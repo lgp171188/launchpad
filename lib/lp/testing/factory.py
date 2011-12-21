@@ -4134,11 +4134,12 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             context also contains the password and gpg signing mode.
         :param sender: The `Person` that is sending the email.
         """
+        from bzrlib.branch import Branch
         md = MergeDirective2.from_objects(
             source_branch.repository, source_branch.last_revision(),
             public_branch=source_branch.get_public_branch(),
             target_branch=target_branch.getInternalBzrUrl(),
-            local_target_branch=target_branch.getInternalBzrUrl(), time=0,
+            local_target_branch=Branch.open(target_branch.getInternalBzrUrl()), time=0,
             timezone=0)
         email = None
         if sender is not None:
