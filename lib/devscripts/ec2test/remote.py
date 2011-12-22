@@ -146,7 +146,7 @@ class EC2Runner:
         self._pid_filename = pid_filename
         self._shutdown_when_done = shutdown_when_done
         if smtp_connection is None:
-            config = bzrlib.config.GlobalConfig()
+            config = bzrlib.config.GlobalStack()
             smtp_connection = SMTPConnection(config)
         self._smtp_connection = smtp_connection
         self._emails = emails
@@ -190,11 +190,11 @@ class EC2Runner:
 
             return function(*args, **kwargs)
         except:
-            config = bzrlib.config.GlobalConfig()
+            config = bzrlib.config.GlobalStack()
             # Handle exceptions thrown by the test() or daemonize() methods.
             if self._emails:
                 msg = EmailMessage(
-                    from_address=config.username(),
+                    from_address=config.get('email'),
                     to_address=self._emails,
                     subject='%s FAILED' % (name,),
                     body=traceback.format_exc())
@@ -327,7 +327,7 @@ class Request:
         self._emails = emails
         self._pqm_message = pqm_message
         # Used for figuring out how to send emails.
-        self._bzr_config = bzrlib.config.GlobalConfig()
+        self._bzr_config = bzrlib.config.GlobalStack()
         if smtp_connection is None:
             smtp_connection = SMTPConnection(self._bzr_config)
         self._smtp_connection = smtp_connection
@@ -462,7 +462,7 @@ class Request:
         """
         message = MIMEMultipart.MIMEMultipart()
         message['To'] = ', '.join(self._emails)
-        message['From'] = self._bzr_config.username()
+        message['From'] = self._bzr_config.get('email')
         if successful:
             status = 'SUCCESS'
         else:
@@ -905,7 +905,7 @@ def main(argv):
 
     pid_filename = os.path.join(LAUNCHPAD_DIR, 'ec2test-remote.pid')
 
-    smtp_connection = SMTPConnection(bzrlib.config.GlobalConfig())
+    smtp_connection = SMTPConnection(bzrlib.config.GlobalStack())
 
     request = Request(
         options.public_branch, options.public_branch_revno, TEST_DIR,
