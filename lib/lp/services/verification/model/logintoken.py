@@ -1,4 +1,4 @@
-# Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2012 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 # pylint: disable-msg=E0611,W0212
@@ -22,39 +22,36 @@ from zope.component import getUtility
 from zope.interface import implements
 from zope.security.proxy import removeSecurityProxy
 
-from canonical.config import config
-from canonical.database.constants import UTC_NOW
-from canonical.database.datetimecol import UtcDateTimeCol
-from canonical.database.enumcol import EnumCol
-from canonical.database.sqlbase import (
+from lp.app.errors import NotFoundError
+from lp.app.validators.email import valid_email
+from lp.registry.interfaces.gpg import IGPGKeySet
+from lp.registry.interfaces.person import IPersonSet
+from lp.services.config import config
+from lp.services.database.constants import UTC_NOW
+from lp.services.database.datetimecol import UtcDateTimeCol
+from lp.services.database.enumcol import EnumCol
+from lp.services.database.sqlbase import (
     SQLBase,
     sqlvalues,
     )
-from canonical.launchpad.components.tokens import (
-    create_unique_token_for_table,
+from lp.services.gpg.interfaces import IGPGHandler
+from lp.services.identity.interfaces.emailaddress import IEmailAddressSet
+from lp.services.mail.helpers import get_email_template
+from lp.services.mail.sendmail import (
+    format_address,
+    simple_sendmail,
     )
-from canonical.launchpad.helpers import get_email_template
+from lp.services.tokens import create_unique_token_for_table
 from lp.services.verification.interfaces.authtoken import LoginTokenType
 from lp.services.verification.interfaces.logintoken import (
     ILoginToken,
     ILoginTokenSet,
     )
-from canonical.launchpad.interfaces.lpstorm import IMasterObject
-from canonical.launchpad.webapp import canonical_url
-from canonical.launchpad.webapp.interfaces import (
+from lp.services.webapp import canonical_url
+from lp.services.webapp.interfaces import (
     IStoreSelector,
     MAIN_STORE,
     MASTER_FLAVOR,
-    )
-from lp.app.errors import NotFoundError
-from lp.app.validators.email import valid_email
-from lp.registry.interfaces.gpg import IGPGKeySet
-from lp.registry.interfaces.person import IPersonSet
-from lp.services.gpg.interfaces import IGPGHandler
-from lp.services.identity.interfaces.emailaddress import IEmailAddressSet
-from lp.services.mail.sendmail import (
-    format_address,
-    simple_sendmail,
     )
 
 
@@ -79,13 +76,6 @@ class LoginToken(SQLBase):
     password = ''  # Quick fix for Bug #2481
 
     title = 'Launchpad Email Verification'
-
-    @property
-    def requester_account(self):
-        """See `ILoginToken`."""
-        if self.requester is None or self.requester.account is None:
-            return None
-        return IMasterObject(self.requester.account)
 
     def consume(self):
         """See ILoginToken."""
@@ -259,8 +249,7 @@ class LoginToken(SQLBase):
     def activateGPGKey(self, key, can_encrypt):
         """See `ILoginToken`."""
         gpgkeyset = getUtility(IGPGKeySet)
-        requester = self.requester
-        lpkey, new = gpgkeyset.activate(requester, key, can_encrypt)
+        lpkey, new = gpgkeyset.activate(self.requester, key, can_encrypt)
 
         self.consume()
 
@@ -282,7 +271,6 @@ class LoginToken(SQLBase):
         """
         emailset = getUtility(IEmailAddressSet)
         requester = self.requester
-        account = self.requester_account
         emails = chain(requester.validatedemails, [requester.preferredemail])
         # Must remove the security proxy because the user may not be logged in
         # and thus won't be allowed to view the requester's email addresses.
@@ -306,7 +294,7 @@ class LoginToken(SQLBase):
                 else:
                     # The email is not yet registered, so we register it for
                     # our user.
-                    email = emailset.new(uid, requester, account=account)
+                    email = emailset.new(uid, requester)
                     created.append(uid)
 
         return created, existing_and_owned_by_others

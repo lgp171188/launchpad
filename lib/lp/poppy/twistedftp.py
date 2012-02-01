@@ -31,11 +31,11 @@ from twisted.python import filepath
 from zope.component import getUtility
 from zope.interface import implements
 
-from canonical.config import config
 from lp.poppy import get_poppy_root
 from lp.poppy.filesystem import UploadFileSystem
 from lp.poppy.hooks import Hooks
 from lp.registry.interfaces.gpg import IGPGKeySet
+from lp.services.config import config
 from lp.services.database import read_transaction
 from lp.services.gpg.interfaces import (
     GPGVerificationError,
@@ -154,7 +154,9 @@ class FTPRealm:
 class PoppyFileWriter(ftp._FileWriter):
     """An `IWriteFile` that checks for signed changes files."""
 
-    def close(self):
+    # XXX: deryck, 2012-01-26, Bug 798957
+    # Disable close() as we search for a better fix to bug.
+    def disabled_close(self):
         """Called after the file has been completely downloaded."""
         if self.fObj.name.endswith(".changes"):
             error = self.validateGPG(self.fObj.name)

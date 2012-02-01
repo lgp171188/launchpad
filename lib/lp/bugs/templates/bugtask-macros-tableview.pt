@@ -655,7 +655,7 @@
       show_new_listings request/features/bugs.dynamic_bug_listings.enabled;
       advanced_search view/shouldShowAdvancedForm"
     tal:condition="python: show_new_listings and not advanced_search">
-    LPS.use('lp.bugs.buglisting', 'lp.ordering', 'lp.buglisting_utils',
+    YUI().use('lp.bugs.buglisting', 'lp.ordering', 'lp.buglisting_utils',
       function(Y) {
         Y.on('domready', function() {
             var navigator = Y.lp.bugs.buglisting.BugListingNavigator
@@ -694,9 +694,16 @@
             var model = navigator.get('model');
             model.get('history').after(
                 'change', function(e) {
-                     Y.lp.buglisting_utils.update_sort_button_visibility(
-                         orderby, e.newVal);
-                });
+                    // Only update the sort buttons if we've got a valid batch
+                    // key.
+                    if (Y.Object.hasKey(e.newVal, 'batch_key')) {
+                        Y.lp.buglisting_utils.update_sort_button_visibility(
+                            orderby,
+                            e.newVal
+                        );
+                    }
+                 }
+            );
             var config_node = orderby.get('config_node');
             var list_util = new Y.lp.buglisting_utils.BugListingConfigUtil({
                 srcNode: config_node,

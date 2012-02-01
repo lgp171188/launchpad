@@ -10,25 +10,26 @@ import transaction
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
-from canonical.launchpad.interfaces.lpstorm import (
+from lp.app.interfaces.launchpad import ILaunchpadCelebrities
+from lp.services.database.lpstorm import (
     ISlaveStore,
     IStore,
     )
-from canonical.librarian.testing.fake import FakeLibrarian
-from canonical.testing.layers import (
-    LaunchpadFunctionalLayer,
-    LaunchpadZopelessLayer,
-    ZopelessDatabaseLayer,
-    )
-from lp.app.interfaces.launchpad import ILaunchpadCelebrities
+from lp.services.librarianserver.testing.fake import FakeLibrarian
 from lp.services.tarfile_helpers import LaunchpadWriteTarFile
 from lp.services.worlddata.interfaces.language import ILanguageSet
 from lp.testing import (
     person_logged_in,
     TestCaseWithFactory,
     )
+from lp.testing.dbuser import switch_dbuser
 from lp.testing.factory import LaunchpadObjectFactory
 from lp.testing.fakemethod import FakeMethod
+from lp.testing.layers import (
+    LaunchpadFunctionalLayer,
+    LaunchpadZopelessLayer,
+    ZopelessDatabaseLayer,
+    )
 from lp.translations.enums import RosettaImportStatus
 from lp.translations.interfaces.translationimportqueue import (
     ITranslationImportQueue,
@@ -62,8 +63,7 @@ class TestCanSetStatusBase:
 
     def _switch_dbuser(self):
         if self.dbuser != None:
-            transaction.commit()
-            self.layer.switchDbUser(self.dbuser)
+            switch_dbuser(self.dbuser)
 
     def _assertCanSetStatus(self, user, entry, expected_list):
         # Helper to check for all statuses.

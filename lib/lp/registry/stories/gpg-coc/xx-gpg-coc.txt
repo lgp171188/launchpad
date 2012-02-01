@@ -140,7 +140,7 @@ Make sure that UIDs were properly processed; in particular, check that
 "sample.revoked@canonical.com", the revoked UID in the key, wasn't
 added as an email address:
 
-    >>> from canonical.launchpad.testing.pages import strip_label
+    >>> from lp.testing.pages import strip_label
 
     >>> browser.open("http://launchpad.dev/~name12/+editemails")
     >>> control = browser.getControl(name='field.UNVALIDATED_SELECTED')
@@ -651,7 +651,7 @@ Test if the advertisement email was sent:
   ...         del browser.mech_browser.addheaders[pos]
   ...         break
   >>> browser.addHeader(
-  ...   'Authorization', 'Basic guilherme.salgado@canonical.com:zeca')
+  ...   'Authorization', 'Basic guilherme.salgado@canonical.com:test')
 
   Check if we can see the Code of conduct page
 

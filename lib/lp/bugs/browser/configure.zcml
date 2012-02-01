@@ -177,6 +177,13 @@
             permission="launchpad.View"/>
         <browser:page
             for="lp.bugs.interfaces.bugmessage.IBugComment"
+            name="+download"
+            class="lp.bugs.browser.bugcomment.BugCommentView"
+            attribute="download"
+            permission="launchpad.View"
+        />
+        <browser:page
+            for="lp.bugs.interfaces.bugmessage.IBugComment"
             name="+box"
             template="../templates/bugcomment-box.pt"
             class="lp.bugs.browser.bugcomment.BugCommentBoxView"
@@ -191,10 +198,16 @@
          factory="lp.bugs.browser.bugcomment.BugCommentXHTMLRepresentation"
          name="lazr.restful.EntryResource"
         />
+    <adapter
+        for="lp.bugs.interfaces.bugmessage.IBugComment
+             lazr.restful.interfaces.IWebServiceClientRequest"
+        provides="lazr.restful.interfaces.IEntry"
+        factory="lp.bugs.adapters.bug.bugcomment_to_entry"
+        />
     <browser:url
         for="lp.bugs.interfaces.malone.IMaloneApplication"
         path_expression="string:bugs"
-        parent_utility="canonical.launchpad.webapp.interfaces.ILaunchpadRoot"/>
+        parent_utility="lp.services.webapp.interfaces.ILaunchpadRoot"/>
     <browser:menu
         id="malone_actions"
         title="Menu for Malone-related actions."/>
@@ -363,7 +376,7 @@
         for="lp.registry.interfaces.product.IProduct"
         permission="launchpad.BugSupervisor"
         name="+configure-bugtracker"
-        template="../../app/templates/generic-edit.pt"
+        template="../templates/bugtracker-configure.pt"
         class="lp.bugs.browser.bugtarget.ProductConfigureBugTrackerView"/>
     <browser:page
         for="lp.registry.interfaces.product.IProduct"
@@ -1128,13 +1141,13 @@
 
     <!-- batching -->
     <browser:page
-        for="canonical.launchpad.webapp.interfaces.ITableBatchNavigator"
+        for="lp.services.webapp.interfaces.ITableBatchNavigator"
         name="+table-view"
         template="../templates/bugs-listing-table.pt"
         permission="zope.Public" />
 
     <browser:page
-        for="canonical.launchpad.webapp.interfaces.ITableBatchNavigator"
+        for="lp.services.webapp.interfaces.ITableBatchNavigator"
         name="+table-view-without-navlinks"
         template="../templates/bugs-listing-table-without-navlinks.pt"
         permission="zope.Public" />

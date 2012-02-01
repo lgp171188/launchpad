@@ -21,18 +21,6 @@ from zope.component import (
     )
 from zope.interface import implements
 
-from canonical.config import config
-from canonical.database.sqlbase import (
-    flush_database_updates,
-    sqlvalues,
-    )
-from canonical.launchpad.ftests import login
-from canonical.launchpad.helpers import (
-    get_contact_email_addresses,
-    get_email_template,
-    )
-from canonical.launchpad.interfaces.lpstorm import IStore
-from canonical.testing.layers import LaunchpadZopelessLayer
 from lp.bugs.adapters.bugchange import (
     BranchLinkedToBug,
     BranchUnlinkedFromBug,
@@ -75,13 +63,28 @@ from lp.bugs.scripts.bugnotification import (
     )
 from lp.registry.interfaces.person import IPersonSet
 from lp.registry.interfaces.product import IProductSet
+from lp.services.config import config
+from lp.services.database.lpstorm import IStore
+from lp.services.database.sqlbase import (
+    flush_database_updates,
+    sqlvalues,
+    )
+from lp.services.mail.helpers import (
+    get_contact_email_addresses,
+    get_email_template,
+    )
 from lp.services.messages.interfaces.message import IMessageSet
 from lp.services.propertycache import cachedproperty
 from lp.testing import (
+    login,
     TestCase,
     TestCaseWithFactory,
     )
-from lp.testing.dbuser import lp_dbuser
+from lp.testing.dbuser import (
+    lp_dbuser,
+    switch_dbuser,
+    )
+from lp.testing.layers import LaunchpadZopelessLayer
 from lp.testing.matchers import Contains
 
 
@@ -241,7 +244,7 @@ class TestGetEmailNotifications(unittest.TestCase):
 
     def setUp(self):
         """Set up some mock bug notifications to use."""
-        self.layer.switchDbUser(config.malone.bugnotification_dbuser)
+        switch_dbuser(config.malone.bugnotification_dbuser)
         sample_person = getUtility(IPersonSet).getByEmail(
             'test@canonical.com')
         self.now = datetime.now(pytz.timezone('UTC'))
@@ -607,7 +610,7 @@ class EmailNotificationTestBase(TestCaseWithFactory):
         [self.product_bugtask] = self.bug.bugtasks
         commit()
         login('test@canonical.com')
-        self.layer.switchDbUser(config.malone.bugnotification_dbuser)
+        switch_dbuser(config.malone.bugnotification_dbuser)
         self.now = datetime.now(pytz.UTC)
         self.ten_minutes_ago = self.now - timedelta(minutes=10)
         self.notification_set = getUtility(IBugNotificationSet)

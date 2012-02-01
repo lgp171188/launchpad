@@ -11,24 +11,25 @@ import pytz
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
-from canonical.config import config
-from canonical.launchpad.testing.pages import find_tag_by_id
-from canonical.launchpad.webapp.publisher import canonical_url
-from canonical.testing.layers import DatabaseFunctionalLayer
 from lp.app.enums import ServiceUsage
 from lp.registry.browser.product import ProductLicenseMixin
 from lp.registry.interfaces.product import (
     IProductSet,
     License,
     )
+from lp.services.config import config
+from lp.services.webapp.publisher import canonical_url
 from lp.testing import (
+    BrowserTestCase,
     login_celebrity,
     login_person,
     person_logged_in,
     TestCaseWithFactory,
     )
 from lp.testing.fixture import DemoMode
+from lp.testing.layers import DatabaseFunctionalLayer
 from lp.testing.mail_helpers import pop_notifications
+from lp.testing.pages import find_tag_by_id
 from lp.testing.service_usage_helpers import set_service_usage
 from lp.testing.views import (
     create_initialized_view,
@@ -386,3 +387,19 @@ class ProductSetReviewLicensesViewTestCase(TestCaseWithFactory):
         self.assertTrue(
             'Y.lp.app.choice.addBinaryChoice' in str(
                 content.find(id='fnord-edit-license-approved').parent))
+
+
+class TestProductRdfView(BrowserTestCase):
+    """Test the Product RDF view."""
+
+    layer = DatabaseFunctionalLayer
+
+    def test_headers(self):
+        """The headers for the RDF view of a product should be as expected."""
+        product = self.factory.makeProduct()
+        browser = self.getViewBrowser(product, view_name='+rdf')
+        content_disposition = 'attachment; filename="%s.rdf"' % product.name
+        self.assertEqual(
+            content_disposition, browser.headers['Content-disposition'])
+        self.assertEqual(
+            'application/rdf+xml', browser.headers['Content-type'])

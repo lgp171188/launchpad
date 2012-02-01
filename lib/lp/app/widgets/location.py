@@ -26,16 +26,16 @@ from zope.schema import (
     Float,
     )
 
-from canonical.config import config
-from canonical.launchpad import _
-from canonical.launchpad.webapp.interfaces import (
-    ILaunchBag,
-    IMultiLineWidgetLayout,
-    )
+from lp import _
 from lp.app.browser.tales import ObjectImageDisplayAPI
 from lp.app.validators import LaunchpadValidationError
 from lp.registry.interfaces.location import IObjectWithLocation
+from lp.services.config import config
 from lp.services.geoip.interfaces import IGeoIPRecord
+from lp.services.webapp.interfaces import (
+    ILaunchBag,
+    IMultiLineWidgetLayout,
+    )
 
 
 class ILocationWidget(IInputWidget, IBrowserWidget, IMultiLineWidgetLayout):
@@ -132,7 +132,7 @@ class LocationWidget(BrowserWidget, InputWidget):
             show_marker=self.show_marker)
         return """
             <script type="text/javascript">
-                LPS.use('node', 'lp.app.mapping', function(Y) {
+                YUI().use('node', 'lp.app.mapping', function(Y) {
                     function renderMap() {
                         Y.lp.app.mapping.renderPersonMap(
                             %(center_lat)s, %(center_lng)s, %(displayname)s,

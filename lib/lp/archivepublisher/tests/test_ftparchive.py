@@ -14,11 +14,6 @@ import unittest
 
 from zope.component import getUtility
 
-from canonical.config import config
-from canonical.testing.layers import (
-    LaunchpadZopelessLayer,
-    ZopelessDatabaseLayer,
-    )
 from lp.archivepublisher.config import getPubConfig
 from lp.archivepublisher.diskpool import DiskPool
 from lp.archivepublisher.model.ftparchive import (
@@ -29,11 +24,17 @@ from lp.archivepublisher.model.ftparchive import (
 from lp.archivepublisher.publishing import Publisher
 from lp.registry.interfaces.distribution import IDistributionSet
 from lp.registry.interfaces.pocket import PackagePublishingPocket
+from lp.services.config import config
 from lp.services.log.logger import (
     BufferLogger,
     DevNullLogger,
     )
 from lp.testing import TestCaseWithFactory
+from lp.testing.dbuser import switch_dbuser
+from lp.testing.layers import (
+    LaunchpadZopelessLayer,
+    ZopelessDatabaseLayer,
+    )
 
 
 def sanitize_apt_ftparchive_Sources_output(text):
@@ -71,7 +72,7 @@ class TestFTPArchive(TestCaseWithFactory):
 
     def setUp(self):
         super(TestFTPArchive, self).setUp()
-        self.layer.switchDbUser(config.archivepublisher.dbuser)
+        switch_dbuser(config.archivepublisher.dbuser)
 
         self._distribution = getUtility(IDistributionSet)['ubuntutest']
         self._archive = self._distribution.main_archive

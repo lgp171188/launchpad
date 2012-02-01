@@ -27,16 +27,16 @@ from fixtures import (
 import transaction
 from zope.component import getUtility
 
-from canonical.config import config
-from canonical.launchpad.daemons.tachandler import TacTestSetup
-from canonical.testing.layers import (
+from lp.poppy.hooks import Hooks
+from lp.registry.interfaces.ssh import ISSHKeySet
+from lp.services.config import config
+from lp.services.daemons.tachandler import TacTestSetup
+from lp.testing import TestCaseWithFactory
+from lp.testing.keyserver import KeyServerTac
+from lp.testing.layers import (
     ZopelessAppServerLayer,
     ZopelessDatabaseLayer,
     )
-from lp.poppy.hooks import Hooks
-from lp.registry.interfaces.ssh import ISSHKeySet
-from lp.testing import TestCaseWithFactory
-from lp.testing.keyserver import KeyServerTac
 
 
 class FTPServer(Fixture):
@@ -371,7 +371,9 @@ class TestPoppy(TestCaseWithFactory):
                 self.root_dir, upload_dirs[index], "test")).read()
             self.assertEqual(content, expected_contents[index])
 
-    def test_bad_gpg_on_changesfile(self):
+    # XXX: deryck, 2012-01-26, Bug 798957
+    # PoppyFileWriter.close has been disabled, so disable test, too.
+    def disabled_test_bad_gpg_on_changesfile(self):
         """Check that we get a rejection error when uploading .changes files
         with invalid GPG signatures.
         """

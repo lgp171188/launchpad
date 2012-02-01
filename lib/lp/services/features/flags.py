@@ -37,8 +37,12 @@ value_domain_info = sorted([
 # Data for generating web-visible feature flag documentation.
 #
 # Entries for each flag are:
-# flag name, value domain, prose documentation, default behaviour, title,
-# URL to a page with more information about the feature.
+# 1. flag name
+# 2. value domain
+# 3. prose documentation
+# 4. default behaviour
+# 5. title
+# 6. URL to a page with more information about the feature.
 #
 # Value domain as in value_domain_info above.
 #
@@ -103,6 +107,18 @@ flag_info = sorted([
      'float',
      'Sets the hard request timeout in milliseconds.',
      '',
+     '',
+     ''),
+    ('js.combo_loader.enabled',
+     'boolean',
+     'Determines if we use a js combo loader or not.',
+     '',
+     '',
+     ''),
+    ('js.yui-version',
+     'space delimited',
+     'Allows us to change the YUI version we run against, e.g. yui-3.4.',
+     'As speficied in versions.cfg',
      '',
      ''),
     ('mail.dkim_authentication.disabled',
@@ -198,12 +214,6 @@ flag_info = sorted([
      '',
      '',
      ''),
-    ('disclosure.delete_bugtask.enabled',
-     'boolean',
-     'Enables bugtasks to be deleted by authorised users.',
-     '',
-     '',
-     ''),
     ('disclosure.allow_multipillar_private_bugs.enabled',
      'boolean',
      'Allows private bugs to have more than one bug task.',
@@ -213,6 +223,13 @@ flag_info = sorted([
     ('disclosure.users_hide_own_bug_comments.enabled',
      'boolean',
      'Allows users in project roles and comment owners to hide bug comments.',
+     '',
+     '',
+     ''),
+    ('disclosure.extra_private_team_LimitedView_security.enabled',
+     'boolean',
+     ('Enables additional checks to be done to determine whether a user has '
+      'launchpad.LimitedView permission on a private team.'),
      '',
      '',
      ''),

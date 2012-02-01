@@ -17,18 +17,12 @@ import tempfile
 
 from fixtures import MonkeyPatch
 from storm.locals import Store
-import transaction
 from zope.component import (
     getGlobalSiteManager,
     getUtility,
     )
 from zope.security.proxy import removeSecurityProxy
 
-from canonical.config import config
-from canonical.database.constants import UTC_NOW
-from canonical.launchpad.interfaces.librarian import ILibraryFileAliasSet
-from canonical.launchpad.testing.fakepackager import FakePackager
-from canonical.testing.layers import LaunchpadZopelessLayer
 from lp.app.errors import NotFoundError
 from lp.archiveuploader.nascentupload import NascentUpload
 from lp.archiveuploader.nascentuploadfile import DdebBinaryUploadFile
@@ -61,7 +55,10 @@ from lp.registry.interfaces.series import SeriesStatus
 from lp.registry.interfaces.sourcepackage import SourcePackageFileType
 from lp.registry.interfaces.sourcepackagename import ISourcePackageNameSet
 from lp.registry.model.sourcepackagename import SourcePackageName
+from lp.services.config import config
+from lp.services.database.constants import UTC_NOW
 from lp.services.features.testing import FeatureFixture
+from lp.services.librarian.interfaces import ILibraryFileAliasSet
 from lp.services.log.logger import (
     BufferLogger,
     DevNullLogger,
@@ -98,12 +95,15 @@ from lp.soyuz.model.publishing import (
     )
 from lp.soyuz.model.sourcepackagerelease import SourcePackageRelease
 from lp.soyuz.scripts.initialize_distroseries import InitializeDistroSeries
+from lp.soyuz.tests.fakepackager import FakePackager
 from lp.testing import (
     TestCase,
     TestCaseWithFactory,
     )
+from lp.testing.dbuser import switch_dbuser
 from lp.testing.fakemethod import FakeMethod
 from lp.testing.gpgkeys import import_public_test_keys
+from lp.testing.layers import LaunchpadZopelessLayer
 from lp.testing.mail_helpers import pop_notifications
 
 
@@ -132,12 +132,10 @@ class TestUploadProcessorBase(TestCaseWithFactory):
     layer = LaunchpadZopelessLayer
 
     def switchToUploader(self):
-        transaction.commit()
-        self.layer.switchDbUser("uploader")
+        switch_dbuser("uploader")
 
     def switchToAdmin(self):
-        transaction.commit()
-        self.layer.switchDbUser("launchpad_main")
+        switch_dbuser("launchpad_main")
 
     def setUp(self):
         super(TestUploadProcessorBase, self).setUp()

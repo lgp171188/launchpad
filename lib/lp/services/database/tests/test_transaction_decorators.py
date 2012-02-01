@@ -6,18 +6,19 @@ import unittest
 import transaction
 from zope.component import getUtility
 
-from canonical.launchpad.database.librarian import LibraryFileContent
-from canonical.launchpad.webapp.interfaces import (
-    DEFAULT_FLAVOR,
-    IStoreSelector,
-    MAIN_STORE,
-    )
-from canonical.librarian import db
-from canonical.testing.layers import LaunchpadZopelessLayer
 from lp.services.database import (
     read_transaction,
     write_transaction,
     )
+from lp.services.librarian.model import LibraryFileContent
+from lp.services.librarianserver import db
+from lp.services.webapp.interfaces import (
+    DEFAULT_FLAVOR,
+    IStoreSelector,
+    MAIN_STORE,
+    )
+from lp.testing.dbuser import switch_dbuser
+from lp.testing.layers import LaunchpadZopelessLayer
 
 
 class TestTransactionDecorators(unittest.TestCase):
@@ -26,7 +27,7 @@ class TestTransactionDecorators(unittest.TestCase):
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        self.layer.switchDbUser('librarian')
+        switch_dbuser('librarian')
         self.store = getUtility(IStoreSelector).get(
                 MAIN_STORE, DEFAULT_FLAVOR)
         self.content_id = db.Library().add('deadbeef', 1234, 'abababab')
