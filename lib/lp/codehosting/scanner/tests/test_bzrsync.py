@@ -16,6 +16,7 @@ from bzrlib.revision import (
     )
 from bzrlib.tests import TestCaseWithTransport
 from bzrlib.uncommit import uncommit
+from bzrlib.url_policy_open import BranchOpener
 import pytz
 from storm.locals import Store
 from twisted.python.util import mergeFunctionMetadata
@@ -40,7 +41,6 @@ from lp.codehosting.bzrutils import (
     read_locked,
     write_locked,
     )
-from lp.codehosting.safe_open import SafeBranchOpener
 from lp.codehosting.scanner.bzrsync import BzrSync
 from lp.services.config import config
 from lp.services.database.lpstorm import IStore
@@ -83,7 +83,7 @@ class BzrSyncTestCase(TestCaseWithTransport, TestCaseWithFactory):
 
     def setUp(self):
         super(BzrSyncTestCase, self).setUp()
-        SafeBranchOpener.install_hook()
+        BranchOpener.install_hook()
         self.disable_directory_isolation()
         self.useBzrBranches(direct_database=True)
         self.makeFixtures()
