@@ -14,6 +14,7 @@ import operator
 
 from bzrlib import urlutils
 from bzrlib.revision import NULL_REVISION
+from bzrlib.url_policy_open import open_only_scheme
 import pytz
 import simplejson
 from sqlobject import (
@@ -131,7 +132,6 @@ from lp.code.model.revision import (
     RevisionAuthor,
     )
 from lp.code.model.seriessourcepackagebranch import SeriesSourcePackageBranch
-from lp.codehosting.safe_open import safe_open
 from lp.registry.enums import (
     InformationType,
     PRIVATE_INFORMATION_TYPES,
@@ -597,7 +597,7 @@ class Branch(SQLBase, BzrIdentityMixin):
 
     def getBzrBranch(self):
         """See `IBranch`."""
-        return safe_open('lp-internal', self.getInternalBzrUrl())
+        return open_only_scheme('lp-internal', self.getInternalBzrUrl())
 
     @property
     def displayname(self):

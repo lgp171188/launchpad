@@ -16,6 +16,7 @@ from bzrlib.tests.http_server import (
     TestingHTTPServer,
     TestingThreadingHTTPServer,
     )
+from bzrlib.url_policy_open import AcceptAnythingPolicy
 
 from lp.codehosting.puller.worker import (
     BranchMirrorer,
@@ -23,7 +24,6 @@ from lp.codehosting.puller.worker import (
     PullerWorker,
     PullerWorkerProtocol,
     )
-from lp.codehosting.safe_open import AcceptAnythingPolicy
 from lp.codehosting.tests.helpers import LoomTestMixin
 from lp.testing import TestCaseWithFactory
 

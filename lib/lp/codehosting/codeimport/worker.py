@@ -53,6 +53,12 @@ from bzrlib.urlutils import (
     join as urljoin,
     local_path_from_url,
     )
+from bzrlib.url_policy_open import (
+    BadUrl,
+    BranchOpenPolicy,
+    BranchOpener,
+    )
+
 import cscvs
 from cscvs.cmds import totla
 import CVS
@@ -77,11 +83,6 @@ from lp.codehosting.codeimport.tarball import (
     extract_tarball,
     )
 from lp.codehosting.codeimport.uifactory import LoggingUIFactory
-from lp.codehosting.safe_open import (
-    BadUrl,
-    BranchOpenPolicy,
-    SafeBranchOpener,
-    )
 from lp.services.config import config
 from lp.services.propertycache import cachedproperty
 
@@ -95,10 +96,10 @@ class CodeImportBranchOpenPolicy(BranchOpenPolicy):
      - only open the allowed schemes
     """
 
-    allowed_schemes = ['http', 'https', 'svn', 'git', 'ftp', 'bzr']
+    allowed_schemes = ['http', 'https', 'svn', 'git', 'ftp', 'svn', 'bzr']
 
-    def shouldFollowReferences(self):
-        """See `BranchOpenPolicy.shouldFollowReferences`.
+    def should_follow_references(self):
+        """See `BranchOpenPolicy.should_follow_references`.
 
         We traverse branch references for MIRRORED branches because they
         provide a useful redirection mechanism and we want to be consistent
@@ -106,16 +107,16 @@ class CodeImportBranchOpenPolicy(BranchOpenPolicy):
         """
         return True
 
-    def transformFallbackLocation(self, branch, url):
-        """See `BranchOpenPolicy.transformFallbackLocation`.
+    def transform_fallback_location(self, branch, url):
+        """See `BranchOpenPolicy.transform_fallback_location`.
 
         For mirrored branches, we stack on whatever the remote branch claims
         to stack on, but this URL still needs to be checked.
         """
         return urljoin(branch.base, url), True
 
-    def checkOneURL(self, url):
-        """See `BranchOpenPolicy.checkOneURL`.
+    def check_one_url(self, url):
+        """See `BranchOpenPolicy.check_one_url`.
 
         We refuse to mirror from Launchpad or a ssh-like or file URL.
         """
@@ -717,7 +718,7 @@ class PullingImportWorker(ImportWorker):
     def _doImport(self):
         self._logger.info("Starting job.")
         saved_factory = bzrlib.ui.ui_factory
-        opener = SafeBranchOpener(self._opener_policy, self.probers)
+        opener = BranchOpener(self._opener_policy, self.probers)
         bzrlib.ui.ui_factory = LoggingUIFactory(logger=self._logger)
         try:
             self._logger.info(

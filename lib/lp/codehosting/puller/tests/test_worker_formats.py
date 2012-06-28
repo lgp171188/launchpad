@@ -15,10 +15,10 @@ from bzrlib.plugins.weave_fmt.repository import (
 from bzrlib.repofmt.knitpack_repo import RepositoryFormatKnitPack5
 from bzrlib.repofmt.knitrepo import RepositoryFormatKnit1
 from bzrlib.tests.per_repository import TestCaseWithRepository
+from bzrlib.url_policy_open import BranchOpener
 
 import lp.codehosting  # For bzr plugins.
 from lp.codehosting.puller.tests import PullerWorkerMixin
-from lp.codehosting.safe_open import SafeBranchOpener
 from lp.codehosting.tests.helpers import LoomTestMixin
 
 
@@ -29,7 +29,7 @@ class TestPullerWorkerFormats(TestCaseWithRepository, PullerWorkerMixin,
         TestCaseWithRepository.setUp(self)
         # make_bzrdir relies on this being a relative filesystem path.
         self._source_branch_path = 'source-branch'
-        SafeBranchOpener.install_hook()
+        BranchOpener.install_hook()
         self.worker = self.makePullerWorker(
             self.get_url(self._source_branch_path),
             self.get_url('dest-path'))

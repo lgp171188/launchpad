@@ -18,6 +18,10 @@ from bzrlib.errors import (
     UnknownFormatError,
     UnsupportedFormatError,
     )
+from bzrlib.url_policy_open import (
+    BranchLoopError,
+    BranchReferenceForbidden,
+    )
 from lazr.uri import InvalidURIError
 
 from lp.code.enums import BranchType
@@ -28,10 +32,6 @@ from lp.codehosting.puller.worker import (
     BranchMirrorer,
     PullerWorker,
     PullerWorkerProtocol,
-    )
-from lp.codehosting.safe_open import (
-    BranchLoopError,
-    BranchReferenceForbidden,
     )
 from lp.testing import TestCase
 
