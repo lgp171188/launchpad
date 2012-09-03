@@ -59,7 +59,7 @@ class TestAccessPolicySource(TestCaseWithFactory):
         wanted = [
             (self.factory.makeProduct(), InformationType.PROPRIETARY),
             (self.factory.makeDistribution(),
-                InformationType.UNEMBARGOEDSECURITY),
+                InformationType.PUBLICSECURITY),
             ]
         policies = getUtility(IAccessPolicySource).create(wanted)
         self.assertThat(
@@ -77,17 +77,17 @@ class TestAccessPolicySource(TestCaseWithFactory):
 
         wanted = [
             (product, InformationType.PROPRIETARY),
-            (product, InformationType.UNEMBARGOEDSECURITY),
+            (product, InformationType.PUBLICSECURITY),
             (distribution, InformationType.PROPRIETARY),
-            (distribution, InformationType.UNEMBARGOEDSECURITY),
+            (distribution, InformationType.PUBLICSECURITY),
             (other_product, InformationType.PROPRIETARY),
             ]
         getUtility(IAccessPolicySource).create(wanted)
 
         query = [
             (product, InformationType.PROPRIETARY),
-            (product, InformationType.UNEMBARGOEDSECURITY),
-            (distribution, InformationType.UNEMBARGOEDSECURITY),
+            (product, InformationType.PUBLICSECURITY),
+            (distribution, InformationType.PUBLICSECURITY),
             ]
         self.assertContentEqual(
             query,
@@ -115,11 +115,11 @@ class TestAccessPolicySource(TestCaseWithFactory):
         distribution = self.factory.makeProduct()
         other_product = self.factory.makeProduct()
         policies = (
-            (product, InformationType.EMBARGOEDSECURITY),
+            (product, InformationType.PRIVATESECURITY),
             (product, InformationType.USERDATA),
-            (distribution, InformationType.EMBARGOEDSECURITY),
+            (distribution, InformationType.PRIVATESECURITY),
             (distribution, InformationType.USERDATA),
-            (other_product, InformationType.EMBARGOEDSECURITY),
+            (other_product, InformationType.PRIVATESECURITY),
             (other_product, InformationType.USERDATA),
             )
         self.assertContentEqual(
@@ -702,7 +702,7 @@ class TestReconcileAccessPolicyArtifacts(TestCaseWithFactory):
     def test_adds_missing_accesspolicyartifacts(self):
         # reconcile_access_for_artifact adds missing links.
         product = self.factory.makeProduct()
-        bug = self.factory.makeBug(product=product)
+        bug = self.factory.makeBug(target=product)
         reconcile_access_for_artifact(bug, InformationType.USERDATA, [])
 
         self.assertPoliciesForBug([], bug)
@@ -725,3 +725,20 @@ class TestReconcileAccessPolicyArtifacts(TestCaseWithFactory):
         reconcile_access_for_artifact(
             bug, InformationType.USERDATA, [product])
         self.assertPoliciesForBug([(product, InformationType.USERDATA)], bug)
+
+    def test_raises_exception_on_missing_policies(self):
+        # reconcile_access_for_artifact raises an exception if a pillar is
+        # missing an AccessPolicy.
+        product = self.factory.makeProduct()
+        # Creating a product will have created two APs, delete them.
+        aps = getUtility(IAccessPolicySource).findByPillar([product])
+        getUtility(IAccessPolicyGrantSource).revokeByPolicy(aps)
+        for ap in aps:
+            IStore(ap).remove(ap)
+        bug = self.factory.makeBug(target=product)
+        expected = (
+            "Pillar(s) %s require an access policy for information type "
+            "Private.") % product.name
+        self.assertRaisesWithContent(
+            AssertionError, expected, reconcile_access_for_artifact, bug,
+            InformationType.USERDATA, [product])

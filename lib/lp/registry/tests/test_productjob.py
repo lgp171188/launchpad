@@ -11,9 +11,9 @@ from datetime import (
     )
 
 import pytz
-import transaction
 from testtools.content import Content
 from testtools.content_type import UTF8_TEXT
+import transaction
 from zope.component import getUtility
 from zope.interface import (
     classProvides,
@@ -26,7 +26,7 @@ from lp.registry.enums import (
     InformationType,
     ProductJobType,
     )
-from lp.registry.interfaces.person import TeamSubscriptionPolicy
+from lp.registry.interfaces.person import TeamMembershipPolicy
 from lp.registry.interfaces.product import License
 from lp.registry.interfaces.productjob import (
     ICommercialExpiredJob,
@@ -326,7 +326,7 @@ class ProductNotificationJobTestCase(TestCaseWithFactory):
     def make_maintainer_team(self, product):
         team = self.factory.makeTeam(
             owner=product.owner,
-            subscription_policy=TeamSubscriptionPolicy.MODERATED)
+            membership_policy=TeamMembershipPolicy.MODERATED)
         team_admin = self.factory.makePerson()
         with person_logged_in(team.teamowner):
             team.addMember(
@@ -577,7 +577,7 @@ class CommericialExpirationMixin(CommercialHelpers):
         # Create a proprietary project owned by a team which will have
         # different DB relations.
         team = self.factory.makeTeam(
-            subscription_policy=TeamSubscriptionPolicy.RESTRICTED)
+            membership_policy=TeamMembershipPolicy.RESTRICTED)
         proprietary_product = self.factory.makeProduct(
             owner=team, licenses=[License.OTHER_PROPRIETARY])
         self.expire_commercial_subscription(proprietary_product)

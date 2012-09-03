@@ -29,6 +29,7 @@ from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
 from lp.code.bzr import (
+    branch_revision_history,
     BranchFormat,
     RepositoryFormat,
     )
@@ -64,6 +65,7 @@ from lp.code.model.directbranchcommit import DirectBranchCommit
 from lp.code.model.revision import RevisionSet
 from lp.code.model.tests.test_branch import create_knit
 from lp.codehosting.vfs import branch_id_to_path
+from lp.registry.enums import InformationType
 from lp.scripts.helpers import TransactionFreeOperation
 from lp.services.config import config
 from lp.services.database.constants import UTC_NOW
@@ -171,6 +173,23 @@ class TestBranchScanJob(TestCaseWithFactory):
             job.run()
 
         self.assertEqual(db_branch.revision_count, 5)
+
+    def test_run_with_private_linked_bug(self):
+        """Ensure the job scans a branch with a private bug in the revprops."""
+        self.useBzrBranches(direct_database=True)
+        db_branch, bzr_tree = self.create_branch_and_tree()
+        product = self.factory.makeProduct()
+        private_bug = self.factory.makeBug(
+            target=product, information_type=InformationType.USERDATA)
+        bug_line = 'https://launchpad.net/bugs/%s fixed' % private_bug.id
+        with override_environ(BZR_EMAIL='me@example.com'):
+            bzr_tree.commit(
+                'First commit', rev_id='rev1', revprops={'bugs': bug_line})
+        job = BranchScanJob.create(db_branch)
+        with dbuser(config.branchscanner.dbuser):
+            job.run()
+        self.assertEqual(db_branch.revision_count, 1)
+        self.assertTrue(private_bug.hasBranch(db_branch))
 
 
 class TestBranchUpgradeJob(TestCaseWithFactory):
@@ -380,7 +399,7 @@ class TestRevisionsAddedJob(TestCaseWithFactory):
         job = RevisionsAddedJob.create(branch, 'rev1', 'rev2', '')
         self.assertEqual([job], list(RevisionsAddedJob.iterReady()))
 
-    def updateDBRevisions(self, branch, bzr_branch, revision_ids=None):
+    def updateDBRevisions(self, branch, bzr_branch, revision_ids):
         """Update the database for the revisions.
 
         :param branch: The database branch associated with the revisions.
@@ -388,8 +407,6 @@ class TestRevisionsAddedJob(TestCaseWithFactory):
         :param revision_ids: The ids of the revisions to update.  If not
             supplied, the branch revision history is used.
         """
-        if revision_ids is None:
-            revision_ids = bzr_branch.revision_history()
         for bzr_revision in bzr_branch.repository.get_revisions(revision_ids):
             existing = branch.getBranchRevision(
                 revision_id=bzr_revision.revision_id)
@@ -777,7 +794,8 @@ class TestRevisionsAddedJob(TestCaseWithFactory):
                 committer="Joe Bloggs <joe@example.com>",
                 timestamp=1000100000.0, timezone=0)
         switch_dbuser('branchscanner')
-        self.updateDBRevisions(db_branch, tree.branch)
+        self.updateDBRevisions(db_branch, tree.branch,
+            branch_revision_history(tree.branch))
         expected = (
             u"-" * 60 + '\n'
             "revno: 1" '\n'
@@ -820,7 +838,8 @@ class TestRevisionsAddedJob(TestCaseWithFactory):
                 committer=u"Non ASCII: \xed", timestamp=1000000000.0,
                 timezone=0)
         switch_dbuser('branchscanner')
-        self.updateDBRevisions(db_branch, tree.branch)
+        self.updateDBRevisions(db_branch, tree.branch,
+            branch_revision_history(tree.branch))
         job = RevisionsAddedJob.create(db_branch, '', '', '')
         message = job.getRevisionMessage(rev_id, 1)
         # The revision message must be a unicode object.
