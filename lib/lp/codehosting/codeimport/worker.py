@@ -96,7 +96,7 @@ class CodeImportBranchOpenPolicy(BranchOpenPolicy):
      - only open the allowed schemes
     """
 
-    allowed_schemes = ['http', 'https', 'svn', 'git', 'ftp', 'svn', 'bzr']
+    allowed_schemes = ['http', 'https', 'svn', 'git', 'ftp', 'bzr']
 
     def should_follow_references(self):
         """See `BranchOpenPolicy.should_follow_references`.
