@@ -71,7 +71,6 @@ from bzrlib.repofmt.knitrepo import (
     RepositoryFormatKnit3,
     RepositoryFormatKnit4,
     )
-from bzrlib.tsort import topo_sort
 from lazr.enum import (
     DBEnumeratedType,
     DBItem,
