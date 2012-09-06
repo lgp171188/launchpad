@@ -91,6 +91,9 @@ from lp.code.interfaces.seriessourcepackagebranch import (
     IFindOfficialBranchLinks,
     )
 from lp.registry.enums import (
+    BranchSharingPolicy,
+    BugSharingPolicy,
+    FREE_INFORMATION_TYPES,
     InformationType,
     PRIVATE_INFORMATION_TYPES,
     PUBLIC_INFORMATION_TYPES,
@@ -277,6 +280,18 @@ class Distribution(SQLBase, BugTargetBase, MakesAnnouncements,
     def pillar_category(self):
         """See `IPillar`."""
         return "Distribution"
+
+    @property
+    def branch_sharing_policy(self):
+        """See `IHasSharingPolicies."""
+        # Sharing policy for distributions is always PUBLIC.
+        return BranchSharingPolicy.PUBLIC
+
+    @property
+    def bug_sharing_policy(self):
+        """See `IHasSharingPolicies."""
+        # Sharing policy for distributions is always PUBLIC.
+        return BugSharingPolicy.PUBLIC
 
     @property
     def uploaders(self):
@@ -1574,10 +1589,7 @@ class Distribution(SQLBase, BugTargetBase, MakesAnnouncements,
 
     def getAllowedBugInformationTypes(self):
         """See `IDistribution.`"""
-        types = set(InformationType.items)
-        types.discard(InformationType.PROPRIETARY)
-        types.discard(InformationType.EMBARGOED)
-        return types
+        return FREE_INFORMATION_TYPES
 
     def getDefaultBugInformationType(self):
         """See `IDistribution.`"""

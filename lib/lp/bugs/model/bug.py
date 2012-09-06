@@ -100,10 +100,7 @@ from lp.bugs.adapters.bugchange import (
     UnsubscribedFromBug,
     )
 from lp.bugs.enums import BugNotificationLevel
-from lp.bugs.errors import (
-    BugCannotBePrivate,
-    InvalidDuplicateValue,
-    )
+from lp.bugs.errors import InvalidDuplicateValue
 from lp.bugs.interfaces.bug import (
     IBug,
     IBugBecameQuestionEvent,
@@ -160,8 +157,10 @@ from lp.hardwaredb.interfaces.hwdb import IHWSubmissionBugSet
 from lp.registry.enums import (
     InformationType,
     PRIVATE_INFORMATION_TYPES,
+    PROPRIETARY_INFORMATION_TYPES,
     SECURITY_INFORMATION_TYPES,
     )
+from lp.registry.errors import CannotChangeInformationType
 from lp.registry.interfaces.accesspolicy import (
     IAccessArtifactGrantSource,
     IAccessArtifactSource,
@@ -812,7 +811,8 @@ class Bug(SQLBase):
         # there is at least one bugtask for which access can be checked.
         if self.default_bugtask:
             service = getUtility(IService, 'sharing')
-            bugs, ignored = service.getVisibleArtifacts(person, bugs=[self])
+            bugs, ignored = service.getVisibleArtifacts(
+                person, bugs=[self], ignore_permissions=True)
             if not bugs:
                 service.ensureAccessGrants(
                     [person], subscribed_by, bugs=[self],
@@ -1710,10 +1710,12 @@ class Bug(SQLBase):
         """See `IBug`."""
         if self.information_type == information_type:
             return False
-        if (information_type == InformationType.PROPRIETARY and
-            len(self.affected_pillars) > 1):
-            raise BugCannotBePrivate(
-                "Multi-pillar bugs cannot be proprietary.")
+        if information_type not in self.getAllowedInformationTypes(who):
+            raise CannotChangeInformationType("Forbidden by project policy.")
+        if (information_type in PROPRIETARY_INFORMATION_TYPES
+            and len(self.affected_pillars) > 1):
+            raise CannotChangeInformationType(
+                "Proprietary bugs can only affect one project.")
         if information_type in PRIVATE_INFORMATION_TYPES:
             self.who_made_private = who
             self.date_made_private = UTC_NOW
