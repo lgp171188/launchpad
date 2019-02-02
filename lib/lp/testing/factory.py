@@ -3519,13 +3519,13 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         return proberecord
 
     def makeMirror(self, distribution, displayname=None, country=None,
-                   http_url=None, ftp_url=None, rsync_url=None,
+                   http_url=None, https_url=None, ftp_url=None, rsync_url=None,
                    official_candidate=False):
         """Create a mirror for the distribution."""
         if displayname is None:
             displayname = self.getUniqueString("mirror")
         # If no URL is specified create an HTTP URL.
-        if http_url is None and ftp_url is None and rsync_url is None:
+        if http_url is https_url is ftp_url is rsync_url is None:
             http_url = self.getUniqueURL()
         # If no country is given use Argentina.
         if country is None:
@@ -3539,6 +3539,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             display_name=displayname,
             description=None,
             http_base_url=http_url,
+            https_base_url=https_url,
             ftp_base_url=ftp_url,
             rsync_base_url=rsync_url,
             official_candidate=official_candidate)

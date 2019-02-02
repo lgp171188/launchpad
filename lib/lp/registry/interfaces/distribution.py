@@ -491,13 +491,13 @@ class IDistributionPublic(
         """Return the country DNS mirror for a country and content type."""
 
     def newMirror(owner, speed, country, content, display_name=None,
-                  description=None, http_base_url=None,
+                  description=None, http_base_url=None, https_base_url=None,
                   ftp_base_url=None, rsync_base_url=None, enabled=False,
                   official_candidate=False, whiteboard=None):
         """Create a new DistributionMirror for this distribution.
 
-        At least one of http_base_url or ftp_base_url must be provided in
-        order to create a mirror.
+        At least one of {http,https,ftp}_base_url must be provided in order to
+        create a mirror.
         """
 
     def getOCIProject(name):

@@ -302,6 +302,12 @@ class DistroMirrorHTTPURIField(DistroMirrorURIField):
         return getUtility(IDistributionMirrorSet).getByHttpUrl(url)
 
 
+class DistroMirrorHTTPSURIField(DistroMirrorURIField):
+
+    def getMirrorByURI(self, url):
+        return getUtility(IDistributionMirrorSet).getByHttpsUrl(url)
+
+
 class DistroMirrorFTPURIField(DistroMirrorURIField):
 
     def getMirrorByURI(self, url):
@@ -349,6 +355,11 @@ class IDistributionMirror(Interface):
         allowed_schemes=['http'], allow_userinfo=False,
         allow_query=False, allow_fragment=False, trailing_slash=True,
         description=_('e.g.: http://archive.ubuntu.com/ubuntu/')))
+    https_base_url = exported(DistroMirrorHTTPSURIField(
+        title=_('HTTPS URL'), required=False, readonly=False,
+        allowed_schemes=['https'], allow_userinfo=False,
+        allow_query=False, allow_fragment=False, trailing_slash=True,
+        description=_('e.g.: https://archive.ubuntu.com/ubuntu/')))
     ftp_base_url = exported(DistroMirrorFTPURIField(
         title=_('FTP URL'), required=False, readonly=False,
         allowed_schemes=['ftp'], allow_userinfo=False,
@@ -435,8 +446,9 @@ class IDistributionMirror(Interface):
 
     @invariant
     def mirrorMustHaveHTTPOrFTPURL(mirror):
-        if not (mirror.http_base_url or mirror.ftp_base_url):
-            raise Invalid('A mirror must have at least an HTTP or FTP URL.')
+        if not (mirror.http_base_url or mirror.https_base_url or
+                mirror.ftp_base_url):
+            raise Invalid('A mirror must have at least an HTTP(S) or FTP URL.')
 
     def getSummarizedMirroredSourceSeries():
         """Return a summarized list of this distribution_mirror's
@@ -613,6 +625,9 @@ class IDistributionMirrorSet(Interface):
 
     def getByHttpUrl(url):
         """Return the mirror with the given HTTP URL or None."""
+
+    def getByHttpsUrl(url):
+        """Return the mirror with the given HTTPS URL or None."""
 
     def getByFtpUrl(url):
         """Return the mirror with the given FTP URL or None."""
