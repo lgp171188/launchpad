@@ -1426,6 +1426,13 @@ class GitRepository(StormBase, WebhookTargetMixin, GitIdentityMixin):
         return DecoratedResultSet(
             results, pre_iter_hook=preloadDataForActivities)
 
+    def issueAccessToken(self):
+        """See `IGitRepository`."""
+        issuer = getUtility(IMacaroonIssuer, "git-repository")
+        # Our security adapter has already done the checks we need, apart
+        # from forbidding anonymous users which is done by the issuer.
+        return removeSecurityProxy(issuer).issueMacaroon(self).serialize()
+
     def canBeDeleted(self):
         """See `IGitRepository`."""
         # Can't delete if the repository is associated with anything.
