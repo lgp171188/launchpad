@@ -57,7 +57,10 @@ from lp.registry.errors import (
     InvalidName,
     NoSuchSourcePackageName,
     )
-from lp.registry.interfaces.person import NoSuchPerson
+from lp.registry.interfaces.person import (
+    IPersonSet,
+    NoSuchPerson,
+    )
 from lp.registry.interfaces.product import (
     InvalidProductName,
     NoSuchProduct,
@@ -79,7 +82,7 @@ class GitAPI(LaunchpadXMLRPCView):
         super(GitAPI, self).__init__(*args, **kwargs)
         self.repository_set = getUtility(IGitRepositorySet)
 
-    def _verifyMacaroon(self, macaroon_raw, repository=None):
+    def _verifyMacaroon(self, macaroon_raw, repository=None, user=None):
         try:
             macaroon = Macaroon.deserialize(macaroon_raw)
         except Exception:
@@ -89,7 +92,7 @@ class GitAPI(LaunchpadXMLRPCView):
         except ComponentLookupError:
             return False
         return issuer.verifyMacaroon(
-            macaroon, repository, require_context=False)
+            macaroon, repository, require_context=False, user=user)
 
     def _performLookup(self, requester, path, auth_params):
         repository, extra_path = getUtility(IGitLookup).getByPath(path)
@@ -97,17 +100,34 @@ class GitAPI(LaunchpadXMLRPCView):
             return None
         macaroon_raw = auth_params.get("macaroon")
         naked_repository = removeSecurityProxy(repository)
-        if (macaroon_raw is not None and
-                self._verifyMacaroon(macaroon_raw, naked_repository)):
-            # The authentication parameters specifically grant access to
-            # this repository, so we can bypass other checks.
-            # For the time being, this only works for code imports.
-            assert (
-                naked_repository.repository_type == GitRepositoryType.IMPORTED)
-            hosting_path = naked_repository.getInternalPath()
-            writable = True
-            private = naked_repository.private
-        else:
+        writable = None
+
+        if macaroon_raw is not None:
+            if not self._verifyMacaroon(
+                    macaroon_raw, naked_repository, user=requester):
+                # Macaroon authentication failed.  Don't fall back to the
+                # requester's permissions, since macaroons typically have
+                # additional constraints.  Instead, return "permission
+                # denied" for visible repositories, and deny the existence
+                # of invisible ones.
+                if check_permission("launchpad.View", repository):
+                    raise faults.PermissionDenied()
+                else:
+                    return None
+            # We have a macaroon that grants a subset of the requester's
+            # permissions.  If the requester is None (the code import case),
+            # then we ordinarily map that to the anonymous principal, but
+            # that doesn't have any useful write access; in this case we're
+            # really starting from a principal with all permissions and
+            # constraining that, so just bypass other checks and say what we
+            # mean directly.  If the requester is not None, then fall
+            # through and do ordinary permission checks for them.
+            if requester is None:
+                hosting_path = naked_repository.getInternalPath()
+                writable = True
+                private = naked_repository.private
+
+        if writable is None:
             try:
                 hosting_path = repository.getInternalPath()
             except Unauthorized:
@@ -123,6 +143,7 @@ class GitAPI(LaunchpadXMLRPCView):
                 if not grants.is_empty():
                     writable = True
             private = repository.private
+
         return {
             "path": hosting_path,
             "writable": writable,
@@ -315,12 +336,15 @@ class GitAPI(LaunchpadXMLRPCView):
         getUtility(IGitRefScanJobSource).create(
             removeSecurityProxy(repository))
 
+    @return_fault
     def authenticateWithPassword(self, username, password):
         """See `IGitAPI`."""
-        # XXX cjwatson 2016-10-06: We only support free-floating macaroons
-        # at the moment, not ones bound to a user.
-        if not username and self._verifyMacaroon(password):
-            return {"macaroon": password}
+        user = getUtility(IPersonSet).getByName(username) if username else None
+        if self._verifyMacaroon(password, user=user):
+            params = {"macaroon": password}
+            if user is not None:
+                params["uid"] = user.id
+            return params
         else:
             # Only macaroons are supported for password authentication.
             return faults.Unauthorized()
@@ -344,13 +368,19 @@ class GitAPI(LaunchpadXMLRPCView):
             getUtility(IGitLookup).getByHostingPath(translated_path))
 
         macaroon_raw = auth_params.get("macaroon")
-        if (macaroon_raw is not None and
-                self._verifyMacaroon(macaroon_raw, repository)):
-            # The authentication parameters grant access as an anonymous
-            # repository owner.
-            # For the time being, this only works for code imports.
-            assert repository.repository_type == GitRepositoryType.IMPORTED
-            requester = GitGranteeType.REPOSITORY_OWNER
+        if macaroon_raw is not None:
+            if not self._verifyMacaroon(
+                    macaroon_raw, repository, user=requester):
+                # Macaroon authentication failed.  Don't fall back to the
+                # requester's permissions, since macaroons typically have
+                # additional constraints.
+                return [
+                    (xmlrpc_client.Binary(ref_path.data), [])
+                    for ref_path in ref_paths]
+            # If we don't have a requester, then the authentication
+            # parameters grant access as an anonymous repository owner.
+            if requester is None:
+                requester = GitGranteeType.REPOSITORY_OWNER
 
         if all(isinstance(ref_path, xmlrpc_client.Binary)
                for ref_path in ref_paths):

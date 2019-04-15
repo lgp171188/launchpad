@@ -456,6 +456,10 @@ class CodeImportJobMacaroonIssuer(MacaroonIssuerBase):
 
     def verifyPrimaryCaveat(self, caveat_value, context, **kwargs):
         """See `MacaroonIssuerBase`."""
+        # Code import jobs only support free-floating macaroons for Git
+        # authentication, not ones bound to a user.
+        if kwargs.get("user"):
+            return False
         if context is None:
             # We're only verifying that the macaroon could be valid for some
             # context.
