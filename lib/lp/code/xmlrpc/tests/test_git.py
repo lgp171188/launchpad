@@ -979,7 +979,7 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
         macaroons = [
             removeSecurityProxy(issuer).issueMacaroon(job) for job in jobs]
         path = u"/%s" % code_imports[0].git_repository.unique_name
-        self.assertPermissionDenied(
+        self.assertUnauthorized(
             None, path, permission="write",
             macaroon_raw=macaroons[0].serialize())
         with celebrity_logged_in("vcs_imports"):
@@ -987,15 +987,15 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
         self.assertTranslates(
             None, path, code_imports[0].git_repository, True,
             permission="write", macaroon_raw=macaroons[0].serialize())
-        self.assertPermissionDenied(
+        self.assertUnauthorized(
             None, path, permission="write",
             macaroon_raw=macaroons[1].serialize())
-        self.assertPermissionDenied(
+        self.assertUnauthorized(
             None, path, permission="write",
             macaroon_raw=Macaroon(
                 location=config.vhost.mainsite.hostname, identifier="another",
                 key="another-secret").serialize())
-        self.assertPermissionDenied(
+        self.assertUnauthorized(
             None, path, permission="write", macaroon_raw="nonsense")
 
     def test_translatePath_private_code_import(self):
@@ -1019,7 +1019,7 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
         macaroons = [
             removeSecurityProxy(issuer).issueMacaroon(job) for job in jobs]
         path = u"/%s" % code_imports[0].git_repository.unique_name
-        self.assertPermissionDenied(
+        self.assertUnauthorized(
             None, path, permission="write",
             macaroon_raw=macaroons[0].serialize())
         with celebrity_logged_in("vcs_imports"):
@@ -1028,17 +1028,15 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
             None, path, code_imports[0].git_repository, True,
             permission="write", macaroon_raw=macaroons[0].serialize(),
             private=True)
-        # The expected faults are slightly different from the public case,
-        # because we deny the existence of private repositories.
-        self.assertGitRepositoryNotFound(
+        self.assertUnauthorized(
             None, path, permission="write",
             macaroon_raw=macaroons[1].serialize())
-        self.assertGitRepositoryNotFound(
+        self.assertUnauthorized(
             None, path, permission="write",
             macaroon_raw=Macaroon(
                 location=config.vhost.mainsite.hostname, identifier="another",
                 key="another-secret").serialize())
-        self.assertGitRepositoryNotFound(
+        self.assertUnauthorized(
             None, path, permission="write", macaroon_raw="nonsense")
 
     def test_translatePath_user_macaroon(self):
@@ -1068,17 +1066,17 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
                         permission="write", macaroon_raw=macaroon.serialize(),
                         private=(i == 2))
                 else:
-                    self.assertPermissionDenied(
+                    self.assertUnauthorized(
                         requester, paths[i], permission="write",
                         macaroon_raw=macaroon.serialize())
             login(ANONYMOUS)
-            self.assertPermissionDenied(
+            self.assertUnauthorized(
                 requester, paths[i], permission="write",
                 macaroon_raw=Macaroon(
                     location=config.vhost.mainsite.hostname,
                     identifier="another", key="another-secret").serialize())
             login(ANONYMOUS)
-            self.assertPermissionDenied(
+            self.assertUnauthorized(
                 requester, paths[i], permission="write",
                 macaroon_raw="nonsense")
 

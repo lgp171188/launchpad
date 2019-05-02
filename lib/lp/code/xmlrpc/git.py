@@ -109,13 +109,11 @@ class GitAPI(LaunchpadXMLRPCView):
                     macaroon_raw, naked_repository, user=requester):
                 # Macaroon authentication failed.  Don't fall back to the
                 # requester's permissions, since macaroons typically have
-                # additional constraints.  Instead, return "permission
-                # denied" for visible repositories, and deny the existence
-                # of invisible ones.
-                if check_permission("launchpad.View", repository):
-                    raise faults.PermissionDenied()
-                else:
-                    return None
+                # additional constraints.  Instead, just return
+                # "authorisation required", thus preventing probing for the
+                # existence of repositories without presenting valid
+                # credentials.
+                raise faults.Unauthorized()
             # We have a macaroon that grants a subset of the requester's
             # permissions.  If the requester is None (the code import case),
             # then we ordinarily map that to the anonymous principal, but
