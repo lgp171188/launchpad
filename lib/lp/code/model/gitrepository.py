@@ -799,6 +799,8 @@ class GitRepository(StormBase, WebhookTargetMixin, GitIdentityMixin):
         if (verify_policy and
             information_type not in self.getAllowedInformationTypes(user)):
             raise CannotChangeInformationType("Forbidden by project policy.")
+        # XXX cjwatson 2019-03-29: Check privacy rules on snaps that use
+        # this repository.
         self.information_type = information_type
         self._reconcileAccess()
         if (information_type in PRIVATE_INFORMATION_TYPES and
@@ -1431,7 +1433,7 @@ class GitRepository(StormBase, WebhookTargetMixin, GitIdentityMixin):
         # Can't delete if the repository is associated with anything.
         return len(self.getDeletionRequirements()) == 0
 
-    def _getDeletionRequirements(self):
+    def _getDeletionRequirements(self, eager_load=False):
         """Determine what operations must be performed to delete this branch.
 
         Two dictionaries are returned, one for items that must be deleted,
@@ -1467,11 +1469,12 @@ class GitRepository(StormBase, WebhookTargetMixin, GitIdentityMixin):
             prerequisite_git_repository=self):
             alteration_operations.append(
                 ClearPrerequisiteRepository(merge_proposal))
+        recipes = self.recipes if eager_load else self._getRecipes()
         deletion_operations.extend(
             DeletionCallable(
                 recipe, msg("This recipe uses this repository."),
                 recipe.destroySelf)
-            for recipe in self.recipes)
+            for recipe in recipes)
         if not getUtility(ISnapSet).findByGitRepository(self).is_empty():
             alteration_operations.append(DeletionCallable(
                 None, msg("Some snap packages build from this repository."),
@@ -1479,10 +1482,10 @@ class GitRepository(StormBase, WebhookTargetMixin, GitIdentityMixin):
 
         return (alteration_operations, deletion_operations)
 
-    def getDeletionRequirements(self):
+    def getDeletionRequirements(self, eager_load=False):
         """See `IGitRepository`."""
         alteration_operations, deletion_operations = (
-            self._getDeletionRequirements())
+            self._getDeletionRequirements(eager_load=eager_load))
         result = {
             operation.affected_object: ("alter", operation.rationale)
             for operation in alteration_operations}
@@ -1780,31 +1783,31 @@ class GitRepositoryMacaroonIssuer(MacaroonIssuerBase):
     def __init__(self):
         super(GitRepositoryMacaroonIssuer, self).__init__()
         self.checkers = {
-            "lp.openid-identifier": self.verifyOpenIDIdentifier,
+            "lp.principal.openid-identifier": self.verifyOpenIDIdentifier,
             "lp.expires": self.verifyExpires,
             }
 
-    def checkIssuingContext(self, context):
+    def checkIssuingContext(self, context, user=None, **kwargs):
         """See `MacaroonIssuerBase`.
 
         For issuing, the context is an `IGitRepository`.
         """
-        if not IGitRepository.providedBy(context):
-            raise ValueError("Cannot handle context %r." % context)
-        return context.id
-
-    def issueMacaroon(self, context):
-        """See `IMacaroonIssuer`."""
-        user = getUtility(ILaunchBag).user
         if user is None:
             raise Unauthorized(
                 "git-repository macaroons may only be issued for a logged-in "
                 "user.")
+        if not IGitRepository.providedBy(context):
+            raise ValueError("Cannot handle context %r." % context)
+        return context.id
+
+    def issueMacaroon(self, context, user=None, **kwargs):
+        """See `IMacaroonIssuer`."""
         macaroon = super(GitRepositoryMacaroonIssuer, self).issueMacaroon(
-            context)
+            context, user=user, **kwargs)
+        naked_account = removeSecurityProxy(user).account
         macaroon.add_first_party_caveat(
-            "lp.openid-identifier " +
-            user.account.openid_identifiers.any().identifier)
+            "lp.principal.openid-identifier " +
+            naked_account.openid_identifiers.any().identifier)
         store = IStore(GitRepository)
         # XXX cjwatson 2019-04-09: Expire macaroons after the number of
         # seconds given in the code.git.access_token_expiry feature flag,
@@ -1841,14 +1844,14 @@ class GitRepositoryMacaroonIssuer(MacaroonIssuerBase):
         return caveat_value == str(context.id)
 
     def verifyOpenIDIdentifier(self, caveat_value, context, **kwargs):
-        """Verify an lp.openid-identifier caveat."""
+        """Verify an lp.principal.openid-identifier caveat."""
         user = kwargs.get("user")
         try:
             account = getUtility(IAccountSet).getByOpenIDIdentifier(
                 caveat_value)
         except LookupError:
             return False
-        return user == IPerson(account)
+        return IPerson.providedBy(user) and user.account == account
 
     def verifyExpires(self, caveat_value, context, **kwargs):
         """Verify an lp.expires caveat."""

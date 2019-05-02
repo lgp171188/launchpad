@@ -3923,17 +3923,17 @@ class TestGitRepositoryMacaroonIssuer(MacaroonTestMixin, TestCaseWithFactory):
     def test_issueMacaroon_refuses_branch(self):
         branch = self.factory.makeAnyBranch()
         issuer = getUtility(IMacaroonIssuer, "git-repository")
-        with person_logged_in(branch.owner):
-            self.assertRaises(
-                ValueError, removeSecurityProxy(issuer).issueMacaroon, branch)
+        self.assertRaises(
+            ValueError, removeSecurityProxy(issuer).issueMacaroon,
+            branch, user=branch.owner)
 
     def test_issueMacaroon_good(self):
         repository = self.factory.makeGitRepository()
         issuer = getUtility(IMacaroonIssuer, "git-repository")
-        with person_logged_in(repository.owner):
-            identifier = (
-                repository.owner.account.openid_identifiers.any().identifier)
-            macaroon = removeSecurityProxy(issuer).issueMacaroon(repository)
+        naked_account = removeSecurityProxy(repository.owner).account
+        identifier = naked_account.openid_identifiers.any().identifier
+        macaroon = removeSecurityProxy(issuer).issueMacaroon(
+            repository, user=repository.owner)
         now = get_transaction_timestamp(Store.of(repository))
         expires = now + timedelta(days=7)
         self.assertThat(macaroon, MatchesStructure(
@@ -3943,7 +3943,8 @@ class TestGitRepositoryMacaroonIssuer(MacaroonTestMixin, TestCaseWithFactory):
                 MatchesStructure.byEquality(
                     caveat_id="lp.git-repository %s" % repository.id),
                 MatchesStructure.byEquality(
-                    caveat_id="lp.openid-identifier %s" % identifier),
+                    caveat_id=(
+                        "lp.principal.openid-identifier %s" % identifier)),
                 MatchesStructure.byEquality(
                     caveat_id="lp.expires %s" % (
                         expires.strftime("%Y-%m-%dT%H:%M:%S.%f"))),
@@ -3954,8 +3955,8 @@ class TestGitRepositoryMacaroonIssuer(MacaroonTestMixin, TestCaseWithFactory):
             {"code.git.access_token_expiry": "3600"}))
         repository = self.factory.makeGitRepository()
         issuer = getUtility(IMacaroonIssuer, "git-repository")
-        with person_logged_in(repository.owner):
-            macaroon = removeSecurityProxy(issuer).issueMacaroon(repository)
+        macaroon = removeSecurityProxy(issuer).issueMacaroon(
+            repository, user=repository.owner)
         now = get_transaction_timestamp(Store.of(repository))
         expires = now + timedelta(hours=1)
         self.assertThat(macaroon, MatchesStructure(
@@ -3977,13 +3978,14 @@ class TestGitRepositoryMacaroonIssuer(MacaroonTestMixin, TestCaseWithFactory):
         authserver = AuthServerAPIView(private_root.authserver, TestRequest())
         self.assertEqual(
             faults.PermissionDenied(),
-            authserver.issueMacaroon("git-repository", repository))
+            authserver.issueMacaroon(
+                "git-repository", "GitRepository", repository))
 
     def test_verifyMacaroon_good(self):
         repository = self.factory.makeGitRepository()
         issuer = getUtility(IMacaroonIssuer, "git-repository")
-        with person_logged_in(repository.owner):
-            macaroon = removeSecurityProxy(issuer).issueMacaroon(repository)
+        macaroon = removeSecurityProxy(issuer).issueMacaroon(
+            repository, user=repository.owner)
         self.assertMacaroonVerifies(
             issuer, macaroon, repository, user=repository.owner)
 
@@ -4003,14 +4005,14 @@ class TestGitRepositoryMacaroonIssuer(MacaroonTestMixin, TestCaseWithFactory):
         macaroon = Macaroon(
             location=config.vhost.mainsite.hostname, key="another-secret")
         self.assertMacaroonDoesNotVerify(
-            ["Signatures do not match."],
+            ["Signatures do not match"],
             issuer, macaroon, repository, user=repository.owner)
 
     def test_verifyMacaroon_wrong_repository(self):
         repository = self.factory.makeGitRepository()
         issuer = getUtility(IMacaroonIssuer, "git-repository")
-        with person_logged_in(repository.owner):
-            macaroon = removeSecurityProxy(issuer).issueMacaroon(repository)
+        macaroon = removeSecurityProxy(issuer).issueMacaroon(
+            repository, user=repository.owner)
         self.assertMacaroonDoesNotVerify(
             ["Caveat check for 'lp.git-repository %s' failed." %
              repository.id],
@@ -4020,8 +4022,8 @@ class TestGitRepositoryMacaroonIssuer(MacaroonTestMixin, TestCaseWithFactory):
     def test_verifyMacaroon_multiple_repository_caveats(self):
         repository = self.factory.makeGitRepository()
         issuer = getUtility(IMacaroonIssuer, "git-repository")
-        with person_logged_in(repository.owner):
-            macaroon = removeSecurityProxy(issuer).issueMacaroon(repository)
+        macaroon = removeSecurityProxy(issuer).issueMacaroon(
+            repository, user=repository.owner)
         macaroon.add_first_party_caveat("lp.git-repository another")
         self.assertMacaroonDoesNotVerify(
             ["Multiple 'lp.git-repository' caveats are not allowed."],
@@ -4030,12 +4032,12 @@ class TestGitRepositoryMacaroonIssuer(MacaroonTestMixin, TestCaseWithFactory):
     def test_verifyMacaroon_wrong_user(self):
         repository = self.factory.makeGitRepository()
         issuer = getUtility(IMacaroonIssuer, "git-repository")
-        with person_logged_in(repository.owner):
-            identifier = (
-                repository.owner.account.openid_identifiers.any().identifier)
-            macaroon = removeSecurityProxy(issuer).issueMacaroon(repository)
+        naked_account = removeSecurityProxy(repository.owner).account
+        identifier = naked_account.openid_identifiers.any().identifier
+        macaroon = removeSecurityProxy(issuer).issueMacaroon(
+            repository, user=repository.owner)
         self.assertMacaroonDoesNotVerify(
-            ["Caveat check for 'lp.openid-identifier %s' failed." %
+            ["Caveat check for 'lp.principal.openid-identifier %s' failed." %
              identifier],
             issuer, macaroon, repository, user=self.factory.makePerson())
 
@@ -4045,32 +4047,35 @@ class TestGitRepositoryMacaroonIssuer(MacaroonTestMixin, TestCaseWithFactory):
         repository = self.factory.makeGitRepository()
         owner = repository.owner
         issuer = getUtility(IMacaroonIssuer, "git-repository")
-        with person_logged_in(owner):
-            identifier = owner.account.openid_identifiers.any().identifier
-            macaroon = removeSecurityProxy(issuer).issueMacaroon(repository)
+        naked_account = removeSecurityProxy(owner).account
+        identifier = naked_account.openid_identifiers.any().identifier
+        macaroon = removeSecurityProxy(issuer).issueMacaroon(
+            repository, user=owner)
         IStore(OpenIdIdentifier).find(
             OpenIdIdentifier,
             OpenIdIdentifier.account_id == owner.account.id).remove()
         self.assertMacaroonDoesNotVerify(
-            ["Caveat check for 'lp.openid-identifier %s' failed." %
+            ["Caveat check for 'lp.principal.openid-identifier %s' failed." %
              identifier],
             issuer, macaroon, repository, user=owner)
 
     def test_verifyMacaroon_multiple_openid_identifier_caveats(self):
         repository = self.factory.makeGitRepository()
         issuer = getUtility(IMacaroonIssuer, "git-repository")
-        with person_logged_in(repository.owner):
-            macaroon = removeSecurityProxy(issuer).issueMacaroon(repository)
-        macaroon.add_first_party_caveat("lp.openid-identifier another")
+        macaroon = removeSecurityProxy(issuer).issueMacaroon(
+            repository, user=repository.owner)
+        macaroon.add_first_party_caveat(
+            "lp.principal.openid-identifier another")
         self.assertMacaroonDoesNotVerify(
-            ["Multiple 'lp.openid-identifier' caveats are not allowed."],
+            ["Multiple 'lp.principal.openid-identifier' caveats are not "
+             "allowed."],
             issuer, macaroon, repository, user=repository.owner)
 
     def test_verifyMacaroon_expired(self):
         repository = self.factory.makeGitRepository()
         issuer = getUtility(IMacaroonIssuer, "git-repository")
-        with person_logged_in(repository.owner):
-            macaroon = removeSecurityProxy(issuer).issueMacaroon(repository)
+        macaroon = removeSecurityProxy(issuer).issueMacaroon(
+            repository, user=repository.owner)
         now = get_transaction_timestamp(Store.of(repository))
         self.useFixture(MockPatch(
             "lp.code.model.gitrepository.get_transaction_timestamp",
@@ -4085,9 +4090,10 @@ class TestGitRepositoryMacaroonIssuer(MacaroonTestMixin, TestCaseWithFactory):
         # that's OK; we just take the strictest.
         repository = self.factory.makeGitRepository()
         issuer = getUtility(IMacaroonIssuer, "git-repository")
-        with person_logged_in(repository.owner):
-            macaroon1 = removeSecurityProxy(issuer).issueMacaroon(repository)
-            macaroon2 = removeSecurityProxy(issuer).issueMacaroon(repository)
+        macaroon1 = removeSecurityProxy(issuer).issueMacaroon(
+            repository, user=repository.owner)
+        macaroon2 = removeSecurityProxy(issuer).issueMacaroon(
+            repository, user=repository.owner)
         now = get_transaction_timestamp(Store.of(repository))
         expires1 = now + timedelta(days=1)
         expires2 = now + timedelta(days=14)

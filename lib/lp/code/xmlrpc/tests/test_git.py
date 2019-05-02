@@ -585,6 +585,13 @@ class TestGitAPIMixin:
         self.assertHasRefPermissions(
             no_privileges, repository, [path], {path: []})
 
+    def test_checkRefPermissions_nonexistent_repository(self):
+        requester = self.factory.makePerson()
+        self.assertEqual(
+            faults.GitRepositoryNotFound("nonexistent"),
+            self.git_api.checkRefPermissions(
+                "nonexistent", [], {"uid": requester.id}))
+
 
 class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
     """Tests for the implementation of `IGitAPI`."""
@@ -1047,7 +1054,8 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
         issuer = getUtility(IMacaroonIssuer, "git-repository")
         with person_logged_in(requester):
             macaroons = [
-                removeSecurityProxy(issuer).issueMacaroon(repository)
+                removeSecurityProxy(issuer).issueMacaroon(
+                    repository, user=requester)
                 for repository in repositories]
             paths = [
                 u"/%s" % repository.unique_name for repository in repositories]
@@ -1135,9 +1143,8 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
             "launchpad", internal_macaroon_secret_key="some-secret")
         requester = self.factory.makePerson()
         issuer = getUtility(IMacaroonIssuer, "git-repository")
-        with person_logged_in(requester):
-            macaroon = removeSecurityProxy(issuer).issueMacaroon(
-                self.factory.makeGitRepository(owner=requester))
+        macaroon = removeSecurityProxy(issuer).issueMacaroon(
+            self.factory.makeGitRepository(owner=requester), user=requester)
         self.assertEqual(
             {"macaroon": macaroon.serialize(), "uid": requester.id},
             self.git_api.authenticateWithPassword(
@@ -1258,7 +1265,8 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
         issuer = getUtility(IMacaroonIssuer, "git-repository")
         with person_logged_in(requester):
             macaroons = [
-                removeSecurityProxy(issuer).issueMacaroon(repository)
+                removeSecurityProxy(issuer).issueMacaroon(
+                    repository, user=requester)
                 for repository in repositories]
         for i, repository in enumerate(repositories):
             for j, macaroon in enumerate(macaroons):
