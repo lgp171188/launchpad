@@ -7,20 +7,44 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 __all__ = [
+    'BadMacaroonContext',
     'IMacaroonIssuer',
+    'IMacaroonVerificationResult',
     ]
 
-from zope.interface import Interface
+from zope.interface import (
+    Attribute,
+    Interface,
+    )
 from zope.schema import Bool
+
+
+class BadMacaroonContext(Exception):
+    """The requested context is unsuitable."""
+
+    def __init__(self, context, message=None):
+        if message is None:
+            message = "Cannot handle context %r." % context
+        super(BadMacaroonContext, self).__init__(message)
+        self.context = context
+
+
+class IMacaroonVerificationResult(Interface):
+    """Information about a verified macaroon."""
+
+    issuer_name = Attribute("The name of the macaroon's issuer.")
 
 
 class IMacaroonIssuerPublic(Interface):
     """Public interface to a policy for verifying macaroons."""
 
+    identifier = Attribute("An identifying name for this issuer.")
+
     issuable_via_authserver = Bool(
         "Does this issuer allow issuing macaroons via the authserver?")
 
-    def verifyMacaroon(macaroon, context, require_context=True, **kwargs):
+    def verifyMacaroon(macaroon, context, require_context=True, errors=None,
+                       **kwargs):
         """Verify that `macaroon` is valid for `context`.
 
         :param macaroon: A `Macaroon`.
@@ -30,20 +54,25 @@ class IMacaroonIssuerPublic(Interface):
             verify that the macaroon could be valid for some context.  Use
             this in the authentication part of an
             authentication/authorisation API.
+        :param errors: If non-None, any verification error messages will be
+            appended to this list.
         :param kwargs: Additional arguments that issuers may require to
             verify a macaroon.
-        :return: True if `macaroon` is valid for `context`, otherwise False.
+        :return: An `IMacaroonVerificationResult` if `macaroon` is valid for
+            `context`, otherwise None.
         """
 
 
 class IMacaroonIssuer(IMacaroonIssuerPublic):
     """Interface to a policy for issuing and verifying macaroons."""
 
-    def issueMacaroon(context):
+    def issueMacaroon(context, **kwargs):
         """Issue a macaroon for `context`.
 
         :param context: The context that the returned macaroon should relate
             to.
-        :raises ValueError: if the context is unsuitable.
+        :param kwargs: Additional arguments that issuers may require to
+            issue a macaroon.
+        :raises BadMacaroonContext: if the context is unsuitable.
         :return: A macaroon.
         """

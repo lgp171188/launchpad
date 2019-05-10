@@ -15,9 +15,24 @@ from pymacaroons import (
     Verifier,
     )
 from pymacaroons.exceptions import MacaroonVerificationFailedException
+from zope.interface import implementer
 
 from lp.services.config import config
-from lp.services.scripts import log
+from lp.services.macaroons.interfaces import (
+    BadMacaroonContext,
+    IMacaroonVerificationResult,
+    )
+
+
+@implementer(IMacaroonVerificationResult)
+class MacaroonVerificationResult:
+
+    def __init__(self, identifier):
+        self._issuer_name = identifier
+
+    @property
+    def issuer_name(self):
+        return self._issuer_name
 
 
 class MacaroonIssuerBase:
@@ -52,11 +67,11 @@ class MacaroonIssuerBase:
 
     @property
     def identifier(self):
-        """An identifying name for this issuer."""
+        """See `IMacaroonIssuer`."""
         raise NotImplementedError
 
     @property
-    def primary_caveat_name(self):
+    def _primary_caveat_name(self):
         """The name of the primary context caveat issued by this issuer."""
         return "lp.%s" % self.identifier
 
@@ -68,28 +83,30 @@ class MacaroonIssuerBase:
                 "launchpad.internal_macaroon_secret_key not configured.")
         return secret
 
-    def checkIssuingContext(self, context):
+    def checkIssuingContext(self, context, **kwargs):
         """Check that the issuing context is suitable.
 
         Concrete implementations may implement this method to check that the
-        context of a macaroon issuance is suitable.  The returned
-        context is passed to individual caveat checkers, and may be the same
-        context that was passed in or an adapted one.
+        context of a macaroon issuance is suitable.  The returned context is
+        used to create the primary caveat, and may be the same context that
+        was passed in or an adapted one.
 
         :param context: The context to check.
-        :raises ValueError: if the context is unsuitable.
-        :return: The context to pass to individual caveat checkers.
+        :param kwargs: Additional arguments that issuers may require to
+            issue a macaroon.
+        :raises BadMacaroonContext: if the context is unsuitable.
+        :return: The context to use to create the primary caveat.
         """
         return context
 
-    def issueMacaroon(self, context):
+    def issueMacaroon(self, context, **kwargs):
         """See `IMacaroonIssuer`."""
-        context = self.checkIssuingContext(context)
+        context = self.checkIssuingContext(context, **kwargs)
         macaroon = Macaroon(
             location=config.vhost.mainsite.hostname,
             identifier=self.identifier, key=self._root_secret)
         macaroon.add_first_party_caveat(
-            "%s %s" % (self.primary_caveat_name, context))
+            "%s %s" % (self._primary_caveat_name, context))
         return macaroon
 
     def checkVerificationContext(self, context, **kwargs):
@@ -103,7 +120,7 @@ class MacaroonIssuerBase:
         :param context: The context to check.
         :param kwargs: Additional arguments that issuers may require to
             verify a macaroon.
-        :raises ValueError: if the context is unsuitable.
+        :raises BadMacaroonContext: if the context is unsuitable.
         :return: The context to pass to individual caveat checkers.
         """
         return context
@@ -121,64 +138,69 @@ class MacaroonIssuerBase:
         raise NotImplementedError
 
     def verifyMacaroon(self, macaroon, context, require_context=True,
-                       **kwargs):
+                       errors=None, **kwargs):
         """See `IMacaroonIssuer`."""
         if macaroon.location != config.vhost.mainsite.hostname:
-            log.info("Macaroon has unknown location '%s'." % macaroon.location)
-            return False
+            if errors is not None:
+                errors.append(
+                    "Macaroon has unknown location '%s'." % macaroon.location)
+            return None
         if require_context and context is None:
-            log.info("Expected macaroon verification context but got None.")
-            return False
+            if errors is not None:
+                errors.append(
+                    "Expected macaroon verification context but got None.")
+            return None
         if context is not None:
             try:
                 context = self.checkVerificationContext(context)
-            except ValueError as e:
-                log.info(str(e))
-                return False
+            except BadMacaroonContext as e:
+                if errors is not None:
+                    errors.append(str(e))
+                return None
         seen = set()
-
-        # XXX cjwatson 2019-04-11: Once we're on Python 3, we should use
-        # "nonlocal" instead of this hack.
-        class VerificationState:
-            logged_caveat_error = False
-
-        state = VerificationState()
+        verified = MacaroonVerificationResult(self.identifier)
 
         def verify(caveat):
             try:
                 caveat_name, caveat_value = caveat.split(" ", 1)
             except ValueError:
-                log.info("Cannot parse caveat '%s'." % caveat)
-                state.logged_caveat_error = True
+                if errors is not None:
+                    errors.append("Cannot parse caveat '%s'." % caveat)
                 return False
             if caveat_name not in self.allow_multiple and caveat_name in seen:
-                log.info(
-                    "Multiple '%s' caveats are not allowed." % caveat_name)
-                state.logged_caveat_error = True
+                if errors is not None:
+                    errors.append(
+                        "Multiple '%s' caveats are not allowed." % caveat_name)
                 return False
             seen.add(caveat_name)
-            if caveat_name == self.primary_caveat_name:
+            if caveat_name == self._primary_caveat_name:
                 checker = self.verifyPrimaryCaveat
             else:
                 checker = self.checkers.get(caveat_name)
                 if checker is None:
-                    log.info("Unhandled caveat name '%s'." % caveat_name)
-                    state.logged_caveat_error = True
+                    if errors is not None:
+                        errors.append(
+                            "Unhandled caveat name '%s'." % caveat_name)
                     return False
             if not checker(caveat_value, context, **kwargs):
-                log.info("Caveat check for '%s' failed." % caveat)
-                state.logged_caveat_error = True
+                if errors is not None:
+                    errors.append("Caveat check for '%s' failed." % caveat)
                 return False
             return True
 
         try:
             verifier = Verifier()
             verifier.satisfy_general(verify)
-            return verifier.verify(macaroon, self._root_secret)
+            if verifier.verify(macaroon, self._root_secret):
+                return verified
+            else:
+                return None
+        # XXX cjwatson 2019-04-24: This can currently raise a number of
+        # other exceptions in the presence of non-well-formed input data,
+        # but most of them are too broad to reasonably catch so we let them
+        # turn into OOPSes for now.  Revisit this once
+        # https://github.com/ecordell/pymacaroons/issues/51 is fixed.
         except MacaroonVerificationFailedException as e:
-            if not state.logged_caveat_error:
-                log.info(str(e))
-            return False
-        except Exception:
-            log.exception("Unhandled exception while verifying macaroon.")
-            return False
+            if errors is not None and not errors:
+                errors.append(str(e))
+            return None

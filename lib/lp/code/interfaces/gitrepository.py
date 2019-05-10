@@ -651,9 +651,10 @@ class IGitRepositoryView(IHasRecipes):
         :return: A `ResultSet` of `IGitActivity`.
         """
 
+    @call_with(user=REQUEST_USER)
     @export_write_operation()
     @operation_for_version("devel")
-    def issueAccessToken():
+    def issueAccessToken(user):
         """Issue an access token for this repository.
 
         Access tokens can be used to push to this repository over HTTPS.
@@ -664,6 +665,7 @@ class IGitRepositoryView(IHasRecipes):
         This interface is experimental, and may be changed or removed
         without notice.
 
+        :param user: The user to issue the access token for.
         :return: A serialised macaroon.
         """
 
@@ -882,9 +884,11 @@ class IGitRepositoryEdit(IWebhookTarget):
         merge proposals.
         """
 
-    def getDeletionRequirements():
+    def getDeletionRequirements(eager_load=False):
         """Determine what is required to delete this branch.
 
+        :param eager_load: If True, preload related information needed to
+            display the deletion requirements.
         :return: a dict of {object: (operation, reason)}, where object is the
             object that must be deleted or altered, operation is either
             "delete" or "alter", and reason is a string explaining why the

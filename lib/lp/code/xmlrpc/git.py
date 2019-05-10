@@ -39,7 +39,10 @@ from lp.code.errors import (
     GitTargetError,
     InvalidNamespace,
     )
-from lp.code.interfaces.codehosting import LAUNCHPAD_ANONYMOUS
+from lp.code.interfaces.codehosting import (
+    LAUNCHPAD_ANONYMOUS,
+    LAUNCHPAD_SERVICES,
+    )
 from lp.code.interfaces.gitapi import IGitAPI
 from lp.code.interfaces.githosting import IGitHostingClient
 from lp.code.interfaces.gitjob import IGitRefScanJobSource
@@ -74,6 +77,49 @@ from lp.xmlrpc import faults
 from lp.xmlrpc.helpers import return_fault
 
 
+def _get_requester_id(auth_params):
+    """Get the requester ID from authentication parameters.
+
+    The pack frontend layer authenticates using either the authserver (SSH)
+    or `GitAPI.authenticateWithPassword` (HTTP), and then sends a
+    corresponding dictionary of authentication parameters to other methods.
+    For a real user, it sends a "uid" item with the person's ID; for
+    internal services, it sends "user": "+launchpad-services"; for anonymous
+    requests, it sends neither.
+    """
+    requester_id = auth_params.get("uid")
+    if requester_id is not None:
+        return requester_id
+    # We never need to identify other users by name, so limit the "user"
+    # item to just internal services.
+    if auth_params.get("user") == LAUNCHPAD_SERVICES:
+        return LAUNCHPAD_SERVICES
+    else:
+        return LAUNCHPAD_ANONYMOUS
+
+
+def _is_issuer_internal(verified):
+    """Was the authorising macaroon issued by an internal-only issuer?
+
+    These macaroons are privileged in various ways, and are used by internal
+    services.
+
+    :param verified: An `IMacaroonVerificationResult`.
+    """
+    return verified.issuer_name in ("code-import-job", "snap-build")
+
+
+def _can_internal_issuer_write(verified):
+    """Does this internal-only issuer have write access?
+
+    Some macaroons used by internal services are intended for writing to the
+    repository; others only allow read access.
+
+    :param verified: An `IMacaroonVerificationResult`.
+    """
+    return verified.issuer_name == "code-import-job"
+
+
 @implementer(IGitAPI)
 class GitAPI(LaunchpadXMLRPCView):
     """See `IGitAPI`."""
@@ -85,6 +131,8 @@ class GitAPI(LaunchpadXMLRPCView):
     def _verifyMacaroon(self, macaroon_raw, repository=None, user=None):
         try:
             macaroon = Macaroon.deserialize(macaroon_raw)
+        # XXX cjwatson 2019-04-23: Restrict exceptions once
+        # https://github.com/ecordell/pymacaroons/issues/50 is fixed.
         except Exception:
             return False
         try:
@@ -98,36 +146,52 @@ class GitAPI(LaunchpadXMLRPCView):
         repository, extra_path = getUtility(IGitLookup).getByPath(path)
         if repository is None:
             return None
+
         macaroon_raw = auth_params.get("macaroon")
         naked_repository = removeSecurityProxy(repository)
         writable = None
 
         if macaroon_raw is not None:
-            if not self._verifyMacaroon(
-                    macaroon_raw, naked_repository, user=requester):
+            verify_user = (
+                None if requester == LAUNCHPAD_SERVICES else requester)
+            verified = self._verifyMacaroon(
+                macaroon_raw, naked_repository, user=verify_user)
+            if not verified:
                 # Macaroon authentication failed.  Don't fall back to the
                 # requester's permissions, since macaroons typically have
-                # additional constraints.  Instead, return "permission
-                # denied" for visible repositories, and deny the existence
-                # of invisible ones.
-                if check_permission("launchpad.View", repository):
-                    raise faults.PermissionDenied()
-                else:
-                    return None
-            # We have a macaroon that grants a subset of the requester's
-            # permissions.  If the requester is None (the code import case),
-            # then we ordinarily map that to the anonymous principal, but
-            # that doesn't have any useful write access; in this case we're
-            # really starting from a principal with all permissions and
-            # constraining that, so just bypass other checks and say what we
-            # mean directly.  If the requester is not None, then fall
-            # through and do ordinary permission checks for them.
-            if requester is None:
+                # additional constraints.  Instead, just return
+                # "authorisation required", thus preventing probing for the
+                # existence of repositories without presenting valid
+                # credentials.
+                raise faults.Unauthorized()
+
+            # Internal macaroons may only be used by internal services, and
+            # user macaroons may only be used by real users.  Forbid
+            # potential confusion.
+            internal = _is_issuer_internal(verified)
+            if (requester == LAUNCHPAD_SERVICES) != internal:
+                raise faults.Unauthorized()
+
+            if internal:
+                # We know that the authentication parameters specifically
+                # grant access to this repository because we were able to
+                # verify the macaroon using the repository as its context,
+                # so we can bypass other checks.  This is only permitted for
+                # selected macaroon issuers used by internal services.
                 hosting_path = naked_repository.getInternalPath()
-                writable = True
+                writable = _can_internal_issuer_write(verified)
                 private = naked_repository.private
 
+            # In any other case, the macaroon constrains the permissions of
+            # the principal, so fall through to doing normal user
+            # authorisation.
+        elif requester == LAUNCHPAD_SERVICES:
+            # Internal services must authenticate using a macaroon.
+            raise faults.Unauthorized()
+
         if writable is None:
+            # This isn't an authorised internal service, so perform normal
+            # user authorisation.
             try:
                 hosting_path = repository.getInternalPath()
             except Unauthorized:
@@ -320,11 +384,8 @@ class GitAPI(LaunchpadXMLRPCView):
 
     def translatePath(self, path, permission, auth_params):
         """See `IGitAPI`."""
-        requester_id = auth_params.get("uid")
-        if requester_id is None:
-            requester_id = LAUNCHPAD_ANONYMOUS
         return run_with_login(
-            requester_id, self._translatePath,
+            _get_requester_id(auth_params), self._translatePath,
             six.ensure_text(path).strip("/"), permission, auth_params)
 
     def notify(self, translated_path):
@@ -340,14 +401,16 @@ class GitAPI(LaunchpadXMLRPCView):
     def authenticateWithPassword(self, username, password):
         """See `IGitAPI`."""
         user = getUtility(IPersonSet).getByName(username) if username else None
-        if self._verifyMacaroon(password, user=user):
-            params = {"macaroon": password}
+        verified = self._verifyMacaroon(password, user=user)
+        if verified:
+            auth_params = {"macaroon": password}
             if user is not None:
-                params["uid"] = user.id
-            return params
-        else:
-            # Only macaroons are supported for password authentication.
-            return faults.Unauthorized()
+                auth_params["uid"] = user.id
+            elif _is_issuer_internal(verified):
+                auth_params["user"] = LAUNCHPAD_SERVICES
+            return auth_params
+        # Only macaroons are supported for password authentication.
+        return faults.Unauthorized()
 
     def _renderPermissions(self, set_of_permissions):
         """Render a set of permission strings for XML-RPC output."""
@@ -360,27 +423,59 @@ class GitAPI(LaunchpadXMLRPCView):
             permissions.append('force_push')
         return permissions
 
+    @return_fault
     def _checkRefPermissions(self, requester, translated_path, ref_paths,
                              auth_params):
         if requester == LAUNCHPAD_ANONYMOUS:
             requester = None
         repository = removeSecurityProxy(
             getUtility(IGitLookup).getByHostingPath(translated_path))
+        if repository is None:
+            raise faults.GitRepositoryNotFound(translated_path)
 
-        macaroon_raw = auth_params.get("macaroon")
-        if macaroon_raw is not None:
-            if not self._verifyMacaroon(
-                    macaroon_raw, repository, user=requester):
-                # Macaroon authentication failed.  Don't fall back to the
-                # requester's permissions, since macaroons typically have
-                # additional constraints.
-                return [
-                    (xmlrpc_client.Binary(ref_path.data), [])
-                    for ref_path in ref_paths]
-            # If we don't have a requester, then the authentication
-            # parameters grant access as an anonymous repository owner.
-            if requester is None:
-                requester = GitGranteeType.REPOSITORY_OWNER
+        try:
+            macaroon_raw = auth_params.get("macaroon")
+            if macaroon_raw is not None:
+                verify_user = (
+                    None if requester == LAUNCHPAD_SERVICES else requester)
+                verified = self._verifyMacaroon(
+                    macaroon_raw, repository, user=verify_user)
+                if not verified:
+                    # Macaroon authentication failed.  Don't fall back to
+                    # the requester's permissions, since macaroons typically
+                    # have additional constraints.
+                    raise faults.Unauthorized()
+
+                # Internal macaroons may only be used by internal services,
+                # and user macaroons may only be used by real users.  Forbid
+                # potential confusion.
+                internal = _is_issuer_internal(verified)
+                if (requester == LAUNCHPAD_SERVICES) != internal:
+                    raise faults.Unauthorized()
+
+                if internal:
+                    if not _can_internal_issuer_write(verified):
+                        raise faults.Unauthorized()
+
+                    # We know that the authentication parameters
+                    # specifically grant access to this repository because
+                    # we were able to verify the macaroon using the
+                    # repository as its context, so we can bypass other
+                    # checks and grant access as an anonymous repository
+                    # owner.  This is only permitted for selected macaroon
+                    # issuers used by internal services.
+                    requester = GitGranteeType.REPOSITORY_OWNER
+            elif requester == LAUNCHPAD_SERVICES:
+                # Internal services must authenticate using a macaroon.
+                raise faults.Unauthorized()
+        except faults.Unauthorized:
+            # XXX cjwatson 2019-05-09: It would be simpler to just raise
+            # this directly, but turnip won't handle it very gracefully at
+            # the moment.  It's possible to reach this by being very unlucky
+            # about the timing of a push.
+            return [
+                (xmlrpc_client.Binary(ref_path.data), [])
+                for ref_path in ref_paths]
 
         if all(isinstance(ref_path, xmlrpc_client.Binary)
                for ref_path in ref_paths):
@@ -407,12 +502,9 @@ class GitAPI(LaunchpadXMLRPCView):
                 }
 
     def checkRefPermissions(self, translated_path, ref_paths, auth_params):
-        """ See `IGitAPI`"""
-        requester_id = auth_params.get("uid")
-        if requester_id is None:
-            requester_id = LAUNCHPAD_ANONYMOUS
+        """See `IGitAPI`."""
         return run_with_login(
-            requester_id,
+            _get_requester_id(auth_params),
             self._checkRefPermissions,
             translated_path,
             ref_paths,
