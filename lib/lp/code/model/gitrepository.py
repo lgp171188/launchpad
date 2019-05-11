@@ -1428,9 +1428,15 @@ class GitRepository(StormBase, WebhookTargetMixin, GitIdentityMixin):
         return DecoratedResultSet(
             results, pre_iter_hook=preloadDataForActivities)
 
-    def issueAccessToken(self, user):
+    def issueAccessToken(self):
         """See `IGitRepository`."""
         issuer = getUtility(IMacaroonIssuer, "git-repository")
+        # It's more usual in model code to pass the user as an argument,
+        # e.g. using @call_with(user=REQUEST_USER) in the webservice
+        # interface.  However, in this case that would allow anyone who
+        # constructs a way to call this method not via the webservice to
+        # issue a token for any user, which seems like a bad idea.
+        user = getUtility(ILaunchBag).user
         # Our security adapter has already done the checks we need, apart
         # from forbidding anonymous users which is done by the issuer.
         return removeSecurityProxy(issuer).issueMacaroon(

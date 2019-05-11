@@ -651,10 +651,9 @@ class IGitRepositoryView(IHasRecipes):
         :return: A `ResultSet` of `IGitActivity`.
         """
 
-    @call_with(user=REQUEST_USER)
     @export_write_operation()
     @operation_for_version("devel")
-    def issueAccessToken(user):
+    def issueAccessToken():
         """Issue an access token for this repository.
 
         Access tokens can be used to push to this repository over HTTPS.
@@ -665,7 +664,6 @@ class IGitRepositoryView(IHasRecipes):
         This interface is experimental, and may be changed or removed
         without notice.
 
-        :param user: The user to issue the access token for.
         :return: A serialised macaroon.
         """
 
