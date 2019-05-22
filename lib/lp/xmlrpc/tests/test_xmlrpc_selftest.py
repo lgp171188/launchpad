@@ -29,11 +29,11 @@ class TestXMLRPCSelfTest(TestCaseWithFactory):
 
     def make_proxy(self):
         return xmlrpclib.ServerProxy(
-            'http://xmlrpc.launchpad.dev/', transport=XMLRPCTestTransport())
+            'http://xmlrpc.launchpad.test/', transport=XMLRPCTestTransport())
 
     def make_logged_in_proxy(self):
         return xmlrpclib.ServerProxy(
-            'http://test@canonical.com:test@xmlrpc.launchpad.dev/',
+            'http://test@canonical.com:test@xmlrpc.launchpad.test/',
             transport=XMLRPCTestTransport())
 
     def test_launchpad_root_object(self):

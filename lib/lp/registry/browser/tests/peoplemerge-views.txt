@@ -91,7 +91,7 @@ address.
     >>> view.errors
     []
     >>> print view.request.response.getHeader('location')
-    http://launchpad.dev/~name16
+    http://launchpad.test/~name16
 
 
 Delete team
@@ -130,7 +130,7 @@ The view provides a label, page_title, and cancel url to present the page.
     Delete
 
     >>> print view.cancel_url
-    http://launchpad.dev/~deletable
+    http://launchpad.test/~deletable
 
 The view uses the similar form fields as the team merge view, but it does not
 render them because their values are preset. Only the action is rendered,
@@ -181,7 +181,7 @@ The user is redirected to /people when a team is deleted.
     The team is queued to be deleted.
 
     >>> print view.next_url
-    http://launchpad.dev/people
+    http://launchpad.test/people
 
 And there is a person merge job setup to delete them.
 

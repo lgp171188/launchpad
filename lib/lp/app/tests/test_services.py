@@ -44,7 +44,7 @@ class TestServiceFactory(TestCaseWithFactory, FakeAdapterMixin):
         fake_service = FakeService()
         self.registerUtility(fake_service, IService, "fake")
         context, view, request = test_traverse(
-            'https://launchpad.dev/api/devel/+services/fake')
+            'https://launchpad.test/api/devel/+services/fake')
         self.assertEqual(getUtility(IServiceFactory), context)
         self.assertEqual(fake_service, view)
 
@@ -53,11 +53,11 @@ class TestServiceFactory(TestCaseWithFactory, FakeAdapterMixin):
         self.useFixture(FakeLogger())
         self.assertRaises(
             NotFound, self.getUserBrowser,
-            'https://launchpad.dev/api/devel/+services')
+            'https://launchpad.test/api/devel/+services')
 
     def test_invalid_service(self):
         # Test that traversal an invalid service name fails.
         self.useFixture(FakeLogger())
         self.assertRaises(
             NotFound, self.getUserBrowser,
-            'https://launchpad.dev/api/devel/+services/invalid')
+            'https://launchpad.test/api/devel/+services/invalid')

@@ -45,9 +45,9 @@ LP_JS_BUILD := $(JS_BUILD_DIR)/lp
 
 MINS_TO_SHUTDOWN=15
 
-CODEHOSTING_ROOT=/var/tmp/bazaar.launchpad.dev
+CODEHOSTING_ROOT=/var/tmp/bazaar.launchpad.test
 
-CONVOY_ROOT?=/srv/launchpad.dev/convoy
+CONVOY_ROOT?=/srv/launchpad.test/convoy
 
 VERSION_INFO = version-info.py
 
@@ -155,7 +155,7 @@ ifneq ($(SUDO_UID),)
 endif
 
 inplace: build logs clean_logs codehosting-dir
-	if [ -d /srv/launchpad.dev ]; then \
+	if [ -d /srv/launchpad.test ]; then \
 		ln -sfn $(WD)/build/js $(CONVOY_ROOT); \
 	fi
 
@@ -474,9 +474,9 @@ copy-apache-config: codehosting-dir
 		-e 's,%LISTEN_ADDRESS%,$(LISTEN_ADDRESS),' \
 		configs/development/local-launchpad-apache > \
 		/etc/apache2/sites-available/$$base
-	if [ ! -d /srv/launchpad.dev ]; then \
-		mkdir /srv/launchpad.dev; \
-		chown $(SUDO_UID):$(SUDO_GID) /srv/launchpad.dev; \
+	if [ ! -d /srv/launchpad.test ]; then \
+		mkdir /srv/launchpad.test; \
+		chown $(SUDO_UID):$(SUDO_GID) /srv/launchpad.test; \
 	fi
 
 enable-apache-launchpad: copy-apache-config copy-certificates

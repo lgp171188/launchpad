@@ -125,7 +125,7 @@ class TestLoginAndLogout(TestCaseWithFactory):
         # We are redirecting to Loggerhead, to ask it to logout.
 
         location = lazr.uri.URI(self.request.response.getHeader('location'))
-        self.assertEqual(location.host, 'bazaar.launchpad.dev')
+        self.assertEqual(location.host, 'bazaar.launchpad.test')
         self.assertEqual(location.scheme, 'https')
         self.assertEqual(location.path, '/+logout')
 
@@ -134,7 +134,7 @@ class TestLoginAndLogout(TestCaseWithFactory):
         # launchpad_loggerhead.tests.TestLogout for the pertinent tests.
 
         query = cgi.parse_qs(location.query)
-        self.assertEqual(query['next_to'][0], 'http://testopenid.dev/+logout')
+        self.assertEqual(query['next_to'][0], 'http://testopenid.test/+logout')
 
     def test_logging_in_and_logging_out_the_old_way(self):
         # A test showing that we can authenticate a request that had the

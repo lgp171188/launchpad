@@ -9,7 +9,7 @@ that is more interesting to import operators, and not so much to
 individual users, this seems like a fair compromise.
 
     >>> browser = setupBrowser(auth="Basic test@canonical.com:test")
-    >>> browser.open('http://code.launchpad.dev/+code-imports/+machines')
+    >>> browser.open('http://code.launchpad.test/+code-imports/+machines')
     >>> def print_table(browser):
     ...    table = find_tag_by_id(
     ...        browser.contents, 'code-import-machine-listing')
@@ -41,7 +41,7 @@ running jobs in the table.
     >>> ignored = make_running_import(factory=factory, machine=odin)
     >>> logout()
 
-    >>> browser.open('http://code.launchpad.dev/+code-imports/+machines')
+    >>> browser.open('http://code.launchpad.test/+code-imports/+machines')
     >>> print_table(browser)
     Machine                            Status
     apollo (2 jobs running)            Online

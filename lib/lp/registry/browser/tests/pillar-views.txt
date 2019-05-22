@@ -141,13 +141,13 @@ indicator showing whether it has been configured or not.
 
     >>> print find_tag_by_id(rendered, 'configuration_links')
     <table...
-    <a ...href="http://launchpad.dev/bread/+configure-code"...
+    <a ...href="http://launchpad.test/bread/+configure-code"...
     <span class="sprite no action-icon">...
-    <a ...href="http://launchpad.dev/bread/+configure-bugtracker"...
+    <a ...href="http://launchpad.test/bread/+configure-bugtracker"...
     <span class="sprite no action-icon">...    
-    <a ...href="http://launchpad.dev/bread/+configure-translations"...
+    <a ...href="http://launchpad.test/bread/+configure-translations"...
     <span class="sprite yes action-icon">...
-    <a ...href="http://launchpad.dev/bread/+configure-answers"...
+    <a ...href="http://launchpad.test/bread/+configure-answers"...
     <span class="sprite no action-icon">...
     </table>
 
@@ -265,10 +265,10 @@ The menu when viewed from a product page.
     >>> for link in sorted(
     ...     menuapi.navigation.values(), key=attrgetter('sort_key')):
     ...     print link.url
-    http://bugs.launchpad.dev/bread/+filebug
-    http://answers.launchpad.dev/bread/+addquestion
-    http://translations.launchpad.dev/bread
-    http://blueprints.launchpad.dev/bread/+addspec
+    http://bugs.launchpad.test/bread/+filebug
+    http://answers.launchpad.test/bread/+addquestion
+    http://translations.launchpad.test/bread
+    http://blueprints.launchpad.test/bread/+addspec
 
     >>> from lp.registry.browser.pillar import InvolvedMenu
     >>> from lp.testing.menu import check_menu_links
@@ -283,10 +283,10 @@ The menu when viewed from a distribution page.
     ...     menuapi.navigation.values(), key=attrgetter('sort_key')):
     ...     if link.enabled:
     ...         print link.url
-    http://bugs.launchpad.dev/umbra/+filebug
-    http://answers.launchpad.dev/umbra/+addquestion
-    http://translations.launchpad.dev/umbra
-    http://blueprints.launchpad.dev/umbra/+addspec
+    http://bugs.launchpad.test/umbra/+filebug
+    http://answers.launchpad.test/umbra/+addquestion
+    http://translations.launchpad.test/umbra
+    http://blueprints.launchpad.test/umbra/+addspec
 
 The menu when viewed from a distribution source package page.
 
@@ -296,5 +296,5 @@ The menu when viewed from a distribution source package page.
     ...     menuapi.navigation.values(), key=attrgetter('sort_key')):
     ...     if link.enabled:
     ...         print link.url
-    http://bugs.launchpad.dev/umbra/+source/box/+filebug
-    http://answers.launchpad.dev/umbra/+source/box/+addquestion
+    http://bugs.launchpad.test/umbra/+source/box/+filebug
+    http://answers.launchpad.test/umbra/+source/box/+addquestion

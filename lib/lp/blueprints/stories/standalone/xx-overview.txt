@@ -33,7 +33,7 @@ Viewing blueprints targeted to a product
 Let's use the Mozilla Firefox product as an example. Users can see the list
 of blueprints attached to Mozilla Firefox by following the "Blueprints" tab:
 
-    >>> user_browser.open('http://launchpad.dev/firefox')
+    >>> user_browser.open('http://launchpad.test/firefox')
     >>> user_browser.getLink('Blueprints').click()
     >>> main = find_main_content(user_browser.contents)
     >>> print extract_text(main).encode('ascii', 'backslashreplace')
@@ -50,7 +50,7 @@ targeted to a given product series. Let's pick the Mozilla Firefox 1.0
 series as an example. To begin with, there are no blueprints listed on
 the blueprints page for 1.0:
 
-    >>> user_browser.open('http://blueprints.launchpad.dev/firefox/1.0')
+    >>> user_browser.open('http://blueprints.launchpad.test/firefox/1.0')
     >>> main = find_main_content(user_browser.contents)
     >>> print extract_text(main).encode('ascii', 'backslashreplace')
     Blueprints for 1.0
@@ -59,7 +59,7 @@ the blueprints page for 1.0:
 Let's target an existing Mozilla Firefox blueprint to the 1.0 series:
 
     >>> browser = admin_browser
-    >>> browser.open('http://launchpad.dev/firefox/+specs')
+    >>> browser.open('http://launchpad.test/firefox/+specs')
     >>> browser.getLink('svg-support').click()
     >>> print browser.title
     Support Native SVG Objects...
@@ -80,7 +80,7 @@ Let's target an existing Mozilla Firefox blueprint to the 1.0 series:
 We'll also target the blueprint to a milestone.  First we'll create a
 milestone:
 
-    >>> browser.open('http://launchpad.dev/firefox/1.0')
+    >>> browser.open('http://launchpad.test/firefox/1.0')
     >>> browser.getLink('Create milestone').click()
     >>> browser.getControl('Name').value = '1.0.9'
     >>> browser.getControl('Date Targeted').value = '2050-05-05'
@@ -89,7 +89,7 @@ milestone:
 
 Now we'll target our chosen blueprint to the new milestone:
 
-    >>> browser.open('http://launchpad.dev/firefox/+specs')
+    >>> browser.open('http://launchpad.test/firefox/+specs')
     >>> browser.getLink('svg-support').click()
     >>> browser.getLink('Target milestone').click()
     >>> main = find_main_content(browser.contents)
@@ -110,7 +110,7 @@ Now we'll target our chosen blueprint to the new milestone:
 Now the blueprint listing for the 1.0 series includes an entry for our chosen
 blueprint. It also lists the milestone to which the blueprint is targeted:
 
-    >>> user_browser.open('http://blueprints.launchpad.dev/firefox/1.0')
+    >>> user_browser.open('http://blueprints.launchpad.test/firefox/1.0')
     >>> main = find_main_content(user_browser.contents)
     >>> print extract_text(main).encode('ascii', 'backslashreplace')
     Blueprints for 1.0...
@@ -130,7 +130,7 @@ Viewing blueprints targeted to a distribution
 Let's use the Ubuntu distribution as an example. Users can see the list of
 blueprints attached to Ubuntu Linux by following the "Blueprints" tab:
 
-    >>> user_browser.open('http://launchpad.dev/ubuntu')
+    >>> user_browser.open('http://launchpad.test/ubuntu')
     >>> user_browser.getLink('Blueprints').click()
     >>> main = find_main_content(user_browser.contents)
     >>> print extract_text(main).encode('ascii', 'backslashreplace')
@@ -147,7 +147,7 @@ those targeted to a given distribution series. Let's pick the Grumpy Groundhog
 series as an example. To begin with, there are no blueprints listed on the
 blueprints page for Grumpy:
 
-    >>> user_browser.open('http://blueprints.launchpad.dev/ubuntu/grumpy')
+    >>> user_browser.open('http://blueprints.launchpad.test/ubuntu/grumpy')
     >>> main = find_main_content(user_browser.contents)
     >>> print extract_text(main).encode('ascii', 'backslashreplace')
     Blueprints for Grumpy
@@ -156,7 +156,7 @@ blueprints page for Grumpy:
 Let's target an existing Ubuntu blueprint to the Grumpy series:
 
     >>> browser = admin_browser
-    >>> browser.open('http://launchpad.dev/ubuntu/+specs')
+    >>> browser.open('http://launchpad.test/ubuntu/+specs')
     >>> browser.getLink('media-integrity-check').click()
     >>> main = find_main_content(browser.contents)
     >>> print browser.title
@@ -177,7 +177,7 @@ Let's target an existing Ubuntu blueprint to the Grumpy series:
 We'll also target the blueprint to a milestone.  First we'll create a
 milestone:
 
-    >>> browser.open('http://launchpad.dev/ubuntu/grumpy/')
+    >>> browser.open('http://launchpad.test/ubuntu/grumpy/')
     >>> browser.getLink('Create milestone').click()
     >>> browser.getControl('Name').value = 'drift-1'
     >>> browser.getControl('Date Targeted').value = '2050-05-05'
@@ -186,7 +186,7 @@ milestone:
 
 Now we'll target our chosen blueprint to the new milestone:
 
-    >>> browser.open('http://launchpad.dev/ubuntu/+specs')
+    >>> browser.open('http://launchpad.test/ubuntu/+specs')
     >>> browser.getLink('media-integrity-check').click()
     >>> browser.getLink('Target milestone').click()
     >>> print extract_text(find_main_content(browser.contents))
@@ -206,7 +206,7 @@ Now we'll target our chosen blueprint to the new milestone:
 Finally, the blueprint listing for Grumpy includes an entry for our chosen
 blueprint. It also lists the milestone to which the blueprint is targeted:
 
-    >>> user_browser.open('http://blueprints.launchpad.dev/ubuntu/grumpy')
+    >>> user_browser.open('http://blueprints.launchpad.test/ubuntu/grumpy')
     >>> main = find_main_content(user_browser.contents)
     >>> print extract_text(main).encode('ascii', 'backslashreplace')
     Blueprints for Grumpy...

@@ -475,7 +475,7 @@ class Macro:
         http://launchpad.net/+main-template-macros
         http://launchpad.net/ubuntu/+main-template-macros
         http://launchpad.net/ubuntu/+main-template-macros
-        https://blueprints.launchpad.dev/ubuntu/hoary/+main-template-macros
+        https://blueprints.launchpad.test/ubuntu/hoary/+main-template-macros
 
     Obviously, those requests wouldn't do anything useful and would instead
     generate an OOPS.

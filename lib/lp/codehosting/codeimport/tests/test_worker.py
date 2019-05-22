@@ -1382,7 +1382,7 @@ class CodeImportBranchOpenPolicyTests(TestCase):
         self.assertGoodUrl("http://user:password@svn.example/branches/trunk")
         self.assertBadUrl("svn+ssh://svn.example.com/bla")
         self.assertGoodUrl("bzr://bzr.example.com/somebzrurl/")
-        self.assertBadUrl("bzr://bazaar.launchpad.dev/example")
+        self.assertBadUrl("bzr://bazaar.launchpad.test/example")
 
     def test_checkOneURL_git_to_bzr(self):
         self.policy = CodeImportBranchOpenPolicy("git", "bzr")
@@ -1390,7 +1390,7 @@ class CodeImportBranchOpenPolicyTests(TestCase):
         self.assertBadUrl("file:///etc/passwd")
         self.assertBadUrl("unknown-scheme://devpad/")
         self.assertGoodUrl("git://git.example.com/repo")
-        self.assertGoodUrl("git://git.launchpad.dev/example")
+        self.assertGoodUrl("git://git.launchpad.test/example")
 
     def test_checkOneURL_git_to_git(self):
         self.policy = CodeImportBranchOpenPolicy("git", "git")
@@ -1398,7 +1398,7 @@ class CodeImportBranchOpenPolicyTests(TestCase):
         self.assertBadUrl("file:///etc/passwd")
         self.assertBadUrl("unknown-scheme://devpad/")
         self.assertGoodUrl("git://git.example.com/repo")
-        self.assertBadUrl("git://git.launchpad.dev/example")
+        self.assertBadUrl("git://git.launchpad.test/example")
 
 
 class RedirectTests(http_utils.TestCaseWithRedirectedWebserver, TestCase):

@@ -7,7 +7,7 @@ The Bugs front page shows some statistics:
 * number of external bug trackers registered
 * number of CVE bug links
 
-    >>> anon_browser.open('http://bugs.launchpad.dev/')
+    >>> anon_browser.open('http://bugs.launchpad.test/')
     >>> statistics = find_portlet(
     ...     anon_browser.contents, 'Statistics')
     >>> print(extract_text(statistics))

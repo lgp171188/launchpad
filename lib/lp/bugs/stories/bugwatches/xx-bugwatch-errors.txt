@@ -16,10 +16,10 @@ no existing bug watches.
     >>> logout()
 
     >>> user_browser.open(
-    ...     'http://bugs.launchpad.dev/jokosher/+bug/12')
+    ...     'http://bugs.launchpad.test/jokosher/+bug/12')
     >>> user_browser.getLink('Also affects project').click()
     >>> user_browser.url
-    'http://bugs.launchpad.dev/jokosher/+bug/12/+choose-affected-product'
+    'http://bugs.launchpad.test/jokosher/+bug/12/+choose-affected-product'
 
     >>> bug_url = 'https://bugzilla.mozilla.org/show_bug.cgi?id=900'
     >>> user_browser.getControl('Project:').value = 'thunderbird'
@@ -28,7 +28,7 @@ no existing bug watches.
     >>> user_browser.getControl(name='field.bug_url').value = bug_url
     >>> user_browser.getControl('Add to Bug Report').click()
     >>> user_browser.url
-    'http://bugs.launchpad.dev/thunderbird/+bug/12'
+    'http://bugs.launchpad.test/thunderbird/+bug/12'
 
 We can now alter the bug watch manually to check that the correct error
 messages are displayed.
@@ -52,7 +52,7 @@ The error, telling us that the bug wasn't found on the remote server,
 should now be displayed to the user, along with a link to the popup help
 for that error message.
 
-    >>> user_browser.open('http://bugs.launchpad.dev/thunderbird/+bug/12')
+    >>> user_browser.open('http://bugs.launchpad.test/thunderbird/+bug/12')
     >>> for tag in find_tags_by_class(user_browser.contents,
     ...     'error message'):
     ...     print(extract_text(tag.renderContents()))
@@ -61,7 +61,7 @@ for that error message.
 
     >>> help_link = user_browser.getLink('(what does this mean?)')
     >>> print(help_link.url)
-    http://bugs.launchpad.dev/.../+error-help#BUG_NOT_FOUND
+    http://bugs.launchpad.test/.../+error-help#BUG_NOT_FOUND
 
 It's also shown in the tooltip of the warning icon next to the bug watch
 in the bugtask table.
@@ -83,7 +83,7 @@ We can observe this for each of the BugWatchActivityStatus failure values:
     ...     value not in BUG_WATCH_ACTIVITY_SUCCESS_STATUSES]
     >>> for item in failure_values:
     ...     set_bugwatch_error_type(watch, item)
-    ...     user_browser.open('http://bugs.launchpad.dev/thunderbird/+bug/12')
+    ...     user_browser.open('http://bugs.launchpad.test/thunderbird/+bug/12')
     ...     for tag in find_tags_by_class(user_browser.contents,
     ...         'error message'):
     ...         print(extract_text(tag.renderContents()))
@@ -121,6 +121,6 @@ message will go away.
     >>> nwatch.last_error_type = None
     >>> nwatch.updateStatus(UNKNOWN_REMOTE_STATUS, BugTaskStatus.UNKNOWN)
     >>> logout()
-    >>> user_browser.open('http://bugs.launchpad.dev/thunderbird/+bug/12')
+    >>> user_browser.open('http://bugs.launchpad.test/thunderbird/+bug/12')
     >>> len(find_tags_by_class(user_browser.contents, 'error message'))
     0

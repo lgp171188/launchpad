@@ -1,6 +1,6 @@
 Add some attendees to the sprint.
 
-    >>> admin_browser.open('http://launchpad.dev/sprints/ubz')
+    >>> admin_browser.open('http://launchpad.test/sprints/ubz')
     >>> admin_browser.getLink('Register yourself').click()
     >>> admin_browser.getControl('Register').click()
     >>> admin_browser.getLink('Register someone else').click()
@@ -9,7 +9,7 @@ Add some attendees to the sprint.
 
 Get the sprint meeting export:
 
-    >>> browser.open('http://launchpad.dev/sprints/ubz/+temp-meeting-export')
+    >>> browser.open('http://launchpad.test/sprints/ubz/+temp-meeting-export')
     >>> print browser.headers['content-type']
     application/xml;charset=utf-8
 

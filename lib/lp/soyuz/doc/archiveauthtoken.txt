@@ -84,7 +84,7 @@ The new token is returned and reflects the data:
     testtoken
 
     >>> print(new_token.archive_url)
-    http://bradsmith:testtoken@private-ppa.launchpad.dev/joe/ppa/...
+    http://bradsmith:testtoken@private-ppa.launchpad.test/joe/ppa/...
 
 Commit the new token to the database.
 

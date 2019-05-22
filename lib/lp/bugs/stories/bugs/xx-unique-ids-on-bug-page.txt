@@ -8,7 +8,7 @@ option).
 
 For example, bug one has more than one Package field.
 
-    >>> user_browser.open('http://launchpad.dev/bugs/1')
+    >>> user_browser.open('http://launchpad.test/bugs/1')
     >>> user_browser.getControl('Package')
     Traceback (most recent call last):
     ...

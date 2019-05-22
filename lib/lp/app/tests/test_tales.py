@@ -61,7 +61,7 @@ def test_requestapi():
     >>> class FakeApplicationRequest:
     ...    principal = FakePrincipal()
     ...    def getURL(self):
-    ...        return 'http://launchpad.dev/'
+    ...        return 'http://launchpad.test/'
     ...
 
     Let's make a fake request, where request.principal is a FakePrincipal

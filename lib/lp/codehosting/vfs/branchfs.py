@@ -604,7 +604,7 @@ class LaunchpadServer(_BaseLaunchpadServer):
             # though one might think that it would make sense to raise
             # NoSuchFile. Sadly, raising that makes the client do "clever"
             # things like say "Parent directory of
-            # bzr+ssh://bazaar.launchpad.dev/~noone/firefox/branch does not
+            # bzr+ssh://bazaar.launchpad.test/~noone/firefox/branch does not
             # exist. You may supply --create-prefix to create all leading
             # parent directories", which is just misleading.
             fault = trap_fault(

@@ -12,9 +12,9 @@ canonical URL.
     []
     >>> logout()
 
-    >>> browser.open('http://launchpad.dev/firefox')
+    >>> browser.open('http://launchpad.test/firefox')
 
-    >>> browser.open('http://launchpad.dev/iceweasel')
+    >>> browser.open('http://launchpad.test/iceweasel')
     Traceback (most recent call last):
     ...
     NotFound:...
@@ -23,6 +23,6 @@ canonical URL.
     >>> getUtility(IProductSet)['firefox'].setAliases(['iceweasel'])
     >>> logout()
 
-    >>> browser.open('http://launchpad.dev/iceweasel')
+    >>> browser.open('http://launchpad.test/iceweasel')
     >>> browser.url
-    'http://launchpad.dev/firefox'
+    'http://launchpad.test/firefox'

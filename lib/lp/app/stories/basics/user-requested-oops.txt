@@ -8,7 +8,7 @@ use case for this is to get a dump of the blocking activities that a page does.
 A user can request an oops for a page by using the ++oops++ namespace in any
 page traversal.
 
-    >>> browser.open("http://launchpad.dev/++oops++")
+    >>> browser.open("http://launchpad.test/++oops++")
 
 The OOPS id is put into the comment at the end of the document.
 
@@ -24,7 +24,7 @@ The OOPS id is put into the comment at the end of the document.
 
 The ++oops++ can be anywhere in the traversal.
 
-    >>> browser.open("http://launchpad.dev/gnome-terminal/++oops++/trunk")
+    >>> browser.open("http://launchpad.test/gnome-terminal/++oops++/trunk")
     >>> (page, summary) = browser.contents.split('</body>')
     >>> print summary
     ...

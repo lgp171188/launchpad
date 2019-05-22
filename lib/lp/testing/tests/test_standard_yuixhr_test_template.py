@@ -28,9 +28,9 @@ from lp.testing.yuixhr import (
 # You can run these yui app tests interactively.  This can help with
 # construction and debugging.  To do so, start Launchpad with "make
 # run-testapp" and go to
-# http://launchpad.dev:8085/+yuitest/PATH/TO/THIS/FILE/WITHOUT/EXTENSION
+# http://launchpad.test:8085/+yuitest/PATH/TO/THIS/FILE/WITHOUT/EXTENSION
 # . For example,
-# http://launchpad.dev:8085/+yuitest/lp/testing/tests/test_yuixhr_fixture
+# http://launchpad.test:8085/+yuitest/lp/testing/tests/test_yuixhr_fixture
 # will run the tests in
 # {launchpad}/lib/lp/testing/tests/test_yui_fixture[.py|.js].
 

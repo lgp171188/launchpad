@@ -861,7 +861,7 @@ class ProjectGroupFileBugGuidedViewTestCase(TestCaseWithFactory):
         response = view.request.response
         self.assertEqual(302, response.getStatus())
         self.assertEqual(
-            'http://bugs.launchpad.dev/fnord/+filebug?'
+            'http://bugs.launchpad.test/fnord/+filebug?'
             'field.title=A+bug&'
             'field.tags=is+os',
             response.getHeader('Location'))
@@ -871,7 +871,7 @@ class ProjectGroupFileBugGuidedViewTestCase(TestCaseWithFactory):
         view = self.makeProjectGroupFileBugView('fnord', u'caf\xe9', '')
         response = view.request.response
         self.assertEqual(
-            'http://bugs.launchpad.dev/fnord/+filebug?'
+            'http://bugs.launchpad.test/fnord/+filebug?'
             'field.title=caf%C3%A9&'
             'field.tags=',
             response.getHeader('Location'))

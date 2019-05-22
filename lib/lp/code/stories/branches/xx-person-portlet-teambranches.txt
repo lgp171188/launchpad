@@ -21,7 +21,7 @@ and only teams that have branches are shown.
 Initially Eric's teams have no branches, so there is not be a portlet
 there.
 
-    >>> browser.open('http://code.launchpad.dev/~eric')
+    >>> browser.open('http://code.launchpad.test/~eric')
     >>> portlet = find_tag_by_id(browser.contents, 'portlet-team-branches')
     >>> print(portlet)
     None
@@ -30,7 +30,7 @@ there.
     >>> vb = factory.makeAnyBranch(owner=vikings)
     >>> logout()
 
-    >>> browser.open('http://code.launchpad.dev/~eric')
+    >>> browser.open('http://code.launchpad.test/~eric')
     >>> tb = find_tag_by_id(browser.contents, 'portlet-team-branches')
     >>> print(extract_text(tb.h2))
     Branches owned by

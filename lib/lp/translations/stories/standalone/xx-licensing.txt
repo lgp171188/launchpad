@@ -6,10 +6,10 @@ to a form to indicate whether he agrees to license his translations
 under the revised BSD licence.
 
     >>> browser = setupBrowser(auth='Basic karl@canonical.com:test')
-    >>> browser.open('http://translations.launchpad.dev/alsa-utils/trunk/'
+    >>> browser.open('http://translations.launchpad.test/alsa-utils/trunk/'
     ...              '+pots/alsa-utils/es/+translate')
     >>> browser.url
-    'http://translations.launchpad.dev/~karl/+licensing?back_to=...'
+    'http://translations.launchpad.test/~karl/+licensing?back_to=...'
 
 Karl realises that he is not on the translate page, he can see that
 that this page has information about relicensing.
@@ -42,7 +42,7 @@ Karl sees a notice acknowledging his choice.
 He's also forwarded back to the Spanish alsa-utils translations page.
 
     >>> browser.url
-    'http://translations.launchpad.dev/...+pots/alsa-utils/es/+translate'
+    'http://translations.launchpad.test/...+pots/alsa-utils/es/+translate'
 
 However, this page is now read-only for Karl, and there are no textareas
 nor input boxes available.
@@ -57,10 +57,10 @@ nor input boxes available.
 
 Karl changes his mind. He returns to the licensing page.
 
-    >>> browser.open('http://translations.launchpad.dev/~karl/')
+    >>> browser.open('http://translations.launchpad.test/~karl/')
     >>> browser.getLink('Translations licensing').click()
     >>> browser.url
-    'http://translations.launchpad.dev/~karl/+licensing'
+    'http://translations.launchpad.test/~karl/+licensing'
     >>> print(browser.title)
     Licensing : Translations...
 
@@ -80,7 +80,7 @@ He changes it again.
 
 Karl can now browse to a +translate page without being forwarded.
 
-    >>> browser.open('http://translations.launchpad.dev/alsa-utils/trunk/'
+    >>> browser.open('http://translations.launchpad.test/alsa-utils/trunk/'
     ...              '+pots/alsa-utils/es/+translate')
     >>> browser.url
     'http://.../alsa-utils/trunk/+pots/alsa-utils/es/+translate'
@@ -95,7 +95,7 @@ Permissions
 If another logged-in user comes across Karl's translations page, they see
 no link to change Karl's licensing choice.
 
-    >>> user_browser.open('http://translations.launchpad.dev/~karl/')
+    >>> user_browser.open('http://translations.launchpad.test/~karl/')
     >>> user_browser.getLink('Translations licensing')
     Traceback (most recent call last):
     ...
@@ -104,7 +104,7 @@ no link to change Karl's licensing choice.
 Typing in the URL directly doesn't work either.
 
     >>> user_browser.open(
-    ...     'http://translations.launchpad.dev/~karl/+licensing')
+    ...     'http://translations.launchpad.test/~karl/+licensing')
     Traceback (most recent call last):
     ...
     Unauthorized: ...

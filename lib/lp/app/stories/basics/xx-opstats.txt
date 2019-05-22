@@ -7,7 +7,7 @@ We can access them via XML-RPC:
     >>> import xmlrpclib
     >>> from lp.testing.xmlrpc import XMLRPCTestTransport
     >>> lp_xmlrpc = xmlrpclib.ServerProxy(
-    ...     'http://xmlrpc.launchpad.dev/+opstats',
+    ...     'http://xmlrpc.launchpad.test/+opstats',
     ...     transport=XMLRPCTestTransport()
     ...     )
 
@@ -64,7 +64,7 @@ are adjusted after the request has been served:
 Number of HTTP requests and success codes
 -----------------------------------------
 
-    >>> output = http("GET / HTTP/1.1\nHost: bugs.launchpad.dev\n")
+    >>> output = http("GET / HTTP/1.1\nHost: bugs.launchpad.test\n")
     >>> output.getStatus()
     200
     >>> report()
@@ -80,7 +80,7 @@ database policy, this request first uses the slave DB. The requested
 information is not found in there, so a retry is attempted against the
 master DB in case the information is missing due to replication lag.
 
-    >>> output = http("GET http://launchpad.dev/non-existant HTTP/1.1\n")
+    >>> output = http("GET http://launchpad.test/non-existant HTTP/1.1\n")
     >>> output.getStatus()
     404
     >>> report()
@@ -105,7 +105,7 @@ particular need to differentiate these cases though:
     ...         raise Exception('Oops')
     ...
     >>> ztapi.browserView(None, "error-test", ErrorView)
-    >>> output = http("GET /error-test HTTP/1.1\nHost: launchpad.dev\n")
+    >>> output = http("GET /error-test HTTP/1.1\nHost: launchpad.test\n")
     >>> output.getStatus()
     500
     >>> report()
@@ -122,7 +122,7 @@ the site.
     >>> from textwrap import dedent
     >>> output = http(dedent("""\
     ...     GET /error-test HTTP/1.1
-    ...     Host: launchpad.dev
+    ...     Host: launchpad.test
     ...     User-Agent: Mozilla/42.0
     ...     """))
     >>> output.getStatus()
@@ -203,9 +203,9 @@ HTTP access for Cricket
 
 Stats can also be retrieved via HTTP in cricket-graph format:
 
-    >>> output = http("GET / HTTP/1.1\nHost: launchpad.dev\n")
-    >>> output = http("GET / HTTP/1.1\nHost: launchpad.dev\n")
-    >>> print http("GET /+opstats HTTP/1.1\nHost: launchpad.dev\n")
+    >>> output = http("GET / HTTP/1.1\nHost: launchpad.test\n")
+    >>> output = http("GET / HTTP/1.1\nHost: launchpad.test\n")
+    >>> print http("GET /+opstats HTTP/1.1\nHost: launchpad.test\n")
     HTTP/1.1 200 Ok
     ...
     Content-Type: text/plain; charset=US-ASCII
@@ -258,7 +258,7 @@ the new connection information is used.
 
 We can still access the opstats page.
 
-    >>> print http("GET /+opstats HTTP/1.1\nHost: launchpad.dev\n")
+    >>> print http("GET /+opstats HTTP/1.1\nHost: launchpad.test\n")
     HTTP/1.1 200 Ok
     ...
     Content-Type: text/plain; charset=US-ASCII
@@ -270,7 +270,7 @@ This is also true if we are provide authentication.
 
     >>> print http(r"""
     ... GET /+opstats HTTP/1.1
-    ... Host: launchpad.dev
+    ... Host: launchpad.test
     ... Authorization: Basic Zm9vLmJhckBjYW5vbmljYWwuY29tOnRlc3Q=
     ... """)
     HTTP/1.1 200 Ok

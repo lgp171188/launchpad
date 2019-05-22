@@ -380,7 +380,7 @@ class TestWebhookDeliveryJob(TestCaseWithFactory):
         self.assertEqual([
             ('POST', 'http://example.com/ep',
              {'Content-Type': 'application/json',
-              'User-Agent': 'launchpad.dev-Webhooks/r%s' % (
+              'User-Agent': 'launchpad.test-Webhooks/r%s' % (
                   versioninfo.revision),
               'X-Launchpad-Event-Type': 'test',
               'X-Launchpad-Delivery': str(job.job_id)}),
@@ -396,7 +396,7 @@ class TestWebhookDeliveryJob(TestCaseWithFactory):
         self.assertEqual([
             ('POST', 'http://example.com/ep',
              {'Content-Type': 'application/json',
-              'User-Agent': 'launchpad.dev-Webhooks/r%s' % (
+              'User-Agent': 'launchpad.test-Webhooks/r%s' % (
                   versioninfo.revision),
               'X-Hub-Signature':
                   'sha1=de75f136c37d89f5eb24834468c1ecd602fa95dd',

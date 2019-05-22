@@ -2280,7 +2280,7 @@ class TestCodebrowse(TestCaseWithFactory):
         # The basic codebrowse URL for a public branch is an 'https' URL.
         branch = self.factory.makeAnyBranch()
         self.assertEqual(
-            'https://bazaar.launchpad.dev/' + branch.unique_name,
+            'https://bazaar.launchpad.test/' + branch.unique_name,
             branch.getCodebrowseUrl())
 
     def test_private(self):
@@ -2290,14 +2290,14 @@ class TestCodebrowse(TestCaseWithFactory):
             owner=owner, information_type=InformationType.USERDATA)
         login_person(owner)
         self.assertEqual(
-            'https://bazaar.launchpad.dev/' + branch.unique_name,
+            'https://bazaar.launchpad.test/' + branch.unique_name,
             branch.getCodebrowseUrl())
 
     def test_extra_args(self):
         # Any arguments to getCodebrowseUrl are appended to the URL.
         branch = self.factory.makeAnyBranch()
         self.assertEqual(
-            'https://bazaar.launchpad.dev/' + branch.unique_name + '/a/b',
+            'https://bazaar.launchpad.test/' + branch.unique_name + '/a/b',
             branch.getCodebrowseUrl('a', 'b'))
 
     def test_source_code_url(self):
@@ -3333,7 +3333,7 @@ class TestBranchGetBlob(TestCaseWithFactory):
             [((branch.id, 'some-file-id'), {'rev': 'scanned-id'})],
             hosting_fixture.getBlob.calls)
         key = (
-            'bazaar.launchpad.dev:bzr-file-list:%s:scanned-id:src' % branch.id)
+            'bazaar.launchpad.test:bzr-file-list:%s:scanned-id:src' % branch.id)
         self.assertEqual(
             json.dumps({'README.txt': 'some-file-id'}),
             getUtility(IMemcacheClient).get(key.encode('UTF-8')))
@@ -3350,7 +3350,7 @@ class TestBranchGetBlob(TestCaseWithFactory):
         self.assertEqual(
             [((branch.id, 'some-file-id'), {'rev': 'some-rev'})],
             hosting_fixture.getBlob.calls)
-        key = 'bazaar.launchpad.dev:bzr-file-list:%s:some-rev:src' % branch.id
+        key = 'bazaar.launchpad.test:bzr-file-list:%s:some-rev:src' % branch.id
         self.assertEqual(
             json.dumps({'README.txt': 'some-file-id'}),
             getUtility(IMemcacheClient).get(key.encode('UTF-8')))
@@ -3359,7 +3359,7 @@ class TestBranchGetBlob(TestCaseWithFactory):
         branch = self.factory.makeBranch()
         hosting_fixture = self.useFixture(BranchHostingFixture(
             blob=b'Some text'))
-        key = 'bazaar.launchpad.dev:bzr-file-list:%s:some-rev:src' % branch.id
+        key = 'bazaar.launchpad.test:bzr-file-list:%s:some-rev:src' % branch.id
         getUtility(IMemcacheClient).set(
             key.encode('UTF-8'), json.dumps({'README.txt': 'some-file-id'}))
         blob = branch.getBlob('src/README.txt', revision_id='some-rev')
@@ -3375,7 +3375,7 @@ class TestBranchGetBlob(TestCaseWithFactory):
         branch = self.factory.makeBranch()
         hosting_fixture = self.useFixture(BranchHostingFixture(
             file_list={'README.txt': 'some-file-id'}, blob=b'Some text'))
-        key = 'bazaar.launchpad.dev:bzr-file-list:%s:some-rev:src' % branch.id
+        key = 'bazaar.launchpad.test:bzr-file-list:%s:some-rev:src' % branch.id
         getUtility(IMemcacheClient).set(key.encode('UTF-8'), '{}')
         blob = branch.getBlob('src/README.txt', revision_id='some-rev')
         self.assertEqual('Some text', blob)
@@ -3397,7 +3397,7 @@ class TestBranchGetBlob(TestCaseWithFactory):
         self.assertEqual(
             [((branch.id, 'some-file-id'), {'rev': 'some-rev'})],
             hosting_fixture.getBlob.calls)
-        key = 'bazaar.launchpad.dev:bzr-file-list:%s:some-rev:' % branch.id
+        key = 'bazaar.launchpad.test:bzr-file-list:%s:some-rev:' % branch.id
         self.assertEqual(
             json.dumps({'README.txt': 'some-file-id'}),
             getUtility(IMemcacheClient).get(key.encode('UTF-8')))
@@ -3412,7 +3412,7 @@ class TestBranchGetBlob(TestCaseWithFactory):
             [((branch.id, 'src'), {'rev': 'some-rev'})],
             hosting_fixture.getInventory.calls)
         self.assertEqual([], hosting_fixture.getBlob.calls)
-        key = 'bazaar.launchpad.dev:bzr-file-list:%s:some-rev:src' % branch.id
+        key = 'bazaar.launchpad.test:bzr-file-list:%s:some-rev:src' % branch.id
         self.assertEqual(
             '{}', getUtility(IMemcacheClient).get(key.encode('UTF-8')))
 
@@ -3429,14 +3429,14 @@ class TestBranchGetBlob(TestCaseWithFactory):
             [((branch.id, 'src'), {'rev': 'some-rev'})],
             hosting_fixture.getInventory.calls)
         self.assertEqual([], hosting_fixture.getBlob.calls)
-        key = 'bazaar.launchpad.dev:bzr-file-list:%s:some-rev:src' % branch.id
+        key = 'bazaar.launchpad.test:bzr-file-list:%s:some-rev:src' % branch.id
         self.assertEqual(
             'null', getUtility(IMemcacheClient).get(key.encode('UTF-8')))
 
     def test_cached_missing_directory(self):
         branch = self.factory.makeBranch()
         hosting_fixture = self.useFixture(BranchHostingFixture())
-        key = 'bazaar.launchpad.dev:bzr-file-list:%s:some-rev:src' % branch.id
+        key = 'bazaar.launchpad.test:bzr-file-list:%s:some-rev:src' % branch.id
         getUtility(IMemcacheClient).set(key.encode('UTF-8'), 'null')
         self.assertRaises(
             BranchFileNotFound, branch.getBlob,

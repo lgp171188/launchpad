@@ -8,7 +8,7 @@ allow them. -- Guilherme Salgado, 2006-10-27
     >>> context = DistributionMirror.byName('archive-mirror')
     >>> owner_attribute_name = 'owner'
     >>> context_url = (
-    ...     'http://launchpad.dev/ubuntu/+mirror/archive-mirror')
+    ...     'http://launchpad.test/ubuntu/+mirror/archive-mirror')
 
 Distribution mirrors can be reassigned by anybody with the launchpad.Edit
 permission on them. Mark is the owner of the archive-mirror.
@@ -27,7 +27,7 @@ permission on them. Mark is the owner of the archive-mirror.
     >>> browser.open(context_url)
     >>> browser.getLink('Change owner').click()
     >>> browser.url
-    'http://launchpad.dev/ubuntu/+mirror/archive-mirror/+reassign'
+    'http://launchpad.test/ubuntu/+mirror/archive-mirror/+reassign'
 
 First we'll enter an unexistent name.
 
@@ -35,7 +35,7 @@ First we'll enter an unexistent name.
     >>> browser.getControl(name='field.existing').value = ['existing']
     >>> browser.getControl('Change').click()
     >>> browser.url
-    'http://launchpad.dev/ubuntu/+mirror/archive-mirror/+reassign'
+    'http://launchpad.test/ubuntu/+mirror/archive-mirror/+reassign'
     >>> for tag in find_tags_by_class(browser.contents, 'message'):
     ...     tag.renderContents()
     'There is 1 error.'
@@ -51,7 +51,7 @@ the owner of something.
     >>> browser.getControl(name='field.owner').value = 'matsubara'
     >>> browser.getControl('Change').click()
     >>> browser.url
-    'http://launchpad.dev/ubuntu/+mirror/archive-mirror/+reassign'
+    'http://launchpad.test/ubuntu/+mirror/archive-mirror/+reassign'
     >>> for tag in find_tags_by_class(browser.contents, 'message'):
     ...     tag.renderContents()
     'There is 1 error.'
@@ -63,7 +63,7 @@ Now we try to create a team using a name that is already taken.
     >>> browser.getControl(name='field.existing').value = ['new']
     >>> browser.getControl('Change').click()
     >>> browser.url
-    'http://launchpad.dev/ubuntu/+mirror/archive-mirror/+reassign'
+    'http://launchpad.test/ubuntu/+mirror/archive-mirror/+reassign'
     >>> for tag in find_tags_by_class(browser.contents, 'message'):
     ...     tag.renderContents()
     'There is 1 error.'
@@ -81,7 +81,7 @@ account.
     >>> browser.getControl(name='field.existing').value = ['existing']
     >>> browser.getControl('Change').click()
     >>> browser.url
-    'http://launchpad.dev/ubuntu/+mirror/archive-mirror'
+    'http://launchpad.test/ubuntu/+mirror/archive-mirror'
     >>> context = DistributionMirror.byName('archive-mirror')
     >>> salgado.id == getattr(context, owner_attribute_name).id
     True

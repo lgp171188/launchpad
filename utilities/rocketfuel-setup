@@ -42,30 +42,30 @@ if [ $? -ne 0 ]; then
   echo "Adding development hosts on local machine"
   echo "
 # Launchpad virtual domains. This should be on one line.
-127.0.0.88      launchpad.dev
+127.0.0.88      launchpad.test
 " | sudo tee -a /etc/hosts > /dev/null
-  echo "launchpad.dev added to /etc/hosts"
+  echo "launchpad.test added to /etc/hosts"
 fi
 
 declare -a hostnames
 hostnames=$(cat <<EOF
-    answers.launchpad.dev
-    archive.launchpad.dev
-    api.launchpad.dev
-    bazaar.launchpad.dev
-    bazaar-internal.launchpad.dev
-    blueprints.launchpad.dev
-    bugs.launchpad.dev
-    code.launchpad.dev
-    feeds.launchpad.dev
-    keyserver.launchpad.dev
-    lists.launchpad.dev
-    ppa.launchpad.dev
-    private-ppa.launchpad.dev
-    testopenid.dev
-    translations.launchpad.dev
-    xmlrpc-private.launchpad.dev
-    xmlrpc.launchpad.dev
+    answers.launchpad.test
+    archive.launchpad.test
+    api.launchpad.test
+    bazaar.launchpad.test
+    bazaar-internal.launchpad.test
+    blueprints.launchpad.test
+    bugs.launchpad.test
+    code.launchpad.test
+    feeds.launchpad.test
+    keyserver.launchpad.test
+    lists.launchpad.test
+    ppa.launchpad.test
+    private-ppa.launchpad.test
+    testopenid.test
+    translations.launchpad.test
+    xmlrpc-private.launchpad.test
+    xmlrpc.launchpad.test
 EOF
     )
 
@@ -151,8 +151,8 @@ for pkg in $REQUIRED_PACKAGES; do
 done
 
 # Create the document root(s) to avoid Apache warnings
-mkdir -p /var/tmp/bazaar.launchpad.dev/static
-mkdir -p /var/tmp/bazaar.launchpad.dev/mirrors
+mkdir -p /var/tmp/bazaar.launchpad.test/static
+mkdir -p /var/tmp/bazaar.launchpad.test/mirrors
 
 sudo a2enmod proxy > /dev/null
 if [ $? -ne 0 ]; then

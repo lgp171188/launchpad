@@ -4,11 +4,11 @@ Creating a new team
 Regular users can create teams.
 
     >>> browser = setupBrowser(auth='Basic test@canonical.com:test')
-    >>> browser.open('http://launchpad.dev/people/')
+    >>> browser.open('http://launchpad.test/people/')
     >>> browser.getLink('Register a team').click()
 
     >>> browser.url
-    'http://launchpad.dev/people/+newteam'
+    'http://launchpad.test/people/+newteam'
 
     >>> browser.title
     'Register a new team in Launchpad'
@@ -20,7 +20,7 @@ Regular users can create teams.
     >>> browser.getControl('Create').click()
 
     >>> browser.url
-    'http://launchpad.dev/~myemail'
+    'http://launchpad.test/~myemail'
 
     >>> browser.title
     'your own team in Launchpad'
@@ -38,7 +38,7 @@ Joining a team
 Karl will join the newly created team.
 
     >>> browser = setupBrowser(auth='Basic karl@canonical.com:test')
-    >>> browser.open('http://launchpad.dev/~myemail')
+    >>> browser.open('http://launchpad.test/~myemail')
     >>> print extract_text(
     ...     find_tag_by_id(browser.contents, 'subscription-policy'))
     Membership policy:
@@ -46,11 +46,11 @@ Karl will join the newly created team.
 
     >>> browser.getLink('Join the team').click()
     >>> browser.url
-    'http://launchpad.dev/~myemail/+join'
+    'http://launchpad.test/~myemail/+join'
 
     >>> browser.getControl(name='field.actions.join').click()
     >>> browser.url
-    'http://launchpad.dev/~myemail'
+    'http://launchpad.test/~myemail'
 
 Since this is an open team, he's automatically approved.
 
@@ -66,7 +66,7 @@ team.
     Traceback (most recent call last):
     ...
     LinkNotFoundError
-    >>> browser.open('http://launchpad.dev/~myemail/+join')
+    >>> browser.open('http://launchpad.test/~myemail/+join')
     >>> for tag in find_tags_by_class(browser.contents, 'informational'):
     ...     print tag.renderContents()
     You are an active member of this team already.
@@ -76,7 +76,7 @@ the team's home page.
 
     >>> browser.getLink('Back').click()
     >>> browser.url
-    'http://launchpad.dev/~myemail'
+    'http://launchpad.test/~myemail'
 
 If this was a moderated team, the membership would not have been automatically
 approved, though.
@@ -89,7 +89,7 @@ approved, though.
 
     >>> browser = setupBrowser(
     ...     auth='Basic james.blackwell@ubuntulinux.com:test')
-    >>> browser.open('http://launchpad.dev/~myemail')
+    >>> browser.open('http://launchpad.test/~myemail')
     >>> print extract_text(
     ...     find_tag_by_id(browser.contents, 'subscription-policy'))
     Membership policy:
@@ -97,7 +97,7 @@ approved, though.
 
     >>> browser.getLink('Join the team').click()
     >>> browser.url
-    'http://launchpad.dev/~myemail/+join'
+    'http://launchpad.test/~myemail/+join'
 
     >>> print find_tag_by_id(browser.contents, 'maincontent').renderContents()
     <BLANKLINE>
@@ -111,14 +111,14 @@ hit the 'Cancel' button, going back to the team's page...
 
     >>> browser.getLink('Cancel').click()
     >>> browser.url
-    'http://launchpad.dev/~myemail'
+    'http://launchpad.test/~myemail'
 
 ...and then do everything again, if they really want to join.
 
     >>> browser.getLink('Join the team').click()
     >>> browser.getControl(name='field.actions.join').click()
     >>> browser.url
-    'http://launchpad.dev/~myemail'
+    'http://launchpad.test/~myemail'
 
     >>> for tag in find_tags_by_class(browser.contents, 'informational'):
     ...     print tag.renderContents()
@@ -132,7 +132,7 @@ Delegated teams also require approval of direct membership.
     >>> logout()
 
     >>> browser = setupBrowser(auth='Basic colin.watson@ubuntulinux.com:test')
-    >>> browser.open('http://launchpad.dev/~myemail')
+    >>> browser.open('http://launchpad.test/~myemail')
     >>> print extract_text(
     ...     find_tag_by_id(browser.contents, 'subscription-policy'))
     Membership policy:
@@ -140,7 +140,7 @@ Delegated teams also require approval of direct membership.
 
     >>> browser.getLink('Join the team').click()
     >>> browser.url
-    'http://launchpad.dev/~myemail/+join'
+    'http://launchpad.test/~myemail/+join'
 
     >>> print find_tag_by_id(browser.contents, 'maincontent').renderContents()
     <BLANKLINE>
@@ -151,7 +151,7 @@ Delegated teams also require approval of direct membership.
 
     >>> browser.getControl(name='field.actions.join').click()
     >>> browser.url
-    'http://launchpad.dev/~myemail'
+    'http://launchpad.test/~myemail'
 
     >>> for tag in find_tags_by_class(browser.contents, 'informational'):
     ...     print tag.renderContents()
@@ -164,9 +164,9 @@ If it was a restricted team, users wouldn't even see a link to join the team.
 
     >>> browser = setupBrowser(
     ...     auth='Basic jeff.waugh@ubuntulinux.com:test')
-    >>> browser.open('http://launchpad.dev/~myemail')
+    >>> browser.open('http://launchpad.test/~myemail')
     >>> browser.url
-    'http://launchpad.dev/~myemail'
+    'http://launchpad.test/~myemail'
     >>> print extract_text(
     ...     find_tag_by_id(browser.contents, 'subscription-policy'))
     Membership policy:
@@ -180,9 +180,9 @@ If it was a restricted team, users wouldn't even see a link to join the team.
 If the user manually crafts the URL to the +join page, they'll only see a
 message explaining that this is a restricted team.
 
-    >>> browser.open('http://launchpad.dev/~myemail/+join')
+    >>> browser.open('http://launchpad.test/~myemail/+join')
     >>> browser.url
-    'http://launchpad.dev/~myemail/+join'
+    'http://launchpad.test/~myemail/+join'
 
     >>> for tag in find_tags_by_class(browser.contents, 'informational'):
     ...     print tag.renderContents()
@@ -194,16 +194,16 @@ home page, since they can't join it.
 
     >>> browser.getLink('Back').click()
     >>> browser.url
-    'http://launchpad.dev/~myemail'
+    'http://launchpad.test/~myemail'
 
 On the team's +members page we can now see Karl as an approved member,
 Colin Watson and James Blackwell as proposed members, and Jeff Waugh won't
 be there at all.
 
-    >>> anon_browser.open('http://launchpad.dev/~myemail')
+    >>> anon_browser.open('http://launchpad.test/~myemail')
     >>> anon_browser.getLink('All members').click()
     >>> anon_browser.url
-    'http://launchpad.dev/~myemail/+members'
+    'http://launchpad.test/~myemail/+members'
 
     >>> contents = anon_browser.contents
     >>> for link in find_tag_by_id(contents, 'activemembers').findAll('a'):
@@ -233,10 +233,10 @@ have been invited.
     ...             contents = six.ensure_text(link.renderContents())
     ...             print contents.encode('ascii', 'replace')
 
-    >>> browser.open('http://launchpad.dev/~landscape-developers')
+    >>> browser.open('http://launchpad.test/~landscape-developers')
     >>> browser.getLink('All members').click()
     >>> browser.url
-    'http://launchpad.dev/~landscape-developers/+members'
+    'http://launchpad.test/~landscape-developers/+members'
 
     >>> print_members(browser.contents, 'activemembers')
     Guilherme Salgado
@@ -263,7 +263,7 @@ Former members are only viewable by admins of the team.
 The list of active members and former (inactive) members can grow
 without bounds, so they are paginated.
 
-    >>> browser.open('http://launchpad.dev/~admins/+members')
+    >>> browser.open('http://launchpad.test/~admins/+members')
     >>> print_members(browser.contents, 'activemembers')
     Andrew Bennetts
     Carlos Perell? Mar?n
@@ -286,7 +286,7 @@ without bounds, so they are paginated.
     ... default_batch_size: 2
     ... """)
     >>> admin_browser.open(
-    ...     'http://launchpad.dev/~admins/+members?inactive_batch=2')
+    ...     'http://launchpad.test/~admins/+members?inactive_batch=2')
     >>> print_members(admin_browser.contents, 'inactivemembers')
     Celso Providelo
     David Allouche
@@ -303,21 +303,21 @@ James Blackwell wants to join the team and we know he made some contributions
 in the past, so we'll approve his membership.
 
     >>> browser = setupBrowser(auth='Basic test@canonical.com:test')
-    >>> browser.open('http://launchpad.dev/~myemail/+members')
+    >>> browser.open('http://launchpad.test/~myemail/+members')
     >>> print_members(browser.contents, 'proposedmembers')
     Colin Watson
     James Blackwell
 
-    >>> browser.open('http://launchpad.dev/~myemail/+member/jblack')
+    >>> browser.open('http://launchpad.test/~myemail/+member/jblack')
     >>> browser.url
-    'http://launchpad.dev/~myemail/+member/jblack'
+    'http://launchpad.test/~myemail/+member/jblack'
 
     >>> browser.getControl(name='membership.expirationdate').value = \
     ...     '2048-04-14'
     >>> browser.getControl(name='approve').click()
 
     >>> browser.url
-    'http://launchpad.dev/~myemail/+members'
+    'http://launchpad.test/~myemail/+members'
 
     >>> print_members(browser.contents, 'activemembers')
     James Blackwell
@@ -330,16 +330,16 @@ Promoting/Demoting an existing member
 
 We'll now promote jblack to an administrator of this team.
 
-    >>> browser.open('http://launchpad.dev/~myemail/+member/jblack')
+    >>> browser.open('http://launchpad.test/~myemail/+member/jblack')
     >>> browser.url
-    'http://launchpad.dev/~myemail/+member/jblack'
+    'http://launchpad.test/~myemail/+member/jblack'
 
     >>> browser.getControl(name='admin').value
     ['no']
     >>> browser.getControl(name='admin').value = ["yes"]
     >>> browser.getControl(name='change').click()
 
-    >>> browser.open('http://launchpad.dev/~myemail/+member/jblack')
+    >>> browser.open('http://launchpad.test/~myemail/+member/jblack')
     >>> browser.getControl(name='admin').value
     ['yes']
 
@@ -348,7 +348,7 @@ We can also demote him if he doesn't behave himself.
     >>> browser.getControl(name='admin').value = ["no"]
     >>> browser.getControl(name='change').click()
 
-    >>> browser.open('http://launchpad.dev/~myemail/+member/jblack')
+    >>> browser.open('http://launchpad.test/~myemail/+member/jblack')
     >>> browser.getControl(name='admin').value
     ['no']
 
@@ -364,12 +364,12 @@ membership for now.
     # It would be nice to be able to clone the browser and not do
     # the manual copy.
     >>> browser2 = setupBrowser(auth="Basic test@canonical.com:test")
-    >>> browser2.open("http://launchpad.dev/~myemail/+member/karl")
+    >>> browser2.open("http://launchpad.test/~myemail/+member/karl")
 
-    >>> browser.open("http://launchpad.dev/~myemail/+member/karl")
+    >>> browser.open("http://launchpad.test/~myemail/+member/karl")
     >>> browser.getControl('Deactivate').click()
     >>> browser.url
-    'http://launchpad.dev/~myemail/+members'
+    'http://launchpad.test/~myemail/+members'
 
     >>> print_members(browser.contents, 'inactivemembers')
     Karl Tilbury
@@ -379,7 +379,7 @@ instance. No crashes in sight:
 
     >>> browser2.getControl('Deactivate').click()
     >>> browser2.url
-    'http://launchpad.dev/~myemail/+members'
+    'http://launchpad.test/~myemail/+members'
 
 
 Reactivating a deactivated member
@@ -389,16 +389,16 @@ Later we may decide to reactivate Karl Tilbury's membership, so this must be
 possible.
 
     # Again, keep a second browser open to test concurrency.
-    >>> browser2.open("http://launchpad.dev/~myemail/+member/karl")
+    >>> browser2.open("http://launchpad.test/~myemail/+member/karl")
 
-    >>> browser.open("http://launchpad.dev/~myemail/+member/karl")
+    >>> browser.open("http://launchpad.test/~myemail/+member/karl")
     >>> browser.getControl(name="expires").value = ["date"]
     >>> browser.getControl(name="membership.expirationdate").value = \
     ...     '2049-04-16'
     >>> browser.getControl("Reactivate").click()
 
     >>> browser.url
-    'http://launchpad.dev/~myemail/+members'
+    'http://launchpad.test/~myemail/+members'
 
     >>> print find_tag_by_id(browser.contents, 'inactivemembers')
     None
@@ -415,7 +415,7 @@ error message:
     ...     '2049-04-16'
     >>> browser2.getControl("Reactivate").click()
     >>> browser2.url
-    'http://launchpad.dev/%7Emyemail/+member/karl/+index'
+    'http://launchpad.test/%7Emyemail/+member/karl/+index'
     >>> for tag in find_tags_by_class(browser2.contents, 'error message'):
     ...     print tag.renderContents()
     The membership request for Karl Tilbury has already been processed.

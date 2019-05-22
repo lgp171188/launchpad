@@ -10,7 +10,7 @@ to bandaid search scaling issues inhibits that in the sample data; when we get
 a relevance-integrated index we'll be able to do relevance ordered, limited
 searches efficiently and these tests can be expanded at that point.
 
-    >>> user_browser.open("http://launchpad.dev/products/firefox/+filebug")
+    >>> user_browser.open("http://launchpad.test/products/firefox/+filebug")
 
     >>> user_browser.getControl("Summary", index=0).value = (
     ...     "Firefox does not support complex SVG images")
@@ -25,7 +25,7 @@ searches efficiently and these tests can be expanded at that point.
 If we instead enter a summary that matches bug #4 better, the result will
 be reversed.
 
-    >>> user_browser.open("http://launchpad.dev/products/firefox/+filebug")
+    >>> user_browser.open("http://launchpad.test/products/firefox/+filebug")
 
     >>> user_browser.getControl("Summary", index=0).value = (
     ...     "Reflow problems with SVG")

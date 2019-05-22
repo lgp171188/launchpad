@@ -5,7 +5,7 @@ To view the answer contact report for a given person, the user chooses
 the 'Answer Contact For' link from the actions portlet while viewing
 the Person's page.
 
-    >>> anon_browser.open('http://answers.launchpad.dev/~no-priv')
+    >>> anon_browser.open('http://answers.launchpad.test/~no-priv')
     >>> anon_browser.getLink('Answer contact for').click()
     >>> print(anon_browser.title)
     Projects for which...
@@ -20,7 +20,7 @@ that.
 But when the person is an answer contact, the page displays the project
 they registered for.
 
-    >>> anon_browser.open('http://answers.launchpad.dev/~name16')
+    >>> anon_browser.open('http://answers.launchpad.test/~name16')
     >>> anon_browser.getLink('Answer contact for').click()
     >>> print(anon_browser.title)
     Projects for which...
@@ -49,7 +49,7 @@ registration.
 
     >>> browser.addHeader('Authorization', 'Basic test@canonical.com:test')
     >>> browser.open(
-    ...     'http://answers.launchpad.dev/~name12')
+    ...     'http://answers.launchpad.test/~name12')
     >>> browser.getLink('Answer contact for').click()
     >>> print(browser.title)
     Projects for which...
@@ -68,7 +68,7 @@ The Remove yourself/team links only appears in their profile. They cannot
 see the link for other users.
 
     >>> browser.open(
-    ...     'http://answers.launchpad.dev/~name16')
+    ...     'http://answers.launchpad.test/~name16')
     >>> browser.getLink('Answer contact for').click()
     >>> print(browser.title)
     Projects for which...

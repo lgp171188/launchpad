@@ -18,7 +18,7 @@ This API is deprecated, and will eventually be replaced with an
 equivalent method in the new Launchpad API infrastructure.
 
     >>> public_codehosting_api = xmlrpclib.ServerProxy(
-    ...     'http://xmlrpc.launchpad.dev/bazaar/',
+    ...     'http://xmlrpc.launchpad.test/bazaar/',
     ...     transport=XMLRPCTestTransport())
 
 
@@ -38,8 +38,8 @@ accessed:
     ...     '~vcs-imports/evolution/main')
     >>> for url in results['urls']:
     ...     print(url)
-    bzr+ssh://bazaar.launchpad.dev/~vcs-imports/evolution/main
-    http://bazaar.launchpad.dev/~vcs-imports/evolution/main
+    bzr+ssh://bazaar.launchpad.test/~vcs-imports/evolution/main
+    http://bazaar.launchpad.test/~vcs-imports/evolution/main
 
 The URLs that are likely to be faster or provide write access appear
 earlier in the list.

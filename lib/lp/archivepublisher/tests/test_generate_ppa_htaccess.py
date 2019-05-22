@@ -547,7 +547,7 @@ class TestPPAHtaccessTokenGeneration(TestCaseWithFactory):
             "of the archive to verify it.\n\n"
             "You can contact the archive owner by visiting their Launchpad "
                 "page here:\n\n"
-            "<http://launchpad.dev/~joe>\n\n"
+            "<http://launchpad.test/~joe>\n\n"
             "If you have any concerns you can contact the Launchpad team by "
                 "emailing\n"
             "feedback@launchpad.net\n\n"

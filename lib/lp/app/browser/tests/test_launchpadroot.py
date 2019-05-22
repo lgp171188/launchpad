@@ -107,17 +107,17 @@ class TestLaunchpadRootNavigation(TestCaseWithFactory):
     def test_support(self):
         # The /support link redirects to answers.
         context, view, request = test_traverse(
-            'http://launchpad.dev/support')
+            'http://launchpad.test/support')
         view()
         self.assertEqual(301, request.response.getStatus())
         self.assertEqual(
-            'http://answers.launchpad.dev/launchpad',
+            'http://answers.launchpad.test/launchpad',
             request.response.getHeader('location'))
 
     def test_feedback(self):
         # The /feedback link redirects to the help site.
         context, view, request = test_traverse(
-            'http://launchpad.dev/feedback')
+            'http://launchpad.test/feedback')
         view()
         self.assertEqual(301, request.response.getStatus())
         self.assertEqual(

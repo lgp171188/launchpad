@@ -4,7 +4,7 @@ List of owned or driven projects
 A Team home page displays a list of projects owned or driven by that
 team.
 
-    >>> anon_browser.open('http://launchpad.dev/~ubuntu-team')
+    >>> anon_browser.open('http://launchpad.test/~ubuntu-team')
     >>> related_projects = find_tag_by_id(
     ...     anon_browser.contents, 'portlet-related-projects')
     >>> for tr in related_projects.findAll('tr'):
@@ -30,14 +30,14 @@ The +related-projects page displays a table with project names.
 
 A person's projects are accessible via a link on the 'Related packages' page.
 
-    >>> anon_browser.open('http://launchpad.dev/~mark')
+    >>> anon_browser.open('http://launchpad.test/~mark')
     >>> anon_browser.getLink('Related packages').click()
     >>> print anon_browser.url
-    http://launchpad.dev/~mark/+related-packages
+    http://launchpad.test/~mark/+related-packages
     >>> print anon_browser.title
     Related packages : Mark Shuttleworth
 
-    >>> anon_browser.open('http://launchpad.dev/~mark')
+    >>> anon_browser.open('http://launchpad.test/~mark')
     >>> anon_browser.getLink('Related projects').click()
     >>> related_projects = find_tag_by_id(
     ...     anon_browser.contents, 'related-projects')

@@ -32,7 +32,7 @@ truncated.
     ...         print(div_tag)
     >>> print_comments(browser.contents) #doctest: -ELLIPSIS
     <div class="boardCommentBody">
-    <a href="http://bugs.launchpad.dev/tomcat/+bug/2/comments/1/+download">Download
+    <a href="http://bugs.launchpad.test/tomcat/+bug/2/comments/1/+download">Download
     full text</a> (363 bytes)
     <div class="comment-text" itemprop="commentText"><p>This
     would be a real killer feature. If there...</p></div>
@@ -41,7 +41,7 @@ truncated.
     </p>
     </div>
     <div class="boardCommentBody">
-    <a href="http://bugs.launchpad.dev/tomcat/+bug/2/comments/2/+download">Download
+    <a href="http://bugs.launchpad.test/tomcat/+bug/2/comments/2/+download">Download
     full text</a> (364 bytes)
     <div class="comment-text" itemprop="commentText"><p>Oddly
     enough the bug system seems only capabl...</p></div>
@@ -54,7 +54,7 @@ Let's click on the first "Read more..." link.
 
     >>> browser.getLink("Read more...").click()
     >>> browser.url
-    'http://bugs.launchpad.dev/tomcat/+bug/2/comments/1'
+    'http://bugs.launchpad.test/tomcat/+bug/2/comments/1'
 
 The whole comment is visible on this page:
 
@@ -85,7 +85,7 @@ with an email address in it. Note: This set of tests is generally
 the same rules as xx-question-message.txt; changes here may require
 changes to that test.
 
-    >>> user_browser.open('http://bugs.launchpad.dev/tomcat/+bug/2')
+    >>> user_browser.open('http://bugs.launchpad.test/tomcat/+bug/2')
     >>> user_browser.title.decode('utf-8')
     u'Bug #2 (blackhole) ... : Bugs : Tomcat'
     >>> user_browser.getControl(name='field.comment').value = (
@@ -133,7 +133,7 @@ Unauthenticated users, such as a bot will see the obfuscated email
 address, '<email address hidden>'. The anonymous user is
 unauthenticated, so they will see the obfuscated email address.
 
-    >>> anon_browser.open('http://bugs.launchpad.dev/tomcat/+bug/2')
+    >>> anon_browser.open('http://bugs.launchpad.test/tomcat/+bug/2')
     >>> anon_browser.title.decode('utf-8')
     u'Bug #2 (blackhole) ... : Bugs : Tomcat'
     >>> text = find_tags_by_class(

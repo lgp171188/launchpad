@@ -22,7 +22,7 @@ schedul-o-matic.
 
 Let's start by viewing the list of sprints registered.
 
-    >>> user_browser.open('http://launchpad.dev/sprints')
+    >>> user_browser.open('http://launchpad.test/sprints')
     >>> user_browser.title
     'Meetings and sprints registered in Launchpad'
 
@@ -41,7 +41,7 @@ in the future, so there is a timebomb here for 2011 or so...
 
     >>> user_browser.getLink('Rome').click()
     >>> user_browser.url
-    'http://launchpad.dev/sprints/rome'
+    'http://launchpad.test/sprints/rome'
 
 Creating new sprints
 ====================
@@ -49,7 +49,7 @@ Creating new sprints
 We should also be able to create a new sprint. We do this off the
 Sprints +new page.
 
-    >>> user_browser.open('http://launchpad.dev/sprints')
+    >>> user_browser.open('http://launchpad.test/sprints')
     >>> user_browser.getLink('Register a meeting').click()
 
     >>> print user_browser.title
@@ -126,7 +126,7 @@ the new sprint.
     >>> user_browser.getControl('Add Sprint').click()
 
     >>> user_browser.url
-    'http://launchpad.dev/sprints/ltsponsteroids'
+    'http://launchpad.test/sprints/ltsponsteroids'
 
 Since the sprint's time zone was set to UTC, the dates are displayed in
 that time zone:
@@ -144,7 +144,7 @@ see a warning to that effect on the page.
 
 Add a new sprint with a different time zone is also handled correctly.
 
-    >>> user_browser.open('http://launchpad.dev/sprints/+new')
+    >>> user_browser.open('http://launchpad.test/sprints/+new')
     >>> user_browser.getControl('Name').value = 'africa-sprint'
     >>> user_browser.getControl('Title').value = 'Africa Sprint'
     >>> summary = 'This is a sprint summary. Some words about the sprint'
@@ -158,7 +158,7 @@ Add a new sprint with a different time zone is also handled correctly.
     >>> user_browser.getControl('Add Sprint').click()
 
     >>> user_browser.url
-    'http://launchpad.dev/sprints/africa-sprint'
+    'http://launchpad.test/sprints/africa-sprint'
 
     >>> print extract_text(find_tag_by_id(user_browser.contents, 'start-end'))
     Starts: 09:15 SAST on Monday, 2006-07-10
@@ -169,7 +169,7 @@ Add a new sprint with a different time zone is also handled correctly.
 We should be able to edit the details on a sprint but the menus are only
 available to those who have permissions to edit that sprint.
 
-    >>> anon_browser.open('http://launchpad.dev/sprints/ubz')
+    >>> anon_browser.open('http://launchpad.test/sprints/ubz')
     >>> print anon_browser.title
     Ubuntu Below Zero : Meetings
 
@@ -182,7 +182,7 @@ We will log in as Sample Person and edit the ubz sprint.
 
     >>> browser.addHeader('Authorization', 'Basic test@canonical.com:test')
 
-    >>> browser.open('http://launchpad.dev/sprints/ubz')
+    >>> browser.open('http://launchpad.test/sprints/ubz')
     >>> print browser.title
     Ubuntu Below Zero : Meetings
 
@@ -191,9 +191,9 @@ We will log in as Sample Person and edit the ubz sprint.
     False
     >>> browser.getLink('Change details').click()
     >>> browser.url
-    'http://launchpad.dev/sprints/ubz/+edit'
+    'http://launchpad.test/sprints/ubz/+edit'
     >>> browser.getLink('Cancel').url
-    'http://launchpad.dev/sprints/ubz'
+    'http://launchpad.test/sprints/ubz'
 
 The sprint start and end times are expressed to the nearest minute, and
 not the second:
@@ -229,7 +229,7 @@ sprint home page.
     >>> browser.getControl('Change').click()
 
     >>> browser.url
-    'http://launchpad.dev/sprints/ubz'
+    'http://launchpad.test/sprints/ubz'
 
 
 The address of the sprint is now visible.
@@ -245,11 +245,11 @@ The address of the sprint is now visible.
 If we just change the time zone on the edit form, the start and finish
 dates will be changed too, since they follow local time:
 
-    >>> browser.open('http://launchpad.dev/sprints/ubz/+edit')
+    >>> browser.open('http://launchpad.test/sprints/ubz/+edit')
     >>> browser.getControl('Timezone').value = ['Australia/Darwin']
     >>> browser.getControl('Change').click()
     >>> print browser.url
-    http://launchpad.dev/sprints/ubz
+    http://launchpad.test/sprints/ubz
 
     >>> print extract_text(find_tag_by_id(browser.contents, 'start-end'))
     Starts: 08:30 ACST on Tuesday, 2006-01-10
@@ -258,7 +258,7 @@ dates will be changed too, since they follow local time:
 
 We should be able to see the workload of a sprint:
 
-    >>> anon_browser.open('http://launchpad.dev/sprints/ubz/+assignments')
+    >>> anon_browser.open('http://launchpad.test/sprints/ubz/+assignments')
     >>> print anon_browser.title
     Assignments : Blueprints : Ubuntu Below Zero : Meetings
 
@@ -279,7 +279,7 @@ And we should be able to see the workload page of a sprint even when there's
 no spec assigned to people.
 
     >>> anon_browser.open(
-    ...     'http://launchpad.dev/sprints/ltsponsteroids/+assignments')
+    ...     'http://launchpad.test/sprints/ltsponsteroids/+assignments')
     >>> notice = find_tag_by_id(anon_browser.contents, 'no-blueprints')
     >>> print extract_text(notice)
     There are no open blueprints.
@@ -292,11 +292,11 @@ It should be possible to register yourself to attend the sprint:
 
     >>> browser.addHeader('Authorization', 'Basic test@canonical.com:test')
 
-    >>> browser.open('http://launchpad.dev/sprints/ubz')
+    >>> browser.open('http://launchpad.test/sprints/ubz')
 
     >>> browser.getLink('Register yourself').click()
     >>> browser.url
-    'http://launchpad.dev/sprints/ubz/+attend'
+    'http://launchpad.test/sprints/ubz/+attend'
 
     >>> print browser.title
     Register your attendance : Ubuntu Below Zero : Meetings
@@ -327,7 +327,7 @@ date up to one day after the sprint ends.
     >>> browser.getControl('Register').click()
 
     >>> print browser.url
-    http://launchpad.dev/sprints/ubz/+attend
+    http://launchpad.test/sprints/ubz/+attend
 
     >>> for tag in find_tags_by_class(browser.contents, 'message'):
     ...     print tag.renderContents()
@@ -341,7 +341,7 @@ An attendance that starts after the end of the sprint is also an error:
     >>> browser.getControl('Register').click()
 
     >>> print browser.url
-    http://launchpad.dev/sprints/ubz/+attend
+    http://launchpad.test/sprints/ubz/+attend
 
     >>> for tag in find_tags_by_class(browser.contents, 'message'):
     ...     print tag.renderContents()
@@ -357,7 +357,7 @@ error:
     >>> browser.getControl('Register').click()
 
     >>> print browser.url
-    http://launchpad.dev/sprints/ubz/+attend
+    http://launchpad.test/sprints/ubz/+attend
 
     >>> for tag in find_tags_by_class(browser.contents, 'message'):
     ...     print tag.renderContents()
@@ -373,7 +373,7 @@ the date range overlaps that of the sprint.
     >>> browser.getControl('To').value = '2006-02-12 20:11:00'
     >>> browser.getControl('Register').click()
     >>> browser.url
-    'http://launchpad.dev/sprints/ubz'
+    'http://launchpad.test/sprints/ubz'
 
 Now, Sample Person should be listed as an attendee.
 
@@ -398,10 +398,10 @@ dates are prefilled (they have been clamped to the sprint duration):
 
 Also, it is possible to register someone else. Let's register Carlos.
 
-    >>> browser.open('http://launchpad.dev/sprints/ubz')
+    >>> browser.open('http://launchpad.test/sprints/ubz')
     >>> browser.getLink('Register someone else').click()
     >>> browser.url
-    'http://launchpad.dev/sprints/ubz/+register'
+    'http://launchpad.test/sprints/ubz/+register'
 
 By default, the form is pre-filled with attendance times that match the
 start and end of the conference.
@@ -424,13 +424,13 @@ and specify that they are registering Carlos.
     >>> browser.getControl('Register').click()
 
     >>> browser.url
-    'http://launchpad.dev/sprints/ubz'
+    'http://launchpad.test/sprints/ubz'
 
 Sample Person registers Salgado as well.
 
     >>> browser.getLink('Register someone else').click()
     >>> browser.url
-    'http://launchpad.dev/sprints/ubz/+register'
+    'http://launchpad.test/sprints/ubz/+register'
 
     >>> browser.getControl('Attendee').value = (
     ...     'guilherme.salgado@canonical.com')
@@ -472,12 +472,12 @@ First, we add a couple of IRC nicknames for Carlos.
     text/csv
 
     >>> carlos_browser = setupBrowser(auth='Basic carlos@canonical.com:test')
-    >>> carlos_browser.open('http://launchpad.dev/sprints/ubz')
+    >>> carlos_browser.open('http://launchpad.test/sprints/ubz')
     >>> carlos_browser.getLink('Export attendees to CSV').click()
     >>> print carlos_browser.headers['content-type']
     text/csv
 
-    >>> admin_browser.open('http://launchpad.dev/sprints/ubz')
+    >>> admin_browser.open('http://launchpad.test/sprints/ubz')
     >>> admin_browser.getLink('Export attendees to CSV').click()
     >>> print admin_browser.headers['content-type']
     text/csv
@@ -493,13 +493,13 @@ The resulting CSV file lists physical attendance correctly.
 
 Unregistered and anonymous users cannot access the CSV report.
 
-    >>> user_browser.open('http://launchpad.dev/sprints/ubz')
+    >>> user_browser.open('http://launchpad.test/sprints/ubz')
     >>> user_browser.getLink('Export attendees to CSV').click()
     Traceback (most recent call last):
     ...
     LinkNotFoundError
 
-    >>> anon_browser.open('http://launchpad.dev/sprints/ubz/+attendees-csv')
+    >>> anon_browser.open('http://launchpad.test/sprints/ubz/+attendees-csv')
     Traceback (most recent call last):
     ...
     Unauthorized:...
@@ -508,7 +508,7 @@ Registering somebody for a remote-only sprint doesn't offer the choice of
 physical or remote attendance, and the CSV report always reports such people
 as attending remotely.
 
-    >>> browser.open('http://launchpad.dev/sprints/ltsponsteroids')
+    >>> browser.open('http://launchpad.test/sprints/ltsponsteroids')
     >>> browser.getLink('Register yourself').click()
     >>> browser.getControl(name='field.is_physical')
     Traceback (most recent call last):

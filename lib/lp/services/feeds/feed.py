@@ -145,8 +145,8 @@ class FeedBase(LaunchpadView):
     @property
     def feed_format(self):
         """See `IFeed`."""
-        # If the full URL is http://feeds.launchpad.dev/announcements.atom/foo
-        # getURL() will return http://feeds.launchpad.dev/announcements.atom
+        # If the full URL is http://feeds.launchpad.test/announcements.atom/foo
+        # getURL() will return http://feeds.launchpad.test/announcements.atom
         # when traversing the feed, which will allow os.path.splitext()
         # to split off ".atom" correctly.
         path = self.request.getURL()

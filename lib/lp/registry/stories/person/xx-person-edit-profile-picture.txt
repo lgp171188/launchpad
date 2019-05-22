@@ -7,12 +7,12 @@ Note that we have chosen not to expose the ability to customise a user's icon
 or logo.
 
     >>> browser = setupBrowser(auth='Basic mark@example.com:test')
-    >>> browser.open('http://launchpad.dev/~mark')
+    >>> browser.open('http://launchpad.test/~mark')
     >>> browser.url
-    'http://launchpad.dev/~mark'
+    'http://launchpad.test/~mark'
     >>> browser.getLink('Change details').click()
     >>> browser.url
-    'http://launchpad.dev/~mark/+edit'
+    'http://launchpad.test/~mark/+edit'
 
     >>> find_tag_by_id(
     ...     browser.contents, 'field.mugshot_current_img').get('src')
@@ -26,10 +26,10 @@ or logo.
 Here we see the updated values.
 
     >>> browser.url
-    'http://launchpad.dev/~mark'
+    'http://launchpad.test/~mark'
     >>> browser.getLink('Change details').click()
     >>> browser.url
-    'http://launchpad.dev/~mark/+edit'
+    'http://launchpad.test/~mark/+edit'
 
     >>> browser.getControl(name='field.mugshot.action').value
     ['keep']

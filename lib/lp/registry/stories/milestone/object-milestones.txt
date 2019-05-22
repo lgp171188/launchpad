@@ -42,9 +42,9 @@ projects have a page in which all of their milestones are listed.
 Distributions
 .............
 
-    >>> anon_browser.open('http://launchpad.dev/debian/+milestones')
+    >>> anon_browser.open('http://launchpad.test/debian/+milestones')
     >>> anon_browser.url
-    'http://launchpad.dev/debian/+milestones'
+    'http://launchpad.test/debian/+milestones'
 
     >>> print all_milestones(anon_browser)
     Debian 3.1      Woody ...
@@ -54,12 +54,12 @@ Distributions
 Distribution Series
 ...................
 
-    >>> anon_browser.open('http://launchpad.dev/debian/woody/+milestones')
+    >>> anon_browser.open('http://launchpad.test/debian/woody/+milestones')
     >>> print all_milestones(anon_browser)
     Debian 3.1      ...
     Debian 3.1-rc1  ...
 
-    >>> anon_browser.open('http://launchpad.dev/debian/sarge/+milestones')
+    >>> anon_browser.open('http://launchpad.test/debian/sarge/+milestones')
     >>> print all_milestones(anon_browser)
     None
 
@@ -71,9 +71,9 @@ The Product "All milestones" page lists the milestones for all series,
 including the inactive ones. They do not include the bug and blueprint
 counts (because they are costly to retrieve).
 
-    >>> anon_browser.open('http://launchpad.dev/firefox/+milestones')
+    >>> anon_browser.open('http://launchpad.test/firefox/+milestones')
     >>> anon_browser.url
-    'http://launchpad.dev/firefox/+milestones'
+    'http://launchpad.test/firefox/+milestones'
 
     >>> print all_milestones(anon_browser)
     Mozilla Firefox 1.0.0 "First Stable Release"    1.0    None        ...
@@ -95,14 +95,14 @@ link to the project groups's milestone's page.
 Product Series
 ..............
 
-    >>> anon_browser.open('http://launchpad.dev/firefox/trunk/+milestones')
+    >>> anon_browser.open('http://launchpad.test/firefox/trunk/+milestones')
     >>> print all_milestones(anon_browser)
     Mozilla Firefox 0.9.2  ...
     Mozilla Firefox 0.9.1  ...
     Mozilla Firefox 0.9    ...
     Mozilla Firefox 1.0    ...
 
-    >>> anon_browser.open('http://launchpad.dev/firefox/1.0/+milestones')
+    >>> anon_browser.open('http://launchpad.test/firefox/1.0/+milestones')
     >>> print all_milestones(anon_browser)
     Mozilla Firefox 1.0.0 ...
 
@@ -121,7 +121,7 @@ the bug and blueprint counts (because they are costly to retrieve).
     >>> test_helper = ProjectMilestoneTest(helper_only=True)
     >>> test_helper.setUpProjectMilestoneTests()
     >>> logout()
-    >>> anon_browser.open('http://launchpad.dev/gnome')
+    >>> anon_browser.open('http://launchpad.test/gnome')
     >>> anon_browser.getLink('See all milestones').click()
     >>> print all_milestones(anon_browser)
     GNOME 2.1.6  None        This is an inactive milestone
@@ -157,37 +157,37 @@ associated with that milestone for products of this project:
 
 A project milestone page has the same navigation as the project:
 
-    >>> anon_browser.open('http://launchpad.dev/firefox/+milestone/1.0')
+    >>> anon_browser.open('http://launchpad.test/firefox/+milestone/1.0')
     >>> print anon_browser.title
     1.0 : Mozilla Firefox
 
     >>> print_location(anon_browser.contents)
     Hierarchy: Mozilla Firefox
     Tabs:
-    * Overview (selected) - http://launchpad.dev/firefox
-    * Code - http://code.launchpad.dev/firefox
-    * Bugs - http://bugs.launchpad.dev/firefox
-    * Blueprints - http://blueprints.launchpad.dev/firefox
-    * Translations - http://translations.launchpad.dev/firefox
-    * Answers - http://answers.launchpad.dev/firefox
+    * Overview (selected) - http://launchpad.test/firefox
+    * Code - http://code.launchpad.test/firefox
+    * Bugs - http://bugs.launchpad.test/firefox
+    * Blueprints - http://blueprints.launchpad.test/firefox
+    * Translations - http://translations.launchpad.test/firefox
+    * Answers - http://answers.launchpad.test/firefox
     Main heading: Mozilla Firefox 1.0
 
 Similarly, a distribution milestone page has the same navigation as the
 distribution:
 
-    >>> anon_browser.open('http://launchpad.dev/debian/+milestone/3.1')
+    >>> anon_browser.open('http://launchpad.test/debian/+milestone/3.1')
     >>> print anon_browser.title
     3.1 : Debian
 
     >>> print_location(anon_browser.contents)
     Hierarchy: Debian
     Tabs:
-    * Overview (selected) - http://launchpad.dev/debian
-    * Code - http://code.launchpad.dev/debian
-    * Bugs - http://bugs.launchpad.dev/debian
-    * Blueprints - http://blueprints.launchpad.dev/debian
-    * Translations - http://translations.launchpad.dev/debian
-    * Answers - http://answers.launchpad.dev/debian
+    * Overview (selected) - http://launchpad.test/debian
+    * Code - http://code.launchpad.test/debian
+    * Bugs - http://bugs.launchpad.test/debian
+    * Blueprints - http://blueprints.launchpad.test/debian
+    * Translations - http://translations.launchpad.test/debian
+    * Answers - http://answers.launchpad.test/debian
     Main heading: Debian 3.1
 
 
@@ -198,7 +198,7 @@ Bugs targeted to multiple series
 Setup this embarrasing story.
 
     >>> browser = setupBrowser(auth='Basic test@canonical.com:test')
-    >>> browser.open('http://bugs.launchpad.dev/firefox/')
+    >>> browser.open('http://bugs.launchpad.test/firefox/')
     >>> browser.getLink('Report a bug').click()
     >>> browser.getControl('Summary', index=0).value = 'Test Bug 1'
     >>> browser.getControl('Continue').click()
@@ -249,7 +249,7 @@ series target).
 To demonstrate this, we'll begin by creating a new series "2.0" for the
 Mozilla Firefox product, to complement the existing series "1.0":
 
-    >>> browser.open('http://launchpad.dev/firefox')
+    >>> browser.open('http://launchpad.test/firefox')
     >>> browser.getLink('Register a series').click()
     >>> print browser.title
     Register a new Mozilla Firefox release series...
@@ -262,7 +262,7 @@ Mozilla Firefox product, to complement the existing series "1.0":
 
 We'll also create a new test milestone within the "trunk" series:
 
-    >>> browser.open('http://launchpad.dev/firefox/trunk')
+    >>> browser.open('http://launchpad.test/firefox/trunk')
     >>> print browser.title
     Series trunk : Mozilla Firefox
 
@@ -277,7 +277,7 @@ We'll also create a new test milestone within the "trunk" series:
     >>> print browser.title
     Series trunk : Mozilla Firefox
 
-    >>> browser.open('http://launchpad.dev/firefox/trunk')
+    >>> browser.open('http://launchpad.test/firefox/trunk')
 
     >>> print extract_text(find_tag_by_id(browser.contents, 'series-trunk'))
     Version                         Expected    Released              Summary
@@ -393,7 +393,7 @@ bug still appears in the milestone's bug listing:
     >>> browser.open(bug_2_url)
     >>> browser.getLink('Target to series').click()
     >>> print browser.url
-    http://bugs.launchpad.dev/firefox/+bug/.../+nominate
+    http://bugs.launchpad.test/firefox/+bug/.../+nominate
 
     >>> browser.getControl('Trunk').selected = True
     >>> browser.getControl('Target').click()

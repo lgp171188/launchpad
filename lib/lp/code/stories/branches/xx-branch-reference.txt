@@ -17,7 +17,7 @@ before finding the real branch location.
 
 The first request made is to find the bzrdir format:
 
-  >>> branchurl = ('http://launchpad.dev/~name12/+branch/'
+  >>> branchurl = ('http://launchpad.test/~name12/+branch/'
   ...              'gnome-terminal/main')
   >>> anon_browser.open(branchurl + '/.bzr/branch-format')
   >>> anon_browser.contents
@@ -36,7 +36,7 @@ the branch:
 
   >>> anon_browser.open(branchurl + '/.bzr/branch/location')
   >>> anon_browser.contents
-  'http://bazaar.launchpad.dev/~name12/gnome-terminal/main'
+  'http://bazaar.launchpad.test/~name12/gnome-terminal/main'
 
 
 Product Series Branch
@@ -45,16 +45,16 @@ Product Series Branch
 A branch can be nominated as representing a product series.  A branch
 reference is provided for product series too:
 
-  >>> anon_browser.open('http://launchpad.dev/'
+  >>> anon_browser.open('http://launchpad.test/'
   ...                   'evolution/trunk/.bzr/branch/location')
   >>> anon_browser.contents
-  'http://bazaar.launchpad.dev/~vcs-imports/evolution/main'
+  'http://bazaar.launchpad.test/~vcs-imports/evolution/main'
 
 
 However, if a product series has no branch associated with it, we get
 a 404 error:
 
-  >>> anon_browser.open('http://launchpad.dev/'
+  >>> anon_browser.open('http://launchpad.test/'
   ...                   'firefox/1.0/.bzr/branch/location')
   Traceback (most recent call last):
     ...
@@ -68,16 +68,16 @@ Each product has a series set as the development focus.  A branch
 reference is provided for a product, providing the branch for the
 development focus:
 
-  >>> anon_browser.open('http://launchpad.dev/'
+  >>> anon_browser.open('http://launchpad.test/'
   ...                   'evolution/.bzr/branch/location')
   >>> anon_browser.contents
-  'http://bazaar.launchpad.dev/~vcs-imports/evolution/main'
+  'http://bazaar.launchpad.test/~vcs-imports/evolution/main'
 
 
 However, if the development focus of a product has no branch
 associated with it, we get a 404 error:
 
-  >>> anon_browser.open('http://launchpad.dev/'
+  >>> anon_browser.open('http://launchpad.test/'
   ...                   'firefox/.bzr/branch/location')
   Traceback (most recent call last):
     ...

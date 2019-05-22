@@ -313,7 +313,7 @@ class TestBugCommentImplementsInterface(TestCaseWithFactory):
         bug_message = self.factory.makeBugComment()
         bugtask = bug_message.bugs[0].default_bugtask
         product = removeSecurityProxy(bugtask).target
-        url = 'http://bugs.launchpad.dev/%s/+bug/%s/comments/%s' % (
+        url = 'http://bugs.launchpad.test/%s/+bug/%s/comments/%s' % (
            product.name, bugtask.bug.id, 1)
         self.assertEqual(url, canonical_url(bug_message))
 

@@ -39,7 +39,7 @@ If you are not logged in, you don't see the link to make an
 announcement, neither on the pillar page nor on the announcements
 page.
 
-    >>> anon_browser.open('http://launchpad.dev/firefox')
+    >>> anon_browser.open('http://launchpad.test/firefox')
     >>> anon_browser.getLink('Make announcement')
     Traceback (most recent call last):
     ...
@@ -51,7 +51,7 @@ page.
     ...
     LinkNotFoundError
 
-    >>> anon_browser.open('http://launchpad.dev/ubuntu')
+    >>> anon_browser.open('http://launchpad.test/ubuntu')
     >>> anon_browser.getLink('Make announcement')
     Traceback (most recent call last):
     ...
@@ -68,7 +68,7 @@ Logged in users can only see it if they have launchpad.Edit on the
 pillar.
 
     >>> nopriv_browser = setupBrowser(auth="Basic no-priv@canonical.com:test")
-    >>> nopriv_browser.open('http://launchpad.dev/firefox')
+    >>> nopriv_browser.open('http://launchpad.test/firefox')
     >>> nopriv_browser.getLink('Make announcement')
     Traceback (most recent call last):
     ...
@@ -81,7 +81,7 @@ pillar.
     LinkNotFoundError
 
     >>> priv_browser = setupBrowser(auth="Basic mark@example.com:test")
-    >>> priv_browser.open('http://launchpad.dev/ubuntu')
+    >>> priv_browser.open('http://launchpad.test/ubuntu')
     >>> link = priv_browser.getLink('Make announcement')
     >>> print link.text
     Make announcement
@@ -91,7 +91,7 @@ pillar.
     >>> print link.text
     Make announcement
 
-    >>> priv_browser.open('http://launchpad.dev/firefox')
+    >>> priv_browser.open('http://launchpad.test/firefox')
     >>> link = priv_browser.getLink('Make announcement')
     >>> print link.text
     Make announcement
@@ -105,7 +105,7 @@ pillar.
 Following the action link takes you to a form where you can make the
 announcement:
 
-    >>> priv_browser.open('http://launchpad.dev/apache')
+    >>> priv_browser.open('http://launchpad.test/apache')
     >>> priv_browser.getLink('Make announcement').click()
     >>> priv_browser.getControl('Headline').value = (
     ...     'Apache announcement headline')
@@ -119,7 +119,7 @@ Making the announcement takes the user back to the main page for the
 project.
 
     >>> print priv_browser.url
-    http://launchpad.dev/apache
+    http://launchpad.test/apache
     >>> print priv_browser.title
     Apache in Launchpad
 
@@ -127,7 +127,7 @@ We'll repeat the process for Tomcat, an IProduct that is part of the
 Apache project, but this time we won't specify a URL, and we will
 specify a date the announcement was made:
 
-    >>> priv_browser.open('http://launchpad.dev/tomcat')
+    >>> priv_browser.open('http://launchpad.test/tomcat')
 
 Because Tomcat is part of the Apache group, it picks up on the Apache
 announcement so there is a "Latest news" portlet. Let's render the
@@ -170,13 +170,13 @@ And check out the results:
 Let's make sure that the announcement is presented as a link.
 
     >>> print priv_browser.getLink('Tomcat announcement headline').url
-    http://launchpad.dev/tomcat/+announcement/...
+    http://launchpad.test/tomcat/+announcement/...
 
 We'll repeat the process for Derby, an IProduct that is part of the
 Apache project, but this time we won't specify a URL, and we'll make the
 announcement immediately:
 
-    >>> priv_browser.open('http://launchpad.dev/derby')
+    >>> priv_browser.open('http://launchpad.test/derby')
     >>> 'Derby announcement' in latest_news(priv_browser.contents)
     False
     >>> priv_browser.getLink('Make announcement').click()
@@ -194,7 +194,7 @@ We'll repeat the process for Jokosher, an IProduct that is not part of
 any project, but this time we won't specify a URL, and we will specify a
 date in the future when the announcement will be made:
 
-    >>> priv_browser.open('http://launchpad.dev/jokosher')
+    >>> priv_browser.open('http://launchpad.test/jokosher')
     >>> priv_browser.getLink('Make announcement').click()
     >>> priv_browser.getControl('Headline').value = (
     ...     'Jokosher announcement headline')
@@ -213,7 +213,7 @@ date in the future when the announcement will be made:
 And again for Kubuntu, an IDistribution, but this time we won't specify
 a date for the announcement at all:
 
-    >>> priv_browser.open('http://launchpad.dev/kubuntu')
+    >>> priv_browser.open('http://launchpad.test/kubuntu')
     >>> priv_browser.getLink('Make announcement').click()
     >>> priv_browser.getControl('Headline').value = (
     ...     'Kubuntu announcement headline')
@@ -228,7 +228,7 @@ a date for the announcement at all:
 
 And finally for RedHat, an IDistribution, with immediate announcement:
 
-    >>> priv_browser.open('http://launchpad.dev/redhat')
+    >>> priv_browser.open('http://launchpad.test/redhat')
     >>> priv_browser.getLink('Make announcement').click()
     >>> priv_browser.getControl('Headline').value = (
     ...     'RedHat announcement headline')
@@ -251,7 +251,7 @@ We will use the privileged user to get the link URL to the page that
 shows the Kubuntu announcement, then try to open the page with the
 anon_browser.
 
-    >>> priv_browser.open('http://launchpad.dev/kubuntu/+announcements')
+    >>> priv_browser.open('http://launchpad.test/kubuntu/+announcements')
     >>> priv_browser.getLink('Kubuntu announcement headline').click()
     >>> link_url = priv_browser.url
     >>> anon_browser.open(link_url)
@@ -262,7 +262,7 @@ anon_browser.
 We will show that the anonymous user can see an announcement that was
 published:
 
-    >>> anon_browser.open('http://launchpad.dev/apache/+announcements')
+    >>> anon_browser.open('http://launchpad.test/apache/+announcements')
     >>> anon_browser.getLink('Derby announcement headline').click()
     >>> print anon_browser.title
     Derby announcement headline : Derby
@@ -291,38 +291,38 @@ as expected.
 
 When there are no announcements for a product, there is no link.
 
-    >>> anon_browser.open('http://launchpad.dev/netapplet')
+    >>> anon_browser.open('http://launchpad.test/netapplet')
     >>> count_show_links(anon_browser.contents)
     0
 
 When there are no announcements for a project, we should not see
 any links to show announcements.
 
-    >>> anon_browser.open('http://launchpad.dev/gnome')
+    >>> anon_browser.open('http://launchpad.test/gnome')
     >>> count_show_links(anon_browser.contents)
     0
 
 Distribution pages may have the link in the annoucements portlet,
 
-    >>> anon_browser.open('http://launchpad.dev/ubuntu')
+    >>> anon_browser.open('http://launchpad.test/ubuntu')
     >>> count_show_links(anon_browser.contents)
     1
 
 But we do see it when there are published announcements.
 
-    >>> anon_browser.open('http://launchpad.dev/apache')
+    >>> anon_browser.open('http://launchpad.test/apache')
     >>> count_show_links(anon_browser.contents)
     1
-    >>> anon_browser.open('http://launchpad.dev/tomcat')
+    >>> anon_browser.open('http://launchpad.test/tomcat')
     >>> count_show_links(anon_browser.contents)
     1
-    >>> anon_browser.open('http://launchpad.dev/redhat')
+    >>> anon_browser.open('http://launchpad.test/redhat')
     >>> count_show_links(anon_browser.contents)
     1
 
 Let's make sure the page is useful when there are no announcements!
 
-    >>> anon_browser.open('http://launchpad.dev/netapplet/+announcements')
+    >>> anon_browser.open('http://launchpad.test/netapplet/+announcements')
     >>> no_announcements(anon_browser.contents)
     True
 
@@ -332,7 +332,7 @@ First, lets take a look at Kubuntu. The announcement we made there was
 to be published "some time in the future" so it should not be visible to
 a user who is not logged in:
 
-    >>> anon_browser.open('http://launchpad.dev/kubuntu/+announcements')
+    >>> anon_browser.open('http://launchpad.test/kubuntu/+announcements')
     >>> no_announcements(anon_browser.contents)
     True
     >>> 'Kubuntu announcement' in announcements(anon_browser.contents)
@@ -341,7 +341,7 @@ a user who is not logged in:
 Nor should it be visible to a user who has nothing to do with the
 project so does not have any permissions there:
 
-    >>> nopriv_browser.open('http://launchpad.dev/kubuntu/+announcements')
+    >>> nopriv_browser.open('http://launchpad.test/kubuntu/+announcements')
     >>> no_announcements(nopriv_browser.contents)
     True
     >>> 'Kubuntu announcement' in announcements(nopriv_browser.contents)
@@ -350,7 +350,7 @@ project so does not have any permissions there:
 However, if we are an admin of the project, then we should see the
 announcement, ready to be edited or published:
 
-    >>> priv_browser.open('http://launchpad.dev/kubuntu/+announcements')
+    >>> priv_browser.open('http://launchpad.test/kubuntu/+announcements')
     >>> no_announcements(priv_browser.contents)
     False
     >>> 'Kubuntu announcement' in announcements(priv_browser.contents)
@@ -369,7 +369,7 @@ We can publish this announcement immediately.
     >>> print priv_browser.title
     Publish announcement : Kubuntu announcement headline : Kubuntu
     >>> print priv_browser.url
-    http://launchpad.dev/kubuntu/+announceme.../+publish
+    http://launchpad.test/kubuntu/+announceme.../+publish
     >>> radio = priv_browser.getControl(name="field.publication_date.action")
     >>> radio.value = ['immediately']
     >>> priv_browser.getControl('Publish').click()
@@ -382,7 +382,7 @@ Doing so takes us back to the list of announcements.
 And since the announcement has been made, the everybody can now see
 it too:
 
-    >>> anon_browser.open('http://launchpad.dev/kubuntu/+announcements')
+    >>> anon_browser.open('http://launchpad.test/kubuntu/+announcements')
     >>> no_announcements(anon_browser.contents)
     False
     >>> 'Kubuntu announcement' in announcements(anon_browser.contents)
@@ -396,7 +396,7 @@ future.
 
 Anonymous users should not see it.
 
-    >>> anon_browser.open('http://launchpad.dev/jokosher/+announcements')
+    >>> anon_browser.open('http://launchpad.test/jokosher/+announcements')
     >>> no_announcements(anon_browser.contents)
     True
     >>> 'Jokosher announcement' in announcements(anon_browser.contents)
@@ -404,7 +404,7 @@ Anonymous users should not see it.
 
 However, we should see it if we have admin permissions for Jokosher:
 
-    >>> priv_browser.open('http://launchpad.dev/jokosher/+announcements')
+    >>> priv_browser.open('http://launchpad.test/jokosher/+announcements')
     >>> no_announcements(priv_browser.contents)
     False
     >>> 'Jokosher announcement' in announcements(priv_browser.contents)
@@ -422,7 +422,7 @@ Since a project publishes all the news for itself and for each of the
 projects that are part of it, all three should be visible to the public
 on Apache's announcements page:
 
-    >>> anon_browser.open('http://launchpad.dev/apache/+announcements')
+    >>> anon_browser.open('http://launchpad.test/apache/+announcements')
     >>> no_announcements(anon_browser.contents)
     False
     >>> 'Apache announcement' in announcements(anon_browser.contents)
@@ -436,7 +436,7 @@ Let's take a look at the Tomcat page. We should see the Tomcat
 announcement, and the Apache (group) announcement, but not the Derby
 announcement:
 
-    >>> anon_browser.open('http://launchpad.dev/tomcat/+announcements')
+    >>> anon_browser.open('http://launchpad.test/tomcat/+announcements')
     >>> no_announcements(anon_browser.contents)
     False
     >>> 'Apache announcement' in announcements(anon_browser.contents)
@@ -449,7 +449,7 @@ announcement:
 Finally, there is a page for all announcements across all projects
 hosted in Launchpad:
 
-    >>> anon_browser.open('http://launchpad.dev/+announcements')
+    >>> anon_browser.open('http://launchpad.test/+announcements')
     >>> 'Announcements from all projects' in anon_browser.title
     True
     >>> 'Kubuntu announcement' in announcements(anon_browser.contents)
@@ -485,7 +485,7 @@ Editing announcements
 The announcement listing page does not have editing links.  They are
 available on the individual announcement pages.
 
-    >>> priv_browser.open('http://launchpad.dev/tomcat/+announcements')
+    >>> priv_browser.open('http://launchpad.test/tomcat/+announcements')
     >>> print priv_browser.getLink('Read more').url
     http://apache.org/announcement/rocking/
     >>> priv_browser.getLink('Apache announcement headline').click()
@@ -508,7 +508,7 @@ available on the individual announcement pages.
     >>> priv_browser.getControl('Modify').click()
     >>> print priv_browser.title
     News and announcements...
-    >>> priv_browser.open('http://launchpad.dev/tomcat/+announcements')
+    >>> priv_browser.open('http://launchpad.test/tomcat/+announcements')
     >>> 'Modified headline' in announcements(priv_browser.contents)
     True
     >>> 'Modified summary' in announcements(priv_browser.contents)
@@ -522,7 +522,7 @@ Retractions
 
 You can retract an announcement which was previously announced.
 
-    >>> priv_browser.open('http://launchpad.dev/kubuntu/+announcements')
+    >>> priv_browser.open('http://launchpad.test/kubuntu/+announcements')
     >>> 'Kubuntu announcement ' in announcements(priv_browser.contents)
     True
     >>> 'Retracted' in announcements(priv_browser.contents)
@@ -546,7 +546,7 @@ is shown as having been retracted if you are a privileged user.
 
 But anonymous users cannot see retracted items:
 
-    >>> anon_browser.open('http://launchpad.dev/kubuntu/+announcements')
+    >>> anon_browser.open('http://launchpad.test/kubuntu/+announcements')
     >>> no_announcements(anon_browser.contents)
     True
     >>> 'Kubuntu announcement' in announcements(anon_browser.contents)
@@ -554,7 +554,7 @@ But anonymous users cannot see retracted items:
 
 And it has disappeared from the global listing too.
 
-    >>> anon_browser.open('http://launchpad.dev/+announcements')
+    >>> anon_browser.open('http://launchpad.test/+announcements')
     >>> 'Kubuntu announcement' in announcements(anon_browser.contents)
     False
 
@@ -574,7 +574,7 @@ Once something has been retracted, it can be published again.
 
 And once again it is visible to unprivileged users:
 
-    >>> anon_browser.open('http://launchpad.dev/kubuntu/+announcements')
+    >>> anon_browser.open('http://launchpad.test/kubuntu/+announcements')
     >>> no_announcements(anon_browser.contents)
     False
     >>> 'Kubuntu announcement' in announcements(anon_browser.contents)
@@ -588,7 +588,7 @@ If an announcement has been made in one project, and it really belongs
 in another, then someone who is an administrator in both places can move
 it.
 
-    >>> priv_browser.open('http://launchpad.dev/kubuntu/+announcements')
+    >>> priv_browser.open('http://launchpad.test/kubuntu/+announcements')
     >>> priv_browser.getLink('Kubuntu announcement headline').click()
     >>> priv_browser.getLink('Move announcement').click()
     >>> print priv_browser.title
@@ -605,7 +605,7 @@ not be able to move it.
 
     >>> kamion_browser = \
     ...     setupBrowser(auth="Basic colin.watson@ubuntulinux.com:test")
-    >>> kamion_browser.open('http://launchpad.dev/guadalinex/+announcements')
+    >>> kamion_browser.open('http://launchpad.test/guadalinex/+announcements')
     >>> kamion_browser.getLink('Kubuntu announcement headline').click()
     >>> kamion_browser.getLink('Move announcement').click()
     >>> print kamion_browser.title
@@ -628,7 +628,7 @@ IDistribution.
 The feeds are published even when there are no announcements.
 
     >>> nopriv_browser.open(
-    ...     'http://feeds.launchpad.dev/netapplet/announcements.atom')
+    ...     'http://feeds.launchpad.test/netapplet/announcements.atom')
     >>> validate_feed(nopriv_browser.contents,
     ...              nopriv_browser.headers['content-type'],
     ...              nopriv_browser.url)
@@ -636,14 +636,14 @@ The feeds are published even when there are no announcements.
     >>> 'NetApplet Announcements' in nopriv_browser.contents
     True
 
-The "self" link should point to the original URL, in the feeds.launchpad.dev
+The "self" link should point to the original URL, in the feeds.launchpad.test
 domain.
 
     >>> strainer = SoupStrainer('link', rel='self')
     >>> links = parse_links(nopriv_browser.contents, rel='self')
     >>> for link in links:
     ...     print link
-    <link rel="self" href="http://feeds.launchpad.dev/netapplet/announcements.atom" />
+    <link rel="self" href="http://feeds.launchpad.test/netapplet/announcements.atom" />
 
     >>> for id_ in parse_ids(nopriv_browser.contents):
     ...     print extract_text(id_)
@@ -653,7 +653,7 @@ The feeds include only published announcements. The Jokosher
 announcement, which is due in the future, does not show up:
 
     >>> nopriv_browser.open(
-    ...     'http://feeds.launchpad.dev/jokosher/announcements.atom')
+    ...     'http://feeds.launchpad.test/jokosher/announcements.atom')
     >>> validate_feed(nopriv_browser.contents,
     ...              nopriv_browser.headers['content-type'],
     ...              nopriv_browser.url)
@@ -664,7 +664,7 @@ announcement, which is due in the future, does not show up:
 Retracted items do not show up either.
 
     >>> nopriv_browser.open(
-    ...     'http://feeds.launchpad.dev/guadalinex/announcements.atom')
+    ...     'http://feeds.launchpad.test/guadalinex/announcements.atom')
     >>> validate_feed(nopriv_browser.contents,
     ...              nopriv_browser.headers['content-type'],
     ...              nopriv_browser.url)
@@ -676,7 +676,7 @@ Retracted items do not show up either.
     tag:launchpad.net,2006-10-16:/guadalinex/+announcements
     tag:launchpad.net,...:/+announcement/...
 
-    >>> priv_browser.open('http://launchpad.dev/guadalinex/+announcements')
+    >>> priv_browser.open('http://launchpad.test/guadalinex/+announcements')
     >>> "Kubuntu announcement headline" in (
     ...     announcements(priv_browser.contents))
     True
@@ -694,7 +694,7 @@ And once again, project feeds include news from their constituent
 products.
 
     >>> nopriv_browser.open(
-    ...     'http://feeds.launchpad.dev/apache/announcements.atom')
+    ...     'http://feeds.launchpad.test/apache/announcements.atom')
     >>> validate_feed(nopriv_browser.contents,
     ...              nopriv_browser.headers['content-type'],
     ...              nopriv_browser.url)
@@ -716,13 +716,13 @@ products.
     >>> links = parse_links(nopriv_browser.contents, rel='self')
     >>> for link in links:
     ...     print link
-    <link rel="self" href="http://feeds.launchpad.dev/apache/announcements.atom" />
+    <link rel="self" href="http://feeds.launchpad.test/apache/announcements.atom" />
 
 Finally, there is a feed for all announcements across all projects
 hosted in Launchpad:
 
     >>> nopriv_browser.open(
-    ...     'http://feeds.launchpad.dev/announcements.atom')
+    ...     'http://feeds.launchpad.test/announcements.atom')
     >>> validate_feed(nopriv_browser.contents,
     ...              nopriv_browser.headers['content-type'],
     ...              nopriv_browser.url)
@@ -748,7 +748,7 @@ all the html to make it a valid payload for the xml document. IE7 won't
 let us use a DTD to define the html entities that standard xml is missing.
 
     >>> nopriv_browser.open(
-    ...     'http://feeds.launchpad.dev/ubuntu/announcements.atom')
+    ...     'http://feeds.launchpad.test/ubuntu/announcements.atom')
     >>> validate_feed(nopriv_browser.contents,
     ...              nopriv_browser.headers['content-type'],
     ...              nopriv_browser.url)
@@ -774,7 +774,7 @@ Deletion
 
 An owner can permanently delete an announcement.
 
-    >>> kamion_browser.open('http://launchpad.dev/guadalinex/+announcements')
+    >>> kamion_browser.open('http://launchpad.test/guadalinex/+announcements')
     >>> no_announcements(kamion_browser.contents)
     False
     >>> kamion_browser.getLink('Kubuntu announcement headline').click()

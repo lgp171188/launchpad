@@ -123,12 +123,12 @@ class TestSnapNavigation(TestCaseWithFactory):
         snap = self.factory.makeSnap(
             registrant=owner, owner=owner, name="snap")
         self.assertEqual(
-            "http://launchpad.dev/~person/+snap/snap", canonical_url(snap))
+            "http://launchpad.test/~person/+snap/snap", canonical_url(snap))
 
     def test_snap(self):
         snap = self.factory.makeSnap()
         obj, _, _ = test_traverse(
-            "http://launchpad.dev/~%s/+snap/%s" % (snap.owner.name, snap.name))
+            "http://launchpad.test/~%s/+snap/%s" % (snap.owner.name, snap.name))
         self.assertEqual(snap, obj)
 
 

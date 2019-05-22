@@ -45,12 +45,12 @@ This feed gets the latest bugs reported against a product. The feed includes
 summary information about the bugs such as ID, title, author, and a link to
 the bug itself.
 
-    >>> browser.open('http://feeds.launchpad.dev/jokosher/latest-bugs.html?'
+    >>> browser.open('http://feeds.launchpad.test/jokosher/latest-bugs.html?'
     ...              'show_column=bugtargetdisplayname')
     >>> browser.title
     'Bugs in Jokosher'
     >>> browser.url
-    'http://feeds.launchpad.dev/jokosher/latest-bugs.html?show_column=bugtargetdisplayname'
+    'http://feeds.launchpad.test/jokosher/latest-bugs.html?show_column=bugtargetdisplayname'
 
     >>> entries = parse_entries(browser.contents)
     >>> print(len(entries))
@@ -58,7 +58,7 @@ the bug itself.
 
     >>> print_entry(entries[1])
     number: 12
-    href: http://bugs.launchpad.dev/jokosher/+bug/12
+    href: http://bugs.launchpad.test/jokosher/+bug/12
     title: Copy, Cut and Delete operations should work on selections
     importance: Critical
     status: Confirmed
@@ -71,12 +71,12 @@ the bug itself.
 This feed gets the latest bugs for a project, and has the same type of content
 as the latest bugs feed for a product.
 
-    >>> browser.open('http://feeds.launchpad.dev/mozilla/latest-bugs.html?'
+    >>> browser.open('http://feeds.launchpad.test/mozilla/latest-bugs.html?'
     ...              'show_column=bugtargetdisplayname')
     >>> browser.title
     'Bugs in The Mozilla Project'
     >>> browser.url
-    'http://feeds.launchpad.dev/mozilla/latest-bugs.html?show_column=bugtargetdisplayname'
+    'http://feeds.launchpad.test/mozilla/latest-bugs.html?show_column=bugtargetdisplayname'
 
     >>> entries = parse_entries(browser.contents)
     >>> print(len(entries))
@@ -84,7 +84,7 @@ as the latest bugs feed for a product.
 
     >>> print_entry(entries[1])
     number: 15
-    href: http://bugs.launchpad.dev/redfish/+bug/15
+    href: http://bugs.launchpad.test/redfish/+bug/15
     title: Nonsensical bugs are useless
     importance: Undecided
     status: New
@@ -114,7 +114,7 @@ Create a private team and assign a mozilla bug to that team.
 
 Get the mozilla/latest-bugs feed. The previous bug should be included.
 
-    >>> browser.open('http://feeds.launchpad.dev/mozilla/latest-bugs.html?'
+    >>> browser.open('http://feeds.launchpad.test/mozilla/latest-bugs.html?'
     ...              'show_column=bugtargetdisplayname')
     >>> entries = parse_entries(browser.contents)
     >>> get_bug_numbers(entries)
@@ -124,11 +124,11 @@ Get the mozilla/latest-bugs feed. The previous bug should be included.
 
 This feed gets the latest bugs for a person.
 
-    >>> browser.open('http://feeds.launchpad.dev/~name16/latest-bugs.html')
+    >>> browser.open('http://feeds.launchpad.test/~name16/latest-bugs.html')
     >>> browser.title
     'Bugs for Foo Bar'
     >>> browser.url
-    'http://feeds.launchpad.dev/~name16/latest-bugs.html'
+    'http://feeds.launchpad.test/~name16/latest-bugs.html'
 
     >>> entries = parse_entries(browser.contents)
     >>> print(len(entries))
@@ -136,7 +136,7 @@ This feed gets the latest bugs for a person.
 
     >>> print_entry(entries[1])
     number: 15
-    href: http://bugs.launchpad.dev/redfish/+bug/15
+    href: http://bugs.launchpad.test/redfish/+bug/15
     title: Nonsensical bugs are useless
     project: Redfish
     importance: Undecided
@@ -150,12 +150,12 @@ This feed gets the latest bugs for a person.
 
 This feed gets the latest bugs reported against any target.
 
-    >>> browser.open('http://feeds.launchpad.dev/bugs/latest-bugs.html?'
+    >>> browser.open('http://feeds.launchpad.test/bugs/latest-bugs.html?'
     ...              'show_column=bugtargetdisplayname')
     >>> browser.title
     'Launchpad bugs'
     >>> browser.url
-    'http://feeds.launchpad.dev/bugs/latest-bugs.html?show_column=bugtargetdisplayname'
+    'http://feeds.launchpad.test/bugs/latest-bugs.html?show_column=bugtargetdisplayname'
 
     >>> entries = parse_entries(browser.contents)
     >>> print(len(entries))
@@ -163,7 +163,7 @@ This feed gets the latest bugs reported against any target.
 
     >>> print_entry(entries[1])
     number: 15
-    href: http://bugs.launchpad.dev/redfish/+bug/15
+    href: http://bugs.launchpad.test/redfish/+bug/15
     title: Nonsensical bugs are useless
     importance: Undecided
     status: New
@@ -178,7 +178,7 @@ This feed gets the latest bugs reported against any target.
 This feed is the most useful of them all. Any bug search can be turned into
 a feed.
 
-    >>> url = ("http://feeds.launchpad.dev/bugs/+bugs.html?"
+    >>> url = ("http://feeds.launchpad.test/bugs/+bugs.html?"
     ...        "field.searchtext=&search=Search+Bug+Reports&"
     ...        "field.scope=all&field.scope.target=")
 
@@ -215,7 +215,7 @@ to True.
 
     >>> print_entry(entries[1])
     number: 15
-    href: http://bugs.launchpad.dev/redfish/+bug/15
+    href: http://bugs.launchpad.test/redfish/+bug/15
     title: Nonsensical bugs are useless
     project: Redfish
     importance: Undecided

@@ -150,7 +150,7 @@ class MailingListTestCase(TestCaseWithFactory):
         self.assertEqual(mailing_list, team.mailing_list)
         self.assertEqual(team, mailing_list.team)
         self.assertEqual(team.teamowner, mailing_list.registrant)
-        self.assertEqual('team@lists.launchpad.dev', mailing_list.address)
+        self.assertEqual('team@lists.launchpad.test', mailing_list.address)
         self.assertEqual(MailingListStatus.APPROVED, mailing_list.status)
         self.assertIs(None, mailing_list.date_activated)
         self.assertIs(None, mailing_list.welcome_message)
@@ -169,7 +169,7 @@ class MailingListTestCase(TestCaseWithFactory):
         self.assertEqual(
             'New Mailing List for Team', notifications[0]['subject'])
         self.assertTextMatchesExpressionIgnoreWhitespace(
-            '.*To subscribe:.*http://launchpad.dev/~.*/\+editmailinglists.*',
+            '.*To subscribe:.*http://launchpad.test/~.*/\+editmailinglists.*',
             notifications[0].get_payload())
 
     def test_startConstructing_from_APPROVED(self):
@@ -208,7 +208,7 @@ class MailingListTestCase(TestCaseWithFactory):
         mailing_list.transitionToStatus(MailingListStatus.ACTIVE)
         self.assertEqual(MailingListStatus.ACTIVE, mailing_list.status)
         self.assertEqual(
-            'http://lists.launchpad.dev/team', mailing_list.archive_url)
+            'http://lists.launchpad.test/team', mailing_list.archive_url)
         email = getUtility(IEmailAddressSet).getByEmail(
             team.mailing_list.address)
         self.assertEqual(

@@ -134,7 +134,7 @@ class TestDatabaseErrorViews(TestCase):
         self.useFixture(bouncer)
         transaction.abort()
         # Verify things are working initially.
-        url = 'http://launchpad.dev/'
+        url = 'http://launchpad.test/'
         self.retryConnection(url, bouncer)
         # Now break the database, and we get an exception, along with
         # our view and several OOPSes from the retries.
@@ -236,7 +236,7 @@ class TestDatabaseErrorViews(TestCase):
                 raise OperationalError()
         ztapi.browserView(None, "error-test", BrokenView())
 
-        url = 'http://launchpad.dev/error-test'
+        url = 'http://launchpad.test/error-test'
         error = self.getHTTPError(url)
         self.assertEqual(httplib.SERVICE_UNAVAILABLE, error.code)
         self.assertThat(error.read(),

@@ -17,12 +17,12 @@ source package name.
     ...     name='new')
     >>> logout()
 
-    >>> browser.open('http://launchpad.dev/mint/stable')
+    >>> browser.open('http://launchpad.test/mint/stable')
 
 Going to this page shows us a listing of all branches associated with that
 distribution series ordered by most recently changed first.
 
-    >>> browser.open('http://code.launchpad.dev/mint/stable')
+    >>> browser.open('http://code.launchpad.test/mint/stable')
     >>> contents = browser.contents
     >>> print_tag_with_id(contents, 'branchtable')
     Name   Status   Last Modified  Last Commit

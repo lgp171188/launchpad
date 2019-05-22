@@ -6,7 +6,7 @@ bugs that are linked to blueprints or to bugs that are not linked to
 any blueprints. Normally, both options are turned on.
 
     >>> advanced_search_url = (
-    ...     'http://bugs.launchpad.dev/firefox/+bugs?advanced=1')
+    ...     'http://bugs.launchpad.test/firefox/+bugs?advanced=1')
     >>> anon_browser.open(advanced_search_url)
     >>> anon_browser.getControl(
     ...     'Show bugs with linked blueprints').selected

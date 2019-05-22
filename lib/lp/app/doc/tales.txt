@@ -325,7 +325,7 @@ The fmt: namespace to get URLs
 The `fmt:url` is used when you want the canonical URL of a given object.
 
     >>> print test_tales("bug/fmt:url", bug=bug)
-    http://bugs.launchpad.dev/bugs/1
+    http://bugs.launchpad.test/bugs/1
 
 You can also specify an extra argument (a view's name), if you want the
 URL of a given page under that object. For that to work, though, we need
@@ -334,7 +334,7 @@ to simulate a browser request -- that's why we login() here.
     >>> from lp.services.webapp.servers import LaunchpadTestRequest
     >>> login(ANONYMOUS, LaunchpadTestRequest())
     >>> print test_tales("bug/fmt:url/+text", bug=bug)
-    http://bugs.launchpad.dev/bugs/1/+text
+    http://bugs.launchpad.test/bugs/1/+text
 
 
 fmt:url accepts an rootsite extension to make URLs to a specific application.
@@ -343,16 +343,16 @@ fmt:url accepts an rootsite extension to make URLs to a specific application.
     ...     LaunchpadTestRequest(SERVER_URL='http://code.launchpad.net'))
 
     >>> print test_tales("person/fmt:url:bugs", person=mark)
-    http://bugs.launchpad.dev/~mark
+    http://bugs.launchpad.test/~mark
 
     >>> print test_tales("person/fmt:url:feeds", person=mark)
-    http://feeds.launchpad.dev/~mark
+    http://feeds.launchpad.test/~mark
 
     >>> print test_tales("pillar/fmt:url:answers", pillar=ubuntu)
-    http://answers.launchpad.dev/ubuntu
+    http://answers.launchpad.test/ubuntu
 
     >>> print test_tales("bug/fmt:url:mainsite", bug=bug)
-    http://launchpad.dev/bugs/1
+    http://launchpad.test/bugs/1
 
     >>> login(ANONYMOUS)
 
@@ -434,28 +434,28 @@ The link can make the URL go to a specific app.
     ...     LaunchpadTestRequest(SERVER_URL='http://code.launchpad.net'))
 
     >>> print test_tales("pillar/fmt:link:translations", pillar=ubuntu)
-    <a ...http://translations.launchpad.dev/ubuntu...
+    <a ...http://translations.launchpad.test/ubuntu...
 
     >>> print test_tales("person/fmt:url:feeds", person=mark)
-    http://feeds.launchpad.dev/~mark
+    http://feeds.launchpad.test/~mark
 
     >>> print test_tales("bug/fmt:url:mainsite", bug=bug)
-    http://launchpad.dev/bugs/1
+    http://launchpad.test/bugs/1
 
 The default behaviour for pillars, persons, and teams is to link to
 the mainsite.
 
     >>> print test_tales("pillar/fmt:link", pillar=ubuntu)
-    <a ...http://launchpad.dev/ubuntu...
+    <a ...http://launchpad.test/ubuntu...
 
     >>> print test_tales("person/fmt:link", person=mark)
-    <a ...http://launchpad.dev/~mark...
+    <a ...http://launchpad.test/~mark...
 
     >>> print test_tales("person/fmt:link-display-name-id", person=mark)
-    <a ...http://launchpad.dev/~mark...>Mark Shuttleworth (mark)</a>
+    <a ...http://launchpad.test/~mark...>Mark Shuttleworth (mark)</a>
 
     >>> print test_tales("team/fmt:link", team=ubuntu_team)
-    <a ...http://launchpad.dev/~ubuntu-team...
+    <a ...http://launchpad.test/~ubuntu-team...
 
     >>> login(ANONYMOUS)
 
@@ -514,7 +514,7 @@ For branches, fmt:link links to the branch page.
 The bzr-link formatter uses the bzr identity.
 
     >>> print test_tales("branch/fmt:bzr-link", branch=branch)
-    <a href="http://code.launchpad.dev/~eric/fooix/bar"
+    <a href="http://code.launchpad.test/~eric/fooix/bar"
       class="sprite branch">lp://dev/~eric/fooix/bar</a>
 
     >>> ignored = login_person(fooix.owner, LaunchpadTestRequest())
@@ -694,7 +694,7 @@ not included.
 The url for the release file can be retrieved using fmt:url.
 
     >>> print test_tales("release_file/fmt:url", release_file=release_file)
-    http://launchpad.dev/.../+download/test.txt
+    http://launchpad.test/.../+download/test.txt
 
 HTML in the file description is escaped in the fmt:link.
 
@@ -703,7 +703,7 @@ HTML in the file description is escaped in the fmt:link.
     >>> print test_tales("release_file/fmt:link", release_file=release_file)
     <img ...
     <a title="&gt;&lt;script&gt;XSS failed&lt;/script&gt; (4 bytes)"
-    href="http://launchpad.dev/.../+download/test.txt">test.txt</a> ...
+    href="http://launchpad.test/.../+download/test.txt">test.txt</a> ...
 
 
 
@@ -788,10 +788,10 @@ Bug Trackers
 The "standard" 'url' name is supported:
 
     >>> test_tales("bugtracker/fmt:url", bugtracker=bugtracker)
-    u'http://bugs.launchpad.dev/bugs/bugtrackers/email'
+    u'http://bugs.launchpad.test/bugs/bugtrackers/email'
 
 (The url is relative if possible, and our test request claims to be from
-launchpad.dev, so the url is relative.)
+launchpad.test, so the url is relative.)
 
 As are 'link', 'external-link', 'external-title-link' and 'aliases',
 which help when hiding email addresses from users who are not logged in.
@@ -851,10 +851,10 @@ Bug Watches
 The "standard" 'url' name is supported:
 
     >>> test_tales("bugwatch/fmt:url", bugwatch=sf_bugwatch)
-    u'http://bugs.launchpad.dev/bugs/12/+watch/...'
+    u'http://bugs.launchpad.test/bugs/12/+watch/...'
 
     >>> test_tales("bugwatch/fmt:url", bugwatch=email_bugwatch)
-    u'http://bugs.launchpad.dev/bugs/12/+watch/...'
+    u'http://bugs.launchpad.test/bugs/12/+watch/...'
 
 As are 'external-link' and 'external-link-short', which help when hiding
 email addresses from users who are not logged in:
@@ -1200,22 +1200,22 @@ emphasise the linkage.
 
     >>> test_tales('foo/fmt:linkify-email',
     ...    foo='I am the mighty foo.bar@canonical.com hear me roar.')
-    u'...<a href="http://launchpad.dev/~name16"
+    u'...<a href="http://launchpad.test/~name16"
       class="sprite person">foo.bar@canonical.com</a>...'
 
 Multiple addresses may be linkified at once:
 
     >>> test_tales('foo/fmt:linkify-email',
     ...     foo='foo.bar@canonical.com and cprov@ubuntu.com')
-    u'<a href="http://launchpad.dev/~name16"
+    u'<a href="http://launchpad.test/~name16"
       class="sprite person">foo.bar@canonical.com</a>
-      and <a href="http://launchpad.dev/~cprov"
+      and <a href="http://launchpad.test/~cprov"
         class="sprite person">cprov@ubuntu.com</a>'
 
 Team addresses are linkified with a team icon:
 
     >>> test_tales('foo/fmt:linkify-email', foo='support@ubuntu.com')
-    u'<a href="http://launchpad.dev/~ubuntu-team"
+    u'<a href="http://launchpad.test/~ubuntu-team"
       class="sprite team">support@ubuntu.com</a>'
 
 Unknown email addresses are not altered in any way:
@@ -1495,14 +1495,14 @@ MenuLinks (ILink) can be formatted anchored text and icons.
     >>> login(ANONYMOUS, request)
     >>> link = Link('+place', 'text', 'summary', icon='icon', enabled=True)
     >>> menu_link = MenuLink(link)
-    >>> menu_link.url = "http://launchpad.dev/+place"
+    >>> menu_link.url = "http://launchpad.test/+place"
     >>> menu_link.name = 'test_link'
 
 The link can be rendered as an anchored icon.
 
     >>> print test_tales('menu_link/fmt:icon', menu_link=menu_link)
     <a class="menu-link-test_link sprite icon action-icon"
-       href="http://launchpad.dev/+place"
+       href="http://launchpad.test/+place"
        title="summary">text</a>
 
 The default rendering can be explicitly called too, text with an icon to
@@ -1510,7 +1510,7 @@ the left.
 
     >>> print test_tales('menu_link/fmt:link', menu_link=menu_link)
     <a class="menu-link-test_link sprite icon"
-       href="http://launchpad.dev/+place"
+       href="http://launchpad.test/+place"
        title="summary">text</a>
 
 The 'edit', 'remove' and 'trash-icon' links are rendered icons followed
@@ -1519,19 +1519,19 @@ by text. They have both the sprite and modify CSS classes.
     >>> menu_link.icon = 'edit'
     >>> print test_tales('menu_link/fmt:link', menu_link=menu_link)
     <a class="menu-link-test_link sprite modify edit"
-       href="http://launchpad.dev/+place"
+       href="http://launchpad.test/+place"
        title="summary">text</a>
 
     >>> menu_link.icon = 'remove'
     >>> print test_tales('menu_link/fmt:link', menu_link=menu_link)
     <a class="menu-link-test_link sprite modify remove"
-       href="http://launchpad.dev/+place"
+       href="http://launchpad.test/+place"
        title="summary">text</a>
 
     >>> menu_link.icon = 'trash-icon'
     >>> print test_tales('menu_link/fmt:link', menu_link=menu_link)
     <a class="menu-link-test_link sprite modify trash-icon"
-       href="http://launchpad.dev/+place"
+       href="http://launchpad.test/+place"
        title="summary">text</a>
 
 fmt:icon-link and fmt:link-icon are deprecated. They are an alias for
@@ -1541,18 +1541,18 @@ controls the format based on the icon name.
     >>> menu_link.icon = 'icon'
     >>> print test_tales('menu_link/fmt:icon-link', menu_link=menu_link)
     <a class="menu-link-test_link sprite icon"
-       href="http://launchpad.dev/+place"
+       href="http://launchpad.test/+place"
        title="summary">text</a>
 
     >>> print test_tales('menu_link/fmt:link-icon', menu_link=menu_link)
     <a class="menu-link-test_link sprite icon"
-       href="http://launchpad.dev/+place"
+       href="http://launchpad.test/+place"
        title="summary">text</a>
 
 And the url format is also available.
 
     >>> print test_tales('menu_link/fmt:url', menu_link=menu_link)
-    http://launchpad.dev/+place
+    http://launchpad.test/+place
 
 If the link is disabled, no markup is rendered.
 

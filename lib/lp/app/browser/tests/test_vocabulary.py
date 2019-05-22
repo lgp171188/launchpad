@@ -143,7 +143,7 @@ class PersonPickerEntrySourceAdapterTestCase(TestCaseWithFactory):
         getUtility(IIrcIDSet).new(person, 'eg.dom', 'snarf')
         getUtility(IIrcIDSet).new(person, 'ex.dom', 'pting')
         entry = get_picker_entry(person, None, picker_expander_enabled=True)
-        self.assertEqual('http://launchpad.dev/~snarf', entry.alt_title_link)
+        self.assertEqual('http://launchpad.test/~snarf', entry.alt_title_link)
         self.assertEqual(
             ['snarf on eg.dom, pting on ex.dom', 'Member since 2005-01-30'],
             entry.details)
@@ -152,7 +152,7 @@ class PersonPickerEntrySourceAdapterTestCase(TestCaseWithFactory):
         # The person picker provides more information for teams.
         team = self.factory.makeTeam(email='fnord@eg.dom', name='fnord')
         entry = get_picker_entry(team, None, picker_expander_enabled=True)
-        self.assertEqual('http://launchpad.dev/~fnord', entry.alt_title_link)
+        self.assertEqual('http://launchpad.test/~fnord', entry.alt_title_link)
         self.assertEqual(['Team members: 1'], entry.details)
 
     def test_PersonPickerEntryAdapter_badges(self):
@@ -256,7 +256,7 @@ class TestDistributionSourcePackagePickerEntrySourceAdapter(
             sourcepackagename='snarf', distroseries=series, publish=True)
         dsp = distro.getSourcePackage('snarf')
         self.assertEqual(
-            'http://launchpad.dev/fnord/+source/snarf',
+            'http://launchpad.test/fnord/+source/snarf',
             self.getPickerEntry(dsp).alt_title_link)
 
 
@@ -309,7 +309,7 @@ class TestProductPickerEntrySourceAdapter(TestCaseWithFactory):
     def test_product_provides_alt_title_link(self):
         product = self.factory.makeProduct(name='fnord')
         self.assertEqual(
-            'http://launchpad.dev/fnord',
+            'http://launchpad.test/fnord',
             self.getPickerEntry(product).alt_title_link)
 
     def test_provides_commercial_subscription_none(self):
@@ -388,7 +388,7 @@ class TestProjectGroupPickerEntrySourceAdapter(TestCaseWithFactory):
     def test_projectgroup_provides_alt_title_link(self):
         projectgroup = self.factory.makeProject(name='fnord')
         self.assertEqual(
-            'http://launchpad.dev/fnord',
+            'http://launchpad.test/fnord',
             self.getPickerEntry(projectgroup).alt_title_link)
 
 
@@ -445,7 +445,7 @@ class TestDistributionPickerEntrySourceAdapter(TestCaseWithFactory):
     def test_distribution_provides_alt_title_link(self):
         distribution = self.factory.makeDistribution(name='fnord')
         self.assertEqual(
-            'http://launchpad.dev/fnord',
+            'http://launchpad.test/fnord',
             self.getPickerEntry(distribution).alt_title_link)
 
 
@@ -544,7 +544,7 @@ class HugeVocabularyJSONViewTestCase(TestCaseWithFactory):
         result = simplejson.loads(view())
         expected = [{
             "alt_title": team.name,
-            "alt_title_link": "http://launchpad.dev/~%s" % team.name,
+            "alt_title_link": "http://launchpad.test/~%s" % team.name,
             "api_uri": "/~%s" % team.name,
             "badges":
                 [{"label": product.displayname,
@@ -562,7 +562,7 @@ class HugeVocabularyJSONViewTestCase(TestCaseWithFactory):
             },
             {
             "alt_title": person.name,
-            "alt_title_link": "http://launchpad.dev/~%s" % person.name,
+            "alt_title_link": "http://launchpad.test/~%s" % person.name,
             "api_uri": "/~%s" % person.name,
             "css": "sprite person",
             "description": "<email address hidden>",

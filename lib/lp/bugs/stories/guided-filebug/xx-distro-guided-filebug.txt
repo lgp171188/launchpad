@@ -3,7 +3,7 @@
 Like filing bugs on products, filing bugs on distributions involves
 first finding out if you're bug has already been reported.
 
-    >>> user_browser.open("http://launchpad.dev/ubuntu/+filebug")
+    >>> user_browser.open("http://launchpad.test/ubuntu/+filebug")
 
 Submitting a bug title...
 
@@ -29,7 +29,7 @@ Subscribing to one of the similar bugs takes us to the bug page.
     ...     "Yes, this is the bug I'm trying to report").click()
 
     >>> print(user_browser.url)
-    http://bugs.launchpad.dev/thunderbird/+bug/9
+    http://bugs.launchpad.test/thunderbird/+bug/9
 
     >>> print_feedback_messages(user_browser.contents)
     This bug has been marked as affecting you.
@@ -39,7 +39,7 @@ back...
 
     # We should use goBack() here but can't because of bug #98372:
     # zope.testbrowser truncates document content after goBack().
-    >>> user_browser.open("http://launchpad.dev/ubuntu/+filebug")
+    >>> user_browser.open("http://launchpad.test/ubuntu/+filebug")
     >>> user_browser.getControl("Summary", index=0).value = (
     ...     "Thunderbird crashes when opening large emails")
     >>> user_browser.getControl("Continue").click()
@@ -70,7 +70,7 @@ Finally, let's submit the bug.
     >>> user_browser.getControl("Submit Bug Report").click()
 
     >>> print(user_browser.url)
-    http://bugs.launchpad.dev/ubuntu/+source/mozilla-firefox/+bug/...
+    http://bugs.launchpad.test/ubuntu/+source/mozilla-firefox/+bug/...
 
 
 == Filing a bug when there are none similar ==
@@ -78,7 +78,7 @@ Finally, let's submit the bug.
 When no similar bugs are found the form works the same but appears
 different in the user agent.
 
-    >>> user_browser.open("http://launchpad.dev/ubuntu/+filebug")
+    >>> user_browser.open("http://launchpad.test/ubuntu/+filebug")
 
 Submitting a distinctive bug title...
 
@@ -103,4 +103,4 @@ But the bug can be filed as before.
     >>> user_browser.getControl("Submit Bug Report").click()
 
     >>> print(user_browser.url)
-    http://bugs.launchpad.dev/ubuntu/+source/mozilla-firefox/+bug/...
+    http://bugs.launchpad.test/ubuntu/+source/mozilla-firefox/+bug/...

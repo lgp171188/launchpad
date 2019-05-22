@@ -45,7 +45,7 @@ perform the last step of the workflow for adding a GPG key.
     >>> tac.setUp()
 
     >>> request = LaunchpadTestRequest(
-    ...     SERVER_URL='http://launchpad.dev',
+    ...     SERVER_URL='http://launchpad.test',
     ...     PATH_INFO='/token/%s/+validategpg' % login_token.token,
     ...     method='POST', form={'field.actions.continue': 'Continue'})
     >>> login(ANONYMOUS, request)

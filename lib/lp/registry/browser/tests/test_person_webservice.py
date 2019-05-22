@@ -315,7 +315,7 @@ class PersonSetWebServiceTests(TestCaseWithFactory):
             person_name,
             self.webservice.get(
                 '/people?ws.op=getByOpenIDIdentifier&'
-                'identifier=http://login1.dev/%%2Bid/%s'
+                'identifier=http://login1.test/%%2Bid/%s'
                 % person_openid,
                 api_version='devel').jsonBody()['name'])
 
@@ -424,7 +424,7 @@ class PersonSetWebServiceTests(TestCaseWithFactory):
         with admin_logged_in():
             by_name = getUtility(IPersonSet).getByName('bar')
             by_openid = getUtility(IPersonSet).getByOpenIDIdentifier(
-                u'http://testopenid.dev/+id/foo')
+                u'http://testopenid.test/+id/foo')
             self.assertEqual(by_name, by_openid)
             self.assertEqual(
                 AccountStatus.PLACEHOLDER, by_name.account_status)

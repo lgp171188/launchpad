@@ -35,7 +35,7 @@ craft the URL to get to it, so in this case the page will simply say the
 membership can't be renewed and explain why.
 
     >>> browser = setupBrowser(auth='Basic karl@canonical.com:test')
-    >>> browser.open('http://launchpad.dev/~karl/+expiringmembership/'
+    >>> browser.open('http://launchpad.test/~karl/+expiringmembership/'
     ...              'ubuntu-mirror-admins')
     >>> browser.getControl('Renew')
     Traceback (most recent call last):
@@ -49,7 +49,7 @@ membership can't be renewed and explain why.
 
 Other users (apart from Karl) can't see that page.
 
-    >>> user_browser.open('http://launchpad.dev/~karl/+expiringmembership/'
+    >>> user_browser.open('http://launchpad.test/~karl/+expiringmembership/'
     ...                   'ubuntu-mirror-admins')
     Traceback (most recent call last):
     ...
@@ -64,7 +64,7 @@ the user to renew that membership because it's not about to expire.
     >>> team.renewal_policy = TeamMembershipRenewalPolicy.ONDEMAND
     >>> logout()
 
-    >>> browser.open('http://launchpad.dev/~karl/+expiringmembership/'
+    >>> browser.open('http://launchpad.test/~karl/+expiringmembership/'
     ...              'ubuntu-mirror-admins')
     >>> browser.getControl('Renew')
     Traceback (most recent call last):
@@ -89,7 +89,7 @@ mech_control TestBrowser voodoo.
 
     >>> team_admin_browser = setupBrowser(auth='Basic mark@example.com:test')
     >>> team_admin_browser.open(
-    ...     'http://launchpad.dev/~ubuntu-mirror-admins/+member/karl')
+    ...     'http://launchpad.test/~ubuntu-mirror-admins/+member/karl')
     >>> team_admin_browser.getControl(name='expires').value = ['date']
     >>> expiry = team_admin_browser.getControl(
     ...     name='membership.expirationdate')
@@ -98,9 +98,9 @@ mech_control TestBrowser voodoo.
     >>> team_admin_browser.getControl(name='change').click()
 
     >>> team_admin_browser.url
-    'http://launchpad.dev/~ubuntu-mirror-admins/+members'
+    'http://launchpad.test/~ubuntu-mirror-admins/+members'
 
-    >>> browser.open('http://launchpad.dev/~karl/+expiringmembership/'
+    >>> browser.open('http://launchpad.test/~karl/+expiringmembership/'
     ...              'ubuntu-mirror-admins')
     >>> print extract_text(find_tag_by_id(browser.contents, 'maincontent'))
     Renew membership of Karl Tilbury in Mirror Administrators
@@ -112,7 +112,7 @@ Karl then renews his membership.
 
     >>> browser.getControl('Renew').click()
     >>> browser.url
-    'http://launchpad.dev/~karl'
+    'http://launchpad.test/~karl'
     >>> for tag in find_tags_by_class(
     ...         browser.contents, 'informational message'):
     ...     print tag.renderContents()
@@ -120,7 +120,7 @@ Karl then renews his membership.
 
 Karl can't renew it again, since it's now not set to expire soon.
 
-    >>> browser.open('http://launchpad.dev/~karl/+expiringmembership/'
+    >>> browser.open('http://launchpad.test/~karl/+expiringmembership/'
     ...              'ubuntu-mirror-admins')
     >>> browser.getControl('Renew')
     Traceback (most recent call last):
@@ -153,7 +153,7 @@ Logged in as Sample Person (one of landscape developers' admins), we'll
 now renew the membership.
 
     >>> browser = setupBrowser(auth='Basic test@canonical.com:test')
-    >>> browser.open('http://launchpad.dev/~landscape-developers'
+    >>> browser.open('http://launchpad.test/~landscape-developers'
     ...              '/+expiringmembership/ubuntu-mirror-admins')
     >>> print extract_text(find_tag_by_id(browser.contents, 'maincontent'))
     Renew membership of Landscape Developers in Mirror Administrators
@@ -163,7 +163,7 @@ now renew the membership.
 
     >>> browser.getControl('Renew').click()
     >>> browser.url
-    'http://launchpad.dev/~landscape-developers'
+    'http://launchpad.test/~landscape-developers'
     >>> for tag in find_tags_by_class(
     ...         browser.contents, 'informational message'):
     ...     print tag.renderContents()
@@ -178,7 +178,7 @@ provided no information as to whether the membership was renewed.
     >>> browser.goBack()
     >>> browser.getControl('Renew').click()
     >>> browser.url
-    'http://launchpad.dev/~landscape-developers'
+    'http://launchpad.test/~landscape-developers'
     >>> for tag in find_tags_by_class(
     ...         browser.contents, 'informational message'):
     ...     print tag.renderContents()
@@ -187,7 +187,7 @@ provided no information as to whether the membership was renewed.
 When the page is loaded again, there is no form since the membership
 will no longer be expiring soon.
 
-    >>> browser.open('http://launchpad.dev/~landscape-developers'
+    >>> browser.open('http://launchpad.test/~landscape-developers'
     ...              '/+expiringmembership/ubuntu-mirror-admins')
     >>> print extract_text(find_tag_by_id(browser.contents, 'maincontent'))
     Renew membership of Landscape Developers in Mirror Administrators
@@ -196,7 +196,7 @@ will no longer be expiring soon.
 
 Any user who's not an admin of landscape-developers can't even see that page.
 
-    >>> user_browser.open('http://launchpad.dev/~landscape-developers'
+    >>> user_browser.open('http://launchpad.test/~landscape-developers'
     ...                   '/+expiringmembership/ubuntu-mirror-admins')
     Traceback (most recent call last):
     ...

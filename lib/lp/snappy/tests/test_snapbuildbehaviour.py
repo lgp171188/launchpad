@@ -390,7 +390,7 @@ class TestAsyncSnapBuildBehaviour(TestSnapBuildBehaviourBase):
                 "headers": ContainsDict({
                     b"Authorization": MatchesListwise([
                         Equals(b"Basic " + base64.b64encode(
-                            b"admin-launchpad.dev:admin-secret"))]),
+                            b"admin-launchpad.test:admin-secret"))]),
                     b"Content-Type": MatchesListwise([
                         Equals(b"application/json; charset=UTF-8"),
                         ]),

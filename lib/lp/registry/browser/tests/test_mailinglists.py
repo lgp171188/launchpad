@@ -83,7 +83,7 @@ class MailingListSubscriptionControlsTestCase(TestCaseWithFactory):
     def test_subscribe_control_renders(self):
         login_person(self.user)
         view = create_view(self.b_team, name='+index',
-            principal=self.user, server_url='http://launchpad.dev',
+            principal=self.user, server_url='http://launchpad.test',
             path_info='/~%s' % self.b_team.name)
         content = view.render()
         link_tag = find_tag_by_id(content, "link-list-subscribe")
@@ -93,7 +93,7 @@ class MailingListSubscriptionControlsTestCase(TestCaseWithFactory):
         other_person = self.factory.makePerson()
         login_person(other_person)
         view = create_view(self.b_team, name='+index',
-            principal=other_person, server_url='http://launchpad.dev',
+            principal=other_person, server_url='http://launchpad.test',
             path_info='/~%s' % self.b_team.name)
         content = view.render()
         self.assertNotEqual('', content)
@@ -111,7 +111,7 @@ class TestMailingListPortlet(MailingListTestCase):
         team = self.makeTeamWithMailingList()
         view = create_view(
             team, name='+portlet-mailinglist',
-            server_url='http://launchpad.dev', path_info='/~%s' % team.name)
+            server_url='http://launchpad.test', path_info='/~%s' % team.name)
         link = find_tag_by_id(view(), 'mailing-list-archive')
         self.assertEqual('View public archive', extract_text(link))
 
@@ -121,7 +121,7 @@ class TestMailingListPortlet(MailingListTestCase):
             visibility=PersonVisibility.PRIVATE)
         view = create_view(
             team, name='+portlet-mailinglist',
-            server_url='http://launchpad.dev', path_info='/~%s' % team.name)
+            server_url='http://launchpad.test', path_info='/~%s' % team.name)
         link = find_tag_by_id(view(), 'mailing-list-archive')
         self.assertEqual('View private archive', extract_text(link))
 

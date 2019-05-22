@@ -50,7 +50,7 @@ Logged in users can register a merge proposal.
 
     >>> nopriv_browser = setupBrowser(auth="Basic no-priv@canonical.com:test")
     >>> nopriv_browser.open(
-    ...     'http://code.launchpad.dev/~name12/gnome-terminal/klingon')
+    ...     'http://code.launchpad.test/~name12/gnome-terminal/klingon')
     >>> nopriv_browser.getLink('Propose for merging').click()
     >>> nopriv_browser.getControl(
     ...     name='field.target_branch.target_branch').value = (
@@ -70,7 +70,7 @@ Registering the merge proposal takes the user to the new merge proposal.
 
     >>> klingon_proposal = nopriv_browser.url
     >>> print(klingon_proposal)
-    http://code.launchpad.dev/~name12/gnome-terminal/klingon/+merge/...
+    http://code.launchpad.test/~name12/gnome-terminal/klingon/+merge/...
 
 The summary reflects the selected target and prerequisite.
 
@@ -154,7 +154,7 @@ has been defined or the branch owner will be used.
     >>> print(extract_text(pending))
     Reviewer          Review Type    Date Requested    Status
     Sample Person                    ... ago           Pending [Review]
-    Review via email: mp+...@code.launchpad.dev
+    Review via email: mp+...@code.launchpad.test
                                                  Request another review
 
 The status of the merge proposal is updated to "Needs review".
@@ -185,7 +185,7 @@ Only the last request is listed, showing the last review type.
     Reviewer          Review Type    Date Requested    Status
     Mark Shuttleworth                ... ago           Pending
     Sample Person     second         ... ago           Pending [Review]
-    Review via email: mp+...@code.launchpad.dev
+    Review via email: mp+...@code.launchpad.test
                                                  Request another review
 
 
@@ -379,7 +379,7 @@ branch widget is shown.
     ...         'input', attrs={'name': re.compile('target_branch')})
 
     >>> nopriv_browser.open(
-    ...     'http://code.launchpad.dev/~mark/firefox/release-0.8')
+    ...     'http://code.launchpad.test/~mark/firefox/release-0.8')
     >>> nopriv_browser.getLink('Propose for merging').click()
     >>> for widget in get_target_branch_widgets(nopriv_browser):
     ...     print(widget)
@@ -409,7 +409,7 @@ Invalid errors are also shown.
 When a branch is set as the development focus, then a radio button
 is shown.
 
-    >>> admin_browser.open('http://launchpad.dev/firefox/trunk')
+    >>> admin_browser.open('http://launchpad.test/firefox/trunk')
     >>> admin_browser.getLink('Link to branch').click()
     >>> admin_browser.getControl(name='field.branch_location').value = (
     ...     '~name12/firefox/main')
@@ -429,7 +429,7 @@ is shown.
 Also the main development focus is selected.
 
     >>> nopriv_browser.open(
-    ...     'http://code.launchpad.dev/~mark/firefox/release-0.8')
+    ...     'http://code.launchpad.test/~mark/firefox/release-0.8')
     >>> nopriv_browser.getLink('Propose for merging').click()
     >>> print_radio_options(nopriv_browser)
     ~name12/firefox/main checked
@@ -445,7 +445,7 @@ focus before, then that is also shown as a radio option.
     >>> nopriv_browser.getControl('Propose Merge').click()
 
     >>> nopriv_browser.open(
-    ...     'http://code.launchpad.dev/~mark/firefox/release-0.9.2')
+    ...     'http://code.launchpad.test/~mark/firefox/release-0.9.2')
     >>> nopriv_browser.getLink('Propose for merging').click()
     >>> print_radio_options(nopriv_browser)
     ~name12/firefox/main checked
@@ -501,7 +501,7 @@ When the development focus branch is proposed for merging,
 don't suggest that we merge it onto itself.
 
     >>> nopriv_browser.open(
-    ...     'http://code.launchpad.dev/~name12/firefox/main')
+    ...     'http://code.launchpad.test/~name12/firefox/main')
     >>> nopriv_browser.getLink('Propose for merging').click()
     >>> print_radio_options(nopriv_browser)
     ~mark/firefox/release-0.9 checked
@@ -512,7 +512,7 @@ we don't show that branch as a possible target (as it is the source
 branch).
 
     >>> nopriv_browser.open(
-    ...     'http://code.launchpad.dev/~mark/firefox/release-0.9')
+    ...     'http://code.launchpad.test/~mark/firefox/release-0.9')
     >>> nopriv_browser.getLink('Propose for merging').click()
     >>> print_radio_options(nopriv_browser)
     ~name12/firefox/main checked
@@ -526,7 +526,7 @@ Junk branches cannot be proposed for merging.  The action option is not
 shown for junk branches.
 
     >>> nopriv_browser.open(
-    ...     'http://code.launchpad.dev/~mark/+junk/testdoc')
+    ...     'http://code.launchpad.test/~mark/+junk/testdoc')
     >>> nopriv_browser.getLink('Propose for merging').click()
     Traceback (most recent call last):
     ...
@@ -536,7 +536,7 @@ Even if the user hand crafts the URL to look like a proposal to merge,
 they'll get a 404.
 
     >>> nopriv_browser.open(
-    ...     'http://code.launchpad.dev/~mark/+junk/testdoc/+register-merge')
+    ...     'http://code.launchpad.test/~mark/+junk/testdoc/+register-merge')
     Traceback (most recent call last):
     ...
     NotFound: ...
@@ -654,7 +654,7 @@ If there are reviews either pending or completed these are also shown.
 The api tag is a hidden anchor that holds the URL for the merge proposal api
 access.
 
-    >>> nopriv_browser.open('http://code.launchpad.dev/~fred/fooix/proposed')
+    >>> nopriv_browser.open('http://code.launchpad.test/~fred/fooix/proposed')
     >>> print_tag_with_id(nopriv_browser.contents, 'landing-targets')
     Ready for review for merging into lp://dev/fooix
       Eric the Viking: Pending (code) requested ... ago

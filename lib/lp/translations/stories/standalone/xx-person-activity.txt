@@ -7,7 +7,7 @@ person has contributed to.
 Here the person whose activity we're going to look at is Carlos.
 
     >>> anon_browser.open(
-    ...     "http://translations.launchpad.dev/people/carlos/+activity")
+    ...     "http://translations.launchpad.test/people/carlos/+activity")
 
 The user can see in the page navigation that Carlos has so far worked
 on six files, five of which are shown on this page.

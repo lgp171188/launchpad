@@ -19,13 +19,13 @@ exception (and the user will be prompted to login from another page).
 The logged user will see the Ask a Question page, for the Mozilla
 Project in this case.
 
-    >>> anon_browser.open('http://answers.launchpad.dev/mozilla')
+    >>> anon_browser.open('http://answers.launchpad.test/mozilla')
     >>> anon_browser.getLink('Ask a question').click()
     Traceback (most recent call last):
       ...
     Unauthorized...
 
-    >>> user_browser.open('http://answers.launchpad.dev/mozilla')
+    >>> user_browser.open('http://answers.launchpad.test/mozilla')
     >>> user_browser.getLink('Ask a question').click()
     >>> print(user_browser.title)
     Ask a question...
@@ -155,7 +155,7 @@ test the supported languages behaviour for non-English languages. Dafydd
 speaks Japanese, so we will use him.
 
     >>> daf_browser = setupBrowser(auth='Basic daf@canonical.com:test')
-    >>> daf_browser.open('http://launchpad.dev/~daf/+editlanguages')
+    >>> daf_browser.open('http://launchpad.test/~daf/+editlanguages')
     >>> print(daf_browser.title)
     Language preferences...
 
@@ -163,7 +163,7 @@ speaks Japanese, so we will use him.
     True
 
     >>> daf_browser.open(
-    ...     'http://answers.launchpad.dev/thunderbird/+answer-contact')
+    ...     'http://answers.launchpad.test/thunderbird/+answer-contact')
     >>> print(daf_browser.title)
     Answer contact for...
 
@@ -181,7 +181,7 @@ where the user's languages and the answer contact's languages will
 match. This condition demonstrates the supported language behaviour.
 
     >>> user_browser.open(
-    ...     'http://launchpad.dev/~no-priv/+editlanguages')
+    ...     'http://launchpad.test/~no-priv/+editlanguages')
     >>> print(user_browser.title)
     Language preferences...
 
@@ -198,7 +198,7 @@ list. This indicates that they can ask a question in Japanese or English
 and expect someone to reply in the same language.
 
     >>> user_browser.open(
-    ...     'http://answers.launchpad.dev/firefox/+addquestion')
+    ...     'http://answers.launchpad.test/firefox/+addquestion')
     >>> print(user_browser.getControl('Language').displayOptions)
     ['English (en) *', 'Japanese (ja)']
 
@@ -225,7 +225,7 @@ Privileges Person visits the Ask a question page from a project just as
 No Privileged Person did above, but this time in wants to do so in
 Japanese.
 
-    >>> user_browser.open('http://answers.launchpad.dev/mozilla')
+    >>> user_browser.open('http://answers.launchpad.test/mozilla')
     >>> user_browser.getLink('Ask a question').click()
     >>> print(user_browser.title)
     Ask a question...
@@ -295,7 +295,7 @@ Let's try this again from the starting page, but this time, No
 Privileges Person correctly chooses Thunderbird as the subject of their
 question.
 
-    >>> user_browser.open('http://answers.launchpad.dev/mozilla')
+    >>> user_browser.open('http://answers.launchpad.test/mozilla')
     >>> user_browser.getLink('Ask a question').click()
     >>> print(user_browser.title)
     Ask a question...

@@ -16,12 +16,12 @@ Mark is a qualified user.
 
     >>> browser = setupBrowser(auth='Basic mark@example.com:test')
     >>> browser.open(
-    ...     'http://translations.launchpad.dev/ubuntu/hoary/+source/mozilla/')
+    ...     'http://translations.launchpad.test/ubuntu/hoary/+source/mozilla/')
     >>> download = browser.getLink('download a full tarball')
     >>> download_url = download.url
     >>> download.click()
     >>> print(browser.url)
-    http://translations.launchpad.dev/ubuntu/hoary/+source/mozilla/+export
+    http://translations.launchpad.test/ubuntu/hoary/+source/mozilla/+export
 
 
 Authorization
@@ -42,7 +42,7 @@ reasonable level.
     ...     page and sees that the two have consistent access rules.
     ...     """
     ...     browser.open(
-    ...         'http://translations.launchpad.dev/'
+    ...         'http://translations.launchpad.test/'
     ...         'ubuntu/hoary/+source/mozilla/')
     ...     try:
     ...         browser.getLink('download a full tarball').click()
@@ -163,7 +163,7 @@ The "Download" link leads to a page that lets the user select an export
 format, and request the download.
 
     >>> browser.open(
-    ...     'http://translations.launchpad.dev/'
+    ...     'http://translations.launchpad.test/'
     ...     'ubuntu/hoary/+source/mozilla/+export')
     >>> browser.title
     'Download : Hoary (5.04) : Translations : mozilla package : Ubuntu'
@@ -171,7 +171,7 @@ format, and request the download.
     >>> browser.getControl('Request Download').click()
 
     >>> print(browser.url)
-    http://translations.launchpad.dev/ubuntu/hoary/+source/mozilla
+    http://translations.launchpad.test/ubuntu/hoary/+source/mozilla
 
     >>> print_feedback_messages(browser.contents)
     Your request has been received. Expect to receive an email shortly.
@@ -201,7 +201,7 @@ other's, a warning would appear on the export request form that wasn't
 there before.
 
     >>> browser.open(
-    ...     'http://translations.launchpad.dev/'
+    ...     'http://translations.launchpad.test/'
     ...     'ubuntu/hoary/+source/evolution/+export')
     >>> print_feedback_messages(browser.contents)
 
@@ -209,7 +209,7 @@ there before.
     >>> flush_database_updates()
 
     >>> browser.open(
-    ...     'http://translations.launchpad.dev/'
+    ...     'http://translations.launchpad.test/'
     ...     'ubuntu/hoary/+source/evolution/+export')
     >>> print_feedback_messages(browser.contents)
     This package has templates with different native file formats.  If you

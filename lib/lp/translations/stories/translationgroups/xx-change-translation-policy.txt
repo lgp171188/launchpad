@@ -22,16 +22,16 @@ administrators sees the "Configure translations" link, leading to the
 translations settings page.
 
     >>> re_browser.open(
-    ...     'http://translations.launchpad.dev/chestii')
+    ...     'http://translations.launchpad.test/chestii')
     >>> re_browser.getLink('Configure Translations').click()
     >>> print(re_browser.url)
-    http://translations.launchpad.dev/chestii/+configure-translations
+    http://translations.launchpad.test/chestii/+configure-translations
 
     >>> po_browser.open(
-    ...     'http://translations.launchpad.dev/chestii')
+    ...     'http://translations.launchpad.test/chestii')
     >>> po_browser.getLink('Configure Translations').click()
     >>> print(po_browser.url)
-    http://translations.launchpad.dev/chestii/+configure-translations
+    http://translations.launchpad.test/chestii/+configure-translations
 
 From the settings page, translations group and translation permissions
 can be changed.
@@ -46,7 +46,7 @@ can be changed.
     ...     'CLOSED']
     >>> re_browser.getControl('Change').click()
     >>> print(re_browser.url)
-    http://translations.launchpad.dev/chestii
+    http://translations.launchpad.test/chestii
     >>> permissions = find_tag_by_id(
     ...     re_browser.contents, 'translation-permissions')
     >>> print(extract_text(permissions))
@@ -56,7 +56,7 @@ Other persons, including the translation group owners, will not see the link
 to translations policy page.
 
     >>> dtc_browser.open(
-    ...     'http://translations.launchpad.dev/chestii')
+    ...     'http://translations.launchpad.test/chestii')
     >>> dtc_browser.getLink('Configure Translations')
     Traceback (most recent call last):
     ...
@@ -65,7 +65,7 @@ to translations policy page.
 An attempt to access the translations policy url will not be authorized.
 
     >>> browser.open(
-    ...     'http://translations.launchpad.dev/'
+    ...     'http://translations.launchpad.test/'
     ...     'chestii/+configure-translations')
     Traceback (most recent call last):
     ...
@@ -79,10 +79,10 @@ Ubuntu translation coordinators will have access to translations policy page
 for Ubuntu and will be able to change it.
 
     >>> dtc_browser.open(
-    ...     'http://translations.launchpad.dev/ubuntu')
+    ...     'http://translations.launchpad.test/ubuntu')
     >>> dtc_browser.getLink('Configure translations').click()
     >>> print(dtc_browser.url)
-    http://translations.launchpad.dev/ubuntu/+configure-translations
+    http://translations.launchpad.test/ubuntu/+configure-translations
 
     >>> dtc_browser.getControl('Translation group').value = [
     ...     'ubuntu-translators']
@@ -90,7 +90,7 @@ for Ubuntu and will be able to change it.
     ...     'CLOSED']
     >>> dtc_browser.getControl('Change').click()
     >>> print(dtc_browser.url)
-    http://translations.launchpad.dev/ubuntu
+    http://translations.launchpad.test/ubuntu
     >>> permissions = find_tag_by_id(
     ...     dtc_browser.contents, 'translation-permissions')
     >>> print(extract_text(permissions))

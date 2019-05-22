@@ -332,12 +332,12 @@ FAQ references are global, and also linkified:
     ...     'faq  number  2\n'
     ...     )
     >>> print test_tales('foo/fmt:text-to-html', foo=text)
-    <p><a href="http://answers.launchpad.dev/ubuntu/+faq/1">faq 1</a><br />
-    <a href="http://answers.launchpad.dev/ubuntu/+faq/2">faq #2</a><br />
-    <a href="http://answers.launchpad.dev/ubuntu/+faq/2">faq-2</a><br />
-    <a href="http://answers.launchpad.dev/ubuntu/+faq/2">faq=2</a><br />
-    <a href="http://answers.launchpad.dev/ubuntu/+faq/1">faq item 1</a><br />
-    <a href="http://answers.launchpad.dev/ubuntu/+faq/2">faq number 2</a></p>
+    <p><a href="http://answers.launchpad.test/ubuntu/+faq/1">faq 1</a><br />
+    <a href="http://answers.launchpad.test/ubuntu/+faq/2">faq #2</a><br />
+    <a href="http://answers.launchpad.test/ubuntu/+faq/2">faq-2</a><br />
+    <a href="http://answers.launchpad.test/ubuntu/+faq/2">faq=2</a><br />
+    <a href="http://answers.launchpad.test/ubuntu/+faq/1">faq item 1</a><br />
+    <a href="http://answers.launchpad.test/ubuntu/+faq/2">faq number 2</a></p>
 
 Except, that is, when the FAQ doesn't exist:
 

@@ -166,7 +166,7 @@ class TestWebserviceAccessToBugAttachmentFiles(TestCaseWithFactory):
         self.assertEqual(303, response.status)
 
         # The Librarian URL has, for our test case, the form
-        # "https://NNNN.restricted.launchpad.dev:PORT/NNNN/foo.txt?token=..."
+        # "https://NNNN.restricted.launchpad.test:PORT/NNNN/foo.txt?token=..."
         # where NNNN and PORT are integers.
         parsed_url = urlparse(response.getHeader('location'))
         self.assertEqual('https', parsed_url.scheme)

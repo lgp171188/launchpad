@@ -181,12 +181,12 @@ class TestMaloneHandler(TestCaseWithFactory):
         # user back and ask that they use attachments instead.
         big_body_text = 'This is really big.' * 10000
         message = self.getFailureForMessage(
-            'new@bugs.launchpad.dev', body=big_body_text)
+            'new@bugs.launchpad.test', body=big_body_text)
         self.assertIn("The description is too long.", message)
 
     def test_bug_not_found(self):
         # Non-existent bug numbers result in an informative error.
-        message = self.getFailureForMessage('1234@bugs.launchpad.dev')
+        message = self.getFailureForMessage('1234@bugs.launchpad.test')
         self.assertIn(
             "There is no such bug in Launchpad: 1234", message)
 
@@ -200,7 +200,7 @@ class TestMaloneHandler(TestCaseWithFactory):
         # Drop the notifications from celebrity_logged_in.
         pop_notifications()
         message = self.getFailureForMessage(
-            '4@bugs.launchpad.dev',
+            '4@bugs.launchpad.test',
             from_address=removeSecurityProxy(person.preferredemail).email)
         self.assertIs(None, message)
 
@@ -209,7 +209,7 @@ class TestMaloneHandler(TestCaseWithFactory):
         with celebrity_logged_in('admin'):
             getUtility(IBugSet).get(4).setPrivate(
                 True, self.factory.makePerson())
-        message = self.getFailureForMessage('4@bugs.launchpad.dev')
+        message = self.getFailureForMessage('4@bugs.launchpad.test')
         self.assertIn(
             "There is no such bug in Launchpad: 4", message)
 
@@ -230,7 +230,7 @@ class MaloneHandlerProcessTestCase(TestCaseWithFactory):
             msg = self.factory.makeSignedMessage(
                 body='borked\n affects fnord',
                 subject='subject borked',
-                to_address='new@bugs.launchpad.dev')
+                to_address='new@bugs.launchpad.test')
             handler.process(msg, msg['To'])
         notification = self.getLatestBugNotification()
         bug = notification.bug
@@ -254,7 +254,7 @@ class MaloneHandlerProcessTestCase(TestCaseWithFactory):
             msg = self.factory.makeSignedMessage(
                 body='borked\n affects fnord',
                 subject='subject borked',
-                to_address='new@bugs.launchpad.dev')
+                to_address='new@bugs.launchpad.test')
             handler.process(msg, msg['To'])
         notification = self.getLatestBugNotification()
         bug = notification.bug
@@ -272,7 +272,7 @@ class MaloneHandlerProcessTestCase(TestCaseWithFactory):
             msg = self.factory.makeSignedMessage(
                 body='borked\n assignee pting\n affects fnord',
                 subject='affects after assignee',
-                to_address='new@bugs.launchpad.dev')
+                to_address='new@bugs.launchpad.test')
             handler.process(msg, msg['To'])
         notification = self.getLatestBugNotification()
         bug = notification.bug
@@ -290,7 +290,7 @@ class MaloneHandlerProcessTestCase(TestCaseWithFactory):
             msg = self.factory.makeSignedMessage(
                 body='unsecure\n security yes\n affects fnord\n tag ajax',
                 subject='unsecure code',
-                to_address='new@bugs.launchpad.dev')
+                to_address='new@bugs.launchpad.test')
             handler.process(msg, msg['To'])
         notification = self.getLatestBugNotification()
         bug = notification.bug
@@ -313,7 +313,7 @@ class MaloneHandlerProcessTestCase(TestCaseWithFactory):
             msg = self.factory.makeSignedMessage(
                 body='bad thing\n security yes\n affects fnord',
                 subject='security issue',
-                to_address='new@bugs.launchpad.dev')
+                to_address='new@bugs.launchpad.test')
             handler.process(msg, msg['To'])
         notification = self.getLatestBugNotification()
         bug = notification.bug
@@ -335,7 +335,7 @@ class MaloneHandlerProcessTestCase(TestCaseWithFactory):
             msg = self.factory.makeSignedMessage(
                 body='unsecure\n informationtype userdata\n affects fnord',
                 subject='unsecure code',
-                to_address='new@bugs.launchpad.dev')
+                to_address='new@bugs.launchpad.test')
             handler.process(msg, msg['To'])
         notification = self.getLatestBugNotification()
         bug = notification.bug

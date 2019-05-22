@@ -81,13 +81,13 @@ class TestLiveFSNavigation(TestCaseWithFactory):
             registrant=owner, owner=owner, distroseries=distroseries,
             name="livefs")
         self.assertEqual(
-            "http://launchpad.dev/~person/+livefs/distro/unstable/livefs",
+            "http://launchpad.test/~person/+livefs/distro/unstable/livefs",
             canonical_url(livefs))
 
     def test_livefs(self):
         livefs = self.factory.makeLiveFS()
         obj, _, _ = test_traverse(
-            "http://launchpad.dev/~%s/+livefs/%s/%s/%s" % (
+            "http://launchpad.test/~%s/+livefs/%s/%s/%s" % (
                 livefs.owner.name, livefs.distro_series.distribution.name,
                 livefs.distro_series.name, livefs.name))
         self.assertEqual(livefs, obj)

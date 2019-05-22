@@ -426,7 +426,7 @@ class TestSpecificationSubscription(SpecificationWebserviceTestCase):
         # Test canBeUnsubscribedByUser() API.
         webservice = LaunchpadWebServiceCaller(
             'launchpad-library', 'salgado-change-anything',
-            domain='api.launchpad.dev:8085')
+            domain='api.launchpad.test:8085')
 
         with person_logged_in(ANONYMOUS):
             db_spec = self.factory.makeSpecification()

@@ -3,7 +3,7 @@
 This page directs users to SourcePackage translations pages.
 
     >>> anon_browser.open(
-    ...     'http://translations.launchpad.dev/ubuntu/+source/evolution')
+    ...     'http://translations.launchpad.test/ubuntu/+source/evolution')
     >>> anon_browser.title
     'Translations : ...evolution...package : Ubuntu'
 

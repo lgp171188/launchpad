@@ -67,10 +67,10 @@ class TestTargetGitListingView:
 
         # Clone instructions for the default repo are present.
         self.assertEqual(
-            'https://git.launchpad.dev/%s' % self.target_path,
+            'https://git.launchpad.test/%s' % self.target_path,
             soup.find(attrs={'class': 'https-url'}).find(text=True))
         self.assertEqual(
-            'https://git.launchpad.dev/%s' % self.target_path,
+            'https://git.launchpad.test/%s' % self.target_path,
             soup.find(text='Browse the code').parent['href'])
 
         # The default repo's branches are shown, but not its tags.
@@ -220,10 +220,10 @@ class TestPersonTargetGitListingView:
 
         # Clone instructions for the default repo are present.
         self.assertEqual(
-            'https://git.launchpad.dev/~dev/%s' % self.target_path,
+            'https://git.launchpad.test/~dev/%s' % self.target_path,
             soup.find(attrs={'class': 'https-url'}).find(text=True))
         self.assertEqual(
-            'https://git.launchpad.dev/~dev/%s' % self.target_path,
+            'https://git.launchpad.test/~dev/%s' % self.target_path,
             soup.find(text='Browse the code').parent['href'])
 
         # The default repo's branches are shown.

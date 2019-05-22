@@ -247,7 +247,7 @@ class TestBinaryBuildPackageBehaviour(TestCaseWithFactory):
             self.factory.makeLibraryFileAlias(db_only=True),
             filetype=SourcePackageFileType.ORIG_TARBALL)
         sprf_url = (
-            'http://private-ppa.launchpad.dev/%s/%s/ubuntu/pool/%s/%s'
+            'http://private-ppa.launchpad.test/%s/%s/ubuntu/pool/%s/%s'
             % (archive.owner.name, archive.name,
                poolify(
                    build.source_package_release.sourcepackagename.name,

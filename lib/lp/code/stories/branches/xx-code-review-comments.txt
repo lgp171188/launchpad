@@ -49,7 +49,7 @@ to the main merge proposal page.
 The person's name links back to the main site for that person.
 
     >>> print(anon_browser.getLink('Eric the Viking').url)
-    http://launchpad.dev/~eric
+    http://launchpad.test/~eric
 
 Reply link is displayed even if the user isn't logged in.
 
@@ -148,7 +148,7 @@ in a table at the top of the page.
     Reviewer                     Review Type    Date Requested    Status
     Eric the Viking (community)  timeless       ...               Abstain...
     a moment ago
-    Review via email: mp+...@code.launchpad.dev
+    Review via email: mp+...@code.launchpad.test
 
 
 Commits shown in the conversation

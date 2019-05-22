@@ -82,7 +82,7 @@ expected_body = """\
  * Duration: 10 minutes
  * Build Log: %s
  * Upload Log: %s
- * Builder: http://launchpad.dev/builders/bob
+ * Builder: http://launchpad.test/builders/bob
 """
 
 
@@ -268,7 +268,7 @@ class TestLiveFSBuild(TestCaseWithFactory):
         body, footer = notification.get_payload(decode=True).split("\n-- \n")
         self.assertEqual(expected_body % (build.log_url, ""), body)
         self.assertEqual(
-            "http://launchpad.dev/~person/+livefs/distro/unstable/livefs-1/"
+            "http://launchpad.test/~person/+livefs/distro/unstable/livefs-1/"
             "+build/%d\n"
             "You are the requester of the build.\n" % build.id, footer)
 
@@ -279,7 +279,7 @@ class TestLiveFSBuild(TestCaseWithFactory):
         # The log URL for a live filesystem build will use the archive context.
         self.addFakeBuildLog(self.build)
         self.assertEqual(
-            "http://launchpad.dev/~%s/+livefs/%s/%s/%s/+build/%d/+files/"
+            "http://launchpad.test/~%s/+livefs/%s/%s/%s/+build/%d/+files/"
             "mybuildlog.txt" % (
                 self.build.livefs.owner.name, self.build.distribution.name,
                 self.build.distro_series.name, self.build.livefs.name,

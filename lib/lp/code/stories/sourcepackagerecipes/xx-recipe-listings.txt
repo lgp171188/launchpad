@@ -50,7 +50,7 @@ read "3 recipes." Let's click through.
     >>> nopriv_browser.open(branch_url)
     >>> nopriv_browser.getLink('3 recipes').click()
     >>> print(nopriv_browser.url)
-    http://code.launchpad.dev/%7Eperson-name.../product-name.../branch.../+recipes
+    http://code.launchpad.test/%7Eperson-name.../product-name.../branch.../+recipes
 
 The "Base Source" column should not be shown.
 
@@ -98,7 +98,7 @@ should now read "4 recipes."  Let's click through.
     >>> nopriv_browser.open(repository_url)
     >>> nopriv_browser.getLink('4 recipes').click()
     >>> print(nopriv_browser.url)
-    http://code.launchpad.dev/%7Eperson-name.../product-name.../+git/gitrepository.../+recipes
+    http://code.launchpad.test/%7Eperson-name.../product-name.../+git/gitrepository.../+recipes
 
 The "Base Source" column should not be shown.
 
@@ -125,7 +125,7 @@ listed.
     ...     nopriv_browser.open(ref1_url)
     >>> nopriv_browser.getLink('2 recipes').click()
     >>> print(nopriv_browser.url)
-    http://code.launchpad.dev/%7Eperson-name.../product-name.../+git/gitrepository.../+ref/a/+recipes
+    http://code.launchpad.test/%7Eperson-name.../product-name.../+git/gitrepository.../+ref/a/+recipes
 
     >>> print_recipe_listing_head(nopriv_browser)
     Name
@@ -145,7 +145,7 @@ Let's use the product from the former branch test.
     >>> nopriv_browser.open(product_url)
     >>> nopriv_browser.getLink('View source package recipes').click()
     >>> print(nopriv_browser.url)
-    http://code.launchpad.dev/product-name.../+recipes
+    http://code.launchpad.test/product-name.../+recipes
 
     >>> print_recipe_listing_head(nopriv_browser)
     Name
@@ -166,7 +166,7 @@ The same thing works for the target of the former Git repository test.
     >>> nopriv_browser.open(target_url)
     >>> nopriv_browser.getLink('View source package recipes').click()
     >>> print(nopriv_browser.url)
-    http://code.launchpad.dev/product-name.../+recipes
+    http://code.launchpad.test/product-name.../+recipes
 
     >>> print_recipe_listing_head(nopriv_browser)
     Name
@@ -197,7 +197,7 @@ Create a person, make some recipes for that person.
     >>> nopriv_browser.open(person_url)
     >>> nopriv_browser.getLink('View source package recipes').click()
     >>> print(nopriv_browser.url)
-    http://code.launchpad.dev/~person-name.../+recipes
+    http://code.launchpad.test/~person-name.../+recipes
 
 The "Owner" section should be missing.
 

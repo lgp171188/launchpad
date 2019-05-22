@@ -80,9 +80,9 @@ a.clicktext {font-weight: normal;}
     filter to only get the stacktraces you want in this case; see information
     in the &quot;SQL trace&quot; section below on how to do this.</p>
     <p>The "++profile++" path segment can usually go anywhere in the URL
-    (e.g., <code>http://launchpad.dev/++profile++show</code> or
-    <code>http://launchpad.dev/++profile++show/Firefox</code> or
-    <code>http://launchpad.dev/Firefox/++profile++show</code>) but some pages
+    (e.g., <code>http://launchpad.test/++profile++show</code> or
+    <code>http://launchpad.test/++profile++show/Firefox</code> or
+    <code>http://launchpad.test/Firefox/++profile++show</code>) but some pages
     do seem to redirect in surprising ways, so experimentation may be
     necessary.</p>
     <p>If you are working on a developer instance of Launchpad, you can also

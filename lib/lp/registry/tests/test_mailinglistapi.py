@@ -89,7 +89,7 @@ class MailingListAPITestCase(TestCaseWithFactory):
 
     def test_getMembershipInformation_remote_public_archive(self):
         # Private teams do not have config.mailman.archive_address,
-        # 'archive@mail-archive.dev', in the list of membership information,
+        # 'archive@mail-archive.test', in the list of membership information,
         # but public do.
         subscriber = self.factory.makePerson(email='me@eg.dom')
         team_b = self.factory.makeTeam(
@@ -359,7 +359,7 @@ class MailingListAPIMessageTestCase(TestCaseWithFactory):
         with person_logged_in(sender):
             message = message_from_string(dedent("""\
                 From: me@eg.dom
-                To: team@lists.launchpad.dev
+                To: team@lists.launchpad.test
                 Subject: A question
                 Message-ID: <first-post>
                 Date: Fri, 01 Aug 2000 01:08:59 -0000\n
@@ -382,7 +382,7 @@ class MailingListAPIMessageTestCase(TestCaseWithFactory):
             'New mailing list message requiring approval for Team',
             notifications[0]['subject'])
         self.assertTextMatchesExpressionIgnoreWhitespace(
-            '.*http://launchpad.dev/~team/\+mailinglist-moderate.*',
+            '.*http://launchpad.test/~team/\+mailinglist-moderate.*',
             notifications[0].get_payload())
         self.assertEqual({}, self.mailinglist_api.getMessageDispositions())
 
@@ -401,7 +401,7 @@ class MailingListAPIMessageTestCase(TestCaseWithFactory):
         with person_logged_in(sender):
             message = message_from_string(dedent("""\
                 From: \xa9 me <me@eg.dom>
-                To: team@lists.launchpad.dev
+                To: team@lists.launchpad.test
                 Subject: \xa9 gremlins
                 Message-ID: <\xa9-me>
                 Date: Fri, 01 Aug 2000 01:08:59 -0000\n
@@ -420,7 +420,7 @@ class MailingListAPIMessageTestCase(TestCaseWithFactory):
             found.posted_message.close()
         self.assertEqual([
             'From: \\xa9 me <me@eg.dom>',
-            'To: team@lists.launchpad.dev',
+            'To: team@lists.launchpad.test',
             'Subject: \\xa9 gremlins',
             'Message-ID: <\\xa9-me>',
             'Date: Fri, 01 Aug 2000 01:08:59 -0000',

@@ -9,7 +9,7 @@ Public PPAs do not have an option for managing subscriptions:
 
     >>> cprov_browser = setupBrowser(
     ...     auth="Basic celso.providelo@canonical.com:test")
-    >>> cprov_browser.open("http://launchpad.dev/~cprov/+archive/ppa")
+    >>> cprov_browser.open("http://launchpad.test/~cprov/+archive/ppa")
     >>> cprov_browser.getLink("Manage subscriptions")
     Traceback (most recent call last):
     ...
@@ -19,10 +19,10 @@ Similarly, trying to access the subscriptions page directly will simply
 redirect back to the PPA page with a feedback message:
 
     >>> cprov_browser.open(
-    ...     "http://launchpad.dev/~cprov/+archive/ppa/+subscriptions")
+    ...     "http://launchpad.test/~cprov/+archive/ppa/+subscriptions")
 
     >>> print(cprov_browser.url)
-    http://launchpad.dev/~cprov/+archive/ubuntu/ppa
+    http://launchpad.test/~cprov/+archive/ubuntu/ppa
 
     >>> print_feedback_messages(cprov_browser.contents)
     Only private archives can have subscribers.
@@ -44,7 +44,7 @@ Setup private PPAs for both Celso and Mark:
 
 The PPA page includes a link to manage subscriptions:
 
-    >>> cprov_browser.open("http://launchpad.dev/~cprov/+archive/p3a")
+    >>> cprov_browser.open("http://launchpad.test/~cprov/+archive/p3a")
     >>> cprov_browser.getLink("Manage access").click()
 
 Initially there are no subscriptions for a newly privatized PPA (although,
@@ -117,7 +117,7 @@ so that Joe has multiple subscriptions:
 
     >>> mark_browser = setupBrowser(auth="Basic mark@example.com:test")
     >>> mark_browser.open(
-    ...     "http://launchpad.dev/~mark/+archive/p3a/+subscriptions")
+    ...     "http://launchpad.test/~mark/+archive/p3a/+subscriptions")
     >>> mark_browser.getControl(name='field.subscriber').value = 'joesmith'
     >>> mark_browser.getControl(
     ...     name='field.description').value = "Joe is also my friend"
@@ -128,7 +128,7 @@ listed in the current subscriptions area:
 
     >>> joe_browser = setupBrowser(auth="Basic joe@example.com:test")
     >>> joe_browser.open(
-    ...     "http://launchpad.dev/~joesmith/+archivesubscriptions")
+    ...     "http://launchpad.test/~joesmith/+archivesubscriptions")
     >>> for row in find_tags_by_class(joe_browser.contents,
     ...                               'archive-subscription-row'):
     ...     print(extract_text(row))
@@ -140,7 +140,7 @@ It is not possible to traverse to a team's archive subscriptions to
 create tokens.
 
     >>> joe_browser.open(
-    ...     "http://launchpad.dev/~teamjoe/+archivesubscriptions")
+    ...     "http://launchpad.test/~teamjoe/+archivesubscriptions")
     Traceback (most recent call last):
     ...
     NotFound...
@@ -153,16 +153,16 @@ automatically (creating a token for the user) and they are taken to a page
 displaying their subscription.
 
     >>> joe_browser.open(
-    ...     "http://launchpad.dev/~joesmith/+archivesubscriptions")
+    ...     "http://launchpad.test/~joesmith/+archivesubscriptions")
     >>> joe_browser.getControl(name="activate", index=0).click()
     >>> sources_list = find_tag_by_id(joe_browser.contents, 'sources_list')
     >>> print(extract_text(sources_list))
     Custom sources.list entries
     ...
-    deb http://joesmith:...@private-ppa.launchpad.dev/mark/p3a/ubuntu
+    deb http://joesmith:...@private-ppa.launchpad.test/mark/p3a/ubuntu
         hoary main #Personal access of Joe Smith (joesmith)
         to PPA named p3a for Mark Shuttleworth
-    deb-src http://joesmith:...@private-ppa.launchpad.dev/mark/p3a/ubuntu
+    deb-src http://joesmith:...@private-ppa.launchpad.test/mark/p3a/ubuntu
         hoary main #Personal access of Joe Smith (joesmith)
         to PPA named p3a for Mark Shuttleworth
 
@@ -184,10 +184,10 @@ has a signing key:
     >>> print(extract_text(sources_list))
     Custom sources.list entries
     ...
-    deb http://joesmith:...@private-ppa.launchpad.dev/mark/p3a/ubuntu
+    deb http://joesmith:...@private-ppa.launchpad.test/mark/p3a/ubuntu
         hoary main #Personal access of Joe Smith (joesmith)
         to PPA named p3a for Mark Shuttleworth
-    deb-src http://joesmith:...@private-ppa.launchpad.dev/mark/p3a/ubuntu
+    deb-src http://joesmith:...@private-ppa.launchpad.test/mark/p3a/ubuntu
         hoary main #Personal access of Joe Smith (joesmith)
         to PPA named p3a for Mark Shuttleworth
     This repository is signed ...
@@ -196,14 +196,14 @@ Once a person has activated a subscription, being subscribed again via
 another team does not lead to duplicate entries on the person's
 subscriptions page.
 
-    >>> mark_browser.open("http://launchpad.dev/~mark/+archive/p3a")
+    >>> mark_browser.open("http://launchpad.test/~mark/+archive/p3a")
     >>> mark_browser.getLink("Manage access").click()
     >>> mark_browser.getControl(name='field.subscriber').value = 'teamjoe'
     >>> mark_browser.getControl(
     ...     name='field.description').value = "Joe's friends are my friends."
     >>> mark_browser.getControl(name="field.actions.add").click()
     >>> joe_browser.open(
-    ...     "http://launchpad.dev/~joesmith/+archivesubscriptions")
+    ...     "http://launchpad.test/~joesmith/+archivesubscriptions")
     >>> rows = find_tags_by_class(
     ...     joe_browser.contents, 'archive-subscription-row')
     >>> for row in rows:
@@ -215,7 +215,7 @@ subscriptions page.
 == Attempting to browse directly to a subscription ==
 
     >>> joe_browser.open(
-    ...     "http://launchpad.dev/~joesmith/+archivesubscriptions/foo")
+    ...     "http://launchpad.test/~joesmith/+archivesubscriptions/foo")
     Traceback (most recent call last):
     ...
     NotFound...

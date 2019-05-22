@@ -39,7 +39,7 @@ provide the IBuildRecordView.
 
 For Distribution, it's possible to filter build results by state and name:
 
-    >>> anon_browser.open("http://launchpad.dev/ubuntu")
+    >>> anon_browser.open("http://launchpad.test/ubuntu")
     >>> anon_browser.getLink("Builds").click()
     >>> print(anon_browser.title)
     Builds : Ubuntu
@@ -49,7 +49,7 @@ For Distribution, it's possible to filter build results by state and name:
 
 For DistroSeries, an architecture filter is also presented:
 
-    >>> anon_browser.open("http://launchpad.dev/ubuntu/hoary")
+    >>> anon_browser.open("http://launchpad.test/ubuntu/hoary")
     >>> anon_browser.getLink("Show builds").click()
     >>> print(anon_browser.title)
     Builds : Hoary (5.04) : Ubuntu
@@ -59,7 +59,7 @@ For DistroSeries, an architecture filter is also presented:
 
 For DistroArchSeries, same as Distribution:
 
-    >>> anon_browser.open("http://launchpad.dev/ubuntu/hoary/i386")
+    >>> anon_browser.open("http://launchpad.test/ubuntu/hoary/i386")
     >>> anon_browser.getLink("Show builds").click()
     >>> print(anon_browser.title)
     Builds : i386 : Hoary (5.04) : Ubuntu
@@ -70,7 +70,7 @@ For DistroArchSeries, same as Distribution:
 For Builder, same as Distribution:
 
     >>> anon_browser.mech_browser.set_handle_equiv(False)
-    >>> anon_browser.open("http://launchpad.dev/builders/bob")
+    >>> anon_browser.open("http://launchpad.test/builders/bob")
     >>> anon_browser.getLink("View full history").click()
     >>> print(anon_browser.title)
     Build history : Bob The Builder : Build Farm
@@ -81,7 +81,7 @@ For Builder, same as Distribution:
 For Archive (PPA), same as Distribution:
 
     >>> anon_browser.open(
-    ...     "http://launchpad.dev/~cprov/+archive/+packages")
+    ...     "http://launchpad.test/~cprov/+archive/+packages")
     >>> anon_browser.getLink("View all builds").click()
     >>> print(anon_browser.title)
     Builds : PPA for Celso Providelo : Celso Providelo
@@ -92,7 +92,7 @@ For Archive (PPA), same as Distribution:
 For SourcePackage, it's only possible to filter by state.
 
     >>> anon_browser.open(
-    ...   "http://launchpad.dev/ubuntu/hoary/+source/pmount")
+    ...   "http://launchpad.test/ubuntu/hoary/+source/pmount")
     >>> anon_browser.getLink("Show builds").click()
     >>> print(anon_browser.title)
     Builds : Hoary (5.04) : pmount package : Ubuntu
@@ -109,7 +109,7 @@ The source package default state is "all states":
 
 The anonymous user checks the contents of the distro builds list page.
 
-    >>> anon_browser.open("http://launchpad.dev/ubuntu/+builds")
+    >>> anon_browser.open("http://launchpad.test/ubuntu/+builds")
 
 
 Build titles
@@ -266,7 +266,7 @@ The form will not permit the anonymous user to enter a bad value (bug
 Pagetest infrastructure won't allow us to pass a not presented field
 to the form:
 
-    >>> anon_browser.open("http://launchpad.dev/+builds/bob/+history")
+    >>> anon_browser.open("http://launchpad.test/+builds/bob/+history")
     >>> anon_browser.getControl(name="build_state").value = ['foo']
     Traceback (most recent call last):
     ...
@@ -276,7 +276,7 @@ However even if anonymous user builds an URL with a incorrect value,
 code is prepared to raise the correct exception:
 
     >>> anon_browser.open(
-    ...     "http://launchpad.dev/+builds/bob/+history?build_state=foo")
+    ...     "http://launchpad.test/+builds/bob/+history?build_state=foo")
     Traceback (most recent call last):
     ...
     UnexpectedFormData: No suitable state found for value "foo"
@@ -285,7 +285,7 @@ The code also raises UnexpectedFormData when valid, but duplicated,
 form values are submitted:
 
     >>> anon_browser.open(
-    ...     "http://launchpad.dev/ubuntu/+builds"
+    ...     "http://launchpad.test/ubuntu/+builds"
     ...     "?build_text=binutils&build_state=building"
     ...     "&build_text=binutils&build_state=all")
     Traceback (most recent call last):
@@ -302,7 +302,7 @@ job processed by this builder. The main difference for the other
 +builds pages is that is doesn't render the builder information for
 each record, since they were obviously built by the context builder.
 
-    >>> anon_browser.open("http://launchpad.dev/+builds/bob")
+    >>> anon_browser.open("http://launchpad.test/+builds/bob")
     >>> anon_browser.getLink("View full history").click()
 
 In the first batch anonymous user can see successfully-built and
@@ -387,7 +387,7 @@ that has no builds, for instance 'debian' in our sampledata, the page
 says 'No packages are currently building'. We assume that this is your
 first view if there are no GET arguments.
 
-    >>> anon_browser.open("http://launchpad.dev/debian/+builds")
+    >>> anon_browser.open("http://launchpad.test/debian/+builds")
 
     >>> print(extract_text(
     ...     find_tag_by_id(anon_browser.contents, 'no-default-result')))
@@ -415,7 +415,7 @@ was done before.
 If there *are* builds present, the anonymous user does not see any
 special messages. (We added this to catch bug #160331.)
 
-    >>> anon_browser.open("http://launchpad.dev/ubuntu/+builds")
+    >>> anon_browser.open("http://launchpad.test/ubuntu/+builds")
 
     >>> find_tag_by_id(anon_browser.contents, 'empty-result') is None
     True
@@ -430,7 +430,7 @@ After opening a empty SourcePackage Builds page anonymous user will
 repeat the same set of accesses done for Distribution Builds page.
 
     >>> anon_browser.open(
-    ...    "http://launchpad.dev/"
+    ...    "http://launchpad.test/"
     ...    "ubuntu/hoary/+source/mozilla-firefox/+builds")
 
 When anonymous user first load only 'No packages currently building'
@@ -470,7 +470,7 @@ Anonymous user can see builds of partner packages on the same builds
 page as any other packages from the primary archive.
 
     >>> anon_browser.open(
-    ...    "http://launchpad.dev/ubuntu//+builds?build_text="
+    ...    "http://launchpad.test/ubuntu//+builds?build_text="
     ...    "commercialpackage&build_state=built")
 
     >>> print(extract_text(
@@ -481,7 +481,7 @@ page as any other packages from the primary archive.
 And also on the distro series builds page:
 
     >>> anon_browser.open(
-    ...    "http://launchpad.dev/ubuntu/breezy-autotest/+builds"
+    ...    "http://launchpad.test/ubuntu/breezy-autotest/+builds"
     ...    "?build_text=commercialpackage&build_state=built")
 
     >>> print(extract_text(
@@ -519,7 +519,7 @@ Such feature is visible when anonymous user access the
 `DistributionSourcePackageRelease` page in the 'Builds' portlet.
 
     >>> anon_browser.open(
-    ...     "http://launchpad.dev/ubuntu/+source/testing/1.0")
+    ...     "http://launchpad.test/ubuntu/+source/testing/1.0")
     >>> print(extract_text(find_portlet(anon_browser.contents, 'Builds')))
     Builds
     Warty: hppa i386

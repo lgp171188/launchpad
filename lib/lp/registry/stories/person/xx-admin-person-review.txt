@@ -8,10 +8,10 @@ Registry admins can review users and update some of their information.
     >>> expert_browser = setupBrowser(auth='Basic %s:test' % email)
     >>> logout()
 
-    >>> expert_browser.open('http://launchpad.dev/~salgado')
+    >>> expert_browser.open('http://launchpad.test/~salgado')
     >>> expert_browser.getLink('Administer').click()
     >>> print expert_browser.url
-    http://launchpad.dev/~salgado/+review
+    http://launchpad.test/~salgado/+review
 
     >>> print expert_browser.title
     Review person...
@@ -22,7 +22,7 @@ Registry admins can review users and update some of their information.
     ...     name='field.personal_standing_reason').value = 'good guy'
     >>> expert_browser.getControl('Change').click()
     >>> print expert_browser.url
-    http://launchpad.dev/~no-way
+    http://launchpad.test/~no-way
 
 Registry experts can't change the displayname.
 
@@ -35,7 +35,7 @@ Registry experts can't change the displayname.
     Unauthorized: ...
 
 But Launchpad admins can.
-    >>> admin_browser.open('http://launchpad.dev/~no-way/+review')
+    >>> admin_browser.open('http://launchpad.test/~no-way/+review')
     >>> admin_browser.getControl('Name', index=0).value = 'salgado'
     >>> admin_browser.getControl(
     ...     'Display Name', index=0).value = 'The one and only Salgado'
@@ -43,7 +43,7 @@ But Launchpad admins can.
     >>> print admin_browser.title
     The one and only Salgado in Launchpad
     >>> print admin_browser.url
-    http://launchpad.dev/~salgado
+    http://launchpad.test/~salgado
 
 
 Review account
@@ -51,7 +51,7 @@ Review account
 
 The review page has a link to the review account page.
 
-    >>> expert_browser.open('http://launchpad.dev/~salgado')
+    >>> expert_browser.open('http://launchpad.test/~salgado')
     >>> expert_browser.getLink('Administer Account').click()
     >>> print expert_browser.title
     Review person's account...

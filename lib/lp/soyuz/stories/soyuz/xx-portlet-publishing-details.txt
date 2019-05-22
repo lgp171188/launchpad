@@ -4,7 +4,7 @@ This portlet conveys information about the latest version of a
 package for each distroseries in which it is published.
 
     >>> browser.open(
-    ...     "http://launchpad.dev/ubuntu/+source/alsa-utils/"
+    ...     "http://launchpad.test/ubuntu/+source/alsa-utils/"
     ...     "+portlet-publishing-details")
 
 For each distroseries there is a line containing the distroseries name,
@@ -21,14 +21,14 @@ into account any overrides applied since the package was uploaded.
 Series and versions are linkified.
 
     >>> print(browser.getLink('Hoary').url)
-    http://bugs.launchpad.dev/ubuntu/hoary/+source/alsa-utils
+    http://bugs.launchpad.test/ubuntu/hoary/+source/alsa-utils
     >>> print(browser.getLink('1.0.9a-4').url)
-    http://launchpad.dev/ubuntu/+source/alsa-utils/1.0.9a-4
+    http://launchpad.test/ubuntu/+source/alsa-utils/1.0.9a-4
 
 When a source package has never been published, the portlet will say so.
 
     >>> browser.open(
-    ...     "http://launchpad.dev/ubuntu/+source/a52dec/"
+    ...     "http://launchpad.test/ubuntu/+source/a52dec/"
     ...     "+portlet-publishing-details")
 
     >>> print(extract_text(browser.contents))
@@ -40,7 +40,7 @@ distroseries.  "cdrkit" is published in Warty and Breezy-autotest, but
 only Warty is active.
 
     >>> browser.open(
-    ...     "http://launchpad.dev/ubuntu/+source/cdrkit/"
+    ...     "http://launchpad.test/ubuntu/+source/cdrkit/"
     ...     "+portlet-publishing-details")
 
     >>> print(extract_text(browser.contents))

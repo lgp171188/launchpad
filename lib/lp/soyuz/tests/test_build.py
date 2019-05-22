@@ -125,7 +125,7 @@ class TestBuild(TestCaseWithFactory):
             self.das.architecturetag, spn, version)
         self.assertEqual(expected_buildlog, build.log.filename)
         url_start = (
-            'http://launchpad.dev/%s/+source/%s/%s/+build/%s/+files' % (
+            'http://launchpad.test/%s/+source/%s/%s/+build/%s/+files' % (
                 self.distroseries.distribution.name, spn, version, build.id))
         expected_buildlog_url = '%s/%s' % (url_start, expected_buildlog)
         self.assertEqual(expected_buildlog_url, build.log_url)
@@ -243,7 +243,7 @@ class TestBuild(TestCaseWithFactory):
         expected_filename = 'upload_%s_log.txt' % build.id
         self.assertEqual(expected_filename, build.upload_log.filename)
         url_start = (
-            'http://launchpad.dev/%s/+source/%s/%s/+build/%s/+files' % (
+            'http://launchpad.test/%s/+source/%s/%s/+build/%s/+files' % (
                 self.distroseries.distribution.name, spph.source_package_name,
                 spph.source_package_version, build.id))
         expected_url = '%s/%s' % (url_start, expected_filename)

@@ -558,6 +558,6 @@ added (i.e. `add` overrides `remove`).
 
     >>> server.Bug.update_see_also({
     ...     'ids': [1], 'add': ['https://launchpad.net/bugs/14'],
-    ...     'remove': ['https://launchpad.dev/bugs/14']})
+    ...     'remove': ['https://launchpad.test/bugs/14']})
     {'changes': {1: {'see_also':
         {'added': ['https://launchpad.net/bugs/14']}}}}

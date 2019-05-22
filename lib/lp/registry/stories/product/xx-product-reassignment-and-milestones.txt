@@ -3,7 +3,7 @@ a bugtask to a different product forces the milestone value to None,
 even if the user was trying to set the milestone value.
 
     >>> browser = setupBrowser(auth="Basic foo.bar@canonical.com:test")
-    >>> browser.open("http://bugs.launchpad.dev/firefox/+bug/1/+editstatus")
+    >>> browser.open("http://bugs.launchpad.test/firefox/+bug/1/+editstatus")
     >>> browser.getControl(name="firefox.target.product").value = "evolution"
     >>> browser.getControl("Milestone").value = ["1"]
     >>> browser.getControl("Save Changes").click()
@@ -15,7 +15,7 @@ even if the user was trying to set the milestone value.
 
 (Revert the change we just made.)
 
-    >>> browser.open("http://bugs.launchpad.dev/evolution/+bug/1/+editstatus")
+    >>> browser.open("http://bugs.launchpad.test/evolution/+bug/1/+editstatus")
     >>> browser.getControl(name="evolution.target.product").value = "firefox"
     >>> browser.getControl("Save Changes").click()
 

@@ -74,7 +74,7 @@ class TestBuildersCollection(TestCaseWithFactory):
         self.assertEqual(
             'tag:launchpad.net:2008:redacted', current_builds['restricted'])
         self.assertEqual(
-            'http://api.launchpad.dev/devel' + bpb_url,
+            'http://api.launchpad.test/devel' + bpb_url,
             current_builds['public'])
 
     def test_getBuildQueueSizes(self):

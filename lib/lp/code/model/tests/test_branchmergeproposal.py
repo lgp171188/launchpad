@@ -1174,7 +1174,7 @@ class TestGetAddress(TestCaseWithFactory):
 
     def test_address(self):
         merge_proposal = self.factory.makeBranchMergeProposal()
-        expected = 'mp+%d@code.launchpad.dev' % merge_proposal.id
+        expected = 'mp+%d@code.launchpad.test' % merge_proposal.id
         self.assertEqual(expected, merge_proposal.address)
 
 

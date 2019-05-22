@@ -5,7 +5,7 @@ comment form requires launchpad.Edit permission on the bugtask. In this
 case, it means being logged in.
 
     >>> anon_browser.open(
-    ...     "http://bugs.launchpad.dev/firefox/+bug/1/+addcomment-form")
+    ...     "http://bugs.launchpad.test/firefox/+bug/1/+addcomment-form")
     Traceback (most recent call last):
       ..
     Unauthorized: ...launchpad.Edit...
@@ -13,12 +13,12 @@ case, it means being logged in.
 So let's login and add a comment.
 
     >>> user_browser.open(
-    ...     "http://bugs.launchpad.dev/firefox/+bug/1/+addcomment-form")
+    ...     "http://bugs.launchpad.test/firefox/+bug/1/+addcomment-form")
     >>> user_browser.getControl(name='field.comment').value = "a test comment"
     >>> user_browser.getControl("Post Comment").click()
 
     >>> print(user_browser.url)
-    http://bugs.launchpad.dev/firefox/+bug/1
+    http://bugs.launchpad.test/firefox/+bug/1
 
     >>> print_feedback_messages(user_browser.contents)
     Thank you for your comment.
@@ -28,7 +28,7 @@ When an attachment is submitted, the comment and description are optional.
     >>> from StringIO import StringIO
 
     >>> user_browser.open(
-    ...     "http://bugs.launchpad.dev/firefox/+bug/1/+addcomment-form")
+    ...     "http://bugs.launchpad.test/firefox/+bug/1/+addcomment-form")
     >>> user_browser.getControl("Attachment").add_file(
     ...     StringIO("a test file"), "text/plain", "foo.txt")
     >>> user_browser.getControl("Post Comment").click()
@@ -39,7 +39,7 @@ When an attachment is submitted, the comment and description are optional.
 A comment and attachment can be submitted in one request.
 
     >>> user_browser.open(
-    ...     "http://bugs.launchpad.dev/firefox/+bug/1/+addcomment-form")
+    ...     "http://bugs.launchpad.test/firefox/+bug/1/+addcomment-form")
     >>> user_browser.getControl(
     ...     name='field.comment').value = "this is a comment"
     >>> user_browser.getControl("Attachment").add_file(
@@ -48,7 +48,7 @@ A comment and attachment can be submitted in one request.
     >>> user_browser.getControl("Post Comment").click()
 
     >>> print(user_browser.url)
-    http://bugs.launchpad.dev/firefox/+bug/1
+    http://bugs.launchpad.test/firefox/+bug/1
 
     >>> print_feedback_messages(user_browser.contents)
     Thank you for your comment.
@@ -57,13 +57,13 @@ A comment and attachment can be submitted in one request.
 You cannot upload an empty attachment.
 
     >>> user_browser.open(
-    ...     "http://bugs.launchpad.dev/firefox/+bug/1/+addcomment-form")
+    ...     "http://bugs.launchpad.test/firefox/+bug/1/+addcomment-form")
     >>> user_browser.getControl("Attachment").add_file(
     ...     StringIO(""), "text/plain", "foo.txt")
     >>> user_browser.getControl("Post Comment").click()
 
     >>> print(user_browser.url)
-    http://bugs.launchpad.dev/firefox/+bug/1/+addcomment
+    http://bugs.launchpad.test/firefox/+bug/1/+addcomment
 
     >>> print_feedback_messages(user_browser.contents)
     There is 1 error.
@@ -78,7 +78,7 @@ option in launchpad.conf. In our example, the size is limited to 1024.
     1024
 
     >>> user_browser.open(
-    ...     "http://bugs.launchpad.dev/firefox/+bug/1/+addcomment-form")
+    ...     "http://bugs.launchpad.test/firefox/+bug/1/+addcomment-form")
     >>> user_browser.getControl("Attachment").add_file(
     ...     StringIO("x"*1025), "text/plain", "foo.txt")
     >>> user_browser.getControl("Post Comment").click()
@@ -90,14 +90,14 @@ option in launchpad.conf. In our example, the size is limited to 1024.
 The comment/attach file form is available from a link on the bug page.
 
     >>> user_browser.open(
-    ...     "http://bugs.launchpad.dev/firefox/+bug/1/+addcomment")
+    ...     "http://bugs.launchpad.test/firefox/+bug/1/+addcomment")
     >>> user_browser.getControl("Attachment").add_file(
     ...     StringIO("a test file"), "text/plain", "foo.txt")
     >>> user_browser.getControl("Description").value = "some file"
     >>> user_browser.getControl("Post Comment").click()
 
     >>> print(user_browser.url)
-    http://bugs.launchpad.dev/firefox/+bug/1
+    http://bugs.launchpad.test/firefox/+bug/1
 
     >>> print_feedback_messages(user_browser.contents)
     Attachment foo.txt added to bug.

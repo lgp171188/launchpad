@@ -10,7 +10,7 @@ Let's have an authenticated user create a message in the style of
 an email post to examine the markup rules. This message contains a
 quoted passage, and a signature with an email address in it.
 
-    >>> user_browser.open('http://answers.launchpad.dev/ubuntu/+question/11')
+    >>> user_browser.open('http://answers.launchpad.test/ubuntu/+question/11')
     >>> print(user_browser.title.decode('utf-8'))
     Question #11 : ...
 
@@ -50,7 +50,7 @@ Unauthenticated users, such as a bot will see the mock email address
 of 'person@domain.dom'. The anonymous user is unauthenticated, so they will
 see the obfuscated email address (<email address hidden>).
 
-    >>> anon_browser.open('http://answers.launchpad.dev/ubuntu/+question/11')
+    >>> anon_browser.open('http://answers.launchpad.test/ubuntu/+question/11')
     >>> print(anon_browser.title)
     Question #11 : ...
 

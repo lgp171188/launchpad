@@ -14,11 +14,11 @@ in the table HWDriver.
     >>> hwdb_root = webservice.get('/+hwdb').jsonBody()
     >>> pprint_entry(hwdb_root)
     driver_names_collection_link:
-        u'http://api.launchpad.dev/beta/+hwdb/driver_names'
+        u'http://api.launchpad.test/beta/+hwdb/driver_names'
     package_names_collection_link:
-        u'http://api.launchpad.dev/beta/+hwdb/package_names'
-    resource_type_link: u'http://api.launchpad.dev/beta/#hwdb'
-    self_link: u'http://api.launchpad.dev/beta/+hwdb'
+        u'http://api.launchpad.test/beta/+hwdb/package_names'
+    resource_type_link: u'http://api.launchpad.test/beta/#hwdb'
+    self_link: u'http://api.launchpad.test/beta/+hwdb'
 
 
 === Device Queries and Devices ===
@@ -41,8 +41,8 @@ A device entry provides the attributes bus_product_id, name and variant.
     drivers_collection_link: u'.../+hwdb/+device/1/drivers'
     id: 1
     name: u'MS-7369'
-    resource_type_link: u'http://api.launchpad.dev/beta/#h_w_device'
-    self_link: u'http://api.launchpad.dev/beta/+hwdb/+device/1'
+    resource_type_link: u'http://api.launchpad.test/beta/#h_w_device'
+    self_link: u'http://api.launchpad.test/beta/+hwdb/+device/1'
     variant: None
     vendor_id: u'MSI'
     vendor_name: u'MSI'
@@ -83,8 +83,8 @@ devices matching the given value are returned.
     drivers_collection_link: u'.../+hwdb/+device/1/drivers'
     id: 1
     name: u'MS-7369'
-    resource_type_link: u'http://api.launchpad.dev/beta/#h_w_device'
-    self_link: u'http://api.launchpad.dev/beta/+hwdb/+device/1'
+    resource_type_link: u'http://api.launchpad.test/beta/#h_w_device'
+    self_link: u'http://api.launchpad.test/beta/+hwdb/+device/1'
     variant: None
     vendor_id: u'MSI'
     vendor_name: u'MSI'
@@ -121,8 +121,8 @@ Single device records can be accessed too.
     drivers_collection_link: u'.../+hwdb/+device/2/drivers'
     id: 2
     name: u'MCP65 USB Controller'
-    resource_type_link: u'http://api.launchpad.dev/beta/#h_w_device'
-    self_link: u'http://api.launchpad.dev/beta/+hwdb/+device/2'
+    resource_type_link: u'http://api.launchpad.test/beta/#h_w_device'
+    self_link: u'http://api.launchpad.test/beta/+hwdb/+device/2'
     variant: None
     vendor_id: u'0x10de'
     vendor_name: u'nVidia Corporation'
@@ -152,20 +152,20 @@ HWDevice.drivers returns the list of drivers associtaed with this device.
     license: None
     name: u'ehci_hcd'
     package_name: u'linux-image-2.6.24-19-generic'
-    resource_type_link: u'http://api.launchpad.dev/beta/#h_w_driver'
-    self_link: u'http://api.launchpad.dev/beta/+hwdb/+driver/1'
+    resource_type_link: u'http://api.launchpad.test/beta/#h_w_driver'
+    self_link: u'http://api.launchpad.test/beta/+hwdb/+driver/1'
     id: 5
     license: None
     name: u'hub'
     package_name: u'linux-image-2.6.24-19-generic'
-    resource_type_link: u'http://api.launchpad.dev/beta/#h_w_driver'
-    self_link: u'http://api.launchpad.dev/beta/+hwdb/+driver/5'
+    resource_type_link: u'http://api.launchpad.test/beta/#h_w_driver'
+    self_link: u'http://api.launchpad.test/beta/+hwdb/+driver/5'
     id: 2
     license: None
     name: u'usb'
     package_name: u'linux-image-2.6.24-19-generic'
-    resource_type_link: u'http://api.launchpad.dev/beta/#h_w_driver'
-    self_link: u'http://api.launchpad.dev/beta/+hwdb/+driver/2'
+    resource_type_link: u'http://api.launchpad.test/beta/#h_w_driver'
+    self_link: u'http://api.launchpad.test/beta/+hwdb/+driver/2'
 
 We can add and retrieve class data, i.e., the type of a device (printer,
 scanner, sound device) for a device. Device 2 is a PCI USB controller,
@@ -178,8 +178,8 @@ call returns a reference to a HWDeviceClass record.
     ...     sub_class=3).jsonBody()
     >>> pprint_entry(class_info)
     main_class: 12
-    resource_type_link: u'http://api.launchpad.dev/beta/#h_w_device_class'
-    self_link: u'http://api.launchpad.dev/beta/+hwdb/+deviceclass/...'
+    resource_type_link: u'http://api.launchpad.test/beta/#h_w_device_class'
+    self_link: u'http://api.launchpad.test/beta/+hwdb/+deviceclass/...'
     sub_class: 3
 
 A second call of this method returns the same record.
@@ -188,7 +188,7 @@ A second call of this method returns the same record.
     ...     '/+hwdb/+device/2', 'getOrCreateDeviceClass', {}, main_class=12,
     ...     sub_class=3).jsonBody()
     >>> print(class_info['self_link'])
-    http://api.launchpad.dev/beta/+hwdb/+deviceclass/...
+    http://api.launchpad.test/beta/+hwdb/+deviceclass/...
 
 The property device.classes returns the collection of all classes
 assigned to the device.
@@ -197,8 +197,8 @@ assigned to the device.
     >>> for entry in class_info['entries']:
     ...     pprint_entry(entry)
     main_class: 12
-    resource_type_link: u'http://api.launchpad.dev/beta/#h_w_device_class'
-    self_link: u'http://api.launchpad.dev/beta/+hwdb/+deviceclass/...'
+    resource_type_link: u'http://api.launchpad.test/beta/#h_w_device_class'
+    self_link: u'http://api.launchpad.test/beta/+hwdb/+deviceclass/...'
     sub_class: 3
 
 We can delete existing class data by calling deviceclass.delete().
@@ -251,62 +251,62 @@ name, package_name, variant and license.
     license: None
     name: u'ehci_hcd'
     package_name: u'linux-image-2.6.24-19-generic'
-    resource_type_link: u'http://api.launchpad.dev/beta/#h_w_driver'
-    self_link: u'http://api.launchpad.dev/beta/+hwdb/+driver/...'
+    resource_type_link: u'http://api.launchpad.test/beta/#h_w_driver'
+    self_link: u'http://api.launchpad.test/beta/+hwdb/+driver/...'
     id: ...
     license: None
     name: u'usb'
     package_name: u'linux-image-2.6.24-19-generic'
-    resource_type_link: u'http://api.launchpad.dev/beta/#h_w_driver'
-    self_link: u'http://api.launchpad.dev/beta/+hwdb/+driver/...'
+    resource_type_link: u'http://api.launchpad.test/beta/#h_w_driver'
+    self_link: u'http://api.launchpad.test/beta/+hwdb/+driver/...'
     id: ...
     license: None
     name: u'usb-storage'
     package_name: u'linux-image-2.6.24-19-generic'
-    resource_type_link: u'http://api.launchpad.dev/beta/#h_w_driver'
-    self_link: u'http://api.launchpad.dev/beta/+hwdb/+driver/...'
+    resource_type_link: u'http://api.launchpad.test/beta/#h_w_driver'
+    self_link: u'http://api.launchpad.test/beta/+hwdb/+driver/...'
     id: ...
     license: None
     name: u'sd'
     package_name: u'linux-image-2.6.24-19-generic'
-    resource_type_link: u'http://api.launchpad.dev/beta/#h_w_driver'
-    self_link: u'http://api.launchpad.dev/beta/+hwdb/+driver/...'
+    resource_type_link: u'http://api.launchpad.test/beta/#h_w_driver'
+    self_link: u'http://api.launchpad.test/beta/+hwdb/+driver/...'
     id: ...
     license: None
     name: u'hub'
     package_name: u'linux-image-2.6.24-19-generic'
-    resource_type_link: u'http://api.launchpad.dev/beta/#h_w_driver'
-    self_link: u'http://api.launchpad.dev/beta/+hwdb/+driver/...'
+    resource_type_link: u'http://api.launchpad.test/beta/#h_w_driver'
+    self_link: u'http://api.launchpad.test/beta/+hwdb/+driver/...'
     id: ...
     license: None
     name: u'ahci'
     package_name: u'linux-image-2.6.24-19-generic'
-    resource_type_link: u'http://api.launchpad.dev/beta/#h_w_driver'
-    self_link: u'http://api.launchpad.dev/beta/+hwdb/+driver/...'
+    resource_type_link: u'http://api.launchpad.test/beta/#h_w_driver'
+    self_link: u'http://api.launchpad.test/beta/+hwdb/+driver/...'
     id: ...
     license: None
     name: u'sr'
     package_name: u'linux-image-2.6.24-19-generic'
-    resource_type_link: u'http://api.launchpad.dev/beta/#h_w_driver'
-    self_link: u'http://api.launchpad.dev/beta/+hwdb/+driver/...'
+    resource_type_link: u'http://api.launchpad.test/beta/#h_w_driver'
+    self_link: u'http://api.launchpad.test/beta/+hwdb/+driver/...'
     id: ...
     license: None
     name: u'nv'
     package_name: u'xorg'
-    resource_type_link: u'http://api.launchpad.dev/beta/#h_w_driver'
-    self_link: u'http://api.launchpad.dev/beta/+hwdb/+driver/...'
+    resource_type_link: u'http://api.launchpad.test/beta/#h_w_driver'
+    self_link: u'http://api.launchpad.test/beta/+hwdb/+driver/...'
     id: ...
     license: None
     name: u'usb'
     package_name: u''
-    resource_type_link: u'http://api.launchpad.dev/beta/#h_w_driver'
-    self_link: u'http://api.launchpad.dev/beta/+hwdb/+driver/...'
+    resource_type_link: u'http://api.launchpad.test/beta/#h_w_driver'
+    self_link: u'http://api.launchpad.test/beta/+hwdb/+driver/...'
     id: ...
     license: None
     name: u'foo'
     package_name: u''
-    resource_type_link: u'http://api.launchpad.dev/beta/#h_w_driver'
-    self_link: u'http://api.launchpad.dev/beta/+hwdb/+driver/...'
+    resource_type_link: u'http://api.launchpad.test/beta/#h_w_driver'
+    self_link: u'http://api.launchpad.test/beta/+hwdb/+driver/...'
 
 If we specify a package name, only drivers from this package are
 returned.
@@ -319,8 +319,8 @@ returned.
     license: None
     name: u'nv'
     package_name: u'xorg'
-    resource_type_link: u'http://api.launchpad.dev/beta/#h_w_driver'
-    self_link: u'http://api.launchpad.dev/beta/+hwdb/+driver/...'
+    resource_type_link: u'http://api.launchpad.test/beta/#h_w_driver'
+    self_link: u'http://api.launchpad.test/beta/+hwdb/+driver/...'
 
 If we specify an empty package name, those drivers are returned where
 a package_name is not recorded.
@@ -333,14 +333,14 @@ a package_name is not recorded.
     license: None
     name: u'usb'
     package_name: u''
-    resource_type_link: u'http://api.launchpad.dev/beta/#h_w_driver'
-    self_link: u'http://api.launchpad.dev/beta/+hwdb/+driver/...'
+    resource_type_link: u'http://api.launchpad.test/beta/#h_w_driver'
+    self_link: u'http://api.launchpad.test/beta/+hwdb/+driver/...'
     id: ...
     license: None
     name: u'foo'
     package_name: u''
-    resource_type_link: u'http://api.launchpad.dev/beta/#h_w_driver'
-    self_link: u'http://api.launchpad.dev/beta/+hwdb/+driver/...'
+    resource_type_link: u'http://api.launchpad.test/beta/#h_w_driver'
+    self_link: u'http://api.launchpad.test/beta/+hwdb/+driver/...'
 
 If the parameter name is specified but no package_name, all drivers with
 the given name are returned.
@@ -353,14 +353,14 @@ the given name are returned.
     license: None
     name: u'usb'
     package_name: u'linux-image-2.6.24-19-generic'
-    resource_type_link: u'http://api.launchpad.dev/beta/#h_w_driver'
-    self_link: u'http://api.launchpad.dev/beta/+hwdb/+driver/...'
+    resource_type_link: u'http://api.launchpad.test/beta/#h_w_driver'
+    self_link: u'http://api.launchpad.test/beta/+hwdb/+driver/...'
     id: ...
     license: None
     name: u'usb'
     package_name: u''
-    resource_type_link: u'http://api.launchpad.dev/beta/#h_w_driver'
-    self_link: u'http://api.launchpad.dev/beta/+hwdb/+driver/...'
+    resource_type_link: u'http://api.launchpad.test/beta/#h_w_driver'
+    self_link: u'http://api.launchpad.test/beta/+hwdb/+driver/...'
 
 If package_name and name are specified, those records are returned that
 match both values.
@@ -374,8 +374,8 @@ match both values.
     license: None
     name: u'usb'
     package_name: u'linux-image-2.6.24-19-generic'
-    resource_type_link: u'http://api.launchpad.dev/beta/#h_w_driver'
-    self_link: u'http://api.launchpad.dev/beta/+hwdb/+driver/2'
+    resource_type_link: u'http://api.launchpad.test/beta/#h_w_driver'
+    self_link: u'http://api.launchpad.test/beta/+hwdb/+driver/2'
 
 Single drivers can be retrieved too.
 
@@ -384,8 +384,8 @@ Single drivers can be retrieved too.
     license: None
     name: u'ehci_hcd'
     package_name: u'linux-image-2.6.24-19-generic'
-    resource_type_link: u'http://api.launchpad.dev/beta/#h_w_driver'
-    self_link: u'http://api.launchpad.dev/beta/+hwdb/+driver/1'
+    resource_type_link: u'http://api.launchpad.test/beta/#h_w_driver'
+    self_link: u'http://api.launchpad.test/beta/+hwdb/+driver/1'
 
 A 404 error is returned, when a non-existent ID is passed in the URL...
 
@@ -476,20 +476,20 @@ The HWDB application object provides a list of known driver names...
     >>> for driver_name in driver_names['entries']:
     ...     pprint_entry(driver_name)
     name: u'ahci'
-    resource_type_link: u'http://api.launchpad.dev/beta/#h_w_driver_name'
-    self_link: u'http://api.launchpad.dev/beta/+hwdb/+drivername/ahci'
+    resource_type_link: u'http://api.launchpad.test/beta/#h_w_driver_name'
+    self_link: u'http://api.launchpad.test/beta/+hwdb/+drivername/ahci'
     name: u'ehci_hcd'
-    resource_type_link: u'http://api.launchpad.dev/beta/#h_w_driver_name'
-    self_link: u'http://api.launchpad.dev/beta/+hwdb/+drivername/ehci_hcd'
+    resource_type_link: u'http://api.launchpad.test/beta/#h_w_driver_name'
+    self_link: u'http://api.launchpad.test/beta/+hwdb/+drivername/ehci_hcd'
     name: u'foo'
-    resource_type_link: u'http://api.launchpad.dev/beta/#h_w_driver_name'
-    self_link: u'http://api.launchpad.dev/beta/+hwdb/+drivername/foo'
+    resource_type_link: u'http://api.launchpad.test/beta/#h_w_driver_name'
+    self_link: u'http://api.launchpad.test/beta/+hwdb/+drivername/foo'
     name: u'hub'
-    resource_type_link: u'http://api.launchpad.dev/beta/#h_w_driver_name'
-    self_link: u'http://api.launchpad.dev/beta/+hwdb/+drivername/hub'
+    resource_type_link: u'http://api.launchpad.test/beta/#h_w_driver_name'
+    self_link: u'http://api.launchpad.test/beta/+hwdb/+drivername/hub'
     name: u'nv'
-    resource_type_link: u'http://api.launchpad.dev/beta/#h_w_driver_name'
-    self_link: u'http://api.launchpad.dev/beta/+hwdb/+drivername/nv'
+    resource_type_link: u'http://api.launchpad.test/beta/#h_w_driver_name'
+    self_link: u'http://api.launchpad.test/beta/+hwdb/+drivername/nv'
 
 ...and of package names.
 
@@ -499,17 +499,17 @@ The HWDB application object provides a list of known driver names...
     ...     pprint_entry(package_name)
     package_name: u''
     resource_type_link:
-        u'http://api.launchpad.dev/beta/#h_w_driver_package_name'
-    self_link: u'http://api.launchpad.dev/beta/+hwdb/+driverpackagename/'
+        u'http://api.launchpad.test/beta/#h_w_driver_package_name'
+    self_link: u'http://api.launchpad.test/beta/+hwdb/+driverpackagename/'
     package_name: u'linux-image-2.6.24-19-generic'
     resource_type_link:
-        u'http://api.launchpad.dev/beta/#h_w_driver_package_name'
+        u'http://api.launchpad.test/beta/#h_w_driver_package_name'
     self_link:
-        u'http://api.launchpad.dev/beta/+hwdb/+driverpackagename/linux-...
+        u'http://api.launchpad.test/beta/+hwdb/+driverpackagename/linux-...
     package_name: u'xorg'
     resource_type_link:
-        u'http://api.launchpad.dev/beta/#h_w_driver_package_name'
-    self_link: u'http://api.launchpad.dev/beta/+hwdb/+driverpackagename/xorg'
+        u'http://api.launchpad.test/beta/#h_w_driver_package_name'
+    self_link: u'http://api.launchpad.test/beta/+hwdb/+driverpackagename/xorg'
 
 
 === HWDB submissions and submission queries ===
@@ -525,11 +525,11 @@ for the contents of devices_collection_link.)
     date_submitted: u'2008-09-30T08:19:00.222131+00:00'
     devices_collection_link: u'.../+hwdb/+submission/sample-submission/devices'
     format: u'Version 1'
-    owner_link: u'http://api.launchpad.dev/beta/~name12'
+    owner_link: u'http://api.launchpad.test/beta/~name12'
     private: False
     raw_submission_link:
         u'.../+hwdb/+submission/sample-submission/raw_submission'
-    resource_type_link: u'http://api.launchpad.dev/beta/#h_w_submission'
+    resource_type_link: u'http://api.launchpad.test/beta/#h_w_submission'
     self_link: u'.../+hwdb/+submission/sample-submission'
     status: u'Processed'
     submission_key: u'sample-submission'
@@ -815,13 +815,13 @@ A single HWSubmissionDevice record can be accessed via its database ID.
     >>> submission_device = webservice.get(
     ...     '/+hwdb/+submissiondevice/3').jsonBody()
     >>> pprint_entry(submission_device)
-    device_link: u'http://api.launchpad.dev/beta/+hwdb/+device/2'
-    driver_link: u'http://api.launchpad.dev/beta/+hwdb/+driver/1'
+    device_link: u'http://api.launchpad.test/beta/+hwdb/+device/2'
+    driver_link: u'http://api.launchpad.test/beta/+hwdb/+driver/1'
     hal_device_id: 121
     id: 3
-    parent_link: u'http://api.launchpad.dev/beta/+hwdb/+submissiondevice/2'
-    resource_type_link: u'http://api.launchpad.dev/beta/#h_w_submission_device'
-    self_link: u'http://api.launchpad.dev/beta/+hwdb/+submissiondevice/3'
+    parent_link: u'http://api.launchpad.test/beta/+hwdb/+submissiondevice/2'
+    resource_type_link: u'http://api.launchpad.test/beta/#h_w_submission_device'
+    self_link: u'http://api.launchpad.test/beta/+hwdb/+submissiondevice/3'
 
 The HWSubmissionDevice records belonging to a given submission can
 are stored in HWSubmission.devices.
@@ -830,7 +830,7 @@ are stored in HWSubmission.devices.
     >>> submission_devices = webservice.get(url).jsonBody()
     >>> for submission_device in submission_devices['entries']:
     ...     pprint_entry(submission_device)
-    device_link: u'http://api.launchpad.dev/beta/+hwdb/+device/2'
+    device_link: u'http://api.launchpad.test/beta/+hwdb/+device/2'
     driver_link: None
     hal_device_id: 121
     id: 2
@@ -861,8 +861,8 @@ A vendor ID can be accessed by via its database ID.
     >>> pprint_entry(vendor_id)
     bus: u'System'
     id: 1
-    resource_type_link: u'http://api.launchpad.dev/beta/#h_w_vendor_i_d'
-    self_link: u'http://api.launchpad.dev/beta/+hwdb/+hwvendorid/1'
+    resource_type_link: u'http://api.launchpad.test/beta/#h_w_vendor_i_d'
+    self_link: u'http://api.launchpad.test/beta/+hwdb/+hwvendorid/1'
     vendor_id: u'MSI'
 
 A 404 error is returned, when a non-existent ID is passed in the URL...
@@ -890,13 +890,13 @@ HWDBApplication.vendorIDs().
     ...     pprint_entry(vendor_id)
     bus: u'USB'
     id: 3
-    resource_type_link: u'http://api.launchpad.dev/beta/#h_w_vendor_i_d'
-    self_link: u'http://api.launchpad.dev/beta/+hwdb/+hwvendorid/3'
+    resource_type_link: u'http://api.launchpad.test/beta/#h_w_vendor_i_d'
+    self_link: u'http://api.launchpad.test/beta/+hwdb/+hwvendorid/3'
     vendor_id: u'0x04b4'
     bus: u'USB'
     id: 4
-    resource_type_link: u'http://api.launchpad.dev/beta/#h_w_vendor_i_d'
-    self_link: u'http://api.launchpad.dev/beta/+hwdb/+hwvendorid/4'
+    resource_type_link: u'http://api.launchpad.test/beta/#h_w_vendor_i_d'
+    self_link: u'http://api.launchpad.test/beta/+hwdb/+hwvendorid/4'
     vendor_id: u'0x0dda'
 
 

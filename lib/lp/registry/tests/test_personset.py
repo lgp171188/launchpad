@@ -209,9 +209,9 @@ class TestPersonSet(TestCaseWithFactory):
         with person_logged_in(person):
             identifier = person.account.openid_identifiers.one().identifier
         for id_url in (
-                u'http://testopenid.dev/+id/%s' % identifier,
-                u'http://login1.dev/+id/%s' % identifier,
-                u'http://login2.dev/+id/%s' % identifier):
+                u'http://testopenid.test/+id/%s' % identifier,
+                u'http://login1.test/+id/%s' % identifier,
+                u'http://login2.test/+id/%s' % identifier):
             self.assertEqual(
                 person, self.person_set.getByOpenIDIdentifier(id_url))
 
@@ -220,7 +220,7 @@ class TestPersonSet(TestCaseWithFactory):
         self.assertIs(
             None,
             self.person_set.getByOpenIDIdentifier(
-                u'http://testopenid.dev/+id/notanid'))
+                u'http://testopenid.test/+id/notanid'))
 
     def test_getByOpenIDIdentifier_for_bad_domain_is_none(self):
         # Even though the OpenIDIdentifier table doesn't store the
@@ -232,7 +232,7 @@ class TestPersonSet(TestCaseWithFactory):
         self.assertIs(
             None,
             self.person_set.getByOpenIDIdentifier(
-                u'http://not.launchpad.dev/+id/%s' % identifier))
+                u'http://not.launchpad.test/+id/%s' % identifier))
 
     def test_find__accepts_queries_with_or_operator(self):
         # PersonSet.find() allows to search for OR combined terms.
