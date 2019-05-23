@@ -122,23 +122,27 @@ class SnapBuildBehaviour(BuildFarmJobBehaviourBase):
                     endpoint=config.snappy.builder_proxy_auth_api_endpoint,
                     token=token['username']))
         args["name"] = build.snap.store_name or build.snap.name
-        # XXX cjwatson 2015-08-03: Allow tools_source to be overridden at
-        # some more fine-grained level.
-        args["archives"], args["trusted_keys"] = (
-            yield get_sources_list_for_building(
-                build, build.distro_arch_series, None,
-                tools_source=config.snappy.tools_source,
-                tools_fingerprint=config.snappy.tools_fingerprint,
-                logger=logger))
         channels = build.channels or {}
         if "snapcraft" not in channels:
             channels["snapcraft"] = (
                 getFeatureFlag(SNAP_SNAPCRAFT_CHANNEL_FEATURE_FLAG) or "apt")
-        if channels.get("snapcraft") != "apt":
+        if channels.get("snapcraft") == "apt":
+            # XXX cjwatson 2015-08-03: Allow tools_source to be overridden
+            # at some more fine-grained level.
+            tools_source = config.snappy.tools_source
+            tools_fingerprint = config.snappy.tools_fingerprint
+        else:
             # We have to remove the security proxy that Zope applies to this
             # dict, since otherwise we'll be unable to serialise it to
             # XML-RPC.
             args["channels"] = removeSecurityProxy(channels)
+            tools_source = None
+            tools_fingerprint = None
+        args["archives"], args["trusted_keys"] = (
+            yield get_sources_list_for_building(
+                build, build.distro_arch_series, None,
+                tools_source=tools_source, tools_fingerprint=tools_fingerprint,
+                logger=logger))
         if build.snap.branch is not None:
             args["branch"] = build.snap.branch.bzr_identity
         elif build.snap.git_ref is not None:
