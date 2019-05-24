@@ -425,7 +425,7 @@ class TestTimeout(TestCase):
     def test_urlfetch_does_not_support_file_urls_by_default(self):
         """urlfetch() does not support file urls by default."""
         test_path = self.useFixture(TempDir()).join('file')
-        write_file(test_path, '')
+        write_file(test_path, b'')
         url = 'file://' + test_path
         e = self.assertRaises(InvalidSchema, urlfetch, url)
         self.assertEqual(
@@ -434,7 +434,7 @@ class TestTimeout(TestCase):
     def test_urlfetch_supports_file_urls_if_allow_file(self):
         """urlfetch() supports file urls if explicitly asked to do so."""
         test_path = self.useFixture(TempDir()).join('file')
-        write_file(test_path, 'Success.')
+        write_file(test_path, b'Success.')
         url = 'file://' + test_path
         self.assertThat(urlfetch(url, allow_file=True), MatchesStructure(
             status_code=Equals(200),

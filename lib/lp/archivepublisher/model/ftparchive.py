@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 from collections import defaultdict
@@ -254,13 +254,13 @@ class FTPArchiveHandler:
         for path in needed_paths:
             write_file(os.path.join(
                 self._config.overrideroot,
-                ".".join(("override", suite) + path)), "")
+                ".".join(("override", suite) + path)), b"")
 
         # Create empty file lists.
         def touch_list(*parts):
             write_file(os.path.join(
                 self._config.overrideroot,
-                "_".join((suite, ) + parts)), "")
+                "_".join((suite, ) + parts)), b"")
         touch_list(comp, "source")
 
         arch_tags = [

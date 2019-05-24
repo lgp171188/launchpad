@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test the generate_ppa_htaccess.py script. """
@@ -161,7 +161,7 @@ class TestPPAHtaccessTokenGeneration(TestCaseWithFactory):
 
     def testReplaceUpdatedHtpasswd(self):
         """Test that the htpasswd file is only replaced if it changes."""
-        FILE_CONTENT = "Kneel before Zod!"
+        FILE_CONTENT = b"Kneel before Zod!"
         # The publisher Config object does not have an interface, so we
         # need to remove the security wrapper.
         pub_config = getPubConfig(self.ppa)
@@ -174,7 +174,7 @@ class TestPPAHtaccessTokenGeneration(TestCaseWithFactory):
         # Write the same contents in a temp file.
         def write_tempfile():
             fd, temp_filename = tempfile.mkstemp(dir=pub_config.archiveroot)
-            file = os.fdopen(fd, "w")
+            file = os.fdopen(fd, "wb")
             file.write(FILE_CONTENT)
             file.close()
             return temp_filename
@@ -188,7 +188,7 @@ class TestPPAHtaccessTokenGeneration(TestCaseWithFactory):
         self.assertFalse(os.path.exists(temp_filename))
 
         # Writing a different .htpasswd should see it get replaced.
-        write_file(filename, "Come to me, son of Jor-El!")
+        write_file(filename, b"Come to me, son of Jor-El!")
 
         temp_filename = write_tempfile()
         self.assertTrue(os.path.exists(temp_filename))

@@ -1,4 +1,4 @@
-# Copyright 2009-2017 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 from datetime import datetime
@@ -395,7 +395,7 @@ class TestParsedFilesDetection(TestCase):
         file_paths = [root.join(str(name)) for name in range(3)]
         now = time.time()
         for i, path in enumerate(file_paths):
-            write_file(path, '%s\n' % i)
+            write_file(path, ('%s\n' % i).encode('UTF-8'))
             os.utime(path, (now - i, now - i))
         contents = []
         for fd, _ in get_files_to_parse(file_paths):
