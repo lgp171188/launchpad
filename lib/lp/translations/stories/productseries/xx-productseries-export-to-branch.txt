@@ -41,7 +41,7 @@ A project owner sets a translations branch from the series' translations
 settings page.
 
     >>> productseries_url = str(
-    ...     'http://translations.launchpad.dev/%s/trunk' %
+    ...     'http://translations.launchpad.test/%s/trunk' %
     ...         productseries.product.name)
     >>> settings_page = productseries_url + '/+translations-settings'
     >>> link_page = productseries_url + '/+link-translations-branch'
@@ -60,14 +60,14 @@ The notice links to a page where a translations branch can be selected.
 
     >>> owner_browser.getLink('Choose a target branch').click()
     >>> print(owner_browser.url)
-    http://translations.launchpad.dev/.../trunk/+link-translations-branch
+    http://translations.launchpad.test/.../trunk/+link-translations-branch
 
     >>> set_translations_branch(owner_browser, branch_name)
 
 After setting the branch, the form returns to the settings page.
 
     >>> print(owner_browser.url)
-    http://translations.launchpad.dev/.../trunk/+translations-settings
+    http://translations.launchpad.test/.../trunk/+translations-settings
 
 It shows the changed setting.
 
@@ -79,11 +79,11 @@ changed.
 
     >>> edit_link = owner_browser.getLink(id='translations-branch-edit-link')
     >>> print(edit_link.url)
-    http://translations.launchpad.dev/.../trunk/+link-translations-branch
+    http://translations.launchpad.test/.../trunk/+link-translations-branch
 
     >>> branch_link = owner_browser.getLink(url=branch_name)
     >>> print(branch_link.url)
-    http://code.launchpad.dev/~.../.../...
+    http://code.launchpad.test/~.../.../...
 
     >>> branch_link.click()
 
@@ -109,7 +109,7 @@ The field can also be cleared in order to disable the exports.
     >>> set_translations_branch(owner_browser, '')
 
     >>> print(owner_browser.url)
-    http://translations.launchpad.dev/.../trunk/+translations-settings
+    http://translations.launchpad.test/.../trunk/+translations-settings
 
 The settings page then goes back to showing the original message.
 

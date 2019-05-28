@@ -170,31 +170,31 @@ To demonstrate this, we'll start by creating two blueprints for a
 distribution:
 
     >>> browser = user_browser
-    >>> browser.open('http://blueprints.launchpad.dev/ubuntu')
+    >>> browser.open('http://blueprints.launchpad.test/ubuntu')
     >>> browser.getLink('Register a blueprint').click()
     >>> browser.url
-    'http://blueprints.launchpad.dev/ubuntu/+addspec'
+    'http://blueprints.launchpad.test/ubuntu/+addspec'
     >>> browser.getControl('Name').value = 'blueprint-1'
     >>> browser.getControl('Title').value = 'The First Blueprint'
     >>> browser.getControl('Summary').value = 'The first blueprint.'
     >>> browser.getControl('Register').click()
     >>> browser.url
-    'http://blueprints.launchpad.dev/ubuntu/+spec/blueprint-1'
+    'http://blueprints.launchpad.test/ubuntu/+spec/blueprint-1'
     >>> browser.open(
-    ...     'http://blueprints.launchpad.dev/ubuntu/+addspec')
+    ...     'http://blueprints.launchpad.test/ubuntu/+addspec')
     >>> browser.getControl('Name').value = 'blueprint-2'
     >>> browser.getControl('Title').value = 'The Second Blueprint'
     >>> browser.getControl('Summary').value = 'The second blueprint.'
     >>> browser.getControl('Register').click()
     >>> browser.url
-    'http://blueprints.launchpad.dev/ubuntu/+spec/blueprint-2'
+    'http://blueprints.launchpad.test/ubuntu/+spec/blueprint-2'
 
 To begin with, we can see ''both'' blueprints by visiting the distribution's
 blueprints page:
 
     >>> browser.getLink('Blueprints').click()
     >>> browser.url
-    'http://blueprints.launchpad.dev/ubuntu'
+    'http://blueprints.launchpad.test/ubuntu'
     >>> browser.getLink('blueprint-1')
     <Link...
     >>> browser.getLink('blueprint-2')
@@ -204,14 +204,14 @@ Let's mark the ''second'' blueprint as ''implemented'':
 
     >>> browser.getLink('blueprint-2').click()
     >>> browser.url
-    'http://blueprints.launchpad.dev/ubuntu/+spec/blueprint-2'
+    'http://blueprints.launchpad.test/ubuntu/+spec/blueprint-2'
     >>> browser.getLink(url='+status').click()
     >>> browser.url
-    'http://blueprints.launchpad.dev/ubuntu/+spec/blueprint-2/+status'
+    'http://blueprints.launchpad.test/ubuntu/+spec/blueprint-2/+status'
     >>> browser.getControl('Implementation Status').value = ['IMPLEMENTED']
     >>> browser.getControl('Change').click()
     >>> browser.url
-    'http://blueprints.launchpad.dev/ubuntu/+spec/blueprint-2'
+    'http://blueprints.launchpad.test/ubuntu/+spec/blueprint-2'
 
 By default, implemented blueprints are ''not'' listed on a target's blueprint
 listing pages. So now when we visit the distribution's blueprints page, the
@@ -219,7 +219,7 @@ second blueprint is no longer visible:
 
     >>> browser.getLink('Blueprints').click()
     >>> browser.url
-    'http://blueprints.launchpad.dev/ubuntu'
+    'http://blueprints.launchpad.test/ubuntu'
     >>> browser.getLink('blueprint-1')
     <Link...
     >>> browser.getLink('blueprint-2')
@@ -232,7 +232,7 @@ the "List all blueprints" link:
 
     >>> browser.getLink('List all blueprints').click()
     >>> browser.url
-    'http://blueprints.launchpad.dev/ubuntu/+specs?show=all'
+    'http://blueprints.launchpad.test/ubuntu/+specs?show=all'
     >>> browser.getLink('blueprint-1')
     <Link...
     >>> browser.getLink('blueprint-2')
@@ -243,38 +243,38 @@ blueprint targets:
 
  * distribution series:
 
-    >>> browser.open('http://blueprints.launchpad.dev/ubuntu/hoary')
+    >>> browser.open('http://blueprints.launchpad.test/ubuntu/hoary')
     >>> browser.getLink('List all blueprints').click()
     >>> browser.url
-    'http://blueprints.launchpad.dev/ubuntu/hoary/+specs?show=all'
+    'http://blueprints.launchpad.test/ubuntu/hoary/+specs?show=all'
 
  * project groups:
 
-    >>> browser.open('http://blueprints.launchpad.dev/mozilla')
+    >>> browser.open('http://blueprints.launchpad.test/mozilla')
     >>> browser.getLink('List all blueprints').click()
     >>> browser.url
-    'http://blueprints.launchpad.dev/mozilla/+specs?show=all'
+    'http://blueprints.launchpad.test/mozilla/+specs?show=all'
 
  * products:
 
-    >>> browser.open('http://blueprints.launchpad.dev/firefox')
+    >>> browser.open('http://blueprints.launchpad.test/firefox')
     >>> browser.getLink('List all blueprints').click()
     >>> browser.url
-    'http://blueprints.launchpad.dev/firefox/+specs?show=all'
+    'http://blueprints.launchpad.test/firefox/+specs?show=all'
 
  * product series:
 
-    >>> browser.open('http://blueprints.launchpad.dev/firefox/1.0')
+    >>> browser.open('http://blueprints.launchpad.test/firefox/1.0')
     >>> browser.getLink('List all blueprints').click()
     >>> browser.url
-    'http://blueprints.launchpad.dev/firefox/1.0/+specs?show=all'
+    'http://blueprints.launchpad.test/firefox/1.0/+specs?show=all'
 
  * projects:
 
-    >>> browser.open('http://blueprints.launchpad.dev/mozilla')
+    >>> browser.open('http://blueprints.launchpad.test/mozilla')
     >>> browser.getLink('List all blueprints').click()
     >>> browser.url
-    'http://blueprints.launchpad.dev/mozilla/+specs?show=all'
+    'http://blueprints.launchpad.test/mozilla/+specs?show=all'
     >>> specs = find_tag_by_id(browser.contents, 'speclisting')
     >>> print extract_text(specs)
     Priority Blueprint Design Delivery Assignee Project Series
@@ -290,13 +290,13 @@ blueprint targets:
   blueprint to a series.
 
     >>> browser = setupBrowser(auth='Basic foo.bar@canonical.com:test')
-    >>> browser.open('http://blueprints.launchpad.dev/mozilla')
+    >>> browser.open('http://blueprints.launchpad.test/mozilla')
     >>> browser.getLink('svg-support').click()
     >>> browser.getLink('Propose as goal').click()
     >>> series_goal = browser.getControl('Series Goal')
     >>> series_goal.value = ['2']
     >>> browser.getControl('Continue').click()
-    >>> browser.open('http://blueprints.launchpad.dev/mozilla/+series/1.0')
+    >>> browser.open('http://blueprints.launchpad.test/mozilla/+series/1.0')
     >>> specs = find_tag_by_id(browser.contents, 'speclisting')
     >>> print extract_text(specs)
     Priority Blueprint Design Delivery Assignee Project Series Milestone

@@ -14,7 +14,7 @@ but we need old bookmarks to keep working with the status names.
     ...     "&field.omit_dupes=on"
     ...     "&field.has_patch.used="
     ... )
-    >>> url = "http://bugs.launchpad.dev/ubuntu/+bugs?" + query
+    >>> url = "http://bugs.launchpad.test/ubuntu/+bugs?" + query
     >>> anon_browser.open(url)
 
 The user is redirected to a new url to make the change explicit, and
@@ -59,7 +59,7 @@ the new status names in place of the old.
     ...     "field.status_upstream-empty-marker=1&"
     ...     "field.omit_dupes=on"
     ...     )
-    >>> url = "http://bugs.launchpad.dev/bugs/+bugs?" + query
+    >>> url = "http://bugs.launchpad.test/bugs/+bugs?" + query
     >>> anon_browser.open(url)
 
     >>> uri = URI(anon_browser.url)
@@ -91,7 +91,7 @@ too.
 Searching for assigned bugs using old status names works fine, but the
 user agent is automatically redirected to an updated location:
 
-    >>> url = "http://bugs.launchpad.dev/~mark/+assignedbugs?" + query
+    >>> url = "http://bugs.launchpad.test/~mark/+assignedbugs?" + query
     >>> anon_browser.open(url)
 
     >>> uri = URI(anon_browser.url)
@@ -108,7 +108,7 @@ user agent is automatically redirected to an updated location:
 Just as with assigned bugs, searching for reported bugs takes the user
 agent to a corrected location:
 
-    >>> url = "http://bugs.launchpad.dev/~mark/+reportedbugs?" + query
+    >>> url = "http://bugs.launchpad.test/~mark/+reportedbugs?" + query
     >>> anon_browser.open(url)
 
     >>> uri = URI(anon_browser.url)
@@ -126,7 +126,7 @@ functionality may be removed so it's important to get people moved
 over to the new locations as quickly and seamlessly as possible to
 avoid disruption.
 
-    >>> url = "http://bugs.launchpad.dev/~mark/+subscribedbugs?" + query
+    >>> url = "http://bugs.launchpad.test/~mark/+subscribedbugs?" + query
     >>> anon_browser.open(url)
 
     >>> uri = URI(anon_browser.url)

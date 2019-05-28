@@ -183,21 +183,21 @@ class TestCodeHandler(TestCaseWithFactory):
         mail = self.factory.makeSignedMessage('<my-id>')
         switch_dbuser(config.processmail.dbuser)
         self.assertFalse(self.code_handler.process(mail,
-            'foo@code.launchpad.dev', None))
+            'foo@code.launchpad.test', None))
 
     def test_processNonExistantAddress(self):
         """When a non-existant address is supplied, it returns False."""
         mail = self.factory.makeSignedMessage('<my-id>')
         switch_dbuser(config.processmail.dbuser)
         self.assertTrue(self.code_handler.process(mail,
-            'mp+0@code.launchpad.dev', None))
+            'mp+0@code.launchpad.test', None))
         notification = pop_notifications()[0]
         self.assertEqual('Submit Request Failure', notification['subject'])
         # The returned message is a multipart message, the first part is
         # the message, and the second is the original message.
         message, original = notification.get_payload()
         self.assertIn(
-            "There is no merge proposal at mp+0@code.launchpad.dev\n",
+            "There is no merge proposal at mp+0@code.launchpad.test\n",
             message.get_payload(decode=True))
 
     def test_processBadVote(self):

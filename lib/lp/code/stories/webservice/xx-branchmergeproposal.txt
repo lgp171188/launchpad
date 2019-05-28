@@ -19,7 +19,7 @@ Branch merge proposals can be created through the API.
     ...     """Convert a browser request to a web service client request.
     ...     This is a bit of a hack, but it's the simplest way to get a
     ...     URL that the web service client will respect."""
-    ...     return url.replace("launchpad.dev/api/", "api.launchpad.dev/")
+    ...     return url.replace("launchpad.test/api/", "api.launchpad.test/")
 
     >>> target_url = fix_url(str(canonical_url(
     ...     target, request=request, rootsite='api')))
@@ -44,11 +44,11 @@ Branch merge proposals can be created through the API.
     >>> bmp_url = bmp_result.getHeader('Location')
     >>> bmp = registrant_webservice.get(bmp_url).jsonBody()
     >>> pprint_entry(bmp)
-    address: u'mp+...@code.launchpad.dev'
+    address: u'mp+...@code.launchpad.test'
     all_comments_collection_link:
-        u'http://api.launchpad.dev/devel/~.../+merge/.../all_comments'
+        u'http://api.launchpad.test/devel/~.../+merge/.../all_comments'
     bugs_collection_link:
-        u'http://api.launchpad.dev/devel/~.../+merge/.../bugs'
+        u'http://api.launchpad.test/devel/~.../+merge/.../bugs'
     commit_message: u'It was merged!\n'
     date_created: u'...'
     date_merged: None
@@ -58,29 +58,29 @@ Branch merge proposals can be created through the API.
     merge_reporter_link: None
     merged_revision_id: None
     merged_revno: None
-    prerequisite_branch_link: u'http://api.launchpad.dev/devel/~...'
+    prerequisite_branch_link: u'http://api.launchpad.test/devel/~...'
     prerequisite_git_path: None
     prerequisite_git_repository_link: None
     preview_diff_link: None
     preview_diffs_collection_link: u'http://.../preview_diffs'
     private: False
     queue_status: u'Needs review'
-    registrant_link: u'http://api.launchpad.dev/devel/~person-name...'
+    registrant_link: u'http://api.launchpad.test/devel/~person-name...'
     resource_type_link:
-        u'http://api.launchpad.dev/devel/#branch_merge_proposal'
+        u'http://api.launchpad.test/devel/#branch_merge_proposal'
     reviewed_revid: None
     reviewer_link: None
-    self_link: u'http://api.launchpad.dev/devel/~.../+merge/...'
-    source_branch_link: u'http://api.launchpad.dev/devel/~...'
+    self_link: u'http://api.launchpad.test/devel/~.../+merge/...'
+    source_branch_link: u'http://api.launchpad.test/devel/~...'
     source_git_path: None
     source_git_repository_link: None
     superseded_by_link: None
     supersedes_link: None
-    target_branch_link: u'http://api.launchpad.dev/devel/~...'
+    target_branch_link: u'http://api.launchpad.test/devel/~...'
     target_git_path: None
     target_git_repository_link: None
     votes_collection_link:
-        u'http://api.launchpad.dev/devel/~.../+merge/.../votes'
+        u'http://api.launchpad.test/devel/~.../+merge/.../votes'
     web_link: u'http://code.../~.../+merge/...'
 
 If we try and create the merge proposal again, we should get a ValueError.
@@ -101,15 +101,15 @@ Our review request is listed in the votes collection.
     >>> votes = webservice.get(
     ...     bmp['votes_collection_link']).jsonBody()
     >>> pprint_entry(votes['entries'][0])
-    branch_merge_proposal_link: u'http://api.launchpad.dev/devel/~.../+merge/...'
+    branch_merge_proposal_link: u'http://api.launchpad.test/devel/~.../+merge/...'
     comment_link: None
     date_created: u'...'
     is_pending: True
-    registrant_link: u'http://api.launchpad.dev/devel/~person-name...'
-    resource_type_link: u'http://api.launchpad.dev/devel/#code_review_vote_reference'
+    registrant_link: u'http://api.launchpad.test/devel/~person-name...'
+    resource_type_link: u'http://api.launchpad.test/devel/#code_review_vote_reference'
     review_type: u'green'
-    reviewer_link: u'http://api.launchpad.dev/devel/~person-name...'
-    self_link: u'http://api.launchpad.dev/devel/~...'
+    reviewer_link: u'http://api.launchpad.test/devel/~person-name...'
+    self_link: u'http://api.launchpad.test/devel/~...'
 
 == Get an existing merge proposal ==
 
@@ -149,7 +149,7 @@ We use the webservice as an unrelated, unprivileged user.
 
     >>> merge_proposal = webservice.get(proposal_url).jsonBody()
     >>> pprint_entry(merge_proposal)
-    address: u'mp+...@code.launchpad.dev'
+    address: u'mp+...@code.launchpad.test'
     all_comments_collection_link:
         u'http://.../~source/fooix/fix-it/+merge/.../all_comments'
     bugs_collection_link: u'http://.../~source/fooix/fix-it/+merge/.../bugs'
@@ -196,7 +196,7 @@ The comments on a branch merge proposal are exposed through the API.
     2
     >>> pprint_entry(all_comments['entries'][0])
     as_quoted_email: u'> This is great work'
-    author_link: u'http://api.launchpad.dev/devel/~...'
+    author_link: u'http://api.launchpad.test/devel/~...'
     branch_merge_proposal_link: u'http://.../~source/fooix/fix-it/+merge/...'
     date_created: u'...'
     id: ...
@@ -214,7 +214,7 @@ The comments on a branch merge proposal are exposed through the API.
     ...     id=comment_2_id).jsonBody()
     >>> pprint_entry(comment_2)
     as_quoted_email: u'> This is mediocre work.'
-    author_link: u'http://api.launchpad.dev/devel/~...'
+    author_link: u'http://api.launchpad.test/devel/~...'
     branch_merge_proposal_link: u'http://.../~source/fooix/fix-it/+merge/...'
     date_created: u'...'
     id: ...
@@ -288,7 +288,7 @@ Now the code review should be made.
     >>> comment = reviewer_webservice.get(comment_link).jsonBody()
     >>> pprint_entry(comment)
     as_quoted_email: u'> This is great work'
-    author_link: u'http://api.launchpad.dev/devel/~...'
+    author_link: u'http://api.launchpad.test/devel/~...'
     branch_merge_proposal_link: u'http://.../~source/fooix/fix-it/+merge/...'
     date_created: u'...'
     id: ...

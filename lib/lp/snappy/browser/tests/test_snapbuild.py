@@ -60,7 +60,7 @@ class TestCanonicalUrlForSnapBuild(TestCaseWithFactory):
         build = self.factory.makeSnapBuild(requester=owner, snap=snap)
         self.assertThat(
             canonical_url(build),
-            StartsWith("http://launchpad.dev/~person/+snap/snap/+build/"))
+            StartsWith("http://launchpad.test/~person/+snap/snap/+build/"))
 
 
 class TestSnapBuildView(TestCaseWithFactory):

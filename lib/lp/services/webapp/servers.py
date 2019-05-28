@@ -1404,8 +1404,8 @@ class WebServiceTestRequest(LaunchpadWebServiceRequestTraversal,
 
     def __init__(self, body_instream=None, environ=None, version=None, **kw):
         test_environ = {
-            'SERVER_URL': 'http://api.launchpad.dev',
-            'HTTP_HOST': 'api.launchpad.dev',
+            'SERVER_URL': 'http://api.launchpad.test',
+            'HTTP_HOST': 'api.launchpad.test',
             }
         if environ is not None:
             test_environ.update(environ)

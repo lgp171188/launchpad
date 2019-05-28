@@ -35,7 +35,7 @@ class TestPillarSharingBreadcrumb(BaseBreadcrumbTestCase, SharingBaseTestCase):
             'Sharing',
             'Sharing details for %s' % grantee.displayname,
             ]
-        url = 'https://launchpad.dev/%s/+sharing/%s' % (
+        url = 'https://launchpad.test/%s/+sharing/%s' % (
             self.pillar.name, grantee.name)
         crumbs = [c.text for c in self.getBreadcrumbsForUrl(url)]
         self.assertEqual(expected_crumbs, crumbs)
@@ -166,15 +166,15 @@ class TestNameblacklistBreadcrumb(BaseBreadcrumbTestCase):
         login_person(self.registry_expert)
 
     def test_nameblacklist(self):
-        expected = [('Name Blacklist', 'http://launchpad.dev/+nameblacklist')]
+        expected = [('Name Blacklist', 'http://launchpad.test/+nameblacklist')]
         self.assertBreadcrumbs(expected, self.name_blacklist_set)
 
     def test_nameblacklist_edit(self):
         blacklist = self.name_blacklist_set.getByRegExp(u'blacklist')
         expected = [
             ('Name Blacklist',
-             'http://launchpad.dev/+nameblacklist'),
+             'http://launchpad.test/+nameblacklist'),
             ('Edit a blacklist expression',
-             'http://launchpad.dev/+nameblacklist/1/+edit'),
+             'http://launchpad.test/+nameblacklist/1/+edit'),
             ]
         self.assertBreadcrumbs(expected, blacklist, view_name='+edit')

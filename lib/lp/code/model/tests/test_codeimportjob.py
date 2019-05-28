@@ -1300,7 +1300,7 @@ class TestCodeImportJobMacaroonIssuer(MacaroonTestMixin, TestCaseWithFactory):
         job = self.makeJob()
         issuer = getUtility(IMacaroonIssuer, "code-import-job")
         macaroon = removeSecurityProxy(issuer).issueMacaroon(job)
-        self.assertEqual("launchpad.dev", macaroon.location)
+        self.assertEqual("launchpad.test", macaroon.location)
         self.assertEqual("code-import-job", macaroon.identifier)
         self.assertThat(macaroon.caveats, MatchesListwise([
             MatchesStructure.byEquality(

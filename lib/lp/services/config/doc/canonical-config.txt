@@ -101,10 +101,10 @@ be changed for a feature.
 
     >>> test_data = ("""
     ...     [answertracker]
-    ...     email_domain: answers.launchpad.dev""")
+    ...     email_domain: answers.launchpad.test""")
     >>> config.push('test_data', test_data)
     >>> config.answertracker.email_domain
-    'answers.launchpad.dev'
+    'answers.launchpad.test'
 
 And the test can remove the data when it is done to restore the config.
 

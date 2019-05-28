@@ -7,18 +7,18 @@ manager support, so lets go and edit those.
 First, we need to load the +edit page.
 
     >>> browser.addHeader('Authorization', 'Basic carlos@canonical.com:test')
-    >>> features_domain = 'http://blueprints.launchpad.dev'
+    >>> features_domain = 'http://blueprints.launchpad.test'
     >>> spec_path = '/firefox/+spec/extension-manager-upgrades'
     >>> browser.open(features_domain + spec_path)
     >>> browser.getLink('Change details').click()
     >>> browser.url
-    'http://blueprints.launchpad.dev/firefox/+spec/extension-manager-upgrades/+edit'
+    'http://blueprints.launchpad.test/firefox/+spec/extension-manager-upgrades/+edit'
 
 The page links back to the blueprint page, in case we change our minds.
 
     >>> back_link = browser.getLink('Extension Manager Upgrades')
     >>> back_link.url
-    'http://blueprints.launchpad.dev/firefox/+spec/extension-manager-upgrades'
+    'http://blueprints.launchpad.test/firefox/+spec/extension-manager-upgrades'
 
 Launchpad won't let us use an URL already used in another blueprint.
 
@@ -61,24 +61,24 @@ specification home page.
     >>> browser.getControl('Status Whiteboard').value = 'XXX'
     >>> browser.getControl('Change').click()
     >>> browser.url
-    'http://blueprints.launchpad.dev/firefox/+spec/extension-manager-upgrades'
+    'http://blueprints.launchpad.test/firefox/+spec/extension-manager-upgrades'
 
 Also, we would like to assign these to someone other than Carlos, and we
 would also like to have a drafter associated with it.
 
     >>> browser.getLink(url='+people').click()
     >>> browser.url
-    'http://blueprints.launchpad.dev/firefox/+spec/extension-manager-upgrades/+people'
+    'http://blueprints.launchpad.test/firefox/+spec/extension-manager-upgrades/+people'
     >>> back_link = browser.getLink('Extension Manager System Upgrades')
     >>> back_link.url
-    'http://blueprints.launchpad.dev/firefox/+spec/extension-manager-upgrades'
+    'http://blueprints.launchpad.test/firefox/+spec/extension-manager-upgrades'
     >>> browser.getControl('Assignee').value = 'tsukimi@quaqua.net'
     >>> browser.getControl('Drafter').value = 'daf@canonical.com'
     >>> browser.getControl('Approver').value = 'stuart.bishop@canonical.com'
     >>> browser.getControl('Status Whiteboard').value = 'YYY'
     >>> browser.getControl('Change').click()
     >>> browser.url
-    'http://blueprints.launchpad.dev/firefox/+spec/extension-manager-upgrades'
+    'http://blueprints.launchpad.test/firefox/+spec/extension-manager-upgrades'
 
 Finally, we should be able to change the status metadata (definition status,
 implementation status, estimated man days etc) of the specification.
@@ -86,29 +86,29 @@ implementation status, estimated man days etc) of the specification.
     >>> browser.getLink(url='+status').click()
     >>> back_link = browser.getLink('Extension Manager System Upgrades')
     >>> back_link.url
-    'http://blueprints.launchpad.dev/firefox/+spec/extension-manager-upgrades'
+    'http://blueprints.launchpad.test/firefox/+spec/extension-manager-upgrades'
     >>> browser.getControl('Definition Status').value = ['DRAFT']
     >>> # browser.getControl('Estimated Developer Days').value = '5'
     >>> browser.getControl('Implementation Status').value = ['SLOW']
     >>> browser.getControl('Status Whiteboard').value = 'XXX'
     >>> browser.getControl('Change').click()
     >>> browser.url
-    'http://blueprints.launchpad.dev/firefox/+spec/extension-manager-upgrades'
+    'http://blueprints.launchpad.test/firefox/+spec/extension-manager-upgrades'
 
 Any logged in user can edit a specification whiteboard.
 
     >>> user_browser.open(
-    ...     'http://blueprints.launchpad.dev/kubuntu/'
+    ...     'http://blueprints.launchpad.test/kubuntu/'
     ...     '+spec/krunch-desktop-plan')
     >>> user_browser.getLink(url='+whiteboard').click()
     >>> back_link = user_browser.getLink('The Krunch Desktop Plan')
     >>> back_link.url
-    'http://blueprints.launchpad.dev/kubuntu/+spec/krunch-desktop-plan'
+    'http://blueprints.launchpad.test/kubuntu/+spec/krunch-desktop-plan'
 
     >>> user_browser.getControl('Whiteboard').value = 'XXX by Sample Person'
     >>> user_browser.getControl('Change').click()
     >>> user_browser.url
-    'http://blueprints.launchpad.dev/kubuntu/+spec/krunch-desktop-plan'
+    'http://blueprints.launchpad.test/kubuntu/+spec/krunch-desktop-plan'
 
     >>> 'XXX by Sample Person' in user_browser.contents
     True
@@ -121,7 +121,7 @@ Regular users can't access the change status page.
     LinkNotFoundError
 
     >>> user_browser.open(
-    ...     'http://blueprints.launchpad.dev/kubuntu/'
+    ...     'http://blueprints.launchpad.test/kubuntu/'
     ...     '+spec/krunch-desktop-plan/+status')
     Traceback (most recent call last):
     ...
@@ -130,7 +130,7 @@ Regular users can't access the change status page.
 Nor can they change a blueprint's priority.
 
     >>> user_browser.open(
-    ...     'http://blueprints.launchpad.dev/kubuntu/'
+    ...     'http://blueprints.launchpad.test/kubuntu/'
     ...     '+spec/krunch-desktop-plan')
     >>> user_browser.getLink(url='+priority')
     Traceback (most recent call last):
@@ -140,11 +140,11 @@ Nor can they change a blueprint's priority.
 But an administrator can.
 
     >>> admin_browser.open(
-    ...     'http://blueprints.launchpad.dev/kubuntu/'
+    ...     'http://blueprints.launchpad.test/kubuntu/'
     ...     '+spec/krunch-desktop-plan')
     >>> admin_browser.getLink(url='+priority').click()
     >>> admin_browser.url
-    'http://blueprints.launchpad.dev/kubuntu/+spec/krunch-desktop-plan/+priority'
+    'http://blueprints.launchpad.test/kubuntu/+spec/krunch-desktop-plan/+priority'
     >>> back_link = admin_browser.getLink('The Krunch Desktop Plan')
     >>> back_link.url
-    'http://blueprints.launchpad.dev/kubuntu/+spec/krunch-desktop-plan'
+    'http://blueprints.launchpad.test/kubuntu/+spec/krunch-desktop-plan'

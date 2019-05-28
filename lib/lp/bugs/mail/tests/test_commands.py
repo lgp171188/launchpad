@@ -339,7 +339,7 @@ class BugEmailCommandTestCase(TestCaseWithFactory):
         message = self.factory.makeSignedMessage(
             body='borked\n affects fnord',
             subject='title borked',
-            to_address='new@bugs.launchpad.dev')
+            to_address='new@bugs.launchpad.test')
         filealias = self.factory.makeLibraryFileAlias()
         command = BugEmailCommand('bug', ['new'])
         params, event = command.execute(message, filealias)

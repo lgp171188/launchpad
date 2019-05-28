@@ -29,7 +29,7 @@ class DistroSeriesDifferenceWebServiceTestCase(TestCaseWithFactory):
         # DistroSeriesDifferences are available on the web service.
         ds_diff = self.factory.makeDistroSeriesDifference()
         ds_diff_path = canonical_url(ds_diff).replace(
-            'http://launchpad.dev', '')
+            'http://launchpad.test', '')
 
         ws_diff = ws_object(self.factory.makeLaunchpadService(), ds_diff)
 

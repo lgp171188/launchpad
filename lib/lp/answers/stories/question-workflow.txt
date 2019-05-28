@@ -33,7 +33,7 @@ Logging In
 
 To participate in a question, the user must be logged in.
 
-    >>> anon_browser.open('http://launchpad.dev/firefox/+question/2')
+    >>> anon_browser.open('http://launchpad.test/firefox/+question/2')
     >>> print(anon_browser.contents)
     <!DOCTYPE...
     ...
@@ -55,7 +55,7 @@ Privileges Person enters their question in the 'Message' field and clicks
 on the 'Add Information Request' button.
 
     >>> support_browser.open(
-    ...     'http://launchpad.dev/firefox/+question/2')
+    ...     'http://launchpad.test/firefox/+question/2')
     >>> content = find_tag_by_id(
     ...     support_browser.contents, 'can-you-help-with-this-problem')
     >>> print(content.h2.renderContents())
@@ -122,7 +122,7 @@ see the 'Can you help with this problem?' heading because it is not
 relevant to their tasks.
 
     >>> owner_browser.open(
-    ...     'http://launchpad.dev/firefox/+question/2')
+    ...     'http://launchpad.test/firefox/+question/2')
     >>> content = find_tag_by_id(
     ...     owner_browser.contents, 'can-you-help-with-this-problem')
     >>> content is None
@@ -153,7 +153,7 @@ answer. This is done by entering the answer in the 'Message' box and
 clicking the 'Propose Answer' button.
 
     >>> support_browser.open(
-    ...     'http://launchpad.dev/firefox/+question/2')
+    ...     'http://launchpad.test/firefox/+question/2')
     >>> support_browser.getControl('Message').value = (
     ...     "New version of the firefox package are available with SVG "
     ...     "support enabled. You can use apt-get or adept to upgrade.")
@@ -177,7 +177,7 @@ When the owner comes back on the question page, they will now see a new
 'This Solved My Problem' button near the answer.
 
     >>> owner_browser.open(
-    ...     'http://launchpad.dev/firefox/+question/2')
+    ...     'http://launchpad.test/firefox/+question/2')
     >>> soup = find_main_content(owner_browser.contents)
     >>> soup.findAll('div', 'boardComment')[-1].find('input', type='submit')
     <input type="submit" name="field.actions.confirm"
@@ -374,7 +374,7 @@ History
 The history of the question is available on the 'History' page.
 
     >>> anon_browser.open(
-    ...     'http://launchpad.dev/firefox/+question/2')
+    ...     'http://launchpad.test/firefox/+question/2')
     >>> anon_browser.getLink('History').click()
     >>> print(anon_browser.title)
     History of question #2...
@@ -420,7 +420,7 @@ other users with similar problems. He does not see a notice about
 choosing an answer that helped him solve his problem.
 
     >>> carlos_browser = setupBrowser(auth='Basic carlos@canonical.com:test')
-    >>> carlos_browser.open('http://launchpad.dev/firefox/+question/12')
+    >>> carlos_browser.open('http://launchpad.test/firefox/+question/12')
     >>> print(find_request_status(carlos_browser.contents))
     Status: Open ...
 
@@ -453,7 +453,7 @@ No Privileges Person (a different user from the one above) discovers the
 Firefox question. The solution does not work, but they think they have a
 similar problem so they ask their own question.
 
-    >>> user_browser.open('http://launchpad.dev/firefox/+question/2')
+    >>> user_browser.open('http://launchpad.test/firefox/+question/2')
 
     >>> content = find_main_content(user_browser.contents)
     >>> print(content.find(id='can-you-help-with-this-problem'))

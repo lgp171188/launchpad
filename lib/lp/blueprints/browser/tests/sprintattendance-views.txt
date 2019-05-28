@@ -22,10 +22,10 @@ The view captures the user's time_start and time_ends attendance.
 The view also defines a next_url and cancel_url.
 
     >>> print sprint_attendance_view.next_url
-    http://launchpad.dev/sprints/ubz
+    http://launchpad.test/sprints/ubz
 
     >>> print sprint_attendance_view.cancel_url
-    http://launchpad.dev/sprints/ubz
+    http://launchpad.test/sprints/ubz
 
 A helper function to test date handling.
 

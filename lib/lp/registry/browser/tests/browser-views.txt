@@ -21,7 +21,7 @@ javascript calls newMilestone on the object at series_api_uri.
     >>> series = factory.makeProductSeries(name='stable', product=product)
     >>> view = MilestoneCreatorView(series, LaunchpadTestRequest())
     >>> print view.milestone_form_uri
-    http://launchpad.dev/app/stable/+addmilestone/++form++
+    http://launchpad.test/app/stable/+addmilestone/++form++
     >>> print view.series_api_uri
     /app/stable
 

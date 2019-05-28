@@ -14,14 +14,14 @@ example URL.  Here 'layer' is a clue as to the subdomain.
 
 The example URLs will look like::
 
-  https://launchpad.dev/~<ITeam.name>/+addmember
+  https://launchpad.test/~<ITeam.name>/+addmember
 
 Which means all segments are present, and you can get a real URL by
 substituting data (in this case, a team name),
 
 or::
 
-  https://launchpad.dev/[[ITranslator]]/+admin
+  https://launchpad.test/[[ITranslator]]/+admin
 
 Which means we couldn't actually figure out the proper URL. [[ITranslator]]
 might actually be made of multiple URL segments,

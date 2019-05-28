@@ -188,7 +188,7 @@ class TestSignedMessage(TestCaseWithFactory):
             "to go here\n"
             "to import your OpenPGP key and then use it to sign your "
             "messages:\n\n"
-            "  http://launchpad.dev/~%s/+editpgpkeys\n\n"
+            "  http://launchpad.test/~%s/+editpgpkeys\n\n"
             "If you did not knowingly send email to Launchpad, then spammers "
             "may be\n"
             "forging messages as if they were sent from your address, perhaps "

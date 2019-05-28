@@ -14,7 +14,7 @@ added to the bugwatches resp CVEs related to this bug
   >>> user_browser.getControl('Post Comment', index=-1).click()
 
   >>> user_browser.url
-  'http://bugs.launchpad.dev/debian/+source/mozilla-firefox/+bug/1'
+  'http://bugs.launchpad.test/debian/+source/mozilla-firefox/+bug/1'
 
   >>> added_cve_link = user_browser.getLink('1991-9911')
   >>> print(added_cve_link)
@@ -42,7 +42,7 @@ url of a remote bug.
   ...     u'is.'.encode('utf-8'))
   >>> user_browser.getControl('Post Comment', index=-1).click()
   >>> user_browser.url
-  'http://bugs.launchpad.dev/debian/+source/mozilla-firefox/+bug/1'
+  'http://bugs.launchpad.test/debian/+source/mozilla-firefox/+bug/1'
 
   >>> bugwatch_portlet = find_portlet(user_browser.contents, 
   ...    'Remote bug watches')

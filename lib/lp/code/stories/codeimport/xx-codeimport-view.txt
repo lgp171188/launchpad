@@ -30,14 +30,14 @@ another couple that target Git as well before we start.
 
 The code imports overview page is linked off the main code page.
 
-    >>> browser.open('http://code.launchpad.dev')
+    >>> browser.open('http://code.launchpad.test')
     >>> browser.getLink('3 imported branches').click()
     >>> print(browser.title)
     Code Imports
 
 Any user can look at the current list of imports.
 
-    >>> anon_browser.open('http://code.launchpad.dev/+code-imports')
+    >>> anon_browser.open('http://code.launchpad.test/+code-imports')
     >>> print(anon_browser.title)
     Code Imports
 
@@ -58,7 +58,7 @@ for that import:
 
     >>> browser.getLink('~vcs-imports/gnome-terminal/import').click()
     >>> browser.url
-    'http://code.launchpad.dev/~vcs-imports/gnome-terminal/import'
+    'http://code.launchpad.test/~vcs-imports/gnome-terminal/import'
 
 
 Filtering the code import list
@@ -70,7 +70,7 @@ filter just on them we'll see the "no imports found" message.  It is worth
 ensuring that the control for filtering on review status reads "Any" by
 default, as the code that ensures this is poking at Zope 3 internals a bit.
 
-    >>> browser.open('http://code.launchpad.dev/+code-imports')
+    >>> browser.open('http://code.launchpad.test/+code-imports')
     >>> control = browser.getControl(name="field.review_status")
     >>> control.displayValue
     ['Any']
@@ -132,7 +132,7 @@ If we create a lot of imports, the listing view will be batched.
     ...     new_import = factory.makeCodeImport()
     >>> logout()
 
-    >>> browser.open('http://code.launchpad.dev/+code-imports')
+    >>> browser.open('http://code.launchpad.test/+code-imports')
     >>> browser.getLink('Next').click()
     >>> browser.url
-    'http://code.launchpad.dev/+code-imports/+index?...start=5...'
+    'http://code.launchpad.test/+code-imports/+index?...start=5...'

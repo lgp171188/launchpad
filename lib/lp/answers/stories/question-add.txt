@@ -5,7 +5,7 @@ There are two paths available to a user to ask a new question. The first
 one involes two steps. First, go to the product or distribution for
 which support is desired:
 
-    >>> browser.open('http://answers.launchpad.dev/ubuntu')
+    >>> browser.open('http://answers.launchpad.test/ubuntu')
     >>> print(browser.title)
     Questions : Ubuntu
 
@@ -21,7 +21,7 @@ Asking a new question requires logging in:
     Traceback (most recent call last):
       ...
     Unauthorized...
-    >>> user_browser.open('http://answers.launchpad.dev/ubuntu/')
+    >>> user_browser.open('http://answers.launchpad.test/ubuntu/')
     >>> user_browser.getLink('Ask a question').click()
     >>> print(user_browser.title)
     Ask a question...
@@ -37,7 +37,7 @@ start the creation process. Questions created this way will be
 associated with the source package of the used application.
 
     >>> user_browser.open(
-    ...     'http://launchpad.dev/ubuntu/hoary/'
+    ...     'http://launchpad.test/ubuntu/hoary/'
     ...     '+sources/mozilla-firefox/+gethelp')
     >>> print(user_browser.title)
     Help and support...
@@ -86,7 +86,7 @@ For now, use a closer search:
     How can I play MP3/Divx/DVDs/Quicktime/Realmedia files or view
         Flash/Java web pages
     >>> similar_faqs.a['href']
-    u'http://answers.launchpad.dev/ubuntu/+faq/...'
+    u'http://answers.launchpad.test/ubuntu/+faq/...'
 
     >>> similar_questions = contents.find(id='similar-questions')
     >>> print(extract_text(similar_questions).encode(

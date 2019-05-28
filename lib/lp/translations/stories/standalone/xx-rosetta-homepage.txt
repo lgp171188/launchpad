@@ -17,7 +17,7 @@ Set up
 The front page
 --------------
 
-    >>> browser.open('http://translations.launchpad.dev/')
+    >>> browser.open('http://translations.launchpad.test/')
     >>> print(browser.title)
     Launchpad Translations
 

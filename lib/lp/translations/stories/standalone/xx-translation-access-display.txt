@@ -13,7 +13,7 @@ translation, and also reminds him that he has full editing privileges.
     ...         print(tag.renderContents())
 
     >>> admin_browser.open(
-    ...     'http://translations.launchpad.dev/'
+    ...     'http://translations.launchpad.test/'
     ...     'evolution/trunk/+pots/evolution-2.2/es/+translate')
     >>> print_tag(admin_browser.contents, 'translation-managers')
     This translation is managed by <...testing Spanish team<...>, assigned by
@@ -54,7 +54,7 @@ translation group of its own, that too is shown here.
     >>> evolution.projectgroup.translationgroup = gnomegroup
 
     >>> admin_browser.open(
-    ...     'http://translations.launchpad.dev/'
+    ...     'http://translations.launchpad.test/'
     ...     'evolution/trunk/+pots/evolution-2.2/es/+translate')
     >>> print_tag(admin_browser.contents, 'translation-managers')
     This translation is managed by <...testing Spanish team<...>, assigned by
@@ -65,7 +65,7 @@ If the two groups are identical, however, it is only listed once.
     >>> evolution.projectgroup.translationgroup = evolution.translationgroup
 
     >>> admin_browser.open(
-    ...     'http://translations.launchpad.dev/'
+    ...     'http://translations.launchpad.test/'
     ...     'evolution/trunk/+pots/evolution-2.2/es/+translate')
     >>> managers_tag = find_tag_by_id(
     ...     admin_browser.contents, 'translation-managers').renderContents()
@@ -79,7 +79,7 @@ If no translation group is assigned, the page also mentions that.
     >>> evolution.projectgroup.translationgroup = None
 
     >>> admin_browser.open(
-    ...     'http://translations.launchpad.dev/'
+    ...     'http://translations.launchpad.test/'
     ...     'evolution/trunk/+pots/evolution-2.2/es/+translate')
     >>> print_tag(admin_browser.contents, 'translation-managers')
     No translation group has been assigned.
@@ -94,7 +94,7 @@ Ann Ominous is not logged in.  She visits the same translation and sees
 the same information, except she's not allowed to enter anything.
 
     >>> anon_browser.open(
-    ...     'http://translations.launchpad.dev/'
+    ...     'http://translations.launchpad.test/'
     ...     'evolution/trunk/+pots/evolution-2.2/es/+translate')
     >>> print_tag(anon_browser.contents, 'translation-managers')
     This translation is managed by <...testing Spanish team<...>, assigned by
@@ -108,7 +108,7 @@ translation.  The page informs Joe that he can enter suggestions, which
 will be held for review by the translation's managers.
 
     >>> user_browser.open(
-    ...     'http://translations.launchpad.dev/'
+    ...     'http://translations.launchpad.test/'
     ...     'evolution/trunk/+pots/evolution-2.2/es/+translate')
     >>> print_tag(user_browser.contents, 'translation-access')
     Your suggestions will be held for review by the managers of this
@@ -129,7 +129,7 @@ to submit suggestions.
     >>> from lp.translations.enums import TranslationPermission
     >>> evolution.translationpermission = TranslationPermission.CLOSED
     >>> user_browser.open(
-    ...     'http://translations.launchpad.dev/'
+    ...     'http://translations.launchpad.test/'
     ...     'evolution/trunk/+pots/evolution-2.2/es/+translate')
     >>> print_tag(user_browser.contents, 'translation-access')
     This template can be translated only by its managers.
@@ -154,7 +154,7 @@ up translation for this language.
 
     #>>> evolution.translationpermission = TranslationPermission.RESTRICTED
     #>>> user_browser.open(
-    #...     'http://translations.launchpad.dev/'
+    #...     'http://translations.launchpad.test/'
     #...     'evolution/trunk/+pots/evolution-2.2/nl/+translate')
     #>>> print_tag(user_browser.contents, 'translation-access')
     #There is nobody to manage translation into this particular language.
@@ -169,7 +169,7 @@ will be displayed.
     >>> evolution.translationpermission = TranslationPermission.CLOSED
     >>> evolution.translationgroup = None
     >>> user_browser.open(
-    ...     'http://translations.launchpad.dev/'
+    ...     'http://translations.launchpad.test/'
     ...     'evolution/trunk/+pots/evolution-2.2/es/+translate')
     >>> print_tag(user_browser.contents, 'translation-access')
     This translation is not open for changes.

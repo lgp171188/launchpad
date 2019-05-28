@@ -16,7 +16,7 @@ shows the complete history of a package in all series.
     >>> logout()
 
     >>> anon_browser.open(
-    ...     'http://launchpad.dev/ubuntutest/+source/test-history/'
+    ...     'http://launchpad.test/ubuntutest/+source/test-history/'
     ...     '+publishinghistory')
 
     >>> table = find_tag_by_id(anon_browser.contents, 'publishing-summary')
@@ -36,7 +36,7 @@ request for deletion by a user.
     >>> logout()
 
     >>> anon_browser.open(
-    ...     'http://launchpad.dev/ubuntutest/+source/test-history/'
+    ...     'http://launchpad.test/ubuntutest/+source/test-history/'
     ...     '+publishinghistory')
 
     >>> table = find_tag_by_id(anon_browser.contents, 'publishing-summary')
@@ -49,4 +49,4 @@ request for deletion by a user.
 Links to bug reports are added for bugs mentioned in the removal comment.
 
     >>> print(anon_browser.getLink("bug 1").url)
-    http://launchpad.dev/bugs/1
+    http://launchpad.test/bugs/1

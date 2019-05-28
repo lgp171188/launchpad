@@ -3,13 +3,13 @@ Translation Groups
 
 Make sure we can actually display the Translation Groups page.
 
-    >>> anon_browser.open('http://translations.launchpad.dev/')
+    >>> anon_browser.open('http://translations.launchpad.test/')
     >>> print(anon_browser.url)
-    http://translations.launchpad.dev/
+    http://translations.launchpad.test/
 
     >>> anon_browser.getLink('translation groups').click()
     >>> print(anon_browser.url)
-    http://translations.launchpad.dev/+groups
+    http://translations.launchpad.test/+groups
 
     >>> print(anon_browser.title)
     Translation groups
@@ -19,7 +19,7 @@ groups.  Unprivileged users do not have access to the group creation
 page.
 
     >>> anon_browser.open(
-    ...     'http://translations.launchpad.dev/+groups/+new')
+    ...     'http://translations.launchpad.test/+groups/+new')
     Traceback (most recent call last):
     ...
     Unauthorized...
@@ -27,7 +27,7 @@ page.
 Same for a regular, unprivileged user.
 
     >>> user_browser.open(
-    ...     'http://translations.launchpad.dev/+groups/+new')
+    ...     'http://translations.launchpad.test/+groups/+new')
     Traceback (most recent call last):
     ...
     Unauthorized...
@@ -35,7 +35,7 @@ Same for a regular, unprivileged user.
 OK, best we try again, with administrator rights!
 
     >>> admin_browser.open(
-    ...     'http://translations.launchpad.dev/+groups/+new')
+    ...     'http://translations.launchpad.test/+groups/+new')
     >>> print(find_main_content(
     ...     admin_browser.contents).find('h1').renderContents())
     Create a new translation group
@@ -60,17 +60,17 @@ may not contain any upper-case letters.
 Neither we can use the name of an already existing group like testing-
 translation-team.
 
-    >>> browser.open('http://translations.launchpad.dev/+groups')
+    >>> browser.open('http://translations.launchpad.test/+groups')
     >>> print(browser.url)
-    http://translations.launchpad.dev/+groups
+    http://translations.launchpad.test/+groups
 
     >>> print(browser.getLink('Just a testing team').url)
-    http://translations.launchpad.dev/+groups/testing-translation-team
+    http://translations.launchpad.test/+groups/testing-translation-team
 
     >>> admin_browser.getControl('Name').value = 'testing-translation-team'
     >>> admin_browser.getControl('Create').click()
     >>> print(admin_browser.url)
-    http://translations.launchpad.dev/+groups/+new
+    http://translations.launchpad.test/+groups/+new
 
     >>> for message in find_tags_by_class(admin_browser.contents, 'message'):
     ...     print(message.renderContents())
@@ -85,13 +85,13 @@ such as just "polyglot" (no upper-case letters).
     ...     u'https://help.launchpad.net/Translations/PolyglotPolicies')
     >>> admin_browser.getControl('Create').click()
     >>> print(admin_browser.url)
-    http://translations.launchpad.dev/+groups/polyglot
+    http://translations.launchpad.test/+groups/polyglot
 
 After creating a translation group, the user automatically ends up on
 that group's page.
 
     >>> admin_browser.url
-    'http://translations.launchpad.dev/+groups/polyglot'
+    'http://translations.launchpad.test/+groups/polyglot'
 
     >>> admin_browser.title
     '...The PolyGlot Translation Group...'
@@ -107,7 +107,7 @@ A Rosetta administrator is also allowed to create groups.
 
     >>> browser.addHeader('Authorization', 'Basic jordi@ubuntu.com:test')
     >>> browser.open(
-    ...     'http://translations.launchpad.dev/+groups/+new')
+    ...     'http://translations.launchpad.test/+groups/+new')
     >>> browser.getControl('Name').value='monolingua'
     >>> browser.getControl('Title').value='Single-language Translators'
     >>> browser.getControl('Summary').value = (
@@ -115,7 +115,7 @@ A Rosetta administrator is also allowed to create groups.
     ...     "translations through drawings and hand signals.")
     >>> browser.getControl('Create').click()
     >>> print(browser.url)
-    http://translations.launchpad.dev/+groups/monolingua
+    http://translations.launchpad.test/+groups/monolingua
 
     >>> browser.title
     '...Single-language Translators...'
@@ -131,12 +131,12 @@ Person.
 
     >>> browser.getLink(id='link-reassign').click()
     >>> browser.url
-    'http://translations.launchpad.dev/+groups/monolingua/+reassign'
+    'http://translations.launchpad.test/+groups/monolingua/+reassign'
 
     >>> browser.getControl(name='field.owner').value = 'name12'
     >>> browser.getControl('Change').click()
     >>> browser.url
-    'http://translations.launchpad.dev/+groups/monolingua'
+    'http://translations.launchpad.test/+groups/monolingua'
 
 The Rosetta administrator is still able to administer this group:
 
@@ -153,16 +153,16 @@ That means that Sample Person is allowed to administer "their" group.
 
     >>> browser.addHeader('Authorization', 'Basic test@canonical.com:test')
     >>> browser.open(
-    ...     'http://translations.launchpad.dev/'
+    ...     'http://translations.launchpad.test/'
     ...     'translations/groups/monolingua/')
     >>> browser.getLink('Appoint a new translation team')
     <...+appoint'>
 
 The new groups should show up on the "Translation groups" page.
 
-    >>> anon_browser.open('http://translations.launchpad.dev/+groups')
+    >>> anon_browser.open('http://translations.launchpad.test/+groups')
     >>> print(anon_browser.url)
-    http://translations.launchpad.dev/+groups
+    http://translations.launchpad.test/+groups
 
     >>> groups_table = find_tag_by_id(
     ...     anon_browser.contents, 'translation-groups')
@@ -178,27 +178,27 @@ When editing translation group details, we could rename the translation
 group.
 
     >>> admin_browser.open(
-    ...     'http://translations.launchpad.dev/+groups')
+    ...     'http://translations.launchpad.test/+groups')
     >>> print(admin_browser.url)
-    http://translations.launchpad.dev/+groups
+    http://translations.launchpad.test/+groups
 
 We can see that the translation group that we are going to duplicate
 exists already:
 
     >>> print(admin_browser.getLink('The PolyGlot Translation Group').url)
-    http://translations.launchpad.dev/+groups/polyglot
+    http://translations.launchpad.test/+groups/polyglot
 
 Navigate to the one we are going to rename.
 
     >>> admin_browser.getLink('Just a testing team').click()
     >>> print(admin_browser.url)
-    http://translations.launchpad.dev/+groups/testing-translation-team
+    http://translations.launchpad.test/+groups/testing-translation-team
 
 And select to edit its details.
 
     >>> admin_browser.getLink('Change details').click()
     >>> print(admin_browser.url)
-    http://translations.launchpad.dev/+groups/testing-translation-team/+edit
+    http://translations.launchpad.test/+groups/testing-translation-team/+edit
 
 Change the name.
 
@@ -209,7 +209,7 @@ The system detected that we tried to use an already existing name, so we
 didn't move away from this form.
 
     >>> print(admin_browser.url)
-    http://translations.launchpad.dev/+groups/testing-translation-team/+edit
+    http://translations.launchpad.test/+groups/testing-translation-team/+edit
 
     >>> for tag in find_tags_by_class(admin_browser.contents, 'message'):
     ...     print(tag.renderContents())
@@ -221,7 +221,7 @@ Choosing another name should work though.
     >>> admin_browser.getControl('Name').value = u'renamed-group'
     >>> admin_browser.getControl('Change').click()
     >>> print(admin_browser.url)
-    http://translations.launchpad.dev/+groups/renamed-group
+    http://translations.launchpad.test/+groups/renamed-group
 
     >>> for tag in find_tags_by_class(admin_browser.contents, 'message'):
     ...     print(tag.renderContents())
@@ -240,7 +240,7 @@ Ubuntu is using Launchpad for translations. Ubuntu doesn't have
 TranslationGroup and uses open permissions. We can see that from the
 translations page.
 
-    >>> anon_browser.open('http://launchpad.dev/ubuntu')
+    >>> anon_browser.open('http://launchpad.test/ubuntu')
     >>> anon_browser.getLink('Translations').click()
     >>> print(anon_browser.title)
     Translations : Ubuntu
@@ -313,7 +313,7 @@ First make sure it uses Launchpad for translations.
 
     >>> netapplet_owner_browser = setupBrowser(
     ...     auth='Basic test@canonical.com:test')
-    >>> netapplet_owner_browser.open('http://launchpad.dev/netapplet')
+    >>> netapplet_owner_browser.open('http://launchpad.test/netapplet')
     >>> netapplet_owner_browser.getLink(
     ...   'Translations', index=1).click()
     >>> print(netapplet_owner_browser.title)
@@ -327,7 +327,7 @@ First make sure it uses Launchpad for translations.
 Netapplet doesn't have TranslationGroup and uses open permissions. We
 can see that from the translations page.
 
-    >>> netapplet_owner_browser.open('http://launchpad.dev/netapplet')
+    >>> netapplet_owner_browser.open('http://launchpad.test/netapplet')
     >>> netapplet_owner_browser.getLink('Translations').click()
     >>> print(netapplet_owner_browser.title)
     Translations : NetApplet
@@ -389,7 +389,7 @@ the Gnome project page and that it has no translation group assigned.
 
     >>> gnome_owner_browser = setupBrowser(
     ...     auth='Basic test@canonical.com:test')
-    >>> gnome_owner_browser.open('http://launchpad.dev/gnome')
+    >>> gnome_owner_browser.open('http://launchpad.test/gnome')
     >>> gnome_owner_browser.getLink('Translations').click()
     >>> translations_page_url = gnome_owner_browser.url
     >>> print(gnome_owner_browser.title)
@@ -435,7 +435,7 @@ And make sure these changes are now reflected in the Gnome project page
 in the relevant portlet.
 
     >>> gnome_owner_browser.url
-    'http://translations.launchpad.dev/gnome'
+    'http://translations.launchpad.test/gnome'
     >>> print(gnome_owner_browser.title)
     Translations : GNOME
 
@@ -443,9 +443,9 @@ We should now see the various distro's, projects and products that the
 group has been assigned as the translator for.
 
     >>> browser.open(
-    ...     'http://translations.launchpad.dev/+groups/polyglot')
+    ...     'http://translations.launchpad.test/+groups/polyglot')
     >>> print(browser.url)
-    http://translations.launchpad.dev/+groups/polyglot
+    http://translations.launchpad.test/+groups/polyglot
 
     >>> def find_projects_portlet(browser):
     ...     """Find the portlet with projects/distros this group works with.
@@ -455,17 +455,17 @@ group has been assigned as the translator for.
     >>> portlet = find_projects_portlet(browser)
     >>> for link in portlet.findAll('a'):
     ...     print('%s: %s' % (link.find(text=True), link['href']))
-    Ubuntu: http://launchpad.dev/ubuntu
-    GNOME: http://launchpad.dev/gnome
-    NetApplet: http://launchpad.dev/netapplet
+    Ubuntu: http://launchpad.test/ubuntu
+    GNOME: http://launchpad.test/gnome
+    NetApplet: http://launchpad.test/netapplet
 
 If we disable some of these projects...
 
-    >>> admin_browser.open("http://launchpad.dev/gnome/+review")
+    >>> admin_browser.open("http://launchpad.test/gnome/+review")
     >>> admin_browser.getControl("Active").click()
     >>> admin_browser.getControl("Change").click()
     >>> admin_browser.url
-    'http://launchpad.dev/projectgroups'
+    'http://launchpad.test/projectgroups'
 
     # Unlink the source packages so the project can be deactivated.
     >>> from zope.component import getUtility
@@ -474,31 +474,31 @@ If we disable some of these projects...
     >>> login('admin@canonical.com')
     >>> unlink_source_packages(getUtility(IProductSet).getByName('netapplet'))
     >>> logout()
-    >>> admin_browser.open("http://launchpad.dev/netapplet/+admin")
+    >>> admin_browser.open("http://launchpad.test/netapplet/+admin")
     >>> admin_browser.getControl("Active").click()
     >>> admin_browser.getControl("Change").click()
     >>> admin_browser.url
-    'http://launchpad.dev/projects'
+    'http://launchpad.test/projects'
 
 They disappear from the listing:
 
     >>> browser.open(
-    ...     'http://translations.launchpad.dev/+groups/polyglot')
+    ...     'http://translations.launchpad.test/+groups/polyglot')
     >>> print(browser.url)
-    http://translations.launchpad.dev/+groups/polyglot
+    http://translations.launchpad.test/+groups/polyglot
 
     >>> portlet = find_projects_portlet(browser)
     >>> for link in portlet.findAll('a'):
     ...     print('%s: %s' % (link.string, link['href']))
-    Ubuntu: http://launchpad.dev/ubuntu
+    Ubuntu: http://launchpad.test/ubuntu
 
 Let's undo this so we don't get in trouble with other tests in this
 story!
 
-    >>> admin_browser.open("http://launchpad.dev/gnome/+review")
+    >>> admin_browser.open("http://launchpad.test/gnome/+review")
     >>> admin_browser.getControl("Active").click()
     >>> admin_browser.getControl("Change").click()
-    >>> admin_browser.open("http://launchpad.dev/netapplet/+admin")
+    >>> admin_browser.open("http://launchpad.test/netapplet/+admin")
     >>> admin_browser.getControl("Active").click()
     >>> admin_browser.getControl("Change").click()
 
@@ -519,7 +519,7 @@ him to appoint a translator.
 
     >>> browser.addHeader('Authorization', 'Basic jordi@ubuntu.com:test')
     >>> browser.open(
-    ...   'http://translations.launchpad.dev/+groups/polyglot/')
+    ...   'http://translations.launchpad.test/+groups/polyglot/')
     >>> print(find_tag_by_id(browser.contents, "translation-teams-listing"))
     <...
     No translation teams or supervisors have been appointed in this
@@ -531,7 +531,7 @@ appoint a translator.
 
     >>> browser.getLink('Appoint a new translation team').click()
     >>> browser.url
-    'http://translations.launchpad.dev/+groups/polyglot/+appoint'
+    'http://translations.launchpad.test/+groups/polyglot/+appoint'
 
 Appoint a translator. Hoary Gnome Team will translate into Abkhazian.
 
@@ -542,11 +542,11 @@ Appoint a translator. Hoary Gnome Team will translate into Abkhazian.
 We should get redirected back to the group page.
 
     >>> browser.url
-    'http://translations.launchpad.dev/+groups/polyglot'
+    'http://translations.launchpad.test/+groups/polyglot'
 
     >>> browser.getLink('Appoint a new translation team').click()
     >>> browser.url
-    'http://translations.launchpad.dev/+groups/polyglot/+appoint'
+    'http://translations.launchpad.test/+groups/polyglot/+appoint'
 
 And let's appoint No Privileges user for Afrikaans too.
 
@@ -561,7 +561,7 @@ Now we should see both of those appointments on the polyglot page:
     ...Afrikaans...No Privileges Person...
 
     >>> browser.url
-    'http://translations.launchpad.dev/+groups/polyglot'
+    'http://translations.launchpad.test/+groups/polyglot'
 
 Appointing a new Abkhazian translator must fail gracefully, not crash as
 it used to do (Bug #52991).
@@ -574,7 +574,7 @@ it used to do (Bug #52991).
 The error means we stay on the appoint page:
 
     >>> browser.url
-    'http://translations.launchpad.dev/+groups/polyglot/+appoint'
+    'http://translations.launchpad.test/+groups/polyglot/+appoint'
 
     >>> for message in find_tags_by_class(browser.contents, 'message'):
     ...     print(message.renderContents())
@@ -585,25 +585,25 @@ Launchpad administrators, are allowed too to manage translation group
 membership.
 
     >>> admin_browser.open(
-    ...   'http://translations.launchpad.dev/+groups/polyglot/')
+    ...   'http://translations.launchpad.test/+groups/polyglot/')
     >>> admin_browser.getLink('Appoint a new translation team').click()
     >>> admin_browser.url
-    'http://translations.launchpad.dev/+groups/polyglot/+appoint'
+    'http://translations.launchpad.test/+groups/polyglot/+appoint'
 
 Even to edit details of the translation group.
 
     >>> admin_browser.open(
-    ...   'http://translations.launchpad.dev/+groups/polyglot/')
+    ...   'http://translations.launchpad.test/+groups/polyglot/')
     >>> admin_browser.getLink('Change details').click()
     >>> admin_browser.url
-    'http://translations.launchpad.dev/+groups/polyglot/+edit'
+    'http://translations.launchpad.test/+groups/polyglot/+edit'
 
 Normal users, however, are not.
 
     >>> user_browser.open(
-    ...   'http://translations.launchpad.dev/+groups/polyglot/')
+    ...   'http://translations.launchpad.test/+groups/polyglot/')
     >>> user_browser.url
-    'http://translations.launchpad.dev/+groups/polyglot/'
+    'http://translations.launchpad.test/+groups/polyglot/'
 
     >>> user_browser.getLink('Appoint a new translation team')
     Traceback (most recent call last):
@@ -611,9 +611,9 @@ Normal users, however, are not.
     LinkNotFoundError
 
     >>> user_browser.open(
-    ...   'http://translations.launchpad.dev/+groups/polyglot/')
+    ...   'http://translations.launchpad.test/+groups/polyglot/')
     >>> user_browser.url
-    'http://translations.launchpad.dev/+groups/polyglot/'
+    'http://translations.launchpad.test/+groups/polyglot/'
 
     >>> user_browser.getLink('Change details').click()
     Traceback (most recent call last):
@@ -629,9 +629,9 @@ The system allows us to change the translator for a concrete language
     # Let's see the list of languages we have right now:
 
     >>> anon_browser.open(
-    ...     'http://translations.launchpad.dev/+groups/polyglot')
+    ...     'http://translations.launchpad.test/+groups/polyglot')
     >>> print(anon_browser.url)
-    http://translations.launchpad.dev/+groups/polyglot
+    http://translations.launchpad.test/+groups/polyglot
 
     >>> portlet = find_tag_by_id(
     ...     anon_browser.contents, "translation-teams-listing")
@@ -646,15 +646,15 @@ The system allows us to change the translator for a concrete language
 
     >>> browser.addHeader('Authorization', 'Basic jordi@ubuntu.com:test')
     >>> browser.open(
-    ...   'http://translations.launchpad.dev/+groups/polyglot/')
+    ...   'http://translations.launchpad.test/+groups/polyglot/')
     >>> print(browser.url)
-    http://translations.launchpad.dev/+groups/polyglot/
+    http://translations.launchpad.test/+groups/polyglot/
 
     # We are going to change the Afrikaans (af) translator.
 
     >>> browser.getLink(id='edit-af-translator').click()
     >>> print(browser.url)
-    http://translations.launchpad.dev/+groups/polyglot/af
+    http://translations.launchpad.test/+groups/polyglot/af
 
 Let's change the language it translates to Afrikaans, which already
 exist.
@@ -662,9 +662,9 @@ exist.
     # Abkhazian URL exists.
 
     >>> admin_browser.open(
-    ...     'http://translations.launchpad.dev/+groups/polyglot/ab')
+    ...     'http://translations.launchpad.test/+groups/polyglot/ab')
     >>> print(admin_browser.url)
-    http://translations.launchpad.dev/+groups/polyglot/ab
+    http://translations.launchpad.test/+groups/polyglot/ab
 
     # And we change the one we are editing from Afrikaans to Abkhazian
 
@@ -675,21 +675,21 @@ exist.
     # polyglot/af/).
 
     >>> print(browser.url)
-    http://translations.launchpad.dev/+groups/polyglot/af/+admin
+    http://translations.launchpad.test/+groups/polyglot/af/+admin
 
 the system detects it and notify the user that is not possible.
 
     >>> for message in find_tags_by_class(browser.contents, 'message'):
     ...     print(message.renderContents())
     There is 1 error.
-    <a href="http://translations.launchpad.dev/~name21">Hoary Gnome Team</a>
+    <a href="http://translations.launchpad.test/~name21">Hoary Gnome Team</a>
     is already a translator for this language
 
 However, if the language selected doesn't have yet a translator, for
 instance Welsh (cy), the change will work.
 
     >>> admin_browser.open(
-    ...     'http://translations.launchpad.dev/+groups/polyglot/cy')
+    ...     'http://translations.launchpad.test/+groups/polyglot/cy')
     Traceback (most recent call last):
     ...
     NotFound:...
@@ -700,7 +700,7 @@ instance Welsh (cy), the change will work.
     # We are back to the translation group summary page.
 
     >>> print(browser.url)
-    http://translations.launchpad.dev/+groups/polyglot
+    http://translations.launchpad.test/+groups/polyglot
 
     # And the 'Translation Teams' portlet shows the new information.
 
@@ -720,14 +720,14 @@ Let's remove the Hoary Gnome Team, they are not really translators. We
 should be redirected to the polyglot page.
 
     >>> admin_browser.open(
-    ...     'http://translations.launchpad.dev/+groups/' +
+    ...     'http://translations.launchpad.test/+groups/' +
     ...         'polyglot/ab/+remove')
     >>> print(admin_browser.url)
-    http://translations.launchpad.dev/+groups/polyglot/ab/+remove
+    http://translations.launchpad.test/+groups/polyglot/ab/+remove
 
     >>> admin_browser.getControl('Remove').click()
     >>> print(admin_browser.url)
-    http://translations.launchpad.dev/+groups/polyglot
+    http://translations.launchpad.test/+groups/polyglot
 
 And on that page, we should see the removal message.
 
@@ -755,7 +755,7 @@ Southern Sotho. We expect them to see a readonly form:
     >>> browser.addHeader(
     ...     'Authorization', 'Basic no-priv@canonical.com:test')
     >>> browser.open(
-    ...     'http://translations.launchpad.dev/'
+    ...     'http://translations.launchpad.test/'
     ...     'ubuntu/hoary/+source/evolution/'
     ...     '+pots/evolution-2.2/st/+translate')
     >>> print(browser.url)
@@ -777,7 +777,7 @@ However, in Welsh, No Privileges Person does have the ability to edit
 directly.
 
     >>> browser.open(
-    ...     'http://translations.launchpad.dev/'
+    ...     'http://translations.launchpad.test/'
     ...     'ubuntu/hoary/+source/evolution/'
     ...     '+pots/evolution-2.2/cy/19/+translate')
     >>> print(browser.url)
@@ -824,14 +824,14 @@ they are not a designated translator.
     >>> browser.addHeader('Authorization', 'Basic no-priv@canonical.com:test')
 
     >>> admin_browser.open(
-    ...     'http://translations.launchpad.dev/ubuntu/'
+    ...     'http://translations.launchpad.test/ubuntu/'
     ...     '+configure-translations')
 
     >>> admin_browser.getControl(
     ...     'Translation permissions policy').value = ['RESTRICTED']
     >>> admin_browser.getControl('Change').click()
     >>> print(admin_browser.url)
-    http://translations.launchpad.dev/ubuntu
+    http://translations.launchpad.test/ubuntu
 
     >>> print(extract_text(
     ...     find_tag_by_id(admin_browser.contents,
@@ -868,7 +868,7 @@ suggestions.
     ...         print("Not found.")
 
     >>> browser.open(
-    ...     'http://translations.launchpad.dev/'
+    ...     'http://translations.launchpad.test/'
     ...     'ubuntu/hoary/+source/evolution/'
     ...     '+pots/evolution-2.2/')
 
@@ -879,7 +879,7 @@ suggestions.
     Not found.
 
     >>> browser.open(
-    ...     'http://translations.launchpad.dev/'
+    ...     'http://translations.launchpad.test/'
     ...     'ubuntu/hoary/+source/evolution/'
     ...     '+pots/evolution-2.2/st/+translate')
 
@@ -902,7 +902,7 @@ The Polyglot translation group now assigns a Southern Sotho translation
 team, of which No Privileges however is not a member.
 
     >>> admin_browser.open(
-    ...     'http://translations.launchpad.dev/+groups/polyglot/+appoint')
+    ...     'http://translations.launchpad.test/+groups/polyglot/+appoint')
     >>> admin_browser.getControl('Language').value=['st']
     >>> admin_browser.getControl('Translator').value='name21'
     >>> admin_browser.getControl('Appoint').click()
@@ -911,7 +911,7 @@ No Privileges Person can now enter text, but the page does warn that it
 will only accept suggestions.
 
     >>> browser.open(
-    ...     'http://translations.launchpad.dev/'
+    ...     'http://translations.launchpad.test/'
     ...     'ubuntu/hoary/+source/evolution/'
     ...     '+pots/evolution-2.2/st/+translate')
 
@@ -951,7 +951,7 @@ as well as to upload files.
     ...         return markers[0].renderContents()
 
     >>> browser.open(
-    ...     'http://translations.launchpad.dev/'
+    ...     'http://translations.launchpad.test/'
     ...     'ubuntu/hoary/+source/evolution/'
     ...     '+pots/evolution-2.2/cy/+translate')
 
@@ -962,7 +962,7 @@ No Privileges person is going to translate here.  Message number 137 is
 not yet translated.
 
     >>> browser.open(
-    ...     'http://translations.launchpad.dev/'
+    ...     'http://translations.launchpad.test/'
     ...     'ubuntu/hoary/+source/evolution/'
     ...     '+pots/evolution-2.2/cy/8/+translate')
 
@@ -1001,7 +1001,7 @@ has been added.
 
 First, we verify that netapplet is using Launchpad Translations.
 
-    >>> admin_browser.open('http://launchpad.dev/netapplet')
+    >>> admin_browser.open('http://launchpad.test/netapplet')
     >>> admin_browser.getLink('Translations', index=1).click()
     >>> print_radio_button_field(admin_browser.contents, "translations_usage")
     ( ) Unknown
@@ -1032,21 +1032,21 @@ as the translation group for the netapplet product...
 ... and its associated project, GNOME.
 
     >>> admin_browser.open(
-    ...     'http://translations.launchpad.dev/gnome/+settings')
+    ...     'http://translations.launchpad.test/gnome/+settings')
     >>> admin_browser.getControl('Translation group').displayValue = [
     ...     'Just a testing team']
     >>> admin_browser.getControl(
     ...     'Translation permissions policy').displayValue = ['Structured']
     >>> admin_browser.getControl('Change').click()
     >>> admin_browser.url
-    'http://translations.launchpad.dev/gnome'
+    'http://translations.launchpad.test/gnome'
 
 Now, we test that a member of a translation team is able to translate
 directly, in this example, we are using 'tsukimi' account.
 
     >>> tsukimi_browser = setupBrowser(auth='Basic tsukimi@quaqua.net:test')
     >>> tsukimi_browser.open(
-    ...     'http://translations.launchpad.dev/netapplet/trunk/+pots/' +
+    ...     'http://translations.launchpad.test/netapplet/trunk/+pots/' +
     ...         'netapplet/es/+translate')
     >>> content = find_main_content(tsukimi_browser.contents)
     >>> print(content)
@@ -1061,7 +1061,7 @@ members of the team.
     >>> no_priv_browser = setupBrowser(
     ...     auth='Basic no-priv@canonical.com:test')
     >>> no_priv_browser.open(
-    ...     'http://translations.launchpad.dev/netapplet/trunk/+pots/' +
+    ...     'http://translations.launchpad.test/netapplet/trunk/+pots/' +
     ...         'netapplet/es/+translate')
     >>> content = find_main_content(no_priv_browser.contents)
     >>> print(content)
@@ -1073,7 +1073,7 @@ And finally, we test that a language without a team lets anyone (in this
 case, the 'No Privileges' account) to translate directly.
 
     >>> no_priv_browser.open(
-    ...     'http://translations.launchpad.dev/netapplet/trunk/+pots/' +
+    ...     'http://translations.launchpad.test/netapplet/trunk/+pots/' +
     ...         'netapplet/fr/+translate')
     >>> content = find_main_content(no_priv_browser.contents)
     >>> print(content)
@@ -1085,7 +1085,7 @@ First, make sure we can see the page.
 Try to get the page when unauthenticated.
 
     >>> browser.open(
-    ...     'http://translations.launchpad.dev/ubuntu/hoary/+source/' +
+    ...     'http://translations.launchpad.test/ubuntu/hoary/+source/' +
     ...         'evolution/+pots/evolution-2.2/af/+upload')
     Traceback (most recent call last):
     ...
@@ -1094,7 +1094,7 @@ Try to get the page when unauthenticated.
 And now with valid credentials.
 
     >>> admin_browser.open(
-    ...     'http://translations.launchpad.dev/ubuntu/hoary/+source/' +
+    ...     'http://translations.launchpad.test/ubuntu/hoary/+source/' +
     ...         'evolution/+pots/evolution-2.2/af/+upload')
     >>> print(admin_browser.url)
     http://.../ubuntu/hoary/+source/evolution/+pots/evolution-2.2/af/+upload
@@ -1144,7 +1144,7 @@ cannot be handled.
     >>> upload.add_file(StringIO(af_file), 'application/msword', 'af.doc')
     >>> admin_browser.getControl('Upload').click()
     >>> print(admin_browser.url)
-    http://translations.launchpad.dev/ubuntu/hoary/+source/evolution/+pots/evolution-2.2/af/+upload
+    http://translations.launchpad.test/ubuntu/hoary/+source/evolution/+pots/evolution-2.2/af/+upload
 
     >>> for tag in find_tags_by_class(admin_browser.contents, 'error'):
     ...     print(tag.renderContents())
@@ -1157,7 +1157,7 @@ With all the correct information, a file can be uploaded.
     >>> upload.add_file(StringIO(af_file), 'application/x-po', 'af.po')
     >>> admin_browser.getControl('Upload').click()
     >>> print(admin_browser.url)
-    http://translations.launchpad.dev/ubuntu/hoary/+source/evolution/+pots/evolution-2.2/af/+upload
+    http://translations.launchpad.test/ubuntu/hoary/+source/evolution/+pots/evolution-2.2/af/+upload
 
     >>> for tag in find_tags_by_class(admin_browser.contents, 'message'):
     ...     print(tag.renderContents())
@@ -1202,7 +1202,7 @@ Let's add a new suggestion as a person without privileges.
 
     >>> browser.addHeader("Authorization", "Basic no-priv@canonical.com:test")
     >>> browser.open(
-    ...     'http://translations.launchpad.dev/'
+    ...     'http://translations.launchpad.test/'
     ...     'ubuntu/hoary/+source/evolution/'
     ...     '+pots/evolution-2.2/es/+translate')
     >>> browser.getControl(

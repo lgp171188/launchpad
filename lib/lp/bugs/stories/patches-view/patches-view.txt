@@ -26,7 +26,7 @@ We don't see any patches when we open the patches view.
     ...         print(extract_text(messages[0]))
 
     >>> anon_browser.open(
-    ...     'http://bugs.launchpad.dev/patchy-product-1/+patches')
+    ...     'http://bugs.launchpad.test/patchy-product-1/+patches')
     >>> show_patches_view(anon_browser.contents)
     There are no patches associated with Patchy 1 at this time.
 
@@ -51,7 +51,7 @@ view, because that bug has no patch attachments.
     >>> bug_a = make_bug(title="bug_a title", product=patchy_product)
     >>> transaction.commit()
     >>> anon_browser.open(
-    ...     'http://bugs.launchpad.dev/patchy-product-1/+patches')
+    ...     'http://bugs.launchpad.test/patchy-product-1/+patches')
     >>> show_patches_view(anon_browser.contents)
     There are no patches associated with Patchy 1 at this time.
 
@@ -61,7 +61,7 @@ still shows no patches.
     >>> with_anybody(factory.makeBugAttachment)(bug=bug_a, is_patch=False)
     <BugAttachment at...
     >>> transaction.commit()
-    >>> anon_browser.open('http://bugs.launchpad.dev/patchy-product-1/+patches')
+    >>> anon_browser.open('http://bugs.launchpad.test/patchy-product-1/+patches')
     >>> show_patches_view(anon_browser.contents)
     There are no patches associated with Patchy 1 at this time.
 
@@ -78,7 +78,7 @@ patches view.
     <BugAttachment at...
     >>> transaction.commit()
     >>> anon_browser.open(
-    ...     'http://bugs.launchpad.dev/patchy-product-1/+patches')
+    ...     'http://bugs.launchpad.test/patchy-product-1/+patches')
     >>> show_patches_view(anon_browser.contents)
     Bug                                 Importance   Status    Patch Age
     Bug #...: bug_a title               Undecided     New     ...second...
@@ -150,7 +150,7 @@ attachments, and various statuses...
 ...the youngest patch on each bug is visible in the patch report
 (except for bugs in "Fix Released" state, which aren't shown):
 
-    >>> anon_browser.open('http://bugs.launchpad.dev/patchy-product-1/+patches')
+    >>> anon_browser.open('http://bugs.launchpad.test/patchy-product-1/+patches')
     >>> show_patches_view(anon_browser.contents)
     Bug                                 Importance   Status    Patch Age
     Bug #...: bug_c title               Wishlist  Fix Committed ...second...
@@ -169,7 +169,7 @@ importance and status.
     >>> anon_browser.getControl(name="orderby").value = ['-importance']
     >>> anon_browser.getControl("sort").click()
     >>> anon_browser.url
-    'http://bugs.launchpad.dev/patchy-product-1/+patches?orderby=-importance'
+    'http://bugs.launchpad.test/patchy-product-1/+patches?orderby=-importance'
     >>> show_patches_view(anon_browser.contents)
     Bug                                 Importance   Status    Patch Age
     Bug #...: bug_b title               Critical    Confirmed ...second...
@@ -185,7 +185,7 @@ importance and status.
     >>> anon_browser.getControl(name="orderby").value = ['status']
     >>> anon_browser.getControl("sort").click()
     >>> anon_browser.url
-    'http://bugs.launchpad.dev/patchy-product-1/+patches?orderby=status'
+    'http://bugs.launchpad.test/patchy-product-1/+patches?orderby=status'
     >>> show_patches_view(anon_browser.contents)
     Bug                                 Importance   Status    Patch Age
     Bug #...: bug_a title               Undecided     New     ...second...
@@ -200,7 +200,7 @@ importance and status.
 
 But we can't sort by things that aren't validated by the view.
 
-    >>> anon_browser.open('http://bugs.launchpad.dev/patchy-product-1/+patches?orderby=star-sign')
+    >>> anon_browser.open('http://bugs.launchpad.test/patchy-product-1/+patches?orderby=star-sign')
     Traceback (most recent call last):
     ...
     UnexpectedFormData: Unexpected value for field 'orderby': 'star-sign'
@@ -261,7 +261,7 @@ Bugs in a product series show up in the patches view for that series.
     >>> make_bugtask(bug=bug_c, target=patchy_product_series)
     >>> logout()
     >>> anon_browser.open(
-    ...     'https://bugs.launchpad.dev/patchy-product-1/trunk/+patches')
+    ...     'https://bugs.launchpad.test/patchy-product-1/trunk/+patches')
     >>> show_patches_view(anon_browser.contents)
     Bug                       Importance     Status      Patch Age
     Bug #...: bug_c title     Wishlist  Fix Committed   ...second...

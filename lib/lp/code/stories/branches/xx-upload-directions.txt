@@ -4,7 +4,7 @@ The branch ~name12/gnome-terminal/pushed is an upload branch. Its index page
 shows contextual directions on how to upload to it.
 
     >>> branch_page = (
-    ...     'http://code.launchpad.dev/~name12/+branch/gnome-terminal/pushed')
+    ...     'http://code.launchpad.test/~name12/+branch/gnome-terminal/pushed')
 
 We will need multiple browsers, logged in with different users. Set them up
 now.
@@ -51,7 +51,7 @@ the branch, and suggest logging in for directions.
     >>> instructions = find_tag_by_id(content, 'upload-directions')
     >>> print(instructions.renderContents())
     Only
-    <a href="http://launchpad.dev/~name12">Sample Person</a>
+    <a href="http://launchpad.test/~name12">Sample Person</a>
     can upload to this branch. If you are Sample Person please
     <a href="+login">log in</a> for upload directions.
 
@@ -64,7 +64,7 @@ definitive that it is not possible to upload to this branch.
     >>> print(instructions.renderContents())
     <div...
     You cannot upload to this branch. Only
-    <a href="http://launchpad.dev/~name12">Sample Person</a>
+    <a href="http://launchpad.test/~name12">Sample Person</a>
     can upload to this branch.
     ...
 
@@ -86,7 +86,7 @@ key registered, point to the SSH keys form.
 
 First, unregister the existing SSH key for Sample Person.
 
-    >>> name12_browser.open(url='http://launchpad.dev/~name12')
+    >>> name12_browser.open(url='http://launchpad.test/~name12')
     >>> name12_browser.getLink(url='editsshkeys').click()
     >>> name12_browser.getControl('Remove').click()
 
@@ -97,7 +97,7 @@ The branch page now displays directions and a link to register an SSH key.
     >>> instructions = find_tag_by_id(content, 'ssh-key-directions')
     >>> print(instructions.renderContents())
     To authenticate with the Launchpad branch upload service, you need to
-    <a href="http://launchpad.dev/~name12/+editsshkeys">
+    <a href="http://launchpad.test/~name12/+editsshkeys">
     register an SSH key</a>.
 
 Click the link and register a key.
@@ -156,7 +156,7 @@ owner is a team.
     >>> instructions = find_tag_by_id(content, 'upload-directions')
     >>> print(instructions.renderContents())
     Members of <a
-    href="http://launchpad.dev/~landscape-developers">Landscape
+    href="http://launchpad.test/~landscape-developers">Landscape
     Developers</a> can upload to this branch. <a href="+login">Log in</a> for
     directions.
 
@@ -169,7 +169,7 @@ a link to the team.
     >>> print(instructions.renderContents())
     <div...
     You cannot upload to this branch. Members of <a
-    href="http://launchpad.dev/~landscape-developers">Landscape
+    href="http://launchpad.test/~landscape-developers">Landscape
     Developers</a> can upload to this branch.
     ...
 
@@ -192,7 +192,7 @@ owning team's name.
 Upload directions should not be displayed for import branches.
 
     >>> import_branch_page = (
-    ...     'http://code.launchpad.dev/~vcs-imports/evolution/main')
+    ...     'http://code.launchpad.test/~vcs-imports/evolution/main')
     >>> anon_browser.open(import_branch_page)
     >>> content = anon_browser.contents
     >>> instructions = find_tag_by_id(content, 'upload-directions')

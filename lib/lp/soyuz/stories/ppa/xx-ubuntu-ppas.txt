@@ -2,17 +2,17 @@
 
 The Ubuntu page contains a link to get to the Personal Package Archives.
 
-    >>> anon_browser.open("http://launchpad.dev/ubuntu")
+    >>> anon_browser.open("http://launchpad.test/ubuntu")
     >>> anon_browser.getLink("Personal Package Archives").click()
     >>> print_location(anon_browser.contents)
     Hierarchy: Ubuntu
     Tabs:
-    * Overview (selected) - http://launchpad.dev/ubuntu
-    * Code - http://code.launchpad.dev/ubuntu
-    * Bugs - http://bugs.launchpad.dev/ubuntu
-    * Blueprints - http://blueprints.launchpad.dev/ubuntu
-    * Translations - http://translations.launchpad.dev/ubuntu
-    * Answers - http://answers.launchpad.dev/ubuntu
+    * Overview (selected) - http://launchpad.test/ubuntu
+    * Code - http://code.launchpad.test/ubuntu
+    * Bugs - http://bugs.launchpad.test/ubuntu
+    * Blueprints - http://blueprints.launchpad.test/ubuntu
+    * Translations - http://translations.launchpad.test/ubuntu
+    * Answers - http://answers.launchpad.test/ubuntu
     Main heading: Personal Package Archives for Ubuntu
 
 
@@ -58,7 +58,7 @@ further tests.
 Currently we only support PPAs for a limited number of distros. The
 '+ppas' page isn't linked for other distribution.
 
-    >>> anon_browser.open("http://launchpad.dev/debian")
+    >>> anon_browser.open("http://launchpad.test/debian")
     >>> anon_browser.getLink("Personal Package Archives")
     Traceback (most recent call last):
     ...
@@ -76,7 +76,7 @@ coherent data for a distribution with no PPAs.
     >>> logout()
     >>> transaction.commit()
 
-    >>> anon_browser.open("http://launchpad.dev/debian")
+    >>> anon_browser.open("http://launchpad.test/debian")
     >>> anon_browser.getLink("Personal Package Archives").click()
     >>> print(anon_browser.title)
     Personal Package Archives : Debian
@@ -116,7 +116,7 @@ Description, Sources and Binaries, the latter two being a count.
 The default search shows only active (those with, at least one,
 PENDING or PUBLISHED source record) PPAs.
 
-    >>> anon_browser.open("http://launchpad.dev/ubuntu")
+    >>> anon_browser.open("http://launchpad.test/ubuntu")
     >>> anon_browser.getLink("Personal Package Archives").click()
     >>> anon_browser.getControl('Search', index=0).click()
     >>> for ppa_row in find_tags_by_class(
@@ -147,7 +147,7 @@ The information section will be only rendered if the page is reloaded
 with no 'name_filter' GET argument, in other words, when no search was
 request.
 
-    >>> anon_browser.open("http://launchpad.dev/ubuntu/+ppas")
+    >>> anon_browser.open("http://launchpad.test/ubuntu/+ppas")
 
     >>> find_tag_by_id(
     ...     anon_browser.contents, 'ppa_most_active') is not None
@@ -225,7 +225,7 @@ URL, the page copes gracefully with this by searching for all the terms
 specified.
 
     >>> anon_browser.open(
-    ...     "http://launchpad.dev/ubuntu/+ppas"
+    ...     "http://launchpad.test/ubuntu/+ppas"
     ...     "?name_filter=packages&name_filter=friends")
     >>> [row] = find_tags_by_class(anon_browser.contents, 'ppa_batch_row')
     >>> print(extract_text(row))
@@ -279,12 +279,12 @@ wiki, which contains more documentation about the PPA installation
 procedure.
 
     >>> print(anon_browser.getLink('Read about installing').url)
-    http://launchpad.dev/+help-soyuz/ppa-sources-list.html
+    http://launchpad.test/+help-soyuz/ppa-sources-list.html
 
 The PPA owner reference is a link to its profile page.
 
     >>> print(anon_browser.getLink('Celso Providelo').url)
-    http://launchpad.dev/~cprov
+    http://launchpad.test/~cprov
 
 The installation details are presented right below the 'Technical
 details about this PPA' (in a javascript-expandable area). It consists
@@ -303,9 +303,9 @@ and copy-and-paste the repository URL to their systems.
       Choose your Ubuntu version
       Breezy Badger Autotest (6.6.6)
       Warty (4.10)
-    deb http://ppa.launchpad.dev/cprov/ppa/ubuntu
+    deb http://ppa.launchpad.test/cprov/ppa/ubuntu
       YOUR_UBUNTU_VERSION_HERE main
-    deb-src http://ppa.launchpad.dev/cprov/ppa/ubuntu
+    deb-src http://ppa.launchpad.test/cprov/ppa/ubuntu
       YOUR_UBUNTU_VERSION_HERE main
 
 When present PPA 'Build dependencies' and 'Signing key' will also be
@@ -368,7 +368,7 @@ to the newer version.
 The link itself will point to the newer version in the distribution.
 
     >>> print(anon_browser.getLink('Newer version').url)
-    http://launchpad.dev/ubuntu/+source/iceweasel/1.1
+    http://launchpad.test/ubuntu/+source/iceweasel/1.1
 
 A Latest updates portlet is included on the index page indicating the
 latest published sources with their states.
@@ -420,7 +420,7 @@ Current build activity is linked to the builds page with the relevant
 filter.
 
     >>> print(anon_browser.getLink('1 package building').url)
-    http://launchpad.dev/~cprov/+archive/ubuntu/ppa/+builds?build_state=building
+    http://launchpad.test/~cprov/+archive/ubuntu/ppa/+builds?build_state=building
 
 
 == Filtering an archive ==
@@ -457,7 +457,7 @@ An empty PPA doesn't list any packages and it also doesn't present the
 'apt sources lines ' widget and the repository 'URL' since they would
 link to a repository that doesn't exist yet.
 
-    >>> anon_browser.open("http://launchpad.dev/~no-priv/+archive/ubuntu/ppa")
+    >>> anon_browser.open("http://launchpad.test/~no-priv/+archive/ubuntu/ppa")
     >>> print(extract_text(find_main_content(anon_browser.contents)))
     PPA for No Privileges Person
     PPA description
@@ -491,16 +491,16 @@ published source.
     >>> sources_list = find_tag_by_id(
     ...     anon_browser.contents, 'sources-list-entries')
     >>> print(extract_text(sources_list))
-    deb http://ppa.launchpad.dev/no-priv/ppa/ubuntu
+    deb http://ppa.launchpad.test/no-priv/ppa/ubuntu
         warty main
-    deb-src http://ppa.launchpad.dev/no-priv/ppa/ubuntu
+    deb-src http://ppa.launchpad.test/no-priv/ppa/ubuntu
         warty main
 
 Also the repository URL, within the sources.list snippet, is an actual link.
 
     >>> print(anon_browser.getLink(
-    ...     "http://ppa.launchpad.dev/no-priv/ppa/ubuntu").url)
-    http://ppa.launchpad.dev/no-priv/ppa/ubuntu
+    ...     "http://ppa.launchpad.test/no-priv/ppa/ubuntu").url)
+    http://ppa.launchpad.test/no-priv/ppa/ubuntu
 
 
 == Upload hint ==
@@ -511,7 +511,7 @@ section in the PPA details table.
     >>> no_priv_browser = setupBrowser(
     ...     auth='Basic no-priv@canonical.com:test')
     >>> no_priv_browser.open(
-    ...     "http://launchpad.dev/~no-priv/+archive/ubuntu/ppa")
+    ...     "http://launchpad.test/~no-priv/+archive/ubuntu/ppa")
 
     >>> print_tag_with_id(no_priv_browser.contents, 'upload-hint')
     Uploading packages to this PPA
@@ -527,12 +527,12 @@ It also has a link pointing to its corresponding help page.
 Anonymous access or users with no upload permission cannot see the
 upload hint section.
 
-    >>> anon_browser.open("http://launchpad.dev/~no-priv/+archive/ubuntu/ppa")
+    >>> anon_browser.open("http://launchpad.test/~no-priv/+archive/ubuntu/ppa")
     >>> print(find_tag_by_id(
     ...     anon_browser.contents, 'upload-hint'))
     None
 
-    >>> admin_browser.open("http://launchpad.dev/~no-priv/+archive/ubuntu/ppa")
+    >>> admin_browser.open("http://launchpad.test/~no-priv/+archive/ubuntu/ppa")
     >>> print(find_tag_by_id(
     ...     anon_browser.contents, 'upload-hint'))
     None
@@ -588,12 +588,12 @@ links to the same help pop-up that describes how to add a PPA and
 its key to Ubuntu.
 
     >>> print(anon_browser.getLink('Read about installing').url)
-    http://launchpad.dev/+help-soyuz/ppa-sources-list.html
+    http://launchpad.test/+help-soyuz/ppa-sources-list.html
 
 And further down, next to the key id, we link to that same pop-up help:
 
     >>> print(anon_browser.getLink('What is this?').url)
-    http://launchpad.dev/+help-soyuz/ppa-sources-list.html
+    http://launchpad.test/+help-soyuz/ppa-sources-list.html
 
 
 == Single-publication PPAs ==
@@ -601,7 +601,7 @@ And further down, next to the key id, we link to that same pop-up help:
 Just quickly check if the singular form of this section is handled
 properly.
 
-    >>> anon_browser.open("http://launchpad.dev/~mark/+archive/ubuntu/ppa")
+    >>> anon_browser.open("http://launchpad.test/~mark/+archive/ubuntu/ppa")
     >>> print(anon_browser.title)
     PPA for Mark Shuttleworth : Mark Shuttleworth
 
@@ -617,8 +617,8 @@ And the sources.list entries point to the right distribution release:
     ...     anon_browser.contents, 'sources-list-entries')
     >>> text = extract_text(results)
     >>> print(text)
-    deb http://ppa.launchpad.dev/mark/ppa/ubuntu breezy-autotest main
-    deb-src http://ppa.launchpad.dev/mark/ppa/ubuntu breezy-autotest main
+    deb http://ppa.launchpad.test/mark/ppa/ubuntu breezy-autotest main
+    deb-src http://ppa.launchpad.test/mark/ppa/ubuntu breezy-autotest main
 
 
 == Populating 'Most Active' section ==
@@ -643,7 +643,7 @@ Publications created, now when any user access the 'Ubuntu PPAs' page,
 they will be able to see 4 PPAs where we've added publications listed in
 the 'Most active' section.
 
-    >>> anon_browser.open("http://launchpad.dev/ubuntu/+ppas")
+    >>> anon_browser.open("http://launchpad.test/ubuntu/+ppas")
     >>> print(extract_text(
     ...    find_tag_by_id(anon_browser.contents, 'ppa_most_active')))
     Most active
@@ -666,20 +666,20 @@ PPAs are being enhanced to allow multiple named PPAs per owner.  For a
 limited transitional period, specifying a URL without the name in it
 will redirect to the correct URL with the default PPA name, "ppa".
 
-    >>> admin_browser.open("http://launchpad.dev/~cprov/+archive")
+    >>> admin_browser.open("http://launchpad.test/~cprov/+archive")
     >>> admin_browser.url
-    'http://launchpad.dev/~cprov/+archive/ubuntu/ppa'
+    'http://launchpad.test/~cprov/+archive/ubuntu/ppa'
 
 If the user in question doesn't have a PPA, any attempt to access it,
 either via the new-style URL or the compatibility redirection, will
 result in a NotFound error.
 
-    >>> admin_browser.open("http://launchpad.dev/~name16/+archive/ppa")
+    >>> admin_browser.open("http://launchpad.test/~name16/+archive/ppa")
     Traceback (most recent call last):
     ...
     NotFound: Object: <Person at ... name16 (Foo Bar)>, name: u'+archive'
 
-    >>> admin_browser.open("http://launchpad.dev/~name16/+archive")
+    >>> admin_browser.open("http://launchpad.test/~name16/+archive")
     Traceback (most recent call last):
     ...
     NotFound: Object: <Person at ... name16 (Foo Bar)>, name: u'+archive'

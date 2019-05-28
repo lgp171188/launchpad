@@ -177,7 +177,7 @@ Therefore, we won't set type="html" for the title element.
     ... <link rel="self" href="http://foo.bar" />
     ... <updated>2006-05-19T06:37:40.344941+00:00</updated>
     ... <entry>
-    ...     <id>http://launchpad.dev/entry</id>
+    ...     <id>http://launchpad.test/entry</id>
     ...     <author></author>
     ...     <updated>2007-05-19T06:37:40.344941+00:00</updated>
     ...     <title type="text">&lt;b&gt;hello&lt;/b&gt;</title>
@@ -211,7 +211,7 @@ Therefore, we won't set type="html" for the title element.
     Parent: author
     =
       7: <entry>
-      8:     <id>http://launchpad.dev/entry</id>
+      8:     <id>http://launchpad.test/entry</id>
       9:     <author></author>
        : ~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
      10:     <updated>2007-05-19T06:37:40.344941+00:00</updated>

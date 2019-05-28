@@ -13,19 +13,19 @@ projects and another blueprint, to be superseded.
 
     >>> browser.addHeader('Authorization', 'Basic foo.bar@canonical.com:test')
 
-    >>> browser.open('http://blueprints.launchpad.dev/bzr/+addspec')
+    >>> browser.open('http://blueprints.launchpad.test/bzr/+addspec')
     >>> browser.getControl('Name').value = 'a-unique-blueprint'
     >>> browser.getControl('Title').value = 'A unique Blueprint'
     >>> browser.getControl('Summary').value = 'A unique bzr Blueprint...'
     >>> browser.getControl('Register Blueprint').click()
 
-    >>> browser.open('http://blueprints.launchpad.dev/redfish/+addspec')
+    >>> browser.open('http://blueprints.launchpad.test/redfish/+addspec')
     >>> browser.getControl('Name').value = 'a-unique-blueprint'
     >>> browser.getControl('Title').value = 'A unique Blueprint'
     >>> browser.getControl('Summary').value = 'A unique refish Blueprint...'
     >>> browser.getControl('Register Blueprint').click()
 
-    >>> browser.open('http://blueprints.launchpad.dev/redfish/+addspec')
+    >>> browser.open('http://blueprints.launchpad.test/redfish/+addspec')
     >>> browser.getControl('Name').value = 'another-unique-blueprint'
     >>> browser.getControl('Title').value = 'Another unique Blueprint'
     >>> browser.getControl('Summary').value = 'Another refish Blueprint...'
@@ -35,7 +35,7 @@ Then we'll mark one of the blueprints as superseded by another one from the
 same project for which we know there is another blueprint in a different
 project with an identical name, which was registered earlier.
 
-    >>> browser.open('http://blueprints.launchpad.dev/redfish/' +
+    >>> browser.open('http://blueprints.launchpad.test/redfish/' +
     ...     '+spec/another-unique-blueprint/+supersede')
     >>> browser.getControl('Superseded by').value = 'a-unique-blueprint'
     >>> browser.getControl('Continue').click()
@@ -49,4 +49,4 @@ one that was registered earlier.
 
     >>> browser.getLink('A unique Blueprint').click()
     >>> browser.url
-    'http://blueprints.launchpad.dev/redfish/+spec/a-unique-blueprint'
+    'http://blueprints.launchpad.test/redfish/+spec/a-unique-blueprint'

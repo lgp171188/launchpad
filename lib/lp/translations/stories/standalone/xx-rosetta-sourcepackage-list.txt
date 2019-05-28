@@ -5,7 +5,7 @@ in a particular distibution series. In this case, we're asking for the
 translation overview for Evolution in Hoary.
 
     >>> anon_browser.open(
-    ...     'http://translations.launchpad.dev/ubuntu/hoary/'
+    ...     'http://translations.launchpad.test/ubuntu/hoary/'
     ...     '+source/evolution')
     >>> anon_browser.title
     'Hoary (5.04) : Translations : ...evolution...package : Ubuntu'

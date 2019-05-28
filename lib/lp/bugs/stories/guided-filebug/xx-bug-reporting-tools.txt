@@ -20,7 +20,7 @@ comment.
 
     NOTE: The form names are used instead of their labels here, because
           external tools depend on them.
-    >>> anon_browser.open('http://launchpad.dev/+storeblob')
+    >>> anon_browser.open('http://launchpad.test/+storeblob')
     >>> anon_browser.getControl(name='field.blob').add_file( # Don't change!
     ...     extra_filebug_data, 'not/important', 'not.important')
     >>> anon_browser.getControl(name='FORM_SUBMIT').click() # Don't change!
@@ -61,7 +61,7 @@ Guided +filebug
 The most common case will be that the user is sent to the guided
 +filebug page and the user goes through the workflow there.
 
-    >>> filebug_host = 'launchpad.dev'
+    >>> filebug_host = 'launchpad.test'
     >>> filebug_path = (
     ...    '/ubuntu/+source/mozilla-firefox/+filebug/%s' % blob_token)
     >>> filebug_url = 'http://%s%s' % (filebug_host, filebug_path)
@@ -126,7 +126,7 @@ information specified in the extra filebug data.
     ...     'A bug description.')
     >>> user_browser.getControl('Submit Bug Report').click()
     >>> user_browser.url
-    'http://bugs.launchpad.dev/ubuntu/+source/mozilla-firefox/+bug/...'
+    'http://bugs.launchpad.test/ubuntu/+source/mozilla-firefox/+bug/...'
 
 Two attachments were added.
 
@@ -158,7 +158,7 @@ that will be used to automatically fill in a suggested title.
 
     >>> extra_filebug_data_with_subject = open(
     ...     os.path.join(testfiles, 'extra_filebug_data_subject.msg'))
-    >>> anon_browser.open('http://launchpad.dev/+storeblob')
+    >>> anon_browser.open('http://launchpad.test/+storeblob')
     >>> anon_browser.getControl(name='field.blob').add_file( # Don't change!
     ...     extra_filebug_data_with_subject, 'not/important', 'not.important')
     >>> anon_browser.getControl(name='FORM_SUBMIT').click() # Don't change!
@@ -166,7 +166,7 @@ that will be used to automatically fill in a suggested title.
     >>> process_blob(blob_token)
 
     >>> user_browser.open(
-    ...    'http://launchpad.dev/ubuntu/+source/mozilla-firefox/+filebug/'
+    ...    'http://launchpad.test/ubuntu/+source/mozilla-firefox/+filebug/'
     ...     '%s' % blob_token)
 
     >>> user_browser.getControl('Summary', index=0).value
@@ -187,7 +187,7 @@ initialized with that value.
 
     >>> extra_filebug_data_with_subject = open(
     ...     os.path.join(testfiles, 'extra_filebug_data_tags.msg'))
-    >>> anon_browser.open('http://launchpad.dev/+storeblob')
+    >>> anon_browser.open('http://launchpad.test/+storeblob')
     >>> anon_browser.getControl(name='field.blob').add_file( # Don't change!
     ...     extra_filebug_data_with_subject, 'not/important', 'not.important')
     >>> anon_browser.getControl(name='FORM_SUBMIT').click() # Don't change!
@@ -195,7 +195,7 @@ initialized with that value.
     >>> process_blob(blob_token)
 
     >>> user_browser.open(
-    ...    'http://launchpad.dev/ubuntu/+source/mozilla-firefox/'
+    ...    'http://launchpad.test/ubuntu/+source/mozilla-firefox/'
     ...     '+filebug/%s' % blob_token)
     >>> user_browser.getControl('Summary', index=0).value = 'Another summary'
     >>> user_browser.getControl('Continue').click()
@@ -211,7 +211,7 @@ The user can of course change the tags if they want.
     ...     'Bug description.')
     >>> user_browser.getControl('Submit Bug Report').click()
     >>> user_browser.url
-    'http://bugs.launchpad.dev/ubuntu/+source/mozilla-firefox/+bug/...'
+    'http://bugs.launchpad.test/ubuntu/+source/mozilla-firefox/+bug/...'
 
     >>> tags = find_tag_by_id(user_browser.contents, 'bug-tags')
     >>> print(extract_text(tags))
@@ -221,7 +221,7 @@ The normal +filebug page has a hidden tags widget, so bugs filed via
 that will get their tags set as well.
 
     >>> user_browser.open(
-    ...    'http://launchpad.dev/ubuntu/+source/mozilla-firefox/+filebug/'
+    ...    'http://launchpad.test/ubuntu/+source/mozilla-firefox/+filebug/'
     ...     '%s' % blob_token)
     >>> user_browser.getControl('Summary', index=0).value = 'Bug Summary'
     >>> user_browser.getControl('Continue').click()
@@ -230,7 +230,7 @@ that will get their tags set as well.
     ...     'Bug description.')
     >>> user_browser.getControl('Submit Bug Report').click()
     >>> user_browser.url
-    'http://bugs.launchpad.dev/ubuntu/+source/mozilla-firefox/+bug/...'
+    'http://bugs.launchpad.test/ubuntu/+source/mozilla-firefox/+bug/...'
 
     >>> tags = find_tag_by_id(user_browser.contents, 'bug-tags')
     >>> print(extract_text(tags))
@@ -256,7 +256,7 @@ The database knows only the first key.
 Once we submit the bug report...
 
     >>> extra_filebug_data_with_hwdb_submission.seek(0)
-    >>> anon_browser.open('http://launchpad.dev/+storeblob')
+    >>> anon_browser.open('http://launchpad.test/+storeblob')
     >>> anon_browser.getControl(name='field.blob').add_file( # Don't change!
     ...     extra_filebug_data_with_hwdb_submission, 'not/important',
     ...     'not.important')
@@ -265,7 +265,7 @@ Once we submit the bug report...
     >>> process_blob(blob_token)
 
     >>> filebug_url = (
-    ...    'http://launchpad.dev/ubuntu/+source/mozilla-firefox/+filebug/'
+    ...    'http://launchpad.test/ubuntu/+source/mozilla-firefox/+filebug/'
     ...     '%s' % blob_token)
     >>> user_browser.open(filebug_url)
     >>> user_browser.getControl('Summary', index=0).value = 'Another summary'

@@ -4,43 +4,43 @@ structural object.
 Taking an IPOMsgSet for IProductSeries context:
 
   >>> browser.open(
-  ...     'http://translations.launchpad.dev/evolution/trunk/+pots/'
+  ...     'http://translations.launchpad.test/evolution/trunk/+pots/'
   ...     'evolution-2.2/es/1')
 
 We get a +translate page because that's the only page for an IPOMsgSet and the
 system forwards automatically there.
 
   >>> print(browser.url)
-  http://translations.launchpad.dev/evolution/trunk/+pots/evolution-2.2/es/1/+translate
+  http://translations.launchpad.test/evolution/trunk/+pots/evolution-2.2/es/1/+translate
 
 The Application tabs should point to IProductSeries URLs.
 
     >>> print_location_apps(browser.contents)
-    * Overview - http://launchpad.dev/evolution
-    * Code - http://code.launchpad.dev/evolution
-    * Bugs - http://bugs.launchpad.dev/evolution
-    * Blueprints - http://blueprints.launchpad.dev/evolution
-    * Translations (selected) - http://translations.launchpad.dev/evolution
-    * Answers - http://answers.launchpad.dev/evolution
+    * Overview - http://launchpad.test/evolution
+    * Code - http://code.launchpad.test/evolution
+    * Bugs - http://bugs.launchpad.test/evolution
+    * Blueprints - http://blueprints.launchpad.test/evolution
+    * Translations (selected) - http://translations.launchpad.test/evolution
+    * Answers - http://answers.launchpad.test/evolution
 
 Taking an IPOMsgSet for ISourcePackage context:
 
   >>> browser.open(
-  ...     'http://translations.launchpad.dev/ubuntu/hoary/+source/evolution/'
+  ...     'http://translations.launchpad.test/ubuntu/hoary/+source/evolution/'
   ...     '+pots/evolution-2.2/es/1')
 
 We get a +translate page because that's the only page for an IPOMsgSet and the
 system forwards automatically there.
 
   >>> print(browser.url)
-  http://translations.launchpad.dev/ubuntu/hoary/+source/evolution/+pots/evolution-2.2/es/1/+translate
+  http://translations.launchpad.test/ubuntu/hoary/+source/evolution/+pots/evolution-2.2/es/1/+translate
 
 The Application tabs should point to ISourcePackage URLs.
 
     >>> print_location_apps(browser.contents)
-    * Overview - http://launchpad.dev/ubuntu/+source/evolution
-    * Code - http://code.launchpad.dev/ubuntu/+source/evolution
-    * Bugs - http://bugs.launchpad.dev/ubuntu/+source/evolution
+    * Overview - http://launchpad.test/ubuntu/+source/evolution
+    * Code - http://code.launchpad.test/ubuntu/+source/evolution
+    * Bugs - http://bugs.launchpad.test/ubuntu/+source/evolution
     * Blueprints - not linked
-    * Translations (selected) - http://translations.launchpad.dev/ubuntu/+source/evolution
-    * Answers - http://answers.launchpad.dev/ubuntu/+source/evolution
+    * Translations (selected) - http://translations.launchpad.test/ubuntu/+source/evolution
+    * Answers - http://answers.launchpad.test/ubuntu/+source/evolution

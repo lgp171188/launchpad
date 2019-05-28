@@ -9,11 +9,11 @@ the contents of any error page. So we use http() instead.)
 
     >>> page_with_referer = str(http(r"""
     ... GET /+fhqwhgads HTTP/1.1
-    ... Referer: http://launchpad.dev/+about
+    ... Referer: http://launchpad.test/+about
     ... """))
     >>> print page_with_referer
     HTTP/1.1 404 Not Found
-    ...href="http://launchpad.dev/+about"...
+    ...href="http://launchpad.test/+about"...
 
 It also contains instructions specific to broken links.
 

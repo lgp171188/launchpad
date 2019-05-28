@@ -98,8 +98,8 @@ class TestExpandURL(TestCaseWithFactory):
         api = PublicCodehostingAPI(None, None)
         results = api.resolve_lp_path(product.name)
         urls = [
-            'bzr+ssh://bazaar.launchpad.dev/+branch/%s' % product.name,
-            'http://bazaar.launchpad.dev/%s' % trunk.unique_name]
+            'bzr+ssh://bazaar.launchpad.test/+branch/%s' % product.name,
+            'http://bazaar.launchpad.test/%s' % trunk.unique_name]
         self.assertEqual(dict(urls=urls), results)
 
     def test_resultDictForHotProduct(self):
@@ -109,7 +109,7 @@ class TestExpandURL(TestCaseWithFactory):
         self.pushConfig('codehosting', hot_products=product.name)
         api = PublicCodehostingAPI(None, None)
         results = api.resolve_lp_path(product.name)
-        http_url = 'http://bazaar.launchpad.dev/%s' % trunk.unique_name
+        http_url = 'http://bazaar.launchpad.test/%s' % trunk.unique_name
         self.assertEqual(dict(urls=[http_url]), results)
 
     def test_product_only(self):

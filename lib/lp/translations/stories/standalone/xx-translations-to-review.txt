@@ -29,7 +29,7 @@ Xowxz is a Khmer reviewer.
     >>> logout()
 
     >>> browser = setupBrowser(auth='Basic xowxz@example.com:test')
-    >>> homepage = 'http://translations.launchpad.dev/~xowxz'
+    >>> homepage = 'http://translations.launchpad.test/~xowxz'
 
     >>> def add_unreviewed_pofile(translationgroup):
     ...     """Create a POFile managed by `translationgroup`."""

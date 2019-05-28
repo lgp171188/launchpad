@@ -26,7 +26,7 @@ see both a portlet listing the answer contacts for the source package
 and another one listing those of the distribution.
 
     >>> anon_browser.open(
-    ...     'http://launchpad.dev/ubuntu/+source/evolution')
+    ...     'http://launchpad.test/ubuntu/+source/evolution')
     >>> anon_browser.getLink('Answers').click()
     >>> portlet = find_portlet(
     ...     anon_browser.contents,
@@ -42,7 +42,7 @@ To register themselves as answer contact, the user clicks on the
 
     >>> browser.addHeader('Authorization', 'Basic test@canonical.com:test')
     >>> browser.open(
-    ...     'http://launchpad.dev/ubuntu/+source/evolution/+questions')
+    ...     'http://launchpad.test/ubuntu/+source/evolution/+questions')
     >>> browser.getLink('Answers').click()
     >>> browser.getLink('Set answer contact').click()
     >>> print(browser.title)

@@ -12,7 +12,7 @@ No Privileges Person can see the email address in the tooltip of the
 questions in the Latest questions solved portlet on the Answers
 front page.
 
-    >>> user_browser.open('http://answers.launchpad.dev/')
+    >>> user_browser.open('http://answers.launchpad.test/')
     >>> question_portlet = find_tag_by_id(
     ...     user_browser.contents, 'latest-questions-solved')
     >>> for li in question_portlet.findAll('li'):
@@ -78,7 +78,7 @@ description. They can then see the email address in the tooltip in the
     >>> print(user_browser.title)
     Question #... : ...
 
-    >>> user_browser.open('http://answers.launchpad.dev/')
+    >>> user_browser.open('http://answers.launchpad.test/')
     >>> question_portlet = find_tag_by_id(
     ...     user_browser.contents, 'latest-questions-asked')
     >>> for li in question_portlet.findAll('li'):
@@ -92,7 +92,7 @@ description. They can then see the email address in the tooltip in the
 Anonymous cannot see the email address anywhere on the Answers front
 page.
 
-    >>> anon_browser.open('http://answers.launchpad.dev/')
+    >>> anon_browser.open('http://answers.launchpad.test/')
     >>> b'user@domain.com' in anon_browser.contents
     False
 

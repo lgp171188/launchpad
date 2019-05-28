@@ -2,13 +2,13 @@
 
 The test browser does not support javascript
     >>> user_browser.open(
-    ...     'http://launchpad.dev/firefox/+bug/1/+choose-affected-product')
+    ...     'http://launchpad.test/firefox/+bug/1/+choose-affected-product')
     >>> find_link = user_browser.getLink('Find')
     >>> find_link.url
-    'http://launchpad.dev/firefox/+bug...'
+    'http://launchpad.test/firefox/+bug...'
 
     >>> user_browser.open(
-    ...     'http://bugs.launchpad.dev/firefox/+bug/1/+affects-new-product')
+    ...     'http://bugs.launchpad.test/firefox/+bug/1/+affects-new-product')
     >>> user_browser.getControl('Bug URL').value = (
     ...     'http://bugs.foo.org/bugs/show_bug.cgi?id=42')
     >>> user_browser.getControl('Project name').value = 'The Foo Project'
@@ -29,7 +29,7 @@ for the user to use as the affected upstream.
     >>> from lp.testing.pages import strip_label
 
     >>> user_browser.open(
-    ...     'http://bugs.launchpad.dev/tomcat/+bug/2/+affects-new-product')
+    ...     'http://bugs.launchpad.test/tomcat/+bug/2/+affects-new-product')
     >>> print(user_browser.title)
     Register project affected by...
     >>> user_browser.getControl('Bug URL').value = (
@@ -99,7 +99,7 @@ If the URL of the remote bug is not recognized by Launchpad, we'll tell the
 user and ask them to check if it's correct.
 
     >>> user_browser.open(
-    ...     'http://bugs.launchpad.dev/firefox/+bug/1/+affects-new-product')
+    ...     'http://bugs.launchpad.test/firefox/+bug/1/+affects-new-product')
     >>> user_browser.getControl('Bug URL').value = (
     ...     'http://foo.org/notabug.cgi?id=42')
     >>> user_browser.getControl('Project name').value = 'Foo Project'

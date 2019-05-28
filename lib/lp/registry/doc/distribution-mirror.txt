@@ -648,9 +648,9 @@ is correct.
     INFO    Probing Archive Mirrors
     INFO    Probed 4 mirrors.
     INFO    Disabling 1 mirror(s):
-            http://launchpad.dev/ubuntu/+mirror/archive-404-mirror
+            http://launchpad.test/ubuntu/+mirror/archive-404-mirror
     INFO    Re-enabling 1 mirror(s):
-            http://launchpad.dev/ubuntu/+mirror/archive-mirror
+            http://launchpad.test/ubuntu/+mirror/archive-mirror
     INFO    Done.
     <BLANKLINE>
 
@@ -662,7 +662,7 @@ is correct.
     INFO    Probing CD Image Mirrors
     INFO    Probed 4 mirrors.
     INFO    Disabling 1 mirror(s):
-            http://launchpad.dev/ubuntu/+mirror/unreachable-mirror
+            http://launchpad.test/ubuntu/+mirror/unreachable-mirror
     INFO    Done.
     <BLANKLINE>
 
@@ -710,7 +710,7 @@ we'll enable them again.
     INFO    Probing CD Image Mirrors
     INFO    Probed 4 mirrors.
     INFO    Re-enabling 1 mirror(s):
-            http://launchpad.dev/ubuntu/+mirror/releases-mirror
+            http://launchpad.test/ubuntu/+mirror/releases-mirror
     INFO    Done.
     <BLANKLINE>
 

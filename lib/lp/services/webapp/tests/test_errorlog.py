@@ -353,8 +353,8 @@ class TestErrorReportingUtility(TestCase):
         utility._oops_config.publisher = None
         request = TestRequest(
             environ={
-                'SERVER_URL': 'http://launchpad.dev/fnord',
-                'HTTP_REFERER': 'http://launchpad.dev/snarf'})
+                'SERVER_URL': 'http://launchpad.test/fnord',
+                'HTTP_REFERER': 'http://launchpad.test/snarf'})
         try:
             raise GoneError('fnord')
         except GoneError:
@@ -368,8 +368,8 @@ class TestErrorReportingUtility(TestCase):
         utility._oops_config.publisher = None
         request = TestRequest(
             environ={
-                'SERVER_URL': 'http://launchpad.dev/fnord',
-                'HTTP_REFERER': 'http://bazaar.launchpad.dev/snarf'})
+                'SERVER_URL': 'http://launchpad.test/fnord',
+                'HTTP_REFERER': 'http://bazaar.launchpad.test/snarf'})
         try:
             raise GoneError('fnord')
         except GoneError:
@@ -383,8 +383,8 @@ class TestErrorReportingUtility(TestCase):
         utility._oops_config.publisher = None
         request = TestRequest(
             environ={
-                'SERVER_URL': 'http://bazaar.launchpad.dev/fnord',
-                'HTTP_REFERER': 'http://launchpad.dev/snarf'})
+                'SERVER_URL': 'http://bazaar.launchpad.test/fnord',
+                'HTTP_REFERER': 'http://launchpad.test/snarf'})
         try:
             raise GoneError('fnord')
         except GoneError:
@@ -397,7 +397,7 @@ class TestErrorReportingUtility(TestCase):
         utility._oops_config.publisher = None
         # There is no HTTP_REFERER header in this request
         request = TestRequest(
-            environ={'SERVER_URL': 'http://launchpad.dev/fnord'})
+            environ={'SERVER_URL': 'http://launchpad.test/fnord'})
         try:
             raise GoneError('fnord')
         except GoneError:
@@ -528,7 +528,7 @@ class TestSensitiveRequestVariables(testtools.TestCase):
         to mark it as sensitive.
         """
         request = TestRequest(
-            environ={'SERVER_URL': 'http://api.launchpad.dev'},
+            environ={'SERVER_URL': 'http://api.launchpad.test'},
             form={'oauth_signature': '&BTXPJ6pQTvh49r9p'})
         self.assertTrue(_is_sensitive(request, 'oauth_signature'))
 
@@ -579,7 +579,7 @@ class TestOopsIgnoring(testtools.TestCase):
         utility._oops_config.publisher = None
         report = {'type': 'NotFound',
                 'url': 'http://example.com',
-                'req_vars': {'HTTP_REFERER': 'http://launchpad.dev/'}}
+                'req_vars': {'HTTP_REFERER': 'http://launchpad.test/'}}
         self.assertNotEqual(None, utility._oops_config.publish(report))
 
     def test_404_without_referer_is_ignored(self):

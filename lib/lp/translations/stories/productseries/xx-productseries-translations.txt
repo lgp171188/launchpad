@@ -143,7 +143,7 @@ Evolution is set up to use Launchpad Translations, so the notice does
 not appear there.
 
     >>> owner_browser.open(
-    ...     'http://translations.launchpad.dev/'
+    ...     'http://translations.launchpad.test/'
     ...     'evolution/trunk/+translations-upload')
     >>> print(find_tag_by_id(
     ...     owner_browser.contents, 'not-translated-in-launchpad'))
@@ -152,7 +152,7 @@ not appear there.
 Nor does it appear on the template upload pages.
 
     >>> owner_browser.open(
-    ...     'http://translations.launchpad.dev/'
+    ...     'http://translations.launchpad.test/'
     ...     'evolution/trunk/+pots/evolution-2.2/+upload')
     >>> print(find_tag_by_id(
     ...     owner_browser.contents, 'not-translated-in-launchpad'))
@@ -169,7 +169,7 @@ Launchpad Translations.
 When the owner now visits the upload page for trunk, there's a notice.
 
     >>> owner_browser.open(
-    ...     'http://translations.launchpad.dev/'
+    ...     'http://translations.launchpad.test/'
     ...     'bazaar/trunk/+translations-upload')
     >>> print(extract_text(
     ...     find_tag_by_id(
@@ -192,7 +192,7 @@ The notice links to the page for configuring translations on the project.
 An administrator also sees the notice.
 
     >>> admin_browser.open(
-    ...     'http://translations.launchpad.dev/'
+    ...     'http://translations.launchpad.test/'
     ...     'bazaar/trunk/+translations-upload')
     >>> print(extract_text(
     ...     find_tag_by_id(
@@ -232,7 +232,7 @@ notice but not the link to the project's settings.
 
     >>> jtv_browser = setupBrowser('Basic jtv-sample@canonical.com:test')
     >>> jtv_browser.open(
-    ...     'http://translations.launchpad.dev/'
+    ...     'http://translations.launchpad.test/'
     ...     'bazaar/trunk/+translations-upload')
 
     >>> print(extract_text(
@@ -320,7 +320,7 @@ release series should be translated.
     >>> print(distribution.translation_focus)
     None
     >>> logout()
-    >>> admin_browser.open('http://translations.launchpad.dev/earthian/1.4')
+    >>> admin_browser.open('http://translations.launchpad.test/earthian/1.4')
     >>> print(find_tag_by_id(admin_browser.contents, 'translation-focus'))
     None
 
@@ -331,7 +331,7 @@ If focus is set, nice explanatory text is displayed.
     ...     name='1.6', distribution=distribution)
     >>> distribution.translation_focus = focus_series
     >>> logout()
-    >>> admin_browser.open('http://translations.launchpad.dev/earthian/1.4')
+    >>> admin_browser.open('http://translations.launchpad.test/earthian/1.4')
     >>> print(extract_text(
     ...     find_tag_by_id(admin_browser.contents, 'translation-focus')))
     Launchpad currently recommends translating 1.6.
@@ -350,7 +350,7 @@ When projects have only one active series, and it is already configured,
 project admin does not see the link for configuring other branches.
 
     >>> admin_browser.open(
-    ...     'http://translations.launchpad.dev/evolution')
+    ...     'http://translations.launchpad.test/evolution')
     >>> untranslatable = find_tag_by_id(
     ...     admin_browser.contents, 'portlet-untranslatable-branches')
     >>> untranslatable is None
@@ -371,7 +371,7 @@ Project administrator will see links to configuring translations for
 the new series.
 
     >>> admin_browser.open(
-    ...     'http://translations.launchpad.dev/evolution')
+    ...     'http://translations.launchpad.test/evolution')
     >>> untranslatable = find_tag_by_id(
     ...     admin_browser.contents, 'portlet-untranslatable-branches')
     >>> print(extract_text(untranslatable))
@@ -383,12 +383,12 @@ page togheter with link for uploading a template from that series
 (manual) and setting automatic imports.
 
     >>> print(admin_browser.getLink('Evolution evo-new series').url)
-    http://translations.launchpad.dev/evolution/evo-new/+translations
+    http://translations.launchpad.test/evolution/evo-new/+translations
 
     >>> print(admin_browser.getLink(
     ... 'manual', url='/evolution/evo-new/+translations-upload').url)
-    http://translations.launchpad.dev/evolution/evo-new/+translations-upload
+    http://translations.launchpad.test/evolution/evo-new/+translations-upload
 
     >>> print(admin_browser.getLink(
     ... 'automatic', url='/evolution/evo-new/+translations-settings').url)
-    http://translations.launchpad.dev/evolution/evo-new/+translations-settings
+    http://translations.launchpad.test/evolution/evo-new/+translations-settings

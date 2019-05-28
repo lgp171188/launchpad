@@ -131,7 +131,7 @@ class TestBugLinking(BzrSyncTestCase):
         """Get the canonical URL for 'bug'.
 
         We don't use canonical_url because we don't want to have to make
-        Bazaar know about launchpad.dev.
+        Bazaar know about launchpad.test.
         """
         return 'https://launchpad.net/bugs/%s' % bug.id
 

@@ -54,9 +54,9 @@ class TestBugTaskTraversal(TestCaseWithFactory):
         bug = self.factory.makeBug()
         product = self.factory.makeProduct()
         obj, view, request = test_traverse(
-            'http://api.launchpad.dev/1.0/%s/+bug/%d'
+            'http://api.launchpad.test/1.0/%s/+bug/%d'
             % (product.name, bug.default_bugtask.bug.id))
         self.assertEqual(
             removeSecurityProxy(view).target,
-            'http://api.launchpad.dev/1.0/%s/+bug/%d'
+            'http://api.launchpad.test/1.0/%s/+bug/%d'
             % (bug.default_bugtask.target.name, bug.default_bugtask.bug.id))

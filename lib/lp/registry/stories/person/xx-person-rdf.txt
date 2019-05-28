@@ -7,7 +7,7 @@ We export FOAF RDF metadata from the /~Person.name/+index document.
     ...     BeautifulSoup4 as BeautifulSoup,
     ...     SoupStrainer4 as SoupStrainer,
     ...     )
-    >>> anon_browser.open("http://launchpad.dev/~name16")
+    >>> anon_browser.open("http://launchpad.test/~name16")
     >>> strainer = SoupStrainer(['link'], {'type': ['application/rdf+xml']})
     >>> soup = BeautifulSoup(anon_browser.contents, parse_only=strainer)
     >>> print soup.renderContents()
@@ -20,7 +20,7 @@ Individual RDF
 And this is what the FOAF document for an individual actually looks
 like. It includes GPG information, if the user has any.
 
-    >>> anon_browser.open("http://launchpad.dev/~name16/+rdf")
+    >>> anon_browser.open("http://launchpad.test/~name16/+rdf")
     >>> print anon_browser.contents
     <?xml version="1.0"...?>
     <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
@@ -44,7 +44,7 @@ like. It includes GPG information, if the user has any.
 
 It also includes SSH keys:
 
-    >>> anon_browser.open("http://launchpad.dev/~name12/+rdf")
+    >>> anon_browser.open("http://launchpad.test/~name12/+rdf")
     >>> print anon_browser.contents
     <?xml version="1.0"...?>
     ...
@@ -70,14 +70,14 @@ output:
 
     >>> from lp.testing.branding import set_branding
     >>> mark_browser = setupBrowser(auth='Basic mark@example.com:test')
-    >>> mark_browser.open('http://launchpad.dev/~mark/+branding')
+    >>> mark_browser.open('http://launchpad.test/~mark/+branding')
     >>> set_branding(mark_browser, icon=False)
     >>> mark_browser.getControl('Change Branding').click()
 
 Now, generate the RDF itself:
 
     >>> from lp.services.helpers import backslashreplace
-    >>> anon_browser.open("http://launchpad.dev/~testing-spanish-team/+rdf")
+    >>> anon_browser.open("http://launchpad.test/~testing-spanish-team/+rdf")
     >>> print backslashreplace(anon_browser.contents)
     <?xml version="1.0"...?>
     <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
@@ -100,7 +100,7 @@ Corner Cases
 
 Note how ascii and non-ascii names are rendered properly:
 
-    >>> anon_browser.open("http://launchpad.dev/~carlos/+rdf")
+    >>> anon_browser.open("http://launchpad.test/~carlos/+rdf")
     >>> strainer = SoupStrainer(['foaf:name'])
     >>> soup = BeautifulSoup(anon_browser.contents, parse_only=strainer)
     >>> for tag in soup:
@@ -110,7 +110,7 @@ Note how ascii and non-ascii names are rendered properly:
 If the team has no active members no <foaf:member> elements will be
 present:
 
-    >>> anon_browser.open("http://launchpad.dev/~name21/+rdf")
+    >>> anon_browser.open("http://launchpad.test/~name21/+rdf")
     >>> strainer = SoupStrainer(['foaf:member'])
     >>> soup = BeautifulSoup(anon_browser.contents, parse_only=strainer)
     >>> len(soup)

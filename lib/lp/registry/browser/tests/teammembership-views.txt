@@ -20,7 +20,7 @@ Team membership breadcrumbs uses the member's displayname to create
     >>> view = create_view(membership, '+index')
 
     >>> request = make_fake_request(
-    ...     'http://launchpad.dev/~us/+member/team-owner',
+    ...     'http://launchpad.test/~us/+member/team-owner',
     ...     [super_team, membership, view])
     >>> hierarchy = create_initialized_view(
     ...     membership, '+hierarchy', request=request)

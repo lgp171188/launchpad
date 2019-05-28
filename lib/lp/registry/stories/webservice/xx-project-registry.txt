@@ -209,7 +209,7 @@ are redirected to the correct location.
     >>> print webservice.get('/FireFox')
     HTTP/1.1 301 Moved Permanently
     ...
-    Location: http://api.launchpad.dev/beta/firefox
+    Location: http://api.launchpad.test/beta/firefox
     ...
 
 Some entries for projects are only available to admins.  Here we see

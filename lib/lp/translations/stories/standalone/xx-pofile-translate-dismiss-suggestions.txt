@@ -16,7 +16,7 @@ suggestions can be dismissed to keep them off the page.
 
 First the admin (or anybody with edit rights) adds a translation.
 
-    >>> admin_browser.open('http://translations.launchpad.dev/alsa-utils'
+    >>> admin_browser.open('http://translations.launchpad.test/alsa-utils'
     ...                    '/trunk/+pots/alsa-utils/de/+translate')
     >>> admin_browser.getControl(
     ...     name='msgset_198_de_translation_0_new').value = (
@@ -33,7 +33,7 @@ First the admin (or anybody with edit rights) adds a translation.
 
 Now somebody else comes and makes a really bad suggestion.
 
-    >>> user_browser.open('http://translations.launchpad.dev/alsa-utils'
+    >>> user_browser.open('http://translations.launchpad.test/alsa-utils'
     ...                    '/trunk/+pots/alsa-utils/de/+translate')
     >>> user_browser.getControl(
     ...     name='msgset_198_de_translation_0_new').value = (
@@ -61,7 +61,7 @@ But it's only a suggestion, so the translation remains unchanged.
 In order to get rid of this, the admin chooses to keep the great new
 translation and to dismiss all suggestions.
 
-    >>> admin_browser.open('http://translations.launchpad.dev/alsa-utils'
+    >>> admin_browser.open('http://translations.launchpad.test/alsa-utils'
     ...                    '/trunk/+pots/alsa-utils/de/+translate')
     >>> admin_browser.getControl(name='msgset_198_dismiss').value = (
     ...         'dismiss_suggestions')
@@ -86,7 +86,7 @@ But the really bad suggestion is gone.
 External suggestions cannot be dismissed, they are staying around. Here is
 such a case.
 
-    >>> admin_browser.open('http://translations.launchpad.dev/evolution/'
+    >>> admin_browser.open('http://translations.launchpad.test/evolution/'
     ...                    'trunk/+pots/evolution-2.2/es/5/+translate')
     >>> admin_browser.getControl(name='msgset_5_dismiss').value = (
     ...         'dismiss_suggestions')
@@ -96,7 +96,7 @@ such a case.
 
 There are still suggestions because they are external.
 
-    >>> admin_browser.open('http://translations.launchpad.dev/evolution/'
+    >>> admin_browser.open('http://translations.launchpad.test/evolution/'
     ...                    'trunk/+pots/evolution-2.2/es/5/+translate')
     >>> print(extract_text(find_tag_by_id(admin_browser.contents,
     ...                                   'msgset_5_es_suggestion_686_0')))

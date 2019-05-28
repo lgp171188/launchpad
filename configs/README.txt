@@ -111,10 +111,10 @@ the config singleton.
 
     >>> test_data = ("""
     ...     [answertracker]
-    ...     email_domain: answers.launchpad.dev""")
+    ...     email_domain: answers.launchpad.test""")
     >>> config.push('test_data', test_data)
     >>> config.answertracker.email_domain
-    'answers.launchpad.dev'
+    'answers.launchpad.test'
 
 And tests can remove the data with pop() when they are done to restore
 the config.

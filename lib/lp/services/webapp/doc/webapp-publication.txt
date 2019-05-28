@@ -15,9 +15,9 @@ Launchpad site and one for the sites of the various applications.
 
     >>> from lp.services.config import config
     >>> config.vhost.mainsite.hostname
-    'launchpad.dev'
+    'launchpad.test'
     >>> config.vhost.blueprints.hostname
-    'blueprints.launchpad.dev'
+    'blueprints.launchpad.test'
 
 It also says whether we use http or https (although this setting can be
 overridden for the root URL of a particular host).
@@ -35,48 +35,48 @@ These are parsed into webapp.vhost.allvhosts.
     ...     print 'rooturl:', vhost.rooturl
     ...     print 'althosts:', (', '.join(vhost.althostnames))
     ...     print '----'
-    answers @ answers.launchpad.dev
-    rooturl: http://answers.launchpad.dev/
+    answers @ answers.launchpad.test
+    rooturl: http://answers.launchpad.test/
     althosts:
     ----
-    api @ api.launchpad.dev
-    rooturl: http://api.launchpad.dev/
+    api @ api.launchpad.test
+    rooturl: http://api.launchpad.test/
     althosts:
     ----
-    blueprints @ blueprints.launchpad.dev
-    rooturl: http://blueprints.launchpad.dev/
+    blueprints @ blueprints.launchpad.test
+    rooturl: http://blueprints.launchpad.test/
     althosts:
     ----
-    bugs @ bugs.launchpad.dev
-    rooturl: http://bugs.launchpad.dev/
+    bugs @ bugs.launchpad.test
+    rooturl: http://bugs.launchpad.test/
     althosts:
     ----
-    code @ code.launchpad.dev
-    rooturl: http://code.launchpad.dev/
+    code @ code.launchpad.test
+    rooturl: http://code.launchpad.test/
     althosts:
     ----
-    feeds @ feeds.launchpad.dev
-    rooturl: http://feeds.launchpad.dev/
+    feeds @ feeds.launchpad.test
+    rooturl: http://feeds.launchpad.test/
     althosts:
     ----
-    mainsite @ launchpad.dev
-    rooturl: http://launchpad.dev/
+    mainsite @ launchpad.test
+    rooturl: http://launchpad.test/
     althosts: localhost
     ----
-    testopenid @ testopenid.dev
-    rooturl: http://testopenid.dev/
+    testopenid @ testopenid.test
+    rooturl: http://testopenid.test/
     althosts:
     ----
-    translations @ translations.launchpad.dev
-    rooturl: http://translations.launchpad.dev/
+    translations @ translations.launchpad.test
+    rooturl: http://translations.launchpad.test/
     althosts:
     ----
-    xmlrpc @ xmlrpc.launchpad.dev
-    rooturl: http://xmlrpc.launchpad.dev/
+    xmlrpc @ xmlrpc.launchpad.test
+    rooturl: http://xmlrpc.launchpad.test/
     althosts:
     ----
-    xmlrpc_private @ xmlrpc-private.launchpad.dev
-    rooturl: http://xmlrpc-private.launchpad.dev/
+    xmlrpc_private @ xmlrpc-private.launchpad.test
+    rooturl: http://xmlrpc-private.launchpad.test/
     althosts:
     ----
 
@@ -86,18 +86,18 @@ request is headed to one of the officialy-used Launchpad host names:
 
     >>> for hostname in sorted(allvhosts.hostnames):
     ...     print hostname
-    answers.launchpad.dev
-    api.launchpad.dev
-    blueprints.launchpad.dev
-    bugs.launchpad.dev
-    code.launchpad.dev
-    feeds.launchpad.dev
-    launchpad.dev
+    answers.launchpad.test
+    api.launchpad.test
+    blueprints.launchpad.test
+    bugs.launchpad.test
+    code.launchpad.test
+    feeds.launchpad.test
+    launchpad.test
     localhost
-    testopenid.dev
-    translations.launchpad.dev
-    xmlrpc-private.launchpad.dev
-    xmlrpc.launchpad.dev
+    testopenid.test
+    translations.launchpad.test
+    xmlrpc-private.launchpad.test
+    xmlrpc.launchpad.test
 
 
 VirtualHostRequestPublicationFactory
@@ -126,7 +126,7 @@ By default, the request publication factory will only handle requests
 to all the host names registered for a particular virtual host.
 
     >>> environment = {'REQUEST_METHOD': 'GET',
-    ...                'HTTP_HOST': 'launchpad.dev'}
+    ...                'HTTP_HOST': 'launchpad.test'}
     >>> factory.canHandle(environment)
     True
 
@@ -149,7 +149,7 @@ on its registered hosts.
 
     >>> environment = {'REQUEST_METHOD': 'GET',
     ...                'SERVER_PORT': '1234',
-    ...                'HTTP_HOST': 'launchpad.dev'}
+    ...                'HTTP_HOST': 'launchpad.test'}
     >>> factory.canHandle(environment)
     True
 
@@ -163,7 +163,7 @@ information is retrieved later on, in __call__().
 
     >>> for key, value in sorted(factory._thread_local.environment.items()):
     ...     print '%s: %s' % (key, value)
-    HTTP_HOST: launchpad.dev
+    HTTP_HOST: launchpad.test
     REQUEST_METHOD: GET
     SERVER_PORT: 1234
 
@@ -185,7 +185,7 @@ host configured settings.
     >>> type(request)
     <class 'lp.services.webapp.servers.LaunchpadBrowserRequest'>
     >>> request.getApplicationURL()
-    'http://launchpad.dev'
+    'http://launchpad.test'
 
 But if the request comes in to the local or default host, the request
 factory is not wrapped:
@@ -209,7 +209,7 @@ A request publication factory will not handle requests unless they're
 directed to one of its registered host names.
 
     >>> environment = {'REQUEST_METHOD': 'GET',
-    ...                'HTTP_HOST': 'answers.launchpad.dev'}
+    ...                'HTTP_HOST': 'answers.launchpad.test'}
     >>> factory.canHandle(environment)
     False
 
@@ -228,7 +228,7 @@ requests to request to a particular port.
     ...     'mainsite', LaunchpadBrowserRequest, LaunchpadBrowserPublication,
     ...     port=1234)
     >>> environment = {'REQUEST_METHOD': 'GET',
-    ...                'HTTP_HOST': 'launchpad.dev'}
+    ...                'HTTP_HOST': 'launchpad.test'}
     >>> factory.canHandle(environment)
     False
     >>> environment['SERVER_PORT'] = '80'
@@ -241,22 +241,22 @@ requests to request to a particular port.
 The port is also checked for in the HTTP_HOST variable:
 
     >>> environment = {'REQUEST_METHOD': 'GET',
-    ...                'HTTP_HOST': 'launchpad.dev:1234'}
+    ...                'HTTP_HOST': 'launchpad.test:1234'}
     >>> factory.canHandle(environment)
     True
-    >>> environment['HTTP_HOST'] = 'launchpad.dev:one_two_three_four'
+    >>> environment['HTTP_HOST'] = 'launchpad.test:one_two_three_four'
     >>> factory.canHandle(environment)
     False
 
 If the port is given twice (in SERVER_PORT and the Host header), the
 value from SERVER_PORT takes precedence. (The rationale behind this is
-that it's valid for a client to put launchpad.dev:80 in the Host header,
+that it's valid for a client to put launchpad.test:80 in the Host header,
 but the request is really coming on the port 1234 because it's being
 proxied.)
 
     >>> environment = {'REQUEST_METHOD': 'GET',
     ...                'SERVER_PORT' : '1234',
-    ...                'HTTP_HOST': 'launchpad.dev:80'}
+    ...                'HTTP_HOST': 'launchpad.test:80'}
     >>> factory.canHandle(environment)
     True
 
@@ -264,7 +264,7 @@ It's okay to specify the port in both places if the ports are the same:
 
     >>> environment = {'REQUEST_METHOD': 'GET',
     ...                'SERVER_PORT' : 1234,
-    ...                'HTTP_HOST': 'launchpad.dev:1234'}
+    ...                'HTTP_HOST': 'launchpad.test:1234'}
     >>> factory.canHandle(environment)
     True
 
@@ -277,7 +277,7 @@ ProtocolErrorPublicationFactory is a parameterized object that
 publishes a document describing a particular HTTP-level error.
 
     >>> environment = {'REQUEST_METHOD': 'DELETE',
-    ...                'HTTP_HOST': 'launchpad.dev',
+    ...                'HTTP_HOST': 'launchpad.test',
     ...                'SERVER_PORT' : '1234'}
     >>> factory.canHandle(environment)
     True
@@ -290,7 +290,7 @@ publishes a document describing a particular HTTP-level error.
     ...     'mainsite', LaunchpadBrowserRequest, LaunchpadBrowserPublication,
     ...     methods=['DELETE'])
     >>> environment = {'REQUEST_METHOD': 'GET',
-    ...                'HTTP_HOST': 'launchpad.dev'}
+    ...                'HTTP_HOST': 'launchpad.test'}
     >>> factory.canHandle(environment)
     True
     >>> requestfactory, publicationfactory = factory()
@@ -322,7 +322,7 @@ the registered factories.)
     >>> from lp.testing.publication import (
     ...     get_request_and_publication, print_request_and_publication)
 
-    >>> print_request_and_publication('launchpad.dev')
+    >>> print_request_and_publication('launchpad.test')
     LaunchpadBrowserRequest
     MainLaunchpadPublication
 
@@ -330,16 +330,16 @@ the registered factories.)
     LaunchpadBrowserRequest
     MainLaunchpadPublication
 
-    >>> print_request_and_publication('launchpad.dev', method='DELETE')
+    >>> print_request_and_publication('launchpad.test', method='DELETE')
     ProtocolErrorRequest
     ProtocolErrorPublication: status=405
       Allow: GET, HEAD, POST
 
-    >>> print_request_and_publication('api.launchpad.dev')
+    >>> print_request_and_publication('api.launchpad.test')
     WebServiceClientRequest
     WebServicePublication
 
-    >>> print_request_and_publication('feeds.launchpad.dev')
+    >>> print_request_and_publication('feeds.launchpad.test')
     FeedsBrowserRequest
     FeedsPublication
 
@@ -348,7 +348,7 @@ common HTTP methods, but it will only accept a MIME type of
 application/json.
 
     >>> for m in ['GET', 'HEAD', 'DELETE', 'OPTIONS']:
-    ...     print_request_and_publication('api.launchpad.dev', method=m)
+    ...     print_request_and_publication('api.launchpad.test', method=m)
     WebServiceClientRequest
     WebServicePublication
     WebServiceClientRequest
@@ -361,7 +361,7 @@ application/json.
 
     >>> for m in ['POST', 'PUT']:
     ...     print_request_and_publication(
-    ...         'api.launchpad.dev', method=m, mime_type='application/json')
+    ...         'api.launchpad.test', method=m, mime_type='application/json')
     WebServiceClientRequest
     WebServicePublication
     WebServiceClientRequest
@@ -372,7 +372,7 @@ virtualhosts, such as the application root, it is also handled by the
 web service request and publication:
 
     >>> print_request_and_publication(
-    ...     'launchpad.dev', method='GET',
+    ...     'launchpad.test', method='GET',
     ...     extra_environment={'PATH_INFO': '/api'})
     WebServiceClientRequest
     WebServicePublication
@@ -381,7 +381,7 @@ Requests for '/api' on other hosts like feeds are handled like
 other requests on these hosts:
 
     >>> print_request_and_publication(
-    ...     'feeds.launchpad.dev', method='GET',
+    ...     'feeds.launchpad.test', method='GET',
     ...     extra_environment={'PATH_INFO': '/api'})
     FeedsBrowserRequest
     FeedsPublication
@@ -390,24 +390,24 @@ The XML-RPC RequestPublicationFactory only responds to POST requests,
 and then only when the MIME type is text/xml.
 
     >>> print_request_and_publication(
-    ...     'xmlrpc.launchpad.dev', method='POST', mime_type='text/xml')
+    ...     'xmlrpc.launchpad.test', method='POST', mime_type='text/xml')
     PublicXMLRPCRequest
     PublicXMLRPCPublication
 
     >>> print_request_and_publication(
-    ...     'xmlrpc.launchpad.dev', method='POST',
+    ...     'xmlrpc.launchpad.test', method='POST',
     ...     mime_type='text/xml; charset=utf-8')
     PublicXMLRPCRequest
     PublicXMLRPCPublication
 
     >>> print_request_and_publication(
-    ...     'xmlrpc.launchpad.dev', method='GET')
+    ...     'xmlrpc.launchpad.test', method='GET')
     ProtocolErrorRequest
     ProtocolErrorPublication: status=405
       Allow: POST
 
     >>> print_request_and_publication(
-    ...     'xmlrpc.launchpad.dev', method='POST',
+    ...     'xmlrpc.launchpad.test', method='POST',
     ...     mime_type='application/xml')
     ProtocolErrorRequest
     ProtocolErrorPublication: status=415
@@ -422,7 +422,7 @@ Find the port the Private XMLRPC service is listening on.
     ...         private_port = server.address[1]
 
     >>> print_request_and_publication(
-    ...     'xmlrpc-private.launchpad.dev', method='POST',
+    ...     'xmlrpc-private.launchpad.test', method='POST',
     ...     mime_type='application/xml')
     ProtocolErrorRequest
     ProtocolErrorPublication: status=404
@@ -430,20 +430,20 @@ Find the port the Private XMLRPC service is listening on.
 Try a normal request:
 
     >>> print_request_and_publication(
-    ...     'xmlrpc-private.launchpad.dev', port=private_port, method='POST',
+    ...     'xmlrpc-private.launchpad.test', port=private_port, method='POST',
     ...     mime_type='text/xml')
     PrivateXMLRPCRequest
     PrivateXMLRPCPublication
 
     >>> print_request_and_publication(
-    ...     'xmlrpc-private.launchpad.dev', port=private_port, method='POST',
+    ...     'xmlrpc-private.launchpad.test', port=private_port, method='POST',
     ...     mime_type='text/xml; charset=utf-8')
     PrivateXMLRPCRequest
     PrivateXMLRPCPublication
 
 A request to an unknown host results in a 404 error.
 
-    >>> print_request_and_publication('nosuchhost.launchpad.dev')
+    >>> print_request_and_publication('nosuchhost.launchpad.test')
     ProtocolErrorRequest
     ProtocolErrorPublication: status=404
 
@@ -461,12 +461,12 @@ less nice.
     >>> from zope.app.testing.functional import HTTPCaller
     >>> http = HTTPCaller()
     >>> print http("GET / HTTP/1.1\n"
-    ...            "Host: nosuchhost.launchpad.dev")
+    ...            "Host: nosuchhost.launchpad.test")
     HTTP/1.1 404 Not Found
     ...
 
     >>> print http("GET /foo/bar HTTP/1.1\n"
-    ...            "Host: xmlrpc.launchpad.dev\n"
+    ...            "Host: xmlrpc.launchpad.test\n"
     ...            "X-zope-handle-errors: False")
     HTTP/1.1 405 Method Not Allowed
     Allow: POST
@@ -1047,7 +1047,7 @@ utility to setup the request.
 The feeds implementation always returns the anonymous user.
 
     >>> request, publication = get_request_and_publication(
-    ...     'feeds.launchpad.dev',
+    ...     'feeds.launchpad.test',
     ...     extra_environment=dict(HTTP_AUTHORIZATION=foo_bar_auth))
     >>> principal = publication.getPrincipal(request)
 
@@ -1083,7 +1083,7 @@ token.
     ...     oauth_nonce='4572616e48616d6d65724c61686176')
     >>> policy = getUtility(IStoreSelector).pop()
     >>> test_request, publication = get_request_and_publication(
-    ...     'api.launchpad.dev', 'GET',
+    ...     'api.launchpad.test', 'GET',
     ...     extra_environment=dict(QUERY_STRING=urlencode(form)))
     >>> test_request.processInputs()
     >>> principal = publication.getPrincipal(test_request)

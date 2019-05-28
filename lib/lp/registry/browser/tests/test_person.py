@@ -180,7 +180,7 @@ class PersonViewOpenidIdentityUrlTestCase(TestCaseWithFactory):
         TestCaseWithFactory.setUp(self)
         self.user = self.factory.makePerson(name='eris')
         self.request = LaunchpadTestRequest(
-            SERVER_URL="http://launchpad.dev/")
+            SERVER_URL="http://launchpad.test/")
         login_person(self.user, self.request)
         self.view = PersonView(self.user, self.request)
         # Marker allowing us to reset the config.
@@ -190,7 +190,7 @@ class PersonViewOpenidIdentityUrlTestCase(TestCaseWithFactory):
     def test_should_be_profile_page_when_delegating(self):
         """The profile page is the OpenID identifier in normal situation."""
         self.assertEqual(
-            'http://launchpad.dev/~eris', self.view.openid_identity_url)
+            'http://launchpad.test/~eris', self.view.openid_identity_url)
 
     def test_should_be_production_profile_page_when_not_delegating(self):
         """When the profile page is not delegated, the OpenID identity URL
@@ -200,10 +200,10 @@ class PersonViewOpenidIdentityUrlTestCase(TestCaseWithFactory):
             openid_delegate_profile: False
 
             [launchpad]
-            non_restricted_hostname: prod.launchpad.dev
+            non_restricted_hostname: prod.launchpad.test
             '''))
         self.assertEqual(
-            'http://prod.launchpad.dev/~eris', self.view.openid_identity_url)
+            'http://prod.launchpad.test/~eris', self.view.openid_identity_url)
 
 
 class TestPersonIndexView(BrowserTestCase):
@@ -301,7 +301,7 @@ class TestPersonIndexView(BrowserTestCase):
         password_match = soupmatchers.HTMLContains(
             soupmatchers.Tag(
                 'Change password', 'a',
-                attrs={'href': 'http://testopenid.dev/'},
+                attrs={'href': 'http://testopenid.test/'},
                 text='Change password'))
         self.assertThat(markup, password_match)
 
@@ -670,9 +670,9 @@ class TestPersonEditView(TestPersonRenameFormMixin, TestCaseWithFactory):
         error_msg = view.errors[0]
         expected_msg = (
             "The email address '%s' is already registered to "
-            "<a href=\"http://launchpad.dev/~deadaccount\">deadaccount</a>. "
+            "<a href=\"http://launchpad.test/~deadaccount\">deadaccount</a>. "
             "If you think that is a duplicated account, you can "
-            "<a href=\"http://launchpad.dev/people/+requestmerge?"
+            "<a href=\"http://launchpad.test/people/+requestmerge?"
             "field.dupe_person=deadaccount\">merge it</a> into your account."
             % email_address)
         self.assertEqual(expected_msg, error_msg)
@@ -1187,7 +1187,7 @@ class PersonOwnedTeamsViewTestCase(TestCaseWithFactory):
                 owner, '+owned-teams', principal=owner)
             markup = view()
         soup = find_tag_by_id(markup, 'maincontent')
-        participation_link = 'http://launchpad.dev/~snarf/+participation'
+        participation_link = 'http://launchpad.test/~snarf/+participation'
         self.assertIsNotNone(soup.find('a', {'href': participation_link}))
         self.assertIsNotNone(soup.find('table', {'id': 'owned-teams'}))
         self.assertIsNotNone(soup.find('a', {'href': '/~pting'}))

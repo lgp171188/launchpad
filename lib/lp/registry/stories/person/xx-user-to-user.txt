@@ -9,7 +9,7 @@ wants to contact Salgado.
     >>> from lp.services.mail import stub
     >>> del stub.test_emails[:]
 
-    >>> user_browser.open('http://launchpad.dev/~salgado')
+    >>> user_browser.open('http://launchpad.test/~salgado')
     >>> user_browser.getLink('Contact this user').click()
     >>> print user_browser.title
     Contact this user : Guilherme Salgado
@@ -57,7 +57,7 @@ Choosing a From: address
 Sample Person has multiple registered and validated email addresses.
 
     >>> browser = setupBrowser(auth='Basic test@canonical.com:test')
-    >>> browser.open('http://launchpad.dev/~salgado/+contactuser')
+    >>> browser.open('http://launchpad.test/~salgado/+contactuser')
     >>> browser.getControl('Subject').value = 'Hi Salgado'
     >>> browser.getControl('Message').value = 'Hello again'
 

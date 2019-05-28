@@ -21,14 +21,14 @@ with a computer these days).
     >>> transaction.commit()
     >>> logout()
 
-    >>> browser.open('http://answers.launchpad.dev/kubuntu')
+    >>> browser.open('http://answers.launchpad.test/kubuntu')
     >>> browser.getLink('All FAQs').click()
 
 Unfortunately, it seems that nobody has problems or questions about
 Kubuntu:
 
     >>> print(browser.url)
-    http://answers.launchpad.dev/kubuntu/+faqs
+    http://answers.launchpad.test/kubuntu/+faqs
     >>> print(browser.title)
     FAQs for Kubuntu : Questions : Kubuntu
 
@@ -41,7 +41,7 @@ Kubuntu:
 She learns through Fozzie Bear that support for Kubuntu is really
 happening on the Ubuntu project.
 
-    >>> browser.open('http://answers.launchpad.dev/ubuntu')
+    >>> browser.open('http://answers.launchpad.test/ubuntu')
     >>> browser.getLink('All FAQs').click()
     >>> print(browser.title)
     FAQs for Ubuntu : Questions : Ubuntu
@@ -83,7 +83,7 @@ She clicks on FAQ's title to display the complete FAQ content:
     >>> print(backslashreplace(browser.title))
     FAQ #6 : Questions : Ubuntu
     >>> print(browser.url)
-    http://answers.launchpad.dev/ubuntu/+faq/6
+    http://answers.launchpad.test/ubuntu/+faq/6
 
 The FAQ page has a link back to the FAQ listing:
 
@@ -91,7 +91,7 @@ The FAQ page has a link back to the FAQ listing:
     >>> print(browser.title)
     FAQs for Ubuntu : Questions : Ubuntu
     >>> print(browser.url)
-    http://answers.launchpad.dev/ubuntu/+faqs
+    http://answers.launchpad.test/ubuntu/+faqs
 
 
 == Searching FAQs ==
@@ -166,25 +166,25 @@ Altough distribution source packages aren't directly associated with
 FAQs. The 'All FAQs' link that appears in that context links to the
 distribution FAQs.
 
-    >>> browser.open('http://answers.launchpad.dev/ubuntu/'
+    >>> browser.open('http://answers.launchpad.test/ubuntu/'
     ...              '+source/mozilla-firefox')
     >>> browser.getLink('All FAQs').click()
     >>> print(browser.title)
     FAQs for Ubuntu : Questions : Ubuntu
     >>> print(browser.url)
-    http://answers.launchpad.dev/ubuntu/+faqs
+    http://answers.launchpad.test/ubuntu/+faqs
 
 
 == Accessing an FAQ directly ==
 
 Asking for a non-existent FAQ or an invalid ID will raise a 404 error.
 
-    >>> anon_browser.open('http://answers.launchpad.dev/ubuntu/+faq/171717')
+    >>> anon_browser.open('http://answers.launchpad.test/ubuntu/+faq/171717')
     Traceback (most recent call last):
       ...
     NotFound: ...
 
-    >>> anon_browser.open('http://answers.launchpad.dev/ubuntu/+faq/bad')
+    >>> anon_browser.open('http://answers.launchpad.test/ubuntu/+faq/bad')
     Traceback (most recent call last):
       ...
     NotFound: ...

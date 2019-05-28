@@ -355,7 +355,7 @@ too.
     Register a new Mozilla Firefox release series
 
     >>> print view.cancel_url
-    http://launchpad.dev/firefox
+    http://launchpad.test/firefox
 
 The view allows the driver to set series name, summary, branch and
 releasefileglob fields.

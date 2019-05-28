@@ -279,7 +279,7 @@ signature, and the signature marker has a trailing space.
      '-- ',
      'You received this bug notification because you are subscribed to the bug',
      'report.',
-     'http://bugs.launchpad.dev/bugs/1',
+     'http://bugs.launchpad.test/bugs/1',
      '',
      'Title:',
      '  Firefox does not support SVG'...]
@@ -408,7 +408,7 @@ top of the email:
     X-Launchpad-Bug-Duplicate: 1
     <BLANKLINE>
     *** This bug is a duplicate of bug 1 ***
-        http://bugs.launchpad.dev/bugs/1
+        http://bugs.launchpad.test/bugs/1
     ...
     ----------------------------------------------------------------------
 
@@ -957,7 +957,7 @@ We can see that Concise Person doesn't receive verbose notifications:
     --
     You received this bug notification because you are subscribed to the bug
     report.
-    http://bugs.launchpad.dev/bugs/...
+    http://bugs.launchpad.test/bugs/...
     <BLANKLINE>
     Title:
       In the beginning...
@@ -985,7 +985,7 @@ that gets verbose email.
     --
     You received this bug notification because you are a member of Verbose
     Team, which is subscribed to the bug report.
-    http://bugs.launchpad.dev/bugs/...
+    http://bugs.launchpad.test/bugs/...
     <BLANKLINE>
     Title:
       In the beginning...
@@ -1005,7 +1005,7 @@ Whereas Verbose Person does get the description and task status:
     --
     You received this bug notification because you are subscribed to the bug
     report.
-    http://bugs.launchpad.dev/bugs/...
+    http://bugs.launchpad.test/bugs/...
     <BLANKLINE>
     Title:
       In the beginning...
@@ -1019,7 +1019,7 @@ Whereas Verbose Person does get the description and task status:
        machinery. Ain't technology great?
     <BLANKLINE>
     To manage notifications about this bug go to:
-    http://bugs.launchpad.dev/.../+bug/.../+subscriptions
+    http://bugs.launchpad.test/.../+bug/.../+subscriptions
     ----------------------------------------------------------------------
 
 And Concise Team Person does too, even though their team doesn't want them:
@@ -1036,7 +1036,7 @@ And Concise Team Person does too, even though their team doesn't want them:
     --
     You received this bug notification because you are a member of Concise
     Team, which is subscribed to the bug report.
-    http://bugs.launchpad.dev/bugs/...
+    http://bugs.launchpad.test/bugs/...
     <BLANKLINE>
     Title:
       In the beginning...
@@ -1050,7 +1050,7 @@ And Concise Team Person does too, even though their team doesn't want them:
        machinery. Ain't technology great?
     <BLANKLINE>
     To manage notifications about this bug go to:
-    http://bugs.launchpad.dev/.../+bug/.../+subscriptions
+    http://bugs.launchpad.test/.../+bug/.../+subscriptions
     ----------------------------------------------------------------------
 
 It's important to note that the bug title and description are wrapped
@@ -1302,7 +1302,7 @@ receive these notifications.
     ...
     You received this bug notification because you are subscribed to
     mozilla-firefox in Ubuntu.
-    http://bugs.launchpad.dev/bugs/1
+    http://bugs.launchpad.test/bugs/1
     ...
     ----------------------------------------------------------------------
     To: mark@example.com
@@ -1383,7 +1383,7 @@ no notifications created by addChange().
     --
     You received this bug notification because you are a member of
     Addressless Team, which is subscribed to the bug report.
-    http://bugs.launchpad.dev/bugs/1
+    http://bugs.launchpad.test/bugs/1
     ...
     ----------------------------------------------------------------------
     To: test@canonical.com
@@ -1418,7 +1418,7 @@ after all.
     ...
     You received this bug notification because you are subscribed to
     mozilla-firefox in Ubuntu.
-    http://bugs.launchpad.dev/bugs/1
+    http://bugs.launchpad.test/bugs/1
     ...
     ----------------------------------------------------------------------
     To: mark@example.com

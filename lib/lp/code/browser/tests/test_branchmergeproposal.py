@@ -1627,7 +1627,7 @@ class TestBranchMergeProposalView(TestCaseWithFactory):
         self.assertThat(cache.objects, ContainsDict({
             'branch_name': Equals(bmp.source_branch.name),
             'branch_diff_link': Equals(
-                'http://code.launchpad.dev/%s/+diff/' %
+                'http://code.launchpad.test/%s/+diff/' %
                 bmp.source_branch.unique_name),
             }))
 
@@ -1643,7 +1643,7 @@ class TestBranchMergeProposalView(TestCaseWithFactory):
         self.assertThat(cache.objects, ContainsDict({
             'branch_name': Equals(bmp.source_branch.name),
             'branch_diff_link': Equals(
-                'https://code.launchpad.dev/+loggerhead/%s/diff/' %
+                'https://code.launchpad.test/+loggerhead/%s/diff/' %
                 bmp.source_branch.unique_name),
             }))
 
@@ -1656,7 +1656,7 @@ class TestBranchMergeProposalView(TestCaseWithFactory):
         self.assertThat(cache.objects, ContainsDict({
             'branch_name': Equals(bmp.source_git_ref.name),
             'branch_diff_link': Equals(
-                'http://code.launchpad.dev/%s/+diff/' %
+                'http://code.launchpad.test/%s/+diff/' %
                 bmp.source_git_repository.unique_name),
             }))
 
@@ -1676,7 +1676,7 @@ class TestBranchMergeProposalView(TestCaseWithFactory):
                     Tag(
                         'branch breadcrumb', 'a', text=bmp.source_branch.name,
                         attrs={
-                            'href': 'http://code.launchpad.dev/%s' % (
+                            'href': 'http://code.launchpad.test/%s' % (
                                 bmp.source_branch.unique_name)})),
                 Within(
                     breadcrumbs_tag,
@@ -1709,7 +1709,7 @@ class TestBranchMergeProposalView(TestCaseWithFactory):
                         'git repository breadcrumb', 'a',
                         text=bmp.source_git_repository.git_identity,
                         attrs={
-                            'href': 'http://code.launchpad.dev/%s' % (
+                            'href': 'http://code.launchpad.test/%s' % (
                                 bmp.source_git_repository.unique_name)})),
                 Within(
                     breadcrumbs_tag,
@@ -1717,7 +1717,7 @@ class TestBranchMergeProposalView(TestCaseWithFactory):
                         'git ref breadcrumb', 'a',
                         text=bmp.source_git_ref.name,
                         attrs={
-                            'href': 'http://code.launchpad.dev/%s/+ref/%s' % (
+                            'href': 'http://code.launchpad.test/%s/+ref/%s' % (
                                 bmp.source_git_repository.unique_name,
                                 bmp.source_git_ref.name)})),
                 Within(

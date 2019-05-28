@@ -197,7 +197,7 @@ class TestEnsureNotWeaklyAuthenticated(TestCaseWithFactory):
             "The message you sent included commands to modify the test,\n"
             "but your OpenPGP key isn't imported into Launchpad. "
             "Please go to\n"
-            "http://launchpad.dev/~eric/+editpgpkeys to import your key.\n",
+            "http://launchpad.test/~eric/+editpgpkeys to import your key.\n",
             error.message)
 
 

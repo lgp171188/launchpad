@@ -4,11 +4,11 @@ a given name.
 As it's main functionality this page allow users to search for binary
 packages within the distroseries in context:
 
-    >>> anon_browser.open("http://launchpad.dev/ubuntu/warty")
+    >>> anon_browser.open("http://launchpad.test/ubuntu/warty")
     >>> anon_browser.getControl(name="text").value = "a"
     >>> anon_browser.getControl("Find a Package").click()
     >>> anon_browser.url
-    'http://launchpad.dev/ubuntu/warty/+search?text=a'
+    'http://launchpad.test/ubuntu/warty/+search?text=a'
     >>> print(extract_text(
     ...     find_tag_by_id(anon_browser.contents, 'search-results')))
     1 &rarr; 3 of 3 results
@@ -33,7 +33,7 @@ Each entry contains:
    the upload was done.
 
   >>> anon_browser.open(
-  ...     "http://launchpad.dev/ubuntu/warty/+portlet-latestuploads")
+  ...     "http://launchpad.test/ubuntu/warty/+portlet-latestuploads")
   >>> latest_uploads = str(find_tag_by_id(anon_browser.contents,
   ...                      "latest-uploads"))
   >>> 'mozilla-firefox 0.9' in latest_uploads
@@ -47,13 +47,13 @@ clicking on it:
 
   >>> anon_browser.getLink("mozilla-firefox 0.9").click()
   >>> anon_browser.url
-  'http://launchpad.dev/ubuntu/+source/mozilla-firefox/0.9'
+  'http://launchpad.test/ubuntu/+source/mozilla-firefox/0.9'
 
 Empty results are also presented properly (even if they are quite rare
 in production environment):
 
   >>> anon_browser.open(
-  ...     "http://launchpad.dev/ubuntutest/breezy-autotest/"
+  ...     "http://launchpad.test/ubuntutest/breezy-autotest/"
   ...     "+portlet-latestuploads")
   >>> find_tag_by_id(anon_browser.contents, 'no-latest-uploads') is not None
   True

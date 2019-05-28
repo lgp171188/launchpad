@@ -5,7 +5,7 @@ All packages maintained or uploaded by a given person can be seen on
 that person's +related-packages page, which is linked to from the
 person's home page.
 
-    >>> browser.open("http://launchpad.dev/~mark/+related-packages")
+    >>> browser.open("http://launchpad.test/~mark/+related-packages")
     >>> print(browser.title)
     Related packages : Mark Shuttleworth
 
@@ -23,18 +23,18 @@ where all items can be perused.
     Owned teams
 
     >>> print(browser.getLink("Maintained packages").url)
-    http://launchpad.dev/~mark/+maintained-packages
+    http://launchpad.test/~mark/+maintained-packages
     >>> print(browser.getLink("Uploaded packages").url)
-    http://launchpad.dev/~mark/+uploaded-packages
+    http://launchpad.test/~mark/+uploaded-packages
     >>> print(browser.getLink("PPA packages").url)
-    http://launchpad.dev/~mark/+ppa-packages
+    http://launchpad.test/~mark/+ppa-packages
     >>> print(browser.getLink("Related projects").url)
-    http://launchpad.dev/~mark/+related-projects
+    http://launchpad.test/~mark/+related-projects
 
 Each category on the summary page has a heading that shows how many
 packages are being displayed.
 
-    >>> browser.open("http://launchpad.dev/~mark/+related-packages")
+    >>> browser.open("http://launchpad.test/~mark/+related-packages")
     >>> print(extract_text(find_tag_by_id(browser.contents, 'packages')))
     Maintained packages
     Displaying first 5 packages out of 7 total
@@ -54,10 +54,10 @@ distrosourcepackagerelease respectively.
 The package name column links to the distribution source package page.
 The user chooses to see the distribution information for cnews:
 
-    >>> browser.open("http://launchpad.dev/~name16/+related-packages")
+    >>> browser.open("http://launchpad.test/~name16/+related-packages")
     >>> link = browser.getLink("cnews")
     >>> print(link)
-    <Link text='cnews' url='http://launchpad.dev/ubuntu/+source/cnews'>
+    <Link text='cnews' url='http://launchpad.test/ubuntu/+source/cnews'>
     >>> link.click()
     >>> browser.title
     '...cnews... package : Ubuntu'
@@ -65,7 +65,7 @@ The user chooses to see the distribution information for cnews:
 The second column links to the distribution series source package page. The
 user follows the "Ubuntu Hoary" link next to cnews:
 
-    >>> browser.open("http://launchpad.dev/~name16/+related-packages")
+    >>> browser.open("http://launchpad.test/~name16/+related-packages")
     >>> link = browser.getLink(url="/ubuntu/hoary/+source/cnews")
     >>> print(link)
     <Link text='Ubuntu Hoary' ...>
@@ -76,10 +76,10 @@ user follows the "Ubuntu Hoary" link next to cnews:
 The third column links to the distribution source package release page. The
 user follows the cnews version link to see the page.
 
-    >>> browser.open("http://launchpad.dev/~name16/+related-packages")
+    >>> browser.open("http://launchpad.test/~name16/+related-packages")
     >>> link = browser.getLink(url="/ubuntu/+source/cnews/cr.g7-37")
     >>> print(link)
-    <Link ... url='http://launchpad.dev/ubuntu/+source/cnews/cr.g7-37'>
+    <Link ... url='http://launchpad.test/ubuntu/+source/cnews/cr.g7-37'>
     >>> link.click()
     >>> browser.title
     'cr.g7-37 : cnews package : Ubuntu'
@@ -91,7 +91,7 @@ Batched listing pages
 Following the navigation link to "Maintained packages" takes the user
 to the page that lists maintained packages in batches.
 
-    >>> browser.open("http://launchpad.dev/~mark/+related-packages")
+    >>> browser.open("http://launchpad.test/~mark/+related-packages")
     >>> browser.getLink("Maintained packages").click()
     >>> print(extract_text(find_tag_by_id(browser.contents, 'packages')))
     1...5 of 7 results
@@ -103,12 +103,12 @@ to the page that lists maintained packages in batches.
 The Maintained packages page only has data if the person or team has
 maintained packages to show. No-priv does not maintain packages.
 
-    >>> anon_browser.open("http://launchpad.dev/~no-priv")
+    >>> anon_browser.open("http://launchpad.test/~no-priv")
     >>> print_tag_with_id(anon_browser.contents, 'ppas')
     Personal package archives
     PPA for No Privileges Person
     >>> anon_browser.open(
-    ...     "http://launchpad.dev/~no-priv/+maintained-packages")
+    ...     "http://launchpad.test/~no-priv/+maintained-packages")
     >>> print(extract_text(
     ...     find_tag_by_id(anon_browser.contents, 'packages')))
     Name...
@@ -246,13 +246,13 @@ more packages than intended.
 
 The logged-in user's case:
 
-    >>> user_browser.open("http://launchpad.dev/~cprov/+related-packages")
+    >>> user_browser.open("http://launchpad.test/~cprov/+related-packages")
     >>> print_ppa_rows(user_browser)
     source1 PPA for Celso Providelo - Ubuntu Hoary 666 ...ago None
 
 The not logged-in (anonymous) user's case:
 
-    >>> anon_browser.open("http://launchpad.dev/~cprov/+related-packages")
+    >>> anon_browser.open("http://launchpad.test/~cprov/+related-packages")
     >>> print_ppa_rows(anon_browser)
     source1 PPA for Celso Providelo - Ubuntu Hoary 666 ...ago None
 
@@ -260,13 +260,13 @@ However no-priv themselves and any Launchpad Administrator can still see
 both packages:
 
     >>> nopriv_browser = setupBrowser(auth="Basic no-priv@canonical.com:test")
-    >>> nopriv_browser.open("http://launchpad.dev/~cprov/+related-packages")
+    >>> nopriv_browser.open("http://launchpad.test/~cprov/+related-packages")
     >>> print_ppa_rows(nopriv_browser)
     source2 PPA named p3a for No Priv... Ubuntutest Breezy-autotest 666
         ...ago None
     source1 PPA for Celso Providelo - Ubuntu Hoary 666 ...ago None
 
-    >>> admin_browser.open("http://launchpad.dev/~cprov/+related-packages")
+    >>> admin_browser.open("http://launchpad.test/~cprov/+related-packages")
     >>> print_ppa_rows(admin_browser)
     source2 PPA named p3a for No Priv... Ubuntutest Breezy-autotest 666
         ...ago None
@@ -286,11 +286,11 @@ private one and the view the page again.
     Update the releases cache table.
     >>> update_cached_records(True)
 
-    >>> user_browser.open("http://launchpad.dev/~cprov/+related-packages")
+    >>> user_browser.open("http://launchpad.test/~cprov/+related-packages")
     >>> print_ppa_rows(user_browser)
     source1 PPA for Celso Providelo - Ubuntu Hoary 666 ...ago None
 
-    >>> anon_browser.open("http://launchpad.dev/~cprov/+related-packages")
+    >>> anon_browser.open("http://launchpad.test/~cprov/+related-packages")
     >>> print_ppa_rows(anon_browser)
     source1 PPA for Celso Providelo - Ubuntu Hoary 666 ...ago None
 
@@ -315,7 +315,7 @@ his private one:
 It will now disappear from the listings because it's not published in any
 public archives.
 
-    >>> user_browser.open("http://launchpad.dev/~cprov/+related-packages")
+    >>> user_browser.open("http://launchpad.test/~cprov/+related-packages")
     >>> print_ppa_rows(user_browser)
 
 Now we'll publish it in the primary archive.
@@ -335,11 +335,11 @@ Now we'll publish it in the primary archive.
 This makes the package appear in the listings again because the primary
 archive is public.
 
-    >>> user_browser.open("http://launchpad.dev/~cprov/+related-packages")
+    >>> user_browser.open("http://launchpad.test/~cprov/+related-packages")
     >>> print_ppa_rows(user_browser)
     source1 PPA named p3a for Celso... - Ubuntu Hoary 666 ...ago None
 
-    >>> anon_browser.open("http://launchpad.dev/~cprov/+related-packages")
+    >>> anon_browser.open("http://launchpad.test/~cprov/+related-packages")
     >>> print_ppa_rows(anon_browser)
     source1 PPA named p3a for Celso... - Ubuntu Hoary 666 ...ago None
 
@@ -351,11 +351,11 @@ the listings.
     >>> update_cached_records()
     >>> logout()
 
-    >>> user_browser.open("http://launchpad.dev/~cprov/+related-packages")
+    >>> user_browser.open("http://launchpad.test/~cprov/+related-packages")
     >>> print_ppa_rows(user_browser)
     source1 PPA named p3a for Celso... - Ubuntu Hoary 666 ...ago None
 
-    >>> anon_browser.open("http://launchpad.dev/~cprov/+related-packages")
+    >>> anon_browser.open("http://launchpad.test/~cprov/+related-packages")
     >>> print_ppa_rows(anon_browser)
     source1 PPA named p3a for Celso... - Ubuntu Hoary 666 ...ago None
 
@@ -370,7 +370,7 @@ some MOTU users in reviewing candidates' packages.
 
 First list the packages in the PPA.
 
-    >>> admin_browser.open("http://launchpad.dev/~cprov/+related-packages")
+    >>> admin_browser.open("http://launchpad.test/~cprov/+related-packages")
     >>> print_ppa_rows(admin_browser)
     source2 PPA named p3a for No Priv... - Ubuntutest Breezy-autotest 666
         ...ago None
@@ -379,7 +379,7 @@ First list the packages in the PPA.
 Then delete the 'source2' package.
 
     >>> admin_browser.open(
-    ...     "http://launchpad.dev/~no-priv/+archive/p3a/+delete-packages")
+    ...     "http://launchpad.test/~no-priv/+archive/p3a/+delete-packages")
     >>> admin_browser.getControl(
     ...    name='field.selected_sources').value = ['%s' % source2.id]
     >>> admin_browser.getControl(
@@ -406,7 +406,7 @@ Then delete the 'source2' package.
 Now re-list the PPA's packages, 'source2' was deleted but still
 appears.
 
-    >>> admin_browser.open("http://launchpad.dev/~cprov/+related-packages")
+    >>> admin_browser.open("http://launchpad.test/~cprov/+related-packages")
     >>> print_ppa_rows(admin_browser)
     source2 PPA named p3a for No Priv... - Ubuntutest Breezy-autotest 666
         ...ago None
@@ -420,7 +420,7 @@ Please note also that disabled archives are not viewable by anonymous users.
     ...     for ppa_row in package_table.findChildren('tr'):
     ...         print(extract_text(ppa_row))
 
-    >>> anon_browser.open("http://launchpad.dev/~cprov/+archive/ppa")
+    >>> anon_browser.open("http://launchpad.test/~cprov/+archive/ppa")
     >>> print_archive_package_rows(anon_browser)
     Package     Version     Uploaded by
     ...
@@ -430,7 +430,7 @@ Please note also that disabled archives are not viewable by anonymous users.
     >>> cprov.archive.disable()
     >>> update_cached_records()
     >>> logout()
-    >>> anon_browser.open("http://launchpad.dev/~cprov/+archive/ppa")
+    >>> anon_browser.open("http://launchpad.test/~cprov/+archive/ppa")
     Traceback (most recent call last):
     ...
     Unauthorized: (..., 'browserDefault', 'launchpad.SubscriberView')

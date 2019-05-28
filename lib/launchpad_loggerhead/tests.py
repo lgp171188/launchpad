@@ -202,7 +202,7 @@ class TestWSGI(TestCaseWithFactory):
             allow_redirects=False)
         self.assertEqual(301, response.status_code)
         self.assertEqual(
-            "testopenid.dev:8085",
+            "testopenid.test:8085",
             urlsplit(response.headers["Location"]).netloc)
 
     def test_private_port_public_branch(self):

@@ -582,7 +582,7 @@ bug. setLaunchpadBugId() also requires authentication.
     >>> test_transport.expireCookie(test_transport.auth_cookie)
     >>> with trac.responses():
     ...     trac.setLaunchpadBugId(
-    ...         '3', 15, 'http://bugs.launchpad.dev/bugs/xxx')
+    ...         '3', 15, 'http://bugs.launchpad.test/bugs/xxx')
     Using XML-RPC to generate token.
     Successfully validated the token.
 
@@ -608,7 +608,7 @@ remote bug that doesn't exist, a BugNotFound error will be raised.
     BugNotFound: 12345
 
     >>> trac.setLaunchpadBugId(
-    ...     '12345', 1, 'http://bugs.launchpad.dev/bugs/xxx')
+    ...     '12345', 1, 'http://bugs.launchpad.test/bugs/xxx')
     Traceback (most recent call last):
       ...
     BugNotFound: 12345

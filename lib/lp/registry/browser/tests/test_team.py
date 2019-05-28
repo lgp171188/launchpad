@@ -411,7 +411,7 @@ class TestTeamEditView(TestTeamPersonRenameFormMixin, TestCaseWithFactory):
 
         # We're now redirected to the team's home page, which is now on a
         # different URL since we changed its name.
-        self.assertEqual('http://launchpad.dev/~ubuntuteam', browser.url)
+        self.assertEqual('http://launchpad.test/~ubuntuteam', browser.url)
 
         # Check the values again.
         browser.getLink('Change details').click()

@@ -141,7 +141,7 @@ class ContactViaWebNotificationRecipientSetTestCase(TestCaseWithFactory):
             reason, rationale = recipient_set.getReason(email)
         self.assertEqual(
             'using the "Contact this user" link on your profile page\n'
-            '(http://launchpad.dev/~pting)',
+            '(http://launchpad.test/~pting)',
             reason)
         self.assertEqual('ContactViaWeb user', rationale)
 
@@ -154,7 +154,7 @@ class ContactViaWebNotificationRecipientSetTestCase(TestCaseWithFactory):
         self.assertEqual(
             'using the "Contact this team\'s admins" link '
             'on the Pting team page\n'
-            '(http://launchpad.dev/~pting)',
+            '(http://launchpad.test/~pting)',
             reason)
         self.assertEqual('ContactViaWeb owner (pting team)', rationale)
 
@@ -167,7 +167,7 @@ class ContactViaWebNotificationRecipientSetTestCase(TestCaseWithFactory):
         self.assertEqual(
             'to each member of the Pting team using the '
             '"Contact this team" link on the Pting team page\n'
-            '(http://launchpad.dev/~pting)',
+            '(http://launchpad.test/~pting)',
             reason)
         self.assertEqual('ContactViaWeb member (pting team)', rationale)
 
@@ -267,7 +267,7 @@ class EmailToPersonViewTestCase(TestCaseWithFactory):
         response = view.request.response
         self.assertEqual(302, response.getStatus())
         self.assertEqual(
-            'http://launchpad.dev/~him', response.getHeader('Location'))
+            'http://launchpad.test/~him', response.getHeader('Location'))
 
     def test_inactive_user_redirects(self):
         # The view explains that the user is inactive.
@@ -279,7 +279,7 @@ class EmailToPersonViewTestCase(TestCaseWithFactory):
         response = view.request.response
         self.assertEqual(302, response.getStatus())
         self.assertEqual(
-            'http://launchpad.dev/~him', response.getHeader('Location'))
+            'http://launchpad.test/~him', response.getHeader('Location'))
 
     def test_contact_not_possible_reason_to_user(self):
         # The view explains that the user is inactive.

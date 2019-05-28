@@ -31,7 +31,7 @@ class TestPersonProduct(TestCaseWithFactory):
     def test_canonical_url(self):
         # The canonical_url of a person product is ~person/product.
         pp = self._makePersonProduct()
-        expected = 'http://launchpad.dev/~%s/%s' % (
+        expected = 'http://launchpad.test/~%s/%s' % (
             pp.person.name, pp.product.name)
         self.assertEqual(expected, canonical_url(pp))
 

@@ -1,8 +1,8 @@
 Users can see bugs tags on the bug page.
 
-    >>> user_browser.open('http://bugs.launchpad.dev/firefox/+bug/1')
+    >>> user_browser.open('http://bugs.launchpad.test/firefox/+bug/1')
     >>> user_browser.url
-    'http://bugs.launchpad.dev/firefox/+bug/1'
+    'http://bugs.launchpad.test/firefox/+bug/1'
     >>> print(extract_text(find_tag_by_id(user_browser.contents, 'bug-tags')))
     Add tags  Tag help
 
@@ -45,7 +45,7 @@ Now the tags will be displayed on the bug page:
 Simply changing the ordering of the bug tags won't cause anything to
 happen.
 
-    >>> user_browser.open('http://bugs.launchpad.dev/firefox/+bug/1/+edit')
+    >>> user_browser.open('http://bugs.launchpad.test/firefox/+bug/1/+edit')
     >>> tags = user_browser.getControl('Tags')
     >>> tags.value
     'bar foo'
@@ -53,28 +53,28 @@ happen.
     >>> tags.value = "foo bar"
     >>> user_browser.getControl('Change').click()
     >>> user_browser.url
-    'http://bugs.launchpad.dev/firefox/+bug/1'
+    'http://bugs.launchpad.test/firefox/+bug/1'
 
 Let's delete the tags we added.
 
-    >>> user_browser.open('http://bugs.launchpad.dev/firefox/+bug/1/+edit')
+    >>> user_browser.open('http://bugs.launchpad.test/firefox/+bug/1/+edit')
     >>> user_browser.getControl('Tags').value
     'bar foo'
     >>> user_browser.getControl('Tags').value = ''
     >>> user_browser.getControl('Change').click()
     >>> user_browser.url
-    'http://bugs.launchpad.dev/firefox/+bug/1'
+    'http://bugs.launchpad.test/firefox/+bug/1'
 
 If we look at a bug having tags, the displayed tags are links, linking
 to the list of all bugs having that tag in this context.
 
-    >>> anon_browser.open('http://bugs.launchpad.dev/ubuntu/+bug/2')
+    >>> anon_browser.open('http://bugs.launchpad.test/ubuntu/+bug/2')
     >>> anon_browser.url
-    'http://bugs.launchpad.dev/ubuntu/+bug/2'
+    'http://bugs.launchpad.test/ubuntu/+bug/2'
 
     >>> anon_browser.getLink('dataloss').click()
     >>> anon_browser.url
-    'http://bugs.launchpad.dev/ubuntu/+bugs?field.tag=dataloss'
+    'http://bugs.launchpad.test/ubuntu/+bugs?field.tag=dataloss'
 
     >>> from lp.bugs.tests.bug import print_bugtasks
     >>> print_bugtasks(anon_browser.contents)

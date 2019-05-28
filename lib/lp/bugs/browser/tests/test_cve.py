@@ -79,7 +79,7 @@ class TestCVEReportView(TestCaseWithFactory):
         html_data = self.view.render()
         cve_links = re.findall(
             r'<a style="text-decoration: none" '
-            r'href="http://bugs.launchpad.dev/bugs/cve/\d{4}-\d{4}">'
+            r'href="http://bugs.launchpad.test/bugs/cve/\d{4}-\d{4}">'
             r'<img src="/@@/link" alt="" />'
             r'<span style="text-decoration: underline">CVE-\d{4}-\d{4}</span>'
             r'</a>',
@@ -158,21 +158,21 @@ class TestCVEReportView(TestCaseWithFactory):
             [
                 {
                     'displayname': 'CVE-2011-0123',
-                    'url': 'http://bugs.launchpad.dev/bugs/cve/2011-0123',
+                    'url': 'http://bugs.launchpad.test/bugs/cve/2011-0123',
                     },
                 {
                     'displayname': 'CVE-2011-0456',
-                    'url': 'http://bugs.launchpad.dev/bugs/cve/2011-0456',
+                    'url': 'http://bugs.launchpad.test/bugs/cve/2011-0456',
                     },
                 ])
         expected = (
             '<a style="text-decoration: none" '
-            'href="http://bugs.launchpad.dev/bugs/cve/2011-0123">'
+            'href="http://bugs.launchpad.test/bugs/cve/2011-0123">'
             '<img src="/@@/link" alt="" />'
             '<span style="text-decoration: underline">CVE-2011-0123</span>'
             '</a><br />\n'
             '<a style="text-decoration: none" '
-            'href="http://bugs.launchpad.dev/bugs/cve/2011-0456">'
+            'href="http://bugs.launchpad.test/bugs/cve/2011-0456">'
             '<img src="/@@/link" alt="" />'
             '<span style="text-decoration: underline">CVE-2011-0456</span>'
             '</a>')

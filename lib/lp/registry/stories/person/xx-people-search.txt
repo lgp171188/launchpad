@@ -4,7 +4,7 @@ People and Team Search
 Searching for people
 --------------------
 
-    >>> browser.open('http://launchpad.dev/people')
+    >>> browser.open('http://launchpad.test/people')
     >>> print browser.title
     People and teams in Launchpad
 

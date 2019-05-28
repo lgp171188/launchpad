@@ -11,7 +11,7 @@ At present, the unified page for setting up the branch is not linked
 from anywhere, so it must be navigated to directly.
 
     >>> browser = setupBrowser(auth="Basic test@canonical.com:test")
-    >>> browser.open('http://launchpad.dev/firefox/trunk/+setbranch')
+    >>> browser.open('http://launchpad.test/firefox/trunk/+setbranch')
 
 The default choice for the type of branch to set is one that
 already exists on Launchpad.
@@ -41,7 +41,7 @@ A user can choose to link to an existing branch on Launchpad.
     >>> print_feedback_messages(browser.contents)
     Series code location updated.
     >>> print browser.url
-    http://launchpad.dev/firefox/trunk
+    http://launchpad.test/firefox/trunk
 
 
 Linking to an external branch
@@ -53,7 +53,7 @@ or be a Git, Subversion, or CVS branch.
 Each of these types must provide the URL of the external repository,
 the branch name to use in Launchpad, and the branch owner.
 
-    >>> browser.open('http://launchpad.dev/firefox/trunk/+setbranch')
+    >>> browser.open('http://launchpad.test/firefox/trunk/+setbranch')
     >>> browser.getControl('Import a branch hosted somewhere else').click()
     >>> browser.getControl('Branch name').value = 'bzr-firefox-branch'
     >>> browser.getControl(name='field.rcs_type').value = ['BZR']
@@ -63,12 +63,12 @@ the branch name to use in Launchpad, and the branch owner.
     >>> print_feedback_messages(browser.contents)
     Code import created and branch linked to the series.
     >>> print browser.url
-    http://launchpad.dev/firefox/trunk
+    http://launchpad.test/firefox/trunk
 
 The process is the same for a Git external branch, though the novel
 "git://" scheme can also be used.
 
-    >>> browser.open('http://launchpad.dev/firefox/trunk/+setbranch')
+    >>> browser.open('http://launchpad.test/firefox/trunk/+setbranch')
     >>> browser.getControl('Import a branch hosted somewhere else').click()
     >>> browser.getControl('Branch name').value = 'git-firefox-branch'
     >>> browser.getControl(name='field.rcs_type').value = ['GIT']
@@ -78,11 +78,11 @@ The process is the same for a Git external branch, though the novel
     >>> print_feedback_messages(browser.contents)
     Code import created and branch linked to the series.
     >>> print browser.url
-    http://launchpad.dev/firefox/trunk
+    http://launchpad.test/firefox/trunk
 
 Likewise Subversion can use the "svn://" scheme.
 
-    >>> browser.open('http://launchpad.dev/firefox/trunk/+setbranch')
+    >>> browser.open('http://launchpad.test/firefox/trunk/+setbranch')
     >>> browser.getControl('Import a branch hosted somewhere else').click()
     >>> browser.getControl('Branch name').value = 'svn-firefox-branch'
     >>> browser.getControl(name='field.rcs_type').value = ['BZR_SVN']
@@ -92,11 +92,11 @@ Likewise Subversion can use the "svn://" scheme.
     >>> print_feedback_messages(browser.contents)
     Code import created and branch linked to the series.
     >>> print browser.url
-    http://launchpad.dev/firefox/trunk
+    http://launchpad.test/firefox/trunk
 
 The branch owner can be the logged in user or one of their teams.
 
-    >>> browser.open('http://launchpad.dev/firefox/trunk/+setbranch')
+    >>> browser.open('http://launchpad.test/firefox/trunk/+setbranch')
     >>> browser.getControl('Import a branch hosted somewhere else').click()
     >>> browser.getControl('Branch name').value = 'git-firefox-branch'
     >>> browser.getControl(name='field.rcs_type').value = ['GIT']
@@ -107,7 +107,7 @@ The branch owner can be the logged in user or one of their teams.
     >>> print_feedback_messages(browser.contents)
     Code import created and branch linked to the series.
     >>> print browser.url
-    http://launchpad.dev/firefox/trunk
+    http://launchpad.test/firefox/trunk
     >>> login('test@canonical.com')
     >>> firefox_trunk = firefox.getSeries('trunk')
     >>> print firefox_trunk.branch.unique_name

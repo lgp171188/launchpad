@@ -60,9 +60,9 @@ of properties:
     log_url:
     u'http://.../~cprov/+archive/ubuntu/ppa/+build/26/+files/netapplet-1.0.0.tar.gz'
     pocket: u'Release'
-    resource_type_link: u'http://api.launchpad.dev/beta/#build'
+    resource_type_link: u'http://api.launchpad.test/beta/#build'
     score: None
-    self_link: u'http://api.launchpad.dev/beta/~cprov/+archive/ubuntu/ppa/+build/26'
+    self_link: u'http://api.launchpad.test/beta/~cprov/+archive/ubuntu/ppa/+build/26'
     source_package_name: u'cdrkit'
     status: u'Failed to build'
     title: u'i386 build of cdrkit 1.0 in ubuntu breezy-autotest RELEASE'
@@ -155,10 +155,10 @@ will be proxied by the webapp.
     ...     source_pub['self_link'], 'getBuilds').jsonBody()
 
     >>> print(builds['entries'][0]['log_url'])
-    http://launchpad.dev/~cprov/+archive/ubuntu/ppa/+build/26/+files/...
+    http://launchpad.test/~cprov/+archive/ubuntu/ppa/+build/26/+files/...
 
     >>> print(builds['entries'][0]['upload_log_url'])
-    http://launchpad.dev/~cprov/+archive/ubuntu/ppa/+build/26/+files/...
+    http://launchpad.test/~cprov/+archive/ubuntu/ppa/+build/26/+files/...
 
 Re-trying builds
 ================

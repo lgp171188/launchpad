@@ -528,7 +528,7 @@ setLaunchpadBugId() requires authentication.
     ...     bugzilla.xmlrpc_transport.auth_cookie)
 
     >>> bugzilla.setLaunchpadBugId(
-    ...     1, 10, 'http://bugs.launchpad.dev/bugs/xxx')
+    ...     1, 10, 'http://bugs.launchpad.test/bugs/xxx')
     Using XML-RPC to generate token.
     CALLED Launchpad.login({'token': '...'})
     Successfully validated the token.

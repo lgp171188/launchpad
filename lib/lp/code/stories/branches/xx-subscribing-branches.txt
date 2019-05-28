@@ -26,7 +26,7 @@ Subscribing to Branches
 In order to subscribe to a branch, the user must be logged in.
 
     >>> anon_browser.open(
-    ...     'http://code.launchpad.dev/~name12/gnome-terminal/main')
+    ...     'http://code.launchpad.test/~name12/gnome-terminal/main')
     >>> anon_browser.getLink('Subscribe')
     Traceback (most recent call last):
     ...
@@ -36,7 +36,7 @@ Let us subscribe to one of the branches. First, let's make sure we can see the
 link "Subscribe" from a branch's page.
 
     >>> browser = setupBrowser(auth='Basic no-priv@canonical.com:test')
-    >>> browser.open('http://code.launchpad.dev/~name12/gnome-terminal/main')
+    >>> browser.open('http://code.launchpad.test/~name12/gnome-terminal/main')
 
 Initially there should be no subscribers.
 
@@ -121,7 +121,7 @@ Clicking the back button and then clicking on either Change or
 Unsubscribe will give a message that we are not subscribed.
 
     >>> from urllib import urlencode
-    >>> browser.addHeader('Referer', 'https://launchpad.dev/')
+    >>> browser.addHeader('Referer', 'https://launchpad.test/')
     >>> browser.open(
     ...     form_url,
     ...     data=urlencode({'field.actions.change': 'Change'}))
@@ -145,7 +145,7 @@ can be used to subscribe individuals or teams.
 You need to be logged in to see the link.
 
     >>> anon_browser.open(
-    ...     'http://code.launchpad.dev/~name12/gnome-terminal/main')
+    ...     'http://code.launchpad.test/~name12/gnome-terminal/main')
     >>> anon_browser.getLink('Subscribe someone else')
     Traceback (most recent call last):
     ...
@@ -153,7 +153,7 @@ You need to be logged in to see the link.
 
 Any logged in user is able to subscribe others to a branch.
 
-    >>> browser.open('http://code.launchpad.dev/~name12/gnome-terminal/main')
+    >>> browser.open('http://code.launchpad.test/~name12/gnome-terminal/main')
     >>> browser.getLink('Subscribe someone else').click()
 
 The process of subscribing others is the same as subscribing the
@@ -203,7 +203,7 @@ The user does not have to be in the team to subscribe them.
     Send email about any code review activity for this branch.
 
     >>> anon_browser.open(
-    ...     'http://code.launchpad.dev/~name12/gnome-terminal/main')
+    ...     'http://code.launchpad.test/~name12/gnome-terminal/main')
     >>> print_subscribers(anon_browser.contents)
     Landscape Developers
     Mark Shuttleworth
@@ -211,7 +211,7 @@ The user does not have to be in the team to subscribe them.
 Launchpad administrators can edit anyones branch subsription.
 
     >>> admin_browser.open(
-    ...     'http://code.launchpad.dev/~name12/gnome-terminal/main')
+    ...     'http://code.launchpad.test/~name12/gnome-terminal/main')
     >>> print_subscribers(admin_browser.contents)
     Landscape Developers
     Mark Shuttleworth
@@ -231,7 +231,7 @@ be used to traverse to the branch subscriptions instead of through
 the branch itself.
 
     >>> browser.open(
-    ...     'http://code.launchpad.dev/~name12/gnome-terminal/main')
+    ...     'http://code.launchpad.test/~name12/gnome-terminal/main')
     >>> print_subscribers(browser.contents)
     Landscape Developers
     Mark Shuttleworth

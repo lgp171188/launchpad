@@ -4,10 +4,10 @@ Filing bugs on ProjectGroups
 Even though it's not possible to file bugs against projects directly,
 it's still possible to file a bug from a project's main page.
 
-    >>> user_browser.open('http://launchpad.dev/gnome')
+    >>> user_browser.open('http://launchpad.test/gnome')
     >>> user_browser.getLink(url='+filebug').click()
     >>> user_browser.url
-    'http://bugs.launchpad.dev/gnome/+filebug'
+    'http://bugs.launchpad.test/gnome/+filebug'
 
 The ProjectGroup filebug page is like a Product's filebug page, except
 that it also asks for a Product. Only Products that are using Bugs are
@@ -37,7 +37,7 @@ page.
     >>> user_browser.getControl('Further information').value = 'Crash.'
     >>> user_browser.getControl('Submit Bug Report').click()
     >>> user_browser.url
-    'http://bugs.launchpad.dev/evolution/+bug/...'
+    'http://bugs.launchpad.test/evolution/+bug/...'
 
     >>> user_browser.title
     'Bug #...Evolution crashes... : Bugs : Evolution'
@@ -54,9 +54,9 @@ the page explains the case.
     ...     displayname='Test Group', name='test-group')
     >>> logout()
 
-    >>> user_browser.open('http://launchpad.dev/test-group/+filebug')
+    >>> user_browser.open('http://launchpad.test/test-group/+filebug')
     >>> user_browser.url
-    'http://launchpad.dev/test-group/+filebug'
+    'http://launchpad.test/test-group/+filebug'
 
     >>> for message in find_tags_by_class(user_browser.contents,
     ...     'informational message'):

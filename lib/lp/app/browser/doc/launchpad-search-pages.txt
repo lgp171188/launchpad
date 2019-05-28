@@ -39,7 +39,7 @@ When text is not None, the title indicates what was searched.
     ...         search_param_list.append('%s=%s' % (name, value))
     ...     query_string = '&'.join(search_param_list)
     ...     request = LaunchpadTestRequest(
-    ...         SERVER_URL='https://launchpad.dev/+search',
+    ...         SERVER_URL='https://launchpad.test/+search',
     ...         QUERY_STRING=query_string, form=form, PATH_INFO='/+search')
     ...     search_view = getMultiAdapter((root, request), name="+search")
     ...     search_view.initialize()
@@ -514,7 +514,7 @@ showing the matching terms in context of the page text.
     >>> page.title
     u'...Bug... #2 in Ubuntu Hoary: \u201cBlackhole Trash folder\u201d'
     >>> page.url
-    'http://bugs.launchpad.dev/ubuntu/hoary/+bug/2'
+    'http://bugs.launchpad.test/ubuntu/hoary/+bug/2'
     >>> page.summary
     u'...Launchpad\u2019s ...bug... tracker allows collaboration...'
 
@@ -566,7 +566,7 @@ The view provides the requested URL so that the template can make a
 link to try the search again
 
     >>> print search_view.url
-    https://launchpad.dev/+search?field.text=gnomebaker
+    https://launchpad.test/+search?field.text=gnomebaker
 
 
 SearchFormView and SearchFormPrimaryView
@@ -589,7 +589,7 @@ present in the rendered form.
     >>> search_form_view.id_suffix
     '-secondary'
     >>> print search_form_view.render()
-    <form action="http://launchpad.dev/+search" method="get"
+    <form action="http://launchpad.test/+search" method="get"
       accept-charset="UTF-8" id="sitesearch-secondary"
       name="sitesearch-secondary">
       <div>
@@ -611,7 +611,7 @@ field's value is 'bug', as was submitted above.
     >>> search_form_view.id_suffix
     ''
     >>> print search_form_view.render()
-    <form action="http://launchpad.dev/+search" method="get"
+    <form action="http://launchpad.test/+search" method="get"
       accept-charset="UTF-8" id="sitesearch"
       name="sitesearch">
       <div>

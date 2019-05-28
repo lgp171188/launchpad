@@ -60,7 +60,7 @@ class TestBranchRewriter(TestCaseWithFactory):
             rewriter.rewriteLine("/%s/.bzr/README" % branch.unique_name)
             for branch in branches]
         expected = [
-            'file:///var/tmp/bazaar.launchpad.dev/mirrors/%s/.bzr/README'
+            'file:///var/tmp/bazaar.launchpad.test/mirrors/%s/.bzr/README'
             % branch_id_to_path(branch.id)
             for branch in branches]
         self.assertEqual(expected, output)
@@ -114,7 +114,7 @@ class TestBranchRewriter(TestCaseWithFactory):
                 "%s/.bzr/README" % branch_id_alias(branch))
             for branch in branches]
         expected = [
-            'file:///var/tmp/bazaar.launchpad.dev/mirrors/%s/.bzr/README'
+            'file:///var/tmp/bazaar.launchpad.test/mirrors/%s/.bzr/README'
             % branch_id_to_path(branch.id)
             for branch in branches]
         self.assertEqual(expected, output)
@@ -272,7 +272,7 @@ class TestBranchRewriterScript(TestCaseWithFactory):
             ["/%s/.bzr/README" % branch.unique_name for branch in allbs]
             + ["/%s/changes" % branch.unique_name for branch in allbs])
         expected_lines = (
-            ['file:///var/tmp/bazaar.launchpad.dev/mirrors/%s/.bzr/README'
+            ['file:///var/tmp/bazaar.launchpad.test/mirrors/%s/.bzr/README'
              % branch_id_to_path(branch.id) for branch in bs]
             + ['http://localhost:8080/%s/.bzr/README' % privbranch.unique_name]
             + ['http://localhost:8080/%s/changes' % b.unique_name for b in bs]
@@ -300,7 +300,7 @@ class TestBranchRewriterScript(TestCaseWithFactory):
 
         new_branch_input = '/%s/.bzr/README' % new_branch.unique_name
         expected_lines.append(
-            'file:///var/tmp/bazaar.launchpad.dev/mirrors/%s/.bzr/README'
+            'file:///var/tmp/bazaar.launchpad.test/mirrors/%s/.bzr/README'
             % branch_id_to_path(new_branch.id))
         proc.stdin.write(new_branch_input + '\n')
         output_lines.append(
@@ -308,7 +308,7 @@ class TestBranchRewriterScript(TestCaseWithFactory):
 
         edited_branch_input = '/%s/.bzr/README' % edited_branch.unique_name
         expected_lines.append(
-            'file:///var/tmp/bazaar.launchpad.dev/mirrors/%s/.bzr/README'
+            'file:///var/tmp/bazaar.launchpad.test/mirrors/%s/.bzr/README'
             % branch_id_to_path(edited_branch.id))
         proc.stdin.write(edited_branch_input + '\n')
         output_lines.append(

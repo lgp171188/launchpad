@@ -13,20 +13,20 @@
 # These have to be first so non-Host/non-SNI requests don't hit bazaar etc.
 # But they can't have a ServerAlias wildcard or they'll shadow bazaar.
 <VirtualHost %LISTEN_ADDRESS%:80>
-  ServerName launchpad.dev
-  ServerAlias answers.launchpad.dev api.launchpad.dev blueprints.launchpad.dev
-  ServerAlias bugs.launchpad.dev code.launchpad.dev feeds.launchpad.dev
-  ServerAlias translations.launchpad.dev xmlrpc.launchpad.dev testopenid.dev
+  ServerName launchpad.test
+  ServerAlias answers.launchpad.test api.launchpad.test blueprints.launchpad.test
+  ServerAlias bugs.launchpad.test code.launchpad.test feeds.launchpad.test
+  ServerAlias translations.launchpad.test xmlrpc.launchpad.test testopenid.test
 
   RewriteEngine On
   RewriteRule (.*) https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 </VirtualHost>
 
 <VirtualHost %LISTEN_ADDRESS%:443>
-  ServerName launchpad.dev
-  ServerAlias answers.launchpad.dev api.launchpad.dev blueprints.launchpad.dev
-  ServerAlias bugs.launchpad.dev code.launchpad.dev feeds.launchpad.dev
-  ServerAlias translations.launchpad.dev xmlrpc.launchpad.dev testopenid.dev
+  ServerName launchpad.test
+  ServerAlias answers.launchpad.test api.launchpad.test blueprints.launchpad.test
+  ServerAlias bugs.launchpad.test code.launchpad.test feeds.launchpad.test
+  ServerAlias translations.launchpad.test xmlrpc.launchpad.test testopenid.test
   SSLEngine On
   SSLCertificateFile /etc/apache2/ssl/launchpad.crt
   SSLCertificateKeyFile /etc/apache2/ssl/launchpad.key
@@ -52,7 +52,7 @@
 </VirtualHost>
 
 <VirtualHost %LISTEN_ADDRESS%:80>
-  ServerName bazaar.launchpad.dev
+  ServerName bazaar.launchpad.test
   LogLevel debug
 
   ProxyRequests off
@@ -62,12 +62,12 @@
   RewriteMap branch-rewrite prg:%BRANCH_REWRITE%
   RewriteMap escape int:escape
 
-  RewriteRule ^/$ http://launchpad.dev [L]
+  RewriteRule ^/$ http://launchpad.test [L]
 
   RewriteRule ^(/.*)$ ${branch-rewrite:${escape:$1}} [L,P,NE]
 
-  DocumentRoot /var/tmp/bazaar.launchpad.dev/static/
-  <Directory /var/tmp/bazaar.launchpad.dev/static/>
+  DocumentRoot /var/tmp/bazaar.launchpad.test/static/
+  <Directory /var/tmp/bazaar.launchpad.test/static/>
     Options SymLinksIfOwnerMatch
     AllowOverride None
     Options Indexes
@@ -79,7 +79,7 @@
 </VirtualHost>
 
 <VirtualHost %LISTEN_ADDRESS%:443>
-  ServerName bazaar.launchpad.dev
+  ServerName bazaar.launchpad.test
   LogLevel debug
 
   SSLEngine On
@@ -94,7 +94,7 @@
 
   RequestHeader add X-Forwarded-Scheme https
 
-  RewriteRule ^/$ http://launchpad.dev [L]
+  RewriteRule ^/$ http://launchpad.test [L]
   RewriteRule ^/(.*)$ http://localhost:8080/$1 [L,P]
 
   <Location />
@@ -103,11 +103,11 @@
 </VirtualHost>
 
 <VirtualHost %LISTEN_ADDRESS%:80>
-  ServerName bazaar-internal.launchpad.dev
+  ServerName bazaar-internal.launchpad.test
   LogLevel debug
 
-  DocumentRoot /var/tmp/bazaar.launchpad.dev/mirrors
-  <Directory /var/tmp/bazaar.launchpad.dev/mirrors/>
+  DocumentRoot /var/tmp/bazaar.launchpad.test/mirrors
+  <Directory /var/tmp/bazaar.launchpad.test/mirrors/>
     <IfVersion >= 2.4>
       Require ip 127.0.0.0/255.0.0.0
     </IfVersion>
@@ -123,7 +123,7 @@
 </VirtualHost>
 
 <VirtualHost %LISTEN_ADDRESS%:80>
-  ServerName lists.launchpad.dev
+  ServerName lists.launchpad.test
   Alias  /   /var/tmp/mailman/mhonarc/
   <Directory /var/tmp/mailman/mhonarc>
     AllowOverride None
@@ -132,8 +132,8 @@
 </VirtualHost>
 
 <VirtualHost %LISTEN_ADDRESS%:80>
-  ServerName ppa.launchpad.dev
-  ServerAlias private-ppa.launchpad.dev
+  ServerName ppa.launchpad.test
+  ServerAlias private-ppa.launchpad.test
   LogLevel debug
 
   DocumentRoot /var/tmp/ppa
@@ -152,7 +152,7 @@
 </VirtualHost>
 
 <VirtualHost %LISTEN_ADDRESS%:80>
-  ServerName archive.launchpad.dev
+  ServerName archive.launchpad.test
   LogLevel debug
 
   DocumentRoot /var/tmp/archive

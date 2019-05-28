@@ -6,7 +6,7 @@ Malone provides an XML-RPC interface for filing bugs.
     >>> import xmlrpclib
     >>> from lp.testing.xmlrpc import XMLRPCTestTransport
     >>> filebug_api = xmlrpclib.ServerProxy(
-    ...     'http://test@canonical.com:test@xmlrpc.launchpad.dev/bugs/',
+    ...     'http://test@canonical.com:test@xmlrpc.launchpad.test/bugs/',
     ...     transport=XMLRPCTestTransport())
 
 
@@ -72,7 +72,7 @@ return value.)
     >>> bug_url = filebug_api.filebug(params)
     ObjectCreatedEvent: <Bug ...>
     >>> print(bug_url)
-    http://bugs.launchpad.dev/bugs/...
+    http://bugs.launchpad.test/bugs/...
 
     >>> from zope.component import getUtility
     >>> from lp.bugs.interfaces.bug import IBugSet
@@ -99,7 +99,7 @@ Reporting a distro bug.
     >>> bug_url = filebug_api.filebug(params)
     ObjectCreatedEvent: <Bug ...>
     >>> print(bug_url)
-    http://bugs.launchpad.dev/bugs/...
+    http://bugs.launchpad.test/bugs/...
 
     >>> bug = bugset.get(get_bug_id_from_url(bug_url))
 
@@ -126,7 +126,7 @@ Reporting a package bug.
     >>> bug_url = filebug_api.filebug(params)
     ObjectCreatedEvent: <Bug ...>
     >>> print(bug_url)
-    http://bugs.launchpad.dev/bugs/...
+    http://bugs.launchpad.test/bugs/...
 
     >>> login('test@canonical.com')
     >>> bug = bugset.get(get_bug_id_from_url(bug_url))
@@ -277,7 +277,7 @@ The LoginToken generated will be of the LoginTokenType BUGTRACKER.
 These requests are all handled by the private xml-rpc server.
 
     >>> bugtracker_api = xmlrpclib.ServerProxy(
-    ...     'http://xmlrpc-private.launchpad.dev:8087/bugs',
+    ...     'http://xmlrpc-private.launchpad.test:8087/bugs',
     ...     transport=XMLRPCTestTransport())
 
     >>> token_string = bugtracker_api.newBugTrackerToken()

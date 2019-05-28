@@ -8,7 +8,7 @@ if a specific user exists...
     >>> root_url = BaseLayer.appserver_root_url()
     >>> browser.open(root_url)
     >>> browser.vhost
-    'http://launchpad.dev'
+    'http://launchpad.test'
     >>> browser.urlpath
     '/'
 
@@ -24,6 +24,6 @@ if a specific user exists...
     >>> browser.getControl('Display Name').value = 'Stimpson J. Cat'
     >>> browser.getControl('Create').click()
     >>> browser.vhost
-    'http://launchpad.dev'
+    'http://launchpad.test'
     >>> browser.urlpath
     '/~stimpy'

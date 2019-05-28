@@ -9,7 +9,7 @@ Bug 11 has quite a few comments. Note that the "Add comment" text area also
 has the comment-text CSS class, increasing all the find_tags_by_class counts
 below by one.
 
-    >>> user_browser.open('http://launchpad.dev/bugs/11')
+    >>> user_browser.open('http://launchpad.test/bugs/11')
     >>> comments = find_tags_by_class(user_browser.contents, 'comment-text')
     >>> len(comments)
     7
@@ -27,7 +27,7 @@ threshold.
 
 Now only 3 comments will be displayed; the oldest and the 2 newest.
 
-    >>> user_browser.open('http://launchpad.dev/bugs/11')
+    >>> user_browser.open('http://launchpad.test/bugs/11')
     >>> comments = find_tags_by_class(user_browser.contents, 'comment-text')
     >>> len(comments)
     4
@@ -72,7 +72,7 @@ Anonymous users have a slightly different experience. If the comment
 list is truncated, the usual "to post a comment you must log in" note
 is also removed.
 
-    >>> anon_browser.open('http://launchpad.dev/bugs/11')
+    >>> anon_browser.open('http://launchpad.test/bugs/11')
     >>> print(find_tag_by_id(
     ...     anon_browser.contents, 'add-comment-login-first'))
     None

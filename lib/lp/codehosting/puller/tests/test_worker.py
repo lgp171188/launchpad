@@ -369,20 +369,20 @@ class TestMirroredBranchPolicy(TestCase):
         policy = MirroredBranchPolicy()
         self.assertRaises(
             BadUrlLaunchpad, policy.checkOneURL,
-            self.factory.getUniqueURL(host='bazaar.launchpad.dev'))
+            self.factory.getUniqueURL(host='bazaar.launchpad.test'))
 
     def testNoHTTPSLaunchpadURL(self):
         policy = MirroredBranchPolicy()
         self.assertRaises(
             BadUrlLaunchpad, policy.checkOneURL,
             self.factory.getUniqueURL(
-                host='bazaar.launchpad.dev', scheme='https'))
+                host='bazaar.launchpad.test', scheme='https'))
 
     def testNoOtherHostLaunchpadURL(self):
         policy = MirroredBranchPolicy()
         self.assertRaises(
             BadUrlLaunchpad, policy.checkOneURL,
-            self.factory.getUniqueURL(host='code.launchpad.dev'))
+            self.factory.getUniqueURL(host='code.launchpad.test'))
 
     def testLocalhost(self):
         self.pushConfig(
