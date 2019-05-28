@@ -368,8 +368,8 @@ class TestSpecificationInformationType(BrowserTestCase):
             browser.contents, soupmatchers.HTMLContains(privacy_banner))
 
 
-# canonical_url erroneously returns http://blueprints.launchpad.dev/+new
-NEW_SPEC_FROM_ROOT_URL = 'http://blueprints.launchpad.dev/specs/+new'
+# canonical_url erroneously returns http://blueprints.launchpad.test/+new
+NEW_SPEC_FROM_ROOT_URL = 'http://blueprints.launchpad.test/specs/+new'
 
 
 class NewSpecificationTests:

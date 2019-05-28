@@ -5,7 +5,7 @@ The approve/decline buttons and buttons aren't visible to unprivileged users.
 
     >>> no_priv_browser = setupBrowser(
     ...     auth="Basic no-priv@canonical.com:test")
-    >>> no_priv_browser.open("http://launchpad.dev/bugs/1")
+    >>> no_priv_browser.open("http://launchpad.test/bugs/1")
 
     >>> no_priv_browser.getControl("Approve")
     Traceback (most recent call last):
@@ -19,7 +19,7 @@ The approve/decline buttons and buttons aren't visible to unprivileged users.
 
 But an admin can see them.
 
-    >>> admin_browser.open("http://bugs.launchpad.dev/bugs/1")
+    >>> admin_browser.open("http://bugs.launchpad.test/bugs/1")
     >>> approve_button = admin_browser.getControl("Approve", index=0)
     >>> decline_button = admin_browser.getControl("Decline", index=0)
 
@@ -34,21 +34,21 @@ Approving a nomination displays a feedback message.
 
 After a productseries task has been created, it's editable.
 
-    >>> user_browser.open('http://launchpad.dev/firefox/+bug/1')
+    >>> user_browser.open('http://launchpad.test/firefox/+bug/1')
     >>> user_browser.getLink(url='firefox/1.0/+bug/1/+editstatus').click()
     >>> user_browser.url
-    'http://bugs.launchpad.dev/firefox/1.0/+bug/1/+editstatus'
+    'http://bugs.launchpad.test/firefox/1.0/+bug/1/+editstatus'
 
     >>> user_browser.getControl('Status').value
     ['New']
     >>> user_browser.getControl('Status').value = ['Confirmed']
     >>> user_browser.getControl('Save Changes').click()
     >>> user_browser.url
-    'http://bugs.launchpad.dev/firefox/1.0/+bug/1'
+    'http://bugs.launchpad.test/firefox/1.0/+bug/1'
 
 Privileged users can decline bug nominations.
 
-    >>> admin_browser.open("http://bugs.launchpad.dev/bugs/1")
+    >>> admin_browser.open("http://bugs.launchpad.test/bugs/1")
     >>> approve_button = admin_browser.getControl("Approve", index=0)
     >>> decline_button = admin_browser.getControl("Decline", index=0)
 
@@ -84,7 +84,7 @@ A bug can be nominated for a distribution release.
     ...     auth='Basic %s:test' % nominater.preferredemail.email)
     >>> logout()
     >>> nominater_browser.open(
-    ...     "http://launchpad.dev/poseidon/+source/%s/+bug/%s/+nominate" %
+    ...     "http://launchpad.test/poseidon/+source/%s/+bug/%s/+nominate" %
     ...     (dsp.name, bug_task.bug.id))
 
 Before we continue, we'll set up a second browser instance, to simulate
@@ -97,7 +97,7 @@ errors, and we'll give an example of one shortly.
     ...     auth='Basic %s:test' % nominater.preferredemail.email)
     >>> logout()
     >>> nominater_other_browser.open(
-    ...     "http://launchpad.dev/poseidon/+source/%s/+bug/%s/+nominate" %
+    ...     "http://launchpad.test/poseidon/+source/%s/+bug/%s/+nominate" %
     ...     (dsp.name, bug_task.bug.id))
     >>> nominater_browser.getControl("Aqua").selected = True
     >>> nominater_browser.getControl("Nominate").click()
@@ -122,7 +122,7 @@ When a nomination is submitted by a privileged user, it is immediately
 approved and targeted to the release.
 
     >>> admin_browser.open(
-    ...     "http://launchpad.dev/poseidon/+source/%s/+bug/%s/+nominate" %
+    ...     "http://launchpad.test/poseidon/+source/%s/+bug/%s/+nominate" %
     ...     (dsp.name, bug_task.bug.id))
 
     >>> admin_browser.getControl("Hydro").selected = True
@@ -149,7 +149,7 @@ A bug can be nominated for a product series.
     ...     auth='Basic %s:test' % nominater.preferredemail.email)
     >>> logout()
     >>> nominater_browser.open(
-    ...     "http://launchpad.dev/widget/+bug/%s/+nominate" % bug.id)
+    ...     "http://launchpad.test/widget/+bug/%s/+nominate" % bug.id)
 
 Before we continue, we'll set up a second browser instance, to simulate
 the nominater accessing the site from another window. Working with the same
@@ -161,7 +161,7 @@ errors, and we'll give an example of one shortly.
     ...     auth='Basic %s:test' % nominater.preferredemail.email)
     >>> logout()
     >>> nominater_other_browser.open(
-    ...     "http://launchpad.dev/widget/+bug/%s/+nominate" % bug.id)
+    ...     "http://launchpad.test/widget/+bug/%s/+nominate" % bug.id)
 
     >>> nominater_browser.getControl("Beta").selected = True
     >>> nominater_other_browser.getControl("Beta").selected = True
@@ -186,7 +186,7 @@ When a nomination is submitted by a privileged user, it is immediately
 approved and targeted to the release.
 
     >>> admin_browser.open(
-    ...     "http://launchpad.dev/widget/+bug/%s/+nominate" % bug.id)
+    ...     "http://launchpad.test/widget/+bug/%s/+nominate" % bug.id)
 
     >>> admin_browser.getControl("Trunk").selected = True
     >>> admin_browser.getControl("Target").click()
@@ -199,16 +199,16 @@ When a bug is targeted to the current development release, the general
 distribution task is no longer editable. Instead the status is tracked
 in the release task.
 
-    >>> user_browser.open('http://bugs.launchpad.dev/ubuntu/+bug/2')
+    >>> user_browser.open('http://bugs.launchpad.test/ubuntu/+bug/2')
     >>> ubuntu_edit_url = (
-    ...     'http://bugs.launchpad.dev/ubuntu/+bug/2/+editstatus')
+    ...     'http://bugs.launchpad.test/ubuntu/+bug/2/+editstatus')
     >>> user_browser.getLink(url=ubuntu_edit_url)
     Traceback (most recent call last):
     ...
     LinkNotFoundError...
 
     >>> ubuntu_hoary_edit_url = (
-    ...     'http://bugs.launchpad.dev/ubuntu/hoary/+bug/2/+editstatus')
+    ...     'http://bugs.launchpad.test/ubuntu/hoary/+bug/2/+editstatus')
     >>> user_browser.getLink(url=ubuntu_hoary_edit_url) is not None
     True
 
@@ -216,7 +216,7 @@ The use of the Won't Fix status is restricted. We need to use it to
 illustrate conjoined bugtasks, so we'll make 'no-priv' the bug supervisor
 for Ubuntu:
 
-    >>> admin_browser.open('http://bugs.launchpad.dev/ubuntu/+bugsupervisor')
+    >>> admin_browser.open('http://bugs.launchpad.test/ubuntu/+bugsupervisor')
     >>> admin_browser.getControl('Bug Supervisor').value = 'no-priv'
     >>> admin_browser.getControl('Change').click()
 
@@ -282,20 +282,20 @@ product task is no longer editable. Instead the status is tracked
 in the series task.
 
     >>> admin_browser.open(
-    ...     "http://launchpad.dev/products/firefox/+bug/4/+nominate")
+    ...     "http://launchpad.test/products/firefox/+bug/4/+nominate")
     >>> admin_browser.getControl("Trunk").selected = True
     >>> admin_browser.getControl("Target").click()
 
-    >>> user_browser.open('http://bugs.launchpad.dev/firefox/+bug/4')
+    >>> user_browser.open('http://bugs.launchpad.test/firefox/+bug/4')
     >>> firefox_edit_url = (
-    ...     'http://bugs.launchpad.dev/firefox/+bug/4/+editstatus')
+    ...     'http://bugs.launchpad.test/firefox/+bug/4/+editstatus')
     >>> user_browser.getLink(url=firefox_edit_url)
     Traceback (most recent call last):
     ...
     LinkNotFoundError...
 
     >>> firefox_trunk_edit_url = (
-    ...     'http://bugs.launchpad.dev/firefox/trunk/+bug/4/+editstatus')
+    ...     'http://bugs.launchpad.test/firefox/trunk/+bug/4/+editstatus')
     >>> user_browser.getLink(url=firefox_trunk_edit_url) is not None
     True
 
@@ -303,7 +303,7 @@ The use of the Won't Fix status is restricted. We need to use it to
 illustrate conjoined bugtasks, so we'll make 'no-priv' the bug supervisor
 for Firefox:
 
-    >>> admin_browser.open('http://bugs.launchpad.dev/firefox/+bugsupervisor')
+    >>> admin_browser.open('http://bugs.launchpad.test/firefox/+bugsupervisor')
     >>> admin_browser.getControl('Bug Supervisor').value = 'no-priv'
     >>> admin_browser.getControl('Change').click()
 
@@ -322,7 +322,7 @@ open, while the series task is invalid.
     >>> user_browser.getControl('Status').displayValue = ["Won't Fix"]
     >>> user_browser.getControl('Save Changes').click()
     >>> user_browser.url
-    'http://bugs.launchpad.dev/firefox/trunk/+bug/4'
+    'http://bugs.launchpad.test/firefox/trunk/+bug/4'
 
 Now both the general and series tasks are editable.
 
@@ -371,7 +371,7 @@ the productseries' bug page, in order to see a list of all bugs
 targeted to it.
 
     >>> anon_browser.open(
-    ...     'http://launchpad.dev/firefox/1.0/+bugs')
+    ...     'http://launchpad.test/firefox/1.0/+bugs')
 
     >>> from lp.bugs.tests.bug import print_bugtasks
     >>> print_bugtasks(anon_browser.contents)

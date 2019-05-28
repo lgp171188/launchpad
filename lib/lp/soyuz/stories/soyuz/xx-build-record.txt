@@ -39,7 +39,7 @@ package in a `DistroArchSeries`. There is an individual page for each
 individual `Build`, and they can be accessed via the build-farm URL
 shortcut.
 
-    >>> build_url = "http://launchpad.dev/builders/+build/%d" % build_id
+    >>> build_url = "http://launchpad.test/builders/+build/%d" % build_id
 
 Using the short-cut URL any user can promptly access the build
 page. It's title briefly describes the build.
@@ -109,16 +109,16 @@ The 'Build details' section exists for all status and contains links
 to all the relevant entities involved in this build.
 
     >>> print(anon_browser.getLink('testing - 1.0').url)
-    http://launchpad.dev/ubuntutest/+source/testing/1.0
+    http://launchpad.test/ubuntutest/+source/testing/1.0
 
     >>> print(anon_browser.getLink('Primary Archive for Ubuntu Test').url)
-    http://launchpad.dev/ubuntutest
+    http://launchpad.test/ubuntutest
 
     >>> print(anon_browser.getLink('Breezy Badger Autotest').url)
-    http://launchpad.dev/ubuntutest/breezy-autotest
+    http://launchpad.test/ubuntutest/breezy-autotest
 
     >>> print(anon_browser.getLink('i386').url)
-    http://launchpad.dev/ubuntutest/breezy-autotest/i386
+    http://launchpad.test/ubuntutest/breezy-autotest/i386
 
 Pending build records can be 'rescored', which will directly affect
 the time they will get started. A link to the corresponding help text
@@ -176,7 +176,7 @@ messages.
     Started ... ago
 
     >>> print(anon_browser.getLink('Bob The Builder').url)
-    http://launchpad.dev/builders/bob
+    http://launchpad.test/builders/bob
 
     >>> print(extract_text(
     ...     find_tag_by_id(anon_browser.contents, 'buildlog')))
@@ -224,7 +224,7 @@ how long it took.
     uploadlog (7 bytes)
 
     >>> print(anon_browser.getLink('Bob The Builder').url)
-    http://launchpad.dev/builders/bob
+    http://launchpad.test/builders/bob
 
     >>> login(ANONYMOUS)
     >>> anon_browser.getLink('buildlog').url == build.log_url
@@ -251,7 +251,7 @@ Administrators can retry failed builds using the 'retry' icon in the
     uploadlog (7 bytes)
 
     >>> print(admin_browser.getLink('Retry this build').url)
-    http://launchpad.dev/ubuntutest/+source/testing/1.0/+build/.../+retry
+    http://launchpad.test/ubuntutest/+source/testing/1.0/+build/.../+retry
 
 By clicking on the 'Retry this build' link, administrators are informed of
 the consequences of this action.
@@ -429,7 +429,7 @@ binary reference finally becomes a link to its corresponding page.
     testing-bin 1.0
 
     >>> print(anon_browser.getLink('testing-bin 1.0').url)
-    http://launchpad.dev/ubuntutest/breezy-autotest/i386/testing-bin/1.0
+    http://launchpad.test/ubuntutest/breezy-autotest/i386/testing-bin/1.0
 
 
 PPA builds
@@ -452,7 +452,7 @@ navigate to packages.
     >>> [ppa_build] = ppa_source.getBuilds()
     >>> ppa_build.updateStatus(BuildStatus.FULLYBUILT, builder=bob_builder)
     >>> ppa_build_url = (
-    ...     "http://launchpad.dev/builders/+build/%d" % ppa_build.id)
+    ...     "http://launchpad.test/builders/+build/%d" % ppa_build.id)
     >>> logout()
 
     >>> anon_browser.open(ppa_build_url)
@@ -472,10 +472,10 @@ The 'Build status' section is identical for PPAs.
     ppa-test-bin_1.0_i386.changes (23 bytes)
 
     >>> print(anon_browser.getLink('Bob The Builder').url)
-    http://launchpad.dev/builders/bob
+    http://launchpad.test/builders/bob
 
     >>> print(anon_browser.getLink('buildlog').url)
-    http://launchpad.dev/~cprov/+archive/ubuntu/ppa/+build/.../+files/buildlog_...
+    http://launchpad.test/~cprov/+archive/ubuntu/ppa/+build/.../+files/buildlog_...
 
     >>> print(anon_browser.getLink('ppa-test-bin_1.0_i386.changes').url)
     http://.../+build/.../+files/ppa-test-bin_1.0_i386.changes
@@ -498,13 +498,13 @@ packages, since they do not exist.
     LinkNotFoundError
 
     >>> print(anon_browser.getLink('PPA for Celso Providelo').url)
-    http://launchpad.dev/~cprov/+archive/ubuntu/ppa
+    http://launchpad.test/~cprov/+archive/ubuntu/ppa
 
     >>> print(anon_browser.getLink('Breezy Badger Autotest').url)
-    http://launchpad.dev/ubuntutest/breezy-autotest
+    http://launchpad.test/ubuntutest/breezy-autotest
 
     >>> print(anon_browser.getLink('i386', index=1).url)
-    http://launchpad.dev/ubuntutest/breezy-autotest/i386
+    http://launchpad.test/ubuntutest/breezy-autotest/i386
 
 Similarly, binary packages are not linkified in 'Binary packages'
 section for PPA builds.
@@ -544,7 +544,7 @@ If the source package was created from a recipe build, link to it.
     ...
 
     >>> print(anon_browser.getLink('~cprov/product/mybranch recipe build').url)
-    http://launchpad.dev/~cprov/+archive/ubuntu/ppa/+recipebuild/...
+    http://launchpad.test/~cprov/+archive/ubuntu/ppa/+recipebuild/...
 
 Finally, the 'Build files' section is identical for PPA builds.
 
@@ -575,7 +575,7 @@ record always link to its binaries.
     None
 
     >>> imported_build_url = (
-    ...     "http://launchpad.dev/builders/+build/%d" % imported_build.id)
+    ...     "http://launchpad.test/builders/+build/%d" % imported_build.id)
 
     >>> logout()
 
@@ -591,4 +591,4 @@ record always link to its binaries.
     imported-bin 666
 
     >>> print(anon_browser.getLink('imported-bin 666').url)
-    http://launchpad.dev/ubuntutest/breezy-autotest/i386/imported-bin/666
+    http://launchpad.test/ubuntutest/breezy-autotest/i386/imported-bin/666

@@ -301,7 +301,7 @@ class SearchBugsFeed(BugsFeedBase):
     """Bug feeds for a generic search.
 
     Searches are of the form produced by an advanced bug search, e.g.
-    http://bugs.launchpad.dev/bugs/+bugs.atom?field.searchtext=&
+    http://bugs.launchpad.test/bugs/+bugs.atom?field.searchtext=&
         search=Search+Bug+Reports&field.scope=all&field.scope.target=
     """
 

@@ -966,7 +966,7 @@ class TestBranchChangedNotification(TestCaseWithTransport):
         # the path part of that URL, and this relative path is passed to
         # branchChanged().
         self.assertStackedOnIsRewritten(
-            'http://bazaar.launchpad.dev/~user/product/branch',
+            'http://bazaar.launchpad.test/~user/product/branch',
             '/~user/product/branch')
 
     def test_branch_unlock_ignores_non_launchpad_stacked_url(self):
@@ -980,8 +980,8 @@ class TestBranchChangedNotification(TestCaseWithTransport):
         # on Launchpad with a scheme we don't understand, it is passed
         # unchanged to branchChanged().
         self.assertStackedOnIsRewritten(
-            'gopher://bazaar.launchpad.dev/~user/foo',
-            'gopher://bazaar.launchpad.dev/~user/foo')
+            'gopher://bazaar.launchpad.test/~user/foo',
+            'gopher://bazaar.launchpad.test/~user/foo')
 
     def assertFormatStringsPassed(self, branch):
         self.assertEqual(1, len(self._branch_changed_log))

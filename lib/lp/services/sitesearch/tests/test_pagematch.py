@@ -37,7 +37,7 @@ class TestPageMatchURLHandling(TestCase):
             'https://bugs.launchpad.net/unicode-titles/+bug/456',
             u'The Zope testrunner likes ASCII more than Unicode.')
         self.assertEqual(
-            'http://bugs.launchpad.dev/unicode-titles/+bug/456', p.url)
+            'http://bugs.launchpad.test/unicode-titles/+bug/456', p.url)
 
     def test_rewrite_url_with_trailing_slash(self):
         """A URL's trailing slash is removed; Launchpad does not use trailing
@@ -47,7 +47,7 @@ class TestPageMatchURLHandling(TestCase):
             u'Ubuntu in Launchpad',
             'https://launchpad.net/ubuntu/',
             u'Ubuntu also includes more software than any other operating')
-        self.assertEqual('http://launchpad.dev/ubuntu', p.url)
+        self.assertEqual('http://launchpad.test/ubuntu', p.url)
 
     def test_rewrite_url_exceptions(self):
         """There is a list of URLs that are not rewritten configured in
@@ -63,11 +63,11 @@ class TestPageMatchURLHandling(TestCase):
 
     def test_rewrite_url_handles_invalid_data(self):
         # Given a bad url, pagematch can get a valid one.
-        bad_url = ("http://launchpad.dev/+search?"
+        bad_url = ("http://launchpad.test/+search?"
                    "field.text=WUSB54GC+ karmic&"
                    "field.actions.search=Search")
         p = PageMatch('Bad,', bad_url, 'Bad data')
-        expected = ("http://launchpad.dev/+search?"
+        expected = ("http://launchpad.test/+search?"
                    "field.text=WUSB54GC++karmic&"
                    "field.actions.search=Search")
         self.assertEqual(expected, p.url)
@@ -75,12 +75,12 @@ class TestPageMatchURLHandling(TestCase):
     def test_rewrite_url_handles_invalid_data_partial_escaped(self):
         # Given a url with partial escaped values, pagematch does not error.
         partial_encoded_url = (
-           "http://launchpad.dev/+search?"
+           "http://launchpad.test/+search?"
            "field.text=WUSB54GC+%2Bkarmic&"
            "field.actions.search=Search")
         p = PageMatch('Weird.', partial_encoded_url, 'Weird data')
         expected = (
-            "http://launchpad.dev/+search?"
+            "http://launchpad.test/+search?"
             "field.text=WUSB54GC+%2Bkarmic&"
             "field.actions.search=Search")
         self.assertEqual(expected, p.url)

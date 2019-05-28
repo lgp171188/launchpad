@@ -235,14 +235,14 @@ It is possible to find a branch by URL. Either using the pull URL:
 Or using the URL of the mirror of the branch on Launchpad:
 
     >>> new_branch_mirrored = (
-    ...     u'http://bazaar.launchpad.dev/' +
+    ...     u'http://bazaar.launchpad.test/' +
     ...     new_mirrored_branch.unique_name)
     >>> branch_lookup.getByUrl(new_branch_mirrored) == new_mirrored_branch
     True
 
     >>> new_junk_branch = factory.makePersonalBranch()
     >>> junkcode_mirrored = (
-    ...     u'http://bazaar.launchpad.dev/' +
+    ...     u'http://bazaar.launchpad.test/' +
     ...     new_junk_branch.unique_name)
     >>> branch_lookup.getByUrl(junkcode_mirrored) == new_junk_branch
     True
@@ -312,7 +312,7 @@ BranchSubscriptionNotificationLevel.
 
     >>> from lp.services.webapp import canonical_url
     >>> print(canonical_url(subscription))
-    http://code...dev/~user/product/subscribed/+subscription/subscriber
+    http://code...test/~user/product/subscribed/+subscription/subscriber
 
 The settings for a subscription can be changed by re-subscribing.
 

@@ -35,7 +35,7 @@ Once authenticated, we're redirected back to the page where we started, with
 the query args preserved.
 
     >>> browser.vhost
-    'http://launchpad.dev'
+    'http://launchpad.test'
     >>> browser.urlpath
     '/people'
     >>> import re

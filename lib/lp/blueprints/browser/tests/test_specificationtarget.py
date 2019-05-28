@@ -43,7 +43,7 @@ class TestRegisterABlueprintButtonPortlet(TestCaseWithFactory):
         view = create_view(
             context, '+register-a-blueprint-button')
         self.assertEqual(
-            'http://blueprints.launchpad.dev/%s/+addspec' % name,
+            'http://blueprints.launchpad.test/%s/+addspec' % name,
             view.target_url)
         self.assertTrue(
             '<div id="involvement" class="portlet involvement">' in view())

@@ -21,7 +21,7 @@ import queue.
 For starters, Carlos uploads a tarball with 100 files to the queue.
 
     >>> browser.open(
-    ...     'http://translations.launchpad.dev/evolution/trunk/'
+    ...     'http://translations.launchpad.test/evolution/trunk/'
     ...     '+translations-upload')
     >>> file_ctrl = browser.getControl('File:')
     >>> file_ctrl.add_file(
@@ -65,7 +65,7 @@ already included in the sample data.
     ...     """Print contents of the import target dropdown."""
     ...     print_dropdown(browser, 'field.filter_target')
 
-    >>> browser.open('http://translations.launchpad.dev/+imports')
+    >>> browser.open('http://translations.launchpad.test/+imports')
     >>> browser.getLink('Next')
     <Link
       text='Next'
@@ -133,7 +133,7 @@ Now Carlos selects only the .po files, and only 96 of the entries are
 shown.
 
     >>> browser.open(
-    ...     'http://translations.launchpad.dev/+imports?'
+    ...     'http://translations.launchpad.test/+imports?'
     ...     'field.filter_status=all&field.filter_extension=po')
     >>> browser.getControl(name='field.filter_status', index=0).value
     ['all']
@@ -145,7 +145,7 @@ shown.
 When filtering for .pot files, the other 6 entries show up instead.
 
     >>> browser.open(
-    ...     'http://translations.launchpad.dev/+imports?'
+    ...     'http://translations.launchpad.test/+imports?'
     ...     'field.filter_status=all&field.filter_extension=pot')
     >>> browser.getControl(name='field.filter_status', index=0).value
     ['all']
@@ -160,7 +160,7 @@ When filtering for .pot files, the other 6 entries show up instead.
 Next Carlos filters for Approved entries.
 
     >>> browser.open(
-    ...     'http://translations.launchpad.dev/+imports?'
+    ...     'http://translations.launchpad.test/+imports?'
     ...     'field.filter_status=APPROVED&field.filter_extension=all')
     >>> browser.getControl(name='field.filter_status', index=0).value
     ['APPROVED']
@@ -181,18 +181,18 @@ no entries matching the status that Carlos is filtering for.
 
 Carlos changes the status of the third entry to Blocked.
 
-    >>> browser.open('http://translations.launchpad.dev/+imports')
+    >>> browser.open('http://translations.launchpad.test/+imports')
     >>> browser.getControl(name='field.status_%d' % qid1).value
     ['NEEDS_REVIEW']
     >>> browser.getControl(name='field.status_%d' % qid1).value = ['BLOCKED']
     >>> browser.getControl('Change status').click()
     >>> print(browser.url)
-    http://translations.launchpad.dev/+imports/+index
+    http://translations.launchpad.test/+imports/+index
 
 The entry now shows up in the Blocked filter.
 
     >>> browser.open(
-    ...     'http://translations.launchpad.dev/+imports?'
+    ...     'http://translations.launchpad.test/+imports?'
     ...     'field.filter_status=BLOCKED&field.filter_extension=all')
     >>> browser.getControl(name='field.status_%s' % qid1).value
     ['BLOCKED']
@@ -208,7 +208,7 @@ The entry now shows up in the Blocked filter.
 And the entries that need review are only 99.
 
     >>> browser.open(
-    ...     'http://translations.launchpad.dev/+imports?'
+    ...     'http://translations.launchpad.test/+imports?'
     ...     'field.filter_status=NEEDS_REVIEW&field.filter_extension=all')
     >>> browser.getControl(name='field.filter_status', index=0).value
     ['NEEDS_REVIEW']
@@ -219,18 +219,18 @@ And the entries that need review are only 99.
 
 The fourth entry, Carlos deletes by setting its status to Deleted.
 
-    >>> browser.open('http://translations.launchpad.dev/+imports')
+    >>> browser.open('http://translations.launchpad.test/+imports')
     >>> browser.getControl(name='field.status_%d' % qid2).value
     ['NEEDS_REVIEW']
     >>> browser.getControl(name='field.status_%d' % qid2).value = ['DELETED']
     >>> browser.getControl('Change status').click()
     >>> browser.url
-    'http://translations.launchpad.dev/+imports/+index'
+    'http://translations.launchpad.test/+imports/+index'
 
 It shows up in the Deleted filter.
 
     >>> browser.open(
-    ...     'http://translations.launchpad.dev/+imports?'
+    ...     'http://translations.launchpad.test/+imports?'
     ...     'field.filter_status=DELETED&field.filter_extension=all')
     >>> browser.getControl(name='field.status_%d' % qid2).value
     ['DELETED']
@@ -240,7 +240,7 @@ It shows up in the Deleted filter.
 Thus only 98 entries remain in the Needs Review filter.
 
     >>> browser.open(
-    ...     'http://translations.launchpad.dev/+imports?'
+    ...     'http://translations.launchpad.test/+imports?'
     ...     'field.filter_status=NEEDS_REVIEW&field.filter_extension=all')
     >>> browser.getControl(name='field.filter_status', index=0).value
     ['NEEDS_REVIEW']
@@ -255,7 +255,7 @@ Thus only 98 entries remain in the Needs Review filter.
 An attempt to filter for an undefined status is an UnexpectedFormData. 
 
     >>> browser.open(
-    ...     'http://translations.launchpad.dev/+imports?'
+    ...     'http://translations.launchpad.test/+imports?'
     ...     'field.filter_status=boguscode')
     Traceback (most recent call last):
     ...
@@ -267,7 +267,7 @@ An attempt to filter for an undefined status is an UnexpectedFormData.
 It's also possible to filter by target. In this case, Evolution.
 
     >>> browser.open(
-    ...     'http://translations.launchpad.dev/+imports?'
+    ...     'http://translations.launchpad.test/+imports?'
     ...     'field.filter_target=evolution')
     >>> browser.getControl(name='field.filter_target', index=0).value
     ['evolution']
@@ -279,7 +279,7 @@ Carlos uploads files for Evolution in Ubuntu Hoary.
     >>> import transaction
     >>> from StringIO import StringIO
     >>> admin_browser.open(
-    ...     'http://translations.launchpad.dev/ubuntu/hoary/+source/'
+    ...     'http://translations.launchpad.test/ubuntu/hoary/+source/'
     ...     'evolution/+pots/evolution-2.2/+upload')
     >>> file_ctrl = admin_browser.getControl('File:')
     >>> file_ctrl.add_file(
@@ -296,7 +296,7 @@ Hoary now shows up as a filter option in the target filter dropdown.
 Carlos selects that option and filters for it.
 
     >>> user_browser.open(
-    ...     'http://translations.launchpad.dev/+imports')
+    ...     'http://translations.launchpad.test/+imports')
     >>> user_browser.getControl(
     ...     name='field.filter_target', index=0).value = ['ubuntu/hoary']
     >>> user_browser.getControl('Filter').click()
@@ -336,7 +336,7 @@ Ubuntu.
     ...         output.append(represent_queue_entry(entry))
     ...     return '\n'.join(output)
 
-    >>> browser.open('http://translations.launchpad.dev/+imports')
+    >>> browser.open('http://translations.launchpad.test/+imports')
 
 The queue has uploads for Hoary (a Distribution release series) and for
 Evolution (a separate project registered in Launchpad).
@@ -389,7 +389,7 @@ If Carlos attempts to filter for a nonexistent target, e.g. through a
 mistyped URL, an UnexpectedFormData is raised.
 
     >>> browser.open(
-    ...     'http://translations.launchpad.dev/+imports?'
+    ...     'http://translations.launchpad.test/+imports?'
     ...     'field.filter_target=bogus/target')
     Traceback (most recent call last):
     ...

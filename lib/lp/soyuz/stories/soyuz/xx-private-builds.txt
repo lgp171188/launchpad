@@ -61,7 +61,7 @@ The status shown to an anonymous user hides the private source it is
 building.
 
     >>> anon_browser.mech_browser.set_handle_equiv(False)
-    >>> anon_browser.open("http://launchpad.dev/+builds/frog")
+    >>> anon_browser.open("http://launchpad.test/+builds/frog")
     >>> print(extract_text(find_main_content(anon_browser.contents)))
     The frog builder...
     Current status
@@ -71,7 +71,7 @@ building.
 Launchpad Administrators are allowed to see the build:
 
     >>> admin_browser.mech_browser.set_handle_equiv(False)
-    >>> admin_browser.open("http://launchpad.dev/+builds/frog")
+    >>> admin_browser.open("http://launchpad.test/+builds/frog")
     >>> print(extract_text(find_main_content(admin_browser.contents)))
     The frog builder...
     Current status
@@ -83,7 +83,7 @@ Buildd Administrators are not allowed to see the build in the portlet:
 
     >>> name12_browser = setupBrowser(auth="Basic test@canonical.com:test")
     >>> name12_browser.mech_browser.set_handle_equiv(False)
-    >>> name12_browser.open("http://launchpad.dev/+builds/frog")
+    >>> name12_browser.open("http://launchpad.test/+builds/frog")
     >>> print(extract_text(find_main_content(name12_browser.contents)))
     The frog builder...
     Current status
@@ -95,7 +95,7 @@ cprov is also allowed to see his own build:
     >>> cprov_browser = setupBrowser(
     ...     auth="Basic celso.providelo@canonical.com:test")
     >>> cprov_browser.mech_browser.set_handle_equiv(False)
-    >>> cprov_browser.open("http://launchpad.dev/+builds/frog")
+    >>> cprov_browser.open("http://launchpad.test/+builds/frog")
     >>> print(extract_text(find_main_content(cprov_browser.contents)))
     The frog builder...
     Current status
@@ -108,7 +108,7 @@ access.  This prevents direct access to the build URL by unauthorised
 users:
 
     >>> anon_browser.open(
-    ...     "http://launchpad.dev/~cprov/+archive/ubuntu/p3a/+build/%s" %
+    ...     "http://launchpad.test/~cprov/+archive/ubuntu/p3a/+build/%s" %
     ...     private_build_id)
     Traceback (most recent call last):
     ...
@@ -117,10 +117,10 @@ users:
 But it is fine for authorised users:
 
     >>> cprov_browser.open(
-    ...     "http://launchpad.dev/~cprov/+archive/ubuntu/p3a/+build/%s" %
+    ...     "http://launchpad.test/~cprov/+archive/ubuntu/p3a/+build/%s" %
     ...     private_build_id)
     >>> print(cprov_browser.url)
-    http://launchpad.dev/~cprov/+archive/ubuntu/p3a/+build/...
+    http://launchpad.test/~cprov/+archive/ubuntu/p3a/+build/...
 
 
 == Builder history page ==
@@ -136,7 +136,7 @@ The builder "bob" has lots of builds in the sample data, including some
 for cprov's public archive.  We can visit bob's history page and see
 what it shows a non-privileged user:
 
-    >>> anon_browser.open("http://launchpad.dev/+builds/bob/+history")
+    >>> anon_browser.open("http://launchpad.test/+builds/bob/+history")
     >>> [builds_list] = find_tags_by_class(
     ...     anon_browser.contents, 'builds_list')
     >>> print(extract_text(builds_list))
@@ -159,7 +159,7 @@ what it shows a non-privileged user:
 The builder "Frog" has only the one build created above. So viewing the
 history as an unauthorised user shows an empty history.
 
-    >>> anon_browser.open("http://launchpad.dev/+builds/frog/+history")
+    >>> anon_browser.open("http://launchpad.test/+builds/frog/+history")
     >>> [builds_list] = find_tags_by_class(
     ...     anon_browser.contents, 'builds_list')
     >>> print(extract_text(builds_list))
@@ -170,7 +170,7 @@ history as an unauthorised user shows an empty history.
 Both admin and the owner of the build, cprov, can see the build in
 "Frog"'s build history.
 
-    >>> admin_browser.open("http://launchpad.dev/+builds/frog/+history")
+    >>> admin_browser.open("http://launchpad.test/+builds/frog/+history")
     >>> [builds_list] = find_tags_by_class(
     ...     admin_browser.contents, 'builds_list')
     >>> print(extract_text(builds_list))
@@ -179,7 +179,7 @@ Both admin and the owner of the build, cprov, can see the build in
     i386 build of privacy-test 666 in ubuntutest breezy-autotest RELEASE
     ...
 
-    >>> cprov_browser.open("http://launchpad.dev/+builds/frog/+history")
+    >>> cprov_browser.open("http://launchpad.test/+builds/frog/+history")
     >>> [builds_list] = find_tags_by_class(
     ...     cprov_browser.contents, 'builds_list')
     >>> print(extract_text(builds_list))
@@ -197,7 +197,7 @@ a builder then it is hidden as in the examples above.
 
 An admin user can see builds even if they are private:
 
-    >>> admin_browser.open("http://launchpad.dev/+builds")
+    >>> admin_browser.open("http://launchpad.test/+builds")
     >>> print(extract_text(find_main_content(admin_browser.contents)))
     The Launchpad build farm
     ...
@@ -208,7 +208,7 @@ An admin user can see builds even if they are private:
 
 Launchpad Buildd admins cannot see private builds.
 
-    >>> name12_browser.open("http://launchpad.dev/+builds")
+    >>> name12_browser.open("http://launchpad.test/+builds")
     >>> print(extract_text(find_main_content(name12_browser.contents)))
     The Launchpad build farm
     ...
@@ -219,7 +219,7 @@ Launchpad Buildd admins cannot see private builds.
 
 cprov can see his own private build:
 
-    >>> cprov_browser.open("http://launchpad.dev/+builds")
+    >>> cprov_browser.open("http://launchpad.test/+builds")
     >>> print(extract_text(find_main_content(cprov_browser.contents)))
     The Launchpad build farm
     ...
@@ -230,7 +230,7 @@ cprov can see his own private build:
 
 Anonymous users cannot see the private build:
 
-    >>> anon_browser.open("http://launchpad.dev/+builds")
+    >>> anon_browser.open("http://launchpad.test/+builds")
     >>> print(extract_text(find_main_content(anon_browser.contents)))
     The Launchpad build farm
     2 available build machines, ...
@@ -252,7 +252,7 @@ users:
     >>> from zope.security.interfaces import Unauthorized
     >>> try:
     ...     anon_browser.open(
-    ...         "http://launchpad.dev/~cprov/+archive/ubuntu/p3a/+build/%s" %
+    ...         "http://launchpad.test/~cprov/+archive/ubuntu/p3a/+build/%s" %
     ...         private_build_id)
     ... except Unauthorized:
     ...     print("Got expected exception")
@@ -263,7 +263,7 @@ users:
     >>> browser = setupBrowser(auth="Basic no-priv@canonical.com:test")
     >>> try:
     ...     browser.open(
-    ...         "http://launchpad.dev/~cprov/+archive/ubuntu/p3a/+build/%s" %
+    ...         "http://launchpad.test/~cprov/+archive/ubuntu/p3a/+build/%s" %
     ...         private_build_id)
     ... except Unauthorized:
     ...     print("Got expected exception")
@@ -293,7 +293,7 @@ First log in as an admin to be able to manipulate the source publishing.
 
 Now the anonymous user can see the build:
 
-    >>> anon_browser.open("http://launchpad.dev/+builds")
+    >>> anon_browser.open("http://launchpad.test/+builds")
     >>> print(extract_text(find_main_content(anon_browser.contents)))
     The Launchpad build farm
     ...
@@ -305,7 +305,7 @@ Now the anonymous user can see the build:
 Any other logged-in user will also see the build:
 
     >>> browser.mech_browser.set_handle_equiv(False)
-    >>> browser.open("http://launchpad.dev/+builds")
+    >>> browser.open("http://launchpad.test/+builds")
     >>> print(extract_text(find_main_content(browser.contents)))
     The Launchpad build farm
     ...
@@ -317,13 +317,13 @@ Any other logged-in user will also see the build:
 Accessing the build page will now also work:
 
     >>> anon_browser.open(
-    ...     "http://launchpad.dev/~cprov/+archive/ubuntu/p3a/+build/%s" %
+    ...     "http://launchpad.test/~cprov/+archive/ubuntu/p3a/+build/%s" %
     ...     private_build_id)
     >>> print(anon_browser.title)
     i386 build of privacy-test 666 : PPA named p3a for Celso Providelo : Celso Providelo
 
     >>> browser.open(
-    ...     "http://launchpad.dev/~cprov/+archive/ubuntu/p3a/+build/%s" %
+    ...     "http://launchpad.test/~cprov/+archive/ubuntu/p3a/+build/%s" %
     ...     private_build_id)
     >>> print(browser.title)
     i386 build of privacy-test 666 : PPA named p3a for Celso Providelo : Celso Providelo
@@ -332,11 +332,11 @@ Similarly, when accessing the distribution source package release page,
 the main content will display a link to the newly unembargoed build:
 
     >>> browser.open(
-    ...     "http://launchpad.dev/ubuntutest/+source/privacy-test/666")
+    ...     "http://launchpad.test/ubuntutest/+source/privacy-test/666")
     >>> portlet = find_portlet(browser.contents, 'Builds')
     >>> print(extract_text(portlet))
     Builds
     Breezy Badger Autotest: i386
 
     >>> print(browser.getLink('i386').url)
-    http://launchpad.dev/~cprov/+archive/ubuntu/p3a/+build/...
+    http://launchpad.test/~cprov/+archive/ubuntu/p3a/+build/...

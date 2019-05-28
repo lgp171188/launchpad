@@ -38,7 +38,7 @@ Reported bugs
 
 The bugs front page can be consulted now for the list of reported bugs.
 
-    >>> anon_browser.open('http://bugs.launchpad.dev/')
+    >>> anon_browser.open('http://bugs.launchpad.test/')
     >>> reported_bugs = find_tag_by_id(anon_browser.contents, 'reported-bugs')
 
 The list of recently reported bugs contains up to the last 5 bugs reported

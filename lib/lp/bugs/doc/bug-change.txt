@@ -396,13 +396,13 @@ You can add an attachment...
 
     >>> print(pretty(attachment_change.getBugActivity()))
     {'newvalue':
-         u'sample-attachment http://bugs.launchpad.dev/bugs/...+files/...',
+         u'sample-attachment http://bugs.launchpad.test/bugs/...+files/...',
      'oldvalue': None,
      'whatchanged': 'attachment added'}
 
     >>> print(attachment_change.getBugNotification()['text'])
     ** Attachment added: "sample-attachment"
-    http://bugs.launchpad.dev/bugs/.../+attachment/.../+files/...
+    http://bugs.launchpad.test/bugs/.../+attachment/.../+files/...
 
 Or remove one.
 
@@ -414,12 +414,12 @@ Or remove one.
     >>> print(pretty(attachment_change.getBugActivity()))
     {'newvalue': None,
      'oldvalue':
-         u'sample-attachment http://bugs.launchpad.dev/bugs/...+files/...',
+         u'sample-attachment http://bugs.launchpad.test/bugs/...+files/...',
      'whatchanged': 'attachment removed'}
 
     >>> print(attachment_change.getBugNotification()['text'])
     ** Attachment removed: "sample-attachment"
-    http://bugs.launchpad.dev/bugs/.../+attachment/.../+files/...
+    http://bugs.launchpad.test/bugs/.../+attachment/.../+files/...
 
 
 == BugTaskAttributeChange ==

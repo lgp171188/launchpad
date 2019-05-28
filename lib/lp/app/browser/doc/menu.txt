@@ -64,9 +64,9 @@ and disabled links are included.
     Related pages
     >>> for link in menu_view.links:
     ...     print link.enabled, link.url
-    True   http://launchpad.dev/~beaker/+edit
-    True   http://launchpad.dev/~beaker/+edit-people
-    False  http://launchpad.dev/~beaker/+admin
+    True   http://launchpad.test/~beaker/+edit
+    True   http://launchpad.test/~beaker/+edit-people
+    False  http://launchpad.test/~beaker/+admin
 
 The view renders the heading using the menu title and a list of the links. A
 link is rendered only if its 'enabled' property is true. The template uses the
@@ -81,13 +81,13 @@ style attribute is used.
     <BLANKLINE>
         <li>
           <a class="menu-link-edit_thing sprite modify edit"
-             href="http://launchpad.dev/~beaker/+edit">Edit thing</a>
+             href="http://launchpad.test/~beaker/+edit">Edit thing</a>
         </li>
     <BLANKLINE>
     <BLANKLINE>
         <li>
             <a class="menu-link-edit_people"
-               href="http://launchpad.dev/~beaker/+edit-people">Edit
+               href="http://launchpad.test/~beaker/+edit-people">Edit
                  people related to thing</a>
         </li>
         ...
@@ -99,18 +99,18 @@ unset, and then only the link icon and text will be displayed, but it will not
 be clickable.
 
     >>> request = LaunchpadTestRequest(
-    ...     SERVER_URL='http://launchpad.dev/~beaker/+edit')
+    ...     SERVER_URL='http://launchpad.test/~beaker/+edit')
     >>> print request.getURL()
-    http://launchpad.dev/~beaker/+edit
+    http://launchpad.test/~beaker/+edit
 
     >>> view = EditView(user, request)
     >>> menu_view = create_initialized_view(
     ...     view, '+related-pages', principal=user)
     >>> for link in menu_view.links:
     ...     print link.enabled, link.linked, link.url
-    True  False  http://launchpad.dev/~beaker/+edit
-    True  True   http://launchpad.dev/~beaker/+edit-people
-    False True   http://launchpad.dev/~beaker/+admin
+    True  False  http://launchpad.test/~beaker/+edit
+    True  True   http://launchpad.test/~beaker/+edit-people
+    False True   http://launchpad.test/~beaker/+admin
 
     >>> print menu_view.render()
     <div id="related-pages" class="portlet">
@@ -134,8 +134,8 @@ links.
     ...     view, '+global-actions', principal=user)
     >>> for link in menu_view.enabled_links:
     ...     print link.enabled, link.linked, link.url
-    True  False  http://launchpad.dev/~beaker/+edit
-    True  True   http://launchpad.dev/~beaker/+edit-people
+    True  False  http://launchpad.test/~beaker/+edit
+    True  True   http://launchpad.test/~beaker/+edit-people
 
 The generated markup is for a portlet with the global-actions id.
 
@@ -148,7 +148,7 @@ The generated markup is for a portlet with the global-actions id.
         </li>
         <li>
           <a class="menu-link-edit_people"
-             href="http://launchpad.dev/~beaker/+edit-people">Edit
+             href="http://launchpad.test/~beaker/+edit-people">Edit
                people related to thing</a>
         </li>
       </ul>

@@ -151,8 +151,8 @@ class TestGitRefView(BrowserTestCase):
         username = ref.owner.name
         text = self.getMainText(ref, "+index", user=ref.owner)
         self.assertTextMatchesExpressionIgnoreWhitespace(r"""
-            git clone -b branch https://git.launchpad.dev/.*
-            git clone -b branch git\+ssh://{username}@git.launchpad.dev/.*
+            git clone -b branch https://git.launchpad.test/.*
+            git clone -b branch git\+ssh://{username}@git.launchpad.test/.*
             """.format(username=username), text)
 
     def makeCommitLog(self):
@@ -208,7 +208,7 @@ class TestGitRefView(BrowserTestCase):
         self.assertEqual(
             expected_texts, [extract_text(detail) for detail in details])
         expected_urls = list(reversed([
-            "https://git.launchpad.dev/%s/commit/?id=%s" % (
+            "https://git.launchpad.test/%s/commit/?id=%s" % (
                 ref.repository.shortened_path, log[i]["sha1"])
             for i in range(5)]))
         self.assertEqual(
@@ -286,7 +286,7 @@ class TestGitRefView(BrowserTestCase):
         recent_commits_tag = soupmatchers.Tag(
             'recent commits', 'div', attrs={'id': 'recent-commits'})
         expected_url = (
-            'https://git.launchpad.dev/%s/log/?h=%s' %
+            'https://git.launchpad.test/%s/log/?h=%s' %
             (ref.repository.shortened_path, encoded_branch_name))
         self.assertThat(
             view(),

@@ -58,13 +58,13 @@ canonical URL for set based views.
 
     >>> from lp.services.webapp import canonical_url
     >>> print(canonical_url(machine_set))
-    http://code.launchpad.dev/+code-imports/+machines
+    http://code.launchpad.test/+code-imports/+machines
 
 A single code import machine is identified by the hostname of the
 machine directly after the canonical URL of the code import machine set.
 
     >>> print(canonical_url(sample_machine))
-    http://code.launchpad.dev/+code-imports/+machines/bazaar-importer
+    http://code.launchpad.test/+code-imports/+machines/bazaar-importer
 
 
 Creating CodeImportMachines

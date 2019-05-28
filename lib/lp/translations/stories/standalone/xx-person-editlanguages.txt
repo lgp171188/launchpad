@@ -5,7 +5,7 @@ He comes to the main Translations page and wants to change his preferred
 languages.
 
     >>> browser = setupBrowser(auth='Basic carlos@canonical.com:test')
-    >>> browser.open('http://translations.launchpad.dev/')
+    >>> browser.open('http://translations.launchpad.test/')
 
 So he looks for the "preferred languages" section on the page.  This
 lists his current preferences.
@@ -58,7 +58,7 @@ confirming his changes.
     Added Welsh to your preferred languages.<br
     />Removed Spanish from your preferred languages.
 
-    >>> browser.open('http://translations.launchpad.dev/')
+    >>> browser.open('http://translations.launchpad.test/')
     >>> print(find_languages_section(browser.contents))
     Your preferred languages
     Catalan
@@ -74,7 +74,7 @@ languages page from there.
     >>> browser.addHeader('X-Forwarded-For', '80.66.224.0')
     >>> browser.addHeader('Accept-Language', b'pt_br, Espa\xf1ol')
     >>> browser.open(
-    ...     'http://translations.launchpad.dev/~name12/+editlanguages')
+    ...     'http://translations.launchpad.test/~name12/+editlanguages')
 
 Since Joao doesn't have a preferred language set, Launchpad determines
 it from the browser headers.  His secondary language choice, Spanish, is
@@ -106,7 +106,7 @@ information.
     >>> print(find_spoken_languages(country_portlet))
     []
     >>> print(country_portlet.find('a')['href'])
-    http://answers.launchpad.dev/launchpad
+    http://answers.launchpad.test/launchpad
 
 Back home in Brazil, Joao gets the equivalent for Brazil, where the
 equivalent information is known.
@@ -114,7 +114,7 @@ equivalent information is known.
     >>> browser = setupBrowser('Basic test@canonical.com:test')
     >>> browser.addHeader('X-Forwarded-For', '143.54.0.1')
     >>> browser.open(
-    ...     'http://translations.launchpad.dev/~name12/+editlanguages')
+    ...     'http://translations.launchpad.test/~name12/+editlanguages')
     >>> country_portlet = find_tag_by_id(browser.contents,
     ...                                  'portlet-country-languages')
     >>> print(find_spoken_languages(country_portlet))
@@ -127,7 +127,7 @@ direct non-logged in users to edit their preferred languages.
 The launchpad.AnyPerson permission means that when an anonymous user goes
 to that page, they'll be asked to login.
 
-    >>> anon_browser.open('http://launchpad.dev/+editmylanguages')
+    >>> anon_browser.open('http://launchpad.test/+editmylanguages')
     Traceback (most recent call last):
     ...
     Unauthorized: ...
@@ -135,9 +135,9 @@ to that page, they'll be asked to login.
 But a logged in user will be sent straight to their /~user/+editlanguages
 page.
 
-    >>> browser.open('http://launchpad.dev/+editmylanguages')
+    >>> browser.open('http://launchpad.test/+editmylanguages')
     >>> browser.url
-    'http://launchpad.dev/~name12/+editlanguages'
+    'http://launchpad.test/~name12/+editlanguages'
 
 
 == Adding languages to teams ==
@@ -149,7 +149,7 @@ to support Spanish questions for Ubuntu, so they set the team's
 preferred languages.
 
     >>> browser = setupBrowser(auth='Basic test@canonical.com:test')
-    >>> browser.open('http://launchpad.dev/~landscape-developers')
+    >>> browser.open('http://launchpad.test/~landscape-developers')
     >>> browser.title
     'Landscape Developers in Launchpad'
 
@@ -171,7 +171,7 @@ Launchpad Admin has a question from No Privileges Person claiming that
 they cannot add Esperanto to their languages. Foo Bar visits No Privileges
 Person's page to do it themselves.
 
-    >>> admin_browser.open('http://launchpad.dev/~no-priv')
+    >>> admin_browser.open('http://launchpad.test/~no-priv')
     >>> admin_browser.title
     'No Privileges Person in Launchpad'
     >>> admin_browser.getLink('Set preferred languages').click()
@@ -207,7 +207,7 @@ Noi, a new user, visits her home page.
     >>> logout()
 
     >>> noi_browser = setupBrowser('Basic noi@example.com:test')
-    >>> noi_home = 'http://translations.launchpad.dev/~noi'
+    >>> noi_home = 'http://translations.launchpad.test/~noi'
     >>> noi_browser.open(noi_home)
 
 The home page reminds her to set her preferred languages.

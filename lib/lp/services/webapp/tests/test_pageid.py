@@ -46,7 +46,7 @@ class FakeCollectionResourceView(FakeView):
     def __init__(self):
         super(FakeCollectionResourceView, self).__init__()
         self.type_url = (
-            u'https://launchpad.dev/api/devel/#milestone-page-resource')
+            u'https://launchpad.test/api/devel/#milestone-page-resource')
 
 
 class LaunchpadBrowserPublicationPageIDTestCase(TestCase):

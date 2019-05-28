@@ -70,7 +70,7 @@ and there will be a link to the templates list.
     ...
 
     >>> print(admin_browser.getLink('1 template').url)
-    http...://translations.launchpad.dev/.../trunk/+templates
+    http...://translations.launchpad.test/.../trunk/+templates
 
     >>> admin_browser.getLink('1 template').click()
     >>> print(admin_browser.title)

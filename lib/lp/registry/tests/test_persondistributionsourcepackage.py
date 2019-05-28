@@ -29,7 +29,7 @@ class TestPersonDistributionSourcePackage(TestCaseWithFactory):
         # ~person/distribution/+source/sourcepackagename.
         pdsp = self._makePersonDistributionSourcePackage()
         dsp = pdsp.distro_source_package
-        expected = 'http://launchpad.dev/~%s/%s/+source/%s' % (
+        expected = 'http://launchpad.test/~%s/%s/+source/%s' % (
             pdsp.person.name, dsp.distribution.name,
             dsp.sourcepackagename.name)
         self.assertEqual(expected, canonical_url(pdsp))

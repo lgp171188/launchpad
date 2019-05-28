@@ -84,7 +84,7 @@ Now we actually demonstrate the behaviour.  The view did raise a TimeoutError.
     >>> capture.setUp()
     >>> browser = Browser()
     >>> browser.handleErrors = False
-    >>> browser.open('http://launchpad.dev/doom_test')
+    >>> browser.open('http://launchpad.test/doom_test')
     Traceback (most recent call last):
     ...
     TimeoutError...

@@ -7,7 +7,7 @@ project and they want to delete the trunk series because development
 is really happening in the 1.0 series.
 
     >>> owner_browser = setupBrowser(auth='Basic test@canonical.com:test')
-    >>> owner_browser.open('http://launchpad.dev/firefox/trunk')
+    >>> owner_browser.open('http://launchpad.test/firefox/trunk')
     >>> print owner_browser.title
     Series trunk : Mozilla Firefox
 
@@ -36,7 +36,7 @@ of development. They then remove the linked package which they believe is
 bogus.
 
     >>> owner_browser.getLink('Cancel').click()
-    >>> owner_browser.open('http://launchpad.dev/firefox/+edit')
+    >>> owner_browser.open('http://launchpad.test/firefox/+edit')
     >>> print owner_browser.title
     Change Mozilla Firefox's details...
 
@@ -99,7 +99,7 @@ that the series was deleted, and can not see a link to it anymore.
 A series with translations can never be deleted. The project owner or
 release manager sees the explanation when they try to delete the series.
 
-    >>> owner_browser.open('http://launchpad.dev/evolution/trunk')
+    >>> owner_browser.open('http://launchpad.test/evolution/trunk')
     >>> owner_browser.getLink('Delete series').click()
     >>> print owner_browser.title
     Delete Evolution trunk series ...

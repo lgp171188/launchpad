@@ -9,27 +9,27 @@ Anonymous and an ordinary user cannot access Celso's PPA package
 console, even if they try the URL directly.
 
     >>> anon_browser.open(
-    ...     'http://launchpad.dev/~cprov/+archive/ppa/+packages')
+    ...     'http://launchpad.test/~cprov/+archive/ppa/+packages')
     >>> anon_browser.getLink('Delete packages').click()
     Traceback (most recent call last):
     ...
     LinkNotFoundError
 
     >>> anon_browser.open(
-    ...     'http://launchpad.dev/~cprov/+archive/ppa/+delete-packages')
+    ...     'http://launchpad.test/~cprov/+archive/ppa/+delete-packages')
     Traceback (most recent call last):
     ...
     Unauthorized: ..., 'launchpad.Edit')
 
     >>> user_browser.open(
-    ...     'http://launchpad.dev/~cprov/+archive/ppa/+packages')
+    ...     'http://launchpad.test/~cprov/+archive/ppa/+packages')
     >>> user_browser.getLink('Delete packages').click()
     Traceback (most recent call last):
     ...
     LinkNotFoundError
 
     >>> user_browser.open(
-    ...    'http://launchpad.dev/~cprov/+archive/ppa/+delete-packages')
+    ...    'http://launchpad.test/~cprov/+archive/ppa/+delete-packages')
     Traceback (most recent call last):
     ...
     Unauthorized: ..., 'launchpad.Edit')
@@ -40,13 +40,13 @@ Celso's PPA.
     >>> cprov_browser = setupBrowser(
     ...     auth="Basic celso.providelo@canonical.com:test")
     >>> cprov_browser.open(
-    ...     'http://launchpad.dev/~cprov/+archive/ppa/+packages')
+    ...     'http://launchpad.test/~cprov/+archive/ppa/+packages')
     >>> cprov_browser.getLink('Delete packages').click()
     >>> print(cprov_browser.title)
     Delete packages from PPA for Celso Providelo...
 
     >>> admin_browser.open(
-    ...     'http://launchpad.dev/~cprov/+archive/ppa/+packages')
+    ...     'http://launchpad.test/~cprov/+archive/ppa/+packages')
     >>> admin_browser.getLink('Delete packages').click()
     >>> print(admin_browser.title)
     Delete packages from PPA for Celso Providelo...
@@ -92,7 +92,7 @@ The user may delete packages from a PPA without providing a reason
 (deletion comment). Let's try it on mark's archive.
 
     >>> admin_browser.open(
-    ...     'http://launchpad.dev/~mark/+archive/ppa/+packages')
+    ...     'http://launchpad.test/~mark/+archive/ppa/+packages')
     >>> admin_browser.getLink('Delete packages').click()
     >>> print_ppa_packages(admin_browser.contents)
     Source            Published   Status     Series          Section  Build
@@ -121,7 +121,7 @@ The single package in mark's archive was deleted successfully.
 Now back to cprov's archive for the remaining tests.
 
     >>> admin_browser.open(
-    ...     'http://launchpad.dev/~cprov/+archive/ppa/+packages')
+    ...     'http://launchpad.test/~cprov/+archive/ppa/+packages')
     >>> admin_browser.getLink('Delete packages').click()
 
 Deletion requires, at least, one selected a source, otherwise an error
@@ -182,7 +182,7 @@ The deleted record is now presented accordingly in the +index page. We
 will use another browser to inspect the results of our deletions.
 
     >>> cprov_browser.open(
-    ...     'http://launchpad.dev/~cprov/+archive/ppa/+packages')
+    ...     'http://launchpad.test/~cprov/+archive/ppa/+packages')
     >>> print_ppa_packages(cprov_browser.contents)
     Source            Published   Status     Series          Section  Build
         Status
@@ -213,7 +213,7 @@ the form re-submission tests.
     >>> re_post_browser = setupBrowser(
     ...     auth="Basic foo.bar@canonical.com:test")
     >>> re_post_browser.open(
-    ...     'http://launchpad.dev/~cprov/+archive/ppa/+packages')
+    ...     'http://launchpad.test/~cprov/+archive/ppa/+packages')
     >>> re_post_browser.getLink('Delete packages').click()
 
 Multiple packages can be deleted in one single batch.
@@ -244,7 +244,7 @@ The page doesn't present the form anymore, since there are no sources
 available for deletion.
 
     >>> admin_browser.open(
-    ...     'http://launchpad.dev/~cprov/+archive/ppa/+delete-packages')
+    ...     'http://launchpad.test/~cprov/+archive/ppa/+delete-packages')
     >>> main_content = find_main_content(admin_browser.contents)
     >>> print(extract_text(
     ...   find_tags_by_class(str(main_content), 'top-portlet')[0]))
@@ -281,7 +281,7 @@ PPAs that don't contain any published source packages, do not present
 the 'Delete packages' link.
 
     >>> admin_browser.open(
-    ...     'http://launchpad.dev/~no-priv/+archive/ppa/+packages')
+    ...     'http://launchpad.test/~no-priv/+archive/ppa/+packages')
     >>> admin_browser.getLink('Delete packages').click()
     Traceback (most recent call last):
     ...
@@ -292,7 +292,7 @@ for PPAs that do not contain any published packages, instead a clear
 message is presented.
 
     >>> admin_browser.open(
-    ...    'http://launchpad.dev/~no-priv/+archive/ppa/+delete-packages')
+    ...    'http://launchpad.test/~no-priv/+archive/ppa/+delete-packages')
     >>> print(admin_browser.title)
     Delete packages from PPA for No Privileges Person...
 
@@ -358,7 +358,7 @@ The SUPERSEDED source we have just added is listed in the PPA
 overview page.
 
     >>> user_browser.open(
-    ...     'http://launchpad.dev/~no-priv/+archive/ppa/+packages')
+    ...     'http://launchpad.test/~no-priv/+archive/ppa/+packages')
     >>> user_browser.getControl(
     ...    name='field.status_filter').value = ['superseded']
     >>> user_browser.getControl('Filter', index=0).click()
@@ -463,7 +463,7 @@ Please note also how the deletion comment is diplayed in its entirety as
 opposed to being truncated after the first 20 characters.
 
     >>> user_browser.open(
-    ...     'http://launchpad.dev/~no-priv/+archive/ppa/+packages')
+    ...     'http://launchpad.test/~no-priv/+archive/ppa/+packages')
     >>> user_browser.getControl(
     ...    name='field.status_filter').value = ['superseded']
     >>> user_browser.getControl('Filter', index=0).click()
@@ -531,7 +531,7 @@ area.
 The message for the file links does not appear for non-PPA publishings
 as it would refer to non-existent links.
 
-    >>> user_browser.open("http://launchpad.dev/ubuntu/+source/foobar/1.0")
+    >>> user_browser.open("http://launchpad.test/ubuntu/+source/foobar/1.0")
     >>> user_browser.getLink('See full publishing history').click()
     >>> print(extract_text(find_main_content(user_browser.contents)))
     Publishing history of foobar 1.0 source package in Ubuntu

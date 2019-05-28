@@ -229,10 +229,10 @@ class TestSnapStoreUploadJob(TestCaseWithFactory):
             notification["X-Launchpad-Notification-Type"])
         body, footer = notification.get_payload(decode=True).split("\n-- \n")
         self.assertIn(
-            "http://launchpad.dev/~requester-team/+snap/test-snap/+authorize",
+            "http://launchpad.test/~requester-team/+snap/test-snap/+authorize",
             body)
         self.assertEqual(
-            "http://launchpad.dev/~requester-team/+snap/test-snap/+build/%d\n"
+            "http://launchpad.test/~requester-team/+snap/test-snap/+build/%d\n"
             "Your team Requester Team is the requester of the build.\n" %
             snapbuild.id, footer)
         self.assertWebhookDeliveries(
@@ -322,10 +322,10 @@ class TestSnapStoreUploadJob(TestCaseWithFactory):
             notification["X-Launchpad-Notification-Type"])
         body, footer = notification.get_payload(decode=True).split("\n-- \n")
         self.assertIn(
-            "http://launchpad.dev/~requester-team/+snap/test-snap/+authorize",
+            "http://launchpad.test/~requester-team/+snap/test-snap/+authorize",
             body)
         self.assertEqual(
-            "http://launchpad.dev/~requester-team/+snap/test-snap/+build/%d\n"
+            "http://launchpad.test/~requester-team/+snap/test-snap/+build/%d\n"
             "Your team Requester Team is the requester of the build.\n" %
             snapbuild.id, footer)
         self.assertWebhookDeliveries(
@@ -373,7 +373,7 @@ class TestSnapStoreUploadJob(TestCaseWithFactory):
         body, footer = notification.get_payload(decode=True).split("\n-- \n")
         self.assertIn("Failed to upload", body)
         build_url = (
-            "http://launchpad.dev/~requester-team/+snap/test-snap/+build/%d" %
+            "http://launchpad.test/~requester-team/+snap/test-snap/+build/%d" %
             snapbuild.id)
         self.assertIn(build_url, body)
         self.assertEqual(
@@ -477,7 +477,7 @@ class TestSnapStoreUploadJob(TestCaseWithFactory):
         body, footer = notification.get_payload(decode=True).split("\n-- \n")
         self.assertIn("Scan failed.", body)
         self.assertEqual(
-            "http://launchpad.dev/~requester-team/+snap/test-snap/+build/%d\n"
+            "http://launchpad.test/~requester-team/+snap/test-snap/+build/%d\n"
             "Your team Requester Team is the requester of the build.\n" %
             snapbuild.id, footer)
         self.assertWebhookDeliveries(
@@ -552,7 +552,7 @@ class TestSnapStoreUploadJob(TestCaseWithFactory):
         body, footer = notification.get_payload(decode=True).split("\n-- \n")
         self.assertIn(self.store_url, body)
         self.assertEqual(
-            "http://launchpad.dev/~requester-team/+snap/test-snap/+build/%d\n"
+            "http://launchpad.test/~requester-team/+snap/test-snap/+build/%d\n"
             "Your team Requester Team is the requester of the build.\n" %
             snapbuild.id, footer)
         self.assertWebhookDeliveries(
@@ -603,7 +603,7 @@ class TestSnapStoreUploadJob(TestCaseWithFactory):
         self.assertIn("Failed to publish", body)
         self.assertIn(self.store_url, body)
         self.assertEqual(
-            "http://launchpad.dev/~requester-team/+snap/test-snap/+build/%d\n"
+            "http://launchpad.test/~requester-team/+snap/test-snap/+build/%d\n"
             "Your team Requester Team is the requester of the build.\n" %
             snapbuild.id, footer)
         self.assertWebhookDeliveries(

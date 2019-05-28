@@ -35,7 +35,7 @@ are not a member of, their message gets held for moderator approval.
     >>> def post_message(from_address, to_team_name):
     ...     message = getUtility(IMessageSet).fromEmail("""\
     ... From: %s
-    ... To: %s@lists.launchpad.dev
+    ... To: %s@lists.launchpad.test
     ... Subject: Something to think about
     ... Message-ID: %s
     ... Date: %s

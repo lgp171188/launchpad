@@ -45,10 +45,10 @@ The portlet has a form to search FAQs. The view provides the action URL so
 that the form works from any page.
 
     >>> print(view.portlet_action)
-    http://answers.launchpad.dev/firefox/+faqs
+    http://answers.launchpad.test/firefox/+faqs
 
     >>> print(content.form['action'])
-    http://answers.launchpad.dev/firefox/+faqs
+    http://answers.launchpad.test/firefox/+faqs
 
 The portlet provides a link to create a FAQ when the user that has append
 permission, such as the project owner.

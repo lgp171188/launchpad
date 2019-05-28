@@ -69,7 +69,7 @@ class PageMacroDispatcherTestCase(TestPageMacroDispatcherMixin, TestCase):
         self._setUpView()
 
     def test_base_template(self):
-        # Requests on the launchpad.dev vhost use the Launchpad base template.
+        # Requests on the launchpad.test vhost use the Launchpad base template.
         adapter = self.getAdapter([self.view], IPathAdapter, name='macro')
         template_path = os.path.normpath(adapter.base.filename)
         self.assertIn('lp/app/templates', template_path)

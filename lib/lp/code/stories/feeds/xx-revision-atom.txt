@@ -69,7 +69,7 @@ using BeautifulStoneSoup instead of BeautifulSoup or the helper functions.
 The feed for a person's revisions will show the most recent 25 revisions
 that have been committed by that person (or attributed to that person).
 
-    >>> anon_browser.open('http://feeds.launchpad.dev/~mike/revisions.atom')
+    >>> anon_browser.open('http://feeds.launchpad.test/~mike/revisions.atom')
     >>> def validate_browser_feed(browser):
     ...     validate_feed(
     ...         browser.contents, browser.headers['content-type'], browser.url)
@@ -96,12 +96,12 @@ Ensure the self link is correct and there is only one.
     ...     for link in parse_links(browser.contents, rel="self"):
     ...         print(link)
     >>> print_parse_links(anon_browser)
-    <link rel="self" href="http://feeds.launchpad.dev/~mike/revisions.atom" />
+    <link rel="self" href="http://feeds.launchpad.test/~mike/revisions.atom" />
 
 If we look at the feed for a team, we get revisions created by any member
 of that team.
 
-    >>> browser.open('http://feeds.launchpad.dev/~m-team/revisions.atom')
+    >>> browser.open('http://feeds.launchpad.test/~m-team/revisions.atom')
     >>> validate_browser_feed(browser)
     No Errors
     >>> BSS(browser.contents).title.contents
@@ -119,7 +119,7 @@ of that team.
 The feed for a product's revisions will show the most recent 25 revisions
 that have been committed on branches for the product.
 
-    >>> anon_browser.open('http://feeds.launchpad.dev/fooix/revisions.atom')
+    >>> anon_browser.open('http://feeds.launchpad.test/fooix/revisions.atom')
     >>> validate_browser_feed(anon_browser)
     No Errors
     >>> BSS(anon_browser.contents).title.contents
@@ -136,7 +136,7 @@ for the product, which will be different each time the test is run.
 Ensure the self link points to the feed location and there is only one.
 
     >>> print_parse_links(anon_browser)
-    <link rel="self" href="http://feeds.launchpad.dev/fooix/revisions.atom" />
+    <link rel="self" href="http://feeds.launchpad.test/fooix/revisions.atom" />
 
 
 == Feed for a project group's revisions ==
@@ -144,7 +144,7 @@ Ensure the self link points to the feed location and there is only one.
 A feed for a project group will show the most recent 25 revisions across any
 branch for any product that is associated with the project group.
 
-    >>> anon_browser.open('http://feeds.launchpad.dev/fubar/revisions.atom')
+    >>> anon_browser.open('http://feeds.launchpad.test/fubar/revisions.atom')
     >>> validate_browser_feed(anon_browser)
     No Errors
     >>> BSS(anon_browser.contents).title.contents
@@ -163,4 +163,4 @@ of the project group, which will be different each time the test is run.
 Ensure the self link points to the feed location and there is only one.
 
     >>> print_parse_links(anon_browser)
-    <link rel="self" href="http://feeds.launchpad.dev/fubar/revisions.atom" />
+    <link rel="self" href="http://feeds.launchpad.test/fubar/revisions.atom" />

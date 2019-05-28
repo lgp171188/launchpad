@@ -5,22 +5,22 @@ Question' menu item. You need to be logged in to see the edit form, and
 only the question creator or an owner of the question target can change the
 title and description.
 
-    >>> anon_browser.open('http://launchpad.dev/firefox/+question/2')
+    >>> anon_browser.open('http://launchpad.test/firefox/+question/2')
     >>> anon_browser.getLink('Edit question').click()
     Traceback (most recent call last):
     ...
     Unauthorized...
 
     >>> test_browser = setupBrowser(auth='Basic test@canonical.com:test')
-    >>> test_browser.open('http://launchpad.dev/firefox/+question/2')
+    >>> test_browser.open('http://launchpad.test/firefox/+question/2')
     >>> test_browser.getLink('Edit question').click()
     >>> print(test_browser.url)
-    http://answers.launchpad.dev/firefox/+question/2/+edit
+    http://answers.launchpad.test/firefox/+question/2/+edit
 
 There is a cancel link should the user decide otherwise:
 
     >>> print(test_browser.getLink('Cancel').url)
-    http://answers.launchpad.dev/firefox/+question/2
+    http://answers.launchpad.test/firefox/+question/2
 
 When we post the form, we should be redirected back to the question page.
 
@@ -33,7 +33,7 @@ When we post the form, we should be redirected back to the question page.
     >>> test_browser.getControl('Save Changes').click()
 
     >>> print(test_browser.url)
-    http://answers.launchpad.dev/firefox/+question/2
+    http://answers.launchpad.test/firefox/+question/2
 
 And viewing that page should show the updated information.
 
@@ -52,7 +52,7 @@ You can even modify the title and description of 'Answered' and
     ...     print(extract_text(
     ...         find_tag_by_id(browser.contents, 'question-status')))
 
-    >>> test_browser.open('http://launchpad.dev/ubuntu/+question/3')
+    >>> test_browser.open('http://launchpad.test/ubuntu/+question/3')
     >>> print_question_status(test_browser)
     Status: Invalid
 
@@ -66,7 +66,7 @@ Distribution questions can have a source package associated with them.
 Any logged in user can change the question source package on the
 'Edit Question' page.
 
-    >>> user_browser.open('http://launchpad.dev/ubuntu/+question/5')
+    >>> user_browser.open('http://launchpad.test/ubuntu/+question/5')
     >>> user_browser.getLink('Edit question').click()
     >>> user_browser.getControl(
     ...     name='field.target.package').value = 'linux-source-2.6.15'
@@ -74,7 +74,7 @@ Any logged in user can change the question source package on the
 
 Product questions ignore sourcepackage information if it is submitted:
 
-    >>> user_browser.open('http://launchpad.dev/firefox/+question/2')
+    >>> user_browser.open('http://launchpad.test/firefox/+question/2')
     >>> user_browser.getLink('Edit question').click()
     >>> user_browser.getControl(
     ...     name='field.target.package').value = 'linux-source-2.6.15'

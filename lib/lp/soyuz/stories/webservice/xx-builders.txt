@@ -13,8 +13,8 @@ Iterating over the collection is possible:
 
     >>> for builder in builders:
     ...     print(builder)
-    http://api.launchpad.dev/devel/builders/bob
-    http://api.launchpad.dev/devel/builders/frog
+    http://api.launchpad.test/devel/builders/bob
+    http://api.launchpad.test/devel/builders/frog
 
 An individual builder can be retrieved by name by using the getByName()
 operation on "builders":

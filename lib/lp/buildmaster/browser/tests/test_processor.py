@@ -25,5 +25,5 @@ class TestProcessorNavigation(TestCaseWithFactory):
     def test_processor_navigation(self):
         quantum = self.factory.makeProcessor('quantum')
         obj, view, request = test_traverse(
-            'http://api.launchpad.dev/devel/+processors/quantum')
+            'http://api.launchpad.test/devel/+processors/quantum')
         self.assertEqual(quantum, obj)

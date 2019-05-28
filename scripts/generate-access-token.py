@@ -18,7 +18,7 @@ from lp.services.scripts.base import LaunchpadScript
 from lp.services.webapp.interfaces import OAuthPermission
 
 
-LP_API_URL = 'https://api.launchpad.dev/devel'
+LP_API_URL = 'https://api.launchpad.test/devel'
 
 
 def print_local_settings(user, key, token, secret):

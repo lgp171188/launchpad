@@ -38,7 +38,7 @@ be escaped.
 
 For a 3-0 page:
 
-    >>> browser.open('http://launchpad.dev/ubuntu')
+    >>> browser.open('http://launchpad.test/ubuntu')
     >>> print browser.contents
     <...
     <style...url(/@@/demo)...</style>
@@ -60,7 +60,7 @@ When you are not on a demo site, the text no longer appears.
 
 First for a 3-0 page:
 
-    >>> browser.open('http://launchpad.dev/ubuntu')
+    >>> browser.open('http://launchpad.test/ubuntu')
     >>> print extract_text(find_tag_by_id(browser.contents, 'lp-version'))
     &bull; r... devmode (Get the code!)
     >>> len(find_tags_by_class(browser.contents, 'sitemessage'))

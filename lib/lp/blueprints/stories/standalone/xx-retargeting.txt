@@ -4,7 +4,7 @@ different product or distribution.
 
 First, load the svg-support spec on Firefox:
 
-  >>> admin_browser.open("http://launchpad.dev/firefox/+spec/svg-support")
+  >>> admin_browser.open("http://launchpad.test/firefox/+spec/svg-support")
 
 Now, let's make sure we can see the retargeting page for it, as the Foo Bar
 administrator:
@@ -16,16 +16,16 @@ mind.
 
     >>> back_link = admin_browser.getLink('Support Native SVG Objects')
     >>> back_link.url
-    'http://blueprints.launchpad.dev/firefox/+spec/svg-support'
+    'http://blueprints.launchpad.test/firefox/+spec/svg-support'
     >>> admin_browser.getLink('Cancel').url
-    'http://blueprints.launchpad.dev/firefox/+spec/svg-support'
+    'http://blueprints.launchpad.test/firefox/+spec/svg-support'
 
 We can move the blueprint to Evolution.
 
   >>> admin_browser.getControl("For").value = "evolution"
   >>> admin_browser.getControl("Retarget Blueprint").click()
   >>> admin_browser.url
-  'http://blueprints.launchpad.dev/evolution/+spec/svg-support'
+  'http://blueprints.launchpad.test/evolution/+spec/svg-support'
 
 OK. Now, it follows that we should be able to retarget it immediately from
 evolution, to a distribution. Let's try redhat.
@@ -34,7 +34,7 @@ evolution, to a distribution. Let's try redhat.
   >>> admin_browser.getControl("For").value = "redhat"
   >>> admin_browser.getControl("Retarget Blueprint").click()
   >>> admin_browser.url
-  'http://blueprints.launchpad.dev/redhat/+spec/svg-support'
+  'http://blueprints.launchpad.test/redhat/+spec/svg-support'
 
 And similarly, this should now be on Red Hat, and we should be able to send
 it straight back to firefox. This means that the data set should finish this
@@ -44,7 +44,7 @@ test in the same state that it was when we started.
   >>> admin_browser.getControl("For").value = "firefox"
   >>> admin_browser.getControl("Retarget Blueprint").click()
   >>> admin_browser.url
-  'http://blueprints.launchpad.dev/firefox/+spec/svg-support'
+  'http://blueprints.launchpad.test/firefox/+spec/svg-support'
 
 If we try to reassign the spec to a target which doesn't exist, we don't
 blow up:
@@ -56,7 +56,7 @@ blow up:
 We stay on the same page and get an error message printed out:
 
   >>> admin_browser.url
-  'http://blueprints.launchpad.dev/firefox/+spec/svg-support/+retarget'
+  'http://blueprints.launchpad.test/firefox/+spec/svg-support/+retarget'
 
   >>> for tag in find_tags_by_class(admin_browser.contents, 'message'):
   ...     print tag.renderContents()

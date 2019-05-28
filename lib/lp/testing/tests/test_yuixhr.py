@@ -63,7 +63,7 @@ class TestYUITestFixtureController(TestCase):
     def test_traverse_stores_the_path(self):
         login(ANONYMOUS)
         object, view, request = test_traverse(
-            'http://launchpad.dev/+yuitest/'
+            'http://launchpad.test/+yuitest/'
             'lib/lp/testing/tests/test_yuixhr_fixture.js')
         self.assertEqual(
             'lib/lp/testing/tests/test_yuixhr_fixture.js',

@@ -15,7 +15,7 @@
       {
         "id": "https://api.cognitive.microsoft.com/api/v7/#WebPages.0",
         "name": "Bug #2 in Ubuntu Hoary: “Blackhole Trash folder”",
-        "url": "http://bugs.launchpad.dev/ubuntu/hoary/+bug/2",
+        "url": "http://bugs.launchpad.test/ubuntu/hoary/+bug/2",
         "urlPingSuffix": "DevEx,5103.1",
         "isFamilyFriendly": true,
         "displayUrl": "https://help.launchpad.net/Bugs",
@@ -58,7 +58,7 @@
       {
         "id": "https://api.cognitive.microsoft.com/api/v7/#WebPages.1",
         "name": "Bug #2 in mozilla-firefox (Debian): “Blackhole Trash folder”",
-        "url": "http://bugs.launchpad.dev/debian/+source/mozilla-firefox/+bug/2",
+        "url": "http://bugs.launchpad.test/debian/+source/mozilla-firefox/+bug/2",
         "urlPingSuffix": "DevEx,5149.1",
         "isFamilyFriendly": true,
         "displayUrl": "https://blog.launchpad.net/general/of-bugs-and-statuses",
@@ -69,7 +69,7 @@
       {
         "id": "https://api.cognitive.microsoft.com/api/v7/#WebPages.2",
         "name": "Bug #3 in mozilla-firefox (Debian): “Bug Title Test”",
-        "url": "http://bugs.launchpad.dev/debian/+source/mozilla-firefox/+bug/3",
+        "url": "http://bugs.launchpad.test/debian/+source/mozilla-firefox/+bug/3",
         "urlPingSuffix": "DevEx,5178.1",
         "isFamilyFriendly": true,
         "displayUrl": "https://launchpad.net/mahara/+milestone/1.8.0",
@@ -80,7 +80,7 @@
       {
         "id": "https://api.cognitive.microsoft.com/api/v7/#WebPages.3",
         "name": "Bug trackers registered in Launchpad",
-        "url": "http://bugs.launchpad.dev/bugs/bugtrackers",
+        "url": "http://bugs.launchpad.test/bugs/bugtrackers",
         "urlPingSuffix": "DevEx,5193.1",
         "isFamilyFriendly": true,
         "displayUrl": "https://launchpad.net/mb",
@@ -91,7 +91,7 @@
       {
         "id": "https://api.cognitive.microsoft.com/api/v7/#WebPages.4",
         "name": "Bug tracker “Debian Bug tracker”",
-        "url": "http://bugs.launchpad.dev/bugs/bugtrackers/debbugs",
+        "url": "http://bugs.launchpad.test/bugs/bugtrackers/debbugs",
         "urlPingSuffix": "DevEx,5208.1",
         "about": [
           {

@@ -214,7 +214,7 @@ class TestOpenIDCallbackView(TestCaseWithFactory):
     def _createAndRenderView(self, response,
                              view_class=StubbedOpenIDCallbackView, form=None):
         if form is None:
-            form = {'starting_url': 'http://launchpad.dev/after-login'}
+            form = {'starting_url': 'http://launchpad.test/after-login'}
         request = LaunchpadTestRequest(form=form, environ={'PATH_INFO': '/'})
         # The layer we use sets up an interaction (by calling login()), but we
         # want to use our own request in the interaction, so we logout() and
@@ -259,12 +259,12 @@ class TestOpenIDCallbackView(TestCaseWithFactory):
         request = LaunchpadTestRequest(
             SERVER_URL='http://example.com',
             QUERY_STRING='foo=bar',
-            form={'starting_url': 'http://launchpad.dev/after-login'},
+            form={'starting_url': 'http://launchpad.test/after-login'},
             environ={'PATH_INFO': '/'})
         view = OpenIDCallbackView(context=None, request=None)
         params = view._gather_params(request)
         expected_params = {
-            'starting_url': 'http://launchpad.dev/after-login',
+            'starting_url': 'http://launchpad.test/after-login',
             'foo': 'bar',
         }
         self.assertEqual(params, expected_params)
@@ -300,7 +300,7 @@ class TestOpenIDCallbackView(TestCaseWithFactory):
         request = LaunchpadTestRequest(
             SERVER_URL='http://example.com',
             QUERY_STRING='foo=bar',
-            form={'starting_url': 'http://launchpad.dev/after-login'})
+            form={'starting_url': 'http://launchpad.test/after-login'})
         view = OpenIDCallbackView(context=None, request=None)
         url = view._get_requested_url(request)
         self.assertEqual(url, 'http://example.com?foo=bar')
@@ -313,14 +313,14 @@ class TestOpenIDCallbackView(TestCaseWithFactory):
         request = LaunchpadTestRequest(
             SERVER_URL='http://example.com',
             QUERY_STRING='foo=bar',
-            form={'starting_url': 'http://launchpad.dev/after-login'},
+            form={'starting_url': 'http://launchpad.test/after-login'},
             environ={'PATH_INFO': '/'})
         view = FakeConsumerOpenIDCallbackView(object(), request)
         view.initialize()
         self.assertEqual(
             view.fake_consumer.params,
             {
-                'starting_url': 'http://launchpad.dev/after-login',
+                'starting_url': 'http://launchpad.test/after-login',
                 'foo': 'bar',
             })
         self.assertEqual(
@@ -336,7 +336,7 @@ class TestOpenIDCallbackView(TestCaseWithFactory):
         self.assertRaises(
             LookupError, account_set.getByOpenIDIdentifier, identifier)
         openid_response = FakeOpenIDResponse(
-            'http://testopenid.dev/+id/%s' % identifier, status=SUCCESS,
+            'http://testopenid.test/+id/%s' % identifier, status=SUCCESS,
             email='non-existent@example.com', full_name='Foo User')
         with SRegResponse_fromSuccessResponse_stubbed():
             view, html = self._createAndRenderView(openid_response)
@@ -370,7 +370,7 @@ class TestOpenIDCallbackView(TestCaseWithFactory):
         self.assertRaises(
             LookupError, account_set.getByOpenIDIdentifier, identifier)
         openid_response = FakeOpenIDResponse(
-            'http://testopenid.dev/+id/%s' % identifier, status=SUCCESS,
+            'http://testopenid.test/+id/%s' % identifier, status=SUCCESS,
             email=email, full_name='Foo User')
         with SRegResponse_fromSuccessResponse_stubbed():
             view, html = self._createAndRenderView(openid_response)
@@ -405,7 +405,7 @@ class TestOpenIDCallbackView(TestCaseWithFactory):
         openid_identifier = removeSecurityProxy(
             person.account).openid_identifiers.any().identifier
         openid_response = FakeOpenIDResponse(
-            'http://testopenid.dev/+id/%s' % openid_identifier,
+            'http://testopenid.test/+id/%s' % openid_identifier,
             status=SUCCESS, email=email, full_name=person.displayname)
         with SRegResponse_fromSuccessResponse_stubbed():
             view, html = self._createAndRenderView(openid_response)
@@ -435,7 +435,7 @@ class TestOpenIDCallbackView(TestCaseWithFactory):
                 OpenIdIdentifier.account_id).order_by(
                     OpenIdIdentifier.account_id).first()
         openid_response = FakeOpenIDResponse(
-            'http://testopenid.dev/+id/%s' % openid_identifier,
+            'http://testopenid.test/+id/%s' % openid_identifier,
             status=SUCCESS, email=email, full_name=person.displayname)
         with SRegResponse_fromSuccessResponse_stubbed():
             view, html = self._createAndRenderView(openid_response)
@@ -496,7 +496,7 @@ class TestOpenIDCallbackView(TestCaseWithFactory):
             identifier, status=SUCCESS, message='', email=test_email,
             full_name='Foo User', discharge_macaroon_raw='dummy discharge')
         form = {
-            'starting_url': 'http://launchpad.dev/after-login',
+            'starting_url': 'http://launchpad.test/after-login',
             'discharge_macaroon_action': 'field.actions.complete',
             'discharge_macaroon_field': 'field.discharge_macaroon',
             }
@@ -538,7 +538,7 @@ class TestOpenIDCallbackView(TestCaseWithFactory):
             identifier, status=SUCCESS, message='', email=test_email,
             full_name='Foo User')
         form = {
-            'starting_url': 'http://launchpad.dev/after-login',
+            'starting_url': 'http://launchpad.test/after-login',
             'discharge_macaroon_action': 'field.actions.complete',
             'discharge_macaroon_field': 'field.discharge_macaroon',
             }
@@ -742,7 +742,7 @@ class TestMissingServerShowsNiceErrorPage(TestCase):
         self.useFixture(fixture)
         browser = TestBrowser()
         self.assertRaises(urllib2.HTTPError,
-                          browser.open, 'http://launchpad.dev/+login')
+                          browser.open, 'http://launchpad.test/+login')
         self.assertEqual('503 Service Unavailable',
                          browser.headers.get('status'))
         self.assertTrue(
@@ -911,9 +911,9 @@ class TestOpenIDLogin(TestCaseWithFactory):
         view()
         start, stop = get_request_timeline(request).actions[-2:]
         self.assertEqual(start.category, 'openid-association-begin-start')
-        self.assertEqual(start.detail, 'http://testopenid.dev/')
+        self.assertEqual(start.detail, 'http://testopenid.test/')
         self.assertEqual(stop.category, 'openid-association-begin-stop')
-        self.assertEqual(stop.detail, 'http://testopenid.dev/')
+        self.assertEqual(stop.detail, 'http://testopenid.test/')
 
 
 class TestOpenIDRealm(TestCaseWithFactory):

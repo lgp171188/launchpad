@@ -8,7 +8,7 @@ That action is only available to project owners. That's why the link doesn't
 appear for the anonymous user nor No Privileges Person:
 
     >>> from lp.services.helpers import backslashreplace
-    >>> anon_browser.open('http://answers.launchpad.dev/firefox/+faq/7')
+    >>> anon_browser.open('http://answers.launchpad.test/firefox/+faq/7')
     >>> print(backslashreplace(anon_browser.title))
     FAQ #7 : Questions : Mozilla Firefox
 
@@ -17,7 +17,7 @@ appear for the anonymous user nor No Privileges Person:
     ...
     LinkNotFoundError
 
-    >>> user_browser.open('http://answers.launchpad.dev/firefox/+faq/7')
+    >>> user_browser.open('http://answers.launchpad.test/firefox/+faq/7')
     >>> user_browser.getLink('Edit FAQ')
     Traceback (most recent call last):
     ...
@@ -26,12 +26,12 @@ appear for the anonymous user nor No Privileges Person:
 Even trying to access the link directly will fail:
 
     >>> anon_browser.open(
-    ...     'http://answers.launchpad.dev/firefox/+faq/7/+edit')
+    ...     'http://answers.launchpad.test/firefox/+faq/7/+edit')
     Traceback (most recent call last):
     ...
     Unauthorized: ...
     >>> user_browser.open(
-    ...     'http://answers.launchpad.dev/firefox/+faq/7/+edit')
+    ...     'http://answers.launchpad.test/firefox/+faq/7/+edit')
     Traceback (most recent call last):
     ...
     Unauthorized: ...
@@ -40,10 +40,10 @@ The link is accessible to Sample Person who is the owner of the Firefox
 project:
 
     >>> browser.addHeader('Authorization', 'Basic test@canonical.com:test')
-    >>> browser.open('http://answers.launchpad.dev/firefox/+faq/7')
+    >>> browser.open('http://answers.launchpad.test/firefox/+faq/7')
     >>> browser.getLink('Edit FAQ').click()
     >>> print(browser.url)
-    http://answers.launchpad.dev/firefox/+faq/7/+edit
+    http://answers.launchpad.test/firefox/+faq/7/+edit
     >>> print(browser.title)
     Edit FAQ...
 
@@ -68,7 +68,7 @@ click 'Save' to save their changes.
 The user can see their changes on the page:
 
     >>> print(browser.url)
-    http://answers.launchpad.dev/firefox/+faq/7
+    http://answers.launchpad.test/firefox/+faq/7
 
     >>> print(extract_text(find_tag_by_id(browser.contents, 'faq-keywords')))
     Keywords: windows ubuntu plugins extensions

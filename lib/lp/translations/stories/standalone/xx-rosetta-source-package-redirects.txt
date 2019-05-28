@@ -3,7 +3,7 @@ Checks that the '+pots/' page redirects always to the '+translations' one.
   >>> print(http(r"""
   ... GET /ubuntu/hoary/+source/evolution/+pots/ HTTP/1.1
   ... Accept-Language: en-gb,en;q=0.5
-  ... Host: translations.launchpad.dev
+  ... Host: translations.launchpad.test
   ... """))
   HTTP/1.1 303 See Other
   Content-Length: 0
@@ -16,7 +16,7 @@ Checks that the '+pots' page redirects always to the '+translations' one.
   >>> print(http(r"""
   ... GET /ubuntu/hoary/+source/evolution/+pots HTTP/1.1
   ... Accept-Language: en-gb,en;q=0.5
-  ... Host: translations.launchpad.dev
+  ... Host: translations.launchpad.test
   ... """))
   HTTP/1.1 303 See Other
   ...
@@ -33,7 +33,7 @@ removing.
   >>> print(http(r"""
   ... GET /ubuntu/hoary/+sources/evolution/+translate HTTP/1.1
   ... Accept-Language: en-gb,en;q=0.5
-  ... Host: translations.launchpad.dev
+  ... Host: translations.launchpad.test
   ... """))
   HTTP/1.1 301 Moved Permanently
   Content-Length: 0

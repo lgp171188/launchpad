@@ -57,7 +57,7 @@ Requests made with a testbrowser will also be profiled.
 
     >>> from zope.testbrowser.testing import Browser
     >>> browser = Browser()
-    >>> browser.open('http://launchpad.dev/')
+    >>> browser.open('http://launchpad.test/')
     >>> len(PageTestLayer.profiler.getstats()) > profile_count
     True
 

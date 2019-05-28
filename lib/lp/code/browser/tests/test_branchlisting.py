@@ -260,8 +260,8 @@ class TestSimplifiedPersonBranchesView(TestCaseWithFactory):
         self.team = self.factory.makeTeam(owner=self.person)
         self.product = self.factory.makeProduct(name='bambam')
 
-        self.code_base_url = 'http://code.launchpad.dev/~barney'
-        self.base_url = 'http://launchpad.dev/~barney'
+        self.code_base_url = 'http://code.launchpad.test/~barney'
+        self.base_url = 'http://launchpad.test/~barney'
         self.default_target = self.person
 
     def makeABranch(self):
@@ -336,8 +336,8 @@ class TestSimplifiedPersonProductBranchesView(
             self.person, self.product)
         self.team_product = getUtility(IPersonProductFactory).create(
             self.team, self.product)
-        self.code_base_url = 'http://code.launchpad.dev/~barney/bambam'
-        self.base_url = 'http://launchpad.dev/~barney/bambam'
+        self.code_base_url = 'http://code.launchpad.test/~barney/bambam'
+        self.base_url = 'http://launchpad.test/~barney/bambam'
         self.default_target = self.person_product
 
     def makeABranch(self):
@@ -597,7 +597,7 @@ class TestProductSeriesTemplate(TestCaseWithFactory):
         browser = self.getUserBrowser(
             canonical_url(branch.product, rootsite='code'))
         link = browser.getLink(re.compile('^' + series_name + '$'))
-        self.assertEqual('launchpad.dev', URI(link.url).host)
+        self.assertEqual('launchpad.test', URI(link.url).host)
 
 
 class TestPersonBranchesPage(BrowserTestCase):

@@ -300,11 +300,11 @@ librarian file of the attachment.
     [u'patch 1', u'patch 2']
     >>> [attachment['file'].http_url
     ...  for attachment in view.regular_attachments]
-    [u'http://bugs.launchpad.dev/firefox/+bug/5/+attachment/.../+files/a1',
-     u'http://bugs.launchpad.dev/firefox/+bug/5/+attachment/.../+files/a2']
+    [u'http://bugs.launchpad.test/firefox/+bug/5/+attachment/.../+files/a1',
+     u'http://bugs.launchpad.test/firefox/+bug/5/+attachment/.../+files/a2']
     >>> [patch['file'].http_url for patch in view.patches]
-    [u'http://bugs.launchpad.dev/firefox/+bug/5/+attachment/.../+files/p1',
-     u'http://bugs.launchpad.dev/firefox/+bug/5/+attachment/.../+files/p2']
+    [u'http://bugs.launchpad.test/firefox/+bug/5/+attachment/.../+files/p1',
+     u'http://bugs.launchpad.test/firefox/+bug/5/+attachment/.../+files/p2']
 
 
 Bug Navigation

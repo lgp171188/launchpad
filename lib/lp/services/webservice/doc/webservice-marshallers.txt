@@ -49,22 +49,22 @@ returns that item. Otherwise it raises a ValueError.
 
     >>> from lp.registry.interfaces.person import IPerson
     >>> person = marshaller.marshall_from_request(
-    ...     "http://api.launchpad.dev/beta/~salgado")
+    ...     "http://api.launchpad.test/beta/~salgado")
     >>> IPerson.providedBy(person)
     True
     >>> person.name
     u'salgado'
 
     >>> ubuntu_team = marshaller.marshall_from_json_data(
-    ...     "http://api.launchpad.dev/beta/~ubuntu-team")
+    ...     "http://api.launchpad.test/beta/~ubuntu-team")
     >>> ubuntu_team.name
     u'ubuntu-team'
 
     >>> marshaller.marshall_from_request(
-    ...     "http://api.launchpad.dev/beta/~nosuchperson")
+    ...     "http://api.launchpad.test/beta/~nosuchperson")
     Traceback (most recent call last):
     ...
-    ValueError: No such object "http://api.launchpad.dev/beta/~nosuchperson".
+    ValueError: No such object "http://api.launchpad.test/beta/~nosuchperson".
 
     >>> marshaller.marshall_from_json_data("salgado")
     Traceback (most recent call last):

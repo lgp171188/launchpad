@@ -28,7 +28,7 @@ expected_body = u"""\
  * Duration: 5 minutes
  * Build Log: %s
  * Upload Log: 
- * Builder: http://launchpad.dev/builders/bob
+ * Builder: http://launchpad.test/builders/bob
 """
 
 superseded_body = u"""\

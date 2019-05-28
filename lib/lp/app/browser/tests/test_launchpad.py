@@ -56,7 +56,7 @@ from lp.testing.views import create_view
 
 # We set the request header HTTP_REFERER  when we want to simulate navigation
 # from a valid page. This is used in the assertDisplaysNotification check.
-DEFAULT_REFERER = 'http://launchpad.dev'
+DEFAULT_REFERER = 'http://launchpad.test'
 
 
 class TraversalMixin:
@@ -123,7 +123,7 @@ class TraversalMixin:
 
         :param path: A slash-delimited path.
         :param use_default_referer: If True, set the referer attribute in the
-            request header to DEFAULT_REFERER = "http://launchpad.dev"
+            request header to DEFAULT_REFERER = "http://launchpad.test"
             (otherwise it remains as None)
         :return: The object found.
         """
@@ -667,7 +667,7 @@ class TestPersonTraversal(TestCaseWithFactory, TraversalMixin):
         # Just /~/ expands to the current user.  (Bug 785800).
         person = self.factory.makePerson()
         login_person(person)
-        obj, view, req = test_traverse('http://launchpad.dev/~')
+        obj, view, req = test_traverse('http://launchpad.test/~')
         view = removeSecurityProxy(view)
         self.assertEqual(
             canonical_url(person),
@@ -676,13 +676,13 @@ class TestPersonTraversal(TestCaseWithFactory, TraversalMixin):
     def test_self_url_not_logged_in(self):
         # /~/ when not logged in asks you to log in.
         self.assertRaises(Unauthorized,
-            test_traverse, 'http://launchpad.dev/~')
+            test_traverse, 'http://launchpad.test/~')
 
     def test_self_url_pathinfo(self):
         # You can traverse below /~/.
         person = self.factory.makePerson()
         login_person(person)
-        obj, view, req = test_traverse('http://launchpad.dev/~/+editsshkeys')
+        obj, view, req = test_traverse('http://launchpad.test/~/+editsshkeys')
         view = removeSecurityProxy(view)
         self.assertEqual(
             canonical_url(person) + '/+editsshkeys',
@@ -692,7 +692,7 @@ class TestPersonTraversal(TestCaseWithFactory, TraversalMixin):
         # You can traverse below /~/.
         person = self.factory.makePerson()
         login_person(person)
-        obj, view, req = test_traverse('http://bugs.launchpad.dev/~')
+        obj, view, req = test_traverse('http://bugs.launchpad.test/~')
         view = removeSecurityProxy(view)
         self.assertEqual(
             canonical_url(person, rootsite='bugs'),

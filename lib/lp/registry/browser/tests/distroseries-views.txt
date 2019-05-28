@@ -22,7 +22,7 @@ label, page_title, and cancel_url
     Administer The Hoary Hedgehog Release
 
     >>> print view.cancel_url
-    http://launchpad.dev/ubuntu/hoary
+    http://launchpad.test/ubuntu/hoary
 
 We will use a function to print the details related with the
 distroseries being tested.
@@ -167,7 +167,7 @@ uses the display_name, title, and description fields.
     Edit The Hoary Hedgehog Release details
 
     >>> print view.cancel_url
-    http://launchpad.dev/ubuntu/hoary
+    http://launchpad.test/ubuntu/hoary
 
     >>> [field.__name__ for field in view.form_fields]
     ['display_name', 'title', 'summary', 'description']
@@ -215,7 +215,7 @@ A distroseries is created using the distroseries view.
     Add a series
 
     >>> print view.cancel_url
-    http://launchpad.dev/ubuntu
+    http://launchpad.test/ubuntu
     >>> print view.next_url
     None
 

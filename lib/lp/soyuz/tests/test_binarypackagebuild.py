@@ -134,7 +134,7 @@ class TestBinaryPackageBuild(TestCaseWithFactory):
         # is not a PPA or a copy archive.
         self.addFakeBuildLog(self.build)
         self.assertEqual(
-            'http://launchpad.dev/%s/+source/'
+            'http://launchpad.test/%s/+source/'
             '%s/%s/+build/%d/+files/mybuildlog.txt' % (
                 self.build.distribution.name,
                 self.build.source_package_release.sourcepackagename.name,
@@ -148,7 +148,7 @@ class TestBinaryPackageBuild(TestCaseWithFactory):
             archive=self.factory.makeArchive(purpose=ArchivePurpose.PPA))
         self.addFakeBuildLog(build)
         self.assertEqual(
-            'http://launchpad.dev/~%s/+archive/%s/'
+            'http://launchpad.test/~%s/+archive/%s/'
             '%s/+build/%d/+files/mybuildlog.txt' % (
                 build.archive.owner.name, build.archive.distribution.name,
                 build.archive.name, build.id),
@@ -937,7 +937,7 @@ class TestBinaryPackageBuildMacaroonIssuer(
             archive=self.factory.makeArchive(private=True))
         issuer = getUtility(IMacaroonIssuer, "binary-package-build")
         macaroon = removeSecurityProxy(issuer).issueMacaroon(build)
-        self.assertEqual("launchpad.dev", macaroon.location)
+        self.assertEqual("launchpad.test", macaroon.location)
         self.assertEqual("binary-package-build", macaroon.identifier)
         self.assertThat(macaroon.caveats, MatchesListwise([
             MatchesStructure.byEquality(

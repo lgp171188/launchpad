@@ -1425,7 +1425,7 @@ class TestProductFiles(TestCase):
         firefox_owner = setupBrowser(auth='Basic mark@example.com:test')
         filename = u'foo\xa5.txt'.encode('utf-8')
         firefox_owner.open(
-            'http://launchpad.dev/firefox/1.0/1.0.0/+adddownloadfile')
+            'http://launchpad.test/firefox/1.0/1.0.0/+adddownloadfile')
         foo_file = StringIO('Foo installer package...')
         foo_signature = StringIO('Dummy GPG signature for the Foo installer')
         firefox_owner.getControl(name='field.filecontent').add_file(
@@ -1439,7 +1439,7 @@ class TestProductFiles(TestCase):
         self.assertEqual(
             get_feedback_messages(firefox_owner.contents),
             [html_escape(u"Your file 'foo\xa5.txt' has been uploaded.")])
-        firefox_owner.open('http://launchpad.dev/firefox/+download')
+        firefox_owner.open('http://launchpad.test/firefox/+download')
         content = find_main_content(firefox_owner.contents)
         rows = content.findAll('tr')
 
@@ -1448,20 +1448,20 @@ class TestProductFiles(TestCase):
         a_element = a_list[0]
         self.assertEqual(
             a_element['href'],
-            'http://launchpad.dev/firefox/1.0/1.0.0/+download/foo%C2%A5.txt')
+            'http://launchpad.test/firefox/1.0/1.0.0/+download/foo%C2%A5.txt')
         self.assertEqual(a_element.contents[0].strip(), u'foo\xa5.txt')
         # 2nd row
         a_element = a_list[1]
         self.assertEqual(
             a_element['href'],
-            'http://launchpad.dev/firefox/1.0/1.0.0/+download/'
+            'http://launchpad.test/firefox/1.0/1.0.0/+download/'
             'foo%C2%A5.txt/+md5')
         self.assertEqual(a_element.contents[0].strip(), u'md5')
         # 3rd row
         a_element = a_list[2]
         self.assertEqual(
             a_element['href'],
-            'http://launchpad.dev/firefox/1.0/1.0.0/+download/'
+            'http://launchpad.test/firefox/1.0/1.0.0/+download/'
             'foo%C2%A5.txt.asc')
         self.assertEqual(a_element.contents[0].strip(), u'sig')
 

@@ -2,7 +2,7 @@
 
 The question page shows a link to make the question into a bug.
 
-  >>> browser.open('http://launchpad.dev/firefox/+question/2')
+  >>> browser.open('http://launchpad.test/firefox/+question/2')
   >>> createLink = browser.getLink('Create bug report')
   >>> createLink is not None
   True
@@ -60,7 +60,7 @@ questions' portlet:
 A user can't create a bug report when a question has already a bug linked
 to it.
 
-  >>> browser.open('http://launchpad.dev/firefox/+question/2')
+  >>> browser.open('http://launchpad.test/firefox/+question/2')
   >>> browser.contents
   '...<h3>Related bugs</h3>...'
   >>> browser.getLink('Create bug report')
@@ -70,7 +70,7 @@ to it.
 
 It works with distribution questions as well.
 
-  >>> browser.open('http://launchpad.dev/ubuntu/+question/5/+makebug')
+  >>> browser.open('http://launchpad.test/ubuntu/+question/5/+makebug')
   >>> browser.getControl('Summary').value = (
   ...     "Ubuntu Installer can't find CDROM")
   >>> browser.getControl('Create Bug Report').click()

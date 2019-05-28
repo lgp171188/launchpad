@@ -44,7 +44,7 @@ class TestNewCodeImports(TestCaseWithFactory):
         self.assertEqual('~eric/fooix/import', msg['X-Launchpad-Branch'])
         self.assertEqual(
             'A new CVS code import has been requested by Eric:\n'
-            '    http://code.launchpad.dev/~eric/fooix/import\n'
+            '    http://code.launchpad.test/~eric/fooix/import\n'
             'from\n'
             '    :pserver:anonymouse@cvs.example.com:/cvsroot, a_module\n'
             '\n'
@@ -67,7 +67,7 @@ class TestNewCodeImports(TestCaseWithFactory):
         self.assertEqual('~eric/fooix/trunk', msg['X-Launchpad-Branch'])
         self.assertEqual(
             'A new subversion code import has been requested by Eric:\n'
-            '    http://code.launchpad.dev/~eric/fooix/trunk\n'
+            '    http://code.launchpad.test/~eric/fooix/trunk\n'
             'from\n'
             '    svn://svn.example.com/fooix/trunk\n'
             '\n'
@@ -90,7 +90,7 @@ class TestNewCodeImports(TestCaseWithFactory):
         self.assertEqual(
             'A new git code import has been requested '
             'by Eric:\n'
-            '    http://code.launchpad.dev/~eric/fooix/master\n'
+            '    http://code.launchpad.test/~eric/fooix/master\n'
             'from\n'
             '    git://git.example.com/fooix.git\n'
             '\n'
@@ -115,7 +115,7 @@ class TestNewCodeImports(TestCaseWithFactory):
         self.assertEqual(
             'A new git code import has been requested '
             'by Eric:\n'
-            '    http://code.launchpad.dev/~eric/fooix/+git/master\n'
+            '    http://code.launchpad.test/~eric/fooix/+git/master\n'
             'from\n'
             '    git://git.example.com/fooix.git\n'
             '\n'
@@ -143,7 +143,7 @@ class TestNewCodeImports(TestCaseWithFactory):
         self.assertEqual(
             'A new git code import has been requested '
             'by Eric:\n'
-            '    http://code.launchpad.dev/~eric/foobuntu/manic/fooix/master\n'
+            '    http://code.launchpad.test/~eric/foobuntu/manic/fooix/master\n'
             'from\n'
             '    git://git.example.com/fooix.git\n'
             '\n'
@@ -166,7 +166,7 @@ class TestUpdatedCodeImports(TestCaseWithFactory):
             'The import has been marked as failing.\n\n'
             'This code import is from:\n'
             '    %(details)s\n\n'
-            '-- \nhttp://code.launchpad.dev/%(unique_name)s\n'
+            '-- \nhttp://code.launchpad.test/%(unique_name)s\n'
             'You are getting this email because you are a member of the '
             'vcs-imports team.\n' % {
                 'details': details,
@@ -187,7 +187,7 @@ class TestUpdatedCodeImports(TestCaseWithFactory):
             'instead of:\n'
             '    %(old_details)s\n'
             '\n'
-            '-- \nhttp://code.launchpad.dev/%(unique_name)s\n'
+            '-- \nhttp://code.launchpad.test/%(unique_name)s\n'
             'You are getting this email because you are a member of the '
             'vcs-imports team.\n' % {
                 'details_change_message': textwrap.fill(

@@ -453,10 +453,10 @@ class TestBugSecrecyViews(TestCaseWithFactory):
         self.assertFalse(cache_data['other_subscription_notifications'])
         subscription_data = cache_data['subscription']
         self.assertEqual(
-            'http://launchpad.dev/api/devel/bugs/%s' % bug.id,
+            'http://launchpad.test/api/devel/bugs/%s' % bug.id,
             subscription_data['bug_link'])
         self.assertEqual(
-            'http://launchpad.dev/api/devel/~%s' % person.name,
+            'http://launchpad.test/api/devel/~%s' % person.name,
             subscription_data['person_link'])
         self.assertEqual(
             'Discussion', subscription_data['bug_notification_level'])
@@ -630,7 +630,7 @@ class TestBugCanonicalUrl(BrowserTestCase):
         browser = self.getViewBrowser(bug, rootsite="bugs")
         # Hardcode this to be sure we've really got what we expected, with no
         # confusion about lp's own url generation machinery.
-        expected_url = 'http://bugs.launchpad.dev/bugs/%d' % bug.id
+        expected_url = 'http://bugs.launchpad.test/bugs/%d' % bug.id
         self.assertThat(
             browser.contents,
             HTMLContains(Tag(

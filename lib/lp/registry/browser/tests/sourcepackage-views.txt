@@ -23,7 +23,7 @@ Edit packaging view
     Link to an upstream project
 
     >>> print view.view.cancel_url
-    http://launchpad.dev/youbuntu/busy/+source/bonkers
+    http://launchpad.test/youbuntu/busy/+source/bonkers
 
 
 The view allows the logged in user to change product series field. The
@@ -83,7 +83,7 @@ product can be chosen from a list of options.
 
     >>> ignored = view.view.render()
     >>> print view.view.next_url
-    http://launchpad.dev/youbuntu/busy/+source/bonkers
+    http://launchpad.test/youbuntu/busy/+source/bonkers
 
     >>> for notification in view.request.response.notifications:
     ...     print notification.message
@@ -145,7 +145,7 @@ but there is no notification message that the upstream link was updated.
     >>> print view.view
     <...SourcePackageChangeUpstreamStepTwo object...>
     >>> print view.view.next_url
-    http://launchpad.dev/youbuntu/busy/+source/bonkers
+    http://launchpad.test/youbuntu/busy/+source/bonkers
     >>> view.view.errors
     []
 
@@ -252,7 +252,7 @@ to the +edit-packaging page where the user can search for a project.
     >>> view.errors
     []
     >>> print view.next_url
-    http://launchpad.dev/youbuntu/busy/+source/lernid/+edit-packaging
+    http://launchpad.test/youbuntu/busy/+source/lernid/+edit-packaging
 
 
 Upstream connections view
@@ -351,7 +351,7 @@ to the project series.
     Unlink an upstream project
 
     >>> print view.cancel_url
-    http://launchpad.dev/youbuntu/wonky/+source/stinkypackage
+    http://launchpad.test/youbuntu/wonky/+source/stinkypackage
 
     >>> user = package.packaging.owner
     >>> ignored = login_person(user)

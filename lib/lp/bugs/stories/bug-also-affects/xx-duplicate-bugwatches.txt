@@ -8,7 +8,7 @@ with adding a Debian bug watch to bug #8.
 
     >>> debian_bug = 'http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=42'
     >>> user_browser.open(
-    ...     'http://launchpad.dev/debian/+source/mozilla-firefox/'
+    ...     'http://launchpad.test/debian/+source/mozilla-firefox/'
     ...     '+bug/8/')
     >>> user_browser.getLink(url='+distrotask').click()
     >>> user_browser.getControl('Distribution').value = ['debian']
@@ -54,7 +54,7 @@ Both the thunderbird and gnome-terminal Debian tasks are pointing to the
 same bug watch.
 
     >>> user_browser.open(
-    ...     'http://launchpad.dev/debian/+source/mozilla-firefox/'
+    ...     'http://launchpad.test/debian/+source/mozilla-firefox/'
     ...     '+bug/8/')
 
     >>> from lp.bugs.tests.bug import print_bug_affects_table
@@ -70,7 +70,7 @@ If a bug watch which is already added to another bug is added, a
 notification is added linking to the bug. This is useful for detecting
 duplicates.
 
-    >>> user_browser.open('http://launchpad.dev/bugs/5')
+    >>> user_browser.open('http://launchpad.test/bugs/5')
     >>> user_browser.getLink(url='+distrotask').click()
     >>> user_browser.getControl('Distribution').value = ['debian']
     >>> user_browser.getControl('Source Package Name').value = (

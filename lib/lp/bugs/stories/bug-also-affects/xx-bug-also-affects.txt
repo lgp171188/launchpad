@@ -5,14 +5,14 @@ distribution.
     >>> browser.open("http://localhost/firefox/+bug/6")
     >>> browser.getLink(url='+distrotask').click()
     >>> browser.url
-    'http://bugs.launchpad.dev/firefox/+bug/6/+distrotask'
+    'http://bugs.launchpad.test/firefox/+bug/6/+distrotask'
 
 On this page we can add distribution task. Just in case we change our
 mind, there is a cancel link that points back to the bug page:
 
     >>> cancel_link = browser.getLink('Cancel')
     >>> cancel_link.url
-    'http://bugs.launchpad.dev/firefox/+bug/6'
+    'http://bugs.launchpad.test/firefox/+bug/6'
 
 We start by adding an Ubuntu task. Since Ubuntu uses Launchpad as its
 bug tracker, the task gets added and we return to the newly created
@@ -21,18 +21,18 @@ task's page.
     >>> browser.getControl('Distribution').value = ['ubuntu']
     >>> browser.getControl('Continue').click()
     >>> browser.url
-    'http://bugs.launchpad.dev/ubuntu/+bug/6'
+    'http://bugs.launchpad.test/ubuntu/+bug/6'
 
 It should not be possible to add the same distrotask again.
 
     >>> browser.getLink(url='+distrotask').click()
     >>> browser.url
-    'http://bugs.launchpad.dev/ubuntu/+bug/6/+distrotask'
+    'http://bugs.launchpad.test/ubuntu/+bug/6/+distrotask'
 
     >>> browser.getControl('Distribution').value = ['ubuntu']
     >>> browser.getControl('Continue').click()
     >>> browser.url
-    'http://bugs.launchpad.dev/ubuntu/+bug/6/+distrotask'
+    'http://bugs.launchpad.test/ubuntu/+bug/6/+distrotask'
 
     >>> print_feedback_messages(browser.contents)
     There is 1 error.
@@ -88,7 +88,7 @@ Launchpad, we add a bug watch as well.
     >>> browser.open('http://localhost/firefox/+bug/1')
     >>> browser.getLink(url='+distrotask').click()
     >>> print(browser.url)
-    http://bugs.launchpad.dev/firefox/+bug/1/+distrotask
+    http://bugs.launchpad.test/firefox/+bug/1/+distrotask
 
     >>> browser.getControl(name='field.distribution').value = ['debian']
     >>> browser.getControl("Source Package Name").value = "alsa-utils"
@@ -96,7 +96,7 @@ Launchpad, we add a bug watch as well.
     ...     'http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=123')
     >>> browser.getControl('Continue').click()
     >>> print(browser.url)
-    http://bugs.launchpad.dev/debian/+source/alsa-utils/+bug/1
+    http://bugs.launchpad.test/debian/+source/alsa-utils/+bug/1
 
 If we try to add an Ubuntu task together with a bug watch we get an
 error, because Ubuntu uses Launchpad as its bug tracker
@@ -108,7 +108,7 @@ error, because Ubuntu uses Launchpad as its bug tracker
     ...     'https://bugzilla.mozilla.org/show_bug.cgi?id=84')
     >>> browser.getControl('Continue').click()
     >>> print(browser.url)
-    http://bugs.launchpad.dev/debian/+source/alsa-utils/+bug/1/+distrotask
+    http://bugs.launchpad.test/debian/+source/alsa-utils/+bug/1/+distrotask
 
     >>> print_feedback_messages(browser.contents)
     There is 1 error.
@@ -122,7 +122,7 @@ If we remove the remote bug it will work.
     >>> browser.getControl('URL').value = ''
     >>> browser.getControl('Continue').click()
     >>> print(browser.url)
-    http://bugs.launchpad.dev/ubuntu/+source/alsa-utils/+bug/1
+    http://bugs.launchpad.test/ubuntu/+source/alsa-utils/+bug/1
 
 It's not possible to change a bugtask to a existing one.
 
@@ -145,7 +145,7 @@ It's not possible to change a bugtask to a existing one.
     ...     ).value = 'pmount'
     >>> browser.getControl('Save Changes').click()
     >>> print(browser.url)
-    http://bugs.launchpad.dev/ubuntu/+source/pmount/+bug/1
+    http://bugs.launchpad.test/ubuntu/+source/pmount/+bug/1
 
 We want to make people aware of that they should link bugtasks to bug
 watches in order to get automatic status updates. So if we try to add a
@@ -166,7 +166,7 @@ we really want to do this.
     >>> browser.getControl('Source Package Name').value = 'pmount'
     >>> browser.getControl('Continue').click()
     >>> print(browser.url)
-    http://bugs.launchpad.dev/ubuntu/+source/pmount/+bug/1/+distrotask
+    http://bugs.launchpad.test/ubuntu/+source/pmount/+bug/1/+distrotask
 
     >>> print_feedback_messages(browser.contents)
     Debian doesn't use Launchpad as its bug tracker. ...
@@ -182,7 +182,7 @@ notification will still be displayed.
 
     >>> browser.getControl('Continue').click()
     >>> print(browser.url)
-    http://bugs.launchpad.dev/ubuntu/+source/pmount/+bug/1/+distrotask
+    http://bugs.launchpad.test/ubuntu/+source/pmount/+bug/1/+distrotask
 
     >>> print_feedback_messages(browser.contents)
     Debian doesn't use Launchpad as its bug tracker. ...
@@ -192,7 +192,7 @@ redirected to the bug page.
 
     >>> browser.getControl('Add Anyway').click()
     >>> print(browser.url)
-    http://bugs.launchpad.dev/debian/+source/pmount/+bug/1
+    http://bugs.launchpad.test/debian/+source/pmount/+bug/1
 
     >>> print(browser.contents)
     <...
@@ -231,7 +231,7 @@ We cannot allow proprietary bugs to affect more than one pillar.
     >>> browser.getControl(name='field.product').value = other_product_name
     >>> browser.getControl('Continue').click()
     >>> print(browser.url)
-    http://bugs.launchpad.dev/proprietary-product/+bug/.../+choose-affected-product
+    http://bugs.launchpad.test/proprietary-product/+bug/.../+choose-affected-product
 
     >>> print_feedback_messages(browser.contents)
     There is 1 error.
@@ -252,7 +252,7 @@ Ubuntu will cause the product-selection step to be skipped because the
 package is linked to the evolution upstream product.
 
     >>> user_browser.open(
-    ...     'http://launchpad.dev/ubuntu/+source/evolution/+bug/6')
+    ...     'http://launchpad.test/ubuntu/+source/evolution/+bug/6')
     >>> user_browser.getLink(url='+choose-affected-product').click()
     >>> user_browser.getControl('Project').value
     Traceback (most recent call last):
@@ -267,7 +267,7 @@ product, though.
 
     >>> user_browser.getLink('Choose another project').click()
     >>> print(user_browser.url)
-    http://bugs.launchpad.dev/ubuntu/+source/evolution/+bug/6/+choose-affected-product?field.product=evolution
+    http://bugs.launchpad.test/ubuntu/+source/evolution/+bug/6/+choose-affected-product?field.product=evolution
 
     >>> user_browser.getControl('Project').value
     'evolution'
@@ -277,7 +277,7 @@ to the bug page:
 
     >>> cancel_link = user_browser.getLink('Cancel')
     >>> print(cancel_link.url)
-    http://bugs.launchpad.dev/ubuntu/+source/evolution/+bug/6
+    http://bugs.launchpad.test/ubuntu/+source/evolution/+bug/6
 
 But we'll choose Thunderbird.
 
@@ -312,12 +312,12 @@ with, but we can't reference it.
 
     >>> user_browser.getControl('Add to Bug Report').click()
     >>> print(user_browser.url)
-    http://bugs.launchpad.dev/thunderbird/+bug/6
+    http://bugs.launchpad.test/thunderbird/+bug/6
 
 Let's add the evolution task as well.
 
     >>> user_browser.open(
-    ...     'http://launchpad.dev/ubuntu/+source/evolution/+bug/6')
+    ...     'http://launchpad.test/ubuntu/+source/evolution/+bug/6')
     >>> user_browser.getLink(url='+choose-affected-product').click()
     >>> print(user_browser.url)
     http://.../ubuntu/+source/evolution/+bug/6/+choose-affected-product
@@ -325,7 +325,7 @@ Let's add the evolution task as well.
     >>> user_browser.getControl('Add to Bug Report').click()
 
     >>> print(user_browser.url)
-    http://bugs.launchpad.dev/evolution/+bug/6
+    http://bugs.launchpad.test/evolution/+bug/6
 
 
 Error messages
@@ -334,7 +334,7 @@ Error messages
 If we try to add an upstream task without specifying a product:
 
     >>> user_browser.open(
-    ...     'http://launchpad.dev/debian/+source/mozilla-firefox/+bug/3')
+    ...     'http://launchpad.test/debian/+source/mozilla-firefox/+bug/3')
     >>> user_browser.getLink(url='+choose-affected-product').click()
     >>> print(user_browser.url)
     http://.../debian/+source/mozilla-firefox/+bug/3/+choose-affected-product
@@ -366,13 +366,13 @@ this and ask them to search for the product.
 
     >>> search_link = user_browser.getLink('search for it')
     >>> print(search_link.url)
-    http://bugs.launchpad.dev/projects
+    http://bugs.launchpad.test/projects
 
 Since we don't restrict the input, the user can write anything, so we
 need to make sure that everything is quoted before displaying the input.
 
     >>> user_browser.open(
-    ...     'http://launchpad.dev/debian/+source/mozilla-firefox/+bug/3'
+    ...     'http://launchpad.test/debian/+source/mozilla-firefox/+bug/3'
     ...     '/+choose-affected-product')
 
     >>> user_browser.getControl('Project').value = b'N\xc3\xb6 Such Product&<>'
@@ -393,7 +393,7 @@ specify a bug watch. If we inadvertently left some leading or trailing
 white space in the bug URL it will be stripped.
 
     >>> user_browser.open(
-    ...     'http://launchpad.dev/debian/+source/mozilla-firefox/'
+    ...     'http://launchpad.test/debian/+source/mozilla-firefox/'
     ...     '+bug/3/+choose-affected-product')
     >>> user_browser.getControl('Project').value = 'alsa-utils'
     >>> user_browser.getControl('Continue').click()
@@ -407,7 +407,7 @@ Launchpad redirects to the newly created bugtask page, with a row for
 the new bug watch.
 
     >>> print(user_browser.url)
-    http://bugs.launchpad.dev/alsa-utils/+bug/3
+    http://bugs.launchpad.test/alsa-utils/+bug/3
 
     >>> affects_table = find_tags_by_class(
     ...     user_browser.contents, 'listing')[0]
@@ -428,12 +428,12 @@ And now we try to add the same upstream again.
 
     >>> user_browser.getLink(url='+choose-affected-product').click()
     >>> print(user_browser.url)
-    http://bugs.launchpad.dev/alsa-utils/+bug/3/+choose-affected-product
+    http://bugs.launchpad.test/alsa-utils/+bug/3/+choose-affected-product
 
     >>> user_browser.getControl('Project').value = 'alsa-utils'
     >>> user_browser.getControl('Continue').click()
     >>> print(user_browser.url)
-    http://bugs.launchpad.dev/alsa-utils/+bug/3/+choose-affected-product
+    http://bugs.launchpad.test/alsa-utils/+bug/3/+choose-affected-product
 
 We get a nice error message.
 
@@ -447,20 +447,20 @@ We can add another upstream to the bug.
     >>> user_browser.getControl('Continue').click()
     >>> user_browser.getControl('Add to Bug Report').click()
     >>> print(user_browser.url)
-    http://bugs.launchpad.dev/evolution/+bug/3
+    http://bugs.launchpad.test/evolution/+bug/3
 
 But if we try to change it to the target of an existing upstream
 bugtask, our validator springs into action.
 
     >>> user_browser.getLink(url='evolution/+bug/3/+editstatus').click()
     >>> print(user_browser.url)
-    http://bugs.launchpad.dev/evolution/+bug/3/+editstatus
+    http://bugs.launchpad.test/evolution/+bug/3/+editstatus
 
     >>> user_browser.getControl(name='evolution.target.product').value = (
     ...     'alsa-utils')
     >>> user_browser.getControl('Save Changes').click()
     >>> print(user_browser.url)
-    http://bugs.launchpad.dev/evolution/+bug/3/+editstatus
+    http://bugs.launchpad.test/evolution/+bug/3/+editstatus
 
     >>> print_feedback_messages(user_browser.contents)
     There is 1 error in the data you entered...
@@ -478,12 +478,12 @@ When adding a bug watch together with a new bugtask, you have to enter
 the URL of the remote bug.
 
     >>> user_browser.open(
-    ...     'http://bugs.launchpad.dev/firefox/+bug/4/'
+    ...     'http://bugs.launchpad.test/firefox/+bug/4/'
     ...     '+choose-affected-product')
     >>> user_browser.getControl('Project').value = 'gnome-terminal'
     >>> user_browser.getControl('Continue').click()
     >>> print(user_browser.url)
-    http://bugs.launchpad.dev/firefox/+bug/4/+choose-affected-product
+    http://bugs.launchpad.test/firefox/+bug/4/+choose-affected-product
 
     >>> user_browser.getControl('I have the URL').selected = True
     >>> user_browser.getControl(name='field.bug_url').value = (
@@ -494,13 +494,13 @@ that points back to the bug page:
 
     >>> cancel_link = user_browser.getLink('Cancel')
     >>> print(cancel_link.url)
-    http://bugs.launchpad.dev/firefox/+bug/4
+    http://bugs.launchpad.test/firefox/+bug/4
 
 But we're happy, so we add the bug watch.
 
     >>> user_browser.getControl('Add to Bug Report').click()
     >>> print(user_browser.url)
-    http://bugs.launchpad.dev/gnome-terminal/+bug/4
+    http://bugs.launchpad.test/gnome-terminal/+bug/4
 
     >>> bug_watches = find_portlet(
     ...     user_browser.contents, 'Remote bug watches')
@@ -512,19 +512,19 @@ It's possible to supply an HTTPS URL, even though the bug tracker's base
 URL is HTTP.
 
     >>> user_browser.open(
-    ...     'http://bugs.launchpad.dev/firefox/+bug/4/'
+    ...     'http://bugs.launchpad.test/firefox/+bug/4/'
     ...     '+choose-affected-product')
     >>> user_browser.getControl('Project').value = 'netapplet'
     >>> user_browser.getControl('Continue').click()
     >>> print(user_browser.url)
-    http://bugs.launchpad.dev/firefox/+bug/4/+choose-affected-product
+    http://bugs.launchpad.test/firefox/+bug/4/+choose-affected-product
 
     >>> user_browser.getControl('I have the URL').selected = True
     >>> user_browser.getControl(name='field.bug_url').value = (
     ...     u'https://bugzilla.gnome.org/bugs/show_bug.cgi?id=84')
     >>> user_browser.getControl('Add to Bug Report').click()
     >>> print(user_browser.url)
-    http://bugs.launchpad.dev/netapplet/+bug/4
+    http://bugs.launchpad.test/netapplet/+bug/4
 
 The URL was automatically converted to HTTP:
 
@@ -539,19 +539,19 @@ If the URL can't be recognised (i.e., we don't even know what bug
 tracker type it is), an error message is displayed.
 
     >>> user_browser.open(
-    ...     'http://bugs.launchpad.dev/firefox/+bug/4/'
+    ...     'http://bugs.launchpad.test/firefox/+bug/4/'
     ...     '+choose-affected-product')
     >>> user_browser.getControl('Project').value = 'alsa-utils'
     >>> user_browser.getControl('Continue').click()
     >>> print(user_browser.url)
-    http://bugs.launchpad.dev/firefox/+bug/4/+choose-affected-product
+    http://bugs.launchpad.test/firefox/+bug/4/+choose-affected-product
 
     >>> user_browser.getControl('I have the URL').selected = True
     >>> user_browser.getControl(name='field.bug_url').value = (
     ...     u'http://bugs.unknown/42')
     >>> user_browser.getControl('Add to Bug Report').click()
     >>> print(user_browser.url)
-    http://bugs.launchpad.dev/firefox/+bug/4/+choose-affected-product
+    http://bugs.launchpad.test/firefox/+bug/4/+choose-affected-product
 
     >>> for message in find_tags_by_class(user_browser.contents, 'message'):
     ...     print(message.renderContents())
@@ -566,7 +566,7 @@ registered in Launchpad, the user will be prompted to register it first.
     ...     u"http://new.trac/ticket/42")
     >>> user_browser.getControl('Add to Bug Report').click()
     >>> print(user_browser.url)
-    http://bugs.launchpad.dev/firefox/+bug/4/+choose-affected-product
+    http://bugs.launchpad.test/firefox/+bug/4/+choose-affected-product
 
     >>> print_feedback_messages(user_browser.contents)
     ...
@@ -577,7 +577,7 @@ As before, if we change our mind, we can back out if we want.
 
     >>> cancel_link = user_browser.getLink('Cancel')
     >>> print(cancel_link.url)
-    http://bugs.launchpad.dev/firefox/+bug/4
+    http://bugs.launchpad.test/firefox/+bug/4
 
 Now the user confirms they want us to register the bug tracker for them
 and we do that before creating the new bug watch.
@@ -587,7 +587,7 @@ and we do that before creating the new bug watch.
 The bug watch is linked, and we're redirected to the bug's page.
 
     >>> print(user_browser.url)
-    http://bugs.launchpad.dev/alsa-utils/+bug/4
+    http://bugs.launchpad.test/alsa-utils/+bug/4
 
 The bug tracker and bug watch were added. We can see that the bugtracker
 has a special name, starting with 'auto-', to indicate that it was
@@ -605,19 +605,19 @@ If the user does not specify the base url's schema at all, we complete
 it to HTTP on their behalf:
 
     >>> user_browser.open(
-    ...     'http://bugs.launchpad.dev/firefox/+bug/4/'
+    ...     'http://bugs.launchpad.test/firefox/+bug/4/'
     ...     '+choose-affected-product')
     >>> user_browser.getControl('Project').value = 'thunderbird'
     >>> user_browser.getControl('Continue').click()
     >>> print(user_browser.url)
-    http://bugs.launchpad.dev/firefox/+bug/4/+choose-affected-product
+    http://bugs.launchpad.test/firefox/+bug/4/+choose-affected-product
 
     >>> user_browser.getControl('I have the URL').selected = True
     >>> user_browser.getControl(name='field.bug_url').value = (
     ...     u'bugzilla.gnome.org/bugs/show_bug.cgi?id=168')
     >>> user_browser.getControl('Add to Bug Report').click()
     >>> print(user_browser.url)
-    http://bugs.launchpad.dev/thunderbird/+bug/4
+    http://bugs.launchpad.test/thunderbird/+bug/4
 
     >>> bug_watches = find_portlet(
     ...     user_browser.contents, 'Remote bug watches')
@@ -635,7 +635,7 @@ Email Addresses
 Similar things happen when the upstream link is an email address:
 
     >>> user_browser.open(
-    ...     'http://bugs.launchpad.dev/jokosher/+bug/12/'
+    ...     'http://bugs.launchpad.test/jokosher/+bug/12/'
     ...     '+choose-affected-product')
     >>> user_browser.getControl('Project').value = 'gnome-terminal'
     >>> user_browser.getControl('Continue').click()
@@ -660,7 +660,7 @@ confirmation.
 
     >>> user_browser.getControl('Add to Bug Report').click()
     >>> print(user_browser.url)
-    http://bugs.launchpad.dev/gnome-terminal/+bug/12
+    http://bugs.launchpad.test/gnome-terminal/+bug/12
 
     >>> def print_remote_bug_watches_portlet(browser):
     ...     bug_watches = find_portlet(

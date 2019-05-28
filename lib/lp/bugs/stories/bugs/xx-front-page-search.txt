@@ -3,7 +3,7 @@
 It's possible to search bug reports across all of Launchpad from the
 Bugs front page.
 
-    >>> anon_browser.open('http://bugs.launchpad.dev/')
+    >>> anon_browser.open('http://bugs.launchpad.test/')
     >>> anon_browser.getControl('Search Bug Reports') is not None
     True
 
@@ -21,7 +21,7 @@ Launchpad will be searched, and the bug target will be visible in the
 bug listing.
 
     >>> from lp.bugs.tests.bug import print_bugtasks
-    >>> anon_browser.open('http://bugs.launchpad.dev/')
+    >>> anon_browser.open('http://bugs.launchpad.test/')
     >>> anon_browser.getControl('All projects').selected = True
     >>> anon_browser.getControl(name='field.searchtext').value = 'test bug'
     >>> anon_browser.getControl('Search Bug Reports').click()
@@ -42,7 +42,7 @@ bug listing.
 Even if a product is specified in the bug target widget, all bug reports
 will be searched.
 
-    >>> anon_browser.open('http://bugs.launchpad.dev/')
+    >>> anon_browser.open('http://bugs.launchpad.test/')
     >>> anon_browser.getControl('All projects').selected = True
     >>> anon_browser.getControl(name='field.searchtext').value = 'test bug'
     >>> anon_browser.getControl(name='field.scope.target').value = 'evolution'
@@ -53,7 +53,7 @@ will be searched.
 The same is of course true if the target widget contains a non-existant
 project name.
 
-    >>> anon_browser.open('http://bugs.launchpad.dev/')
+    >>> anon_browser.open('http://bugs.launchpad.test/')
     >>> anon_browser.getControl('All projects').selected = True
     >>> anon_browser.getControl(name='field.searchtext').value = 'test bug'
     >>> anon_browser.getControl(name='field.scope.target').value = 'invalid'
@@ -75,13 +75,13 @@ If the user chooses to search only one project, they will be forwarded to
 the project's bug listing, and the search will be performed there. If no
 name is specified, an error message will be displayed.
 
-    >>> anon_browser.open('http://bugs.launchpad.dev/')
+    >>> anon_browser.open('http://bugs.launchpad.test/')
     >>> anon_browser.getControl('One project').selected = True
     >>> anon_browser.getControl(name='field.scope.target').value = ''
     >>> anon_browser.getControl(name='field.searchtext').value = 'test bug'
     >>> anon_browser.getControl('Search Bug Reports').click()
     >>> anon_browser.url
-    'http://bugs.launchpad.dev/bugs?...'
+    'http://bugs.launchpad.test/bugs?...'
     >>> anon_browser.getControl(name='field.searchtext').value
     'test bug'
 
@@ -92,13 +92,13 @@ name is specified, an error message will be displayed.
 An error message will be displayed also if the project isn't registered
 in the Launchpad.
 
-    >>> anon_browser.open('http://bugs.launchpad.dev/')
+    >>> anon_browser.open('http://bugs.launchpad.test/')
     >>> anon_browser.getControl('One project').selected = True
     >>> anon_browser.getControl(name='field.scope.target').value = 'invalid'
     >>> anon_browser.getControl(name='field.searchtext').value = 'test bug'
     >>> anon_browser.getControl('Search Bug Reports').click()
     >>> anon_browser.url
-    'http://bugs.launchpad.dev/bugs?...&field.scope.target=invalid...'
+    'http://bugs.launchpad.test/bugs?...&field.scope.target=invalid...'
     >>> anon_browser.getControl(name='field.searchtext').value
     'test bug'
     >>> for message in find_tags_by_class(anon_browser.contents, 'message'):
@@ -111,14 +111,14 @@ support javascript, so a 'Find' link pointing to /bugs is displayed.
 
     >>> find_link = anon_browser.getLink('Find')
     >>> find_link.url
-    'http://bugs.launchpad.dev/bugs...'
+    'http://bugs.launchpad.test/bugs...'
 
 'Project' in this context means either a product, distribution or a
 project group.
 
 === Searching a product ===
 
-    >>> anon_browser.open('http://bugs.launchpad.dev/')
+    >>> anon_browser.open('http://bugs.launchpad.test/')
     >>> anon_browser.getControl('One project').selected = True
     >>> anon_browser.getControl(name='field.scope.target').value = 'evolution'
     >>> anon_browser.getControl(name='field.searchtext').value = 'test bug'
@@ -126,14 +126,14 @@ project group.
     >>> print(anon_browser.title)
     Bugs : Evolution...
     >>> anon_browser.url
-    'http://bugs.launchpad.dev/evolution/+bugs?field.searchtext=test+bug...'
+    'http://bugs.launchpad.test/evolution/+bugs?field.searchtext=test+bug...'
     >>> print_bugtasks(anon_browser.contents)
     7 A test bug Evolution
       Medium New
 
 === Searching a project ===
 
-    >>> anon_browser.open('http://bugs.launchpad.dev/')
+    >>> anon_browser.open('http://bugs.launchpad.test/')
     >>> anon_browser.getControl('One project').selected = True
     >>> anon_browser.getControl(name='field.scope.target').value = 'gnome'
     >>> anon_browser.getControl(name='field.searchtext').value = 'test bug'
@@ -141,14 +141,14 @@ project group.
     >>> print(anon_browser.title)
     Bugs : GNOME
     >>> anon_browser.url
-    'http://bugs.launchpad.dev/gnome/+bugs?field.searchtext=test+bug...'
+    'http://bugs.launchpad.test/gnome/+bugs?field.searchtext=test+bug...'
     >>> print_bugtasks(anon_browser.contents)
     7 A test bug
       Evolution Medium New
 
 === Searching a distribution ===
 
-    >>> anon_browser.open('http://bugs.launchpad.dev/')
+    >>> anon_browser.open('http://bugs.launchpad.test/')
     >>> anon_browser.getControl('One project').selected = True
     >>> anon_browser.getControl(name='field.scope.target').value = 'ubuntu'
     >>> anon_browser.getControl(name='field.searchtext').value = 'test bug'
@@ -156,7 +156,7 @@ project group.
     >>> print(anon_browser.title)
     Bugs : Ubuntu...
     >>> anon_browser.url
-    'http://bugs.launchpad.dev/ubuntu/+bugs?field.searchtext=test+bug...'
+    'http://bugs.launchpad.test/ubuntu/+bugs?field.searchtext=test+bug...'
     >>> print_bugtasks(anon_browser.contents)
     10 another test bug
        linux-source-2.6.15 (Ubuntu)  Medium  New
@@ -166,7 +166,7 @@ project group.
 Like with all other bug searches, it's possible to jump a bug by
 specifying only the bug id as the search term.
 
-    >>> anon_browser.open('http://bugs.launchpad.dev/')
+    >>> anon_browser.open('http://bugs.launchpad.test/')
     >>> anon_browser.getControl(name='field.searchtext').value = '7'
     >>> anon_browser.getControl('Search Bug Reports').click()
     >>> anon_browser.url

@@ -50,10 +50,10 @@ class GetCookieDomainTestCase(TestCase):
         self.assertEqual(get_cookie_domain('bugs.staging.launchpad.net'),
                          '.staging.launchpad.net')
 
-        self.assertEqual(get_cookie_domain('launchpad.dev'),
-                         '.launchpad.dev')
-        self.assertEqual(get_cookie_domain('bugs.launchpad.dev'),
-                         '.launchpad.dev')
+        self.assertEqual(get_cookie_domain('launchpad.test'),
+                         '.launchpad.test')
+        self.assertEqual(get_cookie_domain('bugs.launchpad.test'),
+                         '.launchpad.test')
 
 
 class TestLaunchpadCookieClientIdManager(TestCase):

@@ -18,7 +18,7 @@ Announcement breadcrumbs use the announcement title.
     >>> view = create_initialized_view(announcement, '+index')
 
     >>> request = make_fake_request(
-    ...     'http://launchpad.dev/joy-of-cooking/spam',
+    ...     'http://launchpad.test/joy-of-cooking/spam',
     ...     [product, announcement, view])
     >>> hierarchy = create_initialized_view(
     ...     announcement, '+hierarchy', request=request)
@@ -49,7 +49,7 @@ announcements. The product implements IHasAnnouncements.
 Batching
 --------
 
-Announcements are presented in batches.  For launchpad.dev the batch size is
+Announcements are presented in batches.  For launchpad.test the batch size is
 smaller than in production to ease testing.
 
     >>> from lp.registry.interfaces.announcement import IAnnouncementSet

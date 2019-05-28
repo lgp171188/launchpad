@@ -94,7 +94,7 @@ class TestCanonicalUrlForRecipe(TestCaseWithFactory):
         recipe = self.factory.makeSourcePackageRecipe(
             owner=owner, name='recipe-name')
         self.assertEqual(
-            'http://code.launchpad.dev/~recipe-owner/+recipe/recipe-name',
+            'http://code.launchpad.test/~recipe-owner/+recipe/recipe-name',
             canonical_url(recipe))
 
 
@@ -1923,7 +1923,7 @@ class TestSourcePackageRecipeDeleteViewMixin:
         browser.getControl('Delete recipe').click()
 
         self.assertEqual(
-            'http://code.launchpad.dev/~chef',
+            'http://code.launchpad.test/~chef',
             browser.url)
 
     def test_delete_recipe_registry_expert(self):
@@ -1938,7 +1938,7 @@ class TestSourcePackageRecipeDeleteViewMixin:
         browser.getControl('Delete recipe').click()
 
         self.assertEqual(
-            'http://code.launchpad.dev/~chef',
+            'http://code.launchpad.test/~chef',
             browser.url)
 
     def test_delete_recipe_no_permissions(self):

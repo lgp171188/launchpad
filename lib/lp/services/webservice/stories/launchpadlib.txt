@@ -58,7 +58,7 @@ scheme which does not work in the test environment.
 
     >>> from launchpadlib.launchpad import Launchpad
     >>> launchpad = Launchpad(
-    ...     credentials, None, None, 'http://api.launchpad.dev/')
+    ...     credentials, None, None, 'http://api.launchpad.test/')
     >>> print launchpad.me.name
     no-priv
 
@@ -66,7 +66,7 @@ Anonymous access
 ================
 
     >>> lp_anon = Launchpad.login_anonymously('launchpadlib test',
-    ...                                       'http://api.launchpad.dev/')
+    ...                                       'http://api.launchpad.test/')
 
 The Launchpad object for the anonymous user can be used to access
 public information.
@@ -104,7 +104,7 @@ and Launchpad.
 Now create a Launchpad object and observe how it populates the cache.
 
     >>> launchpad = Launchpad(
-    ...     credentials, None, None, 'http://api.launchpad.dev/',
+    ...     credentials, None, None, 'http://api.launchpad.test/',
     ...     cache=cache)
     send: 'GET /1.0/ ...accept: application/vnd.sun.wadl+xml...'
     reply: 'HTTP/1.0 200 Ok\n'
@@ -117,7 +117,7 @@ Create a second Launchpad object, and the cached documents will be
 used instead of new HTTP requests being used.
 
     >>> launchpad = Launchpad(
-    ...     credentials, None, None, 'http://api.launchpad.dev/',
+    ...     credentials, None, None, 'http://api.launchpad.test/',
     ...     cache=cache)
 
 Cleanup.

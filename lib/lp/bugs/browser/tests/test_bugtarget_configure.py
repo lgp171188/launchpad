@@ -51,8 +51,8 @@ class TestProductBugConfigurationView(TestCaseWithFactory):
             'bug_reporting_guidelines', 'bug_reported_acknowledgement',
             'enable_bugfiling_duplicate_search', 'bug_supervisor']
         self.assertEqual(fields, view.field_names)
-        self.assertEqual('http://launchpad.dev/boing', view.next_url)
-        self.assertEqual('http://launchpad.dev/boing', view.cancel_url)
+        self.assertEqual('http://launchpad.test/boing', view.next_url)
+        self.assertEqual('http://launchpad.test/boing', view.cancel_url)
 
     def test_bug_supervisor_view_attributes(self):
         login_person(self.bug_supervisor)
@@ -65,8 +65,8 @@ class TestProductBugConfigurationView(TestCaseWithFactory):
             'bug_reporting_guidelines', 'bug_reported_acknowledgement',
             'enable_bugfiling_duplicate_search']
         self.assertEqual(fields, view.field_names)
-        self.assertEqual('http://launchpad.dev/boing', view.next_url)
-        self.assertEqual('http://launchpad.dev/boing', view.cancel_url)
+        self.assertEqual('http://launchpad.test/boing', view.next_url)
+        self.assertEqual('http://launchpad.test/boing', view.cancel_url)
 
     def test_all_data_change(self):
         # Verify that the composed interface supports all fields.

@@ -10,7 +10,7 @@ demonstrate this, we'll assign a bug to the user that we're going to
 deactivate.
 
     >>> browser = setupBrowser(auth='Basic test@canonical.com:test')
-    >>> edit_bug_url = ("http://bugs.launchpad.dev/debian/sarge/+source/"
+    >>> edit_bug_url = ("http://bugs.launchpad.test/debian/sarge/+source/"
     ...     "mozilla-firefox/+bug/3/+editstatus")
     >>> browser.open(edit_bug_url)
     >>> bugwatch_control = browser.getControl(
@@ -27,18 +27,18 @@ deactivate.
 
 There's a link to the +deactivate-account page in a person's +edit page.
 
-    >>> browser.open('http://launchpad.dev/~name12')
+    >>> browser.open('http://launchpad.test/~name12')
     >>> browser.getLink('Change details').click()
     >>> browser.url
-    'http://launchpad.dev/~name12/+edit'
+    'http://launchpad.test/~name12/+edit'
 
     >>> browser.getLink('Deactivate your account').click()
     >>> browser.url
-    'http://launchpad.dev/~name12/+deactivate-account'
+    'http://launchpad.test/~name12/+deactivate-account'
 
     >>> browser.getControl('Deactivate My Account').click()
     >>> browser.url
-    'http://launchpad.dev'
+    'http://launchpad.test'
     >>> print_feedback_messages(browser.contents)
     Your account has been deactivated.
 
@@ -55,7 +55,7 @@ There's a link to the +deactivate-account page in a person's +edit page.
 And now the Launchpad page for Sample Person person will clearly say they
 do not use Launchpad.
 
-    >>> browser.open('http://launchpad.dev/~name12-deactivatedaccount')
+    >>> browser.open('http://launchpad.test/~name12-deactivatedaccount')
     >>> print extract_text(
     ...     find_tag_by_id(browser.contents, 'not-lp-user-or-team'))
     Sample Person does not use Launchpad.
@@ -63,7 +63,7 @@ do not use Launchpad.
 The bugs that were assigned to Sample Person will no longer have an
 assignee.
 
-    >>> browser.open('http://launchpad.dev/debian/+source/'
+    >>> browser.open('http://launchpad.test/debian/+source/'
     ...     'mozilla-firefox/+bug/3')
     >>> print extract_text(find_main_content(browser.contents))
     Bug Title Test
@@ -75,7 +75,7 @@ assignee.
 Although teams have NOACCOUNT as their account_status, they are teams and so
 it makes no sense to say they don't use Launchpad.
 
-    >>> browser.open('http://launchpad.dev/~ubuntu-team')
+    >>> browser.open('http://launchpad.test/~ubuntu-team')
     >>> print find_tag_by_id(browser.contents, 'not-lp-user-or-team')
     None
 
@@ -83,7 +83,7 @@ The action of deactivating an account is something that can only be done by
 the user themselves --not even Launchpad admins can do that on behalf of other
 people.
 
-    >>> admin_browser.open('http://launchpad.dev/~cprov/+deactivate-account')
+    >>> admin_browser.open('http://launchpad.test/~cprov/+deactivate-account')
     Traceback (most recent call last):
     ...
     Unauthorized: ...

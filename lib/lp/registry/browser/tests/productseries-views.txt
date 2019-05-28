@@ -45,9 +45,9 @@ rendering links:
 
     >>> for link in view.enabled_links:
     ...     print link.url
-    http://bugs.launchpad.dev/app/simple/+filebug
-    http://translations.launchpad.dev/app/simple
-    http://blueprints.launchpad.dev/app/simple/+addspec
+    http://bugs.launchpad.test/app/simple/+filebug
+    http://translations.launchpad.test/app/simple
+    http://blueprints.launchpad.test/app/simple/+addspec
 
 
 ProductSeries view
@@ -141,7 +141,7 @@ The view provides access to the latest release if it has one.
 The view also provides a link to register a new code import.
 
     >>> print view.request_import_link
-    http://code.launchpad.dev/firefox/+new-import
+    http://code.launchpad.test/firefox/+new-import
 
 
 Edit ProductSeries
@@ -159,10 +159,10 @@ The productseries +edit view provides a label and page_title for the page.
 The view provides a cancel_url and a next_url.
 
     >>> print view.cancel_url
-    http://launchpad.dev/app/simple
+    http://launchpad.test/app/simple
 
     >>> print view.next_url
-    http://launchpad.dev/app/simple
+    http://launchpad.test/app/simple
 
 
 Administer Productseries
@@ -192,7 +192,7 @@ The view provides a label and page_title.
 The view provides a cancel_url and a next_url.
 
     >>> print view.cancel_url
-    http://launchpad.dev/app/simple
+    http://launchpad.test/app/simple
 
 Users without edit permission cannot access the view.
 
@@ -258,7 +258,7 @@ though it is None by default. There is a cancel_url that links to the series.
     None
 
     >>> print view.cancel_url
-    http://launchpad.dev/field/rabbit
+    http://launchpad.test/field/rabbit
 
 There are helper properties that list the associates objects with the
 series, the most important of which are milestones. Bugtasks and
@@ -396,7 +396,7 @@ Series structural subscriptions are removed. Branch links are removed.
     Series rabbit deleted.
 
     >>> print view.next_url
-    http://launchpad.dev/field
+    http://launchpad.test/field
     >>> [milestone for milestone in product.all_milestones]
     []
     >>> [release for release in  product.releases]

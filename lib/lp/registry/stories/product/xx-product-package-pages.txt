@@ -5,7 +5,7 @@ Launchpad can show you a product's packages by distribution, with links to
 each.
 
     >>> anon_browser.open(
-    ...     'http://launchpad.dev/evolution/+packages')
+    ...     'http://launchpad.test/evolution/+packages')
     >>> print anon_browser.title
     Linked packages ...
     >>> print extract_text(
@@ -24,7 +24,7 @@ packages for each series. In this case, mark@example.com is the owner of
 Evolution.
 
     >>> evo_owner = setupBrowser(auth='Basic mark@example.com:test')
-    >>> evo_owner.open('http://launchpad.dev/evolution/+packages')
+    >>> evo_owner.open('http://launchpad.test/evolution/+packages')
     >>> print evo_owner.title
     Linked packages ...
     >>> print extract_text(find_tag_by_id(
@@ -38,11 +38,11 @@ Evolution.
 
 Any logged in users can still see the links to create a packaging link.
 
-    >>> user_browser.open('http://launchpad.dev/evolution/+packages')
+    >>> user_browser.open('http://launchpad.test/evolution/+packages')
     >>> print user_browser.getLink(url='/evolution/trunk/+ubuntupkg').url
-    http://launchpad.dev/evolution/trunk/+ubuntupkg
+    http://launchpad.test/evolution/trunk/+ubuntupkg
 
-    >>> anon_browser.open('http://launchpad.dev/evolution/+packages')
+    >>> anon_browser.open('http://launchpad.test/evolution/+packages')
     >>> anon_browser.getLink(url='/evolution/trunk/+ubuntupkg')
     Traceback (most recent call last):
     ...

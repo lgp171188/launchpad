@@ -11,7 +11,7 @@ updating when Launchpad upgrades Bazaar.
 
 Check that the Bazaar home page works.
 
-    >>> browser.open('http://code.launchpad.dev/')
+    >>> browser.open('http://code.launchpad.test/')
     >>> footer = find_tag_by_id(browser.contents, 'application-footer')
 
     >>> print(extract_text(footer))
@@ -45,7 +45,7 @@ Any user can see the project search form.
 
     >>> form = find_tag_by_id(browser.contents, 'search-projects-form')
     >>> print(form['action'])
-    http://launchpad.dev/projects
+    http://launchpad.test/projects
 
     >>> browser.getControl(name='text', index=0)
     <Control name='text' type='text'>
@@ -103,7 +103,7 @@ Recently changed
 Recently changed branches are ordered with the branches with the most
 recent commits first.
 
-    >>> browser.open('http://code.launchpad.dev/')
+    >>> browser.open('http://code.launchpad.test/')
     >>> changed = find_tag_by_id(browser.contents, 'recently-changed')
     >>> print(changed.findAll('a')[-1]['href'])
     /+recently-changed-branches
@@ -130,7 +130,7 @@ Recently imported
 Recently imported branches are ordered by recent commits only in
 imported branches.
 
-    >>> browser.open('http://code.launchpad.dev/')
+    >>> browser.open('http://code.launchpad.test/')
     >>> imported = find_tag_by_id(browser.contents, 'recent-imports')
     >>> print(imported.findAll('a')[-1]['href'])
     /+recently-imported-branches

@@ -13,7 +13,7 @@ ftp:
 sftp:
   ## The URL of the XML-RPC endpoint that handles authentication of SSH
   ## users.
-  authentication_endpoint: "http://xmlrpc-private.launchpad.dev:8087/authserver"
+  authentication_endpoint: "http://xmlrpc-private.launchpad.test:8087/authserver"
   ## The absolute path to the private key used for the SFTP server.
   host_key_private: "configs/development/txpkgupload-sftp"
   ## The absolute path to the public key used for the SFTP server.

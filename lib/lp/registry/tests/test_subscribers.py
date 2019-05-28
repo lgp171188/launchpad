@@ -100,7 +100,7 @@ class LicenseNotificationTestCase(TestCaseWithFactory):
 
     def make_product_user(self, licenses):
         user = self.factory.makePerson(
-            name='registrant', email='registrant@launchpad.dev')
+            name='registrant', email='registrant@launchpad.test')
         login_person(user)
         product = self.factory.makeProduct(
             name='ball', owner=user, licenses=licenses)
@@ -121,7 +121,7 @@ class LicenseNotificationTestCase(TestCaseWithFactory):
             'Licence information for ball in Launchpad',
             notification['Subject'])
         self.assertEqual(
-            'Registrant <registrant@launchpad.dev>',
+            'Registrant <registrant@launchpad.test>',
             notification['To'])
         self.assertEqual(
             'Commercial <commercial@launchpad.net>',

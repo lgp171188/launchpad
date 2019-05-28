@@ -6,7 +6,7 @@ content class/page.
 
 Let's find a build that produced some binaries:
 
-  >>> browser.open("http://launchpad.dev/ubuntu/+builds")
+  >>> browser.open("http://launchpad.test/ubuntu/+builds")
   >>> browser.getControl(name="build_state").value = ['built']
   >>> browser.getControl("Filter").click()
   >>> browser.getLink("Next").click()
@@ -14,7 +14,7 @@ Let's find a build that produced some binaries:
   ...     'i386 build of mozilla-firefox 0.9 in ubuntu '
   ...     'warty RELEASE')
   >>> build_link.url
-  'http://launchpad.dev/ubuntu/+source/mozilla-firefox/0.9/+build/2'
+  'http://launchpad.test/ubuntu/+source/mozilla-firefox/0.9/+build/2'
 
 Next, we'll manually create a suitable package upload record for our
 build:
@@ -40,7 +40,7 @@ XXX: noodles 2009-01-16 bug 317863: move this into the STP.
 
   >>> build_link.click()
   >>> browser.url
-  'http://launchpad.dev/ubuntu/+source/mozilla-firefox/0.9/+build/2'
+  'http://launchpad.test/ubuntu/+source/mozilla-firefox/0.9/+build/2'
 
 This build produced one BinaryPackage, called 'mozilla-firefox 0.9',
 which is presented in the right portlet, called 'Resulting Binaries'.
@@ -49,7 +49,7 @@ Let's just check if the page is presented without errors (see bug
 
   >>> browser.getLink('mozilla-firefox 0.9').click()
   >>> browser.url
-  'http://launchpad.dev/ubuntu/warty/i386/mozilla-firefox/0.9'
+  'http://launchpad.test/ubuntu/warty/i386/mozilla-firefox/0.9'
 
 When rendering package relationships only existent packages contain
 links to within LP application, not found packages are rendered as
@@ -63,20 +63,20 @@ links to a binary in the context in question.
   ...     parse_relationship_section(str(section))
 
   >>> print_relation('provides')
-  LINK: "mozilla-firefox" -> http://launchpad.dev/ubuntu/warty/i386/mozilla-firefox
+  LINK: "mozilla-firefox" -> http://launchpad.test/ubuntu/warty/i386/mozilla-firefox
 
   >>> print_relation('predepends')
   TEXT: "foo"
-  LINK: "pmount" -> http://launchpad.dev/ubuntu/warty/i386/pmount
+  LINK: "pmount" -> http://launchpad.test/ubuntu/warty/i386/pmount
 
   >>> print_relation('enhances')
   TEXT: "bar"
-  LINK: "pmount" -> http://launchpad.dev/ubuntu/warty/i386/pmount
+  LINK: "pmount" -> http://launchpad.test/ubuntu/warty/i386/pmount
 
 
   >>> print_relation('breaks')
   TEXT: "baz"
-  LINK: "pmount" -> http://launchpad.dev/ubuntu/warty/i386/pmount
+  LINK: "pmount" -> http://launchpad.test/ubuntu/warty/i386/pmount
 
 
 'Depends', 'Conflicts', 'Replaces', 'Suggests' and 'Recommends'
@@ -113,7 +113,7 @@ Even when there is no information to present and the package control
 files don't contain the field, we still present the  corresponding
 relationship section.
 
-  >>> browser.open('http://launchpad.dev/ubuntu/warty/i386/pmount/0.1-1')
+  >>> browser.open('http://launchpad.test/ubuntu/warty/i386/pmount/0.1-1')
   >>> print_relation('predepends')
   EMPTY SECTION
 

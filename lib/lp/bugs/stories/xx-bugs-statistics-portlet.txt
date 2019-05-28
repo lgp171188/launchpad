@@ -78,7 +78,7 @@ reported bugs.
 The content includes a link to the distribution CVE report.
 
     >>> print(user_browser.getLink('CVE report').url)
-    http://bugs.launchpad.dev/debian/+cve
+    http://bugs.launchpad.test/debian/+cve
 
 
 Distribution Series
@@ -147,7 +147,7 @@ reported bugs.
 The content includes a link to the distribution CVE report.
 
     >>> print(user_browser.getLink('CVE report').url)
-    http://bugs.launchpad.dev/debian/woody/+cve
+    http://bugs.launchpad.test/debian/woody/+cve
 
 
 Distribution Source Package
@@ -432,4 +432,4 @@ bugs is also shown.
 The content includes a link to the distribution CVE report.
 
     >>> print(user_browser.getLink('CVE report').url)
-    http://bugs.launchpad.dev/firefox/+cve
+    http://bugs.launchpad.test/firefox/+cve

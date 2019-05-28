@@ -146,7 +146,7 @@ class MasterDatabasePolicyTestCase(BaseDatabasePolicyTestCase):
         use POST and do not support session cookies.
         """
         request = LaunchpadTestRequest(
-            SERVER_URL='http://xmlrpc-private.launchpad.dev')
+            SERVER_URL='http://xmlrpc-private.launchpad.test')
         setFirstLayer(request, IXMLRPCRequest)
         policy = getAdapter(request, IDatabasePolicy)
         self.assertTrue(
@@ -169,7 +169,7 @@ class LaunchpadDatabasePolicyTestCase(SlaveDatabasePolicyTestCase):
     """
 
     def setUp(self):
-        request = LaunchpadTestRequest(SERVER_URL='http://launchpad.dev')
+        request = LaunchpadTestRequest(SERVER_URL='http://launchpad.test')
         self.policy = LaunchpadDatabasePolicy(request)
         super(LaunchpadDatabasePolicyTestCase, self).setUp()
 
@@ -183,7 +183,7 @@ class LayerDatabasePolicyTestCase(TestCase):
         over them.
         """
         request = LaunchpadTestRequest(
-            SERVER_URL='http://feeds.launchpad.dev')
+            SERVER_URL='http://feeds.launchpad.test')
         setFirstLayer(request, FeedsLayer)
         policy = IDatabasePolicy(request)
         self.assertIsInstance(policy, SlaveOnlyDatabasePolicy)
@@ -198,7 +198,7 @@ class LayerDatabasePolicyTestCase(TestCase):
         """
         api_prefix = getUtility(
             IWebServiceConfiguration).active_versions[0]
-        server_url = 'http://api.launchpad.dev/%s' % api_prefix
+        server_url = 'http://api.launchpad.test/%s' % api_prefix
         request = LaunchpadTestRequest(SERVER_URL=server_url)
         setFirstLayer(request, WebServiceLayer)
         policy = IDatabasePolicy(request)
@@ -211,7 +211,7 @@ class LayerDatabasePolicyTestCase(TestCase):
         """
         api_prefix = getUtility(
             IWebServiceConfiguration).active_versions[0]
-        server_url = 'http://api.launchpad.dev/%s' % api_prefix
+        server_url = 'http://api.launchpad.test/%s' % api_prefix
         request = LaunchpadTestRequest(SERVER_URL=server_url)
         newInteraction(request)
         try:
@@ -230,7 +230,7 @@ class LayerDatabasePolicyTestCase(TestCase):
 
     def test_other_request_uses_LaunchpadDatabasePolicy(self):
         """By default, requests should use the LaunchpadDatabasePolicy."""
-        server_url = 'http://launchpad.dev/'
+        server_url = 'http://launchpad.test/'
         request = LaunchpadTestRequest(SERVER_URL=server_url)
         policy = IDatabasePolicy(request)
         self.assertIsInstance(policy, LaunchpadDatabasePolicy)

@@ -5,7 +5,7 @@ Comments imported into Launchpad from external bug trackers are
 formatted for display in a way that distinguishes them from comments
 entered within Launchpad itself.
 
-    >>> user_browser.open('http://bugs.launchpad.dev/redfish/+bug/15')
+    >>> user_browser.open('http://bugs.launchpad.test/redfish/+bug/15')
     >>> remote_bug_comment = find_tags_by_class(
     ...     user_browser.contents, 'remoteBugComment', only_first=True)
     >>> details = remote_bug_comment.find(
@@ -39,7 +39,7 @@ individual comment page, where the inline form is displayed.
 
     >>> user_browser.getLink('Reply on Debian Bug tracker').click()
     >>> print(user_browser.url)
-    http://bugs.launchpad.dev/redfish/+bug/15/comments/1
+    http://bugs.launchpad.test/redfish/+bug/15/comments/1
 
 We enter a comment, and submit the form.
 
@@ -87,7 +87,7 @@ the 'awaiting synchronization' mark goes away.
     >>> flush_database_updates()
     >>> logout()
 
-    >>> user_browser.open('http://bugs.launchpad.dev/redfish/+bug/15')
+    >>> user_browser.open('http://bugs.launchpad.test/redfish/+bug/15')
     >>> last_bug_comment = find_tags_by_class(
     ...     user_browser.contents, 'remoteBugComment')[-1]
     >>> print(extract_text(last_bug_comment))
@@ -104,7 +104,7 @@ the 'awaiting synchronization' mark goes away.
 When an anonymous user views a remote comment, the reply links are
 hidden, since they can't be used anonymously anyway.
 
-    >>> anon_browser.open('http://bugs.launchpad.dev/redfish/+bug/15')
+    >>> anon_browser.open('http://bugs.launchpad.test/redfish/+bug/15')
     >>> remote_bug_comment = find_tags_by_class(
     ...     anon_browser.contents, 'remoteBugComment', only_first=True)
     >>> activity = remote_bug_comment.find(

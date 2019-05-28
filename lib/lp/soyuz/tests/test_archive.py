@@ -1843,7 +1843,7 @@ class TestArchiveDependencies(TestCaseWithFactory):
                 build, build.distro_arch_series,
                 build.source_package_release.name)
             matches = MatchesRegex(
-                "deb http://buildd:sekrit@private-ppa.launchpad.dev/"
+                "deb http://buildd:sekrit@private-ppa.launchpad.test/"
                 "person-name-.*/dependency/ubuntu distroseries-.* main")
             self.assertThat(sources_list[0], matches)
             self.assertThat(trusted_keys, MatchesListwise([
@@ -2032,7 +2032,7 @@ class TestOverlays(TestCaseWithFactory):
     def _createDep(self, test_publisher, derived_series, parent_series,
                    parent_distro, component_name=None, pocket=None,
                    overlay=True, arch_tag='i386',
-                   publish_base_url='http://archive.launchpad.dev/'):
+                   publish_base_url='http://archive.launchpad.test/'):
         # Helper to create a parent/child relationship.
         if isinstance(parent_distro, six.string_types):
             depdistro = self.factory.makeDistribution(parent_distro,

@@ -54,7 +54,7 @@ Can we access it via the webservice API as well?
     >>> umbrella = webservice.get(
     ...     "/package-sets/ubuntu/hoary/umbrella").jsonBody()
     >>> print(umbrella['self_link'])
-    http://api.launchpad.dev/beta/package-sets/ubuntu/hoary/umbrella
+    http://api.launchpad.test/beta/package-sets/ubuntu/hoary/umbrella
 
 `PackageSet`s can be looked up by name.
 
@@ -62,7 +62,7 @@ Can we access it via the webservice API as well?
     ...     '/package-sets', 'getByName', {}, distroseries='/ubuntu/hoary',
     ...     name=u'umbrella')
     >>> print(response.jsonBody()['self_link'])
-    http://api.launchpad.dev/beta/package-sets/ubuntu/hoary/umbrella
+    http://api.launchpad.test/beta/package-sets/ubuntu/hoary/umbrella
 
 When a `PackageSet` cannot be found, an error is returned.
 
@@ -215,7 +215,7 @@ sorted by name.
 
     >>> response = anon_webservice.get("/package-sets/")
     >>> print_payload(response)
-    http://api.launchpad.dev/beta/package-sets/ubuntu/hoary/umbrella
+    http://api.launchpad.test/beta/package-sets/ubuntu/hoary/umbrella
 
 Package sets may include other package sets (as subsets). At this point,
 however, we only have the 'umbrella' package set. It hence has no subsets.
@@ -256,10 +256,10 @@ Every package set is associated with a distro series.
     ...     '/package-sets', 'getByName', {}, distroseries='/ubuntu/hoary',
     ...     name=u'mozilla').jsonBody()
     >>> print(mozilla['distroseries_link'])
-    http://api.launchpad.dev/beta/ubuntu/hoary
+    http://api.launchpad.test/beta/ubuntu/hoary
 
     >>> print(mozilla['self_link'])
-    http://api.launchpad.dev/beta/package-sets/ubuntu/hoary/mozilla
+    http://api.launchpad.test/beta/package-sets/ubuntu/hoary/mozilla
 
 A collection of package sets belonging to a given distro series can be
 obtained via the `getBySeries` call.
@@ -282,7 +282,7 @@ that exists already.
 
     >>> grumpy = webservice.get("/ubuntu/grumpy").jsonBody()
     >>> print(grumpy['self_link'])
-    http://api.launchpad.dev/beta/ubuntu/grumpy
+    http://api.launchpad.test/beta/ubuntu/grumpy
 
 We are adding a new 'mozilla' package set to the 'grumpy' distro series and
 it is related to 'mozilla' in 'hoary'.
@@ -300,15 +300,15 @@ it is related to 'mozilla' in 'hoary'.
     ...     '/package-sets', 'getByName', {}, name=u'mozilla',
     ...     distroseries=grumpy['self_link']).jsonBody()
     >>> print(grumpy_mozilla['distroseries_link'])
-    http://api.launchpad.dev/beta/ubuntu/grumpy
+    http://api.launchpad.test/beta/ubuntu/grumpy
 
     >>> print(grumpy_mozilla['self_link'])
-    http://api.launchpad.dev/beta/package-sets/ubuntu/grumpy/mozilla
+    http://api.launchpad.test/beta/package-sets/ubuntu/grumpy/mozilla
 
     >>> response = webservice.named_get(
     ...     mozilla['self_link'], 'relatedSets', {})
     >>> print_payload(response)
-    http://api.launchpad.dev/beta/package-sets/ubuntu/grumpy/mozilla
+    http://api.launchpad.test/beta/package-sets/ubuntu/grumpy/mozilla
 
 
 Package set hierarchy
@@ -415,11 +415,11 @@ The 'umbrella' package set should have plenty of subsets now.
     >>> response = webservice.named_get(
     ...     '/package-sets/ubuntu/hoary/umbrella', 'setsIncluded', {})
     >>> print_payload(response)
-    http://api.launchpad.dev/beta/package-sets/ubuntu/hoary/firefox
-    http://api.launchpad.dev/beta/package-sets/ubuntu/hoary/gnome
-    http://api.launchpad.dev/beta/package-sets/ubuntu/hoary/languagepack
-    http://api.launchpad.dev/beta/package-sets/ubuntu/hoary/mozilla
-    http://api.launchpad.dev/beta/package-sets/ubuntu/hoary/thunderbird
+    http://api.launchpad.test/beta/package-sets/ubuntu/hoary/firefox
+    http://api.launchpad.test/beta/package-sets/ubuntu/hoary/gnome
+    http://api.launchpad.test/beta/package-sets/ubuntu/hoary/languagepack
+    http://api.launchpad.test/beta/package-sets/ubuntu/hoary/mozilla
+    http://api.launchpad.test/beta/package-sets/ubuntu/hoary/thunderbird
 
 However only two of the above are direct subsets.
 
@@ -427,8 +427,8 @@ However only two of the above are direct subsets.
     ...     '/package-sets/ubuntu/hoary/umbrella', 'setsIncluded', {},
     ...     direct_inclusion=True)
     >>> print_payload(response)
-    http://api.launchpad.dev/beta/package-sets/ubuntu/hoary/gnome
-    http://api.launchpad.dev/beta/package-sets/ubuntu/hoary/mozilla
+    http://api.launchpad.test/beta/package-sets/ubuntu/hoary/gnome
+    http://api.launchpad.test/beta/package-sets/ubuntu/hoary/mozilla
 
 Let's ask the question the other way around what package sets are including
 a particular subset?
@@ -436,10 +436,10 @@ a particular subset?
     >>> response = webservice.named_get(
     ...     '/package-sets/ubuntu/hoary/languagepack', 'setsIncludedBy', {})
     >>> print_payload(response)
-    http://api.launchpad.dev/beta/package-sets/ubuntu/hoary/gnome
-    http://api.launchpad.dev/beta/package-sets/ubuntu/hoary/mozilla
-    http://api.launchpad.dev/beta/package-sets/ubuntu/hoary/thunderbird
-    http://api.launchpad.dev/beta/package-sets/ubuntu/hoary/umbrella
+    http://api.launchpad.test/beta/package-sets/ubuntu/hoary/gnome
+    http://api.launchpad.test/beta/package-sets/ubuntu/hoary/mozilla
+    http://api.launchpad.test/beta/package-sets/ubuntu/hoary/thunderbird
+    http://api.launchpad.test/beta/package-sets/ubuntu/hoary/umbrella
 
 The list of package sets that *directly* include 'languagepack' will be
 shorter because the transitive closure is ignored.
@@ -448,8 +448,8 @@ shorter because the transitive closure is ignored.
     ...     '/package-sets/ubuntu/hoary/languagepack', 'setsIncludedBy', {},
     ...     direct_inclusion=True)
     >>> print_payload(response)
-    http://api.launchpad.dev/beta/package-sets/ubuntu/hoary/gnome
-    http://api.launchpad.dev/beta/package-sets/ubuntu/hoary/thunderbird
+    http://api.launchpad.test/beta/package-sets/ubuntu/hoary/gnome
+    http://api.launchpad.test/beta/package-sets/ubuntu/hoary/thunderbird
 
 We can remove subsets as well. In the example below 'thunderbird' will
 stop including 'languagepack'.
@@ -467,7 +467,7 @@ And, here we go, now 'languagepack' has only one direct predecessor: 'gnome'.
     ...     '/package-sets/ubuntu/hoary/languagepack', 'setsIncludedBy', {},
     ...     direct_inclusion=True)
     >>> print_payload(response)
-    http://api.launchpad.dev/beta/package-sets/ubuntu/hoary/gnome
+    http://api.launchpad.test/beta/package-sets/ubuntu/hoary/gnome
 
 Let's add a few source packages to the 'firefox' and the 'thunderbird'
 package sets.
@@ -507,9 +507,9 @@ Which package sets include 'mozilla-firefox'?
     ...     '/package-sets/', 'setsIncludingSource', {},
     ...     sourcepackagename=u'mozilla-firefox')
     >>> print_payload(response)
-    http://api.launchpad.dev/beta/package-sets/ubuntu/hoary/firefox
-    http://api.launchpad.dev/beta/package-sets/ubuntu/hoary/mozilla
-    http://api.launchpad.dev/beta/package-sets/ubuntu/hoary/umbrella
+    http://api.launchpad.test/beta/package-sets/ubuntu/hoary/firefox
+    http://api.launchpad.test/beta/package-sets/ubuntu/hoary/mozilla
+    http://api.launchpad.test/beta/package-sets/ubuntu/hoary/umbrella
 
 Which package sets include the 'mozilla-firefox' source package *directly*?
 
@@ -518,8 +518,8 @@ Which package sets include the 'mozilla-firefox' source package *directly*?
     ...     sourcepackagename=u'mozilla-firefox',
     ...     direct_inclusion=True)
     >>> print_payload(response)
-    http://api.launchpad.dev/beta/package-sets/ubuntu/hoary/firefox
-    http://api.launchpad.dev/beta/package-sets/ubuntu/hoary/umbrella
+    http://api.launchpad.test/beta/package-sets/ubuntu/hoary/firefox
+    http://api.launchpad.test/beta/package-sets/ubuntu/hoary/umbrella
 
 If a non-existing source package name is passed it returns an error.
 
@@ -729,10 +729,10 @@ The following query (note the additional 'distroseries' parameter) is
 thus equivalent:
 
     >>> print(ubuntu['current_series_link'])
-    http://api.launchpad.dev/beta/ubuntu/hoary
+    http://api.launchpad.test/beta/ubuntu/hoary
     >>> hoary = webservice.get("/ubuntu/hoary").jsonBody()
     >>> print(hoary['self_link'])
-    http://api.launchpad.dev/beta/ubuntu/hoary
+    http://api.launchpad.test/beta/ubuntu/hoary
 
     >>> response = webservice.named_get(
     ...     ubuntu['main_archive_link'], 'isSourceUploadAllowed',
@@ -794,7 +794,7 @@ Create a new package set ('thunderbird') in 'grumpy'.
     >>> response = webservice.named_get(
     ...     thunderbird['self_link'], 'relatedSets', {})
     >>> print_payload(response)
-    http://api.launchpad.dev/beta/package-sets/ubuntu/grumpy/thunderbird
+    http://api.launchpad.test/beta/package-sets/ubuntu/grumpy/thunderbird
 
 Associate 'thunderbird' with the appropriate source packages.
 
@@ -915,11 +915,11 @@ The user 'cprov' has no upload permission for 'thunderbird' in 'hoary'.
     ...     '?type=packageset&item=thunderbird&series=hoary')
     >>> permission = webservice.get(url).jsonBody()
     >>> pprint_entry(permission)
-    archive_link: u'http://api.launchpad.dev/beta/ubuntu/+archive/primary'
+    archive_link: u'http://api.launchpad.test/beta/ubuntu/+archive/primary'
     ...
     distro_series_name: u'hoary'
     ...
     package_set_name: u'thunderbird'
     permission: u'Archive Upload Rights'
-    person_link: u'http://api.launchpad.dev/beta/~cprov'
+    person_link: u'http://api.launchpad.test/beta/~cprov'
     ...

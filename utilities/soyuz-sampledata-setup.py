@@ -393,7 +393,7 @@ class SoyuzSampledataSetup(LaunchpadScript):
 
         print dedent("""
             Now start your local Launchpad with "make run_codehosting" and log
-            into https://launchpad.dev/ as "%(email)s" with "test" as the
+            into https://launchpad.test/ as "%(email)s" with "test" as the
             password.
             Your user name will be %(user_name)s."""
             % {

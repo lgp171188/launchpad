@@ -98,7 +98,7 @@ generates a notification email only to Ubuntu Team administrators.
     approved.  You can approve, decline or leave it as proposed by following
     the link below.
     <BLANKLINE>
-        http://launchpad.dev/~ubuntu-team/+member/lifeless
+        http://launchpad.test/~ubuntu-team/+member/lifeless
     <BLANKLINE>
     -- =
     <BLANKLINE>
@@ -146,7 +146,7 @@ job now.
     The membership status of Robert Collins (lifeless) in the team Ubuntu
     Team (ubuntu-team) was changed by Mark Shuttleworth (mark) from
     Proposed to Declined.
-    <http://launchpad.dev/~ubuntu-team>
+    <http://launchpad.test/~ubuntu-team>
     <BLANKLINE>
     -- =
     <BLANKLINE>
@@ -161,7 +161,7 @@ job now.
     <BLANKLINE>
     The status of your membership in the team Ubuntu Team (ubuntu-team) was
     changed by Mark Shuttleworth (mark) from Proposed to Declined.
-    <http://launchpad.dev/~ubuntu-team>
+    <http://launchpad.test/~ubuntu-team>
     <BLANKLINE>
     -- =
     <BLANKLINE>
@@ -204,7 +204,7 @@ The same goes for approving a proposed member.
     The membership status of Dafydd Harries (daf) in the team Ubuntu Team
     (ubuntu-team) was changed by Mark Shuttleworth (mark) from Proposed to
     Approved.
-    <http://launchpad.dev/~ubuntu-team>
+    <http://launchpad.test/~ubuntu-team>
     <BLANKLINE>
     Mark Shuttleworth said:
      This is a nice guy; I like him
@@ -221,7 +221,7 @@ The same goes for approving a proposed member.
     <BLANKLINE>
     The status of your membership in the team Ubuntu Team (ubuntu-team) was
     changed by Mark Shuttleworth (mark) from Proposed to Approved.
-    <http://launchpad.dev/~ubuntu-team>
+    <http://launchpad.test/~ubuntu-team>
     <BLANKLINE>
     Mark Shuttleworth said:
      This is a nice guy; I like him
@@ -254,7 +254,7 @@ The same for deactivating a membership.
     The membership status of Dafydd Harries (daf) in the team Ubuntu Team
     (ubuntu-team) was changed by Mark Shuttleworth (mark) from Approved to
     Deactivated.
-    <http://launchpad.dev/~ubuntu-team>
+    <http://launchpad.test/~ubuntu-team>
     -- =
     <BLANKLINE>
     You received this email because you are an admin of the Ubuntu Team team.
@@ -268,7 +268,7 @@ The same for deactivating a membership.
     <BLANKLINE>
     The status of your membership in the team Ubuntu Team (ubuntu-team) was
     changed by Mark Shuttleworth (mark) from Approved to Deactivated.
-    <http://launchpad.dev/~ubuntu-team>
+    <http://launchpad.test/~ubuntu-team>
     -- =
     <BLANKLINE>
     You received this email because you are the affected member.
@@ -302,7 +302,7 @@ message sent.
     team, so that membership has to be approved.  You can approve, decline
     or leave it as proposed by following the link below.
     <BLANKLINE>
-        http://launchpad.dev/~ubuntu-team/+member/admins
+        http://launchpad.test/~ubuntu-team/+member/admins
     <BLANKLINE>
     -- =
     <BLANKLINE>
@@ -347,7 +347,7 @@ Now, the emails have been sent.
     <BLANKLINE>
     Celso Providelo (cprov) added you as a member of Ubuntu Team (ubuntu-
     team).
-      <http://launchpad.dev/~ubuntu-team>
+      <http://launchpad.test/~ubuntu-team>
     <BLANKLINE>
     -- =
     <BLANKLINE>
@@ -367,7 +367,7 @@ Now, the emails have been sent.
     (ubuntu-team) by Celso Providelo (cprov). Follow the link below for more
     details.
     <BLANKLINE>
-        http://launchpad.dev/~ubuntu-team/+member/marilize
+        http://launchpad.test/~ubuntu-team/+member/marilize
     <BLANKLINE>
     -- =
     <BLANKLINE>
@@ -407,11 +407,11 @@ membership will only be activated if they accept the invitation.
     Celso Providelo (cprov) has invited Mirror Administrators (ubuntu-
     mirror-admins) (which you are an administrator of) to join Ubuntu Team
     (ubuntu-team).
-    <http://launchpad.dev/~ubuntu-team>
+    <http://launchpad.test/~ubuntu-team>
     <BLANKLINE>
     You can accept or decline this invitation on the following page:
     <BLANKLINE>
-        http://launchpad.dev/~ubuntu-mirror-admins/+invitation/ubuntu-team
+        http://launchpad.test/~ubuntu-mirror-admins/+invitation/ubuntu-team
     <BLANKLINE>
     Regards,
     The Launchpad team
@@ -449,7 +449,7 @@ team.
     Mark Shuttleworth (mark) has accepted the invitation to make Mirror
     Administrators (ubuntu-mirror-admins) a member of Ubuntu Team (ubuntu-
     team).
-    <http://launchpad.dev/~ubuntu-team>
+    <http://launchpad.test/~ubuntu-team>
     <BLANKLINE>
     Mark Shuttleworth said:
      Of course I want to be part of ubuntu!
@@ -469,7 +469,7 @@ team.
     Mark Shuttleworth (mark) has accepted the invitation to make Mirror
     Administrators (ubuntu-mirror-admins) a member of Ubuntu Team (ubuntu-
     team).
-    <http://launchpad.dev/~ubuntu-team>
+    <http://launchpad.test/~ubuntu-team>
     <BLANKLINE>
     Mark Shuttleworth said:
      Of course I want to be part of ubuntu!
@@ -514,7 +514,7 @@ Similarly, a notification is sent if the invitation is declined.
     <BLANKLINE>
     Mark Shuttleworth (mark) has declined the invitation to make Landscape
     Developers (landscape-developers) a member of Ubuntu Team (ubuntu-team).
-    <http://launchpad.dev/~ubuntu-team>
+    <http://launchpad.test/~ubuntu-team>
     <BLANKLINE>
     Mark Shuttleworth said:
      Landscape has nothing to do with ubuntu, unfortunately.
@@ -533,7 +533,7 @@ Similarly, a notification is sent if the invitation is declined.
     <BLANKLINE>
     Mark Shuttleworth (mark) has declined the invitation to make Landscape
     Developers (landscape-developers) a member of Ubuntu Team (ubuntu-team).
-    <http://launchpad.dev/~ubuntu-team>
+    <http://launchpad.test/~ubuntu-team>
     <BLANKLINE>
     Mark Shuttleworth said:
      Landscape has nothing to do with ubuntu, unfortunately.
@@ -581,7 +581,7 @@ passing force_team_add=True to the addMember() method.
     Team (ubuntu-team) by Celso Providelo (cprov). Follow the link below for
     more details.
     <BLANKLINE>
-        http://launchpad.dev/~ubuntu-team/+member/launchpad
+        http://launchpad.test/~ubuntu-team/+member/launchpad
     <BLANKLINE>
     -- =
     <BLANKLINE>
@@ -638,15 +638,15 @@ ubuntu-team's admins.
     of Launchpad Beta Testers (launchpad-beta-testers) (which you are the
     owner=
     of) in the Ubuntu Team (ubuntu-team) Launchpad team is due to expire.
-    <http://launchpad.dev/~ubuntu-team>
+    <http://launchpad.test/~ubuntu-team>
     <BLANKLINE>
     To prevent this membership from expiring, you should get in touch
     with one of the team's administrators:
-    Alexander Limi (limi) <http://launchpad.dev/~limi>
-    Colin Watson (kamion) <http://launchpad.dev/~kamion>
-    Foo Bar (name16) <http://launchpad.dev/~name16>
-    Jeff Waugh (jdub) <http://launchpad.dev/~jdub>
-    Mark Shuttleworth (mark) <http://launchpad.dev/~mark>
+    Alexander Limi (limi) <http://launchpad.test/~limi>
+    Colin Watson (kamion) <http://launchpad.test/~kamion>
+    Foo Bar (name16) <http://launchpad.test/~name16>
+    Jeff Waugh (jdub) <http://launchpad.test/~jdub>
+    Mark Shuttleworth (mark) <http://launchpad.test/~mark>
     <BLANKLINE>
     If the membership does expire, we'll send you one more message to let
     you know it's happened.
@@ -683,10 +683,10 @@ to renew their own membership.
     On ..., 9 days from now, your membership
     in the Ubuntu Team (ubuntu-team) Launchpad team
     is due to expire.
-    <http://launchpad.dev/~ubuntu-team>
+    <http://launchpad.test/~ubuntu-team>
     <BLANKLINE>
     If you want, you can renew this membership at
-    <http://launchpad.dev/~kamion/+expiringmembership/ubuntu-team>
+    <http://launchpad.test/~kamion/+expiringmembership/ubuntu-team>
     <BLANKLINE>
     If your membership does expire, we'll send you one more message to let
     you know it's happened.
@@ -713,10 +713,10 @@ to renew their own membership.
     of Launchpad Beta Testers (launchpad-beta-testers) (which you are the
     owner=
     of) in the Ubuntu Team (ubuntu-team) Launchpad team is due to expire.
-    <http://launchpad.dev/~ubuntu-team>
+    <http://launchpad.test/~ubuntu-team>
     <BLANKLINE>
     If you want, you can renew this membership at
-    <http://launchpad.dev/~launchpad-beta-testers/+expiringmembership/...>
+    <http://launchpad.test/~launchpad-beta-testers/+expiringmembership/...>
     <BLANKLINE>
     If the membership does expire, we'll send you one more message to let
     you know it's happened.
@@ -758,10 +758,10 @@ their membership page, where they can extend it.
     in the Landscape Developers (landscape-developers) Launchpad team is due
     to=
     expire.
-    <http://launchpad.dev/~landscape-developers>
+    <http://launchpad.test/~landscape-developers>
     <BLANKLINE>
     To stay a member of this team you should extend your membership at
-    <http://launchpad.dev/~landscape-developers/+member/name12>
+    <http://launchpad.test/~landscape-developers/+member/name12>
     <BLANKLINE>
     If your membership does expire, we'll send you one more message to let
     you know it's happened.
@@ -817,7 +817,7 @@ notification is sent to all team admins.
     <BLANKLINE>
     Karl Tilbury (karl) renewed their own membership in the Mirror
     Administrators (ubuntu-mirror-admins) team until ...
-    <http://launchpad.dev/~ubuntu-mirror-admins>
+    <http://launchpad.test/~ubuntu-mirror-admins>
     <BLANKLINE>
     Regards,
     The Launchpad team
@@ -875,7 +875,7 @@ email notification.
     The membership status of Celso Providelo (cprov) in the team Ubuntu Team
     (ubuntu-team) was changed by Mark Shuttleworth (mark) from Approved to
     Administrator.
-    <http://launchpad.dev/~ubuntu-team>
+    <http://launchpad.test/~ubuntu-team>
     <BLANKLINE>
     -- =
     You received this email because you are an admin of the Ubuntu Team team.
@@ -889,7 +889,7 @@ email notification.
     <BLANKLINE>
     The status of your membership in the team Ubuntu Team (ubuntu-team) was
     changed by Mark Shuttleworth (mark) from Approved to Administrator.
-    <http://launchpad.dev/~ubuntu-team>
+    <http://launchpad.test/~ubuntu-team>
     <BLANKLINE>
     -- =
     You received this email because you are the affected member.
@@ -922,7 +922,7 @@ will only be sent to the team administrators.
     The membership status of Jeff Waugh (jdub) in the team Ubuntu Team
     (ubuntu-team) was changed by the user from Administrator to
     Approved.
-    <http://launchpad.dev/~ubuntu-team>
+    <http://launchpad.test/~ubuntu-team>
     <BLANKLINE>
     -- =
     You received this email because you are an admin of the Ubuntu Team team.
@@ -956,7 +956,7 @@ wouldn't make sense to the members of the team reading it.
     The membership status of Mirror Administrators (ubuntu-mirror-admins) in
     the team Ubuntu Team (ubuntu-team) was changed by Mark Shuttleworth
     (mark) from Approved to Deactivated.
-    <http://launchpad.dev/~ubuntu-team>
+    <http://launchpad.test/~ubuntu-team>
     <BLANKLINE>
     -- =
     You received this email because you are an admin of the Ubuntu Team team.
@@ -971,7 +971,7 @@ wouldn't make sense to the members of the team reading it.
     The membership status of Mirror Administrators (ubuntu-mirror-admins) in
     the team Ubuntu Team (ubuntu-team) was changed by Mark Shuttleworth
     (mark) from Approved to Deactivated.
-    <http://launchpad.dev/~ubuntu-team>
+    <http://launchpad.test/~ubuntu-team>
     <BLANKLINE>
     -- =
     You received this email because your team Mirror Administrators is the
@@ -1048,11 +1048,11 @@ notification email contain subscription information.
     Subject: You have been added to team-one
     <BLANKLINE>
     Team-owner (team-owner) added you as a member of Team One (team-one).
-      <http://launchpad.dev/~team-one>
+      <http://launchpad.test/~team-one>
     <BLANKLINE>
     If you would like to subscribe to the team list, use the link below
     to update your Mailing List Subscription preferences.
-      <http://launchpad.dev/~/+editmailinglists>
+      <http://launchpad.test/~/+editmailinglists>
     <BLANKLINE>
     -- =
     <BLANKLINE>
@@ -1077,11 +1077,11 @@ emails contain subscription information.
     <BLANKLINE>
     Team-owner (team-owner) added Team Two (team-two) (which you are a
     member of) as a member of Team One (team-one).
-      <http://launchpad.dev/~team-one>
+      <http://launchpad.test/~team-one>
     <BLANKLINE>
     If you would like to subscribe to the team list, use the link below
     to update your Mailing List Subscription preferences.
-      <http://launchpad.dev/~/+editmailinglists>
+      <http://launchpad.test/~/+editmailinglists>
     <BLANKLINE>
     -- =
     <BLANKLINE>

@@ -180,7 +180,7 @@ class TestGitSubscriptionAddView(BrowserTestCase):
             ['No subscribers.'], list(self._getSubscribers(browser.contents)))
         # Going back and then clicking on either Change or Unsubscribe gives
         # a message that we are not subscribed.
-        browser.addHeader('Referer', 'https://launchpad.dev/')
+        browser.addHeader('Referer', 'https://launchpad.test/')
         browser.open(
             form_url, data=urlencode({'field.actions.change': 'Change'}))
         self.assertEqual(

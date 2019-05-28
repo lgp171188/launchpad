@@ -1434,7 +1434,7 @@ class TestDoDirectCopy(BaseDoCopyTests, TestCaseWithFactory):
               * 1.0-2.
 
             %s
-            http://launchpad.dev/~archiver/+archive/ubuntutest/ppa
+            http://launchpad.test/~archiver/+archive/ubuntutest/ppa
             You are receiving this email because you made this upload.
             """ % "-- ")
         self.assertEqual(expected, body)
@@ -1469,7 +1469,7 @@ class TestDoDirectCopy(BaseDoCopyTests, TestCaseWithFactory):
 
             Date: %s
             Changed-By: Foo Bar <foo.bar@canonical.com>
-            http://launchpad.dev/ubuntutest/+source/foo/1.0-2
+            http://launchpad.test/ubuntutest/+source/foo/1.0-2
             """ % source.sourcepackagerelease.dateuploaded)
         # Spurious newlines are a pain and don't really affect the end
         # results so stripping is the easiest route here.

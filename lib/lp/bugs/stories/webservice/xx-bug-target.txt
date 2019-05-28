@@ -151,7 +151,7 @@ We can retrieve or set a person or team as the bug supervisor for projects.
 
     >>> firefox_project = webservice.get('/firefox').jsonBody()
     >>> print(firefox_project['bug_supervisor_link'])
-    http://api.launchpad.dev/beta/~name12
+    http://api.launchpad.test/beta/~name12
 
 We can also do this for distributions.
 
@@ -166,7 +166,7 @@ We can also do this for distributions.
 
     >>> ubuntutest_dist = webservice.get('/ubuntutest').jsonBody()
     >>> print(ubuntutest_dist['bug_supervisor_link'])
-    http://api.launchpad.dev/beta/~ubuntu-team
+    http://api.launchpad.test/beta/~ubuntu-team
 
 Setting the bug supervisor is restricted to owners and launchpad admins.
 

@@ -298,14 +298,14 @@ class TestGetByUrl(TestCaseWithFactory):
         # Trailing slashes are stripped from the url prior to searching.
         branch = self.makeProductBranch()
         lookup = getUtility(IBranchLookup)
-        branch2 = lookup.getByUrl('http://bazaar.launchpad.dev/~aa/b/c/')
+        branch2 = lookup.getByUrl('http://bazaar.launchpad.test/~aa/b/c/')
         self.assertEqual(branch, branch2)
 
     def test_getByUrl_with_http(self):
         """getByUrl recognizes LP branches for http URLs."""
         branch = self.makeProductBranch()
         branch_set = getUtility(IBranchLookup)
-        branch2 = branch_set.getByUrl('http://bazaar.launchpad.dev/~aa/b/c')
+        branch2 = branch_set.getByUrl('http://bazaar.launchpad.test/~aa/b/c')
         self.assertEqual(branch, branch2)
 
     def test_getByUrl_with_ssh(self):
@@ -313,14 +313,14 @@ class TestGetByUrl(TestCaseWithFactory):
         branch = self.makeProductBranch()
         branch_set = getUtility(IBranchLookup)
         branch2 = branch_set.getByUrl(
-            'bzr+ssh://bazaar.launchpad.dev/~aa/b/c')
+            'bzr+ssh://bazaar.launchpad.test/~aa/b/c')
         self.assertEqual(branch, branch2)
 
     def test_getByUrl_with_sftp(self):
         """getByUrl recognizes LP branches for sftp URLs."""
         branch = self.makeProductBranch()
         branch_set = getUtility(IBranchLookup)
-        branch2 = branch_set.getByUrl('sftp://bazaar.launchpad.dev/~aa/b/c')
+        branch2 = branch_set.getByUrl('sftp://bazaar.launchpad.test/~aa/b/c')
         self.assertEqual(branch, branch2)
 
     def test_getByUrl_with_ftp(self):
@@ -330,7 +330,7 @@ class TestGetByUrl(TestCaseWithFactory):
         """
         self.makeProductBranch()
         branch_set = getUtility(IBranchLookup)
-        branch2 = branch_set.getByUrl('ftp://bazaar.launchpad.dev/~aa/b/c')
+        branch2 = branch_set.getByUrl('ftp://bazaar.launchpad.test/~aa/b/c')
         self.assertIs(None, branch2)
 
     def test_getByURL_with_lp_prefix(self):

@@ -6,7 +6,7 @@ eg. "applied patch in comment #34". This number is stable, and part of
 the permalink URL. To help users find the relevant comments more
 easily, the numbers are displayed in the comment header.
 
-    >>> anon_browser.open('http://bugs.launchpad.dev/jokosher/+bug/11')
+    >>> anon_browser.open('http://bugs.launchpad.test/jokosher/+bug/11')
     >>> comments = find_tags_by_class(
     ...     anon_browser.contents, 'boardComment')
     >>> for comment in comments:

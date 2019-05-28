@@ -257,7 +257,7 @@ class OneLoopTestCase(MailmanTestCase):
         mm_list = MailList.MailList('team-1')
         self.addCleanup(self.cleanMailmanList, mm_list)
         self.assertEqual(
-            'team-1@lists.launchpad.dev', mm_list.getListAddress())
+            'team-1@lists.launchpad.test', mm_list.getListAddress())
         self.assertEqual(MailingListStatus.ACTIVE, mailing_list.status)
 
     def test_deactivate(self):
@@ -295,7 +295,7 @@ class OneLoopTestCase(MailmanTestCase):
         self.runner._oneloop()
         self.assertFalse(os.path.exists(backup_file))
         self.assertEqual(
-            'team-1@lists.launchpad.dev', self.mm_list.getListAddress())
+            'team-1@lists.launchpad.test', self.mm_list.getListAddress())
         self.assertEqual(MailingListStatus.ACTIVE, mailing_list.status)
 
     def test_get_subscriptions_add(self):
@@ -419,7 +419,7 @@ class OneLoopTestCase(MailmanTestCase):
         mm_list = MailList.MailList('team-1')
         self.addCleanup(self.cleanMailmanList, mm_list)
         self.assertEqual(
-            'team-1@lists.launchpad.dev', mm_list.getListAddress())
+            'team-1@lists.launchpad.test', mm_list.getListAddress())
         self.assertEqual(MailingListStatus.ACTIVE, mailing_list.status)
 
     def test_updating_to_active_recovery(self):

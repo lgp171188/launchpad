@@ -27,7 +27,7 @@ EMPTY_DBNAME=launchpad_empty
 TEST_SESSION_DBNAME=session_ftest
 
 # The database which is a copy of launchpad_ftest_template and can be accessed
-# via http://launchpad.dev when you use LPCONFIG=test-playground.
+# via http://launchpad.test when you use LPCONFIG=test-playground.
 TEST_PLAYGROUND_DBNAME=launchpad_ftest_playground
 
 # The session database name.

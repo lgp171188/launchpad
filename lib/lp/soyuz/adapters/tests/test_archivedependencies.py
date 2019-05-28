@@ -577,7 +577,7 @@ class TestSourcesList(TestCaseWithFactory):
         # a PPA.  This means that the parent's details gets added to the
         # sources.list passed to the builders.
         depdistro = self.factory.makeDistribution(
-            "depdistro", publish_base_url="http://archive.launchpad.dev/")
+            "depdistro", publish_base_url="http://archive.launchpad.test/")
         depseries = self.factory.makeDistroSeries(
             distribution=depdistro, name="depseries")
         self.factory.makeDistroArchSeries(

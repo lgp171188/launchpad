@@ -258,7 +258,7 @@ long hyphenated URL.  Under normal circumstances, this will get wrapped.
     ...     date='today',
     ...     message_id='<aardvark>',
     ...     # And this is the one we're really interested in.
-    ...     review_url=('http://launchpad.dev/~frankly-my-dear-i-'
+    ...     review_url=('http://launchpad.test/~frankly-my-dear-i-'
     ...                 'dont-give-a-damn/+review-moderation-messages'),
     ...     )
 
@@ -283,7 +283,7 @@ long hyphenated URL.  Under normal circumstances, this will get wrapped.
     <BLANKLINE>
     To review all messages pending approval, visit:
     <BLANKLINE>
-        http://launchpad.dev/~frankly-my-dear-i-dont-give-a-damn/+review-
+        http://launchpad.test/~frankly-my-dear-i-dont-give-a-damn/+review-
     moderation-messages
     <BLANKLINE>
     Regards,
@@ -316,7 +316,7 @@ The callable's argument is the pre-wrapped paragraph.
     <BLANKLINE>
     To review all messages pending approval, visit:
     <BLANKLINE>
-        http://launchpad.dev/~frankly-my-dear-i-dont-give-a-damn/+review-moderation-messages
+        http://launchpad.test/~frankly-my-dear-i-dont-give-a-damn/+review-moderation-messages
     <BLANKLINE>
     Regards,
     The Launchpad team

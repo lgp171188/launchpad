@@ -4682,7 +4682,7 @@ ALTER TABLE livefsfile ENABLE TRIGGER ALL;
 
 ALTER TABLE logintoken DISABLE TRIGGER ALL;
 
-INSERT INTO logintoken (id, requester, requesteremail, email, created, tokentype, token, fingerprint, redirection_url, date_consumed) VALUES (1, NULL, NULL, 'bac@canonical.com', '2008-06-27 14:48:38.308457', 3, '4d0a02130ab51372bb2114a9abe3ad8482810bdac58a4231c85c005c923cd57c', NULL, 'http://launchpad.dev', '2008-06-27 14:49:11.149508');
+INSERT INTO logintoken (id, requester, requesteremail, email, created, tokentype, token, fingerprint, redirection_url, date_consumed) VALUES (1, NULL, NULL, 'bac@canonical.com', '2008-06-27 14:48:38.308457', 3, '4d0a02130ab51372bb2114a9abe3ad8482810bdac58a4231c85c005c923cd57c', NULL, 'http://launchpad.test', '2008-06-27 14:49:11.149508');
 INSERT INTO logintoken (id, requester, requesteremail, email, created, tokentype, token, fingerprint, redirection_url, date_consumed) VALUES (2, 16, 'foo.bar@canonical.com', 'admin@canonical.com', '2008-08-05 11:59:42.448213', 4, 'd617585e5d8be1b4eba0c4d5f5058f0f761f6d2912d8c780b257d483ac3e5c8f', NULL, NULL, '2008-08-05 12:01:32.086327');
 
 
@@ -9186,8 +9186,8 @@ ALTER TABLE productreleasefile ENABLE TRIGGER ALL;
 
 ALTER TABLE publisherconfig DISABLE TRIGGER ALL;
 
-INSERT INTO publisherconfig (id, distribution, root_dir, base_url, copy_base_url) VALUES (1, 1, '/var/tmp/archive', 'http://archive.launchpad.dev/', 'http://rebuild-test.internal/');
-INSERT INTO publisherconfig (id, distribution, root_dir, base_url, copy_base_url) VALUES (2, 8, '/var/tmp/archive', 'http://archive.launchpad.dev/', 'http://rebuild-test.internal/');
+INSERT INTO publisherconfig (id, distribution, root_dir, base_url, copy_base_url) VALUES (1, 1, '/var/tmp/archive', 'http://archive.launchpad.test/', 'http://rebuild-test.internal/');
+INSERT INTO publisherconfig (id, distribution, root_dir, base_url, copy_base_url) VALUES (2, 8, '/var/tmp/archive', 'http://archive.launchpad.test/', 'http://rebuild-test.internal/');
 
 
 ALTER TABLE publisherconfig ENABLE TRIGGER ALL;

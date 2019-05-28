@@ -27,7 +27,7 @@ And for every country we publish most of its attributes.
 
 Make sure that invalid countries return 404s and not OOPSes.
 
-    >>> bogus_country = "http://api.launchpad.dev/beta/+countries/bogus"
+    >>> bogus_country = "http://api.launchpad.test/beta/+countries/bogus"
     >>> print webservice.get(bogus_country)
     HTTP/1.1 404 Not Found
     ...

@@ -356,7 +356,7 @@ redirect the user to another URL.  The URL is specified by the
   ...
   ...     @action(u'Redirect', name='redirect')
   ...     def redirect_action(self, action, data):
-  ...         self.next_url = 'http://launchpad.dev/'
+  ...         self.next_url = 'http://launchpad.test/'
   ...
   ...     def handleUpdateFailure(self, action, data, errors):
   ...         return u'Some errors occured.'

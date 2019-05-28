@@ -61,7 +61,7 @@ Listings from the main product code page
 Below the branch counts in the main content, there is a paragraph that lists
 the number of active reviews and approved merges.
 
-    >>> browser.open('http://code.launchpad.dev/fooix')
+    >>> browser.open('http://code.launchpad.test/fooix')
     >>> print_tag_with_id(browser.contents, 'active-review-count')
     Fooix has 3 active reviews...
 
@@ -91,7 +91,7 @@ Listings from the main person code page
 The summary before the branch listings also shows the number of active reviews
 and approved merges.
 
-    >>> browser.open('http://code.launchpad.dev/~albert')
+    >>> browser.open('http://code.launchpad.test/~albert')
     >>> print_tag_with_id(browser.contents, 'portlet-person-codesummary')
     Branches
     Active reviews
@@ -101,7 +101,7 @@ and approved merges.
 The person's active reviews also lists all of their currently requested
 reviews.
 
-    >>> browser.open('http://code.launchpad.dev/~robert/+activereviews')
+    >>> browser.open('http://code.launchpad.test/~robert/+activereviews')
     >>> print_tag_with_id(browser.contents, 'proposals')
     Reviews Robert has to do
     Branch Merge Proposal             Requested By    Lines Activity
@@ -118,7 +118,7 @@ team cannot approve a review, only a person can.
     >>> logout()
 
     >>> browser = setupBrowser(auth='Basic albert@example.com:test')
-    >>> browser.open('http://code.launchpad.dev/~albert/fooix/review')
+    >>> browser.open('http://code.launchpad.test/~albert/fooix/review')
     >>> browser.getLink('Ready for review').click()
     >>> browser.getLink('Request another review').click()
     >>> browser.getControl('Reviewer').value = 'a-team'
@@ -127,7 +127,7 @@ team cannot approve a review, only a person can.
 
 Since Albert is in the A-Team, he can do the pending review.
 
-    >>> browser.open('http://code.launchpad.dev/~a-team')
+    >>> browser.open('http://code.launchpad.test/~a-team')
     >>> browser.getLink('Active reviews').click()
     >>> print_tag_with_id(browser.contents, 'proposals')
     Requested reviews you can do
@@ -141,7 +141,7 @@ Listings from a branch page
 When looking at a branch that is a target of merge proposals, the user is
 shown a link and a count.
 
-    >>> browser.open('http://code.launchpad.dev/fooix')
+    >>> browser.open('http://code.launchpad.test/fooix')
     >>> browser.getLink('lp://dev/fooix').click()
     >>> print_tag_with_id(browser.contents, 'landing-candidates')
     3 branches proposed for merging into this one.

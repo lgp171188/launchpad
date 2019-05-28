@@ -12,7 +12,7 @@ or inferred from GeoIP information. In this example, only English
 questions will be shown when the user has not provided language
 information.
 
-    >>> anon_browser.open('http://launchpad.dev/distros/ubuntu/+questions')
+    >>> anon_browser.open('http://launchpad.test/distros/ubuntu/+questions')
     >>> soup = find_main_content(anon_browser.contents)
     >>> for question in soup.findAll('td', 'questionTITLE'):
     ...     print(question.find('a').renderContents())
@@ -97,7 +97,7 @@ language controls.
     >>> transaction.commit()
     >>> logout()
 
-    >>> anon_browser.open('http://launchpad.dev/kubuntu/+questions')
+    >>> anon_browser.open('http://launchpad.test/kubuntu/+questions')
     >>> anon_browser.getControl(name='field.language')
     Traceback (most recent call last):
       ...
@@ -115,7 +115,7 @@ mapped, we assume they speak the default language of English.
 
     >>> anon_browser.addHeader('X_FORWARDED_FOR', '172.16.1.1')
     >>> anon_browser.open(
-    ...     'http://launchpad.dev/ubuntu/+source/mozilla-firefox/+questions')
+    ...     'http://launchpad.test/ubuntu/+source/mozilla-firefox/+questions')
     >>> anon_browser.getControl(name='field.language')
     Traceback (most recent call last):
       ...
@@ -125,7 +125,7 @@ But if the user configures their browser to accept Spanish and English
 then questions with those language will be displayed:
 
     >>> anon_browser.addHeader('Accept-Language', 'es, en')
-    >>> anon_browser.open('http://launchpad.dev/distros/ubuntu/+questions')
+    >>> anon_browser.open('http://launchpad.test/distros/ubuntu/+questions')
     >>> anon_browser.getControl('English (en)').selected
     True
     >>> anon_browser.getControl('Spanish (es)').selected
@@ -159,7 +159,7 @@ languages, nor is their browser configured with a language; we use GeoIP
 rules. As with the anonymous user, the intersection of the GeoIP
 languages and the target's question languages is 'en'.
 
-    >>> user_browser.open('http://launchpad.dev/distros/ubuntu/+questions')
+    >>> user_browser.open('http://launchpad.test/distros/ubuntu/+questions')
     >>> sorted(user_browser.getControl(name='field.language').options)
     ['en']
 
@@ -168,7 +168,7 @@ that language, we do not show the language controls.
 
     >>> user_browser.addHeader('X_FORWARDED_FOR', '172.16.1.1')
     >>> user_browser.open(
-    ...     'http://launchpad.dev/ubuntu/+source/mozilla-firefox/+questions')
+    ...     'http://launchpad.test/ubuntu/+source/mozilla-firefox/+questions')
     >>> user_browser.getControl(name='field.language')
     Traceback (most recent call last):
       ...
@@ -178,7 +178,7 @@ When No Privileges Person adds Spanish and English to their browser, they
 are added to the language controls.
 
     >>> user_browser.addHeader('Accept-Language', 'es, en')
-    >>> user_browser.open('http://launchpad.dev/distros/ubuntu/+questions')
+    >>> user_browser.open('http://launchpad.test/distros/ubuntu/+questions')
     >>> sorted(user_browser.getControl(name='field.language').options)
     ['en', 'es']
 
@@ -192,7 +192,7 @@ Catalan questions, so no Catalan checkbox is displayed.
     >>> from lp.testing.pages import strip_label
 
     >>> browser.addHeader('Authorization', 'Basic carlos@canonical.com:test')
-    >>> browser.open('http://launchpad.dev/distros/ubuntu/+questions')
+    >>> browser.open('http://launchpad.test/distros/ubuntu/+questions')
     >>> language_control = browser.getControl(name='field.language')
     >>> for label in sorted(language_control.displayOptions):
     ...     strip_label(label)
@@ -220,7 +220,7 @@ will not be any controls present for those two languages when
 searching Ubuntu.
 
     >>> daf_browser = setupBrowser(auth='Basic daf@canonical.com:test')
-    >>> daf_browser.open('http://launchpad.dev/~daf/+editlanguages')
+    >>> daf_browser.open('http://launchpad.test/~daf/+editlanguages')
     >>> daf_browser.getControl('English (United Kingdom)').selected
     True
     >>> daf_browser.getControl('Japanese').selected
@@ -235,7 +235,7 @@ The controls are filters that allow the user to see questions in
 their languages. Daf, in this example, can see a language filter for
 English, and can use it to locate English questions.
 
-    >>> daf_browser.open('http://launchpad.dev/distros/ubuntu/+questions')
+    >>> daf_browser.open('http://launchpad.test/distros/ubuntu/+questions')
     >>> language_control = daf_browser.getControl(name='field.language')
     >>> for label in language_control.displayOptions:
     ...     strip_label(label)
@@ -266,12 +266,12 @@ project that needs help. They visit Kubuntu and does not see a need,
 but when they visit Mozilla Firefox, they are informed that there are
 questions going unanswered.
 
-    >>> user_browser.open('http://answers.launchpad.dev/kubuntu')
+    >>> user_browser.open('http://answers.launchpad.test/kubuntu')
     >>> paragraph = find_main_content(user_browser.contents).find('p')
     >>> print(extract_text(paragraph))
     There are no questions for Kubuntu with the requested statuses.
 
-    >>> user_browser.open('http://answers.launchpad.dev/firefox')
+    >>> user_browser.open('http://answers.launchpad.test/firefox')
     >>> paragraph = find_main_content(user_browser.contents).find('p')
     >>> print(extract_text(paragraph))
     Mozilla Firefox has unanswered questions in the following languages:
@@ -312,7 +312,7 @@ project. They can see the question on the second page of "My questions"...
 
     >>> sample_person_browser = setupBrowser(
     ...     auth='Basic test@canonical.com:test')
-    >>> sample_person_browser.open('http://answers.launchpad.dev/ubuntu')
+    >>> sample_person_browser.open('http://answers.launchpad.test/ubuntu')
     >>> sample_person_browser.getLink('My questions').click()
     >>> sample_person_browser.getLink('Next').click()
     >>> print(sample_person_browser.title)

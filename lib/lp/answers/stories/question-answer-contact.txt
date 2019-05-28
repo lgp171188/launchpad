@@ -11,7 +11,7 @@ distribution.
 
     >>> browser.addHeader('Authorization', 'Basic test@canonical.com:test')
     >>> browser.addHeader('Accept-Language', 'en, es')
-    >>> browser.open('http://launchpad.dev/ubuntu/+questions')
+    >>> browser.open('http://launchpad.test/ubuntu/+questions')
     >>> print(extract_text(
     ...     find_tag_by_id(
     ...         browser.contents, 'portlet-answer-contacts-ubuntu')))
@@ -68,7 +68,7 @@ To remove oneself from the answer contacts, the user uses the same 'Set
 answer contact' link and uncheck themselves or the team they want to remove
 from the answer contact list.
 
-    >>> browser.open('http://launchpad.dev/ubuntu/+questions')
+    >>> browser.open('http://launchpad.test/ubuntu/+questions')
     >>> browser.getLink('Set answer contact').click()
     >>> browser.getControl(
     ...     "I want to be an answer contact for Ubuntu").selected
@@ -92,13 +92,13 @@ Product Answer Contacts
 
 The 'Set answer contact' action is also available on products:
 
-    >>> browser.open('http://answers.launchpad.dev/firefox')
+    >>> browser.open('http://answers.launchpad.test/firefox')
     >>> browser.getLink('Set answer contact').click()
     >>> print(browser.title)
     Answer contact for...
 
     >>> print(browser.url)
-    http://answers.launchpad.dev/firefox/+answer-contact
+    http://answers.launchpad.test/firefox/+answer-contact
 
 
 Answer Contact teams and preferred languages
@@ -115,7 +115,7 @@ main story above. They want Landscape Developers team to be answer
 contacts for Ubuntu, but only for Spanish questions to keep the email
 traffic to a manageable volume.
 
-    >>> browser.open('http://answers.launchpad.dev/ubuntu/')
+    >>> browser.open('http://answers.launchpad.test/ubuntu/')
     >>> print(browser.title)
     Questions : Ubuntu
 
@@ -129,7 +129,7 @@ traffic to a manageable volume.
 Sample Person navigates to the team page to set it's preferred
 languages. They must add Spanish to the team's preferred languages.
 
-    >>> browser.open('http://launchpad.dev/~landscape-developers')
+    >>> browser.open('http://launchpad.test/~landscape-developers')
     >>> browser.title
     'Landscape Developers in Launchpad'
 

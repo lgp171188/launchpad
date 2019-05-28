@@ -29,7 +29,7 @@ have the launchpad.Driver permission.
     >>> logout()
 
     >>> user_browser.open(
-    ...     "http://launchpad.dev/distros/ubuntu/+source/mozilla-firefox/"
+    ...     "http://launchpad.test/distros/ubuntu/+source/mozilla-firefox/"
     ...     "+bug/1/nominations/2/+bugtasks-and-nominations-table-row")
 
 no-priv will, of course, see their nomination.
@@ -53,7 +53,7 @@ no-priv can't access the +edit-form (the view that renders the submit
 buttons) directly either.
 
     >>> user_browser.open(
-    ...     "http://launchpad.dev/distros/ubuntu/+source/mozilla-firefox/"
+    ...     "http://launchpad.test/distros/ubuntu/+source/mozilla-firefox/"
     ...     "+bug/1/nominations/2/+edit-form")
     Traceback (most recent call last):
       ...
@@ -74,7 +74,7 @@ Approve and Decline buttons.
 
     >>> browser = setupBrowser("Basic foo.bar@canonical.com:test")
     >>> browser.open(
-    ...     "http://launchpad.dev/distros/ubuntu/+source/mozilla-firefox/"
+    ...     "http://launchpad.test/distros/ubuntu/+source/mozilla-firefox/"
     ...     "+bug/1/nominations/2/+bugtasks-and-nominations-table-row")
 
     >>> approve_button = browser.getControl("Approve")
@@ -94,7 +94,7 @@ Now only the "Approve" button shows.
 
     >>> browser = setupBrowser("Basic foo.bar@canonical.com:test")
     >>> browser.open(
-    ...     "http://launchpad.dev/distros/ubuntu/+source/mozilla-firefox/"
+    ...     "http://launchpad.test/distros/ubuntu/+source/mozilla-firefox/"
     ...     "+bug/1/nominations/2/+bugtasks-and-nominations-table-row")
 
     >>> browser.contents

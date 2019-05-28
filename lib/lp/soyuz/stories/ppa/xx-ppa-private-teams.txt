@@ -26,7 +26,7 @@ user/team page.
 
     >>> browser = setupBrowser(
     ...     auth='Basic celso.providelo@canonical.com:test')
-    >>> browser.open("http://launchpad.dev/~private-team")
+    >>> browser.open("http://launchpad.test/~private-team")
 
    >>> print_tag_with_id(browser.contents, 'ppas')
    Personal package archives
@@ -49,7 +49,7 @@ The URL template also shows the private URL.
     >>> print(extract_text(
     ...     first_tag_by_class(browser.contents, 'form')))
     URL:
-      http://private-ppa.launchpad.dev/private-team/
+      http://private-ppa.launchpad.test/private-team/
       At least one lowercase letter or number, followed by letters, numbers,
       dots, hyphens or pluses. Keep this name short; it is used in URLs.
     ...
@@ -69,7 +69,7 @@ An administrator viewing the PPA administration page sees that it is
 marked private.
 
    >>> admin_browser.open(
-   ...     'http://launchpad.dev/~private-team/+archive/ppa/+admin')
+   ...     'http://launchpad.test/~private-team/+archive/ppa/+admin')
    >>> admin_browser.getControl(name='field.private').value
    True
 

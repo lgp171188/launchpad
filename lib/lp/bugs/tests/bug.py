@@ -299,10 +299,10 @@ def print_bugfilters_portlet_unfilled(browser, target):
 
     :param browser  browser from which to extract the content.
     :param target   entity from whose bugs page to fetch the portlet
-                    (e.g., http://bugs.launchpad.dev/TARGET/...)
+                    (e.g., http://bugs.launchpad.test/TARGET/...)
     """
     browser.open(
-        'http://bugs.launchpad.dev/%s/+portlet-bugfilters' % target)
+        'http://bugs.launchpad.test/%s/+portlet-bugfilters' % target)
     ul = BeautifulSoup(browser.contents).find('ul', 'data-list')
     print_ul(ul)
 
@@ -318,10 +318,10 @@ def print_bugfilters_portlet_filled(browser, target):
 
     :param browser  browser from which to extract the content.
     :param target   entity from whose bugs page to fetch the portlet
-                    (e.g., http://bugs.launchpad.dev/TARGET/...)
+                    (e.g., http://bugs.launchpad.test/TARGET/...)
     """
     browser.open(
-        'http://bugs.launchpad.dev'
+        'http://bugs.launchpad.test'
         '/%s/+bugtarget-portlet-bugfilters-stats' % target)
     ul = BeautifulSoup(browser.contents).find('ul', 'data-list')
     print_ul(ul)

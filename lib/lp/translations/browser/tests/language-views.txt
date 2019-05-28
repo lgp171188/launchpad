@@ -25,10 +25,10 @@ because the previous and next steps of editing a language are returning
 to its index.
 
     >>> print(language_admin_view.cancel_url)
-    http://translations.launchpad.dev/+languages/pt_BR
+    http://translations.launchpad.test/+languages/pt_BR
 
     >>> print(language_admin_view.next_url)
-    http://translations.launchpad.dev/+languages/pt_BR
+    http://translations.launchpad.test/+languages/pt_BR
 
 
 Validation
@@ -59,7 +59,7 @@ Add Language
 The view provides also a cancel_url and a next_url:
 
     >>> print(language_add_view.cancel_url)
-    http://translations.launchpad.dev/+languages
+    http://translations.launchpad.test/+languages
 
     >>> print(language_add_view.field_names)
     ['code', 'englishname', 'nativename', 'pluralforms',
@@ -83,7 +83,7 @@ The view provides also a cancel_url and a next_url:
     []
 
     >>> print(language_add_view.next_url)
-    http://translations.launchpad.dev/+languages/lp_US
+    http://translations.launchpad.test/+languages/lp_US
 
 
 View Language

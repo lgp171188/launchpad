@@ -1,6 +1,6 @@
 Any user can see a release for a series.
 
-    >>> anon_browser.open('http://launchpad.dev/firefox/trunk/0.9.2')
+    >>> anon_browser.open('http://launchpad.test/firefox/trunk/0.9.2')
     >>> print anon_browser.title
     0.9.2 "One (secure) Tree Hill" : Series trunk : Mozilla Firefox
 
@@ -32,7 +32,7 @@ release. Each file is linked.
 There is an link about how to verify downloaded files.
 
     >>> anon_browser.getLink('How do I verify a download?')
-    <Link ... url='http://launchpad.dev/+help-registry/verify-downloads.html'>
+    <Link ... url='http://launchpad.test/+help-registry/verify-downloads.html'>
 
 If the file had been downloaded, we'd see the number of times it was
 downloaded and the date of the last download on that table as well.

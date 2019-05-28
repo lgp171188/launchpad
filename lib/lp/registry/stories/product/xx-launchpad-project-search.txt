@@ -3,12 +3,12 @@
 Launchpad provides a way for people to search across products, projects and
 distributions.
 
-    >>> anon_browser.open('http://launchpad.dev/projects')
+    >>> anon_browser.open('http://launchpad.test/projects')
     >>> project_search = anon_browser.getForm(id='project-search')
     >>> project_search.getControl(name='text').value = 'whizzbar'
     >>> anon_browser.getControl('Search', index=0).click()
     >>> anon_browser.url
-    'http://launchpad.dev/projects/+index?text=whizzbar'
+    'http://launchpad.test/projects/+index?text=whizzbar'
 
 The user is informed when no matches are found.
 
@@ -24,12 +24,12 @@ the user to refine their search.
     >>> config.launchpad.default_batch_size
     5
 
-    >>> anon_browser.open('http://launchpad.dev/projects')
+    >>> anon_browser.open('http://launchpad.test/projects')
     >>> project_search = anon_browser.getForm(id='project-search')
     >>> project_search.getControl(name='text').value = 'ubuntu'
     >>> project_search.getControl('Search').click()
     >>> anon_browser.url
-    'http://launchpad.dev/projects/+index?text=ubuntu'
+    'http://launchpad.test/projects/+index?text=ubuntu'
 
     >>> content = find_main_content(anon_browser.contents)
     >>> print extract_text(find_tag_by_id(content, 'search-summary'))
@@ -63,12 +63,12 @@ project-group, or distribution.
 
     >>> anon_browser.getLink('Tomcat').click()
     >>> anon_browser.url
-    'http://launchpad.dev/tomcat'
+    'http://launchpad.test/tomcat'
 
 If the user searches without any search terms, the page asks them to enter
 some terms and do another search.
 
-    >>> anon_browser.open('http://launchpad.dev/projects')
+    >>> anon_browser.open('http://launchpad.test/projects')
     >>> project_search = anon_browser.getForm(id='project-search')
     >>> project_search.getControl(name='text').value
     ''
@@ -83,12 +83,12 @@ some terms and do another search.
 
 A similar page is available for only searching project groups.
 
-    >>> anon_browser.open('http://launchpad.dev/projectgroups')
+    >>> anon_browser.open('http://launchpad.test/projectgroups')
     >>> search = anon_browser.getForm(id='projectgroup-search')
     >>> search.getControl(name='text').value = 'gnome'
     >>> search.getControl('Search').click()
     >>> anon_browser.url
-    'http://launchpad.dev/projectgroups/+index?text=gnome'
+    'http://launchpad.test/projectgroups/+index?text=gnome'
 
     >>> tags = find_tags_by_class(
     ...     anon_browser.contents, "informational message")

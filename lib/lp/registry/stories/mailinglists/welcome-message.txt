@@ -11,7 +11,7 @@ address.
     >>> logout()
     >>> transaction.commit()
 
-    >>> user_browser.open('http://launchpad.dev/~aardvarks')
+    >>> user_browser.open('http://launchpad.test/~aardvarks')
     >>> user_browser.getLink('Configure mailing list').click()
     >>> welcome_message = user_browser.getControl('Welcome message')
     >>> welcome_message.value
@@ -55,7 +55,7 @@ What if Mailman failed to apply the change?
     >>> transaction.commit()
     >>> logout()
 
-    >>> user_browser.open('http://launchpad.dev/~aardvarks/+mailinglist')
+    >>> user_browser.open('http://launchpad.test/~aardvarks/+mailinglist')
     >>> print extract_text(find_tag_by_id(
     ...     user_browser.contents, 'mailing_list_status_message').strong)
     This team's mailing list is in an inconsistent state...

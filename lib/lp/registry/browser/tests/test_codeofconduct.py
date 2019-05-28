@@ -37,7 +37,7 @@ class TestSignedCodeOfConductAckView(TestCaseWithFactory):
             'Register a code of conduct signature', view.label)
         self.assertEqual(view.label, view.page_title)
         self.assertEqual(['owner'], view.field_names)
-        url = 'http://launchpad.dev/codeofconduct/console'
+        url = 'http://launchpad.test/codeofconduct/console'
         self.assertEqual(url, view.next_url)
         self.assertEqual(url, view.cancel_url)
 
@@ -79,7 +79,7 @@ class SignCodeOfConductTestCase(TestCaseWithFactory):
         self.assertEqual(['admincomment'], view.field_names)
         self.assertEqual(
             view.page_title, view.label)
-        url = 'http://launchpad.dev/codeofconduct/console/%d' % (
+        url = 'http://launchpad.test/codeofconduct/console/%d' % (
             self.signed_coc.id)
         self.assertEqual(url, view.next_url)
         self.assertEqual(url, view.cancel_url)

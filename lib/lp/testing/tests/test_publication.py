@@ -72,7 +72,7 @@ class TestTestTraverse(TestCaseWithFactory):
         self.addCleanup(
             getSiteManager().unregisterAdapter, new_class,
             (ILaunchpadRoot, IDefaultBrowserLayer), Interface, name)
-        return 'https://launchpad.dev/' + name
+        return 'https://launchpad.test/' + name
 
     def test_traverse_simple(self):
         # test_traverse called with a product URL returns the product
@@ -80,7 +80,7 @@ class TestTestTraverse(TestCaseWithFactory):
         login(ANONYMOUS)
         product = self.factory.makeProduct()
         context, view, request = test_traverse(
-            'https://launchpad.dev/' + product.name)
+            'https://launchpad.test/' + product.name)
         self.assertEqual(product, context)
 
     def test_traverse_quoted(self):
@@ -89,7 +89,7 @@ class TestTestTraverse(TestCaseWithFactory):
         login(ANONYMOUS)
         product = self.factory.makeProduct(name='foo+bar')
         context, view, request = test_traverse(
-            'https://launchpad.dev/' + quote(product.name))
+            'https://launchpad.test/' + quote(product.name))
         self.assertEqual(product, context)
 
     def test_request_is_current_during_traversal(self):
@@ -111,7 +111,7 @@ class TestTestTraverse(TestCaseWithFactory):
         request = LaunchpadTestRequest()
         login(ANONYMOUS, request)
         product = self.factory.makeProduct()
-        test_traverse('https://launchpad.dev/' + product.name)
+        test_traverse('https://launchpad.test/' + product.name)
         self.assertIs(request, get_current_browser_request())
 
     def test_uses_current_user(self):
@@ -132,7 +132,7 @@ class TestTestTraverse(TestCaseWithFactory):
         login(ANONYMOUS)
         product = self.factory.makeProduct()
         context, view, request = test_traverse(
-            'http://api.launchpad.dev/devel/' + product.name)
+            'http://api.launchpad.test/devel/' + product.name)
         self.assertEqual(product, context)
         self.assertIsInstance(view, EntryResource)
 

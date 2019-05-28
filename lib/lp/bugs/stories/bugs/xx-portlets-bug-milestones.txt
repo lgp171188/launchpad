@@ -9,7 +9,7 @@ this, a project has to first have one of its milestones associated with a bug.
 If there are no milestones with bugs, then there is no milestone-targeted
 portlet.
 
-    >>> anon_browser.open("http://bugs.launchpad.dev/firefox")
+    >>> anon_browser.open("http://bugs.launchpad.test/firefox")
     >>> portlet = find_portlet(
     ...     anon_browser.contents, "Milestone-targeted bugs")
     >>> print(portlet)
@@ -41,7 +41,7 @@ The bugtask milestone is set to the Firefox 1.0 milestone.
 Now Firefox has a milestone-targeted bugs portlet on the project's bugs home
 page.
 
-    >>> anon_browser.open("http://bugs.launchpad.dev/firefox")
+    >>> anon_browser.open("http://bugs.launchpad.test/firefox")
     >>> portlet = find_portlet(
     ...     anon_browser.contents, "Milestone-targeted bugs")
     >>> print(extract_text(portlet))
@@ -58,7 +58,7 @@ becomes visible.
 
 And look at the portlet.
 
-    >>> anon_browser.open("http://bugs.launchpad.dev/debian/sarge/+bugs")
+    >>> anon_browser.open("http://bugs.launchpad.test/debian/sarge/+bugs")
     >>> portlet = find_portlet(
     ...     anon_browser.contents, "Milestone-targeted bugs")
     >>> print(extract_text(portlet))

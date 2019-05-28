@@ -10,7 +10,7 @@ Profile page
 
 User keys are shown on profile pages, and any user can see that.
 
-    >>> anon_browser.open('http://launchpad.dev/~name12')
+    >>> anon_browser.open('http://launchpad.test/~name12')
     >>> print anon_browser.title
     Sample Person in Launchpad
     >>> print extract_text(
@@ -20,7 +20,7 @@ User keys are shown on profile pages, and any user can see that.
 Salgado does not have a key, so we omit the 'SSH keys' section for anonymous
 users.
 
-    >>> anon_browser.open('http://launchpad.dev/~salgado')
+    >>> anon_browser.open('http://launchpad.test/~salgado')
     >>> print anon_browser.title
     Guilherme Salgado in Launchpad
     >>> print find_tag_by_id(anon_browser.contents, 'sshkeys')
@@ -36,7 +36,7 @@ Salgado sees a message explaining that he can register his ssh key.
     ...     'guilherme.salgado@canonical.com')
     >>> logout()
     >>> browser = setupBrowserFreshLogin(salgado)
-    >>> browser.open('http://launchpad.dev/~salgado')
+    >>> browser.open('http://launchpad.test/~salgado')
     >>> print browser.title
     Guilherme Salgado in Launchpad
     >>> print extract_text(
@@ -132,7 +132,7 @@ Launchpad administrators are not allowed to poke at other user's ssh keys.
     >>> foo_bar = getUtility(IPersonSet).getByEmail('foo.bar@canonical.com')
     >>> logout()
     >>> admin_browser = setupBrowserFreshLogin(foo_bar)
-    >>> admin_browser.open('http://launchpad.dev/~salgado/+editsshkeys')
+    >>> admin_browser.open('http://launchpad.test/~salgado/+editsshkeys')
     Traceback (most recent call last):
     ...
     Unauthorized: ...
@@ -140,7 +140,7 @@ Launchpad administrators are not allowed to poke at other user's ssh keys.
 Salgado chooses to remove one of his ssh keys from Launchpad. The link
 to edit his keys is on the page.
 
-    >>> browser.open('http://launchpad.dev/~salgado')
+    >>> browser.open('http://launchpad.test/~salgado')
     >>> print browser.title
     Guilherme Salgado in Launchpad
     >>> print extract_text(find_tag_by_id(browser.contents, 'sshkeys'))
@@ -178,7 +178,7 @@ belong to him, it will fail with an error message.
 Similarly, it's not possible to remove an unspecified ssh key, although in
 this case we'll raise an UnexpectedFormData.
 
-    >>> browser.open('http://launchpad.dev/~salgado/+editsshkeys')
+    >>> browser.open('http://launchpad.test/~salgado/+editsshkeys')
     >>> browser.getControl(name='key', index=0).value = ''
     >>> browser.getControl('Remove', index=0).click()
     Traceback (most recent call last):
@@ -191,7 +191,7 @@ that the key has been removed.
     >>> import email
     >>> from lp.services.mail import stub
     >>> stub.test_emails = []
-    >>> browser.open('http://launchpad.dev/~salgado/+editsshkeys')
+    >>> browser.open('http://launchpad.test/~salgado/+editsshkeys')
     >>> browser.getControl('Remove', index=0).click()
     >>> from_addr, to_addr, msg = stub.test_emails.pop()
     >>> to_addr
@@ -206,7 +206,7 @@ These keys can be imported just like the others which have ASCII
 comments.
 
     >>> key = 'ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAzSc+OzlZaURcX8NK9Hy1VoA1SXXuxFAvLw9ljz6xXEFgodmkSgSE/Pc+nR2fO/hl0rnWi//8oOwkHlwLVPQpor2cjQlceVs9rKaQcrcwRm6Jmi8CYKlEIBq82kpaLwXwK/x5ZsDfFtYUq558C5IKZOnDozthC7REPYK0cQ8gZ4bLf+5hmJ6QO4sSRZcXTZuPvgUixhlazFo6w6GqWbynf29Wp+WkLFGxGF2UE/dI8HyQy2j7ddaLnW50mGfB00B/pYtO246s84097BRUE8XoBC3SvzsZx6IbI3hOd2e834lq6kOj6QI0wu6+GINRCZf5UyNlpJv6X809XBvq68SCgw== St\xc3\xa9phane'
-    >>> browser.open('http://launchpad.dev/~salgado/+editsshkeys')
+    >>> browser.open('http://launchpad.test/~salgado/+editsshkeys')
     >>> browser.getControl(name='sshkey').value = key
     >>> browser.getControl('Import Public Key').click()
     >>> print_feedback_messages(browser.contents)

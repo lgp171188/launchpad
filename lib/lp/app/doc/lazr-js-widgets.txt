@@ -55,7 +55,7 @@ link into an AJAX control when JS is available:
         Widgets &gt; important
     </span>
         <a class="yui3-editable_text-trigger sprite edit action-icon"
-           href="http://launchpad.dev/widget/+edit"
+           href="http://launchpad.test/widget/+edit"
            title="">Edit</a>
     </h1>
     <script>
@@ -89,20 +89,20 @@ of the object being edited.  This can be overridden in two ways:
   * provide an 'edit_title' to set the title attribute of the anchor
 
     >>> print widget.edit_url
-    http://launchpad.dev/widget/+edit
+    http://launchpad.test/widget/+edit
 
     >>> diff_view = TextLineEditorWidget(
     ...     product, title_field, title, 'h1', edit_view='+edit-people',
     ...     edit_title='Change the product title')
     >>> print diff_view.edit_url
-    http://launchpad.dev/widget/+edit-people
+    http://launchpad.test/widget/+edit-people
     >>> print diff_view.edit_title
     Change the product title
     >>> ignored = login_person(product.owner)
     >>> print diff_view()
     <h1...
     <a class="yui3-editable_text-trigger sprite edit action-icon"
-       href="http://launchpad.dev/widget/+edit-people"
+       href="http://launchpad.test/widget/+edit-people"
        title="Change the product title">...
 
     >>> diff_url = TextLineEditorWidget(
@@ -174,7 +174,7 @@ editor.
         <div class="clearfix">
           <div class="edit-controls">
             <a class="yui3-editable_text-trigger sprite edit action-icon"
-               href="http://launchpad.dev/~eric/+archive/ubuntu/ppa/+edit"
+               href="http://launchpad.test/~eric/+archive/ubuntu/ppa/+edit"
                title="">Edit</a>
           </div>
           <h3>A title</h3>
@@ -272,7 +272,7 @@ to select.
       </span>
       <span>
         <a class="sprite edit action-icon lazr-btn yui3-activator-act"
-          href="http://launchpad.dev/widget/+edit"
+          href="http://launchpad.test/widget/+edit"
           title="">Edit</a>
         <div class="yui3-activator-message-box yui3-activator-hidden"></div>
     </span> ...
@@ -340,7 +340,7 @@ rendered to hook up the widget.
     My email: <span class="value">Don't hide it</span>
       <span>
         <a class="editicon sprite edit action-icon"
-           href="http://launchpad.dev/~eric/+edit" title="">Edit</a>
+           href="http://launchpad.test/~eric/+edit" title="">Edit</a>
       </span>
     </span>
     <script>
@@ -417,7 +417,7 @@ rendered to hook up the widget.
       <dt>
         Recipe distro series
           <a class="sprite edit action-icon lazr-btn yui3-activator-act"
-             href="http://code.launchpad.dev/~eric/+recipe/cake_recipe/+edit"
+             href="http://code.launchpad.test/~eric/+recipe/cake_recipe/+edit"
              id="edit-distroseries-btn"
              title="">Edit</a>
       </dt>

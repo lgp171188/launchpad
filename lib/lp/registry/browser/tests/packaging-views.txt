@@ -39,7 +39,7 @@ attribute.
     ['sourcepackagename', 'distroseries']
 
     >>> print view.cancel_url
-    http://launchpad.dev/hot/hotter
+    http://launchpad.test/hot/hotter
 
     >>> for series in ubuntu.series:
     ...     print series.name
@@ -90,7 +90,7 @@ Ubuntu package.
     ['sourcepackagename', 'distroseries']
 
     >>> print view.cancel_url
-    http://launchpad.dev/hot/hotter
+    http://launchpad.test/hot/hotter
 
 The view restricts the packaging to Ubuntu series, and default is the current
 Ubuntu series.
@@ -276,9 +276,9 @@ instead.)
     >>> for link in table.findAll('a'):
     ...     if '+remove-packaging' in link['href']:
     ...         print link['href']
-    http://launchpad.dev/ubuntu/grumpy/+source/hot/+remove-packaging
-    http://launchpad.dev/ubuntu/hoary/+source/thunderbird/+remove-packaging
-    http://launchpad.dev/ubuntu/hoary/+source/hot/+remove-packaging
+    http://launchpad.test/ubuntu/grumpy/+source/hot/+remove-packaging
+    http://launchpad.test/ubuntu/hoary/+source/thunderbird/+remove-packaging
+    http://launchpad.test/ubuntu/hoary/+source/hot/+remove-packaging
 
     >>> [hoary_package] = [
     ...     package for series in view.series_batch.batch

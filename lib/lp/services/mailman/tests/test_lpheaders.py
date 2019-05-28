@@ -48,19 +48,19 @@ class TestLaunchpadHeadersTestCase(MailmanTestCase):
         silence = LaunchpadHeaders.process(self.mm_list, message, msg_data)
         self.assertEqual(None, silence)
         self.assertEqual(
-            '<team-1.lists.launchpad.dev>', message['List-Id'])
+            '<team-1.lists.launchpad.test>', message['List-Id'])
         self.assertEqual(
-            '<http://help.launchpad.dev/ListHelp>', message['List-Help'])
+            '<http://help.launchpad.test/ListHelp>', message['List-Help'])
         self.assertEqual(
-            '<http://launchpad.dev/~team-1>', message['List-Subscribe'])
+            '<http://launchpad.test/~team-1>', message['List-Subscribe'])
         self.assertEqual(
-            '<http://launchpad.dev/~team-1>', message['List-Unsubscribe'])
+            '<http://launchpad.test/~team-1>', message['List-Unsubscribe'])
         self.assertEqual(
-            '<mailto:team-1@lists.launchpad.dev>', message['List-Post'])
+            '<mailto:team-1@lists.launchpad.test>', message['List-Post'])
         self.assertEqual(
-            '<http://lists.launchpad.dev/team-1>', message['List-Archive'])
+            '<http://lists.launchpad.test/team-1>', message['List-Archive'])
         self.assertEqual(
-            '<http://launchpad.dev/~team-1>', message['List-Owner'])
+            '<http://launchpad.test/~team-1>', message['List-Owner'])
 
     def test_message_decoration_data(self):
         # The lpheaders process method provides decoration-data.
@@ -72,16 +72,16 @@ class TestLaunchpadHeadersTestCase(MailmanTestCase):
         self.assertTrue('decoration-data' in msg_data)
         decoration_data = msg_data['decoration-data']
         self.assertEqual(
-            'http://launchpad.dev/~team-1',
+            'http://launchpad.test/~team-1',
             decoration_data['list_owner'])
         self.assertEqual(
-            'team-1@lists.launchpad.dev',
+            'team-1@lists.launchpad.test',
             decoration_data['list_post'])
         self.assertEqual(
-            'http://launchpad.dev/~team-1',
+            'http://launchpad.test/~team-1',
             decoration_data['list_unsubscribe'])
         self.assertEqual(
-            'http://help.launchpad.dev/ListHelp',
+            'http://help.launchpad.test/ListHelp',
             decoration_data['list_help'])
 
     def test_message_decorate_footer(self):
@@ -96,8 +96,8 @@ class TestLaunchpadHeadersTestCase(MailmanTestCase):
         body, footer = message.get_payload()[1].get_payload().rsplit('-- ', 1)
         expected = (
             "\n"
-            "Mailing list: http://launchpad.dev/~team-1\n"
-            "Post to     : team-1@lists.launchpad.dev\n"
-            "Unsubscribe : http://launchpad.dev/~team-1\n"
-            "More help   : http://help.launchpad.dev/ListHelp\n")
+            "Mailing list: http://launchpad.test/~team-1\n"
+            "Post to     : team-1@lists.launchpad.test\n"
+            "Unsubscribe : http://launchpad.test/~team-1\n"
+            "More help   : http://help.launchpad.test/ListHelp\n")
         self.assertEqual(expected, footer)

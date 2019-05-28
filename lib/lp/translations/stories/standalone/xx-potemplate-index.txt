@@ -9,7 +9,7 @@ The index page for a POTemplate lists all available translations
 for a source package. No Privileges Person visits the
 evolution-2.2 POTemplate page.
 
-    >>> anon_browser.open("http://translations.launchpad.dev/"
+    >>> anon_browser.open("http://translations.launchpad.test/"
     ...     "ubuntu/hoary/+source/evolution/+pots/evolution-2.2/")
     >>> print(anon_browser.title)
     Template ...evolution-2.2... : Hoary (5.04) :
@@ -50,7 +50,7 @@ languages when the user speaks English or even when English
 translations exist. The Mozilla sourcepackage pkgconf-mozilla has
 English translations, but they are not displayed to the user.
 
-    >>> anon_browser.open('http://translations.launchpad.dev/ubuntu/hoary/'
+    >>> anon_browser.open('http://translations.launchpad.test/ubuntu/hoary/'
     ...     '+source/mozilla/+pots/pkgconf-mozilla')
     >>> table = find_tag_by_id(anon_browser.contents, 'language-chart')
     >>> for row in table.findAll('tr')[0:6]:
@@ -69,7 +69,7 @@ Sharing information
 The template is sharing translations with the template of the same name in
 the Ubuntu source package. This information is displayed on the page.
 
-    >>> anon_browser.open('http://translations.launchpad.dev/evolution'
+    >>> anon_browser.open('http://translations.launchpad.test/evolution'
     ...     '/trunk/+pots/evolution-2.2')
     >>> sharing_info = find_tag_by_id(
     ...     anon_browser.contents, 'sharing-information')
@@ -84,7 +84,7 @@ the Ubuntu source package. This information is displayed on the page.
 Likewise, the Ubuntu template gives information about how it is sharing
 translations with the upstream project.
 
-    >>> anon_browser.open('http://translations.launchpad.dev/ubuntu'
+    >>> anon_browser.open('http://translations.launchpad.test/ubuntu'
     ...     '/hoary/+source/evolution/+pots/evolution-2.2')
     >>> sharing_info = find_tag_by_id(
     ...     anon_browser.contents, 'sharing-information')
@@ -99,7 +99,7 @@ translations with the upstream project.
 If the user has the right permissions, they are offered to edit the sharing
 information.
 
-    >>> admin_browser.open('http://translations.launchpad.dev/evolution'
+    >>> admin_browser.open('http://translations.launchpad.test/evolution'
     ...     '/trunk/+pots/evolution-2.2')
     >>> sharing_details = find_tag_by_id(
     ...     admin_browser.contents, 'sharing-details')
@@ -116,7 +116,7 @@ Finding related templates
 When products have more than one template, the page informs the user
 that there are alternates that may be translated.
 
-    >>> anon_browser.open("http://translations.launchpad.dev/"
+    >>> anon_browser.open("http://translations.launchpad.test/"
     ...     "evolution/trunk/+pots/evolution-2.2-test")
     >>> alternate_notice = find_tag_by_id(anon_browser.contents,
     ...                                   'potemplate-relatives')
@@ -165,7 +165,7 @@ Visiting any template from the same page, the user sees links to the other
 templates.
 
     >>> browser.open(
-    ...     ("http://translations.launchpad.dev/"
+    ...     ("http://translations.launchpad.test/"
     ...     "ubuntu/hoary/+source/%s/+pots/%s") % (
     ...     package.name, template.name))
     >>> relatives = find_tag_by_id(
@@ -185,7 +185,7 @@ Another template is added to the same source package.
     >>> logout()
 
     >>> browser.open(
-    ...     ("http://translations.launchpad.dev/"
+    ...     ("http://translations.launchpad.test/"
     ...     "ubuntu/hoary/+source/%s/+pots/%s") % (
     ...     package.name, template.name))
     >>> relatives = find_tag_by_id(
@@ -209,7 +209,7 @@ Another template is added to the same source package.
     >>> logout()
 
     >>> browser.open((
-    ...     "http://translations.launchpad.dev/"
+    ...     "http://translations.launchpad.test/"
     ...     "ubuntu/hoary/+source/%s/+pots/%s") % (
     ...     package.name, template.name))
     >>> relatives = find_tag_by_id(
@@ -220,7 +220,7 @@ Another template is added to the same source package.
 
     >>> browser.getLink('2 other templates').click()
     >>> browser.url == ((
-    ...     'http://translations.launchpad.dev/'
+    ...     'http://translations.launchpad.test/'
     ...     'ubuntu/hoary/+source/%s/+translations') % (
     ...     package.name))
     True
@@ -252,7 +252,7 @@ A product series with 7 templates is created.
     >>> logout()
 
     >>> browser.open((
-    ...     "http://translations.launchpad.dev/"
+    ...     "http://translations.launchpad.test/"
     ...     "fusa/trunk/+pots/%s") % template.name)
     >>> relatives = find_tag_by_id(
     ...     browser.contents, 'potemplate-relatives')
@@ -262,7 +262,7 @@ A product series with 7 templates is created.
 
     >>> browser.getLink('2 other templates').click()
     >>> browser.url == (
-    ...     'http://translations.launchpad.dev/'
+    ...     'http://translations.launchpad.test/'
     ...     'fusa/trunk/+templates')
     True
 
@@ -274,7 +274,7 @@ Anonymous visitors see only a list of all existing templates, with no
 administration or download/upload links.
 
     >>> anon_browser.open(
-    ...     'http://translations.launchpad.dev/'
+    ...     'http://translations.launchpad.test/'
     ...     'ubuntu/hoary/+source/evolution/+pots/evolution-2.2')
     >>> anon_browser.getLink('upload')
     Traceback (most recent call last):
@@ -290,7 +290,7 @@ As an authenticated user, you should see the download link,
 but not the one for uploading file to this potemplate.
 
     >>> user_browser.open(
-    ...     'http://translations.launchpad.dev/'
+    ...     'http://translations.launchpad.test/'
     ...     'ubuntu/hoary/+source/evolution/+pots/evolution-2.2')
     >>> user_browser.getLink('upload')
     Traceback (most recent call last):
@@ -306,28 +306,28 @@ Beside administering this template, "Change permissions"
 and "Change details" should be also accessible.
 
     >>> admin_browser.open(
-    ...     'http://translations.launchpad.dev/'
+    ...     'http://translations.launchpad.test/'
     ...     'ubuntu/hoary/+source/evolution/+pots/evolution-2.2')
     >>> admin_browser.getLink('upload').click()
     >>> print(admin_browser.url)
     http://trans.../ubuntu/hoary/+source/evolution/+pots/evolution-2.2/+upload
 
     >>> admin_browser.open(
-    ...     'http://translations.launchpad.dev/'
+    ...     'http://translations.launchpad.test/'
     ...     'ubuntu/hoary/+source/evolution/+pots/evolution-2.2')
     >>> admin_browser.getLink('download').click()
     >>> print(admin_browser.url)
     http://trans.../ubuntu/hoary/+source/evolution/+pots/evolution-2.2/+export
 
     >>> admin_browser.open(
-    ...     'http://translations.launchpad.dev/'
+    ...     'http://translations.launchpad.test/'
     ...     'ubuntu/hoary/+source/evolution/+pots/evolution-2.2')
     >>> admin_browser.getLink('Administer this template').click()
     >>> print(admin_browser.url)
     http://trans.../ubuntu/hoary/+source/evolution/+pots/evolution-2.2/+admin
 
     >>> admin_browser.open(
-    ...     'http://translations.launchpad.dev/'
+    ...     'http://translations.launchpad.test/'
     ...     'ubuntu/hoary/+source/evolution/+pots/evolution-2.2')
     >>> admin_browser.getLink('Change details').click()
     >>> print(admin_browser.url)

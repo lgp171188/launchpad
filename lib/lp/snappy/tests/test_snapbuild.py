@@ -89,7 +89,7 @@ expected_body = """\
  * Duration: 10 minutes
  * Build Log: %s
  * Upload Log: %s
- * Builder: http://launchpad.dev/builders/bob
+ * Builder: http://launchpad.test/builders/bob
 """
 
 
@@ -375,7 +375,7 @@ class TestSnapBuild(TestCaseWithFactory):
         body, footer = notification.get_payload(decode=True).split("\n-- \n")
         self.assertEqual(expected_body % (build.log_url, ""), body)
         self.assertEqual(
-            "http://launchpad.dev/~person/+snap/snap-1/+build/%d\n"
+            "http://launchpad.test/~person/+snap/snap-1/+build/%d\n"
             "You are the requester of the build.\n" % build.id, footer)
 
     def addFakeBuildLog(self, build):
@@ -385,7 +385,7 @@ class TestSnapBuild(TestCaseWithFactory):
         # The log URL for a snap package build will use the archive context.
         self.addFakeBuildLog(self.build)
         self.assertEqual(
-            "http://launchpad.dev/~%s/+snap/%s/+build/%d/+files/"
+            "http://launchpad.test/~%s/+snap/%s/+build/%d/+files/"
             "mybuildlog.txt" % (
                 self.build.snap.owner.name, self.build.snap.name,
                 self.build.id),
@@ -810,7 +810,7 @@ class TestSnapBuildMacaroonIssuer(MacaroonTestMixin, TestCaseWithFactory):
         issuer = getUtility(IMacaroonIssuer, "snap-build")
         macaroon = removeSecurityProxy(issuer).issueMacaroon(build)
         self.assertThat(macaroon, MatchesStructure(
-            location=Equals("launchpad.dev"),
+            location=Equals("launchpad.test"),
             identifier=Equals("snap-build"),
             caveats=MatchesListwise([
                 MatchesStructure.byEquality(
@@ -825,7 +825,7 @@ class TestSnapBuildMacaroonIssuer(MacaroonTestMixin, TestCaseWithFactory):
         macaroon = Macaroon.deserialize(
             authserver.issueMacaroon("snap-build", "SnapBuild", build.id))
         self.assertThat(macaroon, MatchesStructure(
-            location=Equals("launchpad.dev"),
+            location=Equals("launchpad.test"),
             identifier=Equals("snap-build"),
             caveats=MatchesListwise([
                 MatchesStructure.byEquality(
