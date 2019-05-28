@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test native publication workflow for Soyuz. """
@@ -15,7 +15,10 @@ import tempfile
 import pytz
 import scandir
 from storm.store import Store
-from testtools.matchers import Equals
+from testtools.matchers import (
+    Equals,
+    GreaterThan,
+    )
 import transaction
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
@@ -635,7 +638,7 @@ class TestNativePublishingBase(TestCaseWithFactory, SoyuzTestPublisher):
     def checkPublication(self, pub, status):
         """Assert the publication has the given status."""
         self.assertEqual(
-            pub.status, status, "%s is not %s (%s)" % (
+            status, pub.status, "%s is not %s (%s)" % (
             pub.displayname, status.name, pub.status.name))
 
     def checkPublications(self, pubs, status):
@@ -1156,6 +1159,31 @@ class TestBinaryDomination(TestNativePublishingBase):
         bin.supersede(super_bin)
         self.checkSuperseded([bin], super_bin)
         self.assertEqual(super_date, bin.datesuperseded)
+
+    def testSkipsDominantArchIndependentBinaries(self):
+        """Check that supersedeAssociated skips dominant arch-indep binaries.
+
+        It's possible for there to be multiple pending publications with
+        identical overrides, for instance if two archive admins call
+        changeOverride with the same parameters at nearly the same time.  In
+        this situation, we make sure not to supersede the dominant one.
+        """
+        originals = self.getPubBinaries(architecturespecific=False)
+        self.assertThat(len(originals), GreaterThan(1))
+        self.assertNotEqual("universe", originals[0].component.name)
+        overrides_1 = [
+            pub.changeOverride(new_component="universe") for pub in originals]
+        transaction.commit()
+        overrides_2 = [
+            pub.changeOverride(new_component="universe") for pub in originals]
+        for pub, dominant in zip(overrides_1 + originals, overrides_2 * 2):
+            pub.supersede(dominant, supersede_associated=False)
+        for pub, dominant in zip(overrides_1 + originals, overrides_2 * 2):
+            pub.supersedeAssociated(dominant, keep=overrides_2)
+        for original, override_1, override_2 in zip(
+                originals, overrides_1, overrides_2):
+            self.checkSuperseded([original, override_1], override_2)
+        self.checkPublications(overrides_2, PackagePublishingStatus.PENDING)
 
     def testSupersedesCorrespondingDDEB(self):
         """Check that supersede() takes with it any corresponding DDEB.

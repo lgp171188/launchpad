@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Publishing interfaces."""
@@ -480,11 +480,13 @@ class ISourcePackagePublishingHistoryPublic(IPublishingView):
         :return: a list of `ILibraryFileAlias`.
         """
 
-    def supersede(dominant=None, logger=None):
+    def supersede(dominant=None, supersede_associated=True, logger=None):
         """Supersede this publication.
 
         :param dominant: optional `ISourcePackagePublishingHistory` which is
             triggering the domination.
+        :param supersede_associated: no-op here, for compatibility with
+            `IBinaryPackagePublishingHistory.supersede`.
         :param logger: optional object to which debug information will be
             logged.
         """
@@ -751,11 +753,26 @@ class IBinaryPackagePublishingHistoryPublic(IPublishingView):
             required=False, readonly=True),
         as_of="devel")
 
-    def supersede(dominant=None, logger=None):
+    def supersede(dominant=None, supersede_associated=True, logger=None):
         """Supersede this publication.
 
         :param dominant: optional `IBinaryPackagePublishingHistory` which is
             triggering the domination.
+        :param supersede_associated: if True, also supersede other
+            publications associated closely with this one.  Callers may set
+            this to False and call `supersedeAssociated` themselves if they
+            need more control over which publications remain live.
+        :param logger: optional object to which debug information will be
+            logged.
+        """
+
+    def supersedeAssociated(dominant=None, keep=None, logger=None):
+        """Supersede other publications associated closely with this one.
+
+        :param dominant: optional `IBinaryPackagePublishingHistory` which is
+            triggering the domination.
+        :param keep: optional set of other associated publications that have
+            been positively determined to be live and should be skipped.
         :param logger: optional object to which debug information will be
             logged.
         """

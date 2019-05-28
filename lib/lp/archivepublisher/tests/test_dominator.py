@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for domination.py."""
@@ -11,7 +11,11 @@ import datetime
 from operator import attrgetter
 
 import apt_pkg
-from testtools.matchers import LessThan
+from testtools.matchers import (
+    GreaterThan,
+    LessThan,
+    )
+import transaction
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
@@ -325,6 +329,32 @@ class TestDominator(TestNativePublishingBase):
 
         self.checkPublications(foo_10_all_bins + [foo_10_i386_bin],
                                PackagePublishingStatus.SUPERSEDED)
+
+    def test_dominatePackage_handles_double_arch_indep_override(self):
+        # If there are multiple identical publications of an
+        # architecture-independent binary, dominatePackage leaves the most
+        # recent one live.
+        originals = self.getPubBinaries(
+            status=PackagePublishingStatus.PUBLISHED,
+            architecturespecific=False)
+        self.assertThat(len(originals), GreaterThan(1))
+        self.assertNotEqual("universe", originals[0].component.name)
+        overrides_1 = [
+            pub.changeOverride(new_component="universe") for pub in originals]
+        transaction.commit()
+        overrides_2 = [
+            pub.changeOverride(new_component="universe") for pub in originals]
+        for pub in overrides_1 + overrides_2:
+            pub.setPublished()
+        dominator = Dominator(self.logger, originals[0].archive)
+        dominator.judgeAndDominate(
+            originals[0].distroseries, originals[0].pocket)
+        for pub in originals:
+            self.assertEqual(PackagePublishingStatus.SUPERSEDED, pub.status)
+        for pub in overrides_1:
+            self.assertEqual(PackagePublishingStatus.SUPERSEDED, pub.status)
+        for pub in overrides_2:
+            self.assertEqual(PackagePublishingStatus.PUBLISHED, pub.status)
 
 
 class TestDomination(TestNativePublishingBase):
