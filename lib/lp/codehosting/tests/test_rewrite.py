@@ -346,8 +346,8 @@ class TestBranchRewriterScriptHandlesDisconnects(TestCase):
         if result.endswith('\n'):
             return result[:-1]
         self.fail(
-            "Incomplete line or no result retrieved from subprocess: %s"
-            % repr(result.getvalue()))
+            "Incomplete line or no result retrieved from subprocess: %r"
+            % result)
 
     def test_reconnects_when_disconnected(self):
         pgbouncer = self.useFixture(PGBouncerFixture())
