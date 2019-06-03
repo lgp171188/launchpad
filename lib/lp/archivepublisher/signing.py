@@ -95,6 +95,8 @@ class SigningUpload(CustomUpload):
             self.kmod_x509 = None
             self.opal_pem = None
             self.opal_x509 = None
+            self.sipl_pem = None
+            self.sipl_x509 = None
             self.autokey = False
         else:
             self.uefi_key = os.path.join(pubconf.signingroot, "uefi.key")
@@ -103,6 +105,8 @@ class SigningUpload(CustomUpload):
             self.kmod_x509 = os.path.join(pubconf.signingroot, "kmod.x509")
             self.opal_pem = os.path.join(pubconf.signingroot, "opal.pem")
             self.opal_x509 = os.path.join(pubconf.signingroot, "opal.x509")
+            self.sipl_pem = os.path.join(pubconf.signingroot, "sipl.pem")
+            self.sipl_x509 = os.path.join(pubconf.signingroot, "sipl.x509")
             self.autokey = pubconf.signingautokey
 
         self.setComponents(tarfile_path)
@@ -176,6 +180,8 @@ class SigningUpload(CustomUpload):
                     yield (os.path.join(dirpath, filename), self.signKmod)
                 elif filename.endswith(".opal"):
                     yield (os.path.join(dirpath, filename), self.signOpal)
+                elif filename.endswith(".sipl"):
+                    yield (os.path.join(dirpath, filename), self.signSipl)
 
     def getKeys(self, which, generate, *keynames):
         """Validate and return the uefi key and cert for encryption."""
@@ -270,6 +276,8 @@ class SigningUpload(CustomUpload):
         extendedKeyUsage        = codeSigning,1.3.6.1.4.1.2312.16.1.2
         """)
 
+    openssl_config_sipl = "# SIPL openssl config" + openssl_config_base
+
     def generateOpensslConfig(self, key_type, genkey_tmpl):
         # Truncate name to 64 character maximum.
         common_name = self.generateKeyCommonName(
@@ -343,6 +351,22 @@ class SigningUpload(CustomUpload):
         self.publishPublicKey(cert)
         cmdl = ["kmodsign", "-D", "sha512", pem, cert, image, image + ".sig"]
         return self.callLog("Opal signing", cmdl)
+
+    def generateSiplKeys(self):
+        """Generate new Sipl Signing Keys for this archive."""
+        config = self.generateOpensslConfig("Sipl", self.openssl_config_sipl)
+        self.generatePemX509Pair("Sipl", config, self.sipl_pem, self.sipl_x509)
+
+    def signSipl(self, image):
+        """Attempt to sign a kernel image for Sipl."""
+        remove_if_exists("%s.sig" % image)
+        (pem, cert) = self.getKeys('Sipl Kernel', self.generateSiplKeys,
+            self.sipl_pem, self.sipl_x509)
+        if not pem or not cert:
+            return
+        self.publishPublicKey(cert)
+        cmdl = ["kmodsign", "-D", "sha512", pem, cert, image, image + ".sig"]
+        return self.callLog("Sipl signing", cmdl)
 
     def convertToTarball(self):
         """Convert unpacked output to signing tarball."""
