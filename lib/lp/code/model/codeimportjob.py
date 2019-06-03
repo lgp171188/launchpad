@@ -420,10 +420,6 @@ class CodeImportJobMacaroonIssuer(MacaroonIssuerBase):
     def _root_secret(self):
         secret = config.launchpad.internal_macaroon_secret_key
         if not secret:
-            # XXX cjwatson 2018-11-01: Remove this once it is no longer in
-            # production configs.
-            secret = config.codeimport.macaroon_secret_key
-        if not secret:
             raise RuntimeError(
                 "launchpad.internal_macaroon_secret_key not configured.")
         return secret

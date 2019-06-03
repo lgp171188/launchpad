@@ -1307,11 +1307,6 @@ class TestCodeImportJobMacaroonIssuer(MacaroonTestMixin, TestCaseWithFactory):
                 caveat_id="lp.code-import-job %s" % job.id),
             ]))
 
-    def test_issueMacaroon_good_old_config(self):
-        self.pushConfig("launchpad", internal_macaroon_secret_key="")
-        self.pushConfig("codeimport", macaroon_secret_key="some-secret")
-        self.test_issueMacaroon_good()
-
     def test_issueMacaroon_not_via_authserver(self):
         job = self.makeJob()
         private_root = getUtility(IPrivateApplication)
