@@ -242,7 +242,7 @@ class SigningUpload(CustomUpload):
         cmdl = ["sbsign", "--key", key, "--cert", cert, image]
         return self.callLog("UEFI signing", cmdl)
 
-    openssl_config_opal = textwrap.dedent("""
+    openssl_config_base = textwrap.dedent("""
         [ req ]
         default_bits = 4096
         distinguished_name = req_distinguished_name
@@ -260,7 +260,10 @@ class SigningUpload(CustomUpload):
         authorityKeyIdentifier=keyid
         """)
 
-    openssl_config_kmod = openssl_config_opal + textwrap.dedent("""
+    openssl_config_opal = "# OPAL openssl config" + openssl_config_base
+
+    openssl_config_kmod = "# KMOD openssl config" + openssl_config_base + \
+        textwrap.dedent("""
         # codeSigning:  specifies that this key is used to sign code.
         # 1.3.6.1.4.1.2312.16.1.2:  defines this key as used for
         #   module signing only. See https://lkml.org/lkml/2015/8/26/741.

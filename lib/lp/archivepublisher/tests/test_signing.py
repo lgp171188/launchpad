@@ -562,12 +562,14 @@ class TestSigning(RunPartsMixin, TestSigningHelpers):
         upload = SigningUpload()
         text = upload.generateOpensslConfig('Kmod', 'something-unique')
 
+        id_re = re.compile(r'^# KMOD openssl config\b')
         cn_re = re.compile(r'\bCN\s*=\s*something-unique\b')
         eku_re = re.compile(
             r'\bextendedKeyUsage\s*=\s*'
             r'codeSigning,1.3.6.1.4.1.2312.16.1.2\s*\b')
 
         self.assertIn('[ req ]', text)
+        self.assertIsNotNone(id_re.search(text))
         self.assertIsNotNone(cn_re.search(text))
         self.assertIsNotNone(eku_re.search(text))
 
@@ -643,9 +645,11 @@ class TestSigning(RunPartsMixin, TestSigningHelpers):
         upload = SigningUpload()
         text = upload.generateOpensslConfig('Opal', 'something-unique')
 
+        id_re = re.compile(r'^# OPAL openssl config\b')
         cn_re = re.compile(r'\bCN\s*=\s*something-unique\b')
 
         self.assertIn('[ req ]', text)
+        self.assertIsNotNone(id_re.search(text))
         self.assertIsNotNone(cn_re.search(text))
         self.assertNotIn('extendedKeyUsage', text)
 
