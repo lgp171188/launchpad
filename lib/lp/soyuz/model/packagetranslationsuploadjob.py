@@ -115,6 +115,10 @@ class PackageTranslationsUploadJobDerived(BaseRunnableJob):
             Job.base_job_type == JobType.UPLOAD_PACKAGE_TRANSLATIONS)
         return (cls(job) for job in jobs)
 
+    def getOperationDescription(self):
+        return "uploading translations of %s in %s" % (
+            self.sourcepackagename.name, self.distroseries)
+
     def getErrorRecipients(self):
         if self.requester is not None:
             return [format_address_for_person(self.requester)]

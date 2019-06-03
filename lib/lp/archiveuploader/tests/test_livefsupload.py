@@ -1,4 +1,4 @@
-# Copyright 2014-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2014-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test uploads of LiveFSBuilds."""
@@ -57,8 +57,8 @@ class TestLiveFSBuildUploads(TestUploadProcessorBase):
         self.assertFalse(self.build.verifySuccessfulUpload())
         upload_dir = os.path.join(
             self.incoming_folder, "test", str(self.build.id), "ubuntu")
-        write_file(os.path.join(upload_dir, "ubuntu.squashfs"), "squashfs")
-        write_file(os.path.join(upload_dir, "ubuntu.manifest"), "manifest")
+        write_file(os.path.join(upload_dir, "ubuntu.squashfs"), b"squashfs")
+        write_file(os.path.join(upload_dir, "ubuntu.manifest"), b"manifest")
         handler = UploadHandler.forProcessor(
             self.uploadprocessor, self.incoming_folder, "test", self.build)
         result = handler.processLiveFS(self.log)

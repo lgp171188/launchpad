@@ -106,7 +106,10 @@ from lp.testing import (
     TestCaseWithFactory,
     )
 from lp.testing.dbuser import dbuser
-from lp.testing.gpgkeys import gpgkeysdir
+from lp.testing.gpgkeys import (
+    gpgkeysdir,
+    import_public_key,
+    )
 from lp.testing.keyserver import InProcessKeyServerFixture
 from lp.testing.layers import LaunchpadZopelessLayer
 from lp.xmlrpc.interfaces import IPrivateApplication
@@ -658,6 +661,48 @@ class TestAsyncSnapBuildBehaviour(TestSnapBuildBehaviourBase):
         self.assertThat(args["trusted_keys"], MatchesListwise([
             Base64KeyMatches("0D57E99656BEFB0897606EE9A022DD1F5001B46D"),
             ]))
+
+    @defer.inlineCallbacks
+    def test_extraBuildArgs_tools_source_channels_apt(self):
+        # If snapcraft is being installed from apt, extraBuildArgs sends an
+        # extra archive to provide updates.
+        yield self.useFixture(InProcessKeyServerFixture()).start()
+        tools_source = (
+            "deb http://ppa.launchpad.net/snappy-dev/snapcraft-daily/ubuntu "
+            "%(series)s main")
+        tools_fingerprint = "A419AE861E88BC9E04B9C26FBA2B9389DFD20543"
+        self.pushConfig(
+            "snappy",
+            tools_source=tools_source, tools_fingerprint=tools_fingerprint)
+        import_public_key("test@canonical.com")
+        job = self.makeJob(channels={"snapcraft": "apt"})
+        with dbuser(config.builddmaster.dbuser):
+            args = yield job.extraBuildArgs()
+        self.assertEqual(
+            tools_source % {"series": job.build.distro_series.name},
+            args["archives"][0])
+        self.assertThat(args["trusted_keys"], MatchesListwise([
+            Base64KeyMatches("A419AE861E88BC9E04B9C26FBA2B9389DFD20543"),
+            ]))
+
+    @defer.inlineCallbacks
+    def test_extraBuildArgs_tools_source_channels_snap(self):
+        # If snapcraft is being installed from apt, extraBuildArgs ignores
+        # tools_source.
+        yield self.useFixture(InProcessKeyServerFixture()).start()
+        tools_source = (
+            "deb http://ppa.launchpad.net/snappy-dev/snapcraft-daily/ubuntu "
+            "%(series)s main")
+        tools_fingerprint = "A419AE861E88BC9E04B9C26FBA2B9389DFD20543"
+        self.pushConfig(
+            "snappy",
+            tools_source=tools_source, tools_fingerprint=tools_fingerprint)
+        import_public_key("test@canonical.com")
+        job = self.makeJob(channels={"snapcraft": "stable"})
+        with dbuser(config.builddmaster.dbuser):
+            args = yield job.extraBuildArgs()
+        self.assertNotIn(tools_source, args["archives"])
+        self.assertEqual([], args["trusted_keys"])
 
     @defer.inlineCallbacks
     def test_extraBuildArgs_channels(self):
