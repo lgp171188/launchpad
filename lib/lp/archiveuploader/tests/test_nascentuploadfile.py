@@ -7,19 +7,29 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 
+from functools import partial
+import gzip
 import hashlib
+import io
 import os
 import subprocess
+import tarfile
 
 from debian.deb822 import (
     Changes,
+    Deb822,
     Dsc,
     )
+try:
+    import lzma
+except ImportError:
+    from backports import lzma
 from testtools.matchers import (
     Contains,
     Equals,
     MatchesAny,
     MatchesListwise,
+    MatchesRegex,
     )
 
 from lp.archiveuploader.changesfile import ChangesFile
@@ -360,11 +370,23 @@ class DebBinaryUploadFileTests(PackageUploadFileTestCase):
             "Priority": b"optional",
             "Homepage": b"http://samba.org/~jelmer/dulwich",
             "Description": b"Pure-python Git library\n"
-                b"Dulwich is a Python implementation of the file formats and "
-                b"protocols",
+                b" Dulwich is a Python implementation of the file formats and"
+                b" protocols",
             }
 
-    def createDeb(self, filename, control_format, data_format, members=None):
+    def _writeCompressedFile(self, filename, data):
+        if filename.endswith(".gz"):
+            open_func = gzip.open
+        elif filename.endswith(".xz"):
+            open_func = partial(lzma.LZMAFile, format=lzma.FORMAT_XZ)
+        else:
+            raise ValueError(
+                "Unhandled compression extension in '%s'" % filename)
+        with open_func(filename, "wb") as f:
+            f.write(data)
+
+    def createDeb(self, filename, control, control_format, data_format,
+                  members=None):
         """Return the contents of a dummy .deb file."""
         tempdir = self.makeTemporaryDirectory()
         if members is None:
@@ -374,7 +396,31 @@ class DebBinaryUploadFileTests(PackageUploadFileTestCase):
                 "data.tar.%s" % data_format,
                 ]
         for member in members:
-            write_file(os.path.join(tempdir, member), b"")
+            if member == "debian-binary":
+                write_file(os.path.join(tempdir, member), b"2.0\n")
+            elif member.startswith("control.tar."):
+                with io.BytesIO() as control_tar_buf:
+                    with tarfile.open(
+                            mode="w", fileobj=control_tar_buf) as control_tar:
+                        with io.BytesIO() as control_buf:
+                            Deb822(control).dump(
+                                fd=control_buf, encoding="UTF-8")
+                            control_buf.seek(0)
+                            tarinfo = tarfile.TarInfo(name="control")
+                            tarinfo.size = len(control_buf.getvalue())
+                            control_tar.addfile(tarinfo, fileobj=control_buf)
+                    control_tar_bytes = control_tar_buf.getvalue()
+                self._writeCompressedFile(
+                    os.path.join(tempdir, member), control_tar_bytes)
+            elif member.startswith("data.tar."):
+                with io.BytesIO() as data_tar_buf:
+                    with tarfile.open(mode="w", fileobj=data_tar_buf):
+                        pass
+                    data_tar_bytes = data_tar_buf.getvalue()
+                self._writeCompressedFile(
+                    os.path.join(tempdir, member), data_tar_bytes)
+            else:
+                raise ValueError("Unhandled .deb member '%s'" % member)
         retcode = subprocess.call(
             ["ar", "rc", filename] + members, cwd=tempdir)
         self.assertEqual(0, retcode)
@@ -383,13 +429,16 @@ class DebBinaryUploadFileTests(PackageUploadFileTestCase):
 
     def createDebBinaryUploadFile(self, filename, component_and_section,
                                   priority_name, package, version, changes,
-                                  control_format=None, data_format=None,
-                                  members=None):
+                                  control=None, control_format=None,
+                                  data_format=None, members=None):
         """Create a DebBinaryUploadFile."""
-        if (control_format is not None or data_format is not None or
-                members is not None):
+        if (control is not None or control_format is not None or
+                data_format is not None or members is not None):
+            if control is None:
+                control = self.getBaseControl()
             data = self.createDeb(
-                filename, control_format, data_format, members=members)
+                filename, control, control_format, data_format,
+                members=members)
         else:
             data = "DUMMY DATA"
         (path, md5, sha1, size) = self.writeUploadFile(filename, data)
@@ -415,13 +464,49 @@ class DebBinaryUploadFileTests(PackageUploadFileTestCase):
         self.assertEqual("0.42", uploadfile.source_version)
         self.assertEqual("0.42", uploadfile.control_version)
 
+    def test_verifyFormat_missing_control(self):
+        # verifyFormat rejects .debs with no control member.
+        uploadfile = self.createDebBinaryUploadFile(
+            "foo_0.42_i386.deb", "main/python", "unknown", "mypkg", "0.42",
+            None, members=["debian-binary", "data.tar.gz"])
+        self.assertThat(
+            ["".join(error.args) for error in uploadfile.verifyFormat()],
+            MatchesListwise([
+                Equals(
+                    "%s: 'dpkg-deb -I' invocation failed." %
+                    uploadfile.filename),
+                MatchesRegex(
+                    r"^ \[dpkg-deb output:\] .* has premature member "
+                    r"'data\.tar\.gz'"),
+                Equals(
+                    "%s: 'dpkg-deb -c' invocation failed." %
+                    uploadfile.filename),
+                MatchesRegex(
+                    r"^ \[dpkg-deb output:\] .* has premature member "
+                    r"'data\.tar\.gz'"),
+                ]))
+
+    def test_verifyFormat_missing_data(self):
+        # verifyFormat rejects .debs with no data member.
+        uploadfile = self.createDebBinaryUploadFile(
+            "foo_0.42_i386.deb", "main/python", "unknown", "mypkg", "0.42",
+            None, members=["debian-binary", "control.tar.gz"])
+        self.assertThat(
+            ["".join(error.args) for error in uploadfile.verifyFormat()],
+            MatchesListwise([
+                Equals(
+                    "%s: 'dpkg-deb -c' invocation failed." %
+                    uploadfile.filename),
+                MatchesRegex(
+                    r"^ \[dpkg-deb output:\] .* unexpected end of file"),
+                ]))
+
     def test_verifyFormat_control_xz(self):
         # verifyFormat accepts .debs with an xz-compressed control member.
         uploadfile = self.createDebBinaryUploadFile(
             "foo_0.42_i386.deb", "main/python", "unknown", "mypkg", "0.42",
             None, control_format="xz", data_format="gz")
-        control = self.getBaseControl()
-        uploadfile.parseControl(control)
+        uploadfile.extractAndParseControl()
         self.assertEqual([], list(uploadfile.verifyFormat()))
 
     def test_verifyFormat_data_xz(self):
@@ -429,8 +514,7 @@ class DebBinaryUploadFileTests(PackageUploadFileTestCase):
         uploadfile = self.createDebBinaryUploadFile(
             "foo_0.42_i386.deb", "main/python", "unknown", "mypkg", "0.42",
             None, control_format="gz", data_format="xz")
-        control = self.getBaseControl()
-        uploadfile.parseControl(control)
+        uploadfile.extractAndParseControl()
         self.assertEqual([], list(uploadfile.verifyFormat()))
 
     def test_verifyDebTimestamp_SystemError(self):
@@ -456,8 +540,8 @@ class DebBinaryUploadFileTests(PackageUploadFileTestCase):
         bpr = uploadfile.storeInDatabase(build)
         self.assertEqual(u'python (<< 2.7), python (>= 2.5)', bpr.depends)
         self.assertEqual(
-            u"Dulwich is a Python implementation of the file formats "
-            u"and protocols", bpr.description)
+            u" Dulwich is a Python implementation of the file formats and"
+            u" protocols", bpr.description)
         self.assertEqual(False, bpr.essential)
         self.assertEqual(524, bpr.installedsize)
         self.assertEqual(True, bpr.architecturespecific)
