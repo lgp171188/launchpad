@@ -1,4 +1,4 @@
-# Copyright 2011-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2011-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test publish-ftpmaster cron script."""
@@ -167,30 +167,30 @@ class TestNewerMtime(TestCase):
         self.assertFalse(newer_mtime(self.a, self.b))
 
     def test_one_missing(self):
-        write_file(self.b, "")
+        write_file(self.b, b"")
         self.assertFalse(newer_mtime(self.a, self.b))
 
     def test_other_missing(self):
-        write_file(self.a, "")
+        write_file(self.a, b"")
         self.assertTrue(newer_mtime(self.a, self.b))
 
     def test_older(self):
-        write_file(self.a, "")
+        write_file(self.a, b"")
         os.utime(self.a, (0, 0))
-        write_file(self.b, "")
+        write_file(self.b, b"")
         self.assertFalse(newer_mtime(self.a, self.b))
 
     def test_equal(self):
         now = time.time()
-        write_file(self.a, "")
+        write_file(self.a, b"")
         os.utime(self.a, (now, now))
-        write_file(self.b, "")
+        write_file(self.b, b"")
         os.utime(self.b, (now, now))
         self.assertFalse(newer_mtime(self.a, self.b))
 
     def test_newer(self):
-        write_file(self.a, "")
-        write_file(self.b, "")
+        write_file(self.a, b"")
+        write_file(self.b, b"")
         os.utime(self.b, (0, 0))
         self.assertTrue(newer_mtime(self.a, self.b))
 

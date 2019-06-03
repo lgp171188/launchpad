@@ -1,4 +1,4 @@
-# Copyright 2010-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test NascentUploadFile functionality."""
@@ -374,7 +374,7 @@ class DebBinaryUploadFileTests(PackageUploadFileTestCase):
                 "data.tar.%s" % data_format,
                 ]
         for member in members:
-            write_file(os.path.join(tempdir, member), "")
+            write_file(os.path.join(tempdir, member), b"")
         retcode = subprocess.call(
             ["ar", "rc", filename] + members, cwd=tempdir)
         self.assertEqual(0, retcode)

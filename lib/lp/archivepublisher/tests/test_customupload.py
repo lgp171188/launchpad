@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for `CustomUploads`."""
@@ -256,7 +256,7 @@ class TestSigning(TestCaseWithFactory, RunPartsMixin):
     def test_sign_with_signing_key(self):
         filename = os.path.join(
             getPubConfig(self.archive).archiveroot, "file")
-        write_file(filename, "contents")
+        write_file(filename, b"contents")
         self.assertIsNone(self.archive.signing_key)
         self.useFixture(InProcessKeyServerFixture()).start()
         key_path = os.path.join(gpgkeysdir, 'ppa-sample@canonical.com.sec')
@@ -277,7 +277,7 @@ class TestSigning(TestCaseWithFactory, RunPartsMixin):
         self.enableRunParts(distribution_name=self.distro.name)
         archiveroot = getPubConfig(self.archive).archiveroot
         filename = os.path.join(archiveroot, "file")
-        write_file(filename, "contents")
+        write_file(filename, b"contents")
         self.assertIsNone(self.archive.signing_key)
         run_parts_fixture = self.useFixture(MonkeyPatch(
             "lp.archivepublisher.archivesigningkey.run_parts", FakeMethod()))

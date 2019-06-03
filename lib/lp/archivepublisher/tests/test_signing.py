@@ -1,4 +1,4 @@
-# Copyright 2012-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2012-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test UEFI custom uploads."""
@@ -102,33 +102,33 @@ class FakeMethodCallLog(FakeMethod):
         if description == "UEFI signing":
             filename = cmdl[-1]
             if filename.endswith(".efi"):
-                write_file(filename + ".signed", "")
+                write_file(filename + ".signed", b"")
 
         elif description == "UEFI keygen":
-            write_file(self.upload.uefi_key, "")
-            write_file(self.upload.uefi_cert, "")
+            write_file(self.upload.uefi_key, b"")
+            write_file(self.upload.uefi_cert, b"")
 
         elif description == "Kmod signing":
             filename = cmdl[-1]
             if filename.endswith(".ko.sig"):
-                write_file(filename, "")
+                write_file(filename, b"")
 
         elif description == "Kmod keygen cert":
-            write_file(self.upload.kmod_x509, "")
+            write_file(self.upload.kmod_x509, b"")
 
         elif description == "Kmod keygen key":
-            write_file(self.upload.kmod_pem, "")
+            write_file(self.upload.kmod_pem, b"")
 
         elif description == "Opal signing":
             filename = cmdl[-1]
             if filename.endswith(".opal.sig"):
-                write_file(filename, "")
+                write_file(filename, b"")
 
         elif description == "Opal keygen cert":
-            write_file(self.upload.opal_x509, "")
+            write_file(self.upload.opal_x509, b"")
 
         elif description == "Opal keygen key":
-            write_file(self.upload.opal_pem, "")
+            write_file(self.upload.opal_pem, b"")
 
         else:
             raise AssertionError("unknown command executed cmd=(%s)" %
@@ -194,22 +194,22 @@ class TestSigningHelpers(TestCaseWithFactory):
         self.key = os.path.join(self.signing_dir, "uefi.key")
         self.cert = os.path.join(self.signing_dir, "uefi.crt")
         if create:
-            write_file(self.key, "")
-            write_file(self.cert, "")
+            write_file(self.key, b"")
+            write_file(self.cert, b"")
 
     def setUpKmodKeys(self, create=True):
         self.kmod_pem = os.path.join(self.signing_dir, "kmod.pem")
         self.kmod_x509 = os.path.join(self.signing_dir, "kmod.x509")
         if create:
-            write_file(self.kmod_pem, "")
-            write_file(self.kmod_x509, "")
+            write_file(self.kmod_pem, b"")
+            write_file(self.kmod_x509, b"")
 
     def setUpOpalKeys(self, create=True):
         self.opal_pem = os.path.join(self.signing_dir, "opal.pem")
         self.opal_x509 = os.path.join(self.signing_dir, "opal.x509")
         if create:
-            write_file(self.opal_pem, "")
-            write_file(self.opal_x509, "")
+            write_file(self.opal_pem, b"")
+            write_file(self.opal_x509, b"")
 
     def openArchive(self, loader_type, version, arch):
         self.path = os.path.join(
