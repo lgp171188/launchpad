@@ -559,11 +559,14 @@ class TestSigning(RunPartsMixin, TestSigningHelpers):
     def test_correct_kmod_openssl_config(self):
         # Check that calling generateOpensslConfig() will return an appropriate
         # openssl configuration.
+        self.setUpPPA()
         upload = SigningUpload()
-        text = upload.generateOpensslConfig('Kmod', 'something-unique')
+        upload.setTargetDirectory(
+            self.archive, "test_1.0_amd64.tar.gz", "distroseries")
+        text = upload.generateOpensslConfig('Kmod', upload.openssl_config_kmod)
 
         id_re = re.compile(r'^# KMOD openssl config\b')
-        cn_re = re.compile(r'\bCN\s*=\s*something-unique\b')
+        cn_re = re.compile(r'\bCN\s*=\s*' + self.testcase_cn[4:-1] + '\s+Kmod')
         eku_re = re.compile(
             r'\bextendedKeyUsage\s*=\s*'
             r'codeSigning,1.3.6.1.4.1.2312.16.1.2\s*\b')
@@ -642,11 +645,14 @@ class TestSigning(RunPartsMixin, TestSigningHelpers):
     def test_correct_opal_openssl_config(self):
         # Check that calling generateOpensslConfig() will return an appropriate
         # openssl configuration.
+        self.setUpPPA()
         upload = SigningUpload()
-        text = upload.generateOpensslConfig('Opal', 'something-unique')
+        upload.setTargetDirectory(
+            self.archive, "test_1.0_amd64.tar.gz", "distroseries")
+        text = upload.generateOpensslConfig('Opal', upload.openssl_config_opal)
 
         id_re = re.compile(r'^# OPAL openssl config\b')
-        cn_re = re.compile(r'\bCN\s*=\s*something-unique\b')
+        cn_re = re.compile(r'\bCN\s*=\s*' + self.testcase_cn[4:-1] + '\s+Opal')
 
         self.assertIn('[ req ]', text)
         self.assertIsNotNone(id_re.search(text))

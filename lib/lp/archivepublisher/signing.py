@@ -270,30 +270,23 @@ class SigningUpload(CustomUpload):
         extendedKeyUsage        = codeSigning,1.3.6.1.4.1.2312.16.1.2
         """)
 
-    def generateOpensslConfig(self, key_type, common_name):
-        if key_type == 'Kmod':
-            genkey_tmpl = self.openssl_config_kmod
-        elif key_type == 'Opal':
-            genkey_tmpl = self.openssl_config_opal
-        else:
-            raise ValueError("unknown key_type " + key_type)
+    def generateOpensslConfig(self, key_type, genkey_tmpl):
+        # Truncate name to 64 character maximum.
+        common_name = self.generateKeyCommonName(
+            self.archive.owner.name, self.archive.name, key_type)
 
         return genkey_tmpl.format(common_name=common_name)
 
-    def generatePemX509Pair(self, key_type, pem_filename, x509_filename):
+    def generatePemX509Pair(self, key_type, genkey_text, pem_filename,
+            x509_filename):
         """Generate new pem/x509 key pairs."""
         directory = os.path.dirname(pem_filename)
         if not os.path.exists(directory):
             os.makedirs(directory)
 
-        # Truncate name to 64 character maximum.
-        common_name = self.generateKeyCommonName(
-            self.archive.owner.name, self.archive.name, key_type)
-
         old_mask = os.umask(0o077)
         try:
             with tempfile.NamedTemporaryFile(suffix='.keygen') as tf:
-                genkey_text = self.generateOpensslConfig(key_type, common_name)
                 print(genkey_text, file=tf)
 
                 # Close out the underlying file so we know it is complete.
@@ -321,7 +314,8 @@ class SigningUpload(CustomUpload):
 
     def generateKmodKeys(self):
         """Generate new Kernel Signing Keys for this archive."""
-        self.generatePemX509Pair("Kmod", self.kmod_pem, self.kmod_x509)
+        config = self.generateOpensslConfig("Kmod", self.openssl_config_kmod)
+        self.generatePemX509Pair("Kmod", config, self.kmod_pem, self.kmod_x509)
 
     def signKmod(self, image):
         """Attempt to sign a kernel module."""
@@ -336,7 +330,8 @@ class SigningUpload(CustomUpload):
 
     def generateOpalKeys(self):
         """Generate new Opal Signing Keys for this archive."""
-        self.generatePemX509Pair("Opal", self.opal_pem, self.opal_x509)
+        config = self.generateOpensslConfig("Opal", self.openssl_config_opal)
+        self.generatePemX509Pair("Opal", config, self.opal_pem, self.opal_x509)
 
     def signOpal(self, image):
         """Attempt to sign a kernel image for Opal."""
