@@ -104,6 +104,13 @@ class TestPackageTranslationsUploadJob(LocalTestHelper):
         jobs = list(PackageTranslationsUploadJob.iterReady())
         self.assertEqual(1, len(jobs))
 
+    def test_getOperationDescription(self):
+        _, sp, job = self.makeJob()
+        self.assertEqual(
+            "uploading translations of %s in %s" % (
+                sp.sourcepackagename.name, sp.distroseries),
+            job.getOperationDescription())
+
     def test_getErrorRecipients_requester(self):
         _, _, job = self.makeJob()
         email = format_address_for_person(job.requester)
