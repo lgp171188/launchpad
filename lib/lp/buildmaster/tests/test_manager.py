@@ -2,7 +2,7 @@
 # NOTE: The first line above must stay first; do not move the copyright
 # notice to the top.  See http://www.python.org/dev/peps/pep-0263/.
 #
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for the renovated slave scanner aka BuilddManager."""
@@ -346,6 +346,34 @@ class TestSlaveScannerScan(TestCaseWithFactory):
         d = defer.maybeDeferred(scanner.scan)
         d.addCallback(
             self._checkJobUpdated, builder, job, logtail=u"\uFFFD\uFFFD──")
+
+    def test_scan_of_logtail_containing_nul(self):
+        # PostgreSQL text columns can't store ASCII NUL (\0) characters, so
+        # we make sure to filter those out of the logtail.
+        class NULSlave(BuildingSlave):
+            @defer.inlineCallbacks
+            def status(self):
+                status = yield super(NULSlave, self).status()
+                status["logtail"] = xmlrpclib.Binary(b"foo\0bar\0baz")
+                defer.returnValue(status)
+
+        builder = getUtility(IBuilderSet)[BOB_THE_BUILDER_NAME]
+        login('foo.bar@canonical.com')
+        builder.builderok = True
+        self.patch(
+            BuilderSlave, 'makeBuilderSlave',
+            FakeMethod(NULSlave(build_id='PACKAGEBUILD-8')))
+        transaction.commit()
+        login(ANONYMOUS)
+
+        job = builder.currentjob
+        self.assertBuildingJob(job, builder)
+
+        switch_dbuser(config.builddmaster.dbuser)
+        scanner = self._getScanner()
+        d = defer.maybeDeferred(scanner.scan)
+        d.addCallback(
+            self._checkJobUpdated, builder, job, logtail=u"foobarbaz")
 
     @defer.inlineCallbacks
     def test_scan_calls_builder_factory_prescanUpdate(self):
