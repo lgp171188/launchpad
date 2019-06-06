@@ -91,9 +91,9 @@ class FakeMethodCallLog(FakeMethod):
             "Opal signing": 0,
             "Opal keygen key": 0,
             "Opal keygen cert": 0,
-            "Sipl signing": 0,
-            "Sipl keygen key": 0,
-            "Sipl keygen cert": 0,
+            "SIPL signing": 0,
+            "SIPL keygen key": 0,
+            "SIPL keygen cert": 0,
             }
 
     def __call__(self, *args, **kwargs):
@@ -133,15 +133,15 @@ class FakeMethodCallLog(FakeMethod):
         elif description == "Opal keygen key":
             write_file(self.upload.opal_pem, b"")
 
-        elif description == "Sipl signing":
+        elif description == "SIPL signing":
             filename = cmdl[-1]
             if filename.endswith(".sipl.sig"):
                 write_file(filename, b"")
 
-        elif description == "Sipl keygen cert":
+        elif description == "SIPL keygen cert":
             write_file(self.upload.sipl_x509, b"")
 
-        elif description == "Sipl keygen key":
+        elif description == "SIPL keygen key":
             write_file(self.upload.sipl_pem, b"")
 
         else:
@@ -337,12 +337,12 @@ class TestSigning(RunPartsMixin, TestSigningHelpers):
             ('Kmod keygen cert', 1),
             ('Opal keygen key', 1),
             ('Opal keygen cert', 1),
-            ('Sipl keygen key', 1),
-            ('Sipl keygen cert', 1),
+            ('SIPL keygen key', 1),
+            ('SIPL keygen cert', 1),
             ('UEFI signing', 1),
             ('Kmod signing', 1),
             ('Opal signing', 1),
-            ('Sipl signing', 1),
+            ('SIPL signing', 1),
         ]
         self.assertContentEqual(expected_callers, upload.callLog.caller_list())
 
@@ -609,7 +609,7 @@ class TestSigning(RunPartsMixin, TestSigningHelpers):
             self.archive, "test_1.0_amd64.tar.gz", "distroseries")
         text = upload.generateOpensslConfig('Kmod', upload.openssl_config_kmod)
 
-        id_re = re.compile(r'^# KMOD openssl config\b')
+        id_re = re.compile(r'^# KMOD OpenSSL config\n')
         cn_re = re.compile(r'\bCN\s*=\s*' + self.testcase_cn[4:-1] + '\s+Kmod')
         eku_re = re.compile(
             r'\bextendedKeyUsage\s*=\s*'
@@ -695,7 +695,7 @@ class TestSigning(RunPartsMixin, TestSigningHelpers):
             self.archive, "test_1.0_amd64.tar.gz", "distroseries")
         text = upload.generateOpensslConfig('Opal', upload.openssl_config_opal)
 
-        id_re = re.compile(r'^# OPAL openssl config\b')
+        id_re = re.compile(r'^# OPAL OpenSSL config\n')
         cn_re = re.compile(r'\bCN\s*=\s*' + self.testcase_cn[4:-1] + '\s+Opal')
 
         self.assertIn('[ req ]', text)
@@ -776,10 +776,10 @@ class TestSigning(RunPartsMixin, TestSigningHelpers):
         upload = SigningUpload()
         upload.setTargetDirectory(
             self.archive, "test_1.0_amd64.tar.gz", "distroseries")
-        text = upload.generateOpensslConfig('Sipl', upload.openssl_config_sipl)
+        text = upload.generateOpensslConfig('SIPL', upload.openssl_config_sipl)
 
-        id_re = re.compile(r'^# SIPL openssl config\b')
-        cn_re = re.compile(r'\bCN\s*=\s*' + self.testcase_cn[4:-1] + '\s+Sipl')
+        id_re = re.compile(r'^# SIPL OpenSSL config\n')
+        cn_re = re.compile(r'\bCN\s*=\s*' + self.testcase_cn[4:-1] + '\s+SIPL')
 
         self.assertIn('[ req ]', text)
         self.assertIsNotNone(id_re.search(text))
@@ -1060,8 +1060,8 @@ class TestSigning(RunPartsMixin, TestSigningHelpers):
         upload.setTargetDirectory(
             self.archive, "test_1.0_amd64.tar.gz", "distroseries")
         upload.signOpal(os.path.join(self.makeTemporaryDirectory(), 't.sipl'))
-        self.assertEqual(0, upload.callLog.caller_count('Sipl keygen key'))
-        self.assertEqual(0, upload.callLog.caller_count('Sipl keygen cert'))
+        self.assertEqual(0, upload.callLog.caller_count('SIPL keygen key'))
+        self.assertEqual(0, upload.callLog.caller_count('SIPL keygen cert'))
         self.assertFalse(os.path.exists(self.sipl_pem))
         self.assertFalse(os.path.exists(self.sipl_x509))
 
@@ -1078,8 +1078,8 @@ class TestSigning(RunPartsMixin, TestSigningHelpers):
         upload.setTargetDirectory(
             self.archive, "test_1.0_amd64.tar.gz", "distroseries")
         upload.signSipl(os.path.join(self.makeTemporaryDirectory(), 't.sipl'))
-        self.assertEqual(1, upload.callLog.caller_count('Sipl keygen key'))
-        self.assertEqual(1, upload.callLog.caller_count('Sipl keygen cert'))
+        self.assertEqual(1, upload.callLog.caller_count('SIPL keygen key'))
+        self.assertEqual(1, upload.callLog.caller_count('SIPL keygen cert'))
         self.assertTrue(os.path.exists(self.sipl_pem))
         self.assertTrue(os.path.exists(self.sipl_x509))
         self.assertEqual(stat.S_IMODE(os.stat(self.sipl_pem).st_mode), 0o600)
