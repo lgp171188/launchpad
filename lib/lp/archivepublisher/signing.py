@@ -97,6 +97,8 @@ class SigningUpload(CustomUpload):
             self.opal_x509 = None
             self.sipl_pem = None
             self.sipl_x509 = None
+            self.fit_key = None
+            self.fit_cert = None
             self.autokey = False
         else:
             self.uefi_key = os.path.join(pubconf.signingroot, "uefi.key")
@@ -107,6 +109,11 @@ class SigningUpload(CustomUpload):
             self.opal_x509 = os.path.join(pubconf.signingroot, "opal.x509")
             self.sipl_pem = os.path.join(pubconf.signingroot, "sipl.pem")
             self.sipl_x509 = os.path.join(pubconf.signingroot, "sipl.x509")
+            # Note: the signature tool allows a collection of keys and takes
+            #       a directory name with all valid keys.  Avoid mixing the
+            #       other signing types' keys with the fit keys.
+            self.fit_key = os.path.join(pubconf.signingroot, "fit", "fit.key")
+            self.fit_cert = os.path.join(pubconf.signingroot, "fit", "fit.crt")
             self.autokey = pubconf.signingautokey
 
         self.setComponents(tarfile_path)
@@ -182,6 +189,8 @@ class SigningUpload(CustomUpload):
                     yield (os.path.join(dirpath, filename), self.signOpal)
                 elif filename.endswith(".sipl"):
                     yield (os.path.join(dirpath, filename), self.signSipl)
+                elif filename.endswith(".fit"):
+                    yield (os.path.join(dirpath, filename), self.signFit)
 
     def getKeys(self, which, generate, *keynames):
         """Validate and return the uefi key and cert for encryption."""
@@ -371,6 +380,26 @@ class SigningUpload(CustomUpload):
         self.publishPublicKey(cert)
         cmdl = ["kmodsign", "-D", "sha512", pem, cert, image, image + ".sig"]
         return self.callLog("SIPL signing", cmdl)
+
+    def generateFitKeys(self):
+        """Generate new Fit Keys for this archive."""
+        self.generateKeyCrtPair("Fit", self.fit_key, self.fit_cert)
+
+    def signFit(self, image):
+        """Attempt to sign an image."""
+        image_signed = "%s.signed" % image
+        remove_if_exists(image_signed)
+        (key, cert) = self.getKeys('Fit', self.generateFitKeys,
+            self.fit_key, self.fit_cert)
+        if not key or not cert:
+            return
+        self.publishPublicKey(cert)
+        # Make a copy of the image as mkimage signs in place and in
+        # signed-only mode we will remove the original file.
+        shutil.copy(image, image_signed)
+        cmdl = ["mkimage", "-F", "-k", os.path.dirname(key), "-r",
+            image_signed]
+        return self.callLog("Fit signing", cmdl)
 
     def convertToTarball(self):
         """Convert unpacked output to signing tarball."""
