@@ -191,7 +191,7 @@ class TestSigningHelpers(TestCaseWithFactory):
             purpose=ArchivePurpose.PPA)
         self.signing_dir = os.path.join(
             self.temp_dir, "signing", "signing-owner", "testing")
-        self.testcase_cn = '/CN=PPA signing-owner testing/'
+        self.testcase_cn = 'PPA signing-owner testing'
         pubconf = getPubConfig(self.archive)
         if not os.path.exists(pubconf.temproot):
             os.makedirs(pubconf.temproot)
@@ -595,7 +595,8 @@ class TestSigning(RunPartsMixin, TestSigningHelpers):
         args = fake_call.calls[0][0][0]
         expected_cmd = [
             'openssl', 'req', '-new', '-x509', '-newkey', 'rsa:2048',
-            '-subj', self.testcase_cn, '-keyout', self.key, '-out', self.cert,
+            '-subj', '/CN=' + self.testcase_cn + ' UEFI/',
+            '-keyout', self.key, '-out', self.cert,
             '-days', '3650', '-nodes', '-sha256',
             ]
         self.assertEqual(expected_cmd, args)
@@ -610,7 +611,7 @@ class TestSigning(RunPartsMixin, TestSigningHelpers):
         text = upload.generateOpensslConfig('Kmod', upload.openssl_config_kmod)
 
         id_re = re.compile(r'^# KMOD OpenSSL config\n')
-        cn_re = re.compile(r'\bCN\s*=\s*' + self.testcase_cn[4:-1] + '\s+Kmod')
+        cn_re = re.compile(r'\bCN\s*=\s*' + self.testcase_cn + '\s+Kmod')
         eku_re = re.compile(
             r'\bextendedKeyUsage\s*=\s*'
             r'codeSigning,1.3.6.1.4.1.2312.16.1.2\s*\b')
@@ -696,7 +697,7 @@ class TestSigning(RunPartsMixin, TestSigningHelpers):
         text = upload.generateOpensslConfig('Opal', upload.openssl_config_opal)
 
         id_re = re.compile(r'^# OPAL OpenSSL config\n')
-        cn_re = re.compile(r'\bCN\s*=\s*' + self.testcase_cn[4:-1] + '\s+Opal')
+        cn_re = re.compile(r'\bCN\s*=\s*' + self.testcase_cn + '\s+Opal')
 
         self.assertIn('[ req ]', text)
         self.assertIsNotNone(id_re.search(text))
@@ -779,7 +780,7 @@ class TestSigning(RunPartsMixin, TestSigningHelpers):
         text = upload.generateOpensslConfig('SIPL', upload.openssl_config_sipl)
 
         id_re = re.compile(r'^# SIPL OpenSSL config\n')
-        cn_re = re.compile(r'\bCN\s*=\s*' + self.testcase_cn[4:-1] + '\s+SIPL')
+        cn_re = re.compile(r'\bCN\s*=\s*' + self.testcase_cn + '\s+SIPL')
 
         self.assertIn('[ req ]', text)
         self.assertIsNotNone(id_re.search(text))

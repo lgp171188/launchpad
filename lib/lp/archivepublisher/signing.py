@@ -213,29 +213,33 @@ class SigningUpload(CustomUpload):
         common_name = "PPA %s %s" % (owner, archive)
         return common_name[0:64 - len(suffix)] + suffix
 
-    def generateUefiKeys(self):
-        """Generate new UEFI Keys for this archive."""
-        directory = os.path.dirname(self.uefi_key)
+    def generateKeyCrtPair(self, key_type, key_filename, cert_filename):
+        """Generate new Key/Crt key pairs."""
+        directory = os.path.dirname(key_filename)
         if not os.path.exists(directory):
             os.makedirs(directory)
 
         common_name = self.generateKeyCommonName(
-            self.archive.owner.name, self.archive.name)
+            self.archive.owner.name, self.archive.name, key_type)
         subject = '/CN=' + common_name + '/'
 
         old_mask = os.umask(0o077)
         try:
             new_key_cmd = [
                 'openssl', 'req', '-new', '-x509', '-newkey', 'rsa:2048',
-                '-subj', subject, '-keyout', self.uefi_key,
-                '-out', self.uefi_cert, '-days', '3650', '-nodes', '-sha256',
+                '-subj', subject, '-keyout', key_filename,
+                '-out', cert_filename, '-days', '3650', '-nodes', '-sha256',
                 ]
-            self.callLog("UEFI keygen", new_key_cmd)
+            self.callLog(key_type + " keygen", new_key_cmd)
         finally:
             os.umask(old_mask)
 
-        if os.path.exists(self.uefi_cert):
-            os.chmod(self.uefi_cert, 0o644)
+        if os.path.exists(cert_filename):
+            os.chmod(cert_filename, 0o644)
+
+    def generateUefiKeys(self):
+        """Generate new UEFI Keys for this archive."""
+        self.generateKeyCrtPair("UEFI", self.uefi_key, self.uefi_cert)
 
     def signUefi(self, image):
         """Attempt to sign an image."""
