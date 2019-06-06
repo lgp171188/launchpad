@@ -85,8 +85,8 @@ class FakeMethodCallLog(FakeMethod):
         self.callers = {
             "UEFI signing": 0,
             "UEFI keygen": 0,
-            "Fit signing": 0,
-            "Fit keygen": 0,
+            "FIT signing": 0,
+            "FIT keygen": 0,
             "Kmod signing": 0,
             "Kmod keygen key": 0,
             "Kmod keygen cert": 0,
@@ -113,12 +113,12 @@ class FakeMethodCallLog(FakeMethod):
             write_file(self.upload.uefi_key, b"")
             write_file(self.upload.uefi_cert, b"")
 
-        elif description == "Fit signing":
+        elif description == "FIT signing":
             filename = cmdl[-1]
             if filename.endswith(".fit"):
                 write_file(filename + ".signed", b"")
 
-        elif description == "Fit keygen":
+        elif description == "FIT keygen":
             write_file(self.upload.fit_key, b"")
             write_file(self.upload.fit_cert, b"")
 
@@ -365,12 +365,12 @@ class TestSigning(RunPartsMixin, TestSigningHelpers):
             ('Opal keygen cert', 1),
             ('SIPL keygen key', 1),
             ('SIPL keygen cert', 1),
-            ('Fit keygen', 1),
+            ('FIT keygen', 1),
             ('UEFI signing', 1),
             ('Kmod signing', 1),
             ('Opal signing', 1),
             ('SIPL signing', 1),
-            ('Fit signing', 1),
+            ('FIT signing', 1),
         ]
         self.assertContentEqual(expected_callers, upload.callLog.caller_list())
 
@@ -704,7 +704,7 @@ class TestSigning(RunPartsMixin, TestSigningHelpers):
         args = fake_call.calls[0][0][0]
         expected_cmd = [
             'openssl', 'req', '-new', '-x509', '-newkey', 'rsa:2048',
-            '-subj', '/CN=' + self.testcase_cn + ' Fit/',
+            '-subj', '/CN=' + self.testcase_cn + ' FIT/',
             '-keyout', self.fit_key, '-out', self.fit_cert,
             '-days', '3650', '-nodes', '-sha256',
             ]
@@ -1109,7 +1109,7 @@ class TestSigning(RunPartsMixin, TestSigningHelpers):
         upload.setTargetDirectory(
             self.archive, "test_1.0_amd64.tar.gz", "distroseries")
         upload.signFit(os.path.join(self.makeTemporaryDirectory(), 'fit'))
-        self.assertEqual(0, upload.callLog.caller_count('Fit keygen'))
+        self.assertEqual(0, upload.callLog.caller_count('FIT keygen'))
         self.assertFalse(os.path.exists(self.fit_key))
         self.assertFalse(os.path.exists(self.fit_cert))
 
@@ -1128,7 +1128,7 @@ class TestSigning(RunPartsMixin, TestSigningHelpers):
         upload.setTargetDirectory(
             self.archive, "test_1.0_amd64.tar.gz", "distroseries")
         upload.signFit(os.path.join(self.makeTemporaryDirectory(), 't.fit'))
-        self.assertEqual(1, upload.callLog.caller_count('Fit keygen'))
+        self.assertEqual(1, upload.callLog.caller_count('FIT keygen'))
         self.assertTrue(os.path.exists(self.fit_key))
         self.assertTrue(os.path.exists(self.fit_cert))
         self.assertEqual(stat.S_IMODE(os.stat(self.fit_key).st_mode), 0o600)

@@ -382,14 +382,14 @@ class SigningUpload(CustomUpload):
         return self.callLog("SIPL signing", cmdl)
 
     def generateFitKeys(self):
-        """Generate new Fit Keys for this archive."""
-        self.generateKeyCrtPair("Fit", self.fit_key, self.fit_cert)
+        """Generate new FIT Keys for this archive."""
+        self.generateKeyCrtPair("FIT", self.fit_key, self.fit_cert)
 
     def signFit(self, image):
         """Attempt to sign an image."""
         image_signed = "%s.signed" % image
         remove_if_exists(image_signed)
-        (key, cert) = self.getKeys('Fit', self.generateFitKeys,
+        (key, cert) = self.getKeys('FIT', self.generateFitKeys,
             self.fit_key, self.fit_cert)
         if not key or not cert:
             return
@@ -399,7 +399,7 @@ class SigningUpload(CustomUpload):
         shutil.copy(image, image_signed)
         cmdl = ["mkimage", "-F", "-k", os.path.dirname(key), "-r",
             image_signed]
-        return self.callLog("Fit signing", cmdl)
+        return self.callLog("FIT signing", cmdl)
 
     def convertToTarball(self):
         """Convert unpacked output to signing tarball."""
