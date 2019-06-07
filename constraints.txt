@@ -221,7 +221,7 @@ amqp==2.4.2
 anyjson==0.3.3
 appdirs==1.4.3
 asn1crypto==0.23.0
-attrs==17.3.0
+attrs==19.1.0
 auditor==0.0.3
 auditorclient==0.0.4
 auditorfixture==0.0.7
@@ -241,7 +241,7 @@ Chameleon==2.11
 chardet==3.0.4
 constantly==15.1.0
 cookies==2.2.1
-cryptography==2.1.4
+cryptography==2.7
 cssselect==0.9.1
 cssutils==0.9.10
 d2to1==0.2.12
@@ -323,6 +323,7 @@ pycparser==2.18
 # lp:~launchpad/pygpgme/pthread
 # lp1 Link against libgpgme-pthread for thread-safety.
 pygpgme==0.3+lp1
+PyHamcrest==1.9.0
 pyinotify==0.9.4
 pymacaroons==0.13.0
 PyNaCl==1.3.0
@@ -345,7 +346,7 @@ requests-file==1.4.3
 requests-toolbelt==0.6.2
 responses==0.9.0
 scandir==1.7
-service-identity==17.0.0
+service-identity==18.1.0
 setproctitle==1.1.7
 setuptools-git==1.2
 setuptools-scm==1.15.7
@@ -364,7 +365,7 @@ testresources==0.2.7
 testscenarios==0.4
 timeline==0.0.3
 treq==18.6.0
-Twisted[conch,tls]==18.4.0
+Twisted[conch,tls]==19.2.1
 txAMQP==0.6.2
 txfixtures==0.4.2
 txpkgupload==0.2
