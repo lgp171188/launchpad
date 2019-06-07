@@ -1,4 +1,4 @@
-# Copyright 2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2018-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Unit tests for `BranchHostingClient`.
@@ -16,6 +16,7 @@ import re
 
 from lazr.restful.utils import get_current_browser_request
 import responses
+from six.moves.urllib.parse import urljoin
 from testtools.matchers import MatchesStructure
 from zope.component import getUtility
 from zope.interface import implementer
@@ -26,6 +27,7 @@ from lp.code.errors import (
     BranchHostingFault,
     )
 from lp.code.interfaces.branchhosting import IBranchHostingClient
+from lp.services.config import config
 from lp.services.job.interfaces.job import (
     IRunnableJob,
     JobStatus,
@@ -78,6 +80,9 @@ class TestBranchHostingClient(TestCase):
         self.assertEqual(
             "/" + url_suffix.split("?", 1)[0], action.detail.split(" ", 1)[0])
 
+    def makeHostingURL(self, path):
+        return urljoin(config.codehosting.internal_bzr_api_endpoint, path)
+
     def test_getDiff(self):
         with self.mockRequests("GET", body="---\n+++\n"):
             diff = self.client.getDiff(123, "2", "1")
@@ -107,7 +112,8 @@ class TestBranchHostingClient(TestCase):
             self.assertRaisesWithContent(
                 BranchHostingFault,
                 "Failed to get diff from Bazaar branch: "
-                "400 Client Error: Bad Request",
+                "400 Client Error: Bad Request for url: " +
+                self.makeHostingURL("/+branch-id/123/diff/2/1"),
                 self.client.getDiff, 123, "2", "1")
 
     def test_getInventory(self):
@@ -148,7 +154,9 @@ class TestBranchHostingClient(TestCase):
             self.assertRaisesWithContent(
                 BranchHostingFault,
                 "Failed to get inventory from Bazaar branch: "
-                "400 Client Error: Bad Request",
+                "400 Client Error: Bad Request for url: " +
+                self.makeHostingURL(
+                    "/+branch-id/123/+json/files/head%3A/dir/path/file/name"),
                 self.client.getInventory, 123, "dir/path/file/name")
 
     def test_getInventory_url_quoting(self):
@@ -194,7 +202,9 @@ class TestBranchHostingClient(TestCase):
             self.assertRaisesWithContent(
                 BranchHostingFault,
                 "Failed to get file from Bazaar branch: "
-                "400 Client Error: Bad Request",
+                "400 Client Error: Bad Request for url: " +
+                self.makeHostingURL(
+                    "/+branch-id/123/download/head%3A/file-id"),
                 self.client.getBlob, 123, "file-id")
 
     def test_getBlob_url_quoting(self):

@@ -418,7 +418,7 @@ class TestTimeout(TestCase):
             'ftp://example.com/', use_proxy=True, allow_ftp=True)
         self.assertThat(response, MatchesStructure(
             status_code=Equals(200),
-            headers=ContainsDict({'content-length': Equals('8')}),
+            headers=ContainsDict({'Content-Length': Equals('8')}),
             content=Equals('Success.')))
         t.join()
 

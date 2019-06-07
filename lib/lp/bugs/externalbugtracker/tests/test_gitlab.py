@@ -131,7 +131,7 @@ class TestGitLab(TestCase):
             tracker.getRemoteBugBatch(["1", "2"]))
         self.assertEqual(
             "https://gitlab.com/api/v4/projects/user%2Frepository/issues?"
-            "iids[]=1&iids[]=2",
+            "iids%5B%5D=1&iids%5B%5D=2",
             responses.calls[-1].request.url)
 
     @responses.activate
@@ -144,7 +144,7 @@ class TestGitLab(TestCase):
             tracker.getRemoteBugBatch(["1", "2"], last_accessed=since))
         self.assertEqual(
             "https://gitlab.com/api/v4/projects/user%2Frepository/issues?"
-            "updated_after=2015-01-01T12%3A00%3A00Z&iids[]=1&iids[]=2",
+            "updated_after=2015-01-01T12%3A00%3A00Z&iids%5B%5D=1&iids%5B%5D=2",
             responses.calls[-1].request.url)
 
     @responses.activate
@@ -189,7 +189,8 @@ class TestGitLab(TestCase):
                 [str(bug["iid"]) for bug in self.sample_bugs]))
         expected_urls = [
             "https://gitlab.com/api/v4/projects/user%2Frepository/issues?" +
-            "&".join("iids[]=%s" % bug["iid"] for bug in self.sample_bugs),
+            "&".join(
+                "iids%%5B%%5D=%s" % bug["iid"] for bug in self.sample_bugs),
             "https://gitlab.com/api/v4/projects/user%2Frepository/issues?"
             "page=2",
             "https://gitlab.com/api/v4/projects/user%2Frepository/issues?"
@@ -251,7 +252,7 @@ class TestGitLabUpdateBugWatches(TestCaseWithFactory):
         responses.add(
             "GET",
             "https://gitlab.com/api/v4/projects/user%2Frepository/issues?"
-            "iids[]=1234",
+            "iids%5B%5D=1234",
             json=remote_bug, match_querystring=True)
         bug = self.factory.makeBug()
         bug_tracker = self.factory.makeBugTracker(

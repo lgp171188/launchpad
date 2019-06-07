@@ -2,7 +2,7 @@
 # NOTE: The first line above must stay first; do not move the copyright
 # notice to the top.  See http://www.python.org/dev/peps/pep-0263/.
 #
-# Copyright 2016-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2016-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Unit tests for `GitHostingClient`.
@@ -21,7 +21,17 @@ import re
 
 from lazr.restful.utils import get_current_browser_request
 import responses
-from testtools.matchers import MatchesStructure
+from six.moves.urllib.parse import (
+    parse_qsl,
+    urljoin,
+    urlsplit,
+    )
+from testtools.matchers import (
+    AfterPreprocessing,
+    Equals,
+    MatchesListwise,
+    MatchesStructure,
+    )
 from zope.component import getUtility
 from zope.interface import implementer
 from zope.security.proxy import removeSecurityProxy
@@ -33,6 +43,7 @@ from lp.code.errors import (
     GitRepositoryScanFault,
     )
 from lp.code.interfaces.githosting import IGitHostingClient
+from lp.services.config import config
 from lp.services.job.interfaces.job import (
     IRunnableJob,
     JobStatus,
@@ -50,6 +61,24 @@ from lp.services.timeout import (
 from lp.services.webapp.url import urlappend
 from lp.testing import TestCase
 from lp.testing.layers import ZopelessDatabaseLayer
+
+
+class MatchesURL(AfterPreprocessing):
+    """Matches a URL, disregarding the order of query string parameters."""
+
+    def __init__(self, url):
+        split_url = urlsplit(url)
+        query_matcher = AfterPreprocessing(
+            lambda qs: sorted(parse_qsl(qs)),
+            MatchesListwise(
+                [Equals(pair) for pair in sorted(parse_qsl(split_url.query))]))
+        super(MatchesURL, self).__init__(
+            urlsplit, MatchesStructure(
+                scheme=Equals(split_url.scheme),
+                netloc=Equals(split_url.netloc),
+                path=Equals(split_url.path),
+                query=query_matcher,
+                fragment=Equals(split_url.fragment)))
 
 
 class TestGitHostingClient(TestCase):
@@ -77,8 +106,10 @@ class TestGitHostingClient(TestCase):
 
     def assertRequest(self, url_suffix, json_data=None, method=None, **kwargs):
         [request] = self.requests
-        self.assertThat(request, MatchesStructure.byEquality(
-            url=urlappend(self.endpoint, url_suffix), method=method, **kwargs))
+        self.assertThat(request, MatchesStructure(
+            url=MatchesURL(urlappend(self.endpoint, url_suffix)),
+            method=Equals(method),
+            **{key: Equals(value) for key, value in kwargs.items()}))
         if json_data is not None:
             self.assertEqual(json_data, json.loads(request.body))
         timeline = get_request_timeline(get_current_browser_request())
@@ -86,6 +117,9 @@ class TestGitHostingClient(TestCase):
         self.assertEqual("git-hosting-%s" % method.lower(), action.category)
         self.assertEqual(
             "/" + url_suffix.split("?", 1)[0], action.detail.split(" ", 1)[0])
+
+    def makeHostingURL(self, path):
+        return urljoin(config.codehosting.internal_git_api_endpoint, path)
 
     def test_create(self):
         with self.mockRequests("POST"):
@@ -105,7 +139,8 @@ class TestGitHostingClient(TestCase):
             self.assertRaisesWithContent(
                 GitRepositoryCreationFault,
                 "Failed to create Git repository: "
-                "400 Client Error: Bad Request",
+                "400 Client Error: Bad Request for url: " +
+                self.makeHostingURL("/repo"),
                 self.client.create, "123")
 
     def test_getProperties(self):
@@ -120,7 +155,8 @@ class TestGitHostingClient(TestCase):
             self.assertRaisesWithContent(
                 GitRepositoryScanFault,
                 "Failed to get properties of Git repository: "
-                "400 Client Error: Bad Request",
+                "400 Client Error: Bad Request for url: " +
+                self.makeHostingURL("/repo/123"),
                 self.client.getProperties, "123")
 
     def test_setProperties(self):
@@ -135,7 +171,8 @@ class TestGitHostingClient(TestCase):
             self.assertRaisesWithContent(
                 GitRepositoryScanFault,
                 "Failed to set properties of Git repository: "
-                "400 Client Error: Bad Request",
+                "400 Client Error: Bad Request for url: " +
+                self.makeHostingURL("/repo/123"),
                 self.client.setProperties, "123",
                 default_branch="refs/heads/a")
 
@@ -160,7 +197,8 @@ class TestGitHostingClient(TestCase):
             self.assertRaisesWithContent(
                 GitRepositoryScanFault,
                 "Failed to get refs from Git repository: "
-                "400 Client Error: Bad Request",
+                "400 Client Error: Bad Request for url: " +
+                self.makeHostingURL("/repo/123/refs"),
                 self.client.getRefs, "123")
 
     def test_getCommits(self):
@@ -175,7 +213,8 @@ class TestGitHostingClient(TestCase):
             self.assertRaisesWithContent(
                 GitRepositoryScanFault,
                 "Failed to get commit details from Git repository: "
-                "400 Client Error: Bad Request",
+                "400 Client Error: Bad Request for url: " +
+                self.makeHostingURL("/repo/123/commits"),
                 self.client.getCommits, "123", ["0"])
 
     def test_getLog(self):
@@ -198,7 +237,8 @@ class TestGitHostingClient(TestCase):
             self.assertRaisesWithContent(
                 GitRepositoryScanFault,
                 "Failed to get commit log from Git repository: "
-                "400 Client Error: Bad Request",
+                "400 Client Error: Bad Request for url: " +
+                self.makeHostingURL("/repo/123/log/refs/heads/master"),
                 self.client.getLog, "123", "refs/heads/master")
 
     def test_getDiff(self):
@@ -225,7 +265,8 @@ class TestGitHostingClient(TestCase):
             self.assertRaisesWithContent(
                 GitRepositoryScanFault,
                 "Failed to get diff from Git repository: "
-                "400 Client Error: Bad Request",
+                "400 Client Error: Bad Request for url: " +
+                self.makeHostingURL("/repo/123/compare/a..b"),
                 self.client.getDiff, "123", "a", "b")
 
     def test_getMergeDiff(self):
@@ -257,7 +298,8 @@ class TestGitHostingClient(TestCase):
             self.assertRaisesWithContent(
                 GitRepositoryScanFault,
                 "Failed to get merge diff from Git repository: "
-                "400 Client Error: Bad Request",
+                "400 Client Error: Bad Request for url: " +
+                self.makeHostingURL("/repo/123/compare-merge/a:b"),
                 self.client.getMergeDiff, "123", "a", "b")
 
     def test_detectMerges(self):
@@ -273,7 +315,8 @@ class TestGitHostingClient(TestCase):
             self.assertRaisesWithContent(
                 GitRepositoryScanFault,
                 "Failed to detect merges in Git repository: "
-                "400 Client Error: Bad Request",
+                "400 Client Error: Bad Request for url: " +
+                self.makeHostingURL("/repo/123/detect-merges/a"),
                 self.client.detectMerges, "123", "a", ["b", "c"])
 
     def test_delete(self):
@@ -286,7 +329,8 @@ class TestGitHostingClient(TestCase):
             self.assertRaisesWithContent(
                 GitRepositoryDeletionFault,
                 "Failed to delete Git repository: "
-                "400 Client Error: Bad Request",
+                "400 Client Error: Bad Request for url: " +
+                self.makeHostingURL("/repo/123"),
                 self.client.delete, "123")
 
     def test_getBlob(self):
@@ -327,7 +371,8 @@ class TestGitHostingClient(TestCase):
             self.assertRaisesWithContent(
                 GitRepositoryScanFault,
                 "Failed to get file from Git repository: "
-                "400 Client Error: Bad Request",
+                "400 Client Error: Bad Request for url: " +
+                self.makeHostingURL("/repo/123/blob/dir/path/file/name"),
                 self.client.getBlob, "123", "dir/path/file/name")
 
     def test_getBlob_url_quoting(self):
