@@ -8,7 +8,7 @@ __all__ = ['BugTaskTargetNameCacheUpdater']
 
 from collections import defaultdict
 
-from zope.interface import implements
+from zope.interface import implementer
 
 from lp.bugs.model.bugtask import (
     bug_target_from_key,
@@ -19,7 +19,7 @@ from lp.registry.model.distroseries import DistroSeries
 from lp.registry.model.product import Product
 from lp.registry.model.productseries import ProductSeries
 from lp.registry.model.sourcepackagename import SourcePackageName
-from lp.services.database.lpstorm import (
+from lp.services.database.interfaces import (
     IMasterStore,
     ISlaveStore,
     )
@@ -38,10 +38,9 @@ target_classes = (
     Product, ProductSeries, Distribution, DistroSeries, SourcePackageName)
 
 
+@implementer(ITunableLoop)
 class BugTaskTargetNameCachesTunableLoop(object):
     """An `ITunableLoop` for updating BugTask targetname caches."""
-
-    implements(ITunableLoop)
 
     def __init__(self, transaction, logger, offset=0):
         self.transaction = transaction

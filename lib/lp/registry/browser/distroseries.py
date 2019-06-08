@@ -1,4 +1,4 @@
-# Copyright 2009-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """View classes related to `IDistroSeries`."""
@@ -10,7 +10,6 @@ __all__ = [
     'DistroSeriesAdminView',
     'DistroSeriesBreadcrumb',
     'DistroSeriesEditView',
-    'DistroSeriesFacets',
     'DistroSeriesInitializeView',
     'DistroSeriesLocalDifferencesView',
     'DistroSeriesMissingPackagesView',
@@ -27,6 +26,7 @@ from lazr.restful.interfaces import IJSONRequestCache
 from zope.component import getUtility
 from zope.event import notify
 from zope.formlib import form
+from zope.formlib.widget import CustomWidgetFactory
 from zope.interface import Interface
 from zope.lifecycleevent import ObjectCreatedEvent
 from zope.schema import (
@@ -42,7 +42,6 @@ from zope.schema.vocabulary import (
 from lp import _
 from lp.app.browser.launchpadform import (
     action,
-    custom_widget,
     LaunchpadEditFormView,
     LaunchpadFormView,
     )
@@ -82,19 +81,16 @@ from lp.services.browser_helpers import get_plural_text
 from lp.services.database.constants import UTC_NOW
 from lp.services.features import getFeatureFlag
 from lp.services.propertycache import cachedproperty
-from lp.services.webapp import (
-    GetitemNavigation,
-    StandardLaunchpadFacets,
-    )
+from lp.services.webapp import GetitemNavigation
 from lp.services.webapp.authorization import check_permission
 from lp.services.webapp.batching import BatchNavigator
 from lp.services.webapp.breadcrumb import Breadcrumb
+from lp.services.webapp.escaping import structured
 from lp.services.webapp.menu import (
     ApplicationMenu,
     enabled_with_permission,
     Link,
     NavigationMenu,
-    structured,
     )
 from lp.services.webapp.publisher import (
     canonical_url,
@@ -202,13 +198,6 @@ class DistroSeriesBreadcrumb(Breadcrumb):
     @property
     def text(self):
         return self.context.named_version
-
-
-class DistroSeriesFacets(StandardLaunchpadFacets):
-
-    usedfor = IDistroSeries
-    enable_only = ['overview', 'branches', 'bugs', 'specifications',
-                   'translations']
 
 
 class DistroSeriesOverviewMenu(
@@ -563,8 +552,8 @@ class DistroSeriesEditView(LaunchpadEditFormView, SeriesStatusMixin):
     It redirects to the main distroseries page after a successful edit.
     """
     schema = IDistroSeries
-    field_names = ['displayname', 'title', 'summary', 'description']
-    custom_widget('status', LaunchpadDropdownWidget)
+    field_names = ['display_name', 'title', 'summary', 'description']
+    custom_widget_status = LaunchpadDropdownWidget
 
     @property
     def label(self):
@@ -588,18 +577,19 @@ class DistroSeriesEditView(LaunchpadEditFormView, SeriesStatusMixin):
         'status' field. See `createStatusField` method.
         """
         LaunchpadEditFormView.setUpFields(self)
-        self.is_derivative = (
-            not self.context.distribution.full_functionality)
+        self.series_are_harmless = (
+            not self.context.distribution.official_packages)
         self.has_admin = check_permission('launchpad.Admin', self.context)
-        if self.has_admin or self.is_derivative:
-            # The user is an admin or this is an IDerivativeDistribution.
+        if self.has_admin or self.series_are_harmless:
+            # The user is an admin or damage to the series can't break
+            # archives.
             self.form_fields = (
                 self.form_fields + self.createStatusField())
 
     @action("Change")
     def change_action(self, action, data):
         """Update the context and redirects to its overviw page."""
-        if self.has_admin or self.is_derivative:
+        if self.has_admin or self.series_are_harmless:
             self.updateDateReleased(data.get('status'))
         self.updateContextFromData(data)
         self.request.response.addInfoNotification(
@@ -613,8 +603,9 @@ class DistroSeriesAdminView(LaunchpadEditFormView, SeriesStatusMixin):
     It redirects to the main distroseries page after a successful edit.
     """
     schema = IDistroSeries
-    field_names = ['name', 'version', 'changeslist']
-    custom_widget('status', LaunchpadDropdownWidget)
+    field_names = [
+        'name', 'version', 'changeslist', 'inherit_overrides_from_parents']
+    custom_widget_status = LaunchpadDropdownWidget
 
     @property
     def label(self):
@@ -666,8 +657,8 @@ class IDistroSeriesAddForm(Interface):
         IDistroSeries["version"], description=_(
             "The version of the new series."))
 
-    displayname = copy_field(
-        IDistroSeries["displayname"], description=_(
+    display_name = copy_field(
+        IDistroSeries["display_name"], description=_(
             "The name of the new series as it would "
             "appear in a paragraph."))
 
@@ -680,7 +671,7 @@ class DistroSeriesAddView(LaunchpadFormView):
     field_names = [
         'name',
         'version',
-        'displayname',
+        'display_name',
         'summary',
         ]
 
@@ -702,8 +693,8 @@ class DistroSeriesAddView(LaunchpadFormView):
         # previous_series will be None if there isn't one.
         distroseries = self.context.newSeries(
             name=data['name'],
-            displayname=data['displayname'],
-            title=data['displayname'],
+            display_name=data['display_name'],
+            title=data['display_name'],
             summary=data['summary'],
             description=u"",
             version=data['version'],
@@ -875,10 +866,10 @@ class DistroSeriesDifferenceBaseView(LaunchpadFormView,
     a derived series and its parent."""
     schema = IDifferencesFormSchema
     field_names = ['selected_differences', 'sponsored_person']
-    custom_widget('selected_differences', LabeledMultiCheckBoxWidget)
-    custom_widget('package_type', LaunchpadRadioWidget)
-    custom_widget(
-        'sponsored_person', PersonPickerWidget,
+    custom_widget_selected_differences = LabeledMultiCheckBoxWidget
+    custom_widget_package_type = LaunchpadRadioWidget
+    custom_widget_sponsored_person = CustomWidgetFactory(
+        PersonPickerWidget,
         header="Select person being sponsored", show_assign_me_button=False)
 
     # Differences type to display. Can be overrided by sublasses.
@@ -960,15 +951,11 @@ class DistroSeriesDifferenceBaseView(LaunchpadFormView,
 
         sponsored_person = data.get("sponsored_person")
 
-        # When syncing we *must* do it asynchronously so that a package
-        # copy job is created.  This gives the job a chance to inspect
-        # the copy and create a PackageUpload if required.
         if self.do_copy(
             'selected_differences', sources, self.context.main_archive,
             self.context, destination_pocket, include_binaries=False,
             dest_url=series_url, dest_display_name=series_title,
-            person=self.user, force_async=True,
-            sponsored_person=sponsored_person):
+            person=self.user, sponsored_person=sponsored_person):
             # The copy worked so we redirect back to show the results. Include
             # the query string so that the user ends up on the same batch page
             # with the same filtering parameters as before.
@@ -1000,9 +987,6 @@ class DistroSeriesDifferenceBaseView(LaunchpadFormView,
         This method is used as a condition for the above sync action, as
         well as directly in the template.
         """
-        if not getFeatureFlag('soyuz.derived_series_sync.enabled'):
-            return False
-
         archive = self.context.main_archive
         has_perm = (self.user is not None and (
                         archive.hasAnyPermission(self.user) or

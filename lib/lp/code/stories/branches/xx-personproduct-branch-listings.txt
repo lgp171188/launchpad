@@ -12,9 +12,9 @@ person are shown, rather than all of the person's branches.
 
 When there are no branches, a helpful message is shown.
 
-    >>> browser.open('http://code.launchpad.dev/~eric/fooix')
+    >>> browser.open('http://code.launchpad.test/~eric/fooix')
     >>> print_tag_with_id(browser.contents, 'no-branch-message')
-    There are no branches of Fooix owned by Eric in Launchpad today.
+    There are no branches of Fooix for Eric in Launchpad today.
 
 If we create a couple of fooix branches, and a few other branches, we can see
 that only the fooix branches are shown.
@@ -37,9 +37,9 @@ that only the fooix branches are shown.
     ...     owner=eric, date_created=date_generator.next())
     >>> logout()
 
-    >>> browser.open('http://code.launchpad.dev/~eric/fooix')
+    >>> browser.open('http://code.launchpad.test/~eric/fooix')
     >>> print_tag_with_id(browser.contents, 'portlet-person-codesummary')
-    2 owned branches ...
+    Branches ...
     >>> print_tag_with_id(browser.contents, 'branchtable')
     Name                         ...
     lp://dev/~eric/fooix/feature ...

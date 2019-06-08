@@ -11,13 +11,13 @@ import transaction
 from lp.code.model.tests.test_branchmergeproposaljobs import (
     make_runnable_incremental_diff_job,
     )
+from lp.code.model.tests.test_diff import DiffTestCase
 from lp.services.job.interfaces.job import JobStatus
 from lp.services.scripts.tests import run_script
-from lp.testing import TestCaseWithFactory
 from lp.testing.layers import ZopelessAppServerLayer
 
 
-class TestMergeProposalJobScript(TestCaseWithFactory):
+class TestMergeProposalJobScript(DiffTestCase):
 
     layer = ZopelessAppServerLayer
 
@@ -26,12 +26,13 @@ class TestMergeProposalJobScript(TestCaseWithFactory):
         job = make_runnable_incremental_diff_job(self)
         transaction.commit()
         retcode, stdout, stderr = run_script(
-            'cronscripts/merge-proposal-jobs.py', ['--log-twisted'])
+            'cronscripts/process-job-source.py',
+            ['--log-twisted', 'IBranchMergeProposalJobSource'])
         self.assertEqual(0, retcode)
         self.assertEqual('', stdout)
         matches_expected = MatchesRegex(
-            'INFO    Creating lockfile:'
-            ' /var/lock/launchpad-merge-proposal-jobs.lock\n'
+            'INFO    Creating lockfile: /var/lock/launchpad-process-job-'
+            'source-IBranchMergeProposalJobSource.lock\n'
             'INFO    Running through Twisted.\n'
             'Log opened.\n'
             'INFO    Log opened.\n'

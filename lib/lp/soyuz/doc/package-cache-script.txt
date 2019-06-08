@@ -43,13 +43,14 @@ distribution and respective distroseriess considered in stderr.
   >>> process.returncode
   0
 
-  >>> print stdout
+  >>> print(stdout)
 
-  >>> print stderr
+  >>> print(stderr)
   INFO    Creating lockfile: /var/lock/launchpad-update-cache.lock
   INFO    Updating ubuntu package counters
   INFO    Updating ubuntu main archives
   ...
+  INFO    Updating ubuntu official branch links
   INFO    Updating ubuntu PPAs
   ...
   INFO    redhat done

@@ -28,20 +28,20 @@ class GettextPOChangedExporterTestCase(unittest.TestCase):
 
     def testInterface(self):
         """Check whether the object follows the interface."""
-        self.failUnless(
+        self.assertTrue(
             verifyObject(ITranslationFormatExporter,
                          self.translation_exporter),
             "GettextPOExporter doesn't follow the interface")
 
     def testSupportedFormats(self):
         """Check that the exporter reports the correct formats."""
-        self.failUnlessEqual(
+        self.assertEqual(
             self.translation_exporter.format,
             TranslationFileFormat.POCHANGED,
             "Expected GettextPOChangedExporter to provide POCHANGED format "
             "but got %r instead." % self.translation_exporter.format)
-        self.failUnlessEqual(
-            self.translation_exporter.supported_source_formats ,
+        self.assertEqual(
+            self.translation_exporter.supported_source_formats,
             [],
             "Expected GettextPOChangedExporter to support no source formats "
             "but got %r instead." % (

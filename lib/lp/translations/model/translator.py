@@ -1,8 +1,6 @@
 # Copyright 2009 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-# pylint: disable-msg=E0611,W0212
-
 __metaclass__ = type
 __all__ = ['Translator', 'TranslatorSet']
 
@@ -12,7 +10,7 @@ from sqlobject import (
     )
 from storm.expr import Join
 from storm.store import Store
-from zope.interface import implements
+from zope.interface import implementer
 
 from lp.registry.interfaces.person import validate_public_person
 from lp.registry.model.teammembership import TeamParticipation
@@ -25,10 +23,9 @@ from lp.translations.interfaces.translator import (
     )
 
 
+@implementer(ITranslator)
 class Translator(SQLBase):
     """A Translator in a TranslationGroup."""
-
-    implements(ITranslator)
 
     # default to listing newest first
     _defaultOrder = '-id'
@@ -45,8 +42,8 @@ class Translator(SQLBase):
     style_guide_url = StringCol(notNull=False, default=None)
 
 
+@implementer(ITranslatorSet)
 class TranslatorSet:
-    implements(ITranslatorSet)
 
     def new(self, translationgroup, language,
             translator, style_guide_url=None):

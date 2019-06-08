@@ -1,13 +1,17 @@
-# Copyright 2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2012-2017 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
+
+from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 
+from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
+from lp.app.enums import InformationType
 from lp.code.model.branch import Branch
-from lp.registry.enums import InformationType
-from lp.services.database.lpstorm import IStore
+from lp.registry.interfaces.accesspolicy import IAccessPolicySource
+from lp.services.database.interfaces import IStore
 from lp.testing import TestCaseWithFactory
 from lp.testing.layers import DatabaseFunctionalLayer
 
@@ -35,7 +39,9 @@ class TestBranchAccessPolicyTriggers(TestCaseWithFactory):
         owner = self.factory.makePerson()
         branch = self.factory.makeBranch(
             information_type=InformationType.USERDATA, owner=owner)
-        self.assertAccess(branch, 66, [owner.id])
+        [ap] = getUtility(IAccessPolicySource).find(
+            [(removeSecurityProxy(branch).product, InformationType.USERDATA)])
+        self.assertAccess(branch, ap.id, [owner.id])
         artifact = self.factory.makeAccessArtifact(concrete=branch)
         grant = self.factory.makeAccessArtifactGrant(artifact=artifact)
-        self.assertAccess(branch, 66, [owner.id, grant.grantee.id])
+        self.assertAccess(branch, ap.id, [owner.id, grant.grantee.id])

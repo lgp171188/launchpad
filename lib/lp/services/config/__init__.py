@@ -1,4 +1,4 @@
-# Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2017 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 '''
@@ -11,6 +11,7 @@ environment variable, and defaults to 'development'
 __metaclass__ = type
 
 
+import glob
 import logging
 import os
 import sys
@@ -19,9 +20,9 @@ from urlparse import (
     urlunparse,
     )
 
+import importlib_resources
 from lazr.config import ImplicitTypeSchema
 from lazr.config.interfaces import ConfigErrors
-import pkg_resources
 import ZConfig
 
 from lp.services.osutils import open_for_writing
@@ -213,12 +214,25 @@ class LaunchpadConfig:
             config_file = os.path.join(config_dir, 'launchpad-lazr.conf')
         schema = ImplicitTypeSchema(schema_file)
         self._config = schema.load(config_file)
+        self._loadConfigOverlays(config_file)
         try:
             self._config.validate()
         except ConfigErrors as error:
             message = '\n'.join([str(e) for e in error.errors])
             raise ConfigErrors(message)
         self._setZConfig()
+
+    def _loadConfigOverlays(self, config_file):
+        """Apply config overlays from the launchpad.config_overlay_dir."""
+        rel_dir = self._config['launchpad']['config_overlay_dir']
+        if not rel_dir:
+            return
+        dir = os.path.join(
+            os.path.dirname(os.path.abspath(config_file)), rel_dir)
+        for path in sorted(glob.glob(os.path.join(dir, '*-lazr.conf'))):
+            with open(path) as f:
+                text = f.read()
+            self._config.push(path, text)
 
     @property
     def zope_config_file(self):
@@ -227,9 +241,9 @@ class LaunchpadConfig:
 
     def _setZConfig(self):
         """Modify the config, adding automatically generated settings"""
-        schemafile = pkg_resources.resource_filename(
-            'zope.app.server', 'schema.xml')
-        schema = ZConfig.loadSchema(schemafile)
+        with importlib_resources.path(
+                'zope.app.server', 'schema.xml') as schemafile:
+            schema = ZConfig.loadSchema(str(schemafile))
         root_options, handlers = ZConfig.loadConfig(
             schema, self.zope_config_file)
 

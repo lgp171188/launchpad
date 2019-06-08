@@ -20,7 +20,7 @@ Project group overview page
 
 The overview page for project groups is accessible to all users.
 
-    >>> anon_browser.open('http://launchpad.dev/gnome')
+    >>> anon_browser.open('http://launchpad.test/gnome')
     >>> anon_browser.title
     'GNOME in Launchpad'
 
@@ -38,13 +38,13 @@ its development focus.
 The projects are linked.
 
     >>> print anon_browser.getLink('gnomebaker').url
-    http://launchpad.dev/gnomebaker
+    http://launchpad.test/gnomebaker
 
 The project overview page contains a link to register new products with the
 project. It is only available to users which have 'Admin' privileges on the
 project.
 
-    >>> browser.open('http://launchpad.dev/mozilla')
+    >>> browser.open('http://launchpad.test/mozilla')
     >>> browser.getLink('Register a project in The Mozilla Project')
     Traceback (most recent call last):
       ...
@@ -56,9 +56,9 @@ project.
       ...
     LinkNotFoundError...
 
-    >>> admin_browser.open('http://launchpad.dev/mozilla')
+    >>> admin_browser.open('http://launchpad.test/mozilla')
     >>> admin_browser.getLink('Register a project in The Mozilla Project').url
-    'http://launchpad.dev/mozilla/+newproduct'
+    'http://launchpad.test/mozilla/+newproduct'
 
 
 Empty Project Groups
@@ -66,21 +66,20 @@ Empty Project Groups
 
 An empty project group needs to be set up first...
 
-    >>> admin_browser.open('http://launchpad.dev/projectgroups/+new')
+    >>> admin_browser.open('http://launchpad.test/projectgroups/+new')
     >>> admin_browser.getControl(name='field.name').value = 'a-test-group'
     >>> admin_browser.getControl('Display Name:').value = 'Test Group'
-    >>> admin_browser.getControl('Title:').value = 'My Test Group'
     >>> admin_browser.getControl(name='field.summary').value = 'Summary'
     >>> admin_browser.getControl('Description:').value = 'Define me'
     >>> admin_browser.getControl('Maintainer:').value = 'cprov'
     >>> admin_browser.getControl('Add').click()
     >>> admin_browser.url
-    'http://launchpad.dev/a-test-group'
+    'http://launchpad.test/a-test-group'
 
 Empty project group index pages will not display the 'Report a bug', 'Ask a
 question' or 'Help translate' buttons.
 
-    >>> user_browser.open('http://launchpad.dev/a-test-group')
+    >>> user_browser.open('http://launchpad.test/a-test-group')
     >>> user_browser.getLink('Report a bug')
     Traceback (most recent call last):
       ..
@@ -96,7 +95,7 @@ question' or 'Help translate' buttons.
 
 Also, the bugs, blueprints, translations and answers facets will be disabled:
 
-    >>> user_browser.open('http://launchpad.dev/a-test-group')
+    >>> user_browser.open('http://launchpad.test/a-test-group')
     >>> user_browser.getLink('Bugs')
     Traceback (most recent call last):
       ..
@@ -121,7 +120,7 @@ Also, the bugs, blueprints, translations and answers facets will be disabled:
 A warning message will be displayed at the top of the overview page when the
 owner of the project group views it:
 
-    >>> admin_browser.open('http://launchpad.dev/a-test-group')
+    >>> admin_browser.open('http://launchpad.test/a-test-group')
     >>> for warning in find_tags_by_class(admin_browser.contents, 'warning'):
     ...     extract_text(warning.renderContents())
     u'There are no projects registered for\nTest Group...'
@@ -141,7 +140,7 @@ Products of a project
 The home page of a project contains a list of all products which are part of
 that project.
 
-    >>> browser.open('http://launchpad.dev/mozilla')
+    >>> browser.open('http://launchpad.test/mozilla')
     >>> products = find_tags_by_class(browser.contents, 'sprite product')
     >>> for product in products:
     ...     print product
@@ -163,7 +162,7 @@ Inactive products are not included in that list, though.
     >>> firefox.syncUpdate()
 
     >>> logout()
-    >>> browser.open('http://launchpad.dev/mozilla')
+    >>> browser.open('http://launchpad.test/mozilla')
     >>> products = find_tags_by_class(browser.contents, 'sprite product')
     >>> for product in products:
     ...     print product
@@ -179,9 +178,9 @@ Project Group bug subscriptions
 To receive email notifications about bugs pertaining to a project group, we
 can create structural bug subscriptions.
 
-    >>> user_browser.open('http://launchpad.dev/mozilla')
+    >>> user_browser.open('http://launchpad.test/mozilla')
     >>> user_browser.getLink('Subscribe to bug mail').click()
     >>> print user_browser.url
-    http://launchpad.dev/mozilla/+subscribe
+    http://launchpad.test/mozilla/+subscribe
     >>> print user_browser.title
-    Subscribe : The Mozilla Project
+    Subscribe : Bugs : The Mozilla Project

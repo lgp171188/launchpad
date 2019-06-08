@@ -1,12 +1,9 @@
-# Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
-
-# pylint: disable-msg=E0611,W0212
 
 __metaclass__ = type
 __all__ = [
     'BugTracker',
-    'BugTrackerSet',
     'BugTrackerAlias',
     'BugTrackerAliasSet',
     'BugTrackerComponent',
@@ -34,7 +31,6 @@ from sqlobject import (
     SQLObjectNotFound,
     StringCol,
     )
-from sqlobject.sqlbuilder import AND
 from storm.expr import (
     Count,
     Desc,
@@ -50,7 +46,7 @@ from storm.locals import (
     )
 from storm.store import Store
 from zope.component import getUtility
-from zope.interface import implements
+from zope.interface import implementer
 
 from lp.app.errors import NotFoundError
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
@@ -75,19 +71,19 @@ from lp.registry.interfaces.person import (
     IPersonSet,
     validate_public_person,
     )
+from lp.registry.model.product import (
+    Product,
+    ProductSet,
+    )
+from lp.registry.model.projectgroup import ProjectGroup
 from lp.services.database.enumcol import EnumCol
-from lp.services.database.lpstorm import IStore
+from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import (
     flush_database_updates,
     SQLBase,
     )
 from lp.services.database.stormbase import StormBase
 from lp.services.helpers import shortlist
-from lp.services.webapp.interfaces import (
-    DEFAULT_FLAVOR,
-    IStoreSelector,
-    MAIN_STORE,
-    )
 
 
 def normalise_leading_slashes(rest):
@@ -152,6 +148,15 @@ def make_bugtracker_name(uri):
         else:
             raise AssertionError(
                 'Not a valid email address: %s' % base_uri.path)
+    elif base_uri.host == 'github.com' and base_uri.path.endswith('/issues'):
+        repository_id = base_uri.path[:-len('/issues')].lstrip('/')
+        base_name = 'github-' + repository_id.replace('/', '-').lower()
+    elif (('gitlab' in base_uri.host or
+           base_uri.host == 'salsa.debian.org') and
+          base_uri.path.endswith('/issues')):
+        repository_id = base_uri.path[:-len('/issues')].lstrip('/')
+        base_name = '%s-%s' % (
+            base_uri.host, repository_id.replace('/', '-').lower())
     else:
         base_name = base_uri.host
 
@@ -177,6 +182,7 @@ def make_bugtracker_title(uri):
         return base_uri.host + base_uri.path
 
 
+@implementer(IBugTrackerComponent)
 class BugTrackerComponent(StormBase):
     """The software component in the remote bug tracker.
 
@@ -184,7 +190,6 @@ class BugTrackerComponent(StormBase):
     they affect.  This class provides a mapping of this upstream component
     to the corresponding source package in the distro.
     """
-    implements(IBugTrackerComponent)
     __storm_table__ = 'BugTrackerComponent'
 
     id = Int(primary=True)
@@ -231,13 +236,13 @@ class BugTrackerComponent(StormBase):
         """The distribution's source package for this component""")
 
 
+@implementer(IBugTrackerComponentGroup)
 class BugTrackerComponentGroup(StormBase):
     """A collection of components in a remote bug tracker.
 
     Some bug trackers organize sets of components into higher level
     groups, such as Bugzilla's 'product'.
     """
-    implements(IBugTrackerComponentGroup)
     __storm_table__ = 'BugTrackerComponentGroup'
 
     id = Int(primary=True)
@@ -299,6 +304,7 @@ class BugTrackerComponentGroup(StormBase):
         return component
 
 
+@implementer(IBugTracker)
 class BugTracker(SQLBase):
     """A class to access the BugTracker table in the database.
 
@@ -307,12 +313,11 @@ class BugTracker(SQLBase):
     BugTracker. bugzilla.mozilla.org and bugzilla.gnome.org are each
     distinct BugTrackers.
     """
-    implements(IBugTracker)
 
     _table = 'BugTracker'
 
-    bugtrackertype = EnumCol(dbName='bugtrackertype',
-        schema=BugTrackerType, notNull=True)
+    bugtrackertype = EnumCol(
+        dbName='bugtrackertype', schema=BugTrackerType, notNull=True)
     name = StringCol(notNull=True, unique=True)
     title = StringCol(notNull=True)
     summary = StringCol(notNull=False)
@@ -325,8 +330,6 @@ class BugTracker(SQLBase):
         storm_validator=validate_public_person, notNull=True)
     contactdetails = StringCol(notNull=False)
     has_lp_plugin = BoolCol(notNull=False, default=False)
-    projects = SQLMultipleJoin(
-        'ProjectGroup', joinColumn='bugtracker', orderBy='name')
     products = SQLMultipleJoin(
         'Product', joinColumn='bugtracker', orderBy='name')
     watches = SQLMultipleJoin(
@@ -337,6 +340,11 @@ class BugTracker(SQLBase):
         BugTrackerType.BUGZILLA: (
             "%(base_url)s/enter_bug.cgi?product=%(remote_product)s"
             "&short_desc=%(summary)s&long_desc=%(description)s"),
+        BugTrackerType.GITHUB: (
+            "%(base_url)s/new?title=%(summary)s&body=%(description)s"),
+        BugTrackerType.GITLAB: (
+            "%(base_url)s/new"
+            "?issue[title]=%(summary)s&issue[description]=%(description)s"),
         BugTrackerType.GOOGLE_CODE: (
             "%(base_url)s/entry?summary=%(summary)s&"
             "comment=%(description)s"),
@@ -366,6 +374,12 @@ class BugTracker(SQLBase):
         BugTrackerType.BUGZILLA: (
             "%(base_url)s/query.cgi?product=%(remote_product)s"
             "&short_desc=%(summary)s"),
+        BugTrackerType.GITHUB: (
+            "%(base_url)s?utf8=%%E2%%9C%%93"
+            "&q=is%%3Aissue%%20is%%3Aopen%%20%(summary)s"),
+        BugTrackerType.GITLAB: (
+            "%(base_url)s?scope=all&utf8=%%E2%%9C%%93&state=opened"
+            "&search=%(summary)s"),
         BugTrackerType.GOOGLE_CODE: "%(base_url)s/list?q=%(summary)s",
         BugTrackerType.DEBBUGS: (
             "%(base_url)s/cgi-bin/search.cgi?phrase=%(summary)s"
@@ -512,12 +526,12 @@ class BugTracker(SQLBase):
         # are already watching a remote bug.
         if self.bugtrackertype == BugTrackerType.EMAILADDRESS:
             return []
-
-        return shortlist(Bug.select(AND(BugWatch.q.bugID == Bug.q.id,
-                                        BugWatch.q.bugtrackerID == self.id,
-                                        BugWatch.q.remotebug == remotebug),
-                                    distinct=True,
-                                    orderBy=['datecreated']))
+        return shortlist(
+            Store.of(self).find(
+                Bug,
+                BugWatch.bugID == Bug.id, BugWatch.bugtrackerID == self.id,
+                BugWatch.remotebug == remotebug).config(
+                    distinct=True).order_by(Bug.datecreated))
 
     @property
     def watches_ready_to_check(self):
@@ -593,10 +607,10 @@ class BugTracker(SQLBase):
     @property
     def imported_bug_messages(self):
         """See `IBugTracker`."""
-        return BugMessage.select(
-            AND((BugMessage.q.bugwatchID == BugWatch.q.id),
-                (BugWatch.q.bugtrackerID == self.id)),
-            orderBy=BugMessage.q.id)
+        return Store.of(self).find(
+            BugMessage,
+            BugMessage.bugwatchID == BugWatch.id,
+            BugWatch.bugtrackerID == self.id).order_by(BugMessage.id)
 
     def getLinkedPersonByName(self, name):
         """Return the Person with a given name on this bugtracker."""
@@ -633,7 +647,7 @@ class BugTracker(SQLBase):
 
         # Generate a valid Launchpad name for the Person.
         base_canonical_name = (
-            "%s-%s" % (sanitize_name(display_name), self.name))
+            "%s-%s" % (sanitize_name(display_name.lower()), self.name))
         canonical_name = base_canonical_name
 
         person_set = getUtility(IPersonSet)
@@ -719,13 +733,24 @@ class BugTracker(SQLBase):
             BugTrackerComponent.source_package_name ==
                 dsp.sourcepackagename.id).one()
 
+    def getRelatedPillars(self, user=None):
+        """See `IBugTracker`."""
+        products = IStore(Product).find(
+            Product,
+            Product.bugtrackerID == self.id, Product.active == True,
+            ProductSet.getProductPrivacyFilter(user)).order_by(Product.name)
+        groups = IStore(ProjectGroup).find(
+            ProjectGroup,
+            ProjectGroup.bugtrackerID == self.id,
+            ProjectGroup.active == True).order_by(ProjectGroup.name)
+        return groups, products
 
+
+@implementer(IBugTrackerSet)
 class BugTrackerSet:
     """Implements IBugTrackerSet for a container or set of BugTrackers,
     either the full set in the db, or a subset.
     """
-
-    implements(IBugTrackerSet)
 
     table = BugTracker
 
@@ -781,19 +806,16 @@ class BugTrackerSet:
         """See `IBugTrackerSet`."""
         return BugTracker.select()
 
-    def trackers(self, active=None):
-        # Without context, cannot tell what store flavour is desirable.
-        store = getUtility(IStoreSelector).get(MAIN_STORE, DEFAULT_FLAVOR)
+    def getAllTrackers(self, active=None):
         if active is not None:
             clauses = [BugTracker.active == active]
         else:
             clauses = []
-        results = store.find(BugTracker, *clauses)
-        results.order_by(BugTracker.name)
-        return results
+        return IStore(BugTracker).find(BugTracker, *clauses).order_by(
+            BugTracker.name)
 
-    def ensureBugTracker(self, baseurl, owner, bugtrackertype,
-        title=None, summary=None, contactdetails=None, name=None):
+    def ensureBugTracker(self, baseurl, owner, bugtrackertype, title=None,
+                         summary=None, contactdetails=None, name=None):
         """See `IBugTrackerSet`."""
         # Try to find an existing bug tracker that matches.
         bugtracker = self.queryByBaseURL(baseurl)
@@ -828,48 +850,42 @@ class BugTrackerSet:
 
     def getMostActiveBugTrackers(self, limit=None):
         """See `IBugTrackerSet`."""
-        store = IStore(BugTracker)
-        result = store.find(
+        return IStore(BugTracker).find(
             BugTracker,
-            BugTracker.id == BugWatch.bugtrackerID)
-        result = result.group_by(BugTracker)
-        result = result.order_by(Desc(Count(BugWatch)))
-        if limit is not None:
-            return result[:limit]
-        else:
-            return result
+            BugTracker.id == BugWatch.bugtrackerID).group_by(
+                BugTracker).order_by(Desc(Count(BugWatch))).config(limit=limit)
 
-    def getPillarsForBugtrackers(self, bugtrackers):
+    def getPillarsForBugtrackers(self, bugtrackers, user=None):
         """See `IBugTrackerSet`."""
-        from lp.registry.model.product import Product
-        from lp.registry.model.projectgroup import ProjectGroup
-        ids = [str(b.id) for b in bugtrackers]
-        products = Product.select(
-            "bugtracker in (%s) AND active IS True" %
-            ",".join(ids), orderBy="name")
-        projects = ProjectGroup.select(
-            "bugtracker in (%s) AND active IS True" %
-            ",".join(ids), orderBy="name")
-        ret = {}
+        ids = [tracker.id for tracker in bugtrackers]
+        products = IStore(Product).find(
+            Product,
+            Product.bugtrackerID.is_in(ids), Product.active == True,
+            ProductSet.getProductPrivacyFilter(user)).order_by(Product.name)
+        groups = IStore(ProjectGroup).find(
+            ProjectGroup,
+            ProjectGroup.bugtrackerID.is_in(ids),
+            ProjectGroup.active == True).order_by(ProjectGroup.name)
+        results = {}
         for product in products:
-            ret.setdefault(product.bugtracker, []).append(product)
-        for project in projects:
-            ret.setdefault(project.bugtracker, []).append(project)
-        return ret
+            results.setdefault(product.bugtracker, []).append(product)
+        for project in groups:
+            results.setdefault(project.bugtracker, []).append(project)
+        return results
 
 
+@implementer(IBugTrackerAlias)
 class BugTrackerAlias(SQLBase):
     """See `IBugTrackerAlias`."""
-    implements(IBugTrackerAlias)
 
     bugtracker = ForeignKey(
         foreignKey="BugTracker", dbName="bugtracker", notNull=True)
     base_url = StringCol(notNull=True)
 
 
+@implementer(IBugTrackerAliasSet)
 class BugTrackerAliasSet:
     """See `IBugTrackerAliasSet`."""
-    implements(IBugTrackerAliasSet)
 
     table = BugTrackerAlias
 

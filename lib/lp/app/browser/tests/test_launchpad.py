@@ -17,16 +17,21 @@ from lp.app.browser.launchpad import (
     iter_view_registrations,
     LaunchpadRootNavigation,
     )
+from lp.app.enums import InformationType
 from lp.app.errors import GoneError
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
+from lp.app.interfaces.services import IService
+from lp.code.interfaces.gitrepository import IGitRepositorySet
 from lp.code.interfaces.linkedbranch import ICanHasLinkedBranch
 from lp.registry.enums import (
-    InformationType,
     PersonVisibility,
+    SharingPermission,
+    VCSType,
     )
 from lp.registry.interfaces.person import IPersonSet
 from lp.services.identity.interfaces.account import AccountStatus
 from lp.services.webapp import canonical_url
+from lp.services.webapp.escaping import html_escape
 from lp.services.webapp.interfaces import (
     BrowserNotificationLevel,
     ILaunchpadRoot,
@@ -34,9 +39,11 @@ from lp.services.webapp.interfaces import (
 from lp.services.webapp.servers import LaunchpadTestRequest
 from lp.services.webapp.url import urlappend
 from lp.testing import (
+    admin_logged_in,
     ANONYMOUS,
-    login,
+    celebrity_logged_in,
     login_person,
+    login,
     person_logged_in,
     TestCaseWithFactory,
     )
@@ -49,7 +56,7 @@ from lp.testing.views import create_view
 
 # We set the request header HTTP_REFERER  when we want to simulate navigation
 # from a valid page. This is used in the assertDisplaysNotification check.
-DEFAULT_REFERER = 'http://launchpad.dev'
+DEFAULT_REFERER = 'http://launchpad.test'
 
 
 class TraversalMixin:
@@ -70,10 +77,10 @@ class TraversalMixin:
 
         notifications = request.notifications
         if notification is None:
-            self.assertEquals(len(notifications), 0)
+            self.assertEqual(len(notifications), 0)
             return
         self.assertEqual(len(notifications), 1)
-        self.assertEquals(notifications[0].level, level)
+        self.assertEqual(notifications[0].level, level)
         self.assertEqual(notification, notifications[0].message)
 
     def assertDisplaysNotification(
@@ -116,7 +123,7 @@ class TraversalMixin:
 
         :param path: A slash-delimited path.
         :param use_default_referer: If True, set the referer attribute in the
-            request header to DEFAULT_REFERER = "http://launchpad.dev"
+            request header to DEFAULT_REFERER = "http://launchpad.test"
             (otherwise it remains as None)
         :return: The object found.
         """
@@ -167,9 +174,9 @@ class TestBranchTraversal(TestCaseWithFactory, TraversalMixin):
         # branch that doesn't exist will display an error message.
         branch = self.factory.makeAnyBranch()
         bad_name = branch.unique_name + 'wibble'
-        requiredMessage = "No such branch: '%s'." % (
-            branch.name + "wibble")
-        self.assertDisplaysError(bad_name, requiredMessage)
+        required_message = html_escape(
+            "No such branch: '%s'." % (branch.name + "wibble"))
+        self.assertDisplaysError(bad_name, required_message)
 
     def test_private_branch(self):
         # If an attempt is made to access a private branch, display an error.
@@ -177,8 +184,9 @@ class TestBranchTraversal(TestCaseWithFactory, TraversalMixin):
             information_type=InformationType.USERDATA)
         branch_unique_name = removeSecurityProxy(branch).unique_name
         login(ANONYMOUS)
-        requiredMessage = "No such branch: '%s'." % branch_unique_name
-        self.assertDisplaysError(branch_unique_name, requiredMessage)
+        required_message = html_escape(
+            "No such branch: '%s'." % branch_unique_name)
+        self.assertDisplaysError(branch_unique_name, required_message)
 
     def test_product_alias(self):
         # Traversing to /+branch/<product> redirects to the page for the
@@ -205,8 +213,8 @@ class TestBranchTraversal(TestCaseWithFactory, TraversalMixin):
     def test_nonexistent_product(self):
         # Traversing to /+branch/<no-such-product> displays an error message.
         non_existent = 'non-existent'
-        requiredMessage = u"No such product: '%s'." % non_existent
-        self.assertDisplaysError(non_existent, requiredMessage)
+        required_message = u"No such product: '%s'." % non_existent
+        self.assertDisplaysError(non_existent, html_escape(required_message))
 
     def test_nonexistent_product_without_referer(self):
         # Traversing to /+branch/<no-such-product> without a referer results
@@ -312,7 +320,7 @@ class TestBranchTraversal(TestCaseWithFactory, TraversalMixin):
         # error notification if the thing following +branch is a unique name
         # that's too short to be a real unique name.
         owner = self.factory.makePerson()
-        requiredMessage = (
+        requiredMessage = html_escape(
             u"Cannot understand namespace name: '%s'" % owner.name)
         self.assertDisplaysError('~%s' % owner.name, requiredMessage)
 
@@ -325,6 +333,253 @@ class TestBranchTraversal(TestCaseWithFactory, TraversalMixin):
         # error notification if the thing following +branch has an invalid
         # product name.
         self.assertNotFound("_foo", use_default_referer=False)
+
+
+class TestCodeTraversal(TestCaseWithFactory, TraversalMixin):
+
+    layer = DatabaseFunctionalLayer
+
+    def traverse(self, path, **kwargs):
+        return super(TestCodeTraversal, self).traverse(
+            path, '+code', **kwargs)
+
+    def test_project_bzr_branch(self):
+        branch = self.factory.makeAnyBranch()
+        self.assertRedirects(branch.unique_name, canonical_url(branch))
+
+    def test_project_git_branch(self):
+        git_repo = self.factory.makeGitRepository()
+        self.assertRedirects(git_repo.unique_name, canonical_url(git_repo))
+
+    def test_no_such_bzr_unique_name(self):
+        branch = self.factory.makeAnyBranch()
+        bad_name = branch.unique_name + 'wibble'
+        self.assertNotFound(bad_name)
+
+    def test_no_such_git_unique_name(self):
+        repo = self.factory.makeGitRepository()
+        bad_name = repo.unique_name + 'wibble'
+        self.assertNotFound(bad_name)
+
+    def test_private_bzr_branch(self):
+        branch = self.factory.makeProductBranch(
+            information_type=InformationType.USERDATA)
+        branch_unique_name = removeSecurityProxy(branch).unique_name
+        login(ANONYMOUS)
+        self.assertNotFound(branch_unique_name)
+
+    def test_private_git_branch(self):
+        git_repo = self.factory.makeGitRepository(
+            information_type=InformationType.USERDATA)
+        repo_unique_name = removeSecurityProxy(git_repo).unique_name
+        login(ANONYMOUS)
+        self.assertNotFound(repo_unique_name)
+
+    def test_product_alias_bzr(self):
+        branch = self.factory.makeProductBranch()
+        naked_product = removeSecurityProxy(branch.product)
+        ICanHasLinkedBranch(naked_product).setBranch(branch)
+        self.assertRedirects(naked_product.name, canonical_url(branch))
+
+    def test_product_alias_git(self):
+        project = self.factory.makeProduct()
+        repo = self.factory.makeGitRepository(target=project)
+        naked_project = removeSecurityProxy(project)
+        with person_logged_in(repo.target.owner):
+            getUtility(IGitRepositorySet).setDefaultRepository(
+                repo.target, repo)
+        self.assertRedirects(naked_project.name, canonical_url(repo))
+
+    def test_private_bzr_branch_for_product(self):
+        branch = self.factory.makeProductBranch()
+        naked_product = removeSecurityProxy(branch.product)
+        ICanHasLinkedBranch(naked_product).setBranch(branch)
+        removeSecurityProxy(branch).information_type = (
+            InformationType.USERDATA)
+        login(ANONYMOUS)
+        self.assertNotFound(naked_product.name)
+
+    def test_private_git_branch_for_product(self):
+        project = self.factory.makeProduct()
+        repo = self.factory.makeGitRepository(target=project)
+        with person_logged_in(repo.target.owner):
+            getUtility(IGitRepositorySet).setDefaultRepository(
+                repo.target, repo)
+
+        removeSecurityProxy(repo).information_type = (
+            InformationType.USERDATA)
+        login(ANONYMOUS)
+
+        naked_project = removeSecurityProxy(project)
+        self.assertNotFound(naked_project.name)
+
+    def test_nonexistent_product(self):
+        non_existent = 'non-existent'
+        self.assertNotFound(non_existent)
+
+    def test_product_without_dev_focus(self):
+        product = self.factory.makeProduct()
+        self.assertNotFound(product.name)
+
+    def test_distro_package_alias_bzr(self):
+        sourcepackage = self.factory.makeSourcePackage()
+        branch = self.factory.makePackageBranch(sourcepackage=sourcepackage)
+        distro_package = sourcepackage.distribution_sourcepackage
+        registrant = distro_package.distribution.owner
+        target = ICanHasLinkedBranch(distro_package)
+        with person_logged_in(registrant):
+            target.setBranch(branch, registrant)
+        self.assertRedirects("%s" % target.bzr_path, canonical_url(branch))
+
+    def test_distro_package_alias_git(self):
+        sourcepackage = self.factory.makeSourcePackage()
+        distro_package = sourcepackage.distribution_sourcepackage
+        repo = self.factory.makeGitRepository(target=distro_package)
+
+        with admin_logged_in():
+            getUtility(IGitRepositorySet).setDefaultRepository(
+                distro_package, repo)
+
+        self.assertRedirects("%s" % repo.shortened_path, canonical_url(repo))
+
+    def test_private_branch_for_distro_package_bzr(self):
+        sourcepackage = self.factory.makeSourcePackage()
+        branch = self.factory.makePackageBranch(
+            sourcepackage=sourcepackage,
+            information_type=InformationType.USERDATA)
+        distro_package = sourcepackage.distribution_sourcepackage
+        registrant = distro_package.distribution.owner
+        with person_logged_in(registrant):
+            ICanHasLinkedBranch(distro_package).setBranch(branch, registrant)
+        login(ANONYMOUS)
+        path = ICanHasLinkedBranch(distro_package).bzr_path
+        self.assertNotFound(path)
+
+    def test_private_branch_for_distro_package_git(self):
+        sourcepackage = self.factory.makeSourcePackage()
+        distro_package = sourcepackage.distribution_sourcepackage
+        repo = self.factory.makeGitRepository(
+            target=distro_package,
+            information_type=InformationType.USERDATA)
+        with admin_logged_in():
+            getUtility(IGitRepositorySet).setDefaultRepository(
+                distro_package, repo)
+        login(ANONYMOUS)
+        path = removeSecurityProxy(repo).shortened_path
+        self.assertNotFound(path)
+
+    def test_trailing_path_redirect_bzr(self):
+        branch = self.factory.makeAnyBranch()
+        path = urlappend(branch.unique_name, '+edit')
+        self.assertRedirects(path, canonical_url(branch, view_name='+edit'))
+
+    def test_trailing_path_redirect_git(self):
+        repo = self.factory.makeGitRepository()
+        path = urlappend(repo.unique_name, '+edit')
+        self.assertRedirects(path, canonical_url(repo, view_name='+edit'))
+
+    def test_alias_trailing_path_redirect_bzr(self):
+        branch = self.factory.makeProductBranch()
+        with person_logged_in(branch.product.owner):
+            branch.product.development_focus.branch = branch
+        path = '%s/+edit' % branch.product.name
+        self.assertRedirects(path, canonical_url(branch, view_name='+edit'))
+
+    def test_alias_trailing_path_redirect_git(self):
+        project = self.factory.makeProduct()
+        repo = self.factory.makeGitRepository(target=project)
+        with admin_logged_in():
+            getUtility(IGitRepositorySet).setDefaultRepository(
+                project, repo)
+        path = '%s/+edit' % project.name
+        self.assertRedirects(path, canonical_url(repo, view_name='+edit'))
+
+    def test_product_series_redirect_bzr(self):
+        branch = self.factory.makeBranch()
+        series = self.factory.makeProductSeries(branch=branch)
+        self.assertRedirects(
+            ICanHasLinkedBranch(series).bzr_path, canonical_url(branch))
+
+    def test_no_branch_for_series(self):
+        # If there's no branch for a product series, display a
+        # message telling the user there is no linked branch.
+        series = self.factory.makeProductSeries()
+        path = ICanHasLinkedBranch(series).bzr_path
+        self.assertNotFound(path)
+
+    def test_private_branch_for_series(self):
+        # If the development focus of a product series is private, display a
+        # message telling the user there is no linked branch.
+        branch = self.factory.makeBranch(
+            information_type=InformationType.USERDATA)
+        series = self.factory.makeProductSeries(branch=branch)
+        login(ANONYMOUS)
+        path = ICanHasLinkedBranch(series).bzr_path
+        self.assertNotFound(path)
+
+    def test_too_short_branch_name(self):
+        owner = self.factory.makePerson()
+        self.assertNotFound('~%s' % owner.name)
+
+    def test_invalid_product_name(self):
+        self.assertNotFound('_foo')
+
+    def test_invalid_product_name_without_referer(self):
+        self.assertNotFound("_foo", use_default_referer=False)
+
+    def test_ambiguous_project_default_repo_bzr(self):
+        project = self.factory.makeProduct()
+        bzr_branch = self.factory.makeBranch(target=project)
+        self.factory.makeGitRepository(target=project)
+        with person_logged_in(project.owner):
+            ICanHasLinkedBranch(project).setBranch(bzr_branch, project.owner)
+
+        self.assertRedirects(project.name, canonical_url(bzr_branch))
+
+    def test_ambiguous_project_without_vcs_set(self):
+        project = self.factory.makeProduct()
+        bzr_branch = self.factory.makeBranch(target=project)
+        repo = self.factory.makeGitRepository(target=project)
+        with person_logged_in(project.owner):
+            ICanHasLinkedBranch(project).setBranch(bzr_branch, project.owner)
+            getUtility(IGitRepositorySet).setDefaultRepository(
+                project, repo)
+
+        self.assertNotFound(project.name)
+
+    def test_ambiguous_project_with_vcs_set_to_git(self):
+        project = self.factory.makeProduct()
+        bzr_branch = self.factory.makeBranch(target=project)
+        repo = self.factory.makeGitRepository(target=project)
+        with person_logged_in(project.owner):
+            ICanHasLinkedBranch(project).setBranch(bzr_branch, project.owner)
+            getUtility(IGitRepositorySet).setDefaultRepository(
+                project, repo)
+            project.vcs = VCSType.GIT
+
+        self.assertRedirects(project.name, canonical_url(repo))
+
+    def test_ambiguous_project_with_vcs_set_to_bzr(self):
+        project = self.factory.makeProduct()
+        bzr_branch = self.factory.makeBranch(target=project)
+        repo = self.factory.makeGitRepository(target=project)
+        with person_logged_in(project.owner):
+            ICanHasLinkedBranch(project).setBranch(bzr_branch, project.owner)
+            getUtility(IGitRepositorySet).setDefaultRepository(
+                project, repo)
+            project.vcs = VCSType.BZR
+
+        self.assertRedirects(project.name, canonical_url(bzr_branch))
+
+    def test_personal_branch_bzr(self):
+        person = self.factory.makePerson()
+        branch = self.factory.makePersonalBranch(owner=person)
+        self.assertRedirects(branch.unique_name, canonical_url(branch))
+
+    def test_personal_branch_git(self):
+        person = self.factory.makePerson()
+        repo = self.factory.makeGitRepository(owner=person, target=person)
+        self.assertRedirects(repo.unique_name, canonical_url(repo))
 
 
 class TestPersonTraversal(TestCaseWithFactory, TraversalMixin):
@@ -353,7 +608,7 @@ class TestPersonTraversal(TestCaseWithFactory, TraversalMixin):
         name = 'suspended-person'
         person = self.factory.makePerson(name=name)
         login_person(self.admin)
-        removeSecurityProxy(person).account_status = AccountStatus.SUSPENDED
+        person.setAccountStatus(AccountStatus.SUSPENDED, None, 'Go away')
         segment = '~%s' % name
         # Admins can see the suspended user.
         traversed = self.traverse(segment, segment)
@@ -364,6 +619,23 @@ class TestPersonTraversal(TestCaseWithFactory, TraversalMixin):
         # Regular users cannot see the suspended user.
         login_person(self.any_user)
         self.assertRaises(GoneError, self.traverse, segment, segment)
+
+    def test_placeholder_person_visibility(self):
+        # Verify a placeholder user is only traversable by an admin.
+        name = u'placeholder-person'
+        person = getUtility(IPersonSet).createPlaceholderPerson(name, name)
+        login_person(self.admin)
+        segment = '~%s' % name
+        # Admins can see the placeholder user.
+        traversed = self.traverse(segment, segment)
+        self.assertEqual(person, traversed)
+        # Registry experts can see the placeholder user.
+        login_person(self.registry_expert)
+        traversed = self.traverse(segment, segment)
+        self.assertEqual(person, traversed)
+        # Regular users cannot see the placeholder user.
+        login_person(self.any_user)
+        self.assertRaises(NotFound, self.traverse, segment, segment)
 
     def test_public_team(self):
         # Verify a public team is returned.
@@ -395,7 +667,7 @@ class TestPersonTraversal(TestCaseWithFactory, TraversalMixin):
         # Just /~/ expands to the current user.  (Bug 785800).
         person = self.factory.makePerson()
         login_person(person)
-        obj, view, req = test_traverse('http://launchpad.dev/~')
+        obj, view, req = test_traverse('http://launchpad.test/~')
         view = removeSecurityProxy(view)
         self.assertEqual(
             canonical_url(person),
@@ -404,13 +676,13 @@ class TestPersonTraversal(TestCaseWithFactory, TraversalMixin):
     def test_self_url_not_logged_in(self):
         # /~/ when not logged in asks you to log in.
         self.assertRaises(Unauthorized,
-            test_traverse, 'http://launchpad.dev/~')
+            test_traverse, 'http://launchpad.test/~')
 
     def test_self_url_pathinfo(self):
         # You can traverse below /~/.
         person = self.factory.makePerson()
         login_person(person)
-        obj, view, req = test_traverse('http://launchpad.dev/~/+editsshkeys')
+        obj, view, req = test_traverse('http://launchpad.test/~/+editsshkeys')
         view = removeSecurityProxy(view)
         self.assertEqual(
             canonical_url(person) + '/+editsshkeys',
@@ -420,7 +692,7 @@ class TestPersonTraversal(TestCaseWithFactory, TraversalMixin):
         # You can traverse below /~/.
         person = self.factory.makePerson()
         login_person(person)
-        obj, view, req = test_traverse('http://bugs.launchpad.dev/~')
+        obj, view, req = test_traverse('http://bugs.launchpad.test/~')
         view = removeSecurityProxy(view)
         self.assertEqual(
             canonical_url(person, rootsite='bugs'),
@@ -470,3 +742,111 @@ class TestIterViewRegistrations(TestCaseWithFactory):
             reg.name for reg in iter_view_registrations(macros.__class__))
         self.assertIn('+base-layout-macros', names)
         self.assertNotIn('+related-pages', names)
+
+
+class TestProductTraversal(TestCaseWithFactory, TraversalMixin):
+
+    layer = DatabaseFunctionalLayer
+
+    def setUp(self):
+        super(TestProductTraversal, self).setUp()
+        self.active_public_product = self.factory.makeProduct()
+        self.inactive_public_product = self.factory.makeProduct()
+        removeSecurityProxy(self.inactive_public_product).active = False
+        self.proprietary_product_owner = self.factory.makePerson()
+        self.active_proprietary_product = self.factory.makeProduct(
+            owner=self.proprietary_product_owner,
+            information_type=InformationType.PROPRIETARY)
+        self.inactive_proprietary_product = self.factory.makeProduct(
+            owner=self.proprietary_product_owner,
+            information_type=InformationType.PROPRIETARY)
+        removeSecurityProxy(self.inactive_proprietary_product).active = False
+
+    def traverse_to_active_public_product(self):
+        segment = self.active_public_product.name
+        self.traverse(segment, segment)
+
+    def traverse_to_inactive_public_product(self):
+        segment = removeSecurityProxy(self.inactive_public_product).name
+        self.traverse(segment, segment)
+
+    def traverse_to_active_proprietary_product(self):
+        segment = removeSecurityProxy(self.active_proprietary_product).name
+        self.traverse(segment, segment)
+
+    def traverse_to_inactive_proprietary_product(self):
+        segment = removeSecurityProxy(self.inactive_proprietary_product).name
+        self.traverse(segment, segment)
+
+    def test_access_for_anon(self):
+        # Anonymous users can see only public active products.
+        with person_logged_in(ANONYMOUS):
+            self.traverse_to_active_public_product()
+            # Access to other products raises a NotFound error.
+            self.assertRaises(
+                NotFound, self.traverse_to_inactive_public_product)
+            self.assertRaises(
+                NotFound, self.traverse_to_active_proprietary_product)
+            self.assertRaises(
+                NotFound, self.traverse_to_inactive_proprietary_product)
+
+    def test_access_for_ordinary_users(self):
+        # Ordinary logged in users can see only public active products.
+        with person_logged_in(self.factory.makePerson()):
+            self.traverse_to_active_public_product()
+            # Access to other products raises a NotFound error.
+            self.assertRaises(
+                NotFound, self.traverse_to_inactive_public_product)
+            self.assertRaises(
+                NotFound, self.traverse_to_active_proprietary_product)
+            self.assertRaises(
+                NotFound, self.traverse_to_inactive_proprietary_product)
+
+    def test_access_for_person_with_pillar_grant(self):
+        # Persons with a policy grant for a proprietary product can
+        # access this product, if it is active.
+        user = self.factory.makePerson()
+        with person_logged_in(self.proprietary_product_owner):
+            getUtility(IService, 'sharing').sharePillarInformation(
+                self.active_proprietary_product, user,
+                self.proprietary_product_owner,
+                {InformationType.PROPRIETARY: SharingPermission.ALL})
+            getUtility(IService, 'sharing').sharePillarInformation(
+                self.inactive_proprietary_product, user,
+                self.proprietary_product_owner,
+                {InformationType.PROPRIETARY: SharingPermission.ALL})
+        with person_logged_in(user):
+            self.traverse_to_active_public_product()
+            self.assertRaises(
+                NotFound, self.traverse_to_inactive_public_product)
+            self.traverse_to_active_proprietary_product()
+            self.assertRaises(
+                NotFound, self.traverse_to_inactive_proprietary_product)
+
+    def test_access_for_persons_with_artifact_grant(self):
+        # Persons with an artifact grant related to a private product
+        # can traverse the product.
+        user = self.factory.makePerson()
+        with person_logged_in(self.proprietary_product_owner):
+            bug = self.factory.makeBug(
+                target=self.active_proprietary_product,
+                information_type=InformationType.PROPRIETARY)
+            getUtility(IService, 'sharing').ensureAccessGrants(
+                [user], self.proprietary_product_owner, bugs=[bug])
+        with person_logged_in(user):
+            self.traverse_to_active_proprietary_product()
+
+    def check_admin_access(self):
+        self.traverse_to_active_public_product()
+        self.traverse_to_inactive_public_product()
+        self.traverse_to_active_proprietary_product()
+        self.traverse_to_inactive_proprietary_product()
+
+    def test_access_for_persons_with_special_permissions(self):
+        # Admins have access all products, including inactive and propretary
+        # products.
+        with celebrity_logged_in('admin'):
+            self.check_admin_access()
+        # Commercial admins have access to all products.
+        with celebrity_logged_in('commercial_admin'):
+            self.check_admin_access()

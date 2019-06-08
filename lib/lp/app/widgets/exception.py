@@ -2,14 +2,15 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 from z3c.ptcompat import ViewPageTemplateFile
-from zope.app.form.browser.interfaces import IWidgetInputErrorView
-from zope.app.form.interfaces import (
+from zope.formlib.interfaces import (
     IWidgetInputError,
+    IWidgetInputErrorView,
     WidgetInputError as _WidgetInputError,
     )
-from zope.interface import implements
+from zope.interface import implementer
 
 
+@implementer(IWidgetInputError)
 class WidgetInputError(_WidgetInputError):
     """A customized WidgetInputError to work around a bug in Z3
     (The snippet method fails if errors is a list of ValidationError objects)
@@ -18,7 +19,6 @@ class WidgetInputError(_WidgetInputError):
     fixed upstream -- StuartBishop 20050520
 
     """
-    implements(IWidgetInputError)
 
     def __init__(self, field_name, widget_title, errors):
         """Initialize Error
@@ -35,9 +35,9 @@ class WidgetInputError(_WidgetInputError):
         return ', '.join([v.doc() for v in self.errors])
 
 
+@implementer(IWidgetInputErrorView)
 class WidgetInputErrorView(object):
     """Rendering of IWidgetInputError"""
-    implements(IWidgetInputErrorView)
 
     def __init__(self, context, request):
         self.context = context

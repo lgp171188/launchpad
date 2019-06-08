@@ -7,7 +7,6 @@ __metaclass__ = type
 
 __all__ = [
     'POExportView',
-    'POFileFacets',
     'POFileFilteredView',
     'POFileNavigation',
     'POFileNavigationMenu',
@@ -16,7 +15,6 @@ __all__ = [
     'POFileView',
     ]
 
-from cgi import escape
 import os.path
 import re
 import urllib
@@ -42,10 +40,9 @@ from lp.services.webapp import (
     NavigationMenu,
     )
 from lp.services.webapp.batching import BatchNavigator
+from lp.services.webapp.escaping import structured
 from lp.services.webapp.interfaces import ILaunchBag
-from lp.services.webapp.menu import structured
 from lp.translations.browser.poexportrequest import BaseExportView
-from lp.translations.browser.potemplate import POTemplateFacets
 from lp.translations.browser.translationmessage import (
     BaseTranslationView,
     CurrentTranslationMessageView,
@@ -89,13 +86,6 @@ class POFileNavigation(Navigation):
                 "%r is not a valid sequence number." % name)
 
         return potmsgset.getCurrentTranslationMessageOrDummy(self.context)
-
-
-class POFileFacets(POTemplateFacets):
-    usedfor = IPOFile
-
-    def __init__(self, context):
-        POTemplateFacets.__init__(self, context.potemplate)
 
 
 class POFileMenuMixin:
@@ -223,9 +213,10 @@ class POFileMetadataViewMixin:
 
         links = []
         if group_guide is not None:
-            links.append("""
-                <a class="style-guide-url" href="%s">%s instructions</a>
-                """ % (group_guide, escape(self.translation_group.title)))
+            links.append(
+                structured(
+                    '<a class="style-guide-url" href="%s">%s instructions</a>',
+                    group_guide, self.translation_group.title).escapedtext)
 
         if team_guide is not None:
             if group_guide is None:
@@ -235,9 +226,10 @@ class POFileMetadataViewMixin:
                 # Full team name may get tedious after we just named the
                 # group.  Just use the language name.
                 name = self.context.language.englishname
-            links.append("""
-                <a class="style-guide-url" href="%s"> %s guidelines</a>
-                """ % (team_guide, escape(name)))
+            links.append(
+                structured(
+                    '<a class="style-guide-url" href="%s"> %s guidelines</a>',
+                    team_guide, name).escapedtext)
 
         text = ' and '.join(links).rstrip()
 
@@ -273,24 +265,28 @@ class POFileView(LaunchpadView):
 
     @cachedproperty
     def contributors(self):
-        return list(self.context.contributors)
+        people = list(self.context.contributors)
+        # Preload ValidPersonCache.
+        list(getUtility(IPersonSet).getPrecachedPersonsFromIDs(
+            [person.id for person in people], need_validity=True))
+        return people
 
-    @property
+    @cachedproperty
     def user_can_edit(self):
         """Does the user have full edit rights for this translation?"""
         return self.context.canEditTranslations(self.user)
 
-    @property
+    @cachedproperty
     def user_can_suggest(self):
         """Is the user allowed to make suggestions here?"""
         return self.context.canAddSuggestions(self.user)
 
-    @property
+    @cachedproperty
     def has_translationgroup(self):
         """Is there a translation group for this translation?"""
         return self.context.potemplate.translationgroups
 
-    @property
+    @cachedproperty
     def is_managed(self):
         """Is a translation group member assigned to this translation?"""
         for group in self.context.potemplate.translationgroups:
@@ -298,7 +294,7 @@ class POFileView(LaunchpadView):
                 return True
         return False
 
-    @property
+    @cachedproperty
     def managers(self):
         """List translation groups and translation teams for this translation.
 
@@ -638,8 +634,8 @@ class POFileTranslateView(BaseTranslationView, POFileMetadataViewMixin):
             id = int(match.group(1))
             potmsgset = self.context.potemplate.getPOTMsgSetByID(id)
             if potmsgset is None:
-                # This should only happen if someone tries to POST his own
-                # form instead of ours, and he uses a POTMsgSet id that
+                # This should only happen if someone tries to POST their own
+                # form instead of ours, and they use a POTMsgSet id that
                 # does not exist for this POTemplate.
                 raise UnexpectedFormData(
                     "Got translation for POTMsgID %d which is not in the "

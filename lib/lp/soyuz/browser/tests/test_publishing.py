@@ -1,7 +1,9 @@
-# Copyright 2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2011-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for source package publication listing."""
+
+from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 
@@ -15,6 +17,7 @@ from zope.component import getUtility
 from zope.publisher.interfaces import NotFound
 from zope.security.interfaces import Unauthorized
 
+from lp.registry.interfaces.distribution import IDistributionSet
 from lp.registry.interfaces.person import IPersonSet
 from lp.services.webapp.publisher import (
     canonical_url,
@@ -45,12 +48,11 @@ class TestSourcePublicationListingExtra(BrowserTestCase):
         self.admin = getUtility(IPersonSet).getByEmail(ADMIN_EMAIL)
         # Create everything we need to create builds, such as a
         # DistroArchSeries and a builder.
-        self.pf = self.factory.makeProcessorFamily()
-        pf_proc = self.pf.addProcessor(self.factory.getUniqueString(), '', '')
-        self.distroseries = self.factory.makeDistroSeries()
+        self.processor = self.factory.makeProcessor(supports_virtualized=True)
+        self.distroseries = self.factory.makeDistroSeries(
+            distribution=getUtility(IDistributionSet)['ubuntu'])
         self.das = self.factory.makeDistroArchSeries(
-            distroseries=self.distroseries, processorfamily=self.pf,
-            supports_virtualized=True)
+            distroseries=self.distroseries, processor=self.processor)
         self.archive = self.factory.makeArchive(
             distribution=self.distroseries.distribution)
         with person_logged_in(self.admin):
@@ -58,7 +60,8 @@ class TestSourcePublicationListingExtra(BrowserTestCase):
             self.publisher.prepareBreezyAutotest()
             self.distroseries.nominatedarchindep = self.das
             self.publisher.addFakeChroots(distroseries=self.distroseries)
-            self.builder = self.factory.makeBuilder(processor=pf_proc)
+            self.builder = self.factory.makeBuilder(
+                processors=[self.processor])
 
     def test_view_with_source_package_recipe(self):
         # When a SourcePackageRelease is linked to a
@@ -134,8 +137,12 @@ class TestSourcePackagePublishingHistoryNavigation(TestCaseWithFactory):
             filename='changelog',
             restricted=(archive is not None and archive.private))
         spr = self.factory.makeSourcePackageRelease(changelog=lfa)
+        if archive is not None:
+            distroseries = archive.distribution.currentseries
+        else:
+            distroseries = None
         return self.factory.makeSourcePackagePublishingHistory(
-            archive=archive,
+            archive=archive, distroseries=distroseries,
             sourcepackagerelease=spr)
 
     def test_changelog(self):

@@ -7,7 +7,7 @@ are related by their need, shipment condition and/or licence.
 Zope auxiliary test toolchain:
 
  >>> from zope.component import getUtility
- >>> from lp.services.webapp.testing import verifyObject
+ >>> from lp.testing import verifyObject
 
 Importing Component content class and its interface:
 
@@ -20,7 +20,7 @@ Get an Component instance from the current sampledata:
 
 Test some attributes:
 
- >>> print main.id, main.name
+ >>> print(main.id, main.name)
  1 main
 
 Check if the instance corresponds to the declared interface:
@@ -41,7 +41,7 @@ Check we can use the set as a utility:
 Test iteration over the sampledata default components:
 
  >>> for c in component_set:
- ...    print c.name
+ ...    print(c.name)
  main
  restricted
  universe
@@ -52,27 +52,27 @@ by default, they are ordered by 'id'.
 
 Test __getitem__ method, retrieving a component by name:
 
- >>> print component_set['universe'].name
+ >>> print(component_set['universe'].name)
  universe
 
 Test get method, retrieving a component by its id:
 
- >>> print component_set.get(2).name
+ >>> print(component_set.get(2).name)
  restricted
 
 New component creation for a given name:
 
  >>> new_comp = component_set.new('test')
- >>> print new_comp.id, new_comp.name
- 6 test
+ >>> print(new_comp.name)
+ test
 
 Ensuring a component (if not found, create it):
 
- >>> component_set.ensure('test').id
- 6
+ >>> component_set.ensure('test').id == new_comp.id
+ True
 
- >>> component_set.ensure('test2').id
- 7
+ >>> component_set.ensure('test2').id == new_comp.id
+ False
 
 
 Importing Section content class and its interface:
@@ -86,7 +86,7 @@ Get a Section instance from the current sampledata:
 
 Test some attributes:
 
- >>> print base.id, base.name
+ >>> print(base.id, base.name)
  1 base
 
 Check if the instance corresponds to the declared interface:
@@ -107,7 +107,7 @@ Check we can use the set as a utility:
 Test iteration over the sampledata default sections:
 
  >>> for s in section_set:
- ...    print s.name
+ ...    print(s.name)
  base
  web
  editors
@@ -148,24 +148,24 @@ by default they are ordered by 'id'.
 
 Test __getitem__ method, retrieving a section by name:
 
- >>> print section_set['science'].name
+ >>> print(section_set['science'].name)
  science
 
 Test get method, retrieving a section by its id:
 
- >>> print section_set.get(2).name
+ >>> print(section_set.get(2).name)
  web
 
 New section creation for a given name:
 
  >>> new_sec = section_set.new('test')
- >>> print new_sec.id, new_sec.name
- 36 test
+ >>> print(new_sec.name)
+ test
 
 Ensuring a section (if not found, create it):
 
- >>> section_set.ensure('test').id
- 36
+ >>> section_set.ensure('test').id == new_sec.id
+ True
 
- >>> section_set.ensure('test2').id
- 37
+ >>> section_set.ensure('test2').id == new_sec.id
+ False

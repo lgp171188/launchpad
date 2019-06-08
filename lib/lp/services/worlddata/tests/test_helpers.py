@@ -4,7 +4,7 @@
 from doctest import DocTestSuite
 import unittest
 
-from zope.interface import implements
+from zope.interface import implementer
 from zope.publisher.interfaces.browser import IBrowserRequest
 
 from lp.registry.interfaces.person import IPerson
@@ -20,8 +20,8 @@ class DummyLanguage:
         self.alt_suggestion_language = None
 
 
+@implementer(ILanguageSet)
 class DummyLanguageSet:
-    implements(ILanguageSet)
 
     _languages = {
         'ja': DummyLanguage('ja', 1),
@@ -34,8 +34,8 @@ class DummyLanguageSet:
         return self._languages[key]
 
 
+@implementer(IPerson)
 class DummyPerson:
-    implements(IPerson)
 
     def __init__(self, codes):
         self.codes = codes
@@ -54,8 +54,8 @@ class DummyResponse:
         pass
 
 
+@implementer(IBrowserRequest)
 class DummyRequest:
-    implements(IBrowserRequest)
 
     def __init__(self, **form_data):
         self.form = form_data
@@ -85,8 +85,8 @@ class DummyRequestLanguages:
             ]
 
 
+@implementer(ILaunchBag)
 class DummyLaunchBag:
-    implements(ILaunchBag)
 
     def __init__(self, login=None, user=None):
         self.login = login
@@ -96,7 +96,7 @@ class DummyLaunchBag:
 def test_preferred_or_request_languages():
     '''
     >>> from zope.app.testing.placelesssetup import setUp, tearDown
-    >>> from zope.app.testing import ztapi
+    >>> from zope.component import provideAdapter, provideUtility
     >>> from zope.i18n.interfaces import IUserPreferredLanguages
     >>> from lp.services.geoip.interfaces import IRequestPreferredLanguages
     >>> from lp.services.geoip.interfaces import IRequestLocalLanguages
@@ -106,14 +106,15 @@ def test_preferred_or_request_languages():
     First, test with a person who has a single preferred language.
 
     >>> setUp()
-    >>> ztapi.provideUtility(ILanguageSet, DummyLanguageSet())
-    >>> ztapi.provideUtility(
-    ...     ILaunchBag, DummyLaunchBag('foo.bar@canonical.com', dummyPerson))
-    >>> ztapi.provideAdapter(
-    ...     IBrowserRequest, IRequestPreferredLanguages,
-    ...     adaptRequestToLanguages)
-    >>> ztapi.provideAdapter(
-    ...     IBrowserRequest, IRequestLocalLanguages, adaptRequestToLanguages)
+    >>> provideUtility(DummyLanguageSet(), ILanguageSet)
+    >>> provideUtility(
+    ...     DummyLaunchBag('foo.bar@canonical.com', dummyPerson), ILaunchBag)
+    >>> provideAdapter(
+    ...     adaptRequestToLanguages, (IBrowserRequest,),
+    ...     IRequestPreferredLanguages)
+    >>> provideAdapter(
+    ...     adaptRequestToLanguages, (IBrowserRequest,),
+    ...     IRequestLocalLanguages)
 
     >>> languages = preferred_or_request_languages(DummyRequest())
     >>> len(languages)
@@ -126,15 +127,16 @@ def test_preferred_or_request_languages():
     Then test with a person who has no preferred language.
 
     >>> setUp()
-    >>> ztapi.provideUtility(ILanguageSet, DummyLanguageSet())
-    >>> ztapi.provideUtility(
-    ...     ILaunchBag,
-    ...     DummyLaunchBag('foo.bar@canonical.com', dummyNoLanguagePerson))
-    >>> ztapi.provideAdapter(
-    ...     IBrowserRequest, IRequestPreferredLanguages,
-    ...     adaptRequestToLanguages)
-    >>> ztapi.provideAdapter(
-    ...     IBrowserRequest, IRequestLocalLanguages, adaptRequestToLanguages)
+    >>> provideUtility(DummyLanguageSet(), ILanguageSet)
+    >>> provideUtility(
+    ...     DummyLaunchBag('foo.bar@canonical.com', dummyNoLanguagePerson),
+    ...     ILaunchBag)
+    >>> provideAdapter(
+    ...     adaptRequestToLanguages, (IBrowserRequest,),
+    ...     IRequestPreferredLanguages)
+    >>> provideAdapter(
+    ...     adaptRequestToLanguages, (IBrowserRequest,),
+    ...     IRequestLocalLanguages)
 
     >>> languages = preferred_or_request_languages(DummyRequest())
     >>> len(languages)

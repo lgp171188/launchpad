@@ -32,14 +32,12 @@ class TestProductSeriesLanguages(TestCaseWithFactory):
 
     def test_no_templates_no_translation(self):
         # There are no templates and no translations.
-        self.assertEquals([],
-                          self.productseries.productserieslanguages)
+        self.assertEqual([], self.productseries.productserieslanguages)
 
     def test_one_template_no_translation(self):
         # There is a template and no translations.
         self.factory.makePOTemplate(productseries=self.productseries)
-        self.assertEquals([],
-                          self.productseries.productserieslanguages)
+        self.assertEqual([], self.productseries.productserieslanguages)
 
     def test_one_template_with_pofile(self):
         # There is a template and one translation.
@@ -52,15 +50,15 @@ class TestProductSeriesLanguages(TestCaseWithFactory):
         sr_pofile = self.factory.makePOFile('sr', potemplate)
 
         psls = list(self.productseries.productserieslanguages)
-        self.assertEquals(1, len(psls))
+        self.assertEqual(1, len(psls))
 
         # ProductSeriesLanguage object correctly keeps values
         # for a language, productseries itself and POFile.
         sr_psl = psls[0]
-        self.assertEquals(self.productseries, sr_psl.productseries)
-        self.assertEquals(sr_pofile.language, sr_psl.language)
-        self.assertEquals(sr_pofile, sr_psl.pofile)
-        self.assertEquals([sr_pofile], list(sr_psl.pofiles))
+        self.assertEqual(self.productseries, sr_psl.productseries)
+        self.assertEqual(sr_pofile.language, sr_psl.language)
+        self.assertEqual(sr_pofile, sr_psl.pofile)
+        self.assertEqual([sr_pofile], list(sr_psl.pofiles))
 
     def test_productserieslanguages_languages_sorting(self):
         # ProductSeriesLanguages are sorted alphabetically by language.
@@ -69,15 +67,15 @@ class TestProductSeriesLanguages(TestCaseWithFactory):
 
         # Add a Serbian translation.
         serbian = getUtility(ILanguageSet).getLanguageByCode('sr')
-        sr_pofile = self.factory.makePOFile(serbian.code, potemplate)
+        self.factory.makePOFile(serbian.code, potemplate)
         # Add another translation (eg. "Albanian", so it sorts
         # it before Serbian).
         albanian = getUtility(ILanguageSet).getLanguageByCode('sq')
-        sq_pofile = self.factory.makePOFile(albanian.code, potemplate)
+        self.factory.makePOFile(albanian.code, potemplate)
 
         languages = [psl.language for psl in
                      self.productseries.productserieslanguages]
-        self.assertEquals([albanian, serbian], languages)
+        self.assertEqual([albanian, serbian], languages)
 
     def test_two_templates_pofile_not_set(self):
         # With two templates, pofile attribute doesn't get set.
@@ -90,12 +88,12 @@ class TestProductSeriesLanguages(TestCaseWithFactory):
 
         # Add Serbian translation for one POTemplate.
         serbian = getUtility(ILanguageSet).getLanguageByCode('sr')
-        pofile1 = self.factory.makePOFile(serbian.code, potemplate1)
+        self.factory.makePOFile(serbian.code, potemplate1)
         psls = list(self.productseries.productserieslanguages)
 
         # `pofile` is not set when there's more than one template.
         sr_psl = psls[0]
-        self.assertEquals(None, sr_psl.pofile)
+        self.assertIsNone(sr_psl.pofile)
 
 
 class TestProductSeriesLanguageStatsCalculation(TestCaseWithFactory):
@@ -107,7 +105,7 @@ class TestProductSeriesLanguageStatsCalculation(TestCaseWithFactory):
         potemplate = self.factory.makePOTemplate(
             productseries=self.productseries)
         for sequence in range(number_of_potmsgsets):
-            self.factory.makePOTMsgSet(potemplate, sequence=sequence+1)
+            self.factory.makePOTMsgSet(potemplate, sequence=sequence + 1)
         removeSecurityProxy(potemplate).messagecount = number_of_potmsgsets
         return potemplate
 
@@ -134,7 +132,7 @@ class TestProductSeriesLanguageStatsCalculation(TestCaseWithFactory):
         self.language = getUtility(ILanguageSet).getLanguageByCode('sr')
 
     def assertPSLStatistics(self, psl, stats):
-        self.assertEquals(
+        self.assertEqual(
             (psl.messageCount(),
              psl.translatedCount(),
              psl.currentCount(),
@@ -148,12 +146,12 @@ class TestProductSeriesLanguageStatsCalculation(TestCaseWithFactory):
         # With no templates all counts are zero.
         psl = self.psl_set.getProductSeriesLanguage(
             self.productseries, self.language)
-        self.failUnless(verifyObject(IProductSeriesLanguage, psl))
+        self.assertTrue(verifyObject(IProductSeriesLanguage, psl))
         self.assertPSLStatistics(psl, (0, 0, 0, 0, 0, 0, None))
 
         # Adding a single template with 10 messages makes the total
         # count of messages go up to 10.
-        potemplate = self.createPOTemplateWithPOTMsgSets(10)
+        self.createPOTemplateWithPOTMsgSets(10)
         psl = self.psl_set.getProductSeriesLanguage(
             self.productseries, self.language)
         psl.recalculateCounts()
@@ -172,7 +170,7 @@ class TestProductSeriesLanguageStatsCalculation(TestCaseWithFactory):
         # Getting PSL through PSLSet gives an uninitialized object.
         psl = self.psl_set.getProductSeriesLanguage(
             self.productseries, self.language)
-        self.assertEquals(psl.messageCount(), 0)
+        self.assertEqual(psl.messageCount(), 0)
 
         # We explicitely ask for stats to be recalculated.
         psl.recalculateCounts()
@@ -247,8 +245,8 @@ class TestProductSeriesLanguageStatsCalculation(TestCaseWithFactory):
     def test_recalculateCounts_no_pofiles(self):
         # Test that recalculateCounts works correctly even when there
         # are no POFiles returned.
-        potemplate1 = self.createPOTemplateWithPOTMsgSets(1)
-        potemplate2 = self.createPOTemplateWithPOTMsgSets(2)
+        self.createPOTemplateWithPOTMsgSets(1)
+        self.createPOTemplateWithPOTMsgSets(2)
         psl = self.psl_set.getProductSeriesLanguage(self.productseries,
                                                     self.language)
         psl.recalculateCounts()

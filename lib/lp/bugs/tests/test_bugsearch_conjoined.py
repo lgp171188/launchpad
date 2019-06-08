@@ -143,7 +143,7 @@ class TestProjectGroupExcludeConjoinedMasterSearch(TestSearchBase):
         self.bug_count = 2
         self.bug_products = {}
         for i in range(self.bug_count):
-            product = self.factory.makeProduct(project=self.projectgroup)
+            product = self.factory.makeProduct(projectgroup=self.projectgroup)
             product_milestone = self.factory.makeMilestone(
                 product=product, name='foo')
             bug = self.makeBug(product_milestone)
@@ -207,7 +207,7 @@ class TestProjectGroupExcludeConjoinedMasterSearch(TestSearchBase):
         for bug, product in self.bug_products.items():
             extra_bugtasks += 1
             other_product = self.factory.makeProduct(
-                project=self.projectgroup)
+                projectgroup=self.projectgroup)
             # Create a new milestone with the same name.
             other_product_milestone = self.factory.makeMilestone(
                 product=other_product,
@@ -277,7 +277,7 @@ class TestDistributionExcludeConjoinedMasterSearch(TestSearchBase):
         Store.of(self.milestone).flush()
         with StormStatementRecorder() as recorder:
             list(self.bugtask_set.search(self.params))
-        self.assertThat(recorder, HasQueryCount(Equals(4)))
+        self.assertThat(recorder, HasQueryCount(Equals(5)))
 
     def test_search_results_count_with_other_productseries_tasks(self):
         # Test with zero conjoined masters and bugtasks targeted to

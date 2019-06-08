@@ -1,12 +1,14 @@
-# Copyright 2009-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2017 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
 
 import doctest
 import email
+import re
 from textwrap import dedent
 
+from fixtures import FakeLogger
 import soupmatchers
 from storm.store import Store
 from testtools.matchers import (
@@ -15,13 +17,17 @@ from testtools.matchers import (
     LessThan,
     Not,
     )
+from testtools.testcase import ExpectedException
 import transaction
 from zope.component import getUtility
 from zope.publisher.interfaces import NotFound
+from zope.security.proxy import removeSecurityProxy
 
 from lp.app.browser.lazrjs import TextAreaEditorWidget
+from lp.app.enums import InformationType
 from lp.app.errors import NotFoundError
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
+from lp.blueprints.enums import SpecificationImplementationStatus
 from lp.buildmaster.enums import BuildStatus
 from lp.registry.browser.person import PersonView
 from lp.registry.browser.team import TeamInvitationView
@@ -35,15 +41,20 @@ from lp.registry.interfaces.teammembership import (
     )
 from lp.registry.model.karma import KarmaCategory
 from lp.registry.model.milestone import milestone_sort_key
+from lp.scripts.garbo import PopulateLatestPersonSourcePackageReleaseCache
 from lp.services.config import config
 from lp.services.identity.interfaces.account import AccountStatus
 from lp.services.identity.interfaces.emailaddress import IEmailAddressSet
+from lp.services.log.logger import DevNullLogger
 from lp.services.mail import stub
+from lp.services.propertycache import clear_property_cache
 from lp.services.verification.interfaces.authtoken import LoginTokenType
 from lp.services.verification.interfaces.logintoken import ILoginTokenSet
 from lp.services.verification.tests.logintoken import get_token_url_from_email
 from lp.services.webapp import canonical_url
+from lp.services.webapp.escaping import html_escape
 from lp.services.webapp.interfaces import ILaunchBag
+from lp.services.webapp.publisher import RedirectionView
 from lp.services.webapp.servers import LaunchpadTestRequest
 from lp.soyuz.enums import (
     ArchivePurpose,
@@ -54,16 +65,18 @@ from lp.soyuz.tests.test_publishing import SoyuzTestPublisher
 from lp.testing import (
     ANONYMOUS,
     BrowserTestCase,
-    celebrity_logged_in,
     login,
-    login_celebrity,
     login_person,
     monkey_patch,
     person_logged_in,
+    record_two_runs,
     StormStatementRecorder,
     TestCaseWithFactory,
     )
-from lp.testing.dbuser import switch_dbuser
+from lp.testing.dbuser import (
+    dbuser,
+    switch_dbuser,
+    )
 from lp.testing.layers import (
     DatabaseFunctionalLayer,
     LaunchpadFunctionalLayer,
@@ -72,12 +85,90 @@ from lp.testing.layers import (
 from lp.testing.matchers import HasQueryCount
 from lp.testing.pages import (
     extract_text,
+    find_tag_by_id,
     setupBrowserForUser,
     )
+from lp.testing.publication import test_traverse
 from lp.testing.views import (
     create_initialized_view,
     create_view,
     )
+
+
+class TestPersonNavigation(TestCaseWithFactory):
+
+    layer = DatabaseFunctionalLayer
+
+    def assertRedirect(self, path, redirect):
+        view = test_traverse(path)[1]
+        self.assertIsInstance(view, RedirectionView)
+        self.assertEqual(':/' + redirect, removeSecurityProxy(view).target)
+
+    def test_traverse_archive_distroful(self):
+        archive = self.factory.makeArchive(purpose=ArchivePurpose.PPA)
+        in_suf = '/~%s/+archive/%s/%s' % (
+            archive.owner.name, archive.distribution.name, archive.name)
+        self.assertEqual(archive, test_traverse(in_suf)[0])
+        self.assertEqual(archive, test_traverse('/api/devel' + in_suf)[0])
+        self.assertEqual(archive, test_traverse('/api/1.0' + in_suf)[0])
+
+    def test_traverse_archive_distroless(self):
+        # Pre-mid-2014 distroless PPA URLs redirect to the new ones.
+        archive = self.factory.makeArchive(purpose=ArchivePurpose.PPA)
+        in_suf = '/~%s/+archive/%s' % (archive.owner.name, archive.name)
+        out_suf = '/~%s/+archive/%s/%s' % (
+            archive.owner.name, archive.distribution.name, archive.name)
+        self.assertRedirect(in_suf, out_suf)
+        self.assertRedirect('/api/devel' + in_suf, '/api/devel' + out_suf)
+        # 1.0 API requests don't redirect, since some manually construct
+        # URLs and don't cope with redirects (most notably the Python 2
+        # implementation of apt-add-repository).
+        self.assertEqual(archive, test_traverse('/api/1.0' + out_suf)[0])
+
+    def test_traverse_archive_distroless_implies_ubuntu(self):
+        # The distroless PPA redirect only finds Ubuntu PPAs, since
+        # distroful URLs were implemented as a requirement for
+        # non-Ubuntu PPAs.
+        other_archive = self.factory.makeArchive(
+            purpose=ArchivePurpose.PPA,
+            distribution=self.factory.makeDistribution())
+        with ExpectedException(NotFound):
+            test_traverse(
+                '/~%s/+archive/%s' % (
+                    other_archive.owner.name, other_archive.name))
+
+    def test_traverse_archive_redirects_nameless(self):
+        # Pre-2009 nameless PPA URLs redirect to the new ones.
+        archive = self.factory.makeArchive(
+            purpose=ArchivePurpose.PPA, name="ppa")
+        in_suf = '/~%s/+archive' % archive.owner.name
+        out_suf = '/~%s/+archive/%s/%s' % (
+            archive.owner.name, archive.distribution.name, archive.name)
+        self.assertRedirect(in_suf, out_suf)
+        self.assertRedirect('/api/devel' + in_suf, '/api/devel' + out_suf)
+        self.assertRedirect('/api/1.0' + in_suf, '/api/1.0' + out_suf)
+
+    def test_traverse_git_repository_project(self):
+        project = self.factory.makeProduct()
+        repository = self.factory.makeGitRepository(target=project)
+        url = "/~%s/%s/+git/%s" % (
+            repository.owner.name, project.name, repository.name)
+        self.assertEqual(repository, test_traverse(url)[0])
+
+    def test_traverse_git_repository_package(self):
+        dsp = self.factory.makeDistributionSourcePackage()
+        repository = self.factory.makeGitRepository(target=dsp)
+        url = "/~%s/%s/+source/%s/+git/%s" % (
+            repository.owner.name, dsp.distribution.name,
+            dsp.sourcepackagename.name, repository.name)
+        self.assertEqual(repository, test_traverse(url)[0])
+
+    def test_traverse_git_repository_personal(self):
+        person = self.factory.makePerson()
+        repository = self.factory.makeGitRepository(
+            owner=person, target=person)
+        url = "/~%s/+git/%s" % (person.name, repository.name)
+        self.assertEqual(repository, test_traverse(url)[0])
 
 
 class PersonViewOpenidIdentityUrlTestCase(TestCaseWithFactory):
@@ -89,7 +180,7 @@ class PersonViewOpenidIdentityUrlTestCase(TestCaseWithFactory):
         TestCaseWithFactory.setUp(self)
         self.user = self.factory.makePerson(name='eris')
         self.request = LaunchpadTestRequest(
-            SERVER_URL="http://launchpad.dev/")
+            SERVER_URL="http://launchpad.test/")
         login_person(self.user, self.request)
         self.view = PersonView(self.user, self.request)
         # Marker allowing us to reset the config.
@@ -98,8 +189,8 @@ class PersonViewOpenidIdentityUrlTestCase(TestCaseWithFactory):
 
     def test_should_be_profile_page_when_delegating(self):
         """The profile page is the OpenID identifier in normal situation."""
-        self.assertEquals(
-            'http://launchpad.dev/~eris', self.view.openid_identity_url)
+        self.assertEqual(
+            'http://launchpad.test/~eris', self.view.openid_identity_url)
 
     def test_should_be_production_profile_page_when_not_delegating(self):
         """When the profile page is not delegated, the OpenID identity URL
@@ -109,13 +200,13 @@ class PersonViewOpenidIdentityUrlTestCase(TestCaseWithFactory):
             openid_delegate_profile: False
 
             [launchpad]
-            non_restricted_hostname: prod.launchpad.dev
+            non_restricted_hostname: prod.launchpad.test
             '''))
-        self.assertEquals(
-            'http://prod.launchpad.dev/~eris', self.view.openid_identity_url)
+        self.assertEqual(
+            'http://prod.launchpad.test/~eris', self.view.openid_identity_url)
 
 
-class TestPersonIndexView(TestCaseWithFactory):
+class TestPersonIndexView(BrowserTestCase):
 
     layer = DatabaseFunctionalLayer
 
@@ -187,9 +278,8 @@ class TestPersonIndexView(TestCaseWithFactory):
             'name="robots" content="noindex,nofollow"' in markup)
 
     def test_is_probationary_or_invalid_user_with_invalid(self):
-        person = self.factory.makePerson()
-        with celebrity_logged_in('admin'):
-            person.account.status = AccountStatus.NOACCOUNT
+        person = self.factory.makePerson(
+            account_status=AccountStatus.NOACCOUNT)
         observer = self.factory.makePerson()
         view = create_initialized_view(person, '+index', principal=observer)
         self.assertIs(True, view.is_probationary_or_invalid_user)
@@ -202,6 +292,78 @@ class TestPersonIndexView(TestCaseWithFactory):
         person = self.factory.makePerson(description=person_description)
         view = create_initialized_view(person, '+index')
         self.assertThat(view.page_description, Equals(person_description))
+
+    def test_person_view_change_password(self):
+        person = self.factory.makePerson()
+        view = create_initialized_view(person, '+index', principal=person)
+        with person_logged_in(person):
+            markup = self.get_markup(view, person)
+        password_match = soupmatchers.HTMLContains(
+            soupmatchers.Tag(
+                'Change password', 'a',
+                attrs={'href': 'http://testopenid.test/'},
+                text='Change password'))
+        self.assertThat(markup, password_match)
+
+    def test_assigned_blueprints(self):
+        person = self.factory.makePerson()
+        public_spec = self.factory.makeSpecification(
+            assignee=person,
+            implementation_status=SpecificationImplementationStatus.STARTED,
+            information_type=InformationType.PUBLIC)
+        private_name = 'super-private'
+        self.factory.makeSpecification(
+            name=private_name, assignee=person,
+            implementation_status=SpecificationImplementationStatus.STARTED,
+            information_type=InformationType.PROPRIETARY)
+        with person_logged_in(None):
+            browser = self.getViewBrowser(person)
+        self.assertIn(public_spec.name, browser.contents)
+        self.assertNotIn(private_name, browser.contents)
+
+    def test_only_assigned_blueprints(self):
+        # Only assigned blueprints are listed, not arbitrary related
+        # blueprints
+        person = self.factory.makePerson()
+        spec = self.factory.makeSpecification(
+            implementation_status=SpecificationImplementationStatus.STARTED,
+            owner=person, drafter=person, approver=person)
+        spec.subscribe(person)
+        with person_logged_in(None):
+            browser = self.getViewBrowser(person)
+        self.assertNotIn(spec.name, browser.contents)
+
+    def test_show_gpg_keys_for_view_owner(self):
+        person = self.factory.makePerson()
+        with person_logged_in(person):
+            view = create_initialized_view(person, '+index')
+            self.assertTrue(view.should_show_gpgkeys_section)
+
+    def test_gpg_keys_not_shown_for_user_with_no_gpg_keys(self):
+        person = self.factory.makePerson()
+        view = create_initialized_view(person, '+index')
+        self.assertFalse(view.should_show_gpgkeys_section)
+
+    def test_gpg_keys_shown_for_user_with_gpg_keys(self):
+        person = self.factory.makePerson()
+        self.factory.makeGPGKey(person)
+        view = create_initialized_view(person, '+index')
+        self.assertTrue(view.should_show_gpgkeys_section)
+
+    def test_ppas_query_count(self):
+        owner = self.factory.makePerson()
+
+        def create_ppa_and_permission():
+            ppa = self.factory.makeArchive(
+                owner=owner, purpose=ArchivePurpose.PPA, private=True)
+            ppa.newComponentUploader(self.user, 'main')
+
+        recorder1, recorder2 = record_two_runs(
+            lambda: self.getMainText(owner, '+index'),
+            create_ppa_and_permission, 5,
+            login_method=lambda: login_person(owner),
+            record_request=True)
+        self.assertThat(recorder2, HasQueryCount.byEquality(recorder1))
 
 
 class TestPersonViewKarma(TestCaseWithFactory):
@@ -232,29 +394,22 @@ class TestPersonViewKarma(TestCaseWithFactory):
                          'Categories are not sorted correctly')
 
     def _makeKarmaCache(self, person, product, category, value=10):
-        """ Create and return a KarmaCache entry with the given arguments.
+        """Create and return a KarmaCache entry with the given arguments.
 
-        In order to create the KarmaCache record we must switch to the DB
-        user 'karma', so tests that need a different user after calling
-        this method should run switch_dbuser() themselves.
+        A commit is implicitly triggered because the 'karma' dbuser is used.
         """
+        with dbuser('karma'):
+            cache_manager = getUtility(IKarmaCacheManager)
+            karmacache = cache_manager.new(
+                value, person.id, category.id, product_id=product.id)
 
-        switch_dbuser('karma')
+            try:
+                cache_manager.updateKarmaValue(
+                    value, person.id, category_id=None, product_id=product.id)
+            except NotFoundError:
+                cache_manager.new(
+                    value, person.id, category_id=None, product_id=product.id)
 
-        cache_manager = getUtility(IKarmaCacheManager)
-        karmacache = cache_manager.new(
-            value, person.id, category.id, product_id=product.id)
-
-        try:
-            cache_manager.updateKarmaValue(
-                value, person.id, category_id=None, product_id=product.id)
-        except NotFoundError:
-            cache_manager.new(
-                value, person.id, category_id=None, product_id=product.id)
-
-        # We must commit here so that the change is seen in other transactions
-        # (e.g. when the callsite issues a switch_dbuser() after we return).
-        transaction.commit()
         return karmacache
 
 
@@ -284,7 +439,7 @@ class TestShouldShowPpaSection(TestCaseWithFactory):
         # authorised to view the PPA.
         login(ANONYMOUS)
         person_view = PersonView(self.owner, LaunchpadTestRequest())
-        self.failUnless(person_view.should_show_ppa_section)
+        self.assertTrue(person_view.should_show_ppa_section)
 
     def test_viewing_person_without_ppa(self):
         # If the context person does not have a ppa then the section
@@ -292,28 +447,28 @@ class TestShouldShowPpaSection(TestCaseWithFactory):
         login(ANONYMOUS)
         person_without_ppa = self.factory.makePerson()
         person_view = PersonView(person_without_ppa, LaunchpadTestRequest())
-        self.failIf(person_view.should_show_ppa_section)
+        self.assertFalse(person_view.should_show_ppa_section)
 
     def test_viewing_self(self):
         # If the current user has edit access to the context person then
         # the section should always display.
         login_person(self.owner)
         person_view = PersonView(self.owner, LaunchpadTestRequest())
-        self.failUnless(person_view.should_show_ppa_section)
+        self.assertTrue(person_view.should_show_ppa_section)
 
         # If the ppa is private, the section is still displayed to
         # a user with edit access to the person.
         self.make_ppa_private(self.person_ppa)
         login_person(self.owner)
         person_view = PersonView(self.owner, LaunchpadTestRequest())
-        self.failUnless(person_view.should_show_ppa_section)
+        self.assertTrue(person_view.should_show_ppa_section)
 
         # Even a person without a PPA will see the section when viewing
         # themselves.
         person_without_ppa = self.factory.makePerson()
         login_person(person_without_ppa)
         person_view = PersonView(person_without_ppa, LaunchpadTestRequest())
-        self.failUnless(person_view.should_show_ppa_section)
+        self.assertTrue(person_view.should_show_ppa_section)
 
     def test_anon_viewing_person_with_private_ppa(self):
         # If the ppa is private, the ppa section will not be displayed
@@ -321,13 +476,13 @@ class TestShouldShowPpaSection(TestCaseWithFactory):
         self.make_ppa_private(self.person_ppa)
         login(ANONYMOUS)
         person_view = PersonView(self.owner, LaunchpadTestRequest())
-        self.failIf(person_view.should_show_ppa_section)
+        self.assertFalse(person_view.should_show_ppa_section)
 
         # But if the context person has a second ppa that is public,
         # then anon users will see the section.
         self.factory.makeArchive(owner=self.owner)
         person_view = PersonView(self.owner, LaunchpadTestRequest())
-        self.failUnless(person_view.should_show_ppa_section)
+        self.assertTrue(person_view.should_show_ppa_section)
 
     def test_viewing_team_with_private_ppa(self):
         # If a team PPA is private, the ppa section will be displayed
@@ -340,18 +495,18 @@ class TestShouldShowPpaSection(TestCaseWithFactory):
 
         # So the member will see the section.
         person_view = PersonView(self.team, LaunchpadTestRequest())
-        self.failUnless(person_view.should_show_ppa_section)
+        self.assertTrue(person_view.should_show_ppa_section)
 
         # But other users who are not members will not.
         non_member = self.factory.makePerson()
         login_person(non_member)
         person_view = PersonView(self.team, LaunchpadTestRequest())
-        self.failIf(person_view.should_show_ppa_section)
+        self.assertFalse(person_view.should_show_ppa_section)
 
         # Unless the team also has another ppa which is public.
         self.factory.makeArchive(owner=self.team)
         person_view = PersonView(self.team, LaunchpadTestRequest())
-        self.failUnless(person_view.should_show_ppa_section)
+        self.assertTrue(person_view.should_show_ppa_section)
 
 
 class TestPersonRenameFormMixin:
@@ -412,6 +567,42 @@ class TestPersonEditView(TestPersonRenameFormMixin, TestCaseWithFactory):
         self.ppa = self.factory.makeArchive(owner=self.person)
         self.view = create_initialized_view(self.person, '+edit')
 
+    def test_unclean_usernames_cannot_be_set(self):
+        # Users cannot set unclean usernames
+        form = {
+            'field.name': 'unclean.name',
+            'field.actions.save': 'Save Changes',
+            }
+        view = create_initialized_view(self.person, '+edit', form=form)
+
+        expected_msg = html_escape(dedent("""
+            Invalid username 'unclean.name'. Usernames must be at least three
+            and no longer than 32 characters long. They must contain at least
+            one letter, start and end with a letter or number. All letters
+            must be lower-case and non-consecutive hyphens are allowed."""))
+        self.assertEqual(expected_msg, view.errors[0])
+
+    def test_unclean_usernames_do_not_block_edit(self):
+        # Users with unclean usernames (less restrictive) are not forced
+        # to update it along with other details of their account.
+        dirty_person = self.factory.makePerson(name='unclean.name')
+        login_person(dirty_person)
+
+        form = {
+            'field.display_name': 'Nice Displayname',
+            'field.name': dirty_person.name,
+            'field.actions.save': 'Save Changes',
+            }
+        view = create_initialized_view(dirty_person, '+edit', form=form)
+
+        notifications = view.request.response.notifications
+        self.assertEqual(1, len(notifications))
+        self.assertEqual(
+            'The changes to your personal details have been saved.',
+            notifications[0].message)
+        self.assertEqual('Nice Displayname', dirty_person.displayname)
+        self.assertEqual('unclean.name', dirty_person.name)
+
     def createAddEmailView(self, email_address):
         """Test helper to create +editemails view."""
         form = {
@@ -452,7 +643,7 @@ class TestPersonEditView(TestPersonRenameFormMixin, TestCaseWithFactory):
         self.assertIsNotNone(token)
         notifications = view.request.response.notifications
         self.assertEqual(1, len(notifications))
-        expected_msg = (
+        expected_msg = html_escape(
             u"A confirmation message has been sent to '%s'."
             " Follow the instructions in that message to confirm"
             " that the address is yours. (If the message doesn't arrive in a"
@@ -479,9 +670,9 @@ class TestPersonEditView(TestPersonRenameFormMixin, TestCaseWithFactory):
         error_msg = view.errors[0]
         expected_msg = (
             "The email address '%s' is already registered to "
-            "<a href=\"http://launchpad.dev/~deadaccount\">deadaccount</a>. "
+            "<a href=\"http://launchpad.test/~deadaccount\">deadaccount</a>. "
             "If you think that is a duplicated account, you can "
-            "<a href=\"http://launchpad.dev/people/+requestmerge?"
+            "<a href=\"http://launchpad.test/people/+requestmerge?"
             "field.dupe_person=deadaccount\">merge it</a> into your account."
             % email_address)
         self.assertEqual(expected_msg, error_msg)
@@ -498,8 +689,8 @@ class TestPersonEditView(TestPersonRenameFormMixin, TestCaseWithFactory):
         view = create_initialized_view(self.person, '+editemails', form=form)
         notifications = view.request.response.notifications
         self.assertEqual(1, len(notifications))
-        expected_msg = (
-            u"An e-mail message was sent to '%s' "
+        expected_msg = html_escape(
+            u"An email message was sent to '%s' "
             "with instructions on how to confirm that it belongs to you."
             % added_email)
         self.assertEqual(expected_msg, notifications[0].message)
@@ -529,7 +720,7 @@ class TestPersonEditView(TestPersonRenameFormMixin, TestCaseWithFactory):
         token_url = get_token_url_from_email(raw_msg)
         browser = setupBrowserForUser(user=self.person)
         browser.open(token_url)
-        expected_msg = u'Confirm e-mail address <code>%s</code>' % added_email
+        expected_msg = u'Confirm email address <code>%s</code>' % added_email
         self.assertIn(expected_msg, browser.contents)
         browser.getControl('Continue').click()
         # Login again to access displayname, since browser logged us out.
@@ -548,7 +739,7 @@ class TestPersonEditView(TestPersonRenameFormMixin, TestCaseWithFactory):
         view = create_initialized_view(self.person, '+editemails', form=form)
         notifications = view.request.response.notifications
         self.assertEqual(1, len(notifications))
-        expected_msg = (
+        expected_msg = html_escape(
             u"The email address '%s' has been removed." % added_email)
         self.assertEqual(expected_msg, notifications[0].message)
 
@@ -560,7 +751,7 @@ class TestPersonEditView(TestPersonRenameFormMixin, TestCaseWithFactory):
             }
         view = create_initialized_view(self.person, '+editemails', form=form)
         error_msg = view.errors[0]
-        expected_msg = (
+        expected_msg = html_escape(
             "You can't remove %s because it's your contact email address."
             % self.valid_email_address)
         self.assertEqual(expected_msg, error_msg)
@@ -593,8 +784,17 @@ class TestPersonEditView(TestPersonRenameFormMixin, TestCaseWithFactory):
 
     def test_team_editemails_not_found(self):
         """Teams should not have a +editemails page."""
+        self.useFixture(FakeLogger())
         team = self.factory.makeTeam(owner=self.person, members=[self.person])
         url = '%s/+editemails' % canonical_url(team)
+        browser = setupBrowserForUser(user=self.person)
+        self.assertRaises(NotFound, browser.open, url)
+
+    def test_team_editmailinglists_not_found(self):
+        """Teams should not have a +editmailinglists page."""
+        self.useFixture(FakeLogger())
+        team = self.factory.makeTeam(owner=self.person, members=[self.person])
+        url = '%s/+editmailinglists' % canonical_url(team)
         browser = setupBrowserForUser(user=self.person)
         self.assertRaises(NotFound, browser.open, url)
 
@@ -607,16 +807,17 @@ class TestPersonEditView(TestPersonRenameFormMixin, TestCaseWithFactory):
     def test_email_string_validation_invalid_email(self):
         """+editemails should warn when provided data is not an email."""
         not_an_email = 'foo'
-        expected_msg = u"'foo' doesn't seem to be a valid email address."
+        expected_msg = html_escape(
+            u"'foo' doesn't seem to be a valid email address.")
         self._assertEmailAndError(not_an_email, expected_msg)
 
     def test_email_string_validation_is_escaped(self):
         """+editemails should escape output to prevent XSS."""
         xss_email = "foo@example.com<script>window.alert('XSS')</script>"
         expected_msg = (
-            u"'foo@example.com&lt;script&gt;"
-            "window.alert('XSS')&lt;/script&gt;'"
-            " doesn't seem to be a valid email address.")
+            u"&#x27;foo@example.com&lt;script&gt;"
+            "window.alert(&#x27;XSS&#x27;)&lt;/script&gt;&#x27;"
+            " doesn&#x27;t seem to be a valid email address.")
         self._assertEmailAndError(xss_email, expected_msg)
 
     def test_edit_email_login_redirect(self):
@@ -629,34 +830,6 @@ class TestPersonEditView(TestPersonRenameFormMixin, TestCaseWithFactory):
         self.assertEqual(expected_url, response.getHeader('location'))
 
 
-class PersonAdministerViewTestCase(TestPersonRenameFormMixin,
-                                   TestCaseWithFactory):
-    layer = LaunchpadFunctionalLayer
-
-    def setUp(self):
-        super(PersonAdministerViewTestCase, self).setUp()
-        self.person = self.factory.makePerson()
-        login_celebrity('admin')
-        self.ppa = self.factory.makeArchive(owner=self.person)
-        self.view = create_initialized_view(self.person, '+review')
-
-    def test_init_admin(self):
-        # An admin sees all the fields.
-        self.assertEqual('Review person', self.view.label)
-        self.assertEqual(
-            ['name', 'displayname', 'personal_standing',
-             'personal_standing_reason'],
-            self.view.field_names)
-
-    def test_init_registry_expert(self):
-        # Registry experts do not see the displayname field.
-        login_celebrity('registry_experts')
-        self.view.setUpFields()
-        self.assertEqual(
-            ['name', 'personal_standing', 'personal_standing_reason'],
-            self.view.field_names)
-
-
 class TestPersonParticipationView(TestCaseWithFactory):
 
     layer = DatabaseFunctionalLayer
@@ -666,13 +839,13 @@ class TestPersonParticipationView(TestCaseWithFactory):
         self.user = self.factory.makePerson()
         self.view = create_view(self.user, name='+participation')
 
-    def test__asParticpation_owner(self):
+    def test__asParticipation_owner(self):
         # Team owners have the role of 'Owner'.
         self.factory.makeTeam(owner=self.user)
         [participation] = self.view.active_participations
         self.assertEqual('Owner', participation['role'])
 
-    def test__asParticpation_admin(self):
+    def test__asParticipation_admin(self):
         # Team admins have the role of 'Admin'.
         team = self.factory.makeTeam()
         login_person(team.teamowner)
@@ -683,7 +856,7 @@ class TestPersonParticipationView(TestCaseWithFactory):
         [participation] = self.view.active_participations
         self.assertEqual('Admin', participation['role'])
 
-    def test__asParticpation_member(self):
+    def test__asParticipation_member(self):
         # The default team role is 'Member'.
         team = self.factory.makeTeam()
         login_person(team.teamowner)
@@ -691,7 +864,7 @@ class TestPersonParticipationView(TestCaseWithFactory):
         [participation] = self.view.active_participations
         self.assertEqual('Member', participation['role'])
 
-    def test__asParticpation_without_mailing_list(self):
+    def test__asParticipation_without_mailing_list(self):
         # The default team role is 'Member'.
         team = self.factory.makeTeam()
         login_person(team.teamowner)
@@ -699,7 +872,7 @@ class TestPersonParticipationView(TestCaseWithFactory):
         [participation] = self.view.active_participations
         self.assertEqual('&mdash;', participation['subscribed'])
 
-    def test__asParticpation_unsubscribed_to_mailing_list(self):
+    def test__asParticipation_unsubscribed_to_mailing_list(self):
         # The default team role is 'Member'.
         team = self.factory.makeTeam()
         self.factory.makeMailingList(team, team.teamowner)
@@ -708,7 +881,7 @@ class TestPersonParticipationView(TestCaseWithFactory):
         [participation] = self.view.active_participations
         self.assertEqual('Not subscribed', participation['subscribed'])
 
-    def test__asParticpation_subscribed_to_mailing_list(self):
+    def test__asParticipation_subscribed_to_mailing_list(self):
         # The default team role is 'Member'.
         team = self.factory.makeTeam()
         mailing_list = self.factory.makeMailingList(team, team.teamowner)
@@ -775,6 +948,33 @@ class TestPersonParticipationView(TestCaseWithFactory):
         self.assertEqual('A', participations[1]['via'])
         self.assertEqual('B, A', participations[2]['via'])
 
+    def test_active_participations_public_via_private_team(self):
+        # Private teams that grant a user access to public teams are listed,
+        # but redacted if the requesting user does not have access to them.
+        owner = self.factory.makePerson()
+        direct_team = self.factory.makeTeam(
+            owner=owner, name='a', visibility=PersonVisibility.PRIVATE)
+        indirect_team = self.factory.makeTeam(owner=owner, name='b')
+        login_person(owner)
+        direct_team.addMember(self.user, owner)
+        indirect_team.addMember(direct_team, owner)
+        # The private team is included in active_participations and via.
+        login_person(self.user)
+        view = create_view(
+            self.user, name='+participation', principal=self.user)
+        participations = view.active_participations
+        self.assertEqual(2, len(participations))
+        self.assertIsNone(participations[0]['via'])
+        self.assertEqual('A', participations[1]['via'])
+        # The private team is not included in active_participations and via.
+        observer = self.factory.makePerson()
+        login_person(observer)
+        view = create_view(
+            self.user, name='+participation', principal=observer)
+        participations = view.active_participations
+        self.assertEqual(1, len(participations))
+        self.assertEqual('[private team]', participations[0]['via'])
+
     def test_has_participations_false(self):
         participations = self.view.active_participations
         self.assertEqual(0, len(participations))
@@ -786,19 +986,39 @@ class TestPersonParticipationView(TestCaseWithFactory):
         self.assertEqual(1, len(participations))
         self.assertEqual(True, self.view.has_participations)
 
+    def test_mailing_list_subscriptions_query_count(self):
+        # Additional mailing list subscriptions do not add additional queries.
+        def create_subscriptions():
+            direct_team = self.factory.makeTeam(members=[self.user])
+            direct_list = self.factory.makeMailingList(
+                direct_team, direct_team.teamowner)
+            direct_list.subscribe(self.user)
+            indirect_team = self.factory.makeTeam(members=[direct_team])
+            indirect_list = self.factory.makeMailingList(
+                indirect_team, indirect_team.teamowner)
+            indirect_list.subscribe(self.user)
 
-class TestPersonRelatedSoftwareView(TestCaseWithFactory):
+        def get_participations():
+            clear_property_cache(self.view)
+            return list(self.view.active_participations)
+
+        recorder1, recorder2 = record_two_runs(
+            get_participations, create_subscriptions, 5)
+        self.assertThat(recorder2, HasQueryCount.byEquality(recorder1))
+
+
+class TestPersonRelatedPackagesView(TestCaseWithFactory):
     """Test the related software view."""
 
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
-        super(TestPersonRelatedSoftwareView, self).setUp()
+        super(TestPersonRelatedPackagesView, self).setUp()
         self.user = self.factory.makePerson()
         self.factory.makeGPGKey(self.user)
         self.ubuntu = getUtility(ILaunchpadCelebrities).ubuntu
         self.warty = self.ubuntu.getSeries('warty')
-        self.view = create_initialized_view(self.user, '+related-software')
+        self.view = create_initialized_view(self.user, '+related-packages')
 
     def publishSources(self, archive, maintainer):
         publisher = SoyuzTestPublisher()
@@ -815,6 +1035,12 @@ class TestPersonRelatedSoftwareView(TestCaseWithFactory):
                 creator=self.user,
                 distroseries=self.warty)
             spphs.append(spph)
+        # Update the releases cache table.
+        switch_dbuser('garbo_frequently')
+        job = PopulateLatestPersonSourcePackageReleaseCache(DevNullLogger())
+        while not job.isDone():
+            job(chunk_size=100)
+        switch_dbuser('launchpad')
         login(ANONYMOUS)
         return spphs
 
@@ -828,7 +1054,7 @@ class TestPersonRelatedSoftwareView(TestCaseWithFactory):
 
     def test_view_helper_attributes(self):
         # Verify view helper attributes.
-        self.assertEqual('Related software', self.view.page_title)
+        self.assertEqual('Related packages', self.view.page_title)
         self.assertEqual('summary_list_size', self.view._max_results_key)
         self.assertEqual(
             config.launchpad.summary_list_size,
@@ -917,16 +1143,6 @@ class TestPersonUploadedPackagesView(TestCaseWithFactory):
             config.launchpad.default_batch_size,
             self.view.max_results_to_display)
 
-    def test_verify_bugs_and_answers_links(self):
-        # Verify the links for bugs and answers point to locations that
-        # exist.
-        html = self.view()
-        expected_base = '/%s/+source/%s' % (
-            self.spph.distroseries.distribution.name,
-            self.spph.source_package_name)
-        self.assertIn('<a href="%s/+bugs">' % expected_base, html)
-        self.assertIn('<a href="%s/+questions">' % expected_base, html)
-
 
 class TestPersonPPAPackagesView(TestCaseWithFactory):
     """Test the maintained packages view."""
@@ -945,6 +1161,48 @@ class TestPersonPPAPackagesView(TestCaseWithFactory):
         self.assertEqual(
             config.launchpad.default_batch_size,
             self.view.max_results_to_display)
+
+
+class PersonOwnedTeamsViewTestCase(TestCaseWithFactory):
+    """Test +owned-teams view."""
+
+    layer = DatabaseFunctionalLayer
+
+    def test_properties(self):
+        # The batch is created when the view is initialized.
+        owner = self.factory.makePerson()
+        team = self.factory.makeTeam(owner=owner)
+        view = create_initialized_view(owner, '+owned-teams')
+        self.assertEqual('Owned teams', view.page_title)
+        self.assertEqual('team', view.batchnav._singular_heading)
+        self.assertEqual([team], view.batch)
+
+    def test_page_text_with_teams(self):
+        # When the person owns teams, the page shows a a listing
+        # table. There is always a link to the team participation page.
+        owner = self.factory.makePerson(name='snarf')
+        self.factory.makeTeam(owner=owner, name='pting')
+        with person_logged_in(owner):
+            view = create_initialized_view(
+                owner, '+owned-teams', principal=owner)
+            markup = view()
+        soup = find_tag_by_id(markup, 'maincontent')
+        participation_link = 'http://launchpad.test/~snarf/+participation'
+        self.assertIsNotNone(soup.find('a', {'href': participation_link}))
+        self.assertIsNotNone(soup.find('table', {'id': 'owned-teams'}))
+        self.assertIsNotNone(soup.find('a', {'href': '/~pting'}))
+        self.assertIsNotNone(soup.find('table', {'class': 'upper-batch-nav'}))
+        self.assertIsNotNone(soup.find('table', {'class': 'lower-batch-nav'}))
+
+    def test_page_text_without_teams(self):
+        # When the person does not own teams, the page states the case.
+        owner = self.factory.makePerson(name='pting')
+        with person_logged_in(owner):
+            view = create_initialized_view(
+                owner, '+owned-teams', principal=owner)
+            markup = view()
+        soup = find_tag_by_id(markup, 'maincontent')
+        self.assertIsNotNone(soup.find('p', {'id': 'no-teams'}))
 
 
 class TestPersonSynchronisedPackagesView(TestCaseWithFactory):
@@ -977,24 +1235,6 @@ class TestPersonSynchronisedPackagesView(TestCaseWithFactory):
             config.launchpad.default_batch_size,
             self.view.max_results_to_display)
 
-    def test_verify_bugs_and_answers_links(self):
-        # Verify the links for bugs and answers point to locations that
-        # exist.
-        html = self.view()
-        expected_base = '/%s/+source/%s' % (
-            self.copied_spph.distroseries.distribution.name,
-            self.copied_spph.source_package_name)
-        bug_matcher = soupmatchers.HTMLContains(
-            soupmatchers.Tag(
-                'Bugs link', 'a',
-                attrs={'href': expected_base + '/+bugs'}))
-        question_matcher = soupmatchers.HTMLContains(
-            soupmatchers.Tag(
-                'Questions link', 'a',
-                attrs={'href': expected_base + '/+questions'}))
-        self.assertThat(html, bug_matcher)
-        self.assertThat(html, question_matcher)
-
 
 class TestPersonRelatedProjectsView(TestCaseWithFactory):
     """Test the maintained packages view."""
@@ -1004,24 +1244,35 @@ class TestPersonRelatedProjectsView(TestCaseWithFactory):
     def setUp(self):
         super(TestPersonRelatedProjectsView, self).setUp()
         self.user = self.factory.makePerson()
-        self.view = create_initialized_view(self.user, '+related-projects')
 
     def test_view_helper_attributes(self):
         # Verify view helper attributes.
-        self.assertEqual('Related projects', self.view.page_title)
-        self.assertEqual('default_batch_size', self.view._max_results_key)
+        view = create_initialized_view(self.user, '+related-projects')
+        self.assertEqual('Related projects', view.page_title)
+        self.assertEqual('default_batch_size', view._max_results_key)
         self.assertEqual(
-            config.launchpad.default_batch_size,
-            self.view.max_results_to_display)
+            config.launchpad.default_batch_size, view.max_results_to_display)
+
+    def test_batching(self):
+        for i in range(10):
+            self.factory.makeProduct(owner=self.user)
+        view = create_initialized_view(self.user, '+related-projects')
+        next_match = soupmatchers.HTMLContains(
+            soupmatchers.Tag(
+                'Next link', 'a',
+                attrs={'href': re.compile(re.escape(
+                    '?batch=5&memo=5&start=5'))},
+                text='Next'))
+        self.assertThat(view(), next_match)
 
 
-class TestPersonRelatedSoftwareFailedBuild(TestCaseWithFactory):
-    """The related software views display links to failed builds."""
+class TestPersonRelatedPackagesFailedBuild(TestCaseWithFactory):
+    """The related packages views display links to failed builds."""
 
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
-        super(TestPersonRelatedSoftwareFailedBuild, self).setUp()
+        super(TestPersonRelatedPackagesFailedBuild, self).setUp()
         self.user = self.factory.makePerson()
 
         # First we need to publish some PPA packages with failed builds
@@ -1034,39 +1285,48 @@ class TestPersonRelatedSoftwareFailedBuild(TestCaseWithFactory):
         publisher = SoyuzTestPublisher()
         publisher.prepareBreezyAutotest()
         ppa = self.factory.makeArchive(owner=self.user)
-        src_pub = publisher.getPubSource(
-            creator=self.user, maintainer=self.user, archive=ppa)
-        binaries = publisher.getPubBinaries(
-            pub_source=src_pub)
-        self.build = binaries[0].binarypackagerelease.build
-        self.build.status = BuildStatus.FAILEDTOBUILD
-        self.build.archive = publisher.distroseries.main_archive
+        spph = self.factory.makeSourcePackagePublishingHistory(
+            sourcepackagename='foo', version='666',
+            spr_creator=self.user, maintainer=self.user, archive=ppa)
+        das = self.factory.makeDistroArchSeries(
+            distroseries=spph.distroseries, architecturetag='cyr128')
+        self.build = self.factory.makeBinaryPackageBuild(
+            source_package_release=spph.sourcepackagerelease,
+            archive=spph.distroseries.distribution.main_archive,
+            distroarchseries=das)
+        self.build.updateStatus(BuildStatus.FAILEDTOBUILD)
+        # Update the releases cache table.
+        switch_dbuser('garbo_frequently')
+        job = PopulateLatestPersonSourcePackageReleaseCache(DevNullLogger())
+        while not job.isDone():
+            job(chunk_size=100)
+        switch_dbuser('launchpad')
         login(ANONYMOUS)
 
     def test_related_software_with_failed_build(self):
         # The link to the failed build is displayed.
-        self.view = create_view(self.user, name='+related-software')
+        self.view = create_view(self.user, name='+related-packages')
         html = self.view()
-        self.assertTrue(
-            '<a href="/ubuntutest/+source/foo/666/+build/%d">i386</a>' % (
-                self.build.id) in html)
+        self.assertIn(
+            '<a href="/ubuntu/+source/foo/666/+build/%d">cyr128</a>' % (
+                self.build.id), html)
 
     def test_related_ppa_packages_with_failed_build(self):
         # The link to the failed build is displayed.
         self.view = create_view(self.user, name='+ppa-packages')
         html = self.view()
-        self.assertTrue(
-            '<a href="/ubuntutest/+source/foo/666/+build/%d">i386</a>' % (
-                self.build.id) in html)
+        self.assertIn(
+            '<a href="/ubuntu/+source/foo/666/+build/%d">cyr128</a>' % (
+                self.build.id), html)
 
 
-class TestPersonRelatedSoftwareSynchronisedPackages(TestCaseWithFactory):
-    """The related software views display links to synchronised packages."""
+class TestPersonRelatedPackagesSynchronisedPackages(TestCaseWithFactory):
+    """The related packages views display links to synchronised packages."""
 
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
-        super(TestPersonRelatedSoftwareSynchronisedPackages, self).setUp()
+        super(TestPersonRelatedPackagesSynchronisedPackages, self).setUp()
         self.user = self.factory.makePerson()
         self.spph = self.factory.makeSourcePackagePublishingHistory()
 
@@ -1089,7 +1349,7 @@ class TestPersonRelatedSoftwareSynchronisedPackages(TestCaseWithFactory):
     def test_related_software_no_link_synchronised_packages(self):
         # No link to the synchronised packages page if no synchronised
         # packages.
-        view = create_view(self.user, name='+related-software')
+        view = create_view(self.user, name='+related-packages')
         synced_package_link_matcher = self.getLinkToSynchronisedMatcher()
         self.assertThat(view(), Not(synced_package_link_matcher))
 
@@ -1097,13 +1357,13 @@ class TestPersonRelatedSoftwareSynchronisedPackages(TestCaseWithFactory):
         # If this person has synced packages, the link to the synchronised
         # packages page is present.
         self.createCopiedSource(self.user, self.spph)
-        view = create_view(self.user, name='+related-software')
+        view = create_view(self.user, name='+related-packages')
         synced_package_link_matcher = self.getLinkToSynchronisedMatcher()
         self.assertThat(view(), synced_package_link_matcher)
 
     def test_related_software_displays_synchronised_packages(self):
         copied_spph = self.createCopiedSource(self.user, self.spph)
-        view = create_view(self.user, name='+related-software')
+        view = create_view(self.user, name='+related-packages')
         synced_packages_title = soupmatchers.HTMLContains(
             soupmatchers.Tag(
                 'Synchronised packages title', 'h2',
@@ -1135,8 +1395,7 @@ class TestPersonDeactivateAccountView(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
     form = {
         'field.comment': 'Gotta go.',
-        'field.actions.deactivate': 'Deactivate My Account',
-        }
+        'field.actions.deactivate': 'Deactivate My Account'}
 
     def test_deactivate_user_active(self):
         user = self.factory.makePerson()
@@ -1153,7 +1412,7 @@ class TestPersonDeactivateAccountView(TestCaseWithFactory):
     def test_deactivate_user_already_deactivated(self):
         deactivated_user = self.factory.makePerson()
         login_person(deactivated_user)
-        deactivated_user.deactivateAccount('going.')
+        deactivated_user.deactivate(comment='going.')
         view = create_initialized_view(
             deactivated_user, '+deactivate-account', form=self.form)
         self.assertEqual(1, len(view.errors))
@@ -1325,21 +1584,12 @@ class BugTaskViewsTestBase:
             self.assertEqual(expected, view.getMilestoneWidgetValues())
         self.assertThat(recorder, HasQueryCount(LessThan(6)))
 
-    def test_context_description(self):
-        # view.context_description returns a string that can be used
-        # in texts like "Bugs in $context_descirption"
-        view = create_initialized_view(self.person, self.view_name)
-        self.assertEqual(
-            self.expected_context_description % self.person.displayname,
-            view.context_description)
-
 
 class TestPersonRelatedBugTaskSearchListingView(
     BugTaskViewsTestBase, TestCaseWithFactory):
     """Tests for PersonRelatedBugTaskSearchListingView."""
 
     view_name = '+bugs'
-    expected_context_description = 'related to %s'
 
     def setUp(self):
         super(TestPersonRelatedBugTaskSearchListingView, self).setUp()
@@ -1356,7 +1606,6 @@ class TestPersonAssignedBugTaskSearchListingView(
     """Tests for PersonAssignedBugTaskSearchListingView."""
 
     view_name = '+assignedbugs'
-    expected_context_description = 'assigned to %s'
 
     def setUp(self):
         super(TestPersonAssignedBugTaskSearchListingView, self).setUp()
@@ -1370,7 +1619,6 @@ class TestPersonCommentedBugTaskSearchListingView(
     """Tests for PersonAssignedBugTaskSearchListingView."""
 
     view_name = '+commentedbugs'
-    expected_context_description = 'commented on by %s'
 
     def setUp(self):
         super(TestPersonCommentedBugTaskSearchListingView, self).setUp()
@@ -1384,7 +1632,6 @@ class TestPersonReportedBugTaskSearchListingView(
     """Tests for PersonAssignedBugTaskSearchListingView."""
 
     view_name = '+reportedbugs'
-    expected_context_description = 'reported by %s'
 
     def setUp(self):
         super(TestPersonReportedBugTaskSearchListingView, self).setUp()
@@ -1398,7 +1645,6 @@ class TestPersonSubscribedBugTaskSearchListingView(
     """Tests for PersonAssignedBugTaskSearchListingView."""
 
     view_name = '+subscribedbugs'
-    expected_context_description = '%s is subscribed to'
 
     def setUp(self):
         super(TestPersonSubscribedBugTaskSearchListingView, self).setUp()
@@ -1413,7 +1659,6 @@ class TestPersonAffectingBugTaskSearchListingView(
     """Tests for PersonAffectingBugTaskSearchListingView."""
 
     view_name = '+affectingbugs'
-    expected_context_description = 'affecting %s'
 
     def setUp(self):
         super(TestPersonAffectingBugTaskSearchListingView, self).setUp()

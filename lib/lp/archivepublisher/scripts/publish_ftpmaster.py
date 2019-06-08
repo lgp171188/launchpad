@@ -1,4 +1,4 @@
-# Copyright 2011-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2011-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Master distro publishing script."""
@@ -9,22 +9,34 @@ __all__ = [
     ]
 
 from datetime import datetime
+import math
 import os
+import shutil
 
 from pytz import utc
+import scandir
 from zope.component import getUtility
 
 from lp.archivepublisher.config import getPubConfig
 from lp.archivepublisher.interfaces.publisherconfig import IPublisherConfigSet
-from lp.archivepublisher.publishing import GLOBAL_PUBLISHER_LOCK
+from lp.archivepublisher.publishing import (
+    cannot_modify_suite,
+    GLOBAL_PUBLISHER_LOCK,
+    )
+from lp.archivepublisher.run_parts import (
+    execute_subprocess,
+    run_parts,
+    )
+from lp.archivepublisher.scripts.processaccepted import ProcessAccepted
+from lp.archivepublisher.scripts.publishdistro import PublishDistro
 from lp.registry.interfaces.distribution import IDistributionSet
 from lp.registry.interfaces.pocket import (
     PackagePublishingPocket,
     pocketsuffix,
     )
 from lp.registry.interfaces.series import SeriesStatus
-from lp.services.config import config
 from lp.services.database.bulk import load_related
+from lp.services.osutils import ensure_directory_exists
 from lp.services.scripts.base import (
     LaunchpadCronScript,
     LaunchpadScriptFailure,
@@ -36,8 +48,6 @@ from lp.soyuz.enums import (
     )
 from lp.soyuz.model.distroarchseries import DistroArchSeries
 from lp.soyuz.scripts.custom_uploads_copier import CustomUploadsCopier
-from lp.soyuz.scripts.processaccepted import ProcessAccepted
-from lp.soyuz.scripts.publishdistro import PublishDistro
 
 
 def get_publishable_archives(distribution):
@@ -53,43 +63,6 @@ def get_publishable_archives(distribution):
         archive
         for archive in distribution.all_distro_archives
             if archive.purpose in ARCHIVES_TO_PUBLISH]
-
-
-def compose_shell_boolean(boolean_value):
-    """Represent a boolean value as "yes" or "no"."""
-    boolean_text = {
-        True: "yes",
-        False: "no",
-    }
-    return boolean_text[boolean_value]
-
-
-def shell_quote(literal):
-    """Escape `literal` for use in a double-quoted shell string.
-
-    This is a pretty naive substitution: it doesn't deal well with
-    non-ASCII characters or special characters.
-    """
-    # Characters that need backslash-escaping.  Do the backslash itself
-    # first; any escapes we introduced *before* the backslash would have
-    # their own backslashes escaped afterwards when we got to the
-    # backslash itself.
-    special_characters = '\\"$`\n'
-    for escapee in special_characters:
-        literal = literal.replace(escapee, '\\' + escapee)
-    return '"%s"' % literal
-
-
-def compose_env_string(*env_dicts):
-    """Turn dict(s) into a series of shell parameter assignments.
-
-    Values in later dicts override any values with the same respective
-    keys in earlier dicts.
-    """
-    env = {}
-    for env_dict in env_dicts:
-        env.update(env_dict)
-    return ' '.join(['='.join(pair) for pair in env.iteritems()])
 
 
 def get_backup_dists(archive_config):
@@ -116,31 +89,6 @@ def get_working_dists(archive_config):
     return get_dists(archive_config) + ".in-progress"
 
 
-def extend_PATH():
-    """Produce env dict for extending $PATH.
-
-    Adds the Launchpad source tree's cronscripts/publishing to the
-    existing $PATH.
-
-    :return: a dict suitable for passing to compose_env_string.
-    """
-    scripts_dir = os.path.join(config.root, "cronscripts", "publishing")
-    return {"PATH": '"$PATH":%s' % shell_quote(scripts_dir)}
-
-
-def find_run_parts_dir(distro, parts):
-    """Find the requested run-parts directory, if it exists."""
-    run_parts_location = config.archivepublisher.run_parts_location
-    if not run_parts_location:
-        return
-
-    parts_dir = os.path.join(run_parts_location, distro.name, parts)
-    if file_exists(parts_dir):
-        return parts_dir
-    else:
-        return None
-
-
 def map_distro_pubconfigs(distro):
     """Return dict mapping archive purpose for distro's pub configs.
 
@@ -154,6 +102,19 @@ def map_distro_pubconfigs(distro):
     return dict(
         (purpose, config)
         for purpose, config in candidates if config is not None)
+
+
+def newer_mtime(one_file, other_file):
+    """Is one_file newer than other_file, or is other_file missing?"""
+    try:
+        one_mtime = os.stat(one_file).st_mtime
+    except OSError:
+        return False
+    try:
+        other_mtime = os.stat(other_file).st_mtime
+    except OSError:
+        return True
+    return one_mtime > other_mtime
 
 
 class PublishFTPMaster(LaunchpadCronScript):
@@ -218,26 +179,6 @@ class PublishFTPMaster(LaunchpadCronScript):
                 raise LaunchpadScriptFailure(
                     "Distribution %s not found." % self.options.distribution)
             self.distributions = [distro]
-
-    def executeShell(self, command_line, failure=None):
-        """Run `command_line` through a shell.
-
-        This won't just load an external program and run it; the command
-        line goes through the full shell treatment including variable
-        substitutions, output redirections, and so on.
-
-        :param command_line: Shell command.
-        :param failure: Raise `failure` as an exception if the shell
-            command returns a nonzero value.  If omitted, nonzero return
-            values are ignored.
-        """
-        self.logger.debug("Executing: %s" % command_line)
-        retval = os.system(command_line)
-        if retval != 0:
-            self.logger.debug("Command returned %d.", retval)
-            if failure is not None:
-                self.logger.debug("Command failed: %s", failure)
-                raise failure
 
     def getConfigs(self):
         """Set up configuration objects for archives to be published.
@@ -315,7 +256,8 @@ class PublishFTPMaster(LaunchpadCronScript):
         self.logger.debug(
             "Processing the accepted queue into the publishing records...")
         script = ProcessAccepted(
-            test_args=[distribution.name], logger=self.logger)
+            test_args=["-d", distribution.name], logger=self.logger,
+            ignore_cron_control=True)
         script.txn = self.txn
         script.main()
 
@@ -350,8 +292,9 @@ class PublishFTPMaster(LaunchpadCronScript):
         for purpose, archive_config in self.configs[distribution].iteritems():
             dists = get_dists(archive_config)
             backup_dists = get_backup_dists(archive_config)
-            self.executeShell(
-                "rsync -aH --delete '%s/' '%s'" % (dists, backup_dists),
+            execute_subprocess(
+                ["rsync", "-aH", "--delete", "%s/" % dists, backup_dists],
+                log=self.logger,
                 failure=LaunchpadScriptFailure(
                     "Failed to rsync new dists for %s." % purpose.title))
 
@@ -409,7 +352,7 @@ class PublishFTPMaster(LaunchpadCronScript):
             sum([['-s', suite] for suite in suites], []))
 
         publish_distro = PublishDistro(
-            test_args=arguments, logger=self.logger)
+            test_args=arguments, logger=self.logger, ignore_cron_control=True)
         publish_distro.logger = self.logger
         publish_distro.txn = self.txn
         publish_distro.main()
@@ -449,12 +392,13 @@ class PublishFTPMaster(LaunchpadCronScript):
         """Execute the publish-distro hooks."""
         archive_config = self.configs[distribution][archive.purpose]
         env = {
-            'ARCHIVEROOT': shell_quote(archive_config.archiveroot),
-            'DISTSROOT': shell_quote(get_backup_dists(archive_config)),
+            'ARCHIVEROOT': archive_config.archiveroot,
+            'DISTSROOT': get_backup_dists(archive_config),
             }
         if archive_config.overrideroot is not None:
-            env["OVERRIDEROOT"] = shell_quote(archive_config.overrideroot)
-        self.runParts(distribution, 'publish-distro.d', env)
+            env["OVERRIDEROOT"] = archive_config.overrideroot
+        run_parts(
+            distribution.name, 'publish-distro.d', log=self.logger, env=env)
 
     def installDists(self, distribution):
         """Put the new dists into place, as near-atomically as possible.
@@ -476,72 +420,41 @@ class PublishFTPMaster(LaunchpadCronScript):
             os.rename(backup_dists, dists)
             os.rename(temp_dists, backup_dists)
 
-    def generateListings(self, distribution):
-        """Create ls-lR.gz listings."""
-        self.logger.debug("Creating ls-lR.gz...")
-        lslr = "ls-lR.gz"
-        lslr_new = "." + lslr + ".new"
-        for purpose, archive_config in self.configs[distribution].iteritems():
-            lslr_file = os.path.join(archive_config.archiveroot, lslr)
-            new_lslr_file = os.path.join(archive_config.archiveroot, lslr_new)
-            if file_exists(new_lslr_file):
-                os.remove(new_lslr_file)
-            self.executeShell(
-                "cd -- '%s' ; TZ=UTC ls -lR | gzip -9n >'%s'"
-                % (archive_config.archiveroot, lslr_new),
-                failure=LaunchpadScriptFailure(
-                    "Failed to create %s for %s." % (lslr, purpose.title)))
-            os.rename(new_lslr_file, lslr_file)
-
     def clearEmptyDirs(self, distribution):
         """Clear out any redundant empty directories."""
         for archive_config in self.configs[distribution].itervalues():
-            self.executeShell(
-                "find '%s' -type d -empty | xargs -r rmdir"
-                % archive_config.archiveroot)
-
-    def runParts(self, distribution, parts, env):
-        """Execute run-parts.
-
-        :param distribution: `Distribution` to execute run-parts scripts for.
-        :param parts: The run-parts directory to execute:
-            "publish-distro.d" or "finalize.d".
-        :param env: A dict of environment variables to pass to the
-            scripts in the run-parts directory.
-        """
-        parts_dir = find_run_parts_dir(distribution, parts)
-        if parts_dir is None:
-            self.logger.debug("Skipping run-parts %s: not configured.", parts)
-            return
-        env_string = compose_env_string(env, extend_PATH())
-        self.executeShell(
-            "env %s run-parts -- '%s'" % (env_string, parts_dir),
-            failure=LaunchpadScriptFailure(
-                "Failure while executing run-parts %s." % parts_dir))
+            execute_subprocess(
+                ["find", archive_config.archiveroot, "-type", "d", "-empty",
+                 "-delete"],
+                log=self.logger)
 
     def runFinalizeParts(self, distribution, security_only=False):
         """Run the finalize.d parts to finalize publication."""
-        archive_roots = shell_quote(' '.join([
+        archive_roots = ' '.join([
             archive_config.archiveroot
-            for archive_config in self.configs[distribution].itervalues()]))
+            for archive_config in self.configs[distribution].itervalues()])
 
         env = {
-            'SECURITY_UPLOAD_ONLY': compose_shell_boolean(security_only),
+            'SECURITY_UPLOAD_ONLY': 'yes' if security_only else 'no',
             'ARCHIVEROOTS': archive_roots,
         }
-        self.runParts(distribution, 'finalize.d', env)
+        run_parts(distribution.name, 'finalize.d', log=self.logger, env=env)
 
     def publishSecurityUploads(self, distribution):
-        """Quickly process just the pending security uploads."""
+        """Quickly process just the pending security uploads.
+
+        Returns True if publications were made, False otherwise.
+        """
         self.logger.debug("Expediting security uploads.")
         security_suites = self.getDirtySecuritySuites(distribution)
         if len(security_suites) == 0:
             self.logger.debug("Nothing to do for security publisher.")
-            return
+            return False
 
         self.publishDistroArchive(
             distribution, distribution.main_archive,
             security_suites=security_suites)
+        return True
 
     def publishDistroUploads(self, distribution):
         """Publish the distro's complete uploads."""
@@ -552,6 +465,57 @@ class PublishFTPMaster(LaunchpadCronScript):
                 # most of its time.
                 self.publishDistroArchive(distribution, archive)
 
+    def updateStagedFilesForSuite(self, archive_config, suite):
+        """Install all staged files for a single archive and suite.
+
+        :return: True if any files were installed, otherwise False.
+        """
+        backup_top = os.path.join(get_backup_dists(archive_config), suite)
+        staging_top = os.path.join(archive_config.stagingroot, suite)
+        updated = False
+        for staging_dir, _, filenames in scandir.walk(staging_top):
+            rel_dir = os.path.relpath(staging_dir, staging_top)
+            backup_dir = os.path.join(backup_top, rel_dir)
+            for filename in filenames:
+                new_path = os.path.join(staging_dir, filename)
+                current_path = os.path.join(backup_dir, filename)
+                if newer_mtime(new_path, current_path):
+                    self.logger.debug(
+                        "Updating %s from %s." % (current_path, new_path))
+                    ensure_directory_exists(os.path.dirname(current_path))
+                    # Due to http://bugs.python.org/issue12904, shutil.copy2
+                    # doesn't copy timestamps precisely, and unfortunately
+                    # it rounds down.  If we must lose accuracy, we need to
+                    # round up instead.  This can be removed (and the
+                    # try/except replaced by shutil.move) once Launchpad
+                    # runs on Python >= 3.3.
+                    try:
+                        os.rename(new_path, current_path)
+                    except OSError:
+                        shutil.copy2(new_path, current_path)
+                        st = os.stat(new_path)
+                        os.utime(
+                            current_path,
+                            (math.ceil(st.st_atime), math.ceil(st.st_mtime)))
+                        os.unlink(new_path)
+                    updated = True
+        return updated
+
+    def updateStagedFiles(self, distribution):
+        """Install all staged files for a distribution's archives."""
+        for archive in get_publishable_archives(distribution):
+            if archive.purpose not in self.configs[distribution]:
+                continue
+            archive_config = self.configs[distribution][archive.purpose]
+            for series in distribution.getNonObsoleteSeries():
+                for pocket in PackagePublishingPocket.items:
+                    suite = series.getSuite(pocket)
+                    if cannot_modify_suite(archive, series, pocket):
+                        continue
+                    if self.updateStagedFilesForSuite(archive_config, suite):
+                        archive.markSuiteDirty(series, pocket)
+                        self.txn.commit()
+
     def publish(self, distribution, security_only=False):
         """Do the main publishing work.
 
@@ -559,12 +523,18 @@ class PublishFTPMaster(LaunchpadCronScript):
             updates on the main archive.  This is much faster, so it
             makes sense to do a security-only run before the main
             event to expedite critical fixes.
+        :return has_published: True if any publication was made to the
+            archive.
         """
+        has_published = False
         try:
             if security_only:
-                self.publishSecurityUploads(distribution)
+                has_published = self.publishSecurityUploads(distribution)
             else:
+                self.updateStagedFiles(distribution)
                 self.publishDistroUploads(distribution)
+                # Let's assume the main archive is always modified
+                has_published = True
 
             # Swizzle the now-updated backup dists and the current dists
             # around.
@@ -577,6 +547,8 @@ class PublishFTPMaster(LaunchpadCronScript):
             # system problems.
             self.recoverWorkingDists()
             raise
+
+        return has_published
 
     def prepareFreshSeries(self, distribution):
         """If there are any new distroseries, prepare them for publishing.
@@ -614,13 +586,12 @@ class PublishFTPMaster(LaunchpadCronScript):
         self.processAccepted(distribution)
 
         self.rsyncBackupDists(distribution)
-        self.publish(distribution, security_only=True)
-        self.runFinalizeParts(distribution, security_only=True)
+        if self.publish(distribution, security_only=True):
+            self.runFinalizeParts(distribution, security_only=True)
 
         if not self.options.security_only:
             self.rsyncBackupDists(distribution)
             self.publish(distribution, security_only=False)
-            self.generateListings(distribution)
             self.clearEmptyDirs(distribution)
             self.runFinalizeParts(distribution, security_only=False)
 

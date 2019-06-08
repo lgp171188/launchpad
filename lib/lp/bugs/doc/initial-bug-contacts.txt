@@ -112,7 +112,7 @@ pmount is currently not subscribed to bug 1.
 
     >>> names = subscriber_names(bug_one_in_ubuntu_firefox.bug)
     >>> for name in names:
-    ...     print name
+    ...     print(name)
     Foo Bar
     Mark Shuttleworth
     Sample Person
@@ -125,13 +125,9 @@ demonstrating this, we'll also make Sample Person a subscriber to ubuntu
 pmount, to show that the subscription changes behave correctly when a
 subscriber to the new package is already subscribed to the bug:
 
-    >>> from zope.event import notify
-
     >>> import transaction
-    >>> from lazr.lifecycle.event import ObjectModifiedEvent
-    >>> from lazr.lifecycle.snapshot import Snapshot
-    >>> from lp.bugs.interfaces.bugtask import IBugTask
     >>> from lp.services.mail import stub
+    >>> from lp.services.webapp.snapshot import notify_modified
 
     >>> daf = personset.getByName("daf")
     >>> ubuntu_pmount.addBugSubscription(daf, daf)
@@ -140,16 +136,10 @@ subscriber to the new package is already subscribed to the bug:
     >>> ubuntu_pmount.addBugSubscription(sample_person, sample_person)
     <...StructuralSubscription object at ...>
 
-    >>> old_state = Snapshot(
-    ...        bug_one_in_ubuntu_firefox, providing=IBugTask)
-
-    >>> bug_one_in_ubuntu_firefox.transitionToTarget(ubuntu_pmount, daf)
-
-    >>> source_package_changed = ObjectModifiedEvent(
-    ...        bug_one_in_ubuntu_firefox, old_state,
-    ...        ["id", "title", "sourcepackagename"])
-
-    >>> notify(source_package_changed)
+    >>> with notify_modified(
+    ...         bug_one_in_ubuntu_firefox,
+    ...         ["id", "title", "sourcepackagename"]):
+    ...     bug_one_in_ubuntu_firefox.transitionToTarget(ubuntu_pmount, daf)
     >>> transaction.commit()
 
 With the source package changed, we can see that daf is now subscribed:
@@ -178,10 +168,10 @@ of the email with the bug title and URL.
     1
 
     >>> from_addr, to_addr, raw_message = test_emails.pop()
-    >>> print from_addr
+    >>> print(from_addr)
     bounces@canonical.com
 
-    >>> print to_addr
+    >>> print(to_addr)
     ['daf@canonical.com']
 
     >>> msg = email.message_from_string(raw_message)
@@ -191,11 +181,13 @@ of the email with the bug title and URL.
 
     >>> msg['X-Launchpad-Message-Rationale']
     'Subscriber (pmount in Ubuntu)'
+    >>> msg['X-Launchpad-Message-For']
+    'daf'
 
     >>> msg['Subject']
     '[Bug 1] [NEW] Firefox does not support SVG'
 
-    >>> print msg.get_payload(decode=True)
+    >>> print(msg.get_payload(decode=True))
     You have been subscribed to a public bug:
     <BLANKLINE>
     Firefox needs to support embedded SVG images, now that the standard has
@@ -222,14 +214,14 @@ of the email with the bug title and URL.
     <BLANKLINE>
     --
     Firefox does not support SVG
-    http://bugs.launchpad.dev/bugs/1
+    http://bugs.launchpad.test/bugs/1
     You received this bug notification because you
     are subscribed to pmount in Ubuntu.
 
 Since the reporter didn't do anything to trigger this change, the bug
 address is used as the From address.
 
-    >>> print msg['From']
+    >>> print(msg['From'])
     Launchpad Bug Tracker <1@bugs.launchpad.net>
 
     >>> stub.test_emails = []
@@ -237,15 +229,9 @@ address is used as the From address.
 Let's see that nothing unexpected happens when we set the source package
 to None.
 
-    >>> old_state = Snapshot(
-    ...        bug_one_in_ubuntu_firefox, providing=IBugTask)
-
-    >>> bug_one_in_ubuntu_firefox.transitionToTarget(ubuntu, daf)
-
-    >>> source_package_changed = ObjectModifiedEvent(
-    ...        bug_one_in_ubuntu_firefox, old_state, ["sourcepackagename"])
-
-    >>> notify(source_package_changed)
+    >>> with notify_modified(
+    ...         bug_one_in_ubuntu_firefox, ["sourcepackagename"]):
+    ...     bug_one_in_ubuntu_firefox.transitionToTarget(ubuntu, daf)
     >>> transaction.commit()
     >>> stub.test_emails = []
 
@@ -253,7 +239,7 @@ The package subscribers, Daf and Foo Bar, are implicitly unsubscribed:
 
     >>> names = subscriber_names(bug_one_in_ubuntu_firefox.bug)
     >>> for name in names:
-    ...     print name
+    ...     print(name)
     Mark Shuttleworth
     Sample Person
     Steve Alexander
@@ -270,15 +256,9 @@ contact address. Let's add such a team as a subscriber.
     >>> ubuntu_pmount.addBugSubscription(ubuntu_gnome, ubuntu_gnome)
     <...StructuralSubscription object at ...>
 
-    >>> old_state = Snapshot(
-    ...        bug_one_in_ubuntu_firefox, providing=IBugTask)
-
-    >>> bug_one_in_ubuntu_firefox.transitionToTarget(ubuntu_pmount, daf)
-
-    >>> source_package_changed = ObjectModifiedEvent(
-    ...        bug_one_in_ubuntu_firefox, old_state, ["sourcepackagename"])
-
-    >>> notify(source_package_changed)
+    >>> with notify_modified(
+    ...         bug_one_in_ubuntu_firefox, ["sourcepackagename"]):
+    ...     bug_one_in_ubuntu_firefox.transitionToTarget(ubuntu_pmount, daf)
     >>> transaction.commit()
 
 The Ubuntu Gnome team was subscribed to the bug:
@@ -304,10 +284,10 @@ bug that aren't already subscribed.
 Then we'll reassign bug #2 in Ubuntu to be in Firefox:
 
     >>> bug_two_in_ubuntu = getUtility(IBugTaskSet).get(3)
-    >>> print bug_two_in_ubuntu.bug.id
+    >>> print(bug_two_in_ubuntu.bug.id)
     2
 
-    >>> print bug_two_in_ubuntu.product.name
+    >>> print(bug_two_in_ubuntu.product.name)
     tomcat
 
     >>> sorted(
@@ -315,14 +295,8 @@ Then we'll reassign bug #2 in Ubuntu to be in Firefox:
     ...         bug_two_in_ubuntu.bug.subscriptions])
     [u'Steve Alexander']
 
-    >>> old_state = Snapshot(bug_two_in_ubuntu, providing=IBugTask)
-
-    >>> bug_two_in_ubuntu.transitionToTarget(mozilla_firefox, daf)
-
-    >>> product_changed = ObjectModifiedEvent(
-    ...        bug_two_in_ubuntu, old_state, ["id", "title", "product"])
-
-    >>> notify(product_changed)
+    >>> with notify_modified(bug_two_in_ubuntu, ["id", "title", "product"]):
+    ...     bug_two_in_ubuntu.transitionToTarget(mozilla_firefox, daf)
     >>> transaction.commit()
 
 
@@ -358,7 +332,7 @@ only team that will be listed when the user is changing a package bug
 supervisor:
 
     >>> for team in view.user.getAdministratedTeams():
-    ...        print team.displayname
+    ...        print(team.displayname)
     Landscape Developers
     Launchpad Users
 

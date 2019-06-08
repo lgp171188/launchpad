@@ -1,7 +1,5 @@
-# Copyright 2009 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2017 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
-
-# pylint: disable-msg=E0611,W0212
 
 """Launchpad Pillars share a namespace.
 
@@ -10,6 +8,7 @@ Pillars are currently Product, ProjectGroup and Distribution.
 
 __metaclass__ = type
 
+from operator import attrgetter
 import warnings
 
 from sqlobject import (
@@ -17,14 +16,17 @@ from sqlobject import (
     ForeignKey,
     StringCol,
     )
-from storm.expr import LeftJoin
+from storm.expr import (
+    And,
+    LeftJoin,
+    SQL,
+    )
 from storm.info import ClassAlias
-from storm.locals import SQL
 from storm.store import Store
 from zope.component import getUtility
 from zope.interface import (
-    classProvides,
-    implements,
+    implementer,
+    provider,
     )
 
 from lp.app.errors import NotFoundError
@@ -45,16 +47,15 @@ from lp.registry.interfaces.product import (
 from lp.registry.interfaces.projectgroup import IProjectGroupSet
 from lp.registry.model.featuredproject import FeaturedProject
 from lp.services.config import config
+from lp.services.database.bulk import load_related
+from lp.services.database.decoratedresultset import DecoratedResultSet
+from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import (
     SQLBase,
     sqlvalues,
     )
 from lp.services.helpers import ensure_unicode
-from lp.services.webapp.interfaces import (
-    DEFAULT_FLAVOR,
-    IStoreSelector,
-    MAIN_STORE,
-    )
+from lp.services.librarian.model import LibraryFileAlias
 
 
 __all__ = [
@@ -85,14 +86,13 @@ def pillar_sort_key(pillar):
     return (distribution_name, product_name)
 
 
+@implementer(IPillarNameSet)
 class PillarNameSet:
-    implements(IPillarNameSet)
 
     def __contains__(self, name):
         """See `IPillarNameSet`."""
-        store = getUtility(IStoreSelector).get(MAIN_STORE, DEFAULT_FLAVOR)
         name = ensure_unicode(name)
-        result = store.execute("""
+        result = IStore(PillarName).execute("""
             SELECT TRUE
             FROM PillarName
             WHERE (id IN (SELECT alias_for FROM PillarName WHERE name=?)
@@ -122,7 +122,6 @@ class PillarNameSet:
         # works better with SQLObject too.
 
         # Retrieve information out of the PillarName table.
-        store = getUtility(IStoreSelector).get(MAIN_STORE, DEFAULT_FLAVOR)
         query = """
             SELECT id, product, project, distribution
             FROM PillarName
@@ -136,7 +135,7 @@ class PillarNameSet:
         else:
             query %= ""
         name = ensure_unicode(name)
-        result = store.execute(query, [name, name])
+        result = IStore(PillarName).execute(query, [name, name])
         row = result.get_one()
         if row is None:
             return None
@@ -145,22 +144,22 @@ class PillarNameSet:
             "One (and only one) of product, project or distribution may be "
             "NOT NULL: %s" % row[1:])
 
-        id, product, project, distribution = row
+        id, product, projectgroup, distribution = row
 
         if product is not None:
             return getUtility(IProductSet).get(product)
-        elif project is not None:
-            return getUtility(IProjectGroupSet).get(project)
+        elif projectgroup is not None:
+            return getUtility(IProjectGroupSet).get(projectgroup)
         else:
             return getUtility(IDistributionSet).get(distribution)
 
-    def build_search_query(self, text, extra_columns=()):
+    def build_search_query(self, user, text):
         """Query parameters shared by search() and count_search_matches().
 
         :returns: Storm ResultSet object
         """
         # These classes are imported in this method to prevent an import loop.
-        from lp.registry.model.product import Product
+        from lp.registry.model.product import Product, ProductSet
         from lp.registry.model.projectgroup import ProjectGroup
         from lp.registry.model.distribution import Distribution
         OtherPillarName = ClassAlias(PillarName)
@@ -169,7 +168,7 @@ class PillarNameSet:
             LeftJoin(
                 OtherPillarName, PillarName.alias_for == OtherPillarName.id),
             LeftJoin(Product, PillarName.product == Product.id),
-            LeftJoin(ProjectGroup, PillarName.project == ProjectGroup.id),
+            LeftJoin(ProjectGroup, PillarName.projectgroup == ProjectGroup.id),
             LeftJoin(
                 Distribution, PillarName.distribution == Distribution.id),
             ]
@@ -187,36 +186,35 @@ class PillarNameSet:
                  lower(Distribution.title) = lower(%(text)s)
                 )
             ''' % sqlvalues(text=ensure_unicode(text)))
-        store = getUtility(IStoreSelector).get(MAIN_STORE, DEFAULT_FLAVOR)
         columns = [
             PillarName, OtherPillarName, Product, ProjectGroup, Distribution]
-        for column in extra_columns:
-            columns.append(column)
-        return store.using(*origin).find(tuple(columns), conditions)
+        return IStore(PillarName).using(*origin).find(
+            tuple(columns),
+            And(conditions, ProductSet.getProductPrivacyFilter(user)))
 
-    def count_search_matches(self, text):
-        result = self.build_search_query(text)
+    def count_search_matches(self, user, text):
+        result = self.build_search_query(user, text)
         return result.count()
 
-    def search(self, text, limit):
+    def search(self, user, text, limit):
         """See `IPillarSet`."""
         # Avoid circular import.
-        from lp.registry.model.product import ProductWithLicenses
+        from lp.registry.model.product import get_precached_products
+
         if limit is None:
             limit = config.launchpad.default_batch_size
 
         # Pull out the licences as a subselect which is converted
         # into a PostgreSQL array so that multiple licences per product
         # can be retrieved in a single row for each product.
-        extra_column = ProductWithLicenses.composeLicensesColumn()
-        result = self.build_search_query(text, [extra_column])
+        result = self.build_search_query(user, text)
 
         # If the search text matches the name or title of the
         # Product, Project, or Distribution exactly, then this
         # row should get the highest search rank (9999999).
         # Each row in the PillarName table will join with only one
         # of either the Product, Project, or Distribution tables,
-        # so the coalesce() is necessary to find the rank() which
+        # so the coalesce() is necessary to find the ts_rank() which
         # is not null.
         result.order_by(SQL('''
             (CASE WHEN PillarName.name = lower(%(text)s)
@@ -224,9 +222,9 @@ class PillarNameSet:
                       OR lower(Project.title) = lower(%(text)s)
                       OR lower(Distribution.title) = lower(%(text)s)
                 THEN 9999999
-                ELSE coalesce(rank(Product.fti, ftq(%(text)s)),
-                              rank(Project.fti, ftq(%(text)s)),
-                              rank(Distribution.fti, ftq(%(text)s)))
+                ELSE coalesce(ts_rank(Product.fti, ftq(%(text)s)),
+                              ts_rank(Project.fti, ftq(%(text)s)),
+                              ts_rank(Distribution.fti, ftq(%(text)s)))
             END) DESC, PillarName.name
             ''' % sqlvalues(text=text)))
         # People shouldn't be calling this method with too big limits
@@ -238,13 +236,15 @@ class PillarNameSet:
                 % (limit, longest_expected),
                 stacklevel=2)
         pillars = []
-        # Prefill pillar.product.licenses.
-        for pillar_name, other, product, project, distro, licenses in (
+        products = []
+        for pillar_name, other, product, projectgroup, distro in (
             result[:limit]):
             pillar = pillar_name.pillar
             if IProduct.providedBy(pillar):
-                pillar = ProductWithLicenses(pillar, licenses)
+                products.append(pillar)
             pillars.append(pillar)
+        # Prefill pillar.product.licenses.
+        get_precached_products(products, need_licences=True)
         return pillars
 
     def add_featured_project(self, project):
@@ -273,14 +273,32 @@ class PillarNameSet:
     @property
     def featured_projects(self):
         """See `IPillarSet`."""
+        # Circular imports.
+        from lp.registry.model.distribution import Distribution
+        from lp.registry.model.product import Product
+        from lp.registry.model.projectgroup import ProjectGroup
 
-        query = "PillarName.id = FeaturedProject.pillar_name"
-        return [pillar_name.pillar for pillar_name in PillarName.select(
-                    query, clauseTables=['FeaturedProject'])]
+        store = IStore(PillarName)
+        pillar_names = store.find(
+            PillarName, PillarName.id == FeaturedProject.pillar_name)
+
+        def preload_pillars(rows):
+            pillar_names = (
+                set(rows).union(load_related(PillarName, rows, ['alias_for'])))
+            pillars = load_related(Product, pillar_names, ['productID'])
+            pillars.extend(load_related(
+                ProjectGroup, pillar_names, ['projectgroupID']))
+            pillars.extend(load_related(
+                Distribution, pillar_names, ['distributionID']))
+            load_related(LibraryFileAlias, pillars, ['iconID'])
+
+        return list(DecoratedResultSet(
+            pillar_names, result_decorator=attrgetter('pillar'),
+            pre_iter_hook=preload_pillars))
 
 
+@implementer(IPillarName)
 class PillarName(SQLBase):
-    implements(IPillarName)
 
     _table = 'PillarName'
     _defaultOrder = 'name'
@@ -289,7 +307,7 @@ class PillarName(SQLBase):
         dbName='name', notNull=True, unique=True, alternateID=True)
     product = ForeignKey(
         foreignKey='Product', dbName='product')
-    project = ForeignKey(
+    projectgroup = ForeignKey(
         foreignKey='ProjectGroup', dbName='project')
     distribution = ForeignKey(
         foreignKey='Distribution', dbName='distribution')
@@ -305,8 +323,8 @@ class PillarName(SQLBase):
 
         if pillar_name.distribution is not None:
             return pillar_name.distribution
-        elif pillar_name.project is not None:
-            return pillar_name.project
+        elif pillar_name.projectgroup is not None:
+            return pillar_name.projectgroup
         elif pillar_name.product is not None:
             return pillar_name.product
         else:
@@ -340,11 +358,9 @@ class HasAliasMixin:
             store.remove(pillar_name)
 
 
+@implementer(IPillarPerson)
+@provider(IPillarPersonFactory)
 class PillarPerson:
-
-    implements(IPillarPerson)
-
-    classProvides(IPillarPersonFactory)
 
     def __init__(self, pillar, person):
         self.pillar = pillar

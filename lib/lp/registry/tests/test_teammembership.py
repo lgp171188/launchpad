@@ -1,4 +1,4 @@
-# Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -8,7 +8,6 @@ from datetime import (
     datetime,
     timedelta,
     )
-import os
 import pickle
 import re
 import subprocess
@@ -22,9 +21,9 @@ import transaction
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
+from lp.app.enums import InformationType
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.registry.enums import (
-    InformationType,
     TeamMembershipPolicy,
     TeamMembershipRenewalPolicy,
     )
@@ -33,6 +32,10 @@ from lp.registry.interfaces.accesspolicy import (
     IAccessArtifactSource,
     )
 from lp.registry.interfaces.person import IPersonSet
+from lp.registry.interfaces.persontransferjob import (
+    IExpiringMembershipNotificationJobSource,
+    ITeamJoinNotificationJobSource,
+    )
 from lp.registry.interfaces.teammembership import (
     CyclicalTeamMembershipError,
     ITeamMembershipSet,
@@ -51,7 +54,7 @@ from lp.registry.scripts.teamparticipation import (
     fix_teamparticipation_consistency,
     )
 from lp.services.config import config
-from lp.services.database.lpstorm import IStore
+from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import (
     cursor,
     flush_database_caches,
@@ -59,8 +62,10 @@ from lp.services.database.sqlbase import (
     sqlvalues,
     )
 from lp.services.features.testing import FeatureFixture
+from lp.services.job.runner import JobRunner
 from lp.services.job.tests import block_on_job
 from lp.services.log.logger import BufferLogger
+from lp.services.mail.sendmail import format_address_for_person
 from lp.testing import (
     login,
     login_celebrity,
@@ -76,6 +81,7 @@ from lp.testing.layers import (
     DatabaseFunctionalLayer,
     DatabaseLayer,
     LaunchpadZopelessLayer,
+    ZopelessDatabaseLayer,
     )
 from lp.testing.mail_helpers import pop_notifications
 from lp.testing.matchers import HasQueryCount
@@ -157,11 +163,11 @@ class TestTeamMembershipSet(TestCaseWithFactory):
         self.assertEqual(ubuntu_team.teamowner, membership.proposed_by)
         self.assertEqual(membership.proponent_comment, "I like her")
         now = datetime.now(pytz.UTC)
-        self.failUnless(membership.date_proposed <= now)
-        self.failUnless(membership.datejoined <= now)
+        self.assertTrue(membership.date_proposed <= now)
+        self.assertTrue(membership.datejoined <= now)
         self.assertEqual(ubuntu_team.teamowner, membership.reviewed_by)
         self.assertEqual(membership.reviewer_comment, "I like her")
-        self.failUnless(membership.date_reviewed <= now)
+        self.assertTrue(membership.date_reviewed <= now)
         self.assertEqual(membership.acknowledged_by, None)
 
     def test_membership_creation_stores_proponent(self):
@@ -177,7 +183,7 @@ class TestTeamMembershipSet(TestCaseWithFactory):
             comment="I'd like to join")
         self.assertEqual(marilize, membership.proposed_by)
         self.assertEqual(membership.proponent_comment, "I'd like to join")
-        self.failUnless(
+        self.assertTrue(
             membership.date_proposed <= datetime.now(pytz.UTC))
         self.assertEqual(membership.reviewed_by, None)
         self.assertEqual(membership.acknowledged_by, None)
@@ -227,10 +233,10 @@ class TestTeamMembershipSet(TestCaseWithFactory):
         # or motu.
         self.assertEqual(
             sample_person_on_ubuntu_dev.status, TeamMembershipStatus.EXPIRED)
-        self.failIf(sample_person.inTeam(ubuntu_dev))
+        self.assertFalse(sample_person.inTeam(ubuntu_dev))
         self.assertEqual(
             sample_person_on_motu.status, TeamMembershipStatus.EXPIRED)
-        self.failIf(sample_person.inTeam(motu))
+        self.assertFalse(sample_person.inTeam(motu))
 
     def test_deactivateActiveMemberships(self):
         superteam = self.factory.makeTeam(name='super')
@@ -270,7 +276,7 @@ class TeamParticipationTestCase(TestCaseWithFactory):
     def assertParticipantsEquals(self, participant_names, team):
         """Assert that the participants names in team are the expected ones.
         """
-        self.assertEquals(
+        self.assertEqual(
             sorted(participant_names),
             sorted([participant.name for participant in team.allmembers]))
 
@@ -281,11 +287,17 @@ class TeamParticipationTestCase(TestCaseWithFactory):
 class TestTeamParticipationQuery(TeamParticipationTestCase):
     """A test case for teammembership.test_find_team_participations."""
 
+    def runMailJobs(self):
+        with dbuser("person-transfer-job"):
+            JobRunner.fromReady(
+                getUtility(ITeamJoinNotificationJobSource)).runAll()
+
     def test_find_team_participations(self):
         # The correct team participations are found and the query count is 1.
         self.team1.addMember(self.no_priv, self.foo_bar)
         self.team2.addMember(self.no_priv, self.foo_bar)
         self.team1.addMember(self.team2, self.foo_bar, force_team_add=True)
+        self.runMailJobs()
 
         people = [self.team1, self.team2]
         with StormStatementRecorder() as recorder:
@@ -301,9 +313,12 @@ class TestTeamParticipationQuery(TeamParticipationTestCase):
         self.team1.addMember(self.no_priv, self.foo_bar)
         self.team2.addMember(self.no_priv, self.foo_bar)
         self.team1.addMember(self.team2, self.foo_bar, force_team_add=True)
+        self.runMailJobs()
 
         people = [self.foo_bar, self.team2]
         teams = [self.team1, self.team2]
+        # Repopulate Storm cache after running mail jobs.
+        [team.is_team for team in teams]
         with StormStatementRecorder() as recorder:
             people_teams = find_team_participations(people, teams)
         self.assertThat(recorder, HasQueryCount(Equals(1)))
@@ -645,9 +660,9 @@ class TestTeamMembership(TestCaseWithFactory):
             person, membership_policy=TeamMembershipPolicy.MODERATED)
         teamB = self.factory.makeTeam(
             person, membership_policy=TeamMembershipPolicy.MODERATED)
-        self.failUnless(
+        self.assertTrue(
             teamA.inTeam(teamA), "teamA is not a participant of itself")
-        self.failUnless(
+        self.assertTrue(
             teamB.inTeam(teamB), "teamB is not a participant of itself")
 
         teamA.join(teamB, requester=person)
@@ -655,9 +670,9 @@ class TestTeamMembership(TestCaseWithFactory):
         teamB.setMembershipData(teamA, TeamMembershipStatus.APPROVED, person)
         teamA.setMembershipData(teamB, TeamMembershipStatus.DECLINED, person)
 
-        self.failUnless(teamA.hasParticipationEntryFor(teamA),
+        self.assertTrue(teamA.hasParticipationEntryFor(teamA),
                         "teamA is not a participant of itself")
-        self.failUnless(teamB.hasParticipationEntryFor(teamB),
+        self.assertTrue(teamB.hasParticipationEntryFor(teamB),
                         "teamB is not a participant of itself")
 
     def test_membership_status_changes_are_immediately_flushed_to_db(self):
@@ -704,18 +719,19 @@ class TestTeamMembershipSetStatus(TestCaseWithFactory):
                        TeamMembershipStatus.DECLINED]:
             tm = TeamMembership(
                 person=self.no_priv, team=self.ubuntu_team, status=status)
-            self.failIf(
+            self.assertFalse(
                 tm.proposed_by, "There can be no proponent at this point.")
-            self.failIf(
+            self.assertFalse(
                 tm.date_proposed, "There can be no proposed date this point.")
-            self.failIf(tm.proponent_comment,
-                        "There can be no proponent comment at this point.")
+            self.assertFalse(
+                tm.proponent_comment,
+                "There can be no proponent comment at this point.")
             tm.setStatus(
                 TeamMembershipStatus.PROPOSED, self.foobar,
                 "Did it 'cause I can")
-            self.failUnlessEqual(tm.proposed_by, self.foobar)
-            self.failUnlessEqual(tm.proponent_comment, "Did it 'cause I can")
-            self.failUnless(
+            self.assertEqual(tm.proposed_by, self.foobar)
+            self.assertEqual(tm.proponent_comment, "Did it 'cause I can")
+            self.assertTrue(
                 tm.date_proposed <= datetime.now(pytz.UTC))
             # Destroy the membership so that we can create another in a
             # different state.
@@ -727,19 +743,19 @@ class TestTeamMembershipSetStatus(TestCaseWithFactory):
             tm = TeamMembership(
                 person=self.admins, team=self.ubuntu_team,
                 status=TeamMembershipStatus.INVITED)
-            self.failIf(
+            self.assertFalse(
                 tm.acknowledged_by,
                 "There can be no acknowledger at this point.")
-            self.failIf(
+            self.assertFalse(
                 tm.date_acknowledged,
                 "There can be no accepted date this point.")
-            self.failIf(tm.acknowledger_comment,
-                        "There can be no acknowledger comment at this point.")
+            self.assertFalse(
+                tm.acknowledger_comment,
+                "There can be no acknowledger comment at this point.")
             tm.setStatus(status, self.foobar, "Did it 'cause I can")
-            self.failUnlessEqual(tm.acknowledged_by, self.foobar)
-            self.failUnlessEqual(
-                tm.acknowledger_comment, "Did it 'cause I can")
-            self.failUnless(
+            self.assertEqual(tm.acknowledged_by, self.foobar)
+            self.assertEqual(tm.acknowledger_comment, "Did it 'cause I can")
+            self.assertTrue(
                 tm.date_acknowledged <= datetime.now(pytz.UTC))
             # Destroy the membership so that we can create another in a
             # different state.
@@ -758,20 +774,19 @@ class TestTeamMembershipSetStatus(TestCaseWithFactory):
             for new_status in new_statuses:
                 tm = TeamMembership(
                     person=self.no_priv, team=self.ubuntu_team, status=status)
-                self.failIf(
+                self.assertFalse(
                     tm.reviewed_by,
                     "There can be no approver at this point.")
-                self.failIf(
+                self.assertFalse(
                     tm.date_reviewed,
                     "There can be no approved date this point.")
-                self.failIf(
+                self.assertFalse(
                     tm.reviewer_comment,
                     "There can be no approver comment at this point.")
                 tm.setStatus(new_status, self.foobar, "Did it 'cause I can")
-                self.failUnlessEqual(tm.reviewed_by, self.foobar)
-                self.failUnlessEqual(
-                    tm.reviewer_comment, "Did it 'cause I can")
-                self.failUnless(
+                self.assertEqual(tm.reviewed_by, self.foobar)
+                self.assertEqual(tm.reviewer_comment, "Did it 'cause I can")
+                self.assertTrue(
                     tm.date_reviewed <= datetime.now(pytz.UTC))
 
                 # Destroy the membership so that we can create another in a
@@ -785,11 +800,11 @@ class TestTeamMembershipSetStatus(TestCaseWithFactory):
         tm = TeamMembership(
             person=self.no_priv, team=self.ubuntu_team,
             status=TeamMembershipStatus.PROPOSED)
-        self.failIf(
+        self.assertFalse(
             tm.datejoined, "There can be no datejoined at this point.")
         tm.setStatus(TeamMembershipStatus.APPROVED, self.foobar)
         now = datetime.now(pytz.UTC)
-        self.failUnless(tm.datejoined <= now)
+        self.assertTrue(tm.datejoined <= now)
 
         # We now set the status to deactivated and change datejoined to a
         # date in the past just so that we can easily show it's not changed
@@ -798,7 +813,7 @@ class TestTeamMembershipSetStatus(TestCaseWithFactory):
         tm.setStatus(TeamMembershipStatus.DEACTIVATED, self.foobar)
         tm.datejoined = one_minute_ago
         tm.setStatus(TeamMembershipStatus.APPROVED, self.foobar)
-        self.failUnless(tm.datejoined <= one_minute_ago)
+        self.assertTrue(tm.datejoined <= one_minute_ago)
 
     def test_no_cyclical_membership_allowed(self):
         """No status change can create cyclical memberships."""
@@ -811,28 +826,24 @@ class TestTeamMembershipSetStatus(TestCaseWithFactory):
             self.team1, self.team2)
         team2_on_team1 = getUtility(ITeamMembershipSet).getByPersonAndTeam(
             self.team2, self.team1)
-        self.failUnlessEqual(
-            team1_on_team2.status, TeamMembershipStatus.INVITED)
-        self.failUnlessEqual(
-            team2_on_team1.status, TeamMembershipStatus.INVITED)
+        self.assertEqual(team1_on_team2.status, TeamMembershipStatus.INVITED)
+        self.assertEqual(team2_on_team1.status, TeamMembershipStatus.INVITED)
 
         # Now make team1 an active member of team2.  From this point onwards,
         # team2 cannot be made an active member of team1.
         team1_on_team2.setStatus(TeamMembershipStatus.APPROVED, self.foobar)
         flush_database_updates()
-        self.failUnlessEqual(
-            team1_on_team2.status, TeamMembershipStatus.APPROVED)
+        self.assertEqual(team1_on_team2.status, TeamMembershipStatus.APPROVED)
         self.assertRaises(
             CyclicalTeamMembershipError, team2_on_team1.setStatus,
             TeamMembershipStatus.APPROVED, self.foobar)
-        self.failUnlessEqual(
-            team2_on_team1.status, TeamMembershipStatus.INVITED)
+        self.assertEqual(team2_on_team1.status, TeamMembershipStatus.INVITED)
 
         # It is possible to change the state of team2's membership on team1
         # to another inactive state, though.
         team2_on_team1.setStatus(
             TeamMembershipStatus.INVITATION_DECLINED, self.foobar)
-        self.failUnlessEqual(
+        self.assertEqual(
             team2_on_team1.status, TeamMembershipStatus.INVITATION_DECLINED)
 
     def test_no_cyclical_participation_allowed(self):
@@ -1055,7 +1066,7 @@ class TestTeamMembershipJobs(TestCaseWithFactory):
 
 class TestTeamMembershipSendExpirationWarningEmail(TestCaseWithFactory):
     """Test the behaviour of sendExpirationWarningEmail()."""
-    layer = DatabaseFunctionalLayer
+    layer = ZopelessDatabaseLayer
 
     def setUp(self):
         super(TestTeamMembershipSendExpirationWarningEmail, self).setUp()
@@ -1066,6 +1077,12 @@ class TestTeamMembershipSendExpirationWarningEmail(TestCaseWithFactory):
         self.tm = getUtility(ITeamMembershipSet).getByPersonAndTeam(
             self.member, self.team)
         pop_notifications()
+
+    def runMailJobs(self):
+        with dbuser("person-transfer-job"):
+            JobRunner.fromReady(
+                getUtility(IExpiringMembershipNotificationJobSource)).runAll()
+        return pop_notifications()
 
     def test_error_raised_when_no_expiration(self):
         # An exception is raised if the membership does not have an
@@ -1080,31 +1097,30 @@ class TestTeamMembershipSendExpirationWarningEmail(TestCaseWithFactory):
         tomorrow = datetime.now(pytz.UTC) + timedelta(days=1)
         removeSecurityProxy(self.tm).dateexpires = tomorrow
         self.tm.sendExpirationWarningEmail()
-        notifications = pop_notifications()
+        notifications = self.runMailJobs()
         self.assertEqual(1, len(notifications))
         message = notifications[0]
         self.assertEqual(
             'Your membership in red is about to expire', message['subject'])
-        self.assertEqual(
-            self.member.preferredemail.email, message['to'])
+        self.assertEqual(format_address_for_person(self.member), message['to'])
 
     def test_no_message_sent_for_expired_memberships(self):
         # Members whose membership has expired do not get a message.
         yesterday = datetime.now(pytz.UTC) - timedelta(days=1)
         removeSecurityProxy(self.tm).dateexpires = yesterday
         self.tm.sendExpirationWarningEmail()
-        notifications = pop_notifications()
+        notifications = self.runMailJobs()
         self.assertEqual(0, len(notifications))
 
     def test_no_message_sent_for_non_active_users(self):
         # Non-active users do not get an expiration message.
         with person_logged_in(self.member):
-            self.member.deactivateAccount('Goodbye.')
+            self.member.deactivate('Goodbye.')
         IStore(self.member).flush()
         now = datetime.now(pytz.UTC)
         removeSecurityProxy(self.tm).dateexpires = now + timedelta(days=1)
         self.tm.sendExpirationWarningEmail()
-        notifications = pop_notifications()
+        notifications = self.runMailJobs()
         self.assertEqual(0, len(notifications))
 
 
@@ -1174,9 +1190,9 @@ class TestCheckTeamParticipationScript(TestCase):
         code, out, err = self._runScript()
         self.assertEqual(0, code)
         self.assertEqual(0, len(out))
-        self.failUnless(
+        self.assertTrue(
             re.search('missing TeamParticipation entries for zzzzz', err))
-        self.failUnless(
+        self.assertTrue(
             re.search('spurious TeamParticipation entries for zzzzz', err))
 
     def test_report_circular_team_references(self):
@@ -1211,7 +1227,7 @@ class TestCheckTeamParticipationScript(TestCase):
         code, out, err = self._runScript()
         self.assertEqual(1, code)
         self.assertEqual(0, len(out))
-        self.failUnless(re.search('Circular references found', err))
+        self.assertTrue(re.search('Circular references found', err))
 
     # A script to create two new people, where both participate in the first,
     # and first is missing a self-participation.
@@ -1235,7 +1251,7 @@ class TestCheckTeamParticipationScript(TestCase):
         """The script reports spurious participants of people.
 
         Teams can have multiple participants, but only the person should be a
-        paricipant of him/herself.
+        paricipant of themselves.
         """
         cursor().execute(self.script_create_inconsistent_participation)
         transaction.commit()
@@ -1271,9 +1287,9 @@ class TestCheckTeamParticipationScript(TestCase):
         logger = BufferLogger()
         self.addDetail("log", logger.content)
         info = fetch_team_participation_info(logger)
-        tempdir = self.useFixture(TempDir()).path
-        filename_in = os.path.join(tempdir, "info.in")
-        filename_out = os.path.join(tempdir, "info.out")
+        tempdir = self.useFixture(TempDir())
+        filename_in = tempdir.join("info.in")
+        filename_out = tempdir.join("info.out")
         fout = bz2.BZ2File(filename_in, "w")
         try:
             pickle.dump(info, fout, pickle.HIGHEST_PROTOCOL)
@@ -1303,7 +1319,7 @@ class TestCheckTeamParticipationScriptPerformance(TestCaseWithFactory):
         """
         # Create a deeply nested team and member structure.
         team = self.factory.makeTeam()
-        for num in xrange(10):
+        for num in range(10):
             another_team = self.factory.makeTeam()
             another_person = self.factory.makePerson()
             with person_logged_in(team.teamowner):

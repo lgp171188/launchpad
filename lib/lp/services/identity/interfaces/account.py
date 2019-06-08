@@ -1,28 +1,30 @@
-# Copyright 2009 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-# pylint: disable-msg=E0211,E0213
 """Account interfaces."""
 
 __metaclass__ = type
 
 __all__ = [
     'AccountStatus',
+    'AccountStatusError',
     'AccountSuspendedError',
     'AccountCreationRationale',
     'IAccount',
-    'IAccountPrivate',
+    'IAccountModerateRestricted',
     'IAccountPublic',
     'IAccountSet',
-    'IAccountSpecialRestricted',
+    'IAccountViewRestricted',
     'INACTIVE_ACCOUNT_STATUSES',
     ]
 
+import httplib
 
 from lazr.enum import (
     DBEnumeratedType,
     DBItem,
     )
+from lazr.restful.declarations import error_status
 from zope.interface import (
     Attribute,
     Interface,
@@ -33,11 +35,14 @@ from zope.schema import (
     Int,
     Text,
     )
+from zope.security.proxy import removeSecurityProxy
 
 from lp import _
+from lp.app.validators import LaunchpadValidationError
 from lp.services.fields import StrippedTextLine
 
 
+@error_status(httplib.BAD_REQUEST)
 class AccountSuspendedError(Exception):
     """The account being accessed has been suspended."""
 
@@ -45,33 +50,51 @@ class AccountSuspendedError(Exception):
 class AccountStatus(DBEnumeratedType):
     """The status of an account."""
 
+    PLACEHOLDER = DBItem(5, """
+        Placeholder
+
+        The account was created automatically by SSO and exists solely
+        to hold a username. It is visible only to staff.
+
+        XXX wgrant 2016-03-03: This is a hack until usernames are moved
+            into SSO properly.
+        """)
+
     NOACCOUNT = DBItem(10, """
-        Unactivated account
+        Unactivated
 
         The account has not yet been activated.
         """)
 
     ACTIVE = DBItem(20, """
-        Active account
+        Active
 
         The account is active.
         """)
 
     DEACTIVATED = DBItem(30, """
-        Deactivated account
+        Deactivated
 
         The account has been deactivated by the account's owner.
         """)
 
     SUSPENDED = DBItem(40, """
-        Suspended Launchpad account
+        Suspended
 
         The account has been suspended by a Launchpad admin.
         """)
 
+    CLOSED = DBItem(50, """
+        Closed
+
+        The account has been permanently closed, removing as much personal
+        information as possible.
+        """)
+
 
 INACTIVE_ACCOUNT_STATUSES = [
-    AccountStatus.DEACTIVATED, AccountStatus.SUSPENDED]
+    AccountStatus.PLACEHOLDER, AccountStatus.DEACTIVATED,
+    AccountStatus.SUSPENDED, AccountStatus.CLOSED]
 
 
 class AccountCreationRationale(DBEnumeratedType):
@@ -139,21 +162,21 @@ class AccountCreationRationale(DBEnumeratedType):
         """)
 
     OWNER_CREATED_LAUNCHPAD = DBItem(8, """
-        Created by the owner himself, coming from Launchpad.
+        Created by the owner themselves, coming from Launchpad.
 
         Somebody was navigating through Launchpad and at some point decided to
         create an account.
         """)
 
     OWNER_CREATED_SHIPIT = DBItem(9, """
-        Created by the owner himself, coming from Shipit.
+        Created by the owner themselves, coming from Shipit.
 
         Somebody went to one of the shipit sites to request Ubuntu CDs and was
         directed to Launchpad to create an account.
         """)
 
     OWNER_CREATED_UBUNTU_WIKI = DBItem(10, """
-        Created by the owner himself, coming from the Ubuntu wiki.
+        Created by the owner themselves, coming from the Ubuntu wiki.
 
         Somebody went to the Ubuntu wiki and was directed to Launchpad to
         create an account.
@@ -163,18 +186,18 @@ class AccountCreationRationale(DBEnumeratedType):
         Created by a user to represent a person which does not use Launchpad.
 
         A user wanted to reference a person which is not a Launchpad user, so
-        he created this "placeholder" profile.
+        they created this "placeholder" profile.
         """)
 
     OWNER_CREATED_UBUNTU_SHOP = DBItem(12, """
-        Created by the owner himself, coming from the Ubuntu Shop.
+        Created by the owner themselves, coming from the Ubuntu Shop.
 
         Somebody went to the Ubuntu Shop and was directed to Launchpad to
         create an account.
         """)
 
     OWNER_CREATED_UNKNOWN_TRUSTROOT = DBItem(13, """
-        Created by the owner himself, coming from unknown OpenID consumer.
+        Created by the owner themselves, coming from unknown OpenID consumer.
 
         Somebody went to an OpenID consumer we don't know about and was
         directed to Launchpad to create an account.
@@ -201,22 +224,79 @@ class AccountCreationRationale(DBEnumeratedType):
         and commercial archive) was made via Software Center.
         """)
 
+    USERNAME_PLACEHOLDER = DBItem(17, """
+        Created by setting a username in SSO.
+
+        Somebody without a Launchpad account set their username in SSO.
+        Since SSO doesn't store usernames directly, an invisible
+        placeholder Launchpad account is required.
+        """)
+
+
+class AccountStatusError(LaunchpadValidationError):
+    """The account status cannot change to the proposed status."""
+
+
+class AccountStatusChoice(Choice):
+    """A valid status and transition."""
+
+    transitions = {
+        AccountStatus.PLACEHOLDER: [
+            AccountStatus.NOACCOUNT, AccountStatus.ACTIVE],
+        AccountStatus.NOACCOUNT: [AccountStatus.ACTIVE, AccountStatus.CLOSED],
+        AccountStatus.ACTIVE: [
+            AccountStatus.DEACTIVATED, AccountStatus.SUSPENDED,
+            AccountStatus.CLOSED],
+        AccountStatus.DEACTIVATED: [
+            AccountStatus.ACTIVE, AccountStatus.CLOSED],
+        AccountStatus.SUSPENDED: [
+            AccountStatus.DEACTIVATED, AccountStatus.CLOSED],
+        AccountStatus.CLOSED: [],
+        }
+
+    def constraint(self, value):
+        """See `IField`."""
+        if not IAccount.providedBy(self.context):
+            # Not an account, eg. validating Person.setAccountStatus.
+            return True
+        if removeSecurityProxy(self.context)._SO_creating:
+            # This object is initializing.
+            return True
+        if self.context.status == value:
+            return True
+        return value in self.transitions[self.context.status]
+
+    def _validate(self, value):
+        """See `IField`.
+
+        Ensure the value is a valid transition for current AccountStatus.
+
+        :raises AccountStatusError: When self.constraint() returns False.
+        """
+        if not self.constraint(value):
+            raise AccountStatusError(
+                "The status cannot change from %s to %s" %
+                (removeSecurityProxy(self.context).status, value))
+        super(AccountStatusChoice, self)._validate(value)
+
 
 class IAccountPublic(Interface):
     """Public information on an `IAccount`."""
+
     id = Int(title=_('ID'), required=True, readonly=True)
 
     displayname = StrippedTextLine(
         title=_('Display Name'), required=True, readonly=False,
         description=_("Your name as you would like it displayed."))
 
-    status = Choice(
+    status = AccountStatusChoice(
         title=_("The status of this account"), required=True,
-        readonly=False, vocabulary=AccountStatus)
+        readonly=True, vocabulary=AccountStatus)
 
 
-class IAccountPrivate(Interface):
+class IAccountViewRestricted(Interface):
     """Private information on an `IAccount`."""
+
     date_created = Datetime(
         title=_('Date Created'), required=True, readonly=True)
 
@@ -226,17 +306,8 @@ class IAccountPrivate(Interface):
 
     openid_identifiers = Attribute(_("Linked OpenId Identifiers"))
 
-
-class IAccountSpecialRestricted(Interface):
-    """Attributes of `IAccount` protected with launchpad.Special."""
-
     date_status_set = Datetime(
-        title=_('Date status last modified.'),
-        required=True, readonly=False)
-
-    status_comment = Text(
-        title=_("Why are you deactivating your account?"),
-        required=False, readonly=False)
+        title=_('Date status last modified.'), required=True, readonly=True)
 
     def reactivate(comment):
         """Activate this account.
@@ -247,7 +318,22 @@ class IAccountSpecialRestricted(Interface):
         """
 
 
-class IAccount(IAccountPublic, IAccountPrivate, IAccountSpecialRestricted):
+class IAccountModerateRestricted(Interface):
+
+    status_history = Text(
+        title=_("Account status comments"), required=False, readonly=True)
+
+    def setStatus(status, user, comment):
+        """Change the status of this account.
+
+        :param user: The user performing the action or None.
+        :param comment: An explanation of the change to be logged in
+            status_history.
+        """
+
+
+class IAccount(IAccountPublic, IAccountViewRestricted,
+               IAccountModerateRestricted):
     """Interface describing an `Account`."""
 
 

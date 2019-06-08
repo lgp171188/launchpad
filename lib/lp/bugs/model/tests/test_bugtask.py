@@ -1,4 +1,4 @@
-# Copyright 2009-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -9,7 +9,6 @@ from operator import attrgetter
 import subprocess
 import unittest
 
-from lazr.lifecycle.event import ObjectModifiedEvent
 from lazr.lifecycle.snapshot import Snapshot
 from lazr.restfulclient.errors import Unauthorized
 from storm.store import Store
@@ -17,14 +16,15 @@ from testtools.matchers import Equals
 from testtools.testcase import ExpectedException
 import transaction
 from zope.component import getUtility
-from zope.event import notify
 from zope.interface import providedBy
 from zope.security.interfaces import Unauthorized as ZopeUnAuthorized
 from zope.security.proxy import removeSecurityProxy
 
-from lp.app.enums import ServiceUsage
+from lp.app.enums import (
+    InformationType,
+    ServiceUsage,
+    )
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
-from lp.blueprints.interfaces.specification import ISpecificationSet
 from lp.bugs.interfaces.bug import (
     CreateBugParams,
     IBug,
@@ -57,7 +57,6 @@ from lp.bugs.scripts.bugtasktargetnamecaches import (
 from lp.bugs.tests.bug import create_old_bug
 from lp.registry.enums import (
     BugSharingPolicy,
-    InformationType,
     TeamMembershipPolicy,
     )
 from lp.registry.interfaces.accesspolicy import (
@@ -83,10 +82,12 @@ from lp.services.database.sqlbase import (
     )
 from lp.services.features.testing import FeatureFixture
 from lp.services.job.tests import block_on_job
-from lp.services.log.logger import FakeLogger
+from lp.services.log.logger import DevNullLogger
+from lp.services.propertycache import get_property_cache
 from lp.services.searchbuilder import any
 from lp.services.webapp.authorization import check_permission
 from lp.services.webapp.interfaces import ILaunchBag
+from lp.services.webapp.snapshot import notify_modified
 from lp.soyuz.interfaces.archive import ArchivePurpose
 from lp.testing import (
     admin_logged_in,
@@ -104,7 +105,6 @@ from lp.testing import (
     TestCaseWithFactory,
     ws_object,
     )
-from lp.testing.factory import LaunchpadObjectFactory
 from lp.testing.fakemethod import FakeMethod
 from lp.testing.layers import (
     AppServerLayer,
@@ -116,9 +116,6 @@ from lp.testing.matchers import HasQueryCount
 
 BugData = namedtuple("BugData", ['owner', 'distro', 'distro_release',
 'source_package', 'bug', 'generic_task', 'series_task', ])
-
-ConjoinedData = namedtuple("ConjoinedData", ['alsa_utils', 'generic_task',
-    'devel_focus_task'])
 
 
 class TestBugTaskAdaptation(TestCase):
@@ -225,6 +222,21 @@ class TestBugTaskCreation(TestCaseWithFactory):
             ])
         self.assertContentEqual(
             expected_policies, get_policies_for_artifact(bug))
+
+    def test_incomplete_mapped_for_storage(self):
+        """A task is never actually "Incomplete" in the DB.
+
+        Incomplete is automatically mapped to (with response) or
+        (without response) as appropriate.
+        """
+        task = getUtility(IBugTaskSet).createTask(
+            self.factory.makeBug(), self.factory.makePerson(),
+            self.factory.makeProduct(),
+            status=BugTaskStatus.INCOMPLETE)
+        self.assertEqual(
+            BugTaskStatusSearch.INCOMPLETE_WITHOUT_RESPONSE, task._status)
+        self.assertEqual(
+            BugTaskStatus.INCOMPLETE, task.status)
 
 
 class TestBugTaskCreationPackageComponent(TestCaseWithFactory):
@@ -502,7 +514,7 @@ class TestBugTaskBadges(TestCaseWithFactory):
             ' has_specification: False'])
 
         # a specification gets linked...
-        spec = getUtility(ISpecificationSet).all_specifications[0]
+        spec = self.factory.makeSpecification()
         spec.linkBug(bug_two)
 
         # or a branch gets linked to the bug...
@@ -525,7 +537,7 @@ class TestBugTaskBadges(TestCaseWithFactory):
         ])
 
 
-class TestBugTaskPrivacy(TestCase):
+class TestBugTaskPrivacy(TestCaseWithFactory):
     """Verify that the bug is either private or public.
 
     XXX: rharding 2012-05-14 bug=999298: These tests are ported from doctests
@@ -550,15 +562,11 @@ class TestBugTaskPrivacy(TestCase):
         ubuntu_team = getUtility(IPersonSet).getByEmail('support@ubuntu.com')
         bug_upstream_firefox_crashes.bug.subscribe(ubuntu_team, ubuntu_team)
 
-        old_state = Snapshot(bug_upstream_firefox_crashes.bug,
-                             providing=IBug)
-        self.assertTrue(bug_upstream_firefox_crashes.bug.setPrivate(True,
-                                                                    foobar))
+        with notify_modified(
+                bug_upstream_firefox_crashes.bug, ["id", "title", "private"]):
+            self.assertTrue(
+                bug_upstream_firefox_crashes.bug.setPrivate(True, foobar))
 
-        bug_set_private = ObjectModifiedEvent(bug_upstream_firefox_crashes.bug,
-                                              old_state,
-                                              ["id", "title", "private"])
-        notify(bug_set_private)
         flush_database_updates()
 
         # If we now login as someone who was neither implicitly nor explicitly
@@ -601,7 +609,7 @@ class TestBugTaskPrivacy(TestCase):
         self.assertEqual(sorted(bug_ids), [1, 4, 5, 6])
         apgs.revoke([(policy, mr_no_privs)])
 
-        # Privacy and Priviledged Users
+        # Privacy and Privileged Users
         # Now, we'll log in as Mark Shuttleworth, who was assigned to this bug
         # when it was marked private:
         login("mark@example.com")
@@ -612,8 +620,8 @@ class TestBugTaskPrivacy(TestCase):
             BugTaskStatus.NEW, getUtility(ILaunchBag).user)
 
         # Privacy and Team Awareness
-        # No Privileges Person can't see the private bug, because he's not a
-        # subscriber:
+        # No Privileges Person can't see the private bug, because they're
+        # not a subscriber:
         no_priv = getUtility(IPersonSet).getByEmail('no-priv@canonical.com')
         params = BugTaskSearchParams(
             status=any(BugTaskStatus.NEW, BugTaskStatus.CONFIRMED),
@@ -668,6 +676,29 @@ class TestBugTaskPrivacy(TestCase):
         bug_upstream_firefox_crashes.transitionToStatus(
             BugTaskStatus.NEW, getUtility(ILaunchBag).user)
 
+    def _createBugAndSpecification(self):
+        bug = self.factory.makeBug()
+        spec = self.factory.makeSpecification(
+            information_type=InformationType.PROPRIETARY)
+        with person_logged_in(removeSecurityProxy(spec).product.owner):
+            spec.linkBug(bug)
+        return spec, bug
+
+    def test_bug_specifications_is_filtered_for_anonymous(self):
+        spec, bug = self._createBugAndSpecification()
+        self.assertContentEqual([], bug.getSpecifications(None))
+
+    def test_bug_specifications_is_filtered_for_unknown_user(self):
+        spec, bug = self._createBugAndSpecification()
+        self.assertContentEqual(
+            [], bug.getSpecifications(self.factory.makePerson()))
+
+    def test_bug_specifications_for_authorised_user(self):
+        spec, bug = self._createBugAndSpecification()
+        self.assertContentEqual(
+            [spec],
+            bug.getSpecifications(removeSecurityProxy(spec).product.owner))
+
 
 class TestBugTaskDelta(TestCaseWithFactory):
 
@@ -692,7 +723,7 @@ class TestBugTaskDelta(TestCaseWithFactory):
         names = set(
             name for interface in providedBy(delta) for name in interface)
         for name in names:
-            self.assertEquals(getattr(delta, name), expected_delta.get(name))
+            self.assertEqual(getattr(delta, name), expected_delta.get(name))
 
     def test_get_bugwatch_delta(self):
         # Exercise getDelta() with a change to bugwatch.
@@ -1018,7 +1049,7 @@ class TestBugTaskPermissionsToSetAssigneeMixin:
             self.series_bugtask.userCanSetAnyAssignee(
                 self.series_driver_member))
         if self.supervisor_member is not None:
-            # But he cannot assign anybody to bug tasks of the main target...
+            # But they cannot assign anybody to bug tasks of the main target...
             self.assertFalse(
                 self.target_bugtask.userCanSetAnyAssignee(
                     self.series_driver_member))
@@ -1162,8 +1193,8 @@ class BugTaskSearchBugsElsewhereTest(unittest.TestCase):
 
         # Get a debbugs watch.
         watch_debbugs_327452 = bugwatchset.get(9)
-        self.assertEquals(watch_debbugs_327452.bugtracker.name, "debbugs")
-        self.assertEquals(watch_debbugs_327452.remotebug, "327452")
+        self.assertEqual(watch_debbugs_327452.bugtracker.name, "debbugs")
+        self.assertEqual(watch_debbugs_327452.remotebug, "327452")
 
         # Associate the watch to a Fix Released task.
         debian = getUtility(IDistributionSet).getByName("debian")
@@ -1186,95 +1217,6 @@ class BugTaskSearchBugsElsewhereTest(unittest.TestCase):
             self.firefox_upstream.target.bug_supervisor)
         flush_database_updates()
 
-    def assertBugTaskIsPendingBugWatchElsewhere(self, bugtask):
-        """Assert the bugtask is pending a bug watch elsewhere.
-
-        Pending a bugwatch elsewhere means that at least one of the bugtask's
-        related task's target isn't using Malone, and that
-        related_bugtask.bugwatch is None.
-        """
-        non_malone_using_bugtasks = [
-            related_task for related_task in bugtask.related_tasks
-            if not related_task.pillar.official_malone]
-        pending_bugwatch_bugtasks = [
-            related_bugtask for related_bugtask in non_malone_using_bugtasks
-            if related_bugtask.bugwatch is None]
-        self.assert_(
-            len(pending_bugwatch_bugtasks) > 0,
-            'Bugtask %s on %s has no related bug watches elsewhere.' % (
-                bugtask.id, bugtask.target.displayname))
-
-    def assertBugTaskIsResolvedUpstream(self, bugtask):
-        """Make sure at least one of the related upstream tasks is resolved.
-
-        "Resolved", for our purposes, means either that one of the related
-        tasks is an upstream task in FIXCOMMITTED or FIXRELEASED state, or
-        it is a task with a bugwatch, and in FIXCOMMITTED, FIXRELEASED, or
-        INVALID state.
-        """
-        resolved_upstream_states = [
-            BugTaskStatus.FIXCOMMITTED, BugTaskStatus.FIXRELEASED]
-        resolved_bugwatch_states = [
-            BugTaskStatus.FIXCOMMITTED, BugTaskStatus.FIXRELEASED,
-            BugTaskStatus.INVALID]
-
-        # Helper functions for the list comprehension below.
-        def _is_resolved_upstream_task(bugtask):
-            return (
-                bugtask.product is not None and
-                bugtask.status in resolved_upstream_states)
-
-        def _is_resolved_bugwatch_task(bugtask):
-            return (
-                bugtask.bugwatch and bugtask.status in
-                resolved_bugwatch_states)
-
-        resolved_related_tasks = [
-            related_task for related_task in bugtask.related_tasks
-            if (_is_resolved_upstream_task(related_task) or
-                _is_resolved_bugwatch_task(related_task))]
-
-        self.assert_(len(resolved_related_tasks) > 0)
-        self.assert_(
-            len(resolved_related_tasks) > 0,
-            'Bugtask %s on %s has no resolved related tasks.' % (
-                bugtask.id, bugtask.target.displayname))
-
-    def assertBugTaskIsOpenUpstream(self, bugtask):
-        """Make sure at least one of the related upstream tasks is open.
-
-        "Open", for our purposes, means either that one of the related
-        tasks is an upstream task or a task with a bugwatch which has
-        one of the states listed in open_states.
-        """
-        open_states = [
-            BugTaskStatus.NEW,
-            BugTaskStatus.INCOMPLETE,
-            BugTaskStatus.CONFIRMED,
-            BugTaskStatus.INPROGRESS,
-            BugTaskStatus.UNKNOWN]
-
-        # Helper functions for the list comprehension below.
-        def _is_open_upstream_task(bugtask):
-            return (
-                bugtask.product is not None and
-                bugtask.status in open_states)
-
-        def _is_open_bugwatch_task(bugtask):
-            return (
-                bugtask.bugwatch and bugtask.status in
-                open_states)
-
-        open_related_tasks = [
-            related_task for related_task in bugtask.related_tasks
-            if (_is_open_upstream_task(related_task) or
-                _is_open_bugwatch_task(related_task))]
-
-        self.assert_(
-            len(open_related_tasks) > 0,
-            'Bugtask %s on %s has no open related tasks.' % (
-                bugtask.id, bugtask.target.displayname))
-
     def _hasUpstreamTask(self, bug):
         """Does this bug have an upstream task associated with it?
 
@@ -1284,16 +1226,6 @@ class BugTaskSearchBugsElsewhereTest(unittest.TestCase):
             if bugtask.product is not None:
                 return True
         return False
-
-    def assertShouldBeShownOnNoUpstreamTaskSearch(self, bugtask):
-        """Should the bugtask be shown in the search no upstream task search?
-
-        Returns True if yes, otherwise False.
-        """
-        self.assert_(
-            not self._hasUpstreamTask(bugtask.bug),
-            'Bugtask %s on %s has upstream tasks.' % (
-                bugtask.id, bugtask.target.displayname))
 
 
 class BugTaskSetFindExpirableBugTasksTest(unittest.TestCase):
@@ -1367,44 +1299,6 @@ class BugTaskSetFindExpirableBugTasksTest(unittest.TestCase):
         self.assertRaises(
             AssertionError, self.bugtaskset.findExpirableBugTasks,
             0, self.user, target=[])
-
-
-class BugTaskSetTest(unittest.TestCase):
-    """Test `BugTaskSet` methods."""
-    layer = DatabaseFunctionalLayer
-
-    def setUp(self):
-        login(ANONYMOUS)
-
-    def test_getBugTasks(self):
-        """ IBugTaskSet.getBugTasks() returns a dictionary mapping the given
-        bugs to their bugtasks. It does that in a single query, to avoid
-        hitting the DB again when getting the bugs' tasks.
-        """
-        login('no-priv@canonical.com')
-        factory = LaunchpadObjectFactory()
-        bug1 = factory.makeBug()
-        factory.makeBugTask(bug1)
-        bug2 = factory.makeBug()
-        factory.makeBugTask(bug2)
-        factory.makeBugTask(bug2)
-
-        bugs_and_tasks = getUtility(IBugTaskSet).getBugTasks(
-            [bug1.id, bug2.id])
-        # The bugtasks returned by getBugTasks() are exactly the same as the
-        # ones returned by bug.bugtasks, obviously.
-        self.failUnlessEqual(
-            set(bugs_and_tasks[bug1]).difference(bug1.bugtasks),
-            set([]))
-        self.failUnlessEqual(
-            set(bugs_and_tasks[bug2]).difference(bug2.bugtasks),
-            set([]))
-
-    def test_getBugTasks_with_empty_list(self):
-        # When given an empty list of bug IDs, getBugTasks() will return an
-        # empty dictionary.
-        bugs_and_tasks = getUtility(IBugTaskSet).getBugTasks([])
-        self.failUnlessEqual(bugs_and_tasks, {})
 
 
 class TestBugTaskStatuses(TestCase):
@@ -1664,98 +1558,6 @@ class TestStatusCountsForProductSeries(TestCaseWithFactory):
         self.assertEqual(expected, self.get_counts(None))
 
 
-class TestStatusCountsForProductSeries(TestCaseWithFactory):
-    """Test BugTaskSet.getStatusCountsForProductSeries()."""
-
-    layer = DatabaseFunctionalLayer
-
-    def setUp(self):
-        super(TestStatusCountsForProductSeries, self).setUp()
-        self.bugtask_set = getUtility(IBugTaskSet)
-        self.owner = self.factory.makePerson()
-        login_person(self.owner)
-        self.product = self.factory.makeProduct(owner=self.owner)
-        self.series = self.factory.makeProductSeries(product=self.product)
-        self.milestone = self.factory.makeMilestone(productseries=self.series)
-
-    def get_counts(self, user):
-        return self.bugtask_set.getStatusCountsForProductSeries(
-            user, self.series)
-
-    def createBugs(self):
-        self.factory.makeBug(milestone=self.milestone)
-        self.factory.makeBug(
-            milestone=self.milestone,
-            information_type=InformationType.USERDATA)
-        self.factory.makeBug(series=self.series)
-        self.factory.makeBug(
-            series=self.series, information_type=InformationType.USERDATA)
-
-    def test_privacy_and_counts_for_unauthenticated_user(self):
-        # An unauthenticated user should see bug counts for each status
-        # that do not include private bugs.
-        self.createBugs()
-        self.assertEqual(
-            {BugTaskStatus.NEW: 2},
-            self.get_counts(None))
-
-    def test_privacy_and_counts_for_owner(self):
-        # The owner should see bug counts for each status that do
-        # include all private bugs.
-        self.createBugs()
-        self.assertEqual(
-            {BugTaskStatus.NEW: 4},
-            self.get_counts(self.owner))
-
-    def test_privacy_and_counts_for_other_user(self):
-        # A random authenticated user should see bug counts for each
-        # status that do include all private bugs, since it is costly to
-        # query just the private bugs that the user has access to view,
-        # and this query may be run many times on a single page.
-        self.createBugs()
-        other = self.factory.makePerson()
-        self.assertEqual(
-            {BugTaskStatus.NEW: 4},
-            self.get_counts(other))
-
-    def test_multiple_statuses(self):
-        # Test that separate counts are provided for each status that
-        # bugs are found in.
-        statuses = [
-            BugTaskStatus.INVALID,
-            BugTaskStatus.OPINION,
-            ]
-        for status in statuses:
-            self.factory.makeBug(milestone=self.milestone, status=status)
-            self.factory.makeBug(series=self.series, status=status)
-        for i in range(3):
-            self.factory.makeBug(series=self.series)
-        expected = {
-            BugTaskStatus.INVALID: 2,
-            BugTaskStatus.OPINION: 2,
-            BugTaskStatus.NEW: 3,
-            }
-        self.assertEqual(expected, self.get_counts(None))
-
-    def test_incomplete_status(self):
-        # INCOMPLETE is stored as either INCOMPLETE_WITH_RESPONSE or
-        # INCOMPLETE_WITHOUT_RESPONSE so the stats do not include a count of
-        # INCOMPLETE tasks.
-        statuses = [
-            BugTaskStatusSearch.INCOMPLETE_WITH_RESPONSE,
-            BugTaskStatusSearch.INCOMPLETE_WITHOUT_RESPONSE,
-            BugTaskStatus.INCOMPLETE,
-            ]
-        for status in statuses:
-            self.factory.makeBug(series=self.series, status=status)
-        flush_database_updates()
-        expected = {
-            BugTaskStatusSearch.INCOMPLETE_WITH_RESPONSE: 1,
-            BugTaskStatusSearch.INCOMPLETE_WITHOUT_RESPONSE: 2,
-            }
-        self.assertEqual(expected, self.get_counts(None))
-
-
 class TestBugTaskMilestones(TestCaseWithFactory):
     """Tests that appropriate milestones are returned for bugtasks."""
 
@@ -1822,7 +1624,6 @@ class TestConjoinedBugTasks(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def _setupBugData(self):
-        super(TestConjoinedBugTasks, self).setUp()
         owner = self.factory.makePerson()
         distro = self.factory.makeDistribution(name="eggs", owner=owner,
                                                bug_supervisor=owner)
@@ -2169,37 +1970,32 @@ class TestAutoConfirmBugTasksFlagForProduct(TestCaseWithFactory):
 
     def test_flag_False(self):
         bug_task = self.factory.makeBugTask(target=self.makeTarget())
-        with feature_flags():
-            set_feature_flag(self.flag, u'   ')
+        with FeatureFixture({self.flag: u'   '}):
             self.assertFalse(
                 removeSecurityProxy(bug_task)._checkAutoconfirmFeatureFlag())
 
     def test_explicit_flag(self):
         bug_task = self.factory.makeBugTask(target=self.makeTarget())
-        with feature_flags():
-            set_feature_flag(self.flag, bug_task.pillar.name)
+        with FeatureFixture({self.flag: bug_task.pillar.name}):
             self.assertTrue(
                 removeSecurityProxy(bug_task)._checkAutoconfirmFeatureFlag())
 
     def test_explicit_flag_of_many(self):
         bug_task = self.factory.makeBugTask(target=self.makeTarget())
-        with feature_flags():
-            set_feature_flag(
-                self.flag, u'  foo bar  ' + bug_task.pillar.name + '    baz ')
+        flag_value = u'  foo bar  ' + bug_task.pillar.name + '    baz '
+        with FeatureFixture({self.flag: flag_value}):
             self.assertTrue(
                 removeSecurityProxy(bug_task)._checkAutoconfirmFeatureFlag())
 
     def test_match_all_flag(self):
         bug_task = self.factory.makeBugTask(target=self.makeTarget())
-        with feature_flags():
-            set_feature_flag(self.flag, u'*')
+        with FeatureFixture({self.flag: u'*'}):
             self.assertTrue(
                 removeSecurityProxy(bug_task)._checkAutoconfirmFeatureFlag())
 
     def test_alt_flag_does_not_affect(self):
         bug_task = self.factory.makeBugTask(target=self.makeTarget())
-        with feature_flags():
-            set_feature_flag(self.alt_flag, bug_task.pillar.name)
+        with FeatureFixture({self.alt_flag: bug_task.pillar.name}):
             self.assertFalse(
                 removeSecurityProxy(bug_task)._checkAutoconfirmFeatureFlag())
 
@@ -2254,9 +2050,9 @@ class TestAutoConfirmBugTasksTransitionToTarget(TestCaseWithFactory):
         person = self.factory.makePerson()
         autoconfirm_product = self.factory.makeProduct(owner=person)
         no_autoconfirm_product = self.factory.makeProduct(owner=person)
-        with feature_flags():
-            set_feature_flag(u'bugs.autoconfirm.enabled_product_names',
-                             autoconfirm_product.name)
+        with FeatureFixture({
+            u'bugs.autoconfirm.enabled_product_names':
+            autoconfirm_product.name}):
             bug_task = self.factory.makeBugTask(
                 target=no_autoconfirm_product, owner=person)
             with person_logged_in(person):
@@ -2271,9 +2067,9 @@ class TestAutoConfirmBugTasksTransitionToTarget(TestCaseWithFactory):
         another_person = self.factory.makePerson()
         autoconfirm_product = self.factory.makeProduct(owner=person)
         no_autoconfirm_product = self.factory.makeProduct(owner=person)
-        with feature_flags():
-            set_feature_flag(u'bugs.autoconfirm.enabled_product_names',
-                             autoconfirm_product.name)
+        with FeatureFixture({
+            u'bugs.autoconfirm.enabled_product_names':
+            autoconfirm_product.name}):
             bug_task = self.factory.makeBugTask(
                 target=no_autoconfirm_product, owner=person)
             with person_logged_in(another_person):
@@ -2405,7 +2201,7 @@ class TestValidateTransitionToTarget(TestCaseWithFactory):
     def test_distribution_to_package_works(self):
         distro = self.factory.makeDistribution()
         dsp = self.factory.makeDistributionSourcePackage(distribution=distro)
-        self.assertEquals(dsp.distribution, distro)
+        self.assertEqual(dsp.distribution, distro)
         self.assertTransitionWorks(distro, dsp)
 
     def test_package_to_package_works(self):
@@ -2543,11 +2339,10 @@ class TestTransitionToTarget(TestCaseWithFactory):
         task = self.factory.makeBugTask(target=old)
         p = self.factory.makePerson()
         self.assertEqual(old, task.target)
-        old_state = Snapshot(task, providing=providedBy(task))
         with person_logged_in(task.owner):
-            task.bug.subscribe(p, p)
-            task.transitionToTarget(new, p)
-            notify(ObjectModifiedEvent(task, old_state, ["target"]))
+            with notify_modified(task, ["target"]):
+                task.bug.subscribe(p, p)
+                task.transitionToTarget(new, p)
         return task
 
     def assertTransitionWorks(self, a, b):
@@ -2632,6 +2427,21 @@ class TestTransitionToTarget(TestCaseWithFactory):
             new_product.bugtargetdisplayname,
             removeSecurityProxy(task).targetnamecache)
 
+    def test_cached_recipients_cleared(self):
+        # The bug's notification recipients caches are cleared when
+        # transitionToTarget() is called.
+        new_product = self.factory.makeProduct()
+        task = self.factory.makeBugTask()
+        # Fill the COMMENTS level recipients cache.
+        task.bug.getBugNotificationRecipients()
+        cache = get_property_cache(task.bug)
+        self.assertIsNotNone(
+            getattr(cache, '_notification_recipients_for_lifecycle', None))
+        with person_logged_in(task.owner):
+            task.transitionToTarget(new_product, task.owner)
+        self.assertIsNone(
+            getattr(cache, '_notification_recipients_for_lifecycle', None))
+
     def test_accesspolicyartifacts_updated(self):
         # transitionToTarget updates the AccessPolicyArtifacts related
         # to the bug.
@@ -2669,6 +2479,28 @@ class TestTransitionToTarget(TestCaseWithFactory):
         self.assertContentEqual(
             (t.target for t in bug.bugtasks),
             [sp, sp.distribution_sourcepackage, other_distro])
+
+
+class TransitionToMilestoneTestCase(TestCaseWithFactory):
+    """Tests for BugTask.transitionToMilestone."""
+
+    layer = DatabaseFunctionalLayer
+
+    def test_cached_recipients_cleared(self):
+        # The bug's notification recipients caches are cleared when
+        # transitionToMilestone() is called.
+        task = self.factory.makeBugTask()
+        product = task.target
+        milestone = self.factory.makeMilestone(product=product)
+        # Fill the COMMENTS level recipients cache.
+        task.bug.getBugNotificationRecipients()
+        cache = get_property_cache(task.bug)
+        self.assertIsNotNone(
+            getattr(cache, '_notification_recipients_for_lifecycle', None))
+        with person_logged_in(task.target.owner):
+            task.transitionToMilestone(milestone, task.target.owner)
+        self.assertIsNone(
+            getattr(cache, '_notification_recipients_for_lifecycle', None))
 
 
 class TestTransitionsRemovesSubscribersJob(TestCaseWithFactory):
@@ -3030,7 +2862,8 @@ class TestValidateTarget(TestCaseWithFactory, ValidateTargetMixin):
         task = self.factory.makeBugTask()
         self.factory.makeSourcePackagePublishingHistory(
             distroseries=series, sourcepackagename=dsp.sourcepackagename,
-            archive=self.factory.makeArchive(purpose=ArchivePurpose.PPA))
+            archive=self.factory.makeArchive(
+                distribution=series.distribution, purpose=ArchivePurpose.PPA))
         self.assertRaisesWithContent(
             IllegalTarget,
             "Package %s not published in %s"
@@ -3054,6 +2887,18 @@ class TestValidateTarget(TestCaseWithFactory, ValidateTargetMixin):
             IllegalTarget,
             "%s doesn't allow Public bugs." % commercial_prod.displayname,
             validate_target, bug, commercial_prod)
+
+    def test_illegal_information_type_allowed_if_pillar_not_new(self):
+        # The bug's current information_type does not have to be permitted if
+        # we already affect the pillar.
+        prod = self.factory.makeProduct()
+        series = self.factory.makeProductSeries(product=prod)
+        bug = self.factory.makeBug(
+            target=prod, information_type=InformationType.USERDATA)
+        self.factory.makeCommercialSubscription(prod)
+        with person_logged_in(prod.owner):
+            prod.setBugSharingPolicy(BugSharingPolicy.PROPRIETARY)
+            validate_target(bug, series)
 
 
 class TestValidateNewTarget(TestCaseWithFactory, ValidateTargetMixin):
@@ -3281,7 +3126,7 @@ class TestTargetNameCache(TestCase):
                          u'Mozilla Thunderbird')
 
         thunderbird.name = 'thunderbird-ng'
-        thunderbird.displayname = 'Mozilla Thunderbird NG'
+        thunderbird.display_name = 'Mozilla Thunderbird NG'
 
         # XXX Guilherme Salgado 2005-11-07 bug=3989:
         # This flush_database_updates() shouldn't be needed because we
@@ -3301,7 +3146,7 @@ class TestTargetNameCache(TestCase):
             "/var/lock/launchpad-launchpad-targetnamecacheupdater.lock")))
         self.assertTrue('INFO    Updating targetname cache of bugtasks' in err)
         self.assertTrue('INFO    Calculating targets.' in err)
-        self.assertTrue('INFO    Will check ', err)
+        self.assertTrue('INFO    Will check ' in err)
         self.assertTrue("INFO    Updating (u'Mozilla Thunderbird',)" in err)
         self.assertTrue('INFO    Updated 1 target names.' in err)
         self.assertTrue('INFO    Finished updating targetname cache' in err)
@@ -3359,13 +3204,13 @@ class TestTargetNameCache(TestCase):
         # The updating of targetnamecaches is usually done by the cronjob,
         # however it can also be invoked directly.
         thunderbird.name = 'thunderbird'
-        thunderbird.displayname = 'Mozilla Thunderbird'
+        thunderbird.display_name = 'Mozilla Thunderbird'
         transaction.commit()
 
         self.assertEqual(upstream_task.bugtargetdisplayname,
             u'Mozilla Thunderbird NG')
 
-        logger = FakeLogger()
+        logger = DevNullLogger()
         updater = BugTaskTargetNameCacheUpdater(transaction, logger)
         updater.run()
 

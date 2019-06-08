@@ -1,8 +1,10 @@
-# Copyright 2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """{Describe your test suite here}.
 """
+
+from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 __all__ = []
@@ -26,9 +28,9 @@ from lp.testing.yuixhr import (
 # You can run these yui app tests interactively.  This can help with
 # construction and debugging.  To do so, start Launchpad with "make
 # run-testapp" and go to
-# http://launchpad.dev:8085/+yuitest/PATH/TO/THIS/FILE/WITHOUT/EXTENSION
+# http://launchpad.test:8085/+yuitest/PATH/TO/THIS/FILE/WITHOUT/EXTENSION
 # . For example,
-# http://launchpad.dev:8085/+yuitest/lp/testing/tests/test_yuixhr_fixture
+# http://launchpad.test:8085/+yuitest/lp/testing/tests/test_yuixhr_fixture
 # will run the tests in
 # {launchpad}/lib/lp/testing/tests/test_yui_fixture[.py|.js].
 
@@ -99,6 +101,8 @@ def example(request, data):
     # have been mutating the "data" dict that was passed in.  (This
     # will become slightly more important if you ever want to use
     # .extend.)
+
+
 @example.add_cleanup
 def example(request, data):
     # This is an example of a cleanup function, which will be called

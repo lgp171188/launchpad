@@ -3,14 +3,25 @@
 
 """Webservice unit tests related to Launchpad blueprints."""
 
+from __future__ import absolute_import, print_function, unicode_literals
+
 __metaclass__ = type
 
+import json
+
+from testtools.matchers import MatchesStructure
 import transaction
 from zope.security.management import endInteraction
+from zope.security.proxy import removeSecurityProxy
 
+from lp.app.enums import InformationType
 from lp.blueprints.enums import SpecificationDefinitionStatus
+from lp.registry.enums import SpecificationSharingPolicy
 from lp.services.webapp.interaction import ANONYMOUS
+from lp.services.webapp.interfaces import OAuthPermission
 from lp.testing import (
+    admin_logged_in,
+    api_url,
     launchpadlib_for,
     person_logged_in,
     TestCaseWithFactory,
@@ -42,8 +53,83 @@ class SpecificationWebserviceTestCase(TestCaseWithFactory):
         return result
 
     def getPillarOnWebservice(self, pillar_obj):
+        pillar_name = pillar_obj.name
         launchpadlib = self.getLaunchpadlib()
-        return launchpadlib.load(pillar_obj.name)
+        return launchpadlib.load(pillar_name)
+
+
+class SpecificationWebserviceTests(SpecificationWebserviceTestCase):
+    """Test accessing specification top-level webservice."""
+    layer = AppServerLayer
+
+    def test_collection(self):
+        # `ISpecificationSet` is exposed as a webservice via /specs
+        # and is represented by an empty collection.
+        user = self.factory.makePerson()
+        webservice = webservice_for_person(user)
+        response = webservice.get('/specs')
+        self.assertEqual(200, response.status)
+        self.assertEqual(
+            ['entries', 'resource_type_link', 'start', 'total_size'],
+            sorted(response.jsonBody().keys()))
+        self.assertEqual(0, response.jsonBody()['total_size'])
+
+    def test_creation_for_products(self):
+        # `ISpecificationSet.createSpecification` is exposed and
+        # allows specification creation for products.
+        user = self.factory.makePerson()
+        product = self.factory.makeProduct()
+        product_url = api_url(product)
+        webservice = webservice_for_person(
+            user, permission=OAuthPermission.WRITE_PUBLIC)
+        response = webservice.named_post(
+            '/specs', 'createSpecification',
+            name='test-prod', title='Product', specurl='http://test.com',
+            definition_status='Approved', summary='A summary',
+            target=product_url,
+            api_version='devel')
+        self.assertEqual(201, response.status)
+
+    def test_creation_honor_product_sharing_policy(self):
+        # `ISpecificationSet.createSpecification` respect product
+        # specification_sharing_policy.
+        user = self.factory.makePerson()
+        product = self.factory.makeProduct(
+            owner=user,
+            specification_sharing_policy=(
+                SpecificationSharingPolicy.PROPRIETARY))
+        product_url = api_url(product)
+        webservice = webservice_for_person(
+            user, permission=OAuthPermission.WRITE_PRIVATE)
+        spec_name = 'test-prop'
+        response = webservice.named_post(
+            '/specs', 'createSpecification',
+            name=spec_name, title='Proprietary', specurl='http://test.com',
+            definition_status='Approved', summary='A summary',
+            target=product_url,
+            api_version='devel')
+        self.assertEqual(201, response.status)
+        # The new specification was created as PROPROETARY.
+        response = webservice.get('%s/+spec/%s' % (product_url, spec_name))
+        self.assertEqual(200, response.status)
+        self.assertEqual(
+            'Proprietary', response.jsonBody()['information_type'])
+
+    def test_creation_for_distribution(self):
+        # `ISpecificationSet.createSpecification` also allows
+        # specification creation for distributions.
+        user = self.factory.makePerson()
+        distribution = self.factory.makeDistribution()
+        distribution_url = api_url(distribution)
+        webservice = webservice_for_person(
+            user, permission=OAuthPermission.WRITE_PUBLIC)
+        response = webservice.named_post(
+            '/specs', 'createSpecification',
+            name='test-distro', title='Distro', specurl='http://test.com',
+            definition_status='Approved', summary='A summary',
+            target=distribution_url,
+            api_version='devel')
+        self.assertEqual(201, response.status)
 
 
 class SpecificationAttributeWebserviceTests(SpecificationWebserviceTestCase):
@@ -60,56 +146,35 @@ class SpecificationAttributeWebserviceTests(SpecificationWebserviceTestCase):
         url = '/%s/+spec/%s' % (spec.product.name, spec.name)
         webservice = webservice_for_person(user)
         response = webservice.get(url)
-        expected_keys = [u'self_link', u'http_etag', u'resource_type_link',
-                         u'web_link', u'information_type']
+        expected_keys = ['self_link', 'http_etag', 'resource_type_link',
+                         'web_link', 'information_type']
         self.assertEqual(response.status, 200)
         self.assertContentEqual(expected_keys, response.jsonBody().keys())
 
-    def test_representation_contains_name(self):
+    def test_representation_basics(self):
         spec = self.factory.makeSpecification()
-        spec_name = spec.name
         spec_webservice = self.getSpecOnWebservice(spec)
-        self.assertEqual(spec_name, spec_webservice.name)
+        with person_logged_in(ANONYMOUS):
+            self.assertThat(
+                spec_webservice,
+                MatchesStructure.byEquality(
+                    name=spec.name,
+                    title=spec.title,
+                    specification_url=spec.specurl,
+                    summary=spec.summary,
+                    implementation_status=spec.implementation_status.title,
+                    definition_status=spec.definition_status.title,
+                    priority=spec.priority.title,
+                    date_created=spec.datecreated,
+                    whiteboard=spec.whiteboard,
+                    workitems_text=spec.workitems_text))
 
     def test_representation_contains_target(self):
         spec = self.factory.makeSpecification(
             product=self.factory.makeProduct())
-        spec_target = spec.target
+        spec_target_name = spec.target.name
         spec_webservice = self.getSpecOnWebservice(spec)
-        self.assertEqual(spec_target.name, spec_webservice.target.name)
-
-    def test_representation_contains_title(self):
-        spec = self.factory.makeSpecification(title='Foo')
-        spec_title = spec.title
-        spec_webservice = self.getSpecOnWebservice(spec)
-        self.assertEqual(spec_title, spec_webservice.title)
-
-    def test_representation_contains_specification_url(self):
-        spec = self.factory.makeSpecification(specurl='http://example.com')
-        spec_specurl = spec.specurl
-        spec_webservice = self.getSpecOnWebservice(spec)
-        self.assertEqual(spec_specurl, spec_webservice.specification_url)
-
-    def test_representation_contains_summary(self):
-        spec = self.factory.makeSpecification(summary='Foo')
-        spec_summary = spec.summary
-        spec_webservice = self.getSpecOnWebservice(spec)
-        self.assertEqual(spec_summary, spec_webservice.summary)
-
-    def test_representation_contains_implementation_status(self):
-        spec = self.factory.makeSpecification()
-        spec_implementation_status = spec.implementation_status
-        spec_webservice = self.getSpecOnWebservice(spec)
-        self.assertEqual(
-            spec_implementation_status.title,
-            spec_webservice.implementation_status)
-
-    def test_representation_contains_definition_status(self):
-        spec = self.factory.makeSpecification()
-        spec_definition_status = spec.definition_status
-        spec_webservice = self.getSpecOnWebservice(spec)
-        self.assertEqual(
-            spec_definition_status.title, spec_webservice.definition_status)
+        self.assertEqual(spec_target_name, spec_webservice.target.name)
 
     def test_representation_contains_assignee(self):
         # Hard-code the person's name or else we'd need to set up a zope
@@ -136,30 +201,6 @@ class SpecificationAttributeWebserviceTests(SpecificationWebserviceTestCase):
             owner=self.factory.makePerson(name='test-person'))
         spec_webservice = self.getSpecOnWebservice(spec)
         self.assertEqual('test-person', spec_webservice.owner.name)
-
-    def test_representation_contains_priority(self):
-        spec = self.factory.makeSpecification()
-        spec_priority = spec.priority
-        spec_webservice = self.getSpecOnWebservice(spec)
-        self.assertEqual(spec_priority.title, spec_webservice.priority)
-
-    def test_representation_contains_date_created(self):
-        spec = self.factory.makeSpecification()
-        spec_datecreated = spec.datecreated
-        spec_webservice = self.getSpecOnWebservice(spec)
-        self.assertEqual(spec_datecreated, spec_webservice.date_created)
-
-    def test_representation_contains_whiteboard(self):
-        spec = self.factory.makeSpecification(whiteboard='Test')
-        spec_whiteboard = spec.whiteboard
-        spec_webservice = self.getSpecOnWebservice(spec)
-        self.assertEqual(spec_whiteboard, spec_webservice.whiteboard)
-
-    def test_representation_contains_workitems(self):
-        work_item = self.factory.makeSpecificationWorkItem()
-        spec_webservice = self.getSpecOnWebservice(work_item.specification)
-        self.assertEqual(work_item.specification.workitems_text,
-                         spec_webservice.workitems_text)
 
     def test_representation_contains_milestone(self):
         product = self.factory.makeProduct()
@@ -197,6 +238,55 @@ class SpecificationAttributeWebserviceTests(SpecificationWebserviceTestCase):
         spec_webservice = self.getSpecOnWebservice(spec)
         self.assertEqual(1, spec_webservice.bugs.total_size)
         self.assertEqual(bug.id, spec_webservice.bugs[0].id)
+
+
+class SpecificationMutationTests(TestCaseWithFactory):
+
+    layer = DatabaseFunctionalLayer
+
+    def test_set_information_type(self):
+        product = self.factory.makeProduct(
+            specification_sharing_policy=(
+                SpecificationSharingPolicy.PUBLIC_OR_PROPRIETARY))
+        spec = self.factory.makeSpecification(product=product)
+        self.assertEqual(InformationType.PUBLIC, spec.information_type)
+        spec_url = api_url(spec)
+        webservice = webservice_for_person(
+            product.owner, permission=OAuthPermission.WRITE_PRIVATE)
+        response = webservice.patch(
+            spec_url, "application/json",
+            json.dumps(dict(information_type='Proprietary')),
+            api_version='devel')
+        self.assertEqual(209, response.status)
+        with admin_logged_in():
+            self.assertEqual(
+                InformationType.PROPRIETARY, spec.information_type)
+
+    def test_set_target(self):
+        old_target = self.factory.makeProduct()
+        spec = self.factory.makeSpecification(product=old_target, name='foo')
+        new_target = self.factory.makeProduct(displayname='Fooix')
+        spec_url = api_url(spec)
+        new_target_url = api_url(new_target)
+        webservice = webservice_for_person(
+            old_target.owner, permission=OAuthPermission.WRITE_PRIVATE)
+        response = webservice.patch(
+            spec_url, "application/json",
+            json.dumps(dict(target_link=new_target_url)), api_version='devel')
+        self.assertEqual(301, response.status)
+        with admin_logged_in():
+            self.assertEqual(new_target, spec.target)
+
+            # Moving another spec with the same name fails.
+            other_spec = self.factory.makeSpecification(
+                product=old_target, name='foo')
+            other_spec_url = api_url(other_spec)
+        response = webservice.patch(
+            other_spec_url, "application/json",
+            json.dumps(dict(target_link=new_target_url)), api_version='devel')
+        self.assertEqual(400, response.status)
+        self.assertEqual(
+            "There is already a blueprint named foo for Fooix.", response.body)
 
 
 class SpecificationTargetTests(SpecificationWebserviceTestCase):
@@ -271,7 +361,7 @@ class IHasSpecificationsTests(SpecificationWebserviceTestCase):
         # setup a new one.
         endInteraction()
         lplib = launchpadlib_for('lplib-test', person=None, version='devel')
-        ws_product = ws_object(lplib, product)
+        ws_product = ws_object(lplib, removeSecurityProxy(product))
         self.assertNamesOfSpecificationsAre(
             ["spec1", "spec2"], ws_product.all_specifications)
 
@@ -336,7 +426,7 @@ class TestSpecificationSubscription(SpecificationWebserviceTestCase):
         # Test canBeUnsubscribedByUser() API.
         webservice = LaunchpadWebServiceCaller(
             'launchpad-library', 'salgado-change-anything',
-            domain='api.launchpad.dev:8085')
+            domain='api.launchpad.test:8085')
 
         with person_logged_in(ANONYMOUS):
             db_spec = self.factory.makeSpecification()
@@ -350,7 +440,7 @@ class TestSpecificationSubscription(SpecificationWebserviceTestCase):
 
         result = webservice.named_get(
             subscription['self_link'], 'canBeUnsubscribedByUser').jsonBody()
-        self.assertFalse(result)
+        self.assertTrue(result)
 
 
 class TestSpecificationBugLinks(SpecificationWebserviceTestCase):
@@ -399,3 +489,65 @@ class TestSpecificationBugLinks(SpecificationWebserviceTestCase):
 
         # Now that we've unlinked the bug, there are no linked bugs at all.
         self.assertEqual(0, spec.bugs.total_size)
+
+
+class TestSpecificationGoalHandling(SpecificationWebserviceTestCase):
+
+    layer = AppServerLayer
+
+    def setUp(self):
+        super(TestSpecificationGoalHandling, self).setUp()
+        self.driver = self.factory.makePerson()
+        self.proposer = self.factory.makePerson()
+        self.product = self.factory.makeProduct(driver=self.driver)
+        self.series = self.factory.makeProductSeries(product=self.product)
+
+    def test_goal_propose_and_accept(self):
+        # Webservice clients can propose and accept spec series goals.
+        db_spec = self.factory.makeBlueprint(product=self.product,
+                                             owner=self.proposer)
+        # Propose for series goal
+        with person_logged_in(self.proposer):
+            launchpad = self.factory.makeLaunchpadService(person=self.proposer)
+            spec = ws_object(launchpad, db_spec)
+            series = ws_object(launchpad, self.series)
+            spec.proposeGoal(goal=series)
+            transaction.commit()
+            self.assertEqual(db_spec.goal, self.series)
+            self.assertFalse(spec.has_accepted_goal)
+
+        # Accept series goal
+        with person_logged_in(self.driver):
+            launchpad = self.factory.makeLaunchpadService(person=self.driver)
+            spec = ws_object(launchpad, db_spec)
+            spec.acceptGoal()
+            transaction.commit()
+            self.assertTrue(spec.has_accepted_goal)
+
+    def test_goal_propose_decline_and_clear(self):
+        # Webservice clients can decline and clear spec series goals.
+        db_spec = self.factory.makeBlueprint(product=self.product,
+                                             owner=self.proposer)
+        # Propose for series goal
+        with person_logged_in(self.proposer):
+            launchpad = self.factory.makeLaunchpadService(person=self.proposer)
+            spec = ws_object(launchpad, db_spec)
+            series = ws_object(launchpad, self.series)
+            spec.proposeGoal(goal=series)
+            transaction.commit()
+            self.assertEqual(db_spec.goal, self.series)
+            self.assertFalse(spec.has_accepted_goal)
+
+        with person_logged_in(self.driver):
+            # Decline series goal
+            launchpad = self.factory.makeLaunchpadService(person=self.driver)
+            spec = ws_object(launchpad, db_spec)
+            spec.declineGoal()
+            transaction.commit()
+            self.assertFalse(spec.has_accepted_goal)
+            self.assertEqual(db_spec.goal, self.series)
+
+            # Clear series goal as a driver
+            spec.proposeGoal(goal=None)
+            transaction.commit()
+            self.assertIsNone(db_spec.goal)

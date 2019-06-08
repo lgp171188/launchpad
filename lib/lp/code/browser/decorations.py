@@ -8,9 +8,10 @@ __all__ = [
     'DecoratedBranch',
     ]
 
-from lazr.delegates import delegates
-from zope.interface import implements
+from lazr.delegates import delegate_to
+from zope.interface import implementer
 
+from lp.app.interfaces.informationtype import IInformationType
 from lp.app.interfaces.launchpad import IPrivacy
 from lp.code.interfaces.branch import (
     BzrIdentityMixin,
@@ -19,13 +20,13 @@ from lp.code.interfaces.branch import (
 from lp.services.propertycache import cachedproperty
 
 
+@implementer(IPrivacy)
+@delegate_to(IBranch, IInformationType, context='branch')
 class DecoratedBranch(BzrIdentityMixin):
     """Wrap a number of the branch accessors to cache results.
 
     This avoids repeated db queries.
     """
-    implements(IPrivacy)
-    delegates(IBranch, 'branch')
 
     def __init__(self, branch):
         self.branch = branch
@@ -92,10 +93,9 @@ class DecoratedBranch(BzrIdentityMixin):
         list of subscribers anyway, a simple check over the list is
         sufficient.
         """
-        for sub in self.subscriptions:
-            if sub.person == user:
-                return True
-        return False
+        if user is None:
+            return False
+        return user.id in [sub.personID for sub in self.subscriptions]
 
     @cachedproperty
     def latest_revisions(self):

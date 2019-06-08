@@ -1,23 +1,18 @@
-# Copyright 2009-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
-
-# pylint: disable-msg=E0211,E0213
 
 """Publishing interfaces."""
 
 __metaclass__ = type
 
 __all__ = [
+    'DeletionError',
     'IArchiveSafePublisher',
-    'IBinaryPackageFilePublishing',
     'IBinaryPackagePublishingHistory',
     'IBinaryPackagePublishingHistoryEdit',
     'IBinaryPackagePublishingHistoryPublic',
-    'ICanPublishPackages',
-    'IFilePublishing',
     'IPublishingEdit',
     'IPublishingSet',
-    'ISourcePackageFilePublishing',
     'ISourcePackagePublishingHistory',
     'ISourcePackagePublishingHistoryEdit',
     'ISourcePackagePublishingHistoryPublic',
@@ -108,6 +103,11 @@ class OverrideError(Exception):
     """Raised when an attempt to change an override fails."""
 
 
+@error_status(httplib.BAD_REQUEST)
+class DeletionError(Exception):
+    """Raised when an attempt to delete a publication fails."""
+
+
 name_priority_map = {
     'required': PackagePublishingPriority.REQUIRED,
     'important': PackagePublishingPriority.IMPORTANT,
@@ -121,36 +121,6 @@ name_priority_map = {
 #
 # Base Interfaces
 #
-
-
-class ICanPublishPackages(Interface):
-    """Denotes the ability to publish associated publishing records."""
-
-    def getPendingPublications(archive, pocket, is_careful):
-        """Return the specific group of records to be published.
-
-        IDistroSeries -> ISourcePackagePublishing
-        IDistroArchSeries -> IBinaryPackagePublishing
-
-        'pocket' & 'archive' are mandatory arguments, they  restrict the
-        results to the given value.
-
-        If the distroseries is already released, it automatically refuses
-        to publish records to RELEASE pocket.
-        """
-
-    def publish(diskpool, log, archive, pocket, careful=False):
-        """Publish associated publishing records targeted for a given pocket.
-
-        Require an initialized diskpool instance and a logger instance.
-        Require an 'archive' which will restrict the publications.
-        'careful' argument would cause the 'republication' of all published
-        records if True (system will DTRT checking hash of all
-        published files.)
-
-        Consider records returned by the local implementation of
-        getPendingPublications.
-        """
 
 
 class IArchiveSafePublisher(Interface):
@@ -195,54 +165,12 @@ class IPublishingView(Interface):
         If all the files get published correctly update its status properly.
         """
 
-    def getIndexStanza():
-        """Return archive index stanza contents
-
-        It's based on the locally provided buildIndexStanzaTemplate method,
-        which differs for binary and source instances.
-        """
-
-    def buildIndexStanzaFields():
-        """Build a map of fields and values to be in the Index file.
-
-        The fields and values ae mapped into a dictionary, where the key is
-        the field name and value is the value string.
-        """
-
     def requestObsolescence():
         """Make this publication obsolete.
 
         :return: The obsoleted publishing record, either:
             `ISourcePackagePublishingHistory` or
             `IBinaryPackagePublishingHistory`.
-        """
-
-    def getAncestry(archive=None, distroseries=None, pocket=None,
-                    status=None):
-        """Return the most recent publication of the same source or binary.
-
-        If a suitable ancestry could not be found, None is returned.
-
-        It optionally accepts parameters for adjusting the publishing
-        context, if not given they default to the current context.
-
-        :param archive: optional `IArchive`, defaults to the context archive.
-        :param distroseries: optional `IDistroSeries`, defaults to the
-            context distroseries.
-        :param pocket: optional `PackagePublishingPocket`, defaults to any
-            pocket.
-        :param status: optional `PackagePublishingStatus` or a collection of
-            them, defaults to `PackagePublishingStatus.PUBLISHED`
-        """
-
-    def overrideFromAncestry():
-        """Set the right published component from publishing ancestry.
-
-        Start with the publishing records and fall back to the original
-        uploaded package if necessary.
-
-        :raise: AssertionError if the context publishing record is not in
-            PENDING status.
         """
 
 
@@ -273,66 +201,9 @@ class IPublishingEdit(Interface):
         # deleted in tandem.
 
 
-class IFilePublishing(Interface):
-    """Base interface for *FilePublishing classes"""
-
-    distribution = Int(
-            title=_('Distribution ID'), required=True, readonly=True,
-            )
-    distroseriesname = TextLine(
-            title=_('Series name'), required=True, readonly=True,
-            )
-    componentname = TextLine(
-            title=_('Component name'), required=True, readonly=True,
-            )
-    publishingstatus = Int(
-            title=_('Package publishing status'), required=True,
-            readonly=True,
-            )
-    pocket = Int(
-            title=_('Package publishing pocket'), required=True,
-            readonly=True,
-            )
-    archive = Int(
-            title=_('Archive ID'), required=True, readonly=True,
-            )
-    libraryfilealias = Int(
-            title=_('Binarypackage file alias'), required=True,
-            readonly=True,
-            )
-    libraryfilealiasfilename = TextLine(
-            title=_('File name'), required=True, readonly=True,
-            )
-    archive_url = Attribute('The on-archive URL for the published file.')
-
-    publishing_record = Attribute(
-        "Return the Source or Binary publishing record "
-        "(in the form of I{Source,Binary}PackagePublishingHistory).")
-
-    def publish(diskpool, log):
-        """Publish or ensure contents of this file in the archive.
-
-        Create symbolic link to files already present in different component
-        or add file from librarian if it's not present. Update the database
-        to represent the current archive state.
-        """
-
 #
 # Source package publishing
 #
-
-
-class ISourcePackageFilePublishing(IFilePublishing):
-    """Source package release files and their publishing status"""
-    file_type_name = Attribute(
-        "The uploaded file's type; one of 'orig', 'dsc', 'diff' or 'other'")
-    sourcepackagename = TextLine(
-            title=_('Binary package name'), required=True, readonly=True,
-            )
-    sourcepackagepublishing = Int(
-            title=_('Sourcepackage publishing record id'), required=True,
-            readonly=True,
-            )
 
 
 class ISourcePackagePublishingHistoryPublic(IPublishingView):
@@ -445,17 +316,10 @@ class ISourcePackagePublishingHistoryPublic(IPublishingView):
     meta_sourcepackage = Attribute(
         "Return an ISourcePackage meta object correspondent to the "
         "sourcepackagerelease attribute inside a specific distroseries")
-    meta_sourcepackagerelease = Attribute(
+    meta_distributionsourcepackagerelease = Attribute(
         "Return an IDistributionSourcePackageRelease meta object "
-        "correspondent to the sourcepackagerelease attribute")
-    meta_supersededby = Attribute(
-        "Return an IDistributionSourcePackageRelease meta object "
-        "correspondent to the supersededby attribute. if supersededby "
-        "is None return None.")
-    meta_distroseriessourcepackagerelease = Attribute(
-        "Return an IDistroSeriesSourcePackageRelease meta object "
         "correspondent to the sourcepackagerelease attribute inside "
-        "a specific distroseries")
+        "this distribution")
 
     source_package_name = exported(
         TextLine(
@@ -590,22 +454,7 @@ class ISourcePackagePublishingHistoryPublic(IPublishingView):
         :return: the changelog file URL for this source (a string).
         """
 
-    def getUnpublishedBuilds(build_states=None):
-        """Return a resultset of `IBuild` objects in this context that are
-        not published.
-
-        Note that this is convenience glue for
-        PublishingSet.getUnpublishedBuildsForSources - and that method should
-        be considered authoritative.
-
-        :param build_states: list of build states to which the result should
-            be limited. Defaults to BuildStatus.FULLYBUILT if none are
-            specified.
-        :return: a result set of `IBuilds`.
-        """
-
-    def createMissingBuilds(architectures_available=None, pas_verify=None,
-                            logger=None):
+    def createMissingBuilds(architectures_available=None, logger=None):
         """Create missing Build records for a published source.
 
         P-a-s should be used when accepting sources to the PRIMARY archive
@@ -616,8 +465,6 @@ class ISourcePackagePublishingHistoryPublic(IPublishingView):
             that should be considered for build creation; if not given
             it will be calculated in place, all architectures for the
             context distroseries with available chroot.
-        :param pas_verify: optional Package-architecture-specific (P-a-s)
-            object, to be used, when convinient, for creating builds;
         :param logger: optional context Logger object (used on DEBUG level).
 
         :return: a list of `Builds` created for this source publication.
@@ -676,9 +523,13 @@ class ISourcePackagePublishingHistoryPublic(IPublishingView):
         """
 
     @export_read_operation()
-    def sourceFileUrls():
+    @operation_parameters(
+        include_meta=Bool(title=_("Include Metadata"), required=False))
+    def sourceFileUrls(include_meta=False):
         """URLs for this source publication's uploaded source files.
 
+        :param include_meta: Return a list of dicts with keys url, size, and
+            sha256 for each URL instead of a simple list.
         :return: A collection of URLs for this source.
         """
 
@@ -733,20 +584,6 @@ class ISourcePackagePublishingHistory(ISourcePackagePublishingHistoryPublic,
 #
 
 
-class IBinaryPackageFilePublishing(IFilePublishing):
-    """Binary package files and their publishing status"""
-    # Note that it is really /source/ package name below, and not a
-    # thinko; at least, that's what Celso tells me the code uses
-    #   -- kiko, 2006-03-22
-    sourcepackagename = TextLine(
-            title=_('Source package name'), required=True, readonly=True,
-            )
-    binarypackagepublishing = Int(
-            title=_('Binary Package publishing record id'), required=True,
-            readonly=True,
-            )
-
-
 class IBinaryPackagePublishingHistoryPublic(IPublishingView):
     """A binary package publishing record."""
 
@@ -760,6 +597,8 @@ class IBinaryPackagePublishingHistoryPublic(IPublishingView):
         required=False, readonly=False)
     binarypackagerelease = Attribute(
         "The binary package release being published")
+    source_package_name = Attribute(
+        'The source package name that built this binary.')
     distroarchseriesID = Int(
         title=_("The DB id for the distroarchseries."),
         required=False, readonly=False)
@@ -786,6 +625,12 @@ class IBinaryPackagePublishingHistoryPublic(IPublishingView):
             title=_('The priority being published into'),
             required=False, readonly=False,
             )
+    phased_update_percentage = exported(
+        Int(
+            title=_('The percentage of users for whom this package should be '
+                    'recommended, or None to publish the update for everyone'),
+            required=False, readonly=True,
+            ))
     datepublished = exported(
         Datetime(
             title=_("Date Published"),
@@ -884,6 +729,13 @@ class IBinaryPackagePublishingHistoryPublic(IPublishingView):
         TextLine(
             title=_("Binary Package Version"),
             required=False, readonly=True))
+    build = exported(
+        Reference(
+            # Really IBinaryPackageBuild, fixed in _schema_circular_imports.
+            Interface,
+            title=_("Build"),
+            description=_("The build that produced this binary package."),
+            required=True, readonly=True))
     architecture_specific = exported(
         Bool(
             title=_("Architecture Specific"),
@@ -892,6 +744,12 @@ class IBinaryPackagePublishingHistoryPublic(IPublishingView):
         TextLine(
             title=_("Priority Name"),
             required=False, readonly=True))
+    is_debug = exported(
+        Bool(
+            title=_("Debug Package"),
+            description=_("Is this a debug package publication?"),
+            required=False, readonly=True),
+        as_of="devel")
 
     def supersede(dominant=None, logger=None):
         """Supersede this publication.
@@ -942,10 +800,14 @@ class IBinaryPackagePublishingHistoryPublic(IPublishingView):
         """
 
     @export_read_operation()
+    @operation_parameters(
+        include_meta=Bool(title=_("Include Metadata"), required=False))
     @operation_for_version("devel")
-    def binaryFileUrls():
+    def binaryFileUrls(include_meta=False):
         """URLs for this binary publication's binary files.
 
+        :param include_meta: Return a list of dicts with keys url, size,
+            sha1, and sha256 for each URL instead of a simple list.
         :return: A collection of URLs for this binary.
         """
 
@@ -963,14 +825,20 @@ class IBinaryPackagePublishingHistoryEdit(IPublishingEdit):
         # save manually looking up the priority name, but it doesn't work in
         # this case: the title is wrong, and tests fail when a string value
         # is passed over the webservice.
-        new_priority=TextLine(title=u"The new priority name."))
+        new_priority=TextLine(title=u"The new priority name."),
+        new_phased_update_percentage=Int(
+            title=u"The new phased update percentage."))
     @export_write_operation()
     @operation_for_version("devel")
     def changeOverride(new_component=None, new_section=None,
-                       new_priority=None):
-        """Change the component, section and/or priority of this publication.
+                       new_priority=None, new_phased_update_percentage=None):
+        """Change the component/section/priority/phase of this publication.
 
         It is changed only if the argument is not None.
+
+        Passing new_phased_update_percentage=100 has the effect of setting
+        the phased update percentage to None (i.e. recommended for all
+        users).
 
         Return the overridden publishing record, a
         `IBinaryPackagePublishingHistory`.
@@ -986,77 +854,40 @@ class IBinaryPackagePublishingHistory(IBinaryPackagePublishingHistoryPublic,
 class IPublishingSet(Interface):
     """Auxiliary methods for dealing with sets of publications."""
 
-    def copyBinariesTo(binaries, distroseries, pocket, archive, policy=None):
-        """Copy multiple binaries to a given destination.
-
-        Processing multiple binaries in a batch allows certain
-        performance optimisations such as looking up the main
-        component once only, and getting all the BPPH records
-        with one query.
-
-        :param binaries: A list of binaries to copy.
-        :param distroseries: The target distroseries.
-        :param pocket: The target pocket.
-        :param archive: The target archive.
-        :param policy: The `IOverridePolicy` to apply to the copy.
-
-        :return: A result set of the created binary package
-            publishing histories.
-        """
-
     def publishBinaries(archive, distroseries, pocket, binaries):
         """Efficiently publish multiple BinaryPackageReleases in an Archive.
 
-        Creates `IBinaryPackagePublishingHistory` records for each binary,
-        handling architecture-independent and debug packages, avoiding
-        creation of duplicate publications, and leaving disabled
-        architectures alone.
+        Creates `IBinaryPackagePublishingHistory` records for each
+        binary, handling architecture-independent, avoiding creation of
+        duplicate publications, and leaving disabled architectures
+        alone.
 
         :param archive: The target `IArchive`.
         :param distroseries: The target `IDistroSeries`.
         :param pocket: The target `PackagePublishingPocket`.
         :param binaries: A dict mapping `BinaryPackageReleases` to their
             desired overrides as (`Component`, `Section`,
-            `PackagePublishingPriority`) tuples.
+            `PackagePublishingPriority`, `phased_update_percentage`) tuples.
 
         :return: A list of new `IBinaryPackagePublishingHistory` records.
         """
 
-    def publishBinary(archive, binarypackagerelease, distroseries,
-                      component, section, priority, pocket):
-        """Publish a `BinaryPackageRelease` in an archive.
+    def copyBinaries(archive, distroseries, pocket, bpphs, policy=None):
+        """Copy multiple binaries to a given destination.
 
-        Creates one or more `IBinaryPackagePublishingHistory` records,
-        handling architecture-independent and DDEB publications transparently.
-
-        Note that binaries will only be copied if they don't already exist in
-        the target; this method cannot be used to change overrides.
+        Efficiently copies the given `IBinaryPackagePublishingHistory`
+        records to a new archive and suite, optionally overriding the
+        original publications' component, section and priority using an
+        `IOverridePolicy`.
 
         :param archive: The target `IArchive`.
-        :param binarypackagerelease: The `IBinaryPackageRelease` to copy.
-        :param distroseries: An `IDistroSeries`.
-        :param component: The target `IComponent`.
-        :param section: The target `ISection`.
-        :param priority: The target `PackagePublishingPriority`.
+        :param distroseries: The target `IDistroSeries`.
         :param pocket: The target `PackagePublishingPocket`.
+        :param binaries: A list of `IBinaryPackagePublishingHistory`s to copy.
+        :param policy: An optional `IOverridePolicy` to apply to the copy.
 
-        :return: A list of new `IBinaryPackagePublishingHistory` records.
-        """
-
-    def newBinaryPublication(archive, binarypackagerelease, distroarchseries,
-                             component, section, priority, pocket):
-        """Create a new `BinaryPackagePublishingHistory`.
-
-        :param archive: An `IArchive`
-        :param binarypackagerelease: An `IBinaryPackageRelease`
-        :param distroarchseries: An `IDistroArchSeries`
-        :param component: An `IComponent`
-        :param section: An `ISection`
-        :param priority: A `PackagePublishingPriority`
-        :param pocket: A `PackagePublishingPocket`
-
-        datecreated will be UTC_NOW.
-        status will be PackagePublishingStatus.PENDING
+        :return: A result set of the created `IBinaryPackagePublishingHistory`
+            records.
         """
 
     def newSourcePublication(archive, sourcepackagerelease, distroseries,
@@ -1093,8 +924,7 @@ class IPublishingSet(Interface):
             binary publications.
         """
 
-    def getBuildsForSourceIds(source_ids, archive=None, build_states=None,
-                              need_build_farm_job=False):
+    def getBuildsForSourceIds(source_ids, archive=None, build_states=None):
         """Return all builds related with each given source publication.
 
         The returned ResultSet contains entries with the wanted `Build`s
@@ -1122,10 +952,8 @@ class IPublishingSet(Interface):
         :type build_states: ``list`` or None
         :param need_build_farm_job: whether to include the `PackageBuild`
             and `BuildFarmJob` in the result.
-        :type need_build_farm_job: bool
         :return: a storm ResultSet containing tuples as
-            (`SourcePackagePublishingHistory`, `Build`, `DistroArchSeries`,
-             [`PackageBuild`, `BuildFarmJob` if need_build_farm_job])
+            (`SourcePackagePublishingHistory`, `Build`, `DistroArchSeries`)
         :rtype: `storm.store.ResultSet`.
         """
 
@@ -1212,29 +1040,38 @@ class IPublishingSet(Interface):
              `BinaryPackageRelease`, `BinaryPackageName`, `DistroArchSeries`)
         """
 
-    def getPackageDiffsForSources(one_or_more_source_publications):
-        """Return all `PackageDiff`s for each given source publication.
+    def getBuiltPackagesSummaryForSourcePublication(source_publication):
+        """Return a summary of the built packages for this source publication.
 
-        The returned ResultSet contains entries with the wanted `PackageDiff`s
-        associated with the corresponding source publication and its resulting
-        `LibraryFileAlias` and `LibraryFileContent` in a 4-element tuple. This
-        way the extra information will be cached and the callsites can group
-        package-diffs in any convenient form.
+        For each built package from this published source, return a
+        dictionary with keys "binarypackagename" and "summary", where
+        the binarypackagename is unique (i.e. it ignores the same package
+        published in more than one place/architecture.)
+        """
 
-        `LibraryFileAlias` and `LibraryFileContent` elements might be None in
-        case the `PackageDiff` is not completed yet.
+    def getActiveArchSpecificPublications(sourcepackagerelease, archive,
+                                          distroseries, pocket):
+        """Find architecture-specific binary publications for a source.
 
-        The result is ordered by:
+        For example, say source package release contains binary packages of:
+         * "foo" for i386 (pending in i386)
+         * "foo" for amd64 (published in amd64)
+         * "foo-common" for the "all" architecture (pending or published in
+           various real processor architectures)
 
-         1. Ascending `SourcePackagePublishingHistory.id`,
-         2. Descending `PackageDiff.date_requested`.
+        In that case, this search will return foo(i386) and foo(amd64).  The
+        dominator uses this when figuring out whether foo-common can be
+        superseded: we don't track dependency graphs, but we know that the
+        architecture-specific "foo" releases are likely to depend on the
+        architecture-independent foo-common release.
 
-        :param one_or_more_source_publication: list of or a single
-            `SourcePackagePublishingHistory` object.
-
-        :return: a storm ResultSet containing tuples as
-            (`SourcePackagePublishingHistory`, `PackageDiff`,
-             `LibraryFileAlias`, `LibraryFileContent`)
+        :param sourcepackagerelease: The `SourcePackageRelease`.
+        :param archive: The `Archive` to search.
+        :param distroseries: The `DistroSeries` to search.
+        :param pocket: The `PackagePublishingPocket` to search.
+        :return: A Storm result set of active, architecture-specific
+            `BinaryPackagePublishingHistory` objects for the source package
+            release in the given `archive`, `distroseries`, and `pocket`.
         """
 
     def getChangesFilesForSources(one_or_more_source_publications):
@@ -1273,13 +1110,19 @@ class IPublishingSet(Interface):
         This is a supporting operation for a deletion request.
         """
 
-    def requestDeletion(sources, removed_by, removal_comment=None):
+    def findCorrespondingDDEBPublications(pubs):
+        """Find corresponding DDEB publications, given a list of publications.
+        """
+
+    def requestDeletion(pub, removed_by, removal_comment=None):
         """Delete the source and binary publications specified.
 
         This method deletes the source publications passed via the first
-        parameter as well as their associated binary publications.
+        parameter as well as their associated binary publications, and any
+        binary publications passed in.
 
-        :param sources: list of `SourcePackagePublishingHistory` objects.
+        :param pubs: list of `SourcePackagePublishingHistory` and
+            `BinaryPackagePublishingHistory` objects.
         :param removed_by: `IPerson` responsible for the removal.
         :param removal_comment: optional text describing the removal reason.
 
@@ -1321,34 +1164,6 @@ class IPublishingSet(Interface):
         for details. The call is just proxied here so that it can also be
         used with an ArchiveSourcePublication passed in as
         the source_package_pub, allowing the use of the cached results.
-        """
-
-    def getNearestAncestor(
-        package_name, archive, distroseries, pocket=None, status=None,
-        binary=False):
-        """Return the ancestor of the given parkage in a particular archive.
-
-        :param package_name: The package name for which we are checking for
-            an ancestor.
-        :type package_name: ``string``
-        :param archive: The archive in which we are looking for an ancestor.
-        :type archive: `IArchive`
-        :param distroseries: The particular series in which we are looking for
-            an ancestor.
-        :type distroseries: `IDistroSeries`
-        :param pocket: An optional pocket to restrict the search.
-        :type pocket: `PackagePublishingPocket`.
-        :param status: An optional status defaulting to PUBLISHED if not
-            provided.
-        :type status: `PackagePublishingStatus`
-        :param binary: An optional argument to look for a binary ancestor
-            instead of the default source.
-        :type binary: ``Boolean``
-
-        :return: The most recent publishing history for the given
-            arguments.
-        :rtype: `ISourcePackagePublishingHistory` or
-            `IBinaryPackagePublishingHistory` or None.
         """
 
 active_publishing_status = (

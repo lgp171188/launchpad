@@ -1,7 +1,6 @@
-# Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-# pylint: disable-msg=E0611,W0212
 """A module for CodeOfConduct (CoC) related classes.
 
 https://launchpad.canonical.com/CodeOfConduct
@@ -15,13 +14,15 @@ from datetime import datetime
 import os
 
 import pytz
+import scandir
 from sqlobject import (
     BoolCol,
     ForeignKey,
     StringCol,
     )
+from storm.properties import Unicode
 from zope.component import getUtility
-from zope.interface import implements
+from zope.interface import implementer
 
 from lp.app.errors import NotFoundError
 from lp.registry.interfaces.codeofconduct import (
@@ -41,20 +42,22 @@ from lp.services.database.sqlbase import (
     SQLBase,
     )
 from lp.services.gpg.interfaces import (
+    GPGKeyExpired,
     GPGVerificationError,
     IGPGHandler,
     )
+from lp.services.mail.helpers import get_email_template
 from lp.services.mail.sendmail import (
     format_address,
     simple_sendmail,
     )
+from lp.services.propertycache import cachedproperty
 from lp.services.webapp import canonical_url
 
 
+@implementer(ICodeOfConductConf)
 class CodeOfConductConf:
     """Abstract Component to store the current CoC configuration."""
-
-    implements(ICodeOfConductConf)
 
     ## XXX: cprov 2005-02-17
     ## Integrate this class with LaunchpadCentral configuration
@@ -62,21 +65,20 @@ class CodeOfConductConf:
 
     path = 'lib/lp/registry/codesofconduct/'
     prefix = 'Ubuntu Code of Conduct - '
-    currentrelease = '1.1'
+    currentrelease = '2.0'
     # Set the datereleased to the date that 1.0 CoC was released,
     # preserving everyone's Ubuntu Code of Conduct signatory status.
     # https://launchpad.net/products/launchpad/+bug/48995
     datereleased = datetime(2005, 4, 12, tzinfo=pytz.timezone("UTC"))
 
 
+@implementer(ICodeOfConduct)
 class CodeOfConduct:
     """CoC class model.
 
     A set of properties allow us to properly handle the CoC stored
     in the filesystem, so it's not a database class.
     """
-
-    implements(ICodeOfConduct)
 
     def __init__(self, version):
         self.version = version
@@ -124,10 +126,9 @@ class CodeOfConduct:
         return getUtility(ICodeOfConductConf).datereleased
 
 
+@implementer(ICodeOfConductSet)
 class CodeOfConductSet:
     """A set of CodeOfConducts."""
-
-    implements(ICodeOfConductSet)
 
     title = 'Launchpad Codes of Conduct'
 
@@ -151,11 +152,11 @@ class CodeOfConductSet:
         cocs_path = getUtility(ICodeOfConductConf).path
 
         # iter through files and store the CoC Object
-        for filename in os.listdir(cocs_path):
+        for entry in scandir.scandir(cocs_path):
             # Select the correct filenames
-            if filename.endswith('.txt'):
+            if entry.name.endswith('.txt'):
                 # Extract the version from filename
-                version = filename.replace('.txt', '')
+                version = entry.name.replace('.txt', '')
                 releases.append(CodeOfConduct(version))
 
         # Return the available list of CoCs objects
@@ -172,10 +173,9 @@ class CodeOfConductSet:
         raise AssertionError("No current code of conduct registered")
 
 
+@implementer(ISignedCodeOfConduct)
 class SignedCodeOfConduct(SQLBase):
     """Code of Conduct."""
-
-    implements(ISignedCodeOfConduct)
 
     _table = 'SignedCodeOfConduct'
 
@@ -183,8 +183,7 @@ class SignedCodeOfConduct(SQLBase):
 
     signedcode = StringCol(dbName='signedcode', notNull=False, default=None)
 
-    signingkey = ForeignKey(foreignKey="GPGKey", dbName="signingkey",
-                            notNull=False, default=None)
+    signing_key_fingerprint = Unicode()
 
     datecreated = UtcDateTimeCol(dbName='datecreated', notNull=True,
                                  default=UTC_NOW)
@@ -196,6 +195,12 @@ class SignedCodeOfConduct(SQLBase):
                              default=None)
 
     active = BoolCol(dbName='active', notNull=True, default=False)
+
+    @cachedproperty
+    def signingkey(self):
+        if self.signing_key_fingerprint is not None:
+            return getUtility(IGPGKeySet).getByFingerprint(
+                self.signing_key_fingerprint)
 
     @property
     def displayname(self):
@@ -215,8 +220,8 @@ class SignedCodeOfConduct(SQLBase):
     def sendAdvertisementEmail(self, subject, content):
         """See ISignedCodeOfConduct."""
         assert self.owner.preferredemail
-        template = open('lib/lp/registry/emailtemplates/'
-                        'signedcoc-acknowledge.txt').read()
+        template = get_email_template(
+            'signedcoc-acknowledge.txt', app='registry')
         fromaddress = format_address(
             "Launchpad Code Of Conduct System",
             config.canonical.noreply_from_address)
@@ -228,10 +233,9 @@ class SignedCodeOfConduct(SQLBase):
             subject, message)
 
 
+@implementer(ISignedCodeOfConductSet)
 class SignedCodeOfConductSet:
     """A set of CodeOfConducts"""
-
-    implements(ISignedCodeOfConductSet)
 
     title = 'Code of Conduct Administrator Page'
 
@@ -268,7 +272,7 @@ class SignedCodeOfConductSet:
 
         try:
             sig = gpghandler.getVerifiedSignature(sane_signedcode)
-        except GPGVerificationError as e:
+        except (GPGVerificationError, GPGKeyExpired) as e:
             return str(e)
 
         if not sig.fingerprint:
@@ -310,8 +314,10 @@ class SignedCodeOfConductSet:
                     'space differences are acceptable).')
 
         # Store the signature
-        signed = SignedCodeOfConduct(owner=user, signingkey=gpg,
-                                     signedcode=signedcode, active=True)
+        signed = SignedCodeOfConduct(
+            owner=user,
+            signing_key_fingerprint=gpg.fingerprint if gpg else None,
+            signedcode=signedcode, active=True)
 
         # Send Advertisement Email
         subject = 'Your Code of Conduct signature has been acknowledged'

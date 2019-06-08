@@ -8,7 +8,7 @@ with adding a Debian bug watch to bug #8.
 
     >>> debian_bug = 'http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=42'
     >>> user_browser.open(
-    ...     'http://launchpad.dev/debian/+source/mozilla-firefox/'
+    ...     'http://launchpad.test/debian/+source/mozilla-firefox/'
     ...     '+bug/8/')
     >>> user_browser.getLink(url='+distrotask').click()
     >>> user_browser.getControl('Distribution').value = ['debian']
@@ -20,8 +20,8 @@ Now we can see the added bug watch in the bug watch portlet.
 
     >>> bugwatch_portlet = find_portlet(
     ...     user_browser.contents, 'Remote bug watches')
-    >>> for li_tag in bugwatch_portlet.fetch('li'):
-    ...     print li_tag.findAll('a')[0].renderContents()
+    >>> for li_tag in bugwatch_portlet.findAll('li'):
+    ...     print(li_tag.findAll('a')[0].renderContents())
     debbugs #42
 
 If we add another bug watch, pointing to the same URL, the previous one
@@ -42,19 +42,19 @@ will be used; i.e., another one won't be added.
     >>> user_browser.getControl('URL').value = debian_bug
     >>> user_browser.getControl('Continue').click()
     >>> for tag in find_tags_by_class(user_browser.contents, 'message'):
-    ...   print tag
+    ...   print(tag)
 
     >>> bugwatch_portlet = find_portlet(
     ...     user_browser.contents, 'Remote bug watches')
-    >>> for li_tag in bugwatch_portlet.fetch('li'):
-    ...     print li_tag.findAll('a')[0].string
+    >>> for li_tag in bugwatch_portlet.findAll('li'):
+    ...     print(li_tag.findAll('a')[0].string)
     debbugs #42
 
 Both the thunderbird and gnome-terminal Debian tasks are pointing to the
 same bug watch.
 
     >>> user_browser.open(
-    ...     'http://launchpad.dev/debian/+source/mozilla-firefox/'
+    ...     'http://launchpad.test/debian/+source/mozilla-firefox/'
     ...     '+bug/8/')
 
     >>> from lp.bugs.tests.bug import print_bug_affects_table
@@ -70,15 +70,14 @@ If a bug watch which is already added to another bug is added, a
 notification is added linking to the bug. This is useful for detecting
 duplicates.
 
-    >>> user_browser.open('http://launchpad.dev/bugs/5')
+    >>> user_browser.open('http://launchpad.test/bugs/5')
     >>> user_browser.getLink(url='+distrotask').click()
     >>> user_browser.getControl('Distribution').value = ['debian']
     >>> user_browser.getControl('Source Package Name').value = (
     ...     'mozilla-firefox')
     >>> user_browser.getControl('URL').value = debian_bug
     >>> user_browser.getControl('Continue').click()
-    >>> for message in get_feedback_messages(user_browser.contents):
-    ...   print message
+    >>> print_feedback_messages(user_browser.contents)
     Bug #8 also links to the added bug watch (debbugs #42).
 
 The notification links to the bug in question.

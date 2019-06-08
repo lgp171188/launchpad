@@ -1,7 +1,9 @@
-# Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2017 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for the tales formatters."""
+
+from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 
@@ -15,6 +17,7 @@ from zope.traversing.interfaces import IPathAdapter
 
 from lp.services.webapp.publisher import canonical_url
 from lp.testing import (
+    admin_logged_in,
     login,
     person_logged_in,
     test_tales,
@@ -40,7 +43,7 @@ class TestPreviewDiffFormatter(TestCaseWithFactory):
         else:
             content = ''
         preview = bmp.updatePreviewDiff(
-            content, u'rev-a', u'rev-b', conflicts=conflicts)
+            content, 'rev-a', 'rev-b', conflicts=conflicts)
         bmp.source_branch.last_scanned_id = preview.source_revision_id
         bmp.target_branch.last_scanned_id = preview.target_revision_id
         # Update the values directly sidestepping the security.
@@ -67,13 +70,13 @@ class TestPreviewDiffFormatter(TestCaseWithFactory):
     def test_creation_method(self):
         # Just confirm that our helpers do what they say.
         preview = self._createPreviewDiff(
-            12, 45, 23, u'conflicts', {'filename': (3, 2)})
+            12, 45, 23, 'conflicts', {'filename': (3, 2)})
         self.assertEqual(12, preview.diff_lines_count)
         self.assertEqual(45, preview.added_lines_count)
         self.assertEqual(23, preview.removed_lines_count)
         self.assertEqual(False, preview.stale)
         self.assertEqual(True, self._createStalePreviewDiff().stale)
-        self.assertEqual(u'conflicts', preview.conflicts)
+        self.assertEqual('conflicts', preview.conflicts)
         self.assertEqual({'filename': (3, 2)}, preview.diffstat)
 
     def test_fmt_no_diff(self):
@@ -110,7 +113,11 @@ class TestPreviewDiffFormatter(TestCaseWithFactory):
                 'file2': (3, 0)})
         self.assertEqual(
             '<a href="%s/+files/preview.diff" class="diff-link">'
-            '10 lines (+4/-0) 2 files modified</a>'
+            '10 lines (+4/-0)</a>'
+            '<div class="collapsible">'
+            '<span>2 files modified</span>'
+            '<div>file1 (+1/-0)<br/>file2 (+3/-0)</div>'
+            '</div>'
             % canonical_url(preview),
             test_tales('preview/fmt:link', preview=preview))
 
@@ -121,13 +128,32 @@ class TestPreviewDiffFormatter(TestCaseWithFactory):
                 'file': (3, 0)})
         self.assertEqual(
             '<a href="%s/+files/preview.diff" class="diff-link">'
-            '10 lines (+4/-0) 1 file modified</a>'
+            '10 lines (+4/-0)</a>'
+            '<div class="collapsible">'
+            '<span>1 file modified</span>'
+            '<div>file (+3/-0)</div>'
+            '</div>'
+            % canonical_url(preview),
+            test_tales('preview/fmt:link', preview=preview))
+
+    def test_fmt_lines_escapes_file_name(self):
+        # File names that include HTML metacharacters are escaped.
+        preview = self._createPreviewDiff(
+            10, added=4, removed=0, diffstat={
+                'file<name>': (3, 0)})
+        self.assertEqual(
+            '<a href="%s/+files/preview.diff" class="diff-link">'
+            '10 lines (+4/-0)</a>'
+            '<div class="collapsible">'
+            '<span>1 file modified</span>'
+            '<div>file&lt;name&gt; (+3/-0)</div>'
+            '</div>'
             % canonical_url(preview),
             test_tales('preview/fmt:link', preview=preview))
 
     def test_fmt_simple_conflicts(self):
         # Conflicts are indicated using text in the link.
-        preview = self._createPreviewDiff(10, 2, 3, u'conflicts')
+        preview = self._createPreviewDiff(10, 2, 3, 'conflicts')
         self.assertEqual(
             '<a href="%s/+files/preview.diff" class="diff-link">'
             '10 lines (+2/-3) (has conflicts)</a>'
@@ -147,10 +173,16 @@ class TestPreviewDiffFormatter(TestCaseWithFactory):
             (self.factory.getUniqueString(), (2, 3)) for x in range(23))
         preview = self._createStalePreviewDiff(
             500, 89, 340, diffstat=diffstat)
+        expected_diffstat = '<br/>'.join(
+            '%s (+2/-3)' % path for path in sorted(diffstat))
         self.assertEqual(
             '<a href="%s/+files/preview.diff" class="diff-link">'
-            '500 lines (+89/-340) 23 files modified</a>'
-            % canonical_url(preview),
+            '500 lines (+89/-340)</a>'
+            '<div class="collapsible">'
+            '<span>23 files modified</span>'
+            '<div>%s</div>'
+            '</div>'
+            % (canonical_url(preview), expected_diffstat),
             test_tales('preview/fmt:link', preview=preview))
 
     def test_fmt_stale_non_empty_diff_with_conflicts(self):
@@ -158,11 +190,17 @@ class TestPreviewDiffFormatter(TestCaseWithFactory):
         diffstat = dict(
             (self.factory.getUniqueString(), (2, 3)) for x in range(23))
         preview = self._createStalePreviewDiff(
-            500, 89, 340, u'conflicts', diffstat=diffstat)
+            500, 89, 340, 'conflicts', diffstat=diffstat)
+        expected_diffstat = '<br/>'.join(
+            '%s (+2/-3)' % path for path in sorted(diffstat))
         self.assertEqual(
             '<a href="%s/+files/preview.diff" class="diff-link">'
-            '500 lines (+89/-340) 23 files modified (has conflicts)</a>'
-            % canonical_url(preview),
+            '500 lines (+89/-340) (has conflicts)</a>'
+            '<div class="collapsible">'
+            '<span>23 files modified</span>'
+            '<div>%s</div>'
+            '</div>'
+            % (canonical_url(preview), expected_diffstat),
             test_tales('preview/fmt:link', preview=preview))
 
 
@@ -185,28 +223,40 @@ class TestSourcePackageRecipeBuild(TestCaseWithFactory):
     def test_link(self):
         eric = self.factory.makePerson(name='eric')
         ppa = self.factory.makeArchive(owner=eric, name='ppa')
+        distroseries = self.factory.makeDistroSeries(
+            distribution=ppa.distribution, name='shiny')
+        with admin_logged_in():
+            distroseries.nominatedarchindep = (
+                self.factory.makeDistroArchSeries(distroseries=distroseries))
         build = self.factory.makeSourcePackageRecipeBuild(
-            archive=ppa)
+            archive=ppa, distroseries=distroseries)
         adapter = queryAdapter(build, IPathAdapter, 'fmt')
         self.assertThat(
             adapter.link(None),
             Equals(
-                '<a href="%s">%s recipe build</a> [eric/ppa]'
+                '<a href="%s">%s recipe build in ubuntu shiny</a> '
+                '[~eric/ubuntu/ppa]'
                 % (canonical_url(build, path_only_if_possible=True),
-                   build.recipe.base_branch.unique_name)))
+                   build.recipe.base.unique_name)))
 
     def test_link_no_recipe(self):
         eric = self.factory.makePerson(name='eric')
         ppa = self.factory.makeArchive(owner=eric, name='ppa')
+        distroseries = self.factory.makeDistroSeries(
+            distribution=ppa.distribution, name='shiny')
+        with admin_logged_in():
+            distroseries.nominatedarchindep = (
+                self.factory.makeDistroArchSeries(distroseries=distroseries))
         build = self.factory.makeSourcePackageRecipeBuild(
-            archive=ppa)
+            archive=ppa, distroseries=distroseries)
         with person_logged_in(build.recipe.owner):
             build.recipe.destroySelf()
         adapter = queryAdapter(build, IPathAdapter, 'fmt')
         self.assertThat(
             adapter.link(None),
             Equals(
-                '<a href="%s">build for deleted recipe</a> [eric/ppa]'
+                '<a href="%s">deleted recipe build in ubuntu shiny</a> '
+                '[~eric/ubuntu/ppa]'
                 % (canonical_url(build, path_only_if_possible=True), )))
 
     def test_link_no_permission(self):

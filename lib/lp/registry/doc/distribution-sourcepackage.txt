@@ -15,7 +15,7 @@ A common way to fetch a distribution source package is to start with the
 distribution object:
 
     >>> from zope.component import getUtility
-    >>> from lp.services.webapp.testing import verifyObject
+    >>> from lp.testing import verifyObject
     >>> from lp.registry.interfaces.distribution import IDistributionSet
     >>> from lp.registry.interfaces.distributionsourcepackage import IDistributionSourcePackage
     >>> debian = getUtility(IDistributionSet).getByName("debian")
@@ -49,13 +49,6 @@ A distribution source package has a name, displayname, title, and a summary.
 
     >>> print dsp.summary
     pmount: pmount shortdesc
-
-
-Aggregate attributes
---------------------
-
-    >>> dsp.bugtasks().count()
-    0
 
 
 Publishing-related properties
@@ -163,6 +156,19 @@ Check if 'currentrelease' works with version containing letters
     >>> dsp3.currentrelease.version
     u'cr.g7-37'
 
+=== Distribution Source Package Branches ===
+
+We can use the getBranches() API from IHasBranches to get the related branches
+for a DSP.
+
+    >>> fred = factory.makePerson(name='fred')
+    >>> branch = factory.makePackageBranch(
+    ...     distroseries=hoary, sourcepackagename='pmount', name='tip',
+    ...     owner=fred)
+    >>> [branch] = list(dsp.getBranches())
+    >>> print branch.unique_name
+    ~fred/ubuntu/hoary/pmount/tip
+
 === Grabbing DSPRs ===
 
 To list the current 'pmount in Ubuntu' ISourcePackages, use
@@ -181,7 +187,7 @@ getVersion():
 
     >>> pmount_dspr = dsp.getVersion('0.1-1')
     >>> print pmount_dspr.title
-    "pmount" 0.1-1 source package in Ubuntu
+    pmount 0.1-1 source package in Ubuntu
 
     >>> for pub in pmount_dspr.publishing_history:
     ...     print pub.distroseries.name, pub.status.name
@@ -195,7 +201,7 @@ archive (bug #60440):
     >>> alsa_dsp = ubuntutest.getSourcePackage("alsa-utils")
     >>> alsa_dspr = alsa_dsp.getVersion('1.0.9a-4')
     >>> print alsa_dspr.title
-    "alsa-utils" 1.0.9a-4 source package in ubuntutest
+    alsa-utils 1.0.9a-4 source package in ubuntutest
 
     >>> for pub in alsa_dspr.publishing_history:
     ...     is_removed = pub.dateremoved is not None

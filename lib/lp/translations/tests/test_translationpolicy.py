@@ -1,4 +1,4 @@
-# Copyright 2010 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test `TranslationPolicyMixin`."""
@@ -6,7 +6,7 @@
 __metaclass__ = type
 
 from zope.component import getUtility
-from zope.interface import implements
+from zope.interface import implementer
 from zope.security.proxy import removeSecurityProxy
 
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
@@ -20,9 +20,9 @@ from lp.translations.interfaces.translator import ITranslatorSet
 from lp.translations.model.translationpolicy import TranslationPolicyMixin
 
 
+@implementer(ITranslationPolicy)
 class TranslationPolicyImplementation(TranslationPolicyMixin):
     """An `ITranslationPolicy` implementation for testing."""
-    implements(ITranslationPolicy)
 
     translationgroup = None
 
@@ -48,8 +48,7 @@ class TestTranslationPolicy(TestCaseWithFactory):
 
     def _makeTranslationGroups(self, count):
         """Return a list of `count` freshly minted `TranslationGroup`s."""
-        return [
-            self.factory.makeTranslationGroup() for number in xrange(count)]
+        return [self.factory.makeTranslationGroup() for number in range(count)]
 
     def _makeTranslator(self, language, for_policy=None):
         """Create a translator for a policy object.
@@ -169,7 +168,7 @@ class TestTranslationPolicy(TestCaseWithFactory):
     def test_getEffectiveTranslationPermission_returns_maximum(self):
         # When combining permissions, getEffectiveTranslationPermission
         # returns the one with the highest numerical value.
-        parent = self._makeParentPolicy()
+        self._makeParentPolicy()
         for child_permission in TranslationPermission.items:
             for parent_permission in TranslationPermission.items:
                 self._setPermissions(child_permission, parent_permission)

@@ -162,22 +162,17 @@ SourcePackage context will be reachable.
 
     >>> for release in pmount_hoary.releases:
     ...     print release.title, release.publishing_history[0].status.name
-    "pmount" 0.1-1 source package in Ubuntu SUPERSEDED
-    "pmount" 0.1-2 source package in Ubuntu PUBLISHED
-
-    >>> print pmount_hoary['0.1-1'].title
-    "pmount" 0.1-1 source package in The Hoary Hedgehog Release
-
-    >>> print pmount_hoary['0.1-2'].title
-    "pmount" 0.1-2 source package in The Hoary Hedgehog Release
+    pmount 0.1-1 source package in Ubuntu SUPERSEDED
+    pmount 0.1-2 source package in Ubuntu PUBLISHED
 
     >>> len(list(pmount_hoary.distinctreleases))
     2
 
 'pmount_0.1-1' in hoary is SUPERSEDED but not yet 'removed from disk'.
 
-    >>> pub = SourcePackagePublishingHistory.get(
-    ...     pmount_hoary['0.1-1'].publishing_history[0].id)
+    >>> pub = removeSecurityProxy(ubuntu.main_archive.getPublishedSources(
+    ...     distroseries=ubuntu['hoary'], name=u'pmount',
+    ...     version=u'0.1-1').one())
     >>> pub.datesuperseded is not None
     True
     >>> pub.dateremoved is None
@@ -191,11 +186,8 @@ See bug #179028 for further information.
 
     >>> for release in pmount_hoary.releases:
     ...     print release.title, release.publishing_history[0].status.name
-    "pmount" 0.1-1 source package in Ubuntu SUPERSEDED
-    "pmount" 0.1-2 source package in Ubuntu PUBLISHED
-
-    >>> print pmount_hoary['0.1-1'].title
-    "pmount" 0.1-1 source package in The Hoary Hedgehog Release
+    pmount 0.1-1 source package in Ubuntu SUPERSEDED
+    pmount 0.1-2 source package in Ubuntu PUBLISHED
 
     >>> len(list(pmount_hoary.distinctreleases))
     2
@@ -226,7 +218,7 @@ method on a distribution:
     mozilla-firefox
 
     >>> print ubuntu_firefox.title.encode('ascii', 'backslashreplace')
-    \u201cmozilla-firefox\u201d package in Ubuntu
+    mozilla-firefox package in Ubuntu
 
     >>> print ubuntu_firefox.displayname
     mozilla-firefox in Ubuntu
@@ -273,18 +265,12 @@ packaging process. Here we test the code that links all of those.
 First, let's get some useful objects from the db.
 
     >>> from lp.registry.model.sourcepackagename import SourcePackageName
-    >>> evolution = SourcePackageName.byName('evolution')
-    >>> a52dec = SourcePackageName.byName('a52dec')
-    >>> netapplet = SourcePackageName.byName('netapplet')
     >>> firefox = SourcePackageName.byName('mozilla-firefox')
     >>> pmount = SourcePackageName.byName('pmount')
 
     >>> from lp.registry.model.distroseries import DistroSeries
     >>> warty = DistroSeries.get(1)
     >>> hoary = DistroSeries.get(3)
-    >>> sarge = DistroSeries.get(7)
-    >>> sid = DistroSeries.get(8)
-    >>> g2k5 = DistroSeries.get(9)
 
 Now let's make sure that we can see a productseries for a source
 package.
@@ -294,62 +280,6 @@ package.
     >>> print sp.productseries.name
     1.0
 
-A source package's product series is None when it does not have a
-Packaging entry. Historical packaging does not affect the state of the
-productseries attribute.
-
-    >>> from lp.registry.model.packaging import PackagingUtil
-    >>> hoary_a52dec = SourcePackage(sourcepackagename=a52dec,
-    ...     distroseries=hoary)
-    >>> PackagingUtil().packagingEntryExists(
-    ...     productseries=hoary_a52dec.productseries,
-    ...     sourcepackagename=a52dec,
-    ...     distroseries=hoary)
-    False
-
-    >>> print hoary_a52dec.productseries
-    None
-
-Once a Packaging entry is created to link a distro series source package name
-to a product series, the source package does have a product series.
-
-    >>> from lp.registry.interfaces.packaging import PackagingType
-
-    >>> user = factory.makePerson()
-    >>> a52dec_series = factory.makeProductSeries(name='ratty')
-    >>> packaging = PackagingUtil().createPackaging(
-    ...     productseries=a52dec_series,
-    ...     sourcepackagename=a52dec,
-    ...     distroseries=hoary,
-    ...     packaging=PackagingType.PRIME,
-    ...     owner=user)
-
-    >>> PackagingUtil().packagingEntryExists(
-    ...     productseries=a52dec_series,
-    ...     sourcepackagename=a52dec,
-    ...     distroseries=hoary)
-    True
-
-    >>> print hoary_a52dec.productseries.name
-    ratty
-
-Packaging entries can be deleted using PackagingUtil.deletePackaging. That
-also removes the source package product series.
-
-    >>> from lp.testing import person_logged_in
-    >>> with person_logged_in(user):
-    ...     PackagingUtil().deletePackaging(
-    ...         productseries=a52dec_series,
-    ...         sourcepackagename=a52dec,
-    ...         distroseries=hoary)
-    >>> PackagingUtil().packagingEntryExists(
-    ...     productseries=a52dec_series,
-    ...     sourcepackagename=a52dec,
-    ...     distroseries=hoary)
-    False
-
-    >>> print hoary_a52dec.productseries
-    None
 
 Linkified changelogs are available through SourcePackageReleaseView: XXX
 julian 2007-09-17 This is duplicating the page test. Instead it should
@@ -359,15 +289,15 @@ be more like the bug number linkification just below.
     >>> from lp.services.webapp.servers import LaunchpadTestRequest
     >>> mock_form = {}
     >>> request = LaunchpadTestRequest(form=mock_form)
-    >>> sp = SourcePackage(sourcepackagename=pmount, distroseries=hoary)
-    >>> spr = sp['0.1-2']
-    >>> spr_view = queryMultiAdapter((spr, request), name="+changelog")
-    >>> print spr_view.changelog_entry
+    >>> dsp = ubuntu.getSourcePackage(pmount)
+    >>> dspr = dsp.getVersion('0.1-2')
+    >>> dspr_view = queryMultiAdapter((dspr, request), name="+changelog")
+    >>> print dspr_view.changelog_entry
     This is a placeholder changelog for pmount 0.1-2
 
-    >>> spr = sp['0.1-1']
-    >>> spr_view = queryMultiAdapter((spr, request), name="+changelog")
-    >>> print spr_view.changelog_entry
+    >>> dspr = dsp.getVersion('0.1-1')
+    >>> dspr_view = queryMultiAdapter((dspr, request), name="+changelog")
+    >>> print dspr_view.changelog_entry
     pmount (0.1-1) hoary; urgency=low
     <BLANKLINE>
      * Fix description (Malone #1)
@@ -428,6 +358,7 @@ Direct Packagings
 The direct packaging returns the IPackaging related to the source
 package.
 
+    >>> sp = hoary.getSourcePackage(pmount)
     >>> print sp.direct_packaging
     None
 
@@ -529,7 +460,7 @@ Interface implementation
 
 SourcePackage implements IHasTranslationImports interface:
 
-    >>> from lp.services.webapp.testing import verifyObject
+    >>> from lp.testing import verifyObject
     >>> from lp.translations.interfaces.hastranslationimports import (
     ...     IHasTranslationImports)
     >>> IHasTranslationImports.providedBy(warty_firefox)
@@ -537,5 +468,3 @@ SourcePackage implements IHasTranslationImports interface:
 
     >>> verifyObject(IHasTranslationImports, warty_firefox)
     True
-
-

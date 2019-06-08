@@ -1,7 +1,9 @@
-# Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Unit tests for CodeImportJob and CodeImportJobWorkflow."""
+
+from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 
@@ -11,19 +13,33 @@ __all__ = [
 
 from datetime import datetime
 import StringIO
-import unittest
 
+from pymacaroons import Macaroon
 from pytz import UTC
-from sqlobject.sqlbuilder import SQLConstant
+from testtools.matchers import (
+    Equals,
+    Matcher,
+    MatchesListwise,
+    MatchesStructure,
+    Mismatch,
+    )
 import transaction
 from zope.component import getUtility
+from zope.publisher.xmlrpc import TestRequest
 from zope.security.proxy import removeSecurityProxy
 
+from lp.app.enums import InformationType
 from lp.code.enums import (
     CodeImportEventType,
     CodeImportJobState,
     CodeImportResultStatus,
     CodeImportReviewStatus,
+    GitRepositoryType,
+    TargetRevisionControlSystems,
+    )
+from lp.code.interfaces.codehosting import (
+    branch_id_alias,
+    compose_public_url,
     )
 from lp.code.interfaces.codeimport import ICodeImportSet
 from lp.code.interfaces.codeimportevent import ICodeImportEventSet
@@ -38,10 +54,19 @@ from lp.code.tests.codeimporthelpers import (
     make_finished_import,
     make_running_import,
     )
+from lp.code.tests.helpers import GitHostingFixture
+from lp.services.authserver.xmlrpc import AuthServerAPIView
 from lp.services.config import config
 from lp.services.database.constants import UTC_NOW
+from lp.services.database.interfaces import IStore
+from lp.services.database.sqlbase import get_transaction_timestamp
 from lp.services.librarian.interfaces import ILibraryFileAliasSet
 from lp.services.librarian.interfaces.client import ILibrarianClient
+from lp.services.macaroons.interfaces import (
+    BadMacaroonContext,
+    IMacaroonIssuer,
+    )
+from lp.services.macaroons.testing import MacaroonTestMixin
 from lp.services.webapp import canonical_url
 from lp.testing import (
     ANONYMOUS,
@@ -57,6 +82,8 @@ from lp.testing.layers import (
     LaunchpadFunctionalLayer,
     )
 from lp.testing.pages import get_feedback_messages
+from lp.xmlrpc import faults
+from lp.xmlrpc.interfaces import IPrivateApplication
 
 
 def login_for_code_imports():
@@ -66,6 +93,107 @@ def login_for_code_imports():
     the vcs-imports team and can access the objects freely.
     """
     return login_celebrity('vcs_imports')
+
+
+class CodeImportJobMacaroonVerifies(Matcher):
+    """Matches if a code-import-job macaroon can be verified."""
+
+    def __init__(self, code_import):
+        self.code_import = code_import
+
+    def match(self, macaroon_raw):
+        issuer = getUtility(IMacaroonIssuer, 'code-import-job')
+        macaroon = Macaroon.deserialize(macaroon_raw)
+        if not issuer.verifyMacaroon(macaroon, self.code_import.import_job):
+            return Mismatch("Macaroon '%s' does not verify" % macaroon_raw)
+
+
+class TestCodeImportJob(TestCaseWithFactory):
+
+    layer = DatabaseFunctionalLayer
+
+    def setUp(self):
+        super(TestCodeImportJob, self).setUp()
+        login_for_code_imports()
+
+    def assertArgumentsMatch(self, code_import, matcher, start_job=False):
+        job = self.factory.makeCodeImportJob(code_import=code_import)
+        if start_job:
+            machine = self.factory.makeCodeImportMachine(set_online=True)
+            getUtility(ICodeImportJobWorkflow).startJob(job, machine)
+        self.assertThat(job.makeWorkerArguments(), matcher)
+
+    def test_bzr_arguments(self):
+        code_import = self.factory.makeCodeImport(
+            bzr_branch_url="http://example.com/foo")
+        self.assertArgumentsMatch(
+            code_import, Equals([
+                str(code_import.branch.id), 'bzr:bzr',
+                'http://example.com/foo']))
+
+    def test_git_arguments(self):
+        code_import = self.factory.makeCodeImport(
+            git_repo_url="git://git.example.com/project.git")
+        self.assertArgumentsMatch(
+            code_import, Equals([
+                str(code_import.branch.id), 'git:bzr',
+                'git://git.example.com/project.git']))
+
+    def test_git_to_git_arguments(self):
+        self.pushConfig(
+            'launchpad', internal_macaroon_secret_key='some-secret')
+        self.useFixture(GitHostingFixture())
+        code_import = self.factory.makeCodeImport(
+            git_repo_url="git://git.example.com/project.git",
+            target_rcs_type=TargetRevisionControlSystems.GIT)
+        self.assertArgumentsMatch(
+            code_import, MatchesListwise([
+                Equals(code_import.git_repository.unique_name),
+                Equals('git:git'), Equals('git://git.example.com/project.git'),
+                CodeImportJobMacaroonVerifies(code_import)]),
+            # Start the job so that the macaroon can be verified.
+            start_job=True)
+
+    def test_cvs_arguments(self):
+        code_import = self.factory.makeCodeImport(
+            cvs_root=':pserver:foo@example.com/bar', cvs_module='bar')
+        self.assertArgumentsMatch(
+            code_import, Equals([
+                str(code_import.branch.id), 'cvs:bzr',
+                ':pserver:foo@example.com/bar', 'bar']))
+
+    def test_bzr_svn_arguments(self):
+        code_import = self.factory.makeCodeImport(
+            svn_branch_url='svn://svn.example.com/trunk')
+        self.assertArgumentsMatch(
+            code_import, Equals([
+                str(code_import.branch.id), 'bzr-svn:bzr',
+                'svn://svn.example.com/trunk']))
+
+    def test_bzr_stacked(self):
+        devfocus = self.factory.makeAnyBranch()
+        code_import = self.factory.makeCodeImport(
+            bzr_branch_url='bzr://bzr.example.com/foo',
+            context=devfocus.target.context)
+        code_import.branch.stacked_on = devfocus
+        self.assertArgumentsMatch(
+            code_import, Equals([
+                str(code_import.branch.id), 'bzr:bzr',
+                'bzr://bzr.example.com/foo',
+                compose_public_url('http', branch_id_alias(devfocus))]))
+
+    def test_bzr_stacked_private(self):
+        # Code imports can't be stacked on private branches.
+        devfocus = self.factory.makeAnyBranch(
+            information_type=InformationType.USERDATA)
+        code_import = self.factory.makeCodeImport(
+            context=removeSecurityProxy(devfocus).target.context,
+            bzr_branch_url='bzr://bzr.example.com/foo')
+        branch = removeSecurityProxy(code_import.branch)
+        branch.stacked_on = devfocus
+        self.assertArgumentsMatch(
+            code_import, Equals([
+                str(branch.id), 'bzr:bzr', 'bzr://bzr.example.com/foo']))
 
 
 class TestCodeImportJobSet(TestCaseWithFactory):
@@ -121,9 +249,7 @@ class TestCodeImportJobSetGetJobForMachine(TestCaseWithFactory):
         if state == CodeImportJobState.RUNNING:
             getUtility(ICodeImportJobWorkflow).startJob(job, self.machine)
         naked_job = removeSecurityProxy(job)
-        naked_job.date_due = SQLConstant(
-            "CURRENT_TIMESTAMP AT TIME ZONE 'UTC' + '%d days'"
-            % date_due_delta)
+        naked_job.date_due = UTC_NOW + '%d days' % date_due_delta
         naked_job.requesting_user = requesting_user
         return job
 
@@ -131,7 +257,7 @@ class TestCodeImportJobSetGetJobForMachine(TestCaseWithFactory):
         """Assert that the expected job is chosen by getJobForMachine."""
         observed_job = getUtility(ICodeImportJobSet).getJobForMachine(
             self.machine.hostname, worker_limit=10)
-        self.assert_(observed_job is not None, "No job was selected.")
+        self.assertIsNotNone(observed_job, "No job was selected.")
         self.assertEqual(desired_job, observed_job,
                          "Expected job not selected.")
 
@@ -139,7 +265,7 @@ class TestCodeImportJobSetGetJobForMachine(TestCaseWithFactory):
         """Assert that no job is selected."""
         observed_job = getUtility(ICodeImportJobSet).getJobForMachine(
             'machine', worker_limit=10)
-        self.assert_(observed_job is None, "Job unexpectedly selected.")
+        self.assertIsNone(observed_job, "Job unexpectedly selected.")
 
     def test_nothingSelectedIfNothingCreated(self):
         # There are no due jobs pending if we don't create any (this
@@ -231,9 +357,7 @@ class ReclaimableJobTests(TestCaseWithFactory):
     def makeJobWithHeartbeatInPast(self, seconds_in_past):
         code_import = make_running_import(factory=self.factory)
         naked_job = removeSecurityProxy(code_import.import_job)
-        naked_job.heartbeat = SQLConstant(
-            "CURRENT_TIMESTAMP AT TIME ZONE 'UTC' + '%d seconds'"
-            % (-seconds_in_past,))
+        naked_job.heartbeat = UTC_NOW + '%d seconds' % -seconds_in_past
         return code_import.import_job
 
     def assertReclaimableJobs(self, jobs):
@@ -250,7 +374,7 @@ class TestCodeImportJobSetGetReclaimableJobs(ReclaimableJobTests):
 
     def test_upToDateJob(self):
         # A job that was updated recently is not considered reclaimable.
-        self.makeJobWithHeartbeatInPast(self.LIMIT/2)
+        self.makeJobWithHeartbeatInPast(self.LIMIT / 2)
         self.assertReclaimableJobs([])
 
     def test_staleJob(self):
@@ -271,8 +395,8 @@ class TestCodeImportJobSetGetReclaimableJobs(ReclaimableJobTests):
     def test_staleAndFreshJobs(self):
         # If there are both fresh and stake jobs in the DB, only the
         # stale ones are returned by getReclaimableJobs().
-        self.makeJobWithHeartbeatInPast(self.LIMIT/2)
-        stale_job = self.makeJobWithHeartbeatInPast(self.LIMIT*2)
+        self.makeJobWithHeartbeatInPast(self.LIMIT / 2)
+        stale_job = self.makeJobWithHeartbeatInPast(self.LIMIT * 2)
         self.assertReclaimableJobs([stale_job])
 
 
@@ -284,7 +408,7 @@ class TestCodeImportJobSetGetJobForMachineGardening(ReclaimableJobTests):
     def test_getJobForMachineGardens(self):
         # getJobForMachine reclaims all reclaimable jobs each time it is
         # called.
-        stale_job = self.makeJobWithHeartbeatInPast(self.LIMIT*2)
+        stale_job = self.makeJobWithHeartbeatInPast(self.LIMIT * 2)
         # We assume that this is the only reclaimable job.
         self.assertReclaimableJobs([stale_job])
         machine = self.factory.makeCodeImportMachine(set_online=True)
@@ -427,8 +551,9 @@ class TestCodeImportJobWorkflowNewJob(TestCaseWithFactory,
         # recent than the effective_update_interval, then the new
         # CodeImportJob has date_due set in the future.
         code_import = self.getCodeImportForDateDueTest()
-        # A code import job is automatically started when a reviewed code import
-        # is created. Remove it, so a "clean" one can be created later.
+        # A code import job is automatically started when a reviewed code
+        # import is created. Remove it, so a "clean" one can be created
+        # later.
         removeSecurityProxy(code_import).import_job.destroySelf()
         # Create a CodeImportResult that started a long time ago. This one
         # must be superseded by the more recent one created below.
@@ -448,10 +573,10 @@ class TestCodeImportJobWorkflowNewJob(TestCaseWithFactory,
         # This causes problems for the "UTC_NOW - interval / 2"
         # expression below.
         interval = code_import.effective_update_interval
-        from lp.services.database.sqlbase import get_transaction_timestamp
+        store = IStore(CodeImportResult)
         recent_result = CodeImportResult(
             code_import=code_import, machine=machine, status=FAILURE,
-            date_job_started=get_transaction_timestamp() - interval / 2)
+            date_job_started=get_transaction_timestamp(store) - interval / 2)
         # When we create the job, its date_due should be set to the date_due
         # of the job that was deleted when the CodeImport review status
         # changed from REVIEWED. That is the date_job_started of the most
@@ -698,7 +823,7 @@ class TestCodeImportJobWorkflowUpdateHeartbeat(TestCaseWithFactory,
             "The CodeImportJob associated with %s is "
             "PENDING." % code_import.branch.unique_name,
             getUtility(ICodeImportJobWorkflow).updateHeartbeat,
-            job, u'')
+            job, '')
 
     def test_updateHeartboat(self):
         code_import = self.factory.makeCodeImport()
@@ -709,9 +834,9 @@ class TestCodeImportJobWorkflowUpdateHeartbeat(TestCaseWithFactory,
         # Set heartbeat to something wrong so that we can prove that it was
         # changed.
         removeSecurityProxy(job).heartbeat = None
-        workflow.updateHeartbeat(job, u'some interesting log output')
+        workflow.updateHeartbeat(job, 'some interesting log output')
         self.assertSqlAttributeEqualsDate(job, 'heartbeat', UTC_NOW)
-        self.assertEqual(u'some interesting log output', job.logtail)
+        self.assertEqual('some interesting log output', job.logtail)
 
 
 class TestCodeImportJobWorkflowFinishJob(TestCaseWithFactory,
@@ -770,7 +895,7 @@ class TestCodeImportJobWorkflowFinishJob(TestCaseWithFactory,
         getUtility(ICodeImportJobWorkflow).finishJob(
             running_job, CodeImportResultStatus.SUCCESS, None)
         new_job = code_import.import_job
-        self.assert_(new_job is not None)
+        self.assertIsNotNone(new_job)
         self.assertEqual(new_job.state, CodeImportJobState.PENDING)
         self.assertEqual(new_job.machine, None)
         self.assertEqual(
@@ -786,7 +911,7 @@ class TestCodeImportJobWorkflowFinishJob(TestCaseWithFactory,
         getUtility(ICodeImportJobWorkflow).finishJob(
             running_job, CodeImportResultStatus.SUCCESS_PARTIAL, None)
         new_job = code_import.import_job
-        self.assert_(new_job is not None)
+        self.assertIsNotNone(new_job)
         self.assertEqual(new_job.state, CodeImportJobState.PENDING)
         self.assertEqual(new_job.machine, None)
         self.assertSqlAttributeEqualsDate(new_job, 'date_due', UTC_NOW)
@@ -1123,7 +1248,7 @@ class TestRequestJobUIRaces(TestCaseWithFactory):
         self.requestJobByUserWithDisplayName(code_import_id, "New User")
         user_browser.getControl('Import Now').click()
         self.assertEqual(
-            [u'The import has already been requested by New User.'],
+            ['The import has already been requested by New User.'],
             get_feedback_messages(user_browser.contents))
 
     def test_pressButtonJobDeleted(self):
@@ -1134,7 +1259,7 @@ class TestRequestJobUIRaces(TestCaseWithFactory):
         self.deleteJob(code_import_id)
         user_browser.getControl('Import Now').click()
         self.assertEqual(
-            [u'This import is no longer being updated automatically.'],
+            ['This import is no longer being updated automatically.'],
             get_feedback_messages(user_browser.contents))
 
     def test_pressButtonJobStarted(self):
@@ -1144,9 +1269,154 @@ class TestRequestJobUIRaces(TestCaseWithFactory):
         self.startJob(code_import_id)
         user_browser.getControl('Import Now').click()
         self.assertEqual(
-            [u'The import is already running.'],
+            ['The import is already running.'],
             get_feedback_messages(user_browser.contents))
 
 
-def test_suite():
-    return unittest.TestLoader().loadTestsFromName(__name__)
+class TestCodeImportJobMacaroonIssuer(MacaroonTestMixin, TestCaseWithFactory):
+    """Test CodeImportJob macaroon issuing and verification."""
+
+    layer = DatabaseFunctionalLayer
+
+    def setUp(self):
+        super(TestCodeImportJobMacaroonIssuer, self).setUp()
+        login_for_code_imports()
+        self.pushConfig(
+            "launchpad", internal_macaroon_secret_key="some-secret")
+        self.useFixture(GitHostingFixture())
+
+    def makeJob(self, target_rcs_type=TargetRevisionControlSystems.GIT):
+        code_import = self.factory.makeCodeImport(
+            target_rcs_type=target_rcs_type)
+        return self.factory.makeCodeImportJob(code_import=code_import)
+
+    def test_issueMacaroon_refuses_branch(self):
+        job = self.makeJob(target_rcs_type=TargetRevisionControlSystems.BZR)
+        issuer = getUtility(IMacaroonIssuer, "code-import-job")
+        self.assertRaises(
+            BadMacaroonContext, removeSecurityProxy(issuer).issueMacaroon, job)
+
+    def test_issueMacaroon_good(self):
+        job = self.makeJob()
+        issuer = getUtility(IMacaroonIssuer, "code-import-job")
+        macaroon = removeSecurityProxy(issuer).issueMacaroon(job)
+        self.assertEqual("launchpad.test", macaroon.location)
+        self.assertEqual("code-import-job", macaroon.identifier)
+        self.assertThat(macaroon.caveats, MatchesListwise([
+            MatchesStructure.byEquality(
+                caveat_id="lp.code-import-job %s" % job.id),
+            ]))
+
+    def test_issueMacaroon_not_via_authserver(self):
+        job = self.makeJob()
+        private_root = getUtility(IPrivateApplication)
+        authserver = AuthServerAPIView(private_root.authserver, TestRequest())
+        self.assertEqual(
+            faults.PermissionDenied(),
+            authserver.issueMacaroon("code-import-job", "CodeImportJob", job))
+
+    def test_verifyMacaroon_good(self):
+        machine = self.factory.makeCodeImportMachine(set_online=True)
+        job = self.makeJob()
+        issuer = getUtility(IMacaroonIssuer, "code-import-job")
+        getUtility(ICodeImportJobWorkflow).startJob(job, machine)
+        macaroon = removeSecurityProxy(issuer).issueMacaroon(job)
+        self.assertMacaroonVerifies(issuer, macaroon, job)
+        self.assertMacaroonVerifies(issuer, macaroon, job.code_import.target)
+
+    def test_verifyMacaroon_good_no_context(self):
+        machine = self.factory.makeCodeImportMachine(set_online=True)
+        job = self.makeJob()
+        issuer = getUtility(IMacaroonIssuer, "code-import-job")
+        getUtility(ICodeImportJobWorkflow).startJob(job, machine)
+        macaroon = removeSecurityProxy(issuer).issueMacaroon(job)
+        self.assertMacaroonVerifies(
+            issuer, macaroon, None, require_context=False)
+        self.assertMacaroonVerifies(
+            issuer, macaroon, job, require_context=False)
+        self.assertMacaroonVerifies(
+            issuer, macaroon, job.code_import.target, require_context=False)
+
+    def test_verifyMacaroon_no_context_but_require_context(self):
+        machine = self.factory.makeCodeImportMachine(set_online=True)
+        job = self.makeJob()
+        issuer = getUtility(IMacaroonIssuer, "code-import-job")
+        getUtility(ICodeImportJobWorkflow).startJob(job, machine)
+        macaroon = removeSecurityProxy(issuer).issueMacaroon(job)
+        self.assertMacaroonDoesNotVerify(
+            ["Expected macaroon verification context but got None."],
+            issuer, macaroon, None)
+
+    def test_verifyMacaroon_wrong_location(self):
+        machine = self.factory.makeCodeImportMachine(set_online=True)
+        job = self.makeJob()
+        issuer = getUtility(IMacaroonIssuer, "code-import-job")
+        getUtility(ICodeImportJobWorkflow).startJob(job, machine)
+        macaroon = Macaroon(
+            location="another-location",
+            key=removeSecurityProxy(issuer)._root_secret)
+        self.assertMacaroonDoesNotVerify(
+            ["Macaroon has unknown location 'another-location'."],
+            issuer, macaroon, job)
+        self.assertMacaroonDoesNotVerify(
+            ["Macaroon has unknown location 'another-location'."],
+            issuer, macaroon, job, require_context=False)
+
+    def test_verifyMacaroon_wrong_key(self):
+        machine = self.factory.makeCodeImportMachine(set_online=True)
+        job = self.makeJob()
+        issuer = getUtility(IMacaroonIssuer, "code-import-job")
+        getUtility(ICodeImportJobWorkflow).startJob(job, machine)
+        macaroon = Macaroon(
+            location=config.vhost.mainsite.hostname, key="another-secret")
+        self.assertMacaroonDoesNotVerify(
+            ["Signatures do not match"], issuer, macaroon, job)
+        self.assertMacaroonDoesNotVerify(
+            ["Signatures do not match"],
+            issuer, macaroon, job, require_context=False)
+
+    def test_verifyMacaroon_hosted_repository(self):
+        job = self.makeJob()
+        issuer = getUtility(IMacaroonIssuer, "code-import-job")
+        macaroon = removeSecurityProxy(issuer).issueMacaroon(job)
+        repository = self.factory.makeGitRepository()
+        self.assertMacaroonDoesNotVerify(
+            ["%r is not an IMPORTED repository." % repository],
+            issuer, macaroon, repository)
+
+    def test_verifyMacaroon_repository_with_no_code_import(self):
+        job = self.makeJob()
+        issuer = getUtility(IMacaroonIssuer, "code-import-job")
+        macaroon = removeSecurityProxy(issuer).issueMacaroon(job)
+        repository = self.factory.makeGitRepository(
+            repository_type=GitRepositoryType.IMPORTED)
+        self.assertMacaroonDoesNotVerify(
+            ["%r does not have a code import." % repository],
+            issuer, macaroon, repository)
+
+    def test_verifyMacaroon_not_running(self):
+        job = self.makeJob()
+        issuer = getUtility(IMacaroonIssuer, "code-import-job")
+        macaroon = removeSecurityProxy(issuer).issueMacaroon(job)
+        self.assertMacaroonDoesNotVerify(
+            ["%r is not in the RUNNING state." % job],
+            issuer, macaroon, job)
+        self.assertMacaroonDoesNotVerify(
+            ["%r is not in the RUNNING state." % job],
+            issuer, macaroon, job.code_import.target)
+
+    def test_verifyMacaroon_wrong_job(self):
+        machine = self.factory.makeCodeImportMachine(set_online=True)
+        job = self.makeJob()
+        other_job = self.makeJob()
+        issuer = getUtility(IMacaroonIssuer, "code-import-job")
+        getUtility(ICodeImportJobWorkflow).startJob(job, machine)
+        macaroon = removeSecurityProxy(issuer).issueMacaroon(other_job)
+        self.assertMacaroonDoesNotVerify(
+            ["Caveat check for 'lp.code-import-job %s' failed." %
+             other_job.id],
+            issuer, macaroon, job)
+        self.assertMacaroonDoesNotVerify(
+            ["Caveat check for 'lp.code-import-job %s' failed." %
+             other_job.id],
+            issuer, macaroon, job.code_import.target)

@@ -1,29 +1,43 @@
-# Copyright 2009-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
-
-# pylint: disable-msg=E0611,W0212
 
 __metaclass__ = type
 __all__ = [
     'BinaryPackageBuild',
     'BinaryPackageBuildSet',
+    'COPY_ARCHIVE_SCORE_PENALTY',
+    'PRIVATE_ARCHIVE_SCORE_BONUS',
+    'SCORE_BY_COMPONENT',
+    'SCORE_BY_POCKET',
+    'SCORE_BY_URGENCY',
     ]
 
 import datetime
-import logging
-import operator
+from operator import (
+    attrgetter,
+    itemgetter,
+    )
+import warnings
 
 import apt_pkg
+from debian.deb822 import PkgRelation
+import pytz
 from sqlobject import SQLObjectNotFound
 from storm.expr import (
+    And,
     Desc,
+    Exists,
     Join,
     LeftJoin,
-    SQL,
+    Or,
+    Select,
     )
 from storm.locals import (
+    Bool,
+    DateTime,
     Int,
     Reference,
+    Unicode,
     )
 from storm.store import (
     EmptyResultSet,
@@ -31,58 +45,57 @@ from storm.store import (
     )
 from storm.zope import IResultSet
 from zope.component import getUtility
-from zope.interface import implements
+from zope.interface import implementer
+from zope.security.proxy import removeSecurityProxy
 
-from lp.app.browser.tales import DurationFormatterAPI
 from lp.app.errors import NotFoundError
-from lp.app.interfaces.launchpad import ILaunchpadCelebrities
-from lp.archivepublisher.utils import get_ppa_reference
 from lp.buildmaster.enums import (
     BuildFarmJobType,
     BuildStatus,
     )
-from lp.buildmaster.interfaces.packagebuild import IPackageBuildSource
+from lp.buildmaster.interfaces.buildfarmjob import IBuildFarmJobSource
 from lp.buildmaster.model.builder import Builder
-from lp.buildmaster.model.buildfarmjob import BuildFarmJob
-from lp.buildmaster.model.buildqueue import BuildQueue
-from lp.buildmaster.model.packagebuild import (
-    PackageBuild,
-    PackageBuildDerived,
+from lp.buildmaster.model.buildfarmjob import (
+    BuildFarmJob,
+    SpecificBuildFarmJobSourceMixin,
     )
+from lp.buildmaster.model.buildqueue import BuildQueue
+from lp.buildmaster.model.packagebuild import PackageBuildMixin
+from lp.registry.interfaces.distribution import IDistribution
+from lp.registry.interfaces.distroseries import IDistroSeries
+from lp.registry.interfaces.pocket import PackagePublishingPocket
+from lp.registry.interfaces.series import SeriesStatus
+from lp.registry.interfaces.sourcepackage import SourcePackageUrgency
+from lp.registry.model.sourcepackagename import SourcePackageName
 from lp.services.config import config
 from lp.services.database.bulk import load_related
 from lp.services.database.decoratedresultset import DecoratedResultSet
-from lp.services.database.lpstorm import (
-    IMasterObject,
-    ISlaveStore,
-    IStore,
-    )
+from lp.services.database.enumcol import DBEnum
+from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import (
-    quote_like,
     SQLBase,
     sqlvalues,
     )
-from lp.services.job.model.job import Job
 from lp.services.librarian.browser import ProxiedLibraryFileAlias
+from lp.services.librarian.interfaces import ILibraryFileAlias
 from lp.services.librarian.model import (
     LibraryFileAlias,
     LibraryFileContent,
     )
-from lp.services.mail.helpers import (
-    get_contact_email_addresses,
-    get_email_template,
+from lp.services.macaroons.interfaces import (
+    BadMacaroonContext,
+    IMacaroonIssuer,
     )
-from lp.services.mail.sendmail import (
-    format_address,
-    simple_sendmail,
+from lp.services.macaroons.model import MacaroonIssuerBase
+from lp.soyuz.adapters.buildarch import determine_architectures_to_build
+from lp.soyuz.enums import (
+    ArchivePurpose,
+    PackagePublishingStatus,
     )
-from lp.services.webapp import canonical_url
-from lp.services.webapp.interfaces import (
-    DEFAULT_FLAVOR,
-    IStoreSelector,
-    MAIN_STORE,
+from lp.soyuz.interfaces.archive import (
+    InvalidExternalDependencies,
+    validate_external_dependencies,
     )
-from lp.soyuz.enums import ArchivePurpose
 from lp.soyuz.interfaces.binarypackagebuild import (
     BuildSetStatus,
     CannotBeRescored,
@@ -90,25 +103,82 @@ from lp.soyuz.interfaces.binarypackagebuild import (
     IBinaryPackageBuildSet,
     UnparsableDependencies,
     )
+from lp.soyuz.interfaces.distroarchseries import IDistroArchSeries
+from lp.soyuz.interfaces.packageset import IPackagesetSet
+from lp.soyuz.mail.binarypackagebuild import BinaryPackageBuildMailer
 from lp.soyuz.model.binarypackagename import BinaryPackageName
 from lp.soyuz.model.binarypackagerelease import BinaryPackageRelease
-from lp.soyuz.model.buildpackagejob import BuildPackageJob
-from lp.soyuz.model.files import BinaryPackageFile
+from lp.soyuz.model.files import (
+    BinaryPackageFile,
+    SourcePackageReleaseFile,
+    )
+from lp.soyuz.model.packageset import Packageset
 from lp.soyuz.model.queue import (
     PackageUpload,
     PackageUploadBuild,
     )
 
 
-class BinaryPackageBuild(PackageBuildDerived, SQLBase):
-    implements(IBinaryPackageBuild)
+SCORE_BY_POCKET = {
+    PackagePublishingPocket.BACKPORTS: 0,
+    PackagePublishingPocket.RELEASE: 1500,
+    PackagePublishingPocket.PROPOSED: 3000,
+    PackagePublishingPocket.UPDATES: 3000,
+    PackagePublishingPocket.SECURITY: 4500,
+}
+
+
+SCORE_BY_COMPONENT = {
+    'multiverse': 0,
+    'universe': 250,
+    'restricted': 750,
+    'main': 1000,
+    'partner': 1250,
+}
+
+
+SCORE_BY_URGENCY = {
+    SourcePackageUrgency.LOW: 5,
+    SourcePackageUrgency.MEDIUM: 10,
+    SourcePackageUrgency.HIGH: 15,
+    SourcePackageUrgency.EMERGENCY: 20,
+}
+
+
+PRIVATE_ARCHIVE_SCORE_BONUS = 10000
+
+
+# Rebuilds have usually a lower priority than other builds.
+# This will be subtracted from the final score, usually taking it
+# below 0, ensuring they are built only when nothing else is waiting
+# in the build farm.
+COPY_ARCHIVE_SCORE_PENALTY = 2600
+
+
+def is_build_virtualized(archive, processor):
+    """Should a build for this `IArchive` and `IProcessor` be virtualized?"""
+    return (
+        archive.require_virtualized
+        or not processor.supports_nonvirtualized)
+
+
+def storm_validate_external_dependencies(build, attr, value):
+    assert attr == 'external_dependencies'
+    errors = validate_external_dependencies(value)
+    if len(errors) > 0:
+        raise InvalidExternalDependencies(errors)
+    return value
+
+
+@implementer(IBinaryPackageBuild)
+class BinaryPackageBuild(PackageBuildMixin, SQLBase):
     _table = 'BinaryPackageBuild'
     _defaultOrder = 'id'
 
-    build_farm_job_type = BuildFarmJobType.PACKAGEBUILD
+    job_type = BuildFarmJobType.PACKAGEBUILD
 
-    package_build_id = Int(name='package_build', allow_none=False)
-    package_build = Reference(package_build_id, 'PackageBuild.id')
+    build_farm_job_id = Int(name='build_farm_job')
+    build_farm_job = Reference(build_farm_job_id, BuildFarmJob.id)
 
     distro_arch_series_id = Int(name='distro_arch_series', allow_none=False)
     distro_arch_series = Reference(
@@ -118,17 +188,60 @@ class BinaryPackageBuild(PackageBuildDerived, SQLBase):
     source_package_release = Reference(
         source_package_release_id, 'SourcePackageRelease.id')
 
-    @property
-    def buildqueue_record(self):
-        """See `IBuild`."""
-        store = Store.of(self)
-        results = store.find(
-            BuildQueue,
-            BuildPackageJob.job == BuildQueue.jobID,
-            BuildPackageJob.build == self.id)
-        return results.one()
+    archive_id = Int(name='archive', allow_none=False)
+    archive = Reference(archive_id, 'Archive.id')
 
-    def _getLatestPublication(self):
+    pocket = DBEnum(
+        name='pocket', enum=PackagePublishingPocket, allow_none=False)
+
+    arch_indep = Bool()
+
+    upload_log_id = Int(name='upload_log')
+    upload_log = Reference(upload_log_id, 'LibraryFileAlias.id')
+
+    dependencies = Unicode(name='dependencies')
+
+    processor_id = Int(name='processor')
+    processor = Reference(processor_id, 'Processor.id')
+    virtualized = Bool(name='virtualized')
+
+    date_created = DateTime(
+        name='date_created', tzinfo=pytz.UTC, allow_none=False)
+    date_started = DateTime(name='date_started', tzinfo=pytz.UTC)
+    date_finished = DateTime(name='date_finished', tzinfo=pytz.UTC)
+    date_first_dispatched = DateTime(
+        name='date_first_dispatched', tzinfo=pytz.UTC)
+
+    builder_id = Int(name='builder')
+    builder = Reference(builder_id, 'Builder.id')
+
+    status = DBEnum(name='status', enum=BuildStatus, allow_none=False)
+
+    log_id = Int(name='log')
+    log = Reference(log_id, 'LibraryFileAlias.id')
+
+    failure_count = Int(name='failure_count', allow_none=False)
+
+    distribution_id = Int(name='distribution', allow_none=False)
+    distribution = Reference(distribution_id, 'Distribution.id')
+
+    distro_series_id = Int(name='distro_series', allow_none=False)
+    distro_series = Reference(distro_series_id, 'DistroSeries.id')
+
+    is_distro_archive = Bool(name='is_distro_archive', allow_none=False)
+
+    source_package_name_id = Int(name='source_package_name', allow_none=False)
+    source_package_name = Reference(
+        source_package_name_id, 'SourcePackageName.id')
+
+    external_dependencies = Unicode(
+        name='external_dependencies',
+        validator=storm_validate_external_dependencies)
+
+    buildinfo_id = Int(name='buildinfo')
+    buildinfo = Reference(buildinfo_id, 'LibraryFileAlias.id')
+
+    def getLatestSourcePublication(self):
         from lp.soyuz.model.publishing import SourcePackagePublishingHistory
         store = Store.of(self)
         results = store.find(
@@ -143,7 +256,7 @@ class BinaryPackageBuild(PackageBuildDerived, SQLBase):
     @property
     def current_component(self):
         """See `IBuild`."""
-        latest_publication = self._getLatestPublication()
+        latest_publication = self.getLatestSourcePublication()
         # Production has some buggy builds without source publications.
         # They seem to have been created by early versions of gina and
         # the readding of hppa.
@@ -154,11 +267,16 @@ class BinaryPackageBuild(PackageBuildDerived, SQLBase):
     def current_source_publication(self):
         """See `IBuild`."""
         from lp.soyuz.interfaces.publishing import active_publishing_status
-        latest_publication = self._getLatestPublication()
+        latest_publication = self.getLatestSourcePublication()
         if (latest_publication is not None and
             latest_publication.status in active_publishing_status):
             return latest_publication
         return None
+
+    @property
+    def api_source_package_name(self):
+        """See `IBuild`."""
+        return self.source_package_release.name
 
     @property
     def upload_changesfile(self):
@@ -180,17 +298,15 @@ class BinaryPackageBuild(PackageBuildDerived, SQLBase):
     def package_upload(self):
         """See `IBuild`."""
         store = Store.of(self)
-        # The join on 'changesfile' is not only used only for
-        # pre-fetching the corresponding library file, so callsites
-        # don't have to issue an extra query. It is also important
-        # for excluding delayed-copies, because they might match
-        # the publication context but will not contain as changesfile.
+        # The join on 'changesfile' is used for pre-fetching the
+        # corresponding library file, so callsites don't have to issue an
+        # extra query.
         origin = [
             PackageUploadBuild,
             Join(PackageUpload,
                  PackageUploadBuild.packageuploadID == PackageUpload.id),
             Join(LibraryFileAlias,
-                 LibraryFileAlias.id == PackageUpload.changesfileID),
+                 LibraryFileAlias.id == PackageUpload.changes_file_id),
             Join(LibraryFileContent,
                  LibraryFileContent.id == LibraryFileAlias.contentID),
             ]
@@ -204,22 +320,7 @@ class BinaryPackageBuild(PackageBuildDerived, SQLBase):
         # upload of the result of this `Build`, load the `LibraryFileAlias`
         # and the `LibraryFileContent` in cache because it's most likely
         # they will be needed.
-        return DecoratedResultSet(results, operator.itemgetter(0)).one()
-
-    @property
-    def distro_series(self):
-        """See `IBuild`"""
-        return self.distro_arch_series.distroseries
-
-    @property
-    def distribution(self):
-        """See `IBuild`"""
-        return self.distro_series.distribution
-
-    @property
-    def is_virtualized(self):
-        """See `IBuild`"""
-        return self.archive.require_virtualized
+        return DecoratedResultSet(results, itemgetter(0)).one()
 
     @property
     def title(self):
@@ -275,6 +376,42 @@ class BinaryPackageBuild(PackageBuildDerived, SQLBase):
         return DistributionSourcePackageRelease(
             distribution=self.distribution,
             sourcepackagerelease=self.source_package_release)
+
+    def calculateScore(self):
+        """See `IBuildFarmJob`."""
+        score = 0
+
+        # Private builds get uber score.
+        if self.archive.private:
+            score += PRIVATE_ARCHIVE_SCORE_BONUS
+
+        if self.archive.is_copy:
+            score -= COPY_ARCHIVE_SCORE_PENALTY
+
+        score += self.archive.relative_build_score
+
+        # Language packs don't get any of the usual package-specific
+        # score bumps, as they unduly delay the building of packages in
+        # the main component otherwise.
+        if self.source_package_release.section.name == 'translations':
+            return score
+
+        # Calculates the urgency-related part of the score.
+        score += SCORE_BY_URGENCY[self.source_package_release.urgency]
+
+        # Calculates the pocket-related part of the score.
+        score += SCORE_BY_POCKET[self.pocket]
+
+        # Calculates the component-related part of the score.
+        score += SCORE_BY_COMPONENT.get(self.current_component.name, 0)
+
+        # Calculates the package-set-related part of the score.
+        package_sets = getUtility(IPackagesetSet).setsIncludingSource(
+            self.source_package_release.name, distroseries=self.distro_series)
+        if not self.archive.is_ppa and not package_sets.is_empty():
+            score += package_sets.max(Packageset.relative_build_score)
+
+        return score
 
     def getBinaryPackageNamesForDisplay(self):
         """See `IBuildView`."""
@@ -338,6 +475,8 @@ class BinaryPackageBuild(PackageBuildDerived, SQLBase):
             BuildStatus.MANUALDEPWAIT,
             BuildStatus.CHROOTWAIT,
             BuildStatus.FAILEDTOUPLOAD,
+            BuildStatus.CANCELLED,
+            BuildStatus.SUPERSEDED,
             ]
 
         # If the build is currently in any of the failed states,
@@ -354,8 +493,6 @@ class BinaryPackageBuild(PackageBuildDerived, SQLBase):
         """See `IBuild`."""
         if not self.buildqueue_record:
             return False
-        if self.buildqueue_record.virtualized is False:
-            return False
 
         cancellable_statuses = [
             BuildStatus.BUILDING,
@@ -366,13 +503,15 @@ class BinaryPackageBuild(PackageBuildDerived, SQLBase):
     def retry(self):
         """See `IBuild`."""
         assert self.can_be_retried, "Build %s cannot be retried" % self.id
-        self.status = BuildStatus.NEEDSBUILD
-        self.date_finished = None
+        self.build_farm_job.status = self.status = BuildStatus.NEEDSBUILD
+        self.build_farm_job.date_finished = self.date_finished = None
         self.date_started = None
-        self.builder = None
+        self.build_farm_job.builder = self.builder = None
         self.log = None
         self.upload_log = None
         self.dependencies = None
+        self.failure_count = 0
+        self.virtualized = is_build_virtualized(self.archive, self.processor)
         self.queueBuild()
 
     def rescore(self, score):
@@ -395,24 +534,10 @@ class BinaryPackageBuild(PackageBuildDerived, SQLBase):
         """See `IBinaryPackageBuild`."""
         if not self.can_be_cancelled:
             return
-
-        # If the build is currently building we need to tell the
-        # buildd-manager to terminate it.
-        if self.status == BuildStatus.BUILDING:
-            self.status = BuildStatus.CANCELLING
-            return
-
-        # Otherwise we can cancel it here.
+        # BuildQueue.cancel() will decide whether to go straight to
+        # CANCELLED, or go through CANCELLING to let buildd-manager
+        # clean up the slave.
         self.buildqueue_record.cancel()
-
-    def makeJob(self):
-        """See `IBuildFarmJob`."""
-        store = Store.of(self)
-        job = Job()
-        store.add(job)
-        specific_job = BuildPackageJob(build=self, job=job)
-        store.add(specific_job)
-        return specific_job
 
     def _parseDependencyToken(self, token):
         """Parse the given token.
@@ -422,27 +547,23 @@ class BinaryPackageBuild(PackageBuildDerived, SQLBase):
         Return a triple containing the corresponding (name, version,
         relation) for the given dependency token.
         """
-        # XXX cprov 2006-02-27: it may not work for and'd and or'd syntax.
-        try:
-            name, version, relation = token[0]
-        except ValueError:
-            raise AssertionError(
-                "APT is not dealing correctly with a dependency token "
-                "'%r' from %s (%s) with the following dependencies: %s\n"
-                "It is expected to be a tuple containing only another "
-                "tuple with 3 elements  (name, version, relation)."
-                % (token, self.title, self.id, self.dependencies))
-        # Map relations to the canonical form used in control files.
-        if relation == '<':
-            relation = '<<'
-        elif relation == '>':
-            relation = '>>'
-        return (name, version, relation)
+        assert 'name' in token
+        assert 'version' in token
+        if token['version'] is None:
+            relation = ''
+            version = ''
+        else:
+            relation, version = token['version']
+            if relation == '<':
+                relation = '<<'
+            elif relation == '>':
+                relation = '>>'
+        return (token['name'], version, relation)
 
     def _checkDependencyVersion(self, available, required, relation):
         """Return True if the available version satisfies the context."""
         # This dict maps the package version relationship syntax in lambda
-        # functions which returns boolean according to the results of
+        # functions which returns boolean according to the results of the
         # apt_pkg.version_compare function (see the order above).
         # For further information about pkg relationship syntax see:
         #
@@ -452,7 +573,7 @@ class BinaryPackageBuild(PackageBuildDerived, SQLBase):
             # any version is acceptable if no relationship is given
             '': lambda x: True,
             # strictly later
-            '>>': lambda x: x == 1,
+            '>>': lambda x: x > 0,
             # later or equal
             '>=': lambda x: x >= 0,
             # strictly equal
@@ -460,7 +581,7 @@ class BinaryPackageBuild(PackageBuildDerived, SQLBase):
             # earlier or equal
             '<=': lambda x: x <= 0,
             # strictly earlier
-            '<<': lambda x: x == -1,
+            '<<': lambda x: x < 0,
             }
 
         # Use apt_pkg function to compare versions
@@ -494,13 +615,6 @@ class BinaryPackageBuild(PackageBuildDerived, SQLBase):
 
         return False
 
-    def _toAptFormat(self, token):
-        """Rebuild dependencies line in apt format."""
-        name, version, relation = self._parseDependencyToken(token)
-        if relation and version:
-            return '%s (%s %s)' % (name, relation, version)
-        return '%s' % name
-
     def updateDependencies(self):
         """See `IBuild`."""
 
@@ -508,21 +622,24 @@ class BinaryPackageBuild(PackageBuildDerived, SQLBase):
         # properly.
         apt_pkg.init_system()
 
-        # Check package build dependencies using apt_pkg
+        # Check package build dependencies using debian.deb822
         try:
-            parsed_deps = apt_pkg.parse_depends(self.dependencies)
-        except (ValueError, TypeError):
+            with warnings.catch_warnings():
+                warnings.simplefilter("error")
+                parsed_deps = PkgRelation.parse_relations(self.dependencies)
+        except (AttributeError, Warning):
             raise UnparsableDependencies(
                 "Build dependencies for %s (%s) could not be parsed: '%s'\n"
                 "It indicates that something is wrong in buildd-slaves."
                 % (self.title, self.id, self.dependencies))
 
-        remaining_deps = [
-            self._toAptFormat(token) for token in parsed_deps
-            if not self._isDependencySatisfied(token)]
+        remaining_deps = []
+        for or_dep in parsed_deps:
+            if not any(self._isDependencySatisfied(token) for token in or_dep):
+                remaining_deps.append(or_dep)
 
         # Update dependencies line
-        self.dependencies = u", ".join(remaining_deps)
+        self.dependencies = unicode(PkgRelation.str(remaining_deps))
 
     def __getitem__(self, name):
         return self.getBinaryPackageRelease(name)
@@ -567,51 +684,43 @@ class BinaryPackageBuild(PackageBuildDerived, SQLBase):
         # Look for all sourcepackagerelease instances that match the name
         # and get the (successfully built) build records for this
         # package.
-        completed_builds = BinaryPackageBuild.select("""
-            BinaryPackageBuild.source_package_release =
-                SourcePackageRelease.id AND
-            BinaryPackageBuild.id != %s AND
-            BinaryPackageBuild.distro_arch_series = %s AND
-            SourcePackageRelease.sourcepackagename = SourcePackageName.id AND
-            SourcePackageName.name = %s AND
-            BinaryPackageBuild.package_build = PackageBuild.id AND
-            PackageBuild.archive IN %s AND
-            PackageBuild.build_farm_job = BuildFarmJob.id AND
-            BuildFarmJob.date_finished IS NOT NULL AND
-            BuildFarmJob.status = %s
-            """ % sqlvalues(self, self.distro_arch_series,
-                            self.source_package_release.name, archives,
-                            BuildStatus.FULLYBUILT),
-            orderBy=['-BuildFarmJob.date_finished', '-id'],
-            clauseTables=['PackageBuild', 'BuildFarmJob', 'SourcePackageName',
-                          'SourcePackageRelease'])
-
-        estimated_duration = None
-        if bool(completed_builds):
+        completed_builds = Store.of(self).find(
+            BinaryPackageBuild,
+            BinaryPackageBuild.archive_id.is_in(archives),
+            BinaryPackageBuild.distro_arch_series == self.distro_arch_series,
+            BinaryPackageBuild.source_package_name == self.source_package_name,
+            BinaryPackageBuild.date_finished != None,
+            BinaryPackageBuild.status == BuildStatus.FULLYBUILT,
+            BinaryPackageBuild.id != self.id)
+        most_recent_build = completed_builds.order_by(
+            Desc(BinaryPackageBuild.date_finished),
+            Desc(BinaryPackageBuild.id)).first()
+        if most_recent_build is not None and most_recent_build.duration:
             # Historic build data exists, use the most recent value -
             # assuming it has valid data.
-            most_recent_build = completed_builds[0]
-            estimated_duration = most_recent_build.duration
+            return most_recent_build.duration
 
-        if estimated_duration is None:
-            # Estimate the build duration based on package size if no
-            # historic build data exists.
+        # Estimate the build duration based on package size if no
+        # historic build data exists.
+        # Get the package size in KB.
+        package_size = self.source_package_release.getPackageSize()
+        if package_size > 0:
+            # Analysis of previous build data shows that a build rate
+            # of 6 KB/second is realistic. Furthermore we have to add
+            # another minute for generic build overhead.
+            estimate = int(package_size / 6.0 / 60 + 1)
+        else:
+            # No historic build times and no package size available,
+            # assume a build time of 5 minutes.
+            estimate = 5
+        return datetime.timedelta(minutes=estimate)
 
-            # Get the package size in KB.
-            package_size = self.source_package_release.getPackageSize()
-
-            if package_size > 0:
-                # Analysis of previous build data shows that a build rate
-                # of 6 KB/second is realistic. Furthermore we have to add
-                # another minute for generic build overhead.
-                estimate = int(package_size / 6.0 / 60 + 1)
-            else:
-                # No historic build times and no package size available,
-                # assume a build time of 5 minutes.
-                estimate = 5
-            estimated_duration = datetime.timedelta(minutes=estimate)
-
-        return estimated_duration
+    def addBuildInfo(self, buildinfo):
+        """See `IBinaryPackageBuild`."""
+        if self.buildinfo is None:
+            self.buildinfo = buildinfo
+        else:
+            assert self.buildinfo == buildinfo
 
     def verifySuccessfulUpload(self):
         return bool(self.binarypackages)
@@ -619,7 +728,7 @@ class BinaryPackageBuild(PackageBuildDerived, SQLBase):
     def notify(self, extra_info=None):
         """See `IPackageBuild`.
 
-        If config.buildmaster.build_notification is disable, simply
+        If config.buildmaster.send_build_notification is disabled, simply
         return.
 
         If config.builddmaster.notify_owner is enabled and SPR.creator
@@ -633,146 +742,13 @@ class BinaryPackageBuild(PackageBuildDerived, SQLBase):
         the record in question (all states are supported), see
         doc/build-notification.txt for further information.
         """
-
         if not config.builddmaster.send_build_notification:
             return
         if self.status == BuildStatus.FULLYBUILT:
             return
-
-        recipients = set()
-
-        fromaddress = format_address(
-            config.builddmaster.default_sender_name,
-            config.builddmaster.default_sender_address)
-
-        extra_headers = {
-            'X-Launchpad-Build-State': self.status.name,
-            'X-Launchpad-Build-Component': self.current_component.name,
-            'X-Launchpad-Build-Arch':
-                self.distro_arch_series.architecturetag,
-            }
-
-        # XXX cprov 2006-10-27: Temporary extra debug info about the
-        # SPR.creator in context, to be used during the service quarantine,
-        # notify_owner will be disabled to avoid *spamming* Debian people.
-        creator = self.source_package_release.creator
-        extra_headers['X-Creator-Recipient'] = ",".join(
-            get_contact_email_addresses(creator))
-
-        # Currently there are 7038 SPR published in edgy which the creators
-        # have no preferredemail. They are the autosync ones (creator = katie,
-        # 3583 packages) and the untouched sources since we have migrated from
-        # DAK (the rest). We should not spam Debian maintainers.
-
-        # Please note that both the package creator and the package uploader
-        # will be notified of failures if:
-        #     * the 'notify_owner' flag is set
-        #     * the package build (failure) occurred in the original
-        #       archive.
-        package_was_not_copied = (
-            self.archive == self.source_package_release.upload_archive)
-
-        if package_was_not_copied and config.builddmaster.notify_owner:
-            if (self.archive.is_ppa and creator.inTeam(self.archive.owner)
-                or
-                not self.archive.is_ppa):
-                # If this is a PPA, the package creator should only be
-                # notified if they are the PPA owner or in the PPA team.
-                # (see bug 375757)
-                # Non-PPA notifications inform the creator regardless.
-                recipients = recipients.union(
-                    get_contact_email_addresses(creator))
-            dsc_key = self.source_package_release.dscsigningkey
-            if dsc_key:
-                recipients = recipients.union(
-                    get_contact_email_addresses(dsc_key.owner))
-
-        # Modify notification contents according to the targeted archive.
-        # 'Archive Tag', 'Subject' and 'Source URL' are customized for PPA.
-        # We only send build-notifications to 'buildd-admin' celebrity for
-        # main archive candidates.
-        # For PPA build notifications we include the archive.owner
-        # contact_address.
-        if not self.archive.is_ppa:
-            buildd_admins = getUtility(ILaunchpadCelebrities).buildd_admin
-            recipients = recipients.union(
-                get_contact_email_addresses(buildd_admins))
-            archive_tag = '%s primary archive' % self.distribution.name
-            subject = "[Build #%d] %s" % (self.id, self.title)
-            source_url = canonical_url(self.distributionsourcepackagerelease)
-        else:
-            recipients = recipients.union(
-                get_contact_email_addresses(self.archive.owner))
-            # For PPAs we run the risk of having no available contact_address,
-            # for instance, when both, SPR.creator and Archive.owner have
-            # not enabled it.
-            if len(recipients) == 0:
-                return
-            archive_tag = '%s PPA' % get_ppa_reference(self.archive)
-            subject = "[Build #%d] %s (%s)" % (
-                self.id, self.title, archive_tag)
-            source_url = 'not available'
-            extra_headers['X-Launchpad-PPA'] = get_ppa_reference(self.archive)
-
-        # XXX cprov 2006-08-02: pending security recipients for SECURITY
-        # pocket build. We don't build SECURITY yet :(
-
-        # XXX cprov 2006-08-02: find out a way to glue parameters reported
-        # with the state in the build worflow, maybe by having an
-        # IBuild.statusReport property, which could also be used in the
-        # respective page template.
-        if self.status in [
-            BuildStatus.NEEDSBUILD, BuildStatus.SUPERSEDED]:
-            # untouched builds
-            buildduration = 'not available'
-            buildlog_url = 'not available'
-            builder_url = 'not available'
-        elif self.status == BuildStatus.UPLOADING:
-            buildduration = 'uploading'
-            buildlog_url = 'see builder page'
-            builder_url = 'not available'
-        elif self.status == BuildStatus.BUILDING:
-            # build in process
-            buildduration = 'not finished'
-            buildlog_url = 'see builder page'
-            builder_url = canonical_url(self.buildqueue_record.builder)
-        else:
-            # completed states (success and failure)
-            buildduration = DurationFormatterAPI(
-                self.duration).approximateduration()
-            buildlog_url = self.log_url
-            builder_url = canonical_url(self.builder)
-
-        if self.status == BuildStatus.FAILEDTOUPLOAD:
-            assert extra_info is not None, (
-                'Extra information is required for FAILEDTOUPLOAD '
-                'notifications.')
-            extra_info = 'Upload log:\n%s' % extra_info
-        else:
-            extra_info = ''
-
-        template = get_email_template('build-notification.txt', app='soyuz')
-        replacements = {
-            'source_name': self.source_package_release.name,
-            'source_version': self.source_package_release.version,
-            'architecturetag': self.distro_arch_series.architecturetag,
-            'build_state': self.status.title,
-            'build_duration': buildduration,
-            'buildlog_url': buildlog_url,
-            'builder_url': builder_url,
-            'build_title': self.title,
-            'build_url': canonical_url(self),
-            'source_url': source_url,
-            'extra_info': extra_info,
-            'archive_tag': archive_tag,
-            'component_tag': self.current_component.name,
-            }
-        message = template % replacements
-
-        for toaddress in recipients:
-            simple_sendmail(
-                fromaddress, toaddress, subject, message,
-                headers=extra_headers)
+        mailer = BinaryPackageBuildMailer.forStatus(
+            self, extra_info=extra_info)
+        mailer.sendAll()
 
     def _getDebByFileName(self, filename):
         """Helper function to get a .deb LFA in the context of this build."""
@@ -809,47 +785,48 @@ class BinaryPackageBuild(PackageBuildDerived, SQLBase):
             LibraryFileAlias.id == BinaryPackageFile.libraryfileID,
             LibraryFileAlias.filename == filename).one()
 
-    def getSpecificJob(self):
-        """See `IBuildFarmJob`."""
-        # If we are asked to adapt an object that is already a binary
-        # package build, then don't hit the db.
-        return self
-
     def getUploader(self, changes):
         """See `IBinaryPackageBuild`."""
         return changes.signer
 
+    @property
+    def api_external_dependencies(self):
+        return self.external_dependencies
 
-class BinaryPackageBuildSet:
-    implements(IBinaryPackageBuildSet)
+    @api_external_dependencies.setter
+    def api_external_dependencies(self, value):
+        self.external_dependencies = value
 
-    def new(self, distro_arch_series, source_package_release, processor,
-            archive, pocket, status=BuildStatus.NEEDSBUILD,
-            date_created=None):
+
+@implementer(IBinaryPackageBuildSet)
+class BinaryPackageBuildSet(SpecificBuildFarmJobSourceMixin):
+
+    def new(self, source_package_release, archive, distro_arch_series, pocket,
+            arch_indep=None, status=BuildStatus.NEEDSBUILD, builder=None,
+            buildinfo=None):
         """See `IBinaryPackageBuildSet`."""
-        # Create the PackageBuild to which the new BinaryPackageBuild
-        # will delegate.
-        package_build = getUtility(IPackageBuildSource).new(
-            BinaryPackageBuild.build_farm_job_type,
-            archive.require_virtualized, archive, pocket, processor,
-            status, date_created=date_created)
-
-        binary_package_build = BinaryPackageBuild(
-            package_build=package_build,
+        # Force the current timestamp instead of the default UTC_NOW for
+        # the transaction, avoid several row with same datecreated.
+        if arch_indep is None:
+            arch_indep = distro_arch_series.isNominatedArchIndep
+        date_created = datetime.datetime.now(pytz.timezone('UTC'))
+        # Create the BuildFarmJob for the new BinaryPackageBuild.
+        build_farm_job = getUtility(IBuildFarmJobSource).new(
+            BinaryPackageBuild.job_type, status, date_created, builder,
+            archive)
+        processor = distro_arch_series.processor
+        virtualized = is_build_virtualized(archive, processor)
+        return BinaryPackageBuild(
+            build_farm_job=build_farm_job,
             distro_arch_series=distro_arch_series,
-            source_package_release=source_package_release)
-        return binary_package_build
-
-    def getBuildBySRAndArchtag(self, sourcepackagereleaseID, archtag):
-        """See `IBinaryPackageBuildSet`"""
-        clauseTables = ['DistroArchSeries']
-        query = ('BinaryPackageBuild.source_package_release = %s '
-                 'AND BinaryPackageBuild.distro_arch_series = '
-                     'DistroArchSeries.id '
-                 'AND DistroArchSeries.architecturetag = %s'
-                 % sqlvalues(sourcepackagereleaseID, archtag))
-
-        return BinaryPackageBuild.select(query, clauseTables=clauseTables)
+            source_package_release=source_package_release,
+            archive=archive, pocket=pocket, arch_indep=arch_indep,
+            status=status, processor=processor, virtualized=virtualized,
+            builder=builder, is_distro_archive=archive.is_main,
+            distribution=distro_arch_series.distroseries.distribution,
+            distro_series=distro_arch_series.distroseries,
+            source_package_name=source_package_release.sourcepackagename,
+            buildinfo=buildinfo, date_created=date_created)
 
     def getByID(self, id):
         """See `IBinaryPackageBuildSet`."""
@@ -860,81 +837,50 @@ class BinaryPackageBuildSet:
 
     def getByBuildFarmJob(self, build_farm_job):
         """See `ISpecificBuildFarmJobSource`."""
-        find_spec = (BinaryPackageBuild, PackageBuild, BuildFarmJob)
-        resulting_tuple = Store.of(build_farm_job).find(
-            find_spec,
-            BinaryPackageBuild.package_build == PackageBuild.id,
-            PackageBuild.build_farm_job == BuildFarmJob.id,
-            BuildFarmJob.id == build_farm_job.id).one()
-        if resulting_tuple is None:
-            return None
-        return resulting_tuple[0]
+        return Store.of(build_farm_job).find(
+            BinaryPackageBuild, build_farm_job_id=build_farm_job.id).one()
 
     def preloadBuildsData(self, builds):
         # Circular imports.
-        from lp.soyuz.model.distroarchseries import (
-            DistroArchSeries
-            )
-        from lp.registry.model.distroseries import (
-            DistroSeries
-            )
-        from lp.registry.model.distribution import (
-            Distribution
-            )
+        from lp.soyuz.model.distroarchseries import DistroArchSeries
+        from lp.registry.model.distroseries import DistroSeries
+        from lp.registry.model.distribution import Distribution
         from lp.soyuz.model.archive import Archive
         from lp.registry.model.person import Person
         self._prefetchBuildData(builds)
-        distro_arch_series = load_related(
-            DistroArchSeries, builds, ['distro_arch_series_id'])
-        package_builds = load_related(
-            PackageBuild, builds, ['package_build_id'])
-        archives = load_related(Archive, package_builds, ['archive_id'])
+        das = load_related(DistroArchSeries, builds, ['distro_arch_series_id'])
+        archives = load_related(Archive, builds, ['archive_id'])
         load_related(Person, archives, ['ownerID'])
-        distroseries = load_related(
-            DistroSeries, distro_arch_series, ['distroseriesID'])
-        load_related(
-            Distribution, distroseries, ['distributionID'])
+        distroseries = load_related(DistroSeries, das, ['distroseriesID'])
+        load_related(Distribution, distroseries, ['distributionID'])
 
     def getByBuildFarmJobs(self, build_farm_jobs):
         """See `ISpecificBuildFarmJobSource`."""
         if len(build_farm_jobs) == 0:
             return EmptyResultSet()
-        clause_tables = (BinaryPackageBuild, PackageBuild, BuildFarmJob)
-        build_farm_job_ids = [
-            build_farm_job.id for build_farm_job in build_farm_jobs]
-
-        resultset = Store.of(build_farm_jobs[0]).using(*clause_tables).find(
+        rows = Store.of(build_farm_jobs[0]).find(
             BinaryPackageBuild,
-            BinaryPackageBuild.package_build == PackageBuild.id,
-            PackageBuild.build_farm_job == BuildFarmJob.id,
-            BuildFarmJob.id.is_in(build_farm_job_ids))
-        return DecoratedResultSet(
-            resultset, pre_iter_hook=self.preloadBuildsData)
+            BinaryPackageBuild.build_farm_job_id.is_in(
+                bfj.id for bfj in build_farm_jobs))
+        return DecoratedResultSet(rows, pre_iter_hook=self.preloadBuildsData)
 
-    def getPendingBuildsForArchSet(self, archseries):
-        """See `IBinaryPackageBuildSet`."""
-        if not archseries:
-            return None
-
-        archseries_ids = [d.id for d in archseries]
-        store = getUtility(IStoreSelector).get(MAIN_STORE, DEFAULT_FLAVOR)
-        return store.find(
+    def getBySourceAndLocation(self, source_package_release, archive,
+                               distro_arch_series):
+        return IStore(BinaryPackageBuild).find(
             BinaryPackageBuild,
-            BinaryPackageBuild.distro_arch_series_id.is_in(archseries_ids),
-            BinaryPackageBuild.package_build == PackageBuild.id,
-            PackageBuild.build_farm_job == BuildFarmJob.id,
-            BuildFarmJob.status == BuildStatus.NEEDSBUILD)
+            source_package_release=source_package_release,
+            archive=archive, distro_arch_series=distro_arch_series).one()
 
     def handleOptionalParamsForBuildQueries(
-        self, queries, tables, status=None, name=None, pocket=None,
+        self, clauses, origin, status=None, name=None, pocket=None,
         arch_tag=None):
         """Construct query clauses needed/shared by all getBuild..() methods.
 
         This method is not exposed via the public interface as it is only
         used to DRY-up trusted code.
 
-        :param queries: container to which to add any resulting query clauses.
-        :param tables: container to which to add joined tables.
+        :param clauses: container to which to add any resulting query clauses.
+        :param origin: container to which to add joined tables.
         :param status: optional build state for which to add a query clause if
             present.
         :param name: optional source package release name (or list of source
@@ -945,133 +891,103 @@ class BinaryPackageBuildSet:
         :param arch_tag: optional architecture tag for which to add a
             query clause if present.
         """
+        # Circular. :(
+        from lp.soyuz.model.distroarchseries import DistroArchSeries
 
-        # Ensure the underlying buildfarmjob and package build tables
-        # are included.
-        queries.append('BinaryPackageBuild.package_build = PackageBuild.id')
-        queries.append('PackageBuild.build_farm_job = BuildFarmJob.id')
-        tables.extend(['PackageBuild', 'BuildFarmJob'])
+        origin.append(BinaryPackageBuild)
 
         # Add query clause that filters on build state if the latter is
         # provided.
         if status is not None:
-            queries.append('BuildFarmJob.status=%s' % sqlvalues(status))
+            clauses.append(BinaryPackageBuild.status == status)
 
         # Add query clause that filters on pocket if the latter is provided.
         if pocket:
             if not isinstance(pocket, (list, tuple)):
                 pocket = (pocket,)
-
-            queries.append('PackageBuild.pocket IN %s' % sqlvalues(pocket))
+            clauses.append(BinaryPackageBuild.pocket.is_in(pocket))
 
         # Add query clause that filters on architecture tag if provided.
         if arch_tag is not None:
-            queries.append('''
-                BinaryPackageBuild.distro_arch_series = DistroArchSeries.id
-                AND DistroArchSeries.architecturetag = %s
-            ''' % sqlvalues(arch_tag))
-            tables.extend(['DistroArchSeries'])
+            clauses.append(
+                BinaryPackageBuild.distro_arch_series_id ==
+                    DistroArchSeries.id)
+            if not isinstance(arch_tag, (list, tuple)):
+                arch_tag = (arch_tag,)
+            clauses.append(DistroArchSeries.architecturetag.is_in(arch_tag))
+            origin.append(DistroArchSeries)
 
         # Add query clause that filters on source package release name if the
         # latter is provided.
         if name is not None:
+            clauses.append(
+                BinaryPackageBuild.source_package_name_id ==
+                    SourcePackageName.id)
+            origin.extend([SourcePackageName])
             if not isinstance(name, (list, tuple)):
-                queries.append('''
-                    BinaryPackageBuild.source_package_release =
-                        SourcePackageRelease.id AND
-                    SourcePackageRelease.sourcepackagename =
-                        SourcePackageName.id
-                    AND SourcepackageName.name LIKE '%%%%' || %s || '%%%%'
-                ''' % quote_like(name))
+                clauses.append(
+                    SourcePackageName.name.contains_string(name))
             else:
-                queries.append('''
-                    BinaryPackageBuild.source_package_release =
-                        SourcePackageRelease.id AND
-                    SourcePackageRelease.sourcepackagename =
-                        SourcePackageName.id
-                    AND SourcepackageName.name IN %s
-                ''' % sqlvalues(name))
-            tables.extend(['SourcePackageRelease', 'SourcePackageName'])
+                clauses.append(SourcePackageName.name.is_in(name))
 
     def getBuildsForBuilder(self, builder_id, status=None, name=None,
-                            arch_tag=None, user=None):
+                            pocket=None, arch_tag=None, user=None):
         """See `IBinaryPackageBuildSet`."""
-        queries = []
-        clauseTables = []
+        # Circular. :(
+        from lp.soyuz.model.archive import (
+            Archive, get_archive_privacy_filter)
+
+        clauses = [
+            BinaryPackageBuild.archive_id == Archive.id,
+            BinaryPackageBuild.builder_id == builder_id,
+            get_archive_privacy_filter(user)]
+        origin = [Archive]
 
         self.handleOptionalParamsForBuildQueries(
-            queries, clauseTables, status, name, pocket=None,
-            arch_tag=arch_tag)
+            clauses, origin, status, name, pocket, arch_tag=arch_tag)
 
-        # This code MUST match the logic in the Build security adapter,
-        # otherwise users are likely to get 403 errors, or worse.
-        queries.append("Archive.id = PackageBuild.archive")
-        clauseTables.append('Archive')
-        if user is not None:
-            if not user.inTeam(getUtility(ILaunchpadCelebrities).admin):
-                queries.append("""
-                (Archive.private = FALSE
-                 OR %s IN (SELECT TeamParticipation.person
-                       FROM TeamParticipation
-                       WHERE TeamParticipation.person = %s
-                           AND TeamParticipation.team = Archive.owner)
-                )""" % sqlvalues(user, user))
-        else:
-            queries.append("Archive.private = FALSE")
-
-        queries.append("builder=%s" % builder_id)
-
-        return BinaryPackageBuild.select(
-            " AND ".join(queries), clauseTables=clauseTables,
-            orderBy=["-BuildFarmJob.date_finished", "id"])
+        return IStore(BinaryPackageBuild).using(*origin).find(
+            BinaryPackageBuild, *clauses).order_by(
+                Desc(BinaryPackageBuild.date_finished),
+                BinaryPackageBuild.id)
 
     def getBuildsForArchive(self, archive, status=None, name=None,
                             pocket=None, arch_tag=None):
         """See `IBinaryPackageBuildSet`."""
-        queries = []
-        clauseTables = []
+        clauses = [BinaryPackageBuild.archive_id == archive.id]
+        origin = []
 
         self.handleOptionalParamsForBuildQueries(
-            queries, clauseTables, status, name, pocket, arch_tag)
+            clauses, origin, status, name, pocket, arch_tag)
 
         # Ordering according status
         # * SUPERSEDED & All by -datecreated
         # * FULLYBUILT & FAILURES by -datebuilt
         # It should present the builds in a more natural order.
         if status == BuildStatus.SUPERSEDED or status is None:
-            orderBy = ["-BuildFarmJob.date_created"]
+            orderBy = [Desc(BinaryPackageBuild.date_created)]
         else:
-            orderBy = ["-BuildFarmJob.date_finished"]
+            orderBy = [Desc(BinaryPackageBuild.date_finished)]
         # All orders fallback to id if the primary order doesn't succeed
-        orderBy.append("id")
-
-        queries.append("archive=%s" % sqlvalues(archive))
-        clause = " AND ".join(queries)
+        orderBy.append(BinaryPackageBuild.id)
 
         return self._decorate_with_prejoins(
-            BinaryPackageBuild.select(
-                clause, clauseTables=clauseTables, orderBy=orderBy))
+            IStore(BinaryPackageBuild).using(*origin).find(
+                BinaryPackageBuild, *clauses).order_by(*orderBy))
 
-    def getBuildsByArchIds(self, distribution, arch_ids, status=None,
-                           name=None, pocket=None):
+    def getBuildsForDistro(self, context, status=None, name=None,
+                           pocket=None, arch_tag=None):
         """See `IBinaryPackageBuildSet`."""
-        # If no distroarchseries were passed in, return an empty list
-        if not arch_ids:
-            return EmptyResultSet()
-
-        clauseTables = []
-
-        # format clause according single/multiple architecture(s) form
-        if len(arch_ids) == 1:
-            condition_clauses = [('distro_arch_series=%s'
-                                  % sqlvalues(arch_ids[0]))]
+        if IDistribution.providedBy(context):
+            col = BinaryPackageBuild.distribution_id
+        elif IDistroSeries.providedBy(context):
+            col = BinaryPackageBuild.distro_series_id
+        elif IDistroArchSeries.providedBy(context):
+            col = BinaryPackageBuild.distro_arch_series_id
         else:
-            condition_clauses = [('distro_arch_series IN %s'
-                                  % sqlvalues(arch_ids))]
-
-        condition_clauses.extend([
-            "BinaryPackageBuild.package_build = PackageBuild.id",
-            "PackageBuild.build_farm_job = BuildFarmJob.id"])
+            raise AssertionError("Unsupported context: %r" % context)
+        condition_clauses = [
+            col == context.id, BinaryPackageBuild.is_distro_archive]
 
         # XXX cprov 2006-09-25: It would be nice if we could encapsulate
         # the chunk of code below (which deals with the optional paramenters)
@@ -1080,61 +996,51 @@ class BinaryPackageBuildSet:
         # exclude gina-generated and security (dak-made) builds
         # status == FULLYBUILT && datebuilt == null
         if status == BuildStatus.FULLYBUILT:
-            condition_clauses.append("BuildFarmJob.date_finished IS NOT NULL")
+            condition_clauses.append(BinaryPackageBuild.date_finished != None)
         else:
-            condition_clauses.append(
-                "(BuildFarmJob.status <> %s OR "
-                " BuildFarmJob.date_finished IS NOT NULL)"
-                % sqlvalues(BuildStatus.FULLYBUILT))
+            condition_clauses.append(Or(
+                BinaryPackageBuild.status != BuildStatus.FULLYBUILT,
+                BinaryPackageBuild.date_finished != None))
 
         # Ordering according status
         # * NEEDSBUILD, BUILDING & UPLOADING by -lastscore
-        # * SUPERSEDED & All by -PackageBuild.build_farm_job
+        # * SUPERSEDED & All by -BinaryPackageBuild.id
         #   (nearly equivalent to -datecreated, but much more
         #   efficient.)
         # * FULLYBUILT & FAILURES by -datebuilt
         # It should present the builds in a more natural order.
+        clauseTables = []
+        order_by_table = None
         if status in [
             BuildStatus.NEEDSBUILD,
             BuildStatus.BUILDING,
             BuildStatus.UPLOADING]:
             order_by = [Desc(BuildQueue.lastscore), BinaryPackageBuild.id]
             order_by_table = BuildQueue
-            clauseTables.append('BuildQueue')
-            clauseTables.append('BuildPackageJob')
+            clauseTables.append(BuildQueue)
             condition_clauses.append(
-                'BuildPackageJob.build = BinaryPackageBuild.id')
-            condition_clauses.append('BuildPackageJob.job = BuildQueue.job')
+                BuildQueue._build_farm_job_id ==
+                    BinaryPackageBuild.build_farm_job_id)
         elif status == BuildStatus.SUPERSEDED or status is None:
-            order_by = [Desc(PackageBuild.build_farm_job_id)]
-            order_by_table = PackageBuild
+            order_by = [Desc(BinaryPackageBuild.id)]
         else:
-            order_by = [Desc(BuildFarmJob.date_finished),
+            order_by = [Desc(BinaryPackageBuild.date_finished),
                         BinaryPackageBuild.id]
-            order_by_table = BuildFarmJob
 
         # End of duplication (see XXX cprov 2006-09-25 above).
 
         self.handleOptionalParamsForBuildQueries(
-            condition_clauses, clauseTables, status, name, pocket)
+            condition_clauses, clauseTables, status, name, pocket, arch_tag)
 
-        # Only pick builds from the distribution's main archive to
-        # exclude PPA builds
-        condition_clauses.append(
-            "PackageBuild.archive IN %s" %
-            sqlvalues(list(distribution.all_distro_archive_ids)))
-
-        store = Store.of(distribution)
-        clauseTables = [BinaryPackageBuild] + clauseTables
-        result_set = store.using(*clauseTables).find(
-            (BinaryPackageBuild, order_by_table), *condition_clauses)
+        find_spec = (BinaryPackageBuild,)
+        if order_by_table:
+            find_spec = find_spec + (order_by_table,)
+        result_set = IStore(BinaryPackageBuild).using(*clauseTables).find(
+            find_spec, *condition_clauses)
         result_set.order_by(*order_by)
 
-        def get_bpp(result_row):
-            return result_row[0]
-
         return self._decorate_with_prejoins(
-            DecoratedResultSet(result_set, result_decorator=get_bpp))
+            DecoratedResultSet(result_set, result_decorator=itemgetter(0)))
 
     def _decorate_with_prejoins(self, result_set):
         """Decorate build records with related data prefetch functionality."""
@@ -1144,80 +1050,61 @@ class BinaryPackageBuildSet:
             result_set, pre_iter_hook=self._prefetchBuildData)
         return decorated_results
 
-    def retryDepWaiting(self, distroarchseries):
-        """See `IBinaryPackageBuildSet`. """
-        # XXX cprov 20071122: use the root logger once bug 164203 is fixed.
-        logger = logging.getLogger('retry-depwait')
-
-        # Get the MANUALDEPWAIT records for all archives.
-        store = ISlaveStore(BinaryPackageBuild)
-
-        candidates = store.find(
-            BinaryPackageBuild,
-            BinaryPackageBuild.distro_arch_series == distroarchseries,
-            BinaryPackageBuild.package_build == PackageBuild.id,
-            PackageBuild.build_farm_job == BuildFarmJob.id,
-            BuildFarmJob.status == BuildStatus.MANUALDEPWAIT)
-
-        # Materialise the results right away to avoid hitting the
-        # database multiple times.
-        candidates = list(candidates)
-
-        candidates_count = len(candidates)
-        if candidates_count == 0:
-            logger.info("No MANUALDEPWAIT record found.")
-            return
-
-        logger.info(
-            "Found %d builds in MANUALDEPWAIT state." % candidates_count)
-
-        for build in candidates:
-            if not build.can_be_retried:
-                continue
-            # We're changing 'build' so make sure we have an object from
-            # the master store.
-            build = IMasterObject(build)
-            try:
-                build.updateDependencies()
-            except UnparsableDependencies as e:
-                logger.error(e)
-                continue
-
-            if build.dependencies:
-                logger.debug(
-                    "Skipping %s: %s" % (build.title, build.dependencies))
-                continue
-            logger.info("Retrying %s" % build.title)
-            build.retry()
-            build.buildqueue_record.score()
-
     def getBuildsBySourcePackageRelease(self, sourcepackagerelease_ids,
                                         buildstate=None):
         """See `IBinaryPackageBuildSet`."""
         if (sourcepackagerelease_ids is None or
             len(sourcepackagerelease_ids) == 0):
             return []
-        # Circular.
-        from lp.soyuz.model.archive import Archive
-
-        query = """
-            source_package_release IN %s AND
-            package_build = packagebuild.id AND
-            archive.id = packagebuild.archive AND
-            archive.purpose != %s AND
-            packagebuild.build_farm_job = buildfarmjob.id
-            """ % sqlvalues(sourcepackagerelease_ids, ArchivePurpose.PPA)
+        query = [
+            BinaryPackageBuild.source_package_release_id.is_in(
+                sourcepackagerelease_ids),
+            BinaryPackageBuild.is_distro_archive,
+            ]
 
         if buildstate is not None:
-            query += "AND buildfarmjob.status = %s" % sqlvalues(buildstate)
+            query.append(BinaryPackageBuild.status == buildstate)
 
-        resultset = IStore(BinaryPackageBuild).using(
-            BinaryPackageBuild, PackageBuild, BuildFarmJob, Archive).find(
-            (BinaryPackageBuild, PackageBuild, BuildFarmJob),
-            SQL(query))
+        resultset = IStore(BinaryPackageBuild).find(BinaryPackageBuild, *query)
         resultset.order_by(
-            Desc(BuildFarmJob.date_created), BinaryPackageBuild.id)
-        return DecoratedResultSet(resultset, operator.itemgetter(0))
+            Desc(BinaryPackageBuild.date_created), BinaryPackageBuild.id)
+        return resultset
+
+    def findBuiltOrPublishedBySourceAndArchive(self, sourcepackagerelease,
+                                               archive):
+        """See `IBinaryPackageBuildSet`."""
+        from lp.soyuz.model.publishing import BinaryPackagePublishingHistory
+
+        published_query = Select(
+            1,
+            tables=(
+                BinaryPackagePublishingHistory,
+                Join(
+                    BinaryPackageRelease,
+                    BinaryPackageRelease.id ==
+                        BinaryPackagePublishingHistory.binarypackagereleaseID)
+                ),
+            where=And(
+                BinaryPackagePublishingHistory.archive == archive,
+                BinaryPackageRelease.build == BinaryPackageBuild.id))
+        builds = list(IStore(BinaryPackageBuild).find(
+            BinaryPackageBuild,
+            BinaryPackageBuild.status == BuildStatus.FULLYBUILT,
+            BinaryPackageBuild.source_package_release == sourcepackagerelease,
+            Or(
+                BinaryPackageBuild.archive == archive,
+                Exists(published_query))))
+        # XXX wgrant 2014-11-07: We should be able to assert here that
+        # each archtag appeared only once, as a second successful build
+        # should fail to upload due to file conflicts. Unfortunately,
+        # there are 1141 conflicting builds in the primary archive on
+        # production, and they're non-trivial to clean up.
+        # Let's just hope that nothing of value will be lost if we omit
+        # duplicates.
+        arch_map = {
+            build.distro_arch_series.architecturetag: build
+            for build in builds}
+        return arch_map
 
     def getStatusSummaryForBuilds(self, builds):
         """See `IBinaryPackageBuildSet`."""
@@ -1287,34 +1174,25 @@ class BinaryPackageBuildSet:
             return
 
         build_ids = [build.id for build in results]
-        store = getUtility(IStoreSelector).get(MAIN_STORE, DEFAULT_FLAVOR)
         origin = (
             BinaryPackageBuild,
-            LeftJoin(
-                PackageBuild,
-                BinaryPackageBuild.package_build == PackageBuild.id),
-            LeftJoin(
-                BuildFarmJob,
-                PackageBuild.build_farm_job == BuildFarmJob.id),
-            LeftJoin(
+            Join(
                 SourcePackageRelease,
                 (SourcePackageRelease.id ==
                     BinaryPackageBuild.source_package_release_id)),
-            LeftJoin(
+            Join(
                 SourcePackageName,
                 SourcePackageName.id
                     == SourcePackageRelease.sourcepackagenameID),
             LeftJoin(LibraryFileAlias,
-                     LibraryFileAlias.id == BuildFarmJob.log_id),
+                     LibraryFileAlias.id == BinaryPackageBuild.log_id),
             LeftJoin(LibraryFileContent,
                      LibraryFileContent.id == LibraryFileAlias.contentID),
-            LeftJoin(
-                Builder,
-                Builder.id == BuildFarmJob.builder_id),
+            LeftJoin(Builder, Builder.id == BinaryPackageBuild.builder_id),
             )
-        result_set = store.using(*origin).find(
+        result_set = IStore(BinaryPackageBuild).using(*origin).find(
             (SourcePackageRelease, LibraryFileAlias, SourcePackageName,
-             LibraryFileContent, Builder, PackageBuild, BuildFarmJob),
+             LibraryFileContent, Builder),
             BinaryPackageBuild.id.is_in(build_ids))
 
         # Force query execution so that the ancillary data gets fetched
@@ -1326,58 +1204,226 @@ class BinaryPackageBuildSet:
 
     def getByQueueEntry(self, queue_entry):
         """See `IBinaryPackageBuildSet`."""
-        store = getUtility(IStoreSelector).get(MAIN_STORE, DEFAULT_FLAVOR)
-        result_set = store.find(
-            BinaryPackageBuild,
-            BuildPackageJob.build == BinaryPackageBuild.id,
-            BuildPackageJob.job == BuildQueue.jobID,
-            BuildQueue.job == queue_entry.job)
+        bfj_id = removeSecurityProxy(queue_entry)._build_farm_job_id
+        return IStore(BinaryPackageBuild).find(
+            BinaryPackageBuild, build_farm_job_id=bfj_id).one()
 
-        return result_set.one()
-
-    def getQueueEntriesForBuildIDs(self, build_ids):
-        """See `IBinaryPackageBuildSet`."""
-        store = getUtility(IStoreSelector).get(MAIN_STORE, DEFAULT_FLAVOR)
-
-        origin = (
-            BuildPackageJob,
-            Join(BuildQueue, BuildPackageJob.job == BuildQueue.jobID),
-            Join(
-                BinaryPackageBuild,
-                BuildPackageJob.build == BinaryPackageBuild.id),
-            LeftJoin(
-                Builder,
-                BuildQueue.builderID == Builder.id),
+    @staticmethod
+    def addCandidateSelectionCriteria(processor, virtualized):
+        """See `ISpecificBuildFarmJobSource`."""
+        private_statuses = (
+            PackagePublishingStatus.PUBLISHED,
+            PackagePublishingStatus.SUPERSEDED,
+            PackagePublishingStatus.DELETED,
             )
-        result_set = store.using(*origin).find(
-            (BuildQueue, Builder, BuildPackageJob),
-            BinaryPackageBuild.id.is_in(build_ids))
+        return """
+            SELECT TRUE FROM Archive, BinaryPackageBuild, DistroArchSeries
+            WHERE
+            BinaryPackageBuild.build_farm_job = BuildQueue.build_farm_job AND
+            BinaryPackageBuild.distro_arch_series =
+                DistroArchSeries.id AND
+            BinaryPackageBuild.archive = Archive.id AND
+            ((Archive.private IS TRUE AND
+              EXISTS (
+                  SELECT SourcePackagePublishingHistory.id
+                  FROM SourcePackagePublishingHistory
+                  WHERE
+                      SourcePackagePublishingHistory.distroseries =
+                         DistroArchSeries.distroseries AND
+                      SourcePackagePublishingHistory.sourcepackagerelease =
+                         BinaryPackageBuild.source_package_release AND
+                      SourcePackagePublishingHistory.archive = Archive.id AND
+                      SourcePackagePublishingHistory.status IN %s))
+              OR
+              archive.private IS FALSE) AND
+            BinaryPackageBuild.status = %s
+        """ % sqlvalues(private_statuses, BuildStatus.NEEDSBUILD)
 
-        return result_set
+    @staticmethod
+    def postprocessCandidate(job, logger):
+        """See `ISpecificBuildFarmJobSource`."""
+        # Mark build records targeted to old source versions as SUPERSEDED
+        # and build records target to SECURITY pocket or against an OBSOLETE
+        # distroseries without a flag as FAILEDTOBUILD.
+        # Builds in those situation should not be built because they will
+        # be wasting build-time.  In the former case, there is already a
+        # newer source; the latter case needs an overhaul of the way
+        # security builds are handled (by copying from a PPA) to avoid
+        # creating duplicate builds.
+        build = getUtility(IBinaryPackageBuildSet).getByQueueEntry(job)
+        distroseries = build.distro_arch_series.distroseries
+        if (
+            build.pocket == PackagePublishingPocket.SECURITY or
+            (distroseries.status == SeriesStatus.OBSOLETE and
+                not build.archive.permit_obsolete_series_uploads)):
+            # We never build anything in the security pocket, or for obsolete
+            # series without the flag set.
+            logger.debug(
+                "Build %s FAILEDTOBUILD, queue item %s REMOVED"
+                % (build.id, job.id))
+            build.updateStatus(BuildStatus.FAILEDTOBUILD)
+            job.destroySelf()
+            return False
 
-    def calculateCandidates(self, archseries):
-        """See `IBinaryPackageBuildSet`."""
-        if not archseries:
-            raise AssertionError("Given 'archseries' cannot be None/empty.")
+        publication = build.current_source_publication
+        if publication is None:
+            # The build should be superseded if it no longer has a
+            # current publishing record.
+            logger.debug(
+                "Build %s SUPERSEDED, queue item %s REMOVED"
+                % (build.id, job.id))
+            build.updateStatus(BuildStatus.SUPERSEDED)
+            job.destroySelf()
+            return False
 
-        arch_ids = [d.id for d in archseries]
+        return True
 
-        query = """
-           BinaryPackageBuild.distro_arch_series IN %s AND
-           BinaryPackageBuild.package_build = PackageBuild.id AND
-           PackageBuild.build_farm_job = BuildFarmJob.id AND
-           BuildFarmJob.status = %s AND
-           BuildQueue.job_type = %s AND
-           BuildQueue.job = BuildPackageJob.job AND
-           BuildPackageJob.build = BinaryPackageBuild.id AND
-           BuildQueue.builder IS NULL
-        """ % sqlvalues(
-            arch_ids, BuildStatus.NEEDSBUILD, BuildFarmJobType.PACKAGEBUILD)
+    def _getAllowedArchitectures(self, archive, available_archs):
+        """Filter out any restricted architectures not specifically allowed
+        for an archive.
 
-        candidates = BuildQueue.select(
-            query, clauseTables=[
-                'BinaryPackageBuild', 'PackageBuild', 'BuildFarmJob',
-                'BuildPackageJob'],
-            orderBy=['-BuildQueue.lastscore'])
+        :param available_archs: Architectures to consider
+        :return: Sequence of `IDistroArch` instances.
+        """
+        # Return all distroarches with unrestricted processors or with
+        # processors the archive is explicitly associated with.
+        return [
+            das for das in available_archs
+            if (
+                das.enabled
+                and das.processor in archive.processors
+                and (
+                    das.processor.supports_virtualized
+                    or not archive.require_virtualized))]
 
-        return candidates
+    def createForSource(self, sourcepackagerelease, archive, distroseries,
+                        pocket, architectures_available=None, logger=None):
+        """See `ISourcePackagePublishingHistory`."""
+
+        # Exclude any architectures which already have built or copied
+        # binaries. A new build with the same archtag could never
+        # succeed; its files would conflict during upload.
+        relevant_builds = self.findBuiltOrPublishedBySourceAndArchive(
+            sourcepackagerelease, archive).values()
+
+        # Find any architectures that already have a build that exactly
+        # matches, regardless of status. We can't create a second build
+        # with the same (SPR, Archive, DAS).
+        # XXX wgrant 2014-11-06: Should use a bulk query.
+        for das in distroseries.architectures:
+            build = self.getBySourceAndLocation(
+                sourcepackagerelease, archive, das)
+            if build is not None:
+                relevant_builds.append(build)
+
+        skip_archtags = set(
+            bpb.distro_arch_series.architecturetag for bpb in relevant_builds)
+        # We need to assign the arch-indep role to a build unless an
+        # arch-indep build has already succeeded, or another build in
+        # this series already has it set.
+        need_arch_indep = not any(bpb.arch_indep for bpb in relevant_builds)
+
+        # Find the architectures for which the source chould end up with
+        # new binaries. Exclude architectures not allowed in this
+        # archive and architectures that have already built. Order by
+        # Processor.id so determine_architectures_to_build is
+        # deterministic.
+        # XXX wgrant 2014-11-06: The fact that production's
+        # Processor 1 is i386, a good arch-indep candidate, is a
+        # total coincidence and this isn't a hack. I promise.
+        need_archs = sorted(
+            [das for das in
+             self._getAllowedArchitectures(
+                 archive,
+                 architectures_available
+                    or distroseries.buildable_architectures)
+             if das.architecturetag not in skip_archtags],
+            key=attrgetter('processor.id'))
+        nominated_arch_indep_tag = (
+            distroseries.nominatedarchindep.architecturetag
+            if distroseries.nominatedarchindep else None)
+
+        # Filter the valid archs against the hint list and work out
+        # their arch-indepness.
+        create_tag_map = determine_architectures_to_build(
+            sourcepackagerelease.architecturehintlist,
+            sourcepackagerelease.getUserDefinedField(
+                'Build-Indep-Architecture'),
+            [das.architecturetag for das in need_archs],
+            nominated_arch_indep_tag, need_arch_indep)
+
+        # Create builds for the remaining architectures.
+        new_builds = []
+        for das in sorted(need_archs, key=attrgetter('architecturetag')):
+            if das.architecturetag not in create_tag_map:
+                continue
+            build = self.new(
+                source_package_release=sourcepackagerelease,
+                distro_arch_series=das, archive=archive, pocket=pocket,
+                arch_indep=create_tag_map[das.architecturetag])
+            new_builds.append(build)
+            # Create the builds in suspended mode for disabled archives.
+            build_queue = build.queueBuild(suspended=not archive.enabled)
+            Store.of(build).flush()
+            if logger is not None:
+                logger.debug(
+                    "Created %s [%d] in %s (%d)"
+                    % (build.title, build.id, build.archive.displayname,
+                    build_queue.lastscore))
+        return new_builds
+
+
+@implementer(IMacaroonIssuer)
+class BinaryPackageBuildMacaroonIssuer(MacaroonIssuerBase):
+
+    identifier = "binary-package-build"
+
+    @property
+    def _primary_caveat_name(self):
+        """See `MacaroonIssuerBase`."""
+        # The "lp.principal" prefix indicates that this caveat constrains
+        # the macaroon to access only resources that should be accessible
+        # when acting on behalf of the named build, rather than to access
+        # the named build directly.
+        return "lp.principal.binary-package-build"
+
+    def checkIssuingContext(self, context, **kwargs):
+        """See `MacaroonIssuerBase`.
+
+        For issuing, the context is an `IBinaryPackageBuild`.
+        """
+        if not removeSecurityProxy(context).archive.private:
+            raise BadMacaroonContext(
+                context, "Refusing to issue macaroon for public build.")
+        return removeSecurityProxy(context).id
+
+    def checkVerificationContext(self, context, **kwargs):
+        """See `MacaroonIssuerBase`."""
+        if not ILibraryFileAlias.providedBy(context):
+            raise BadMacaroonContext(context)
+        return context
+
+    def verifyPrimaryCaveat(self, caveat_value, context, **kwargs):
+        """See `MacaroonIssuerBase`.
+
+        For verification, the context is an `ILibraryFileAlias`.  We check
+        that the file is one of those required to build the
+        `IBinaryPackageBuild` that is the context of the macaroon, and that
+        the context build is currently building.
+        """
+        # Circular import.
+        from lp.soyuz.model.sourcepackagerelease import SourcePackageRelease
+
+        try:
+            build_id = int(caveat_value)
+        except ValueError:
+            return False
+        return not IStore(BinaryPackageBuild).find(
+            BinaryPackageBuild,
+            BinaryPackageBuild.id == build_id,
+            BinaryPackageBuild.source_package_release_id ==
+                SourcePackageRelease.id,
+            SourcePackageReleaseFile.sourcepackagereleaseID ==
+                SourcePackageRelease.id,
+            SourcePackageReleaseFile.libraryfile == context,
+            BinaryPackageBuild.status == BuildStatus.BUILDING).is_empty()

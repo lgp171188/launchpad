@@ -16,19 +16,19 @@ Team branding
 -------------
 
     >>> browser = setupBrowser(auth='Basic no-priv@canonical.com:test')
-    >>> browser.open('http://launchpad.dev/~ubuntu-team/+branding')
+    >>> browser.open('http://launchpad.test/~ubuntu-team/+branding')
     Traceback (most recent call last):
     ...
     Unauthorized:...
 
     >>> browser = setupBrowser(auth='Basic mark@example.com:test')
-    >>> browser.open('http://launchpad.dev/~ubuntu-team')
+    >>> browser.open('http://launchpad.test/~ubuntu-team')
     >>> browser.url
-    'http://launchpad.dev/~ubuntu-team'
+    'http://launchpad.test/~ubuntu-team'
     >>> browser.getLink('Change details').click()
     >>> browser.getLink('Change branding').click()
     >>> browser.url
-    'http://launchpad.dev/~ubuntu-team/+branding'
+    'http://launchpad.test/~ubuntu-team/+branding'
 
     >>> browser.getControl(name='field.icon.action').value
     ['keep']
@@ -51,7 +51,7 @@ Team branding
 Here we see the updated values.
 
     >>> browser.url
-    'http://launchpad.dev/~ubuntu-team'
+    'http://launchpad.test/~ubuntu-team'
     >>> browser.getLink('Change details').click()
     >>> browser.getLink('Change branding').click()
 
@@ -74,18 +74,18 @@ Distribution branding
 ---------------------
 
     >>> browser = setupBrowser(auth='Basic no-priv@canonical.com:test')
-    >>> browser.open('http://launchpad.dev/kubuntu/+edit')
+    >>> browser.open('http://launchpad.test/kubuntu/+edit')
     Traceback (most recent call last):
     ...
     Unauthorized:...
 
     >>> browser = setupBrowser(auth='Basic mark@example.com:test')
-    >>> browser.open('http://launchpad.dev/kubuntu')
+    >>> browser.open('http://launchpad.test/kubuntu')
     >>> browser.url
-    'http://launchpad.dev/kubuntu'
+    'http://launchpad.test/kubuntu'
     >>> browser.getLink('Change details').click()
     >>> browser.url
-    'http://launchpad.dev/kubuntu/+edit'
+    'http://launchpad.test/kubuntu/+edit'
 
     >>> browser.getControl(name='field.icon.action').value
     ['keep']
@@ -108,7 +108,7 @@ Distribution branding
 Here we see the updated values.
 
     >>> browser.url
-    'http://launchpad.dev/kubuntu'
+    'http://launchpad.test/kubuntu'
     >>> browser.getLink('Change details').click()
 
     >>> browser.getControl(name='field.icon.action').value
@@ -130,19 +130,19 @@ ProjectGroup branding
 ---------------------
 
     >>> browser = setupBrowser(auth='Basic no-priv@canonical.com:test')
-    >>> browser.open('http://launchpad.dev/mozilla/+branding')
+    >>> browser.open('http://launchpad.test/mozilla/+branding')
     Traceback (most recent call last):
     ...
     Unauthorized:...
 
     >>> browser = setupBrowser(auth='Basic mark@example.com:test')
-    >>> browser.open('http://launchpad.dev/mozilla')
+    >>> browser.open('http://launchpad.test/mozilla')
     >>> browser.url
-    'http://launchpad.dev/mozilla'
+    'http://launchpad.test/mozilla'
     >>> browser.getLink('Change details').click()
     >>> browser.getLink('Change branding').click()
     >>> browser.url
-    'http://launchpad.dev/mozilla/+branding'
+    'http://launchpad.test/mozilla/+branding'
 
     >>> browser.getControl(name='field.icon.action').value
     ['keep']
@@ -165,7 +165,7 @@ ProjectGroup branding
 Here we see the updated values.
 
     >>> browser.url
-    'http://launchpad.dev/mozilla'
+    'http://launchpad.test/mozilla'
     >>> browser.getLink('Change details').click()
     >>> browser.getLink('Change branding').click()
 
@@ -188,22 +188,22 @@ Product branding
 ----------------
 
     >>> browser = setupBrowser(auth='Basic no-priv@canonical.com:test')
-    >>> browser.open('http://launchpad.dev/jokosher/+branding')
+    >>> browser.open('http://launchpad.test/jokosher/+branding')
     Traceback (most recent call last):
     ...
     Unauthorized:...
 
     >>> browser = setupBrowser(auth='Basic mark@example.com:test')
-    >>> browser.open('http://launchpad.dev/jokosher')
+    >>> browser.open('http://launchpad.test/jokosher')
     >>> browser.url
-    'http://launchpad.dev/jokosher'
+    'http://launchpad.test/jokosher'
     >>> browser.getLink('Change details').click()
     >>> browser.url
-    'http://launchpad.dev/jokosher/+edit'
+    'http://launchpad.test/jokosher/+edit'
     >>> browser.getLink('Cancel').click()
     >>> browser.getLink('Change branding').click()
     >>> browser.url
-    'http://launchpad.dev/jokosher/+branding'
+    'http://launchpad.test/jokosher/+branding'
 
     >>> browser.getControl(name='field.icon.action').value
     ['keep']
@@ -226,7 +226,7 @@ Product branding
 Here we see the updated values.
 
     >>> browser.url
-    'http://launchpad.dev/jokosher'
+    'http://launchpad.test/jokosher'
     >>> browser.getLink('Change branding').click()
 
     >>> browser.getControl(name='field.icon.action').value
@@ -250,18 +250,18 @@ Sprint branding
 Again, for Sprints, we have not exposed icon editing through the UI.
 
     >>> browser = setupBrowser(auth='Basic no-priv@canonical.com:test')
-    >>> browser.open('http://launchpad.dev/sprints/futurista/+branding')
+    >>> browser.open('http://launchpad.test/sprints/futurista/+branding')
     Traceback (most recent call last):
     ...
     Unauthorized:...
 
     >>> browser = setupBrowser(auth='Basic mark@example.com:test')
-    >>> browser.open('http://launchpad.dev/sprints/futurista')
+    >>> browser.open('http://launchpad.test/sprints/futurista')
     >>> browser.url
-    'http://launchpad.dev/sprints/futurista'
+    'http://launchpad.test/sprints/futurista'
     >>> browser.getLink('Change branding').click()
     >>> browser.url
-    'http://launchpad.dev/sprints/futurista/+branding'
+    'http://launchpad.test/sprints/futurista/+branding'
 
     >>> browser.getControl(name='field.logo.action').value
     ['keep']
@@ -280,7 +280,7 @@ Again, for Sprints, we have not exposed icon editing through the UI.
 Here we see the updated values.
 
     >>> browser.url
-    'http://launchpad.dev/sprints/futurista'
+    'http://launchpad.test/sprints/futurista'
     >>> browser.getLink('Change branding').click()
 
     >>> browser.getControl(name='field.logo.action').value

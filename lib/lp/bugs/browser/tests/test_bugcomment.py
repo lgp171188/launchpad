@@ -1,4 +1,4 @@
-# Copyright 2010-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for the bugcomment module."""
@@ -19,6 +19,7 @@ from soupmatchers import (
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
+from lp.app.enums import InformationType
 from lp.bugs.browser.bugcomment import (
     BugComment,
     group_comments_with_activity,
@@ -28,16 +29,15 @@ from lp.coop.answersbugs.visibility import (
     TestHideMessageControlMixin,
     TestMessageVisibilityMixin,
     )
-from lp.registry.enums import InformationType
 from lp.registry.interfaces.accesspolicy import IAccessPolicySource
 from lp.services.webapp.publisher import canonical_url
-from lp.services.webapp.testing import verifyObject
 from lp.testing import (
     BrowserTestCase,
     celebrity_logged_in,
     login_person,
     TestCase,
     TestCaseWithFactory,
+    verifyObject,
     )
 from lp.testing.layers import DatabaseFunctionalLayer
 from lp.testing.pages import find_tag_by_id
@@ -108,7 +108,7 @@ class TestGroupCommentsWithActivities(TestCase):
         # have any common actors, no grouping is possible.
         comments = [
             BugCommentStub(*next(self.time_index))
-            for number in xrange(5)]
+            for number in range(5)]
         self.assertEqual(
             comments, self.group(comments=comments, activities=[]))
 
@@ -117,7 +117,7 @@ class TestGroupCommentsWithActivities(TestCase):
         # have any common actors, no grouping is possible.
         activities = [
             BugActivityStub(next(self.time_index)[0])
-            for number in xrange(5)]
+            for number in range(5)]
         self.assertEqual(
             [[activity] for activity in activities], self.group(
                 comments=[], activities=activities))
@@ -175,7 +175,7 @@ class TestGroupCommentsWithActivities(TestCase):
         actor = PersonStub()
         activities = [
             BugActivityStub(next(self.time_index)[0], owner=actor)
-            for count in xrange(8)]
+            for count in range(8)]
         grouped = self.group(comments=[], activities=activities)
         self.assertEqual(2, len(grouped))
         self.assertEqual(activities[:5], grouped[0])
@@ -211,12 +211,12 @@ class TestBugCommentVisibility(
 
     layer = DatabaseFunctionalLayer
 
-    def makeHiddenMessage(self):
+    def makeHiddenMessage(self, comment_owner=None):
         """Required by the mixin."""
         with celebrity_logged_in('admin'):
             bug = self.factory.makeBug()
             comment = self.factory.makeBugComment(
-                    bug=bug, body=self.comment_text)
+                    bug=bug, body=self.comment_text, owner=comment_owner)
             comment.visible = False
         return bug
 
@@ -307,6 +307,15 @@ class TestBugCommentImplementsInterface(TestCaseWithFactory):
         bug_comment = make_bug_comment(self.factory)
         url = canonical_url(bug_comment, view_name='+download')
         self.assertEqual(url, bug_comment.download_url)
+
+    def test_bug_comment_canonical_url(self):
+        """The bug comment url should use the default bugtastk."""
+        bug_message = self.factory.makeBugComment()
+        bugtask = bug_message.bugs[0].default_bugtask
+        product = removeSecurityProxy(bugtask).target
+        url = 'http://bugs.launchpad.test/%s/+bug/%s/comments/%s' % (
+           product.name, bugtask.bug.id, 1)
+        self.assertEqual(url, canonical_url(bug_message))
 
 
 def make_bug_comment(factory, *args, **kwargs):

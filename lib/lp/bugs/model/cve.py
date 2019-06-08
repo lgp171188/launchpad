@@ -1,7 +1,5 @@
-# Copyright 2009 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2017 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
-
-# pylint: disable-msg=E0611,W0212
 
 __metaclass__ = type
 
@@ -10,21 +8,22 @@ __all__ = [
     'CveSet',
     ]
 
-import re
+import operator
 
-# SQL imports
 from sqlobject import (
     SQLMultipleJoin,
     SQLObjectNotFound,
-    SQLRelatedJoin,
     StringCol,
     )
 from storm.expr import In
 from storm.store import Store
-# Zope
-from zope.interface import implements
+from zope.component import getUtility
+from zope.interface import implementer
 
-from lp.app.validators.cve import valid_cve
+from lp.app.validators.cve import (
+    CVEREF_PATTERN,
+    valid_cve,
+    )
 from lp.bugs.interfaces.buglink import IBugLinkTarget
 from lp.bugs.interfaces.cve import (
     CveStatus,
@@ -32,26 +31,22 @@ from lp.bugs.interfaces.cve import (
     ICveSet,
     )
 from lp.bugs.model.bug import Bug
-from lp.bugs.model.bugcve import BugCve
 from lp.bugs.model.buglinktarget import BugLinkTargetMixin
 from lp.bugs.model.cvereference import CveReference
-from lp.services.database.bulk import load_related
+from lp.services.database import bulk
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.enumcol import EnumCol
-from lp.services.database.sqlbase import (
-    SQLBase,
-    sqlvalues,
-    )
+from lp.services.database.interfaces import IStore
+from lp.services.database.sqlbase import SQLBase
+from lp.services.database.stormexpr import fti_search
+from lp.services.xref.interfaces import IXRefSet
+from lp.services.xref.model import XRef
 
 
-cverefpat = re.compile(r'(CVE|CAN)-((19|20)\d{2}\-\d{4})')
-
-
+@implementer(ICve, IBugLinkTarget)
 class Cve(SQLBase, BugLinkTargetMixin):
     """A CVE database record."""
-
-    implements(ICve, IBugLinkTarget)
 
     _table = 'Cve'
 
@@ -61,17 +56,13 @@ class Cve(SQLBase, BugLinkTargetMixin):
     datecreated = UtcDateTimeCol(notNull=True, default=UTC_NOW)
     datemodified = UtcDateTimeCol(notNull=True, default=UTC_NOW)
 
-    # joins
-    bugs = SQLRelatedJoin('Bug', intermediateTable='BugCve',
-        joinColumn='cve', otherColumn='bug', orderBy='id')
-    bug_links = SQLMultipleJoin('BugCve', joinColumn='cve', orderBy='id')
     references = SQLMultipleJoin(
         'CveReference', joinColumn='cve', orderBy='id')
 
     @property
     def url(self):
         """See ICve."""
-        return ('http://www.cve.mitre.org/cgi-bin/cvename.cgi?name=%s'
+        return ('https://cve.mitre.org/cgi-bin/cvename.cgi?name=%s'
                 % self.sequence)
 
     @property
@@ -81,6 +72,14 @@ class Cve(SQLBase, BugLinkTargetMixin):
     @property
     def title(self):
         return 'CVE-%s (%s)' % (self.sequence, self.status.title)
+
+    @property
+    def bugs(self):
+        bug_ids = [
+            int(id) for _, id in getUtility(IXRefSet).findFrom(
+                (u'cve', self.sequence), types=[u'bug'])]
+        return list(sorted(
+            bulk.load(Bug, bug_ids), key=operator.attrgetter('id')))
 
     # CveReference's
     def createReference(self, source, content, url=None):
@@ -92,18 +91,23 @@ class Cve(SQLBase, BugLinkTargetMixin):
         assert ref.cve == self
         CveReference.delete(ref.id)
 
-    # Template methods for BugLinkTargetMixin
-    buglinkClass = BugCve
-
-    def createBugLink(self, bug):
+    def createBugLink(self, bug, props=None):
         """See BugLinkTargetMixin."""
-        return BugCve(cve=self, bug=bug)
+        if props is None:
+            props = {}
+        # XXX: Should set creator.
+        getUtility(IXRefSet).create(
+            {(u'cve', self.sequence): {(u'bug', unicode(bug.id)): props}})
+
+    def deleteBugLink(self, bug):
+        """See BugLinkTargetMixin."""
+        getUtility(IXRefSet).delete(
+            {(u'cve', self.sequence): [(u'bug', unicode(bug.id))]})
 
 
+@implementer(ICveSet)
 class CveSet:
     """The full set of ICve's."""
-
-    implements(ICveSet)
     table = Cve
 
     def __init__(self, bug=None):
@@ -144,14 +148,14 @@ class CveSet:
 
     def search(self, text):
         """See ICveSet."""
-        query = "Cve.fti @@ ftq(%s) " % sqlvalues(text)
-        return Cve.select(query, distinct=True, orderBy='-datemodified')
+        return Cve.select(
+            fti_search(Cve, text), distinct=True, orderBy='-datemodified')
 
     def inText(self, text):
         """See ICveSet."""
         # let's look for matching entries
         cves = set()
-        for match in cverefpat.finditer(text):
+        for match in CVEREF_PATTERN.finditer(text):
             # let's get the core CVE data
             sequence = match.group(2)
             # see if there is already a matching CVE ref in the db, and if
@@ -184,39 +188,34 @@ class CveSet:
 
     def getBugCvesForBugTasks(self, bugtasks, cve_mapper=None):
         """See ICveSet."""
-        bugs = load_related(Bug, bugtasks, ('bugID', ))
+        bugs = bulk.load_related(Bug, bugtasks, ('bugID', ))
         if len(bugs) == 0:
             return []
-        bug_ids = [bug.id for bug in bugs]
-
-        # Do not use BugCve instances: Storm may need a very long time
-        # to look up the bugs and CVEs referenced by a BugCve instance
-        # when the +cve view of a distroseries is rendered: There may
-        # be a few thousand (bug, CVE) tuples, while the number of bugs
-        # and CVEs is in the order of hundred. It is much more efficient
-        # to retrieve just (bug_id, cve_id) from the BugCve table and
-        # to map this to (Bug, CVE) here, instead of letting Storm
-        # look up the CVE and bug for a BugCve instance, even if bugs
-        # and CVEs are bulk loaded.
         store = Store.of(bugtasks[0])
-        bugcve_ids = store.find(
-            (BugCve.bugID, BugCve.cveID), In(BugCve.bugID, bug_ids))
-        bugcve_ids.order_by(BugCve.bugID, BugCve.cveID)
-        bugcve_ids = list(bugcve_ids)
 
-        cve_ids = set(cve_id for bug_id, cve_id in bugcve_ids)
-        cves = store.find(Cve, In(Cve.id, list(cve_ids)))
+        xrefs = getUtility(IXRefSet).findFromMany(
+            [(u'bug', unicode(bug.id)) for bug in bugs], types=[u'cve'])
+        bugcve_ids = set()
+        for bug_key in xrefs:
+            for cve_key in xrefs[bug_key]:
+                bugcve_ids.add((int(bug_key[1]), cve_key[1]))
+
+        bugcve_ids = list(sorted(bugcve_ids))
+
+        cves = store.find(
+            Cve, In(Cve.sequence, [seq for _, seq in bugcve_ids]))
 
         if cve_mapper is None:
-            cvemap = dict((cve.id, cve) for cve in cves)
+            cvemap = dict((cve.sequence, cve) for cve in cves)
         else:
-            cvemap = dict((cve.id, cve_mapper(cve)) for cve in cves)
+            cvemap = dict((cve.sequence, cve_mapper(cve)) for cve in cves)
         bugmap = dict((bug.id, bug) for bug in bugs)
         return [
-            (bugmap[bug_id], cvemap[cve_id])
-            for bug_id, cve_id in bugcve_ids
+            (bugmap[bug_id], cvemap[cve_sequence])
+            for bug_id, cve_sequence in bugcve_ids
             ]
 
     def getBugCveCount(self):
         """See ICveSet."""
-        return BugCve.select().count()
+        return IStore(XRef).find(
+            XRef, XRef.from_type == u'bug', XRef.to_type == u'cve').count()

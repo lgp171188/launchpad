@@ -4,14 +4,13 @@ Editing a ProjectGroup
 The maintainer of a project can edit its details.
 
     >>> browser.addHeader('Authorization', 'Basic test@canonical.com:test')
-    >>> browser.open('http://launchpad.dev/gnome')
+    >>> browser.open('http://launchpad.test/gnome')
     >>> browser.getLink('Change details').click()
     >>> print browser.title
     Change project group details...
 
     >>> soup = find_main_content(browser.contents)
     >>> browser.getControl('Display Name').value = 'New Name'
-    >>> browser.getControl('Title').value = 'New Title'
     >>> browser.getControl('Project Group Summary').value = 'New Summary.'
     >>> browser.getControl('Description').value = 'New Description.'
     >>> browser.getControl('Homepage URL').value = 'http://new-url.com/'
@@ -19,7 +18,7 @@ The maintainer of a project can edit its details.
     >>> browser.getControl('Change Details').click()
 
     >>> print browser.url
-    http://launchpad.dev/gnome
+    http://launchpad.test/gnome
 
 Regular users can't access the +review page.
 
@@ -30,11 +29,11 @@ Regular users can't access the +review page.
 
 But administrators can access the page:
 
-    >>> admin_browser.open('http://launchpad.dev/gnome')
+    >>> admin_browser.open('http://launchpad.test/gnome')
     >>> admin_browser.getLink('Administer').click()
 
     >>> print admin_browser.url
-    http://launchpad.dev/gnome/+review
+    http://launchpad.test/gnome/+review
 
     >>> print admin_browser.title
     Change project group details : New Name
@@ -46,7 +45,7 @@ Mark the project as reviewed and change the name.
     >>> admin_browser.getControl('Change').click()
 
     >>> print admin_browser.url
-    http://launchpad.dev/new-name
+    http://launchpad.test/new-name
 
 The project summary shows the status as reviewed for admins only.
 
@@ -55,7 +54,7 @@ The project summary shows the status as reviewed for admins only.
 
 Other users cannot see the Project group status in the details portlet.
 
-    >>> anon_browser.open('http://launchpad.dev/new-name')
+    >>> anon_browser.open('http://launchpad.test/new-name')
     >>> print extract_text(
     ...     find_tag_by_id(anon_browser.contents, 'portlet-details'))
     Project group information
@@ -70,7 +69,7 @@ Other users cannot see the Project group status in the details portlet.
 Administrators can also change the maintainer and registrant independent
 of each other, as well as adding aliases to the project group.
 
-    >>> admin_browser.open('http://launchpad.dev/new-name')
+    >>> admin_browser.open('http://launchpad.test/new-name')
     >>> admin_browser.getLink('Administer').click()
     >>> admin_browser.getControl('Maintainer').value = 'cprov'
     >>> admin_browser.getControl('Registrant').value = 'ddaa'
@@ -102,7 +101,7 @@ The registrant really should only be a person, not a team, but that
 constraint has to be relaxed to account for old data where we do have
 teams as registrants.
 
-    >>> admin_browser.open('http://launchpad.dev/new-name')
+    >>> admin_browser.open('http://launchpad.test/new-name')
     >>> admin_browser.getLink('Administer').click()
     >>> admin_browser.getControl('Registrant').value = 'registry'
     >>> admin_browser.getControl('Change').click()
@@ -121,7 +120,7 @@ Registry experts are not allowed access to the +edit page.
     >>> logout()
     >>> expert_browser = setupBrowser(auth='Basic %s:test' % email)
 
-    >>> expert_browser.open('http://launchpad.dev/new-name')
+    >>> expert_browser.open('http://launchpad.test/new-name')
     >>> expert_browser.getLink('Change details').click()
     Traceback (most recent call last):
     ...
@@ -129,7 +128,7 @@ Registry experts are not allowed access to the +edit page.
 
 And going directly to the URL is not allowed.
 
-    >>> expert_browser.open('http://launchpad.dev/new-name/+edit')
+    >>> expert_browser.open('http://launchpad.test/new-name/+edit')
     Traceback (most recent call last):
     ...
     Unauthorized...
@@ -137,10 +136,10 @@ And going directly to the URL is not allowed.
 Registry experts do have access to administer project groups, though
 there are fewer fields available.
 
-    >>> expert_browser.open('http://launchpad.dev/new-name')
+    >>> expert_browser.open('http://launchpad.test/new-name')
     >>> expert_browser.getLink('Administer').click()
     >>> print expert_browser.url
-    http://launchpad.dev/new-name/+review
+    http://launchpad.test/new-name/+review
 
     >>> expert_browser.getControl('Maintainer')
     Traceback (most recent call last):
@@ -157,7 +156,7 @@ there are fewer fields available.
     >>> expert_browser.getControl('Reviewed').selected = False
     >>> expert_browser.getControl('Change').click()
 
-    >>> expert_browser.open('http://launchpad.dev/newer-name')
+    >>> expert_browser.open('http://launchpad.test/newer-name')
     >>> expert_browser.getLink('Administer').click()
     >>> print expert_browser.getControl('Aliases').value
     sleepy

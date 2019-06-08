@@ -14,7 +14,7 @@ The Rosetta homepage.
     >>> from lp.translations.interfaces.translations import (
     ...     IRosettaApplication)
     >>> canonical_url(getUtility(IRosettaApplication))
-    u'http://launchpad.dev/translations'
+    u'http://launchpad.test/translations'
 
 POTemplates and POFiles
 -----------------------
@@ -44,7 +44,7 @@ And here's our subset.
     ...     distroseries=hoary, sourcepackagename=sourcepackagename)
 
     >>> canonical_url(potemplatesubset)
-    u'http://launchpad.dev/ubuntu/hoary/+source/evolution/+pots'
+    u'http://launchpad.test/ubuntu/hoary/+source/evolution/+pots'
 
 We can get a particular PO template for this source package by its PO template
 name.
@@ -65,7 +65,7 @@ Also, we can get the url to a translation message.
     >>> translationmessage = potmsgset.getCurrentTranslation(
     ...     pofile.potemplate, pofile.language, potemplate.translation_side)
     >>> translationmessage.setPOFile(pofile)
-    >>> print canonical_url(translationmessage)
+    >>> print(canonical_url(translationmessage))
     http://transl.../hoary/+source/evolution/+pots/evolution-2.2/es/1
 
 Even for a dummy one.
@@ -73,7 +73,7 @@ Even for a dummy one.
     >>> potmsgset = potemplate.getPOTMsgSetBySequence(20)
     >>> translationmessage = potmsgset.getCurrentTranslationMessageOrDummy(
     ...     pofile)
-    >>> print canonical_url(translationmessage)
+    >>> print(canonical_url(translationmessage))
     http://transl.../hoary/+source/evolution/+pots/evolution-2.2/es/20
 
 Upstream POTemplateSubsets work in much the same way, except they hang off a
@@ -91,7 +91,7 @@ with the distro subset.
     ...     productseries=evolution_trunk_series)
     >>> potemplate = potemplatesubset['evolution-2.2']
     >>> canonical_url(potemplate)
-    u'http://translations.launchpad.dev/evolution/trunk/+pots/evolution-2.2'
+    u'http://translations.launchpad.test/evolution/trunk/+pots/evolution-2.2'
 
     >>> pofile = potemplate.getPOFileByLang('es')
     >>> canonical_url(pofile)
@@ -103,7 +103,7 @@ Also, we can get the url to a dummy one
     >>> translationmessage = potmsgset.getCurrentTranslation(
     ...     pofile.potemplate, pofile.language, potemplate.translation_side)
     >>> translationmessage.setPOFile(pofile)
-    >>> print canonical_url(translationmessage)
+    >>> print(canonical_url(translationmessage))
     http://translations.../evolution/trunk/+pots/evolution-2.2/es/1
 
 Even for a dummy PO msgset
@@ -111,7 +111,7 @@ Even for a dummy PO msgset
     >>> potmsgset = potemplate.getPOTMsgSetBySequence(20)
     >>> translationmessage = potmsgset.getCurrentTranslationMessageOrDummy(
     ...     pofile)
-    >>> print canonical_url(translationmessage)
+    >>> print(canonical_url(translationmessage))
     http://translations.../evolution/trunk/+pots/evolution-2.2/es/20
 
 
@@ -121,10 +121,10 @@ Translation groups
 Rosetta also has translation groups.
 
     >>> canonical_url(getUtility(ITranslationGroupSet))
-    u'http://translations.launchpad.dev/+groups'
+    u'http://translations.launchpad.test/+groups'
 
     >>> canonical_url(factory.makeTranslationGroup(name='test'))
-    u'http://translations.launchpad.dev/+groups/test'
+    u'http://translations.launchpad.test/+groups/test'
 
 
 Distribution, DistroSeries and DistroSeriesLanguage
@@ -135,12 +135,12 @@ Distribution and distribution series default to the main vhost.
     >>> distribution = factory.makeDistribution(
     ...     name='boo')
     >>> canonical_url(distribution)
-    u'http://launchpad.dev/boo'
+    u'http://launchpad.test/boo'
 
     >>> distroseries = factory.makeDistroSeries(
     ...     name='bah', distribution=distribution)
     >>> canonical_url(distroseries)
-    u'http://launchpad.dev/boo/bah'
+    u'http://launchpad.test/boo/bah'
 
 DistroSeriesLanguage objects have their URLs on translations vhost.
 
@@ -152,7 +152,7 @@ DistroSeriesLanguage objects have their URLs on translations vhost.
     >>> boo_bah_serbian = getUtility(IDistroSeriesLanguageSet).getDummy(
     ...     distroseries, serbian)
     >>> canonical_url(boo_bah_serbian)
-    u'http://translations.launchpad.dev/boo/bah/+lang/sr'
+    u'http://translations.launchpad.test/boo/bah/+lang/sr'
 
 Product, ProductSeries and ProductSeriesLanguage
 ---------------------------------------------------
@@ -162,12 +162,12 @@ Product and product series default to the main vhost.
     >>> product = factory.makeProduct(
     ...     name='coo')
     >>> canonical_url(product)
-    u'http://launchpad.dev/coo'
+    u'http://launchpad.test/coo'
 
     >>> productseries = factory.makeProductSeries(
     ...     name='cah', product=product)
     >>> canonical_url(productseries)
-    u'http://launchpad.dev/coo/cah'
+    u'http://launchpad.test/coo/cah'
 
 ProductSeriesLanguage objects have their URLs on translations vhost.
 
@@ -178,4 +178,4 @@ ProductSeriesLanguage objects have their URLs on translations vhost.
     >>> coo_cah_serbian = psl_set.getProductSeriesLanguage(
     ...     productseries, serbian)
     >>> canonical_url(coo_cah_serbian)
-    u'http://translations.launchpad.dev/coo/cah/+lang/sr'
+    u'http://translations.launchpad.test/coo/cah/+lang/sr'

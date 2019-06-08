@@ -12,17 +12,15 @@ __all__ = [
     'BugSubscriptionListView',
     ]
 
-import cgi
-
-from lazr.delegates import delegates
+from lazr.delegates import delegate_to
 from lazr.restful.interfaces import (
     IJSONRequestCache,
     IWebServiceClientRequest,
     )
 from simplejson import dumps
 from zope import formlib
-from zope.app.form import CustomWidgetFactory
-from zope.app.form.browser.itemswidgets import RadioWidget
+from zope.formlib.itemswidgets import RadioWidget
+from zope.formlib.widget import CustomWidgetFactory
 from zope.schema import Choice
 from zope.schema.vocabulary import (
     SimpleTerm,
@@ -57,7 +55,7 @@ from lp.services.webapp.authorization import (
     check_permission,
     precache_permission_for_objects,
     )
-from lp.services.webapp.menu import structured
+from lp.services.webapp.escaping import structured
 
 
 class BugSubscriptionAddView(LaunchpadFormView):
@@ -204,19 +202,14 @@ class BugSubscriptionSubscribeSelfView(LaunchpadFormView,
     def _subscribers_for_current_user(self):
         """Return a dict of the subscribers for the current user."""
         persons_for_user = {}
-        person_count = 0
         bug = self.context.bug
         for person in bug.getSubscribersForPerson(self.user):
             if person.id not in persons_for_user:
                 persons_for_user[person.id] = person
-                person_count += 1
-
-        self._subscriber_count_for_current_user = person_count
         return persons_for_user.values()
 
     def initialize(self):
         """See `LaunchpadFormView`."""
-        self._subscriber_count_for_current_user = 0
         self._redirecting_to_bug_list = False
         super(BugSubscriptionSubscribeSelfView, self).initialize()
 
@@ -271,9 +264,10 @@ class BugSubscriptionSubscribeSelfView(LaunchpadFormView,
                 subscription_terms.append(
                     SimpleTerm(
                         person, person.name,
-                        'unsubscribe <a href="%s">%s</a> from this bug' % (
+                        structured(
+                            'unsubscribe <a href="%s">%s</a> from this bug',
                             canonical_url(person),
-                            cgi.escape(person.displayname))))
+                            person.displayname).escapedtext))
         if not self_subscribed:
             if not is_really_muted:
                 subscription_terms.insert(0,
@@ -486,18 +480,19 @@ class BugSubscriptionSubscribeSelfView(LaunchpadFormView,
             if check_permission("launchpad.View", current_bug):
                 # The user still has permission to see this bug, so no
                 # special-casing needed.
-                return (
-                    "You have been unsubscribed from bug %d%s." % (
-                    current_bug.id, unsubed_dupes_msg_fragment))
+                return structured(
+                    "You have been unsubscribed from bug %s%s.",
+                    current_bug.id, unsubed_dupes_msg_fragment).escapedtext
             else:
-                return (
-                    "You have been unsubscribed from bug %d%s. You no "
-                    "longer have access to this private bug.") % (
-                        current_bug.id, unsubed_dupes_msg_fragment)
+                return structured(
+                    "You have been unsubscribed from bug %s%s. You no "
+                    "longer have access to this private bug.",
+                    current_bug.id, unsubed_dupes_msg_fragment).escapedtext
         else:
-            return "%s has been unsubscribed from bug %d%s." % (
-                cgi.escape(user.displayname), current_bug.id,
-                unsubed_dupes_msg_fragment)
+            return structured(
+                "%s has been unsubscribed from bug %s%s.",
+                user.displayname, current_bug.id,
+                unsubed_dupes_msg_fragment).escapedtext
 
     def _getUnsubscribedDupesMsgFragment(self, unsubed_dupes):
         """Return the duplicates fragment of the unsubscription notification.
@@ -510,11 +505,13 @@ class BugSubscriptionSubscribeSelfView(LaunchpadFormView,
 
         dupe_links = []
         for unsubed_dupe in unsubed_dupes:
-            dupe_links.append(
-                '<a href="%s" title="%s">#%d</a>' % (
+            dupe_links.append(structured(
+                '<a href="%s" title="%s">#%s</a>',
                 canonical_url(unsubed_dupe), unsubed_dupe.title,
                 unsubed_dupe.id))
-        dupe_links_string = ", ".join(dupe_links)
+        # We can't current join structured()s, so do it manually.
+        dupe_links_string = structured(
+            ", ".join(['%s'] * len(dupe_links)), *dupe_links)
 
         num_dupes = len(unsubed_dupes)
         if num_dupes > 1:
@@ -522,12 +519,11 @@ class BugSubscriptionSubscribeSelfView(LaunchpadFormView,
         else:
             plural_suffix = ""
 
-        return (
-            " and %(num_dupes)d duplicate%(plural_suffix)s "
-            "(%(dupe_links_string)s)") % ({
-                'num_dupes': num_dupes,
-                'plural_suffix': plural_suffix,
-                'dupe_links_string': dupe_links_string})
+        return structured(
+            " and %(num_dupes)s duplicate%(plural_suffix)s "
+            "(%(dupe_links_string)s)",
+            num_dupes=num_dupes, plural_suffix=plural_suffix,
+            dupe_links_string=dupe_links_string)
 
 
 class BugPortletSubscribersWithDetails(LaunchpadView):
@@ -622,9 +618,9 @@ class BugPortletSubscribersWithDetails(LaunchpadView):
         return self.subscriber_data_js
 
 
+@delegate_to(IBugSubscription, context='subscription')
 class SubscriptionAttrDecorator:
     """A BugSubscription with added attributes for HTML/JS."""
-    delegates(IBugSubscription, 'subscription')
 
     def __init__(self, subscription):
         self.subscription = subscription

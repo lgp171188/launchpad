@@ -1,4 +1,4 @@
-# Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Helpers for testing out publication related code."""
@@ -12,11 +12,13 @@ __all__ = [
 
 from cStringIO import StringIO
 
-# Z3 doesn't make this available as a utility.
-from zope.app import zapi
+from six.moves.urllib_parse import unquote
 from zope.app.publication.requestpublicationregistry import factoryRegistry
-from zope.app.security.interfaces import IUnauthenticatedPrincipal
-from zope.component import getUtility
+from zope.authentication.interfaces import IUnauthenticatedPrincipal
+from zope.component import (
+    getGlobalSiteManager,
+    getUtility,
+    )
 from zope.interface import providedBy
 from zope.publisher.interfaces.browser import IDefaultSkin
 from zope.security.management import restoreInteraction
@@ -30,6 +32,7 @@ from lp.services.webapp.interaction import (
     )
 from lp.services.webapp.interfaces import IOpenLaunchBag
 from lp.services.webapp.servers import ProtocolErrorPublication
+
 
 # Defines an helper function that returns the appropriate
 # IRequest and IPublication.
@@ -96,7 +99,7 @@ def test_traverse(url):
     request, publication = get_request_and_publication(
         host=url_parts[1], extra_environment={
             'SERVER_URL': server_url,
-            'PATH_INFO': path_info})
+            'PATH_INFO': unquote(path_info)})
 
     request.setPublication(publication)
     # We avoid calling publication.beforePublication because this starts a new
@@ -104,7 +107,7 @@ def test_traverse(url):
     # removal of any created and uncommitted objects.
 
     # Set the default layer.
-    adapters = zapi.getGlobalSiteManager().adapters
+    adapters = getGlobalSiteManager().adapters
     layer = adapters.lookup((providedBy(request),), IDefaultSkin, '')
     if layer is not None:
         layers.setAdditionalLayer(request, layer)

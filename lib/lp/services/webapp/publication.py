@@ -14,6 +14,7 @@ import threading
 import traceback
 import urllib
 
+from lazr.restful.utils import safe_hasattr
 from lazr.uri import (
     InvalidURIError,
     URI,
@@ -28,24 +29,23 @@ from storm.zope.interfaces import IZStorm
 import tickcount
 import transaction
 from zc.zservertracelog.interfaces import ITraceLog
-# used to get at the adapters service
-from zope.app import zapi
 import zope.app.publication.browser
-from zope.app.publication.interfaces import BeforeTraverseEvent
-from zope.app.security.interfaces import IUnauthenticatedPrincipal
+from zope.authentication.interfaces import IUnauthenticatedPrincipal
 from zope.component import (
+    getGlobalSiteManager,
     getUtility,
     queryMultiAdapter,
     )
 from zope.error.interfaces import IErrorReportingUtility
 from zope.event import notify
 from zope.interface import (
-    implements,
+    implementer,
     providedBy,
     )
 from zope.publisher.interfaces import (
     IPublishTraverse,
     Retry,
+    StartRequestEvent,
     )
 from zope.publisher.interfaces.browser import (
     IBrowserRequest,
@@ -54,6 +54,7 @@ from zope.publisher.interfaces.browser import (
 from zope.publisher.publish import mapply
 from zope.security.management import newInteraction
 from zope.security.proxy import removeSecurityProxy
+from zope.traversing.interfaces import BeforeTraverseEvent
 
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 import lp.layers as layers
@@ -64,23 +65,23 @@ from lp.registry.interfaces.person import (
     )
 from lp.services import features
 from lp.services.config import config
+from lp.services.database.interfaces import (
+    IDatabasePolicy,
+    IStoreSelector,
+    MASTER_FLAVOR,
+    )
+from lp.services.database.policy import LaunchpadDatabasePolicy
 from lp.services.features.flags import NullFeatureController
 from lp.services.oauth.interfaces import IOAuthSignedRequest
 from lp.services.osutils import open_for_writing
 import lp.services.webapp.adapter as da
-from lp.services.webapp.dbpolicy import LaunchpadDatabasePolicy
 from lp.services.webapp.interfaces import (
     FinishReadOnlyRequestEvent,
-    IDatabasePolicy,
     ILaunchpadRoot,
     IOpenLaunchBag,
     IPlacelessAuthUtility,
-    IPrimaryContext,
-    IStoreSelector,
-    MASTER_FLAVOR,
     NoReferrerError,
     OffsiteFormPostError,
-    StartRequestEvent,
     )
 from lp.services.webapp.opstats import OpStats
 from lp.services.webapp.vhosts import allvhosts
@@ -173,6 +174,7 @@ class ProfilingOops(Exception):
     """Fake exception used to log OOPS information when profiling pages."""
 
 
+@implementer(IPublishTraverse)
 class LoginRoot:
     """Object that provides IPublishTraverse to return only itself.
 
@@ -180,7 +182,6 @@ class LoginRoot:
     special namespaces to be traversed, but doesn't traverse other
     normal names.
     """
-    implements(IPublishTraverse)
 
     def publishTraverse(self, request, name):
         if not request.getTraversalStack():
@@ -200,8 +201,6 @@ class LaunchpadBrowserPublication(
     """
     # This class does not __init__ its parent or specify exception types
     # so that it can replace its parent class.
-    # pylint: disable-msg=W0231,W0702
-
     root_object_interface = ILaunchpadRoot
 
     def __init__(self, db):
@@ -239,7 +238,6 @@ class LaunchpadBrowserPublication(
     # If this becomes untrue at some point, the code will need to be
     # revisited.
 
-    # pylint: disable-msg=E0301
     def beforeTraversal(self, request):
         notify(StartRequestEvent(request))
         request._traversalticks_start = tickcount.tickcount()
@@ -272,8 +270,7 @@ class LaunchpadBrowserPublication(
         getUtility(IOpenLaunchBag).clear()
 
         # Set the default layer.
-        adapters = zapi.getGlobalSiteManager().adapters
-        # pylint: disable-msg=E0231
+        adapters = getGlobalSiteManager().adapters
         layer = adapters.lookup((providedBy(request),), IDefaultSkin, '')
         if layer is not None:
             layers.setAdditionalLayer(request, layer)
@@ -380,7 +377,7 @@ class LaunchpadBrowserPublication(
             uri = uri.replace(query=query_string)
         return str(uri)
 
-    def constructPageID(self, view, context):
+    def constructPageID(self, view, context, view_names=()):
         """Given a view, figure out what its page ID should be.
 
         This provides a hook point for subclasses to override.
@@ -392,11 +389,19 @@ class LaunchpadBrowserPublication(
             # is accessible in the instance __name__ attribute. We use
             # that if it's available, otherwise fall back to the class
             # name.
-            if getattr(view, '__name__', None) is not None:
+            if safe_hasattr(view, '__name__'):
                 view_name = view.__name__
             else:
                 view_name = view.__class__.__name__
-            pageid = '%s:%s' % (context.__class__.__name__, view_name)
+            names = [
+                n for n in [view_name] + list(view_names) if n is not None]
+            context_name = context.__class__.__name__
+            # Is this a view of a generated view class,
+            # such as ++model++ view of Product:+bugs. Recurse!
+            if ' ' in context_name and safe_hasattr(context, 'context'):
+                return self.constructPageID(context, context.context, names)
+            view_names = ':'.join(names)
+            pageid = '%s:%s' % (context_name, view_names)
         # The view name used in the pageid usually comes from ZCML and so
         # it will be a unicode string although it shouldn't.  To avoid
         # problems we encode it into ASCII.
@@ -586,9 +591,11 @@ class LaunchpadBrowserPublication(
             pass
 
         # Log an OOPS for DisconnectionErrors: we don't expect to see
-        # disconnections as a routine event, so having information about them
-        # is important. See Bug #373837 for more information.
-        # We need to do this before we re-raise the exception as a Retry.
+        # most types of disconnections as a routine event
+        # (full-update.py produces very specific pgbouncer errors), so
+        # having information about them is important. See Bug #373837
+        # for more information.  We need to do this before we re-raise
+        # the exception as a Retry.
         if isinstance(exc_info[1], DisconnectionError):
             getUtility(IErrorReportingUtility).raising(exc_info, request)
 
@@ -638,6 +645,10 @@ class LaunchpadBrowserPublication(
                 orig_env.pop('launchpad.publicationticks', None)
             # Our endRequest needs to know if a retry is pending or not.
             request._wants_retry = True
+            # Abort any in-progress transaction and reset any
+            # disconnected stores. ZopePublication.handleException would
+            # do this for us if we weren't bypassing it.
+            transaction.abort()
             if isinstance(exc_info[1], Retry):
                 raise
             raise Retry(exc_info)
@@ -657,11 +668,10 @@ class LaunchpadBrowserPublication(
     def beginErrorHandlingTransaction(self, request, ob, note):
         """Hook for when a new view is started to handle an exception.
 
-        We need to add an additional behavior to the usual Zope behavior.
+        We need to add an additional behaviour to the usual Zope behaviour.
         We must restart the request timer.  Otherwise we can get OOPS errors
         from our exception views inappropriately.
         """
-        # pylint: disable-msg=E1002
         super(LaunchpadBrowserPublication,
               self).beginErrorHandlingTransaction(request, ob, note)
         # XXX: gary 2008-11-04 bug=293614: As the bug describes, we want to
@@ -735,19 +745,6 @@ class LaunchpadBrowserPublication(
             # cache issues.
             if thread_name != 'MainThread' or name.endswith('-slave'):
                 store.reset()
-
-
-class InvalidThreadsConfiguration(Exception):
-    """Exception thrown when the number of threads isn't set correctly."""
-
-
-class DefaultPrimaryContext:
-    """The default primary context is the context."""
-
-    implements(IPrimaryContext)
-
-    def __init__(self, context):
-        self.context = context
 
 
 _browser_re = re.compile(r"""(?x)^(

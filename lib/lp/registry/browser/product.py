@@ -1,4 +1,4 @@
-# Copyright 2009-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Browser views for products."""
@@ -8,7 +8,6 @@ __metaclass__ = type
 __all__ = [
     'ProductAddSeriesView',
     'ProductAddView',
-    'ProductAddViewBase',
     'ProductAdminView',
     'ProductBrandingView',
     'ProductBugsMenu',
@@ -26,13 +25,11 @@ __all__ = [
     'ProductOverviewMenu',
     'ProductPackagesView',
     'ProductPackagesPortletView',
-    'ProductPrivateBugsMixin',
-    'ProductPurchaseSubscriptionView',
     'ProductRdfView',
     'ProductReviewLicenseView',
     'ProductSeriesSetView',
+    'ProductSetBranchView',
     'ProductSetBreadcrumb',
-    'ProductSetFacets',
     'ProductSetNavigation',
     'ProductSetReviewLicensesView',
     'ProductSetView',
@@ -44,28 +41,30 @@ __all__ = [
     ]
 
 
-from datetime import (
-    datetime,
-    timedelta,
-    )
 from operator import attrgetter
+from urlparse import urlunsplit
 
-from lazr.delegates import delegates
-from lazr.restful.interface import copy_field
-import pytz
+from bzrlib import urlutils
+from bzrlib.revision import NULL_REVISION
+from lazr.delegates import delegate_to
+from lazr.restful.interface import (
+    copy_field,
+    use_template,
+    )
+from lazr.restful.interfaces import IJSONRequestCache
 from z3c.ptcompat import ViewPageTemplateFile
-from zope.app.form import CustomWidgetFactory
-from zope.app.form.browser import (
+from zope.component import getUtility
+from zope.event import notify
+from zope.formlib import form
+from zope.formlib.interfaces import WidgetInputError
+from zope.formlib.widget import CustomWidgetFactory
+from zope.formlib.widgets import (
     CheckBoxWidget,
     TextAreaWidget,
     TextWidget,
     )
-from zope.app.form.interfaces import WidgetInputError
-from zope.component import getUtility
-from zope.event import notify
-from zope.formlib import form
 from zope.interface import (
-    implements,
+    implementer,
     Interface,
     )
 from zope.lifecycleevent import ObjectCreatedEvent
@@ -80,15 +79,12 @@ from zope.schema.vocabulary import (
 
 from lp import _
 from lp.answers.browser.faqtarget import FAQTargetNavigationMixin
-from lp.answers.browser.questiontarget import (
-    QuestionTargetFacetMixin,
-    QuestionTargetTraversalMixin,
-    )
+from lp.answers.browser.questiontarget import QuestionTargetTraversalMixin
 from lp.app.browser.launchpadform import (
     action,
-    custom_widget,
     LaunchpadEditFormView,
     LaunchpadFormView,
+    render_radio_widget_part,
     ReturnToReferrerMixin,
     safe_action,
     )
@@ -106,14 +102,24 @@ from lp.app.browser.tales import (
     format_link,
     MenuAPI,
     )
-from lp.app.enums import ServiceUsage
-from lp.app.errors import NotFoundError
-from lp.app.interfaces.headings import IEditableContextTitle
+from lp.app.enums import (
+    InformationType,
+    PILLAR_INFORMATION_TYPES,
+    PROPRIETARY_INFORMATION_TYPES,
+    ServiceUsage,
+    )
+from lp.app.errors import (
+    NotFoundError,
+    UnexpectedFormData,
+    )
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
+from lp.app.utilities import json_dump_information_types
+from lp.app.vocabularies import InformationTypeVocabulary
 from lp.app.widgets.date import DateWidget
 from lp.app.widgets.itemswidgets import (
     CheckBoxMatrixWidget,
     LaunchpadRadioWidget,
+    LaunchpadRadioWidgetWithDescription,
     )
 from lp.app.widgets.popup import PersonPickerWidget
 from lp.app.widgets.product import (
@@ -125,10 +131,8 @@ from lp.app.widgets.textwidgets import StrippedTextWidget
 from lp.blueprints.browser.specificationtarget import (
     HasSpecificationsMenuMixin,
     )
-from lp.bugs.browser.bugtask import (
-    BugTargetTraversalMixin,
-    get_buglisting_search_filter_url,
-    )
+from lp.bugs.browser.buglisting import get_buglisting_search_filter_url
+from lp.bugs.browser.bugtask import BugTargetTraversalMixin
 from lp.bugs.browser.structuralsubscription import (
     expose_structural_subscription_data_to_js,
     StructuralSubscriptionMenuMixin,
@@ -136,7 +140,30 @@ from lp.bugs.browser.structuralsubscription import (
     )
 from lp.bugs.interfaces.bugtask import RESOLVED_BUGTASK_STATUSES
 from lp.code.browser.branchref import BranchRef
+from lp.code.browser.codeimport import (
+    CodeImportNameValidationMixin,
+    validate_import_url,
+    )
 from lp.code.browser.sourcepackagerecipelisting import HasRecipesMenuMixin
+from lp.code.browser.vcslisting import TargetDefaultVCSNavigationMixin
+from lp.code.enums import (
+    RevisionControlSystems,
+    TargetRevisionControlSystems,
+    )
+from lp.code.errors import (
+    BranchExists,
+    GitRepositoryExists,
+    )
+from lp.code.interfaces.branch import IBranch
+from lp.code.interfaces.branchjob import IRosettaUploadJobSource
+from lp.code.interfaces.codeimport import (
+    ICodeImport,
+    ICodeImportSet,
+    )
+from lp.code.interfaces.gitrepository import (
+    IGitRepository,
+    IGitRepositorySet,
+    )
 from lp.registry.browser import (
     add_subscribe_link,
     BaseRdfView,
@@ -153,7 +180,7 @@ from lp.registry.browser.pillar import (
     PillarNavigationMixin,
     PillarViewMixin,
     )
-from lp.registry.browser.productseries import get_series_branch_error
+from lp.registry.enums import VCSType
 from lp.registry.interfaces.pillar import IPillarNameSet
 from lp.registry.interfaces.product import (
     IProduct,
@@ -175,8 +202,8 @@ from lp.services.feeds.browser import FeedsMixin
 from lp.services.fields import (
     PillarAliases,
     PublicPersonChoice,
+    URIField,
     )
-from lp.services.librarian.interfaces import ILibraryFileAliasSet
 from lp.services.propertycache import cachedproperty
 from lp.services.webapp import (
     ApplicationMenu,
@@ -196,8 +223,11 @@ from lp.services.webapp.batching import BatchNavigator
 from lp.services.webapp.breadcrumb import Breadcrumb
 from lp.services.webapp.interfaces import UnsafeFormGetSubmissionError
 from lp.services.webapp.menu import NavigationMenu
+from lp.services.webapp.url import urlsplit
+from lp.services.webapp.vhosts import allvhosts
 from lp.services.worlddata.helpers import browser_languages
 from lp.services.worlddata.interfaces.country import ICountry
+from lp.snappy.browser.hassnaps import HasSnapsMenuMixin
 from lp.translations.browser.customlanguagecode import (
     HasCustomLanguageCodesTraversalMixin,
     )
@@ -211,7 +241,7 @@ class ProductNavigation(
     Navigation, BugTargetTraversalMixin,
     FAQTargetNavigationMixin, HasCustomLanguageCodesTraversalMixin,
     QuestionTargetTraversalMixin, StructuralSubscriptionTargetTraversalMixin,
-    PillarNavigationMixin):
+    PillarNavigationMixin, TargetDefaultVCSNavigationMixin):
 
     usedfor = IProduct
 
@@ -224,7 +254,10 @@ class ProductNavigation(
 
     @stepthrough('+spec')
     def traverse_spec(self, name):
-        return self.context.getSpecification(name)
+        spec = self.context.getSpecification(name)
+        if not check_permission('launchpad.LimitedView', spec):
+            return None
+        return spec
 
     @stepthrough('+milestone')
     def traverse_milestone(self, name):
@@ -300,40 +333,10 @@ class ProductLicenseMixin:
             pass
 
 
-class ProductFacets(QuestionTargetFacetMixin, StandardLaunchpadFacets):
+class ProductFacets(StandardLaunchpadFacets):
     """The links that will appear in the facet menu for an IProduct."""
 
     usedfor = IProduct
-
-    enable_only = ['overview', 'bugs', 'answers', 'specifications',
-                   'translations', 'branches']
-
-    links = StandardLaunchpadFacets.links
-
-    def overview(self):
-        text = 'Overview'
-        summary = 'General information about %s' % self.context.displayname
-        return Link('', text, summary)
-
-    def bugs(self):
-        text = 'Bugs'
-        summary = 'Bugs reported about %s' % self.context.displayname
-        return Link('', text, summary)
-
-    def branches(self):
-        text = 'Code'
-        summary = 'Branches for %s' % self.context.displayname
-        return Link('', text, summary)
-
-    def specifications(self):
-        text = 'Blueprints'
-        summary = 'Feature specifications for %s' % self.context.displayname
-        return Link('', text, summary)
-
-    def translations(self):
-        text = 'Translations'
-        summary = 'Translations of %s in Launchpad' % self.context.displayname
-        return Link('', text, summary)
 
 
 class ProductInvolvementView(PillarInvolvementView):
@@ -365,7 +368,7 @@ class ProductInvolvementView(PillarInvolvementView):
             self.context.answers_usage != ServiceUsage.UNKNOWN)
         states['configure_translations'] = (
             self.context.translations_usage != ServiceUsage.UNKNOWN)
-        states['configure_codehosting'] = (
+        states['configure_code'] = (
             self.context.codehosting_usage != ServiceUsage.UNKNOWN)
         return states
 
@@ -378,26 +381,27 @@ class ProductInvolvementView(PillarInvolvementView):
         'configured' -- a boolean representing the configuration status.
         """
         overview_menu = MenuAPI(self.context).overview
-        series_menu = MenuAPI(self.context.development_focus).overview
         configuration_names = [
             'configure_bugtracker',
-            'configure_answers',
             'configure_translations',
+            'configure_answers',
             #'configure_blueprints',
             ]
         config_list = []
         config_statuses = self.configuration_states
         for key in configuration_names:
+            overview_menu[key].text = overview_menu[key].text.replace(
+                'Configure ', '')
             config_list.append(dict(link=overview_menu[key],
                                     configured=config_statuses[key]))
 
         # Add the branch configuration in separately.
-        set_branch = series_menu['set_branch']
-        set_branch.text = 'Configure project branch'
-        set_branch.summary = "Specify the location of this project's code."
-        config_list.append(
-            dict(link=set_branch,
-                 configured=config_statuses['configure_codehosting']))
+        configure_code = overview_menu['configure_code']
+        configure_code.text = 'Code'
+        configure_code.summary = "Specify the location of this project's code."
+        config_list.insert(0,
+            dict(link=configure_code,
+                 configured=config_statuses['configure_code']))
         return config_list
 
     @property
@@ -423,7 +427,6 @@ class ProductNavigationMenu(NavigationMenu):
     links = [
         'details',
         'announcements',
-        'branchvisibility',
         'downloads',
         ]
 
@@ -439,11 +442,6 @@ class ProductNavigationMenu(NavigationMenu):
         text = 'Downloads'
         return Link('+download', text)
 
-    @enabled_with_permission('launchpad.Commercial')
-    def branchvisibility(self):
-        text = 'Define branch visibility'
-        return Link('+branchvisibility', text)
-
 
 class ProductEditLinksMixin(StructuralSubscriptionMenuMixin):
     """A mixin class for menus that need Product edit links."""
@@ -455,25 +453,25 @@ class ProductEditLinksMixin(StructuralSubscriptionMenuMixin):
 
     @enabled_with_permission('launchpad.BugSupervisor')
     def configure_bugtracker(self):
-        text = 'Configure bug tracker'
+        text = 'Configure Bugs'
         summary = 'Specify where bugs are tracked for this project'
         return Link('+configure-bugtracker', text, summary, icon='edit')
 
     @enabled_with_permission('launchpad.TranslationsAdmin')
     def configure_translations(self):
-        text = 'Configure translations'
+        text = 'Configure Translations'
         summary = 'Allow users to submit translations for this project'
         return Link('+configure-translations', text, summary, icon='edit')
 
     @enabled_with_permission('launchpad.Edit')
     def configure_answers(self):
-        text = 'Configure support tracker'
+        text = 'Configure Answers'
         summary = 'Allow users to ask questions on this project'
         return Link('+configure-answers', text, summary, icon='edit')
 
     @enabled_with_permission('launchpad.Edit')
     def configure_blueprints(self):
-        text = 'Configure blueprints'
+        text = 'Configure Blueprints'
         summary = 'Enable tracking of feature planning.'
         return Link('+configure-blueprints', text, summary, icon='edit')
 
@@ -525,7 +523,7 @@ class ProductActionNavigationMenu(NavigationMenu, ProductEditLinksMixin):
 
 
 class ProductOverviewMenu(ApplicationMenu, ProductEditLinksMixin,
-                          HasRecipesMenuMixin):
+                          HasRecipesMenuMixin, HasSnapsMenuMixin):
 
     usedfor = IProduct
     facet = 'overview'
@@ -541,16 +539,17 @@ class ProductOverviewMenu(ApplicationMenu, ProductEditLinksMixin,
         'packages',
         'series',
         'series_add',
+        'configure_code',
         'milestones',
         'downloads',
         'announce',
         'announcements',
         'administer',
         'review_license',
-        'branchvisibility',
         'rdf',
         'branding',
         'view_recipes',
+        'view_snaps',
         ]
 
     def top_contributors(self):
@@ -595,14 +594,17 @@ class ProductOverviewMenu(ApplicationMenu, ProductEditLinksMixin,
             'RDF</abbr> metadata')
         return Link('+rdf', text, icon='download')
 
+    @enabled_with_permission('launchpad.Edit')
+    def configure_code(self):
+        """Return a link to configure code for this project."""
+        text = 'Configure Code'
+        icon = 'edit'
+        summary = 'Configure code for this project'
+        return Link('+configure-code', text, summary, icon=icon)
+
     def downloads(self):
         text = 'Downloads'
         return Link('+download', text, icon='info')
-
-    @enabled_with_permission('launchpad.Commercial')
-    def branchvisibility(self):
-        text = 'Define branch visibility'
-        return Link('+branchvisibility', text, icon='edit')
 
 
 class ProductBugsMenu(PillarBugsMenu, ProductEditLinksMixin):
@@ -640,14 +642,6 @@ def _cmp_distros(a, b):
 class ProductSetBreadcrumb(Breadcrumb):
     """Return a breadcrumb for an `IProductSet`."""
     text = "Projects"
-
-
-class ProductSetFacets(StandardLaunchpadFacets):
-    """The links that will appear in the facet menu for the IProductSet."""
-
-    usedfor = IProductSet
-
-    enable_only = ['overview', 'branches']
 
 
 class SortSeriesMixin:
@@ -698,6 +692,7 @@ class SortSeriesMixin:
         return self._sorted_filtered_list(check_active)
 
 
+@delegate_to(IProduct, context='product')
 class ProductWithSeries:
     """A decorated product that includes series data.
 
@@ -711,7 +706,6 @@ class ProductWithSeries:
     # variables to self.product, which would bypass the caching.
     series = None
     development_focus = None
-    delegates(IProduct, 'product')
 
     def __init__(self, product):
         self.product = product
@@ -736,9 +730,9 @@ class ProductWithSeries:
             self.release_by_id[release.id] = release_delegate
 
 
+@delegate_to(IProductSeries, context='series')
 class DecoratedSeries:
     """A decorated series that includes helper attributes for templates."""
-    delegates(IProductSeries, 'series')
 
     def __init__(self, series):
         self.series = series
@@ -791,6 +785,7 @@ class SeriesWithReleases(DecoratedSeries):
         return False
 
 
+@delegate_to(IProductRelease, context='release')
 class ReleaseWithFiles:
     """A decorated release that includes product release files.
 
@@ -803,7 +798,6 @@ class ReleaseWithFiles:
     # this class will not delegate the actual instance variables to
     # self.release, which would raise an AttributeError.
     parent = None
-    delegates(IProductRelease, 'release')
 
     def __init__(self, release, parent):
         self.release = release
@@ -912,11 +906,20 @@ class ProductDownloadFileMixin:
                     return release
         return None
 
+    @cachedproperty
+    def has_download_files(self):
+        for series in self.context.series:
+            if series.status == SeriesStatus.OBSOLETE:
+                continue
+            for release in series.getCachedReleases():
+                if len(list(release.files)) > 0:
+                    return True
+        return False
 
+
+@implementer(IProductActionMenu)
 class ProductView(PillarViewMixin, HasAnnouncementsView, SortSeriesMixin,
                   FeedsMixin, ProductDownloadFileMixin):
-
-    implements(IProductActionMenu, IEditableContextTitle)
 
     @property
     def maintainer_widget(self):
@@ -944,11 +947,6 @@ class ProductView(PillarViewMixin, HasAnnouncementsView, SortSeriesMixin,
         super(ProductView, self).initialize()
         self.status_message = None
         product = self.context
-        title_field = IProduct['title']
-        title = "Edit this title"
-        self.title_edit_widget = TextLineEditorWidget(
-            product, title_field, title, 'h1', max_width='95%',
-            truncate_lines=2)
         programming_lang = IProduct['programminglang']
         title = 'Edit programming languages'
         additional_arguments = {
@@ -982,13 +980,6 @@ class ProductView(PillarViewMixin, HasAnnouncementsView, SortSeriesMixin,
         return self.context.license_status != LicenseStatus.OPEN_SOURCE
 
     @property
-    def freshmeat_url(self):
-        if self.context.freshmeatproject:
-            return ("http://freshmeat.net/projects/%s"
-                % self.context.freshmeatproject)
-        return None
-
-    @property
     def sourceforge_url(self):
         if self.context.sourceforgeproject:
             return ("http://sourceforge.net/projects/%s"
@@ -999,7 +990,6 @@ class ProductView(PillarViewMixin, HasAnnouncementsView, SortSeriesMixin,
     def has_external_links(self):
         return (self.context.homepageurl or
                 self.context.sourceforgeproject or
-                self.context.freshmeatproject or
                 self.context.wikiurl or
                 self.context.screenshotsurl or
                 self.context.downloadurl)
@@ -1014,7 +1004,6 @@ class ProductView(PillarViewMixin, HasAnnouncementsView, SortSeriesMixin,
         from lp.services.webapp.menu import MenuLink
         urls = [
             ('Sourceforge project', self.sourceforge_url),
-            ('Freshmeat record', self.freshmeat_url),
             ('Wiki', self.context.wikiurl),
             ('Screenshots', self.context.screenshotsurl),
             ('External downloads', self.context.downloadurl),
@@ -1032,10 +1021,35 @@ class ProductView(PillarViewMixin, HasAnnouncementsView, SortSeriesMixin,
     def should_display_homepage(self):
         return (self.context.homepageurl and
                 self.context.homepageurl not in
-                    [self.freshmeat_url, self.sourceforge_url])
+                    [self.sourceforge_url])
 
     def requestCountry(self):
         return ICountry(self.request, None)
+
+    @property
+    def golang_import_spec(self):
+        """Meta string for golang remote import path.
+        See: https://golang.org/cmd/go/#hdr-Remote_import_paths
+        """
+        if self.context.vcs == VCSType.GIT:
+            repo = getUtility(IGitRepositorySet).getDefaultRepository(
+                self.context)
+            if check_permission('launchpad.View', repo):
+                return "{hostname}/{product} git {git_https_url}".format(
+                    hostname=config.vhost.mainsite.hostname,
+                    product=self.context.name,
+                    git_https_url=repo.git_https_url)
+        elif self.context.vcs == VCSType.BZR:
+            branch = self.context.development_focus.branch
+            if check_permission('launchpad.View', branch):
+                return (
+                    "{hostname}/{product} bzr "
+                    "{root_url}{branch}").format(
+                        hostname=config.vhost.mainsite.hostname,
+                        root_url=allvhosts.configs['mainsite'].rooturl,
+                        product=self.context.name,
+                        branch=branch.unique_name)
+        return None
 
     def browserLanguages(self):
         return browser_languages(self.request)
@@ -1052,12 +1066,12 @@ class ProductView(PillarViewMixin, HasAnnouncementsView, SortSeriesMixin,
 
     @cachedproperty
     def effective_driver(self):
-        """Return the product driver or the project driver."""
+        """Return the product driver or the project group driver."""
         if self.context.driver is not None:
             driver = self.context.driver
-        elif (self.context.project is not None and
-              self.context.project.driver is not None):
-            driver = self.context.project.driver
+        elif (self.context.projectgroup is not None and
+              self.context.projectgroup.driver is not None):
+            driver = self.context.projectgroup.driver
         else:
             driver = None
         return driver
@@ -1127,10 +1141,15 @@ class ProductView(PillarViewMixin, HasAnnouncementsView, SortSeriesMixin,
             true_text='Approved',
             header='Does the licence qualifiy the project for free hosting?')
 
-
-class ProductPurchaseSubscriptionView(ProductView):
-    """View the instructions to purchase a commercial subscription."""
-    page_title = 'Purchase subscription'
+    @property
+    def code_trunk(self):
+        if self.context.inferred_vcs == VCSType.GIT:
+            return getUtility(IGitRepositorySet).getDefaultRepository(
+                self.context)
+        elif self.context.inferred_vcs == VCSType.BZR:
+            return self.context.development_focus.branch
+        else:
+            return None
 
 
 class ProductPackagesView(LaunchpadView):
@@ -1175,18 +1194,10 @@ class ProductPackagesView(LaunchpadView):
         return results
 
 
-class ProductPackagesPortletView(LaunchpadFormView):
+class ProductPackagesPortletView(LaunchpadView):
     """View class for product packaging portlet."""
 
     schema = Interface
-    package_field_name = 'distributionsourcepackage'
-    custom_widget(
-        package_field_name, LaunchpadRadioWidget, orientation='vertical')
-    suggestions = None
-    max_suggestions = 8
-    other_package = object()
-    not_packaged = object()
-    initial_focus_widget = None
 
     @cachedproperty
     def sourcepackages(self):
@@ -1202,89 +1213,6 @@ class ProductPackagesPortletView(LaunchpadFormView):
         """Are there packages, or can packages be suggested."""
         if len(self.sourcepackages) > 0:
             return True
-        if self.user is None:
-            return False
-        date_next_suggest_packaging = self.context.date_next_suggest_packaging
-        return (
-            date_next_suggest_packaging is None
-            or date_next_suggest_packaging <= datetime.now(tz=pytz.UTC))
-
-    @property
-    def initial_values(self):
-        """See `LaunchpadFormView`."""
-        return {self.package_field_name: self.other_package}
-
-    def initialize(self):
-        # The template only shows the form if the portlet is shown and
-        # there aren't any linked sourcepackages. If either of those
-        # conditions fails, there's no point setting up the widgets
-        # (with the expensive FTI query that entails).
-        if self.can_show_portlet and not self.sourcepackages:
-            super(ProductPackagesPortletView, self).initialize()
-
-    def setUpFields(self):
-        """See `LaunchpadFormView`."""
-        super(ProductPackagesPortletView, self).setUpFields()
-        ubuntu = getUtility(ILaunchpadCelebrities).ubuntu
-        distro_source_packages = ubuntu.searchSourcePackages(
-            self.context.name, has_packaging=False,
-            publishing_distroseries=ubuntu.currentseries)
-        # Based upon the matches, create a new vocabulary with
-        # term descriptions that include a link to the source package.
-        self.suggestions = []
-        vocab_terms = []
-        for package in distro_source_packages[:self.max_suggestions]:
-            if package.development_version.currentrelease is not None:
-                self.suggestions.append(package)
-                item_url = canonical_url(package)
-                description = structured(
-                    '<a href="%s">%s</a>', item_url, package.name)
-                vocab_terms.append(
-                    SimpleTerm(package, package.name, description))
-        # Add an option to represent the user's decision to choose a
-        # different package. Note that source packages cannot have uppercase
-        # names with underscores, so the name is safe to use.
-        description = 'Choose another Ubuntu package'
-        vocab_terms.append(
-            SimpleTerm(self.other_package, 'OTHER_PACKAGE', description))
-        vocabulary = SimpleVocabulary(vocab_terms)
-        # Add an option to represent that the project is not packaged in
-        # Ubuntu.
-        description = 'This project is not packaged in Ubuntu'
-        vocab_terms.append(
-            SimpleTerm(self.not_packaged, 'NOT_PACKAGED', description))
-        vocabulary = SimpleVocabulary(vocab_terms)
-        series_display_name = ubuntu.currentseries.displayname
-        self.form_fields = form.Fields(
-            Choice(__name__=self.package_field_name,
-                   title=_('Ubuntu %s packages') % series_display_name,
-                   default=None,
-                   vocabulary=vocabulary,
-                   required=True))
-
-    @action(_('Set Ubuntu Package Information'), name='link')
-    def link(self, action, data):
-        product = self.context
-        dsp = data.get(self.package_field_name)
-        product_series = product.development_focus
-        if dsp is self.other_package:
-            # The user wants to link an alternate package to this project.
-            self.next_url = canonical_url(
-                product_series, view_name="+ubuntupkg")
-            return
-        if dsp is self.not_packaged:
-            year_from_now = datetime.now(tz=pytz.UTC) + timedelta(days=365)
-            self.context.date_next_suggest_packaging = year_from_now
-            self.next_url = self.request.getURL()
-            return
-        ubuntu = getUtility(ILaunchpadCelebrities).ubuntu
-        product_series.setPackaging(ubuntu.currentseries,
-                                    dsp.sourcepackagename,
-                                    self.user)
-        self.request.response.addInfoNotification(
-            'This project was linked to the source package "%s"' %
-            dsp.displayname)
-        self.next_url = self.request.getURL()
 
 
 class SeriesReleasePair:
@@ -1377,9 +1305,9 @@ class ProductDownloadFilesView(LaunchpadView,
                 release.version in self.milestones[series.name])
 
 
+@implementer(IProductEditMenu)
 class ProductBrandingView(BrandingChangeView):
     """A view to set branding."""
-    implements(IProductEditMenu)
 
     label = "Change branding"
     schema = IProduct
@@ -1396,8 +1324,8 @@ class ProductBrandingView(BrandingChangeView):
         return canonical_url(self.context)
 
 
+@implementer(IProductEditMenu)
 class ProductConfigureBase(ReturnToReferrerMixin, LaunchpadEditFormView):
-    implements(IProductEditMenu)
     schema = IProduct
     usage_fieldname = None
 
@@ -1417,6 +1345,15 @@ class ProductConfigureBase(ReturnToReferrerMixin, LaunchpadEditFormView):
                 field.description = (
                     field.description.replace('pillar', 'project'))
                 usage_field.field = field
+                if (self.usage_fieldname in
+                    ('answers_usage', 'translations_usage') and
+                    self.context.information_type in
+                    PROPRIETARY_INFORMATION_TYPES):
+                    values = usage_field.field.vocabulary.items
+                    terms = [SimpleTerm(value, value.name, value.title)
+                             for value in values
+                             if value != ServiceUsage.LAUNCHPAD]
+                    usage_field.field.vocabulary = SimpleVocabulary(terms)
 
     @property
     def field_names(self):
@@ -1445,53 +1382,21 @@ class ProductConfigureAnswersView(ProductConfigureBase):
     usage_fieldname = 'answers_usage'
 
 
-class ProductPrivateBugsMixin():
-    """A mixin for setting the product private_bugs field."""
-    def setUpFields(self):
-        # private_bugs is readonly since we are using a mutator but we need
-        # to edit it on the form.
-        super(ProductPrivateBugsMixin, self).setUpFields()
-        self.form_fields = self.form_fields.omit('private_bugs')
-        private_bugs = copy_field(IProduct['private_bugs'], readonly=False)
-        self.form_fields += form.Fields(private_bugs, render_context=True)
-
-    def validate(self, data):
-        super(ProductPrivateBugsMixin, self).validate(data)
-        private_bugs = data.get('private_bugs')
-        if private_bugs is None:
-            return
-        try:
-            self.context.checkPrivateBugsTransitionAllowed(
-                private_bugs, self.user)
-        except Exception as e:
-            self.setFieldError('private_bugs', e.message)
-
-    def updateContextFromData(self, data, context=None, notify_modified=True):
-        # private_bugs uses a mutator to check permissions, so it needs to
-        # be handled separately.
-        if 'private_bugs' in data:
-            self.context.setPrivateBugs(data['private_bugs'], self.user)
-            del data['private_bugs']
-        parent = super(ProductPrivateBugsMixin, self)
-        return parent.updateContextFromData(data, context, notify_modified)
-
-
+@implementer(IProductEditMenu)
 class ProductEditView(ProductLicenseMixin, LaunchpadEditFormView):
     """View class that lets you edit a Product object."""
-
-    implements(IProductEditMenu)
 
     label = "Edit details"
     schema = IProduct
     field_names = [
-        "displayname",
+        "display_name",
         "title",
         "summary",
         "description",
-        "project",
+        "projectgroup",
         "homepageurl",
+        "information_type",
         "sourceforgeproject",
-        "freshmeatproject",
         "wikiurl",
         "screenshotsurl",
         "downloadurl",
@@ -1500,13 +1405,54 @@ class ProductEditView(ProductLicenseMixin, LaunchpadEditFormView):
         "licenses",
         "license_info",
         ]
-    custom_widget('licenses', LicenseWidget)
-    custom_widget('license_info', GhostWidget)
+    custom_widget_licenses = LicenseWidget
+    custom_widget_license_info = GhostWidget
+    custom_widget_information_type = CustomWidgetFactory(
+        LaunchpadRadioWidgetWithDescription,
+        vocabulary=InformationTypeVocabulary(types=PILLAR_INFORMATION_TYPES))
+
+    @property
+    def next_url(self):
+        """See `LaunchpadFormView`."""
+        if self.context.active:
+            if len(self.errors) > 0:
+                return None
+            return canonical_url(self.context)
+        else:
+            return canonical_url(getUtility(IProductSet))
+
+    cancel_url = next_url
 
     @property
     def page_title(self):
         """The HTML page title."""
         return "Change %s's details" % self.context.title
+
+    def initialize(self):
+        # The JSON cache must be populated before the super call, since
+        # the form is rendered during LaunchpadFormView's initialize()
+        # when an action is invoked.
+        cache = IJSONRequestCache(self.request)
+        json_dump_information_types(cache, PILLAR_INFORMATION_TYPES)
+        super(ProductEditView, self).initialize()
+
+    def validate(self, data):
+        """Validate 'licenses' and 'license_info'.
+
+        'licenses' must not be empty unless the product already
+        exists and never has had a licence set.
+
+        'license_info' must not be empty if "Other/Proprietary"
+        or "Other/Open Source" is checked.
+        """
+        super(ProductEditView, self).validate(data)
+        information_type = data.get('information_type')
+        if information_type:
+            errors = [
+                str(e) for e in self.context.checkInformationType(
+                    information_type)]
+            if len(errors) > 0:
+                self.setFieldError('information_type', ' '.join(errors))
 
     def showOptionalMarker(self, field_name):
         """See `LaunchpadFormView`."""
@@ -1521,16 +1467,6 @@ class ProductEditView(ProductLicenseMixin, LaunchpadEditFormView):
     @action("Change", name='change')
     def change_action(self, action, data):
         self.updateContextFromData(data)
-
-    @property
-    def next_url(self):
-        """See `LaunchpadFormView`."""
-        if self.context.active:
-            return canonical_url(self.context)
-        else:
-            return canonical_url(getUtility(IProductSet))
-
-    cancel_url = next_url
 
 
 class ProductValidationMixin:
@@ -1547,8 +1483,7 @@ class ProductValidationMixin:
                         canonical_url(self.context, view_name='+packages')))
 
 
-class ProductAdminView(ProductPrivateBugsMixin, ProductEditView,
-                       ProductValidationMixin):
+class ProductAdminView(ProductEditView, ProductValidationMixin):
     """View for $project/+admin"""
     label = "Administer project details"
     default_field_names = [
@@ -1556,7 +1491,6 @@ class ProductAdminView(ProductPrivateBugsMixin, ProductEditView,
         "owner",
         "active",
         "autoupdate",
-        "private_bugs",
         ]
 
     @property
@@ -1625,15 +1559,14 @@ class ProductAdminView(ProductPrivateBugsMixin, ProductEditView,
         return canonical_url(self.context)
 
 
-class ProductReviewLicenseView(ReturnToReferrerMixin, ProductPrivateBugsMixin,
-                               ProductEditView, ProductValidationMixin):
+class ProductReviewLicenseView(ReturnToReferrerMixin, ProductEditView,
+                               ProductValidationMixin):
     """A view to review a project and change project privileges."""
     label = "Review project"
     field_names = [
         "project_reviewed",
         "license_approved",
         "active",
-        "private_bugs",
         "reviewer_whiteboard",
         ]
 
@@ -1671,8 +1604,10 @@ class ProductAddSeriesView(LaunchpadFormView):
 
     schema = IProductSeries
     field_names = ['name', 'summary', 'branch', 'releasefileglob']
-    custom_widget('summary', TextAreaWidget, height=7, width=62)
-    custom_widget('releasefileglob', StrippedTextWidget, displayWidth=40)
+    custom_widget_summary = CustomWidgetFactory(
+        TextAreaWidget, height=7, width=62)
+    custom_widget_releasefileglob = CustomWidgetFactory(
+        StrippedTextWidget, displayWidth=40)
 
     series = None
 
@@ -1689,6 +1624,7 @@ class ProductAddSeriesView(LaunchpadFormView):
 
     def validate(self, data):
         """See `LaunchpadFormView`."""
+        from lp.registry.browser.productseries import get_series_branch_error
         branch = data.get('branch')
         if branch is not None:
             message = get_series_branch_error(self.context, branch)
@@ -1729,6 +1665,466 @@ class ProductSeriesSetView(ProductView):
         return BatchNavigator(decorated_result, self.request)
 
 
+LINK_LP = 'link-lp'
+IMPORT_EXTERNAL = 'import-external'
+
+
+BRANCH_TYPE_VOCABULARY = SimpleVocabulary((
+    SimpleTerm(LINK_LP, LINK_LP,
+               _("Link to a Bazaar branch already on Launchpad")),
+    SimpleTerm(IMPORT_EXTERNAL, IMPORT_EXTERNAL,
+               _("Import a branch hosted somewhere else")),
+    ))
+
+
+GIT_REPOSITORY_TYPE_VOCABULARY = SimpleVocabulary((
+    SimpleTerm(LINK_LP, LINK_LP,
+               _("Link to a Git repository already on Launchpad")),
+    SimpleTerm(IMPORT_EXTERNAL, IMPORT_EXTERNAL,
+               _("Import a Git repository hosted somewhere else")),
+    ))
+
+
+class SetBranchForm(Interface):
+    """The fields presented on the form for setting a branch."""
+
+    use_template(ICodeImport, ['cvs_module'])
+
+    rcs_type = Choice(title=_("Type of RCS"),
+        required=False, vocabulary=RevisionControlSystems,
+        description=_(
+            "The version control system to import from. "))
+
+    repo_url = URIField(
+        title=_("Branch URL"), required=True,
+        description=_("The URL of the branch."),
+        allowed_schemes=["http", "https"],
+        allow_userinfo=False, allow_port=True, allow_query=False,
+        allow_fragment=False, trailing_slash=False)
+
+    branch_location = copy_field(
+        IProductSeries['branch'], __name__='branch_location',
+        title=_('Branch'),
+        description=_(
+            "The Bazaar branch for this series in Launchpad, "
+            "if one exists."))
+
+    branch_type = Choice(
+        title=_('Import type'), vocabulary=BRANCH_TYPE_VOCABULARY,
+        description=_("Whether the branch is imported"), required=True)
+
+    branch_name = copy_field(
+        IBranch['name'], __name__='branch_name', title=_('Branch name'),
+        description=_(''), required=True)
+
+    branch_owner = copy_field(
+        IBranch['owner'], __name__='branch_owner', title=_('Branch owner'),
+        description=_(''), required=True)
+
+    default_vcs = Choice(
+        title=_("Project VCS"), required=True, vocabulary=VCSType,
+        description=_("The version control system for this project."))
+
+    git_repository_location = Choice(
+        title=_('Git repository'), required=False,
+        vocabulary='GitRepositoryRestrictedOnProduct',
+        description=_(
+            "The Git repository for this project in Launchpad, "
+            "if one exists, in the form: "
+            "~user/project-name/+git/repo-name"))
+
+    git_repository_type = Choice(
+        title=_('Import type'), required=True,
+        vocabulary=GIT_REPOSITORY_TYPE_VOCABULARY,
+        description=_('Whether the repository is imported'))
+
+    git_repository_name = copy_field(
+        IGitRepository['name'], __name__='git_repository_name',
+        title=_('Git repository name'), description=_(''), required=True)
+
+    git_repository_owner = copy_field(
+        IGitRepository['owner'], __name__='git_repository_owner',
+        title=_('Git repository owner'), description=_(''), required=True)
+
+    git_repository_url = URIField(
+        title=_('Git repository URL'), required=True,
+        description=_('The URL of the Git repository.'),
+        allowed_schemes=["git", "http", "https"],
+        allow_userinfo=True, allow_port=True, allow_query=False,
+        allow_fragment=False, trailing_slash=False)
+
+
+class ProductSetBranchView(ReturnToReferrerMixin, LaunchpadFormView,
+                           ProductView,
+                           CodeImportNameValidationMixin):
+    """The view to set a branch default for the Product."""
+
+    label = 'Configure code'
+    page_title = label
+    schema = SetBranchForm
+    # Set for_input to True to ensure fields marked read-only will be editable
+    # upon creation.
+    for_input = True
+
+    custom_widget_rcs_type = LaunchpadRadioWidget
+    custom_widget_branch_type = LaunchpadRadioWidget
+    custom_widget_default_vcs = LaunchpadRadioWidget
+    custom_widget_git_repository_type = LaunchpadRadioWidget
+
+    errors_in_action = False
+    is_series = False
+
+    @property
+    def series(self):
+        return self.context.development_focus
+
+    @property
+    def initial_values(self):
+        repository_set = getUtility(IGitRepositorySet)
+        return dict(
+            rcs_type=RevisionControlSystems.BZR,
+            default_vcs=(self.context.pillar.inferred_vcs or VCSType.BZR),
+            branch_type=LINK_LP,
+            branch_location=self.series.branch,
+            git_repository_type=LINK_LP,
+            git_repository_location=repository_set.getDefaultRepository(
+                self.context.pillar),
+            git_repository_name=self.context.pillar.name)
+
+    @property
+    def git_ssh_url(self):
+        base_url = urlsplit(
+            urlutils.join(config.codehosting.git_ssh_root, self.context.name))
+        url = list(base_url)
+        url[1] = "{}@{}".format(self.user.name, base_url.hostname)
+        return urlunsplit(url)
+
+    @property
+    def next_url(self):
+        """Return the next_url.
+
+        Use the value from `ReturnToReferrerMixin` or None if there
+        are errors.
+        """
+        if self.errors_in_action:
+            return None
+        return super(ProductSetBranchView, self).next_url
+
+    def setUpFields(self):
+        """See `LaunchpadFormView`."""
+        super(ProductSetBranchView, self).setUpFields()
+        if self.is_series:
+            self.form_fields = self.form_fields.omit(
+                'default_vcs', 'git_repository_location',
+                'git_repository_type', 'git_repository_name',
+                'git_repository_owner', 'git_repository_url')
+
+    def setUpWidgets(self):
+        """See `LaunchpadFormView`."""
+        super(ProductSetBranchView, self).setUpWidgets()
+        widget = self.widgets['rcs_type']
+        vocab = widget.vocabulary
+        current_value = widget._getFormValue()
+        self.rcs_type_cvs = render_radio_widget_part(
+            widget, vocab.CVS, current_value, 'CVS')
+        self.rcs_type_svn = render_radio_widget_part(
+            widget, vocab.BZR_SVN, current_value, 'SVN')
+        self.rcs_type_git = render_radio_widget_part(
+            widget, vocab.GIT, current_value)
+        self.rcs_type_bzr = render_radio_widget_part(
+            widget, vocab.BZR, current_value)
+        self.rcs_type_emptymarker = widget._emptyMarker()
+
+        widget = self.widgets['branch_type']
+        current_value = widget._getFormValue()
+        vocab = widget.vocabulary
+        self.branch_type_link, self.branch_type_import = [
+            render_radio_widget_part(widget, value, current_value)
+            for value in (LINK_LP, IMPORT_EXTERNAL)]
+
+        if not self.is_series:
+            widget = self.widgets['default_vcs']
+            vocab = widget.vocabulary
+            current_value = widget._getFormValue()
+            self.default_vcs_git = render_radio_widget_part(
+                widget, vocab.GIT, current_value, 'Git')
+            self.default_vcs_bzr = render_radio_widget_part(
+                widget, vocab.BZR, current_value, 'Bazaar')
+
+            widget = self.widgets['git_repository_type']
+            current_value = widget._getFormValue()
+            vocab = widget.vocabulary
+            self.git_repository_type_link, self.git_repository_type_import = [
+                render_radio_widget_part(widget, value, current_value)
+                for value in (LINK_LP, IMPORT_EXTERNAL)]
+
+    def _validateLinkLpBzr(self, data):
+        """Validate data for link-lp bzr case."""
+        if 'branch_location' not in data:
+            self.setFieldError(
+                'branch_location', 'The branch location must be set.')
+
+    def _validateLinkLpGit(self, data):
+        """Validate data for link-lp git case."""
+        if data.get('git_repository_location'):
+            repo = data.get('git_repository_location')
+            if not repo:
+                self.setFieldError(
+                    'git_repository_location',
+                    'The repository does not exist.')
+
+    def _validateImportExternalBzr(self, data):
+        """Validate data for import-external bzr case."""
+        rcs_type = data.get('rcs_type')
+        repo_url = data.get('repo_url')
+
+        # Private teams are forbidden from owning code imports.
+        branch_owner = data.get('branch_owner')
+        if branch_owner is not None and branch_owner.private:
+            self.setFieldError(
+                'branch_owner', 'Private teams are forbidden from owning '
+                'external imports.')
+
+        if repo_url is None:
+            self.setFieldError(
+                'repo_url', 'You must set the external repository URL.')
+        else:
+            reason = validate_import_url(
+                repo_url, rcs_type, TargetRevisionControlSystems.BZR)
+            if reason:
+                self.setFieldError('repo_url', reason)
+
+        # RCS type is mandatory.
+        # This condition should never happen since an initial value is set.
+        if rcs_type is None:
+            # The error shows but does not identify the widget.
+            self.setFieldError(
+                'rcs_type',
+                'You must specify the type of RCS for the remote host.')
+        elif rcs_type == RevisionControlSystems.CVS:
+            if 'cvs_module' not in data:
+                self.setFieldError('cvs_module', 'The CVS module must be set.')
+
+        if 'branch_name' not in data:
+            self.setFieldError('branch_name', 'The branch name must be set.')
+        if 'branch_owner' not in data:
+            self.setFieldError('branch_owner', 'The branch owner must be set.')
+
+    def _validateImportExternalGit(self, data):
+        """Validate data for import-external git case."""
+        git_repository_url = data.get('git_repository_url')
+
+        # Private teams are forbidden from owning code imports.
+        git_repository_owner = data.get('git_repository_owner')
+        if git_repository_owner is not None and git_repository_owner.private:
+            self.setFieldError(
+                'git_repository_owner',
+                'Private teams are forbidden from owning external imports.')
+
+        if git_repository_url is None:
+            self.setFieldError(
+                'git_repository_url',
+                'You must set the external repository URL.')
+        else:
+            reason = validate_import_url(
+                git_repository_url, RevisionControlSystems.GIT,
+                TargetRevisionControlSystems.GIT)
+            if reason:
+                self.setFieldError('git_repository_url', reason)
+
+        if 'git_repository_name' not in data:
+            self.setFieldError(
+                'git_repository_name', 'The repository name must be set.')
+        if 'git_repository_owner' not in data:
+            self.setFieldError(
+                'git_repository_owner', 'The repository owner must be set.')
+
+    def _setRequired(self, names, value):
+        """Mark the widget field as optional."""
+        for name in names:
+            widget = self.widgets[name]
+            # The 'required' property on the widget context is set to False.
+            # The widget also has a 'required' property but it isn't used
+            # during validation.
+            widget.context.required = value
+
+    def _validSchemes(self, rcs_type):
+        """Return the valid schemes for the repository URL."""
+        schemes = set(['http', 'https'])
+        # Extend the allowed schemes for the repository URL based on
+        # rcs_type.
+        extra_schemes = {
+            RevisionControlSystems.BZR_SVN: ['svn'],
+            RevisionControlSystems.GIT: ['git'],
+            RevisionControlSystems.BZR: ['bzr'],
+            }
+        schemes.update(extra_schemes.get(rcs_type, []))
+        return schemes
+
+    def validate_widgets(self, data, names=None):
+        """See `LaunchpadFormView`."""
+        names = [
+            'branch_type', 'rcs_type', 'default_vcs', 'git_repository_type']
+        super(ProductSetBranchView, self).validate_widgets(data, names)
+
+        if not self.is_series:
+            git_repository_type = data.get('git_repository_type')
+            if git_repository_type == LINK_LP:
+                # Mark other widgets as non-required.
+                self._setRequired(['git_repository_url', 'git_repository_name',
+                                   'git_repository_owner'], False)
+            elif git_repository_type == IMPORT_EXTERNAL:
+                # The repository location is not required for validation.
+                self._setRequired(['git_repository_location'], False)
+            else:
+                raise AssertionError(
+                    "Unknown Git repository type %s" % git_repository_type)
+
+        branch_type = data.get('branch_type')
+        if branch_type == LINK_LP:
+            # Mark other widgets as non-required.
+            self._setRequired(['rcs_type', 'repo_url', 'cvs_module',
+                               'branch_name', 'branch_owner'], False)
+        elif branch_type == IMPORT_EXTERNAL:
+            rcs_type = data.get('rcs_type')
+
+            # Set the valid schemes based on rcs_type.
+            self.widgets['repo_url'].field.allowed_schemes = (
+                self._validSchemes(rcs_type))
+            # The branch location is not required for validation.
+            self._setRequired(['branch_location'], False)
+            # The cvs_module is required if it is a CVS import.
+            if rcs_type == RevisionControlSystems.CVS:
+                self._setRequired(['cvs_module'], True)
+        else:
+            raise AssertionError("Unknown branch type %s" % branch_type)
+
+        # Perform full validation now.
+        super(ProductSetBranchView, self).validate_widgets(data)
+
+    def validate(self, data):
+        """See `LaunchpadFormView`."""
+        # If widget validation returned errors then there is no need to
+        # continue as we'd likely just override the errors reported there.
+        if len(self.errors) > 0:
+            return
+
+        if not self.is_series:
+            git_repository_type = data.get('git_repository_type')
+            if git_repository_type == LINK_LP:
+                self._validateLinkLpGit(data)
+            elif git_repository_type == IMPORT_EXTERNAL:
+                self._validateImportExternalGit(data)
+            else:
+                raise AssertionError(
+                    "Unknown Git repository type %s" % git_repository_type)
+
+        branch_type = data.get('branch_type')
+        if branch_type == LINK_LP:
+            self._validateLinkLpBzr(data)
+        elif branch_type == IMPORT_EXTERNAL:
+            self._validateImportExternalBzr(data)
+        else:
+            raise AssertionError("Unknown branch type %s" % branch_type)
+
+    def abort_update(self):
+        """Abort transaction.
+
+        This is normally handled by LaunchpadFormView, but this can be called
+        from the success handler."""
+
+        self.errors_in_action = True
+        self._abort()
+
+    def add_update_notification(self):
+        self.request.response.addInfoNotification(
+            'Project settings updated.')
+
+    @action(_('Update'), name='update')
+    def update_action(self, action, data):
+        branch_type = data.get('branch_type')
+
+        if not self.is_series:
+            default_vcs = data.get('default_vcs')
+            if default_vcs:
+                self.context.vcs = default_vcs
+
+            git_repository_type = data.get('git_repository_type')
+
+            if git_repository_type == LINK_LP:
+                repo = data.get('git_repository_location')
+                repository_set = getUtility(IGitRepositorySet)
+                if repository_set.getDefaultRepository(self.context) != repo:
+                    repository_set.setDefaultRepository(self.context, repo)
+                    self.add_update_notification()
+            elif git_repository_type == IMPORT_EXTERNAL:
+                name = data.get('git_repository_name')
+                owner = data.get('git_repository_owner')
+                url = data.get('git_repository_url')
+                try:
+                    code_import = getUtility(ICodeImportSet).new(
+                        owner=owner,
+                        registrant=self.user,
+                        context=self.context,
+                        branch_name=name,
+                        rcs_type=RevisionControlSystems.GIT,
+                        target_rcs_type=TargetRevisionControlSystems.GIT,
+                        url=url)
+                except GitRepositoryExists as e:
+                    self._setBranchExists(
+                        e.existing_repository, 'git_repository_name')
+                    self.abort_update()
+                    return
+                getUtility(IGitRepositorySet).setDefaultRepository(
+                    self.context, code_import.git_repository)
+                self.request.response.addInfoNotification(
+                    'Code import created and repository set as default.')
+            else:
+                raise UnexpectedFormData(git_repository_type)
+
+        if branch_type == LINK_LP:
+            branch_location = data.get('branch_location')
+            if branch_location != self.series.branch:
+                self.series.branch = branch_location
+                # Request an initial upload of translation files.
+                getUtility(IRosettaUploadJobSource).create(
+                    self.series.branch, NULL_REVISION)
+                self.add_update_notification()
+        elif branch_type == IMPORT_EXTERNAL:
+            branch_name = data.get('branch_name')
+            branch_owner = data.get('branch_owner')
+            rcs_type = data.get('rcs_type')
+            if rcs_type == RevisionControlSystems.CVS:
+                cvs_root = data.get('repo_url')
+                cvs_module = data.get('cvs_module')
+                url = None
+            else:
+                cvs_root = None
+                cvs_module = None
+                url = data.get('repo_url')
+            rcs_item = RevisionControlSystems.items[rcs_type.name]
+            try:
+                code_import = getUtility(ICodeImportSet).new(
+                    owner=branch_owner,
+                    registrant=self.user,
+                    context=self.context,
+                    branch_name=branch_name,
+                    rcs_type=rcs_item,
+                    target_rcs_type=TargetRevisionControlSystems.BZR,
+                    url=url,
+                    cvs_root=cvs_root,
+                    cvs_module=cvs_module)
+            except BranchExists as e:
+                self._setBranchExists(e.existing_branch, 'branch_name')
+                self.abort_update()
+                return
+            self.series.branch = code_import.branch
+            self.request.response.addInfoNotification(
+                'Code import created and branch linked to the series.')
+        else:
+            raise UnexpectedFormData(branch_type)
+
+
 class ProductRdfView(BaseRdfView):
     """A view that sets its mime-type to application/rdf+xml"""
 
@@ -1738,16 +2134,6 @@ class ProductRdfView(BaseRdfView):
     @property
     def filename(self):
         return '%s.rdf' % self.context.name
-
-
-class Icon:
-    """An icon for use with image:icon."""
-
-    def __init__(self, library_id):
-        self.library_alias = getUtility(ILibraryFileAliasSet)[library_id]
-
-    def getURL(self):
-        return self.library_alias.getURL()
 
 
 class ProductSetNavigationMenu(RegistryCollectionActionMenuBase):
@@ -1769,10 +2155,9 @@ class ProductSetNavigationMenu(RegistryCollectionActionMenuBase):
         return Link('+all', 'Show all projects', icon='list')
 
 
+@implementer(IRegistryCollectionNavigationMenu)
 class ProductSetView(LaunchpadView):
     """View for products index page."""
-
-    implements(IRegistryCollectionNavigationMenu)
 
     page_title = 'Projects registered in Launchpad'
 
@@ -1789,23 +2174,28 @@ class ProductSetView(LaunchpadView):
 
     @cachedproperty
     def all_batched(self):
-        return BatchNavigator(self.context.all_active, self.request)
+        return BatchNavigator(self.context.get_all_active(self.user),
+                              self.request)
 
     @cachedproperty
     def matches(self):
         if not self.search_requested:
             return None
         pillarset = getUtility(IPillarNameSet)
-        return pillarset.count_search_matches(self.search_string)
+        return pillarset.count_search_matches(self.user, self.search_string)
 
     @cachedproperty
     def search_results(self):
         search_string = self.search_string.lower()
         limit = self.max_results_to_display
-        return getUtility(IPillarNameSet).search(search_string, limit)
+        return getUtility(IPillarNameSet).search(
+            self.user, search_string, limit)
 
     def tooManyResultsFound(self):
         return self.matches > self.max_results_to_display
+
+    def latest(self):
+        return self.context.get_all_active(self.user)[:5]
 
 
 class ProductSetReviewLicensesView(LaunchpadFormView):
@@ -1830,23 +2220,22 @@ class ProductSetReviewLicensesView(LaunchpadFormView):
         ('subscription_modified_after', 'subscription_modified_before'),
         ]
 
-    custom_widget(
-        'licenses', CheckBoxMatrixWidget, column_count=4,
-        orientation='vertical')
-    custom_widget('active', LaunchpadRadioWidget,
-                  _messageNoValue="(do not filter)")
-    custom_widget('project_reviewed', LaunchpadRadioWidget,
-                  _messageNoValue="(do not filter)")
-    custom_widget('license_approved', LaunchpadRadioWidget,
-                  _messageNoValue="(do not filter)")
-    custom_widget('has_subscription', LaunchpadRadioWidget,
-                  _messageNoValue="(do not filter)")
-    custom_widget('created_after', DateWidget)
-    custom_widget('created_before', DateWidget)
-    custom_widget('subscription_expires_after', DateWidget)
-    custom_widget('subscription_expires_before', DateWidget)
-    custom_widget('subscription_modified_after', DateWidget)
-    custom_widget('subscription_modified_before', DateWidget)
+    custom_widget_licenses = CustomWidgetFactory(
+        CheckBoxMatrixWidget, column_count=4, orientation='vertical')
+    custom_widget_active = CustomWidgetFactory(
+        LaunchpadRadioWidget, _messageNoValue="(do not filter)")
+    custom_widget_project_reviewed = CustomWidgetFactory(
+        LaunchpadRadioWidget, _messageNoValue="(do not filter)")
+    custom_widget_license_approved = CustomWidgetFactory(
+        LaunchpadRadioWidget, _messageNoValue="(do not filter)")
+    custom_widget_has_subscription = CustomWidgetFactory(
+        LaunchpadRadioWidget, _messageNoValue="(do not filter)")
+    custom_widget_created_after = DateWidget
+    custom_widget_created_before = DateWidget
+    custom_widget_subscription_expires_after = DateWidget
+    custom_widget_subscription_expires_before = DateWidget
+    custom_widget_subscription_modified_after = DateWidget
+    custom_widget_subscription_modified_before = DateWidget
 
     @property
     def left_side_widgets(self):
@@ -1882,36 +2271,8 @@ class ProductSetReviewLicensesView(LaunchpadFormView):
         search_params = self.initial_values
         # Override the defaults with the form values if available.
         search_params.update(data)
-        return BatchNavigator(self.context.forReview(**search_params),
-                              self.request, size=50)
-
-
-class ProductAddViewBase(ProductLicenseMixin, LaunchpadFormView):
-    """Abstract class for adding a new product.
-
-    ProductLicenseMixin requires the "product" attribute be set in the
-    child classes' action handler.
-    """
-
-    schema = IProduct
-    product = None
-    field_names = ['name', 'displayname', 'title', 'summary',
-                   'description', 'homepageurl', 'sourceforgeproject',
-                   'freshmeatproject', 'wikiurl', 'screenshotsurl',
-                   'downloadurl', 'programminglang',
-                   'licenses', 'license_info']
-    custom_widget(
-        'licenses', LicenseWidget, column_count=3, orientation='vertical')
-    custom_widget('homepageurl', TextWidget, displayWidth=30)
-    custom_widget('screenshotsurl', TextWidget, displayWidth=30)
-    custom_widget('wikiurl', TextWidget, displayWidth=30)
-    custom_widget('downloadurl', TextWidget, displayWidth=30)
-
-    @property
-    def next_url(self):
-        """See `LaunchpadFormView`."""
-        assert self.product is not None, 'No product has been created'
-        return canonical_url(self.product)
+        result = self.context.forReview(self.user, **search_params)
+        return BatchNavigator(result, self.request, size=50)
 
 
 def create_source_package_fields():
@@ -1928,15 +2289,16 @@ def create_source_package_fields():
 class ProjectAddStepOne(StepView):
     """product/+new view class for creating a new project."""
 
-    _field_names = ['displayname', 'name', 'title', 'summary']
+    _field_names = ['display_name', 'name', 'summary']
     label = "Register a project in Launchpad"
     schema = IProduct
     step_name = 'projectaddstep1'
     template = ViewPageTemplateFile('../templates/product-new.pt')
     page_title = "Register a project in Launchpad"
 
-    custom_widget('displayname', TextWidget, displayWidth=50, label='Name')
-    custom_widget('name', ProductNameWidget, label='URL')
+    custom_widget_display_name = CustomWidgetFactory(
+        TextWidget, displayWidth=50, label='Name')
+    custom_widget_name = CustomWidgetFactory(ProductNameWidget, label='URL')
 
     step_description = 'Project basics'
     search_results_count = 0
@@ -1944,9 +2306,7 @@ class ProjectAddStepOne(StepView):
     def setUpFields(self):
         """See `LaunchpadFormView`."""
         super(ProjectAddStepOne, self).setUpFields()
-        self.form_fields = (
-            self.form_fields +
-            create_source_package_fields())
+        self.form_fields = (self.form_fields + create_source_package_fields())
 
     def setUpWidgets(self):
         """See `LaunchpadFormView`."""
@@ -1986,10 +2346,9 @@ class ProjectAddStepOne(StepView):
 class ProjectAddStepTwo(StepView, ProductLicenseMixin, ReturnToReferrerMixin):
     """Step 2 (of 2) in the +new project add wizard."""
 
-    _field_names = ['displayname', 'name', 'title', 'summary',
-                    'description', 'homepageurl', 'licenses', 'license_info',
-                    'owner',
-                    ]
+    _field_names = ['display_name', 'name', 'summary', 'description',
+                    'homepageurl', 'information_type', 'licenses',
+                    'license_info', 'driver', 'bug_supervisor', 'owner']
     schema = IProduct
     step_name = 'projectaddstep2'
     template = ViewPageTemplateFile('../templates/product-new.pt')
@@ -1997,16 +2356,36 @@ class ProjectAddStepTwo(StepView, ProductLicenseMixin, ReturnToReferrerMixin):
 
     product = None
 
-    custom_widget('displayname', TextWidget, displayWidth=50, label='Name')
-    custom_widget('name', ProductNameWidget, label='URL')
-    custom_widget('homepageurl', TextWidget, displayWidth=30)
-    custom_widget('licenses', LicenseWidget)
-    custom_widget('license_info', GhostWidget)
-    custom_widget(
-        'owner', PersonPickerWidget, header="Select the maintainer",
+    custom_widget_display_name = CustomWidgetFactory(
+        TextWidget, displayWidth=50, label='Name')
+    custom_widget_name = CustomWidgetFactory(ProductNameWidget, label='URL')
+    custom_widget_homepageurl = CustomWidgetFactory(
+        TextWidget, displayWidth=30)
+    custom_widget_licenses = LicenseWidget
+    custom_widget_license_info = GhostWidget
+    custom_widget_information_type = CustomWidgetFactory(
+        LaunchpadRadioWidgetWithDescription,
+        vocabulary=InformationTypeVocabulary(types=PILLAR_INFORMATION_TYPES))
+
+    custom_widget_owner = CustomWidgetFactory(
+        PersonPickerWidget, header="Select the maintainer",
         show_create_team_link=True)
-    custom_widget(
-        'disclaim_maintainer', CheckBoxWidget, cssClass="subordinate")
+    custom_widget_bug_supervisor = CustomWidgetFactory(
+        PersonPickerWidget, header="Set a bug supervisor",
+        required=True, show_create_team_link=True)
+    custom_widget_driver = CustomWidgetFactory(
+        PersonPickerWidget, header="Set a driver",
+        required=True, show_create_team_link=True)
+    custom_widget_disclaim_maintainer = CustomWidgetFactory(
+        CheckBoxWidget, cssClass="subordinate")
+
+    def initialize(self):
+        # The JSON cache must be populated before the super call, since
+        # the form is rendered during LaunchpadFormView's initialize()
+        # when an action is invoked.
+        cache = IJSONRequestCache(self.request)
+        json_dump_information_types(cache, PILLAR_INFORMATION_TYPES)
+        super(ProjectAddStepTwo, self).initialize()
 
     @property
     def main_action_label(self):
@@ -2014,8 +2393,7 @@ class ProjectAddStepTwo(StepView, ProductLicenseMixin, ReturnToReferrerMixin):
             return u'Complete Registration'
         else:
             return u'Complete registration and link to %s package' % (
-                self.source_package_name.name,
-                )
+                self.source_package_name.name)
 
     @property
     def _return_url(self):
@@ -2036,27 +2414,39 @@ class ProjectAddStepTwo(StepView, ProductLicenseMixin, ReturnToReferrerMixin):
 
     @property
     def initial_values(self):
-        return {'owner': self.user.name}
+        return {
+            'driver': self.user.name,
+            'bug_supervisor': self.user.name,
+            'owner': self.user.name,
+            'information_type': InformationType.PUBLIC,
+        }
+
+    @property
+    def enable_information_type(self):
+        return not self.source_package_name
 
     def setUpFields(self):
         """See `LaunchpadFormView`."""
         super(ProjectAddStepTwo, self).setUpFields()
-        hidden_names = ('__visited_steps__', 'license_info')
+        hidden_names = ['__visited_steps__', 'license_info']
         hidden_fields = self.form_fields.select(*hidden_names)
+
+        if not self.enable_information_type:
+            hidden_names.extend(
+                ['information_type', 'bug_supervisor', 'driver'])
+
         visible_fields = self.form_fields.omit(*hidden_names)
-        self.form_fields = (visible_fields +
-                            self._createDisclaimMaintainerField() +
-                            create_source_package_fields() +
-                            hidden_fields)
+        self.form_fields = (
+            visible_fields + self._createDisclaimMaintainerField() +
+            create_source_package_fields() + hidden_fields)
 
     def _createDisclaimMaintainerField(self):
         """Return a Bool field for disclaiming maintainer.
 
-        If the registrant does not want to maintain the project she can select
-        this checkbox and the ownership will be transfered to the registry
-        admins team.
+        If the registrant does not want to maintain the project they can
+        select this checkbox and the ownership will be transferred to the
+        registry admins team.
         """
-
         return form.Fields(
             Bool(__name__='disclaim_maintainer',
                  title=_("I do not want to maintain this project"),
@@ -2076,12 +2466,15 @@ class ProjectAddStepTwo(StepView, ProductLicenseMixin, ReturnToReferrerMixin):
         self.widgets['name'].read_only = True
         # The "hint" is really more of an explanation at this point, but the
         # phrasing is different.
-        self.widgets['name'].hint = ('When published, '
-                                     "this will be the project's URL.")
-        self.widgets['displayname'].visible = False
-
+        self.widgets['name'].hint = (
+            "When published, this will be the project's URL.")
+        self.widgets['display_name'].visible = False
         self.widgets['source_package_name'].visible = False
         self.widgets['distroseries'].visible = False
+
+        if (self.enable_information_type and
+            IProductSet.providedBy(self.context)):
+            self.widgets['information_type'].value = InformationType.PUBLIC
 
         # Set the source_package_release attribute on the licenses
         # widget, so that the source package's copyright info can be
@@ -2111,7 +2504,7 @@ class ProjectAddStepTwo(StepView, ProductLicenseMixin, ReturnToReferrerMixin):
     def _search_string(self):
         """Return the ORed terms to match."""
         search_text = SPACE.join((self.request.form['field.name'],
-                                  self.request.form['field.displayname'],
+                                  self.request.form['field.display_name'],
                                   self.request.form['field.summary']))
         # OR all the terms together.
         return OR.join(search_text.split())
@@ -2125,14 +2518,14 @@ class ProjectAddStepTwo(StepView, ProductLicenseMixin, ReturnToReferrerMixin):
         """
         # XXX BarryWarsaw 16-Apr-2009 do we need batching and should we return
         # more than 7 hits?
-        pillar_set = getUtility(IPillarNameSet)
-        return pillar_set.search(self._search_string, 7)
+        return getUtility(IPillarNameSet).search(
+            self.user, self._search_string, 7)
 
     @cachedproperty
     def search_results_count(self):
         """Return the count of matching `IPillar`s."""
-        pillar_set = getUtility(IPillarNameSet)
-        return pillar_set.count_search_matches(self._search_string)
+        return getUtility(IPillarNameSet).count_search_matches(
+            self.user, self._search_string)
 
     # StepView requires that its validate() method not be overridden, so make
     # sure this calls the right method.  validateStep() will call the licence
@@ -2150,35 +2543,46 @@ class ProjectAddStepTwo(StepView, ProductLicenseMixin, ReturnToReferrerMixin):
             for error in errors:
                 self.errors.remove(error)
 
+        if self.enable_information_type:
+            if data.get('information_type') != InformationType.PUBLIC:
+                for required_field in ('bug_supervisor', 'driver'):
+                    if data.get(required_field) is None:
+                        self.setFieldError(
+                            required_field, 'Select a user or team.')
+
     @property
     def label(self):
         """See `LaunchpadFormView`."""
         return 'Register %s (%s) in Launchpad' % (
-                self.request.form['field.displayname'],
+                self.request.form['field.display_name'],
                 self.request.form['field.name'])
 
     def create_product(self, data):
         """Create the product from the user data."""
         # Get optional data.
-        project = data.get('project')
+        projectgroup = data.get('projectgroup')
         description = data.get('description')
         disclaim_maintainer = data.get('disclaim_maintainer', False)
         if disclaim_maintainer:
             owner = getUtility(ILaunchpadCelebrities).registry_experts
         else:
             owner = data.get('owner')
+
         return getUtility(IProductSet).createProduct(
             registrant=self.user,
+            bug_supervisor=data.get('bug_supervisor', None),
+            driver=data.get('driver', None),
             owner=owner,
             name=data['name'],
-            displayname=data['displayname'],
-            title=data['title'],
+            display_name=data['display_name'],
+            title=data['display_name'],
             summary=data['summary'],
             description=description,
             homepageurl=data.get('homepageurl'),
             licenses=data['licenses'],
             license_info=data['license_info'],
-            project=project)
+            information_type=data.get('information_type'),
+            projectgroup=projectgroup)
 
     def link_source_package(self, product, data):
         if (data.get('distroseries') is not None
@@ -2235,10 +2639,9 @@ class IProductEditPeopleSchema(Interface):
             "become the project's new maintainers."))
 
 
+@implementer(IProductEditMenu)
 class ProductEditPeopleView(LaunchpadEditFormView):
     """Enable editing of important people on the project."""
-
-    implements(IProductEditMenu)
 
     label = "Change the roles of people"
     schema = IProductEditPeopleSchema
@@ -2255,12 +2658,14 @@ class ProductEditPeopleView(LaunchpadEditFormView):
     # failing.
     initial_values = {'transfer_to_registry': False}
 
-    custom_widget('owner', PersonPickerWidget, header="Select the maintainer",
-                  show_create_team_link=True)
-    custom_widget('transfer_to_registry', CheckBoxWidget,
-                  widget_class='field subordinate')
-    custom_widget('driver', PersonPickerWidget, header="Select the driver",
-                  show_create_team_link=True)
+    custom_widget_owner = CustomWidgetFactory(
+        PersonPickerWidget, header="Select the maintainer",
+        show_create_team_link=True)
+    custom_widget_transfer_to_registry = CustomWidgetFactory(
+        CheckBoxWidget, widget_class='field subordinate')
+    custom_widget_driver = CustomWidgetFactory(
+        PersonPickerWidget, header="Select the driver",
+        show_create_team_link=True)
 
     @property
     def page_title(self):

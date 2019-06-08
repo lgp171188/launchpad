@@ -13,15 +13,12 @@ from storm.locals import (
     Reference,
     Storm,
     )
-from zope.component import getUtility
-from zope.interface import implements
+from zope.interface import implementer
 
 from lp.services.database.enumcol import DBEnum
-from lp.services.webapp.interfaces import (
-    DEFAULT_FLAVOR,
-    IStoreSelector,
-    MAIN_STORE,
-    MASTER_FLAVOR,
+from lp.services.database.interfaces import (
+    IMasterStore,
+    IStore,
     )
 from lp.soyuz.enums import SourcePackageFormat
 from lp.soyuz.interfaces.sourcepackageformat import (
@@ -30,10 +27,9 @@ from lp.soyuz.interfaces.sourcepackageformat import (
     )
 
 
+@implementer(ISourcePackageFormatSelection)
 class SourcePackageFormatSelection(Storm):
     """See ISourcePackageFormatSelection."""
-
-    implements(ISourcePackageFormatSelection)
 
     __storm_table__ = 'sourcepackageformatselection'
 
@@ -45,22 +41,19 @@ class SourcePackageFormatSelection(Storm):
     format = DBEnum(enum=SourcePackageFormat)
 
 
+@implementer(ISourcePackageFormatSelectionSet)
 class SourcePackageFormatSelectionSet:
     """See ISourcePackageFormatSelectionSet."""
 
-    implements(ISourcePackageFormatSelectionSet)
-
     def getBySeriesAndFormat(self, distroseries, format):
         """See `ISourcePackageFormatSelection`."""
-        return getUtility(IStoreSelector).get(
-            MAIN_STORE, DEFAULT_FLAVOR).find(
-                SourcePackageFormatSelection, distroseries=distroseries,
-                format=format).one()
+        return IStore(SourcePackageFormatSelection).find(
+            SourcePackageFormatSelection, distroseries=distroseries,
+            format=format).one()
 
     def add(self, distroseries, format):
         """See `ISourcePackageFormatSelection`."""
         spfs = SourcePackageFormatSelection()
         spfs.distroseries = distroseries
         spfs.format = format
-        return getUtility(IStoreSelector).get(MAIN_STORE, MASTER_FLAVOR).add(
-            spfs)
+        return IMasterStore(SourcePackageFormatSelection).add(spfs)

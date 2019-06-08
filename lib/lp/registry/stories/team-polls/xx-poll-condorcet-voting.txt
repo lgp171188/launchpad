@@ -29,7 +29,7 @@
 
 
   If a non-member (Sample Person) guesses the voting URL and tries to vote,
-  he won't be allowed.
+  they won't be allowed.
 
   >>> print http(r"""
   ... GET /~ubuntu-team/+poll/never-closes2/+vote HTTP/1.1
@@ -46,6 +46,7 @@
   ... POST /~ubuntu-team/+poll/never-closes2/+vote HTTP/1.1
   ... Authorization: Basic foo.bar@canonical.com:test
   ... Content-Type: application/x-www-form-urlencoded
+  ... Referer: https://launchpad.test/
   ...
   ... token=xn9FDCTp4m&showvote=Show+My+Vote&option_12=&option_13=&option_14=&option_15=""")
   HTTP/1.1 200 Ok
@@ -81,6 +82,7 @@
   ... POST /~ubuntu-team/+poll/never-closes2/+vote HTTP/1.1
   ... Authorization: Basic foo.bar@canonical.com:test
   ... Content-Type: application/x-www-form-urlencoded
+  ... Referer: https://launchpad.test/
   ...
   ... token=xn9FDCTp4m&option_12=2&option_13=3&option_14=4&option_15=1&changevote=Change+Vote""")
   HTTP/1.1 200 Ok
@@ -168,6 +170,7 @@
   ... POST /~ubuntu-team/+poll/never-closes3/+vote HTTP/1.1
   ... Authorization: Basic foo.bar@canonical.com:test
   ... Content-Type: application/x-www-form-urlencoded
+  ... Referer: https://launchpad.test/
   ...
   ... option_16=4&option_17=2&option_18=1&option_19=3&changevote=Change+Vote""")
   HTTP/1.1 200 Ok

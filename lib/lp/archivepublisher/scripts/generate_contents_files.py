@@ -1,4 +1,4 @@
-# Copyright 2011-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2011-2016 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Archive Contents files generator."""
@@ -14,24 +14,25 @@ import os
 from zope.component import getUtility
 
 from lp.archivepublisher.config import getPubConfig
+from lp.archivepublisher.publishing import cannot_modify_suite
 from lp.registry.interfaces.distribution import IDistributionSet
 from lp.registry.interfaces.pocket import PackagePublishingPocket
-from lp.registry.interfaces.series import SeriesStatus
 from lp.services.command_spawner import (
     CommandSpawner,
     OutputLineHandler,
     ReturnCodeReceiver,
     )
 from lp.services.config import config
+from lp.services.database.policy import (
+    DatabaseBlockedPolicy,
+    SlaveOnlyDatabasePolicy,
+    )
+from lp.services.osutils import ensure_directory_exists
 from lp.services.scripts.base import (
     LaunchpadCronScript,
     LaunchpadScriptFailure,
     )
 from lp.services.utils import file_exists
-from lp.services.webapp.dbpolicy import (
-    DatabaseBlockedPolicy,
-    SlaveOnlyDatabasePolicy,
-    )
 
 
 COMPONENTS = [
@@ -94,16 +95,6 @@ def execute(logger, command, args=None):
             "Failure while running command: %s" % description)
 
 
-def move_file(old_path, new_path):
-    """Rename file `old_path` to `new_path`.
-
-    Mercilessly delete any file that may already exist at `new_path`.
-    """
-    if file_exists(new_path):
-        os.remove(new_path)
-    os.rename(old_path, new_path)
-
-
 class GenerateContentsFiles(LaunchpadCronScript):
 
     distribution = None
@@ -142,29 +133,23 @@ class GenerateContentsFiles(LaunchpadCronScript):
             if not file_exists(path):
                 os.makedirs(path)
 
-    def getSupportedSeries(self):
-        """Return suites that are supported in this distribution.
-
-        "Supported" means not EXPERIMENTAL or OBSOLETE.
-        """
-        unsupported_status = (SeriesStatus.EXPERIMENTAL,
-                              SeriesStatus.OBSOLETE)
-        for series in self.distribution:
-            if series.status not in unsupported_status:
-                yield series
-
     def getSuites(self):
-        """Return suites that are actually supported in this distribution."""
-        for series in self.getSupportedSeries():
+        """Return suites that need Contents files."""
+        # XXX cjwatson 2015-09-23: This script currently only supports the
+        # primary archive.
+        archive = self.distribution.main_archive
+        for series in self.distribution.getNonObsoleteSeries():
             for pocket in PackagePublishingPocket.items:
                 suite = series.getSuite(pocket)
+                if cannot_modify_suite(archive, series, pocket):
+                    continue
                 if file_exists(os.path.join(self.config.distsroot, suite)):
                     yield suite
 
     def getArchs(self, suite):
         """Query architectures supported by the suite."""
         series, _ = self.distribution.getDistroSeriesAndPocket(suite)
-        return [arch.architecturetag for arch in series.architectures]
+        return [arch.architecturetag for arch in series.enabled_architectures]
 
     def getDirs(self, archs):
         """Subdirectories needed for each component."""
@@ -220,21 +205,6 @@ class GenerateContentsFiles(LaunchpadCronScript):
         else:
             self.logger.debug("Did not find overrides; not copying.")
 
-    def writeContentsTop(self, distro_name, distro_title):
-        """Write Contents.top file.
-
-        This method won't access the database.
-        """
-        output_filename = os.path.join(
-            self.content_archive, '%s-misc' % distro_name, "Contents.top")
-        parameters = {
-            'distrotitle': distro_title,
-        }
-        output_file = file(output_filename, 'w')
-        text = file(get_template("Contents.top")).read() % parameters
-        output_file.write(text)
-        output_file.close()
-
     def runAptFTPArchive(self, distro_name):
         """Run apt-ftparchive to produce the Contents files.
 
@@ -248,7 +218,7 @@ class GenerateContentsFiles(LaunchpadCronScript):
                 "apt-contents.conf"),
             ])
 
-    def generateContentsFiles(self, override_root, distro_name, distro_title):
+    def generateContentsFiles(self, override_root, distro_name):
         """Generate Contents files.
 
         This method may take a long time to run.
@@ -258,19 +228,17 @@ class GenerateContentsFiles(LaunchpadCronScript):
             evaluated without accessing the database.
         :param distro_name: Copy of `self.distribution.name` that can be
             evaluated without accessing the database.
-        :param distro_title: Copy of `self.distribution.title` that can be
-            evaluated without accessing the database.
         """
         self.logger.debug(
             "Running apt in private tree to generate new contents.")
         self.copyOverrides(override_root)
-        self.writeContentsTop(distro_name, distro_title)
         self.runAptFTPArchive(distro_name)
 
     def updateContentsFile(self, suite, arch):
         """Update Contents file, if it has changed."""
         contents_dir = os.path.join(
             self.content_archive, self.distribution.name, 'dists', suite)
+        staging_dir = os.path.join(self.config.stagingroot, suite)
         contents_filename = "Contents-%s" % arch
         last_contents = os.path.join(contents_dir, ".%s" % contents_filename)
         current_contents = os.path.join(contents_dir, contents_filename)
@@ -279,16 +247,17 @@ class GenerateContentsFiles(LaunchpadCronScript):
         # re-fetch them unnecessarily.
         if differ_in_content(current_contents, last_contents):
             self.logger.debug(
-                "Installing new Contents file for %s/%s.", suite, arch)
+                "Staging new Contents file for %s/%s.", suite, arch)
 
             new_contents = os.path.join(
                 contents_dir, "%s.gz" % contents_filename)
             contents_dest = os.path.join(
-                self.config.distsroot, suite, "%s.gz" % contents_filename)
+                staging_dir, "%s.gz" % contents_filename)
 
-            move_file(current_contents, last_contents)
-            move_file(new_contents, contents_dest)
-            os.chmod(contents_dest, 0664)
+            ensure_directory_exists(os.path.dirname(contents_dest))
+            os.rename(current_contents, last_contents)
+            os.rename(new_contents, contents_dest)
+            os.chmod(contents_dest, 0o664)
         else:
             self.logger.debug(
                 "Skipping unmodified Contents file for %s/%s.", suite, arch)
@@ -322,14 +291,12 @@ class GenerateContentsFiles(LaunchpadCronScript):
 
         overrideroot = self.config.overrideroot
         distro_name = self.distribution.name
-        distro_title = self.distribution.title
 
         # This takes a while.  Ensure that we do it without keeping a
         # database transaction open.
         self.txn.commit()
         with DatabaseBlockedPolicy():
-            self.generateContentsFiles(
-                overrideroot, distro_name, distro_title)
+            self.generateContentsFiles(overrideroot, distro_name)
 
         self.updateContentsFiles(suites)
 

@@ -37,8 +37,6 @@ class TestMacroNontraversability(TestCaseWithFactory):
         '+bugtask-macros-tableview',
         'bugtask-macros-cve',
         '+bmp-macros',
-        'branch-form-macros',
-        '+bmq-macros',
         '+announcement-macros',
         '+person-macros',
         '+milestone-macros',
@@ -64,5 +62,5 @@ class TestMacroNontraversability(TestCaseWithFactory):
 
     def test_macro_names_not_traversable(self):
         for name in self.macro_names:
-            self.assertTrue(self.is_not_found('http://launchpad.dev/' + name),
+            self.assertTrue(self.is_not_found('http://launchpad.test/' + name),
                 'macro name %r should not be URL accessable' % name)

@@ -1,7 +1,5 @@
-# Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
-
-# pylint: disable-msg=W0702
 
 """Code to talk to the database about what the worker script is doing."""
 
@@ -136,7 +134,7 @@ class CodeImportWorkerMonitor:
         self.codeimport_endpoint = codeimport_endpoint
         self._call_finish_job = True
         self._log_file = tempfile.TemporaryFile()
-        self._branch_url = None
+        self._target_url = None
         self._log_file_name = 'no-name-set.txt'
         self._access_policy = access_policy
 
@@ -144,8 +142,8 @@ class CodeImportWorkerMonitor:
         config = errorlog.globalErrorUtility._oops_config
         context = {
             'twisted_failure': failure,
-            'request': errorlog.ScriptRequest(
-                [('code_import_job_id', self._job_id)], self._branch_url),
+            'http_request': errorlog.ScriptRequest(
+                [('code_import_job_id', self._job_id)], self._target_url),
             }
         report = config.create(context)
 
@@ -171,15 +169,22 @@ class CodeImportWorkerMonitor:
     def getWorkerArguments(self):
         """Get arguments for the worker for the import we are working on.
 
-        This also sets the _branch_url and _log_file_name attributes for use
+        This also sets the _target_url and _log_file_name attributes for use
         in the _logOopsFromFailure and finishJob methods respectively.
         """
         deferred = self.codeimport_endpoint.callRemote(
             'getImportDataForJobID', self._job_id)
 
         def _processResult(result):
-            code_import_arguments, branch_url, log_file_name = result
-            self._branch_url = branch_url
+            if isinstance(result, dict):
+                code_import_arguments = result['arguments']
+                target_url = result['target_url']
+                log_file_name = result['log_file_name']
+            else:
+                # XXX cjwatson 2018-03-15: Remove once the scheduler always
+                # sends a dict.
+                code_import_arguments, target_url, log_file_name = result
+            self._target_url = target_url
             self._log_file_name = log_file_name
             self._logger.info(
                 'Found source details: %s', code_import_arguments)
@@ -297,7 +302,8 @@ class CodeImportWorkerMonitor:
         if status == CodeImportResultStatus.FAILURE:
             self._log_file.write("Import failed:\n")
             reason.printTraceback(self._log_file)
-            self._logOopsFromFailure(reason)
+            self._logger.info(
+                "Import failed: %s: %s" % (reason.type, reason.value))
         else:
             self._logger.info('Import succeeded.')
         return self.finishJob(status)

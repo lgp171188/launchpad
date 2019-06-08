@@ -1,4 +1,4 @@
-# Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -19,12 +19,13 @@ import mimetypes
 from lazr.restful.interface import copy_field
 from lazr.restful.utils import smartquote
 from z3c.ptcompat import ViewPageTemplateFile
-from zope.app.form.browser import (
+from zope.event import notify
+from zope.formlib.form import FormFields
+from zope.formlib.widget import CustomWidgetFactory
+from zope.formlib.widgets import (
     TextAreaWidget,
     TextWidget,
     )
-from zope.event import notify
-from zope.formlib.form import FormFields
 from zope.lifecycleevent import ObjectCreatedEvent
 from zope.schema import Bool
 from zope.schema.vocabulary import (
@@ -35,7 +36,6 @@ from zope.schema.vocabulary import (
 from lp import _
 from lp.app.browser.launchpadform import (
     action,
-    custom_widget,
     LaunchpadEditFormView,
     LaunchpadFormView,
     )
@@ -48,6 +48,7 @@ from lp.registry.browser import (
 from lp.registry.interfaces.productrelease import (
     IProductRelease,
     IProductReleaseFileAddForm,
+    UpstreamFileType,
     )
 from lp.services.webapp import (
     canonical_url,
@@ -106,9 +107,11 @@ class ProductReleaseAddViewBase(LaunchpadFormView):
     """
     schema = IProductRelease
 
-    custom_widget('datereleased', DateTimeWidget)
-    custom_widget('release_notes', TextAreaWidget, height=7, width=62)
-    custom_widget('changelog', TextAreaWidget, height=7, width=62)
+    custom_widget_datereleased = DateTimeWidget
+    custom_widget_release_notes = CustomWidgetFactory(
+        TextAreaWidget, height=7, width=62)
+    custom_widget_changelog = CustomWidgetFactory(
+        TextAreaWidget, height=7, width=62)
 
     def _prependKeepMilestoneActiveField(self):
         keep_milestone_active_checkbox = FormFields(
@@ -226,9 +229,11 @@ class ProductReleaseEditView(LaunchpadEditFormView):
         "changelog",
         ]
 
-    custom_widget('datereleased', DateTimeWidget)
-    custom_widget('release_notes', TextAreaWidget, height=7, width=62)
-    custom_widget('changelog', TextAreaWidget, height=7, width=62)
+    custom_widget_datereleased = DateTimeWidget
+    custom_widget_release_notes = CustomWidgetFactory(
+        TextAreaWidget, height=7, width=62)
+    custom_widget_changelog = CustomWidgetFactory(
+        TextAreaWidget, height=7, width=62)
 
     @property
     def label(self):
@@ -264,7 +269,8 @@ class ProductReleaseAddDownloadFileView(LaunchpadFormView):
     """A view for adding a file to an `IProductRelease`."""
     schema = IProductReleaseFileAddForm
 
-    custom_widget('description', TextWidget, displayWidth=60)
+    custom_widget_description = CustomWidgetFactory(
+        TextWidget, displayWidth=60)
 
     @property
     def label(self):
@@ -272,6 +278,19 @@ class ProductReleaseAddDownloadFileView(LaunchpadFormView):
         return smartquote('Add a download file to %s' % self.context.title)
 
     page_title = label
+
+    def validate(self, data):
+        """See `LaunchpadFormView`."""
+        if not self.context.can_have_release_files:
+            self.addError('Only public projects can have download files.')
+        file_name = None
+        filecontent = self.request.form.get(self.widgets['filecontent'].name)
+        if filecontent:
+            file_name = filecontent.filename
+        if file_name and self.context.hasReleaseFile(file_name):
+            self.setFieldError(
+                'filecontent',
+                u"The file '%s' is already uploaded." % file_name)
 
     @action('Upload', name='add')
     def add_action(self, action, data):
@@ -290,7 +309,13 @@ class ProductReleaseAddDownloadFileView(LaunchpadFormView):
                 file_upload.filename)
 
             if content_type is None:
-                content_type = "text/plain"
+                if filetype in (
+                    UpstreamFileType.CODETARBALL,
+                    UpstreamFileType.INSTALLER
+                ):
+                    content_type = "application/octet-stream"
+                else:
+                    content_type = "text/plain"
 
             # signature_upload is u'' if no file is specified in
             # the browser.

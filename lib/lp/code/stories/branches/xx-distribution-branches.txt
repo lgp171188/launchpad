@@ -17,18 +17,18 @@ hence a distribution.
     ...     name='new')
     >>> logout()
 
-    >>> browser.open('http://launchpad.dev/mint')
+    >>> browser.open('http://launchpad.test/mint')
 
 The code tab is now enabled at the distribution level.
 
     >>> print_location_apps(browser.contents)
     * Overview (selected) ...
-    * Code - http://code.launchpad.dev/mint
+    * Code - http://code.launchpad.test/mint
     ...
 
 Going to this page shows us a listing ordered by most recently changed first.
 
-    >>> browser.open('http://code.launchpad.dev/mint')
+    >>> browser.open('http://code.launchpad.test/mint')
     >>> contents = browser.contents
     >>> print_tag_with_id(contents, 'branchtable')
     Name   Status   Last Modified  Last Commit
@@ -36,5 +36,5 @@ Going to this page shows us a listing ordered by most recently changed first.
     lp://dev/~eric/mint/old/twisted/old      Development ...
     ...
     >>> ordering_control = browser.getControl(name='field.sort_by')
-    >>> print ordering_control.displayValue
+    >>> print(ordering_control.displayValue)
     ['most recently changed first']

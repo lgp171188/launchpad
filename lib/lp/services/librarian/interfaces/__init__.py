@@ -1,7 +1,5 @@
-# Copyright 2009 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2016 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
-
-# pylint: disable-msg=E0211,E0213
 
 """Librarian interfaces."""
 
@@ -55,8 +53,6 @@ class ILibraryFileAlias(Interface):
         title=_('Filename'), required=True, readonly=True)
     mimetype = TextLine(
         title=_('MIME type'), required=True, readonly=True)
-    last_accessed = Datetime(
-        title=_('Date last accessed'), required=False, readonly=True)
     expires = Datetime(
         title=_('Expiry time'), required=False, readonly=True,
         description=_('''
@@ -151,6 +147,7 @@ class ILibraryFileContent(Interface):
     datecreated = Datetime(
         title=_('Date created'), required=True, readonly=True)
     filesize = Int(title=_('File size'), required=True, readonly=True)
+    sha256 = TextLine(title=_('SHA-256 hash'), required=True, readonly=True)
     sha1 = TextLine(title=_('SHA-1 hash'), required=True, readonly=True)
     md5 = TextLine(title=_('MD5 hash'), required=True, readonly=True)
 
@@ -158,7 +155,7 @@ class ILibraryFileContent(Interface):
 class ILibraryFileAliasSet(Interface):
 
     def create(name, size, file, contentType, expires=None, debugID=None,
-               restricted=False):
+               restricted=False, allow_zero_length=False):
         """Create a file in the Librarian, returning the new alias.
 
         An expiry time of None means the file will never expire until it
@@ -174,9 +171,9 @@ class ILibraryFileAliasSet(Interface):
     def __getitem__(key):
         """Lookup an ILibraryFileAlias by id."""
 
-    def findBySHA1(sha1):
-        """Return all LibraryFileAlias whose content's sha1 match the given
-        sha1.
+    def findBySHA256(sha256):
+        """Return all LibraryFileAlias whose content's sha256 match the
+        given sha256.
         """
 
 

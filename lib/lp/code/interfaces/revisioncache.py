@@ -1,8 +1,6 @@
 # Copyright 2009 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-# pylint: disable-msg=E0211, E0213
-
 """A collection of revisions.
 
 See `IRevisionCollection` for more details.
@@ -58,8 +56,8 @@ class IRevisionCollection(Interface):
     def inProduct(product):
         """Restrict to revisions in branches in 'product'."""
 
-    def inProject(project):
-        """Restrict to revisions in branches in 'project'."""
+    def inProjectGroup(projectgroup):
+        """Restrict to revisions in branches in 'projectgroup'."""
 
     def inSourcePackage(package):
         """Restrict to revisions in branches in 'package'.

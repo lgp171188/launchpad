@@ -18,10 +18,10 @@ Our poll is not yet open, so new options can be added to it.
     >>> team_admin_browser = setupBrowser(
     ...     auth='Basic jeff.waugh@ubuntulinux.com:test')
     >>> team_admin_browser.open(
-    ...     'http://launchpad.dev/~ubuntu-team/+poll/dpl-2080')
+    ...     'http://launchpad.test/~ubuntu-team/+poll/dpl-2080')
     >>> team_admin_browser.getLink('Add new option').click()
     >>> team_admin_browser.url
-    'http://launchpad.dev/~ubuntu-team/+poll/dpl-2080/+newoption'
+    'http://launchpad.test/~ubuntu-team/+poll/dpl-2080/+newoption'
 
     >>> bill_name = (
     ...     'bill-amazingly-huge-middle-name-almost-impossible-to-read-graham')
@@ -32,7 +32,7 @@ Our poll is not yet open, so new options can be added to it.
 After adding an options we're taken back to the poll's home page.
 
     >>> team_admin_browser.url
-    'http://launchpad.dev/~ubuntu-team/+poll/dpl-2080'
+    'http://launchpad.test/~ubuntu-team/+poll/dpl-2080'
 
 And here we see the option listed as one of the active options for this
 poll.
@@ -47,7 +47,7 @@ message because the title is required.
 
     >>> team_admin_browser.getLink('Add new option').click()
     >>> team_admin_browser.url
-    'http://launchpad.dev/~ubuntu-team/+poll/dpl-2080/+newoption'
+    'http://launchpad.test/~ubuntu-team/+poll/dpl-2080/+newoption'
 
     >>> will_name = (
     ...     'will-amazingly-huge-middle-name-almost-impossible-to-read-graham')
@@ -55,7 +55,7 @@ message because the title is required.
     >>> team_admin_browser.getControl('Title').value = ''
     >>> team_admin_browser.getControl('Create').click()
 
-    >>> print "\n".join(get_feedback_messages(team_admin_browser.contents))
+    >>> print_feedback_messages(team_admin_browser.contents)
     There is 1 error.
     Required input is missing.
 
@@ -66,7 +66,7 @@ should get a nice error message
     >>> team_admin_browser.getControl('Title').value = 'Bill Again'
     >>> team_admin_browser.getControl('Create').click()
 
-    >>> print "\n".join(get_feedback_messages(team_admin_browser.contents))
+    >>> print_feedback_messages(team_admin_browser.contents)
     There is 1 error.
     ...is already in use by another option in this poll.
 
@@ -74,12 +74,12 @@ It's not possible to add/edit a poll option after a poll is open or closed.
 That's only possible when the poll is not yet open.
 
     >>> team_admin_browser.open(
-    ...     'http://launchpad.dev/~ubuntu-team/+poll/director-2004/+newoption')
+    ...     'http://launchpad.test/~ubuntu-team/+poll/director-2004/+newoption')
 
-    >>> "\n".join(get_feedback_messages(team_admin_browser.contents))
-    u'You can&#8217;t add new options because the poll is already closed.'
+    >>> print_feedback_messages(team_admin_browser.contents)
+    You can&#8217;t add new options because the poll is already closed.
 
     >>> team_admin_browser.open(
-    ...     'http://launchpad.dev/~ubuntu-team/+poll/never-closes/+newoption')
-    >>> "\n".join(get_feedback_messages(team_admin_browser.contents))
-    u'You can&#8217;t add new options because the poll is already open.'
+    ...     'http://launchpad.test/~ubuntu-team/+poll/never-closes/+newoption')
+    >>> print_feedback_messages(team_admin_browser.contents)
+    You can&#8217;t add new options because the poll is already open.

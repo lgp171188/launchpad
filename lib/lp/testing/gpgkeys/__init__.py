@@ -1,4 +1,4 @@
-# Copyright 2009 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """OpenPGP keys used for testing.
@@ -23,14 +23,15 @@ from cStringIO import StringIO
 import os
 
 import gpgme
+import scandir
 from zope.component import getUtility
 
-from lp.registry.interfaces.gpg import (
-    GPGKeyAlgorithm,
-    IGPGKeySet,
-    )
+from lp.registry.interfaces.gpg import IGPGKeySet
 from lp.registry.interfaces.person import IPersonSet
-from lp.services.gpg.interfaces import IGPGHandler
+from lp.services.gpg.interfaces import (
+    get_gpgme_context,
+    IGPGHandler,
+    )
 
 
 gpgkeysdir = os.path.join(os.path.dirname(__file__), 'data')
@@ -64,12 +65,13 @@ def import_public_key(email_addr):
             return
 
     # Insert the key into the database.
-    getUtility(IGPGKeySet).new(
-        ownerID=personset.getByEmail(email_addr).id,
+    keyset = getUtility(IGPGKeySet)
+    key = keyset.new(
+        ownerID=person.id,
         keyid=key.keyid,
         fingerprint=key.fingerprint,
         keysize=key.keysize,
-        algorithm=GPGKeyAlgorithm.items[key.algorithm],
+        algorithm=key.algorithm,
         active=(not key.revoked))
 
 
@@ -108,9 +110,9 @@ def test_pubkey_from_email(email_addr):
 
 def test_keyrings():
     """Iterate over the filenames for test keyrings."""
-    for name in os.listdir(gpgkeysdir):
-        if name.endswith('.gpg'):
-            yield os.path.join(gpgkeysdir, name)
+    for entry in scandir.scandir(gpgkeysdir):
+        if entry.name.endswith('.gpg'):
+            yield entry.path
 
 
 def decrypt_content(content, password):
@@ -128,9 +130,7 @@ def decrypt_content(content, password):
     if isinstance(content, unicode):
         raise TypeError('Content cannot be Unicode.')
 
-    # setup context
-    ctx = gpgme.Context()
-    ctx.armor = True
+    ctx = get_gpgme_context()
 
     # setup containers
     cipher = StringIO(content)
@@ -141,7 +141,7 @@ def decrypt_content(content, password):
 
     ctx.passphrase_cb = passphrase_cb
 
-    # Do the deecryption.
+    # Do the decryption.
     try:
         ctx.decrypt(cipher, plain)
     except gpgme.GpgmeError:

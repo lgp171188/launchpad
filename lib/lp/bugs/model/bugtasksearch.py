@@ -1,4 +1,4 @@
-# Copyright 2009-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2017 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -12,7 +12,6 @@ __all__ = [
     ]
 
 from lazr.enum import BaseItem
-from sqlobject.sqlbuilder import SQLConstant
 from storm.expr import (
     Alias,
     And,
@@ -38,9 +37,9 @@ from zope.security.proxy import (
     removeSecurityProxy,
     )
 
+from lp.app.enums import PUBLIC_INFORMATION_TYPES
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
-from lp.blueprints.model.specification import Specification
-from lp.blueprints.model.specificationbug import SpecificationBug
+from lp.bugs.errors import InvalidSearchParameters
 from lp.bugs.interfaces.bugattachment import BugAttachmentType
 from lp.bugs.interfaces.bugnomination import BugNominationStatus
 from lp.bugs.interfaces.bugtask import (
@@ -60,14 +59,12 @@ from lp.bugs.model.bug import (
     )
 from lp.bugs.model.bugattachment import BugAttachment
 from lp.bugs.model.bugbranch import BugBranch
-from lp.bugs.model.bugcve import BugCve
 from lp.bugs.model.bugmessage import BugMessage
 from lp.bugs.model.bugnomination import BugNomination
 from lp.bugs.model.bugsubscription import BugSubscription
 from lp.bugs.model.bugtask import BugTask
 from lp.bugs.model.bugtaskflat import BugTaskFlat
 from lp.bugs.model.structuralsubscription import StructuralSubscription
-from lp.registry.enums import PUBLIC_INFORMATION_TYPES
 from lp.registry.interfaces.distribution import IDistribution
 from lp.registry.interfaces.distroseries import IDistroSeries
 from lp.registry.interfaces.milestone import IProjectGroupMilestone
@@ -79,18 +76,21 @@ from lp.registry.model.distribution import Distribution
 from lp.registry.model.milestone import Milestone
 from lp.registry.model.milestonetag import MilestoneTag
 from lp.registry.model.person import Person
-from lp.registry.model.product import Product
+from lp.registry.model.product import (
+    Product,
+    ProductSet,
+    )
 from lp.registry.model.teammembership import TeamParticipation
 from lp.services.database.bulk import load
 from lp.services.database.decoratedresultset import DecoratedResultSet
-from lp.services.database.lpstorm import IStore
+from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import sqlvalues
 from lp.services.database.stormexpr import (
-    Array,
     ArrayAgg,
     ArrayIntersects,
+    fti_search,
     get_where_for_reference,
-    NullCount,
+    rank_by_fti,
     Unnest,
     )
 from lp.services.propertycache import get_property_cache
@@ -101,6 +101,7 @@ from lp.services.searchbuilder import (
     not_equals,
     NULL,
     )
+from lp.services.xref.model import XRef
 from lp.soyuz.enums import PackagePublishingStatus
 from lp.soyuz.model.publishing import SourcePackagePublishingHistory
 
@@ -110,6 +111,7 @@ Reporter = ClassAlias(Person)
 bug_join = (Bug, Join(Bug, Bug.id == BugTaskFlat.bug_id))
 bugtask_join = (
     BugTask, Join(BugTask, BugTask.id == BugTaskFlat.bugtask_id))
+# Keep in sync with lp.bugs.browser.buglisting.SORT_KEYS.
 orderby_expression = {
     "task": (BugTaskFlat.bugtask_id, []),
     "id": (BugTaskFlat.bug_id, []),
@@ -160,27 +162,6 @@ orderby_expression = {
                         BugTag.id, tables=[BugTag],
                         where=(BugTag.bugID == BugTaskFlat.bug_id),
                         order_by=BugTag.tag, limit=1))),
-            ]
-        ),
-    "specification": (
-        Specification.name,
-        [
-            (Specification,
-                LeftJoin(
-                    Specification,
-                    # We want at most one specification per bug.
-                    # Select the specification that comes first
-                    # in alphabetic order.
-                    Specification.id == Select(
-                        Specification.id,
-                        tables=[
-                            SpecificationBug,
-                            Join(
-                                Specification,
-                                Specification.id ==
-                                    SpecificationBug.specificationID)],
-                        where=(SpecificationBug.bugID == BugTaskFlat.bug_id),
-                        order_by=Specification.name, limit=1))),
             ]
         ),
     }
@@ -243,29 +224,20 @@ def search_bugs(pre_iter_hook, alternatives, just_bug_ids=False):
                 orig_pre_iter_hook(rows)
 
     if len(alternatives) == 1:
-        [query, clauseTables, bugtask_decorator, join_tables,
-         has_duplicate_results, with_clause] = _build_query(alternatives[0])
+        [query, clauseTables, bugtask_decorator, join_tables, with_clause] = (
+            _build_query(alternatives[0]))
         if with_clause:
             store = store.with_(with_clause)
         decorators.append(bugtask_decorator)
-
-        if has_duplicate_results:
-            origin = _build_origin(join_tables, clauseTables, start)
-            outer_origin = _build_origin(orderby_joins, [], start)
-            subquery = Select(
-                BugTaskFlat.bugtask_id, where=query, tables=origin)
-            result = store.using(*outer_origin).find(
-                want, In(BugTaskFlat.bugtask_id, subquery))
-        else:
-            origin = _build_origin(
-                join_tables + orderby_joins, clauseTables, start)
-            result = store.using(*origin).find(want, query)
+        origin = _build_origin(
+            join_tables + orderby_joins, clauseTables, start)
+        result = store.using(*origin).find(want, query)
     else:
         results = []
 
         for params in alternatives:
-            [query, clauseTables, decorator, join_tables,
-             has_duplicate_results, with_clause] = _build_query(params)
+            [query, clauseTables, decorator, join_tables, with_clause] = (
+                _build_query(params))
             origin = _build_origin(join_tables, clauseTables, start)
             localstore = store
             if with_clause:
@@ -332,7 +304,6 @@ def _build_query(params):
     join_tables = []
 
     decorators = []
-    has_duplicate_results = False
     with_clauses = []
 
     # These arguments can be processed in a loop without any other
@@ -383,7 +354,7 @@ def _build_query(params):
                 'Excluding conjoined tasks is not currently supported '
                 'for milestone tags')
         if not params.milestone:
-            raise ValueError(
+            raise InvalidSearchParameters(
                 "BugTaskSearchParam.exclude_conjoined cannot be True if "
                 "BugTaskSearchParam.milestone is not set")
 
@@ -395,9 +366,10 @@ def _build_query(params):
                         Milestone.id,
                         tables=[Milestone, Product],
                         where=And(
-                            Product.project == params.milestone.target,
+                            Product.projectgroup == params.milestone.target,
                             Milestone.productID == Product.id,
-                            Milestone.name == params.milestone.name))))
+                            Milestone.name == params.milestone.name,
+                            ProductSet.getProductPrivacyFilter(params.user)))))
         else:
             extra_clauses.append(
                 search_value_to_storm_where_condition(
@@ -416,7 +388,7 @@ def _build_query(params):
                     Milestone.id,
                     tables=[Milestone, Product, MilestoneTag],
                     where=And(
-                        Product.project == params.milestone_tag.target,
+                        Product.projectgroup == params.milestone_tag.target,
                         Milestone.productID == Product.id,
                         Milestone.id == MilestoneTag.milestone_id,
                         MilestoneTag.tag.is_in(params.milestone_tag.tags)),
@@ -433,12 +405,12 @@ def _build_query(params):
         #     join_tables += tables
         #     extra_clauses += clauses
 
-    if params.project:
+    if params.projectgroup:
         clauseTables.append(Product)
         extra_clauses.append(And(
             BugTaskFlat.product_id == Product.id,
             search_value_to_storm_where_condition(
-                Product.project, params.project)))
+                Product.projectgroup, params.projectgroup)))
 
     if params.omit_dupes:
         extra_clauses.append(BugTaskFlat.duplicateof == None)
@@ -449,9 +421,13 @@ def _build_query(params):
             BugTaskFlat.productseries == None))
 
     if params.has_cve:
-        extra_clauses.append(
-            BugTaskFlat.bug_id.is_in(
-                Select(BugCve.bugID, tables=[BugCve], distinct=True)))
+        where = [
+            XRef.from_type == u'bug',
+            XRef.from_id_int == BugTaskFlat.bug_id,
+            XRef.to_type == u'cve',
+            ]
+        extra_clauses.append(Exists(Select(
+            1, tables=[XRef], where=And(*where))))
 
     if params.attachmenttype is not None:
         if params.attachmenttype == BugAttachmentType.PATCH:
@@ -477,8 +453,6 @@ def _build_query(params):
             BugSubscription.person == params.subscriber))
 
     if params.structural_subscriber is not None:
-        # See bug 787294 for the story that led to the query elements
-        # below.  Please change with care.
         with_clauses.append(
             '''ss as (SELECT * from StructuralSubscription
             WHERE StructuralSubscription.subscriber = %s)'''
@@ -487,79 +461,66 @@ def _build_query(params):
         class StructuralSubscriptionCTE(StructuralSubscription):
             __storm_table__ = 'ss'
 
-        join_tables.append(
-            (Product, LeftJoin(Product, And(
-                            BugTaskFlat.product_id == Product.id,
-                            Product.active))))
-        ProductSub = ClassAlias(StructuralSubscriptionCTE)
-        join_tables.append((
-            ProductSub,
-            LeftJoin(
-                ProductSub,
-                BugTaskFlat.product_id == ProductSub.productID)))
-        ProductSeriesSub = ClassAlias(StructuralSubscriptionCTE)
-        join_tables.append((
-            ProductSeriesSub,
-            LeftJoin(
-                ProductSeriesSub,
-                BugTaskFlat.productseries_id ==
-                    ProductSeriesSub.productseriesID)))
-        ProjectSub = ClassAlias(StructuralSubscriptionCTE)
-        join_tables.append((
-            ProjectSub,
-            LeftJoin(
-                ProjectSub,
-                Product.projectID == ProjectSub.projectID)))
-        DistributionSub = ClassAlias(StructuralSubscriptionCTE)
-        join_tables.append((
-            DistributionSub,
-            LeftJoin(
-                DistributionSub,
-                And(BugTaskFlat.distribution_id ==
-                        DistributionSub.distributionID,
-                    Or(
-                        DistributionSub.sourcepackagenameID ==
-                            BugTaskFlat.sourcepackagename_id,
-                        DistributionSub.sourcepackagenameID == None)))))
-        if params.distroseries is not None:
-            parent_distro_id = params.distroseries.distributionID
-        else:
-            parent_distro_id = 0
-        DistroSeriesSub = ClassAlias(StructuralSubscriptionCTE)
-        join_tables.append((
-            DistroSeriesSub,
-            LeftJoin(
-                DistroSeriesSub,
-                Or(BugTaskFlat.distroseries_id ==
-                        DistroSeriesSub.distroseriesID,
-                    # There is a mismatch between BugTask and
-                    # StructuralSubscription. SS does not support
-                    # distroseries. This clause works because other
-                    # joins ensure the match bugtask is the right
-                    # series.
-                    And(parent_distro_id == DistroSeriesSub.distributionID,
-                        BugTaskFlat.sourcepackagename_id ==
-                            DistroSeriesSub.sourcepackagenameID)))))
-        MilestoneSub = ClassAlias(StructuralSubscriptionCTE)
-        join_tables.append((
-            MilestoneSub,
-            LeftJoin(
-                MilestoneSub,
-                BugTaskFlat.milestone_id == MilestoneSub.milestoneID)))
-        extra_clauses.append(
-            NullCount(Array(
-                ProductSub.id, ProductSeriesSub.id, ProjectSub.id,
-                DistributionSub.id, DistroSeriesSub.id, MilestoneSub.id)) < 6)
-        has_duplicate_results = True
+        SS = ClassAlias(StructuralSubscriptionCTE)
+        # Milestones apply to all structural subscription searches.
+        ss_clauses = [
+            In(BugTaskFlat.milestone_id, Select(SS.milestoneID, tables=[SS]))]
+        if (params.projectgroup is None
+            and params.product is None and params.productseries is None):
+            # This search is *not* contrained to project related bugs, so
+            # include distro, distroseries, DSP and SP subscriptions.
+            ss_clauses.append(In(
+                BugTaskFlat.distribution_id,
+                Select(SS.distributionID, tables=[SS],
+                       where=(SS.sourcepackagenameID == None))))
+            ss_clauses.append(In(
+                Row(BugTaskFlat.distribution_id,
+                    BugTaskFlat.sourcepackagename_id),
+                Select((SS.distributionID, SS.sourcepackagenameID),
+                       tables=[SS])))
+            ss_clauses.append(In(
+                BugTaskFlat.distroseries_id,
+                Select(SS.distroseriesID, tables=[SS],
+                       where=(SS.sourcepackagenameID == None))))
+            # Users expect to find their DSP subscriptions when searching
+            # distroseries. We only include these when we need to.
+            if params.distroseries is not None:
+                distroseries_id = params.distroseries.id
+                parent_distro_id = params.distroseries.distributionID
+            else:
+                distroseries_id = 0
+                parent_distro_id = 0
+            ss_clauses.append(In(
+                Row(BugTaskFlat.distroseries_id,
+                    BugTaskFlat.sourcepackagename_id),
+                Select((distroseries_id, SS.sourcepackagenameID), tables=[SS],
+                       where=And(
+                           SS.distributionID == parent_distro_id,
+                           SS.sourcepackagenameID != None))))
+        if params.distribution is None and params.distroseries is None:
+            # This search is *not* contrained to distro related bugs so
+            # include products, productseries, and project group subscriptions.
+            projectgroup_match = True
+            if params.projectgroup is not None:
+                projectgroup_match = (
+                    Product.projectgroup == params.projectgroup)
+            ss_clauses.append(In(
+                BugTaskFlat.product_id,
+                Select(SS.productID, tables=[SS])))
+            ss_clauses.append(In(
+                BugTaskFlat.productseries_id,
+                Select(SS.productseriesID, tables=[SS])))
+            ss_clauses.append(In(
+                BugTaskFlat.product_id,
+                Select(Product.id, tables=[SS, Product],
+                       where=And(
+                           SS.projectgroupID == Product.projectgroupID,
+                           projectgroup_match,
+                           Product.active))))
+        extra_clauses.append(Or(*ss_clauses))
 
-    # Remove bugtasks from deactivated products, if necessary.
-    # We don't have to do this if
-    # 1) We're searching on bugtasks for a specific product
-    # 2) We're searching on bugtasks for a specific productseries
-    # 3) We're searching on bugtasks for a distribution
-    # 4) We're searching for bugtasks for a distroseries
-    # because in those instances we don't have arbitrary products which
-    # may be deactivated showing up in our search.
+    # Remove bugtasks from deactivated products. This is needed for searches
+    # where people or project groups are the context.
     if (params.product is None and
         params.distribution is None and
         params.productseries is None and
@@ -578,7 +539,7 @@ def _build_query(params):
         elif params.distroseries:
             distroseries = params.distroseries
         if distroseries is None:
-            raise ValueError(
+            raise InvalidSearchParameters(
                 "Search by component requires a context with a "
                 "distribution or distroseries.")
 
@@ -617,15 +578,10 @@ def _build_query(params):
         if tag_clause is not None:
             extra_clauses.append(tag_clause)
 
-    # XXX Tom Berger 2008-02-14:
-    # We use StructuralSubscription to determine
-    # the bug supervisor relation for distribution source
-    # packages, following a conversion to use this object.
-    # We know that the behaviour remains the same, but we
-    # should change the terminology, or re-instate
-    # PackageBugSupervisor, since the use of this relation here
-    # is not for subscription to notifications.
-    # See bug #191809
+    # XXX sinzui 2012-09-26:
+    # This uses StructuralSubscription to assume a bug supervisor relationship
+    # for distribution source packages to preserve historical behaviour.
+    # This also duplicates params.structural_subscriber code and behaviour.
     if params.bug_supervisor:
         extra_clauses.append(Or(
             In(
@@ -660,8 +616,7 @@ def _build_query(params):
                 BugMessage.bugID, tables=[BugMessage],
                 where=And(
                     BugMessage.index > 0,
-                    BugMessage.owner == params.bug_commenter),
-                distinct=True)))
+                    BugMessage.owner == params.bug_commenter))))
 
     if params.affects_me:
         params.affected_user = params.user
@@ -699,10 +654,11 @@ def _build_query(params):
             extra_clauses.append(
                 Milestone.dateexpected <= dateexpected_before)
 
-    clause, decorator = _get_bug_privacy_filter_with_decorator(params.user)
-    if clause:
-        extra_clauses.append(clause)
-        decorators.append(decorator)
+    if not params.ignore_privacy:
+        clause, decorator = _get_bug_privacy_filter_with_decorator(params.user)
+        if clause:
+            extra_clauses.append(clause)
+            decorators.append(decorator)
 
     hw_clause = _build_hardware_related_clause(params)
     if hw_clause is not None:
@@ -716,15 +672,39 @@ def _build_query(params):
                     BugBranch.branchID, branches))
         return Exists(Select(1, tables=[BugBranch], where=And(*where)))
 
+    def make_merge_proposal_clause(merge_proposals=None):
+        where = [
+            XRef.from_type == u'bug',
+            XRef.from_id_int == BugTaskFlat.bug_id,
+            XRef.to_type == u'merge_proposal',
+            ]
+        if merge_proposals is not None:
+            where.append(
+                search_value_to_storm_where_condition(
+                    XRef.to_id_int, merge_proposals))
+        return Exists(Select(1, tables=[XRef], where=And(*where)))
+
     if zope_isinstance(params.linked_branches, BaseItem):
+        # BUGS_WITH_BRANCHES/BUGS_WITHOUT_BRANCHES will find bugs with
+        # linked merge proposals too.
         if params.linked_branches == BugBranchSearch.BUGS_WITH_BRANCHES:
-            extra_clauses.append(make_branch_clause())
+            extra_clauses.append(
+                Or(make_branch_clause(), make_merge_proposal_clause()))
         elif (params.linked_branches ==
                 BugBranchSearch.BUGS_WITHOUT_BRANCHES):
             extra_clauses.append(Not(make_branch_clause()))
+            extra_clauses.append(Not(make_merge_proposal_clause()))
     elif zope_isinstance(params.linked_branches, (any, all, int)):
-        # A specific search term has been supplied.
+        # A specific search term has been supplied.  Note that this only
+        # works with branches, not merge proposals, as it takes integer
+        # branch IDs.
         extra_clauses.append(make_branch_clause(params.linked_branches))
+
+    if params.linked_merge_proposals is not None:
+        # This is normally only used internally by
+        # BranchMergeProposal.getRelatedBugTasks.
+        extra_clauses.append(
+            make_merge_proposal_clause(params.linked_merge_proposals))
 
     linked_blueprints_clause = _build_blueprint_related_clause(params)
     if linked_blueprints_clause is not None:
@@ -761,9 +741,7 @@ def _build_query(params):
         with_clause = SQL(', '.join(with_clauses))
     else:
         with_clause = None
-    return (
-        query, clauseTables, decorator, join_tables,
-        has_duplicate_results, with_clause)
+    return (query, clauseTables, decorator, join_tables, with_clause)
 
 
 def _process_order_by(params):
@@ -824,16 +802,21 @@ def _process_order_by(params):
             pass
 
     for orderby_col in orderby:
-        if isinstance(orderby_col, SQLConstant):
+        if isinstance(orderby_col, SQL):
             orderby_arg.append(orderby_col)
             continue
-        if orderby_col.startswith("-"):
-            col, sort_joins = orderby_expression[orderby_col[1:]]
-            extra_joins.extend(sort_joins)
+        desc_search = False
+        if orderby_col.startswith(u"-"):
+            orderby_col = orderby_col[1:]
+            desc_search = True
+        if orderby_col not in orderby_expression:
+            raise InvalidSearchParameters(
+                "Unrecognized order_by: %r" % (orderby_col,))
+        col, sort_joins = orderby_expression[orderby_col]
+        extra_joins.extend(sort_joins)
+        if desc_search:
             order_clause = Desc(col)
         else:
-            col, sort_joins = orderby_expression[orderby_col]
-            extra_joins.extend(sort_joins)
             order_clause = col
         if col in unambiguous_cols:
             ambiguous = False
@@ -867,34 +850,35 @@ def _build_search_text_clause(params, fast=False):
         assert params.searchtext is None, (
             'Cannot use searchtext at the same time as fast_searchtext.')
         searchtext = params.fast_searchtext
-        fti_expression = "?::tsquery"
+        ftq_for_fti = False
     else:
         assert params.fast_searchtext is None, (
             'Cannot use fast_searchtext at the same time as searchtext.')
         searchtext = params.searchtext
-        fti_expression = "ftq(?)"
+        ftq_for_fti = True
 
     if params.orderby is None:
         # Unordered search results aren't useful, so sort by relevance
         # instead.
-        params.orderby = [
-            SQL("-rank(BugTaskFlat.fti, %s)" % fti_expression,
-                params=(searchtext,))]
+        params.orderby = [rank_by_fti(BugTaskFlat, searchtext, ftq_for_fti)]
 
-    return SQL("BugTaskFlat.fti @@ %s" % fti_expression, params=(searchtext,))
+    return fti_search(BugTaskFlat, searchtext, ftq_for_fti)
 
 
 def _build_status_clause(col, status):
     """Return the SQL query fragment for search by status.
 
     Called from `_build_query` or recursively."""
+
     if zope_isinstance(status, any):
         values = list(status.query_values)
-        # Since INCOMPLETE isn't stored as a single value we need to
+        # Since INCOMPLETE isn't stored as a single value any more, we need to
         # expand it before generating the SQL.
-        if BugTaskStatus.INCOMPLETE in values:
-            values.remove(BugTaskStatus.INCOMPLETE)
-            values.extend(DB_INCOMPLETE_BUGTASK_STATUSES)
+        old = set([BugTaskStatus.INCOMPLETE, BugTaskStatusSearch.INCOMPLETE])
+        accepted_values = list(set(values) - old)
+        if len(accepted_values) < len(values):
+            accepted_values.extend(DB_INCOMPLETE_BUGTASK_STATUSES)
+            values = accepted_values
         return search_value_to_storm_where_condition(col, any(*values))
     elif zope_isinstance(status, not_equals):
         return Not(_build_status_clause(col, status.value))
@@ -902,11 +886,15 @@ def _build_status_clause(col, status):
         # INCOMPLETE is not stored in the DB, instead one of
         # DB_INCOMPLETE_BUGTASK_STATUSES is stored, so any request to
         # search for INCOMPLETE should instead search for those values.
-        if status == BugTaskStatus.INCOMPLETE:
+        # BugTaskStatus is used internally, BugTaskStatusSearch is used
+        # externally, such as API.
+        if (status == BugTaskStatus.INCOMPLETE
+            or status == BugTaskStatusSearch.INCOMPLETE):
             status = any(*DB_INCOMPLETE_BUGTASK_STATUSES)
         return search_value_to_storm_where_condition(col, status)
     else:
-        raise ValueError('Unrecognized status value: %r' % (status,))
+        raise InvalidSearchParameters(
+            'Unrecognized status value: %r' % (status,))
 
 
 def _build_exclude_conjoined_clause(milestone):
@@ -1045,7 +1033,7 @@ def _build_hardware_related_clause(params):
     clauses.append(_userCanAccessSubmissionStormClause(params.user))
 
     return BugTaskFlat.bug_id.is_in(
-        Select(Bug.id, tables=tables, where=And(*clauses), distinct=True))
+        Select(Bug.id, tables=tables, where=And(*clauses)))
 
 
 def _build_blueprint_related_clause(params):
@@ -1053,12 +1041,17 @@ def _build_blueprint_related_clause(params):
     linked_blueprints = params.linked_blueprints
 
     def make_clause(blueprints=None):
-        where = [SpecificationBug.bugID == BugTaskFlat.bug_id]
+        where = [
+            XRef.from_type == u'bug',
+            XRef.from_id_int == BugTaskFlat.bug_id,
+            XRef.to_type == u'specification',
+            ]
         if blueprints is not None:
             where.append(
                 search_value_to_storm_where_condition(
-                    SpecificationBug.specificationID, blueprints))
-        return Exists(Select(1, tables=[SpecificationBug], where=And(*where)))
+                    XRef.to_id_int, blueprints))
+        return Exists(Select(
+            1, tables=[XRef], where=And(*where)))
 
     if linked_blueprints is None:
         return None

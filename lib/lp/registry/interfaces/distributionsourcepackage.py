@@ -1,7 +1,5 @@
-# Copyright 2009-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2016 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
-
-# pylint: disable-msg=E0211,E0213
 
 """Source package in Distribution interfaces."""
 
@@ -13,46 +11,41 @@ __all__ = [
 
 from lazr.restful.declarations import (
     export_as_webservice_entry,
-    export_operation_as,
-    export_read_operation,
     exported,
-    operation_parameters,
-    operation_returns_collection_of,
-    rename_parameters_as,
     )
 from lazr.restful.fields import Reference
 from zope.interface import (
     Attribute,
     Interface,
     )
-from zope.schema import (
-    Int,
-    TextLine,
-    )
+from zope.schema import TextLine
 
 from lp import _
 from lp.answers.interfaces.questiontarget import IQuestionTarget
+from lp.app.interfaces.launchpad import IHeadingContext
 from lp.bugs.interfaces.bugtarget import (
     IBugTarget,
     IHasOfficialBugTags,
     )
-from lp.bugs.interfaces.bugtask import IBugTask
 from lp.bugs.interfaces.structuralsubscription import (
     IStructuralSubscriptionTarget,
     )
 from lp.code.interfaces.hasbranches import (
     IHasBranches,
+    IHasCodeImports,
     IHasMergeProposals,
     )
+from lp.code.interfaces.hasgitrepositories import IHasGitRepositories
 from lp.registry.interfaces.distribution import IDistribution
 from lp.registry.interfaces.role import IHasDrivers
 from lp.soyuz.enums import ArchivePurpose
 
 
-class IDistributionSourcePackage(IBugTarget, IHasBranches, IHasMergeProposals,
-                                 IHasOfficialBugTags,
+class IDistributionSourcePackage(IHeadingContext, IBugTarget, IHasBranches,
+                                 IHasMergeProposals, IHasOfficialBugTags,
                                  IStructuralSubscriptionTarget,
-                                 IQuestionTarget, IHasDrivers):
+                                 IQuestionTarget, IHasDrivers,
+                                 IHasGitRepositories, IHasCodeImports):
     """Represents a source package in a distribution.
 
     Create IDistributionSourcePackages by invoking
@@ -67,9 +60,9 @@ class IDistributionSourcePackage(IBugTarget, IHasBranches, IHasMergeProposals,
 
     name = exported(
         TextLine(title=_("The source package name as text"), readonly=True))
-    displayname = exported(
-        TextLine(title=_("Display name for this package."), readonly=True),
-        exported_as="display_name")
+    display_name = exported(
+        TextLine(title=_("Display name for this package."), readonly=True))
+    displayname = Attribute('Display name (deprecated)')
     title = exported(
         TextLine(title=_("Title for this package."), readonly=True))
 
@@ -182,21 +175,6 @@ class IDistributionSourcePackage(IBugTarget, IHasBranches, IHasMergeProposals,
         See https://bugs.launchpad.net/soyuz/+bug/236922 for a plan
         on how this criteria will be centrally encoded.
         """)
-
-    @rename_parameters_as(quantity='limit')
-    @operation_parameters(
-        quantity=Int(
-            title=_("The maximum number of bug tasks to return"),
-            min=1))
-    @operation_returns_collection_of(IBugTask)
-    @export_operation_as(name="getBugTasks")
-    @export_read_operation()
-    def bugtasks(quantity=None):
-        """Bug tasks on this source package, sorted newest first.
-
-        If needed, you can limit the number of bugtasks you are interested
-        in using the quantity parameter.
-        """
 
     def __eq__(other):
         """IDistributionSourcePackage comparison method.

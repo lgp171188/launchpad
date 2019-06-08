@@ -1,42 +1,34 @@
-# Copyright 2009-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Helper functions/classes for Soyuz tests."""
 
+from __future__ import absolute_import, print_function, unicode_literals
+
 __metaclass__ = type
 
 __all__ = [
+    'Base64KeyMatches',
     'SoyuzTestHelper',
-    'TestPackageDiffsBase',
     ]
 
-import unittest
+import base64
 
+from testtools.matchers import (
+    Equals,
+    Matcher,
+    )
 from zope.component import getUtility
 
 from lp.registry.interfaces.distribution import IDistributionSet
 from lp.registry.interfaces.person import IPersonSet
 from lp.registry.interfaces.pocket import PackagePublishingPocket
-from lp.services.config import config
-from lp.services.librarian.model import LibraryFileAlias
+from lp.services.gpg.interfaces import IGPGHandler
 from lp.soyuz.enums import PackagePublishingStatus
-from lp.soyuz.interfaces.packagediff import IPackageDiffSet
-from lp.soyuz.model.publishing import (
-    BinaryPackagePublishingHistory,
-    SourcePackagePublishingHistory,
-    )
-from lp.soyuz.tests.fakepackager import FakePackager
-from lp.testing.dbuser import dbuser
-from lp.testing.gpgkeys import import_public_test_keys
-from lp.testing.layers import LaunchpadZopelessLayer
+from lp.soyuz.model.publishing import SourcePackagePublishingHistory
 from lp.testing.sampledata import (
     BUILDD_ADMIN_USERNAME,
-    CHROOT_LIBRARYFILEALIAS,
-    I386_ARCHITECTURE_NAME,
-    LAUNCHPAD_DBUSER_NAME,
     UBUNTU_DISTRIBUTION_NAME,
-    WARTY_DISTROSERIES_NAME,
-    WARTY_UPDATES_SUITE_NAME,
     )
 
 
@@ -106,31 +98,6 @@ class SoyuzTestHelper:
             sample_pub.append(pub)
         return sample_pub
 
-    def createPublishingForDistroArchSeries(self, binarypackagerelease,
-                                            distroarchseries):
-        """Return a list of `BinaryPackagePublishingHistory`.
-
-        The publishing records are created according to the given
-        `BinaryPackageRelease` and `DistroArchSeries` for all
-        (status, archive, pocket) returned from `sample_publishing_data`.
-        """
-        sample_pub = []
-        for status, archive, pocket in self.sample_publishing_data:
-            pub = BinaryPackagePublishingHistory(
-                binarypackagerelease=binarypackagerelease,
-                binarypackagename=binarypackagerelease.binarypackagename,
-                distroarchseries=distroarchseries,
-                component=binarypackagerelease.component,
-                section=binarypackagerelease.section,
-                priority=binarypackagerelease.priority,
-                status=status,
-                archive=archive,
-                pocket=pocket)
-            # Flush the object changes into DB do guarantee stable database
-            # ID order as expected in the callsites.
-            sample_pub.append(pub)
-        return sample_pub
-
     def checkPubList(self, expected, given):
         """Check if the given publication list matches the expected one.
 
@@ -139,67 +106,16 @@ class SoyuzTestHelper:
         return [p.id for p in expected] == [r.id for r in given]
 
 
-class TestPackageDiffsBase(unittest.TestCase):
-    """Base class facilitating tests related to package diffs."""
-    layer = LaunchpadZopelessLayer
-    dbuser = config.uploader.dbuser
+class Base64KeyMatches(Matcher):
+    """Matches if base64-encoded key material has a given fingerprint."""
 
-    def setUp(self):
-        """Setup proper DB connection and contents for tests
+    def __init__(self, fingerprint):
+        self.fingerprint = fingerprint
 
-        Connect to the DB as the 'uploader' user (same user used in the
-        script), upload the test packages (see `uploadTestPackages`) and
-        commit the transaction.
+    def match(self, encoded_key):
+        key = base64.b64decode(encoded_key)
+        return Equals(self.fingerprint).match(
+            getUtility(IGPGHandler).importPublicKey(key).fingerprint)
 
-        Store the `FakePackager` object used in the test uploads as `packager`
-        so the tests can reuse it if necessary.
-        """
-        super(TestPackageDiffsBase, self).setUp()
-        with dbuser(LAUNCHPAD_DBUSER_NAME):
-            fake_chroot = LibraryFileAlias.get(CHROOT_LIBRARYFILEALIAS)
-            ubuntu = getUtility(IDistributionSet).getByName(
-                UBUNTU_DISTRIBUTION_NAME)
-            warty = ubuntu.getSeries(WARTY_DISTROSERIES_NAME)
-            warty[I386_ARCHITECTURE_NAME].addOrUpdateChroot(fake_chroot)
-
-        self.packager = self.uploadTestPackages()
-        self.layer.txn.commit()
-
-    def uploadTestPackages(self):
-        """Upload packages for testing `PackageDiff` generation script.
-
-        Upload zeca_1.0-1 and zeca_1.0-2 sources, so a `PackageDiff` between
-        them is created.
-
-        Assert there is not pending `PackageDiff` in the DB before uploading
-        the package and also assert that there is one after the uploads.
-
-        :return: the FakePackager object used to generate and upload the test,
-            packages, so the tests can upload subsequent version if necessary.
-        """
-        # No pending PackageDiff available in sampledata.
-        self.assertEqual(self.getPendingDiffs().count(), 0)
-
-        import_public_test_keys()
-        # Use FakePackager to upload a base package to ubuntu.
-        packager = FakePackager(
-            'zeca', '1.0', 'foo.bar@canonical.com-passwordless.sec')
-        packager.buildUpstream()
-        packager.buildSource()
-        packager.uploadSourceVersion('1.0-1', suite=WARTY_UPDATES_SUITE_NAME)
-
-        # Upload a new version of the source, so a PackageDiff can
-        # be created.
-        packager.buildVersion('1.0-2', changelog_text="cookies")
-        packager.buildSource(include_orig=False)
-        packager.uploadSourceVersion('1.0-2', suite=WARTY_UPDATES_SUITE_NAME)
-
-        # Check if there is exactly one pending PackageDiff record and
-        # It's the one we have just created.
-        self.assertEqual(self.getPendingDiffs().count(), 1)
-
-        return packager
-
-    def getPendingDiffs(self):
-        """Pending `PackageDiff` available."""
-        return getUtility(IPackageDiffSet).getPendingDiffs()
+    def __str__(self):
+        return "Base64KeyMatches(%s)" % self.fingerprint

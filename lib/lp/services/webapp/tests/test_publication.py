@@ -1,4 +1,4 @@
-# Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2017 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests publication.py"""
@@ -8,9 +8,12 @@ __metaclass__ = type
 import sys
 
 from contrib.oauth import (
+    OAuthConsumer,
     OAuthRequest,
     OAuthSignatureMethod_PLAINTEXT,
+    OAuthToken,
     )
+from fixtures import FakeLogger
 from storm.database import (
     STATE_DISCONNECTED,
     STATE_RECONNECT,
@@ -23,7 +26,7 @@ from zope.publisher.interfaces import (
     Retry,
     )
 
-from lp.services.database.lpstorm import IMasterStore
+from lp.services.database.interfaces import IMasterStore
 from lp.services.identity.model.emailaddress import EmailAddress
 from lp.services.oauth.interfaces import (
     IOAuthConsumerSet,
@@ -66,7 +69,7 @@ class TestLaunchpadBrowserPublication(TestCase):
         publication = LaunchpadBrowserPublication(None)
         publication.callTraversalHooks(request, obj1)
         publication.callTraversalHooks(request, obj2)
-        self.assertEquals(request.traversed_objects, [obj1, obj2])
+        self.assertEqual(request.traversed_objects, [obj1, obj2])
 
     def test_callTraversalHooks_appends_only_once_to_traversed_objects(self):
         # callTraversalHooks() may be called more than once for a given
@@ -77,7 +80,7 @@ class TestLaunchpadBrowserPublication(TestCase):
         publication = LaunchpadBrowserPublication(None)
         publication.callTraversalHooks(request, obj1)
         publication.callTraversalHooks(request, obj2)
-        self.assertEquals(request.traversed_objects, [obj1])
+        self.assertEqual(request.traversed_objects, [obj1])
 
 
 class TestWebServicePublication(TestCaseWithFactory):
@@ -96,22 +99,24 @@ class TestWebServicePublication(TestCaseWithFactory):
         # different.
         self.factory.makeAccount('Personless account')
         person = self.factory.makePerson()
-        self.failIfEqual(person.id, person.account.id)
+        self.assertNotEqual(person.id, person.account.id)
 
         # Create an access token for our new person.
-        consumer = getUtility(IOAuthConsumerSet).new('test-consumer')
-        request_token = consumer.newRequestToken()
+        consumer = getUtility(IOAuthConsumerSet).new(u'test-consumer')
+        request_token, _ = consumer.newRequestToken()
         request_token.review(
             person, permission=OAuthPermission.READ_PUBLIC, context=None)
-        access_token = request_token.createAccessToken()
+        access_token, access_secret = request_token.createAccessToken()
 
         # Use oauth.OAuthRequest just to generate a dictionary containing all
         # the parameters we need to use in a valid OAuth request, using the
         # access token we just created for our new person.
+        oauth_consumer = OAuthConsumer(consumer.key, u'')
+        oauth_token = OAuthToken(access_token.key, access_secret)
         oauth_request = OAuthRequest.from_consumer_and_token(
-            consumer, access_token)
+            oauth_consumer, oauth_token)
         oauth_request.sign_request(
-            OAuthSignatureMethod_PLAINTEXT(), consumer, access_token)
+            OAuthSignatureMethod_PLAINTEXT(), oauth_consumer, oauth_token)
         return LaunchpadTestRequest(form=oauth_request.parameters)
 
     def test_getPrincipal_for_person_and_account_with_different_ids(self):
@@ -119,7 +124,7 @@ class TestWebServicePublication(TestCaseWithFactory):
         # having the same IDs as their associated person entries to work.
         request = self._getRequestForPersonAndAccountWithDifferentIDs()
         principal = WebServicePublication(None).getPrincipal(request)
-        self.failIf(principal is None)
+        self.assertIsNotNone(principal)
 
     def test_disconnect_logs_oops(self):
         # Ensure that OOPS reports are generated for database
@@ -278,12 +283,13 @@ class TestEncodedReferer(TestCaseWithFactory):
     def test_not_found(self):
         # No oopses are reported when accessing the referer while rendering
         # the page.
+        self.useFixture(FakeLogger())
         browser = self.getUserBrowser()
         browser.addHeader('Referer', '/whut\xe7foo')
         self.assertRaises(
             NotFound,
             browser.open,
-            'http://launchpad.dev/missing')
+            'http://launchpad.test/missing')
         self.assertEqual(0, len(self.oopses))
 
 
@@ -294,9 +300,10 @@ class TestUnicodePath(TestCaseWithFactory):
     def test_non_ascii_url(self):
         # No oopses are reported when accessing the URL while rendering the
         # page.
+        self.useFixture(FakeLogger())
         browser = self.getUserBrowser()
         self.assertRaises(
             NotFound,
             browser.open,
-            'http://launchpad.dev/%ED%B4%B5')
+            'http://launchpad.test/%ED%B4%B5')
         self.assertEqual(0, len(self.oopses))

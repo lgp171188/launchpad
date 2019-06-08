@@ -1,4 +1,4 @@
-# Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Bug tracker views."""
@@ -7,7 +7,6 @@ __metaclass__ = type
 
 __all__ = [
     'BugTrackerAddView',
-    'BugTrackerBreadcrumb',
     'BugTrackerComponentGroupNavigation',
     'BugTrackerEditView',
     'BugTrackerEditComponentView',
@@ -24,24 +23,25 @@ __all__ = [
 from itertools import chain
 
 from lazr.restful.utils import smartquote
-from zope.app.form.browser import TextAreaWidget
 from zope.component import getUtility
 from zope.formlib import form
-from zope.interface import implements
+from zope.formlib.widget import CustomWidgetFactory
+from zope.formlib.widgets import TextAreaWidget
+from zope.interface import implementer
 from zope.schema import Choice
 from zope.schema.vocabulary import SimpleVocabulary
 
 from lp import _
 from lp.app.browser.launchpadform import (
     action,
-    custom_widget,
     LaunchpadEditFormView,
     LaunchpadFormView,
     )
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
+from lp.app.validators import LaunchpadValidationError
 from lp.app.widgets.itemswidgets import LaunchpadRadioWidget
+from lp.app.widgets.popup import UbuntuSourcePackageNameWidget
 from lp.app.widgets.textwidgets import DelimitedListWidget
-from lp.bugs.browser.widgets.bugtask import UbuntuSourcePackageNameWidget
 from lp.bugs.interfaces.bugtracker import (
     BugTrackerType,
     IBugTracker,
@@ -166,7 +166,7 @@ class BugTrackerSetView(LaunchpadView):
         # bug watch counts per tracker. However the batching makes
         # the inefficiency tolerable for now. Robert Collins 20100919.
         self._pillar_cache = self.context.getPillarsForBugtrackers(
-            list(self.context.trackers()))
+            list(self.context.getAllTrackers()), self.user)
 
     @property
     def inactive_tracker_count(self):
@@ -174,14 +174,14 @@ class BugTrackerSetView(LaunchpadView):
 
     @cachedproperty
     def active_trackers(self):
-        results = self.context.trackers(active=True)
+        results = self.context.getAllTrackers(active=True)
         navigator = ActiveBatchNavigator(results, self.request)
         navigator.setHeadings('tracker', 'trackers')
         return navigator
 
     @cachedproperty
     def inactive_trackers(self):
-        results = self.context.trackers(active=False)
+        results = self.context.getAllTrackers(active=False)
         navigator = InactiveBatchNavigator(results, self.request)
         navigator.setHeadings('tracker', 'trackers')
         return navigator
@@ -204,8 +204,7 @@ class BugTrackerSetView(LaunchpadView):
             has_more_pillars = False
         return {
             'pillars': pillars[:self.pillar_limit],
-            'has_more_pillars': has_more_pillars,
-        }
+            'has_more_pillars': has_more_pillars}
 
 
 class BugTrackerView(LaunchpadView):
@@ -227,8 +226,8 @@ class BugTrackerView(LaunchpadView):
         This property was created for the Related projects portlet in
         the bug tracker's page.
         """
-        return shortlist(chain(self.context.projects,
-                               self.context.products), 100)
+        pillars = chain(*self.context.getRelatedPillars(self.user))
+        return shortlist([p for p in pillars if p.active], 100)
 
     @property
     def related_component_groups(self):
@@ -244,9 +243,11 @@ class BugTrackerEditView(LaunchpadEditFormView):
 
     schema = IBugTracker
 
-    custom_widget('summary', TextAreaWidget, width=30, height=5)
-    custom_widget('aliases', DelimitedListWidget, height=3)
-    custom_widget('active', LaunchpadRadioWidget, orientation='vertical')
+    custom_widget_summary = CustomWidgetFactory(
+        TextAreaWidget, width=30, height=5)
+    custom_widget_aliases = CustomWidgetFactory(DelimitedListWidget, height=3)
+    custom_widget_active = CustomWidgetFactory(
+        LaunchpadRadioWidget, orientation='vertical')
 
     @property
     def page_title(self):
@@ -265,9 +266,7 @@ class BugTrackerEditView(LaunchpadEditFormView):
             'contactdetails',
             ]
 
-        # Members of the admin team can set the bug tracker's active
-        # state.
-        if check_permission("launchpad.Admin", self.user):
+        if check_permission("launchpad.Admin", self.context):
             field_names.append('active')
 
         return field_names
@@ -303,16 +302,20 @@ class BugTrackerEditView(LaunchpadEditFormView):
         # If aliases has an error, unwrap the Dantean exception from
         # Zope so that we can tell the user something useful.
         if self.getFieldError('aliases'):
-            # XXX: GavinPanella 2008-04-02 bug=210901: The error
-            # messages may already be escaped (with `cgi.escape`), but
-            # the water is muddy, so we won't attempt to unescape them
-            # or otherwise munge them, in case we introduce a
-            # different problem. For now, escaping twice is okay as we
-            # won't see any artifacts of that during normal use.
+            # XXX: wgrant 2008-04-02 bug=210901: The error
+            # messages may have already been escaped by
+            # LaunchpadValidationError, so wrap them in structured() to
+            # avoid double-escaping them. It's possible that non-LVEs
+            # could also be escaped, but I can't think of any cases so
+            # let's just escape them anyway.
             aliases_errors = self.widgets['aliases']._error.errors.args[0]
+            maybe_structured_errors = [
+                structured(error)
+                if isinstance(error, LaunchpadValidationError) else error
+                for error in aliases_errors]
             self.setFieldError('aliases', structured(
-                    '<br />'.join(['%s'] * len(aliases_errors)),
-                    *aliases_errors))
+                    '<br />'.join(['%s'] * len(maybe_structured_errors)),
+                    *maybe_structured_errors))
 
     @action('Change', name='change')
     def change_action(self, action, data):
@@ -355,7 +358,7 @@ class BugTrackerEditView(LaunchpadEditFormView):
 
         # Only admins and registry experts can delete bug watches en
         # masse.
-        if self.context.watches.count() > 0:
+        if not self.context.watches.is_empty():
             admin_teams = [celebrities.admin, celebrities.registry_experts]
             for team in admin_teams:
                 if self.user.inTeam(team):
@@ -367,7 +370,7 @@ class BugTrackerEditView(LaunchpadEditFormView):
                         sorted(team.title for team in admin_teams)))
 
         # Bugtrackers with imported messages cannot be deleted.
-        if self.context.imported_bug_messages.count() > 0:
+        if not self.context.imported_bug_messages.is_empty():
             reasons.append(
                 'Bug comments have been imported via this bug tracker.')
 
@@ -420,9 +423,7 @@ class BugTrackerEditView(LaunchpadEditFormView):
         """Return True if the user can see the reschedule action."""
         user_can_reset_watches = check_permission(
             "launchpad.Admin", self.context)
-        return (
-            user_can_reset_watches and
-            self.context.watches.count() > 0)
+        return user_can_reset_watches and not self.context.watches.is_empty()
 
     @action(
         'Reschedule all watches', name='reschedule',
@@ -465,7 +466,7 @@ class BugTrackerEditComponentView(LaunchpadEditFormView):
     linked to source packages in the Ubuntu distribution.
     """
     schema = IBugTrackerComponent
-    custom_widget('sourcepackagename', UbuntuSourcePackageNameWidget)
+    custom_widget_sourcepackagename = UbuntuSourcePackageNameWidget
     field_names = ['sourcepackagename']
     page_title = 'Link component'
 
@@ -548,20 +549,9 @@ class BugTrackerSetBreadcrumb(Breadcrumb):
         return u"Bug trackers"
 
 
-class BugTrackerBreadcrumb(Breadcrumb):
-    """Builds a breadcrumb for an `IBugTracker`."""
-
-    rootsite = None
-
-    @property
-    def text(self):
-        return self.context.title
-
-
+@implementer(IRemoteBug)
 class RemoteBug:
     """Represents a bug in a remote bug tracker."""
-
-    implements(IRemoteBug)
 
     def __init__(self, bugtracker, remotebug, bugs):
         self.bugtracker = bugtracker

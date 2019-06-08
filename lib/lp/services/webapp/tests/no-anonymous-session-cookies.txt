@@ -33,8 +33,8 @@ Now let's log in and show that the session cookie is set.
     >>> print extract_text(find_tag_by_id(browser.contents, 'logincontrol'))
     Foo Bar (name16) ...
 
-    # Open a page again so that we see the cookie for a launchpad.dev request
-    # and not a testopenid.dev request (as above).
+    # Open a page again so that we see the cookie for a launchpad.test request
+    # and not a testopenid.test request (as above).
     >>> browser.open(root_url)
 
     >>> len(browser.cookies)
@@ -45,7 +45,7 @@ Now let's log in and show that the session cookie is set.
     >>> year_from_now <= expires < year_plus_from_now
     True
     >>> browser.cookies.getinfo('launchpad_tests')['domain']
-    '.launchpad.dev'
+    '.launchpad.test'
 
 The cookie will be set to expire in ten minutes when you log out.  The ten
 minute time interval (set in lp.services.webapp.login and enforced
@@ -60,7 +60,7 @@ time for browsers with bad system clocks.
     ... except (HTTPError, URLError):
     ...     pass
 
-After ensuring the browser has not left the launchpad.dev domain, the
+After ensuring the browser has not left the launchpad.test domain, the
 single cookie is shown to have the ten minute expiration.
 
     >>> browser.open(root_url)

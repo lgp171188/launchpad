@@ -19,8 +19,7 @@ from storm.expr import (
     Func,
     SQL,
     )
-from zope.component import getUtility
-from zope.interface import implements
+from zope.interface import implementer
 
 from lp.code.interfaces.revisioncache import IRevisionCollection
 from lp.code.model.revision import (
@@ -31,17 +30,12 @@ from lp.code.model.revision import (
 from lp.registry.model.distroseries import DistroSeries
 from lp.registry.model.product import Product
 from lp.registry.model.teammembership import TeamParticipation
-from lp.services.webapp.interfaces import (
-    DEFAULT_FLAVOR,
-    IStoreSelector,
-    MAIN_STORE,
-    )
+from lp.services.database.interfaces import IStore
 
 
+@implementer(IRevisionCollection)
 class GenericRevisionCollection:
     """See `IRevisionCollection`."""
-
-    implements(IRevisionCollection)
 
     def __init__(self, store=None, filter_expressions=None):
         self._store = store
@@ -54,11 +48,11 @@ class GenericRevisionCollection:
     @property
     def store(self):
         # Although you might think we could set the default value for store in
-        # the constructor, we can't. The IStoreSelector utility is not
+        # the constructor, we can't. The IStore utility is not
         # available at the time that the branchcollection.zcml is parsed,
         # which means we get an error if this code is in the constructor.
         if self._store is None:
-            return getUtility(IStoreSelector).get(MAIN_STORE, DEFAULT_FLAVOR)
+            return IStore(Product)
         else:
             return self._store
 
@@ -110,11 +104,11 @@ class GenericRevisionCollection:
         return self._filterBy(
             [RevisionCache.product == product])
 
-    def inProject(self, project):
+    def inProjectGroup(self, projectgroup):
         """See `IRevisionCollection`."""
         return self._filterBy(
             [RevisionCache.product == Product.id,
-             Product.project == project])
+             Product.projectgroup == projectgroup])
 
     def inSourcePackage(self, package):
         """See `IRevisionCollection`."""

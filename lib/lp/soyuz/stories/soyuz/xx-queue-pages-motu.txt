@@ -23,7 +23,7 @@ MOTU upload-admin role
 
 In our sample data, there is a user 'no-team-memberships' who has
 rights to administer the queue in the universe and multiverse
-components only.  We'll set up a browser for him:
+components only.  We'll set up a browser for them:
 
     >>> motu_browser = setupBrowser(
     ...     auth="Basic no-team-memberships@test.com:test")
@@ -34,10 +34,10 @@ component:
     >>> def print_queue(contents):
     ...     queue_rows = find_tags_by_class(contents, "queue-row")
     ...     for row in queue_rows:
-    ...         print extract_text(row)
+    ...         print(extract_text(row))
 
     >>> motu_browser.open(
-    ...     "http://launchpad.dev/ubuntu/breezy-autotest/")
+    ...     "http://launchpad.test/ubuntu/breezy-autotest/")
     >>> motu_browser.getLink("All uploads").click()
     >>> print_queue(motu_browser.contents)
     Package             Version     Component Section Priority Sets Pocket  When
@@ -53,18 +53,16 @@ not have permission to accept items in "main":
 
     >>> motu_browser.getControl(name="QUEUE_ID").value = ['4']
     >>> motu_browser.getControl(name="Accept").click()
-    >>> for message in get_feedback_messages(motu_browser.contents):
-    ...     print message
-    FAILED: alsa-utils (You have no rights to accept component(s) 'main')
+    >>> print_feedback_messages(motu_browser.contents)
+    FAILED: alsa-utils (You have no rights to accept component(s) &#x27;main&#x27;)
 
 The same applies to the binary upload "pmount" because its build
 produced a package in main:
 
     >>> motu_browser.getControl(name="QUEUE_ID").value=['2']
     >>> motu_browser.getControl(name="Accept").click()
-    >>> for message in get_feedback_messages(motu_browser.contents):
-    ...     print message
-    FAILED: pmount (You have no rights to accept component(s) 'main')
+    >>> print_feedback_messages(motu_browser.contents)
+    FAILED: pmount (You have no rights to accept component(s) &#x27;main&#x27;)
 
 Let's change the components on some uploads so that the user has
 permission to manipulate them.
@@ -99,18 +97,17 @@ permission to manipulate them.
     >>> logout()
 
 So now our user will be able to manipulate the alsa-utils source and
-the pmount binary.  However, he is still constrained with any component
-override that is applied; this must still be one of his permitted
+the pmount binary.  However, they are still constrained with any component
+override that is applied; this must still be one of their permitted
 components.
 
-If he tries to override back to main, it will fail:
+If they try to override back to main, it will fail:
 
     >>> motu_browser.getControl(name="QUEUE_ID").value = ['4']
     >>> motu_browser.getControl(
     ...     name="component_override").displayValue = ["main"]
     >>> motu_browser.getControl(name="Accept").click()
-    >>> for message in get_feedback_messages(motu_browser.contents):
-    ...     print message
+    >>> print_feedback_messages(motu_browser.contents)
     FAILED: alsa-utils (No rights to override to main)
 
 The same applies to the binary:
@@ -119,8 +116,7 @@ The same applies to the binary:
     >>> motu_browser.getControl(
     ...     name="component_override").displayValue = ["main"]
     >>> motu_browser.getControl(name="Accept").click()
-    >>> for message in get_feedback_messages(motu_browser.contents):
-    ...     print message
+    >>> print_feedback_messages(motu_browser.contents)
     FAILED: pmount (No rights to override to main)
 
 Our user is able to override to multiverse, however.  Let's do that
@@ -130,28 +126,26 @@ with pmount:
     >>> motu_browser.getControl(
     ...     name="component_override").displayValue = ["multiverse"]
     >>> motu_browser.getControl(name="Accept").click()
-    >>> for message in get_feedback_messages(motu_browser.contents):
-    ...     print message
+    >>> print_feedback_messages(motu_browser.contents)
     OK: pmount(multiverse/(unchanged)/(unchanged))
 
 Our user is also able to reject, let's reject alsa-utils:
 
     >>> motu_browser.getControl(name="QUEUE_ID").value = ['4']
+    >>> motu_browser.getControl(name='rejection_comment').value = 'Foo'
     >>> motu_browser.getControl(name="Reject").click()
-    >>> for message in get_feedback_messages(motu_browser.contents):
-    ...     print message
+    >>> print_feedback_messages(motu_browser.contents)
     OK: alsa-utils
 
-In some cases the user might select more than one item at once, but he
-only has permission to change a subset of those items.  In this case,
-the items he has permission to change will be processed, but the others
+In some cases the user might select more than one item at once, but they
+only have permission to change a subset of those items.  In this case,
+the items they have permission to change will be processed, but the others
 will be left alone.
 
     >>> motu_browser.getControl(name="QUEUE_ID").value = ['1', '3']
     >>> motu_browser.getControl(
     ...     name="component_override").displayValue = ["multiverse"]
     >>> motu_browser.getControl(name="Accept").click()
-    >>> for message in sorted(get_feedback_messages(motu_browser.contents)):
-    ...     print message
-    FAILED: netapplet (You have no rights to accept component(s) 'main')
+    >>> print_feedback_messages(motu_browser.contents)
+    FAILED: netapplet (You have no rights to accept component(s) &#x27;main&#x27;)
     OK: mozilla-firefox(multiverse/(unchanged)/(unchanged))

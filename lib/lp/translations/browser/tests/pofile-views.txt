@@ -14,7 +14,6 @@ First, we need some imports.
     ...     ITranslationImportQueue)
     >>> from lp.registry.interfaces.distribution import IDistributionSet
     >>> from lp.translations.interfaces.potemplate import IPOTemplateSet
-    >>> from lp.translations.publisher import TranslationsLayer
     >>> from lp.registry.interfaces.sourcepackagename import (
     ...     ISourcePackageNameSet)
     >>> from lp.services.worlddata.interfaces.language import ILanguageSet
@@ -36,8 +35,7 @@ Now it's time to test the initialization of the view class.
     >>> potemplate = potemplatesubset['evolution-2.2']
     >>> pofile_es = potemplate.getPOFileByLang('es')
     >>> form = {'show': 'all' }
-    >>> pofile_view = create_view(
-    ...     pofile_es, '+translate', form=form, layer=TranslationsLayer)
+    >>> pofile_view = create_view(pofile_es, '+translate', form=form)
     >>> pofile_view.initialize()
 
 An IPOFile knows (or sometimes has to guess) its number of pluralforms.  In
@@ -53,8 +51,8 @@ Thus the view class also knows about the plural forms information.
 
 We know that we want all messages.
 
-    >>> pofile_view.show
-    'all'
+    >>> print(pofile_view.show)
+    all
 
 This time, we are going to see what happens if we get an IPOFile without
 the plural form information.
@@ -62,8 +60,7 @@ the plural form information.
     >>> language_tlh = getUtility(ILanguageSet).getLanguageByCode('tlh')
     >>> pofile_tlh = potemplate.getDummyPOFile(language_tlh)
     >>> form = {'show': 'all' }
-    >>> pofile_view = create_view(
-    ...     pofile_tlh, '+translate', form=form, layer=TranslationsLayer)
+    >>> pofile_view = create_view(pofile_tlh, '+translate', form=form)
     >>> pofile_view.initialize()
 
 Here we can see that it's lacking that information.
@@ -79,29 +76,26 @@ And the view class detects it correctly.
 Check the argument to filter messagesets.
 
     >>> form = {'show': 'translated'}
-    >>> pofile_view = create_view(
-    ...     pofile_es, '+translate', form=form, layer=TranslationsLayer)
+    >>> pofile_view = create_view(pofile_es, '+translate', form=form)
     >>> pofile_view.initialize()
 
 Yeah, it detects it correctly and stores the attribute as it should be.
 
-    >>> pofile_view.show
-    'translated'
+    >>> print(pofile_view.show)
+    translated
 
 Let's move to the navigation URLS testing.
 
 We get a request without any argument.
 
     >>> form = {'show': 'all' }
-    >>> pofile_view = create_view(
-    ...     pofile_es, '+translate', form=form, layer=TranslationsLayer)
+    >>> pofile_view = create_view(pofile_es, '+translate', form=form)
     >>> pofile_view.initialize()
 
 It's time to test that we get the right message sets from the submitted form.
 
     >>> form = {'show': 'all' }
-    >>> pofile_view = create_view(
-    ...     pofile_es, '+translate', form=form, layer=TranslationsLayer)
+    >>> pofile_view = create_view(pofile_es, '+translate', form=form)
     >>> pofile_view.initialize()
 
 We get the first entry that should be in the form, the one with id == 130.
@@ -155,9 +149,9 @@ listed in the page.
     >>> for translationmessage_view in (
     ...     pofile_view.translationmessage_views):
     ...     translationmessage_view.initialize()
-    >>> print pofile_view.autofocus_html_id
+    >>> print(pofile_view.autofocus_html_id)
     msgset_130_es_translation_0_new
-    >>> print pofile_view.translations_order
+    >>> print(pofile_view.translations_order)
     msgset_130_es_translation_0_new msgset_131_es_translation_0_new
     msgset_132_es_translation_0_new msgset_133_es_translation_0_new
     msgset_134_es_translation_0_new msgset_135_es_translation_0_new
@@ -197,8 +191,7 @@ Now we do a submission with new translations:
     ...         'msgset_138_es_translation_0_new',
     ...     'msgset_138_es_translation_0_new': 'Bar',
     ...     'submit_translations': 'Save &amp; Continue'}
-    >>> pofile_view = create_view(
-    ...     pofile_es, '+translate', form=form, layer=TranslationsLayer)
+    >>> pofile_view = create_view(pofile_es, '+translate', form=form)
     >>> pofile_view.request.method = 'POST'
     >>> pofile_view.initialize()
 
@@ -214,7 +207,7 @@ The messages displayed on the +translate page are always in ascending order of
 their POTMsgSets' sequence numbers.
 
     >>> for potmsgset in pofile_view._getSelectedPOTMsgSets():
-    ...     print potmsgset.getSequence(pofile_es.potemplate)
+    ...     print(potmsgset.getSequence(pofile_es.potemplate))
     1
     2
     3
@@ -243,7 +236,7 @@ Also, we get redirected to the next batch.
     >>> pofile_view.request.response.getHeader('Location')
     'http://127.0.0.1?memo=10&start=10'
 
-The messsage's sequence is the position of that message in latest imported
+The message's sequence is the position of that message in latest imported
 template. We are going to test now what happens when we submit a potmsgset
 that has a sequence == 0. It means that that msgset is disabled and we don't
 serve such messages in our translation form, but we could get it in some
@@ -252,7 +245,8 @@ situations, like when this set of actions happen:
  - A user gets a translation form for the template X.
  - A new template X is imported into the system that removes some messages
    from the previous import.
- - Previous user, submits the translation form he got for the old template X.
+ - Previous user, submits the translation form they got for the old template
+   X.
 
 The problem here is that some of the messages on that form are disabled so
 their sequence is 0.
@@ -272,8 +266,7 @@ their sequence is 0.
     ...         'msgset_161_es_translation_0_new',
     ...     'msgset_161_es_translation_0_new': 'Foo',
     ...     'submit_translations': 'Save &amp; Continue'}
-    >>> pofile_view = create_view(
-    ...     pofile_es, '+translate', form=form, layer=TranslationsLayer)
+    >>> pofile_view = create_view(pofile_es, '+translate', form=form)
     >>> pofile_view.request.method = 'POST'
     >>> pofile_view.initialize()
     >>> flush_database_caches()
@@ -300,11 +293,11 @@ what's inside.
 #    >>> pomsgset.potmsgset.id
 #    144
 #    >>> for text in pomsgset.active_texts:
-#    ...     print text
+#    ...     print(text)
 #    %d contacto
 #    %d contactos
 #    >>> for text in pomsgset.published_texts:
-#    ...     print text
+#    ...     print(text)
 #    %d contacto
 #    %d contactos
 #    >>> list(pomsgset.getNewSubmissions(0))
@@ -312,10 +305,10 @@ what's inside.
 #    >>> list(pomsgset.getNewSubmissions(1))
 #    []
 #    >>> for submission in pomsgset.getCurrentSubmissions(0):
-#    ...     print submission.datecreated.isoformat()
+#    ...     print(submission.datecreated.isoformat())
 #    2005-04-07T...
 #    >>> for submission in pomsgset.getCurrentSubmissions(1):
-#    ...     print submission.datecreated.isoformat()
+#    ...     print(submission.datecreated.isoformat())
 #    2005-04-07T...
 
 The POMsgSet we're looking at had its submissions cache pre-populated by the
@@ -333,11 +326,11 @@ exact same results.
 #    >>> pomsgset.potmsgset.id
 #    144
 #    >>> for text in pomsgset.active_texts:
-#    ...     print text
+#    ...     print(text)
 #    %d contacto
 #    %d contactos
 #    >>> for text in pomsgset.published_texts:
-#    ...     print text
+#    ...     print(text)
 #    %d contacto
 #    %d contactos
 #    >>> list(pomsgset.getNewSubmissions(0))
@@ -345,10 +338,10 @@ exact same results.
 #    >>> list(pomsgset.getNewSubmissions(1))
 #    []
 #    >>> for submission in pomsgset.getCurrentSubmissions(0):
-#    ...     print submission.datecreated.isoformat()
+#    ...     print(submission.datecreated.isoformat())
 #    2005-04-07T...
 #    >>> for submission in pomsgset.getCurrentSubmissions(1):
-#    ...     print submission.datecreated.isoformat()
+#    ...     print(submission.datecreated.isoformat())
 #    2005-04-07T...
 
 Now, we are going to check the alternative language submission.
@@ -359,8 +352,7 @@ Now, we are going to check the alternative language submission.
 #    ...     'start': '10',
 #    ...     'field.alternative_language': 'fr',
 #    ...     'select_alternate_language': 'Change'}
-#    >>> pofile_view = create_view(
-#    ...     pofile_es, '+translate', form=form, layer=TranslationsLayer)
+#    >>> pofile_view = create_view(pofile_es, '+translate', form=form)
 #    >>> pofile_view.initialize()
 #    >>> pofile_view.second_lang_code
 #    'fr'
@@ -377,16 +369,19 @@ we check that it contains only sample data entries.
     >>> translationimportqueue.countEntries()
     2
     >>> for entry in translationimportqueue.getAllEntries():
-    ...     print entry.id, entry.content.filename
+    ...     print(entry.id, entry.content.filename)
     1 evolution-2.2-test.pot
     2 pt_BR.po
 
 The FileUpload class needs a class with the attributes: filename, file and
 headers.
 
+XXX cjwatson 2018-06-02: FileUploadArgument.filename can become a native
+string again once we're on zope.publisher >= 4.0.0a1.
+
     >>> class FileUploadArgument:
-    ...     filename='po/es.po'
-    ...     file=StringIO('foos')
+    ...     filename=b'po/es.po'
+    ...     file=StringIO(b'foos')
     ...     headers=''
 
 Now, we do the upload.
@@ -395,8 +390,7 @@ Now, we do the upload.
     ...     'file': FileUpload(FileUploadArgument()),
     ...     'upload_type': 'upstream',
     ...     'pofile_upload': 'Upload'}
-    >>> pofile_view = create_view(
-    ...     pofile_es, '+upload', form=form, layer=TranslationsLayer)
+    >>> pofile_view = create_view(pofile_es, '+upload', form=form)
     >>> pofile_view.request.method = 'POST'
     >>> pofile_view.initialize()
 
@@ -407,7 +401,9 @@ As we can see, we have now one entry added to our queue.
 
 Get it and check that some attributes are set as they should.
 
-    >>> entry = translationimportqueue.get(3)
+    >>> from lp.translations.enums import RosettaImportStatus
+    >>> entry = translationimportqueue.getAllEntries(
+    ...     import_status=RosettaImportStatus.NEEDS_REVIEW)[-1]
     >>> entry.pofile == pofile_es
     True
 
@@ -498,12 +494,11 @@ index page.
 
     # Request the download.
     >>> form = {'format': 'PO' }
-    >>> pofile_view = create_view(
-    ...     pofile_es, '+export', form=form, layer=TranslationsLayer)
+    >>> pofile_view = create_view(pofile_es, '+export', form=form)
     >>> pofile_view.request.method = 'POST'
     >>> pofile_view.initialize()
 
 And we are redirected to the index page, as expected:
 
-    >>> print pofile_view.request.response.getHeader('Location')
+    >>> print(pofile_view.request.response.getHeader('Location'))
     http://trans.../ubuntu/hoary/+source/evolution/+pots/evolution-2.2/es

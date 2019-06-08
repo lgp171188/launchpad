@@ -1,7 +1,9 @@
-# Copyright 2009-2010 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for debversion."""
+
+from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 
@@ -62,15 +64,15 @@ class VersionTests(unittest.TestCase):
 
     def testReturnString(self):
         """Version should convert to a string."""
-        self.assertEquals(str(Version("1.0")), "1.0")
+        self.assertEqual(str(Version("1.0")), "1.0")
 
     def testAcceptsInteger(self):
         """Version should accept an integer."""
-        self.assertEquals(str(Version(1)), "1")
+        self.assertEqual(str(Version(1)), "1")
 
     def testAcceptsNumber(self):
         """Version should accept a number."""
-        self.assertEquals(str(Version(1.2)), "1.2")
+        self.assertEqual(str(Version(1.2)), "1.2")
 
     def testNotEmpty(self):
         """Version should fail with empty input."""
@@ -107,8 +109,8 @@ class VersionTests(unittest.TestCase):
     def testRevisionNotEmpty(self):
         """Version should not allow an empty revision."""
         v = Version("1-")
-        self.assertEquals("1-", v.upstream_version)
-        self.assertEquals(None, v.debian_version)
+        self.assertEqual("1-", v.upstream_version)
+        self.assertIsNone(v.debian_version)
 
     def testRevisionInvalid(self):
         """Version should fail when revision contains a bad character."""
@@ -118,19 +120,19 @@ class VersionTests(unittest.TestCase):
         """Version should give same input as output."""
         for value in self.VALUES:
             result = str(Version(value))
-            self.assertEquals(value, result)
+            self.assertEqual(value, result)
 
     def testComparisons(self):
         """Sample Version comparisons should pass."""
         for x, y in self.COMPARISONS:
-            self.failUnless(Version(x) < Version(y))
+            self.assertTrue(Version(x) < Version(y))
 
     def testNullEpochIsZero(self):
         """Version should treat an omitted epoch as a zero one."""
-        self.assertEquals(Version("1.0"), Version("0:1.0"))
+        self.assertEqual(Version("1.0"), Version("0:1.0"))
 
     def notestNullRevisionIsZero(self):
         """Version should treat an omitted revision as being equal to zero.
         """
-        self.assertEquals(Version("1.0"), Version("1.0-0"))
-        self.failUnless(Version("1.0") == Version("1.0-0"))
+        self.assertEqual(Version("1.0"), Version("1.0-0"))
+        self.assertTrue(Version("1.0") == Version("1.0-0"))

@@ -1,7 +1,5 @@
-# Copyright 2009 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2017 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
-
-# pylint: disable-msg=W0702
 
 """Integration between the normal Launchpad logging and Twisted's."""
 
@@ -28,7 +26,7 @@ from twisted.python import (
     )
 from twisted.python.logfile import DailyLogFile
 from twisted.web import xmlrpc
-from zope.interface import implements
+from zope.interface import implementer
 
 from lp.services.librarian.utils import copy_and_close
 from lp.services.scripts import logger
@@ -57,7 +55,8 @@ def set_up_oops_reporting(name, configuration, logfile):
     errorlog.globalErrorUtility.configure(
         configuration,
         config_factory=oops_twisted.Config,
-        publisher_adapter=oops_twisted.defer_publisher)
+        publisher_adapter=oops_twisted.defer_publisher,
+        publisher_helpers=oops_twisted.publishers)
     log_observer = RotatableFileLogObserver(logfile)
     oops_observer = OOPSObserver(errorlog.globalErrorUtility._oops_config,
         log_observer)
@@ -156,7 +155,7 @@ class LoggingProxy(xmlrpc.Proxy):
     def callRemote(self, method, *args):
         """See `xmlrpc.Proxy.callRemote`.
 
-        In addition to the superclass' behavior, we log the call and its
+        In addition to the superclass' behaviour, we log the call and its
         result.
         """
         request = self.request_count
@@ -172,10 +171,9 @@ class LoggingProxy(xmlrpc.Proxy):
         return deferred.addBoth(_logResult)
 
 
+@implementer(log.ILogObserver)
 class RotatableFileLogObserver:
     """A log observer that uses a log file and reopens it on SIGUSR1."""
-
-    implements(log.ILogObserver)
 
     def __init__(self, logfilepath):
         """Set up the logfile and possible signal handler.

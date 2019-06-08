@@ -12,6 +12,7 @@ from testtools.matchers import Not
 from zope.component import getUtility
 
 from lp.registry.interfaces.series import SeriesStatus
+from lp.services.features.testing import FeatureFixture
 from lp.services.webapp.interaction import get_current_principal
 from lp.services.webapp.interfaces import (
     BrowserNotificationLevel,
@@ -62,6 +63,16 @@ class TestBugNominationView(TestCaseWithFactory):
         view = create_initialized_view(self.bug_task, name='+nominate')
         action = view.__class__.actions.byname['actions.submit']
         self.assertEqual('Nominate', action.label)
+
+    def test_submit_action_bug_supervisor_feature_flag(self):
+        # A bug supervisor sees the Target action label when the feature
+        # flag is enabled.
+        self.useFixture(FeatureFixture(
+            {'bugs.nominations.bug_supervisors_can_target': 'on'}))
+        login_person(self.bug_worker)
+        view = create_initialized_view(self.bug_task, name='+nominate')
+        action = view.__class__.actions.byname['actions.submit']
+        self.assertEqual('Target', action.label)
 
     def test_submit_action_driver(self):
         # A driver sees the Target action label.
@@ -232,13 +243,35 @@ class TestBugNominationEditView(TestCaseWithFactory):
         return view
 
     def assertApproves(self, nomination):
-        self.assertEquals(
+        self.assertEqual(
             302,
             self.getNominationEditView(
                 nomination,
                 {'field.actions.approve': 'Approve'},
                 ).request.response.getStatus())
         self.assertTrue(nomination.isApproved())
+
+    def test_label(self):
+        nomination = self.getNomination()
+        target = nomination.target
+        view = self.getNominationEditView(nomination, {})
+        self.assertEqual(
+            'Approve or decline nomination for bug #%d in %s' % (
+                nomination.bug.id, target.bugtargetdisplayname),
+            view.label)
+
+    def test_page_title(self):
+        nomination = self.getNomination()
+        target = nomination.target
+        view = self.getNominationEditView(nomination, {})
+        self.assertEqual(
+            'Review nomination for %s' % target.bugtargetdisplayname,
+            view.page_title)
+
+    def test_next_url(self):
+        nomination = self.getNomination()
+        view = self.getNominationEditView(nomination, {})
+        self.assertEqual(canonical_url(view.current_bugtask), view.next_url)
 
     def test_approving_twice_is_noop(self):
         nomination = self.getNomination()

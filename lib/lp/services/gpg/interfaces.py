@@ -1,29 +1,123 @@
-# Copyright 2009 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-# pylint: disable-msg=E0211,E0213
+__all__ = [
+    'get_gpg_path',
+    'get_gpgme_context',
+    'GPGKeyAlgorithm',
+    'GPGKeyDoesNotExistOnServer',
+    'GPGKeyExpired',
+    'GPGKeyNotFoundError',
+    'GPGKeyRevoked',
+    'GPGKeyMismatchOnServer',
+    'GPGKeyTemporarilyNotFoundError',
+    'GPGUploadFailure',
+    'GPGVerificationError',
+    'IGPGHandler',
+    'IPymeKey',
+    'IPymeSignature',
+    'IPymeUserId',
+    'MoreThanOneGPGKeyFound',
+    'SecretGPGKeyImportDetected',
+    'valid_fingerprint',
+    'valid_keyid',
+    ]
 
+import httplib
+import os.path
+import re
+
+from lazr.enum import (
+    DBEnumeratedType,
+    DBItem,
+    )
+from lazr.restful.declarations import error_status
 from zope.interface import (
     Attribute,
     Interface,
     )
 
 
-__all__ = [
-    'GPGKeyDoesNotExistOnServer',
-    'GPGKeyExpired',
-    'GPGKeyRevoked',
-    'GPGKeyNotFoundError',
-    'GPGKeyTemporarilyNotFoundError',
-    'GPGUploadFailure',
-    'GPGVerificationError',
-    'IGPGHandler',
-    'IPymeSignature',
-    'IPymeKey',
-    'IPymeUserId',
-    'MoreThanOneGPGKeyFound',
-    'SecretGPGKeyImportDetected',
-    ]
+def valid_fingerprint(fingerprint):
+    """Is the fingerprint of valid form."""
+    # Fingerprints of v3 keys are md5, fingerprints of v4 keys are sha1;
+    # accordingly, fingerprints of v3 keys are 128 bit, those of v4 keys
+    # 160. Check therefore for strings of hex characters that are 32
+    # (4 * 32 == 128) or 40 characters long (4 * 40 = 160).
+    if len(fingerprint) not in (32, 40):
+        return False
+    if re.match(r"^[\dA-F]+$", fingerprint) is None:
+        return False
+    return True
+
+
+def valid_keyid(keyid):
+    """Is the key of valid form."""
+    if re.match(r"^[\dA-F]{8}$", keyid) is not None:
+        return True
+    else:
+        return False
+
+
+def get_gpg_path():
+    """Return the path to the GPG executable we prefer.
+
+    We stick to GnuPG 1 until we've worked out how to get things working
+    with GnuPG 2.
+    """
+    if os.path.exists("/usr/bin/gpg1"):
+        return "/usr/bin/gpg1"
+    else:
+        return "/usr/bin/gpg"
+
+
+def get_gpgme_context():
+    """Return a new appropriately-configured GPGME context."""
+    import gpgme
+
+    context = gpgme.Context()
+    context.set_engine_info(gpgme.PROTOCOL_OpenPGP, get_gpg_path(), None)
+    context.armor = True
+    return context
+
+
+# XXX: cprov 2004-10-04:
+# (gpg+dbschema) the data structure should be rearranged to support 4 field
+# needed: keynumber(1,16,17,20), keyalias(R,g,D,G), title and description
+class GPGKeyAlgorithm(DBEnumeratedType):
+    """
+    GPG Compliant Key Algorithms Types:
+
+    1 : "R", # RSA
+    16: "g", # ElGamal
+    17: "D", # DSA
+    20: "G", # ElGamal, compromised
+
+    FIXME
+    Rewrite it according to the experimental API returning also a name
+    attribute tested on 'algorithmname' attribute
+
+    """
+
+    R = DBItem(1, """
+        R
+
+        RSA""")
+
+    LITTLE_G = DBItem(16, """
+         g
+
+         ElGamal""")
+
+    D = DBItem(17, """
+        D
+
+        DSA""")
+
+    G = DBItem(20, """
+        G
+
+        ElGamal, compromised""")
 
 
 class MoreThanOneGPGKeyFound(Exception):
@@ -45,6 +139,7 @@ class GPGKeyNotFoundError(Exception):
         super(GPGKeyNotFoundError, self).__init__(message)
 
 
+@error_status(httplib.INTERNAL_SERVER_ERROR)
 class GPGKeyTemporarilyNotFoundError(GPGKeyNotFoundError):
     """The GPG key with the given fingerprint was not found on the keyserver.
 
@@ -59,6 +154,7 @@ class GPGKeyTemporarilyNotFoundError(GPGKeyNotFoundError):
             fingerprint, message)
 
 
+@error_status(httplib.NOT_FOUND)
 class GPGKeyDoesNotExistOnServer(GPGKeyNotFoundError):
     """The GPG key with the given fingerprint was not found on the keyserver.
 
@@ -77,7 +173,7 @@ class GPGKeyRevoked(Exception):
     def __init__(self, key):
         self.key = key
         super(GPGKeyRevoked, self).__init__(
-            "%s has been publicly revoked" % (key.keyid, ))
+            "%s has been publicly revoked" % (key.fingerprint, ))
 
 
 class GPGKeyExpired(Exception):
@@ -85,7 +181,22 @@ class GPGKeyExpired(Exception):
 
     def __init__(self, key):
         self.key = key
-        super(GPGKeyExpired, self).__init__("%s has expired" % (key.keyid, ))
+        super(GPGKeyExpired, self).__init__(
+            "%s has expired" % (key.fingerprint, ))
+
+
+class GPGKeyMismatchOnServer(Exception):
+    """The keyserver returned the wrong key for a given fingerprint.
+
+    This may indicate a keyserver compromise.
+    """
+    def __init__(self, expected_fingerprint, keyserver_fingerprint):
+        self.expected_fingerprint = expected_fingerprint
+        self.keyserver_fingerprint = keyserver_fingerprint
+        message = (
+            "The keyserver returned the wrong key: expected %s, got %s." %
+            (expected_fingerprint, keyserver_fingerprint))
+        super(GPGKeyMismatchOnServer, self).__init__(message)
 
 
 class SecretGPGKeyImportDetected(Exception):
@@ -130,11 +241,10 @@ class IGPGHandler(Interface):
     def getVerifiedSignatureResilient(content, signature=None):
         """Wrapper for getVerifiedSignature.
 
-        It calls the target method exactly 3 times.
-
-        Return the result if it succeed during the cycle, otherwise
-        capture the errors and emits at the end GPGVerificationError
-        with the stored error information.
+        This calls the target method up to three times.  Successful results
+        are returned immediately, and GPGKeyExpired errors are raised
+        immediately.  Otherwise, captures the errors and raises
+        GPGVerificationError with the accumulated error information.
         """
 
     def getVerifiedSignature(content, signature=None):
@@ -147,13 +257,12 @@ class IGPGHandler(Interface):
         content and signature must be 8-bit encoded str objects. It's up to
         the caller to encode or decode as appropriate.
 
-        The only exception likely to be propogated out is GPGVerificationError
-
         :param content: The content to be verified as string;
         :param signature: The signature as string (or None if content is
             clearsigned)
 
         :raise GPGVerificationError: if the signature cannot be verified.
+        :raise GPGKeyExpired: if the signature was made with an expired key.
         :return: a `PymeSignature` object.
         """
 
@@ -199,27 +308,26 @@ class IGPGHandler(Interface):
         :return: a `PymeKey` object for the just-generated secret key.
         """
 
-    def encryptContent(content, fingerprint):
-        """Encrypt the given content for the given fingerprint.
+    def encryptContent(content, key):
+        """Encrypt the given content for the given key.
 
         content must be a traditional string. It's up to the caller to
-        encode or decode properly. Fingerprint must be hexadecimal string.
+        encode or decode properly.
 
         :param content: the Unicode content to be encrypted.
-        :param fingerprint: the OpenPGP key's fingerprint.
+        :param key: the `IPymeKey` to encrypt the content for.
 
         :return: the encrypted content or None if failed.
         """
 
-    def signContent(content, key_fingerprint, password='', mode=None):
-        """Signs content with a given GPG fingerprint.
+    def signContent(content, key, password='', mode=None):
+        """Signs content with a given GPG key.
 
         :param content: the content to sign.
-        :param key_fingerprint: the fingerprint of the key to use when
-            signing the content.
+        :param key: the `IPymeKey` to use when signing the content.
         :param password: optional password to the key identified by
             key_fingerprint, the default value is '',
-        :param mode: optional he type of GPG signature to produce, the
+        :param mode: optional type of GPG signature to produce, the
             default mode is gpgme.SIG_MODE_CLEAR (clearsigned signatures)
 
         :return: The ASCII-armored signature for the content.
@@ -295,6 +403,7 @@ class IPymeKey(Interface):
     """pyME key model."""
 
     fingerprint = Attribute("Key Fingerprint")
+    key = Attribute("Underlying GpgmeKey object")
     algorithm = Attribute("Key Algorithm")
     revoked = Attribute("Key Revoked")
     expired = Attribute("Key Expired")
@@ -322,6 +431,9 @@ class IPymeKey(Interface):
 
         :return: a string containing the exported key.
         """
+
+    def matches(fingerprint):
+        """Return True if and only if this fingerprint matches this key."""
 
 
 class IPymeUserId(Interface):

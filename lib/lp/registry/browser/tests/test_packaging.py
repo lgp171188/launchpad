@@ -1,10 +1,14 @@
-# Copyright 2009 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2017 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Browser tests for Packaging actions."""
 
 __metaclass__ = type
 
+from testscenarios import (
+    load_tests_apply_scenarios,
+    WithScenarios,
+    )
 from zope.component import getUtility
 
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
@@ -15,33 +19,38 @@ from lp.registry.interfaces.packaging import (
     )
 from lp.registry.interfaces.product import IProductSet
 from lp.registry.interfaces.sourcepackagename import ISourcePackageNameSet
+from lp.services.features.testing import FeatureFixture
 from lp.testing import (
     login,
     logout,
     TestCaseWithFactory,
     )
-from lp.testing.layers import (
-    DatabaseFunctionalLayer,
-    PageTestLayer,
-    )
+from lp.testing.layers import DatabaseFunctionalLayer
 from lp.testing.pages import setupBrowser
 from lp.testing.views import create_initialized_view
 
 
-class TestProductSeriesUbuntuPackagingView(TestCaseWithFactory):
-    """Browser tests for deletion of Packaging objects."""
+class TestProductSeriesUbuntuPackagingView(WithScenarios, TestCaseWithFactory):
+    """Browser tests for adding Packaging objects."""
 
     layer = DatabaseFunctionalLayer
 
+    scenarios = [
+        ("spn_picker", {"features": {}}),
+        ("dsp_picker", {
+            "features": {u"disclosure.dsp_picker.enabled": u"on"},
+            }),
+        ]
+
     def setUp(self):
         super(TestProductSeriesUbuntuPackagingView, self).setUp()
+        if self.features:
+            self.useFixture(FeatureFixture(self.features))
         self.ubuntu = getUtility(ILaunchpadCelebrities).ubuntu
         self.hoary = self.ubuntu.getSeries('hoary')
         self.sourcepackagename = self.factory.makeSourcePackageName('hot')
-        self.sourcepackage = self.factory.makeSourcePackage(
-            sourcepackagename=self.sourcepackagename, distroseries=self.hoary)
-        self.factory.makeSourcePackagePublishingHistory(
-            sourcepackagename=self.sourcepackagename, distroseries=self.hoary)
+        self.factory.makeDSPCache(
+            distroseries=self.hoary, sourcepackagename=self.sourcepackagename)
         self.product = self.factory.makeProduct(name="hot", displayname='Hot')
         self.productseries = self.factory.makeProductSeries(
             product=self.product, name='hotter')
@@ -86,11 +95,11 @@ class TestProductSeriesUbuntuPackagingView(TestCaseWithFactory):
         view = create_initialized_view(
             other_productseries, '+ubuntupkg', form=form)
         view_errors = [
-            'The <a href="http://launchpad.dev/ubuntu/hoary/+source/hot">'
+            'The <a href="http://launchpad.test/ubuntu/hoary/+source/hot">'
              'hot</a> package in Hoary is already linked to another series.']
         self.assertEqual(view_errors, view.errors)
 
-    def test_sourcepackgename_required(self):
+    def test_sourcepackagename_required(self):
         # A source package name must be provided.
         form = {
             'field.distroseries': 'hoary',
@@ -103,10 +112,12 @@ class TestProductSeriesUbuntuPackagingView(TestCaseWithFactory):
         self.assertEqual('sourcepackagename', view.errors[0].field_name)
         self.assertEqual('Required input is missing.', view.errors[0].doc())
 
-    def test_cannot_link_to_nonexistant_ubuntu_package(self):
+    def test_cannot_link_to_nonexistent_ubuntu_package(self):
         # In the case of full functionality distributions like Ubuntu, the
         # source package must be published in the distro series.
-        self.factory.makeSourcePackageName('vapor')
+        warty = self.ubuntu.getSeries('warty')
+        self.factory.makeDSPCache(
+            distroseries=warty, sourcepackagename='vapor')
         form = {
             'field.distroseries': 'hoary',
             'field.sourcepackagename': 'vapor',
@@ -138,7 +149,7 @@ class TestProductSeriesUbuntuPackagingView(TestCaseWithFactory):
 class TestBrowserDeletePackaging(TestCaseWithFactory):
     """Browser tests for deletion of Packaging objects."""
 
-    layer = PageTestLayer
+    layer = DatabaseFunctionalLayer
 
     def setUp(self):
         super(TestBrowserDeletePackaging, self).setUp()
@@ -177,7 +188,7 @@ class TestBrowserDeletePackaging(TestCaseWithFactory):
         logout()
         # Delete the packaging
         user_browser = self.user_browser
-        user_browser.open('http://launchpad.dev/ubuntu/+source/alsa-utils')
+        user_browser.open('http://launchpad.test/ubuntu/+source/alsa-utils')
         link = user_browser.getLink(
             url='/ubuntu/warty/+source/alsa-utils/+remove-packaging')
         link.click()
@@ -188,3 +199,6 @@ class TestBrowserDeletePackaging(TestCaseWithFactory):
             productseries=productseries,
             sourcepackagename=package_name,
             distroseries=distroseries))
+
+
+load_tests = load_tests_apply_scenarios

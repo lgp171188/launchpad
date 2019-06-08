@@ -1,55 +1,54 @@
-# Copyright 2009-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for PersonSet."""
 
 __metaclass__ = type
 
-from datetime import datetime
 
-import pytz
 from testtools.matchers import (
+    Equals,
+    GreaterThan,
     LessThan,
-    MatchesStructure,
     )
 import transaction
 from zope.component import getUtility
+from zope.security.interfaces import Unauthorized
 from zope.security.proxy import removeSecurityProxy
 
 from lp.code.tests.helpers import remove_all_sample_data_branches
 from lp.registry.errors import (
     InvalidName,
     NameAlreadyTaken,
-    )
-from lp.registry.interfaces.accesspolicy import IAccessPolicyGrantSource
-from lp.registry.interfaces.karma import IKarmaCacheManager
-from lp.registry.interfaces.mailinglist import MailingListStatus
-from lp.registry.interfaces.mailinglistsubscription import (
-    MailingListAutoSubscribePolicy,
+    NoSuchAccount,
+    NotPlaceholderAccount,
     )
 from lp.registry.interfaces.nameblacklist import INameBlacklistSet
 from lp.registry.interfaces.person import (
+    IPerson,
     IPersonSet,
     PersonCreationRationale,
     TeamEmailAddressError,
-    TeamMembershipStatus,
     )
-from lp.registry.interfaces.personnotification import IPersonNotificationSet
-from lp.registry.model.person import (
-    Person,
-    PersonSet,
+from lp.registry.interfaces.ssh import (
+    SSHKeyAdditionError,
+    SSHKeyType,
     )
-from lp.registry.tests.test_person import KarmaTestMixin
-from lp.services.config import config
-from lp.services.database.lpstorm import (
+from lp.registry.model.codeofconduct import SignedCodeOfConduct
+from lp.registry.model.person import Person
+from lp.services.database.interfaces import (
     IMasterStore,
     IStore,
     )
-from lp.services.database.sqlbase import cursor
+from lp.services.database.sqlbase import (
+    cursor,
+    flush_database_caches,
+    )
 from lp.services.identity.interfaces.account import (
     AccountCreationRationale,
     AccountStatus,
     AccountSuspendedError,
+    IAccountSet,
     )
 from lp.services.identity.interfaces.emailaddress import (
     EmailAddressAlreadyTaken,
@@ -60,21 +59,27 @@ from lp.services.identity.interfaces.emailaddress import (
 from lp.services.identity.model.account import Account
 from lp.services.identity.model.emailaddress import EmailAddress
 from lp.services.openid.model.openididentifier import OpenIdIdentifier
-from lp.soyuz.enums import ArchiveStatus
+from lp.services.webapp.interfaces import ILaunchBag
 from lp.testing import (
+    admin_logged_in,
     ANONYMOUS,
-    celebrity_logged_in,
+    anonymous_logged_in,
     login,
-    login_person,
     logout,
     person_logged_in,
     StormStatementRecorder,
     TestCase,
     TestCaseWithFactory,
     )
-from lp.testing.dbuser import dbuser
 from lp.testing.layers import DatabaseFunctionalLayer
 from lp.testing.matchers import HasQueryCount
+
+
+def make_openid_identifier(account, identifier):
+    openid_identifier = OpenIdIdentifier()
+    openid_identifier.identifier = identifier
+    openid_identifier.account = account
+    return IStore(OpenIdIdentifier).add(openid_identifier)
 
 
 class TestPersonSet(TestCaseWithFactory):
@@ -90,8 +95,8 @@ class TestPersonSet(TestCaseWithFactory):
     def test_isNameBlacklisted(self):
         cursor().execute(
             "INSERT INTO NameBlacklist(id, regexp) VALUES (-100, 'foo')")
-        self.failUnless(self.person_set.isNameBlacklisted('foo'))
-        self.failIf(self.person_set.isNameBlacklisted('bar'))
+        self.assertTrue(self.person_set.isNameBlacklisted('foo'))
+        self.assertFalse(self.person_set.isNameBlacklisted('bar'))
 
     def test_isNameBlacklisted_user_is_admin(self):
         team = self.factory.makeTeam()
@@ -105,13 +110,13 @@ class TestPersonSet(TestCaseWithFactory):
     def test_getByEmail_ignores_case_and_whitespace(self):
         person1_email = 'foo.bar@canonical.com'
         person1 = self.person_set.getByEmail(person1_email)
-        self.failIf(
-            person1 is None,
+        self.assertIsNotNone(
+            person1,
             "PersonSet.getByEmail() could not find %r" % person1_email)
 
         person2 = self.person_set.getByEmail('  foo.BAR@canonICAL.com  ')
-        self.failIf(
-            person2 is None,
+        self.assertIsNotNone(
+            person2,
             "PersonSet.getByEmail() should ignore case and whitespace.")
         self.assertEqual(person1, person2)
 
@@ -128,16 +133,16 @@ class TestPersonSet(TestCaseWithFactory):
         # The getPrecachedPersonsFromIDs() method should only make one
         # query to load all the extraneous data. Accessing the
         # attributes should then cause zero queries.
-        person_ids = [
-            self.factory.makePerson().id
-            for i in range(3)]
+        person_ids = [self.factory.makePerson().id for i in range(3)]
+        person_ids += [self.factory.makeTeam().id for i in range(3)]
+        transaction.commit()
 
         with StormStatementRecorder() as recorder:
             persons = list(self.person_set.getPrecachedPersonsFromIDs(
                 person_ids, need_karma=True, need_ubuntu_coc=True,
-                need_location=True, need_archive=True,
+                need_teamowner=True, need_location=True, need_archive=True,
                 need_preferred_email=True, need_validity=True))
-        self.assertThat(recorder, HasQueryCount(LessThan(2)))
+        self.assertThat(recorder, HasQueryCount(LessThan(3)))
 
         with StormStatementRecorder() as recorder:
             for person in persons:
@@ -147,7 +152,55 @@ class TestPersonSet(TestCaseWithFactory):
                 person.location,
                 person.archive
                 person.preferredemail
+                person.teamowner
         self.assertThat(recorder, HasQueryCount(LessThan(1)))
+
+    def test_getPrecachedPersonsFromIDs_preferred_email(self):
+        # getPrecachedPersonsFromIDs() sets preferredemail to the preferred
+        # address if it exists, but otherwise leaves it as none.
+        team_no_contact = self.factory.makeTeam(email=None)
+        team_contact = self.factory.makeTeam(email=u'team@example.com')
+        team_list = self.factory.makeTeam(email=None)
+        self.factory.makeMailingList(team_list, team_list.teamowner)
+        person_normal = self.factory.makePerson()
+        person_unactivated = self.factory.makePerson(
+            account_status=AccountStatus.NOACCOUNT)
+        person_ids = [
+            t.id for t in [
+                team_no_contact, team_contact, team_list, person_normal,
+                person_unactivated]]
+        transaction.commit()
+
+        with StormStatementRecorder() as recorder:
+            list(self.person_set.getPrecachedPersonsFromIDs(
+                person_ids, need_preferred_email=True))
+        self.assertThat(recorder, HasQueryCount(Equals(1)))
+
+        with StormStatementRecorder() as recorder:
+            self.assertIsNone(team_no_contact.preferredemail)
+            self.assertEqual(
+                EmailAddressStatus.PREFERRED,
+                team_contact.preferredemail.status)
+            self.assertIsNone(team_list.preferredemail)
+            self.assertIsNone(person_unactivated.preferredemail)
+            self.assertEqual(
+                EmailAddressStatus.PREFERRED,
+                person_normal.preferredemail.status)
+        self.assertThat(recorder, HasQueryCount(Equals(0)))
+
+    def test_getPrecachedPersonsFromIDs_is_ubuntu_coc_signer(self):
+        # getPrecachedPersonsFromIDs() sets is_ubuntu_coc_signer
+        # correctly.
+        person_ids = [self.factory.makePerson().id for i in range(3)]
+        SignedCodeOfConduct(owner=person_ids[0], active=True)
+        flush_database_caches()
+
+        persons = list(
+            self.person_set.getPrecachedPersonsFromIDs(
+                person_ids, need_ubuntu_coc=True))
+        self.assertContentEqual(
+            zip(person_ids, [True, False, False]),
+            [(p.id, p.is_ubuntu_coc_signer) for p in persons])
 
     def test_getByOpenIDIdentifier_returns_person(self):
         # getByOpenIDIdentifier takes a full OpenID identifier and
@@ -155,21 +208,19 @@ class TestPersonSet(TestCaseWithFactory):
         person = self.factory.makePerson()
         with person_logged_in(person):
             identifier = person.account.openid_identifiers.one().identifier
-        self.assertEqual(
-            person,
-            self.person_set.getByOpenIDIdentifier(
-                u'http://openid.launchpad.dev/+id/%s' % identifier))
-        self.assertEqual(
-            person,
-            self.person_set.getByOpenIDIdentifier(
-                u'http://ubuntu-openid.launchpad.dev/+id/%s' % identifier))
+        for id_url in (
+                u'http://testopenid.test/+id/%s' % identifier,
+                u'http://login1.test/+id/%s' % identifier,
+                u'http://login2.test/+id/%s' % identifier):
+            self.assertEqual(
+                person, self.person_set.getByOpenIDIdentifier(id_url))
 
     def test_getByOpenIDIdentifier_for_nonexistent_identifier_is_none(self):
         # None is returned if there's no matching person.
         self.assertIs(
             None,
             self.person_set.getByOpenIDIdentifier(
-                u'http://openid.launchpad.dev/+id/notanid'))
+                u'http://testopenid.test/+id/notanid'))
 
     def test_getByOpenIDIdentifier_for_bad_domain_is_none(self):
         # Even though the OpenIDIdentifier table doesn't store the
@@ -181,7 +232,7 @@ class TestPersonSet(TestCaseWithFactory):
         self.assertIs(
             None,
             self.person_set.getByOpenIDIdentifier(
-                u'http://not.launchpad.dev/+id/%s' % identifier))
+                u'http://not.launchpad.test/+id/%s' % identifier))
 
     def test_find__accepts_queries_with_or_operator(self):
         # PersonSet.find() allows to search for OR combined terms.
@@ -235,459 +286,6 @@ class TestPersonSet(TestCaseWithFactory):
         self.assertEqual([team_two], result)
 
 
-class TestPersonSetMergeMailingListSubscriptions(TestCaseWithFactory):
-
-    layer = DatabaseFunctionalLayer
-
-    def setUp(self):
-        TestCaseWithFactory.setUp(self)
-        # Use the unsecured PersonSet so that private methods can be tested.
-        self.person_set = PersonSet()
-        self.from_person = self.factory.makePerson()
-        self.to_person = self.factory.makePerson()
-        self.cur = cursor()
-
-    def test__mergeMailingListSubscriptions_no_subscriptions(self):
-        self.person_set._mergeMailingListSubscriptions(
-            self.cur, self.from_person.id, self.to_person.id)
-        self.assertEqual(0, self.cur.rowcount)
-
-    def test__mergeMailingListSubscriptions_with_subscriptions(self):
-        naked_person = removeSecurityProxy(self.from_person)
-        naked_person.mailing_list_auto_subscribe_policy = (
-            MailingListAutoSubscribePolicy.ALWAYS)
-        self.team, self.mailing_list = self.factory.makeTeamAndMailingList(
-            'test-mailinglist', 'team-owner')
-        with person_logged_in(self.team.teamowner):
-            self.team.addMember(
-                self.from_person, reviewer=self.team.teamowner)
-        transaction.commit()
-        self.person_set._mergeMailingListSubscriptions(
-            self.cur, self.from_person.id, self.to_person.id)
-        self.assertEqual(1, self.cur.rowcount)
-
-
-class TestPersonSetMerge(TestCaseWithFactory, KarmaTestMixin):
-    """Test cases for PersonSet merge."""
-
-    layer = DatabaseFunctionalLayer
-
-    def setUp(self):
-        super(TestPersonSetMerge, self).setUp()
-        self.person_set = getUtility(IPersonSet)
-
-    def _do_premerge(self, from_person, to_person):
-        # Do the pre merge work performed by the LoginToken.
-        with celebrity_logged_in('admin'):
-            email = from_person.preferredemail
-            email.status = EmailAddressStatus.NEW
-            email.person = to_person
-        transaction.commit()
-
-    def _do_merge(self, from_person, to_person, reviewer=None):
-        # Perform the merge as the db user that will be used by the jobs.
-        with dbuser(config.IPersonMergeJobSource.dbuser):
-            self.person_set.merge(from_person, to_person, reviewer=reviewer)
-        return from_person, to_person
-
-    def _get_testable_account(self, person, date_created, openid_identifier):
-        # Return a naked account with predictable attributes.
-        account = removeSecurityProxy(person.account)
-        account.date_created = date_created
-        account.openid_identifier = openid_identifier
-        return account
-
-    def test_delete_no_notifications(self):
-        team = self.factory.makeTeam()
-        owner = team.teamowner
-        transaction.commit()
-        with dbuser(config.IPersonMergeJobSource.dbuser):
-            self.person_set.delete(team, owner)
-        notification_set = getUtility(IPersonNotificationSet)
-        notifications = notification_set.getNotificationsToSend()
-        self.assertEqual(0, notifications.count())
-
-    def test_openid_identifiers(self):
-        # Verify that OpenId Identifiers are merged.
-        duplicate = self.factory.makePerson()
-        duplicate_identifier = removeSecurityProxy(
-            duplicate.account).openid_identifiers.any().identifier
-        person = self.factory.makePerson()
-        person_identifier = removeSecurityProxy(
-            person.account).openid_identifiers.any().identifier
-        self._do_premerge(duplicate, person)
-        login_person(person)
-        duplicate, person = self._do_merge(duplicate, person)
-        self.assertEqual(
-            0,
-            removeSecurityProxy(duplicate.account).openid_identifiers.count())
-
-        merged_identifiers = [
-            identifier.identifier for identifier in
-                removeSecurityProxy(person.account).openid_identifiers]
-
-        self.assertIn(duplicate_identifier, merged_identifiers)
-        self.assertIn(person_identifier, merged_identifiers)
-
-    def test_karmacache_transferred_to_user_has_no_karma(self):
-        # Verify that the merged user has no KarmaCache entries,
-        # and the karma total was transfered.
-        self.cache_manager = getUtility(IKarmaCacheManager)
-        product = self.factory.makeProduct()
-        duplicate = self.factory.makePerson()
-        self._makeKarmaCache(
-            duplicate, product, [('bugs', 10)])
-        self._makeKarmaTotalCache(duplicate, 15)
-        # The karma changes invalidated duplicate instance.
-        duplicate = self.person_set.get(duplicate.id)
-        person = self.factory.makePerson()
-        self._do_premerge(duplicate, person)
-        login_person(person)
-        duplicate, person = self._do_merge(duplicate, person)
-        self.assertEqual([], duplicate.karma_category_caches)
-        self.assertEqual(0, duplicate.karma)
-        self.assertEqual(15, person.karma)
-
-    def test_karmacache_transferred_to_user_has_karma(self):
-        # Verify that the merged user has no KarmaCache entries,
-        # and the karma total was summed.
-        self.cache_manager = getUtility(IKarmaCacheManager)
-        product = self.factory.makeProduct()
-        duplicate = self.factory.makePerson()
-        self._makeKarmaCache(
-            duplicate, product, [('bugs', 10)])
-        self._makeKarmaTotalCache(duplicate, 15)
-        person = self.factory.makePerson()
-        self._makeKarmaCache(
-            person, product, [('bugs', 9)])
-        self._makeKarmaTotalCache(person, 13)
-        # The karma changes invalidated duplicate and person instances.
-        duplicate = self.person_set.get(duplicate.id)
-        person = self.person_set.get(person.id)
-        self._do_premerge(duplicate, person)
-        login_person(person)
-        duplicate, person = self._do_merge(duplicate, person)
-        self.assertEqual([], duplicate.karma_category_caches)
-        self.assertEqual(0, duplicate.karma)
-        self.assertEqual(28, person.karma)
-
-    def test_person_date_created_preserved(self):
-        # Verify that the oldest datecreated is merged.
-        person = self.factory.makePerson()
-        duplicate = self.factory.makePerson()
-        oldest_date = datetime(
-            2005, 11, 25, 0, 0, 0, 0, pytz.timezone('UTC'))
-        removeSecurityProxy(duplicate).datecreated = oldest_date
-        self._do_premerge(duplicate, person)
-        login_person(person)
-        duplicate, person = self._do_merge(duplicate, person)
-        self.assertEqual(oldest_date, person.datecreated)
-
-    def test_team_with_active_mailing_list_raises_error(self):
-        # A team with an active mailing list cannot be merged.
-        target_team = self.factory.makeTeam()
-        test_team = self.factory.makeTeam()
-        self.factory.makeMailingList(
-            test_team, test_team.teamowner)
-        self.assertRaises(
-            AssertionError, self.person_set.merge, test_team, target_team)
-
-    def test_team_with_inactive_mailing_list(self):
-        # A team with an inactive mailing list can be merged.
-        target_team = self.factory.makeTeam()
-        test_team = self.factory.makeTeam()
-        mailing_list = self.factory.makeMailingList(
-            test_team, test_team.teamowner)
-        mailing_list.deactivate()
-        mailing_list.transitionToStatus(MailingListStatus.INACTIVE)
-        test_team, target_team = self._do_merge(
-            test_team, target_team, test_team.teamowner)
-        self.assertEqual(target_team, test_team.merged)
-        self.assertEqual(
-            MailingListStatus.PURGED, test_team.mailing_list.status)
-        emails = getUtility(IEmailAddressSet).getByPerson(target_team).count()
-        self.assertEqual(0, emails)
-
-    def test_team_with_purged_mailing_list(self):
-        # A team with a purges mailing list can be merged.
-        target_team = self.factory.makeTeam()
-        test_team = self.factory.makeTeam()
-        mailing_list = self.factory.makeMailingList(
-            test_team, test_team.teamowner)
-        mailing_list.deactivate()
-        mailing_list.transitionToStatus(MailingListStatus.INACTIVE)
-        mailing_list.purge()
-        test_team, target_team = self._do_merge(
-            test_team, target_team, test_team.teamowner)
-        self.assertEqual(target_team, test_team.merged)
-
-    def test_team_with_members(self):
-        # Team members are removed before merging.
-        target_team = self.factory.makeTeam()
-        test_team = self.factory.makeTeam()
-        former_member = self.factory.makePerson()
-        with person_logged_in(test_team.teamowner):
-            test_team.addMember(former_member, test_team.teamowner)
-        test_team, target_team = self._do_merge(
-            test_team, target_team, test_team.teamowner)
-        self.assertEqual(target_team, test_team.merged)
-        self.assertEqual([], list(former_member.super_teams))
-
-    def test_team_without_super_teams_is_fine(self):
-        # A team with no members and no super teams
-        # merges without errors.
-        test_team = self.factory.makeTeam()
-        target_team = self.factory.makeTeam()
-        login_person(test_team.teamowner)
-        self._do_merge(test_team, target_team, test_team.teamowner)
-
-    def test_team_with_super_teams(self):
-        # A team with superteams can be merged, but the memberships
-        # are not transferred.
-        test_team = self.factory.makeTeam()
-        super_team = self.factory.makeTeam()
-        target_team = self.factory.makeTeam()
-        login_person(test_team.teamowner)
-        test_team.join(super_team, test_team.teamowner)
-        test_team, target_team = self._do_merge(
-            test_team, target_team, test_team.teamowner)
-        self.assertEqual(target_team, test_team.merged)
-        self.assertEqual([], list(target_team.super_teams))
-
-    def test_merge_moves_branches(self):
-        # When person/teams are merged, branches owned by the from person
-        # are moved.
-        person = self.factory.makePerson()
-        branch = self.factory.makeBranch()
-        duplicate = branch.owner
-        self._do_premerge(branch.owner, person)
-        login_person(person)
-        duplicate, person = self._do_merge(duplicate, person)
-        branches = person.getBranches()
-        self.assertEqual(1, branches.count())
-
-    def test_merge_with_duplicated_branches(self):
-        # If both the from and to people have branches with the same name,
-        # merging renames the duplicate from the from person's side.
-        product = self.factory.makeProduct()
-        from_branch = self.factory.makeBranch(name='foo', product=product)
-        to_branch = self.factory.makeBranch(name='foo', product=product)
-        mergee = to_branch.owner
-        duplicate = from_branch.owner
-        self._do_premerge(duplicate, mergee)
-        login_person(mergee)
-        duplicate, mergee = self._do_merge(duplicate, mergee)
-        branches = [b.name for b in mergee.getBranches()]
-        self.assertEqual(2, len(branches))
-        self.assertContentEqual([u'foo', u'foo-1'], branches)
-
-    def test_merge_moves_recipes(self):
-        # When person/teams are merged, recipes owned by the from person are
-        # moved.
-        person = self.factory.makePerson()
-        recipe = self.factory.makeSourcePackageRecipe()
-        duplicate = recipe.owner
-        # Delete the PPA, which is required for the merge to work.
-        with person_logged_in(duplicate):
-            recipe.owner.archive.status = ArchiveStatus.DELETED
-        self._do_premerge(duplicate, person)
-        login_person(person)
-        duplicate, person = self._do_merge(duplicate, person)
-        self.assertEqual(1, person.recipes.count())
-
-    def test_merge_with_duplicated_recipes(self):
-        # If both the from and to people have recipes with the same name,
-        # merging renames the duplicate from the from person's side.
-        merge_from = self.factory.makeSourcePackageRecipe(
-            name=u'foo', description=u'FROM')
-        merge_to = self.factory.makeSourcePackageRecipe(
-            name=u'foo', description=u'TO')
-        duplicate = merge_from.owner
-        mergee = merge_to.owner
-        # Delete merge_from's PPA, which is required for the merge to work.
-        with person_logged_in(merge_from.owner):
-            merge_from.owner.archive.status = ArchiveStatus.DELETED
-        self._do_premerge(merge_from.owner, mergee)
-        login_person(mergee)
-        duplicate, mergee = self._do_merge(duplicate, mergee)
-        recipes = mergee.recipes
-        self.assertEqual(2, recipes.count())
-        descriptions = [r.description for r in recipes]
-        self.assertEqual([u'TO', u'FROM'], descriptions)
-        self.assertEqual(u'foo-1', recipes[1].name)
-
-    def assertSubscriptionMerges(self, target):
-        # Given a subscription target, we want to make sure that subscriptions
-        # that the duplicate person made are carried over to the merged
-        # account.
-        duplicate = self.factory.makePerson()
-        with person_logged_in(duplicate):
-            target.addSubscription(duplicate, duplicate)
-        person = self.factory.makePerson()
-        self._do_premerge(duplicate, person)
-        login_person(person)
-        duplicate, person = self._do_merge(duplicate, person)
-        # The merged person has the subscription, and the duplicate person
-        # does not.
-        self.assertTrue(target.getSubscription(person) is not None)
-        self.assertTrue(target.getSubscription(duplicate) is None)
-
-    def assertConflictingSubscriptionDeletes(self, target):
-        # Given a subscription target, we want to make sure that subscriptions
-        # that the duplicate person made that conflict with existing
-        # subscriptions in the merged account are deleted.
-        duplicate = self.factory.makePerson()
-        person = self.factory.makePerson()
-        with person_logged_in(duplicate):
-            target.addSubscription(duplicate, duplicate)
-        with person_logged_in(person):
-            # The description lets us show that we still have the right
-            # subscription later.
-            target.addBugSubscriptionFilter(person, person).description = (
-                u'a marker')
-        self._do_premerge(duplicate, person)
-        login_person(person)
-        duplicate, person = self._do_merge(duplicate, person)
-        # The merged person still has the original subscription, as shown
-        # by the marker name.
-        self.assertEqual(
-            target.getSubscription(person).bug_filters[0].description,
-            u'a marker')
-        # The conflicting subscription on the duplicate has been deleted.
-        self.assertTrue(target.getSubscription(duplicate) is None)
-
-    def test_merge_with_product_subscription(self):
-        # See comments in assertSubscriptionMerges.
-        self.assertSubscriptionMerges(self.factory.makeProduct())
-
-    def test_merge_with_conflicting_product_subscription(self):
-        # See comments in assertConflictingSubscriptionDeletes.
-        self.assertConflictingSubscriptionDeletes(self.factory.makeProduct())
-
-    def test_merge_with_project_subscription(self):
-        # See comments in assertSubscriptionMerges.
-        self.assertSubscriptionMerges(self.factory.makeProject())
-
-    def test_merge_with_conflicting_project_subscription(self):
-        # See comments in assertConflictingSubscriptionDeletes.
-        self.assertConflictingSubscriptionDeletes(self.factory.makeProject())
-
-    def test_merge_with_distroseries_subscription(self):
-        # See comments in assertSubscriptionMerges.
-        self.assertSubscriptionMerges(self.factory.makeDistroSeries())
-
-    def test_merge_with_conflicting_distroseries_subscription(self):
-        # See comments in assertConflictingSubscriptionDeletes.
-        self.assertConflictingSubscriptionDeletes(
-            self.factory.makeDistroSeries())
-
-    def test_merge_with_milestone_subscription(self):
-        # See comments in assertSubscriptionMerges.
-        self.assertSubscriptionMerges(self.factory.makeMilestone())
-
-    def test_merge_with_conflicting_milestone_subscription(self):
-        # See comments in assertConflictingSubscriptionDeletes.
-        self.assertConflictingSubscriptionDeletes(
-            self.factory.makeMilestone())
-
-    def test_merge_with_productseries_subscription(self):
-        # See comments in assertSubscriptionMerges.
-        self.assertSubscriptionMerges(self.factory.makeProductSeries())
-
-    def test_merge_with_conflicting_productseries_subscription(self):
-        # See comments in assertConflictingSubscriptionDeletes.
-        self.assertConflictingSubscriptionDeletes(
-            self.factory.makeProductSeries())
-
-    def test_merge_with_distribution_subscription(self):
-        # See comments in assertSubscriptionMerges.
-        self.assertSubscriptionMerges(self.factory.makeDistribution())
-
-    def test_merge_with_conflicting_distribution_subscription(self):
-        # See comments in assertConflictingSubscriptionDeletes.
-        self.assertConflictingSubscriptionDeletes(
-            self.factory.makeDistribution())
-
-    def test_merge_with_sourcepackage_subscription(self):
-        # See comments in assertSubscriptionMerges.
-        dsp = self.factory.makeDistributionSourcePackage()
-        self.assertSubscriptionMerges(dsp)
-
-    def test_merge_with_conflicting_sourcepackage_subscription(self):
-        # See comments in assertConflictingSubscriptionDeletes.
-        dsp = self.factory.makeDistributionSourcePackage()
-        self.assertConflictingSubscriptionDeletes(dsp)
-
-    def test_merge_accesspolicygrants(self):
-        # AccessPolicyGrants are transferred from the duplicate.
-        person = self.factory.makePerson()
-        grant = self.factory.makeAccessPolicyGrant()
-        self._do_premerge(grant.grantee, person)
-
-        source = getUtility(IAccessPolicyGrantSource)
-        self.assertEqual(
-            grant.grantee, source.findByPolicy([grant.policy]).one().grantee)
-        with person_logged_in(person):
-            self._do_merge(grant.grantee, person)
-        self.assertEqual(
-            person, source.findByPolicy([grant.policy]).one().grantee)
-
-    def test_merge_accesspolicygrants_conflicts(self):
-        # Conflicting AccessPolicyGrants are deleted.
-        policy = self.factory.makeAccessPolicy()
-
-        person = self.factory.makePerson()
-        person_grantor = self.factory.makePerson()
-        person_grant = self.factory.makeAccessPolicyGrant(
-            grantee=person, grantor=person_grantor, policy=policy)
-        person_grant_date = person_grant.date_created
-
-        duplicate = self.factory.makePerson()
-        duplicate_grantor = self.factory.makePerson()
-        self.factory.makeAccessPolicyGrant(
-            grantee=duplicate, grantor=duplicate_grantor, policy=policy)
-
-        self._do_premerge(duplicate, person)
-        with person_logged_in(person):
-            self._do_merge(duplicate, person)
-
-        # Only one grant for the policy exists: the retained person's.
-        source = getUtility(IAccessPolicyGrantSource)
-        self.assertThat(
-            source.findByPolicy([policy]).one(),
-            MatchesStructure.byEquality(
-                policy=policy,
-                grantee=person,
-                date_created=person_grant_date))
-
-    def test_mergeAsync(self):
-        # mergeAsync() creates a new `PersonMergeJob`.
-        from_person = self.factory.makePerson()
-        to_person = self.factory.makePerson()
-        login_person(from_person)
-        job = self.person_set.mergeAsync(from_person, to_person, from_person)
-        self.assertEqual(from_person, job.from_person)
-        self.assertEqual(to_person, job.to_person)
-        self.assertEqual(from_person, job.requester)
-
-    def test_mergeProposedInvitedTeamMembership(self):
-        # Proposed and invited memberships are declined.
-        TMS = TeamMembershipStatus
-        dupe_team = self.factory.makeTeam()
-        test_team = self.factory.makeTeam()
-        inviting_team = self.factory.makeTeam()
-        proposed_team = self.factory.makeTeam()
-        with celebrity_logged_in('admin'):
-            # Login as a user who can work with all these teams.
-            inviting_team.addMember(
-                dupe_team, inviting_team.teamowner)
-            proposed_team.addMember(
-                dupe_team, dupe_team.teamowner, status=TMS.PROPOSED)
-            self._do_merge(dupe_team, test_team, test_team.teamowner)
-            self.assertEqual(0, inviting_team.invited_member_count)
-            self.assertEqual(0, proposed_team.proposed_member_count)
-
-
 class TestPersonSetCreateByOpenId(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
@@ -698,7 +296,7 @@ class TestPersonSetCreateByOpenId(TestCaseWithFactory):
 
         # Generate some valid test data.
         self.account = self.makeAccount()
-        self.identifier = self.makeOpenIdIdentifier(self.account, u'whatever')
+        self.identifier = make_openid_identifier(self.account, u'whatever')
         self.person = self.makePerson(self.account)
         self.email = self.makeEmailAddress(
             email='whatever@example.com', person=self.person)
@@ -709,16 +307,10 @@ class TestPersonSetCreateByOpenId(TestCaseWithFactory):
             creation_rationale=AccountCreationRationale.UNKNOWN,
             status=AccountStatus.ACTIVE))
 
-    def makeOpenIdIdentifier(self, account, identifier):
-        openid_identifier = OpenIdIdentifier()
-        openid_identifier.identifier = identifier
-        openid_identifier.account = account
-        return self.store.add(openid_identifier)
-
     def makePerson(self, account):
         return self.store.add(Person(
             name='acc%d' % account.id, account=account,
-            displayname='Displayname',
+            display_name='Displayname',
             creation_rationale=PersonCreationRationale.UNKNOWN))
 
     def makeEmailAddress(self, email, person):
@@ -785,30 +377,6 @@ class TestPersonSetCreateByOpenId(TestCaseWithFactory):
                 in self.account.openid_identifiers]
         self.assertIn(new_identifier, identifiers)
 
-    def testNewEmailAddress(self):
-        # Account looked up by OpenId identifier and new EmailAddress
-        # attached. We can do this because we trust our OpenId Provider.
-        new_email = u'new_email@example.com'
-        found, updated = self.person_set.getOrCreateByOpenIDIdentifier(
-            self.identifier.identifier, new_email, 'Ignored Name',
-            PersonCreationRationale.UNKNOWN, 'No Comment')
-        found = removeSecurityProxy(found)
-
-        self.assertIs(True, updated)
-        self.assertIs(self.person, found)
-        self.assertIs(self.account, found.account)
-        self.assertEqual(
-            [self.identifier], list(self.account.openid_identifiers))
-
-        # The old email address is still there and correctly linked.
-        self.assertIs(self.email, found.preferredemail)
-        self.assertIs(self.email.person, self.person)
-
-        # The new email address is there too and correctly linked.
-        new_email = self.store.find(EmailAddress, email=new_email).one()
-        self.assertIs(new_email.person, self.person)
-        self.assertEqual(EmailAddressStatus.NEW, new_email.status)
-
     def testNewAccountAndIdentifier(self):
         # If neither the OpenId Identifier nor the email address are
         # found, we create everything.
@@ -841,7 +409,7 @@ class TestPersonSetCreateByOpenId(TestCaseWithFactory):
             PersonCreationRationale.UNKNOWN, 'No Comment')
         found = removeSecurityProxy(found)
 
-        self.assertIs(True, updated)
+        self.assertTrue(updated)
 
         self.assertIsNot(None, found.account)
         self.assertEqual(
@@ -849,27 +417,31 @@ class TestPersonSetCreateByOpenId(TestCaseWithFactory):
         self.assertIs(self.email.person, found)
         self.assertEqual(EmailAddressStatus.PREFERRED, self.email.status)
 
-    def testMovedEmailAddress(self):
-        # The EmailAddress and OpenId Identifier are both in the
-        # database, but they are not linked to the same account. The
-        # identifier needs to be relinked to the correct account - the
-        # user able to log into the trusted SSO with that email address
-        # should be able to log into Launchpad with that email address.
-        # This lets us cope with the SSO migrating email addresses
-        # between SSO accounts.
+    def testEmailAddressAccountAndOpenIDAccountAreDifferent(self):
+        # The EmailAddress and OpenId Identifier are both in the database,
+        # but they are not linked to the same account. In this case, the
+        # OpenId Identifier trumps the EmailAddress's account.
         self.identifier.account = self.store.find(
             Account, displayname='Foo Bar').one()
+        email_account = self.email.account
 
         found, updated = self.person_set.getOrCreateByOpenIDIdentifier(
             self.identifier.identifier, self.email.email, 'New Name',
             PersonCreationRationale.UNKNOWN, 'No Comment')
         found = removeSecurityProxy(found)
 
-        self.assertIs(True, updated)
-        self.assertIs(self.person, found)
+        self.assertFalse(updated)
+        self.assertIs(IPerson(self.identifier.account), found)
 
         self.assertIs(found.account, self.identifier.account)
         self.assertIn(self.identifier, list(found.account.openid_identifiers))
+        self.assertIs(email_account, self.email.account)
+
+    def testEmptyOpenIDIdentifier(self):
+        self.assertRaises(
+            AssertionError,
+            self.person_set.getOrCreateByOpenIDIdentifier, u'', 'foo@bar.com',
+            'New Name', PersonCreationRationale.UNKNOWN, 'No Comment')
 
     def testTeamEmailAddress(self):
         # If the EmailAddress is linked to a team, login fails. There is
@@ -882,6 +454,39 @@ class TestPersonSetCreateByOpenId(TestCaseWithFactory):
             self.person_set.getOrCreateByOpenIDIdentifier,
             u'other-openid-identifier', 'foo@bar.com', 'New Name',
             PersonCreationRationale.UNKNOWN, 'No Comment')
+
+    def testDeactivatedAccount(self):
+        # Logging into a deactivated account with a new email address
+        # reactivates the account, adds that email address, and sets it
+        # as preferred.
+        addr = 'not@an.address'
+        self.person.preDeactivate('I hate life.')
+        self.assertEqual(AccountStatus.DEACTIVATED, self.person.account_status)
+        self.assertIs(None, self.person.preferredemail)
+        found, updated = self.person_set.getOrCreateByOpenIDIdentifier(
+            self.identifier.identifier, addr, 'New Name',
+            PersonCreationRationale.UNKNOWN, 'No Comment')
+        self.assertEqual(AccountStatus.ACTIVE, self.person.account_status)
+        self.assertEqual(addr, self.person.preferredemail.email)
+
+    def testPlaceholderAccount(self):
+        # Logging into a username placeholder account activates the
+        # account and adds the email address.
+        email = u'placeholder@example.com'
+        openid = u'placeholder-id'
+        name = u'placeholder'
+        person = self.person_set.createPlaceholderPerson(openid, name)
+        self.assertEqual(AccountStatus.PLACEHOLDER, person.account.status)
+        original_created = person.datecreated
+        transaction.commit()
+        found, updated = self.person_set.getOrCreateByOpenIDIdentifier(
+            openid, email, 'New Name', PersonCreationRationale.UNKNOWN,
+            'No Comment')
+        self.assertEqual(person, found)
+        self.assertEqual(AccountStatus.ACTIVE, person.account.status)
+        self.assertEqual(name, person.name)
+        self.assertEqual('New Name', person.display_name)
+        self.assertThat(person.datecreated, GreaterThan(original_created))
 
 
 class TestCreatePersonAndEmail(TestCase):
@@ -964,7 +569,7 @@ class TestPersonSetEnsurePerson(TestCaseWithFactory):
 
         ensured_person = self.person_set.ensurePerson(
             self.email_address, self.displayname, self.rationale)
-        self.assertEquals(testing_person.id, ensured_person.id)
+        self.assertEqual(testing_person.id, ensured_person.id)
         self.assertIsNot(
             ensured_person.displayname, self.displayname,
             'Person.displayname should not be overridden.')
@@ -1016,9 +621,10 @@ class TestPersonSetGetOrCreateByOpenIDIdentifier(TestCaseWithFactory):
         self.assertEqual(person, found_person)
         self.assertEqual(AccountStatus.ACTIVE, person.account.status)
         self.assertTrue(db_updated)
-        self.assertEqual(
-            "when purchasing an application via Software Center.",
-            removeSecurityProxy(person.account).status_comment)
+        self.assertEndsWith(
+            removeSecurityProxy(person.account).status_history,
+            ": Deactivated -> Active: "
+            "when purchasing an application via Software Center.\n")
 
     def test_existing_suspended_account(self):
         # An existing suspended account will raise an exception.
@@ -1049,7 +655,456 @@ class TestPersonSetGetOrCreateByOpenIDIdentifier(TestCaseWithFactory):
             u'other-openid-identifier', 'a@b.com')
 
         self.assertEqual(other_person, person)
-        self.assert_(
-            u'other-openid-identifier' in [
-                identifier.identifier for identifier in removeSecurityProxy(
-                    person.account).openid_identifiers])
+        self.assertIn(
+            u'other-openid-identifier',
+            [identifier.identifier for identifier in removeSecurityProxy(
+                person.account).openid_identifiers])
+
+
+class TestPersonSetGetOrCreateSoftwareCenterCustomer(TestCaseWithFactory):
+
+    layer = DatabaseFunctionalLayer
+
+    def setUp(self):
+        super(TestPersonSetGetOrCreateSoftwareCenterCustomer, self).setUp()
+        self.sca = getUtility(IPersonSet).getByName('software-center-agent')
+
+    def test_restricted_to_sca(self):
+        # Only the software-center-agent celebrity can invoke this
+        # privileged method.
+        def do_it():
+            return getUtility(IPersonSet).getOrCreateSoftwareCenterCustomer(
+                getUtility(ILaunchBag).user, u'somebody',
+                'somebody@example.com', 'Example')
+        random = self.factory.makePerson()
+        admin = self.factory.makePerson(
+            member_of=[getUtility(IPersonSet).getByName('admins')])
+
+        # Anonymous, random or admin users can't invoke the method.
+        with anonymous_logged_in():
+            self.assertRaises(Unauthorized, do_it)
+        with person_logged_in(random):
+            self.assertRaises(Unauthorized, do_it)
+        with person_logged_in(admin):
+            self.assertRaises(Unauthorized, do_it)
+
+        with person_logged_in(self.sca):
+            person = do_it()
+        self.assertIsInstance(person, Person)
+
+    def test_finds_by_openid(self):
+        # A Person with the requested OpenID identifier is returned.
+        somebody = self.factory.makePerson()
+        make_openid_identifier(somebody.account, u'somebody')
+        with person_logged_in(self.sca):
+            got = getUtility(IPersonSet).getOrCreateSoftwareCenterCustomer(
+                self.sca, u'somebody', 'somebody@example.com', 'Example')
+        self.assertEqual(somebody, got)
+
+        # The email address doesn't get linked, as that could change how
+        # future logins work.
+        self.assertIs(
+            None,
+            getUtility(IEmailAddressSet).getByEmail('somebody@example.com'))
+
+    def test_creates_new(self):
+        # If an unknown OpenID identifier and email address are
+        # provided, a new account is created and returned.
+        with person_logged_in(self.sca):
+            made = getUtility(IPersonSet).getOrCreateSoftwareCenterCustomer(
+                self.sca, u'somebody', 'somebody@example.com', 'Example')
+        with admin_logged_in():
+            self.assertEqual('Example', made.displayname)
+            self.assertEqual('somebody@example.com', made.preferredemail.email)
+
+        # The email address is linked, since it can't compromise an
+        # account that is being created just for it.
+        email = getUtility(IEmailAddressSet).getByEmail('somebody@example.com')
+        self.assertEqual(made, email.person)
+
+    def test_activates_unactivated(self):
+        # An unactivated account should be treated just like a new
+        # account -- it gets activated with the given email address.
+        somebody = self.factory.makePerson(
+            email='existing@example.com',
+            account_status=AccountStatus.NOACCOUNT)
+        make_openid_identifier(somebody.account, u'somebody')
+        self.assertEqual(AccountStatus.NOACCOUNT, somebody.account.status)
+        with person_logged_in(self.sca):
+            got = getUtility(IPersonSet).getOrCreateSoftwareCenterCustomer(
+                self.sca, u'somebody', 'somebody@example.com', 'Example')
+        self.assertEqual(somebody, got)
+        with admin_logged_in():
+            self.assertEqual(AccountStatus.ACTIVE, somebody.account.status)
+            self.assertEqual(
+                'somebody@example.com', somebody.preferredemail.email)
+
+    def test_fails_if_email_is_already_registered(self):
+        # Only the OpenID identifier is used to look up an account. If
+        # the OpenID identifier isn't already registered by the email
+        # address is, the request is rejected to avoid potentially
+        # adding an unwanted OpenID identifier to the address' account.
+        #
+        # The user must log into Launchpad directly first to register
+        # their OpenID identifier.
+        other = self.factory.makePerson(email='other@example.com')
+        with person_logged_in(self.sca):
+            self.assertRaises(
+                EmailAddressAlreadyTaken,
+                getUtility(IPersonSet).getOrCreateSoftwareCenterCustomer,
+                self.sca, u'somebody', 'other@example.com', 'Example')
+
+        # The email address stays with the old owner.
+        email = getUtility(IEmailAddressSet).getByEmail('other@example.com')
+        self.assertEqual(other, email.person)
+
+    def test_fails_if_account_is_suspended(self):
+        # Suspended accounts cannot be returned.
+        somebody = self.factory.makePerson()
+        make_openid_identifier(somebody.account, u'somebody')
+        with admin_logged_in():
+            somebody.setAccountStatus(
+                AccountStatus.SUSPENDED, None, "Go away!")
+        with person_logged_in(self.sca):
+            self.assertRaises(
+                AccountSuspendedError,
+                getUtility(IPersonSet).getOrCreateSoftwareCenterCustomer,
+                self.sca, u'somebody', 'somebody@example.com', 'Example')
+
+    def test_fails_if_account_is_deactivated(self):
+        # We don't want to reactivate explicitly deactivated accounts,
+        # nor do we want to potentially compromise them with a bad email
+        # address.
+        somebody = self.factory.makePerson()
+        make_openid_identifier(somebody.account, u'somebody')
+        with admin_logged_in():
+            somebody.setAccountStatus(
+                AccountStatus.DEACTIVATED, None, "Goodbye cruel world.")
+        with person_logged_in(self.sca):
+            self.assertRaises(
+                NameAlreadyTaken,
+                getUtility(IPersonSet).getOrCreateSoftwareCenterCustomer,
+                self.sca, u'somebody', 'somebody@example.com', 'Example')
+
+
+class TestPersonGetUsernameForSSO(TestCaseWithFactory):
+
+    layer = DatabaseFunctionalLayer
+
+    def setUp(self):
+        super(TestPersonGetUsernameForSSO, self).setUp()
+        self.sso = getUtility(IPersonSet).getByName(u'ubuntu-sso')
+
+    def test_restricted_to_sca(self):
+        # Only the ubuntu-sso celebrity can invoke this
+        # privileged method.
+        target = self.factory.makePerson(name='username')
+        make_openid_identifier(target.account, u'openid')
+
+        def do_it():
+            return getUtility(IPersonSet).getUsernameForSSO(
+                getUtility(ILaunchBag).user, u'openid')
+        random = self.factory.makePerson()
+        admin = self.factory.makePerson(
+            member_of=[getUtility(IPersonSet).getByName(u'admins')])
+
+        # Anonymous, random or admin users can't invoke the method.
+        with anonymous_logged_in():
+            self.assertRaises(Unauthorized, do_it)
+        with person_logged_in(random):
+            self.assertRaises(Unauthorized, do_it)
+        with person_logged_in(admin):
+            self.assertRaises(Unauthorized, do_it)
+
+        with person_logged_in(self.sso):
+            self.assertEqual('username', do_it())
+
+
+class TestPersonSetUsernameFromSSO(TestCaseWithFactory):
+
+    layer = DatabaseFunctionalLayer
+
+    def setUp(self):
+        super(TestPersonSetUsernameFromSSO, self).setUp()
+        self.sso = getUtility(IPersonSet).getByName(u'ubuntu-sso')
+
+    def test_restricted_to_sca(self):
+        # Only the ubuntu-sso celebrity can invoke this
+        # privileged method.
+        def do_it():
+            getUtility(IPersonSet).setUsernameFromSSO(
+                getUtility(ILaunchBag).user, u'openid', u'username')
+        random = self.factory.makePerson()
+        admin = self.factory.makePerson(
+            member_of=[getUtility(IPersonSet).getByName(u'admins')])
+
+        # Anonymous, random or admin users can't invoke the method.
+        with anonymous_logged_in():
+            self.assertRaises(Unauthorized, do_it)
+        with person_logged_in(random):
+            self.assertRaises(Unauthorized, do_it)
+        with person_logged_in(admin):
+            self.assertRaises(Unauthorized, do_it)
+
+        with person_logged_in(self.sso):
+            do_it()
+
+    def test_creates_new_placeholder(self):
+        # If an unknown OpenID identifier and email address are
+        # provided, a new account is created with the given username and
+        # returned.
+        with person_logged_in(self.sso):
+            getUtility(IPersonSet).setUsernameFromSSO(
+                self.sso, u'openid', u'username')
+        person = getUtility(IPersonSet).getByName(u'username')
+        self.assertEqual(u'username', person.name)
+        self.assertEqual(u'username', person.displayname)
+        self.assertEqual(AccountStatus.PLACEHOLDER, person.account.status)
+        with admin_logged_in():
+            self.assertContentEqual(
+                [u'openid'],
+                [oid.identifier for oid in person.account.openid_identifiers])
+            self.assertContentEqual([], person.validatedemails)
+            self.assertContentEqual([], person.guessedemails)
+
+    def test_creates_new_placeholder_dry_run(self):
+        with person_logged_in(self.sso):
+            getUtility(IPersonSet).setUsernameFromSSO(
+                self.sso, u'openid', u'username', dry_run=True)
+        self.assertRaises(
+            LookupError,
+            getUtility(IAccountSet).getByOpenIDIdentifier, u'openid')
+        self.assertIs(None, getUtility(IPersonSet).getByName(u'username'))
+
+    def test_updates_existing_placeholder(self):
+        # An existing placeholder Person with the request OpenID
+        # identifier has its name updated.
+        getUtility(IPersonSet).setUsernameFromSSO(
+            self.sso, u'openid', u'username')
+        person = getUtility(IPersonSet).getByName(u'username')
+
+        # Another call for the same OpenID identifier updates the
+        # existing Person.
+        getUtility(IPersonSet).setUsernameFromSSO(
+            self.sso, u'openid', u'newsername')
+        self.assertEqual(u'newsername', person.name)
+        self.assertEqual(u'newsername', person.displayname)
+        self.assertEqual(AccountStatus.PLACEHOLDER, person.account.status)
+        with admin_logged_in():
+            self.assertContentEqual([], person.validatedemails)
+            self.assertContentEqual([], person.guessedemails)
+
+    def test_updates_existing_placeholder_dry_run(self):
+        getUtility(IPersonSet).setUsernameFromSSO(
+            self.sso, u'openid', u'username')
+        person = getUtility(IPersonSet).getByName(u'username')
+
+        getUtility(IPersonSet).setUsernameFromSSO(
+            self.sso, u'openid', u'newsername', dry_run=True)
+        self.assertEqual(u'username', person.name)
+
+    def test_validation(self, dry_run=False):
+        # An invalid username is rejected with an InvalidName exception.
+        self.assertRaises(
+            InvalidName,
+            getUtility(IPersonSet).setUsernameFromSSO,
+            self.sso, u'openid', u'username!!', dry_run=dry_run)
+        transaction.abort()
+
+        # A username that's already in use is rejected with a
+        # NameAlreadyTaken exception.
+        self.factory.makePerson(name='taken')
+        self.assertRaises(
+            NameAlreadyTaken,
+            getUtility(IPersonSet).setUsernameFromSSO,
+            self.sso, u'openid', u'taken', dry_run=dry_run)
+        transaction.abort()
+
+        # setUsernameFromSSO can't be used to set an OpenID
+        # identifier's username if a non-placeholder account exists.
+        somebody = self.factory.makePerson()
+        make_openid_identifier(somebody.account, u'openid-taken')
+        self.assertRaises(
+            NotPlaceholderAccount,
+            getUtility(IPersonSet).setUsernameFromSSO,
+            self.sso, u'openid-taken', u'username', dry_run=dry_run)
+
+    def test_validation_dry_run(self):
+        self.test_validation(dry_run=True)
+
+
+class TestPersonGetSSHKeysForSSO(TestCaseWithFactory):
+
+    layer = DatabaseFunctionalLayer
+
+    def setUp(self):
+        super(TestPersonGetSSHKeysForSSO, self).setUp()
+        self.sso = getUtility(IPersonSet).getByName(u'ubuntu-sso')
+
+    def test_restricted_to_sso(self):
+        # Only the ubuntu-sso celebrity can invoke this
+        # privileged method.
+        target = self.factory.makePerson(name='username')
+        make_openid_identifier(target.account, u'openid')
+
+        def do_it():
+            return getUtility(IPersonSet).getUsernameForSSO(
+                getUtility(ILaunchBag).user, u'openid')
+        random = self.factory.makePerson()
+        admin = self.factory.makePerson(
+            member_of=[getUtility(IPersonSet).getByName(u'admins')])
+
+        # Anonymous, random or admin users can't invoke the method.
+        with anonymous_logged_in():
+            self.assertRaises(Unauthorized, do_it)
+        with person_logged_in(random):
+            self.assertRaises(Unauthorized, do_it)
+        with person_logged_in(admin):
+            self.assertRaises(Unauthorized, do_it)
+        with person_logged_in(self.sso):
+            self.assertEqual('username', do_it())
+
+
+class TestPersonAddSSHKeyFromSSO(TestCaseWithFactory):
+
+    layer = DatabaseFunctionalLayer
+
+    def setUp(self):
+        super(TestPersonAddSSHKeyFromSSO, self).setUp()
+        self.sso = getUtility(IPersonSet).getByName(u'ubuntu-sso')
+
+    def test_restricted_to_sso(self):
+        # Only the ubuntu-sso celebrity can invoke this
+        # privileged method.
+        key_text = self.factory.makeSSHKeyText()
+        target = self.factory.makePerson(name='username')
+        make_openid_identifier(target.account, u'openid')
+
+        def do_it():
+            return getUtility(IPersonSet).addSSHKeyFromSSO(
+                getUtility(ILaunchBag).user, u'openid', key_text, False)
+        random = self.factory.makePerson()
+        admin = self.factory.makePerson(
+            member_of=[getUtility(IPersonSet).getByName(u'admins')])
+
+        # Anonymous, random or admin users can't invoke the method.
+        with anonymous_logged_in():
+            self.assertRaises(Unauthorized, do_it)
+        with person_logged_in(random):
+            self.assertRaises(Unauthorized, do_it)
+        with person_logged_in(admin):
+            self.assertRaises(Unauthorized, do_it)
+        with person_logged_in(self.sso):
+            self.assertEqual(None, do_it())
+
+    def test_adds_new_ssh_key(self):
+        full_key = self.factory.makeSSHKeyText()
+        _, keytext, comment = full_key.split(' ', 2)
+        target = self.factory.makePerson(name='username')
+        make_openid_identifier(target.account, u'openid')
+
+        with person_logged_in(self.sso):
+            getUtility(IPersonSet).addSSHKeyFromSSO(
+                self.sso, u'openid', full_key, False)
+
+        with person_logged_in(target):
+            [key] = target.sshkeys
+            self.assertEqual(key.keytype, SSHKeyType.RSA)
+            self.assertEqual(key.keytext, keytext)
+            self.assertEqual(key.comment, comment)
+
+    def test_does_not_add_new_ssh_key_with_dry_run(self):
+        key_text = self.factory.makeSSHKeyText()
+        target = self.factory.makePerson(name='username')
+        make_openid_identifier(target.account, u'openid')
+
+        with person_logged_in(self.sso):
+            getUtility(IPersonSet).addSSHKeyFromSSO(
+                self.sso, u'openid', key_text, True)
+
+        with person_logged_in(target):
+            self.assertEqual(0, target.sshkeys.count())
+
+    def test_raises_with_nonexisting_account(self):
+        with person_logged_in(self.sso):
+            self.assertRaises(
+                NoSuchAccount,
+                getUtility(IPersonSet).addSSHKeyFromSSO,
+                self.sso, u'doesnotexist', 'ssh-rsa key comment', True)
+
+
+class TestPersonDeleteSSHKeyFromSSO(TestCaseWithFactory):
+
+    layer = DatabaseFunctionalLayer
+
+    def setUp(self):
+        super(TestPersonDeleteSSHKeyFromSSO, self).setUp()
+        self.sso = getUtility(IPersonSet).getByName(u'ubuntu-sso')
+
+    def test_restricted_to_sso(self):
+        # Only the ubuntu-sso celebrity can invoke this
+        # privileged method.
+        target = self.factory.makePerson(name='username')
+        with person_logged_in(target):
+            key = self.factory.makeSSHKey(target)
+        key_text = key.getFullKeyText()
+        make_openid_identifier(target.account, u'openid')
+
+        def do_it():
+            return getUtility(IPersonSet).deleteSSHKeyFromSSO(
+                getUtility(ILaunchBag).user, u'openid', key_text, False)
+        random = self.factory.makePerson()
+        admin = self.factory.makePerson(
+            member_of=[getUtility(IPersonSet).getByName(u'admins')])
+
+        # Anonymous, random or admin users can't invoke the method.
+        with anonymous_logged_in():
+            self.assertRaises(Unauthorized, do_it)
+        with person_logged_in(random):
+            self.assertRaises(Unauthorized, do_it)
+        with person_logged_in(admin):
+            self.assertRaises(Unauthorized, do_it)
+        with person_logged_in(self.sso):
+            self.assertEqual(None, do_it())
+
+    def test_deletes_ssh_key(self):
+        target = self.factory.makePerson(name='username')
+        with person_logged_in(target):
+            key = self.factory.makeSSHKey(target)
+        make_openid_identifier(target.account, u'openid')
+
+        with person_logged_in(self.sso):
+            getUtility(IPersonSet).deleteSSHKeyFromSSO(
+                self.sso, u'openid', key.getFullKeyText(), False)
+
+        with person_logged_in(target):
+            self.assertEqual(0, target.sshkeys.count())
+
+    def test_does_not_delete_ssh_key_with_dry_run(self):
+        target = self.factory.makePerson(name='username')
+        with person_logged_in(target):
+            key = self.factory.makeSSHKey(target)
+        make_openid_identifier(target.account, u'openid')
+
+        with person_logged_in(self.sso):
+            getUtility(IPersonSet).deleteSSHKeyFromSSO(
+                self.sso, u'openid', key.getFullKeyText(), True)
+
+        with person_logged_in(target):
+            self.assertEqual([key], list(target.sshkeys))
+
+    def test_raises_with_nonexisting_account(self):
+        with person_logged_in(self.sso):
+            self.assertRaises(
+                NoSuchAccount,
+                getUtility(IPersonSet).deleteSSHKeyFromSSO,
+                self.sso, u'doesnotexist', 'ssh-rsa key comment', False)
+
+    def test_raises_with_bad_key_type(self):
+        target = self.factory.makePerson(name='username')
+        make_openid_identifier(target.account, u'openid')
+        with person_logged_in(self.sso):
+            self.assertRaises(
+                SSHKeyAdditionError,
+                getUtility(IPersonSet).deleteSSHKeyFromSSO,
+                self.sso, u'openid', 'badtype key comment', False)

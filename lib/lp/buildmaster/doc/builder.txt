@@ -18,27 +18,14 @@ There are several builders in the sample data. Let's examine the first.
 
 As expected, it implements IBuilder.
 
-    >>> from lp.services.webapp.testing import verifyObject
+    >>> from lp.testing import verifyObject
 
-    >>> print builder.name
+    >>> print(builder.name)
     bob
-    >>> print builder.builderok
+    >>> print(builder.builderok)
     True
-    >>> print builder.failnotes
+    >>> print(builder.failnotes)
     None
-
-Builders can take on different behaviors depending on the type of build
-they are currently processing. Each builder provides an attribute
-(current_build_behavior) to which all the build-type specific behavior
-for the current build is delegated. In the sample data, bob's current
-behavior is dealing with binary packages.
-
-    >>> from zope.security.proxy import isinstance
-    >>> from lp.soyuz.model.binarypackagebuildbehavior import (
-    ...     BinaryPackageBuildBehavior)
-    >>> isinstance(
-    ...     builder.current_build_behavior, BinaryPackageBuildBehavior)
-    True
 
 
 BuilderSet
@@ -55,7 +42,7 @@ Builders and groups thereof are managed through a utility, IBuilderSet.
 Iterating over a BuilderSet yields all registered builders.
 
     >>> for b in builderset:
-    ...     print b.name
+    ...     print(b.name)
     bob
     frog
 
@@ -66,24 +53,26 @@ count() return the number of builders registered:
 
 Builders can be retrieved by name.
 
-    >>> print builderset['bob'].name
+    >>> print(builderset['bob'].name)
     bob
-    >>> print builderset['bad']
+    >>> print(builderset['bad'])
     None
 
 And also by ID.
 
-    >>> print builderset.get(2).name
+    >>> print(builderset.get(2).name)
     frog
-    >>> print builderset.get(100).name
+    >>> print(builderset.get(100).name)
     Traceback (most recent call last):
     ...
     SQLObjectNotFound: Object not found
 
 The 'new' method will create a new builder in the database.
 
-    >>> bnew = builderset.new(
-    ...     1, 'http://dummy.com:8221/', 'dummy', 'Dummy Title', 1)
+    >>> from lp.testing import admin_logged_in
+    >>> with admin_logged_in():
+    ...     bnew = builderset.new(
+    ...         [1], 'http://dummy.com:8221/', 'dummy', 'Dummy Title', 1)
     >>> bnew.name
     u'dummy'
 
@@ -91,7 +80,7 @@ The 'new' method will create a new builder in the database.
 virtualization status, architecture, then name.
 
     >>> for b in builderset.getBuilders():
-    ...     print b.name
+    ...     print(b.name)
     bob
     dummy
     frog
@@ -99,7 +88,7 @@ virtualization status, architecture, then name.
     >>> bnew.active = False
     >>> login(ANONYMOUS)
     >>> for b in builderset.getBuilders():
-    ...     print b.name
+    ...     print(b.name)
     bob
     frog
 
@@ -156,32 +145,9 @@ The build for the ubuntu primary archive shows up again.
 All job types are included. If we create a recipe build job, it will
 show up in the calculated queue size.
 
-    >>> recipe_bq = factory.makeSourcePackageRecipeBuildJob()
-    >>> # XXX wgrant 20100625 bug=598397: The factory erroneously creates
-    >>> # architecture-independent jobs.
-    >>> print recipe_bq.processor
-    None
-
-    >>> from lp.soyuz.interfaces.processor import IProcessorFamilySet
-    >>> i386_family = getUtility(IProcessorFamilySet).getByName('x86')
-    >>> recipe_bq.processor = i386_family.processors[0]
-    >>> recipe_bq.virtualized = True
-    >>> transaction.commit()
-
-    >>> queue_sizes = builderset.getBuildQueueSizes()
-    >>> print queue_sizes['virt']['386']
-    (1L, datetime.timedelta(0, 64))
-
-Any BuildQueues with a null `virtualized` property are considered virtual
-by default.
-
-    >>> recipe_bq = factory.makeSourcePackageRecipeBuildJob()
-    >>> recipe_bq.virtualized = None
-    >>> recipe_bq.processor = i386_family.processors[0]
+    >>> recipe_bq = factory.makeSourcePackageRecipeBuild(
+    ...     distroseries=ubuntu.currentseries).queueBuild()
     >>> transaction.commit()
     >>> queue_sizes = builderset.getBuildQueueSizes()
-
-The virtual queue size has increased accordingly:
-
-    >>> print queue_sizes['virt']['386']
-    (2L, datetime.timedelta(0, 128))
+    >>> print(queue_sizes['virt']['386'])
+    (1L, datetime.timedelta(0, 600))

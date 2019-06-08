@@ -27,7 +27,7 @@ EMPTY_DBNAME=launchpad_empty
 TEST_SESSION_DBNAME=session_ftest
 
 # The database which is a copy of launchpad_ftest_template and can be accessed
-# via http://launchpad.dev when you use LPCONFIG=test-playground.
+# via http://launchpad.test when you use LPCONFIG=test-playground.
 TEST_PLAYGROUND_DBNAME=launchpad_ftest_playground
 
 # The session database name.
@@ -38,7 +38,8 @@ DROPDB=${PYTHON} ../../utilities/pgmassacre.py
 # The command we use to drop (if exists) and recreate a database.
 CREATEDB=${PYTHON} ../../utilities/pgmassacre.py -t
 
-HEADER="-- Copyright 2010-2011 Canonical Ltd.  This software is licensed \
+YEAR=$(shell date +'%Y')
+HEADER="-- Copyright 2010-${YEAR} Canonical Ltd.  This software is licensed \
   under the\n-- GNU Affero General Public License version 3 (see the file \
 	LICENSE)."
 
@@ -60,9 +61,9 @@ build_new_sampledata=$(PYTHON) fti.py --null -d ${1} -q && \
 # on production. It is generated using newbaseline.py in
 # bzr+ssh://devpad.canonical.com/code/stub/dbascripts
 #
-REV=2209
+REV=2210
 BASELINE=launchpad-${REV}-00-0.sql
-MD5SUM=cc7a493c924196409a22392a16443d52  launchpad-2209-00-0.sql
+MD5SUM=36ae7078cd41916bbbd9c116b2e6aea7  launchpad-2210-00-0.sql
 
 default: all
 
@@ -134,22 +135,8 @@ create:
 
 # Confirm that launchpad-XX-00-0.sql hasn't been messed with - this file
 # is our baseline telling us what was installed into production
-check: search_path
+check:
 	@if [ "`md5sum ${BASELINE}`" != "${MD5SUM}" ]; then echo "* ${BASELINE} is corrupt or has been modified"; exit 1; else echo "* Using ${BASELINE} as baseline"; fi
-
-search_path:
-	@psql -d template1 -q -A -t -c 'show search_path'
-	@if [ `psql -d template1 -q -A -t -c 'show search_path'` != '$$user,public,ts2' ] && [ `psql -d template1 -q -A -t -c 'show search_path'` != '"$$user",public,ts2' ]; then \
-		echo "* It appears your search path is unconfigured."; \
-		echo "	Have you read <https://launchpad.canonical.com/DatabaseSetup>?";  \
-		echo; \
-		echo "* Add the following to /etc/postgresql/X.X/main/postgresql.conf"; \
-		echo " (where X.X is the version of the PostgreSQL DB you're connecting to):"; \
-		echo "    search_path='\$$user,public,ts2'"; \
-		echo "* Then reload PostgreSQL:";  \
-		echo "    sudo /etc/init.d/postgresql reload";  \
-		exit 1; \
-	 fi
 
 
 all: dev test
@@ -158,9 +145,6 @@ all: dev test
 doc:
 	postgresql_autodoc -d ${DBNAME_DEV} -f launchpad -t html
 	tidy -asxhtml launchpad.html > ,launchpad.html || mv ,launchpad.html launchpad.html
-
-diagram:
-	${PYTHON} diagram.py
 
 newsampledata_test:
 	$(call build_new_sampledata,${TEST_PLAYGROUND_DBNAME},${SAMPLEDATA})
@@ -174,5 +158,5 @@ lintdata:
 	$(call build_new_sampledata,${TEMPLATE_WITH_TEST_SAMPLEDATA},${LINTDATA})
 	$(call build_new_sampledata,${TEMPLATE_WITH_DEV_SAMPLEDATA},${LINTDATA_DEV})
 
-.PHONY: default test dev create check search_path all doc diagram newsampledata_test newsampledata_dev newsampledata lintdata
+.PHONY: default test dev create check all doc diagram newsampledata_test newsampledata_dev newsampledata lintdata
 

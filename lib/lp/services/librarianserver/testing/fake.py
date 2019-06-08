@@ -1,4 +1,4 @@
-# Copyright 2010 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2016 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Fake, in-process implementation of the Librarian API.
@@ -23,7 +23,7 @@ from fixtures import Fixture
 import transaction
 from transaction.interfaces import ISynchronizer
 import zope.component
-from zope.interface import implements
+from zope.interface import implementer
 
 from lp.services.config import config
 from lp.services.librarian.client import get_libraryfilealias_download_path
@@ -59,25 +59,26 @@ class InstrumentedLibraryFileAlias(LibraryFileAlias):
         return self._datafile.read(chunksize)
 
 
+_fake_librarian_provided_utilities = [ILibrarianClient, ILibraryFileAliasSet]
+
+
+@implementer(ISynchronizer, *_fake_librarian_provided_utilities)
 class FakeLibrarian(Fixture):
     """A test double Librarian which works in-process.
 
     This takes the role of both the librarian client and the LibraryFileAlias
     utility.
     """
-    provided_utilities = [ILibrarianClient, ILibraryFileAliasSet]
-    implements(ISynchronizer, *provided_utilities)
 
-    def setUp(self):
+    def _setUp(self):
         """Fixture API: install as the librarian."""
-        Fixture.setUp(self)
         self.aliases = {}
         self.download_url = config.librarian.download_url
         transaction.manager.registerSynch(self)
         self.addCleanup(transaction.manager.unregisterSynch, self)
 
         site_manager = zope.component.getGlobalSiteManager()
-        for utility in self.provided_utilities:
+        for utility in _fake_librarian_provided_utilities:
             original = zope.component.getUtility(utility)
             if site_manager.unregisterUtility(original, utility):
                 # We really disabled a utility, restore it later.
@@ -150,14 +151,16 @@ class FakeLibrarian(Fixture):
     def _makeLibraryFileContent(self, content):
         """Create a `LibraryFileContent`."""
         size = len(content)
-        sha1 = hashlib.sha1(content).hexdigest()
         md5 = hashlib.md5(content).hexdigest()
+        sha1 = hashlib.sha1(content).hexdigest()
+        sha256 = hashlib.sha256(content).hexdigest()
 
-        content_object = LibraryFileContent(filesize=size, sha1=sha1, md5=md5)
+        content_object = LibraryFileContent(
+            filesize=size, md5=md5, sha1=sha1, sha256=sha256)
         return content_object
 
     def create(self, name, size, file, contentType, expires=None,
-               debugID=None, restricted=False):
+               debugID=None, restricted=False, allow_zero_length=False):
         "See `ILibraryFileAliasSet`."""
         return self._storeFile(name, size, file, contentType, expires=expires)
 
@@ -170,10 +173,10 @@ class FakeLibrarian(Fixture):
                 "librarian, who has never heard of it." % key)
         return alias
 
-    def findBySHA1(self, sha1):
+    def findBySHA256(self, sha256):
         "See `ILibraryFileAliasSet`."""
         for alias in self.aliases.itervalues():
-            if alias.content.sha1 == sha1:
+            if alias.content.sha256 == sha256:
                 return alias
 
         return None

@@ -6,14 +6,18 @@ __metaclass__ = type
 import base64
 
 import testtools
-from zope.app.security.basicauthadapter import BasicAuthAdapter
-from zope.app.security.interfaces import ILoginPassword
-from zope.app.security.principalregistry import UnauthenticatedPrincipal
 from zope.app.testing import ztapi
 from zope.app.testing.placelesssetup import PlacelessSetup
-from zope.component import getUtility
-from zope.interface import implements
+from zope.authentication.interfaces import ILoginPassword
+from zope.component import (
+    getUtility,
+    provideAdapter,
+    provideUtility,
+    )
+from zope.interface import implementer
+from zope.principalregistry.principalregistry import UnauthenticatedPrincipal
 from zope.publisher.browser import TestRequest
+from zope.publisher.http import BasicAuthAdapter
 from zope.publisher.interfaces.http import IHTTPCredentials
 
 from lp.registry.interfaces.person import IPerson
@@ -29,13 +33,13 @@ from lp.services.webapp.interfaces import (
     )
 
 
+@implementer(IPerson)
 class DummyPerson(object):
-    implements(IPerson)
     is_valid_person = True
 
 
+@implementer(IAccount)
 class DummyAccount(object):
-    implements(IAccount)
     person = DummyPerson()
 
 
@@ -43,8 +47,8 @@ Bruce = LaunchpadPrincipal(42, 'bruce', 'Bruce', DummyAccount())
 Bruce.person = Bruce.account.person
 
 
+@implementer(IPlacelessLoginSource)
 class DummyPlacelessLoginSource(object):
-    implements(IPlacelessLoginSource)
 
     def getPrincipalByLogin(self, id):
         return Bruce
@@ -60,11 +64,9 @@ class TestPlacelessAuth(PlacelessSetup, testtools.TestCase):
     def setUp(self):
         testtools.TestCase.setUp(self)
         PlacelessSetup.setUp(self)
-        ztapi.provideUtility(IPlacelessLoginSource,
-                             DummyPlacelessLoginSource())
-        ztapi.provideUtility(IPlacelessAuthUtility, PlacelessAuthUtility())
-        ztapi.provideAdapter(
-            IHTTPCredentials, ILoginPassword, BasicAuthAdapter)
+        provideUtility(DummyPlacelessLoginSource(), IPlacelessLoginSource)
+        provideUtility(PlacelessAuthUtility(), IPlacelessAuthUtility)
+        provideAdapter(BasicAuthAdapter, (IHTTPCredentials,), ILoginPassword)
 
     def tearDown(self):
         ztapi.unprovideUtility(IPlacelessLoginSource)
@@ -75,7 +77,7 @@ class TestPlacelessAuth(PlacelessSetup, testtools.TestCase):
     def _make(self, login, pwd):
         dict = {
             'HTTP_AUTHORIZATION':
-            'Basic %s' % base64.encodestring('%s:%s' % (login, pwd))}
+            'Basic %s' % base64.b64encode('%s:%s' % (login, pwd))}
         request = TestRequest(**dict)
         return getUtility(IPlacelessAuthUtility), request
 
@@ -89,8 +91,8 @@ class TestPlacelessAuth(PlacelessSetup, testtools.TestCase):
 
     def test_unauthenticatedPrincipal(self):
         authsvc, request = self._make(None, None)
-        self.assert_(isinstance(authsvc.unauthenticatedPrincipal(),
-                                UnauthenticatedPrincipal))
+        self.assertTrue(isinstance(authsvc.unauthenticatedPrincipal(),
+                                   UnauthenticatedPrincipal))
 
     def test_unauthorized(self):
         authsvc, request = self._make('bruce', 'test')
@@ -125,7 +127,7 @@ class TestPlacelessAuth(PlacelessSetup, testtools.TestCase):
             exception = self.assertRaises(
                 AssertionError, authsvc._authenticateUsingBasicAuth,
                 credentials, request)
-            self.assertEquals(
+            self.assertEqual(
                 "Attempted to use basic auth when it is disabled",
                 str(exception))
         finally:

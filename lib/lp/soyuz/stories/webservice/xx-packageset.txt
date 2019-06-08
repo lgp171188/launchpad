@@ -14,7 +14,7 @@ correctness of exposing package sets on the web services API.
 The actual package set *functionality* is tested in much greater detail
 here:
 
-    lib/lp/soyuz/doc/packageset.txt
+    lb/lp/soyuz/tests/test_packageset.py
 
 Please refer to the tests contained in the file above if you are really
 interested in package sets and the complete functionality they offer.
@@ -30,70 +30,99 @@ source packages.
 
     >>> name12 = webservice.get("/~name12").jsonBody()
     >>> response = webservice.named_post(
-    ...     '/package-sets', 'new', {},
+    ...     '/package-sets', 'new', {}, distroseries='/ubuntu/hoary',
     ...     name=u'umbrella', description=u'Contains all source packages',
     ...     owner=name12['self_link'])
-    >>> print response
+    >>> print(response)
     HTTP/1.1 201 Created
     ...
 
 Let's make sure the newly created package set is present.
 
     >>> login('foo.bar@canonical.com')
-    >>> import operator
-    >>> def sort_by_id(iterable):
-    ...     return sorted(iterable, key=operator.attrgetter('id'))
-    >>> def print_data(iterable):
-    ...     for datum in sort_by_id(iterable):
-    ...          print('%3d -> %s' % (datum.id, datum.name))
-
+    >>> from lp.registry.interfaces.distribution import IDistributionSet
     >>> from lp.soyuz.interfaces.packageset import (
     ...     IPackagesetSet)
+    >>> ubuntu = getUtility(IDistributionSet).getByName('ubuntu')
     >>> ps_factory = getUtility(IPackagesetSet)
-    >>> print_data((ps_factory[u'umbrella'], ))
-    1 -> umbrella
+    >>> print(ps_factory.getByName(ubuntu.currentseries, u'umbrella').name)
+    umbrella
 
 Can we access it via the webservice API as well?
 
     >>> logout()
-    >>> umbrella = webservice.get("/package-sets/hoary/umbrella").jsonBody()
-    >>> print umbrella['self_link']
-    http://api.launchpad.dev/beta/package-sets/hoary/umbrella
+    >>> umbrella = webservice.get(
+    ...     "/package-sets/ubuntu/hoary/umbrella").jsonBody()
+    >>> print(umbrella['self_link'])
+    http://api.launchpad.test/beta/package-sets/ubuntu/hoary/umbrella
 
 `PackageSet`s can be looked up by name.
 
     >>> response = webservice.named_get(
-    ...     '/package-sets', 'getByName', {}, name=u'umbrella')
-    >>> print response.jsonBody()['self_link']
-    http://api.launchpad.dev/beta/package-sets/hoary/umbrella
+    ...     '/package-sets', 'getByName', {}, distroseries='/ubuntu/hoary',
+    ...     name=u'umbrella')
+    >>> print(response.jsonBody()['self_link'])
+    http://api.launchpad.test/beta/package-sets/ubuntu/hoary/umbrella
 
 When a `PackageSet` cannot be found, an error is returned.
 
     >>> response = webservice.named_get(
-    ...     '/package-sets', 'getByName', {}, name=u'not-found')
-    >>> print response
+    ...     '/package-sets', 'getByName', {}, distroseries='/ubuntu/hoary',
+    ...     name=u'not-found')
+    >>> print(response)
     HTTP/1.1 404 Not Found
     ...
     No such package set (in the specified distro series): 'not-found'.
 
 Here's an example with a funny URL concoted by a "smart" user.
 
-    >>> response = webservice.get("/package-sets/lucid-plus-1/umbrella/+pwn")
-    >>> print response
+    >>> response = webservice.get(
+    ...     "/package-sets/ubuntu/lucid-plus-1/umbrella/+pwn")
+    >>> print(response)
     HTTP/1.1 404 Not Found
+    ...
+
+Let's create another set.
+
+    >>> response = webservice.named_post(
+    ...     '/package-sets', 'new', {}, distroseries='/ubuntu/hoary',
+    ...     name=u'shortlived', description=u'An ephemeral packageset',
+    ...     owner=name12['self_link'])
+    >>> print(response)
+    HTTP/1.1 201 Created
+    ...
+
+We can modify it, and even give it away.
+
+    >>> from simplejson import dumps
+    >>> name16 = webservice.get("/~name16").jsonBody()
+    >>> patch = {u'name': 'renamed',
+    ...          u'description': u'Repurposed packageset',
+    ...          u'owner_link': name16['self_link']}
+    >>> response = webservice.patch(
+    ...     '/package-sets/ubuntu/hoary/shortlived', 'application/json',
+    ...     dumps(patch))
+    >>> print(response)
+    HTTP/1.1 301 Moved Permanently
+    ...
+
+And then delete it.
+
+    >>> response = webservice.delete(
+    ...     '/package-sets/ubuntu/hoary/renamed', {}, api_version='devel')
+    >>> print(response)
+    HTTP/1.1 200 Ok
     ...
 
 Populate the 'umbrella' package set with source packages.
 
-    >>> from lp.services.webapp.interfaces import (
-    ...     IStoreSelector, MAIN_STORE, DEFAULT_FLAVOR)
+    >>> from lp.services.database.interfaces import IStore
     >>> from lp.registry.model.sourcepackagename import SourcePackageName
-    >>> store = getUtility(IStoreSelector).get(MAIN_STORE, DEFAULT_FLAVOR)
-    >>> all_spns = store.find(SourcePackageName)
+    >>> all_spns = IStore(SourcePackageName).find(SourcePackageName)
     >>> response = webservice.named_post(
-    ...     '/package-sets/hoary/umbrella', 'addSources', {},
+    ...     '/package-sets/ubuntu/hoary/umbrella', 'addSources', {},
     ...     names=[spn.name for spn in all_spns])
-    >>> print response
+    >>> print(response)
     HTTP/1.1 200 Ok
     ...
 
@@ -101,17 +130,17 @@ Note that attempts to add or remove source package names that do not
 exist will not fail. Non-existing source package names are *ignored*.
 
     >>> response = webservice.named_post(
-    ...     '/package-sets/hoary/umbrella', 'addSources', {},
+    ...     '/package-sets/ubuntu/hoary/umbrella', 'addSources', {},
     ...     names=[u'does-not-exist'])
-    >>> print response
+    >>> print(response)
     HTTP/1.1 200 Ok
     ...
     null
 
     >>> response = webservice.named_post(
-    ...     '/package-sets/hoary/umbrella', 'removeSources', {},
+    ...     '/package-sets/ubuntu/hoary/umbrella', 'removeSources', {},
     ...     names=[u'does-not-exist'])
-    >>> print response
+    >>> print(response)
     HTTP/1.1 200 Ok
     ...
     null
@@ -119,8 +148,8 @@ exist will not fail. Non-existing source package names are *ignored*.
 Let's see what we got.
 
     >>> response = webservice.named_get(
-    ...     '/package-sets/hoary/umbrella', 'getSourcesIncluded', {})
-    >>> print response
+    ...     '/package-sets/ubuntu/hoary/umbrella', 'getSourcesIncluded', {})
+    >>> print(response)
     HTTP/1.1 200 Ok
     ...
     ["a52dec",
@@ -146,9 +175,9 @@ the 'foobar' and 'iceweasel' source package associations will be removed
 from the 'umbrella' package set.
 
     >>> response = webservice.named_post(
-    ...     '/package-sets/hoary/umbrella', 'removeSources', {},
+    ...     '/package-sets/ubuntu/hoary/umbrella', 'removeSources', {},
     ...     names=["foobar", "iceweasel"])
-    >>> print response
+    >>> print(response)
     HTTP/1.1 200 Ok
     ...
 
@@ -156,8 +185,8 @@ Please note that the 'foobar' and 'iceweasel' source packages are absent
 from the list below.
 
     >>> response = webservice.named_get(
-    ...     '/package-sets/hoary/umbrella', 'getSourcesIncluded', {})
-    >>> print response
+    ...     '/package-sets/ubuntu/hoary/umbrella', 'getSourcesIncluded', {})
+    >>> print(response)
     HTTP/1.1 200 Ok
     ...
     ["a52dec",
@@ -182,18 +211,18 @@ sorted by name.
     >>> def print_payload(response):
     ...     body = response.jsonBody()
     ...     for entry in body['entries']:
-    ...         print entry['self_link']
+    ...         print(entry['self_link'])
 
     >>> response = anon_webservice.get("/package-sets/")
     >>> print_payload(response)
-    http://api.launchpad.dev/beta/package-sets/hoary/umbrella
+    http://api.launchpad.test/beta/package-sets/ubuntu/hoary/umbrella
 
 Package sets may include other package sets (as subsets). At this point,
 however, we only have the 'umbrella' package set. It hence has no subsets.
 
     >>> response = webservice.named_get(
-    ...     '/package-sets/hoary/umbrella', 'setsIncluded', {})
-    >>> print response
+    ...     '/package-sets/ubuntu/hoary/umbrella', 'setsIncluded', {})
+    >>> print(response)
     HTTP/1.1 200 Ok
     ...
     {"total_size": 0, "start": 0, "entries": []}
@@ -201,18 +230,18 @@ however, we only have the 'umbrella' package set. It hence has no subsets.
 Let's create a few more package sets and set up a package set hierarchy.
 
     >>> response = webservice.named_post(
-    ...     '/package-sets', 'new', {},
+    ...     '/package-sets', 'new', {}, distroseries='/ubuntu/hoary',
     ...     name=u'gnome', description=u'Contains all gnome packages',
     ...     owner=name12['self_link'])
-    >>> print response
+    >>> print(response)
     HTTP/1.1 201 Created
     ...
 
     >>> response = webservice.named_post(
-    ...     '/package-sets', 'new', {},
+    ...     '/package-sets', 'new', {}, distroseries='/ubuntu/hoary',
     ...     name=u'mozilla', description=u'Contains all mozilla packages',
     ...     owner=name12['self_link'])
-    >>> print response
+    >>> print(response)
     HTTP/1.1 201 Created
     ...
 
@@ -224,12 +253,13 @@ Every package set is associated with a distro series.
 
     >>> from lazr.restful.testing.webservice import pprint_entry
     >>> mozilla = webservice.named_get(
-    ...     '/package-sets', 'getByName', {}, name=u'mozilla').jsonBody()
-    >>> print mozilla['distroseries_link']
-    http://api.launchpad.dev/beta/ubuntu/hoary
+    ...     '/package-sets', 'getByName', {}, distroseries='/ubuntu/hoary',
+    ...     name=u'mozilla').jsonBody()
+    >>> print(mozilla['distroseries_link'])
+    http://api.launchpad.test/beta/ubuntu/hoary
 
-    >>> print mozilla['self_link']
-    http://api.launchpad.dev/beta/package-sets/hoary/mozilla
+    >>> print(mozilla['self_link'])
+    http://api.launchpad.test/beta/package-sets/ubuntu/hoary/mozilla
 
 A collection of package sets belonging to a given distro series can be
 obtained via the `getBySeries` call.
@@ -238,7 +268,7 @@ obtained via the `getBySeries` call.
     ...     '/package-sets', 'getBySeries', {},
     ...     distroseries=mozilla['distroseries_link']).jsonBody()
     >>> for entry in packagesets["entries"]:
-    ...     print "{entry[name]}: {entry[description]}".format(entry=entry)
+    ...     print("{entry[name]}: {entry[description]}".format(entry=entry))
     gnome: Contains all gnome packages
     mozilla: Contains all mozilla packages
     umbrella: Contains all source packages
@@ -251,35 +281,34 @@ When adding a package set we can specify that is to be related to another set
 that exists already.
 
     >>> grumpy = webservice.get("/ubuntu/grumpy").jsonBody()
-    >>> print grumpy['self_link']
-    http://api.launchpad.dev/beta/ubuntu/grumpy
+    >>> print(grumpy['self_link'])
+    http://api.launchpad.test/beta/ubuntu/grumpy
 
 We are adding a new 'mozilla' package set to the 'grumpy' distro series and
 it is related to 'mozilla' in 'hoary'.
 
     >>> response = webservice.named_post(
-    ...     '/package-sets', 'new', {},
-    ...     name=u'mozilla',
+    ...     '/package-sets', 'new', {}, distroseries=grumpy['self_link'],
+    ...     name=u'mozilla', owner=name12['self_link'],
     ...     description=u'Contains all mozilla packages in grumpy',
-    ...     owner=name12['self_link'], distroseries=grumpy['self_link'],
     ...     related_set=mozilla['self_link'])
-    >>> print response
+    >>> print(response)
     HTTP/1.1 201 Created
     ...
 
     >>> grumpy_mozilla = webservice.named_get(
     ...     '/package-sets', 'getByName', {}, name=u'mozilla',
     ...     distroseries=grumpy['self_link']).jsonBody()
-    >>> print grumpy_mozilla['distroseries_link']
-    http://api.launchpad.dev/beta/ubuntu/grumpy
+    >>> print(grumpy_mozilla['distroseries_link'])
+    http://api.launchpad.test/beta/ubuntu/grumpy
 
-    >>> print grumpy_mozilla['self_link']
-    http://api.launchpad.dev/beta/package-sets/grumpy/mozilla
+    >>> print(grumpy_mozilla['self_link'])
+    http://api.launchpad.test/beta/package-sets/ubuntu/grumpy/mozilla
 
     >>> response = webservice.named_get(
     ...     mozilla['self_link'], 'relatedSets', {})
     >>> print_payload(response)
-    http://api.launchpad.dev/beta/package-sets/grumpy/mozilla
+    http://api.launchpad.test/beta/package-sets/ubuntu/grumpy/mozilla
 
 
 Package set hierarchy
@@ -288,28 +317,26 @@ Package set hierarchy
 More package sets are needed to set up the hierarchy described below.
 
     >>> response = webservice.named_post(
-    ...     '/package-sets', 'new', {},
+    ...     '/package-sets', 'new', {}, distroseries='/ubuntu/hoary',
     ...     name=u'firefox', description=u'Contains all firefox packages',
     ...     owner=name12['self_link'])
-    >>> print response
+    >>> print(response)
     HTTP/1.1 201 Created
     ...
 
     >>> response = webservice.named_post(
-    ...     '/package-sets', 'new', {},
-    ...     name=u'thunderbird',
-    ...     description=u'Contains all thunderbird packages',
-    ...     owner=name12['self_link'])
-    >>> print response
+    ...     '/package-sets', 'new', {}, distroseries='/ubuntu/hoary',
+    ...     name=u'thunderbird', owner=name12['self_link'],
+    ...     description=u'Contains all thunderbird packages')
+    >>> print(response)
     HTTP/1.1 201 Created
     ...
 
     >>> response = webservice.named_post(
-    ...     '/package-sets', 'new', {},
-    ...     name=u'languagepack',
-    ...     description=u'Contains all languagepack packages',
-    ...     owner=name12['self_link'])
-    >>> print response
+    ...     '/package-sets', 'new', {}, distroseries='/ubuntu/hoary',
+    ...     name=u'languagepack', owner=name12['self_link'],
+    ...     description=u'Contains all languagepack packages')
+    >>> print(response)
     HTTP/1.1 201 Created
     ...
 
@@ -317,11 +344,10 @@ The 'languagepack' package set will be removed later (in hoary). Let's add a
 set with the same name in 'grumpy' to make sure that the right one is found.
 
     >>> response = webservice.named_post(
-    ...     '/package-sets', 'new', {},
-    ...     name=u'languagepack',
-    ...     description=u'Contains all languagepack packages',
-    ...     owner=name12['self_link'], distroseries=grumpy['self_link'])
-    >>> print response
+    ...     '/package-sets', 'new', {}, distroseries=grumpy['self_link'],
+    ...     name=u'languagepack', owner=name12['self_link'],
+    ...     description=u'Contains all languagepack packages')
+    >>> print(response)
     HTTP/1.1 201 Created
     ...
 
@@ -338,30 +364,30 @@ set hierarchy:
           * languagepack
 
     >>> response = webservice.named_post(
-    ...     '/package-sets/hoary/umbrella', 'addSubsets', {},
+    ...     '/package-sets/ubuntu/hoary/umbrella', 'addSubsets', {},
     ...     names=[u'gnome', u'mozilla'])
-    >>> print response
+    >>> print(response)
     HTTP/1.1 200 Ok
     ...
 
     >>> response = webservice.named_post(
-    ...     '/package-sets/hoary/gnome', 'addSubsets', {},
+    ...     '/package-sets/ubuntu/hoary/gnome', 'addSubsets', {},
     ...     names=[u'languagepack'])
-    >>> print response
+    >>> print(response)
     HTTP/1.1 200 Ok
     ...
 
     >>> response = webservice.named_post(
-    ...     '/package-sets/hoary/thunderbird', 'addSubsets', {},
+    ...     '/package-sets/ubuntu/hoary/thunderbird', 'addSubsets', {},
     ...     names=[u'languagepack'])
-    >>> print response
+    >>> print(response)
     HTTP/1.1 200 Ok
     ...
 
     >>> response = webservice.named_post(
-    ...     '/package-sets/hoary/mozilla', 'addSubsets', {},
+    ...     '/package-sets/ubuntu/hoary/mozilla', 'addSubsets', {},
     ...     names=[u'firefox', u'thunderbird'])
-    >>> print response
+    >>> print(response)
     HTTP/1.1 200 Ok
     ...
 
@@ -369,17 +395,17 @@ Similarly to 'addSources' and 'removeSources', adding or removing
 non-existing package sets will not fail.
 
     >>> response = webservice.named_post(
-    ...     '/package-sets/hoary/thunderbird', 'addSubsets', {},
+    ...     '/package-sets/ubuntu/hoary/thunderbird', 'addSubsets', {},
     ...     names=[u'does-not-exist'])
-    >>> print response
+    >>> print(response)
     HTTP/1.1 200 Ok
     ...
     null
 
     >>> response = webservice.named_post(
-    ...     '/package-sets/hoary/thunderbird', 'removeSubsets', {},
+    ...     '/package-sets/ubuntu/hoary/thunderbird', 'removeSubsets', {},
     ...     names=[u'does-not-exist'])
-    >>> print response
+    >>> print(response)
     HTTP/1.1 200 Ok
     ...
     null
@@ -387,89 +413,90 @@ non-existing package sets will not fail.
 The 'umbrella' package set should have plenty of subsets now.
 
     >>> response = webservice.named_get(
-    ...     '/package-sets/hoary/umbrella', 'setsIncluded', {})
+    ...     '/package-sets/ubuntu/hoary/umbrella', 'setsIncluded', {})
     >>> print_payload(response)
-    http://api.launchpad.dev/beta/package-sets/hoary/firefox
-    http://api.launchpad.dev/beta/package-sets/hoary/gnome
-    http://api.launchpad.dev/beta/package-sets/hoary/languagepack
-    http://api.launchpad.dev/beta/package-sets/hoary/mozilla
-    http://api.launchpad.dev/beta/package-sets/hoary/thunderbird
+    http://api.launchpad.test/beta/package-sets/ubuntu/hoary/firefox
+    http://api.launchpad.test/beta/package-sets/ubuntu/hoary/gnome
+    http://api.launchpad.test/beta/package-sets/ubuntu/hoary/languagepack
+    http://api.launchpad.test/beta/package-sets/ubuntu/hoary/mozilla
+    http://api.launchpad.test/beta/package-sets/ubuntu/hoary/thunderbird
 
 However only two of the above are direct subsets.
 
     >>> response = webservice.named_get(
-    ...     '/package-sets/hoary/umbrella', 'setsIncluded', {},
+    ...     '/package-sets/ubuntu/hoary/umbrella', 'setsIncluded', {},
     ...     direct_inclusion=True)
     >>> print_payload(response)
-    http://api.launchpad.dev/beta/package-sets/hoary/gnome
-    http://api.launchpad.dev/beta/package-sets/hoary/mozilla
+    http://api.launchpad.test/beta/package-sets/ubuntu/hoary/gnome
+    http://api.launchpad.test/beta/package-sets/ubuntu/hoary/mozilla
 
 Let's ask the question the other way around what package sets are including
 a particular subset?
 
     >>> response = webservice.named_get(
-    ...     '/package-sets/hoary/languagepack', 'setsIncludedBy', {})
+    ...     '/package-sets/ubuntu/hoary/languagepack', 'setsIncludedBy', {})
     >>> print_payload(response)
-    http://api.launchpad.dev/beta/package-sets/hoary/gnome
-    http://api.launchpad.dev/beta/package-sets/hoary/mozilla
-    http://api.launchpad.dev/beta/package-sets/hoary/thunderbird
-    http://api.launchpad.dev/beta/package-sets/hoary/umbrella
+    http://api.launchpad.test/beta/package-sets/ubuntu/hoary/gnome
+    http://api.launchpad.test/beta/package-sets/ubuntu/hoary/mozilla
+    http://api.launchpad.test/beta/package-sets/ubuntu/hoary/thunderbird
+    http://api.launchpad.test/beta/package-sets/ubuntu/hoary/umbrella
 
 The list of package sets that *directly* include 'languagepack' will be
 shorter because the transitive closure is ignored.
 
     >>> response = webservice.named_get(
-    ...     '/package-sets/hoary/languagepack', 'setsIncludedBy', {},
+    ...     '/package-sets/ubuntu/hoary/languagepack', 'setsIncludedBy', {},
     ...     direct_inclusion=True)
     >>> print_payload(response)
-    http://api.launchpad.dev/beta/package-sets/hoary/gnome
-    http://api.launchpad.dev/beta/package-sets/hoary/thunderbird
+    http://api.launchpad.test/beta/package-sets/ubuntu/hoary/gnome
+    http://api.launchpad.test/beta/package-sets/ubuntu/hoary/thunderbird
 
 We can remove subsets as well. In the example below 'thunderbird' will
 stop including 'languagepack'.
 
     >>> response = webservice.named_post(
-    ...     '/package-sets/hoary/thunderbird', 'removeSubsets', {},
+    ...     '/package-sets/ubuntu/hoary/thunderbird', 'removeSubsets', {},
     ...     names=[u'languagepack'])
-    >>> print response
+    >>> print(response)
     HTTP/1.1 200 Ok
     ...
 
 And, here we go, now 'languagepack' has only one direct predecessor: 'gnome'.
 
     >>> response = webservice.named_get(
-    ...     '/package-sets/hoary/languagepack', 'setsIncludedBy', {},
+    ...     '/package-sets/ubuntu/hoary/languagepack', 'setsIncludedBy', {},
     ...     direct_inclusion=True)
     >>> print_payload(response)
-    http://api.launchpad.dev/beta/package-sets/hoary/gnome
+    http://api.launchpad.test/beta/package-sets/ubuntu/hoary/gnome
 
 Let's add a few source packages to the 'firefox' and the 'thunderbird'
 package sets.
 
     >>> response = webservice.named_post(
-    ...     '/package-sets/hoary/firefox', 'addSources', {},
+    ...     '/package-sets/ubuntu/hoary/firefox', 'addSources', {},
     ...     names=['at', 'mozilla-firefox', 'language-pack-de'])
-    >>> print response
+    >>> print(response)
     HTTP/1.1 200 Ok
     ...
 
     >>> response = webservice.named_get(
-    ...     '/package-sets/hoary/firefox', 'getSourcesIncluded', {})
-    >>> print response
+    ...     '/package-sets/ubuntu/hoary/firefox', 'getSourcesIncluded', {})
+    >>> print(response)
     HTTP/1.1 200 Ok
     ...
     ["at", "language-pack-de", "mozilla-firefox"]
 
     >>> response = webservice.named_post(
-    ...     '/package-sets/hoary/thunderbird', 'addSources', {},
+    ...     '/package-sets/ubuntu/hoary/thunderbird', 'addSources', {},
     ...     names=['at', 'cnews', 'thunderbird', 'language-pack-de'])
-    >>> print response
+    >>> print(response)
     HTTP/1.1 200 Ok
     ...
 
     >>> response = webservice.named_get(
-    ...     '/package-sets/hoary/thunderbird', 'getSourcesIncluded', {})
-    >>> print response
+    ...     '/package-sets/ubuntu/hoary/thunderbird', 'getSourcesIncluded',
+    ...     {})
+    >>> print(response)
     HTTP/1.1 200 Ok
     ...
     ["at", "cnews", "language-pack-de", "thunderbird"]
@@ -480,9 +507,9 @@ Which package sets include 'mozilla-firefox'?
     ...     '/package-sets/', 'setsIncludingSource', {},
     ...     sourcepackagename=u'mozilla-firefox')
     >>> print_payload(response)
-    http://api.launchpad.dev/beta/package-sets/hoary/firefox
-    http://api.launchpad.dev/beta/package-sets/hoary/mozilla
-    http://api.launchpad.dev/beta/package-sets/hoary/umbrella
+    http://api.launchpad.test/beta/package-sets/ubuntu/hoary/firefox
+    http://api.launchpad.test/beta/package-sets/ubuntu/hoary/mozilla
+    http://api.launchpad.test/beta/package-sets/ubuntu/hoary/umbrella
 
 Which package sets include the 'mozilla-firefox' source package *directly*?
 
@@ -491,15 +518,15 @@ Which package sets include the 'mozilla-firefox' source package *directly*?
     ...     sourcepackagename=u'mozilla-firefox',
     ...     direct_inclusion=True)
     >>> print_payload(response)
-    http://api.launchpad.dev/beta/package-sets/hoary/firefox
-    http://api.launchpad.dev/beta/package-sets/hoary/umbrella
+    http://api.launchpad.test/beta/package-sets/ubuntu/hoary/firefox
+    http://api.launchpad.test/beta/package-sets/ubuntu/hoary/umbrella
 
 If a non-existing source package name is passed it returns an error.
 
     >>> response = webservice.named_get(
     ...     '/package-sets/', 'setsIncludingSource', {},
     ...     sourcepackagename=u'does-not-exist')
-    >>> print response
+    >>> print(response)
     HTTP/1.1 404 Not Found
     ...
     No such source package: 'does-not-exist'.
@@ -508,11 +535,11 @@ What source packages are shared by the 'firefox' and the 'thunderbird'
 package sets?
 
     >>> thunderbird = webservice.get(
-    ...     "/package-sets/hoary/thunderbird").jsonBody()
+    ...     "/package-sets/ubuntu/hoary/thunderbird").jsonBody()
     >>> response = webservice.named_get(
-    ...     '/package-sets/hoary/firefox', 'getSourcesSharedBy', {},
+    ...     '/package-sets/ubuntu/hoary/firefox', 'getSourcesSharedBy', {},
     ...     other_package_set=thunderbird['self_link'])
-    >>> print response
+    >>> print(response)
     HTTP/1.1 200 Ok
     ...
     ["at", "language-pack-de"]
@@ -520,18 +547,19 @@ package sets?
 How about the complement set i.e. the packages not shared?
 
     >>> response = webservice.named_get(
-    ...     '/package-sets/hoary/firefox', 'getSourcesNotSharedBy', {},
+    ...     '/package-sets/ubuntu/hoary/firefox', 'getSourcesNotSharedBy', {},
     ...     other_package_set=thunderbird['self_link'])
-    >>> print response
+    >>> print(response)
     HTTP/1.1 200 Ok
     ...
     ["mozilla-firefox"]
 
-    >>> firefox = webservice.get("/package-sets/hoary/firefox").jsonBody()
+    >>> firefox = webservice.get(
+    ...     "/package-sets/ubuntu/hoary/firefox").jsonBody()
     >>> response = webservice.named_get(
-    ...     '/package-sets/hoary/thunderbird', 'getSourcesNotSharedBy', {},
-    ...     other_package_set=firefox['self_link'])
-    >>> print response
+    ...     '/package-sets/ubuntu/hoary/thunderbird', 'getSourcesNotSharedBy',
+    ...     {}, other_package_set=firefox['self_link'])
+    >>> print(response)
     HTTP/1.1 200 Ok
     ...
     ["cnews", "thunderbird"]
@@ -557,7 +585,7 @@ main archive.
     ...     ubuntu['main_archive_link'], 'newPackagesetUploader', {},
     ...     person=name12['self_link'],
     ...     packageset=firefox['self_link'])
-    >>> print response
+    >>> print(response)
     HTTP/1.1 201 Created
     ...
 
@@ -585,7 +613,7 @@ main archive.
     ...     ubuntu['main_archive_link'], 'newPackagesetUploader', {},
     ...     person=name12['self_link'],
     ...     packageset=mozilla['self_link'])
-    >>> print response
+    >>> print(response)
     HTTP/1.1 201 Created
     ...
 
@@ -614,7 +642,7 @@ Let's delete the upload privilege for the 'mozilla' package set.
     ...     ubuntu['main_archive_link'], 'deletePackagesetUploader', {},
     ...     person=name12['self_link'],
     ...     packageset=mozilla['self_link'])
-    >>> print response
+    >>> print(response)
     HTTP/1.1 200 Ok
     ...
 
@@ -634,7 +662,7 @@ Let's grant 'cprov' an upload permission to 'mozilla' and 'thunderbird'.
     ...     ubuntu['main_archive_link'], 'newPackagesetUploader', {},
     ...     person=cprov['self_link'],
     ...     packageset=mozilla['self_link'])
-    >>> print response
+    >>> print(response)
     HTTP/1.1 201 Created
     ...
 
@@ -642,7 +670,7 @@ Let's grant 'cprov' an upload permission to 'mozilla' and 'thunderbird'.
     ...     ubuntu['main_archive_link'], 'newPackagesetUploader', {},
     ...     person=cprov['self_link'],
     ...     packageset=thunderbird['self_link'])
-    >>> print response
+    >>> print(response)
     HTTP/1.1 201 Created
     ...
 
@@ -700,11 +728,11 @@ series in the query above. Hence the `currentseries` in Ubuntu is assumed
 The following query (note the additional 'distroseries' parameter) is
 thus equivalent:
 
-    >>> print ubuntu['current_series_link']
-    http://api.launchpad.dev/beta/ubuntu/hoary
+    >>> print(ubuntu['current_series_link'])
+    http://api.launchpad.test/beta/ubuntu/hoary
     >>> hoary = webservice.get("/ubuntu/hoary").jsonBody()
-    >>> print hoary['self_link']
-    http://api.launchpad.dev/beta/ubuntu/hoary
+    >>> print(hoary['self_link'])
+    http://api.launchpad.test/beta/ubuntu/hoary
 
     >>> response = webservice.named_get(
     ...     ubuntu['main_archive_link'], 'isSourceUploadAllowed',
@@ -755,39 +783,38 @@ This will fail since 'name12' has no permissions applying to 'grumpy' yet.
 Create a new package set ('thunderbird') in 'grumpy'.
 
     >>> response = webservice.named_post(
-    ...     '/package-sets', 'new', {},
+    ...     '/package-sets', 'new', {}, distroseries=grumpy['self_link'],
     ...     name=u'thunderbird',
     ...     description=u'Contains all thunderbird packages in grumpy',
-    ...     owner=name12['self_link'], distroseries=grumpy['self_link'],
-    ...     related_set=thunderbird['self_link'])
-    >>> print response
+    ...     owner=name12['self_link'], related_set=thunderbird['self_link'])
+    >>> print(response)
     HTTP/1.1 201 Created
     ...
 
     >>> response = webservice.named_get(
     ...     thunderbird['self_link'], 'relatedSets', {})
     >>> print_payload(response)
-    http://api.launchpad.dev/beta/package-sets/grumpy/thunderbird
+    http://api.launchpad.test/beta/package-sets/ubuntu/grumpy/thunderbird
 
 Associate 'thunderbird' with the appropriate source packages.
 
     >>> response = webservice.named_post(
-    ...     '/package-sets/grumpy/thunderbird', 'addSources', {},
+    ...     '/package-sets/ubuntu/grumpy/thunderbird', 'addSources', {},
     ...     names=['thunderbird', 'language-pack-de'])
-    >>> print response
+    >>> print(response)
     HTTP/1.1 200 Ok
     ...
 
 Grant 'name12' upload permissions to 'thunderbird' in 'grumpy'.
 
     >>> grouchy_bird = webservice.get(
-    ...     "/package-sets/grumpy/thunderbird").jsonBody()
+    ...     "/package-sets/ubuntu/grumpy/thunderbird").jsonBody()
 
     >>> response = webservice.named_post(
     ...     ubuntu['main_archive_link'], 'newPackagesetUploader', {},
     ...     person=name12['self_link'],
     ...     packageset=grouchy_bird['self_link'])
-    >>> print response
+    >>> print(response)
     HTTP/1.1 201 Created
     ...
 
@@ -849,7 +876,7 @@ permission URLs a 404 will result.
     >>> url = ('/ubuntu/+archive/primary/+upload/name12'
     ...     '?type=packageset&item=thunderbird')
     >>> response = webservice.get(url)
-    >>> print response
+    >>> print(response)
     HTTP/1.1 404 Not Found
     ...
 
@@ -859,7 +886,7 @@ series.
     >>> url = ('/ubuntu/+archive/primary/+upload/name12'
     ...     '?type=packageset&item=thunderbird&series=foobar')
     >>> response = webservice.get(url)
-    >>> print response
+    >>> print(response)
     HTTP/1.1 404 Not Found
     ...
 
@@ -868,7 +895,7 @@ The user 'name12' has no upload permission for 'thunderbird' in 'hoary'..
     >>> url = ('/ubuntu/+archive/primary/+upload/name12'
     ...     '?type=packageset&item=thunderbird&series=hoary')
     >>> response = webservice.get(url)
-    >>> print response
+    >>> print(response)
     HTTP/1.1 404 Not Found
     ...
 
@@ -877,9 +904,9 @@ The user 'name12' has no upload permission for 'thunderbird' in 'hoary'..
     >>> url = ('/ubuntu/+archive/primary/+upload/name12'
     ...     '?type=packageset&item=thunderbird&series=grumpy')
     >>> permission = webservice.get(url).jsonBody()
-    >>> print permission['package_set_name']
+    >>> print(permission['package_set_name'])
     thunderbird
-    >>> print permission['distro_series_name']
+    >>> print(permission['distro_series_name'])
     grumpy
 
 The user 'cprov' has no upload permission for 'thunderbird' in 'hoary'.
@@ -888,11 +915,11 @@ The user 'cprov' has no upload permission for 'thunderbird' in 'hoary'.
     ...     '?type=packageset&item=thunderbird&series=hoary')
     >>> permission = webservice.get(url).jsonBody()
     >>> pprint_entry(permission)
-    archive_link: u'http://api.launchpad.dev/beta/ubuntu/+archive/primary'
+    archive_link: u'http://api.launchpad.test/beta/ubuntu/+archive/primary'
     ...
     distro_series_name: u'hoary'
     ...
     package_set_name: u'thunderbird'
     permission: u'Archive Upload Rights'
-    person_link: u'http://api.launchpad.dev/beta/~cprov'
+    person_link: u'http://api.launchpad.test/beta/~cprov'
     ...

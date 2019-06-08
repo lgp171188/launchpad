@@ -6,7 +6,11 @@ imported branches.  If the logged in user is an import operator
 (member of VCS imports or Launchpad admin) then they can see a link
 to edit the details.
 
-    >>> from lp.code.enums import RevisionControlSystems
+    >>> from lp.code.enums import (
+    ...     RevisionControlSystems,
+    ...     TargetRevisionControlSystems,
+    ...     )
+    >>> from lp.code.tests.helpers import GitHostingFixture
     >>> from lp.testing import ANONYMOUS, login, logout
     >>> login('test@canonical.com')
 
@@ -33,13 +37,17 @@ to edit the details.
     >>> git_import_location = str(canonical_url(git_import.branch))
     >>> git_import_branch_unique_name = git_import.branch.unique_name
 
-    >>> hg_import = factory.makeProductCodeImport(
-    ...     hg_repo_url="http://hg.example.org/bar")
-    >>> hg_import_location = str(canonical_url(hg_import.branch))
-    >>> hg_import_branch_unique_name = hg_import.branch.unique_name
+    >>> with GitHostingFixture():
+    ...     git_to_git_import = factory.makeProductCodeImport(
+    ...         git_repo_url="git://git.example.org/fooix2",
+    ...         target_rcs_type=TargetRevisionControlSystems.GIT)
+    >>> git_to_git_import_location = str(
+    ...     canonical_url(git_to_git_import.git_repository))
+    >>> git_to_git_repository_unique_name = (
+    ...     git_to_git_import.git_repository.unique_name)
 
     >>> package_import = factory.makePackageCodeImport(
-    ...     hg_repo_url="http://hg.example.org/zap")
+    ...     git_repo_url="http://git.example.org/zap")
     >>> package_import_location = str(canonical_url(package_import.branch))
     >>> package_import_branch_unique_name = package_import.branch.unique_name
 
@@ -56,14 +64,27 @@ Both VCS Imports members and Launchpad administrators can edit the
 import:
 
     >>> def print_import_details(browser):
-    ...     div = find_tag_by_id(
-    ...         browser.contents, 'branch-import-details').div.div
-    ...     print extract_text(div)
+    ...     details = find_tag_by_id(
+    ...         browser.contents, 'branch-import-details')
+    ...     if details is None:
+    ...         details = find_tag_by_id(
+    ...             browser.contents, 'repository-import-details')
+    ...     print(extract_text(details.div.div))
+
     >>> import_browser.open(svn_import_location)
     >>> print_import_details(import_browser)
     Import Status: Reviewed
     This branch is an import of the Subversion branch
     from svn://svn.example.com/fooix/trunk.
+    The next import is scheduled to run
+    as soon as possible.
+    Edit import source or review import
+
+    >>> import_browser.open(git_to_git_import_location)
+    >>> print_import_details(import_browser)
+    Import Status: Reviewed
+    This repository is an import of the Git repository
+    at git://git.example.org/fooix2.
     The next import is scheduled to run
     as soon as possible.
     Edit import source or review import
@@ -75,6 +96,7 @@ Editing details
 There are a number of buttons shown on the editing page for
 import operators.
 
+    >>> import_browser.open(svn_import_location)
     >>> import_browser.getLink('Edit import source or review import').click()
     >>> print_submit_buttons(import_browser.contents)
     Update
@@ -94,7 +116,7 @@ in the form.
     >>> def print_form_fields(browser):
     ...     tags = find_tags_by_class(browser.contents, 'textType')
     ...     for tag in tags:
-    ...         print '%s: %s' % (tag['name'], tag['value'])
+    ...         print('%s: %s' % (tag['name'], tag['value']))
 
     >>> print_form_fields(import_browser)
     field.url: svn://svn.example.com/fooix/trunk
@@ -110,15 +132,15 @@ in the form.
     >>> print_form_fields(import_browser)
     field.url: git://git.example.org/fooix
 
-    >>> import_browser.open(hg_import_location)
+    >>> import_browser.open(git_to_git_import_location)
     >>> import_browser.getLink('Edit import source or review import').click()
     >>> print_form_fields(import_browser)
-    field.url: http://hg.example.org/bar
+    field.url: git://git.example.org/fooix2
 
     >>> import_browser.open(package_import_location)
     >>> import_browser.getLink('Edit import source or review import').click()
     >>> print_form_fields(import_browser)
-    field.url: http://hg.example.org/zap
+    field.url: http://git.example.org/zap
 
 
 Editing the import location
@@ -134,8 +156,7 @@ This is true for Subversion imports,
     >>> import_browser.getControl('URL').value = \
     ...     'svn://user:password@svn-new.example.com/fooix/trunk'
     >>> import_browser.getControl('Update').click()
-    >>> for message in get_feedback_messages(import_browser.contents):
-    ...     print extract_text(message)
+    >>> print_feedback_messages(import_browser.contents)
     The code import has been updated.
 
 bzr-svn imports,
@@ -144,8 +165,7 @@ bzr-svn imports,
     >>> import_browser.getControl('URL').value = \
     ...     'svn://user:password@svn-new.example.com/bzr-svn/trunk'
     >>> import_browser.getControl('Update').click()
-    >>> for message in get_feedback_messages(import_browser.contents):
-    ...     print extract_text(message)
+    >>> print_feedback_messages(import_browser.contents)
     The code import has been updated.
 
 CVS imports,
@@ -156,28 +176,25 @@ CVS imports,
     >>> import_browser.getControl('Module').value = \
     ...     'fooix2'
     >>> import_browser.getControl('Update').click()
-    >>> for message in get_feedback_messages(import_browser.contents):
-    ...     print extract_text(message)
+    >>> print_feedback_messages(import_browser.contents)
     The code import has been updated.
 
-Git imports,
+Git-to-Bazaar imports,
 
     >>> import_browser.open(git_import_location + '/+edit-import')
     >>> import_browser.getControl('URL').value = \
     ...     'git://user:password@git-new.example.org/fooix'
     >>> import_browser.getControl('Update').click()
-    >>> for message in get_feedback_messages(import_browser.contents):
-    ...     print extract_text(message)
+    >>> print_feedback_messages(import_browser.contents)
     The code import has been updated.
 
-Mercurial imports,
+Git-to-Git imports,
 
-    >>> import_browser.open(hg_import_location + '/+edit-import')
+    >>> import_browser.open(git_to_git_import_location + '/+edit-import')
     >>> import_browser.getControl('URL').value = \
-    ...     'http://user:password@metal.example.org/bar'
+    ...     'git://user:password@git-new.example.org/fooix2'
     >>> import_browser.getControl('Update').click()
-    >>> for message in get_feedback_messages(import_browser.contents):
-    ...     print extract_text(message)
+    >>> print_feedback_messages(import_browser.contents)
     The code import has been updated.
 
 and imports targetting source packages.
@@ -186,8 +203,7 @@ and imports targetting source packages.
     >>> import_browser.getControl('URL').value = \
     ...     'http://metal.example.org/zap'
     >>> import_browser.getControl('Update').click()
-    >>> for message in get_feedback_messages(import_browser.contents):
-    ...     print extract_text(message)
+    >>> print_feedback_messages(import_browser.contents)
     The code import has been updated.
 
 
@@ -199,8 +215,7 @@ Invalidating an import
     >>> print_import_details(import_browser)
     Import Status: Invalid
     ...
-    >>> for message in get_feedback_messages(import_browser.contents):
-    ...     print extract_text(message)
+    >>> print_feedback_messages(import_browser.contents)
     The code import has been set as invalid.
 
 
@@ -212,8 +227,7 @@ Suspending an import
     >>> print_import_details(import_browser)
     Import Status: Suspended
     ...
-    >>> for message in get_feedback_messages(import_browser.contents):
-    ...     print extract_text(message)
+    >>> print_feedback_messages(import_browser.contents)
     The code import has been suspended.
 
 
@@ -225,8 +239,7 @@ Marking an import as failing
     >>> print_import_details(import_browser)
     Import Status: Failed
     ...
-    >>> for message in get_feedback_messages(import_browser.contents):
-    ...     print extract_text(message)
+    >>> print_feedback_messages(import_browser.contents)
     The code import has been marked as failing.
 
 
@@ -320,15 +333,14 @@ Anonymous users cannot see this button.
     >>> anon_browser.getControl('Import Now')
     Traceback (most recent call last):
       ...
-    LookupError: label 'Import Now'
+    LookupError: label u'Import Now'
 
 If the logged in user clicks this button, the import will be scheduled
 to run ASAP and the fact that the import has been requested is
 displayed.
 
     >>> sample_person_browser.getControl('Import Now').click()
-    >>> for msg in get_feedback_messages(sample_person_browser.contents):
-    ...     print msg
+    >>> print_feedback_messages(sample_person_browser.contents)
     Import will run as soon as possible.
     >>> print_import_details(sample_person_browser)
     Import Status: Reviewed

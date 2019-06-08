@@ -1,7 +1,9 @@
-# Copyright 2010 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test the IPerson.createPPA() method."""
+
+from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 
@@ -31,6 +33,7 @@ class TestCreatePPA(TestCaseWithFactory):
         with person_logged_in(person):
             ppa = person.createPPA()
         self.assertEqual(ppa.name, 'ppa')
+        self.assertEqual(2048, ppa.authorized_size)
 
     def test_private(self):
         with celebrity_logged_in('commercial_admin') as person:
@@ -67,4 +70,5 @@ class TestCreatePPA(TestCaseWithFactory):
                 team_admin, team_owner, status=TeamMembershipStatus.ADMIN)
         with person_logged_in(team_admin):
             ppa = private_team.createPPA(private=True)
-        self.assertEqual(True, ppa.private)
+            self.assertEqual(True, ppa.private)
+            self.assertEqual(20480, ppa.authorized_size)

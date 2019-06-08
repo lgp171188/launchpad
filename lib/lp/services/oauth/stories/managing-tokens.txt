@@ -10,22 +10,22 @@ and/or revoked from that user's +oauth-tokens page.
     # Create a desktop integration token.
     >>> login('salgado@ubuntu.com')
     >>> consumer = factory.makeOAuthConsumer(
-    ...     "System-wide: Ubuntu (mycomputer)")
+    ...     u"System-wide: Ubuntu (mycomputer)")
     >>> salgado = getUtility(IPersonSet).getByName('salgado')
-    >>> desktop_token = factory.makeOAuthAccessToken(
+    >>> desktop_token, _ = factory.makeOAuthAccessToken(
     ...     consumer, salgado, OAuthPermission.DESKTOP_INTEGRATION)
 
     # Create a request token, authorize it for READ_PRIVATE access,
     # but don't exchange it for an access token.
     >>> consumer = factory.makeOAuthConsumer(
-    ...     "Example consumer for READ_PRIVATE")
+    ...     u"Example consumer for READ_PRIVATE")
     >>> request_token = factory.makeOAuthRequestToken()
     >>> request_token.review(salgado, OAuthPermission.READ_PRIVATE)
     >>> logout()
 
     # View the tokens.
     >>> my_browser = setupBrowser(auth='Basic salgado@ubuntu.com:test')
-    >>> my_browser.open('http://launchpad.dev/~salgado/+oauth-tokens')
+    >>> my_browser.open('http://launchpad.test/~salgado/+oauth-tokens')
     >>> print my_browser.title
     Authorized applications...
     >>> main_content = find_tag_by_id(my_browser.contents, 'maincontent')
@@ -87,11 +87,10 @@ shown as one of the authorized ones.
     >>> my_browser.getControl('Revoke Authorization', index=2).click()
     >>> print my_browser.title
     Authorized applications...
-    >>> for message in get_feedback_messages(my_browser.contents):
-    ...     print message
+    >>> print_feedback_messages(my_browser.contents)
     Authorization revoked successfully.
 
-    >>> my_browser.open('http://launchpad.dev/~salgado/+oauth-tokens')
+    >>> my_browser.open('http://launchpad.test/~salgado/+oauth-tokens')
     >>> print extract_text(find_tag_by_id(my_browser.contents, 'maincontent'))
     Authorized applications
     ...
@@ -112,13 +111,13 @@ include that.
     >>> from lp.registry.interfaces.product import IProductSet
     >>> from lp.services.oauth.interfaces import IOAuthConsumerSet
     >>> login('salgado@ubuntu.com')
-    >>> token = getUtility(IOAuthConsumerSet).getByKey(
-    ...     'launchpad-library').newRequestToken()
+    >>> token, _ = getUtility(IOAuthConsumerSet).getByKey(
+    ...     u'launchpad-library').newRequestToken()
     >>> token.review(salgado, OAuthPermission.WRITE_PUBLIC,
     ...              context=getUtility(IProductSet)['firefox'])
-    >>> access_token = token.createAccessToken()
+    >>> access_token, _ = token.createAccessToken()
     >>> logout()
-    >>> my_browser.open('http://launchpad.dev/~salgado/+oauth-tokens')
+    >>> my_browser.open('http://launchpad.test/~salgado/+oauth-tokens')
     >>> print extract_text(find_tag_by_id(my_browser.contents, 'maincontent'))
     Authorized applications
     ...
@@ -130,7 +129,7 @@ include that.
 That page is protected with the launchpad.Edit permission, for obvious
 reasons, so users can only access their own.
 
-    >>> user_browser.open('http://launchpad.dev/~salgado/+oauth-tokens')
+    >>> user_browser.open('http://launchpad.test/~salgado/+oauth-tokens')
     Traceback (most recent call last):
     ...
     Unauthorized: ...launchpad.Edit...

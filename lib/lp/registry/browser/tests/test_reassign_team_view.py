@@ -1,10 +1,11 @@
-# Copyright 2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2011-2017 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for TeamReassignmentView view code."""
 
 __metaclass__ = type
 
+from fixtures import FakeLogger
 from zope.component import getUtility
 from zope.security.interfaces import Unauthorized
 from zope.security.proxy import removeSecurityProxy
@@ -14,6 +15,7 @@ from lp.registry.interfaces.teammembership import (
     ITeamMembershipSet,
     TeamMembershipStatus,
     )
+from lp.services.webapp.escaping import html_escape
 from lp.services.webapp.publisher import canonical_url
 from lp.testing import (
     login_person,
@@ -30,6 +32,7 @@ class TestTeamReassignmentView(TestCaseWithFactory):
 
     def test_non_owner_unauthorised(self):
         # Only team owners can reassign team ownership.
+        self.useFixture(FakeLogger())
         team = self.factory.makeTeam()
         any_person = self.factory.makePerson()
         reassign_url = canonical_url(team, view_name='+reassign')
@@ -151,10 +154,11 @@ class TestTeamReassignmentViewErrors(TestCaseWithFactory):
         view = create_initialized_view(
             a_team, '+reassign', form=form, principal=owner)
         self.assertEqual(
-            [u"There's already a person/team with the name 'a-team' in "
-            "Launchpad. Please choose a different name or select the option "
-            "to make that person/team the new owner, if that's what you "
-             "want."],
+            [html_escape(
+                u"There's already a person/team with the name 'a-team' in "
+                "Launchpad. Please choose a different name or select the "
+                "option to make that person/team the new owner, if that's "
+                "what you want.")],
             view.errors)
 
     def test_cyclical_direct_team_membership_error(self):

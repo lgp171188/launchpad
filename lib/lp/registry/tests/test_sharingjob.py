@@ -1,4 +1,4 @@
-# Copyright 2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2012-2015 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for SharingJobs."""
@@ -11,12 +11,13 @@ import transaction
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
+from lp.app.enums import InformationType
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.code.enums import (
     BranchSubscriptionNotificationLevel,
     CodeReviewNotificationLevel,
     )
-from lp.registry.enums import InformationType
+from lp.registry.enums import SpecificationSharingPolicy
 from lp.registry.interfaces.accesspolicy import (
     IAccessArtifactGrantSource,
     IAccessPolicySource,
@@ -34,7 +35,7 @@ from lp.registry.model.sharingjob import (
     SharingJobDerived,
     SharingJobType,
     )
-from lp.services.database.lpstorm import IStore
+from lp.services.database.interfaces import IStore
 from lp.services.features.testing import FeatureFixture
 from lp.services.job.interfaces.job import JobStatus
 from lp.services.job.tests import block_on_job
@@ -116,6 +117,26 @@ class SharingJobDerivedTestCase(TestCaseWithFactory):
             '<REMOVE_ARTIFACT_SUBSCRIPTIONS job reconciling subscriptions '
             'for branch_ids=[%d], requestor=%s>'
             % (branch.id, requestor.name), repr(job))
+
+    def test_repr_gitrepositories(self):
+        requestor = self.factory.makePerson()
+        gitrepository = self.factory.makeGitRepository()
+        job = getUtility(IRemoveArtifactSubscriptionsJobSource).create(
+            requestor, artifacts=[gitrepository])
+        self.assertEqual(
+            '<REMOVE_ARTIFACT_SUBSCRIPTIONS job reconciling subscriptions '
+            'for gitrepository_ids=[%d], requestor=%s>'
+            % (gitrepository.id, requestor.name), repr(job))
+
+    def test_repr_specifications(self):
+        requestor = self.factory.makePerson()
+        specification = self.factory.makeSpecification()
+        job = getUtility(IRemoveArtifactSubscriptionsJobSource).create(
+            requestor, artifacts=[specification])
+        self.assertEqual(
+            '<REMOVE_ARTIFACT_SUBSCRIPTIONS job reconciling subscriptions '
+            'for requestor=%s, specification_ids=[%d]>'
+            % (requestor.name, specification.id), repr(job))
 
     def test_create_success(self):
         # Create an instance of SharingJobDerived that delegates to SharingJob.
@@ -244,6 +265,17 @@ class RemoveArtifactSubscriptionsJobTestCase(TestCaseWithFactory):
         self.assertEqual(requestor.id, naked_job.requestor_id)
         self.assertContentEqual([bug.id], naked_job.bug_ids)
 
+    def test_create__bad_artifact_class(self):
+        # A ValueError is raised if an object of an unsupported type
+        # is passed as an artifact to
+        # IRemoveArtifactSubscriptionsJob.create().
+        requestor = self.factory.makePerson()
+        wrong_object = self.factory.makePerson()
+        self.assertRaises(
+            ValueError,
+            getUtility(IRemoveArtifactSubscriptionsJobSource).create,
+            requestor, [wrong_object])
+
     def test_getErrorRecipients(self):
         # The pillar owner and job requestor are the error recipients.
         requestor = self.factory.makePerson()
@@ -257,10 +289,13 @@ class RemoveArtifactSubscriptionsJobTestCase(TestCaseWithFactory):
         self.assertContentEqual(
             expected_emails, job.getErrorRecipients())
 
-    def _assert_bug_change_unsubscribes(self, change_callback):
-        # Subscribers are unsubscribed if the bug becomes invisible due to a
-        # change in information_type.
-        product = self.factory.makeProduct()
+    def _assert_artifact_change_unsubscribes(self, change_callback,
+                                             configure_test):
+        # Subscribers are unsubscribed if the artifact becomes invisible
+        # due to a change in information_type.
+        product = self.factory.makeProduct(
+            specification_sharing_policy=(
+                SpecificationSharingPolicy.EMBARGOED_OR_PROPRIETARY))
         owner = self.factory.makePerson()
         [policy] = getUtility(IAccessPolicySource).find(
             [(product, InformationType.USERDATA)])
@@ -278,6 +313,12 @@ class RemoveArtifactSubscriptionsJobTestCase(TestCaseWithFactory):
         branch = self.factory.makeBranch(
             owner=owner, product=product,
             information_type=InformationType.USERDATA)
+        gitrepository = self.factory.makeGitRepository(
+            owner=owner, target=product,
+            information_type=InformationType.USERDATA)
+        specification = self.factory.makeSpecification(
+            owner=owner, product=product,
+            information_type=InformationType.PROPRIETARY)
 
         # The artifact grantees will not lose access when the job is run.
         artifact_indirect_grantee = self.factory.makePerson()
@@ -285,113 +326,162 @@ class RemoveArtifactSubscriptionsJobTestCase(TestCaseWithFactory):
             membership_policy=TeamMembershipPolicy.RESTRICTED,
             members=[artifact_indirect_grantee])
 
-        bug.subscribe(policy_team_grantee, owner)
-        bug.subscribe(policy_indirect_grantee, owner)
-        bug.subscribe(artifact_team_grantee, owner)
         bug.subscribe(artifact_indirect_grantee, owner)
         branch.subscribe(artifact_indirect_grantee,
             BranchSubscriptionNotificationLevel.NOEMAIL, None,
             CodeReviewNotificationLevel.NOEMAIL, owner)
+        gitrepository.subscribe(artifact_indirect_grantee,
+            BranchSubscriptionNotificationLevel.NOEMAIL, None,
+            CodeReviewNotificationLevel.NOEMAIL, owner)
+        # Subscribing somebody to a specification does not automatically
+        # create an artifact grant.
+        spec_artifact = self.factory.makeAccessArtifact(specification)
+        self.factory.makeAccessArtifactGrant(
+            spec_artifact, artifact_indirect_grantee)
+        with person_logged_in(product.owner):
+            specification.subscribe(artifact_indirect_grantee, owner)
+
+        # pick one of the concrete artifacts (bug, branch, Git repository,
+        # or spec) and subscribe the teams and persons.
+        concrete_artifact, get_pillars, get_subscribers = configure_test(
+            bug, branch, gitrepository, specification, policy_team_grantee,
+            policy_indirect_grantee, artifact_team_grantee, owner)
+
         # Subscribing policy_team_grantee has created an artifact grant so we
         # need to revoke that to test the job.
-        artifact = self.factory.makeAccessArtifact(concrete=bug)
+        artifact = self.factory.makeAccessArtifact(concrete=concrete_artifact)
         getUtility(IAccessArtifactGrantSource).revokeByArtifact(
             [artifact], [policy_team_grantee])
 
         # policy grantees are subscribed because the job has not been run yet.
-        subscribers = removeSecurityProxy(bug).getDirectSubscribers()
+        subscribers = get_subscribers(concrete_artifact)
         self.assertIn(policy_team_grantee, subscribers)
         self.assertIn(policy_indirect_grantee, subscribers)
 
-        # Change bug attributes so that it can become inaccessible for
+        # Change artifact attributes so that it can become inaccessible for
         # some users.
-        change_callback(bug)
+        change_callback(concrete_artifact)
         reconcile_access_for_artifact(
-            bug, bug.information_type, bug.affected_pillars)
+            concrete_artifact, concrete_artifact.information_type,
+            get_pillars(concrete_artifact))
 
         getUtility(IRemoveArtifactSubscriptionsJobSource).create(
-            owner, [bug])
+            owner, [concrete_artifact])
         with block_on_job(self):
             transaction.commit()
 
         # Check the result. Policy grantees will be unsubscribed.
-        subscribers = removeSecurityProxy(bug).getDirectSubscribers()
+        subscribers = get_subscribers(concrete_artifact)
         self.assertNotIn(policy_team_grantee, subscribers)
         self.assertNotIn(policy_indirect_grantee, subscribers)
         self.assertIn(artifact_team_grantee, subscribers)
-        self.assertIn(artifact_indirect_grantee, subscribers)
+        self.assertIn(artifact_indirect_grantee, bug.getDirectSubscribers())
         self.assertIn(artifact_indirect_grantee, branch.subscribers)
+        self.assertIn(artifact_indirect_grantee, gitrepository.subscribers)
+        self.assertIn(artifact_indirect_grantee,
+                      removeSecurityProxy(specification).subscribers)
+
+    def _assert_bug_change_unsubscribes(self, change_callback):
+
+        def get_pillars(concrete_artifact):
+            return concrete_artifact.affected_pillars
+
+        def get_subscribers(concrete_artifact):
+            return removeSecurityProxy(
+                concrete_artifact).getDirectSubscribers()
+
+        def configure_test(bug, branch, gitrepository, specification,
+                           policy_team_grantee, policy_indirect_grantee,
+                           artifact_team_grantee, owner):
+            concrete_artifact = bug
+            bug.subscribe(policy_team_grantee, owner)
+            bug.subscribe(policy_indirect_grantee, owner)
+            bug.subscribe(artifact_team_grantee, owner)
+            return concrete_artifact, get_pillars, get_subscribers
+
+        self._assert_artifact_change_unsubscribes(
+            change_callback, configure_test)
 
     def _assert_branch_change_unsubscribes(self, change_callback):
-        product = self.factory.makeProduct()
-        owner = self.factory.makePerson()
-        [policy] = getUtility(IAccessPolicySource).find(
-            [(product, InformationType.USERDATA)])
-        # The policy grantees will lose access.
-        policy_indirect_grantee = self.factory.makePerson()
-        policy_team_grantee = self.factory.makeTeam(
-            membership_policy=TeamMembershipPolicy.RESTRICTED,
-            members=[policy_indirect_grantee])
 
-        self.factory.makeAccessPolicyGrant(policy, policy_team_grantee, owner)
-        login_person(owner)
-        bug = self.factory.makeBug(
-            owner=owner, target=product,
-            information_type=InformationType.USERDATA)
-        branch = self.factory.makeBranch(
-            owner=owner, product=product,
-            information_type=InformationType.USERDATA)
+        def get_pillars(concrete_artifact):
+            return [concrete_artifact.product]
 
-        # The artifact grantees will not lose access when the job is run.
-        artifact_indirect_grantee = self.factory.makePerson()
-        artifact_team_grantee = self.factory.makeTeam(
-            membership_policy=TeamMembershipPolicy.RESTRICTED,
-            members=[artifact_indirect_grantee])
+        def get_subscribers(concrete_artifact):
+            return concrete_artifact.subscribers
 
-        branch.subscribe(
-            policy_team_grantee, BranchSubscriptionNotificationLevel.NOEMAIL,
-            None, CodeReviewNotificationLevel.NOEMAIL, owner)
-        branch.subscribe(
-            policy_indirect_grantee,
-            BranchSubscriptionNotificationLevel.NOEMAIL, None,
-            CodeReviewNotificationLevel.NOEMAIL, owner)
-        branch.subscribe(
-            artifact_team_grantee,
-            BranchSubscriptionNotificationLevel.NOEMAIL, None,
-            CodeReviewNotificationLevel.NOEMAIL, owner)
-        branch.subscribe(
-            artifact_indirect_grantee,
-            BranchSubscriptionNotificationLevel.NOEMAIL, None,
-            CodeReviewNotificationLevel.NOEMAIL, owner)
-        bug.subscribe(artifact_indirect_grantee, owner)
-        # Subscribing policy_team_grantee has created an artifact grant so we
-        # need to revoke that to test the job.
-        artifact = self.factory.makeAccessArtifact(concrete=branch)
-        getUtility(IAccessArtifactGrantSource).revokeByArtifact(
-            [artifact], [policy_team_grantee])
+        def configure_test(bug, branch, gitrepository, specification,
+                           policy_team_grantee, policy_indirect_grantee,
+                           artifact_team_grantee, owner):
+            concrete_artifact = branch
+            branch.subscribe(
+                policy_team_grantee,
+                BranchSubscriptionNotificationLevel.NOEMAIL,
+                None, CodeReviewNotificationLevel.NOEMAIL, owner)
+            branch.subscribe(
+                policy_indirect_grantee,
+                BranchSubscriptionNotificationLevel.NOEMAIL, None,
+                CodeReviewNotificationLevel.NOEMAIL, owner)
+            branch.subscribe(
+                artifact_team_grantee,
+                BranchSubscriptionNotificationLevel.NOEMAIL, None,
+                CodeReviewNotificationLevel.NOEMAIL, owner)
+            return concrete_artifact, get_pillars, get_subscribers
 
-        # policy grantees are subscribed because the job has not been run yet.
-        #subscribers = removeSecurityProxy(branch).subscribers
-        self.assertIn(policy_team_grantee, branch.subscribers)
-        self.assertIn(policy_indirect_grantee, branch.subscribers)
+        self._assert_artifact_change_unsubscribes(
+            change_callback, configure_test)
 
-        # Change branch attributes so that it can become inaccessible for
-        # some users.
-        change_callback(branch)
-        reconcile_access_for_artifact(
-            branch, branch.information_type, [branch.product])
+    def _assert_gitrepository_change_unsubscribes(self, change_callback):
 
-        getUtility(IRemoveArtifactSubscriptionsJobSource).create(
-            owner, [branch])
-        with block_on_job(self):
-            transaction.commit()
+        def get_pillars(concrete_artifact):
+            return [concrete_artifact.target]
 
-        # Check the result. Policy grantees will be unsubscribed.
-        self.assertNotIn(policy_team_grantee, branch.subscribers)
-        self.assertNotIn(policy_indirect_grantee, branch.subscribers)
-        self.assertIn(artifact_team_grantee, branch.subscribers)
-        self.assertIn(artifact_indirect_grantee, branch.subscribers)
-        self.assertIn(artifact_indirect_grantee, bug.getDirectSubscribers())
+        def get_subscribers(concrete_artifact):
+            return concrete_artifact.subscribers
+
+        def configure_test(bug, branch, gitrepository, specification,
+                           policy_team_grantee, policy_indirect_grantee,
+                           artifact_team_grantee, owner):
+            concrete_artifact = gitrepository
+            gitrepository.subscribe(
+                policy_team_grantee,
+                BranchSubscriptionNotificationLevel.NOEMAIL,
+                None, CodeReviewNotificationLevel.NOEMAIL, owner)
+            gitrepository.subscribe(
+                policy_indirect_grantee,
+                BranchSubscriptionNotificationLevel.NOEMAIL, None,
+                CodeReviewNotificationLevel.NOEMAIL, owner)
+            gitrepository.subscribe(
+                artifact_team_grantee,
+                BranchSubscriptionNotificationLevel.NOEMAIL, None,
+                CodeReviewNotificationLevel.NOEMAIL, owner)
+            return concrete_artifact, get_pillars, get_subscribers
+
+        self._assert_artifact_change_unsubscribes(
+            change_callback, configure_test)
+
+    def _assert_specification_change_unsubscribes(self, change_callback):
+
+        def get_pillars(concrete_artifact):
+            return [concrete_artifact.product]
+
+        def get_subscribers(concrete_artifact):
+            return concrete_artifact.subscribers
+
+        def configure_test(bug, branch, gitrepository, specification,
+                           policy_team_grantee, policy_indirect_grantee,
+                           artifact_team_grantee, owner):
+            naked_spec = removeSecurityProxy(specification)
+            naked_spec.subscribe(policy_team_grantee, owner)
+            naked_spec.subscribe(policy_indirect_grantee, owner)
+            spec_artifact = self.factory.makeAccessArtifact(specification)
+            self.factory.makeAccessArtifactGrant(
+                spec_artifact, artifact_team_grantee)
+            naked_spec.subscribe(artifact_team_grantee, owner)
+            return naked_spec, get_pillars, get_subscribers
+
+        self._assert_artifact_change_unsubscribes(
+            change_callback, configure_test)
 
     def test_change_information_type_branch(self):
         def change_information_type(branch):
@@ -399,6 +489,20 @@ class RemoveArtifactSubscriptionsJobTestCase(TestCaseWithFactory):
                 InformationType.PRIVATESECURITY)
 
         self._assert_branch_change_unsubscribes(change_information_type)
+
+    def test_change_information_type_gitrepository(self):
+        def change_information_type(gitrepository):
+            removeSecurityProxy(gitrepository).information_type = (
+                InformationType.PRIVATESECURITY)
+
+        self._assert_gitrepository_change_unsubscribes(change_information_type)
+
+    def test_change_information_type_specification(self):
+        def change_information_type(specification):
+            removeSecurityProxy(specification).information_type = (
+                InformationType.EMBARGOED)
+
+        self._assert_specification_change_unsubscribes(change_information_type)
 
     def test_change_information_type(self):
         # Changing the information type of a bug unsubscribes users who can no

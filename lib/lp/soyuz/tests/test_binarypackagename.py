@@ -1,19 +1,17 @@
-# Copyright 2010 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test BinaryPackageName."""
 
+from __future__ import absolute_import, print_function, unicode_literals
+
 __metaclass__ = type
 
-from datetime import datetime
-
-import pytz
 from zope.component import getUtility
 
 from lp.app.errors import NotFoundError
 from lp.soyuz.enums import PackagePublishingStatus
 from lp.soyuz.interfaces.binarypackagename import IBinaryPackageNameSet
-from lp.soyuz.model.binarypackagename import getBinaryPackageDescriptions
 from lp.testing import TestCaseWithFactory
 from lp.testing.layers import DatabaseFunctionalLayer
 
@@ -37,17 +35,6 @@ class TestBinaryPackageNameSet(TestCaseWithFactory):
     def test_getAll_contains_one(self):
         name = self.factory.makeBinaryPackageName()
         self.assertIn(name, self.name_set.getAll())
-
-    def test_findByName_not_found(self):
-        self.assertEqual([], list(self.name_set.findByName("notfound")))
-
-    def test_findByName_found(self):
-        name1 = self.factory.makeBinaryPackageName("prefixname")
-        name2 = self.factory.makeBinaryPackageName("name")
-        name3 = self.factory.makeBinaryPackageName("namesuffix")
-        name4 = self.factory.makeBinaryPackageName("other")
-        self.assertEqual(
-            [name1, name2, name3], list(self.name_set.findByName("name")))
 
     def test_queryByName_not_found(self):
         self.assertEqual(None, self.name_set.queryByName("notfound"))
@@ -152,66 +139,3 @@ class TestBinaryPackageNameSet(TestCaseWithFactory):
             list(self.name_set.getNotNewByNames(
                 [name.id for name in names], distroarchseries.distroseries,
                 [archive.id for archive in archives[:1]])))
-
-    def test_getBinaryPackageDescriptions_none(self):
-        self.assertEqual({}, getBinaryPackageDescriptions([]))
-
-    def test_getBinaryPackageDescriptions_no_release(self):
-        name = self.factory.makeBinaryPackageName()
-        self.assertEqual({}, getBinaryPackageDescriptions([name]))
-
-    def test_getBinaryPackageDescriptions_one_release(self):
-        name = self.factory.makeBinaryPackageName()
-        self.factory.makeBinaryPackageRelease(
-            binarypackagename=name, description="foo")
-        self.assertEqual(
-            {name.name: "foo"},
-            getBinaryPackageDescriptions([name], max_title_length=3))
-
-    def test_getBinaryPackageDescriptions_shortens_names(self):
-        name = self.factory.makeBinaryPackageName()
-        self.factory.makeBinaryPackageRelease(
-            binarypackagename=name, description="foot")
-        self.assertEqual(
-            {name.name: "foo..."},
-            getBinaryPackageDescriptions([name], max_title_length=3))
-
-    def test_getBinaryPackageDescriptions_uses_latest(self):
-        name = self.factory.makeBinaryPackageName()
-        self.factory.makeBinaryPackageRelease(
-            binarypackagename=name, description="foo",
-            date_created=datetime(1980, 01, 01, tzinfo=pytz.UTC))
-        self.factory.makeBinaryPackageRelease(
-            binarypackagename=name, description="bar",
-            date_created=datetime(2000, 01, 01, tzinfo=pytz.UTC))
-        self.assertEqual(
-            {name.name: "bar"},
-            getBinaryPackageDescriptions([name], max_title_length=3))
-
-    def test_getBinaryPackageDescriptions_two_packages(self):
-        name1 = self.factory.makeBinaryPackageName()
-        name2 = self.factory.makeBinaryPackageName()
-        self.factory.makeBinaryPackageRelease(
-            binarypackagename=name1, description="foo")
-        self.factory.makeBinaryPackageRelease(
-            binarypackagename=name2, description="bar")
-        self.assertEqual(
-            {name1.name: "foo", name2.name: "bar"},
-            getBinaryPackageDescriptions([name1, name2], max_title_length=3))
-
-    def test_getBinaryPackageDescriptions_strips_newlines(self):
-        name = self.factory.makeBinaryPackageName()
-        self.factory.makeBinaryPackageRelease(
-            binarypackagename=name, description="f\no")
-        self.assertEqual(
-            {name.name: "f o"},
-            getBinaryPackageDescriptions([name], max_title_length=3))
-
-    def test_getBinaryPackageDescriptions_use_names(self):
-        name = self.factory.makeBinaryPackageName()
-        self.factory.makeBinaryPackageRelease(
-            binarypackagename=name, description="foo")
-        self.assertEqual(
-            {name.name: "foo"},
-            getBinaryPackageDescriptions(
-                [name], use_names=True, max_title_length=3))

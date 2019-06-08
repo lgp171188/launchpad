@@ -24,17 +24,17 @@ class TestBugTaskBreadcrumb(BaseBreadcrumbTestCase):
     def test_bugtask(self):
         crumbs = self.getBreadcrumbsForObject(self.bugtask)
         last_crumb = crumbs[-1]
-        self.assertEquals(self.bugtask_url, last_crumb.url)
-        self.assertEquals("Bug #%d" % self.bug.id, last_crumb.text)
-        self.assertEquals(
+        self.assertEqual(self.bugtask_url, last_crumb.url)
+        self.assertEqual("Bug #%d" % self.bug.id, last_crumb.text)
+        self.assertEqual(
             u"Bug #%d \u201cborked\u201d" % self.bug.id, last_crumb.detail)
 
     def test_bugtask_child(self):
         crumbs = self.getBreadcrumbsForObject(
             self.bugtask, view_name='+activity')
-        self.assertEquals(crumbs[-1].url, "%s/+activity" % self.bugtask_url)
-        self.assertEquals(crumbs[-2].url, self.bugtask_url)
-        self.assertEquals(crumbs[-2].text, "Bug #%d" % self.bug.id)
+        self.assertEqual(crumbs[-1].url, "%s/+activity" % self.bugtask_url)
+        self.assertEqual(crumbs[-2].url, self.bugtask_url)
+        self.assertEqual(crumbs[-2].text, "Bug #%d" % self.bug.id)
 
     def test_bugtask_comment(self):
         login_person(self.bug.owner)
@@ -42,12 +42,12 @@ class TestBugTaskBreadcrumb(BaseBreadcrumbTestCase):
             bug=self.bug, owner=self.bug.owner,
             subject="test comment subject", body="test comment body")
         expected_breadcrumbs = [
-            ('Crumb Tester', 'http://launchpad.dev/crumb-tester'),
-            ('Bugs', 'http://bugs.launchpad.dev/crumb-tester'),
+            ('Crumb Tester', 'http://launchpad.test/crumb-tester'),
+            ('Bugs', 'http://bugs.launchpad.test/crumb-tester'),
             ('Bug #%s' % self.bug.id,
-             'http://bugs.launchpad.dev/crumb-tester/+bug/%s' % self.bug.id),
+             'http://bugs.launchpad.test/crumb-tester/+bug/%s' % self.bug.id),
             ('Comment #1',
-             'http://bugs.launchpad.dev/crumb-tester/+bug/%s/comments/1' % (
+             'http://bugs.launchpad.test/crumb-tester/+bug/%s/comments/1' % (
                 self.bug.id)),
             ]
         self.assertBreadcrumbs(expected_breadcrumbs, comment)
@@ -81,20 +81,20 @@ class TestBugTrackerBreadcrumbs(BaseBreadcrumbTestCase):
         self.assertBreadcrumbs(expected_breadcrumbs, self.bug_tracker)
 
 
-class BugsVHostBreadcrumbTestCase(BaseBreadcrumbTestCase):
+class BugsFacetBreadcrumbTestCase(BaseBreadcrumbTestCase):
 
     def test_person(self):
         person = self.factory.makePerson(name='snarf')
         person_bugs_url = canonical_url(person, rootsite='bugs')
         crumbs = self.getBreadcrumbsForObject(person, rootsite='bugs')
         last_crumb = crumbs[-1]
-        self.assertEquals(person_bugs_url, last_crumb.url)
-        self.assertEquals("Bugs", last_crumb.text)
+        self.assertEqual(person_bugs_url, last_crumb.url)
+        self.assertEqual("Bugs", last_crumb.text)
 
     def test_bugtarget(self):
         project = self.factory.makeProduct(name='fnord')
         project_bugs_url = canonical_url(project, rootsite='bugs')
         crumbs = self.getBreadcrumbsForObject(project, rootsite='bugs')
         last_crumb = crumbs[-1]
-        self.assertEquals(project_bugs_url, last_crumb.url)
-        self.assertEquals("Bugs", last_crumb.text)
+        self.assertEqual(project_bugs_url, last_crumb.url)
+        self.assertEqual("Bugs", last_crumb.text)

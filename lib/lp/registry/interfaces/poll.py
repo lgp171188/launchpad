@@ -1,8 +1,6 @@
 # Copyright 2009 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-# pylint: disable-msg=E0211,E0213
-
 __all__ = [
     'IPoll',
     'IPollSet',
@@ -444,8 +442,8 @@ class IVoteCastSet(Interface):
 class IVote(Interface):
     """Here we store the vote itself, linked to a special token.
 
-    This token is given to the user when he votes, so he can change his vote
-    later.
+    This token is given to the user when they vote, so they can change their
+    vote later.
     """
 
     id = Int(
@@ -497,4 +495,3 @@ class IVoteSet(Interface):
         Raises a TypeError if the given option doesn't belong to a
         simple-style poll.
         """
-

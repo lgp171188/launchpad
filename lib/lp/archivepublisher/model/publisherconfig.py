@@ -16,21 +16,21 @@ from storm.locals import (
     Storm,
     Unicode,
     )
-from zope.interface import implements
+from zope.interface import implementer
 
 from lp.archivepublisher.interfaces.publisherconfig import (
     IPublisherConfig,
     IPublisherConfigSet,
     )
-from lp.services.database.lpstorm import (
+from lp.services.database.interfaces import (
     IMasterStore,
     IStore,
     )
 
 
+@implementer(IPublisherConfig)
 class PublisherConfig(Storm):
     """See `IArchiveAuthToken`."""
-    implements(IPublisherConfig)
     __storm_table__ = 'PublisherConfig'
 
     id = Int(primary=True)
@@ -45,9 +45,9 @@ class PublisherConfig(Storm):
     copy_base_url = Unicode(name='copy_base_url', allow_none=False)
 
 
+@implementer(IPublisherConfigSet)
 class PublisherConfigSet:
     """See `IPublisherConfigSet`."""
-    implements(IPublisherConfigSet)
     title = "Soyuz Publisher Configurations"
 
     def new(self, distribution, root_dir, base_url, copy_base_url):

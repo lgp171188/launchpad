@@ -1,8 +1,6 @@
 # Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-# pylint: disable-msg=E0213
-
 """Specification message interfaces."""
 
 __metaclass__ = type
@@ -48,9 +46,3 @@ class ISpecificationMessageSet(Interface):
 
     def get(specificationmessageid):
         """Retrieve an ISpecificationMessage by its ID."""
-
-    def getBySpecificationAndMessage(specification, message):
-        """Return the corresponding ISpecificationMesssage.
-
-        Return None if no such ISpecificationMesssage exists.
-        """

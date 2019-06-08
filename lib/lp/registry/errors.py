@@ -1,4 +1,4 @@
-# Copyright 2010 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2016 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -9,6 +9,7 @@ __all__ = [
     'CannotDeleteCommercialSubscription',
     'CannotTransitionToCountryMirror',
     'CommercialSubscribersOnly',
+    'CannotPackageProprietaryProduct',
     'CountryMirrorAlreadySet',
     'DeleteSubscriptionError',
     'InvalidFilename',
@@ -18,15 +19,19 @@ __all__ = [
     'MirrorHasNoHTTPURL',
     'MirrorNotProbed',
     'NameAlreadyTaken',
+    'NoSuchAccount',
     'NoSuchDistroSeries',
     'NoSuchSourcePackageName',
+    'NotPlaceholderAccount',
     'InclusiveTeamLinkageError',
     'PPACreationError',
     'PrivatePersonLinkageError',
+    'ProprietaryProduct',
     'TeamMembershipTransitionError',
     'TeamMembershipPolicyError',
     'UserCannotChangeMembershipSilently',
     'UserCannotSubscribePerson',
+    'VoucherAlreadyRedeemed',
     ]
 
 import httplib
@@ -58,6 +63,16 @@ class InvalidName(Exception):
 
 
 @error_status(httplib.BAD_REQUEST)
+class NotPlaceholderAccount(Exception):
+    """A non-placeholder account already exists for that OpenID identifier."""
+
+
+@error_status(httplib.BAD_REQUEST)
+class NoSuchAccount(Exception):
+    """No account exists for the specified openid identifier."""
+
+
+@error_status(httplib.BAD_REQUEST)
 class InvalidFilename(Exception):
     """An invalid filename was used as an attachment filename."""
 
@@ -83,6 +98,10 @@ class CommercialSubscribersOnly(Unauthorized):
     Raised when a user tries to invoke an operation that is only available to
     current commercial subscribers and they don't have an active subscription.
     """
+
+
+class ProprietaryProduct(Exception):
+    """Cannot make the change because the project is proprietary."""
 
 
 class NoSuchSourcePackageName(NameLookupFailed):
@@ -202,3 +221,11 @@ class CannotDeleteCommercialSubscription(Exception):
 @error_status(httplib.BAD_REQUEST)
 class CannotChangeInformationType(Exception):
     """The information type cannot be changed."""
+
+
+class CannotPackageProprietaryProduct(Exception):
+    """Raised when a non-PUBLIC product's series is linked to a package."""
+
+
+class VoucherAlreadyRedeemed(Exception):
+    """Raised when a voucher is redeemed more than once."""

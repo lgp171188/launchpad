@@ -23,7 +23,7 @@ constant value.
 Anonymous users will see the list of featured projects with links to the
 projects' pages in Launchpad. The "project of the day" is listed separately.
 
-    >>> anon_browser.open('http://launchpad.dev/')
+    >>> anon_browser.open('http://launchpad.test/')
     >>> featured = find_tag_by_id(anon_browser.contents, 'homepage-featured')
     >>> print extract_text(featured.h2)
     Featured projects
@@ -55,7 +55,7 @@ Anonymous users cannot see the link to administer featured projects:
 
 A user without privileges cannot see the administration link, either:
 
-    >>> user_browser.open('http://launchpad.dev/')
+    >>> user_browser.open('http://launchpad.test/')
     >>> user_browser.getLink(MANAGE_LINK)
     Traceback (most recent call last):
     ...
@@ -63,14 +63,14 @@ A user without privileges cannot see the administration link, either:
 
 But Foo Bar, who is an administrator, can see the management link:
 
-    >>> admin_browser.open('http://launchpad.dev/')
+    >>> admin_browser.open('http://launchpad.test/')
     >>> admin_browser.getLink(MANAGE_LINK).click()
     >>> admin_browser.url
-    'http://launchpad.dev/+featuredprojects'
+    'http://launchpad.test/+featuredprojects'
 
 No Privilege persons is denied access to this page:
 
-    >>> user_browser.open('http://launchpad.dev/+featuredprojects')
+    >>> user_browser.open('http://launchpad.test/+featuredprojects')
     Traceback (most recent call last):
     ...
     Unauthorized: ...
@@ -81,7 +81,7 @@ project:
     >>> admin_browser.getControl('Add project').value = 'apache'
     >>> admin_browser.getControl('Update').click()
     >>> admin_browser.url
-    'http://launchpad.dev/'
+    'http://launchpad.test/'
     >>> featured = find_tag_by_id(admin_browser.contents, 'homepage-featured')
     >>> 'Apache' in extract_text(featured)
     True
@@ -90,7 +90,7 @@ Just to be certain, we will iterate the list as we did before and see
 that Apache has been added. Because the list has changed, a different project
 is now at index '4' and is therefore displayed as the top project:
 
-    >>> anon_browser.open('http://launchpad.dev/')
+    >>> anon_browser.open('http://launchpad.test/')
     >>> featured = find_tag_by_id(anon_browser.contents, 'homepage-featured')
     >>> top_project = featured.find('', 'featured-project-top')
     >>> print extract_text(top_project.h3)
@@ -115,7 +115,7 @@ is now at index '4' and is therefore displayed as the top project:
     >>> admin_browser.getControl('Apache').click()
     >>> admin_browser.getControl('Update').click()
     >>> admin_browser.url
-    'http://launchpad.dev/'
+    'http://launchpad.test/'
     >>> featured = find_tag_by_id(admin_browser.contents, 'homepage-featured')
     >>> 'Apache' in extract_text(featured)
     False
@@ -123,7 +123,7 @@ is now at index '4' and is therefore displayed as the top project:
 Just to be certain, we will iterate the list as we did before and see
 that Apache has been removed:
 
-    >>> anon_browser.open('http://launchpad.dev/')
+    >>> anon_browser.open('http://launchpad.test/')
     >>> featured = find_tag_by_id(anon_browser.contents, 'homepage-featured')
     >>> for link in featured.findAll('a'):
     ...     print extract_text(link)

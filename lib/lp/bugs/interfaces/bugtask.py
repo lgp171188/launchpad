@@ -1,4 +1,4 @@
-# Copyright 2009-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2016 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Bug task interfaces."""
@@ -23,7 +23,6 @@ __all__ = [
     'IBugTaskSet',
     'ICreateQuestionFromBugTaskForm',
     'IllegalTarget',
-    'INominationsReviewTableBatchNavigator',
     'IRemoveQuestionFromBugTaskForm',
     'normalize_bugtask_status',
     'RESOLVED_BUGTASK_STATUSES',
@@ -80,7 +79,6 @@ from zope.schema import (
 from zope.security.interfaces import Unauthorized
 
 from lp import _
-from lp.app.interfaces.launchpad import IHasDateCreated
 from lp.app.validators import LaunchpadValidationError
 from lp.app.validators.name import name_validator
 from lp.bugs.interfaces.bugwatch import (
@@ -97,7 +95,7 @@ from lp.services.fields import (
     StrippedTextLine,
     Summary,
     )
-from lp.services.webapp.interfaces import ITableBatchNavigator
+from lp.services.webservice.apihelpers import patch_collection_property
 
 
 class BugTaskImportance(DBEnumeratedType):
@@ -391,7 +389,7 @@ class IBugTaskDelete(Interface):
         """
 
 
-class IBugTask(IHasDateCreated, IHasBug, IBugTaskDelete):
+class IBugTask(IHasBug, IBugTaskDelete):
     """A bug needing fixing in a particular product or package."""
     export_as_webservice_entry()
 
@@ -419,7 +417,7 @@ class IBugTask(IHasDateCreated, IHasBug, IBugTaskDelete):
         title=_('Milestone'),
         required=False,
         readonly=True,
-        vocabulary='Milestone',
+        vocabulary='BugTaskMilestone',
         schema=Interface))  # IMilestone
     milestoneID = Attribute('The id of the milestone.')
 
@@ -498,7 +496,8 @@ class IBugTask(IHasDateCreated, IHasBug, IBugTaskDelete):
     date_closed = exported(
         Datetime(title=_("Date Closed"),
                  description=_("The date on which this task was marked "
-                               "either Won't Fix, Invalid or Fix Released."),
+                               "Fix Released, Invalid, Won't Fix, Expired or "
+                               "Opinion."),
                  readonly=True,
                  required=False))
     date_left_new = exported(
@@ -603,8 +602,8 @@ class IBugTask(IHasDateCreated, IHasBug, IBugTaskDelete):
         :param person: The person to check to see if they are a contributor.
 
         Return a dict with the following values:
-        is_contributor: True if the user has any bugs assigned to him in the
-        context of this bug task's pillar, either directly or by team
+        is_contributor: True if the user has any bugs assigned to them in
+        the context of this bug task's pillar, either directly or by team
         participation.
         person_name: the displayname of the person
         pillar_name: the displayname of the bug task's pillar
@@ -717,10 +716,9 @@ class IBugTask(IHasDateCreated, IHasBug, IBugTaskDelete):
         """Check if the current user can set assignee to None."""
 
     @mutator_for(assignee)
-    @operation_parameters(
-        assignee=copy_field(assignee))
+    @operation_parameters(assignee=copy_field(assignee))
     @export_write_operation()
-    def transitionToAssignee(assignee):
+    def transitionToAssignee(assignee, validate=True):
         """Perform a workflow transition to the given assignee.
 
         When the bugtask assignee is changed from None to an IPerson
@@ -795,10 +793,10 @@ class IBugTask(IHasDateCreated, IHasBug, IBugTaskDelete):
 
 # Set schemas that were impossible to specify during the definition of
 # IBugTask itself.
-IBugTask['related_tasks'].value_type.schema = IBugTask
+patch_collection_property(IBugTask, 'related_tasks', IBugTask)
 
 # We are forced to define this now to avoid circular import problems.
-IBugWatch['bugtasks'].value_type.schema = IBugTask
+patch_collection_property(IBugWatch, 'bugtasks', IBugTask)
 
 
 class IBugTaskDelta(Interface):
@@ -851,12 +849,6 @@ class IBugTaskSet(Interface):
         Raise a NotFoundError if there is no IBugTask
         matching the given id. Raise a zope.security.interfaces.Unauthorized
         if the user doesn't have the permission to view this bug.
-        """
-
-    def getBugTasks(bug_ids):
-        """Return the bugs with the given IDs and all of its bugtasks.
-
-        :return: A dictionary mapping the bugs to their bugtasks.
         """
 
     def getBugTaskTags(bugtasks):
@@ -1067,7 +1059,7 @@ class IAddBugTaskWithProductCreationForm(ILinkPackaging):
     bug_url = StrippedTextLine(
         title=_('Bug URL'), required=True, constraint=valid_remote_bug_url,
         description=_("The URL of this bug in the remote bug tracker."))
-    displayname = TextLine(title=_('Project name'))
+    display_name = TextLine(title=_('Project name'))
     name = ProductNameField(
         title=_('Project ID'), constraint=name_validator, required=True,
         description=_(
@@ -1075,10 +1067,6 @@ class IAddBugTaskWithProductCreationForm(ILinkPackaging):
             "followed by letters, dots, hyphens or plusses. e.g. firefox, "
             "linux, gnome-terminal."))
     summary = Summary(title=_('Project summary'), required=True)
-
-
-class INominationsReviewTableBatchNavigator(ITableBatchNavigator):
-    """Marker interface to render custom template for the bug nominations."""
 
 
 class ICreateQuestionFromBugTaskForm(Interface):

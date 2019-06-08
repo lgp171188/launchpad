@@ -1,7 +1,9 @@
-# Copyright 2010 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test uploads of SourcePackageRecipeBuilds."""
+
+from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 
@@ -29,10 +31,6 @@ class TestSourcePackageRecipeBuildUploads(TestUploadProcessorBase):
         super(TestSourcePackageRecipeBuildUploads, self).setUp()
 
         self.setupBreezy()
-
-        # We need at least one architecture for the PPA upload to be
-        # accepted.
-        self.breezy['i386'].supports_virtualized = True
 
         self.switchToAdmin()
         self.recipe = self.factory.makeSourcePackageRecipe()
@@ -64,7 +62,7 @@ class TestSourcePackageRecipeBuildUploads(TestUploadProcessorBase):
             '%d/ubuntu/bar_1.0-1_source.changes' % self.build.archive.id)
         self.layer.txn.commit()
 
-        self.assertEquals(UploadStatusEnum.ACCEPTED, result,
+        self.assertEqual(UploadStatusEnum.ACCEPTED, result,
             "Source upload failed\nGot: %s" % self.log.getLogBuffer())
 
         self.assertEqual(BuildStatus.FULLYBUILT, self.build.status)

@@ -1,4 +1,4 @@
-# Copyright 2009 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2017 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Bug feed (syndication) views."""
@@ -15,7 +15,7 @@ __all__ = [
 from z3c.ptcompat import ViewPageTemplateFile
 from zope.component import getUtility
 
-from lp.bugs.browser.bugtask import (
+from lp.bugs.browser.buglisting import (
     BugsBugTaskSearchListingView,
     BugTargetView,
     )
@@ -228,7 +228,10 @@ class BugTargetBugsFeed(BugsFeedBase):
     @property
     def title(self):
         """See `IFeed`."""
-        return "Bugs in %s" % self.context.displayname
+        if IMaloneApplication.providedBy(self.context):
+            return "Launchpad bugs"
+        else:
+            return "Bugs in %s" % self.context.displayname
 
     @property
     def feed_id(self):
@@ -240,7 +243,10 @@ class BugTargetBugsFeed(BugsFeedBase):
             datecreated = self.context.datecreated.date().isoformat()
         else:
             datecreated = '2008'
-        url_path = urlparse(self.link_alternate)[2]
+        if IMaloneApplication.providedBy(self.context):
+            url_path = ''
+        else:
+            url_path = urlparse(self.link_alternate)[2]
         id_ = 'tag:launchpad.net,%s:/%s%s' % (
             datecreated,
             self.rootsite,
@@ -295,7 +301,7 @@ class SearchBugsFeed(BugsFeedBase):
     """Bug feeds for a generic search.
 
     Searches are of the form produced by an advanced bug search, e.g.
-    http://bugs.launchpad.dev/bugs/+bugs.atom?field.searchtext=&
+    http://bugs.launchpad.test/bugs/+bugs.atom?field.searchtext=&
         search=Search+Bug+Reports&field.scope=all&field.scope.target=
     """
 

@@ -1,4 +1,4 @@
-# Copyright 2009-2010 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2014 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Components for exporting translation files."""
@@ -15,7 +15,7 @@ from StringIO import StringIO
 import tempfile
 
 from zope.component import subscribers
-from zope.interface import implements
+from zope.interface import implementer
 
 from lp.services.tarfile_helpers import LaunchpadWriteTarFile
 from lp.translations.interfaces.translationexporter import (
@@ -28,9 +28,9 @@ from lp.translations.interfaces.translationfileformat import (
     )
 
 
+@implementer(IExportedTranslationFile)
 class ExportedTranslationFile:
     """See `IExportedTranslationFile`."""
-    implements(IExportedTranslationFile)
 
     def __init__(self, content_file):
         self._content_file = content_file
@@ -56,9 +56,9 @@ class ExportedTranslationFile:
         self._content_file.close()
 
 
+@implementer(ITranslationExporter)
 class TranslationExporter:
     """See `ITranslationExporter`."""
-    implements(ITranslationExporter)
 
     def getExportersForSupportedFileFormat(self, file_format):
         """See `ITranslationExporter`."""
@@ -91,7 +91,7 @@ class TranslationExporter:
                 output_format = target_format
             format_exporter = self.getExporterProducingTargetFileFormat(
                 output_format)
-            file_content = format_exporter.exportTranslationFile(
+            format_exporter.exportTranslationFile(
                 translation_file, storage, ignore_obsolete=ignore_obsolete,
                 force_utf8=force_utf8)
 

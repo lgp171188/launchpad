@@ -29,10 +29,10 @@ truncated.
     ...     soup = find_main_content(page)
     ...     comment_divs = soup('div', 'boardCommentBody')
     ...     for div_tag in comment_divs:
-    ...         print div_tag
+    ...         print(div_tag)
     >>> print_comments(browser.contents) #doctest: -ELLIPSIS
     <div class="boardCommentBody">
-    <a href="http://bugs.launchpad.dev/tomcat/+bug/2/comments/1/+download">Download
+    <a href="http://bugs.launchpad.test/tomcat/+bug/2/comments/1/+download">Download
     full text</a> (363 bytes)
     <div class="comment-text" itemprop="commentText"><p>This
     would be a real killer feature. If there...</p></div>
@@ -41,7 +41,7 @@ truncated.
     </p>
     </div>
     <div class="boardCommentBody">
-    <a href="http://bugs.launchpad.dev/tomcat/+bug/2/comments/2/+download">Download
+    <a href="http://bugs.launchpad.test/tomcat/+bug/2/comments/2/+download">Download
     full text</a> (364 bytes)
     <div class="comment-text" itemprop="commentText"><p>Oddly
     enough the bug system seems only capabl...</p></div>
@@ -54,22 +54,22 @@ Let's click on the first "Read more..." link.
 
     >>> browser.getLink("Read more...").click()
     >>> browser.url
-    'http://bugs.launchpad.dev/tomcat/+bug/2/comments/1'
+    'http://bugs.launchpad.test/tomcat/+bug/2/comments/1'
 
 The whole comment is visible on this page:
 
-    >>> print browser.title
+    >>> print(browser.title)
     Comment #1 : Bug #2 (blackhole) : Bugs : Tomcat
 
     >>> print_comments(browser.contents) #doctest: -ELLIPSIS
     <div class="boardCommentBody">
     <div class="comment-text" itemprop="commentText"><p>This
       would be a real killer feature. If there is already code
-      to make it possible, why aren't there tons of press announcements
+      to make it possible, why aren&#x27;t there tons of press announcements
       about the secuirty possibilities. Imagine - no more embarrassing
       emails for Mr Gates... everything they delete would actually
-      disappear! I'm sure Redmond will switch over as soon as they hear
-      about this. It's not a bug, it's a feature!</p></div>
+      disappear! I&#x27;m sure Redmond will switch over as soon as they hear
+      about this. It&#x27;s not a bug, it&#x27;s a feature!</p></div>
     </div>
 
     >>> config_data  = config.pop('max_comment_data')
@@ -85,7 +85,7 @@ with an email address in it. Note: This set of tests is generally
 the same rules as xx-question-message.txt; changes here may require
 changes to that test.
 
-    >>> user_browser.open('http://bugs.launchpad.dev/tomcat/+bug/2')
+    >>> user_browser.open('http://bugs.launchpad.test/tomcat/+bug/2')
     >>> user_browser.title.decode('utf-8')
     u'Bug #2 (blackhole) ... : Bugs : Tomcat'
     >>> user_browser.getControl(name='field.comment').value = (
@@ -116,14 +116,14 @@ changes to that test.
     ...     "-----END PGP SIGNATURE-----\n")
     >>> user_browser.getControl('Post Comment', index=-1).click()
 
-No Privileges Person is authenticated in user_browser, so he can see
+No Privileges Person is authenticated in user_browser, so they can see
 email addresses in messages.
 
     >>> user_browser.title.decode('utf-8')
     u'Bug #2 (blackhole) ... : Bugs : Tomcat'
     >>> text = find_tags_by_class(
     ...     user_browser.contents, 'boardCommentBody')[-1]
-    >>> print extract_text(text.findAll('p')[-2])
+    >>> print(extract_text(text.findAll('p')[-2]))
     --
     ______________________
     human@example.org
@@ -131,14 +131,14 @@ email addresses in messages.
 
 Unauthenticated users, such as a bot will see the obfuscated email
 address, '<email address hidden>'. The anonymous user is
-unauthenticated, so he will see the obfuscated email address.
+unauthenticated, so they will see the obfuscated email address.
 
-    >>> anon_browser.open('http://bugs.launchpad.dev/tomcat/+bug/2')
+    >>> anon_browser.open('http://bugs.launchpad.test/tomcat/+bug/2')
     >>> anon_browser.title.decode('utf-8')
     u'Bug #2 (blackhole) ... : Bugs : Tomcat'
     >>> text = find_tags_by_class(
     ...     anon_browser.contents, 'boardCommentBody')[-1]
-    >>> print extract_text(text.findAll('p')[-2])
+    >>> print(extract_text(text.findAll('p')[-2]))
     --
     ______________________
     &lt;email address hidden&gt;
@@ -155,7 +155,7 @@ class.
 Pagetests cannot test CSS and JS behaviour.  We can only check that the markup
 includes the hooks for the style and script.
 
-    >>> print text.findAll('p')[-2]
+    >>> print(text.findAll('p')[-2])
     <p><span class="foldable">--...
     &lt;email address hidden&gt;<br />
     Witty signatures rock!
@@ -169,7 +169,7 @@ are wrapped with a tag of 'foldable' class, citation lines are
 always displayed. Again we can continue with the anonymous user to
 see the markup.
 
-    >>> print text.findAll('p')[-3]
+    >>> print(text.findAll('p')[-3])
     <p>Somebody said sometime ago:<br />
     <span class="foldable-quoted">
     &gt; 1. Remove the letters  c, j, q, x, w<br />
@@ -181,12 +181,12 @@ PGP blocks in signed messages are identified by a paragraph that
 starts with '-----BEGIN PGP'.  There are two kinds of PGP blocks,
 the notice that the message is signed, and the signature.
 
-    >>> print text.findAll('p')[0]
+    >>> print(text.findAll('p')[0])
     <p><span class="foldable">-----BEGIN PGP SIGNED MESSAGE-----<br />
     Hash: SHA1
     </span></p>
 
-    >>> print text.findAll('p')[-1]
+    >>> print(text.findAll('p')[-1])
     <p><span class="foldable">-----BEGIN PGP SIGNATURE-----<br />
     Version: GnuPG v1.4.1 (GNU/Linux)<br />
     Comment: Using GnuPG with Thunderbird<br />

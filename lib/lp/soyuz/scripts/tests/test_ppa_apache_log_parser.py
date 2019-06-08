@@ -6,12 +6,9 @@ import subprocess
 
 from zope.component import getUtility
 
+from lp.buildmaster.interfaces.processor import IProcessorSet
 from lp.registry.interfaces.person import IPersonSet
-from lp.services.webapp.interfaces import (
-    DEFAULT_FLAVOR,
-    IStoreSelector,
-    MAIN_STORE,
-    )
+from lp.services.database.interfaces import IStore
 from lp.services.worlddata.interfaces.country import ICountrySet
 from lp.soyuz.model.binarypackagerelease import (
     BinaryPackageReleaseDownloadCount,
@@ -78,11 +75,11 @@ class TestScriptRunning(TestCaseWithFactory):
         self.publisher = SoyuzTestPublisher()
         self.publisher.prepareBreezyAutotest()
 
-        self.store = getUtility(IStoreSelector).get(
-            MAIN_STORE, DEFAULT_FLAVOR)
+        self.store = IStore(BinaryPackageReleaseDownloadCount)
 
         self.archive = getUtility(IPersonSet).getByName('cprov').archive
         self.archive.require_virtualized = False
+        self.archive.setProcessors(getUtility(IProcessorSet).getAll())
 
         self.foo_i386, self.foo_hppa = self.publisher.getPubBinaries(
                 archive=self.archive, architecturespecific=True)

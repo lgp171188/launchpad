@@ -1,7 +1,5 @@
-# Copyright 2009-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2016 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
-
-# pylint: disable-msg=E0611,W0212
 
 """Classes to represent source packages in a distribution."""
 
@@ -13,11 +11,13 @@ __all__ = [
     ]
 
 import itertools
-import operator
+from operator import (
+    attrgetter,
+    itemgetter,
+    )
 from threading import local
 
 from bzrlib.lru_cache import LRUCache
-from lazr.restful.utils import smartquote
 from sqlobject.sqlbuilder import SQLConstant
 from storm.expr import (
     And,
@@ -32,17 +32,16 @@ from storm.locals import (
     Unicode,
     )
 import transaction
-from zope.interface import implements
+from zope.interface import implementer
 
 from lp.bugs.interfaces.bugsummary import IBugSummaryDimension
-from lp.bugs.model.bug import BugSet
 from lp.bugs.model.bugtarget import BugTargetBase
-from lp.bugs.model.bugtask import BugTask
 from lp.bugs.model.structuralsubscription import (
     StructuralSubscriptionTargetMixin,
     )
 from lp.code.model.hasbranches import (
     HasBranchesMixin,
+    HasCodeImportsMixin,
     HasMergeProposalsMixin,
     )
 from lp.registry.interfaces.distributionsourcepackage import (
@@ -57,7 +56,9 @@ from lp.registry.model.sourcepackage import (
     SourcePackage,
     SourcePackageQuestionTargetMixin,
     )
-from lp.services.database.lpstorm import IStore
+from lp.services.database.bulk import load
+from lp.services.database.decoratedresultset import DecoratedResultSet
+from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import sqlvalues
 from lp.services.propertycache import cachedproperty
 from lp.soyuz.enums import (
@@ -113,10 +114,13 @@ class DistributionSourcePackageProperty:
         setattr(obj._self_in_database, self.attrname, value)
 
 
+@implementer(
+    IBugSummaryDimension, IDistributionSourcePackage, IHasCustomLanguageCodes)
 class DistributionSourcePackage(BugTargetBase,
                                 SourcePackageQuestionTargetMixin,
                                 StructuralSubscriptionTargetMixin,
                                 HasBranchesMixin,
+                                HasCodeImportsMixin,
                                 HasCustomLanguageCodesMixin,
                                 HasMergeProposalsMixin,
                                 HasDriversMixin):
@@ -126,10 +130,6 @@ class DistributionSourcePackage(BugTargetBase,
     things about the releases that are published under its name, the latest
     or current release, etc.
     """
-
-    implements(
-        IBugSummaryDimension, IDistributionSourcePackage,
-        IHasCustomLanguageCodes)
 
     bug_reporting_guidelines = DistributionSourcePackageProperty(
         'bug_reporting_guidelines')
@@ -152,10 +152,12 @@ class DistributionSourcePackage(BugTargetBase,
         return self.sourcepackagename.name
 
     @property
-    def displayname(self):
+    def display_name(self):
         """See `IDistributionSourcePackage`."""
         return '%s in %s' % (
             self.sourcepackagename.name, self.distribution.displayname)
+
+    displayname = display_name
 
     @property
     def bugtargetdisplayname(self):
@@ -170,7 +172,7 @@ class DistributionSourcePackage(BugTargetBase,
     @property
     def title(self):
         """See `IDistributionSourcePackage`."""
-        return smartquote('"%s" package in %s') % (
+        return '%s package in %s' % (
             self.sourcepackagename.name, self.distribution.displayname)
 
     @property
@@ -213,10 +215,8 @@ class DistributionSourcePackage(BugTargetBase,
     def delete(self):
         """See `DistributionSourcePackage`."""
         dsp_in_db = self._self_in_database
-        no_spph = self.publishing_history.count() == 0
-        if dsp_in_db is not None and no_spph:
-            store = IStore(dsp_in_db)
-            store.remove(dsp_in_db)
+        if dsp_in_db is not None and self.publishing_history.is_empty():
+            IStore(dsp_in_db).remove(dsp_in_db)
             return True
         return False
 
@@ -259,16 +259,18 @@ class DistributionSourcePackage(BugTargetBase,
             SourcePackagePublishingHistory.archive IN %s AND
             SourcePackagePublishingHistory.sourcepackagerelease =
                 SourcePackageRelease.id AND
+            SourcePackagePublishingHistory.sourcepackagename = %s AND
             SourcePackageRelease.sourcepackagename = %s AND
             SourcePackageRelease.version = %s
             """ % sqlvalues(self.distribution,
                             self.distribution.all_distro_archive_ids,
                             self.sourcepackagename,
+                            self.sourcepackagename,
                             version),
             orderBy='-datecreated',
             prejoinClauseTables=['SourcePackageRelease'],
             clauseTables=['DistroSeries', 'SourcePackageRelease'])
-        if spph.count() == 0:
+        if spph.is_empty():
             return None
         return DistributionSourcePackageRelease(
             distribution=self.distribution,
@@ -281,16 +283,6 @@ class DistributionSourcePackage(BugTargetBase,
         releases = self.distribution.getCurrentSourceReleases(
             [self.sourcepackagename])
         return releases.get(self)
-
-    def bugtasks(self, quantity=None):
-        """See `IDistributionSourcePackage`."""
-        return BugTask.select("""
-            distribution=%s AND
-            sourcepackagename=%s
-            """ % sqlvalues(self.distribution.id,
-                            self.sourcepackagename.id),
-            orderBy='-datecreated',
-            limit=quantity)
 
     def get_distroseries_packages(self, active_only=True):
         """See `IDistributionSourcePackage`."""
@@ -337,7 +329,8 @@ class DistributionSourcePackage(BugTargetBase,
                 PackagePublishingStatus.PUBLISHED),
             (SourcePackagePublishingHistory.sourcepackagerelease ==
                 SourcePackageRelease.id),
-            SourcePackageRelease.sourcepackagename == self.sourcepackagename,
+            (SourcePackagePublishingHistory.sourcepackagename ==
+                self.sourcepackagename),
             # Ensure that the package was not copied.
             SourcePackageRelease.upload_archive == Archive.id,
             # Next, the joins for the ordering by soyuz karma of the
@@ -363,9 +356,8 @@ class DistributionSourcePackage(BugTargetBase,
     def binary_names(self):
         """See `IDistributionSourcePackage`."""
         names = []
-        history = self.publishing_history
-        if history.count() > 0:
-            binaries = history[0].getBuiltBinaries()
+        if not self.publishing_history.is_empty():
+            binaries = self.publishing_history[0].getBuiltBinaries()
             names = [binary.binary_package_name for binary in binaries]
         return names
 
@@ -378,7 +370,7 @@ class DistributionSourcePackage(BugTargetBase,
             DistroSeries.distribution == self.distribution)
         result = store.find(Packaging, condition)
         result.order_by("debversion_sort_key(version) DESC")
-        if result.count() == 0:
+        if result.is_empty():
             return None
         else:
             return result[0].productseries.product
@@ -391,54 +383,64 @@ class DistributionSourcePackage(BugTargetBase,
         return self._getPublishingHistoryQuery(status)
 
     def _getPublishingHistoryQuery(self, status=None):
-        query = """
-            DistroSeries.distribution = %s AND
-            SourcePackagePublishingHistory.archive IN %s AND
-            SourcePackagePublishingHistory.distroseries =
-                DistroSeries.id AND
-            SourcePackagePublishingHistory.sourcepackagename = %s AND
-            SourcePackageRelease.id =
-                SourcePackagePublishingHistory.sourcepackagerelease
-            """ % sqlvalues(self.distribution,
-                            self.distribution.all_distro_archive_ids,
-                            self.sourcepackagename)
+        conditions = [
+            SourcePackagePublishingHistory.archiveID.is_in(
+                self.distribution.all_distro_archive_ids),
+            SourcePackagePublishingHistory.distroseriesID == DistroSeries.id,
+            DistroSeries.distribution == self.distribution,
+            SourcePackagePublishingHistory.sourcepackagename ==
+                self.sourcepackagename,
+            SourcePackageRelease.id ==
+                SourcePackagePublishingHistory.sourcepackagereleaseID,
+            ]
 
         if status is not None:
-            query += ("AND SourcePackagePublishingHistory.status = %s"
-                      % sqlvalues(status))
+            conditions.append(SourcePackagePublishingHistory.status == status)
 
-        return SourcePackagePublishingHistory.select(query,
-            clauseTables=['DistroSeries', 'SourcePackageRelease'],
-            prejoinClauseTables=['SourcePackageRelease'],
-            orderBy='-datecreated')
+        res = IStore(SourcePackagePublishingHistory).find(
+            (SourcePackagePublishingHistory, SourcePackageRelease),
+            *conditions)
+        res.order_by(
+            Desc(SourcePackagePublishingHistory.datecreated),
+            Desc(SourcePackagePublishingHistory.id))
+        return DecoratedResultSet(res, itemgetter(0))
 
     def getReleasesAndPublishingHistory(self):
         """See `IDistributionSourcePackage`."""
-        store = Store.of(self.distribution)
-        result = store.find(
-            (SourcePackageRelease, SourcePackagePublishingHistory),
-            SourcePackagePublishingHistory.distroseries == DistroSeries.id,
+        pub_constraints = (
             DistroSeries.distribution == self.distribution,
+            SourcePackagePublishingHistory.distroseries == DistroSeries.id,
             SourcePackagePublishingHistory.archiveID.is_in(
                self.distribution.all_distro_archive_ids),
             SourcePackagePublishingHistory.sourcepackagename ==
                 self.sourcepackagename,
-            SourcePackageRelease.id ==
-                SourcePackagePublishingHistory.sourcepackagereleaseID)
-        result.order_by(
-            Desc(SourcePackageRelease.id),
-            Desc(SourcePackagePublishingHistory.datecreated),
-            Desc(SourcePackagePublishingHistory.id))
+            )
 
-        # Collate the publishing history by SourcePackageRelease.
-        dspr_pubs = []
-        for spr, pubs in itertools.groupby(result, operator.itemgetter(0)):
-            dspr_pubs.append(
+        # Find distinct SPRs for our SPN in our archives.
+        spr_ids = Store.of(self.distribution).find(
+            SourcePackagePublishingHistory.sourcepackagereleaseID,
+            *pub_constraints
+            ).order_by(
+                Desc(SourcePackagePublishingHistory.sourcepackagereleaseID)
+            ).config(distinct=True)
+
+        def decorate(spr_ids):
+            # Find the SPPHs for each SPR in our result.
+            load(SourcePackageRelease, spr_ids)
+            sprs = [SourcePackageRelease.get(spr_id) for spr_id in spr_ids]
+            pubs = DistributionSourcePackageRelease.getPublishingHistories(
+                self.distribution, sprs)
+            sprs_by_id = dict(
+                (spr, list(pubs)) for (spr, pubs) in
+                itertools.groupby(pubs, attrgetter('sourcepackagereleaseID')))
+            return [
                 (DistributionSourcePackageRelease(
-                        distribution=self.distribution,
-                        sourcepackagerelease=spr),
-                 [spph for (spr, spph) in pubs]))
-        return dspr_pubs
+                    distribution=self.distribution,
+                    sourcepackagerelease=spr),
+                 sprs_by_id[spr.id])
+                for spr in sprs]
+
+        return DecoratedResultSet(spr_ids, bulk_decorator=decorate)
 
     # XXX kiko 2006-08-16: Bad method name, no need to be a property.
     @property
@@ -545,10 +547,9 @@ class DistributionSourcePackage(BugTargetBase,
             cls._new(distribution, sourcepackagename, upstream_link_allowed)
 
 
+@implementer(transaction.interfaces.ISynchronizer)
 class ThreadLocalLRUCache(LRUCache, local):
     """A per-thread LRU cache that can synchronize with a transaction."""
-
-    implements(transaction.interfaces.ISynchronizer)
 
     def newTransaction(self, txn):
         pass

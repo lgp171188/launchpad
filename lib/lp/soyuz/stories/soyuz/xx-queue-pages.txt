@@ -31,7 +31,7 @@ a Zope interaction to show it:
     ...     main_archive, name12)
     >>> from operator import attrgetter
     >>> for permission in sorted(permissions, key=attrgetter("id")):
-    ...     print permission.component.name
+    ...     print(permission.component.name)
     main
     restricted
     universe
@@ -54,7 +54,7 @@ The link "View Uploads" is presented in Distrorelease page.
 Viewing the current queue, by default the NEW queue.
 
     >>> anon_browser.open(
-    ...     "http://launchpad.dev/ubuntu/breezy-autotest/")
+    ...     "http://launchpad.test/ubuntu/breezy-autotest/")
     >>> anon_browser.getLink("All uploads").click()
 
     >>> anon_browser.getControl(
@@ -64,7 +64,7 @@ Viewing the current queue, by default the NEW queue.
     >>> def print_queue(contents):
     ...     queue_rows = find_tags_by_class(contents, "queue-row")
     ...     for row in queue_rows:
-    ...         print extract_text(row)
+    ...         print(extract_text(row))
 
     >>> print_queue(anon_browser.contents)
     Package             Version     Component Section Priority Sets Pocket  When
@@ -78,13 +78,13 @@ Viewing the current queue, by default the NEW queue.
 The package name in the results list is a clickable link to the changes
 file for that upload.
 
-    >>> print anon_browser.getLink("netapplet-1.0.0.tar.gz")
+    >>> print(anon_browser.getLink("netapplet-1.0.0.tar.gz"))
     <Link text='netapplet-1.0.0.tar.gz'
-	  url='http://.../1/netapplet-1.0.0.tar.gz'>
+	  url='http://.../+upload/7/+files/netapplet-1.0.0.tar.gz'>
 
-    >>> print anon_browser.getLink("alsa-utils")
+    >>> print(anon_browser.getLink("alsa-utils"))
     <Link text='alsa-utils'
-	  url='http://.../1/netapplet-1.0.0.tar.gz'>
+	  url='http://.../+upload/4/+files/netapplet-1.0.0.tar.gz'>
 
 (This link for alsa-utils is pointing at the librarian URL for
 netapplet, because we have used its changes file for all the
@@ -184,9 +184,9 @@ and an extra, expired, source file.
     >>> from lp.soyuz.enums import PackageDiffStatus
     >>> login(ANONYMOUS)
     >>> old = main_archive.getPublishedSources(
-    ...     name='alsa-utils', version='1.0.9a-4')[0].sourcepackagerelease
+    ...     name=u'alsa-utils', version='1.0.9a-4')[0].sourcepackagerelease
     >>> new = main_archive.getPublishedSources(
-    ...     name='alsa-utils',
+    ...     name=u'alsa-utils',
     ...     version='1.0.9a-4ubuntu1')[0].sourcepackagerelease
     >>> diff = removeSecurityProxy(old.requestDiffTo(
     ...     requester=name12, to_sourcepackagerelease=new))
@@ -209,7 +209,7 @@ image:
     >>> anon_browser.getControl(name="queue_text").value = ''
     >>> anon_browser.getControl("Update").click()
 
-    >>> print find_tag_by_id(anon_browser.contents, 'queue-4-icon')
+    >>> print(find_tag_by_id(anon_browser.contents, 'queue-4-icon'))
     <span class="expander-link" id="queue-4-icon">&nbsp;</span>
 
 The 'filelist' is expanded as one or more table rows, right below the
@@ -222,21 +222,22 @@ It contains a list of files related to the queue item clicked, followed
 by its size, one file per line. Expired files have no size.
 
     >>> for row in filelist:
-    ...     print extract_text(row)
+    ...     print(extract_text(row))
     alsa-utils_1.0.9a-4ubuntu1.dsc (3 bytes)
     alsa-utils_1.0.9a-4ubuntu1.diff.gz
     diff from 1.0.9a-4 to 1.0.9a-4ubuntu1 (11 bytes)
 
-Each unexpired filename links to its respective librarian URL. Expired
-files have no link, so we just get None.
+Each unexpired filename links to its respective proxied librarian URL.
+Expired files have no link, so we just get None.
 
     >>> for row in filelist:
-    ...     print row.find('a')
-    <a href="http://.../alsa-utils_1.0.9a-4ubuntu1.dsc">
+    ...     print(row.find('a'))
+    <a href="http://.../+upload/4/+files/alsa-utils_1.0.9a-4ubuntu1.dsc">
       alsa-utils_1.0.9a-4ubuntu1.dsc
     </a>
     None
-    <a href="http://.../alsa-utils.diff.gz">diff from 1.0.9a-4 to 1.0.9a-4ubuntu1</a>
+    <a href="http://.../alsa-utils.diff.gz">diff from 1.0.9a-4 to
+    1.0.9a-4ubuntu1</a>
 
 On binary queue items we also present the stamp 'NEW' for files never
 published in the archive (it helps archive admins when reviewing
@@ -244,7 +245,7 @@ candidates).  The binary items will also individually show their
 version, component, section and priority.
 
     >>> [filelist] = find_tags_by_class(anon_browser.contents, 'queue-2')
-    >>> print extract_text(filelist)
+    >>> print(extract_text(filelist))
     pmount_1.0-1_all.deb (18 bytes) NEW 0.1-1 main base important
 
 XXX cprov 20070726: we should extend the test when we are able to
@@ -259,8 +260,7 @@ Inspect the ACCEPTED queue:
     >>> anon_browser.getControl(
     ...     name="queue_state", index=0).displayValue = ['Accepted']
     >>> anon_browser.getControl("Update").click()
-    >>> for message in get_feedback_messages(anon_browser.contents):
-    ...     print message
+    >>> print_feedback_messages(anon_browser.contents)
     The Accepted queue is empty.
 
 Now we act on the queue, which requires admin or upload_manager permission.
@@ -297,16 +297,29 @@ Upload a new "bar" source so we can accept it later.
     ...     version='1.0-1', component='universe', section='devel',
     ...     changes_file_content=changes_file_content)
 
-    >>> bar_src.package_upload.setNew()
+    >>> from lp.soyuz.enums import PackageUploadStatus
+    >>> from lp.soyuz.model.queue import PassthroughStatusValue
+    >>> removeSecurityProxy(bar_src.package_upload).status = (
+    ...     PassthroughStatusValue(PackageUploadStatus.NEW))
     >>> bar_queue_id = bar_src.package_upload.id
 
 Swallow any email generated at the upload:
 
+    >>> from lp.services.config import config
+    >>> from lp.services.job.runner import JobRunner
     >>> from lp.services.mail import stub
-    >>> from lp.testing.mail_helpers import (
-    ...     pop_notifications,
-    ...     sort_addresses,
+    >>> from lp.soyuz.interfaces.archivejob import (
+    ...     IPackageUploadNotificationJobSource,
     ...     )
+    >>> from lp.testing.mail_helpers import pop_notifications
+
+    >>> def run_package_upload_notification_jobs():
+    ...     with permissive_security_policy(
+    ...             config.IPackageUploadNotificationJobSource.dbuser):
+    ...         job_source = getUtility(IPackageUploadNotificationJobSource)
+    ...         JobRunner.fromReady(job_source).runAll()
+
+    >>> run_package_upload_notification_jobs()
     >>> swallow = pop_notifications()
 
 Set up a second browser on the same page to simulate accidentally posting to
@@ -348,11 +361,14 @@ Accepting queue items results in an email to the uploader (and the changer
 if it is someone other than the uploader) and (usually) an email to the
 distroseries' announcement list (see nascentupload-announcements.txt).
 
-    >>> [notification, announcement] = pop_notifications()
-    >>> print sort_addresses(notification['To'])
-    Daniel Silverstone <daniel.silverstone@canonical.com>,
+    >>> run_package_upload_notification_jobs()
+    >>> [changer_notification, signer_notification,
+    ...  announcement] = pop_notifications()
+    >>> print(changer_notification['To'])
+    Daniel Silverstone <daniel.silverstone@canonical.com>
+    >>> print(signer_notification['To'])
     Foo Bar <foo.bar@canonical.com>
-    >>> print announcement['To']
+    >>> print(announcement['To'])
     autotest_changes@ubuntu.com
 
 Forcing a duplicated submission on a queue item is recognised.  Here we
@@ -362,13 +378,12 @@ a double post.
     >>> duplicate_submission_browser.getControl(
     ...     name="QUEUE_ID").value = [str(bar_queue_id)]
     >>> duplicate_submission_browser.getControl(name="Accept").click()
-    >>> for message in get_feedback_messages(
-    ...     duplicate_submission_browser.contents):
-    ...     print message
-    FAILED: bar (The source bar - 1.0-1 is already accepted...
+    >>> print_feedback_messages(duplicate_submission_browser.contents)
+    FAILED: bar (Unable to accept queue item due to status.)
 
 No emails are sent in this case:
 
+    >>> run_package_upload_notification_jobs()
     >>> len(stub.test_emails)
     0
 
@@ -380,8 +395,7 @@ Let's accept mozilla-firefox so we can see it in the accepted queue:
     ...    "http://localhost/ubuntu/breezy-autotest/+queue")
     >>> upload_manager_browser.getControl(name="QUEUE_ID").value = ['1']
     >>> upload_manager_browser.getControl(name="Accept").click()
-    >>> for message in get_feedback_messages(upload_manager_browser.contents):
-    ...     print message
+    >>> print_feedback_messages(upload_manager_browser.contents)
     OK: mozilla-firefox
 
 The item is moved to the ACCEPTED queue:
@@ -418,8 +432,7 @@ Accept "cnews" source:
 
     >>> upload_manager_browser.getControl(name="QUEUE_ID").value = ['9']
     >>> upload_manager_browser.getControl(name="Accept").click()
-    >>> for message in get_feedback_messages(upload_manager_browser.contents):
-    ...     print message
+    >>> print_feedback_messages(upload_manager_browser.contents)
     OK: cnews
 
 And the page is still on the Unapproved list:
@@ -467,12 +480,10 @@ And now accepts the checked items:
 
     >>> upload_manager_browser.getControl(name="Accept").click()
 
-He sees the informational message that confirms the details of what was
+They see the informational message that confirms the details of what was
 overridden:
 
-    >>> for message in sorted(get_feedback_messages(
-    ...     upload_manager_browser.contents)):
-    ...     print message
+    >>> print_feedback_messages(upload_manager_browser.contents)
     OK: netapplet(restricted/admin)
     OK: pmount(restricted/admin/extra)
 
@@ -498,7 +509,7 @@ values:
 
     >>> filelist = find_tags_by_class(anon_browser.contents, 'queue-2')
     >>> for row in filelist:
-    ...     print extract_text(row)
+    ...     print(extract_text(row))
     pmount_1.0-1_all.deb (18 bytes) NEW 0.1-1 restricted admin extra
 
 'netapplet' has gone straight to the 'done' queue because it's a single
@@ -518,12 +529,16 @@ Rejecting items
 
 Rejecting 'alsa-utils' source:
 
+    >>> run_package_upload_notification_jobs()
+    >>> stub.test_emails = []
+
     >>> upload_manager_browser.getControl(name="QUEUE_ID").value = ['4']
     >>> upload_manager_browser.getControl(name="Reject").disabled
     False
+    >>> upload_manager_browser.getControl(name='rejection_comment').value = (
+    ...     'Foo')
     >>> upload_manager_browser.getControl(name="Reject").click()
-    >>> for message in get_feedback_messages(upload_manager_browser.contents):
-    ...     print message
+    >>> print_feedback_messages(upload_manager_browser.contents)
     OK: alsa-utils
 
     >>> print_queue(upload_manager_browser.contents)
@@ -533,6 +548,7 @@ Rejecting 'alsa-utils' source:
 
 One rejection email is generated:
 
+    >>> run_package_upload_notification_jobs()
     >>> [rejection] = pop_notifications()
     >>> rejection['Subject']
     '[ubuntu/breezy-autotest] alsa-utils 1.0.9a-4ubuntu1 (Rejected)'
@@ -541,16 +557,16 @@ Please note that in this case the rejection reason is not available
 and how that's stated in the notification email body.
 
     >>> body = rejection.get_payload()[0]
-    >>> print body.as_string() # doctest: -NORMALIZE_WHITESPACE
+    >>> print(body.as_string()) # doctest: -NORMALIZE_WHITESPACE
     Content-Type: text/plain; charset="utf-8"
     MIME-Version: 1.0
     Content-Transfer-Encoding: quoted-printable
     <BLANKLINE>
     Rejected:
-    Rejected by archive administrator.
+    Rejected by Sample Person: Foo
     ...
-    You are receiving this email because you are the uploader, maintainer or
-    signer of the above package.
+    You are receiving this email because you are the most recent person
+    listed in this package's changelog.
     <BLANKLINE>
 
 The override controls are now available for rejected packages.

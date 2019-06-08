@@ -1,12 +1,14 @@
-# Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Testing infrastructure for page tests."""
 
 __metaclass__ = type
 
+from contextlib import contextmanager
 from datetime import datetime
 import doctest
+from itertools import chain
 import os
 import pdb
 import pprint
@@ -15,15 +17,22 @@ import unittest
 from urlparse import urljoin
 
 from BeautifulSoup import (
-    BeautifulSoup,
     CData,
     Comment,
     Declaration,
     NavigableString,
     PageElement,
     ProcessingInstruction,
-    SoupStrainer,
     Tag,
+    )
+from bs4.element import (
+    Comment as Comment4,
+    Declaration as Declaration4,
+    Doctype as Doctype4,
+    NavigableString as NavigableString4,
+    PageElement as PageElement4,
+    ProcessingInstruction as ProcessingInstruction4,
+    Tag as Tag4,
     )
 from contrib.oauth import (
     OAuthConsumer,
@@ -32,12 +41,14 @@ from contrib.oauth import (
     OAuthToken,
     )
 from lazr.restful.testing.webservice import WebServiceCaller
+import six
 import transaction
 from zope.app.testing.functional import (
     HTTPCaller,
     SimpleCookie,
     )
 from zope.component import getUtility
+from zope.security.management import setSecurityPolicy
 from zope.security.proxy import removeSecurityProxy
 from zope.session.interfaces import ISession
 from zope.testbrowser.testing import Browser
@@ -45,12 +56,17 @@ from zope.testbrowser.testing import Browser
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.registry.errors import NameAlreadyTaken
 from lp.registry.interfaces.teammembership import TeamMembershipStatus
+from lp.services.beautifulsoup import (
+    BeautifulSoup,
+    SoupStrainer,
+    )
 from lp.services.config import config
 from lp.services.oauth.interfaces import (
     IOAuthConsumerSet,
     OAUTH_REALM,
     )
 from lp.services.webapp import canonical_url
+from lp.services.webapp.authorization import LaunchpadPermissiveSecurityPolicy
 from lp.services.webapp.interfaces import OAuthPermission
 from lp.services.webapp.servers import LaunchpadTestRequest
 from lp.services.webapp.url import urlsplit
@@ -60,13 +76,22 @@ from lp.testing import (
     login,
     login_person,
     logout,
+    person_logged_in,
     )
+from lp.testing.dbuser import dbuser
 from lp.testing.factory import LaunchpadObjectFactory
 from lp.testing.layers import PageTestLayer
 from lp.testing.systemdocs import (
     LayeredDocFileSuite,
     stop,
     )
+
+
+SAMPLEDATA_ACCESS_SECRETS = {
+    u'salgado-read-nonprivate': u'secret',
+    u'salgado-change-anything': u'test',
+    u'nopriv-read-nonprivate': u'mystery',
+    }
 
 
 class UnstickyCookieHTTPCaller(HTTPCaller):
@@ -113,8 +138,8 @@ class LaunchpadWebServiceCaller(WebServiceCaller):
     """A class for making calls to Launchpad web services."""
 
     def __init__(self, oauth_consumer_key=None, oauth_access_key=None,
-                 handle_errors=True, domain='api.launchpad.dev',
-                 protocol='http'):
+                 oauth_access_secret=None, handle_errors=True,
+                 domain='api.launchpad.test', protocol='http'):
         """Create a LaunchpadWebServiceCaller.
         :param oauth_consumer_key: The OAuth consumer key to use.
         :param oauth_access_key: The OAuth access key to use for the request.
@@ -124,39 +149,20 @@ class LaunchpadWebServiceCaller(WebServiceCaller):
         Other parameters are passed to the HTTPCaller used to make the calls.
         """
         if oauth_consumer_key is not None and oauth_access_key is not None:
-            login(ANONYMOUS)
-            consumers = getUtility(IOAuthConsumerSet)
-            self.consumer = consumers.getByKey(oauth_consumer_key)
-            if oauth_access_key == '':
-                # The client wants to make an anonymous request.
-                self.access_token = OAuthToken(oauth_access_key, '')
-                if self.consumer is None:
-                    # The client is trying to make an anonymous
-                    # request with a previously unknown consumer. This
-                    # is fine: we manually create a "fake"
-                    # OAuthConsumer (it's "fake" because it's not
-                    # really an IOAuthConsumer as returned by
-                    # IOAuthConsumerSet.getByKey) to be used in the
-                    # requests we make.
-                    self.consumer = OAuthConsumer(oauth_consumer_key, '')
-            else:
-                if self.consumer is None:
-                    # Requests using this caller will be rejected by
-                    # the server, but we have a test that verifies
-                    # such requests _are_ rejected, so we'll create a
-                    # fake OAuthConsumer object.
-                    self.consumer = OAuthConsumer(oauth_consumer_key, '')
-                    self.access_token = OAuthToken(oauth_access_key, '')
-                else:
-                    # The client wants to make an authorized request
-                    # using a recognized consumer key.
-                    self.access_token = self.consumer.getAccessToken(
-                        oauth_access_key)
+            # XXX cjwatson 2016-01-25: Callers should be updated to pass
+            # Unicode directly, but that's a big change.
+            oauth_consumer_key = six.ensure_text(oauth_consumer_key)
+            self.consumer = OAuthConsumer(oauth_consumer_key, u'')
+            if oauth_access_secret is None:
+                oauth_access_secret = SAMPLEDATA_ACCESS_SECRETS.get(
+                    oauth_access_key, u'')
+            self.access_token = OAuthToken(
+                oauth_access_key, oauth_access_secret)
+            # This shouldn't be here, but many old tests expect it.
             logout()
         else:
             self.consumer = None
             self.access_token = None
-
         self.handle_errors = handle_errors
         WebServiceCaller.__init__(self, handle_errors, domain, protocol)
 
@@ -198,9 +204,12 @@ def find_tag_by_id(content, id):
     """Find and return the tag with the given ID"""
     if isinstance(content, PageElement):
         elements_with_id = content.findAll(True, {'id': id})
+    elif isinstance(content, PageElement4):
+        elements_with_id = content.find_all(True, {'id': id})
     else:
-        elements_with_id = [tag for tag in BeautifulSoup(
-                            content, parseOnlyThese=SoupStrainer(id=id))]
+        elements_with_id = [
+            tag for tag in BeautifulSoup(
+                content, parseOnlyThese=SoupStrainer(id=id))]
     if len(elements_with_id) == 0:
         return None
     elif len(elements_with_id) == 1:
@@ -213,21 +222,6 @@ def find_tag_by_id(content, id):
 def first_tag_by_class(content, class_):
     """Find and return the first tag matching the given class(es)"""
     return find_tags_by_class(content, class_, True)
-
-
-def extract_all_script_and_style_links(content):
-    """Find and return all thetags with the given name."""
-    strainer = SoupStrainer(['script', 'link'])
-    soup = BeautifulSoup(content, parseOnlyThese=strainer)
-    links = []
-    link_attr = {u'link': 'href', u'script': 'src'}
-    for script_or_style in BeautifulSoup.findAll(soup):
-        attrs = dict(script_or_style.attrs)
-        link = attrs.get(link_attr[script_or_style.name], None)
-        if link:
-            links.append(link)
-
-    return "\n".join(links)
 
 
 def find_tags_by_class(content, class_, only_first=False):
@@ -289,10 +283,10 @@ def get_feedback_messages(content):
     return [extract_text(tag) for tag in soup]
 
 
-def print_feedback_messages(content):
+def print_feedback_messages(content, formatter='minimal'):
     """Print out the feedback messages."""
     for message in get_feedback_messages(content):
-        print message
+        print extract_text(message, formatter=formatter)
 
 
 def print_table(content, columns=None, skip_rows=None, sep="\t"):
@@ -354,7 +348,10 @@ def strip_label(label):
     return label.replace('\xC2', '').replace('\xA0', '').strip()
 
 
-IGNORED_ELEMENTS = [Comment, Declaration, ProcessingInstruction]
+IGNORED_ELEMENTS = [
+    Comment, Declaration, ProcessingInstruction,
+    Comment4, Declaration4, Doctype4, ProcessingInstruction4,
+    ]
 ELEMENTS_INTRODUCING_NEWLINE = [
     'p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'pre', 'dl',
     'div', 'noscript', 'blockquote', 'form', 'hr', 'table', 'fieldset',
@@ -365,7 +362,7 @@ NEWLINES_RE = re.compile(u'\n+')
 LEADING_AND_TRAILING_SPACES_RE = re.compile(
     u'(^[ \t]+)|([ \t]$)', re.MULTILINE)
 TABS_AND_SPACES_RE = re.compile(u'[ \t]+')
-NBSP_RE = re.compile(u'&nbsp;|&#160;')
+NBSP_RE = re.compile(u'&nbsp;|&#160;|\xa0')
 
 
 def extract_link_from_tag(tag, base=None):
@@ -374,7 +371,7 @@ def extract_link_from_tag(tag, base=None):
     A `tag` should contain a 'href' attribute, and `base` will commonly
     be extracted from browser.url.
     """
-    if not isinstance(tag, PageElement):
+    if not isinstance(tag, (PageElement, PageElement4)):
         link = BeautifulSoup(tag)
     else:
         link = tag
@@ -386,7 +383,8 @@ def extract_link_from_tag(tag, base=None):
         return urljoin(base, href)
 
 
-def extract_text(content, extract_image_text=False, skip_tags=None):
+def extract_text(content, extract_image_text=False, skip_tags=None,
+                 formatter='minimal'):
     """Return the text stripped of all tags.
 
     All runs of tabs and spaces are replaced by a single space and runs of
@@ -395,7 +393,7 @@ def extract_text(content, extract_image_text=False, skip_tags=None):
     """
     if skip_tags is None:
         skip_tags = ['script']
-    if not isinstance(content, PageElement):
+    if not isinstance(content, (PageElement, PageElement4)):
         soup = BeautifulSoup(content)
     else:
         soup = content
@@ -426,10 +424,15 @@ def extract_text(content, extract_image_text=False, skip_tags=None):
             result.append(unicode(node[:]))
         elif isinstance(node, NavigableString):
             result.append(unicode(node))
+        elif isinstance(node, NavigableString4):
+            result.append(node.format_string(node, formatter=formatter))
         else:
-            if isinstance(node, Tag):
+            if isinstance(node, (Tag, Tag4)):
                 # If the node has the class "sortkey" then it is invisible.
-                if node.get('class') == 'sortkey':
+                if isinstance(node, Tag) and node.get('class') == 'sortkey':
+                    continue
+                elif (isinstance(node, Tag4) and
+                        node.get('class') == ['sortkey']):
                     continue
                 elif getattr(node, 'name', '') in skip_tags:
                     continue
@@ -600,10 +603,11 @@ def print_location(contents):
     The main heading is the first <h1> element in the page.
     """
     doc = find_tag_by_id(contents, 'document')
-    hierarchy = doc.find(attrs={'class': 'breadcrumbs'}).findAll(
-        recursive=False)
+    heading = doc.find(attrs={'id': 'watermark-heading'}).findAll('a')
+    container = doc.find(attrs={'class': 'breadcrumbs'})
+    hierarchy = container.findAll(recursive=False) if container else []
     segments = [extract_text(step).encode('us-ascii', 'replace')
-                for step in hierarchy]
+                for step in chain(heading, hierarchy)]
 
     if len(segments) == 0:
         breadcrumbs = 'None displayed'
@@ -638,8 +642,12 @@ def print_location_apps(contents):
     else:
         for tab in location_apps:
             tab_text = extract_text(tab)
-            if tab['class'].find('active') != -1:
-                tab_text += ' (selected)'
+            if isinstance(tab['class'], list):  # BeautifulSoup 4
+                if 'active' in tab['class']:
+                    tab_text += ' (selected)'
+            else:                               # BeautifulSoup 3
+                if tab['class'].find('active') != -1:
+                    tab_text += ' (selected)'
             if tab.a:
                 link = tab.a['href']
             else:
@@ -711,7 +719,7 @@ def safe_canonical_url(*args, **kwargs):
     return str(canonical_url(*args, **kwargs))
 
 
-def webservice_for_person(person, consumer_key='launchpad-library',
+def webservice_for_person(person, consumer_key=u'launchpad-library',
                           permission=OAuthPermission.READ_PUBLIC,
                           context=None):
     """Return a valid LaunchpadWebServiceCaller for the person.
@@ -726,11 +734,14 @@ def webservice_for_person(person, consumer_key='launchpad-library',
     consumer = oacs.getByKey(consumer_key)
     if consumer is None:
         consumer = oacs.new(consumer_key)
-    request_token = consumer.newRequestToken()
+    request_token, _ = consumer.newRequestToken()
     request_token.review(person, permission, context)
-    access_token = request_token.createAccessToken()
+    access_token, access_secret = request_token.createAccessToken()
     logout()
-    return LaunchpadWebServiceCaller(consumer_key, access_token.key)
+    service = LaunchpadWebServiceCaller(
+        consumer_key, access_token.key, access_secret)
+    service.user = person
+    return service
 
 
 def setupDTCBrowser():
@@ -776,7 +787,30 @@ def setupRosettaExpertBrowser():
     return setupBrowser(auth='Basic re@ex.com:test')
 
 
-def setUpGlobs(test):
+@contextmanager
+def permissive_security_policy(dbuser_name=None):
+    """Context manager to run code with a permissive security policy.
+
+    This is just enough to run code such as `BaseMailer` that normally
+    expects to be called only from environments that use a permissive
+    security policy, such as jobs or scripts.
+    """
+    try:
+        old_policy = setSecurityPolicy(LaunchpadPermissiveSecurityPolicy)
+        if dbuser_name is not None:
+            dbuser_context = dbuser(dbuser_name)
+        else:
+            dbuser_context = contextmanager([None].__iter__)
+        with person_logged_in(ANONYMOUS), dbuser_context:
+            yield
+    finally:
+        setSecurityPolicy(old_policy)
+
+
+# XXX cjwatson 2018-05-13: Once all doctests are made safe for the standard
+# __future__ imports, the `future=True` behaviour should become
+# unconditional.
+def setUpGlobs(test, future=False):
     test.globs['transaction'] = transaction
     test.globs['http'] = UnstickyCookieHTTPCaller()
     test.globs['webservice'] = LaunchpadWebServiceCaller(
@@ -802,14 +836,11 @@ def setUpGlobs(test):
     # raises ValueError exceptions in /usr/lib/python2.4/Cookie.py
     test.globs['canonical_url'] = safe_canonical_url
     test.globs['factory'] = LaunchpadObjectFactory()
-    test.globs['extract_all_script_and_style_links'] = (
-        extract_all_script_and_style_links)
     test.globs['find_tag_by_id'] = find_tag_by_id
     test.globs['first_tag_by_class'] = first_tag_by_class
     test.globs['find_tags_by_class'] = find_tags_by_class
     test.globs['find_portlet'] = find_portlet
     test.globs['find_main_content'] = find_main_content
-    test.globs['get_feedback_messages'] = get_feedback_messages
     test.globs['print_feedback_messages'] = print_feedback_messages
     test.globs['print_table'] = print_table
     test.globs['extract_link_from_tag'] = extract_link_from_tag
@@ -819,6 +850,7 @@ def setUpGlobs(test):
     test.globs['login_person'] = login_person
     test.globs['logout'] = logout
     test.globs['parse_relationship_section'] = parse_relationship_section
+    test.globs['permissive_security_policy'] = permissive_security_policy
     test.globs['pretty'] = pprint.PrettyPrinter(width=1).pformat
     test.globs['print_action_links'] = print_action_links
     test.globs['print_errors'] = print_errors
@@ -836,12 +868,18 @@ def setUpGlobs(test):
     test.globs['PageTestLayer'] = PageTestLayer
     test.globs['stop'] = stop
 
+    if future:
+        import __future__
+        for future_item in (
+                'absolute_import', 'print_function', 'unicode_literals'):
+            test.globs[future_item] = getattr(__future__, future_item)
+
 
 # This function name doesn't follow our standard naming conventions,
 # but does follow the convention of the other doctest related *Suite()
 # functions.
 
-def PageTestSuite(storydir, package=None, setUp=setUpGlobs):
+def PageTestSuite(storydir, package=None, setUp=setUpGlobs, **kw):
     """Create a suite of page tests for files found in storydir.
 
     :param storydir: the directory containing the page tests.
@@ -865,10 +903,9 @@ def PageTestSuite(storydir, package=None, setUp=setUpGlobs):
     # Add tests to the suite individually.
     if filenames:
         checker = doctest.OutputChecker()
-        paths=[os.path.join(storydir, filename)
-               for filename in filenames]
+        paths = [os.path.join(storydir, filename) for filename in filenames]
         suite.addTest(LayeredDocFileSuite(
             paths=paths,
             package=package, checker=checker, stdout_logging=False,
-            layer=PageTestLayer, setUp=setUp))
+            layer=PageTestLayer, setUp=setUp, **kw))
     return suite

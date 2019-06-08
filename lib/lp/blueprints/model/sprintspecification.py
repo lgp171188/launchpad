@@ -1,8 +1,6 @@
 # Copyright 2009 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-# pylint: disable-msg=E0611,W0212
-
 __metaclass__ = type
 
 __all__ = ['SprintSpecification']
@@ -11,7 +9,7 @@ from sqlobject import (
     ForeignKey,
     StringCol,
     )
-from zope.interface import implements
+from zope.interface import implementer
 
 from lp.blueprints.enums import SprintSpecificationStatus
 from lp.blueprints.interfaces.sprintspecification import ISprintSpecification
@@ -25,10 +23,9 @@ from lp.services.database.enumcol import EnumCol
 from lp.services.database.sqlbase import SQLBase
 
 
+@implementer(ISprintSpecification)
 class SprintSpecification(SQLBase):
     """A link between a sprint and a specification."""
-
-    implements(ISprintSpecification)
 
     _table = 'SprintSpecification'
 
@@ -69,4 +66,3 @@ class SprintSpecification(SQLBase):
         self.status = SprintSpecificationStatus.DECLINED
         self.decider = decider
         self.date_decided = UTC_NOW
-

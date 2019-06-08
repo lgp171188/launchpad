@@ -1,6 +1,6 @@
 Start out by verifying the members page is sane.
 
-    >>> browser.open('http://launchpad.dev/~ubuntu-team/+members')
+    >>> browser.open('http://launchpad.test/~ubuntu-team/+members')
     >>> 'Ubuntu Team' in browser.contents
     True
 
@@ -88,7 +88,7 @@ next year -- successfully.
 We're redirected to the +members page
 
     >>> browser.url
-    'http://launchpad.dev/~ubuntu-team/+members'
+    'http://launchpad.test/~ubuntu-team/+members'
 
     >>> login(ANONYMOUS)
     >>> kamion_membership = teammembershipset.getByPersonAndTeam(
@@ -116,7 +116,7 @@ demote himself. He starts by paging though the memberships, then he deselects
 the administrator control on the membership page.
 
     >>> jdub_browser = setupBrowser(auth='Basic jeff.waugh@ubuntulinux.com:test')
-    >>> jdub_browser.open('http://launchpad.dev/~ubuntu-team/+members')
+    >>> jdub_browser.open('http://launchpad.test/~ubuntu-team/+members')
     >>> jdub_browser.getLink('Next').click()
     >>> url = '/~ubuntu-team/+member/jdub'
     >>> jdub_browser.getLink(url=url).click()
@@ -130,7 +130,7 @@ the administrator control on the membership page.
     >>> jdub_browser.getControl('Change').click()
 
     >>> jdub_browser.url
-    'http://launchpad.dev/~ubuntu-team/+members'
+    'http://launchpad.test/~ubuntu-team/+members'
 
     >>> login(ANONYMOUS)
     >>> jdub = personset.getByName('jdub')
@@ -140,10 +140,10 @@ the administrator control on the membership page.
     'Approved'
     >>> logout()
 
-Sample person had his membership declined to the guadamen group. Test
+Sample person had their membership declined to the guadamen group. Test
 that the page works and that foo.bar@canonical can access it.
 
-    >>> browser.open('http://launchpad.dev/~guadamen/+member/name12/')
+    >>> browser.open('http://launchpad.test/~guadamen/+member/name12/')
 
     >>> 'Declined member' in browser.contents
     True
@@ -152,12 +152,12 @@ Dave Miller is a proposed member in Ubuntu Gnome Team.
 If two people try to accept him as a member at the same time, the first one
 should succeed and the second one receive a nice error message.
 
-    >>> browser.open('http://launchpad.dev/~name18/+members')
+    >>> browser.open('http://launchpad.test/~name18/+members')
     >>> url = '/~name18/+member/justdave'
     >>> browser.getLink(url=url).click()
 
     >>> second_browser = setupBrowser(auth='Basic foo.bar@canonical.com:test')
-    >>> second_browser.open('http://launchpad.dev' + url)
+    >>> second_browser.open('http://launchpad.test' + url)
 
 Approve the membership in the first browser.
 
@@ -166,7 +166,7 @@ Approve the membership in the first browser.
 We're redirected to the members page.
 
     >>> browser.url
-    'http://launchpad.dev/~name18/+members'
+    'http://launchpad.test/~name18/+members'
 
     >>> login(ANONYMOUS)
     >>> dave = personset.getByName('justdave')
@@ -188,14 +188,14 @@ But in the second browser with the stale data we get an error message:
 
 An admin can see the former members of the team.
 
-    >>> browser.open('http://launchpad.dev/~name18/+members')
+    >>> browser.open('http://launchpad.test/~name18/+members')
     >>> print extract_text(
     ...     find_tag_by_id(browser.contents, 'inactivemembers'))
     Name    Joined in   Status...
 
 Other users cannot see the former members of the team.
 
-    >>> user_browser.open('http://launchpad.dev/~name18/+members')
+    >>> user_browser.open('http://launchpad.test/~name18/+members')
     >>> print find_tag_by_id(user_browser.contents, 'inactivemembers')
     None
 
@@ -208,7 +208,7 @@ member, as well as the teams in which they are an indirect member.
 
 Kiko has not joined any teams:
 
-    >>> anon_browser.open('http://launchpad.dev/~kiko/+participation')
+    >>> anon_browser.open('http://launchpad.test/~kiko/+participation')
     >>> print extract_text(
     ...     find_tag_by_id(anon_browser.contents, 'no-participation'))
     Christian Reis has not yet joined any teams.
@@ -217,7 +217,7 @@ Kiko has not joined any teams:
 
 Sample Person has both direct and indirect memberships:
 
-    >>> anon_browser.open('http://launchpad.dev/~name12/+participation')
+    >>> anon_browser.open('http://launchpad.test/~name12/+participation')
     >>> content = find_main_content(anon_browser.contents)
     >>> print find_tag_by_id(content, 'no-participation')
     None
@@ -237,7 +237,7 @@ subscriptions on their own participation page.
     >>> print find_tag_by_id(content, 'participation-actions')
     None
 
-    >>> user_browser.open('http://launchpad.dev/~no-priv/+participation')
+    >>> user_browser.open('http://launchpad.test/~no-priv/+participation')
     >>> actions = find_tag_by_id(
     ...     user_browser.contents, 'participation-actions')
     >>> print extract_text(actions)
@@ -247,12 +247,12 @@ subscriptions on their own participation page.
     >>> user_browser.getLink('Register a team')
     <Link ... url='http://.../people/+newteam'>
     >>> user_browser.getLink('Change mailing list subscriptions')
-    <Link ... url='http://.../~no-priv/+editemails'>
+    <Link ... url='http://.../~no-priv/+editmailinglists'>
 
 Teams also have a participation page, but it does not include a mailing
 list column.
 
-    >>> admin_browser.open('http://launchpad.dev/~admins/+participation')
+    >>> admin_browser.open('http://launchpad.test/~admins/+participation')
     >>> print extract_text(
     ...     find_tag_by_id(admin_browser.contents, 'participation'))
     Team                  Joined      Role    Via

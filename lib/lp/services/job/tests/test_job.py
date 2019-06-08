@@ -1,20 +1,24 @@
-# Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2017 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
 
-from datetime import datetime
+from datetime import (
+    datetime,
+    timedelta,
+    )
 import time
 
 from lazr.jobrunner.jobrunner import LeaseHeld
 import pytz
+from pytz import UTC
 from storm.locals import Store
 from testtools.matchers import Equals
 import transaction
 
 from lp.code.model.branchmergeproposaljob import CodeReviewCommentEmailJob
 from lp.services.database.constants import UTC_NOW
-from lp.services.database.lpstorm import IStore
+from lp.services.database.interfaces import IStore
 from lp.services.job.interfaces.job import (
     IJob,
     JobStatus,
@@ -24,11 +28,11 @@ from lp.services.job.model.job import (
     Job,
     UniversalJobSource,
     )
-from lp.services.webapp.testing import verifyObject
 from lp.testing import (
     StormStatementRecorder,
     TestCase,
     TestCaseWithFactory,
+    verifyObject,
     )
 from lp.testing.layers import ZopelessDatabaseLayer
 from lp.testing.matchers import HasQueryCount
@@ -182,20 +186,12 @@ class TestJob(TestCaseWithFactory):
         self.assertNotEqual(None, job.date_finished)
         self.assertEqual(job.status, JobStatus.WAITING)
 
-    def test_queue_when_completed_is_invalid(self):
-        """When a job is completed, attempting to queue is invalid."""
-        job = Job(_status=JobStatus.COMPLETED)
-        self.assertRaises(InvalidTransition, job.queue)
-
-    def test_queue_when_waiting_is_invalid(self):
-        """When a job is waiting, attempting to queue is invalid."""
-        job = Job(_status=JobStatus.WAITING)
-        self.assertRaises(InvalidTransition, job.queue)
-
-    def test_queue_when_failed_is_invalid(self):
-        """When a job is failed, attempting to queue is invalid."""
-        job = Job(_status=JobStatus.FAILED)
-        self.assertRaises(InvalidTransition, job.queue)
+    def test_queue_clears_lease_expires(self):
+        """Queueing a job releases its lease."""
+        job = Job(_status=JobStatus.RUNNING)
+        job.lease_expires = UTC_NOW
+        job.queue()
+        self.assertIsNone(job.lease_expires)
 
     def test_suspend(self):
         """A job that is in the WAITING state can be suspended."""
@@ -229,12 +225,12 @@ class TestJob(TestCaseWithFactory):
             job.status,
             JobStatus.WAITING)
 
-    def test_resume_clears_lease_expiry(self):
-        """A job that resumes should null out the lease_expiry."""
+    def test_resume_clears_lease_expires(self):
+        """A job that resumes should null out the lease_expires."""
         job = Job(_status=JobStatus.SUSPENDED)
         job.lease_expires = UTC_NOW
         job.resume()
-        self.assertIs(None, job.lease_expires)
+        self.assertIsNone(job.lease_expires)
 
     def test_resume_when_running(self):
         """When a job is running, attempting to resume is invalid."""
@@ -257,6 +253,30 @@ class TestJob(TestCaseWithFactory):
             job = Job(_status=status)
             self.assertEqual(
                 status in Job.PENDING_STATUSES, job.is_pending)
+
+    def test_is_runnable_when_failed(self):
+        """is_runnable is false when the job is not WAITING."""
+        job = Job(_status=JobStatus.FAILED)
+        self.assertFalse(job.is_runnable)
+
+    def test_is_runnable_when_scheduled_in_future(self):
+        """is_runnable is false when the job is scheduled in the future."""
+        job = Job(
+            _status=JobStatus.WAITING,
+            scheduled_start=datetime.now(UTC) + timedelta(seconds=60))
+        self.assertFalse(job.is_runnable)
+
+    def test_is_runnable_when_scheduled_in_past(self):
+        """is_runnable is true when the job is scheduled in the past."""
+        job = Job(
+            _status=JobStatus.WAITING,
+            scheduled_start=datetime.now(UTC) - timedelta(seconds=60))
+        self.assertTrue(job.is_runnable)
+
+    def test_is_runnable_when_not_scheduled(self):
+        """is_runnable is true when no explicit schedule has been requested."""
+        job = Job(_status=JobStatus.WAITING)
+        self.assertTrue(job.is_runnable)
 
     def test_start_manages_transactions(self):
         # Job.start() does not commit the transaction by default.

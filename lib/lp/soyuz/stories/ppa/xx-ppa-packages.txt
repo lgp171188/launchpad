@@ -4,12 +4,12 @@ The PPA packages page
 
 The PPA packages page is accessible from the PPA page.
 
-    >>> anon_browser.open('http://launchpad.dev/~cprov/+archive/ppa')
+    >>> anon_browser.open('http://launchpad.test/~cprov/+archive/ubuntu/ppa')
     >>> anon_browser.getLink('View package details').click()
-    >>> print anon_browser.url
-    http://launchpad.dev/~cprov/+archive/ppa/+packages
+    >>> print(anon_browser.url)
+    http://launchpad.test/~cprov/+archive/ubuntu/ppa/+packages
 
-    >>> print anon_browser.title
+    >>> print(anon_browser.title)
     Packages in...
 
 
@@ -22,24 +22,23 @@ a descriptive main heading.
     >>> print_location(anon_browser.contents)
     Hierarchy: Celso Providelo > PPA for Celso Providelo > Packages in...
     Tabs:
-    * Overview (selected) - http://launchpad.dev/~cprov
-    * Code - http://code.launchpad.dev/~cprov
-    * Bugs - http://bugs.launchpad.dev/~cprov
-    * Blueprints - http://blueprints.launchpad.dev/~cprov
-    * Translations - http://translations.launchpad.dev/~cprov
-    * Answers - http://answers.launchpad.dev/~cprov
+    * Overview (selected) - http://launchpad.test/~cprov
+    * Code - http://code.launchpad.test/~cprov
+    * Bugs - http://bugs.launchpad.test/~cprov
+    * Blueprints - http://blueprints.launchpad.test/~cprov
+    * Translations - http://translations.launchpad.test/~cprov
+    * Answers - http://answers.launchpad.test/~cprov
     Main heading: Packages in ...PPA for Celso Providelo...
 
 You can see the build details of the packages in the archive by using
 the 'View all builds' link.
 
     >>> anon_browser.getLink('View all builds').click()
-    >>> print anon_browser.title
+    >>> print(anon_browser.title)
     Builds : PPA for Celso Providelo : Celso Providelo
 
-    >>> print anon_browser.url
-    http://launchpad.dev/~cprov/+archive/ppa/+builds
-
+    >>> print(anon_browser.url)
+    http://launchpad.test/~cprov/+archive/ubuntu/ppa/+builds
 
 The rest of the builds page functionality is tested generically at
 in xx-builds-pages.txt.
@@ -52,10 +51,10 @@ A summary of the package totals is presented in a portlet (although the
 actual values are loaded in asynchronously.
 
     >>> anon_browser.open(
-    ...     'http://launchpad.dev/~cprov/+archive/ppa/+packages')
+    ...     'http://launchpad.test/~cprov/+archive/ubuntu/ppa/+packages')
     >>> package_totals = find_portlet(
     ...     anon_browser.contents, "Package totals")
-    >>> print extract_text(package_totals)
+    >>> print(extract_text(package_totals))
     Package totals
     ...
     Package counters and estimated archive size temporarily
@@ -69,9 +68,9 @@ A summary of the builds for the PPA is also presented.
 
     >>> build_summary = find_portlet(
     ...     anon_browser.contents, "View all builds Package build summary")
-    >>> print extract_text(build_summary)
+    >>> print(extract_text(build_summary))
     View...
-    A total of 4 builds have been dispatched for this PPA.
+    A total of 4 builds have been created for this PPA.
     Completed builds
     3 successful
     1 failed
@@ -79,8 +78,8 @@ A summary of the builds for the PPA is also presented.
 Successful builds link directly to the builds filter.
 
     >>> successful_builds_link = anon_browser.getLink('3 successful')
-    >>> print successful_builds_link.url
-    http://launchpad.dev/~cprov/+archive/ppa/+builds?build_state=built
+    >>> print(successful_builds_link.url)
+    http://launchpad.test/~cprov/+archive/ubuntu/ppa/+builds?build_state=built
 
 
 The detailed Packages list
@@ -90,7 +89,7 @@ The detailed Packages list
     ...     package_table = find_tag_by_id(
     ...         contents, 'packages_list')
     ...     for ppa_row in package_table.findChildren('tr'):
-    ...         print extract_text(ppa_row)
+    ...         print(extract_text(ppa_row))
 
     >>> print_archive_package_rows(anon_browser.contents)
     Source              Published   Status     Series      Section  Build
@@ -108,7 +107,7 @@ Each data row is expandable to contain some sections containing:
 
     >>> expander_url = anon_browser.getLink(id='pub29-expander').url
     >>> anon_browser.open(expander_url)
-    >>> print extract_text(anon_browser.contents)
+    >>> print(extract_text(anon_browser.contents))
     Publishing details
       Published on 2007-07-09
       Copied from ubuntu hoary in Primary Archive for Ubuntu Linux
@@ -133,22 +132,24 @@ published, this will be indicated to the viewer:
     # record so that it is pending publication.
     >>> login('foo.bar@canonical.com')
     >>> from zope.component import getUtility
+    >>> from zope.security.proxy import removeSecurityProxy
     >>> from lp.registry.interfaces.person import IPersonSet
     >>> cprov = getUtility(IPersonSet).getByName('cprov')
     >>> cprov_ppa = cprov.archive
     >>> pmount_i386_pub = cprov_ppa.getAllPublishedBinaries(
-    ...     name='pmount', version='0.1-1')[1]
-    >>> print pmount_i386_pub.displayname
+    ...     name=u'pmount', version='0.1-1')[1]
+    >>> print(pmount_i386_pub.displayname)
     pmount 0.1-1 in warty i386
     >>> from lp.soyuz.enums import PackagePublishingStatus
-    >>> pmount_i386_pub.status = PackagePublishingStatus.PENDING
-    >>> pmount_i386_pub.datepublished = None
+    >>> naked_pub = removeSecurityProxy(pmount_i386_pub)
+    >>> naked_pub.status = PackagePublishingStatus.PENDING
+    >>> naked_pub.datepublished = None
     >>> transaction.commit()
     >>> logout()
 
     # Now, to re-display the pmount expanded section:
     >>> anon_browser.open(expander_url)
-    >>> print extract_text(anon_browser.contents)
+    >>> print(extract_text(anon_browser.contents))
     Note: Some binary packages for this source are not yet published in the
     repository.
     Publishing details
@@ -172,11 +173,11 @@ When the package is copied from a PPA, the archive title will link
 back to the source PPA.
 
     >>> anon_browser.open(
-    ...     "http://launchpad.dev/~cprov/+archive/ppa/+packages")
+    ...     "http://launchpad.test/~cprov/+archive/ubuntu/ppa/+packages")
     >>> expander_url = anon_browser.getLink(id='pub28-expander').url
     >>> anon_browser.open(expander_url)
     >>> anon_browser.getLink("PPA for Mark Shuttleworth").url
-    'http://launchpad.dev/~mark/+archive/ppa'
+    'http://launchpad.test/~mark/+archive/ubuntu/ppa'
 
 This link is not present if the user does not have permission to view
 the PPA.  We create a private PPA with a published source and then copy
@@ -210,11 +211,11 @@ in as Celso.
     >>> cprov_browser = setupBrowser(
     ...     auth="Basic celso.providelo@canonical.com:test")
     >>> cprov_browser.open(
-    ...     "http://launchpad.dev/~joe/+archive/ppa/+packages")
+    ...     "http://launchpad.test/~joe/+archive/ubuntu/ppa/+packages")
     >>> expander_url = cprov_browser.getLink(id=expander_link_id).url
     >>> cprov_browser.open(expander_url)
-    >>> print cprov_browser.getLink("PPA named p3a for Celso Providelo").url
-    http://launchpad.dev/~cprov/+archive/p3a
+    >>> print(cprov_browser.getLink("PPA named p3a for Celso Providelo").url)
+    http://launchpad.test/~cprov/+archive/ubuntu/p3a
 
 But Joe himself will not see the link.
 
@@ -238,7 +239,7 @@ While we are there, we can also see that the private PPA's 'repository-size'
 pagelet isn't publicly available.
 
     >>> anon_browser.open(
-    ...     "http://launchpad.dev/~cprov/+archive/p3a/+repository-size")
+    ...     "http://launchpad.test/~cprov/+archive/ubuntu/p3a/+repository-size")
     Traceback (most recent call last):
     ...
     Unauthorized: (..., 'launchpad.View')
@@ -251,7 +252,7 @@ We can search a PPA for a particular package.  A non-existent package shows
 no results.
 
     >>> anon_browser.open(
-    ...     "http://launchpad.dev/~cprov/+archive/ppa/+packages")
+    ...     "http://launchpad.test/~cprov/+archive/ubuntu/ppa/+packages")
     >>> field = anon_browser.getControl(name='field.name_filter')
     >>> field.value = 'nonexistentpackage'
     >>> anon_browser.getControl('Filter', index=0).click()
@@ -271,24 +272,19 @@ modify some publication in Celso's PPA to SUPERSEDED and DELETED
 states. Note, for consistency we have to create the binary publishing records
 for iceweasel before marking it as superseded.
 
-    >>> login('foo.bar@canonical.com')
+    >>> login('celso.providelo@canonical.com')
     >>> cprov = getUtility(IPersonSet).getByName('cprov')
     >>> iceweasel_pub = cprov.archive.getPublishedSources(
-    ...     name='iceweasel').first()
+    ...     name=u'iceweasel').first()
     >>> bpr = test_publisher.uploadBinaryForBuild(
     ...     iceweasel_pub.getBuilds()[0], 'bar-bin')
     >>> pub_bins = test_publisher.publishBinaryInArchive(
     ...     bpr, cprov.archive, status=PackagePublishingStatus.PUBLISHED)
-    >>> iceweasel_pub.status = (
-    ...     PackagePublishingStatus.SUPERSEDED)
-    >>> pmount_pub = cprov.archive.getPublishedSources(name='pmount').first()
-    >>> pmount_pub.status = PackagePublishingStatus.DELETED
-    >>> pmount_pub.removed_by = cprov
-    >>> pmount_pub.removal_comment = 'nhack !'
+    >>> iceweasel_pub.supersede()
+    >>> pmount_pub = cprov.archive.getPublishedSources(name=u'pmount').first()
+    >>> pmount_pub.requestDeletion(cprov, 'nhack !')
     >>> logout()
     >>> transaction.commit()
-    >>> from lp.services.database.sqlbase import flush_database_updates
-    >>> flush_database_updates()
 
 The default status filter is 'published', which means that, by
 default, PPA pages will only present PUBLISHED or PENDING packages.
@@ -344,7 +340,7 @@ uploaded the package. First we need to set up a team PPA and publish
 something to it.
 
     >>> foo_browser = setupBrowser(auth="Basic foo.bar@canonical.com:test")
-    >>> foo_browser.open("http://launchpad.dev/~ubuntu-team/+activate-ppa")
+    >>> foo_browser.open("http://launchpad.test/~ubuntu-team/+activate-ppa")
     >>> foo_browser.getControl(name="field.displayname").value = (
     ...     'PPA for Ubuntu team')
     >>> foo_browser.getControl(name="field.accepted").value = True
@@ -355,12 +351,19 @@ Publish mozilla-firefox to ubuntu-team's PPA and ensure that it is signed
 by name16 (Foo Bar) who is a member - the signer is presented as the uploader
 in the list.
 
-    >>> from lp.soyuz.tests.ppa import publishToTeamPPA
+    >>> from lp.registry.interfaces.sourcepackage import SourcePackageFileType
+    >>> from lp.testing.sampledata import UBUNTU_UPLOAD_TEAM_NAME
     >>> login(ANONYMOUS)
-    >>> publishToTeamPPA(team_name="ubuntu-team")
+    >>> team = getUtility(IPersonSet).getByName(UBUNTU_UPLOAD_TEAM_NAME)
+    >>> key = factory.makeGPGKey(team.teamowner)
+    >>> pub = factory.makeSourcePackagePublishingHistory(
+    ...     archive=team.archive, dscsigningkey=key)
+    >>> lfa = factory.makeLibraryFileAlias(filename='foo.orig.tar.gz')
+    >>> ign = factory.makeSourcePackageReleaseFile(
+    ...     sourcepackagerelease=pub.sourcepackagerelease, library_file=lfa,
+    ...     filetype=SourcePackageFileType.ORIG_TARBALL)
     >>> logout()
     >>> transaction.commit()
-    >>> flush_database_updates()
 
 Access ubuntu-team's PPA page:
 
@@ -371,7 +374,7 @@ The package row data shows the uploader:
 
     >>> print_archive_package_rows(foo_browser.contents)
     Source              Uploader ... Status   Series  Section  Build Status
-    mozilla-firefox...  name16       Pending  Hoary   Base
+    unique-from...      mark         Pending  Distroseries... Section...
 
 Links from files go to their on-archive locations:
 
@@ -379,14 +382,14 @@ Links from files go to their on-archive locations:
     ...     foo_browser.contents, 'expander')[0]['id']
     >>> expander_url = foo_browser.getLink(id=expander_id).url
     >>> anon_browser.open(expander_url)
-    >>> print anon_browser.getLink("orig").url
-    http://.../firefox_0.9.2.orig.tar.gz
+    >>> print(anon_browser.getLink("orig").url)
+    http://.../+sourcefiles/.../foo.orig.tar.gz
 
 The uploader name is linkified to that user's home page:
 
-    >>> foo_browser.getLink(url="~name16").click()
+    >>> foo_browser.getLink(url="~mark").click()
     >>> foo_browser.url
-    'http://launchpad.dev/~name16'
+    'http://launchpad.test/~mark'
 
 
 PPA Build Status column
@@ -408,12 +411,12 @@ for each published source:
 Anyone can see the build status for package in Celso's PPA.
 
     >>> anon_browser.open(
-    ...     "http://launchpad.dev/~cprov/+archive/ppa/+packages")
+    ...     "http://launchpad.test/~cprov/+archive/ubuntu/ppa/+packages")
 
     >>> def print_build_status(contents):
     ...     rows = find_tags_by_class(contents, 'archive_package_row')
     ...     headers = rows[0].findAll('th')
-    ...     print extract_text(headers[0]), extract_text(headers[-1])
+    ...     print(extract_text(headers[0]), extract_text(headers[-1]))
     ...     for row in rows[1:]:
     ...         columns = row.findAll('td')
     ...         name = extract_text(columns[0])
@@ -421,7 +424,7 @@ Anyone can see the build status for package in Celso's PPA.
     ...         built_text = columns[-1].a
     ...         if built_text is not None:
     ...             built_text = built_text.renderContents()
-    ...         print name, built_icon, built_text
+    ...         print(name, built_icon, built_text)
 
     >>> print_build_status(anon_browser.contents)
     Source                    Build Status
@@ -435,7 +438,7 @@ of downloading the buildlog).
 
     >>> anon_browser.getLink('i386').click()
 
-    >>> print anon_browser.title
+    >>> print(anon_browser.title)
     i386 build of cdrkit 1.0 : PPA for Celso Providelo : Celso Providelo
 
 This feature is also useful from the PPA owner perspective. When Celso
@@ -445,7 +448,7 @@ quickly 'retry' the failure.
     >>> cprov_browser = setupBrowser(
     ...     auth='Basic celso.providelo@canonical.com:test')
     >>> cprov_browser.open(
-    ...     "http://launchpad.dev/~cprov/+archive/ppa/+packages")
+    ...     "http://launchpad.test/~cprov/+archive/ubuntu/ppa/+packages")
 
     >>> cprov_browser.getLink('i386').click()
     >>> cprov_browser.getLink("Retry this build").click()
@@ -455,7 +458,7 @@ At this point anyone can also visualise that 'cdrkit' source is being
 built in Celso's PPA.
 
     >>> anon_browser.open(
-    ...     "http://launchpad.dev/~cprov/+archive/ppa/+packages")
+    ...     "http://launchpad.test/~cprov/+archive/ubuntu/ppa/+packages")
     >>> print_build_status(anon_browser.contents)
     Source                    Build Status
     cdrkit - 1.0              /@@/build-needed i386
@@ -464,5 +467,5 @@ Again the architecture tags listed on the 'built' column link to the
 corresponding build page.
 
     >>> anon_browser.getLink('i386').click()
-    >>> print anon_browser.title
+    >>> print(anon_browser.title)
     i386 build of cdrkit 1.0 : PPA for Celso Providelo : Celso Providelo

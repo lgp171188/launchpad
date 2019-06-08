@@ -1,4 +1,4 @@
-# Copyright 2009-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """The processing of debian installer tarballs."""
@@ -10,12 +10,12 @@ __metaclass__ = type
 
 __all__ = [
     'DebianInstallerUpload',
-    'process_debian_installer',
     ]
 
 import os
 import shutil
 
+from lp.archivepublisher.config import getPubConfig
 from lp.archivepublisher.customupload import CustomUpload
 
 
@@ -48,10 +48,14 @@ class DebianInstallerUpload(CustomUpload):
             raise ValueError("%s is not BASE_VERSION_ARCH" % tarfile_base)
         return bits[0], bits[1], bits[2].split(".")[0]
 
-    def setTargetDirectory(self, pubconf, tarfile_path, distroseries):
+    def setComponents(self, tarfile_path):
         _, self.version, self.arch = self.parsePath(tarfile_path)
+
+    def setTargetDirectory(self, archive, tarfile_path, suite):
+        self.setComponents(tarfile_path)
+        pubconf = getPubConfig(archive)
         self.targetdir = os.path.join(
-            pubconf.archiveroot, 'dists', distroseries, 'main',
+            pubconf.archiveroot, 'dists', suite, 'main',
             'installer-%s' % self.arch)
 
     @classmethod
@@ -73,13 +77,6 @@ class DebianInstallerUpload(CustomUpload):
     def shouldInstall(self, filename):
         return filename.startswith('%s/' % self.version)
 
-
-def process_debian_installer(pubconf, tarfile_path, distroseries):
-    """Process a raw-installer tarfile.
-
-    Unpacking it into the given archive for the given distroseries.
-    Raises CustomUploadError (or some subclass thereof) if anything goes
-    wrong.
-    """
-    upload = DebianInstallerUpload()
-    upload.process(pubconf, tarfile_path, distroseries)
+    def shouldSign(self, filename):
+        """Sign checksums files."""
+        return filename.endswith('SUMS')

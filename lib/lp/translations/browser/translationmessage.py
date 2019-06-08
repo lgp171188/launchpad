@@ -1,8 +1,5 @@
-# Copyright 2009-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
-
-# pylint: disable-msg=W0404
-# (Disable warning about importing two different datetime modules)
 
 """View classes for ITranslationMessage interface."""
 
@@ -11,9 +8,9 @@ __metaclass__ = type
 __all__ = [
     'BaseTranslationView',
     'contains_translations',
-    'CurrentTranslationMessageAppMenus',
-    'CurrentTranslationMessageFacets',
+    'convert_translationmessage_to_submission',
     'CurrentTranslationMessageIndexView',
+    'CurrentTranslationMessageMenu',
     'CurrentTranslationMessagePageView',
     'CurrentTranslationMessageView',
     'CurrentTranslationMessageZoomedView',
@@ -30,27 +27,27 @@ import urllib
 import pytz
 from z3c.ptcompat import ViewPageTemplateFile
 from zope import datetime as zope_datetime
-from zope.app.form import CustomWidgetFactory
-from zope.app.form.browser import DropdownWidget
-from zope.app.form.interfaces import IInputWidget
-from zope.app.form.utility import setUpWidgets
 from zope.component import getUtility
-from zope.interface import implements
+from zope.formlib.interfaces import IInputWidget
+from zope.formlib.utility import setUpWidgets
+from zope.formlib.widget import CustomWidgetFactory
+from zope.formlib.widgets import DropdownWidget
+from zope.interface import implementer
 from zope.schema.vocabulary import getVocabularyRegistry
 
 from lp.app.errors import UnexpectedFormData
 from lp.services.propertycache import cachedproperty
 from lp.services.webapp import (
-    ApplicationMenu,
     canonical_url,
     enabled_with_permission,
     LaunchpadView,
     Link,
+    NavigationMenu,
     urlparse,
     )
 from lp.services.webapp.batching import BatchNavigator
+from lp.services.webapp.escaping import structured
 from lp.services.webapp.interfaces import ILaunchBag
-from lp.services.webapp.menu import structured
 from lp.services.webapp.publisher import RedirectionView
 from lp.translations.browser.browser_helpers import (
     contract_rosetta_escapes,
@@ -58,7 +55,6 @@ from lp.translations.browser.browser_helpers import (
     count_lines,
     text_to_html,
     )
-from lp.translations.browser.potemplate import POTemplateFacets
 from lp.translations.interfaces.pofile import IPOFileAlternativeLanguage
 from lp.translations.interfaces.side import ITranslationSideTraitsSet
 from lp.translations.interfaces.translationmessage import (
@@ -194,33 +190,26 @@ class CustomDropdownWidget(DropdownWidget):
         return contents
 
 
-class CurrentTranslationMessageFacets(POTemplateFacets):
-    usedfor = ITranslationMessage
-
-    def __init__(self, context):
-        POTemplateFacets.__init__(self, context.browser_pofile.potemplate)
-
-
-class CurrentTranslationMessageAppMenus(ApplicationMenu):
+class CurrentTranslationMessageMenu(NavigationMenu):
     usedfor = ITranslationMessage
     facet = 'translations'
-    links = ['overview', 'translate', 'upload', 'download']
+    links = ['details', 'translate', 'upload', 'download']
 
-    def overview(self):
-        text = 'Overview'
-        return Link('../', text)
+    def details(self):
+        text = 'Translation details'
+        return Link('../', text, icon='info')
 
     def translate(self):
         text = 'Translate many'
-        return Link('../+translate', text, icon='languages')
+        return Link('../+translate', text, icon='language')
 
     @enabled_with_permission('launchpad.Edit')
     def upload(self):
-        text = 'Upload a file'
-        return Link('../+upload', text, icon='edit')
+        text = 'Upload translation'
+        return Link('../+upload', text, icon='add')
 
     def download(self):
-        text = 'Download'
+        text = 'Download translation'
         return Link('../+export', text, icon='download')
 
 
@@ -752,7 +741,7 @@ class BaseTranslationView(LaunchpadView):
         # Extract the translations from the form, and store them in
         # self.form_posted_translations. We try plural forms in turn,
         # starting at 0.
-        for pluralform in xrange(TranslationConstants.MAX_PLURAL_FORMS):
+        for pluralform in range(TranslationConstants.MAX_PLURAL_FORMS):
             msgset_ID_LANGCODE_translation_PLURALFORM_new = '%s%d_new' % (
                 msgset_ID_LANGCODE_translation_, pluralform)
             if msgset_ID_LANGCODE_translation_PLURALFORM_new not in form:
@@ -1078,7 +1067,7 @@ class CurrentTranslationMessageView(LaunchpadView):
         # suggestion_blocks dictionary, keyed on plural form index; this
         # allows us later to just iterate over them in the view code
         # using a generic template.
-        self.pluralform_indices = range(self.context.plural_forms)
+        self.pluralform_indices = list(range(self.context.plural_forms))
 
         self._buildAllSuggestions()
 
@@ -1223,24 +1212,6 @@ class CurrentTranslationMessageView(LaunchpadView):
             else:
                 self.can_confirm_and_dismiss = True
 
-    def _setOnePOFile(self, messages):
-        """Return a list of messages that all have a browser_pofile set.
-
-        If a pofile cannot be found for a message, it is not included in
-        the resulting list.
-        """
-        result = []
-        for message in messages:
-            if message.browser_pofile is None:
-                pofile = message.getOnePOFile()
-                if pofile is None:
-                    # Do not include in result.
-                    continue
-                else:
-                    message.setPOFile(pofile)
-            result.append(message)
-        return result
-
     def _buildAllSuggestions(self):
         """Builds all suggestions and puts them into suggestions_block.
 
@@ -1288,8 +1259,8 @@ class CurrentTranslationMessageView(LaunchpadView):
 
             self._set_dismiss_flags(local, other)
 
-            for suggestion in local:
-                suggestion.setPOFile(self.pofile)
+            getUtility(ITranslationMessageSet).preloadDetails(
+                local, need_potranslation=True, need_people=True)
 
             # Get a list of translations which are _used_ as translations
             # for this same message in a different translation template.
@@ -1300,19 +1271,36 @@ class CurrentTranslationMessageView(LaunchpadView):
                 potmsgset.getExternallySuggestedOrUsedTranslationMessages(
                     suggested_languages=[language],
                     used_languages=used_languages))
+
+            # Suggestions from other templates need full preloading,
+            # including picking a POFile. preloadDetails requires that
+            # all messages have the same language, so we invoke it
+            # separately for the alternate suggestion language.
+            preload_groups = [
+                translations[language].used + translations[language].suggested,
+                translations[self.sec_lang].used,
+                ]
+            for group in preload_groups:
+                getUtility(ITranslationMessageSet).preloadDetails(
+                    group, need_pofile=True, need_potemplate=True,
+                    need_potemplate_context=True,
+                    need_potranslation=True, need_potmsgset=True,
+                    need_people=True)
+
             alt_external = translations[self.sec_lang].used
-            externally_used = self._setOnePOFile(sorted(
-                translations[language].used,
+            externally_used = sorted(
+                [m for m in translations[language].used if m.browser_pofile],
                 key=operator.attrgetter("date_created"),
-                reverse=True))
+                reverse=True)
 
             # Get a list of translations which are suggested as
             # translations for this same message in a different translation
             # template, but are not used.
-            externally_suggested = self._setOnePOFile(sorted(
-                translations[language].suggested,
+            externally_suggested = sorted(
+                [m for m in translations[language].suggested
+                 if m.browser_pofile],
                 key=operator.attrgetter("date_created"),
-                reverse=True))
+                reverse=True)
         else:
             # Don't show suggestions for anonymous users.
             local = externally_used = externally_suggested = []
@@ -1468,12 +1456,6 @@ class CurrentTranslationMessageView(LaunchpadView):
                 self.context.potmsgset),
             self.context.potmsgset.flags)
 
-    @cachedproperty
-    def sequence(self):
-        """Return the position number of this potmsgset in the pofile."""
-        return self.context.potmsgset.getSequence(
-            self.pofile.potemplate)
-
     @property
     def singular_text(self):
         """Return the singular form prepared to render in a web page."""
@@ -1590,7 +1572,8 @@ class CurrentTranslationMessageZoomedView(CurrentTranslationMessageView):
         # should point to the parent batch of messages.
         # XXX: kiko 2006-09-27: Preserve second_lang_code and other form
         # parameters?
-        batch_url = '/+translate?start=%d' % (self.sequence - 1)
+        assert self.context.browser_pofile == self.pofile
+        batch_url = '/+translate?start=%d' % (self.context.sequence - 1)
         return canonical_url(self.pofile) + batch_url
 
     @property
@@ -1606,10 +1589,9 @@ class CurrentTranslationMessageZoomedView(CurrentTranslationMessageView):
         return None
 
 
+@implementer(ITranslationMessageSuggestions)
 class TranslationMessageSuggestions:
     """See `ITranslationMessageSuggestions`."""
-
-    implements(ITranslationMessageSuggestions)
 
     def __init__(self, title, translation, submissions,
                  user_is_official_translator, form_is_writeable,
@@ -1669,6 +1651,7 @@ def convert_translationmessage_to_submission(
     """
 
     submission = Submission()
+    submission.is_traversable = (message.sequence != 0)
     submission.translationmessage = message
     for attribute in ['id', 'language', 'potmsgset', 'date_created']:
         setattr(submission, attribute, getattr(message, attribute))

@@ -1,7 +1,5 @@
-# Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
-
-# pylint: disable-msg=W0222,W0231
 
 __metaclass__ = type
 
@@ -15,7 +13,7 @@ from bzrlib.bzrdir import (
     format_registry,
     )
 from bzrlib.urlutils import join as urljoin
-from testtools.deferredruntest import (
+from testtools.twistedsupport import (
     assert_fails_with,
     AsynchronousDeferredRunTest,
     flush_logged_errors,
@@ -95,7 +93,7 @@ class TestJobScheduler(TestCase):
         manager = self.makeJobScheduler()
         manager.lockfilename = self.masterlock
         manager.lock()
-        self.failUnless(os.path.exists(self.masterlock))
+        self.assertTrue(os.path.exists(self.masterlock))
         manager.unlock()
 
     def testManagerEnforcesLocks(self):
@@ -105,7 +103,7 @@ class TestJobScheduler(TestCase):
         anothermanager = self.makeJobScheduler()
         anothermanager.lockfilename = self.masterlock
         self.assertRaises(scheduler.LockError, anothermanager.lock)
-        self.failUnless(os.path.exists(self.masterlock))
+        self.assertTrue(os.path.exists(self.masterlock))
         manager.unlock()
 
     def test_run_calls_acquireBranchToPull(self):
@@ -164,9 +162,8 @@ class TestPullerWireProtocol(TestCase):
 
         The failure is asserted to contain an exception of type
         `exception_type`."""
-        self.failUnless(self.puller_protocol.failure is not None)
-        self.failUnless(
-            self.puller_protocol.failure.check(exception_type))
+        self.assertIsNotNone(self.puller_protocol.failure)
+        self.assertTrue(self.puller_protocol.failure.check(exception_type))
 
     def assertProtocolInState0(self):
         """Assert that the protocol is in state 0."""
@@ -652,8 +649,8 @@ class TestPullerMasterIntegration(PullerBranchTestCase):
         # contents of stderr are logged in an OOPS report.
         oops_logged = []
 
-        def new_oops_raising((type, value, tb), request):
-            oops_logged.append((type, value, tb))
+        def new_oops_raising(info, request):
+            oops_logged.append(info)
 
         old_oops_raising = errorlog.globalErrorUtility.raising
         errorlog.globalErrorUtility.raising = new_oops_raising
@@ -855,15 +852,13 @@ class TestPullerMasterIntegration(PullerBranchTestCase):
         return locking_process_deferred.addCallbacks(
             locking_process_callback, locking_process_errback)
 
-    # XXX wgrant 2011-09-14 bug 848994: This is a fragile test.
-    def DISABLE_test_mirror_with_destination_self_locked(self):
+    def test_mirror_with_destination_self_locked(self):
         # If the destination branch was locked by another worker, the worker
         # should break the lock and mirror the branch regardless.
         deferred = self._run_with_destination_locked(self.doDefaultMirroring)
         return deferred.addErrback(self._dumpError)
 
-    # XXX gary 2011-09-13 bug 848994: This is a fragile test.
-    def DISABLE_test_mirror_with_destination_locked_by_another(self):
+    def test_mirror_with_destination_locked_by_another(self):
         # When the destination branch is locked with a different lock it, the
         # worker should *not* break the lock and instead fail.
 

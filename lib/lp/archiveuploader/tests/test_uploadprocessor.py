@@ -1,7 +1,9 @@
-# Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Functional tests for uploadprocessor.py."""
+
+from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 __all__ = [
@@ -9,7 +11,6 @@ __all__ = [
     "TestUploadProcessorBase",
     ]
 
-from email import message_from_string
 import os
 import shutil
 from StringIO import StringIO
@@ -48,7 +49,11 @@ from lp.buildmaster.enums import (
     BuildFarmJobType,
     BuildStatus,
     )
+from lp.buildmaster.interfaces.buildfarmjobbehaviour import (
+    IBuildFarmJobBehaviour,
+    )
 from lp.registry.interfaces.distribution import IDistributionSet
+from lp.registry.interfaces.gpg import IGPGKeySet
 from lp.registry.interfaces.person import IPersonSet
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.registry.interfaces.series import SeriesStatus
@@ -57,13 +62,11 @@ from lp.registry.interfaces.sourcepackagename import ISourcePackageNameSet
 from lp.registry.model.sourcepackagename import SourcePackageName
 from lp.services.config import config
 from lp.services.database.constants import UTC_NOW
-from lp.services.features.testing import FeatureFixture
 from lp.services.librarian.interfaces import ILibraryFileAliasSet
 from lp.services.log.logger import (
     BufferLogger,
     DevNullLogger,
     )
-from lp.services.mail import stub
 from lp.soyuz.enums import (
     ArchivePermissionType,
     ArchivePurpose,
@@ -72,6 +75,7 @@ from lp.soyuz.enums import (
     )
 from lp.soyuz.interfaces.archive import IArchiveSet
 from lp.soyuz.interfaces.archivepermission import IArchivePermissionSet
+from lp.soyuz.interfaces.binarypackagebuild import IBinaryPackageBuildSet
 from lp.soyuz.interfaces.component import IComponentSet
 from lp.soyuz.interfaces.packageset import IPackagesetSet
 from lp.soyuz.interfaces.publishing import (
@@ -86,9 +90,6 @@ from lp.soyuz.model.archivepermission import ArchivePermission
 from lp.soyuz.model.binarypackagename import BinaryPackageName
 from lp.soyuz.model.binarypackagerelease import BinaryPackageRelease
 from lp.soyuz.model.component import Component
-from lp.soyuz.model.distroseriesdifferencejob import (
-    FEATURE_FLAG_ENABLE_MODULE,
-    )
 from lp.soyuz.model.publishing import (
     BinaryPackagePublishingHistory,
     SourcePackagePublishingHistory,
@@ -102,7 +103,10 @@ from lp.testing import (
     )
 from lp.testing.dbuser import switch_dbuser
 from lp.testing.fakemethod import FakeMethod
-from lp.testing.gpgkeys import import_public_test_keys
+from lp.testing.gpgkeys import (
+    import_public_key,
+    import_public_test_keys,
+    )
 from lp.testing.layers import LaunchpadZopelessLayer
 from lp.testing.mail_helpers import pop_notifications
 
@@ -121,6 +125,7 @@ class BrokenUploadPolicy(AbstractUploadPolicy):
         self.name = "broken"
         self.unsigned_changes_ok = True
         self.unsigned_dsc_ok = True
+        self.unsigned_buildinfo_ok = True
 
     def checkUpload(self, upload):
         """Raise an exception upload processing is not expecting."""
@@ -142,6 +147,7 @@ class TestUploadProcessorBase(TestCaseWithFactory):
 
         self.queue_folder = tempfile.mkdtemp()
         self.incoming_folder = os.path.join(self.queue_folder, "incoming")
+        self.failed_folder = os.path.join(self.queue_folder, "failed")
         os.makedirs(self.incoming_folder)
 
         self.test_files_dir = os.path.join(config.root,
@@ -158,17 +164,12 @@ class TestUploadProcessorBase(TestCaseWithFactory):
         self.options.nomails = False
         self.options.context = 'insecure'
 
-        # common recipients
-        self.kinnison_recipient = (
-            "Daniel Silverstone <daniel.silverstone@canonical.com>")
-        self.name16_recipient = "Foo Bar <foo.bar@canonical.com>"
+        # common recipient
+        self.name16_recipient = "foo.bar@canonical.com"
 
         self.log = BufferLogger()
 
         self.switchToAdmin()
-        self.useFixture(FeatureFixture({
-            FEATURE_FLAG_ENABLE_MODULE: u'on',
-        }))
         self.switchToUploader()
 
     def tearDown(self):
@@ -198,7 +199,8 @@ class TestUploadProcessorBase(TestCaseWithFactory):
         self.switchToUploader()
         return upload_processor
 
-    def publishPackage(self, packagename, version, source=True, archive=None):
+    def publishPackage(self, packagename, version, source=True, archive=None,
+                       component_override=None):
         """Publish a single package that is currently NEW in the queue."""
         self.switchToAdmin()
 
@@ -215,15 +217,17 @@ class TestUploadProcessorBase(TestCaseWithFactory):
             pubrec = queue_item.sources[0].publish(self.log)
         else:
             pubrec = queue_item.builds[0].publish(self.log)
+        if component_override:
+            pubrec.component = component_override
         self.switchToUploader()
         return pubrec
 
     def assertLogContains(self, line):
         """Assert if a given line is present in the log messages."""
         log_lines = self.log.getLogBuffer()
-        self.assertTrue(line in log_lines,
-                        "'%s' is not in logged output\n\n%s"
-                        % (line, log_lines))
+        self.assertTrue(
+            line in log_lines, "'%s' is not in logged output\n\n%s" % (
+                line, log_lines))
 
     def assertRaisesAndReturnError(self, excClass, callableObj, *args,
                                    **kwargs):
@@ -242,7 +246,7 @@ class TestUploadProcessorBase(TestCaseWithFactory):
                 excName = excClass.__name__
             else:
                 excName = str(excClass)
-            raise self.failureException, "%s not raised" % excName
+            raise self.failureException("%s not raised" % excName)
 
     def setupBreezy(self, name="breezy", permitted_formats=None):
         """Create a fresh distroseries in ubuntu.
@@ -343,50 +347,47 @@ class TestUploadProcessorBase(TestCaseWithFactory):
         self.switchToUploader()
         return upload_processor
 
-    def assertEmail(self, contents=None, recipients=None):
-        """Check last email content and recipients.
+    def assertEmails(self, expected, allow_leftover=False):
+        """Check recent email content and recipients.
 
-        :param contents: A list of lines; assert that each is in the email.
-        :param recipients: A list of recipients that must be on the email.
-                           Supply an empty list if you don't want them
-                           checked.  Default action is to check that the
-                           recipient is foo.bar@canonical.com, which is the
-                           signer on most of the test data uploads.
+        :param expected: A list of dicts, each of which represents an
+            expected email and may have "contents" and "recipient" keys.
+            All the items in expected must match in the correct order, with
+            none left over.  "contents" is a list of lines; assert that each
+            is in Subject + Body.  "recipient" is the To address the email
+            must have, defaulting to "foo.bar@canonical.com" which is the
+            signer on most of the test data uploads; supply None if you
+            don't want it checked.
+        :param allow_leftover: If True, allow additional emails to be left
+            over after checking the ones in expected.
         """
-        if recipients is None:
-            recipients = [self.name16_recipient]
-        if contents is None:
-            contents = []
 
-        self.assertEqual(
-            len(stub.test_emails), 1,
-            'Unexpected number of emails sent: %s' % len(stub.test_emails))
+        if allow_leftover:
+            notifications = pop_notifications()
+            self.assertTrue(len(notifications) >= len(expected))
+        else:
+            notifications = self.assertEmailQueueLength(len(expected))
 
-        from_addr, to_addrs, raw_msg = stub.test_emails.pop()
-        msg = message_from_string(raw_msg)
-        # This is now a MIMEMultipart message.
-        body = msg.get_payload(0)
-        body = body.get_payload(decode=True)
+        for item, msg in zip(expected, notifications):
+            recipient = item.get("recipient", self.name16_recipient)
+            contents = item.get("contents", [])
 
-        # Only check recipients if callsite didn't provide an empty list.
-        if recipients != []:
-            clean_recipients = [r.strip() for r in to_addrs]
-            for recipient in list(recipients):
+            # This is now a MIMEMultipart message.
+            body = msg.get_payload(0)
+            body = body.get_payload(decode=True).decode("UTF-8")
+
+            # Only check the recipient if the caller didn't explicitly pass
+            # "recipient": None.
+            if recipient is not None:
+                self.assertEqual(recipient, msg['X-Envelope-To'])
+
+            subject = "Subject: %s\n" % msg['Subject']
+            body = subject + body
+
+            for content in list(contents):
                 self.assertTrue(
-                    recipient in clean_recipients,
-                    "%s not found in %s" % (recipients, clean_recipients))
-            self.assertEqual(
-                len(recipients), len(clean_recipients),
-                "Email recipients do not match exactly. Expected %s, got %s" %
-                    (recipients, clean_recipients))
-
-        subject = "Subject: %s\n" % msg['Subject']
-        body = subject + body
-
-        for content in list(contents):
-            self.assertTrue(
-                content in body,
-                "Expect: '%s'\nGot:\n%s" % (content, body))
+                    content in body,
+                    "Expect: '%s'\nGot:\n%s" % (content, body))
 
     def PGPSignatureNotPreserved(self, archive=None):
         """PGP signatures should be removed from .changes files.
@@ -425,24 +426,18 @@ class TestUploadProcessor(TestUploadProcessorBase):
 
     def _checkPartnerUploadEmailSuccess(self):
         """Ensure partner uploads generate the right email."""
-        from_addr, to_addrs, raw_msg = stub.test_emails.pop()
-        foo_bar = "Foo Bar <foo.bar@canonical.com>"
-        self.assertEqual([e.strip() for e in to_addrs], [foo_bar])
+        [msg] = pop_notifications()
+        self.assertEqual("foo.bar@canonical.com", msg["X-Envelope-To"])
         self.assertTrue(
-            "rejected" not in raw_msg,
-            "Expected acceptance email not rejection. Actually Got:\n%s"
-                % raw_msg)
+            "rejected" not in str(msg),
+            "Expected acceptance email not rejection. Actually Got:\n%s" % msg)
 
     def testInstantiate(self):
         """UploadProcessor should instantiate"""
         self.getUploadProcessor(None)
 
     def testLocateDirectories(self):
-        """Return a sorted list of subdirs in a directory.
-
-        We don't test that we block on the lockfile, as this is trivial
-        code but tricky to test.
-        """
+        """Return a sorted list of subdirs in a directory."""
         testdir = tempfile.mkdtemp()
         try:
             os.mkdir("%s/dir3" % testdir)
@@ -457,19 +452,14 @@ class TestUploadProcessor(TestUploadProcessorBase):
 
     def _makeUpload(self, testdir):
         """Create a dummy upload for testing the move/remove methods."""
-        upload = tempfile.mkdtemp(dir=testdir)
-        distro = upload + ".distro"
-        f = open(distro, mode="w")
-        f.write("foo")
-        f.close()
-        return upload, distro
+        return tempfile.mkdtemp(dir=testdir)
 
     def testMoveUpload(self):
-        """moveUpload should move the upload directory and .distro file."""
+        """moveUpload should move the upload directory."""
         testdir = tempfile.mkdtemp()
         try:
-            # Create an upload, a .distro and a target to move it to.
-            upload, distro = self._makeUpload(testdir)
+            # Create an upload and a target to move it to.
+            upload = self._makeUpload(testdir)
             target = tempfile.mkdtemp(dir=testdir)
             target_name = os.path.basename(target)
             upload_name = os.path.basename(upload)
@@ -482,19 +472,15 @@ class TestUploadProcessor(TestUploadProcessorBase):
 
             # Check it moved
             self.assertTrue(os.path.exists(os.path.join(target, upload_name)))
-            self.assertTrue(os.path.exists(os.path.join(
-                target, upload_name + ".distro")))
             self.assertFalse(os.path.exists(upload))
-            self.assertFalse(os.path.exists(distro))
         finally:
             shutil.rmtree(testdir)
 
     def testMoveProcessUploadAccepted(self):
         testdir = tempfile.mkdtemp()
         try:
-            # Create an upload, a .distro and a target to move it to.
-            upload, distro = self._makeUpload(testdir)
-            upload_name = os.path.basename(upload)
+            # Create an upload and a target to move it to.
+            upload = self._makeUpload(testdir)
 
             # Remove it
             self.options.base_fsroot = testdir
@@ -503,12 +489,8 @@ class TestUploadProcessor(TestUploadProcessorBase):
             handler.moveProcessedUpload("accepted", self.log)
 
             # Check it was removed, not moved
-            self.assertFalse(os.path.exists(os.path.join(
-                testdir, "accepted")))
-            self.assertFalse(os.path.exists(os.path.join(testdir,
-                "accepted", upload_name + ".distro")))
+            self.assertFalse(os.path.exists(os.path.join(testdir, "accepted")))
             self.assertFalse(os.path.exists(upload))
-            self.assertFalse(os.path.exists(distro))
         finally:
             shutil.rmtree(testdir)
 
@@ -516,8 +498,8 @@ class TestUploadProcessor(TestUploadProcessorBase):
         """moveProcessedUpload moves if the result was not successful."""
         testdir = tempfile.mkdtemp()
         try:
-            # Create an upload, a .distro and a target to move it to.
-            upload, distro = self._makeUpload(testdir)
+            # Create an upload and a target to move it to.
+            upload = self._makeUpload(testdir)
             upload_name = os.path.basename(upload)
 
             # Move it
@@ -527,21 +509,18 @@ class TestUploadProcessor(TestUploadProcessorBase):
             handler.moveProcessedUpload("rejected", self.log)
 
             # Check it moved
-            self.assertTrue(os.path.exists(os.path.join(testdir,
-                "rejected", upload_name)))
-            self.assertTrue(os.path.exists(os.path.join(testdir,
-                "rejected", upload_name + ".distro")))
+            self.assertTrue(os.path.exists(os.path.join(
+                testdir, "rejected", upload_name)))
             self.assertFalse(os.path.exists(upload))
-            self.assertFalse(os.path.exists(distro))
         finally:
             shutil.rmtree(testdir)
 
     def testRemoveUpload(self):
-        """RemoveUpload removes the upload directory and .distro file."""
+        """RemoveUpload removes the upload directory."""
         testdir = tempfile.mkdtemp()
         try:
-            # Create an upload, a .distro and a target to move it to.
-            upload, distro = self._makeUpload(testdir)
+            # Create an upload and a target to move it to.
+            upload = self._makeUpload(testdir)
             os.path.basename(upload)
 
             # Remove it
@@ -551,10 +530,8 @@ class TestUploadProcessor(TestUploadProcessorBase):
             handler.removeUpload(self.log)
 
             # Check it was removed, not moved
-            self.assertFalse(os.path.exists(os.path.join(
-                testdir, "accepted")))
+            self.assertFalse(os.path.exists(os.path.join(testdir, "accepted")))
             self.assertFalse(os.path.exists(upload))
-            self.assertFalse(os.path.exists(distro))
         finally:
             shutil.rmtree(testdir)
 
@@ -587,14 +564,13 @@ class TestUploadProcessor(TestUploadProcessorBase):
         self.processUpload(uploadprocessor, upload_dir)
 
         # Check the mailer stub has a rejection email for Daniel
-        from_addr, to_addrs, raw_msg = stub.test_emails.pop()
+        [msg] = pop_notifications()
         # This is now a MIMEMultipart message.
-        msg = message_from_string(raw_msg)
         body = msg.get_payload(0)
-        body = body.get_payload(decode=True)
+        body = body.get_payload(decode=True).decode("UTF-8")
 
-        daniel = "Daniel Silverstone <daniel.silverstone@canonical.com>"
-        self.assertEqual(to_addrs, [daniel])
+        self.assertEqual(
+            "daniel.silverstone@canonical.com", msg["X-Envelope-To"])
         self.assertTrue("Unhandled exception processing upload: Exception "
                         "raised by BrokenUploadPolicy for testing."
                         in body)
@@ -624,14 +600,14 @@ class TestUploadProcessor(TestUploadProcessorBase):
         self.processUpload(uploadprocessor, upload_dir)
 
         # Check it went ok to the NEW queue and all is going well so far.
-        from_addr, to_addrs, raw_msg = stub.test_emails.pop()
-        to_addrs = [e.strip() for e in to_addrs]
-        foo_bar = "Foo Bar <foo.bar@canonical.com>"
-        daniel = "Daniel Silverstone <daniel.silverstone@canonical.com>"
-        self.assertContentEqual(to_addrs, [foo_bar, daniel])
-        self.assertTrue(
-            "NEW" in raw_msg, "Expected email containing 'NEW', got:\n%s"
-            % raw_msg)
+        daniel = "daniel.silverstone@canonical.com"
+        foo_bar = "foo.bar@canonical.com"
+        notifications = self.assertEmailQueueLength(2)
+        for expected_to_addr, msg in zip((daniel, foo_bar), notifications):
+            self.assertEqual(expected_to_addr, msg["X-Envelope-To"])
+            self.assertTrue(
+                "NEW" in str(msg),
+                "Expected email containing 'NEW', got:\n%s" % msg)
 
         # Accept and publish the upload.
         # This is required so that the next upload of a later version of
@@ -659,14 +635,12 @@ class TestUploadProcessor(TestUploadProcessorBase):
         self.processUpload(uploadprocessor, upload_dir)
 
         # Verify we get an email talking about awaiting approval.
-        from_addr, to_addrs, raw_msg = stub.test_emails.pop()
-        to_addrs = [e.strip() for e in to_addrs]
-        daniel = "Daniel Silverstone <daniel.silverstone@canonical.com>"
-        foo_bar = "Foo Bar <foo.bar@canonical.com>"
-        self.assertContentEqual(to_addrs, [foo_bar, daniel])
-        self.assertTrue("Waiting for approval" in raw_msg,
-                        "Expected an 'upload awaits approval' email.\n"
-                        "Got:\n%s" % raw_msg)
+        notifications = self.assertEmailQueueLength(2)
+        for expected_to_addr, msg in zip((daniel, foo_bar), notifications):
+            self.assertEqual(expected_to_addr, msg["X-Envelope-To"])
+            self.assertTrue(
+                "Waiting for approval" in str(msg),
+                "Expected an 'upload awaits approval' email.\nGot:\n%s" % msg)
 
         # And verify that the queue item is in the unapproved state.
         queue_items = self.breezy.getPackageUploads(
@@ -840,9 +814,9 @@ class TestUploadProcessor(TestUploadProcessorBase):
         bar_copied_source = bar_source_pub.copyTo(
             breezy_autotest, PackagePublishingPocket.RELEASE,
             self.ubuntu.main_archive)
-        bar_copied_build = bar_copied_source.sourcepackagerelease.createBuild(
-            breezy_autotest_i386, PackagePublishingPocket.RELEASE,
-            self.ubuntu.main_archive)
+        bar_copied_build = getUtility(IBinaryPackageBuildSet).new(
+            bar_copied_source.sourcepackagerelease, self.ubuntu.main_archive,
+            breezy_autotest_i386, PackagePublishingPocket.RELEASE)
 
         # Re-upload the same 'bar-1.0-1' binary as if it was rebuilt
         # in breezy-autotest context.
@@ -943,10 +917,10 @@ class TestUploadProcessor(TestUploadProcessorBase):
         self.processUpload(uploadprocessor, upload_dir)
 
         # Check that it was rejected appropriately.
-        from_addr, to_addrs, raw_msg = stub.test_emails.pop()
-        self.assertTrue(
-            "Partner archive for distro '%s' not found" % self.ubuntu.name
-                in raw_msg)
+        [msg] = pop_notifications()
+        self.assertIn(
+            "Partner archive for distro '%s' not found" % self.ubuntu.name,
+            str(msg))
 
     def testMixedPartnerUploadFails(self):
         """Uploads with partner and non-partner files are rejected.
@@ -962,13 +936,12 @@ class TestUploadProcessor(TestUploadProcessorBase):
         self.processUpload(uploadprocessor, upload_dir)
 
         # Check that it was rejected.
-        from_addr, to_addrs, raw_msg = stub.test_emails.pop()
-        foo_bar = "Foo Bar <foo.bar@canonical.com>"
-        self.assertEqual([e.strip() for e in to_addrs], [foo_bar])
+        [msg] = pop_notifications()
+        self.assertEqual("foo.bar@canonical.com", msg["X-Envelope-To"])
         self.assertTrue(
-            "Cannot mix partner files with non-partner." in raw_msg,
+            "Cannot mix partner files with non-partner." in str(msg),
             "Expected email containing 'Cannot mix partner files with "
-            "non-partner.', got:\n%s" % raw_msg)
+            "non-partner.', got:\n%s" % msg)
 
     def testPartnerReusingOrigFromPartner(self):
         """Partner uploads reuse 'orig.tar.gz' from the partner archive."""
@@ -1002,14 +975,13 @@ class TestUploadProcessor(TestUploadProcessorBase):
         self.processUpload(uploadprocessor, upload_dir)
         # Discard the announcement email and check the acceptance message
         # content.
-        from_addr, to_addrs, raw_msg = stub.test_emails.pop()
-        msg = message_from_string(raw_msg)
+        msg = pop_notifications()[-1]
         # This is now a MIMEMultipart message.
         body = msg.get_payload(0)
-        body = body.get_payload(decode=True)
+        body = body.get_payload(decode=True).decode("UTF-8")
 
         self.assertEqual(
-            '[ubuntu/breezy] foocomm 1.0-3 (Accepted)', msg['Subject'])
+            '[ubuntu/partner/breezy] foocomm 1.0-3 (Accepted)', msg['Subject'])
         self.assertFalse(
             'Unable to find foocomm_1.0.orig.tar.gz in upload or '
             'distribution.' in body,
@@ -1059,9 +1031,9 @@ class TestUploadProcessor(TestUploadProcessorBase):
         # Fudge a build for foocomm so that it's not in the partner archive.
         # We can then test that uploading a binary package must match the
         # build's archive.
-        foocomm_build = foocomm_spr.createBuild(
-            self.breezy['i386'], PackagePublishingPocket.RELEASE,
-            self.ubuntu.main_archive)
+        foocomm_build = getUtility(IBinaryPackageBuildSet).new(
+            foocomm_spr, self.ubuntu.main_archive, self.breezy['i386'],
+            PackagePublishingPocket.RELEASE)
         self.layer.txn.commit()
         upload_dir = self.queueUpload("foocomm_1.0-1_binary")
         build_uploadprocessor = self.getUploadProcessor(
@@ -1070,10 +1042,10 @@ class TestUploadProcessor(TestUploadProcessorBase):
             build_uploadprocessor, upload_dir, build=foocomm_build)
 
         contents = [
-            "Subject: foocomm_1.0-1_i386.changes rejected",
-            "Attempt to upload binaries specifying build 31, "
-            "where they don't fit."]
-        self.assertEmail(contents)
+            "Subject: [ubuntu/partner] foocomm_1.0-1_i386.changes (Rejected)",
+            "Attempt to upload binaries specifying build %d, "
+            "where they don't fit." % foocomm_build.id]
+        self.assertEmails([{"contents": contents}])
 
         # Reset upload queue directory for a new upload.
         shutil.rmtree(upload_dir)
@@ -1120,11 +1092,10 @@ class TestUploadProcessor(TestUploadProcessorBase):
         self.processUpload(uploadprocessor, upload_dir)
 
         # Check it went ok to the NEW queue and all is going well so far.
-        from_addr, to_addrs, raw_msg = stub.test_emails.pop()
+        [msg] = pop_notifications()
         self.assertTrue(
-            "NEW" in raw_msg,
-            "Expected email containing 'NEW', got:\n%s"
-            % raw_msg)
+            "NEW" in str(msg),
+            "Expected email containing 'NEW', got:\n%s" % msg)
 
         # Accept and publish the upload.
         partner_archive = getUtility(IArchiveSet).getByDistroPurpose(
@@ -1155,7 +1126,7 @@ class TestUploadProcessor(TestUploadProcessorBase):
         # at upload-time. 'foocomm' only builds in 'i386', thus only one
         # build gets created.
         foocomm_source = partner_archive.getPublishedSources(
-            name='foocomm', version='1.0-2').one()
+            name=u'foocomm', version='1.0-2').one()
         [build] = foocomm_source.sourcepackagerelease.builds
         self.assertEqual(
             build.title,
@@ -1223,10 +1194,10 @@ class TestUploadProcessor(TestUploadProcessorBase):
         # Check it is rejected.
         expect_msg = ("Partner uploads must be for the RELEASE or "
                       "PROPOSED pocket.")
-        from_addr, to_addrs, raw_msg = stub.test_emails.pop()
+        [msg] = pop_notifications()
         self.assertTrue(
-            expect_msg in raw_msg,
-            "Expected email with %s, got:\n%s" % (expect_msg, raw_msg))
+            expect_msg in str(msg),
+            "Expected email with %s, got:\n%s" % (expect_msg, msg))
 
         # And an oops should be filed for the error.
         error_report = self.oopses[new_index]
@@ -1264,29 +1235,42 @@ class TestUploadProcessor(TestUploadProcessorBase):
         self.layer.txn.commit()
         self._uploadPartnerToNonReleasePocketAndCheckFail()
 
+    def assertRejectionMessage(self, uploadprocessor, msg, with_file=True):
+        expected = ''
+        for part in ('-1.dsc', '.orig.tar.gz', '-1.diff.gz'):
+            if with_file:
+                expected += 'bar_1.0%s: %s\n' % (part, msg)
+            else:
+                expected += '%s\n' % msg
+        expected += ('Further error processing not possible because of a '
+            'critical previous error.')
+        self.assertEqual(
+            expected, uploadprocessor.last_processed_upload.rejection_message)
+
     def testUploadWithUnknownSectionIsRejected(self):
         uploadprocessor = self.setupBreezyAndGetUploadProcessor()
         upload_dir = self.queueUpload("bar_1.0-1_bad_section")
         self.processUpload(uploadprocessor, upload_dir)
+        self.assertRejectionMessage(
+            uploadprocessor, "Unknown section 'badsection'")
+
+    def testUploadWithMalformedSectionIsRejected(self):
+        uploadprocessor = self.setupBreezyAndGetUploadProcessor()
+        upload_dir = self.queueUpload("bar_1.0-1_malformed_section")
+        self.processUpload(uploadprocessor, upload_dir)
+        expected = (
+            'Wrong number of fields in Files field line.\n'
+            'Further error processing not possible because of a '
+            'critical previous error.')
         self.assertEqual(
-            uploadprocessor.last_processed_upload.rejection_message,
-            "bar_1.0-1.dsc: Unknown section 'badsection'\n"
-            "bar_1.0.orig.tar.gz: Unknown section 'badsection'\n"
-            "bar_1.0-1.diff.gz: Unknown section 'badsection'\n"
-            "Further error processing not possible because of a "
-            "critical previous error.")
+            expected, uploadprocessor.last_processed_upload.rejection_message)
 
     def testUploadWithUnknownComponentIsRejected(self):
         uploadprocessor = self.setupBreezyAndGetUploadProcessor()
         upload_dir = self.queueUpload("bar_1.0-1_contrib_component")
         self.processUpload(uploadprocessor, upload_dir)
-        self.assertEqual(
-            uploadprocessor.last_processed_upload.rejection_message,
-            "bar_1.0-1.dsc: Unknown component 'contrib'\n"
-            "bar_1.0.orig.tar.gz: Unknown component 'contrib'\n"
-            "bar_1.0-1.diff.gz: Unknown component 'contrib'\n"
-            "Further error processing not possible because of a "
-            "critical previous error.")
+        self.assertRejectionMessage(
+            uploadprocessor, "Unknown component 'contrib'")
 
     def testSourceUploadToBuilddPath(self):
         """Source uploads to buildd upload paths are not permitted."""
@@ -1300,7 +1284,8 @@ class TestUploadProcessor(TestUploadProcessorBase):
         # Check that the sourceful upload to the copy archive is rejected.
         contents = [
             "Invalid upload path (1/ubuntu) for this policy (insecure)"]
-        self.assertEmail(contents=contents, recipients=[])
+        self.assertEmails(
+            [{"contents": contents, "recipient": None}], allow_leftover=True)
 
     # Uploads that are new should have the component overridden
     # such that:
@@ -1314,7 +1299,7 @@ class TestUploadProcessor(TestUploadProcessorBase):
     # The following three tests check this.
     def checkComponentOverride(self, upload_dir_name,
                                expected_component_name):
-        """Helper function to check overridden component names.
+        """Helper function to check overridden source component names.
 
         Upload a 'bar' package from upload_dir_name, then
         inspect the package 'bar' in the NEW queue and ensure its
@@ -1340,8 +1325,6 @@ class TestUploadProcessor(TestUploadProcessorBase):
         # The component contrib does not exist in the sample data, so
         # add it here.
         Component(name='contrib')
-
-        # Test it.
         self.checkComponentOverride(
             "bar_1.0-1_contrib_component", "multiverse")
 
@@ -1350,8 +1333,6 @@ class TestUploadProcessor(TestUploadProcessorBase):
         # The component non-free does not exist in the sample data, so
         # add it here.
         Component(name='non-free')
-
-        # Test it.
         self.checkComponentOverride(
             "bar_1.0-1_nonfree_component", "multiverse")
 
@@ -1362,6 +1343,48 @@ class TestUploadProcessor(TestUploadProcessorBase):
         universe.
         """
         self.checkComponentOverride("bar_1.0-1", "universe")
+
+    def checkBinaryComponentOverride(self, component_override=None,
+                                     expected_component_name='universe'):
+        """Helper function to check overridden binary component names.
+
+        Upload a 'bar' package from upload_dir_name, publish it, and then
+        override the publication's component. When the binary release is
+        published, it's component correspond to the source publication's
+        component.
+
+        The original component comes from the source package contained
+        in upload_dir_name.
+        """
+        uploadprocessor = self.setupBreezyAndGetUploadProcessor()
+        # Upload 'bar-1.0-1' source and binary to ubuntu/breezy.
+        upload_dir = self.queueUpload("bar_1.0-1")
+        self.processUpload(uploadprocessor, upload_dir)
+        bar_source_pub = self.publishPackage(
+            'bar', '1.0-1', component_override=component_override)
+        [bar_original_build] = bar_source_pub.createMissingBuilds()
+
+        self.options.context = 'buildd'
+        upload_dir = self.queueUpload("bar_1.0-1_binary")
+        build_uploadprocessor = self.getUploadProcessor(
+            self.layer.txn, builds=True)
+        self.processUpload(
+            build_uploadprocessor, upload_dir, build=bar_original_build)
+        [bar_binary_pub] = self.publishPackage("bar", "1.0-1", source=False)
+        self.assertEqual(
+            bar_binary_pub.component.name, expected_component_name)
+        self.assertEqual(
+            bar_binary_pub.binarypackagerelease.component.name,
+            expected_component_name)
+
+    def testBinaryPackageDefaultComponent(self):
+        """The default component is universe."""
+        self.checkBinaryComponentOverride(None, "universe")
+
+    def testBinaryPackageSourcePublicationOverride(self):
+        """The source publication's component is used."""
+        restricted = getUtility(IComponentSet)["restricted"]
+        self.checkBinaryComponentOverride(restricted, "restricted")
 
     def testOopsCreation(self):
         """Test that an unhandled exception generates an OOPS."""
@@ -1401,10 +1424,9 @@ class TestUploadProcessor(TestUploadProcessorBase):
         upload_dir = self.queueUpload("bar_1.0-1_lzma")
         self.processUpload(uploadprocessor, upload_dir)
         # Make sure it went ok:
-        from_addr, to_addrs, raw_msg = stub.test_emails.pop()
-        self.assertTrue(
-            "rejected" not in raw_msg,
-            "Failed to upload bar source:\n%s" % raw_msg)
+        [msg] = pop_notifications()
+        self.assertFalse(
+            "rejected" in str(msg), "Failed to upload bar source:\n%s" % msg)
         self.publishPackage("bar", "1.0-1")
         # Clear out emails generated during upload.
         pop_notifications()
@@ -1414,11 +1436,7 @@ class TestUploadProcessor(TestUploadProcessorBase):
         self.processUpload(uploadprocessor, upload_dir)
 
         # Successful binary uploads won't generate any email.
-        if len(stub.test_emails) != 0:
-            from_addr, to_addrs, raw_msg = stub.test_emails.pop()
-        self.assertEqual(
-            len(stub.test_emails), 0,
-            "Expected no emails!  Actually got:\n%s" % raw_msg)
+        self.assertEmailQueueLength(0)
 
         # Check in the queue to see if it really made it:
         queue_items = self.breezy.getPackageUploads(
@@ -1445,10 +1463,9 @@ class TestUploadProcessor(TestUploadProcessorBase):
         upload_dir = self.queueUpload("bar_1.0-1_xz")
         self.processUpload(uploadprocessor, upload_dir)
         # Make sure it went ok:
-        from_addr, to_addrs, raw_msg = stub.test_emails.pop()
-        self.assertTrue(
-            "rejected" not in raw_msg,
-            "Failed to upload bar source:\n%s" % raw_msg)
+        [msg] = pop_notifications()
+        self.assertFalse(
+            "rejected" in str(msg), "Failed to upload bar source:\n%s" % msg)
         self.publishPackage("bar", "1.0-1")
         # Clear out emails generated during upload.
         pop_notifications()
@@ -1458,11 +1475,7 @@ class TestUploadProcessor(TestUploadProcessorBase):
         self.processUpload(uploadprocessor, upload_dir)
 
         # Successful binary uploads won't generate any email.
-        if len(stub.test_emails) != 0:
-            from_addr, to_addrs, raw_msg = stub.test_emails.pop()
-        self.assertEqual(
-            len(stub.test_emails), 0,
-            "Expected no emails!  Actually got:\n%s" % raw_msg)
+        self.assertEmailQueueLength(0)
 
         # Check in the queue to see if it really made it:
         queue_items = self.breezy.getPackageUploads(
@@ -1472,6 +1485,35 @@ class TestUploadProcessor(TestUploadProcessorBase):
             queue_items.count(), 1,
             "Expected one 'bar' item in the queue, actually got %d."
                 % queue_items.count())
+
+    def testSourceUploadWithoutBinaryField(self):
+        """Source uploads may omit the Binary field.
+
+        dpkg >= 1.19.3 omits the Binary field (as well as Description) from
+        sourceful .changes files, so don't require it.
+        """
+        self.setupBreezy()
+        self.layer.txn.commit()
+        self.options.context = 'absolutely-anything'
+        uploadprocessor = self.getUploadProcessor(self.layer.txn)
+
+        upload_dir = self.queueUpload("bar_1.0-1_no_binary_field")
+        self.processUpload(uploadprocessor, upload_dir)
+        [msg] = pop_notifications()
+        self.assertNotIn(
+            "rejected", str(msg), "Failed to upload bar source:\n%s" % msg)
+        spph = self.publishPackage("bar", "1.0-1")
+
+        self.assertEqual(
+            sorted((sprf.libraryfile.filename, sprf.filetype)
+                   for sprf in spph.sourcepackagerelease.files),
+            [('bar_1.0-1.diff.gz',
+              SourcePackageFileType.DIFF),
+             ('bar_1.0-1.dsc',
+              SourcePackageFileType.DSC),
+             ('bar_1.0.orig.tar.gz',
+              SourcePackageFileType.ORIG_TARBALL),
+             ])
 
     def testUploadResultingInNoBuilds(self):
         """Source uploads resulting in no builds.
@@ -1554,7 +1596,7 @@ class TestUploadProcessor(TestUploadProcessorBase):
 
         # Upload the first version and accept it to make it known in
         # Ubuntu.  The uploader has rights to upload NEW packages to
-        # components that he does not have direct rights to.
+        # components that they do not have direct rights to.
         upload_dir = self.queueUpload("bar_1.0-1")
         self.processUpload(uploadprocessor, upload_dir)
         self.publishPackage('bar', '1.0-1')
@@ -1610,7 +1652,7 @@ class TestUploadProcessor(TestUploadProcessorBase):
 
         # Upload the first version and accept it to make it known in
         # Ubuntu.  The uploader has rights to upload NEW packages to
-        # components that he does not have direct rights to.
+        # components that they do not have direct rights to.
         upload_dir = self.queueUpload("bar_1.0-1")
         self.processUpload(uploadprocessor, upload_dir)
         self.publishPackage('bar', '1.0-1')
@@ -1656,10 +1698,10 @@ class TestUploadProcessor(TestUploadProcessorBase):
         self.processUpload(uploadprocessor, upload_dir)
 
         # Check that it failed (permissions were granted for wrong series).
-        from_addr, to_addrs, raw_msg = stub.test_emails.pop()
-        msg = message_from_string(raw_msg)
+        # Any of the multiple notifications will do.
+        msg = pop_notifications()[-1]
         self.assertEqual(
-            msg['Subject'], 'bar_1.0-2_source.changes rejected')
+            msg['Subject'], '[ubuntu] bar_1.0-2_source.changes (Rejected)')
 
         # Grant the permissions in the proper series.
         self.switchToAdmin()
@@ -1686,7 +1728,7 @@ class TestUploadProcessor(TestUploadProcessorBase):
     def testUploadPathErrorIntendedForHumans(self):
         # Distribution upload path errors are augmented with a hint
         # to fix the current dput/dupload configuration.
-        # This information gets included in the rejection email along
+        # This information gets included in the rejection emails along
         # with pointer to the Soyuz questions in Launchpad and the
         # reason why the message was sent to the current recipients.
         self.setupBreezy()
@@ -1711,20 +1753,26 @@ class TestUploadProcessor(TestUploadProcessorBase):
              ],
             rejection_message.splitlines())
 
-        contents = [
-            "Subject: bar_1.0-1_source.changes rejected",
+        base_contents = [
+            "Subject: [ubuntu] bar_1.0-1_source.changes (Rejected)",
             "Could not find distribution 'boing'",
             "If you don't understand why your files were rejected",
             "http://answers.launchpad.net/soyuz",
-            "You are receiving this email because you are the "
-               "uploader, maintainer or",
-            "signer of the above package.",
             ]
-        recipients = [
-            'Foo Bar <foo.bar@canonical.com>',
-            'Daniel Silverstone <daniel.silverstone@canonical.com>',
-            ]
-        self.assertEmail(contents, recipients=recipients)
+        expected = []
+        expected.append({
+            "contents": base_contents + [
+                "You are receiving this email because you are the most "
+                    "recent person",
+                "listed in this package's changelog."],
+            "recipient": "daniel.silverstone@canonical.com",
+            })
+        expected.append({
+            "contents": base_contents + [
+                "You are receiving this email because you made this upload."],
+            "recipient": "foo.bar@canonical.com",
+            })
+        self.assertEmails(expected)
 
     def test30QuiltUploadToUnsupportingSeriesIsRejected(self):
         """Ensure that uploads to series without format support are rejected.
@@ -1741,11 +1789,11 @@ class TestUploadProcessor(TestUploadProcessorBase):
         upload_dir = self.queueUpload("bar_1.0-1_3.0-quilt")
         self.processUpload(uploadprocessor, upload_dir)
         # Make sure it was rejected.
-        from_addr, to_addrs, raw_msg = stub.test_emails.pop()
+        [msg] = pop_notifications()
         self.assertTrue(
             "bar_1.0-1.dsc: format '3.0 (quilt)' is not permitted in "
-            "breezy." in raw_msg,
-            "Source was not rejected properly:\n%s" % raw_msg)
+            "breezy." in str(msg),
+            "Source was not rejected properly:\n%s" % msg)
 
     def test30QuiltUpload(self):
         """Ensure that 3.0 (quilt) uploads work properly. """
@@ -1759,13 +1807,12 @@ class TestUploadProcessor(TestUploadProcessorBase):
         upload_dir = self.queueUpload("bar_1.0-1_3.0-quilt")
         self.processUpload(uploadprocessor, upload_dir)
         # Make sure it went ok:
-        from_addr, to_addrs, raw_msg = stub.test_emails.pop()
-        self.assertTrue(
-            "rejected" not in raw_msg,
-            "Failed to upload bar source:\n%s" % raw_msg)
+        [msg] = pop_notifications()
+        self.assertFalse(
+            "rejected" in str(msg), "Failed to upload bar source:\n%s" % msg)
         spph = self.publishPackage("bar", "1.0-1")
 
-        self.assertEquals(
+        self.assertEqual(
             sorted((sprf.libraryfile.filename, sprf.filetype)
                    for sprf in spph.sourcepackagerelease.files),
             [('bar_1.0-1.debian.tar.bz2',
@@ -1774,12 +1821,17 @@ class TestUploadProcessor(TestUploadProcessorBase):
               SourcePackageFileType.DSC),
              ('bar_1.0.orig-comp1.tar.gz',
               SourcePackageFileType.COMPONENT_ORIG_TARBALL),
+             ('bar_1.0.orig-comp1.tar.gz.asc',
+              SourcePackageFileType.COMPONENT_ORIG_TARBALL_SIGNATURE),
              ('bar_1.0.orig-comp2.tar.bz2',
               SourcePackageFileType.COMPONENT_ORIG_TARBALL),
              ('bar_1.0.orig-comp3.tar.xz',
               SourcePackageFileType.COMPONENT_ORIG_TARBALL),
              ('bar_1.0.orig.tar.gz',
-              SourcePackageFileType.ORIG_TARBALL)])
+              SourcePackageFileType.ORIG_TARBALL),
+             ('bar_1.0.orig.tar.gz.asc',
+              SourcePackageFileType.ORIG_TARBALL_SIGNATURE),
+             ])
 
     def test30QuiltUploadWithSameComponentOrig(self):
         """Ensure that 3.0 (quilt) uploads with shared component origs work.
@@ -1794,19 +1846,18 @@ class TestUploadProcessor(TestUploadProcessorBase):
         upload_dir = self.queueUpload("bar_1.0-1_3.0-quilt")
         self.processUpload(uploadprocessor, upload_dir)
         # Make sure it went ok:
-        from_addr, to_addrs, raw_msg = stub.test_emails.pop()
-        self.assertTrue(
-            "rejected" not in raw_msg,
-            "Failed to upload bar source:\n%s" % raw_msg)
+        [msg] = pop_notifications()
+        self.assertFalse(
+            "rejected" in str(msg), "Failed to upload bar source:\n%s" % msg)
         self.publishPackage("bar", "1.0-1")
 
         # Upload another source sharing the same (component) orig.
         upload_dir = self.queueUpload("bar_1.0-2_3.0-quilt_without_orig")
-        self.assertEquals(
+        self.assertEqual(
             self.processUpload(uploadprocessor, upload_dir), ['accepted'])
 
         queue_item = uploadprocessor.last_processed_upload.queue_root
-        self.assertEquals(
+        self.assertEqual(
             sorted((sprf.libraryfile.filename, sprf.filetype) for sprf
                    in queue_item.sources[0].sourcepackagerelease.files),
             [('bar_1.0-2.debian.tar.bz2',
@@ -1815,10 +1866,15 @@ class TestUploadProcessor(TestUploadProcessorBase):
               SourcePackageFileType.DSC),
              ('bar_1.0.orig-comp1.tar.gz',
               SourcePackageFileType.COMPONENT_ORIG_TARBALL),
+             ('bar_1.0.orig-comp1.tar.gz.asc',
+              SourcePackageFileType.COMPONENT_ORIG_TARBALL_SIGNATURE),
              ('bar_1.0.orig-comp2.tar.bz2',
               SourcePackageFileType.COMPONENT_ORIG_TARBALL),
              ('bar_1.0.orig.tar.gz',
-              SourcePackageFileType.ORIG_TARBALL)])
+              SourcePackageFileType.ORIG_TARBALL),
+             ('bar_1.0.orig.tar.gz.asc',
+              SourcePackageFileType.ORIG_TARBALL_SIGNATURE),
+             ])
 
     def test30NativeUpload(self):
         """Ensure that 3.0 (native) uploads work properly. """
@@ -1832,13 +1888,12 @@ class TestUploadProcessor(TestUploadProcessorBase):
         upload_dir = self.queueUpload("bar_1.0_3.0-native")
         self.processUpload(uploadprocessor, upload_dir)
         # Make sure it went ok:
-        from_addr, to_addrs, raw_msg = stub.test_emails.pop()
-        self.assertTrue(
-            "rejected" not in raw_msg,
-            "Failed to upload bar source:\n%s" % raw_msg)
+        [msg] = pop_notifications()
+        self.assertFalse(
+            "rejected" in str(msg), "Failed to upload bar source:\n%s" % msg)
         spph = self.publishPackage("bar", "1.0")
 
-        self.assertEquals(
+        self.assertEqual(
             sorted((sprf.libraryfile.filename, sprf.filetype)
                    for sprf in spph.sourcepackagerelease.files),
             [('bar_1.0.dsc',
@@ -1857,11 +1912,11 @@ class TestUploadProcessor(TestUploadProcessorBase):
         upload_dir = self.queueUpload("bar_1.0-1_1.0-bzip2")
         self.processUpload(uploadprocessor, upload_dir)
         # Make sure it was rejected.
-        from_addr, to_addrs, raw_msg = stub.test_emails.pop()
+        [msg] = pop_notifications()
         self.assertTrue(
             "bar_1.0-1.dsc: is format 1.0 but uses bzip2 compression."
-            in raw_msg,
-            "Source was not rejected properly:\n%s" % raw_msg)
+            in str(msg),
+            "Source was not rejected properly:\n%s" % msg)
 
     def testUploadToWrongPocketIsRejected(self):
         # Uploads to the wrong pocket are rejected.
@@ -1879,21 +1934,27 @@ class TestUploadProcessor(TestUploadProcessorBase):
             "the 'CURRENT' state.",
             rejection_message)
 
-        contents = [
-            "Subject: bar_1.0-1_source.changes rejected",
+        base_contents = [
+            "Subject: [ubuntu] bar_1.0-1_source.changes (Rejected)",
             "Not permitted to upload to the RELEASE pocket in a series "
             "in the 'CURRENT' state.",
             "If you don't understand why your files were rejected",
             "http://answers.launchpad.net/soyuz",
-            "You are receiving this email because you are the "
-               "uploader, maintainer or",
-            "signer of the above package.",
             ]
-        recipients = [
-            'Foo Bar <foo.bar@canonical.com>',
-            'Daniel Silverstone <daniel.silverstone@canonical.com>',
-            ]
-        self.assertEmail(contents, recipients=recipients)
+        expected = []
+        expected.append({
+            "contents": base_contents + [
+                "You are receiving this email because you are the most "
+                    "recent person",
+                "listed in this package's changelog."],
+            "recipient": "daniel.silverstone@canonical.com",
+            })
+        expected.append({
+            "contents": base_contents + [
+                "You are receiving this email because you made this upload."],
+            "recipient": "foo.bar@canonical.com",
+            })
+        self.assertEmails(expected)
 
     def testPGPSignatureNotPreserved(self):
         """PGP signatures should be removed from .changes files.
@@ -1902,7 +1963,7 @@ class TestUploadProcessor(TestUploadProcessorBase):
         should both have the PGP signature removed.
         """
         uploadprocessor = self.setupBreezyAndGetUploadProcessor(
-        policy='insecure')
+            policy='insecure')
         upload_dir = self.queueUpload("bar_1.0-1")
         self.processUpload(uploadprocessor, upload_dir)
         # ACCEPT the upload
@@ -1929,8 +1990,86 @@ class TestUploadProcessor(TestUploadProcessorBase):
 
         self.assertEqual(UploadStatusEnum.REJECTED, result)
         self.assertLogContains(
-            "INFO Failed to parse changes file")
-        self.assertEqual(len(stub.test_emails), 0)
+            "INFO Not sending rejection notice without a signing key.")
+        self.assertEmailQueueLength(0)
+        self.assertEqual([], self.oopses)
+
+    def test_deactivated_key_upload_sends_mail(self):
+        # An upload signed with a deactivated key does not OOPS and sends a
+        # rejection email.
+        self.switchToAdmin()
+        fingerprint = "340CA3BB270E2716C9EE0B768E7EB7086C64A8C5"
+        gpgkeyset = getUtility(IGPGKeySet)
+        gpgkeyset.deactivate(gpgkeyset.getByFingerprint(fingerprint))
+        self.switchToUploader()
+
+        uploadprocessor = self.setupBreezyAndGetUploadProcessor()
+        upload_dir = self.queueUpload("netapplet_1.0-1-signed")
+
+        [result] = self.processUpload(uploadprocessor, upload_dir)
+
+        self.assertEqual(UploadStatusEnum.REJECTED, result)
+        base_contents = [
+            "Subject: [ubuntu] netapplet_1.0-1_source.changes (Rejected)",
+            "File %s/netapplet_1.0-1-signed/netapplet_1.0-1_source.changes "
+            "is signed with a deactivated key %s" % (
+                self.incoming_folder, fingerprint),
+            ]
+        expected = []
+        expected.append({
+            "contents": base_contents + [
+                "You are receiving this email because you are the most "
+                    "recent person",
+                "listed in this package's changelog."],
+            "recipient": "daniel.silverstone@canonical.com",
+            })
+        expected.append({
+            "contents": base_contents + [
+                "You are receiving this email because you made this upload."],
+            "recipient": "foo.bar@canonical.com",
+            })
+        self.assertEmails(expected)
+        self.assertEqual([], self.oopses)
+
+    def test_expired_key_upload_sends_mail(self):
+        # An upload signed with an expired key does not OOPS and sends a
+        # rejection email.
+        self.switchToAdmin()
+        email = "expired.key@canonical.com"
+        fingerprint = "0DD64D28E5F41138533495200E3DB4D402F53CC6"
+        # This key's email address doesn't exist in sampledata, so we need
+        # to create a person for it and import it.
+        self.factory.makePerson(email=email)
+        import_public_key(email)
+        self.switchToUploader()
+
+        uploadprocessor = self.setupBreezyAndGetUploadProcessor()
+        upload_dir = self.queueUpload("netapplet_1.0-1-expiredkey")
+
+        [result] = self.processUpload(uploadprocessor, upload_dir)
+
+        self.assertEqual(UploadStatusEnum.REJECTED, result)
+        base_contents = [
+            "Subject: [ubuntu] netapplet_1.0-1_source.changes (Rejected)",
+            "File "
+            "%s/netapplet_1.0-1-expiredkey/netapplet_1.0-1_source.changes "
+            "is signed with an expired key %s" % (
+                self.incoming_folder, fingerprint),
+            ]
+        expected = []
+        expected.append({
+            "contents": base_contents + [
+                "You are receiving this email because you are the most "
+                    "recent person",
+                "listed in this package's changelog."],
+            "recipient": "daniel.silverstone@canonical.com",
+            })
+        expected.append({
+            "contents": base_contents + [
+                "You are receiving this email because you made this upload."],
+            "recipient": email,
+            })
+        self.assertEmails(expected)
         self.assertEqual([], self.oopses)
 
     def test_ddeb_upload_overrides(self):
@@ -1955,6 +2094,116 @@ class TestUploadProcessor(TestUploadProcessorBase):
 
         self.assertEqual("optional", ddeb.priority_name)
         self.assertEqual(deb.priority_name, ddeb.priority_name)
+
+    def test_redirect_release_uploads(self):
+        # Setting the Distribution.redirect_release_uploads flag causes
+        # release pocket uploads to be redirected to proposed.
+        uploadprocessor = self.setupBreezyAndGetUploadProcessor(
+            policy="insecure")
+        self.switchToAdmin()
+        self.ubuntu.redirect_release_uploads = True
+        # Don't bother with announcements.
+        self.breezy.changeslist = None
+        self.switchToUploader()
+        upload_dir = self.queueUpload("bar_1.0-1")
+        self.processUpload(uploadprocessor, upload_dir)
+        self.assertEmails([{
+            "contents":
+                ["Redirecting ubuntu breezy to ubuntu breezy-proposed."],
+            "recipient": None,
+            }], allow_leftover=True)
+        [queue_item] = self.breezy.getPackageUploads(
+            status=PackageUploadStatus.NEW, name=u"bar",
+            version=u"1.0-1", exact_match=True)
+        self.assertEqual(PackagePublishingPocket.PROPOSED, queue_item.pocket)
+
+        queue_item.acceptFromQueue()
+        pop_notifications()
+        upload_dir = self.queueUpload("bar_1.0-2")
+        self.processUpload(uploadprocessor, upload_dir)
+        self.assertEmails([{
+            "contents":
+                ["Redirecting ubuntu breezy to ubuntu breezy-proposed."],
+            "recipient": None,
+            }], allow_leftover=True)
+        [queue_item] = self.breezy.getPackageUploads(
+            status=PackageUploadStatus.DONE, name=u"bar",
+            version=u"1.0-2", exact_match=True)
+        self.assertEqual(PackagePublishingPocket.PROPOSED, queue_item.pocket)
+
+    def test_source_buildinfo(self):
+        # A buildinfo file is attached to the SPR.
+        uploadprocessor = self.setupBreezyAndGetUploadProcessor()
+        upload_dir = self.queueUpload("bar_1.0-1_buildinfo")
+        with open(os.path.join(upload_dir, "bar_1.0-1_source.buildinfo")) as f:
+            buildinfo_contents = f.read()
+        self.processUpload(uploadprocessor, upload_dir)
+        source_pub = self.publishPackage("bar", "1.0-1")
+        self.assertEqual(
+            buildinfo_contents,
+            source_pub.sourcepackagerelease.buildinfo.read())
+
+    def test_binary_buildinfo(self):
+        # A buildinfo file is attached to the BPB.
+        uploadprocessor = self.setupBreezyAndGetUploadProcessor()
+        upload_dir = self.queueUpload("bar_1.0-1")
+        self.processUpload(uploadprocessor, upload_dir)
+        source_pub = self.publishPackage("bar", "1.0-1")
+        [build] = source_pub.createMissingBuilds()
+        self.switchToAdmin()
+        [queue_item] = self.breezy.getPackageUploads(
+            status=PackageUploadStatus.ACCEPTED,
+            version=u"1.0-1", name=u"bar")
+        queue_item.setDone()
+        build.buildqueue_record.markAsBuilding(self.factory.makeBuilder())
+        build.updateStatus(
+            BuildStatus.UPLOADING, builder=build.buildqueue_record.builder)
+        self.switchToUploader()
+        shutil.rmtree(upload_dir)
+        self.layer.txn.commit()
+        behaviour = IBuildFarmJobBehaviour(build)
+        leaf_name = behaviour.getUploadDirLeaf(build.build_cookie)
+        upload_dir = self.queueUpload(
+            "bar_1.0-1_binary_buildinfo", queue_entry=leaf_name)
+        with open(os.path.join(upload_dir, "bar_1.0-1_i386.buildinfo")) as f:
+            buildinfo_contents = f.read()
+        self.options.context = "buildd"
+        self.options.builds = True
+        BuildUploadHandler(
+            uploadprocessor, self.incoming_folder, leaf_name).process()
+        self.assertEqual(BuildStatus.FULLYBUILT, build.status)
+        self.assertEqual(buildinfo_contents, build.buildinfo.read())
+
+    def test_binary_buildinfo_arch_indep(self):
+        # A buildinfo file for an arch-indep build is attached to the BPB.
+        uploadprocessor = self.setupBreezyAndGetUploadProcessor()
+        upload_dir = self.queueUpload("bar_1.0-1")
+        self.processUpload(uploadprocessor, upload_dir)
+        source_pub = self.publishPackage("bar", "1.0-1")
+        [build] = source_pub.createMissingBuilds()
+        self.switchToAdmin()
+        [queue_item] = self.breezy.getPackageUploads(
+            status=PackageUploadStatus.ACCEPTED,
+            version=u"1.0-1", name=u"bar")
+        queue_item.setDone()
+        build.buildqueue_record.markAsBuilding(self.factory.makeBuilder())
+        build.updateStatus(
+            BuildStatus.UPLOADING, builder=build.buildqueue_record.builder)
+        self.switchToUploader()
+        shutil.rmtree(upload_dir)
+        self.layer.txn.commit()
+        behaviour = IBuildFarmJobBehaviour(build)
+        leaf_name = behaviour.getUploadDirLeaf(build.build_cookie)
+        upload_dir = self.queueUpload(
+            "bar_1.0-1_binary_buildinfo_indep", queue_entry=leaf_name)
+        with open(os.path.join(upload_dir, "bar_1.0-1_i386.buildinfo")) as f:
+            buildinfo_contents = f.read()
+        self.options.context = "buildd"
+        self.options.builds = True
+        BuildUploadHandler(
+            uploadprocessor, self.incoming_folder, leaf_name).process()
+        self.assertEqual(BuildStatus.FULLYBUILT, build.status)
+        self.assertEqual(buildinfo_contents, build.buildinfo.read())
 
 
 class TestUploadHandler(TestUploadProcessorBase):
@@ -2004,10 +2253,8 @@ class TestUploadHandler(TestUploadProcessorBase):
 
         builder = self.factory.makeBuilder()
         build.buildqueue_record.markAsBuilding(builder)
-        build.builder = build.buildqueue_record.builder
-
-        build.status = BuildStatus.UPLOADING
-        build.date_finished = UTC_NOW
+        build.updateStatus(
+            BuildStatus.UPLOADING, builder=build.buildqueue_record.builder)
         self.switchToUploader()
 
         # Upload and accept a binary for the primary archive source.
@@ -2015,16 +2262,16 @@ class TestUploadHandler(TestUploadProcessorBase):
 
         # Commit so the build cookie has the right ids.
         self.layer.txn.commit()
-        leaf_name = build.getUploadDirLeaf(build.getBuildCookie())
+        behaviour = IBuildFarmJobBehaviour(build)
+        leaf_name = behaviour.getUploadDirLeaf(build.build_cookie)
         os.mkdir(os.path.join(self.incoming_folder, leaf_name))
         self.options.context = 'buildd'
         self.options.builds = True
         BuildUploadHandler(self.uploadprocessor, self.incoming_folder,
             leaf_name).process()
-        self.assertEquals(1, len(self.oopses))
-        self.assertEquals(
-            BuildStatus.FAILEDTOUPLOAD, build.status)
-        self.assertEquals(builder, build.builder)
+        self.assertEqual(1, len(self.oopses))
+        self.assertEqual(BuildStatus.FAILEDTOUPLOAD, build.status)
+        self.assertEqual(builder, build.builder)
         self.assertIsNot(None, build.duration)
         log_contents = build.upload_log.read()
         self.assertTrue('ERROR Exception while processing upload '
@@ -2049,7 +2296,7 @@ class TestUploadHandler(TestUploadProcessorBase):
         queue_item.setDone()
 
         build.buildqueue_record.markAsBuilding(self.factory.makeBuilder())
-        build.status = BuildStatus.UPLOADING
+        build.updateStatus(BuildStatus.UPLOADING)
         self.switchToUploader()
 
         # Upload and accept a binary for the primary archive source.
@@ -2057,18 +2304,19 @@ class TestUploadHandler(TestUploadProcessorBase):
 
         # Commit so the build cookie has the right ids.
         self.layer.txn.commit()
-        leaf_name = build.getUploadDirLeaf(build.getBuildCookie())
+        behaviour = IBuildFarmJobBehaviour(build)
+        leaf_name = behaviour.getUploadDirLeaf(build.build_cookie)
         upload_dir = self.queueUpload("bar_1.0-1_binary",
                 queue_entry=leaf_name)
         self.options.context = 'buildd'
         self.options.builds = True
-        last_stub_mail_count = len(stub.test_emails)
+        pop_notifications()
         BuildUploadHandler(self.uploadprocessor, self.incoming_folder,
             leaf_name).process()
         self.layer.txn.commit()
         # No emails are sent on success
-        self.assertEquals(len(stub.test_emails), last_stub_mail_count)
-        self.assertEquals(BuildStatus.FULLYBUILT, build.status)
+        self.assertEmailQueueLength(0)
+        self.assertEqual(BuildStatus.FULLYBUILT, build.status)
         # Upon full build the upload log is unset.
         self.assertIs(None, build.upload_log)
 
@@ -2080,12 +2328,12 @@ class TestUploadHandler(TestUploadProcessorBase):
         build = self.factory.makeSourcePackageRecipeBuild(sourcename=u"bar",
             distroseries=self.breezy, archive=archive,
             requester=archive.owner)
-        self.assertEquals(archive.owner, build.requester)
-        self.factory.makeSourcePackageRecipeBuildJob(recipe_build=build)
+        self.assertEqual(archive.owner, build.requester)
         self.switchToUploader()
         # Commit so the build cookie has the right ids.
         self.layer.txn.commit()
-        leaf_name = build.getUploadDirLeaf(build.getBuildCookie())
+        behaviour = IBuildFarmJobBehaviour(build)
+        leaf_name = behaviour.getUploadDirLeaf(build.build_cookie)
         relative_path = "~%s/%s/%s/%s" % (
             archive.owner.name, archive.name, self.breezy.distribution.name,
             self.breezy.name)
@@ -2093,12 +2341,9 @@ class TestUploadHandler(TestUploadProcessorBase):
             "bar_1.0-1", queue_entry=leaf_name, relative_path=relative_path)
         self.options.context = 'buildd'
         self.options.builds = True
-        build.jobStarted()
-        # Commit so date_started is recorded and doesn't cause constraint
-        # violations later.
-        build.status = BuildStatus.UPLOADING
-        build.date_finished = UTC_NOW
-        Store.of(build).flush()
+        build.updateStatus(BuildStatus.BUILDING)
+        build.updateStatus(BuildStatus.UPLOADING)
+        self.switchToUploader()
         BuildUploadHandler(self.uploadprocessor, self.incoming_folder,
             leaf_name).process()
         self.layer.txn.commit()
@@ -2108,8 +2353,8 @@ class TestUploadHandler(TestUploadProcessorBase):
         # Properly uploaded source packages should result in the
         # build status changing to FULLYBUILT.
         build = self.doSuccessRecipeBuild()
-        self.assertEquals(BuildStatus.FULLYBUILT, build.status)
-        self.assertEquals(None, build.builder)
+        self.assertEqual(BuildStatus.FULLYBUILT, build.status)
+        self.assertIsNone(build.builder)
         self.assertIsNot(None, build.duration)
         # Upon full build the upload log is unset.
         self.assertIs(None, build.upload_log)
@@ -2120,7 +2365,7 @@ class TestUploadHandler(TestUploadProcessorBase):
         See bug 778437.
         """
         self.doSuccessRecipeBuild()
-        self.assertEquals(len(pop_notifications()), 0, pop_notifications)
+        self.assertEmailQueueLength(0)
 
     def doFailureRecipeBuild(self):
         # A source package recipe build will fail if no files are present.
@@ -2131,20 +2376,16 @@ class TestUploadHandler(TestUploadProcessorBase):
         archive.require_virtualized = False
         build = self.factory.makeSourcePackageRecipeBuild(sourcename=u"bar",
             distroseries=self.breezy, archive=archive)
-        self.factory.makeSourcePackageRecipeBuildJob(recipe_build=build)
         # Commit so the build cookie has the right ids.
         Store.of(build).flush()
-        leaf_name = build.getUploadDirLeaf(build.getBuildCookie())
+        behaviour = IBuildFarmJobBehaviour(build)
+        leaf_name = behaviour.getUploadDirLeaf(build.build_cookie)
         os.mkdir(os.path.join(self.incoming_folder, leaf_name))
         self.options.context = 'buildd'
         self.options.builds = True
-        build.jobStarted()
+        build.updateStatus(BuildStatus.BUILDING)
+        build.updateStatus(BuildStatus.UPLOADING)
         self.switchToUploader()
-        # Commit so date_started is recorded and doesn't cause constraint
-        # violations later.
-        Store.of(build).flush()
-        build.status = BuildStatus.UPLOADING
-        build.date_finished = UTC_NOW
         BuildUploadHandler(self.uploadprocessor, self.incoming_folder,
             leaf_name).process()
         self.layer.txn.commit()
@@ -2152,8 +2393,8 @@ class TestUploadHandler(TestUploadProcessorBase):
 
     def testSourcePackageRecipeBuild_fail(self):
         build = self.doFailureRecipeBuild()
-        self.assertEquals(BuildStatus.FAILEDTOUPLOAD, build.status)
-        self.assertEquals(None, build.builder)
+        self.assertEqual(BuildStatus.FAILEDTOUPLOAD, build.status)
+        self.assertIsNone(build.builder)
         self.assertIsNot(None, build.duration)
         self.assertIsNot(None, build.upload_log)
 
@@ -2161,12 +2402,10 @@ class TestUploadHandler(TestUploadProcessorBase):
         # Failures should generate a message that includes the upload log URL.
         self.doFailureRecipeBuild()
         (mail,) = pop_notifications()
-        # Python2.6 prefixes continuation lines with a \t, 2.7 uses a single
-        # space instead, try both to stay compatible (see email/generator.py
-        # Generator._write_headers for details).
-        subject = mail['Subject'].replace('\n\t', ' ').replace('\n ', ' ')
+        # Unfold continuation lines.
+        subject = mail['Subject'].replace('\n ', ' ')
         self.assertIn('Failed to upload', subject)
-        body = mail.get_payload(decode=True)
+        body = mail.get_payload(decode=True).decode('UTF-8')
         self.assertIn('Upload Log: http', body)
 
     def doDeletedRecipeBuild(self):
@@ -2178,23 +2417,22 @@ class TestUploadHandler(TestUploadProcessorBase):
         archive.require_virtualized = False
         build = self.factory.makeSourcePackageRecipeBuild(sourcename=u"bar",
             distroseries=self.breezy, archive=archive)
-        self.factory.makeSourcePackageRecipeBuildJob(recipe_build=build)
         self.switchToUploader()
         # Commit so the build cookie has the right ids.
         Store.of(build).flush()
-        leaf_name = build.getUploadDirLeaf(build.getBuildCookie())
+        behaviour = IBuildFarmJobBehaviour(build)
+        leaf_name = behaviour.getUploadDirLeaf(build.build_cookie)
         os.mkdir(os.path.join(self.incoming_folder, leaf_name))
         self.options.context = 'buildd'
         self.options.builds = True
-        build.jobStarted()
+        build.updateStatus(BuildStatus.BUILDING)
         self.switchToAdmin()
         build.recipe.destroySelf()
         self.switchToUploader()
         # Commit so date_started is recorded and doesn't cause constraint
         # violations later.
         Store.of(build).flush()
-        build.status = BuildStatus.UPLOADING
-        build.date_finished = UTC_NOW
+        build.updateStatus(BuildStatus.UPLOADING)
         BuildUploadHandler(self.uploadprocessor, self.incoming_folder,
             leaf_name).process()
         self.layer.txn.commit()
@@ -2202,14 +2440,34 @@ class TestUploadHandler(TestUploadProcessorBase):
 
     def testSourcePackageRecipeBuild_deleted_recipe(self):
         build = self.doDeletedRecipeBuild()
-        self.assertEquals(BuildStatus.FAILEDTOUPLOAD, build.status)
-        self.assertEquals(None, build.builder)
+        self.assertEqual(BuildStatus.FAILEDTOUPLOAD, build.status)
+        self.assertIsNone(build.builder)
         self.assertIsNot(None, build.duration)
         self.assertIs(None, build.upload_log)
 
-    def testBuildWithInvalidStatus(self):
-        # Builds with an invalid (non-UPLOADING) status should trigger
-        # a warning but be left alone.
+    def testSnapBuild_deleted_snap(self):
+        # A snap build will fail if the snap is deleted.
+        self.switchToAdmin()
+        build = self.factory.makeSnapBuild()
+        self.switchToUploader()
+        Store.of(build).flush()
+        behaviour = IBuildFarmJobBehaviour(build)
+        leaf_name = behaviour.getUploadDirLeaf(build.build_cookie)
+        os.mkdir(os.path.join(self.incoming_folder, leaf_name))
+        self.options.context = 'buildd'
+        self.options.builds = True
+        build.updateStatus(BuildStatus.UPLOADING)
+        self.switchToAdmin()
+        build.snap.destroySelf()
+        self.switchToUploader()
+        BuildUploadHandler(
+            self.uploadprocessor, self.incoming_folder, leaf_name).process()
+        self.assertFalse(
+            os.path.exists(os.path.join(self.incoming_folder, leaf_name)))
+        self.assertTrue(
+            os.path.exists(os.path.join(self.failed_folder, leaf_name)))
+
+    def processUploadWithBuildStatus(self, status):
         upload_dir = self.queueUpload("bar_1.0-1")
         self.processUpload(self.uploadprocessor, upload_dir)
         source_pub = self.publishPackage('bar', '1.0-1')
@@ -2221,31 +2479,56 @@ class TestUploadHandler(TestUploadProcessorBase):
             status=PackageUploadStatus.ACCEPTED,
             version=u"1.0-1", name=u"bar")
         queue_item.setDone()
+        pop_notifications()
 
         build.buildqueue_record.markAsBuilding(self.factory.makeBuilder())
-        build.status = BuildStatus.BUILDING
+        build.updateStatus(status)
         self.switchToUploader()
 
         shutil.rmtree(upload_dir)
 
         # Commit so the build cookie has the right ids.
         self.layer.txn.commit()
-        leaf_name = build.getUploadDirLeaf(build.getBuildCookie())
+        behaviour = IBuildFarmJobBehaviour(build)
+        leaf_name = behaviour.getUploadDirLeaf(build.build_cookie)
         upload_dir = self.queueUpload(
             "bar_1.0-1_binary", queue_entry=leaf_name)
         self.options.context = 'buildd'
         self.options.builds = True
-        len(stub.test_emails)
+        self.assertEmailQueueLength(0)
         BuildUploadHandler(self.uploadprocessor, self.incoming_folder,
             leaf_name).process()
         self.layer.txn.commit()
+
+        return build, leaf_name
+
+    def testBuildStillBuilding(self):
+        # Builds that are still BUILDING should be left alone.  The
+        # upload directory may already be in place, but buildd-manager
+        # will set the status to UPLOADING when it's handed off.
+        build, leaf_name = self.processUploadWithBuildStatus(
+            BuildStatus.BUILDING)
         # The build status is not changed
         self.assertTrue(
             os.path.exists(os.path.join(self.incoming_folder, leaf_name)))
-        self.assertEquals(BuildStatus.BUILDING, build.status)
+        self.assertEqual(BuildStatus.BUILDING, build.status)
+        self.assertLogContains("Build status is BUILDING. Ignoring.")
+
+    def testBuildWithInvalidStatus(self):
+        # Builds with an invalid (not UPLOADING or BUILDING) status
+        # should trigger a failure. We've probably raced with
+        # buildd-manager due to a new and assuredly extra-special bug.
+        build, leaf_name = self.processUploadWithBuildStatus(
+            BuildStatus.NEEDSBUILD)
+        # The build status is not changed, but the upload has moved.
+        self.assertFalse(
+            os.path.exists(os.path.join(self.incoming_folder, leaf_name)))
+        self.assertTrue(
+            os.path.exists(os.path.join(self.failed_folder, leaf_name)))
+        self.assertEqual(BuildStatus.NEEDSBUILD, build.status)
         self.assertLogContains(
-            "Expected build status to be 'UPLOADING', was BUILDING. "
-            "Ignoring.")
+            "Expected build status to be UPLOADING or BUILDING, was "
+            "NEEDSBUILD.")
 
     def testOrderFilenames(self):
         """orderFilenames sorts _source.changes ahead of other files."""
@@ -2277,7 +2560,7 @@ class ParseBuildUploadLeafNameTests(TestCase):
     """Tests for parse_build_upload_leaf_name."""
 
     def test_valid(self):
-        self.assertEquals(
+        self.assertEqual(
             ('PACKAGEBUILD', 60),
             parse_build_upload_leaf_name("20100812-PACKAGEBUILD-60"))
 

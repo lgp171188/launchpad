@@ -54,10 +54,10 @@ The view provides a list of enabled links that is rendered by the template.
       <h2>Get Involved</h2>
       <ul class="involvement">
         <li>
-          <a href=... class="...bugs">Report a bug</a>...
+          <a class="...bugs" href=...>Report a bug</a>...
         </li>
         <li>
-          <a href=... class="...answers">Ask a question</a>...
+          <a class="...answers" href=...>Ask a question</a>...
         </li>
       </ul>
     ...
@@ -87,11 +87,11 @@ to configure each service.
 
     >>> for link in view.configuration_links:
     ...     print link['link'].name
+    configure_code
     configure_bugtracker
-    configure_answers
     configure_translations
-    set_branch
-
+    configure_answers
+    
 The registration status is determined with the 'configuration_states'
 property.  Notice that blueprints are not included in the
 configuration links nor the completeness computation as the use of
@@ -101,7 +101,7 @@ blueprints is not promoted.
     ...     print key, view.configuration_states[key]
     configure_answers False
     configure_bugtracker False
-    configure_codehosting False
+    configure_code False
     configure_translations False
 
 The percentage of the registration completed can be determined by
@@ -120,7 +120,7 @@ Changing the product's usage is reflected in the view properties.
     ...     print key, view.configuration_states[key]
     configure_answers False
     configure_bugtracker False
-    configure_codehosting False
+    configure_code False
     configure_translations True
 
     >>> print pretty(view.registration_completeness)
@@ -141,13 +141,13 @@ indicator showing whether it has been configured or not.
 
     >>> print find_tag_by_id(rendered, 'configuration_links')
     <table...
-    <a href="http://launchpad.dev/bread/+configure-bugtracker"...
+    <a ...href="http://launchpad.test/bread/+configure-code"...
     <span class="sprite no action-icon">...
-    <a href="http://launchpad.dev/bread/+configure-answers"...
-    <span class="sprite no action-icon">...
-    <a href="http://launchpad.dev/bread/+configure-translations"...
+    <a ...href="http://launchpad.test/bread/+configure-bugtracker"...
+    <span class="sprite no action-icon">...    
+    <a ...href="http://launchpad.test/bread/+configure-translations"...
     <span class="sprite yes action-icon">...
-    <a href="http://launchpad.dev/bread/trunk/+setbranch"...
+    <a ...href="http://launchpad.test/bread/+configure-answers"...
     <span class="sprite no action-icon">...
     </table>
 
@@ -155,7 +155,7 @@ Project groups are supported too, but they only display the
 applications used by their products.
 
     >>> project_group = factory.makeProject(name='box', owner=product.owner)
-    >>> product.project = project_group
+    >>> product.projectgroup = project_group
 
     >>> view = create_view(project_group, '+get-involved')
     >>> print view.blueprints_usage.name
@@ -216,6 +216,8 @@ If a product is translatable, translations is enabled in the involvment menu.
     ...     productseries=series,
     ...     language_codes=['es'])
     >>> product.translations_usage = ServiceUsage.LAUNCHPAD
+    >>> from lp.services.propertycache import clear_property_cache
+    >>> clear_property_cache(project_group)
     >>> project_group.has_translatable()
     True
 
@@ -263,10 +265,10 @@ The menu when viewed from a product page.
     >>> for link in sorted(
     ...     menuapi.navigation.values(), key=attrgetter('sort_key')):
     ...     print link.url
-    http://bugs.launchpad.dev/bread/+filebug
-    http://answers.launchpad.dev/bread/+addquestion
-    http://translations.launchpad.dev/bread
-    http://blueprints.launchpad.dev/bread/+addspec
+    http://bugs.launchpad.test/bread/+filebug
+    http://answers.launchpad.test/bread/+addquestion
+    http://translations.launchpad.test/bread
+    http://blueprints.launchpad.test/bread/+addspec
 
     >>> from lp.registry.browser.pillar import InvolvedMenu
     >>> from lp.testing.menu import check_menu_links
@@ -281,10 +283,10 @@ The menu when viewed from a distribution page.
     ...     menuapi.navigation.values(), key=attrgetter('sort_key')):
     ...     if link.enabled:
     ...         print link.url
-    http://bugs.launchpad.dev/umbra/+filebug
-    http://answers.launchpad.dev/umbra/+addquestion
-    http://translations.launchpad.dev/umbra
-    http://blueprints.launchpad.dev/umbra/+addspec
+    http://bugs.launchpad.test/umbra/+filebug
+    http://answers.launchpad.test/umbra/+addquestion
+    http://translations.launchpad.test/umbra
+    http://blueprints.launchpad.test/umbra/+addspec
 
 The menu when viewed from a distribution source package page.
 
@@ -294,5 +296,5 @@ The menu when viewed from a distribution source package page.
     ...     menuapi.navigation.values(), key=attrgetter('sort_key')):
     ...     if link.enabled:
     ...         print link.url
-    http://bugs.launchpad.dev/umbra/+source/box/+filebug
-    http://answers.launchpad.dev/umbra/+source/box/+addquestion
+    http://bugs.launchpad.test/umbra/+source/box/+filebug
+    http://answers.launchpad.test/umbra/+source/box/+addquestion

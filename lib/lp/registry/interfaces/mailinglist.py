@@ -1,7 +1,5 @@
-# Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2015 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
-
-# pylint: disable-msg=E0211,E0213
 
 """Mailing list interfaces."""
 
@@ -18,7 +16,6 @@ __all__ = [
     'IMailingListSubscription',
     'IMessageApproval',
     'IMessageApprovalSet',
-    'IMessageHeldEvent',
     'MailingListStatus',
     'PURGE_STATES',
     'PostedMessageStatus',
@@ -30,11 +27,7 @@ from lazr.enum import (
     DBEnumeratedType,
     DBItem,
     )
-from lazr.lifecycle.interfaces import IObjectCreatedEvent
-from zope.interface import (
-    Attribute,
-    Interface,
-    )
+from zope.interface import Interface
 from zope.schema import (
     Bool,
     Choice,
@@ -66,10 +59,6 @@ class MailingListStatus(DBEnumeratedType):
     """
 
     # REGISTERED and DECLINED are obsolete states, no longer used.
-    # Originally, mailing lists requests had to be approved by a member of
-    # ~mailing-list-experts but we've since changed that to allow for
-    # auto-approval.  We keep these states for historical purposes, but no
-    # longer use them.
 
     REGISTERED = DBItem(1, """
         Registered; request creation
@@ -402,27 +391,11 @@ class IMailingList(Interface):
             not own the given email address.
         """
 
-    def getSubscribedAddresses():
-        """Return the set of subscribed email addresses for members.
-
-        :return: a list of email addresses (as strings) for all
-            subscribed members of the mailing list.
-        """
-
     def getSubscribers():
         """Return the set of subscribers.
 
         :return: a result set of the subscribers sorted by full name.  These
         are the people who will receive messages posted to the mailing list.
-        """
-
-    def getSenderAddresses():
-        """Return the set of all email addresses for members.
-
-        :return: a list of the registered and validated email addresses
-            (as strings) for all members of the mailing list's team, in no
-            particular order.  These represent all the addresses which are
-            allowed to post to the mailing list.
         """
 
     def holdMessage(message):
@@ -484,6 +457,17 @@ class IMailingListSet(Interface):
         :return: The `IMailingList` for the named team or None if no mailing
             list is registered for the named team, or the team doesn't exist.
         :raises AssertionError: When `team_name` is not a string.
+        """
+
+    def getSubscriptionsForTeams(person, teams):
+        """Return a person's subscriptions to usable lists for a set of teams.
+
+        :param person: An `IPerson`.
+        :param teams: A list of `ITeam`s.
+        :return: A dictionary mapping team IDs to tuples of `IMailingList`
+            IDs and `IMailingListSubscription` IDs; the second element will
+            be None if a team has a list to which the person is not
+            subscribed.
         """
 
     def getSubscribedAddresses(team_names):
@@ -850,13 +834,6 @@ class IHeldMessageDetails(Interface):
         description=_('The RFC 2822 Subject header.'),
         required=True, readonly=True)
 
-    sender = Text(
-        title=_('Message author'),
-        description=_('The message originator (i.e. author), formatted as '
-                      'per RFC 2822 and derived from the RFC 2822 originator '
-                      'fields From and Reply-To.  This is a unicode string.'),
-        required=True, readonly=True)
-
     author = Object(
         schema=IPerson,
         title=_('Message author'),
@@ -871,12 +848,6 @@ class IHeldMessageDetails(Interface):
     body = Text(
         title=_('Plain text message body'),
         description=_('The message body as plain text.'),
-        required=True, readonly=True)
-
-    email_message = Text(
-        title=_('The email message object'),
-        description=_('The email.message.Message object created from the '
-                      "original message's raw text."),
         required=True, readonly=True)
 
 
@@ -939,10 +910,3 @@ class UnsafeToPurge(Exception):
     def __str__(self):
         return 'Cannot purge mailing list in %s state: %s' % (
             self._mailing_list.status.name, self._mailing_list.team.name)
-
-
-class IMessageHeldEvent(IObjectCreatedEvent):
-    """A mailing list message has been held for moderator approval."""
-
-    mailing_list = Attribute('The mailing list the message is held for.')
-    message_id = Attribute('The Message-ID of the held message.')

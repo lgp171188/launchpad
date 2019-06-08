@@ -1,16 +1,16 @@
-# Copyright 2009-2010 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 import doctest
 import unittest
 
-from zope.app.form.interfaces import (
+from zope.formlib.interfaces import (
     IDisplayWidget,
     IInputWidget,
     )
 from zope.interface import (
     directlyProvides,
-    implements,
+    implementer,
     )
 
 from lp.app.browser.launchpadform import LaunchpadFormView
@@ -33,8 +33,10 @@ class LaunchpadFormTest(unittest.TestCase):
         # If more than one returns True, then that widget may get included
         # in the form twice.
         form = LaunchpadFormView(None, None)
+
         class FakeWidget:
             pass
+
         widget = FakeWidget()
         form.widgets = {'widget': widget}
         # test every combination of the three interfaces:
@@ -67,21 +69,25 @@ class LaunchpadFormTest(unittest.TestCase):
         """Verify a field marked .for_display has no (Optional) marker."""
         # IInputWidgets have an (Optional) marker if they are not required.
         form = LaunchpadFormView(None, None)
+
+        @implementer(IInputWidget)
         class FakeInputWidget:
-            implements(IInputWidget)
             def __init__(self, required):
                 self.required = required
+
         form.widgets = {'widget': FakeInputWidget(required=False)}
         self.assertTrue(form.showOptionalMarker('widget'))
         # Required IInputWidgets have no (Optional) marker.
         form.widgets = {'widget': FakeInputWidget(required=True)}
         self.assertFalse(form.showOptionalMarker('widget'))
+
         # IDisplayWidgets have no (Optional) marker, regardless of whether
         # they are required or not, since they are read only.
+        @implementer(IDisplayWidget)
         class FakeDisplayWidget:
-            implements(IDisplayWidget)
             def __init__(self, required):
                 self.required = required
+
         form.widgets = {'widget': FakeDisplayWidget(required=False)}
         self.assertFalse(form.showOptionalMarker('widget'))
         form.widgets = {'widget': FakeDisplayWidget(required=True)}
@@ -89,14 +95,13 @@ class LaunchpadFormTest(unittest.TestCase):
 
 
 def doctest_custom_widget_with_setUpFields_override():
-    """As a regression test, it is important to note that the custom_widget
-    class advisor should still work when setUpFields is overridden.  For
-    instance, consider this custom widget and view:
+    """As a regression test, it is important to note that custom widgets
+    should still work when setUpFields is overridden.  For instance,
+    consider this custom widget and view:
 
-        >>> from zope.app.form.interfaces import IDisplayWidget, IInputWidget
+        >>> from zope.formlib.interfaces import IDisplayWidget, IInputWidget
         >>> from zope.interface import directlyProvides, implements
-        >>> from lp.app.browser.launchpadform import (
-        ...     LaunchpadFormView, custom_widget)
+        >>> from lp.app.browser.launchpadform import LaunchpadFormView
         >>> from zope.schema import Bool
         >>> from zope.publisher.browser import TestRequest
         >>> from zope.formlib import form
@@ -115,7 +120,7 @@ def doctest_custom_widget_with_setUpFields_override():
         ...         self.value = value
         ...
         >>> class CustomView(LaunchpadFormView):
-        ...     custom_widget('my_bool', CustomStubWidget)
+        ...     custom_widget_my_bool = CustomStubWidget
         ...     def setUpFields(self):
         ...         self.form_fields = form.Fields(Bool(__name__='my_bool'))
         ...

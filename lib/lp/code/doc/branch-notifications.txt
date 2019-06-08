@@ -41,35 +41,37 @@ also sends the email to the list of recipients.
     ...     BranchSubscriptionNotificationLevel.FULL,
     ...     BranchSubscriptionDiffSize.WHOLEDIFF,
     ...     CodeReviewNotificationLevel.NOEMAIL, branch.owner)
-    >>> BranchMailer.forRevision(branch, 1, 'foo@canonical.com',
-    ...     'The contents.', None, 'Subject line').sendAll()
+    >>> BranchMailer.forRevision(branch, 'foo@canonical.com',
+    ...     'The contents.', None, 'Subject line', revno=1).sendAll()
 
     >>> notifications = pop_notifications()
     >>> len(notifications)
     1
     >>> branch_notification = notifications[0]
-    >>> print branch_notification['To']
+    >>> print(branch_notification['To'])
     Sample Person <test@canonical.com>
-    >>> print branch_notification['From']
+    >>> print(branch_notification['From'])
     foo@canonical.com
-    >>> print branch_notification['Subject']
+    >>> print(branch_notification['Subject'])
     Subject line
-    >>> print branch_notification['X-Launchpad-Project']
+    >>> print(branch_notification['X-Launchpad-Project'])
     firefox
-    >>> print branch_notification['X-Launchpad-Branch']
+    >>> print(branch_notification['X-Launchpad-Branch'])
     ~name12/firefox/main
-    >>> print branch_notification['X-Launchpad-Message-Rationale']
+    >>> print(branch_notification['X-Launchpad-Message-Rationale'])
     Subscriber
+    >>> print(branch_notification['X-Launchpad-Message-For'])
+    name12
     >>> notification_body = branch_notification.get_payload(decode=True)
-    >>> print notification_body #doctest: -NORMALIZE_WHITESPACE
+    >>> print(notification_body) #doctest: -NORMALIZE_WHITESPACE
     The contents.
     <BLANKLINE>
     --
     lp://dev/~name12/firefox/main
-    http://code.launchpad.dev/~name12/firefox/main
+    http://code.launchpad.test/~name12/firefox/main
     <BLANKLINE>
     You are subscribed to branch lp://dev/~name12/firefox/main.
-    To unsubscribe from this branch go to http://code.launchpad.dev/~name12/firefox/main/+edit-subscription
+    To unsubscribe from this branch go to http://code.launchpad.test/~name12/firefox/main/+edit-subscription
     <BLANKLINE>
     >>> branch.unsubscribe(branch.owner, branch.owner)
 
@@ -95,7 +97,6 @@ previous one.  The size limit is one of the following:
   * Send the entire diff
 
     >>> from lp.registry.interfaces.person import IPersonSet
-    >>> from lp.code.interfaces.branch import IBranch, IBranchSet
     >>> personset = getUtility(IPersonSet)
 
     >>> def subscribe_user_by_email(branch, email, level, size, level2):
@@ -151,7 +152,7 @@ Team are subscribed in the same way.
 And to make sure we have them:
 
     >>> for subscription in branch.subscriptions:
-    ...     print subscription.person.name
+    ...     print(subscription.person.name)
     no-priv
     name12
     carlos
@@ -181,7 +182,7 @@ to allow email filtering.
     >>> for email in recipients.getEmails():
     ...     subscription, header = recipients.getReason(email)
     ...     if subscription.notification_level in interested_levels:
-    ...         print email, subscription.max_diff_lines.title, header
+    ...         print(email, subscription.max_diff_lines.title, header)
     carlos@canonical.com          Don't send diffs  Subscriber
     celso.providelo@canonical.com 1000 lines        Subscriber
     daf@canonical.com             5000 lines        Subscriber
@@ -203,18 +204,18 @@ to allow email filtering.
     ...             attachment = '\n' + root[1].get_payload(decode=True)
     ...     else:
     ...         body = email.get_payload(decode=True)
-    ...     print 'To: %s\n%s%s' % (email['To'], body, attachment)
+    ...     print('To: %s\n%s%s' % (email['To'], body, attachment))
 
 We need to create some sufficiently large diffs to compare against.
 
-    >>> diff = '\n'.join([str(value) for value in xrange(6000)])
+    >>> diff = '\n'.join([str(value) for value in range(6000)])
     >>> message = 'Test message.\n'
 
 Send the revision notifications.
 
     >>> BranchMailer.forRevision(
-    ...     branch, 1234, 'no-reply@canonical.com', message, diff,
-    ...     None).sendAll()
+    ...     branch, 'no-reply@canonical.com', message, diff,
+    ...     None, revno=1234).sendAll()
     >>> notifications = pop_notifications()
     >>> len(notifications)
     6
@@ -228,11 +229,11 @@ Send the revision notifications.
 
 There are also some useful headers for filtering emails.
 
-    >>> print msg['X-Launchpad-Branch']
+    >>> print(msg['X-Launchpad-Branch'])
     ~name12/firefox/main
-    >>> print msg['X-Launchpad-Branch-Revision-Number']
+    >>> print(msg['X-Launchpad-Branch-Revision-Number'])
     1234
-    >>> print msg['X-Launchpad-Project']
+    >>> print(msg['X-Launchpad-Project'])
     firefox
     >>> print_to_and_body(notifications.pop(0))
     To: Celso Providelo <celso.providelo@canonical.com>
@@ -248,7 +249,7 @@ There are also some useful headers for filtering emails.
     The size of the diff (6000 lines) is larger than your specified limit of
     5000 lines...
 
-Foo Bar is getting the email due to his membership in the Launchpad
+Foo Bar is getting the email due to their membership in the Launchpad
 developers team.  Since the email is due to a team, there is no
 unsubscribe link.
 
@@ -260,7 +261,7 @@ unsubscribe link.
     Your team Launchpad Developers is subscribed to branch
     lp://dev/~name12/firefox/main.
     To unsubscribe from this branch go to
-    http://code.launchpad.dev/~name12/firefox/main/+edit-subscription
+    http://code.launchpad.test/~name12/firefox/main/+edit-subscription
     <BLANKLINE>
     0 1 ... 5999...
 
@@ -280,15 +281,15 @@ Mark's unsubscription link is to his personal branch subscription.
     <BLANKLINE>
     ...
     To unsubscribe from this branch go to
-    http://code.launchpad.dev/~name12/firefox/main/+edit-subscription
+    http://code.launchpad.test/~name12/firefox/main/+edit-subscription
     0 1 ... 5999...
 
 And just to be sure, lets create one with 800 lines.
 
-    >>> diff = '\n'.join([str(value) for value in xrange(800)])
+    >>> diff = '\n'.join([str(value) for value in range(800)])
     >>> BranchMailer.forRevision(
-    ...     branch, 1234, 'no-reply@canonical.com', message, diff,
-    ...     None).sendAll()
+    ...     branch, 'no-reply@canonical.com', message, diff,
+    ...     None, revno=1234).sendAll()
     >>> notifications = pop_notifications()
     >>> len(notifications)
     6
@@ -387,7 +388,7 @@ that is used rather than the email addresses of the seven members.
     >>> for email in recipients.getEmails():
     ...     subscription, header = recipients.getReason(email)
     ...     if subscription.notification_level in interested_levels:
-    ...         print email, subscription.max_diff_lines.title, header
+    ...         print(email, subscription.max_diff_lines.title, header)
     david.allouche@canonical.com  500 lines   Subscriber
     foo.bar@canonical.com        5000 lines   Subscriber @vcs-imports
     robertc@robertcollins.net    5000 lines   Subscriber @vcs-imports
@@ -404,8 +405,8 @@ that is used rather than the email addresses of the seven members.
     ...         body = body.decode(email.get_param('charset'))
     ...     else:
     ...         body = body.decode('iso-8859-1')
-    ...     print u'To: %s\nFrom: %s\nSubject: %s\n%s' % (
-    ...         email['To'], email['From'], email['Subject'], body)
+    ...     print(u'To: %s\nFrom: %s\nSubject: %s\n%s' % (
+    ...         email['To'], email['From'], email['Subject'], body))
 
 It is the form infrastructure that fires off the ObjectModifedEvent,
 so we'll fake that bit here.  The page tests will check the emails
@@ -418,21 +419,27 @@ Resubscribe our test user.
     ...     BranchSubscriptionDiffSize.NODIFF,
     ...     CodeReviewNotificationLevel.NOEMAIL)
 
-    >>> from zope.event import notify
-    >>> from lazr.lifecycle.event import ObjectModifiedEvent
-    >>> from lazr.lifecycle.snapshot import Snapshot
+    >>> from lp.code.interfaces.branchjob import IBranchModifiedMailJobSource
+    >>> from lp.services.config import config
+    >>> from lp.services.job.runner import JobRunner
+    >>> from lp.services.log.logger import DevNullLogger
+    >>> from lp.services.webapp.snapshot import notify_modified
+    >>> from lp.testing.dbuser import dbuser
+
+    >>> def run_modified_mail_jobs():
+    ...     job_source = getUtility(IBranchModifiedMailJobSource)
+    ...     logger = DevNullLogger()
+    ...     with dbuser(config.IBranchModifiedMailJobSource.dbuser):
+    ...         JobRunner.fromReady(job_source, logger=logger).runAll()
 
     >>> login('test@canonical.com')
-    >>> before_modification = Snapshot(branch, providing=IBranch)
-
-    >>> branch.whiteboard = 'This is the new whiteboard'
 
 Even though the branch notification emails don't use the field
-names just now, we'll pass them through anyway
+names just now, we'll pass them through anyway.
 
-    >>> notify(ObjectModifiedEvent(branch,
-    ...                               before_modification,
-    ...                               ['whiteboard']))
+    >>> with notify_modified(branch, ['whiteboard']):
+    ...     branch.whiteboard = 'This is the new whiteboard'
+    >>> run_modified_mail_jobs()
 
     >>> notifications = pop_notifications()
     >>> len(notifications)
@@ -447,11 +454,11 @@ names just now, we'll pass them through anyway
     <BLANKLINE>
     --
     lp://dev/~name12/firefox/main
-    http://code.launchpad.dev/~name12/firefox/main
+    http://code.launchpad.test/~name12/firefox/main
     <BLANKLINE>
     You are subscribed to branch lp://dev/~name12/firefox/main.
     To unsubscribe from this branch go to
-    http://code.launchpad.dev/~name12/firefox/main/+edit-subscription
+    http://code.launchpad.test/~name12/firefox/main/+edit-subscription
 
 
 The fields that are currently tracked with the delta, and cause
@@ -469,19 +476,21 @@ something like this:
     >>> branch = getUtility(IBranchLookup).getByUniqueName(
     ...     '~name12/firefox/main')
 
-    >>> before_modification = Snapshot(branch, providing=IBranch)
-
-    >>> branch.name = 'new-name'
-    >>> branch.url = 'http://example.com/foo'
-    >>> branch.whiteboard = 'This is a multiline whiteboard\n' \
-    ...  'with a really long line that should invoke the splitting ' \
-    ...  'algorithm in the mail wrapper to make sure that the line ' \
-    ...  'is not too long'
     >>> from lp.code.enums import BranchLifecycleStatus
-    >>> branch.lifecycle_status = BranchLifecycleStatus.EXPERIMENTAL
-    >>> updated_fields = ['name','title','summary','url','whiteboard','lifecycle_status']
-    >>> notify(ObjectModifiedEvent(
-    ...     branch, before_modification, updated_fields))
+    >>> updated_fields = [
+    ...     'name', 'title', 'summary', 'url', 'whiteboard',
+    ...     'lifecycle_status',
+    ...     ]
+    >>> with notify_modified(branch, updated_fields):
+    ...     branch.name = 'new-name'
+    ...     branch.url = 'http://example.com/foo'
+    ...     branch.whiteboard = (
+    ...         'This is a multiline whiteboard\n'
+    ...         'with a really long line that should invoke the splitting '
+    ...         'algorithm in the mail wrapper to make sure that the line '
+    ...         'is not too long')
+    ...     branch.lifecycle_status = BranchLifecycleStatus.EXPERIMENTAL
+    >>> run_modified_mail_jobs()
 
     >>> notifications = pop_notifications()
     >>> len(notifications)
@@ -503,11 +512,11 @@ something like this:
     <BLANKLINE>
     --
     lp://dev/~name12/firefox/new-name
-    http://code.launchpad.dev/~name12/firefox/new-name
+    http://code.launchpad.test/~name12/firefox/new-name
     <BLANKLINE>
     You are subscribed to branch lp://dev/~name12/firefox/new-name.
     To unsubscribe from this branch go to
-    http://code.launchpad.dev/~name12/firefox/new-name/+edit-subscription
+    http://code.launchpad.test/~name12/firefox/new-name/+edit-subscription
 
 
 == Unicode in emails ==
@@ -515,12 +524,9 @@ something like this:
 All the text fields of a branch are considered unicode, so the email
 must also handle the unicode.
 
-    >>> before_modification = Snapshot(branch, providing=IBranch)
-
-    >>> branch.whiteboard = u'A new \ua000 summary'
-    >>> updated_fields = ['whiteboard']
-    >>> notify(ObjectModifiedEvent(
-    ...     branch, before_modification, updated_fields))
+    >>> with notify_modified(branch, ['whiteboard']):
+    ...     branch.whiteboard = u'A new \ua000 summary'
+    >>> run_modified_mail_jobs()
 
     >>> notifications = pop_notifications()
     >>> len(notifications)
@@ -533,11 +539,11 @@ must also handle the unicode.
      u'',
      u'--',
      u'lp://dev/~name12/firefox/new-name',
-     u'http://code.launchpad.dev/~name12/firefox/new-name',
+     u'http://code.launchpad.test/~name12/firefox/new-name',
      u'',
      u'You are subscribed to branch lp://dev/~name12/firefox/new-name.',
      u'To unsubscribe from this branch go to
-     http://code.launchpad.dev/~name12/firefox/new-name/+edit-subscription']
+     http://code.launchpad.test/~name12/firefox/new-name/+edit-subscription']
 
 
 == Modifications by users other than the branch owner ==
@@ -556,13 +562,11 @@ There are no subscribers to this branch.
 Login as an admin user so we can alter the branch.
 
     >>> login('foo.bar@canonical.com')
-    >>> before_modification = Snapshot(branch, providing=IBranch)
 
-    >>> branch.whiteboard = (
-    ...     'Please refrain from bad language in a public arena.')
-    >>> updated_fields = ['whiteboard']
-    >>> notify(ObjectModifiedEvent(
-    ...     branch, before_modification, updated_fields))
+    >>> with notify_modified(branch, ['whiteboard']):
+    ...     branch.whiteboard = (
+    ...         'Please refrain from bad language in a public arena.')
+    >>> run_modified_mail_jobs()
 
     >>> notifications = pop_notifications()
     >>> len(notifications)
@@ -578,7 +582,7 @@ Login as an admin user so we can alter the branch.
     <BLANKLINE>
     --
     lp://dev/~name12/gnome-terminal/main
-    http://code.launchpad.dev/~name12/gnome-terminal/main
+    http://code.launchpad.test/~name12/gnome-terminal/main
     <BLANKLINE>
     You are getting this email as you are the owner of the branch and someone
     has edited the details.

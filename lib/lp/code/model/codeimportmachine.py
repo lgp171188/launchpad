@@ -1,8 +1,6 @@
 # Copyright 2009 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-# pylint: disable-msg=E0611,W0212
-
 """Database classes including and related to CodeImportMachine."""
 
 __metaclass__ = type
@@ -17,7 +15,7 @@ from sqlobject import (
     StringCol,
     )
 from zope.component import getUtility
-from zope.interface import implements
+from zope.interface import implementer
 
 from lp.code.enums import (
     CodeImportMachineOfflineReason,
@@ -37,12 +35,11 @@ from lp.services.database.enumcol import EnumCol
 from lp.services.database.sqlbase import SQLBase
 
 
+@implementer(ICodeImportMachine)
 class CodeImportMachine(SQLBase):
     """See `ICodeImportMachine`."""
 
     _defaultOrder = ['hostname']
-
-    implements(ICodeImportMachine)
 
     date_created = UtcDateTimeCol(notNull=True, default=DEFAULT)
 
@@ -108,10 +105,9 @@ class CodeImportMachine(SQLBase):
         getUtility(ICodeImportEventSet).newQuiesce(self, user, message)
 
 
+@implementer(ICodeImportMachineSet)
 class CodeImportMachineSet(object):
     """See `ICodeImportMachineSet`."""
-
-    implements(ICodeImportMachineSet)
 
     def getAll(self):
         """See `ICodeImportMachineSet`."""

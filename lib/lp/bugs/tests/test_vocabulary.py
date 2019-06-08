@@ -1,11 +1,14 @@
-# Copyright 2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2011-2015 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test the bug domain vocabularies."""
 
 __metaclass__ = type
 
-from lp.bugs.vocabularies import UsesBugsDistributionVocabulary
+from lp.bugs.vocabularies import (
+    BugTaskMilestoneVocabulary,
+    UsesBugsDistributionVocabulary,
+    )
 from lp.testing import (
     person_logged_in,
     TestCaseWithFactory,
@@ -67,3 +70,79 @@ class UsesBugsDistributionVocabularyTestCase(TestCaseWithFactory):
         self.assertFalse(
             thing in vocabulary,
             "Vocabulary contains a non-distribution.")
+
+
+class TestBugTaskMilestoneVocabulary(TestCaseWithFactory):
+    """Test that the BugTaskMilestoneVocabulary behaves as expected."""
+    layer = DatabaseFunctionalLayer
+
+    def _assert_milestones(self, target, milestone):
+        bugtask = self.factory.makeBugTask(target=target)
+        vocabulary = BugTaskMilestoneVocabulary(bugtask)
+        self.assertEqual(
+            [term.title for term in vocabulary], [milestone.displayname])
+
+    def testUpstreamBugTaskMilestoneVocabulary(self):
+        """Test of MilestoneVocabulary for a upstraem bugtask."""
+        product = self.factory.makeProduct()
+        milestone = self.factory.makeMilestone(product=product)
+        # Only active milestones are returned.
+        self.factory.makeMilestone(product=product, active=False)
+        self._assert_milestones(product, milestone)
+
+    def testProductseriesBugTaskMilestoneVocabulary(self):
+        """Test of MilestoneVocabulary for a productseries."""
+        series = self.factory.makeProductSeries()
+        milestone = self.factory.makeMilestone(productseries=series)
+        # Only active milestones are returned.
+        self.factory.makeMilestone(productseries=series, active=False)
+        self._assert_milestones(series, milestone)
+
+    def testDistributionBugTaskMilestoneVocabulary(self):
+        """Test of MilestoneVocabulary for a distribution."""
+        distro = self.factory.makeDistribution()
+        milestone = self.factory.makeMilestone(distribution=distro)
+        # Only active milestones are returned.
+        self.factory.makeMilestone(distribution=distro, active=False)
+        self._assert_milestones(distro, milestone)
+
+    def testDistroseriesBugTaskMilestoneVocabulary(self):
+        """Test of MilestoneVocabulary for a distroseries."""
+        distroseries = self.factory.makeDistroSeries()
+        milestone = self.factory.makeMilestone(distroseries=distroseries)
+        # Only active milestones are returned.
+        self.factory.makeMilestone(distroseries=distroseries, active=False)
+        self._assert_milestones(distroseries, milestone)
+
+    def testDistributionSourcePackageBugTaskMilestoneVocabulary(self):
+        """Test of MilestoneVocabulary for a distro source package."""
+        distro = self.factory.makeDistribution()
+        milestone = self.factory.makeMilestone(distribution=distro)
+        # Only active milestones are returned.
+        self.factory.makeMilestone(distribution=distro, active=False)
+        distro_sourcepackage = self.factory.makeDistributionSourcePackage(
+            distribution=distro)
+        self._assert_milestones(distro_sourcepackage, milestone)
+
+    def testSourcePackageBugTaskMilestoneVocabulary(self):
+        """Test of MilestoneVocabulary for a sourcepackage."""
+        distroseries = self.factory.makeDistroSeries()
+        milestone = self.factory.makeMilestone(distroseries=distroseries)
+        # Only active milestones are returned.
+        self.factory.makeMilestone(distroseries=distroseries, active=False)
+        sourcepackage = self.factory.makeSourcePackage(
+            distroseries=distroseries)
+        self._assert_milestones(sourcepackage, milestone)
+
+    def test_sorted(self):
+        product = self.factory.makeProduct()
+        milestone1 = self.factory.makeMilestone(product=product, name="1.0.0")
+        milestone2 = self.factory.makeMilestone(product=product, name="1.10.0")
+        milestone3 = self.factory.makeMilestone(product=product, name="1.6.2")
+        milestone4 = self.factory.makeMilestone(product=product, name="1.8.4")
+        bugtask = self.factory.makeBugTask(target=product)
+        vocabulary = BugTaskMilestoneVocabulary(bugtask)
+        self.assertEqual(
+            [milestone2.displayname, milestone4.displayname,
+             milestone3.displayname, milestone1.displayname],
+            [term.title for term in vocabulary])

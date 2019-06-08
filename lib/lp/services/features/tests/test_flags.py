@@ -13,7 +13,10 @@ from lp.services.features import (
     install_feature_controller,
     )
 from lp.services.features.flags import FeatureController
-from lp.services.features.rulesource import StormFeatureRuleSource
+from lp.services.features.rulesource import (
+    MemoryFeatureRuleSource,
+    StormFeatureRuleSource,
+    )
 from lp.testing import (
     layers,
     TestCase,
@@ -185,7 +188,7 @@ class TestFeatureFlags(TestCase):
         # no scopes need to be checked because it's just not in the database
         # and there's no point checking
         self.assertEqual({}, f._known_scopes._known)
-        self.assertEquals([], call_log)
+        self.assertEqual([], call_log)
         # however, this we have now negative-cached the flag
         self.assertEqual(dict(unknown=None), f.usedFlags())
         self.assertEqual(dict(), f.usedScopes())
@@ -207,21 +210,19 @@ test_rules_list = [
     ]
 
 
-class TestStormFeatureRuleSource(TestCase):
-
-    layer = layers.DatabaseFunctionalLayer
+class FeatureRuleSourceTestsMixin:
 
     def test_getAllRulesAsTuples(self):
-        source = StormFeatureRuleSource()
+        source = self.makeSource()
         source.setAllRules(test_rules_list)
-        self.assertEquals(
+        self.assertEqual(
             test_rules_list,
             list(source.getAllRulesAsTuples()))
 
     def test_getAllRulesAsText(self):
-        source = StormFeatureRuleSource()
+        source = self.makeSource()
         source.setAllRules(test_rules_list)
-        self.assertEquals(
+        self.assertEqual(
             """\
 %s\tbeta_user\t100\t%s
 ui.icing\tnormal_user\t500\t5.0
@@ -232,7 +233,7 @@ ui.icing\tdefault\t100\t3.0
 
     def test_setAllRulesFromText(self):
         # We will overwrite existing data.
-        source = StormFeatureRuleSource()
+        source = self.makeSource()
         source.setAllRules(test_rules_list)
         source.setAllRulesFromText("""
 
@@ -240,7 +241,7 @@ flag1   beta_user   200   alpha
 flag1   default     100   gamma with spaces
 flag2   default     0\ton
 """)
-        self.assertEquals({
+        self.assertEqual({
             'flag1': [
                 ('beta_user', 200, 'alpha'),
                 ('default', 100, 'gamma with spaces'),
@@ -250,3 +251,19 @@ flag2   default     0\ton
                 ],
             },
             source.getAllRulesAsDict())
+
+
+class TestStormFeatureRuleSource(FeatureRuleSourceTestsMixin, TestCase):
+
+    layer = layers.DatabaseFunctionalLayer
+
+    def makeSource(self):
+        return StormFeatureRuleSource()
+
+
+class TestMemoryFeatureRuleSource(FeatureRuleSourceTestsMixin, TestCase):
+
+    layer = layers.FunctionalLayer
+
+    def makeSource(self):
+        return MemoryFeatureRuleSource()

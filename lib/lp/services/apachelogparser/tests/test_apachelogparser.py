@@ -1,4 +1,4 @@
-# Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 from datetime import datetime
@@ -7,8 +7,9 @@ from operator import itemgetter
 import os
 from StringIO import StringIO
 import tempfile
+import time
 
-from zope.component import getUtility
+from fixtures import TempDir
 
 from lp.services.apachelogparser.base import (
     create_or_update_parsedlog_entry,
@@ -21,13 +22,10 @@ from lp.services.apachelogparser.base import (
     )
 from lp.services.apachelogparser.model.parsedapachelog import ParsedApacheLog
 from lp.services.config import config
+from lp.services.database.interfaces import IStore
 from lp.services.librarianserver.apachelogparser import DBUSER
 from lp.services.log.logger import BufferLogger
-from lp.services.webapp.interfaces import (
-    DEFAULT_FLAVOR,
-    IStoreSelector,
-    MAIN_STORE,
-    )
+from lp.services.osutils import write_file
 from lp.testing import TestCase
 from lp.testing.dbuser import switch_dbuser
 from lp.testing.layers import (
@@ -391,6 +389,20 @@ class TestParsedFilesDetection(TestCase):
         super(TestParsedFilesDetection, self).setUp()
         switch_dbuser(DBUSER)
 
+    def test_sorts_by_mtime(self):
+        # Files are sorted by ascending mtime.
+        root = self.useFixture(TempDir())
+        file_paths = [root.join(str(name)) for name in range(3)]
+        now = time.time()
+        for i, path in enumerate(file_paths):
+            write_file(path, ('%s\n' % i).encode('UTF-8'))
+            os.utime(path, (now - i, now - i))
+        contents = []
+        for fd, _ in get_files_to_parse(file_paths):
+            fd.seek(0)
+            contents.append(fd.read())
+        self.assertEqual(['2\n', '1\n', '0\n'], contents)
+
     def test_not_parsed_file(self):
         # A file that has never been parsed will have to be parsed from the
         # start.
@@ -406,7 +418,7 @@ class TestParsedFilesDetection(TestCase):
         ParsedApacheLog(first_line, len(fd.read()))
 
         files_to_parse = get_files_to_parse([self.file_path])
-        self.failUnlessEqual(list(files_to_parse), [])
+        self.assertEqual(list(files_to_parse), [])
 
     def test_parsed_file_with_new_content(self):
         # A file that has been parsed already but in which new content was
@@ -440,14 +452,13 @@ class TestParsedFilesDetection(TestCase):
         fd.close()
         files_to_parse = get_files_to_parse([new_path])
         positions = map(itemgetter(1), files_to_parse)
-        self.failUnlessEqual(positions, [0])
+        self.assertEqual(positions, [0])
 
     def test_fresh_gzipped_file(self):
         # get_files_to_parse() handles gzipped files just like uncompressed
         # ones.  The first time we see one, we'll parse from the beginning.
         gz_name = 'launchpadlibrarian.net.access-log.1.gz'
         gz_path = os.path.join(self.root, gz_name)
-        first_line = gzip.open(gz_path).readline()
         files_to_parse = get_files_to_parse([gz_path])
         positions = map(itemgetter(1), files_to_parse)
         self.assertEqual(positions, [0])
@@ -461,7 +472,7 @@ class TestParsedFilesDetection(TestCase):
         ParsedApacheLog(first_line, len(first_line))
         files_to_parse = get_files_to_parse([gz_path])
         positions = map(itemgetter(1), files_to_parse)
-        self.failUnlessEqual(positions, [len(first_line)])
+        self.assertEqual(positions, [len(first_line)])
 
 
 class Test_create_or_update_parsedlog_entry(TestCase):
@@ -477,12 +488,12 @@ class Test_create_or_update_parsedlog_entry(TestCase):
         # When given a first_line that doesn't exist in the ParsedApacheLog
         # table, create_or_update_parsedlog_entry() will create a new entry
         # with the given number of bytes read.
-        store = getUtility(IStoreSelector).get(MAIN_STORE, DEFAULT_FLAVOR)
         first_line = u'First line'
         create_or_update_parsedlog_entry(
             first_line, parsed_bytes=len(first_line))
 
-        entry = store.find(ParsedApacheLog, first_line=first_line).one()
+        entry = IStore(ParsedApacheLog).find(
+            ParsedApacheLog, first_line=first_line).one()
         self.assertIsNot(None, entry)
         self.assertEqual(entry.bytes_read, len(first_line))
 
@@ -492,7 +503,7 @@ class Test_create_or_update_parsedlog_entry(TestCase):
         # with the given number of bytes read.
         first_line = u'First line'
         create_or_update_parsedlog_entry(first_line, parsed_bytes=2)
-        store = getUtility(IStoreSelector).get(MAIN_STORE, DEFAULT_FLAVOR)
+        store = IStore(ParsedApacheLog)
         entry = store.find(ParsedApacheLog, first_line=first_line).one()
 
         # Here we see that the new entry was created.

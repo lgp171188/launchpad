@@ -11,10 +11,10 @@ from it.
 __metaclass__ = type
 __all__ = []
 
-# Zope recently changed the behavior of items widgets with regards to missing
+# Zope recently changed the behaviour of items widgets with regards to missing
 # values, but they kindly left this global variable for you to monkey patch if
-# you want the old behavior, just like we do.
-from zope.app.form.browser import itemswidgets
+# you want the old behaviour, just like we do.
+from zope.formlib import itemswidgets
 
 
 itemswidgets.EXPLICIT_EMPTY_SELECTION = False

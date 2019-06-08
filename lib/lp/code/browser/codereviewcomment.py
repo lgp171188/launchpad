@@ -1,4 +1,4 @@
-# Copyright 2009-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -6,19 +6,21 @@ __metaclass__ = type
 __all__ = [
     'CodeReviewCommentAddView',
     'CodeReviewCommentContextMenu',
-    'CodeReviewCommentPrimaryContext',
     'CodeReviewCommentView',
     'CodeReviewDisplayComment',
     ]
 
-from lazr.delegates import delegates
+from lazr.delegates import delegate_to
 from lazr.restful.interface import copy_field
-from zope.app.form.browser import (
+from zope.component import getUtility
+from zope.formlib.widget import CustomWidgetFactory
+from zope.formlib.widgets import (
     DropdownWidget,
     TextAreaWidget,
+    TextWidget,
     )
 from zope.interface import (
-    implements,
+    implementer,
     Interface,
     )
 from zope.schema import Text
@@ -26,10 +28,12 @@ from zope.schema import Text
 from lp import _
 from lp.app.browser.launchpadform import (
     action,
-    custom_widget,
     LaunchpadFormView,
     )
 from lp.code.interfaces.codereviewcomment import ICodeReviewComment
+from lp.code.interfaces.codereviewinlinecomment import (
+    ICodeReviewInlineCommentSet,
+    )
 from lp.code.interfaces.codereviewvote import ICodeReviewVoteReference
 from lp.services.comments.browser.comment import download_body
 from lp.services.comments.browser.messagecomment import MessageComment
@@ -46,13 +50,15 @@ from lp.services.webapp import (
     LaunchpadView,
     Link,
     )
-from lp.services.webapp.interfaces import IPrimaryContext
+from lp.services.webapp.interfaces import ILaunchBag
 
 
 class ICodeReviewDisplayComment(IComment, ICodeReviewComment):
     """Marker interface for displaying code review comments."""
 
 
+@implementer(ICodeReviewDisplayComment)
+@delegate_to(ICodeReviewComment, context='comment')
 class CodeReviewDisplayComment(MessageComment):
     """A code review comment or activity or both.
 
@@ -60,10 +66,6 @@ class CodeReviewDisplayComment(MessageComment):
     this is purely a display interface, and doesn't make sense to have display
     only code in the model itself.
     """
-
-    implements(ICodeReviewDisplayComment)
-
-    delegates(ICodeReviewComment, 'comment')
 
     def __init__(self, comment, from_superseded=False, limit_length=True):
         if limit_length:
@@ -84,10 +86,19 @@ class CodeReviewDisplayComment(MessageComment):
 
     @property
     def extra_css_class(self):
+        css_classes = (
+            super(CodeReviewDisplayComment, self).extra_css_class.split())
         if self.from_superseded:
-            return 'from-superseded'
-        else:
-            return ''
+            css_classes.append('from-superseded')
+        return ' '.join(css_classes)
+
+    @cachedproperty
+    def previewdiff_id(self):
+        inline_comment = getUtility(
+            ICodeReviewInlineCommentSet).getByReviewComment(self.comment)
+        if inline_comment is not None:
+            return inline_comment.previewdiff_id
+        return None
 
     @cachedproperty
     def body_text(self):
@@ -112,20 +123,15 @@ class CodeReviewDisplayComment(MessageComment):
     def download_url(self):
         return canonical_url(self.comment, view_name='+download')
 
+    @cachedproperty
+    def show_spam_controls(self):
+        user = getUtility(ILaunchBag).user
+        return self.comment.userCanSetCommentVisibility(user)
+
 
 def get_message(display_comment):
     """Adapt an ICodeReviwComment to an IMessage."""
     return display_comment.comment.message
-
-
-class CodeReviewCommentPrimaryContext:
-    """The primary context is the comment is that of the source branch."""
-
-    implements(IPrimaryContext)
-
-    def __init__(self, comment):
-        self.context = IPrimaryContext(
-            comment.branch_merge_proposal).context
 
 
 class CodeReviewCommentContextMenu(ContextMenu):
@@ -139,12 +145,10 @@ class CodeReviewCommentContextMenu(ContextMenu):
         return Link('+reply', 'Reply', icon='add', enabled=enabled)
 
 
+@implementer(ILibraryFileAlias)
+@delegate_to(ILibraryFileAlias, context='alias')
 class DiffAttachment:
     """An attachment that we are going to display."""
-
-    implements(ILibraryFileAlias)
-
-    delegates(ILibraryFileAlias, 'alias')
 
     def __init__(self, alias):
         self.alias = alias
@@ -219,13 +223,16 @@ class CodeReviewCommentAddView(LaunchpadFormView):
     """View for adding a CodeReviewComment."""
 
     class MyDropWidget(DropdownWidget):
-        "Override the default no-value display name to -Select-."
+        "Override the default none-selected display name to -Select-."
         _messageNoValue = 'Comment only'
 
     schema = IEditCodeReviewComment
 
-    custom_widget('comment', TextAreaWidget, cssClass='comment-text')
-    custom_widget('vote', MyDropWidget)
+    custom_widget_review_type = CustomWidgetFactory(
+        TextWidget, displayWidth=15)
+    custom_widget_comment = CustomWidgetFactory(
+        TextAreaWidget, cssClass='comment-text')
+    custom_widget_vote = MyDropWidget
 
     page_title = 'Reply to code review comment'
 

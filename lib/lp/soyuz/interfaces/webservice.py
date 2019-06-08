@@ -1,4 +1,4 @@
-# Copyright 2010-2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2017 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """All the interfaces that are exposed through the webservice.
@@ -24,20 +24,19 @@ __all__ = [
     'IArchive',
     'IArchiveDependency',
     'IArchivePermission',
+    'IArchiveSet',
     'IArchiveSubscriber',
     'IBinaryPackageBuild',
     'IBinaryPackagePublishingHistory',
     'IBinaryPackageReleaseDownloadCount',
     'IDistroArchSeries',
+    'ILiveFS',
+    'ILiveFSBuild',
+    'ILiveFSSet',
     'IPackageUpload',
     'IPackageset',
     'IPackagesetSet',
-    'IProcessor',
-    'IProcessorFamily',
-    'IProcessorFamilySet',
-    'IProcessorSet',
     'ISourcePackagePublishingHistory',
-    'IncompatibleArguments',
     'InsufficientUploadRights',
     'InvalidComponent',
     'InvalidPocketForPPA',
@@ -54,11 +53,6 @@ __all__ = [
 # XXX: JonathanLange 2010-11-09 bug=673083: Legacy work-around for circular
 # import bugs.  Break this up into a per-package thing.
 from lp import _schema_circular_imports
-from lp.services.webservice.apihelpers import (
-    patch_collection_property,
-    patch_plain_parameter_type,
-    patch_reference_property,
-    )
 from lp.soyuz.interfaces.archive import (
     AlreadySubscribed,
     ArchiveDisabled,
@@ -70,6 +64,7 @@ from lp.soyuz.interfaces.archive import (
     CannotUploadToPPA,
     ComponentNotFound,
     IArchive,
+    IArchiveSet,
     InsufficientUploadRights,
     InvalidComponent,
     InvalidPocketForPartnerArchive,
@@ -91,19 +86,17 @@ from lp.soyuz.interfaces.binarypackagebuild import (
 from lp.soyuz.interfaces.binarypackagerelease import (
     IBinaryPackageReleaseDownloadCount,
     )
-from lp.soyuz.interfaces.buildrecords import IncompatibleArguments
 from lp.soyuz.interfaces.distroarchseries import IDistroArchSeries
+from lp.soyuz.interfaces.livefs import (
+    ILiveFS,
+    ILiveFSSet,
+    )
+from lp.soyuz.interfaces.livefsbuild import ILiveFSBuild
 from lp.soyuz.interfaces.packageset import (
     DuplicatePackagesetName,
     IPackageset,
     IPackagesetSet,
     NoSuchPackageSet,
-    )
-from lp.soyuz.interfaces.processor import (
-    IProcessor,
-    IProcessorFamily,
-    IProcessorFamilySet,
-    IProcessorSet,
     )
 from lp.soyuz.interfaces.publishing import (
     IBinaryPackagePublishingHistory,
@@ -113,12 +106,3 @@ from lp.soyuz.interfaces.queue import IPackageUpload
 
 
 _schema_circular_imports
-
-# IProcessor
-patch_reference_property(
-    IProcessor, 'family', IProcessorFamily)
-
-patch_collection_property(
-    IArchive, 'enabled_restricted_families', IProcessorFamily)
-patch_plain_parameter_type(
-    IArchive, 'enableRestrictedFamily', 'family', IProcessorFamily)

@@ -1,12 +1,11 @@
-# Copyright 2009 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2017 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for linked branch implementations."""
 
+from __future__ import absolute_import, print_function, unicode_literals
+
 __metaclass__ = type
-
-
-import unittest
 
 from zope.security.proxy import removeSecurityProxy
 
@@ -353,7 +352,3 @@ class TestLinkedBranchSorting(TestCaseWithFactory):
         self.assertIs(meerkat_2_devel_backports, links[5])
         self.assertIs(meerkat_1, links[6])
         self.assertIs(zebra, links[7])
-
-
-def test_suite():
-    return unittest.TestLoader().loadTestsFromName(__name__)

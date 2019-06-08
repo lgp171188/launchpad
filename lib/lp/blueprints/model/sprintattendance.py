@@ -1,8 +1,6 @@
 # Copyright 2009 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-# pylint: disable-msg=E0611,W0212
-
 __metaclass__ = type
 
 __all__ = ['SprintAttendance']
@@ -12,7 +10,7 @@ from storm.locals import (
     Int,
     Reference,
     )
-from zope.interface import implements
+from zope.interface import implementer
 
 from lp.blueprints.interfaces.sprintattendance import ISprintAttendance
 from lp.registry.interfaces.person import validate_public_person
@@ -20,10 +18,9 @@ from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.stormbase import StormBase
 
 
+@implementer(ISprintAttendance)
 class SprintAttendance(StormBase):
     """A record of the attendance of a person at a sprint."""
-
-    implements(ISprintAttendance)
 
     __storm_table__ = 'SprintAttendance'
 
@@ -37,8 +34,12 @@ class SprintAttendance(StormBase):
 
     time_starts = UtcDateTimeCol(notNull=True)
     time_ends = UtcDateTimeCol(notNull=True)
-    is_physical = Bool(default=True)
+    _is_physical = Bool(name='is_physical', default=True)
 
     def __init__(self, sprint, attendee):
         self.sprint = sprint
         self.attendee = attendee
+
+    @property
+    def is_physical(self):
+        return self.sprint.is_physical and self._is_physical

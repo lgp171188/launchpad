@@ -1,4 +1,4 @@
-# Copyright 2009-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Infrastructure for handling custom uploads.
@@ -13,21 +13,26 @@ DDTP (Debian Description Translation Project) tarballs.
 
 __metaclass__ = type
 
-__all__ = ['CustomUpload', 'CustomUploadError']
+__all__ = ['CustomUpload']
 
 import os
 import shutil
 import tarfile
 import tempfile
 
+import scandir
+from zope.interface import implementer
+
 from lp.archivepublisher.debversion import (
     Version as make_version,
     VersionError,
     )
-
-
-class CustomUploadError(Exception):
-    """Base class for all errors associated with publishing custom uploads."""
+from lp.archivepublisher.interfaces.archivesigningkey import ISignableArchive
+from lp.services.librarian.utils import copy_and_close
+from lp.soyuz.interfaces.queue import (
+    CustomUploadError,
+    ICustomUploadHandler,
+    )
 
 
 class CustomUploadTarballTarError(CustomUploadError):
@@ -84,31 +89,48 @@ class CustomUploadAlreadyExists(CustomUploadError):
     """A build for this type, architecture, and version already exists."""
     def __init__(self, custom_type, arch, version):
         message = ('%s build %s for architecture %s already exists' %
-                   (custom_type, arch, version))
+                   (custom_type, version, arch))
         CustomUploadError.__init__(self, message)
 
 
+@implementer(ICustomUploadHandler)
 class CustomUpload:
     """Base class for custom upload handlers"""
 
     # This should be set as a class property on each subclass.
     custom_type = None
 
-    def __init__(self):
+    @classmethod
+    def publish(cls, packageupload, libraryfilealias, logger=None):
+        """See `ICustomUploadHandler`."""
+        temp_dir = tempfile.mkdtemp()
+        try:
+            tarfile_path = os.path.join(temp_dir, libraryfilealias.filename)
+            temp_file = open(tarfile_path, "wb")
+            libraryfilealias.open()
+            copy_and_close(libraryfilealias, temp_file)
+            suite = packageupload.distroseries.getSuite(packageupload.pocket)
+            upload = cls(logger=logger)
+            upload.process(packageupload.archive, tarfile_path, suite)
+        finally:
+            shutil.rmtree(temp_dir)
+
+    def __init__(self, logger=None):
         self.targetdir = None
         self.version = None
         self.arch = None
 
         self.tmpdir = None
+        self.logger = logger
 
-    def process(self, pubconf, tarfile_path, distroseries):
+    def process(self, archive, tarfile_path, suite):
         """Process the upload and install it into the archive."""
         self.tarfile_path = tarfile_path
         try:
-            self.setTargetDirectory(pubconf, tarfile_path, distroseries)
+            self.setTargetDirectory(archive, tarfile_path, suite)
             self.checkForConflicts()
             self.extract()
-            self.installFiles()
+            self.installFiles(archive, suite)
             self.fixCurrentSymlink()
         finally:
             self.cleanup()
@@ -121,7 +143,11 @@ class CustomUpload:
         """
         raise NotImplementedError
 
-    def setTargetDirectory(self, pubconf, tarfile_path, distroseries):
+    def setComponents(tarfile_path):
+        """Set instance variables based on decomposing the filename."""
+        raise NotImplementedError
+
+    def setTargetDirectory(self, archive, tarfile_path, suite):
         """Set self.targetdir based on parameters.
 
         This should also set self.version and self.arch (if applicable) as a
@@ -242,13 +268,27 @@ class CustomUpload:
         """Ensure the parent directory exists."""
         parentdir = os.path.dirname(path)
         if not os.path.isdir(parentdir):
-            os.makedirs(parentdir, 0755)
+            os.makedirs(parentdir, 0o755)
 
-    def installFiles(self):
+    def shouldSign(self, filename):
+        """Returns True if the given filename should be signed."""
+        return False
+
+    def sign(self, archive, suite, filename):
+        """Sign a file.
+
+        For now, we always write a detached signature to the input file name
+        plus ".gpg".
+        """
+        signable_archive = ISignableArchive(archive)
+        if signable_archive.can_sign:
+            signable_archive.signFile(suite, filename, log=self.logger)
+
+    def installFiles(self, archive, suite):
         """Install the files from the custom upload to the archive."""
         assert self.tmpdir is not None, "Must extract tarfile first"
         extracted = False
-        for dirpath, dirnames, filenames in os.walk(self.tmpdir):
+        for dirpath, dirnames, filenames in scandir.walk(self.tmpdir):
 
             # Create symbolic links to directories.
             for dirname in dirnames:
@@ -262,8 +302,8 @@ class CustomUpload:
                 # Also, ensure that the process has the expected umask.
                 old_mask = os.umask(0)
                 try:
-                    if old_mask != 022:
-                        raise CustomUploadBadUmask(022, old_mask)
+                    if old_mask != 0o022:
+                        raise CustomUploadBadUmask(0o022, old_mask)
                 finally:
                     os.umask(old_mask)
                 if os.path.islink(sourcepath):
@@ -291,7 +331,9 @@ class CustomUpload:
                     os.symlink(os.readlink(sourcepath), destpath)
                 else:
                     shutil.copy(sourcepath, destpath)
-                    os.chmod(destpath, 0644)
+                    os.chmod(destpath, 0o644)
+                    if self.shouldSign(destpath):
+                        self.sign(archive, suite, destpath)
 
                 extracted = True
 
@@ -315,17 +357,17 @@ class CustomUpload:
         # now present in the target. Deliberately skip 'broken' versions
         # because they can't be sorted anyway.
         versions = []
-        for inst in os.listdir(self.targetdir):
+        for entry in scandir.scandir(self.targetdir):
             # Skip the symlink.
-            if inst == 'current':
+            if entry.name == 'current':
                 continue
             # Skip broken versions.
             try:
-                make_version(inst)
+                make_version(entry.name)
             except VersionError:
                 continue
             # Append the valid versions to the list.
-            versions.append(inst)
+            versions.append(entry.name)
         versions.sort(key=make_version, reverse=True)
 
         # Make sure the 'current' symlink points to the most recent version

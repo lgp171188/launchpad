@@ -3,18 +3,18 @@
 
 """Test questiontarget views."""
 
+from __future__ import absolute_import, print_function, unicode_literals
+
 __metaclass__ = type
 
 import os
 from urllib import quote
 
-from BeautifulSoup import BeautifulSoup
 from lazr.restful.interfaces import (
     IJSONRequestCache,
     IWebServiceClientRequest,
     )
 from simplejson import dumps
-from storm.store import Store
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 from zope.traversing.browser import absoluteURL
@@ -23,6 +23,7 @@ from lp.answers.interfaces.questioncollection import IQuestionSet
 from lp.app.enums import ServiceUsage
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.registry.interfaces.person import IPersonSet
+from lp.services.beautifulsoup import BeautifulSoup
 from lp.services.webapp import canonical_url
 from lp.services.worlddata.interfaces.language import ILanguageSet
 from lp.testing import (
@@ -51,7 +52,7 @@ class TestSearchQuestionsView(TestCaseWithFactory):
         product = self.factory.makeProduct()
         # Avoid non-ascii character in unicode literal to not upset
         # pocket-lint. Bug #776389.
-        non_ascii_string = u'portugu\xeas'
+        non_ascii_string = 'portugu\xeas'
         with person_logged_in(product.owner):
             self.factory.makeFAQ(product, non_ascii_string)
         form = {
@@ -73,12 +74,7 @@ class TestSearchQuestionsView(TestCaseWithFactory):
         removeSecurityProxy(distro).official_answers = True
         dsp = self.factory.makeDistributionSourcePackage(
             distribution=distro)
-        questions = []
-        for i in range(0, 5):
-            questions.append(self.factory.makeQuestion(
-                target=dsp, owner=owner))
-        # Empty the cache.
-        Store.of(questions[0]).invalidate()
+        [self.factory.makeQuestion(target=dsp, owner=owner) for i in range(5)]
         browses_under_limit = BrowsesWithQueryLimit(
             31, owner, view_name="+questions")
         self.assertThat(dsp, browses_under_limit)
@@ -126,7 +122,7 @@ class TestSearchQuestionsViewCanConfigureAnswers(TestCaseWithFactory):
 
 
 class TestSearchQuestionsViewTemplate(TestCaseWithFactory):
-    """Test the behavior of SearchQuestionsView.template"""
+    """Test the behaviour of SearchQuestionsView.template"""
 
     layer = DatabaseFunctionalLayer
 
@@ -149,14 +145,14 @@ class TestSearchQuestionsViewTemplate(TestCaseWithFactory):
         product = self.factory.makeProduct()
         project_group = self.factory.makeProject(owner=product.owner)
         with person_logged_in(product.owner):
-            product.project = project_group
+            product.projectgroup = project_group
         self.assertViewTemplate(project_group, 'unknown-support.pt')
 
     def test_template_projectgroup_answers_usage_launchpad(self):
         product = self.factory.makeProduct()
         project_group = self.factory.makeProject(owner=product.owner)
         with person_logged_in(product.owner):
-            product.project = project_group
+            product.projectgroup = project_group
             product.answers_usage = ServiceUsage.LAUNCHPAD
         self.assertViewTemplate(project_group, 'question-listing.pt')
 
@@ -186,7 +182,7 @@ class TestSearchQuestionsViewTemplate(TestCaseWithFactory):
 
 
 class TestSearchQuestionsViewUnknown(TestCaseWithFactory):
-    """Test the behavior of SearchQuestionsView unknown support."""
+    """Test the behaviour of SearchQuestionsView unknown support."""
 
     layer = DatabaseFunctionalLayer
 

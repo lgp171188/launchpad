@@ -1,4 +1,4 @@
-# Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Enumerations used in the lp/code modules."""
@@ -7,11 +7,11 @@ __metaclass__ = type
 __all__ = [
     'BranchLifecycleStatus',
     'BranchLifecycleStatusFilter',
+    'BranchListingSort',
     'BranchMergeProposalStatus',
     'BranchSubscriptionDiffSize',
     'BranchSubscriptionNotificationLevel',
     'BranchType',
-    'BranchVisibilityRule',
     'CodeImportEventDataType',
     'CodeImportEventType',
     'CodeImportJobState',
@@ -21,9 +21,14 @@ __all__ = [
     'CodeImportReviewStatus',
     'CodeReviewNotificationLevel',
     'CodeReviewVote',
+    'GitActivityType',
+    'GitGranteeType',
+    'GitObjectType',
+    'GitPermissionType',
+    'GitRepositoryType',
+    'NON_CVS_RCS_TYPES',
     'RevisionControlSystems',
-    'TeamBranchVisibilityRule',
-    'UICreatableBranchType',
+    'TargetRevisionControlSystems',
     ]
 
 from lazr.enum import (
@@ -79,7 +84,7 @@ class BranchLifecycleStatus(DBEnumeratedType):
 class BranchType(DBEnumeratedType):
     """Branch Type
 
-    The type of a branch determins the branch interaction with a number
+    The type of a branch determines the branch's interaction with a number
     of other subsystems.
     """
 
@@ -99,8 +104,8 @@ class BranchType(DBEnumeratedType):
     IMPORTED = DBItem(3, """
         Imported
 
-        Branches that have been imported from an externally hosted
-        branch in bzr or another VCS and are made available through Launchpad.
+        This branch has been imported from an externally-hosted branch in
+        bzr or another VCS and is made available through Launchpad.
         """)
 
     REMOTE = DBItem(4, """
@@ -111,9 +116,120 @@ class BranchType(DBEnumeratedType):
         """)
 
 
-class UICreatableBranchType(EnumeratedType):
-    """The types of branches that can be created through the web UI."""
-    use_template(BranchType, exclude='IMPORTED')
+class GitRepositoryType(DBEnumeratedType):
+    """Git Repository Type
+
+    The type of a repository determines its interaction with other
+    subsystems.
+    """
+
+    HOSTED = DBItem(1, """
+        Hosted
+
+        Launchpad is the primary location of this repository.
+        """)
+
+    # Skipping MIRRORED (2) to stay in sync with BranchType, in order to
+    # reduce confusion for manual database queries.
+
+    IMPORTED = DBItem(3, """
+        Imported
+
+        This repository has been imported from an externally-hosted
+        repository and is made available through Launchpad.
+        """)
+
+    REMOTE = DBItem(4, """
+        Remote
+
+        Registered in Launchpad with an external location,
+        but is not to be mirrored, nor available through Launchpad.
+        """)
+
+
+class GitObjectType(DBEnumeratedType):
+    """Git Object Type
+
+    Keep these in sync with the concrete GIT_OBJ_* enum values in libgit2.
+    """
+
+    COMMIT = DBItem(1, """
+        Commit
+
+        A commit object.
+        """)
+
+    TREE = DBItem(2, """
+        Tree
+
+        A tree (directory listing) object.
+        """)
+
+    BLOB = DBItem(3, """
+        Blob
+
+        A file revision object.
+        """)
+
+    TAG = DBItem(4, """
+        Tag
+
+        An annotated tag object.
+        """)
+
+
+class GitGranteeType(DBEnumeratedType):
+    """Git Grantee Type
+
+    Access grants for Git repositories can be made to various kinds of
+    grantees.
+    """
+
+    REPOSITORY_OWNER = DBItem(1, """
+        Repository owner
+
+        A grant to the owner of the associated repository.
+        """)
+
+    PERSON = DBItem(2, """
+        Person
+
+        A grant to a particular person or team.
+        """)
+
+
+class GitActivityType(DBEnumeratedType):
+    """Git Activity Type
+
+    Various kinds of change can be recorded for a Git repository.
+    """
+
+    RULE_ADDED = DBItem(1, "Added access rule")
+
+    RULE_CHANGED = DBItem(2, "Changed access rule")
+
+    RULE_REMOVED = DBItem(3, "Removed access rule")
+
+    RULE_MOVED = DBItem(4, "Moved access rule")
+
+    GRANT_ADDED = DBItem(11, "Added access grant")
+
+    GRANT_CHANGED = DBItem(12, "Changed access grant")
+
+    GRANT_REMOVED = DBItem(13, "Removed access grant")
+
+
+class GitPermissionType(EnumeratedType):
+    """Git Permission Type
+
+    A kind of permission that can be granted on part of a Git repository.
+    """
+
+    CAN_CREATE = Item("Can create")
+
+    CAN_PUSH = Item("Can push")
+
+    CAN_FORCE_PUSH = Item("Can force-push")
 
 
 class BranchLifecycleStatusFilter(EnumeratedType):
@@ -138,6 +254,69 @@ class BranchLifecycleStatusFilter(EnumeratedType):
         Any status
 
         Show all the branches.
+        """)
+
+
+class BranchListingSort(EnumeratedType):
+    """Choices for how to sort branch listings."""
+
+    # XXX: MichaelHudson 2007-10-17 bug=153891: We allow sorting on quantities
+    # that are not visible in the listing!
+
+    DEFAULT = Item("""
+        by most interesting
+
+        Sort branches by the default ordering for the view.
+        """)
+
+    PRODUCT = Item("""
+        by project name
+
+        Sort branches by name of the project the branch is for.
+        """)
+
+    LIFECYCLE = Item("""
+        by status
+
+        Sort branches by their status.
+        """)
+
+    NAME = Item("""
+        by branch name
+
+        Sort branches by the name of the branch.
+        """)
+
+    OWNER = Item("""
+        by owner name
+
+        Sort branches by the name of the owner.
+        """)
+
+    MOST_RECENTLY_CHANGED_FIRST = Item("""
+        most recently changed first
+
+        Sort branches from the most recently to the least recently
+        changed.
+        """)
+
+    LEAST_RECENTLY_CHANGED_FIRST = Item("""
+        most neglected first
+
+        Sort branches from the least recently to the most recently
+        changed.
+        """)
+
+    NEWEST_FIRST = Item("""
+        newest first
+
+        Sort branches from newest to oldest.
+        """)
+
+    OLDEST_FIRST = Item("""
+        oldest first
+
+        Sort branches from oldest to newest.
         """)
 
 
@@ -305,40 +484,6 @@ class CodeReviewNotificationLevel(DBEnumeratedType):
         """)
 
 
-class BranchVisibilityRule(DBEnumeratedType):
-    """Branch Visibility Rules for defining branch visibility policy."""
-
-    PUBLIC = DBItem(1, """
-        Public
-
-        Branches are public by default.
-        """)
-
-    PRIVATE = DBItem(2, """
-        Private
-
-        Branches are private by default.
-        """)
-
-    PRIVATE_ONLY = DBItem(3, """
-        Private only
-
-        Branches are private by default. Branch owners are not able
-        to change the visibility of the branches to public.
-        """)
-
-    FORBIDDEN = DBItem(4, """
-        Forbidden
-
-        Users are not able to create branches in the context.
-        """)
-
-
-class TeamBranchVisibilityRule(EnumeratedType):
-    """The valid policy rules for teams."""
-    use_template(BranchVisibilityRule, exclude='FORBIDDEN')
-
-
 class RevisionControlSystems(DBEnumeratedType):
     """Revision Control Systems
 
@@ -374,13 +519,32 @@ class RevisionControlSystems(DBEnumeratedType):
     HG = DBItem(5, """
         Mercurial
 
-        Imports from Mercurial using bzr-hg.
+        Imports from Mercurial using bzr-hg. (no longer supported)
         """)
 
     BZR = DBItem(6, """
         Bazaar
 
         Mirror of a Bazaar branch.
+        """)
+
+
+class TargetRevisionControlSystems(EnumeratedType):
+    """Target Revision Control Systems
+
+    Revision control systems that can be the target of a code import.
+    """
+
+    BZR = Item("""
+        Bazaar
+
+        Import to Bazaar.
+        """)
+
+    GIT = Item("""
+        Git
+
+        Import to Git.
         """)
 
 
@@ -892,3 +1056,7 @@ class CodeReviewVote(DBEnumeratedType):
 
         The reviewer needs more information before making a decision.
         """)
+
+NON_CVS_RCS_TYPES = (
+    RevisionControlSystems.BZR_SVN, RevisionControlSystems.GIT,
+    RevisionControlSystems.BZR)

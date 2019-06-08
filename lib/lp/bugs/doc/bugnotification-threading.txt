@@ -18,16 +18,17 @@ Let's add add change notification and see how it works:
     >>> from datetime import datetime, timedelta
     >>> from lp.services.messages.interfaces.message import IMessageSet
     >>> from lp.bugs.interfaces.bug import IBugSet
-    >>> from lp.bugs.adapters.bugchange import BugVisibilityChange
+    >>> from lp.bugs.adapters.bugchange import BugInformationTypeChange
+    >>> from lp.app.enums import InformationType
 
     >>> ten_minutes_ago = (
     ...     datetime.now(pytz.timezone('UTC')) - timedelta(minutes=10))
     >>> sample_person = getUtility(ILaunchBag).user
     >>> bug_one = getUtility(IBugSet).get(1)
     >>> bug_one.addChange(
-    ...     BugVisibilityChange(
-    ...         ten_minutes_ago, sample_person, "private",
-    ...         False, True))
+    ...     BugInformationTypeChange(
+    ...         ten_minutes_ago, sample_person, "information_type",
+    ...         InformationType.PUBLIC, InformationType.USERDATA))
 
     >>> from lp.bugs.interfaces.bugnotification import IBugNotificationSet
     >>> from lp.bugs.scripts.bugnotification import (
@@ -68,9 +69,9 @@ id:
     >>> bug_one.linkMessage(comment)
     <...>
     >>> bug_one.addChange(
-    ...     BugVisibilityChange(
-    ...         ten_minutes_ago, sample_person, "private",
-    ...         True, False))
+    ...     BugInformationTypeChange(
+    ...         ten_minutes_ago, sample_person, "information_type",
+    ...         InformationType.USERDATA, InformationType.PUBLIC))
     >>> notifications = getUtility(
     ...     IBugNotificationSet).getNotificationsToSend()
     >>> messages = [emails for notifications, omitted, emails in
@@ -122,3 +123,33 @@ Grab the notifications:
     >>> comment.rfc822msgid in references
     True
 
+Create a new bug, fetching the notification manually since it will not yet
+be ready to send.  The notification sent for this should not have any
+References header.
+
+    >>> from lp.bugs.interfaces.bug import CreateBugParams
+    >>> from lp.bugs.model.bugnotification import BugNotification
+    >>> from lp.services.database.interfaces import IStore
+
+    >>> for notification in notifications:
+    ...     notification.date_emailed = datetime.now(pytz.timezone('UTC'))
+    >>> flush_database_updates()
+
+    >>> params = CreateBugParams(
+    ...     owner=sample_person, title="New bug", comment="New bug.",
+    ...     target=bug_one.default_bugtask.target)
+    >>> bug = getUtility(IBugSet).createBug(params)
+    >>> notifications = IStore(BugNotification).find(
+    ...     BugNotification, BugNotification.bug == bug)
+    >>> messages = [emails for notifications, omitted, emails in
+    ...     get_email_notifications(notifications)]
+    >>> len(messages)
+    1
+    >>> emails = messages[0]
+    >>> len(emails)
+    1
+    >>> notification = emails[0]
+    >>> notification['Message-Id'] == bug.initial_message.rfc822msgid
+    True
+    >>> 'References' in notification
+    False

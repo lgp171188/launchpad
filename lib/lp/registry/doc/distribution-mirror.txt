@@ -18,7 +18,7 @@ to create a new mirror you should use the Distribution.newMirror method.
     >>> from lp.registry.interfaces.pocket import PackagePublishingPocket
     >>> from lp.registry.interfaces.series import SeriesStatus
     >>> from lp.services.worlddata.interfaces.country import ICountrySet
-    >>> from lp.soyuz.interfaces.distroarchseries import IDistroArchSeriesSet
+    >>> from lp.soyuz.model.distroarchseries import DistroArchSeries
     >>> mirrorset = getUtility(IDistributionMirrorSet)
     >>> distroset = getUtility(IDistributionSet)
     >>> ubuntu = distroset.get(1)
@@ -72,7 +72,7 @@ associated with a given mirror, we use the ensureMirrorDistroArchSeries
 (or ensureMirrorDistroSeriesSource) method.
 
     >>> warty = getUtility(IDistroSeriesSet).get(1)
-    >>> warty_i386 = getUtility(IDistroArchSeriesSet).get(1)
+    >>> warty_i386 = DistroArchSeries.get(1)
     >>> pocket = PackagePublishingPocket.RELEASE
     >>> warty_component = warty.components[0]
     >>> warty_i386_mirror = new_mirror.ensureMirrorDistroArchSeries(
@@ -146,7 +146,7 @@ We also have a property which returns all unofficial mirrors.
 
 It's possible to retrieve a mirror by its name:
 
-    >>> from lp.services.webapp.testing import verifyObject
+    >>> from lp.testing import verifyObject
     >>> from lp.registry.interfaces.distributionmirror import IDistributionMirror
     >>> example_mirror = mirrorset.getByName('archive-mirror')
     >>> verifyObject(IDistributionMirror, example_mirror)
@@ -172,16 +172,12 @@ The getBy*Url methods return the corresponding mirrors:
     None
 
     >>> ftp_mirror = mirrorset.getByFtpUrl('ftp://localhost/example-ftp')
-    >>> ftp_mirror.has_ftp_or_rsync_base_url
-    True
 
     >>> print mirrorset.getByFtpUrl('ftp://non-existent-url')
     None
 
     >>> rsync_mirror = mirrorset.getByRsyncUrl(
     ...     'rsync://localhost/example-rsync')
-    >>> rsync_mirror.has_ftp_or_rsync_base_url
-    True
 
     >>> print mirrorset.getByRsyncUrl('rsync://non-existent-url')
     None
@@ -190,7 +186,7 @@ The getBy*Url methods return the corresponding mirrors:
 == Finding the best mirror for a given user ==
 
 In order to be able to guess what would be the best mirror for a given
-user based on his IP address, we provide simple API to find official
+user based on their IP address, we provide simple API to find official
 mirrors of a given content type located on a given country (or any other
 country in its continent if the country doesn't have any).
 
@@ -498,22 +494,22 @@ config.distributionmirrorprober.releases_file_list_url option)
     >>> for (series, flavour, paths) in get_expected_cdimage_paths():
     ...     for path in paths:
     ...         print series.name, flavour, path
-    hoary kubuntu /kubuntu/hoary/kubuntu-5.04-install-amd64.iso
-    hoary kubuntu /kubuntu/hoary/kubuntu-5.04-install-i386.iso
-    hoary kubuntu /kubuntu/hoary/kubuntu-5.04-install-powerpc.iso
-    hoary kubuntu /kubuntu/hoary/kubuntu-5.04-live-amd64.iso
-    hoary kubuntu /kubuntu/hoary/kubuntu-5.04-live-i386.iso
-    hoary kubuntu /kubuntu/hoary/kubuntu-5.04-live-powerpc.iso
-    hoary ubuntu /hoary/ubuntu-5.04-install-amd64.iso
-    hoary ubuntu /hoary/ubuntu-5.04-install-i386.iso
-    hoary ubuntu /hoary/ubuntu-5.04-install-powerpc.iso
-    hoary ubuntu /hoary/ubuntu-5.04-live-amd64.iso
-    hoary ubuntu /hoary/ubuntu-5.04-live-i386.iso
-    hoary ubuntu /hoary/ubuntu-5.04-live-powerpc.iso
-    warty ubuntu /warty/warty-release-install-amd64.iso
-    warty ubuntu /warty/warty-release-install-i386.iso
-    warty ubuntu /warty/warty-release-install-powerpc.iso
-    warty ubuntu /warty/warty-release-live-i386.iso
+    hoary kubuntu kubuntu/hoary/kubuntu-5.04-install-amd64.iso
+    hoary kubuntu kubuntu/hoary/kubuntu-5.04-install-i386.iso
+    hoary kubuntu kubuntu/hoary/kubuntu-5.04-install-powerpc.iso
+    hoary kubuntu kubuntu/hoary/kubuntu-5.04-live-amd64.iso
+    hoary kubuntu kubuntu/hoary/kubuntu-5.04-live-i386.iso
+    hoary kubuntu kubuntu/hoary/kubuntu-5.04-live-powerpc.iso
+    hoary ubuntu hoary/ubuntu-5.04-install-amd64.iso
+    hoary ubuntu hoary/ubuntu-5.04-install-i386.iso
+    hoary ubuntu hoary/ubuntu-5.04-install-powerpc.iso
+    hoary ubuntu hoary/ubuntu-5.04-live-amd64.iso
+    hoary ubuntu hoary/ubuntu-5.04-live-i386.iso
+    hoary ubuntu hoary/ubuntu-5.04-live-powerpc.iso
+    warty ubuntu warty/warty-release-install-amd64.iso
+    warty ubuntu warty/warty-release-install-i386.iso
+    warty ubuntu warty/warty-release-install-powerpc.iso
+    warty ubuntu warty/warty-release-live-i386.iso
 
 
 === Checking how up-to-date the content is ===
@@ -580,8 +576,8 @@ so we need to skip that upload.
     ...     warty.components[0])
     >>> warty_i386_mirror = removeSecurityProxy(warty_i386_mirror)
     >>> recent_freshness, threshold = warty_i386_mirror.freshness_times[0]
-    >>> start = datetime(2005, 06, 20, tzinfo=utc)
-    >>> end = datetime(2005, 06, 20, tzinfo=utc) + timedelta(hours=0.5)
+    >>> start = datetime(2005, 6, 20, tzinfo=utc)
+    >>> end = datetime(2005, 6, 20, tzinfo=utc) + timedelta(hours=0.5)
     >>> time_interval = (start, end)
     >>> upload = warty_i386_mirror.getLatestPublishingEntry(
     ...     time_interval, deb_only=False)
@@ -652,9 +648,9 @@ is correct.
     INFO    Probing Archive Mirrors
     INFO    Probed 4 mirrors.
     INFO    Disabling 1 mirror(s):
-            http://launchpad.dev/ubuntu/+mirror/archive-404-mirror
+            http://launchpad.test/ubuntu/+mirror/archive-404-mirror
     INFO    Re-enabling 1 mirror(s):
-            http://launchpad.dev/ubuntu/+mirror/archive-mirror
+            http://launchpad.test/ubuntu/+mirror/archive-mirror
     INFO    Done.
     <BLANKLINE>
 
@@ -666,7 +662,7 @@ is correct.
     INFO    Probing CD Image Mirrors
     INFO    Probed 4 mirrors.
     INFO    Disabling 1 mirror(s):
-            http://launchpad.dev/ubuntu/+mirror/unreachable-mirror
+            http://launchpad.test/ubuntu/+mirror/unreachable-mirror
     INFO    Done.
     <BLANKLINE>
 
@@ -714,7 +710,7 @@ we'll enable them again.
     INFO    Probing CD Image Mirrors
     INFO    Probed 4 mirrors.
     INFO    Re-enabling 1 mirror(s):
-            http://launchpad.dev/ubuntu/+mirror/releases-mirror
+            http://launchpad.test/ubuntu/+mirror/releases-mirror
     INFO    Done.
     <BLANKLINE>
 

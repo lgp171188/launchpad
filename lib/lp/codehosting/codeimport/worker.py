@@ -1,4 +1,4 @@
-# Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """The code import worker. This imports code from foreign repositories."""
@@ -14,14 +14,20 @@ __all__ = [
     'CodeImportWorkerExitCode',
     'ForeignTreeStore',
     'GitImportWorker',
-    'HgImportWorker',
     'ImportWorker',
+    'ToBzrImportWorker',
     'get_default_bazaar_branch_store',
     ]
 
 
+import io
 import os
 import shutil
+import subprocess
+from urlparse import (
+    urlsplit,
+    urlunsplit,
+    )
 
 # FIRST Ensure correct plugins are loaded. Do not delete this comment or the
 # line below this comment.
@@ -62,22 +68,20 @@ from bzrlib.url_policy_open import (
 import cscvs
 from cscvs.cmds import totla
 import CVS
+from dulwich.errors import GitProtocolError
+from dulwich.protocol import (
+    pkt_line,
+    Protocol,
+    )
 from lazr.uri import (
     InvalidURIError,
     URI,
     )
+from pymacaroons import Macaroon
 import SCM
 
-from lp.code.enums import RevisionControlSystems
 from lp.code.interfaces.branch import get_blacklisted_hostnames
-from lp.code.interfaces.codehosting import (
-    branch_id_alias,
-    compose_public_url,
-    )
-from lp.codehosting.codeimport.foreigntree import (
-    CVSWorkingTree,
-    SubversionWorkingTree,
-    )
+from lp.codehosting.codeimport.foreigntree import CVSWorkingTree
 from lp.codehosting.codeimport.tarball import (
     create_tarball,
     extract_tarball,
@@ -85,6 +89,8 @@ from lp.codehosting.codeimport.tarball import (
 from lp.codehosting.codeimport.uifactory import LoggingUIFactory
 from lp.services.config import config
 from lp.services.propertycache import cachedproperty
+from lp.services.timeout import urlfetch
+from lp.services.utils import sanitise_urls
 
 
 class CodeImportBranchOpenPolicy(BranchOpenPolicy):
@@ -92,11 +98,16 @@ class CodeImportBranchOpenPolicy(BranchOpenPolicy):
 
     In summary:
      - follow references,
-     - only open non-Launchpad URLs
+     - only open non-Launchpad URLs for imports from Bazaar to Bazaar or
+       from Git to Git
      - only open the allowed schemes
     """
 
     allowed_schemes = ['http', 'https', 'svn', 'git', 'ftp', 'bzr']
+
+    def __init__(self, rcstype, target_rcstype):
+        self.rcstype = rcstype
+        self.target_rcstype = target_rcstype
 
     def should_follow_references(self):
         """See `BranchOpenPolicy.should_follow_references`.
@@ -118,15 +129,17 @@ class CodeImportBranchOpenPolicy(BranchOpenPolicy):
     def check_one_url(self, url):
         """See `BranchOpenPolicy.check_one_url`.
 
-        We refuse to mirror from Launchpad or a ssh-like or file URL.
+        We refuse to mirror Bazaar branches from Launchpad, or any branches
+        from a ssh-like or file URL.
         """
         try:
             uri = URI(url)
         except InvalidURIError:
             raise BadUrl(url)
-        launchpad_domain = config.vhost.mainsite.hostname
-        if uri.underDomain(launchpad_domain):
-            raise BadUrl(url)
+        if self.rcstype == self.target_rcstype:
+            launchpad_domain = config.vhost.mainsite.hostname
+            if uri.underDomain(launchpad_domain):
+                raise BadUrl(url)
         for hostname in get_blacklisted_hostnames():
             if uri.underDomain(hostname):
                 raise BadUrl(url)
@@ -154,9 +167,18 @@ class BazaarBranchStore:
         """Construct a Bazaar branch store based at `transport`."""
         self.transport = transport
 
-    def _getMirrorURL(self, db_branch_id):
+    def _getMirrorURL(self, db_branch_id, push=False):
         """Return the URL that `db_branch` is stored at."""
-        return urljoin(self.transport.base, '%08x' % db_branch_id)
+        base_url = self.transport.base
+        if push:
+            # Pulling large branches over sftp is less CPU-intensive, but
+            # pushing over bzr+ssh seems to be more reliable.
+            split = urlsplit(base_url)
+            if split.scheme == 'sftp':
+                base_url = urlunsplit([
+                    'bzr+ssh', split.netloc, split.path, split.query,
+                    split.fragment])
+        return urljoin(base_url, '%08x' % db_branch_id)
 
     def pull(self, db_branch_id, target_path, required_format,
              needs_tree=False, stacked_on_url=None):
@@ -206,7 +228,7 @@ class BazaarBranchStore:
             (i.e. actually transferred revisions).
         """
         self.transport.create_prefix()
-        target_url = self._getMirrorURL(db_branch_id)
+        target_url = self._getMirrorURL(db_branch_id, push=True)
         try:
             remote_branch = Branch.open(target_url)
         except NotBranchError:
@@ -262,38 +284,57 @@ class CodeImportSourceDetails:
     As the worker doesn't talk to the database, we don't use
     `CodeImport` objects for this.
 
-    The 'fromArguments' and 'asArguments' methods convert to and from a form
+    The 'fromArguments' method builds an instance of this class from a form
     of the information suitable for passing around on executables' command
     lines.
 
-    :ivar branch_id: The id of the branch associated to this code import, used
-        for locating the existing import and the foreign tree.
-    :ivar rcstype: 'svn', 'cvs', 'hg', 'git', 'bzr-svn', 'bzr' as appropriate.
-    :ivar url: The branch URL if rcstype in ['svn', 'bzr-svn',
-        'git', 'hg', 'bzr'], None otherwise.
+    :ivar target_id: The id of the Bazaar branch or the path of the Git
+        repository associated with this code import, used for locating the
+        existing import and the foreign tree.
+    :ivar rcstype: 'cvs', 'git', 'bzr-svn', 'bzr' as appropriate.
+    :ivar target_rcstype: 'bzr' or 'git' as appropriate.
+    :ivar url: The branch URL if rcstype in ['bzr-svn', 'git', 'bzr'], None
+        otherwise.
     :ivar cvs_root: The $CVSROOT if rcstype == 'cvs', None otherwise.
     :ivar cvs_module: The CVS module if rcstype == 'cvs', None otherwise.
+    :ivar stacked_on_url: The URL of the branch that the associated branch
+        is stacked on, if any.
+    :ivar macaroon: A macaroon granting authority to push to the target
+        repository if target_rcstype == 'git', None otherwise.
     """
 
-    def __init__(self, branch_id, rcstype, url=None, cvs_root=None,
-                 cvs_module=None, stacked_on_url=None):
-        self.branch_id = branch_id
+    def __init__(self, target_id, rcstype, target_rcstype, url=None,
+                 cvs_root=None, cvs_module=None, stacked_on_url=None,
+                 macaroon=None):
+        self.target_id = target_id
         self.rcstype = rcstype
+        self.target_rcstype = target_rcstype
         self.url = url
         self.cvs_root = cvs_root
         self.cvs_module = cvs_module
         self.stacked_on_url = stacked_on_url
+        self.macaroon = macaroon
 
     @classmethod
     def fromArguments(cls, arguments):
         """Convert command line-style arguments to an instance."""
-        branch_id = int(arguments.pop(0))
+        # Keep this in sync with CodeImportJob.makeWorkerArguments.
+        arguments = list(arguments)
+        target_id = arguments.pop(0)
         rcstype = arguments.pop(0)
-        if rcstype in ['svn', 'bzr-svn', 'git', 'hg', 'bzr']:
+        if ':' not in rcstype:
+            raise AssertionError(
+                "'%s' does not contain both source and target types." %
+                rcstype)
+        rcstype, target_rcstype = rcstype.split(':', 1)
+        if rcstype in ['bzr-svn', 'git', 'bzr']:
             url = arguments.pop(0)
-            try:
-                stacked_on_url = arguments.pop(0)
-            except IndexError:
+            if target_rcstype == 'bzr':
+                try:
+                    stacked_on_url = arguments.pop(0)
+                except IndexError:
+                    stacked_on_url = None
+            else:
                 stacked_on_url = None
             cvs_root = cvs_module = None
         elif rcstype == 'cvs':
@@ -302,60 +343,16 @@ class CodeImportSourceDetails:
             [cvs_root, cvs_module] = arguments
         else:
             raise AssertionError("Unknown rcstype %r." % rcstype)
+        if target_rcstype == 'bzr':
+            target_id = int(target_id)
+            macaroon = None
+        elif target_rcstype == 'git':
+            macaroon = Macaroon.deserialize(arguments.pop(0))
+        else:
+            raise AssertionError("Unknown target_rcstype %r." % target_rcstype)
         return cls(
-            branch_id, rcstype, url, cvs_root, cvs_module, stacked_on_url)
-
-    @classmethod
-    def fromCodeImport(cls, code_import):
-        """Convert a `CodeImport` to an instance."""
-        branch = code_import.branch
-        if branch.stacked_on is not None and not branch.stacked_on.private:
-            stacked_path = branch_id_alias(branch.stacked_on)
-            stacked_on_url = compose_public_url('http', stacked_path)
-        else:
-            stacked_on_url = None
-        if code_import.rcs_type == RevisionControlSystems.SVN:
-            return cls(
-                branch.id, 'svn', str(code_import.url),
-                stacked_on_url=stacked_on_url)
-        elif code_import.rcs_type == RevisionControlSystems.BZR_SVN:
-            return cls(
-                branch.id, 'bzr-svn', str(code_import.url),
-                stacked_on_url=stacked_on_url)
-        elif code_import.rcs_type == RevisionControlSystems.CVS:
-            return cls(
-                branch.id, 'cvs',
-                cvs_root=str(code_import.cvs_root),
-                cvs_module=str(code_import.cvs_module))
-        elif code_import.rcs_type == RevisionControlSystems.GIT:
-            return cls(
-                branch.id, 'git', str(code_import.url),
-                stacked_on_url=stacked_on_url)
-        elif code_import.rcs_type == RevisionControlSystems.HG:
-            return cls(
-                branch.id, 'hg', str(code_import.url),
-                stacked_on_url=stacked_on_url)
-        elif code_import.rcs_type == RevisionControlSystems.BZR:
-            return cls(
-                branch.id, 'bzr', str(code_import.url),
-                stacked_on_url=stacked_on_url)
-        else:
-            raise AssertionError("Unknown rcstype %r." % code_import.rcs_type)
-
-    def asArguments(self):
-        """Return a list of arguments suitable for passing to a child process.
-        """
-        result = [str(self.branch_id), self.rcstype]
-        if self.rcstype in ['svn', 'bzr-svn', 'git', 'hg', 'bzr']:
-            result.append(self.url)
-            if self.stacked_on_url is not None:
-                result.append(self.stacked_on_url)
-        elif self.rcstype == 'cvs':
-            result.append(self.cvs_root)
-            result.append(self.cvs_module)
-        else:
-            raise AssertionError("Unknown rcstype %r." % self.rcstype)
-        return result
+            target_id, rcstype, target_rcstype, url, cvs_root, cvs_module,
+            stacked_on_url, macaroon)
 
 
 class ImportDataStore:
@@ -379,7 +376,7 @@ class ImportDataStore:
         """
         self.source_details = source_details
         self._transport = transport
-        self._branch_id = source_details.branch_id
+        self._target_id = source_details.target_id
 
     def _getRemoteName(self, local_name):
         """Convert `local_name` to the name used to store a file.
@@ -399,7 +396,7 @@ class ImportDataStore:
         if dot_index < 0:
             raise AssertionError("local_name must have an extension.")
         ext = local_name[dot_index:]
-        return '%08x%s' % (self._branch_id, ext)
+        return '%08x%s' % (self._target_id, ext)
 
     def fetch(self, filename, dest_transport=None):
         """Retrieve `filename` from the store.
@@ -464,10 +461,7 @@ class ForeignTreeStore:
     def _getForeignTree(self, target_path):
         """Return a foreign tree object for `target_path`."""
         source_details = self.import_data_store.source_details
-        if source_details.rcstype == 'svn':
-            return SubversionWorkingTree(
-                source_details.url, str(target_path))
-        elif source_details.rcstype == 'cvs':
+        if source_details.rcstype == 'cvs':
             return CVSWorkingTree(
                 source_details.cvs_root, source_details.cvs_module,
                 target_path)
@@ -513,57 +507,23 @@ class ForeignTreeStore:
 class ImportWorker:
     """Oversees the actual work of a code import."""
 
-    # Where the Bazaar working tree will be stored.
-    BZR_BRANCH_PATH = 'bzr_branch'
-
-    # Should `getBazaarBranch` create a working tree?
-    needs_bzr_tree = True
-
-    required_format = BzrDirFormat.get_default_format()
-
-    def __init__(self, source_details, import_data_transport,
-                 bazaar_branch_store, logger, opener_policy):
+    def __init__(self, source_details, logger, opener_policy):
         """Construct an `ImportWorker`.
 
         :param source_details: A `CodeImportSourceDetails` object.
-        :param bazaar_branch_store: A `BazaarBranchStore`. The import worker
-            uses this to fetch and store the Bazaar branches that are created
-            and updated during the import process.
         :param logger: A `Logger` to pass to cscvs.
         :param opener_policy: Policy object that decides what branches can
              be imported
         """
         self.source_details = source_details
-        self.bazaar_branch_store = bazaar_branch_store
-        self.import_data_store = ImportDataStore(
-            import_data_transport, self.source_details)
         self._logger = logger
         self._opener_policy = opener_policy
-
-    def getBazaarBranch(self):
-        """Return the Bazaar `Branch` that we are importing into."""
-        if os.path.isdir(self.BZR_BRANCH_PATH):
-            shutil.rmtree(self.BZR_BRANCH_PATH)
-        return self.bazaar_branch_store.pull(
-            self.source_details.branch_id, self.BZR_BRANCH_PATH,
-            self.required_format, self.needs_bzr_tree,
-            stacked_on_url=self.source_details.stacked_on_url)
-
-    def pushBazaarBranch(self, bazaar_branch):
-        """Push the updated Bazaar branch to the server.
-
-        :return: True if revisions were transferred.
-        """
-        return self.bazaar_branch_store.push(
-            self.source_details.branch_id, bazaar_branch,
-            self.required_format,
-            stacked_on_url=self.source_details.stacked_on_url)
 
     def getWorkingDirectory(self):
         """The directory we should change to and store all scratch files in.
         """
         base = config.codeimportworker.working_directory_root
-        dirname = 'worker-for-branch-%s' % self.source_details.branch_id
+        dirname = 'worker-for-branch-%s' % self.source_details.target_id
         return os.path.join(base, dirname)
 
     def run(self):
@@ -602,7 +562,56 @@ class ImportWorker:
         raise NotImplementedError()
 
 
-class CSCVSImportWorker(ImportWorker):
+class ToBzrImportWorker(ImportWorker):
+    """Oversees the actual work of a code import to Bazaar."""
+
+    # Where the Bazaar working tree will be stored.
+    BZR_BRANCH_PATH = 'bzr_branch'
+
+    # Should `getBazaarBranch` create a working tree?
+    needs_bzr_tree = True
+
+    required_format = BzrDirFormat.get_default_format()
+
+    def __init__(self, source_details, import_data_transport,
+                 bazaar_branch_store, logger, opener_policy):
+        """Construct a `ToBzrImportWorker`.
+
+        :param source_details: A `CodeImportSourceDetails` object.
+        :param bazaar_branch_store: A `BazaarBranchStore`. The import worker
+            uses this to fetch and store the Bazaar branches that are created
+            and updated during the import process.
+        :param logger: A `Logger` to pass to cscvs.
+        :param opener_policy: Policy object that decides what branches can
+             be imported
+        """
+        super(ToBzrImportWorker, self).__init__(
+            source_details, logger, opener_policy)
+        self.bazaar_branch_store = bazaar_branch_store
+        self.import_data_store = ImportDataStore(
+            import_data_transport, self.source_details)
+
+    def getBazaarBranch(self):
+        """Return the Bazaar `Branch` that we are importing into."""
+        if os.path.isdir(self.BZR_BRANCH_PATH):
+            shutil.rmtree(self.BZR_BRANCH_PATH)
+        return self.bazaar_branch_store.pull(
+            self.source_details.target_id, self.BZR_BRANCH_PATH,
+            self.required_format, self.needs_bzr_tree,
+            stacked_on_url=self.source_details.stacked_on_url)
+
+    def pushBazaarBranch(self, bazaar_branch, remote_branch=None):
+        """Push the updated Bazaar branch to the server.
+
+        :return: True if revisions were transferred.
+        """
+        return self.bazaar_branch_store.push(
+            self.source_details.target_id, bazaar_branch,
+            self.required_format,
+            stacked_on_url=self.source_details.stacked_on_url)
+
+
+class CSCVSImportWorker(ToBzrImportWorker):
     """An ImportWorker for imports that use CSCVS.
 
     As well as invoking cscvs to do the import, this class also needs to
@@ -619,7 +628,7 @@ class CSCVSImportWorker(ImportWorker):
     def getForeignTree(self):
         """Return the foreign branch object that we are importing from.
 
-        :return: A `SubversionWorkingTree` or a `CVSWorkingTree`.
+        :return: A `CVSWorkingTree`.
         """
         if os.path.isdir(self.FOREIGN_WORKING_TREE_PATH):
             shutil.rmtree(self.FOREIGN_WORKING_TREE_PATH)
@@ -629,7 +638,7 @@ class CSCVSImportWorker(ImportWorker):
     def importToBazaar(self, foreign_tree, bazaar_branch):
         """Actually import `foreign_tree` into `bazaar_branch`.
 
-        :param foreign_tree: A `SubversionWorkingTree` or a `CVSWorkingTree`.
+        :param foreign_tree: A `CVSWorkingTree`.
         :param bazaar_tree: A `bzrlib.branch.Branch`, which must have a
             colocated working tree.
         """
@@ -682,7 +691,7 @@ class CSCVSImportWorker(ImportWorker):
             return CodeImportWorkerExitCode.SUCCESS_NOCHANGE
 
 
-class PullingImportWorker(ImportWorker):
+class PullingImportWorker(ToBzrImportWorker):
     """An import worker for imports that can be done by a bzr plugin.
 
     Subclasses need to implement `probers`.
@@ -769,7 +778,7 @@ class PullingImportWorker(ImportWorker):
                 else:
                     raise
             self._logger.info("Pushing local import branch to central store.")
-            self.pushBazaarBranch(bazaar_branch)
+            self.pushBazaarBranch(bazaar_branch, remote_branch=remote_branch)
             self._logger.info("Job complete.")
             return result
         finally:
@@ -814,7 +823,7 @@ class GitImportWorker(PullingImportWorker):
         return config.codeimport.git_revisions_import_limit
 
     def getBazaarBranch(self):
-        """See `ImportWorker.getBazaarBranch`.
+        """See `ToBzrImportWorker.getBazaarBranch`.
 
         In addition to the superclass' behaviour, we retrieve bzr-git's
         caches, both legacy and modern, from the import data store and put
@@ -835,8 +844,8 @@ class GitImportWorker(PullingImportWorker):
             extract_tarball(local_name, git_db_dir)
         return branch
 
-    def pushBazaarBranch(self, bazaar_branch):
-        """See `ImportWorker.pushBazaarBranch`.
+    def pushBazaarBranch(self, bazaar_branch, remote_branch=None):
+        """See `ToBzrImportWorker.pushBazaarBranch`.
 
         In addition to the superclass' behaviour, we store bzr-git's cache
         directory at .bzr/repository/git in the import data store.
@@ -847,79 +856,6 @@ class GitImportWorker(PullingImportWorker):
         git_db_dir = os.path.join(local_path_from_url(repo_base), 'git')
         local_name = 'git-cache.tar.gz'
         create_tarball(git_db_dir, local_name)
-        self.import_data_store.put(local_name)
-        return non_trivial
-
-
-class HgImportWorker(PullingImportWorker):
-    """An import worker for Mercurial imports.
-
-    The only behaviour we add is preserving the id-sha map between runs.
-    """
-
-    @property
-    def invalid_branch_exceptions(self):
-        return [
-            NoRepositoryPresent,
-            NotBranchError,
-            ConnectionError,
-        ]
-
-    @property
-    def unsupported_feature_exceptions(self):
-        return [
-            InvalidEntryName,
-        ]
-
-    @property
-    def broken_remote_exceptions(self):
-        return []
-
-    @property
-    def probers(self):
-        """See `PullingImportWorker.probers`."""
-        from bzrlib.plugins.hg import HgProber
-        return [HgProber]
-
-    def getRevisionLimit(self):
-        """See `PullingImportWorker.getRevisionLimit`."""
-        return config.codeimport.hg_revisions_import_limit
-
-    def getBazaarBranch(self):
-        """See `ImportWorker.getBazaarBranch`.
-
-        In addition to the superclass' behaviour, we retrieve the bzr-hg's
-        caches, both legacy and current and put them where bzr-hg will find
-        them in the Bazaar tree, that is at '.bzr/repository/hg-v2.db' and
-        '.bzr/repository/hg'.
-        """
-        branch = PullingImportWorker.getBazaarBranch(self)
-        # Fetch the legacy cache from the store, if present.
-        self.import_data_store.fetch(
-            'hg-v2.db', branch.repository._transport)
-        # The cache dir from newer bzr-hgs is stored as a tarball.
-        local_name = 'hg-cache.tar.gz'
-        if self.import_data_store.fetch(local_name):
-            repo_transport = branch.repository._transport
-            repo_transport.mkdir('hg')
-            hg_db_dir = os.path.join(
-                local_path_from_url(repo_transport.base), 'hg')
-            extract_tarball(local_name, hg_db_dir)
-        return branch
-
-    def pushBazaarBranch(self, bazaar_branch):
-        """See `ImportWorker.pushBazaarBranch`.
-
-        In addition to the superclass' behaviour, we store the hg cache
-        that bzr-hg will have created at .bzr/repository/hg into
-        the import data store.
-        """
-        non_trivial = PullingImportWorker.pushBazaarBranch(
-            self, bazaar_branch)
-        repo_base = bazaar_branch.repository._transport.base
-        hg_db_dir = os.path.join(local_path_from_url(repo_base), 'hg')
-        local_name = 'hg-cache.tar.gz'
-        create_tarball(hg_db_dir, local_name)
         self.import_data_store.put(local_name)
         return non_trivial
 
@@ -958,6 +894,42 @@ class BzrSvnImportWorker(PullingImportWorker):
         from bzrlib.plugins.svn import SvnRemoteProber
         return [SvnRemoteProber]
 
+    def getBazaarBranch(self):
+        """See `ToBzrImportWorker.getBazaarBranch`.
+
+        In addition to the superclass' behaviour, we retrieve bzr-svn's
+        cache from the import data store and put it where bzr-svn will find
+        it.
+        """
+        from bzrlib.plugins.svn.cache import create_cache_dir
+        branch = super(BzrSvnImportWorker, self).getBazaarBranch()
+        local_name = 'svn-cache.tar.gz'
+        if self.import_data_store.fetch(local_name):
+            extract_tarball(local_name, create_cache_dir())
+        return branch
+
+    def pushBazaarBranch(self, bazaar_branch, remote_branch=None):
+        """See `ToBzrImportWorker.pushBazaarBranch`.
+
+        In addition to the superclass' behaviour, we store bzr-svn's cache
+        directory in the import data store.
+        """
+        from bzrlib.plugins.svn.cache import get_cache
+        non_trivial = super(BzrSvnImportWorker, self).pushBazaarBranch(
+            bazaar_branch)
+        if remote_branch is not None:
+            cache = get_cache(remote_branch.repository.uuid)
+            cache_dir = cache.create_cache_dir()
+            local_name = 'svn-cache.tar.gz'
+            create_tarball(
+                os.path.dirname(cache_dir), local_name,
+                filenames=[os.path.basename(cache_dir)])
+            self.import_data_store.put(local_name)
+            # XXX cjwatson 2019-02-06: Once this is behaving well on
+            # production, consider removing the local cache after pushing a
+            # copy of it to the import data store.
+        return non_trivial
+
 
 class BzrImportWorker(PullingImportWorker):
     """An import worker for importing Bazaar branches."""
@@ -967,6 +939,7 @@ class BzrImportWorker(PullingImportWorker):
         ConnectionError,
         ]
     unsupported_feature_exceptions = []
+    broken_remote_exceptions = []
 
     def getRevisionLimit(self):
         """See `PullingImportWorker.getRevisionLimit`."""
@@ -980,3 +953,163 @@ class BzrImportWorker(PullingImportWorker):
         """See `PullingImportWorker.probers`."""
         from bzrlib.bzrdir import BzrProber, RemoteBzrProber
         return [BzrProber, RemoteBzrProber]
+
+
+class GitToGitImportWorker(ImportWorker):
+    """An import worker for imports from Git to Git."""
+
+    def _runGit(self, *args, **kwargs):
+        """Run git with arguments, sending output to the logger."""
+        cmd = ["git"] + list(args)
+        git_process = subprocess.Popen(
+            cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, **kwargs)
+        for line in git_process.stdout:
+            line = line.decode("UTF-8", "replace").rstrip("\n")
+            self._logger.info(sanitise_urls(line))
+        retcode = git_process.wait()
+        if retcode:
+            raise subprocess.CalledProcessError(retcode, cmd)
+
+    def _getHead(self, repository, remote_name):
+        """Get HEAD from a configured remote in a local repository.
+
+        The returned ref name will be adjusted in such a way that it can be
+        passed to `_setHead` (e.g. refs/remotes/origin/master ->
+        refs/heads/master).
+        """
+        # This is a bit weird, but set-head will bail out if the target
+        # doesn't exist in the correct remotes namespace.  git 2.8.0 has
+        # "git ls-remote --symref <repository> HEAD" which would involve
+        # less juggling.
+        self._runGit(
+            "fetch", "-q", ".", "refs/heads/*:refs/remotes/%s/*" % remote_name,
+            cwd=repository)
+        self._runGit(
+            "remote", "set-head", remote_name, "--auto", cwd=repository)
+        ref_prefix = "refs/remotes/%s/" % remote_name
+        target_ref = subprocess.check_output(
+            ["git", "symbolic-ref", ref_prefix + "HEAD"],
+            cwd=repository, universal_newlines=True).rstrip("\n")
+        if not target_ref.startswith(ref_prefix):
+            raise GitProtocolError(
+                "'git remote set-head %s --auto' did not leave remote HEAD "
+                "under %s" % (remote_name, ref_prefix))
+        real_target_ref = "refs/heads/" + target_ref[len(ref_prefix):]
+        # Ensure the result is a valid ref name, just in case.
+        self._runGit("check-ref-format", real_target_ref, cwd="repository")
+        return real_target_ref
+
+    def _setHead(self, target_url, target_ref):
+        """Set HEAD on a remote repository.
+
+        This relies on the turnip-set-symbolic-ref extension.
+        """
+        service = "turnip-set-symbolic-ref"
+        url = urljoin(target_url, service)
+        headers = {
+            "Content-Type": "application/x-%s-request" % service,
+            }
+        body = pkt_line("HEAD %s" % target_ref) + pkt_line(None)
+        try:
+            response = urlfetch(url, method="POST", headers=headers, data=body)
+            response.raise_for_status()
+        except Exception as e:
+            raise GitProtocolError(str(e))
+        content_type = response.headers.get("Content-Type")
+        if content_type != ("application/x-%s-result" % service):
+            raise GitProtocolError(
+                "Invalid Content-Type from server: %s" % content_type)
+        content = io.BytesIO(response.content)
+        proto = Protocol(content.read, None)
+        pkt = proto.read_pkt_line()
+        if pkt is None:
+            raise GitProtocolError("Unexpected flush-pkt from server")
+        elif pkt.rstrip(b"\n") == b"ACK HEAD":
+            pass
+        elif pkt.startswith(b"ERR "):
+            raise GitProtocolError(
+                pkt[len(b"ERR "):].rstrip(b"\n").decode("UTF-8"))
+        else:
+            raise GitProtocolError("Unexpected packet %r from server" % pkt)
+
+    def _deleteRefs(self, repository, pattern):
+        """Delete all refs in `repository` matching `pattern`."""
+        # XXX cjwatson 2016-11-08: We might ideally use something like:
+        # "git for-each-ref --format='delete %(refname)%00%(objectname)%00' \
+        #   <pattern> | git update-ref --stdin -z
+        # ... which would be faster, but that requires git 1.8.5.
+        remote_refs = subprocess.check_output(
+            ["git", "for-each-ref", "--format=%(refname)", pattern],
+            cwd="repository").splitlines()
+        for remote_ref in remote_refs:
+            self._runGit("update-ref", "-d", remote_ref, cwd="repository")
+
+    def _doImport(self):
+        self._logger.info("Starting job.")
+        try:
+            self._opener_policy.checkOneURL(self.source_details.url)
+        except BadUrl as e:
+            self._logger.info("Invalid URL: %s" % e)
+            return CodeImportWorkerExitCode.FAILURE_FORBIDDEN
+        unauth_target_url = urljoin(
+            config.codehosting.git_browse_root, self.source_details.target_id)
+        split = urlsplit(unauth_target_url)
+        target_netloc = ":%s@%s" % (
+            self.source_details.macaroon.serialize(), split.hostname)
+        if split.port:
+            target_netloc += ":%s" % split.port
+        target_url = urlunsplit([
+            split.scheme, target_netloc, split.path, "", ""])
+        # XXX cjwatson 2016-10-11: Ideally we'd put credentials in a
+        # credentials store instead.  However, git only accepts credentials
+        # that have both a non-empty username and a non-empty password.
+        self._logger.info("Getting existing repository from hosting service.")
+        try:
+            self._runGit("clone", "--mirror", target_url, "repository")
+        except subprocess.CalledProcessError as e:
+            self._logger.info(
+                "Unable to get existing repository from hosting service: "
+                "git clone exited %s" % e.returncode)
+            return CodeImportWorkerExitCode.FAILURE
+        self._logger.info("Fetching remote repository.")
+        try:
+            self._runGit("config", "gc.auto", "0", cwd="repository")
+            # Remove any stray remote-tracking refs from the last time round.
+            self._deleteRefs("repository", "refs/remotes/source/**")
+            self._runGit(
+                "remote", "add", "source", self.source_details.url,
+                cwd="repository")
+            self._runGit(
+                "fetch", "--prune", "source", "+refs/*:refs/*",
+                cwd="repository")
+            try:
+                new_head = self._getHead("repository", "source")
+            except (subprocess.CalledProcessError, GitProtocolError) as e2:
+                self._logger.info("Unable to fetch default branch: %s" % e2)
+                new_head = None
+            self._runGit("remote", "rm", "source", cwd="repository")
+            # XXX cjwatson 2016-11-03: For some reason "git remote rm"
+            # doesn't actually remove the refs.
+            self._deleteRefs("repository", "refs/remotes/source/**")
+        except subprocess.CalledProcessError as e:
+            self._logger.info("Unable to fetch remote repository: %s" % e)
+            return CodeImportWorkerExitCode.FAILURE_INVALID
+        self._logger.info("Pushing repository to hosting service.")
+        try:
+            if new_head is not None:
+                # Push the target of HEAD first to ensure that it is always
+                # available.
+                self._runGit(
+                    "push", target_url, "+%s:%s" % (new_head, new_head),
+                    cwd="repository")
+                try:
+                    self._setHead(target_url, new_head)
+                except GitProtocolError as e:
+                    self._logger.info("Unable to set default branch: %s" % e)
+            self._runGit("push", "--mirror", target_url, cwd="repository")
+        except subprocess.CalledProcessError as e:
+            self._logger.info(
+                "Unable to push to hosting service: git push exited %s" %
+                e.returncode)
+            return CodeImportWorkerExitCode.FAILURE
+        return CodeImportWorkerExitCode.SUCCESS

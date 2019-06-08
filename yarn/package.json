@@ -1,0 +1,21 @@
+{
+  "name": "launchpad",
+  "version": "0.0.0",
+  "description": "Launchpad",
+  "main": "index.js",
+  "repository": {
+    "type": "bzr",
+    "url": "https://bazaar.launchpad.net/+branch/launchpad"
+  },
+  "author": "Canonical Ltd.",
+  "license": "AGPL-3.0",
+  "dependencies": {
+    "yui": "3.10.3"
+  },
+  "devDependencies": {
+    "eslint": "^4.2.0"
+  },
+  "scripts": {
+    "lint": "eslint 'lib/lp/**/*.js'"
+  }
+}

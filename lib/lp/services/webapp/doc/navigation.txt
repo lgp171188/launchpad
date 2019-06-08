@@ -29,7 +29,9 @@ When you write a navigation class, you can talk about four kinds of traversal.
  - Say that particular steps result in a redirection to some other name.
    Example, for a Product:
 
-   redirection('+bug', '+bugs')
+   @redirection('+bug'):
+   def redirect_bug(self):
+       return '+bugs'
 
  - Say how traversal works for anything not handled by the other rules.
    Example:
@@ -55,7 +57,7 @@ In order to demonstrate a navigation class, we need to create an interface
 for the thing being navigated.  Rather than use a standard Launchpad interface,
 we'll define one here.
 
-    >>> from zope.interface import Interface, Attribute, implements
+    >>> from zope.interface import Interface, Attribute, implementer
 
     >>> class IThingSet(Interface):
     ...     """An interface we're using in this doctest."""
@@ -100,8 +102,8 @@ we'll define one here.
     ...         except IndexError:
     ...             return None
 
-    >>> class Request(object):
-    ...     implements(IBrowserRequest)
+    >>> @implementer(IBrowserRequest)
+    ... class Request(object):
     ...
     ...     def __init__(self):
     ...         self.response = Response()
@@ -136,8 +138,8 @@ we'll define one here.
     ...
     ...     value = Attribute('the value of the thing')
 
-    >>> class Thing(object):
-    ...     implements(IThing)
+    >>> @implementer(IThing)
+    ... class Thing(object):
     ...
     ...     def __init__(self, value):
     ...         self.value = value
@@ -145,8 +147,8 @@ we'll define one here.
     ...     def __repr__(self):
     ...         return "<Thing '%s'>" % self.value
 
-    >>> class ThingSet(object):
-    ...     implements(IThingSet)
+    >>> @implementer(IThingSet)
+    ... class ThingSet(object):
     ...
     ...     def getThing(self, name):
     ...         if name.startswith('t'):
@@ -255,8 +257,8 @@ The zcml processor `browser:navigation` registers navigation classes.
     >>> from zope.configuration import xmlconfig
     >>> zcmlcontext = xmlconfig.string("""
     ... <configure xmlns:browser="http://namespaces.zope.org/browser">
+    ...   <include package="zope.browserpage" file="meta.zcml" />
     ...   <include package="lp.services.webapp" file="meta.zcml" />
-    ...   <include package="zope.app.zcmlfiles" file="meta.zcml" />
     ...   <browser:navigation
     ...       module="lp.testing"
     ...       classes="ThingSetNavigation"
@@ -399,17 +401,14 @@ Check that the request's state is as it should be.
 == redirection ==
 
 You can register that particular names are to be redirected to other names.
-You do this using the redirection() function in one of three ways:
+You do this using the redirection() function in one of two ways:
 
- 1. as a class advisor function:
-        redirection(namefrom, nameto)
-
- 2. as a Navigation class method decorator:
+ 1. as a Navigation class method decorator:
         @redirection(namefrom)
         def redirect_namefrom(self):
             return nameto
 
- 3. returned by some other traversal function:
+ 2. returned by some other traversal function:
         @stepto(namefrom)
         def traverse_namefrom(self):
             return redirection(nameto)
@@ -429,8 +428,13 @@ Let's make another navigation class to test redirection.
 
     >>> class ThingSetNavigation4(ThingSetNavigation):
     ...
-    ...     redirection('tree', 'trees', status=301)
-    ...     redirection('toad', 'toads')
+    ...     @redirection('tree', status=301)
+    ...     def redirect_tree(self):
+    ...         return 'trees'
+    ...
+    ...     @redirection('toad')
+    ...     def redirect_toad(self):
+    ...         return 'toads'
     ...
     ...     def traverse(self, name):
     ...         return redirection('/another/place', status=301)
@@ -548,7 +552,9 @@ so far, and also defining some more stepthroughs and steptos and redirections.
     ...     def traverse_diplodocus(self, name):
     ...         return 'diplodocus called %s' % name
     ...
-    ...     redirection('topology', 'topologies')
+    ...     @redirection('topology')
+    ...     def redirect_topology(self):
+    ...         return 'topologies'
 
     >>> ubernav = UberEverythingThingNavigation(thingset, request)
 
@@ -605,7 +611,7 @@ Check those from ThingSetNavigation4:
     '/another/place'
 
 
-== Testing that multiple inheritence involving decorator advisors works ==
+== Testing that multiple inheritance involving decorators works ==
 
     >>> class A:
     ...

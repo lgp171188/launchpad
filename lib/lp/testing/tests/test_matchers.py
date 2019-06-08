@@ -1,15 +1,17 @@
-# Copyright 2010 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2017 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
 
 from testtools.matchers import (
+    Equals,
     Is,
+    KeysEqual,
     LessThan,
     Not,
     )
 from zope.interface import (
-    implements,
+    implementer,
     Interface,
     )
 from zope.interface.exceptions import BrokenImplementation
@@ -18,10 +20,10 @@ from zope.security.checker import NamesChecker
 from zope.security.proxy import ProxyFactory
 
 from lp.testing import (
+    RequestTimelineCollector,
     TestCase,
     TestCaseWithFactory,
     )
-from lp.testing._webservice import QueryCollector
 from lp.testing.layers import DatabaseFunctionalLayer
 from lp.testing.matchers import (
     BrowsesWithQueryLimit,
@@ -45,10 +47,9 @@ class ITestInterface(Interface):
         """Dummy method for interface compliance testing."""
 
 
+@implementer(ITestInterface)
 class Implementor:
     """Dummy class that implements ITestInterface for testing."""
-
-    implements(ITestInterface)
 
     def doFoo(self):
         pass
@@ -113,8 +114,9 @@ class ProvidesTests(TestCase):
 
     def match_does_not_verify(self):
 
+        @implementer(ITestInterface)
         class BadlyImplementedClass:
-            implements(ITestInterface)
+            pass
 
         obj = BadlyImplementedClass()
         matcher = Provides(ITestInterface)
@@ -136,7 +138,7 @@ class ProvidesTests(TestCase):
         obj, mismatch = self.match_does_not_verify()
         try:
             verifyObject(ITestInterface, obj)
-            self.assert_("verifyObject did not raise an exception.")
+            self.assertTrue("verifyObject did not raise an exception.")
         except BrokenImplementation as e:
             extra = str(e)
         self.assertEqual(extra, mismatch.extra)
@@ -206,7 +208,7 @@ class TestQueryMatching(TestCase):
 
     def test_match(self):
         matcher = HasQueryCount(Is(3))
-        collector = QueryCollector()
+        collector = RequestTimelineCollector()
         collector.count = 3
         # not inspected
         del collector.queries
@@ -214,9 +216,12 @@ class TestQueryMatching(TestCase):
 
     def test_mismatch(self):
         matcher = HasQueryCount(LessThan(2))
-        collector = QueryCollector()
+        collector = RequestTimelineCollector()
         collector.count = 2
-        collector.queries = [("foo", "bar"), ("baaz", "quux")]
+        collector.queries = [
+            (0, 1, "SQL-main-slave", "SELECT 1 FROM Person", None),
+            (2, 3, "SQL-main-slave", "SELECT 1 FROM Product", None),
+            ]
         mismatch = matcher.match(collector)
         self.assertThat(mismatch, Not(Is(None)))
         details = mismatch.get_details()
@@ -225,10 +230,90 @@ class TestQueryMatching(TestCase):
             self.assertEqual("queries", name)
             self.assertEqual("text", content.content_type.type)
             lines.append(''.join(content.iter_text()))
-        self.assertEqual(["('foo', 'bar')\n('baaz', 'quux')"],
-            lines)
+        separator = "-" * 70
+        expected_lines = [
+            "0-1@SQL-main-slave SELECT 1 FROM Person\n" + separator + "\n" +
+            "2-3@SQL-main-slave SELECT 1 FROM Product\n" + separator,
+            ]
+        self.assertEqual(expected_lines, lines)
         self.assertEqual(
             "queries do not match: %s" % (LessThan(2).match(2).describe(),),
+            mismatch.describe())
+
+    def test_with_backtrace(self):
+        matcher = HasQueryCount(LessThan(2))
+        collector = RequestTimelineCollector()
+        collector.count = 2
+        collector.queries = [
+            (0, 1, "SQL-main-slave", "SELECT 1 FROM Person",
+             '  File "example", line 2, in <module>\n'
+             '    Store.of(Person).one()\n'),
+            (2, 3, "SQL-main-slave", "SELECT 1 FROM Product",
+             '  File "example", line 3, in <module>\n'
+             '    Store.of(Product).one()\n'),
+            ]
+        mismatch = matcher.match(collector)
+        self.assertThat(mismatch, Not(Is(None)))
+        details = mismatch.get_details()
+        lines = []
+        for name, content in details.items():
+            self.assertEqual("queries", name)
+            self.assertEqual("text", content.content_type.type)
+            lines.append(''.join(content.iter_text()))
+        separator = "-" * 70
+        backtrace_separator = "." * 70
+        expected_lines = [
+            '0-1@SQL-main-slave SELECT 1 FROM Person\n' + separator + '\n' +
+            '  File "example", line 2, in <module>\n' +
+            '    Store.of(Person).one()\n' + backtrace_separator + '\n' +
+            '2-3@SQL-main-slave SELECT 1 FROM Product\n' + separator + '\n' +
+            '  File "example", line 3, in <module>\n' +
+            '    Store.of(Product).one()\n' + backtrace_separator,
+            ]
+        self.assertEqual(expected_lines, lines)
+        self.assertEqual(
+            "queries do not match: %s" % (LessThan(2).match(2).describe(),),
+            mismatch.describe())
+
+    def test_byEquality(self):
+        old_collector = RequestTimelineCollector()
+        old_collector.count = 2
+        old_collector.queries = [
+            (0, 1, "SQL-main-slave", "SELECT 1 FROM Person", None),
+            (2, 3, "SQL-main-slave", "SELECT 1 FROM Product", None),
+            ]
+        new_collector = RequestTimelineCollector()
+        new_collector.count = 3
+        new_collector.queries = [
+            (0, 1, "SQL-main-slave", "SELECT 1 FROM Person", None),
+            (2, 3, "SQL-main-slave", "SELECT 1 FROM Product", None),
+            (4, 5, "SQL-main-slave", "SELECT 1 FROM Distribution", None),
+            ]
+        matcher = HasQueryCount.byEquality(old_collector)
+        mismatch = matcher.match(new_collector)
+        self.assertThat(mismatch, Not(Is(None)))
+        details = mismatch.get_details()
+        old_lines = []
+        new_lines = []
+        self.assertThat(details, KeysEqual("queries", "other_queries"))
+        self.assertEqual("text", details["other_queries"].content_type.type)
+        old_lines.append("".join(details["other_queries"].iter_text()))
+        self.assertEqual("text", details["queries"].content_type.type)
+        new_lines.append("".join(details["queries"].iter_text()))
+        separator = "-" * 70
+        expected_old_lines = [
+            "0-1@SQL-main-slave SELECT 1 FROM Person\n" + separator + "\n" +
+            "2-3@SQL-main-slave SELECT 1 FROM Product\n" + separator,
+            ]
+        expected_new_lines = [
+            "0-1@SQL-main-slave SELECT 1 FROM Person\n" + separator + "\n" +
+            "2-3@SQL-main-slave SELECT 1 FROM Product\n" + separator + "\n" +
+            "4-5@SQL-main-slave SELECT 1 FROM Distribution\n" + separator,
+            ]
+        self.assertEqual(expected_old_lines, old_lines)
+        self.assertEqual(expected_new_lines, new_lines)
+        self.assertEqual(
+            "queries do not match: %s" % (Equals(2).match(3).describe(),),
             mismatch.describe())
 
 
@@ -291,7 +376,7 @@ class EqualsIgnoringWhitespaceTests(TestCase):
         matcher = EqualsIgnoringWhitespace("one \t two \n three")
         mismatch = matcher.match(" one \r three ")
         self.assertEqual(
-            "'one two three' != 'one three'",
+            "'one three' != 'one two three'",
             mismatch.describe())
 
     def test_match_unicode(self):
@@ -302,7 +387,7 @@ class EqualsIgnoringWhitespaceTests(TestCase):
         matcher = EqualsIgnoringWhitespace(u"one \t two \n \u1234  ")
         mismatch = matcher.match(u" one \r \u1234 ")
         self.assertEqual(
-            u"u'one two \\u1234' != u'one \\u1234'",
+            u"u'one \\u1234' != u'one two \\u1234'",
             mismatch.describe())
 
     def test_match_non_string(self):

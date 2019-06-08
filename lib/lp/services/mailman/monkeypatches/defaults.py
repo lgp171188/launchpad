@@ -2,8 +2,6 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 # Pick up the standard Mailman defaults
-# pylint: disable-msg=W0401
-# pylint: disable-msg=W0614
 from Mailman.Defaults import *
 
 # Use a name for the site list that is very unlikely to conflict with any
@@ -18,21 +16,20 @@ MTA = None
 
 # Disable runners for features we don't need.
 QRUNNERS = [
-    ('ArchRunner',     1), # messages for the archiver
-    ('BounceRunner',   1), # for processing the qfile/bounces directory
-##     ('CommandRunner',  1), # commands and bounces from the outside world
-    ('IncomingRunner', 1), # posts from the outside world
-##     ('NewsRunner',     1), # outgoing messages to the nntpd
-    ('OutgoingRunner', 1), # outgoing messages to the smtpd
-    ('VirginRunner',   1), # internally crafted (virgin birth) messages
-    ('RetryRunner',    1), # retry temporarily failed deliveries
+    ('ArchRunner',     1),  # messages for the archiver
+    ('BounceRunner',   1),  # for processing the qfile/bounces directory
+##     ('CommandRunner',  1),  # commands and bounces from the outside world
+    ('IncomingRunner', 1),  # posts from the outside world
+##     ('NewsRunner',     1),  # outgoing messages to the nntpd
+    ('OutgoingRunner', 1),  # outgoing messages to the smtpd
+    ('VirginRunner',   1),  # internally crafted (virgin birth) messages
+    ('RetryRunner',    1),  # retry temporarily failed deliveries
     # Non-standard runners we've added.
-    ('XMLRPCRunner',   1), # Poll for XMLRPC requests
+    ('XMLRPCRunner',   1),  # Poll for XMLRPC requests
     ]
 
 # Other list defaults.
-# pylint: disable-msg=E0602
-DEFAULT_GENERIC_NONMEMBER_ACTION = 3 # Discard
+DEFAULT_GENERIC_NONMEMBER_ACTION = 3  # Discard
 DEFAULT_SEND_REMINDERS = No
 DEFAULT_SEND_WELCOME_MSG = Yes
 DEFAULT_SEND_GOODBYE_MSG = No

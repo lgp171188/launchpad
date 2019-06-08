@@ -1,4 +1,4 @@
-# Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Views for IBugLinkTarget."""
@@ -12,7 +12,6 @@ __all__ = [
     ]
 
 from collections import defaultdict
-from operator import attrgetter
 
 from lazr.lifecycle.event import ObjectModifiedEvent
 from lazr.lifecycle.snapshot import Snapshot
@@ -24,11 +23,10 @@ from zope.security.interfaces import Unauthorized
 from lp import _
 from lp.app.browser.launchpadform import (
     action,
-    custom_widget,
     LaunchpadFormView,
     )
 from lp.app.widgets.itemswidgets import LabeledMultiCheckBoxWidget
-from lp.bugs.browser.bugtask import BugListingBatchNavigator
+from lp.bugs.browser.buglisting import BugListingBatchNavigator
 from lp.bugs.interfaces.buglink import (
     IBugLinkForm,
     IUnlinkBugsForm,
@@ -70,7 +68,7 @@ class BugLinkView(LaunchpadFormView):
             self.context, providing=providedBy(self.context))
         bug = data['bug']
         try:
-            self.context.linkBug(bug)
+            self.context.linkBug(bug, user=self.user)
         except Unauthorized:
             # XXX flacoste 2006-08-23 bug=57470: This should use proper _().
             self.setFieldError(
@@ -97,7 +95,7 @@ class BugLinksListingView(LaunchpadView):
         """
         # Do a regular search to get the bugtasks so that visibility is
         # evaluated and eager loading is performed.
-        bug_ids = map(attrgetter('bugID'), self.context.bug_links)
+        bug_ids = [bug.id for bug in self.context.bugs]
         if not bug_ids:
             return []
         bugtask_set = getUtility(IBugTaskSet)
@@ -108,6 +106,8 @@ class BugLinksListingView(LaunchpadView):
         for task in bugtasks:
             bugs[task.bug].append(task)
         badges = bugtask_set.getBugTaskBadgeProperties(bugtasks)
+        tags = bugtask_set.getBugTaskTags(bugtasks)
+        people = bugtask_set.getBugTaskPeople(bugtasks)
         links = []
         columns_to_show = ["id", "summary", "bugtargetdisplayname",
             "importance", "status"]
@@ -116,6 +116,8 @@ class BugLinksListingView(LaunchpadView):
                 columns_to_show=columns_to_show,
                 size=config.malone.buglist_batch_size)
             get_property_cache(navigator).bug_badge_properties = badges
+            get_property_cache(navigator).tags_for_batch = tags
+            get_property_cache(navigator).bugtask_people = people
             links.append({
                 'bug': bug,
                 'title': bug.title,
@@ -131,7 +133,7 @@ class BugsUnlinkView(LaunchpadFormView):
 
     label = _('Remove links to bug reports')
     schema = IUnlinkBugsForm
-    custom_widget('bugs', LabeledMultiCheckBoxWidget)
+    custom_widget_bugs = LabeledMultiCheckBoxWidget
     page_title = label
 
     @property
@@ -147,7 +149,7 @@ class BugsUnlinkView(LaunchpadFormView):
         for bug in data['bugs']:
             replacements = {'bugid': bug.id}
             try:
-                self.context.unlinkBug(bug)
+                self.context.unlinkBug(bug, user=self.user)
                 response.addNotification(
                     _('Removed link to bug #$bugid.', mapping=replacements))
             except Unauthorized:

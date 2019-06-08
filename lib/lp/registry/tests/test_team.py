@@ -1,19 +1,25 @@
-# Copyright 2010-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for PersonSet."""
 
 __metaclass__ = type
 
+from email.mime.text import MIMEText
+from email.utils import (
+    formatdate,
+    make_msgid,
+    )
+
 import transaction
 from zope.component import getUtility
 from zope.interface.exceptions import Invalid
 from zope.security.proxy import removeSecurityProxy
 
+from lp.app.enums import InformationType
 from lp.registry.enums import (
     EXCLUSIVE_TEAM_POLICY,
     INCLUSIVE_TEAM_POLICY,
-    InformationType,
     PersonTransferJobType,
     PersonVisibility,
     TeamMembershipPolicy,
@@ -30,9 +36,11 @@ from lp.registry.interfaces.person import (
     )
 from lp.registry.interfaces.teammembership import TeamMembershipStatus
 from lp.registry.model.persontransferjob import PersonTransferJob
-from lp.services.database.lpstorm import IMasterStore
+from lp.services.database.interfaces import IMasterStore
 from lp.services.identity.interfaces.emailaddress import IEmailAddressSet
 from lp.services.identity.model.emailaddress import EmailAddress
+from lp.services.mail.sendmail import format_address_for_person
+from lp.services.messages.interfaces.message import IDirectEmailAuthorization
 from lp.soyuz.enums import ArchiveStatus
 from lp.testing import (
     login_celebrity,
@@ -157,9 +165,10 @@ class TestTeamGetTeamAdminsEmailAddresses(TestCaseWithFactory):
         self.assertEqual([email], self.team.getTeamAdminsEmailAddresses())
 
     def test_no_admins(self):
-        # A team without admins has no email addresses.
+        # A team without admins falls back to the owner's email address.
+        email = self.team.teamowner.preferredemail.email
         self.team.teamowner.leave(self.team)
-        self.assertEqual([], self.team.getTeamAdminsEmailAddresses())
+        self.assertEqual([email], self.team.getTeamAdminsEmailAddresses())
 
     def test_admins_are_users_with_preferred_email_addresses(self):
         # The team's admins are users, and they provide the email addresses.
@@ -341,8 +350,8 @@ class TestTeamMembershipPolicyChoiceModerated(TeamMembershipPolicyBase):
 
     def test_closed_team_with_closed_super_team_cannot_become_open(self):
         # The team cannot compromise the membership of the super team
-        # by becoming open. The user must remove his team from the super team
-        # first.
+        # by becoming open. The user must remove their team from the super
+        # team first.
         self.setUpTeams()
         self.other_team.addMember(self.team, self.team.teamowner)
         self.assertFalse(
@@ -390,6 +399,32 @@ class TestTeamMembershipPolicyChoiceModerated(TeamMembershipPolicyBase):
         ppa = self.team.createPPA()
         ppa.delete(self.team.teamowner)
         removeSecurityProxy(ppa).status = ArchiveStatus.DELETED
+        self.assertTrue(
+            self.field.constraint(TeamMembershipPolicy.OPEN))
+        self.assertEqual(
+            None, self.field.validate(TeamMembershipPolicy.OPEN))
+
+    def test_closed_team_with_series_branch_cannot_become_open(self):
+        # The team cannot become open if it has a branch linked to
+        # a product series.
+        self.setUpTeams()
+        series = self.factory.makeProductSeries()
+        branch = self.factory.makeProductBranch(
+            product=series.product, owner=self.team)
+        with person_logged_in(series.product.owner):
+            series.branch = branch
+        self.assertFalse(
+            self.field.constraint(TeamMembershipPolicy.OPEN))
+        self.assertRaises(
+            TeamMembershipPolicyError, self.field.validate,
+            TeamMembershipPolicy.OPEN)
+
+    def test_closed_team_without_a_series_branch_can_become_open(self):
+        # The team can become open if does not have a branch linked to
+        # a product series.
+        self.setUpTeams()
+        series = self.factory.makeProductSeries()
+        self.factory.makeProductBranch(product=series.product, owner=self.team)
         self.assertTrue(
             self.field.constraint(TeamMembershipPolicy.OPEN))
         self.assertEqual(
@@ -527,6 +562,27 @@ class TestVisibilityConsistencyWarning(TestCaseWithFactory):
         PersonTransferJob(
             member, self.team,
             PersonTransferJobType.MEMBERSHIP_NOTIFICATION, metadata)
+        self.assertEqual(
+            None,
+            self.team.visibilityConsistencyWarning(PersonVisibility.PRIVATE))
+
+    def test_no_warning_for_UserToUserEmail_recipient(self):
+        # A UserToUserEmail.recipient reference does not cause a warning.
+        # Since the fix for https://bugs.launchpad.net/launchpad/+bug/246022
+        # it's no longer possible to create these without also having a
+        # TeamMembership.person reference (which separately inhibits
+        # visibility changes), but there are still examples on production.
+        sender = self.factory.makePerson()
+        self.team.setContactAddress(
+            getUtility(IEmailAddressSet).new("team@example.org", self.team))
+        message = MIMEText("")
+        message["From"] = format_address_for_person(sender)
+        message["To"] = format_address_for_person(self.team)
+        message["Subject"] = ""
+        message["Message-ID"] = make_msgid("launchpad")
+        message["Date"] = formatdate()
+        IDirectEmailAuthorization(sender).record(message)
+        transaction.commit()
         self.assertEqual(
             None,
             self.team.visibilityConsistencyWarning(PersonVisibility.PRIVATE))

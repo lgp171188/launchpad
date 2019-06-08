@@ -20,9 +20,9 @@ def notify(step):
 
 _counter = 1
 
+
 def sigusr1_handler(signum, frame):
     """Emit a message"""
-    # pylint: disable-msg=W0603
     global _counter
     logging.getLogger('').error('Message %d' % _counter)
     notify('emit_%d' % _counter)
@@ -31,9 +31,11 @@ def sigusr1_handler(signum, frame):
 
 _installed_handler = None
 
+
 def sigusr2_handler(signum, frame):
     _installed_handler(signum, frame)
     notify('sigusr2')
+
 
 if __name__ == '__main__':
     logging.getLogger('').addHandler(FileHandler(sys.argv[1]))

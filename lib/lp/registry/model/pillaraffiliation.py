@@ -24,7 +24,7 @@ from collections import namedtuple
 
 from zope.component import adapter
 from zope.interface import (
-    implements,
+    implementer,
     Interface,
     )
 
@@ -53,6 +53,7 @@ BadgeDetails = namedtuple('BadgeDetails', ('url', 'label', 'role'))
 
 
 @adapter(Interface)
+@implementer(IHasAffiliation)
 class PillarAffiliation(object):
     """Default affiliation adapter.
 
@@ -62,15 +63,12 @@ class PillarAffiliation(object):
     The default is just to use the context object directly.
     """
 
-    implements(IHasAffiliation)
-
     # We rank the affiliations from most important to least important.
     # Unlisted roles are given a rank of 10.
     affiliation_priorities = {
         'maintainer': 1,
         'driver': 2,
         'bug supervisor': 3,
-        'security contact': 4,
     }
 
     def __init__(self, context):

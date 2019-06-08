@@ -1,9 +1,9 @@
 # Copyright 2009-2010 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-"""Test harness for Answer Tracker related unit tests.
+"""Test harness for Answer Tracker related unit tests."""
 
-"""
+from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 
@@ -51,13 +51,16 @@ def test_suite():
     suite = unittest.TestSuite()
     loader = unittest.TestLoader()
     suite.addTest(loader.loadTestsFromTestCase(TestEmailObfuscated))
-    suite.addTest(LayeredDocFileSuite('question-subscribe_me.txt',
-                  setUp=setUp, tearDown=tearDown,
-                  layer=DatabaseFunctionalLayer))
-    suite.addTest(LayeredDocFileSuite('views.txt',
-                  setUp=setUp, tearDown=tearDown,
-                  layer=DatabaseFunctionalLayer))
-    suite.addTest(LayeredDocFileSuite('faq-views.txt',
-                  setUp=setUp, tearDown=tearDown,
-                  layer=DatabaseFunctionalLayer))
+    suite.addTest(LayeredDocFileSuite(
+        'question-subscribe_me.txt',
+        setUp=lambda test: setUp(test, future=True), tearDown=tearDown,
+        layer=DatabaseFunctionalLayer))
+    suite.addTest(LayeredDocFileSuite(
+        'views.txt',
+        setUp=lambda test: setUp(test, future=True), tearDown=tearDown,
+        layer=DatabaseFunctionalLayer))
+    suite.addTest(LayeredDocFileSuite(
+        'faq-views.txt',
+        setUp=lambda test: setUp(test, future=True), tearDown=tearDown,
+        layer=DatabaseFunctionalLayer))
     return suite

@@ -1,4 +1,4 @@
-# Copyright 2011-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2011-2015 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -7,10 +7,8 @@ from storm.exceptions import LostObjectError
 from testtools.matchers import AllMatch
 from zope.component import getUtility
 
-from lp.registry.enums import (
-    InformationType,
-    SharingPermission,
-    )
+from lp.app.enums import InformationType
+from lp.registry.enums import SharingPermission
 from lp.registry.interfaces.accesspolicy import (
     IAccessArtifact,
     IAccessArtifactGrant,
@@ -26,7 +24,7 @@ from lp.registry.interfaces.accesspolicy import (
     )
 from lp.registry.model.accesspolicy import reconcile_access_for_artifact
 from lp.registry.model.person import Person
-from lp.services.database.lpstorm import IStore
+from lp.services.database.interfaces import IStore
 from lp.testing import TestCaseWithFactory
 from lp.testing.layers import DatabaseFunctionalLayer
 from lp.testing.matchers import Provides
@@ -282,11 +280,25 @@ class TestAccessArtifactBranch(BaseAccessArtifactTests,
         return self.factory.makeBranch()
 
 
+class TestAccessArtifactGitRepository(BaseAccessArtifactTests,
+                                      TestCaseWithFactory):
+
+    def getConcreteArtifact(self):
+        return self.factory.makeGitRepository()
+
+
 class TestAccessArtifactBug(BaseAccessArtifactTests,
                             TestCaseWithFactory):
 
     def getConcreteArtifact(self):
         return self.factory.makeBug()
+
+
+class TestAccessArtifactSpecification(BaseAccessArtifactTests,
+                            TestCaseWithFactory):
+
+    def getConcreteArtifact(self):
+        return self.factory.makeSpecification()
 
 
 class TestAccessArtifactGrant(TestCaseWithFactory):

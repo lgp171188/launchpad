@@ -1,13 +1,14 @@
-# Copyright 2009-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-# pylint: disable-msg=E0611,W0212
-
 __metaclass__ = type
-__all__ = ['DistroArchSeries',
-           'DistroArchSeriesSet',
-           'PocketChroot'
-           ]
+__all__ = [
+    'DistroArchSeries',
+    'PocketChroot'
+    ]
+
+from cStringIO import StringIO
+import hashlib
 
 from sqlobject import (
     BoolCol,
@@ -18,61 +19,65 @@ from sqlobject import (
     StringCol,
     )
 from storm.locals import (
+    Int,
     Join,
-    SQL,
+    Or,
+    Reference,
     )
 from storm.store import EmptyResultSet
 from zope.component import getUtility
-from zope.interface import implements
+from zope.interface import implementer
 
+from lp.buildmaster.enums import BuildBaseImageType
+from lp.buildmaster.model.processor import Processor
 from lp.registry.interfaces.person import validate_public_person
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.services.database.constants import DEFAULT
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.enumcol import EnumCol
+from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import (
-    quote,
-    quote_like,
     SQLBase,
     sqlvalues,
     )
-from lp.services.helpers import shortlist
-from lp.services.webapp.interfaces import (
-    IStoreSelector,
-    MAIN_STORE,
-    SLAVE_FLAVOR,
+from lp.services.database.stormexpr import (
+    fti_search,
+    rank_by_fti,
     )
+from lp.services.librarian.interfaces import ILibraryFileAliasSet
+from lp.services.webapp.publisher import (
+    get_raw_form_value_from_current_request,
+    )
+from lp.soyuz.adapters.archivedependencies import pocket_dependencies
 from lp.soyuz.enums import PackagePublishingStatus
 from lp.soyuz.interfaces.binarypackagebuild import IBinaryPackageBuildSet
 from lp.soyuz.interfaces.binarypackagename import IBinaryPackageName
 from lp.soyuz.interfaces.buildrecords import IHasBuildRecords
 from lp.soyuz.interfaces.distroarchseries import (
     IDistroArchSeries,
-    IDistroArchSeriesSet,
+    InvalidChrootUploaded,
     IPocketChroot,
     )
-from lp.soyuz.interfaces.publishing import ICanPublishPackages
+from lp.soyuz.interfaces.publishing import active_publishing_status
 from lp.soyuz.model.binarypackagename import BinaryPackageName
 from lp.soyuz.model.binarypackagerelease import BinaryPackageRelease
-from lp.soyuz.model.processor import Processor
 
 
+@implementer(IDistroArchSeries, IHasBuildRecords)
 class DistroArchSeries(SQLBase):
-    implements(IDistroArchSeries, IHasBuildRecords, ICanPublishPackages)
     _table = 'DistroArchSeries'
     _defaultOrder = 'id'
 
     distroseries = ForeignKey(dbName='distroseries',
         foreignKey='DistroSeries', notNull=True)
-    processorfamily = ForeignKey(dbName='processorfamily',
-        foreignKey='ProcessorFamily', notNull=True)
+    processor_id = Int(name='processor', allow_none=False)
+    processor = Reference(processor_id, Processor.id)
     architecturetag = StringCol(notNull=True)
     official = BoolCol(notNull=True)
     owner = ForeignKey(
         dbName='owner', foreignKey='Person',
         storm_validator=validate_public_person, notNull=True)
     package_count = IntCol(notNull=True, default=DEFAULT)
-    supports_virtualized = BoolCol(notNull=False, default=False)
     enabled = BoolCol(notNull=False, default=True)
 
     packages = SQLRelatedJoin('BinaryPackageRelease',
@@ -84,27 +89,10 @@ class DistroArchSeries(SQLBase):
         return self.getBinaryPackage(name)
 
     @property
-    def default_processor(self):
-        """See `IDistroArchSeries`."""
-        # XXX cprov 2005-08-31:
-        # This could possibly be better designed; let's think about it in
-        # the future. Pick the first processor we found for this
-        # distroarchseries.processorfamily. The data model should
-        # change to have a default processor for a processorfamily
-        return self.processors[0]
-
-    @property
-    def processors(self):
-        """See `IDistroArchSeries`."""
-        return Processor.selectBy(family=self.processorfamily, orderBy='id')
-
-    @property
     def title(self):
         """See `IDistroArchSeries`."""
         return '%s for %s (%s)' % (
-            self.distroseries.title, self.architecturetag,
-            self.processorfamily.name
-            )
+            self.distroseries.title, self.architecturetag, self.processor.name)
 
     @property
     def displayname(self):
@@ -112,6 +100,10 @@ class DistroArchSeries(SQLBase):
         return '%s %s %s' % (
             self.distroseries.distribution.displayname,
             self.distroseries.displayname, self.architecturetag)
+
+    @property
+    def supports_virtualized(self):
+        return self.processor.supports_virtualized
 
     def updatePackageCount(self):
         """See `IDistroArchSeries`."""
@@ -134,110 +126,172 @@ class DistroArchSeries(SQLBase):
     @property
     def isNominatedArchIndep(self):
         """See `IDistroArchSeries`."""
-        return (self.distroseries.nominatedarchindep and
+        return (self.distroseries.nominatedarchindep is not None and
                 self.id == self.distroseries.nominatedarchindep.id)
 
-    def getPocketChroot(self):
+    def getPocketChroot(self, pocket, exact_pocket=False, image_type=None):
         """See `IDistroArchSeries`."""
-        pchroot = PocketChroot.selectOneBy(distroarchseries=self)
-        return pchroot
+        if image_type is None:
+            image_type = BuildBaseImageType.CHROOT
+        pockets = [pocket] if exact_pocket else pocket_dependencies[pocket]
+        pocket_chroots = {
+            pocket_chroot.pocket: pocket_chroot
+            for pocket_chroot in IStore(PocketChroot).find(
+                PocketChroot,
+                PocketChroot.distroarchseries == self,
+                PocketChroot.pocket.is_in(pockets),
+                PocketChroot.image_type == image_type)}
+        for pocket_dep in reversed(pockets):
+            if pocket_dep in pocket_chroots:
+                pocket_chroot = pocket_chroots[pocket_dep]
+                # We normally only return a PocketChroot row that is
+                # actually populated with a chroot, but if exact_pocket is
+                # set then we return even an unpopulated row in order to
+                # avoid constraint violations in addOrUpdateChroot.
+                if pocket_chroot.chroot is not None or exact_pocket:
+                    return pocket_chroot
+        return None
 
-    def getChroot(self, default=None):
+    def getChroot(self, default=None, pocket=None, image_type=None):
         """See `IDistroArchSeries`."""
-        pocket_chroot = self.getPocketChroot()
+        if pocket is None:
+            pocket = PackagePublishingPocket.RELEASE
+        pocket_chroot = self.getPocketChroot(pocket, image_type=image_type)
 
         if pocket_chroot is None:
             return default
 
         return pocket_chroot.chroot
 
-    @property
-    def chroot_url(self):
+    def getChrootURL(self, pocket=None, image_type=None):
         """See `IDistroArchSeries`."""
-        chroot = self.getChroot()
+        chroot = self.getChroot(pocket=pocket, image_type=image_type)
         if chroot is None:
             return None
         return chroot.http_url
 
-    def addOrUpdateChroot(self, chroot):
+    @property
+    def chroot_url(self):
         """See `IDistroArchSeries`."""
-        pocket_chroot = self.getPocketChroot()
+        return self.getChrootURL()
+
+    def addOrUpdateChroot(self, chroot, pocket=None, image_type=None):
+        """See `IDistroArchSeries`."""
+        if pocket is None:
+            pocket = PackagePublishingPocket.RELEASE
+        if image_type is None:
+            image_type = BuildBaseImageType.CHROOT
+        pocket_chroot = self.getPocketChroot(
+            pocket, exact_pocket=True, image_type=image_type)
 
         if pocket_chroot is None:
-            return PocketChroot(distroarchseries=self, chroot=chroot)
+            return PocketChroot(
+                distroarchseries=self, pocket=pocket, chroot=chroot,
+                image_type=image_type)
         else:
             pocket_chroot.chroot = chroot
 
         return pocket_chroot
 
+    def setChroot(self, data, sha1sum, pocket=None, image_type=None):
+        """See `IDistroArchSeries`."""
+        # XXX: StevenK 2013-06-06 bug=1116954: We should not need to refetch
+        # the file content from the request, since the passed in one has been
+        # wrongly encoded.
+        data = get_raw_form_value_from_current_request(data, 'data')
+        if isinstance(data, str):
+            filecontent = data
+        else:
+            filecontent = data.read()
+
+        # Due to http://bugs.python.org/issue1349106 launchpadlib sends
+        # MIME with \n line endings, which is illegal. lazr.restful
+        # parses each ending as \r\n, resulting in a binary that ends
+        # with \r getting the last byte chopped off. To cope with this
+        # on the server side we try to append \r if the SHA-1 doesn't
+        # match.
+        content_sha1sum = hashlib.sha1(filecontent).hexdigest()
+        if content_sha1sum != sha1sum:
+            filecontent += '\r'
+            content_sha1sum = hashlib.sha1(filecontent).hexdigest()
+        if content_sha1sum != sha1sum:
+            raise InvalidChrootUploaded("Chroot upload checksums do not match")
+
+        # This duplicates addOrUpdateChroot, but we need it to build a
+        # reasonable filename.
+        if image_type is None:
+            image_type = BuildBaseImageType.CHROOT
+
+        filename = '%s-%s-%s-%s.tar.gz' % (
+            image_type.name.lower().split()[0],
+            self.distroseries.distribution.name, self.distroseries.name,
+            self.architecturetag)
+        lfa = getUtility(ILibraryFileAliasSet).create(
+            name=filename, size=len(filecontent), file=StringIO(filecontent),
+            contentType='application/octet-stream')
+        if lfa.content.sha1 != sha1sum:
+            raise InvalidChrootUploaded("Chroot upload checksums do not match")
+        self.addOrUpdateChroot(lfa, pocket=pocket, image_type=image_type)
+
+    def setChrootFromBuild(self, livefsbuild, filename, pocket=None,
+                           image_type=None):
+        """See `IDistroArchSeries`."""
+        self.addOrUpdateChroot(
+            livefsbuild.getFileByName(filename), pocket=pocket,
+            image_type=image_type)
+
+    def removeChroot(self, pocket=None, image_type=None):
+        """See `IDistroArchSeries`."""
+        self.addOrUpdateChroot(None, pocket=pocket, image_type=image_type)
+
     def searchBinaryPackages(self, text):
         """See `IDistroArchSeries`."""
         from lp.soyuz.model.publishing import BinaryPackagePublishingHistory
 
-        store = getUtility(IStoreSelector).get(MAIN_STORE, SLAVE_FLAVOR)
         origin = [
             BinaryPackageRelease,
             Join(
                 BinaryPackagePublishingHistory,
                 BinaryPackagePublishingHistory.binarypackagerelease ==
-                    BinaryPackageRelease.id
-                ),
+                    BinaryPackageRelease.id),
             Join(
                 BinaryPackageName,
                 BinaryPackageRelease.binarypackagename ==
-                    BinaryPackageName.id
-                )
-            ]
-        if text:
-            find_spec = (
-                BinaryPackageRelease,
-                BinaryPackageName,
-                SQL("rank(BinaryPackageRelease.fti, ftq(%s)) AS rank" %
-                    sqlvalues(text))
-                )
-        else:
-            find_spec = (
-                BinaryPackageRelease,
-                BinaryPackageName,
-                BinaryPackageName,  # dummy value
-                )
+                    BinaryPackageName.id)]
+
+        find_spec = [BinaryPackageRelease, BinaryPackageName]
         archives = self.distroseries.distribution.getArchiveIDList()
 
-        # Note: When attempting to convert the query below into straight
-        # Storm expressions, a 'tuple index out-of-range' error was always
-        # raised.
-        query = """
-            BinaryPackagePublishingHistory.distroarchseries = %s AND
-            BinaryPackagePublishingHistory.archive IN %s AND
-            BinaryPackagePublishingHistory.dateremoved is NULL
-            """ % (quote(self), quote(archives))
+        clauses = [
+            BinaryPackagePublishingHistory.distroarchseries == self,
+            BinaryPackagePublishingHistory.archiveID.is_in(archives),
+            BinaryPackagePublishingHistory.status.is_in(
+                active_publishing_status)]
+        order_by = [BinaryPackageName.name]
         if text:
-            query += """
-            AND (BinaryPackageRelease.fti @@ ftq(%s) OR
-            BinaryPackageName.name ILIKE '%%' || %s || '%%')
-            """ % (quote(text), quote_like(text))
-        result = store.using(*origin).find(
-            find_spec, query).config(distinct=True)
-
-        if text:
-            result = result.order_by("rank DESC, BinaryPackageName.name")
-        else:
-            result = result.order_by("BinaryPackageName.name")
+            ranking = rank_by_fti(BinaryPackageRelease, text)
+            find_spec.append(ranking)
+            clauses.append(
+                Or(
+                    fti_search(BinaryPackageRelease, text),
+                    BinaryPackageName.name.contains_string(text.lower())))
+            order_by.insert(0, ranking)
+        result = IStore(BinaryPackageName).using(*origin).find(
+            tuple(find_spec), *clauses).config(distinct=True).order_by(
+                *order_by)
 
         # import here to avoid circular import problems
         from lp.soyuz.model.distroarchseriesbinarypackagerelease import (
             DistroArchSeriesBinaryPackageRelease)
 
         # Create a function that will decorate the results, converting
-        # them from the find_spec above into DASBPRs:
-        def result_to_dasbpr(
-            (binary_package_release, binary_package_name, rank)):
+        # them from the find_spec above into DASBPRs.
+        def result_to_dasbpr(row):
             return DistroArchSeriesBinaryPackageRelease(
-                distroarchseries=self,
-                binarypackagerelease=binary_package_release)
+                distroarchseries=self, binarypackagerelease=row[0])
 
         # Return the decorated result set so the consumer of these
-        # results will only see DSPs
+        # results will only see DSPs.
         return DecoratedResultSet(result, result_to_dasbpr)
 
     def getBinaryPackage(self, name):
@@ -269,144 +323,27 @@ class DistroArchSeries(SQLBase):
 
         # Use the facility provided by IBinaryPackageBuildSet to
         # retrieve the records.
-        return getUtility(IBinaryPackageBuildSet).getBuildsByArchIds(
-            self.distroseries.distribution, [self.id], build_state, name,
-            pocket)
-
-    def getReleasedPackages(self, binary_name, pocket=None,
-                            include_pending=False, archive=None):
-        """See IDistroArchSeries."""
-        from lp.soyuz.model.publishing import BinaryPackagePublishingHistory
-
-        queries = []
-
-        if not IBinaryPackageName.providedBy(binary_name):
-            binary_name = BinaryPackageName.byName(binary_name)
-
-        queries.append("""
-        binarypackagerelease=binarypackagerelease.id AND
-        binarypackagerelease.binarypackagename=%s AND
-        distroarchseries = %s
-        """ % sqlvalues(binary_name, self))
-
-        if pocket is not None:
-            queries.append("pocket=%s" % sqlvalues(pocket.value))
-
-        if include_pending:
-            queries.append("status in (%s, %s)" % sqlvalues(
-                PackagePublishingStatus.PUBLISHED,
-                PackagePublishingStatus.PENDING))
-        else:
-            queries.append("status=%s" % sqlvalues(
-                PackagePublishingStatus.PUBLISHED))
-
-        archives = self.distroseries.distribution.getArchiveIDList(archive)
-        queries.append("archive IN %s" % sqlvalues(archives))
-
-        published = BinaryPackagePublishingHistory.select(
-            " AND ".join(queries),
-            clauseTables=['BinaryPackageRelease'],
-            orderBy=['-id'])
-
-        return shortlist(published)
-
-    def getPendingPublications(self, archive, pocket, is_careful):
-        """See `ICanPublishPackages`."""
-        from lp.soyuz.model.publishing import BinaryPackagePublishingHistory
-
-        queries = [
-            "distroarchseries = %s AND archive = %s"
-            % sqlvalues(self, archive)
-            ]
-
-        target_status = [PackagePublishingStatus.PENDING]
-        if is_careful:
-            target_status.append(PackagePublishingStatus.PUBLISHED)
-        queries.append("status IN %s" % sqlvalues(target_status))
-
-        # restrict to a specific pocket.
-        queries.append('pocket = %s' % sqlvalues(pocket))
-
-        # Exclude RELEASE pocket if the distroseries was already released,
-        # since it should not change, unless the archive allows it.
-        if (not self.distroseries.isUnstable() and
-            not archive.allowUpdatesToReleasePocket()):
-            queries.append(
-            'pocket != %s' % sqlvalues(PackagePublishingPocket.RELEASE))
-
-        publications = BinaryPackagePublishingHistory.select(
-                    " AND ".join(queries), orderBy=["-id"])
-
-        return publications
-
-    def publish(self, diskpool, log, archive, pocket, is_careful=False):
-        """See `ICanPublishPackages`."""
-        log.debug("Attempting to publish pending binaries for %s"
-              % self.architecturetag)
-
-        dirty_pockets = set()
-
-        for bpph in self.getPendingPublications(archive, pocket, is_careful):
-            if not self.distroseries.checkLegalPocket(
-                bpph, is_careful, log):
-                continue
-            bpph.publish(diskpool, log)
-            dirty_pockets.add((self.distroseries.name, bpph.pocket))
-
-        return dirty_pockets
+        return getUtility(IBinaryPackageBuildSet).getBuildsForDistro(
+            self, build_state, name, pocket)
 
     @property
     def main_archive(self):
         return self.distroseries.distribution.main_archive
 
 
-class DistroArchSeriesSet:
-    """This class is to deal with DistroArchSeries related stuff"""
-
-    implements(IDistroArchSeriesSet)
-
-    def __iter__(self):
-        return iter(DistroArchSeries.select())
-
-    def get(self, dar_id):
-        """See `IDistributionSet`."""
-        return DistroArchSeries.get(dar_id)
-
-    def count(self):
-        return DistroArchSeries.select().count()
-
-    def getIdsForArchitectures(self, architectures, arch_tag=None):
-        """Filter architectures and return the ids.
-
-        This method is not exposed via the public interface as it is
-        used simply to keep trusted code DRY.
-
-        :param architectures: an iterable of architectures to process.
-        :param arch_tag: an optional architecture tag or a tag list with
-            which to filter the results.
-        :return: a list of the ids of the architectures matching arch_tag.
-        """
-        # If arch_tag was not provided, just return the ids without
-        # filtering.
-        if arch_tag is None:
-            return [arch.id for arch in architectures]
-        else:
-            if not isinstance(arch_tag, (list, tuple)):
-                arch_tag = (arch_tag, )
-            return [arch.id for arch in architectures
-                        if arch.architecturetag in arch_tag]
-
-
+@implementer(IPocketChroot)
 class PocketChroot(SQLBase):
-    implements(IPocketChroot)
     _table = "PocketChroot"
 
-    distroarchseries = ForeignKey(dbName='distroarchseries',
-                                   foreignKey='DistroArchSeries',
-                                   notNull=True)
+    distroarchseries = ForeignKey(
+        dbName='distroarchseries', foreignKey='DistroArchSeries', notNull=True)
 
-    pocket = EnumCol(schema=PackagePublishingPocket,
-                     default=PackagePublishingPocket.RELEASE,
-                     notNull=True)
+    pocket = EnumCol(
+        schema=PackagePublishingPocket,
+        default=PackagePublishingPocket.RELEASE, notNull=True)
 
     chroot = ForeignKey(dbName='chroot', foreignKey='LibraryFileAlias')
+
+    image_type = EnumCol(
+        schema=BuildBaseImageType, default=BuildBaseImageType.CHROOT,
+        notNull=True)

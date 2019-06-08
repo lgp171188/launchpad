@@ -14,7 +14,7 @@ link to turn it into a team.
 For instance, we have an auto-created profile for Matsubara, which
 definitely doesn't seem to be a team.
 
-    >>> browser.open('http://launchpad.dev/~matsubara')
+    >>> browser.open('http://launchpad.test/~matsubara')
     >>> browser.getLink(url='+requestmerge')
     <Link text='Are you Diogo Matsubara?'...
 
@@ -31,7 +31,7 @@ team. This works even if the profile's email addresses would normally be
 hidden.
 
     >>> doc_team.hide_email_addresses = True
-    >>> user_browser.open('http://launchpad.dev/~doc')
+    >>> user_browser.open('http://launchpad.test/~doc')
     >>> user_browser.getLink('Is this a team you run?').click()
     >>> user_browser.title
     'Claim team...
@@ -45,13 +45,13 @@ turning that profile into a team.
     >>> user_browser.title
     'Ubuntu Doc Team does not use Launchpad'
 
-    >>> for msg in get_feedback_messages(user_browser.contents):
-    ...     print msg
-    A confirmation message has been sent to 'doc@lists.ubuntu.com'. Follow
-    the instructions in that message to finish claiming this team. (If the
-    above address is from a mailing list, it may be necessary to talk with
-    one of its admins to accept the message from Launchpad so that you can
-    finish the process.)
+    >>> print_feedback_messages(user_browser.contents)
+    A confirmation message has been sent to
+    &#x27;doc@lists.ubuntu.com&#x27;. Follow the instructions in that
+    message to finish claiming this team. (If the above address is from
+    a mailing list, it may be necessary to talk with one of its admins
+    to accept the message from Launchpad so that you can finish the
+    process.)
 
 That will send an email to the address given, with a link to finish the
 claiming process.
@@ -64,13 +64,13 @@ claiming process.
     ['doc@lists.ubuntu.com']
     >>> token_url = get_token_url_from_email(msg)
     >>> token_url
-    'http://launchpad.dev/token/...'
+    'http://launchpad.test/token/...'
 
     >>> user_browser.open(token_url)
     >>> user_browser.title
     'Claim Launchpad team'
 
-Here the user sees a form where he can enter a few more details about the
+Here the user sees a form where they can enter a few more details about the
 team and finish the claiming process, making the person who started the
 claim process the team's owner.
 
@@ -80,7 +80,7 @@ claim process the team's owner.
     Traceback (most recent call last):
     ...
     LookupError:...
-    >>> from BeautifulSoup import BeautifulSoup
+    >>> from lp.services.beautifulsoup import BeautifulSoup
     >>> soup = BeautifulSoup(user_browser.contents)
     >>> print extract_text(
     ...     soup.find(attrs={'for': 'field.teamowner'}).findPrevious('tr'))
@@ -95,8 +95,7 @@ page.
 
     >>> user_browser.title
     'Ubuntu Doc Team in Launchpad'
-    >>> for msg in get_feedback_messages(user_browser.contents):
-    ...     print msg
+    >>> print_feedback_messages(user_browser.contents)
     Team claimed successfully
 
     >>> print extract_text(

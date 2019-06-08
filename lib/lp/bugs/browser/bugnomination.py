@@ -1,4 +1,4 @@
-# Copyright 2009-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Browser view classes related to bug nominations."""
@@ -16,12 +16,10 @@ import datetime
 import pytz
 from zope.component import getUtility
 from zope.interface import Interface
-from zope.publisher.interfaces import implements
 
 from lp import _
 from lp.app.browser.launchpadform import (
     action,
-    custom_widget,
     LaunchpadFormView,
     )
 from lp.app.widgets.itemswidgets import LabeledMultiCheckBoxWidget
@@ -31,31 +29,20 @@ from lp.bugs.interfaces.bugnomination import (
     IBugNominationForm,
     )
 from lp.bugs.interfaces.cve import ICveSet
+from lp.services.features import getFeatureFlag
 from lp.services.webapp import (
     canonical_url,
     LaunchpadView,
     )
 from lp.services.webapp.authorization import check_permission
-from lp.services.webapp.interfaces import (
-    ILaunchBag,
-    IPrimaryContext,
-    )
-
-
-class BugNominationPrimaryContext:
-    """The primary context is the nearest `IBugTarget`."""
-    implements(IPrimaryContext)
-
-    def __init__(self, nomination):
-        launchbag = getUtility(ILaunchBag)
-        self.context = launchbag.bugtask.target
+from lp.services.webapp.interfaces import ILaunchBag
 
 
 class BugNominationView(LaunchpadFormView):
 
     schema = IBugNominationForm
     initial_focus_widget = None
-    custom_widget('nominatable_series', LabeledMultiCheckBoxWidget)
+    custom_widget_nominatable_series = LabeledMultiCheckBoxWidget
 
     def __init__(self, context, request):
         self.current_bugtask = context
@@ -65,9 +52,9 @@ class BugNominationView(LaunchpadFormView):
         LaunchpadFormView.initialize(self)
         # Update the submit label based on the user's permission.
         submit_action = self.__class__.actions.byname['actions.submit']
-        if self.userIsReleaseManager():
+        if self.userCanTarget():
             submit_action.label = _("Target")
-        elif self.userIsBugSupervisor():
+        elif self.userCanNominate():
             submit_action.label = _("Nominate")
         else:
             self.request.response.addErrorNotification(
@@ -81,19 +68,23 @@ class BugNominationView(LaunchpadFormView):
 
         The label returned depends on the user's privileges.
         """
-        if self.userIsReleaseManager():
+        if self.userCanTarget():
             return "Target bug #%d to series" % self.context.bug.id
         else:
             return "Nominate bug #%d for series" % self.context.bug.id
 
     page_title = label
 
-    def userIsReleaseManager(self):
-        """Does the current user have release management privileges?"""
-        return self.current_bugtask.userHasDriverPrivileges(self.user)
+    def userCanTarget(self):
+        """Can the current user target the bug to a series?"""
+        return (
+            self.current_bugtask.userHasDriverPrivileges(self.user)
+            or (getFeatureFlag('bugs.nominations.bug_supervisors_can_target')
+                and self.current_bugtask.userHasBugSupervisorPrivileges(
+                    self.user)))
 
-    def userIsBugSupervisor(self):
-        """Is the current user the bug supervisor?"""
+    def userCanNominate(self):
+        """Can the current user nominate the bug for a series?"""
         return self.current_bugtask.userHasBugSupervisorPrivileges(
             self.user)
 
@@ -218,11 +209,14 @@ class BugNominationEditView(LaunchpadFormView):
     field_names = []
 
     @property
-    def title(self):
+    def label(self):
         return 'Approve or decline nomination for bug #%d in %s' % (
             self.context.bug.id, self.context.target.bugtargetdisplayname)
-    label = title
-    page_title = title
+
+    @property
+    def page_title(self):
+        text = 'Review nomination for %s'
+        return text % self.context.target.bugtargetdisplayname
 
     def initialize(self):
         self.current_bugtask = getUtility(ILaunchBag).bugtask

@@ -9,24 +9,18 @@ __all__ = []
 
 from datetime import timedelta
 
-from zope.component import getUtility
-from zope.interface import implements
+from zope.interface import implementer
 
 from lp.code.enums import BranchType
 from lp.code.interfaces.branchpuller import IBranchPuller
 from lp.code.model.branch import Branch
 from lp.services.database.constants import UTC_NOW
-from lp.services.webapp.interfaces import (
-    DEFAULT_FLAVOR,
-    IStoreSelector,
-    MAIN_STORE,
-    )
+from lp.services.database.interfaces import IStore
 
 
+@implementer(IBranchPuller)
 class BranchPuller:
     """See `IBranchPuller`."""
-
-    implements(IBranchPuller)
 
     MAXIMUM_MIRROR_FAILURES = 5
     MIRROR_TIME_INCREMENT = timedelta(hours=6)
@@ -35,8 +29,7 @@ class BranchPuller:
         """See `IBranchPuller`."""
         if not branch_types:
             branch_types = (BranchType.MIRRORED, BranchType.IMPORTED)
-        store = getUtility(IStoreSelector).get(MAIN_STORE, DEFAULT_FLAVOR)
-        branch = store.find(
+        branch = IStore(Branch).find(
             Branch,
             Branch.next_mirror_time <= UTC_NOW,
             Branch.branch_type.is_in(branch_types)).order_by(

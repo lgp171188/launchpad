@@ -8,23 +8,23 @@ __metaclass__ = type
 
 
 import email
-from email.Utils import make_msgid
+from email.utils import make_msgid
 from logging import getLogger
 
-from zope.app import zapi
-from zope.interface import implements
+from zope.component import getUtility
+from zope.interface import implementer
 from zope.sendmail.interfaces import IMailer
 
 
 COMMASPACE = ', '
 
 
+@implementer(IMailer)
 class MboxMailer:
     """
     Stores the message in a Unix mailbox file.  This will be so much cooler
     when we can use Python 2.5's mailbox module.
     """
-    implements(IMailer)
 
     def __init__(self, filename, overwrite, mailer=None):
         self.filename = filename
@@ -66,6 +66,6 @@ class MboxMailer:
             # This allows for example, the mboxMailer to be used in the test
             # suite, which requires that the testMailer eventually gets
             # called.
-            chained_mailer = zapi.getUtility(IMailer, self.mailer)
+            chained_mailer = getUtility(IMailer, self.mailer)
             chained_mailer.send(fromaddr, toaddrs, message)
         return message_id

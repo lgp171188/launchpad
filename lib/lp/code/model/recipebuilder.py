@@ -1,71 +1,72 @@
-# Copyright 2010 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Code to build recipes on the buildfarm."""
 
 __metaclass__ = type
 __all__ = [
-    'RecipeBuildBehavior',
+    'RecipeBuildBehaviour',
     ]
 
-import traceback
-
-from zope.component import adapts
-from zope.interface import implements
+from twisted.internet import defer
+from zope.component import adapter
+from zope.interface import implementer
 from zope.security.proxy import removeSecurityProxy
 
 from lp.buildmaster.interfaces.builder import CannotBuild
-from lp.buildmaster.interfaces.buildfarmjobbehavior import (
-    IBuildFarmJobBehavior,
+from lp.buildmaster.interfaces.buildfarmjobbehaviour import (
+    IBuildFarmJobBehaviour,
     )
-from lp.buildmaster.model.buildfarmjobbehavior import BuildFarmJobBehaviorBase
+from lp.buildmaster.model.buildfarmjobbehaviour import (
+    BuildFarmJobBehaviourBase,
+    )
 from lp.code.interfaces.sourcepackagerecipebuild import (
-    ISourcePackageRecipeBuildJob,
+    ISourcePackageRecipeBuild,
     )
-from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.services.config import config
+from lp.services.propertycache import cachedproperty
 from lp.soyuz.adapters.archivedependencies import (
     get_primary_current_component,
     get_sources_list_for_building,
     )
 
 
-class RecipeBuildBehavior(BuildFarmJobBehaviorBase):
+@adapter(ISourcePackageRecipeBuild)
+@implementer(IBuildFarmJobBehaviour)
+class RecipeBuildBehaviour(BuildFarmJobBehaviourBase):
     """How to build a recipe on the build farm."""
 
-    adapts(ISourcePackageRecipeBuildJob)
-    implements(IBuildFarmJobBehavior)
+    builder_type = "sourcepackagerecipe"
 
-    status = None
+    # The list of build status values for which email notifications are
+    # allowed to be sent. It is up to each callback as to whether it will
+    # consider sending a notification but it won't do so if the status is not
+    # in this list.
+    ALLOWED_STATUS_NOTIFICATIONS = ['PACKAGEFAIL', 'DEPFAIL', 'CHROOTFAIL']
 
-    @property
-    def build(self):
-        return self.buildfarmjob.build
+    @cachedproperty
+    def distro_arch_series(self):
+        if self.build is not None and self._builder is not None:
+            return self.build.distroseries.getDistroArchSeriesByProcessor(
+                self._builder.processor)
+        else:
+            return None
 
-    @property
-    def display_name(self):
-        ret = "%s, %s, %s" % (
-            self.build.distroseries.displayname, self.build.recipe.name,
-            self.build.recipe.owner.name)
-        if self._builder is not None:
-            ret += " (on %s)" % self._builder.url
-        return ret
-
-    def logStartBuild(self, logger):
-        """See `IBuildFarmJobBehavior`."""
-        logger.info("startBuild(%s)", self.display_name)
-
-    def _extraBuildArgs(self, distroarchseries, logger=None):
+    @defer.inlineCallbacks
+    def extraBuildArgs(self, logger=None):
         """
         Return the extra arguments required by the slave for the given build.
         """
+        if self.distro_arch_series is None:
+            raise CannotBuild(
+                "Unable to find distroarchseries for %s in %s" %
+                (self._builder.processor.name,
+                 self.build.distroseries.displayname))
+
         # Build extra arguments.
-        args = {}
-        suite = self.build.distroseries.name
-        if self.build.pocket != PackagePublishingPocket.RELEASE:
-            suite += "-%s" % (self.build.pocket.name.lower())
-        args['suite'] = suite
-        args['arch_tag'] = distroarchseries.architecturetag
+        args = yield super(RecipeBuildBehaviour, self).extraBuildArgs(
+            logger=logger)
+        args['suite'] = self.build.distroseries.getSuite(self.build.pocket)
         requester = self.build.requester
         if requester.preferredemail is None:
             # Use a constant, known, name and email.
@@ -78,89 +79,23 @@ class RecipeBuildBehavior(BuildFarmJobBehaviorBase):
             # Don't keep the naked requester around though.
             args["author_email"] = removeSecurityProxy(
                 requester).preferredemail.email
-        args["recipe_text"] = str(self.build.recipe.builder_recipe)
+        args["recipe_text"] = self.build.recipe.getRecipeText(validate=True)
         args['archive_purpose'] = self.build.archive.purpose.name
         args["ogrecomponent"] = get_primary_current_component(
             self.build.archive, self.build.distroseries,
-            None)
-        args['archives'] = get_sources_list_for_building(self.build,
-            distroarchseries, None)
-        args['archive_private'] = self.build.archive.private
-
-        # config.builddmaster.bzr_builder_sources_list can contain a
-        # sources.list entry for an archive that will contain a
-        # bzr-builder package that needs to be used to build this
-        # recipe.
-        try:
-            extra_archive = config.builddmaster.bzr_builder_sources_list
-        except AttributeError:
-            extra_archive = None
-
-        if extra_archive is not None:
-            try:
-                sources_line = extra_archive % (
-                    {'series': self.build.distroseries.name})
-                args['archives'].append(sources_line)
-            except StandardError:
-                # Someone messed up the config, don't add it.
-                if logger:
-                    logger.error(
-                        "Exception processing bzr_builder_sources_list:\n%s"
-                        % traceback.format_exc())
-
+            None).name
+        args['archives'], args['trusted_keys'] = (
+            yield get_sources_list_for_building(
+                self.build, self.distro_arch_series, None,
+                tools_source=config.builddmaster.bzr_builder_sources_list,
+                logger=logger))
+        # XXX cjwatson 2017-07-26: This duplicates "series", which is common
+        # to all build types; this name for it is deprecated and should be
+        # removed once launchpad-buildd no longer requires it.
         args['distroseries_name'] = self.build.distroseries.name
-        return args
-
-    def dispatchBuildToSlave(self, build_queue_id, logger):
-        """See `IBuildFarmJobBehavior`."""
-
-        distroseries = self.build.distroseries
-        # Start the binary package build on the slave builder. First
-        # we send the chroot.
-        distroarchseries = distroseries.getDistroArchSeriesByProcessor(
-            self._builder.processor)
-        if distroarchseries is None:
-            raise CannotBuild("Unable to find distroarchseries for %s in %s" %
-                (self._builder.processor.name,
-                self.build.distroseries.displayname))
-        args = self._extraBuildArgs(distroarchseries, logger)
-        chroot = distroarchseries.getChroot()
-        if chroot is None:
-            raise CannotBuild("Unable to find a chroot for %s" %
-                              distroarchseries.displayname)
-        logger.info(
-            "Sending chroot file for recipe build to %s" % self._builder.name)
-        d = self._builder.slave.cacheFile(logger, chroot)
-
-        def got_cache_file(ignored):
-            # Generate a string which can be used to cross-check when obtaining
-            # results so we know we are referring to the right database object in
-            # subsequent runs.
-            buildid = "%s-%s" % (self.build.id, build_queue_id)
-            cookie = self.buildfarmjob.generateSlaveBuildCookie()
-            chroot_sha1 = chroot.content.sha1
-            logger.info(
-                "Initiating build %s on %s" % (buildid, self._builder.url))
-
-            return self._builder.slave.build(
-                cookie, "sourcepackagerecipe", chroot_sha1, {}, args)
-
-        def log_build_result((status, info)):
-            message = """%s (%s):
-            ***** RESULT *****
-            %s
-            %s: %s
-            ******************
-            """ % (
-                self._builder.name,
-                self._builder.url,
-                args,
-                status,
-                info,
-                )
-            logger.info(message)
-
-        return d.addCallback(got_cache_file).addCallback(log_build_result)
+        if self.build.recipe.base_git_repository is not None:
+            args['git'] = True
+        defer.returnValue(args)
 
     def verifyBuildRequest(self, logger):
         """Assert some pre-build checks.
@@ -172,7 +107,7 @@ class RecipeBuildBehavior(BuildFarmJobBehaviorBase):
            distroseries state.
         """
         build = self.build
-        assert not (not self._builder.virtualized and build.is_virtualized), (
+        assert self._builder.virtualized, (
             "Attempt to build virtual item on a non-virtual builder.")
 
         # This should already have been checked earlier, but just check again
@@ -184,20 +119,3 @@ class RecipeBuildBehavior(BuildFarmJobBehaviorBase):
                 "to the series status of %s." %
                     (build.title, build.id, build.pocket.name,
                      build.distroseries.name))
-
-    def updateSlaveStatus(self, raw_slave_status, status):
-        """Parse the recipe build specific status info into the status dict.
-
-        This includes:
-        * filemap => dictionary or None
-        * dependencies => string or None
-        """
-        build_status_with_files = (
-            'BuildStatus.OK',
-            'BuildStatus.PACKAGEFAIL',
-            'BuildStatus.DEPFAIL',
-            )
-        if (status['builder_status'] == 'BuilderStatus.WAITING' and
-            status['build_status'] in build_status_with_files):
-            status['filemap'] = raw_slave_status[3]
-            status['dependencies'] = raw_slave_status[4]

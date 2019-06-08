@@ -1,4 +1,4 @@
-# Copyright 2009-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """The processing of dist-upgrader tarballs."""
@@ -7,19 +7,17 @@ __metaclass__ = type
 
 __all__ = [
     'DistUpgraderUpload',
-    'process_dist_upgrader',
     ]
 
 import os
 
-from lp.archivepublisher.customupload import (
-    CustomUpload,
-    CustomUploadError,
-    )
+from lp.archivepublisher.config import getPubConfig
+from lp.archivepublisher.customupload import CustomUpload
 from lp.archivepublisher.debversion import (
     BadUpstreamError,
     Version as make_version,
     )
+from lp.soyuz.interfaces.queue import CustomUploadError
 
 
 class DistUpgraderBadVersion(CustomUploadError):
@@ -65,10 +63,14 @@ class DistUpgraderUpload(CustomUpload):
             raise ValueError("%s is not NAME_VERSION_ARCH" % tarfile_base)
         return bits[0], bits[1], bits[2].split(".")[0]
 
-    def setTargetDirectory(self, pubconf, tarfile_path, distroseries):
+    def setComponents(self, tarfile_path):
         _, self.version, self.arch = self.parsePath(tarfile_path)
+
+    def setTargetDirectory(self, archive, tarfile_path, suite):
+        self.setComponents(tarfile_path)
+        pubconf = getPubConfig(archive)
         self.targetdir = os.path.join(
-            pubconf.archiveroot, 'dists', distroseries, 'main',
+            pubconf.archiveroot, 'dists', suite, 'main',
             'dist-upgrader-%s' % self.arch)
 
     @classmethod
@@ -79,7 +81,7 @@ class DistUpgraderUpload(CustomUpload):
             return None
 
     def shouldInstall(self, filename):
-        """ Install files from a dist-upgrader tarball.
+        """Install files from a dist-upgrader tarball.
 
         It raises DistUpgraderBadVersion if if finds a directory name that
         could not be treated as a valid Debian version.
@@ -99,13 +101,6 @@ class DistUpgraderUpload(CustomUpload):
             raise DistUpgraderBadVersion(self.tarfile_path, exc)
         return version and not filename.startswith('current')
 
-
-def process_dist_upgrader(pubconf, tarfile_path, distroseries):
-    """Process a raw-dist-upgrader tarfile.
-
-    Unpacking it into the given archive for the given distroseries.
-    Raises CustomUploadError (or some subclass thereof) if anything goes
-    wrong.
-    """
-    upload = DistUpgraderUpload()
-    upload.process(pubconf, tarfile_path, distroseries)
+    def shouldSign(self, filename):
+        """Sign *.tar.gz files."""
+        return filename.endswith('.tar.gz')

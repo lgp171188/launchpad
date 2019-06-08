@@ -2,8 +2,6 @@
 # the GNU Affero General Public License version 3 (see the file
 # LICENSE).
 
-# pylint: disable-msg=E0611,W0212
-
 __metaclass__ = type
 __all__ = [
     'Language',
@@ -26,7 +24,7 @@ from storm.expr import (
     LeftJoin,
     Or,
     )
-from zope.interface import implements
+from zope.interface import implementer
 
 from lp.app.errors import NotFoundError
 from lp.registry.model.karma import (
@@ -35,7 +33,7 @@ from lp.registry.model.karma import (
     )
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.enumcol import EnumCol
-from lp.services.database.lpstorm import (
+from lp.services.database.interfaces import (
     ISlaveStore,
     IStore,
     )
@@ -58,8 +56,8 @@ from lp.services.worlddata.model.spokenin import SpokenIn
 SpokenIn
 
 
+@implementer(ILanguage)
 class Language(SQLBase):
-    implements(ILanguage)
 
     _table = 'Language'
 
@@ -179,8 +177,8 @@ class Language(SQLBase):
         return self.translators.count()
 
 
+@implementer(ILanguageSet)
 class LanguageSet:
-    implements(ILanguageSet)
 
     @staticmethod
     def _getTranslatorJoins():
@@ -199,7 +197,7 @@ class LanguageSet:
                     KarmaCategory.name == 'translations',
                     KarmaCache.categoryID == KarmaCategory.id,
                     KarmaCache.productID == None,
-                    KarmaCache.projectID == None,
+                    KarmaCache.projectgroupID == None,
                     KarmaCache.sourcepackagenameID == None,
                     KarmaCache.distributionID == None)),
             PersonLanguage.personID ==

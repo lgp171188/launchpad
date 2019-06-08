@@ -1,4 +1,4 @@
-# Copyright 2009 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2017 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """ ChangesFile class
@@ -17,6 +17,7 @@ __all__ = [
 
 import os
 
+from lp.archiveuploader.buildinfofile import BuildInfoFile
 from lp.archiveuploader.dscfile import (
     DSCFile,
     SignableTagFile,
@@ -29,15 +30,18 @@ from lp.archiveuploader.nascentuploadfile import (
     SourceUploadFile,
     splitComponentAndSection,
     UdebBinaryUploadFile,
-    UploadError,
-    UploadWarning,
     )
 from lp.archiveuploader.utils import (
     determine_binary_file_type,
     determine_source_file_type,
+    parse_and_merge_file_lists,
     re_changes_file_name,
     re_isadeb,
+    re_isbuildinfo,
     re_issource,
+    rfc822_encode_address,
+    UploadError,
+    UploadWarning,
     )
 from lp.registry.interfaces.sourcepackage import (
     SourcePackageFileType,
@@ -54,7 +58,7 @@ class ChangesFile(SignableTagFile):
     """Changesfile model."""
 
     mandatory_fields = set([
-        "Source", "Binary", "Architecture", "Version", "Distribution",
+        "Source", "Architecture", "Version", "Distribution",
         "Maintainer", "Files", "Changes", "Date",
         # Changed-By is not technically mandatory according to
         # Debian policy but Soyuz relies on it being set in
@@ -73,12 +77,18 @@ class ChangesFile(SignableTagFile):
         }
 
     dsc = None
+    buildinfo = None
     maintainer = None
     changed_by = None
     filename_archtag = None
     files = None
 
     def __init__(self, filepath, policy, logger):
+        self.filepath = filepath
+        self.policy = policy
+        self.logger = logger
+
+    def parseChanges(self):
         """Process the given changesfile.
 
         Does:
@@ -88,24 +98,25 @@ class ChangesFile(SignableTagFile):
             * Checks name of changes file
             * Checks signature of changes file
 
-        If any of these checks fail, UploadError is raised, and it's
-        considered a fatal error (no subsequent processing of the upload
-        will be done).
+        If any of these checks fail, UploadError is yielded, and it should
+        be considered a fatal error (no subsequent processing of the upload
+        should be done).
 
         Logger and Policy are instances built in uploadprocessor.py passed
         via NascentUpload class.
         """
-        self.filepath = filepath
-        self.policy = policy
-        self.logger = logger
-
-        self.parse(verify_signature=not policy.unsigned_changes_ok)
+        try:
+            self.parse(verify_signature=not self.policy.unsigned_changes_ok)
+        except UploadError as e:
+            yield e
+            return
 
         for field in self.mandatory_fields:
             if field not in self._dict:
-                raise UploadError(
+                yield UploadError(
                     "Unable to find mandatory field '%s' in the changes "
                     "file." % field)
+                return
 
         try:
             format = float(self._dict["Format"])
@@ -114,7 +125,7 @@ class ChangesFile(SignableTagFile):
             format = 1.5
 
         if format < 1.5 or format > 2.0:
-            raise UploadError(
+            yield UploadError(
                 "Format out of acceptable range for changes file. Range "
                 "1.5 - 2.0, format %g" % format)
 
@@ -173,12 +184,15 @@ class ChangesFile(SignableTagFile):
         all exceptions that are generated while processing all mentioned
         files.
         """
+        try:
+            raw_files = parse_and_merge_file_lists(self._dict, changes=True)
+        except UploadError as e:
+            yield e
+            return
+
         files = []
-        for fileline in self._dict['Files'].strip().split("\n"):
-            # files lines from a changes file are always of the form:
-            # CHECKSUM SIZE [COMPONENT/]SECTION PRIORITY FILENAME
-            digest, size, component_and_section, priority_name, filename = (
-                fileline.strip().split())
+        for attr in raw_files:
+            filename, hashes, size, component_and_section, priority_name = attr
             filepath = os.path.join(self.dirname, filename)
             try:
                 if self.isCustom(component_and_section):
@@ -186,7 +200,7 @@ class ChangesFile(SignableTagFile):
                     # otherwise the tarballs in custom uploads match
                     # with source_match.
                     file_instance = CustomUploadFile(
-                        filepath, digest, size, component_and_section,
+                        filepath, hashes, size, component_and_section,
                         priority_name, self.policy, self.logger)
                 else:
                     try:
@@ -198,12 +212,14 @@ class ChangesFile(SignableTagFile):
                         continue
 
                     file_instance = cls(
-                        filepath, digest, size, component_and_section,
+                        filepath, hashes, size, component_and_section,
                         priority_name, package, self.version, self,
                         self.policy, self.logger)
 
                     if cls == DSCFile:
                         self.dsc = file_instance
+                    elif cls == BuildInfoFile:
+                        self.buildinfo = file_instance
             except UploadError as error:
                 yield error
             else:
@@ -295,7 +311,7 @@ class ChangesFile(SignableTagFile):
     @property
     def binaries(self):
         """Return set of binary package names listed."""
-        return set(self._dict['Binary'].strip().split())
+        return set(self._dict.get('Binary', '').strip().split())
 
     @property
     def converted_urgency(self):
@@ -351,16 +367,17 @@ class ChangesFile(SignableTagFile):
          -- <CHANGED-BY>  <DATE>
         }}}
         """
-        changes_author = (
-            '\n -- %s   %s' %
-            (self.changed_by['rfc822'], self.date))
-        return self.changes_comment + changes_author
+        changes_author = rfc822_encode_address(
+            self.changed_by['name'], self.changed_by['email'])
+        return '%s\n\n -- %s  %s' % (
+            self.changes_comment, changes_author.encode('utf-8'), self.date)
 
 
 def determine_file_class_and_name(filename):
     """Determine the name and PackageUploadFile subclass for the filename."""
     source_match = re_issource.match(filename)
     binary_match = re_isadeb.match(filename)
+    buildinfo_match = re_isbuildinfo.match(filename)
     if source_match:
         package = source_match.group(1)
         if (determine_source_file_type(filename) ==
@@ -375,6 +392,9 @@ def determine_file_class_and_name(filename):
             BinaryPackageFileType.DDEB: DdebBinaryUploadFile,
             BinaryPackageFileType.UDEB: UdebBinaryUploadFile,
             }[determine_binary_file_type(filename)]
+    elif buildinfo_match:
+        package = buildinfo_match.group(1)
+        cls = BuildInfoFile
     else:
         raise CannotDetermineFileTypeError(
             "Could not determine the type of %r" % filename)

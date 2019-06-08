@@ -1,4 +1,4 @@
-# Copyright 2009-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -14,6 +14,7 @@ __all__ = [
 
 
 import hashlib
+import httplib
 from select import select
 import socket
 from socket import (
@@ -31,14 +32,15 @@ from urlparse import (
     )
 
 from lazr.restful.utils import get_current_browser_request
+import six
 from storm.store import Store
-from zope.component import getUtility
-from zope.interface import implements
+from zope.interface import implementer
 
 from lp.services.config import (
     config,
     dbconfig,
     )
+from lp.services.database.interfaces import IMasterStore
 from lp.services.database.postgresql import ConnectionString
 from lp.services.librarian.interfaces.client import (
     DownloadFailed,
@@ -49,18 +51,16 @@ from lp.services.librarian.interfaces.client import (
     UploadFailed,
     )
 from lp.services.timeline.requesttimeline import get_request_timeline
-from lp.services.webapp.interfaces import (
-    IStoreSelector,
-    MAIN_STORE,
-    MASTER_FLAVOR,
-    )
 
 
 def url_path_quote(filename):
     """Quote `filename` for use in a URL."""
-    # XXX RobertCollins 2004-09-21: Perhaps filenames with / in them
-    # should be disallowed?
-    return urllib.quote(filename).replace('/', '%2F')
+    # RFC 3986 says ~ should not be generated escaped, but urllib.quote
+    # predates it. Additionally, + is safe to use unescaped in paths and is
+    # frequently used in Debian versions, so leave it alone.
+    #
+    # This needs to match Library.getAlias' TimeLimitedToken handling.
+    return urllib.quote(filename, safe='/~+')
 
 
 def get_libraryfilealias_download_path(aliasID, filename):
@@ -143,8 +143,7 @@ class FileUploadClient:
         if size <= min_size:
             raise UploadFailed('Invalid length: %d' % size)
 
-        if isinstance(name, unicode):
-            name = name.encode('utf-8')
+        name = six.ensure_binary(name)
 
         # Import in this method to avoid a circular import
         from lp.services.librarian.model import LibraryFileContent
@@ -155,7 +154,7 @@ class FileUploadClient:
             # Get the name of the database the client is using, so that
             # the server can check that the client is using the same
             # database as the server.
-            store = getUtility(IStoreSelector).get(MAIN_STORE, MASTER_FLAVOR)
+            store = IMasterStore(LibraryFileAlias)
             databaseName = self._getDatabaseName(store)
 
             # Generate new content and alias IDs.
@@ -183,8 +182,9 @@ class FileUploadClient:
             self._sendLine('', check_for_error_responses=(size > 0))
 
             # Prepare to the upload the file
-            shaDigester = hashlib.sha1()
-            md5Digester = hashlib.md5()
+            md5_digester = hashlib.md5()
+            sha1_digester = hashlib.sha1()
+            sha256_digester = hashlib.sha256()
             bytesWritten = 0
 
             # Read in and upload the file 64kb at a time, by using the two-arg
@@ -193,8 +193,9 @@ class FileUploadClient:
             for chunk in iter(lambda: file.read(1024 * 64), ''):
                 self.state.f.write(chunk)
                 bytesWritten += len(chunk)
-                shaDigester.update(chunk)
-                md5Digester.update(chunk)
+                md5_digester.update(chunk)
+                sha1_digester.update(chunk)
+                sha256_digester.update(chunk)
 
             assert bytesWritten == size, (
                 'size is %d, but %d were read from the file'
@@ -209,8 +210,9 @@ class FileUploadClient:
             # Add rows to DB
             content = LibraryFileContent(
                 id=contentID, filesize=size,
-                sha1=shaDigester.hexdigest(),
-                md5=md5Digester.hexdigest())
+                sha256=sha256_digester.hexdigest(),
+                sha1=sha1_digester.hexdigest(),
+                md5=md5_digester.hexdigest())
             LibraryFileAlias(
                 id=aliasID, content=content, filename=name.decode('UTF-8'),
                 mimetype=contentType, expires=expires,
@@ -233,8 +235,7 @@ class FileUploadClient:
             raise TypeError('No data')
         if size <= 0:
             raise UploadFailed('No data')
-        if isinstance(name, unicode):
-            name = name.encode('utf-8')
+        name = six.ensure_binary(name)
         self._connect()
         try:
             database_name = ConnectionString(dbconfig.main_master).dbname
@@ -284,6 +285,18 @@ class _File:
     def __init__(self, file, url):
         self.file = file
         self.url = url
+        headers = file.info()
+        chunked = (headers.get("Transfer-Encoding") == "chunked")
+        if not chunked and "Content-Length" in headers:
+            try:
+                self.length = int(headers["Content-Length"])
+            except ValueError:
+                self.length = None
+            else:
+                if self.length < 0:
+                    self.length = None
+        else:
+            self.length = None
 
     def read(self, chunksize=None):
         request = get_current_browser_request()
@@ -291,9 +304,20 @@ class _File:
         action = timeline.start("librarian-read", self.url)
         try:
             if chunksize is None:
-                return self.file.read()
+                s = self.file.read()
             else:
-                return self.file.read(chunksize)
+                if self.length is not None:
+                    chunksize = min(chunksize, self.length)
+                s = self.file.read(chunksize)
+            if self.length is not None:
+                self.length -= len(s)
+                # httplib doesn't quite do all the checking we need: in
+                # particular, it won't fail on a short bounded-size read
+                # from a non-chunked-transfer-coding resource.  Check this
+                # manually.
+                if not s and chunksize != 0 and self.length:
+                    raise httplib.IncompleteRead(s, expected=self.length)
+            return s
         finally:
             action.finish()
 
@@ -504,9 +528,9 @@ class FileDownloadClient:
                     raise
 
 
+@implementer(ILibrarianClient)
 class LibrarianClient(FileUploadClient, FileDownloadClient):
     """See `ILibrarianClient`."""
-    implements(ILibrarianClient)
 
     restricted = False
 
@@ -531,9 +555,9 @@ class LibrarianClient(FileUploadClient, FileDownloadClient):
             )
 
 
+@implementer(IRestrictedLibrarianClient)
 class RestrictedLibrarianClient(LibrarianClient):
     """See `IRestrictedLibrarianClient`."""
-    implements(IRestrictedLibrarianClient)
 
     restricted = True
 

@@ -7,7 +7,6 @@ This code can import an XML bug dump into Launchpad.  The XML format
 is described in the RELAX-NG schema 'doc/bug-export.rnc'.
 """
 
-
 __metaclass__ = type
 
 __all__ = [
@@ -21,25 +20,14 @@ import datetime
 import logging
 import os
 import time
-
-
-try:
-    import xml.etree.cElementTree as ET
-except ImportError:
-    import cElementTree as ET
+from xml.etree import cElementTree
 
 import pytz
-
 from storm.store import Store
-
 from zope.component import getUtility
 from zope.contenttype import guess_content_type
 
-from lp.services.database.constants import UTC_NOW
-from lp.services.identity.interfaces.emailaddress import IEmailAddressSet
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
-from lp.services.librarian.interfaces import ILibraryFileAliasSet
-from lp.services.messages.interfaces.message import IMessageSet
 from lp.bugs.adapters.bug import convert_to_information_type
 from lp.bugs.interfaces.bug import (
     CreateBugParams,
@@ -60,11 +48,16 @@ from lp.bugs.interfaces.bugwatch import (
     NoBugTrackerFound,
     )
 from lp.bugs.interfaces.cve import ICveSet
+from lp.bugs.scripts.bugexport import BUGS_XMLNS
+from lp.registry.enums import BugSharingPolicy
 from lp.registry.interfaces.person import (
     IPersonSet,
     PersonCreationRationale,
     )
-from lp.bugs.scripts.bugexport import BUGS_XMLNS
+from lp.services.database.constants import UTC_NOW
+from lp.services.identity.interfaces.emailaddress import IEmailAddressSet
+from lp.services.librarian.interfaces import ILibraryFileAliasSet
+from lp.services.messages.interfaces.message import IMessageSet
 
 
 DEFAULT_LOGGER = logging.getLogger('lp.bugs.scripts.bugimport')
@@ -151,6 +144,10 @@ class BugImporter:
         # duplicates of this bug.
         self.pending_duplicates = {}
 
+        # We can't currently sensibly import into non-PUBLIC products.
+        if self.product:
+            assert self.product.bug_sharing_policy == BugSharingPolicy.PUBLIC
+
     def getPerson(self, node):
         """Get the Launchpad user corresponding to the given XML node"""
         if node is None:
@@ -175,34 +172,18 @@ class BugImporter:
         person_set = getUtility(IPersonSet)
 
         launchpad_id = self.person_id_cache.get(email)
-        if launchpad_id is not None:
-            person = person_set.get(launchpad_id)
-            if person is not None and person.merged is not None:
-                person = None
-        else:
-            person = None
-
-        if person is None:
-            person = getUtility(IPersonSet).getByEmail(
-                    email,
-                    filter_status=False)
-
-            if person is None:
-                self.logger.debug('creating person for %s' % email)
-                # Has the short name been taken?
-                if name is not None and (
-                    person_set.getByName(name) is not None):
-                    # The short name is already taken, so we'll pass
-                    # None to createPersonAndEmail(), which will take
-                    # care of creating a unique one.
-                    name = None
-                person, address = (
-                    person_set.createPersonAndEmail(
-                        email=email, name=name, displayname=displayname,
-                        rationale=PersonCreationRationale.BUGIMPORT,
-                        comment=('when importing bugs for %s' %
-                                 self.product.displayname)))
-
+        person = person_set.get(launchpad_id) if launchpad_id else None
+        if person is None or person.merged is not None:
+            if name is not None and person_set.getByName(name) is not None:
+                # The short name is already taken, so we'll pass None to
+                # ensurePerson(), which will take care of generating a
+                # unique one if a new Person is required.
+                name = None
+            person = getUtility(IPersonSet).ensurePerson(
+                email=email, name=name, displayname=displayname,
+                rationale=PersonCreationRationale.BUGIMPORT,
+                comment=(
+                    'when importing bugs for %s' % self.product.displayname))
             self.person_id_cache[email] = person.id
 
         # if we are auto-verifying new accounts, make sure the person
@@ -256,7 +237,7 @@ class BugImporter:
 
     def importBugs(self, ztm):
         """Import bugs from a file."""
-        tree = ET.parse(self.bugs_filename)
+        tree = cElementTree.parse(self.bugs_filename)
         root = tree.getroot()
         assert root.tag == '{%s}launchpad-bugs' % BUGS_XMLNS, (
             "Root element is wrong: %s" % root.tag)
@@ -295,9 +276,6 @@ class BugImporter:
 
         private = get_value(bugnode, 'private') == 'True'
         security_related = get_value(bugnode, 'security_related') == 'True'
-        # If the product has private_bugs, we force private to True.
-        if self.product.private_bugs:
-            private = True
         information_type = convert_to_information_type(
             private, security_related)
 
@@ -318,16 +296,11 @@ class BugImporter:
 
         # Process remaining comments
         for commentnode in comments:
-            msg = self.createMessage(commentnode,
-                                     defaulttitle=bug.followup_subject())
+            msg = self.createMessage(
+                commentnode, defaulttitle=bug.followup_subject())
             bug.linkMessage(msg)
             self.createAttachments(bug, msg, commentnode)
 
-        # Security bugs must be created private, so set it correctly.
-        if not self.product.private_bugs:
-            information_type = convert_to_information_type(
-                private, security_related)
-            bug.transitionToInformationType(information_type, owner)
         bug.name = get_value(bugnode, 'nickname')
         description = get_value(bugnode, 'description')
         if description:
@@ -338,7 +311,7 @@ class BugImporter:
             if cve is None:
                 raise BugXMLSyntaxError('Unknown CVE: %s' %
                                         get_text(cvenode))
-            bug.linkCVE(cve, self.bug_importer)
+            bug.linkCVE(cve, self.bug_importer, check_permissions=False)
 
         tags = []
         for tagnode in get_all(bugnode, 'tags/tag'):

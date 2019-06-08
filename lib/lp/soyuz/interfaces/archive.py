@@ -1,7 +1,5 @@
-# Copyright 2009-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
-
-# pylint: disable-msg=E0211,E0213
 
 """Archive interfaces."""
 
@@ -10,25 +8,29 @@ __metaclass__ = type
 __all__ = [
     'ALLOW_RELEASE_BUILDS',
     'AlreadySubscribed',
+    'ArchiveAlreadyDeleted',
     'ArchiveDependencyError',
     'ArchiveDisabled',
     'ArchiveNotPrivate',
     'CannotCopy',
     'CannotSwitchPrivacy',
     'ComponentNotFound',
-    'CannotRestrictArchitectures',
+    'CannotModifyArchiveProcessor',
     'CannotUploadToArchive',
     'CannotUploadToPPA',
     'CannotUploadToPocket',
+    'CannotUploadToSeries',
+    'DuplicateTokenName',
     'FULL_COMPONENT_SUPPORT',
     'IArchive',
+    'IArchiveAdmin',
     'IArchiveAppend',
-    'IArchiveCommercial',
     'IArchiveEdit',
-    'IArchiveView',
     'IArchiveEditDependenciesForm',
+    'IArchiveSubscriberView',
     'IArchivePublic',
     'IArchiveSet',
+    'IArchiveView',
     'IDistributionArchive',
     'InsufficientUploadRights',
     'InvalidComponent',
@@ -37,12 +39,15 @@ __all__ = [
     'InvalidPocketForPPA',
     'IPPA',
     'MAIN_ARCHIVE_PURPOSES',
+    'NAMED_AUTH_TOKEN_FEATURE_FLAG',
+    'NamedAuthTokenFeatureDisabled',
     'NoRightsForArchive',
     'NoRightsForComponent',
     'NoSuchPPA',
     'NoTokensForTeams',
     'PocketNotFound',
     'PriorityNotFound',
+    'RedirectedPocket',
     'SectionNotFound',
     'VersionRequiresName',
     'default_name_by_purpose',
@@ -50,13 +55,16 @@ __all__ = [
     ]
 
 import httplib
+import re
 from urlparse import urlparse
 
-from lazr.enum import DBEnumeratedType
 from lazr.restful.declarations import (
     call_with,
+    collection_default_content,
     error_status,
+    export_as_webservice_collection,
     export_as_webservice_entry,
+    export_destructor_operation,
     export_factory_operation,
     export_operation_as,
     export_read_operation,
@@ -87,22 +95,32 @@ from zope.schema import (
     Text,
     TextLine,
     )
+from zope.security.interfaces import Unauthorized
 
 from lp import _
 from lp.app.errors import NameLookupFailed
 from lp.app.interfaces.launchpad import IPrivacy
 from lp.app.validators.name import name_validator
+from lp.buildmaster.interfaces.processor import IProcessor
+from lp.registry.interfaces.distroseries import IDistroSeries
 from lp.registry.interfaces.gpg import IGPGKey
 from lp.registry.interfaces.person import IPerson
+from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.registry.interfaces.role import IHasOwner
 from lp.services.fields import (
     PersonChoice,
     PublicPersonChoice,
     StrippedTextLine,
     )
-from lp.soyuz.enums import ArchivePurpose
+from lp.soyuz.enums import (
+    ArchivePurpose,
+    PackagePublishingStatus,
+    )
 from lp.soyuz.interfaces.buildrecords import IHasBuildRecords
 from lp.soyuz.interfaces.component import IComponent
+
+
+NAMED_AUTH_TOKEN_FEATURE_FLAG = u"soyuz.named_auth_token.allow_new"
 
 
 @error_status(httplib.BAD_REQUEST)
@@ -180,8 +198,9 @@ class VersionRequiresName(Exception):
     """Raised on some queries when version is specified but name is not."""
 
 
-class CannotRestrictArchitectures(Exception):
-    """The architectures for this archive can not be restricted."""
+@error_status(httplib.BAD_REQUEST)
+class ArchiveAlreadyDeleted(Exception):
+    """Archive already deleted."""
 
 
 @error_status(httplib.FORBIDDEN)
@@ -192,7 +211,7 @@ class CannotUploadToArchive(Exception):
 
     def __init__(self, **args):
         """Construct a `CannotUploadToArchive`."""
-        Exception.__init__(self, self._fmt % args)
+        super(CannotUploadToArchive, self).__init__(self._fmt % args)
 
 
 class InvalidPocketForPartnerArchive(CannotUploadToArchive):
@@ -206,9 +225,22 @@ class CannotUploadToPocket(Exception):
     """Returned when a pocket is closed for uploads."""
 
     def __init__(self, distroseries, pocket):
-        Exception.__init__(self,
+        super(CannotUploadToPocket, self).__init__(
             "Not permitted to upload to the %s pocket in a series in the "
             "'%s' state." % (pocket.name, distroseries.status.name))
+
+
+@error_status(httplib.FORBIDDEN)
+class RedirectedPocket(Exception):
+    """Returned for a pocket that would normally be redirected to another.
+
+    This is used in contexts (e.g. copies) where actually doing the
+    redirection would be Too Much Magic."""
+
+    def __init__(self, distroseries, pocket, preferred):
+        Exception.__init__(self,
+            "Not permitted to upload directly to %s; try %s instead." %
+            (distroseries.getSuite(pocket), distroseries.getSuite(preferred)))
 
 
 class CannotUploadToPPA(CannotUploadToArchive):
@@ -241,7 +273,7 @@ class NoRightsForComponent(CannotUploadToArchive):
         "Signer is not permitted to upload to the component '%(component)s'.")
 
     def __init__(self, component):
-        CannotUploadToArchive.__init__(self, component=component.name)
+        super(NoRightsForComponent, self).__init__(component=component.name)
 
 
 class InvalidPocketForPPA(CannotUploadToArchive):
@@ -256,7 +288,17 @@ class ArchiveDisabled(CannotUploadToArchive):
     _fmt = ("%(archive_name)s is disabled.")
 
     def __init__(self, archive_name):
-        CannotUploadToArchive.__init__(self, archive_name=archive_name)
+        super(ArchiveDisabled, self).__init__(archive_name=archive_name)
+
+
+class CannotUploadToSeries(CannotUploadToArchive):
+    """Uploading to an obsolete series is not allowed."""
+
+    _fmt = ("%(distroseries)s is obsolete and will not accept new uploads.")
+
+    def __init__(self, distroseries):
+        super(CannotUploadToSeries, self).__init__(
+            distroseries=distroseries.name)
 
 
 @error_status(httplib.BAD_REQUEST)
@@ -265,8 +307,36 @@ class InvalidExternalDependencies(Exception):
 
     def __init__(self, errors):
         error_msg = 'Invalid external dependencies:\n%s\n' % '\n'.join(errors)
-        super(Exception, self).__init__(self, error_msg)
+        super(Exception, self).__init__(error_msg)
         self.errors = errors
+
+
+@error_status(httplib.FORBIDDEN)
+class CannotModifyArchiveProcessor(Exception):
+    """Tried to enable or disable a restricted processor on an archive."""
+
+    _fmt = (
+        '%(processor)s is restricted, and may only be enabled or disabled '
+        'by administrators.')
+
+    def __init__(self, processor):
+        super(CannotModifyArchiveProcessor, self).__init__(
+            self._fmt % {'processor': processor.name})
+
+
+@error_status(httplib.CONFLICT)
+class DuplicateTokenName(Exception):
+    """Raised when creating a named token and an active token for this archive
+     with this name already exists."""
+
+
+@error_status(httplib.UNAUTHORIZED)
+class NamedAuthTokenFeatureDisabled(Unauthorized):
+    """Only certain users can create named authorization tokens."""
+
+    def __init__(self):
+        super(NamedAuthTokenFeatureDisabled, self).__init__(
+            "You do not have permission to create named authorization tokens")
 
 
 class IArchivePublic(IPrivacy, IHasOwner):
@@ -298,6 +368,11 @@ class IArchivePublic(IPrivacy, IHasOwner):
             title=_("Display name"), required=True,
             description=_("A short title for the archive.")))
 
+    reference = exported(
+        TextLine(
+            title=_("Reference"), required=True, readonly=True,
+            description=_("A string to uniquely identify the archive.")))
+
     distribution = exported(
         Reference(
             Interface,  # Redefined to IDistribution later.
@@ -319,7 +394,13 @@ class IArchivePublic(IPrivacy, IHasOwner):
                 "subscribers. This can only be changed if the archive has "
                 "never had any sources published.")))
 
+    is_primary = Attribute("True if this archive is a primary archive.")
+
     is_ppa = Attribute("True if this archive is a PPA.")
+
+    is_partner = Attribute("True if this archive is a partner archive.")
+
+    is_copy = Attribute("True if this archive is a copy archive.")
 
     is_main = Bool(
         title=_("True if archive is a main archive type"), required=False)
@@ -348,16 +429,159 @@ class IArchivePublic(IPrivacy, IHasOwner):
         """
 
 
+class IArchiveSubscriberView(Interface):
+
+    archive_url = Attribute("External archive URL.")
+    dependencies = exported(
+        CollectionField(
+            title=_("Archive dependencies recorded for this archive."),
+            value_type=Reference(schema=Interface),
+            # Really IArchiveDependency
+            readonly=True))
+    description = exported(
+        Text(
+            title=_("Description"), required=False,
+            description=_(
+                "A short description of the archive. URLs are allowed and "
+                "will be rendered as links.")))
+    is_active = Bool(
+        title=_("True if the archive is in the active state"),
+        required=False, readonly=True)
+    num_pkgs_building = Attribute(
+        "Tuple of packages building and waiting to build")
+    publish = Bool(
+        title=_("Publish"), required=False,
+        description=_("Whether or not to update the apt repository.  If "
+            "disabled, nothing will be published.  If the archive is "
+            "private then additionally no builds will be dispatched."))
+    can_be_published = Bool(
+        title=_("Can be published"), required=True,
+        description=_(
+            "True if this archive can be published, considering both the "
+            "explicit publish flag and any other constraints."))
+    series_with_sources = Attribute(
+        "DistroSeries to which this archive has published sources")
+    signing_key = Object(
+        title=_('Repository signing key.'), required=False, schema=IGPGKey)
+
+    @export_read_operation()
+    @operation_for_version("devel")
+    def getSigningKeyData():
+        """Get the public key used to sign this repository.
+
+        If the repository has a signing key but it cannot be retrieved from
+        the keyserver, then the response will have an appropriate 4xx or 5xx
+        HTTP status code.  Otherwise, returns the ASCII-armoured public key
+        material as a text string, or None if the repository has no signing
+        key.
+        """
+
+    def getAuthToken(person):
+        """Returns an IArchiveAuthToken for the archive in question for
+        IPerson provided.
+
+        :return: A IArchiveAuthToken, or None if the user has none.
+        """
+
+    @export_operation_as('getPublishedSources')
+    @rename_parameters_as(name="source_name", distroseries="distro_series")
+    @operation_parameters(
+        name=TextLine(title=_("Source package name"), required=False),
+        version=TextLine(title=_("Version"), required=False),
+        status=Choice(
+            title=_('Package Publishing Status'),
+            description=_('The status of this publishing record'),
+            vocabulary=PackagePublishingStatus,
+            required=False),
+        distroseries=Reference(
+            IDistroSeries, title=_("Distroseries name"), required=False),
+        pocket=Choice(
+            title=_("Pocket"),
+            description=_("The pocket into which this entry is published"),
+            vocabulary=PackagePublishingPocket,
+            required=False, readonly=True),
+        exact_match=Bool(
+            title=_("Exact Match"),
+            description=_("Whether or not to filter source names by exact"
+                          " matching."),
+            required=False),
+        created_since_date=Datetime(
+            title=_("Created Since Date"),
+            description=_("Return entries whose `date_created` is greater "
+                          "than or equal to this date."),
+            required=False),
+        component_name=TextLine(title=_("Component name"), required=False),
+        order_by_date=Bool(
+            title=_("Order by creation date"),
+            description=_("Return newest results first. This is recommended "
+                          "for applications that need to catch up with "
+                          "publications since their last run. If not "
+                          "specified, results are ordered by source "
+                          "package name (lexicographically), then by "
+                          "descending version and then descending ID."),
+            required=False),
+        )
+    # Really returns ISourcePackagePublishingHistory, see below for
+    # patch to avoid circular import.
+    @operation_returns_collection_of(Interface)
+    @export_read_operation()
+    def api_getPublishedSources(name=None, version=None, status=None,
+                                distroseries=None, pocket=None,
+                                exact_match=False, created_since_date=None,
+                                component_name=None, order_by_date=False):
+        """All `ISourcePackagePublishingHistory` target to this archive."""
+        # It loads additional related objects only needed in the API call
+        # context (i.e. security checks and entries marshalling).
+
+    def getPublishedSources(name=None, version=None, status=None,
+                            distroseries=None, pocket=None,
+                            exact_match=False, created_since_date=None,
+                            eager_load=False, component_name=None,
+                            order_by_date=False):
+        """All `ISourcePackagePublishingHistory` target to this archive.
+
+        :param name: source name filter (exact match or SQL LIKE controlled
+                     by 'exact_match' argument).
+                     Name can be a single string or a list of strings.
+        :param version: source version filter (always exact match).
+        :param status: `PackagePublishingStatus` filter, can be a sequence.
+        :param distroseries: `IDistroSeries` filter.
+        :param pocket: `PackagePublishingPocket` filter.  This may be an
+            iterable of more than one pocket or a single pocket.
+        :param exact_match: either or not filter source names by exact
+                             matching.
+        :param created_since_date: Only return results whose `date_created`
+            is greater than or equal to this date.
+        :param component_name: component filter. Only return source packages
+            that are in this component.
+        :param order_by_date: Order publications by descending creation date
+            and then by descending ID.  This is suitable for applications
+            that need to catch up with publications since their last run.
+            If not specified, publications are ordered by source
+            package name (lexicographically), then by descending version
+            and then descending ID.
+
+        :return: SelectResults containing `ISourcePackagePublishingHistory`,
+            ordered by name. If there are multiple results for the same
+            name then they are sub-ordered newest first.
+        """
+
+    def newAuthToken(person, token=None, date_created=None):
+        """Create a new authorization token.
+
+        :param person: An IPerson whom this token is for.
+        :param token: Optional unicode text to use as the token. One will be
+            generated if not given.
+        :param date_created: Optional, defaults to now.
+
+        :return: A new IArchiveAuthToken
+        """
+
+
 class IArchiveView(IHasBuildRecords):
     """Archive interface for operations restricted by view privilege."""
 
     title = TextLine(title=_("Name"), required=False, readonly=True)
-
-    publish = Bool(
-        title=_("Publish"), required=False,
-        description=_("Whether or not to update the APT repository.  If "
-            "disabled, nothing will be published.  If the archive is "
-            "private then additionally no builds will be dispatched."))
 
     require_virtualized = exported(
         Bool(
@@ -365,10 +589,22 @@ class IArchiveView(IHasBuildRecords):
             readonly=False, description=_(
                 "Only build the archive's packages on virtual builders.")))
 
-    build_debug_symbols = Bool(
-        title=_("Build debug symbols"), required=False,
+    build_debug_symbols = exported(Bool(
+        title=_("Build debug symbols"), required=False, readonly=False,
         description=_(
-            "Create debug symbol packages for builds in the archive."))
+            "Create debug symbol packages for builds in the archive.")),
+        as_of='devel')
+    publish_debug_symbols = exported(Bool(
+        title=_("Publish debug symbols"), required=False, readonly=False,
+        description=_(
+            "Publish debug symbol packages in the apt repository.")),
+        as_of='devel')
+
+    permit_obsolete_series_uploads = exported(Bool(
+        title=_("Permit uploads to obsolete series"), required=False,
+        readonly=False,
+        description=_("Allow uploads targeted to obsolete series.")),
+        as_of='devel')
 
     authorized_size = exported(
         Int(
@@ -377,12 +613,11 @@ class IArchiveView(IHasBuildRecords):
             description=_("Maximum size, in MiB, allowed for the archive.")))
 
     purpose = Int(
-        title=_("Purpose of archive."), required=True, readonly=True,
-        )
+        title=_("Purpose of archive."), required=True, readonly=True)
 
-    status = Int(
-        title=_("Status of archive."), required=True, readonly=True,
-        )
+    status = exported(
+        Int(title=_("Status of archive."), required=True, readonly=True),
+        as_of='devel')
 
     sources_cached = Int(
         title=_("Number of sources cached"), required=False,
@@ -396,30 +631,12 @@ class IArchiveView(IHasBuildRecords):
         "Concatenation of the source and binary packages published in this "
         "archive. Its content is used for indexed searches across archives.")
 
-    signing_key = Object(
-        title=_('Repository sigining key.'), required=False, schema=IGPGKey)
-
-    debug_archive = Attribute(
-        "The archive into which debug binaries should be uploaded.")
-
     default_component = Reference(
         IComponent,
         title=_(
             "The default component for this archive. Publications without a "
             "valid component will be assigned this one."))
 
-    archive_url = Attribute("External archive URL.")
-
-    is_partner = Attribute("True if this archive is a partner archive.")
-
-    is_copy = Attribute("True if this archive is a copy archive.")
-
-    is_active = Bool(
-        title=_("True if the archive is in the active state"),
-        required=False, readonly=True)
-
-    series_with_sources = Attribute(
-        "DistroSeries to which this archive has published sources")
     number_of_sources = Attribute(
         'The number of sources published in the context archive.')
     number_of_binaries = Attribute(
@@ -465,7 +682,7 @@ class IArchiveView(IHasBuildRecords):
         Text(title=_("External dependencies"), required=False,
         readonly=False, description=_(
             "Newline-separated list of repositories to be used to retrieve "
-            "any external build dependencies when building packages in the "
+            "any external build-dependencies when building packages in the "
             "archive, in the format:\n"
             "deb http[s]://[user:pass@]<host>[/path] %(series)s[-pocket] "
                 "[components]\n"
@@ -473,16 +690,39 @@ class IArchiveView(IHasBuildRecords):
             "context build.\n"
             "NOTE: This is for migration of OEM PPAs only!")))
 
-    enabled_restricted_families = exported(
+    dirty_suites = Attribute(
+        "Suites that the next publisher run should publish regardless of "
+        "pending publications.")
+
+    processors = exported(
         CollectionField(
-            title=_("Enabled restricted families"),
-            description=_(
-                "The restricted architecture families on which the archive "
-                "can build."),
-            value_type=Reference(schema=Interface),
-            # Really IProcessorFamily.
+            title=_("Processors"),
+            description=_("The architectures on which the archive can build."),
+            value_type=Reference(schema=IProcessor),
             readonly=True),
         as_of='devel')
+
+    enabled_restricted_processors = exported(
+        CollectionField(
+            title=_("Enabled restricted processors"),
+            description=_("DEPRECATED. Use processors instead."),
+            value_type=Reference(schema=IProcessor),
+            readonly=True),
+        as_of='devel')
+
+    available_processors = Attribute(
+        "The architectures that are available to be enabled or disabled for "
+        "this archive.")
+
+    @call_with(check_permissions=True, user=REQUEST_USER)
+    @operation_parameters(
+        processors=List(
+            value_type=Reference(schema=IProcessor), required=True),
+    )
+    @export_write_operation()
+    @operation_for_version('devel')
+    def setProcessors(processors, check_permissions=False, user=None):
+        """Set the architectures on which the archive can build."""
 
     def getSourcesForDeletion(name=None, status=None, distroseries=None):
         """All `ISourcePackagePublishingHistory` available for deletion.
@@ -603,20 +843,20 @@ class IArchiveView(IHasBuildRecords):
         Return True if the upload is allowed and False if denied.
         """
 
-    def checkUploadToPocket(distroseries, pocket):
+    def checkUploadToPocket(distroseries, pocket, person=None):
         """Check if an upload to a particular archive and pocket is possible.
 
         :param distroseries: A `IDistroSeries`
         :param pocket: A `PackagePublishingPocket`
+        :param person: Check for redirected pockets if this person is not a
+            queue admin.
         :return: Reason why uploading is not possible or None
         """
 
     @operation_parameters(
         person=Reference(schema=IPerson),
         distroseries=Reference(
-            # Really IDistroSeries, avoiding a circular import here.
-            Interface,
-            title=_("The distro series"), required=True),
+            IDistroSeries, title=_("The distro series"), required=True),
         sourcepackagename=TextLine(
             title=_("Source package name"), required=True),
         component=TextLine(
@@ -624,8 +864,7 @@ class IArchiveView(IHasBuildRecords):
         pocket=Choice(
             title=_("Pocket"),
             description=_("The pocket into which this entry is published"),
-            # Really PackagePublishingPocket, circular import fixed below.
-            vocabulary=DBEnumeratedType,
+            vocabulary=PackagePublishingPocket,
             required=True),
         strict_component=Bool(
             title=_("Strict component"), required=False),
@@ -709,6 +948,21 @@ class IArchiveView(IHasBuildRecords):
         :return the corresponding `ILibraryFileAlias` is the file was found.
         """
 
+    def getSourceFileByName(name, version, filename):
+        """Return the `ILibraryFileAlias` for a source name/version/filename.
+
+        This can be used to avoid ambiguities with `getFileByName` in
+        imported archives, where the upstream archive software may not
+        always have had robust historical filename uniqueness checks.
+
+        :param name: The name of the source package.
+        :param version: The version of the source package.
+        :param filename: The exact filename to look up.
+
+        :raises NotFoundError: if no matching file could be found.
+        :return: the corresponding `ILibraryFileAlias`.
+        """
+
     def getBinaryPackageRelease(name, version, archtag):
         """Find the specified `IBinaryPackageRelease` in the archive.
 
@@ -783,7 +1037,7 @@ class IArchiveView(IHasBuildRecords):
         """The `ArchivePermission` records for the person's package sets.
 
         :param person: An `IPerson` for whom you want to find out which
-            package sets he has access to.
+            package sets they have access to.
 
         :return: `ArchivePermission` records for all the package sets that
             'person' is allowed to upload to.
@@ -831,7 +1085,7 @@ class IArchiveView(IHasBuildRecords):
         :param sourcepackagename: the source package name; can be
             either a string or a `ISourcePackageName`.
         :param person: An `IPerson` for whom you want to find out which
-            package sets he has access to.
+            package sets they have access to.
 
         :raises NoSuchSourcePackageName: if a source package with the
             given name could not be found.
@@ -875,9 +1129,7 @@ class IArchiveView(IHasBuildRecords):
             title=_("Source package name"), required=True),
         person=Reference(schema=IPerson),
         distroseries=Reference(
-            # Really IDistroSeries, avoiding a circular import here.
-            Interface,
-            title=_("The distro series"), required=False))
+            IDistroSeries, title=_("The distro series"), required=False))
     @export_read_operation()
     def isSourceUploadAllowed(sourcepackagename, person, distroseries=None):
         """True if the person is allowed to upload the given source package.
@@ -885,7 +1137,7 @@ class IArchiveView(IHasBuildRecords):
         Return True if there exists a permission that combines
             * this archive
             * a package set that includes the given source package name
-            * the given person or a team he is a member of
+            * the given person or a team they are a member of
 
         If the source package name is included by *any* package set with
         an explicit permission then only such explicit permissions will
@@ -894,26 +1146,14 @@ class IArchiveView(IHasBuildRecords):
         :param sourcepackagename: the source package name; can be
             either a string or a `ISourcePackageName`.
         :param person: An `IPerson` for whom you want to find out which
-            package sets he has access to.
+            package sets they have access to.
         :param distroseries: The `IDistroSeries` for which to check
             permissions. If none is supplied then `currentseries` in
-            Ubuntu is assumed.
+            the archive's distribution is assumed.
 
         :raises NoSuchSourcePackageName: if a source package with the
             given name could not be found.
         :return: True if the person is allowed to upload the source package.
-        """
-
-    num_pkgs_building = Attribute(
-        "Tuple of packages building and waiting to build")
-
-    def getSourcePackageReleases(build_status=None):
-        """Return the releases for this archive.
-
-        :param build_status: If specified, only the distinct releases with
-            builds in the specified build status will be returned.
-        :return: A `ResultSet` of distinct `SourcePackageReleases` for this
-            archive.
         """
 
     def updatePackageDownloadCount(bpr, day, country, count):
@@ -935,27 +1175,13 @@ class IArchiveView(IHasBuildRecords):
     def getPockets():
         """Return iterable containing valid pocket names for this archive."""
 
-    def getOverridePolicy():
+    def getOverridePolicy(distroseries, pocket, phased_update_percentage=None):
         """Returns an instantiated `IOverridePolicy` for the archive."""
 
     buildd_secret = TextLine(
         title=_("Build farm secret"), required=False,
         description=_(
             "The password used by the build farm to access the archive."))
-
-    dependencies = exported(
-        CollectionField(
-            title=_("Archive dependencies recorded for this archive."),
-            value_type=Reference(schema=Interface),
-            # Really IArchiveDependency
-            readonly=True))
-
-    description = exported(
-        Text(
-            title=_("Description"), required=False,
-            description=_(
-                "A short description of the archive. URLs are allowed and "
-                "will be rendered as links.")))
 
     signing_key_fingerprint = exported(
         Text(
@@ -964,69 +1190,7 @@ class IArchiveView(IHasBuildRecords):
                           "for this PPA or None if there is no signing "
                           "key available.")))
 
-    @rename_parameters_as(name="source_name", distroseries="distro_series")
-    @operation_parameters(
-        name=TextLine(title=_("Source package name"), required=False),
-        version=TextLine(title=_("Version"), required=False),
-        status=Choice(
-            title=_('Package Publishing Status'),
-            description=_('The status of this publishing record'),
-            # Really PackagePublishingStatus, circular import fixed below.
-            vocabulary=DBEnumeratedType,
-            required=False),
-        distroseries=Reference(
-            # Really IDistroSeries, fixed below to avoid circular import.
-            Interface,
-            title=_("Distroseries name"), required=False),
-        pocket=Choice(
-            title=_("Pocket"),
-            description=_("The pocket into which this entry is published"),
-            # Really PackagePublishingPocket, circular import fixed below.
-            vocabulary=DBEnumeratedType,
-            required=False, readonly=True),
-        exact_match=Bool(
-            title=_("Exact Match"),
-            description=_("Whether or not to filter source names by exact"
-                          " matching."),
-            required=False),
-        created_since_date=Datetime(
-            title=_("Created Since Date"),
-            description=_("Return entries whose `date_created` is greater "
-                          "than or equal to this date."),
-            required=False),
-        component_name=TextLine(title=_("Component name"), required=False),
-        )
-    # Really returns ISourcePackagePublishingHistory, see below for
-    # patch to avoid circular import.
     @call_with(eager_load=True)
-    @operation_returns_collection_of(Interface)
-    @export_read_operation()
-    def getPublishedSources(name=None, version=None, status=None,
-                            distroseries=None, pocket=None,
-                            exact_match=False, created_since_date=None,
-                            eager_load=False, component_name=None):
-        """All `ISourcePackagePublishingHistory` target to this archive.
-
-        :param name: source name filter (exact match or SQL LIKE controlled
-                     by 'exact_match' argument).
-                     Name can be a single string or a list of strings.
-        :param version: source version filter (always exact match).
-        :param status: `PackagePublishingStatus` filter, can be a sequence.
-        :param distroseries: `IDistroSeries` filter.
-        :param pocket: `PackagePublishingPocket` filter.  This may be an
-            iterable of more than one pocket or a single pocket.
-        :param exact_match: either or not filter source names by exact
-                             matching.
-        :param created_since_date: Only return results whose `date_created`
-            is greater than or equal to this date.
-        :param component_name: component filter. Only return source packages
-            that are in this component.
-
-        :return: SelectResults containing `ISourcePackagePublishingHistory`,
-            ordered by name. If there are multiple results for the same
-            name then they are sub-ordered newest first.
-        """
-
     @rename_parameters_as(
         name="binary_name", distroarchseries="distro_arch_series")
     @operation_parameters(
@@ -1035,8 +1199,7 @@ class IArchiveView(IHasBuildRecords):
         status=Choice(
             title=_("Package Publishing Status"),
             description=_("The status of this publishing record"),
-            # Really PackagePublishingStatus, circular import fixed below.
-            vocabulary=DBEnumeratedType,
+            vocabulary=PackagePublishingStatus,
             required=False),
         distroarchseries=Reference(
             # Really IDistroArchSeries, circular import fixed below.
@@ -1045,8 +1208,7 @@ class IArchiveView(IHasBuildRecords):
         pocket=Choice(
             title=_("Pocket"),
             description=_("The pocket into which this entry is published"),
-            # Really PackagePublishingPocket, circular import fixed below.
-            vocabulary=DBEnumeratedType,
+            vocabulary=PackagePublishingPocket,
             required=False, readonly=True),
         exact_match=Bool(
             description=_("Whether or not to filter binary names by exact "
@@ -1062,8 +1224,14 @@ class IArchiveView(IHasBuildRecords):
             description=_("Return ordered results by default, but specifying "
                           "False will return results more quickly."),
             required=False, readonly=True),
+        order_by_date=Bool(
+            title=_("Order by creation date"),
+            description=_("Return newest results first. This is recommended "
+                          "for applications that need to catch up with "
+                          "publications since their last run."),
+            required=False),
         )
-    # Really returns ISourcePackagePublishingHistory, see below for
+    # Really returns IBinaryPackagePublishingHistory, see below for
     # patch to avoid circular import.
     @operation_returns_collection_of(Interface)
     @export_operation_as("getPublishedBinaries")
@@ -1071,7 +1239,8 @@ class IArchiveView(IHasBuildRecords):
     def getAllPublishedBinaries(name=None, version=None, status=None,
                                 distroarchseries=None, pocket=None,
                                 exact_match=False, created_since_date=None,
-                                ordered=True):
+                                ordered=True, order_by_date=False,
+                                eager_load=False):
         """All `IBinaryPackagePublishingHistory` target to this archive.
 
         :param name: binary name filter (exact match or SQL LIKE controlled
@@ -1089,6 +1258,9 @@ class IArchiveView(IHasBuildRecords):
             False then the results will be unordered.  This will make the
             operation much quicker to return results if you don't care about
             ordering.
+        :param order_by_date: Order publications by descending creation date
+            and then by descending ID.  This is suitable for applications
+            that need to catch up with publications since their last run.
 
         :return: A collection containing `BinaryPackagePublishingHistory`.
         """
@@ -1207,7 +1379,7 @@ class IArchiveView(IHasBuildRecords):
     @operation_returns_collection_of(Interface)
     @export_read_operation()
     def getQueueAdminsForComponent(component_name):
-        """Return `IArchivePermission` records for authorised queue admins.
+        """Return `IArchivePermission` records for authorized queue admins.
 
         :param component_name: An `IComponent` or textual name for the
             component.
@@ -1229,8 +1401,7 @@ class IArchiveView(IHasBuildRecords):
     @operation_parameters(
         pocket=Choice(
             title=_("Pocket"),
-            # Really PackagePublishingPocket, circular import fixed below.
-            vocabulary=DBEnumeratedType,
+            vocabulary=PackagePublishingPocket,
             required=True),
         )
     # Really IArchivePermission, set below to avoid circular import.
@@ -1247,20 +1418,17 @@ class IArchiveView(IHasBuildRecords):
     @operation_parameters(
         pocket=Choice(
             title=_("Pocket"),
-            # Really PackagePublishingPocket, circular import fixed below.
-            vocabulary=DBEnumeratedType,
+            vocabulary=PackagePublishingPocket,
             required=True),
         distroseries=Reference(
-            # Really IDistroSeries, avoiding a circular import here.
-            Interface,
-            title=_("Distro series"), required=False),
+            IDistroSeries, title=_("Distro series"), required=False),
         )
     # Really IArchivePermission, set below to avoid circular import.
     @operation_returns_collection_of(Interface)
     @export_read_operation()
     @operation_for_version("devel")
     def getQueueAdminsForPocket(pocket, distroseries=None):
-        """Return `IArchivePermission` records for authorised queue admins.
+        """Return `IArchivePermission` records for authorized queue admins.
 
         :param pocket: A `PackagePublishingPocket`.
         :param distroseries: An optional `IDistroSeries`.
@@ -1299,32 +1467,15 @@ class IArchiveView(IHasBuildRecords):
         :return: A dictionary of filenames and SHA1s.
         """
 
-    def getAuthToken(person):
-        """Returns an IArchiveAuthToken for the archive in question for
-        IPerson provided.
-
-        :return: A IArchiveAuthToken, or None if the user has none.
-        """
-
-    def newAuthToken(person, token=None, date_created=None):
-        """Create a new authorisation token.
-
-        :param person: An IPerson whom this token is for
-        :param token: Optional unicode text to use as the token. One will be
-            generated if not given
-        :param date_created: Optional, defaults to now
-
-        :return: A new IArchiveAuthToken
-        """
-
     @call_with(person=REQUEST_USER)
     @operation_parameters(
         source_name=TextLine(title=_("Source package name")),
         version=TextLine(title=_("Version")),
         from_archive=Reference(schema=Interface),
         # Really IArchive, see below
-        to_pocket=TextLine(title=_("Pocket name")),
-        to_series=TextLine(title=_("Distroseries name"), required=False),
+        to_pocket=TextLine(title=_("Target pocket name")),
+        to_series=TextLine(
+            title=_("Target distroseries name"), required=False),
         include_binaries=Bool(
             title=_("Include Binaries"),
             description=_("Whether or not to copy binaries already built for"
@@ -1340,18 +1491,41 @@ class IArchiveView(IHasBuildRecords):
             description=_("Automatically approve this copy (queue admins "
                           "only)."),
             required=False),
+        silent=Bool(
+            title=_("Silent"),
+            description=_(
+                "Don't notify anyone about this copy. For use by queue "
+                "admins only."),
+            required=False),
+        from_pocket=TextLine(title=_("Source pocket name"), required=False),
+        from_series=TextLine(
+            title=_("Source distroseries name"), required=False),
+        phased_update_percentage=Int(
+            title=_("Phased update percentage"),
+            description=_("The percentage of users for whom this package"
+                          " should be recommended, or None to publish the"
+                          " update for everyone."),
+            required=False),
         )
     @export_write_operation()
     @operation_for_version('devel')
     def copyPackage(source_name, version, from_archive, to_pocket,
                     person, to_series=None, include_binaries=False,
-                    sponsored=None, unembargo=False, auto_approve=False):
+                    sponsored=None, unembargo=False, auto_approve=False,
+                    silent=False, from_pocket=None, from_series=None,
+                    phased_update_percentage=None):
         """Copy a single named source into this archive.
 
         Asynchronously copy a specific version of a named source to the
         destination archive if necessary.  Calls to this method will return
         immediately if the copy passes basic security checks and the copy
         will happen sometime later with full checking.
+
+        If the source or target distribution has a development series alias,
+        then it may be used as the source or target distroseries name
+        respectively; but note that this will always be resolved to the true
+        development series of that distribution, which may not match the
+        alias in the respective published archives.
 
         :param source_name: a string name of the package to copy.
         :param version: the version of the package to copy.
@@ -1372,6 +1546,14 @@ class IArchiveView(IHasBuildRecords):
         :param auto_approve: if True and the `IPerson` requesting the sync
             has queue admin permissions on the target, accept the copy
             immediately rather than setting it to unapproved.
+        :param silent: Suppress any emails that the copy would generate.
+            Only usable with queue admin permissions on the target.
+        :param from_pocket: the source pocket (as a string). If omitted,
+            copy from any pocket with a matching version.
+        :param from_series: the source distroseries (as a string). If
+            omitted, copy from any series with a matching version.
+        :param phased_update_percentage: the phased update percentage to
+            apply to the copied publication.
 
         :raises NoSuchSourcePackageName: if the source name is invalid
         :raises PocketNotFound: if the pocket name is invalid
@@ -1410,12 +1592,19 @@ class IArchiveView(IHasBuildRecords):
             description=_("Automatically approve this copy (queue admins "
                           "only)."),
             required=False),
+        silent=Bool(
+            title=_("Silent"),
+            description=_(
+                "Don't notify anyone about this copy. For use by queue "
+                "admins only."),
+            required=False),
         )
     @export_write_operation()
     @operation_for_version('devel')
     def copyPackages(source_names, from_archive, to_pocket, person,
                      to_series=None, from_series=None, include_binaries=False,
-                     sponsored=None, unembargo=False, auto_approve=False):
+                     sponsored=None, unembargo=False, auto_approve=False,
+                     silent=False):
         """Copy multiple named sources into this archive from another.
 
         Asynchronously copy the most recent PUBLISHED versions of the named
@@ -1425,6 +1614,12 @@ class IArchiveView(IHasBuildRecords):
 
         Partial changes of the destination archive can happen because each
         source is copied in its own transaction.
+
+        If the source or target distribution has a development series alias,
+        then it may be used as the source or target distroseries name
+        respectively; but note that this will always be resolved to the true
+        development series of that distribution, which may not match the
+        alias in the respective published archives.
 
         :param source_names: a list of string names of packages to copy.
         :param from_archive: the source archive from which to copy.
@@ -1445,6 +1640,8 @@ class IArchiveView(IHasBuildRecords):
         :param auto_approve: if True and the `IPerson` requesting the sync
             has queue admin permissions on the target, accept the copies
             immediately rather than setting it to unapproved.
+        :param silent: Suppress any emails that the copy would generate.
+            Only usable with queue admin permissions on the target.
 
         :raises NoSuchSourcePackageName: if the source name is invalid
         :raises PocketNotFound: if the pocket name is invalid
@@ -1484,6 +1681,11 @@ class IArchiveAppend(Interface):
                     from_series=None, include_binaries=False, person=None):
         """Synchronise (copy) named sources into this archive from another.
 
+        DEPRECATED: syncSource and syncSources are deprecated, and will
+        be removed entirely in the future. Use the asynchronous
+        copyPackage method instead, and poll getPublishedSources if you
+        need to await completion.
+
         It will copy the most recent PUBLISHED versions of the named
         sources to the destination archive if necessary.
 
@@ -1491,6 +1693,12 @@ class IArchiveAppend(Interface):
         are synchronised between the archives. If any of the requested
         copies cannot be performed, the whole operation will fail. There
         will be no partial changes of the destination archive.
+
+        If the source or target distribution has a development series alias,
+        then it may be used as the source or target distroseries name
+        respectively; but note that this will always be resolved to the true
+        development series of that distribution, which may not match the
+        alias in the respective published archives.
 
         :param source_names: a list of string names of packages to copy.
         :param from_archive: the source archive from which to copy.
@@ -1531,8 +1739,19 @@ class IArchiveAppend(Interface):
                    to_series=None, include_binaries=False, person=None):
         """Synchronise (copy) a single named source into this archive.
 
+        DEPRECATED: syncSource and syncSources are deprecated, and will
+        be removed entirely in the future. Use the asynchronous
+        copyPackage method instead, and poll getPublishedSources if you
+        need to await completion.
+
         Copy a specific version of a named source to the destination
         archive if necessary.
+
+        If the source distribution has a development series alias, then it
+        may be used as the source distroseries name; but note that this will
+        always be resolved to the true development series of that
+        distribution, which may not match the alias in the published source
+        archive.
 
         :param source_name: a string name of the package to copy.
         :param version: the version of the package to copy.
@@ -1639,8 +1858,7 @@ class IArchiveEdit(Interface):
         person=Reference(schema=IPerson),
         pocket=Choice(
             title=_("Pocket"),
-            # Really PackagePublishingPocket, circular import fixed below.
-            vocabulary=DBEnumeratedType,
+            vocabulary=PackagePublishingPocket,
             required=True),
         )
     # Really IArchivePermission, set below to avoid circular import.
@@ -1681,13 +1899,10 @@ class IArchiveEdit(Interface):
         person=Reference(schema=IPerson),
         pocket=Choice(
             title=_("Pocket"),
-            # Really PackagePublishingPocket, circular import fixed below.
-            vocabulary=DBEnumeratedType,
+            vocabulary=PackagePublishingPocket,
             required=True),
         distroseries=Reference(
-            # Really IDistroSeries, avoiding a circular import here.
-            Interface,
-            title=_("Distro series"), required=True),
+            IDistroSeries, title=_("Distro series"), required=True),
         )
     # Really IArchivePermission, set below to avoid circular import.
     @export_factory_operation(Interface, [])
@@ -1757,8 +1972,7 @@ class IArchiveEdit(Interface):
         person=Reference(schema=IPerson),
         pocket=Choice(
             title=_("Pocket"),
-            # Really PackagePublishingPocket, circular import fixed below.
-            vocabulary=DBEnumeratedType,
+            vocabulary=PackagePublishingPocket,
             required=True),
         )
     @export_write_operation()
@@ -1790,13 +2004,10 @@ class IArchiveEdit(Interface):
         person=Reference(schema=IPerson),
         pocket=Choice(
             title=_("Pocket"),
-            # Really PackagePublishingPocket, circular import fixed below.
-            vocabulary=DBEnumeratedType,
+            vocabulary=PackagePublishingPocket,
             required=True),
         distroseries=Reference(
-            # Really IDistroSeries, avoiding a circular import here.
-            Interface,
-            title=_("Distro series"), required=True),
+            IDistroSeries, title=_("Distro series"), required=True),
         )
     @export_write_operation()
     @operation_for_version("devel")
@@ -1835,19 +2046,6 @@ class IArchiveEdit(Interface):
     def disable():
         """Disable the archive."""
 
-    def delete(deleted_by):
-        """Delete this archive.
-
-        :param deleted_by: The `IPerson` requesting the deletion.
-
-        The ArchiveStatus will be set to DELETING and any published
-        packages will be marked as DELETED by deleted_by.
-
-        The publisher is responsible for deleting the repository area
-        when it sees the status change and sets it to DELETED once
-        processed.
-        """
-
     def addArchiveDependency(dependency, pocket, component=None):
         """Record an archive dependency record for the context archive.
 
@@ -1869,8 +2067,7 @@ class IArchiveEdit(Interface):
         pocket=Choice(
             title=_("Pocket"),
             description=_("The pocket into which this entry is published"),
-            # Really PackagePublishingPocket.
-            vocabulary=DBEnumeratedType,
+            vocabulary=PackagePublishingPocket,
             required=True),
         component=TextLine(title=_("Component"), required=False),
         )
@@ -1891,6 +2088,7 @@ class IArchiveEdit(Interface):
         :return: a `IArchiveDependency` object targeted to the context
             `IArchive` requiring 'dependency' `IArchive`.
         """
+
     @operation_parameters(
         dependency=Reference(schema=Interface, required=True),
         # Really IArchive
@@ -1903,20 +2101,165 @@ class IArchiveEdit(Interface):
         :param dependency: is an `IArchive` object.
         """
 
+    @call_with(as_dict=True)
+    @operation_parameters(
+        name=TextLine(title=_("Authorization token name"), required=True),
+        token=TextLine(
+            title=_("Optional secret for this named token"), required=False))
+    @export_write_operation()
+    @operation_for_version("devel")
+    def newNamedAuthToken(name, token=None, as_dict=False):
+        """Create a new named authorization token.
 
-class IArchiveCommercial(Interface):
+        :param name: An identifier string for this token.
+        :param token: Optional unicode text to use as the token. One will be
+            generated if not given.
+        :param as_dict: Optional boolean, controls whether the return value is
+            a dictionary or a full object.
+
+        :return: An `ArchiveAuthToken` object or a dictionary where the value
+            of `token` is the secret and the value of `archive_url` is the
+            externally-usable archive URL including basic auth.
+        """
+
+    @call_with(as_dict=True)
+    @operation_parameters(
+        names=List(
+            title=_("Authorization token names"),
+            value_type=TextLine(), required=True))
+    @export_write_operation()
+    @operation_for_version("devel")
+    def newNamedAuthTokens(names, as_dict=False):
+        """Create named authorization tokens in bulk.
+
+        :param names: A list of token names.
+        :param as_dict: Optional boolean, controls whether the return value is
+            a list of dictionaries or a list of full objects.
+
+        :return: A list of `ArchiveAuthToken` objects or a dictionary of
+            {name: {token, archive_url} where `name` is a token name,
+            `token` is the secret and `archive_url` is the externally-usable
+            archive URL including basic auth.
+        """
+
+    @call_with(as_dict=True)
+    @operation_parameters(
+        name=TextLine(title=_("Authorization token name"), required=True))
+    @export_read_operation()
+    @operation_for_version("devel")
+    def getNamedAuthToken(name, as_dict=False):
+        """Return a named authorization token for the given name in this
+         archive.
+
+        :param name: The identifier string for a token.
+        :param as_dict: Optional boolean, controls whether the return value is
+            a dictionary or a full object.
+
+        :return: An `ArchiveAuthToken` object or a dictionary where the value
+            of `token` is the secret and the value of `archive_url` is the
+            externally-usable archive URL including basic auth.
+        :raises NotFoundError: if no matching token could be found.
+        """
+
+    @call_with(as_dict=True)
+    @operation_parameters(
+        names=List(
+            title=_("Authorization token names"),
+            value_type=TextLine(), required=False))
+    @export_read_operation()
+    @operation_for_version("devel")
+    def getNamedAuthTokens(names=None, as_dict=False):
+        """Return a subset of active named authorization tokens for this
+        archive if `names` is specified, or all active named authorization
+        tokens for this archive is `names` is null.
+
+        :param names: An optional list of token names.
+        :param as_dict: Optional boolean, controls whether the return value is
+            a list of dictionares or a list of full objects.
+
+        :return: A list of `ArchiveAuthToken` objects or a list of dictionaries
+            where `token` is the secret and `archive_url` is the
+            externally-usable archive URL including basic auth.
+        """
+
+    @operation_parameters(
+        name=TextLine(title=_("Authorization token name"), required=True))
+    @export_write_operation()
+    @operation_for_version("devel")
+    def revokeNamedAuthToken(name):
+        """Deactivate a named authorization token.
+
+        :param name: The identifier string for a token.
+        :raises NotFoundError: if no matching token could be found.
+        """
+
+    @operation_parameters(
+        names=List(
+            title=_("Authorization token names"),
+            value_type=TextLine(), required=True))
+    @export_write_operation()
+    @operation_for_version("devel")
+    def revokeNamedAuthTokens(names):
+        """Deactivate named authorization tokens in bulk.
+
+        :param names: A list of token names.
+        """
+
+    @operation_parameters(
+        distroseries=Reference(
+            IDistroSeries, title=_("Distro series"), required=True),
+        pocket=Choice(
+            title=_("Pocket"),
+            vocabulary=PackagePublishingPocket,
+            required=True),
+        )
+    @export_write_operation()
+    @operation_for_version("devel")
+    def markSuiteDirty(distroseries, pocket):
+        """Mark a suite as dirty in this archive.
+
+        The next publisher run will publish this suite regardless of whether
+        it has any pending publications.
+
+        :param distroseries: An `IDistroSeries`.
+        :param pocket: A `PackagePublishingPocket`.
+        """
+
+
+class IArchiveDelete(Interface):
+    """Archive interface for operations restricted by delete privilege."""
+
+    @export_destructor_operation()
+    @call_with(deleted_by=REQUEST_USER)
+    @operation_for_version('devel')
+    def delete(deleted_by):
+        """Delete this archive.
+
+        :param deleted_by: The `IPerson` requesting the deletion.
+
+        The ArchiveStatus will be set to DELETING and any published
+        packages will be marked as DELETED by deleted_by.
+
+        The publisher is responsible for deleting the repository area
+        when it sees the status change and sets it to DELETED once
+        processed.
+        """
+
+
+class IArchiveAdmin(Interface):
     """Archive interface for operations restricted by commercial."""
 
     @operation_parameters(
-        family=Reference(schema=Interface, required=True),
-        # Really IProcessorFamily.
+        processor=Reference(schema=IProcessor, required=True),
     )
     @export_write_operation()
     @operation_for_version('devel')
-    def enableRestrictedFamily(family):
-        """Add the processor family to the set of enabled restricted families.
+    def enableRestrictedProcessor(processor):
+        """Add the processor to the set of enabled restricted processors.
 
-        :param family: is an `IProcessorFamily` object.
+        DEPRECATED. Use setProcessors instead.
+
+        :param processor: is an `IProcessor` object.
         """
 
 
@@ -1930,8 +2273,9 @@ class IArchiveRestricted(Interface):
             "with a higher score will build sooner.")))
 
 
-class IArchive(IArchivePublic, IArchiveAppend, IArchiveEdit, IArchiveView,
-               IArchiveCommercial, IArchiveRestricted):
+class IArchive(IArchivePublic, IArchiveAppend, IArchiveEdit, IArchiveDelete,
+               IArchiveSubscriberView, IArchiveView, IArchiveAdmin,
+               IArchiveRestricted):
     """Main Archive interface."""
     export_as_webservice_entry()
 
@@ -1954,23 +2298,18 @@ class IArchiveEditDependenciesForm(Interface):
 class IArchiveSet(Interface):
     """Interface for ArchiveSet"""
 
+    export_as_webservice_collection(IArchive)
+
     title = Attribute('Title')
 
-    def getNumberOfPPASourcesForDistribution(distribution):
-        """Return the number of sources for PPAs in a given distribution.
-
-        Only public and published sources are considered.
-        """
-
-    def getNumberOfPPABinariesForDistribution(distribution):
-        """Return the number of binaries for PPAs in a given distribution.
-
-        Only public and published sources are considered.
-        """
+    @collection_default_content()
+    def empty_list():
+        """There is no default content, but lazr.restful needs some anyway."""
 
     def new(purpose, owner, name=None, displayname=None, distribution=None,
             description=None, enabled=True, require_virtualized=True,
-            private=False, suppress_subscription_notifications=False):
+            private=False, suppress_subscription_notifications=False,
+            processors=None):
         """Create a new archive.
 
         On named-ppa creation, the signing key for the default PPA for the
@@ -1995,6 +2334,8 @@ class IArchiveSet(Interface):
         :param private: whether or not to make the PPA private
         :param suppress_subscription_notifications: whether to suppress
             emails to subscribers about new subscriptions.
+        :param processors: list of `IProcessors` for which the archive should
+            build. If omitted, processors with `build_by_default` will be used.
 
         :return: an `IArchive` object.
         :raises AssertionError if name is already taken within distribution.
@@ -2002,6 +2343,16 @@ class IArchiveSet(Interface):
 
     def get(archive_id):
         """Return the IArchive with the given archive_id."""
+
+    @call_with(check_permissions=True, user=REQUEST_USER)
+    @operation_parameters(
+        reference=TextLine(
+            title=_("Archive reference string"), required=True))
+    @operation_returns_entry(schema=IArchive)
+    @export_read_operation()
+    @operation_for_version('devel')
+    def getByReference(reference, check_permissions=False, user=None):
+        """Return the IArchive with the given archive reference."""
 
     def getPPAByDistributionAndOwnerName(distribution, person_name, ppa_name):
         """Return a single PPA.
@@ -2048,6 +2399,9 @@ class IArchiveSet(Interface):
         The result is ordered by PPA displayname.
         """
 
+    def getPPADistributionsForUser(user):
+        """Return the `Distribution`s of all PPAs for the given user."""
+
     def getPPAsPendingSigningKey():
         """Return all PPAs pending signing key generation.
 
@@ -2070,25 +2424,6 @@ class IArchiveSet(Interface):
 
         :return A list with up to 5 dictionaries containing the ppa 'title'
             and the number of 'uploads' keys and corresponding values.
-        """
-
-    def getBuildCountersForArchitecture(archive, distroarchseries):
-        """Return a dictionary containing the build counters per status.
-
-        The result is restricted to the given archive and distroarchseries.
-
-        The returned dictionary contains the follwoing keys and values:
-
-         * 'total': total number of builds (includes SUPERSEDED);
-         * 'pending': number of builds in NEEDSBUILD or BUILDING state;
-         * 'failed': number of builds in FAILEDTOBUILD, MANUALDEPWAIT,
-           CHROOTWAIT and FAILEDTOUPLOAD state;
-         * 'succeeded': number of SUCCESSFULLYBUILT builds.
-
-        :param archive: target `IArchive`;
-        :param distroarchseries: target `IDistroArchSeries`.
-
-        :return a dictionary with the 4 keys specified above.
         """
 
     def getArchivesForDistribution(distribution, name=None, purposes=None,
@@ -2135,14 +2470,12 @@ default_name_by_purpose = {
     ArchivePurpose.PRIMARY: 'primary',
     ArchivePurpose.PPA: 'ppa',
     ArchivePurpose.PARTNER: 'partner',
-    ArchivePurpose.DEBUG: 'debug',
     }
 
 
 MAIN_ARCHIVE_PURPOSES = (
     ArchivePurpose.PRIMARY,
     ArchivePurpose.PARTNER,
-    ArchivePurpose.DEBUG,
     )
 
 ALLOW_RELEASE_BUILDS = (
@@ -2153,7 +2486,6 @@ ALLOW_RELEASE_BUILDS = (
 
 FULL_COMPONENT_SUPPORT = (
     ArchivePurpose.PRIMARY,
-    ArchivePurpose.DEBUG,
     ArchivePurpose.COPY,
     )
 
@@ -2166,11 +2498,14 @@ def validate_external_dependencies(ext_deps):
     :param ext_deps: The dependencies form field to check.
     """
     errors = []
+    if ext_deps is None:
+        return errors
     # The field can consist of multiple entries separated by
     # newlines, so process each in turn.
     for dep in ext_deps.splitlines():
+        dep_without_options = re.sub(r"^([^ ]*) \[[^]]*\] ", r"\1 ", dep)
         try:
-            deb, url, suite, components = dep.split(" ", 3)
+            deb, url, suite, components = dep_without_options.split(" ", 3)
         except ValueError:
             errors.append(
                 "'%s' is not a complete and valid sources.list entry"

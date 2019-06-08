@@ -21,12 +21,11 @@ The +products-with-translations page lists all translatable products in
 Launchpad.
 
     >>> browser.open(
-    ...     'http://translations.launchpad.dev/'
+    ...     'http://translations.launchpad.test/'
     ...     'translations/+products-with-translations')
 
-    >>> print find_main_content(browser.contents).renderContents()
+    >>> print(find_main_content(browser.contents).renderContents())
     <...>
     ... of 2 results
-    ...alsa-utils...
     ...Evolution...
-
+    ...alsa-utils...

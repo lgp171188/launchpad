@@ -58,7 +58,7 @@ convertToQuestion()
 
 Sample Person recognises that this bug is a question while reviewing the
 bugtarget's bugs, and choose to make it into a question. The UI would
-pass Sample Person as the Person changing the status. He may provide a
+pass Sample Person as the Person changing the status. They may provide a
 message about why the report is a question.
 
     >>> from lp.registry.interfaces.person import IPersonSet
@@ -120,6 +120,7 @@ Once converted to a question, the bugtask status is Invalid.
 Subscribers to the bug are notified that the bug was made into a
 question and that the bugtasks are Invalid.
 
+    >>> bug.clearBugNotificationRecipientsCache()
     >>> recipients = bug.getBugNotificationRecipients()
     >>> 'no-priv@canonical.com' in recipients.getEmails()
     True
@@ -130,9 +131,9 @@ question and that the bugtasks are Invalid.
     >>> from lp.bugs.model.bugnotification import BugNotification
     >>> bug_notifications = BugNotification.select(orderBy='-id')
     >>> for notification in bug_notifications:
-    ...     print notification.message.text_contents
+    ...     print(notification.message.text_contents)
     ** Converted to question:
-       http://answers.launchpad.dev/.../+question/...
+       http://answers.launchpad.test/.../+question/...
     ** Changed in: ...
        Status: New => Invalid
     This is a question.
@@ -163,7 +164,7 @@ just the question created from the bug.
     >>> bug.title
     u'Print is broken'
 
-    >>> [bug_link.question.title for bug_link in question.bug_links]
+    >>> [bug.title for bug in question.bugs]
     [u'Print is broken']
 
     >>> [question.title for question in bug.questions]

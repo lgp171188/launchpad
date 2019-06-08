@@ -4,7 +4,7 @@ Downloading Product Series Translations
 Products and product series that use Translations offer complete
 translation downloads.
 
-    >>> user_browser.open('http://translations.launchpad.dev/evolution')
+    >>> user_browser.open('http://translations.launchpad.test/evolution')
     >>> download = user_browser.getLink('download')
 
 For products, that option downloads translations for the series that is
@@ -12,25 +12,24 @@ currently the preferred translation target.
 
     >>> download_url = download.url
     >>> download_url
-    'http://translations.launchpad.dev/evolution/trunk/+export'
+    'http://translations.launchpad.test/evolution/trunk/+export'
 
 Another way of getting that same export would be to browse to the series
 first and requesting a download there.
 
-    >>> user_browser.open('http://translations.launchpad.dev/evolution/trunk')
+    >>> user_browser.open('http://translations.launchpad.test/evolution/trunk')
     >>> user_browser.getLink('download').click()
     >>> user_browser.url
-    'http://translations.launchpad.dev/evolution/trunk/+export'
+    'http://translations.launchpad.test/evolution/trunk/+export'
 
 The translations export is implemented by the same machinery that does
 it for source packages (tested and documented separately).
 
-    >>> print user_browser.title
-    Download : Translations...
+    >>> print(user_browser.title)
+    Download : Series trunk : Translations...
 
     >>> user_browser.getControl('Request Download').click()
-    >>> for message in get_feedback_messages(user_browser.contents):
-    ...     print message
+    >>> print_feedback_messages(user_browser.contents)
     Your request has been received.  Expect to receive an email shortly.
 
 
@@ -47,7 +46,7 @@ Translations.
     >>> product = Product.byName('evolution')
     >>> product.translations_usage = ServiceUsage.NOT_APPLICABLE
     >>> product.sync()
-    >>> user_browser.open('http://translations.launchpad.dev/evolution')
+    >>> user_browser.open('http://translations.launchpad.test/evolution')
     >>> user_browser.getLink('download')
     Traceback (most recent call last):
     ...
@@ -56,7 +55,7 @@ Translations.
     >>> # Restore previous state for subsequent tests, and verify
     >>> product.translations_usage = ServiceUsage.LAUNCHPAD
     >>> product.sync()
-    >>> user_browser.open('http://translations.launchpad.dev/evolution')
+    >>> user_browser.open('http://translations.launchpad.test/evolution')
     >>> user_browser.getLink('download') is not None
     True
 
@@ -66,7 +65,7 @@ Authorization
 
 Only logged-in users get the option to request downloads.
 
-    >>> anon_browser.open('http://translations.launchpad.dev/evolution/')
+    >>> anon_browser.open('http://translations.launchpad.test/evolution/')
     >>> anon_browser.getLink('download').click()
     Traceback (most recent call last):
     ...
@@ -78,10 +77,10 @@ We can't see its placeholder in non-development mode:
     >>> config.devmode
     True
     >>> config.devmode = False
-    >>> anon_browser.open('http://translations.launchpad.dev/evolution/')
+    >>> anon_browser.open('http://translations.launchpad.test/evolution/')
     >>> for tag in find_tags_by_class(
     ...     anon_browser.contents, 'menu-link-translationdownload'):
-    ...     print tag.renderContents()
+    ...     print(tag.renderContents())
 
     # Reset global configuration...
     >>> config.devmode = True

@@ -1,17 +1,19 @@
-# Copyright 2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2012-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
 
 __all__ = [
     'block_on_job',
-    'celeryd',
+    'celery_worker',
     'monitor_celery',
     'pop_remote_notifications',
     ]
 
 
 from contextlib import contextmanager
+import email
+import subprocess
 
 from testtools.content import text_content
 
@@ -19,18 +21,19 @@ from lp.services.job.runner import BaseRunnableJob
 from lp.testing.fixture import CaptureOops
 
 
-def celeryd(queue, cwd=None):
-    """Return a ContextManager for a celeryd instance.
+@contextmanager
+def celery_worker(queue, cwd=None):
+    """Return a ContextManager for a "celery worker" instance.
 
-    The celeryd instance will be configured to use the currently-configured
-    BROKER_URL, and able to run CeleryRunJob tasks.
+    The "celery worker" instance will be configured to use the
+    currently-configured BROKER_URL, and able to run CeleryRunJob tasks.
     """
-    from lp.services.job.celeryjob import CeleryRunJob
-    from lazr.jobrunner.tests.test_celerytask import running
+    from lp.services.job.celeryjob import celery_app
     # convert config params to a URL, so they can be passed as --broker.
-    with CeleryRunJob.app.broker_connection() as connection:
+    with celery_app.broker_connection() as connection:
         broker_uri = connection.as_uri(include_password=True)
     cmd_args = (
+        'worker',
         '--config', 'lp.services.job.celeryconfig',
         '--broker', broker_uri,
         '--concurrency', '1',
@@ -38,7 +41,18 @@ def celeryd(queue, cwd=None):
         '--queues', queue,
         '--include', 'lp.services.job.tests.celery_helpers',
     )
-    return running('bin/celeryd', cmd_args, cwd=cwd)
+    # Mostly duplicated from lazr.jobrunner.tests.test_celerytask.running,
+    # but we throw away stdout and stderr since we never read from them
+    # anyway and we don't want them to block.
+    with open('/dev/null', 'w') as devnull:
+        proc = subprocess.Popen(
+            ('bin/celery',) + cmd_args, stdout=devnull,
+            stderr=devnull, cwd=cwd)
+        try:
+            yield proc
+        finally:
+            proc.terminate()
+            proc.wait()
 
 
 @contextmanager
@@ -75,11 +89,13 @@ def block_on_job(test_case=None):
 
 def drain_celery_queues():
     from lazr.jobrunner.celerytask import drain_queues
-    from lp.services.job.celeryjob import CeleryRunJob
-    drain_queues(CeleryRunJob.app, CeleryRunJob.app.conf.CELERY_QUEUES.keys())
+    from lp.services.job.celeryjob import celery_app
+    drain_queues(celery_app, celery_app.conf.CELERY_QUEUES.keys())
 
 
 def pop_remote_notifications():
-    """Pop the notifications from a celeryd worker."""
+    """Pop the notifications from a celery worker."""
     from lp.services.job.tests.celery_helpers import pop_notifications
-    return pop_notifications.delay().get(30)
+    return [
+        email.message_from_string(message)
+        for message in pop_notifications.delay().get(30)]

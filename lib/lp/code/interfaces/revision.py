@@ -1,8 +1,6 @@
 # Copyright 2009 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-# pylint: disable-msg=E0211,E0213
-
 """Revision interfaces."""
 
 __metaclass__ = type
@@ -83,6 +81,7 @@ class IRevision(Interface):
 class IRevisionAuthor(Interface):
     """Committer of a Bazaar revision."""
 
+    id = Int(title=_('The database revision author ID'))
     name = TextLine(title=_("Revision Author Name"), required=True)
     name_without_email = Attribute(
         "Revision author name without email address.")

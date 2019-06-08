@@ -4,8 +4,8 @@ The contact address field and its related messages are properly
 escaped in order to prevent XSS.
 
     >>> admin_browser.open(
-    ...     'http://launchpad.dev/~guadamen/+contactaddress')
-    >>> admin_browser.getControl('Another e-mail address').selected = True
+    ...     'http://launchpad.test/~guadamen/+contactaddress')
+    >>> admin_browser.getControl('Another email address').selected = True
     >>> admin_browser.getControl(name='field.contact_address').value = (
     ...     '<script>alert("cheezburger");</script>')
     >>> admin_browser.getControl('Change').click()
@@ -31,7 +31,7 @@ The error message is also valid and correctly escaped:
     <p class="error message">
     ...
     <div class="message">
-    &lt;script&gt;alert("cheezburger");&lt;/script&gt; isn't...
+    &lt;script&gt;alert(&quot;cheezburger&quot;);&lt;/script&gt; isn&#x27;t...
     </div>
 
 The script we tried to inject is not present, unescaped, anywhere in

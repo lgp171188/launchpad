@@ -1,11 +1,14 @@
-# Copyright 2009-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2017 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Unit tests for methods of Branch and BranchSet."""
 
+from __future__ import absolute_import, print_function, unicode_literals
+
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
+from lp.app.enums import InformationType
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.code.enums import (
     BranchSubscriptionDiffSize,
@@ -14,7 +17,6 @@ from lp.code.enums import (
     )
 from lp.code.interfaces.codehosting import SUPPORTED_SCHEMES
 from lp.code.tests.helpers import make_official_package_branch
-from lp.registry.enums import InformationType
 from lp.services.webapp.authorization import check_permission
 from lp.soyuz.interfaces.archivepermission import IArchivePermissionSet
 from lp.testing import (
@@ -338,7 +340,7 @@ class TestComposePublicURL(TestCaseWithFactory):
         # supports.
         branch = self.factory.makeAnyBranch()
 
-        url_pattern = '%%s://bazaar.launchpad.dev/~%s/%s/%s' % (
+        url_pattern = '%%s://bazaar.launchpad.test/~%s/%s/%s' % (
             branch.owner.name, branch.product.name, branch.name)
         for scheme in SUPPORTED_SCHEMES:
             public_url = branch.composePublicURL(scheme)

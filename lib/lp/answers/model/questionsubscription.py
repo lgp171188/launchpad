@@ -1,8 +1,6 @@
 # Copyright 2009 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-# pylint: disable-msg=E0611,W0212
-
 """SQLBase implementation of IQuestionSubscription."""
 
 __metaclass__ = type
@@ -15,7 +13,7 @@ from storm.locals import (
     DateTime,
     Int,
     )
-from zope.interface import implements
+from zope.interface import implementer
 
 from lp.answers.interfaces.questionsubscription import IQuestionSubscription
 from lp.registry.interfaces.person import validate_public_person
@@ -24,10 +22,9 @@ from lp.services.database.constants import UTC_NOW
 from lp.services.database.sqlbase import SQLBase
 
 
+@implementer(IQuestionSubscription)
 class QuestionSubscription(SQLBase):
     """A subscription for person to a question."""
-
-    implements(IQuestionSubscription)
 
     _table = 'QuestionSubscription'
 

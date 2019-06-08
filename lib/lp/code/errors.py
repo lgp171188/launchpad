@@ -1,4 +1,4 @@
-# Copyright 2009-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Errors used in the lp/code modules."""
@@ -13,29 +13,48 @@ __all__ = [
     'BranchCreatorNotMemberOfOwnerTeam',
     'BranchCreatorNotOwner',
     'BranchExists',
+    'BranchFileNotFound',
     'BranchHasPendingWrites',
+    'BranchHostingFault',
     'BranchTargetError',
     'BranchTypeError',
     'BuildAlreadyPending',
     'BuildNotAllowedForDistro',
     'BranchMergeProposalExists',
     'CannotDeleteBranch',
+    'CannotDeleteGitRepository',
+    'CannotHaveLinkedBranch',
+    'CannotModifyNonHostedGitRepository',
     'CannotUpgradeBranch',
     'CannotUpgradeNonHosted',
-    'CannotHaveLinkedBranch',
     'CodeImportAlreadyRequested',
     'CodeImportAlreadyRunning',
+    'CodeImportInvalidTargetType',
     'CodeImportNotInReviewedState',
     'ClaimReviewFailed',
+    'DiffNotFound',
+    'GitDefaultConflict',
+    'GitRepositoryBlobNotFound',
+    'GitRepositoryBlobUnsupportedRemote',
+    'GitRepositoryCreationException',
+    'GitRepositoryCreationFault',
+    'GitRepositoryCreationForbidden',
+    'GitRepositoryCreatorNotMemberOfOwnerTeam',
+    'GitRepositoryCreatorNotOwner',
+    'GitRepositoryDeletionFault',
+    'GitRepositoryExists',
+    'GitRepositoryScanFault',
+    'GitTargetError',
     'InvalidBranchMergeProposal',
-    'InvalidMergeQueueConfig',
     'InvalidNamespace',
     'NoLinkedBranch',
     'NoSuchBranch',
+    'NoSuchGitReference',
+    'NoSuchGitRepository',
     'PrivateBranchRecipe',
+    'PrivateGitRepositoryRecipe',
     'ReviewNotPending',
     'StaleLastMirrored',
-    'TooManyBuilds',
     'TooNewRecipeFormat',
     'UnknownBranchTypeError',
     'UpdatePreviewDiffNotReady',
@@ -50,7 +69,10 @@ import httplib
 from bzrlib.plugins.builder.recipe import RecipeParseError
 from lazr.restful.declarations import error_status
 
-from lp.app.errors import NameLookupFailed
+from lp.app.errors import (
+    NameLookupFailed,
+    NotFoundError,
+    )
 
 # Annotate the RecipeParseError's with a 400 webservice status.
 error_status(httplib.BAD_REQUEST)(RecipeParseError)
@@ -220,11 +242,18 @@ class BranchMergeProposalExists(InvalidBranchMergeProposal):
     """Raised if there is already a matching BranchMergeProposal."""
 
     def __init__(self, existing_proposal):
+        # Circular import.
+        from lp.code.interfaces.branch import IBranch
+        # display_name is the newer style, but IBranch uses the older style.
+        if IBranch.providedBy(existing_proposal.merge_source):
+            display_name = "displayname"
+        else:
+            display_name = "display_name"
         super(BranchMergeProposalExists, self).__init__(
                 'There is already a branch merge proposal registered for '
                 'branch %s to land on %s that is still active.' %
-                (existing_proposal.source_branch.displayname,
-                 existing_proposal.target_branch.displayname))
+                (getattr(existing_proposal.merge_source, display_name),
+                 getattr(existing_proposal.merge_target, display_name)))
         self.existing_proposal = existing_proposal
 
 
@@ -276,9 +305,19 @@ class PrivateBranchRecipe(Exception):
 
     def __init__(self, branch):
         message = (
-            'Recipe may not refer to private branch: %s' %
-            branch.bzr_identity)
+            'Recipe may not refer to private branch: %s' % branch.identity)
         self.branch = branch
+        Exception.__init__(self, message)
+
+
+@error_status(httplib.BAD_REQUEST)
+class PrivateGitRepositoryRecipe(Exception):
+
+    def __init__(self, repository):
+        message = (
+            'Recipe may not refer to private repository: %s' %
+            repository.identity)
+        self.repository = repository
         Exception.__init__(self, message)
 
 
@@ -311,6 +350,185 @@ class UnknownBranchTypeError(Exception):
     """Raised when the user specifies an unrecognized branch type."""
 
 
+class BranchHostingFault(Exception):
+    """Raised when there is a fault fetching information about a branch."""
+
+
+class BranchFileNotFound(BranchHostingFault):
+    """Raised when a file does not exist in a branch."""
+
+    def __init__(self, branch_id, filename=None, file_id=None, rev=None):
+        super(BranchFileNotFound, self).__init__()
+        if (filename is None) == (file_id is None):
+            raise AssertionError(
+                "Exactly one of filename and file_id must be given.")
+        self.branch_id = branch_id
+        self.filename = filename
+        self.file_id = file_id
+        self.rev = rev
+
+    def __str__(self):
+        message = "Branch ID %s has no file " % self.branch_id
+        if self.filename is not None:
+            message += self.filename
+        else:
+            message += "with ID %s" % self.file_id
+        if self.rev is not None:
+            message += " at revision %s" % self.rev
+        return message
+
+
+class GitRepositoryCreationException(Exception):
+    """Base class for Git repository creation exceptions."""
+
+
+@error_status(httplib.CONFLICT)
+class GitRepositoryExists(GitRepositoryCreationException):
+    """Raised when creating a Git repository that already exists."""
+
+    def __init__(self, existing_repository):
+        params = {
+            "name": existing_repository.name,
+            "context": existing_repository.namespace.name,
+            }
+        message = (
+            'A Git repository with the name "%(name)s" already exists for '
+            '%(context)s.' % params)
+        self.existing_repository = existing_repository
+        GitRepositoryCreationException.__init__(self, message)
+
+
+@error_status(httplib.BAD_REQUEST)
+class CannotDeleteGitRepository(Exception):
+    """The Git repository cannot be deleted at this time."""
+
+
+class GitRepositoryCreationForbidden(GitRepositoryCreationException):
+    """A visibility policy forbids Git repository creation.
+
+    The exception is raised if the policy for the project does not allow the
+    creator of the repository to create a repository for that project.
+    """
+
+
+@error_status(httplib.BAD_REQUEST)
+class GitRepositoryCreatorNotMemberOfOwnerTeam(GitRepositoryCreationException):
+    """Git repository creator is not a member of the owner team.
+
+    Raised when a user is attempting to create a repository and set the
+    owner of the repository to a team that they are not a member of.
+    """
+
+
+@error_status(httplib.BAD_REQUEST)
+class GitRepositoryCreatorNotOwner(GitRepositoryCreationException):
+    """A user cannot create a Git repository belonging to another user.
+
+    Raised when a user is attempting to create a repository and set the
+    owner of the repository to another user.
+    """
+
+
+class GitRepositoryCreationFault(Exception):
+    """Raised when there is a hosting fault creating a Git repository."""
+
+
+class GitRepositoryScanFault(Exception):
+    """Raised when there is a fault scanning a repository."""
+
+
+class GitRepositoryBlobNotFound(GitRepositoryScanFault):
+    """Raised when a blob does not exist in a repository."""
+
+    def __init__(self, path, filename, rev=None):
+        super(GitRepositoryBlobNotFound, self).__init__()
+        self.path = path
+        self.filename = filename
+        self.rev = rev
+
+    def __str__(self):
+        message = "Repository %s has no file %s" % (self.path, self.filename)
+        if self.rev is not None:
+            message += " at revision %s" % self.rev
+        return message
+
+
+class GitRepositoryBlobUnsupportedRemote(Exception):
+    """Raised when trying to fetch a blob from an unsupported remote host."""
+
+    def __init__(self, repository_url):
+        super(GitRepositoryBlobUnsupportedRemote, self).__init__()
+        self.repository_url = repository_url
+
+    def __str__(self):
+        return "Cannot fetch blob from external Git repository at %s" % (
+            self.repository_url)
+
+
+class GitRepositoryDeletionFault(Exception):
+    """Raised when there is a fault deleting a repository."""
+
+
+class GitTargetError(Exception):
+    """Raised when there is an error determining a Git repository target."""
+
+
+class NoSuchGitRepository(NameLookupFailed):
+    """Raised when we try to load a Git repository that does not exist."""
+
+    _message_prefix = "No such Git repository"
+
+
+class NoSuchGitReference(NotFoundError):
+    """Raised when we try to look up a Git reference that does not exist."""
+
+    def __init__(self, repository, path):
+        self.repository = repository
+        self.path = path
+        self.message = (
+            "The repository at %s does not contain a reference named '%s'." %
+            (repository.display_name, path))
+        NotFoundError.__init__(self, self.message)
+
+    def __str__(self):
+        return self.message
+
+
+@error_status(httplib.CONFLICT)
+class GitDefaultConflict(Exception):
+    """Raised when trying to set a Git repository as the default for
+    something that already has a default."""
+
+    def __init__(self, existing_repository, target, owner=None):
+        params = {
+            "unique_name": existing_repository.unique_name,
+            "target": target.displayname,
+            }
+        if owner is None:
+            message = (
+                "The default repository for '%(target)s' is already set to "
+                "%(unique_name)s." % params)
+        else:
+            params["owner"] = owner.displayname
+            message = (
+                "%(owner)s's default repository for '%(target)s' is already "
+                "set to %(unique_name)s." % params)
+        self.existing_repository = existing_repository
+        self.target = target
+        self.owner = owner
+        Exception.__init__(self, message)
+
+
+@error_status(httplib.FORBIDDEN)
+class CannotModifyNonHostedGitRepository(Exception):
+    """Raised when trying to modify a non-hosted Git repository."""
+
+    def __init__(self, repository):
+        super(CannotModifyNonHostedGitRepository, self).__init__(
+            "Cannot modify non-hosted Git repository %s." %
+            repository.display_name)
+
+
 @error_status(httplib.BAD_REQUEST)
 class CodeImportNotInReviewedState(Exception):
     """Raised when the user requests an import of a non-automatic import."""
@@ -327,6 +545,16 @@ class CodeImportAlreadyRequested(Exception):
 @error_status(httplib.BAD_REQUEST)
 class CodeImportAlreadyRunning(Exception):
     """Raised when the user requests an import that is already running."""
+
+
+@error_status(httplib.BAD_REQUEST)
+class CodeImportInvalidTargetType(Exception):
+    """Raised for code imports with an invalid target for their type."""
+
+    def __init__(self, target, target_rcs_type):
+        super(CodeImportInvalidTargetType, self).__init__(
+            "Objects of type %s do not support code imports targeting %s." %
+            (target.__class__.__name__, target_rcs_type))
 
 
 @error_status(httplib.BAD_REQUEST)
@@ -349,16 +577,6 @@ class RecipeBuildException(Exception):
         Exception.__init__(self, msg)
 
 
-class TooManyBuilds(RecipeBuildException):
-    """A build was requested that exceeded the quota."""
-
-    def __init__(self, recipe, distroseries):
-        RecipeBuildException.__init__(
-            self, recipe, distroseries,
-            'You have exceeded your quota for recipe %(recipe)s for'
-            ' distroseries %(distroseries)s')
-
-
 class BuildAlreadyPending(RecipeBuildException):
     """A build was requested when an identical build was already pending."""
 
@@ -378,9 +596,5 @@ class BuildNotAllowedForDistro(RecipeBuildException):
 
 
 @error_status(httplib.BAD_REQUEST)
-class InvalidMergeQueueConfig(Exception):
-    """The config specified is not a valid JSON string."""
-
-    def __init__(self):
-        message = ('The configuration specified is not a valid JSON string.')
-        Exception.__init__(self, message)
+class DiffNotFound(Exception):
+    """A `IPreviewDiff` with the timestamp was not found."""

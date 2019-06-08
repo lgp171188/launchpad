@@ -1,7 +1,5 @@
-# Copyright 2009 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2016 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
-
-# pylint: disable-msg=E0611,W0212
 
 """Database classes related to bug nomination.
 
@@ -23,7 +21,7 @@ from sqlobject import (
     SQLObjectNotFound,
     )
 from zope.component import getUtility
-from zope.interface import implements
+from zope.interface import implementer
 
 from lp.app.errors import NotFoundError
 from lp.bugs.adapters.bugchange import BugTaskAdded
@@ -39,10 +37,11 @@ from lp.services.database.constants import UTC_NOW
 from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.enumcol import EnumCol
 from lp.services.database.sqlbase import SQLBase
+from lp.services.features import getFeatureFlag
 
 
+@implementer(IBugNomination)
 class BugNomination(SQLBase):
-    implements(IBugNomination)
     _table = "BugNomination"
 
     owner = ForeignKey(
@@ -93,7 +92,8 @@ class BugNomination(SQLBase):
                     targets.append(distroseries)
         else:
             targets.append(self.productseries)
-        bugtasks = getUtility(IBugTaskSet).createManyTasks(self.bug, approver, targets)
+        bugtasks = getUtility(IBugTaskSet).createManyTasks(
+            self.bug, approver, targets)
         for bug_task in bugtasks:
             self.bug.addChange(BugTaskAdded(UTC_NOW, approver, bug_task))
 
@@ -123,6 +123,12 @@ class BugNomination(SQLBase):
         # Use the class method to check permissions because there is not
         # yet a bugtask instance with the this target.
         BugTask = self.bug.bugtasks[0].__class__
+
+        if (getFeatureFlag('bugs.nominations.bug_supervisors_can_target') and
+                BugTask.userHasBugSupervisorPrivilegesContext(
+                    self.target, person)):
+            return True
+
         if BugTask.userHasDriverPrivilegesContext(self.target, person):
             return True
 
@@ -151,9 +157,9 @@ class BugNomination(SQLBase):
         return False
 
 
+@implementer(IBugNominationSet)
 class BugNominationSet:
     """See IBugNominationSet."""
-    implements(IBugNominationSet)
 
     def get(self, id):
         """See IBugNominationSet."""

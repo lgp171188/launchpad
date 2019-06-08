@@ -1,4 +1,4 @@
-# Copyright 2009-2010 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -10,11 +10,12 @@ from datetime import datetime
 import httplib
 import itertools
 import logging
-import os
+import os.path
 from StringIO import StringIO
-import urllib2
+import urllib
 import urlparse
 
+import requests
 from twisted.internet import (
     defer,
     protocol,
@@ -35,6 +36,7 @@ from lp.registry.interfaces.distributionmirror import (
 from lp.registry.interfaces.distroseries import IDistroSeries
 from lp.services.config import config
 from lp.services.librarian.interfaces import ILibraryFileAliasSet
+from lp.services.timeout import urlfetch
 from lp.services.webapp import canonical_url
 from lp.soyuz.interfaces.distroarchseries import IDistroArchSeries
 
@@ -201,9 +203,9 @@ class ProberFactory(protocol.ClientFactory):
     request_path = None
 
     # Details of the URL of the host in which we'll connect, which will only
-    # be different from request_* in case we have an http_proxy environment
-    # variable --in that case the scheme, host and port will be the ones
-    # extracted from http_proxy and the path will be self.url
+    # be different from request_* in case we have a configured http_proxy --
+    # in that case the scheme, host and port will be the ones extracted from
+    # http_proxy and the path will be self.url.
     connect_scheme = None
     connect_host = None
     connect_port = None
@@ -278,7 +280,7 @@ class ProberFactory(protocol.ClientFactory):
         # XXX Guilherme Salgado 2006-09-19:
         # We don't actually know how to handle FTP responses, but we
         # expect to be behind a squid HTTP proxy with the patch at
-        # http://www.squid-cache.org/bugs/show_bug.cgi?id=1758 applied. So, if
+        # https://bugs.squid-cache.org/show_bug.cgi?id=1758 applied. So, if
         # you encounter any problems with FTP URLs you'll probably have to nag
         # the sysadmins to fix squid for you.
         if scheme not in ('http', 'ftp'):
@@ -295,9 +297,9 @@ class ProberFactory(protocol.ClientFactory):
         if self.request_host not in host_timeouts:
             host_timeouts[self.request_host] = 0
 
-        # If the http_proxy variable is set, we want to use it as the host
-        # we're going to connect to.
-        proxy = os.getenv('http_proxy')
+        # If launchpad.http_proxy is set in our configuration, we want to
+        # use it as the host we're going to connect to.
+        proxy = config.launchpad.http_proxy
         if proxy:
             scheme, host, port, dummy = _parse(proxy)
             path = url
@@ -318,7 +320,8 @@ class RedirectAwareProberFactory(ProberFactory):
 
         scheme, host, port, orig_path = _parse(self.url)
         scheme, host, port, new_path = _parse(url)
-        if orig_path.split('/')[-1] != new_path.split('/')[-1]:
+        if (urllib.unquote(orig_path.split('/')[-1])
+            != urllib.unquote(new_path.split('/')[-1])):
             # Server redirected us to a file which doesn't seem to be what we
             # requested.  It's likely to be a stupid server which redirects
             # instead of 404ing (https://launchpad.net/bugs/204460).
@@ -534,14 +537,14 @@ class ArchiveMirrorProberCallbacks(LoggingMixin):
         MirrorDistroSeriesSource or a MirrorDistroArchSeries.
         """
         if IDistroArchSeries.providedBy(self.series):
-            text = ("Series %s, Architecture %s" %
-                    (self.series.distroseries.title,
-                     self.series.architecturetag))
+            series = self.series.distroseries
+            arch = self.series.architecturetag
         else:
-            text = "Series %s" % self.series.title
-        text += (", Component %s and Pocket %s" %
-                 (self.component.name, self.pocket.title))
-        return text
+            series = self.series
+            arch = 'source'
+        return '%s %s %s %s' % (
+            series.distribution.name, series.getSuite(self.pocket), arch,
+            self.component.name)
 
     def logError(self, failure, url):
         msg = ("%s on %s of %s\n"
@@ -610,29 +613,23 @@ class MirrorCDImageProberCallbacks(LoggingMixin):
         return failure
 
 
-def _build_request_for_cdimage_file_list(url):
-    headers = {'Pragma': 'no-cache', 'Cache-control': 'no-cache'}
-    return urllib2.Request(url, headers=headers)
-
-
 def _get_cdimage_file_list():
     url = config.distributionmirrorprober.cdimage_file_list_url
+    # In test environments, this may be a file: URL.  Adjust it to be in a
+    # form that requests can cope with (i.e. using an absolute path).
+    parsed_url = urlparse.urlparse(url)
+    if parsed_url.scheme == 'file' and not os.path.isabs(parsed_url.path):
+        assert parsed_url.path == parsed_url[2]
+        parsed_url = list(parsed_url)
+        parsed_url[2] = os.path.join(config.root, parsed_url[2])
+    url = urlparse.urlunparse(parsed_url)
     try:
-        return urllib2.urlopen(_build_request_for_cdimage_file_list(url))
-    except urllib2.URLError as e:
+        return urlfetch(
+            url, headers={'Pragma': 'no-cache', 'Cache-control': 'no-cache'},
+            use_proxy=True, allow_file=True)
+    except requests.RequestException as e:
         raise UnableToFetchCDImageFileList(
             'Unable to fetch %s: %s' % (url, e))
-
-
-def restore_http_proxy(http_proxy):
-    """Restore the http_proxy environment variable to the given value."""
-    if http_proxy is None:
-        try:
-            del os.environ['http_proxy']
-        except KeyError:
-            pass
-    else:
-        os.environ['http_proxy'] = http_proxy
 
 
 def get_expected_cdimage_paths():
@@ -646,10 +643,10 @@ def get_expected_cdimage_paths():
     UnableToFetchCDImageFileList exception will be raised.
     """
     d = {}
-    for line in _get_cdimage_file_list().readlines():
+    for line in _get_cdimage_file_list().iter_lines():
         flavour, seriesname, path, size = line.split('\t')
         paths = d.setdefault((flavour, seriesname), [])
-        paths.append(path)
+        paths.append(path.lstrip('/'))
 
     ubuntu = getUtility(ILaunchpadCelebrities).ubuntu
     paths = []
@@ -679,12 +676,15 @@ def probe_archive_mirror(mirror, logfile, unchecked_keys, logger):
     publishing time are available on that mirror, giving us an idea of when it
     was last synced to the main archive.
     """
+    base_url = mirror.base_url
+    if not base_url.endswith('/'):
+        base_url += '/'
     packages_paths = mirror.getExpectedPackagesPaths()
     sources_paths = mirror.getExpectedSourcesPaths()
     all_paths = itertools.chain(packages_paths, sources_paths)
     request_manager = RequestManager()
     for series, pocket, component, path in all_paths:
-        url = "%s/%s" % (mirror.base_url, path)
+        url = urlparse.urljoin(base_url, path)
         callbacks = ArchiveMirrorProberCallbacks(
             mirror, series, pocket, component, url, logfile)
         unchecked_keys.append(url)
@@ -708,6 +708,10 @@ def probe_cdimage_mirror(mirror, logfile, unchecked_keys, logger):
     files for a given series and flavour, then we consider that mirror is
     actually mirroring that series and flavour.
     """
+    base_url = mirror.base_url
+    if not base_url.endswith('/'):
+        base_url += '/'
+
     # The list of files a mirror should contain will change over time and we
     # don't want to keep records for files a mirror doesn't need to have
     # anymore, so we delete all records before start probing. This also fixes
@@ -728,7 +732,7 @@ def probe_cdimage_mirror(mirror, logfile, unchecked_keys, logger):
         deferredList = []
         request_manager = RequestManager()
         for path in paths:
-            url = '%s/%s' % (mirror.base_url, path)
+            url = urlparse.urljoin(base_url, path)
             # Use a RedirectAwareProberFactory because CD mirrors are allowed
             # to redirect, and we need to cope with that.
             prober = RedirectAwareProberFactory(url)
@@ -846,10 +850,10 @@ class DistroMirrorProber:
             # XXX: salgado 2006-05-26:
             # Some people registered mirrors on distros other than Ubuntu back
             # in the old times, so now we need to do this small hack here.
-            if not mirror.distribution.full_functionality:
+            if not mirror.distribution.supports_mirrors:
                 self.logger.debug(
                     "Mirror '%s' of distribution '%s' can't be probed --we "
-                    "only probe Ubuntu mirrors."
+                    "only probe distros that support mirrors."
                     % (mirror.name, mirror.distribution.name))
                 continue
 

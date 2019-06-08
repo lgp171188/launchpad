@@ -1,8 +1,6 @@
 # Copyright 2004-2012 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-# pylint: disable-msg=E0211,E0213
-
 """Bug message interfaces."""
 
 __metaclass__ = type
@@ -106,7 +104,7 @@ class IBugMessageAddForm(Interface):
         required=False, default=False)
     attachment_description = Title(title=u'Description', required=False)
     email_me = Bool(
-        title=u"E-mail me about changes to this bug report",
+        title=u"Email me about changes to this bug report",
         required=False, default=False)
     bugwatch_id = Int(
         title=(u"Synchronize this comment with a remote bug "
@@ -134,7 +132,9 @@ class IBugComment(IMessage, IComment):
         'The URL for submitting replies to this comment.')
     activity = Attribute(
         "A list of BugActivityItems associated with this comment.")
-    show_footer = Attribute(
+    show_activity = Attribute(
+        "Whether or not to show an activity for the comment.")
+    show_spam_controls = Attribute(
         "Whether or not to show a footer for the comment.")
     patches = Attribute(
         "Patches attched to this comment.")

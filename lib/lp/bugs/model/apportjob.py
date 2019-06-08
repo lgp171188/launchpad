@@ -11,7 +11,7 @@ __all__ = [
 
 from cStringIO import StringIO
 
-from lazr.delegates import delegates
+from lazr.delegates import delegate_to
 import simplejson
 from sqlobject import SQLObjectNotFound
 from storm.expr import And
@@ -22,8 +22,8 @@ from storm.locals import (
     )
 from zope.component import getUtility
 from zope.interface import (
-    classProvides,
-    implements,
+    implementer,
+    provider,
     )
 
 from lp.bugs.interfaces.apportjob import (
@@ -39,7 +39,7 @@ from lp.bugs.utilities.filebugdataparser import (
     )
 from lp.services.config import config
 from lp.services.database.enumcol import EnumCol
-from lp.services.database.lpstorm import IStore
+from lp.services.database.interfaces import IStore
 from lp.services.database.stormbase import StormBase
 from lp.services.job.model.job import (
     EnumeratedSubclass,
@@ -48,17 +48,11 @@ from lp.services.job.model.job import (
 from lp.services.job.runner import BaseRunnableJob
 from lp.services.librarian.interfaces import ILibraryFileAliasSet
 from lp.services.temporaryblobstorage.model import TemporaryBlobStorage
-from lp.services.webapp.interfaces import (
-    DEFAULT_FLAVOR,
-    IStoreSelector,
-    MAIN_STORE,
-    )
 
 
+@implementer(IApportJob)
 class ApportJob(StormBase):
     """Base class for jobs related to Apport BLOBs."""
-
-    implements(IApportJob)
 
     __storm_table__ = 'ApportJob'
 
@@ -76,7 +70,7 @@ class ApportJob(StormBase):
 
     # The metadata property because it needs to be modifiable by
     # subclasses of ApportJobDerived. However, since ApportJobDerived
-    # only delegates() to ApportJob we can't simply directly access the
+    # only delegates to ApportJob we can't simply directly access the
     # _json_data property, so we use a getter and setter here instead.
     def _set_metadata(self, metadata):
         self._json_data = unicode(
@@ -107,8 +101,7 @@ class ApportJob(StormBase):
     @classmethod
     def get(cls, key):
         """Return the instance of this class whose key is supplied."""
-        store = getUtility(IStoreSelector).get(MAIN_STORE, DEFAULT_FLAVOR)
-        instance = store.get(cls, key)
+        instance = IStore(cls).get(cls, key)
         if instance is None:
             raise SQLObjectNotFound(
                 'No occurrence of %s has key %s' % (cls.__name__, key))
@@ -118,11 +111,11 @@ class ApportJob(StormBase):
         return ApportJobDerived.makeSubclass(self)
 
 
+@delegate_to(IApportJob)
+@provider(IApportJobSource)
 class ApportJobDerived(BaseRunnableJob):
     """Intermediate class for deriving from ApportJob."""
     __metaclass__ = EnumeratedSubclass
-    delegates(IApportJob)
-    classProvides(IApportJobSource)
 
     def __init__(self, job):
         self.context = job
@@ -155,8 +148,7 @@ class ApportJobDerived(BaseRunnableJob):
     @classmethod
     def iterReady(cls):
         """Iterate through all ready ApportJobs."""
-        store = IStore(ApportJob)
-        jobs = store.find(
+        jobs = IStore(ApportJob).find(
             ApportJob,
             And(ApportJob.job_type == cls.class_job_type,
                 ApportJob.job == Job.id,
@@ -176,14 +168,14 @@ class ApportJobDerived(BaseRunnableJob):
         return vars
 
 
+@implementer(IProcessApportBlobJob)
+@provider(IProcessApportBlobJobSource)
 class ProcessApportBlobJob(ApportJobDerived):
     """A Job to process an Apport BLOB."""
-    implements(IProcessApportBlobJob)
 
     class_job_type = ApportJobType.PROCESS_BLOB
-    classProvides(IProcessApportBlobJobSource)
 
-    config = config.process_apport_blobs
+    config = config.IProcessApportBlobJobSource
 
     @classmethod
     def create(cls, blob):
@@ -192,8 +184,7 @@ class ProcessApportBlobJob(ApportJobDerived):
         # We also include jobs which have been completed when checking
         # for exisiting jobs, since a BLOB should only be processed
         # once.
-        store = getUtility(IStoreSelector).get(MAIN_STORE, DEFAULT_FLAVOR)
-        job_for_blob = store.find(
+        job_for_blob = IStore(ApportJob).find(
             ApportJob,
             ApportJob.blob == blob,
             ApportJob.job_type == cls.class_job_type,

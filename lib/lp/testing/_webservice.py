@@ -1,8 +1,6 @@
-# Copyright 2010 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-# We like global statements!
-# pylint: disable-msg=W0602,W0603
 __metaclass__ = type
 
 __all__ = [
@@ -21,15 +19,13 @@ from launchpadlib.credentials import (
     Credentials,
     )
 from launchpadlib.launchpad import Launchpad
+import six
 import transaction
-from zope.app.publication.interfaces import IEndRequestEvent
-from zope.app.testing import ztapi
 from zope.component import getUtility
 import zope.testing.cleanup
 
 from lp.registry.interfaces.person import IPersonSet
 from lp.services.oauth.interfaces import IOAuthConsumerSet
-from lp.services.webapp.adapter import get_request_statements
 from lp.services.webapp.interaction import ANONYMOUS
 from lp.services.webapp.interfaces import OAuthPermission
 from lp.services.webapp.publisher import canonical_url
@@ -62,7 +58,7 @@ def oauth_access_token_for(consumer_name, person, permission, context=None):
     :param context: The OAuth context for the credentials (or a string
         designating same).
 
-    :return: An OAuthAccessToken object.
+    :return: A tuple of an OAuthAccessToken object and its secret.
     """
     if isinstance(person, basestring):
         # Look up a person by name.
@@ -81,23 +77,11 @@ def oauth_access_token_for(consumer_name, person, permission, context=None):
     consumer = consumer_set.getByKey(consumer_name)
     if consumer is None:
         consumer = consumer_set.new(consumer_name)
-    else:
-        # We didn't have to create the consumer. Maybe this user
-        # already has an access token for this
-        # consumer+person+permission?
-        existing_token = [token for token in person.oauth_access_tokens
-                          if (token.consumer == consumer
-                              and token.permission == permission
-                              and token.context == context)]
-        if len(existing_token) >= 1:
-            return existing_token[0]
 
-    # There is no existing access token for this
-    # consumer+person+permission+context. Create one and review it.
-    request_token = consumer.newRequestToken()
+    request_token, _ = consumer.newRequestToken()
     request_token.review(person, permission, context)
-    access_token = request_token.createAccessToken()
-    return access_token
+    access_token, access_secret = request_token.createAccessToken()
+    return access_token, access_secret
 
 
 def launchpadlib_credentials_for(
@@ -119,11 +103,10 @@ def launchpadlib_credentials_for(
     # PageTestLayer, when a Launchpad instance is running for
     # launchpadlib to use.
     login(ANONYMOUS)
-    access_token = oauth_access_token_for(
+    access_token, access_secret = oauth_access_token_for(
         consumer_name, person, permission, context)
     logout()
-    launchpadlib_token = AccessToken(
-        access_token.key, access_token.secret)
+    launchpadlib_token = AccessToken(access_token.key, access_secret)
     return Credentials(consumer_name=consumer_name,
                        access_token=launchpadlib_token)
 
@@ -135,7 +118,7 @@ def _clean_up_cache(cache):
 
 def launchpadlib_for(
     consumer_name, person=None, permission=OAuthPermission.WRITE_PRIVATE,
-    context=None, version="devel", service_root="http://api.launchpad.dev/"):
+    context=None, version="devel", service_root="http://api.launchpad.test/"):
     """Create a Launchpad object for the given person.
 
     :param consumer_name: An OAuth consumer name.
@@ -149,6 +132,9 @@ def launchpadlib_for(
 
     :return: A launchpadlib Launchpad object.
     """
+    # XXX cjwatson 2016-01-22: Callers should be updated to pass Unicode
+    # directly, but that's a big change.
+    consumer_name = six.ensure_text(consumer_name)
     if person is None:
         token = AnonymousAccessToken()
         credentials = Credentials(consumer_name, access_token=token)
@@ -160,40 +146,3 @@ def launchpadlib_for(
     zope.testing.cleanup.addCleanUp(_clean_up_cache, (cache,))
     return Launchpad(credentials, None, None, service_root=service_root,
                      version=version, cache=cache)
-
-
-class QueryCollector:
-    """Collect database calls made in web requests.
-
-    These are only retrievable at the end of a request, and for tests it is
-    useful to be able to make assertions about the calls made during a
-    request: this class provides a tool to gather them in a simple fashion.
-
-    :ivar count: The count of db queries the last web request made.
-    :ivar queries: The list of queries made. See
-        lp.services.webapp.adapter.get_request_statements for more
-        information.
-    """
-
-    def __init__(self):
-        self._active = False
-        self.count = None
-        self.queries = None
-
-    def register(self):
-        """Start counting queries.
-
-        Be sure to call unregister when finished with the collector.
-
-        After each web request the count and queries attributes are updated.
-        """
-        ztapi.subscribe((IEndRequestEvent, ), None, self)
-        self._active = True
-
-    def __call__(self, event):
-        if self._active:
-            self.queries = get_request_statements()
-            self.count = len(self.queries)
-
-    def unregister(self):
-        self._active = False

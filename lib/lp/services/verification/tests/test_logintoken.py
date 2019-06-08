@@ -26,7 +26,7 @@ class TestLoginToken(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def test_sendMergeRequestEmail(self):
-        # sendMergeRequestEmail() sends an email to the user informing him/her
+        # sendMergeRequestEmail() sends an email to the user informing them
         # of the request.
 
         user1 = self.factory.makePerson(name="requester")
@@ -59,7 +59,7 @@ class TestLoginToken(TestCaseWithFactory):
             To confirm you want to do this, please follow
             this link:
 
-                http://launchpad.dev/token/...
+                http://launchpad.test/token/...
 
             If you didn't ask to merge these accounts, please
             either ignore this email or report it to the

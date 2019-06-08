@@ -1,4 +1,4 @@
-# Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Widgets related to IBranch."""
@@ -7,6 +7,7 @@ __metaclass__ = type
 __all__ = [
     'RecipeOwnerWidget',
     'TargetBranchWidget',
+    'TargetGitRepositoryWidget',
     ]
 
 
@@ -16,28 +17,32 @@ from datetime import (
     )
 
 from pytz import utc
-from zope.app.form.browser.widget import renderElement
-from zope.app.form.interfaces import (
-    IInputWidget,
-    InputErrors,
-    )
-from zope.app.form.utility import setUpWidget
 from zope.component import (
     getMultiAdapter,
     getUtility,
     )
+from zope.formlib.interfaces import (
+    IInputWidget,
+    InputErrors,
+    )
+from zope.formlib.utility import setUpWidget
+from zope.formlib.widget import renderElement
 from zope.schema.vocabulary import (
     SimpleTerm,
     SimpleVocabulary,
     )
 
 from lp.app.widgets.itemswidgets import LaunchpadRadioWidget
+from lp.code.interfaces.gitcollection import IGitCollection
+from lp.code.interfaces.gitref import IGitRef
+from lp.code.interfaces.gitrepository import IGitRepositorySet
+from lp.registry.interfaces.person import IPerson
 from lp.services.webapp import canonical_url
-from lp.services.webapp.interfaces import ILaunchBag
-from lp.services.webapp.menu import (
-    escape,
+from lp.services.webapp.escaping import (
+    html_escape,
     structured,
     )
+from lp.services.webapp.interfaces import ILaunchBag
 
 
 class SuggestionWidget(LaunchpadRadioWidget):
@@ -87,7 +92,7 @@ class SuggestionWidget(LaunchpadRadioWidget):
         return len(self.suggestion_vocab) > 0
 
     def _optionId(self, index):
-        return '%s.%d' % (escape(self.name), index)
+        return '%s.%d' % (html_escape(self.name), index)
 
     def _otherId(self):
         """Return the id of the "Other" option."""
@@ -174,7 +179,7 @@ class SuggestionWidget(LaunchpadRadioWidget):
         # Lastly render the other option.
         index = len(items)
         other_selection_text = "%s %s" % (
-            escape(self._renderLabel("Other:", index)),
+            html_escape(self._renderLabel("Other:", index)),
             self.other_selection_widget())
         other_selection_onclick = (
             "this.form['%s'].focus()" % self.other_selection_widget.name)
@@ -233,7 +238,8 @@ class TargetBranchWidget(SuggestionWidget):
         collection = collection.visibleByUser(logged_in_user)
         # May actually need some eager loading, but the API isn't fine grained
         # yet.
-        branches = collection.getBranches(eager_load=False).config(distinct=True)
+        branches = collection.getBranches(eager_load=False).config(
+            distinct=True)
         target_branches = list(branches.config(limit=5))
         # If there is a development focus branch, make sure it is always
         # shown, and as the first item.
@@ -259,14 +265,101 @@ class TargetBranchWidget(SuggestionWidget):
         # radio buttons that is not a hyperlink in order to select the radio
         # button.  It was decided not to have the entire text as a link, but
         # instead to have a separate link to the branch details.
-        text = '%s (<a href="%s">branch details</a>)' % (
-            escape(branch.displayname), escape(canonical_url(branch)))
+        text = u'%s (<a href="%s">branch details</a>)'
         # If the branch is the development focus, say so.
         if branch == self.context.context.target.default_merge_target:
-            text = text + "&ndash; <em>development focus</em>"
-        label = u'<label for="%s" style="font-weight: normal">%s</label>' % (
-            self._optionId(index), text)
-        return structured(label)
+            text += u"&ndash; <em>development focus</em>"
+        label = (
+            u'<label for="%s" style="font-weight: normal">' + text +
+            u'</label>')
+        return structured(
+            label, self._optionId(index), branch.displayname,
+            canonical_url(branch))
+
+    def _autoselectOther(self):
+        """Select "other" on keypress."""
+        on_key_press = "selectWidget('%s', event);" % self._otherId()
+        self.other_selection_widget.onKeyPress = on_key_press
+
+
+class TargetGitRepositoryWidget(SuggestionWidget):
+    """Widget for selecting a target Git repository.
+
+    The default repository for a new Git merge proposal should be the
+    default repository for the target if there is one.
+
+    Also in the initial radio button selector are other repositories for the
+    target that the repository owner has specified as target repositories
+    for other merge proposals.
+
+    Finally there is an "other" button that gets the user to use the normal
+    branch selector.
+    """
+
+    @staticmethod
+    def _generateSuggestionVocab(context, full_vocabulary):
+        """Generate the vocabulary for the radio buttons.
+
+        The generated vocabulary contains the default repository for the
+        target if there is one, and also any other repositories that the
+        user has specified recently as a target for a proposed merge.
+        """
+        if IGitRef.providedBy(context):
+            repository = context.repository
+        else:
+            repository = context
+
+        if IPerson.providedBy(repository.target):
+            # If the source is a personal repository, then the only valid
+            # target is that same repository.
+            target_repositories = [repository]
+        else:
+            repository_set = getUtility(IGitRepositorySet)
+            default_target = repository_set.getDefaultRepository(
+                repository.target)
+            logged_in_user = getUtility(ILaunchBag).user
+            since = datetime.now(utc) - timedelta(days=90)
+            collection = IGitCollection(repository.target).targetedBy(
+                logged_in_user, since)
+            collection = collection.visibleByUser(logged_in_user)
+            # May actually need some eager loading, but the API isn't fine
+            # grained yet.
+            repositories = collection.getRepositories(eager_load=False).config(
+                distinct=True)
+            target_repositories = list(repositories.config(limit=5))
+            # If there is a default repository, make sure it is always
+            # shown, and as the first item.
+            if default_target is not None:
+                if default_target in target_repositories:
+                    target_repositories.remove(default_target)
+                target_repositories.insert(0, default_target)
+
+        terms = []
+        for repository in target_repositories:
+            terms.append(SimpleTerm(repository, repository.unique_name))
+
+        return SimpleVocabulary(terms)
+
+    def _renderSuggestionLabel(self, repository, index):
+        """Render a label for the option based on a repository."""
+        # To aid usability there needs to be some text connected with the
+        # radio buttons that is not a hyperlink in order to select the radio
+        # button.  It was decided not to have the entire text as a link, but
+        # instead to have a separate link to the repository details.
+        text = u'%s (<a href="%s">repository details</a>)'
+        # If the repository is the default for the target, say so.
+        if not IPerson.providedBy(repository.target):
+            repository_set = getUtility(IGitRepositorySet)
+            default_target = repository_set.getDefaultRepository(
+                repository.target)
+            if repository == default_target:
+                text += u"&ndash; <em>default repository</em>"
+        label = (
+            u'<label for="%s" style="font-weight: normal">' + text +
+            u'</label>')
+        return structured(
+            label, self._optionId(index), repository.display_name,
+            canonical_url(repository))
 
     def _autoselectOther(self):
         """Select "other" on keypress."""
@@ -277,7 +370,7 @@ class TargetBranchWidget(SuggestionWidget):
 class RecipeOwnerWidget(SuggestionWidget):
     """Widget for selecting a recipe owner.
 
-    The current user and the base branch owner are suggested.
+    The current user and the base source owner are suggested.
     """
 
     @staticmethod

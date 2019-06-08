@@ -1,7 +1,9 @@
-# Copyright 2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2011-2015 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for QuestionJobs classes."""
+
+from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 
@@ -25,7 +27,8 @@ from lp.answers.model.questionjob import (
     QuestionEmailJob,
     QuestionJob,
     )
-from lp.services.database.lpstorm import IStore
+from lp.services.config import config
+from lp.services.database.interfaces import IStore
 from lp.services.features.testing import FeatureFixture
 from lp.services.job.interfaces.job import JobStatus
 from lp.services.job.tests import (
@@ -45,6 +48,7 @@ from lp.testing import (
     run_script,
     TestCaseWithFactory,
     )
+from lp.testing.dbuser import dbuser
 from lp.testing.layers import (
     CeleryJobLayer,
     DatabaseFunctionalLayer,
@@ -291,8 +295,10 @@ class QuestionEmailJobTestCase(TestCaseWithFactory):
         # The email is sent to all the recipients.
         job = make_question_job(
             self.factory, QuestionRecipientSet.ASKER_SUBSCRIBER)
+        team_subscriber = self.factory.makeTeam()
+        job.question.subscribe(team_subscriber)
         logger = BufferLogger()
-        with log.use(logger):
+        with dbuser(config.answertracker.dbuser), log.use(logger):
             job.run()
         self.assertEqual(
             ["DEBUG QuestionEmailJob will send email for question %s." %
@@ -301,7 +307,7 @@ class QuestionEmailJobTestCase(TestCaseWithFactory):
              job.question.id],
             logger.getLogBuffer().splitlines())
         transaction.commit()
-        self.assertEqual(2, len(stub.test_emails))
+        self.assertEqual(3, len(stub.test_emails))
 
     def test_run_cronscript(self):
         # The cronscript is configured: schema-lazr.conf and security.cfg.

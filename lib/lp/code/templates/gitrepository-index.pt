@@ -1,0 +1,114 @@
+<html
+  xmlns="http://www.w3.org/1999/xhtml"
+  xmlns:tal="http://xml.zope.org/namespaces/tal"
+  xmlns:metal="http://xml.zope.org/namespaces/metal"
+  xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+  metal:use-macro="view/macro:page/main_side"
+  i18n:domain="launchpad"
+>
+
+<metal:block fill-slot="head_epilogue">
+  <style type="text/css">
+    #merge-summary, #recipe-summary {
+      margin-top: .5em;
+      margin-bottom: .1em;
+    }
+    #clone-url dt {
+      font-weight: strong;
+    }
+  </style>
+</metal:block>
+
+<body>
+
+<metal:side fill-slot="side">
+  <div tal:replace="structure context/@@+portlet-privacy" />
+  <div tal:replace="structure context/@@+global-actions" />
+  <tal:subscribers replace="structure context/@@+portlet-subscribers" />
+</metal:side>
+
+<tal:registering metal:fill-slot="registering">
+  Owned by <tal:owner replace="structure context/owner/fmt:link" />
+</tal:registering>
+
+<div metal:fill-slot="main">
+
+  <div id="repository-description" tal:condition="context/description"
+       class="summary"
+       tal:content="structure context/description/fmt:text-to-html" />
+
+  <div class="yui-g first">
+    <div id="repository-management" class="portlet">
+      <tal:repository-management
+          replace="structure context/@@++repository-management" />
+    </div>
+  </div>
+
+  <div class="yui-g first" tal:condition="request/features/code.git.show_repository_mps">
+    <div id="repository-relations" class="portlet">
+      <tal:repository-pending-merges
+           replace="structure context/@@++repository-pending-merges" />
+    </div>
+  </div>
+
+  <div class="yui-g">
+    <div id="repository-relations" class="portlet">
+      <tal:repository-recipes
+           replace="structure context/@@++repository-recipes" />
+      <div metal:use-macro="context/@@+snap-macros/related-snaps">
+        <metal:context-type fill-slot="context_type">repository</metal:context-type>
+      </div>
+    </div>
+  </div>
+
+  <div id="repository-import-details"
+       class="yui-g"
+       tal:condition="context/repository_type/enumvalue:IMPORTED">
+    <div class="portlet">
+      <h2>Import details</h2>
+      <tal:repository-import-details
+          replace="structure context/@@++repository-import-details" />
+    </div>
+  </div>
+
+  <div class="yui-g" tal:condition="python: not view.show_rescan_link and context.pending_updates">
+    <div class="portlet">
+      <div id="repository-pending-updates" class="pending-update">
+        <h3>Updating repository...</h3>
+        <p>
+          Launchpad is processing new changes to this repository which will
+          be available shortly. Reload to see the changes.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <div class="yui-g" tal:condition="view/show_rescan_link">
+    <div class="portlet">
+      <div id="branch-scan-failed" class="pending-update">
+        <h3>Repository scan failed</h3>
+        <p>
+          Scanning this repository for changes failed.  You can manually rescan if required.
+        </p>
+        <p>
+          <form action="+rescan" name="launchpadform" method="post" enctype="multipart/form-data" accept-charset="UTF-8">
+            <input id="field.actions.rescan" class="button" type="submit"
+             name="field.actions.rescan" value="Rescan" />
+          </form>
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <div class="yui-g">
+    <div id="repository-branches" class="portlet"
+         tal:define="branches view/branches">
+      <h2>Branches</h2>
+      <tal:repository-branches replace="structure branches/@@+ref-listing" />
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>

@@ -11,7 +11,7 @@ using the LPCONFIG environment variable.
 
 Each config directory contains a launchpad-lazr.conf file, and optionally
 a number of .zcml files. These .zcml files are processed as ZCML
-overrides allowing you to change behavior not yet configurable in
+overrides allowing you to change behaviour not yet configurable in
 launchpad-lazr.conf.
 
 If you want to create a temporary config, prefix the directory name with
@@ -111,10 +111,10 @@ the config singleton.
 
     >>> test_data = ("""
     ...     [answertracker]
-    ...     email_domain: answers.launchpad.dev""")
+    ...     email_domain: answers.launchpad.test""")
     >>> config.push('test_data', test_data)
     >>> config.answertracker.email_domain
-    'answers.launchpad.dev'
+    'answers.launchpad.test'
 
 And tests can remove the data with pop() when they are done to restore
 the config.

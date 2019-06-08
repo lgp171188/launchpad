@@ -10,34 +10,34 @@ approve it, we end up back on the global translations import queue.
 XXX DaniloSegan 2009-09-01: due to Zope bug #98437 we can't test that
 this works properly when no "referer" header is sent.
 
-    >>> admin_browser.open('http://translations.launchpad.dev/+imports')
+    >>> admin_browser.open('http://translations.launchpad.test/+imports')
     >>> admin_browser.getLink(url='imports/1').click()
-    >>> print admin_browser.getLink('Cancel').url
-    http://translations.launchpad.dev/+imports
+    >>> print(admin_browser.getLink('Cancel').url)
+    http://translations.launchpad.test/+imports
     >>> admin_browser.getControl('Approve').click()
-    >>> print admin_browser.url
-    http://translations.launchpad.dev/+imports
+    >>> print(admin_browser.url)
+    http://translations.launchpad.test/+imports
 
 Going to the same entry from the Evolution import queue, and then approving
 it, brings us back to the Evolution import queue.
 
     >>> admin_browser.open(
-    ...     'http://translations.launchpad.dev/evolution/+imports')
+    ...     'http://translations.launchpad.test/evolution/+imports')
     >>> admin_browser.getLink(url='imports/1').click()
-    >>> print admin_browser.getLink('Cancel').url
-    http://translations.launchpad.dev/evolution/+imports
+    >>> print(admin_browser.getLink('Cancel').url)
+    http://translations.launchpad.test/evolution/+imports
     >>> admin_browser.getControl('Approve').click()
-    >>> print admin_browser.url
-    http://translations.launchpad.dev/evolution/+imports
+    >>> print(admin_browser.url)
+    http://translations.launchpad.test/evolution/+imports
 
 Similarly, if we go to an import queue entry through the user's import
 queue, after approving the entry we are back looking at user's import queue.
 
     >>> admin_browser.open(
-    ...     'http://translations.launchpad.dev/~name16/+imports')
+    ...     'http://translations.launchpad.test/~name16/+imports')
     >>> admin_browser.getLink(url='imports/1').click()
-    >>> print admin_browser.getLink('Cancel').url
-    http://translations.launchpad.dev/~name16/+imports
+    >>> print(admin_browser.getLink('Cancel').url)
+    http://translations.launchpad.test/~name16/+imports
     >>> admin_browser.getControl('Approve').click()
-    >>> print admin_browser.url
-    http://translations.launchpad.dev/~name16/+imports
+    >>> print(admin_browser.url)
+    http://translations.launchpad.test/~name16/+imports

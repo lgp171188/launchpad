@@ -34,8 +34,8 @@ Both of the branches we made appear in the listing.
 
     >>> def print_branches(browser):
     ...    table = find_tag_by_id(browser.contents, 'branchtable')
-    ...    for row in table.tbody.fetch('tr'):
-    ...        print extract_text(row)
+    ...    for row in table.tbody.findAll('tr'):
+    ...        print(extract_text(row))
     >>> print_branches(browser)
     lp://dev/~owner1/distro/series/foo/branch1 ...
     lp://dev/~owner2/distro/series/foo/branch2 ...
@@ -60,7 +60,7 @@ distribution.
     ...     distribution=distro, sourcepackagename=branch1.sourcepackagename)
     >>> transaction.commit()
     >>> distro_source_package_listing = canonical_url(
-    ...     distro_source_package, view_name="+branches", rootsite='code')
+    ...     distro_source_package, view_name="+all-branches", rootsite='code')
     >>> logout()
 
     >>> browser.open(distro_source_package_listing)

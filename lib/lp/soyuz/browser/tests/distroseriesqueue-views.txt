@@ -27,7 +27,7 @@ View parameters need to be set properly before start:
 After setup we have a 'batched' list:
 
   >>> from lp.services.webapp.interfaces import IBatchNavigator
-  >>> from lp.services.webapp.testing import verifyObject
+  >>> from lp.testing import verifyObject
   >>> verifyObject(IBatchNavigator, queue_view.batchnav)
   True
 
@@ -154,7 +154,7 @@ message is presented.
   ...     (breezy_autotest, request), name="+queue")
   >>> queue_view.setupQueueList()
   >>> queue_view.performQueueAction()
-  >>> print queue_view.error
+  >>> print(queue_view.error)
   You do not have permission to act on queue items.
 
   >>> getUtility(IPackageUploadSet).get(1).status.name
@@ -184,6 +184,7 @@ Rejection an item from NEW queue:
 
   >>> request = LaunchpadTestRequest(
   ...     form={'queue_state': PackageUploadStatus.NEW.value,
+  ...           'rejection_comment': 'Foo',
   ...           'Reject': 'Reject',
   ...           'QUEUE_ID': '2'})
   >>> request.method = 'POST'
@@ -196,7 +197,7 @@ message is presented.
   ...     (breezy_autotest, request), name="+queue")
   >>> queue_view.setupQueueList()
   >>> queue_view.performQueueAction()
-  >>> print queue_view.error
+  >>> print(queue_view.error)
   You do not have permission to act on queue items.
 
   >>> target.status.name
@@ -259,6 +260,7 @@ Now that "foo" is published in Hoary, we can upload a new build.
     >>> from lp.soyuz.interfaces.component import IComponentSet
     >>> from lp.soyuz.model.component import ComponentSelection
     >>> from lp.testing.gpgkeys import import_public_test_keys
+    >>> from lp.testing.pages import permissive_security_policy
     >>> import_public_test_keys()
     >>> universe = getUtility(IComponentSet)['universe']
     >>> trash = ComponentSelection(distroseries=hoary, component=universe)
@@ -270,7 +272,8 @@ Now that "foo" is published in Hoary, we can upload a new build.
     ...    datadir('suite/foo_1.0-2_multi_binary/foo_1.0-2_i386.changes'),
     ...    sync_policy, DevNullLogger())
     >>> foo_upload.process()
-    >>> foo_upload.do_accept()
+    >>> with permissive_security_policy("uploader"):
+    ...     foo_upload.do_accept()
     True
 
 Now we can examine the view, which provides an is_new method:
@@ -287,7 +290,7 @@ is_new() method requires to work.
 
     >>> binary_packages = foo_upload.queue_root.builds[0].build.binarypackages
     >>> for binarypackage in binary_packages:
-    ...     print binarypackage.name, queue_view.is_new(binarypackage)
+    ...     print(binarypackage.name, queue_view.is_new(binarypackage))
     foo False
     foo-dev True
 

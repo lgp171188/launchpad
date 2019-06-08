@@ -17,7 +17,7 @@ how that code works.
 == show_tracebacks ==
 
 The show_tracebacks variable controls whether the client is shown
-tracebacks of errors. The show_tracebacks behavior itself is tested in
+tracebacks of errors. The show_tracebacks behaviour itself is tested in
 lazr.restful's "webservice-error" test. This test only shows how
 changes within Launchpad affect the value of show_tracebacks. The
 Launchpad web service shows or hides information about exceptions
@@ -27,10 +27,10 @@ developer.
     >>> from lp.services.config import config
     >>> from textwrap import dedent
 
-    >>> from zope.interface import implements
+    >>> from zope.interface import implementer
     >>> from lp.services.webapp.interfaces import ILaunchBag
-    >>> class FakeLaunchBag:
-    ...     implements(ILaunchBag)
+    >>> @implementer(ILaunchBag)
+    ... class FakeLaunchBag:
     ...     developer = False
     >>> the_launchbag = FakeLaunchBag()
     >>> provideUtility(the_launchbag, ILaunchBag)

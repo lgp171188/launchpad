@@ -1,4 +1,4 @@
-# Copyright 2009 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """The way the branch scanner handles merges."""
@@ -12,11 +12,11 @@ __all__ = [
 from bzrlib.revision import NULL_REVISION
 from zope.component import getUtility
 
+from lp.code.adapters.branch import BranchMergeProposalNoPreviewDiffDelta
 from lp.code.enums import BranchLifecycleStatus
 from lp.code.interfaces.branchcollection import IAllBranches
 from lp.code.interfaces.branchmergeproposal import (
     BRANCH_MERGE_PROPOSAL_FINAL_STATES,
-    notify_modified,
     )
 from lp.services.utils import CachingIterator
 
@@ -26,7 +26,7 @@ def is_series_branch(branch):
     # XXX: JonathanLange 2009-05-07 spec=package-branches: This assumes that
     # we only care about whether a branch is a product series. What about poor
     # old distroseries?
-    return branch.associatedProductSeries().count() > 0
+    return bool(branch.associatedProductSeries())
 
 
 def is_development_focus(branch):
@@ -62,7 +62,8 @@ def merge_detected(logger, source, target, proposal=None, merge_revno=None):
         if is_development_focus(target):
             mark_branch_merged(logger, source)
     else:
-        notify_modified(proposal, proposal.markAsMerged, merge_revno)
+        with BranchMergeProposalNoPreviewDiffDelta.monitor(proposal):
+            proposal.markAsMerged(merge_revno)
         # If there is an explicit merge proposal, change the branch's
         # status when it's been merged into a development focus or any
         # other series branch.
@@ -92,6 +93,7 @@ def auto_merge_branches(scan_completed):
     #
     # XXX: JonathanLange 2009-05-11 spec=package-branches: This assumes that
     # merge detection only works with product branches.
+    logger.info("Looking for merged branches.")
     branches = getUtility(IAllBranches).inProduct(db_branch.product)
     branches = branches.withLifecycleStatus(
         BranchLifecycleStatus.DEVELOPMENT,
@@ -151,12 +153,16 @@ def auto_merge_proposals(scan_completed):
     # which introduced the change, that will either be set through the web
     # ui by a person, or by PQM once it is integrated.
 
+    logger.info("Looking for merged proposals.")
     if scan_completed.bzr_branch is None:
         # Only happens in tests.
         merge_sorted = []
     else:
+        # This is potentially slow for deep histories; we defer even
+        # initialising it until we need it, and we cache the iterator's
+        # results.
         merge_sorted = CachingIterator(
-            scan_completed.bzr_branch.iter_merge_sorted_revisions())
+            scan_completed.bzr_branch.iter_merge_sorted_revisions)
     for proposal in db_branch.landing_candidates:
         tip_rev_id = proposal.source_branch.last_scanned_id
         if tip_rev_id in new_ancestry:

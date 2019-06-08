@@ -3,17 +3,14 @@
 Our sample consumer (whose key is 'foobar123451432') asks Launchpad for
 a request token which may later be exchanged for an access token.
 
-    >>> import time
     >>> from urllib import urlencode
     >>> data = dict(
     ...     oauth_consumer_key='foobar123451432',
     ...     oauth_version='1.0',
     ...     oauth_signature_method='PLAINTEXT',
-    ...     oauth_signature='&',
-    ...     oauth_timestamp=time.time(),
-    ...     oauth_nonce='4572616e48616d6d65724c61686176')
+    ...     oauth_signature='&')
     >>> anon_browser.open(
-    ...     'http://launchpad.dev/+request-token', data=urlencode(data))
+    ...     'http://launchpad.test/+request-token', data=urlencode(data))
 
     >>> print anon_browser.contents
     oauth_token=...&oauth_token_secret=...
@@ -28,7 +25,7 @@ levels.
     >>> json_browser = setupBrowser()
     >>> json_browser.addHeader('Accept', 'application/json')
     >>> json_browser.open(
-    ...     'http://launchpad.dev/+request-token', data=urlencode(data))
+    ...     'http://launchpad.test/+request-token', data=urlencode(data))
     >>> token = simplejson.loads(json_browser.contents)
     >>> sorted(token.keys())
     ['access_levels', 'oauth_token', 'oauth_token_consumer',
@@ -49,20 +46,20 @@ so that the application can proceed.
     >>> from lp.testing import login, logout
     >>> from lp.services.oauth.interfaces import IOAuthConsumerSet
     >>> login('salgado@ubuntu.com')
-    >>> print getUtility(IOAuthConsumerSet).getByKey('joe-feed-reader')
+    >>> print getUtility(IOAuthConsumerSet).getByKey(u'joe-feed-reader')
     None
 
     >>> logout()
     >>> data2 = data.copy()
     >>> data2['oauth_consumer_key'] = 'joe-feed-reader'
     >>> anon_browser.open(
-    ...     'http://launchpad.dev/+request-token', data=urlencode(data2))
+    ...     'http://launchpad.test/+request-token', data=urlencode(data2))
 
     >>> print anon_browser.contents
     oauth_token=...&oauth_token_secret=...
 
     >>> login('salgado@ubuntu.com')
-    >>> getUtility(IOAuthConsumerSet).getByKey('joe-feed-reader')
+    >>> getUtility(IOAuthConsumerSet).getByKey(u'joe-feed-reader')
     <...OAuthConsumer...
     >>> logout()
 
@@ -72,7 +69,7 @@ If the consumer key is empty, we respond with a 401 status.
     >>> data2['oauth_consumer_key'] = ''
     >>> print http(r"""
     ... GET /+request-token?%s HTTP/1.1
-    ... Host: launchpad.dev
+    ... Host: launchpad.test
     ... """ % urlencode(data2))
     HTTP/1.1 401 Unauthorized
     ...
@@ -90,7 +87,7 @@ an '&', since there's no token yet and the consumer secret is empty.
     >>> data2['oauth_signature'] = '&somesecret'
     >>> print http(r"""
     ... GET /+request-token?%s HTTP/1.1
-    ... Host: launchpad.dev
+    ... Host: launchpad.test
     ... """ % urlencode(data2))
     HTTP/1.1 401 Unauthorized
     ...
@@ -102,7 +99,7 @@ get a 400 response.
     >>> data2['oauth_signature_method'] = 'HMAC-SHA1'
     >>> print http(r"""
     ... GET /+request-token?%s HTTP/1.1
-    ... Host: launchpad.dev
+    ... Host: launchpad.test
     ... """ % urlencode(data2))
     HTTP/1.1 400 Bad Request
     ...

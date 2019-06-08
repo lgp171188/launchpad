@@ -1,8 +1,6 @@
 # Copyright 2009 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-# pylint: disable-msg=E0611,W0212
-
 """Classes to represent a binary package in a distroarchseries."""
 
 __metaclass__ = type
@@ -12,10 +10,10 @@ __all__ = [
     ]
 
 from storm.locals import Desc
-from zope.interface import implements
+from zope.interface import implementer
 
 from lp.app.errors import NotFoundError
-from lp.services.database.lpstorm import IStore
+from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import sqlvalues
 from lp.services.propertycache import cachedproperty
 from lp.soyuz.enums import PackagePublishingStatus
@@ -29,6 +27,7 @@ from lp.soyuz.model.distroarchseriesbinarypackagerelease import (
 from lp.soyuz.model.publishing import BinaryPackagePublishingHistory
 
 
+@implementer(IDistroArchSeriesBinaryPackage)
 class DistroArchSeriesBinaryPackage:
     """A Binary Package in the context of a Distro Arch Series.
 
@@ -36,8 +35,6 @@ class DistroArchSeriesBinaryPackage:
     database. Instead, they are synthesized based on information from
     the publishing and binarypackagerelease tables.
     """
-
-    implements(IDistroArchSeriesBinaryPackage)
 
     def __init__(self, distroarchseries, binarypackagename):
         self.distroarchseries = distroarchseries
@@ -69,7 +66,7 @@ class DistroArchSeriesBinaryPackage:
     @property
     def title(self):
         """See IDistroArchSeriesBinaryPackage."""
-        return '"%s" binary package in %s' % (
+        return '%s binary package in %s' % (
             self.binarypackagename.name, self.distroarchseries.displayname)
 
     @cachedproperty

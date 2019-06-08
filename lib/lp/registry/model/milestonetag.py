@@ -7,30 +7,30 @@ __metaclass__ = type
 __all__ = [
     'MilestoneTag',
     'ProjectGroupMilestoneTag',
+    'validate_tags',
     ]
 
 
-from storm.locals import (
+from storm.expr import (
+    And,
+    Exists,
+    Select,
+    )
+from storm.properties import (
     DateTime,
     Int,
-    Reference,
     Unicode,
     )
-from zope.component import getUtility
-from zope.interface import implements
+from storm.references import Reference
+from zope.interface import implementer
 
-from lp.blueprints.model.specification import Specification
+from lp.app.validators.name import valid_name
 from lp.registry.interfaces.milestonetag import IProjectGroupMilestoneTag
 from lp.registry.model.milestone import (
     Milestone,
     MilestoneData,
     )
 from lp.registry.model.product import Product
-from lp.services.webapp.interfaces import (
-    DEFAULT_FLAVOR,
-    IStoreSelector,
-    MAIN_STORE,
-    )
 
 
 class MilestoneTag(object):
@@ -54,9 +54,8 @@ class MilestoneTag(object):
             self.date_created = date_created
 
 
+@implementer(IProjectGroupMilestoneTag)
 class ProjectGroupMilestoneTag(MilestoneData):
-
-    implements(IProjectGroupMilestoneTag)
 
     def __init__(self, target, tags):
         self.target = target
@@ -79,21 +78,26 @@ class ProjectGroupMilestoneTag(MilestoneData):
         """See IMilestoneData."""
         return self.displayname
 
-    @property
-    def specifications(self):
-        """See IMilestoneData."""
-        store = getUtility(IStoreSelector).get(MAIN_STORE, DEFAULT_FLAVOR)
-        results = []
-        for tag in self.tags:
-            result = store.find(
-                Specification,
-                Specification.milestone == Milestone.id,
-                Milestone.product == Product.id,
-                Product.project == self.target,
-                MilestoneTag.milestone_id == Milestone.id,
-                MilestoneTag.tag == tag)
-            results.append(result)
-        result = results.pop()
-        for i in results:
-            result = result.intersection(i)
-        return result
+    def _milestone_ids_expr(self, user):
+        tag_constraints = And(*[
+            Exists(
+                Select(
+                    1, tables=[MilestoneTag],
+                    where=And(
+                        MilestoneTag.milestone_id == Milestone.id,
+                        MilestoneTag.tag == tag)))
+            for tag in self.tags])
+        return Select(
+            Milestone.id,
+            tables=[Milestone, Product],
+            where=And(
+                Milestone.productID == Product.id,
+                Product.projectgroup == self.target,
+                tag_constraints))
+
+
+def validate_tags(tags):
+    """Check that `separator` separated `tags` are valid tag names."""
+    return (
+        all(valid_name(tag) for tag in tags) and
+        len(set(tags)) == len(tags))

@@ -1,4 +1,4 @@
-# Copyright 2009-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -11,6 +11,7 @@ __all__ = [
     ]
 
 import atexit
+from contextlib import contextmanager
 import httplib
 import os
 import shutil
@@ -20,21 +21,22 @@ import subprocess
 import sys
 import tempfile
 import urllib
-import urllib2
 
 import gpgme
 from lazr.restful.utils import get_current_browser_request
-from zope.interface import implements
+import requests
+from zope.interface import implementer
+from zope.security.proxy import removeSecurityProxy
 
 from lp.app.validators.email import valid_email
-from lp.registry.interfaces.gpg import (
-    GPGKeyAlgorithm,
-    valid_fingerprint,
-    )
 from lp.services.config import config
 from lp.services.gpg.interfaces import (
+    get_gpg_path,
+    get_gpgme_context,
+    GPGKeyAlgorithm,
     GPGKeyDoesNotExistOnServer,
     GPGKeyExpired,
+    GPGKeyMismatchOnServer,
     GPGKeyNotFoundError,
     GPGKeyRevoked,
     GPGKeyTemporarilyNotFoundError,
@@ -46,6 +48,7 @@ from lp.services.gpg.interfaces import (
     IPymeUserId,
     MoreThanOneGPGKeyFound,
     SecretGPGKeyImportDetected,
+    valid_fingerprint,
     )
 from lp.services.timeline.requesttimeline import get_request_timeline
 from lp.services.timeout import (
@@ -59,17 +62,27 @@ signing_only_param = """
 <GnupgKeyParms format="internal">
   Key-Type: RSA
   Key-Usage: sign
-  Key-Length: 1024
+  Key-Length: 4096
   Name-Real: %(name)s
   Expire-Date: 0
 </GnupgKeyParms>
 """
 
 
+@contextmanager
+def gpgme_timeline(name, detail):
+    request = get_current_browser_request()
+    timeline = get_request_timeline(request)
+    action = timeline.start("gpgme-%s" % name, detail, allow_nested=True)
+    try:
+        yield
+    finally:
+        action.finish()
+
+
+@implementer(IGPGHandler)
 class GPGHandler:
     """See IGPGHandler."""
-
-    implements(IGPGHandler)
 
     def __init__(self):
         """Initialize environment variable."""
@@ -88,15 +101,13 @@ class GPGHandler:
         """
         self.home = tempfile.mkdtemp(prefix='gpg-')
         confpath = os.path.join(self.home, 'gpg.conf')
-        conf = open(confpath, 'w')
-        # set needed GPG options, 'auto-key-retrieve' is necessary for
-        # automatically retrieve from the keyserver unknown key when
-        # verifying signatures and 'no-auto-check-trustdb' avoid wasting
-        # time verifying the local keyring consistence.
-        conf.write('keyserver hkp://%s\n'
-                   'keyserver-options auto-key-retrieve\n'
-                   'no-auto-check-trustdb\n' % config.gpghandler.host)
-        conf.close()
+        with open(confpath, 'w') as conf:
+            # Avoid wasting time verifying the local keyring's consistency.
+            conf.write('no-auto-check-trustdb\n')
+            # Prefer a SHA-2 hash where possible, otherwise GPG will fall
+            # back to a hash it can use.
+            conf.write(
+                'personal-digest-preferences SHA512 SHA384 SHA256 SHA224\n')
         # create a local atexit handler to remove the configuration directory
         # on normal termination.
 
@@ -109,15 +120,7 @@ class GPGHandler:
 
     def sanitizeFingerprint(self, fingerprint):
         """See IGPGHandler."""
-        # remove whitespaces, truncate to max of 40 (as per v4 keys) and
-        # convert to upper case
-        fingerprint = fingerprint.replace(' ', '')
-        fingerprint = fingerprint[:40].upper()
-
-        if not valid_fingerprint(fingerprint):
-            return None
-
-        return fingerprint
+        return sanitize_fingerprint(fingerprint)
 
     def resetLocalState(self):
         """See IGPGHandler."""
@@ -131,8 +134,8 @@ class GPGHandler:
         """See IGPGHandler."""
         try:
             return self.getVerifiedSignature(content, signature)
-        except GPGVerificationError:
-            # Swallow GPG Verification Errors
+        except (GPGVerificationError, GPGKeyExpired):
+            # Swallow GPG verification errors
             pass
         return None
 
@@ -143,7 +146,7 @@ class GPGHandler:
         for i in range(3):
             try:
                 signature = self.getVerifiedSignature(content, signature)
-            except GPGVerificationError as info:
+            except GPGKeyNotFoundError as info:
                 errors.append(info)
             else:
                 return signature
@@ -153,14 +156,13 @@ class GPGHandler:
         raise GPGVerificationError(
             "Verification failed 3 times: %s " % stored_errors)
 
-    def getVerifiedSignature(self, content, signature=None):
-        """See IGPGHandler."""
+    def _rawVerifySignature(self, ctx, content, signature=None):
+        """Internals of `getVerifiedSignature`.
 
-        assert not isinstance(content, unicode)
-        assert not isinstance(signature, unicode)
-
-        ctx = gpgme.Context()
-
+        This is called twice during a typical verification: once to work out
+        the correct fingerprint, and once after retrieving the corresponding
+        key from the keyserver.
+        """
         # from `info gpgme` about gpgme_op_verify(SIG, SIGNED_TEXT, PLAIN):
         #
         # If SIG is a detached signature, then the signed text should be
@@ -176,16 +178,19 @@ class GPGHandler:
             # store the content
             plain = StringIO(content)
             args = (sig, plain, None)
+            timeline_detail = "detached signature"
         else:
             # store clearsigned signature
             sig = StringIO(content)
             # writeable content
             plain = StringIO()
             args = (sig, None, plain)
+            timeline_detail = "clear signature"
 
         # process it
         try:
-            signatures = ctx.verify(*args)
+            with gpgme_timeline("verify", timeline_detail):
+                signatures = ctx.verify(*args)
         except gpgme.GpgmeError as e:
             error = GPGVerificationError(e.strerror)
             for attr in ("args", "code", "signatures", "source"):
@@ -211,33 +216,62 @@ class GPGHandler:
             raise GPGVerificationError('Single signature expected, '
                                        'found multiple signatures')
 
-        signature = signatures[0]
-        # signature.status == 0 means "Ok"
-        if signature.status is not None:
-            raise GPGVerificationError(signature.status.args)
+        return plain, signatures[0]
 
-        # supporting subkeys by retriving the full key from the
-        # keyserver and use the master key fingerprint.
-        try:
-            key = self.retrieveKey(signature.fpr)
-        except GPGKeyNotFoundError:
-            raise GPGVerificationError(
-                "Unable to map subkey: %s" % signature.fpr)
+    def getVerifiedSignature(self, content, signature=None):
+        """See IGPGHandler."""
+
+        assert not isinstance(content, unicode)
+        assert not isinstance(signature, unicode)
+
+        ctx = get_gpgme_context()
+
+        # We may not yet have the public key, so find out the fingerprint we
+        # need to fetch.
+        _, sig = self._rawVerifySignature(ctx, content, signature=signature)
+
+        # Fetch the full key from the keyserver now that we know its
+        # fingerprint, and then verify the signature again.  (This also lets
+        # us support subkeys by using the master key fingerprint.)
+        # XXX cjwatson 2019-03-12: Before GnuPG 2.2.7 and GPGME 1.11.0,
+        # sig.fpr is a 64-bit key ID in the case where the key isn't in the
+        # local keyring yet.  I haven't yet heard of 64-bit key ID
+        # collisions in the wild, but even if they happen here,
+        # importPublicKey will raise MoreThanOneGPGKeyFound, so the worst
+        # consequence is a denial of service for the owner of an affected
+        # key.  If we do run into this, then the correct fix is to upgrade
+        # GnuPG and GPGME.
+        key = self.retrieveKey(sig.fpr)
+        plain, sig = self._rawVerifySignature(
+            ctx, content, signature=signature)
+
+        expired = False
+        # sig.status == 0 means "Ok"
+        if sig.status is not None:
+            if sig.status.code == gpgme.ERR_KEY_EXPIRED:
+                expired = True
+            else:
+                raise GPGVerificationError(sig.status.args)
+
+        if expired:
+            # This should already be set, but let's make sure.
+            key.expired = True
+            raise GPGKeyExpired(key)
 
         # return the signature container
         return PymeSignature(
             fingerprint=key.fingerprint,
             plain_data=plain.getvalue(),
-            timestamp=signature.timestamp)
+            timestamp=sig.timestamp)
 
     def importPublicKey(self, content):
         """See IGPGHandler."""
         assert isinstance(content, str)
-        context = gpgme.Context()
-        context.armor = True
+        context = get_gpgme_context()
 
         newkey = StringIO(content)
-        result = context.import_(newkey)
+        with gpgme_timeline("import", "new public key"):
+            result = context.import_(newkey)
 
         if len(result.imports) == 0:
             raise GPGKeyNotFoundError(content)
@@ -268,10 +302,10 @@ class GPGHandler:
         if 'GPG_AGENT_INFO' in os.environ:
             del os.environ['GPG_AGENT_INFO']
 
-        context = gpgme.Context()
-        context.armor = True
+        context = get_gpgme_context()
         newkey = StringIO(content)
-        import_result = context.import_(newkey)
+        with gpgme_timeline("import", "new secret key"):
+            import_result = context.import_(newkey)
 
         secret_imports = [
             fingerprint
@@ -294,7 +328,7 @@ class GPGHandler:
 
     def generateKey(self, name):
         """See `IGPGHandler`."""
-        context = gpgme.Context()
+        context = get_gpgme_context()
 
         # Make sure that gpg-agent doesn't interfere.
         if 'GPG_AGENT_INFO' in os.environ:
@@ -303,8 +337,9 @@ class GPGHandler:
         # Only 'utf-8' encoding is supported by gpgme.
         # See more information at:
         # http://pyme.sourceforge.net/doc/gpgme/Generating-Keys.html
-        result = context.genkey(
-            signing_only_param % {'name': name.encode('utf-8')})
+        with gpgme_timeline("genkey", name):
+            result = context.genkey(
+                signing_only_param % {'name': name.encode('utf-8')})
 
         # Right, it might seem paranoid to have this many assertions,
         # but we have to take key generation very seriously.
@@ -326,35 +361,33 @@ class GPGHandler:
 
         return key
 
-    def encryptContent(self, content, fingerprint):
+    def encryptContent(self, content, key):
         """See IGPGHandler."""
         if isinstance(content, unicode):
             raise TypeError('Content cannot be Unicode.')
 
-        # setup context
-        ctx = gpgme.Context()
-        ctx.armor = True
+        ctx = get_gpgme_context()
 
         # setup containers
         plain = StringIO(content)
         cipher = StringIO()
 
-        # retrive gpgme key object
-        try:
-            key = ctx.get_key(fingerprint.encode('ascii'), 0)
-        except gpgme.GpgmeError:
+        if key.key is None:
             return None
 
         if not key.can_encrypt:
             raise ValueError('key %s can not be used for encryption'
-                             % fingerprint)
+                             % key.fingerprint)
 
         # encrypt content
-        ctx.encrypt([key], gpgme.ENCRYPT_ALWAYS_TRUST, plain, cipher)
+        with gpgme_timeline("encrypt", key.fingerprint):
+            ctx.encrypt(
+                [removeSecurityProxy(key.key)], gpgme.ENCRYPT_ALWAYS_TRUST,
+                plain, cipher)
 
         return cipher.getvalue()
 
-    def signContent(self, content, key_fingerprint, password='', mode=None):
+    def signContent(self, content, key, password='', mode=None):
         """See IGPGHandler."""
         if not isinstance(content, str):
             raise TypeError('Content should be a string.')
@@ -364,11 +397,8 @@ class GPGHandler:
 
         # Find the key and make it the only one allowed to sign content
         # during this session.
-        context = gpgme.Context()
-        context.armor = True
-
-        key = context.get_key(key_fingerprint.encode('ascii'), True)
-        context.signers = [key]
+        context = get_gpgme_context()
+        context.signers = [removeSecurityProxy(key.key)]
 
         # Set up containers.
         plaintext = StringIO(content)
@@ -384,7 +414,8 @@ class GPGHandler:
 
         # Sign the text.
         try:
-            context.sign(plaintext, signature, mode)
+            with gpgme_timeline("sign", key.fingerprint):
+                context.sign(plaintext, signature, mode)
         except gpgme.GpgmeError:
             return None
 
@@ -394,7 +425,7 @@ class GPGHandler:
         """Get an iterator of the keys this gpg handler
         already knows about.
         """
-        ctx = gpgme.Context()
+        ctx = get_gpgme_context()
 
         # XXX michaeln 2010-05-07 bug=576405
         # Currently gpgme.Context().keylist fails if passed a unicode
@@ -402,8 +433,10 @@ class GPGHandler:
         if type(filter) == unicode:
             filter = filter.encode('utf-8')
 
-        for key in ctx.keylist(filter, secret):
-            yield PymeKey.newFromGpgmeKey(key)
+        with gpgme_timeline(
+                "keylist", "filter: %r, secret: %r" % (filter, secret)):
+            for key in ctx.keylist(filter, secret):
+                yield PymeKey.newFromGpgmeKey(key)
 
     def retrieveKey(self, fingerprint):
         """See IGPGHandler."""
@@ -417,6 +450,11 @@ class GPGHandler:
         if not key.exists_in_local_keyring:
             pubkey = self._getPubKey(fingerprint)
             key = self.importPublicKey(pubkey)
+            if not key.matches(fingerprint):
+                ctx = get_gpgme_context()
+                with gpgme_timeline("delete", key.fingerprint):
+                    ctx.delete(key.key)
+                raise GPGKeyMismatchOnServer(fingerprint, key.fingerprint)
         return key
 
     def retrieveActiveKey(self, fingerprint):
@@ -456,30 +494,43 @@ class GPGHandler:
 
         conn.close()
 
-    def uploadPublicKey(self, fingerprint):
+    def uploadPublicKey(self, fingerprint, logger=None):
         """See IGPGHandler"""
+        if not config.gpghandler.upload_keys:
+            if logger is not None:
+                logger.info(
+                    "Not submitting key to keyserver "
+                    "(disabled in configuration).")
+            return
+
         pub_key = self.retrieveKey(fingerprint)
         self._submitKey(pub_key.export())
 
     def getURLForKeyInServer(self, fingerprint, action='index', public=False):
         """See IGPGHandler"""
         params = {
-            'search': '0x%s' % fingerprint,
             'op': action,
+            'search': '0x%s' % fingerprint,
+            'fingerprint': 'on',
             }
         if public:
             host = config.gpghandler.public_host
         else:
             host = config.gpghandler.host
-        return 'http://%s:%s/pks/lookup?%s' % (host, config.gpghandler.port,
-                                               urllib.urlencode(params))
+        if public and config.gpghandler.public_https:
+            base = 'https://%s' % host
+        else:
+            base = 'http://%s:%s' % (host, config.gpghandler.port)
+        return '%s/pks/lookup?%s' % (
+            base, urllib.urlencode(sorted(params.items())))
 
     def _getPubKey(self, fingerprint):
         """See IGPGHandler for further information."""
         request = get_current_browser_request()
         timeline = get_request_timeline(request)
         action = timeline.start(
-            'retrieving GPG key', 'Fingerprint: %s' % fingerprint)
+            'retrieving GPG key', 'Fingerprint: %s' % fingerprint,
+            allow_nested=True)
         try:
             return self._grabPage('get', fingerprint)
         # We record an OOPS for most errors: If the keyserver does not
@@ -488,19 +539,21 @@ class GPGHandler:
         # minutes." The details of the error do not matter for users
         # (and for the code in callsites), but we should be able to see
         # if this problem occurs too often.
-        except urllib2.HTTPError as exc:
-            # The key server behaves a bit odd when queried for non
-            # existent keys: Instead of responding with a 404, it
-            # returns a 500 error. But we can extract the fact that
-            # the key is unknown by looking into the response's content.
-            if exc.code == 500 and exc.fp is not None:
-                content = exc.fp.read()
-                no_key_message = 'Error handling request: No keys found'
-                if content.find(no_key_message) >= 0:
+        except requests.HTTPError as exc:
+            # Old versions of SKS return a 500 error when queried for a
+            # non-existent key. Production was upgraded in 2013/01, but
+            # let's leave this here for a while.
+            #
+            # We can extract the fact that the key is unknown by looking
+            # into the response's content.
+            if exc.response.status_code in (404, 500):
+                no_key_message = 'No results found: No keys found'
+                if exc.response.content.find(no_key_message) >= 0:
                     raise GPGKeyDoesNotExistOnServer(fingerprint)
                 errorlog.globalErrorUtility.raising(sys.exc_info(), request)
                 raise GPGKeyTemporarilyNotFoundError(fingerprint)
-        except (TimeoutError, urllib2.URLError) as exc:
+            raise
+        except (TimeoutError, requests.RequestException) as exc:
             errorlog.globalErrorUtility.raising(sys.exc_info(), request)
             raise GPGKeyTemporarilyNotFoundError(fingerprint)
         finally:
@@ -509,12 +562,12 @@ class GPGHandler:
     def _grabPage(self, action, fingerprint):
         """Wrapper to collect KeyServer Pages."""
         url = self.getURLForKeyInServer(fingerprint, action)
-        return urlfetch(url)
+        return urlfetch(url).content
 
 
+@implementer(IPymeSignature)
 class PymeSignature(object):
     """See IPymeSignature."""
-    implements(IPymeSignature)
 
     def __init__(self, fingerprint=None, plain_data=None, timestamp=None):
         """Initialized a signature container."""
@@ -523,9 +576,9 @@ class PymeSignature(object):
         self.timestamp = timestamp
 
 
+@implementer(IPymeKey)
 class PymeKey:
     """See IPymeKey."""
-    implements(IPymeKey)
 
     fingerprint = None
     exists_in_local_keyring = False
@@ -544,10 +597,11 @@ class PymeKey:
 
     def _buildFromFingerprint(self, fingerprint):
         """Build key information from a fingerprint."""
-        context = gpgme.Context()
+        context = get_gpgme_context()
         # retrive additional key information
         try:
-            key = context.get_key(fingerprint, False)
+            with gpgme_timeline("get-key", fingerprint):
+                key = context.get_key(fingerprint, False)
         except gpgme.GpgmeError:
             key = None
 
@@ -556,12 +610,13 @@ class PymeKey:
 
     def _buildFromGpgmeKey(self, key):
         self.exists_in_local_keyring = True
+        self.key = key
         subkey = key.subkeys[0]
         self.fingerprint = subkey.fpr
         self.revoked = subkey.revoked
         self.keysize = subkey.length
 
-        self.algorithm = GPGKeyAlgorithm.items[subkey.pubkey_algo].title
+        self.algorithm = GPGKeyAlgorithm.items[subkey.pubkey_algo]
         self.keyid = self.fingerprint[-8:]
         self.expired = key.expired
         self.secret = key.secret
@@ -579,29 +634,43 @@ class PymeKey:
 
     @property
     def displayname(self):
-        return '%s%s/%s' % (self.keysize, self.algorithm, self.keyid)
+        return '%s%s/%s' % (
+            self.keysize, self.algorithm.title, self.fingerprint)
 
     def export(self):
-        """See `PymeKey`."""
+        """See `IPymeKey`."""
         if self.secret:
             # XXX cprov 20081014: gpgme_op_export() only supports public keys.
             # See http://www.fifi.org/cgi-bin/info2www?(gpgme)Exporting+Keys
             p = subprocess.Popen(
-                ['gpg', '--export-secret-keys', '-a', self.fingerprint],
+                [get_gpg_path(), '--export-secret-keys', '-a',
+                 self.fingerprint],
                 stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
             return p.stdout.read()
 
-        context = gpgme.Context()
-        context.armor = True
+        context = get_gpgme_context()
         keydata = StringIO()
-        context.export(self.fingerprint.encode('ascii'), keydata)
+        with gpgme_timeline("export", self.fingerprint):
+            context.export(self.fingerprint.encode('ascii'), keydata)
 
         return keydata.getvalue()
 
+    def matches(self, fingerprint):
+        """See `IPymeKey`."""
+        for subkey in self.key.subkeys:
+            if fingerprint == subkey.fpr:
+                return True
+            # XXX cjwatson 2019-03-13: Remove affordance for 64-bit key IDs
+            # once we're on GnuPG 2.2.7 and GPGME 1.11.0.  See comment in
+            # getVerifiedSignature.
+            if len(fingerprint) == 16 and subkey.fpr.endswith(fingerprint):
+                return True
+        return False
 
+
+@implementer(IPymeUserId)
 class PymeUserId:
     """See IPymeUserId"""
-    implements(IPymeUserId)
 
     def __init__(self, uid):
         self.revoked = uid.revoked
@@ -611,3 +680,19 @@ class PymeUserId:
         self.name = uid.name
         self.email = uid.email
         self.comment = uid.comment
+
+
+def sanitize_fingerprint(fingerprint):
+    """Sanitize a GPG fingerprint.
+
+    This is the ultimate implementation of IGPGHandler.sanitizeFingerprint.
+    """
+    # remove whitespaces, truncate to max of 40 (as per v4 keys) and
+    # convert to upper case
+    fingerprint = fingerprint.replace(' ', '')
+    fingerprint = fingerprint[:40].upper()
+
+    if not valid_fingerprint(fingerprint):
+        return None
+
+    return fingerprint

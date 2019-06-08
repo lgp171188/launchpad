@@ -1,4 +1,4 @@
-# Copyright 2009-2010 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -22,22 +22,35 @@ from sqlobject import (
 from storm.expr import And
 from storm.locals import SQL
 from storm.store import Store
-from zope.interface import implements
+from zope.component import getUtility
+from zope.interface import implementer
+from zope.security.proxy import removeSecurityProxy
 
-from lp.registry.interfaces.person import validate_public_person
+from lp.registry.interfaces.person import (
+    IPersonSet,
+    validate_public_person,
+    )
+from lp.services.database.bulk import (
+    load,
+    load_related,
+    )
 from lp.services.database.constants import (
     DEFAULT,
     UTC_NOW,
     )
 from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.enumcol import EnumCol
-from lp.services.database.lpstorm import IStore
+from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import (
     quote,
     SQLBase,
     sqlvalues,
     )
-from lp.services.propertycache import cachedproperty
+from lp.services.propertycache import (
+    cachedproperty,
+    get_property_cache,
+    )
+from lp.translations.interfaces.potemplate import IPOTemplateSet
 from lp.translations.interfaces.side import TranslationSide
 from lp.translations.interfaces.translationmessage import (
     ITranslationMessage,
@@ -46,6 +59,7 @@ from lp.translations.interfaces.translationmessage import (
     TranslationValidationStatus,
     )
 from lp.translations.interfaces.translations import TranslationConstants
+from lp.translations.model.potranslation import POTranslation
 
 
 UTC = pytz.timezone('UTC')
@@ -59,7 +73,7 @@ def make_plurals_fragment(fragment, separator):
     """
     return separator.join([
         fragment % {'form': form}
-        for form in xrange(TranslationConstants.MAX_PLURAL_FORMS)])
+        for form in range(TranslationConstants.MAX_PLURAL_FORMS)])
 
 
 def make_plurals_sql_fragment(fragment, separator="AND"):
@@ -110,11 +124,15 @@ class TranslationMessageMixIn:
             elements.append(suffix)
         return self.potmsgset.makeHTMLID('_'.join(elements))
 
-    def setPOFile(self, pofile):
+    def setPOFile(self, pofile, sequence=None):
         """See `ITranslationMessage`."""
         self.browser_pofile = pofile
+        if sequence is not None:
+            get_property_cache(self).sequence = sequence
+        else:
+            del get_property_cache(self).sequence
 
-    @property
+    @cachedproperty
     def sequence(self):
         if self.browser_pofile:
             pofile = self.browser_pofile
@@ -131,6 +149,7 @@ class TranslationMessageMixIn:
         self.date_reviewed = timestamp
 
 
+@implementer(ITranslationMessage)
 class DummyTranslationMessage(TranslationMessageMixIn):
     """Represents an `ITranslationMessage` where we don't yet HAVE it.
 
@@ -138,7 +157,6 @@ class DummyTranslationMessage(TranslationMessageMixIn):
     default information. We can represent them from the existing data and
     logic.
     """
-    implements(ITranslationMessage)
 
     def __init__(self, pofile, potmsgset):
         self.id = None
@@ -151,7 +169,7 @@ class DummyTranslationMessage(TranslationMessageMixIn):
         self.date_reviewed = None
         self.reviewer = None
 
-        for form in xrange(TranslationConstants.MAX_PLURAL_FORMS):
+        for form in range(TranslationConstants.MAX_PLURAL_FORMS):
             setattr(self, 'msgstr%d' % form, None)
 
         self.comment = None
@@ -217,8 +235,8 @@ class DummyTranslationMessage(TranslationMessageMixIn):
         """See `ITranslationMessage`."""
 
 
+@implementer(ITranslationMessage)
 class TranslationMessage(SQLBase, TranslationMessageMixIn):
-    implements(ITranslationMessage)
 
     _table = 'TranslationMessage'
 
@@ -289,7 +307,7 @@ class TranslationMessage(SQLBase, TranslationMessageMixIn):
         """See `ITranslationMessage`."""
         return [
             getattr(self, 'msgstr%d' % form)
-            for form in xrange(TranslationConstants.MAX_PLURAL_FORMS)]
+            for form in range(TranslationConstants.MAX_PLURAL_FORMS)]
 
     @cachedproperty
     def translations(self):
@@ -392,7 +410,7 @@ class TranslationMessage(SQLBase, TranslationMessageMixIn):
               """(SELECT potemplate
                     FROM TranslationTemplateItem
                     WHERE potmsgset = %s AND sequence > 0
-                    LIMIT 1)""" % sqlvalues(self.potmsgset)),
+                    LIMIT 1)""" % sqlvalues(self.potmsgsetID)),
             POFile.language == self.language).one()
         return pofile
 
@@ -480,7 +498,7 @@ class TranslationMessage(SQLBase, TranslationMessageMixIn):
         store = Store.of(self)
 
         forms_match = (TranslationMessage.msgstr0ID == self.msgstr0ID)
-        for form in xrange(1, TranslationConstants.MAX_PLURAL_FORMS):
+        for form in range(1, TranslationConstants.MAX_PLURAL_FORMS):
             form_name = 'msgstr%d' % form
             form_value = getattr(self, 'msgstr%dID' % form)
             forms_match = And(
@@ -512,9 +530,9 @@ class TranslationMessage(SQLBase, TranslationMessageMixIn):
         return clone
 
 
+@implementer(ITranslationMessageSet)
 class TranslationMessageSet:
     """See `ITranslationMessageSet`."""
-    implements(ITranslationMessageSet)
 
     def getByID(self, ID):
         """See `ITranslationMessageSet`."""
@@ -526,3 +544,69 @@ class TranslationMessageSet:
     def selectDirect(self, where=None, order_by=None):
         """See `ITranslationMessageSet`."""
         return TranslationMessage.select(where, orderBy=order_by)
+
+    def preloadDetails(self, messages, pofile=None, need_pofile=False,
+                       need_potemplate=False, need_potemplate_context=False,
+                       need_potranslation=False, need_potmsgset=False,
+                       need_people=False):
+        """See `ITranslationMessageSet`."""
+        from lp.translations.model.potemplate import POTemplate
+        from lp.translations.model.potmsgset import POTMsgSet
+        assert need_pofile or not need_potemplate
+        assert need_potemplate or not need_potemplate_context
+        tms = [removeSecurityProxy(tm) for tm in messages]
+        if need_pofile:
+            self.preloadPOFilesAndSequences(tms, pofile)
+        if need_potemplate:
+            pofiles = [
+                tm.browser_pofile for tm in tms
+                if tm.browser_pofile is not None]
+            pots = load_related(
+                POTemplate,
+                (removeSecurityProxy(pofile) for pofile in pofiles),
+                ['potemplateID'])
+        if need_potemplate_context:
+            getUtility(IPOTemplateSet).preloadPOTemplateContexts(pots)
+        if need_potranslation:
+            load_related(
+                POTranslation, tms,
+                ['msgstr%dID' % form
+                 for form in range(TranslationConstants.MAX_PLURAL_FORMS)])
+        if need_potmsgset:
+            load_related(POTMsgSet, tms, ['potmsgsetID'])
+        if need_people:
+            list(getUtility(IPersonSet).getPrecachedPersonsFromIDs(
+                [tm.submitterID for tm in tms]
+                + [tm.reviewerID for tm in tms]))
+
+    def preloadPOFilesAndSequences(self, messages, pofile=None):
+        """See `ITranslationMessageSet`."""
+        from lp.translations.model.pofile import POFile
+        from lp.translations.model.translationtemplateitem import (
+            TranslationTemplateItem,
+            )
+
+        if len(messages) == 0:
+            return
+        language = messages[0].language
+        if pofile is not None:
+            pofile_constraints = [POFile.id == pofile.id]
+        else:
+            pofile_constraints = [POFile.language == language]
+        results = IStore(POFile).find(
+            (TranslationTemplateItem.potmsgsetID, POFile.id,
+             TranslationTemplateItem.sequence),
+            TranslationTemplateItem.potmsgsetID.is_in(
+                message.potmsgsetID for message in messages),
+            POFile.potemplateID == TranslationTemplateItem.potemplateID,
+            *pofile_constraints
+            ).config(distinct=(TranslationTemplateItem.potmsgsetID,))
+        potmsgset_map = dict(
+            (potmsgset_id, (pofile_id, sequence))
+            for potmsgset_id, pofile_id, sequence in results)
+        load(POFile, (pofile_id for pofile_id, _ in potmsgset_map.values()))
+        for message in messages:
+            assert message.language == language
+            pofile_id, sequence = potmsgset_map.get(
+                message.potmsgsetID, (None, None))
+            message.setPOFile(IStore(POFile).get(POFile, pofile_id), sequence)

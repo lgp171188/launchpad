@@ -1,5 +1,7 @@
-# Copyright 2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2011-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
+
+from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 
@@ -41,9 +43,8 @@ class TestBuildStartEstimation(TestCaseWithFactory):
         self.distroseries = self.factory.makeDistroSeries()
         self.bob = getUtility(IBuilderSet).getByName(BOB_THE_BUILDER_NAME)
         das = self.factory.makeDistroArchSeries(
-            distroseries=self.distroseries,
-            processorfamily=self.bob.processor.id,
-            architecturetag='i386', supports_virtualized=True)
+            distroseries=self.distroseries, processor=self.bob.processor,
+            architecturetag='i386')
         with person_logged_in(self.admin):
             self.distroseries.nominatedarchindep = das
         self.publisher.addFakeChroots(distroseries=self.distroseries)
@@ -77,13 +78,12 @@ class TestBuildStartEstimation(TestCaseWithFactory):
         now = datetime.now(pytz.UTC)
         # Since build1 is higher priority, it's estimated dispatch time is now
         estimate = self.job_start_estimate(build1)
-        self.assertEquals(5, (estimate - now).seconds)
+        self.assertEqual(5, (estimate - now).seconds)
         # And build2 is next, so must take build1's duration into account
         estimate = self.job_start_estimate(build2)
-        self.assertEquals(600, (estimate - now).seconds)
+        self.assertEqual(600, (estimate - now).seconds)
         # If we disable build1's archive, build2 is next
         with person_logged_in(self.admin):
             build1.archive.disable()
         estimate = self.job_start_estimate(build2)
-        self.assertEquals(5, (estimate - now).seconds)
-
+        self.assertEqual(5, (estimate - now).seconds)

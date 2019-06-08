@@ -1,8 +1,6 @@
 # Copyright 2009 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-# pylint: disable-msg=E0211,E0213
-
 """Interfaces for feeds generation."""
 
 __metaclass__ = type
@@ -211,7 +209,7 @@ class IFeedEntry(Interface):
                      "became public.")
 
     # The primary authors for the entry.
-    authors= Attribute(
+    authors = Attribute(
         "A list of IFeedPerson representing the authors for the entry.")
 
     # People who contributed to the entry.  The line between authors and
@@ -224,14 +222,14 @@ class IFeedEntry(Interface):
 
     # The logo representing the entry.
     # Not used and ignored.
-    logo  = TextLine(
+    logo = TextLine(
         title=u"Logo URL",
         description=u"The URL for the entry logo."
                      "Currently not used.")
 
     # The icon representing the entry.
     # Not used and ignored.
-    icon  = TextLine(
+    icon = TextLine(
         title=u"Icon URL",
         description=u"The URL for the entry icon."
                      "Currently not used.")
@@ -270,6 +268,7 @@ class IFeedTypedData(Interface):
         description=u"URL for the root of the site that produced the content, "
                      "i.e. 'http://code.launchpad.net'",
         required=False)
+
 
 class IFeedPerson(Interface):
     """Interface for a person in a feed."""

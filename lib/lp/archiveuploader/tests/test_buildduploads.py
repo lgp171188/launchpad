@@ -1,7 +1,9 @@
-# Copyright 2009-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test buildd uploads use-cases."""
+
+from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 
@@ -13,6 +15,7 @@ from lp.archiveuploader.tests.test_uploadprocessor import (
     TestUploadProcessorBase,
     )
 from lp.archiveuploader.uploadprocessor import UploadHandler
+from lp.buildmaster.interfaces.processor import IProcessorSet
 from lp.registry.interfaces.distribution import IDistributionSet
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.services.database.constants import UTC_NOW
@@ -20,12 +23,9 @@ from lp.soyuz.enums import (
     PackagePublishingStatus,
     PackageUploadStatus,
     )
+from lp.soyuz.interfaces.binarypackagebuild import IBinaryPackageBuildSet
 from lp.soyuz.interfaces.publishing import IPublishingSet
 from lp.soyuz.model.binarypackagebuild import BinaryPackageBuild
-from lp.soyuz.model.processor import (
-    Processor,
-    ProcessorFamily,
-    )
 from lp.testing.gpgkeys import import_public_test_keys
 
 
@@ -142,9 +142,9 @@ class TestStagedBinaryUploadBase(TestUploadProcessorBase):
     def _createBuild(self, archtag):
         """Create a build record attached to the base source."""
         spr = self.source_queue.sources[0].sourcepackagerelease
-        build = spr.createBuild(
-            distro_arch_series=self.distroseries[archtag],
-            pocket=self.pocket, archive=self.distroseries.main_archive)
+        build = getUtility(IBinaryPackageBuildSet).new(
+            spr, self.distroseries.main_archive, self.distroseries[archtag],
+            self.pocket)
         self.layer.txn.commit()
         return build
 
@@ -181,12 +181,10 @@ class TestBuilddUploads(TestStagedBinaryUploadBase):
         """Extend breezy setup to enable uploads to powerpc architecture."""
         TestStagedBinaryUploadBase.setupBreezy(self)
         self.switchToAdmin()
-        ppc_family = ProcessorFamily.selectOneBy(name='powerpc')
-        Processor(
-            name='powerpc', title='PowerPC', description='not yet',
-            family=ppc_family)
+        ppc = getUtility(IProcessorSet).new(
+            name='powerpc', title='PowerPC', description='not yet')
         self.breezy.newArch(
-            'powerpc', ppc_family, True, self.breezy.owner)
+            'powerpc', ppc, True, self.breezy.owner)
         self.switchToUploader()
 
     def setUp(self):

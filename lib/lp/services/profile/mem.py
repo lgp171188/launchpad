@@ -1,8 +1,6 @@
 # Copyright 2009 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-# We like globals!
-# pylint: disable-msg=W0602
 """
 This code is from:
     http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/286222
@@ -43,8 +41,9 @@ import types
 
 _proc_status = '/proc/%d/status' % os.getpid()
 
-_scale = {'kB': 1024.0, 'mB': 1024.0*1024.0,
-          'KB': 1024.0, 'MB': 1024.0*1024.0}
+_scale = {'kB': 1024.0, 'mB': 1024.0 * 1024.0,
+          'KB': 1024.0, 'MB': 1024.0 * 1024.0}
+
 
 def _VmB(VmKey):
     '''Private.
@@ -104,6 +103,7 @@ def dump_garbage():
         if len(s) > 80:
             s = s[:80]
         print type(x), "\n  ", s
+
 
 # This is spiv's reference count code, under 'MIT Licence if I'm pressed'.
 #
@@ -187,6 +187,7 @@ def printCounts(counts, file=None):
         else:
             file.write("%s %s\n" % (c, obj))
 
+
 def readCounts(file, marker=None):
     """Reverse of printCounts().
 
@@ -206,7 +207,7 @@ def readCounts(file, marker=None):
 
 
 def logInThread(n=30):
-    reflog = file('/tmp/refs.log','w')
+    reflog = file('/tmp/refs.log', 'w')
     t = threading.Thread(target=_logRefsEverySecond, args=(reflog, n))
     # Allow process to exit without explicitly stopping thread.
     t.setDaemon(True)
@@ -235,4 +236,3 @@ if __name__ == "__main__":
 
     # show the dirt ;-)
     dump_garbage()
-

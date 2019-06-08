@@ -17,19 +17,12 @@ source package name.
     ...     name='new')
     >>> logout()
 
-    >>> browser.open('http://launchpad.dev/mint/stable')
-
-The code tab is now enabled at the distribution series level.
-
-    >>> print_location_apps(browser.contents)
-    * Overview (selected) ...
-    * Code - http://code.launchpad.dev/mint/stable
-    ...
+    >>> browser.open('http://launchpad.test/mint/stable')
 
 Going to this page shows us a listing of all branches associated with that
 distribution series ordered by most recently changed first.
 
-    >>> browser.open('http://code.launchpad.dev/mint/stable')
+    >>> browser.open('http://code.launchpad.test/mint/stable')
     >>> contents = browser.contents
     >>> print_tag_with_id(contents, 'branchtable')
     Name   Status   Last Modified  Last Commit
@@ -37,5 +30,5 @@ distribution series ordered by most recently changed first.
     lp://dev/~eric/mint/stable/zope/new         Development ...
     ...
     >>> ordering_control = browser.getControl(name='field.sort_by')
-    >>> print ordering_control.displayValue
+    >>> print(ordering_control.displayValue)
     ['most recently changed first']

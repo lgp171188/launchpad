@@ -1,8 +1,6 @@
 # Copyright 2009 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-# pylint: disable-msg=W0703
-
 """Mark translation credits messages as translated."""
 
 __metaclass__ = type
@@ -14,7 +12,7 @@ __all__ = [
 import logging
 
 from zope.component import getUtility
-from zope.interface import implements
+from zope.interface import implementer
 
 from lp.services.looptuner import (
     DBLoopTuner,
@@ -23,9 +21,9 @@ from lp.services.looptuner import (
 from lp.translations.interfaces.pofile import IPOFileSet
 
 
+@implementer(ITunableLoop)
 class CreditsFixer:
     """`ITunableLoop` that translates all `POFile`s' translation credits."""
-    implements(ITunableLoop)
 
     def __init__(self, transaction, logger, start_at=0):
         self.transaction = transaction

@@ -1,7 +1,5 @@
-# Copyright 2009-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2016 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
-
-# pylint: disable-msg=E0211,E0213,E0602
 
 """Interfaces related to bugs."""
 
@@ -12,9 +10,9 @@ __all__ = [
     'CreatedBugWithNoBugTasksError',
     'IBug',
     'IBugAddForm',
+    'IBugAppend',
     'IBugBecameQuestionEvent',
     'IBugDelta',
-    'IBugEdit',
     'IBugMute',
     'IBugPublic',
     'IBugSet',
@@ -24,7 +22,6 @@ __all__ = [
     'IProjectGroupBugAddForm',
     ]
 
-from lazr.enum import DBEnumeratedType
 from lazr.lifecycle.snapshot import doNotSnapshot
 from lazr.restful.declarations import (
     accessor_for,
@@ -66,10 +63,12 @@ from zope.schema import (
 from zope.schema.vocabulary import SimpleVocabulary
 
 from lp import _
+from lp.app.enums import InformationType
 from lp.app.errors import NotFoundError
 from lp.app.interfaces.launchpad import IPrivacy
 from lp.app.validators.attachment import attachment_size_constraint
 from lp.app.validators.name import bug_name_validator
+from lp.bugs.enums import BugNotificationLevel
 from lp.bugs.interfaces.bugactivity import IBugActivity
 from lp.bugs.interfaces.bugattachment import IBugAttachment
 from lp.bugs.interfaces.bugbranch import IBugBranch
@@ -81,7 +80,6 @@ from lp.bugs.interfaces.bugtask import (
 from lp.bugs.interfaces.bugwatch import IBugWatch
 from lp.bugs.interfaces.cve import ICve
 from lp.code.interfaces.branchlink import IHasLinkedBranches
-from lp.registry.enums import InformationType
 from lp.registry.interfaces.person import IPerson
 from lp.services.fields import (
     BugField,
@@ -94,6 +92,10 @@ from lp.services.fields import (
     Title,
     )
 from lp.services.messages.interfaces.message import IMessage
+from lp.services.webservice.apihelpers import (
+    patch_collection_property,
+    patch_reference_property,
+    )
 
 
 class CreateBugParams:
@@ -282,11 +284,10 @@ class IBugView(Interface):
             value_type=Reference(schema=ICve),
             readonly=True))
     has_cves = Bool(title=u"True if the bug has cve entries.")
-    cve_links = Attribute('Links between this bug and CVE entries.')
-    duplicates = exported(
+    duplicates = exported(doNotSnapshot(
         CollectionField(
             title=_("MultiJoin of bugs which are dupes of this one."),
-            value_type=BugField(), readonly=True))
+            value_type=BugField(), readonly=True)))
     # See lp.bugs.model.bug.Bug.attachments for why there are two similar
     # properties here.
     # attachments_unpopulated would more naturally be attachments, and
@@ -384,6 +385,9 @@ class IBugView(Interface):
             value_type=Reference(schema=IMessage)),
         exported_as='messages'))
 
+    def getSpecifications(user):
+        """List of related specifications that the user can view."""
+
     def _indexed_messages(include_content=False, include_parents=False):
         """Low level query for getting bug messages.
 
@@ -393,9 +397,6 @@ class IBugView(Interface):
             messages too. If False the parent attribute will be *forced* to
             None to prevent lazy evaluation triggering database lookups.
         """
-
-    def hasBranch(branch):
-        """Is this branch linked to this bug?"""
 
     def isSubscribed(person):
         """Is person subscribed to this bug?
@@ -441,15 +442,13 @@ class IBugView(Interface):
         """Return IPersons that are indirectly subscribed to this bug.
 
         Indirect subscribers get bugmail, but don't have an entry in the
-        BugSubscription table. This includes bug contacts, subscribers from
-        dupes, etc.
+        BugSubscription table. This subscribers from dupes, etc.
         """
 
     def getAlsoNotifiedSubscribers(recipients=None, level=None):
         """Return IPersons in the "Also notified" subscriber list.
 
-        This includes bug contacts and assignees, but not subscribers
-        from duplicates.
+        This includes assignees, but not subscribers from duplicates.
         """
 
     def getSubscriptionsFromDuplicates():
@@ -479,7 +478,7 @@ class IBugView(Interface):
             `BugSubscriptionLevel.LIFECYCLE` if unspecified.
         """
 
-    def getBugNotificationRecipients(duplicateof=None, old_bug=None):
+    def getBugNotificationRecipients(level=BugNotificationLevel.LIFECYCLE):
         """Return a complete INotificationRecipientSet instance.
 
         The INotificationRecipientSet instance will contain details of
@@ -487,6 +486,14 @@ class IBugView(Interface):
         includes email addresses and textual and header-ready
         rationales. See `BugNotificationRecipients` for
         details of this implementation.
+        """
+
+    def clearBugNotificationRecipientsCache():
+        """Clear the bug notification recipient BugNotificationLevel cache.
+
+        Call this when a change to a bug or bugtask would change the
+        notification recipients. Changing a a bugtask's milestone or
+        target is such a case.
         """
 
     def canBeAQuestion():
@@ -599,7 +606,6 @@ class IBugView(Interface):
           - maintainer
           - driver
           - bug supervisor
-          - security contact
 
         Additionally, the comment owners can hide their own comments but that
         is not checked here - this method is to see if arbitrary users can
@@ -678,17 +684,17 @@ class IBugView(Interface):
         """
 
 
-class IBugEdit(Interface):
-    """IBug attributes that require launchpad.Edit permission."""
+class IBugAppend(Interface):
+    """IBug attributes that require launchpad.Append permission."""
 
-    @call_with(owner=REQUEST_USER)
+    @call_with(owner=REQUEST_USER, from_api=True)
     @operation_parameters(
         data=Bytes(constraint=attachment_size_constraint),
         comment=Text(), filename=TextLine(), is_patch=Bool(),
         content_type=TextLine(), description=Text())
     @export_factory_operation(IBugAttachment, [])
     def addAttachment(owner, data, comment, filename, is_patch=False,
-                      content_type=None, description=None):
+                      content_type=None, description=None, from_api=False):
         """Attach a file to this bug.
 
         :owner: An IPerson.
@@ -699,13 +705,14 @@ class IBugEdit(Interface):
         :is_patch: A boolean.
         """
 
-    def addCommentNotification(message, recipients=None, activity=None):
+    def addCommentNotification(message, recipients=None, activity=None,
+                               level=BugNotificationLevel.COMMENTS):
         """Add a bug comment notification.
 
         If a BugActivity instance is provided as an `activity`, it is linked
         to the notification."""
 
-    def addChange(change, recipients=None):
+    def addChange(change, recipients=None, update_heat=True):
         """Record a change to the bug.
 
         :param change: An `IBugChange` instance from which to take the
@@ -713,6 +720,7 @@ class IBugEdit(Interface):
         :param recipients: A set of `IBugNotificationRecipient`s to whom
             to send notifications about this change. If None is passed
             the default list of recipients for the bug will be used.
+        :param update_heat: Whether to update the bug heat.
         """
 
     @operation_parameters(
@@ -800,16 +808,37 @@ class IBugEdit(Interface):
         file_alias.restricted.
         """
 
-    @call_with(user=REQUEST_USER, return_cve=False)
+    @call_with(user=REQUEST_USER)
+    @operation_parameters(
+        # Really IBranchMergeProposal, patched in _schema_circular_imports.py.
+        merge_proposal=Reference(
+            Interface, title=_('Merge proposal'), required=True))
+    @export_write_operation()
+    @operation_for_version('devel')
+    def linkMergeProposal(merge_proposal, user, check_permissions=True):
+        """Ensure that this MP is linked to this bug."""
+
+    @call_with(user=REQUEST_USER)
+    @operation_parameters(
+        # Really IBranchMergeProposal, patched in _schema_circular_imports.py.
+        merge_proposal=Reference(
+            Interface, title=_('Merge proposal'), required=True))
+    @export_write_operation()
+    @operation_for_version('devel')
+    def unlinkMergeProposal(merge_proposal, user, check_permissions=True):
+        """Ensure that any links between this bug and the given MP are removed.
+        """
+
+    @call_with(user=REQUEST_USER)
     @operation_parameters(cve=Reference(ICve, title=_('CVE'), required=True))
     @export_write_operation()
-    def linkCVE(cve, user, return_cve=True):
+    def linkCVE(cve, user, check_permissions=True):
         """Ensure that this CVE is linked to this bug."""
 
     @call_with(user=REQUEST_USER)
     @operation_parameters(cve=Reference(ICve, title=_('CVE'), required=True))
     @export_write_operation()
-    def unlinkCVE(cve, user):
+    def unlinkCVE(cve, user, check_permissions=True):
         """Ensure that any links between this bug and the given CVE are
         removed.
         """
@@ -837,9 +866,6 @@ class IBugEdit(Interface):
 
             :security_related: True/False.
             :who: The IPerson who is making the change.
-
-        This may also cause the security contact to be subscribed
-        if one is registered and if the bug is not private.
 
         Return True if a change is made, False otherwise.
         """
@@ -937,13 +963,10 @@ class IBugEdit(Interface):
     def newMessage(owner, subject, content):
         """Create a new message, and link it to this object."""
 
-    # The level actually uses BugNotificationLevel as its vocabulary,
-    # but due to circular import problems we fix that in
-    # _schema_circular_imports.py rather than here.
     @operation_parameters(
         person=Reference(IPerson, title=_('Person'), required=True),
         level=Choice(
-            vocabulary=DBEnumeratedType, required=False,
+            vocabulary=BugNotificationLevel, required=False,
             title=_('Level')))
     @call_with(subscribed_by=REQUEST_USER, suppress_notify=False)
     @export_write_operation()
@@ -985,41 +1008,57 @@ class IBugEdit(Interface):
         Return None if no bugtask was edited.
         """
 
-    def updateHeat():
-        """Update the heat for the bug."""
 
-
-class IBug(IBugPublic, IBugView, IBugEdit, IHasLinkedBranches):
+class IBug(IBugPublic, IBugView, IBugAppend, IHasLinkedBranches):
     """The core bug entry."""
     export_as_webservice_entry()
 
-    linked_branches = exported(
+    linked_bugbranches = exported(
         CollectionField(
-            title=_("Branches associated with this bug, usually "
-            "branches on which this bug is being fixed."),
+            title=_(
+                "Bazaar branches associated with this bug, usually "
+                "branches on which this bug is being fixed."),
             value_type=Reference(schema=IBugBranch),
-            readonly=True))
+            readonly=True),
+        exported_as='linked_branches')
 
-    @accessor_for(linked_branches)
+    @accessor_for(linked_bugbranches)
     @call_with(user=REQUEST_USER)
     @export_read_operation()
     @operation_for_version('beta')
     def getVisibleLinkedBranches(user):
-        """Return the branches linked to this bug that are visible by
-        `user`."""
+        """Return all the branches linked to the bug that `user` can see."""
+
+    linked_merge_proposals = exported(
+        CollectionField(
+            title=_(
+                "Merge proposals associated with this bug (currently only "
+                "Git-based merge proposals)."),
+            # Really IBranchMergeProposal, patched in
+            # _schema_circular_imports.py.
+            value_type=Reference(schema=Interface),
+            readonly=True),
+        as_of='devel')
+
+    @accessor_for(linked_merge_proposals)
+    @call_with(user=REQUEST_USER)
+    @export_read_operation()
+    @operation_for_version('devel')
+    def getVisibleLinkedMergeProposals(user):
+        """Return all the MPs linked to the bug that `user` can see."""
 
 
 # We are forced to define these now to avoid circular import problems.
-IBugAttachment['bug'].schema = IBug
-IBugWatch['bug'].schema = IBug
-IMessage['bugs'].value_type.schema = IBug
-ICve['bugs'].value_type.schema = IBug
+patch_reference_property(IBugAttachment, 'bug', IBug)
+patch_reference_property(IBugWatch, 'bug', IBug)
+patch_collection_property(IMessage, 'bugs', IBug)
+patch_collection_property(ICve, 'bugs', IBug)
 
 # In order to avoid circular dependencies, we only import
 # IBugSubscription (which itself imports IBug) here, and assign it as
 # the value type for the `subscriptions` collection.
 from lp.bugs.interfaces.bugsubscription import IBugSubscription
-IBug['subscriptions'].value_type.schema = IBugSubscription
+patch_collection_property(IBug, 'subscriptions', IBugSubscription)
 
 
 class IBugDelta(Interface):
@@ -1154,13 +1193,6 @@ class IBugSet(Interface):
         If it can't be found, NotFoundError will be raised.
         """
 
-    def queryByRemoteBug(bugtracker, remotebug):
-        """Find one or None bugs for the BugWatch and bug tracker.
-
-        Find one or None bugs in Launchpad that have a BugWatch matching
-        the given bug tracker and remote bug id.
-        """
-
     def createBug(bug_params, notify_event=True):
         """Create a bug and return it.
 
@@ -1179,9 +1211,6 @@ class IBugSet(Interface):
           * distribution, product and package contacts (whichever ones are
             applicable based on the bug report target) will be subscribed to
             all *public bugs only*
-
-          * for public upstream bugs where there is no upstream bug contact,
-            the product owner will be subscribed instead
 
           * if either product or distribution is specified, an appropiate
             bug task will be created

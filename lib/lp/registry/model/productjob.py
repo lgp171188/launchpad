@@ -1,4 +1,4 @@
-# Copyright 2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2012-2015 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Jobs classes to update products and send notifications."""
@@ -17,7 +17,7 @@ from datetime import (
     timedelta,
     )
 
-from lazr.delegates import delegates
+from lazr.delegates import delegate_to
 from pytz import utc
 import simplejson
 from storm.expr import (
@@ -32,13 +32,17 @@ from storm.locals import (
     )
 from zope.component import getUtility
 from zope.interface import (
-    classProvides,
-    implements,
+    implementer,
+    provider,
     )
 from zope.security.proxy import removeSecurityProxy
 
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
-from lp.registry.enums import ProductJobType
+from lp.registry.enums import (
+    BranchSharingPolicy,
+    BugSharingPolicy,
+    ProductJobType,
+    )
 from lp.registry.interfaces.person import IPersonSet
 from lp.registry.interfaces.product import (
     IProduct,
@@ -61,7 +65,7 @@ from lp.registry.model.product import Product
 from lp.services.config import config
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.enumcol import EnumCol
-from lp.services.database.lpstorm import (
+from lp.services.database.interfaces import (
     IMasterStore,
     IStore,
     )
@@ -118,10 +122,9 @@ class ProductJobManager:
         return total
 
 
+@implementer(IProductJob)
 class ProductJob(StormBase):
     """Base class for product jobs."""
-
-    implements(IProductJob)
 
     __storm_table__ = 'ProductJob'
 
@@ -156,6 +159,8 @@ class ProductJob(StormBase):
         self._json_data = json_data.decode('utf-8')
 
 
+@delegate_to(IProductJob)
+@provider(IProductJobSource)
 class ProductJobDerived(BaseRunnableJob):
     """Intermediate class for deriving from ProductJob.
 
@@ -165,9 +170,6 @@ class ProductJobDerived(BaseRunnableJob):
     inheritance solution to the problem. Subclasses need to override
     the run() method.
     """
-
-    delegates(IProductJob)
-    classProvides(IProductJobSource)
 
     def __init__(self, job):
         self.context = job
@@ -226,11 +228,10 @@ class ProductJobDerived(BaseRunnableJob):
         return vars
 
 
+@implementer(IProductNotificationJob)
+@provider(IProductNotificationJobSource)
 class ProductNotificationJob(ProductJobDerived):
     """A Job that send an email to the product maintainer."""
-
-    implements(IProductNotificationJob)
-    classProvides(IProductNotificationJobSource)
     class_job_type = ProductJobType.REVIEWER_NOTIFICATION
 
     @classmethod
@@ -320,6 +321,7 @@ class ProductNotificationJob(ProductJobDerived):
             'X-Launchpad-Project':
                 '%(product_displayname)s (%(product_name)s)' % message_data,
             'X-Launchpad-Message-Rationale': rationale,
+            'X-Launchpad-Message-For': self.product.owner.name,
             }
         if reply_to is not None:
             headers['Reply-To'] = reply_to
@@ -395,12 +397,11 @@ class CommericialExpirationMixin:
         return data
 
 
+@implementer(ISevenDayCommercialExpirationJob)
+@provider(ISevenDayCommercialExpirationJobSource)
 class SevenDayCommercialExpirationJob(CommericialExpirationMixin,
                                       ProductNotificationJob):
     """A job that sends an email about an expiring commercial subscription."""
-
-    implements(ISevenDayCommercialExpirationJob)
-    classProvides(ISevenDayCommercialExpirationJobSource)
     class_job_type = ProductJobType.COMMERCIAL_EXPIRATION_7_DAYS
 
     @staticmethod
@@ -411,12 +412,11 @@ class SevenDayCommercialExpirationJob(CommericialExpirationMixin,
         return now, in_seven_days, seven_days_ago
 
 
+@implementer(IThirtyDayCommercialExpirationJob)
+@provider(IThirtyDayCommercialExpirationJobSource)
 class ThirtyDayCommercialExpirationJob(CommericialExpirationMixin,
                                        ProductNotificationJob):
     """A job that sends an email about an expiring commercial subscription."""
-
-    implements(IThirtyDayCommercialExpirationJob)
-    classProvides(IThirtyDayCommercialExpirationJobSource)
     class_job_type = ProductJobType.COMMERCIAL_EXPIRATION_30_DAYS
 
     @staticmethod
@@ -429,11 +429,10 @@ class ThirtyDayCommercialExpirationJob(CommericialExpirationMixin,
         return in_twenty_three_days, in_thirty_days, thirty_days_ago
 
 
+@implementer(ICommercialExpiredJob)
+@provider(ICommercialExpiredJobSource)
 class CommercialExpiredJob(CommericialExpirationMixin, ProductNotificationJob):
     """A job that sends an email about an expired commercial subscription."""
-
-    implements(ICommercialExpiredJob)
-    classProvides(ICommercialExpiredJobSource)
     class_job_type = ProductJobType.COMMERCIAL_EXPIRED
 
     _email_template_name = ''  # email_template_name does not need this.
@@ -468,7 +467,9 @@ class CommercialExpiredJob(CommericialExpirationMixin, ProductNotificationJob):
         if self._is_proprietary:
             self.product.active = False
         else:
-            removeSecurityProxy(self.product).private_bugs = False
+            naked_product = removeSecurityProxy(self.product)
+            naked_product.setBranchSharingPolicy(BranchSharingPolicy.FORBIDDEN)
+            naked_product.setBugSharingPolicy(BugSharingPolicy.FORBIDDEN)
             for series in self.product.series:
                 if series.branch is not None and series.branch.private:
                     removeSecurityProxy(series).branch = None

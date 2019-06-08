@@ -1,6 +1,5 @@
-# Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
-# pylint: disable-msg=E1002
 
 """View classes for `IProductSeries`."""
 
@@ -17,7 +16,6 @@ __all__ = [
     'ProductSeriesView',
     ]
 
-import cgi
 import os.path
 
 from bzrlib.revision import NULL_REVISION
@@ -27,7 +25,6 @@ from zope.publisher.browser import FileUpload
 from lp import _
 from lp.app.browser.launchpadform import (
     action,
-    custom_widget,
     LaunchpadEditFormView,
     LaunchpadFormView,
     ReturnToReferrerMixin,
@@ -46,7 +43,7 @@ from lp.services.webapp import (
     NavigationMenu,
     )
 from lp.services.webapp.authorization import check_permission
-from lp.services.webapp.menu import structured
+from lp.services.webapp.escaping import structured
 from lp.translations.browser.poexportrequest import BaseExportView
 from lp.translations.browser.potemplate import BaseSeriesTemplatesView
 from lp.translations.browser.translations import TranslationsMixin
@@ -160,21 +157,22 @@ class ProductSeriesTranslationsMixin(TranslationsMixin):
     @property
     def request_bzr_import_url(self):
         """URL to request a bazaar import."""
-        return canonical_url(self.context,
-                             view_name="+request-bzr-import",
-                             rootsite="translations")
+        return canonical_url(
+            self.context, view_name="+request-bzr-import",
+            rootsite="translations")
 
     @property
-    def link_branch_url(self):
+    def set_branch_url(self):
         """URL to link the series to a branch."""
-        return canonical_url(self.context, rootsite="mainsite",
-                             view_name="+linkbranch")
+        return canonical_url(
+            self.context, rootsite="mainsite", view_name="+setbranch")
 
     @property
     def translations_settings_url(self):
         """URL to change the translations for the series."""
-        return canonical_url(self.context, rootsite="translations",
-                             view_name="+translations-settings")
+        return canonical_url(
+            self.context, rootsite="translations",
+            view_name="+translations-settings")
 
 
 class ProductSeriesUploadView(LaunchpadView, TranslationsMixin):
@@ -306,10 +304,12 @@ class ProductSeriesUploadView(LaunchpadView, TranslationsMixin):
                             "%s files could not be uploaded because their "
                             "names matched multiple existing uploads, for "
                             "different templates.", len(conflicts))
+                        conflict_str = structured(
+                            "</li><li>".join(["%s" % len(conflicts)]),
+                            *conflicts)
                         ul_conflicts = structured(
                             "The conflicting file names were:<br /> "
-                            "<ul><li>%s</li></ul>" % (
-                            "</li><li>".join(map(cgi.escape, conflicts))))
+                            "<ul><li>%s</li></ul>", conflict_str)
                     self.request.response.addWarningNotification(
                         structured(
                         "%s  This makes it "
@@ -485,8 +485,7 @@ class ProductSeriesTranslationsSettingsView(ReturnToReferrerMixin,
     page_title = "Settings"
 
     field_names = ['translations_autoimport_mode']
-    settings_widget = custom_widget('translations_autoimport_mode',
-                  SettingsRadioWidget)
+    custom_widget_translations_autoimport_mode = SettingsRadioWidget
 
     @action(u"Save settings", name="save_settings")
     def change_settings_action(self, action, data):

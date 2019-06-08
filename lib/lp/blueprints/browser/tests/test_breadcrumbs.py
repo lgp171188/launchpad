@@ -1,18 +1,20 @@
 # Copyright 2009-2010 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
+from __future__ import absolute_import, print_function, unicode_literals
+
 __metaclass__ = type
 
 from lp.services.webapp.publisher import canonical_url
 from lp.testing.breadcrumbs import BaseBreadcrumbTestCase
 
 
-class TestHasSpecificationsBreadcrumbOnBlueprintsVHost(
+class TestHasSpecificationsBreadcrumbOnBlueprintsFacet(
         BaseBreadcrumbTestCase):
     """Test Breadcrumbs for IHasSpecifications on the blueprints vhost."""
 
     def setUp(self):
-        super(TestHasSpecificationsBreadcrumbOnBlueprintsVHost, self).setUp()
+        super(TestHasSpecificationsBreadcrumbOnBlueprintsFacet, self).setUp()
         self.person = self.factory.makePerson()
         self.person_specs_url = canonical_url(
             self.person, rootsite='blueprints')
@@ -25,15 +27,15 @@ class TestHasSpecificationsBreadcrumbOnBlueprintsVHost(
         crumbs = self.getBreadcrumbsForObject(
             self.product, rootsite='blueprints')
         last_crumb = crumbs[-1]
-        self.assertEquals(last_crumb.url, self.product_specs_url)
-        self.assertEquals(last_crumb.text, 'Blueprints')
+        self.assertEqual(last_crumb.url, self.product_specs_url)
+        self.assertEqual(last_crumb.text, 'Blueprints')
 
     def test_person(self):
         crumbs = self.getBreadcrumbsForObject(
             self.person, rootsite='blueprints')
         last_crumb = crumbs[-1]
-        self.assertEquals(last_crumb.url, self.person_specs_url)
-        self.assertEquals(last_crumb.text, 'Blueprints')
+        self.assertEqual(last_crumb.url, self.person_specs_url)
+        self.assertEqual(last_crumb.text, 'Blueprints')
 
 
 class TestSpecificationBreadcrumb(BaseBreadcrumbTestCase):
@@ -51,6 +53,5 @@ class TestSpecificationBreadcrumb(BaseBreadcrumbTestCase):
     def test_specification(self):
         crumbs = self.getBreadcrumbsForObject(self.specification)
         last_crumb = crumbs[-1]
-        self.assertEquals(last_crumb.url, self.specification_url)
-        self.assertEquals(
-            last_crumb.text, self.specification.title)
+        self.assertEqual(last_crumb.url, self.specification_url)
+        self.assertEqual(last_crumb.text, self.specification.title)

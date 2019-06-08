@@ -1,8 +1,6 @@
 # Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-# pylint: disable-msg=E0211,E0213
-
 """ProjectGroup-related interfaces for Launchpad."""
 
 __metaclass__ = type
@@ -28,6 +26,7 @@ from lazr.restful.fields import (
     Reference,
     ReferenceChoice,
     )
+from lazr.restful.interface import copy_field
 from zope.interface import (
     Attribute,
     Interface,
@@ -42,7 +41,6 @@ from zope.schema import (
     )
 
 from lp import _
-from lp.app.interfaces.headings import IRootContext
 from lp.app.interfaces.launchpad import (
     IHasIcon,
     IHasLogo,
@@ -60,9 +58,6 @@ from lp.bugs.interfaces.bugtracker import IBugTracker
 from lp.bugs.interfaces.structuralsubscription import (
     IStructuralSubscriptionTarget,
     )
-from lp.code.interfaces.branchvisibilitypolicy import (
-    IHasBranchVisibilityPolicy,
-    )
 from lp.code.interfaces.hasbranches import (
     IHasBranches,
     IHasMergeProposals,
@@ -72,6 +67,7 @@ from lp.registry.interfaces.karma import IKarmaContext
 from lp.registry.interfaces.milestone import (
     ICanGetMilestonesDirectly,
     IHasMilestones,
+    IProjectGroupMilestone,
     )
 from lp.registry.interfaces.pillar import IPillar
 from lp.registry.interfaces.role import (
@@ -92,7 +88,7 @@ from lp.services.fields import (
 from lp.translations.interfaces.translationpolicy import ITranslationPolicy
 
 
-class ProjectNameField(PillarNameField):
+class ProjectGroupNameField(PillarNameField):
 
     @property
     def _content_iface(self):
@@ -107,7 +103,7 @@ class IProjectGroupModerate(IPillar):
             description=_("Whether or not this project group has been "
                           "reviewed.")))
     name = exported(
-        ProjectNameField(
+        ProjectGroupNameField(
             title=_('Name'),
             required=True,
             description=_(
@@ -119,13 +115,23 @@ class IProjectGroupModerate(IPillar):
 
 class IProjectGroupPublic(
     ICanGetMilestonesDirectly, IHasAppointedDriver, IHasBranches, IHasBugs,
-    IHasDrivers, IHasBranchVisibilityPolicy, IHasIcon, IHasLogo,
-    IHasMergeProposals, IHasMilestones, IHasMugshot,
-    IHasOwner, IHasSpecifications, IHasSprints, IMakesAnnouncements,
-    IKarmaContext, IRootContext, IHasOfficialBugTags, IServiceUsage):
+    IHasDrivers, IHasIcon, IHasLogo, IHasMergeProposals, IHasMilestones,
+    IHasMugshot, IHasOwner, IHasSpecifications, IHasSprints,
+    IMakesAnnouncements, IKarmaContext, IHasOfficialBugTags,
+    IServiceUsage):
     """Public IProjectGroup properties."""
 
     id = Int(title=_('ID'), readonly=True)
+
+    # The following milestone collections are copied from IHasMilestone so that
+    # we can override the collection value types to be IProjectGroupMilestone.
+    milestones = copy_field(
+        IHasMilestones['milestones'],
+        value_type=Reference(schema=IProjectGroupMilestone))
+
+    all_milestones = copy_field(
+        IHasMilestones['all_milestones'],
+        value_type=Reference(schema=IProjectGroupMilestone))
 
     owner = exported(
         PublicPersonChoice(
@@ -145,15 +151,16 @@ class IProjectGroupPublic(
             description=_("Project group registrant. Must be a valid "
                           "Launchpad Person.")))
 
-    displayname = exported(
+    display_name = exported(
         TextLine(
             title=_('Display Name'),
             description=_(
                 "Appropriately capitalised, "
                 'and typically ending in "Project". '
                 "Examples: the Apache Project, the Mozilla Project, "
-                "the Gimp Project.")),
-        exported_as="display_name")
+                "the Gimp Project.")))
+
+    displayname = Attribute('Display name (deprecated)')
 
     title = exported(
         Title(
@@ -237,7 +244,8 @@ class IProjectGroupPublic(
         TextLine(
             title=_("Freshmeat Project Name"),
             description=_("The Freshmeat project name for this "
-                          "project group, if it is in Freshmeat."),
+                          "project group, if it is in Freshmeat. "
+                          "[DEPRECATED]"),
             required=False),
         exported_as="freshmeat_project")
 
@@ -317,18 +325,13 @@ class IProjectGroupPublic(
         title=u"Search for possible duplicate bugs when a new bug is filed",
         required=False, readonly=True)
 
+    translatables = Attribute("Products that are translatable in LP")
+
     def getProduct(name):
         """Get a product with name `name`."""
 
     def getConfigurableProducts():
         """Get all products that can be edited by user."""
-
-    def translatables():
-        """Return an iterator over products that are translatable in LP.
-
-        Only products with IProduct.translations_usage set to
-        ServiceUsage.LAUNCHPAD are considered translatable.
-        """
 
     def has_translatable():
         """Return a boolean showing the existance of translatables products.
@@ -418,8 +421,8 @@ class IProjectGroupSeries(IHasSpecifications, IHasAppointedDriver, IHasIcon,
     """Interface for ProjectGroupSeries.
 
     This class provides the specifications related to a "virtual project
-    series", i.e., to those specifactions that are assigned to a series
-    of a product which is part of this project.
+    group series", i.e., to those specifications that are assigned to a
+    series of a product which is part of this project group.
     """
     name = TextLine(title=u'The name of the product series.',
                     required=True, readonly=True,
@@ -432,6 +435,7 @@ class IProjectGroupSeries(IHasSpecifications, IHasAppointedDriver, IHasIcon,
     title = TextLine(title=u'The title for this project series.',
                      required=True, readonly=True)
 
-    project = Object(schema=IProjectGroup,
-                     title=u"The project this series belongs to",
-                     required=True, readonly=True)
+    projectgroup = Object(
+        schema=IProjectGroup,
+        title=u"The project group this series belongs to",
+        required=True, readonly=True)

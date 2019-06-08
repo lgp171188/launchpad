@@ -5,8 +5,8 @@ heavy database activity including complex caching and prefetching of
 translation suggestions.  It's hard to keep database performance for this page
 under control.
 
-  >>> from lp.testing._webservice import QueryCollector
-  >>> query_counter = QueryCollector()
+  >>> from lp.testing import RequestTimelineCollector
+  >>> query_counter = RequestTimelineCollector()
   >>> query_counter.register()
 
 === Anonymous access ===
@@ -16,11 +16,11 @@ number of queries issued is relatively low.  Mileage may vary, but consider
 this test a tripwire for the number potentially getting out of hand.
 
     >>> anon_browser.open(
-    ...     'http://translations.launchpad.dev/ubuntu/hoary/+source/evolution/'
+    ...     'http://translations.launchpad.test/ubuntu/hoary/+source/evolution/'
     ...     '+pots/evolution-2.2/es/+translate')
     >>> anon_browser.url
-    'http://translations.launchpad.dev/ubuntu/hoary/+source/evolution/+pots/evolution-2.2/es/+translate'
-    >>> print anon_browser.contents
+    'http://translations.launchpad.test/ubuntu/hoary/+source/evolution/+pots/evolution-2.2/es/+translate'
+    >>> print(anon_browser.contents)
     <...
     >>> statement_count = query_counter.count
     >>> 0 < statement_count < 120
@@ -33,10 +33,10 @@ option to make suggestions, but existing suggestions as well.  It takes more
 queries, but it still shouldn't run in the hundreds.
 
     >>> admin_browser.open(
-    ...     'http://translations.launchpad.dev/ubuntu/hoary/+source/evolution/'
+    ...     'http://translations.launchpad.test/ubuntu/hoary/+source/evolution/'
     ...     '+pots/evolution-2.2/es/+translate')
     >>> admin_browser.url
-    'http://translations.launchpad.dev/ubuntu/hoary/+source/evolution/+pots/evolution-2.2/es/+translate'
+    'http://translations.launchpad.test/ubuntu/hoary/+source/evolution/+pots/evolution-2.2/es/+translate'
 
 XXX: JeroenVermeulen 2008-06-20 bug=241394: This has just started
 failing in PQM.  May be something to do with the introduction of Storm.
@@ -47,4 +47,3 @@ Disable it for now.
 
     >>> # Cleanup.
     >>> query_counter.unregister()
-

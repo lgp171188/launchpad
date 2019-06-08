@@ -4,7 +4,7 @@ the Debian task on bug #1.
 
     >>> browser.addHeader('Authorization', 'Basic test@canonical.com:test')
     >>> browser.open(
-    ...     'http://bugs.launchpad.dev/debian/+source/mozilla-firefox/'
+    ...     'http://bugs.launchpad.test/debian/+source/mozilla-firefox/'
     ...     '+bug/1/+editstatus')
 
 There's currently a bug watch linked to the task.
@@ -18,7 +18,7 @@ There's currently a bug watch linked to the task.
 
 This means that we only display the status, it's not possible to edit it:
 
-    >>> print browser.contents
+    >>> print(browser.contents)
     <!DOCTYPE...
 
     <label for="debian_mozilla-firefox.status">Status</label>
@@ -29,19 +29,19 @@ This means that we only display the status, it's not possible to edit it:
     >>> status_control = browser.getControl(name='debian_mozilla-firefox.status')
     Traceback (most recent call last):
     ...
-    LookupError: name 'debian_mozilla-firefox.status'
+    LookupError: name u'debian_mozilla-firefox.status'
 
 Of course we can't edit the importance or assignee either.
 
     >>> browser.getControl(name='debian_mozilla-firefox.importance')
     Traceback (most recent call last):
     ...
-    LookupError: name 'debian_mozilla-firefox.importance'
+    LookupError: name u'debian_mozilla-firefox.importance'
 
     >>> browser.getControl(name='debian_mozilla-firefox.assignee')
     Traceback (most recent call last):
     ...
-    LookupError: name 'debian_mozilla-firefox.assignee'
+    LookupError: name u'debian_mozilla-firefox.assignee'
 
 If we remove the bug watch, we'll be able to edit the status, which has
 been reset to New.
@@ -51,7 +51,7 @@ been reset to New.
     >>> submit_button.click()
 
     >>> browser.open(
-    ...     'http://bugs.launchpad.dev/debian/+source/mozilla-firefox/'
+    ...     'http://bugs.launchpad.test/debian/+source/mozilla-firefox/'
     ...     '+bug/1/+editstatus')
     >>> status_control = browser.getControl(name='debian_mozilla-firefox.status')
     >>> status_control.displayValue
@@ -67,7 +67,7 @@ Let's try to actually edit the status to see that it works:
     >>> submit_button.click()
 
     >>> browser.open(
-    ...     'http://bugs.launchpad.dev/debian/+source/mozilla-firefox/'
+    ...     'http://bugs.launchpad.test/debian/+source/mozilla-firefox/'
     ...     '+bug/1/+editstatus')
     >>> status_control = browser.getControl(name='debian_mozilla-firefox.status')
     >>> status_control.displayValue
@@ -76,7 +76,7 @@ Let's try to actually edit the status to see that it works:
 From the edit page we can also create a new bug watch:
 
     >>> browser.open(
-    ...     'http://bugs.launchpad.dev/debian/+source/mozilla-firefox/'
+    ...     'http://bugs.launchpad.test/debian/+source/mozilla-firefox/'
     ...     '+bug/1/+editstatus')
     >>> bugwatch_control = browser.getControl(
     ...     name='debian_mozilla-firefox.bugwatch')
@@ -88,7 +88,7 @@ From the edit page we can also create a new bug watch:
     >>> submit_button = browser.getControl('Save Changes')
     >>> submit_button.click()
     >>> browser.url
-    'http://bugs.launchpad.dev/debian/+source/mozilla-firefox/+bug/1'
+    'http://bugs.launchpad.test/debian/+source/mozilla-firefox/+bug/1'
 
 The Debian task is linked to the newly created bug watch.
 
@@ -101,7 +101,7 @@ If we try to add an already existing bug watch, a new one won't be
 created, instead the old one will be used.
 
     >>> browser.open(
-    ...     'http://bugs.launchpad.dev/debian/+source/mozilla-firefox/'
+    ...     'http://bugs.launchpad.test/debian/+source/mozilla-firefox/'
     ...     '+bug/1/+editstatus')
     >>> bugwatch_control = browser.getControl(
     ...     name='debian_mozilla-firefox.bugwatch')
@@ -113,11 +113,11 @@ created, instead the old one will be used.
     >>> submit_button = browser.getControl('Save Changes')
     >>> submit_button.click()
     >>> browser.url
-    'http://bugs.launchpad.dev/debian/+source/mozilla-firefox/+bug/1'
+    'http://bugs.launchpad.test/debian/+source/mozilla-firefox/+bug/1'
 
     >>> bugwatch_portlet = find_portlet(browser.contents, 'Remote bug watches')
-    >>> for li_tag in bugwatch_portlet.fetch('li'):
-    ...     print li_tag.findAll('a')[0].string
+    >>> for li_tag in bugwatch_portlet.findAll('li'):
+    ...     print(li_tag.findAll('a')[0].string)
     mozilla.org #123543
     mozilla.org #2000
     mozilla.org #42

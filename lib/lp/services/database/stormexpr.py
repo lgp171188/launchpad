@@ -1,4 +1,4 @@
-# Copyright 2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2011-2016 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -8,29 +8,100 @@ __all__ = [
     'ArrayAgg',
     'ArrayContains',
     'ArrayIntersects',
+    'BulkUpdate',
     'ColumnSelect',
     'Concatenate',
     'CountDistinct',
+    'fti_search',
     'Greatest',
     'get_where_for_reference',
+    'IsDistinctFrom',
     'NullCount',
+    'NullsFirst',
+    'NullsLast',
+    'RegexpMatch',
+    'rank_by_fti',
     'TryAdvisoryLock',
     'Unnest',
+    'Values',
     ]
 
+from storm import Undef
 from storm.exceptions import ClassInfoError
 from storm.expr import (
     BinaryOper,
+    COLUMN_NAME,
     ComparableExpr,
     compile,
     CompoundOper,
     EXPR,
     Expr,
     In,
+    Like,
     NamedFunc,
     Or,
+    SQL,
+    SuffixExpr,
+    TABLE,
     )
-from storm.info import get_obj_info
+from storm.info import (
+    get_cls_info,
+    get_obj_info,
+    )
+
+
+class BulkUpdate(Expr):
+    # Perform a bulk table update using literal values.
+    __slots__ = ("map", "where", "table", "values", "primary_columns")
+
+    def __init__(self, map, table, values, where=Undef, primary_columns=Undef):
+        self.map = map
+        self.where = where
+        self.table = table
+        self.values = values
+        self.primary_columns = primary_columns
+
+
+@compile.when(BulkUpdate)
+def compile_bulkupdate(compile, update, state):
+    pairs = update.map.items()
+    state.push("context", COLUMN_NAME)
+    col_names = [compile(col, state, token=True) for col, val in pairs]
+    state.context = EXPR
+    col_values = [compile(val, state) for col, val in pairs]
+    sets = ["%s=%s" % (col, val) for col, val in zip(col_names, col_values)]
+    state.context = TABLE
+    tokens = ["UPDATE ", compile(update.table, state, token=True), " SET ",
+              ", ".join(sets), " FROM "]
+    state.context = EXPR
+    # We don't want the values expression wrapped in parenthesis.
+    state.precedence = 0
+    tokens.append(compile(update.values, state, raw=True))
+    if update.where is not Undef:
+        tokens.append(" WHERE ")
+        tokens.append(compile(update.where, state, raw=True))
+    state.pop()
+    return "".join(tokens)
+
+
+class Values(Expr):
+    __slots__ = ("name", "cols", "values")
+
+    def __init__(self, name, cols, values):
+        self.name = name
+        self.cols = cols
+        self.values = values
+
+
+@compile.when(Values)
+def compile_values(compile, expr, state):
+    col_names, col_types = zip(*expr.cols)
+    first_row = ", ".join(
+        "%s::%s" % (compile(value, state), type)
+        for value, type in zip(expr.values[0], col_types))
+    rows = [first_row] + [compile(value, state) for value in expr.values[1:]]
+    return "(VALUES (%s)) AS %s(%s)" % (
+        "), (".join(rows), expr.name, ', '.join(col_names))
 
 
 class ColumnSelect(Expr):
@@ -141,6 +212,32 @@ class ArrayIntersects(CompoundOper):
     oper = "&&"
 
 
+class IsDistinctFrom(CompoundOper):
+    """True iff the left side is distinct from the right side."""
+    __slots__ = ()
+    oper = " IS DISTINCT FROM "
+
+
+class NullsFirst(SuffixExpr):
+    """Order null values before non-null values."""
+    __slots__ = ()
+    suffix = "NULLS FIRST"
+
+
+class NullsLast(SuffixExpr):
+    """Order null values after non-null values."""
+    __slots__ = ()
+    suffix = "NULLS LAST"
+
+
+class RegexpMatch(BinaryOper):
+    __slots__ = ()
+    oper = " ~ "
+
+
+compile.set_precedence(compile.get_precedence(Like), RegexpMatch)
+
+
 def get_where_for_reference(reference, other):
     """Generate a column comparison expression for a reference property.
 
@@ -191,3 +288,27 @@ def _get_where_for_local_many(relation, others):
             [_remote_variables(relation, value) for value in others])
     else:
         return Or(*[relation.get_where_for_local(value) for value in others])
+
+
+def determine_table_and_fragment(table, ftq):
+    table = get_cls_info(table).table
+    if ftq:
+        query_fragment = "ftq(?)"
+    else:
+        query_fragment = "?::tsquery"
+    return table, query_fragment
+
+
+def fti_search(table, text, ftq=True):
+    """An expression ensuring that table rows match the specified text."""
+    table, query_fragment = determine_table_and_fragment(table, ftq)
+    return SQL(
+        '%s.fti @@ %s' % (table.name, query_fragment), params=(text,),
+        tables=(table,))
+
+
+def rank_by_fti(table, text, ftq=True):
+    table, query_fragment = determine_table_and_fragment(table, ftq)
+    return SQL(
+        '-ts_rank(%s.fti, %s)' % (table.name, query_fragment), params=(text,),
+        tables=(table,))

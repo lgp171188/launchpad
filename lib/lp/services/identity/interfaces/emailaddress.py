@@ -1,7 +1,5 @@
-# Copyright 2009-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2015 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
-
-# pylint: disable-msg=E0211,E0213
 
 """EmailAddress interfaces."""
 
@@ -14,11 +12,14 @@ __all__ = [
     'InvalidEmailAddress',
     'VALID_EMAIL_STATUSES']
 
+import httplib
+
 from lazr.enum import (
     DBEnumeratedType,
     DBItem,
     )
 from lazr.restful.declarations import (
+    error_status,
     export_as_webservice_entry,
     exported,
     )
@@ -38,6 +39,7 @@ class InvalidEmailAddress(Exception):
     """The email address is not valid."""
 
 
+@error_status(httplib.CONFLICT)
 class EmailAddressAlreadyTaken(Exception):
     """The email address is already registered in Launchpad."""
 

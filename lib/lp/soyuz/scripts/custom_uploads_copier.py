@@ -1,4 +1,4 @@
-# Copyright 2011-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2011-2016 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Copy latest custom uploads into a distribution release series.
@@ -14,19 +14,17 @@ __all__ = [
 
 from operator import attrgetter
 
-from zope.component import getUtility
-
 from lp.archivepublisher.ddtp_tarball import DdtpTarballUpload
 from lp.archivepublisher.debian_installer import DebianInstallerUpload
 from lp.archivepublisher.dist_upgrader import DistUpgraderUpload
-from lp.archivepublisher.uefi import UefiUpload
+from lp.archivepublisher.rosetta_translations import RosettaTranslationsUpload
+from lp.archivepublisher.signing import (
+    SigningUpload,
+    UefiUpload,
+    )
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.services.database.bulk import load_referencing
 from lp.soyuz.enums import PackageUploadCustomFormat
-from lp.soyuz.interfaces.archive import (
-    IArchiveSet,
-    MAIN_ARCHIVE_PURPOSES,
-    )
 from lp.soyuz.model.queue import PackageUploadCustom
 
 
@@ -43,17 +41,36 @@ class CustomUploadsCopier:
         PackageUploadCustomFormat.DEBIAN_INSTALLER: DebianInstallerUpload,
         PackageUploadCustomFormat.DIST_UPGRADER: DistUpgraderUpload,
         PackageUploadCustomFormat.DDTP_TARBALL: DdtpTarballUpload,
+        PackageUploadCustomFormat.ROSETTA_TRANSLATIONS:
+            RosettaTranslationsUpload,
         PackageUploadCustomFormat.UEFI: UefiUpload,
+        PackageUploadCustomFormat.SIGNING: SigningUpload,
         }
 
     def __init__(self, target_series,
-                 target_pocket=PackagePublishingPocket.RELEASE):
+                 target_pocket=PackagePublishingPocket.RELEASE,
+                 target_archive=None):
         self.target_series = target_series
         self.target_pocket = target_pocket
+        self.target_archive = target_archive
 
     def isCopyable(self, upload):
         """Is `upload` the kind of `PackageUploadCustom` that we can copy?"""
         return upload.customformat in self.copyable_types
+
+    def autoApprove(self, custom, source_archive):
+        """Can `custom` be automatically approved from `source_archive`?"""
+        # XXX cjwatson 2012-08-16: This more or less duplicates
+        # BuildDaemonUploadPolicy.autoApprove/CustomUploadFile.autoApprove.
+        if (custom.packageupload.archive.is_ppa or
+            custom.packageupload.archive == source_archive):
+            return True
+        # Signing uploads will be signed, and must therefore be approved
+        # by a human.
+        if custom.customformat in (PackageUploadCustomFormat.UEFI,
+                                   PackageUploadCustomFormat.SIGNING):
+            return False
+        return True
 
     def getCandidateUploads(self, source_series,
                             source_pocket=PackagePublishingPocket.RELEASE):
@@ -99,19 +116,6 @@ class CustomUploadsCopier:
                 latest_uploads.setdefault(key, upload)
         return latest_uploads
 
-    def getTargetArchive(self, original_archive):
-        """Find counterpart of `original_archive` in `self.target_series`.
-
-        :param original_archive: The `Archive` that the original upload went
-            into.  If this is not a primary, partner, or debug archive,
-            None is returned.
-        :return: The `Archive` of the same purpose for `self.target_series`.
-        """
-        if original_archive.purpose not in MAIN_ARCHIVE_PURPOSES:
-            return None
-        return getUtility(IArchiveSet).getByDistroPurpose(
-            self.target_series.distribution, original_archive.purpose)
-
     def isObsolete(self, upload, target_uploads):
         """Is `upload` superseded by one that the target series already has?
 
@@ -121,18 +125,35 @@ class CustomUploadsCopier:
         existing_upload = target_uploads.get(self.getKey(upload))
         return existing_upload is not None and existing_upload.id >= upload.id
 
+    def isForValidDAS(self, upload):
+        """Is `upload` for a valid DAS for the target series?
+
+        :param upload: A `PackageUploadCustom` from the source series.
+        """
+        concrete = self.copyable_types[upload.customformat]()
+        concrete.setComponents(upload.libraryfilealias.filename)
+        if concrete.arch is None:
+            return True
+        return concrete.arch in [
+            das.architecturetag
+            for das in self.target_series.enabled_architectures]
+
     def copyUpload(self, original_upload):
         """Copy `original_upload` into `self.target_series`."""
-        target_archive = self.getTargetArchive(
-            original_upload.packageupload.archive)
-        if target_archive is None:
-            return None
+        if self.target_archive is None:
+            # Copy within the same archive.
+            target_archive = original_upload.packageupload.archive
+        else:
+            target_archive = self.target_archive
         package_upload = self.target_series.createQueueEntry(
             self.target_pocket, target_archive,
             changes_file_alias=original_upload.packageupload.changesfile)
         custom = package_upload.addCustom(
             original_upload.libraryfilealias, original_upload.customformat)
-        package_upload.setAccepted()
+        if self.autoApprove(custom, original_upload.packageupload.archive):
+            package_upload.setAccepted()
+        else:
+            package_upload.setUnapproved()
         return custom
 
     def copy(self, source_series,
@@ -143,5 +164,6 @@ class CustomUploadsCopier:
         source_uploads = self.getLatestUploads(
             source_series, source_pocket=source_pocket)
         for upload in source_uploads.itervalues():
-            if not self.isObsolete(upload, target_uploads):
+            if (not self.isObsolete(upload, target_uploads) and
+                self.isForValidDAS(upload)):
                 self.copyUpload(upload)

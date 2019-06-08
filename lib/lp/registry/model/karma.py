@@ -1,8 +1,6 @@
 # Copyright 2009 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-# pylint: disable-msg=E0611,W0212
-
 __metaclass__ = type
 __all__ = [
     'Karma',
@@ -23,9 +21,8 @@ from sqlobject import (
     SQLObjectNotFound,
     StringCol,
     )
-from sqlobject.sqlbuilder import AND
 from storm.expr import Desc
-from zope.interface import implements
+from zope.interface import implementer
 
 from lp.app.errors import NotFoundError
 from lp.registry.interfaces.distribution import IDistribution
@@ -44,26 +41,25 @@ from lp.registry.interfaces.product import IProduct
 from lp.registry.interfaces.projectgroup import IProjectGroup
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.datetimecol import UtcDateTimeCol
-from lp.services.database.lpstorm import IStore
+from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import (
     SQLBase,
     sqlvalues,
     )
 
 
+@implementer(IKarmaAssignedEvent)
 class KarmaAssignedEvent:
     """See `IKarmaAssignedEvent`."""
-
-    implements(IKarmaAssignedEvent)
 
     def __init__(self, object, karma):
         self.object = object
         self.karma = karma
 
 
+@implementer(IKarma)
 class Karma(SQLBase):
     """See IKarma."""
-    implements(IKarma)
 
     _table = 'Karma'
     _defaultOrder = ['action', 'id']
@@ -83,9 +79,9 @@ class Karma(SQLBase):
         dbName='datecreated', notNull=True, default=UTC_NOW)
 
 
+@implementer(IKarmaAction)
 class KarmaAction(SQLBase):
     """See IKarmaAction."""
-    implements(IKarmaAction)
 
     _table = 'KarmaAction'
     sortingColumns = ['category', 'name']
@@ -99,9 +95,9 @@ class KarmaAction(SQLBase):
     points = IntCol(dbName='points', notNull=True)
 
 
+@implementer(IKarmaActionSet)
 class KarmaActionSet:
     """See IKarmaActionSet."""
-    implements(IKarmaActionSet)
 
     def __iter__(self):
         return iter(KarmaAction.select())
@@ -128,9 +124,9 @@ class KarmaActionSet:
                 query, clauseTables=['Karma'], distinct=True, orderBy=orderBy)
 
 
+@implementer(IKarmaCache)
 class KarmaCache(SQLBase):
     """See IKarmaCache."""
-    implements(IKarmaCache)
 
     _table = 'KarmaCache'
     _defaultOrder = ['category', 'id']
@@ -143,7 +139,7 @@ class KarmaCache(SQLBase):
         dbName='karmavalue', notNull=True)
     product = ForeignKey(
         dbName='product', foreignKey='Product', notNull=False)
-    project = ForeignKey(
+    projectgroup = ForeignKey(
         dbName='project', foreignKey='ProjectGroup', notNull=False)
     distribution = ForeignKey(
         dbName='distribution', foreignKey='Distribution', notNull=False)
@@ -152,26 +148,29 @@ class KarmaCache(SQLBase):
         notNull=False)
 
 
+@implementer(IKarmaCacheManager)
 class KarmaCacheManager:
     """See IKarmaCacheManager."""
-    implements(IKarmaCacheManager)
 
     def new(self, value, person_id, category_id, product_id=None,
-            distribution_id=None, sourcepackagename_id=None, project_id=None):
+            distribution_id=None, sourcepackagename_id=None,
+            projectgroup_id=None):
         """See IKarmaCacheManager."""
         return KarmaCache(
             karmavalue=value, person=person_id, category=category_id,
             product=product_id, distribution=distribution_id,
-            sourcepackagename=sourcepackagename_id, project=project_id)
+            sourcepackagename=sourcepackagename_id,
+            projectgroup=projectgroup_id)
 
     def updateKarmaValue(self, value, person_id, category_id, product_id=None,
                          distribution_id=None, sourcepackagename_id=None,
-                         project_id=None):
+                         projectgroup_id=None):
         """See IKarmaCacheManager."""
         entry = self._getEntry(
             person_id=person_id, category_id=category_id,
             product_id=product_id, distribution_id=distribution_id,
-            project_id=project_id, sourcepackagename_id=sourcepackagename_id)
+            projectgroup_id=projectgroup_id,
+            sourcepackagename_id=sourcepackagename_id)
         if entry is None:
             raise NotFoundError("KarmaCache not found: %s" % vars())
         else:
@@ -180,26 +179,24 @@ class KarmaCacheManager:
 
     def _getEntry(self, person_id, category_id, product_id=None,
                   distribution_id=None, sourcepackagename_id=None,
-                  project_id=None):
+                  projectgroup_id=None):
         """Return the KarmaCache entry with the given arguments.
 
         Return None if it's not found.
         """
-        # Can't use selectBy() because product/distribution/sourcepackagename
-        # may be None.
-        query = AND(
-            KarmaCache.q.personID == person_id,
-            KarmaCache.q.categoryID == category_id,
-            KarmaCache.q.productID == product_id,
-            KarmaCache.q.projectID == project_id,
-            KarmaCache.q.distributionID == distribution_id,
-            KarmaCache.q.sourcepackagenameID == sourcepackagename_id)
-        return KarmaCache.selectOne(query)
+        return IStore(KarmaCache).find(
+            KarmaCache,
+            KarmaCache.personID == person_id,
+            KarmaCache.categoryID == category_id,
+            KarmaCache.productID == product_id,
+            KarmaCache.projectgroupID == projectgroup_id,
+            KarmaCache.distributionID == distribution_id,
+            KarmaCache.sourcepackagenameID == sourcepackagename_id).one()
 
 
+@implementer(IKarmaTotalCache)
 class KarmaTotalCache(SQLBase):
     """A cached value of the total of a person's karma (all categories)."""
-    implements(IKarmaTotalCache)
 
     _table = 'KarmaTotalCache'
     _defaultOrder = ['id']
@@ -208,9 +205,9 @@ class KarmaTotalCache(SQLBase):
     karma_total = IntCol(dbName='karma_total', notNull=True)
 
 
+@implementer(IKarmaCategory)
 class KarmaCategory(SQLBase):
     """See IKarmaCategory."""
-    implements(IKarmaCategory)
 
     _defaultOrder = ['title', 'id']
 
@@ -222,14 +219,13 @@ class KarmaCategory(SQLBase):
         'KarmaAction', joinColumn='category', orderBy='name')
 
 
+@implementer(IKarmaContext)
 class KarmaContextMixin:
     """A mixin to be used by classes implementing IKarmaContext.
 
     This would be better as an adapter for Product and Distribution, but a
     mixin should be okay for now.
     """
-
-    implements(IKarmaContext)
 
     def getTopContributorsGroupedByCategory(self, limit=None):
         """See IKarmaContext."""
@@ -249,10 +245,10 @@ class KarmaContextMixin:
         elif IDistribution.providedBy(self):
             condition = KarmaCache.distributionID == self.id
         elif IProjectGroup.providedBy(self):
-            condition = KarmaCache.projectID == self.id
+            condition = KarmaCache.projectgroupID == self.id
         else:
             raise AssertionError(
-                "Not a product, project or distribution: %r" % self)
+                "Not a product, project group or distribution: %r" % self)
 
         if category is not None:
             category = category.id

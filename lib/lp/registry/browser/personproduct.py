@@ -12,20 +12,24 @@ __all__ = [
 
 
 from zope.component import queryAdapter
+from zope.interface import implementer
 from zope.traversing.interfaces import IPathAdapter
 
 from lp.app.errors import NotFoundError
+from lp.code.browser.vcslisting import PersonTargetDefaultVCSNavigationMixin
 from lp.code.interfaces.branchnamespace import get_branch_namespace
 from lp.registry.interfaces.personproduct import IPersonProduct
 from lp.services.webapp import (
-    Link,
+    canonical_url,
     Navigation,
     StandardLaunchpadFacets,
     )
 from lp.services.webapp.breadcrumb import Breadcrumb
+from lp.services.webapp.interfaces import IMultiFacetedBreadcrumb
 
 
-class PersonProductNavigation(Navigation):
+class PersonProductNavigation(PersonTargetDefaultVCSNavigationMixin,
+                              Navigation):
     """Navigation to branches for this person/product."""
     usedfor = IPersonProduct
 
@@ -40,12 +44,20 @@ class PersonProductNavigation(Navigation):
             return branch
 
 
+@implementer(IMultiFacetedBreadcrumb)
 class PersonProductBreadcrumb(Breadcrumb):
     """Breadcrumb for an `IPersonProduct`."""
 
     @property
     def text(self):
         return self.context.product.displayname
+
+    @property
+    def url(self):
+        if self._url is None:
+            return canonical_url(self.context.product, rootsite=self.rootsite)
+        else:
+            return self._url
 
     @property
     def icon(self):
@@ -57,12 +69,4 @@ class PersonProductFacets(StandardLaunchpadFacets):
     """The links that will appear in the facet menu for an IPerson."""
 
     usedfor = IPersonProduct
-
     enable_only = ['branches']
-
-    def branches(self):
-        text = 'Code'
-        summary = ('Bazaar Branches of %s owned by %s' %
-                   (self.context.product.displayname,
-                    self.context.person.displayname))
-        return Link('', text, summary)

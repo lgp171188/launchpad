@@ -1,8 +1,6 @@
 # Copyright 2009 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-# pylint: disable-msg=E0611,W0212
-
 """SQLBase implementation of  IAnswerContact."""
 
 __metaclass__ = type
@@ -10,17 +8,16 @@ __all__ = ['AnswerContact']
 
 
 from sqlobject import ForeignKey
-from zope.interface import implements
+from zope.interface import implementer
 
 from lp.answers.interfaces.answercontact import IAnswerContact
 from lp.registry.interfaces.person import validate_public_person
 from lp.services.database.sqlbase import SQLBase
 
 
+@implementer(IAnswerContact)
 class AnswerContact(SQLBase):
     """An entry for an answer contact for an `IQuestionTarget`."""
-
-    implements(IAnswerContact)
 
     _defaultOrder = ['id']
     _table = 'AnswerContact'

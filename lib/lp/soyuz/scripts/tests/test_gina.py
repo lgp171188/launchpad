@@ -1,31 +1,58 @@
-# Copyright 2009-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 from doctest import DocTestSuite
 import hashlib
 import os
+import shutil
+import subprocess
+import tempfile
 from textwrap import dedent
 from unittest import TestLoader
 
+import apt_pkg
+from fixtures import EnvironmentVariableFixture
+import transaction
+
 from lp.archiveuploader.tagfiles import parse_tagfile
 from lp.registry.interfaces.pocket import PackagePublishingPocket
+from lp.registry.interfaces.series import SeriesStatus
+from lp.services.database.constants import UTC_NOW
+from lp.services.features.testing import FeatureFixture
 from lp.services.log.logger import DevNullLogger
+from lp.services.osutils import write_file
 from lp.services.tarfile_helpers import LaunchpadWriteTarFile
 from lp.soyuz.enums import PackagePublishingStatus
 from lp.soyuz.scripts.gina import ExecutionError
+from lp.soyuz.scripts.gina.archive import (
+    ArchiveComponentItems,
+    ArchiveFilesystemInfo,
+    PackagesMap,
+    )
 from lp.soyuz.scripts.gina.dominate import dominate_imported_source_packages
 import lp.soyuz.scripts.gina.handlers
 from lp.soyuz.scripts.gina.handlers import (
+    BinaryPackageHandler,
     BinaryPackagePublisher,
+    ImporterHandler,
+    SourcePackageHandler,
     SourcePackagePublisher,
     )
 from lp.soyuz.scripts.gina.packages import (
     BinaryPackageData,
+    MissingRequiredArguments,
     SourcePackageData,
     )
-from lp.testing import TestCaseWithFactory
+from lp.soyuz.scripts.gina.runner import import_sourcepackages
+from lp.testing import (
+    TestCase,
+    TestCaseWithFactory,
+    )
 from lp.testing.faketransaction import FakeTransaction
-from lp.testing.layers import ZopelessDatabaseLayer
+from lp.testing.layers import (
+    LaunchpadZopelessLayer,
+    ZopelessDatabaseLayer,
+    )
 
 
 class FakePackagesMap:
@@ -36,6 +63,9 @@ class FakePackagesMap:
 class TestGina(TestCaseWithFactory):
 
     layer = ZopelessDatabaseLayer
+
+    def assertPublishingStates(self, spphs, states):
+        self.assertEqual(states, [pub.status for pub in spphs])
 
     def test_dominate_imported_source_packages_dominates_imports(self):
         # dominate_imported_source_packages dominates the source
@@ -79,14 +109,12 @@ class TestGina(TestCaseWithFactory):
         dominate_imported_source_packages(
             txn, logger, series.distribution.name, series.name, pocket,
             FakePackagesMap({package.name: [{'Version': '1.1.1'}]}))
-        self.assertEqual([
+        states = [
             PackagePublishingStatus.SUPERSEDED,
             PackagePublishingStatus.SUPERSEDED,
-            PackagePublishingStatus.PUBLISHED,
-            PackagePublishingStatus.DELETED,
-            PackagePublishingStatus.PENDING,
-            ],
-            [pub.status for pub in spphs])
+            PackagePublishingStatus.PUBLISHED, PackagePublishingStatus.DELETED,
+            PackagePublishingStatus.PENDING]
+        self.assertPublishingStates(spphs, states)
 
     def test_dominate_imported_source_packages_dominates_deletions(self):
         # dominate_imported_source_packages dominates the source
@@ -114,12 +142,77 @@ class TestGina(TestCaseWithFactory):
         # The older, superseded release stays superseded; but the
         # releases that dropped out of the imported Sources list without
         # known successors are marked deleted.
-        self.assertEqual([
-            PackagePublishingStatus.SUPERSEDED,
-            PackagePublishingStatus.DELETED,
-            PackagePublishingStatus.DELETED,
-            ],
-            [pub.status for pub in pubs])
+        self.assertPublishingStates(
+            pubs, [PackagePublishingStatus.SUPERSEDED,
+            PackagePublishingStatus.DELETED, PackagePublishingStatus.DELETED])
+
+    def test_dominate_imported_sources_dominates_supported_series(self):
+        series = self.factory.makeDistroSeries()
+        pocket = PackagePublishingPocket.RELEASE
+        package = self.factory.makeSourcePackageName()
+        pubs = [
+            self.factory.makeSourcePackagePublishingHistory(
+                archive=series.main_archive, distroseries=series,
+                pocket=pocket, status=PackagePublishingStatus.PUBLISHED,
+                sourcepackagerelease=self.factory.makeSourcePackageRelease(
+                    sourcepackagename=package, version=version))
+            for version in ['1.0', '1.1', '1.1a']]
+
+        # In this scenario, 1.0 is a superseded release.
+        pubs[0].supersede()
+        # Now set the series to SUPPORTED.
+        series.status = SeriesStatus.SUPPORTED
+        logger = DevNullLogger()
+        txn = FakeTransaction()
+        dominate_imported_source_packages(
+            txn, logger, series.distribution.name, series.name, pocket,
+            FakePackagesMap({}))
+        self.assertPublishingStates(
+            pubs, [PackagePublishingStatus.SUPERSEDED,
+            PackagePublishingStatus.DELETED, PackagePublishingStatus.DELETED])
+
+
+class TestArchiveFilesystemInfo(TestCase):
+
+    def assertCompressionTypeWorks(self, compressor_func):
+        archive_root = self.useTempDir()
+        sampledata_root = os.path.join(
+            os.path.dirname(__file__), "gina_test_archive")
+        sampledata_component_dir = os.path.join(
+            sampledata_root, "dists", "breezy", "main")
+        component_dir = os.path.join(archive_root, "dists", "breezy", "main")
+        os.makedirs(os.path.join(component_dir, "source"))
+        shutil.copy(
+            os.path.join(sampledata_component_dir, "source", "Sources"),
+            os.path.join(component_dir, "source", "Sources"))
+        compressor_func(os.path.join(component_dir, "source", "Sources"))
+        os.makedirs(os.path.join(component_dir, "binary-i386"))
+        shutil.copy(
+            os.path.join(sampledata_component_dir, "binary-i386", "Packages"),
+            os.path.join(component_dir, "binary-i386", "Packages"))
+        compressor_func(os.path.join(component_dir, "binary-i386", "Packages"))
+
+        archive_info = ArchiveFilesystemInfo(
+            archive_root, "breezy", "main", "i386")
+        sources = apt_pkg.TagFile(archive_info.srcfile)
+        self.assertEqual("archive-copier", next(sources)["Package"])
+        binaries = apt_pkg.TagFile(archive_info.binfile)
+        self.assertEqual("python-pam", next(binaries)["Package"])
+
+    def test_uncompressed(self):
+        self.assertCompressionTypeWorks(lambda path: None)
+
+    def test_gzip(self):
+        self.assertCompressionTypeWorks(
+            lambda path: subprocess.check_call(["gzip", path]))
+
+    def test_bzip2(self):
+        self.assertCompressionTypeWorks(
+            lambda path: subprocess.check_call(["bzip2", path]))
+
+    def test_xz(self):
+        self.assertCompressionTypeWorks(
+            lambda path: subprocess.check_call(["xz", path]))
 
 
 class TestSourcePackageData(TestCaseWithFactory):
@@ -183,8 +276,134 @@ class TestSourcePackageData(TestCaseWithFactory):
         # Unpacking this in an Ubuntu context fails.
         self.assertRaises(
             ExecutionError, sp_data.do_package, "ubuntu", archive_root)
+        self.assertFalse(os.path.exists("foo-1.0"))
         # But all is well in a Debian context.
         sp_data.do_package("debian", archive_root)
+        self.assertFalse(os.path.exists("foo-1.0"))
+
+    def test_process_package_cleans_up_after_unpack_failure(self):
+        archive_root = self.useTempDir()
+        pool_dir = os.path.join(archive_root, "pool/main/f/foo")
+        os.makedirs(pool_dir)
+
+        with open(os.path.join(
+            pool_dir, "foo_1.0.orig.tar.gz"), "wb+") as buffer:
+            orig_tar = LaunchpadWriteTarFile(buffer)
+            orig_tar.add_directory("foo-1.0")
+            orig_tar.close()
+            buffer.seek(0)
+            orig_tar_contents = buffer.read()
+        with open(os.path.join(
+            pool_dir, "foo_1.0-1.debian.tar.gz"), "wb+") as buffer:
+            debian_tar = LaunchpadWriteTarFile(buffer)
+            debian_tar.add_file("debian/source/format", "3.0 (quilt)\n")
+            debian_tar.add_file("debian/patches/series", "--- corrupt patch\n")
+            debian_tar.add_file("debian/rules", "")
+            debian_tar.close()
+            buffer.seek(0)
+            debian_tar_contents = buffer.read()
+        dsc_path = os.path.join(pool_dir, "foo_1.0-1.dsc")
+        with open(dsc_path, "w") as dsc:
+            dsc.write(dedent("""\
+                Format: 3.0 (quilt)
+                Source: foo
+                Binary: foo
+                Architecture: all
+                Version: 1.0-1
+                Maintainer: Foo Bar <foo.bar@canonical.com>
+                Files:
+                 %s %s foo_1.0.orig.tar.gz
+                 %s %s foo_1.0-1.debian.tar.gz
+                """ % (
+                    hashlib.md5(orig_tar_contents).hexdigest(),
+                    len(orig_tar_contents),
+                    hashlib.md5(debian_tar_contents).hexdigest(),
+                    len(debian_tar_contents))))
+
+        dsc_contents = parse_tagfile(dsc_path)
+        dsc_contents["Directory"] = pool_dir
+        dsc_contents["Package"] = "foo"
+        dsc_contents["Component"] = "main"
+        dsc_contents["Section"] = "misc"
+
+        sp_data = SourcePackageData(**dsc_contents)
+        unpack_tmpdir = self.makeTemporaryDirectory()
+        with EnvironmentVariableFixture("TMPDIR", unpack_tmpdir):
+            # Force tempfile to recheck TMPDIR.
+            tempfile.tempdir = None
+            try:
+                self.assertRaises(
+                    ExecutionError,
+                    sp_data.process_package, "ubuntu", archive_root)
+            finally:
+                # Force tempfile to recheck TMPDIR for future tests.
+                tempfile.tempdir = None
+        self.assertEqual([], os.listdir(unpack_tmpdir))
+
+    def test_checksum_fields(self):
+        # We only need one of Files or Checksums-*.
+        base_dsc_contents = {
+            "Package": "foo",
+            "Binary": "foo",
+            "Version": "1.0-1",
+            "Maintainer": "Foo Bar <foo@canonical.com>",
+            "Section": "misc",
+            "Architecture": "all",
+            "Directory": "pool/main/f/foo",
+            "Component": "main",
+            }
+        for field in (
+                "Files", "Checksums-Sha1", "Checksums-Sha256",
+                "Checksums-Sha512"):
+            dsc_contents = dict(base_dsc_contents)
+            dsc_contents[field] = "xxx 000 foo_1.0-1.dsc"
+            sp_data = SourcePackageData(**dsc_contents)
+            self.assertEqual(["foo_1.0-1.dsc"], sp_data.files)
+        self.assertRaises(
+            MissingRequiredArguments, SourcePackageData, **base_dsc_contents)
+
+
+class TestSourcePackageHandler(TestCaseWithFactory):
+
+    layer = LaunchpadZopelessLayer
+
+    def test_user_defined_fields(self):
+        series = self.factory.makeDistroSeries()
+        archive_root = self.useTempDir()
+        sphandler = SourcePackageHandler(
+            series.distribution.name, archive_root,
+            PackagePublishingPocket.RELEASE, None)
+        dsc_contents = {
+            "Format": "3.0 (quilt)",
+            "Source": "foo",
+            "Binary": "foo",
+            "Architecture": "all arm64",
+            "Version": "1.0-1",
+            "Maintainer": "Foo Bar <foo@canonical.com>",
+            "Files": "xxx 000 foo_1.0-1.dsc",
+            "Build-Indep-Architecture": "amd64",
+            "Directory": "pool/main/f/foo",
+            "Package": "foo",
+            "Component": "main",
+            "Section": "misc",
+            }
+        sp_data = SourcePackageData(**dsc_contents)
+        self.assertEqual(
+            [["Build-Indep-Architecture", "amd64"]], sp_data._user_defined)
+        sp_data.archive_root = archive_root
+        sp_data.dsc = ""
+        sp_data.copyright = ""
+        sp_data.urgency = "low"
+        sp_data.changelog = None
+        sp_data.changelog_entry = None
+        sp_data.date_uploaded = UTC_NOW
+        # We don't need a real .dsc here.
+        write_file(
+            os.path.join(archive_root, "pool/main/f/foo/foo_1.0-1.dsc"), b"x")
+        spr = sphandler.createSourcePackageRelease(sp_data, series)
+        self.assertIsNotNone(spr)
+        self.assertEqual(
+            [["Build-Indep-Architecture", "amd64"]], spr.user_defined_fields)
 
 
 class TestSourcePackagePublisher(TestCaseWithFactory):
@@ -208,6 +427,75 @@ class TestSourcePackagePublisher(TestCaseWithFactory):
         self.assertEqual(PackagePublishingStatus.PUBLISHED, spph.status)
 
 
+class TestBinaryPackageData(TestCaseWithFactory):
+
+    layer = ZopelessDatabaseLayer
+
+    def test_checksum_fields(self):
+        # We only need one of MD5sum or SHA*.
+        base_deb_contents = {
+            "Package": "foo",
+            "Installed-Size": "0",
+            "Maintainer": "Foo Bar <foo@canonical.com>",
+            "Section": "misc",
+            "Architecture": "all",
+            "Version": "1.0-1",
+            "Filename": "pool/main/f/foo/foo_1.0-1_all.deb",
+            "Component": "main",
+            "Size": "0",
+            "Description": "",
+            "Priority": "extra",
+            }
+        for field in ("MD5sum", "SHA1", "SHA256", "SHA512"):
+            deb_contents = dict(base_deb_contents)
+            deb_contents[field] = "0"
+            BinaryPackageData(**deb_contents)
+        self.assertRaises(
+            MissingRequiredArguments, BinaryPackageData, **base_deb_contents)
+
+
+class TestBinaryPackageHandler(TestCaseWithFactory):
+
+    layer = LaunchpadZopelessLayer
+
+    def test_user_defined_fields(self):
+        das = self.factory.makeDistroArchSeries()
+        archive_root = self.useTempDir()
+        sphandler = SourcePackageHandler(
+            das.distroseries.distribution.name, archive_root,
+            PackagePublishingPocket.RELEASE, None)
+        bphandler = BinaryPackageHandler(
+            sphandler, archive_root, PackagePublishingPocket.RELEASE)
+        spr = self.factory.makeSourcePackageRelease(
+            distroseries=das.distroseries)
+        deb_contents = {
+            "Package": "foo",
+            "Installed-Size": "0",
+            "Maintainer": "Foo Bar <foo@canonical.com>",
+            "Section": "misc",
+            "Architecture": "amd64",
+            "Version": "1.0-1",
+            "Filename": "pool/main/f/foo/foo_1.0-1_amd64.deb",
+            "Component": "main",
+            "Size": "0",
+            "MD5sum": "0" * 32,
+            "Description": "",
+            "Summary": "",
+            "Priority": "extra",
+            "Python-Version": "2.7",
+            }
+        bp_data = BinaryPackageData(**deb_contents)
+        self.assertEqual([["Python-Version", "2.7"]], bp_data._user_defined)
+        bp_data.archive_root = archive_root
+        # We don't need a real .deb here.
+        write_file(
+            os.path.join(archive_root, "pool/main/f/foo/foo_1.0-1_amd64.deb"),
+            b"x")
+        bpr = bphandler.createBinaryPackage(bp_data, spr, das, "amd64")
+        self.assertIsNotNone(bpr)
+        self.assertEqual([["Python-Version", "2.7"]], bpr.user_defined_fields)
+
+
 class TestBinaryPackagePublisher(TestCaseWithFactory):
 
     layer = ZopelessDatabaseLayer
@@ -229,6 +517,45 @@ class TestBinaryPackagePublisher(TestCaseWithFactory):
 
         [bpph] = series.main_archive.getAllPublishedBinaries()
         self.assertEqual(PackagePublishingStatus.PUBLISHED, bpph.status)
+
+
+class TestRunner(TestCaseWithFactory):
+
+    layer = LaunchpadZopelessLayer
+
+    def test_import_sourcepackages_skip(self):
+        # gina can be told to skip particular source versions by setting
+        # soyuz.gina.skip_source_versions to a space-separated list of
+        # $DISTRO/$NAME/$VERSION.
+        series = self.factory.makeDistroSeries()
+
+        archive_root = os.path.join(
+            os.path.dirname(__file__), 'gina_test_archive')
+        arch_component_items = ArchiveComponentItems(
+            archive_root, 'lenny', ['main'], [], True)
+        packages_map = PackagesMap(arch_component_items)
+        importer_handler = ImporterHandler(
+            transaction, series.distribution.name, series.name, archive_root,
+            PackagePublishingPocket.RELEASE, None)
+
+        def import_and_get_versions():
+            import_sourcepackages(
+                series.distribution.name, packages_map, archive_root,
+                importer_handler)
+            return [
+                p.source_package_version
+                for p in series.getPublishedSources('archive-copier')]
+
+        # Our test archive has archive-copier 0.1.5 and 0.3.6 With
+        # soyuz.gina.skip_source_versions set to
+        # '$distro/archive-copier/0.1.5', an import will grab only
+        # 0.3.6.
+        skiplist = '%s/archive-copier/0.1.5' % series.distribution.name
+        with FeatureFixture({'soyuz.gina.skip_source_versions': skiplist}):
+            self.assertContentEqual(['0.3.6'], import_and_get_versions())
+
+        # Importing again without the feature flag removed grabs both.
+        self.assertContentEqual(['0.1.5', '0.3.6'], import_and_get_versions())
 
 
 def test_suite():

@@ -1,11 +1,12 @@
-# Copyright 2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2012-2017 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for core services infrastructure."""
 
+from fixtures import FakeLogger
 from lazr.restful.interfaces._rest import IHTTPResource
 from zope.component import getUtility
-from zope.interface.declarations import implements
+from zope.interface import implementer
 from zope.publisher.interfaces import NotFound
 
 from lp.app.interfaces.services import (
@@ -26,8 +27,8 @@ class IFakeService(IService):
     """Fake service interface."""
 
 
+@implementer(IFakeService, IHTTPResource)
 class FakeService:
-    implements(IFakeService, IHTTPResource)
 
     name = 'fake_service'
 
@@ -43,18 +44,20 @@ class TestServiceFactory(TestCaseWithFactory, FakeAdapterMixin):
         fake_service = FakeService()
         self.registerUtility(fake_service, IService, "fake")
         context, view, request = test_traverse(
-            'https://launchpad.dev/api/devel/+services/fake')
+            'https://launchpad.test/api/devel/+services/fake')
         self.assertEqual(getUtility(IServiceFactory), context)
         self.assertEqual(fake_service, view)
 
     def test_invalid_traversal(self):
         # Test that traversal to +services without a service specified fails.
+        self.useFixture(FakeLogger())
         self.assertRaises(
             NotFound, self.getUserBrowser,
-            'https://launchpad.dev/api/devel/+services')
+            'https://launchpad.test/api/devel/+services')
 
     def test_invalid_service(self):
         # Test that traversal an invalid service name fails.
+        self.useFixture(FakeLogger())
         self.assertRaises(
             NotFound, self.getUserBrowser,
-            'https://launchpad.dev/api/devel/+services/invalid')
+            'https://launchpad.test/api/devel/+services/invalid')

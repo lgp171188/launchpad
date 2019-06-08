@@ -39,5 +39,5 @@ user tried to re-post the form after validating one of their email addresses.
     >>> response.getStatus()
     302
     >>> response.getHeader('Location')
-    'http://launchpad.dev/token/...'
+    'http://launchpad.test/token/...'
 

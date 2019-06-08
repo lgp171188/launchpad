@@ -6,7 +6,7 @@ remote bug tracker into Launchpad.
 In order to demonstrate this we need to create example Bug, BugTracker
 and BugWatch instances with which to work.
 
-    >>> from zope.interface import implements
+    >>> from zope.interface import implementer
     >>> from lp.services.config import config
     >>> from lp.bugs.tests.externalbugtracker import (
     ...     new_bugtracker)
@@ -42,8 +42,8 @@ ExternalBugTracker class which implements these three methods.
     >>> from lp.bugs.externalbugtracker import (
     ...     ExternalBugTracker)
     >>> from lp.bugs.interfaces.externalbugtracker import ISupportsCommentImport
-    >>> class CommentImportingExternalBugTracker(ExternalBugTracker):
-    ...     implements(ISupportsCommentImport)
+    >>> @implementer(ISupportsCommentImport)
+    ... class CommentImportingExternalBugTracker(ExternalBugTracker):
     ...
     ...     comment_dict = {}
     ...     remote_comments = {
@@ -103,10 +103,10 @@ were imported. They also have the remote_comment_id attribute set.
     ...     for message in bug.messages[1:]:
     ...         bug_message = getUtility(IBugMessageSet).getByBugAndMessage(
     ...             bug, message)
-    ...         print bug_message.bugwatch == bug_watch
-    ...         print "%s: %s" % (
+    ...         print(bug_message.bugwatch == bug_watch)
+    ...         print("%s: %s" % (
     ...             bug_message.remote_comment_id,
-    ...             bug_message.message.text_contents)
+    ...             bug_message.message.text_contents))
     >>> print_bug_messages(bug, bug_watch)
     True
     1: Example comment the first
@@ -143,7 +143,7 @@ form which it was imported.
 
 In the examples above, joe.bloggs@example.com was used as the poster of
 all the comments. Since Joe didn't have a Launchpad account, it was
-created automatically for him, with the e-mail address marked as
+created automatically for him, with the email address marked as
 invalid.
 
     >>> joe = getUtility(IPersonSet).getByEmail('joe.bloggs@example.com',
@@ -153,14 +153,14 @@ invalid.
 
     >>> joe.displayname
     u'Joe Bloggs'
-    >>> print joe.preferredemail
+    >>> print(joe.preferredemail)
     None
-    >>> print joe.creation_rationale.name
+    >>> print(joe.creation_rationale.name)
     BUGIMPORT
-    >>> print joe.creation_comment
+    >>> print(joe.creation_comment)
     when importing comments for Bugzilla *TESTING* #123456.
 
-If the poster's e-mail is already registered in Launchpad, the comment
+If the poster's email is already registered in Launchpad, the comment
 is associated with the existing person.
 
     >>> no_priv = getUtility(IPersonSet).getByName('no-priv')
@@ -198,7 +198,7 @@ used to create a Person based on the displayname alone.
     >>> bug.messages[-1].owner.name
     u'noemail-bugzilla-checkwatches-1'
 
-    >>> print bug.messages[-1].owner.preferredemail
+    >>> print(bug.messages[-1].owner.preferredemail)
     None
 
 A BugTrackerPerson record will have been created to map the new Person
@@ -222,7 +222,7 @@ imported.
     or display name found. (OOPS-...)
     INFO Imported 0 comments for remote bug 123456 on ...
 
-    >>> print bug.messages[-1].text_contents
+    >>> print(bug.messages[-1].text_contents)
     Yet another comment.
 
 Let's delete that comment now so that it doesn't break later tests.
@@ -302,7 +302,7 @@ remote tracker and will not be returned by getImportedBugMessages()
     ...         content='Pushable comment', bugwatch=bug_watch2)
 
     >>> for bug_message in bug_watch2.getImportedBugMessages():
-    ...     print bug_message.message.text_contents
+    ...     print(bug_message.message.text_contents)
     Imported comment
 
     >>> transaction.commit()
@@ -359,7 +359,7 @@ examining the BugMessages which link the messages to the bug.
     >>> bug_message_two = getUtility(IBugMessageSet).getByBugAndMessage(
     ...     bug, message_two)
 
-    >>> print bug_message_one.bugwatch
+    >>> print(bug_message_one.bugwatch)
     None
 
     >>> bug_message_two.bugwatch == bug_watch
@@ -394,7 +394,7 @@ Launchpad but will result in no Karma records being created.
     INFO Imported 1 comments for remote bug 123456...
 
     >>> for cve in bug_watch.bug.cves:
-    ...     print cve.displayname
+    ...     print(cve.displayname)
     CVE-1991-9911
 
 Karma is only awarded for actions that occur within Launchpad. If an
@@ -416,18 +416,18 @@ Once again, CVE links are created but no karma is assigned.
     INFO Imported 1 comments for remote bug 123456...
 
     >>> for cve in sorted([cve.displayname for cve in bug_watch.bug.cves]):
-    ...     print cve
+    ...     print(cve)
     CVE-1991-9911
     CVE-1999-0593
 
     >>> karma_helper.unregister_listener()
 
 
-== E-mail notifications ==
+== Email notifications ==
 
 When bug comments are imported, notifications are sent to inform the bug
 subscribers about it. The first time we import comments from a bug
-watch, there can be a lot of comments. To avoid causing a lot of e-mail
+watch, there can be a lot of comments. To avoid causing a lot of email
 notifications to be sent, only one notification is sent for all the
 comments.
 
@@ -478,7 +478,7 @@ is used as the From address.
     >>> notifications[0].message.owner.name
     u'bug-watch-updater'
 
-    >>> print notifications[0].message.text_contents
+    >>> print(notifications[0].message.text_contents)
     Launchpad has imported 2 comments from the remote bug at
     http://.../show_bug.cgi?id=42.
     <BLANKLINE>
@@ -514,8 +514,8 @@ more than one.
     ...     '3': 'Third imported comment (initial import)',
     ...     '4': 'Fourth imported comment (initial import)',
     ...     }
-    >>> bug_watch.getImportedBugMessages().count() > 0
-    True
+    >>> bug_watch.getImportedBugMessages().is_empty()
+    False
 
     >>> transaction.commit()
 
@@ -526,8 +526,8 @@ more than one.
     >>> len(notifications)
     2
     >>> for notification in notifications:
-    ...     print "%s wrote: %s" % (
+    ...     print("%s wrote: %s" % (
     ...         notification.message.owner.name,
-    ...         notification.message.text_contents)
+    ...         notification.message.text_contents))
     joe-bloggs wrote: Third imported comment (initial import)
     joe-bloggs wrote: Fourth imported comment (initial import)

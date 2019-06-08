@@ -1,7 +1,9 @@
 # Copyright 2009-2010 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-""" Unit-tests for the Answer Tracker Mail Notifications. """
+"""Unit tests for the Answer Tracker Mail Notifications."""
+
+from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 
@@ -12,7 +14,7 @@ __all__ = [
 from unittest import TestCase
 
 from zope.component import getUtility
-from zope.interface import implements
+from zope.interface import implementer
 from zope.security.proxy import removeSecurityProxy
 
 from lp.answers.enums import QuestionRecipientSet
@@ -74,9 +76,9 @@ class StubQuestionMessage:
         self.subject = subject
 
 
+@implementer(IPerson)
 class FakeUser:
     """A fake user."""
-    implements(IPerson)
 
 
 class FakeEvent:
@@ -100,7 +102,7 @@ class QuestionModifiedDefaultNotificationTestCase(TestCase):
 
     def test_getSubject(self):
         """getSubject() when there is no message added to the question."""
-        self.assertEquals(
+        self.assertEqual(
             'Re: [Question #1]: Question title',
             self.notification.getSubject())
 
@@ -196,7 +198,7 @@ class FakeQuestionNotification(QuestionNotification):
 
 
 class QuestionNotificationTestCase(TestCaseWithFactory):
-    """Test common question notification behavior."""
+    """Test common question notification behaviour."""
 
     layer = DatabaseFunctionalLayer
 

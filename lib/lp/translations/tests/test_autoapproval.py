@@ -1,4 +1,4 @@
-# Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Unit tests for translation import queue auto-approval.
@@ -14,6 +14,7 @@ from datetime import (
     timedelta,
     )
 
+from fixtures import FakeLogger
 from pytz import UTC
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
@@ -26,13 +27,15 @@ from lp.registry.model.sourcepackagename import (
     SourcePackageName,
     SourcePackageNameSet,
     )
-from lp.services.database.lpstorm import IMasterStore
-from lp.services.webapp.testing import verifyObject
+from lp.services.database.interfaces import IMasterStore
 from lp.services.worlddata.model.language import (
     Language,
     LanguageSet,
     )
-from lp.testing import TestCaseWithFactory
+from lp.testing import (
+    TestCaseWithFactory,
+    verifyObject,
+    )
 from lp.testing.fakemethod import FakeMethod
 from lp.testing.layers import LaunchpadZopelessLayer
 from lp.translations.enums import RosettaImportStatus
@@ -255,7 +258,7 @@ class TestGuessPOFileCustomLanguageCode(TestCaseWithFactory,
 
         self.becomeTheGardener()
         el_file = entry.getGuessedPOFile()
-        self.failIfEqual(el_file, elx_file)
+        self.assertNotEqual(el_file, elx_file)
         self.assertEqual(el_file.language.code, 'el')
 
     def test_CustomLanguageCodeRedirectsMatch(self):
@@ -306,6 +309,7 @@ class TestTemplateGuess(TestCaseWithFactory, GardenerDbUserMixin):
 
     def setUp(self):
         super(TestTemplateGuess, self).setUp()
+        self.useFixture(FakeLogger())
         self.templateset = POTemplateSet()
 
     def _setUpProduct(self):
@@ -481,7 +485,7 @@ class TestTemplateGuess(TestCaseWithFactory, GardenerDbUserMixin):
         series = self.factory.makeProductSeries()
         templates = [
             self.factory.makePOTemplate(productseries=series)
-            for counter in xrange(2)]
+            for counter in range(2)]
         entry = self.factory.makeTranslationImportQueueEntry(
             productseries=series)
         self.assertEqual(
@@ -497,7 +501,7 @@ class TestTemplateGuess(TestCaseWithFactory, GardenerDbUserMixin):
             self.factory.makePOTemplate(
                 translation_domain=domain,
                 productseries=self.factory.makeProductSeries())
-            for counter in xrange(2)]
+            for counter in range(2)]
         entry = self.factory.makeTranslationImportQueueEntry(
             productseries=templates[0].productseries)
         self.assertEqual(
@@ -514,7 +518,7 @@ class TestTemplateGuess(TestCaseWithFactory, GardenerDbUserMixin):
             self.factory.makePOTemplate(
                 translation_domain=domain, distroseries=distroseries,
                 sourcepackagename=self.factory.makeSourcePackageName())
-            for counter in xrange(2)]
+            for counter in range(2)]
         entry = self.factory.makeTranslationImportQueueEntry(
             distroseries=distroseries,
             sourcepackagename=templates[1].sourcepackagename)
@@ -553,7 +557,7 @@ class TestTemplateGuess(TestCaseWithFactory, GardenerDbUserMixin):
         templates = [
             self.factory.makePOTemplate(
                 translation_domain=domain, productseries=series)
-            for counter in xrange(2)]
+            for counter in range(2)]
         entry = self.factory.makeTranslationImportQueueEntry(
             productseries=series)
 

@@ -1,4 +1,4 @@
-# Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """FakePackager utility.
@@ -6,6 +6,8 @@
 It builds small and fully functional packages to be used in launchpad test
 suite.
 """
+
+from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 __all__ = ['FakePackager']
@@ -18,6 +20,7 @@ import tarfile
 import tempfile
 import time
 
+import scandir
 from zope.component import getUtility
 
 from lp.archiveuploader.nascentupload import NascentUpload
@@ -89,9 +92,9 @@ class FakePackager:
         self.version = version
 
         if key_path is not None:
-            self.gpg_key_id = self._importGPGKey(key_path)
+            self.gpg_key_fingerprint = self._importGPGKey(key_path)
         else:
-            self.gpg_key_id = None
+            self.gpg_key_fingerprint = None
 
         self.upstream_directory = os.path.join(
             self.sandbox_path, '%s-%s' % (self.name, self.version))
@@ -119,19 +122,19 @@ class FakePackager:
     def _importGPGKey(self, key_path):
         """Import the given secret GPG key to sign packages.
 
-        Return the key ID import as '0xAABBCCDD'
+        Return the fingerprint of the imported key, prefixed with '0x'.
         """
         gpghandler = getUtility(IGPGHandler)
 
         if key_path is None:
-            self.gpg_key_id = None
+            self.gpg_key_fingerprint = None
             return
 
         gpghandler.resetLocalState()
         import_secret_test_key(key_path)
         key = list(gpghandler.localKeys())[0]
 
-        return '0x%s' % key.keyid
+        return '0x%s' % key.fingerprint
 
     def _appendContents(self, content):
         """Append a given content in the upstream 'contents' file.
@@ -360,9 +363,9 @@ class FakePackager:
         if not signed:
             debuild_options.extend(['-uc', '-us'])
         else:
-            assert self.gpg_key_id is not None, (
+            assert self.gpg_key_fingerprint is not None, (
                 'Cannot build signed packages because the key is not set.')
-            debuild_options.append('-k%s' % self.gpg_key_id)
+            debuild_options.append('-k%s' % self.gpg_key_fingerprint)
 
         if include_orig:
             debuild_options.append('-sa')
@@ -376,9 +379,8 @@ class FakePackager:
 
     def listAvailableUploads(self):
         """Return the path for all available changesfiles."""
-        changes = [os.path.join(self.sandbox_path, filename)
-                   for filename in os.listdir(self.sandbox_path)
-                   if filename.endswith('.changes')]
+        changes = [entry.path for entry in scandir.scandir(self.sandbox_path)
+                   if entry.name.endswith('.changes')]
 
         return sorted(changes)
 

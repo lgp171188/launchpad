@@ -6,6 +6,7 @@
 __all__ = [
     'DuplicatePriorityError',
     'FeatureRuleSource',
+    'MemoryFeatureRuleSource',
     'NullFeatureRuleSource',
     'StormFeatureRuleSource',
     ]
@@ -117,7 +118,7 @@ class StormFeatureRuleSource(FeatureRuleSource):
             # timeouts also looks up flags, but doing such a lookup can
             # will cause a doom if the db request is not executed or is
             # canceled by the DB - and then results in a failure in
-            # zope.app.publications.ZopePublication.handleError when it
+            # zope.app.publication.ZopePublication.handleError when it
             # calls transaction.commit.
             # By Looking this up first, we avoid this and also permit
             # code using flags to work in timed out requests (by appearing to
@@ -150,6 +151,24 @@ class StormFeatureRuleSource(FeatureRuleSource):
                 value=value,
                 priority=priority))
         store.flush()
+
+
+class MemoryFeatureRuleSource(FeatureRuleSource):
+    """Access feature rules stored in non-persistent memory.
+    """
+
+    def __init__(self):
+        self.rules = []
+
+    def getAllRulesAsTuples(self):
+        return self.rules
+
+    def setAllRules(self, new_rules):
+        """Replace all existing rules with a new set.
+
+        :param new_rules: List of (name, scope, priority, value) tuples.
+        """
+        self.rules = [Rule(*r) for r in new_rules]
 
 
 class NullFeatureRuleSource(FeatureRuleSource):

@@ -2,7 +2,7 @@ The lp.services.webapp.adapter code constrains the amount of time that
 a request can take.
 
 The document webapp/ftests/test_adapter.txt shows its
-behavior in detail.  This document shows the behavior within the context of a
+behaviour in detail.  This document shows the behaviour within the context of a
 page test.
 
 In particular, this demonstration shows not only that the main view will raise
@@ -21,7 +21,7 @@ exception, and a time machine.
     >>> from textwrap import dedent
     >>> from zope.publisher.interfaces.browser import (
     ...     IBrowserRequest, IBrowserView, IBrowserPublisher)
-    >>> from zope.interface import Interface, implements
+    >>> from zope.interface import Interface, implementer
     >>> from zope.security.checker import CheckerPublic, MultiChecker
     >>> import zope.component
     >>> import lp.services.webapp.adapter
@@ -40,8 +40,8 @@ exception, and a time machine.
     ...     global _now
     ...     _now += delta
     >>> lp.services.webapp.adapter.time = fake_time # Monkey patch
-    >>> class DoomedView(BrowserView):
-    ...     implements(IBrowserPublisher)
+    >>> @implementer(IBrowserPublisher)
+    ... class DoomedView(BrowserView):
     ...     __Security_checker__ = MultiChecker((
     ...         (IBrowserView, CheckerPublic),
     ...         (IBrowserPublisher, CheckerPublic),
@@ -77,14 +77,14 @@ exception, and a time machine.
     ...     DoomedExceptionView, required=(TimeoutError, IBrowserRequest),
     ...     provided=IBrowserView, name='index.html')
 
-Now we actually demonstrate the behavior.  The view did raise a TimeoutError.
+Now we actually demonstrate the behaviour.  The view did raise a TimeoutError.
 
     >>> from lp.testing.fixture import CaptureOops
     >>> capture = CaptureOops()
     >>> capture.setUp()
     >>> browser = Browser()
     >>> browser.handleErrors = False
-    >>> browser.open('http://launchpad.dev/doom_test')
+    >>> browser.open('http://launchpad.test/doom_test')
     Traceback (most recent call last):
     ...
     TimeoutError...

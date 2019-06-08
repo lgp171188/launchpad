@@ -1,6 +1,6 @@
 #!/usr/bin/python -S
 #
-# Copyright 2009 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2016 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """
@@ -15,6 +15,7 @@ import glob
 from optparse import OptionParser
 import os.path
 import re
+import subprocess
 from textwrap import dedent
 
 from bzrlib.branch import Branch
@@ -29,14 +30,15 @@ from lp.services.scripts import (
     logger,
     logger_options,
     )
-from lp.services.utils import total_seconds
 
 
-SCHEMA_DIR = os.path.dirname(__file__)
+SCHEMA_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
-def main():
-    con = connect()
+def main(con=None):
+    if con is None:
+        con = connect()
+
     patches = get_patchlist(con)
 
     log.info("Applying patches.")
@@ -118,7 +120,7 @@ def report_patch_times(con, todays_patches):
     for major, minor, patch, start_time, db_time in cur.fetchall():
         if (major, minor, patch) in todays_patches:
             continue
-        db_time = total_seconds(db_time)
+        db_time = db_time.total_seconds()
         start_time = start_time.strftime('%Y-%m-%d')
         log.info(
             "%d-%02d-%d applied %s in %0.1f seconds"
@@ -140,7 +142,7 @@ def report_patch_times(con, todays_patches):
             continue
         log.info(
             "%d-%02d-%d applied just now in %0.1f seconds",
-            major, minor, patch, total_seconds(db_time))
+            major, minor, patch, db_time.total_seconds())
 
 
 def apply_patches_normal(con):
@@ -160,7 +162,7 @@ def apply_patches_normal(con):
 
     # Repair patch timestamps if necessary.
     cur.execute(
-        FIX_PATCH_TIMES_POST_SQL % sqlvalues(*get_bzr_details()))
+        FIX_PATCH_TIMES_POST_SQL % sqlvalues(*get_vcs_details()))
 
     # Update comments.
     apply_comments(con)
@@ -238,29 +240,44 @@ def apply_other(con, script, no_commit=False):
 
 
 def apply_comments(con):
-    apply_other(con, 'comments.sql')
+    if options.comments:
+        apply_other(con, 'comments.sql')
+    else:
+        log.debug("Skipping comments.sql per command line settings")
 
 
-_bzr_details_cache = None
+_vcs_details_cache = None
 
 
-def get_bzr_details():
-    """Return (branch_nick, revno, revision_id) of this Bazaar branch.
+def get_vcs_details():
+    """Return (branch_nick, revno, revision_id) of this VCS branch.
+
+    If this is a Git branch, then revno will be None.
 
     Returns (None, None, None) if the tree this code is running from
-    is not a Bazaar branch.
+    is not a VCS branch.
     """
-    global _bzr_details_cache
-    if _bzr_details_cache is None:
-        try:
-            branch = Branch.open_containing(SCHEMA_DIR)[0]
-            revno, revision_id = branch.last_revision_info()
-            branch_nick = branch.get_config().get_nickname()
-        except NotBranchError:
-            log.warning("Not a Bazaar branch - branch details unavailable")
-            revision_id, revno, branch_nick = None, None, None
-        _bzr_details_cache = (branch_nick, revno, revision_id)
-    return _bzr_details_cache
+    global _vcs_details_cache
+    if _vcs_details_cache is None:
+        top = os.path.dirname(os.path.dirname(SCHEMA_DIR))
+        if os.path.exists(os.path.join(top, ".git")):
+            branch_nick = subprocess.check_output(
+                ["git", "rev-parse", "--abbrev-ref", "HEAD"],
+                universal_newlines=True).rstrip("\n")
+            revno = None
+            revision_id = subprocess.check_output(
+                ["git", "rev-parse", "HEAD"],
+                universal_newlines=True).rstrip("\n")
+        else:
+            try:
+                branch = Branch.open_containing(SCHEMA_DIR)[0]
+                revno, revision_id = branch.last_revision_info()
+                branch_nick = branch.get_config().get_nickname()
+            except NotBranchError:
+                log.warning("Not a Bazaar branch - branch details unavailable")
+                revision_id, revno, branch_nick = None, None, None
+        _vcs_details_cache = (branch_nick, revno, revision_id)
+    return _vcs_details_cache
 
 
 if __name__ == '__main__':
@@ -273,6 +290,9 @@ if __name__ == '__main__':
     parser.add_option(
         "--partial", dest="partial", default=False,
         action="store_true", help="Commit after applying each patch")
+    parser.add_option(
+        "--skip-comments", dest="comments", default=True,
+        action="store_false", help="Skip applying comments.sql")
     (options, args) = parser.parse_args()
 
     if args:

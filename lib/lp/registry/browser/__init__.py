@@ -1,4 +1,4 @@
-# Copyright 2009-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2013 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Common registry browser helpers and mixins."""
@@ -22,6 +22,7 @@ import os
 
 from storm.store import Store
 from zope.component import getUtility
+from zope.security.proxy import removeSecurityProxy
 
 from lp.app.browser.folder import ExportedFolder
 from lp.app.browser.launchpadform import (
@@ -29,6 +30,9 @@ from lp.app.browser.launchpadform import (
     LaunchpadEditFormView,
     )
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
+from lp.blueprints.interfaces.specificationworkitem import (
+    ISpecificationWorkItemSet,
+    )
 from lp.bugs.interfaces.bugtask import IBugTaskSet
 from lp.bugs.interfaces.bugtasksearch import BugTaskSearchParams
 from lp.registry.interfaces.productseries import IProductSeries
@@ -150,29 +154,24 @@ class MilestoneOverlayMixin:
 
 
 class RegistryDeleteViewMixin:
-    """A mixin class that provides common behavior for registry deletions."""
+    """A mixin class that provides common behaviour for registry deletions."""
 
     @property
     def cancel_url(self):
         """The context's URL."""
         return canonical_url(self.context)
 
-    def _getBugtasks(self, target):
+    def _getBugtasks(self, target, ignore_privacy=False):
         """Return the list `IBugTask`s associated with the target."""
         if IProductSeries.providedBy(target):
             params = BugTaskSearchParams(user=self.user)
             params.setProductSeries(target)
         else:
-            params = BugTaskSearchParams(milestone=target, user=self.user)
+            params = BugTaskSearchParams(
+                milestone=target, user=self.user,
+                ignore_privacy=ignore_privacy)
         bugtasks = getUtility(IBugTaskSet).search(params)
         return list(bugtasks)
-
-    def _getSpecifications(self, target):
-        """Return the list `ISpecification`s associated to the target."""
-        if IProductSeries.providedBy(target):
-            return list(target.all_specifications)
-        else:
-            return list(target.specifications)
 
     def _getProductRelease(self, milestone):
         """The `IProductRelease` associated with the milestone."""
@@ -195,9 +194,11 @@ class RegistryDeleteViewMixin:
             subscription.delete()
 
     def _remove_series_bugs_and_specifications(self, series):
-        """Untarget the associated bugs and subscriptions."""
-        for spec in self._getSpecifications(series):
-            spec.proposeGoal(None, self.user)
+        """Untarget the associated bugs and specifications."""
+        for spec in series.all_specifications:
+            # The logged in user may have no permission to see the spec, so
+            # make use of removeSecurityProxy to force it.
+            removeSecurityProxy(spec).proposeGoal(None, self.user)
         for bugtask in self._getBugtasks(series):
             # Bugtasks cannot be deleted directly. In this case, the bugtask
             # is already reported on the product, so the series bugtask has
@@ -232,13 +233,17 @@ class RegistryDeleteViewMixin:
     def _deleteMilestone(self, milestone):
         """Delete a milestone and unlink related objects."""
         self._unsubscribe_structure(milestone)
-        for bugtask in self._getBugtasks(milestone):
-            if bugtask.conjoined_master is not None:
-                Store.of(bugtask).remove(bugtask.conjoined_master)
+        # We need to remove the milestone from every bug, even those the
+        # current user can't see/change, otherwise we can't delete the
+        # milestone, since it's still referenced.
+        for bugtask in self._getBugtasks(milestone, ignore_privacy=True):
+            nb = removeSecurityProxy(bugtask)
+            if nb.conjoined_master is not None:
+                Store.of(bugtask).remove(nb.conjoined_master)
             else:
-                bugtask.milestone = None
-        for spec in self._getSpecifications(milestone):
-            spec.milestone = None
+                nb.milestone = None
+        removeSecurityProxy(milestone.all_specifications).set(milestoneID=None)
+        getUtility(ISpecificationWorkItemSet).unlinkMilestone(milestone)
         self._deleteRelease(milestone.product_release)
         milestone.destroySelf()
 

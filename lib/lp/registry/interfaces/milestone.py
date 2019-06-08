@@ -1,7 +1,5 @@
-# Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2013 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
-
-# pylint: disable-msg=E0211,E0213
 
 """Milestone interfaces."""
 
@@ -56,6 +54,7 @@ from lp.bugs.interfaces.bugtarget import (
     IHasOfficialBugTags,
     )
 from lp.bugs.interfaces.bugtask import IBugTask
+from lp.bugs.interfaces.bugtasksearch import IBugTaskSearchBase
 from lp.bugs.interfaces.structuralsubscription import (
     IStructuralSubscriptionTarget,
     )
@@ -66,7 +65,11 @@ from lp.services.fields import (
     NoneableDescription,
     NoneableTextLine,
     )
-from lp.services.webservice.apihelpers import patch_plain_parameter_type
+from lp.services.webservice.apihelpers import (
+    patch_collection_property,
+    patch_plain_parameter_type,
+    patch_reference_property,
+    )
 
 
 class MilestoneNameField(ContentNameField):
@@ -122,8 +125,6 @@ class IMilestoneData(IHasBugs, IStructuralSubscriptionTarget,
                 "The product, distribution, or project group for this "
                 "milestone."),
             required=False))
-    specifications = Attribute(
-        "A list of specifications targeted to this object.")
     dateexpected = exported(
         FormattableDate(title=_("Date Targeted"), required=False,
              description=_("Example: 2005-11-24")),
@@ -138,9 +139,14 @@ class IMilestoneData(IHasBugs, IStructuralSubscriptionTarget,
     title = exported(
         TextLine(title=_("A context title for pages."),
                  readonly=True))
+    all_specifications = doNotSnapshot(
+        Attribute('All specifications linked to this milestone.'))
 
     def bugtasks(user):
         """Get a list of non-conjoined bugtasks visible to this user."""
+
+    def getSpecifications(user):
+        """Return the specifications visible to this user."""
 
 
 class IAbstractMilestone(IMilestoneData):
@@ -266,9 +272,13 @@ class IMilestone(IAbstractMilestone):
         why this is not a property.
         """
 
+    def userCanView(user):
+        """True if the given user has access to this product."""
+
 
 # Avoid circular imports
-IBugTask['milestone'].schema = IMilestone
+patch_reference_property(IBugTask, 'milestone', IMilestone)
+patch_collection_property(IBugTaskSearchBase, 'milestone', IMilestone)
 patch_plain_parameter_type(
     IBugTask, 'transitionToMilestone', 'new_milestone', IMilestone)
 
@@ -307,7 +317,7 @@ class IMilestoneSet(Interface):
 
 class IProjectGroupMilestone(IAbstractMilestone):
     """A marker interface for milestones related to a project"""
-    export_as_webservice_entry()
+    export_as_webservice_entry(as_of="beta")
 
 
 class IHasMilestones(Interface):
@@ -343,6 +353,6 @@ class ICanGetMilestonesDirectly(Interface):
 
 
 # Fix cyclic references.
-IMilestone['target'].schema = IHasMilestones
-IMilestone['series_target'].schema = IHasMilestones
-IProductRelease['milestone'].schema = IMilestone
+patch_reference_property(IMilestone, 'target', IHasMilestones)
+patch_reference_property(IMilestone, 'series_target', IHasMilestones)
+patch_reference_property(IProductRelease, 'milestone', IMilestone)

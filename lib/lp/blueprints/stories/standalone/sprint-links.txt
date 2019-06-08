@@ -10,7 +10,7 @@ First we open the page for the spec on Support <canvas> objects from the
 sample data. We will use Sample Person, who has no special privileges.
 
   >>> browser.addHeader('Authorization', 'Basic test@canonical.com:test')
-  >>> browser.open('http://blueprints.launchpad.dev/firefox/+spec/canvas')
+  >>> browser.open('http://blueprints.launchpad.test/firefox/+spec/canvas')
   >>> browser.isHtml
   True
 
@@ -25,7 +25,7 @@ mind.
 
     >>> back_link = browser.getLink('Support <canvas> Objects')
     >>> back_link.url
-    'http://blueprints.launchpad.dev/firefox/+spec/canvas'
+    'http://blueprints.launchpad.test/firefox/+spec/canvas'
 
 Now  with a POST, we try to Add the spec to the Guacamole sprint.
 
@@ -68,6 +68,8 @@ classes don't know about their own permissions and security).
     >>> from lp.registry.interfaces.person import IPersonSet
     >>> login('test@canonical.com')
     >>> rome_sprint = factory.makeSprint(name='rome')
+    >>> logout()
+    >>> ignored = login_person(rome_sprint.owner)
     >>> rome_sprint.time_ends = dt.datetime.now(UTC) + dt.timedelta(30)
     >>> rome_sprint.time_starts = dt.datetime.now(UTC) + dt.timedelta(20)
     >>> sample_person = getUtility(IPersonSet).getByName('name12')
@@ -75,7 +77,7 @@ classes don't know about their own permissions and security).
     >>> logout()
 
     >>> browser.open(
-    ...     'http://blueprints.launchpad.dev/'
+    ...     'http://blueprints.launchpad.test/'
     ...     'kubuntu/+spec/kde-desktopfile-langpacks')
     >>> 'Approved for the meeting agenda' in browser.contents
     False
@@ -102,7 +104,7 @@ Now go and change that and verify.
   'http://.../kubuntu/+spec/kde-desktopfile-langpacks/rome'
   >>> back_link = browser.getLink('KDE Desktop File Language Packs')
   >>> back_link.url
-  'http://blueprints.launchpad.dev/kubuntu/+spec/kde-desktopfile-langpacks'
+  'http://blueprints.launchpad.test/kubuntu/+spec/kde-desktopfile-langpacks'
   >>> browser.getControl('Decline').click()
   >>> 'Declined for the meeting' not in browser.contents
   False

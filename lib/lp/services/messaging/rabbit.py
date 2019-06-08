@@ -1,4 +1,4 @@
-# Copyright 2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2011-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """An API for messaging systems in Launchpad, e.g. RabbitMQ."""
@@ -14,14 +14,15 @@ __all__ = [
 from collections import deque
 from functools import partial
 import json
+import socket
 import sys
 import threading
 import time
 
-from amqplib import client_0_8 as amqp
+import amqp
 import transaction
 from transaction._transaction import Status as TransactionStatus
-from zope.interface import implements
+from zope.interface import implementer
 
 from lp.services.config import config
 from lp.services.messaging.interfaces import (
@@ -37,9 +38,8 @@ from lp.services.messaging.interfaces import (
 LAUNCHPAD_EXCHANGE = "launchpad-exchange"
 
 
+@implementer(transaction.interfaces.ISynchronizer)
 class RabbitSessionTransactionSync:
-
-    implements(transaction.interfaces.ISynchronizer)
 
     def __init__(self, session):
         self.session = session
@@ -73,15 +73,16 @@ def connect():
     """
     if not is_configured():
         raise MessagingUnavailable("Incomplete configuration")
-    return amqp.Connection(
+    connection = amqp.Connection(
         host=config.rabbitmq.host, userid=config.rabbitmq.userid,
         password=config.rabbitmq.password,
-        virtual_host=config.rabbitmq.virtual_host, insist=False)
+        virtual_host=config.rabbitmq.virtual_host)
+    connection.connect()
+    return connection
 
 
+@implementer(IMessageSession)
 class RabbitSession(threading.local):
-
-    implements(IMessageSession)
 
     exchange = LAUNCHPAD_EXCHANGE
 
@@ -98,9 +99,7 @@ class RabbitSession(threading.local):
     @property
     def is_connected(self):
         """See `IMessageSession`."""
-        return (
-            self._connection is not None and
-            self._connection.transport is not None)
+        return self._connection is not None and self._connection.connected
 
     def connect(self):
         """See `IMessageSession`.
@@ -108,7 +107,7 @@ class RabbitSession(threading.local):
         Open a connection for this thread if necessary. Connections cannot be
         shared between threads.
         """
-        if self._connection is None or self._connection.transport is None:
+        if self._connection is None or not self._connection.connected:
             self._connection = connect()
         return self._connection
 
@@ -117,6 +116,9 @@ class RabbitSession(threading.local):
         if self._connection is not None:
             try:
                 self._connection.close()
+            except socket.error:
+                # Socket error is fine; the connection is still closed.
+                pass
             finally:
                 self._connection = None
 
@@ -217,10 +219,9 @@ class RabbitMessageBase:
         return self._channel
 
 
+@implementer(IMessageProducer)
 class RabbitRoutingKey(RabbitMessageBase):
     """A RabbitMQ data origination point."""
-
-    implements(IMessageProducer)
 
     def __init__(self, session, routing_key):
         super(RabbitRoutingKey, self).__init__(session)
@@ -254,10 +255,9 @@ class RabbitRoutingKey(RabbitMessageBase):
             routing_key=self.key, msg=msg)
 
 
+@implementer(IMessageConsumer)
 class RabbitQueue(RabbitMessageBase):
     """A RabbitMQ Queue."""
-
-    implements(IMessageConsumer)
 
     def __init__(self, session, name):
         super(RabbitQueue, self).__init__(session)
@@ -281,8 +281,8 @@ class RabbitQueue(RabbitMessageBase):
                 else:
                     self.channel.basic_ack(message.delivery_tag)
                     return json.loads(message.body)
-            except amqp.AMQPChannelException as error:
-                if error.amqp_reply_code == 404:
+            except amqp.ChannelError as error:
+                if error.reply_code == 404:
                     raise QueueNotFound()
                 else:
                     raise

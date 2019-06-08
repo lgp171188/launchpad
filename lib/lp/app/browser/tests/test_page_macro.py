@@ -7,7 +7,7 @@ __metaclass__ = type
 
 import os
 
-from zope.interface import implements
+from zope.interface import implementer
 from zope.location.interfaces import LocationError
 from zope.traversing.interfaces import IPathAdapter
 
@@ -31,8 +31,8 @@ class ITest(IPrivacy):
     """A mechanism for adaption."""
 
 
+@implementer(ITest)
 class TestObject:
-    implements(ITest)
 
     def __init__(self):
         self.private = False
@@ -69,7 +69,7 @@ class PageMacroDispatcherTestCase(TestPageMacroDispatcherMixin, TestCase):
         self._setUpView()
 
     def test_base_template(self):
-        # Requests on the launchpad.dev vhost use the Launchpad base template.
+        # Requests on the launchpad.test vhost use the Launchpad base template.
         adapter = self.getAdapter([self.view], IPathAdapter, name='macro')
         template_path = os.path.normpath(adapter.base.filename)
         self.assertIn('lp/app/templates', template_path)

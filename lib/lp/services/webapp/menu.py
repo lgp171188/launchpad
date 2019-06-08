@@ -5,11 +5,10 @@
 
 __metaclass__ = type
 __all__ = [
+    'ALL_LINKS',
     'enabled_with_permission',
-    'escape',
     'get_current_view',
     'get_facet',
-    'structured',
     'FacetMenu',
     'ApplicationMenu',
     'ContextMenu',
@@ -20,25 +19,22 @@ __all__ = [
     'MenuLink',
     ]
 
-import cgi
 import types
 
-from lazr.delegates import delegates
+from lazr.delegates import delegate_to
+from lazr.restful.utils import get_current_browser_request
 from lazr.uri import (
     InvalidURIError,
     URI,
     )
 from zope.component import getMultiAdapter
-from zope.i18n import (
-    Message,
-    translate,
-    )
-from zope.interface import implements
+from zope.interface import implementer
 from zope.security.proxy import (
     isinstance as zope_isinstance,
     removeSecurityProxy,
     )
 
+from lp.services.webapp.escaping import html_escape
 from lp.services.webapp.interfaces import (
     IApplicationMenu,
     IContextMenu,
@@ -48,49 +44,13 @@ from lp.services.webapp.interfaces import (
     ILinkData,
     IMenuBase,
     INavigationMenu,
-    IStructuredString,
     )
 from lp.services.webapp.publisher import (
     canonical_url,
-    get_current_browser_request,
     LaunchpadView,
     UserAttributeCache,
     )
 from lp.services.webapp.vhosts import allvhosts
-
-
-class structured:
-
-    implements(IStructuredString)
-
-    def __init__(self, text, *replacements, **kwreplacements):
-        text = translate_if_i18n(text)
-        self.text = text
-        if replacements and kwreplacements:
-            raise TypeError(
-                "You must provide either positional arguments or keyword "
-                "arguments to structured(), not both.")
-        if replacements:
-            escaped = []
-            for replacement in replacements:
-                if isinstance(replacement, structured):
-                    escaped.append(unicode(replacement.escapedtext))
-                else:
-                    escaped.append(cgi.escape(unicode(replacement)))
-            self.escapedtext = text % tuple(escaped)
-        elif kwreplacements:
-            escaped = {}
-            for key, value in kwreplacements.iteritems():
-                if isinstance(value, structured):
-                    escaped[key] = unicode(value.escapedtext)
-                else:
-                    escaped[key] = cgi.escape(unicode(value))
-            self.escapedtext = text % escaped
-        else:
-            self.escapedtext = unicode(text)
-
-    def __repr__(self):
-        return "<structured-string '%s'>" % self.text
 
 
 def get_current_view(request=None):
@@ -115,16 +75,16 @@ def get_current_view(request=None):
 
 def get_facet(view):
     """Return the view's facet name."""
-    return getattr(removeSecurityProxy(view), '__launchpad_facetname__', None)
+    return getattr(removeSecurityProxy(view), '__launchpad_facetname__', u'')
 
 
+@implementer(ILinkData)
 class LinkData:
     """General links that aren't default links.
 
     Instances of this class just provide link data.  The class is also known
     as 'Link' to make it nice to use when defining menus.
     """
-    implements(ILinkData)
 
     def __init__(self, target, text, summary=None, icon=None, enabled=True,
                  site=None, menu=None, hidden=False):
@@ -162,10 +122,10 @@ class LinkData:
 Link = LinkData
 
 
+@implementer(ILink)
+@delegate_to(ILinkData, context='_linkdata')
 class MenuLink:
     """Adapter from ILinkData to ILink."""
-    implements(ILink)
-    delegates(ILinkData, context='_linkdata')
 
     # These attributes are set by the menus infrastructure.
     name = None
@@ -192,11 +152,9 @@ class MenuLink:
 
     @property
     def escapedtext(self):
-        text = self._linkdata.text
-        if IStructuredString.providedBy(text):
-            return text.escapedtext
-        else:
-            return cgi.escape(text)
+        # This is often an IStructuredString, which html_escape knows
+        # to not double-escape.
+        return html_escape(self._linkdata.text)
 
     @property
     def icon_url(self):
@@ -217,9 +175,9 @@ class MenuLink:
         return self.url.path
 
 
+@implementer(IFacetLink)
 class FacetLink(MenuLink):
     """Adapter from ILinkData to IFacetLink."""
-    implements(IFacetLink)
 
     # This attribute is set by the menus infrastructure.
     selected = False
@@ -231,10 +189,9 @@ ALL_LINKS = object()
 MENU_ANNOTATION_KEY = 'lp.services.webapp.menu.links'
 
 
+@implementer(IMenuBase)
 class MenuBase(UserAttributeCache):
     """Base class for facets and menus."""
-
-    implements(IMenuBase)
 
     links = None
     extra_attributes = None
@@ -379,23 +336,17 @@ class MenuBase(UserAttributeCache):
             yield link
 
 
+@implementer(IFacetMenu)
 class FacetMenu(MenuBase):
     """Base class for facet menus."""
-
-    implements(IFacetMenu)
 
     _baseclassname = 'FacetMenu'
 
     # See IFacetMenu.
     defaultlink = None
 
-    def _filterLink(self, name, link):
-        """Hook to allow subclasses to alter links based on the name used."""
-        return link
-
     def _get_link(self, name):
-        return IFacetLink(
-            self._filterLink(name, MenuBase._get_link(self, name)))
+        return IFacetLink(MenuBase._get_link(self, name))
 
     def initLink(self, linkname, request_url=None):
         link = super(FacetMenu, self).initLink(linkname, request_url)
@@ -411,26 +362,23 @@ class FacetMenu(MenuBase):
             link.selected = True
 
 
+@implementer(IApplicationMenu)
 class ApplicationMenu(MenuBase):
     """Base class for application menus."""
-
-    implements(IApplicationMenu)
 
     _baseclassname = 'ApplicationMenu'
 
 
+@implementer(IContextMenu)
 class ContextMenu(MenuBase):
     """Base class for context menus."""
-
-    implements(IContextMenu)
 
     _baseclassname = 'ContextMenu'
 
 
+@implementer(INavigationMenu)
 class NavigationMenu(MenuBase):
     """Base class for navigation menus."""
-
-    implements(INavigationMenu)
 
     _baseclassname = 'NavigationMenu'
 
@@ -538,50 +486,3 @@ class enabled_with_permission:
                 link.enabled = False
             return link
         return enable_if_allowed
-
-
-##
-## Helpers for working with normal, structured, and internationalized
-## text.
-##
-
-# XXX: mars 2008-02-12:
-# This entire block should be extracted into its own module, along
-# with the structured() class.
-
-def escape(message):
-    """Performs translation and sanitizes any HTML present in the message.
-
-    A plain string message will be sanitized ("&", "<" and ">" are
-    converted to HTML-safe sequences).  Passing a message that
-    provides the `IStructuredString` interface will return a unicode
-    string that has been properly escaped.  Passing an instance of a
-    Zope internationalized message will cause the message to be
-    translated, then santizied.
-
-    :param message: This may be a string, `zope.i18n.Message`,
-        `zope.i18n.MessageID`, or an instance of `IStructuredString`.
-    """
-    if IStructuredString.providedBy(message):
-        return message.escapedtext
-    else:
-        # It is possible that the message is wrapped in an
-        # internationalized object, so we need to translate it
-        # first. See bug #54987.
-        return cgi.escape(
-            unicode(
-                translate_if_i18n(message)))
-
-
-def translate_if_i18n(obj_or_msgid):
-    """Translate an internationalized object, returning the result.
-
-    Returns any other type of object untouched.
-    """
-    if isinstance(obj_or_msgid, Message):
-        return translate(
-            obj_or_msgid,
-            context=get_current_browser_request())
-    else:
-        # Just text (or something unknown).
-        return obj_or_msgid

@@ -1,4 +1,4 @@
-# Copyright 2009-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2016 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Interfaces for searching bug tasks. Mostly used with IBugTaskSet."""
@@ -13,6 +13,7 @@ __all__ = [
     'DEFAULT_SEARCH_BUGTASK_STATUSES_FOR_DISPLAY',
     'get_person_bugtasks_search_params',
     'IBugTaskSearch',
+    'IBugTaskSearchBase',
     'IllegalRelatedBugTasksParams',
     'IFrontPageBugTaskSearch',
     'IPersonBugTaskSearch',
@@ -27,6 +28,7 @@ from lazr.enum import (
     Item,
     )
 from lazr.restful.declarations import error_status
+from lazr.restful.fields import ReferenceChoice
 from zope.interface import Interface
 from zope.schema import (
     Bool,
@@ -41,13 +43,13 @@ from zope.schema.vocabulary import (
 from zope.security.proxy import isinstance as zope_isinstance
 
 from lp import _
+from lp.app.enums import InformationType
 from lp.bugs.interfaces.bugtask import (
     BugTaskStatusSearch,
     BugTaskStatusSearchDisplay,
     IBugTask,
     UNRESOLVED_BUGTASK_STATUSES,
     )
-from lp.registry.enums import InformationType
 from lp.services.fields import SearchTag
 from lp.services.searchbuilder import (
     all,
@@ -149,7 +151,7 @@ class BugTaskSearchParams:
     """
 
     product = None
-    project = None
+    projectgroup = None
     distribution = None
     distroseries = None
     productseries = None
@@ -171,12 +173,13 @@ class BugTaskSearchParams:
                  hardware_owner_is_affected_by_bug=False,
                  hardware_owner_is_subscribed_to_bug=False,
                  hardware_is_linked_to_bug=False,
-                 linked_branches=None, linked_blueprints=None,
+                 linked_branches=None, linked_merge_proposals=None,
+                 linked_blueprints=None,
                  structural_subscriber=None, modified_since=None,
                  created_since=None, exclude_conjoined_tasks=False, cve=None,
                  upstream_target=None, milestone_dateexpected_before=None,
                  milestone_dateexpected_after=None, created_before=None,
-                 information_type=None):
+                 information_type=None, ignore_privacy=False):
 
         self.bug = bug
         self.searchtext = searchtext
@@ -220,6 +223,7 @@ class BugTaskSearchParams:
             hardware_owner_is_subscribed_to_bug)
         self.hardware_is_linked_to_bug = hardware_is_linked_to_bug
         self.linked_branches = linked_branches
+        self.linked_merge_proposals = linked_merge_proposals
         self.linked_blueprints = linked_blueprints
         self.structural_subscriber = structural_subscriber
         self.modified_since = modified_since
@@ -236,14 +240,15 @@ class BugTaskSearchParams:
             self.information_type = set((information_type,))
         else:
             self.information_type = None
+        self.ignore_privacy = ignore_privacy
 
     def setProduct(self, product):
         """Set the upstream context on which to filter the search."""
         self.product = product
 
-    def setProject(self, project):
+    def setProjectGroup(self, projectgroup):
         """Set the upstream context on which to filter the search."""
-        self.project = project
+        self.projectgroup = projectgroup
 
     def setDistribution(self, distribution):
         """Set the distribution context on which to filter the search."""
@@ -337,7 +342,7 @@ class BugTaskSearchParams:
         elif IDistributionSourcePackage.providedBy(instance):
             self.setSourcePackage(target)
         elif IProjectGroup.providedBy(instance):
-            self.setProject(target)
+            self.setProjectGroup(target)
         else:
             raise AssertionError("unknown target type %r" % target)
 
@@ -369,17 +374,18 @@ class BugTaskSearchParams:
                        distribution=None, tags=None,
                        tags_combinator=BugTagsSearchCombinator.ALL,
                        omit_duplicates=True, omit_targeted=None,
-                       status_upstream=None, milestone_assignment=None,
-                       milestone=None, component=None, nominated_for=None,
-                       sourcepackagename=None, has_no_package=None,
-                       hardware_bus=None, hardware_vendor_id=None,
-                       hardware_product_id=None, hardware_driver_name=None,
+                       status_upstream=None, milestone=None, component=None,
+                       nominated_for=None, sourcepackagename=None,
+                       has_no_package=None, hardware_bus=None,
+                       hardware_vendor_id=None, hardware_product_id=None,
+                       hardware_driver_name=None,
                        hardware_driver_package_name=None,
                        hardware_owner_is_bug_reporter=None,
                        hardware_owner_is_affected_by_bug=False,
                        hardware_owner_is_subscribed_to_bug=False,
                        hardware_is_linked_to_bug=False, linked_branches=None,
-                       linked_blueprints=None, structural_subscriber=None,
+                       linked_merge_proposals=None, linked_blueprints=None,
+                       structural_subscriber=None,
                        modified_since=None, created_since=None,
                        created_before=None, information_type=None):
         """Create and return a new instance using the parameter list."""
@@ -448,6 +454,7 @@ class BugTaskSearchParams:
         search_params.hardware_is_linked_to_bug = (
             hardware_is_linked_to_bug)
         search_params.linked_branches = linked_branches
+        search_params.linked_merge_proposals = linked_merge_proposals
         search_params.linked_blueprints = linked_blueprints
         search_params.structural_subscriber = structural_subscriber
         search_params.modified_since = modified_since
@@ -546,12 +553,13 @@ class IBugTaskSearchBase(Interface):
     has_no_package = Bool(
         title=_('Exclude bugs with packages specified'),
         required=False, default=False)
-    milestone_assignment = Choice(
-        title=_('Target'), vocabulary="Milestone", required=False)
     milestone = List(
         title=_('Milestone'),
         description=_('Show only bug tasks targeted to this milestone.'),
-        value_type=IBugTask['milestone'], required=False)
+        value_type=ReferenceChoice(
+        title=_('Milestone'), vocabulary='Milestone',
+            schema=Interface),  # IMilestone
+        required=False)
     component = List(
         title=_('Component'),
         description=_('Distribution package archive grouping. '

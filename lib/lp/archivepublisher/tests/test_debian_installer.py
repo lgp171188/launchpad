@@ -1,4 +1,4 @@
-# Copyright 2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2012-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test debian-installer custom uploads.
@@ -7,35 +7,44 @@ See also lp.soyuz.tests.test_distroseriesqueue_debian_installer for
 high-level tests of debian-installer upload and queue manipulation.
 """
 
-import os
+from __future__ import absolute_import, print_function, unicode_literals
 
+import os
+from textwrap import dedent
+
+from testtools.matchers import DirContains
+from zope.component import getUtility
+
+from lp.archivepublisher.config import getPubConfig
 from lp.archivepublisher.customupload import (
     CustomUploadAlreadyExists,
     CustomUploadBadUmask,
     )
-from lp.archivepublisher.debian_installer import (
-    DebianInstallerUpload,
-    process_debian_installer,
-    )
+from lp.archivepublisher.debian_installer import DebianInstallerUpload
+from lp.archivepublisher.interfaces.publisherconfig import IPublisherConfigSet
+from lp.archivepublisher.tests.test_run_parts import RunPartsMixin
 from lp.services.tarfile_helpers import LaunchpadWriteTarFile
-from lp.testing import TestCase
+from lp.soyuz.enums import ArchivePurpose
+from lp.testing import TestCaseWithFactory
+from lp.testing.layers import ZopelessDatabaseLayer
 
 
-class FakeConfig:
-    """A fake publisher configuration."""
-    def __init__(self, archiveroot):
-        self.archiveroot = archiveroot
+class TestDebianInstaller(RunPartsMixin, TestCaseWithFactory):
 
-
-class TestDebianInstaller(TestCase):
+    layer = ZopelessDatabaseLayer
 
     def setUp(self):
         super(TestDebianInstaller, self).setUp()
         self.temp_dir = self.makeTemporaryDirectory()
-        self.pubconf = FakeConfig(self.temp_dir)
+        self.distro = self.factory.makeDistribution()
+        db_pubconf = getUtility(IPublisherConfigSet).getByDistribution(
+            self.distro)
+        db_pubconf.root_dir = unicode(self.temp_dir)
+        self.archive = self.factory.makeArchive(
+            distribution=self.distro, purpose=ArchivePurpose.PRIMARY)
         self.suite = "distroseries"
-        # CustomUpload.installFiles requires a umask of 022.
-        old_umask = os.umask(022)
+        # CustomUpload.installFiles requires a umask of 0o022.
+        old_umask = os.umask(0o022)
         self.addCleanup(os.umask, old_umask)
 
     def openArchive(self):
@@ -45,24 +54,25 @@ class TestDebianInstaller(TestCase):
             self.temp_dir,
             "debian-installer-images_%s_%s.tar.gz" % (self.version, self.arch))
         self.buffer = open(self.path, "wb")
-        self.archive = LaunchpadWriteTarFile(self.buffer)
+        self.tarfile = LaunchpadWriteTarFile(self.buffer)
 
     def addFile(self, path, contents):
-        self.archive.add_file(
+        self.tarfile.add_file(
             "installer-%s/%s/%s" % (self.arch, self.version, path), contents)
 
     def addSymlink(self, path, target):
-        self.archive.add_symlink(
+        self.tarfile.add_symlink(
             "installer-%s/%s/%s" % (self.arch, self.version, path), target)
 
     def process(self):
-        self.archive.close()
+        self.tarfile.close()
         self.buffer.close()
-        process_debian_installer(self.pubconf, self.path, self.suite)
+        DebianInstallerUpload().process(self.archive, self.path, self.suite)
 
     def getInstallerPath(self, versioned_filename=None):
+        pubconf = getPubConfig(self.archive)
         installer_path = os.path.join(
-            self.temp_dir, "dists", self.suite, "main",
+            pubconf.archiveroot, "dists", self.suite, "main",
             "installer-%s" % self.arch)
         if versioned_filename is not None:
             installer_path = os.path.join(
@@ -72,7 +82,7 @@ class TestDebianInstaller(TestCase):
     def test_basic(self):
         # Processing a simple correct tar file succeeds.
         self.openArchive()
-        self.addFile("hello", "world")
+        self.addFile("hello", b"world")
         self.process()
 
     def test_already_exists(self):
@@ -82,16 +92,16 @@ class TestDebianInstaller(TestCase):
         self.assertRaises(CustomUploadAlreadyExists, self.process)
 
     def test_bad_umask(self):
-        # The umask must be 022 to avoid incorrect permissions.
+        # The umask must be 0o022 to avoid incorrect permissions.
         self.openArchive()
-        self.addFile("dir/file", "foo")
-        os.umask(002)  # cleanup already handled by setUp
+        self.addFile("dir/file", b"foo")
+        os.umask(0o002)  # cleanup already handled by setUp
         self.assertRaises(CustomUploadBadUmask, self.process)
 
     def test_current_symlink(self):
         # A "current" symlink is created to the last version.
         self.openArchive()
-        self.addFile("hello", "world")
+        self.addFile("hello", b"world")
         self.process()
         installer_path = self.getInstallerPath()
         self.assertContentEqual(
@@ -107,8 +117,8 @@ class TestDebianInstaller(TestCase):
         filename = os.path.join(directory, "default")
         long_filename = os.path.join(
             directory, "very_very_very_very_very_very_long_filename")
-        self.addFile(filename, "hey")
-        self.addFile(long_filename, "long")
+        self.addFile(filename, b"hey")
+        self.addFile(long_filename, b"long")
         self.process()
         with open(self.getInstallerPath(filename)) as f:
             self.assertEqual("hey", f.read())
@@ -133,28 +143,46 @@ class TestDebianInstaller(TestCase):
                 self.getInstallerPath(link_to_dir_path))))
 
     def test_top_level_permissions(self):
-        # Top-level directories are set to mode 0755 (see bug 107068).
+        # Top-level directories are set to mode 0o755 (see bug 107068).
         self.openArchive()
-        self.addFile("hello", "world")
+        self.addFile("hello", b"world")
         self.process()
         installer_path = self.getInstallerPath()
-        self.assertEqual(0755, os.stat(installer_path).st_mode & 0777)
+        self.assertEqual(0o755, os.stat(installer_path).st_mode & 0o777)
         self.assertEqual(
-            0755,
-            os.stat(os.path.join(installer_path, os.pardir)).st_mode & 0777)
+            0o755,
+            os.stat(os.path.join(installer_path, os.pardir)).st_mode & 0o777)
 
     def test_extracted_permissions(self):
-        # Extracted files and directories are set to 0644/0755.
+        # Extracted files and directories are set to 0o644/0o755.
         self.openArchive()
         directory = ("images/netboot/ubuntu-installer/i386/"
                      "pxelinux.cfg.serial-9600")
         filename = os.path.join(directory, "default")
-        self.addFile(filename, "hey")
+        self.addFile(filename, b"hey")
         self.process()
         self.assertEqual(
-            0644, os.stat(self.getInstallerPath(filename)).st_mode & 0777)
+            0o644, os.stat(self.getInstallerPath(filename)).st_mode & 0o777)
         self.assertEqual(
-            0755, os.stat(self.getInstallerPath(directory)).st_mode & 0777)
+            0o755, os.stat(self.getInstallerPath(directory)).st_mode & 0o777)
+
+    def test_sign_with_external_run_parts(self):
+        self.enableRunParts(distribution_name=self.distro.name)
+        with open(os.path.join(
+                self.parts_directory, self.distro.name, "sign.d",
+                "10-sign"), "w") as f:
+            f.write(dedent("""\
+                #! /bin/sh
+                touch "$OUTPUT_PATH"
+                """))
+            os.fchmod(f.fileno(), 0o755)
+        self.openArchive()
+        self.addFile("images/list", "a list")
+        self.addFile("images/SHA256SUMS", "a checksum")
+        self.process()
+        self.assertThat(
+            self.getInstallerPath("images"),
+            DirContains(["list", "SHA256SUMS", "SHA256SUMS.gpg"]))
 
     def test_getSeriesKey_extracts_architecture(self):
         # getSeriesKey extracts the architecture from an upload's filename.

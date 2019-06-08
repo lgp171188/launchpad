@@ -1,7 +1,9 @@
-# Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for domination.py."""
+
+from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 
@@ -10,6 +12,7 @@ from operator import attrgetter
 
 import apt_pkg
 from testtools.matchers import LessThan
+from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
 from lp.archivepublisher.domination import (
@@ -28,9 +31,13 @@ from lp.registry.interfaces.series import SeriesStatus
 from lp.services.database.sqlbase import flush_database_updates
 from lp.services.log.logger import DevNullLogger
 from lp.soyuz.enums import PackagePublishingStatus
-from lp.soyuz.interfaces.publishing import ISourcePackagePublishingHistory
+from lp.soyuz.interfaces.publishing import (
+    IPublishingSet,
+    ISourcePackagePublishingHistory,
+    )
 from lp.soyuz.tests.test_publishing import TestNativePublishingBase
 from lp.testing import (
+    monkey_patch,
     StormStatementRecorder,
     TestCaseWithFactory,
     )
@@ -521,7 +528,7 @@ class TestGeneralizedPublication(TestCaseWithFactory):
             self.factory.makeSourcePackagePublishingHistory(
                 sourcepackagerelease=spr, distroseries=distroseries,
                 pocket=pocket)
-            for counter in xrange(len(ages))]
+            for counter in range(len(ages))]
         alter_creation_dates(spphs, ages)
 
         self.assertEqual(
@@ -545,7 +552,7 @@ class TestGeneralizedPublication(TestCaseWithFactory):
                 distroseries=distroseries, pocket=pocket,
                 sourcepackagerelease=self.factory.makeSourcePackageRelease(
                     version=version))
-            for counter in xrange(len(ages))]
+            for counter in range(len(ages))]
         alter_creation_dates(spphs, ages)
 
         self.assertEqual(
@@ -661,7 +668,7 @@ class TestDominatorMethods(TestCaseWithFactory):
                 archive=series.main_archive, distroseries=series,
                 pocket=pocket, status=PackagePublishingStatus.PUBLISHED,
                 sourcepackagerelease=spr)
-            for counter in xrange(3)]
+            for counter in range(3)]
         alter_creation_dates(pubs, [
             datetime.timedelta(3),
             datetime.timedelta(2),
@@ -683,7 +690,7 @@ class TestDominatorMethods(TestCaseWithFactory):
     def test_dominatePackage_is_efficient(self):
         # dominatePackage avoids issuing too many queries.
         generalization = GeneralizedPublication(True)
-        versions = ["1.%s" % revision for revision in xrange(5)]
+        versions = ["1.%s" % revision for revision in range(5)]
         pubs = make_spphs_for_versions(self.factory, versions)
         with StormStatementRecorder() as recorder:
             self.makeDominator(pubs).dominatePackage(
@@ -704,7 +711,7 @@ class TestDominatorMethods(TestCaseWithFactory):
         package = self.factory.makeSourcePackageName()
         pocket = PackagePublishingPocket.RELEASE
 
-        versions = ["1.%d" % number for number in xrange(4)]
+        versions = ["1.%d" % number for number in range(4)]
 
         # We have one package releases for each version.
         relevant_releases = dict(
@@ -732,7 +739,7 @@ class TestDominatorMethods(TestCaseWithFactory):
             for version in jumble(versions))
 
         ages = jumble(
-            [datetime.timedelta(age) for age in xrange(len(versions))])
+            [datetime.timedelta(age) for age in range(len(versions))])
 
         # Actually the "oldest to newest" order on the publications only
         # applies to their creation dates.  Their creation orders are
@@ -882,7 +889,7 @@ class TestDominatorMethods(TestCaseWithFactory):
             self.factory.makeSourcePackagePublishingHistory(
                 distroseries=series, sourcepackagerelease=spr, pocket=pocket,
                 status=PackagePublishingStatus.PUBLISHED)
-            for counter in xrange(2)]
+            for counter in range(2)]
         dominator = self.makeDominator(spphs)
         self.assertContentEqual(
             [(spr.sourcepackagename.name, len(spphs))],
@@ -999,7 +1006,7 @@ class TestDominatorMethods(TestCaseWithFactory):
             distribution=das.distroseries.distribution)
         other_das = self.factory.makeDistroArchSeries(
             distroseries=other_series, architecturetag=das.architecturetag,
-            processorfamily=das.processorfamily)
+            processor=das.processor)
         self.assertContentEqual(
             [], dominator.findBinariesForDomination(
                 other_das, bpphs[0].pocket))
@@ -1244,10 +1251,11 @@ class TestArchSpecificPublicationsCache(TestCaseWithFactory):
         """Create a `BinaryPackagePublishingHistory`."""
         if spr is None:
             spr = self.makeSPR()
-        bpb = self.factory.makeBinaryPackageBuild(source_package_release=spr)
+        das = self.factory.makeDistroArchSeries(distroseries=distroseries)
+        bpb = self.factory.makeBinaryPackageBuild(
+            source_package_release=spr, distroarchseries=das)
         bpr = self.factory.makeBinaryPackageRelease(
             build=bpb, architecturespecific=arch_specific)
-        das = self.factory.makeDistroArchSeries(distroseries=distroseries)
         return removeSecurityProxy(
             self.factory.makeBinaryPackagePublishingHistory(
                 binarypackagerelease=bpr, archive=archive,
@@ -1293,7 +1301,10 @@ class TestArchSpecificPublicationsCache(TestCaseWithFactory):
         self.makeBPPH(spr, arch_specific=True)
         bpph = self.makeBPPH(spr, arch_specific=False)
         cache = self.makeCache()
+        fake = FakeMethod()
         cache.hasArchSpecificPublications(bpph)
-        spr.getActiveArchSpecificPublications = FakeMethod()
-        cache.hasArchSpecificPublications(bpph)
-        self.assertEqual(0, spr.getActiveArchSpecificPublications.call_count)
+        with monkey_patch(
+                removeSecurityProxy(getUtility(IPublishingSet)),
+                getActiveArchSpecificPublications=fake):
+            cache.hasArchSpecificPublications(bpph)
+        self.assertEqual(0, fake.call_count)

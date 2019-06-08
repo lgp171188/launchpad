@@ -20,50 +20,40 @@ valid open source licence so he is displayed the voucher redemption
 page.
 
     >>> browser = setupBrowser(auth='Basic mark@example.com:test')
-    >>> browser.open('http://launchpad.dev/~mark/+vouchers')
+    >>> browser.open('http://launchpad.test/~mark')
+    >>> browser.getLink('Manage commercial subscriptions').click()
     >>> main = find_main_content(browser.contents)
     >>> print extract_text(main)
-    Redeem Vouchers for Commercial Subscriptions
+    Purchase and Redeem Commercial Subscription Vouchers
     ...Select the project you wish to subscribe...
 
-no-priv is not an administrator on any projects.  When she accesses
-the page she is not given the option to redeem a voucher.
-
-    >>> browser = setupBrowser(auth='Basic no-priv@canonical.com:test')
-    >>> browser.open('http://launchpad.dev/~no-priv/+vouchers')
-    >>> main = find_main_content(browser.contents)
-    >>> print extract_text(main)
-    Redeem Vouchers for Commercial Subscriptions...
-    No Privileges Person does not own any commercial projects. Only project
-    owners can redeem vouchers for a project.
-
-A user can access her voucher page but not someone else's.  Here
+A user can access their voucher page but not someone else's.  Here
 no-priv tries to access '+vouchers' on another user and is not
 allowed.
 
-    >>> browser.open('http://launchpad.dev/~mark/+vouchers')
+    >>> browser = setupBrowser(auth='Basic no-priv@canonical.com:test')
+    >>> browser.open('http://launchpad.test/~mark/+vouchers')
     Traceback (most recent call last):
     ...
     Unauthorized: ...
 
-Unless, of course, that user is an administrator.  Then he can access
+Unless, of course, that user is an administrator.  Then they can access
 the '+vouchers' page on any user.
 
     >>> browser = setupBrowser(auth='Basic foo.bar@canonical.com:test')
-    >>> browser.open('http://launchpad.dev/~mark/+vouchers')
+    >>> browser.open('http://launchpad.test/~mark/+vouchers')
     >>> main = find_main_content(browser.contents)
     >>> print extract_text(main)
-    Redeem Vouchers for Commercial Subscriptions
+    Purchase and Redeem Commercial Subscription Vouchers
     ...Select the project you wish to subscribe...
-
 
 Foo Bar has no vouchers.  Accessing the +vouchers page results in a message.
 
-    >>> browser.open('http://launchpad.dev/~name12/+vouchers')
+    >>> browser.open('http://launchpad.test/~name12/+vouchers')
     >>> main = find_main_content(browser.contents)
     >>> print extract_text(main)
-    Redeem Vouchers for Commercial Subscriptions
-    ...Sample Person does not have any redeemable vouchers available.
+    Purchase and Redeem Commercial Subscription Vouchers
+    ...You do not have any redeemable commercial subscription vouchers.
     Here are the steps to obtain a commercial subscription:...
 
 
@@ -75,33 +65,31 @@ successful voucher redemption.
 
     >>> browser = setupBrowser(
     ...     auth='Basic celso.providelo@canonical.com:test')
-    >>> browser.open('http://launchpad.dev/~cprov/+vouchers')
+    >>> browser.open('http://launchpad.test/~cprov/+vouchers')
     >>> browser.getControl(name='field.project').value='aptoncd'
     >>> browser.getControl(name='field.voucher').value = [
     ...     'LPCBS12-f78df324-0cc2-11dd-8b6b-000000000004']
     >>> browser.getControl('Redeem').click()
     >>> print browser.url
-    http://launchpad.dev/%7Ecprov/+vouchers
-    >>> for message in get_feedback_messages(browser.contents):
-    ...     print message
+    http://launchpad.test/%7Ecprov/+vouchers
+    >>> print_feedback_messages(browser.contents)
     Voucher redeemed successfully
 
 
 Selecting a project that is not a commercial project owned by the user
 results in an error.
 
-    >>> browser.open('http://launchpad.dev/~cprov/+vouchers')
+    >>> browser.open('http://launchpad.test/~cprov/+vouchers')
     >>> browser.getControl(name='field.project').value='bzr'
     >>> browser.getControl(name='field.voucher').value = [
     ...     'LPCBS12-f78df324-0cc2-11dd-8b6b-000000000005']
     >>> browser.getControl('Redeem').click()
-    >>> for message in get_feedback_messages(browser.contents):
-    ...     print message
+    >>> print_feedback_messages(browser.contents)
     There is 1 error.
     Invalid value
 
-If, however, a person is a member of the Launchpad Commercial team he
-can apply a voucher to any project, not just those he administers.
+If, however, a person is a member of the Launchpad Commercial team they
+can apply a voucher to any project, not just those they administer.
 This ability is provided so that commercial admins in Launchpad can
 help projects with voucher issues, which is especially useful when
 setting up Canonical-internal projects.
@@ -110,7 +98,7 @@ setting up Canonical-internal projects.
     ...     auth='Basic commercial-member@canonical.com:test')
 
 Show that the commercial member does not own or drive any projects by
-viewing his +related-projects page.
+viewing their +related-projects page.
 
     >>> login('foo.bar@canonical.com')
     >>> from zope.component import getUtility
@@ -124,69 +112,20 @@ viewing his +related-projects page.
     >>> logout()
 
     >>> browser.open(
-    ...     'http://launchpad.dev/~commercial-member/+related-projects')
+    ...     'http://launchpad.test/~commercial-member/+related-projects')
     >>> main = find_main_content(browser.contents)
     >>> print extract_text(main)
     Related projects
     ...
     Commercial Member doesn't own or drive any projects.
 
-He can still redeem a voucher against a commercial project even though
-he is not responsible for it.
+They can still redeem a voucher against a commercial project even though
+they are not responsible for it.
 
-    >>> browser.open('http://launchpad.dev/~commercial-member/+vouchers')
+    >>> browser.open('http://launchpad.test/~commercial-member/+vouchers')
     >>> browser.getControl(name='field.project').value='mega-money-maker'
     >>> browser.getControl(name='field.voucher').value = [
     ...     'LPCBS12-f78df324-0cc2-11dd-8b6b-com000000001']
     >>> browser.getControl('Redeem').click()
-    >>> for message in get_feedback_messages(browser.contents):
-    ...     print message
+    >>> print_feedback_messages(browser.contents)
     Voucher redeemed successfully
-
-
-OOPS handling
--------------
-
-If an error occurs in the proxy while trying to redeem a voucher an
-OOPS is recorded but an error is not raised.  The user is shown an
-error message instead.
-
-Set the canned fault.
-
-    >>> from lp.services.salesforce.tests.proxy import (
-    ...     SalesforceXMLRPCTestTransport)
-    >>> SalesforceXMLRPCTestTransport.forced_fault = (
-    ...     'redeemVoucher', 'NotFound','Something was not found.')
-
-Log in as a user with lots of vouchers.
-
-    >>> browser = setupBrowser(auth='Basic bac@canonical.com:test')
-    >>> browser.open('http://launchpad.dev/~bac/+vouchers')
-
-Attempt to redeem a valid voucher and see the error message.
-
-    >>> from lp.testing.fixture import CaptureOops
-    >>> capture = CaptureOops()
-    >>> capture.setUp()
-    >>> browser.getControl(name='field.project').value='mega-money-maker'
-    >>> browser.getControl(name='field.voucher').value = [
-    ...     'LPCBS12-f78df324-0cc2-11dd-8b6b-bac000000001']
-    >>> browser.getControl('Redeem').click()
-    >>> for message in get_feedback_messages(browser.contents):
-    ...     print message
-    There is 1 error.
-    The voucher could not be redeemed at this time.
-
-The OOPS report shows the error was logged even though the OOPS was
-not shown to the user.
-
-    >>> report = capture.oopses[0]
-    >>> capture.cleanUp()
-    >>> report['type']
-    'SVPNotFoundException'
-    >>> report['value']
-    u'Something was not found.'
-
-Reset the class variable to disable forced faults.
-
-    >>> SalesforceXMLRPCTestTransport.forced_fault = None

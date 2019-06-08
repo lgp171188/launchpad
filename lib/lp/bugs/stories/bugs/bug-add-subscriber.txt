@@ -7,35 +7,35 @@ someone else to the bug.
 
 Anonymous users should not be able to subscribe someone else to a bug.
 
-    >>> anon_browser.open('http://bugs.launchpad.dev/firefox/+bug/1')
+    >>> anon_browser.open('http://bugs.launchpad.test/firefox/+bug/1')
     >>> anon_browser.getLink('Subscribe someone else').click()
     Traceback (most recent call last):
     ...
     Unauthorized: ...
 
-No Privileges wants to subscribe David Allouche to the bug because he knows
+No Privileges wants to subscribe David Allouche to the bug because they know
 that he's interested in that feature.
 
-    >>> user_browser.open('http://bugs.launchpad.dev/firefox/+bug/1')
+    >>> user_browser.open('http://bugs.launchpad.test/firefox/+bug/1')
     >>> user_browser.getLink('Subscribe someone else').click()
     >>> user_browser.url
-    'http://bugs.launchpad.dev/firefox/+bug/1/+addsubscriber'
+    'http://bugs.launchpad.test/firefox/+bug/1/+addsubscriber'
 
 If No Privileges has a sudden change of heart, there's a cancel link
 that will return the browser to the bug page.
 
     >>> cancel_link = user_browser.getLink('Cancel')
     >>> cancel_link.url
-    'http://bugs.launchpad.dev/firefox/+bug/1'
+    'http://bugs.launchpad.test/firefox/+bug/1'
 
-By looking at the 'Subscribers' portlet, he sees that David Allouche is not
+By looking at the 'Subscribers' portlet, they see that David Allouche is not
 currently subscribed to the bug:
 
     >>> from lp.bugs.tests.bug import (
     ...     print_also_notified, print_direct_subscribers)
 
     >>> user_browser.open(
-    ...     'http://bugs.launchpad.dev/bugs/1/'
+    ...     'http://bugs.launchpad.test/bugs/1/'
     ...     '+bug-portlet-subscribers-details')
     >>> print_direct_subscribers(user_browser.contents)
     Sample Person
@@ -45,15 +45,15 @@ currently subscribed to the bug:
     Foo Bar
     Mark Shuttleworth
 
-He subscribes David Allouche to the bug using his Launchpad username.
+They subscribe David Allouche to the bug using his Launchpad username.
 
-    >>> user_browser.open('http://bugs.launchpad.dev/firefox/+bug/1/+addsubscriber')
+    >>> user_browser.open('http://bugs.launchpad.test/firefox/+bug/1/+addsubscriber')
     >>> user_browser.getControl("Person").value = 'ddaa'
     >>> user_browser.getControl("Subscribe user").click()
     >>> user_browser.url
-    'http://bugs.launchpad.dev/firefox/+bug/1'
+    'http://bugs.launchpad.test/firefox/+bug/1'
 
-He is notified that David Allouche has been subscribed.
+They are notified that David Allouche has been subscribed.
 
     >>> for tag in find_tags_by_class(user_browser.contents,
     ...     'informational message'):
@@ -63,7 +63,7 @@ He is notified that David Allouche has been subscribed.
 The subscribers portlet now contains the new subscriber's name.
 
     >>> user_browser.open(
-    ...     'http://bugs.launchpad.dev/bugs/1/'
+    ...     'http://bugs.launchpad.test/bugs/1/'
     ...     '+bug-portlet-subscribers-details')
     >>> print_direct_subscribers(user_browser.contents)
     David Allouche (Unsubscribe)
@@ -75,26 +75,27 @@ David got a notification, saying that he was subscribed to the bug.
     >>> from lp.services.mail import stub
     >>> len(stub.test_emails)
     1
-    >>> print stub.test_emails[0][2]
+    >>> print(stub.test_emails[0][2])
     MIME-Version: 1.0
     ...
     To: david.allouche@canonical.com
     Reply-To: Bug ... <...@bugs.launchpad.net>
     ...
     X-Launchpad-Message-Rationale: Subscriber
+    X-Launchpad-Message-For: ddaa
     ...
     You have been subscribed to a public bug by No Privileges Person (no-priv):
     ...
-    http://bugs.launchpad.dev/bugs/...
+    http://bugs.launchpad.test/bugs/...
 
 He subscribes the Landscape developers team.
 
-    >>> user_browser.open('http://bugs.launchpad.dev/firefox/+bug/1')
+    >>> user_browser.open('http://bugs.launchpad.test/firefox/+bug/1')
     >>> user_browser.getLink('Subscribe someone else').click()
     >>> user_browser.getControl("Person").value = 'landscape-developers'
     >>> user_browser.getControl("Subscribe user").click()
     >>> user_browser.url
-    'http://bugs.launchpad.dev/firefox/+bug/1'
+    'http://bugs.launchpad.test/firefox/+bug/1'
 
 He is notified that Landscape developers team has been subscribed.
 
@@ -106,7 +107,7 @@ He is notified that Landscape developers team has been subscribed.
 The subscribers portlet displays the new subscribed team.
 
     >>> user_browser.open(
-    ...     'http://bugs.launchpad.dev/bugs/1/'
+    ...     'http://bugs.launchpad.test/bugs/1/'
     ...     '+bug-portlet-subscribers-details')
     >>> print_direct_subscribers(user_browser.contents)
     David Allouche (Unsubscribe)
@@ -119,8 +120,8 @@ Subscription of private teams
 -----------------------------
 
 Private teams can be subscribed to bugs. Any logged in user can see
-the private team in the subscribers list. Additionally if she is a member of
-the private team she can unsubscribe the team.
+the private team in the subscribers list. Additionally if they are a member
+of the private team they can unsubscribe the team.
 
     >>> # Create a private team with Foo Bar as the owner.
     >>> from zope.component import getUtility
@@ -133,14 +134,14 @@ the private team she can unsubscribe the team.
     ...     visibility=PersonVisibility.PRIVATE)
     >>> logout()
     >>> foobar_browser = setupBrowser(auth='Basic foo.bar@canonical.com:test')
-    >>> foobar_browser.open('http://bugs.launchpad.dev/firefox/+bug/1')
+    >>> foobar_browser.open('http://bugs.launchpad.test/firefox/+bug/1')
     >>> foobar_browser.getLink('Subscribe someone else').click()
     >>> foobar_browser.getControl("Person").value = 'private-team'
     >>> foobar_browser.getControl("Subscribe user").click()
     >>> foobar_browser.url
-    'http://bugs.launchpad.dev/firefox/+bug/1'
+    'http://bugs.launchpad.test/firefox/+bug/1'
     >>> foobar_browser.open(
-    ...     'http://bugs.launchpad.dev/bugs/1/'
+    ...     'http://bugs.launchpad.test/bugs/1/'
     ...     '+bug-portlet-subscribers-details')
     >>> print_direct_subscribers(foobar_browser.contents)
     David Allouche (Unsubscribe)
@@ -153,7 +154,7 @@ Someone not in the team will see the private team in the subscribers list but
 cannot unsubscribe them.
 
     >>> user_browser.open(
-    ...     'http://bugs.launchpad.dev/bugs/1/'
+    ...     'http://bugs.launchpad.test/bugs/1/'
     ...     '+bug-portlet-subscribers-details')
     >>> print_direct_subscribers(user_browser.contents)
     David Allouche (Unsubscribe)
@@ -166,7 +167,7 @@ An anonymous user will not be shown the private team in the subscribers
 list.
 
     >>> anon_browser.open(
-    ...     'http://bugs.launchpad.dev/bugs/1/'
+    ...     'http://bugs.launchpad.test/bugs/1/'
     ...     '+bug-portlet-subscribers-details')
     >>> print_direct_subscribers(anon_browser.contents)
     David Allouche
@@ -180,10 +181,10 @@ and Landscape Developers have been subscribed, but we will not see an
 entry in the activity log for Private Team.
 
     >>> def print_row(row):
-    ...     print ' | '.join(
-    ...         extract_text(cell) for cell in row(('th', 'td')))
+    ...     print(' | '.join(
+    ...         extract_text(cell) for cell in row(('th', 'td'))))
     >>> user_browser.open(
-    ...     'http://bugs.launchpad.dev/firefox/+bug/1/+activity')
+    ...     'http://bugs.launchpad.test/firefox/+bug/1/+activity')
     >>> main_content = find_main_content(user_browser.contents)
     >>> for row in main_content.table('tr'):
     ...     print_row(row)

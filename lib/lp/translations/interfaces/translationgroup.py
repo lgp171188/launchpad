@@ -1,8 +1,6 @@
 # Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-# pylint: disable-msg=E0211,E0213
-
 """Interfaces for groups of translators."""
 
 __metaclass__ = type
@@ -138,7 +136,7 @@ class ITranslationGroup(IHasOwner):
             ordered by language name in English.
         """
 
-    def fetchProjectsForDisplay():
+    def fetchProjectsForDisplay(user):
         """Fetch `Product`s using this group, for display purposes.
 
         Prefetches display-related properties.

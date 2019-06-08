@@ -1,8 +1,6 @@
 # Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-# pylint: disable-msg=E0211,E0213
-
 """CVE interfaces."""
 
 __metaclass__ = type
@@ -110,7 +108,7 @@ class ICve(Interface):
         CollectionField(
             title=_('Bugs related to this CVE entry.'),
             readonly=True,
-            value_type=Reference(schema=Interface))) # Redefined in bug.py.
+            value_type=Reference(schema=Interface)))  # Redefined in bug.py.
 
     # Other attributes.
     url = exported(

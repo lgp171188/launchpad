@@ -1,7 +1,5 @@
-# Copyright 2009 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2016 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
-
-# pylint: disable-msg=E0611,W0212
 
 __metaclass__ = type
 __all__ = ['GPGKey', 'GPGKeySet']
@@ -10,27 +8,29 @@ from sqlobject import (
     BoolCol,
     ForeignKey,
     IntCol,
-    SQLObjectNotFound,
     StringCol,
     )
 from zope.component import getUtility
-from zope.interface import implements
+from zope.interface import implementer
 
 from lp.registry.interfaces.gpg import (
-    GPGKeyAlgorithm,
     IGPGKey,
     IGPGKeySet,
     )
 from lp.services.database.enumcol import EnumCol
+from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import (
     SQLBase,
     sqlvalues,
     )
-from lp.services.gpg.interfaces import IGPGHandler
+from lp.services.gpg.interfaces import (
+    GPGKeyAlgorithm,
+    IGPGHandler,
+    )
 
 
+@implementer(IGPGKey)
 class GPGKey(SQLBase):
-    implements(IGPGKey)
 
     _table = 'GPGKey'
     _defaultOrder = ['owner', 'keyid']
@@ -56,11 +56,12 @@ class GPGKey(SQLBase):
 
     @property
     def displayname(self):
-        return '%s%s/%s' % (self.keysize, self.algorithm.title, self.keyid)
+        return '%s%s/%s' % (
+            self.keysize, self.algorithm.title, self.fingerprint)
 
 
+@implementer(IGPGKeySet)
 class GPGKeySet:
-    implements(IGPGKeySet)
 
     def new(self, ownerID, keyid, fingerprint, keysize,
             algorithm, active=True, can_encrypt=False):
@@ -73,27 +74,27 @@ class GPGKeySet:
     def activate(self, requester, key, can_encrypt):
         """See `IGPGKeySet`."""
         fingerprint = key.fingerprint
-        lp_key = self.getByFingerprint(fingerprint)
+        lp_key = GPGKey.selectOneBy(fingerprint=fingerprint)
         if lp_key:
+            assert lp_key.owner == requester
+            is_new = False
             # Then the key already exists, so let's reactivate it.
             lp_key.active = True
             lp_key.can_encrypt = can_encrypt
-            return lp_key, False
-        ownerID = requester.id
-        keyid = key.keyid
-        keysize = key.keysize
-        algorithm = GPGKeyAlgorithm.items[key.algorithm]
-        lp_key = self.new(
-            ownerID, keyid, fingerprint, keysize, algorithm,
-            can_encrypt=can_encrypt)
-        return lp_key, True
+        else:
+            is_new = True
+            ownerID = requester.id
+            keyid = key.keyid
+            keysize = key.keysize
+            algorithm = key.algorithm
+            lp_key = self.new(
+                ownerID, keyid, fingerprint, keysize, algorithm,
+                can_encrypt=can_encrypt)
+        return lp_key, is_new
 
-    def get(self, key_id, default=None):
-        """See `IGPGKeySet`"""
-        try:
-            return GPGKey.get(key_id)
-        except SQLObjectNotFound:
-            return default
+    def deactivate(self, key):
+        lp_key = GPGKey.selectOneBy(fingerprint=key.fingerprint)
+        lp_key.active = False
 
     def getByFingerprint(self, fingerprint, default=None):
         """See `IGPGKeySet`"""
@@ -102,15 +103,13 @@ class GPGKeySet:
             return default
         return result
 
-    def getGPGKeysForPeople(self, people):
+    def getByFingerprints(self, fingerprints):
         """See `IGPGKeySet`"""
-        return GPGKey.select("""
-            GPGKey.owner IN %s AND
-            GPGKey.active = True
-            """ % sqlvalues([person.id for person in people]))
+        fingerprints = list(fingerprints)
+        return list(IStore(GPGKey).find(
+            GPGKey, GPGKey.fingerprint.is_in(fingerprints)))
 
-    def getGPGKeys(self, ownerid=None, active=True):
-        """See `IGPGKeySet`"""
+    def getGPGKeysForPerson(self, owner, active=True):
         if active is False:
             query = """
                 active = false
@@ -120,12 +119,8 @@ class GPGKeySet:
                            AND requester = %s
                            AND date_consumed is NULL
                     )
-                """ % sqlvalues(ownerid)
+                """ % sqlvalues(owner.id)
         else:
             query = 'active=true'
-
-        if ownerid:
-            query += ' AND owner=%s' % sqlvalues(ownerid)
-
-        return GPGKey.select(query, orderBy='id')
-
+        query += ' AND owner=%s' % sqlvalues(owner.id)
+        return list(GPGKey.select(query, orderBy='id'))

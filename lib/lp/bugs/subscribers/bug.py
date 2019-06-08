@@ -1,4 +1,4 @@
-# Copyright 2009-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2015 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -16,6 +16,8 @@ __all__ = [
 
 import datetime
 
+from zope.security.proxy import removeSecurityProxy
+
 from lp.bugs.adapters.bugchange import (
     BugDuplicateChange,
     BugTaskAssigneeChange,
@@ -28,10 +30,9 @@ from lp.bugs.mail.bugnotificationrecipients import BugNotificationRecipients
 from lp.bugs.mail.newbug import generate_bug_add_email
 from lp.bugs.model.bug import get_also_notified_subscribers
 from lp.registry.interfaces.person import IPerson
+from lp.registry.model.person import get_recipients
 from lp.services.config import config
 from lp.services.database.sqlbase import block_implicit_flushes
-from lp.services.features import getFeatureFlag
-from lp.services.mail.helpers import get_contact_email_addresses
 from lp.services.mail.sendmail import (
     format_address,
     sendmail,
@@ -41,11 +42,7 @@ from lp.services.webapp.publisher import canonical_url
 
 @block_implicit_flushes
 def notify_bug_modified(bug, event):
-    """Handle bug change events.
-
-    Subscribe the security contacts for a bug when it becomes
-    security-related, and add notifications for the changes.
-    """
+    """Handle bug change events."""
     bug_delta = get_bug_delta(
         old_bug=event.object_before_modification,
         new_bug=event.object, user=IPerson(event.user))
@@ -114,13 +111,8 @@ def get_bug_delta(old_bug, new_bug, user):
     IBugDelta if there are changes, or None if there were no changes.
     """
     changes = {}
-    fields = ["title", "description", "name"]
-    if bool(getFeatureFlag(
-        'disclosure.information_type_notifications.enabled')):
-        fields.append('information_type')
-    else:
-        fields.extend(('private', 'security_related'))
-    fields.extend(("duplicateof", "tags"))
+    fields = ["title", "description", "name", "information_type",
+        "duplicateof", "tags"]
     for field_name in fields:
         # fields for which we show old => new when their values change
         old_val = getattr(old_bug, field_name)
@@ -145,7 +137,6 @@ def add_bug_change_notifications(bug_delta, old_bugtask=None,
     """Generate bug notifications and add them to the bug."""
     changes = get_bug_changes(bug_delta)
     recipients = bug_delta.bug.getBugNotificationRecipients(
-        old_bug=bug_delta.bug_before_modification,
         level=BugNotificationLevel.METADATA)
     if old_bugtask is not None:
         old_bugtask_recipients = BugNotificationRecipients()
@@ -157,24 +148,42 @@ def add_bug_change_notifications(bug_delta, old_bugtask=None,
         bug = bug_delta.bug
         if isinstance(change, BugDuplicateChange):
             no_dupe_master_recipients = bug.getBugNotificationRecipients(
-                old_bug=bug_delta.bug_before_modification,
                 level=change.change_level)
             bug_delta.bug.addChange(
                 change, recipients=no_dupe_master_recipients)
         elif (isinstance(change, BugTaskAssigneeChange) and
               new_subscribers is not None):
             for person in new_subscribers:
+                # If this change involves multiple changes, other structural
+                # subscribers will leak into new_subscribers, and they may
+                # not be in the recipients list, due to having a LIFECYCLE
+                # structural subscription.
+                if person not in recipients:
+                    continue
+                # We are only interested in dropping the assignee out, since
+                # we send assignment notifications separately.
                 reason, rationale = recipients.getReason(person)
                 if 'Assignee' in rationale:
                     recipients.remove(person)
             bug_delta.bug.addChange(change, recipients=recipients)
         else:
             if change.change_level == BugNotificationLevel.LIFECYCLE:
-                change_recipients = bug.getBugNotificationRecipients(
-                    old_bug=bug_delta.bug_before_modification,
-                    level=change.change_level)
-                recipients.update(change_recipients)
-            bug_delta.bug.addChange(change, recipients=recipients)
+                # XXX: The level handling here is duplicated with the
+                # start of this method and *really* needs refactoring.
+                change_recipients = BugNotificationRecipients()
+                change_recipients.update(recipients)
+                change_recipients.update(
+                    bug.getBugNotificationRecipients(
+                        level=change.change_level))
+                if old_bugtask is not None:
+                    old_bugtask_recipients = BugNotificationRecipients()
+                    get_also_notified_subscribers(
+                        old_bugtask, recipients=old_bugtask_recipients,
+                        level=change.change_level)
+                    change_recipients.update(old_bugtask_recipients)
+            else:
+                change_recipients = recipients
+            bug_delta.bug.addChange(change, recipients=change_recipients)
 
 
 def send_bug_details_to_new_bug_subscribers(
@@ -196,11 +205,11 @@ def send_bug_details_to_new_bug_subscribers(
             and not event_creator.selfgenerated_bugnotifications):
         new_subs.discard(event_creator)
 
-    to_addrs = set()
+    to_persons = set()
     for new_sub in new_subs:
-        to_addrs.update(get_contact_email_addresses(new_sub))
+        to_persons.update(get_recipients(new_sub))
 
-    if not to_addrs:
+    if not to_persons:
         return False
 
     from_addr = format_address(
@@ -218,13 +227,14 @@ def send_bug_details_to_new_bug_subscribers(
     recipients = bug.getBugNotificationRecipients()
 
     bug_notification_builder = BugNotificationBuilder(bug, event_creator)
-    for to_addr in sorted(to_addrs):
-        reason, rationale = recipients.getReason(to_addr)
+    for to_person in sorted(to_persons):
+        reason, rationale = recipients.getReason(
+            str(removeSecurityProxy(to_person).preferredemail.email))
         subject, contents = generate_bug_add_email(
             bug, new_recipients=True, subscribed_by=subscribed_by,
             reason=reason, event_creator=event_creator)
         msg = bug_notification_builder.build(
-            from_addr, to_addr, contents, subject, email_date,
+            from_addr, to_person, contents, subject, email_date,
             rationale=rationale, references=references)
         sendmail(msg)
 

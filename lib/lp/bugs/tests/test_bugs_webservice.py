@@ -1,18 +1,22 @@
-# Copyright 2009-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Webservice unit tests related to Launchpad Bugs."""
 
 __metaclass__ = type
 
+from datetime import (
+    datetime,
+    timedelta,
+    )
 import re
 
-from BeautifulSoup import BeautifulSoup
 from lazr.lifecycle.interfaces import IDoNotSnapshot
 from lazr.restfulclient.errors import (
     BadRequest,
     HTTPError,
     )
+import pytz
 from simplejson import dumps
 from storm.store import Store
 from testtools.matchers import (
@@ -20,15 +24,16 @@ from testtools.matchers import (
     LessThan,
     )
 from zope.component import getMultiAdapter
+from zope.security.proxy import removeSecurityProxy
 
+from lp.app.enums import InformationType
 from lp.bugs.browser.bugtask import get_comments_for_bugtask
 from lp.bugs.interfaces.bug import IBug
-from lp.registry.enums import (
-    BugSharingPolicy,
-    InformationType,
-    )
+from lp.registry.enums import BugSharingPolicy
 from lp.registry.interfaces.product import License
+from lp.services.beautifulsoup import BeautifulSoup4 as BeautifulSoup
 from lp.services.webapp import snapshot
+from lp.services.webapp.interfaces import OAuthPermission
 from lp.services.webapp.servers import LaunchpadTestRequest
 from lp.testing import (
     api_url,
@@ -37,15 +42,18 @@ from lp.testing import (
     login_person,
     logout,
     person_logged_in,
+    RequestTimelineCollector,
     TestCaseWithFactory,
     )
-from lp.testing._webservice import QueryCollector
 from lp.testing.layers import (
     DatabaseFunctionalLayer,
     LaunchpadFunctionalLayer,
     )
 from lp.testing.matchers import HasQueryCount
-from lp.testing.pages import LaunchpadWebServiceCaller
+from lp.testing.pages import (
+    LaunchpadWebServiceCaller,
+    webservice_for_person,
+    )
 from lp.testing.sampledata import (
     ADMIN_EMAIL,
     USER_EMAIL,
@@ -100,7 +108,7 @@ class TestBugDescriptionRepresentation(TestCaseWithFactory):
     def findBugDescription(self, response):
         """Find the bug description field in an XHTML document fragment."""
         soup = BeautifulSoup(response.body)
-        dt = soup.find('dt', text="description").parent
+        dt = soup.find('dt', text="description")
         dd = dt.findNextSibling('dd')
         return str(dd.contents.pop())
 
@@ -113,7 +121,7 @@ class TestBugDescriptionRepresentation(TestCaseWithFactory):
         self.assertEqual(
             self.findBugDescription(response),
             u'<p>Useless bugs are useless. '
-            'See <a href="/bugs/%d" class="bug-link">Bug %d</a>.</p>' % (
+            'See <a class="bug-link" href="/bugs/%d">Bug %d</a>.</p>' % (
             self.bug_one.id, self.bug_one.id))
 
     def test_PATCH_xhtml_representation(self):
@@ -132,7 +140,7 @@ class TestBugDescriptionRepresentation(TestCaseWithFactory):
 
         self.assertEqual(
             self.findBugDescription(response),
-            u'<p>See <a href="/bugs/%d" class="bug-link">bug %d</a></p>' % (
+            u'<p>See <a class="bug-link" href="/bugs/%d">bug %d</a></p>' % (
             self.bug_one.id, self.bug_one.id))
 
 
@@ -202,7 +210,7 @@ class TestBugScaling(TestCaseWithFactory):
         self.factory.makeBugAttachment(self.bug)
         webservice = LaunchpadWebServiceCaller(
             'launchpad-library', 'salgado-change-anything')
-        collector = QueryCollector()
+        collector = RequestTimelineCollector()
         collector.register()
         self.addCleanup(collector.unregister)
         url = '/bugs/%d/attachments?ws.size=75' % self.bug.id
@@ -212,7 +220,7 @@ class TestBugScaling(TestCaseWithFactory):
         response = webservice.get(url)
         self.assertThat(collector, HasQueryCount(LessThan(24)))
         with_2_count = collector.count
-        self.failUnlessEqual(response.status, 200)
+        self.assertEqual(response.status, 200)
         login(USER_EMAIL)
         for i in range(5):
             self.factory.makeBugAttachment(self.bug)
@@ -237,7 +245,7 @@ class TestBugScaling(TestCaseWithFactory):
         self.factory.makeBugComment(bug)
         webservice = LaunchpadWebServiceCaller(
             'launchpad-library', 'salgado-change-anything')
-        collector = QueryCollector()
+        collector = RequestTimelineCollector()
         collector.register()
         self.addCleanup(collector.unregister)
         url = '/bugs/%d/messages?ws.size=75' % bug.id
@@ -247,7 +255,7 @@ class TestBugScaling(TestCaseWithFactory):
         response = webservice.get(url)
         self.assertThat(collector, HasQueryCount(LessThan(24)))
         with_2_count = collector.count
-        self.failUnlessEqual(response.status, 200)
+        self.assertEqual(response.status, 200)
         login(USER_EMAIL)
         for i in range(50):
             self.factory.makeBugComment(bug)
@@ -280,12 +288,12 @@ class TestBugMessages(TestCaseWithFactory):
         bug = self.webservice.load(api_url(self.bug))
         messages = bug.messages
         latest_message = [message for message in messages][-1]
-        self.failUnlessEqual(self.message2.subject, latest_message.subject)
+        self.assertEqual(self.message2.subject, latest_message.subject)
 
         # The parent_link for the latest message should be None
         # because the parent is not a member of this bug's messages
         # collection itself.
-        self.failUnlessEqual(None, latest_message.parent)
+        self.assertIsNone(latest_message.parent)
 
 
 class TestPostBugWithLargeCollections(TestCaseWithFactory):
@@ -311,7 +319,7 @@ class TestPostBugWithLargeCollections(TestCaseWithFactory):
             'subscriptions', 'users_affected', 'users_unaffected',
             'users_affected_with_dupes', 'messages', 'attachments',
             'activity'):
-            self.failUnless(
+            self.assertTrue(
                 IDoNotSnapshot.providedBy(IBug[field_name]),
                 'IBug.%s should not be included in snapshots, see bug 507642.'
                 % field_name)
@@ -347,12 +355,13 @@ class TestErrorHandling(TestCaseWithFactory):
     def test_add_duplicate_bugtask_for_project_gives_bad_request(self):
         bug = self.factory.makeBug()
         product = self.factory.makeProduct()
+        product_url = api_url(product)
         self.factory.makeBugTask(bug=bug, target=product)
 
         launchpad = launchpadlib_for('test', bug.owner)
         lp_bug = launchpad.load(api_url(bug))
         self.assertRaises(
-            BadRequest, lp_bug.addTask, target=api_url(product))
+            BadRequest, lp_bug.addTask, target=product_url)
 
     def test_add_invalid_bugtask_to_proprietary_bug_gives_bad_request(self):
         # Test we get an error when we attempt to invalidly add a bug task to
@@ -363,6 +372,7 @@ class TestErrorHandling(TestCaseWithFactory):
             bug_sharing_policy=BugSharingPolicy.PROPRIETARY)
         product2 = self.factory.makeProduct(
             bug_sharing_policy=BugSharingPolicy.PROPRIETARY)
+        product2_url = api_url(product2)
         bug = self.factory.makeBug(
             target=product1, owner=owner,
             information_type=InformationType.PROPRIETARY)
@@ -371,7 +381,7 @@ class TestErrorHandling(TestCaseWithFactory):
         launchpad = launchpadlib_for('test', owner)
         lp_bug = launchpad.load(api_url(bug))
         self.assertRaises(
-            BadRequest, lp_bug.addTask, target=api_url(product2))
+            BadRequest, lp_bug.addTask, target=product2_url)
 
     def test_add_attachment_with_bad_filename_raises_exception(self):
         # Test that addAttachment raises BadRequest when the filename given
@@ -390,46 +400,74 @@ class BugSetTestCase(TestCaseWithFactory):
 
     layer = DatabaseFunctionalLayer
 
-    def test_default_private_bugs_true(self):
-        # Verify the path through user submission, to MaloneApplication to
-        # BugSet, and back to the user creates a private bug according
-        # to the project's bugs are private by default rule.
-        project = self.factory.makeLegacyProduct(
+    def makeAPITarget(self, bug_policy):
+        project = self.factory.makeProduct(
             licenses=[License.OTHER_PROPRIETARY])
+        target_url = api_url(project)
         with person_logged_in(project.owner):
-            project.setPrivateBugs(True, project.owner)
-        webservice = launchpadlib_for('test', 'salgado')
-        bugs_collection = webservice.load('/bugs')
-        bug = bugs_collection.createBug(
-            target=api_url(project), title='title', description='desc')
-        self.assertEqual('Private', bug.information_type)
+            project.setBugSharingPolicy(bug_policy)
+        return target_url
 
-    def test_explicit_private_private_bugs_true(self):
-        # Verify the path through user submission, to MaloneApplication to
-        # BugSet, and back to the user creates a private bug because the
-        # user commands it.
-        project = self.factory.makeLegacyProduct(
-            licenses=[License.OTHER_PROPRIETARY])
-        with person_logged_in(project.owner):
-            project.setPrivateBugs(True, project.owner)
+    def getBugsCollection(self):
         webservice = launchpadlib_for('test', 'salgado')
-        bugs_collection = webservice.load('/bugs')
-        bug = bugs_collection.createBug(
-            target=api_url(project), title='title', description='desc',
-            private=True)
-        self.assertEqual('Private', bug.information_type)
+        return webservice.load('/bugs')
 
     def test_default_sharing_policy_proprietary(self):
         # Verify the path through user submission, to MaloneApplication to
         # BugSet, and back to the user creates a private bug according
         # to the project's bug sharing policy.
-        project = self.factory.makeProduct(
-            licenses=[License.OTHER_PROPRIETARY])
-        with person_logged_in(project.owner):
-            project.setBugSharingPolicy(
-                BugSharingPolicy.PROPRIETARY_OR_PUBLIC)
-        webservice = launchpadlib_for('test', 'salgado')
-        bugs_collection = webservice.load('/bugs')
+        target_url = self.makeAPITarget(BugSharingPolicy.PROPRIETARY_OR_PUBLIC)
+        bugs_collection = self.getBugsCollection()
         bug = bugs_collection.createBug(
-            target=api_url(project), title='title', description='desc')
+            target=target_url, title='title', description='desc')
         self.assertEqual('Proprietary', bug.information_type)
+
+    def test_override_default_sharing_policy_proprietary(self):
+        # A Proprietary bug can be created if the porject's bug sharing policy
+        # permits it.
+        target_url = self.makeAPITarget(BugSharingPolicy.PUBLIC_OR_PROPRIETARY)
+        bugs_collection = self.getBugsCollection()
+        bug = bugs_collection.createBug(
+            target=target_url, title='title', description='desc',
+            information_type='Proprietary')
+        self.assertEqual('Proprietary', bug.information_type)
+
+
+class TestBugDateLastUpdated(TestCaseWithFactory):
+
+    layer = DatabaseFunctionalLayer
+
+    def make_old_bug(self):
+        bug = self.factory.makeBug()
+        one_year_ago = datetime.now(pytz.UTC) - timedelta(days=365)
+        removeSecurityProxy(bug).date_last_updated = one_year_ago
+        owner = bug.owner
+        with person_logged_in(owner):
+            webservice = webservice_for_person(
+                owner, permission=OAuthPermission.WRITE_PUBLIC)
+        return (bug, owner, webservice)
+
+    def test_subscribe_does_not_update(self):
+        # Calling subscribe over the API does not update date_last_updated.
+        (bug, owner, webservice) = self.make_old_bug()
+        subscriber = self.factory.makePerson()
+        date_last_updated = bug.date_last_updated
+        api_sub = api_url(subscriber)
+        bug_url = api_url(bug)
+        logout()
+        response = webservice.named_post(bug_url, 'subscribe', person=api_sub)
+        self.assertEqual(200, response.status)
+        with person_logged_in(owner):
+            self.assertEqual(date_last_updated, bug.date_last_updated)
+
+    def test_change_status_does_update(self):
+        # Changing the status of a bugtask does change date_last_updated.
+        (bug, owner, webservice) = self.make_old_bug()
+        task_url = api_url(bug.default_bugtask)
+        date_last_updated = bug.date_last_updated
+        logout()
+        response = webservice.patch(
+            task_url, 'application/json', dumps(dict(status='Invalid')))
+        self.assertEqual(209, response.status)
+        with person_logged_in(owner):
+            self.assertNotEqual(date_last_updated, bug.date_last_updated)

@@ -8,18 +8,18 @@ Let's first setup some objects that we'll need.
 If you're not logged in and go to the +polls page of the "Ubuntu Team"
 you'll see a link to login as a team administrator.
 
-    >>> anon_browser.open('http://launchpad.dev/~ubuntu-team')
+    >>> anon_browser.open('http://launchpad.test/~ubuntu-team')
     >>> anon_browser.getLink('Show polls').click()
     >>> anon_browser.url
-    'http://launchpad.dev/~ubuntu-team/+polls'
+    'http://launchpad.test/~ubuntu-team/+polls'
     >>> anon_browser.getLink('Log in as an admin to set up a new poll').url
-    'http://launchpad.dev/~ubuntu-team/+login'
+    'http://launchpad.test/~ubuntu-team/+login'
 
 Try to create a new poll logged in as 'no-priv', which is not a team
 administrator. There's no link leading to the +newpoll page, but the user can
 easily guess it.
 
-    >>> no_priv_browser.open('http://launchpad.dev/~ubuntu-team/+newpoll')
+    >>> no_priv_browser.open('http://launchpad.test/~ubuntu-team/+newpoll')
     Traceback (most recent call last):
     ...
     Unauthorized:...
@@ -27,11 +27,11 @@ easily guess it.
 Now we're logged in as Jeff Waugh which is a team administrator and thus can
 create a new poll.
 
-    >>> team_admin_browser.open('http://launchpad.dev/~ubuntu-team')
+    >>> team_admin_browser.open('http://launchpad.test/~ubuntu-team')
     >>> team_admin_browser.getLink('Show polls').click()
     >>> team_admin_browser.getLink('Set up a new poll').click()
     >>> team_admin_browser.url
-    'http://launchpad.dev/~ubuntu-team/+newpoll'
+    'http://launchpad.test/~ubuntu-team/+newpoll'
 
     >>> team_admin_browser.title
     'New poll : ...'
@@ -54,7 +54,7 @@ test the name field validator.
     ...     name='field.datecloses').value = '2100-07-04 02:00:00+00:00'
     >>> team_admin_browser.getControl('Continue').click()
 
-    >>> print "\n".join(get_feedback_messages(team_admin_browser.contents))
+    >>> print_feedback_messages(team_admin_browser.contents)
     There is 1 error.
     Invalid name 'election_2100'. Names must be at least two characters ...
 
@@ -68,7 +68,7 @@ We fix the name, but swap the dates. Again a nice error message.
     ...     name='field.datecloses').value = '2100-06-04 02:00:00+00:00'
     >>> team_admin_browser.getControl('Continue').click()
 
-    >>> print "\n".join(get_feedback_messages(team_admin_browser.contents))
+    >>> print_feedback_messages(team_admin_browser.contents)
     There is 1 error.
     A poll cannot close at the time (or before) it opens.
 
@@ -83,12 +83,12 @@ Now we get it right.
 We're redirected to the newly created poll page.
 
     >>> team_admin_browser.url
-    'http://launchpad.dev/~ubuntu-team/+poll/election-2100'
+    'http://launchpad.test/~ubuntu-team/+poll/election-2100'
 
 Create a new poll that starts in 2025-06-04 and will last until 2035.
 
     >>> team_admin_browser.open(
-    ...     'http://launchpad.dev/~ubuntu-team/+newpoll')
+    ...     'http://launchpad.test/~ubuntu-team/+newpoll')
     >>> team_admin_browser.getControl(
     ...     "The unique name of this poll").value = 'dpl-2080'
     >>> title_control = team_admin_browser.getControl(
@@ -108,21 +108,21 @@ Create a new poll that starts in 2025-06-04 and will last until 2035.
 We're redirected to the newly created poll
 
     >>> team_admin_browser.url
-    'http://launchpad.dev/~ubuntu-team/+poll/dpl-2080'
+    'http://launchpad.test/~ubuntu-team/+poll/dpl-2080'
     >>> team_admin_browser.title
     'Debian Project Leader Election 2080 : \xe2\x80\x9cUbuntu Team\xe2\x80\x9d team'
     >>> print_location(team_admin_browser.contents)
-    Hierarchy:  ?Ubuntu Team? team > Debian Project Leader Election 2080
+    Hierarchy:  ?Ubuntu Team? team
     Tabs:
-    * Overview (selected) - http://launchpad.dev/~ubuntu-team
-    * Code - http://code.launchpad.dev/~ubuntu-team
-    * Bugs - http://bugs.launchpad.dev/~ubuntu-team
-    * Blueprints - http://blueprints.launchpad.dev/~ubuntu-team
-    * Translations - http://translations.launchpad.dev/~ubuntu-team
-    * Answers - http://answers.launchpad.dev/~ubuntu-team
+    * Overview (selected) - http://launchpad.test/~ubuntu-team
+    * Code - http://code.launchpad.test/~ubuntu-team
+    * Bugs - http://bugs.launchpad.test/~ubuntu-team
+    * Blueprints - http://blueprints.launchpad.test/~ubuntu-team
+    * Translations - http://translations.launchpad.test/~ubuntu-team
+    * Answers - http://answers.launchpad.test/~ubuntu-team
     Main heading: Debian Project Leader Election 2080
     >>> team_admin_browser.getLink('add an option').url
-    'http://launchpad.dev/%7Eubuntu-team/+poll/dpl-2080/+newoption'
+    'http://launchpad.test/%7Eubuntu-team/+poll/dpl-2080/+newoption'
 
 Now lets try to insert a poll with the name of a existing one.
 
@@ -130,7 +130,7 @@ Now lets try to insert a poll with the name of a existing one.
 # There's no link to get back to +polls.
 
     >>> team_admin_browser.open(
-    ...     'http://launchpad.dev/~ubuntu-team/+newpoll')
+    ...     'http://launchpad.test/~ubuntu-team/+newpoll')
     >>> team_admin_browser.getControl(
     ...     "The unique name of this poll").value = 'dpl-2080'
     >>> title_control = team_admin_browser.getControl(
@@ -147,7 +147,7 @@ Now lets try to insert a poll with the name of a existing one.
     ...     name='field.datecloses').value = '2035-06-04 02:00:00+00:00'
     >>> team_admin_browser.getControl('Continue').click()
 
-    >>> print "\n".join(get_feedback_messages(team_admin_browser.contents))
+    >>> print_feedback_messages(team_admin_browser.contents)
     There is 1 error.
     dpl-2080 is already in use by another poll in this team.
 
@@ -160,6 +160,6 @@ the poll opens -- at that point new options cannot be added.
     >>> today = datetime.today().strftime('%Y-%m-%d')
     >>> team_admin_browser.getControl(name='field.dateopens').value = today
     >>> team_admin_browser.getControl('Continue').click()
-    >>> print "\n".join(get_feedback_messages(team_admin_browser.contents))
+    >>> print_feedback_messages(team_admin_browser.contents)
     There is 1 error.
-    A poll cannot open less than 12 hours after it's created.
+    A poll cannot open less than 12 hours after it&#x27;s created.

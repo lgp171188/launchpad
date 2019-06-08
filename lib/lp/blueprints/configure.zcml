@@ -1,4 +1,4 @@
-<!-- Copyright 2009-2010 Canonical Ltd.  This software is licensed under the
+<!-- Copyright 2009-2017 Canonical Ltd.  This software is licensed under the
      GNU Affero General Public License version 3 (see the file LICENSE).
 -->
 
@@ -21,7 +21,10 @@
       component="lp.blueprints.publisher.BlueprintsLayer"
       provides="zope.publisher.interfaces.browser.IDefaultBrowserLayer"
       name="blueprints" />
-
+  <utility
+      component="lp.blueprints.publisher.SpecificationsFacet"
+      provides="lp.services.webapp.interfaces.IFacet"
+      name="specifications" />
 
   <lp:help-folder folder="help" name="+help-blueprints" />
 
@@ -30,15 +33,25 @@
   <class
       class="lp.blueprints.model.sprint.Sprint">
     <allow
-        interface="lp.blueprints.interfaces.sprint.ISprint"/>
+        interface="lp.blueprints.interfaces.sprint.ISprintPublic
+                   lp.blueprints.interfaces.sprint.ISprintEditableAttributes"/>
     <require
         permission="launchpad.AnyPerson"
-        set_schema="lp.blueprints.interfaces.sprint.ISprint"/>
+        interface="lp.blueprints.interfaces.sprint.ISprintAnyPerson"/>
+    <require
+        permission="launchpad.Edit"
+        set_schema="lp.blueprints.interfaces.sprint.ISprintEditableAttributes"/>
+    <require
+        permission="launchpad.Moderate"
+        interface="lp.blueprints.interfaces.sprint.ISprintModerate"/>
+    <require
+        permission="launchpad.Driver"
+        interface="lp.blueprints.interfaces.sprint.ISprintDriver"/>
   </class>
   <adapter
       provides="lp.services.webapp.interfaces.IBreadcrumb"
       for="lp.blueprints.interfaces.sprint.ISprint"
-      factory="lp.services.webapp.breadcrumb.TitleBreadcrumb"
+      factory="lp.blueprints.browser.sprint.SprintBreadcrumb"
       permission="zope.Public"/>
   <adapter
       provides="lp.services.webapp.interfaces.IBreadcrumb"
@@ -83,6 +96,14 @@
     <allow
         interface="lp.blueprints.interfaces.specificationworkitem.ISpecificationWorkItem"/>
   </class>
+
+  <!-- SpecificationWorkItemSet -->
+
+  <securedutility
+      class="lp.blueprints.model.specificationworkitem.SpecificationWorkItemSet"
+      provides="lp.blueprints.interfaces.specificationworkitem.ISpecificationWorkItemSet">
+    <allow interface="lp.blueprints.interfaces.specificationworkitem.ISpecificationWorkItemSet"/>
+  </securedutility>
 
   <!-- SpecificationDependency -->
 
@@ -150,10 +171,6 @@
   <class class="lp.blueprints.model.specification.Specification">
     <allow interface="lp.blueprints.interfaces.specification.ISpecificationPublic"/>
     <require
-        permission="launchpad.Edit"
-        set_attributes="information_type" />
-
-    <require
         permission="launchpad.LimitedView"
         interface="lp.blueprints.interfaces.specification.ISpecificationView" />
 
@@ -175,22 +192,19 @@
                         approver assignee drafter man_days
                         implementation_status"/>
     <require
+        permission="launchpad.Driver"
+        interface="lp.blueprints.interfaces.specification.ISpecificationDriverRestricted"/>
+    <require
         permission="launchpad.Admin"
         set_attributes="priority direction_approved"/>
     <require
         permission="launchpad.LimitedView"
-        attributes="bugs
-                    bug_links"/>
+        attributes="bugs"/>
     <require
         permission="launchpad.AnyAllowedPerson"
         attributes="linkBug
                     unlinkBug
                     setWorkItems"/>
-  </class>
-
-  <class class="lp.blueprints.model.specificationbug.SpecificationBug">
-    <allow interface="lp.blueprints.interfaces.specificationbug.ISpecificationBug"/>
-    <allow interface="lazr.restful.interfaces.IJSONPublishable"/>
   </class>
 
   <subscriber
@@ -205,10 +219,6 @@
       for="lp.blueprints.interfaces.specification.ISpecification
            lazr.lifecycle.interfaces.IObjectModifiedEvent"
       handler="lp.blueprints.subscribers.specification_update_lifecycle_status"/>
-  <subscriber
-      for="lp.blueprints.interfaces.specification.ISpecification
-           lazr.lifecycle.interfaces.IObjectModifiedEvent"
-      handler="lp.blueprints.subscribers.specification_goalstatus"/>
   <subscriber
       for="lp.blueprints.interfaces.specification.ISpecification
            lazr.lifecycle.interfaces.IObjectModifiedEvent"

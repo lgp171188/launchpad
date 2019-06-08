@@ -1,4 +1,4 @@
-# Copyright 2010 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2015 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 
@@ -8,7 +8,6 @@ __metaclass__ = type
 from datetime import timedelta
 
 from storm.locals import Store
-from zope.security.proxy import removeSecurityProxy
 
 from lp.buildmaster.enums import BuildStatus
 from lp.code.mail.sourcepackagerecipebuild import (
@@ -17,24 +16,25 @@ from lp.code.mail.sourcepackagerecipebuild import (
 from lp.services.config import config
 from lp.services.webapp import canonical_url
 from lp.testing import TestCaseWithFactory
-from lp.testing.layers import LaunchpadFunctionalLayer
+from lp.testing.dbuser import switch_dbuser
+from lp.testing.layers import LaunchpadZopelessLayer
 
 
 expected_body = u"""\
  * State: Successfully built
  * Recipe: person/recipe
- * Archive: archiveowner/ppa
+ * Archive: ~archiveowner/ubuntu/ppa
  * Distroseries: distroseries
  * Duration: 5 minutes
  * Build Log: %s
  * Upload Log: 
- * Builder: http://launchpad.dev/builders/bob
+ * Builder: http://launchpad.test/builders/bob
 """
 
 superseded_body = u"""\
  * State: Build for superseded Source
  * Recipe: person/recipe
- * Archive: archiveowner/ppa
+ * Archive: ~archiveowner/ubuntu/ppa
  * Distroseries: distroseries
  * Duration: 
  * Build Log: 
@@ -42,13 +42,15 @@ superseded_body = u"""\
  * Builder: 
 """
 
+
 class TestSourcePackageRecipeBuildMailer(TestCaseWithFactory):
 
-    layer = LaunchpadFunctionalLayer
+    layer = LaunchpadZopelessLayer
 
     def makeStatusEmail(self, build):
+        switch_dbuser(config.builddmaster.dbuser)
         mailer = SourcePackageRecipeBuildMailer.forStatus(build)
-        email = removeSecurityProxy(build.requester).preferredemail.email
+        email = build.requester.preferredemail.email
         return mailer.generateEmail(email, build.requester)
 
     def test_generateEmail(self):
@@ -59,20 +61,21 @@ class TestSourcePackageRecipeBuildMailer(TestCaseWithFactory):
         pantry_owner = self.factory.makePerson(name='archiveowner')
         pantry = self.factory.makeArchive(name='ppa', owner=pantry_owner)
         secret = self.factory.makeDistroSeries(name=u'distroseries')
+        secret.nominatedarchindep = (
+            self.factory.makeDistroArchSeries(distroseries=secret))
         build = self.factory.makeSourcePackageRecipeBuild(
             recipe=cake, distroseries=secret, archive=pantry,
             status=BuildStatus.FULLYBUILT, duration=timedelta(minutes=5))
-        naked_build = removeSecurityProxy(build)
-        naked_build.builder = self.factory.makeBuilder(name='bob')
-        naked_build.log = self.factory.makeLibraryFileAlias()
-        Store.of(build).flush()
+        build.updateStatus(
+            BuildStatus.FULLYBUILT,
+            builder=self.factory.makeBuilder(name='bob'))
+        build.setLog(self.factory.makeLibraryFileAlias())
         ctrl = self.makeStatusEmail(build)
         self.assertEqual(
             u'[recipe build #%d] of ~person recipe in distroseries: '
             'Successfully built' % (build.id), ctrl.subject)
         body, footer = ctrl.body.split('\n-- \n')
-        self.assertEqual(
-            expected_body % build.log.getURL(), body)
+        self.assertEqual(expected_body % build.log_url, body)
         build_url = canonical_url(build)
         self.assertEqual(
             '%s\nYou are the requester of the build.\n' % build_url, footer)
@@ -81,8 +84,12 @@ class TestSourcePackageRecipeBuildMailer(TestCaseWithFactory):
         self.assertEqual(
             'Requester', ctrl.headers['X-Launchpad-Message-Rationale'])
         self.assertEqual(
+            build.requester.name, ctrl.headers['X-Launchpad-Message-For'])
+        self.assertEqual(
             'recipe-build-status',
             ctrl.headers['X-Launchpad-Notification-Type'])
+        self.assertEqual(
+            '~archiveowner/ubuntu/ppa', ctrl.headers['X-Launchpad-Archive'])
         self.assertEqual(
             'FULLYBUILT', ctrl.headers['X-Launchpad-Build-State'])
 
@@ -94,6 +101,8 @@ class TestSourcePackageRecipeBuildMailer(TestCaseWithFactory):
         pantry_owner = self.factory.makePerson(name='archiveowner')
         pantry = self.factory.makeArchive(name='ppa', owner=pantry_owner)
         secret = self.factory.makeDistroSeries(name=u'distroseries')
+        secret.nominatedarchindep = (
+            self.factory.makeDistroArchSeries(distroseries=secret))
         build = self.factory.makeSourcePackageRecipeBuild(
             recipe=cake, distroseries=secret, archive=pantry,
             status=BuildStatus.SUPERSEDED)
@@ -112,16 +121,19 @@ class TestSourcePackageRecipeBuildMailer(TestCaseWithFactory):
         self.assertEqual(
             'Requester', ctrl.headers['X-Launchpad-Message-Rationale'])
         self.assertEqual(
+            build.requester.name, ctrl.headers['X-Launchpad-Message-For'])
+        self.assertEqual(
             'recipe-build-status',
             ctrl.headers['X-Launchpad-Notification-Type'])
+        self.assertEqual(
+            '~archiveowner/ubuntu/ppa', ctrl.headers['X-Launchpad-Archive'])
         self.assertEqual(
             'SUPERSEDED', ctrl.headers['X-Launchpad-Build-State'])
 
     def test_generateEmail_upload_failure(self):
         """GenerateEmail works when many fields are NULL."""
         build = self.factory.makeSourcePackageRecipeBuild()
-        removeSecurityProxy(build).upload_log = (
-            self.factory.makeLibraryFileAlias())
+        build.storeUploadLog('uploaded')
         upload_log_fragment = 'Upload Log: %s' % build.upload_log_url
         ctrl = self.makeStatusEmail(build)
         self.assertTrue(upload_log_fragment in ctrl.body)

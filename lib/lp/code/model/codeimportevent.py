@@ -1,8 +1,6 @@
 # Copyright 2009 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-# pylint: disable-msg=E0611,W0212
-
 """Database classes related to and including CodeImportEvent."""
 
 __metaclass__ = type
@@ -18,7 +16,7 @@ from sqlobject import (
     ForeignKey,
     StringCol,
     )
-from zope.interface import implements
+from zope.interface import implementer
 
 from lp.code.enums import (
     CodeImportEventDataType,
@@ -41,10 +39,9 @@ from lp.services.database.enumcol import EnumCol
 from lp.services.database.sqlbase import SQLBase
 
 
+@implementer(ICodeImportEvent)
 class CodeImportEvent(SQLBase):
     """See `ICodeImportEvent`."""
-
-    implements(ICodeImportEvent)
     _table = 'CodeImportEvent'
 
     date_created = UtcDateTimeCol(notNull=True, default=DEFAULT)
@@ -80,10 +77,9 @@ class _CodeImportEventData(SQLBase):
     data_value = StringCol()
 
 
+@implementer(ICodeImportEventSet)
 class CodeImportEventSet:
     """See `ICodeImportEventSet`."""
-
-    implements(ICodeImportEventSet)
 
     def getAll(self):
         """See `ICodeImportEventSet`."""
@@ -269,10 +265,8 @@ class CodeImportEventSet:
 
     def _iterSourceDetails(self, code_import):
         """Yield key-value tuples describing the source of the import."""
-        if code_import.rcs_type in (RevisionControlSystems.SVN,
-                                    RevisionControlSystems.BZR_SVN,
+        if code_import.rcs_type in (RevisionControlSystems.BZR_SVN,
                                     RevisionControlSystems.GIT,
-                                    RevisionControlSystems.HG,
                                     RevisionControlSystems.BZR):
             yield 'URL', code_import.url
         elif code_import.rcs_type == RevisionControlSystems.CVS:
@@ -325,10 +319,9 @@ class CodeImportEventSet:
             return None
 
 
+@implementer(ICodeImportEventToken)
 class CodeImportEventToken:
     """See `ICodeImportEventToken`."""
-
-    implements(ICodeImportEventToken)
 
     def __init__(self, items):
         self.items = items

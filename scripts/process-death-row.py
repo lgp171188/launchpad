@@ -3,8 +3,6 @@
 # Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-# Stop lint warning about relative import:
-# pylint: disable-msg=W0403
 """Death row processor script.
 
 This script removes obsolete files from the selected archive(s) pool.
@@ -25,7 +23,7 @@ archive tree without removing the files.
 """
 import _pythonpath
 
-from lp.soyuz.scripts.processdeathrow import DeathRowProcessor
+from lp.archivepublisher.scripts.processdeathrow import DeathRowProcessor
 
 
 if __name__ == "__main__":

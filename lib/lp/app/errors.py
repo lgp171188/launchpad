@@ -1,4 +1,4 @@
-# Copyright 2010-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2017 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Cross application type errors for launchpad."""
@@ -6,9 +6,11 @@
 __metaclass__ = type
 __all__ = [
     'GoneError',
+    'IncompatibleArguments',
     'NameLookupFailed',
     'NotFoundError',
     'POSTToNonCanonicalURL',
+    'ServiceUsageForbidden',
     'SubscriptionPrivacyViolation',
     'TranslationUnavailable',
     'UnexpectedFormData',
@@ -79,6 +81,16 @@ class UserCannotUnsubscribePerson(Unauthorized):
 @error_status(httplib.BAD_REQUEST)
 class SubscriptionPrivacyViolation(Exception):
     """The subscription would violate privacy policies."""
+
+
+@error_status(httplib.BAD_REQUEST)
+class ServiceUsageForbidden(Exception):
+    """The specified ServiceUsage is not allowed."""
+
+
+@error_status(httplib.BAD_REQUEST)
+class IncompatibleArguments(Exception):
+    """Raised when incompatible arguments are passed to a method."""
 
 
 # Slam a 401 response code onto all ForbiddenAttribute errors.

@@ -1,4 +1,4 @@
-# Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for lp.services.utils."""
@@ -6,10 +6,8 @@
 __metaclass__ = type
 
 from contextlib import contextmanager
-from datetime import (
-    datetime,
-    timedelta,
-    )
+from datetime import datetime
+from functools import partial
 import hashlib
 import itertools
 import os
@@ -32,12 +30,14 @@ from lp.services.utils import (
     decorate_with,
     docstring_dedent,
     file_exists,
+    iter_chunks,
     iter_split,
     load_bz2_pickle,
     obfuscate_structure,
     run_capturing_output,
+    sanitise_urls,
     save_bz2_pickle,
-    total_seconds,
+    seconds_since_epoch,
     traceback_info,
     utc_now,
     )
@@ -143,12 +143,38 @@ class TestIterateSplit(TestCase):
             list(iter_split('one/two/three', '/')))
 
 
+class TestIterChunks(TestCase):
+    """Tests for iter_chunks."""
+
+    def test_empty(self):
+        self.assertEqual([], list(iter_chunks([], 1)))
+
+    def test_sequence(self):
+        self.assertEqual(
+            [('a', 'b'), ('c', 'd'), ('e',)], list(iter_chunks('abcde', 2)))
+
+    def test_iterable(self):
+        self.assertEqual(
+            [('a', 'b'), ('c', 'd'), ('e',)],
+            list(iter_chunks(iter('abcde'), 2)))
+
+    def test_size_divides_exactly(self):
+        self.assertEqual(
+            [(1, 2, 3), (4, 5, 6), (7, 8, 9)],
+            list(iter_chunks(range(1, 10), 3)))
+
+    def test_size_does_not_divide_exactly(self):
+        self.assertEqual(
+            [(1, 2, 3), (4, 5, 6), (7, 8)],
+            list(iter_chunks(range(1, 9), 3)))
+
+
 class TestCachingIterator(TestCase):
     """Tests for CachingIterator."""
 
     def test_reuse(self):
         # The same iterator can be used multiple times.
-        iterator = CachingIterator(itertools.count())
+        iterator = CachingIterator(itertools.count)
         self.assertEqual(
             [0, 1, 2, 3, 4], list(itertools.islice(iterator, 0, 5)))
         self.assertEqual(
@@ -157,7 +183,7 @@ class TestCachingIterator(TestCase):
     def test_more_values(self):
         # If a subsequent call to iter causes more values to be fetched, they
         # are also cached.
-        iterator = CachingIterator(itertools.count())
+        iterator = CachingIterator(itertools.count)
         self.assertEqual(
             [0, 1, 2], list(itertools.islice(iterator, 0, 3)))
         self.assertEqual(
@@ -165,20 +191,36 @@ class TestCachingIterator(TestCase):
 
     def test_limited_iterator(self):
         # Make sure that StopIteration is handled correctly.
-        iterator = CachingIterator(iter([0, 1, 2, 3, 4]))
+        iterator = CachingIterator(partial(iter, [0, 1, 2, 3, 4]))
         self.assertEqual(
             [0, 1, 2], list(itertools.islice(iterator, 0, 3)))
         self.assertEqual([0, 1, 2, 3, 4], list(iterator))
 
     def test_parallel_iteration(self):
         # There can be parallel iterators over the CachingIterator.
-        ci = CachingIterator(iter([0, 1, 2, 3, 4]))
+        ci = CachingIterator(partial(iter, [0, 1, 2, 3, 4]))
         i1 = iter(ci)
         i2 = iter(ci)
         self.assertEqual(0, i1.next())
         self.assertEqual(0, i2.next())
         self.assertEqual([1, 2, 3, 4], list(i2))
         self.assertEqual([1, 2, 3, 4], list(i1))
+
+    def test_deferred_initialisation(self):
+        # Initialising the iterator may be expensive, so CachingIterator
+        # defers this until it needs it.
+        self.initialised = False
+
+        def iterator():
+            self.initialised = True
+            return iter([0, 1, 2])
+
+        ci = CachingIterator(iterator)
+        self.assertFalse(self.initialised)
+        self.assertEqual([0, 1, 2], list(ci))
+        self.assertTrue(self.initialised)
+        self.assertEqual([0, 1, 2], list(ci))
+        self.assertTrue(self.initialised)
 
 
 class TestDecorateWith(TestCase):
@@ -204,7 +246,7 @@ class TestDecorateWith(TestCase):
         def function():
             pass
         function()
-        self.assertEquals(['before', 'after'], calls)
+        self.assertEqual(['before', 'after'], calls)
 
     def test_decorate_with_function(self):
         # The original function is actually called when we call the result of
@@ -215,7 +257,7 @@ class TestDecorateWith(TestCase):
         def function():
             calls.append('foo')
         function()
-        self.assertEquals(['foo'], calls)
+        self.assertEqual(['foo'], calls)
 
     def test_decorate_with_call_twice(self):
         # A function decorated with decorate_with can be called twice.
@@ -226,7 +268,7 @@ class TestDecorateWith(TestCase):
             calls.append('foo')
         function()
         function()
-        self.assertEquals(['foo', 'foo'], calls)
+        self.assertEqual(['foo', 'foo'], calls)
 
     def test_decorate_with_arguments(self):
         # decorate_with passes through arguments.
@@ -236,7 +278,7 @@ class TestDecorateWith(TestCase):
         def function(*args, **kwargs):
             calls.append((args, kwargs))
         function('foo', 'bar', qux=4)
-        self.assertEquals([(('foo', 'bar'), {'qux': 4})], calls)
+        self.assertEqual([(('foo', 'bar'), {'qux': 4})], calls)
 
     def test_decorate_with_name_and_docstring(self):
         # decorate_with preserves function names and docstrings.
@@ -339,13 +381,24 @@ class TestUTCNow(TestCase):
         self.assertThat(now, LessThanOrEqual(new_now))
 
 
+class TestSecondsSinceEpoch(TestCase):
+    """Tests for `seconds_since_epoch`."""
+
+    def test_epoch(self):
+        epoch = datetime.fromtimestamp(0, tz=UTC)
+        self.assertEqual(0, seconds_since_epoch(epoch))
+
+    def test_start_of_2018(self):
+        dt = datetime(2018, 1, 1, tzinfo=UTC)
+        self.assertEqual(1514764800, seconds_since_epoch(dt))
+
+
 class TestBZ2Pickle(TestCase):
     """Tests for `save_bz2_pickle` and `load_bz2_pickle`."""
 
     def test_save_and_load(self):
         data = {1: 2, "room": 101}
-        tempdir = self.useFixture(TempDir()).path
-        tempfile = os.path.join(tempdir, "dump")
+        tempfile = self.useFixture(TempDir()).join("dump")
         save_bz2_pickle(data, tempfile)
         self.assertEqual(data, load_bz2_pickle(tempfile))
 
@@ -390,12 +443,22 @@ class TestObfuscateStructure(TestCase):
         self.assertEqual({'foo': [['<email address hidden>']]}, obfuscated)
 
 
-class TestTotalSeconds(TestCase):
+class TestSanitiseURLs(TestCase):
 
-    # XXX: JonathanLange 2012-05-31: Remove this when Python 2.6 support is
-    # dropped.  Replace calls with timedelta.total_seconds.
+    def test_already_clean(self):
+        self.assertEqual('clean', sanitise_urls('clean'))
 
-    def test_total_seconds(self):
-        # Numbers are arbitrary.
-        duration = timedelta(days=3, seconds=45, microseconds=16)
-        self.assertEqual(3 * 24 * 3600 + 45.000016, total_seconds(duration))
+    def test_removes_credentials(self):
+        self.assertEqual(
+            'http://<redacted>@example.com/',
+            sanitise_urls('http://user:secret@example.com/'))
+
+    def test_non_greedy(self):
+        self.assertEqual(
+            '{"one": "http://example.com/", '
+            '"two": "http://<redacted>@example.com/", '
+            '"three": "http://<redacted>@example.org/"}',
+            sanitise_urls(
+                '{"one": "http://example.com/", '
+                '"two": "http://alice:secret@example.com/", '
+                '"three": "http://bob:hidden@example.org/"}'))

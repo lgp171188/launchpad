@@ -45,7 +45,7 @@ class TestBugSupervisorEditView(TestCaseWithFactory):
             }
 
     def test_view_attributes(self):
-        self.product.displayname = 'Boing'
+        self.product.display_name = 'Boing'
         view = create_initialized_view(
             self.product, name='+bugsupervisor')
         label = 'Edit bug supervisor for Boing'
@@ -56,8 +56,8 @@ class TestBugSupervisorEditView(TestCaseWithFactory):
         adapter, context = view.adapters.popitem()
         self.assertEqual(BugSupervisorEditSchema, adapter)
         self.assertEqual(self.product, context)
-        self.assertEqual('http://launchpad.dev/boing', view.next_url)
-        self.assertEqual('http://launchpad.dev/boing', view.cancel_url)
+        self.assertEqual('http://launchpad.test/boing', view.next_url)
+        self.assertEqual('http://launchpad.test/boing', view.cancel_url)
 
     def test_owner_appoint_self_from_none(self):
         # This also verifies that displaynames are escaped.

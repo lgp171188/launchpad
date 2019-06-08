@@ -1,4 +1,4 @@
-# Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 """Browser code for the Launchpad root page."""
 
@@ -14,8 +14,9 @@ import time
 
 import feedparser
 from lazr.batchnavigator.z3batching import batch
-from zope.app.form.interfaces import ConversionError
+import requests
 from zope.component import getUtility
+from zope.formlib.interfaces import ConversionError
 from zope.interface import Interface
 from zope.schema import TextLine
 from zope.schema.interfaces import TooLong
@@ -31,20 +32,19 @@ from lp.app.browser.launchpadform import (
 from lp.app.errors import NotFoundError
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.app.validators.name import sanitize_name
-from lp.blueprints.interfaces.specification import ISpecificationSet
 from lp.bugs.interfaces.bug import IBugSet
-from lp.code.interfaces.branchcollection import IAllBranches
 from lp.registry.browser.announcement import HasAnnouncementsView
 from lp.registry.interfaces.person import IPersonSet
 from lp.registry.interfaces.pillar import IPillarNameSet
 from lp.registry.interfaces.product import IProductSet
 from lp.services.config import config
 from lp.services.features import getFeatureFlag
-from lp.services.googlesearch.interfaces import (
-    GoogleResponseError,
-    ISearchService,
-    )
+from lp.services.memcache.interfaces import IMemcacheClient
 from lp.services.propertycache import cachedproperty
+from lp.services.sitesearch.interfaces import (
+    SiteSearchResponseError,
+    active_search_service,
+    )
 from lp.services.statistics.interfaces.statistic import ILaunchpadStatisticSet
 from lp.services.timeout import urlfetch
 from lp.services.webapp import LaunchpadView
@@ -110,7 +110,13 @@ class LaunchpadRootIndexView(HasAnnouncementsView, LaunchpadView):
     @property
     def branch_count(self):
         """The total branch count of public branches in all of Launchpad."""
-        return getUtility(IAllBranches).visibleByUser(None).count()
+        return getUtility(ILaunchpadStatisticSet).value('public_branch_count')
+
+    @property
+    def gitrepository_count(self):
+        """The total Git repository count in all of Launchpad."""
+        return getUtility(ILaunchpadStatisticSet).value(
+            'public_git_repository_count')
 
     @property
     def bug_count(self):
@@ -130,7 +136,8 @@ class LaunchpadRootIndexView(HasAnnouncementsView, LaunchpadView):
     @property
     def blueprint_count(self):
         """The total blueprint count in all of Launchpad."""
-        return getUtility(ISpecificationSet).specification_count
+        return getUtility(ILaunchpadStatisticSet).value(
+            'public_specification_count')
 
     @property
     def answer_count(self):
@@ -157,17 +164,18 @@ class LaunchpadRootIndexView(HasAnnouncementsView, LaunchpadView):
         launchpad.homepage_recent_posts_count. The posts are fetched
         from the feed specified in launchpad.homepage_recent_posts_feed.
 
-        Since the feed is parsed everytime, the template should cache this
-        through memcached.
-
         FeedParser takes care of sanitizing the HTML contained in the feed.
         """
-        # Use urlfetch which supports timeout
+        key = '%s:homepage-blog-posts' % config.instance_name
+        cached_data = getUtility(IMemcacheClient).get(key)
+        if cached_data:
+            return cached_data
         try:
-            data = urlfetch(config.launchpad.homepage_recent_posts_feed)
-        except IOError:
+            # Use urlfetch which supports timeout
+            response = urlfetch(config.launchpad.homepage_recent_posts_feed)
+        except requests.RequestException:
             return []
-        feed = feedparser.parse(data)
+        feed = feedparser.parse(response.content)
         posts = []
         max_count = config.launchpad.homepage_recent_posts_count
         # FeedParser takes care of HTML sanitisation.
@@ -178,6 +186,8 @@ class LaunchpadRootIndexView(HasAnnouncementsView, LaunchpadView):
                 'link': entry.link,
                 'date': time.strftime('%d %b %Y', entry.updated_parsed),
                 })
+        # The cache of posts expires after an hour.
+        getUtility(IMemcacheClient).set(key, posts, time=3600)
         return posts
 
 
@@ -490,31 +500,34 @@ class LaunchpadSearchView(LaunchpadFormView):
         vocab = vocabulary_registry.get(
             None, 'DistributionOrProductOrProjectGroup')
         try:
-            return vocab.getTermByToken(name).value
+            pillar = vocab.getTermByToken(name).value
+            if check_permission("launchpad.View", pillar):
+                return pillar
         except LookupError:
-            return None
+            pass
+        return None
 
     def searchPages(self, query_terms, start=0):
         """Return the up to 20 pages that match the query_terms, or None.
 
-        :param query_terms: The unescaped terms to query Google.
+        :param query_terms: The unescaped terms to query for.
         :param start: The index of the page that starts the set of pages.
-        :return: A GooglBatchNavigator or None.
+        :return: A SiteSearchBatchNavigator or None.
         """
         if query_terms in [None, '']:
             return None
-        google_search = getUtility(ISearchService)
+        site_search = active_search_service()
         try:
-            page_matches = google_search.search(
+            page_matches = site_search.search(
                 terms=query_terms, start=start)
-        except GoogleResponseError:
-            # There was a connectivity or Google service issue that means
+        except SiteSearchResponseError:
+            # There was a connectivity or search service issue that means
             # there is no data available at this moment.
             self.has_page_service = False
             return None
         if len(page_matches) == 0:
             return None
-        navigator = GoogleBatchNavigator(
+        navigator = SiteSearchBatchNavigator(
             page_matches, self.request, start=start)
         navigator.setHeadings(*self.batch_heading)
         return navigator
@@ -573,12 +586,10 @@ class WindowedListBatch(batch._Batch):
 
     def endNumber(self):
         """Return the end index of the batch, not including None objects."""
-        # This class should know about the private _window attribute.
-        # pylint: disable-msg=W0212
         return self.start + len(self.list._window)
 
 
-class GoogleBatchNavigator(BatchNavigator):
+class SiteSearchBatchNavigator(BatchNavigator):
     """A batch navigator with a fixed size of 20 items per batch."""
 
     _batch_factory = WindowedListBatch
@@ -603,7 +614,7 @@ class GoogleBatchNavigator(BatchNavigator):
         :param callback: Not used.
         """
         results = WindowedList(results, start, results.total)
-        super(GoogleBatchNavigator, self).__init__(results, request,
+        super(SiteSearchBatchNavigator, self).__init__(results, request,
             start=start, size=size, callback=callback,
             transient_parameters=transient_parameters,
             force_start=force_start, range_factory=range_factory)

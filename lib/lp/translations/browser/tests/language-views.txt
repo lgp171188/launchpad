@@ -6,31 +6,29 @@ Admin Language
 
     >>> from zope.component import getUtility
     >>> from lp.services.worlddata.interfaces.language import ILanguageSet
-    >>> from lp.translations.publisher import TranslationsLayer
 
     >>> language_set = getUtility(ILanguageSet)
     >>> portuguese = language_set.getLanguageByCode('pt_BR')
-    >>> language_admin_view = create_view(
-    ...     portuguese, '+admin', layer=TranslationsLayer)
+    >>> language_admin_view = create_view(portuguese, '+admin')
     >>> language_admin_view.initialize()
 
 The language +admin view provides a label and a page_title for the page.
 
-    >>> print language_admin_view.label
+    >>> print(language_admin_view.label)
     Edit Portuguese (Brazil) in Launchpad
 
-    >>> print language_admin_view.page_title
+    >>> print(language_admin_view.page_title)
     Change details
 
 The view provides also a cancel_url and a next_url, but they're the same
 because the previous and next steps of editing a language are returning
 to its index.
 
-    >>> print language_admin_view.cancel_url
-    http://translations.launchpad.dev/+languages/pt_BR
+    >>> print(language_admin_view.cancel_url)
+    http://translations.launchpad.test/+languages/pt_BR
 
-    >>> print language_admin_view.next_url
-    http://translations.launchpad.dev/+languages/pt_BR
+    >>> print(language_admin_view.next_url)
+    http://translations.launchpad.test/+languages/pt_BR
 
 
 Validation
@@ -43,28 +41,27 @@ Plural information entered on the admin page is checked for validity.
     ...     'pluralforms': 2,
     ...     'pluralexpression': '1/n',
     ...     })
-    >>> print language_admin_view.getFieldError('pluralexpression')
+    >>> print(language_admin_view.getFieldError('pluralexpression'))
     Division by zero in plural expression for n = 0.
 
 
 Add Language
 ------------
 
-    >>> language_add_view = create_view(language_set, '+add',
-    ...     layer=TranslationsLayer)
+    >>> language_add_view = create_view(language_set, '+add')
 
-    >>> print language_add_view.label
+    >>> print(language_add_view.label)
     Register a language in Launchpad
 
-    >>> print language_add_view.page_title
+    >>> print(language_add_view.page_title)
     Register a language
 
 The view provides also a cancel_url and a next_url:
 
-    >>> print language_add_view.cancel_url
-    http://translations.launchpad.dev/+languages
+    >>> print(language_add_view.cancel_url)
+    http://translations.launchpad.test/+languages
 
-    >>> print language_add_view.field_names
+    >>> print(language_add_view.field_names)
     ['code', 'englishname', 'nativename', 'pluralforms',
     'pluralexpression', 'visible', 'direction']
 
@@ -81,13 +78,12 @@ The view provides also a cancel_url and a next_url:
     ...     }
 
     >>> language_add_view = create_initialized_view(
-    ...     language_set, '+add', form=form,
-    ...     layer=TranslationsLayer)
+    ...     language_set, '+add', form=form)
     >>> language_add_view.errors
     []
 
-    >>> print language_add_view.next_url
-    http://translations.launchpad.dev/+languages/lp_US
+    >>> print(language_add_view.next_url)
+    http://translations.launchpad.test/+languages/lp_US
 
 
 View Language
@@ -105,8 +101,7 @@ implementation later.
     >>> translators_method = Language.translators
     >>> del Language.translators
     >>> serbian = language_set.getLanguageByCode('sr')
-    >>> language_view = create_initialized_view(serbian, '+index',
-    ...     layer=TranslationsLayer)
+    >>> language_view = create_initialized_view(serbian, '+index')
 
 The 'friendly_plural_forms' function shows us a list of plural forms and
 a set of examples for each one, so one won't need to understand the plural
@@ -115,7 +110,7 @@ formula expression to see how it works.
     >>> friendly_plural_forms = language_view.friendly_plural_forms
 
     >>> for form_dict in friendly_plural_forms:
-    ...     print form_dict['form'], ':', form_dict['examples']
+    ...     print(form_dict['form'], ':', form_dict['examples'])
     0 : 1, 21, 31, 41, 51, 61...
     1 : 2, 3, 4, 22, 23, 24...
     2 : 0, 5, 6, 7, 8, 9...
@@ -168,15 +163,14 @@ Language.translator is a list containing all contributors decreasingly sorted
 according to their karma value.
 
     >>> serbian.translators = translators
-    >>> language_view = create_initialized_view(serbian, '+index',
-    ...     layer=TranslationsLayer)
+    >>> language_view = create_initialized_view(serbian, '+index')
     >>> top_contributors = language_view.top_contributors
     >>> translator_main in top_contributors
     True
     >>> translator_merged in top_contributors
     False
     >>> for translator in top_contributors:
-    ...     print translator.name
+    ...     print(translator.name)
     translator-main
     translator-0
     translator-1
@@ -191,13 +185,12 @@ View LanguageSet
 ------------------
 
     >>> login('carlos@canonical.com')
-    >>> languageset_view = create_initialized_view(language_set, '+index',
-    ...     layer=TranslationsLayer)
+    >>> languageset_view = create_initialized_view(language_set, '+index')
 
 The user_languages property contains a list of the current user's preferred
 languages formated as links.
 
-    >>> print languageset_view.user_languages
+    >>> print(languageset_view.user_languages)
     <a href=".../ca" ...>Catalan</a>,
     <a href=".../en" ...>English</a>,
     <a href=".../es" ...>Spanish</a>
@@ -205,11 +198,9 @@ languages formated as links.
 For a user without any preferred languages, English will be returned.
 
     >>> person = factory.makePerson()
-    >>> print person.languages
+    >>> print(person.languages)
     []
     >>> ignored = login_person(person)
-    >>> languageset_view = create_initialized_view(language_set, '+index',
-    ...     layer=TranslationsLayer)
-    >>> print languageset_view.user_languages
+    >>> languageset_view = create_initialized_view(language_set, '+index')
+    >>> print(languageset_view.user_languages)
     <a href=".../en" ...>English</a>
-

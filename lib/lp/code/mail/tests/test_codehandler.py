@@ -1,13 +1,16 @@
-# Copyright 2009-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2015 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Testing the CodeHandler."""
 
 __metaclass__ = type
 
-from difflib import unified_diff
 from textwrap import dedent
 
+from lazr.lifecycle.event import (
+    ObjectCreatedEvent,
+    ObjectModifiedEvent,
+    )
 from storm.store import Store
 import transaction
 from zope.security.management import setSecurityPolicy
@@ -31,7 +34,6 @@ from lp.code.model.branchmergeproposaljob import (
     BranchMergeProposalJob,
     BranchMergeProposalJobType,
     )
-from lp.code.model.diff import PreviewDiff
 from lp.code.tests.helpers import make_merge_proposal_without_reviewers
 from lp.services.config import config
 from lp.services.mail.handlers import mail_handlers
@@ -165,26 +167,37 @@ class TestCodeHandler(TestCaseWithFactory):
             '<my-id>', [comment.message.rfc822msgid
                         for comment in bmp.all_comments])
 
+    def test_process_git(self):
+        """Processing an email related to a Git-based merge proposal works."""
+        mail = self.factory.makeSignedMessage('<my-id>')
+        bmp = self.factory.makeBranchMergeProposalForGit()
+        email_addr = bmp.address
+        switch_dbuser(config.processmail.dbuser)
+        self.code_handler.process(mail, email_addr, None)
+        self.assertIn(
+            '<my-id>',
+            [comment.message.rfc822msgid for comment in bmp.all_comments])
+
     def test_processBadAddress(self):
         """When a bad address is supplied, it returns False."""
         mail = self.factory.makeSignedMessage('<my-id>')
         switch_dbuser(config.processmail.dbuser)
         self.assertFalse(self.code_handler.process(mail,
-            'foo@code.launchpad.dev', None))
+            'foo@code.launchpad.test', None))
 
     def test_processNonExistantAddress(self):
         """When a non-existant address is supplied, it returns False."""
         mail = self.factory.makeSignedMessage('<my-id>')
         switch_dbuser(config.processmail.dbuser)
         self.assertTrue(self.code_handler.process(mail,
-            'mp+0@code.launchpad.dev', None))
+            'mp+0@code.launchpad.test', None))
         notification = pop_notifications()[0]
         self.assertEqual('Submit Request Failure', notification['subject'])
         # The returned message is a multipart message, the first part is
         # the message, and the second is the original message.
         message, original = notification.get_payload()
         self.assertIn(
-            "There is no merge proposal at mp+0@code.launchpad.dev\n",
+            "There is no merge proposal at mp+0@code.launchpad.test\n",
             message.get_payload(decode=True))
 
     def test_processBadVote(self):
@@ -222,7 +235,7 @@ class TestCodeHandler(TestCaseWithFactory):
 
 
         --\x20
-        For more information about using Launchpad by e-mail, see
+        For more information about using Launchpad by email, see
         https://help.launchpad.net/EmailInterface
         or send an email to help@launchpad.net"""),
                                 message.get_payload(decode=True))
@@ -381,16 +394,10 @@ class TestCodeHandler(TestCaseWithFactory):
 
     def test_reviewer_with_diff(self):
         """Requesting a review with a diff works."""
-        diff_text = ''.join(unified_diff('', 'Fake diff'))
-        preview_diff = PreviewDiff.create(
-            diff_text,
-            unicode(self.factory.getUniqueString('revid')),
-            unicode(self.factory.getUniqueString('revid')),
-            None, None)
+        bmp = make_merge_proposal_without_reviewers(self.factory)
+        self.factory.makePreviewDiff(merge_proposal=bmp)
         # To record the diff in the librarian.
         transaction.commit()
-        bmp = make_merge_proposal_without_reviewers(
-            self.factory, preview_diff=preview_diff)
         eric = self.factory.makePerson(name="eric", email="eric@example.com")
         mail = self.factory.makeSignedMessage(body=' reviewer eric')
         email_addr = bmp.address
@@ -421,6 +428,24 @@ class TestCodeHandler(TestCaseWithFactory):
         self.assertEqual(notification['to'],
             mail['from'])
         self.assertEqual(0, bmp.all_comments.count())
+
+    def test_notifies_modification(self):
+        """Changes to the merge proposal itself trigger events."""
+        mail = self.factory.makeSignedMessage(body=' merge approved')
+        bmp = self.factory.makeBranchMergeProposal()
+        email_addr = bmp.address
+        switch_dbuser(config.processmail.dbuser)
+        login_person(bmp.merge_target.owner)
+        _, events = self.assertNotifies(
+            [ObjectModifiedEvent, ObjectCreatedEvent], False,
+            self.code_handler.process, mail, email_addr, None)
+        self.assertEqual(bmp, events[0].object)
+        self.assertEqual(
+            BranchMergeProposalStatus.WORK_IN_PROGRESS,
+            events[0].object_before_modification.queue_status)
+        self.assertEqual(
+            BranchMergeProposalStatus.CODE_APPROVED,
+            events[0].object.queue_status)
 
 
 class TestVoteEmailCommand(TestCase):

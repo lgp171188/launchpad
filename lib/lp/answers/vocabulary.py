@@ -7,16 +7,22 @@ __metaclass__ = type
 __all__ = [
     'FAQVocabulary',
     'UsesAnswersDistributionVocabulary',
+    'UsesAnswersProductVocabulary',
     ]
 
 from sqlobject import OR
-from zope.interface import implements
+from storm.expr import And
+from zope.interface import implementer
 from zope.schema.vocabulary import SimpleTerm
 
 from lp.answers.interfaces.faq import IFAQ
 from lp.answers.interfaces.faqtarget import IFAQTarget
 from lp.registry.interfaces.distribution import IDistribution
-from lp.registry.vocabularies import DistributionVocabulary
+from lp.registry.model.product import Product
+from lp.registry.vocabularies import (
+    DistributionVocabulary,
+    ProductVocabulary,
+    )
 from lp.services.webapp.vocabulary import (
     CountableIterator,
     FilteredVocabularyBase,
@@ -24,9 +30,9 @@ from lp.services.webapp.vocabulary import (
     )
 
 
+@implementer(IHugeVocabulary)
 class FAQVocabulary(FilteredVocabularyBase):
     """Vocabulary containing all the FAQs in an `IFAQTarget`."""
-    implements(IHugeVocabulary)
 
     displayname = 'Select a FAQ'
     step_title = 'Search'
@@ -78,6 +84,18 @@ class FAQVocabulary(FilteredVocabularyBase):
         """See `IHugeVocabulary`."""
         results = self.context.findSimilarFAQs(query)
         return CountableIterator(results.count(), results, self.toTerm)
+
+
+class UsesAnswersProductVocabulary(ProductVocabulary):
+    """Products that use Launchpad to track questions."""
+
+    def search(self, query, vocab_filter=None):
+        if vocab_filter is None:
+            vocab_filter = []
+        vocab_filter.append(
+            And(Product.official_answers == True))
+        return super(UsesAnswersProductVocabulary, self).search(
+            query, vocab_filter)
 
 
 class UsesAnswersDistributionVocabulary(DistributionVocabulary):

@@ -4,14 +4,14 @@ DistributionMirror Pages
 Registering a mirror
 --------------------
 
-Only full functionality distributions may have mirrors.
-IDerivativeDistributions cannot use the form.
+Distributions must have mirror support enabled in order to have mirrors.
+Other distributions cannot use the form.
 
     >>> from lp.testing.pages import (
     ...     extract_text, find_tag_by_id)
 
     >>> distribution = factory.makeDistribution(name='youbuntu')
-    >>> distribution.full_functionality
+    >>> distribution.supports_mirrors
     False
 
     >>> ignored = login_person(distribution.owner)
@@ -21,8 +21,7 @@ IDerivativeDistributions cannot use the form.
     >>> print extract_text(content)
     This functionality is not yet available...
 
-Ubuntu is an IBaseDistributions and is full functionality. It can have
-mirrors.
+Ubuntu has mirror support enabled, so it can have mirrors.
 
     >>> from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 
@@ -37,23 +36,23 @@ mirrors.
 The view provides a label, page_title, and cancel_url
 
     >>> print view.label
-    Register a new mirror for Ubuntu Linux
+    Register a new mirror for Ubuntu
 
     >>> print view.page_title
-    Register a new mirror for Ubuntu Linux
+    Register a new mirror for Ubuntu
 
     >>> print view.cancel_url
-    http://launchpad.dev/ubuntu
+    http://launchpad.test/ubuntu
 
 A HTTP or FTP URL is required to register a mirror.
 
     >>> view.field_names
-    ['displayname', 'description', 'whiteboard', 'http_base_url',
+    ['display_name', 'description', 'whiteboard', 'http_base_url',
      'ftp_base_url', 'rsync_base_url', 'speed', 'country', 'content',
      'official_candidate']
 
     >>> form = {
-    ...     'field.displayname': 'Illuminati',
+    ...     'field.display_name': 'Illuminati',
     ...     'field.description': 'description',
     ...     'field.whiteboard': 'whiteboard',
     ...     'field.http_base_url': 'http://secret.me/',
@@ -69,7 +68,7 @@ A HTTP or FTP URL is required to register a mirror.
     >>> view.errors
     []
     >>> print view.next_url
-    http://launchpad.dev/ubuntu/+mirror/secret.me-archive
+    http://launchpad.test/ubuntu/+mirror/secret.me-archive
 
     >>> transaction.commit()
 
@@ -161,7 +160,7 @@ The view provides a label, page_title, and cancel_url.
     Review mirror Illuminati
 
     >>> print view.cancel_url
-    http://launchpad.dev/ubuntu/+mirror/secret.me-archive
+    http://launchpad.test/ubuntu/+mirror/secret.me-archive
 
 If the status is not changed, the reviewer and date_reviewed won't be
 changed either.
@@ -190,7 +189,7 @@ changed.
     >>> view.errors
     []
     >>> print view.next_url
-    http://launchpad.dev/ubuntu/+mirror/secret.me-archive
+    http://launchpad.test/ubuntu/+mirror/secret.me-archive
 
     >>> print mirror.status.name
     OFFICIAL
@@ -235,12 +234,12 @@ The +edit view provides a label, page_title, and cancel_url.
     Edit mirror Illuminati
 
     >>> print view.cancel_url
-    http://launchpad.dev/ubuntu/+mirror/secret.me-archive
+    http://launchpad.test/ubuntu/+mirror/secret.me-archive
 
 The user can edit the mirror fields.
 
     >>> view.field_names
-    ['name', 'displayname', 'description', 'whiteboard', 'http_base_url',
+    ['name', 'display_name', 'description', 'whiteboard', 'http_base_url',
      'ftp_base_url', 'rsync_base_url', 'speed', 'country', 'content',
      'official_candidate']
 
@@ -253,7 +252,7 @@ The user can edit the mirror fields.
     >>> view.errors
     []
     >>> print view.next_url
-    http://launchpad.dev/ubuntu/+mirror/secret.me-archive
+    http://launchpad.test/ubuntu/+mirror/secret.me-archive
 
     >>> print mirror.ftp_base_url
     ftp://secret.me/
@@ -298,7 +297,7 @@ The +delete view provides a label, page_title, and cancel_url.
     Delete mirror Illuminati
 
     >>> print view.cancel_url
-    http://launchpad.dev/ubuntu/+mirror/secret.me-archive
+    http://launchpad.test/ubuntu/+mirror/secret.me-archive
 
 A mirror that have been probed cannot be deleted.
 
@@ -314,7 +313,7 @@ A mirror that have been probed cannot be deleted.
     []
     >>> for notification in view.request.response.notifications:
     ...     print notification.message
-    This mirror has been probed and thus can't be deleted.
+    This mirror has been probed and thus can&#x27;t be deleted.
 
 Deletion is permanent.
 
@@ -325,7 +324,7 @@ Deletion is permanent.
     >>> view.errors
     []
     >>> print view.next_url
-    http://launchpad.dev/ubuntu/+pendingreviewmirrors
+    http://launchpad.test/ubuntu/+pendingreviewmirrors
 
     >>> transaction.commit()
     >>> print ubuntu.getMirrorByName('secret.me-archive')
@@ -465,13 +464,13 @@ Any user can see the RSS for an archive mirror
     >>> user = getUtility(ILaunchBag).user
     >>> view = create_initialized_view(
     ...     ubuntu, '+archivemirrors-rss', principal=user,
-    ...     server_url='http://launchpad.dev/ubuntu/+archivemirrors-rss')
+    ...     server_url='http://launchpad.test/ubuntu/+archivemirrors-rss')
     >>> print view()
     <?xml version="1.0"...?>
     <rss xmlns:mirror="https://launchpad.net/" version="2.0">
       <channel>
         <title>Ubuntu Archive Mirrors Status</title>
-        <link>http://launchpad.dev/ubuntu/+archivemirrors-rss</link>
+        <link>http://launchpad.test/ubuntu/+archivemirrors-rss</link>
         <description>Status of Ubuntu Archive Mirrors</description>
         ...
         <item>
@@ -498,7 +497,7 @@ Any user can see the RSS for an CD mirror
 
     >>> view = create_initialized_view(
     ...     ubuntu, '+cdmirrors-rss', principal=user,
-    ...     server_url='http://launchpad.dev/ubuntu/+cdmirrors-rss')
+    ...     server_url='http://launchpad.test/ubuntu/+cdmirrors-rss')
     >>> print view()
     <?xml version="1.0"...?>
     <rss ...

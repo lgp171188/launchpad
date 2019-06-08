@@ -1,7 +1,5 @@
-# Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
-
-# pylint: disable-msg=E0611,W0212
 
 __metaclass__ = type
 __all__ = [
@@ -32,13 +30,13 @@ from storm.store import (
     Store,
     )
 from zope.component import getUtility
-from zope.interface import implements
+from zope.interface import implementer
 from zope.security.proxy import removeSecurityProxy
 
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.services.config import config
 from lp.services.database.constants import DEFAULT
-from lp.services.database.lpstorm import IStore
+from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import (
     cursor,
     quote,
@@ -128,8 +126,8 @@ def dictify_translations(translations):
         if translation is not None)
 
 
+@implementer(IPOTMsgSet)
 class POTMsgSet(SQLBase):
-    implements(IPOTMsgSet)
 
     _table = 'POTMsgSet'
 
@@ -416,7 +414,7 @@ class POTMsgSet(SQLBase):
                 JOIN SuggestivePOTemplate ON
                     TranslationTemplateItem.potemplate =
                         SuggestivePOTemplate.potemplate
-                WHERE msgid_singular = %s and potmsgset.id <> %s
+                WHERE POTMsgSet.msgid_singular = %s and POTMsgSet.id <> %s
             )''' % sqlvalues(self.msgid_singular, self))
 
         # Subquery to find the ids of TranslationMessages that are
@@ -428,7 +426,7 @@ class POTMsgSet(SQLBase):
         # distinct translations per form.
         msgstrs = ', '.join([
             'COALESCE(msgstr%d, -1)' % form
-            for form in xrange(TranslationConstants.MAX_PLURAL_FORMS)])
+            for form in range(TranslationConstants.MAX_PLURAL_FORMS)])
         ids_query_params = {
             'msgstrs': msgstrs,
             'where': '(' + ' OR '.join(lang_used) + ')',
@@ -520,7 +518,7 @@ class POTMsgSet(SQLBase):
         """Find all POTranslation records for passed `translations`."""
         potranslations = {}
         # Set all POTranslations we can have (up to MAX_PLURAL_FORMS)
-        for pluralform in xrange(TranslationConstants.MAX_PLURAL_FORMS):
+        for pluralform in range(TranslationConstants.MAX_PLURAL_FORMS):
             translation = translations.get(pluralform)
             if translation is not None:
                 # Find or create a POTranslation for the specified text
@@ -569,8 +567,8 @@ class POTMsgSet(SQLBase):
                 clauses.append('msgstr%s=%s' % (
                     sqlvalues(pluralform, potranslations[pluralform])))
 
-        remaining_plural_forms = range(
-            pofile.plural_forms, TranslationConstants.MAX_PLURAL_FORMS)
+        remaining_plural_forms = list(range(
+            pofile.plural_forms, TranslationConstants.MAX_PLURAL_FORMS))
 
         # Prefer either shared or diverged messages, depending on
         # arguments.

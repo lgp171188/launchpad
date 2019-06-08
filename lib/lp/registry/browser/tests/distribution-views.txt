@@ -61,33 +61,32 @@ The +add view of the DistributionSet allows admins to register distributions.
 The view provides a cancel link.
 
     >>> print view.cancel_url
-    http://launchpad.dev/distros
+    http://launchpad.test/distros
 
 The view accepts the basic fields to register a distribution.
 
     >>> view.field_names
-    ['name', 'displayname', 'title', 'summary', 'description', 'domainname',
+    ['name', 'display_name', 'summary', 'description', 'domainname',
      'members', 'official_malone', 'blueprints_usage', 'translations_usage',
      'answers_usage']
 
     >>> login("admin@canonical.com")
     >>> form = {
     ...     'field.name': 'youbuntu',
-    ...     'field.displayname': 'YoUbuntu',
-    ...     'field.title': 'YoUbuntu OS',
+    ...     'field.display_name': 'YoUbuntu',
     ...     'field.summary': 'summary',
     ...     'field.description': 'description',
     ...     'field.domainname': 'youbuntu.me',
     ...     'field.members': 'landscape-developers',
     ...     'field.require_virtualized': 'on',
-    ...     'field.enabled_restricted_families': [],
+    ...     'field.processors': [],
     ...     'field.actions.save': 'Save',
     ...     }
     >>> view = create_initialized_view(distributionset, '+add', form=form)
     >>> view.errors
     []
     >>> print view.next_url
-    http://launchpad.dev/youbuntu
+    http://launchpad.test/youbuntu
 
     >>> distribution = distributionset.getByName("youbuntu")
     >>> print distribution.name
@@ -120,7 +119,7 @@ a label, page_title, and cancel_url.
     Change YoUbuntu details
 
     >>> print view.cancel_url
-    http://launchpad.dev/youbuntu
+    http://launchpad.test/youbuntu
 
 The view accepts most of the distribution fields.
 
@@ -128,7 +127,7 @@ The view accepts most of the distribution fields.
     <DBItem ServiceUsage.UNKNOWN, (10) Unknown>
 
     >>> view.field_names
-    ['displayname', 'title', 'summary', 'description',
+    ['display_name', 'summary', 'description',
      'bug_reporting_guidelines', 'bug_reported_acknowledgement',
      'package_derivatives_email', 'icon',
      'logo', 'mugshot', 'official_malone', 'enable_bug_expiration',
@@ -144,7 +143,7 @@ The view accepts most of the distribution fields.
     >>> view.errors
     []
     >>> print view.next_url
-    http://launchpad.dev/youbuntu
+    http://launchpad.test/youbuntu
 
     >>> print distribution.bug_reporting_guidelines
     guidelines
@@ -177,7 +176,7 @@ administrator.
     Change the YoUbuntu mirror administrator
 
     >>> print view.cancel_url
-    http://launchpad.dev/youbuntu
+    http://launchpad.test/youbuntu
 
 The view accepts the mirror_admin field.
 
@@ -196,7 +195,7 @@ The view accepts the mirror_admin field.
     >>> view.errors
     []
     >>> print view.next_url
-    http://launchpad.dev/youbuntu
+    http://launchpad.test/youbuntu
 
     >>> print distribution.mirror_admin.name
     no-priv
@@ -225,7 +224,7 @@ the +selectmirroradmins allows the owner or admin to change the members team.
     Change the YoUbuntu members team
 
     >>> print view.cancel_url
-    http://launchpad.dev/youbuntu
+    http://launchpad.test/youbuntu
 
 The view accepts the members field.
 
@@ -244,7 +243,7 @@ The view accepts the members field.
     >>> view.errors
     []
     >>> print view.next_url
-    http://launchpad.dev/youbuntu
+    http://launchpad.test/youbuntu
 
     >>> print distribution.members.name
     ubuntu-team
@@ -354,7 +353,7 @@ and search results.
 
     >>> view = create_view(ubuntu, name='+ppas')
     >>> print view.label
-    Personal Package Archives for Ubuntu Linux
+    Personal Package Archives for Ubuntu
 
     # The leaf of the breadcrumbs, also used in the page-title.
     >>> print view.page_title

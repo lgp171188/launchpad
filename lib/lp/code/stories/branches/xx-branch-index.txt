@@ -33,13 +33,17 @@ On the Code site, registered branches are reached by /<owner>/<product
 of its aliases.  In case an alias is used, the user is redirected to the
 branch's canonical URL -- the one which uses the product name.
 
-    >>> anon_browser.open('http://code.launchpad.dev/~eric/fooix/trunk')
+    >>> anon_browser.open('http://code.launchpad.test/~eric/fooix/trunk')
     >>> anon_browser.url
-    'http://code.launchpad.dev/~eric/fooix/trunk'
+    'http://code.launchpad.test/~eric/fooix/trunk'
 
-    >>> anon_browser.open('http://code.launchpad.dev/~eric/fooey/trunk')
+    >>> anon_browser.open('http://code.launchpad.test/~eric/fooey/trunk')
     >>> anon_browser.url
-    'http://code.launchpad.dev/~eric/fooix/trunk'
+    'http://code.launchpad.test/~eric/fooix/trunk'
+
+    >>> anon_browser.open('http://api.launchpad.test/devel/~eric/fooey/trunk')
+    >>> anon_browser.url
+    'http://api.launchpad.test/devel/~eric/fooix/trunk'
 
 
 Recent Revisions
@@ -47,15 +51,15 @@ Recent Revisions
 
 We display the recent revisions of a branch if it has been scanned.
 
-    >>> user_browser.open('http://code.launchpad.dev/~eric/fooix/trunk')
+    >>> user_browser.open('http://code.launchpad.test/~eric/fooix/trunk')
     >>> assert find_tag_by_id(user_browser.contents, 'merge-summary') is None
     >>> revisions = find_tag_by_id(user_browser.contents, 'recent-revisions')
     >>> def print_merge_links(browser):
     ...     links = find_tag_by_id(browser.contents, 'merge-links')
     ...     if not links:
-    ...         print None
+    ...         print(None)
     ...     else:
-    ...         print extract_text(links)
+    ...         print(extract_text(links))
     >>> print_merge_links(user_browser)
     None
 
@@ -72,7 +76,7 @@ than the text of the revision author.
     ...     revisions = find_tags_by_class(
     ...         browser.contents, 'revision-details')
     ...     for revision in revisions:
-    ...         print extract_text(revision).encode('ascii')
+    ...         print(extract_text(revision).encode('ascii'))
 
     >>> print_revisions(user_browser)
     5. By Eric on 2007-01-05
@@ -85,8 +89,8 @@ Each of the revision numbers are anchors to codebrowse.
 
     >>> revision = find_tags_by_class(
     ...         user_browser.contents, 'revision-details', only_first=True)
-    >>> print revision.a
-    <a href="http://bazaar.launchpad.dev/~eric/fooix/trunk/revision/5">5</a>
+    >>> print(revision.a)
+    <a href="https://bazaar.launchpad.test/~eric/fooix/trunk/revision/5">5</a>
 
 
 Commit messages
@@ -96,22 +100,22 @@ The commit message is displayed in paragraphs underneath the revision id
 and author.
 
     >>> browser.open(
-    ...     'http://code.launchpad.dev/~name12/+branch/+junk/junk.dev')
+    ...     'http://code.launchpad.test/~name12/+branch/+junk/junk.dev')
     >>> commit_messages = find_tags_by_class(
     ...         browser.contents, 'revision-comment')
-    >>> print commit_messages[0].p.renderContents()
+    >>> print(commit_messages[0].p.renderContents())
     fix bug in bar
 
 When a commit message refers to a bug using the form "bug <bugnumber>",
 a link to that bug is created.
 
-    >>> print commit_messages[3].p.renderContents()
+    >>> print(commit_messages[3].p.renderContents())
     fix <a ...>bug 1</a>
 
 This link can be followed to the bug's details page.
 
     >>> browser.getLink('bug 1').click()
-    >>> print browser.title
+    >>> print(browser.title)
     Bug #1 ...
 
 
@@ -127,9 +131,9 @@ Before we can display the revisions, a branch needs to be mirrored (or
 'published') and scanned. When a branch is not yet mirrored, we'll see a
 helpful message.
 
-    >>> browser.open('http://code.launchpad.dev/~name12/firefox/main')
-    >>> print extract_text(
-    ...     find_tag_by_id(browser.contents, 'recent-revisions'))
+    >>> browser.open('http://code.launchpad.test/~name12/firefox/main')
+    >>> print(extract_text(
+    ...     find_tag_by_id(browser.contents, 'recent-revisions')))
     Recent revisions
     This branch has not been mirrored yet.
 
@@ -137,16 +141,16 @@ We don't want to use the word 'mirrored' for hosted or imported
 branches, because those branches are only mirrored internally.
 
     >>> browser.open(
-    ...     'http://code.launchpad.dev/~name12/gnome-terminal/pushed')
-    >>> print extract_text(
-    ...     find_tag_by_id(browser.contents, 'recent-revisions'))
+    ...     'http://code.launchpad.test/~name12/gnome-terminal/pushed')
+    >>> print(extract_text(
+    ...     find_tag_by_id(browser.contents, 'recent-revisions')))
     Recent revisions
     This branch has not been pushed to yet.
 
     >>> browser.open(
-    ...     'http://code.launchpad.dev/~vcs-imports/evolution/main')
-    >>> print extract_text(
-    ...     find_tag_by_id(browser.contents, 'recent-revisions'))
+    ...     'http://code.launchpad.test/~vcs-imports/evolution/main')
+    >>> print(extract_text(
+    ...     find_tag_by_id(browser.contents, 'recent-revisions')))
     Recent revisions
     This branch has not been imported yet.
 
@@ -155,9 +159,9 @@ message. This is helpful particularly for hosted and imported branches,
 which are available for download as soon as they are published.
 
     >>> browser.open(
-    ...     'http://code.launchpad.dev/~name12/gnome-terminal/mirrored')
-    >>> print extract_text(
-    ...     find_tag_by_id(browser.contents, 'recent-revisions'))
+    ...     'http://code.launchpad.test/~name12/gnome-terminal/mirrored')
+    >>> print(extract_text(
+    ...     find_tag_by_id(browser.contents, 'recent-revisions')))
     Recent revisions
     This branch has not been scanned yet.
 
@@ -165,9 +169,9 @@ If a branch has been mirrored and scanned, and has no revisions, then it
 is empty.
 
     >>> browser.open(
-    ...     'http://code.launchpad.dev/~name12/gnome-terminal/scanned')
-    >>> print extract_text(
-    ...     find_tag_by_id(browser.contents, 'recent-revisions'))
+    ...     'http://code.launchpad.test/~name12/gnome-terminal/scanned')
+    >>> print(extract_text(
+    ...     find_tag_by_id(browser.contents, 'recent-revisions')))
     Recent revisions
     This branch is empty.
 
@@ -187,14 +191,14 @@ the URL for the branch's canonical location.
     ...     return find_tag_by_id(browser.contents, 'branch-management')
 
     >>> browser.open(
-    ...     'http://code.launchpad.dev/~name12/gnome-terminal/scanned')
-    >>> print extract_text(get_branch_details_table())
+    ...     'http://code.launchpad.test/~name12/gnome-terminal/scanned')
+    >>> print(extract_text(get_branch_details_table()))
     Branch information
     Owner: Sample Person
     Project: GNOME Terminal
     Status: Development
 
-    >>> print extract_text(get_branch_management_portlet())
+    >>> print(extract_text(get_branch_management_portlet()))
     Only Sample Person can upload to this branch.
     If you are Sample Person please log in for upload directions.
     Browse the code
@@ -220,8 +224,8 @@ it has been mirrored:
     >>> logout()
 
     >>> browser.open(
-    ...     'http://code.launchpad.dev/~no-priv/+junk/mirrored')
-    >>> print extract_text(get_branch_details_table())
+    ...     'http://code.launchpad.test/~no-priv/+junk/mirrored')
+    >>> print(extract_text(get_branch_details_table()))
     Branch information...
     Status: Development
     Location: http://example.com/mirrored
@@ -233,7 +237,7 @@ The branch description should not be shown if there is none.
     >>> def get_branch_description(browser):
     ...     return extract_text(find_tag_by_id(
     ...         browser.contents, 'branch-description'))
-    >>> print get_branch_description(browser)
+    >>> print(get_branch_description(browser))
     Traceback (most recent call last):
     TypeError: expected string or buffer
 
@@ -241,8 +245,8 @@ Branches that have never been mirrored don't have a 'Last mirrored'
 field.
 
     >>> browser.open(
-    ...     'http://code.launchpad.dev/~name12/gnome-terminal/main')
-    >>> print extract_text(get_branch_details_table())
+    ...     'http://code.launchpad.test/~name12/gnome-terminal/main')
+    >>> print(extract_text(get_branch_details_table()))
     Branch information
     Owner: Sample Person
     Project: GNOME Terminal
@@ -251,7 +255,7 @@ field.
     Last mirrored: Not mirrored yet
     Next mirror: Disabled
 
-    >>> print get_branch_description(browser)
+    >>> print(get_branch_description(browser))
     Main branch of development for GNOME Terminal.
     Stable branches are based on that one...
 
@@ -270,8 +274,8 @@ If next_mirror_time is NULL, then mirroring of the branch is disabled.
     >>> logout()
 
     >>> browser.open(
-    ...     'http://code.launchpad.dev/~no-priv/+junk/mirror-disabled')
-    >>> print extract_text(get_branch_details_table())
+    ...     'http://code.launchpad.test/~no-priv/+junk/mirror-disabled')
+    >>> print(extract_text(get_branch_details_table()))
     Branch information
     Owner: No Privileges Person
     Status: Development
@@ -286,9 +290,9 @@ Codebrowse link
 The codebrowse link only appears for branches that have revisions.
 
     >>> browser.open(
-    ...     'http://code.launchpad.dev/~name12/gnome-terminal/scanned')
-    >>> print extract_text(find_tag_by_id(
-    ...     browser.contents, "recent-revisions"))
+    ...     'http://code.launchpad.test/~name12/gnome-terminal/scanned')
+    >>> print(extract_text(find_tag_by_id(
+    ...     browser.contents, "recent-revisions")))
     Recent revisions
     This branch is empty.
 
@@ -296,9 +300,9 @@ In addition, there is a "All revisions" link that links to the changelog
 view in codebrowse.
 
     >>> browser.open(
-    ...     'http://code.launchpad.dev/~name12/+junk/junk.dev')
-    >>> print browser.getLink('All revisions').url
-    http://bazaar.launchpad.dev/~name12/+junk/junk.dev/changes
+    ...     'http://code.launchpad.test/~name12/+junk/junk.dev')
+    >>> print(browser.getLink('All revisions').url)
+    https://bazaar.launchpad.test/~name12/+junk/junk.dev/changes
 
 If the branch is private, the browse code link is not shown. In order to
 see the private branch, we need to log in as a user that is able to see
@@ -306,7 +310,7 @@ the branch.
 
     >>> browser = setupBrowser(auth="Basic test@canonical.com:test")
     >>> browser.open(
-    ...     'http://code.launchpad.dev/~landscape-developers/landscape/trunk')
+    ...     'http://code.launchpad.test/~landscape-developers/landscape/trunk')
 
 
 Download URL
@@ -333,9 +337,9 @@ revisions. So we need to fake that here.
     >>> logout()
 
     >>> browser.open(
-    ...     'http://code.launchpad.dev/~landscape-developers/landscape/trunk')
-    >>> print extract_text(find_tag_by_id(
-    ...     browser.contents, 'branch-management'))
+    ...     'http://code.launchpad.test/~landscape-developers/landscape/trunk')
+    >>> print(extract_text(find_tag_by_id(
+    ...     browser.contents, 'branch-management')))
     Get this branch:
       bzr branch lp://dev/~landscape-developers/landscape/trunk
     ...
@@ -343,9 +347,9 @@ revisions. So we need to fake that here.
 Public branches use the lp spec bzr lookup name.
 
     >>> browser.open(
-    ...     'http://code.launchpad.dev/~name12/gnome-terminal/scanned')
-    >>> print extract_text(find_tag_by_id(
-    ...     browser.contents, 'branch-management'))
+    ...     'http://code.launchpad.test/~name12/gnome-terminal/scanned')
+    >>> print(extract_text(find_tag_by_id(
+    ...     browser.contents, 'branch-management')))
     Get this branch: bzr branch lp://dev/~name12/gnome-terminal/scanned
     ...
 
@@ -363,12 +367,12 @@ Branch formats
 
 The data that we specified is shown on the web page.
 
-    >>> print extract_text(find_tag_by_id(
-    ...     browser.contents, 'branch-format'))
+    >>> print(extract_text(find_tag_by_id(
+    ...     browser.contents, 'branch-format')))
     Branch format: Branch format 5
 
-    >>> print extract_text(find_tag_by_id(
-    ...     browser.contents, 'repository-format'))
+    >>> print(extract_text(find_tag_by_id(
+    ...     browser.contents, 'repository-format')))
     Repository format:
     Bazaar pack repository format 1 (needs bzr 0.92)
 
@@ -393,7 +397,7 @@ And we browse to the stacked branch:
 
 The stacked-on information appears in the branch summary:
 
-    >>> print extract_text(find_tag_by_id(browser.contents, 'stacked-on'))
+    >>> print(extract_text(find_tag_by_id(browser.contents, 'stacked-on')))
     Stacked on: lp://dev/~person-name.../product-name.../branch...
 
     >>> browser.getLink(stacked_on_name).url == stacked_on_url
@@ -406,7 +410,7 @@ The stacked branch is initially public:
 
     >>> browser.open(url)
     >>> content = find_tag_by_id(browser.contents, 'document')
-    >>> print extract_text(find_tag_by_id(content, 'privacy'))
+    >>> print(extract_text(find_tag_by_id(content, 'privacy')))
     This branch contains Public information...
 
 Navigation Context
@@ -420,28 +424,28 @@ owner of the branch is used as the primary context for the branch and
 used for the breadcrumbs and tabs.
 
     >>> browser.open(
-    ...     'http://code.launchpad.dev/~name12/gnome-terminal/scanned')
+    ...     'http://code.launchpad.test/~name12/gnome-terminal/scanned')
     >>> print_location(browser.contents)
-    Hierarchy: GNOME Terminal > Code > scanned
+    Hierarchy: GNOME Terminal
     Tabs:
-    * Overview - http://launchpad.dev/gnome-terminal
-    * Code (selected) - http://code.launchpad.dev/gnome-terminal
-    * Bugs - http://bugs.launchpad.dev/gnome-terminal
-    * Blueprints - http://blueprints.launchpad.dev/gnome-terminal
-    * Translations - http://translations.launchpad.dev/gnome-terminal
-    * Answers - http://answers.launchpad.dev/gnome-terminal
+    * Overview - http://launchpad.test/gnome-terminal
+    * Code (selected) - http://code.launchpad.test/gnome-terminal
+    * Bugs - http://bugs.launchpad.test/gnome-terminal
+    * Blueprints - http://blueprints.launchpad.test/gnome-terminal
+    * Translations - http://translations.launchpad.test/gnome-terminal
+    * Answers - http://answers.launchpad.test/gnome-terminal
     Main heading: lp://dev/~name12/gnome-terminal/scanned
 
-    >>> browser.open('http://code.launchpad.dev/~name12/+junk/junk.dev')
+    >>> browser.open('http://code.launchpad.test/~name12/+junk/junk.dev')
     >>> print_location(browser.contents)
-    Hierarchy: Sample Person > Code > junk.dev
+    Hierarchy: Sample Person
     Tabs:
-    * Overview - http://launchpad.dev/~name12
-    * Code (selected) - http://code.launchpad.dev/~name12
-    * Bugs - http://bugs.launchpad.dev/~name12
-    * Blueprints - http://blueprints.launchpad.dev/~name12
-    * Translations - http://translations.launchpad.dev/~name12
-    * Answers - http://answers.launchpad.dev/~name12
+    * Overview - http://launchpad.test/~name12
+    * Code (selected) - http://code.launchpad.test/~name12
+    * Bugs - http://bugs.launchpad.test/~name12
+    * Blueprints - http://blueprints.launchpad.test/~name12
+    * Translations - http://translations.launchpad.test/~name12
+    * Answers - http://answers.launchpad.test/~name12
     Main heading: lp://dev/~name12/+junk/junk.dev
 
 

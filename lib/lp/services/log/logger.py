@@ -1,4 +1,4 @@
-# Copyright 2010-2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Loggers."""
@@ -9,7 +9,6 @@ __all__ = [
     'DevNullLogger',
     'FakeLogger',
     'LaunchpadLogger',
-    'NullHandler',
     'PrefixFilter',
     ]
 
@@ -18,17 +17,12 @@ from StringIO import StringIO
 import sys
 import traceback
 
-from testtools.content import (
-    Content,
-    UTF8_TEXT,
-    )
-
 from lp.services.log import loglevels
 
 
 LEVEL_PREFIXES = dict(
     (debug_level, "DEBUG%d" % (1 + debug_level - loglevels.DEBUG))
-    for debug_level in xrange(loglevels.DEBUG9, loglevels.DEBUG))
+    for debug_level in range(loglevels.DEBUG9, loglevels.DEBUG))
 
 LEVEL_PREFIXES.update({
     loglevels.DEBUG: 'DEBUG',
@@ -92,14 +86,6 @@ class PrefixFilter:
         prefix = self.prefix or record.name
         record.msg = '[%s] %s' % (prefix, record.msg)
         return True
-
-
-class NullHandler(logging.Handler):
-    """A do-nothing Handler used to silence 'No handlers for logger' warnings.
-    """
-
-    def emit(self, record):
-        pass
 
 
 class FakeLogger:
@@ -233,5 +219,6 @@ class BufferLogger(FakeLogger):
         Use with `testtools.TestCase.addDetail`, `fixtures.Fixture.addDetail`,
         and anything else that understands details.
         """
-        get_bytes = lambda: [self.getLogBuffer().encode("utf-8")]
-        return Content(UTF8_TEXT, get_bytes)
+        # Only import this here to avoid importing testtools outside tests.
+        from testtools.content import text_content
+        return text_content(self.getLogBuffer())

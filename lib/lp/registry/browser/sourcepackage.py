@@ -1,4 +1,4 @@
-# Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Browser views for sourcepackages."""
@@ -10,7 +10,6 @@ __all__ = [
     'SourcePackageAssociationPortletView',
     'SourcePackageBreadcrumb',
     'SourcePackageChangeUpstreamView',
-    'SourcePackageFacets',
     'SourcePackageNavigation',
     'SourcePackageOverviewMenu',
     'SourcePackageRemoveUpstreamView',
@@ -22,7 +21,6 @@ import string
 import urllib
 
 from apt_pkg import (
-    parse_src_depends,
     upstream_version,
     version_compare,
     )
@@ -31,20 +29,17 @@ from lazr.enum import (
     Item,
     )
 from lazr.restful.interface import copy_field
-from lazr.restful.utils import smartquote
 from z3c.ptcompat import ViewPageTemplateFile
-from zope.app.form.browser import DropdownWidget
-from zope.app.form.interfaces import IInputWidget
 from zope.component import (
     adapter,
     getMultiAdapter,
     getUtility,
     )
 from zope.formlib.form import Fields
-from zope.interface import (
-    implements,
-    Interface,
-    )
+from zope.formlib.interfaces import IInputWidget
+from zope.formlib.widget import CustomWidgetFactory
+from zope.formlib.widgets import DropdownWidget
+from zope.interface import Interface
 from zope.schema import (
     Choice,
     TextLine,
@@ -58,7 +53,6 @@ from zope.schema.vocabulary import (
 from lp import _
 from lp.app.browser.launchpadform import (
     action,
-    custom_widget,
     LaunchpadFormView,
     ReturnToReferrerMixin,
     )
@@ -67,7 +61,10 @@ from lp.app.browser.multistep import (
     StepView,
     )
 from lp.app.browser.tales import CustomizableFormatter
-from lp.app.enums import ServiceUsage
+from lp.app.enums import (
+    InformationType,
+    ServiceUsage,
+    )
 from lp.app.widgets.itemswidgets import LaunchpadRadioWidget
 from lp.bugs.browser.bugtask import BugTargetTraversalMixin
 from lp.registry.browser.product import ProjectAddStepOne
@@ -80,17 +77,17 @@ from lp.registry.interfaces.product import IProductSet
 from lp.registry.interfaces.productseries import IProductSeries
 from lp.registry.interfaces.series import SeriesStatus
 from lp.registry.interfaces.sourcepackage import ISourcePackage
+from lp.registry.model.product import Product
 from lp.services.webapp import (
     ApplicationMenu,
     canonical_url,
-    GetitemNavigation,
     Link,
-    StandardLaunchpadFacets,
+    Navigation,
     stepto,
     )
 from lp.services.webapp.breadcrumb import Breadcrumb
+from lp.services.webapp.escaping import structured
 from lp.services.webapp.interfaces import IBreadcrumb
-from lp.services.webapp.menu import structured
 from lp.services.webapp.publisher import LaunchpadView
 from lp.services.worlddata.helpers import browser_languages
 from lp.services.worlddata.interfaces.country import ICountry
@@ -99,7 +96,7 @@ from lp.translations.interfaces.potemplate import IPOTemplateSet
 
 
 def get_register_upstream_url(source_package):
-    displayname = string.capwords(source_package.name.replace('-', ' '))
+    display_name = string.capwords(source_package.name.replace('-', ' '))
     distroseries_string = "%s/%s" % (
         source_package.distroseries.distribution.name,
         source_package.distroseries.name)
@@ -113,8 +110,8 @@ def get_register_upstream_url(source_package):
         'field.source_package_name': source_package.sourcepackagename.name,
         'field.distroseries': distroseries_string,
         'field.name': source_package.name,
-        'field.displayname': displayname,
-        'field.title': displayname,
+        'field.display_name': display_name,
+        'field.title': display_name,
         'field.homepageurl': homepage,
         'field.__visited_steps__': ProjectAddStepOne.step_name,
         'field.actions.continue': 'Continue',
@@ -145,7 +142,7 @@ class SourcePackageFormatterAPI(CustomizableFormatter):
         return {'displayname': displayname}
 
 
-class SourcePackageNavigation(GetitemNavigation, BugTargetTraversalMixin):
+class SourcePackageNavigation(Navigation, BugTargetTraversalMixin):
 
     usedfor = ISourcePackage
 
@@ -184,43 +181,29 @@ class SourcePackageNavigation(GetitemNavigation, BugTargetTraversalMixin):
         redirection_url = canonical_url(dsp, view_name='+gethelp')
         return self.redirectSubTree(redirection_url, status=303)
 
+    def traverse(self, name):
+        """Deprecated redirect to an IDistributionSourcePackageRelease.
+
+        IDistroSeriesSourcePackageRelease lived here until it was
+        removed in Nov 2014.
+        """
+        dspr = self.context.distribution_sourcepackage.getVersion(name)
+        if dspr is None:
+            return None
+        return self.redirectSubTree(canonical_url(dspr), status=301)
+
 
 @adapter(ISourcePackage)
 class SourcePackageBreadcrumb(Breadcrumb):
     """Builds a breadcrumb for an `ISourcePackage`."""
-    implements(IBreadcrumb)
 
     @property
     def text(self):
-        return smartquote('"%s" source package') % (self.context.name)
+        return IBreadcrumb(self.context.distroseries).text
 
-
-class SourcePackageFacets(StandardLaunchpadFacets):
-
-    usedfor = ISourcePackage
-    enable_only = ['overview', 'bugs', 'branches', 'translations']
-
-    def overview(self):
-        text = 'Overview'
-        summary = 'General information about {0}'.format(
-            self.context.displayname)
-        return Link('', text, summary)
-
-    def bugs(self):
-        text = 'Bugs'
-        summary = 'Bugs reported about {0}'.format(self.context.displayname)
-        return Link('', text, summary)
-
-    def branches(self):
-        text = 'Code'
-        summary = 'Branches for {0}'.format(self.context.displayname)
-        return Link('', text, summary)
-
-    def translations(self):
-        text = 'Translations'
-        summary = 'Translations of {0} in Launchpad'.format(
-            self.context.displayname)
-        return Link('', text, summary)
+    @property
+    def inside(self):
+        return self.context.distribution_sourcepackage
 
 
 class SourcePackageOverviewMenu(ApplicationMenu):
@@ -302,6 +285,16 @@ class SourcePackageChangeUpstreamStepOne(ReturnToReferrerMixin, StepView):
         self.next_step = SourcePackageChangeUpstreamStepTwo
         self.request.form['product'] = data['product']
 
+    def validateStep(self, data):
+        super(SourcePackageChangeUpstreamStepOne, self).validateStep(data)
+        product = data.get('product')
+        if product is None:
+            return
+        if product.private:
+            self.setFieldError('product',
+                'Only Public projects can be packaged, not %s.' %
+                data['product'].information_type.title)
+
     @property
     def register_upstream_url(self):
         return get_register_upstream_url(self.context)
@@ -323,8 +316,8 @@ class SourcePackageChangeUpstreamStepTwo(ReturnToReferrerMixin, StepView):
     # The DropdownWidget is used, since the VocabularyPickerWidget
     # does not support visible=False to turn it into a hidden input
     # to continue passing the variable in the form.
-    custom_widget('product', DropdownWidget, visible=False)
-    custom_widget('productseries', LaunchpadRadioWidget)
+    custom_widget_product = CustomWidgetFactory(DropdownWidget, visible=False)
+    custom_widget_productseries = LaunchpadRadioWidget
 
     def setUpFields(self):
         super(SourcePackageChangeUpstreamStepTwo, self).setUpFields()
@@ -494,7 +487,8 @@ class SourcePackageView(LaunchpadView):
         results = {}
         all_arch = sorted([arch.architecturetag for arch in
                            self.context.distroseries.architectures])
-        for bin in self.context.currentrelease.binaries:
+        for bin in self.context.currentrelease.getBinariesForSeries(
+                self.context.distroseries):
             distroarchseries = bin.build.distro_arch_series
             if bin.name not in results:
                 results[bin.name] = []
@@ -510,12 +504,10 @@ class SourcePackageView(LaunchpadView):
     def _relationship_parser(self, content):
         """Wrap the relationship_builder for SourcePackages.
 
-        Define apt_pkg.parse_src_depends as a relationship 'parser' and
-        IDistroSeries.getBinaryPackage as 'getter'.
+        Define IDistroSeries.getBinaryPackage as a relationship 'getter'.
         """
         getter = self.context.distroseries.getBinaryPackage
-        parser = parse_src_depends
-        return relationship_builder(content, parser=parser, getter=getter)
+        return relationship_builder(content, getter=getter)
 
     @property
     def builddepends(self):
@@ -528,6 +520,12 @@ class SourcePackageView(LaunchpadView):
             self.context.currentrelease.builddependsindep)
 
     @property
+    def builddependsarch(self):
+        return self._relationship_parser(
+            self.context.currentrelease.getUserDefinedField(
+                "Build-Depends-Arch"))
+
+    @property
     def build_conflicts(self):
         return self._relationship_parser(
             self.context.currentrelease.build_conflicts)
@@ -536,6 +534,12 @@ class SourcePackageView(LaunchpadView):
     def build_conflicts_indep(self):
         return self._relationship_parser(
             self.context.currentrelease.build_conflicts_indep)
+
+    @property
+    def build_conflicts_arch(self):
+        return self._relationship_parser(
+            self.context.currentrelease.getUserDefinedField(
+                "Build-Conflicts-Arch"))
 
     def requestCountry(self):
         return ICountry(self.request, None)
@@ -552,8 +556,8 @@ class SourcePackageAssociationPortletView(LaunchpadFormView):
     """A view for linking to an upstream package."""
 
     schema = Interface
-    custom_widget(
-        'upstream', LaunchpadRadioWidget, orientation='vertical')
+    custom_widget_upstream = CustomWidgetFactory(
+        LaunchpadRadioWidget, orientation='vertical')
     product_suggestions = None
     initial_focus_widget = None
     max_suggestions = 9
@@ -567,7 +571,9 @@ class SourcePackageAssociationPortletView(LaunchpadFormView):
         # Find registered products that are similarly named to the source
         # package.
         product_vocab = getVocabularyRegistry().get(None, 'Product')
-        matches = product_vocab.searchForTerms(self.context.name)
+        matches = product_vocab.searchForTerms(self.context.name,
+            vocab_filter=[Product._information_type ==
+                          InformationType.PUBLIC])
         # Based upon the matching products, create a new vocabulary with
         # term descriptions that include a link to the product.
         self.product_suggestions = []
@@ -660,8 +666,8 @@ class SourcePackageUpstreamConnectionsView(LaunchpadView):
             return True
         bugtracker = product.bugtracker
         if bugtracker is None:
-            if product.project is not None:
-                bugtracker = product.project.bugtracker
+            if product.projectgroup is not None:
+                bugtracker = product.projectgroup.bugtracker
         if bugtracker is None:
             return False
         return True

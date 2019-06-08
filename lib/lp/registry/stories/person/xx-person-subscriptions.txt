@@ -7,9 +7,9 @@ the link that leads to the +subscriptions page.
 Any user can view the direct subscriptions that a person or team has to
 blueprints, branches, bugs, merge proposals and questions.
 
-    >>> anon_browser.open('http://launchpad.dev/~ubuntu-team/+subscriptions')
+    >>> anon_browser.open('http://launchpad.test/~ubuntu-team/+subscriptions')
     >>> print anon_browser.title
-    Subscriptions : “Ubuntu Team” team
+    Subscriptions : Bugs : “Ubuntu Team” team
 
 The user can see that the Ubuntu Team does not have any direct bug
 subscriptions.
@@ -38,7 +38,7 @@ those.
 Any user can see Webster's bug subscriptions.  The bug subscriptions table
 includes the bug number, title and location.
 
-    >>> anon_browser.open('http://launchpad.dev/~webster/+subscriptions')
+    >>> anon_browser.open('http://launchpad.test/~webster/+subscriptions')
     >>> print extract_text(find_tag_by_id(
     ...     anon_browser.contents, 'bug_subscriptions'))
     Summary
@@ -54,15 +54,15 @@ The bug subscriptions table also includes an unsubscribe link, if the user has
 permission to remove the subscription, for bugs to which the person or team is
 subscribed.
 
-Webster can see and manage his direct bug subscriptions using the page too.
-He chooses to view the bug about Scofflaw.
+Webster can see and manage their direct bug subscriptions using the page too.
+They choose to view the bug about Scofflaw.
 
     >>> login('foo.bar@canonical.com')
     >>> subscriber_browser = setupBrowser(
     ...     auth='Basic %s:test' % subscriber.preferredemail.email)
     >>> logout()
     >>> subscriber_browser.open(
-    ...     'http://bugs.launchpad.dev/~webster/+subscriptions')
+    ...     'http://bugs.launchpad.test/~webster/+subscriptions')
     >>> unsub_link = subscriber_browser.getLink(
     ...     id='unsubscribe-subscriber-%s' % subscriber.id)
     >>> unsub_link.click()
@@ -71,8 +71,8 @@ He chooses to view the bug about Scofflaw.
     >>> "unsubscribe me from this bug" in page_text
     True
 
-After viewing the +subscribe page Webster decides that he still wants to be
-subscribed to the bug.  He clicks cancel which takes him back to his
+After viewing the +subscribe page Webster decides that they still want to be
+subscribed to the bug.  They click cancel which takes them back to their
 +subscription page.
 
     >>> cancel_link = subscriber_browser.getLink('Cancel')
@@ -80,7 +80,7 @@ subscribed to the bug.  He clicks cancel which takes him back to his
     >>> print subscriber_browser.title
     Subscriptions : Bugs : Webster
 
-He chooses to unsubscribe from the bug about Affluenza.
+They choose to unsubscribe from the bug about Affluenza.
 
     >>> subscriber_browser.getLink(url='/affluenza/+bug/%s/+subscribe'
     ...     % bugB.id).click()
@@ -90,11 +90,11 @@ He chooses to unsubscribe from the bug about Affluenza.
     >>> print subscriber_browser.title
     Subscriptions : Bugs : Webster
 
-Webster can see that the bug about Affluenza is no longer listed in his direct
-bug subscriptions.
+Webster can see that the bug about Affluenza is no longer listed in their
+direct bug subscriptions.
 
     >>> subscriber_browser.open(
-    ...     'http://bugs.launchpad.dev/~webster/+subscriptions')
+    ...     'http://bugs.launchpad.test/~webster/+subscriptions')
     >>> print extract_text(find_tag_by_id(
     ...     subscriber_browser.contents, 'bug_subscriptions'))
     Summary
@@ -103,8 +103,8 @@ bug subscriptions.
     Word needs more popularity
     Scofflaw
 
-Webster adds a bug subscription for a team, team America, of which he is a
-member.
+Webster adds a bug subscription for a team, team America, of which they are
+a member.
 
     >>> login('foo.bar@canonical.com')
     >>> team = factory.makeTeam(name='america')
@@ -114,10 +114,10 @@ member.
     >>> subscriptionC = bugC.subscribe(team, subscriber)
     >>> logout()
 
-Webster chooses to review the subscriptions for his team America.
+Webster chooses to review the subscriptions for their team America.
 
     >>> subscriber_browser.open(
-    ...     'https://bugs.launchpad.dev/~america/+subscriptions')
+    ...     'http://bugs.launchpad.test/~america/+subscriptions')
     >>> print subscriber_browser.title
     Subscriptions : Bugs ...
 
@@ -143,7 +143,7 @@ Webster now chooses to unsubscribe team America from the bug about Scofflaw.
     >>> subscriber_browser.getControl('Continue').click()
 
     >>> subscriber_browser.open(
-    ...     'https://launchpad.dev/~america/+subscriptions')
+    ...     'http://launchpad.test/~america/+subscriptions')
     >>> page_text = extract_text(
     ...     find_main_content(subscriber_browser.contents))
     >>> "does not have any direct bug subscriptions" in page_text
@@ -156,12 +156,12 @@ Structural subscriptions
 Leading from the subscriptions view is an overview page of all
 structural subscriptions.
 
-    >>> admin_browser.open("http://launchpad.dev/people/+me/+subscriptions")
+    >>> admin_browser.open("http://launchpad.test/people/+me/+subscriptions")
     >>> admin_browser.getLink("Structural subscriptions").click()
     >>> admin_browser.url
-    'http://launchpad.dev/~name16/+structural-subscriptions'
+    'http://launchpad.test/~name16/+structural-subscriptions'
     >>> admin_browser.title
-    'Structural subscriptions : Foo Bar'
+    'Structural subscriptions : Bugs : Foo Bar'
 
 The structures to which the user is subscribed are displayed in a
 list. The title of the structure links to the structure itself, and is
@@ -183,7 +183,7 @@ The links to modify subscriptions are only shown when the user has
 permission to modify those subscriptions.
 
     >>> subscriber_browser.open(
-    ...     "http://launchpad.dev/~name16/+structural-subscriptions")
+    ...     "http://launchpad.test/~name16/+structural-subscriptions")
     >>> subscriptions = find_tag_by_id(
     ...     subscriber_browser.contents, 'structural-subscriptions')
     >>> for subscription in subscriptions.findAll("li"):
@@ -197,13 +197,13 @@ The structural subscriptions page links back to the direct
 subscriptions page.
 
     >>> admin_browser.getLink("Direct subscriptions").url
-    'http://launchpad.dev/~name16/+subscriptions'
+    'http://launchpad.test/~name16/+subscriptions'
 
 A simple explanatory message is shown when the user doesn't have any
 structural subscriptions.
 
     >>> subscriber_browser.open(
-    ...     "http://launchpad.dev/people/+me/+structural-subscriptions")
+    ...     "http://launchpad.test/people/+me/+structural-subscriptions")
     >>> print extract_text(find_tag_by_id(
     ...     subscriber_browser.contents, "structural-subscriptions"))
     Webster does not have any structural subscriptions.
@@ -232,7 +232,7 @@ subscription filter.
     ...                 create_text.parent.get("href"))
 
     >>> admin_browser.open(
-    ...     "http://launchpad.dev/people/+me/+structural-subscriptions")
+    ...     "http://launchpad.test/people/+me/+structural-subscriptions")
     >>> show_create_links(admin_browser)
     mozilla-firefox in Ubuntu
     * Create a new filter --> /ubuntu/.../name16/+new-filter
@@ -243,7 +243,7 @@ If the user does not have the necessary rights to create new bug
 filters the "Create" link is not shown.
 
     >>> subscriber_browser.open(
-    ...     "http://launchpad.dev/~name16/+structural-subscriptions")
+    ...     "http://launchpad.test/~name16/+structural-subscriptions")
     >>> show_create_links(subscriber_browser)
     mozilla-firefox in Ubuntu
     * No create link.
@@ -268,7 +268,7 @@ filters are shown with a message stating that there is no filtering.
 
     >>> def show_nigels_subscriptions():
     ...     nigel_browser.open(
-    ...         "http://launchpad.dev/people/"
+    ...         "http://launchpad.test/people/"
     ...         "+me/+structural-subscriptions")
     ...     subscriptions = find_tag_by_id(
     ...         nigel_browser.contents, 'structural-subscriptions')

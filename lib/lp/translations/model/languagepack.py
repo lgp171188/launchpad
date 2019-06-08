@@ -1,8 +1,6 @@
 # Copyright 2009 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-# pylint: disable-msg=E0611,W0212
-
 """Language pack store."""
 
 __metaclass__ = type
@@ -13,7 +11,7 @@ __all__ = [
     ]
 
 from sqlobject import ForeignKey
-from zope.interface import implements
+from zope.interface import implementer
 
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.datetimecol import UtcDateTimeCol
@@ -29,8 +27,8 @@ from lp.translations.interfaces.languagepack import (
     )
 
 
+@implementer(ILanguagePack)
 class LanguagePack(SQLBase):
-    implements(ILanguagePack)
 
     _table = 'LanguagePack'
 
@@ -50,8 +48,8 @@ class LanguagePack(SQLBase):
         notNull=False, default=None)
 
 
+@implementer(ILanguagePackSet)
 class LanguagePackSet:
-    implements(ILanguagePackSet)
 
     def addLanguagePack(self, distroseries, file_alias, type):
         """See `ILanguagePackSet`."""

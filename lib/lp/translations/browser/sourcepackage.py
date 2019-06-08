@@ -24,7 +24,7 @@ from lp.services.webapp import (
     NavigationMenu,
     )
 from lp.services.webapp.authorization import check_permission
-from lp.services.webapp.menu import structured
+from lp.services.webapp.escaping import structured
 from lp.services.webapp.publisher import LaunchpadView
 from lp.translations.browser.poexportrequest import BaseExportView
 from lp.translations.browser.product import ProductTranslationsMenu
@@ -380,7 +380,7 @@ class SourcePackageTranslationSharingDetailsView(LaunchpadView):
         if packaging is not None:
             productseries = self.context.direct_packaging.productseries
             productseries_menu = ProductSeriesOverviewMenu(productseries)
-            branch_link = productseries_menu.link_branch()
+            branch_link = productseries_menu.set_branch()
             url = '%s/%s' % (canonical_url(productseries), branch_link.target)
             if branch_link.enabled:
                 return self.icon_link(id, icon, url, text, hidden=False)

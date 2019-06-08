@@ -17,8 +17,7 @@ configuration).
 
     >>> from lp.services.config import config
     >>> from lp.testing.layers import DatabaseLayer
-    >>> expected = (
-    ...     'dbname=%s host=localhost' % DatabaseLayer._db_fixture.dbname)
+    >>> expected = 'dbname=%s' % DatabaseLayer._db_fixture.dbname
     >>> expected == config.database.rw_main_master
     True
 
@@ -60,7 +59,7 @@ using persistent helpers - see lp.testing.layers).
     '.../launchpad-lazr.conf'
 
     >>> config.extends.filename
-    '.../launchpad-lazr.conf'
+    u'.../launchpad-lazr.conf'
 
 LaunchpadConfig provides __contains__ and __getitem__ to check and
 access lazr.config sections and keys.
@@ -102,10 +101,10 @@ be changed for a feature.
 
     >>> test_data = ("""
     ...     [answertracker]
-    ...     email_domain: answers.launchpad.dev""")
+    ...     email_domain: answers.launchpad.test""")
     >>> config.push('test_data', test_data)
     >>> config.answertracker.email_domain
-    'answers.launchpad.dev'
+    'answers.launchpad.test'
 
 And the test can remove the data when it is done to restore the config.
 
@@ -161,7 +160,7 @@ conf file name that is loaded.
     '.../configs/testrunner/test-process-lazr.conf'
 
     >>> test_config.extends.filename
-    '.../configs/testrunner/launchpad-lazr.conf'
+    u'.../configs/testrunner/launchpad-lazr.conf'
 
     >>> test_config.answertracker.days_before_expiration
     300
@@ -181,7 +180,7 @@ process's name.
     '.../configs/testrunner/launchpad-lazr.conf'
 
     >>> test_config.extends.filename
-    '.../configs/development/launchpad-lazr.conf'
+    u'.../configs/development/launchpad-lazr.conf'
 
     >>> test_config.answertracker.days_before_expiration
     15
@@ -221,7 +220,7 @@ argument to the constructor.
 #    >>> config.filename
 #    '.../configs/mailman-itests/launchpad-lazr.conf'
 #    >>> config.extends.filename
-#    '.../configs/development/launchpad-lazr.conf'
+#    u'.../configs/development/launchpad-lazr.conf'
 #    >>> config.database.dbname
 #    'launchpad_dev'
 

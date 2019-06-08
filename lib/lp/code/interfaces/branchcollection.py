@@ -1,7 +1,5 @@
-# Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2017 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
-
-# pylint: disable-msg=E0211, E0213
 
 """A collection of branches.
 
@@ -60,23 +58,25 @@ class IBranchCollection(Interface):
             of individuals and teams that own branches in this collection.
         """
 
-    def getBranches(eager_load=False):
+    def getBranches(eager_load=False, sort_by=None):
         """Return a result set of all branches in this collection.
 
         The returned result set will also join across the specified tables as
         defined by the arguments to this function.  These extra tables are
-        joined specificly to allow the caller to sort on values not in the
+        joined specifically to allow the caller to sort on values not in the
         Branch table itself.
 
         :param eager_load: If True trigger eager loading of all the related
             objects in the collection.
+        :param sort_by: an item from the `BranchListingSort` enumeration, or
+            None to return an unordered result set.
         """
 
     def getBranchIds():
         """Return a result set of all branch ids in this collection."""
 
-    def getMergeProposals(statuses=None, for_branches=None,
-                          target_branch=None, eager_load=False):
+    def getMergeProposals(statuses=None, for_branches=None, target_branch=None,
+                          prerequisite_branch=None, eager_load=False):
         """Return a result set of merge proposals for the branches in this
         collection.
 
@@ -87,6 +87,8 @@ class IBranchCollection(Interface):
             branch is one of the branches specified.
         :param target_branch: If specified, only return merge proposals
             that target the specified branch.
+        :param prerequisite_branch: If specified, only return merge proposals
+            that require the specified branch to be merged first.
         :param eager_load: If True, preloads all the related information for
             merge proposals like PreviewDiffs and Branches.
         """
@@ -128,8 +130,8 @@ class IBranchCollection(Interface):
     def inProduct(product):
         """Restrict the collection to branches in 'product'."""
 
-    def inProject(project):
-        """Restrict the collection to branches in 'project'."""
+    def inProjectGroup(projectgroup):
+        """Restrict the collection to branches in 'projectgroup'."""
 
     def inSourcePackage(package):
         """Restrict the collection to branches in 'package'.
@@ -163,6 +165,12 @@ class IBranchCollection(Interface):
     def isPrivate():
         """Restrict the collection to private branches."""
 
+    def isExclusive():
+        """Restrict the collection to branches owned by exclusive people."""
+
+    def isSeries():
+        """Restrict the collection to branches those linked to series."""
+
     def ownedBy(person):
         """Restrict the collection to branches owned by 'person'."""
 
@@ -174,17 +182,11 @@ class IBranchCollection(Interface):
     def registeredBy(person):
         """Restrict the collection to branches registered by 'person'."""
 
-    def relatedTo(person):
-        """Restrict the collection to branches related to 'person'.
+    def search(term):
+        """Search the collection for branches matching 'term'.
 
-        That is, branches that 'person' owns, registered or is subscribed to.
-        """
-
-    def search(search_term):
-        """Search the collection for branches matching 'search_term'.
-
-        :param search_term: A string.
-        :return: An `ICountableIterator`.
+        :param term: A string.
+        :return: A `ResultSet` of branches that matched.
         """
 
     def scanned():
@@ -209,7 +211,7 @@ class IBranchCollection(Interface):
     def scannedSince(epoch):
         """Restrict the collection to branches scanned since `epoch`."""
 
-    def targetedBy(person):
+    def targetedBy(person, since=None):
         """Restrict the collection to branches targeted by person.
 
         A branch is targeted by a person if that person has registered a merge

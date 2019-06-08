@@ -1,36 +1,34 @@
-# Copyright 2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2011-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for merging translations."""
 
 __metaclass__ = type
 
-
-from lazr.lifecycle.event import ObjectModifiedEvent
-from lazr.lifecycle.snapshot import Snapshot
+from storm.expr import Desc
 import transaction
 from zope.component import getUtility
-from zope.event import notify
 
 from lp.registry.interfaces.packaging import IPackagingUtil
+from lp.services.database.interfaces import IStore
 from lp.services.features.testing import FeatureFixture
 from lp.services.job.interfaces.job import (
     IRunnableJob,
     JobStatus,
     )
 from lp.services.job.tests import block_on_job
-from lp.services.webapp.testing import verifyObject
+from lp.services.webapp.snapshot import notify_modified
 from lp.testing import (
     celebrity_logged_in,
     EventRecorder,
     person_logged_in,
     TestCaseWithFactory,
+    verifyObject,
     )
 from lp.testing.layers import (
     CeleryJobLayer,
     LaunchpadZopelessLayer,
     )
-from lp.translations.interfaces.potemplate import IPOTemplate
 from lp.translations.interfaces.side import TranslationSide
 from lp.translations.interfaces.translationpackagingjob import (
     ITranslationPackagingJobSource,
@@ -74,9 +72,17 @@ def make_translation_merge_job(factory, not_ubuntu=False):
     productseries = upstream_pofile.potemplate.productseries
     distroseries = package_pofile.potemplate.distroseries
     sourcepackagename = package_pofile.potemplate.sourcepackagename
-    return TranslationMergeJob.create(
-        productseries=productseries, distroseries=distroseries,
-        sourcepackagename=sourcepackagename)
+    factory.makePackagingLink(
+        distroseries=distroseries, sourcepackagename=sourcepackagename,
+        productseries=productseries)
+    # Creating the Packaging will have created a merge job too. Return
+    # it.
+    return TranslationPackagingJob.makeSubclass(
+        IStore(TranslationSharingJob).find(
+            TranslationSharingJob,
+            distroseries=distroseries, sourcepackagename=sourcepackagename,
+            productseries=productseries).order_by(
+                Desc(TranslationSharingJob.id)).first())
 
 
 def get_msg_sets(productseries=None, distroseries=None,
@@ -288,7 +294,8 @@ class TestTranslationSplitJob(TestCaseWithFactory):
             packaging.productseries, packaging.sourcepackage,
             TranslationSplitJob)
         self.assertEqual([], finder.find())
-        with person_logged_in(packaging.owner):
+        user = self.factory.makePerson(karma=200)
+        with person_logged_in(user):
             getUtility(IPackagingUtil).deletePackaging(
                 packaging.productseries, packaging.sourcepackagename,
                 packaging.distroseries)
@@ -307,9 +314,8 @@ class TestTranslationTemplateChangeJob(TestCaseWithFactory):
             None, None, TranslationTemplateChangeJob, potemplate)
         self.assertEqual([], finder.find())
         with person_logged_in(potemplate.owner):
-            snapshot = Snapshot(potemplate, providing=IPOTemplate)
-            potemplate.name = self.factory.getUniqueString()
-            notify(ObjectModifiedEvent(potemplate, snapshot, ["name"]))
+            with notify_modified(potemplate, ["name"]):
+                potemplate.name = self.factory.getUniqueString()
 
         (job,) = finder.find()
         self.assertIsInstance(job, TranslationTemplateChangeJob)

@@ -5,13 +5,15 @@
 
 __metaclass__ = type
 
-from cgi import escape
 import re
 from textwrap import dedent
 
 from lp import _
 from lp.app.validators import LaunchpadValidationError
-from lp.services.webapp.menu import structured
+from lp.services.webapp.escaping import (
+    html_escape,
+    structured,
+    )
 
 
 valid_name_pattern = re.compile(r"^[a-z0-9][a-z0-9\+\.\-]+$")
@@ -37,7 +39,7 @@ def sanitize_name(name):
 def valid_name(name):
     """Return True if the name is valid, otherwise False.
 
-    Lauchpad `name` attributes are designed for use as url components
+    Launchpad `name` attributes are designed for use as url components
     and short unique identifiers to things.
 
     The default name constraints may be too strict for some objects,
@@ -75,7 +77,7 @@ def name_validator(name):
             and start with a letter or number. All letters must be lower-case.
             The characters <samp>+</samp>, <samp>-</samp> and <samp>.</samp>
             are also allowed after the first character."""),
-            mapping={'name': escape(name)})
+            mapping={'name': html_escape(name)})
 
         raise LaunchpadValidationError(structured(message))
     return True
@@ -91,7 +93,7 @@ def bug_name_validator(name):
             and start with a letter. All letters must be lower-case.
             The characters <samp>+</samp>, <samp>-</samp> and <samp>.</samp>
             are also allowed after the first character."""),
-            mapping={'name': escape(name)})
+            mapping={'name': html_escape(name)})
 
         raise LaunchpadValidationError(structured(message))
     return True

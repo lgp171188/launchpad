@@ -26,7 +26,7 @@ Start out with a clean page containing no imported keys:
     >>> name12 = getUtility(IPersonSet).getByEmail('test@canonical.com')
     >>> logout()
     >>> browser = setupBrowserFreshLogin(name12)
-    >>> browser.open("http://launchpad.dev/~name12")
+    >>> browser.open("http://launchpad.test/~name12")
     >>> browser.getLink(url='+editpgpkeys').click()
     >>> print browser.title
     Change your OpenPGP keys...
@@ -41,10 +41,9 @@ Claim OpenPGP key:
     >>> key = "A419AE861E88BC9E04B9C26FBA2B9389DFD20543"
     >>> browser.getControl(name='fingerprint').value = key
     >>> browser.getControl(name='import').click()
-    >>> for message in get_feedback_messages(browser.contents):
-    ...     print message
+    >>> print_feedback_messages(browser.contents)
     A message has been sent to test@canonical.com, encrypted
-    with the key 1024D/DFD20543.
+    with the key 1024D/A419AE861E88BC9E04B9C26FBA2B9389DFD20543.
     To confirm the key is yours, decrypt the message and follow the
     link inside.
 
@@ -104,8 +103,9 @@ Import the secret keys needed for this test:
     >>> key = import_secret_test_key('test@canonical.com.sec')
 
 'cipher_body' is a message encrypted with the just-imported
-1024D/DFD20543 OpenPGP key, we need to access the current IGpghandler
-instance to access this key and decrypt the message.
+1024D/A419AE861E88BC9E04B9C26FBA2B9389DFD20543 OpenPGP key, we need to
+access the current IGpghandler instance to access this key and decrypt the
+message.
 
     >>> body = decrypt_content(cipher_body, 'test')
 
@@ -123,34 +123,22 @@ Go to the link sent by email, to validate the email address.
 Get redirected to +validategpg, and confirm token:
 
     >>> print browser.url
-    http://launchpad.dev/token/.../+validategpg
+    http://launchpad.test/token/.../+validategpg
     >>> browser.getControl('Continue').click()
 
 Get redirected to the user's homepage with a greeting:
 
     >>> browser.url
-    'http://launchpad.dev/~name12'
-    >>> for message in get_feedback_messages(browser.contents):
-    ...     print message
-    The key 1024D/DFD20543 was successfully validated.
-    ...
+    'http://launchpad.test/~name12'
+    >>> print_feedback_messages(browser.contents)
+    The key 1024D/A419AE861E88BC9E04B9C26FBA2B9389DFD20543 was successfully
+    validated.
 
 Certify the key is imported:
 
-    >>> browser.open("http://launchpad.dev/~name12/+editpgpkeys")
+    >>> browser.open("http://launchpad.test/~name12/+editpgpkeys")
     >>> browser.getControl(name='DEACTIVATE_GPGKEY').displayOptions
-    ['1024D/DFD20543']
-
-Make sure that UIDs were properly processed; in particular, check that
-"sample.revoked@canonical.com", the revoked UID in the key, wasn't
-added as an email address:
-
-    >>> from lp.testing.pages import strip_label
-
-    >>> browser.open("http://launchpad.dev/~name12/+editemails")
-    >>> control = browser.getControl(name='field.UNVALIDATED_SELECTED')
-    >>> [strip_label(label) for label in sorted(control.displayOptions)]
-    ['sample.person@canonical.com', 'testtest@canonical.com']
+    ['1024D/A419AE861E88BC9E04B9C26FBA2B9389DFD20543']
 
 Verify that the key was imported with the "can encrypt" flag set:
 
@@ -166,24 +154,23 @@ Verify that the key was imported with the "can encrypt" flag set:
 == Claim a sign-only GPG key ==
 
 Here, Sample Person wants to claim a GPG key that can only sign
-content. He can't verify his key by decrypting content on demand, but
-he can verify it by signing content. Launchpad sends him an email
+content. They can't verify their key by decrypting content on demand, but
+they can verify it by signing content. Launchpad sends them an email
 token. The email step ensures that an attacker who knows Sample
 Person's Launchpad password can't associate arbitrary GPG keys with
 their Launchpad account.
 
-    >>> browser.open("http://launchpad.dev/~name12/+editpgpkeys")
+    >>> browser.open("http://launchpad.test/~name12/+editpgpkeys")
 
     >>> fingerprint = "447DBF38C4F9C4ED752246B77D88913717B05A8F"
     >>> browser.getControl(name='fingerprint').value = fingerprint
     >>> browser.getControl(name='import').click()
-    >>> for message in get_feedback_messages(browser.contents):
-    ...     print message
+    >>> print_feedback_messages(browser.contents)
     A message has been sent to test@canonical.com. To
-    confirm the key 1024D/17B05A8F is yours, follow
-    the link inside.
+    confirm the key 1024D/447DBF38C4F9C4ED752246B77D88913717B05A8F is yours,
+    follow the link inside.
 
-Sample Person checks his email.
+Sample Person checks their email.
 
     >>> from_addr, to_addrs, raw_msg = stub.test_emails.pop()
     >>> msg = email.message_from_string(raw_msg)
@@ -198,7 +185,7 @@ ability to decrypt text with this key.
     False
 
 The email does contain some information about the key, and a token URL
-Sample Person should visit to verify his ownership of the key.
+Sample Person should visit to verify their ownership of the key.
 
     >>> print body
     <BLANKLINE>
@@ -207,13 +194,13 @@ Sample Person should visit to verify his ownership of the key.
         User name    : Sample Person
         Email address: test@canonical.com
     ...
+        Key type    : 1024D
         Fingerprint : 447DBF38C4F9C4ED752246B77D88913717B05A8F
-      Key type/ID : 1024D/17B05A8F
     <BLANKLINE>
     UIDs:
         sign.only@canonical.com
     ...
-        http://launchpad.dev/token/...
+        http://launchpad.test/token/...
 
     >>> token_url = get_token_url_from_string(body)
 
@@ -222,17 +209,18 @@ text which includes the date the token was generated (to avoid replay
 attacks). To make this testable, we set the creation date of this
 token to a fixed value:
 
-    >>> nothing, token_value = token_url.split('http://launchpad.dev/token/')
+    >>> nothing, token_value = token_url.split('http://launchpad.test/token/')
 
-    >>> import pytz, datetime
+    >>> import datetime, hashlib, pytz
     >>> from lp.services.verification.model.logintoken import LoginToken
-    >>> logintoken = LoginToken.selectOneBy(token=token_value)
+    >>> logintoken = LoginToken.selectOneBy(
+    ...     _token=hashlib.sha256(token_value).hexdigest())
     >>> logintoken.date_created = datetime.datetime(
-    ...     2005,04,01, 12,00,00, tzinfo=pytz.timezone('UTC'))
+    ...     2005, 4, 1, 12, 0, 0, tzinfo=pytz.timezone('UTC'))
     >>> logintoken.sync()
 
-Back to Sample User. He visits the token URL and is asked to sign some
-text to prove he owns the key.
+Back to Sample User. They visit the token URL and is asked to sign some
+text to prove they own the key.
 
     >>> browser.open(token_url)
     >>> browser.title
@@ -246,34 +234,32 @@ Let's look at the text.
     Please register 447DBF38C4F9C4ED752246B77D88913717B05A8F to the
     Launchpad user name12.  2005-04-01 12:00:00 UTC
 
-If he refuses to sign the text, he gets an error message.
+If they refuse to sign the text, they get an error message.
 
     >>> browser.getControl('Continue').click()
     >>> browser.title
     'Confirm sign-only OpenPGP key'
-    >>> for message in get_feedback_messages(browser.contents):
-    ...     print message
+    >>> print_feedback_messages(browser.contents)
     There is 1 error.
     Required input is missing.
 
-If he signs a different text, he gets an error message.
+If they sign a different text, they get an error message.
 
     >>> login(ANONYMOUS)
     >>> key = import_secret_test_key('sign.only@canonical.com.sec')
     >>> bad = gpghandler.signContent(
-    ...     'This is not the verification message!',
-    ...     '447DBF38C4F9C4ED752246B77D88913717B05A8F', 'test')
+    ...     'This is not the verification message!', key, 'test')
     >>> logout()
 
     >>> browser.getControl('Signed text').value = bad
     >>> browser.getControl('Continue').click()
-    >>> for message in get_feedback_messages(browser.contents):
-    ...     print message
+    >>> print_feedback_messages(browser.contents)
     There is 1 error.
     The signed content does not match the message found in the email.
 
-If he signs the text with a different key, he gets an error
-message. The following text was signed with the key DFD20543:
+If they sign the text with a different key, they get an error
+message. The following text was signed with the key
+A419AE861E88BC9E04B9C26FBA2B9389DFD20543:
 
     >>> signed_content = """
     ... -----BEGIN PGP SIGNED MESSAGE-----
@@ -291,67 +277,60 @@ message. The following text was signed with the key DFD20543:
     ... """
     >>> browser.getControl('Signed text').value = signed_content
     >>> browser.getControl('Continue').click()
-    >>> for message in get_feedback_messages(browser.contents):
-    ...     print message
+    >>> print_feedback_messages(browser.contents)
     There is 1 error.
     The key used to sign the content (A419AE861E88BC9E04B9C26FBA2B9389DFD20543)
     is not the key you were registering
 
-If he signs the text correctly, he is redirected to his home page.
+If they sign the text correctly, they are redirected to their home page.
 
     >>> login(ANONYMOUS)
-    >>> good = gpghandler.signContent(
-    ...     str(verification_content),
-    ...     '447DBF38C4F9C4ED752246B77D88913717B05A8F', 'test')
+    >>> good = gpghandler.signContent(str(verification_content), key, 'test')
     >>> logout()
 
     >>> browser.getControl('Signed text').value = good
     >>> browser.getControl('Continue').click()
     >>> browser.url
-    'http://launchpad.dev/~name12'
-
-The address associated with the key is not associated with his
-Launchpad account, so Launchpad gives him a message to that effect.
-
-    >>> for message in get_feedback_messages(browser.contents):
-    ...     print message
-    The key 1024D/17B05A8F was successfully validated.
-    Some of your key's UIDs (sign.only@canonical.com) are not registered...
+    'http://launchpad.test/~name12'
+    >>> print_feedback_messages(browser.contents)
+    The key 1024D/447DBF38C4F9C4ED752246B77D88913717B05A8F was successfully
+    validated.
 
 Now that the key has been validated, the login token is consumed:
 
-    >>> LoginToken.selectOneBy(token=token_value).date_consumed is not None
+    >>> consumed_token = LoginToken.selectOneBy(
+    ...     _token=hashlib.sha256(token_value).hexdigest())
+    >>> consumed_token.date_consumed is not None
     True
 
-Now Sample Person's sign-only key is associated with his account. He
-verifies this:
+Now Sample Person's sign-only key is associated with their account. They
+verify this:
 
-    >>> browser.open("http://launchpad.dev/~name12/+editpgpkeys")
+    >>> browser.open("http://launchpad.test/~name12/+editpgpkeys")
 
     >>> content = find_main_content(browser.contents)
     >>> browser.getControl(name='DEACTIVATE_GPGKEY').displayOptions
-    [...'1024D/17B05A8F (sign only)']
+    [...'1024D/447DBF38C4F9C4ED752246B77D88913717B05A8F (sign only)']
 
-On a mad whim he decides to de-activate the key he just imported.
+On a mad whim they decide to de-activate the key they just imported.
 
-    >>> browser.getControl(name="DEACTIVATE_GPGKEY").value = ['3']
+    >>> browser.getControl(name="DEACTIVATE_GPGKEY").displayValue = [
+    ...     '1024D/447DBF38C4F9C4ED752246B77D88913717B05A8F (sign only)']
     >>> browser.getControl('Deactivate Key').click()
 
-    >>> for message in get_feedback_messages(browser.contents):
-    ...     print message
-    Deactivated key(s): 1024D/17B05A8F
+    >>> print_feedback_messages(browser.contents)
+    Deactivated key(s): 1024D/447DBF38C4F9C4ED752246B77D88913717B05A8F
 
-Coming to his senses, he asks for a re-validation of the key.
+Coming to their senses, they ask for a re-validation of the key.
 
     >>> browser.getControl(name="REACTIVATE_GPGKEY").value = ['3']
     >>> browser.getControl('Reactivate Key').click()
 
-    >>> for message in get_feedback_messages(browser.contents):
-    ...     print message
+    >>> print_feedback_messages(browser.contents)
     A message has been sent to test@canonical.com with instructions
-    to reactivate these key(s): 1024D/17B05A8F
+    to reactivate these key(s): 1024D/447DBF38C4F9C4ED752246B77D88913717B05A8F
 
-He opens the page and checks that the key is displayed as pending
+They open the page and checks that the key is displayed as pending
 revalidation.
 
     >>> browser.reload()
@@ -372,10 +351,9 @@ Signing a Code of Conduct
 Sample person has never signed a code of conduct.
 
     >>> browser = setupBrowser(auth='Basic test@canonical.com:test')
-    >>> browser.open('http://launchpad.dev/~name12/+codesofconduct')
+    >>> browser.open('http://launchpad.test/~name12/+codesofconduct')
     >>> print extract_text(find_main_content(browser.contents))
     Codes of Conduct for Sample Person
-    ...
     Launchpad records codes of conduct you sign as commitments to the
     principles of collaboration, tolerance and open communication that
     drive the open source community.
@@ -397,7 +375,7 @@ Code of Conduct registration problems
 Sample Person tries unsuccessfully to register a truncated code of conduct.
 
     >>> truncated_coc = read_file('truncated_coc.asc')
-    >>> browser.open('http://launchpad.dev/codeofconduct/1.1/+sign')
+    >>> browser.open('http://launchpad.test/codeofconduct/2.0/+sign')
     >>> browser.getControl('Signed Code').value = truncated_coc
     >>> browser.getControl('Continue').click()
     >>> print_errors(browser.contents)
@@ -419,14 +397,14 @@ Sample Person tries unsuccessfully to register an old version of the code.
 Sample Person tries to access the old version page to sign it, and is informed
 that there is a new version available.
 
-    >>> browser.open('http://launchpad.dev/codeofconduct/1.0/+sign')
+    >>> browser.open('http://launchpad.test/codeofconduct/1.0/+sign')
     >>> browser.getLink('the current version').click()
     >>> print browser.url
-    http://launchpad.dev/codeofconduct/1.1
+    http://launchpad.test/codeofconduct/2.0
 
     >>> browser.getLink('Sign it').click()
     >>> print browser.url
-    http://launchpad.dev/codeofconduct/1.1/+sign
+    http://launchpad.test/codeofconduct/2.0/+sign
 
 
 Code of Conduct registration
@@ -436,42 +414,41 @@ Sample Person registers the code of conduct, using a reformatted copy which
 has leading spaces removed.  This succeeds because the words the same and
 appear in the same order.
 
-    >>> reformatted_coc = read_file('reformatted_11_coc.asc')
+    >>> reformatted_coc = read_file('reformatted_20_coc.asc')
     >>> browser.getControl('Signed Code').value = reformatted_coc
     >>> browser.getControl('Continue').click()
     >>> print browser.url
-    http://launchpad.dev/~name12/+codesofconduct
+    http://launchpad.test/~name12/+codesofconduct
 
-And now Sample Person's Codes of Conduct page shows that he's signed it.
+And now Sample Person's Codes of Conduct page shows that they've signed it.
 
-    >>> browser.open('http://launchpad.dev/~name12/+codesofconduct')
+    >>> browser.open('http://launchpad.test/~name12/+codesofconduct')
     >>> print extract_text(find_main_content(browser.contents))
     Codes of Conduct for Sample Person
-    ...
     Launchpad records codes of conduct you sign as commitments to the
     principles of collaboration, tolerance and open communication that
     drive the open source community.
     Active signatures
     If you change your mind about agreeing to a code of conduct,
     you can deactivate your signature.
-    ...: digitally signed by Sample Person (1024D/DFD20543)
-    ...
+    ...: digitally signed by Sample Person
+    (1024D/A419AE861E88BC9E04B9C26FBA2B9389DFD20543) ...
 
 
-Now Sample Person will deactivate his key...
+Now Sample Person will deactivate their key...
 
     >>> browser = setupBrowserFreshLogin(name12)
-    >>> browser.open('http://launchpad.dev/~name12/+editpgpkeys')
+    >>> browser.open('http://launchpad.test/~name12/+editpgpkeys')
     >>> browser.url
-    'http://launchpad.dev/~name12/+editpgpkeys'
+    'http://launchpad.test/~name12/+editpgpkeys'
 
     >>> print browser.contents
     <...
     ...Your active keys...
-    ...1024D/DFD20543...
+    ...1024D/A419AE861E88BC9E04B9C26FBA2B9389DFD20543...
 
 
-... but he forgot to select the checkbox of the key he wants to remove.
+... but they forgot to select the checkbox of the key they want to remove.
 
     >>> browser.getControl('Deactivate Key').click()
     >>> for tag in find_main_content(browser.contents)('p', 'error message'):
@@ -479,29 +456,30 @@ Now Sample Person will deactivate his key...
     No key(s) selected for deactivation.
 
 
-Now he selects the checkbox and deactivates it.
+Now they select the checkbox and deactivate it.
 
-    >>> browser.getControl('1024D/DFD20543').selected = True
+    >>> browser.getControl(
+    ...     '1024D/A419AE861E88BC9E04B9C26FBA2B9389DFD20543').selected = True
     >>> browser.getControl('Deactivate Key').click()
     >>> soup = find_main_content(browser.contents)
     >>> for tag in soup('p', 'informational message'):
     ...     print tag.renderContents()
-    Deactivated key(s): 1024D/DFD20543
+    Deactivated key(s): 1024D/A419AE861E88BC9E04B9C26FBA2B9389DFD20543
 
 
 Sample Person already has a deactivated key.
 
-    >>> browser.open('http://launchpad.dev/~name12/+editpgpkeys')
+    >>> browser.open('http://launchpad.test/~name12/+editpgpkeys')
     >>> browser.url
-    'http://launchpad.dev/~name12/+editpgpkeys'
+    'http://launchpad.test/~name12/+editpgpkeys'
 
     >>> print browser.contents
     <...
     ...Deactivated keys...
-    ...1024D/DFD20543...
+    ...1024D/A419AE861E88BC9E04B9C26FBA2B9389DFD20543...
 
 
-Now he'll request his key to be reactivated.
+Now they'll request their key to be reactivated.
 
     >>> browser.getControl('Reactivate Key').click()
     >>> soup = find_main_content(browser.contents)
@@ -509,7 +487,8 @@ Now he'll request his key to be reactivated.
     ...     print tag.renderContents()
     No key(s) selected for reactivation.
 
-    >>> browser.getControl('1024D/DFD20543').selected = True
+    >>> browser.getControl(
+    ...     '1024D/A419AE861E88BC9E04B9C26FBA2B9389DFD20543').selected = True
     >>> browser.getControl('Reactivate Key').click()
     >>> soup = find_main_content(browser.contents)
     >>> for tag in soup('p', 'informational message'):
@@ -527,7 +506,7 @@ Get the token from the body of the email sent.
     >>> body = decrypt_content(cipher_body, 'test')
     >>> link = re.findall(r'http.*/token/.*', body)[0]
     >>> token = re.sub(r'.*token/', '', link)
-    >>> token_url = 'http://launchpad.dev/token/%s' % token.encode('ascii')
+    >>> token_url = 'http://launchpad.test/token/%s' % token.encode('ascii')
 
 
 Going to the token page will get us redirected to the page of that specific
@@ -547,20 +526,21 @@ Now Sample Person confirms the reactivation.
 
     >>> browser.getControl('Continue').click()
     >>> browser.url
-    'http://launchpad.dev/~name12'
+    'http://launchpad.test/~name12'
 
     >>> print browser.contents
     <...
-    ...Key 1024D/DFD20543 successfully reactivated...
+    ...Key 1024D/A419AE861E88BC9E04B9C26FBA2B9389DFD20543 successfully
+    reactivated...
 
 
 And now we can see the key listed as one of Sample Person's active keys.
 
-    >>> browser.open('http://launchpad.dev/~name12/+editpgpkeys')
+    >>> browser.open('http://launchpad.test/~name12/+editpgpkeys')
     >>> print browser.contents
     <...
     ...Your active keys...
-    ...1024D/DFD20543...
+    ...1024D/A419AE861E88BC9E04B9C26FBA2B9389DFD20543...
 
 This test verifies that we correctly handle keys which are in some way
 special: either invalid, broken, revoked, expired, or already imported.
@@ -578,7 +558,7 @@ special: either invalid, broken, revoked, expired, or already imported.
 Try to import a key which is already imported:
 
   >>> del stub.test_emails[:]
-  >>> browser.open('http://launchpad.dev/~name12/+editpgpkeys')
+  >>> browser.open('http://launchpad.test/~name12/+editpgpkeys')
   >>> browser.getControl(name='fingerprint').value = preimported
   >>> browser.getControl(name='import').click()
   >>> "A message has been sent" in browser.contents
@@ -599,6 +579,7 @@ Ensure we are raising 404 error instead of System Error
   >>> print http(r"""
   ... POST /codeofconduct/donkey HTTP/1.1
   ... Authorization: Basic Zm9vLmJhckBjYW5vbmljYWwuY29tOnRlc3Q=
+  ... Referer: https://launchpad.test/
   ... """)
   HTTP/1.1 404 Not Found
   ...
@@ -626,7 +607,7 @@ Perform Acknowledge process as Foo bar person:
 
 Ensure the CoC was acknowledge by searching in the CoC Admin Console:
 
-    >>> admin_browser.open('http://launchpad.dev/codeofconduct/console')
+    >>> admin_browser.open('http://launchpad.test/codeofconduct/console')
     >>> admin_browser.getControl(name='searchfor').value = ["all"]
     >>> admin_browser.getControl(name='name').value = "mark"
     >>> admin_browser.getControl(name='search').click()
@@ -688,11 +669,11 @@ Test if the advertisement email was sent:
   >>> browser.open('http://localhost:9000/codeofconduct')
   >>> browser.getLink('current version').click()
 
-  >>> 'Ubuntu Code of Conduct - 1.1' in browser.contents
+  >>> 'Ubuntu Code of Conduct - 2.0' in browser.contents
   True
 
   >>> browser.getLink('Sign it').url
-  'http://localhost:9000/codeofconduct/1.1/+sign'
+  'http://localhost:9000/codeofconduct/2.0/+sign'
 
   >>> browser.getLink('Download this version').url
-  'http://localhost:9000/codeofconduct/1.1/+download'
+  'http://localhost:9000/codeofconduct/2.0/+download'

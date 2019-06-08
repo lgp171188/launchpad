@@ -1,12 +1,18 @@
-# Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2017 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Librarian garbage collection tests"""
 
 __metaclass__ = type
 
+import calendar
+from contextlib import contextmanager
 from cStringIO import StringIO
-from datetime import timedelta
+from datetime import (
+    datetime,
+    timedelta,
+    )
+import hashlib
 import os
 import shutil
 from subprocess import (
@@ -17,33 +23,48 @@ from subprocess import (
 import sys
 import tempfile
 
+import pytz
 from sqlobject import SQLObjectNotFound
+from storm.store import Store
+from swiftclient import client as swiftclient
 import transaction
 
 from lp.services.config import config
+from lp.services.database.interfaces import IMasterStore
 from lp.services.database.sqlbase import (
     connect,
     cursor,
     ISOLATION_LEVEL_AUTOCOMMIT,
     )
+from lp.services.features.testing import FeatureFixture
 from lp.services.librarian.client import LibrarianClient
 from lp.services.librarian.model import (
     LibraryFileAlias,
     LibraryFileContent,
     )
-from lp.services.librarianserver import librariangc
+from lp.services.librarianserver import (
+    librariangc,
+    swift,
+    )
 from lp.services.log.logger import BufferLogger
 from lp.services.utils import utc_now
-from lp.testing import TestCase
+from lp.testing import (
+    monkey_patch,
+    TestCase,
+    )
 from lp.testing.dbuser import switch_dbuser
 from lp.testing.layers import LaunchpadZopelessLayer
+from lp.testing.swift.fixture import SwiftFixture
 
 
-class TestLibrarianGarbageCollection(TestCase):
+class TestLibrarianGarbageCollectionBase:
+    """Test garbage collection code that operates differently with
+    Swift enabled. These tests need to be run under both environments.
+    """
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
-        super(TestLibrarianGarbageCollection, self).setUp()
+        super(TestLibrarianGarbageCollectionBase, self).setUp()
         self.client = LibrarianClient()
         self.patch(librariangc, 'log', BufferLogger())
 
@@ -65,25 +86,23 @@ class TestLibrarianGarbageCollection(TestCase):
         switch_dbuser(config.librarian_gc.dbuser)
         self.ztm = self.layer.txn
 
-        # Make sure the files exist. We do this in setup, because we
-        # need to use the get_file_path method later in the setup and we
-        # want to be sure it is working correctly.
-        path = librariangc.get_file_path(self.f1_id)
-        self.failUnless(os.path.exists(path), "Librarian uploads failed")
-
         # Make sure that every file the database knows about exists on disk.
         # We manually remove them for tests that need to cope with missing
         # library items.
-        self.ztm.begin()
-        cur = cursor()
-        cur.execute("SELECT id FROM LibraryFileContent")
-        for content_id in (row[0] for row in cur.fetchall()):
-            path = librariangc.get_file_path(content_id)
+        self.store = IMasterStore(LibraryFileContent)
+        for content in self.store.find(LibraryFileContent):
+            path = librariangc.get_file_path(content.id)
             if not os.path.exists(path):
                 if not os.path.exists(os.path.dirname(path)):
                     os.makedirs(os.path.dirname(path))
-                open(path, 'w').write('whatever')
-        self.ztm.abort()
+                content_text = '{0} content'.format(content.id)
+                open(path, 'w').write(content_text)
+                os.utime(path, (0, 0))  # Ancient past, never considered new.
+                content.md5 = hashlib.md5(content_text).hexdigest()
+                content.sha1 = hashlib.sha1(content_text).hexdigest()
+                content.sha256 = hashlib.sha256(content_text).hexdigest()
+                content.filesize = len(content_text)
+        transaction.commit()
 
         self.con = connect(
             user=config.librarian_gc.dbuser,
@@ -93,7 +112,7 @@ class TestLibrarianGarbageCollection(TestCase):
         self.con.rollback()
         self.con.close()
         del self.con
-        super(TestLibrarianGarbageCollection, self).tearDown()
+        super(TestLibrarianGarbageCollectionBase, self).tearDown()
 
     def _makeDupes(self):
         """Create two duplicate LibraryFileContent entries with one
@@ -119,23 +138,29 @@ class TestLibrarianGarbageCollection(TestCase):
         f2 = LibraryFileAlias.get(f2_id)
 
         # Make sure the duplicates really are distinct
-        self.failIfEqual(f1_id, f2_id)
-        self.failIfEqual(f1.contentID, f2.contentID)
+        self.assertNotEqual(f1_id, f2_id)
+        self.assertNotEqual(f1.contentID, f2.contentID)
 
-        # Set the last accessed time into the past so they will be garbage
-        # collected
-        f1.last_accessed = self.ancient_past
-        f2.last_accessed = self.ancient_past
         f1.date_created = self.ancient_past
         f2.date_created = self.ancient_past
         f1.content.datecreated = self.ancient_past
         f2.content.datecreated = self.ancient_past
+
+        # Set the time on disk to match the database timestamp.
+        utime = calendar.timegm(self.ancient_past.utctimetuple())
+        os.utime(librariangc.get_file_path(f1.contentID), (utime, utime))
+        os.utime(librariangc.get_file_path(f2.contentID), (utime, utime))
 
         del f1, f2
 
         ztm.commit()
 
         return f1_id, f2_id
+
+    def test_files_exist(self):
+        # Confirm the files we expect created by the test harness
+        # actually exist.
+        self.assertTrue(self.file_exists(self.f1_id))
 
     def test_MergeDuplicates(self):
         # Merge the duplicates
@@ -149,7 +174,7 @@ class TestLibrarianGarbageCollection(TestCase):
         self.ztm.begin()
         f1 = LibraryFileAlias.get(self.f1_id)
         f2 = LibraryFileAlias.get(self.f2_id)
-        self.failUnlessEqual(f1.contentID, f2.contentID)
+        self.assertEqual(f1.contentID, f2.contentID)
 
     def test_DeleteUnreferencedAliases(self):
         self.ztm.begin()
@@ -191,8 +216,8 @@ class TestLibrarianGarbageCollection(TestCase):
         f2 = LibraryFileAlias.get(self.f2_id)
         self.assertEqual(f1.content, f2.content)
 
-        # Flag one of our LibraryFileAliases as being recently accessed
-        f1.last_accessed = self.recent_past
+        # Flag one of our LibraryFileAliases as being recently created
+        f1.date_created = self.recent_past
 
         del f1
         del f2
@@ -275,10 +300,10 @@ class TestLibrarianGarbageCollection(TestCase):
         self.ztm.begin()
         # Make sure the well expired f1 is still there, but has no content.
         f1 = LibraryFileAlias.get(self.f1_id)
-        self.assert_(f1.content is None)
+        self.assertIsNone(f1.content)
         # f2 should still have content, as it isn't flagged for expiry.
         f2 = LibraryFileAlias.get(self.f2_id)
-        self.assert_(f2.content is not None)
+        self.assertIsNotNone(f2.content)
 
     def test_ignoreRecentlyExpiredAliases(self):
         # LibraryFileAlias records that have expired recently are not
@@ -299,10 +324,10 @@ class TestLibrarianGarbageCollection(TestCase):
         # Make sure f1 is still there and has content. This ensures that
         # our stay of execution is still working.
         f1 = LibraryFileAlias.get(self.f1_id)
-        self.assert_(f1.content is not None)
+        self.assertIsNotNone(f1.content)
         # f2 should still have content, as it isn't flagged for expiry.
         f2 = LibraryFileAlias.get(self.f2_id)
-        self.assert_(f2.content is not None)
+        self.assertIsNotNone(f2.content)
 
     def test_DeleteUnreferencedContent(self):
         # Merge the duplicates. This creates an
@@ -322,20 +347,19 @@ class TestLibrarianGarbageCollection(TestCase):
                 AND LibraryFileContent.id IN (%d, %d)
             """ % (self.f1_id, self.f2_id))
         results = cur.fetchall()
-        self.failUnlessEqual(len(results), 1)
+        self.assertEqual(len(results), 1)
         unreferenced_id = results[0][0]
 
         self.ztm.abort()
 
         # Make sure the file exists on disk
-        path = librariangc.get_file_path(unreferenced_id)
-        self.failUnless(os.path.exists(path))
+        self.assertTrue(self.file_exists(unreferenced_id))
 
         # Delete unreferenced content
         librariangc.delete_unreferenced_content(self.con)
 
         # Make sure the file is gone
-        self.failIf(os.path.exists(path))
+        self.assertFalse(self.file_exists(unreferenced_id))
 
         # delete_unreferenced_content should have committed
         self.ztm.begin()
@@ -350,7 +374,7 @@ class TestLibrarianGarbageCollection(TestCase):
             WHERE LibraryFileAlias.id IS NULL
             """)
         results = list(cur.fetchall())
-        self.failUnlessEqual(
+        self.assertEqual(
                 len(results), 0, 'Too many results %r' % (results,)
                 )
 
@@ -384,24 +408,23 @@ class TestLibrarianGarbageCollection(TestCase):
                 AND LibraryFileContent.id IN (%d, %d)
             """ % (self.f1_id, self.f2_id))
         results = cur.fetchall()
-        self.failUnlessEqual(len(results), 1)
+        self.assertEqual(len(results), 1)
         unreferenced_id = results[0][0]
 
         self.ztm.abort()
 
         # Make sure the file exists on disk
-        path = librariangc.get_file_path(unreferenced_id)
-        self.failUnless(os.path.exists(path))
+        self.assertTrue(self.file_exists(unreferenced_id))
 
         # Remove the file from disk
-        os.unlink(path)
-        self.failIf(os.path.exists(path))
+        self.remove_file(unreferenced_id)
+        self.assertFalse(self.file_exists(unreferenced_id))
 
         # Delete unreferenced content
         librariangc.delete_unreferenced_content(self.con)
 
         # Make sure the file is gone
-        self.failIf(os.path.exists(path))
+        self.assertFalse(self.file_exists(unreferenced_id))
 
         # delete_unreferenced_content should have committed
         self.ztm.begin()
@@ -416,9 +439,28 @@ class TestLibrarianGarbageCollection(TestCase):
             WHERE LibraryFileAlias.id IS NULL
             """)
         results = list(cur.fetchall())
-        self.failUnlessEqual(
+        self.assertEqual(
                 len(results), 0, 'Too many results %r' % (results,)
                 )
+
+    @contextmanager
+    def librariangc_thinking_it_is_tomorrow(self):
+        org_time = librariangc.time
+        org_utcnow = librariangc._utcnow
+
+        def tomorrow_time():
+            return org_time() + 24 * 60 * 60 + 1
+
+        def tomorrow_utcnow():
+            return datetime.now(pytz.UTC) + timedelta(days=1, seconds=1)
+
+        try:
+            librariangc.time = tomorrow_time
+            librariangc._utcnow = tomorrow_utcnow
+            yield
+        finally:
+            librariangc.time = org_time
+            librariangc._utcnow = org_utcnow
 
     def test_deleteUnwantedFiles(self):
         self.ztm.begin()
@@ -444,8 +486,7 @@ class TestLibrarianGarbageCollection(TestCase):
                 """, (content_id,))
         self.ztm.commit()
 
-        path = librariangc.get_file_path(content_id)
-        self.failUnless(os.path.exists(path))
+        self.assertTrue(self.file_exists(content_id))
 
         # Ensure delete_unreferenced_files does not remove the file, because
         # it will have just been created (has a recent date_created). There
@@ -453,22 +494,14 @@ class TestLibrarianGarbageCollection(TestCase):
         # bothering to remove the file to avoid the race condition where the
         # garbage collector is run whilst a file is being uploaded.
         librariangc.delete_unwanted_files(self.con)
-        self.failUnless(os.path.exists(path))
+        self.assertTrue(self.file_exists(content_id))
 
         # To test removal does occur when we want it to, we need to trick
         # the garbage collector into thinking it is tomorrow.
-        org_time = librariangc.time
-
-        def tomorrow_time():
-            return org_time() + 24 * 60 * 60 + 1
-
-        try:
-            librariangc.time = tomorrow_time
+        with self.librariangc_thinking_it_is_tomorrow():
             librariangc.delete_unwanted_files(self.con)
-        finally:
-            librariangc.time = org_time
 
-        self.failIf(os.path.exists(path))
+        self.assertFalse(self.file_exists(content_id))
 
         # Make sure nothing else has been removed from disk
         self.ztm.begin()
@@ -477,68 +510,7 @@ class TestLibrarianGarbageCollection(TestCase):
                 SELECT id FROM LibraryFileContent
                 """)
         for content_id in (row[0] for row in cur.fetchall()):
-            path = librariangc.get_file_path(content_id)
-            self.failUnless(os.path.exists(path))
-
-    def test_deleteUnwantedFilesIgnoresNoise(self):
-        # Directories with invalid names in the storage area are
-        # ignored. They are reported as warnings though.
-
-        # Not a hexidecimal number.
-        noisedir1_path = os.path.join(config.librarian_server.root, 'zz')
-
-        # Too long
-        noisedir2_path = os.path.join(config.librarian_server.root, '111')
-
-        # Long non-hexadecimal number
-        noisedir3_path = os.path.join(config.librarian_server.root, '11.bak')
-
-        try:
-            os.mkdir(noisedir1_path)
-            os.mkdir(noisedir2_path)
-            os.mkdir(noisedir3_path)
-
-            # Files in the noise directories.
-            noisefile1_path = os.path.join(noisedir1_path, 'abc')
-            noisefile2_path = os.path.join(noisedir2_path, 'def')
-            noisefile3_path = os.path.join(noisedir2_path, 'ghi')
-            open(noisefile1_path, 'w').write('hello')
-            open(noisefile2_path, 'w').write('there')
-            open(noisefile3_path, 'w').write('testsuite')
-
-            # Pretend it is tomorrow to ensure the files don't count as
-            # recently created, and run the delete_unwanted_files process.
-            org_time = librariangc.time
-
-            def tomorrow_time():
-                return org_time() + 24 * 60 * 60 + 1
-
-            try:
-                librariangc.time = tomorrow_time
-                librariangc.delete_unwanted_files(self.con)
-            finally:
-                librariangc.time = org_time
-
-            # None of the rubbish we created has been touched.
-            self.assert_(os.path.isdir(noisedir1_path))
-            self.assert_(os.path.isdir(noisedir2_path))
-            self.assert_(os.path.isdir(noisedir3_path))
-            self.assert_(os.path.exists(noisefile1_path))
-            self.assert_(os.path.exists(noisefile2_path))
-            self.assert_(os.path.exists(noisefile3_path))
-        finally:
-            # We need to clean this up ourselves, as the standard librarian
-            # cleanup only removes files it knows where valid to avoid
-            # accidents.
-            shutil.rmtree(noisedir1_path)
-            shutil.rmtree(noisedir2_path)
-            shutil.rmtree(noisedir3_path)
-
-        # Can't check the ordering, so we'll just check that one of the
-        # warnings are there.
-        self.assertIn(
-            "WARNING Ignoring invalid directory zz",
-            librariangc.log.getLogBuffer())
+            self.assertTrue(self.file_exists(content_id))
 
     def test_delete_unwanted_files_bug437084(self):
         # There was a bug where delete_unwanted_files() would die
@@ -592,9 +564,9 @@ class TestLibrarianGarbageCollection(TestCase):
         cmd = [sys.executable, script_path, '-q']
         process = Popen(cmd, stdout=PIPE, stderr=STDOUT, stdin=PIPE)
         (script_output, _empty) = process.communicate()
-        self.failUnlessEqual(
+        self.assertEqual(
             process.returncode, 0, 'Error: %s' % script_output)
-        self.failUnlessEqual(script_output, '')
+        self.assertEqual(script_output, '')
 
         # Make sure that our example files have been garbage collected
         self.ztm.begin()
@@ -606,29 +578,221 @@ class TestLibrarianGarbageCollection(TestCase):
         cur = cursor()
         cur.execute("SELECT count(*) FROM LibraryFileAlias")
         count = cur.fetchone()[0]
-        self.failIfEqual(count, 0)
+        self.assertNotEqual(count, 0)
         cur.execute("SELECT count(*) FROM LibraryFileContent")
         count = cur.fetchone()[0]
-        self.failIfEqual(count, 0)
+        self.assertNotEqual(count, 0)
 
     def test_confirm_no_clock_skew(self):
         # There should not be any clock skew when running the test suite.
-        librariangc.confirm_no_clock_skew(self.con)
+        librariangc.confirm_no_clock_skew(self.store)
 
         # To test this function raises an excption when it should,
-        # the garbage collector into thinking it is tomorrow.
-        org_time = librariangc.time
+        # fool the garbage collector into thinking it is tomorrow.
+        with self.librariangc_thinking_it_is_tomorrow():
+            self.assertRaises(
+                Exception, librariangc.confirm_no_clock_skew, (self.store,)
+                )
 
-        def tomorrow_time():
-            return org_time() + 24 * 60 * 60 + 1
+
+class TestDiskLibrarianGarbageCollection(
+    TestLibrarianGarbageCollectionBase, TestCase):
+
+    def file_exists(self, content_id):
+        path = librariangc.get_file_path(content_id)
+        return os.path.exists(path)
+
+    def remove_file(self, content_id):
+        path = librariangc.get_file_path(content_id)
+        os.unlink(path)
+
+    def test_delete_unwanted_files_handles_migrated(self):
+        # Files that have been uploaded to Swift have ".migrated"
+        # appended to their names. These are treated just like the
+        # original file, ignoring the extension.
+        switch_dbuser('testadmin')
+        content = 'foo'
+        lfa = LibraryFileAlias.get(self.client.addFile(
+            'foo.txt', len(content), StringIO(content), 'text/plain'))
+        id_aborted = lfa.contentID
+        # Roll back the database changes, leaving the file on disk.
+        transaction.abort()
+
+        lfa = LibraryFileAlias.get(self.client.addFile(
+            'bar.txt', len(content), StringIO(content), 'text/plain'))
+        transaction.commit()
+        id_committed = lfa.contentID
+
+        switch_dbuser(config.librarian_gc.dbuser)
+
+        # Now rename the file to pretend that librarian-feed-swift has
+        # dealt with it.
+        path_aborted = librariangc.get_file_path(id_aborted)
+        os.rename(path_aborted, path_aborted + '.migrated')
+
+        path_committed = librariangc.get_file_path(id_committed)
+        os.rename(path_committed, path_committed + '.migrated')
+
+        with self.librariangc_thinking_it_is_tomorrow():
+            librariangc.delete_unwanted_files(self.con)
+
+        self.assertFalse(os.path.exists(path_aborted + '.migrated'))
+        self.assertTrue(os.path.exists(path_committed + '.migrated'))
+
+    def test_deleteUnwantedFilesIgnoresNoise(self):
+        # Directories with invalid names in the storage area are
+        # ignored. They are reported as warnings though.
+
+        # Not a hexidecimal number.
+        noisedir1_path = os.path.join(config.librarian_server.root, 'zz')
+
+        # Too long
+        noisedir2_path = os.path.join(config.librarian_server.root, '111')
+
+        # Long non-hexadecimal number
+        noisedir3_path = os.path.join(config.librarian_server.root, '11.bak')
+
+        # A file with the ".migrated" suffix has migrated to Swift but
+        # may still be removed from disk as unwanted by the GC. Other
+        # suffixes are unknown and stay around.
+        migrated_path = librariangc.get_file_path(8769786) + '.noise'
 
         try:
-            librariangc.time = tomorrow_time
-            self.assertRaises(
-                Exception, librariangc.confirm_no_clock_skew, (self.con,)
-                )
+            os.mkdir(noisedir1_path)
+            os.mkdir(noisedir2_path)
+            os.mkdir(noisedir3_path)
+            os.makedirs(os.path.dirname(migrated_path))
+
+            # Files in the noise directories.
+            noisefile1_path = os.path.join(noisedir1_path, 'abc')
+            noisefile2_path = os.path.join(noisedir2_path, 'def')
+            noisefile3_path = os.path.join(noisedir2_path, 'ghi')
+            open(noisefile1_path, 'w').write('hello')
+            open(noisefile2_path, 'w').write('there')
+            open(noisefile3_path, 'w').write('testsuite')
+            open(migrated_path, 'w').write('migrant')
+
+            # Pretend it is tomorrow to ensure the files don't count as
+            # recently created, and run the delete_unwanted_files process.
+            with self.librariangc_thinking_it_is_tomorrow():
+                librariangc.delete_unwanted_files(self.con)
+
+            # None of the rubbish we created has been touched.
+            self.assertTrue(os.path.isdir(noisedir1_path))
+            self.assertTrue(os.path.isdir(noisedir2_path))
+            self.assertTrue(os.path.isdir(noisedir3_path))
+            self.assertTrue(os.path.exists(noisefile1_path))
+            self.assertTrue(os.path.exists(noisefile2_path))
+            self.assertTrue(os.path.exists(noisefile3_path))
+            self.assertTrue(os.path.exists(migrated_path))
         finally:
-            librariangc.time = org_time
+            # We need to clean this up ourselves, as the standard librarian
+            # cleanup only removes files it knows where valid to avoid
+            # accidents.
+            shutil.rmtree(noisedir1_path)
+            shutil.rmtree(noisedir2_path)
+            shutil.rmtree(noisedir3_path)
+            shutil.rmtree(os.path.dirname(migrated_path))
+
+        # Can't check the ordering, so we'll just check that one of the
+        # warnings are there.
+        self.assertIn(
+            "WARNING Ignoring invalid directory zz",
+            librariangc.log.getLogBuffer())
+        # No warning about the .migrated file.
+        self.assertNotIn(".migrated", librariangc.log.getLogBuffer())
+
+
+class TestSwiftLibrarianGarbageCollection(
+    TestLibrarianGarbageCollectionBase, TestCase):
+    """Swift specific garbage collection tests."""
+    def setUp(self):
+        # Once we switch entirely to Swift, we can move this setup into
+        # the lp.testing.layers code and save the per-test overhead.
+
+        self.swift_fixture = self.useFixture(SwiftFixture())
+        self.addCleanup(swift.connection_pool.clear)
+
+        self.useFixture(FeatureFixture({'librarian.swift.enabled': True}))
+
+        super(TestSwiftLibrarianGarbageCollection, self).setUp()
+
+        # Move files into Swift.
+        path = librariangc.get_file_path(self.f1_id)
+        assert os.path.exists(path), "Librarian uploads failed"
+        swift.to_swift(BufferLogger(), remove_func=os.unlink)
+        assert not os.path.exists(path), "to_swift failed to move files"
+
+    def file_exists(self, content_id, suffix=None):
+        container, name = swift.swift_location(content_id)
+        if suffix:
+            name += suffix
+        with swift.connection() as swift_connection:
+            try:
+                swift.quiet_swiftclient(
+                    swift_connection.head_object, container, name)
+                return True
+            except swiftclient.ClientException as x:
+                if x.http_status == 404:
+                    return False
+                raise
+
+    def remove_file(self, content_id):
+        container, name = swift.swift_location(content_id)
+        with swift.connection() as swift_connection:
+            swift_connection.delete_object(container, name)
+
+    def test_delete_unwanted_files_handles_segments(self):
+        # Large files are handled by Swift as multiple segments joined
+        # by a manifest. GC treats the segments like the original file.
+        switch_dbuser('testadmin')
+        content = 'uploading to swift bigly'
+        big1_lfa = LibraryFileAlias.get(self.client.addFile(
+            'foo.txt', len(content), StringIO(content), 'text/plain'))
+        big1_id = big1_lfa.contentID
+
+        big2_lfa = LibraryFileAlias.get(self.client.addFile(
+            'bar.txt', len(content), StringIO(content), 'text/plain'))
+        big2_id = big2_lfa.contentID
+        transaction.commit()
+
+        for lfc_id in (big1_id, big2_id):
+            # Make the files old so they don't look in-progress.
+            os.utime(swift.filesystem_path(lfc_id), (0, 0))
+
+        switch_dbuser(config.librarian_gc.dbuser)
+
+        # Force the files to be segmented as if they were large.
+        with monkey_patch(swift, MAX_SWIFT_OBJECT_SIZE=4):
+            swift.to_swift(BufferLogger(), remove_func=os.unlink)
+
+        def segment_existence(lfc_id):
+            return [
+                self.file_exists(lfc_id, suffix=suffix)
+                for suffix in (None, '/0000', '/0001')]
+
+        # Both files and their segments exist in Swift.
+        self.assertEqual([True, True, True], segment_existence(big1_id))
+        self.assertEqual([True, True, True], segment_existence(big2_id))
+
+        # All the segments survive the first purge.
+        with self.librariangc_thinking_it_is_tomorrow():
+            librariangc.delete_unwanted_files(self.con)
+        self.assertEqual([True, True, True], segment_existence(big1_id))
+        self.assertEqual([True, True, True], segment_existence(big2_id))
+
+        # Remove the first file from the DB.
+        content = big1_lfa.content
+        Store.of(big1_lfa).remove(big1_lfa)
+        Store.of(content).remove(content)
+        transaction.commit()
+
+        # The first file and its segments are removed, but the second is
+        # intact.
+        with self.librariangc_thinking_it_is_tomorrow():
+            librariangc.delete_unwanted_files(self.con)
+        self.assertEqual([False, False, False], segment_existence(big1_id))
+        self.assertEqual([True, True, True], segment_existence(big2_id))
 
 
 class TestBlobCollection(TestCase):
@@ -641,8 +805,8 @@ class TestBlobCollection(TestCase):
 
         # First a blob that has been unclaimed and expired.
         cur.execute("""
-            INSERT INTO LibraryFileContent (filesize, sha1, md5)
-            VALUES (666, 'whatever', 'whatever')
+            INSERT INTO LibraryFileContent (filesize, sha1, md5, sha256)
+            VALUES (666, 'whatever', 'whatever', 'whatever')
             """)
         cur.execute("""SELECT currval('libraryfilecontent_id_seq')""")
         self.expired_lfc_id = cur.fetchone()[0]
@@ -681,8 +845,8 @@ class TestBlobCollection(TestCase):
         # Next a blob that has expired, but claimed and now linked to
         # elsewhere in the database
         cur.execute("""
-            INSERT INTO LibraryFileContent (filesize, sha1, md5)
-            VALUES (666, 'whatever', 'whatever')
+            INSERT INTO LibraryFileContent (filesize, sha1, md5, sha256)
+            VALUES (666, 'whatever', 'whatever', 'whatever')
             """)
         cur.execute("""SELECT currval('libraryfilecontent_id_seq')""")
         self.expired2_lfc_id = cur.fetchone()[0]
@@ -717,8 +881,8 @@ class TestBlobCollection(TestCase):
 
         # And a non expired blob
         cur.execute("""
-            INSERT INTO LibraryFileContent (filesize, sha1, md5)
-            VALUES (666, 'whatever', 'whatever')
+            INSERT INTO LibraryFileContent (filesize, sha1, md5, sha256)
+            VALUES (666, 'whatever', 'whatever', 'whatever')
             """)
         cur.execute("""SELECT currval('libraryfilecontent_id_seq')""")
         self.unexpired_lfc_id = cur.fetchone()[0]
@@ -742,16 +906,27 @@ class TestBlobCollection(TestCase):
         self.unexpired_blob_id = cur.fetchone()[0]
         self.layer.txn.commit()
 
-        # Make sure all the librarian files actually exist on disk
+        # Make sure all the librarian files actually exist on disk with
+        # hashes matching the DB. We use the hash as the new file
+        # content, to preserve existing duplicate relationships.
+        switch_dbuser('testadmin')
         cur = cursor()
-        cur.execute("SELECT id FROM LibraryFileContent")
-        for content_id in (row[0] for row in cur.fetchall()):
+        cur.execute("SELECT id, sha1 FROM LibraryFileContent")
+        for content_id, sha1 in cur.fetchall():
             path = librariangc.get_file_path(content_id)
             if not os.path.exists(path):
                 if not os.path.exists(os.path.dirname(path)):
                     os.makedirs(os.path.dirname(path))
-                open(path, 'w').write('whatever')
-        self.layer.txn.abort()
+                data = sha1
+                open(path, 'w').write(data)
+                cur.execute(
+                    "UPDATE LibraryFileContent "
+                    "SET md5 = %s, sha1 = %s, sha256 = %s, filesize = %s "
+                    "WHERE id = %s",
+                    (hashlib.md5(data).hexdigest(),
+                     hashlib.sha1(data).hexdigest(),
+                     hashlib.sha256(data).hexdigest(), len(data), content_id))
+        self.layer.txn.commit()
 
         switch_dbuser(config.librarian_gc.dbuser)
 
@@ -778,21 +953,21 @@ class TestBlobCollection(TestCase):
             SELECT * FROM TemporaryBlobStorage WHERE id=%s
             """, (self.expired_blob_id,)
             )
-        self.failUnless(cur.fetchone() is None)
+        self.assertIsNone(cur.fetchone())
 
         # As should our expired blob linked elsewhere.
         cur.execute("""
             SELECT * FROM TemporaryBlobStorage WHERE id=%s
             """, (self.expired2_blob_id,)
             )
-        self.failUnless(cur.fetchone() is None)
+        self.assertIsNone(cur.fetchone())
 
         # But our unexpired blob is still hanging around.
         cur.execute("""
             SELECT * FROM TemporaryBlobStorage WHERE id=%s
             """, (self.unexpired_blob_id,)
             )
-        self.failUnless(cur.fetchone() is not None)
+        self.assertIsNotNone(cur.fetchone())
 
         # Now delete our unreferenced aliases and unreferenced content
         cur.execute(
@@ -810,11 +985,11 @@ class TestBlobCollection(TestCase):
         cur.execute("""
             SELECT * FROM LibraryFileAlias WHERE id=%s
             """, (self.expired_lfa_id,))
-        self.failUnless(cur.fetchone() is None)
+        self.assertIsNone(cur.fetchone())
         cur.execute("""
             SELECT * FROM LibraryFileContent WHERE id=%s
             """, (self.expired_lfc_id,))
-        self.failUnless(cur.fetchone() is None)
+        self.assertIsNone(cur.fetchone())
 
         # The second expired blob will has lost its LibraryFileAlias,
         # but the content is still hanging around because something else
@@ -822,21 +997,21 @@ class TestBlobCollection(TestCase):
         cur.execute("""
             SELECT * FROM LibraryFileAlias WHERE id=%s
             """, (self.expired2_lfa_id,))
-        self.failUnless(cur.fetchone() is None)
+        self.assertIsNone(cur.fetchone())
         cur.execute("""
             SELECT * FROM LibraryFileContent WHERE id=%s
             """, (self.expired2_lfc_id,))
-        self.failUnless(cur.fetchone() is not None)
+        self.assertIsNotNone(cur.fetchone())
 
         # The unexpired blob should be unaffected
         cur.execute("""
             SELECT * FROM LibraryFileAlias WHERE id=%s
             """, (self.unexpired_lfa_id,))
-        self.failUnless(cur.fetchone() is not None)
+        self.assertIsNotNone(cur.fetchone())
         cur.execute("""
             SELECT * FROM LibraryFileContent WHERE id=%s
             """, (self.unexpired_lfc_id,))
-        self.failUnless(cur.fetchone() is not None)
+        self.assertIsNotNone(cur.fetchone())
 
     def test_cronscript(self):
         # Run the cronscript
@@ -846,16 +1021,16 @@ class TestBlobCollection(TestCase):
         cmd = [sys.executable, script_path, '-q']
         process = Popen(cmd, stdout=PIPE, stderr=STDOUT, stdin=PIPE)
         (script_output, _empty) = process.communicate()
-        self.failUnlessEqual(
+        self.assertEqual(
             process.returncode, 0, 'Error: %s' % script_output)
-        self.failUnlessEqual(script_output, '')
+        self.assertEqual(script_output, '')
 
         cur = self.con.cursor()
 
         # Make sure that our blobs have been garbage collectd
         cur.execute("SELECT count(*) FROM TemporaryBlobStorage")
         count = cur.fetchone()[0]
-        self.failUnlessEqual(count, 1)
+        self.assertEqual(count, 1)
 
         cur.execute("""
             SELECT count(*) FROM LibraryFileAlias
@@ -866,7 +1041,7 @@ class TestBlobCollection(TestCase):
                 self.unexpired_lfa_id
                 ))
         count = cur.fetchone()[0]
-        self.failUnlessEqual(count, 1)
+        self.assertEqual(count, 1)
 
         cur.execute("""
             SELECT count(*) FROM LibraryFileContent
@@ -877,4 +1052,4 @@ class TestBlobCollection(TestCase):
                 self.unexpired_lfc_id
                 ))
         count = cur.fetchone()[0]
-        self.failIfEqual(count, 2)
+        self.assertNotEqual(count, 2)

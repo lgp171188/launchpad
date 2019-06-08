@@ -1,4 +1,4 @@
-# Copyright 2009 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -15,15 +15,21 @@ import operator
 from lazr.restful.utils import smartquote
 
 from lp.archivepublisher.debversion import Version
-from lp.services.librarian.browser import ProxiedLibraryFileAlias
+from lp.registry.browser.distributionsourcepackage import (
+    PublishingHistoryViewMixin,
+    )
 from lp.services.propertycache import cachedproperty
 from lp.services.webapp import (
+    canonical_url,
     LaunchpadView,
     Navigation,
+    stepthrough,
     )
 from lp.services.webapp.breadcrumb import Breadcrumb
-from lp.soyuz.browser.build import BuildNavigationMixin
+from lp.soyuz.adapters.proxiedsourcefiles import ProxiedSourceLibraryFileAlias
+from lp.soyuz.browser.build import get_build_by_id_str
 from lp.soyuz.enums import PackagePublishingStatus
+from lp.soyuz.interfaces.binarypackagebuild import IBinaryPackageBuildSet
 from lp.soyuz.interfaces.distributionsourcepackagerelease import (
     IDistributionSourcePackageRelease,
     )
@@ -37,9 +43,26 @@ class DistributionSourcePackageReleaseBreadcrumb(Breadcrumb):
         return self.context.version
 
 
-class DistributionSourcePackageReleaseNavigation(Navigation,
-                                                 BuildNavigationMixin):
+class DistributionSourcePackageReleaseNavigation(Navigation):
     usedfor = IDistributionSourcePackageRelease
+
+    @stepthrough('+build')
+    def traverse_build(self, name):
+        build = get_build_by_id_str(IBinaryPackageBuildSet, name)
+        if (build is None
+            or build.archive not in
+                self.context.distribution.all_distro_archives
+            or build.source_package_release !=
+                self.context.sourcepackagerelease):
+            return None
+        return build
+
+    @stepthrough('+latestbuild')
+    def redirect_latestbuild(self, name):
+        build = self.context.getBuildsByArchTag(name).first()
+        if build is not None:
+            return self.redirectSubTree(canonical_url(build), status=303)
+        return self.redirectSubTree(canonical_url(self.context), status=303)
 
 
 class DistributionSourcePackageReleaseView(LaunchpadView):
@@ -78,8 +101,8 @@ class DistributionSourcePackageReleaseView(LaunchpadView):
         """The source package release files as `ProxiedLibraryFileAlias`."""
         last_publication = self._cached_publishing_history[0]
         return [
-            ProxiedLibraryFileAlias(
-                source_file.libraryfile, last_publication.archive)
+            ProxiedSourceLibraryFileAlias(
+                source_file.libraryfile, last_publication)
             for source_file in self.context.files]
 
     @cachedproperty
@@ -136,7 +159,8 @@ class DistributionSourcePackageReleaseView(LaunchpadView):
         return distroseries_builds
 
 
-class DistributionSourcePackageReleasePublishingHistoryView(LaunchpadView):
+class DistributionSourcePackageReleasePublishingHistoryView(
+        LaunchpadView, PublishingHistoryViewMixin):
     """Presenting `DistributionSourcePackageRelease` publishing history."""
 
     usedfor = IDistributionSourcePackageRelease

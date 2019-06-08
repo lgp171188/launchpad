@@ -1,4 +1,4 @@
-# Copyright 2009-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Question views."""
@@ -28,25 +28,24 @@ __all__ = [
 
 from operator import attrgetter
 import re
-from xml.sax.saxutils import escape
 
-from lazr.lifecycle.event import ObjectModifiedEvent
-from lazr.lifecycle.snapshot import Snapshot
 from lazr.restful.interface import copy_field
 from lazr.restful.utils import smartquote
 from z3c.ptcompat import ViewPageTemplateFile
-from zope.app.form.browser import (
+from zope.component import getUtility
+from zope.formlib import form
+from zope.formlib.interfaces import IWidgetFactory
+from zope.formlib.widget import (
+    CustomWidgetFactory,
+    renderElement,
+    )
+from zope.formlib.widgets import (
     TextAreaWidget,
     TextWidget,
     )
-from zope.app.form.browser.widget import renderElement
-from zope.component import getUtility
-from zope.event import notify
-from zope.formlib import form
 from zope.interface import (
     alsoProvides,
-    implements,
-    providedBy,
+    implementer,
     )
 from zope.schema import Choice
 from zope.schema.interfaces import IContextSourceBinder
@@ -79,17 +78,20 @@ from lp.answers.interfaces.questiontarget import (
 from lp.answers.vocabulary import UsesAnswersDistributionVocabulary
 from lp.app.browser.launchpadform import (
     action,
-    custom_widget,
     LaunchpadEditFormView,
     LaunchpadFormView,
     safe_action,
     )
 from lp.app.browser.stringformatter import FormattersAPI
+from lp.app.enums import ServiceUsage
 from lp.app.errors import (
     NotFoundError,
     UnexpectedFormData,
     )
-from lp.app.interfaces.launchpad import ILaunchpadCelebrities
+from lp.app.interfaces.launchpad import (
+    ILaunchpadCelebrities,
+    IServiceUsage,
+    )
 from lp.app.widgets.itemswidgets import LaunchpadRadioWidget
 from lp.app.widgets.launchpadtarget import LaunchpadTargetWidget
 from lp.app.widgets.project import ProjectScopeWidget
@@ -110,8 +112,9 @@ from lp.services.webapp import (
     )
 from lp.services.webapp.authorization import check_permission
 from lp.services.webapp.breadcrumb import Breadcrumb
+from lp.services.webapp.escaping import structured
 from lp.services.webapp.interfaces import IAlwaysSubmittedWidget
-from lp.services.webapp.menu import structured
+from lp.services.webapp.snapshot import notify_modified
 from lp.services.worlddata.helpers import (
     is_english_variant,
     preferred_or_request_languages,
@@ -271,7 +274,7 @@ class QuestionSetView(LaunchpadFormView):
     """View for the Answer Tracker index page."""
 
     schema = IAnswersFrontPageSearchForm
-    custom_widget('scope', ProjectScopeWidget)
+    custom_widget_scope = ProjectScopeWidget
 
     page_title = 'Launchpad Answers'
     label = 'Questions and Answers'
@@ -358,27 +361,26 @@ class QuestionSubscriptionView(LaunchpadView):
             # No post, nothing to do
             return
 
-        question_unmodified = Snapshot(
-            self.context, providing=providedBy(self.context))
+        # XXX cjwatson 2018-12-07: None of the (IQuestion,
+        # IObjectModifiedEvent) subscribers seem to care about the
+        # 'subscribers' field.  Do we need this notification?
         modified_fields = set()
-
-        response = self.request.response
-        # Establish if a subscription form was posted.
-        newsub = self.request.form.get('subscribe', None)
-        if newsub is not None:
-            if newsub == 'Subscribe':
-                self.context.subscribe(self.user)
-                response.addNotification(
-                    _("You have subscribed to this question."))
-                modified_fields.add('subscribers')
-            elif newsub == 'Unsubscribe':
-                self.context.unsubscribe(self.user, self.user)
-                response.addNotification(
-                    _("You have unsubscribed from this question."))
-                modified_fields.add('subscribers')
-            response.redirect(canonical_url(self.context))
-        notify(ObjectModifiedEvent(
-            self.context, question_unmodified, list(modified_fields)))
+        with notify_modified(self.context, modified_fields):
+            response = self.request.response
+            # Establish if a subscription form was posted.
+            newsub = self.request.form.get('subscribe', None)
+            if newsub is not None:
+                if newsub == 'Subscribe':
+                    self.context.subscribe(self.user)
+                    response.addNotification(
+                        _("You have subscribed to this question."))
+                    modified_fields.add('subscribers')
+                elif newsub == 'Unsubscribe':
+                    self.context.unsubscribe(self.user, self.user)
+                    response.addNotification(
+                        _("You have unsubscribed from this question."))
+                    modified_fields.add('subscribers')
+                response.redirect(canonical_url(self.context))
 
     @property
     def page_title(self):
@@ -399,6 +401,7 @@ class QuestionSubscriptionView(LaunchpadView):
         return self.context.isSubscribed(self.user)
 
 
+@implementer(IContextSourceBinder)
 class QuestionLanguageVocabularyFactory:
     """Factory for a vocabulary containing a subset of the possible languages.
 
@@ -409,8 +412,6 @@ class QuestionLanguageVocabularyFactory:
     It also always include the question's current language and excludes all
     English variants.
     """
-
-    implements(IContextSourceBinder)
 
     def __init__(self, view):
         """Create a QuestionLanguageVocabularyFactory.
@@ -546,8 +547,8 @@ class QuestionHistoryView(LaunchpadView):
 class QuestionAddView(QuestionSupportLanguageMixin, LaunchpadFormView):
     """Multi-page add view.
 
-    The user enters first his question summary and then he is shown a list
-    of similar results before adding the question.
+    The user enters first their question summary and then they are shown a
+    list of similar results before adding the question.
     """
     label = _('Ask a question')
 
@@ -558,7 +559,8 @@ class QuestionAddView(QuestionSupportLanguageMixin, LaunchpadFormView):
     # The fields displayed on the search page.
     search_field_names = ['language', 'title']
 
-    custom_widget('title', TextWidget, displayWidth=40, displayMaxWidth=250)
+    custom_widget_title = CustomWidgetFactory(
+        TextWidget, displayWidth=40, displayMaxWidth=250)
 
     search_template = ViewPageTemplateFile(
         '../templates/question-add-search.pt')
@@ -601,8 +603,13 @@ class QuestionAddView(QuestionSupportLanguageMixin, LaunchpadFormView):
         else:
             fields = self.form_fields
         for field in fields:
-            if field.__name__ in self.custom_widgets:
-                field.custom_widget = self.custom_widgets[field.__name__]
+            widget = getattr(self, 'custom_widget_%s' % field.__name__, None)
+            if widget is not None:
+                if IWidgetFactory.providedBy(widget):
+                    field.custom_widget = widget
+                else:
+                    # Allow views to save some typing in common cases.
+                    field.custom_widget = CustomWidgetFactory(widget)
         return fields
 
     def setUpWidgets(self):
@@ -640,6 +647,15 @@ class QuestionAddView(QuestionSupportLanguageMixin, LaunchpadFormView):
     def has_similar_items(self):
         """Return True if similar FAQs or questions were found."""
         return self.similar_questions or self.similar_faqs
+
+    @property
+    def context_uses_answers(self):
+        """Return True if the context uses launchpad as an answer forum."""
+        usage = IServiceUsage(self.context)
+        if usage is not None:
+            return usage.answers_usage == ServiceUsage.LAUNCHPAD
+        else:
+            return False
 
     @action(_('Continue'))
     def continue_action(self, action, data):
@@ -727,6 +743,9 @@ class QuestionChangeStatusView(LaunchpadFormView):
 class QuestionTargetWidget(LaunchpadTargetWidget):
     """A targeting widget that is aware of pillars that use Answers."""
 
+    def getProductVocabulary(self):
+        return 'UsesAnswersProduct'
+
     def getDistributionVocabulary(self):
         distro = self.context.context.distribution
         vocabulary = UsesAnswersDistributionVocabulary(distro)
@@ -741,9 +760,9 @@ class QuestionEditView(LaunchpadEditFormView):
         "language", "title", "description", "target", "assignee",
         "whiteboard"]
 
-    custom_widget('title', TextWidget, displayWidth=40)
-    custom_widget('whiteboard', TextAreaWidget, height=5)
-    custom_widget('target', QuestionTargetWidget)
+    custom_widget_title = CustomWidgetFactory(TextWidget, displayWidth=40)
+    custom_widget_whiteboard = CustomWidgetFactory(TextAreaWidget, height=5)
+    custom_widget_target = QuestionTargetWidget
 
     @property
     def page_title(self):
@@ -923,7 +942,9 @@ class QuestionWorkflowView(LaunchpadFormView, LinkFAQMixin):
             role = PersonRoles(self.user)
             strip_invisible = not (role.in_admin or role.in_registry_experts)
         if strip_invisible:
-            messages = [message for message in messages if message.visible]
+            messages = [
+                message for message in messages
+                if message.visible or message.owner == self.user]
         return messages
 
     def canAddComment(self, action):
@@ -972,7 +993,7 @@ class QuestionWorkflowView(LaunchpadFormView, LinkFAQMixin):
         self.context.giveAnswer(self.user, data['message'])
         # Owners frequently solve their questions, but their messages imply
         # that another user provided an answer. When a question has answers
-        # that can be confirmed, suggest to the owner that he use the
+        # that can be confirmed, suggest to the owner that they use the
         # confirmation button.
         if self.context.can_confirm_answer:
             msgid = _("Your question is solved. If a particular message "
@@ -1059,8 +1080,8 @@ class QuestionWorkflowView(LaunchpadFormView, LinkFAQMixin):
     def _addNotificationAndHandlePossibleSubscription(self, message, data):
         """Post-processing work common to all workflow actions.
 
-        Adds a notification, subscribe the user if he checked the
-        'E-mail me...' option and redirect to the question page.
+        Adds a notification, subscribe the user if they checked the
+        'Email me...' option and redirect to the question page.
         """
         self.request.response.addNotification(message)
 
@@ -1080,11 +1101,11 @@ class QuestionWorkflowView(LaunchpadFormView, LinkFAQMixin):
     @property
     def original_bug(self):
         """Return the bug that the question was created from or None."""
-        for buglink in self.context.bug_links:
-            if (check_permission('launchpad.View', buglink.bug)
-                and buglink.bug.owner == self.context.owner
-                and buglink.bug.datecreated == self.context.datecreated):
-                return buglink.bug
+        for bug in self.context.bugs:
+            if (check_permission('launchpad.View', bug)
+                and bug.owner == self.context.owner
+                and bug.datecreated == self.context.datecreated):
+                return bug
 
         return None
 
@@ -1143,7 +1164,7 @@ class QuestionMessageDisplayView(LaunchpadView):
 
     @cachedproperty
     def canSeeSpamControls(self):
-        return check_permission('launchpad.Moderate', self.context.question)
+        return check_permission('launchpad.Moderate', self.context)
 
     def getBoardCommentCSSClass(self):
         css_classes = ["boardComment"]
@@ -1223,8 +1244,8 @@ class QuestionCreateFAQView(LinkFAQMixin, LaunchpadFormView):
 
     field_names = ['title', 'keywords', 'content']
 
-    custom_widget('keywords', TokensTextWidget)
-    custom_widget("message", TextAreaWidget, height=5)
+    custom_widget_keywords = TokensTextWidget
+    custom_widget_message = CustomWidgetFactory(TextAreaWidget, height=5)
 
     @property
     def initial_values(self):
@@ -1246,8 +1267,7 @@ class QuestionCreateFAQView(LinkFAQMixin, LaunchpadFormView):
             copy_field(IQuestionLinkFAQForm['message']))
         self.form_fields['message'].field.title = _(
             'Additional comment for question #%s' % self.context.id)
-        self.form_fields['message'].custom_widget = (
-            self.custom_widgets['message'])
+        self.form_fields['message'].custom_widget = self.custom_widget_message
 
     @action(_('Create and Link'), name='create_and_link')
     def create_and_link_action(self, action, data):
@@ -1322,9 +1342,9 @@ class SearchableFAQRadioWidget(LaunchpadRadioWidget):
 
         # Display self._messageNoValue radio button since an existing
         # FAQ may not be relevant. This logic is copied from
-        # zope/app/form/browser/itemswidgets.py except that we have
-        # to prepend the value at the end of this method to prevent
-        # the insert in the for-loop above from going to the top of the list.
+        # zope/formlib/itemswidgets.py except that we have to prepend
+        # the value at the end of this method to prevent the insert in
+        # the for-loop above from going to the top of the list.
         missing = self._toFormValue(self.context.missing_value)
 
         if self._displayItemForMissingValue and not self.context.required:
@@ -1364,12 +1384,13 @@ class SearchableFAQRadioWidget(LaunchpadRadioWidget):
         if selected:
             attributes['checked'] = 'checked'
         input = renderElement(u'input', **attributes)
-        button = '<label style="font-weight: normal">%s&nbsp;%s:</label>' % (
-            input, escape(term.token))
-        link = '<a href="%s">%s</a>' % (
-            canonical_url(term.value), escape(term.title))
+        button = structured(
+            '<label style="font-weight: normal">%s&nbsp;%s:</label>',
+            structured(input), term.token)
+        link = structured(
+            '<a href="%s">%s</a>', canonical_url(term.value), term.title)
 
-        return "\n".join([button, link])
+        return "\n".join([button.escapedtext, link.escapedtext])
 
     def renderSearchWidget(self):
         """Render the search entry field and the button."""
@@ -1401,9 +1422,9 @@ class QuestionLinkFAQView(LinkFAQMixin, LaunchpadFormView):
 
     schema = IQuestionLinkFAQForm
 
-    custom_widget('faq', SearchableFAQRadioWidget)
+    custom_widget_faq = SearchableFAQRadioWidget
 
-    custom_widget("message", TextAreaWidget, height=5)
+    custom_widget_message = CustomWidgetFactory(TextAreaWidget, height=5)
 
     label = _('Is this a FAQ?')
 

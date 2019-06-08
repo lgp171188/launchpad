@@ -1,4 +1,4 @@
-# Copyright 2009 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2017 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """View support classes for feeds."""
@@ -24,7 +24,7 @@ __all__ = [
     ]
 
 from zope.component import getUtility
-from zope.interface import implements
+from zope.interface import implementer
 from zope.publisher.interfaces import NotFound
 from zope.security.interfaces import Unauthorized
 
@@ -35,6 +35,7 @@ from lp.bugs.interfaces.bugtask import (
     IBugTask,
     IBugTaskSet,
     )
+from lp.bugs.interfaces.malone import IMaloneApplication
 from lp.code.interfaces.branch import IBranch
 from lp.layers import FeedsLayer
 from lp.registry.interfaces.announcement import (
@@ -65,10 +66,9 @@ from lp.services.webapp.url import urlappend
 from lp.services.webapp.vhosts import allvhosts
 
 
+@implementer(ICanonicalUrlData)
 class FeedsRootUrlData:
     """`ICanonicalUrlData` for Feeds."""
-
-    implements(ICanonicalUrlData)
 
     path = ''
     inside = None
@@ -122,7 +122,8 @@ class FeedsNavigation(Navigation):
             redirect = RedirectionView(target, self.request, 301)
             return redirect
 
-        # Handle the two formats of urls:
+        # Handle the three formats of urls:
+        # http://feeds.launchpad.net/bugs/latest-bugs.atom
         # http://feeds.launchpad.net/bugs/+bugs.atom?...
         # http://feeds.launchpad.net/bugs/1/bug.atom
         if name == 'bugs':
@@ -135,6 +136,8 @@ class FeedsNavigation(Navigation):
                     return getUtility(IBugTaskSet)
                 else:
                     raise Unauthorized("Bug search feed deactivated")
+            elif bug_id.startswith('latest-bugs.'):
+                return getUtility(IMaloneApplication)
             else:
                 self.request.stepstogo.consume()
                 return getUtility(IBugSet).getByNameOrID(bug_id)
@@ -210,7 +213,10 @@ class BugTargetLatestBugsFeedLink(FeedLinkBase):
 
     @property
     def title(self):
-        return 'Latest Bugs for %s' % self.context.displayname
+        if IMaloneApplication.providedBy(self.context):
+            return 'Latest Bugs'
+        else:
+            return 'Latest Bugs for %s' % self.context.displayname
 
     @property
     def href(self):

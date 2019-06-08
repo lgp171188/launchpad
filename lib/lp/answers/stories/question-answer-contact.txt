@@ -11,20 +11,21 @@ distribution.
 
     >>> browser.addHeader('Authorization', 'Basic test@canonical.com:test')
     >>> browser.addHeader('Accept-Language', 'en, es')
-    >>> browser.open('http://launchpad.dev/ubuntu/+questions')
-    >>> print extract_text(
-    ...     find_tag_by_id(browser.contents, 'portlet-answer-contacts-ubuntu'))
+    >>> browser.open('http://launchpad.test/ubuntu/+questions')
+    >>> print(extract_text(
+    ...     find_tag_by_id(
+    ...         browser.contents, 'portlet-answer-contacts-ubuntu')))
     Answer contacts for Ubuntu
 
 Anybody can become an answer contact. To register as an answer contact,
 the user clicks on the 'Set answer Contact' link:
 
     >>> browser.getLink('Set answer contact').click()
-    >>> print browser.title
+    >>> print(browser.title)
     Answer contact for...
 
     >>> description = find_main_content(browser.contents).p
-    >>> print extract_text(description)
+    >>> print(extract_text(description))
     An answer contact...will receive changes related to all questions
     (written in one of your preferred languages)...
 
@@ -36,8 +37,8 @@ each team that user is an administrator of.
     ['landscape-developers', 'launchpad-users']
 
 The user can select any of these checkboxes to register as an answer
-contact himself or one of the team for which he's an administrator. In
-our case, the user decides to register himself and the Landscape
+contact themselves or one of the team for which they're an administrator. In
+our case, the user decides to register themselves and the Landscape
 Developers team.
 
     >>> browser.getControl(
@@ -47,14 +48,14 @@ Developers team.
 
 Answer contacts must tell Launchpad which languages they provide help
 in. As a convenience, the Answer Tracker will set the Person's preferred
-languages for him. The browser languages are used for a Person. In the
+languages for them. The browser languages are used for a Person. In the
 case of a Team, only English is added. Sample Person reads the notice
-that his preferred languages were set, and uses the link to in the
+that their preferred languages were set, and uses the link to in the
 notice to review the changes. Sample Person's browser sends the accept-
 languages header with English and Spanish.
 
     >>> browser.getLink('Your preferred languages').click()
-    >>> print browser.title
+    >>> print(browser.title)
     Language preferences...
 
     >>> browser.getControl('English', index=0).selected
@@ -64,10 +65,10 @@ languages header with English and Spanish.
     True
 
 To remove oneself from the answer contacts, the user uses the same 'Set
-answer contact' link and uncheck himself or the team he want to remove
+answer contact' link and uncheck themselves or the team they want to remove
 from the answer contact list.
 
-    >>> browser.open('http://launchpad.dev/ubuntu/+questions')
+    >>> browser.open('http://launchpad.test/ubuntu/+questions')
     >>> browser.getLink('Set answer contact').click()
     >>> browser.getControl(
     ...     "I want to be an answer contact for Ubuntu").selected
@@ -82,7 +83,7 @@ from the answer contact list.
 A confirmation message is displayed:
 
     >>> for tag in find_tags_by_class(browser.contents, 'message'):
-    ...     print tag.renderContents()
+    ...     print(tag.renderContents())
     Landscape Developers has been removed as an answer contact for Ubuntu.
 
 
@@ -91,13 +92,13 @@ Product Answer Contacts
 
 The 'Set answer contact' action is also available on products:
 
-    >>> browser.open('http://answers.launchpad.dev/firefox')
+    >>> browser.open('http://answers.launchpad.test/firefox')
     >>> browser.getLink('Set answer contact').click()
-    >>> print browser.title
+    >>> print(browser.title)
     Answer contact for...
 
-    >>> print browser.url
-    http://answers.launchpad.dev/firefox/+answer-contact
+    >>> print(browser.url)
+    http://answers.launchpad.test/firefox/+answer-contact
 
 
 Answer Contact teams and preferred languages
@@ -110,30 +111,30 @@ answer contact. Team admins may configure a team's preferred languages
 to set exactly which languages the team supports.
 
 Sample Person visits the Answers facet of Ubuntu as described in the
-main story above. He wants Landscape Developers team to be answer
+main story above. They want Landscape Developers team to be answer
 contacts for Ubuntu, but only for Spanish questions to keep the email
 traffic to a manageable volume.
 
-    >>> browser.open('http://answers.launchpad.dev/ubuntu/')
-    >>> print browser.title
+    >>> browser.open('http://answers.launchpad.test/ubuntu/')
+    >>> print(browser.title)
     Questions : Ubuntu
 
     >>> browser.getLink('Set answer contact').click()
     >>> browser.getControl("Landscape Developers").selected = True
     >>> browser.getControl('Continue').click()
     >>> for message in find_tags_by_class(browser.contents, 'message'):
-    ...     print extract_text(message)
+    ...     print(extract_text(message))
     Landscape Developers has been added as an answer contact for Ubuntu.
 
 Sample Person navigates to the team page to set it's preferred
-languages. He must add Spanish to the team's preferred languages.
+languages. They must add Spanish to the team's preferred languages.
 
-    >>> browser.open('http://launchpad.dev/~landscape-developers')
+    >>> browser.open('http://launchpad.test/~landscape-developers')
     >>> browser.title
     'Landscape Developers in Launchpad'
 
     >>> browser.getLink('Set preferred languages').click()
-    >>> print browser.title
+    >>> print(browser.title)
     Language preferences...
 
 Sample Person may be surprised to see English is already selected. Per

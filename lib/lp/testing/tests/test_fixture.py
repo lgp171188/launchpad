@@ -1,4 +1,4 @@
-# Copyright 2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2011-12 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for lp.testing.fixture."""
@@ -10,14 +10,15 @@ import sys
 import oops_amqp
 import psycopg2
 from storm.exceptions import DisconnectionError
+import transaction
 from zope.component import (
-    adapts,
+    adapter,
     ComponentLookupError,
     getGlobalSiteManager,
     queryAdapter,
     )
 from zope.interface import (
-    implements,
+    implementer,
     Interface,
     )
 from zope.sendmail.interfaces import IMailDelivery
@@ -27,7 +28,7 @@ from lp.services.config import (
     config,
     dbconfig,
     )
-from lp.services.database.lpstorm import IMasterStore
+from lp.services.database.interfaces import IMasterStore
 from lp.services.messaging import rabbit
 from lp.services.webapp.errorlog import (
     globalErrorUtility,
@@ -58,18 +59,19 @@ class IBar(Interface):
     pass
 
 
+@implementer(IFoo)
 class Foo:
-    implements(IFoo)
+    pass
 
 
+@implementer(IBar)
 class Bar:
-    implements(IBar)
+    pass
 
 
+@adapter(IFoo)
+@implementer(IBar)
 class FooToBar:
-
-    adapts(IFoo)
-    implements(IBar)
 
     def __init__(self, foo):
         self.foo = foo
@@ -87,32 +89,49 @@ class TestZopeAdapterFixture(TestCase):
         self.assertIs(None, queryAdapter(context, IBar))
         with ZopeAdapterFixture(FooToBar):
             # Now there is an adapter from Foo to Bar.
-            adapter = queryAdapter(context, IBar)
-            self.assertIsNot(None, adapter)
-            self.assertIsInstance(adapter, FooToBar)
+            bar_adapter = queryAdapter(context, IBar)
+            self.assertIsNot(None, bar_adapter)
+            self.assertIsInstance(bar_adapter, FooToBar)
         # The adapter is no longer registered.
         self.assertIs(None, queryAdapter(context, IBar))
 
 
+@implementer(IMailDelivery)
 class DummyMailer(object):
 
-    implements(IMailDelivery)
+    pass
 
 
 class TestZopeUtilityFixture(TestCase):
 
     layer = BaseLayer
 
+    def getMailer(self):
+        return getGlobalSiteManager().getUtility(IMailDelivery, 'Mail')
+
     def test_fixture(self):
-        def get_mailer():
-            return getGlobalSiteManager().getUtility(
-                IMailDelivery, 'Mail')
         fake = DummyMailer()
         # In BaseLayer there should be no mailer by default.
-        self.assertRaises(ComponentLookupError, get_mailer)
+        self.assertRaises(ComponentLookupError, self.getMailer)
         with ZopeUtilityFixture(fake, IMailDelivery, 'Mail'):
-            self.assertEquals(get_mailer(), fake)
-        self.assertRaises(ComponentLookupError, get_mailer)
+            self.assertEqual(fake, self.getMailer())
+        self.assertRaises(ComponentLookupError, self.getMailer)
+
+    def test_restores_previous_utility(self):
+        # If there was a previous utility, ZopeUtilityFixture restores it on
+        # cleanup.
+        original_fake = DummyMailer()
+        getGlobalSiteManager().registerUtility(
+            original_fake, IMailDelivery, 'Mail')
+        try:
+            self.assertEqual(original_fake, self.getMailer())
+            fake = DummyMailer()
+            with ZopeUtilityFixture(fake, IMailDelivery, 'Mail'):
+                self.assertEqual(fake, self.getMailer())
+            self.assertEqual(original_fake, self.getMailer())
+        finally:
+            getGlobalSiteManager().unregisterUtility(
+                original_fake, IMailDelivery, 'Mail')
 
 
 class TestPGBouncerFixtureWithCA(TestCase):
@@ -124,13 +143,11 @@ class TestPGBouncerFixtureWithCA(TestCase):
 
     def is_connected(self):
         # First rollback any existing transaction to ensure we attempt
-        # to reconnect. We currently rollback the store explicitely
-        # rather than call transaction.abort() due to Bug #819282.
-        store = IMasterStore(Person)
-        store.rollback()
+        # to reconnect.
+        transaction.abort()
 
         try:
-            store.find(Person).first()
+            IMasterStore(Person).find(Person).first()
             return True
         except DisconnectionError:
             return False
@@ -192,7 +209,7 @@ class TestPGBouncerFixtureWithoutCA(TestCase):
             return False
 
     def test_install_fixture(self):
-        self.assert_(self.is_db_available())
+        self.assertTrue(self.is_db_available())
 
         with PGBouncerFixture() as pgbouncer:
             self.assertTrue(self.is_db_available())
@@ -205,7 +222,7 @@ class TestPGBouncerFixtureWithoutCA(TestCase):
         self.assertTrue(self.is_db_available())
 
     def test_install_fixture_with_restart(self):
-        self.assert_(self.is_db_available())
+        self.assertTrue(self.is_db_available())
 
         with PGBouncerFixture() as pgbouncer:
             self.assertTrue(self.is_db_available())
@@ -228,14 +245,14 @@ class TestCaptureOopsNoRabbit(TestCase):
 
     def test_subscribes_to_events(self):
         capture = self.useFixture(CaptureOops())
-        publishers = globalErrorUtility._oops_config.publishers[:]
+        publisher = globalErrorUtility._oops_config.publisher
         try:
-            globalErrorUtility._oops_config.publishers[:] = [notify_publisher]
+            globalErrorUtility._oops_config.publisher = notify_publisher
             id = globalErrorUtility.raising(sys.exc_info())['id']
             self.assertEqual(id, capture.oopses[0]['id'])
             self.assertEqual(1, len(capture.oopses))
         finally:
-            globalErrorUtility._oops_config.publishers[:] = publishers
+            globalErrorUtility._oops_config.publisher = publisher
 
 
 class TestCaptureOopsRabbit(TestCase):
@@ -255,9 +272,9 @@ class TestCaptureOopsRabbit(TestCase):
         amqp_publisher = oops_amqp.Publisher(
             factory, exchange, routing_key, inherit_id=True)
         oops = {'id': 'fnor', 'foo': 'dr'}
-        self.assertEqual('fnor', amqp_publisher(oops))
+        self.assertEqual(['fnor'], amqp_publisher(oops))
         oops2 = {'id': 'quux', 'foo': 'strangelove'}
-        self.assertEqual('quux', amqp_publisher(oops2))
+        self.assertEqual(['quux'], amqp_publisher(oops2))
         capture.sync()
         self.assertEqual([oops, oops2], capture.oopses)
 

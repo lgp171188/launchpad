@@ -1,8 +1,6 @@
 # Copyright 2009 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-# pylint: disable-msg=E0211,E0213
-
 __metaclass__ = type
 __all__ = [
     'IQuestionsPerson',
@@ -42,7 +40,7 @@ class IQuestionsPerson(IQuestionCollection):
         """Return a list of IQuestionTargets that a person is subscribed to.
 
         This will return IQuestionTargets that the person is registered as an
-        answer contact because he subscribed himself.
+        answer contact because they subscribed themselves.
         """
 
     @operation_returns_collection_of(Interface)  # IQuestionTarget
@@ -52,7 +50,7 @@ class IQuestionsPerson(IQuestionCollection):
         """Return a list of IQuestionTargets that are indirect subscriptions.
 
         This will return IQuestionTargets that the person or team is
-        registered as an answer contact because of his membership in a team.
+        registered as an answer contact because of their membership in a team.
         """
 
     @operation_parameters(

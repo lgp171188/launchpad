@@ -1,16 +1,26 @@
-Package: foo
-Binary: foo
-Version: 2.15-4
+Package: tiny
+Binary: tiny
+Version: 0.1
 Priority: extra
-Section: misc
-Maintainer: James Troup <james@nocrew.org>
-Build-Depends: autoconf (>= 2.13), bison, flex, gettext, texinfo, binutils (>= 2.9.5.0.12), gcc (>= 2.95.2-1), dejagnu (>= 1.4.2-1.1), expect (>= 5.32.2-1), dpatch, file
+Section: devel
+Maintainer: Nobody <nobody@example.com>
+Build-Depends: debhelper
 Architecture: any
-Standards-Version: 3.6.1.0
+Standards-Version: 3.9.4.0
 Format: 1.0
-Directory: pool/main/f/foo
+Directory: pool/main/t/tiny
 Files:
- bf8ef0ec49274621a72c941fbd1d70ed 1326 foo_1.dsc
- ea140e23ae50a61a79902aa67da5214e 15134701 binutils_2.15.orig.tar.gz
- 2cf84daeca019220f5f3753121f012bb 36466 binutils_2.15-4.diff.gz
+ 4699a6dda30a4a32c6264c931a601da5 444 tiny_0.1.dsc
+ 63a97b775d908be8426e8891e582f1c2 485 tiny_0.1.tar.gz
+Package-List: 
+ tiny deb devel extra
+Checksums-Sha1:
+ 0528aa847dfd802bc788320f906f846b4931b840 444 tiny_0.1.dsc
+ d19603504f4c5c347dd6871d03bf232c7d54516a 485 tiny_0.1.tar.gz
+Checksums-Sha256:
+ 4b21ba373193932f1e72359d765fe26f2c991f25a0ec3ad72d209a5fe81823f3 444 tiny_0.1.dsc
+ 8a4a42063805dc1f9ee52b201b58da7c4aa594d6ad916673827320458bf0d9b2 485 tiny_0.1.tar.gz
+Checksums-Sha512:
+ 9ec0fb83923f67e7a55fde5b1bc323e950cdf710e676d5b69486e8c3b1afe63b137e7f7bdcdd2e10f080d75de40cff162857dfafb455e23ccfd52c4b1a1c7f5e 444 tiny_0.1.dsc
+ 7c1502d6709c2dbed18fa7ab6cf485321c46f44467745101ef1230413840378dadfb8f361d72a1df12d927308a77938914b166921e77258c3d3471c4650aa9b1 485 tiny_0.1.tar.gz
 

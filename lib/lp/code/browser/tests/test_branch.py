@@ -1,58 +1,59 @@
-# Copyright 2009-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Unit tests for BranchView."""
+
+from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 
 from datetime import datetime
 from textwrap import dedent
 
-from BeautifulSoup import BeautifulSoup
+from fixtures import FakeLogger
 import pytz
+from six.moves.urllib_error import HTTPError
+from storm.store import Store
+from testtools.matchers import Equals
 from zope.component import getUtility
 from zope.publisher.interfaces import NotFound
+from zope.security.interfaces import Unauthorized
 from zope.security.proxy import removeSecurityProxy
 
-from lp.app.interfaces.headings import IRootContext
+from lp.app.enums import InformationType
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
+from lp.app.interfaces.services import IService
 from lp.bugs.interfaces.bugtask import (
     BugTaskStatus,
     UNRESOLVED_BUGTASK_STATUSES,
     )
-from lp.code.browser.branch import (
-    BranchMirrorStatusView,
-    BranchReviewerEditView,
-    BranchView,
-    )
-from lp.code.browser.branchlisting import PersonOwnedBranchesView
+from lp.code.browser.branch import BranchMirrorStatusView
 from lp.code.bzr import (
     BranchFormat,
     ControlFormat,
     RepositoryFormat,
     )
-from lp.code.enums import (
-    BranchType,
-    BranchVisibilityRule,
-    )
-from lp.registry.enums import (
-    BranchSharingPolicy,
-    InformationType,
-    )
+from lp.code.enums import BranchType
+from lp.code.model.branchjob import BranchScanJob
+from lp.code.tests.helpers import BranchHostingFixture
+from lp.registry.enums import BranchSharingPolicy
 from lp.registry.interfaces.accesspolicy import IAccessPolicySource
 from lp.registry.interfaces.person import PersonVisibility
+from lp.services.beautifulsoup import BeautifulSoup
 from lp.services.config import config
 from lp.services.database.constants import UTC_NOW
+from lp.services.features.testing import FeatureFixture
 from lp.services.helpers import truncate_text
+from lp.services.job.interfaces.job import JobStatus
 from lp.services.webapp.publisher import canonical_url
 from lp.services.webapp.servers import LaunchpadTestRequest
 from lp.testing import (
-    admin_logged_in,
     BrowserTestCase,
     login,
     login_person,
     logout,
     person_logged_in,
+    StormStatementRecorder,
     TestCaseWithFactory,
     )
 from lp.testing.layers import (
@@ -62,6 +63,7 @@ from lp.testing.layers import (
 from lp.testing.matchers import (
     BrowsesWithQueryLimit,
     Contains,
+    HasQueryCount,
     )
 from lp.testing.pages import (
     extract_text,
@@ -81,7 +83,7 @@ class TestBranchMirrorHidden(TestCaseWithFactory):
     layer = LaunchpadFunctionalLayer
 
     def setUp(self):
-        TestCaseWithFactory.setUp(self)
+        super(TestBranchMirrorHidden, self).setUp()
         config.push(
             "test", dedent("""\
                 [codehosting]
@@ -90,15 +92,14 @@ class TestBranchMirrorHidden(TestCaseWithFactory):
 
     def tearDown(self):
         config.pop("test")
-        TestCaseWithFactory.tearDown(self)
+        super(TestBranchMirrorHidden, self).tearDown()
 
     def testNormalBranch(self):
         # A branch from a normal location is fine.
         branch = self.factory.makeAnyBranch(
             branch_type=BranchType.MIRRORED,
             url="http://example.com/good/mirror")
-        view = BranchView(branch, LaunchpadTestRequest())
-        view.initialize()
+        view = create_initialized_view(branch, '+index')
         self.assertTrue(view.user is None)
         self.assertEqual(
             "http://example.com/good/mirror", view.mirror_location)
@@ -106,10 +107,8 @@ class TestBranchMirrorHidden(TestCaseWithFactory):
     def testLocationlessRemoteBranch(self):
         # A branch from a normal location is fine.
         branch = self.factory.makeAnyBranch(
-            branch_type=BranchType.REMOTE,
-            url=None)
-        view = BranchView(branch, LaunchpadTestRequest())
-        view.initialize()
+            branch_type=BranchType.REMOTE, url=None)
+        view = create_initialized_view(branch, '+index')
         self.assertTrue(view.user is None)
         self.assertIs(None, view.mirror_location)
 
@@ -119,11 +118,9 @@ class TestBranchMirrorHidden(TestCaseWithFactory):
         branch = self.factory.makeAnyBranch(
             branch_type=BranchType.MIRRORED,
             url="http://private.example.com/bzr-mysql/mysql-5.0")
-        view = BranchView(branch, LaunchpadTestRequest())
-        view.initialize()
+        view = create_initialized_view(branch, '+index')
         self.assertTrue(view.user is None)
-        self.assertEqual(
-            "<private server>", view.mirror_location)
+        self.assertEqual("<private server>", view.mirror_location)
 
     def testHiddenBranchAsBranchOwner(self):
         # A branch location with a defined private host is visible to the
@@ -131,12 +128,10 @@ class TestBranchMirrorHidden(TestCaseWithFactory):
         owner = self.factory.makePerson(email="eric@example.com")
         branch = self.factory.makeAnyBranch(
             branch_type=BranchType.MIRRORED,
-            owner=owner,
-            url="http://private.example.com/bzr-mysql/mysql-5.0")
+            owner=owner, url="http://private.example.com/bzr-mysql/mysql-5.0")
         # Now log in the owner.
         login('eric@example.com')
-        view = BranchView(branch, LaunchpadTestRequest())
-        view.initialize()
+        view = create_initialized_view(branch, '+index')
         self.assertEqual(view.user, owner)
         self.assertEqual(
             "http://private.example.com/bzr-mysql/mysql-5.0",
@@ -148,25 +143,18 @@ class TestBranchMirrorHidden(TestCaseWithFactory):
         owner = self.factory.makePerson(email="eric@example.com")
         other = self.factory.makePerson(email="other@example.com")
         branch = self.factory.makeAnyBranch(
-            branch_type=BranchType.MIRRORED,
-            owner=owner,
+            branch_type=BranchType.MIRRORED, owner=owner,
             url="http://private.example.com/bzr-mysql/mysql-5.0")
         # Now log in the other person.
         login('other@example.com')
-        view = BranchView(branch, LaunchpadTestRequest())
-        view.initialize()
+        view = create_initialized_view(branch, '+index')
         self.assertEqual(view.user, other)
-        self.assertEqual(
-            "<private server>", view.mirror_location)
+        self.assertEqual("<private server>", view.mirror_location)
 
 
 class TestBranchView(BrowserTestCase):
 
     layer = DatabaseFunctionalLayer
-
-    def setUp(self):
-        super(TestBranchView, self).setUp()
-        self.request = LaunchpadTestRequest()
 
     def testMirrorStatusMessageIsTruncated(self):
         """mirror_status_message is truncated if the text is overly long."""
@@ -174,7 +162,7 @@ class TestBranchView(BrowserTestCase):
         branch.mirrorFailed(
             "on quick brown fox the dog jumps to" *
             BranchMirrorStatusView.MAXIMUM_STATUS_MESSAGE_LENGTH)
-        branch_view = BranchMirrorStatusView(branch, self.request)
+        branch_view = create_view(branch, '+mirror-status')
         self.assertEqual(
             truncate_text(branch.mirror_status_message,
                           branch_view.MAXIMUM_STATUS_MESSAGE_LENGTH) + ' ...',
@@ -184,7 +172,7 @@ class TestBranchView(BrowserTestCase):
         """mirror_status_message on the view is the same as on the branch."""
         branch = self.factory.makeBranch(branch_type=BranchType.MIRRORED)
         branch.mirrorFailed("This is a short error message.")
-        branch_view = BranchMirrorStatusView(branch, self.request)
+        branch_view = create_view(branch, '+mirror-status')
         self.assertTrue(
             len(branch.mirror_status_message)
             <= branch_view.MAXIMUM_STATUS_MESSAGE_LENGTH,
@@ -199,18 +187,16 @@ class TestBranchView(BrowserTestCase):
     def testShowMergeLinksOnManyBranchProject(self):
         # The merge links are shown on projects that have multiple branches.
         product = self.factory.makeProduct(name='super-awesome-project')
-        branch1 = self.factory.makeAnyBranch(product=product)
+        branch = self.factory.makeAnyBranch(product=product)
         self.factory.makeAnyBranch(product=product)
-        view = BranchView(branch1, self.request)
-        view.initialize()
+        view = create_initialized_view(branch, '+index')
         self.assertTrue(view.show_merge_links)
 
     def testShowMergeLinksOnJunkBranch(self):
         # The merge links are not shown on junk branches because they do not
         # support merge proposals.
         junk_branch = self.factory.makeBranch(product=None)
-        view = BranchView(junk_branch, self.request)
-        view.initialize()
+        view = create_initialized_view(junk_branch, '+index')
         self.assertFalse(view.show_merge_links)
 
     def testShowMergeLinksOnSingleBranchProject(self):
@@ -218,17 +204,14 @@ class TestBranchView(BrowserTestCase):
         # only has one branch because it's pointless to propose it for merging
         # if there's nothing to merge into.
         branch = self.factory.makeAnyBranch()
-        view = BranchView(branch, self.request)
-        view.initialize()
+        view = create_initialized_view(branch, '+index')
         self.assertFalse(view.show_merge_links)
 
     def testNoProductSeriesPushingTranslations(self):
         # By default, a branch view shows no product series pushing
         # translations to the branch.
         branch = self.factory.makeBranch()
-
-        view = BranchView(branch, self.request)
-        view.initialize()
+        view = create_initialized_view(branch, '+index')
         self.assertEqual(list(view.translations_sources()), [])
 
     def testProductSeriesPushingTranslations(self):
@@ -238,16 +221,13 @@ class TestBranchView(BrowserTestCase):
         trunk = product.getSeries('trunk')
         branch = self.factory.makeBranch(owner=product.owner)
         removeSecurityProxy(trunk).translations_branch = branch
-
-        view = BranchView(branch, self.request)
-        view.initialize()
+        view = create_initialized_view(branch, '+index')
         self.assertEqual(list(view.translations_sources()), [trunk])
 
     def test_is_empty_directory(self):
         # Branches are considered empty until they get a control format.
         branch = self.factory.makeBranch()
-        view = BranchView(branch, self.request)
-        view.initialize()
+        view = create_initialized_view(branch, '+index')
         self.assertTrue(view.is_empty_directory)
         with person_logged_in(branch.owner):
             # Make it look as though the branch has been pushed.
@@ -256,16 +236,16 @@ class TestBranchView(BrowserTestCase):
         self.assertFalse(view.is_empty_directory)
 
     def test_empty_directories_use_existing(self):
-        # Push example should include --use-existing for empty directories.
+        # Push example should include --use-existing-dir for empty directories.
         branch = self.factory.makeBranch(owner=self.user)
         text = self.getMainText(branch)
-        self.assertIn('push\n--use-existing', text)
+        self.assertIn('push\n--use-existing-dir', text)
         with person_logged_in(self.user):
             # Make it look as though the branch has been pushed.
             branch.branchChanged(
                 None, None, ControlFormat.BZR_METADIR_1, None, None)
         text = self.getMainText(branch)
-        self.assertNotIn('push\n--use-existing', text)
+        self.assertNotIn('push\n--use-existing-dir', text)
 
     def test_user_can_upload(self):
         # A user can upload if they have edit permissions.
@@ -294,6 +274,65 @@ class TestBranchView(BrowserTestCase):
         view = create_initialized_view(branch, '+index')
         login_person(branch.owner)
         self.assertFalse(view.user_can_upload)
+
+    def test_recipes_link_no_recipes(self):
+        # A branch with no recipes does not show a recipes link.
+        branch = self.factory.makeAnyBranch()
+        view = create_initialized_view(branch, '+index')
+        self.assertEqual('No recipes using this branch.', view.recipes_link)
+
+    def test_recipes_link_one_recipe(self):
+        # A branch with one recipe shows a link to that recipe.
+        branch = self.factory.makeAnyBranch()
+        recipe = self.factory.makeSourcePackageRecipe(branches=[branch])
+        view = create_initialized_view(branch, '+index')
+        expected_link = (
+            '<a href="%s">1 recipe</a> using this branch.' %
+            canonical_url(recipe))
+        self.assertEqual(expected_link, view.recipes_link)
+
+    def test_recipes_link_more_recipes(self):
+        # A branch with more than one recipe shows a link to a listing.
+        branch = self.factory.makeAnyBranch()
+        self.factory.makeSourcePackageRecipe(branches=[branch])
+        self.factory.makeSourcePackageRecipe(branches=[branch])
+        view = create_initialized_view(branch, '+index')
+        self.assertEqual(
+            '<a href="+recipes">2 recipes</a> using this branch.',
+            view.recipes_link)
+
+    def test_show_rescan_link(self):
+        branch = self.factory.makeAnyBranch()
+        job = BranchScanJob.create(branch)
+        job.job._status = JobStatus.FAILED
+        view = create_initialized_view(branch, '+index')
+        result = view.show_rescan_link
+        self.assertTrue(result)
+
+    def test_show_rescan_link_no_failures(self):
+        branch = self.factory.makeAnyBranch()
+        job = BranchScanJob.create(branch)
+        job.job._status = JobStatus.COMPLETED
+        job.job.date_finished = UTC_NOW
+        view = create_initialized_view(branch, '+index')
+        result = view.show_rescan_link
+        self.assertFalse(result)
+
+    def test_show_rescan_link_no_scan_jobs(self):
+        branch = self.factory.makeAnyBranch()
+        view = create_initialized_view(branch, '+index')
+        result = view.show_rescan_link
+        self.assertFalse(result)
+
+    def test_show_rescan_link_latest_didnt_fail(self):
+        branch = self.factory.makeAnyBranch()
+        job = BranchScanJob.create(branch)
+        job.job._status = JobStatus.FAILED
+        job = BranchScanJob.create(branch)
+        job.job._status = JobStatus.COMPLETED
+        view = create_initialized_view(branch, '+index')
+        result = view.show_rescan_link
+        self.assertTrue(result)
 
     def _addBugLinks(self, branch):
         for status in BugTaskStatus.items:
@@ -338,8 +377,7 @@ class TestBranchView(BrowserTestCase):
             self.assertTrue(
                 bugtask.status in UNRESOLVED_BUGTASK_STATUSES)
 
-    # XXX wgrant 2011-10-21 bug=879197: Disabled due to spurious failure.
-    def disabled_test_linked_bugs_nonseries_branch_query_scaling(self):
+    def test_linked_bugs_nonseries_branch_query_scaling(self):
         # As we add linked bugs, the query count for a branch index page stays
         # constant.
         branch = self.factory.makeAnyBranch()
@@ -496,6 +534,7 @@ class TestBranchView(BrowserTestCase):
             # These values are extracted here and used below.
             linked_bug_rendered_text = "\n".join(linked_bug_text)
             mp_url = canonical_url(mp, force_local_path=True)
+            branch_url = canonical_url(mp.source_branch, force_local_path=True)
             branch_display_name = mp.source_branch.displayname
 
         browser = self.getUserBrowser(canonical_url(branch))
@@ -523,8 +562,127 @@ class TestBranchView(BrowserTestCase):
 
         links = revision_content.findAll('a')
         self.assertEqual(mp_url, links[2]['href'])
-        self.assertEqual(linked_bug_urls[0], links[3]['href'])
-        self.assertEqual(linked_bug_urls[1], links[4]['href'])
+        self.assertEqual(branch_url, links[3]['href'])
+        self.assertEqual(linked_bug_urls[0], links[4]['href'])
+        self.assertEqual(linked_bug_urls[1], links[5]['href'])
+
+    def test_view_for_user_with_artifact_grant(self):
+        # Users with an artifact grant for a branch related to a private
+        # product can view the main branch page.
+        owner = self.factory.makePerson()
+        user = self.factory.makePerson()
+        product = self.factory.makeProduct(
+            owner=owner,
+            information_type=InformationType.PROPRIETARY)
+        with person_logged_in(owner):
+            product_name = product.name
+            branch = self.factory.makeBranch(
+                product=product, owner=owner,
+                information_type=InformationType.PROPRIETARY)
+            getUtility(IService, 'sharing').ensureAccessGrants(
+                [user], owner, branches=[branch])
+        with person_logged_in(user):
+            url = canonical_url(branch)
+        # The main check: No Unauthorized error should be raised.
+        browser = self.getUserBrowser(url, user=user)
+        self.assertIn(product_name, browser.contents)
+
+    def test_query_count_landing_candidates(self):
+        product = self.factory.makeProduct()
+        branch = self.factory.makeBranch(product=product)
+        for i in range(10):
+            self.factory.makeBranchMergeProposal(target_branch=branch)
+        stacked = self.factory.makeBranch(product=product)
+        source = self.factory.makeBranch(stacked_on=stacked, product=product)
+        prereq = self.factory.makeBranch(product=product)
+        self.factory.makeBranchMergeProposal(
+            source_branch=source, target_branch=branch,
+            prerequisite_branch=prereq)
+        Store.of(branch).flush()
+        Store.of(branch).invalidate()
+        view = create_view(branch, '+index')
+        with StormStatementRecorder() as recorder:
+            view.landing_candidates
+        self.assertThat(recorder, HasQueryCount(Equals(14)))
+
+    def test_query_count_landing_targets(self):
+        product = self.factory.makeProduct()
+        branch = self.factory.makeBranch(product=product)
+        for i in range(10):
+            self.factory.makeBranchMergeProposal(source_branch=branch)
+        stacked = self.factory.makeBranch(product=product)
+        target = self.factory.makeBranch(stacked_on=stacked, product=product)
+        prereq = self.factory.makeBranch(product=product)
+        self.factory.makeBranchMergeProposal(
+            source_branch=branch, target_branch=target,
+            prerequisite_branch=prereq)
+        Store.of(branch).flush()
+        Store.of(branch).invalidate()
+        view = create_view(branch, '+index')
+        with StormStatementRecorder() as recorder:
+            view.landing_targets
+        self.assertThat(recorder, HasQueryCount(Equals(13)))
+
+    def test_query_count_subscriber_content(self):
+        branch = self.factory.makeBranch()
+        for i in range(10):
+            self.factory.makeBranchSubscription(branch=branch)
+        Store.of(branch).flush()
+        Store.of(branch).invalidate()
+        view = create_initialized_view(
+            branch, '+branch-portlet-subscriber-content')
+        with StormStatementRecorder() as recorder:
+            view.render()
+        self.assertThat(recorder, HasQueryCount(Equals(6)))
+
+    def test_query_count_index_with_subscribers(self):
+        branch = self.factory.makeBranch()
+        for i in range(10):
+            self.factory.makeBranchSubscription(branch=branch)
+        Store.of(branch).flush()
+        Store.of(branch).invalidate()
+        branch_url = canonical_url(branch, view_name='+index', rootsite='code')
+        browser = setupBrowser()
+        logout()
+        with StormStatementRecorder() as recorder:
+            browser.open(branch_url)
+        self.assertThat(recorder, HasQueryCount(Equals(30)))
+
+
+class TestBranchRescanView(BrowserTestCase):
+
+    layer = DatabaseFunctionalLayer
+
+    def test_owner_can_see_rescan(self):
+        branch = self.factory.makeAnyBranch()
+        job = BranchScanJob.create(branch)
+        job.job._status = JobStatus.FAILED
+        branch_url = canonical_url(
+            branch, view_name='+rescan', rootsite='code')
+        browser = self.getUserBrowser(branch_url, user=branch.owner)
+        browser.open(branch_url)
+        self.assertIn('schedule a rescan', browser.contents)
+
+    def test_product_owner_can_see_rescan(self):
+        project_owner = self.factory.makePerson()
+        product = self.factory.makeProduct(owner=project_owner)
+        branch = self.factory.makeAnyBranch(product=product)
+        job = BranchScanJob.create(branch)
+        job.job._status = JobStatus.FAILED
+        branch_url = canonical_url(
+            branch, view_name='+rescan', rootsite='code')
+        browser = self.getUserBrowser(branch_url, user=project_owner)
+        browser.open(branch_url)
+        self.assertIn('schedule a rescan', browser.contents)
+
+    def test_other_user_can_not_see_rescan(self):
+        branch = self.factory.makeAnyBranch()
+        job = BranchScanJob.create(branch)
+        job.job._status = JobStatus.FAILED
+        branch_url = canonical_url(
+            branch, view_name='+rescan', rootsite='code')
+        self.assertRaises(
+            Unauthorized, self.getUserBrowser, branch_url)
 
 
 class TestBranchViewPrivateArtifacts(BrowserTestCase):
@@ -584,6 +742,7 @@ class TestBranchViewPrivateArtifacts(BrowserTestCase):
 
     def test_anonymous_view_branch_with_private_owner(self):
         # A branch with a private owner is not rendered for anon users.
+        self.useFixture(FakeLogger())
         private_owner = self.factory.makeTeam(
             visibility=PersonVisibility.PRIVATE)
         with person_logged_in(private_owner):
@@ -700,11 +859,11 @@ class TestBranchViewPrivateArtifacts(BrowserTestCase):
             base_url = canonical_url(branch, rootsite='code')
             product_url = canonical_url(product, rootsite='code')
         url = '%s/+subscription/%s' % (base_url, subscriber.name)
+        expected_title = "Code : %s" % product.displayname
         browser = self._getBrowser(user=subscriber)
         browser.open(url)
         browser.getControl('Unsubscribe').click()
         self.assertEqual(product_url, browser.url)
-        expected_title = "Code : %s" % product.displayname
         self.assertEqual(expected_title, browser.title)
 
 
@@ -718,28 +877,23 @@ class TestBranchReviewerEditView(TestCaseWithFactory):
         # the branch.
         branch = self.factory.makeAnyBranch()
         self.assertIs(None, branch.reviewer)
-        view = BranchReviewerEditView(branch, LaunchpadTestRequest())
-        self.assertEqual(
-            branch.owner,
-            view.initial_values['reviewer'])
+        view = create_view(branch, '+reviewer')
+        self.assertEqual(branch.owner, view.initial_values['reviewer'])
 
     def test_initial_reviewer_set(self):
         # If the reviewer has been set, it is shown as the initial value.
         branch = self.factory.makeAnyBranch()
         login_person(branch.owner)
         branch.reviewer = self.factory.makePerson()
-        view = BranchReviewerEditView(branch, LaunchpadTestRequest())
-        self.assertEqual(
-            branch.reviewer,
-            view.initial_values['reviewer'])
+        view = create_view(branch, '+reviewer')
+        self.assertEqual(branch.reviewer, view.initial_values['reviewer'])
 
     def test_set_reviewer(self):
         # Test setting the reviewer.
         branch = self.factory.makeAnyBranch()
         reviewer = self.factory.makePerson()
         login_person(branch.owner)
-        view = BranchReviewerEditView(branch, LaunchpadTestRequest())
-        view.initialize()
+        view = create_initialized_view(branch, '+reviewer')
         view.change_action.success({'reviewer': reviewer})
         self.assertEqual(reviewer, branch.reviewer)
         # Last modified has been updated.
@@ -752,8 +906,7 @@ class TestBranchReviewerEditView(TestCaseWithFactory):
         branch = self.factory.makeAnyBranch()
         login_person(branch.owner)
         branch.reviewer = self.factory.makePerson()
-        view = BranchReviewerEditView(branch, LaunchpadTestRequest())
-        view.initialize()
+        view = create_initialized_view(branch, '+reviewer')
         view.change_action.success({'reviewer': branch.owner})
         self.assertIs(None, branch.reviewer)
         # Last modified has been updated.
@@ -766,8 +919,7 @@ class TestBranchReviewerEditView(TestCaseWithFactory):
         # modified is not updated.
         modified_date = datetime(2007, 1, 1, tzinfo=pytz.UTC)
         branch = self.factory.makeAnyBranch(date_created=modified_date)
-        view = BranchReviewerEditView(branch, LaunchpadTestRequest())
-        view.initialize()
+        view = create_initialized_view(branch, '+reviewer')
         view.change_action.success({'reviewer': branch.owner})
         self.assertIs(None, branch.reviewer)
         # Last modified has not been updated.
@@ -788,8 +940,8 @@ class TestBranchBzrIdentity(TestCaseWithFactory):
         # the development focus branch.
         login_person(product.owner)
         product.development_focus.branch = branch
-        view = PersonOwnedBranchesView(branch.owner, LaunchpadTestRequest())
-        view.initialize()
+        view = create_initialized_view(
+            branch.owner, '+branches', rootsite='code')
         navigator = view.branches()
         [decorated_branch] = navigator.branches
         self.assertEqual("lp://dev/fooix", decorated_branch.bzr_identity)
@@ -800,15 +952,12 @@ class TestBranchProposalsVisible(TestCaseWithFactory):
 
     layer = DatabaseFunctionalLayer
 
-    def setUp(self):
-        TestCaseWithFactory.setUp(self)
-
     def test_public_target(self):
         # If the user can see the target, then there are merges, and the
         # landing_target is available for the template rendering.
         bmp = self.factory.makeBranchMergeProposal()
         branch = bmp.source_branch
-        view = BranchView(branch, LaunchpadTestRequest())
+        view = create_view(branch, '+index')
         self.assertFalse(view.no_merges)
         [target] = view.landing_targets
         # Check the ids as the target is a DecoratedMergeProposal.
@@ -820,7 +969,7 @@ class TestBranchProposalsVisible(TestCaseWithFactory):
         branch = bmp.source_branch
         removeSecurityProxy(bmp.target_branch).information_type = (
             InformationType.USERDATA)
-        view = BranchView(branch, LaunchpadTestRequest())
+        view = create_view(branch, '+index')
         self.assertTrue(view.no_merges)
         self.assertEqual([], view.landing_targets)
 
@@ -829,7 +978,7 @@ class TestBranchProposalsVisible(TestCaseWithFactory):
         # landing_candidate is available for the template rendering.
         bmp = self.factory.makeBranchMergeProposal()
         branch = bmp.target_branch
-        view = BranchView(branch, LaunchpadTestRequest())
+        view = create_view(branch, '+index')
         self.assertFalse(view.no_merges)
         [candidate] = view.landing_candidates
         # Check the ids as the target is a DecoratedMergeProposal.
@@ -842,7 +991,7 @@ class TestBranchProposalsVisible(TestCaseWithFactory):
         branch = bmp.target_branch
         removeSecurityProxy(bmp.source_branch).information_type = (
             InformationType.USERDATA)
-        view = BranchView(branch, LaunchpadTestRequest())
+        view = create_view(branch, '+index')
         self.assertTrue(view.no_merges)
         self.assertEqual([], view.landing_candidates)
 
@@ -851,7 +1000,7 @@ class TestBranchProposalsVisible(TestCaseWithFactory):
         # there are merges.
         branch = self.factory.makeProductBranch()
         bmp = self.factory.makeBranchMergeProposal(prerequisite_branch=branch)
-        view = BranchView(branch, LaunchpadTestRequest())
+        view = create_view(branch, '+index')
         self.assertFalse(view.no_merges)
         [proposal] = view.dependent_branches
         self.assertEqual(bmp, proposal)
@@ -863,100 +1012,116 @@ class TestBranchProposalsVisible(TestCaseWithFactory):
         bmp = self.factory.makeBranchMergeProposal(prerequisite_branch=branch)
         removeSecurityProxy(bmp.source_branch).information_type = (
             InformationType.USERDATA)
-        view = BranchView(branch, LaunchpadTestRequest())
+        view = create_view(branch, '+index')
         self.assertTrue(view.no_merges)
         self.assertEqual([], view.dependent_branches)
-
-
-class TestBranchRootContext(TestCaseWithFactory):
-    """Test the adaptation of IBranch to IRootContext."""
-
-    layer = DatabaseFunctionalLayer
-
-    def test_personal_branch(self):
-        # The root context of a personal branch is the person.
-        branch = self.factory.makePersonalBranch()
-        root_context = IRootContext(branch)
-        self.assertEqual(branch.owner, root_context)
-
-    def test_package_branch(self):
-        # The root context of a package branch is the distribution.
-        branch = self.factory.makePackageBranch()
-        root_context = IRootContext(branch)
-        self.assertEqual(branch.distroseries.distribution, root_context)
-
-    def test_product_branch(self):
-        # The root context of a product branch is the product.
-        branch = self.factory.makeProductBranch()
-        root_context = IRootContext(branch)
-        self.assertEqual(branch.product, root_context)
 
 
 class TestBranchEditView(TestCaseWithFactory):
 
     layer = DatabaseFunctionalLayer
 
-    def test_allowed_owner_is_ok(self):
-        # A branch's owner can be changed to a team permitted by the
-        # visibility policy.
+    def test_branch_target_widget_renders_junk(self):
+        # The branch target widget renders correctly for a junk branch.
         person = self.factory.makePerson()
-        branch = self.factory.makeProductBranch(owner=person)
-        team = self.factory.makeTeam(
-            owner=person, displayname="Permitted team")
-        branch.product.setBranchVisibilityTeamPolicy(
-            None, BranchVisibilityRule.FORBIDDEN)
-        branch.product.setBranchVisibilityTeamPolicy(
-            team, BranchVisibilityRule.PRIVATE)
-        browser = self.getUserBrowser(
-            canonical_url(branch) + '/+edit', user=person)
-        browser.getControl("Owner").displayValue = ["Permitted team"]
-        browser.getControl("Change Branch").click()
-        with person_logged_in(person):
-            self.assertEquals(team, branch.owner)
+        branch = self.factory.makePersonalBranch(owner=person)
+        login_person(person)
+        view = create_initialized_view(branch, name='+edit')
+        self.assertEqual('personal', view.widgets['target'].default_option)
 
-    def test_forbidden_owner_is_error(self):
-        # An error is displayed if a branch's owner is changed to
-        # a value forbidden by the visibility policy.
-        product = self.factory.makeLegacyProduct(displayname='Some Product')
+    def test_branch_target_widget_renders_product(self):
+        # The branch target widget renders correctly for a product branch.
         person = self.factory.makePerson()
-        branch = self.factory.makeBranch(product=product, owner=person)
-        self.factory.makeTeam(
-            owner=person, displayname="Forbidden team")
-        branch.product.setBranchVisibilityTeamPolicy(
-            None, BranchVisibilityRule.FORBIDDEN)
-        branch.product.setBranchVisibilityTeamPolicy(
-            person, BranchVisibilityRule.PRIVATE)
+        product = self.factory.makeProduct()
+        branch = self.factory.makeProductBranch(product=product, owner=person)
+        login_person(person)
+        view = create_initialized_view(branch, name='+edit')
+        self.assertEqual('product', view.widgets['target'].default_option)
+        self.assertEqual(
+            product.name, view.widgets['target'].product_widget.selected_value)
+
+    def test_no_branch_target_widget_for_source_package_branch(self):
+        # The branch target widget is not rendered for a package branch.
+        person = self.factory.makePerson()
+        branch = self.factory.makePackageBranch(owner=person)
+        login_person(person)
+        view = create_initialized_view(branch, name='+edit')
+        self.assertIsNone(view.widgets.get('target'))
+
+    def test_branch_target_widget_saves_junk(self):
+        # The branch target widget can retarget to a junk branch.
+        person = self.factory.makePerson()
+        product = self.factory.makeProduct()
+        branch = self.factory.makeProductBranch(product=product, owner=person)
+        login_person(person)
+        form = {
+            'field.target': 'personal',
+            'field.actions.change': 'Change Branch',
+        }
+        view = create_initialized_view(branch, name='+edit', form=form)
+        self.assertEqual(person, branch.target.context)
+        self.assertEqual(1, len(view.request.response.notifications))
+        self.assertEqual(
+            'This branch is now a personal branch for %s (%s)'
+                % (person.displayname, person.name),
+            view.request.response.notifications[0].message)
+
+    def test_save_to_different_junk(self):
+        # The branch target widget can retarget to a junk branch.
+        person = self.factory.makePerson()
+        branch = self.factory.makePersonalBranch(owner=person)
+        new_owner = self.factory.makeTeam(name='newowner', members=[person])
+        login_person(person)
+        form = {
+            'field.target': 'personal',
+            'field.owner': 'newowner',
+            'field.actions.change': 'Change Branch',
+        }
+        view = create_initialized_view(branch, name='+edit', form=form)
+        self.assertEqual(new_owner, branch.target.context)
+        self.assertEqual(1, len(view.request.response.notifications))
+        self.assertEqual(
+            'The branch owner has been changed to Newowner (newowner)',
+            view.request.response.notifications[0].message)
+
+    def test_branch_target_widget_saves_product(self):
+        # The branch target widget can retarget to a product branch.
+        person = self.factory.makePerson()
+        branch = self.factory.makePersonalBranch(owner=person)
+        product = self.factory.makeProduct()
+        login_person(person)
+        form = {
+            'field.target': 'product',
+            'field.target.product': product.name,
+            'field.actions.change': 'Change Branch',
+        }
+        view = create_initialized_view(branch, name='+edit', form=form)
+        self.assertEqual(product, branch.target.context)
+        self.assertEqual(
+            'The branch target has been changed to %s (%s)'
+                % (product.displayname, product.name),
+            view.request.response.notifications[0].message)
+
+    def test_forbidden_target_is_error(self):
+        # An error is displayed if a branch is saved with a target that is not
+        # allowed by the sharing policy.
+        owner = self.factory.makePerson()
+        initial_target = self.factory.makeProduct()
+        self.factory.makeProduct(
+            name="commercial", owner=owner,
+            branch_sharing_policy=BranchSharingPolicy.PROPRIETARY)
+        branch = self.factory.makeProductBranch(
+            owner=owner, product=initial_target,
+            information_type=InformationType.PUBLIC)
         browser = self.getUserBrowser(
-            canonical_url(branch) + '/+edit', user=person)
-        browser.getControl("Owner").displayValue = ["Forbidden team"]
+            canonical_url(branch) + '/+edit', user=owner)
+        browser.getControl(name="field.target.product").value = "commercial"
         browser.getControl("Change Branch").click()
         self.assertThat(
             browser.contents,
-            Contains(
-                'Forbidden team is not allowed to own branches in '
-                'Some Product.'))
-        with person_logged_in(person):
-            self.assertEquals(person, branch.owner)
-
-    def test_private_owner_is_ok(self):
-        # A branch's owner can be changed to a private team permitted by the
-        # visibility policy.
-        person = self.factory.makePerson()
-        product = self.factory.makeLegacyProduct()
-        branch = self.factory.makeProductBranch(product=product, owner=person)
-        team = self.factory.makeTeam(
-            owner=person, displayname="Private team",
-            visibility=PersonVisibility.PRIVATE)
-        branch.product.setBranchVisibilityTeamPolicy(
-            None, BranchVisibilityRule.FORBIDDEN)
-        branch.product.setBranchVisibilityTeamPolicy(
-            team, BranchVisibilityRule.PRIVATE)
-        browser = self.getUserBrowser(
-            canonical_url(branch) + '/+edit', user=person)
-        browser.getControl("Owner").displayValue = ["Private team"]
-        browser.getControl("Change Branch").click()
-        with person_logged_in(person):
-            self.assertEquals(team, branch.owner)
+            Contains('Public branches are not allowed for target Commercial.'))
+        with person_logged_in(owner):
+            self.assertEqual(initial_target, branch.target.context)
 
     def test_information_type_in_ui(self):
         # The information_type of a branch can be changed via the UI by an
@@ -970,8 +1135,7 @@ class TestBranchEditView(TestCaseWithFactory):
         browser.getControl("Private", index=1).click()
         browser.getControl("Change Branch").click()
         with person_logged_in(person):
-            self.assertEqual(
-                InformationType.USERDATA, branch.information_type)
+            self.assertEqual(InformationType.USERDATA, branch.information_type)
 
     def test_can_not_change_privacy_of_stacked_on_private(self):
         # The privacy field is not shown if the branch is stacked on a
@@ -986,8 +1150,7 @@ class TestBranchEditView(TestCaseWithFactory):
         with person_logged_in(owner):
             browser = self.getUserBrowser(
                 canonical_url(branch) + '/+edit', user=owner)
-        self.assertRaises(
-            LookupError, browser.getControl, "Information Type")
+        self.assertRaises(LookupError, browser.getControl, "Information Type")
 
     def test_edit_view_ajax_render(self):
         # An information type change request is processed as expected when an
@@ -1002,11 +1165,10 @@ class TestBranchEditView(TestCaseWithFactory):
                 'field.information_type': 'PUBLICSECURITY'},
             **extra)
         with person_logged_in(person):
-            view = create_view(
+            view = create_initialized_view(
                 branch, name='+edit-information-type',
                 request=request, principal=person)
             request.traversed_objects = [person, branch.product, branch, view]
-            view.initialize()
             result = view.render()
             self.assertEqual('', result)
             self.assertEqual(
@@ -1022,7 +1184,7 @@ class TestBranchEditViewInformationTypes(TestCaseWithFactory):
         if user is None:
             user = removeSecurityProxy(branch).owner
         with person_logged_in(user):
-            view = create_initialized_view(branch, '+edit', user=user)
+            view = create_initialized_view(branch, '+edit', principal=user)
             self.assertContentEqual(types, view.getInformationTypesToShow())
 
     def test_public_branch(self):
@@ -1032,10 +1194,8 @@ class TestBranchEditViewInformationTypes(TestCaseWithFactory):
         branch = self.factory.makeBranch(
             information_type=InformationType.PUBLIC)
         self.assertShownTypes(
-            [InformationType.PUBLIC,
-             InformationType.PUBLICSECURITY,
-             InformationType.PRIVATESECURITY,
-             InformationType.USERDATA],
+            [InformationType.PUBLIC, InformationType.PUBLICSECURITY,
+             InformationType.PRIVATESECURITY, InformationType.USERDATA],
             branch)
 
     def test_branch_with_disallowed_type(self):
@@ -1047,12 +1207,9 @@ class TestBranchEditViewInformationTypes(TestCaseWithFactory):
         branch = self.factory.makeBranch(
             product=product, information_type=InformationType.PROPRIETARY)
         self.assertShownTypes(
-            [InformationType.PUBLIC,
-             InformationType.PUBLICSECURITY,
-             InformationType.PRIVATESECURITY,
-             InformationType.USERDATA,
-             InformationType.PROPRIETARY],
-            branch)
+            [InformationType.PUBLIC, InformationType.PUBLICSECURITY,
+             InformationType.PRIVATESECURITY, InformationType.USERDATA,
+             InformationType.PROPRIETARY], branch)
 
     def test_stacked_on_private(self):
         # A branch stacked on a private branch has its choices limited
@@ -1064,25 +1221,8 @@ class TestBranchEditViewInformationTypes(TestCaseWithFactory):
             product=product, stacked_on=stacked_on_branch,
             owner=product.owner,
             information_type=InformationType.PRIVATESECURITY)
-        with admin_logged_in():
-            branch.product.setBranchVisibilityTeamPolicy(
-                branch.owner, BranchVisibilityRule.PRIVATE)
         self.assertShownTypes(
             [InformationType.PRIVATESECURITY, InformationType.USERDATA],
-            branch)
-
-    def test_private_branch(self):
-        # Branches on projects with a private policy can be made private.
-        branch = self.factory.makeBranch(
-            information_type=InformationType.PUBLIC)
-        with admin_logged_in():
-            branch.product.setBranchVisibilityTeamPolicy(
-                branch.owner, BranchVisibilityRule.PRIVATE)
-        self.assertShownTypes(
-            [InformationType.PUBLIC,
-             InformationType.PUBLICSECURITY,
-             InformationType.PRIVATESECURITY,
-             InformationType.USERDATA],
             branch)
 
     def test_branch_for_project_with_embargoed_and_proprietary(self):
@@ -1155,3 +1295,71 @@ class TestBranchPrivacyPortlet(TestCaseWithFactory):
             InformationType.USERDATA.description, description.renderContents())
         self.assertIsNotNone(
             soup.find('a', id='privacy-link', attrs={'href': edit_url}))
+
+
+class TestBranchDiffView(BrowserTestCase):
+
+    layer = DatabaseFunctionalLayer
+
+    def test_feature_disabled(self):
+        self.useFixture(FeatureFixture({"code.bzr.diff.disable_proxy": "on"}))
+        hosting_fixture = self.useFixture(BranchHostingFixture())
+        person = self.factory.makePerson()
+        branch = self.factory.makeBranch(owner=person)
+        e = self.assertRaises(
+            HTTPError, self.getUserBrowser,
+            canonical_url(branch) + "/+diff/2/1")
+        self.assertEqual(401, e.code)
+        self.assertEqual("Proxying of branch diffs is disabled.\n", e.read())
+        self.assertEqual([], hosting_fixture.getDiff.calls)
+
+    def test_render(self):
+        diff = b"A fake diff\n"
+        hosting_fixture = self.useFixture(BranchHostingFixture(diff=diff))
+        person = self.factory.makePerson()
+        branch = self.factory.makeBranch(owner=person, name="some-branch")
+        browser = self.getUserBrowser(
+            canonical_url(branch) + "/+diff/2/1")
+        with person_logged_in(person):
+            self.assertEqual(
+                [((branch.id, "2"), {"old": "1"})],
+                hosting_fixture.getDiff.calls)
+        self.assertEqual("text/x-patch", browser.headers["Content-Type"])
+        self.assertEqual(str(len(diff)), browser.headers["Content-Length"])
+        self.assertEqual(
+            'attachment; filename="some-branch_1_2.diff"',
+            browser.headers["Content-Disposition"])
+        self.assertEqual(diff, browser.contents)
+
+    def test_security(self):
+        # A user who can see a private branch can fetch diffs from it, but
+        # other users cannot.
+        diff = b"A fake diff\n"
+        self.useFixture(BranchHostingFixture(diff=diff))
+        person = self.factory.makePerson()
+        project = self.factory.makeProduct(
+            owner=person, information_type=InformationType.PROPRIETARY)
+        with person_logged_in(person):
+            branch = self.factory.makeBranch(
+                owner=person, product=project,
+                information_type=InformationType.PROPRIETARY)
+            branch_url = canonical_url(branch)
+        browser = self.getUserBrowser(branch_url + "/+diff/2/1", user=person)
+        self.assertEqual(diff, browser.contents)
+        self.useFixture(FakeLogger())
+        self.assertRaises(
+            Unauthorized, self.getUserBrowser, branch_url + "/+diff/2/1")
+
+    def test_filename_quoting(self):
+        # If we construct revisions containing metacharacters and somehow
+        # manage to get that past the hosting service, the Content-Disposition
+        # header is quoted properly.
+        diff = b"A fake diff\n"
+        self.useFixture(BranchHostingFixture(diff=diff))
+        person = self.factory.makePerson()
+        branch = self.factory.makeBranch(owner=person, name="some-branch")
+        browser = self.getUserBrowser(
+            canonical_url(branch) + '/+diff/foo"/"bar')
+        self.assertEqual(
+            r'attachment; filename="some-branch_\"bar_foo\".diff"',
+            browser.headers["Content-Disposition"])

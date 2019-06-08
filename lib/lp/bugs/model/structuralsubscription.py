@@ -1,4 +1,4 @@
-# Copyright 2009-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2013 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -38,10 +38,10 @@ from storm.store import (
     Store,
     )
 from zope.component import (
-    adapts,
+    adapter,
     getUtility,
     )
-from zope.interface import implements
+from zope.interface import implementer
 from zope.security.proxy import ProxyFactory
 
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
@@ -80,7 +80,7 @@ from lp.registry.interfaces.projectgroup import IProjectGroup
 from lp.registry.interfaces.sourcepackage import ISourcePackage
 from lp.registry.model.teammembership import TeamParticipation
 from lp.services.database.constants import UTC_NOW
-from lp.services.database.lpstorm import IStore
+from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import quote
 from lp.services.database.stormexpr import (
     ArrayAgg,
@@ -90,10 +90,9 @@ from lp.services.database.stormexpr import (
 from lp.services.propertycache import cachedproperty
 
 
+@implementer(IStructuralSubscription)
 class StructuralSubscription(Storm):
     """A subscription to a Launchpad structure."""
-
-    implements(IStructuralSubscription)
 
     __storm_table__ = 'StructuralSubscription'
 
@@ -105,8 +104,8 @@ class StructuralSubscription(Storm):
     productseriesID = Int("productseries", default=None)
     productseries = Reference(productseriesID, "ProductSeries.id")
 
-    projectID = Int("project", default=None)
-    project = Reference(projectID, "ProjectGroup.id")
+    projectgroupID = Int("project", default=None)
+    projectgroup = Reference(projectgroupID, "ProjectGroup.id")
 
     milestoneID = Int("milestone", default=None)
     milestone = Reference(milestoneID, "Milestone.id")
@@ -148,17 +147,13 @@ class StructuralSubscription(Storm):
             return self.product
         elif self.productseries is not None:
             return self.productseries
-        elif self.project is not None:
-            return self.project
+        elif self.projectgroup is not None:
+            return self.projectgroup
         elif self.milestone is not None:
             return self.milestone
         elif self.distribution is not None:
             if self.sourcepackagename is not None:
-                # XXX intellectronica 2008-01-15:
-                #   We're importing this pseudo db object
-                #   here because importing it from the top
-                #   doesn't play well with the loading
-                #   sequence.
+                # Circular imports.
                 from lp.registry.model.distributionsourcepackage import (
                     DistributionSourcePackage)
                 return DistributionSourcePackage(
@@ -186,17 +181,15 @@ class StructuralSubscription(Storm):
         return bug_filter
 
     def delete(self):
-        store = Store.of(self)
-        self.bug_filters.remove()
-        store.remove(self)
+        BugSubscriptionFilter.deleteMultiple(
+            [bf.id for bf in self.bug_filters])
+        Store.of(self).remove(self)
 
 
+@implementer(IStructuralSubscriptionTargetHelper)
+@adapter(IDistroSeries)
 class DistroSeriesTargetHelper:
     """A helper for `IDistroSeries`s."""
-
-    implements(IStructuralSubscriptionTargetHelper)
-    adapts(IDistroSeries)
-
     target_type_display = 'distribution series'
 
     def __init__(self, target):
@@ -207,28 +200,24 @@ class DistroSeriesTargetHelper:
         self.join = (StructuralSubscription.distroseries == target)
 
 
+@implementer(IStructuralSubscriptionTargetHelper)
+@adapter(IProjectGroup)
 class ProjectGroupTargetHelper:
     """A helper for `IProjectGroup`s."""
-
-    implements(IStructuralSubscriptionTargetHelper)
-    adapts(IProjectGroup)
-
     target_type_display = 'project group'
 
     def __init__(self, target):
         self.target = target
         self.target_parent = None
-        self.target_arguments = {"project": target}
+        self.target_arguments = {"projectgroup": target}
         self.pillar = target
-        self.join = (StructuralSubscription.project == target)
+        self.join = (StructuralSubscription.projectgroup == target)
 
 
+@implementer(IStructuralSubscriptionTargetHelper)
+@adapter(IDistributionSourcePackage)
 class DistributionSourcePackageTargetHelper:
     """A helper for `IDistributionSourcePackage`s."""
-
-    implements(IStructuralSubscriptionTargetHelper)
-    adapts(IDistributionSourcePackage)
-
     target_type_display = 'package'
 
     def __init__(self, target):
@@ -246,12 +235,10 @@ class DistributionSourcePackageTargetHelper:
                 target.sourcepackagename.id))
 
 
+@implementer(IStructuralSubscriptionTargetHelper)
+@adapter(IMilestone)
 class MilestoneTargetHelper:
     """A helper for `IMilestone`s."""
-
-    implements(IStructuralSubscriptionTargetHelper)
-    adapts(IMilestone)
-
     target_type_display = 'milestone'
 
     def __init__(self, target):
@@ -262,34 +249,30 @@ class MilestoneTargetHelper:
         self.join = (StructuralSubscription.milestone == target)
 
 
+@implementer(IStructuralSubscriptionTargetHelper)
+@adapter(IProduct)
 class ProductTargetHelper:
     """A helper for `IProduct`s."""
-
-    implements(IStructuralSubscriptionTargetHelper)
-    adapts(IProduct)
-
     target_type_display = 'project'
 
     def __init__(self, target):
         self.target = target
-        self.target_parent = target.project
+        self.target_parent = target.projectgroup
         self.target_arguments = {"product": target}
         self.pillar = target
-        if target.project is not None:
+        if target.projectgroup is not None:
             self.join = Or(
                 StructuralSubscription.product == target,
-                StructuralSubscription.project == target.project)
+                StructuralSubscription.projectgroup == target.projectgroup)
         else:
             self.join = (
                 StructuralSubscription.product == target)
 
 
+@implementer(IStructuralSubscriptionTargetHelper)
+@adapter(IProductSeries)
 class ProductSeriesTargetHelper:
     """A helper for `IProductSeries`s."""
-
-    implements(IStructuralSubscriptionTargetHelper)
-    adapts(IProductSeries)
-
     target_type_display = 'project series'
 
     def __init__(self, target):
@@ -300,12 +283,10 @@ class ProductSeriesTargetHelper:
         self.join = (StructuralSubscription.productseries == target)
 
 
+@implementer(IStructuralSubscriptionTargetHelper)
+@adapter(IDistribution)
 class DistributionTargetHelper:
     """A helper for `IDistribution`s."""
-
-    implements(IStructuralSubscriptionTargetHelper)
-    adapts(IDistribution)
-
     target_type_display = 'distribution'
 
     def __init__(self, target):
@@ -422,7 +403,7 @@ class StructuralSubscriptionTargetMixin:
         """See `IStructuralSubscriptionTarget`."""
         # This is a helper method for creating a structural
         # subscription. It is useful so long as subscriptions are mainly
-        # used to implement bug contacts.
+        # used to implement bug supervisor rules.
         if not self.userCanAlterBugSubscription(subscriber, subscribed_by):
             raise UserCannotSubscribePerson(
                 '%s does not have permission to subscribe %s' % (
@@ -561,8 +542,8 @@ def _get_structural_subscriptions(find, targets, *conditions):
     """
     targets = set(target for bugtask, target in targets)
     target_descriptions = [
-        IStructuralSubscriptionTargetHelper(target).join
-        for target in targets]
+        IStructuralSubscriptionTargetHelper(bugtarget).join
+        for bugtarget in targets]
     return IStore(StructuralSubscription).find(
         find, Or(*target_descriptions), *conditions)
 
@@ -909,11 +890,11 @@ def _calculate_tag_query(conditions, tags):
             BugSubscriptionFilter.id,
             tables=[BugSubscriptionFilter, tag_join],
             where=And(
-                Or(# We want filters that proclaim they simply want any tags.
+                Or(  # We want filters that proclaim they simply want any tags.
                    BugSubscriptionFilter.include_any_tags,
                    # Also include filters that match any tag...
                    And(Not(BugSubscriptionFilter.find_all_tags),
-                       Or(# ...with a positive match...
+                       Or(  # ...with a positive match...
                           And(BugSubscriptionFilterTag.include,
                               In(BugSubscriptionFilterTag.tag, tags)),
                           # ...or with a negative match...

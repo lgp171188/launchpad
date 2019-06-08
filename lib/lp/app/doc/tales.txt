@@ -95,20 +95,17 @@ personal package archives (PPAs).
     >>> print test_tales("ppa/image:icon", ppa=mark.archive)
     <img ... src="/@@/ppa-icon" />
 
-Then distribution main archives (primary, partner and debug).
+Then distribution main archives (primary and partner).
 
     >>> from lp.registry.interfaces.distribution import (
     ...      IDistributionSet)
     >>> ubuntu = getUtility(IDistributionSet).getByName('ubuntu')
-    >>> [primary, partner, debug] = ubuntu.all_distro_archives
+    >>> [primary, partner] = ubuntu.all_distro_archives
 
     >>> print test_tales("archive/image:icon", archive=primary)
     <img ... src="/@@/distribution" />
 
     >>> print test_tales("archive/image:icon", archive=partner)
-    <img ... src="/@@/distribution" />
-
-    >>> print test_tales("archive/image:icon", archive=debug)
     <img ... src="/@@/distribution" />
 
 And finally Copy archives.
@@ -132,7 +129,7 @@ displays the unique ppa reference.
     ...     name='ppa', private=False, owner=owner)
     >>> login(ANONYMOUS)
     >>> print test_tales("ppa/fmt:link", ppa=public_ppa)
-    <a href="/~joe/+archive/ppa"
+    <a href="/~joe/+archive/ubuntu/ppa"
        class="sprite ppa-icon">PPA for Joe Smith</a>
     >>> print test_tales("ppa/fmt:reference", ppa=public_ppa)
     ppa:joe/ppa
@@ -144,7 +141,7 @@ users with launchpad.View on them.
     >>> public_ppa.disable()
 
     >>> print test_tales("ppa/fmt:link", ppa=public_ppa)
-    <a href="/~joe/+archive/ppa" class="sprite ppa-icon-inactive">PPA
+    <a href="/~joe/+archive/ubuntu/ppa" class="sprite ppa-icon-inactive">PPA
     for Joe Smith</a>
 
     >>> login(ANONYMOUS)
@@ -160,8 +157,8 @@ them.
     ...     name='pppa', private=True, owner=owner)
 
     >>> print test_tales("ppa/fmt:link", ppa=private_ppa)
-    <a href="/~joe/+archive/pppa" class="sprite ppa-icon">PPA named pppa
-    for Joe Smith</a>
+    <a href="/~joe/+archive/ubuntu/pppa" class="sprite ppa-icon private">PPA named
+    pppa for Joe Smith</a>
 
     >>> login(ANONYMOUS)
 
@@ -180,6 +177,30 @@ a subscription to the PPA.
     >>> print test_tales("ppa/fmt:reference", ppa=private_ppa)
     ppa:joe/pppa
 
+The same 'link' formatter works for distribution archives, with a
+different sprite.  The link target for main archives (primary and
+partner) is the distribution rather than the archive, as the archives
+would just redirect anyway.
+
+    >>> print test_tales("archive/fmt:link", archive=primary)
+    <a href="/ubuntu" class="sprite distribution">Primary Archive for Ubuntu
+    Linux</a>
+
+    >>> print test_tales("archive/fmt:link", archive=partner)
+    <a href="/ubuntu" class="sprite distribution">Partner Archive for Ubuntu
+    Linux</a>
+
+    >>> print test_tales("archive/fmt:link", archive=copy)
+    <a href="/ubuntu/+archive/rebuild" class="sprite distribution">Copy
+    archive rebuild for Mark Shuttleworth</a>
+
+The 'reference' formatter is meaningless for non-PPA archives.
+
+    >>> test_tales("archive/fmt:reference", archive=primary)
+    Traceback (most recent call last):
+    ...
+    NotImplementedError: No reference implementation for non-PPA archive ...
+
 We also have icons for builds which may have different dimensions.
 
     >>> login('admin@canonical.com')
@@ -197,15 +218,14 @@ The 'Needs building' build is 14x14:
 
 The 'building' build is 14x14:
 
-    >>> from zope.security.proxy import removeSecurityProxy
     >>> from lp.buildmaster.enums import BuildStatus
-    >>> removeSecurityProxy(build).status = BuildStatus.BUILDING
+    >>> build.updateStatus(BuildStatus.BUILDING)
     >>> print test_tales("build/image:icon", build=build)
     <img width="14" height="14"...src="/@@/processing" />
 
 But the 'failed to build' build is 16x14:
 
-    >>> removeSecurityProxy(build).status = BuildStatus.FAILEDTOBUILD
+    >>> build.updateStatus(BuildStatus.FAILEDTOBUILD)
     >>> print test_tales("build/image:icon", build=build)
     <img width="16" height="14"...src="/@@/build-failed" />
 
@@ -266,7 +286,7 @@ To preserve newlines in text when displaying as HTML, use fmt:nl_to_br:
 
     >>> test_tales('foo/fmt:nl_to_br',
     ...             foo='icicle\nbicycle\ntricycle & troika')
-    'icicle<br />\nbicycle<br />\ntricycle &amp; troika'
+    u'icicle<br />\nbicycle<br />\ntricycle &amp; troika'
 
 To "<pre>" format a string, use fmt:nice_pre:
 
@@ -274,16 +294,16 @@ To "<pre>" format a string, use fmt:nice_pre:
     >>> pprint.pprint(textwrap.wrap(
     ...     test_tales('foo/fmt:nice_pre', foo='hello & goodbye')
     ...    ))
-    ['<pre class="wrap">hello &amp; goodbye</pre>']
+    [u'<pre class="wrap">hello &amp; goodbye</pre>']
 
 Add manual word breaks to long words in a string:
 
     >>> test_tales('foo/fmt:break-long-words', foo='short words')
-    'short words'
+    u'short words'
 
     >>> test_tales('foo/fmt:break-long-words',
     ...     foo='<http://launchpad.net/products/launchpad>')
-    '&lt;http:/<wbr />/launchpad.<wbr />...<wbr />launchpad&gt;'
+    u'&lt;http:/<wbr />/launchpad.<wbr />...<wbr />launchpad&gt;'
 
 To get a int with its thousands separated by a comma, use fmt:intcomma.
 
@@ -305,7 +325,7 @@ The fmt: namespace to get URLs
 The `fmt:url` is used when you want the canonical URL of a given object.
 
     >>> print test_tales("bug/fmt:url", bug=bug)
-    http://bugs.launchpad.dev/bugs/1
+    http://bugs.launchpad.test/bugs/1
 
 You can also specify an extra argument (a view's name), if you want the
 URL of a given page under that object. For that to work, though, we need
@@ -314,7 +334,7 @@ to simulate a browser request -- that's why we login() here.
     >>> from lp.services.webapp.servers import LaunchpadTestRequest
     >>> login(ANONYMOUS, LaunchpadTestRequest())
     >>> print test_tales("bug/fmt:url/+text", bug=bug)
-    http://bugs.launchpad.dev/bugs/1/+text
+    http://bugs.launchpad.test/bugs/1/+text
 
 
 fmt:url accepts an rootsite extension to make URLs to a specific application.
@@ -323,16 +343,16 @@ fmt:url accepts an rootsite extension to make URLs to a specific application.
     ...     LaunchpadTestRequest(SERVER_URL='http://code.launchpad.net'))
 
     >>> print test_tales("person/fmt:url:bugs", person=mark)
-    http://bugs.launchpad.dev/~mark
+    http://bugs.launchpad.test/~mark
 
     >>> print test_tales("person/fmt:url:feeds", person=mark)
-    http://feeds.launchpad.dev/~mark
+    http://feeds.launchpad.test/~mark
 
     >>> print test_tales("pillar/fmt:url:answers", pillar=ubuntu)
-    http://answers.launchpad.dev/ubuntu
+    http://answers.launchpad.test/ubuntu
 
     >>> print test_tales("bug/fmt:url:mainsite", bug=bug)
-    http://launchpad.dev/bugs/1
+    http://launchpad.test/bugs/1
 
     >>> login(ANONYMOUS)
 
@@ -374,6 +394,8 @@ to a content object.  There are currently links defined for:
 
   * people / teams
   * branches
+  * Git repositories
+  * Git references
   * bugs
   * bug subscriptions
   * bug tasks
@@ -412,28 +434,28 @@ The link can make the URL go to a specific app.
     ...     LaunchpadTestRequest(SERVER_URL='http://code.launchpad.net'))
 
     >>> print test_tales("pillar/fmt:link:translations", pillar=ubuntu)
-    <a ...http://translations.launchpad.dev/ubuntu...
+    <a ...http://translations.launchpad.test/ubuntu...
 
     >>> print test_tales("person/fmt:url:feeds", person=mark)
-    http://feeds.launchpad.dev/~mark
+    http://feeds.launchpad.test/~mark
 
     >>> print test_tales("bug/fmt:url:mainsite", bug=bug)
-    http://launchpad.dev/bugs/1
+    http://launchpad.test/bugs/1
 
 The default behaviour for pillars, persons, and teams is to link to
 the mainsite.
 
     >>> print test_tales("pillar/fmt:link", pillar=ubuntu)
-    <a ...http://launchpad.dev/ubuntu...
+    <a ...http://launchpad.test/ubuntu...
 
     >>> print test_tales("person/fmt:link", person=mark)
-    <a ...http://launchpad.dev/~mark...
+    <a ...http://launchpad.test/~mark...
 
     >>> print test_tales("person/fmt:link-display-name-id", person=mark)
-    <a ...http://launchpad.dev/~mark...>Mark Shuttleworth (mark)</a>
+    <a ...http://launchpad.test/~mark...>Mark Shuttleworth (mark)</a>
 
     >>> print test_tales("team/fmt:link", team=ubuntu_team)
-    <a ...http://launchpad.dev/~ubuntu-team...
+    <a ...http://launchpad.test/~ubuntu-team...
 
     >>> login(ANONYMOUS)
 
@@ -443,11 +465,11 @@ Person's displayname will be escaped; averting a XSS vulnerability.
 
     >>> login('test@canonical.com')
     >>> sample_person = getUtility(IPersonSet).getByName('name12')
-    >>> sample_person.displayname = (
+    >>> sample_person.display_name = (
     ...     "Sample Person<br/><script>alert('XSS')</script>")
     >>> test_tales("person/fmt:link", person=sample_person)
     u'<a href=".../~name12"...>Sample
-      Person&lt;br/&gt;&lt;script&gt;alert(\'XSS\')&lt;/script&gt;</a>'
+      Person&lt;br/&gt;&lt;script&gt;alert(&#x27;XSS&#x27;)&lt;/script&gt;</a>'
 
 The fmt:link formatter takes an additional view_name component to extend
 the link:
@@ -463,10 +485,13 @@ If the person has no time_zone specified, we use UTC.
     u'Australia/Perth'
 
     >>> test_tales("person/fmt:local-time", person=sample_person)
-    '... WST'
+    '... AWST'
 
-    >>> print mark.time_zone
+    >>> from zope.security.proxy import removeSecurityProxy
+    >>> print removeSecurityProxy(mark).location
     None
+    >>> mark.time_zone
+    u'UTC'
 
     >>> test_tales("person/fmt:local-time", person=mark)
     '... UTC'
@@ -489,7 +514,7 @@ For branches, fmt:link links to the branch page.
 The bzr-link formatter uses the bzr identity.
 
     >>> print test_tales("branch/fmt:bzr-link", branch=branch)
-    <a href="http://code.launchpad.dev/~eric/fooix/bar"
+    <a href="http://code.launchpad.test/~eric/fooix/bar"
       class="sprite branch">lp://dev/~eric/fooix/bar</a>
 
     >>> ignored = login_person(fooix.owner, LaunchpadTestRequest())
@@ -498,6 +523,27 @@ The bzr-link formatter uses the bzr identity.
     >>> clear_property_cache(branch)
     >>> print test_tales("branch/fmt:bzr-link", branch=branch)
     <a href=".../~eric/fooix/bar" class="sprite branch">lp://dev/fooix</a>
+
+
+Git repositories
+................
+
+For Git repositories, fmt:link links to the repository page.
+
+    >>> repository = factory.makeGitRepository(
+    ...     owner=eric, target=fooix, name=u'bar')
+    >>> print test_tales("repository/fmt:link", repository=repository)
+    <a href=".../~eric/fooix/+git/bar">lp:~eric/fooix/+git/bar</a>
+
+
+Git references
+..............
+
+For Git references, fmt:link links to the reference page.
+
+    >>> [ref] = factory.makeGitRefs(repository=repository, paths=[u"master"])
+    >>> print test_tales("ref/fmt:link", ref=ref)
+    <a href=".../~eric/fooix/+git/bar/+ref/master">~eric/fooix/+git/bar:master</a>
 
 
 Bugs
@@ -527,11 +573,11 @@ title might be interpreted by the browser.
     >>> bug.title = "Opps<br/><script>alert('XSS')</script>"
     >>> test_tales("bug/fmt:link", bug=getUtility(IBugSet).get(1))
     u'<a href=".../bugs/1" ...>Bug #1:
-      Opps&lt;br/&gt;&lt;script&gt;alert(\'XSS\')&lt;/script&gt;</a>'
+      Opps&lt;br/&gt;&lt;script&gt;alert(&#x27;XSS&#x27;)&lt;/script&gt;</a>'
 
     >>> test_tales("bugtask/fmt:link", bugtask=bugtask)
     u'<a href=".../firefox/+bug/1" ...>Bug #1:
-      Opps&lt;br/&gt;&lt;script&gt;alert(\'XSS\')&lt;/script&gt;</a>'
+      Opps&lt;br/&gt;&lt;script&gt;alert(&#x27;XSS&#x27;)&lt;/script&gt;</a>'
 
 
 Branch subscriptions
@@ -591,7 +637,8 @@ Bug branches
     >>> login('test@canonical.com')
     >>> branch = factory.makeAnyBranch()
     >>> bug = factory.makeBug()
-    >>> bugbranch = bug.linkBranch(branch, branch.owner)
+    >>> bug.linkBranch(branch, branch.owner)
+    >>> [bugbranch] = bug.linked_bugbranches
     >>> test_tales("bugbranch/fmt:link", bugbranch=bugbranch)
     u'<a href="...+bug...">Bug #...</a>'
 
@@ -619,7 +666,7 @@ size), plus extra links for the MD5 hash and signature of that PRF.
     # First we define a helper function for printing the links together
     # with their titles.
 
-    >>> from BeautifulSoup import BeautifulSoup
+    >>> from lp.services.beautifulsoup import BeautifulSoup
     >>> def print_hrefs_with_titles(html):
     ...     soup = BeautifulSoup(html)
     ...     for link in soup.findAll('a'):
@@ -647,7 +694,7 @@ not included.
 The url for the release file can be retrieved using fmt:url.
 
     >>> print test_tales("release_file/fmt:url", release_file=release_file)
-    http://launchpad.dev/.../+download/test.txt
+    http://launchpad.test/.../+download/test.txt
 
 HTML in the file description is escaped in the fmt:link.
 
@@ -656,7 +703,7 @@ HTML in the file description is escaped in the fmt:link.
     >>> print test_tales("release_file/fmt:link", release_file=release_file)
     <img ...
     <a title="&gt;&lt;script&gt;XSS failed&lt;/script&gt; (4 bytes)"
-    href="http://launchpad.dev/.../+download/test.txt">test.txt</a> ...
+    href="http://launchpad.test/.../+download/test.txt">test.txt</a> ...
 
 
 
@@ -741,10 +788,10 @@ Bug Trackers
 The "standard" 'url' name is supported:
 
     >>> test_tales("bugtracker/fmt:url", bugtracker=bugtracker)
-    u'http://bugs.launchpad.dev/bugs/bugtrackers/email'
+    u'http://bugs.launchpad.test/bugs/bugtrackers/email'
 
 (The url is relative if possible, and our test request claims to be from
-launchpad.dev, so the url is relative.)
+launchpad.test, so the url is relative.)
 
 As are 'link', 'external-link', 'external-title-link' and 'aliases',
 which help when hiding email addresses from users who are not logged in.
@@ -781,7 +828,7 @@ which help when hiding email addresses from users who are not logged in.
     external-title-link -->
       u'&lt;email address hidden&gt; bug tracker'
     aliases -->
-      [u'http://bugs.vikingsrool.no/', u'mailto:&lt;email address hidden&gt;']
+      [u'http://bugs.vikingsrool.no/', u'mailto:<email address hidden>']
 
     >>> login('test@canonical.com')
 
@@ -804,10 +851,10 @@ Bug Watches
 The "standard" 'url' name is supported:
 
     >>> test_tales("bugwatch/fmt:url", bugwatch=sf_bugwatch)
-    u'http://bugs.launchpad.dev/bugs/12/+watch/13'
+    u'http://bugs.launchpad.test/bugs/12/+watch/...'
 
     >>> test_tales("bugwatch/fmt:url", bugwatch=email_bugwatch)
-    u'http://bugs.launchpad.dev/bugs/12/+watch/14'
+    u'http://bugs.launchpad.test/bugs/12/+watch/...'
 
 As are 'external-link' and 'external-link-short', which help when hiding
 email addresses from users who are not logged in:
@@ -1019,10 +1066,10 @@ Escaping strings
 To escape a string you should use fmt:escape.
 
     >>> test_tales('foo/fmt:escape', foo='some value')
-    'some value'
+    u'some value'
 
     >>> test_tales('foo/fmt:escape', foo='some <br /> value')
-    'some &lt;br /&gt; value'
+    u'some &lt;br /&gt; value'
 
 
 CSS ids
@@ -1153,22 +1200,22 @@ emphasise the linkage.
 
     >>> test_tales('foo/fmt:linkify-email',
     ...    foo='I am the mighty foo.bar@canonical.com hear me roar.')
-    u'...<a href="http://launchpad.dev/~name16"
+    u'...<a href="http://launchpad.test/~name16"
       class="sprite person">foo.bar@canonical.com</a>...'
 
 Multiple addresses may be linkified at once:
 
     >>> test_tales('foo/fmt:linkify-email',
     ...     foo='foo.bar@canonical.com and cprov@ubuntu.com')
-    u'<a href="http://launchpad.dev/~name16"
+    u'<a href="http://launchpad.test/~name16"
       class="sprite person">foo.bar@canonical.com</a>
-      and <a href="http://launchpad.dev/~cprov"
+      and <a href="http://launchpad.test/~cprov"
         class="sprite person">cprov@ubuntu.com</a>'
 
 Team addresses are linkified with a team icon:
 
     >>> test_tales('foo/fmt:linkify-email', foo='support@ubuntu.com')
-    u'<a href="http://launchpad.dev/~ubuntu-team"
+    u'<a href="http://launchpad.test/~ubuntu-team"
       class="sprite team">support@ubuntu.com</a>'
 
 Unknown email addresses are not altered in any way:
@@ -1193,10 +1240,10 @@ Test the 'fmt:' namespace where the context is a dict.
 
 Test the 'fmt:url' namespace for canonical urls.
 
-    >>> from zope.interface import implements
+    >>> from zope.interface import implementer
     >>> from lp.services.webapp.interfaces import ICanonicalUrlData
-    >>> class ObjectThatHasUrl:
-    ...     implements(ICanonicalUrlData)
+    >>> @implementer(ICanonicalUrlData)
+    ... class ObjectThatHasUrl:
     ...     path = 'bonobo/saki'
     ...     inside = None
     ...     rootsite = None
@@ -1210,11 +1257,11 @@ request.
 
 Make a mock-up IBrowserRequest, and use this as the interaction.
 
-    >>> from zope.interface import implements
+    >>> from zope.interface import implementer
     >>> from lp.services.webapp.interfaces import (
     ...     ILaunchpadBrowserApplicationRequest)
-    >>> class MockBrowserRequest:
-    ...     implements(ILaunchpadBrowserApplicationRequest,)
+    >>> @implementer(ILaunchpadBrowserApplicationRequest,)
+    ... class MockBrowserRequest:
     ...
     ...     interaction = None
     ...     principal = None
@@ -1448,42 +1495,44 @@ MenuLinks (ILink) can be formatted anchored text and icons.
     >>> login(ANONYMOUS, request)
     >>> link = Link('+place', 'text', 'summary', icon='icon', enabled=True)
     >>> menu_link = MenuLink(link)
-    >>> menu_link.url = "http://launchpad.dev/+place"
+    >>> menu_link.url = "http://launchpad.test/+place"
     >>> menu_link.name = 'test_link'
 
 The link can be rendered as an anchored icon.
 
     >>> print test_tales('menu_link/fmt:icon', menu_link=menu_link)
-    <a href="http://launchpad.dev/+place"
-       class="menu-link-test_link sprite icon action-icon"
+    <a class="menu-link-test_link sprite icon action-icon"
+       href="http://launchpad.test/+place"
        title="summary">text</a>
 
 The default rendering can be explicitly called too, text with an icon to
 the left.
 
     >>> print test_tales('menu_link/fmt:link', menu_link=menu_link)
-    <a href="http://launchpad.dev/+place"
-       class="menu-link-test_link sprite icon" title="summary">text</a>
+    <a class="menu-link-test_link sprite icon"
+       href="http://launchpad.test/+place"
+       title="summary">text</a>
 
 The 'edit', 'remove' and 'trash-icon' links are rendered icons followed
 by text. They have both the sprite and modify CSS classes.
 
     >>> menu_link.icon = 'edit'
     >>> print test_tales('menu_link/fmt:link', menu_link=menu_link)
-    <a href="http://launchpad.dev/+place"
-       class="menu-link-test_link sprite modify edit" title="summary">text</a>
+    <a class="menu-link-test_link sprite modify edit"
+       href="http://launchpad.test/+place"
+       title="summary">text</a>
 
     >>> menu_link.icon = 'remove'
     >>> print test_tales('menu_link/fmt:link', menu_link=menu_link)
-    <a href="http://launchpad.dev/+place"
-       class="menu-link-test_link sprite modify remove"
-         title="summary">text</a>
+    <a class="menu-link-test_link sprite modify remove"
+       href="http://launchpad.test/+place"
+       title="summary">text</a>
 
     >>> menu_link.icon = 'trash-icon'
     >>> print test_tales('menu_link/fmt:link', menu_link=menu_link)
-    <a href="http://launchpad.dev/+place"
-       class="menu-link-test_link sprite modify trash-icon"
-         title="summary">text</a>
+    <a class="menu-link-test_link sprite modify trash-icon"
+       href="http://launchpad.test/+place"
+       title="summary">text</a>
 
 fmt:icon-link and fmt:link-icon are deprecated. They are an alias for
 fmt:link. They do not control formatting as they once did; fmt:link
@@ -1491,17 +1540,19 @@ controls the format based on the icon name.
 
     >>> menu_link.icon = 'icon'
     >>> print test_tales('menu_link/fmt:icon-link', menu_link=menu_link)
-    <a href="http://launchpad.dev/+place"
-       class="menu-link-test_link sprite icon" title="summary">text</a>
+    <a class="menu-link-test_link sprite icon"
+       href="http://launchpad.test/+place"
+       title="summary">text</a>
 
     >>> print test_tales('menu_link/fmt:link-icon', menu_link=menu_link)
-    <a href="http://launchpad.dev/+place"
-       class="menu-link-test_link sprite icon" title="summary">text</a>
+    <a class="menu-link-test_link sprite icon"
+       href="http://launchpad.test/+place"
+       title="summary">text</a>
 
 And the url format is also available.
 
     >>> print test_tales('menu_link/fmt:url', menu_link=menu_link)
-    http://launchpad.dev/+place
+    http://launchpad.test/+place
 
 If the link is disabled, no markup is rendered.
 
@@ -1551,7 +1602,7 @@ If the private attribute is True, the class is 'private'.
     True
 
     >>> print test_tales('context/fmt:global-css', context=bug)
-    global-notification-visible private
+    private
 
     >>> login(ANONYMOUS)
 
@@ -1566,12 +1617,12 @@ has the appropriate privileges.
 The team 'myteam' is a private team so only the team members
 and Launchpad admins can see the details.
 
-Foo Bar is an administrator so he can see all.
+Foo Bar is an administrator so they can see all.
 
     >>> login('foo.bar@canonical.com')
     >>> myteam = getUtility(IPersonSet).getByName('myteam')
     >>> test_tales("team/fmt:link", team=myteam)
-    u'<a ...class="sprite team"...>My Team</a>'
+    u'<a ...class="sprite team private"...>My Team</a>'
 
     >>> test_tales("team/fmt:displayname", team=myteam)
     u'My Team'
@@ -1579,11 +1630,11 @@ Foo Bar is an administrator so he can see all.
     >>> test_tales("team/fmt:unique_displayname", team=myteam)
     u'My Team (myteam)'
 
-Owner is a member of myteam so he can see all.
+Owner is a member of myteam so they can see all.
 
     >>> login('owner@canonical.com')
     >>> test_tales("team/fmt:link", team=myteam)
-    u'<a ...class="sprite team"...>My Team</a>'
+    u'<a ...class="sprite team private"...>My Team</a>'
 
     >>> test_tales("team/fmt:displayname", team=myteam)
     u'My Team'

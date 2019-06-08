@@ -1,4 +1,4 @@
-# Copyright 2011-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2011-2017 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for visibility of branches.
@@ -10,6 +10,8 @@ Some branches are also considered "private".  These are branches that
 are only visible to the owner of the branch, and the subscribers.
 """
 
+from __future__ import absolute_import, print_function, unicode_literals
+
 __metaclass__ = type
 
 from zope.component import (
@@ -18,6 +20,7 @@ from zope.component import (
     )
 from zope.security.proxy import removeSecurityProxy
 
+from lp.app.enums import InformationType
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.app.interfaces.security import IAuthorization
 from lp.code.enums import (
@@ -26,7 +29,6 @@ from lp.code.enums import (
     CodeReviewNotificationLevel,
     )
 from lp.code.interfaces.branch import IBranchSet
-from lp.registry.enums import InformationType
 from lp.registry.interfaces.person import TeamMembershipPolicy
 from lp.registry.interfaces.role import IPersonRoles
 from lp.security import AccessBranch
@@ -43,7 +45,7 @@ from lp.testing.layers import DatabaseFunctionalLayer
 
 
 class TestBranchVisibility(TestCaseWithFactory):
-    """Tests for `IHasBranchVisibilityPolicy`."""
+    """Tests for branch privacy."""
 
     layer = DatabaseFunctionalLayer
 
@@ -162,7 +164,7 @@ class TestBranchVisibility(TestCaseWithFactory):
             (test_branches[0], False),
         ], branch_info)
 
-        # An arbitrary person is not in eligible to see any of the private
+        # An arbitrary person is not eligible to see any of the private
         # branches.
         person = self.factory.makePerson()
         branch_info = [(branch, branch.private)
@@ -174,8 +176,8 @@ class TestBranchVisibility(TestCaseWithFactory):
             (test_branches[0], False),
         ], branch_info)
 
-        # Private owner sees his new private branch and other public
-        # branches, but not other's private branches.
+        # Private owner sees their new private branch and other public
+        # branches, but not other private branches.
         branch_info = [(branch, branch.private)
                 for branch in branch_set.getRecentlyRegisteredBranches(
                     3, visible_by_user=private_owner)]

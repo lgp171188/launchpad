@@ -1,7 +1,5 @@
-# Copyright 2009-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
-
-# pylint: disable-msg=W0603
 
 __metaclass__ = type
 __all__ = ['start_launchpad']
@@ -21,7 +19,6 @@ from zope.app.server.main import main
 
 from lp.services.config import config
 from lp.services.daemons import tachandler
-from lp.services.googlesearch import googletestservice
 from lp.services.mailman import runmailman
 from lp.services.osutils import ensure_directory_exists
 from lp.services.pidfile import (
@@ -29,7 +26,7 @@ from lp.services.pidfile import (
     pidfile_path,
     )
 from lp.services.rabbit.server import RabbitServer
-from lp.services.txlongpoll.server import TxLongPollServer
+from lp.services.sitesearch import bingtestservice
 
 
 def make_abspath(path):
@@ -51,8 +48,7 @@ class Service(fixtures.Fixture):
         """
         raise NotImplementedError
 
-    def setUp(self):
-        super(Service, self).setUp()
+    def _setUp(self):
         self.launch()
 
 
@@ -146,14 +142,14 @@ class CodebrowseService(Service):
         process.stdin.close()
 
 
-class GoogleWebService(Service):
+class BingWebService(Service):
 
     @property
     def should_launch(self):
-        return config.google_test_service.launch
+        return config.bing_test_service.launch
 
     def launch(self):
-        self.addCleanup(stop_process, googletestservice.start_as_process())
+        self.addCleanup(stop_process, bingtestservice.start_as_process())
 
 
 class MemcachedService(Service):
@@ -240,29 +236,6 @@ class RabbitService(Service):
         self.useFixture(self.server)
 
 
-class TxLongPollService(Service):
-    """A TxLongPoll service."""
-
-    @property
-    def should_launch(self):
-        return config.txlongpoll.launch
-
-    def launch(self):
-        twistd_bin = os.path.join(
-            config.root, 'bin', 'twistd-for-txlongpoll')
-        broker_hostname, broker_port = as_host_port(
-            config.rabbitmq.host, None, None)
-        self.server = TxLongPollServer(
-            twistd_bin=twistd_bin,
-            frontend_port=config.txlongpoll.frontend_port,
-            broker_user=config.rabbitmq.userid,
-            broker_password=config.rabbitmq.password,
-            broker_vhost=config.rabbitmq.virtual_host,
-            broker_host=broker_hostname,
-            broker_port=broker_port)
-        self.useFixture(self.server)
-
-
 def stop_process(process):
     """kill process and BLOCK until process dies.
 
@@ -275,7 +248,7 @@ def stop_process(process):
 
 def prepare_for_librarian():
     if not os.path.isdir(config.librarian_server.root):
-        os.makedirs(config.librarian_server.root, 0700)
+        os.makedirs(config.librarian_server.root, 0o700)
 
 
 SERVICES = {
@@ -284,11 +257,10 @@ SERVICES = {
     'sftp': TacFile('sftp', 'daemons/sftp.tac', 'codehosting'),
     'forker': ForkingSessionService(),
     'mailman': MailmanService(),
+    'bing-webservice': BingWebService(),
     'codebrowse': CodebrowseService(),
-    'google-webservice': GoogleWebService(),
     'memcached': MemcachedService(),
     'rabbitmq': RabbitService(),
-    'txlongpoll': TxLongPollService(),
     }
 
 

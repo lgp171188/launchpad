@@ -1,17 +1,14 @@
 # Copyright 2010-2012 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-# pylint: disable-msg=E0211,E0213
-
 """Interfaces related to bugs."""
 
 __metaclass__ = type
 
-
 __all__ = [
-    'BugDistroSeriesTargetDetails',
     'IBugTarget',
     'IHasBugs',
+    'IHasExpirableBugs',
     'IHasOfficialBugTags',
     'IOfficialBugTag',
     'IOfficialBugTagTarget',
@@ -30,7 +27,6 @@ from lazr.restful.declarations import (
     export_read_operation,
     export_write_operation,
     exported,
-    LAZR_WEBSERVICE_EXPORTED,
     operation_for_version,
     operation_parameters,
     operation_removed_in_version,
@@ -54,6 +50,12 @@ from zope.schema import (
     )
 
 from lp import _
+from lp.app.enums import (
+    FREE_INFORMATION_TYPES,
+    InformationType,
+    NON_EMBARGOED_INFORMATION_TYPES,
+    PROPRIETARY_INFORMATION_TYPES,
+    )
 from lp.bugs.interfaces.bugtask import IBugTask
 from lp.bugs.interfaces.bugtasksearch import (
     BugBlueprintSearch,
@@ -61,13 +63,12 @@ from lp.bugs.interfaces.bugtasksearch import (
     BugTagsSearchCombinator,
     IBugTaskSearch,
     )
-from lp.registry.enums import (
-    BugSharingPolicy,
-    FREE_INFORMATION_TYPES,
-    InformationType,
-    NON_EMBARGOED_INFORMATION_TYPES,
-    )
+from lp.registry.enums import BugSharingPolicy
 from lp.services.fields import Tag
+from lp.services.webservice.apihelpers import (
+    patch_plain_parameter_type,
+    patch_reference_property,
+    )
 
 
 search_tasks_params_common = {
@@ -93,8 +94,6 @@ search_tasks_params_common = {
     "tags_combinator": copy_field(IBugTaskSearch['tags_combinator']),
     "omit_duplicates": copy_field(IBugTaskSearch['omit_dupes']),
     "status_upstream": copy_field(IBugTaskSearch['status_upstream']),
-    "milestone_assignment": copy_field(
-        IBugTaskSearch['milestone_assignment']),
     "milestone": copy_field(IBugTaskSearch['milestone']),
     "component": copy_field(IBugTaskSearch['component']),
     "nominated_for": Reference(schema=Interface),
@@ -210,6 +209,8 @@ BUG_POLICY_ALLOWED_TYPES = {
     BugSharingPolicy.PUBLIC_OR_PROPRIETARY: NON_EMBARGOED_INFORMATION_TYPES,
     BugSharingPolicy.PROPRIETARY_OR_PUBLIC: NON_EMBARGOED_INFORMATION_TYPES,
     BugSharingPolicy.PROPRIETARY: (InformationType.PROPRIETARY,),
+    BugSharingPolicy.FORBIDDEN: [],
+    BugSharingPolicy.EMBARGOED_OR_PROPRIETARY: PROPRIETARY_INFORMATION_TYPES,
     }
 
 BUG_POLICY_DEFAULT_TYPES = {
@@ -217,6 +218,8 @@ BUG_POLICY_DEFAULT_TYPES = {
     BugSharingPolicy.PUBLIC_OR_PROPRIETARY: InformationType.PUBLIC,
     BugSharingPolicy.PROPRIETARY_OR_PUBLIC: InformationType.PROPRIETARY,
     BugSharingPolicy.PROPRIETARY: InformationType.PROPRIETARY,
+    BugSharingPolicy.FORBIDDEN: None,
+    BugSharingPolicy.EMBARGOED_OR_PROPRIETARY: InformationType.EMBARGOED,
     }
 
 
@@ -249,11 +252,11 @@ class IHasBugs(Interface):
                     distribution=None, tags=None,
                     tags_combinator=BugTagsSearchCombinator.ALL,
                     omit_duplicates=True, omit_targeted=None,
-                    status_upstream=None, milestone_assignment=None,
-                    milestone=None, component=None, nominated_for=None,
-                    sourcepackagename=None, has_no_package=None,
-                    hardware_bus=None, hardware_vendor_id=None,
-                    hardware_product_id=None, hardware_driver_name=None,
+                    status_upstream=None, milestone=None, component=None,
+                    nominated_for=None, sourcepackagename=None,
+                    has_no_package=None, hardware_bus=None,
+                    hardware_vendor_id=None, hardware_product_id=None,
+                    hardware_driver_name=None,
                     hardware_driver_package_name=None,
                     hardware_owner_is_bug_reporter=None,
                     hardware_owner_is_affected_by_bug=False,
@@ -289,6 +292,10 @@ class IHasBugs(Interface):
         The ordered bug tasks are used to choose the most relevant bug task
         for any particular context.
         """
+
+
+class IHasExpirableBugs(Interface):
+    """Marker interface for entities supporting querying expirable bugs"""
 
 
 class IBugTarget(IHasBugs):
@@ -347,31 +354,9 @@ class IBugTarget(IHasBugs):
 
 # We assign the schema for an `IBugTask` attribute here
 # in order to avoid circular dependencies.
-IBugTask['target'].schema = IBugTarget
-IBugTask['transitionToTarget'].getTaggedValue(
-    LAZR_WEBSERVICE_EXPORTED)['params']['target'].schema = IBugTarget
-
-
-class BugDistroSeriesTargetDetails:
-    """The details of a bug targeted to a specific IDistroSeries.
-
-    The following attributes are provided:
-
-    :series: The IDistroSeries.
-    :istargeted: Is there a fix targeted to this series?
-    :sourcepackage: The sourcepackage to which the fix would be targeted.
-    :assignee: An IPerson, or None if no assignee.
-    :status: A BugTaskStatus dbschema item, or None, if series is not
-        targeted.
-    """
-
-    def __init__(self, series, istargeted=False, sourcepackage=None,
-                 assignee=None, status=None):
-        self.series = series
-        self.istargeted = istargeted
-        self.sourcepackage = sourcepackage
-        self.assignee = assignee
-        self.status = status
+patch_reference_property(IBugTask, 'target', IBugTarget)
+patch_plain_parameter_type(
+    IBugTask, 'transitionToTarget', 'target', IBugTarget)
 
 
 class IHasOfficialBugTags(Interface):

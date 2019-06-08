@@ -1,7 +1,9 @@
-# Copyright 2009 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2017 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for the branch listing query optimiser."""
+
+from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 
@@ -94,8 +96,7 @@ class TestGetProductSeriesForBranches(TestCaseWithFactory):
         branch = self.branches[0]
         gamma = self.product.newSeries(
             self.product.owner, "gamma", "summary", branch)
-        beta = self.product.newSeries(
-            self.product.owner, "beta", "summary")
+        self.product.newSeries(self.product.owner, "beta", "summary")
         self.assertSeriesBranches([gamma])
 
     def test_import_branches_also_linked(self):

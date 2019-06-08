@@ -1,7 +1,5 @@
-# Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2017 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
-
-# pylint: disable-msg=E0611,W0212, W0403
 
 __metaclass__ = type
 __all__ = [
@@ -10,8 +8,8 @@ __all__ = [
     'TranslationImportQueue',
     ]
 
-from cStringIO import StringIO
 import datetime
+from io import BytesIO
 import logging
 from operator import attrgetter
 import os.path
@@ -40,7 +38,7 @@ from zope.component import (
     getUtility,
     queryAdapter,
     )
-from zope.interface import implements
+from zope.interface import implementer
 
 from lp.app.errors import NotFoundError
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
@@ -62,7 +60,7 @@ from lp.services.database.constants import (
     )
 from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.enumcol import EnumCol
-from lp.services.database.lpstorm import (
+from lp.services.database.interfaces import (
     IMasterStore,
     ISlaveStore,
     IStore,
@@ -169,8 +167,8 @@ def compose_approval_conflict_notice(domain, templates_count, sample):
         ) % (templates_count, domain, ';\n'.join(sample_names))
 
 
+@implementer(ITranslationImportQueueEntry)
 class TranslationImportQueueEntry(SQLBase):
-    implements(ITranslationImportQueueEntry)
 
     _table = 'TranslationImportQueueEntry'
 
@@ -202,12 +200,6 @@ class TranslationImportQueueEntry(SQLBase):
     date_status_changed = UtcDateTimeCol(dbName='date_status_changed',
         notNull=True, default=DEFAULT)
     error_output = StringCol(notNull=False, default=None)
-
-    @property
-    def is_targeted_to_ubuntu(self):
-        return (self.distroseries is not None and
-            self.distroseries.distribution ==
-            getUtility(ILaunchpadCelebrities).ubuntu)
 
     @property
     def sourcepackage(self):
@@ -848,7 +840,7 @@ class TranslationImportQueueEntry(SQLBase):
         return elapsedtime_text
 
 
-def list_product_request_targets(status_condition):
+def list_product_request_targets(user, status_condition):
     """Return list of Products with import queue entries.
 
     :param status_condition: Storm conditional restricting the
@@ -856,8 +848,10 @@ def list_product_request_targets(status_condition):
     :return: A list of `Product`, distinct and ordered by name.
     """
     # Avoid circular imports.
-    from lp.registry.model.product import Product
+    from lp.registry.model.product import Product, ProductSet
     from lp.registry.model.productseries import ProductSeries
+
+    privacy_filter = ProductSet.getProductPrivacyFilter(user)
 
     products = IStore(Product).find(
         Product,
@@ -868,7 +862,8 @@ def list_product_request_targets(status_condition):
             And(
                 TranslationImportQueueEntry.productseries_id != None,
                 status_condition),
-            distinct=True)))
+            distinct=True)),
+        privacy_filter)
 
     # Products may occur multiple times due to the join with
     # ProductSeries.
@@ -906,8 +901,8 @@ def list_distroseries_request_targets(status_condition):
     return list(distroseries)
 
 
+@implementer(ITranslationImportQueue)
 class TranslationImportQueue:
-    implements(ITranslationImportQueue)
 
     def __iter__(self):
         """See ITranslationImportQueue."""
@@ -1035,6 +1030,19 @@ class TranslationImportQueue:
         return (
             format, translation_importer.getTranslationFormatImporter(format))
 
+    def _getFileObjectAndSize(self, file_or_data):
+        """Get the size of a seekable file object."""
+        if (isinstance(file_or_data, basestring)):
+            file_obj = BytesIO(file_or_data)
+            file_size = len(file_or_data)
+        else:
+            file_obj = file_or_data
+            start = file_obj.tell()
+            file_obj.seek(0, os.SEEK_END)
+            file_size = file_obj.tell()
+            file_obj.seek(start)
+        return file_obj, file_size
+
     def addOrUpdateEntry(self, path, content, by_maintainer, importer,
                          sourcepackagename=None, distroseries=None,
                          productseries=None, potemplate=None, pofile=None,
@@ -1045,16 +1053,18 @@ class TranslationImportQueue:
             "This one has either neither or both.")
         assert productseries is None or sourcepackagename is None, (
             "Can't upload to a sourcepackagename in a productseries.")
-        assert content is not None and content != '', "Upload has no content."
+        assert content is not None, "Upload has no content."
         assert path is not None and path != '', "Upload has no path."
+
+        file, size = self._getFileObjectAndSize(content)
+        assert size is not None and size != 0, "Upload has empty content."
 
         filename = os.path.basename(path)
         format, format_importer = self._getFormatAndImporter(
-            filename, content, format=format)
+            filename, file, format=format)
+        file.seek(0)
 
         # Upload the file into librarian.
-        size = len(content)
-        file = StringIO(content)
         client = getUtility(ILibrarianClient)
         alias = client.addFile(
             name=filename, size=size, file=file,
@@ -1149,9 +1159,9 @@ class TranslationImportQueue:
         num_files = 0
         conflict_files = []
 
-        tarball_io = StringIO(content)
+        tarball_io, _ = self._getFileObjectAndSize(content)
         try:
-            tarball = tarfile.open('', 'r|*', tarball_io)
+            tarball = tarfile.open('', 'r:*', tarball_io)
         except (tarfile.CompressionError, tarfile.ReadError):
             # If something went wrong with the tarfile, assume it's
             # busted and let the user deal with it.
@@ -1163,7 +1173,6 @@ class TranslationImportQueue:
             path = self._makePath(name, filename_filter)
             if self._isTranslationFile(path, only_templates):
                 upload_files[name] = path
-        tarball.close()
 
         if approver_factory is None:
             approver_factory = TranslationNullApprover
@@ -1172,14 +1181,10 @@ class TranslationImportQueue:
             productseries=productseries,
             distroseries=distroseries, sourcepackagename=sourcepackagename)
 
-        # Re-opening because we are using sequential access ("r|*") which is
-        # so much faster.
-        tarball_io.seek(0)
-        tarball = tarfile.open('', 'r|*', tarball_io)
         for tarinfo in tarball:
             if tarinfo.name not in upload_files:
                 continue
-            file_content = tarball.extractfile(tarinfo).read()
+            file_content = tarball.extractfile(tarinfo)
 
             path = upload_files[tarinfo.name]
             entry = approver.approve(self.addOrUpdateEntry(
@@ -1281,7 +1286,7 @@ class TranslationImportQueue:
             " AND ".join(queries), clauseTables=clause_tables,
             orderBy=['dateimported'])
 
-    def getRequestTargets(self, status=None):
+    def getRequestTargets(self, user, status=None):
         """See `ITranslationImportQueue`."""
 
         if status is None:
@@ -1290,7 +1295,7 @@ class TranslationImportQueue:
             status_clause = (TranslationImportQueueEntry.status == status)
 
         distroseries = list_distroseries_request_targets(status_clause)
-        products = list_product_request_targets(status_clause)
+        products = list_product_request_targets(user, status_clause)
 
         return distroseries + products
 

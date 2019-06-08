@@ -7,7 +7,7 @@ question's lifecycle.  These are defined in the QuestionStatus enumeration.
 
     >>> from lp.answers.enums import QuestionStatus
     >>> for status in QuestionStatus.items:
-    ...     print status.name
+    ...     print(status.name)
     OPEN
     NEEDSINFO
     ANSWERED
@@ -20,7 +20,7 @@ actions are defined in the QuestionAction enumeration.
 
     >>> from lp.answers.enums import QuestionAction
     >>> for status in QuestionAction.items:
-    ...     print status.name
+    ...     print(status.name)
     REQUESTINFO
     GIVEINFO
     COMMENT
@@ -73,21 +73,21 @@ A question starts its lifecycle in the Open state.
     ...     datecreated=now,
     ...     )
     >>> question = ubuntu.newQuestion(**new_question_args)
-    >>> print question.status.title
+    >>> print(question.status.title)
     Open
 
 The following scenarios are now possible.
 
 
-1) Another user helps the submitter with his question
-=====================================================
+1) Another user helps the submitter with their question
+=======================================================
 
 The most common scenario is where another user comes to help the submitter and
-answers his question.  This may involve exchanging information with the
+answers their question.  This may involve exchanging information with the
 submitter to clarify the question.
 
 The requestInfo() method is used to ask the user for more information.  This
-method takes two mandatory parameters: the user asking the question and his
+method takes two mandatory parameters: the user asking the question and their
 question.  It can also takes a 'datecreated' parameter specifying the creation
 date of the question (which defaults to 'now').
 
@@ -100,7 +100,7 @@ date of the question (which defaults to 'now').
 We now have the IQuestionMessage that was added to the question messages
 history.
 
-    >>> from lp.services.webapp.testing import verifyObject
+    >>> from lp.testing import verifyObject
     >>> from lp.answers.interfaces.questionmessage import IQuestionMessage
     >>> verifyObject(IQuestionMessage, request_message)
     True
@@ -108,29 +108,29 @@ history.
     True
     >>> request_message.datecreated == now_plus_one_hour
     True
-    >>> print request_message.owner.displayname
+    >>> print(request_message.owner.displayname)
     Sample Person
 
 The question message contains the action that was executed and the status of
 the question after the action was executed.
 
-    >>> print request_message.action.name
+    >>> print(request_message.action.name)
     REQUESTINFO
-    >>> print request_message.new_status.name
+    >>> print(request_message.new_status.name)
     NEEDSINFO
 
-    >>> print request_message.text_contents
+    >>> print(request_message.text_contents)
     What is your Mac model?
 
 The subject of the message was generated automatically.
 
-    >>> print request_message.subject
+    >>> print(request_message.subject)
     Re: Unable to boot installer
 
 The question is moved to the NEEDSINFO state and the last response date is
 updated to the message's timestamp.
 
-    >>> print question.status.name
+    >>> print(question.status.name)
     NEEDSINFO
     >>> question.datelastresponse == now_plus_one_hour
     True
@@ -143,19 +143,19 @@ method which adds an IQuestionMessage with action GIVEINFO.
     >>> reply_message = question.giveInfo(
     ...     "I have a PowerMac 7200.", datecreated=now_plus_two_hours)
 
-    >>> print reply_message.action.name
+    >>> print(reply_message.action.name)
     GIVEINFO
-    >>> print reply_message.new_status.name
+    >>> print(reply_message.new_status.name)
     OPEN
     >>> reply_message == question.messages[-1]
     True
-    >>> print reply_message.owner.displayname
+    >>> print(reply_message.owner.displayname)
     No Privileges Person
 
 The question is moved back to the OPEN state and the last query date is
 updated to the message's creation date.
 
-    >>> print question.status.name
+    >>> print(question.status.name)
     OPEN
     >>> question.datelastquery == now_plus_two_hours
     True
@@ -174,21 +174,21 @@ the answer itself.
     ...     "https://help.ubuntu.com/community/Installation/OldWorldMacs "
     ...     "for all the details.",
     ...     datecreated=now_plus_three_hours)
-    >>> print answer_message.action.name
+    >>> print(answer_message.action.name)
     ANSWER
-    >>> print answer_message.new_status.name
+    >>> print(answer_message.new_status.name)
     ANSWERED
 
 The question's status is changed to ANSWERED and the last response date is
 updated to contain the date of the message.
 
-    >>> print question.status.name
+    >>> print(question.status.name)
     ANSWERED
     >>> question.datelastresponse == now_plus_three_hours
     True
 
 At that point, the question is considered answered, but we don't have
-feedback from the user on whether it solved his problem or not.  If it
+feedback from the user on whether it solved their problem or not.  If it
 doesn't, the user can reopen the question.
 
     >>> login('no-priv@canonical.com')
@@ -198,17 +198,17 @@ doesn't, the user can reopen the question.
     ...     "boot screen. But soon after the Ubuntu progress bar appears, I "
     ...     "get a OOM Killer message appearing on the screen.",
     ...      datecreated=tomorrow)
-    >>> print reopen_message.action.name
+    >>> print(reopen_message.action.name)
     REOPEN
-    >>> print reopen_message.new_status.name
+    >>> print(reopen_message.new_status.name)
     OPEN
-    >>> print reopen_message.owner.displayname
+    >>> print(reopen_message.owner.displayname)
     No Privileges Person
 
 This moves back the question to the OPEN state and the last query date is
 updated to the message's creation date.
 
-    >>> print question.status.name
+    >>> print(question.status.name)
     OPEN
     >>> question.datelastquery == tomorrow
     True
@@ -225,11 +225,12 @@ Once again, an answer is given.
 
 The question is moved back to the ANSWERED state.
 
-    >>> print question.status.name
+    >>> print(question.status.name)
     ANSWERED
 
-The question owner will hopefully come back to confirm that his problem is
-solved.  He can specify which answer message helped him solved his problem.
+The question owner will hopefully come back to confirm that their problem is
+solved.  They can specify which answer message helped them solve their
+problem.
 
     >>> login('no-priv@canonical.com')
     >>> two_weeks_from_now = now + timedelta(days=14)
@@ -237,22 +238,22 @@ solved.  He can specify which answer message helped him solved his problem.
     ...     "I upgraded to 512M of RAM (found on eBay) and I've successfully "
     ...     "managed to install Ubuntu. Thanks for all the help.",
     ...     datecreated=two_weeks_from_now, answer=answer_message)
-    >>> print confirm_message.action.name
+    >>> print(confirm_message.action.name)
     CONFIRM
-    >>> print confirm_message.new_status.name
+    >>> print(confirm_message.new_status.name)
     SOLVED
-    >>> print confirm_message.owner.displayname
+    >>> print(confirm_message.owner.displayname)
     No Privileges Person
 
 The question is moved to the SOLVED state, and the message that solved the
 question is saved.  The date the question was solved and answerer are also
 updated.
 
-    >>> print question.status.name
+    >>> print(question.status.name)
     SOLVED
     >>> question.date_solved == two_weeks_from_now
     True
-    >>> print question.answerer.displayname
+    >>> print(question.answerer.displayname)
     Sample Person
     >>> question.answer == answer_message
     True
@@ -262,9 +263,9 @@ updated.
 =================
 
 In this scenario the user comes back to give the solution to the question
-himself.  The question owner can choose a best answer message later on.  The
-workflow permits the question owner to choose an answer before or after the
-question status is set to SOLVED.
+themselves.  The question owner can choose a best answer message later on.
+The workflow permits the question owner to choose an answer before or after
+the question status is set to SOLVED.
 
 A new question is posed.
 
@@ -280,7 +281,8 @@ The answer provides some useful information to the questioner.
     ...     "to install to. You must mess with the hardware to trick "
     ...     "the core chips to let it install. You may not want to do this.")
 
-The question has researched the problem, and has comes to a solution himself.
+The question owner has researched the problem, and has come to a solution
+themselves.
 
     >>> login('no-priv@canonical.com')
     >>> self_answer_message = question.giveAnswer(
@@ -296,21 +298,21 @@ The question owner is considered to have given information that the problem is
 solved and the question is moved to the SOLVED state.  The 'answerer'
 will be the question owner.
 
-    >>> print self_answer_message.action.name
+    >>> print(self_answer_message.action.name)
     CONFIRM
-    >>> print self_answer_message.new_status.name
+    >>> print(self_answer_message.new_status.name)
     SOLVED
 
-    >>> print question.status.name
+    >>> print(question.status.name)
     SOLVED
-    >>> print question.answerer.displayname
+    >>> print(question.answerer.displayname)
     No Privileges Person
     >>> question.date_solved == now_plus_one_hour
     True
-    >>> print question.answer
+    >>> print(question.answer)
     None
 
-The question owner can still specify which message helped him solved his
+The question owner can still specify which message helped them solve their
 problem.  The confirmAnswer() method is used when the question owner chooses
 another user's answer as a best answer.  The status will remain SOLVED.  The
 'answerer' will be the message owner, and the 'answer' will be the message.
@@ -321,16 +323,16 @@ The question's solution date will be the date of the answer message.
     ...     "Ubuntu on my Mac.",
     ...     datecreated=now_plus_one_hour,
     ...     answer=alt_answer_message)
-    >>> print confirm_message.action.name
+    >>> print(confirm_message.action.name)
     CONFIRM
-    >>> print confirm_message.new_status.name
+    >>> print(confirm_message.new_status.name)
     SOLVED
-    >>> print confirm_message.owner.displayname
+    >>> print(confirm_message.owner.displayname)
     No Privileges Person
 
-    >>> print question.status.name
+    >>> print(question.status.name)
     SOLVED
-    >>> print question.answerer.displayname
+    >>> print(question.answerer.displayname)
     Marilize Coetzee
     >>> question.answer == alt_answer_message
     True
@@ -354,15 +356,15 @@ the expireQuestion() method.
     ...     "this problem you should reopen the question and provide more "
     ...     "information about your problem.",
     ...     datecreated=two_weeks_from_now)
-    >>> print expire_message.action.name
+    >>> print(expire_message.action.name)
     EXPIRE
-    >>> print expire_message.new_status.name
+    >>> print(expire_message.new_status.name)
     EXPIRED
 
 The question is moved to the EXPIRED state and the last response date is
 updated to the message creation date.
 
-    >>> print question.status.name
+    >>> print(question.status.name)
     EXPIRED
     >>> question.datelastresponse == two_weeks_from_now
     True
@@ -376,13 +378,13 @@ reopened.
     ...     "I insert the CD and restart the computer, it boots straight "
     ...     "into Mac OS/9 instead of booting the installer.",
     ...     datecreated=much_later)
-    >>> print reopen_message.action.name
+    >>> print(reopen_message.action.name)
     REOPEN
 
 The question status is changed back to OPEN and the last query date is
 updated.
 
-    >>> print question.status.name
+    >>> print(question.status.name)
     OPEN
     >>> question.datelastquery == much_later
     True
@@ -434,15 +436,15 @@ When rejecting a question, a comment explaining the reason is given.
     >>> reject_message = spam_question.reject(
     ...     sample_person, "We don't send free CDs any more.",
     ...     datecreated=now_plus_one_hour)
-    >>> print reject_message.action.name
+    >>> print(reject_message.action.name)
     REJECT
-    >>> print reject_message.new_status.name
+    >>> print(reject_message.new_status.name)
     INVALID
 
 After rejection, the question is marked as invalid and the last response date
 is updated.
 
-    >>> print spam_question.status.name
+    >>> print(spam_question.status.name)
     INVALID
     >>> spam_question.datelastresponse == now_plus_one_hour
     True
@@ -452,7 +454,7 @@ solution date, answerer, and answer are also updated.
 
     >>> spam_question.answer == reject_message
     True
-    >>> print spam_question.answerer.displayname
+    >>> print(spam_question.answerer.displayname)
     Sample Person
     >>> spam_question.date_solved == now_plus_one_hour
     True
@@ -464,7 +466,7 @@ Other scenarios
 Many other scenarios are possible and some are likely more common than others.
 For example, it is likely that a user will directly answer a question without
 asking for other information first.  Sometimes, the original questioner won't
-come back to confirm that an answer solved his problem.
+come back to confirm that an answer solved their problem.
 
 Another likely scenario is where the question will expire in the NEEDSINFO
 state because the question owner doesn't reply to the request for more
@@ -498,11 +500,11 @@ explaining the status change.
 
 The method returns the IQuestionMessage recording the change.
 
-    >>> print status_change_message.action.name
+    >>> print(status_change_message.action.name)
     SETSTATUS
-    >>> print status_change_message.new_status.name
+    >>> print(status_change_message.new_status.name)
     INVALID
-    >>> print question.status.name
+    >>> print(question.status.name)
     INVALID
 
 The status change updates the last response date.
@@ -530,9 +532,9 @@ the answer and solution date.
     ...     stub, QuestionStatus.OPEN, 'Reopen the question',
     ...     datecreated=now_plus_one_hour)
 
-    >>> print question.date_solved
+    >>> print(question.date_solved)
     None
-    >>> print question.answer
+    >>> print(question.answer)
     None
 
 When the status is changed by a user who doesn't have the launchpad.Admin
@@ -558,7 +560,7 @@ Comments can be added to questions without changing the question's status.
     ...     no_priv, 'This is a comment.',
     ...     datecreated=now_plus_two_hours)
 
-    >>> print comment.action.name
+    >>> print(comment.action.name)
     COMMENT
     >>> comment.new_status == old_status
     True
@@ -577,11 +579,11 @@ Setting the question assignee
 Users with launchpad.Moderator privileges, which are answer contacts,
 question target owners, and admins, can assign someone to answer a question.
 
-Sample Person is an answer contact for ubuntu, so he can set the assignee.
+Sample Person is an answer contact for ubuntu, so they can set the assignee.
 
     >>> login('test@canonical.com')
     >>> question.assignee = stub
-    >>> print question.assignee.displayname
+    >>> print(question.assignee.displayname)
     Stuart Bishop
 
 Users without launchpad.Moderator privileges cannot set the assignee.
@@ -606,9 +608,9 @@ the message they create and a ObjectModifiedEvent for the question.
     >>> from lp.answers.interfaces.question import IQuestion
 
     >>> def print_event(object, event):
-    ...     print "Received %s on %s" % (
+    ...     print("Received %s on %s" % (
     ...         event.__class__.__name__.split('.')[-1],
-    ...         object.__class__.__name__.split('.')[-1])
+    ...         object.__class__.__name__.split('.')[-1]))
     >>> questionmessage_event_listener = TestEventListener(
     ...     IQuestionMessage, IObjectCreatedEvent, print_event)
     >>> question_event_listener = TestEventListener(
@@ -687,17 +689,17 @@ reopening to happen.
 
     >>> reopening.datecreated == now_plus_three_hours
     True
-    >>> print reopening.reopener.displayname
+    >>> print(reopening.reopener.displayname)
     No Privileges Person
 
 It also contains the question's prior answerer, the date created, and the
 prior status of the question.
 
-    >>> print reopening.answerer.displayname
+    >>> print(reopening.answerer.displayname)
     Sample Person
     >>> reopening.date_solved == now_plus_two_hours
     True
-    >>> print reopening.priorstate.name
+    >>> print(reopening.priorstate.name)
     SOLVED
 
 A reopening also occurs when the question status is set back to OPEN after
@@ -718,15 +720,15 @@ having been rejected.
     Received ObjectCreatedEvent on QuestionReopening
 
     >>> reopening = question.reopenings[0]
-    >>> print reopening.reopener.name
+    >>> print(reopening.reopener.name)
     stub
     >>> reopening.datecreated == now_plus_two_hours
     True
-    >>> print reopening.answerer.displayname
+    >>> print(reopening.answerer.displayname)
     Sample Person
     >>> reopening.date_solved == now_plus_one_hour
     True
-    >>> print reopening.priorstate.name
+    >>> print(reopening.priorstate.name)
     INVALID
 
     # Cleanup
@@ -746,9 +748,9 @@ a string.
     >>> reject_message = messageset.fromText(
     ...     'Reject', 'Because I feel like it.', sample_person)
     >>> question_message = question.reject(sample_person, reject_message)
-    >>> print question_message.subject
+    >>> print(question_message.subject)
     Reject
-    >>> print question_message.text_contents
+    >>> print(question_message.text_contents)
     Because I feel like it.
     >>> question_message.rfc822msgid == reject_message.rfc822msgid
     True

@@ -4,6 +4,7 @@
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests that get run automatically on a merge."""
+
 import _pythonpath
 
 import errno
@@ -15,17 +16,17 @@ from signal import (
     SIGKILL,
     SIGTERM,
     )
-from StringIO import StringIO
 from subprocess import (
     PIPE,
     Popen,
     STDOUT,
     )
 import sys
-import tabnanny
 import time
 
 import psycopg2
+
+from lp.services.database import activity_cols
 
 # The TIMEOUT setting (expressed in seconds) affects how long a test will run
 # before it is deemed to be hung, and then appropriately terminated.
@@ -59,20 +60,10 @@ def setup_test_database():
     # Sanity check PostgreSQL version. No point in trying to create a test
     # database when PostgreSQL is too old.
     con = psycopg2.connect('dbname=template1')
-    cur = con.cursor()
-    cur.execute('show server_version')
-    server_version = cur.fetchone()[0]
-    try:
-        numeric_server_version = tuple(map(int, server_version.split('.')))
-    except ValueError:
-        # Skip this check if the version number is more complicated than
-        # we expected.
-        pass
-    else:
-        if numeric_server_version < (8, 0):
-            print 'Your PostgreSQL version is too old.  You need 8.x.x'
-            print 'You have %s' % server_version
-            return 1
+    if con.server_version < 100000:
+        print 'Your PostgreSQL version is too old.  You need at least 10.x'
+        print 'You have %s' % con.get_parameter_status('server_version')
+        return 1
 
     # Drop the template database if it exists - the Makefile does this
     # too, but we can explicity check for errors here
@@ -89,17 +80,17 @@ def setup_test_database():
     # rogue processes still connected to the database.
     for loop in range(2):
         cur.execute("""
-            SELECT usename, current_query
+            SELECT usename, %(query)s
             FROM pg_stat_activity
             WHERE datname IN (
                 'launchpad_dev', 'launchpad_ftest_template', 'launchpad_ftest')
-            """)
+            """ % activity_cols(cur))
         results = list(cur.fetchall())
         if not results:
             break
         # Rogue processes. Report, sleep for a bit, and try again.
-        for usename, current_query in results:
-            print '!! Open connection %s - %s' % (usename, current_query)
+        for usename, query in results:
+            print '!! Open connection %s - %s' % (usename, query)
         print 'Sleeping'
         time.sleep(20)
     else:
@@ -119,14 +110,6 @@ def setup_test_database():
     # bedrock is crumbling.
     con = psycopg2.connect('dbname=launchpad_ftest_template')
     cur = con.cursor()
-    cur.execute('show search_path')
-    search_path = cur.fetchone()[0]
-    if search_path != '$user,public,ts2':
-        print 'Search path incorrect.'
-        print 'Add the following line to /etc/postgresql/postgresql.conf:'
-        print "    search_path = '$user,public,ts2'"
-        print "and tell postgresql to reload its configuration file."
-        return 1
     cur.execute("""
         select pg_encoding_to_char(encoding) as encoding from pg_database
         where datname='launchpad_ftest_template'

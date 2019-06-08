@@ -1,8 +1,6 @@
 # Copyright 2009 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-# pylint: disable-msg=E0211,E0213
-
 """Interfaces for a Binary Package in a DistroSeries."""
 
 __metaclass__ = type
@@ -18,11 +16,11 @@ from zope.interface import (
     )
 
 from lp import _
+from lp.soyuz.interfaces.distributionsourcepackagerelease import (
+    IDistributionSourcePackageRelease,
+    )
 from lp.soyuz.interfaces.distroarchseriesbinarypackagerelease import (
     IDistroArchSeriesBinaryPackageRelease,
-    )
-from lp.soyuz.interfaces.distroseriessourcepackagerelease import (
-    IDistroSeriesSourcePackageRelease,
     )
 
 
@@ -55,8 +53,7 @@ class IDistroSeriesBinaryPackage(Interface):
                 "binary package in this distroseries."))
 
     last_sourcepackagerelease = Reference(
-        IDistroSeriesSourcePackageRelease,
-        title=_("The DistroSeriesSourcePackageRelease that was used to "
+        IDistributionSourcePackageRelease,
+        title=_("The DistributionSourcePackageRelease that was used to "
                 "generate the most recently published binary package "
                 "release"))
-

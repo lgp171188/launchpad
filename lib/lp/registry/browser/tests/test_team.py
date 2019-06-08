@@ -11,6 +11,7 @@ import transaction
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
+from lp.app.enums import InformationType
 from lp.registry.browser.team import (
     TeamIndexMenu,
     TeamMailingListArchiveView,
@@ -19,7 +20,6 @@ from lp.registry.browser.team import (
 from lp.registry.enums import (
     EXCLUSIVE_TEAM_POLICY,
     INCLUSIVE_TEAM_POLICY,
-    InformationType,
     PersonVisibility,
     TeamMembershipPolicy,
     TeamMembershipRenewalPolicy,
@@ -33,6 +33,7 @@ from lp.registry.interfaces.teammembership import (
     )
 from lp.services.propertycache import get_property_cache
 from lp.services.webapp.authorization import check_permission
+from lp.services.webapp.escaping import html_escape
 from lp.services.webapp.publisher import canonical_url
 from lp.soyuz.enums import ArchiveStatus
 from lp.testing import (
@@ -104,13 +105,13 @@ class TestProposedTeamMembersEditView(TestCaseWithFactory):
         """
         failed_names = ', '.join([team.displayname for team in failed])
         if len(failed) == 1:
-            failed_message = (
+            failed_message = html_escape(
                 u'%s is a member of the following team, '
                 'so it could not be accepted:  %s.  '
                 'You need to "Decline" that team.' %
                 (joinee.displayname, failed_names))
         else:
-            failed_message = (
+            failed_message = html_escape(
                 u'%s is a member of the following teams, '
                 'so they could not be accepted:  %s.  '
                 'You need to "Decline" those teams.' %
@@ -283,7 +284,7 @@ class TestTeamEditView(TestTeamPersonRenameFormMixin, TestCaseWithFactory):
             view = create_initialized_view(team, name="+edit")
             self.assertEqual('team', view.widgets['name']._data)
             self.assertEqual(
-                'A Team', view.widgets['displayname']._data)
+                'A Team', view.widgets['display_name']._data)
             self.assertEqual(
                 'A great team', view.widgets['description']._data)
             self.assertEqual(
@@ -410,7 +411,7 @@ class TestTeamEditView(TestTeamPersonRenameFormMixin, TestCaseWithFactory):
 
         # We're now redirected to the team's home page, which is now on a
         # different URL since we changed its name.
-        self.assertEqual('http://launchpad.dev/~ubuntuteam', browser.url)
+        self.assertEqual('http://launchpad.test/~ubuntuteam', browser.url)
 
         # Check the values again.
         browser.getLink('Change details').click()
@@ -448,7 +449,7 @@ class TestTeamEditView(TestTeamPersonRenameFormMixin, TestCaseWithFactory):
         team = self.factory.makeTeam(name="team", owner=owner)
         form = {
             'field.name': team.name,
-            'field.displayname': team.displayname,
+            'field.display_name': team.display_name,
             'field.defaultmembershipperiod': '180',
             'field.defaultrenewalperiod': '365',
             'field.membership_policy': 'RESTRICTED',
@@ -466,29 +467,6 @@ class TestTeamEditView(TestTeamPersonRenameFormMixin, TestCaseWithFactory):
             TeamMembershipRenewalPolicy.ONDEMAND, team.renewal_policy)
 
 
-class TeamAdminisiterViewTestCase(TestTeamPersonRenameFormMixin,
-                                  TestCaseWithFactory):
-
-    layer = LaunchpadFunctionalLayer
-    view_name = '+review'
-
-    def test_init_admin(self):
-        # An admin sees all the fields.
-        team = self.factory.makeTeam()
-        login_celebrity('admin')
-        view = create_initialized_view(team, name=self.view_name)
-        self.assertEqual('Review team', view.label)
-        self.assertEqual(
-            ['name', 'displayname'], view.field_names)
-
-    def test_init_registry_expert(self):
-        # Registry experts do not see the displayname field.
-        team = self.factory.makeTeam()
-        login_celebrity('registry_experts')
-        view = create_initialized_view(team, name=self.view_name)
-        self.assertEqual(['name'], view.field_names)
-
-
 class TestTeamAddView(TestCaseWithFactory):
 
     layer = DatabaseFunctionalLayer
@@ -498,7 +476,7 @@ class TestTeamAddView(TestCaseWithFactory):
         person = self.factory.makePerson()
         form = {
             'field.actions.create': 'Create Team',
-            'field.displayname': 'liberty-land',
+            'field.display_name': 'liberty-land',
             'field.name': 'libertyland',
             'field.renewal_policy': 'NONE',
             'field.renewal_policy-empty-marker': 1,
@@ -548,7 +526,7 @@ class TestTeamAddView(TestCaseWithFactory):
         team_name = self.factory.getUniqueString()
         form = {
             'field.name': team_name,
-            'field.displayname': 'New Team',
+            'field.display_name': 'New Team',
             'field.membership_policy': 'RESTRICTED',
             'field.visibility': 'PRIVATE',
             'field.actions.create': 'Create',
@@ -600,7 +578,7 @@ class TestSimpleTeamAddView(TestCaseWithFactory):
         team_name = self.factory.getUniqueString()
         form = {
             'field.name': team_name,
-            'field.displayname': 'New Team',
+            'field.display_name': 'New Team',
             'field.visibility': 'PRIVATE',
             'field.membership_policy': 'RESTRICTED',
             'field.actions.create': 'Create',
@@ -814,7 +792,8 @@ class TestTeamMemberAddView(TestCaseWithFactory):
         view = create_initialized_view(self.team, "+addmember", form=form)
         self.assertEqual(1, len(view.errors))
         self.assertEqual(
-            "You can't add a team that doesn't have any active members.",
+            html_escape(
+                "You can't add a team that doesn't have any active members."),
             view.errors[0])
 
     def test_no_TeamMembershipTransitionError(self):
@@ -946,5 +925,6 @@ class TestPersonIndexVisibilityView(TestCaseWithFactory):
             superteams = find_tag_by_id(html, 'subteam-of')
         self.assertFalse('&lt;hidden&gt;' in superteams)
         self.assertEqual(
-            '<a href="/~private-team" class="sprite team">Private Team</a>',
+            '<a href="/~private-team" class="sprite team private">'
+            'Private Team</a>',
             str(superteams.findNext('a')))

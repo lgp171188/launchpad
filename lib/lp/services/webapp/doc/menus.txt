@@ -9,11 +9,11 @@ An object has a facetmenu if it can be adapted to IFacetMenu.
     >>> from lp.services.webapp.interfaces import (
     ...     IApplicationMenu, ICanonicalUrlData, IContextMenu, IFacetLink,
     ...     IFacetMenu, ILink, ILinkData)
-    >>> from zope.interface import implements, directlyProvides, Interface
+    >>> from zope.interface import implementer, directlyProvides, Interface
     >>> from zope.component import queryAdapter
 
-    >>> class ObjectThatHasUrl:
-    ...     implements(ICanonicalUrlData)
+    >>> @implementer(ICanonicalUrlData)
+    ... class ObjectThatHasUrl:
     ...     def __init__(self, name, parent):
     ...         self.name = name  # Used in examples later.
     ...         self.path = name  # See ICanonicalUrlData.
@@ -46,10 +46,10 @@ Let's make three objects that together make a url hierarchy:
     >>> street = ExampleContentObject('sesamestreet', root)
     >>> house = ExampleContentObject('number73', street)
     >>> canonical_url(house)
-    u'http://launchpad.dev/sesamestreet/number73'
+    u'http://launchpad.test/sesamestreet/number73'
 
     >>> canonical_url(street)
-    u'http://launchpad.dev/sesamestreet'
+    u'http://launchpad.test/sesamestreet'
 
 
 == The Link class ==
@@ -229,7 +229,7 @@ they are as we expect.
     summary: None
     target: +foo
     text: Foo
-    url: http://launchpad.dev/sesamestreet/+foo
+    url: http://launchpad.test/sesamestreet/+foo
     --- link bar ---
     enabled: True
     escapedtext: Bar
@@ -247,7 +247,7 @@ they are as we expect.
     summary: More explanation about Bar of sesamestreet
     target: +bar
     text: Bar
-    url: http://launchpad.dev/sesamestreet/+bar
+    url: http://launchpad.test/sesamestreet/+bar
 
 
 == The MenuLink and FacetLink adapter classes ==
@@ -304,10 +304,10 @@ Checking out the escapedtext attribute.
     >>> link = Link('+target', 'text -->')
 
     >>> ILink(link).escapedtext
-    'text --&gt;'
+    u'text --&gt;'
 
     >>> IFacetLink(link).escapedtext
-    'text --&gt;'
+    u'text --&gt;'
 
     >>> text = structured('some <b> %s </b> text', '-->')
     >>> link = Link('+target', text)
@@ -318,26 +318,6 @@ Checking out the escapedtext attribute.
     >>> IFacetLink(link).escapedtext
     u'some <b> --&gt; </b> text'
 
-We can test the 'structured' helper directly.
-
-    >>> structured('foo').escapedtext
-    u'foo'
-
-    >>> structured('%s', 'a < b > c & d " e').escapedtext
-    u'a &lt; b &gt; c &amp; d " e'
-
-    >>> structured('a < b > c & d " e').escapedtext
-    u'a < b > c & d " e'
-
-    >>> structured(
-    ...     'replacement %(foo)s, %(bar)s', foo='<foo>', bar='bar').escapedtext
-    u'replacement &lt;foo&gt;, bar'
-
-    >>> structured('whatever', 'foo', 'bar', baz='baz')
-    Traceback (most recent call last):
-    ...
-    TypeError:...
-
 Next, we return the link as HTML.
 
     # We need to use a real launchpad test request so the view adapter
@@ -345,8 +325,8 @@ Next, we return the link as HTML.
     # IParticipation so that the login machinery will work.
     >>> from zope.security.interfaces import IParticipation
     >>> from lp.services.webapp.servers import LaunchpadTestRequest
-    >>> class InteractiveTestRequest(LaunchpadTestRequest):
-    ...     implements(IParticipation)
+    >>> @implementer(IParticipation)
+    ... class InteractiveTestRequest(LaunchpadTestRequest):
     ...     principal = None
     ...     interaction = None
     >>> request = InteractiveTestRequest()
@@ -494,7 +474,7 @@ they are as we expect.
     summary: None
     target: +first
     text: First menu
-    url: http://launchpad.dev/sesamestreet/number73/+first
+    url: http://launchpad.test/sesamestreet/number73/+first
 
 
 == Context Menus ==
@@ -561,7 +541,7 @@ they are as we expect.
     summary: None
     target: +firstcontext
     text: First context menu item
-    url: http://launchpad.dev/sesamestreet/number73/+firstcontext
+    url: http://launchpad.test/sesamestreet/number73/+firstcontext
 
 
 == Registering menus in ZCML ==
@@ -634,8 +614,9 @@ We do the same for a context menu.
 Now, check that we have no IFacetMenu adapter for an IThingHavingFacets
 object.
 
-    >>> class SomeThing:
-    ...     implements(IThingHavingFacets)
+    >>> @implementer(IThingHavingFacets)
+    ... class SomeThing:
+    ...     pass
     >>> something_with_facets = SomeThing()
     >>> IFacetMenu(something_with_facets, None) is None
     True
@@ -643,8 +624,9 @@ object.
 We also need to check that we have no IApplicationMenu adapter named
 'foo' for an IThingHavingMenus object.
 
-    >>> class SomeOtherThing:
-    ...     implements(IThingHavingMenus)
+    >>> @implementer(IThingHavingMenus)
+    ... class SomeOtherThing:
+    ...     pass
     >>> something_with_menus = SomeOtherThing()
     >>> print queryAdapter(something_with_menus, IApplicationMenu, 'foo')
     None
@@ -702,8 +684,8 @@ link should appear linked. The request is also set as the menu's
     >>> from lp.testing import test_tales
     >>> from lp.services.webapp import LaunchpadView
     >>> from lp.services.webapp.vhosts import allvhosts
-    >>> class FakeRequest:
-    ...     implements(IHTTPApplicationRequest, IBrowserRequest)
+    >>> @implementer(IHTTPApplicationRequest, IBrowserRequest)
+    ... class FakeRequest:
     ...
     ...     interaction = None
     ...
@@ -713,6 +695,7 @@ link should appear linked. The request is also set as the menu's
     ...         self.url1 = url1  # returned from getURL(1)
     ...         self.method = 'GET'
     ...         self.annotations = {}
+    ...         self.traversed_objects = []
     ...
     ...     def getURL(self, level=0):
     ...         assert 0 <= level <=1, 'level must be 0 or 1'
@@ -742,7 +725,7 @@ link should appear linked. The request is also set as the menu's
     ...
     ...     def setPrincipal(self, principal):
     ...         self.principal = principal
-    >>> request = FakeRequest('http://launchpad.dev/sesamestreet/+bar')
+    >>> request = FakeRequest('http://launchpad.test/sesamestreet/+bar')
     >>> view = LaunchpadView(house, request)
     >>> view.__launchpad_facetname__ = 'bar'
 
@@ -755,10 +738,10 @@ link should appear linked. The request is also set as the menu's
 
     >>> for link in links:
     ...     print link.url, link.selected, link.linked, link.summary
-    http://launchpad.dev/sesamestreet/+foo False True None
-    http://launchpad.dev/sesamestreet/+bar True False More explanation about
+    http://launchpad.test/sesamestreet/+foo False True None
+    http://launchpad.test/sesamestreet/+bar True False More explanation about
                                                       Bar of sesamestreet
-    http://launchpad.dev/sesamestreet False True GET
+    http://launchpad.test/sesamestreet False True GET
 
 So, the first link '+foo' is linked, but the second '+bar' is not.  This
 is because the URL of '+bar' is the same as the request in the view.
@@ -766,15 +749,15 @@ is because the URL of '+bar' is the same as the request in the view.
 Let's try again, this time with a request from the participation.
 
     >>> participation = FakeRequest(
-    ...     'http://launchpad.dev/sesamestreet/+bar')
+    ...     'http://launchpad.test/sesamestreet/+bar')
     >>> login(ANONYMOUS, participation)
 
     >>> links = test_tales('context/menu:facet', context=house)
     >>> for link in links:
     ...     print link.url, link.selected, link.linked
-    http://launchpad.dev/sesamestreet/+foo False True
-    http://launchpad.dev/sesamestreet/+bar False False
-    http://launchpad.dev/sesamestreet False True
+    http://launchpad.test/sesamestreet/+foo False True
+    http://launchpad.test/sesamestreet/+bar False False
+    http://launchpad.test/sesamestreet False True
 
 Note that '+bar' is not selected.  This is because we're adapting
 'context' and not 'view', so the menus system has no way of knowing what
@@ -792,10 +775,10 @@ name.
     >>> ztapi.setDefaultViewName(IStreet, '+baz', None)
 
     >>> request = FakeRequest(
-    ...     'http://launchpad.dev/sesamestreet/+baz',
-    ...     url1='http://launchpad.dev/sesamestreet/')
+    ...     'http://launchpad.test/sesamestreet/+baz',
+    ...     url1='http://launchpad.test/sesamestreet/')
 
-    >>> from zope.app.zapi import getDefaultViewName
+    >>> from zope.publisher.defaultview import getDefaultViewName
     >>> getDefaultViewName(street, request)
     '+baz'
 
@@ -808,9 +791,9 @@ infrastructure actually calculates a shortened URL for this case.
     >>> links = test_tales('view/menu:facet', view=view)
     >>> for link in links:
     ...     print link.url, link.linked
-    http://launchpad.dev/sesamestreet/+foo True
-    http://launchpad.dev/sesamestreet/+bar True
-    http://launchpad.dev/sesamestreet False
+    http://launchpad.test/sesamestreet/+foo True
+    http://launchpad.test/sesamestreet/+bar True
+    http://launchpad.test/sesamestreet False
 
 You can traverse to an individual menu item from the facet menu:
 
@@ -818,7 +801,7 @@ You can traverse to an individual menu item from the facet menu:
     >>> view.__launchpad_facetname__ = 'bar'
     >>> link = test_tales('view/menu:foo/first', view=view, request=request)
     >>> print link.url
-    http://launchpad.dev/sesamestreet/number73/+first
+    http://launchpad.test/sesamestreet/number73/+first
 
 But if a non-existing entry is requested, a KeyError is raised:
 
@@ -843,13 +826,13 @@ object.
     >>> links = test_tales('view/menu:context', view=view)
     >>> for link in links.values():
     ...     print link.url
-    http://launchpad.dev/sesamestreet/number73/+firstcontext
+    http://launchpad.test/sesamestreet/number73/+firstcontext
 
 The link is also reachable by name:
 
     >>> link = test_tales('context/menu:context/first', context=house)
     >>> print link.url
-    http://launchpad.dev/sesamestreet/number73/+firstcontext
+    http://launchpad.test/sesamestreet/number73/+firstcontext
 
 When there is no menu for a thing, we get an empty iterator.
 
@@ -885,8 +868,8 @@ render() method.
     >>> html = test_tales('context/menu:foo/first/render',
     ...                   context=house, view=view, request=request)
     >>> print html #doctest: +NORMALIZE_WHITESPACE
-    <a...href="http://127.0.0.1/sesamestreet/number73/+first"
-    ...class="menu-link-first">First menu</a>
+    <a...class="menu-link-first"
+    ...href="http://127.0.0.1/sesamestreet/number73/+first">First menu</a>
 
     # Clean up our special login.
 

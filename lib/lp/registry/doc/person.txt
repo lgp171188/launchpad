@@ -10,7 +10,7 @@ not Launchpad users.
     >>> from zope.component import getUtility
     >>> from lp.services.identity.interfaces.emailaddress import (
     ...     IEmailAddressSet)
-    >>> from lp.services.webapp.testing import verifyObject
+    >>> from lp.testing import verifyObject
     >>> from lp.registry.interfaces.person import (
     ...     IHasStanding,
     ...     IPerson,
@@ -68,7 +68,7 @@ The IPersonSet utility
 Access to people (Persons or Teams) is done through the IPersonSet
 utility:
 
-    >>> from lp.services.webapp.testing import verifyObject
+    >>> from lp.testing import verifyObject
 
     >>> verifyObject(IPersonSet, personset)
     True
@@ -106,8 +106,8 @@ caused the entry to be created.
     >>> p.hide_email_addresses
     True
 
-Since this person has chosen to hide his email addresses they won't be
-visible to other users which are not admins.
+Since this person has chosen to hide their email addresses they won't be
+visible to other users who are not admins.
 
     >>> from lp.services.webapp.authorization import check_permission
     >>> login('randomuser@randomhost.com')
@@ -141,7 +141,7 @@ using the createPersonAndEmail() method.
     <DBItem AccountStatus.NOACCOUNT...
 
     >>> from lp.services.identity.model.account import Account
-    >>> from lp.services.database.lpstorm import IMasterStore
+    >>> from lp.services.database.interfaces import IMasterStore
     >>> account = IMasterStore(Account).get(Account, p.accountID)
     >>> account.reactivate("Activated by doc test.")
     >>> p.account_status
@@ -497,7 +497,7 @@ The team owner is also added as an administrator of its team.
     [u'ddaa']
 
     # As said previously, no notifications are sent when we add the
-    # team owner as a member of his team.
+    # team owner as a member of their team.
 
     >>> transaction.commit()
     >>> stub.test_emails
@@ -525,7 +525,7 @@ account_status is NOACCOUNT, though.
     >>> not_a_person.convertToTeam(team_owner=landscape_devs)
     Traceback (most recent call last):
     ...
-    AlreadyConvertedException: foo-v has already been converted to a team.
+    AlreadyConvertedException: foo-o has already been converted to a team.
 
 
 Team members
@@ -551,7 +551,7 @@ admin members of that team.
     [u'Guilherme Salgado', u'Sample Person']
 
 TeamMemberships with a PROPOSED or INVITED status represent a
-person/team which has proposed himself as a member or which has been
+person/team which has proposed themselves as a member or which has been
 invited to join the team.
 
     >>> [member.displayname for member in landscape_devs.proposedmembers]
@@ -690,10 +690,11 @@ Private teams can be subscribed to bugs.
     >>> bug = bug_set.get(1)
     >>> guadamen = person_set.getByName('guadamen')
     >>> salgado = personset.getByName('salgado')
-    >>> private_team = factory.makeTeam(salgado, name='private-team',
+    >>> private_team_owner = factory.makePerson()
+    >>> private_team = factory.makeTeam(
+    ...     private_team_owner, name='private-team',
     ...     displayname='Private Team',
     ...     visibility=PersonVisibility.PRIVATE)
-    >>> private_team_owner = private_team.teamowner
     >>> bug_subscription = BugSubscription(bug=bug, person=private_team,
     ...     subscribed_by=guadamen)
 
@@ -762,6 +763,7 @@ address:
     Ubuntu Doc Team (doc): [u'doc@lists.ubuntu.com']
     Ubuntu Gnome Team (name18): []
     Ubuntu Security Team (ubuntu-security): []
+    Ubuntu Single Sign On (ubuntu-sso): [u'ubuntu-sso@example.com']
     Ubuntu Team (ubuntu-team): [u'support@ubuntu.com']
     Ubuntu Technical Board (techboard): []
     Ubuntu Translators (ubuntu-translators): []
@@ -857,7 +859,8 @@ include them as well.
 
     >>> from lp.services.identity.interfaces.account import AccountStatus
     >>> dave = personset.getByName('justdave')
-    >>> removeSecurityProxy(dave).account_status = AccountStatus.DEACTIVATED
+    >>> removeSecurityProxy(dave).setAccountStatus(
+    ...     AccountStatus.DEACTIVATED, None, 'gbcw')
     >>> transaction.commit()
     >>> list(personset.findPerson('dave'))
     []
@@ -867,7 +870,8 @@ include them as well.
     Dave Miller (justdave): [u'dave.miller@ubuntulinux.com',
                              u'justdave@bugzilla.org']
 
-    >>> removeSecurityProxy(dave).account_status = AccountStatus.ACTIVE
+    >>> removeSecurityProxy(dave).setAccountStatus(
+    ...     AccountStatus.ACTIVE, None, 'Welcome back')
     >>> flush_database_updates()
     >>> login(ANONYMOUS)
 
@@ -944,8 +948,8 @@ To obtain the packages a person is related to, we can use:
  3. getLatestUploadedPPAPackages
 
 The 1st will return the latest SourcePackageReleases related to a person
-in which he is listed as the Maintainer. The second will return the
-latest SourcePackageReleases a person uploaded (and where he isn't the
+in which they are listed as the Maintainer. The second will return the
+latest SourcePackageReleases a person uploaded (and where they aren't the
 maintainer).
 
 Both, 1st and 2nd methods, only consider sources upload to primary
@@ -954,7 +958,15 @@ archives.
 The 3rd method returns SourcePackageReleases uploaded by the person in
 question to any PPA.
 
+There are also analogous methods to see if a person has any of the above
+related packages:
+ 1. hasMaintainedPackages(),
+ 2. hasUploadedButNotMaintainedPackages(),
+ 3. hasUploadedPPAPackages
+
     >>> mark = personset.getByName('mark')
+    >>> mark.hasMaintainedPackages()
+    True
     >>> for sprelease in mark.getLatestMaintainedPackages():
     ...     print (sprelease.name,
     ...            sprelease.upload_distroseries.fullseriesname,
@@ -967,6 +979,8 @@ question to any PPA.
     (u'mozilla-firefox', u'Ubuntu Warty', u'0.9')
     (u'evolution', u'Ubuntu Hoary', u'1.0')
 
+    >>> mark.hasUploadedButNotMaintainedPackages()
+    True
     >>> for sprelease in mark.getLatestUploadedButNotMaintainedPackages():
     ...     print (sprelease.name,
     ...            sprelease.upload_distroseries.fullseriesname,
@@ -978,6 +992,8 @@ question to any PPA.
     (u'linux-source-2.6.15', u'Ubuntu Hoary', u'2.6.15.3')
     (u'alsa-utils', u'Ubuntu Hoary', u'1.0.9a-4ubuntu1')
 
+    >>> mark.hasUploadedPPAPackages()
+    True
     >>> mark_spreleases = mark.getLatestUploadedPPAPackages()
     >>> for sprelease in mark_spreleases:
     ...     print (sprelease.name,
@@ -1007,6 +1023,16 @@ maintainer got omitted from the results:
     ...            sprelease.upload_distroseries.fullseriesname)
     (u'iceweasel', u'1.0', u'mark', u'mark', u'mark', u'Ubuntu Warty')
 
+Unlike Mark, this next person is very lazy and has no related packages:
+
+    >>> lazy = personset.getByName('name12')
+    >>> lazy.hasMaintainedPackages()
+    False
+    >>> lazy.hasUploadedButNotMaintainedPackages()
+    False
+    >>> lazy.hasUploadedPPAPackages()
+    False
+
 
 Packages a Person is subscribed to
 ----------------------------------
@@ -1031,48 +1057,6 @@ alphabetically by package name.
     [u'mozilla-firefox', u'pmount']
 
 
-Pillars owned or driven by a person or team
--------------------------------------------
-
-To obtain all distributions, project groups and projects owned or driven
-by a person or team, we can use the getOwnedOrDrivenPillars() method of
-IPerson. This method returns PillarNames ordered by distribution,
-project groups and projects.
-
-    >>> login(ANONYMOUS)
-
-    >>> from lp.registry.interfaces.distribution import IDistribution
-    >>> from lp.registry.interfaces.product import IProduct
-    >>> from lp.registry.interfaces.projectgroup import IProjectGroup
-
-    >>> def print_pillar(pillarname):
-    ...     pillar = pillarname.pillar
-    ...     if IDistribution.providedBy(pillar):
-    ...         pillar_type = 'distribution'
-    ...     elif IProjectGroup.providedBy(pillar):
-    ...         pillar_type = 'project group'
-    ...     elif IProduct.providedBy(pillar):
-    ...         pillar_type = 'project'
-    ...     print "%s: %s (%s)" % (
-    ...         pillar_type, pillar.displayname, pillar.name)
-
-    >>> for pillarname in mark.getOwnedOrDrivenPillars():
-    ...     print_pillar(pillarname)
-    distribution: Debian (debian)
-    distribution: Gentoo (gentoo)
-    distribution: Kubuntu (kubuntu)
-    distribution: Red Hat (redhat)
-    project group: Apache (apache)
-    project: Derby (derby)
-    project: alsa-utils (alsa-utils)
-
-    >>> for pillarname in ubuntu_team.getOwnedOrDrivenPillars():
-    ...     print_pillar(pillarname)
-    distribution: Ubuntu (ubuntu)
-    distribution: ubuntutest (ubuntutest)
-    project: Tomcat (tomcat)
-
-
 Project owned by a person or team
 ---------------------------------
 
@@ -1081,6 +1065,13 @@ getOwnedProjects() method of IPerson.  This method returns projects
 ordered by displayname.
 
     >>> for project in mark.getOwnedProjects():
+    ...     print project.displayname
+    Derby
+    alsa-utils
+
+We can also ask for projects owned through team memberships.
+
+    >>> for project in mark.getOwnedProjects(transitive=True):
     ...     print project.displayname
     Derby
     Tomcat
@@ -1098,7 +1089,7 @@ The method does not return inactive projects.
     >>> ignored = login_person(registry_member)
     >>> derby = getUtility(IProductSet).getByName('derby')
     >>> derby.active = False
-    >>> for project in mark.getOwnedProjects():
+    >>> for project in mark.getOwnedProjects(transitive=True):
     ...     print project.displayname
     Tomcat
     alsa-utils
@@ -1115,13 +1106,14 @@ David does not own any projects.
 The results returned can be filtered by providing a token to refine the
 search.
 
-    >>> for project in mark.getOwnedProjects(match_name='java'):
+    >>> for project in mark.getOwnedProjects(
+    ...     match_name=u'java', transitive=True):
     ...     print project.displayname
     Tomcat
 
 Searching for a non-existent project returns no matches.
 
-    >>> list(mark.getOwnedProjects(match_name='nosuchthing'))
+    >>> list(mark.getOwnedProjects(match_name=u'nosuchthing'))
     []
 
 
@@ -1188,7 +1180,7 @@ First, Carlos does not have any completed specifications assigned to
 him:
 
     >>> from lp.blueprints.enums import SpecificationFilter
-    >>> carlos.specifications(filter=[
+    >>> carlos.specifications(None, filter=[
     ...     SpecificationFilter.ASSIGNEE,
     ...     SpecificationFilter.COMPLETE]).count()
     0
@@ -1196,14 +1188,16 @@ him:
 Next, Carlos has two incomplete specs *related* to him:
 
     >>> filter = []
-    >>> for spec in carlos.specifications(filter=filter):
+    >>> for spec in carlos.specifications(None, filter=filter):
     ...     print spec.name, spec.is_complete, spec.informational
     svg-support False False
     extension-manager-upgrades False True
 
 These 2 specifications are assigned to Carlos:
 
-    >>> for spec in carlos.assigned_specs:
+    >>> assigned_specs = carlos.specifications(
+    ...     carlos, filter=[SpecificationFilter.ASSIGNEE])
+    >>> for spec in assigned_specs:
     ...     print spec.name
     svg-support
     extension-manager-upgrades
@@ -1211,7 +1205,7 @@ These 2 specifications are assigned to Carlos:
 But from these two, only one has started.
 
     >>> [(spec.name, spec.is_started)
-    ...  for spec in carlos.assigned_specs_in_progress]
+    ...  for spec in carlos.findVisibleAssignedInProgressSpecs(None)]
     [(u'svg-support', True)]
 
 Just for fun, lets check the SAB. He should have one spec for which he
@@ -1219,39 +1213,39 @@ is the approver.
 
     >>> mark = getUtility(IPersonSet).getByName('mark')
     >>> filter = [SpecificationFilter.APPROVER]
-    >>> for spec in mark.specifications(filter=filter):
+    >>> for spec in mark.specifications(None, filter=filter):
     ...     print spec.name
     extension-manager-upgrades
 
 But has registered 5 of them:
 
     >>> filter = [SpecificationFilter.CREATOR]
-    >>> print foobar.specifications(filter=filter).count()
+    >>> print foobar.specifications(None, filter=filter).count()
     5
 
 Now Celso, on the other hand, has 2 specs related to him:
 
     >>> cprov = personset.getByName('cprov')
-    >>> cprov.specifications().count()
+    >>> cprov.specifications(None).count()
     2
 
 On one of those, he is the approver:
 
     >>> filter = [SpecificationFilter.APPROVER]
-    >>> for spec in cprov.specifications(filter=filter):
+    >>> for spec in cprov.specifications(None, filter=filter):
     ...     print spec.name
     svg-support
 
 And on another one, he is the drafter
 
     >>> filter = [SpecificationFilter.DRAFTER]
-    >>> for spec in cprov.specifications(filter=filter):
+    >>> for spec in cprov.specifications(None, filter=filter):
     ...     print spec.name
     e4x
 
 We can filter for specifications that contain specific text:
 
-    >>> for spec in cprov.specifications(filter=['svg']):
+    >>> for spec in cprov.specifications(None, filter=[u'svg']):
     ...     print spec.name
     svg-support
 
@@ -1267,7 +1261,7 @@ Inactive products are excluded from the listings.
     >>> unlink_source_packages(firefox)
     >>> firefox.active = False
     >>> flush_database_updates()
-    >>> cprov.specifications(filter=['svg']).count()
+    >>> cprov.specifications(None, filter=[u'svg']).count()
     0
 
 Reset firefox so we don't mess up later tests.
@@ -1280,24 +1274,6 @@ Branches
 --------
 
 ** See branch.txt for API related to branches.
-
-
-Distribution uploaders
-----------------------
-
-We can ascertain whether a person has uploader rights to a distribution
-or not.
-
-    >>> cprov = getUtility(IPersonSet).getByName('cprov')
-    >>> ubuntu = getUtility(IDistributionSet)['ubuntu']
-    >>> cprov.isUploader(ubuntu)
-    True
-
-'kiko' is not an uploader to Ubuntu:
-
-    >>> kiko = getUtility(IPersonSet).getByName('kiko')
-    >>> kiko.isUploader(ubuntu)
-    False
 
 
 Bug contribution

@@ -22,7 +22,7 @@ ID:
     >>> retrieved_task
     <BugTask ...>
 
-    >>> from lp.services.webapp.testing import verifyObject 
+    >>> from lp.testing import verifyObject 
     >>> verifyObject(IBugTask, retrieved_task)
     True
 
@@ -92,7 +92,7 @@ method raises errors appropriately:
     Traceback (most recent call last):
     ...
     TypeError: ...
-    >>> print task_set.getMultiple(['1; DROP TABLE person;'])
+    >>> print(task_set.getMultiple(['1; DROP TABLE person;']))
     Traceback (most recent call last):
     ...
     ValueError: ...

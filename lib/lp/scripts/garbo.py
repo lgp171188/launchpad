@@ -1,4 +1,4 @@
-# Copyright 2009-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Database garbage collection."""
@@ -8,6 +8,8 @@ __all__ = [
     'DailyDatabaseGarbageCollector',
     'FrequentDatabaseGarbageCollector',
     'HourlyDatabaseGarbageCollector',
+    'load_garbo_job_state',
+    'save_garbo_job_state',
     ]
 
 from datetime import (
@@ -27,12 +29,19 @@ from contrib.glock import (
 import iso8601
 from psycopg2 import IntegrityError
 import pytz
-from storm.expr import In
-from storm.locals import (
+import simplejson
+from storm.expr import (
+    And,
+    In,
+    Join,
+    Like,
     Max,
     Min,
+    Or,
+    Row,
     SQL,
     )
+from storm.info import ClassAlias
 from storm.store import EmptyResultSet
 import transaction
 from zope.component import getUtility
@@ -51,21 +60,36 @@ from lp.bugs.scripts.checkwatches.scheduler import (
 from lp.code.interfaces.revision import IRevisionSet
 from lp.code.model.codeimportevent import CodeImportEvent
 from lp.code.model.codeimportresult import CodeImportResult
+from lp.code.model.diff import (
+    Diff,
+    PreviewDiff,
+    )
 from lp.code.model.revision import (
     RevisionAuthor,
     RevisionCache,
     )
 from lp.hardwaredb.model.hwdb import HWSubmission
+from lp.registry.model.commercialsubscription import CommercialSubscription
 from lp.registry.model.person import Person
 from lp.registry.model.product import Product
+from lp.registry.model.sourcepackagename import SourcePackageName
+from lp.registry.model.teammembership import TeamMembership
 from lp.services.config import config
 from lp.services.database import postgresql
+from lp.services.database.bulk import (
+    create,
+    dbify_value,
+    )
 from lp.services.database.constants import UTC_NOW
-from lp.services.database.lpstorm import IMasterStore
+from lp.services.database.interfaces import IMasterStore
 from lp.services.database.sqlbase import (
     cursor,
     session_store,
     sqlvalues,
+    )
+from lp.services.database.stormexpr import (
+    BulkUpdate,
+    Values,
     )
 from lp.services.features import (
     getFeatureFlag,
@@ -76,13 +100,17 @@ from lp.services.identity.interfaces.account import AccountStatus
 from lp.services.identity.interfaces.emailaddress import EmailAddressStatus
 from lp.services.identity.model.account import Account
 from lp.services.identity.model.emailaddress import EmailAddress
+from lp.services.job.interfaces.job import JobStatus
 from lp.services.job.model.job import Job
 from lp.services.librarian.model import TimeLimitedToken
 from lp.services.log.logger import PrefixFilter
 from lp.services.looptuner import TunableLoop
-from lp.services.oauth.model import OAuthNonce
 from lp.services.openid.model.openidconsumer import OpenIDConsumerNonce
 from lp.services.propertycache import cachedproperty
+from lp.services.salesforce.interfaces import (
+    ISalesforceVoucherProxy,
+    SalesforceVoucherProxyException,
+    )
 from lp.services.scripts.base import (
     LaunchpadCronScript,
     LOCK_PATH,
@@ -90,11 +118,19 @@ from lp.services.scripts.base import (
     )
 from lp.services.session.model import SessionData
 from lp.services.verification.model.logintoken import LoginToken
-from lp.services.webapp.interfaces import (
-    IStoreSelector,
-    MAIN_STORE,
-    MASTER_FLAVOR,
+from lp.services.webhooks.interfaces import IWebhookJobSource
+from lp.services.webhooks.model import WebhookJob
+from lp.snappy.model.snapbuild import SnapFile
+from lp.snappy.model.snapbuildjob import SnapBuildJobType
+from lp.soyuz.enums import PackagePublishingStatus
+from lp.soyuz.model.archive import Archive
+from lp.soyuz.model.distributionsourcepackagecache import (
+    DistributionSourcePackageCache,
     )
+from lp.soyuz.model.livefsbuild import LiveFSFile
+from lp.soyuz.model.publishing import SourcePackagePublishingHistory
+from lp.soyuz.model.reporting import LatestPersonSourcePackageReleaseCache
+from lp.soyuz.model.sourcepackagerelease import SourcePackageRelease
 from lp.translations.interfaces.potemplate import IPOTemplateSet
 from lp.translations.model.potmsgset import POTMsgSet
 from lp.translations.model.potranslation import POTranslation
@@ -108,6 +144,32 @@ from lp.translations.scripts.scrub_pofiletranslator import (
 
 
 ONE_DAY_IN_SECONDS = 24 * 60 * 60
+
+
+# Garbo jobs may choose to persist state between invocations, if it is likely
+# that not all data can be processed in a single run. These utility methods
+# provide convenient access to that state data.
+def load_garbo_job_state(job_name):
+    # Load the json state data for the given job name.
+    job_data = IMasterStore(Person).execute(
+        "SELECT json_data FROM GarboJobState WHERE name = ?",
+        params=(unicode(job_name),)).get_one()
+    if job_data:
+        return simplejson.loads(job_data[0])
+    return None
+
+
+def save_garbo_job_state(job_name, job_data):
+    # Save the json state data for the given job name.
+    store = IMasterStore(Person)
+    json_data = simplejson.dumps(job_data, ensure_ascii=False)
+    result = store.execute(
+        "UPDATE GarboJobState SET json_data = ? WHERE name = ?",
+        params=(json_data, unicode(job_name)))
+    if result.rowcount == 0:
+        store.execute(
+        "INSERT INTO GarboJobState(name, json_data) "
+        "VALUES (?, ?)", params=(unicode(job_name), unicode(json_data)))
 
 
 class BulkPruner(TunableLoop):
@@ -306,20 +368,33 @@ class DuplicateSessionPruner(SessionPruner):
         """
 
 
-class OAuthNoncePruner(BulkPruner):
-    """An ITunableLoop to prune old OAuthNonce records.
+class PreviewDiffPruner(BulkPruner):
+    """A BulkPruner to remove old PreviewDiffs.
 
-    We remove all OAuthNonce records older than 1 day.
+    We remove all but the latest PreviewDiff for each BranchMergeProposal.
+    All PreviewDiffs containing published or draft inline comments
+    (CodeReviewInlineComment{,Draft}) are also preserved.
     """
-    target_table_key = 'access_token, request_timestamp, nonce'
-    target_table_key_type = (
-        'access_token integer, request_timestamp timestamp without time zone,'
-        ' nonce text')
-    target_table_class = OAuthNonce
+    target_table_class = PreviewDiff
     ids_to_prune_query = """
-        SELECT access_token, request_timestamp, nonce FROM OAuthNonce
-        WHERE request_timestamp
-            < CURRENT_TIMESTAMP AT TIME ZONE 'UTC' - CAST('1 day' AS interval)
+        SELECT id
+            FROM
+            (SELECT PreviewDiff.id,
+                rank() OVER (PARTITION BY PreviewDiff.branch_merge_proposal
+                ORDER BY PreviewDiff.date_created DESC) AS pos
+            FROM previewdiff) AS ss
+        WHERE pos > 1
+        EXCEPT SELECT previewdiff FROM CodeReviewInlineComment
+        EXCEPT SELECT previewdiff FROM CodeReviewInlineCommentDraft
+        """
+
+
+class DiffPruner(BulkPruner):
+    """A BulkPruner to remove all unreferenced Diffs."""
+    target_table_class = Diff
+    ids_to_prune_query = """
+        SELECT id FROM diff EXCEPT (SELECT diff FROM previewdiff UNION ALL
+            SELECT diff FROM incrementaldiff)
         """
 
 
@@ -345,7 +420,7 @@ class BugSummaryJournalRollup(TunableLoop):
 
     def __init__(self, log, abort_time=None):
         super(BugSummaryJournalRollup, self).__init__(log, abort_time)
-        self.store = getUtility(IStoreSelector).get(MAIN_STORE, MASTER_FLAVOR)
+        self.store = IMasterStore(Bug)
 
     def isDone(self):
         has_more = self.store.execute(
@@ -361,6 +436,348 @@ class BugSummaryJournalRollup(TunableLoop):
         self.store.commit()
 
 
+class VoucherRedeemer(TunableLoop):
+    """Redeem pending sales vouchers with Salesforce."""
+    maximum_chunk_size = 5
+
+    voucher_expr = (
+        "trim(leading 'pending-' "
+        "from CommercialSubscription.sales_system_id)")
+
+    def __init__(self, log, abort_time=None):
+        super(VoucherRedeemer, self).__init__(log, abort_time)
+        self.store = IMasterStore(CommercialSubscription)
+
+    @cachedproperty
+    def _salesforce_proxy(self):
+        return getUtility(ISalesforceVoucherProxy)
+
+    @property
+    def _pending_subscriptions(self):
+        return self.store.find(
+            CommercialSubscription,
+            Like(CommercialSubscription.sales_system_id, u'pending-%')
+        )
+
+    def isDone(self):
+        return self._pending_subscriptions.count() == 0
+
+    def __call__(self, chunk_size):
+        successful_ids = []
+        for sub in self._pending_subscriptions[:chunk_size]:
+            sales_system_id = sub.sales_system_id[len('pending-'):]
+            try:
+                # The call to redeemVoucher returns True if it succeeds or it
+                # raises an exception.  Therefore the return value does not
+                # need to be checked.
+                self._salesforce_proxy.redeemVoucher(
+                    sales_system_id, sub.purchaser, sub.product)
+                successful_ids.append(unicode(sub.sales_system_id))
+            except SalesforceVoucherProxyException as error:
+                self.log.error(
+                    "Failed to redeem voucher %s: %s"
+                    % (sales_system_id, error.message))
+        # Update the successfully redeemed voucher ids to be not pending.
+        if successful_ids:
+            self.store.find(
+                CommercialSubscription,
+                CommercialSubscription.sales_system_id.is_in(successful_ids)
+            ).set(
+                CommercialSubscription.sales_system_id ==
+                SQL(self.voucher_expr))
+        transaction.commit()
+
+
+class PopulateDistributionSourcePackageCache(TunableLoop):
+    """Populate the DistributionSourcePackageCache table.
+
+    Ensure that new source publications have a row in
+    DistributionSourcePackageCache.
+    """
+    maximum_chunk_size = 1000
+
+    def __init__(self, log, abort_time=None):
+        super(PopulateDistributionSourcePackageCache, self).__init__(
+            log, abort_time)
+        self.store = IMasterStore(DistributionSourcePackageCache)
+        # Keep a record of the processed source publication ID so we know
+        # where the job got up to.
+        self.last_spph_id = 0
+        self.job_name = self.__class__.__name__
+        job_data = load_garbo_job_state(self.job_name)
+        if job_data:
+            self.last_spph_id = job_data.get('last_spph_id', 0)
+
+    def getPendingUpdates(self):
+        # Load the latest published source publication data.
+        origin = [
+            SourcePackagePublishingHistory,
+            Join(
+                SourcePackageName,
+                SourcePackageName.id ==
+                    SourcePackagePublishingHistory.sourcepackagenameID),
+            Join(
+                Archive,
+                Archive.id == SourcePackagePublishingHistory.archiveID),
+            ]
+        rows = self.store.using(*origin).find(
+            (SourcePackagePublishingHistory.id,
+             Archive.id,
+             Archive.distributionID,
+             SourcePackageName.id,
+             SourcePackageName.name),
+            SourcePackagePublishingHistory.status.is_in((
+                PackagePublishingStatus.PENDING,
+                PackagePublishingStatus.PUBLISHED)),
+            SourcePackagePublishingHistory.id > self.last_spph_id)
+        return rows.order_by(SourcePackagePublishingHistory.id)
+
+    def isDone(self):
+        return self.getPendingUpdates().is_empty()
+
+    def __call__(self, chunk_size):
+        # Create a map of new source publications, keyed on (archive,
+        # distribution, SPN).
+        cache_filter_data = []
+        new_records = {}
+        for new_publication in self.getPendingUpdates()[:chunk_size]:
+            (spph_id, archive_id, distribution_id,
+             spn_id, spn_name) = new_publication
+            cache_filter_data.append((archive_id, distribution_id, spn_id))
+            new_records[(archive_id, distribution_id, spn_id)] = spn_name
+            self.last_spph_id = spph_id
+
+        # Gather all the current cached records corresponding to the data in
+        # the current batch.
+        existing_records = set()
+        rows = self.store.find(
+            DistributionSourcePackageCache,
+            In(
+                Row(
+                    DistributionSourcePackageCache.archiveID,
+                    DistributionSourcePackageCache.distributionID,
+                    DistributionSourcePackageCache.sourcepackagenameID),
+                map(Row, cache_filter_data)))
+        for dspc in rows:
+            existing_records.add(
+                (dspc.archiveID, dspc.distributionID,
+                 dspc.sourcepackagenameID))
+
+        # Bulk-create missing cache rows.
+        inserts = []
+        for data in set(new_records) - existing_records:
+            archive_id, distribution_id, spn_id = data
+            inserts.append(
+                (archive_id, distribution_id, spn_id, new_records[data]))
+        if inserts:
+            create(
+                (DistributionSourcePackageCache.archiveID,
+                 DistributionSourcePackageCache.distributionID,
+                 DistributionSourcePackageCache.sourcepackagenameID,
+                 DistributionSourcePackageCache.name),
+                inserts)
+
+        self.store.flush()
+        save_garbo_job_state(self.job_name, {
+            'last_spph_id': self.last_spph_id})
+        transaction.commit()
+
+
+class PopulateLatestPersonSourcePackageReleaseCache(TunableLoop):
+    """Populate the LatestPersonSourcePackageReleaseCache table.
+
+    The LatestPersonSourcePackageReleaseCache contains 2 sets of data, one set
+    for package maintainers and another for package creators. This job iterates
+    over the SPPH records, populating the cache table.
+    """
+    maximum_chunk_size = 1000
+
+    cache_columns = (
+        LatestPersonSourcePackageReleaseCache.maintainer_id,
+        LatestPersonSourcePackageReleaseCache.creator_id,
+        LatestPersonSourcePackageReleaseCache.upload_archive_id,
+        LatestPersonSourcePackageReleaseCache.upload_distroseries_id,
+        LatestPersonSourcePackageReleaseCache.sourcepackagename_id,
+        LatestPersonSourcePackageReleaseCache.archive_purpose,
+        LatestPersonSourcePackageReleaseCache.publication_id,
+        LatestPersonSourcePackageReleaseCache.dateuploaded,
+        LatestPersonSourcePackageReleaseCache.sourcepackagerelease_id,
+    )
+
+    def __init__(self, log, abort_time=None):
+        super_cl = super(PopulateLatestPersonSourcePackageReleaseCache, self)
+        super_cl.__init__(log, abort_time)
+        self.store = IMasterStore(LatestPersonSourcePackageReleaseCache)
+        # Keep a record of the processed source package release id and data
+        # type (creator or maintainer) so we know where to job got up to.
+        self.last_spph_id = 0
+        self.job_name = self.__class__.__name__
+        job_data = load_garbo_job_state(self.job_name)
+        if job_data:
+            self.last_spph_id = job_data.get('last_spph_id', 0)
+
+    def getPendingUpdates(self):
+        # Load the latest published source package release data.
+        spph = SourcePackagePublishingHistory
+        origin = [
+            SourcePackageRelease,
+            Join(
+                spph,
+                And(spph.sourcepackagereleaseID == SourcePackageRelease.id,
+                    spph.archiveID == SourcePackageRelease.upload_archiveID)),
+            Join(Archive, Archive.id == spph.archiveID)]
+        rs = self.store.using(*origin).find(
+            (SourcePackageRelease.id,
+            SourcePackageRelease.creatorID,
+            SourcePackageRelease.maintainerID,
+            SourcePackageRelease.upload_archiveID,
+            Archive.purpose,
+            SourcePackageRelease.upload_distroseriesID,
+            SourcePackageRelease.sourcepackagenameID,
+            SourcePackageRelease.dateuploaded, spph.id),
+            spph.id > self.last_spph_id
+        ).order_by(spph.id)
+        return rs
+
+    def isDone(self):
+        return self.getPendingUpdates().is_empty()
+
+    def __call__(self, chunk_size):
+        cache_filter_data = []
+        new_records = dict()
+        person_ids = set()
+        # Create a map of new published spr data for creators and maintainers.
+        # The map is keyed on (creator/maintainer, archive, spn, distroseries).
+        for new_published_spr_data in self.getPendingUpdates()[:chunk_size]:
+            (spr_id, creator_id, maintainer_id, archive_id, purpose,
+             distroseries_id, spn_id, dateuploaded,
+             spph_id) = new_published_spr_data
+            cache_filter_data.append((archive_id, distroseries_id, spn_id))
+
+            value = (purpose, spph_id, dateuploaded, spr_id)
+            maintainer_key = (
+                maintainer_id, None, archive_id, distroseries_id, spn_id)
+            creator_key = (
+                None, creator_id, archive_id, distroseries_id, spn_id)
+            new_records[maintainer_key] = list(maintainer_key + value)
+            new_records[creator_key] = list(creator_key + value)
+            person_ids.add(maintainer_id)
+            person_ids.add(creator_id)
+            self.last_spph_id = spph_id
+
+        # Gather all the current cached reporting records corresponding to the
+        # data in the current batch. We select matching records from the
+        # reporting cache table based on
+        # (archive_id, distroseries_id, sourcepackagename_id).
+        existing_records = dict()
+        lpsprc = LatestPersonSourcePackageReleaseCache
+        rs = self.store.find(
+            lpsprc,
+            In(
+                Row(
+                    lpsprc.upload_archive_id,
+                    lpsprc.upload_distroseries_id,
+                    lpsprc.sourcepackagename_id),
+                map(Row, cache_filter_data)))
+        for lpsprc_record in rs:
+            key = (
+                lpsprc_record.maintainer_id,
+                lpsprc_record.creator_id,
+                lpsprc_record.upload_archive_id,
+                lpsprc_record.upload_distroseries_id,
+                lpsprc_record.sourcepackagename_id)
+            existing_records[key] = pytz.UTC.localize(
+                lpsprc_record.dateuploaded)
+
+        # Gather account statuses for creators and maintainers.
+        # Deactivating or closing an account removes its LPSPRC rows, and we
+        # don't want to resurrect them.
+        account_statuses = dict(self.store.find(
+            (Person.id, Account.status),
+            Person.id.is_in(person_ids), Person.account == Account.id))
+        ignore_statuses = (AccountStatus.DEACTIVATED, AccountStatus.CLOSED)
+        for new_record in new_records.values():
+            if (new_record[0] is not None and
+                    account_statuses.get(new_record[0]) in ignore_statuses):
+                new_record[0] = None
+            if (new_record[1] is not None and
+                    account_statuses.get(new_record[1]) in ignore_statuses):
+                new_record[1] = None
+
+        # Figure out what records from the new published spr data need to be
+        # inserted and updated into the cache table.
+        inserts = dict()
+        updates = dict()
+        for key, new_published_spr_data in new_records.items():
+            existing_dateuploaded = existing_records.get(key, None)
+            new_maintainer, new_creator, _, _, _, _, _, new_dateuploaded, _ = (
+                new_published_spr_data)
+            if new_maintainer is None and new_creator is None:
+                continue
+            elif existing_dateuploaded is None:
+                target = inserts
+            else:
+                target = updates
+
+            existing_action = target.get(key, None)
+            if (existing_action is None
+                or existing_action[7] < new_dateuploaded):
+                target[key] = new_published_spr_data
+
+        if inserts:
+            # Do a bulk insert.
+            create(self.cache_columns, inserts.values())
+        if updates:
+            # Do a bulk update.
+            cols = [
+                ("maintainer", "integer"),
+                ("creator", "integer"),
+                ("upload_archive", "integer"),
+                ("upload_distroseries", "integer"),
+                ("sourcepackagename", "integer"),
+                ("archive_purpose", "integer"),
+                ("publication", "integer"),
+                ("date_uploaded", "timestamp without time zone"),
+                ("sourcepackagerelease", "integer"),
+                ]
+            values = [
+                [dbify_value(col, val)[0]
+                 for (col, val) in zip(self.cache_columns, data)]
+                for data in updates.values()]
+
+            cache_data_expr = Values('cache_data', cols, values)
+            cache_data = ClassAlias(lpsprc, "cache_data")
+
+            # The columns to be updated.
+            updated_columns = dict([
+                (lpsprc.dateuploaded, cache_data.dateuploaded),
+                (lpsprc.sourcepackagerelease_id,
+                 cache_data.sourcepackagerelease_id),
+                (lpsprc.publication_id, cache_data.publication_id)])
+            # The update filter.
+            filter = And(
+                Or(
+                    cache_data.creator_id == None,
+                    lpsprc.creator_id == cache_data.creator_id),
+                Or(
+                    cache_data.maintainer_id == None,
+                    lpsprc.maintainer_id == cache_data.maintainer_id),
+                lpsprc.upload_archive_id == cache_data.upload_archive_id,
+                lpsprc.upload_distroseries_id ==
+                    cache_data.upload_distroseries_id,
+                lpsprc.sourcepackagename_id == cache_data.sourcepackagename_id)
+
+            self.store.execute(
+                BulkUpdate(
+                    updated_columns,
+                    table=LatestPersonSourcePackageReleaseCache,
+                    values=cache_data_expr, where=filter))
+        self.store.flush()
+        save_garbo_job_state(self.job_name, {
+            'last_spph_id': self.last_spph_id})
+        transaction.commit()
+
+
 class OpenIDConsumerNoncePruner(TunableLoop):
     """An ITunableLoop to prune old OpenIDConsumerNonce records.
 
@@ -370,7 +787,7 @@ class OpenIDConsumerNoncePruner(TunableLoop):
 
     def __init__(self, log, abort_time=None):
         super(OpenIDConsumerNoncePruner, self).__init__(log, abort_time)
-        self.store = getUtility(IStoreSelector).get(MAIN_STORE, MASTER_FLAVOR)
+        self.store = IMasterStore(OpenIDConsumerNonce)
         self.earliest_timestamp = self.store.find(
             Min(OpenIDConsumerNonce.timestamp)).one()
         utc_now = int(time.mktime(time.gmtime()))
@@ -406,7 +823,7 @@ class OpenIDConsumerAssociationPruner(TunableLoop):
 
     def __init__(self, log, abort_time=None):
         super(OpenIDConsumerAssociationPruner, self).__init__(log, abort_time)
-        self.store = getUtility(IStoreSelector).get(MAIN_STORE, MASTER_FLAVOR)
+        self.store = IMasterStore(OpenIDConsumerNonce)
 
     def __call__(self, chunksize):
         result = self.store.execute("""
@@ -724,6 +1141,24 @@ class PersonPruner(TunableLoop):
                 % chunk_size)
 
 
+class TeamMembershipPruner(BulkPruner):
+    """Remove team memberships for merged people.
+
+    People merge can leave team membership records behind because:
+        * The membership duplicates another membership.
+        * The membership would have created a cyclic relationshop.
+        * The operation avoid a race condition.
+    """
+    target_table_class = TeamMembership
+    ids_to_prune_query = """
+        SELECT TeamMembership.id
+        FROM TeamMembership, Person
+        WHERE
+            TeamMembership.person = person.id
+            AND person.merged IS NOT NULL
+        """
+
+
 class BugNotificationPruner(BulkPruner):
     """Prune `BugNotificationRecipient` records no longer of interest.
 
@@ -769,7 +1204,7 @@ class AnswerContactPruner(BulkPruner):
 class BranchJobPruner(BulkPruner):
     """Prune `BranchJob`s that are in a final state and more than a month old.
 
-    When a BranchJob is completed, it gets set to a final state.  These jobs
+    When a BranchJob is completed, it gets set to a final state. These jobs
     should be pruned from the database after a month.
     """
     target_table_class = Job
@@ -781,6 +1216,71 @@ class BranchJobPruner(BulkPruner):
             AND Job.date_finished < CURRENT_TIMESTAMP AT TIME ZONE 'UTC'
                 - CAST('30 days' AS interval)
         """
+
+
+class GitJobPruner(BulkPruner):
+    """Prune `GitJob`s that are in a final state and more than a month old.
+
+    When a GitJob is completed, it gets set to a final state. These jobs
+    should be pruned from the database after a month.
+    """
+    target_table_class = Job
+    ids_to_prune_query = """
+        SELECT DISTINCT Job.id
+        FROM Job, GitJob
+        WHERE
+            Job.id = GitJob.job
+            AND Job.date_finished < CURRENT_TIMESTAMP AT TIME ZONE 'UTC'
+                - CAST('30 days' AS interval)
+        """
+
+
+class SnapBuildJobPruner(BulkPruner):
+    """Prune `SnapBuildJob`s that are in a final state and more than a month
+    old.
+
+    When a SnapBuildJob is completed, it gets set to a final state. These
+    jobs should be pruned from the database after a month, unless they are
+    the most recent job for their SnapBuild.
+    """
+    target_table_class = Job
+    ids_to_prune_query = """
+        SELECT id
+        FROM (
+            SELECT
+                Job.id,
+                Job.date_finished,
+                rank() OVER (
+                    PARTITION BY SnapBuildJob.snapbuild
+                    ORDER BY SnapBuildJob.job DESC) AS rank
+            FROM Job JOIN SnapBuildJob ON Job.id = SnapBuildJob.job) AS jobs
+        WHERE
+            rank > 1
+            AND date_finished < CURRENT_TIMESTAMP AT TIME ZONE 'UTC'
+                - CAST('30 days' AS interval)
+        """
+
+
+class WebhookJobPruner(TunableLoop):
+    """Prune `WebhookJobs` that finished more than a month ago."""
+
+    maximum_chunk_size = 5000
+
+    @property
+    def old_jobs(self):
+        return IMasterStore(WebhookJob).using(WebhookJob, Job).find(
+            (WebhookJob.job_id,),
+            Job.id == WebhookJob.job_id,
+            Job.date_finished < SQL(
+                "CURRENT_TIMESTAMP AT TIME ZONE 'UTC' - '30 days'::interval"))
+
+    def __call__(self, chunksize):
+        getUtility(IWebhookJobSource).deleteByIDs(
+            list(self.old_jobs[:int(chunksize)].values(WebhookJob.job_id)))
+        transaction.commit()
+
+    def isDone(self):
+        return self.old_jobs.is_empty()
 
 
 class BugHeatUpdater(TunableLoop):
@@ -942,14 +1442,32 @@ class UnusedPOTMsgSetPruner(TunableLoop):
 
     @cachedproperty
     def msgset_ids_to_remove(self):
-        """Return the IDs of the POTMsgSets to remove."""
+        """The IDs of the POTMsgSets to remove."""
+        return self._get_msgset_ids_to_remove()
+
+    def _get_msgset_ids_to_remove(self, ids=None):
+        """Return a distrinct list IDs of the POTMsgSets to remove.
+
+        :param ids: a list of POTMsgSet ids to filter. If ids is None,
+            all unused POTMsgSet in the database are returned.
+        """
+        if ids is None:
+            constraints = dict(
+                tti_constraint="AND TRUE",
+                potmsgset_constraint="AND TRUE")
+        else:
+            ids_in = ', '.join([str(id) for id in ids])
+            constraints = dict(
+                tti_constraint="AND tti.potmsgset IN (%s)" % ids_in,
+                potmsgset_constraint="AND POTMsgSet.id IN (%s)" % ids_in)
         query = """
             -- Get all POTMsgSet IDs which are obsolete (sequence == 0)
             -- and are not used (sequence != 0) in any other template.
             SELECT POTMsgSet
               FROM TranslationTemplateItem tti
-              WHERE sequence=0 AND
-              NOT EXISTS(
+              WHERE sequence=0
+              %(tti_constraint)s
+              AND NOT EXISTS(
                 SELECT id
                   FROM TranslationTemplateItem
                   WHERE potmsgset = tti.potmsgset AND sequence != 0)
@@ -961,20 +1479,22 @@ class UnusedPOTMsgSetPruner(TunableLoop):
                LEFT OUTER JOIN TranslationTemplateItem
                  ON TranslationTemplateItem.potmsgset = POTMsgSet.id
                WHERE
-                 TranslationTemplateItem.potmsgset IS NULL);
-            """
+                 TranslationTemplateItem.potmsgset IS NULL
+                 %(potmsgset_constraint)s);
+            """ % constraints
         store = IMasterStore(POTMsgSet)
         results = store.execute(query)
-        ids_to_remove = [id for (id,) in results.get_all()]
-        return ids_to_remove
+        ids_to_remove = set([id for (id,) in results.get_all()])
+        return list(ids_to_remove)
 
     def __call__(self, chunk_size):
         """See `TunableLoop`."""
         # We cast chunk_size to an int to avoid issues with slicing
         # (DBLoopTuner passes in a float).
         chunk_size = int(chunk_size)
-        msgset_ids_to_remove = (
+        msgset_ids = (
             self.msgset_ids_to_remove[self.offset:][:chunk_size])
+        msgset_ids_to_remove = self._get_msgset_ids_to_remove(msgset_ids)
         # Remove related TranslationTemplateItems.
         store = IMasterStore(POTMsgSet)
         related_ttis = store.find(
@@ -1015,6 +1535,80 @@ class UnusedAccessPolicyPruner(TunableLoop):
             product._pruneUnusedPolicies()
         self.start_at = products[-1].id + 1
         transaction.commit()
+
+
+class ProductVCSPopulator(TunableLoop):
+    """Populates product.vcs from product.inferred_vcs if not set."""
+
+    maximum_chunk_size = 5000
+
+    def __init__(self, log, abort_time=None):
+        super(ProductVCSPopulator, self).__init__(log, abort_time)
+        self.start_at = 1
+        self.store = IMasterStore(Product)
+
+    def findProducts(self):
+        return self.store.find(
+            Product, Product.id >= self.start_at).order_by(Product.id)
+
+    def isDone(self):
+        return self.findProducts().is_empty()
+
+    def __call__(self, chunk_size):
+        products = list(self.findProducts()[:chunk_size])
+        for product in products:
+            if not product.vcs:
+                product.vcs = product.inferred_vcs
+        self.start_at = products[-1].id + 1
+        transaction.commit()
+
+
+class LiveFSFilePruner(BulkPruner):
+    """A BulkPruner to remove old `LiveFSFile`s.
+
+    We remove binary files attached to `LiveFSBuild`s that are more than a
+    day old; these files are very large and are only useful for builds in
+    progress.  Text files are typically small (<1MiB) and useful for
+    retrospective analysis, so we preserve those indefinitely.
+    """
+    target_table_class = LiveFSFile
+    ids_to_prune_query = """
+        SELECT DISTINCT LiveFSFile.id
+        FROM LiveFSFile, LiveFSBuild, LibraryFileAlias
+        WHERE
+            LiveFSFile.livefsbuild = LiveFSBuild.id
+            AND LiveFSFile.libraryfile = LibraryFileAlias.id
+            AND LiveFSBuild.date_finished <
+                CURRENT_TIMESTAMP AT TIME ZONE 'UTC'
+                - CAST('1 day' AS interval)
+            AND LibraryFileAlias.mimetype != 'text/plain'
+        """
+
+
+class SnapFilePruner(BulkPruner):
+    """Prune old `SnapFile`s that have been uploaded to the store.
+
+    Snaps attached to `SnapBuild`s are typically very large, and once
+    they've been uploaded to the store we don't really need to keep them in
+    Launchpad as well.  Other files are either small or don't exist anywhere
+    else, so we preserve those indefinitely.
+    """
+    target_table_class = SnapFile
+    ids_to_prune_query = """
+        SELECT DISTINCT SnapFile.id
+        FROM SnapFile, SnapBuild, SnapBuildJob, Job, LibraryFileAlias
+        WHERE
+            SnapFile.snapbuild = SnapBuild.id
+            AND SnapBuildJob.snapbuild = SnapBuild.id
+            AND SnapBuildJob.job_type = %s
+            AND SnapBuildJob.job = Job.id
+            AND Job.status = %s
+            AND Job.date_finished <
+                CURRENT_TIMESTAMP AT TIME ZONE 'UTC'
+                - CAST('30 days' AS INTERVAL)
+            AND SnapFile.libraryfile = LibraryFileAlias.id
+            AND LibraryFileAlias.filename LIKE '%%.snap'
+        """ % (SnapBuildJobType.STORE_UPLOAD.value, JobStatus.COMPLETED.value)
 
 
 class BaseDatabaseGarbageCollector(LaunchpadCronScript):
@@ -1090,9 +1684,8 @@ class BaseDatabaseGarbageCollector(LaunchpadCronScript):
             else:
                 break
 
-        # If the script ran out of time, warn.
         if self.get_remaining_script_time() < 0:
-            self.logger.warn(
+            self.logger.info(
                 "Script aborted after %d seconds.", self.script_timeout)
 
         if tunable_loops:
@@ -1244,15 +1837,18 @@ class FrequentDatabaseGarbageCollector(BaseDatabaseGarbageCollector):
     """
     script_name = 'garbo-frequently'
     tunable_loops = [
-        BugSummaryJournalRollup,
-        OAuthNoncePruner,
-        OpenIDConsumerNoncePruner,
-        OpenIDConsumerAssociationPruner,
         AntiqueSessionPruner,
+        BugSummaryJournalRollup,
+        BugWatchScheduler,
+        OpenIDConsumerAssociationPruner,
+        OpenIDConsumerNoncePruner,
+        PopulateDistributionSourcePackageCache,
+        PopulateLatestPersonSourcePackageReleaseCache,
+        VoucherRedeemer,
         ]
     experimental_tunable_loops = []
 
-    # 5 minmutes minus 20 seconds for cleanup. This helps ensure the
+    # 5 minutes minus 20 seconds for cleanup. This helps ensure the
     # script is fully terminated before the next scheduled hourly run
     # kicks in.
     default_abort_script_time = 60 * 5 - 20
@@ -1265,11 +1861,10 @@ class HourlyDatabaseGarbageCollector(BaseDatabaseGarbageCollector):
     """
     script_name = 'garbo-hourly'
     tunable_loops = [
-        RevisionCachePruner,
-        BugWatchScheduler,
-        UnusedSessionPruner,
-        DuplicateSessionPruner,
         BugHeatUpdater,
+        DuplicateSessionPruner,
+        RevisionCachePruner,
+        UnusedSessionPruner,
         ]
     experimental_tunable_loops = []
 
@@ -1294,17 +1889,26 @@ class DailyDatabaseGarbageCollector(BaseDatabaseGarbageCollector):
         BugWatchActivityPruner,
         CodeImportEventPruner,
         CodeImportResultPruner,
+        DiffPruner,
+        GitJobPruner,
         HWSubmissionEmailLinker,
+        LiveFSFilePruner,
         LoginTokenPruner,
         ObsoleteBugAttachmentPruner,
         OldTimeLimitedTokenDeleter,
+        POTranslationPruner,
+        PreviewDiffPruner,
+        ProductVCSPopulator,
         RevisionAuthorEmailLinker,
         ScrubPOFileTranslator,
+        SnapBuildJobPruner,
+        SnapFilePruner,
         SuggestiveTemplatesCacheUpdater,
-        POTranslationPruner,
+        TeamMembershipPruner,
         UnlinkedAccountPruner,
         UnusedAccessPolicyPruner,
         UnusedPOTMsgSetPruner,
+        WebhookJobPruner,
         ]
     experimental_tunable_loops = [
         PersonPruner,

@@ -1,4 +1,4 @@
-# Copyright 2009 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2015 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for the scanner's merge detection."""
@@ -8,6 +8,7 @@ __metaclass__ = type
 import logging
 
 from bzrlib.revision import NULL_REVISION
+from lazr.lifecycle.event import ObjectModifiedEvent
 import transaction
 from zope.component import getUtility
 from zope.event import notify
@@ -30,7 +31,8 @@ from lp.codehosting.scanner.tests.test_bzrsync import (
     run_as_db_user,
     )
 from lp.services.config import config
-from lp.services.database.lpstorm import IStore
+from lp.services.database.interfaces import IStore
+from lp.services.log.logger import DevNullLogger
 from lp.services.osutils import override_environ
 from lp.testing import (
     TestCase,
@@ -198,7 +200,7 @@ class TestMergeDetection(TestCaseWithFactory):
         mergedetection.auto_merge_branches(
             events.ScanCompleted(
                 db_branch=db_branch, bzr_branch=None,
-                logger=None, new_ancestry=new_ancestry))
+                logger=DevNullLogger(), new_ancestry=new_ancestry))
 
     def mergeDetected(self, logger, source, target):
         # Record the merged branches
@@ -271,7 +273,8 @@ class TestBranchMergeDetectionHandler(TestCaseWithFactory):
         self.assertNotEqual(
             BranchLifecycleStatus.MERGED,
             proposal.source_branch.lifecycle_status)
-        mergedetection.merge_detected(
+        _, [event] = self.assertNotifies(
+            [ObjectModifiedEvent], True, mergedetection.merge_detected,
             logging.getLogger(),
             proposal.source_branch, proposal.target_branch, proposal)
         self.assertEqual(
@@ -279,6 +282,12 @@ class TestBranchMergeDetectionHandler(TestCaseWithFactory):
         self.assertEqual(
             BranchLifecycleStatus.MERGED,
             proposal.source_branch.lifecycle_status)
+        self.assertEqual(proposal, event.object)
+        self.assertEqual(
+            BranchMergeProposalStatus.WORK_IN_PROGRESS,
+            event.object_before_modification.queue_status)
+        self.assertEqual(
+            BranchMergeProposalStatus.MERGED, event.object.queue_status)
         job = IStore(proposal).find(
             BranchMergeProposalJob,
             BranchMergeProposalJob.branch_merge_proposal == proposal,

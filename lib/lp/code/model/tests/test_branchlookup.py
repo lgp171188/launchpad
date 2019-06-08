@@ -1,7 +1,9 @@
-# Copyright 2009-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2017 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for the IBranchLookup implementation."""
+
+from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 
@@ -9,6 +11,7 @@ from lazr.uri import URI
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
+from lp.app.enums import InformationType
 from lp.code.errors import (
     CannotHaveLinkedBranch,
     InvalidNamespace,
@@ -27,7 +30,6 @@ from lp.code.interfaces.codehosting import (
     compose_public_url,
     )
 from lp.code.interfaces.linkedbranch import ICanHasLinkedBranch
-from lp.registry.enums import InformationType
 from lp.registry.errors import (
     NoSuchDistroSeries,
     NoSuchSourcePackageName,
@@ -153,7 +155,7 @@ class TestGetByHostingPath(TestCaseWithFactory):
         self.assertEqual((branch, '/foo'), result)
 
 
-class TestGetByPath(TestCaseWithFactory):
+class TestGetByLPPath(TestCaseWithFactory):
     """Test `IBranchLookup.getByLPPath`."""
 
     layer = DatabaseFunctionalLayer
@@ -171,54 +173,51 @@ class TestGetByPath(TestCaseWithFactory):
             self.factory.getUniqueString()
             for i in range(arbitrary_num_segments)])
 
+    def assertMissingPath(self, exctype, path):
+        self.assertRaises(exctype, self.getByPath, path)
+
+    def assertPath(self, expected_branch, expected_suffix, path):
+        branch, suffix = self.getByPath(path)
+        self.assertEqual(expected_branch, branch)
+        self.assertEqual(expected_suffix, suffix)
+
     def test_finds_exact_personal_branch(self):
         branch = self.factory.makePersonalBranch()
-        found_branch, suffix = self.getByPath(branch.unique_name)
-        self.assertEqual(branch, found_branch)
-        self.assertEqual('', suffix)
+        self.assertPath(branch, '', branch.unique_name)
 
     def test_finds_suffixed_personal_branch(self):
         branch = self.factory.makePersonalBranch()
         suffix = self.makeRelativePath()
-        found_branch, found_suffix = self.getByPath(
-            branch.unique_name + '/' + suffix)
-        self.assertEqual(branch, found_branch)
-        self.assertEqual(suffix, found_suffix)
+        self.assertPath(branch, suffix, branch.unique_name + '/' + suffix)
 
     def test_missing_personal_branch(self):
         owner = self.factory.makePerson()
         namespace = get_branch_namespace(owner)
         branch_name = namespace.getBranchName(self.factory.getUniqueString())
-        self.assertRaises(NoSuchBranch, self.getByPath, branch_name)
+        self.assertMissingPath(NoSuchBranch, branch_name)
 
     def test_missing_suffixed_personal_branch(self):
         owner = self.factory.makePerson()
         namespace = get_branch_namespace(owner)
         branch_name = namespace.getBranchName(self.factory.getUniqueString())
         suffix = self.makeRelativePath()
-        self.assertRaises(
-            NoSuchBranch, self.getByPath, branch_name + '/' + suffix)
+        self.assertMissingPath(NoSuchBranch, branch_name + '/' + suffix)
 
     def test_finds_exact_product_branch(self):
         branch = self.factory.makeProductBranch()
-        found_branch, suffix = self.getByPath(branch.unique_name)
-        self.assertEqual(branch, found_branch)
-        self.assertEqual('', suffix)
+        self.assertPath(branch, '', branch.unique_name)
 
     def test_finds_suffixed_product_branch(self):
         branch = self.factory.makeProductBranch()
         suffix = self.makeRelativePath()
-        found_branch, found_suffix = self.getByPath(
-            branch.unique_name + '/' + suffix)
-        self.assertEqual(branch, found_branch)
-        self.assertEqual(suffix, found_suffix)
+        self.assertPath(branch, suffix, branch.unique_name + '/' + suffix)
 
     def test_missing_product_branch(self):
         owner = self.factory.makePerson()
         product = self.factory.makeProduct()
         namespace = get_branch_namespace(owner, product=product)
         branch_name = namespace.getBranchName(self.factory.getUniqueString())
-        self.assertRaises(NoSuchBranch, self.getByPath, branch_name)
+        self.assertMissingPath(NoSuchBranch, branch_name)
 
     def test_missing_suffixed_product_branch(self):
         owner = self.factory.makePerson()
@@ -226,14 +225,11 @@ class TestGetByPath(TestCaseWithFactory):
         namespace = get_branch_namespace(owner, product=product)
         suffix = self.makeRelativePath()
         branch_name = namespace.getBranchName(self.factory.getUniqueString())
-        self.assertRaises(
-            NoSuchBranch, self.getByPath, branch_name + '/' + suffix)
+        self.assertMissingPath(NoSuchBranch, branch_name + '/' + suffix)
 
     def test_finds_exact_package_branch(self):
         branch = self.factory.makePackageBranch()
-        found_branch, suffix = self.getByPath(branch.unique_name)
-        self.assertEqual(branch, found_branch)
-        self.assertEqual('', suffix)
+        self.assertPath(branch, '', branch.unique_name)
 
     def test_missing_package_branch(self):
         owner = self.factory.makePerson()
@@ -243,7 +239,7 @@ class TestGetByPath(TestCaseWithFactory):
             owner, distroseries=distroseries,
             sourcepackagename=sourcepackagename)
         branch_name = namespace.getBranchName(self.factory.getUniqueString())
-        self.assertRaises(NoSuchBranch, self.getByPath, branch_name)
+        self.assertMissingPath(NoSuchBranch, branch_name)
 
     def test_missing_suffixed_package_branch(self):
         owner = self.factory.makePerson()
@@ -254,19 +250,30 @@ class TestGetByPath(TestCaseWithFactory):
             sourcepackagename=sourcepackagename)
         suffix = self.makeRelativePath()
         branch_name = namespace.getBranchName(self.factory.getUniqueString())
-        self.assertRaises(
-            NoSuchBranch, self.getByPath, branch_name + '/' + suffix)
+        self.assertMissingPath(NoSuchBranch, branch_name + '/' + suffix)
 
     def test_too_short(self):
         person = self.factory.makePerson()
-        self.assertRaises(
-            InvalidNamespace, self.getByPath, '~%s' % person.name)
+        self.assertMissingPath(InvalidNamespace, '~%s' % person.name)
 
     def test_no_such_product(self):
         person = self.factory.makePerson()
         branch_name = '~%s/%s/%s' % (
             person.name, self.factory.getUniqueString(), 'branch-name')
-        self.assertRaises(NoSuchProduct, self.getByPath, branch_name)
+        self.assertMissingPath(NoSuchProduct, branch_name)
+
+
+class TestGetByPath(TestGetByLPPath):
+    """Test `IBranchLookup.getByPath`."""
+
+    def getByPath(self, path):
+        return self.branch_lookup.getByPath(path)
+
+    def assertMissingPath(self, exctype, path):
+        self.assertIsNone(self.getByPath(path))
+
+    def assertPath(self, expected_branch, expected_suffix, path):
+        self.assertEqual(expected_branch, self.getByPath(path))
 
 
 class TestGetByUrl(TestCaseWithFactory):
@@ -291,14 +298,14 @@ class TestGetByUrl(TestCaseWithFactory):
         # Trailing slashes are stripped from the url prior to searching.
         branch = self.makeProductBranch()
         lookup = getUtility(IBranchLookup)
-        branch2 = lookup.getByUrl('http://bazaar.launchpad.dev/~aa/b/c/')
+        branch2 = lookup.getByUrl('http://bazaar.launchpad.test/~aa/b/c/')
         self.assertEqual(branch, branch2)
 
     def test_getByUrl_with_http(self):
         """getByUrl recognizes LP branches for http URLs."""
         branch = self.makeProductBranch()
         branch_set = getUtility(IBranchLookup)
-        branch2 = branch_set.getByUrl('http://bazaar.launchpad.dev/~aa/b/c')
+        branch2 = branch_set.getByUrl('http://bazaar.launchpad.test/~aa/b/c')
         self.assertEqual(branch, branch2)
 
     def test_getByUrl_with_ssh(self):
@@ -306,14 +313,14 @@ class TestGetByUrl(TestCaseWithFactory):
         branch = self.makeProductBranch()
         branch_set = getUtility(IBranchLookup)
         branch2 = branch_set.getByUrl(
-            'bzr+ssh://bazaar.launchpad.dev/~aa/b/c')
+            'bzr+ssh://bazaar.launchpad.test/~aa/b/c')
         self.assertEqual(branch, branch2)
 
     def test_getByUrl_with_sftp(self):
         """getByUrl recognizes LP branches for sftp URLs."""
         branch = self.makeProductBranch()
         branch_set = getUtility(IBranchLookup)
-        branch2 = branch_set.getByUrl('sftp://bazaar.launchpad.dev/~aa/b/c')
+        branch2 = branch_set.getByUrl('sftp://bazaar.launchpad.test/~aa/b/c')
         self.assertEqual(branch, branch2)
 
     def test_getByUrl_with_ftp(self):
@@ -323,7 +330,7 @@ class TestGetByUrl(TestCaseWithFactory):
         """
         self.makeProductBranch()
         branch_set = getUtility(IBranchLookup)
-        branch2 = branch_set.getByUrl('ftp://bazaar.launchpad.dev/~aa/b/c')
+        branch2 = branch_set.getByUrl('ftp://bazaar.launchpad.test/~aa/b/c')
         self.assertIs(None, branch2)
 
     def test_getByURL_with_lp_prefix(self):
@@ -446,7 +453,7 @@ class TestLinkedBranchTraverser(TestCaseWithFactory):
         self.assertRaises(NoSuchProduct, self.traverser.traverse, 'bb')
 
     def test_invalid_product(self):
-        # `traverse` raises `InvalidProductIdentifier` when resolving an lp
+        # `traverse` raises `InvalidProductName` when resolving an lp
         # path for a completely invalid product development focus branch.
         self.assertRaises(
             InvalidProductName, self.traverser.traverse, 'b')
@@ -741,7 +748,7 @@ class TestGetByLPPath(TestCaseWithFactory):
         series = self.factory.makeProductSeries(branch=branch)
         result = self.branch_lookup.getByLPPath(
             '%s/%s/other/bits' % (series.product.name, series.name))
-        self.assertEqual((branch, u'other/bits'), result)
+        self.assertEqual((branch, 'other/bits'), result)
 
     def test_too_long_sourcepackage(self):
         package = self.factory.makeSourcePackage()
@@ -752,4 +759,38 @@ class TestGetByLPPath(TestCaseWithFactory):
                 package.distribution.owner)
         result = self.branch_lookup.getByLPPath(
             '%s/other/bits' % package.path)
-        self.assertEqual((branch, u'other/bits'), result)
+        self.assertEqual((branch, 'other/bits'), result)
+
+
+class PerformLookupTestCase(TestCaseWithFactory):
+
+    layer = DatabaseFunctionalLayer
+
+    def makeProductBranch(self):
+        """Create a branch with aa/b/c as its unique name."""
+        owner = self.factory.makePerson(name='aa')
+        product = self.factory.makeProduct('b')
+        return self.factory.makeProductBranch(
+            owner=owner, product=product, name='c')
+
+    def test_performLookup_with_branch_name(self):
+        # performLookup works with branch unique_name and
+        # escapes the trailing path.
+        product = make_product_with_branch(self.factory)
+        branch = product.development_focus.branch
+        lookup = dict(
+            type='branch_name', unique_name=branch.unique_name,
+            trailing='foo/+filediff')
+        branch_lookup = getUtility(IBranchLookup)
+        found_branch, trailing = branch_lookup.performLookup(lookup)
+        self.assertEqual(branch, found_branch)
+        self.assertEqual('foo/%2Bfilediff', trailing)
+
+    def test_performLookup_with_alias_and_extra_path(self):
+        # PerformLookup works with aliases and escapes the trailing path.
+        product = make_product_with_branch(self.factory)
+        lookup = dict(type='alias', lp_path='%s/foo/+filediff' % product.name)
+        branch_lookup = getUtility(IBranchLookup)
+        found_branch, trailing = branch_lookup.performLookup(lookup)
+        self.assertEqual(product.development_focus.branch, found_branch)
+        self.assertEqual('foo/%2Bfilediff', trailing)

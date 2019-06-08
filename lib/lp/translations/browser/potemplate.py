@@ -1,7 +1,5 @@
-# Copyright 2009-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
-# pylint: disable-msg=F0401
-
 """Browser code for PO templates."""
 
 __metaclass__ = type
@@ -10,7 +8,6 @@ __all__ = [
     'POTemplateAdminView',
     'POTemplateBreadcrumb',
     'POTemplateEditView',
-    'POTemplateFacets',
     'POTemplateExportView',
     'POTemplateMenu',
     'POTemplateNavigation',
@@ -25,11 +22,11 @@ __all__ = [
     'BaseSeriesTemplatesView',
     ]
 
-import cgi
 import datetime
 import operator
 import os.path
 
+from lazr.restful.interface import copy_field
 from lazr.restful.utils import smartquote
 import pytz
 from storm.expr import (
@@ -38,7 +35,7 @@ from storm.expr import (
     )
 from storm.info import ClassAlias
 from zope.component import getUtility
-from zope.interface import implements
+from zope.interface import implementer
 from zope.publisher.browser import FileUpload
 from zope.security.proxy import removeSecurityProxy
 
@@ -55,16 +52,17 @@ from lp.app.enums import (
     )
 from lp.app.errors import NotFoundError
 from lp.app.validators.name import valid_name
-from lp.registry.browser.productseries import ProductSeriesFacets
-from lp.registry.browser.sourcepackage import SourcePackageFacets
-from lp.registry.interfaces.productseries import IProductSeries
+from lp.registry.interfaces.distributionsourcepackage import (
+    IDistributionSourcePackage,
+    )
 from lp.registry.interfaces.role import IPersonRoles
-from lp.registry.interfaces.sourcepackage import ISourcePackage
 from lp.registry.model.packaging import Packaging
 from lp.registry.model.product import Product
 from lp.registry.model.productseries import ProductSeries
 from lp.registry.model.sourcepackagename import SourcePackageName
+from lp.services.features import getFeatureFlag
 from lp.services.helpers import is_tar_filename
+from lp.services.propertycache import cachedproperty
 from lp.services.webapp import (
     canonical_url,
     enabled_with_permission,
@@ -72,15 +70,17 @@ from lp.services.webapp import (
     Link,
     Navigation,
     NavigationMenu,
-    StandardLaunchpadFacets,
     )
 from lp.services.webapp.authorization import check_permission
 from lp.services.webapp.breadcrumb import Breadcrumb
+from lp.services.webapp.escaping import (
+    html_escape,
+    structured,
+    )
 from lp.services.webapp.interfaces import (
     ICanonicalUrlData,
     ILaunchBag,
     )
-from lp.services.webapp.menu import structured
 from lp.services.webapp.publisher import (
     LaunchpadView,
     RedirectionView,
@@ -90,6 +90,10 @@ from lp.translations.browser.poexportrequest import BaseExportView
 from lp.translations.browser.translations import TranslationsMixin
 from lp.translations.browser.translationsharing import (
     TranslationSharingDetailsMixin,
+    )
+from lp.translations.browser.widgets.potemplate import (
+    POTemplateAdminSourcePackageNameWidget,
+    POTemplateEditSourcePackageNameWidget,
     )
 from lp.translations.interfaces.pofile import IPOFileSet
 from lp.translations.interfaces.potemplate import (
@@ -143,61 +147,6 @@ class POTemplateNavigation(Navigation):
             # check the kind of POST we got.  A logout will also be a
             # POST and we should not create a POFile in that case.
             return self.context.newPOFile(name, owner=user)
-
-
-class POTemplateFacets(StandardLaunchpadFacets):
-    usedfor = IPOTemplate
-
-    def __init__(self, context):
-        StandardLaunchpadFacets.__init__(self, context)
-        target = context.translationtarget
-        if IProductSeries.providedBy(target):
-            self._is_product_series = True
-            self.target_facets = ProductSeriesFacets(target)
-        elif ISourcePackage.providedBy(target):
-            self._is_product_series = False
-            self.target_facets = SourcePackageFacets(target)
-        else:
-            # We don't know yet how to handle this target.
-            raise NotImplementedError
-
-        # Enable only the menus that the translation target uses.
-        self.enable_only = self.target_facets.enable_only
-
-        # From an IPOTemplate URL, we reach its translationtarget (either
-        # ISourcePackage or IProductSeries using self.target.
-        self.target = '../../'
-
-    def overview(self):
-        overview_link = self.target_facets.overview()
-        overview_link.target = self.target
-        return overview_link
-
-    def translations(self):
-        translations_link = self.target_facets.translations()
-        translations_link.target = self.target
-        return translations_link
-
-    def bugs(self):
-        bugs_link = self.target_facets.bugs()
-        bugs_link.target = self.target
-        return bugs_link
-
-    def answers(self):
-        answers_link = self.target_facets.answers()
-        answers_link.target = self.target
-        return answers_link
-
-    def specifications(self):
-        specifications_link = self.target_facets.specifications()
-        specifications_link.target = self.target
-        return specifications_link
-
-    def branches(self):
-        branches_link = self.target_facets.branches()
-        if not self._is_product_series:
-            branches_link.target = self.target
-        return branches_link
 
 
 class POTemplateMenu(NavigationMenu):
@@ -309,7 +258,7 @@ class POTemplateView(LaunchpadView,
         return (translation_group is not None and
                 translation_group.translation_guide_url is not None)
 
-    @property
+    @cachedproperty
     def related_templates_by_source(self):
         by_source = list(
             self.context.relatives_by_source[:self.SHOW_RELATED_TEMPLATES])
@@ -492,9 +441,9 @@ class POTemplateUploadView(LaunchpadView, TranslationsMixin):
                     'be imported, %s will be reviewed manually by an '
                     'administrator in the coming few days.  You can track '
                     'your upload\'s status in the '
-                    '<a href="%s/+imports">Translation Import Queue</a>' % (
-                        num, plural_s, plural_s, itthey,
-                        canonical_url(self.context.translationtarget))))
+                    '<a href="%s/+imports">Translation Import Queue</a>',
+                    num, plural_s, plural_s, itthey,
+                    canonical_url(self.context.translationtarget)))
                 if len(conflicts) > 0:
                     if len(conflicts) == 1:
                         warning = (
@@ -509,10 +458,12 @@ class POTemplateUploadView(LaunchpadView, TranslationsMixin):
                             "%s files could not be uploaded because their "
                             "names matched multiple existing uploads, for "
                             "different templates.", len(conflicts))
+                        conflict_str = structured(
+                            "</li><li>".join(["%s" % len(conflicts)]),
+                            *conflicts)
                         ul_conflicts = structured(
                             "The conflicting file names were:<br /> "
-                            "<ul><li>%s</li></ul>" % (
-                            "</li><li>".join(map(cgi.escape, conflicts))))
+                            "<ul><li>%s</li></ul>", conflict_str)
                     self.request.response.addWarningNotification(
                         structured(
                         "%s  This makes it "
@@ -550,10 +501,29 @@ class POTemplateViewPreferred(POTemplateView):
         return POTemplateView.pofiles(self, preferred_only=True)
 
 
+class IPOTemplateEditForm(IPOTemplate):
+
+    sourcepackagename = copy_field(
+        IPOTemplate['sourcepackagename'],
+        vocabularyName='DistributionSourcePackage')
+
+    from_sourcepackagename = copy_field(
+        IPOTemplate['from_sourcepackagename'],
+        vocabularyName='DistributionSourcePackage')
+
+
 class POTemplateEditView(ReturnToReferrerMixin, LaunchpadEditFormView):
     """View class that lets you edit a POTemplate object."""
 
-    schema = IPOTemplate
+    @property
+    def schema(self):
+        """See `LaunchpadFormView`."""
+        if bool(getFeatureFlag('disclosure.dsp_picker.enabled')):
+            return IPOTemplateEditForm
+        else:
+            return IPOTemplate
+
+    custom_widget_sourcepackagename = POTemplateEditSourcePackageNameWidget
     label = 'Edit translation template details'
     page_title = 'Edit details'
     PRIORITY_MIN_VALUE = 0
@@ -572,6 +542,14 @@ class POTemplateEditView(ReturnToReferrerMixin, LaunchpadEditFormView):
         else:
             field_names.append('owner')
         return field_names
+
+    @property
+    def adapters(self):
+        """See `LaunchpadFormView`."""
+        if bool(getFeatureFlag('disclosure.dsp_picker.enabled')):
+            return {IPOTemplateEditForm: self.context}
+        else:
+            return {}
 
     @property
     def _return_url(self):
@@ -606,6 +584,9 @@ class POTemplateEditView(ReturnToReferrerMixin, LaunchpadEditFormView):
         context.setActive(iscurrent)
         old_description = context.description
         old_translation_domain = context.translation_domain
+        for field in ('sourcepackagename', 'from_sourcepackagename'):
+            if IDistributionSourcePackage.providedBy(data.get(field)):
+                data[field] = data[field].sourcepackagename
         self.updateContextFromData(data)
         if old_description != context.description:
             self.user.assignKarma(
@@ -623,6 +604,8 @@ class POTemplateEditView(ReturnToReferrerMixin, LaunchpadEditFormView):
         """Return a POTemplateSubset corresponding to the chosen target."""
         sourcepackagename = data.get('sourcepackagename',
                                      self.context.sourcepackagename)
+        if IDistributionSourcePackage.providedBy(sourcepackagename):
+            sourcepackagename = sourcepackagename.sourcepackagename
         return getUtility(IPOTemplateSet).getSubset(
             distroseries=self.context.distroseries,
             sourcepackagename=sourcepackagename,
@@ -640,6 +623,8 @@ class POTemplateEditView(ReturnToReferrerMixin, LaunchpadEditFormView):
         distroseries = data.get('distroseries', self.context.distroseries)
         sourcepackagename = data.get(
             'sourcepackagename', self.context.sourcepackagename)
+        if IDistributionSourcePackage.providedBy(sourcepackagename):
+            sourcepackagename = sourcepackagename.sourcepackagename
         productseries = data.get('productseries', None)
         sourcepackage_changed = (
             distroseries is not None and
@@ -711,9 +696,12 @@ class POTemplateAdminView(POTemplateEditView):
     field_names = [
         'name', 'translation_domain', 'description', 'header', 'iscurrent',
         'owner', 'productseries', 'distroseries', 'sourcepackagename',
-        'from_sourcepackagename', 'sourcepackageversion', 'binarypackagename',
+        'from_sourcepackagename', 'sourcepackageversion',
         'languagepack', 'path', 'source_file_format', 'priority',
         'date_last_updated']
+    custom_widget_sourcepackagename = POTemplateAdminSourcePackageNameWidget
+    custom_widget_from_sourcepackagename = (
+        POTemplateAdminSourcePackageNameWidget)
     label = 'Administer translation template'
     page_title = "Administer"
 
@@ -721,6 +709,8 @@ class POTemplateAdminView(POTemplateEditView):
         """Return a POTemplateSubset corresponding to the chosen target."""
         distroseries = data.get('distroseries')
         sourcepackagename = data.get('sourcepackagename')
+        if IDistributionSourcePackage.providedBy(sourcepackagename):
+            sourcepackagename = sourcepackagename.sourcepackagename
         productseries = data.get('productseries')
 
         if distroseries is not None and productseries is not None:
@@ -800,39 +790,29 @@ class POTemplateExportView(BaseExportView):
         return self.context.source_file_format
 
 
+@implementer(ICanonicalUrlData)
 class POTemplateSubsetURL:
-    implements(ICanonicalUrlData)
 
     rootsite = 'mainsite'
+    path = '+pots'
 
     def __init__(self, context):
         self.context = context
-
-    @property
-    def path(self):
-        potemplatesubset = self.context
-        if potemplatesubset.distroseries is not None:
-            assert potemplatesubset.productseries is None
-            assert potemplatesubset.sourcepackagename is not None
-            return '+source/%s/+pots' % (
-                potemplatesubset.sourcepackagename.name)
-        else:
-            assert potemplatesubset.productseries is not None
-            return '+pots'
 
     @property
     def inside(self):
         potemplatesubset = self.context
         if potemplatesubset.distroseries is not None:
             assert potemplatesubset.productseries is None
-            return potemplatesubset.distroseries
+            return potemplatesubset.distroseries.getSourcePackage(
+                potemplatesubset.sourcepackagename)
         else:
             assert potemplatesubset.productseries is not None
             return potemplatesubset.productseries
 
 
+@implementer(ICanonicalUrlData)
 class POTemplateURL:
-    implements(ICanonicalUrlData)
 
     rootsite = 'translations'
 
@@ -981,7 +961,7 @@ class BaseSeriesTemplatesView(LaunchpadView):
     def _renderSourcePackage(self, template):
         """Render the `SourcePackageName` for `template`."""
         if self.is_distroseries:
-            return cgi.escape(template.sourcepackagename.name)
+            return html_escape(template.sourcepackagename.name)
         else:
             return None
 
@@ -992,7 +972,7 @@ class BaseSeriesTemplatesView(LaunchpadView):
         :param url: The cached URL for `template`.
         :return: HTML for a link to `template`.
         """
-        text = '<a href="%s">%s</a>' % (url, cgi.escape(template.name))
+        text = '<a href="%s">%s</a>' % (url, html_escape(template.name))
         if not template.iscurrent:
             text += ' (inactive)'
         return text
@@ -1009,7 +989,7 @@ class BaseSeriesTemplatesView(LaunchpadView):
         if sourcepackagename is None:
             sourcepackagename = template.sourcepackagename
         # Build the edit link.
-        escaped_source = cgi.escape(sourcepackagename.name)
+        escaped_source = html_escape(sourcepackagename.name)
         source_url = '+source/%s' % escaped_source
         details_url = source_url + '/+sharing-details'
         edit_link = (
@@ -1018,8 +998,8 @@ class BaseSeriesTemplatesView(LaunchpadView):
 
         # If all the conditions are met for sharing...
         if packaging and upstream and other_template is not None:
-            escaped_series = cgi.escape(productseries.name)
-            escaped_template = cgi.escape(template.name)
+            escaped_series = html_escape(productseries.name)
+            escaped_template = html_escape(template.name)
             pot_url = ('/%s/%s/+pots/%s' %
                 (escaped_source, escaped_series, escaped_template))
             return (edit_link + '<a href="%s">%s/%s</a>'

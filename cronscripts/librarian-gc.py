@@ -3,8 +3,6 @@
 # Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-# pylint: disable-msg=C0103,W0403
-
 """Librarian garbage collector.
 
 This script is run on the Librarian server to merge duplicate files,
@@ -19,7 +17,7 @@ import _pythonpath
 import logging
 
 from lp.services.config import config
-from lp.services.database.lpstorm import IStore
+from lp.services.database.interfaces import IStore
 from lp.services.librarian.model import LibraryFileAlias
 from lp.services.librarianserver import librariangc
 from lp.services.scripts.base import LaunchpadCronScript
@@ -68,11 +66,12 @@ class LibrarianGC(LaunchpadCronScript):
         # XXX wgrant 2011-09-18 bug=853066: Using Storm's raw connection
         # here is wrong. We should either create our own or use
         # Store.execute or cursor() and the transaction module.
-        conn = IStore(LibraryFileAlias)._connection._raw_connection
+        store = IStore(LibraryFileAlias)
+        conn = store._connection._raw_connection
 
         # Refuse to run if we have significant clock skew between the
         # librarian and the database.
-        librariangc.confirm_no_clock_skew(conn)
+        librariangc.confirm_no_clock_skew(store)
 
         # Note that each of these next steps will issue commit commands
         # as appropriate to make this script transaction friendly
@@ -95,6 +94,5 @@ class LibrarianGC(LaunchpadCronScript):
 
 
 if __name__ == '__main__':
-    script = LibrarianGC('librarian-gc',
-                         dbuser=config.librarian_gc.dbuser)
+    script = LibrarianGC('librarian-gc', dbuser=config.librarian_gc.dbuser)
     script.lock_and_run(isolation='autocommit')

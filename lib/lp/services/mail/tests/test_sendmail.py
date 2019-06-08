@@ -5,10 +5,10 @@ __metaclass__ = type
 
 from doctest import DocTestSuite
 import email.header
-from email.Message import Message
+from email.message import Message
 import unittest
 
-from zope.interface import implements
+from zope.interface import implementer
 from zope.sendmail.interfaces import IMailDelivery
 
 from lp.services.encoding import is_ascii_only
@@ -24,7 +24,7 @@ from lp.testing.fixture import (
 class TestMailController(TestCase):
 
     def test_constructor(self):
-        """Test the default construction behavior.
+        """Test the default construction behaviour.
 
         Defaults should be empty.  The 'to' should be converted to a list.
         """
@@ -38,7 +38,7 @@ class TestMailController(TestCase):
         self.assertEqual([], ctrl.attachments)
 
     def test_constructor2(self):
-        """Test the explicit construction behavior.
+        """Test the explicit construction behaviour.
 
         Since to is a list, it is not converted into a list.
         """
@@ -59,9 +59,9 @@ class TestMailController(TestCase):
         after = 'after' + '0123456789'
         hdr = email.header.Header(before + ' ' + after, header_name='Subject')
         encoded = hdr.encode()
-        self.assertTrue(('before\n after' in encoded)
-                        or ('before\n\t after' in encoded),
-                        'Header.encode() changed continuation lines again')
+        self.assertTrue(
+            'before\n after' in encoded,
+            'Header.encode() changed continuation lines again')
 
     def test_addAttachment(self):
         """addAttachment should add a part to the list of attachments."""
@@ -270,12 +270,12 @@ class TestMailController(TestCase):
                 'from@example.com', to_addresses,
                 subject, 'body', {'key': 'value'})
             ctrl.send()
-        self.assertEquals(fake_mailer.from_addr, 'bounces@canonical.com')
-        self.assertEquals(fake_mailer.to_addr, to_addresses)
+        self.assertEqual(fake_mailer.from_addr, 'bounces@canonical.com')
+        self.assertEqual(fake_mailer.to_addr, to_addresses)
         self.checkTimelineHasOneMailAction(ctl.timeline, subject=subject)
 
     def test_sendmail_with_email_header(self):
-        """Check the timeline is ok even if there is an email.Header.
+        """Check the timeline is ok even if there is an email.header.Header.
 
         See https://bugs.launchpad.net/launchpad/+bug/885972
         """
@@ -290,22 +290,21 @@ class TestMailController(TestCase):
         message.add_header('To', 'dest@example.com')
         with CaptureTimeline() as ctl:
             sendmail.sendmail(message)
-        self.assertEquals(fake_mailer.from_addr, 'bounces@canonical.com')
-        self.assertEquals(fake_mailer.to_addr, ['dest@example.com'])
+        self.assertEqual(fake_mailer.from_addr, 'bounces@canonical.com')
+        self.assertEqual(fake_mailer.to_addr, ['dest@example.com'])
         self.checkTimelineHasOneMailAction(ctl.timeline, subject=subject_str)
 
     def checkTimelineHasOneMailAction(self, timeline, subject):
         actions = timeline.actions
-        self.assertEquals(len(actions), 1)
+        self.assertEqual(len(actions), 1)
         a0 = actions[0]
-        self.assertEquals(a0.category, 'sendmail')
-        self.assertEquals(a0.detail, subject)
+        self.assertEqual(a0.category, 'sendmail')
+        self.assertEqual(a0.detail, subject)
         self.assertIsInstance(a0.detail, basestring)
 
 
+@implementer(IMailDelivery)
 class RecordingMailer(object):
-
-    implements(IMailDelivery)
 
     def send(self, from_addr, to_addr, raw_message):
         self.from_addr = from_addr

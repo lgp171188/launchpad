@@ -1,5 +1,7 @@
-# Copyright 2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2011-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
+
+from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 
@@ -12,7 +14,6 @@ from lp.soyuz.enums import (
     ArchivePurpose,
     PackagePublishingStatus,
     )
-from lp.soyuz.interfaces.binarypackagebuild import IBinaryPackageBuildSet
 from lp.soyuz.interfaces.component import IComponentSet
 from lp.soyuz.tests.test_publishing import SoyuzTestPublisher
 from lp.testing import (
@@ -32,12 +33,10 @@ class TestBuildDepWait(TestCaseWithFactory):
         self.admin = getUtility(IPersonSet).getByEmail(ADMIN_EMAIL)
         # Create everything we need to create builds, such as a
         # DistroArchSeries and a builder.
-        self.pf = self.factory.makeProcessorFamily()
-        pf_proc = self.pf.addProcessor(self.factory.getUniqueString(), '', '')
+        self.processor = self.factory.makeProcessor(supports_virtualized=True)
         self.distroseries = self.factory.makeDistroSeries()
         self.das = self.factory.makeDistroArchSeries(
-            distroseries=self.distroseries, processorfamily=self.pf,
-            supports_virtualized=True)
+            distroseries=self.distroseries, processor=self.processor)
         self.archive = self.factory.makeArchive(
             distribution=self.distroseries.distribution,
             purpose=ArchivePurpose.PRIMARY)
@@ -46,7 +45,8 @@ class TestBuildDepWait(TestCaseWithFactory):
             self.publisher.prepareBreezyAutotest()
             self.distroseries.nominatedarchindep = self.das
             self.publisher.addFakeChroots(distroseries=self.distroseries)
-            self.builder = self.factory.makeBuilder(processor=pf_proc)
+            self.builder = self.factory.makeBuilder(
+                processors=[self.processor])
 
     def test_update_dependancies(self):
         # Calling .updateDependencies() on a build will remove those which
@@ -59,8 +59,9 @@ class TestBuildDepWait(TestCaseWithFactory):
         spn = self.factory.getUniqueString()
         version = "%s.1" % self.factory.getUniqueInteger()
         with person_logged_in(self.admin):
-            build.status = BuildStatus.MANUALDEPWAIT
-            build.dependencies = unicode(spn)
+            build.updateStatus(
+                BuildStatus.MANUALDEPWAIT,
+                slave_status={'dependencies': unicode(spn)})
             [bpph] = self.publisher.getPubBinaries(
                 binaryname=spn, distroseries=self.distroseries,
                 version=version, builder=self.builder, archive=self.archive,
@@ -68,7 +69,7 @@ class TestBuildDepWait(TestCaseWithFactory):
             # Commit to make sure stuff hits the database.
             transaction.commit()
         build.updateDependencies()
-        self.assertEquals(u'', build.dependencies)
+        self.assertEqual('', build.dependencies)
 
     def test_update_dependancies_respects_component(self):
         # Since main can only utilise packages that are published in main,
@@ -81,8 +82,9 @@ class TestBuildDepWait(TestCaseWithFactory):
         spn = self.factory.getUniqueString()
         version = "%s.1" % self.factory.getUniqueInteger()
         with person_logged_in(self.admin):
-            build.status = BuildStatus.MANUALDEPWAIT
-            build.dependencies = unicode(spn)
+            build.updateStatus(
+                BuildStatus.MANUALDEPWAIT,
+                slave_status={'dependencies': unicode(spn)})
             [bpph] = self.publisher.getPubBinaries(
                 binaryname=spn, distroseries=self.distroseries,
                 version=version, builder=self.builder, archive=self.archive,
@@ -92,29 +94,10 @@ class TestBuildDepWait(TestCaseWithFactory):
             transaction.commit()
         build.updateDependencies()
         # Since the dependency is in universe, we still can't see it.
-        self.assertEquals(unicode(spn), build.dependencies)
+        self.assertEqual(unicode(spn), build.dependencies)
         with person_logged_in(self.admin):
             bpph.component = getUtility(IComponentSet)['main']
             transaction.commit()
         # Now that we have moved it main, we can see it.
         build.updateDependencies()
-        self.assertEquals(u'', build.dependencies)
-
-    def test_retry_dep_waiting(self):
-        # Builds in MANUALDEPWAIT can be automatically retried.
-        spph = self.publisher.getPubSource(
-            sourcename=self.factory.getUniqueString(),
-            version="%s.1" % self.factory.getUniqueInteger(),
-            distroseries=self.distroseries, archive=self.archive)
-        [build] = spph.createMissingBuilds()
-        with person_logged_in(self.admin):
-            build.status = BuildStatus.MANUALDEPWAIT
-            # .createMissingBuilds() queues the build for us, and we need to
-            # undo that if we're about to retry it.
-            build.buildqueue_record.destroySelf()
-            build.dependencies = u''
-            # Commit to make sure stuff hits the database.
-            transaction.commit()
-        getUtility(IBinaryPackageBuildSet).retryDepWaiting(self.das)
-        self.assertEquals(BuildStatus.NEEDSBUILD, build.status)
-        self.assertTrue(build.buildqueue_record.lastscore > 0)
+        self.assertEqual('', build.dependencies)

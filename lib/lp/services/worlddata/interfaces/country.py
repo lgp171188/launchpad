@@ -1,8 +1,6 @@
 # Copyright 2009 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-# pylint: disable-msg=E0211,E0213
-
 """Country interfaces."""
 
 __metaclass__ = type
@@ -104,4 +102,3 @@ class IContinent(Interface):
     id = Int(title=_('ID'), required=True, readonly=True)
     code = TextLine(title=_("Continent's code"), required=True, readonly=True)
     name = TextLine(title=_("Continent's name"), required=True, readonly=True)
-

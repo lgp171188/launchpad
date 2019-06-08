@@ -1,4 +1,4 @@
-# Copyright 2009-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """IBug related view classes."""
@@ -9,7 +9,6 @@ __all__ = [
     'BugActivity',
     'BugContextMenu',
     'BugEditView',
-    'BugFacets',
     'BugInformationTypePortletView',
     'BugMarkAsAffectingUserView',
     'BugMarkAsDuplicateView',
@@ -26,8 +25,8 @@ __all__ = [
     'MaloneView',
     ]
 
-from email.MIMEMultipart import MIMEMultipart
-from email.MIMEText import MIMEText
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 import re
 
 from lazr.enum import (
@@ -44,34 +43,36 @@ from lazr.restful.interface import copy_field
 from lazr.restful.interfaces import IJSONRequestCache
 from simplejson import dumps
 from zope import formlib
-from zope.app.form.browser import TextWidget
 from zope.component import (
     getMultiAdapter,
     getUtility,
     )
 from zope.event import notify
+from zope.formlib.widget import CustomWidgetFactory
+from zope.formlib.widgets import TextWidget
 from zope.interface import (
-    implements,
+    implementer,
     Interface,
     providedBy,
     )
+from zope.publisher.defaultview import getDefaultViewName
 from zope.schema import (
     Bool,
     Choice,
     )
-from zope.security.interfaces import Unauthorized
 from zope.security.proxy import removeSecurityProxy
 
 from lp import _
 from lp.app.browser.informationtype import InformationTypePortletMixin
 from lp.app.browser.launchpadform import (
     action,
-    custom_widget,
     LaunchpadEditFormView,
     LaunchpadFormView,
     )
+from lp.app.enums import PRIVATE_INFORMATION_TYPES
 from lp.app.errors import NotFoundError
 from lp.app.interfaces.services import IService
+from lp.app.vocabularies import InformationTypeVocabulary
 from lp.app.widgets.itemswidgets import LaunchpadRadioWidgetWithDescription
 from lp.app.widgets.product import GhostCheckBoxWidget
 from lp.app.widgets.project import ProjectScopeWidget
@@ -102,8 +103,8 @@ from lp.bugs.model.personsubscriptioninfo import PersonSubscriptions
 from lp.bugs.model.structuralsubscription import (
     get_structural_subscriptions_for_bug,
     )
-from lp.registry.enums import PRIVATE_INFORMATION_TYPES
-from lp.registry.vocabularies import InformationTypeVocabulary
+from lp.registry.interfaces.person import IPersonSet
+from lp.services.features import getFeatureFlag
 from lp.services.fields import DuplicateBug
 from lp.services.librarian.browser import ProxiedLibraryFileAlias
 from lp.services.mail.mailwrapper import MailWrapper
@@ -118,7 +119,6 @@ from lp.services.webapp import (
     LaunchpadView,
     Link,
     Navigation,
-    StandardLaunchpadFacets,
     stepthrough,
     structured,
     )
@@ -131,6 +131,7 @@ from lp.services.webapp.interfaces import (
     ILaunchBag,
     )
 from lp.services.webapp.publisher import RedirectionView
+from lp.services.webapp.snapshot import notify_modified
 
 
 class BugNavigation(Navigation):
@@ -153,7 +154,7 @@ class BugNavigation(Navigation):
         """Retrieve a BugWatch by name."""
         if name.isdigit():
             # in future this should look up by (bug.id, watch.seqnum)
-            return getUtility(IBugWatchSet)[name]
+            return getUtility(IBugWatchSet).get(int(name))
 
     @stepthrough('+subscription')
     def traverse_subscriptions(self, person_name):
@@ -193,18 +194,6 @@ class BugNavigation(Navigation):
                 return getUtility(IBugNominationSet).get(nomination_id)
             except NotFoundError:
                 return None
-
-
-class BugFacets(StandardLaunchpadFacets):
-    """The links that will appear in the facet menu for an `IBug`.
-
-    However, we never show this, but it does apply to things like
-    bug nominations, by 'acquisition'.
-    """
-
-    usedfor = IBug
-
-    enable_only = []
 
 
 class BugSetNavigation(Navigation):
@@ -256,8 +245,8 @@ class BugContextMenu(ContextMenu):
         return Link('+choose-affected-product', text, icon='add')
 
     def adddistro(self):
-        """Return the 'Also affects distribution' Link."""
-        text = 'Also affects distribution'
+        """Return the 'Also affects distribution/package' Link."""
+        text = 'Also affects distribution/package'
         return Link('+distrotask', text, icon='add')
 
     def subscription(self):
@@ -303,20 +292,23 @@ class BugContextMenu(ContextMenu):
         if self.context.bug.isMuted(user):
             text = "Unmute bug mail"
             icon = 'unmute'
+            summary = (
+                'Unmute this bug so that you will receive emails about it.')
         else:
             text = "Mute bug mail"
             icon = 'mute'
+            summary = (
+                'Mute this bug so that you will not receive emails about it.')
 
-        return Link(
-            '+mute', text, icon=icon, summary=(
-                "Mute this bug so that you will not receive emails "
-                "about it."))
+        return Link('+mute', text, icon=icon, summary=summary)
 
     def nominate(self):
         """Return the 'Target/Nominate for series' Link."""
         launchbag = getUtility(ILaunchBag)
         target = launchbag.product or launchbag.distribution
-        if check_permission("launchpad.Driver", target):
+        if check_permission("launchpad.Driver", target) or (
+                getFeatureFlag('bugs.nominations.bug_supervisors_can_target')
+                and check_permission("launchpad.BugSupervisor", target)):
             text = "Target to series"
             return Link('+nominate', text, icon='milestone')
         elif (check_permission("launchpad.BugSupervisor", target) or
@@ -381,8 +373,8 @@ class BugContextMenu(ContextMenu):
 class MaloneView(LaunchpadFormView):
     """The Bugs front page."""
 
-    custom_widget('searchtext', TextWidget, displayWidth=50)
-    custom_widget('scope', ProjectScopeWidget)
+    custom_widget_searchtext = CustomWidgetFactory(TextWidget, displayWidth=50)
+    custom_widget_scope = ProjectScopeWidget
     schema = IFrontPageBugTaskSearch
     field_names = ['searchtext', 'scope']
 
@@ -534,6 +526,10 @@ class BugViewMixin:
         """
         return getUtility(ILaunchBag).bugtask
 
+    @property
+    def specifications(self):
+        return self.context.getSpecifications(self.user)
+
 
 class BugInformationTypePortletView(InformationTypePortletMixin,
                                     LaunchpadView):
@@ -579,12 +575,15 @@ class BugView(LaunchpadView, BugViewMixin):
                 BugTaskSearchParams(self.user, bug=any(*duplicate_bugs))))
         dupes = []
         for bug in duplicate_bugs:
-            dupe = {}
-            try:
-                dupe['title'] = bug.title
-            except Unauthorized:
-                dupe['title'] = 'Private Bug'
-            dupe['id'] = bug.id
+            # Don't disclose even the ID of a private bug. The link will
+            # just 404.
+            if not check_permission('launchpad.View', bug):
+                continue
+            dupe = {
+                'title': bug.title,
+                'id': bug.id,
+                'bug': bug,
+                }
             # If the dupe has the same context as the one we're in, link
             # to that bug task directly.
             if bug in dupes_in_current_context:
@@ -604,6 +603,13 @@ class BugView(LaunchpadView, BugViewMixin):
 class BugActivity(BugView):
 
     page_title = 'Activity log'
+
+    @property
+    def activity(self):
+        activity = IBug(self.context).activity
+        list(getUtility(IPersonSet).getPrecachedPersonsFromIDs(
+            [a.personID for a in activity], need_validity=True))
+        return activity
 
 
 class BugSubscriptionPortletDetails:
@@ -697,8 +703,12 @@ class BugWithoutContextView(RedirectionView):
     """
 
     def __init__(self, context, request):
+        redirected_context = context.default_bugtask
+        viewname = getDefaultViewName(redirected_context, request)
+        cache_view = getMultiAdapter(
+            (redirected_context, request), name=viewname)
         super(BugWithoutContextView, self).__init__(
-            canonical_url(context.default_bugtask), request)
+            canonical_url(redirected_context), request, cache_view=cache_view)
 
 
 class BugEditViewBase(LaunchpadEditFormView):
@@ -728,8 +738,8 @@ class BugEditView(BugEditViewBase):
     """The view for the edit bug page."""
 
     field_names = ['title', 'description', 'tags']
-    custom_widget('title', TextWidget, displayWidth=30)
-    custom_widget('tags', BugTagsWidget)
+    custom_widget_title = CustomWidgetFactory(TextWidget, displayWidth=30)
+    custom_widget_tags = BugTagsWidget
 
     @property
     def label(self):
@@ -786,11 +796,9 @@ class BugMarkAsDuplicateView(BugEditViewBase):
         # We handle duplicate changes by hand instead of leaving it to
         # the usual machinery because we must use bug.markAsDuplicate().
         bug = self.context.bug
-        bug_before_modification = Snapshot(bug, providing=providedBy(bug))
-        duplicateof = data.pop('duplicateof')
-        bug.markAsDuplicate(duplicateof)
-        notify(
-            ObjectModifiedEvent(bug, bug_before_modification, 'duplicateof'))
+        with notify_modified(bug, ['duplicateof']):
+            duplicateof = data.pop('duplicateof')
+            bug.markAsDuplicate(duplicateof)
         # Apply other changes.
         self.updateBugFromData(data)
         return self._duplicate_action_result()
@@ -803,10 +811,8 @@ class BugMarkAsDuplicateView(BugEditViewBase):
     def remove_action(self, action, data):
         """Update the bug."""
         bug = self.context.bug
-        bug_before_modification = Snapshot(bug, providing=providedBy(bug))
-        bug.markAsDuplicate(None)
-        notify(
-            ObjectModifiedEvent(bug, bug_before_modification, 'duplicateof'))
+        with notify_modified(bug, ['duplicateof']):
+            bug.markAsDuplicate(None)
         return self._duplicate_action_result()
 
     def _duplicate_action_result(self):
@@ -833,8 +839,8 @@ class BugSecrecyEditView(LaunchpadFormView, BugSubscriptionPortletDetails):
 
     field_names = ['information_type', 'validate_change']
 
-    custom_widget('information_type', LaunchpadRadioWidgetWithDescription)
-    custom_widget('validate_change', GhostCheckBoxWidget)
+    custom_widget_information_type = LaunchpadRadioWidgetWithDescription
+    custom_widget_validate_change = GhostCheckBoxWidget
 
     @property
     def schema(self):
@@ -899,8 +905,22 @@ class BugSecrecyEditView(LaunchpadFormView, BugSubscriptionPortletDetails):
                     bug, bug_before_modification, changed_fields,
                     user=self.user))
         if self.request.is_ajax:
+            # Avoid circular imports
+            from lp.bugs.browser.bugtask import (
+                can_add_package_task_to_bug,
+                can_add_project_task_to_bug,
+            )
             if changed:
-                return self._getSubscriptionDetails()
+                result_data = self._getSubscriptionDetails()
+                result_data['can_add_project_task'] = (
+                    can_add_project_task_to_bug(bug))
+                result_data['can_add_package_task'] = (
+                    can_add_package_task_to_bug(bug))
+                self.request.response.setHeader(
+                    'content-type', 'application/json')
+                return dumps(
+                    result_data, cls=ResourceJSONEncoder,
+                    media_type=EntryResource.JSON_TYPE)
             else:
                 return ''
 
@@ -933,10 +953,7 @@ class BugSecrecyEditView(LaunchpadFormView, BugSubscriptionPortletDetails):
         result_data = dict(
             cache_data=cache,
             subscription_data=subscription_data)
-        self.request.response.setHeader('content-type', 'application/json')
-        return dumps(
-            result_data, cls=ResourceJSONEncoder,
-            media_type=EntryResource.JSON_TYPE)
+        return result_data
 
     def _handlePrivacyChanged(self, user_will_be_subscribed):
         """Handle the case where the privacy of the bug has been changed.
@@ -1157,9 +1174,9 @@ class BugTextView(LaunchpadView):
         return "\n".join(texts)
 
 
+@implementer(ICanonicalUrlData)
 class BugURL:
     """Bug URL creation rules."""
-    implements(ICanonicalUrlData)
 
     inside = None
     rootsite = 'bugs'
@@ -1205,7 +1222,7 @@ class BugMarkAsAffectingUserView(LaunchpadFormView):
     label = "Does this bug affect you?"
     page_title = label
 
-    custom_widget('affects', LaunchpadRadioWidgetWithDescription)
+    custom_widget_affects = LaunchpadRadioWidgetWithDescription
 
     @property
     def initial_values(self):

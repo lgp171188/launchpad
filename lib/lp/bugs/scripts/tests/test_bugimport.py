@@ -5,12 +5,13 @@ __metaclass__ = type
 
 import os
 import re
+import xml.etree.cElementTree as ET
 
 import pytz
 from testtools.content import text_content
 import transaction
 from zope.component import getUtility
-from zope.interface import implements
+from zope.interface import implementer
 from zope.security.proxy import removeSecurityProxy
 
 from lp.bugs.externalbugtracker import ExternalBugTracker
@@ -28,7 +29,6 @@ from lp.bugs.interfaces.bugwatch import IBugWatch
 from lp.bugs.interfaces.externalbugtracker import UNKNOWN_REMOTE_IMPORTANCE
 from lp.bugs.model.bugnotification import BugNotification
 from lp.bugs.scripts import bugimport
-from lp.bugs.scripts.bugimport import ET
 from lp.bugs.scripts.checkwatches import (
     CheckwatchesMaster,
     core,
@@ -41,6 +41,7 @@ from lp.registry.interfaces.person import (
 from lp.registry.interfaces.product import IProductSet
 from lp.services.config import config
 from lp.services.database.sqlbase import cursor
+from lp.services.identity.interfaces.account import AccountStatus
 from lp.services.identity.interfaces.emailaddress import IEmailAddressSet
 from lp.testing import (
     login,
@@ -209,13 +210,7 @@ class GetPersonTestCase(TestCaseWithFactory):
 
     def test_find_existing_person(self):
         # Test that getPerson() returns an existing person.
-        person = getUtility(IPersonSet).getByEmail('foo@example.com')
-        self.assertEqual(person, None)
-        person, email = getUtility(IPersonSet).createPersonAndEmail(
-            email='foo@example.com',
-            rationale=PersonCreationRationale.OWNER_CREATED_LAUNCHPAD)
-        self.assertNotEqual(person, None)
-
+        person = self.factory.makePerson(email='foo@example.com')
         product = getUtility(IProductSet).getByName('netapplet')
         importer = bugimport.BugImporter(
             product, 'bugs.xml', 'bug-map.pickle')
@@ -257,11 +252,9 @@ class GetPersonTestCase(TestCaseWithFactory):
     def test_verify_existing_person(self):
         # Test that getPerson() will validate the email of an existing
         # user when verify_users=True.
-        person, email = getUtility(IPersonSet).createPersonAndEmail(
-            rationale=PersonCreationRationale.OWNER_CREATED_LAUNCHPAD,
-            email='foo@example.com')
+        person = self.factory.makePerson(
+            email='foo@example.com', account_status=AccountStatus.NOACCOUNT)
         self.assertEqual(person.preferredemail, None)
-
         product = getUtility(IProductSet).getByName('netapplet')
         importer = bugimport.BugImporter(
             product, 'bugs.xml', 'bug-map.pickle', verify_users=True)
@@ -276,15 +269,9 @@ class GetPersonTestCase(TestCaseWithFactory):
     def test_verify_doesnt_clobber_preferred_email(self):
         # Test that getPerson() does not clobber an existing verified
         # email address when verify_users=True.
-        person, email = getUtility(IPersonSet).createPersonAndEmail(
-            'foo@example.com',
-            PersonCreationRationale.OWNER_CREATED_LAUNCHPAD)
-        transaction.commit()
-        self.failIf(person.account is None, 'Person must have an account.')
-        email = getUtility(IEmailAddressSet).new(
-            'foo@preferred.com', person)
+        person = self.factory.makePerson(email='foo@example.com')
+        email = getUtility(IEmailAddressSet).new('foo@preferred.com', person)
         person.setPreferredEmail(email)
-        transaction.commit()
         self.assertEqual(person.preferredemail.email, 'foo@preferred.com')
 
         product = getUtility(IProductSet).getByName('netapplet')
@@ -656,19 +643,6 @@ class ImportBugTestCase(TestCase):
         self.assertEqual(bug101.private, False)
         self.assertEqual(bug101.security_related, True)
 
-    def test_public_bug_product_private_bugs(self):
-        # Test that if we import a public bug into a product with 
-        # private_bugs, the bug is private.
-        product = getUtility(IProductSet).getByName('netapplet')
-        removeSecurityProxy(product).private_bugs = True
-        importer = bugimport.BugImporter(
-            product, 'bugs.xml', 'bug-map.pickle', verify_users=True)
-        bugnode = ET.fromstring(public_security_bug)
-        bug101 = importer.importBug(bugnode)
-        self.assertIsNot(None, bug101)
-        self.assertTrue(bug101.private)
-        self.assertTrue(bug101.security_related)
-
 
 class BugImportCacheTestCase(TestCase):
     """Test of bug mapping cache load/save routines."""
@@ -830,13 +804,12 @@ class FakeResultSet:
         return False
 
 
+@implementer(IBugWatch)
 class TestBugWatch:
     """A mock bug watch object for testing `ExternalBugTracker.updateWatches`.
 
     This bug watch is guaranteed to trigger a DB failure when `updateStatus`
     is called if its `failing` attribute is True."""
-
-    implements(IBugWatch)
 
     lastchecked = None
     unpushed_comments = FakeResultSet()

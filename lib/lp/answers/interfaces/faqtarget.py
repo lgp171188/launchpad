@@ -1,8 +1,6 @@
 # Copyright 2009 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-# pylint: disable-msg=E0211,E0213
-
 """Interface for things that can host IFAQ."""
 
 __metaclass__ = type
@@ -12,11 +10,15 @@ __all__ = [
     ]
 
 
+from lazr.restful.declarations import export_as_webservice_entry
+
 from lp.answers.interfaces.faqcollection import IFAQCollection
 
 
 class IFAQTarget(IFAQCollection):
     """An object that can contain a FAQ document."""
+
+    export_as_webservice_entry('faq_target', as_of='beta')
 
     def newFAQ(owner, title, content, keywords=None, date_created=None):
         """Create a new FAQ hosted in this target.

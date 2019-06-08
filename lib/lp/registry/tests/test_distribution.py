@@ -1,4 +1,4 @@
-# Copyright 2009-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2015 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for Distribution."""
@@ -23,7 +23,10 @@ from zope.component import getUtility
 from zope.security.interfaces import Unauthorized
 from zope.security.proxy import removeSecurityProxy
 
-from lp.app.enums import ServiceUsage
+from lp.app.enums import (
+    InformationType,
+    ServiceUsage,
+    )
 from lp.app.errors import NotFoundError
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.registry.enums import (
@@ -31,7 +34,6 @@ from lp.registry.enums import (
     BugSharingPolicy,
     EXCLUSIVE_TEAM_POLICY,
     INCLUSIVE_TEAM_POLICY,
-    InformationType,
     )
 from lp.registry.errors import (
     InclusiveTeamLinkageError,
@@ -149,7 +151,7 @@ class TestDistribution(TestCaseWithFactory):
         distroseries = self.factory.makeDistroSeries()
         spph = self.factory.makeSourcePackagePublishingHistory(
             distroseries=distroseries, sourcepackagename='my-package')
-        self.assertEquals(
+        self.assertEqual(
             spph.sourcepackagerelease.sourcepackagename,
             distroseries.distribution.guessPublishedSourcePackageName(
                 'my-package'))
@@ -162,7 +164,7 @@ class TestDistribution(TestCaseWithFactory):
             archive=distroseries.main_archive,
             binarypackagename='binary-package',
             source_package_release=spph.sourcepackagerelease)
-        self.assertEquals(
+        self.assertEqual(
             spph.sourcepackagerelease.sourcepackagename,
             distroseries.distribution.guessPublishedSourcePackageName(
                 'binary-package'))
@@ -186,7 +188,7 @@ class TestDistribution(TestCaseWithFactory):
         distroseries2 = self.factory.makeDistroSeries()
         spph = self.factory.makeSourcePackagePublishingHistory(
             distroseries=distroseries1, sourcepackagename='my-package')
-        self.assertEquals(
+        self.assertEqual(
             spph.sourcepackagerelease.sourcepackagename,
             distroseries1.distribution.guessPublishedSourcePackageName(
                 'my-package'))
@@ -204,7 +206,7 @@ class TestDistribution(TestCaseWithFactory):
         self.factory.makeBinaryPackagePublishingHistory(
             archive=distroseries.main_archive,
             binarypackagename='my-package', sourcepackagename='other-package')
-        self.assertEquals(
+        self.assertEqual(
             my_spph.sourcepackagerelease.sourcepackagename,
             distroseries.distribution.guessPublishedSourcePackageName(
                 'my-package'))
@@ -221,7 +223,7 @@ class TestDistribution(TestCaseWithFactory):
             archive=distroseries.main_archive,
             sourcepackagename='new-source-name',
             binarypackagename='my-package')
-        self.assertEquals(
+        self.assertEqual(
             'new-source-name',
             distroseries.distribution.guessPublishedSourcePackageName(
                 'my-package').name)
@@ -233,7 +235,7 @@ class TestDistribution(TestCaseWithFactory):
             sourcepackagename='my-package')
         self.factory.makeRelatedBranchesForSourcePackage(
             sourcepackage=sourcepackage)
-        self.assertEquals(
+        self.assertEqual(
             'my-package',
             sourcepackage.distribution.guessPublishedSourcePackageName(
                 'my-package').name)
@@ -286,6 +288,22 @@ class TestDistribution(TestCaseWithFactory):
             InformationType.PUBLIC,
             self.factory.makeDistribution().getDefaultBugInformationType())
 
+    def test_getAllowedSpecificationInformationTypes(self):
+        # All distros currently support only public specifications.
+        distro = self.factory.makeDistribution()
+        self.assertContentEqual(
+            [InformationType.PUBLIC],
+            distro.getAllowedSpecificationInformationTypes()
+            )
+
+    def test_getDefaultSpecificationInformtationType(self):
+        # All distros currently support only Public by default
+        # specifications.
+        distro = self.factory.makeDistribution()
+        self.assertEqual(
+            InformationType.PUBLIC,
+            distro.getDefaultSpecificationInformationType())
+
 
 class TestDistributionCurrentSourceReleases(
     CurrentSourceReleasesMixin, TestCase):
@@ -334,7 +352,7 @@ class TestDistributionCurrentSourceReleases(
 
         # Cache cleared.
         distribution.newSeries(
-            name='bar', displayname='Bar', title='Bar', summary='',
+            name='bar', display_name='Bar', title='Bar', summary='',
             description='', version='1', previous_series=None,
             registrant=self.factory.makePerson())
         self.assertNotIn("series", cache)
@@ -353,19 +371,19 @@ class SeriesByStatusTests(TestCaseWithFactory):
 
     def test_get_none(self):
         distro = self.factory.makeDistribution()
-        self.assertEquals([],
+        self.assertEqual([],
             list(distro.getSeriesByStatus(SeriesStatus.FROZEN)))
 
     def test_get_current(self):
         distro = self.factory.makeDistribution()
         series = self.factory.makeDistroSeries(distribution=distro,
             status=SeriesStatus.CURRENT)
-        self.assertEquals([series],
+        self.assertEqual([series],
             list(distro.getSeriesByStatus(SeriesStatus.CURRENT)))
 
 
 class SeriesTests(TestCaseWithFactory):
-    """Test IDistribution.getSeries().
+    """Test IDistribution.getSeries() and friends.
     """
 
     layer = LaunchpadFunctionalLayer
@@ -378,16 +396,42 @@ class SeriesTests(TestCaseWithFactory):
         distro = self.factory.makeDistribution()
         series = self.factory.makeDistroSeries(distribution=distro,
             name="dappere")
-        self.assertEquals(series, distro.getSeries("dappere"))
+        self.assertEqual(series, distro.getSeries("dappere"))
 
     def test_get_by_version(self):
         distro = self.factory.makeDistribution()
         series = self.factory.makeDistroSeries(distribution=distro,
             name="dappere", version="42.6")
-        self.assertEquals(series, distro.getSeries("42.6"))
+        self.assertEqual(series, distro.getSeries("42.6"))
+
+    def test_development_series_alias(self):
+        distro = self.factory.makeDistribution()
+        with person_logged_in(distro.owner):
+            distro.development_series_alias = "devel"
+        self.assertRaises(
+            NoSuchDistroSeries, distro.getSeries, "devel", follow_aliases=True)
+        series = self.factory.makeDistroSeries(
+            distribution=distro, status=SeriesStatus.DEVELOPMENT)
+        self.assertRaises(NoSuchDistroSeries, distro.getSeries, "devel")
+        self.assertEqual(
+            series, distro.getSeries("devel", follow_aliases=True))
+
+    def test_getNonObsoleteSeries(self):
+        distro = self.factory.makeDistribution()
+        self.factory.makeDistroSeries(
+            distribution=distro, status=SeriesStatus.OBSOLETE)
+        current = self.factory.makeDistroSeries(
+            distribution=distro, status=SeriesStatus.CURRENT)
+        development = self.factory.makeDistroSeries(
+            distribution=distro, status=SeriesStatus.DEVELOPMENT)
+        experimental = self.factory.makeDistroSeries(
+            distribution=distro, status=SeriesStatus.EXPERIMENTAL)
+        self.assertContentEqual(
+            [current, development, experimental],
+            list(distro.getNonObsoleteSeries()))
 
 
-class SeriesTests(TestCaseWithFactory):
+class DerivativesTests(TestCaseWithFactory):
     """Test IDistribution.derivatives.
     """
 
@@ -398,10 +442,8 @@ class SeriesTests(TestCaseWithFactory):
         distro2 = self.factory.makeDistribution()
         previous_series = self.factory.makeDistroSeries(distribution=distro1)
         series = self.factory.makeDistroSeries(
-            distribution=distro2,
-            previous_series=previous_series)
-        self.assertContentEqual(
-            [series], distro1.derivatives)
+            distribution=distro2, previous_series=previous_series)
+        self.assertContentEqual([series], distro1.derivatives)
 
 
 class DistroSnapshotTestCase(TestCaseWithFactory):
@@ -618,10 +660,10 @@ class TestWebService(WebServiceTestCase):
         ws_distro = self.wsObject(distro, distro.owner)
         now = datetime.datetime.now(tz=pytz.utc)
         day = datetime.timedelta(days=1)
-        self.failUnlessEqual(
+        self.assertEqual(
             [oopsid],
             ws_distro.findReferencedOOPS(start_date=now - day, end_date=now))
-        self.failUnlessEqual(
+        self.assertEqual(
             [],
             ws_distro.findReferencedOOPS(
                 start_date=now + day, end_date=now + day))
@@ -636,6 +678,6 @@ class TestWebService(WebServiceTestCase):
         ws_distro = self.wsObject(distro, distro.owner)
         now = datetime.datetime.now(tz=pytz.utc)
         day = datetime.timedelta(days=1)
-        self.failUnlessEqual(
+        self.assertEqual(
             [],
             ws_distro.findReferencedOOPS(start_date=now - day, end_date=now))

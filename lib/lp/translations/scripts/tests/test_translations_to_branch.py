@@ -21,7 +21,7 @@ from lp.registry.interfaces.teammembership import (
     )
 from lp.registry.model.productseries import ProductSeries
 from lp.services.config import config
-from lp.services.database.lpstorm import ISlaveStore
+from lp.services.database.interfaces import ISlaveStore
 from lp.services.log.logger import BufferLogger
 from lp.services.scripts.tests import run_script
 from lp.testing import (
@@ -319,7 +319,7 @@ class TestExportTranslationsToBranch(TestCaseWithFactory):
         pofile = self.factory.makePOFile()
 
         exporter = ExportTranslationsToBranch(test_args=[])
-        self.assertEquals(
+        self.assertEqual(
             [pofile],
             list(exporter._findChangedPOFiles(
                 pofile.potemplate.productseries,
@@ -330,7 +330,7 @@ class TestExportTranslationsToBranch(TestCaseWithFactory):
         # returned.
         pofile = self.factory.makePOFile()
         exporter = ExportTranslationsToBranch(test_args=[])
-        self.assertEquals(
+        self.assertEqual(
             [pofile],
             list(exporter._findChangedPOFiles(
                 pofile.potemplate.productseries, changed_since=None)))
@@ -343,7 +343,7 @@ class TestExportTranslationsToBranch(TestCaseWithFactory):
             datetime.datetime.now(pytz.UTC) + datetime.timedelta(1))
 
         exporter = ExportTranslationsToBranch(test_args=[])
-        self.assertEquals(
+        self.assertEqual(
             [],
             list(exporter._findChangedPOFiles(
                 pofile.potemplate.productseries,
@@ -361,7 +361,7 @@ class TestExportTranslationsToBranch(TestCaseWithFactory):
         pofile.potemplate.date_last_updated = date_in_the_far_future
 
         exporter = ExportTranslationsToBranch(test_args=[])
-        self.assertEquals(
+        self.assertEqual(
             [pofile],
             list(exporter._findChangedPOFiles(
                 pofile.potemplate.productseries,

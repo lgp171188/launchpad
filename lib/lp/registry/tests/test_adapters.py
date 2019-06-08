@@ -7,6 +7,7 @@ __metaclass__ = type
 
 from lp.registry.adapters import (
     distroseries_to_distribution,
+    information_type_from_product,
     package_to_sourcepackagename,
     productseries_to_product,
     sourcepackage_to_distribution,
@@ -73,3 +74,11 @@ class TestAdapters(TestCaseWithFactory):
         self.assertTrue(IProduct.providedBy(product))
         self.assertEqual(product_series.product, product)
         self.assertEqual(product, IProduct(product_series))
+
+    def test_information_type_from_product(self):
+        # information_type_from_product() returns an IProduct given
+        # an IMilestone.
+        milestone = self.factory.makeMilestone()
+        product = information_type_from_product(milestone)
+        self.assertTrue(IProduct.providedBy(product))
+        self.assertEqual(product, milestone.product)

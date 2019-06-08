@@ -3,7 +3,7 @@
 Like filing bugs on products, filing bugs on distributions involves
 first finding out if you're bug has already been reported.
 
-    >>> user_browser.open("http://launchpad.dev/ubuntu/+filebug")
+    >>> user_browser.open("http://launchpad.test/ubuntu/+filebug")
 
 Submitting a bug title...
 
@@ -28,11 +28,10 @@ Subscribing to one of the similar bugs takes us to the bug page.
     >>> user_browser.getControl(
     ...     "Yes, this is the bug I'm trying to report").click()
 
-    >>> print user_browser.url
-    http://bugs.launchpad.dev/thunderbird/+bug/9
+    >>> print(user_browser.url)
+    http://bugs.launchpad.test/thunderbird/+bug/9
 
-    >>> for message in get_feedback_messages(user_browser.contents):
-    ...     print message
+    >>> print_feedback_messages(user_browser.contents)
     This bug has been marked as affecting you.
 
 Actually, on reflection, that's not our bug after all. Let's go
@@ -40,9 +39,9 @@ back...
 
     # We should use goBack() here but can't because of bug #98372:
     # zope.testbrowser truncates document content after goBack().
-    >>> user_browser.open("http://launchpad.dev/ubuntu/+filebug")
+    >>> user_browser.open("http://launchpad.test/ubuntu/+filebug")
     >>> user_browser.getControl("Summary", index=0).value = (
-    ...     "Thunderbird crashes when opening large e-mails")
+    ...     "Thunderbird crashes when opening large emails")
     >>> user_browser.getControl("Continue").click()
 
 ...and continue filing our bug.
@@ -63,15 +62,15 @@ description.
     >>> field_labels = page_soup.findAll(
     ...     'label', text=re.compile('Further information'))
     >>> for field_label in field_labels:
-    ...     print extract_text(field_label.parent)
+    ...     print(extract_text(field_label.parent))
     Further information:
 
 Finally, let's submit the bug.
 
     >>> user_browser.getControl("Submit Bug Report").click()
 
-    >>> print user_browser.url
-    http://bugs.launchpad.dev/ubuntu/+source/mozilla-firefox/+bug/...
+    >>> print(user_browser.url)
+    http://bugs.launchpad.test/ubuntu/+source/mozilla-firefox/+bug/...
 
 
 == Filing a bug when there are none similar ==
@@ -79,7 +78,7 @@ Finally, let's submit the bug.
 When no similar bugs are found the form works the same but appears
 different in the user agent.
 
-    >>> user_browser.open("http://launchpad.dev/ubuntu/+filebug")
+    >>> user_browser.open("http://launchpad.test/ubuntu/+filebug")
 
 Submitting a distinctive bug title...
 
@@ -92,7 +91,7 @@ shown.
 
     >>> similar_bugs_list = find_tag_by_id(
     ...     user_browser.contents, "similar-bugs")
-    >>> print similar_bugs_list
+    >>> print(similar_bugs_list)
     None
 
 But the bug can be filed as before.
@@ -103,5 +102,5 @@ But the bug can be filed as before.
     ...     "Frobnobulator is a Firefox add-on, ...")
     >>> user_browser.getControl("Submit Bug Report").click()
 
-    >>> print user_browser.url
-    http://bugs.launchpad.dev/ubuntu/+source/mozilla-firefox/+bug/...
+    >>> print(user_browser.url)
+    http://bugs.launchpad.test/ubuntu/+source/mozilla-firefox/+bug/...

@@ -1,33 +1,101 @@
-# Copyright 2011-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2011-2017 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
+
+from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 
 from lazr.restfulclient.errors import BadRequest
+from testtools.matchers import LessThan
 from zope.component import getUtility
 from zope.security.management import endInteraction
 from zope.security.proxy import removeSecurityProxy
 
+from lp.app.enums import InformationType
 from lp.code.interfaces.branch import IBranchSet
 from lp.code.interfaces.linkedbranch import ICanHasLinkedBranch
-from lp.registry.enums import InformationType
 from lp.registry.interfaces.pocket import PackagePublishingPocket
+from lp.services.webapp.interfaces import OAuthPermission
 from lp.testing import (
+    admin_logged_in,
     api_url,
     launchpadlib_for,
     login_person,
     logout,
+    person_logged_in,
+    record_two_runs,
     run_with_login,
     TestCaseWithFactory,
     )
 from lp.testing.layers import DatabaseFunctionalLayer
+from lp.testing.matchers import HasQueryCount
+from lp.testing.pages import webservice_for_person
+
+
+class TestBranch(TestCaseWithFactory):
+
+    layer = DatabaseFunctionalLayer
+
+    def test_landing_candidates_constant_queries(self):
+        project = self.factory.makeProduct()
+        with person_logged_in(project.owner):
+            trunk = self.factory.makeBranch(target=project)
+            trunk_url = api_url(trunk)
+            webservice = webservice_for_person(
+                project.owner, permission=OAuthPermission.WRITE_PRIVATE)
+
+        def create_mp():
+            with admin_logged_in():
+                branch = self.factory.makeBranch(
+                    target=project,
+                    stacked_on=self.factory.makeBranch(
+                        target=project,
+                        information_type=InformationType.PRIVATESECURITY),
+                    information_type=InformationType.PRIVATESECURITY)
+                self.factory.makeBranchMergeProposal(
+                    source_branch=branch, target_branch=trunk)
+
+        def list_mps():
+            webservice.get(trunk_url + '/landing_candidates')
+
+        list_mps()
+        recorder1, recorder2 = record_two_runs(list_mps, create_mp, 2)
+        self.assertThat(recorder1, HasQueryCount(LessThan(30)))
+        self.assertThat(recorder2, HasQueryCount.byEquality(recorder1))
+
+    def test_landing_targets_constant_queries(self):
+        project = self.factory.makeProduct()
+        with person_logged_in(project.owner):
+            source = self.factory.makeBranch(target=project)
+            source_url = api_url(source)
+            webservice = webservice_for_person(
+                project.owner, permission=OAuthPermission.WRITE_PRIVATE)
+
+        def create_mp():
+            with admin_logged_in():
+                branch = self.factory.makeBranch(
+                    target=project,
+                    stacked_on=self.factory.makeBranch(
+                        target=project,
+                        information_type=InformationType.PRIVATESECURITY),
+                    information_type=InformationType.PRIVATESECURITY)
+                self.factory.makeBranchMergeProposal(
+                    source_branch=source, target_branch=branch)
+
+        def list_mps():
+            webservice.get(source_url + '/landing_targets')
+
+        list_mps()
+        recorder1, recorder2 = record_two_runs(list_mps, create_mp, 2)
+        self.assertThat(recorder1, HasQueryCount(LessThan(30)))
+        self.assertThat(recorder2, HasQueryCount.byEquality(recorder1))
 
 
 class TestBranchOperations(TestCaseWithFactory):
 
     layer = DatabaseFunctionalLayer
 
-    def test_createMergeProposal_fails_if_reviewers_and_review_types_are_different_sizes(self):
+    def test_createMergeProposal_fails_if_reviewers_and_types_mismatch(self):
 
         source = self.factory.makeBranch(name='rock')
         source_url = api_url(source)
@@ -46,7 +114,7 @@ class TestBranchOperations(TestCaseWithFactory):
             target_branch=target, initial_comment='Merge\nit!',
             needs_review=True, commit_message='It was merged!\n',
             reviewers=[source.owner.self_link], review_types=[])
-        self.assertEquals(
+        self.assertEqual(
             exception.content,
             'reviewers and review_types must be equal length.')
 
@@ -80,9 +148,30 @@ class TestBranchOperations(TestCaseWithFactory):
             BadRequest, source.createMergeProposal,
             target_branch=source, initial_comment='Merge\nit!',
             needs_review=True, commit_message='It was merged!\n')
-        self.assertEquals(
+        self.assertEqual(
             exception.content,
             'Source and target branches must be different.')
+
+    def test_setOwner(self):
+        """Test setOwner via the web API does not raise a 404."""
+        branch_owner = self.factory.makePerson(name='fred')
+        product = self.factory.makeProduct(name='myproduct')
+        self.factory.makeProductBranch(
+            name='mybranch', product=product, owner=branch_owner)
+        self.factory.makeTeam(name='barney', owner=branch_owner)
+        endInteraction()
+
+        lp = launchpadlib_for("test", person=branch_owner)
+        ws_branch = lp.branches.getByUniqueName(
+            unique_name='~fred/myproduct/mybranch')
+        ws_new_owner = lp.people['barney']
+        ws_branch.setOwner(new_owner=ws_new_owner)
+        # Check the result.
+        renamed_branch = lp.branches.getByUniqueName(
+            unique_name='~barney/myproduct/mybranch')
+        self.assertIsNotNone(renamed_branch)
+        self.assertEqual(
+            '~barney/myproduct/mybranch', renamed_branch.unique_name)
 
 
 class TestBranchDeletes(TestCaseWithFactory):

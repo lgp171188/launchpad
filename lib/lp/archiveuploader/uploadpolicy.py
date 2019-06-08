@@ -1,4 +1,4 @@
-# Copyright 2009-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2017 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Policy management for the upload handler."""
@@ -25,13 +25,14 @@ from zope.component import (
     getUtility,
     )
 from zope.interface import (
-    implements,
+    implementer,
     Interface,
     )
 
 from lp.registry.interfaces.distribution import IDistributionSet
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.registry.interfaces.series import SeriesStatus
+from lp.soyuz.enums import ArchivePurpose
 
 # Number of seconds in an hour (used later)
 HOURS = 3600
@@ -62,6 +63,7 @@ class ArchiveUploadType(EnumeratedType):
     MIXED_ONLY = Item("Mixed only")
 
 
+@implementer(IArchiveUploadPolicy)
 class AbstractUploadPolicy:
     """Encapsulate the policy of an upload to a launchpad archive.
 
@@ -71,11 +73,11 @@ class AbstractUploadPolicy:
     tests themselves and they operate on NascentUpload instances in order
     to verify them.
     """
-    implements(IArchiveUploadPolicy)
 
     name = 'abstract'
     options = None
     accepted_type = None  # Must be defined in subclasses.
+    redirect_warning = None
 
     def __init__(self):
         """Prepare a policy..."""
@@ -85,11 +87,12 @@ class AbstractUploadPolicy:
         self.archive = None
         self.unsigned_changes_ok = False
         self.unsigned_dsc_ok = False
+        self.unsigned_buildinfo_ok = False
         self.create_people = True
-        # future_time_grace is in seconds. 28800 is 8 hours
-        self.future_time_grace = 8 * HOURS
+        # future_time_grace is in seconds
+        self.future_time_grace = 24 * HOURS
         # The earliest year we accept in a deb's file's mtime
-        self.earliest_year = 1984
+        self.earliest_year = 1975
 
     def validateUploadType(self, upload):
         """Check that the type of the given upload is accepted by this policy.
@@ -142,9 +145,8 @@ class AbstractUploadPolicy:
             # We never override the policy
             return
 
-        self.distroseriesname = dr_name
-        (self.distroseries,
-         self.pocket) = self.distro.getDistroSeriesAndPocket(dr_name)
+        self.distroseries, self.pocket = self.distro.getDistroSeriesAndPocket(
+            dr_name, follow_aliases=True)
 
         if self.archive is None:
             self.archive = self.distroseries.main_archive
@@ -160,21 +162,8 @@ class AbstractUploadPolicy:
                 # to copy archives may go into *any* pocket.
                 return
 
-        # reject PPA uploads by default
-        self.rejectPPAUploads(upload)
-
         # execute policy specific checks
         self.policySpecificChecks(upload)
-
-    def rejectPPAUploads(self, upload):
-        """Reject uploads targeted to PPA.
-
-        We will only allow it on 'insecure' and 'buildd' policy because we
-        ensure the uploads are signed.
-        """
-        if upload.is_ppa:
-            upload.reject(
-                "PPA upload are not allowed in '%s' policy" % self.name)
 
     def policySpecificChecks(self, upload):
         """Implement any policy-specific checks in child."""
@@ -192,7 +181,7 @@ class AbstractUploadPolicy:
 
     def autoApproveNew(self, upload):
         """Return whether the NEW upload should be automatically approved."""
-        return False
+        return not self.archive.is_main
 
 
 class InsecureUploadPolicy(AbstractUploadPolicy):
@@ -201,9 +190,25 @@ class InsecureUploadPolicy(AbstractUploadPolicy):
     name = 'insecure'
     accepted_type = ArchiveUploadType.SOURCE_ONLY
 
-    def rejectPPAUploads(self, upload):
-        """Insecure policy allows PPA upload."""
-        return False
+    def __init__(self):
+        super(InsecureUploadPolicy, self).__init__()
+        # Signatures on source buildinfo files aren't a big deal, and older
+        # versions of debsign didn't produce them.
+        self.unsigned_buildinfo_ok = True
+
+    def setDistroSeriesAndPocket(self, dr_name):
+        """Set the distroseries and pocket from the provided name.
+
+        The insecure policy redirects uploads to a different pocket if
+        Distribution.redirect_release_uploads is set.
+        """
+        super(InsecureUploadPolicy, self).setDistroSeriesAndPocket(dr_name)
+        if (self.archive.purpose == ArchivePurpose.PRIMARY and
+            self.distro.redirect_release_uploads and
+            self.pocket == PackagePublishingPocket.RELEASE):
+            self.pocket = PackagePublishingPocket.PROPOSED
+            self.redirect_warning = "Redirecting %s to %s-proposed." % (
+                self.distroseries, self.distroseries)
 
     def checkArchiveSizeQuota(self, upload):
         """Reject the upload if target archive size quota will be exceeded.
@@ -212,8 +217,8 @@ class InsecureUploadPolicy(AbstractUploadPolicy):
         size quota.Binary upload will be skipped to avoid unnecessary hassle
         dealing with FAILEDTOUPLOAD builds.
         """
-        # Skip the check for binary uploads.
-        if upload.binaryful:
+        # Skip the check for binary uploads or archives with no quota.
+        if upload.binaryful or self.archive.authorized_size is None:
             return
 
         # Calculate the incoming upload total size.
@@ -241,24 +246,21 @@ class InsecureUploadPolicy(AbstractUploadPolicy):
                 "if you need more space." % (
                 new_size / MEGA, self.archive.authorized_size))
         else:
-            # No need to warn user about his PPA's size.
+            # No need to warn user about their PPA's size.
             pass
 
     def policySpecificChecks(self, upload):
         """The insecure policy does not allow SECURITY uploads for now.
 
-        If the upload is targeted to any PPA, checks if the upload is within
-        the allowed quota.
+        Also check if the upload is within the allowed quota.
         """
-        if upload.is_ppa:
-            self.checkArchiveSizeQuota(upload)
-        else:
-            # XXX cjwatson 2012-07-20 bug=1026665: For now, direct uploads
-            # to SECURITY will not be built.  See
-            # BuildPackageJob.postprocessCandidate.
-            if self.pocket == PackagePublishingPocket.SECURITY:
-                upload.reject(
-                    "This upload queue does not permit SECURITY uploads.")
+        self.checkArchiveSizeQuota(upload)
+        # XXX cjwatson 2012-07-20 bug=1026665: For now, direct uploads
+        # to SECURITY will not be built.  See
+        # BuildPackageJob.postprocessCandidate.
+        if self.pocket == PackagePublishingPocket.SECURITY:
+            upload.reject(
+                "This upload queue does not permit SECURITY uploads.")
 
     def autoApprove(self, upload):
         """The insecure policy auto-approves RELEASE/PROPOSED pocket stuff.
@@ -295,6 +297,7 @@ class BuildDaemonUploadPolicy(AbstractUploadPolicy):
         # We permit unsigned uploads because we trust our build daemons
         self.unsigned_changes_ok = True
         self.unsigned_dsc_ok = True
+        self.unsigned_buildinfo_ok = True
 
     def setOptions(self, options):
         """Store the options for later."""
@@ -306,10 +309,6 @@ class BuildDaemonUploadPolicy(AbstractUploadPolicy):
         # XXX: dsilvers 2005-10-14 bug=3135:
         # Implement this to check the buildid etc.
         pass
-
-    def rejectPPAUploads(self, upload):
-        """Buildd policy allows PPA upload."""
-        return False
 
     def validateUploadType(self, upload):
         if upload.sourceful and upload.binaryful:
@@ -339,9 +338,10 @@ class SyncUploadPolicy(AbstractUploadPolicy):
 
     def __init__(self):
         AbstractUploadPolicy.__init__(self)
-        # We don't require changes or dsc to be signed for syncs
+        # We don't require changes/dsc/buildinfo to be signed for syncs
         self.unsigned_changes_ok = True
         self.unsigned_dsc_ok = True
+        self.unsigned_buildinfo_ok = True
 
     def policySpecificChecks(self, upload):
         """Perform sync specific checks."""

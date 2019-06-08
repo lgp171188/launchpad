@@ -1,4 +1,4 @@
-# Copyright 2010-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -12,16 +12,16 @@ __all__ = [
 
 import re
 
-from zope.app.form.browser import TextWidget
 from zope.component import (
     adapter,
     getUtility,
     )
-from zope.interface import implements
+from zope.formlib.widget import CustomWidgetFactory
+from zope.formlib.widgets import TextWidget
+from zope.interface import implementer
 
 from lp.app.browser.launchpadform import (
     action,
-    custom_widget,
     LaunchpadFormView,
     )
 from lp.registry.browser import RegistryEditFormView
@@ -92,7 +92,7 @@ class NameBlacklistAddView(NameBlacklistValidationMixin, LaunchpadFormView):
     label = "Add a new blacklist expression"
     page_title = label
 
-    custom_widget('regexp', TextWidget, displayWidth=60)
+    custom_widget_regexp = CustomWidgetFactory(TextWidget, displayWidth=60)
 
     @property
     def cancel_url(self):
@@ -157,9 +157,8 @@ class NameBlacklistNavigationMenu(ApplicationMenu):
 
 
 @adapter(INameBlacklistSet)
+@implementer(IBreadcrumb)
 class NameBlacklistSetBreadcrumb(Breadcrumb):
     """Return a breadcrumb for an `INameBlackListSet`."""
-
-    implements(IBreadcrumb)
 
     text = "Name Blacklist"

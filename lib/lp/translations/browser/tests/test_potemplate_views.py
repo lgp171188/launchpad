@@ -1,23 +1,45 @@
-# Copyright 2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2011-2016 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Module doc."""
 
 __metaclass__ = type
 
+from testscenarios import (
+    load_tests_apply_scenarios,
+    WithScenarios,
+    )
 
+from lp.services.features.testing import FeatureFixture
+from lp.services.webapp.escaping import html_escape
 from lp.services.webapp.servers import LaunchpadTestRequest
-from lp.testing import TestCaseWithFactory
+from lp.testing import (
+    celebrity_logged_in,
+    TestCaseWithFactory,
+    )
 from lp.testing.layers import DatabaseFunctionalLayer
+from lp.testing.views import create_initialized_view
 from lp.translations.browser.potemplate import (
     POTemplateAdminView,
     POTemplateEditView,
     )
 
 
-class TestPOTemplateEditViewValidation(TestCaseWithFactory):
+class TestPOTemplateEditViewValidation(WithScenarios, TestCaseWithFactory):
 
     layer = DatabaseFunctionalLayer
+
+    scenarios = [
+        ("spn_picker", {"features": {}}),
+        ("dsp_picker", {
+            "features": {u"disclosure.dsp_picker.enabled": u"on"},
+            }),
+        ]
+
+    def setUp(self):
+        super(TestPOTemplateEditViewValidation, self).setUp()
+        if self.features:
+            self.useFixture(FeatureFixture(self.features))
 
     def _makeData(self, potemplate, **kwargs):
         """Create form data for the given template with some changed values.
@@ -63,9 +85,10 @@ class TestPOTemplateEditViewValidation(TestCaseWithFactory):
         view = POTemplateEditView(potemplate, LaunchpadTestRequest())
         view.validate(data)
         self.assertEqual(
-            [u'Template name can only start with lowercase letters a-z '
-             u'or digits 0-9, and other than those characters, can only '
-             u'contain "-", "+" and "." characters.'],
+            [html_escape(
+                u'Template name can only start with lowercase letters a-z '
+                u'or digits 0-9, and other than those characters, can only '
+                u'contain "-", "+" and "." characters.')],
             view.errors)
 
     def test_detects_name_clash_on_name_change(self):
@@ -128,6 +151,23 @@ class TestPOTemplateEditViewValidation(TestCaseWithFactory):
         self.assertEqual(
             [u'Source package already has a template with that same domain.'],
             view.errors)
+
+    def test_change_sourcepackage(self):
+        # Changing the source package is honoured.
+        distroseries = self.factory.makeDistroSeries()
+        potemplate = self.factory.makePOTemplate(distroseries=distroseries)
+        dsp = self.factory.makeDSPCache(distroseries=distroseries)
+        form = {
+            'field.name': potemplate.name,
+            'field.distroseries': distroseries.name,
+            'field.sourcepackagename': dsp.sourcepackagename.name,
+            'field.actions.change': 'Change',
+            }
+        with celebrity_logged_in('rosetta_experts'):
+            view = create_initialized_view(potemplate, '+edit', form=form)
+        self.assertEqual([], view.errors)
+        self.assertEqual(
+            dsp.sourcepackagename.name, potemplate.sourcepackagename.name)
 
 
 class TestPOTemplateAdminViewValidation(TestPOTemplateEditViewValidation):
@@ -192,3 +232,30 @@ class TestPOTemplateAdminViewValidation(TestPOTemplateEditViewValidation):
         self.assertEqual(
             [u'Choose a distribution release series or a project '
              u'release series, but not both.'], view.errors)
+
+    def test_change_from_sourcepackage(self):
+        # Changing the source package the template comes from is honoured.
+        distroseries = self.factory.makeDistroSeries()
+        dsp = self.factory.makeDSPCache(distroseries=distroseries)
+        potemplate = self.factory.makePOTemplate(
+            distroseries=distroseries, sourcepackagename=dsp.sourcepackagename)
+        from_dsp = self.factory.makeDSPCache(distroseries=distroseries)
+        form = {
+            'field.name': potemplate.name,
+            'field.distroseries': '%s/%s' % (
+                distroseries.distribution.name, distroseries.name),
+            'field.sourcepackagename': dsp.sourcepackagename.name,
+            'field.from_sourcepackagename': from_dsp.sourcepackagename.name,
+            'field.actions.change': 'Change',
+            }
+        with celebrity_logged_in('rosetta_experts'):
+            view = create_initialized_view(potemplate, '+admin', form=form)
+        self.assertEqual([], view.errors)
+        self.assertEqual(
+            dsp.sourcepackagename.name, potemplate.sourcepackagename.name)
+        self.assertEqual(
+            from_dsp.sourcepackagename.name,
+            potemplate.from_sourcepackagename.name)
+
+
+load_tests = load_tests_apply_scenarios

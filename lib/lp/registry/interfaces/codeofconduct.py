@@ -1,8 +1,6 @@
 # Copyright 2009 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-# pylint: disable-msg=E0211,E0213
-
 """Interfaces for CodeOfConduct (CoC) and related classes.
 
 https://launchpad.canonical.com/CodeOfConduct
@@ -87,7 +85,6 @@ class ISignedCodeOfConduct(Interface):
                                 "is considered active.")
                   )
 
-
     displayname = Attribute("Fancy Title for CoC.")
 
     def sendAdvertisementEmail(subject, content):
@@ -148,6 +145,7 @@ class ISignedCodeOfConductSet(Interface):
         """Return a datetime object corresponding to the last accepted date
         of Code of Conduct Signature.
         """
+
 
 class ICodeOfConductConf(Interface):
     """Component to store the CoC Configuration."""

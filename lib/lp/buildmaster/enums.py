@@ -1,14 +1,16 @@
-# Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
-
-# pylint: disable-msg=E0211,E0213
 
 """Common build interfaces."""
 
 __metaclass__ = type
 
 __all__ = [
+    'BuildBaseImageType',
+    'BuilderCleanStatus',
+    'BuilderResetProtocol',
     'BuildStatus',
+    'BuildQueueStatus',
     'BuildFarmJobType',
     ]
 
@@ -149,3 +151,101 @@ class BuildFarmJobType(DBEnumeratedType):
 
         Generate translation templates from a bazaar branch.
         """)
+
+    LIVEFSBUILD = DBItem(5, """
+        Live filesystem build
+
+        Build a live filesystem from an archive.
+        """)
+
+    SNAPBUILD = DBItem(6, """
+        Snap package build
+
+        Build a snap package from a recipe.
+        """)
+
+
+class BuildQueueStatus(DBEnumeratedType):
+    """Build queue status.
+
+    The status of a job in the build farm queue. The queue record only
+    exists while the job is running or waiting to run.
+
+    Not to be confused with BuildStatus, which is persistent and
+    includes values to represent the result of a completed job.
+    """
+
+    WAITING = DBItem(0, """
+        Waiting
+
+        The job is waiting to be run.
+        """)
+
+    RUNNING = DBItem(1, """
+        Running
+
+        The job is currently running.
+        """)
+
+    CANCELLING = DBItem(2, """
+        Cancelling
+
+        The job has been cancelled, so should be terminated.
+        """)
+
+    SUSPENDED = DBItem(3, """
+        Suspended
+
+        The job is suspended, so should not be run.
+        """)
+
+
+class BuilderCleanStatus(DBEnumeratedType):
+
+    CLEAN = DBItem(0, """
+        Clean
+
+        The builder slave is ready for use.
+        """)
+
+    DIRTY = DBItem(1, """
+        Dirty
+
+        The builder slave is dirty and needs to be cleaned before use.
+        """)
+
+    CLEANING = DBItem(2, """
+        Cleaning
+
+        The builder slave is being cleaned.
+        """)
+
+
+class BuilderResetProtocol(DBEnumeratedType):
+
+    PROTO_1_1 = DBItem(11, """
+        1.1
+
+        Original synchronous protocol with vm_host and buildd_name. The
+        reset trigger must exit cleanly once the slave is reset and
+        accepting requests.
+        """)
+
+    PROTO_2_0 = DBItem(20, """
+        2.0
+
+        Asynchronous protocol with vm_host and buildd_name. The reset
+        trigger must exit cleanly once the request is accepted, and use
+        the webservice to set Builder.clean_status back to 'Clean' when
+        the slave is reset and accepting requests.
+        """)
+
+
+class BuildBaseImageType(DBEnumeratedType):
+    """Build base image type
+
+    The type of a base image that can be used for builds.
+    """
+
+    CHROOT = DBItem(0, "Chroot tarball")
+    LXD = DBItem(1, "LXD image")

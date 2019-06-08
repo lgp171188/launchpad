@@ -1,7 +1,5 @@
-# Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
-
-# pylint: disable-msg=E0211,E0213
 
 """Code import interfaces."""
 
@@ -43,8 +41,10 @@ from lp.app.validators import LaunchpadValidationError
 from lp.code.enums import (
     CodeImportReviewStatus,
     RevisionControlSystems,
+    TargetRevisionControlSystems,
     )
 from lp.code.interfaces.branch import IBranch
+from lp.code.interfaces.gitrepository import IGitRepository
 from lp.services.fields import (
     PublicPersonChoice,
     URIField,
@@ -77,13 +77,6 @@ def validate_cvs_module(cvsmodule):
     return True
 
 
-def validate_cvs_branch(branch):
-    if branch and re.match('^[a-zA-Z][a-zA-Z0-9_-]*$', branch):
-        return True
-    else:
-        raise LaunchpadValidationError('Your CVS branch name is invalid.')
-
-
 class ICodeImport(Interface):
     """A code import to a Bazaar Branch."""
 
@@ -95,10 +88,18 @@ class ICodeImport(Interface):
 
     branch = exported(
         ReferenceChoice(
-            title=_('Branch'), required=True, readonly=True,
+            title=_('Branch'), required=False, readonly=True,
             vocabulary='Branch', schema=IBranch,
             description=_("The Bazaar branch produced by the "
                 "import system.")))
+    git_repository = exported(
+        ReferenceChoice(
+            title=_('Git repository'), required=False, readonly=True,
+            vocabulary='GitRepository', schema=IGitRepository,
+            description=_(
+                "The Git repository produced by the import system.")))
+    target = Attribute(
+        "The branch/repository produced by the import system (VCS-agnostic).")
 
     registrant = PublicPersonChoice(
         title=_('Registrant'), required=True, readonly=True,
@@ -112,11 +113,16 @@ class ICodeImport(Interface):
             description=_("Only reviewed imports are processed.")))
 
     rcs_type = exported(
-        Choice(title=_("Type of RCS"), readonly=True,
+        Choice(
+            title=_("Type of RCS"), readonly=True,
             required=True, vocabulary=RevisionControlSystems,
-            description=_(
-                "The version control system to import from. "
-                "Can be CVS or Subversion.")))
+            description=_("The revision control system to import from.")))
+
+    target_rcs_type = exported(
+        Choice(
+            title=_("Type of target RCS"), readonly=True,
+            required=True, vocabulary=TargetRevisionControlSystems,
+            description=_("The revision control system to import to.")))
 
     url = exported(
         URIField(title=_("URL"), required=False, readonly=True,
@@ -229,12 +235,12 @@ class ICodeImport(Interface):
 class ICodeImportSet(Interface):
     """Interface representing the set of code imports."""
 
-    def new(registrant, target, branch_name, rcs_type, url=None,
-            cvs_root=None, cvs_module=None, review_status=None,
+    def new(registrant, context, branch_name, rcs_type, target_rcs_type,
+            url=None, cvs_root=None, cvs_module=None, review_status=None,
             owner=None):
         """Create a new CodeImport.
 
-        :param target: An `IBranchTarget` that the code is associated with.
+        :param context: An `IHasCodeImports` that the code is associated with.
         :param owner: The `IPerson` to set as the owner of the branch, or
             None to use registrant. registrant must be a member of owner to
             do this.
@@ -247,22 +253,28 @@ class ICodeImportSet(Interface):
         """
 
     def getByBranch(branch):
-        """Get the CodeImport, if any, associated to a Branch."""
+        """Get the CodeImport, if any, associated with a Branch."""
+
+    def getByGitRepository(repository):
+        """Get the CodeImport, if any, associated with a GitRepository."""
 
     def getByCVSDetails(cvs_root, cvs_module):
         """Get the CodeImport with the specified CVS details."""
 
-    def getByURL(url):
-        """Get the CodeImport with the url."""
+    def getByURL(url, target_rcs_type):
+        """Get the CodeImport with the URL and target RCS type."""
 
     def delete(id):
         """Delete a CodeImport given its id."""
 
-    def search(review_status=None, rcs_type=None):
+    def search(review_status=None, rcs_type=None, target_rcs_type=None):
         """Find the CodeImports of the given status and type.
 
         :param review_status: An entry from the `CodeImportReviewStatus`
             schema, or None, which signifies 'any status'.
         :param rcs_type: An entry from the `RevisionControlSystems`
             schema, or None, which signifies 'any type'.
+        :param target_rcs_type: An entry from the
+            `TargetRevisionControlSystems` schema, or None, which signifies
+            'any type'.
         """

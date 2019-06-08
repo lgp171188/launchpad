@@ -7,22 +7,24 @@ __metaclass__ = type
 
 __all__ = [
     'ExceptionPrivacy',
+    'InformationTypeMixin',
     'Privacy',
     ]
 
-from zope.interface import implements
+from zope.interface import implementer
 from zope.security.interfaces import (
     Forbidden,
     ForbiddenAttribute,
     Unauthorized,
     )
 
+from lp.app.enums import PRIVATE_INFORMATION_TYPES
 from lp.app.interfaces.launchpad import IPrivacy
 
 
+@implementer(IPrivacy)
 class Privacy:
     """Represent any object as IPrivacy."""
-    implements(IPrivacy)
 
     def __init__(self, context, private):
         self.context = context
@@ -38,3 +40,11 @@ class ExceptionPrivacy(Privacy):
         else:
             private = False
         super(ExceptionPrivacy, self).__init__(error, private)
+
+
+class InformationTypeMixin:
+    """Common functionality for classes implementing IInformationType."""
+
+    @property
+    def private(self):
+        return self.information_type in PRIVATE_INFORMATION_TYPES

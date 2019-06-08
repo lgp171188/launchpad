@@ -1,7 +1,9 @@
-# Copyright 2009-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2016 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
+
 from doctest import DocTestSuite
+from email.mime.multipart import MIMEMultipart
 import logging
 import os
 import unittest
@@ -11,17 +13,20 @@ from testtools.matchers import (
     Is,
     )
 import transaction
+from zope.interface import implementer
 from zope.security.management import setSecurityPolicy
 
 from lp.services.config import config
 from lp.services.log.logger import BufferLogger
 from lp.services.mail import helpers
+from lp.services.mail.handlers import mail_handlers
 from lp.services.mail.incoming import (
     authenticateEmail,
     extract_addresses,
     handleMail,
     ORIGINAL_TO_HEADER,
     )
+from lp.services.mail.interfaces import IMailHandler
 from lp.services.mail.sendmail import MailController
 from lp.services.mail.stub import TestMailer
 from lp.services.mail.tests.helpers import testmails_path
@@ -35,7 +40,19 @@ from lp.testing.mail_helpers import pop_notifications
 from lp.testing.systemdocs import LayeredDocFileSuite
 
 
-class TestIncoming(TestCaseWithFactory):
+@implementer(IMailHandler)
+class FakeHandler:
+
+    def __init__(self, allow_unknown_users=True):
+        self.allow_unknown_users = allow_unknown_users
+        self.handledMails = []
+
+    def process(self, mail, to_addr, filealias):
+        self.handledMails.append(mail)
+        return True
+
+
+class IncomingTestCase(TestCaseWithFactory):
 
     layer = LaunchpadZopelessLayer
 
@@ -88,15 +105,11 @@ class TestIncoming(TestCaseWithFactory):
         self.assertEqual([], self.oopses)
         [notification] = pop_notifications()
         body = notification.get_payload()[0].get_payload(decode=True)
-        self.assertIn(
-            "The mail you sent to Launchpad is too long.",
-            body)
-        self.assertIn(
-            "was 55 MB and the limit is 10 MB.",
-            body)
+        self.assertIn("The mail you sent to Launchpad is too long.", body)
+        self.assertIn("was 55 MB and the limit is 10 MB.", body)
 
     def test_invalid_to_addresses(self):
-        """Invalid To: header should not be handled as an OOPS."""
+        # Invalid To: header should not be handled as an OOPS.
         raw_mail = open(os.path.join(
             testmails_path, 'invalid-to-header.txt')).read()
         # Due to the way handleMail works, even if we pass a valid To header
@@ -107,11 +120,69 @@ class TestIncoming(TestCaseWithFactory):
         handleMail()
         self.assertEqual([], self.oopses)
 
+    def makeSentMessage(self, sender, to, subject='subject', body='body',
+                           cc=None, handler_domain=None):
+        if handler_domain is None:
+            extra, handler_domain = to.split('@')
+        test_handler = FakeHandler()
+        mail_handlers.add(handler_domain, test_handler)
+        message = MIMEMultipart()
+        message['Message-Id'] = '<message-id>'
+        message['To'] = to
+        message['From'] = sender
+        message['Subject'] = subject
+        if cc is not None:
+            message['Cc'] = cc
+        message.set_payload(body)
+        TestMailer().send(sender, to, message.as_string())
+        return message, test_handler
+
+    def test_invalid_from_address_no_at(self):
+        # Invalid From: header such as no "@" is handled.
+        message, test_handler = self.makeSentMessage(
+            'me_at_eg.dom', 'test@lp.dev')
+        handleMail()
+        self.assertEqual([], self.oopses)
+        self.assertEqual(1, len(test_handler.handledMails))
+        self.assertEqual('me_at_eg.dom', test_handler.handledMails[0]['From'])
+
+    def test_invalid_cc_address_no_at(self):
+        # Invalid From: header such as no "@" is handled.
+        message, test_handler = self.makeSentMessage(
+            'me@eg.dom', 'test@lp.dev', cc='me_at_eg.dom')
+        handleMail()
+        self.assertEqual([], self.oopses)
+        self.assertEqual(1, len(test_handler.handledMails))
+        self.assertEqual('me_at_eg.dom', test_handler.handledMails[0]['Cc'])
+
+    def test_invalid_from_address_unicode(self):
+        # Invalid From: header such as no "@" is handled.
+        message, test_handler = self.makeSentMessage(
+            'm\xeda@eg.dom', 'test@lp.dev')
+        handleMail()
+        self.assertEqual([], self.oopses)
+        self.assertEqual(1, len(test_handler.handledMails))
+        self.assertEqual('m\xeda@eg.dom', test_handler.handledMails[0]['From'])
+
+    def test_invalid_cc_address_unicode(self):
+        # Invalid Cc: header such as no "@" is handled.
+        message, test_handler = self.makeSentMessage(
+            'me@eg.dom', 'test@lp.dev', cc='m\xeda@eg.dom')
+        handleMail()
+        self.assertEqual([], self.oopses)
+        self.assertEqual(1, len(test_handler.handledMails))
+        self.assertEqual('m\xeda@eg.dom', test_handler.handledMails[0]['Cc'])
+
+
+class AuthenticateEmailTestCase(TestCaseWithFactory):
+
+    layer = LaunchpadZopelessLayer
+
     def test_bad_signature_timestamp(self):
         """If the signature is nontrivial future-dated, it's not trusted."""
 
         signing_context = GPGSigningContext(
-            import_secret_test_key().fingerprint, password='test')
+            import_secret_test_key(), password='test')
         msg = self.factory.makeSignedMessage(signing_context=signing_context)
         # It's not trivial to make a gpg signature with a bogus timestamp, so
         # let's just treat everything as invalid, and trust that the regular
@@ -121,14 +192,19 @@ class TestIncoming(TestCaseWithFactory):
         def fail_all_timestamps(timestamp, context):
             raise helpers.IncomingEmailError("fail!")
         self.assertRaises(
-            helpers.IncomingEmailError,
-            authenticateEmail,
-            msg, fail_all_timestamps)
+            helpers.IncomingEmailError, authenticateEmail, msg,
+            fail_all_timestamps)
 
     def test_unknown_email(self):
         # An unknown email address returns no principal.
         unknown = 'random-unknown@example.com'
         mail = self.factory.makeSignedMessage(email_address=unknown)
+        self.assertThat(authenticateEmail(mail), Is(None))
+
+    def test_badly_formed_email(self):
+        # A badly formed email address returns no principal.
+        bad = '\xed@example.com'
+        mail = self.factory.makeSignedMessage(email_address=bad)
         self.assertThat(authenticateEmail(mail), Is(None))
 
 
@@ -141,8 +217,7 @@ class TestExtractAddresses(TestCaseWithFactory):
         original_to = 'eric@vikings.example.com'
         mail[ORIGINAL_TO_HEADER] = original_to
         self.assertThat(
-            extract_addresses(mail, None, None),
-            Equals([original_to]))
+            extract_addresses(mail, None, None), Equals([original_to]))
 
     def test_original_to_in_body(self):
         header_to = 'eric@vikings-r-us.example.com'

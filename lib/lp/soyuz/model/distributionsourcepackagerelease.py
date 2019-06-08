@@ -1,7 +1,5 @@
-# Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
-
-# pylint: disable-msg=E0611,W0212
 
 """Classes to represent source package releases in a distribution."""
 
@@ -11,7 +9,9 @@ __all__ = [
     'DistributionSourcePackageRelease',
     ]
 
-from lazr.delegates import delegates
+from operator import itemgetter
+
+from lazr.delegates import delegate_to
 from storm.expr import (
     And,
     Desc,
@@ -19,27 +19,18 @@ from storm.expr import (
     LeftJoin,
     SQL,
     )
-from zope.component import getUtility
-from zope.interface import implements
+from storm.store import Store
+from zope.interface import implementer
 
-from lp.buildmaster.model.buildfarmjob import BuildFarmJob
-from lp.buildmaster.model.packagebuild import PackageBuild
 from lp.services.database.decoratedresultset import DecoratedResultSet
-from lp.services.database.sqlbase import sqlvalues
-from lp.services.webapp.interfaces import (
-    DEFAULT_FLAVOR,
-    IStoreSelector,
-    MAIN_STORE,
-    )
-from lp.soyuz.interfaces.archive import MAIN_ARCHIVE_PURPOSES
 from lp.soyuz.interfaces.distributionsourcepackagerelease import (
     IDistributionSourcePackageRelease,
     )
 from lp.soyuz.interfaces.sourcepackagerelease import ISourcePackageRelease
-from lp.soyuz.model.archive import Archive
 from lp.soyuz.model.binarypackagebuild import BinaryPackageBuild
 from lp.soyuz.model.binarypackagename import BinaryPackageName
 from lp.soyuz.model.binarypackagerelease import BinaryPackageRelease
+from lp.soyuz.model.distroarchseries import DistroArchSeries
 from lp.soyuz.model.distroseriesbinarypackage import DistroSeriesBinaryPackage
 from lp.soyuz.model.publishing import (
     BinaryPackagePublishingHistory,
@@ -47,6 +38,8 @@ from lp.soyuz.model.publishing import (
     )
 
 
+@implementer(IDistributionSourcePackageRelease)
+@delegate_to(ISourcePackageRelease, context='sourcepackagerelease')
 class DistributionSourcePackageRelease:
     """This is a "Magic Distribution Source Package Release". It is not an
     SQLObject, but it represents the concept of a specific source package
@@ -54,12 +47,25 @@ class DistributionSourcePackageRelease:
     information.
     """
 
-    implements(IDistributionSourcePackageRelease)
-    delegates(ISourcePackageRelease, context='sourcepackagerelease')
-
     def __init__(self, distribution, sourcepackagerelease):
         self.distribution = distribution
         self.sourcepackagerelease = sourcepackagerelease
+
+    @staticmethod
+    def getPublishingHistories(distribution, sprs):
+        from lp.registry.model.distroseries import DistroSeries
+        res = Store.of(distribution).find(
+            SourcePackagePublishingHistory,
+            SourcePackagePublishingHistory.archiveID.is_in(
+                distribution.all_distro_archive_ids),
+            SourcePackagePublishingHistory.distroseriesID == DistroSeries.id,
+            DistroSeries.distribution == distribution,
+            SourcePackagePublishingHistory.sourcepackagereleaseID.is_in(
+                spr.id for spr in sprs))
+        return res.order_by(
+            Desc(SourcePackagePublishingHistory.sourcepackagereleaseID),
+            Desc(SourcePackagePublishingHistory.datecreated),
+            Desc(SourcePackagePublishingHistory.id))
 
     @property
     def sourcepackage(self):
@@ -70,106 +76,75 @@ class DistributionSourcePackageRelease:
     @property
     def displayname(self):
         """See IDistributionSourcePackageRelease."""
-        return '%s in %s' % (self.name, self.distribution.name)
+        return '%s %s' % (self.name, self.version)
 
     @property
     def title(self):
         """See IDistributionSourcePackageRelease."""
-        return '"%s" %s source package in %s' % (
+        return '%s %s source package in %s' % (
             self.name, self.version, self.distribution.displayname)
 
     @property
     def publishing_history(self):
         """See IDistributionSourcePackageRelease."""
-        return SourcePackagePublishingHistory.select("""
-            DistroSeries.distribution = %s AND
-            SourcePackagePublishingHistory.distroseries =
-                DistroSeries.id AND
-            SourcePackagePublishingHistory.archive IN %s AND
-            SourcePackagePublishingHistory.sourcepackagerelease = %s
-            """ % sqlvalues(self.distribution,
-                            self.distribution.all_distro_archive_ids,
-                            self.sourcepackagerelease),
-            clauseTables=['DistroSeries'],
-            orderBy='-datecreated')
+        return self.getPublishingHistories(
+            self.distribution, [self.sourcepackagerelease])
 
-    @property
-    def builds(self):
-        """See IDistributionSourcePackageRelease."""
-        store = getUtility(IStoreSelector).get(MAIN_STORE, DEFAULT_FLAVOR)
-
-        # Import DistroArchSeries here to avoid circular imports.
-        from lp.soyuz.model.distroarchseries import (
-            DistroArchSeries)
-        from lp.registry.model.distroseries import DistroSeries
-
-        # We want to return all the builds for this distribution that
-        # were built for a main archive together with the builds for this
-        # distribution that were built for a PPA but have been published
-        # in a main archive.
-        builds_for_distro_exprs = (
-            (BinaryPackageBuild.source_package_release ==
-                self.sourcepackagerelease),
-            BinaryPackageBuild.distro_arch_series == DistroArchSeries.id,
-            DistroArchSeries.distroseries == DistroSeries.id,
-            DistroSeries.distribution == self.distribution,
-            BinaryPackageBuild.package_build == PackageBuild.id,
-            PackageBuild.build_farm_job == BuildFarmJob.id
-            )
-
+    def _getBuilds(self, clauses=[]):
         # First, get all the builds built in a main archive (this will
         # include new and failed builds.)
-        builds_built_in_main_archives = store.find(
+        builds_built_in_main_archives = Store.of(self.distribution).find(
             BinaryPackageBuild,
-            builds_for_distro_exprs,
-            PackageBuild.archive == Archive.id,
-            Archive.purpose.is_in(MAIN_ARCHIVE_PURPOSES))
+            BinaryPackageBuild.source_package_release ==
+                self.sourcepackagerelease,
+            BinaryPackageBuild.archive_id.is_in(
+                self.distribution.all_distro_archive_ids),
+            *clauses)
 
         # Next get all the builds that have a binary published in the
         # main archive... this will include many of those in the above
         # query, but not the new/failed ones. It will also include
         # ppa builds that have been published in main archives.
-        builds_published_in_main_archives = store.find(
+        builds_published_in_main_archives = Store.of(self.distribution).find(
             BinaryPackageBuild,
-            builds_for_distro_exprs,
+            BinaryPackageBuild.source_package_release ==
+                self.sourcepackagerelease,
             BinaryPackageRelease.build == BinaryPackageBuild.id,
             BinaryPackagePublishingHistory.binarypackagerelease ==
                 BinaryPackageRelease.id,
-            BinaryPackagePublishingHistory.archive == Archive.id,
-            Archive.purpose.is_in(MAIN_ARCHIVE_PURPOSES)).config(
-                distinct=True)
+            BinaryPackagePublishingHistory.archiveID.is_in(
+                self.distribution.all_distro_archive_ids),
+            *clauses).config(distinct=True)
 
         return builds_built_in_main_archives.union(
             builds_published_in_main_archives).order_by(
                 Desc(BinaryPackageBuild.id))
 
     @property
-    def binary_package_names(self):
+    def builds(self):
         """See IDistributionSourcePackageRelease."""
-        return BinaryPackageName.select("""
-            BinaryPackageName.id =
-                BinaryPackageRelease.binarypackagename AND
-            BinaryPackageRelease.build = BinaryPackageBuild.id AND
-            BinaryPackageBuild.source_package_release = %s
-            """ % sqlvalues(self.sourcepackagerelease.id),
-            clauseTables=['BinaryPackageRelease', 'BinaryPackageBuild'],
-            orderBy='name',
-            distinct=True)
+        return self._getBuilds()
+
+    def getBuildsByArchTag(self, arch_tag):
+        """See IDistributionSourcePackageRelease."""
+        clauses = [
+            BinaryPackageBuild.distro_arch_series_id == DistroArchSeries.id,
+            DistroArchSeries.architecturetag == arch_tag,
+            ]
+        return self._getBuilds(clauses)
 
     @property
     def sample_binary_packages(self):
         """See IDistributionSourcePackageRelease."""
-        #avoid circular imports.
+        # Avoid circular imports.
         from lp.registry.model.distroseries import DistroSeries
         from lp.soyuz.model.distroarchseries import DistroArchSeries
         from lp.soyuz.model.distroseriespackagecache import (
             DistroSeriesPackageCache)
-        store = getUtility(IStoreSelector).get(MAIN_STORE, DEFAULT_FLAVOR)
         archive_ids = list(self.distribution.all_distro_archive_ids)
         result_row = (
             SQL('DISTINCT ON(BinaryPackageName.name) 0 AS ignore'),
-            BinaryPackagePublishingHistory, DistroSeriesPackageCache,
-            BinaryPackageRelease, BinaryPackageName)
+            DistroSeries, BinaryPackageName, DistroSeriesPackageCache)
         tables = (
             BinaryPackagePublishingHistory,
             Join(
@@ -198,7 +173,7 @@ class DistributionSourcePackageRelease:
                     DistroSeriesPackageCache.binarypackagename ==
                     BinaryPackageName.id)))
 
-        all_published = store.using(*tables).find(
+        all_published = Store.of(self.distribution).using(*tables).find(
             result_row,
             DistroSeries.distribution == self.distribution,
             BinaryPackagePublishingHistory.archiveID.is_in(archive_ids),
@@ -208,10 +183,42 @@ class DistributionSourcePackageRelease:
             BinaryPackageName.name)
 
         def make_dsb_package(row):
-            publishing = row[1]
-            package_cache = row[2]
-            return DistroSeriesBinaryPackage(
-                publishing.distroarchseries.distroseries,
-                publishing.binarypackagerelease.binarypackagename,
-                package_cache)
+            _, ds, bpn, package_cache = row
+            return DistroSeriesBinaryPackage(ds, bpn, package_cache)
         return DecoratedResultSet(all_published, make_dsb_package)
+
+    def getBinariesForSeries(self, distroseries):
+        """See `IDistributionSourcePackageRelease`."""
+        # Avoid circular imports.
+        from lp.soyuz.model.distroarchseries import DistroArchSeries
+        store = Store.of(distroseries)
+        result_row = (
+            BinaryPackageRelease, BinaryPackageBuild, BinaryPackageName)
+
+        tables = (
+            BinaryPackageRelease,
+            Join(
+                BinaryPackageBuild,
+                BinaryPackageBuild.id == BinaryPackageRelease.buildID),
+            Join(
+                BinaryPackagePublishingHistory,
+                BinaryPackageRelease.id ==
+                BinaryPackagePublishingHistory.binarypackagereleaseID),
+            Join(
+                DistroArchSeries,
+                DistroArchSeries.id ==
+                BinaryPackagePublishingHistory.distroarchseriesID),
+            Join(
+                BinaryPackageName,
+                BinaryPackageName.id ==
+                BinaryPackageRelease.binarypackagenameID))
+        archive_ids = list(self.distribution.all_distro_archive_ids)
+        binaries = store.using(*tables).find(
+            result_row,
+            And(
+                DistroArchSeries.distroseriesID == distroseries.id,
+                BinaryPackagePublishingHistory.archiveID.is_in(archive_ids),
+                BinaryPackageBuild.source_package_release ==
+                    self.sourcepackagerelease))
+        binaries.order_by(Desc(BinaryPackageRelease.id)).config(distinct=True)
+        return DecoratedResultSet(binaries, itemgetter(0))

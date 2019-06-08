@@ -37,7 +37,7 @@ class LibrarianStorageDBTests(unittest.TestCase):
         newfile.srcDigest = digest
         newfile.append(data)
         fileid, aliasid = newfile.store()
-        self.failUnless(self.storage.hasFile(fileid))
+        self.assertTrue(self.storage.hasFile(fileid))
 
     def test_addFiles_identical(self):
         # Start adding two files with identical data
@@ -55,7 +55,7 @@ class LibrarianStorageDBTests(unittest.TestCase):
 
         # But they are two different ids, because we leave duplicate handling
         # to the garbage collector
-        self.failIfEqual(id1, id2)
+        self.assertNotEqual(id1, id2)
 
     def test_badDigest(self):
         data = 'data ' * 50
@@ -104,8 +104,8 @@ class LibrarianStorageDBTests(unittest.TestCase):
         self.assertRaises(DuplicateFileIDError, newfile.store)
 
     def test_clientProvidedDuplicateContent(self):
-        # Check the new behaviour specified by LibrarianTransactions spec: allow
-        # duplicate content with distinct IDs.
+        # Check the new behaviour specified by LibrarianTransactions
+        # spec: allow duplicate content with distinct IDs.
 
         content = 'some content'
 
@@ -122,8 +122,10 @@ class LibrarianStorageDBTests(unittest.TestCase):
         fileid2, aliasid2 = newfile2.store()
 
         # Create rows in the database for these files.
-        LibraryFileContent(filesize=0, sha1='foo', md5='xx', id=6661)
-        LibraryFileContent(filesize=0, sha1='foo', md5='xx', id=6662)
+        LibraryFileContent(
+            filesize=0, sha1='foo', md5='xx', sha256='xx', id=6661)
+        LibraryFileContent(
+            filesize=0, sha1='foo', md5='xx', sha256='xx', id=6662)
 
         flush_database_updates()
         # And no errors should have been raised!

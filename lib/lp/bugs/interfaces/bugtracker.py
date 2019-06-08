@@ -1,7 +1,5 @@
-# Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
-
-# pylint: disable-msg=E0211,E0213
 
 """Bug tracker interfaces."""
 
@@ -188,6 +186,19 @@ class BugTrackerType(DBEnumeratedType):
         Google.
         """)
 
+    GITHUB = DBItem(12, """
+        GitHub Issues
+
+        The issue tracker for projects hosted on GitHub.
+        """)
+
+    GITLAB = DBItem(13, """
+        GitLab Issues
+
+        GitLab is a single application for the entire software development
+        lifecycle.
+        """)
+
 
 # A list of the BugTrackerTypes that don't need a remote product to be
 # able to return a bug filing URL. We use a whitelist rather than a
@@ -195,6 +206,8 @@ class BugTrackerType(DBEnumeratedType):
 # a remote product is required. This saves us from presenting
 # embarrassingly useless URLs to users.
 SINGLE_PRODUCT_BUGTRACKERTYPES = [
+    BugTrackerType.GITHUB,
+    BugTrackerType.GITLAB,
     BugTrackerType.GOOGLE_CODE,
     BugTrackerType.MANTIS,
     BugTrackerType.PHPPROJECT,
@@ -289,7 +302,6 @@ class IBugTracker(Interface):
         Bool(
             title=_('This bug tracker has a Launchpad plugin installed.'),
             required=False, default=False))
-    projects = Attribute('The projects that use this bug tracker.')
     products = Attribute('The products that use this bug tracker.')
     latestwatches = Attribute('The last 10 watches created.')
     imported_bug_messages = Attribute(
@@ -421,6 +433,10 @@ class IBugTracker(Interface):
         If no components have been linked, returns value of None.
         """
 
+    def getRelatedPillars(user=None):
+        """Returns the `IProduct`s and `IProjectGroup`s that use this tracker.
+        """
+
 
 class IBugTrackerSet(Interface):
     """A set of IBugTracker's.
@@ -497,10 +513,10 @@ class IBugTrackerSet(Interface):
         of bugwatches for each tracker, from highest to lowest.
         """
 
-    def getPillarsForBugtrackers(bug_trackers):
+    def getPillarsForBugtrackers(bug_trackers, user=None):
         """Return dict mapping bugtrackers to lists of pillars."""
 
-    def trackers(active=None):
+    def getAllTrackers(active=None):
         """Return a ResultSet of bugtrackers.
 
         :param active: If True, only active trackers are returned, if False

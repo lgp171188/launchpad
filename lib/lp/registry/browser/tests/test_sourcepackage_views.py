@@ -1,4 +1,4 @@
-# Copyright 2010-2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2016 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for SourcePackage view code."""
@@ -8,10 +8,17 @@ __metaclass__ = type
 import cgi
 import urllib
 
+from soupmatchers import (
+    HTMLContains,
+    Tag,
+    )
+from testtools.matchers import Not
+from testtools.testcase import ExpectedException
 from zope.component import getUtility
-from zope.interface import implements
+from zope.interface import implementer
 from zope.security.proxy import removeSecurityProxy
 
+from lp.app.enums import InformationType
 from lp.registry.browser.sourcepackage import (
     get_register_upstream_url,
     PackageUpstreamTracking,
@@ -25,6 +32,7 @@ from lp.registry.interfaces.distroseries import (
 from lp.registry.interfaces.sourcepackage import ISourcePackage
 from lp.soyuz.tests.test_publishing import SoyuzTestPublisher
 from lp.testing import (
+    BrowserTestCase,
     person_logged_in,
     TestCaseWithFactory,
     )
@@ -44,11 +52,10 @@ class TestSourcePackageViewHelpers(TestCaseWithFactory):
         source_package_name = (
             test_data['source_package'].sourcepackagename.name)
         distroseries_id = test_data['distroseries'].id
-        test_publisher.updateDistroSeriesPackageCache(
-            test_data['distroseries'])
+        test_publisher.updatePackageCache(test_data['distroseries'])
 
-        # updateDistroSeriesPackageCache reconnects the db, so the
-        # objects need to be reloaded.
+        # updatePackageCache reconnects the db, so the objects need to be
+        # reloaded.
         distroseries = getUtility(IDistroSeriesSet).get(distroseries_id)
         return distroseries.getSourcePackage(source_package_name)
 
@@ -70,11 +77,11 @@ class TestSourcePackageViewHelpers(TestCaseWithFactory):
         params = cgi.parse_qsl(query)
         expected_params = [
             ('_return_url',
-             'http://launchpad.dev/zoobuntu/walrus/'
+             'http://launchpad.test/zoobuntu/walrus/'
              '+source/python-super-package'),
             ('field.__visited_steps__', 'projectaddstep1'),
             ('field.actions.continue', 'Continue'),
-            ('field.displayname', 'Python Super Package'),
+            ('field.display_name', 'Python Super Package'),
             ('field.distroseries', 'zoobuntu/walrus'),
             ('field.name', 'python-super-package'),
             ('field.source_package_name', 'python-super-package'),
@@ -82,7 +89,7 @@ class TestSourcePackageViewHelpers(TestCaseWithFactory):
             ]
         self.assertEqual(expected_params, params)
 
-    def test_get_register_upstream_url_displayname(self):
+    def test_get_register_upstream_url_display_name(self):
         # The sourcepackagename 'python-super-package' is split on
         # the hyphens, and each word is capitalized.
         distroseries = self.factory.makeDistroSeries(
@@ -93,7 +100,7 @@ class TestSourcePackageViewHelpers(TestCaseWithFactory):
             sourcepackagename='python-super-package')
         url = get_register_upstream_url(source_package)
         self.assertInQueryString(
-            url, 'field.displayname', 'Python Super Package')
+            url, 'field.display_name', 'Python Super Package')
 
     def test_get_register_upstream_url_summary(self):
         source_package = self._makePublishedSourcePackage()
@@ -109,16 +116,19 @@ class TestSourcePackageViewHelpers(TestCaseWithFactory):
             def __init__(self, **kw):
                 self.__dict__.update(kw)
 
+        @implementer(ISourcePackage)
         class FakeSourcePackage(Faker):
             # Interface necessary for canonical_url() call in
             # get_register_upstream_url().
-            implements(ISourcePackage)
+            pass
 
+        @implementer(IDistroSeries)
         class FakeDistroSeries(Faker):
-            implements(IDistroSeries)
+            pass
 
+        @implementer(IDistribution)
         class FakeDistribution(Faker):
-            implements(IDistribution)
+            pass
 
         releases = Faker(sample_binary_packages=[
             Faker(summary='summary for foo'),
@@ -148,6 +158,58 @@ class TestSourcePackageViewHelpers(TestCaseWithFactory):
         url = get_register_upstream_url(source_package)
         self.assertInQueryString(
             url, 'field.homepageurl', 'http://eg.dom/bonkers')
+
+
+class TestSourcePackageView(BrowserTestCase):
+
+    layer = DatabaseFunctionalLayer
+
+    def test_register_upstream_forbids_proprietary(self):
+        # Cannot specify information_type if registering for sourcepackage.
+        sourcepackage = self.factory.makeSourcePackage(publish=True)
+        browser = self.getViewBrowser(sourcepackage)
+        browser.getControl("Register the upstream project").click()
+        browser.getControl("Link to Upstream Project").click()
+        browser.getControl("Summary").value = "summary"
+        browser.getControl("Continue").click()
+        t = Tag('info_type', 'input', attrs={'name': 'field.information_type'})
+        self.assertThat(browser.contents, Not(HTMLContains(t)))
+
+    def test_link_upstream_handles_initial_proprietary(self):
+        # Proprietary product is not listed as an option.
+        owner = self.factory.makePerson()
+        sourcepackage = self.factory.makeSourcePackage()
+        product_name = sourcepackage.name
+        product_displayname = self.factory.getUniqueString()
+        self.factory.makeProduct(
+            name=product_name, owner=owner,
+            information_type=InformationType.PROPRIETARY,
+            displayname=product_displayname)
+        browser = self.getViewBrowser(sourcepackage, user=owner)
+        with ExpectedException(LookupError):
+            browser.getControl(product_displayname)
+
+    def test_link_upstream_handles_proprietary(self):
+        # Proprietary products produce an 'invalid value' error.
+        owner = self.factory.makePerson()
+        product = self.factory.makeProduct(owner=owner)
+        product_name = product.name
+        product_displayname = product.displayname
+        sourcepackage = self.factory.makeSourcePackage(
+            sourcepackagename=product_name)
+        with person_logged_in(None):
+            browser = self.getViewBrowser(sourcepackage, user=owner)
+            with person_logged_in(owner):
+                product.information_type = InformationType.PROPRIETARY
+            browser.getControl(product_displayname).click()
+            browser.getControl("Link to Upstream Project").click()
+        error = Tag(
+            'error', 'div', attrs={'class': 'message'},
+            text='Invalid value')
+        self.assertThat(browser.contents, HTMLContains(error))
+        self.assertNotIn(
+            'The project %s was linked to this source package.' %
+            str(product_displayname), browser.contents)
 
 
 class TestSourcePackageUpstreamConnectionsView(TestCaseWithFactory):
@@ -213,17 +275,14 @@ class TestSourcePackagePackagingLinks(TestCaseWithFactory):
 
     layer = DatabaseFunctionalLayer
 
-    def makeSourcePackageOverviewMenu(self, with_packaging, for_other_user):
+    def makeSourcePackageOverviewMenu(self, with_packaging, karma=None):
         sourcepackage = self.factory.makeSourcePackage()
-        owner = self.factory.makePerson()
+        registrant = self.factory.makePerson()
         if with_packaging:
             self.factory.makePackagingLink(
                 sourcepackagename=sourcepackage.sourcepackagename,
-                distroseries=sourcepackage.distroseries, owner=owner)
-        if for_other_user:
-            user = self.factory.makePerson()
-        else:
-            user = owner
+                distroseries=sourcepackage.distroseries, owner=registrant)
+        user = self.factory.makePerson(karma=karma)
         with person_logged_in(user):
             menu = SourcePackageOverviewMenu(sourcepackage)
         return menu, user
@@ -231,62 +290,106 @@ class TestSourcePackagePackagingLinks(TestCaseWithFactory):
     def test_edit_packaging_link__enabled_without_packaging(self):
         # If no packging exists, the edit_packaging link is always
         # enabled.
-        menu, user = self.makeSourcePackageOverviewMenu(False, False)
+        menu, user = self.makeSourcePackageOverviewMenu(False, None)
         with person_logged_in(user):
             self.assertTrue(menu.edit_packaging().enabled)
 
     def test_set_upstrem_link__enabled_without_packaging(self):
         # If no packging exists, the set_upstream link is always
         # enabled.
-        menu, user = self.makeSourcePackageOverviewMenu(False, False)
+        menu, user = self.makeSourcePackageOverviewMenu(False, None)
         with person_logged_in(user):
             self.assertTrue(menu.set_upstream().enabled)
 
     def test_remove_packaging_link__enabled_without_packaging(self):
         # If no packging exists, the remove_packaging link is always
         # enabled.
-        menu, user = self.makeSourcePackageOverviewMenu(False, False)
+        menu, user = self.makeSourcePackageOverviewMenu(False, None)
         with person_logged_in(user):
             self.assertTrue(menu.remove_packaging().enabled)
 
-    def test_edit_packaging_link__enabled_with_packaging_for_owner(self):
+    def test_edit_packaging_link__enabled_with_packaging_non_probation(self):
         # If a packging exists, the edit_packaging link is enabled
-        # for the packaging owner.
-        menu, user = self.makeSourcePackageOverviewMenu(True, False)
+        # for the non-probationary users.
+        menu, user = self.makeSourcePackageOverviewMenu(True, 100)
         with person_logged_in(user):
             self.assertTrue(menu.edit_packaging().enabled)
 
-    def test_set_upstrem_link__enabled_with_packaging_for_owner(self):
+    def test_set_upstrem_link__enabled_with_packaging_non_probation(self):
         # If a packging exists, the set_upstream link is enabled
-        # for the packaging owner.
-        menu, user = self.makeSourcePackageOverviewMenu(True, False)
+        # for the non-probationary users.
+        menu, user = self.makeSourcePackageOverviewMenu(True, 100)
         with person_logged_in(user):
             self.assertTrue(menu.set_upstream().enabled)
 
-    def test_remove_packaging_link__enabled_with_packaging_for_owner(self):
+    def test_remove_packaging_link__enabled_with_packaging_non_probation(self):
         # If a packging exists, the remove_packaging link is enabled
-        # for the packaging owner.
-        menu, user = self.makeSourcePackageOverviewMenu(True, False)
+        # for the non-probationary users.
+        menu, user = self.makeSourcePackageOverviewMenu(True, 100)
         with person_logged_in(user):
             self.assertTrue(menu.remove_packaging().enabled)
 
-    def test_edit_packaging_link__enabled_with_packaging_for_others(self):
-        # If a packging exists, the edit_packaging link is enabled
-        # for the packaging owner.
-        menu, user = self.makeSourcePackageOverviewMenu(True, True)
+    def test_edit_packaging_link__enabled_with_packaging_probation(self):
+        # If a packging exists, the edit_packaging link is not enabled
+        # for probationary users.
+        menu, user = self.makeSourcePackageOverviewMenu(True, None)
         with person_logged_in(user):
             self.assertFalse(menu.edit_packaging().enabled)
 
-    def test_set_upstrem_link__enabled_with_packaging_for_others(self):
-        # If a packging exists, the set_upstream link is enabled
-        # for the packaging owner.
-        menu, user = self.makeSourcePackageOverviewMenu(True, True)
+    def test_set_upstrem_link__enabled_with_packaging_probation(self):
+        # If a packging exists, the set_upstream link is not enabled
+        # for probationary users.
+        menu, user = self.makeSourcePackageOverviewMenu(True, None)
         with person_logged_in(user):
             self.assertFalse(menu.set_upstream().enabled)
 
-    def test_remove_packaging_link__enabled_with_packaging_for_others(self):
-        # If a packging exists, the remove_packaging link is enabled
-        # for the packaging owner.
-        menu, user = self.makeSourcePackageOverviewMenu(True, True)
+    def test_remove_packaging_link__enabled_with_packaging_probation(self):
+        # If a packging exists, the remove_packaging link is not enabled
+        # for probationary users.
+        menu, user = self.makeSourcePackageOverviewMenu(True, None)
         with person_logged_in(user):
             self.assertFalse(menu.remove_packaging().enabled)
+
+
+class TestSourcePackageChangeUpstreamView(BrowserTestCase):
+
+    layer = DatabaseFunctionalLayer
+
+    def test_error_on_proprietary_product(self):
+        """Packaging cannot be created for PROPRIETARY products"""
+        product_owner = self.factory.makePerson()
+        product_name = 'proprietary-product'
+        self.factory.makeProduct(
+            name=product_name, owner=product_owner,
+            information_type=InformationType.PROPRIETARY)
+        ubuntu_series = self.factory.makeUbuntuDistroSeries()
+        sp = self.factory.makeSourcePackage(distroseries=ubuntu_series)
+        browser = self.getViewBrowser(
+            sp, '+edit-packaging', user=product_owner)
+        browser.getControl('Project').value = product_name
+        browser.getControl('Continue').click()
+        self.assertIn(
+            'Only Public projects can be packaged, not Proprietary.',
+            browser.contents)
+
+    def test_error_on_proprietary_productseries(self):
+        """Packaging cannot be created for PROPRIETARY productseries"""
+        product_owner = self.factory.makePerson()
+        product_name = 'proprietary-product'
+        product = self.factory.makeProduct(
+            name=product_name, owner=product_owner)
+        series = self.factory.makeProductSeries(product=product)
+        series_displayname = series.displayname
+        ubuntu_series = self.factory.makeUbuntuDistroSeries()
+        sp = self.factory.makeSourcePackage(distroseries=ubuntu_series)
+        browser = self.getViewBrowser(
+            sp, '+edit-packaging', user=product_owner)
+        browser.getControl('Project').value = product_name
+        browser.getControl('Continue').click()
+        with person_logged_in(product_owner):
+            product.information_type = InformationType.PROPRIETARY
+        browser.getControl(series_displayname).selected = True
+        browser.getControl('Change').click()
+        self.assertIn(
+            'Only Public projects can be packaged, not Proprietary.',
+            browser.contents)

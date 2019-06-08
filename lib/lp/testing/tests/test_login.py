@@ -5,7 +5,7 @@
 
 __metaclass__ = type
 
-from zope.app.security.interfaces import IUnauthenticatedPrincipal
+from zope.authentication.interfaces import IUnauthenticatedPrincipal
 from zope.component import getUtility
 from zope.security.management import getInteraction
 
@@ -257,7 +257,6 @@ class TestLoginHelpers(TestCaseWithFactory):
         self.assertTrue(person.inTeam(vcs_imports))
 
     def test_celebrity_logged_in_provides_person(self):
-        vcs_imports = getUtility(ILaunchpadCelebrities).vcs_imports
         with celebrity_logged_in('vcs_imports') as p:
             person = self.getLoggedInPerson()
         self.assertEqual(p, person)

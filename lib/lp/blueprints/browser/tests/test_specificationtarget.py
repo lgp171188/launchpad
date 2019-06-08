@@ -1,24 +1,29 @@
 # Copyright 2009-2012 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
+from __future__ import absolute_import, print_function, unicode_literals
+
 __metaclass__ = type
 
-
-from BeautifulSoup import BeautifulSoup
 from fixtures import FakeLogger
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
-from lp.app.enums import ServiceUsage
+from lp.app.enums import (
+    InformationType,
+    ServiceUsage,
+    )
 from lp.blueprints.browser.specificationtarget import HasSpecificationsView
 from lp.blueprints.interfaces.specification import ISpecificationSet
 from lp.blueprints.interfaces.specificationtarget import (
     IHasSpecifications,
     ISpecificationTarget,
     )
-from lp.blueprints.publisher import BlueprintsLayer
+from lp.services.beautifulsoup import BeautifulSoup
 from lp.testing import (
+    BrowserTestCase,
     login_person,
+    person_logged_in,
     TestCaseWithFactory,
     )
 from lp.testing.layers import DatabaseFunctionalLayer
@@ -38,7 +43,7 @@ class TestRegisterABlueprintButtonPortlet(TestCaseWithFactory):
         view = create_view(
             context, '+register-a-blueprint-button')
         self.assertEqual(
-            'http://blueprints.launchpad.dev/%s/+addspec' % name,
+            'http://blueprints.launchpad.test/%s/+addspec' % name,
             view.target_url)
         self.assertTrue(
             '<div id="involvement" class="portlet involvement">' in view())
@@ -76,8 +81,7 @@ class TestHasSpecificationsViewInvolvement(TestCaseWithFactory):
 
     def verify_involvment(self, context):
         self.assertTrue(IHasSpecifications.providedBy(context))
-        view = create_view(
-            context, '+specs', layer=BlueprintsLayer, principal=self.user)
+        view = create_view(context, '+specs', principal=self.user)
         self.assertTrue(
             '<div id="involvement" class="portlet involvement">' in view())
 
@@ -88,10 +92,10 @@ class TestHasSpecificationsViewInvolvement(TestCaseWithFactory):
         self.verify_involvment(context)
 
     def test_adaptable_to_specificationtarget(self):
-        # A project should adapt to the products within to determine
+        # A project group should adapt to the products within to determine
         # involvment.
         context = self.factory.makeProject(name='hazelnut')
-        product = self.factory.makeProduct(project=context)
+        product = self.factory.makeProduct(projectgroup=context)
         naked_product = removeSecurityProxy(product)
         naked_product.blueprints_usage = ServiceUsage.LAUNCHPAD
         self.verify_involvment(context)
@@ -103,8 +107,7 @@ class TestHasSpecificationsViewInvolvement(TestCaseWithFactory):
     def test_person(self):
         context = self.factory.makePerson(name='pistachio')
         self.assertTrue(IHasSpecifications.providedBy(context))
-        view = create_view(
-            context, '+specs', layer=BlueprintsLayer, principal=self.user)
+        view = create_view(context, '+specs', principal=self.user)
         self.assertFalse(
             '<div id="involvement" class="portlet involvement">' in view())
 
@@ -174,11 +177,7 @@ class TestHasSpecificationsTemplates(TestCaseWithFactory):
         used_templates = list()
         for config in test_configurations:
             naked_target.blueprints_usage = config
-            view = create_view(
-                context,
-                '+specs',
-                layer=BlueprintsLayer,
-                principal=self.user)
+            view = create_view(context, '+specs', principal=self.user)
             used_templates.append(view.template.filename)
         self.assertEqual(correct_templates, used_templates)
 
@@ -206,12 +205,12 @@ class TestHasSpecificationsTemplates(TestCaseWithFactory):
             context=distro_series)
 
     def test_projectgroup(self):
-        project = self.factory.makeProject()
-        product1 = self.factory.makeProduct(project=project)
-        self.factory.makeProduct(project=project)
+        projectgroup = self.factory.makeProject()
+        product1 = self.factory.makeProduct(projectgroup=projectgroup)
+        self.factory.makeProduct(projectgroup=projectgroup)
         self._test_templates_for_configuration(
             target=product1,
-            context=project)
+            context=projectgroup)
 
 
 class TestHasSpecificationsConfiguration(TestCaseWithFactory):
@@ -315,3 +314,27 @@ class SpecificationSetViewTestCase(TestCaseWithFactory):
         self.assertIn(picker_vocab, text)
         focus_script = "setFocusByName('field.search_text')"
         self.assertIn(focus_script, text)
+
+
+class TestPrivacy(BrowserTestCase):
+
+    layer = DatabaseFunctionalLayer
+
+    def test_product_specs(self):
+        # Proprietary specs are only listed for users who can see them.
+        # Other users see the page, but not the private specs.
+        proprietary = self.factory.makeSpecification(
+            information_type=InformationType.PROPRIETARY)
+        product = removeSecurityProxy(proprietary).product
+        public = self.factory.makeSpecification(product=product)
+        with person_logged_in(product.owner):
+            product.blueprints_usage = ServiceUsage.LAUNCHPAD
+            browser = self.getViewBrowser(product, '+specs')
+        self.assertIn(public.name, browser.contents)
+        self.assertNotIn(
+            removeSecurityProxy(proprietary).name, browser.contents)
+        with person_logged_in(None):
+            browser = self.getViewBrowser(product, '+specs',
+                                          user=product.owner)
+        self.assertIn(public.name, browser.contents)
+        self.assertIn(removeSecurityProxy(proprietary).name, browser.contents)

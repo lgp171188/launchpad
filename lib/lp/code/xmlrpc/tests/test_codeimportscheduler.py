@@ -1,4 +1,4 @@
-# Copyright 2010 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test for the methods of `ICodeImportScheduler`."""
@@ -15,7 +15,6 @@ from lp.code.enums import CodeImportResultStatus
 from lp.code.model.codeimportjob import CodeImportJob
 from lp.code.tests.codeimporthelpers import make_running_import
 from lp.code.xmlrpc.codeimportscheduler import CodeImportSchedulerAPI
-from lp.codehosting.codeimport.worker import CodeImportSourceDetails
 from lp.services.database.constants import UTC_NOW
 from lp.services.webapp import canonical_url
 from lp.testing import (
@@ -57,20 +56,21 @@ class TestCodeImportSchedulerAPI(TestCaseWithFactory):
         self.assertEqual(code_import_job.id, job_id)
 
     def test_getImportDataForJobID(self):
-        # getImportDataForJobID returns the worker arguments, branch url and
+        # getImportDataForJobID returns the worker arguments, target url and
         # log file name for an import corresponding to a particular job.
+        self.pushConfig(
+            'codehosting', blacklisted_hostnames='localhost,127.0.0.1')
         code_import_job = self.makeCodeImportJob(running=True)
         code_import = removeSecurityProxy(code_import_job).code_import
-        code_import_arguments, branch_url, log_file_name = \
-            self.api.getImportDataForJobID(code_import_job.id)
-        import_as_arguments = CodeImportSourceDetails.fromCodeImport(
-            code_import).asArguments()
-        expected_log_file_name = '%s.log' % (
-            code_import.branch.unique_name[1:].replace('/', '-'))
-        self.assertEqual(
-            (import_as_arguments, canonical_url(code_import.branch),
-             expected_log_file_name),
-            (code_import_arguments, branch_url, log_file_name))
+        data = self.api.getImportDataForJobID(code_import_job.id)
+        expected_data = {
+            'arguments': code_import_job.makeWorkerArguments(),
+            'target_url': canonical_url(code_import.target),
+            'log_file_name': '%s.log' % (
+                code_import.target.unique_name[1:].replace('/', '-')),
+            'blacklisted_hostnames': ['localhost', '127.0.0.1'],
+            }
+        self.assertEqual(expected_data, data)
 
     def test_getImportDataForJobID_not_found(self):
         # getImportDataForJobID returns a NoSuchCodeImportJob fault when there

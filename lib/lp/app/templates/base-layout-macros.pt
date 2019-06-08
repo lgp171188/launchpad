@@ -35,8 +35,8 @@
 
 <metal:load-javascript define-macro="load-javascript"
   tal:define="
-      revno modules/lp.app.versioninfo/revno | string:unknown;
-      icingroot string:/+icing/rev${revno};
+      revision modules/lp.app.versioninfo/revision | string:unknown;
+      icingroot string:/+icing/rev${revision};
       combo_url view/combo_url;
       devmode modules/lp.services.config/config/devmode;
       yui_version view/yui_version;
@@ -67,27 +67,9 @@
     LP.devmode = true;
   </script>
 
-  <tal:js-legacy condition="not: request/features/js.combo_loader.enabled">
-    <script type="text/javascript"
-          tal:attributes="src string:${icingroot}/build/launchpad.js"></script>
-    <script type="text/javascript" tal:content="string:
-       YUI.GlobalConfig = {
-           debug: ${yui_console_debug},
-           fetchCSS: false,
-           timeout: 50,
-           ignore: [
-               'yui2-yahoo', 'yui2-event', 'yui2-dom',
-               'yui2-calendar','yui2-dom-event'
-           ]
-        }
-       ">
-    </script>
-  </tal:js-legacy>
-
   <script type="text/javascript"
       tal:content="string:var cookie_scope = '${request/lp:cookie_scope}';"></script>
 
-  <tal:js-loader condition="request/features/js.combo_loader.enabled">
    <script type="text/javascript" tal:attributes="src string:${combo_url}/?${yui_version}/yui/yui-min.js&amp;lp/meta.js&amp;${yui_version}/loader/loader-min.js"></script>
    <script type="text/javascript" tal:content="string:
         var raw = null;
@@ -111,48 +93,22 @@
                     // comes from including lp/meta.js
                     modules: LP_MODULES,
                     fetchCSS: false
-                },
-                yui2: {
-                    combine: true,
-                    base: '${combo_url}/?yui2/',
-                    comboBase: '${combo_url}/?',
-                    root: 'yui2/',
-                    fetchCSS: false,
-                    modules: {
-                        'yui2-yahoo': {
-                            path: 'yahoo/yahoo.js'
-                        },
-                        'yui2-event': {
-                            path: 'event/event.js'
-                        },
-                        'yui2-dom': {
-                            path: 'dom/dom.js'
-                        },
-                        'yui2-calendar': {
-                            path: 'calendar/calendar.js'
-                        },
-                        'yui2-dom-event': {
-                            path: 'yahoo-dom-event/yahoo-dom-event.js'
-                        }
-                    }
                 }
             }
         }">
-   </script>
+  </script>
 
-  </tal:js-loader>
   <script type="text/javascript">
       // we need this to create a single YUI instance all events and code
       // talks across. All instances of YUI().use should be based off of
       // LPJS instead.
-      LPJS = new YUI();
+      var LPJS = new YUI();
   </script>
 
 </metal:load-javascript>
 
 <metal:page-javascript define-macro="page-javascript"
   tal:define="
-      revno modules/lp.app.versioninfo/revno | string:unknown;
       devmode modules/lp.services.config/config/devmode;">
   <tal:comment replace="nothing">
     Load and initialize the common script used by all pages.
@@ -163,32 +119,22 @@
     <script id="base-layout-load-scripts" type="text/javascript">
         //<![CDATA[
         LPJS.use('base', 'node', 'console', 'event',
-            'oop', 'lp', 'lp.app.banner.privacy',
-            'lp.app.banner.beta', 'lp.app.foldables','lp.app.sorttable',
-            'lp.app.inlinehelp', 'lp.app.links', 'lp.app.longpoll',
+            'oop', 'lp', 'lp.app.foldables','lp.app.sorttable',
+            'lp.app.inlinehelp', 'lp.app.links',
             'lp.bugs.bugtask_index', 'lp.bugs.subscribers',
             'lp.app.ellipsis', 'lp.code.branchmergeproposal.diff',
+            'lp.views.global',
              function(Y) {
 
             Y.on("domready", function () {
-                if (Y.one(document.body).hasClass('private')) {
-                    banner = Y.lp.app.banner.privacy.getPrivacyBanner();
-                    banner.show();
-                }
-                Y.lp.app.banner.beta.show_beta_if_needed();
+                var global_view = new Y.lp.views.Global();
+                global_view.render();
+
                 Y.lp.app.sorttable.SortTable.init();
                 Y.lp.app.inlinehelp.init_help();
                 Y.lp.activate_collapsibles();
                 Y.lp.app.foldables.activate();
                 Y.lp.app.links.check_valid_lp_links();
-                // Longpolling will only start if
-                // LP.cache.longpoll is populated.
-                // We use Y.later to work around a Safari/Chrome 'feature':
-                // The mouse cursor stays 'busy' until all the requests started during
-                // page load are finished.  Hence we want the long poll request to start
-                // right *after* the page has loaded.
-                Y.later(0, Y.lp.app.longpoll, Y.lp.app.longpoll.setupLongPollManager);
-
             });
 
             Y.on('lp:context:web_link:changed', function(e) {
@@ -239,12 +185,12 @@
 
 <metal:launchpad-stylesheet-3-0 define-macro="launchpad-stylesheet-3-0"
   tal:define="
-    revno modules/lp.app.versioninfo/revno | string:unknown;
-    icingroot string:/+icing/rev${revno}">
+    revision modules/lp.app.versioninfo/revision | string:unknown;
+    icingroot string:/+icing/rev${revision}">
   <tal:comment replace="nothing">
     This macro loads a single css file containing all our stylesheets.
     If you need to include a new css file here, add it to
-    buildout-templates/bin/combine-css.in instead.
+    lib/lp/scripts/utilities/js/combinecss.py instead.
 
     We load the CSS from the same host that served the HTML in order to optimize
     IE caching over SSL. This is inefficient when you cross subdomains (from
@@ -339,10 +285,12 @@
     </div>
 
     <div class="colophon">
-      &copy; 2004-2012
+      &copy; 2004-2019
       <a href="http://canonical.com/">Canonical&nbsp;Ltd.</a>
       &nbsp;&bull;&nbsp;
       <a tal:attributes="href string:${rooturl}legal">Terms of use</a>
+      &nbsp;&bull;&nbsp;
+      <a href="https://www.ubuntu.com/legal/dataprivacy">Data privacy</a>
       &nbsp;&bull;&nbsp;
       <a tal:condition="not: view/user|nothing"
         href="/feedback">Contact Launchpad Support</a>
@@ -357,11 +305,11 @@
 		>Careers</a>
       </tal:careers_link>
       &nbsp;&bull;&nbsp;
-      <a href="http://identi.ca/launchpadstatus"
+      <a href="https://twitter.com/launchpadstatus"
         >System status</a>
       <span id="lp-version">
       &nbsp;&bull;&nbsp;
-        r<tal:revno replace="revno" />
+        r<tal:display_revision replace="display_revision" />
         <tal:devmode condition="devmode">devmode</tal:devmode>
         <tal:demo condition="is_demo">demo site</tal:demo>
         (<a href="https://dev.launchpad.net/"

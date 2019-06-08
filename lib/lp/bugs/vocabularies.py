@@ -1,4 +1,4 @@
-# Copyright 2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2011-2015 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Bug domain vocabularies"""
@@ -9,6 +9,7 @@ __all__ = [
     'BugNominatableDistroSeriesVocabulary',
     'BugNominatableProductSeriesVocabulary',
     'BugNominatableSeriesVocabulary',
+    'BugTaskMilestoneVocabulary',
     'BugTrackerVocabulary',
     'BugVocabulary',
     'BugWatchVocabulary',
@@ -17,9 +18,6 @@ __all__ = [
     'UsesBugsDistributionVocabulary',
     'WebBugTrackerVocabulary',
     ]
-
-import cgi
-from operator import attrgetter
 
 from sqlobject import (
     CONTAINSSTRING,
@@ -30,7 +28,7 @@ from storm.expr import (
     Or,
     )
 from zope.component import getUtility
-from zope.interface import implements
+from zope.interface import implementer
 from zope.schema.interfaces import (
     IVocabulary,
     IVocabularyTokenized,
@@ -39,25 +37,41 @@ from zope.schema.vocabulary import (
     SimpleTerm,
     SimpleVocabulary,
     )
+from zope.security.proxy import removeSecurityProxy
 
 from lp.app.browser.stringformatter import FormattersAPI
 from lp.app.enums import ServiceUsage
-from lp.bugs.interfaces.bugtask import IBugTask
+from lp.bugs.interfaces.bugtask import (
+    IBugTask,
+    IBugTaskSet,
+    )
 from lp.bugs.interfaces.bugtracker import BugTrackerType
 from lp.bugs.model.bug import Bug
 from lp.bugs.model.bugtracker import BugTracker
 from lp.bugs.model.bugwatch import BugWatch
 from lp.registry.interfaces.distribution import IDistribution
+from lp.registry.interfaces.distributionsourcepackage import (
+    IDistributionSourcePackage,
+    )
+from lp.registry.interfaces.distroseries import IDistroSeries
+from lp.registry.interfaces.product import IProduct
+from lp.registry.interfaces.productseries import IProductSeries
 from lp.registry.interfaces.projectgroup import IProjectGroup
 from lp.registry.interfaces.series import SeriesStatus
+from lp.registry.interfaces.sourcepackage import ISourcePackage
 from lp.registry.model.distribution import Distribution
 from lp.registry.model.distroseries import DistroSeries
+from lp.registry.model.milestone import milestone_sort_key
 from lp.registry.model.productseries import ProductSeries
 from lp.registry.vocabularies import DistributionVocabulary
-from lp.services.database.lpstorm import IStore
+from lp.services.database.interfaces import IStore
 from lp.services.helpers import (
     ensure_unicode,
     shortlist,
+    )
+from lp.services.webapp.escaping import (
+    html_escape,
+    structured,
     )
 from lp.services.webapp.interfaces import ILaunchBag
 from lp.services.webapp.vocabulary import (
@@ -98,11 +112,11 @@ class BugVocabulary(SQLObjectVocabularyBase):
     _orderBy = 'id'
 
 
+@implementer(IHugeVocabulary)
 class BugTrackerVocabulary(SQLObjectVocabularyBase):
     """All web and email based external bug trackers."""
     displayname = 'Select a bug tracker'
     step_title = 'Search'
-    implements(IHugeVocabulary)
     _table = BugTracker
     _filter = True
     _orderBy = 'title'
@@ -169,42 +183,37 @@ class BugWatchVocabulary(SQLObjectVocabularyBase):
             yield self.toTerm(watch)
 
     def toTerm(self, watch):
-
-        def escape(string):
-            return cgi.escape(string, quote=True)
-
         if watch.url.startswith('mailto:'):
             user = getUtility(ILaunchBag).user
             if user is None:
-                title = FormattersAPI(
-                    watch.bugtracker.title).obfuscate_email()
-                return SimpleTerm(
-                    watch, watch.id, escape(title))
+                title = html_escape(
+                    FormattersAPI(watch.bugtracker.title).obfuscate_email())
             else:
                 url = watch.url
-                title = escape(watch.bugtracker.title)
-                if url in title:
-                    title = title.replace(
-                        url, '<a href="%s">%s</a>' % (
-                            escape(url), escape(url)))
+                if url in watch.bugtracker.title:
+                    title = html_escape(watch.bugtracker.title).replace(
+                        html_escape(url),
+                        structured(
+                            '<a href="%s">%s</a>', url, url).escapedtext)
                 else:
-                    title = '%s &lt;<a href="%s">%s</a>&gt;' % (
-                        title, escape(url), escape(url[7:]))
-                return SimpleTerm(watch, watch.id, title)
+                    title = structured(
+                        '%s &lt;<a href="%s">%s</a>&gt;',
+                        watch.bugtracker.title, url, url[7:]).escapedtext
         else:
-            return SimpleTerm(
-                watch, watch.id, '%s <a href="%s">#%s</a>' % (
-                    escape(watch.bugtracker.title),
-                    escape(watch.url),
-                    escape(watch.remotebug)))
+            title = structured(
+                '%s <a href="%s">#%s</a>',
+                watch.bugtracker.title, watch.url,
+                watch.remotebug).escapedtext
+
+        # title is already HTML-escaped.
+        return SimpleTerm(watch, watch.id, title)
 
 
+@implementer(IVocabulary, IVocabularyTokenized)
 class DistributionUsingMaloneVocabulary:
     """All the distributions that uses Malone officially."""
 
-    implements(IVocabulary, IVocabularyTokenized)
-
-    _orderBy = 'displayname'
+    _orderBy = 'display_name'
 
     def __init__(self, context=None):
         self.context = context
@@ -253,9 +262,7 @@ class BugNominatableSeriesVocabularyBase(NamedSQLObjectVocabulary):
     def __iter__(self):
         bug = self.context.bug
 
-        all_series = self._getNominatableObjects()
-
-        for series in sorted(all_series, key=attrgetter("displayname")):
+        for series in self._getNominatableObjects():
             if bug.canBeNominatedFor(series):
                 yield self.toTerm(series)
 
@@ -316,3 +323,109 @@ class BugNominatableDistroSeriesVocabulary(
     def _queryNominatableObjectByName(self, name):
         """See BugNominatableSeriesVocabularyBase."""
         return self.distribution.getSeries(name)
+
+
+def milestone_matches_bugtask(milestone, bugtask):
+    """ Return True if the milestone can be set against this bugtask."""
+    bug_target = bugtask.target
+    naked_milestone = removeSecurityProxy(milestone)
+
+    if IProduct.providedBy(bug_target):
+        return bugtask.product.id == naked_milestone.productID
+    elif IProductSeries.providedBy(bug_target):
+        return bugtask.productseries.product.id == naked_milestone.productID
+    elif (IDistribution.providedBy(bug_target) or
+          IDistributionSourcePackage.providedBy(bug_target)):
+        return bugtask.distribution.id == naked_milestone.distributionID
+    elif (IDistroSeries.providedBy(bug_target) or
+          ISourcePackage.providedBy(bug_target)):
+        return bugtask.distroseries.id == naked_milestone.distroseriesID
+    return False
+
+
+@implementer(IVocabulary, IVocabularyTokenized)
+class BugTaskMilestoneVocabulary:
+    """Milestones for a set of bugtasks.
+
+    This vocabulary supports the optional preloading and caching of milestones
+    in order to avoid repeated database queries.
+    """
+
+    def __init__(self, default_bugtask=None, milestones=None):
+        assert default_bugtask is None or IBugTask.providedBy(default_bugtask)
+        self.default_bugtask = default_bugtask
+        self._milestones = None
+        if milestones is not None:
+            self._milestones = dict(
+                (str(milestone.id), milestone) for milestone in milestones)
+
+    def _load_milestones(self, bugtask):
+        # If the milestones have not already been cached, load them for the
+        # specified bugtask.
+        if self._milestones is None:
+            bugtask_set = getUtility(IBugTaskSet)
+            milestones = list(
+                bugtask_set.getBugTaskTargetMilestones([bugtask]))
+            self._milestones = dict(
+                (str(milestone.id), milestone) for milestone in milestones)
+        return self._milestones
+
+    @property
+    def milestones(self):
+        return self._load_milestones(self.default_bugtask)
+
+    def visible_milestones(self, bugtask=None):
+        return self._get_milestones(bugtask)
+
+    def _get_milestones(self, bugtask=None):
+        """All milestones for the specified bugtask."""
+        bugtask = bugtask or self.default_bugtask
+        if bugtask is None:
+            return []
+
+        self._load_milestones(bugtask)
+        milestones = [milestone
+                for milestone in self._milestones.values()
+                if milestone_matches_bugtask(milestone, bugtask)]
+
+        if (bugtask.milestone is not None and
+            bugtask.milestone not in milestones):
+            # Even if we inactivate a milestone, a bugtask might still be
+            # linked to it. Include such milestones in the vocabulary to
+            # ensure that the +editstatus page doesn't break.
+            milestones.append(bugtask.milestone)
+
+        def naked_milestone_sort_key(milestone):
+            return milestone_sort_key(removeSecurityProxy(milestone))
+
+        return sorted(milestones, key=naked_milestone_sort_key, reverse=True)
+
+    def getTerm(self, value):
+        """See `IVocabulary`."""
+        if value not in self:
+            raise LookupError(value)
+        return self.toTerm(value)
+
+    def getTermByToken(self, token):
+        """See `IVocabularyTokenized`."""
+        try:
+            return self.toTerm(self.milestones[str(token)])
+        except:
+            raise LookupError(token)
+
+    def __len__(self):
+        """See `IVocabulary`."""
+        return len(self._get_milestones())
+
+    def __iter__(self):
+        """See `IVocabulary`."""
+        return iter(
+            [self.toTerm(milestone) for milestone in self._get_milestones()])
+
+    def toTerm(self, obj):
+        """See `IVocabulary`."""
+        return SimpleTerm(obj, obj.id, obj.displayname)
+
+    def __contains__(self, obj):
+        """See `IVocabulary`."""
+        return obj in self._get_milestones()

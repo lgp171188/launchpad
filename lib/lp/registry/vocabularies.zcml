@@ -1,4 +1,4 @@
-<!-- Copyright 2009-2012 Canonical Ltd.  This software is licensed under the
+<!-- Copyright 2009-2016 Canonical Ltd.  This software is licensed under the
      GNU Affero General Public License version 3 (see the file LICENSE).
 -->
 
@@ -114,6 +114,19 @@
   </securedutility>
 
   <class class="lp.registry.vocabularies.MilestoneVocabulary">
+    <allow interface="lp.services.webapp.vocabulary.IHugeVocabulary"/>
+  </class>
+
+
+  <securedutility
+    name="MilestoneWithDateExpected"
+    component="lp.registry.vocabularies.MilestoneWithDateExpectedVocabulary"
+    provides="zope.schema.interfaces.IVocabularyFactory"
+    >
+    <allow interface="zope.schema.interfaces.IVocabularyFactory"/>
+  </securedutility>
+
+  <class class="lp.registry.vocabularies.MilestoneWithDateExpectedVocabulary">
     <allow interface="lp.services.webapp.vocabulary.IHugeVocabulary"/>
   </class>
 
@@ -314,6 +327,20 @@
   <class class="lp.registry.vocabularies.AllUserTeamsParticipationPlusSelfVocabulary">
     <allow interface="lp.services.webapp.vocabulary.IHugeVocabulary"/>
   </class>
+
+
+  <securedutility
+    name="AllUserTeamsParticipationPlusSelfSimpleDisplay"
+    component="lp.registry.vocabularies.AllUserTeamsParticipationPlusSelfSimpleDisplayVocabulary"
+    provides="zope.schema.interfaces.IVocabularyFactory"
+    >
+    <allow interface="zope.schema.interfaces.IVocabularyFactory"/>
+  </securedutility>
+
+  <class class="lp.registry.vocabularies.AllUserTeamsParticipationPlusSelfSimpleDisplayVocabulary">
+    <allow interface="lp.services.webapp.vocabulary.IHugeVocabulary"/>
+  </class>
+
 
   <securedutility
     name="ActiveMailingList"
@@ -540,12 +567,6 @@
     </class>
     <class
         class="lp.registry.vocabularies.VocabularyFilterTeam">
-        <require
-            permission="zope.Public"
-            attributes="name title description"/>
-    </class>
-    <class
-        class="lp.registry.vocabularies.InformationTypeVocabulary">
         <require
             permission="zope.Public"
             attributes="name title description"/>

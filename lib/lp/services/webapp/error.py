@@ -6,7 +6,6 @@ __all__ = [
     'InvalidBatchSizeView',
     'NotFoundView',
     'ProtocolErrorView',
-    'ReadOnlyErrorView',
     'RequestExpiredView',
     'SystemErrorView',
     'TranslationUnavailableView',
@@ -19,10 +18,10 @@ import sys
 import traceback
 
 from z3c.ptcompat import ViewPageTemplateFile
-from zope.app.exception.interfaces import ISystemErrorView
+from zope.browser.interfaces import ISystemErrorView
 from zope.component import getUtility
 from zope.exceptions.exceptionformatter import format_exception
-from zope.interface import implements
+from zope.interface import implementer
 
 import lp.layers
 from lp.services import features
@@ -33,12 +32,12 @@ from lp.services.webapp.interfaces import ILaunchBag
 from lp.services.webapp.publisher import LaunchpadView
 
 
+@implementer(ISystemErrorView)
 class SystemErrorView(LaunchpadView):
     """Helper class for views on exceptions.
 
     Also, sets a 500 response code.
     """
-    implements(ISystemErrorView)
 
     page_title = 'Error: Launchpad system error'
 
@@ -86,7 +85,7 @@ class SystemErrorView(LaunchpadView):
         self.specialuser = getUtility(ILaunchBag).developer
 
     def isSystemError(self):
-        """See zope.app.exception.interfaces import ISystemErrorView
+        """See zope.browser.interfaces import ISystemErrorView
 
         It appears that returning True from this method means the
         exception is logged as a SiteError.
@@ -115,7 +114,7 @@ class SystemErrorView(LaunchpadView):
         """Returns the given HTML inside a div of an appropriate class."""
 
         return ('<div class="highlight" style="'
-                "font-family: 'Ubuntu Mono', monospace;"
+                "font-family: monospace;"
                 ' font-size: smaller;">'
                 '%s'
                 '</div>') % html
@@ -262,21 +261,6 @@ class TranslationUnavailableView(SystemErrorView):
         return self.index()
 
 
-class ReadOnlyErrorView(SystemErrorView):
-    """View rendered when an InvalidBatchSizeError is raised."""
-
-    page_title = "Error: you can't do this right now"
-
-    response_code = httplib.SERVICE_UNAVAILABLE
-
-    def isSystemError(self):
-        """We don't need to log these errors in the SiteLog."""
-        return False
-
-    def __call__(self):
-        return self.index()
-
-
 class NoReferrerErrorView(SystemErrorView):
     """View rendered when a POST request does not include a REFERER header."""
 
@@ -296,8 +280,6 @@ class DisconnectionErrorView(SystemErrorView):
 
     response_code = httplib.SERVICE_UNAVAILABLE
     reason = u'our database being temporarily offline'
-    cors_feed = config.launchpad.launchpadstatus_json_cors_feed
-    flash_feed = config.launchpad.launchpadstatus_json_flash_feed
 
 
 class OperationalErrorView(DisconnectionErrorView):

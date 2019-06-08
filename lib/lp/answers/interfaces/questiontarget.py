@@ -1,8 +1,6 @@
 # Copyright 2009 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-# pylint: disable-msg=E0211,E0213
-
 """Interfaces for things which have Questions."""
 
 __metaclass__ = type
@@ -85,7 +83,7 @@ class IQuestionTargetPublic(ISearchableByQuestionOwner):
     def getAnswerContactsForLanguage(language):
         """Return the list of Persons that provide support for a language.
 
-        An answer contact supports questions in his preferred languages.
+        An answer contact supports questions in their preferred languages.
         """
 
     def getAnswerContactRecipients(language):
@@ -107,7 +105,7 @@ class IQuestionTargetPublic(ISearchableByQuestionOwner):
         """Return a list of languages spoken by at the answer contacts.
 
         An answer contact is considered to speak a given language if that
-        language is listed as one of his preferred languages.
+        language is listed as one of their preferred languages.
         """
 
     answer_contacts = List(

@@ -37,7 +37,7 @@ class TestSignedCodeOfConductAckView(TestCaseWithFactory):
             'Register a code of conduct signature', view.label)
         self.assertEqual(view.label, view.page_title)
         self.assertEqual(['owner'], view.field_names)
-        url = 'http://launchpad.dev/codeofconduct/console'
+        url = 'http://launchpad.test/codeofconduct/console'
         self.assertEqual(url, view.next_url)
         self.assertEqual(url, view.cancel_url)
 
@@ -70,7 +70,8 @@ class SignCodeOfConductTestCase(TestCaseWithFactory):
     def sign_coc(self, user, gpg_key):
         """Return a SignedCodeOfConduct using dummy text."""
         signed_coc = SignedCodeOfConduct(
-            owner=user, signingkey=gpg_key,
+            owner=user, signing_key_fingerprint=gpg_key.fingerprint,
+            signing_key_owner=gpg_key.owner,
             signedcode="Dummy CoC signed text.", active=True)
         return signed_coc
 
@@ -78,7 +79,7 @@ class SignCodeOfConductTestCase(TestCaseWithFactory):
         self.assertEqual(['admincomment'], view.field_names)
         self.assertEqual(
             view.page_title, view.label)
-        url = 'http://launchpad.dev/codeofconduct/console/%d' % (
+        url = 'http://launchpad.test/codeofconduct/console/%d' % (
             self.signed_coc.id)
         self.assertEqual(url, view.next_url)
         self.assertEqual(url, view.cancel_url)
@@ -160,11 +161,11 @@ class TestCodeOfConductBrowser(BrowserTestCase):
 
     def test_response(self):
         """Ensure the headers and body are as expected."""
-        coc = getUtility(ICodeOfConductSet)['1.1']
+        coc = getUtility(ICodeOfConductSet)['2.0']
         content = coc.content
         browser = self.getViewBrowser(coc, '+download')
         self.assertEqual(content, browser.contents)
         self.assertEqual(str(len(content)), browser.headers['Content-length'])
-        disposition = 'attachment; filename="UbuntuCodeofConduct-1.1.txt"'
+        disposition = 'attachment; filename="UbuntuCodeofConduct-2.0.txt"'
         self.assertEqual(disposition, browser.headers['Content-disposition'])
         self.assertEqual('text/plain', browser.headers['Content-type'])

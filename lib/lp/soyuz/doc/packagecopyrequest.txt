@@ -12,7 +12,7 @@ Let's prepare a few things we'll need for the subsequent tests.
     >>> from lp.soyuz.interfaces.packagecopyrequest import (
     ...     IPackageCopyRequest, IPackageCopyRequestSet)
     >>> from lp.soyuz.enums import ArchivePurpose, PackageCopyStatus
-    >>> from lp.services.webapp.testing import verifyObject
+    >>> from lp.testing import verifyObject
     >>> from lp.registry.interfaces.distribution import IDistributionSet
     >>> from lp.registry.interfaces.person import IPersonSet
     >>> from lp.soyuz.interfaces.archive import IArchiveSet
@@ -57,7 +57,7 @@ Let's have a look at it. Please note that the source and the target
 components are not set by default. Also, the date started and completed are
 not set either since this is a new package copy request.
 
-    >>> print new_pcr
+    >>> print(new_pcr)
     Package copy request
     source = primary/breezy-autotest/-/RELEASE
     target = our-sample-copy-archive/breezy-autotest/-/RELEASE

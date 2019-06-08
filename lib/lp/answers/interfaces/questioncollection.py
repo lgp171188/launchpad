@@ -1,8 +1,6 @@
 # Copyright 2009 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-# pylint: disable-msg=E0211,E0213
-
 """Interfaces for a Question."""
 
 __metaclass__ = type
@@ -48,8 +46,23 @@ class IQuestionCollection(Interface):
     """An object that can be used to search through a collection of questions.
     """
 
+    @operation_parameters(
+        search_text=TextLine(
+            title=_('Search text'), required=False),
+        status=List(
+            title=_('Status'), required=False,
+            value_type=Choice(vocabulary=QuestionStatus)),
+        language=List(
+            title=_('Language'), required=False,
+            value_type=ReferenceChoice(vocabulary='Language')),
+        sort=Choice(
+            title=_('Sort'), required=False,
+            vocabulary=QuestionSort))
+    @operation_returns_collection_of(Interface)  # IQuestion.
+    @export_read_operation()
+    @operation_for_version('devel')
     def searchQuestions(search_text=None,
-                        status=QUESTION_STATUS_DEFAULT_SEARCH,
+                        status=list(QUESTION_STATUS_DEFAULT_SEARCH),
                         language=None, sort=None):
         """Return the questions from the collection matching search criteria.
 

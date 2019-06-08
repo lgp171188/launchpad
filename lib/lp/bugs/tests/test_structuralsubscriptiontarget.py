@@ -33,7 +33,6 @@ from lp.registry.errors import (
 from lp.registry.interfaces.distribution import IDistributionSet
 from lp.registry.interfaces.product import IProductSet
 from lp.services.webapp.interfaces import ILaunchBag
-from lp.services.webapp.testing import verifyObject
 from lp.testing import (
     ANONYMOUS,
     login,
@@ -41,6 +40,7 @@ from lp.testing import (
     login_person,
     person_logged_in,
     TestCaseWithFactory,
+    verifyObject,
     )
 from lp.testing.factory import is_security_proxied_or_harmless
 from lp.testing.layers import (
@@ -332,7 +332,7 @@ class TestStructuralSubscriptionTargetHelper(TestCaseWithFactory):
         self.assertEqual(target, helper.target)
         self.assertEqual(None, helper.target_parent)
         self.assertEqual(target, helper.pillar)
-        self.assertEqual({"project": target}, helper.target_arguments)
+        self.assertEqual({"projectgroup": target}, helper.target_arguments)
         self.assertEqual(
             u"StructuralSubscription.project = ?",
             compile_storm(helper.join))
@@ -385,13 +385,13 @@ class TestStructuralSubscriptionTargetHelper(TestCaseWithFactory):
             compile_storm(helper.join))
 
     def test_product_in_group(self):
-        project = self.factory.makeProject(owner=self.person)
-        target = self.factory.makeProduct(project=project)
+        projectgroup = self.factory.makeProject(owner=self.person)
+        target = self.factory.makeProduct(projectgroup=projectgroup)
         helper = IStructuralSubscriptionTargetHelper(target)
         self.assertThat(helper, Provides(IStructuralSubscriptionTargetHelper))
         self.assertEqual("project", helper.target_type_display)
         self.assertEqual(target, helper.target)
-        self.assertEqual(project, helper.target_parent)
+        self.assertEqual(projectgroup, helper.target_parent)
         self.assertEqual(target, helper.pillar)
         self.assertEqual({"product": target}, helper.target_arguments)
         self.assertEqual(
@@ -481,17 +481,17 @@ class TestGetAllStructuralSubscriptionsForTarget(TestCaseWithFactory):
         # get_structural_subscriptions_for_target made against the
         # products in that group will return the group-level
         # subscription along with any subscriptions to the product.
-        project = self.factory.makeProject()
-        product = self.factory.makeProduct(project=project)
-        project_sub = project.addBugSubscription(
+        projectgroup = self.factory.makeProject()
+        product = self.factory.makeProduct(projectgroup=projectgroup)
+        projectgroup_sub = projectgroup.addBugSubscription(
             self.subscriber, self.subscriber)
         subscriptions = get_structural_subscriptions_for_target(
             product, self.subscriber)
-        self.assertEqual(set([project_sub]), set(subscriptions))
+        self.assertEqual(set([projectgroup_sub]), set(subscriptions))
 
 
 def distributionSourcePackageSetUp(test):
-    setUp(test)
+    setUp(test, future=True)
     ubuntu = getUtility(IDistributionSet).getByName('ubuntu')
     test.globs['target'] = ubuntu.getSourcePackage('evolution')
     test.globs['other_target'] = ubuntu.getSourcePackage('pmount')
@@ -499,13 +499,13 @@ def distributionSourcePackageSetUp(test):
 
 
 def productSetUp(test):
-    setUp(test)
+    setUp(test, future=True)
     test.globs['target'] = getUtility(IProductSet).getByName('firefox')
     test.globs['filebug'] = bugtarget_filebug
 
 
 def distributionSetUp(test):
-    setUp(test)
+    setUp(test, future=True)
     test.globs['target'] = getUtility(IDistributionSet).getByName('ubuntu')
     test.globs['filebug'] = bugtarget_filebug
 
@@ -517,7 +517,7 @@ def milestone_filebug(milestone, summary, status=None):
 
 
 def milestoneSetUp(test):
-    setUp(test)
+    setUp(test, future=True)
     firefox = getUtility(IProductSet).getByName('firefox')
     test.globs['target'] = firefox.getMilestone('1.0')
     test.globs['filebug'] = milestone_filebug
@@ -535,7 +535,7 @@ def distroseries_sourcepackage_filebug(distroseries, summary, status=None):
 
 
 def distroSeriesSourcePackageSetUp(test):
-    setUp(test)
+    setUp(test, future=True)
     test.globs['target'] = (
         getUtility(IDistributionSet).getByName('ubuntu').getSeries('hoary'))
     test.globs['filebug'] = distroseries_sourcepackage_filebug

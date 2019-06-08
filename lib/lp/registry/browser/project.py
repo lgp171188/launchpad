@@ -1,4 +1,4 @@
-# Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Project-related View Classes"""
@@ -32,12 +32,13 @@ __all__ = [
 
 
 from z3c.ptcompat import ViewPageTemplateFile
-from zope.app.form.browser import TextWidget
 from zope.component import getUtility
 from zope.event import notify
 from zope.formlib import form
+from zope.formlib.widget import CustomWidgetFactory
+from zope.formlib.widgets import TextWidget
 from zope.interface import (
-    implements,
+    implementer,
     Interface,
     )
 from zope.lifecycleevent import ObjectCreatedEvent
@@ -45,13 +46,9 @@ from zope.schema import Choice
 
 from lp import _
 from lp.answers.browser.question import QuestionAddView
-from lp.answers.browser.questiontarget import (
-    QuestionCollectionAnswersMenu,
-    QuestionTargetFacetMixin,
-    )
+from lp.answers.browser.questiontarget import QuestionCollectionAnswersMenu
 from lp.app.browser.launchpadform import (
     action,
-    custom_widget,
     LaunchpadEditFormView,
     LaunchpadFormView,
     )
@@ -76,7 +73,6 @@ from lp.registry.browser.menu import (
     IRegistryCollectionNavigationMenu,
     RegistryCollectionActionMenuBase,
     )
-from lp.registry.browser.milestone import validate_tags
 from lp.registry.browser.objectreassignment import ObjectReassignmentView
 from lp.registry.browser.pillar import PillarViewMixin
 from lp.registry.browser.product import (
@@ -90,7 +86,10 @@ from lp.registry.interfaces.projectgroup import (
     IProjectGroupSeries,
     IProjectGroupSet,
     )
-from lp.registry.model.milestonetag import ProjectGroupMilestoneTag
+from lp.registry.model.milestonetag import (
+    ProjectGroupMilestoneTag,
+    validate_tags,
+    )
 from lp.services.feeds.browser import FeedsMixin
 from lp.services.fields import (
     PillarAliases,
@@ -111,7 +110,10 @@ from lp.services.webapp import (
     )
 from lp.services.webapp.authorization import check_permission
 from lp.services.webapp.breadcrumb import Breadcrumb
-from lp.services.webapp.menu import NavigationMenu
+from lp.services.webapp.menu import (
+    ALL_LINKS,
+    NavigationMenu,
+    )
 
 
 class ProjectNavigation(Navigation,
@@ -146,11 +148,11 @@ class ProjectSetNavigation(Navigation):
     usedfor = IProjectGroupSet
 
     def traverse(self, name):
-        # Raise a 404 on an invalid project name
-        project = self.context.getByName(name)
-        if project is None:
+        # Raise a 404 on an invalid project group name
+        projectgroup = self.context.getByName(name)
+        if projectgroup is None:
             raise NotFoundError(name)
-        return self.redirectSubTree(canonical_url(project))
+        return self.redirectSubTree(canonical_url(projectgroup))
 
 
 class ProjectSetBreadcrumb(Breadcrumb):
@@ -173,41 +175,21 @@ class ProjectSetContextMenu(ContextMenu):
         return Link('+all', text, icon='list')
 
 
-class ProjectFacets(QuestionTargetFacetMixin, StandardLaunchpadFacets):
+class ProjectFacets(StandardLaunchpadFacets):
     """The links that will appear in the facet menu for an IProjectGroup."""
 
     usedfor = IProjectGroup
-
-    enable_only = ['overview', 'branches', 'bugs', 'specifications',
-                   'answers', 'translations']
 
     @cachedproperty
     def has_products(self):
         return self.context.hasProducts()
 
-    def branches(self):
-        text = 'Code'
-        return Link('', text, enabled=self.has_products)
-
-    def bugs(self):
-        site = 'bugs'
-        text = 'Bugs'
-        return Link('', text, enabled=self.has_products, site=site)
-
-    def answers(self):
-        site = 'answers'
-        text = 'Answers'
-        return Link('', text, enabled=self.has_products, site=site)
-
-    def specifications(self):
-        site = 'blueprints'
-        text = 'Blueprints'
-        return Link('', text, enabled=self.has_products, site=site)
-
-    def translations(self):
-        site = 'translations'
-        text = 'Translations'
-        return Link('', text, enabled=self.has_products, site=site)
+    @property
+    def enable_only(self):
+        if not self.has_products:
+            return ['overview']
+        else:
+            return ALL_LINKS
 
 
 class ProjectAdminMenuMixin:
@@ -243,9 +225,8 @@ class ProjectOverviewMenu(ProjectEditMenuMixin, ApplicationMenu):
     usedfor = IProjectGroup
     facet = 'overview'
     links = [
-        'branding', 'driver', 'reassign', 'top_contributors',
-        'announce', 'announcements', 'branch_visibility', 'rdf',
-        'new_product', 'administer', 'milestones']
+        'branding', 'driver', 'reassign', 'top_contributors', 'announce',
+        'announcements', 'rdf', 'new_product', 'administer', 'milestones']
 
     @enabled_with_permission('launchpad.Edit')
     def new_product(self):
@@ -276,11 +257,6 @@ class ProjectOverviewMenu(ProjectEditMenuMixin, ApplicationMenu):
             'Download <abbr title="Resource Description Framework">'
             'RDF</abbr> metadata')
         return Link('+rdf', text, icon='download-icon')
-
-    @enabled_with_permission('launchpad.Commercial')
-    def branch_visibility(self):
-        text = 'Define branch visibility'
-        return Link('+branchvisibility', text, icon='edit', site='mainsite')
 
 
 class IProjectGroupActionMenu(Interface):
@@ -357,9 +333,8 @@ class ProjectBugsMenu(StructuralSubscriptionMenuMixin,
         return Link('+filebug', text, icon='add')
 
 
+@implementer(IProjectGroupActionMenu)
 class ProjectView(PillarViewMixin, HasAnnouncementsView, FeedsMixin):
-
-    implements(IProjectGroupActionMenu)
 
     @property
     def maintainer_widget(self):
@@ -396,7 +371,7 @@ class ProjectView(PillarViewMixin, HasAnnouncementsView, FeedsMixin):
         The number of sub projects can break the preferred layout so the
         template may want to plan for a long list.
         """
-        return self.context.products.count() > 10
+        return len(self.context.products) > 10
 
     @property
     def project_group_milestone_tag(self):
@@ -404,17 +379,17 @@ class ProjectView(PillarViewMixin, HasAnnouncementsView, FeedsMixin):
         return ProjectGroupMilestoneTag(self.context, [])
 
 
+@implementer(IProjectGroupEditMenu)
 class ProjectEditView(LaunchpadEditFormView):
     """View class that lets you edit a Project object."""
-    implements(IProjectGroupEditMenu)
     label = "Change project group details"
     page_title = label
     schema = IProjectGroup
     field_names = [
-        'displayname', 'title', 'summary', 'description',
+        'display_name', 'summary', 'description',
         'bug_reporting_guidelines', 'bug_reported_acknowledgement',
         'homepageurl', 'bugtracker', 'sourceforgeproject',
-        'freshmeatproject', 'wikiurl']
+        'wikiurl']
 
     @action('Change Details', name='change')
     def edit(self, action, data):
@@ -517,19 +492,20 @@ class ProjectGroupAddStepTwo(ProjectAddStepTwo):
         return getUtility(IProductSet).createProduct(
             owner=self.user,
             name=data['name'],
-            title=data['title'],
+            title=data['display_name'],
             summary=data['summary'],
-            displayname=data['displayname'],
+            display_name=data['display_name'],
             licenses=data['licenses'],
             license_info=data['license_info'],
-            project=self.context,
+            information_type=data.get('information_type'),
+            projectgroup=self.context,
             )
 
     @property
     def label(self):
         """See `LaunchpadFormView`."""
         return 'Register %s (%s) in Launchpad as a part of %s' % (
-            self.request.form['displayname'], self.request.form['name'],
+            self.request.form['display_name'], self.request.form['name'],
             self.context.displayname)
 
 
@@ -563,10 +539,9 @@ class ProjectSetNavigationMenu(RegistryCollectionActionMenuBase):
         return Link('+all', text, icon='list')
 
 
+@implementer(IRegistryCollectionNavigationMenu)
 class ProjectSetView(LaunchpadView):
     """View for project group index page."""
-
-    implements(IRegistryCollectionNavigationMenu)
 
     page_title = "Project groups registered in Launchpad"
 
@@ -604,36 +579,37 @@ class ProjectAddView(LaunchpadFormView):
     schema = IProjectGroup
     field_names = [
         'name',
-        'displayname',
-        'title',
+        'display_name',
         'summary',
         'description',
         'owner',
         'homepageurl',
         ]
-    custom_widget('homepageurl', TextWidget, displayWidth=30)
+    custom_widget_homepageurl = CustomWidgetFactory(
+        TextWidget, displayWidth=30)
     label = _('Register a project group with Launchpad')
     page_title = label
-    project = None
+    projectgroup = None
 
     @action(_('Add'), name='add')
     def add_action(self, action, data):
         """Create the new Project from the form details."""
-        self.project = getUtility(IProjectGroupSet).new(
+        self.projectgroup = getUtility(IProjectGroupSet).new(
             name=data['name'].lower().strip(),
-            displayname=data['displayname'],
-            title=data['title'],
+            display_name=data['display_name'],
+            title=data['display_name'],
             homepageurl=data['homepageurl'],
             summary=data['summary'],
             description=data['description'],
             owner=data['owner'],
             )
-        notify(ObjectCreatedEvent(self.project))
+        notify(ObjectCreatedEvent(self.projectgroup))
 
     @property
     def next_url(self):
-        assert self.project is not None, 'No project has been created'
-        return canonical_url(self.project)
+        assert self.projectgroup is not None, (
+            'No project group has been created')
+        return canonical_url(self.projectgroup)
 
 
 class ProjectBrandingView(BrandingChangeView):
@@ -678,7 +654,8 @@ class ProjectAddQuestionView(QuestionAddView):
             data=self.initial_values, ignore_request=False)
 
     def createProductField(self):
-        """Create a Choice field to select one of the project's products."""
+        """Create a Choice field to select one of the project group's
+        products."""
         return form.Fields(
             Choice(
                 __name__='product', vocabulary='ProjectProducts',
@@ -693,8 +670,8 @@ class ProjectAddQuestionView(QuestionAddView):
     @property
     def page_title(self):
         """The current page title."""
-        return _('Ask a question about a project in ${project}',
-                 mapping=dict(project=self.context.displayname))
+        return _('Ask a question about a project in ${projectgroup}',
+                 mapping=dict(projectgroup=self.context.displayname))
 
     @property
     def question_target(self):

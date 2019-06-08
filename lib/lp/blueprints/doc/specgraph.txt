@@ -16,33 +16,41 @@ SpecGraph to keep track of the nodes that have been added.
     >>> from lp.blueprints.browser.specification import SpecGraph
     >>> g = SpecGraph()
     >>> g.url_pattern_for_testing = 'http://whatever/%s'
+    >>> default_target = factory.makeProduct(name='fnord')
 
     >>> class Spec(object):
     ...
     ...     def __init__(self, name,
     ...             is_complete=False, title=None, assignee=None):
     ...         self.name = name
+    ...         self.target = default_target
     ...         self.title = title or name
     ...         self.is_complete = is_complete
     ...         self.assignee = assignee
     ...         # Use lists here to ensure that the code converts them
     ...         # to sets explicitly, like it has to do for SelectResults.
-    ...         self.dependencies = []
+    ...         self._dependencies = []
     ...         # This is a hack for testing: we can set up dependencies,
     ...         # and simply use their "mirror image" for blocked specs.
-    ...         self.blocked_specs = self.dependencies
+    ...         self._blocked_specs = self._dependencies
+    ...
+    ...     def getDependencies(self, user):
+    ...         return self._dependencies
+    ...
+    ...     def getBlockedSpecs(self, user):
+    ...         return self._blocked_specs
 
     >>> foo = Spec('foo', title='something with " and \n in it')
     >>> root = g.newNode(foo, root=True)
 
-    >>> print root
-    <foo>
+    >>> print(root)
+    <fnord-foo>
 
 Note that the root DOT data doesn't have a URL.  This is because we
 don't want a link to the spec we're currently looking at.
 
-    >>> print root.getDOTNodeStatement()
-    "foo"
+    >>> print(root.getDOTNodeStatement())
+    "fnord-foo"
         [
         "color"="red",
         "comment"="something with \" and \n in it",
@@ -50,30 +58,31 @@ don't want a link to the spec we're currently looking at.
         "tooltip"="something with \" and \n in it"
         ]
 
-    >>> print g.root_node
-    <foo>
+    >>> print(g.root_node)
+    <fnord-foo>
 
-    >>> print root.name, root.label, root.URL, root.color
-    foo foo http://whatever/foo red
+    >>> print(root.name, root.label, root.URL, root.color)
+    fnord-foo foo http://whatever/foo red
 
-    >>> g.getNode('no such name') is None
+    >>> other_spec = factory.makeSpecification()
+    >>> g.getNode(other_spec) is None
     True
 
-    >>> g.getNode('foo') is root
+    >>> g.getNode(foo) is root
     True
 
-    >>> print g.listNodes()
-    Root is <foo>
-    <foo>:
+    >>> print(g.listNodes())
+    Root is <fnord-foo>
+    <fnord-foo>:
 
     >>> foo1 = Spec('foo1')
-    >>> foo.dependencies.append(foo1)
+    >>> foo._dependencies.append(foo1)
     >>> foo2 = Spec('foo2')
-    >>> foo.dependencies.append(foo2)
+    >>> foo._dependencies.append(foo2)
     >>> foo11 = Spec('foo11')
-    >>> foo1.dependencies.append(foo11)
+    >>> foo1._dependencies.append(foo11)
     >>> foo111 = Spec('foo111')
-    >>> foo11.dependencies.append(foo111)
+    >>> foo11._dependencies.append(foo111)
 
     >>> def make_graph(dependency, blocked):
     ...     g = SpecGraph()
@@ -86,22 +95,22 @@ don't want a link to the spec we're currently looking at.
     ...     return g
 
     >>> def print_graph(dependency=True, blocked=False):
-    ...     print make_graph(dependency, blocked).listNodes()
+    ...     print(make_graph(dependency, blocked).listNodes())
 
     >>> def print_graph_dot(dependency=True, blocked=False):
-    ...     print make_graph(dependency, blocked).getDOTGraphStatement()
+    ...     print(make_graph(dependency, blocked).getDOTGraphStatement())
 
     >>> print_graph()
-    Root is <foo>
-    <foo>:
-    <foo1>:
-        foo
-    <foo11>:
-        foo1
-    <foo111>:
-        foo11
-    <foo2>:
-        foo
+    Root is <fnord-foo>
+    <fnord-foo>:
+    <fnord-foo1>:
+        fnord-foo
+    <fnord-foo11>:
+        fnord-foo1
+    <fnord-foo111>:
+        fnord-foo11
+    <fnord-foo2>:
+        fnord-foo
 
     >>> print_graph_dot()
     digraph "deptree" {
@@ -125,14 +134,14 @@ don't want a link to the spec we're currently looking at.
         [
         "arrowhead"="normal"
         ]
-    "foo"
+    "fnord-foo"
         [
         "color"="red",
         "comment"="something with \" and \n in it",
         "label"="foo",
         "tooltip"="something with \" and \n in it"
         ]
-    "foo1"
+    "fnord-foo1"
         [
         "URL"="http://whatever/foo1",
         "color"="black",
@@ -140,7 +149,7 @@ don't want a link to the spec we're currently looking at.
         "label"="foo1",
         "tooltip"="foo1"
         ]
-    "foo11"
+    "fnord-foo11"
         [
         "URL"="http://whatever/foo11",
         "color"="black",
@@ -148,7 +157,7 @@ don't want a link to the spec we're currently looking at.
         "label"="foo11",
         "tooltip"="foo11"
         ]
-    "foo111"
+    "fnord-foo111"
         [
         "URL"="http://whatever/foo111",
         "color"="black",
@@ -156,7 +165,7 @@ don't want a link to the spec we're currently looking at.
         "label"="foo111",
         "tooltip"="foo111"
         ]
-    "foo2"
+    "fnord-foo2"
         [
         "URL"="http://whatever/foo2",
         "color"="black",
@@ -164,87 +173,71 @@ don't want a link to the spec we're currently looking at.
         "label"="foo2",
         "tooltip"="foo2"
         ]
-    "foo1" -> "foo"
-    "foo11" -> "foo1"
-    "foo111" -> "foo11"
-    "foo2" -> "foo"
+    "fnord-foo1" -> "fnord-foo"
+    "fnord-foo11" -> "fnord-foo1"
+    "fnord-foo111" -> "fnord-foo11"
+    "fnord-foo2" -> "fnord-foo"
     }
 
-Now, add a circle at the top.
+The graph grows when specifications gain more dependencies.
 
-    >>> foo1.dependencies.append(foo)
+    >>> foo1._dependencies.append(foo)
+    >>> foo111._dependencies.append(foo1)
+    >>> foo111._dependencies.append(foo)
+    >>> foo2._dependencies.append(foo1)
+    >>> foo1._dependencies.append(foo2)
     >>> print_graph()
-    Root is <foo>
-    <foo>:
-        foo1
-    <foo1>:
-        foo
-    <foo11>:
-        foo1
-    <foo111>:
-        foo11
-    <foo2>:
-        foo
-
-Now add another circle at the bottom.
-
-    >>> foo111.dependencies.append(foo1)
-    >>> print_graph()
-    Root is <foo>
-    <foo>:
-        foo1
-    <foo1>:
-        foo
-        foo111
-    <foo11>:
-        foo1
-    <foo111>:
-        foo11
-    <foo2>:
-        foo
-
-Now make it even more convoluted, for fun.
-
-    >>> foo111.dependencies.append(foo)
-    >>> foo2.dependencies.append(foo1)
-    >>> foo1.dependencies.append(foo2)
-    >>> print_graph()
-    Root is <foo>
-    <foo>:
-        foo1
-        foo111
-    <foo1>:
-        foo
-        foo111
-        foo2
-    <foo11>:
-        foo1
-    <foo111>:
-        foo11
-    <foo2>:
-        foo
-        foo1
+    Root is <fnord-foo>
+    <fnord-foo>:
+        fnord-foo1
+        fnord-foo111
+    <fnord-foo1>:
+        fnord-foo
+        fnord-foo111
+        fnord-foo2
+    <fnord-foo11>:
+        fnord-foo1
+    <fnord-foo111>:
+        fnord-foo11
+    <fnord-foo2>:
+        fnord-foo
+        fnord-foo1
 
 And finally, try checking out the blocked specs too.  Because of the
 hack earlier, we have a "mirror image" of the dependencies in the
 blocked speces.
 
     >>> print_graph(dependency=False, blocked=True)
-    Root is <foo>
-    <foo>:
-        foo1
-        foo2
-    <foo1>:
-        foo
-        foo11
-        foo2
-    <foo11>:
-        foo111
-    <foo111>:
-        foo
-        foo1
-    <foo2>:
-        foo1
+    Root is <fnord-foo>
+    <fnord-foo>:
+        fnord-foo1
+        fnord-foo2
+    <fnord-foo1>:
+        fnord-foo
+        fnord-foo11
+        fnord-foo2
+    <fnord-foo11>:
+        fnord-foo111
+    <fnord-foo111>:
+        fnord-foo
+        fnord-foo1
+    <fnord-foo2>:
+        fnord-foo1
+
+A spec with the same name, but from a different target can be a in
+the graph.
+
+    >>> test_graph = SpecGraph()
+    >>> ant_spec = factory.makeSpecification(name='ant')
+    >>> a_bat_spec = factory.makeSpecification(name='bat')
+    >>> b_bat_spec = factory.makeSpecification(name='bat')
+    >>> ignore = ant_spec.createDependency(a_bat_spec)
+    >>> ignore = ant_spec.createDependency(b_bat_spec)
+    >>> ant_node = test_graph.newNode(ant_spec, root=True)
+    >>> a_bat_node = test_graph.newNode(a_bat_spec)
+    >>> b_bat_node = test_graph.newNode(b_bat_spec)
+    >>> test_graph.getNode(b_bat_spec) is b_bat_node
+    True
 
 
 SpecificationTreeImageTag and SpecificationView
@@ -268,7 +261,7 @@ tag when the render() method is called.
     >>> isinstance(graph_view, SpecificationTreeImageTag)
     True
 
-    >>> print graph_view.render()
+    >>> print(graph_view.render())
     <img src="deptree.png" usemap="#deptree" />
     <map id="deptree" name="deptree"> ...
 
@@ -321,13 +314,13 @@ The SpecificationTreeImageTag.render() method captures the raised error
 and directly converts it into an oops report. The markup contains a
 message explaining that the image was not linked.
 
-    >>> print graph_view.render()
+    >>> print(graph_view.render())
     <img src="deptree.png" usemap="#deptree" />
     <p class="error message">There was an error linking the dependency tree
     to its specs.</p>
 
     >>> oops_report = graph_view.request.oops
-    >>> print oops_report['type'], oops_report['value']
+    >>> print(oops_report['type'], oops_report['value'])
     ProblemRenderingGraph (... syntax error in line 1 near 'bad'...)
 
     # Restore the getDotFileText() method.
@@ -357,13 +350,13 @@ The OSError raised creating the image map does not break the spec index
 page. Again, the image map was replaced with an suggestion to reload the
 page to link the image.
 
-    >>> print graph_view.render()
+    >>> print(graph_view.render())
     <img src="deptree.png" usemap="#deptree" />
     <p class="error message">There was an error linking the dependency tree
     to its specs. Reload the page to link the image.</p>
 
     >>> oops_report = graph_view.request.oops
-    >>> print oops_report['type'], oops_report['value']
+    >>> print(oops_report['type'], oops_report['value'])
     OSError [Errno 12] Cannot allocate memory
 
 If an error occurs during the render of the PNG image, the fail over
@@ -379,7 +372,7 @@ image (icing/blueprints-deptree-error.png) is returned. It's size is
     OSError: [Errno 12] Cannot allocate memory
 
     >>> image = graph_view.render()
-    >>> image.startswith('\x89PNG')
+    >>> image.startswith(b'\x89PNG')
     True
 
     >>> fail_over_image_length = len(image)
@@ -396,7 +389,7 @@ The dependency graph image is rendered correctly when Popen is restored.
     ...     (svg_support, request), name="deptree.png")
     >>> graph_view.initialize()
     >>> image = graph_view.render()
-    >>> image.startswith('\x89PNG')
+    >>> image.startswith(b'\x89PNG')
     True
 
     >>> len(image) != fail_over_image_length

@@ -1,8 +1,6 @@
 # Copyright 2009 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-# pylint: disable-msg=E0611,W0212
-
 __metaclass__ = type
 __all__ = [
     'SourcePackageName',
@@ -15,7 +13,7 @@ from sqlobject import (
     SQLObjectNotFound,
     StringCol,
     )
-from zope.interface import implements
+from zope.interface import implementer
 
 from lp.app.errors import NotFoundError
 from lp.app.validators.name import valid_name
@@ -29,15 +27,14 @@ from lp.registry.interfaces.sourcepackagename import (
     )
 from lp.services.database.sqlbase import (
     cursor,
-    quote_like,
     SQLBase,
     sqlvalues,
     )
 from lp.services.helpers import ensure_unicode
 
 
+@implementer(ISourcePackageName)
 class SourcePackageName(SQLBase):
-    implements(ISourcePackageName)
     _table = 'SourcePackageName'
 
     name = StringCol(dbName='name', notNull=True, unique=True,
@@ -62,8 +59,8 @@ class SourcePackageName(SQLBase):
     ensure = classmethod(ensure)
 
 
+@implementer(ISourcePackageNameSet)
 class SourcePackageNameSet:
-    implements(ISourcePackageNameSet)
 
     def __getitem__(self, name):
         """See `ISourcePackageNameSet`."""
@@ -83,11 +80,6 @@ class SourcePackageNameSet:
     def getAll(self):
         """See `ISourcePackageNameSet`."""
         return SourcePackageName.select()
-
-    def findByName(self, name):
-        """Find sourcepackagenames by its name or part of it."""
-        query = "name ILIKE '%%' || %s || '%%'" % quote_like(name)
-        return SourcePackageName.select(query)
 
     def queryByName(self, name):
         """See `ISourcePackageNameSet`."""
@@ -137,16 +129,13 @@ def getSourcePackageDescriptions(
     cur.execute("""SELECT DISTINCT BinaryPackageName.name,
                           SourcePackageName.name
                      FROM BinaryPackageRelease, SourcePackageName,
-                          BinaryPackageBuild, SourcePackageRelease,
-                          BinaryPackageName
+                          BinaryPackageBuild, BinaryPackageName
                     WHERE
                        BinaryPackageName.id =
                            BinaryPackageRelease.binarypackagename AND
                        BinaryPackageRelease.build = BinaryPackageBuild.id AND
-                       SourcePackageRelease.sourcepackagename =
+                       BinaryPackageBuild.source_package_name =
                            SourcePackageName.id AND
-                       BinaryPackageBuild.source_package_release =
-                           SourcePackageRelease.id AND
                        %s
                    ORDER BY BinaryPackageName.name,
                             SourcePackageName.name"""

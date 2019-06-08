@@ -10,7 +10,7 @@ Spoofing a request from France will give us a list containing our french
 archive mirrors, plus the canonical one.
 
     >>> browser.addHeader('X_FORWARDED_FOR', '83.196.46.77')
-    >>> browser.open('http://launchpad.dev/ubuntu/+countrymirrors-archive')
+    >>> browser.open('http://launchpad.test/ubuntu/+countrymirrors-archive')
     >>> print browser.headers['content-type']
     text/plain;charset=utf-8
     >>> print browser.headers['X-Generated-For-Country']
@@ -20,7 +20,7 @@ archive mirrors, plus the canonical one.
     >>> print browser.headers['X-REQUEST-HTTP_X_FORWARDED_FOR']
     83.196.46.77
     >>> print browser.headers['X-REQUEST-REMOTE_ADDR']
-    None
+    127.0.0.1
     >>> sorted(browser.contents.split('\n'))
     ['http://archive.ubuntu.com/ubuntu/',
      'http://localhost:11375/archive-mirror/',
@@ -31,7 +31,7 @@ canonical mirror.
 
     >>> anon_browser.addHeader('X_FORWARDED_FOR', None)
     >>> anon_browser.open(
-    ...     'http://launchpad.dev/ubuntu/+countrymirrors-archive')
+    ...     'http://launchpad.test/ubuntu/+countrymirrors-archive')
     >>> print anon_browser.headers['X-Generated-For-Country']
     Unknown
     >>> sorted(anon_browser.contents.split('\n'))
@@ -49,7 +49,7 @@ Note that unofficial mirrors are not included in the listings.
 
     # http://localhost:11375/archive-mirror/ is not included in the list
     # anymore.
-    >>> browser.open('http://launchpad.dev/ubuntu/+countrymirrors-archive')
+    >>> browser.open('http://launchpad.test/ubuntu/+countrymirrors-archive')
     >>> sorted(browser.contents.split('\n'))
     ['http://archive.ubuntu.com/ubuntu/',
      'http://localhost:11375/valid-mirror/']
@@ -57,7 +57,7 @@ Note that unofficial mirrors are not included in the listings.
 Also, the +countrymirrors-archive page is only available for the Ubuntu
 distribution.
 
-    >>> browser.open('http://launchpad.dev/debian/+countrymirrors-archive')
+    >>> browser.open('http://launchpad.test/debian/+countrymirrors-archive')
     Traceback (most recent call last):
     ...
     HTTPError: HTTP Error 404: Not Found

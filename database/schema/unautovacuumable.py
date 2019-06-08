@@ -16,14 +16,13 @@ Don't run this on any production systems.
 __metaclass__ = type
 __all__ = []
 
-# pylint: disable-msg=W0403
 import _pythonpath
 
-from distutils.version import LooseVersion
 from optparse import OptionParser
 import sys
 import time
 
+from lp.services.database import activity_cols
 from lp.services.database.sqlbase import (
     connect,
     ISOLATION_LEVEL_AUTOCOMMIT,
@@ -52,31 +51,19 @@ def main():
     con.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
     cur = con.cursor()
 
-    cur.execute('show server_version')
-    pg_version = LooseVersion(cur.fetchone()[0])
-
     log.debug("Disabling autovacuum on all tables in the database.")
-    if pg_version < LooseVersion('8.4.0'):
+    cur.execute("""
+        SELECT nspname,relname
+        FROM pg_namespace, pg_class
+        WHERE relnamespace = pg_namespace.oid
+            AND relkind = 'r' AND nspname <> 'pg_catalog'
+        """)
+    for namespace, table in list(cur.fetchall()):
         cur.execute("""
-            INSERT INTO pg_autovacuum
-            SELECT pg_class.oid, FALSE, -1,-1,-1,-1,-1,-1,-1,-1
-            FROM pg_class
-            WHERE relkind in ('r','t')
-                AND pg_class.oid NOT IN (SELECT vacrelid FROM pg_autovacuum)
-            """)
-    else:
-        cur.execute("""
-            SELECT nspname,relname
-            FROM pg_namespace, pg_class
-            WHERE relnamespace = pg_namespace.oid
-                AND relkind = 'r' AND nspname <> 'pg_catalog'
-            """)
-        for namespace, table in list(cur.fetchall()):
-            cur.execute("""
-                ALTER TABLE ONLY "%s"."%s" SET (
-                    autovacuum_enabled=false,
-                    toast.autovacuum_enabled=false)
-                """ % (namespace, table))
+            ALTER TABLE ONLY "%s"."%s" SET (
+                autovacuum_enabled=false,
+                toast.autovacuum_enabled=false)
+            """ % (namespace, table))
 
     log.debug("Killing existing autovacuum processes")
     num_autovacuums = -1
@@ -84,16 +71,16 @@ def main():
         # Sleep long enough for pg_stat_activity to be updated.
         time.sleep(0.6)
         cur.execute("""
-            SELECT procpid FROM pg_stat_activity
+            SELECT %(pid)s FROM pg_stat_activity
             WHERE
                 datname=current_database()
-                AND current_query LIKE 'autovacuum: %'
-            """)
+                AND %(query)s LIKE 'autovacuum: %%'
+            """ % activity_cols(cur))
         autovacuums = [row[0] for row in cur.fetchall()]
         num_autovacuums = len(autovacuums)
-        for procpid in autovacuums:
-            log.debug("Cancelling %d" % procpid)
-            cur.execute("SELECT pg_cancel_backend(%d)" % procpid)
+        for pid in autovacuums:
+            log.debug("Cancelling %d" % pid)
+            cur.execute("SELECT pg_cancel_backend(%d)" % pid)
 
 
 if __name__ == '__main__':

@@ -10,16 +10,16 @@ from testtools.matchers import MatchesStructure
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
+from lp.app.enums import InformationType
 from lp.bugs.interfaces.bugtask import BugTaskStatus
 from lp.bugs.model.bug import Bug
-from lp.registry.enums import InformationType
 from lp.registry.interfaces.accesspolicy import (
     IAccessArtifactGrantSource,
     IAccessArtifactSource,
     IAccessPolicyArtifactSource,
     IAccessPolicySource,
     )
-from lp.services.database.lpstorm import IStore
+from lp.services.database.interfaces import IStore
 from lp.testing import (
     login_person,
     person_logged_in,

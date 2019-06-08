@@ -1,8 +1,6 @@
 # Copyright 2009 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-# pylint: disable-msg=W0703
-
 """Verify (and refresh) `POFile`s' cached statistics."""
 
 __metaclass__ = type
@@ -14,7 +12,7 @@ __all__ = [
 import logging
 
 from zope.component import getUtility
-from zope.interface import implements
+from zope.interface import implementer
 
 from lp.services.config import config
 from lp.services.looptuner import (
@@ -27,9 +25,9 @@ from lp.services.mail.sendmail import simple_sendmail
 from lp.translations.interfaces.pofile import IPOFileSet
 
 
+@implementer(ITunableLoop)
 class Verifier:
     """`ITunableLoop` that recomputes & checks all `POFile`s' statistics."""
-    implements(ITunableLoop)
 
     total_checked = 0
     total_incorrect = 0

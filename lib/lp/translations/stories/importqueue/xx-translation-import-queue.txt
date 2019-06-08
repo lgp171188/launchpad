@@ -6,7 +6,7 @@ template uploads.
 
     >>> ff_owner_browser = setupBrowser(auth='Basic test@canonical.com:test')
     >>> ff_owner_browser.open(
-    ...     'http://translations.launchpad.dev/firefox/1.0/'
+    ...     'http://translations.launchpad.test/firefox/1.0/'
     ...     '+translations-upload')
     >>> 'Here you can upload translation files' in ff_owner_browser.contents
     True
@@ -26,12 +26,12 @@ translations.
     >>> upload.add_file(tarball, 'application/x-gzip', test_file_name)
     >>> ff_owner_browser.getControl('Upload').click()
     >>> ff_owner_browser.url
-    'http://translations.launchpad.dev/firefox/1.0/+translations-upload'
+    'http://translations.launchpad.test/firefox/1.0/+translations-upload'
     >>> 'Upload translation files' in ff_owner_browser.contents
     True
     >>> for tag in find_tags_by_class(ff_owner_browser.contents,
     ...                               'informational message'):
-    ...     print extract_text(tag.renderContents())
+    ...     print(extract_text(tag.renderContents()))
     Thank you for your upload. 2 files from the tarball will be automatically
     reviewed in the next few hours...
 
@@ -39,21 +39,21 @@ The confirmation form shows the user the link where they could track the
 import status:
 
     >>> ff_owner_browser.getLink('Translation Import Queue').click()
-    >>> print ff_owner_browser.url
-    http://translations.launchpad.dev/firefox/1.0/+imports
+    >>> print(ff_owner_browser.url)
+    http://translations.launchpad.test/firefox/1.0/+imports
 
 Once the upload has completed, its templates and translations show up on
 the translation import queue page.  If we're not logged in, status is
 shown as static HTML.
 
     >>> anon_browser.open(
-    ...     'http://translations.launchpad.dev/firefox/1.0/+imports')
-    >>> print anon_browser.url
-    http://translations.launchpad.dev/firefox/1.0/+imports
+    ...     'http://translations.launchpad.test/firefox/1.0/+imports')
+    >>> print(anon_browser.url)
+    http://translations.launchpad.test/firefox/1.0/+imports
     >>> row = find_tags_by_class(anon_browser.contents, 'import_entry_row')[1]
-    >>> print extract_text(row.find('', 'import_source'))
+    >>> print(extract_text(row.find('', 'import_source')))
     po/es.po in Mozilla Firefox 1.0 series
-    >>> print extract_text(row.find('', 'import_status'))
+    >>> print(extract_text(row.find('', 'import_status')))
     Needs Review
 
 Some tarballs contain files whose names look like PO or POT files, but
@@ -79,13 +79,7 @@ ignored, as well as empty files, and things whose names end in .po or
     True
     >>> 'empty.po' in anon_browser.contents
     False
-
-    # XXX: 2010-04-26, Salgado, bug=570244: Need this hack to make it pass on
-    # python2.5 (where tarball.getnames() include a trailing slash on
-    # directory names) and python2.6 (where directory names don't get a
-    # trailing slash).
-    >>> ('directory.po' in tarball.getnames()
-    ...  or 'directory.po/' in tarball.getnames())
+    >>> 'directory.po' in tarball.getnames()
     True
     >>> 'directory.po' in anon_browser.contents
     False
@@ -98,20 +92,22 @@ If we are logged in as an administrator, the same page provides a link
 to where we can edit imports.
 
   >>> browser = setupBrowser(auth='Basic jordi@ubuntu.com:test')
-  >>> browser.open('http://translations.launchpad.dev/+imports')
+  >>> browser.open('http://translations.launchpad.test/+imports')
   >>> 'po/es.po' in browser.contents
   True
   >>> 'Mozilla Firefox 1.0 series' in browser.contents
   True
-  >>> browser.getLink(url='+imports/3')
-  <Link text='Change this entry' url='http://translations.launchpad.dev/+imports/3'>
-  >>> browser.getControl(name='field.status_3').displayValue
+  >>> link = browser.getLink('Change this entry', index=2)
+  >>> link
+  <Link text='Change this entry' url='http://translations.launchpad.test/+imports/...'>
+  >>> qid = int(link.url.rsplit('/', 1)[-1])
+  >>> browser.getControl(name='field.status_%d' % qid).displayValue
   ['Needs Review']
 
 Now, we attach a new file to an already existing translation resource.
 
   >>> browser.open(
-  ...     'http://translations.launchpad.dev/ubuntu/hoary/+source/evolution/'
+  ...     'http://translations.launchpad.test/ubuntu/hoary/+source/evolution/'
   ...     '+pots/evolution-2.2/+upload')
   >>> upload = browser.getControl('File')
   >>> upload
@@ -120,30 +116,30 @@ Now, we attach a new file to an already existing translation resource.
   >>> upload.add_file(StringIO('# foo\n'),
   ...   'text/x-gettext-translation-template', 'evolution.pot')
   >>> browser.getControl('Upload').click()
-  >>> print browser.url
-  http://translations.launchpad.dev/ubuntu/hoary/+source/evolution/+pots/evolution-2.2/+upload
+  >>> print(browser.url)
+  http://translations.launchpad.test/ubuntu/hoary/+source/evolution/+pots/evolution-2.2/+upload
   >>> for tag in find_tags_by_class(browser.contents, 'message'):
-  ...     print tag.renderContents()
+  ...     print(tag.renderContents())
   Thank you for your upload.  It will be automatically reviewed...
 
 The import queue should have three additional entries with the last upload as
 the last entry.
 
-  >>> anon_browser.open('http://translations.launchpad.dev/+imports')
+  >>> anon_browser.open('http://translations.launchpad.test/+imports')
   >>> nav_index = first_tag_by_class(anon_browser.contents,
   ...     'batch-navigation-index')
-  >>> print extract_text(nav_index)
+  >>> print(extract_text(nav_index))
   1 &rarr; 5 of 5 results
   >>> rows = find_tags_by_class(anon_browser.contents, 'import_entry_row')
-  >>> print extract_text(rows[4])
+  >>> print(extract_text(rows[4]))
   evolution.pot in
   evolution in Ubuntu Hoary
   Needs Review
 
 Open the edit form for the third entry.
 
-  >>> browser.open('http://translations.launchpad.dev/+imports')
-  >>> browser.getLink(url='imports/3').click()
+  >>> browser.open('http://translations.launchpad.test/+imports')
+  >>> browser.getLink(url='imports/%d' % qid).click()
 
 And provide information for this IPOTemplate to be newly created. Invalid
 names for the template are rejected.
@@ -153,18 +149,18 @@ names for the template are rejected.
   >>> browser.getControl('Name').value = '.InvalidName'
   >>> browser.getControl('Translation domain').value = 'pkgconf-mozilla'
   >>> browser.getControl('Approve').click()
-  >>> print browser.url
-  http://translations.launchpad.dev/+imports/3/+index
+  >>> print(browser.url)
+  http://translations.launchpad.test/+imports/.../+index
   >>> message = find_tags_by_class(browser.contents, 'message')[1]
-  >>> print message.string
+  >>> print(message.string)
   Please specify a valid name...
 
 So we'd better specify a valid name.
 
   >>> browser.getControl('Name').value = 'pkgconf-mozilla'
   >>> browser.getControl('Approve').click()
-  >>> print browser.url
-  http://translations.launchpad.dev/+imports
+  >>> print(browser.url)
+  http://translations.launchpad.test/+imports
 
 Open the edit form for the fourth entry.
 
@@ -173,25 +169,26 @@ bug, so we need to reopen the page we are currently at to set 'referer'
 header properly.  This seems similar to #98437 but the fix proposed
 there doesn't help.
 
-  >>> browser.open('http://translations.launchpad.dev/+imports')
-  >>> browser.getLink(url='imports/4').click()
+  >>> browser.open('http://translations.launchpad.test/+imports')
+  >>> browser.getLink(url='imports/%d' % (qid + 1)).click()
 
 And provide information for this IPOFile to be newly created.
 
   >>> browser.getControl('File Type').value = ['PO']
-  >>> browser.getControl(name='field.potemplate').value = ['11']
+  >>> browser.getControl(name='field.potemplate').displayValue = [
+  ...     'pkgconf-mozilla']
   >>> browser.getControl('Language').value = ['es']
   >>> browser.getControl('Approve').click()
-  >>> print browser.url
-  http://translations.launchpad.dev/+imports
+  >>> print(browser.url)
+  http://translations.launchpad.test/+imports
 
 The entries are approved, and now have the place where they will be
 imported assigned.
 
-  >>> anon_browser.open('http://translations.launchpad.dev/+imports')
+  >>> anon_browser.open('http://translations.launchpad.test/+imports')
   >>> imports_table = find_tag_by_id(
   ...     anon_browser.contents, 'import-entries-list')
-  >>> print extract_text(imports_table)
+  >>> print(extract_text(imports_table))
   pkgconf-mozilla.pot in
   Mozilla Firefox 1.0 series
   Approved
@@ -224,11 +221,12 @@ No Privileges Person tries to remove entries but to no effect.
   ...         'field.status_5': 'DELETED',
   ...         'field.actions.change_status': 'Change status',
   ...     })
+  >>> user_browser.addHeader("Referer", "http://launchpad.test")
   >>> user_browser.open(
-  ...     'http://translations.launchpad.dev/+imports',
+  ...     'http://translations.launchpad.test/+imports',
   ...     data=post_data)
   >>> for status in find_tags_by_class(user_browser.contents, 'import_status'):
-  ...     print extract_text(status)
+  ...     print(extract_text(status))
   Approved
   Approved
   Imported
@@ -238,13 +236,13 @@ No Privileges Person tries to remove entries but to no effect.
 But Jordi, a Rosetta expert, will be allowed to remove it.
 
   >>> jordi_browser = setupBrowser(auth='Basic jordi@ubuntu.com:test')
-  >>> jordi_browser.open('http://translations.launchpad.dev/+imports')
+  >>> jordi_browser.open('http://translations.launchpad.test/+imports')
   >>> jordi_browser.getControl(name='field.status_1').value = ['DELETED']
   >>> jordi_browser.getControl('Change status').click()
   >>> jordi_browser.url
-  'http://translations.launchpad.dev/+imports/+index'
+  'http://translations.launchpad.test/+imports/+index'
 
-  >>> print find_main_content(jordi_browser.contents)
+  >>> print(find_main_content(jordi_browser.contents))
   <...po/evolution-2.2-test.pot...
   ...Evolution trunk series...
   ...field.status_1...
@@ -252,15 +250,15 @@ But Jordi, a Rosetta expert, will be allowed to remove it.
   ...Foo Bar...
   ...Template "evolution-2.2-test" in Evolution trunk...
 
-Foo Bar Person is a launchpad admin and he's allowed to remove an entry.
+Foo Bar Person is a launchpad admin and they're allowed to remove an entry.
 
-  >>> admin_browser.open('http://translations.launchpad.dev/+imports')
+  >>> admin_browser.open('http://translations.launchpad.test/+imports')
   >>> admin_browser.getControl(name='field.status_2').value = ['DELETED']
   >>> admin_browser.getControl('Change status').click()
   >>> admin_browser.url
-  'http://translations.launchpad.dev/+imports/+index'
+  'http://translations.launchpad.test/+imports/+index'
 
-  >>> print find_main_content(admin_browser.contents)
+  >>> print(find_main_content(admin_browser.contents))
   <...po/pt_BR.po...
   ...Evolution trunk series...
   ...field.status_2...
@@ -272,18 +270,19 @@ Foo Bar Person is a launchpad admin and he's allowed to remove an entry.
 And finally, we make sure that the importer is also allowed to remove their
 own imports.
 
-  >>> ff_owner_browser.open('http://translations.launchpad.dev/+imports')
-  >>> ff_owner_browser.getControl(name='field.status_4').value
+  >>> ff_owner_browser.open('http://translations.launchpad.test/+imports')
+  >>> status = ff_owner_browser.getControl(name='field.status_%d' % (qid + 1))
+  >>> status.value
   ['APPROVED']
-  >>> ff_owner_browser.getControl(name='field.status_4').value = ['DELETED']
+  >>> status.value = ['DELETED']
   >>> ff_owner_browser.getControl('Change status').click()
 
 The entry now appears deleted.
 
-  >>> print find_main_content(ff_owner_browser.contents)
+  >>> print(find_main_content(ff_owner_browser.contents))
   <...po/es.po...
   ...Mozilla Firefox 1.0 series...
-  ...field.status_4...
+  ...field.status_...
   ...selected="selected" value="DELETED"...
   ...Sample Person...
   ...Spanish (es) translation of pkgconf-mozilla in Mozilla Firefox 1.0...
@@ -316,7 +315,7 @@ Somebody else has uploaded a translation template for an Ubuntu package.
     >>> uploader = factory.makePerson()
     >>> ubuntu.translationgroup = factory.makeTranslationGroup(group_owner)
     >>> ubuntu_upload = queue.addOrUpdateEntry(
-    ...     'messages.pot', '(content)', False, uploader,
+    ...     'messages.pot', b'(content)', False, uploader,
     ...     sourcepackagename=package, distroseries=hoary)
 
     >>> logout()
@@ -326,7 +325,7 @@ having any special privileges, is permitted to approve it.
 
     >>> group_owner_browser = setupBrowser(auth='Basic go@example.com:test')
     >>> group_owner_browser.open(
-    ...     'http://translations.launchpad.dev/+imports/%d' %
+    ...     'http://translations.launchpad.test/+imports/%d' %
     ...         ubuntu_upload.id)
     >>> group_owner_browser.getControl(name='field.name').value = 'f918'
     >>> group_owner_browser.getControl(
@@ -341,7 +340,7 @@ Let's check tar.bz2 uploads. They work ;-)
 
   >>> evo_owner_browser = ff_owner_browser
   >>> evo_owner_browser.open(
-  ...     'http://translations.launchpad.dev/evolution/trunk/'
+  ...     'http://translations.launchpad.test/evolution/trunk/'
   ...     '+translations-upload')
 
   >>> test_file_name = os.path.join(
@@ -353,9 +352,9 @@ Let's check tar.bz2 uploads. They work ;-)
   ...     tarball, 'application/x-bzip', test_file_name)
   >>> evo_owner_browser.getControl('Upload').click()
   >>> evo_owner_browser.url
-  'http://translations.launchpad.dev/evolution/trunk/+translations-upload'
+  'http://translations.launchpad.test/evolution/trunk/+translations-upload'
   >>> for tag in find_tags_by_class(evo_owner_browser.contents, 'message'):
-  ...     print extract_text(tag)
+  ...     print(extract_text(tag))
   Thank you for your upload. 2 files from the tarball will be automatically
   reviewed...
 
@@ -363,18 +362,18 @@ Let's try breaking the form by not supplying a file object. It give us a
 decent error message:
 
   >>> browser.open(
-  ...     'http://translations.launchpad.dev/ubuntu/hoary/'
+  ...     'http://translations.launchpad.test/ubuntu/hoary/'
   ...     '+source/evolution/+pots/evolution-2.2/+upload')
   >>> browser.getControl('Upload').click()
   >>> for tag in find_tags_by_class(browser.contents, 'message'):
-  ...     print tag
-  <div...Your upload was ignored because you didn't select a file....
+  ...     print(tag)
+  <div...Your upload was ignored because you didn&#x27;t select a file....
   ...Please select a file and try again.</div>...
 
 Let's try now a tarball upload. Should work:
 
   >>> evo_owner_browser.open(
-  ...     'http://translations.launchpad.dev/evolution/trunk/'
+  ...     'http://translations.launchpad.test/evolution/trunk/'
   ...     '+translations-upload')
 
   >>> test_file_name = os.path.join(
@@ -386,16 +385,16 @@ Let's try now a tarball upload. Should work:
   ...     tarball, 'application/x-gzip', test_file_name)
   >>> evo_owner_browser.getControl('Upload').click()
   >>> evo_owner_browser.url
-  'http://translations.launchpad.dev/evolution/trunk/+translations-upload'
+  'http://translations.launchpad.test/evolution/trunk/+translations-upload'
   >>> for tag in find_tags_by_class(evo_owner_browser.contents, 'message'):
-  ...     print extract_text(tag)
+  ...     print(extract_text(tag))
   Thank you for your upload. 1 file from the tarball will be automatically
   reviewed...
 
 We can handle an empty file disguised as a bzipped tarfile:
 
   >>> evo_owner_browser.open(
-  ...     'http://translations.launchpad.dev/evolution/trunk/'
+  ...     'http://translations.launchpad.test/evolution/trunk/'
   ...     '+translations-upload')
 
   >>> test_file_name = os.path.join(
@@ -407,15 +406,15 @@ We can handle an empty file disguised as a bzipped tarfile:
   ...     tarball, 'application/x-gzip', test_file_name)
   >>> evo_owner_browser.getControl('Upload').click()
   >>> evo_owner_browser.url
-  'http://translations.launchpad.dev/evolution/trunk/+translations-upload'
+  'http://translations.launchpad.test/evolution/trunk/+translations-upload'
   >>> for tag in find_tags_by_class(evo_owner_browser.contents, 'message'):
-  ...     print extract_text(tag)
+  ...     print(extract_text(tag))
   Upload ignored.  The tarball you uploaded did not contain...
 
 And also a truncated tarball inside a bzip2 wrapper:
 
   >>> evo_owner_browser.open(
-  ...     'http://translations.launchpad.dev/evolution/trunk/'
+  ...     'http://translations.launchpad.test/evolution/trunk/'
   ...     '+translations-upload')
 
   >>> test_file_name = os.path.join(
@@ -427,26 +426,23 @@ And also a truncated tarball inside a bzip2 wrapper:
   ...     tarball, 'application/x-gzip', test_file_name)
   >>> evo_owner_browser.getControl('Upload').click()
   >>> evo_owner_browser.url
-  'http://translations.launchpad.dev/evolution/trunk/+translations-upload'
+  'http://translations.launchpad.test/evolution/trunk/+translations-upload'
   >>> for tag in find_tags_by_class(evo_owner_browser.contents, 'message'):
-  ...     print extract_text(tag)
+  ...     print(extract_text(tag))
   Upload ignored.  The tarball you uploaded did not contain...
 
 Or even files that are not really tar.gz files even if the filename
 says that.
 
   >>> evo_owner_browser.open(
-  ...     'http://translations.launchpad.dev/evolution/trunk/'
+  ...     'http://translations.launchpad.test/evolution/trunk/'
   ...     '+translations-upload')
   >>> evo_owner_browser.getControl('File').add_file(
   ...     StringIO('foo'), 'application/x-gzip', test_file_name)
   >>> evo_owner_browser.getControl('Upload').click()
   >>> evo_owner_browser.url
-  'http://translations.launchpad.dev/evolution/trunk/+translations-upload'
-  >>> msgs = get_feedback_messages(evo_owner_browser.contents)
-  >>> print len(msgs)
-  1
-  >>> print msgs[0]
+  'http://translations.launchpad.test/evolution/trunk/+translations-upload'
+  >>> print_feedback_messages(evo_owner_browser.contents)
   Upload ignored.  The tarball you uploaded did not contain...
 
 Bad filter_extension
@@ -468,5 +464,5 @@ filter_extension values do not generate an error.  See bug 388997.
   ...         'field.actions.change_status': 'Change status',
   ...     })
   >>> user_browser.open(
-  ...     'http://translations.launchpad.dev/+imports',
+  ...     'http://translations.launchpad.test/+imports',
   ...     data=post_data)

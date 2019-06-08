@@ -1,4 +1,4 @@
-# Copyright 2009-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2016 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Interfaces including and related to IProduct."""
@@ -72,9 +72,10 @@ from zope.schema import (
 from zope.schema.vocabulary import SimpleVocabulary
 
 from lp import _
+from lp.answers.interfaces.faqtarget import IFAQTarget
 from lp.answers.interfaces.questiontarget import IQuestionTarget
 from lp.app.errors import NameLookupFailed
-from lp.app.interfaces.headings import IRootContext
+from lp.app.interfaces.informationtype import IInformationType
 from lp.app.interfaces.launchpad import (
     IHasIcon,
     IHasLogo,
@@ -89,6 +90,7 @@ from lp.blueprints.interfaces.sprint import IHasSprints
 from lp.bugs.interfaces.bugsupervisor import IHasBugSupervisor
 from lp.bugs.interfaces.bugtarget import (
     IBugTarget,
+    IHasExpirableBugs,
     IOfficialBugTagTargetPublic,
     IOfficialBugTagTargetRestricted,
     )
@@ -96,18 +98,18 @@ from lp.bugs.interfaces.bugtracker import IHasExternalBugTracker
 from lp.bugs.interfaces.structuralsubscription import (
     IStructuralSubscriptionTarget,
     )
-from lp.code.interfaces.branchvisibilitypolicy import (
-    IHasBranchVisibilityPolicy,
-    )
 from lp.code.interfaces.hasbranches import (
     IHasBranches,
     IHasCodeImports,
     IHasMergeProposals,
     )
+from lp.code.interfaces.hasgitrepositories import IHasGitRepositories
 from lp.code.interfaces.hasrecipes import IHasRecipes
 from lp.registry.enums import (
     BranchSharingPolicy,
     BugSharingPolicy,
+    SpecificationSharingPolicy,
+    VCSType,
     )
 from lp.registry.interfaces.announcement import IMakesAnnouncements
 from lp.registry.interfaces.commercialsubscription import (
@@ -141,6 +143,10 @@ from lp.services.fields import (
     Title,
     URIField,
     )
+from lp.services.webservice.apihelpers import (
+    patch_collection_property,
+    patch_reference_property,
+    )
 from lp.translations.interfaces.hastranslationimports import (
     IHasTranslationImports,
     )
@@ -153,47 +159,7 @@ re_valid_rfc1035_label = re.compile(
 
 
 def valid_sourceforge_project_name(project_name):
-    """Is this is a valid SourceForge project name?
-
-    Project names must be valid domain name components.
-
-        >>> valid_sourceforge_project_name('mailman')
-        True
-
-        >>> valid_sourceforge_project_name('hop-2-hop')
-        True
-
-        >>> valid_sourceforge_project_name('quake3')
-        True
-
-    They cannot start with a number.
-
-        >>> valid_sourceforge_project_name('1mailman')
-        False
-
-    Nor can they start or end with a hyphen.
-
-        >>> valid_sourceforge_project_name('-mailman')
-        False
-
-        >>> valid_sourceforge_project_name('mailman-')
-        False
-
-    They must be between 1 and 63 characters in length.
-
-        >>> valid_sourceforge_project_name('x' * 0)
-        False
-
-        >>> valid_sourceforge_project_name('x' * 1)
-        True
-
-        >>> valid_sourceforge_project_name('x' * 63)
-        True
-
-        >>> valid_sourceforge_project_name('x' * 64)
-        False
-
-    """
+    """Is this is a valid SourceForge project name?"""
     return re_valid_rfc1035_label.match(project_name) is not None
 
 
@@ -246,7 +212,7 @@ class License(DBEnumeratedType):
         'ACADEMIC', 'APACHE', 'ARTISTIC', 'ARTISTIC_2_0',
         'BSD', 'COMMON_PUBLIC',
         'CC_BY', 'CC_BY_SA', 'CC_0', 'ECLIPSE',
-        'EDUCATIONAL_COMMUNITY', 'AFFERO', 'GNU_GFDL_NO_OPTIONS',
+        'EDUCATIONAL_COMMUNITY', 'AFFERO', 'GNU_FDL_NO_OPTIONS',
         'GNU_GPL_V2', 'GNU_GPL_V3', 'GNU_LGPL_V2_1', 'GNU_LGPL_V3', 'MIT',
         'MPL', 'OFL', 'OPEN_SOFTWARE', 'PERL', 'PHP', 'PUBLIC_DOMAIN',
         'PYTHON', 'ZPL',
@@ -327,8 +293,8 @@ class License(DBEnumeratedType):
     CC_0 = DBItem(
         320, 'Creative Commons - No Rights Reserved',
         url='http://creativecommons.org/about/cc0')
-    GNU_GFDL_NO_OPTIONS = DBItem(
-        330, "GNU GFDL no options",
+    GNU_FDL_NO_OPTIONS = DBItem(
+        330, "GNU FDL no options",
         url='http://www.gnu.org/copyleft/fdl.html')
     OFL = DBItem(
         340, "Open Font Licence v1.1",
@@ -420,19 +386,75 @@ class IProductModerateRestricted(Interface):
                 "Not applicable to 'Other/Proprietary'.")))
 
 
-class IProductPublic(
-    IBugTarget, ICanGetMilestonesDirectly, IHasAppointedDriver, IHasBranches,
-    IHasBranchVisibilityPolicy, IHasDrivers, IHasExternalBugTracker, IHasIcon,
-    IHasLogo, IHasMergeProposals, IHasMilestones,
-    IHasMugshot, IHasOwner, IHasSprints, IHasTranslationImports,
-    ITranslationPolicy, IKarmaContext, ILaunchpadUsage, IMakesAnnouncements,
-    IOfficialBugTagTargetPublic, IHasOOPSReferences, IPillar,
-    ISpecificationTarget, IHasRecipes, IHasCodeImports, IServiceUsage):
-    """Public IProduct properties."""
+class IProductPublic(Interface):
 
     id = Int(title=_('The Project ID'))
 
-    project = exported(
+    def userCanView(user):
+        """True if the given user has access to this product."""
+
+    def userCanLimitedView(user):
+        """True if the given user has limited access to this product."""
+
+    private = exported(
+        Bool(
+            title=_("Product is confidential"), required=False,
+            readonly=True, default=False,
+            description=_(
+                "This product is visible only to those with access grants.")))
+
+
+class IProductLimitedView(IHasIcon, IHasLogo, IHasOwner, ILaunchpadUsage):
+    """Attributes that must be visible for person with artifact grants
+    on bugs, branches or specifications for the product.
+    """
+
+    display_name = exported(
+        TextLine(
+            title=_('Display Name'),
+            description=_("""The name of the project as it would appear in a
+                paragraph.""")),
+        exported_as='display_name')
+
+    displayname = Attribute('Display name (deprecated)')
+
+    icon = exported(
+        IconImageUpload(
+            title=_("Icon"), required=False,
+            default_image_resource='/@@/product',
+            description=_(
+                "A small image of exactly 14x14 pixels and at most 5kb in "
+                "size, that can be used to identify this project. The icon "
+                "will be displayed next to the project name everywhere in "
+                "Launchpad that we refer to the project and link to it.")))
+
+    logo = exported(
+        LogoImageUpload(
+            title=_("Logo"), required=False,
+            default_image_resource='/@@/product-logo',
+            description=_(
+                "An image of exactly 64x64 pixels that will be displayed in "
+                "the heading of all pages related to this project. It should "
+                "be no bigger than 50kb in size.")))
+
+    name = exported(
+        ProductNameField(
+            title=_('Name'),
+            constraint=name_validator,
+            description=_(
+                "At least one lowercase letter or number, followed by "
+                "letters, numbers, dots, hyphens or pluses. "
+                "Keep this name short; it is used in URLs as shown above.")))
+
+    owner = exported(
+        PersonChoice(
+            title=_('Maintainer'),
+            required=True,
+            vocabulary='ValidPillarOwner',
+            description=_("The restricted team, moderated team, or person "
+                          "who maintains the project information in "
+                          "Launchpad.")))
+    projectgroup = exported(
         ReferenceChoice(
             title=_('Part of'),
             required=False,
@@ -448,14 +470,22 @@ class IProductPublic(
                 'and security policy will apply to this project.')),
         exported_as='project_group')
 
-    owner = exported(
-        PersonChoice(
-            title=_('Maintainer'),
-            required=True,
-            vocabulary='ValidPillarOwner',
-            description=_("The restricted team, moderated team, or person "
-                          "who maintains the project information in "
-                          "Launchpad.")))
+    title = exported(
+        Title(
+            title=_('Title'),
+            description=_("The project title. Should be just a few words."),
+            readonly=True))
+
+
+class IProductView(
+    ICanGetMilestonesDirectly, IHasAppointedDriver, IHasBranches,
+    IHasExternalBugTracker,
+    IHasMergeProposals, IHasMilestones, IHasExpirableBugs,
+    IHasMugshot, IHasSprints, IHasTranslationImports,
+    ITranslationPolicy, IKarmaContext, IMakesAnnouncements,
+    IOfficialBugTagTargetPublic, IHasOOPSReferences,
+    IHasRecipes, IHasCodeImports, IServiceUsage, IHasGitRepositories):
+    """Public IProduct properties."""
 
     registrant = exported(
         PublicPersonChoice(
@@ -476,32 +506,6 @@ class IProductPublic(
                 "and just appoint a team for each specific series, rather "
                 "than having one project team that does it all."),
             required=False, vocabulary='ValidPersonOrTeam'))
-
-    drivers = Attribute(
-        "Presents the drivers of this project as a list. A list is "
-        "required because there might be a project driver and also a "
-        "driver appointed in the overarching project group.")
-
-    name = exported(
-        ProductNameField(
-            title=_('Name'),
-            constraint=name_validator,
-            description=_(
-                "At least one lowercase letter or number, followed by "
-                "letters, numbers, dots, hyphens or pluses. "
-                "Keep this name short; it is used in URLs as shown above.")))
-
-    displayname = exported(
-        TextLine(
-            title=_('Display Name'),
-            description=_("""The name of the project as it would appear in a
-                paragraph.""")),
-        exported_as='display_name')
-
-    title = exported(
-        Title(
-            title=_('Title'),
-            description=_("The project title. Should be just a few words.")))
 
     summary = exported(
         Summary(
@@ -582,7 +586,7 @@ class IProductPublic(
         TextLine(
             title=_('Freshmeat Project'),
             required=False, description=_("""The Freshmeat project name for
-                this project, if it is in freshmeat.""")),
+                this project, if it is in freshmeat. [DEPRECATED]""")),
         exported_as='freshmeat_project')
 
     homepage_content = Text(
@@ -591,25 +595,6 @@ class IProductPublic(
             "The content of this project's home page. Edit this and it will "
             "be displayed for all the world to see. It is NOT a wiki "
             "so you cannot undo changes."))
-
-    icon = exported(
-        IconImageUpload(
-            title=_("Icon"), required=False,
-            default_image_resource='/@@/product',
-            description=_(
-                "A small image of exactly 14x14 pixels and at most 5kb in "
-                "size, that can be used to identify this project. The icon "
-                "will be displayed next to the project name everywhere in "
-                "Launchpad that we refer to the project and link to it.")))
-
-    logo = exported(
-        LogoImageUpload(
-            title=_("Logo"), required=False,
-            default_image_resource='/@@/product-logo',
-            description=_(
-                "An image of exactly 64x64 pixels that will be displayed in "
-                "the heading of all pages related to this project. It should "
-                "be no bigger than 50kb in size.")))
 
     mugshot = exported(
         MugshotImageUpload(
@@ -626,19 +611,26 @@ class IProductPublic(
         description=_("Whether or not this project's attributes are "
                       "updated automatically."))
 
-    private_bugs = exported(Bool(title=_('Private bugs'), readonly=True,
-                        description=_(
-                            "Whether or not bugs reported into this project "
-                            "are private by default.")))
+    private_bugs = exported(
+        Bool(
+            title=_('Private bugs (obsolete; always False)'), readonly=True,
+            description=_("Replaced by bug_sharing_policy.")),
+        ('devel', dict(exported=False)))
+
     branch_sharing_policy = exported(Choice(
         title=_('Branch sharing policy'),
         description=_("Sharing policy for this project's branches."),
-        required=False, readonly=True, vocabulary=BranchSharingPolicy),
+        required=True, readonly=True, vocabulary=BranchSharingPolicy),
         as_of='devel')
     bug_sharing_policy = exported(Choice(
         title=_('Bug sharing policy'),
         description=_("Sharing policy for this project's bugs."),
-        required=False, readonly=True, vocabulary=BugSharingPolicy),
+        required=True, readonly=True, vocabulary=BugSharingPolicy),
+        as_of='devel')
+    specification_sharing_policy = exported(Choice(
+        title=_('Blueprint sharing policy'),
+        description=_("Sharing policy for this project's specifications."),
+        required=True, readonly=True, vocabulary=SpecificationSharingPolicy),
         as_of='devel')
 
     licenses = exported(
@@ -665,11 +657,9 @@ class IProductPublic(
         Datetime(
             title=_('Next suggest packaging date'),
             description=_(
-                "The date when Launchpad can resume suggesting Ubuntu "
-                "packages that the project provides. The default value is "
-                "one year after a user states the project is not packaged "
-                "in Ubuntu."),
-            required=False))
+                "Obsolete. The date to resume Ubuntu package suggestions."),
+            required=False),
+        ('devel', dict(exported=False)))
 
     distrosourcepackages = Attribute(_("List of distribution packages for "
         "this product"))
@@ -691,10 +681,6 @@ class IProductPublic(
                 'The Bazaar URL lp:<project> points to the development focus '
                 'series branch.')))
     development_focusID = Attribute("The development focus ID.")
-
-    name_with_project = Attribute(_("Returns the product name prefixed "
-        "by the project name, if a project is associated with this "
-        "product; otherwise, simply returns the product name."))
 
     releases = exported(
         doNotSnapshot(
@@ -767,23 +753,26 @@ class IProductPublic(
 
     packagings = Attribute(_("All the packagings for the project."))
 
-    def checkPrivateBugsTransitionAllowed(private_bugs, user):
-        """Can the private_bugs attribute be changed to the value by the user?
+    security_contact = exported(
+        TextLine(
+            title=_('Security contact'), required=False, readonly=True,
+            description=_('Security contact (obsolete; always None)')),
+            ('devel', dict(exported=False)), as_of='1.0')
 
-        Generally, the permission is restricted to ~registry or ~admin or
-        bug supervisors.
-        In addition, a valid commercial subscription is required to turn on
-        private bugs when being done by a bug supervisor. However, no
-        commercial subscription is required to turn off private bugs.
-        """
+    vcs = exported(
+        Choice(
+            title=_("VCS"),
+            required=False,
+            vocabulary=VCSType,
+            description=_(
+                "Version control system for this project's code.")))
 
-    @mutator_for(private_bugs)
-    @call_with(user=REQUEST_USER)
-    @operation_parameters(private_bugs=copy_field(private_bugs))
-    @export_write_operation()
-    @operation_for_version("devel")
-    def setPrivateBugs(private_bugs, user):
-        """Mutator for private_bugs that checks entitlement."""
+    inferred_vcs = Choice(
+        title=_("Inferred VCS"),
+        readonly=True,
+        vocabulary=VCSType,
+        description=_(
+            "Inferred version control system for this project's code."))
 
     def getAllowedBugInformationTypes():
         """Get the information types that a bug in this project can have.
@@ -875,9 +864,9 @@ class IProductPublic(
 class IProductEditRestricted(IOfficialBugTagTargetRestricted):
     """`IProduct` properties which require launchpad.Edit permission."""
 
-    @mutator_for(IProductPublic['bug_sharing_policy'])
+    @mutator_for(IProductView['bug_sharing_policy'])
     @operation_parameters(bug_sharing_policy=copy_field(
-        IProductPublic['bug_sharing_policy']))
+        IProductView['bug_sharing_policy']))
     @export_write_operation()
     @operation_for_version("devel")
     def setBugSharingPolicy(bug_sharing_policy):
@@ -886,10 +875,10 @@ class IProductEditRestricted(IOfficialBugTagTargetRestricted):
         Checks authorization and entitlement.
         """
 
-    @mutator_for(IProductPublic['branch_sharing_policy'])
+    @mutator_for(IProductView['branch_sharing_policy'])
     @operation_parameters(
         branch_sharing_policy=copy_field(
-            IProductPublic['branch_sharing_policy']))
+            IProductView['branch_sharing_policy']))
     @export_write_operation()
     @operation_for_version("devel")
     def setBranchSharingPolicy(branch_sharing_policy):
@@ -898,12 +887,33 @@ class IProductEditRestricted(IOfficialBugTagTargetRestricted):
         Checks authorization and entitlement.
         """
 
+    @mutator_for(IProductView['specification_sharing_policy'])
+    @operation_parameters(
+        specification_sharing_policy=copy_field(
+            IProductView['specification_sharing_policy']))
+    @export_write_operation()
+    @operation_for_version("devel")
+    def setSpecificationSharingPolicy(specification_sharing_policy):
+        """Mutator for specification_sharing_policy.
+
+        Checks authorization and entitlement.
+        """
+
+    def checkInformationType(value):
+        """Check whether the information type change should be permitted.
+
+        Iterate through exceptions explaining why the type should not be
+        changed.  Has the side-effect of creating a commercial subscription if
+        permitted.
+        """
+
 
 class IProduct(
-    IHasBugSupervisor, IProductEditRestricted,
-    IProductModerateRestricted, IProductDriverRestricted,
-    IProductPublic, IQuestionTarget, IRootContext,
-    IStructuralSubscriptionTarget):
+    IBugTarget, IHasBugSupervisor, IHasDrivers, IProductEditRestricted,
+    IProductModerateRestricted, IProductDriverRestricted, IProductView,
+    IProductLimitedView, IProductPublic, IFAQTarget, IQuestionTarget,
+    ISpecificationTarget, IStructuralSubscriptionTarget, IInformationType,
+    IPillar):
     """A Product.
 
     The Launchpad Registry describes the open source world as ProjectGroups
@@ -914,9 +924,15 @@ class IProduct(
 
     export_as_webservice_entry('project')
 
+    drivers = Attribute(
+        "Presents the drivers of this project as a list. A list is "
+        "required because there might be a project driver and also a "
+        "driver appointed in the overarching project group.")
+
+
 # Fix cyclic references.
-IProjectGroup['products'].value_type = Reference(IProduct)
-IProductRelease['product'].schema = IProduct
+patch_collection_property(IProjectGroup, 'products', IProduct)
+patch_reference_property(IProductRelease, 'product', IProduct)
 
 
 class IProductSet(Interface):
@@ -928,8 +944,12 @@ class IProductSet(Interface):
         "The PersonSet, placed here so we can easily render "
         "the list of latest teams to register on the /projects/ page.")
 
-    all_active = Attribute(
-        "All the active products, sorted newest first.")
+    def get_users_private_products(user):
+        """Get users non-public products.
+
+        :param user: Which user are we searching products for.
+        :return: An iterable of IProduct
+        """
 
     def get_all_active(eager_load=True):
         """Get all active products.
@@ -968,28 +988,28 @@ class IProductSet(Interface):
 
     @call_with(owner=REQUEST_USER)
     @rename_parameters_as(
-        displayname='display_name', project='project_group',
+        projectgroup='project_group',
         homepageurl='home_page_url', screenshotsurl='screenshots_url',
         freshmeatproject='freshmeat_project', wikiurl='wiki_url',
         downloadurl='download_url',
         sourceforgeproject='sourceforge_project',
         programminglang='programming_lang')
     @export_factory_operation(
-        IProduct, ['name', 'displayname', 'title', 'summary', 'description',
-                   'project', 'homepageurl', 'screenshotsurl',
+        IProduct, ['name', 'display_name', 'title', 'summary', 'description',
+                   'projectgroup', 'homepageurl', 'screenshotsurl',
                    'downloadurl', 'freshmeatproject', 'wikiurl',
                    'sourceforgeproject', 'programminglang',
                    'project_reviewed', 'licenses', 'license_info',
-                   'registrant'])
+                   'registrant', 'bug_supervisor', 'driver'])
     @export_operation_as('new_project')
-    def createProduct(owner, name, displayname, title, summary,
-                      description=None, project=None, homepageurl=None,
+    def createProduct(owner, name, display_name, title, summary,
+                      description=None, projectgroup=None, homepageurl=None,
                       screenshotsurl=None, wikiurl=None,
                       downloadurl=None, freshmeatproject=None,
                       sourceforgeproject=None, programminglang=None,
                       project_reviewed=False, mugshot=None, logo=None,
                       icon=None, licenses=None, license_info=None,
-                      registrant=None):
+                      registrant=None, bug_supervisor=None, driver=None):
         """Create and return a brand new Product.
 
         See `IProduct` for a description of the parameters.
@@ -1015,7 +1035,9 @@ class IProductSet(Interface):
     @operation_returns_collection_of(IProduct)
     @export_read_operation()
     @export_operation_as('licensing_search')
-    def forReview(search_text=None,
+    @call_with(user=REQUEST_USER)
+    def forReview(user,
+                  search_text=None,
                   active=None,
                   project_reviewed=None,
                   licenses=None,
@@ -1029,10 +1051,14 @@ class IProductSet(Interface):
         """Return an iterator over products that need to be reviewed."""
 
     @collection_default_content()
+    def _request_user_search():
+        """Wrapper for search to use request user in default content."""
+
+    @call_with(user=REQUEST_USER)
     @operation_parameters(text=TextLine(title=_("Search text")))
     @operation_returns_collection_of(IProduct)
     @export_read_operation()
-    def search(text=None):
+    def search(user, text=None):
         """Search through the Registry database for products that match the
         query terms. text is a piece of text in the title / summary /
         description fields of product.
@@ -1041,17 +1067,13 @@ class IProductSet(Interface):
         needed for other callers.
         """
 
-    def search_sqlobject(text):
-        """A compatible sqlobject search for bugalsoaffects.py.
-
-        DO NOT ADD USES.
-        """
-
     @operation_returns_collection_of(IProduct)
-    @call_with(quantity=None)
+    @call_with(user=REQUEST_USER, quantity=None)
     @export_read_operation()
-    def latest(quantity=5):
+    def latest(user, quantity=5):
         """Return the latest projects registered in Launchpad.
+
+        The supplied user determines which objects are visible.
 
         If the quantity is not specified or is a value that is not 'None'
         then the set of projects returned is limited to that value (the
@@ -1066,19 +1088,6 @@ class IProductSet(Interface):
         Skips products that are not configured to be translated in
         Launchpad, as well as non-active ones.
         """
-
-    def featuredTranslatables(maximumproducts=8):
-        """Return an iterator over a random sample of translatable products.
-
-        Similar to `getTranslatables`, except the number of results is
-        limited and they are randomly chosen.
-
-        :param maximum_products: Maximum number of products to be
-            returned.
-        :return: An iterator over active, translatable products.
-        """
-        # XXX JeroenVermeulen 2008-07-31 bug=253583: this is not
-        # currently used!
 
     def count_all():
         """Return a count of the total number of products registered in
@@ -1190,6 +1199,7 @@ class InvalidProductName(LaunchpadValidationError):
 # Fix circular imports.
 from lp.registry.interfaces.distributionsourcepackage import (
     IDistributionSourcePackage)
-IDistributionSourcePackage['upstream_product'].schema = IProduct
+patch_reference_property(
+    IDistributionSourcePackage, 'upstream_product', IProduct)
 
-ICommercialSubscription['product'].schema = IProduct
+patch_reference_property(ICommercialSubscription, 'product', IProduct)

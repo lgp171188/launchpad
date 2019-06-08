@@ -1,10 +1,9 @@
 #!../bin/py
 
-# Copyright 2009 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 # This module uses relative imports.
-# pylint: disable-msg=W0403
 __metaclass__ = type
 
 import logging
@@ -18,6 +17,7 @@ import time
 
 from lp.services.config import config
 from lp.services.mailman.runmailman import stop_mailman
+from lp.services.osutils import process_exists
 from lp.services.pidfile import (
     get_pid,
     pidfile_path,
@@ -41,7 +41,7 @@ def main():
     if len(args) < 1:
         parser.error('No service name provided')
 
-    pids = [] # List of pids we tried to kill.
+    pids = []  # List of pids we tried to kill.
     services = args[:]
 
     # Mailman is special, but only stop it if it was launched.
@@ -102,17 +102,6 @@ def main():
                 pass
 
 
-def process_exists(pid):
-    """True if the given process exists."""
-    try:
-        os.getpgid(pid)
-    except OSError as x:
-        if x.errno == 3:
-            return False
-        logging.error("Unknown exception from getpgid - %s", str(x))
-    return True
-
-
 def wait_for_pids(pids, wait, log):
     """
     Wait until all signalled processes are dead, or until we hit the
@@ -126,7 +115,7 @@ def wait_for_pids(pids, wait, log):
     """
     wait_start = time.time()
     while len(pids) > 0 and time.time() < wait_start + wait:
-        for service, pid in pids[:]: # Copy pids because we mutate it.
+        for service, pid in pids[:]:  # Copy pids because we mutate it.
             if not process_exists(pid):
                 pids.remove((service, pid))
         time.sleep(0.1)

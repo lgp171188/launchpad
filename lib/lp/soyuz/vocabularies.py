@@ -1,4 +1,4 @@
-# Copyright 2009-2011 Canonical Ltd.  This software is licensed under the GNU
+# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the GNU
 # Affero General Public License version 3 (see the file LICENSE).
 
 """Soyuz vocabularies."""
@@ -10,35 +10,34 @@ __all__ = [
     'FilteredDistroArchSeriesVocabulary',
     'PackageReleaseVocabulary',
     'PPAVocabulary',
-    'ProcessorFamilyVocabulary',
-    'ProcessorVocabulary',
     ]
 
-from sqlobject import AND
-from storm.expr import SQL
-from zope.component import getUtility
-from zope.interface import implements
-from zope.schema.vocabulary import SimpleTerm
-
-from lp.registry.model.person import Person
-from lp.services.database.sqlbase import (
-    quote,
-    sqlvalues,
+from storm.locals import (
+    And,
+    Or,
     )
+from zope.component import getUtility
+from zope.interface import implementer
+from zope.schema.vocabulary import SimpleTerm
+from zope.security.interfaces import Unauthorized
+
+from lp.registry.model.distroseries import DistroSeries
+from lp.registry.model.person import Person
+from lp.services.database.interfaces import IStore
+from lp.services.database.stormexpr import fti_search
 from lp.services.webapp.interfaces import ILaunchBag
 from lp.services.webapp.vocabulary import (
     IHugeVocabulary,
-    NamedSQLObjectVocabulary,
     SQLObjectVocabularyBase,
     )
 from lp.soyuz.enums import ArchivePurpose
-from lp.soyuz.model.archive import Archive
+from lp.soyuz.interfaces.archive import IArchiveSet
+from lp.soyuz.model.archive import (
+    Archive,
+    get_enabled_archive_filter,
+    )
 from lp.soyuz.model.component import Component
 from lp.soyuz.model.distroarchseries import DistroArchSeries
-from lp.soyuz.model.processor import (
-    Processor,
-    ProcessorFamily,
-    )
 from lp.soyuz.model.sourcepackagerelease import SourcePackageRelease
 
 
@@ -56,7 +55,6 @@ class FilteredDistroArchSeriesVocabulary(SQLObjectVocabularyBase):
 
     _table = DistroArchSeries
     _orderBy = ['DistroSeries.version', 'architecturetag', 'id']
-    _clauseTables = ['DistroSeries']
 
     def toTerm(self, obj):
         name = "%s %s (%s)" % (obj.distroseries.distribution.name,
@@ -66,12 +64,11 @@ class FilteredDistroArchSeriesVocabulary(SQLObjectVocabularyBase):
     def __iter__(self):
         distribution = getUtility(ILaunchBag).distribution
         if distribution:
-            query = """
-                DistroSeries.id = DistroArchSeries.distroseries AND
-                DistroSeries.distribution = %s
-                """ % sqlvalues(distribution.id)
-            results = self._table.select(
-                query, orderBy=self._orderBy, clauseTables=self._clauseTables)
+            results = IStore(DistroSeries).find(
+                self._table,
+                DistroSeries.id == DistroArchSeries.distroseriesID,
+                DistroSeries.distributionID == distribution.id).order_by(
+                    *self._orderBy)
             for distroarchseries in results:
                 yield self.toTerm(distroarchseries)
 
@@ -85,14 +82,17 @@ class PackageReleaseVocabulary(SQLObjectVocabularyBase):
             obj, obj.id, obj.name + " " + obj.version)
 
 
+@implementer(IHugeVocabulary)
 class PPAVocabulary(SQLObjectVocabularyBase):
-
-    implements(IHugeVocabulary)
 
     _table = Archive
     _orderBy = ['Person.name, Archive.name']
     _clauseTables = ['Person']
-    _filter = AND(
+    # This should probably also filter by privacy, but that becomes
+    # problematic when you need to remove a dependency that you can no
+    # longer see.
+    _filter = And(
+        Archive._enabled == True,
         Person.q.id == Archive.q.ownerID,
         Archive.q.purpose == ArchivePurpose.PPA)
     displayname = 'Select a PPA'
@@ -100,35 +100,20 @@ class PPAVocabulary(SQLObjectVocabularyBase):
 
     def toTerm(self, archive):
         """See `IVocabulary`."""
-        description = archive.description
-        if description:
-            summary = description.splitlines()[0]
-        else:
-            summary = "No description available"
-
-        token = '%s/%s' % (archive.owner.name, archive.name)
-
-        return SimpleTerm(archive, token, summary)
+        summary = "No description available"
+        try:
+            if archive.description:
+                summary = archive.description.splitlines()[0]
+        except Unauthorized:
+            pass
+        return SimpleTerm(archive, archive.reference, summary)
 
     def getTermByToken(self, token):
         """See `IVocabularyTokenized`."""
-        try:
-            owner_name, archive_name = token.split('/')
-        except ValueError:
+        obj = getUtility(IArchiveSet).getByReference(token)
+        if obj is None or not obj.enabled or not obj.is_ppa:
             raise LookupError(token)
-
-        clause = AND(
-            self._filter,
-            Person.name == owner_name,
-            Archive.name == archive_name)
-
-        obj = self._table.selectOne(
-            clause, clauseTables=self._clauseTables)
-
-        if obj is None:
-            raise LookupError(token)
-        else:
-            return self.toTerm(obj)
+        return self.toTerm(obj)
 
     def search(self, query, vocab_filter=None):
         """Return a resultset of archives.
@@ -140,31 +125,28 @@ class PPAVocabulary(SQLObjectVocabularyBase):
 
         query = query.lower()
 
+        if query.startswith('~'):
+            query = query.strip('~')
+        if query.startswith('ppa:'):
+            query = query[4:]
         try:
-            owner_name, archive_name = query.split('/')
+            query_split = query.split('/')
+            if len(query_split) == 3:
+                owner_name, distro_name, archive_name = query_split
+            else:
+                owner_name, archive_name = query_split
         except ValueError:
-            clause = AND(
-                self._filter,
-                SQL("(Archive.fti @@ ftq(%s) OR Person.fti @@ ftq(%s))"
-                    % (quote(query), quote(query))))
+            search_clause = Or(
+                fti_search(Archive, query), fti_search(Person, query))
         else:
-            clause = AND(
-                self._filter,
-                Person.name == owner_name,
-                Archive.name == archive_name)
+            search_clause = And(
+                Person.name == owner_name, Archive.name == archive_name)
 
+        clause = And(
+            self._filter,
+            get_enabled_archive_filter(
+                getUtility(ILaunchBag).user, purpose=ArchivePurpose.PPA,
+                include_public=True),
+            search_clause)
         return self._table.select(
             clause, orderBy=self._orderBy, clauseTables=self._clauseTables)
-
-
-class ProcessorVocabulary(NamedSQLObjectVocabulary):
-
-    displayname = 'Select a processor'
-    _table = Processor
-    _orderBy = 'name'
-
-
-class ProcessorFamilyVocabulary(NamedSQLObjectVocabulary):
-    displayname = 'Select a processor family'
-    _table = ProcessorFamily
-    _orderBy = 'name'

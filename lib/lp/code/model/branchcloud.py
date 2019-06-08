@@ -25,18 +25,17 @@ from storm.locals import (
     Max,
     Not,
     )
-from zope.interface import classProvides
+from zope.interface import provider
 
 from lp.code.interfaces.branch import IBranchCloud
 from lp.code.model.revision import RevisionCache
 from lp.registry.model.product import Product
-from lp.services.database.lpstorm import ISlaveStore
+from lp.services.database.interfaces import ISlaveStore
 
 
+@provider(IBranchCloud)
 class BranchCloud:
     """See `IBranchCloud`."""
-
-    classProvides(IBranchCloud)
 
     @staticmethod
     def getProductsWithInfo(num_products=None):

@@ -1,4 +1,4 @@
-# Copyright 2010-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2013 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -128,7 +128,9 @@ class IPlainPackageCopyJobSource(IJobSource):
                target_archive, target_distroseries, target_pocket,
                include_binaries=False, package_version=None,
                copy_policy=PackageCopyPolicy.INSECURE, requester=None,
-               sponsored=None, unembargo=False, auto_approve=False):
+               sponsored=None, unembargo=False, auto_approve=False,
+               silent=False, source_distroseries=None, source_pocket=None,
+               phased_update_percentage=None):
         """Create a new `IPlainPackageCopyJob`.
 
         :param package_name: The name of the source package to copy.
@@ -150,12 +152,22 @@ class IPlainPackageCopyJobSource(IJobSource):
         :param auto_approve: if True and the user requesting the sync has
             queue admin permissions on the target, accept the copy
             immediately rather than setting it to unapproved.
+        :param silent: Suppress any emails that the copy would generate.
+            Only usable with queue admin permissions on the target.
+        :param source_distroseries: The `IDistroSeries` from which to copy
+            the packages. If omitted, copy from any series with a matching
+            version.
+        :param source_pocket: The pocket from which to copy the packages.
+            Must be a member of `PackagePublishingPocket`. If omitted, copy
+            from any pocket with a matching version.
+        :param phased_update_percentage: The phased update percentage to
+            apply to the copied publication.
         """
 
     def createMultiple(target_distroseries, copy_tasks, requester,
                        copy_policy=PackageCopyPolicy.INSECURE,
                        include_binaries=False, unembargo=False,
-                       auto_approve=False):
+                       auto_approve=False, silent=False):
         """Create multiple new `IPlainPackageCopyJob`s at once.
 
         :param target_distroseries: The `IDistroSeries` to which to copy the
@@ -167,10 +179,12 @@ class IPlainPackageCopyJobSource(IJobSource):
         :param copy_policy: Applicable `PackageCopyPolicy`.
         :param include_binaries: As in `do_copy`.
         :param unembargo: As in `do_copy`.
-        :return: An iterable of `PackageCopyJob` ids.
         :param auto_approve: if True and the user requesting the sync has
             queue admin permissions on the target, accept the copy
             immediately rather than setting it to unapproved.
+        :param silent: Suppress any emails that the copy would generate.
+            Only usable with queue admin permissions on the target.
+        :return: An iterable of `PackageCopyJob` ids.
         """
 
     def getActiveJobs(target_archive):
@@ -227,6 +241,19 @@ class IPlainPackageCopyJob(IRunnableJob):
         title=_("Automatic approval"),
         required=False, readonly=True)
 
+    silent = Bool(title=_("Silent"), required=False, readonly=True)
+
+    source_distroseries = Reference(
+        schema=IDistroSeries, title=_('Source DistroSeries.'),
+        required=False, readonly=True)
+
+    source_pocket = Int(
+        title=_("Source package publishing pocket"), required=False,
+        readonly=True)
+
+    phased_update_percentage = Int(
+        title=_("Phased update percentage"), required=False, readonly=True)
+
     def addSourceOverride(override):
         """Add an `ISourceOverride` to the metadata."""
 
@@ -235,6 +262,9 @@ class IPlainPackageCopyJob(IRunnableJob):
 
     def getSourceOverride():
         """Get an `ISourceOverride` from the metadata."""
+
+    def findSourcePublication():
+        """Find the appropriate origin `ISourcePackagePublishingHistory`."""
 
     copy_policy = Choice(
         title=_("Applicable copy policy"),

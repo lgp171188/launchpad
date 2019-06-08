@@ -1,8 +1,9 @@
-# Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
     'BranchJob',
+    'BranchModifiedMailJob',
     'BranchScanJob',
     'BranchJobDerived',
     'BranchJobType',
@@ -12,7 +13,6 @@ __all__ = [
     'RosettaUploadJob',
 ]
 
-import contextlib
 import operator
 import os
 import shutil
@@ -33,7 +33,7 @@ from bzrlib.revision import NULL_REVISION
 from bzrlib.revisionspec import RevisionInfo
 from bzrlib.transport import get_transport
 from bzrlib.upgrade import upgrade
-from lazr.delegates import delegates
+from lazr.delegates import delegate_to
 from lazr.enum import (
     DBEnumeratedType,
     DBItem,
@@ -44,6 +44,7 @@ from sqlobject import (
     SQLObjectNotFound,
     StringCol,
     )
+from storm.exceptions import LostObjectError
 from storm.expr import (
     And,
     SQL,
@@ -52,8 +53,8 @@ from storm.locals import Store
 import transaction
 from zope.component import getUtility
 from zope.interface import (
-    classProvides,
-    implements,
+    implementer,
+    provider,
     )
 
 from lp.code.bzr import (
@@ -67,6 +68,8 @@ from lp.code.enums import (
     )
 from lp.code.interfaces.branchjob import (
     IBranchJob,
+    IBranchModifiedMailJob,
+    IBranchModifiedMailJobSource,
     IBranchScanJob,
     IBranchScanJobSource,
     IBranchUpgradeJob,
@@ -93,33 +96,33 @@ from lp.codehosting.vfs import (
     get_rw_server,
     )
 from lp.codehosting.vfs.branchfs import get_real_branch_path
+from lp.registry.interfaces.person import IPersonSet
 from lp.registry.interfaces.productseries import IProductSeriesSet
 from lp.scripts.helpers import TransactionFreeOperation
 from lp.services.config import config
 from lp.services.database.enumcol import EnumCol
+from lp.services.database.interfaces import (
+    IMasterStore,
+    IStore,
+    )
 from lp.services.database.locking import (
     AdvisoryLockHeld,
     LockType,
     try_advisory_lock,
     )
-from lp.services.database.lpstorm import IStore
 from lp.services.database.sqlbase import SQLBase
 from lp.services.job.interfaces.job import JobStatus
 from lp.services.job.model.job import (
     EnumeratedSubclass,
     Job,
     )
-from lp.services.job.runner import BaseRunnableJob
+from lp.services.job.runner import (
+    BaseRunnableJob,
+    BaseRunnableJobSource,
+    )
 from lp.services.mail.sendmail import format_address_for_person
-from lp.services.webapp import (
-    canonical_url,
-    errorlog,
-    )
-from lp.services.webapp.interfaces import (
-    IStoreSelector,
-    MAIN_STORE,
-    MASTER_FLAVOR,
-    )
+from lp.services.utils import text_delta
+from lp.services.webapp import canonical_url
 from lp.translations.interfaces.translationimportqueue import (
     ITranslationImportQueue,
     )
@@ -186,11 +189,16 @@ class BranchJobType(DBEnumeratedType):
         This job scans a branch for new revisions.
         """)
 
+    BRANCH_MODIFIED_MAIL = DBItem(8, """
+        Branch modified mail
 
+        This job runs against a branch to send emails about modifications.
+        """)
+
+
+@implementer(IBranchJob)
 class BranchJob(SQLBase):
     """Base class for jobs related to branches."""
-
-    implements(IBranchJob)
 
     _table = 'BranchJob'
 
@@ -231,11 +239,10 @@ class BranchJob(SQLBase):
         return BranchJobDerived.makeSubclass(self)
 
 
+@delegate_to(IBranchJob)
 class BranchJobDerived(BaseRunnableJob):
 
     __metaclass__ = EnumeratedSubclass
-
-    delegates(IBranchJob)
 
     def __init__(self, branch_job):
         self.context = branch_job
@@ -249,7 +256,7 @@ class BranchJobDerived(BaseRunnableJob):
             }
 
     # XXX: henninge 2009-02-20 bug=331919: These two standard operators
-    # should be implemented by delegates().
+    # should be implemented by delegate_to().
     def __eq__(self, other):
         # removeSecurityProxy, since 'other' might well be a delegated object
         # and the context attribute is not exposed by design.
@@ -263,8 +270,7 @@ class BranchJobDerived(BaseRunnableJob):
     @classmethod
     def iterReady(cls):
         """See `IRevisionMailJobSource`."""
-        store = getUtility(IStoreSelector).get(MAIN_STORE, MASTER_FLAVOR)
-        jobs = store.find(
+        jobs = IMasterStore(Branch).find(
             (BranchJob),
             And(BranchJob.job_type == cls.class_job_type,
                 BranchJob.job == Job.id,
@@ -299,12 +305,10 @@ class BranchJobDerived(BaseRunnableJob):
         return [format_address_for_person(self.requester)]
 
 
+@implementer(IBranchScanJob)
+@provider(IBranchScanJobSource)
 class BranchScanJob(BranchJobDerived):
     """A Job that scans a branch for new revisions."""
-
-    implements(IBranchScanJob)
-
-    classProvides(IBranchScanJobSource)
     class_job_type = BranchJobType.SCAN_BRANCH
     memory_limit = 2 * (1024 ** 3)
 
@@ -312,45 +316,61 @@ class BranchScanJob(BranchJobDerived):
 
     retry_error_types = (AdvisoryLockHeld,)
 
-    config = config.branchscanner
+    task_queue = 'bzrsyncd_job'
+
+    config = config.IBranchScanJobSource
 
     @classmethod
     def create(cls, branch):
         """See `IBranchScanJobSource`."""
-        branch_job = BranchJob(branch, cls.class_job_type, {})
+        branch_job = BranchJob(
+            branch, cls.class_job_type, {'branch_name': branch.unique_name})
         return cls(branch_job)
+
+    def __init__(self, branch_job):
+        super(BranchScanJob, self).__init__(branch_job)
+        self._cached_branch_name = self.metadata['branch_name']
+
+    @staticmethod
+    def timeline_detail_filter(category, detail):
+        """See `IRunnableJob`."""
+        # Branch scan jobs involve very large bulk INSERT statements, which
+        # we don't want to log in full.  Truncate these in the same kind of
+        # way that python-oops-tools does for its list of most expensive
+        # statements.
+        maximum = 1000
+        splitter = ' ... '
+        if category.startswith('SQL-') and len(detail) > maximum:
+            half = (maximum - len(splitter)) // 2
+            detail = (detail[:half] + splitter + detail[-half:])
+        return detail
 
     def run(self):
         """See `IBranchScanJob`."""
         from lp.services.scripts import log
         with server(get_ro_server(), no_replace=True):
-            lock = try_advisory_lock(
-                LockType.BRANCH_SCAN, self.branch.id, Store.of(self.branch))
-            with lock:
-                bzrsync = BzrSync(self.branch, log)
-                bzrsync.syncBranchAndClose()
-
-    @classmethod
-    @contextlib.contextmanager
-    def contextManager(cls):
-        """See `IBranchScanJobSource`."""
-        errorlog.globalErrorUtility.configure('branchscanner')
-        yield
+            try:
+                with try_advisory_lock(
+                    LockType.BRANCH_SCAN, self.branch.id,
+                    Store.of(self.branch)):
+                    bzrsync = BzrSync(self.branch, log)
+                    bzrsync.syncBranchAndClose()
+            except LostObjectError:
+                log.warning('Skipping branch %s because it has been deleted.'
+                    % self._cached_branch_name)
 
 
+@implementer(IBranchUpgradeJob)
+@provider(IBranchUpgradeJobSource)
 class BranchUpgradeJob(BranchJobDerived):
     """A Job that upgrades branches to the current stable format."""
-
-    implements(IBranchUpgradeJob)
-
-    classProvides(IBranchUpgradeJobSource)
     class_job_type = BranchJobType.UPGRADE_BRANCH
 
     user_error_types = (NotBranchError,)
 
     task_queue = 'branch_write_job'
 
-    config = config.upgrade_branches
+    config = config.IBranchUpgradeJobSource
 
     def getOperationDescription(self):
         return 'upgrading a branch'
@@ -362,13 +382,6 @@ class BranchUpgradeJob(BranchJobDerived):
         branch_job = BranchJob(
             branch, cls.class_job_type, {}, requester=requester)
         return cls(branch_job)
-
-    @staticmethod
-    @contextlib.contextmanager
-    def contextManager():
-        """See `IBranchUpgradeJobSource`."""
-        errorlog.globalErrorUtility.configure('upgrade_branches')
-        yield
 
     def run(self, _check_transaction=False):
         """See `IBranchUpgradeJob`."""
@@ -427,16 +440,14 @@ class BranchUpgradeJob(BranchJobDerived):
                 shutil.rmtree(upgrade_branch_path)
 
 
+@implementer(IRevisionMailJob)
+@provider(IRevisionMailJobSource)
 class RevisionMailJob(BranchJobDerived):
     """A Job that sends a mail for a scan of a Branch."""
 
-    implements(IRevisionMailJob)
-
-    classProvides(IRevisionMailJobSource)
-
     class_job_type = BranchJobType.REVISION_MAIL
 
-    config = config.sendbranchmail
+    config = config.IRevisionMailJobSource
 
     @classmethod
     def create(cls, branch, revno, from_address, body, subject):
@@ -469,21 +480,21 @@ class RevisionMailJob(BranchJobDerived):
     def getMailer(self):
         """Return a BranchMailer for this job."""
         return BranchMailer.forRevision(
-            self.branch, self.revno, self.from_address, self.body,
-            None, self.subject)
+            self.branch, self.from_address, self.body, None, self.subject,
+            revno=self.revno)
 
     def run(self):
         """See `IRevisionMailJob`."""
         self.getMailer().sendAll()
 
 
+@implementer(IRevisionsAddedJob)
 class RevisionsAddedJob(BranchJobDerived):
     """A job for sending emails about added revisions."""
-    implements(IRevisionsAddedJob)
 
     class_job_type = BranchJobType.REVISIONS_ADDED_MAIL
 
-    config = config.sendbranchmail
+    config = config.IRevisionsAddedJobSource
 
     @classmethod
     def create(cls, branch, last_scanned_id, last_revision_id,
@@ -607,8 +618,8 @@ class RevisionsAddedJob(BranchJobDerived):
         else:
             diff_text = None
         return BranchMailer.forRevision(
-            self.branch, revno, self.from_address, message, diff_text,
-            subject)
+            self.branch, self.from_address, message, diff_text, subject,
+            revno=revno)
 
     def getMergedRevisionIDs(self, revision_id, graph):
         """Determine which revisions were merged by this revision.
@@ -733,16 +744,16 @@ class RevisionsAddedJob(BranchJobDerived):
         return outf.getvalue()
 
 
+@implementer(IRosettaUploadJob)
+@provider(IRosettaUploadJobSource)
 class RosettaUploadJob(BranchJobDerived):
     """A Job that uploads translation files to Rosetta."""
 
-    implements(IRosettaUploadJob)
-
-    classProvides(IRosettaUploadJobSource)
-
     class_job_type = BranchJobType.ROSETTA_UPLOAD
 
-    config = config.rosettabranches
+    task_queue = 'bzrsyncd_job'
+
+    config = config.IRosettaUploadJobSource
 
     def __init__(self, branch_job):
         super(RosettaUploadJob, self).__init__(branch_job)
@@ -943,8 +954,7 @@ class RosettaUploadJob(BranchJobDerived):
     @staticmethod
     def iterReady():
         """See `IRosettaUploadJobSource`."""
-        store = getUtility(IStoreSelector).get(MAIN_STORE, MASTER_FLAVOR)
-        jobs = store.using(BranchJob, Job, Branch).find(
+        jobs = IMasterStore(BranchJob).using(BranchJob, Job, Branch).find(
             (BranchJob),
             And(BranchJob.job_type == BranchJobType.ROSETTA_UPLOAD,
                 BranchJob.job == Job.id,
@@ -956,7 +966,7 @@ class RosettaUploadJob(BranchJobDerived):
     @staticmethod
     def findUnfinishedJobs(branch, since=None):
         """See `IRosettaUploadJobSource`."""
-        store = getUtility(IStoreSelector).get(MAIN_STORE, MASTER_FLAVOR)
+        store = IMasterStore(BranchJob)
         match = And(
             Job.id == BranchJob.jobID,
             BranchJob.branch == branch,
@@ -969,18 +979,16 @@ class RosettaUploadJob(BranchJobDerived):
         return jobs
 
 
-class ReclaimBranchSpaceJob(BranchJobDerived):
+@implementer(IReclaimBranchSpaceJob)
+@provider(IReclaimBranchSpaceJobSource)
+class ReclaimBranchSpaceJob(BranchJobDerived, BaseRunnableJobSource):
     """Reclaim the disk space used by a branch that's deleted from the DB."""
-
-    implements(IReclaimBranchSpaceJob)
-
-    classProvides(IReclaimBranchSpaceJobSource)
 
     class_job_type = BranchJobType.RECLAIM_BRANCH_SPACE
 
     task_queue = 'branch_write_job'
 
-    config = config.reclaimbranchspace
+    config = config.IReclaimBranchSpaceJobSource
 
     def __repr__(self):
         return '<RECLAIM_BRANCH_SPACE branch job (%(id)s) for %(branch)s>' % {
@@ -1007,3 +1015,44 @@ class ReclaimBranchSpaceJob(BranchJobDerived):
         branch_path = get_real_branch_path(self.branch_id)
         if os.path.exists(branch_path):
             shutil.rmtree(branch_path)
+
+
+@implementer(IBranchModifiedMailJob)
+@provider(IBranchModifiedMailJobSource)
+class BranchModifiedMailJob(BranchJobDerived):
+    """A Job that sends email about branch modifications."""
+
+    class_job_type = BranchJobType.BRANCH_MODIFIED_MAIL
+
+    config = config.IBranchModifiedMailJobSource
+
+    @classmethod
+    def create(cls, branch, user, branch_delta):
+        """See `IBranchModifiedMailJobSource`."""
+        metadata = {
+            'user': user.id,
+            'branch_delta': text_delta(
+                branch_delta, branch_delta.delta_values,
+                branch_delta.new_values, branch_delta.interface),
+            }
+        branch_job = BranchJob(branch, cls.class_job_type, metadata)
+        job = cls(branch_job)
+        job.celeryRunOnCommit()
+        return job
+
+    @property
+    def user(self):
+        return getUtility(IPersonSet).get(self.metadata['user'])
+
+    @property
+    def branch_delta(self):
+        return self.metadata['branch_delta']
+
+    def getMailer(self):
+        """Return a `BranchMailer` for this job."""
+        return BranchMailer.forBranchModified(
+            self.branch, self.user, self.branch_delta)
+
+    def run(self):
+        """See `IBranchModifiedMailJob`."""
+        self.getMailer().sendAll()

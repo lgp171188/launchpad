@@ -1,4 +1,5 @@
-# Copyright 2010-2011 Canonical Ltd.  All rights reserved.
+# Copyright 2010-2011 Canonical Ltd.  This software is licensed under the
+# GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test OpenID server."""
 
@@ -26,9 +27,9 @@ from openid.server.server import (
     )
 from openid.store.memstore import MemoryStore
 from z3c.ptcompat import ViewPageTemplateFile
-from zope.app.security.interfaces import IUnauthenticatedPrincipal
+from zope.authentication.interfaces import IUnauthenticatedPrincipal
 from zope.component import getUtility
-from zope.interface import implements
+from zope.interface import implementer
 from zope.security.proxy import isinstance as zisinstance
 from zope.session.interfaces import ISession
 
@@ -81,10 +82,9 @@ openid_store = MemoryStore()
 oidutil.log = lambda message, level=0: None
 
 
+@implementer(ICanonicalUrlData)
 class TestOpenIDRootUrlData:
     """`ICanonicalUrlData` for the test OpenID provider."""
-
-    implements(ICanonicalUrlData)
 
     path = ''
     inside = None

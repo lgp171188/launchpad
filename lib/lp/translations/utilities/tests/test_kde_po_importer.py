@@ -1,10 +1,11 @@
-# Copyright 2009-2010 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2017 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """KDE PO importer tests."""
 
 __metaclass__ = type
 
+from io import BytesIO
 import unittest
 
 import transaction
@@ -107,15 +108,15 @@ class KdePOImporterTestCase(unittest.TestCase):
 
     def testInterface(self):
         """Check whether the object follows the interface."""
-        self.failUnless(
+        self.assertTrue(
             verifyObject(ITranslationFormatImporter, self.template_importer),
             "KdePOImporter doesn't conform to ITranslationFormatImporter"
                 "interface.")
 
     def testFormat(self):
         """Check whether KdePOImporter can handle the KDEPO file format."""
-        format = self.template_importer.getFormat(test_kde_template)
-        self.failUnless(
+        format = self.template_importer.getFormat(BytesIO(test_kde_template))
+        self.assertTrue(
             format == TranslationFileFormat.KDEPO,
             'KdePOImporter format expected KDEPO but got %s' % format.name)
 
@@ -126,7 +127,7 @@ class KdePOImporterTestCase(unittest.TestCase):
         # priority over GettextPOImporter
         gettext_importer = GettextPOImporter()
 
-        self.failUnless(
+        self.assertTrue(
             self.template_importer.priority > gettext_importer.priority,
             'KdePOImporter priority is not higher than priority of '
             'GettextPOImporter')
@@ -134,7 +135,7 @@ class KdePOImporterTestCase(unittest.TestCase):
     def testGettextPOFileFormat(self):
         """Check that non-KDE PO files are recognized as regular PO files."""
         format = self.gettext_template_entry.format
-        self.failUnless(format == TranslationFileFormat.PO,
+        self.assertTrue(format == TranslationFileFormat.PO,
                         ('KdePOImporter format expected PO '
                          'but got %s for non-KDE PO file.' % format.name))
 
@@ -143,7 +144,7 @@ class KdePOImporterTestCase(unittest.TestCase):
         message = self.template_file.messages[0]
         singular = message.msgid_singular
         plural = message.msgid_plural
-        self.failUnless(
+        self.assertTrue(
             (singular == u'%1 foo' and plural == u'%1 foos'),
             "KdePOImporter didn't import KDE plural forms correctly.")
 
@@ -152,7 +153,7 @@ class KdePOImporterTestCase(unittest.TestCase):
         """
         message = self.translation_file.messages[0]
         translations = message.translations
-        self.failUnless(
+        self.assertTrue(
             (translations[0] == u'1st plural form %1' and
              translations[1] == u'2nd plural form %1' and
              translations[2] == u'3rd plural form %1'),
@@ -164,7 +165,7 @@ class KdePOImporterTestCase(unittest.TestCase):
         message = self.template_file.messages[1]
         singular = message.msgid_singular
         context = message.context
-        self.failUnless(
+        self.assertTrue(
             (singular == u'Message' and context == u'Context'),
             "KdePOImporter didn't import KDE context correctly.")
 
@@ -174,7 +175,7 @@ class KdePOImporterTestCase(unittest.TestCase):
         singular = message.msgid_singular
         context = message.context
         translations = message.translations
-        self.failUnless(
+        self.assertTrue(
             (singular == u'Message' and context == u'Context' and
              translations[0] == u'Contextual translation'),
             "KdePOImporter didn't import translated KDE context correctly.")

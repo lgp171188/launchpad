@@ -1,4 +1,4 @@
-# Copyright 2009 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for runlaunchpad.py"""
@@ -113,11 +113,11 @@ class TestDefaultConfigArgument(lp.testing.TestCase):
         instance_config_dir = os.path.join(self.config_root, 'test')
         os.mkdir(instance_config_dir)
         open(os.path.join(instance_config_dir, 'launchpad.conf'), 'w').close()
-        self.assertEquals(
+        self.assertEqual(
             ['-o', 'foo', '-C', '%s/launchpad.conf' % instance_config_dir],
             process_config_arguments(
                 ['-i', 'test', '-o', 'foo']))
-        self.assertEquals('test', config.instance_name)
+        self.assertEqual('test', config.instance_name)
 
 
 class ServersToStart(testtools.TestCase):
@@ -137,7 +137,7 @@ class ServersToStart(testtools.TestCase):
         config.push('launch_data', launch_data)
         self.addCleanup(config.pop, 'launch_data')
 
-    def test_nothing_explictly_requested(self):
+    def test_nothing_explicitly_requested(self):
         """Implicitly start services based on the config.*.launch property.
         """
         services = sorted(get_services_to_run([]))
@@ -147,28 +147,24 @@ class ServersToStart(testtools.TestCase):
         if config.mailman.launch:
             expected.append(SERVICES['mailman'])
 
-        # Likewise, the GoogleWebService may or may not be asked to
+        # Likewise, the search test services may or may not be asked to
         # run.
-        if config.google_test_service.launch:
-            expected.append(SERVICES['google-webservice'])
+        if config.bing_test_service.launch:
+            expected.append(SERVICES['bing-webservice'])
 
         # RabbitMQ may or may not be asked to run.
         if config.rabbitmq.launch:
             expected.append(SERVICES['rabbitmq'])
 
-        # TxLongPoll may or may not be asked to run.
-        if config.txlongpoll.launch:
-            expected.append(SERVICES['txlongpoll'])
-
         expected = sorted(expected)
         self.assertEqual(expected, services)
 
     def test_explicit_request_overrides(self):
-        """Only start those services which are explictly requested, ignoring
-        the configuration properties.
+        """Only start those services which are explicitly requested,
+        ignoring the configuration properties.
         """
         services = get_services_to_run(['sftp'])
         self.assertEqual([SERVICES['sftp']], services)
 
     def test_launchpad_systems_red(self):
-        self.failIf(config.launchpad.launch)
+        self.assertFalse(config.launchpad.launch)

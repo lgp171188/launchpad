@@ -1,4 +1,4 @@
-# Copyright 2009 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -19,18 +19,18 @@ __all__ = [
     ]
 
 from z3c.ptcompat import ViewPageTemplateFile
-from zope.app.form.browser import TextWidget
 from zope.component import getUtility
 from zope.event import notify
+from zope.formlib.widget import CustomWidgetFactory
+from zope.formlib.widgets import TextWidget
 from zope.interface import (
-    implements,
+    implementer,
     Interface,
     )
 from zope.lifecycleevent import ObjectCreatedEvent
 
 from lp.app.browser.launchpadform import (
     action,
-    custom_widget,
     LaunchpadEditFormView,
     LaunchpadFormView,
     )
@@ -215,9 +215,9 @@ class PollBreadcrumb(TitleBreadcrumb):
     """Breadcrumb for polls."""
 
 
+@implementer(IPollActionMenu)
 class PollView(BasePollView):
     """A view class to display the results of a poll."""
-    implements(IPollActionMenu)
 
     def initialize(self):
         super(PollView, self).initialize()
@@ -255,7 +255,7 @@ class PollVoteView(BasePollView):
     """A view class to where the user can vote on a poll.
 
     If the user already voted, the current vote is displayed and the user can
-    change it. Otherwise he can register his vote.
+    change it. Otherwise they can register their vote.
     """
 
     default_template = ViewPageTemplateFile(
@@ -359,7 +359,7 @@ class PollVoteView(BasePollView):
                 # XXX: Guilherme Salgado 2005-09-14:
                 # User tried to specify a value which we can't convert to
                 # an integer. Better thing to do would be to notify the user
-                # and ask him to fix it.
+                # and ask them to fix it.
                 preference = None
             newvotes[option] = preference
 
@@ -417,9 +417,8 @@ class PollAddView(LaunchpadFormView):
         notify(ObjectCreatedEvent(poll))
 
 
+@implementer(IPollEditMenu)
 class PollEditView(LaunchpadEditFormView):
-
-    implements(IPollEditMenu)
     schema = IPoll
     label = "Edit poll details"
     page_title = 'Edit'
@@ -444,7 +443,7 @@ class PollOptionEditView(LaunchpadEditFormView):
     label = "Edit option details"
     page_title = 'Edit option'
     field_names = ["name", "title"]
-    custom_widget("title", TextWidget, displayWidth=30)
+    custom_widget_title = CustomWidgetFactory(TextWidget, displayWidth=30)
 
     @property
     def cancel_url(self):
@@ -464,7 +463,7 @@ class PollOptionAddView(LaunchpadFormView):
     label = "Create new poll option"
     page_title = "New option"
     field_names = ["name", "title"]
-    custom_widget("title", TextWidget, displayWidth=30)
+    custom_widget_title = CustomWidgetFactory(TextWidget, displayWidth=30)
 
     @property
     def cancel_url(self):

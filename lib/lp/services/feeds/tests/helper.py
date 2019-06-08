@@ -1,4 +1,4 @@
-# Copyright 2009 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Helper functions for testing feeds."""
@@ -28,7 +28,7 @@ from textwrap import wrap
 
 from zope.interface import (
     Attribute,
-    implements,
+    implementer,
     Interface,
     )
 from BeautifulSoup import BeautifulStoneSoup as BSS
@@ -41,8 +41,8 @@ class IThing(Interface):
     value = Attribute('the value of the thing')
 
 
+@implementer(IThing)
 class Thing(object):
-    implements(IThing)
 
     def __init__(self, value):
         self.value = value
@@ -54,6 +54,7 @@ class Thing(object):
 class ThingFeedView(LaunchpadView):
     usedfor = IThing
     feedname = "thing-feed"
+
     def __call__(self):
         return "a feed view on an IThing"
 
@@ -120,12 +121,12 @@ def validate_feed(content, content_type, base_uri):
                 # which column contains the error.
                 max_line_length = 66
                 wrapped_column_number = column_number % max_line_length
-                line_number_range = range(
-                    max(error_line_number-2, 1),
-                    min(error_line_number+3, len(lines)))
+                line_number_range = list(range(
+                    max(error_line_number - 2, 1),
+                    min(error_line_number + 3, len(lines))))
                 for line_number in line_number_range:
                     unicode_line = unicode(
-                        lines[line_number-1], 'ascii', 'replace')
+                        lines[line_number - 1], 'ascii', 'replace')
                     ascii_line = unicode_line.encode('ascii', 'replace')
                     wrapped_lines = wrap(ascii_line, max_line_length)
                     if line_number == error_line_number:
@@ -135,7 +136,7 @@ def validate_feed(content, content_type, base_uri):
                         point_list = ['~'] * max_line_length
                         point_list[wrapped_column_number] = '^'
                         point_string = ''.join(point_list)
-                        index = column_number/max_line_length + 1
+                        index = column_number / max_line_length + 1
                         wrapped_lines.insert(index, point_string)
                     errors.append(
                         "% 3d: %s" % (line_number,

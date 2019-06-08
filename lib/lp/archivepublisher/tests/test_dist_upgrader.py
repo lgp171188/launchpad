@@ -1,4 +1,4 @@
-# Copyright 2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2012-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test dist-upgrader custom uploads.
@@ -7,8 +7,15 @@ See also lp.soyuz.tests.test_distroseriesqueue_dist_upgrader for high-level
 tests of dist-upgrader upload and queue manipulation.
 """
 
-import os
+from __future__ import absolute_import, print_function, unicode_literals
 
+import os
+from textwrap import dedent
+
+from testtools.matchers import DirContains
+from zope.component import getUtility
+
+from lp.archivepublisher.config import getPubConfig
 from lp.archivepublisher.customupload import (
     CustomUploadAlreadyExists,
     CustomUploadBadUmask,
@@ -16,10 +23,13 @@ from lp.archivepublisher.customupload import (
 from lp.archivepublisher.dist_upgrader import (
     DistUpgraderBadVersion,
     DistUpgraderUpload,
-    process_dist_upgrader,
     )
+from lp.archivepublisher.interfaces.publisherconfig import IPublisherConfigSet
+from lp.archivepublisher.tests.test_run_parts import RunPartsMixin
 from lp.services.tarfile_helpers import LaunchpadWriteTarFile
-from lp.testing import TestCase
+from lp.soyuz.enums import ArchivePurpose
+from lp.testing import TestCaseWithFactory
+from lp.testing.layers import ZopelessDatabaseLayer
 
 
 class FakeConfig:
@@ -28,56 +38,65 @@ class FakeConfig:
         self.archiveroot = archiveroot
 
 
-class TestDistUpgrader(TestCase):
+class TestDistUpgrader(RunPartsMixin, TestCaseWithFactory):
+
+    layer = ZopelessDatabaseLayer
 
     def setUp(self):
         super(TestDistUpgrader, self).setUp()
         self.temp_dir = self.makeTemporaryDirectory()
-        self.pubconf = FakeConfig(self.temp_dir)
+        self.distro = self.factory.makeDistribution()
+        db_pubconf = getUtility(IPublisherConfigSet).getByDistribution(
+            self.distro)
+        db_pubconf.root_dir = unicode(self.temp_dir)
+        self.archive = self.factory.makeArchive(
+            distribution=self.distro, purpose=ArchivePurpose.PRIMARY)
         self.suite = "distroseries"
-        # CustomUpload.installFiles requires a umask of 022.
-        old_umask = os.umask(022)
+        # CustomUpload.installFiles requires a umask of 0o022.
+        old_umask = os.umask(0o022)
         self.addCleanup(os.umask, old_umask)
 
     def openArchive(self, version):
         self.path = os.path.join(
             self.temp_dir, "dist-upgrader_%s_all.tar.gz" % version)
         self.buffer = open(self.path, "wb")
-        self.archive = LaunchpadWriteTarFile(self.buffer)
+        self.tarfile = LaunchpadWriteTarFile(self.buffer)
 
     def process(self):
-        self.archive.close()
+        self.tarfile.close()
         self.buffer.close()
-        process_dist_upgrader(self.pubconf, self.path, self.suite)
+        DistUpgraderUpload().process(self.archive, self.path, self.suite)
 
     def getUpgraderPath(self):
+        pubconf = getPubConfig(self.archive)
         return os.path.join(
-            self.temp_dir, "dists", self.suite, "main", "dist-upgrader-all")
+            pubconf.archiveroot, "dists", self.suite, "main",
+            "dist-upgrader-all")
 
     def test_basic(self):
         # Processing a simple correct tar file works.
         self.openArchive("20060302.0120")
-        self.archive.add_file("20060302.0120/hello", "world")
+        self.tarfile.add_file("20060302.0120/hello", b"world")
         self.process()
 
     def test_already_exists(self):
         # If the target directory already exists, processing fails.
         self.openArchive("20060302.0120")
-        self.archive.add_file("20060302.0120/hello", "world")
+        self.tarfile.add_file("20060302.0120/hello", b"world")
         os.makedirs(os.path.join(self.getUpgraderPath(), "20060302.0120"))
         self.assertRaises(CustomUploadAlreadyExists, self.process)
 
     def test_bad_umask(self):
-        # The umask must be 022 to avoid incorrect permissions.
+        # The umask must be 0o022 to avoid incorrect permissions.
         self.openArchive("20060302.0120")
-        self.archive.add_file("20060302.0120/file", "foo")
-        os.umask(002)  # cleanup already handled by setUp
+        self.tarfile.add_file("20060302.0120/file", b"foo")
+        os.umask(0o002)  # cleanup already handled by setUp
         self.assertRaises(CustomUploadBadUmask, self.process)
 
     def test_current_symlink(self):
         # A "current" symlink is created to the last version.
         self.openArchive("20060302.0120")
-        self.archive.add_file("20060302.0120/hello", "world")
+        self.tarfile.add_file("20060302.0120/hello", b"world")
         self.process()
         upgrader_path = self.getUpgraderPath()
         self.assertContentEqual(
@@ -92,8 +111,26 @@ class TestDistUpgrader(TestCase):
     def test_bad_version(self):
         # Bad versions in the tarball are refused.
         self.openArchive("20070219.1234")
-        self.archive.add_file("foobar/foobar/dapper.tar.gz", "")
+        self.tarfile.add_file("foobar/foobar/dapper.tar.gz", b"")
         self.assertRaises(DistUpgraderBadVersion, self.process)
+
+    def test_sign_with_external_run_parts(self):
+        self.enableRunParts(distribution_name=self.distro.name)
+        with open(os.path.join(
+                self.parts_directory, self.distro.name, "sign.d",
+                "10-sign"), "w") as f:
+            f.write(dedent("""\
+                #! /bin/sh
+                touch "$OUTPUT_PATH"
+                """))
+            os.fchmod(f.fileno(), 0o755)
+        self.openArchive("20060302.0120")
+        self.tarfile.add_file("20060302.0120/list", "a list")
+        self.tarfile.add_file("20060302.0120/foo.tar.gz", "a tarball")
+        self.process()
+        self.assertThat(
+            os.path.join(self.getUpgraderPath(), "20060302.0120"),
+            DirContains(["list", "foo.tar.gz", "foo.tar.gz.gpg"]))
 
     def test_getSeriesKey_extracts_architecture(self):
         # getSeriesKey extracts the architecture from an upload's filename.

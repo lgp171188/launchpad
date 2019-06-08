@@ -33,7 +33,8 @@ input[type='image'] {
 input {
     visibility: inherit;
     }
-input[type=radio] {
+input[type=radio],
+.processors input {
     margin-left: 1em;
     }
 input.urlTextType {
@@ -55,7 +56,7 @@ button.overlay-close-button {
     display: block;
     margin-top: 4px;
     }
-inout[type=input] + button,
+input[type=input] + button,
 img[src$=spinner] + button  {
     margin-left: 6px !important;
     }
@@ -141,7 +142,7 @@ table.listing div.actions {
     }
 table.form, table.extra-options {
     /* Many forms are laid out using tables, with appropriate spacing: */
-    /* http://launchpad.dev/firefox/+edit */
+    /* http://launchpad.test/firefox/+edit */
     margin: 1em 0 inherit inherit;
     width: 100%;
     }
@@ -435,8 +436,8 @@ form.translations .listbox label {
  * without using tables.
  *
  * Examples:
- *   https://translations.launchpad.dev/evolution/trunk/+pots/evolution-2.2/es/+upload
- *   https://translations.launchpad.dev/evolution/trunk/+pots/evolution-2.2/+export
+ *   https://translations.launchpad.test/evolution/trunk/+pots/evolution-2.2/es/+upload
+ *   https://translations.launchpad.test/evolution/trunk/+pots/evolution-2.2/+export
  */
 form.translations div.alignment .content {
     float: left;

@@ -1,5 +1,7 @@
-# Copyright 2010-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
+
+from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 
@@ -12,12 +14,13 @@ from lazr.restfulclient.errors import (
     Unauthorized as LRUnauthorized,
     )
 from testtools import ExpectedException
-from testtools.matchers import Equals
+from testtools.matchers import MatchesStructure
 import transaction
 from zope.component import getUtility
 
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.registry.interfaces.pocket import PackagePublishingPocket
+from lp.services.webapp.interfaces import OAuthPermission
 from lp.soyuz.enums import (
     ArchivePermissionType,
     ArchivePurpose,
@@ -25,10 +28,10 @@ from lp.soyuz.enums import (
     )
 from lp.soyuz.interfaces.component import IComponentSet
 from lp.soyuz.interfaces.packagecopyjob import IPlainPackageCopyJobSource
-from lp.soyuz.interfaces.processor import IProcessorFamilySet
 from lp.soyuz.model.archivepermission import ArchivePermission
 from lp.testing import (
-    celebrity_logged_in,
+    admin_logged_in,
+    api_url,
     launchpadlib_for,
     person_logged_in,
     record_two_runs,
@@ -37,15 +40,18 @@ from lp.testing import (
     )
 from lp.testing.layers import DatabaseFunctionalLayer
 from lp.testing.matchers import HasQueryCount
-from lp.testing.pages import LaunchpadWebServiceCaller
+from lp.testing.pages import (
+    LaunchpadWebServiceCaller,
+    webservice_for_person,
+    )
 
 
 class TestArchiveWebservice(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        TestCaseWithFactory.setUp(self)
-        with celebrity_logged_in('admin'):
+        super(TestArchiveWebservice, self).setUp()
+        with admin_logged_in():
             self.archive = self.factory.makeArchive(
                 purpose=ArchivePurpose.PRIMARY)
             distroseries = self.factory.makeDistroSeries(
@@ -54,9 +60,6 @@ class TestArchiveWebservice(TestCaseWithFactory):
             distro_name = self.archive.distribution.name
             distroseries_name = distroseries.name
             person_name = person.name
-
-        self.webservice = LaunchpadWebServiceCaller(
-            'launchpad-library', 'salgado-change-anything')
 
         self.launchpad = launchpadlib_for(
             "archive test", "salgado", "WRITE_PUBLIC")
@@ -93,7 +96,7 @@ class TestArchiveWebservice(TestCaseWithFactory):
         # getAllPermissions has a query count constant in the number of
         # permissions and people.
         def create_permission():
-            with celebrity_logged_in('admin'):
+            with admin_logged_in():
                 ArchivePermission(
                     archive=self.archive, person=self.factory.makePerson(),
                     component=getUtility(IComponentSet)["main"],
@@ -104,7 +107,41 @@ class TestArchiveWebservice(TestCaseWithFactory):
 
         recorder1, recorder2 = record_two_runs(
             get_permissions, create_permission, 1)
-        self.assertThat(recorder2, HasQueryCount(Equals(recorder1.count)))
+        self.assertThat(recorder2, HasQueryCount.byEquality(recorder1))
+
+    def test_delete(self):
+        with admin_logged_in():
+            ppa = self.factory.makeArchive(purpose=ArchivePurpose.PPA)
+            ppa_url = api_url(ppa)
+            ws = webservice_for_person(
+                ppa.owner, permission=OAuthPermission.WRITE_PRIVATE)
+
+        # DELETE on an archive resource doesn't actually remove it
+        # immediately, but it asks the publisher to delete it later.
+        self.assertEqual(
+            'Active',
+            ws.get(ppa_url, api_version='devel').jsonBody()['status'])
+        self.assertEqual(200, ws.delete(ppa_url, api_version='devel').status)
+        self.assertEqual(
+            'Deleting',
+            ws.get(ppa_url, api_version='devel').jsonBody()['status'])
+
+        # Deleting the PPA again fails.
+        self.assertThat(
+            ws.delete(ppa_url, api_version='devel'),
+            MatchesStructure.byEquality(
+                status=400, body="Archive already deleted."))
+
+    def test_delete_is_restricted(self):
+        with admin_logged_in():
+            ppa = self.factory.makeArchive(purpose=ArchivePurpose.PPA)
+            ppa_url = api_url(ppa)
+            ws = webservice_for_person(
+                self.factory.makePerson(),
+                permission=OAuthPermission.WRITE_PRIVATE)
+
+        # A random user can't delete someone else's PPA.
+        self.assertEqual(401, ws.delete(ppa_url, api_version='devel').status)
 
 
 class TestExternalDependencies(WebServiceTestCase):
@@ -129,11 +166,11 @@ class TestExternalDependencies(WebServiceTestCase):
         with ExpectedException(LRUnauthorized, '.*'):
             ws_archive.lp_save()
 
-    def test_external_dependencies_commercial_owner_invalid(self):
-        """Commercial admins can look and touch."""
-        commercial = getUtility(ILaunchpadCelebrities).commercial_admin
-        owner = self.factory.makePerson(member_of=[commercial])
-        archive = self.factory.makeArchive(owner=owner)
+    def test_external_dependencies_ppa_owner_invalid(self):
+        """PPA admins can look and touch."""
+        ppa_admin_team = getUtility(ILaunchpadCelebrities).ppa_admin
+        ppa_admin = self.factory.makePerson(member_of=[ppa_admin_team])
+        archive = self.factory.makeArchive(owner=ppa_admin)
         transaction.commit()
         ws_archive = self.wsObject(archive, archive.owner)
         self.assertIs(None, ws_archive.external_dependencies)
@@ -142,11 +179,11 @@ class TestExternalDependencies(WebServiceTestCase):
         with ExpectedException(BadRequest, regex):
             ws_archive.lp_save()
 
-    def test_external_dependencies_commercial_owner_valid(self):
-        """Commercial admins can look and touch."""
-        commercial = getUtility(ILaunchpadCelebrities).commercial_admin
-        owner = self.factory.makePerson(member_of=[commercial])
-        archive = self.factory.makeArchive(owner=owner)
+    def test_external_dependencies_ppa_owner_valid(self):
+        """PPA admins can look and touch."""
+        ppa_admin_team = getUtility(ILaunchpadCelebrities).ppa_admin
+        ppa_admin = self.factory.makePerson(member_of=[ppa_admin_team])
+        archive = self.factory.makeArchive(owner=ppa_admin)
         transaction.commit()
         ws_archive = self.wsObject(archive, archive.owner)
         self.assertIs(None, ws_archive.external_dependencies)
@@ -228,112 +265,170 @@ class TestArchiveDependencies(WebServiceTestCase):
         self.assertContentEqual([], ws_archive.dependencies)
 
 
-class TestProcessorFamilies(WebServiceTestCase):
-    """Test the enabled_restricted_families property and methods."""
+class TestProcessors(WebServiceTestCase):
+    """Test the enabled_restricted_processors property and methods."""
 
-    def test_erfNotAvailableInBeta(self):
-        """The enabled_restricted_families property is not in beta."""
+    def test_erpNotAvailableInBeta(self):
+        """The enabled_restricted_processors property is not in beta."""
         self.ws_version = 'beta'
         archive = self.factory.makeArchive()
-        commercial = getUtility(ILaunchpadCelebrities).commercial_admin
-        commercial_admin = self.factory.makePerson(member_of=[commercial])
+        ppa_admin_team = getUtility(ILaunchpadCelebrities).ppa_admin
+        ppa_admin = self.factory.makePerson(member_of=[ppa_admin_team])
         transaction.commit()
-        ws_archive = self.wsObject(archive, user=commercial_admin)
+        ws_archive = self.wsObject(archive, user=ppa_admin)
         expected_re = (
             "(.|\n)*object has no attribute "
-            "'enabled_restricted_families'(.|\n)*")
+            "'enabled_restricted_processors'(.|\n)*")
         with ExpectedException(AttributeError, expected_re):
-            ws_archive.enabled_restricted_families
+            ws_archive.enabled_restricted_processors
 
-    def test_erfAvailableInDevel(self):
-        """The enabled_restricted_families property is in devel."""
+    def test_erpAvailableInDevel(self):
+        """The enabled_restricted_processors property is in devel."""
         self.ws_version = 'devel'
         archive = self.factory.makeArchive()
-        commercial = getUtility(ILaunchpadCelebrities).commercial_admin
-        commercial_admin = self.factory.makePerson(member_of=[commercial])
+        ppa_admin_team = getUtility(ILaunchpadCelebrities).ppa_admin
+        ppa_admin = self.factory.makePerson(member_of=[ppa_admin_team])
         transaction.commit()
-        ws_archive = self.wsObject(archive, user=commercial_admin)
-        self.assertContentEqual([], ws_archive.enabled_restricted_families)
-
-    def test_getByName(self):
-        """The getByName method returns a processor family."""
-        self.ws_version = 'devel'
-        transaction.commit()
-        arm = self.service.processor_families.getByName(name='arm')
-        self.assertEqual(u'arm', arm.name)
-        self.assertEqual(u'ARM Processors', arm.title)
-        self.assertEqual(
-            u'The ARM and compatible processors', arm.description)
-        self.assertEqual(True, arm.restricted)
+        ws_archive = self.wsObject(archive, user=ppa_admin)
+        self.assertContentEqual([], ws_archive.enabled_restricted_processors)
 
     def test_processors(self):
         """Attributes about processors are available."""
         self.ws_version = 'devel'
-        product_family_set = getUtility(IProcessorFamilySet)
-        ws_arm = self.service.processor_families.getByName(name='arm')
-        self.assertContentEqual([], ws_arm.processors)
-        product_family_set = getUtility(IProcessorFamilySet)
-        arm = product_family_set.getByName('arm')
-        arm.addProcessor('new-arm', 'New ARM Title', 'New ARM Description')
+        self.factory.makeProcessor(
+            'new-arm', 'New ARM Title', 'New ARM Description')
         transaction.commit()
-        ws_proc = ws_arm.processors[0]
+        ws_proc = self.service.processors.getByName(name='new-arm')
         self.assertEqual('new-arm', ws_proc.name)
         self.assertEqual('New ARM Title', ws_proc.title)
         self.assertEqual('New ARM Description', ws_proc.description)
 
-    def test_enableRestrictedFamily(self):
-        """A new family can be added to the enabled restricted set."""
+    def setProcessors(self, user, archive_url, names):
+        ws = webservice_for_person(
+            user, permission=OAuthPermission.WRITE_PUBLIC)
+        return ws.named_post(
+            archive_url, 'setProcessors',
+            processors=['/+processors/%s' % name for name in names],
+            api_version='devel')
+
+    def assertProcessors(self, user, archive_url, names):
+        body = webservice_for_person(user).get(
+            archive_url + '/processors', api_version='devel').jsonBody()
+        self.assertContentEqual(
+            names, [entry['name'] for entry in body['entries']])
+
+    def test_setProcessors_admin(self):
+        """An admin can add a new processor to the enabled restricted set."""
+        ppa_admin_team = getUtility(ILaunchpadCelebrities).ppa_admin
+        ppa_admin = self.factory.makePerson(member_of=[ppa_admin_team])
+        self.factory.makeProcessor(
+            'arm', 'ARM', 'ARM', restricted=True, build_by_default=False)
+        ppa_url = api_url(self.factory.makeArchive(purpose=ArchivePurpose.PPA))
+        self.assertProcessors(ppa_admin, ppa_url, ['386', 'hppa', 'amd64'])
+
+        response = self.setProcessors(ppa_admin, ppa_url, ['386', 'arm'])
+        self.assertEqual(200, response.status)
+        self.assertProcessors(ppa_admin, ppa_url, ['386', 'arm'])
+
+    def test_setProcessors_non_owner_forbidden(self):
+        """Only PPA admins and archive owners can call setProcessors."""
+        self.factory.makeProcessor(
+            'unrestricted', 'Unrestricted', 'Unrestricted', restricted=False,
+            build_by_default=False)
+        ppa_url = api_url(self.factory.makeArchive(purpose=ArchivePurpose.PPA))
+
+        response = self.setProcessors(
+            self.factory.makePerson(), ppa_url, ['386', 'unrestricted'])
+        self.assertEqual(401, response.status)
+
+    def test_setProcessors_owner(self):
+        """The archive owner can enable/disable unrestricted processors."""
+        archive = self.factory.makeArchive(purpose=ArchivePurpose.PPA)
+        ppa_url = api_url(archive)
+        owner = archive.owner
+        self.assertProcessors(owner, ppa_url, ['386', 'hppa', 'amd64'])
+
+        response = self.setProcessors(owner, ppa_url, ['386'])
+        self.assertEqual(200, response.status)
+        self.assertProcessors(owner, ppa_url, ['386'])
+
+        response = self.setProcessors(owner, ppa_url, ['386', 'amd64'])
+        self.assertEqual(200, response.status)
+        self.assertProcessors(owner, ppa_url, ['386', 'amd64'])
+
+    def test_setProcessors_owner_restricted_forbidden(self):
+        """The archive owner cannot enable/disable restricted processors."""
+        ppa_admin_team = getUtility(ILaunchpadCelebrities).ppa_admin
+        ppa_admin = self.factory.makePerson(member_of=[ppa_admin_team])
+        self.factory.makeProcessor(
+            'arm', 'ARM', 'ARM', restricted=True, build_by_default=False)
+        archive = self.factory.makeArchive(purpose=ArchivePurpose.PPA)
+        ppa_url = api_url(archive)
+        owner = archive.owner
+
+        response = self.setProcessors(owner, ppa_url, ['386', 'arm'])
+        self.assertEqual(403, response.status)
+
+        # If a PPA admin enables arm, the owner cannot disable it.
+        response = self.setProcessors(ppa_admin, ppa_url, ['386', 'arm'])
+        self.assertEqual(200, response.status)
+        self.assertProcessors(owner, ppa_url, ['386', 'arm'])
+
+        response = self.setProcessors(owner, ppa_url, ['386'])
+        self.assertEqual(403, response.status)
+
+    def test_enableRestrictedProcessor(self):
+        """A new processor can be added to the enabled restricted set."""
         self.ws_version = 'devel'
         archive = self.factory.makeArchive()
-        commercial = getUtility(ILaunchpadCelebrities).commercial_admin
-        commercial_admin = self.factory.makePerson(member_of=[commercial])
+        self.factory.makeProcessor(
+            name='arm', restricted=True, build_by_default=False)
+        ppa_admin_team = getUtility(ILaunchpadCelebrities).ppa_admin
+        ppa_admin = self.factory.makePerson(member_of=[ppa_admin_team])
         transaction.commit()
-        ws_arm = self.service.processor_families.getByName(name='arm')
-        ws_archive = self.wsObject(archive, user=commercial_admin)
-        self.assertContentEqual([], ws_archive.enabled_restricted_families)
-        ws_archive.enableRestrictedFamily(family=ws_arm)
+        ws_arm = self.service.processors.getByName(name='arm')
+        ws_archive = self.wsObject(archive, user=ppa_admin)
+        self.assertContentEqual([], ws_archive.enabled_restricted_processors)
+        ws_archive.enableRestrictedProcessor(processor=ws_arm)
         self.assertContentEqual(
-            [ws_arm], ws_archive.enabled_restricted_families)
+            [ws_arm], ws_archive.enabled_restricted_processors)
 
-    def test_enableRestrictedFamily_owner(self):
-        """A new family can be added to the enabled restricted set.
+    def test_enableRestrictedProcessor_owner(self):
+        """A new processor can be added to the enabled restricted set.
 
         An unauthorized user, even the archive owner, is not allowed.
         """
         self.ws_version = 'devel'
         archive = self.factory.makeArchive()
+        self.factory.makeProcessor(
+            name='arm', restricted=True, build_by_default=False)
         transaction.commit()
-        ws_arm = self.service.processor_families.getByName(name='arm')
+        ws_arm = self.service.processors.getByName(name='arm')
         ws_archive = self.wsObject(archive, user=archive.owner)
-        self.assertContentEqual([], ws_archive.enabled_restricted_families)
+        self.assertContentEqual([], ws_archive.enabled_restricted_processors)
         expected_re = (
-            "(.|\n)*'launchpad\.Commercial'(.|\n)*")
+            "(.|\n)*'launchpad\.Admin'(.|\n)*")
         with ExpectedException(LRUnauthorized, expected_re):
-            ws_archive.enableRestrictedFamily(family=ws_arm)
+            ws_archive.enableRestrictedProcessor(processor=ws_arm)
 
-    def test_enableRestrictedFamily_nonPrivUser(self):
-        """A new family can be added to the enabled restricted set.
+    def test_enableRestrictedProcessor_nonPrivUser(self):
+        """A new processor can be added to the enabled restricted set.
 
         An unauthorized user, some regular user, is not allowed.
         """
         self.ws_version = 'devel'
         archive = self.factory.makeArchive()
+        self.factory.makeProcessor(
+            name='arm', restricted=True, build_by_default=False)
         just_some_guy = self.factory.makePerson()
         transaction.commit()
-        ws_arm = self.service.processor_families.getByName(name='arm')
+        ws_arm = self.service.processors.getByName(name='arm')
         ws_archive = self.wsObject(archive, user=just_some_guy)
-        self.assertContentEqual([], ws_archive.enabled_restricted_families)
+        self.assertContentEqual([], ws_archive.enabled_restricted_processors)
         expected_re = (
-            "(.|\n)*'launchpad\.Commercial'(.|\n)*")
+            "(.|\n)*'launchpad\.Admin'(.|\n)*")
         with ExpectedException(LRUnauthorized, expected_re):
-            ws_archive.enableRestrictedFamily(family=ws_arm)
-
-    def test_defaultCollection(self):
-        """getRestricted will return all of the restricted families."""
-        self.ws_version = 'devel'
-        ws_arm = self.service.processor_families.getByName(name='arm')
-        self.assertContentEqual(
-            [ws_arm], self.service.processor_families)
+            ws_archive.enableRestrictedProcessor(processor=ws_arm)
 
 
 class TestCopyPackage(WebServiceTestCase):
@@ -433,6 +528,23 @@ class TestgetPublishedBinaries(WebServiceTestCase):
         publications = ws_archive.getPublishedBinaries(ordered=False)
         self.assertEqual(2, len(publications))
 
+    def test_getPublishedBinaries_query_count(self):
+        # getPublishedBinaries has a query count constant in the number of
+        # packages returned.
+        archive_url = api_url(self.archive)
+
+        def create_bpph():
+            with admin_logged_in():
+                self.factory.makeBinaryPackagePublishingHistory(
+                    archive=self.archive)
+
+        def get_binaries():
+            LaunchpadWebServiceCaller('consumer', '').named_get(
+                archive_url, 'getPublishedBinaries').jsonBody()
+
+        recorder1, recorder2 = record_two_runs(get_binaries, create_bpph, 1)
+        self.assertThat(recorder2, HasQueryCount.byEquality(recorder1))
+
 
 class TestremoveCopyNotification(WebServiceTestCase):
     """Test removeCopyNotification."""
@@ -464,3 +576,51 @@ class TestremoveCopyNotification(WebServiceTestCase):
         source = getUtility(IPlainPackageCopyJobSource)
         self.assertEqual(
             None, source.getIncompleteJobsForArchive(self.archive).any())
+
+
+class TestArchiveSet(TestCaseWithFactory):
+    """Test ArchiveSet.getByReference."""
+
+    layer = DatabaseFunctionalLayer
+
+    def test_getByReference(self):
+        random = self.factory.makePerson()
+        body = LaunchpadWebServiceCaller('consumer', '').named_get(
+            '/archives', 'getByReference', reference='ubuntu',
+            api_version='devel').jsonBody()
+        self.assertEqual(body['reference'], 'ubuntu')
+        body = webservice_for_person(random).named_get(
+            '/archives', 'getByReference', reference='ubuntu',
+            api_version='devel').jsonBody()
+        self.assertEqual(body['reference'], 'ubuntu')
+
+    def test_getByReference_ppa(self):
+        body = LaunchpadWebServiceCaller('consumer', '').named_get(
+            '/archives', 'getByReference', reference='~cprov/ubuntu/ppa',
+            api_version='devel').jsonBody()
+        self.assertEqual(body['reference'], '~cprov/ubuntu/ppa')
+
+    def test_getByReference_invalid(self):
+        body = LaunchpadWebServiceCaller('consumer', '').named_get(
+            '/archives', 'getByReference', reference='~cprov/ubuntu',
+            api_version='devel').jsonBody()
+        self.assertIs(None, body)
+
+    def test_getByReference_private(self):
+        with admin_logged_in():
+            archive = self.factory.makeArchive(private=True)
+            owner = archive.owner
+            reference = archive.reference
+            random = self.factory.makePerson()
+        body = LaunchpadWebServiceCaller('consumer', '').named_get(
+            '/archives', 'getByReference', reference=reference,
+            api_version='devel').jsonBody()
+        self.assertIs(None, body)
+        body = webservice_for_person(random).named_get(
+            '/archives', 'getByReference', reference=reference,
+            api_version='devel').jsonBody()
+        self.assertIs(None, body)
+        body = webservice_for_person(owner).named_get(
+            '/archives', 'getByReference', reference=reference,
+            api_version='devel').jsonBody()
+        self.assertEqual(body['reference'], reference)

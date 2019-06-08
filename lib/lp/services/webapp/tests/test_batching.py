@@ -1,4 +1,4 @@
-# Copyright 2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2011-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -31,10 +31,10 @@ from lp.services.webapp.batching import (
     )
 from lp.services.webapp.interfaces import StormRangeFactoryError
 from lp.services.webapp.servers import LaunchpadTestRequest
-from lp.services.webapp.testing import verifyObject
 from lp.testing import (
     person_logged_in,
     TestCaseWithFactory,
+    verifyObject,
     )
 from lp.testing.layers import LaunchpadFunctionalLayer
 
@@ -94,7 +94,7 @@ class TestStormRangeFactory(TestCaseWithFactory):
     def test_getOrderValuesFor__two_sort_columns(self):
         # Sorting by more than one column is supported.
         resultset = self.makeStormResultSet()
-        resultset.order_by(Person.displayname, Person.name)
+        resultset.order_by(Person.display_name, Person.name)
         range_factory = StormRangeFactory(resultset)
         order_values = range_factory.getOrderValuesFor(resultset[0])
         self.assertEqual(
@@ -394,18 +394,18 @@ class TestStormRangeFactory(TestCaseWithFactory):
         resultset = self.makeStormResultSet()
         range_factory = StormRangeFactory(resultset, self.logError)
         order_by = [
-            Person.id, Person.datecreated, Person.name, Person.displayname]
-        limits = [1, datetime(2011, 07, 25, 0, 0, 0), 'foo', 'bar']
+            Person.id, Person.datecreated, Person.name, Person.display_name]
+        limits = [1, datetime(2011, 7, 25, 0, 0, 0), 'foo', 'bar']
         result = range_factory.limitsGroupedByOrderDirection(order_by, limits)
         self.assertEqual([(order_by, limits)], result)
         order_by = [
             Desc(Person.id), Desc(Person.datecreated), Desc(Person.name),
-            Desc(Person.displayname)]
+            Desc(Person.display_name)]
         result = range_factory.limitsGroupedByOrderDirection(order_by, limits)
         self.assertEqual([(order_by, limits)], result)
         order_by = [
             Person.id, Person.datecreated, Desc(Person.name),
-            Desc(Person.displayname)]
+            Desc(Person.display_name)]
         result = range_factory.limitsGroupedByOrderDirection(order_by, limits)
         self.assertEqual(
             [(order_by[:2], limits[:2]), (order_by[2:], limits[2:])], result)
@@ -420,7 +420,7 @@ class TestStormRangeFactory(TestCaseWithFactory):
         limit_expression = range_factory.lessThanOrGreaterThanExpression(
             expressions, limits)
         self.assertEqual(
-            "(Person.id, Person.name) > (1, 'foo')",
+            "(Person.id, Person.name) > (1, E'foo')",
             compile(limit_expression))
 
     def test_lessThanOrGreaterThanExpression__desc(self):
@@ -433,7 +433,7 @@ class TestStormRangeFactory(TestCaseWithFactory):
         limit_expression = range_factory.lessThanOrGreaterThanExpression(
             expressions, limits)
         self.assertEqual(
-            "(Person.id, Person.name) < (1, 'foo')",
+            "(Person.id, Person.name) < (1, E'foo')",
             compile(limit_expression))
 
     def test_equalsExpressionsFromLimits(self):
@@ -441,9 +441,9 @@ class TestStormRangeFactory(TestCaseWithFactory):
         range_factory = StormRangeFactory(resultset, self.logError)
         order_by = [
             Person.id, Person.datecreated, Desc(Person.name),
-            Desc(Person.displayname)]
+            Desc(Person.display_name)]
         limits = [
-            1, datetime(2011, 07, 25, 0, 0, 0, tzinfo=pytz.UTC), 'foo', 'bar']
+            1, datetime(2011, 7, 25, 0, 0, 0, tzinfo=pytz.UTC), 'foo', 'bar']
         limits = range_factory.limitsGroupedByOrderDirection(order_by, limits)
         equals_expressions = range_factory.equalsExpressionsFromLimits(limits)
         equals_expressions = map(compile, equals_expressions)
@@ -459,7 +459,7 @@ class TestStormRangeFactory(TestCaseWithFactory):
         resultset = self.makeStormResultSet()
         range_factory = StormRangeFactory(resultset, self.logError)
         [where_clause] = range_factory.whereExpressions([Person.id], [1])
-        self.assertEquals('(Person.id) > (1)', compile(where_clause))
+        self.assertEqual('(Person.id) > (1)', compile(where_clause))
 
     def test_whereExpressions_desc(self):
         """For descending sort order, whereExpressions() returns the
@@ -469,7 +469,7 @@ class TestStormRangeFactory(TestCaseWithFactory):
         range_factory = StormRangeFactory(resultset, self.logError)
         [where_clause] = range_factory.whereExpressions(
             [Desc(Person.id)], [1])
-        self.assertEquals('(Person.id) < (1)', compile(where_clause))
+        self.assertEqual('(Person.id) < (1)', compile(where_clause))
 
     def test_whereExpressions__two_sort_columns_asc_asc(self):
         """If the ascending sort columns c1, c2 and the memo values
@@ -483,8 +483,8 @@ class TestStormRangeFactory(TestCaseWithFactory):
         range_factory = StormRangeFactory(resultset, self.logError)
         [where_clause] = range_factory.whereExpressions(
             [Person.id, Person.name], [1, 'foo'])
-        self.assertEquals(
-            "(Person.id, Person.name) > (1, 'foo')", compile(where_clause))
+        self.assertEqual(
+            "(Person.id, Person.name) > (1, E'foo')", compile(where_clause))
 
     def test_whereExpressions__two_sort_columns_desc_desc(self):
         """If the descending sort columns c1, c2 and the memo values
@@ -498,8 +498,8 @@ class TestStormRangeFactory(TestCaseWithFactory):
         range_factory = StormRangeFactory(resultset, self.logError)
         [where_clause] = range_factory.whereExpressions(
             [Desc(Person.id), Desc(Person.name)], [1, 'foo'])
-        self.assertEquals(
-            "(Person.id, Person.name) < (1, 'foo')", compile(where_clause))
+        self.assertEqual(
+            "(Person.id, Person.name) < (1, E'foo')", compile(where_clause))
 
     def test_whereExpressions__two_sort_columns_asc_desc(self):
         """If the ascending sort column c1, the descending sort column
@@ -516,10 +516,10 @@ class TestStormRangeFactory(TestCaseWithFactory):
         range_factory = StormRangeFactory(resultset, self.logError)
         [where_clause_1, where_clause_2] = range_factory.whereExpressions(
             [Person.id, Desc(Person.name)], [1, 'foo'])
-        self.assertEquals(
-            "Person.id = ? AND ((Person.name) < ('foo'))",
+        self.assertEqual(
+            "Person.id = ? AND ((Person.name) < (E'foo'))",
             compile(where_clause_1))
-        self.assertEquals('(Person.id) > (1)', compile(where_clause_2))
+        self.assertEqual('(Person.id) > (1)', compile(where_clause_2))
 
     def test_getSlice__forward_without_memo(self):
         resultset = self.makeStormResultSet()
@@ -635,7 +635,7 @@ class TestStormRangeFactory(TestCaseWithFactory):
 
     def test_ShadowedList__init(self):
         # ShadowedList instances need two lists as constructor parametrs.
-        list1 = range(3)
+        list1 = list(range(3))
         list2 = self.makeStringSequence(list1)
         shadowed_list = ShadowedList(list1, list2)
         self.assertEqual(shadowed_list.values, list1)
@@ -643,24 +643,25 @@ class TestStormRangeFactory(TestCaseWithFactory):
 
     def test_ShadowedList__init__non_sequence_parameter(self):
         # values and shadow_values must be sequences.
-        self.assertRaises(TypeError, ShadowedList, 1, range(3))
-        self.assertRaises(TypeError, ShadowedList, range(3), 1)
+        self.assertRaises(TypeError, ShadowedList, 1, list(range(3)))
+        self.assertRaises(TypeError, ShadowedList, list(range(3)), 1)
 
     def test_ShadowedList__init__different_list_lengths(self):
         # values and shadow_values must have the same length.
-        self.assertRaises(ValueError, ShadowedList, range(2), range(3))
+        self.assertRaises(
+            ValueError, ShadowedList, list(range(2)), list(range(3)))
 
     def test_ShadowedList__len(self):
         # The length of a ShadowedList ist the same as the list of
         # the sequences it stores.
-        list1 = range(3)
+        list1 = list(range(3))
         list2 = self.makeStringSequence(list1)
         self.assertEqual(len(list1), len(ShadowedList(list1, list2)))
 
     def test_ShadowedList__slice(self):
         # A slice of a ShadowedList contains the slices of its
         # values and shaow_values.
-        list1 = range(5)
+        list1 = list(range(5))
         list2 = self.makeStringSequence(list1)
         shadowed_list = ShadowedList(list1, list2)
         self.assertEqual(list1[2:4], shadowed_list[2:4].values)
@@ -668,18 +669,18 @@ class TestStormRangeFactory(TestCaseWithFactory):
 
     def test_ShadowedList__getitem(self):
         # Accessing a single element of a ShadowedList is equivalent to
-        # accessig an element of its values attribute.
-        list1 = range(3)
+        # accessing an element of its values attribute.
+        list1 = list(range(3))
         list2 = self.makeStringSequence(list1)
         shadowed_list = ShadowedList(list1, list2)
         self.assertEqual(list1[1], shadowed_list[1])
 
     def test_ShadowedList__add(self):
-        # Two shadowedLists can be added, yielding another ShadowedList.
-        list1 = range(3)
+        # Two ShadowedLists can be added, yielding another ShadowedList.
+        list1 = list(range(3))
         list2 = self.makeStringSequence(list1)
         shadow_list1 = ShadowedList(list1, list2)
-        list3 = range(4)
+        list3 = list(range(4))
         list4 = self.makeStringSequence(list3)
         shadow_list2 = ShadowedList(list3, list4)
         list_sum = shadow_list1 + shadow_list2
@@ -689,14 +690,14 @@ class TestStormRangeFactory(TestCaseWithFactory):
 
     def test_ShadowedList__iterator(self):
         # Iterating over a ShadowedList yields if values elements.
-        list1 = range(3)
+        list1 = list(range(3))
         list2 = self.makeStringSequence(list1)
         shadow_list = ShadowedList(list1, list2)
         self.assertEqual(list1, list(iter(shadow_list)))
 
     def test_ShadowedList__reverse(self):
         # ShadowList.reverse() reverses its elements.
-        list1 = range(3)
+        list1 = list(range(3))
         list2 = self.makeStringSequence(list1)
         first1 = list1[0]
         last1 = list1[-1]
@@ -712,7 +713,7 @@ class TestStormRangeFactory(TestCaseWithFactory):
     def test_ShadowedList__reverse__values_and_shadow_values_identical(self):
         # ShadowList.reverse() works also when passed the same
         # sequence as values and as shadow_values.
-        list_ = range(3)
+        list_ = list(range(3))
         shadow_list = ShadowedList(list_, list_)
         shadow_list.reverse()
         self.assertEqual(0, shadow_list[-1])

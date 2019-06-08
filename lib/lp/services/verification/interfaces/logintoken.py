@@ -1,7 +1,5 @@
-# Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2013 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
-
-# pylint: disable-msg=E0211,E0213
 
 """Login token interfaces."""
 
@@ -53,14 +51,6 @@ class ILoginToken(IAuthToken):
         If fingerprint is set, send the message encrypted.
         """
 
-    def sendProfileCreatedEmail(profile, comment):
-        """Notify the profile's email owner that a new profile was created.
-
-        Send an email message to this token's email address explaining that
-        another user has created a launchpad profile for him and providing
-        a link where he can finish the registration process.
-        """
-
     def sendMergeRequestEmail():
         """Send an email to self.email (the dupe account's email address)
         with the URL of a page to finish the merge of Launchpad accounts.
@@ -74,30 +64,13 @@ class ILoginToken(IAuthToken):
         request on behalf of the team.
         """
 
-    def sendClaimProfileEmail():
-        """Send an email to self.email with instructions on how to finish
-        claiming the profile that owns self.email.
-        """
-
     def sendClaimTeamEmail():
-        """E-mail instructions for claiming a team to self.email."""
+        """Email instructions for claiming a team to self.email."""
 
     def activateGPGKey(key, can_encrypt):
         """Activate a GPG key.
 
-        :return: A Launchpad key, whether it's new, email addresses that were
-            created, email addresses owned by someone else.
-        """
-
-    def createEmailAddresses(uids):
-        """Create EmailAddresses for the GPG UIDs that do not exist yet.
-
-        For each of the given UIDs, check if it is already registered and, if
-        not, register it.
-
-        Return a tuple containing the list of newly created emails (as
-        strings) and the emails that exist and are already assigned to another
-        person (also as strings).
+        :return: A Launchpad key, and whether it's new.
         """
 
 

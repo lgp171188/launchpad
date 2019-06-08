@@ -1,4 +1,4 @@
-# Copyright 2009-2010 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for BugWatchSet."""
@@ -9,12 +9,16 @@ from datetime import (
     datetime,
     timedelta,
     )
-import unittest
+import re
 from urlparse import urlunsplit
 
 from lazr.lifecycle.snapshot import Snapshot
 from pytz import utc
 from storm.store import Store
+from testscenarios import (
+    load_tests_apply_scenarios,
+    WithScenarios,
+    )
 import transaction
 from zope.component import getUtility
 from zope.security.interfaces import Unauthorized
@@ -49,6 +53,7 @@ from lp.testing import (
     ANONYMOUS,
     login,
     login_person,
+    TestCase,
     TestCaseWithFactory,
     )
 from lp.testing.dbuser import switch_dbuser
@@ -60,8 +65,126 @@ from lp.testing.layers import (
 from lp.testing.sampledata import ADMIN_EMAIL
 
 
-class ExtractBugTrackerAndBugTestBase:
-    """Test base for testing BugWatchSet.extractBugTrackerAndBug."""
+class ExtractBugTrackerAndBugTest(WithScenarios, TestCase):
+    """Test BugWatchSet.extractBugTrackerAndBug."""
+
+    scenarios = [
+        ('Mantis', {
+            'bugtracker_type': BugTrackerType.MANTIS,
+            'bug_url': 'http://some.host/bugs/view.php?id=3224',
+            'base_url': 'http://some.host/bugs/',
+            'bug_id': '3224',
+            }),
+        ('Bugzilla', {
+            'bugtracker_type': BugTrackerType.BUGZILLA,
+            'bug_url': 'http://some.host/bugs/show_bug.cgi?id=3224',
+            'base_url': 'http://some.host/bugs/',
+            'bug_id': '3224',
+            }),
+        # Issuezilla is practically the same as Bugzilla, so we treat it as
+        # a normal BUGZILLA type.
+        ('Issuezilla', {
+            'bugtracker_type': BugTrackerType.BUGZILLA,
+            'bug_url': 'http://some.host/bugs/show_bug.cgi?issue=3224',
+            'base_url': 'http://some.host/bugs/',
+            'bug_id': '3224',
+            }),
+        ('RoundUp', {
+            'bugtracker_type': BugTrackerType.ROUNDUP,
+            'bug_url': 'http://some.host/some/path/issue377',
+            'base_url': 'http://some.host/some/path/',
+            'bug_id': '377',
+            }),
+        ('Trac', {
+            'bugtracker_type': BugTrackerType.TRAC,
+            'bug_url': 'http://some.host/some/path/ticket/42',
+            'base_url': 'http://some.host/some/path/',
+            'bug_id': '42',
+            }),
+        ('Debbugs', {
+            'bugtracker_type': BugTrackerType.DEBBUGS,
+            'bug_url': (
+                'http://some.host/some/path/cgi-bin/bugreport.cgi?bug=42'),
+            'base_url': 'http://some.host/some/path/',
+            'bug_id': '42',
+            }),
+        ('DebbugsShorthand', {
+            'bugtracker_type': BugTrackerType.DEBBUGS,
+            'bug_url': 'http://bugs.debian.org/42',
+            'base_url': 'http://bugs.debian.org/',
+            'bug_id': '42',
+            'already_registered': True,
+            }),
+        # SourceForge-like URLs, though not actually SourceForge itself.
+        ('XForge', {
+            'bugtracker_type': BugTrackerType.SOURCEFORGE,
+            'bug_url': (
+                'http://gforge.example.com/tracker/index.php'
+                '?func=detail&aid=90812&group_id=84122&atid=575154'),
+            'base_url': 'http://gforge.example.com/',
+            'bug_id': '90812',
+            }),
+        ('RT', {
+            'bugtracker_type': BugTrackerType.RT,
+            'bug_url': 'http://some.host/Ticket/Display.html?id=2379',
+            'base_url': 'http://some.host/',
+            'bug_id': '2379',
+            }),
+        ('CPAN', {
+            'bugtracker_type': BugTrackerType.RT,
+            'bug_url': 'http://rt.cpan.org/Public/Bug/Display.html?id=2379',
+            'base_url': 'http://rt.cpan.org/',
+            'bug_id': '2379',
+            }),
+        ('Savannah', {
+            'bugtracker_type': BugTrackerType.SAVANE,
+            'bug_url': 'http://savannah.gnu.org/bugs/?22003',
+            'base_url': 'http://savannah.gnu.org/',
+            'bug_id': '22003',
+            'already_registered': True,
+            }),
+        ('SavannahWithParameters', {
+            'bugtracker_type': BugTrackerType.SAVANE,
+            'bug_url': (
+                'http://savannah.gnu.org/bugs/index.php'
+                '?func=detailitem&item_id=22003'),
+            'base_url': 'http://savannah.gnu.org/',
+            'bug_id': '22003',
+            'already_registered': True,
+            }),
+        ('Savane', {
+            'bugtracker_type': BugTrackerType.SAVANE,
+            'bug_url': 'http://savane.example.com/bugs/?12345',
+            'base_url': 'http://savane.example.com/',
+            'bug_id': '12345',
+            }),
+        ('PHPProject', {
+            'bugtracker_type': BugTrackerType.PHPPROJECT,
+            'bug_url': 'http://phptracker.example.com/bug.php?id=12345',
+            'base_url': 'http://phptracker.example.com/',
+            'bug_id': '12345',
+            }),
+        ('GoogleCode', {
+            'bugtracker_type': BugTrackerType.GOOGLE_CODE,
+            'bug_url': (
+                'http://code.google.com/p/myproject/issues/detail?id=12345'),
+            'base_url': 'http://code.google.com/p/myproject/issues',
+            'bug_id': '12345',
+            }),
+        ('GitHub', {
+            'bugtracker_type': BugTrackerType.GITHUB,
+            'bug_url': 'https://github.com/user/repository/issues/12345',
+            'base_url': 'https://github.com/user/repository/issues',
+            'bug_id': '12345',
+            }),
+        ('GitLab', {
+            'bugtracker_type': BugTrackerType.GITLAB,
+            'bug_url': 'https://gitlab.com/user/repository/issues/12345',
+            'base_url': 'https://gitlab.com/user/repository/issues',
+            'bug_id': '12345',
+            }),
+        ]
+
     layer = LaunchpadFunctionalLayer
 
     # A URL to an unregistered bug tracker.
@@ -76,7 +199,11 @@ class ExtractBugTrackerAndBugTestBase:
     # The bug id in the sample bug_url.
     bug_id = None
 
+    # True if the bug tracker is already registered in sampledata.
+    already_registered = False
+
     def setUp(self):
+        super(ExtractBugTrackerAndBugTest, self).setUp()
         login(ANONYMOUS)
         self.bugwatch_set = getUtility(IBugWatchSet)
         self.bugtracker_set = getUtility(IBugTrackerSet)
@@ -107,8 +234,9 @@ class ExtractBugTrackerAndBugTestBase:
         # A NoBugTrackerFound exception is raised if extractBugTrackerAndBug
         # can extract a base URL and bug id from the URL but there's no
         # such bug tracker registered in Launchpad.
-        self.failUnless(
-            self.bugtracker_set.queryByBaseURL(self.base_url) is None)
+        if self.already_registered:
+            return
+        self.assertIsNone(self.bugtracker_set.queryByBaseURL(self.base_url))
         try:
             bugtracker, bug = self.bugwatch_set.extractBugTrackerAndBug(
                 self.bug_url)
@@ -122,87 +250,16 @@ class ExtractBugTrackerAndBugTestBase:
             self.fail(
                 "NoBugTrackerFound wasn't raised by extractBugTrackerAndBug")
 
-
-class MantisExtractBugTrackerAndBugTest(
-    ExtractBugTrackerAndBugTestBase, unittest.TestCase):
-    """Ensure BugWatchSet.extractBugTrackerAndBug works with Mantis URLs."""
-
-    bugtracker_type = BugTrackerType.MANTIS
-    bug_url = 'http://some.host/bugs/view.php?id=3224'
-    base_url = 'http://some.host/bugs/'
-    bug_id = '3224'
+    def test_invalid_bug_number(self):
+        # Replace the second digit of the remote bug id with an E, which all
+        # parsers will reject as invalid.
+        invalid_url = re.sub(r'(\d)\d', r'\1E', self.bug_url, count=1)
+        self.assertRaises(
+            UnrecognizedBugTrackerURL,
+            self.bugwatch_set.extractBugTrackerAndBug, invalid_url)
 
 
-class BugzillaExtractBugTrackerAndBugTest(
-    ExtractBugTrackerAndBugTestBase, unittest.TestCase):
-    """Ensure BugWatchSet.extractBugTrackerAndBug works with Bugzilla URLs."""
-
-    bugtracker_type = BugTrackerType.BUGZILLA
-    bug_url = 'http://some.host/bugs/show_bug.cgi?id=3224'
-    base_url = 'http://some.host/bugs/'
-    bug_id = '3224'
-
-
-class IssuezillaExtractBugTrackerAndBugTest(
-    ExtractBugTrackerAndBugTestBase, unittest.TestCase):
-    """Ensure BugWatchSet.extractBugTrackerAndBug works with Issuezilla.
-
-    Issuezilla is practically the same as Buzilla, so we treat it as a
-    normal BUGZILLA type.
-    """
-
-    bugtracker_type = BugTrackerType.BUGZILLA
-    bug_url = 'http://some.host/bugs/show_bug.cgi?issue=3224'
-    base_url = 'http://some.host/bugs/'
-    bug_id = '3224'
-
-
-class RoundUpExtractBugTrackerAndBugTest(
-    ExtractBugTrackerAndBugTestBase, unittest.TestCase):
-    """Ensure BugWatchSet.extractBugTrackerAndBug works with RoundUp URLs."""
-
-    bugtracker_type = BugTrackerType.ROUNDUP
-    bug_url = 'http://some.host/some/path/issue377'
-    base_url = 'http://some.host/some/path/'
-    bug_id = '377'
-
-
-class TracExtractBugTrackerAndBugTest(
-    ExtractBugTrackerAndBugTestBase, unittest.TestCase):
-    """Ensure BugWatchSet.extractBugTrackerAndBug works with Trac URLs."""
-
-    bugtracker_type = BugTrackerType.TRAC
-    bug_url = 'http://some.host/some/path/ticket/42'
-    base_url = 'http://some.host/some/path/'
-    bug_id = '42'
-
-
-class DebbugsExtractBugTrackerAndBugTest(
-    ExtractBugTrackerAndBugTestBase, unittest.TestCase):
-    """Ensure BugWatchSet.extractBugTrackerAndBug works with Debbugs URLs."""
-
-    bugtracker_type = BugTrackerType.DEBBUGS
-    bug_url = 'http://some.host/some/path/cgi-bin/bugreport.cgi?bug=42'
-    base_url = 'http://some.host/some/path/'
-    bug_id = '42'
-
-
-class DebbugsExtractBugTrackerAndBugShorthandTest(
-    ExtractBugTrackerAndBugTestBase, unittest.TestCase):
-    """Ensure extractBugTrackerAndBug works for short Debbugs URLs."""
-
-    bugtracker_type = BugTrackerType.DEBBUGS
-    bug_url = 'http://bugs.debian.org/42'
-    base_url = 'http://bugs.debian.org/'
-    bug_id = '42'
-
-    def test_unregistered_tracker_url(self):
-        # bugs.debian.org is already registered, so no dice.
-        pass
-
-
-class SFExtractBugTrackerAndBugTest(
-    ExtractBugTrackerAndBugTestBase, unittest.TestCase):
+class SFExtractBugTrackerAndBugTest(ExtractBugTrackerAndBugTest):
     """Ensure BugWatchSet.extractBugTrackerAndBug works with SF URLs.
 
     We have only one SourceForge tracker registered in Launchpad, so we
@@ -210,17 +267,31 @@ class SFExtractBugTrackerAndBugTest(
     bug id.
     """
 
-    bugtracker_type = BugTrackerType.SOURCEFORGE
-    bug_url = (
-        'http://sourceforge.net/tracker/index.php'
-        '?func=detail&aid=1568562&group_id=84122&atid=575154')
-    base_url = 'http://sourceforge.net/'
-    bug_id = '1568562'
+    scenarios = [
+        # We have only one SourceForge tracker registered in Launchpad, so
+        # we don't care about the aid and group_id, only about atid which is
+        # the bug id.
+        ('SourceForge', {
+            'bugtracker_type': BugTrackerType.SOURCEFORGE,
+            'bug_url': (
+                'http://sourceforge.net/tracker/index.php'
+                '?func=detail&aid=1568562&group_id=84122&atid=575154'),
+            'base_url': 'http://sourceforge.net/',
+            'bug_id': '1568562',
+            }),
+        # New SF tracker URLs.
+        ('SourceForgeTracker2', {
+            'bugtracker_type': BugTrackerType.SOURCEFORGE,
+            'bug_url': (
+                'http://sourceforge.net/tracker2/'
+                '?func=detail&aid=1568562&group_id=84122&atid=575154'),
+            'base_url': 'http://sourceforge.net/',
+            'bug_id': '1568562',
+            }),
+        ]
 
-    def test_unregistered_tracker_url(self):
-        # The SourceForge tracker is always registered, so this test
-        # doesn't make sense for SourceForge URLs.
-        pass
+    # The SourceForge tracker is always registered.
+    already_registered = True
 
     def test_aliases(self):
         """Test that parsing SourceForge URLs works with the SF aliases."""
@@ -251,82 +322,11 @@ class SFExtractBugTrackerAndBugTest(
         self.base_url = original_base_url
 
 
-class SFTracker2ExtractBugTrackerAndBugTest(SFExtractBugTrackerAndBugTest):
-    """Ensure extractBugTrackerAndBug works for new SF tracker URLs."""
-
-    bugtracker_type = BugTrackerType.SOURCEFORGE
-    bug_url = (
-        'http://sourceforge.net/tracker2/'
-        '?func=detail&aid=1568562&group_id=84122&atid=575154')
-    base_url = 'http://sourceforge.net/'
-    bug_id = '1568562'
-
-
-class XForgeExtractBugTrackerAndBugTest(
-    ExtractBugTrackerAndBugTestBase, unittest.TestCase):
-    """Ensure extractBugTrackerAndBug works with SourceForge-like URLs.
-    """
-
-    bugtracker_type = BugTrackerType.SOURCEFORGE
-    bug_url = (
-        'http://gforge.example.com/tracker/index.php'
-        '?func=detail&aid=90812&group_id=84122&atid=575154')
-    base_url = 'http://gforge.example.com/'
-    bug_id = '90812'
-
-
-class RTExtractBugTrackerAndBugTest(
-    ExtractBugTrackerAndBugTestBase, unittest.TestCase):
-    """Ensure BugWatchSet.extractBugTrackerAndBug works with RT URLs."""
-
-    bugtracker_type = BugTrackerType.RT
-    bug_url = 'http://some.host/Ticket/Display.html?id=2379'
-    base_url = 'http://some.host/'
-    bug_id = '2379'
-
-
-class CpanExtractBugTrackerAndBugTest(
-    ExtractBugTrackerAndBugTestBase, unittest.TestCase):
-    """Ensure BugWatchSet.extractBugTrackerAndBug works with CPAN URLs."""
-
-    bugtracker_type = BugTrackerType.RT
-    bug_url = 'http://rt.cpan.org/Public/Bug/Display.html?id=2379'
-    base_url = 'http://rt.cpan.org/'
-    bug_id = '2379'
-
-
-class SavannahExtractBugTrackerAndBugTest(
-    ExtractBugTrackerAndBugTestBase, unittest.TestCase):
-    """Ensure BugWatchSet.extractBugTrackerAndBug works with Savannah URLs.
-    """
-
-    bugtracker_type = BugTrackerType.SAVANE
-    bug_url = 'http://savannah.gnu.org/bugs/?22003'
-    base_url = 'http://savannah.gnu.org/'
-    bug_id = '22003'
-
-    def test_unregistered_tracker_url(self):
-        # The Savannah tracker is always registered, so this test
-        # doesn't make sense for Savannah URLs.
-        pass
-
-
-class SavaneExtractBugTrackerAndBugTest(
-    ExtractBugTrackerAndBugTestBase, unittest.TestCase):
-    """Ensure BugWatchSet.extractBugTrackerAndBug works with Savane URLs.
-    """
-
-    bugtracker_type = BugTrackerType.SAVANE
-    bug_url = 'http://savane.example.com/bugs/?12345'
-    base_url = 'http://savane.example.com/'
-    bug_id = '12345'
-
-
-class EmailAddressExtractBugTrackerAndBugTest(
-    ExtractBugTrackerAndBugTestBase, unittest.TestCase):
+class EmailAddressExtractBugTrackerAndBugTest(ExtractBugTrackerAndBugTest):
     """Ensure BugWatchSet.extractBugTrackerAndBug works with email addresses.
     """
 
+    scenarios = None
     bugtracker_type = BugTrackerType.EMAILADDRESS
     bug_url = 'mailto:foo.bar@example.com'
     base_url = 'mailto:foo.bar@example.com'
@@ -339,27 +339,9 @@ class EmailAddressExtractBugTrackerAndBugTest(
             self.bugwatch_set.extractBugTrackerAndBug,
             url='this\.is@@a.bad.email.address')
 
-
-class PHPProjectBugTrackerExtractBugTrackerAndBugTest(
-    ExtractBugTrackerAndBugTestBase, unittest.TestCase):
-    """Ensure BugWatchSet.extractBugTrackerAndBug works with PHP bug URLs.
-    """
-
-    bugtracker_type = BugTrackerType.PHPPROJECT
-    bug_url = 'http://phptracker.example.com/bug.php?id=12345'
-    base_url = 'http://phptracker.example.com/'
-    bug_id = '12345'
-
-
-class GoogleCodeBugTrackerExtractBugTrackerAndBugTest(
-    ExtractBugTrackerAndBugTestBase, unittest.TestCase):
-    """Ensure BugWatchSet.extractBugTrackerAndBug works for Google Code URLs.
-    """
-
-    bugtracker_type = BugTrackerType.GOOGLE_CODE
-    bug_url = 'http://code.google.com/p/myproject/issues/detail?id=12345'
-    base_url = 'http://code.google.com/p/myproject/issues'
-    bug_id = '12345'
+    def test_invalid_bug_number(self):
+        # Test does not make sense for email addresses.
+        pass
 
 
 class TestBugWatch(TestCaseWithFactory):
@@ -376,7 +358,7 @@ class TestBugWatch(TestCaseWithFactory):
         watch = self.factory.makeBugWatch(bug=bug)
         product_task.bugwatch = watch
         # For a single-task bug the bug task is eligible for update.
-        self.failUnlessEqual(
+        self.assertEqual(
             [product_task], list(
                 removeSecurityProxy(watch).bugtasks_to_update))
         # If we add a task such that the existing task becomes a
@@ -385,14 +367,14 @@ class TestBugWatch(TestCaseWithFactory):
         product_series_task = self.factory.makeBugTask(
             bug=bug, target=product.development_focus)
         product_series_task.bugwatch = watch
-        self.failUnlessEqual(
+        self.assertEqual(
             [product_series_task], list(
                 removeSecurityProxy(watch).bugtasks_to_update))
         # But once the bug is marked as a duplicate,
         # bugtasks_to_update yields nothing.
         bug.markAsDuplicate(
             self.factory.makeBug(target=product, owner=product.owner))
-        self.failUnlessEqual(
+        self.assertEqual(
             [], list(removeSecurityProxy(watch).bugtasks_to_update))
 
     def test_updateStatus_with_duplicate_bug(self):
@@ -404,14 +386,14 @@ class TestBugWatch(TestCaseWithFactory):
         bug_task = bug.default_bugtask
         bug_task.bugwatch = self.factory.makeBugWatch()
         bug_task_initial_status = bug_task.status
-        self.failIfEqual(BugTaskStatus.INPROGRESS, bug_task.status)
+        self.assertNotEqual(BugTaskStatus.INPROGRESS, bug_task.status)
         bug_task.bugwatch.updateStatus('foo', BugTaskStatus.INPROGRESS)
-        self.failUnlessEqual(bug_task_initial_status, bug_task.status)
+        self.assertEqual(bug_task_initial_status, bug_task.status)
         # Once the task is no longer linked to a duplicate bug, the
         # status will get updated.
         bug.markAsDuplicate(None)
         bug_task.bugwatch.updateStatus('foo', BugTaskStatus.INPROGRESS)
-        self.failUnlessEqual(BugTaskStatus.INPROGRESS, bug_task.status)
+        self.assertEqual(BugTaskStatus.INPROGRESS, bug_task.status)
 
     def test_updateImportance_with_duplicate_bug(self):
         # Calling BugWatch.updateImportance() will not update the
@@ -422,27 +404,27 @@ class TestBugWatch(TestCaseWithFactory):
         bug_task = bug.default_bugtask
         bug_task.bugwatch = self.factory.makeBugWatch()
         bug_task_initial_importance = bug_task.importance
-        self.failIfEqual(BugTaskImportance.HIGH, bug_task.importance)
+        self.assertNotEqual(BugTaskImportance.HIGH, bug_task.importance)
         bug_task.bugwatch.updateImportance('foo', BugTaskImportance.HIGH)
-        self.failUnlessEqual(bug_task_initial_importance, bug_task.importance)
+        self.assertEqual(bug_task_initial_importance, bug_task.importance)
         # Once the task is no longer linked to a duplicate bug, the
         # importance will get updated.
         bug.markAsDuplicate(None)
         bug_task.bugwatch.updateImportance('foo', BugTaskImportance.HIGH)
-        self.failUnlessEqual(BugTaskImportance.HIGH, bug_task.importance)
+        self.assertEqual(BugTaskImportance.HIGH, bug_task.importance)
 
     def test_get_bug_watch_ids(self):
         # get_bug_watch_ids() yields the IDs for the given bug
         # watches.
         bug_watches = [self.factory.makeBugWatch()]
-        self.failUnlessEqual(
+        self.assertEqual(
             [bug_watch.id for bug_watch in bug_watches],
             list(get_bug_watch_ids(bug_watches)))
 
     def test_get_bug_watch_ids_with_iterator(self):
         # get_bug_watch_ids() can also accept an iterator.
         bug_watches = [self.factory.makeBugWatch()]
-        self.failUnlessEqual(
+        self.assertEqual(
             [bug_watch.id for bug_watch in bug_watches],
             list(get_bug_watch_ids(iter(bug_watches))))
 
@@ -450,7 +432,7 @@ class TestBugWatch(TestCaseWithFactory):
         # If something resembling an ID is found, get_bug_watch_ids()
         # yields it unaltered.
         bug_watches = [1, 2, 3]
-        self.failUnlessEqual(
+        self.assertEqual(
             bug_watches, list(get_bug_watch_ids(bug_watches)))
 
     def test_get_bug_watch_ids_with_mixed_list(self):
@@ -458,7 +440,7 @@ class TestBugWatch(TestCaseWithFactory):
         # objects are a mix of bug watches and IDs.
         bug_watch = self.factory.makeBugWatch()
         bug_watches = [1234, bug_watch]
-        self.failUnlessEqual(
+        self.assertEqual(
             [1234, bug_watch.id], list(get_bug_watch_ids(bug_watches)))
 
     def test_get_bug_watch_ids_with_others_in_list(self):
@@ -508,16 +490,16 @@ class TestBugWatchSet(TestCaseWithFactory):
         bug_watch_set = getUtility(IBugWatchSet)
         # Passing in the remote bug ID gets us every bug watch that
         # refers to that remote bug.
-        self.failUnlessEqual(
+        self.assertEqual(
             set(bug_watches_alice),
             set(bug_watch_set.getBugWatchesForRemoteBug('alice')))
-        self.failUnlessEqual(
+        self.assertEqual(
             set(bug_watches_bob),
             set(bug_watch_set.getBugWatchesForRemoteBug('bob')))
         # The search can be narrowed by passing in a list or other
         # iterable collection of bug watch IDs.
         bug_watches_limited = bug_watches_alice + bug_watches_bob[:1]
-        self.failUnlessEqual(
+        self.assertEqual(
             set(bug_watches_bob[:1]),
             set(bug_watch_set.getBugWatchesForRemoteBug('bob', [
                         bug_watch.id for bug_watch in bug_watches_limited])))
@@ -542,11 +524,11 @@ class TestBugWatchSetBulkOperations(TestCaseWithFactory):
     def _checkStatusOfBugWatches(
         self, last_checked_is_null, next_check_is_null, last_error_type):
         for bug_watch in self.bug_watches:
-            self.failUnlessEqual(
+            self.assertEqual(
                 last_checked_is_null, bug_watch.lastchecked is None)
-            self.failUnlessEqual(
+            self.assertEqual(
                 next_check_is_null, bug_watch.next_check is None)
-            self.failUnlessEqual(
+            self.assertEqual(
                 last_error_type, bug_watch.last_error_type)
 
     def test_bulkSetError(self):
@@ -565,9 +547,9 @@ class TestBugWatchSetBulkOperations(TestCaseWithFactory):
     def _checkActivityForBugWatches(self, result, message, oops_id):
         for bug_watch in self.bug_watches:
             latest_activity = bug_watch.activity.first()
-            self.failUnlessEqual(result, latest_activity.result)
-            self.failUnlessEqual(message, latest_activity.message)
-            self.failUnlessEqual(oops_id, latest_activity.oops_id)
+            self.assertEqual(result, latest_activity.result)
+            self.assertEqual(message, latest_activity.message)
+            self.assertEqual(oops_id, latest_activity.oops_id)
 
     def test_bulkAddActivity(self):
         # Called with only bug watches, bulkAddActivity() adds
@@ -662,7 +644,7 @@ class TestBugWatchActivityPruner(TestCaseWithFactory):
         # start of this test.
         messages = [activity.message for activity in self.bug_watch.activity]
         for i in range(MAX_SAMPLE_SIZE):
-            self.failUnless("Activity %s" % i in messages)
+            self.assertIn("Activity %s" % i, messages)
 
 
 class TestBugWatchResetting(TestCaseWithFactory):
@@ -672,12 +654,13 @@ class TestBugWatchResetting(TestCaseWithFactory):
     def setUp(self):
         super(TestBugWatchResetting, self).setUp(user=ADMIN_EMAIL)
         self.bug_watch = self.factory.makeBugWatch()
-        self.bug_watch.last_error_type = BugWatchActivityStatus.BUG_NOT_FOUND
-        self.bug_watch.lastchanged = datetime.now(utc) - timedelta(days=1)
-        self.bug_watch.lastchecked = datetime.now(utc) - timedelta(days=1)
-        self.bug_watch.next_check = datetime.now(utc) + timedelta(days=7)
-        self.bug_watch.remote_importance = 'IMPORTANT'
-        self.bug_watch.remotestatus = 'FIXED'
+        naked = removeSecurityProxy(self.bug_watch)
+        naked.last_error_type = BugWatchActivityStatus.BUG_NOT_FOUND
+        naked.lastchanged = datetime.now(utc) - timedelta(days=1)
+        naked.lastchecked = datetime.now(utc) - timedelta(days=1)
+        naked.next_check = datetime.now(utc) + timedelta(days=7)
+        naked.remote_importance = 'IMPORTANT'
+        naked.remotestatus = 'FIXED'
         self.default_bug_watch_fields = [
             'last_error_type',
             'lastchanged',
@@ -744,3 +727,6 @@ class TestBugWatchResetting(TestCaseWithFactory):
         login_person(lp_dev)
         self.bug_watch.reset()
         self._assertBugWatchHasBeenChanged()
+
+
+load_tests = load_tests_apply_scenarios

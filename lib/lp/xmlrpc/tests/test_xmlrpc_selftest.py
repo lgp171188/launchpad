@@ -9,11 +9,11 @@ import xmlrpclib
 from zope.component import getUtility
 
 from lp.services.webapp.interfaces import ILaunchBag
-from lp.services.webapp.testing import verifyObject
 from lp.testing import (
     anonymous_logged_in,
     person_logged_in,
     TestCaseWithFactory,
+    verifyObject,
     )
 from lp.testing.layers import LaunchpadFunctionalLayer
 from lp.testing.xmlrpc import XMLRPCTestTransport
@@ -29,11 +29,11 @@ class TestXMLRPCSelfTest(TestCaseWithFactory):
 
     def make_proxy(self):
         return xmlrpclib.ServerProxy(
-            'http://xmlrpc.launchpad.dev/', transport=XMLRPCTestTransport())
+            'http://xmlrpc.launchpad.test/', transport=XMLRPCTestTransport())
 
     def make_logged_in_proxy(self):
         return xmlrpclib.ServerProxy(
-            'http://test@canonical.com:test@xmlrpc.launchpad.dev/',
+            'http://test@canonical.com:test@xmlrpc.launchpad.test/',
             transport=XMLRPCTestTransport())
 
     def test_launchpad_root_object(self):

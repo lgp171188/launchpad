@@ -10,21 +10,19 @@ __all__ = [
     ]
 
 
-from cgi import escape
 from textwrap import TextWrapper
 from urllib import quote
 
 from zope.component import getUtility
 
+from lp.app.browser.tales import PersonFormatterAPI
 from lp.registry.interfaces.mailinglist import (
     IHeldMessageDetails,
     IMailingListSet,
     )
 from lp.registry.interfaces.person import ITeam
-from lp.services.webapp import (
-    canonical_url,
-    LaunchpadView,
-    )
+from lp.services.webapp import LaunchpadView
+from lp.services.webapp.escaping import html_escape
 
 
 class HeldMessageView(LaunchpadView):
@@ -44,11 +42,7 @@ class HeldMessageView(LaunchpadView):
         self.subject = self.details.subject
         self.date = self.details.date
         self.widget_name = 'field.' + quote(self.message_id)
-        # The author field is very close to what the details has, except that
-        # the view wants to include a link to the person's overview page.
-        self.author = '<a href="%s">%s</a>' % (
-            canonical_url(self.details.author),
-            escape(self.details.sender))
+        self.author = PersonFormatterAPI(self.details.author).link(None)
 
     def initialize(self):
         """See `LaunchpadView`."""
@@ -99,7 +93,7 @@ class HeldMessageView(LaunchpadView):
         """
         # Escape the text so that there's no chance of cross-site scripting,
         # then split into lines.
-        text_lines = escape(self.details.body).splitlines()
+        text_lines = html_escape(self.details.body).splitlines()
         # Strip off any whitespace only lines from the start of the message.
         text_lines.reverse()
         while len(text_lines) > 0:

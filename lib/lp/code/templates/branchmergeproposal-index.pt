@@ -36,6 +36,9 @@
     #add-comment-review-fields div {
       display: inline;
     }
+    .yui3-publishdrafts:before {
+      content: " ";
+    }
     #proposal-summary th {
       font-weight: bold;
       color: #717171;
@@ -155,34 +158,74 @@
     <div id="source-revisions"
          tal:condition="not: context/queue_status/enumvalue:MERGED">
 
-      <tal:history-available condition="context/source_branch/revision_count"
-                             define="branch context/source_branch;
-                                     revisions view/unlanded_revisions">
-        <h2>Unmerged revisions</h2>
-        <metal:landing-target use-macro="branch/@@+macros/branch-revisions"/>
-      </tal:history-available>
-      <tal:remote-branch condition="context/source_branch/branch_type/enumvalue:REMOTE">
-        <h2>Unmerged revisions</h2>
-        <p>Recent revisions are not available due to the source branch being remote.</p>
-      </tal:remote-branch>
+      <tal:bzr-revisions condition="context/source_branch">
+        <tal:history-available condition="context/source_branch/revision_count"
+                               define="branch context/source_branch;
+                                       revisions view/unlanded_revisions">
+          <h2>Unmerged revisions</h2>
+          <metal:landing-target use-macro="branch/@@+macros/branch-revisions"/>
+        </tal:history-available>
+        <tal:remote-branch condition="context/source_branch/branch_type/enumvalue:REMOTE">
+          <h2>Unmerged revisions</h2>
+          <p>Recent revisions are not available due to the source branch being remote.</p>
+        </tal:remote-branch>
+      </tal:bzr-revisions>
+      <tal:git-revisions condition="context/source_git_ref">
+        <tal:history-available define="ref context/source_git_ref;
+                                       commit_infos view/unlanded_revisions"
+                               condition="commit_infos">
+          <h2>Unmerged commits</h2>
+          <metal:commits use-macro="ref/@@+macros/ref-commits"/>
+        </tal:history-available>
+      </tal:git-revisions>
     </div>
   </div>
 
   <div id="diff-area">
-    <div class="yui-g" tal:condition="view/pending_diff">
+    <div class="yui-g" tal:condition="python: not view.show_diff_update_link and view.pending_diff">
       <div class="pending-update" id="diff-pending-update">
         <h3>Updating diff...</h3>
-        <p tal:condition="not: features/longpoll.merge_proposals.enabled">
+        <p>
           An updated diff will be available in a few minutes. Reload to see the
           changes.
         </p>
-        <p tal:condition="features/longpoll.merge_proposals.enabled">
-          An updated diff is being calculated and will appear automatically when ready.
+      </div>
+    </div>
+    <div class="yui-g" tal:condition="view/show_diff_update_link">
+      <div class="pending-update" id="diff-pending-update">
+        <h3>Diff calculation failed</h3>
+        <p>
+          Calculating the branch diff failed. You can manually schedule an update if required.
+        </p>
+        <p>
+          <form action="+update-diff" name="launchpadform" method="post" enctype="multipart/form-data" accept-charset="UTF-8">
+            <input id="field.actions.update" class="button" type="submit"
+             name="field.actions.update" value="Update diff" />
+          </form>
         </p>
       </div>
     </div>
+    <div class="yui-g pending-update" id="diff-pending-update"
+       tal:condition="view/show_rescan_link">
+      <h3>Update scan failed</h3>
+      <p>
+        At least one of the branches involved have failed to scan.
+        You can manually schedule a rescan if required.
+      </p>
+      <p>
+        <form action="+rescan" name="launchpadform" method="post"
+              enctype="multipart/form-data" accept-charset="UTF-8">
+          <input class="button" type="submit"
+                  name="field.actions.rescan" value="Rescan" />
+        </form>
+      </p>
+    </div>
     <div id="review-diff" tal:condition="view/preview_diff">
       <h2>Preview Diff </h2>
+
+      <div class="diff-navigator">
+      </div>
+
       <div class="diff-content">
         <div tal:replace="structure context/@@++diff"/>
       </div>
@@ -193,42 +236,43 @@
   replace="structure
   string:&lt;script id='codereview-script' type='text/javascript'&gt;" />
   conf = <tal:status-config replace="view/status_config" />
-  <!--
   LPJS.use('io-base', 'lp.code.branchmergeproposal.reviewcomment',
           'lp.code.branchmergeproposal.status', 'lp.app.comment',
-          'lp.code.branchmergeproposal.updater', 'lp.app.widgets.expander',
-          'lp.code.branch.revisionexpander', function(Y) {
+          'lp.app.widgets.expander',
+          'lp.code.branch.revisionexpander',
+          'lp.code.branchmergeproposal.inlinecomments', function(Y) {
 
     Y.on('load', function() {
         var logged_in = LP.links['me'] !== undefined;
-
+        var comment = null;
         if (logged_in) {
-            var comment = new Y.lp.app.comment.CodeReviewComment();
+            comment = new Y.lp.app.comment.CodeReviewComment();
             comment.render();
-            Y.lp.code.branchmergeproposal.status.connect_status(conf);
         }
-        Y.lp.code.branchmergeproposal.reviewcomment.connect_links();
-        (new Y.lp.code.branchmergeproposal.reviewcomment.NumberToggle()
-            ).render();
 
-        if (Y.Lang.isValue(LP.cache.merge_proposal_event_key)) {
-            var updater = new Y.lp.code.branchmergeproposal.updater.UpdaterWidget(
-                {
-                 srcNode: Y.one('#diff-area'),
-                 summary_node: Y.one('#proposal-summary')
+        var review_diff_node = Y.one('#review-diff');
+        if (review_diff_node !== null) {
+            var ic = Y.lp.code.branchmergeproposal.inlinecomments;
+            var diffnav = new ic.DiffNav({srcNode: review_diff_node});
+            if (comment !== null) {
+                comment.on('CodeReviewComment.appended', function () {
+                    diffnav.update_on_new_comment();
                 });
-            Y.on(LP.cache.merge_proposal_event_key, function(data) {
-                if (Y.lp.code.branchmergeproposal.updater.is_mp_diff_updated(data)) {
-                    updater.update();
-                }
-            });
-            updater.on(updater.NAME + '.updated', function() {
-                (new Y.lp.code.branchmergeproposal.reviewcomment.NumberToggle()
-                    ).render();
-            });
+                Y.lp.code.branchmergeproposal.status.connect_status(conf);
+            }
+            Y.lp.code.branchmergeproposal.reviewcomment.connect_links();
+            diffnav.render();
         }
 
-      }, window);
+        LP.cache.comment_context = LP.cache.context;
+        var cl = new Y.lp.app.comment.CommentList({
+            comment_list_container: Y.one('#conversation')
+        });
+        if (comment !== null) {
+            comment.on('CodeReviewComment.appended', cl.bind_new_comment);
+        }
+        cl.render();
+    }, window);
 
     Y.on('domready', function() {
         Y.lp.app.widgets.expander.createByCSS(
@@ -239,7 +283,6 @@
             Y.lp.code.branch.revisionexpander.bmp_diff_loader);
     });
   });
-  -->
 <tal:script replace="structure string:&lt;/script&gt;" />
 
 </div>

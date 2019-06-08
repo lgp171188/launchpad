@@ -17,7 +17,7 @@ __all__ = [
     ]
 
 from zope.interface import (
-    implements,
+    implementer,
     Interface,
     )
 
@@ -97,13 +97,12 @@ class IHasBadges(Interface):
     Badges should honour the visibility of the linked objects.
     """
 
-    # A zope interface doesn't have self as a parameter for its methods.
-    # pylint: disable-msg=E0211
     def getVisibleBadges():
         """Return a list of `Badge` objects that the logged in user can see.
         """
 
 
+@implementer(IHasBadges)
 class HasBadgeBase:
     """The standard base implementation for badge visibility.
 
@@ -113,7 +112,6 @@ class HasBadgeBase:
     The visibility of these badges are checked by calling a method like
     `isFooBadgeVisible` where Foo is the capitalised name of the badge.
     """
-    implements(IHasBadges)
 
     # All private objects should show the private badge.
     badges = ('private',)

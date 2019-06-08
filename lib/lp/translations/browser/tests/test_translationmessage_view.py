@@ -1,4 +1,4 @@
-# Copyright 2009 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 from __future__ import with_statement
@@ -29,6 +29,7 @@ from lp.testing.layers import (
 from lp.testing.views import create_view
 from lp.translations.browser.translationmessage import (
     contains_translations,
+    convert_translationmessage_to_submission,
     CurrentTranslationMessagePageView,
     CurrentTranslationMessageView,
     revert_unselected_translations,
@@ -37,7 +38,6 @@ from lp.translations.enums import TranslationPermission
 from lp.translations.interfaces.side import ITranslationSideTraitsSet
 from lp.translations.interfaces.translations import TranslationConstants
 from lp.translations.interfaces.translationsperson import ITranslationsPerson
-from lp.translations.publisher import TranslationsLayer
 
 
 class TestCurrentTranslationMessage_can_dismiss(TestCaseWithFactory):
@@ -265,8 +265,7 @@ class TestResetTranslations(TestCaseWithFactory):
 
         url = canonical_url(self.current_translation) + '/+translate'
         view = create_view(
-            self.current_translation, '+translate', form=form,
-            layer=TranslationsLayer, server_url=url)
+            self.current_translation, '+translate', form=form, server_url=url)
         view.request.method = 'POST'
         view.initialize()
 
@@ -316,7 +315,7 @@ class TestCurrentTranslationMessagePageView(TestCaseWithFactory):
             base_field_name = 'msgset_%d_%s_translation_' % (
                 message.potmsgset.id, pofile.language.code)
             # Add the expected plural forms fields.
-            for plural_form in xrange(TranslationConstants.MAX_PLURAL_FORMS):
+            for plural_form in range(TranslationConstants.MAX_PLURAL_FORMS):
                 field_name = '%s%d_new' % (base_field_name, plural_form)
                 form[field_name] = u'snarf'
         url = '/%s/%s/%s/+translate' % (
@@ -330,7 +329,7 @@ class TestCurrentTranslationMessagePageView(TestCaseWithFactory):
         view = self._makeView()
         view.request.form['lock_timestamp'] = u'2010-01-01 00:00:00 UTC'
         self.assertEqual(
-            datetime(2010, 01, 01, tzinfo=pytz.utc),
+            datetime(2010, 1, 1, tzinfo=pytz.utc),
             view._extractLockTimestamp())
 
     def test_extractLockTimestamp_returns_None_by_default(self):
@@ -398,7 +397,7 @@ class TestHelpers(TestCaseWithFactory):
         self.assertFalse(contains_translations({}))
 
     def test_contains_translations_finds_any_translations(self):
-        for plural_form in xrange(TranslationConstants.MAX_PLURAL_FORMS):
+        for plural_form in range(TranslationConstants.MAX_PLURAL_FORMS):
             self.assertTrue(
                 contains_translations({plural_form: self.getUniqueString()}))
 
@@ -417,7 +416,7 @@ class TestHelpers(TestCaseWithFactory):
             revert_unselected_translations(translations, None, [0]))
 
     def test_revert_unselected_translations_handles_plurals(self):
-        translated_forms = range(3)
+        translated_forms = list(range(3))
         translations = dict(
             (form, self.getUniqueString()) for form in translated_forms)
 
@@ -477,3 +476,33 @@ class TestHelpers(TestCaseWithFactory):
             {1: u''},
             revert_unselected_translations(
                 new_translations, current_message, []))
+
+
+class TestBadSubmission(TestCaseWithFactory):
+
+    layer = DatabaseFunctionalLayer
+
+    def getSubmission(self, good=True):
+        pofile = self.factory.makePOFile()
+        current = self.factory.makeCurrentTranslationMessage(pofile=pofile)
+        message = self.factory.makeSuggestion(pofile=pofile)
+        if good:
+            message.setPOFile(pofile)
+        submission = convert_translationmessage_to_submission(
+            message=message,
+            current_message=current,
+            plural_form=0,
+            pofile=pofile,
+            legal_warning_needed=False)
+        return submission
+
+    def test_submission_traversable_guard(self):
+        # If a submission doesn't have a sequence greater than 1, it's not
+        # traversable.
+        bad_sub = self.getSubmission(good=False)
+        self.assertEqual(0, bad_sub.translationmessage.sequence)
+        self.assertFalse(bad_sub.is_traversable)
+
+        good_sub = self.getSubmission()
+        self.assertNotEqual(0, good_sub.translationmessage.sequence)
+        self.assertTrue(good_sub.is_traversable)

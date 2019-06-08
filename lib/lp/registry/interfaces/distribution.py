@@ -1,4 +1,4 @@
-# Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2015 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Interfaces including and related to IDistribution."""
@@ -6,8 +6,6 @@
 __metaclass__ = type
 
 __all__ = [
-    'IBaseDistribution',
-    'IDerivativeDistribution',
     'IDistribution',
     'IDistributionDriverRestricted',
     'IDistributionEditRestricted',
@@ -54,9 +52,9 @@ from zope.schema import (
     )
 
 from lp import _
+from lp.answers.interfaces.faqtarget import IFAQTarget
 from lp.answers.interfaces.questiontarget import IQuestionTarget
 from lp.app.errors import NameLookupFailed
-from lp.app.interfaces.headings import IRootContext
 from lp.app.interfaces.launchpad import (
     ILaunchpadUsage,
     IServiceUsage,
@@ -67,14 +65,17 @@ from lp.blueprints.interfaces.sprint import IHasSprints
 from lp.bugs.interfaces.bugsupervisor import IHasBugSupervisor
 from lp.bugs.interfaces.bugtarget import (
     IBugTarget,
+    IHasExpirableBugs,
     IOfficialBugTagTargetPublic,
     IOfficialBugTagTargetRestricted,
     )
 from lp.bugs.interfaces.structuralsubscription import (
     IStructuralSubscriptionTarget,
     )
+from lp.registry.enums import VCSType
 from lp.registry.interfaces.announcement import IMakesAnnouncements
 from lp.registry.interfaces.distributionmirror import IDistributionMirror
+from lp.registry.interfaces.distroseries import DistroSeriesNameField
 from lp.registry.interfaces.karma import IKarmaContext
 from lp.registry.interfaces.milestone import (
     ICanGetMilestonesDirectly,
@@ -127,7 +128,7 @@ class IDistributionEditRestricted(IOfficialBugTagTargetRestricted):
 class IDistributionDriverRestricted(Interface):
     """IDistribution properties requiring launchpad.Driver permission."""
 
-    def newSeries(name, displayname, title, summary, description,
+    def newSeries(name, display_name, title, summary, description,
                   version, previous_series, registrant):
         """Creates a new distroseries."""
 
@@ -138,7 +139,7 @@ class IDistributionPublic(
     IHasOOPSReferences, IHasOwner, IHasSprints, IHasTranslationImports,
     ITranslationPolicy, IKarmaContext, ILaunchpadUsage, IMakesAnnouncements,
     IOfficialBugTagTargetPublic, IPillar, IServiceUsage,
-    ISpecificationTarget):
+    ISpecificationTarget, IHasExpirableBugs):
     """Public IDistribution properties."""
 
     id = Attribute("The distro's unique number.")
@@ -147,12 +148,12 @@ class IDistributionPublic(
             title=_("Name"),
             constraint=name_validator,
             description=_("The distro's name."), required=True))
-    displayname = exported(
+    display_name = exported(
         TextLine(
             title=_("Display Name"),
             description=_("The displayable name of the distribution."),
-            required=True),
-        exported_as='display_name')
+            required=True))
+    displayname = Attribute("Display name (deprecated)")
     title = exported(
         Title(
             title=_("Title"),
@@ -207,8 +208,8 @@ class IDistributionPublic(
             required=True))
     domainname = exported(
         TextLine(
-            title=_("Domain name"),
-            description=_("The distro's domain name."), required=True),
+            title=_("Web site URL"),
+            description=_("The distro's web site URL."), required=True),
         exported_as='domain_name')
     owner = exported(
         PublicPersonChoice(
@@ -309,10 +310,17 @@ class IDistributionPublic(
                 "in the context of the currentseries.")),
         exported_as="current_series")
 
-    full_functionality = Attribute(
-        "Whether or not we enable the full functionality of Launchpad for "
-        "this distribution. Currently only Ubuntu and some derivatives "
-        "get the full functionality of LP")
+    official_packages = exported(Bool(
+        title=_("Packages are tracked in Launchpad"),
+        readonly=False, required=True))
+
+    supports_ppas = exported(Bool(
+        title=_("Enable PPA creation and publication"),
+        readonly=False, required=True))
+
+    supports_mirrors = exported(Bool(
+        title=_("Enable mirror listings and probes"),
+        readonly=False, required=True))
 
     translation_focus = Choice(
         title=_("Translation focus"),
@@ -345,10 +353,6 @@ class IDistributionPublic(
     all_distro_archive_ids = Attribute(
         "A list containing the IDs of all the non-PPA archives.")
 
-    upstream_report_excluded_packages = Attribute(
-        "A list of the source packages that should not be shown on the "
-        "upstream report for this Distribution.")
-
     has_published_binaries = Bool(
         title=_("Has Published Binaries"),
         description=_("True if this distribution has binaries published "
@@ -359,6 +363,26 @@ class IDistributionPublic(
         title=_("Has Published Sources"),
         description=_("True if this distribution has sources published."),
         readonly=True, required=False)
+
+    redirect_release_uploads = exported(Bool(
+        title=_("Redirect release pocket uploads"),
+        description=_("Redirect release pocket uploads to proposed pocket"),
+        readonly=False, required=True))
+
+    development_series_alias = exported(DistroSeriesNameField(
+        title=_("Alias for development series"),
+        description=_(
+            "If set, an alias for the current development series in this "
+            "distribution."),
+        constraint=name_validator, readonly=False, required=False))
+
+    vcs = exported(
+        Choice(
+            title=_("VCS"),
+            required=False,
+            vocabulary=VCSType,
+            description=_(
+                "Version control system for this distribution's code.")))
 
     def getArchiveIDList(archive=None):
         """Return a list of archive IDs suitable for sqlvalues() or quote().
@@ -394,12 +418,23 @@ class IDistributionPublic(
     def getDevelopmentSeries():
         """Return the DistroSeries which are marked as in development."""
 
+    def getNonObsoleteSeries():
+        """Return the non-OBSOLETE DistroSeries in this distribution."""
+
+    def resolveSeriesAlias(name):
+        """Resolve a series alias.
+
+        :param name: The name to resolve.
+        :raises NoSuchDistroSeries: If there is no match.
+        """
+
     @operation_parameters(
         name_or_version=TextLine(title=_("Name or version"), required=True))
     # Really IDistroSeries, see _schema_circular_imports.py.
     @operation_returns_entry(Interface)
+    @call_with(follow_aliases=True)
     @export_read_operation()
-    def getSeries(name_or_version):
+    def getSeries(name_or_version, follow_aliases=False):
         """Return the series with the name or version given.
 
         :param name_or_version: The `IDistroSeries.name` or
@@ -455,7 +490,7 @@ class IDistributionPublic(
     def getCountryMirror(country, mirror_type):
         """Return the country DNS mirror for a country and content type."""
 
-    def newMirror(owner, speed, country, content, displayname=None,
+    def newMirror(owner, speed, country, content, display_name=None,
                   description=None, http_base_url=None,
                   ftp_base_url=None, rsync_base_url=None, enabled=False,
                   official_candidate=False, whiteboard=None):
@@ -492,7 +527,7 @@ class IDistributionPublic(
             and the value is a `IDistributionSourcePackageRelease`.
         """
 
-    def getDistroSeriesAndPocket(distroseriesname):
+    def getDistroSeriesAndPocket(distroseriesname, follow_aliases=False):
         """Return a (distroseries,pocket) tuple which is the given textual
         distroseriesname in this distribution."""
 
@@ -600,25 +635,6 @@ class IDistributionPublic(
         If the component_name supplied is unknown, None is returned.
         """
 
-    def getPackagesAndPublicUpstreamBugCounts(limit=50,
-                                              exclude_packages=None):
-        """Return list of tuples of packages, upstreams and public bug counts.
-
-        :param limit: The maximum number of rows to return.
-        :param exclude_packages: A list of source packages to exclude.
-            These should be specified as strings which correspond with
-            SourcePackageName.name.
-        :returns: [(IDistroSourcePackage, IProduct, int, int, int, int), ...]
-
-        This API is quite specialized; it returns a list of up to limit
-        tuples containing IProducts and three different bug counts:
-            - open bugs
-            - triaged bugs
-            - open bugs with an upstream task
-            - open bugs with upstream tasks that are either linked to
-              bug watches or to products that use_malone.
-        """
-
     def getAllowedBugInformationTypes():
         """Get the information types that a bug in this distribution can have.
 
@@ -637,7 +653,7 @@ class IDistributionPublic(
 
 class IDistribution(
     IDistributionEditRestricted, IDistributionPublic, IHasBugSupervisor,
-    IQuestionTarget, IRootContext, IStructuralSubscriptionTarget):
+    IFAQTarget, IQuestionTarget, IStructuralSubscriptionTarget):
     """An operating system distribution.
 
     Launchpadlib example: retrieving the current version of a package in a
@@ -653,14 +669,6 @@ class IDistribution(
             distro_series=series)[0].source_package_version
     """
     export_as_webservice_entry(as_of="beta")
-
-
-class IBaseDistribution(IDistribution):
-    """A Distribution that is the base for other Distributions."""
-
-
-class IDerivativeDistribution(IDistribution):
-    """A Distribution that derives from another Distribution."""
 
 
 class IDistributionSet(Interface):
@@ -696,7 +704,7 @@ class IDistributionSet(Interface):
     def getByName(distroname):
         """Return the IDistribution with the given name or None."""
 
-    def new(name, displayname, title, description, summary, domainname,
+    def new(name, display_name, title, description, summary, domainname,
             members, owner, registrant, mugshot=None, logo=None, icon=None):
         """Create a new distribution."""
 

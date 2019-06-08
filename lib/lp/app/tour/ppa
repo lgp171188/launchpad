@@ -43,7 +43,7 @@
                 <br /><br />
                 Installing applications from a PPA is just as easy as standard Ubuntu software, with updates automatically pushed to your users.
             </p>
-            <div id="left-link-holder"><strong>Need a private PPA with restricted access?</strong><br /><a href="join-launchpad#commercial">Read about our beta for commercial subscribers &gt;</a></div>
+            <div id="left-link-holder"><strong>Need a private PPA with restricted access?</strong><br /><a href="join-launchpad#commercial">Read about our commercial features &gt;</a></div>
             <div id="link-holder"><a href="https://launchpad.net/ubuntu/+ppas"><img src="images/see-it-action-button.png" alt="See it in action" title="Click to browse PPAs" /></a><br /><a href="https://help.launchpad.net/PPA">Read our PPA user guide &gt;</a></div>
         </div>
         <div id="page-intro-bottom"></div>
@@ -113,7 +113,7 @@
                 <a href="community-support" accesskey="g" tabindex="5">Next</a>
             </li>
             <li class="copyright">
-                &copy; 2004-2012 Canonical Ltd. <a href="https://help.launchpad.net/Legal" accesskey="h" tabindex="6">Terms of Use</a> &#58; <a href="https://help.launchpad.net/Feedback" accesskey="i" tabindex="7">Feedback</a> &#58; <a href="https://answers.launchpad.net/launchpad-project/+faqs" accesskey="j" tabindex="8">FAQ</a>
+                &copy; 2004-2019 Canonical Ltd. <a href="https://help.launchpad.net/Legal" accesskey="h" tabindex="6">Terms of Use</a> &#58; <a href="https://help.launchpad.net/Feedback" accesskey="i" tabindex="7">Feedback</a> &#58; <a href="https://answers.launchpad.net/launchpad-project/+faqs" accesskey="j" tabindex="8">FAQ</a>
             </li>
         </ul>
     </div>

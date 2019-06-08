@@ -1,4 +1,4 @@
-# Copyright 2009-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2016 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for the internal codehosting API."""
@@ -7,15 +7,18 @@ __metaclass__ = type
 
 import datetime
 import os
-import unittest
 
 from bzrlib import bzrdir
-from bzrlib.tests import multiply_tests
 from bzrlib.urlutils import escape
 import pytz
+from testscenarios import (
+    load_tests_apply_scenarios,
+    WithScenarios,
+    )
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
+from lp.app.enums import InformationType
 from lp.app.errors import NotFoundError
 from lp.code.bzr import (
     BranchFormat,
@@ -43,14 +46,15 @@ from lp.code.xmlrpc.codehosting import (
     run_with_login,
     )
 from lp.codehosting.inmemory import InMemoryFrontend
-from lp.registry.enums import InformationType
 from lp.services.database.constants import UTC_NOW
 from lp.services.scripts.interfaces.scriptactivity import IScriptActivitySet
+from lp.services.webapp.escaping import html_escape
 from lp.services.webapp.interfaces import ILaunchBag
 from lp.testing import (
     ANONYMOUS,
     login,
     logout,
+    person_logged_in,
     TestCaseWithFactory,
     )
 from lp.testing.factory import LaunchpadObjectFactory
@@ -97,7 +101,22 @@ class TestRunWithLogin(TestCaseWithFactory):
 
     def test_loginAsRequesterName(self):
         # run_with_login can take a username as well as user id.
-        username = run_with_login(self.person.name, get_logged_in_username)
+        # Deliberately not Unicode, since XML-RPC gives us a byte string.
+        username = run_with_login(
+            self.person.name.encode("UTF-8"), get_logged_in_username)
+        login(ANONYMOUS)
+        self.assertEqual(self.person.name, username)
+        logout()
+
+    def test_loginAsRequesterOpenID(self):
+        # run_with_login can take an OpenID identifier.
+        with person_logged_in(self.person):
+            identifier = (
+                self.person.account.openid_identifiers.one().identifier)
+        username = run_with_login(
+            # Deliberately not Unicode, since XML-RPC gives us a byte string.
+            (u'http://testopenid.test/+id/%s' % identifier).encode("UTF-8"),
+            get_logged_in_username)
         login(ANONYMOUS)
         self.assertEqual(self.person.name, username)
         logout()
@@ -144,12 +163,55 @@ class TestRunWithLogin(TestCaseWithFactory):
         self.assertEqual(None, login_id)
 
 
-class CodehostingTest(TestCaseWithFactory):
+class LaunchpadDatabaseFrontend:
+    """A 'frontend' to Launchpad's branch services.
+
+    A 'frontend' here means something that provides access to the various
+    XML-RPC endpoints, object factories and 'database' methods needed to write
+    unit tests for XML-RPC endpoints.
+
+    All of these methods are gathered together in this class so that
+    alternative implementations can be provided, see `InMemoryFrontend`.
+    """
+
+    def getCodehostingEndpoint(self):
+        """Return the branch filesystem endpoint for testing."""
+        return CodehostingAPI(None, None)
+
+    def getLaunchpadObjectFactory(self):
+        """Return the Launchpad object factory for testing.
+
+        See `LaunchpadObjectFactory`.
+        """
+        return LaunchpadObjectFactory()
+
+    def getBranchLookup(self):
+        """Return an implementation of `IBranchLookup`.
+
+        Tests should use this to get the branch set they need, rather than
+        using 'getUtility(IBranchSet)'. This allows in-memory implementations
+        to work correctly.
+        """
+        return getUtility(IBranchLookup)
+
+    def getLastActivity(self, activity_name):
+        """Get the last script activity with 'activity_name'."""
+        return getUtility(IScriptActivitySet).getLastActivity(activity_name)
+
+
+class CodehostingTest(WithScenarios, TestCaseWithFactory):
     """Tests for the implementation of `ICodehostingAPI`.
 
     :ivar frontend: A nullary callable that returns an object that implements
         getCodehostingEndpoint, getLaunchpadObjectFactory and getBranchLookup.
     """
+
+    scenarios = [
+        ('db', {'frontend': LaunchpadDatabaseFrontend,
+                'layer': LaunchpadFunctionalLayer}),
+        ('inmemory', {'frontend': InMemoryFrontend,
+                      'layer': FunctionalLayer}),
+        ]
 
     def setUp(self):
         TestCaseWithFactory.setUp(self)
@@ -172,15 +234,6 @@ class CodehostingTest(TestCaseWithFactory):
         self.assertIs(None, branch.last_mirrored)
         self.assertEqual(num_failures, branch.mirror_failures)
         self.assertEqual(failure_message, branch.mirror_status_message)
-
-    def assertMirrorSucceeded(self, branch, revision_id):
-        """Assert that `branch` mirrored to `revision_id`."""
-        self.assertSqlAttributeEqualsDate(
-            branch, 'last_mirror_attempt', UTC_NOW)
-        self.assertSqlAttributeEqualsDate(
-            branch, 'last_mirrored', UTC_NOW)
-        self.assertEqual(0, branch.mirror_failures)
-        self.assertEqual(revision_id, branch.last_mirrored_id)
 
     def assertUnmirrored(self, branch):
         """Assert that `branch` has not yet been mirrored.
@@ -205,7 +258,7 @@ class CodehostingTest(TestCaseWithFactory):
         self.assertUnmirrored(branch)
 
         branch.requestMirror()
-        self.assertEquals(
+        self.assertEqual(
             branch.id, self.codehosting_api.acquireBranchToPull([])[0])
 
         failure_message = self.factory.getUniqueString()
@@ -222,8 +275,8 @@ class CodehostingTest(TestCaseWithFactory):
 
     def test_recordSuccess(self):
         # recordSuccess must insert the given data into ScriptActivity.
-        started = datetime.datetime(2007, 07, 05, 19, 32, 1, tzinfo=UTC)
-        completed = datetime.datetime(2007, 07, 05, 19, 34, 24, tzinfo=UTC)
+        started = datetime.datetime(2007, 7, 5, 19, 32, 1, tzinfo=UTC)
+        completed = datetime.datetime(2007, 7, 5, 19, 34, 24, tzinfo=UTC)
         started_tuple = tuple(started.utctimetuple())
         completed_tuple = tuple(completed.utctimetuple())
         success = self.codehosting_api.recordSuccess(
@@ -297,6 +350,15 @@ class CodehostingTest(TestCaseWithFactory):
             owner.id, escape('/~%s/no-such-product/%s' % (owner.name, name)))
         self.assertEqual(faults.NotFound(message), fault)
 
+    def test_createBranch_invalid_product(self):
+        # Creating a branch with an invalid product name fails.
+        owner = self.factory.makePerson()
+        name = self.factory.getUniqueString()
+        branch_name = "/%s/fiz:buzz/%s" % (BRANCH_ALIAS_PREFIX, name)
+        fault = self.codehosting_api.createBranch(
+            owner.id, branch_name)
+        self.assertEqual(faults.InvalidProductName(escape('fiz:buzz')), fault)
+
     def test_createBranch_other_user(self):
         # Creating a branch under another user's directory fails.
         creator = self.factory.makePerson()
@@ -315,8 +377,11 @@ class CodehostingTest(TestCaseWithFactory):
         owner = self.factory.makePerson()
         product = self.factory.makeProduct()
         invalid_name = 'invalid name!'
-        message = ("Invalid branch name '%s'. %s"
-                   % (invalid_name, BRANCH_NAME_VALIDATION_ERROR_MESSAGE))
+        # LaunchpadValidationError unfortunately assumes its output is
+        # always HTML, so it ends up double-escaped in XML-RPC faults.
+        message = html_escape(
+            "Invalid branch name '%s'. %s"
+            % (invalid_name, BRANCH_NAME_VALIDATION_ERROR_MESSAGE))
         fault = self.codehosting_api.createBranch(
             owner.id, escape(
                 '/~%s/%s/%s' % (owner.name, product.name, invalid_name)))
@@ -327,9 +392,12 @@ class CodehostingTest(TestCaseWithFactory):
         owner = self.factory.makePerson()
         product = self.factory.makeProduct()
         invalid_name = u'invalid\N{LATIN SMALL LETTER E WITH ACUTE}'
-        message = ("Invalid branch name '%s'. %s"
-                   % (invalid_name.encode('utf-8'),
-                      str(BRANCH_NAME_VALIDATION_ERROR_MESSAGE)))
+        # LaunchpadValidationError unfortunately assumes its output is
+        # always HTML, so it ends up double-escaped in XML-RPC faults.
+        message = html_escape(
+            "Invalid branch name '%s'. %s"
+            % (invalid_name, BRANCH_NAME_VALIDATION_ERROR_MESSAGE)
+            ).encode('utf-8')
         fault = self.codehosting_api.createBranch(
             owner.id, escape(
                 '/~%s/%s/%s' % (owner.name, product.name, invalid_name)))
@@ -479,7 +547,8 @@ class CodehostingTest(TestCaseWithFactory):
         login(ANONYMOUS)
         translation = self.codehosting_api.translatePath(owner.id, path)
         self.assertEqual(
-            (BRANCH_TRANSPORT, {'id': branch_id, 'writable': True}, ''),
+            (BRANCH_TRANSPORT,
+             {'id': branch_id, 'writable': True, 'private': False}, ''),
             translation)
 
     def test_createBranch_using_branch_alias_product(self):
@@ -507,7 +576,8 @@ class CodehostingTest(TestCaseWithFactory):
         login(ANONYMOUS)
         translation = self.codehosting_api.translatePath(owner.id, path)
         self.assertEqual(
-            (BRANCH_TRANSPORT, {'id': branch_id, 'writable': True}, ''),
+            (BRANCH_TRANSPORT,
+             {'id': branch_id, 'writable': True, 'private': False}, ''),
             translation)
 
     def test_createBranch_using_branch_alias_product_not_auth(self):
@@ -724,7 +794,8 @@ class CodehostingTest(TestCaseWithFactory):
         translation = self.codehosting_api.translatePath(requester.id, path)
         login(ANONYMOUS)
         self.assertEqual(
-            (BRANCH_TRANSPORT, {'id': branch.id, 'writable': False}, ''),
+            (BRANCH_TRANSPORT,
+             {'id': branch.id, 'writable': False, 'private': False}, ''),
             translation)
 
     def test_translatePath_branch_with_trailing_slash(self):
@@ -734,7 +805,8 @@ class CodehostingTest(TestCaseWithFactory):
         translation = self.codehosting_api.translatePath(requester.id, path)
         login(ANONYMOUS)
         self.assertEqual(
-            (BRANCH_TRANSPORT, {'id': branch.id, 'writable': False}, ''),
+            (BRANCH_TRANSPORT,
+             {'id': branch.id, 'writable': False, 'private': False}, ''),
             translation)
 
     def test_translatePath_path_in_branch(self):
@@ -744,7 +816,8 @@ class CodehostingTest(TestCaseWithFactory):
         translation = self.codehosting_api.translatePath(requester.id, path)
         login(ANONYMOUS)
         self.assertEqual(
-            (BRANCH_TRANSPORT, {'id': branch.id, 'writable': False}, 'child'),
+            (BRANCH_TRANSPORT,
+             {'id': branch.id, 'writable': False, 'private': False}, 'child'),
             translation)
 
     def test_translatePath_nested_path_in_branch(self):
@@ -754,7 +827,8 @@ class CodehostingTest(TestCaseWithFactory):
         translation = self.codehosting_api.translatePath(requester.id, path)
         login(ANONYMOUS)
         self.assertEqual(
-            (BRANCH_TRANSPORT, {'id': branch.id, 'writable': False}, 'a/b'),
+            (BRANCH_TRANSPORT,
+             {'id': branch.id, 'writable': False, 'private': False}, 'a/b'),
             translation)
 
     def test_translatePath_preserves_escaping(self):
@@ -769,7 +843,7 @@ class CodehostingTest(TestCaseWithFactory):
         login(ANONYMOUS)
         self.assertEqual(
             (BRANCH_TRANSPORT,
-             {'id': branch.id, 'writable': False},
+             {'id': branch.id, 'writable': False, 'private': False},
              escape(child_path)), translation)
 
     def test_translatePath_no_such_junk_branch(self):
@@ -781,6 +855,27 @@ class CodehostingTest(TestCaseWithFactory):
         requester = self.factory.makePerson()
         product = self.factory.makeProduct()
         path = '/~%s/%s/.bzr/branch-format' % (requester.name, product.name)
+        self.assertNotFound(requester, path)
+
+    def test_translatePath_branches_in_private_parent_dirs_not_found(self):
+        requester = self.factory.makePerson()
+        product = self.factory.makeProduct(
+            information_type=InformationType.PROPRIETARY)
+        path = '/~%s/%s/.bzr/branch-format' % (
+            requester.name, removeSecurityProxy(product).name)
+        self.assertNotFound(requester, path)
+
+    def test_translatePath_private_project(self):
+        requester = self.factory.makePerson()
+        product = self.factory.makeProduct(
+            information_type=InformationType.PROPRIETARY)
+        login(ANONYMOUS)
+        path = '/+branch/%s' % removeSecurityProxy(product).name
+        self.assertNotFound(requester, path)
+        login(ANONYMOUS)
+        path = '/+branch/%s/%s' % (
+            removeSecurityProxy(product).name,
+            removeSecurityProxy(product).development_focus.name)
         self.assertNotFound(requester, path)
 
     def test_translatePath_no_such_branch(self):
@@ -806,7 +901,8 @@ class CodehostingTest(TestCaseWithFactory):
         translation = self.codehosting_api.translatePath(requester.id, path)
         login(ANONYMOUS)
         self.assertEqual(
-            (BRANCH_TRANSPORT, {'id': branch.id, 'writable': True}, ''),
+            (BRANCH_TRANSPORT,
+             {'id': branch.id, 'writable': True, 'private': True}, ''),
             translation)
 
     def test_translatePath_cant_see_private_branch(self):
@@ -830,7 +926,8 @@ class CodehostingTest(TestCaseWithFactory):
             LAUNCHPAD_SERVICES, path)
         login(ANONYMOUS)
         self.assertEqual(
-            (BRANCH_TRANSPORT, {'id': branch.id, 'writable': False}, ''),
+            (BRANCH_TRANSPORT,
+             {'id': branch.id, 'writable': False, 'private': True}, ''),
             translation)
 
     def test_translatePath_anonymous_cant_see_private_branch(self):
@@ -845,7 +942,8 @@ class CodehostingTest(TestCaseWithFactory):
         translation = self.codehosting_api.translatePath(
             LAUNCHPAD_ANONYMOUS, path)
         self.assertEqual(
-            (BRANCH_TRANSPORT, {'id': branch.id, 'writable': False}, ''),
+            (BRANCH_TRANSPORT,
+             {'id': branch.id, 'writable': False, 'private': False}, ''),
             translation)
 
     def test_translatePath_owned(self):
@@ -856,7 +954,8 @@ class CodehostingTest(TestCaseWithFactory):
         translation = self.codehosting_api.translatePath(requester.id, path)
         login(ANONYMOUS)
         self.assertEqual(
-            (BRANCH_TRANSPORT, {'id': branch.id, 'writable': True}, ''),
+            (BRANCH_TRANSPORT,
+             {'id': branch.id, 'writable': True, 'private': False}, ''),
             translation)
 
     def test_translatePath_team_owned(self):
@@ -868,7 +967,8 @@ class CodehostingTest(TestCaseWithFactory):
         translation = self.codehosting_api.translatePath(requester.id, path)
         login(ANONYMOUS)
         self.assertEqual(
-            (BRANCH_TRANSPORT, {'id': branch.id, 'writable': True}, ''),
+            (BRANCH_TRANSPORT,
+             {'id': branch.id, 'writable': True, 'private': False}, ''),
             translation)
 
     def test_translatePath_team_unowned(self):
@@ -880,7 +980,8 @@ class CodehostingTest(TestCaseWithFactory):
         translation = self.codehosting_api.translatePath(requester.id, path)
         login(ANONYMOUS)
         self.assertEqual(
-            (BRANCH_TRANSPORT, {'id': branch.id, 'writable': False}, ''),
+            (BRANCH_TRANSPORT,
+             {'id': branch.id, 'writable': False, 'private': False}, ''),
             translation)
 
     def test_translatePath_owned_mirrored(self):
@@ -891,7 +992,8 @@ class CodehostingTest(TestCaseWithFactory):
         translation = self.codehosting_api.translatePath(requester.id, path)
         login(ANONYMOUS)
         self.assertEqual(
-            (BRANCH_TRANSPORT, {'id': branch.id, 'writable': False}, ''),
+            (BRANCH_TRANSPORT,
+             {'id': branch.id, 'writable': False, 'private': False}, ''),
             translation)
 
     def test_translatePath_owned_imported(self):
@@ -902,7 +1004,8 @@ class CodehostingTest(TestCaseWithFactory):
         translation = self.codehosting_api.translatePath(requester.id, path)
         login(ANONYMOUS)
         self.assertEqual(
-            (BRANCH_TRANSPORT, {'id': branch.id, 'writable': False}, ''),
+            (BRANCH_TRANSPORT,
+             {'id': branch.id, 'writable': False, 'private': False}, ''),
             translation)
 
     def test_translatePath_branch_alias_short_name(self):
@@ -918,7 +1021,8 @@ class CodehostingTest(TestCaseWithFactory):
         translation = self.codehosting_api.translatePath(requester.id, path)
         login(ANONYMOUS)
         self.assertEqual(
-            (BRANCH_TRANSPORT, {'id': branch.id, 'writable': False},
+            (BRANCH_TRANSPORT,
+             {'id': branch.id, 'writable': False, 'private': False},
              path_in_branch), translation)
 
     def test_translatePath_branch_alias_unique_name(self):
@@ -932,7 +1036,8 @@ class CodehostingTest(TestCaseWithFactory):
         translation = self.codehosting_api.translatePath(requester.id, path)
         login(ANONYMOUS)
         self.assertEqual(
-            (BRANCH_TRANSPORT, {'id': branch.id, 'writable': False},
+            (BRANCH_TRANSPORT,
+             {'id': branch.id, 'writable': False, 'private': False},
              path_in_branch), translation)
 
     def test_translatePath_branch_alias_no_such_branch(self):
@@ -1047,7 +1152,7 @@ class CodehostingTest(TestCaseWithFactory):
         translation = self.codehosting_api.translatePath(requester.id, path)
         expected = (
             BRANCH_TRANSPORT,
-            {'id': branch.id, 'writable': False},
+            {'id': branch.id, 'writable': False, 'private': False},
             'foo/bar',
             )
         self.assertEqual(expected, translation)
@@ -1061,7 +1166,8 @@ class CodehostingTest(TestCaseWithFactory):
         path = escape(branch_id_alias(branch))
         translation = self.codehosting_api.translatePath(requester.id, path)
         self.assertEqual(
-            (BRANCH_TRANSPORT, {'id': branch.id, 'writable': False}, ''),
+            (BRANCH_TRANSPORT,
+             {'id': branch.id, 'writable': False, 'private': False}, ''),
             translation)
 
     def test_translatePath_branch_id_alias_private_branch(self):
@@ -1075,7 +1181,8 @@ class CodehostingTest(TestCaseWithFactory):
         path = escape(branch_id_alias(branch))
         translation = self.codehosting_api.translatePath(requester.id, path)
         self.assertEqual(
-            (BRANCH_TRANSPORT, {'id': branch.id, 'writable': False}, ''),
+            (BRANCH_TRANSPORT,
+             {'id': branch.id, 'writable': False, 'private': True}, ''),
             translation)
 
     def test_translatePath_branch_id_alias_private_branch_no_access(self):
@@ -1173,9 +1280,16 @@ class CodehostingTest(TestCaseWithFactory):
             trailing_path='.bzr')
 
 
-class AcquireBranchToPullTestsViaEndpoint(TestCaseWithFactory,
+class AcquireBranchToPullTestsViaEndpoint(WithScenarios, TestCaseWithFactory,
                                           AcquireBranchToPullTests):
     """Tests for `acquireBranchToPull` method of `ICodehostingAPI`."""
+
+    scenarios = [
+        ('db', {'frontend': LaunchpadDatabaseFrontend,
+                'layer': LaunchpadFunctionalLayer}),
+        ('inmemory', {'frontend': InMemoryFrontend,
+                      'layer': FunctionalLayer}),
+        ]
 
     def setUp(self):
         super(AcquireBranchToPullTestsViaEndpoint, self).setUp()
@@ -1259,55 +1373,4 @@ class AcquireBranchToPullTestsViaEndpoint(TestCaseWithFactory,
             ('NO_SUCH_TYPE',))
 
 
-class LaunchpadDatabaseFrontend:
-    """A 'frontend' to Launchpad's branch services.
-
-    A 'frontend' here means something that provides access to the various
-    XML-RPC endpoints, object factories and 'database' methods needed to write
-    unit tests for XML-RPC endpoints.
-
-    All of these methods are gathered together in this class so that
-    alternative implementations can be provided, see `InMemoryFrontend`.
-    """
-
-    def getCodehostingEndpoint(self):
-        """Return the branch filesystem endpoint for testing."""
-        return CodehostingAPI(None, None)
-
-    def getLaunchpadObjectFactory(self):
-        """Return the Launchpad object factory for testing.
-
-        See `LaunchpadObjectFactory`.
-        """
-        return LaunchpadObjectFactory()
-
-    def getBranchLookup(self):
-        """Return an implementation of `IBranchLookup`.
-
-        Tests should use this to get the branch set they need, rather than
-        using 'getUtility(IBranchSet)'. This allows in-memory implementations
-        to work correctly.
-        """
-        return getUtility(IBranchLookup)
-
-    def getLastActivity(self, activity_name):
-        """Get the last script activity with 'activity_name'."""
-        return getUtility(IScriptActivitySet).getLastActivity(activity_name)
-
-
-def test_suite():
-    loader = unittest.TestLoader()
-    suite = unittest.TestSuite()
-    endpoint_tests = unittest.TestSuite(
-        [loader.loadTestsFromTestCase(AcquireBranchToPullTestsViaEndpoint),
-         loader.loadTestsFromTestCase(CodehostingTest),
-         ])
-    scenarios = [
-        ('db', {'frontend': LaunchpadDatabaseFrontend,
-                'layer': LaunchpadFunctionalLayer}),
-        ('inmemory', {'frontend': InMemoryFrontend,
-                      'layer': FunctionalLayer}),
-        ]
-    multiply_tests(endpoint_tests, scenarios, suite)
-    suite.addTests(loader.loadTestsFromTestCase(TestRunWithLogin))
-    return suite
+load_tests = load_tests_apply_scenarios

@@ -1,8 +1,12 @@
-# Copyright 2009 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for job-running facilities."""
 
+from datetime import (
+    datetime,
+    timedelta,
+    )
 import logging
 import re
 import sys
@@ -13,13 +17,20 @@ from lazr.jobrunner.jobrunner import (
     LeaseHeld,
     SuspendJobException,
     )
-from testtools.matchers import MatchesRegex
+from lazr.restful.utils import get_current_browser_request
+from pytz import UTC
+from testtools.matchers import (
+    GreaterThan,
+    LessThan,
+    MatchesAll,
+    MatchesRegex,
+    )
 from testtools.testcase import ExpectedException
 import transaction
-from zope.interface import implements
+from zope.interface import implementer
 
-from lp.code.interfaces.branchmergeproposal import IUpdatePreviewDiffJobSource
 from lp.services.config import config
+from lp.services.database.sqlbase import flush_database_updates
 from lp.services.features.testing import FeatureFixture
 from lp.services.job.interfaces.job import (
     IRunnableJob,
@@ -29,13 +40,14 @@ from lp.services.job.model.job import Job
 from lp.services.job.runner import (
     BaseRunnableJob,
     celery_enabled,
-    JobCronScript,
     JobRunner,
     TwistedJobRunner,
     )
-from lp.services.log.logger import (
-    BufferLogger,
-    DevNullLogger,
+from lp.services.log.logger import BufferLogger
+from lp.services.timeline.requesttimeline import get_request_timeline
+from lp.services.timeout import (
+    get_default_timeout_function,
+    set_default_timeout_function,
     )
 from lp.services.webapp import errorlog
 from lp.testing import (
@@ -47,10 +59,9 @@ from lp.testing.layers import LaunchpadZopelessLayer
 from lp.testing.mail_helpers import pop_notifications
 
 
+@implementer(IRunnableJob)
 class NullJob(BaseRunnableJob):
     """A job that does nothing but append a string to a list."""
-
-    implements(IRunnableJob)
 
     JOB_COMPLETIONS = []
 
@@ -89,6 +100,15 @@ class RaisingJob(NullJob):
     """A job that raises when it runs."""
 
     def run(self):
+        raise RaisingJobException(self.message)
+
+
+class RaisingJobTimelineMessage(NullJob):
+    """A job that records a timeline action and then raises when it runs."""
+
+    def run(self):
+        timeline = get_request_timeline(get_current_browser_request())
+        timeline.start('job', self.message).finish()
         raise RaisingJobException(self.message)
 
 
@@ -297,8 +317,9 @@ class TestJobRunner(TestCaseWithFactory):
         runner = JobRunner([object()])
         self.assertRaises(TypeError, runner.runAll)
 
+        @implementer(IRunnableJob)
         class Runnable:
-            implements(IRunnableJob)
+            pass
         runner = JobRunner([Runnable()])
         self.assertRaises(AttributeError, runner.runAll)
 
@@ -319,6 +340,30 @@ class TestJobRunner(TestCaseWithFactory):
         runner.runJobHandleError(job)
         self.assertEqual(1, len(self.oopses))
 
+    def test_runJobHandleErrors_oops_timeline(self):
+        """The oops timeline only covers the job itself."""
+        timeline = get_request_timeline(get_current_browser_request())
+        timeline.start('test', 'sentinel').finish()
+        job = RaisingJobTimelineMessage('boom')
+        flush_database_updates()
+        runner = JobRunner([job])
+        runner.runJobHandleError(job)
+        self.assertEqual(1, len(self.oopses))
+        actions = [action[2:4] for action in self.oopses[0]['timeline']]
+        self.assertIn(('job', 'boom'), actions)
+        self.assertNotIn(('test', 'sentinel'), actions)
+
+    def test_runJobHandleErrors_oops_timeline_detail_filter(self):
+        """A job can choose to filter oops timeline details."""
+        job = RaisingJobTimelineMessage('boom')
+        job.timeline_detail_filter = lambda _, detail: '<redacted>'
+        flush_database_updates()
+        runner = JobRunner([job])
+        runner.runJobHandleError(job)
+        self.assertEqual(1, len(self.oopses))
+        actions = [action[2:4] for action in self.oopses[0]['timeline']]
+        self.assertIn(('job', '<redacted>'), actions)
+
     def test_runJobHandleErrors_user_error_no_oops(self):
         """If the job raises a user error, there is no oops."""
         job = RaisingJobUserError('boom')
@@ -330,9 +375,17 @@ class TestJobRunner(TestCaseWithFactory):
         """If a job raises a retry_error, it should be re-queued."""
         job = RaisingRetryJob('completion')
         runner = JobRunner([job])
+        self.assertIs(None, job.scheduled_start)
         with self.expectedLog('Scheduling retry due to RetryError'):
             runner.runJob(job, None)
         self.assertEqual(JobStatus.WAITING, job.status)
+        expected_delay = datetime.now(UTC) + timedelta(minutes=10)
+        self.assertThat(
+            job.scheduled_start,
+            MatchesAll(
+                GreaterThan(expected_delay - timedelta(minutes=1)),
+                LessThan(expected_delay + timedelta(minutes=1))))
+        self.assertIsNone(job.lease_expires)
         self.assertNotIn(job, runner.completed_jobs)
         self.assertIn(job, runner.incomplete_jobs)
 
@@ -347,6 +400,26 @@ class TestJobRunner(TestCaseWithFactory):
         self.assertEqual(JobStatus.FAILED, job.status)
         self.assertNotIn(job, runner.completed_jobs)
         self.assertIn(job, runner.incomplete_jobs)
+
+    def test_runJob_sets_default_timeout_function(self):
+        """runJob sets a default timeout function for urlfetch."""
+        class RecordDefaultTimeoutJob(NullJob):
+            def __init__(self):
+                super(RecordDefaultTimeoutJob, self).__init__("")
+
+            def run(self):
+                self.default_timeout = get_default_timeout_function()()
+
+        original_timeout_function = get_default_timeout_function()
+        set_default_timeout_function(None)
+        try:
+            job = RecordDefaultTimeoutJob()
+            job.job.acquireLease()
+            JobRunner([job]).runJob(job, None)
+            self.assertEqual(JobStatus.COMPLETED, job.job.status)
+            self.assertThat(job.default_timeout, GreaterThan(0))
+        finally:
+            set_default_timeout_function(original_timeout_function)
 
     def test_runJobHandleErrors_oops_generated_notify_fails(self):
         """A second oops is logged if the notification of the oops fails."""
@@ -403,9 +476,9 @@ class StaticJobSource(BaseRunnableJob):
         return cls(index, *args)
 
 
+@implementer(IRunnableJob)
 class StuckJob(StaticJobSource):
     """Simulation of a job that stalls."""
-    implements(IRunnableJob)
 
     done = False
 
@@ -445,9 +518,8 @@ class ShorterStuckJob(StuckJob):
         ]
 
 
+@implementer(IRunnableJob)
 class InitialFailureJob(StaticJobSource):
-
-    implements(IRunnableJob)
 
     jobs = [(True,), (False,)]
 
@@ -469,9 +541,8 @@ class InitialFailureJob(StaticJobSource):
                 raise ValueError('Previous failure.')
 
 
+@implementer(IRunnableJob)
 class ProcessSharingJob(StaticJobSource):
-
-    implements(IRunnableJob)
 
     jobs = [(True,), (False,)]
 
@@ -492,9 +563,8 @@ class ProcessSharingJob(StaticJobSource):
                 raise ValueError('Different process.')
 
 
+@implementer(IRunnableJob)
 class MemoryHogJob(StaticJobSource):
-
-    implements(IRunnableJob)
 
     jobs = [()]
 
@@ -517,9 +587,8 @@ class NoJobs(StaticJobSource):
     jobs = []
 
 
+@implementer(IRunnableJob)
 class LeaseHeldJob(StaticJobSource):
-
-    implements(IRunnableJob)
 
     jobs = [()]
 
@@ -547,6 +616,9 @@ class TestTwistedJobRunner(ZopeTestInSubProcess, TestCaseWithFactory):
             sys.path.append(config.root)
             self.addCleanup(sys.path.remove, config.root)
 
+    def _attachLog(self, logger):
+        self.addDetail('log', logger.content)
+
     def test_timeout_long(self):
         """When a job exceeds its lease, an exception is raised.
 
@@ -556,6 +628,7 @@ class TestTwistedJobRunner(ZopeTestInSubProcess, TestCaseWithFactory):
         """
         logger = BufferLogger()
         logger.setLevel(logging.INFO)
+        self.addCleanup(self._attachLog, logger)
         # StuckJob is actually a source of two jobs. The first is fast, the
         # second slow.
         runner = TwistedJobRunner.runFromSource(
@@ -586,6 +659,7 @@ class TestTwistedJobRunner(ZopeTestInSubProcess, TestCaseWithFactory):
         """
         logger = BufferLogger()
         logger.setLevel(logging.INFO)
+        self.addCleanup(self._attachLog, logger)
         # StuckJob is actually a source of two jobs. The first is fast, the
         # second slow.
         runner = TwistedJobRunner.runFromSource(
@@ -612,6 +686,7 @@ class TestTwistedJobRunner(ZopeTestInSubProcess, TestCaseWithFactory):
         reused for a new job, so we kill the worker.
         """
         logger = BufferLogger()
+        self.addCleanup(self._attachLog, logger)
         runner = TwistedJobRunner.runFromSource(
             InitialFailureJob, 'branchscanner', logger)
         self.assertEqual(
@@ -624,6 +699,7 @@ class TestTwistedJobRunner(ZopeTestInSubProcess, TestCaseWithFactory):
         for a new job, so we reuse the worker.
         """
         logger = BufferLogger()
+        self.addCleanup(self._attachLog, logger)
         runner = TwistedJobRunner.runFromSource(
             ProcessSharingJob, 'branchscanner', logger)
         self.assertEqual(
@@ -635,6 +711,7 @@ class TestTwistedJobRunner(ZopeTestInSubProcess, TestCaseWithFactory):
         # especially in parallel tests.
         logger = BufferLogger()
         logger.setLevel(logging.INFO)
+        self.addCleanup(self._attachLog, logger)
         runner = TwistedJobRunner.runFromSource(
             MemoryHogJob, 'branchscanner', logger)
         self.assertEqual(
@@ -646,6 +723,7 @@ class TestTwistedJobRunner(ZopeTestInSubProcess, TestCaseWithFactory):
     def test_no_jobs(self):
         logger = BufferLogger()
         logger.setLevel(logging.INFO)
+        self.addCleanup(self._attachLog, logger)
         runner = TwistedJobRunner.runFromSource(
             NoJobs, 'branchscanner', logger)
         self.assertEqual(
@@ -655,70 +733,12 @@ class TestTwistedJobRunner(ZopeTestInSubProcess, TestCaseWithFactory):
         """Jobs that raise LeaseHeld are handled correctly."""
         logger = BufferLogger()
         logger.setLevel(logging.DEBUG)
+        self.addCleanup(self._attachLog, logger)
         runner = TwistedJobRunner.runFromSource(
             LeaseHeldJob, 'branchscanner', logger)
         self.assertIn('Could not acquire lease', logger.getLogBuffer())
         self.assertEqual(
             (0, 1), (len(runner.completed_jobs), len(runner.incomplete_jobs)))
-
-
-class TestJobCronScript(ZopeTestInSubProcess, TestCaseWithFactory):
-
-    layer = LaunchpadZopelessLayer
-
-    def test_configures_oops_handler(self):
-        """JobCronScript.main should configure the global error utility."""
-
-        class DummyRunner:
-
-            @classmethod
-            def runFromSource(cls, source, dbuser, logger):
-                expected_config = errorlog.ErrorReportingUtility()
-                expected_config.configure('merge_proposal_jobs')
-                self.assertEqual(
-                    'T-merge_proposal_jobs',
-                    errorlog.globalErrorUtility.oops_prefix)
-                return cls()
-
-            completed_jobs = []
-            incomplete_jobs = []
-
-        class JobCronScriptSubclass(JobCronScript):
-            config_name = 'merge_proposal_jobs'
-            source_interface = IUpdatePreviewDiffJobSource
-
-            def __init__(self):
-                super(JobCronScriptSubclass, self).__init__(
-                    DummyRunner, test_args=[])
-                self.logger = DevNullLogger()
-
-        old_errorlog = errorlog.globalErrorUtility
-        try:
-            errorlog.globalErrorUtility = errorlog.ErrorReportingUtility()
-            cronscript = JobCronScriptSubclass()
-            cronscript.main()
-        finally:
-            errorlog.globalErrorUtility = old_errorlog
-
-    def test_log_twisted_option_for_twisted_runner(self):
-        """TwistedJobRunner creates --log-twisted flag."""
-        jcs = JobCronScript(TwistedJobRunner, test_args=[])
-        self.assertIsNot(None, getattr(jcs.options, 'log_twisted', None))
-
-    def test_no_log_twisted_option_for_plain_runner(self):
-        """JobRunner has no --log-twisted flag."""
-        jcs = JobCronScript(JobRunner, test_args=[])
-        self.assertIs(None, getattr(jcs.options, 'log_twisted', None))
-
-    def test_log_twisted_flag(self):
-        """--log-twisted sets JobCronScript.log_twisted True."""
-        jcs = JobCronScript(TwistedJobRunner, test_args=['--log-twisted'])
-        self.assertTrue(jcs.log_twisted)
-
-    def test_no_log_twisted_flag(self):
-        """No --log-twisted sets JobCronScript.log_twisted False."""
-        jcs = JobCronScript(TwistedJobRunner, test_args=[])
-        self.assertFalse(jcs.log_twisted)
 
 
 class TestCeleryEnabled(TestCaseWithFactory):

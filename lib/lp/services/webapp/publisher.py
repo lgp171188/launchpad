@@ -1,4 +1,4 @@
-# Copyright 2009-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Publisher of objects as web pages.
@@ -8,26 +8,28 @@
 __metaclass__ = type
 __all__ = [
     'DataDownloadView',
+    'get_raw_form_value_from_current_request',
     'LaunchpadContainer',
     'LaunchpadView',
     'LaunchpadXMLRPCView',
     'canonical_name',
     'canonical_url',
     'canonical_url_iterator',
-    'get_current_browser_request',
     'nearest',
     'Navigation',
+    'redirection',
     'rootObject',
     'stepthrough',
-    'redirection',
     'stepto',
     'RedirectionView',
     'RenamedView',
     'UserAttributeCache',
     ]
 
+from cgi import FieldStorage
 import httplib
 import re
+from wsgiref.headers import Headers
 
 from lazr.restful import (
     EntryResource,
@@ -38,35 +40,33 @@ from lazr.restful.interfaces import IJSONRequestCache
 from lazr.restful.tales import WebLayerAPI
 from lazr.restful.utils import get_current_browser_request
 import simplejson
-from zope import i18n
-from zope.app import zapi
-from zope.app.publisher.interfaces.xmlrpc import IXMLRPCView
 from zope.app.publisher.xmlrpc import IMethodPublisher
 from zope.component import (
     getUtility,
     queryMultiAdapter,
     )
 from zope.component.interfaces import ComponentLookupError
-from zope.i18nmessageid import Message
 from zope.interface import (
     directlyProvides,
-    implements,
+    implementer,
     )
-from zope.interface.advice import addClassAdvisor
+from zope.publisher.defaultview import getDefaultViewName
 from zope.publisher.interfaces import NotFound
 from zope.publisher.interfaces.browser import (
     IBrowserPublisher,
     IDefaultBrowserLayer,
     )
+from zope.publisher.interfaces.xmlrpc import IXMLRPCView
 from zope.security.checker import (
     NamesChecker,
     ProxyFactory,
     )
 from zope.traversing.browser.interfaces import IAbsoluteURL
 
+from lp.app import versioninfo
 from lp.app.errors import NotFoundError
+from lp.app.interfaces.informationtype import IInformationType
 from lp.app.interfaces.launchpad import IPrivacy
-from lp.app.versioninfo import revno
 from lp.layers import (
     LaunchpadLayer,
     setFirstLayer,
@@ -77,6 +77,7 @@ from lp.services.features import (
     defaultFlagValue,
     getFeatureFlag,
     )
+from lp.services.propertycache import cachedproperty
 from lp.services.utils import obfuscate_structure
 from lp.services.webapp.interfaces import (
     ICanonicalUrlData,
@@ -99,39 +100,31 @@ error_status(httplib.NOT_FOUND)(NotFound)
 RESERVED_NAMESPACE = re.compile('\\+\\+.*\\+\\+')
 
 
-class DecoratorAdvisor:
-    """Base class for a function decorator that adds class advice.
+class DecoratorAnnotator:
+    """Base class for a function decorator that adds an annotation.
 
-    The advice stores information in a magic attribute in the class's dict.
-    The magic attribute's value is a dict, which contains names and functions
-    that were set in the function decorators.
+    The annotation is stored in a magic attribute in the function's dict.
+    The magic attribute's value is a list, which contains names that were
+    set in the function decorators.
     """
 
-    magic_class_attribute = None
+    magic_attribute = None
 
     def __init__(self, name):
         self.name = name
 
     def __call__(self, fn):
-        self.fn = fn
-        addClassAdvisor(self.advise)
+        if self.magic_attribute is None:
+            raise AssertionError('You must provide the magic_attribute to use')
+        annotations = getattr(fn, self.magic_attribute, None)
+        if annotations is None:
+            annotations = []
+            setattr(fn, self.magic_attribute, annotations)
+        annotations.append(self.name)
         return fn
 
-    def getValueToStore(self):
-        return self.fn
 
-    def advise(self, cls):
-        assert self.magic_class_attribute is not None, (
-            'You must provide the magic_class_attribute to use')
-        D = cls.__dict__.get(self.magic_class_attribute)
-        if D is None:
-            D = {}
-            setattr(cls, self.magic_class_attribute, D)
-        D[self.name] = self.getValueToStore()
-        return cls
-
-
-class stepthrough(DecoratorAdvisor):
+class stepthrough(DecoratorAnnotator):
     """Add the decorated method to stepthrough traversals for a class.
 
     A stepthrough method must take single argument that's the path segment for
@@ -148,17 +141,17 @@ class stepthrough(DecoratorAdvisor):
 
     See also doc/navigation.txt.
 
-    This uses Zope's class advisor stuff to make sure that the path segment
-    passed to `stepthrough` is handled by the decorated method.
+    This sets an attribute on the decorated function, equivalent to:
 
-    That is::
-      cls.__stepthrough_traversals__[argument] = decorated
+      if decorated.__stepthrough_traversals__ is None:
+          decorated.__stepthrough_traversals__ = []
+      decorated.__stepthrough_traversals__.append(argument)
     """
 
-    magic_class_attribute = '__stepthrough_traversals__'
+    magic_attribute = '__stepthrough_traversals__'
 
 
-class stepto(DecoratorAdvisor):
+class stepto(DecoratorAnnotator):
     """Add the decorated method to stepto traversals for a class.
 
     A stepto method must take no arguments and return an object for the URL at
@@ -175,65 +168,52 @@ class stepto(DecoratorAdvisor):
 
     See also doc/navigation.txt.
 
-    This uses Zope's class advisor stuff to make sure that the path segment
-    passed to `stepto` is handled by the decorated method.
+    This sets an attribute on the decorated function, equivalent to:
 
-    That is::
-      cls.__stepto_traversals__[argument] = decorated
+      if decorated.__stepto_traversals__ is None:
+          decorated.__stepto_traversals__ = []
+      decorated.__stepto_traversals__.append(argument)
     """
 
-    magic_class_attribute = '__stepto_traversals__'
+    magic_attribute = '__stepto_traversals__'
 
 
 class redirection:
     """A redirection is used for two related purposes.
 
-    It is a class advisor in its two argument form or as a descriptor.
-    It says what name is mapped to where.
+    As a function decorator, it says what name is mapped to where.
 
-    It is an object returned from a traversal method in its one argument
-    form.  It says that the result of such traversal is a redirect.
+    As an object returned from a traversal method, it says that the result
+    of such traversal is a redirect.
 
     You can use the keyword argument 'status' to change the status code
     from the default of 303 (assuming http/1.1).
     """
 
-    def __init__(self, arg1, arg2=None, status=None):
-        if arg2 is None:
-            self.fromname = None
-            self.toname = arg1
-        else:
-            self.fromname = arg1
-            self.toname = lambda self: arg2
-            addClassAdvisor(self.advise)
+    def __init__(self, name, status=None):
+        # Note that this is the source of the redirection when used as a
+        # decorator, but the target when returned from a traversal method.
+        self.name = name
         self.status = status
 
     def __call__(self, fn):
-        # We are being used as a descriptor.
-        assert self.fromname is None, (
-            "redirection() can not be used as a descriptor in its "
-            "two argument form")
-
-        self.fromname = self.toname
-        self.toname = fn
-        addClassAdvisor(self.advise)
-
-        return fn
-
-    def advise(self, cls):
-        redirections = cls.__dict__.get('__redirections__')
+        # We are being used as a function decorator.
+        redirections = getattr(fn, '__redirections__', None)
         if redirections is None:
             redirections = {}
-            setattr(cls, '__redirections__', redirections)
-        redirections[self.fromname] = (self.toname, self.status)
-        return cls
+            setattr(fn, '__redirections__', redirections)
+        redirections[self.name] = self.status
+        return fn
 
 
 class DataDownloadView:
     """Download data without templating.
 
-    Subclasses must provide getBody, content_type and filename.
+    Subclasses must provide getBody, content_type and filename, and may
+    provide charset.
     """
+
+    charset = None
 
     def __init__(self, context, request):
         self.context = context
@@ -245,10 +225,16 @@ class DataDownloadView:
         It is not necessary to supply Content-length, because this is added by
         the caller.
         """
-        self.request.response.setHeader('Content-Type', self.content_type)
-        self.request.response.setHeader(
-            'Content-Disposition', 'attachment; filename="%s"' % (
-             self.filename))
+        headers = Headers([])
+        content_type_params = {}
+        if self.charset is not None:
+            content_type_params['charset'] = self.charset
+        headers.add_header(
+            'Content-Type', self.content_type, **content_type_params)
+        headers.add_header(
+            'Content-Disposition', 'attachment', filename=self.filename)
+        for key, value in headers.items():
+            self.request.response.setHeader(key, value)
         return self.getBody()
 
 
@@ -292,6 +278,8 @@ class LaunchpadView(UserAttributeCache):
                        (i.e. context doesn't properly indicate privacy).
     """
 
+    REDIRECTED_STATUSES = [201, 301, 302, 303, 307]
+
     @property
     def private(self):
         """A view is private if its context is."""
@@ -300,6 +288,22 @@ class LaunchpadView(UserAttributeCache):
             return privacy.private
         else:
             return False
+
+    @property
+    def information_type(self):
+        """A view has the information_type of its context."""
+        information_typed = IInformationType(self.context, None)
+        if information_typed is None:
+            return None
+        return information_typed.information_type.title
+
+    @property
+    def information_type_description(self):
+        """A view has the information_type_description of its context."""
+        information_typed = IInformationType(self.context, None)
+        if information_typed is None:
+            return None
+        return information_typed.information_type.description
 
     def __init__(self, context, request):
         self.context = context
@@ -393,7 +397,7 @@ class LaunchpadView(UserAttributeCache):
         from lp.services.config import config
         combo_url = '/+combo'
         if not config.devmode:
-            combo_url += '/rev%s' % revno
+            combo_url += '/rev%s' % versioninfo.revision
         return combo_url
 
     def render(self):
@@ -414,7 +418,7 @@ class LaunchpadView(UserAttributeCache):
 
         Check if the response status is one of 301, 302, 303 or 307.
         """
-        return self.request.response.getStatus() in [301, 302, 303, 307]
+        return self.request.response.getStatus() in self.REDIRECTED_STATUSES
 
     def __call__(self):
         self.initialize()
@@ -528,13 +532,19 @@ class LaunchpadView(UserAttributeCache):
         from lp.services.features.flags import flag_info
 
         beta_info = {}
-        for (flag_name, value_domain, documentation, default_behavior, title,
+        for (flag_name, value_domain, documentation, default_behaviour, title,
              url) in flag_info:
             if flag_name not in self.related_features:
                 continue
+            # A feature is always in beta if it's not enabled for
+            # everyone, but the related_features dict can also force it.
             value = getFeatureFlag(flag_name)
+            is_beta = (
+                bool(value) and
+                (self.related_features[flag_name] or
+                 defaultFlagValue(flag_name) != value))
             beta_info[flag_name] = {
-                'is_beta': (defaultFlagValue(flag_name) != value),
+                'is_beta': is_beta,
                 'title': title,
                 'url': url,
                 'value': value,
@@ -542,20 +552,18 @@ class LaunchpadView(UserAttributeCache):
         return beta_info
 
 
+@implementer(IXMLRPCView, IMethodPublisher)
 class LaunchpadXMLRPCView(UserAttributeCache):
     """Base class for writing XMLRPC view code."""
-
-    implements(IXMLRPCView, IMethodPublisher)
 
     def __init__(self, context, request):
         self.context = context
         self.request = request
 
 
+@implementer(ICanonicalUrlData)
 class LaunchpadRootUrlData:
     """ICanonicalUrlData for the ILaunchpadRoot object."""
-
-    implements(ICanonicalUrlData)
 
     path = ''
     inside = None
@@ -595,13 +603,13 @@ def canonical_url_iterator(obj):
             yield urldata.inside
 
 
+@implementer(IAbsoluteURL)
 class CanonicalAbsoluteURL:
     """A bridge between Zope's IAbsoluteURL and Launchpad's canonical_url.
 
     We don't implement the whole interface; only what's needed to
     make absoluteURL() succceed.
     """
-    implements(IAbsoluteURL)
 
     def __init__(self, context, request):
         """Initialize with respect to a context and request."""
@@ -635,9 +643,11 @@ def layer_for_rootsite(rootsite):
     defined with the specified name, then LaunchpadLayer is returned.
     """
     try:
-        return getUtility(IDefaultBrowserLayer, rootsite)
+        if rootsite is not None:
+            return getUtility(IDefaultBrowserLayer, rootsite)
     except ComponentLookupError:
-        return LaunchpadLayer
+        pass
+    return LaunchpadLayer
 
 
 class FakeRequest:
@@ -685,6 +695,14 @@ def canonical_url(
         if obj_urldata is None:
             raise NoCanonicalUrl(obj, obj)
         rootsite = obj_urldata.rootsite
+
+    # The app.mainsite_only.canonical_url feature flag forces facet
+    # vhost links to mainsite.
+    facet_rootsites = (
+        'answers', 'blueprints', 'code', 'bugs', 'translations')
+    if (getFeatureFlag('app.mainsite_only.canonical_url')
+            and rootsite in facet_rootsites):
+        rootsite = 'mainsite'
 
     # The request is needed when there's no rootsite specified.
     if request is None:
@@ -781,35 +799,78 @@ def nearest(obj, *interfaces):
         return None
 
 
+def get_raw_form_value_from_current_request(field, field_name):
+    # XXX: StevenK 2013-02-06 bug=1116954: We should not need to refetch
+    # the file content from the request, since the passed in one has been
+    # wrongly encoded.
+    # Circular imports.
+    from lp.services.webapp.servers import WebServiceClientRequest
+    request = get_current_browser_request()
+    assert isinstance(request, WebServiceClientRequest)
+    # Zope wrongly encodes any form element that doesn't look like a file,
+    # so re-fetch the file content if it has been encoded.
+    if request and field_name in request.form and isinstance(
+        request.form[field_name], unicode):
+        request._environ['wsgi.input'].seek(0)
+        fs = FieldStorage(fp=request._body_instream, environ=request._environ)
+        return fs[field_name].value
+    else:
+        return field
+
+
+@implementer(ILaunchpadApplication, ILaunchpadRoot)
 class RootObject:
-    implements(ILaunchpadApplication, ILaunchpadRoot)
+    pass
 
 
 rootObject = ProxyFactory(RootObject(), NamesChecker(["__class__"]))
 
 
+@implementer(ILaunchpadContainer)
 class LaunchpadContainer:
-    implements(ILaunchpadContainer)
 
     def __init__(self, context):
         self.context = context
 
-    def isWithin(self, scope):
-        """Is this object within the given scope?
+    @cachedproperty
+    def _context_url(self):
+        try:
+            return canonical_url(self.context, force_local_path=True)
+        except NoCanonicalUrl:
+            return None
 
-        By default all objects are only within itself.  More specific adapters
-        must override this and implement the logic they want.
+    def getParentContainers(self):
+        """See `ILaunchpadContainer`.
+
+        By default, we only consider the parent of this object in the
+        canonical URL iteration.  Adapters for objects with more complex
+        parentage rules must override this method.
         """
-        return self.context == scope
+        # Circular import.
+        from lp.services.webapp.canonicalurl import nearest_adapter
+        urldata = ICanonicalUrlData(self.context, None)
+        if urldata is not None and urldata.inside is not None:
+            container = nearest_adapter(urldata.inside, ILaunchpadContainer)
+            yield container
+
+    def isWithin(self, scope_url):
+        """See `ILaunchpadContainer`."""
+        if self._context_url is None:
+            return False
+        if self._context_url == scope_url:
+            return True
+        return any(
+            parent.isWithin(scope_url)
+            for parent in self.getParentContainers())
 
 
+@implementer(IBrowserPublisher)
 class Navigation:
     """Base class for writing browser navigation components.
 
     Note that the canonical_url part of Navigation is used outside of
     the browser context.
     """
-    implements(IBrowserPublisher)
 
     def __init__(self, context, request=None):
         """Initialize with context and maybe with a request."""
@@ -855,19 +916,30 @@ class Navigation:
         getUtility(IOpenLaunchBag).add(nextobj)
         return nextobj
 
-    def _combined_class_info(self, attrname):
-        """Walk the class's __mro__ looking for attributes with the given
-        name in class dicts.  Combine the values of these attributes into
-        a single dict.  Return it.
+    def _all_methods(self):
+        """Walk the class's __mro__ looking for methods in class dicts.
+
+        This is careful to avoid evaluating descriptors.
         """
-        combined_info = {}
         # Note that we want to give info from more specific classes priority
         # over info from less specific classes.  We can do this by walking
-        # the __mro__ backwards, and using dict.update(...)
+        # the __mro__ backwards, and by callers considering info from later
+        # methods to override info from earlier methods.
         for cls in reversed(type(self).__mro__):
-            value = cls.__dict__.get(attrname)
+            for value in cls.__dict__.values():
+                if callable(value):
+                    yield value
+
+    def _combined_method_annotations(self, attrname):
+        """Walk through all the methods in the class looking for attributes
+        on those methods with the given name.  Combine the values of these
+        attributes into a single dict.  Return it.
+        """
+        combined_info = {}
+        for method in self._all_methods():
+            value = getattr(method, attrname, None)
             if value is not None:
-                combined_info.update(value)
+                combined_info.update({name: method for name in value})
         return combined_info
 
     def _handle_next_object(self, nextobj, request, name):
@@ -884,7 +956,7 @@ class Navigation:
             raise NotFound(self.context, name)
         elif isinstance(nextobj, redirection):
             return RedirectionView(
-                nextobj.toname, request, status=nextobj.status)
+                nextobj.name, request, status=nextobj.status)
         else:
             return nextobj
 
@@ -900,19 +972,24 @@ class Navigation:
     @property
     def stepto_traversals(self):
         """Return a dictionary containing all the stepto names defined."""
-        return self._combined_class_info('__stepto_traversals__')
+        return self._combined_method_annotations('__stepto_traversals__')
 
     @property
     def stepthrough_traversals(self):
         """Return a dictionary containing all the stepthrough names defined.
         """
-        return self._combined_class_info('__stepthrough_traversals__')
+        return self._combined_method_annotations('__stepthrough_traversals__')
 
     @property
     def redirections(self):
         """Return a dictionary containing all the redirections names defined.
         """
-        return self._combined_class_info('__redirections__')
+        redirections = {}
+        for method in self._all_methods():
+            for fromname, status in getattr(
+                    method, '__redirections__', {}).items():
+                redirections[fromname] = (method, status)
+        return redirections
 
     def _publishTraverse(self, request, name):
         """Traverse, like zope wants."""
@@ -957,38 +1034,12 @@ class Navigation:
                             nextobj = handler(self, nextstep)
                         except NotFoundError:
                             nextobj = None
-                        else:
-                            # Circular import; breaks make.
-                            from lp.services.webapp.breadcrumb import Breadcrumb
-                            stepthrough_page = queryMultiAdapter(
-                                    (self.context, self.request), name=name)
-                            if stepthrough_page:
-                                # Not all stepthroughs have a page; if they
-                                # don't, there's no need for a breadcrumb.
-                                page_title = getattr(
-                                    stepthrough_page, 'page_title', None)
-                                label = getattr(
-                                    stepthrough_page, 'label', None)
-                                stepthrough_text = page_title or label
-                                if isinstance(stepthrough_text, Message):
-                                    stepthrough_text = i18n.translate(
-                                        stepthrough_text,
-                                        context=self.request)
-                                stepthrough_url = canonical_url(
-                                    self.context, view_name=name)
-                                stepthrough_breadcrumb = Breadcrumb(
-                                    context=self.context,
-                                    url=stepthrough_url,
-                                    text=stepthrough_text)
-                                self.request.traversed_objects.append(
-                                    stepthrough_breadcrumb)
-                                
                         return self._handle_next_object(nextobj, request,
                             nextstep)
 
         # Next, look up views on the context object.  If a view exists,
         # use it.
-        view = zapi.queryMultiAdapter((self.context, request), name=name)
+        view = queryMultiAdapter((self.context, request), name=name)
         if view is not None:
             return view
 
@@ -1011,17 +1062,28 @@ class Navigation:
         return self._handle_next_object(nextobj, request, name)
 
     def browserDefault(self, request):
-        view_name = zapi.getDefaultViewName(self.context, request)
+        view_name = getDefaultViewName(self.context, request)
         return self.context, (view_name, )
 
 
+@implementer(IBrowserPublisher)
 class RedirectionView:
-    implements(IBrowserPublisher)
 
-    def __init__(self, target, request, status=None):
+    def __init__(self, target, request, status=None, cache_view=None):
         self.target = target
         self.request = request
         self.status = status
+        self.cache_view = cache_view
+
+    def initialize(self):
+        if self.cache_view:
+            self.cache_view.initialize()
+
+    def getCacheJSON(self):
+        if self.cache_view:
+            return self.cache_view.getCacheJSON()
+        else:
+            return simplejson.dumps({})
 
     def __call__(self):
         self.request.response.redirect(self.target, status=self.status)
@@ -1031,6 +1093,7 @@ class RedirectionView:
         return self, ()
 
 
+@implementer(IBrowserPublisher)
 class RenamedView:
     """Redirect permanently to the new name of the view.
 
@@ -1040,7 +1103,6 @@ class RenamedView:
     :param rootsite: (optional) the virtual host to redirect to,
             e.g. 'answers'.
     """
-    implements(IBrowserPublisher)
 
     def __init__(self, context, request, new_name, rootsite=None):
         self.context = context

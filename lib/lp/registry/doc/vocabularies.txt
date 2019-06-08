@@ -29,7 +29,7 @@ The active mailing lists vocabulary matches and returns only those
 mailing lists which are active.
 
     >>> list_vocabulary = get_naked_vocab(None, 'ActiveMailingList')
-    >>> from lp.services.webapp.testing import verifyObject
+    >>> from lp.testing import verifyObject
     >>> from lp.services.webapp.vocabulary import IHugeVocabulary
     >>> verifyObject(IHugeVocabulary, list_vocabulary)
     True
@@ -413,79 +413,8 @@ product itself are included in the vocabulary.
     firefox: 1.0
     firefox: firefox-milestone-no-series
 
-If the context is a bugtask, only the bugtask's target's milestones are
-in the vocabulary.
-
-    >>> from lp.bugs.interfaces.bug import IBugSet
-    >>> bug_one = getUtility(IBugSet).get(1)
-    >>> firefox_task = bug_one.bugtasks[0]
-    >>> firefox_task.bugtargetdisplayname
-    u'Mozilla Firefox'
-
-    >>> firefox_task_milestones = get_naked_vocab(
-    ...     firefox_task, 'Milestone')
-    >>> for term in firefox_task_milestones:
-    ...     print "%s: %s" % (term.value.target.name, term.value.name)
-    firefox: 1.0
-    firefox: firefox-milestone-no-series
-
-    >>> bug_two = getUtility(IBugSet).get(2)
-    >>> debian_woody_task = bug_two.bugtasks[-1]
-    >>> debian_woody_task.bugtargetdisplayname
-    u'mozilla-firefox (Debian Woody)'
-
-    >>> debian_woody_milestones = get_naked_vocab(
-    ...     debian_woody_task, 'Milestone')
-    >>> debian_woody = debian_woody_task.distroseries
-    >>> len(debian_woody_milestones)
-    2
-
-If one of the milestones is disabled, it won't be included in the
-vocabulary anymore.
-
-    >>> milestone = debian_woody.milestones[0]
-    >>> milestone.active = False
-    >>> flush_database_updates()
-    >>> len(get_naked_vocab(debian_woody_task, 'Milestone'))
-    1
-
-If the milestone was used in a bugtask before it was marked inactive,
-though, it'll still show up on the vocabulary so that users can change
-it.
-
-    >>> debian_woody_task.milestone = milestone
-    >>> flush_database_updates()
-    >>> len(get_naked_vocab(debian_woody_task, 'Milestone'))
-    2
-
-This is true for inactive milestones used in bugtasks for products and
-product series as well.
-
-    >>> product_bugtask = factory.makeBugTask(target=firefox)
-    >>> product_bugtask.milestone = firefox_milestone
-    >>> product_target_milestones = get_naked_vocab(
-    ...     product_bugtask, 'Milestone')
-    >>> for term in product_target_milestones:
-    ...     print "%s: %s" % (term.value.target.name, term.value.name)
-    firefox: 1.0
-    firefox: firefox-milestone-no-series
-
+Inactive milestones are not included in the vocabulary results.
     >>> firefox_milestone.active = False
-    >>> product_target_milestones = get_naked_vocab(
-    ...     product_bugtask, 'Milestone')
-    >>> for term in product_target_milestones:
-    ...     print "%s: %s" % (term.value.target.name, term.value.name)
-    firefox: 1.0
-    firefox: firefox-milestone-no-series
-
-    >>> productseries_bugtask = factory.makeBugTask(target=firefox_trunk)
-    >>> productseries_bugtask.milestone = firefox_milestone
-    >>> productseries_target_milestones = get_naked_vocab(
-    ...     productseries_bugtask, 'Milestone')
-    >>> for term in productseries_target_milestones:
-    ...     print "%s: %s" % (term.value.target.name, term.value.name)
-    firefox: 1.0
-    firefox: firefox-milestone-no-series
 
 If the context is a specification, only milestones from that
 specification target are in the vocabulary.
@@ -511,11 +440,6 @@ The vocabulary contains only active milestones.
 
     >>> firefox_milestones = get_naked_vocab(firefox, 'Milestone')
     >>> len(firefox_milestones)
-    0
-
-    >>> firefox_task_milestones = get_naked_vocab(
-    ...     firefox_task, 'Milestone')
-    >>> len(firefox_task_milestones)
     0
 
 
@@ -640,19 +564,14 @@ anything, as we only match against the beginning of an email address.
 
 A person with a single and unvalidated email address can be merged.
 
-    >>> from lp.registry.interfaces.person import PersonCreationRationale
-    >>> fooperson, email = person_set.createPersonAndEmail(
-    ...     'foobaz@bar.com', PersonCreationRationale.UNKNOWN,
-    ...     name='foobaz', displayname='foo baz')
-    >>> import transaction
-    >>> transaction.commit()
+    >>> from lp.services.identity.interfaces.account import AccountStatus
+    >>> fooperson = factory.makePerson(account_status=AccountStatus.NOACCOUNT)
     >>> fooperson in vocab
     True
 
 But any person without a single email address can't.
 
-    >>> email.destroySelf()
-    >>> transaction.commit()
+    >>> fooperson.guessedemails[0].destroySelf()
     >>> fooperson in vocab
     False
 
@@ -674,14 +593,18 @@ A person whose account_status is any of the statuses of
 INACTIVE_ACCOUNT_STATUSES is part of the vocabulary, though.
 
     >>> from lp.services.identity.interfaces.account import (
+    ...     AccountStatus,
     ...     INACTIVE_ACCOUNT_STATUSES)
     >>> naked_cprov.merged = None
     >>> checked_count = 0
     >>> for status in INACTIVE_ACCOUNT_STATUSES:
-    ...     naked_cprov.account_status = status
-    ...     naked_cprov.syncUpdate()
-    ...     checked_count += int(cprov in vocab)
-    >>> checked_count == len(INACTIVE_ACCOUNT_STATUSES)
+    ...     # Placeholder accounts don't have email addresses, so don't
+    ...     # show up.
+    ...     if status == AccountStatus.PLACEHOLDER:
+    ...         continue
+    ...     person = factory.makePerson(account_status=status)
+    ...     checked_count += int(person in vocab)
+    >>> checked_count == len(INACTIVE_ACCOUNT_STATUSES) - 1
     True
 
 It is possible to search for alternative names.
@@ -787,10 +710,10 @@ PRIVATE_TEAM 'myteam' is not included in the results.
 Valid teams do not include teams that have been merged.
 
     >>> from lp.app.interfaces.launchpad import ILaunchpadCelebrities
+    >>> from lp.registry.personmerge import merge_people
     >>> ignored = login_person(foo_bar)
     >>> registry_experts = getUtility(ILaunchpadCelebrities).registry_experts
-    >>> person_set.merge(
-    ...     ephemeral, registry_experts, reviewer=ephemeral.teamowner)
+    >>> merge_people(ephemeral, registry_experts, reviewer=ephemeral.teamowner)
     >>> ignored = login_person(sample_person)
     >>> sorted(person.name for person in vocab.search('team'))
     [u'hwdb-team', u'name18', u'name20', u'name21',
@@ -924,7 +847,7 @@ If a match is done against irc nick, that is ranked higher than a fti match.
 
     >>> irc_person = factory.makePerson(name='ircperson')
     >>> irc_id = ircid_set.new(
-    ...     irc_person, 'irc.freenode.net', 'team')
+    ...     irc_person, 'chat.freenode.net', 'team')
     >>> [person.displayname for person in vocab.search('team')]
     [u'Ircperson', u'HWDB Team', u'No Team Memberships', u'Simple Team',
      u'Ubuntu Team', u'testing Spanish team', u'Hoary Gnome Team',
@@ -934,7 +857,7 @@ If a match is done against irc nick, that is ranked higher than a fti match.
 A match on launchpad name ranks higher than irc nickname:
     >>> lifeless2 = factory.makePerson(name='anotherlifeless')
     >>> irc_id = ircid_set.new(
-    ...     lifeless2, 'irc.freenode.net', 'lifeless')
+    ...     lifeless2, 'chat.freenode.net', 'lifeless')
     >>> [person.displayname for person in vocab.search('lifeless')]
     [u'Robert Collins', u'Anotherlifeless']
 
@@ -956,10 +879,9 @@ Search for names with '%' and '?' is supported.
 
     >>> symbolic_person = factory.makePerson(name='symbolic')
     >>> irc_id = ircid_set.new(
-    ...     symbolic_person, 'irc.freenode.net', '%percent')
+    ...     symbolic_person, 'chat.freenode.net', '%percent')
     >>> irc_id =ircid_set.new(
     ...     symbolic_person, 'irc.fnord.net', 'question?')
-    >>> transaction.commit()
 
     >>> for person in vocab.search('%percent'):
     ...     print person.name
@@ -1043,6 +965,8 @@ will be returned.
      (u'Launchpad Beta Testers', u'Launchpad Beta Testers Owner'),
      (u'Launchpad Buildd Admins', u'Foo Bar'),
      (u'Launchpad Developers', u'Foo Bar'),
+     (u'Launchpad PPA Admins', u'Commercial Subscription Admins'),
+     (u'Launchpad PPA Self Admins', u'Commercial Subscription Admins'),
      (u'Launchpad Users', u'Sample Person'),
      (u'Mailing List Experts', u'Launchpad Administrators'),
      (u'Mirror Administrators', u'Mark Shuttleworth'),
@@ -1091,7 +1015,7 @@ teams back.
      (u'Warty Security Team', u'Mark Shuttleworth'),
      (u'testing Spanish team', u'Carlos Perell\xf3 Mar\xedn')]
 
-A user who is a member of a private team will see that team in his
+A user who is a member of a private team will see that team in their
 search.
 
     >>> login('no-priv@canonical.com')
@@ -1127,8 +1051,8 @@ All 'valid' persons who are not a team.
     'Select a Person'
 
     >>> people = vocab.search(None)
-    >>> people.count() > 0
-    True
+    >>> people.is_empty()
+    False
 
     >>> invalid_people = [
     ...     person for person in people if not person.is_valid_person]
@@ -1176,10 +1100,11 @@ heterogeneous.
 
     >>> vocab = get_naked_vocab(None, "DistributionOrProduct")
     >>> for term in vocab:
-    ...     if 'Ubuntu' in term.title:
+    ...     if 'buntu' in term.title:
     ...         print term.title, '- class', term.value.__class__.__name__
-    Ubuntu Linux - class Distribution
-    Ubuntu Test - class Distribution
+    Kubuntu - class Distribution
+    Ubuntu - class Distribution
+    ubuntutest - class Distribution
 
 They can be looked up by their aliases too.
 
@@ -1243,10 +1168,11 @@ is heterogeneous.
 
     >>> vocab = get_naked_vocab(None, "DistributionOrProductOrProjectGroup")
     >>> for term in vocab:
-    ...     if 'Ubuntu' in term.title:
+    ...     if 'buntu' in term.title:
     ...         print term.title, '- class', term.value.__class__.__name__
-    Ubuntu Linux - class Distribution
-    Ubuntu Test - class Distribution
+    Kubuntu - class Distribution
+    Ubuntu - class Distribution
+    ubuntutest - class Distribution
 
 They can be looked up by their aliases too.
 
@@ -1318,16 +1244,16 @@ _clauseTables).
     9
 
     >>> for term in featured_project_vocabulary:
-    ...     print term.token, term.value.displayname, term.title
-    applets         Gnome Applets        The Gnome Panel Applets
-    bazaar          Bazaar               Bazaar
-    firefox         Mozilla Firefox      Mozilla Firefox
-    gentoo          Gentoo               The Gentoo Linux
-    gnome           GNOME                The GNOME Project
-    gnome-terminal  GNOME Terminal       The GNOME Terminal Emulator
-    mozilla The     Mozilla Project      The Mozilla Project
-    thunderbird     Mozilla Thunderbird  Mozilla Thunderbird
-    ubuntu          Ubuntu               Ubuntu Linux
+    ...     print term.token, term.title
+    applets         Gnome Applets
+    bazaar          Bazaar
+    firefox         Mozilla Firefox
+    gentoo          Gentoo
+    gnome           GNOME
+    gnome-terminal  GNOME Terminal
+    mozilla         The Mozilla Project
+    thunderbird     Mozilla Thunderbird
+    ubuntu          Ubuntu
 
     >>> ubuntu = getUtility(ILaunchpadCelebrities).ubuntu
     >>> ubuntu in featured_project_vocabulary

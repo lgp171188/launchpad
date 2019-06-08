@@ -1,4 +1,4 @@
-# Copyright 2010 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Browser file for LibraryFileAlias."""
@@ -13,7 +13,7 @@ __all__ = [
     'ProxiedLibraryFileAlias',
     ]
 
-from lazr.delegates import delegates
+from lazr.delegates import delegate_to
 from lazr.restful.interfaces import IWebBrowserOriginatingRequest
 from lazr.restful.utils import get_current_browser_request
 from zope.publisher.interfaces import NotFound
@@ -100,6 +100,7 @@ class FileNavigationMixin:
             self.request)
 
 
+@delegate_to(ILibraryFileAlias)
 class ProxiedLibraryFileAlias:
     """A `LibraryFileAlias` decorator for use in URL generation.
 
@@ -118,17 +119,23 @@ class ProxiedLibraryFileAlias:
     Overrides `ILibraryFileAlias.http_url` to always point to the webapp URL,
     even when called from the webservice domain.
     """
-    delegates(ILibraryFileAlias)
 
     def __init__(self, context, parent):
         self.context = context
         self.parent = parent
 
     @property
+    def request(self):
+        request = get_current_browser_request()
+        if WebServiceLayer.providedBy(request):
+            request = IWebBrowserOriginatingRequest(request)
+        return request
+
+    @property
     def http_url(self):
         """Return the webapp URL for the context `LibraryFileAlias`.
 
-        Preserve the `LibraryFileAlias.http_url` behavior for deleted
+        Preserve the `LibraryFileAlias.http_url` behaviour for deleted
         files, returning None.
 
         Mask webservice requests if it's the case, so the returned URL will
@@ -137,11 +144,7 @@ class ProxiedLibraryFileAlias:
         if self.context.deleted:
             return None
 
-        request = get_current_browser_request()
-        if WebServiceLayer.providedBy(request):
-            request = IWebBrowserOriginatingRequest(request)
-
-        parent_url = canonical_url(self.parent, request=request)
+        parent_url = canonical_url(self.parent, request=self.request)
         traversal_url = urlappend(parent_url, '+files')
         url = urlappend(
             traversal_url,

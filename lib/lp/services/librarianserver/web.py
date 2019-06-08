@@ -1,4 +1,4 @@
-# Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -7,16 +7,29 @@ from datetime import datetime
 import time
 from urlparse import urlparse
 
+from pymacaroons import Macaroon
 from storm.exceptions import DisconnectionError
+from twisted.internet import (
+    abstract,
+    defer,
+    reactor,
+    )
+from twisted.internet.interfaces import IPushProducer
 from twisted.internet.threads import deferToThread
 from twisted.python import log
+from twisted.python.compat import (
+    intToBytes,
+    networkString,
+    )
 from twisted.web import (
+    http,
     proxy,
     resource,
     server,
     static,
     util,
     )
+from zope.interface import implementer
 
 from lp.services.config import config
 from lp.services.database import (
@@ -36,7 +49,7 @@ defaultResource = static.Data("""
         file repository used by
         <a href="https://launchpad.net/">Launchpad</a>.
         </p>
-        <p><small>Copyright 2004-2009 Canonical Ltd.</small></p>
+        <p><small>Copyright 2004-2019 Canonical Ltd.</small></p>
         <!-- kthxbye. -->
         </body></html>
         """, type='text/html')
@@ -114,6 +127,14 @@ class LibraryFileAliasResource(resource.Resource):
                 return fourOhFour
 
         token = request.args.get('token', [None])[0]
+        if token is None:
+            if not request.getUser() and request.getPassword():
+                try:
+                    token = Macaroon.deserialize(request.getPassword())
+                # XXX cjwatson 2019-04-23: Restrict exceptions once
+                # https://github.com/ecordell/pymacaroons/issues/50 is fixed.
+                except Exception:
+                    pass
         path = request.path
         deferred = deferToThread(
             self._getFileAlias, self.aliasID, token, path)
@@ -127,9 +148,9 @@ class LibraryFileAliasResource(resource.Resource):
     def _getFileAlias(self, aliasID, token, path):
         try:
             alias = self.storage.getFileAlias(aliasID, token, path)
-            alias.updateLastAccessed()
             return (alias.contentID, alias.filename,
-                alias.mimetype, alias.date_created, alias.restricted)
+                alias.mimetype, alias.date_created, alias.content.filesize,
+                alias.restricted)
         except LookupError:
             raise NotFound
 
@@ -139,16 +160,15 @@ class LibraryFileAliasResource(resource.Resource):
             return resource.ErrorPage(
                 503, 'Database unavailable',
                 'A required database is unavailable.\n'
-                'See http://identi.ca/launchpadstatus '
+                'See https://twitter.com/launchpadstatus '
                 'for maintenance and outage notifications.')
         else:
             return fourOhFour
 
-    def _cb_getFileAlias(
-            self,
-            (dbcontentID, dbfilename, mimetype, date_created, restricted),
-            filename, request
-            ):
+    @defer.inlineCallbacks
+    def _cb_getFileAlias(self, results, filename, request):
+        (dbcontentID, dbfilename, mimetype, date_created, size,
+         restricted) = results
         # Return a 404 if the filename in the URL is incorrect. This offers
         # a crude form of access control (stuff we care about can have
         # unguessable names effectively using the filename as a secret).
@@ -156,52 +176,136 @@ class LibraryFileAliasResource(resource.Resource):
             log.msg(
                 "404: dbfilename.encode('utf-8') != filename: %r != %r"
                 % (dbfilename.encode('utf-8'), filename))
-            return fourOhFour
+            defer.returnValue(fourOhFour)
 
-        if not restricted:
-            # Set our caching headers. Librarian files can be cached forever.
-            request.setHeader('Cache-Control', 'max-age=31536000, public')
-        else:
-            # Restricted files require revalidation every time. For now,
-            # until the deployment details are completely reviewed, the
-            # simplest, most cautious approach is taken: no caching permited.
-            request.setHeader('Cache-Control', 'max-age=0, private')
-
-        if self.storage.hasFile(dbcontentID) or self.upstreamHost is None:
+        stream = yield self.storage.open(dbcontentID)
+        if stream is not None:
             # XXX: Brad Crittenden 2007-12-05 bug=174204: When encodings are
             # stored as part of a file's metadata this logic will be replaced.
             encoding, mimetype = guess_librarian_encoding(filename, mimetype)
-            return File(
-                mimetype, encoding, date_created,
-                self.storage._fileLocation(dbcontentID))
+            file = File(mimetype, encoding, date_created, stream, size)
+            # Set our caching headers. Public Librarian files can be
+            # cached forever, while private ones mustn't be at all.
+            request.setHeader(
+                'Cache-Control',
+                'max-age=31536000, public'
+                if not restricted else 'max-age=0, private')
+            defer.returnValue(file)
+        elif self.upstreamHost is not None:
+            defer.returnValue(
+                proxy.ReverseProxyResource(
+                    self.upstreamHost, self.upstreamPort, request.path))
         else:
-            return proxy.ReverseProxyResource(self.upstreamHost,
-                                              self.upstreamPort, request.path)
+            raise AssertionError(
+                "Content %d missing from storage." % dbcontentID)
 
     def render_GET(self, request):
         return defaultResource.render(request)
 
 
-class File(static.File):
+class File(resource.Resource):
     isLeaf = True
 
-    def __init__(
-        self, contentType, encoding, modification_time, *args, **kwargs):
+    def __init__(self, contentType, encoding, modification_time, stream, size):
+        resource.Resource.__init__(self)
         # Have to convert the UTC datetime to POSIX timestamp (localtime)
         offset = datetime.utcnow() - datetime.now()
         local_modification_time = modification_time - offset
         self._modification_time = time.mktime(
             local_modification_time.timetuple())
-        static.File.__init__(self, *args, **kwargs)
         self.type = contentType
         self.encoding = encoding
+        self.stream = stream
+        self.size = size
 
-    def getModificationTime(self):
-        """Override the time on disk with the time from the database.
+    def _setContentHeaders(self, request):
+        request.setHeader(b'content-length', intToBytes(self.size))
+        if self.type:
+            request.setHeader(b'content-type', networkString(self.type))
+        if self.encoding:
+            request.setHeader(
+                b'content-encoding', networkString(self.encoding))
 
-        This is used by twisted to set the Last-Modified: header.
-        """
-        return self._modification_time
+    def render_GET(self, request):
+        """See `Resource`."""
+        request.setHeader(b'accept-ranges', b'none')
+
+        if request.setLastModified(self._modification_time) is http.CACHED:
+            # `setLastModified` also sets the response code for us, so if
+            # the request is cached, we close the file now that we've made
+            # sure that the request would otherwise succeed and return an
+            # empty body.
+            self.stream.close()
+            return b''
+
+        if request.method == b'HEAD':
+            # Set the content headers here, rather than making a producer.
+            self._setContentHeaders(request)
+            self.stream.close()
+            return b''
+
+        # static.File has HTTP range support, which would be nice to have.
+        # Unfortunately, static.File isn't a good match for producing data
+        # dynamically by fetching it from Swift. The librarian used to sit
+        # behind Squid, which took care of this, but it no longer does. I
+        # think we will need to cargo-cult the byte-range support and three
+        # Producer implementations from static.File, making the small
+        # modifications to cope with self.fileObject.read maybe returning a
+        # Deferred, and the static.File.makeProducer method to return the
+        # correct producer.
+        self._setContentHeaders(request)
+        request.setResponseCode(http.OK)
+        producer = FileProducer(request, self.stream)
+        producer.start()
+
+        return server.NOT_DONE_YET
+
+
+@implementer(IPushProducer)
+class FileProducer(object):
+
+    buffer_size = abstract.FileDescriptor.bufferSize
+
+    def __init__(self, request, stream):
+        self.request = request
+        self.stream = stream
+        self.producing = True
+
+    def start(self):
+        self.request.registerProducer(self, True)
+        self.resumeProducing()
+
+    def pauseProducing(self):
+        """See `IPushProducer`."""
+        self.producing = False
+
+    @defer.inlineCallbacks
+    def _produceFromStream(self):
+        """Read data from our stream and write it to our consumer."""
+        while self.request and self.producing:
+            data = yield self.stream.read(self.buffer_size)
+            # pauseProducing or stopProducing may have been called while we
+            # were waiting.
+            if not self.producing:
+                return
+            if data:
+                self.request.write(data)
+            else:
+                self.request.unregisterProducer()
+                self.request.finish()
+                self.stopProducing()
+
+    def resumeProducing(self):
+        """See `IPushProducer`."""
+        self.producing = True
+        if self.request:
+            reactor.callLater(0, self._produceFromStream)
+
+    def stopProducing(self):
+        """See `IProducer`."""
+        self.producing = False
+        self.stream.close()
+        self.request = None
 
 
 class DigestSearchResource(resource.Resource):

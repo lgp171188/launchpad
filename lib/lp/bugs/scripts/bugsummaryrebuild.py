@@ -1,4 +1,4 @@
-# Copyright 2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2012-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -17,6 +17,10 @@ from storm.expr import (
 from storm.properties import Bool
 import transaction
 
+from lp.app.enums import (
+    PRIVATE_INFORMATION_TYPES,
+    PUBLIC_INFORMATION_TYPES,
+    )
 from lp.bugs.model.bug import BugTag
 from lp.bugs.model.bugsummary import BugSummary
 from lp.bugs.model.bugtask import (
@@ -25,10 +29,6 @@ from lp.bugs.model.bugtask import (
     BugTask,
     )
 from lp.bugs.model.bugtaskflat import BugTaskFlat
-from lp.registry.enums import (
-    PRIVATE_INFORMATION_TYPES,
-    PUBLIC_INFORMATION_TYPES,
-    )
 from lp.registry.interfaces.distribution import IDistribution
 from lp.registry.interfaces.distroseries import IDistroSeries
 from lp.registry.interfaces.series import ISeriesMixin
@@ -38,7 +38,7 @@ from lp.registry.model.product import Product
 from lp.registry.model.productseries import ProductSeries
 from lp.registry.model.sourcepackagename import SourcePackageName
 from lp.services.database.bulk import create
-from lp.services.database.lpstorm import IStore
+from lp.services.database.interfaces import IStore
 from lp.services.database.stormexpr import Unnest
 from lp.services.looptuner import TunableLoop
 
@@ -81,7 +81,9 @@ def get_bugtask_targets():
 def load_target(pid, psid, did, dsid, spnid):
     store = IStore(Product)
     p, ps, d, ds, spn = map(
-        lambda (cls, id): store.get(cls, id) if id is not None else None,
+        lambda cls_id: (
+            store.get(cls_id[0], cls_id[1]) if cls_id[1] is not None
+            else None),
         zip((Product, ProductSeries, Distribution, DistroSeries,
              SourcePackageName),
             (pid, psid, did, dsid, spnid)))
@@ -205,7 +207,7 @@ def apply_bugsummary_changes(target, added, updated, removed):
         chunk = removed[:100]
         removed = removed[100:]
         exprs = [
-            map(lambda (k, v): k == v, zip(key_cols, key))
+            map(lambda k_v: k_v[0] == k_v[1], zip(key_cols, key))
             for key in chunk]
         IStore(RawBugSummary).find(
             RawBugSummary,

@@ -12,9 +12,8 @@ a LaunchpadFormView based view class:
  * if only a subset of the fields are to be displayed in the form, the
    "field_names" attribute should be set.
 
- * if any fields require custom widgets, the "custom_widgets"
-   attribute should be set to a dictionary mapping field names to
-   widget factories.
+ * if any fields require custom widgets, the "custom_widget_NAME"
+   attribute for each field NAME should be set to a widget factory.
 
  * one or more actions must be provided by the form if it is to
    support submission.
@@ -46,7 +45,7 @@ The schema can be an interface implemented by your content object, or
 an interface specifically tailored for data entry.  Below is an
 example schema:
 
-  >>> from zope.interface import Interface, implements
+  >>> from zope.interface import Interface, implementer
   >>> from zope.schema import TextLine
 
   >>> class IFormTest(Interface):
@@ -54,8 +53,8 @@ example schema:
   ...     displayname = TextLine(title=u"Title")
   ...     password = TextLine(title=u"Password")
 
-  >>> class FormTest:
-  ...     implements(IFormTest)
+  >>> @implementer(IFormTest)
+  ... class FormTest:
   ...     name = 'fred'
   ...     displayname = 'Fred'
   ...     password = 'password'
@@ -127,15 +126,16 @@ should in turn have the FormTest instance as a context:
 == Custom Widgets ==
 
 In some cases we will want to use a custom widget for a particular
-field.  These can be installed easily with the "custom_widgets"
+field.  These can be installed easily with a "custom_widget_NAME"
 attribute:
 
-  >>> from zope.app.form.browser import TextWidget
-  >>> from lp.app.browser.launchpadform import custom_widget
+  >>> from zope.formlib.widget import CustomWidgetFactory
+  >>> from zope.formlib.widgets import TextWidget
 
   >>> class FormTestView3(LaunchpadFormView):
   ...     schema = IFormTest
-  ...     custom_widget('displayname', TextWidget, displayWidth=50)
+  ...     custom_widget_displayname = CustomWidgetFactory(
+  ...         TextWidget, displayWidth=50)
 
   >>> context = FormTest()
   >>> request = LaunchpadTestRequest()
@@ -260,9 +260,9 @@ Check that widget specific errors can be reported:
   >>> view.setUpWidgets()
   >>> data = {}
   >>> view._validate(None, data)
-  [u'your password must not be "password"']
+  [u'your password must not be &quot;password&quot;']
   >>> view.widget_errors
-  {'password': u'your password must not be "password"'}
+  {'password': u'your password must not be &quot;password&quot;'}
 
 The base template used for LaunchpadFormView classes takes care of
 displaying these errors in the appropriate locations.
@@ -308,7 +308,7 @@ Only the fields we specify will be validated:
   Name: Required input is missing.
   Password: Required input is missing.
 
-The default behavior is to validate all widgets.
+The default behaviour is to validate all widgets.
 
   >>> print_widget_validation(None)
   Name: Required input is missing.
@@ -356,7 +356,7 @@ redirect the user to another URL.  The URL is specified by the
   ...
   ...     @action(u'Redirect', name='redirect')
   ...     def redirect_action(self, action, data):
-  ...         self.next_url = 'http://launchpad.dev/'
+  ...         self.next_url = 'http://launchpad.test/'
   ...
   ...     def handleUpdateFailure(self, action, data, errors):
   ...         return u'Some errors occured.'
@@ -462,7 +462,7 @@ error, the generated script will focus the first widget with an error:
 Any widget can be hidden in a LaunchpadFormView while still having its
 value POSTed with the values of the other (visible) ones. The widget's
 visibility is controlled by its 'visible' attribute, which can be set
-through a custom_widget() call.
+using a custom widget.
 
 First we'll create a fake pagetemplate which doesn't use Launchpad's main
 template and thus is way simpler.
@@ -486,7 +486,7 @@ By default, all widgets are visible.
   >>> request = LaunchpadTestRequest()
   >>> view = TestWidgetVisibility(context, request)
 
-  >>> from BeautifulSoup import BeautifulSoup
+  >>> from lp.services.beautifulsoup import BeautifulSoup
   >>> soup = BeautifulSoup(view())
   >>> for input in soup.findAll('input'):
   ...     print input
@@ -496,7 +496,8 @@ If we change a widget's 'visible' flag to False, that widget is rendered
 using its hidden() method, which should return a hidden <input> tag.
 
   >>> class TestWidgetVisibility2(TestWidgetVisibility):
-  ...     custom_widget('displayname', TextWidget, visible=False)
+  ...     custom_widget_displayname = CustomWidgetFactory(
+  ...         TextWidget, visible=False)
 
   >>> view = TestWidgetVisibility2(context, request)
 

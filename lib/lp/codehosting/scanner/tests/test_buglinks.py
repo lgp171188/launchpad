@@ -11,13 +11,11 @@ from zope.event import notify
 
 from lp.app.errors import NotFoundError
 from lp.bugs.interfaces.bug import IBugSet
-from lp.bugs.interfaces.bugbranch import IBugBranchSet
 from lp.code.interfaces.revision import IRevisionSet
 from lp.codehosting.scanner import events
 from lp.codehosting.scanner.buglinks import BugBranchLinker
 from lp.codehosting.scanner.tests.test_bzrsync import BzrSyncTestCase
 from lp.registry.interfaces.pocket import PackagePublishingPocket
-from lp.services.config import config
 from lp.services.osutils import override_environ
 from lp.testing import (
     TestCase,
@@ -63,7 +61,7 @@ class RevisionPropertyParsing(TestCase):
         # Parsing a single line should give a dict with a single entry,
         # mapping the bug_id to the status.
         bugs = self.extractBugInfo("https://launchpad.net/bugs/9999 fixed")
-        self.assertEquals(bugs, {9999: 'fixed'})
+        self.assertEqual(bugs, {9999: 'fixed'})
 
     def test_multiple(self):
         # Information about more than one bug can be specified. Make sure that
@@ -71,39 +69,39 @@ class RevisionPropertyParsing(TestCase):
         bugs = self.extractBugInfo(
             "https://launchpad.net/bugs/9999 fixed\n"
             "https://launchpad.net/bugs/8888 fixed")
-        self.assertEquals(bugs, {9999: 'fixed',
-                                 8888: 'fixed'})
+        self.assertEqual(bugs, {9999: 'fixed',
+                                8888: 'fixed'})
 
     def test_empty(self):
         # If the property is empty, then return an empty dict.
         bugs = self.extractBugInfo('')
-        self.assertEquals(bugs, {})
+        self.assertEqual(bugs, {})
 
     def test_bad_bug(self):
         # If the given bug is not a valid integer, then skip it, generate an
         # OOPS and continue processing.
         bugs = self.extractBugInfo('https://launchpad.net/~jml fixed')
-        self.assertEquals(bugs, {})
+        self.assertEqual(bugs, {})
 
     def test_non_launchpad_bug(self):
         # References to bugs on sites other than launchpad are ignored.
         bugs = self.extractBugInfo('http://bugs.debian.org/1234 fixed')
-        self.assertEquals(bugs, {})
+        self.assertEqual(bugs, {})
 
     def test_duplicated_line(self):
         # If a particular line is duplicated, silently ignore the duplicates.
         bugs = self.extractBugInfo(
             'https://launchpad.net/bugs/9999 fixed\n'
             'https://launchpad.net/bugs/9999 fixed')
-        self.assertEquals(bugs, {9999: 'fixed'})
+        self.assertEqual(bugs, {9999: 'fixed'})
 
     def test_strict_url_checking(self):
         # Ignore URLs that look like a Launchpad bug URL but aren't.
         bugs = self.extractBugInfo('https://launchpad.net/people/1234 fixed')
-        self.assertEquals(bugs, {})
+        self.assertEqual(bugs, {})
         bugs = self.extractBugInfo(
             'https://launchpad.net/bugs/foo/1234 fixed')
-        self.assertEquals(bugs, {})
+        self.assertEqual(bugs, {})
 
 
 class TestBugLinking(BzrSyncTestCase):
@@ -133,7 +131,7 @@ class TestBugLinking(BzrSyncTestCase):
         """Get the canonical URL for 'bug'.
 
         We don't use canonical_url because we don't want to have to make
-        Bazaar know about launchpad.dev.
+        Bazaar know about launchpad.test.
         """
         return 'https://launchpad.net/bugs/%s' % bug.id
 
@@ -142,9 +140,7 @@ class TestBugLinking(BzrSyncTestCase):
 
         Raises an assertion error if there's no such bug.
         """
-        bug_branch = getUtility(IBugBranchSet).getBugBranch(bug, branch)
-        if bug_branch is None:
-            self.fail('No BugBranch found for %r, %r' % (bug, branch))
+        self.assertIn(branch, bug.linked_branches)
 
     def test_newMainlineRevisionAddsBugBranch(self):
         """New mainline revisions with bugs properties create BugBranches."""
@@ -188,11 +184,7 @@ class TestBugLinking(BzrSyncTestCase):
         self.syncBazaarBranchToDatabase(self.bzr_branch, self.db_branch)
         # Create a new DB branch to sync with.
         self.syncBazaarBranchToDatabase(self.bzr_branch, self.new_db_branch)
-        self.assertEqual(
-            getUtility(IBugBranchSet).getBugBranch(
-                self.bug1, self.new_db_branch),
-            None,
-            "Should not create a BugBranch.")
+        self.assertNotIn(self.new_db_branch, self.bug1.linked_branches)
 
     def test_nonMainlineRevisionsDontMakeBugBranches(self):
         """Don't add BugBranches based on non-mainline revisions."""
@@ -225,10 +217,7 @@ class TestBugLinking(BzrSyncTestCase):
                 allow_pointless=True)
 
         self.syncBazaarBranchToDatabase(self.bzr_branch, self.db_branch)
-        self.assertEqual(
-            getUtility(IBugBranchSet).getBugBranch(self.bug1, self.db_branch),
-            None,
-            "Should not create a BugBranch.")
+        self.assertNotIn(self.db_branch, self.bug1.linked_branches)
 
     def test_ignoreNonExistentBug(self):
         """If the bug doesn't actually exist, we just ignore it."""
@@ -261,7 +250,7 @@ class TestSubscription(TestCaseWithFactory):
         self.useBzrBranches(direct_database=True)
         db_branch, tree = self.create_branch_and_tree()
         bug = self.factory.makeBug()
-        switch_dbuser(config.branchscanner.dbuser)
+        switch_dbuser("branchscanner")
         # XXX: AaronBentley 2010-08-06 bug=614404: a bzr username is
         # required to generate the revision-id.
         with override_environ(BZR_EMAIL='me@example.com'):
@@ -273,5 +262,4 @@ class TestSubscription(TestCaseWithFactory):
         revision_set.newFromBazaarRevisions([bzr_revision])
         notify(events.NewMainlineRevisions(
             db_branch, tree.branch, [bzr_revision]))
-        bug_branch = getUtility(IBugBranchSet).getBugBranch(bug, db_branch)
-        self.assertIsNot(None, bug_branch)
+        self.assertIn(db_branch, bug.linked_branches)

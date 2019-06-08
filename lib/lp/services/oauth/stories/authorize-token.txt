@@ -3,12 +3,12 @@ Authorizing a request token
 
 Once the consumer gets a request token, it must send the user to
 Launchpad's +authorize-token page in order for the user to authenticate
-and authorize or not the consumer to act on his behalf.
+and authorize or not the consumer to act on their behalf.
 
     >>> def request_token_for(consumer):
     ...     """Helper method to create a request token."""
     ...     login('salgado@ubuntu.com')
-    ...     token = consumer.newRequestToken()
+    ...     token, _ = consumer.newRequestToken()
     ...     logout()
     ...     return token
 
@@ -17,7 +17,7 @@ and authorize or not the consumer to act on his behalf.
     >>> from lp.services.oauth.interfaces import IOAuthConsumerSet
     >>> from lp.testing import ANONYMOUS, login, logout
     >>> login('salgado@ubuntu.com')
-    >>> consumer = getUtility(IOAuthConsumerSet).getByKey('foobar123451432')
+    >>> consumer = getUtility(IOAuthConsumerSet).getByKey(u'foobar123451432')
     >>> logout()
     >>> token = request_token_for(consumer)
 
@@ -33,8 +33,8 @@ it involves OpenID, which would complicate this test quite a bit.)
 
     >>> from urllib import urlencode
     >>> params = dict(
-    ...     oauth_token=token.key, oauth_callback='http://launchpad.dev/bzr')
-    >>> url = "http://launchpad.dev/+authorize-token?%s" % urlencode(params)
+    ...     oauth_token=token.key, oauth_callback='http://launchpad.test/bzr')
+    >>> url = "http://launchpad.test/+authorize-token?%s" % urlencode(params)
     >>> browser.open(url)
     Traceback (most recent call last):
     ...
@@ -82,7 +82,7 @@ to deny permission altogether.
 
     >>> def authorize_token_browser(allow_permission):
     ...     browser.open(
-    ...         "http://launchpad.dev/+authorize-token?%s&%s"
+    ...         "http://launchpad.test/+authorize-token?%s&%s"
     ...         % (urlencode(params), allow_permission))
 
     >>> def authorize_token_main_content(allow_permission):
@@ -123,7 +123,7 @@ integration has its own section, below.)
 
     >>> allow_permission = "allow_permission=DESKTOP_INTEGRATION"
     >>> browser.open(
-    ...     "http://launchpad.dev/+authorize-token?%s&%s"
+    ...     "http://launchpad.test/+authorize-token?%s&%s"
     ...         % (urlencode(params), allow_permission))
     Traceback (most recent call last):
     ...
@@ -137,7 +137,7 @@ by the user is restricted to things related to that context.
     >>> params_with_context = {'lp.context': 'firefox'}
     >>> params_with_context.update(params)
     >>> browser.open(
-    ...     "http://launchpad.dev/+authorize-token?%s"
+    ...     "http://launchpad.test/+authorize-token?%s"
     ...     % urlencode(params_with_context))
     >>> main_content = find_tag_by_id(browser.contents, 'maincontent')
     >>> print extract_text(main_content)
@@ -156,7 +156,7 @@ the list of authentication levels.
     >>> json_browser.addHeader('Authorization',
     ...     'Basic test@canonical.com:test')
     >>> json_browser.open(
-    ...     "http://launchpad.dev/+authorize-token?%s"
+    ...     "http://launchpad.test/+authorize-token?%s"
     ...     % urlencode(params))
     >>> json_token = simplejson.loads(json_browser.contents)
     >>> sorted(json_token.keys())
@@ -171,7 +171,7 @@ the list of authentication levels.
      ('WRITE_PUBLIC', 'Change Non-Private Data')]
 
     >>> json_browser.open(
-    ...     ("http://launchpad.dev/+authorize-token?%s"
+    ...     ("http://launchpad.test/+authorize-token?%s"
     ...      "&allow_permission=READ_PRIVATE") % urlencode(params))
     >>> json_token = simplejson.loads(json_browser.contents)
     >>> sorted((level['value'], level['title'])
@@ -179,17 +179,17 @@ the list of authentication levels.
     [('READ_PRIVATE', 'Read Anything'),
      ('UNAUTHORIZED', 'No Access')]
 
-Once the user authorizes the application to access Launchpad on his
+Once the user authorizes the application to access Launchpad on their
 behalf, we issue a redirect to the given oauth_callback (if it was
 specified by the application).
 
     >>> browser.open(
-    ...     "http://launchpad.dev/+authorize-token?%s" % urlencode(params))
+    ...     "http://launchpad.test/+authorize-token?%s" % urlencode(params))
     >>> browser.getControl('Read Non-Private Data').click()
 
     # This is the URL given to Launchpad in oauth_callback.
     >>> browser.url
-    'http://launchpad.dev/bzr'
+    'http://launchpad.test/bzr'
 
 After the authorization is granted the token gets its permission and
 person set.
@@ -212,12 +212,12 @@ If no oauth_callback is specified, we don't redirect the user.
 
     >>> params = dict(oauth_token=token.key)
     >>> browser.open(
-    ...     "http://launchpad.dev/+authorize-token?%s" % urlencode(params))
+    ...     "http://launchpad.test/+authorize-token?%s" % urlencode(params))
 
     >>> browser.getControl('Read Anything').click()
 
     >>> browser.url
-    'http://launchpad.dev/+authorize-token'
+    'http://launchpad.test/+authorize-token'
     >>> print extract_text(find_tag_by_id(browser.contents, 'maincontent'))
     Authorize application to access Launchpad on your behalf
     Almost finished ...
@@ -232,7 +232,7 @@ exchanged for an access token), we will explain that to the user.
 
     >>> params = dict(oauth_callback='http://example.com/oauth')
     >>> browser.open(
-    ...     "http://launchpad.dev/+authorize-token?%s" % urlencode(params))
+    ...     "http://launchpad.test/+authorize-token?%s" % urlencode(params))
     >>> print extract_text(find_tag_by_id(browser.contents, 'maincontent'))
     Authorize application to access Launchpad on your behalf
     Unable to identify application
@@ -245,7 +245,7 @@ exchanged for an access token), we will explain that to the user.
     >>> params = dict(
     ...     oauth_token='zzzzzz', oauth_callback='http://example.com/oauth')
     >>> browser.open(
-    ...     "http://launchpad.dev/+authorize-token?%s" % urlencode(params))
+    ...     "http://launchpad.test/+authorize-token?%s" % urlencode(params))
     >>> print extract_text(find_tag_by_id(browser.contents, 'maincontent'))
     Authorize application to access Launchpad on your behalf
     Unable to identify application
@@ -267,13 +267,32 @@ the success message is printed.
     >>> params = dict(
     ...     oauth_token=token.key, oauth_callback='http://example.com/oauth')
     >>> browser.open(
-    ...     "http://launchpad.dev/+authorize-token?%s" % urlencode(params))
+    ...     "http://launchpad.test/+authorize-token?%s" % urlencode(params))
     >>> print extract_text(find_tag_by_id(browser.contents, 'maincontent'))
     Authorize application to access Launchpad on your behalf
     Almost finished ...
     To finish authorizing the application identified as foobar123451432
     ...
     See all applications authorized to access Launchpad on your behalf.
+
+If the token has expired, we notify the user, and inhibit the callback.
+
+    >>> token = request_token_for(consumer)
+    >>> from datetime import datetime, timedelta
+    >>> from pytz import UTC
+    >>> from zope.security.proxy import removeSecurityProxy
+    >>> date_created = datetime.now(UTC) - timedelta(hours=3)
+    >>> removeSecurityProxy(token).date_created = date_created
+    >>> params = dict(
+    ...     oauth_token=token.key, oauth_callback='http://example.com/oauth')
+    >>> browser.open(
+    ...     "http://launchpad.test/+authorize-token?%s" % urlencode(params))
+    >>> browser.getControl('Read Anything').click()
+    >>> browser.url
+    'http://launchpad.test/+authorize-token'
+    >>> [tag] = find_tags_by_class(browser.contents, 'error message')
+    >>> print extract_text(tag)
+    This request token has expired and can no longer be reviewed.
 
 Desktop integration
 ===================
@@ -289,7 +308,7 @@ we'll create such a consumer, and then a request token for that consumer.
 
     >>> login('foo.bar@canonical.com')
     >>> consumer = factory.makeOAuthConsumer(
-    ...     "System-wide: Ubuntu (mycomputer)")
+    ...     u"System-wide: Ubuntu (mycomputer)")
     >>> logout()
 
     >>> token = request_token_for(consumer)
@@ -362,7 +381,7 @@ You can't specify a callback URL when authorizing a desktop-wide
 token, since callback URLs should only be used when integrating
 websites into Launchpad.
 
-    >>> params['oauth_callback'] = 'http://launchpad.dev/bzr'
+    >>> params['oauth_callback'] = 'http://launchpad.test/bzr'
     >>> print_access_levels_for(allow_desktop)
     Traceback (most recent call last):
     ...

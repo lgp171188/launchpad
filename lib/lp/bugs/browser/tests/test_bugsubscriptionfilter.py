@@ -14,6 +14,7 @@ from storm.exceptions import LostObjectError
 from testtools.matchers import StartsWith
 import transaction
 
+from lp.app.enums import InformationType
 from lp.bugs.browser.structuralsubscription import (
     StructuralSubscriptionNavigation,
     )
@@ -22,7 +23,6 @@ from lp.bugs.interfaces.bugtask import (
     BugTaskImportance,
     BugTaskStatus,
     )
-from lp.registry.enums import InformationType
 from lp.services.webapp.publisher import canonical_url
 from lp.services.webapp.servers import LaunchpadTestRequest
 from lp.testing import (
@@ -251,7 +251,7 @@ class TestBugSubscriptionFilterView(
         self.assertEqual([], self.view.conditions)
 
     def test_not_filters_everything_normally(self):
-        self.failIf(self.view.filters_everything)
+        self.assertFalse(self.view.filters_everything)
 
     def test_conditions_for_COMMENTS_events(self):
         # If we are subscribed to comments, that is all-inclusive: no

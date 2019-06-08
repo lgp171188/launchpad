@@ -1,7 +1,5 @@
-# Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2017 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
-
-# pylint: disable-msg=E0211,E0213
 
 from datetime import timedelta
 import httplib
@@ -209,9 +207,6 @@ class ITranslationImportQueueEntry(Interface):
             title=_("The timestamp when the status was changed."),
             required=True))
 
-    is_targeted_to_ubuntu = Attribute(
-        "True if this entry is to be imported into the Ubuntu distribution.")
-
     sourcepackage = exported(
         Reference(
             schema=ISourcePackage,
@@ -318,7 +313,8 @@ class ITranslationImportQueue(Interface):
         """Return a new or updated entry of the import queue.
 
         :arg path: is the path, with the filename, of the uploaded file.
-        :arg content: is the file content.
+        :arg content: is the file content, or a seekable file object open on
+            the file content.
         :arg by_maintainer: indicates if the file was uploaded by the
             maintainer of the project or package.
         :arg importer: is the person that did the import.
@@ -341,7 +337,8 @@ class ITranslationImportQueue(Interface):
         only_templates=False):
         """Add all .po or .pot files from the tarball at :content:.
 
-        :arg content: is a tarball stream.
+        :arg content: is the tarball content, or a seekable file object open
+            on the tarball.
         :arg by_maintainer: indicates if the file was uploaded by the
             maintainer of the project or package.
         :arg importer: is the person that did the import.
@@ -400,7 +397,8 @@ class ITranslationImportQueue(Interface):
     @operation_parameters(
         status=copy_field(ITranslationImportQueueEntry['status']))
     @operation_returns_collection_of(IHasTranslationImports)
-    def getRequestTargets(status=None):
+    @call_with(user=REQUEST_USER)
+    def getRequestTargets(user,  status=None):
         """List `Product`s and `DistroSeries` with pending imports.
 
         :arg status: Filter by `RosettaImportStatus`.

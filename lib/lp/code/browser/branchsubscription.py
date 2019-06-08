@@ -1,4 +1,4 @@
-# Copyright 2009-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -9,12 +9,9 @@ __all__ = [
     'BranchSubscriptionAddView',
     'BranchSubscriptionEditOwnView',
     'BranchSubscriptionEditView',
-    'BranchSubscriptionPrimaryContext',
     ]
 
-from lazr.restful.utils import smartquote
 from zope.component import getUtility
-from zope.interface import implements
 
 from lp.app.browser.launchpadform import (
     action,
@@ -24,6 +21,7 @@ from lp.app.browser.launchpadform import (
 from lp.app.interfaces.services import IService
 from lp.code.enums import BranchSubscriptionNotificationLevel
 from lp.code.interfaces.branchsubscription import IBranchSubscription
+from lp.registry.interfaces.person import IPersonSet
 from lp.services.webapp import (
     canonical_url,
     LaunchpadView,
@@ -32,24 +30,11 @@ from lp.services.webapp.authorization import (
     check_permission,
     precache_permission_for_objects,
     )
-from lp.services.webapp.interfaces import IPrimaryContext
-from lp.services.webapp.menu import structured
-
-
-class BranchSubscriptionPrimaryContext:
-    """The primary context is the subscription is that of the branch."""
-
-    implements(IPrimaryContext)
-
-    def __init__(self, branch_subscription):
-        self.context = IPrimaryContext(branch_subscription.branch).context
+from lp.services.webapp.escaping import structured
 
 
 class BranchPortletSubscribersContent(LaunchpadView):
-    """View for the contents for the subscribers portlet.
-
-    This view is strictly for use with ajax.
-    """
+    """View for the contents for the subscribers portlet."""
 
     def subscriptions(self):
         """Return a decorated list of branch subscriptions."""
@@ -57,15 +42,18 @@ class BranchPortletSubscribersContent(LaunchpadView):
         # Cache permissions so private subscribers can be rendered.
         # The security adaptor will do the job also but we don't want or need
         # the expense of running several complex SQL queries.
+        subscriptions = list(self.context.subscriptions)
+        person_ids = [sub.personID for sub in subscriptions]
+        list(getUtility(IPersonSet).getPrecachedPersonsFromIDs(
+            person_ids, need_validity=True))
         if self.user is not None:
             subscribers = [
-                subscription.person
-                for subscription in self.context.subscriptions]
+                subscription.person for subscription in subscriptions]
             precache_permission_for_objects(
                 self.request, "launchpad.LimitedView", subscribers)
 
         visible_subscriptions = [
-            subscription for subscription in self.context.subscriptions
+            subscription for subscription in subscriptions
             if check_permission('launchpad.LimitedView', subscription.person)]
         return sorted(
             visible_subscriptions,
@@ -96,18 +84,17 @@ class _BranchSubscriptionView(LaunchpadFormView):
 
     cancel_url = next_url
 
-    def add_notification_message(self, initial,
-                                 notification_level, max_diff_lines,
-                                 review_level):
+    def add_notification_message(self, initial, notification_level,
+                                 max_diff_lines, review_level):
         if notification_level in self.LEVELS_REQUIRING_LINES_SPECIFICATION:
             lines_message = '<li>%s</li>' % max_diff_lines.description
         else:
             lines_message = ''
 
         format_str = '%%s<ul><li>%%s</li>%s<li>%%s</li></ul>' % lines_message
-        message = structured(format_str, initial,
-                             notification_level.description,
-                             review_level.description)
+        message = structured(
+            format_str, initial, notification_level.description,
+            review_level.description)
         self.request.response.addNotification(message)
 
     def optional_max_diff_lines(self, notification_level, max_diff_lines):
@@ -118,8 +105,6 @@ class _BranchSubscriptionView(LaunchpadFormView):
 
 
 class BranchSubscriptionAddView(_BranchSubscriptionView):
-
-    subscribing_self = True
 
     page_title = label = "Subscribe to branch"
 
@@ -153,8 +138,7 @@ class BranchSubscriptionEditOwnView(_BranchSubscriptionView):
 
     @property
     def page_title(self):
-        return smartquote(
-            'Edit subscription to branch "%s"' % self.context.displayname)
+        return 'Edit subscription to branch %s' % self.context.displayname
 
     @property
     def initial_values(self):
@@ -209,16 +193,15 @@ class BranchSubscriptionAddOtherView(_BranchSubscriptionView):
     # Since we are subscribing other people, the current user
     # is never considered subscribed.
     user_is_subscribed = False
-    subscribing_self = False
 
     page_title = label = "Subscribe to branch"
 
     def validate(self, data):
-        if data.has_key('person'):
+        if 'person' in data:
             person = data['person']
             subscription = self.context.getSubscription(person)
-            if (subscription is None and person.is_team and 
-                person.anyone_can_join()):
+            if subscription is None and not self.context.userCanBeSubscribed(
+                person):
                 self.setFieldError('person', "Open and delegated teams "
                 "cannot be subscribed to private branches.")
 
@@ -264,8 +247,7 @@ class BranchSubscriptionEditView(LaunchpadEditFormView):
 
     @property
     def page_title(self):
-        return smartquote(
-            'Edit subscription to branch "%s"' % self.branch.displayname)
+        return 'Edit subscription to branch %s' % self.branch.displayname
 
     @property
     def label(self):
@@ -274,7 +256,7 @@ class BranchSubscriptionEditView(LaunchpadEditFormView):
     def initialize(self):
         self.branch = self.context.branch
         self.person = self.context.person
-        LaunchpadEditFormView.initialize(self)
+        super(BranchSubscriptionEditView, self).initialize()
 
     @action("Change", name="change")
     def change_action(self, action, data):
@@ -294,7 +276,7 @@ class BranchSubscriptionEditView(LaunchpadEditFormView):
         url = canonical_url(self.branch)
         # If the subscriber can no longer see the branch, redirect them away.
         service = getUtility(IService, 'sharing')
-        ignored, branches = service.getVisibleArtifacts(
+        _, branches, _, _ = service.getVisibleArtifacts(
             self.person, branches=[self.branch], ignore_permissions=True)
         if not branches:
             url = canonical_url(self.branch.target)

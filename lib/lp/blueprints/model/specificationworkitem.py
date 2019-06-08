@@ -12,11 +12,13 @@ from storm.locals import (
     Reference,
     Unicode,
     )
-from zope.interface import implements
+from storm.store import Store
+from zope.interface import implementer
 
 from lp.blueprints.enums import SpecificationWorkItemStatus
 from lp.blueprints.interfaces.specificationworkitem import (
     ISpecificationWorkItem,
+    ISpecificationWorkItemSet,
     )
 from lp.registry.interfaces.person import validate_public_person
 from lp.services.database.constants import DEFAULT
@@ -25,10 +27,11 @@ from lp.services.database.enumcol import EnumCol
 from lp.services.database.stormbase import StormBase
 
 
+@implementer(ISpecificationWorkItem)
 class SpecificationWorkItem(StormBase):
-    implements(ISpecificationWorkItem)
 
     __storm_table__ = 'SpecificationWorkItem'
+    __storm_order__ = 'id'
 
     id = Int(primary=True)
     title = Unicode(allow_none=False)
@@ -53,14 +56,24 @@ class SpecificationWorkItem(StormBase):
 
     def __init__(self, title, status, specification, assignee, milestone,
                  sequence):
-        self.title=title
-        self.status=status
+        self.title = title
+        self.status = status
         self.specification = specification
-        self.assignee=assignee
-        self.milestone=milestone
-        self.sequence=sequence
+        self.assignee = assignee
+        self.milestone = milestone
+        self.sequence = sequence
 
     @property
     def is_complete(self):
         """See `ISpecificationWorkItem`."""
         return self.status == SpecificationWorkItemStatus.DONE
+
+
+@implementer(ISpecificationWorkItemSet)
+class SpecificationWorkItemSet:
+
+    def unlinkMilestone(self, milestone):
+        """See `ISpecificationWorkItemSet`."""
+        Store.of(milestone).find(
+            SpecificationWorkItem, milestone_id=milestone.id).set(
+                milestone_id=None)

@@ -40,8 +40,6 @@ class StubbedPullerWorkerProtocol(PullerWorkerProtocol):
     """A `PullerWorkerProtocol` that logs events without acting on them."""
 
     def __init__(self):
-        # We are deliberately not calling PullerWorkerProtocol.__init__:
-        # pylint: disable-msg=W0231
         self.calls = []
 
     def sendEvent(self, command, *args):
@@ -111,7 +109,7 @@ class TestErrorCatching(TestCase):
         # is displayed to the user.
         expected_msg = "Launchpad does not mirror branches from Launchpad."
         msg = self.getMirrorFailureForException(
-            BadUrlLaunchpad('http://launchpad.dev/foo'))
+            BadUrlLaunchpad('http://launchpad.test/foo'))
         self.assertTrue(msg.startswith(expected_msg))
 
     def testHostedBranchReference(self):

@@ -1,23 +1,25 @@
-# Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for the CodeImportWorkerMonitor and related classes."""
 
 __metaclass__ = type
 __all__ = [
-    'nuke_codeimport_sample_data']
-
+    'nuke_codeimport_sample_data',
+    ]
 
 import os
 import shutil
 import StringIO
+import subprocess
 import tempfile
 import urllib
 
 from bzrlib.branch import Branch
-from bzrlib.tests import TestCase as BzrTestCase
+from bzrlib.tests import TestCaseInTempDir
+from dulwich.repo import Repo as GitRepo
 import oops_twisted
-from testtools.deferredruntest import (
+from testtools.twistedsupport import (
     assert_fails_with,
     AsynchronousDeferredRunTest,
     flush_logged_errors,
@@ -32,21 +34,24 @@ from twisted.internet import (
 from twisted.python import log
 from twisted.web import xmlrpc
 from zope.component import getUtility
+from zope.security.proxy import removeSecurityProxy
 
 from lp.code.enums import (
     CodeImportResultStatus,
     CodeImportReviewStatus,
     RevisionControlSystems,
+    TargetRevisionControlSystems,
     )
+from lp.code.interfaces.branch import IBranch
 from lp.code.interfaces.codeimport import ICodeImportSet
 from lp.code.interfaces.codeimportjob import ICodeImportJobSet
 from lp.code.model.codeimport import CodeImport
 from lp.code.model.codeimportjob import CodeImportJob
+from lp.code.tests.helpers import GitHostingFixture
 from lp.codehosting.codeimport.tests.servers import (
     BzrServer,
     CVSServer,
     GitServer,
-    MercurialServer,
     SubversionServer,
     )
 from lp.codehosting.codeimport.tests.test_worker import (
@@ -63,6 +68,10 @@ from lp.codehosting.codeimport.workermonitor import (
     ExitQuietly,
     )
 from lp.services.config import config
+from lp.services.config.fixture import (
+    ConfigFixture,
+    ConfigUseFixture,
+    )
 from lp.services.log.logger import BufferLogger
 from lp.services.twistedsupport import suppress_stderr
 from lp.services.twistedsupport.tests.test_processmonitor import (
@@ -218,12 +227,6 @@ class TestWorkerMonitorUnit(TestCase):
         def _logOopsFromFailure(self, failure):
             log.err(failure)
 
-    def assertOopsesLogged(self, exc_types):
-        failures = flush_logged_errors()
-        self.assertEqual(len(exc_types), len(failures))
-        for fail, exc_type in zip(failures, exc_types):
-            self.assert_(fail.check(exc_type))
-
     def makeWorkerMonitorWithJob(self, job_id=1, job_data=()):
         return self.WorkerMonitor(
             job_id, BufferLogger(),
@@ -245,21 +248,56 @@ class TestWorkerMonitorUnit(TestCase):
         return worker_monitor.getWorkerArguments().addCallback(
             self.assertEqual, args)
 
-    def test_getWorkerArguments_sets_branch_url_and_logfilename(self):
-        # getWorkerArguments sets the _branch_url (for use in oops reports)
+    def test_getWorkerArguments_dict(self):
+        # getWorkerArguments returns a deferred that fires with the
+        # 'arguments' part of what getImportDataForJobID returns.
+        # (New protocol: data passed as a dict.)
+        args = [self.factory.getUniqueString(),
+                self.factory.getUniqueString()]
+        data = {'arguments': args, 'target_url': 1, 'log_file_name': 2}
+        worker_monitor = self.makeWorkerMonitorWithJob(1, data)
+        return worker_monitor.getWorkerArguments().addCallback(
+            self.assertEqual, args)
+
+    def test_getWorkerArguments_sets_target_url_and_logfilename(self):
+        # getWorkerArguments sets the _target_url (for use in oops reports)
         # and _log_file_name (for upload to the librarian) attributes on the
         # WorkerMonitor from the data returned by getImportDataForJobID.
-        branch_url = self.factory.getUniqueString()
+        target_url = self.factory.getUniqueString()
         log_file_name = self.factory.getUniqueString()
         worker_monitor = self.makeWorkerMonitorWithJob(
-            1, (['a'], branch_url, log_file_name))
+            1, (['a'], target_url, log_file_name))
 
         def check_branch_log(ignored):
             # Looking at the _ attributes here is in slightly poor taste, but
             # much much easier than them by logging and parsing an oops, etc.
             self.assertEqual(
-                (branch_url, log_file_name),
-                (worker_monitor._branch_url, worker_monitor._log_file_name))
+                (target_url, log_file_name),
+                (worker_monitor._target_url, worker_monitor._log_file_name))
+
+        return worker_monitor.getWorkerArguments().addCallback(
+            check_branch_log)
+
+    def test_getWorkerArguments_sets_target_url_and_logfilename_dict(self):
+        # getWorkerArguments sets the _target_url (for use in oops reports)
+        # and _log_file_name (for upload to the librarian) attributes on the
+        # WorkerMonitor from the data returned by getImportDataForJobID.
+        # (New protocol: data passed as a dict.)
+        target_url = self.factory.getUniqueString()
+        log_file_name = self.factory.getUniqueString()
+        data = {
+            'arguments': ['a'],
+            'target_url': target_url,
+            'log_file_name': log_file_name,
+            }
+        worker_monitor = self.makeWorkerMonitorWithJob(1, data)
+
+        def check_branch_log(ignored):
+            # Looking at the _ attributes here is in slightly poor taste, but
+            # much much easier than them by logging and parsing an oops, etc.
+            self.assertEqual(
+                (target_url, log_file_name),
+                (worker_monitor._target_url, worker_monitor._log_file_name))
 
         return worker_monitor.getWorkerArguments().addCallback(
             check_branch_log)
@@ -401,7 +439,6 @@ class TestWorkerMonitorUnit(TestCase):
                 error.ProcessTerminated,
                 exitCode=CodeImportWorkerExitCode.FAILURE))
         self.assertEqual(calls, [CodeImportResultStatus.FAILURE])
-        self.assertOopsesLogged([error.ProcessTerminated])
         # We return the deferred that callFinishJob returns -- if
         # callFinishJob did not swallow the error, this will fail the test.
         return ret
@@ -417,7 +454,6 @@ class TestWorkerMonitorUnit(TestCase):
                 error.ProcessTerminated,
                 exitCode=CodeImportWorkerExitCode.SUCCESS_NOCHANGE))
         self.assertEqual(calls, [CodeImportResultStatus.SUCCESS_NOCHANGE])
-        self.assertOopsesLogged([])
         # We return the deferred that callFinishJob returns -- if
         # callFinishJob did not swallow the error, this will fail the test.
         return ret
@@ -431,7 +467,6 @@ class TestWorkerMonitorUnit(TestCase):
         calls = self.patchOutFinishJob(worker_monitor)
         ret = worker_monitor.callFinishJob(makeFailure(RuntimeError))
         self.assertEqual(calls, [CodeImportResultStatus.FAILURE])
-        self.assertOopsesLogged([RuntimeError])
         # We return the deferred that callFinishJob returns -- if
         # callFinishJob did not swallow the error, this will fail the test.
         return ret
@@ -447,7 +482,6 @@ class TestWorkerMonitorUnit(TestCase):
                 error.ProcessTerminated,
                 exitCode=CodeImportWorkerExitCode.SUCCESS_PARTIAL))
         self.assertEqual(calls, [CodeImportResultStatus.SUCCESS_PARTIAL])
-        self.assertOopsesLogged([])
         # We return the deferred that callFinishJob returns -- if
         # callFinishJob did not swallow the error, this will fail the test.
         return ret
@@ -463,7 +497,6 @@ class TestWorkerMonitorUnit(TestCase):
                 error.ProcessTerminated,
                 exitCode=CodeImportWorkerExitCode.FAILURE_INVALID))
         self.assertEqual(calls, [CodeImportResultStatus.FAILURE_INVALID])
-        self.assertOopsesLogged([])
         # We return the deferred that callFinishJob returns -- if
         # callFinishJob did not swallow the error, this will fail the test.
         return ret
@@ -479,7 +512,6 @@ class TestWorkerMonitorUnit(TestCase):
             exitCode=CodeImportWorkerExitCode.FAILURE_UNSUPPORTED_FEATURE))
         self.assertEqual(
             calls, [CodeImportResultStatus.FAILURE_UNSUPPORTED_FEATURE])
-        self.assertOopsesLogged([])
         # We return the deferred that callFinishJob returns -- if
         # callFinishJob did not swallow the error, this will fail the test.
         return ret
@@ -496,7 +528,6 @@ class TestWorkerMonitorUnit(TestCase):
                 exitCode=CodeImportWorkerExitCode.FAILURE_REMOTE_BROKEN))
         self.assertEqual(
             calls, [CodeImportResultStatus.FAILURE_REMOTE_BROKEN])
-        self.assertOopsesLogged([])
         # We return the deferred that callFinishJob returns -- if
         # callFinishJob did not swallow the error, this will fail the test.
         return ret
@@ -510,14 +541,10 @@ class TestWorkerMonitorUnit(TestCase):
         ret = worker_monitor.callFinishJob(makeFailure(RuntimeError))
 
         def check_log_file(ignored):
-            failures = flush_logged_errors(RuntimeError)
-            self.assertEqual(1, len(failures))
-            fail = failures[0]
-            traceback_file = StringIO.StringIO()
-            fail.printTraceback(traceback_file)
             worker_monitor._log_file.seek(0)
             log_text = worker_monitor._log_file.read()
-            self.assertIn(traceback_file.read(), log_text)
+            self.assertIn('Traceback (most recent call last)', log_text)
+            self.assertIn('RuntimeError', log_text)
         return ret.addCallback(check_log_file)
 
     def test_callFinishJobRespects_call_finish_job(self):
@@ -531,7 +558,7 @@ class TestWorkerMonitorUnit(TestCase):
         self.assertEqual(calls, [])
 
 
-class TestWorkerMonitorRunNoProcess(BzrTestCase):
+class TestWorkerMonitorRunNoProcess(TestCase):
     """Tests for `CodeImportWorkerMonitor.run` that don't launch a subprocess.
     """
 
@@ -588,10 +615,11 @@ class TestWorkerMonitorRunNoProcess(BzrTestCase):
         # with CodeImportResultStatus.FAILURE, but the call to run() still
         # succeeds.
         # Need a twisted error reporting stack (normally set up by
-        # loggingsuppoer.set_up_oops_reporting).
+        # loggingsupport.set_up_oops_reporting).
         errorlog.globalErrorUtility.configure(
             config_factory=oops_twisted.Config,
-            publisher_adapter=oops_twisted.defer_publisher)
+            publisher_adapter=oops_twisted.defer_publisher,
+            publisher_helpers=oops_twisted.publishers)
         self.addCleanup(errorlog.globalErrorUtility.configure)
         worker_monitor = self.WorkerMonitor(defer.fail(RuntimeError()))
         return worker_monitor.run().addCallback(
@@ -616,22 +644,16 @@ class TestWorkerMonitorRunNoProcess(BzrTestCase):
         worker_monitor.finishJob = finishJob
         return worker_monitor.run()
 
-    def test_log_oops(self):
-        # Ensure an OOPS is logged if published.
+    def test_callFinishJob_logs_failure(self):
+        # callFinishJob logs a failure from the child process.
         errorlog.globalErrorUtility.configure(
             config_factory=oops_twisted.Config,
-            publisher_adapter=oops_twisted.defer_publisher)
+            publisher_adapter=oops_twisted.defer_publisher,
+            publisher_helpers=oops_twisted.publishers)
         self.addCleanup(errorlog.globalErrorUtility.configure)
-        failure_msg = "test_log_oops expected failure"
+        failure_msg = "test_callFinishJob_logs_failure expected failure"
         worker_monitor = self.WorkerMonitor(
             defer.fail(RuntimeError(failure_msg)))
-
-        def finishJob(reason):
-            from twisted.python import failure
-            return worker_monitor._logOopsFromFailure(
-                failure.Failure())
-
-        worker_monitor.finishJob = finishJob
         d = worker_monitor.run()
 
         def check_log_file(ignored):
@@ -684,13 +706,13 @@ class CIWorkerMonitorForTesting(CodeImportWorkerMonitor):
         return protocol
 
 
-class TestWorkerMonitorIntegration(BzrTestCase):
+class TestWorkerMonitorIntegration(TestCaseInTempDir, TestCase):
 
     layer = ZopelessAppServerLayer
-    run_tests_with = AsynchronousDeferredRunTest.make_factory(timeout=20)
+    run_tests_with = AsynchronousDeferredRunTest.make_factory(timeout=60)
 
     def setUp(self):
-        BzrTestCase.setUp(self)
+        super(TestWorkerMonitorIntegration, self).setUp()
         login('no-priv@canonical.com')
         self.factory = LaunchpadObjectFactory()
         nuke_codeimport_sample_data()
@@ -700,7 +722,7 @@ class TestWorkerMonitorIntegration(BzrTestCase):
         self.foreign_commit_count = 0
 
     def tearDown(self):
-        BzrTestCase.tearDown(self)
+        super(TestWorkerMonitorIntegration, self).tearDown()
         logout()
 
     def makeCVSCodeImport(self):
@@ -739,29 +761,18 @@ class TestWorkerMonitorIntegration(BzrTestCase):
         return self.factory.makeCodeImport(
             svn_branch_url=url, rcs_type=RevisionControlSystems.BZR_SVN)
 
-    def makeGitCodeImport(self):
+    def makeGitCodeImport(self, target_rcs_type=None):
         """Make a `CodeImport` that points to a real Git repository."""
         self.git_server = GitServer(self.repo_path, use_server=False)
         self.git_server.start_server()
         self.addCleanup(self.git_server.stop_server)
 
-        self.git_server.makeRepo([('README', 'contents')])
+        self.git_server.makeRepo('source', [('README', 'contents')])
         self.foreign_commit_count = 1
 
         return self.factory.makeCodeImport(
-            git_repo_url=self.git_server.get_url())
-
-    def makeHgCodeImport(self):
-        """Make a `CodeImport` that points to a real Mercurial repository."""
-        self.hg_server = MercurialServer(self.repo_path, use_server=False)
-        self.hg_server.start_server()
-        self.addCleanup(self.hg_server.stop_server)
-
-        self.hg_server.makeRepo([('README', 'contents')])
-        self.foreign_commit_count = 1
-
-        return self.factory.makeCodeImport(
-            hg_repo_url=self.hg_server.get_url())
+            git_repo_url=self.git_server.get_url('source'),
+            target_rcs_type=target_rcs_type)
 
     def makeBzrCodeImport(self):
         """Make a `CodeImport` that points to a real Bazaar branch."""
@@ -781,16 +792,39 @@ class TestWorkerMonitorIntegration(BzrTestCase):
         returns the job.  It also makes sure there are no branches or foreign
         trees in the default stores to interfere with processing this job.
         """
-        source_details = CodeImportSourceDetails.fromCodeImport(code_import)
-        clean_up_default_stores_for_import(source_details)
-        self.addCleanup(clean_up_default_stores_for_import, source_details)
         if code_import.review_status != CodeImportReviewStatus.REVIEWED:
             code_import.updateFromData(
                 {'review_status': CodeImportReviewStatus.REVIEWED},
                 self.factory.makePerson())
         job = getUtility(ICodeImportJobSet).getJobForMachine('machine', 10)
         self.assertEqual(code_import, job.code_import)
+        source_details = CodeImportSourceDetails.fromArguments(
+            removeSecurityProxy(job.makeWorkerArguments()))
+        if IBranch.providedBy(code_import.target):
+            clean_up_default_stores_for_import(source_details)
+            self.addCleanup(clean_up_default_stores_for_import, source_details)
         return job
+
+    def makeTargetGitServer(self):
+        """Set up a target Git server that can receive imports."""
+        self.target_store = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, self.target_store)
+        self.target_git_server = GitServer(self.target_store, use_server=True)
+        self.target_git_server.start_server()
+        self.addCleanup(self.target_git_server.stop_server)
+        config_name = self.getUniqueString()
+        config_fixture = self.useFixture(ConfigFixture(
+            config_name, self.layer.config_fixture.instance_name))
+        setting_lines = [
+            "[codehosting]",
+            "git_browse_root: %s" % self.target_git_server.get_url(""),
+            "",
+            "[launchpad]",
+            "internal_macaroon_secret_key: some-secret",
+            ]
+        config_fixture.add_section("\n" + "\n".join(setting_lines))
+        self.useFixture(ConfigUseFixture(config_name))
+        self.useFixture(GitHostingFixture())
 
     def assertCodeImportResultCreated(self, code_import):
         """Assert that a `CodeImportResult` was created for `code_import`."""
@@ -800,12 +834,20 @@ class TestWorkerMonitorIntegration(BzrTestCase):
 
     def assertBranchImportedOKForCodeImport(self, code_import):
         """Assert that a branch was pushed into the default branch store."""
-        url = get_default_bazaar_branch_store()._getMirrorURL(
-            code_import.branch.id)
-        branch = Branch.open(url)
-        self.assertEqual(self.foreign_commit_count, branch.revno())
+        if IBranch.providedBy(code_import.target):
+            url = get_default_bazaar_branch_store()._getMirrorURL(
+                code_import.branch.id)
+            branch = Branch.open(url)
+            commit_count = branch.revno()
+        else:
+            repo_path = os.path.join(
+                self.target_store, code_import.target.unique_name)
+            commit_count = int(subprocess.check_output(
+                ["git", "rev-list", "--count", "HEAD"],
+                cwd=repo_path, universal_newlines=True))
+        self.assertEqual(self.foreign_commit_count, commit_count)
 
-    def assertImported(self, ignored, code_import_id):
+    def assertImported(self, code_import_id):
         """Assert that the `CodeImport` of the given id was imported."""
         # In the in-memory tests, check that resetTimeout on the
         # CodeImportWorkerMonitorProtocol was called at least once.
@@ -841,71 +883,105 @@ class TestWorkerMonitorIntegration(BzrTestCase):
 
         return deferred.addBoth(save_protocol_object)
 
-    # XXX 2011-09-05 wgrant, bug=841556: This test fails
-    # occasionally in buildbot.
-    def DISABLED_test_import_cvs(self):
+    @defer.inlineCallbacks
+    def test_import_cvs(self):
         # Create a CVS CodeImport and import it.
         job = self.getStartedJobForImport(self.makeCVSCodeImport())
         code_import_id = job.code_import.id
         job_id = job.id
         self.layer.txn.commit()
-        result = self.performImport(job_id)
-        return result.addCallback(self.assertImported, code_import_id)
+        yield self.performImport(job_id)
+        self.assertImported(code_import_id)
 
-    # XXX 2011-09-05 wgrant, bug=841556: This test fails
-    # occasionally in buildbot.
-    def DISABLED_test_import_subversion(self):
+    @defer.inlineCallbacks
+    def test_import_subversion(self):
         # Create a Subversion CodeImport and import it.
         job = self.getStartedJobForImport(self.makeSVNCodeImport())
         code_import_id = job.code_import.id
         job_id = job.id
         self.layer.txn.commit()
-        result = self.performImport(job_id)
-        return result.addCallback(self.assertImported, code_import_id)
+        yield self.performImport(job_id)
+        self.assertImported(code_import_id)
 
-    # XXX 2011-09-09 gary, bug=841556: This test fails
-    # occasionally in buildbot.
-    def DISABLED_test_import_git(self):
+    @defer.inlineCallbacks
+    def test_import_git(self):
         # Create a Git CodeImport and import it.
         job = self.getStartedJobForImport(self.makeGitCodeImport())
         code_import_id = job.code_import.id
         job_id = job.id
         self.layer.txn.commit()
-        result = self.performImport(job_id)
-        return result.addCallback(self.assertImported, code_import_id)
+        yield self.performImport(job_id)
+        self.assertImported(code_import_id)
 
-    # XXX 2011-09-09 gary, bug=841556: This test fails
-    # occasionally in buildbot.
-    def DISABLED_test_import_hg(self):
-        # Create a Mercurial CodeImport and import it.
-        job = self.getStartedJobForImport(self.makeHgCodeImport())
+    @defer.inlineCallbacks
+    def test_import_git_to_git(self):
+        # Create a Git-to-Git CodeImport and import it.
+        self.makeTargetGitServer()
+        job = self.getStartedJobForImport(self.makeGitCodeImport(
+            target_rcs_type=TargetRevisionControlSystems.GIT))
         code_import_id = job.code_import.id
         job_id = job.id
         self.layer.txn.commit()
-        result = self.performImport(job_id)
-        return result.addCallback(self.assertImported, code_import_id)
+        target_repo_path = os.path.join(
+            self.target_store, job.code_import.target.unique_name)
+        os.makedirs(target_repo_path)
+        self.target_git_server.createRepository(target_repo_path, bare=True)
+        yield self.performImport(job_id)
+        self.assertImported(code_import_id)
+        target_repo = GitRepo(target_repo_path)
+        self.assertContentEqual(
+            ["heads/master"], target_repo.refs.keys(base="refs"))
+        self.assertEqual(
+            "ref: refs/heads/master", target_repo.refs.read_ref("HEAD"))
 
-    # XXX 2011-09-05 wgrant, bug=841556: This test fails
-    # occasionally in buildbot.
-    def DISABLED_test_import_bzr(self):
+    @defer.inlineCallbacks
+    def test_import_git_to_git_refs_changed(self):
+        # Create a Git-to-Git CodeImport and import it incrementally with
+        # ref and HEAD changes.
+        self.makeTargetGitServer()
+        job = self.getStartedJobForImport(self.makeGitCodeImport(
+            target_rcs_type=TargetRevisionControlSystems.GIT))
+        code_import_id = job.code_import.id
+        job_id = job.id
+        self.layer.txn.commit()
+        source_repo = GitRepo(os.path.join(self.repo_path, "source"))
+        commit = source_repo.refs["refs/heads/master"]
+        source_repo.refs["refs/heads/one"] = commit
+        source_repo.refs["refs/heads/two"] = commit
+        source_repo.refs.set_symbolic_ref("HEAD", "refs/heads/one")
+        del source_repo.refs["refs/heads/master"]
+        target_repo_path = os.path.join(
+            self.target_store, job.code_import.target.unique_name)
+        self.target_git_server.makeRepo(
+            job.code_import.target.unique_name, [("NEWS", "contents")])
+        yield self.performImport(job_id)
+        self.assertImported(code_import_id)
+        target_repo = GitRepo(target_repo_path)
+        self.assertContentEqual(
+            ["heads/one", "heads/two"], target_repo.refs.keys(base="refs"))
+        self.assertEqual(
+            "ref: refs/heads/one",
+            GitRepo(target_repo_path).refs.read_ref("HEAD"))
+
+    @defer.inlineCallbacks
+    def test_import_bzr(self):
         # Create a Bazaar CodeImport and import it.
         job = self.getStartedJobForImport(self.makeBzrCodeImport())
         code_import_id = job.code_import.id
         job_id = job.id
         self.layer.txn.commit()
-        result = self.performImport(job_id)
-        return result.addCallback(self.assertImported, code_import_id)
+        yield self.performImport(job_id)
+        self.assertImported(code_import_id)
 
-    # XXX 2011-09-05 wgrant, bug=841556: This test fails
-    # frequently in buildbot.
-    def DISABLED_test_import_bzrsvn(self):
+    @defer.inlineCallbacks
+    def test_import_bzrsvn(self):
         # Create a Subversion-via-bzr-svn CodeImport and import it.
         job = self.getStartedJobForImport(self.makeBzrSvnCodeImport())
         code_import_id = job.code_import.id
         job_id = job.id
         self.layer.txn.commit()
-        result = self.performImport(job_id)
-        return result.addCallback(self.assertImported, code_import_id)
+        yield self.performImport(job_id)
+        self.assertImported(code_import_id)
 
 
 class DeferredOnExit(protocol.ProcessProtocol):

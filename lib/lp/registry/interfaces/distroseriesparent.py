@@ -1,8 +1,6 @@
 # Copyright 2011 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-# pylint: disable-msg=E0211,E0213
-
 """DistroSeriesParent interface."""
 
 __metaclass__ = type
@@ -48,6 +46,12 @@ class IDistroSeriesParent(Interface):
         title=_("Is this relationship an overlay?"), required=True,
         default=False)
 
+    inherit_overrides = Bool(
+        title=_("Inherit overrides"), required=True, default=False,
+        description=_(
+            "Should package overrides fall back to the parent series if "
+            "they're unset in the derived series?"))
+
     pocket = Choice(
         title=_("The pocket for this overlay"), required=False,
         vocabulary=PackagePublishingPocket)
@@ -68,7 +72,7 @@ class IDistroSeriesParentSet(Interface):
     """`DistroSeriesParentSet` interface."""
 
     def new(derived_series, parent_series, initialized, is_overlay=False,
-            pocket=None, component=None, ordering=1):
+            pocket=None, component=None, ordering=1, inherit_overrides=False):
         """Create a new `DistroSeriesParent`."""
 
     def getByDerivedSeries(derived_series):

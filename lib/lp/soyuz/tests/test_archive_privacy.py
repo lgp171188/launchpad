@@ -1,7 +1,9 @@
-# Copyright 2010 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test Archive privacy features."""
+
+from __future__ import absolute_import, print_function, unicode_literals
 
 from zope.security.interfaces import Unauthorized
 
@@ -49,7 +51,7 @@ class TestArchivePrivacy(TestCaseWithFactory):
         with person_logged_in(ppa.owner):
             # XXX: jml 2012-06-11: We actually want this to be allowed, but I
             # can't think of any way to grant this without also granting other
-            # attributes that have launchpad.Commercial.
+            # attributes that have launchpad.Admin.
             self.assertRaises(Unauthorized, setattr, ppa, 'private', True)
 
     def test_admin_changing_privacy(self):

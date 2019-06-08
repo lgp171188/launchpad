@@ -13,10 +13,10 @@ import subprocess
 import transaction
 from zope.security.proxy import removeSecurityProxy
 
+from lp.app.enums import InformationType
 from lp.code.interfaces.codehosting import branch_id_alias
 from lp.codehosting.rewrite import BranchRewriter
 from lp.codehosting.vfs import branch_id_to_path
-from lp.registry.enums import InformationType
 from lp.services.config import config
 from lp.services.log.logger import BufferLogger
 from lp.testing import (
@@ -60,7 +60,7 @@ class TestBranchRewriter(TestCaseWithFactory):
             rewriter.rewriteLine("/%s/.bzr/README" % branch.unique_name)
             for branch in branches]
         expected = [
-            'file:///var/tmp/bazaar.launchpad.dev/mirrors/%s/.bzr/README'
+            'file:///var/tmp/bazaar.launchpad.test/mirrors/%s/.bzr/README'
             % branch_id_to_path(branch.id)
             for branch in branches]
         self.assertEqual(expected, output)
@@ -114,7 +114,7 @@ class TestBranchRewriter(TestCaseWithFactory):
                 "%s/.bzr/README" % branch_id_alias(branch))
             for branch in branches]
         expected = [
-            'file:///var/tmp/bazaar.launchpad.dev/mirrors/%s/.bzr/README'
+            'file:///var/tmp/bazaar.launchpad.test/mirrors/%s/.bzr/README'
             % branch_id_to_path(branch.id)
             for branch in branches]
         self.assertEqual(expected, output)
@@ -257,19 +257,26 @@ class TestBranchRewriterScript(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def test_script(self):
-        branches = [
+        # The .bzr subdirectory of all public branch types gets mapped
+        # to the internal by-ID branch store, but everything else, and
+        # all private branch requests, go through to loggerhead.
+        bs = [
             self.factory.makeProductBranch(),
             self.factory.makePersonalBranch(),
             self.factory.makePackageBranch()]
-        input_lines = [
-            "/%s/.bzr/README" % branch.unique_name for branch in branches] + [
-            "/%s/changes" % branch.unique_name for branch in branches]
-        expected_lines = [
-            'file:///var/tmp/bazaar.launchpad.dev/mirrors/%s/.bzr/README'
-            % branch_id_to_path(branch.id)
-            for branch in branches] + [
-            'http://localhost:8080/%s/changes' % branch.unique_name
-            for branch in branches]
+        privbranch = removeSecurityProxy(
+            self.factory.makeProductBranch(
+                information_type=InformationType.USERDATA))
+        allbs = bs + [privbranch]
+        input_lines = (
+            ["/%s/.bzr/README" % branch.unique_name for branch in allbs]
+            + ["/%s/changes" % branch.unique_name for branch in allbs])
+        expected_lines = (
+            ['file:///var/tmp/bazaar.launchpad.test/mirrors/%s/.bzr/README'
+             % branch_id_to_path(branch.id) for branch in bs]
+            + ['http://localhost:8080/%s/.bzr/README' % privbranch.unique_name]
+            + ['http://localhost:8080/%s/changes' % b.unique_name for b in bs]
+            + ['http://localhost:8080/%s/changes' % privbranch.unique_name])
         transaction.commit()
         script_file = os.path.join(
             config.root, 'scripts', 'branch-rewrite.py')
@@ -287,13 +294,13 @@ class TestBranchRewriterScript(TestCaseWithFactory):
         # connected to the database, or edit a branch name that has already
         # been rewritten, both are rewritten successfully.
         new_branch = self.factory.makeAnyBranch()
-        edited_branch = removeSecurityProxy(branches[0])
+        edited_branch = removeSecurityProxy(bs[0])
         edited_branch.name = self.factory.getUniqueString()
         transaction.commit()
 
         new_branch_input = '/%s/.bzr/README' % new_branch.unique_name
         expected_lines.append(
-            'file:///var/tmp/bazaar.launchpad.dev/mirrors/%s/.bzr/README'
+            'file:///var/tmp/bazaar.launchpad.test/mirrors/%s/.bzr/README'
             % branch_id_to_path(new_branch.id))
         proc.stdin.write(new_branch_input + '\n')
         output_lines.append(
@@ -301,7 +308,7 @@ class TestBranchRewriterScript(TestCaseWithFactory):
 
         edited_branch_input = '/%s/.bzr/README' % edited_branch.unique_name
         expected_lines.append(
-            'file:///var/tmp/bazaar.launchpad.dev/mirrors/%s/.bzr/README'
+            'file:///var/tmp/bazaar.launchpad.test/mirrors/%s/.bzr/README'
             % branch_id_to_path(edited_branch.id))
         proc.stdin.write(edited_branch_input + '\n')
         output_lines.append(
@@ -339,8 +346,8 @@ class TestBranchRewriterScriptHandlesDisconnects(TestCase):
         if result.endswith('\n'):
             return result[:-1]
         self.fail(
-            "Incomplete line or no result retrieved from subprocess: %s"
-            % repr(result.getvalue()))
+            "Incomplete line or no result retrieved from subprocess: %r"
+            % result)
 
     def test_reconnects_when_disconnected(self):
         pgbouncer = self.useFixture(PGBouncerFixture())

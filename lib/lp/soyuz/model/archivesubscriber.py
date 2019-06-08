@@ -1,4 +1,4 @@
-# Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Database class for table ArchiveSubscriber."""
@@ -28,25 +28,35 @@ from storm.locals import (
     )
 from storm.store import EmptyResultSet
 from zope.component import getUtility
-from zope.interface import implements
+from zope.interface import implementer
+from zope.security.proxy import removeSecurityProxy
 
-from lp.registry.interfaces.person import validate_person
+from lp.registry.interfaces.person import (
+    IPersonSet,
+    validate_person,
+    )
 from lp.registry.model.person import Person
 from lp.registry.model.teammembership import TeamParticipation
+from lp.services.database.bulk import load_related
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.enumcol import DBEnum
 from lp.services.identity.interfaces.emailaddress import EmailAddressStatus
 from lp.services.identity.model.emailaddress import EmailAddress
+from lp.services.webapp.authorization import precache_permission_for_objects
 from lp.soyuz.enums import ArchiveSubscriberStatus
 from lp.soyuz.interfaces.archiveauthtoken import IArchiveAuthTokenSet
-from lp.soyuz.interfaces.archivesubscriber import IArchiveSubscriber
+from lp.soyuz.interfaces.archivesubscriber import (
+    IArchiveSubscriber,
+    IArchiveSubscriberSet,
+    )
+from lp.soyuz.model.archive import Archive
 from lp.soyuz.model.archiveauthtoken import ArchiveAuthToken
 
 
+@implementer(IArchiveSubscriber)
 class ArchiveSubscriber(Storm):
     """See `IArchiveSubscriber`."""
-    implements(IArchiveSubscriber)
     __storm_table__ = 'ArchiveSubscriber'
 
     id = Int(primary=True)
@@ -88,9 +98,11 @@ class ArchiveSubscriber(Storm):
 
     def cancel(self, cancelled_by):
         """See `IArchiveSubscriber`."""
-        self.date_cancelled = UTC_NOW
-        self.cancelled_by = cancelled_by
-        self.status = ArchiveSubscriberStatus.CANCELLED
+        # The bulk cancel normally has stricter permissions, but if we've
+        # got this far then we know the caller has enough permissions to
+        # cancel just this subscription.
+        removeSecurityProxy(getUtility(IArchiveSubscriberSet)).cancel(
+            [self.id], cancelled_by)
 
     def getNonActiveSubscribers(self):
         """See `IArchiveSubscriber`."""
@@ -143,6 +155,7 @@ class ArchiveSubscriber(Storm):
                 EmailAddress.status == EmailAddressStatus.PREFERRED)
 
 
+@implementer(IArchiveSubscriberSet)
 class ArchiveSubscriberSet:
     """See `IArchiveSubscriberSet`."""
 
@@ -159,7 +172,7 @@ class ArchiveSubscriberSet:
         :param with_active_tokens: Indicates whether the tokens for the given
             subscribers subscriptions should be included in the resultset.
             By default the tokens are not included in the resultset.
-^       """
+        """
         # Grab the extra Storm expressions, for this query,
         # depending on the params:
         extra_exprs = self._getExprsForSubscriptionQueries(
@@ -204,7 +217,17 @@ class ArchiveSubscriberSet:
 
     def getBySubscriberWithActiveToken(self, subscriber, archive=None):
         """See `IArchiveSubscriberSet`."""
-        return self._getBySubscriber(subscriber, archive, True, True)
+        result = self._getBySubscriber(subscriber, archive, True, True)
+
+        def eager_load(rows):
+            subscriptions = map(itemgetter(0), rows)
+            precache_permission_for_objects(
+                None, 'launchpad.View', subscriptions)
+            archives = load_related(Archive, subscriptions, ['archive_id'])
+            list(getUtility(IPersonSet).getPrecachedPersonsFromIDs(
+                [archive.ownerID for archive in archives], need_validity=True))
+
+        return DecoratedResultSet(result, pre_iter_hook=eager_load)
 
     def getByArchive(self, archive, current_only=True):
         """See `IArchiveSubscriberSet`."""
@@ -237,3 +260,12 @@ class ArchiveSubscriberSet:
                 ArchiveSubscriber.status == ArchiveSubscriberStatus.CURRENT)
 
         return extra_exprs
+
+    def cancel(self, archive_subscriber_ids, cancelled_by):
+        """See `IArchiveSubscriberSet`."""
+        Store.of(cancelled_by).find(
+            ArchiveSubscriber,
+            ArchiveSubscriber.id.is_in(archive_subscriber_ids)).set(
+                date_cancelled=UTC_NOW,
+                cancelled_by_id=cancelled_by.id,
+                status=ArchiveSubscriberStatus.CANCELLED)

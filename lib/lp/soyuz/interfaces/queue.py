@@ -1,13 +1,13 @@
-# Copyright 2009-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2016 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
-
-# pylint: disable-msg=E0211,E0213
 
 """Queue interfaces."""
 
 __metaclass__ = type
 
 __all__ = [
+    'CustomUploadError',
+    'ICustomUploadHandler',
     'IHasQueueItems',
     'IPackageUploadQueue',
     'IPackageUpload',
@@ -25,7 +25,6 @@ __all__ = [
 
 import httplib
 
-from lazr.enum import DBEnumeratedType
 from lazr.restful.declarations import (
     call_with,
     error_status,
@@ -54,6 +53,7 @@ from zope.schema import (
 from zope.security.interfaces import Unauthorized
 
 from lp import _
+from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.soyuz.enums import PackageUploadStatus
 from lp.soyuz.interfaces.packagecopyjob import IPackageCopyJob
 
@@ -62,7 +62,7 @@ class QueueStateWriteProtectedError(Exception):
     """This exception prevent directly set operation in queue state.
 
     The queue state machine is controlled by its specific provided methods,
-    like: setNew, setAccepted and so on.
+    like: setAccepted, setDone and so on.
     """
 
 
@@ -139,9 +139,7 @@ class IPackageUpload(Interface):
 
     pocket = exported(
         Choice(
-            # Really PackagePublishingPocket, patched in
-            # _schema_circular_imports.py
-            vocabulary=DBEnumeratedType,
+            vocabulary=PackagePublishingPocket,
             description=_("The pocket targeted by this upload."),
             title=_("The pocket"), required=True, readonly=False,
             ))
@@ -195,6 +193,14 @@ class IPackageUpload(Interface):
             readonly=True),
         ("devel", dict(exported=False)), exported=True)
 
+    copy_source_archive = exported(
+        Reference(
+            # Really IArchive, patched in _schema_circular_imports.py
+            schema=Interface,
+            description=_("The archive from which this package was copied, if "
+                          "any."),
+            title=_("Copy source archive"), required=False, readonly=True))
+
     displayname = exported(
         TextLine(
             title=_("Generic displayname for a queue item"), readonly=True),
@@ -211,6 +217,11 @@ class IPackageUpload(Interface):
 
     sourcepackagerelease = Attribute(
         "The source package release for this item")
+
+    searchable_names = TextLine(
+        title=_("Searchable names for this item"), readonly=True)
+    searchable_versions = List(
+        title=_("Searchable versions for this item"), readonly=True)
 
     package_name = exported(
         TextLine(
@@ -253,12 +264,13 @@ class IPackageUpload(Interface):
         "whether or not this upload contains upgrader images")
     contains_ddtp = Attribute(
         "whether or not this upload contains DDTP images")
+    contains_signing = Attribute(
+        "whether or not this upload contains signing images")
     contains_uefi = Attribute(
-        "whether or not this upload contains a signed UEFI boot loader image")
+        "whether or not this upload contains a signed UEFI boot loader image"
+        " (deprecated)")
     isPPA = Attribute(
         "Return True if this PackageUpload is a PPA upload.")
-    is_delayed_copy = Attribute(
-        "Whether or not this PackageUpload record is a delayed-copy.")
 
     components = Attribute(
         """The set of components used in this upload.
@@ -318,9 +330,6 @@ class IPackageUpload(Interface):
         :return the corresponding `ILibraryFileAlias` if the file was found.
         """
 
-    def setNew():
-        """Set queue state to NEW."""
-
     def setUnapproved():
         """Set queue state to UNAPPROVED."""
 
@@ -344,34 +353,23 @@ class IPackageUpload(Interface):
          * Publish and close bugs for 'single-source' uploads.
          * Skip bug-closing for PPA uploads.
          * Grant karma to people involved with the upload.
-
-        :raises: AssertionError if the context is a delayed-copy.
-        """
-
-    def acceptFromCopy():
-        """Perform upload acceptance for a delayed-copy record.
-
-         * Move the upload to accepted queue in all cases.
-
-        :raises: AssertionError if the context is not a delayed-copy or
-            has no sources associated to it.
         """
 
     @export_write_operation()
     @call_with(user=REQUEST_USER)
     @operation_for_version("devel")
-    def acceptFromQueue(logger=None, dry_run=False, user=None):
+    def acceptFromQueue(user=None):
         """Call setAccepted, do a syncUpdate, and send notification email.
 
          * Grant karma to people involved with the upload.
-
-        :raises: AssertionError if the context is a delayed-copy.
         """
 
     @export_write_operation()
+    @operation_parameters(
+        comment=TextLine(title=_("Rejection comment"), required=False))
     @call_with(user=REQUEST_USER)
     @operation_for_version("devel")
-    def rejectFromQueue(logger=None, dry_run=False, user=None):
+    def rejectFromQueue(user, comment=None):
         """Call setRejected, do a syncUpdate, and send notification email."""
 
     def realiseUpload(logger=None):
@@ -405,11 +403,15 @@ class IPackageUpload(Interface):
         committed to have some updates actually written to the database.
         """
 
-    def notify(summary_text=None, changes_file_object=None, logger=None):
+    def notify(status=None, summary_text=None, changes_file_object=None,
+               logger=None):
         """Notify by email when there is a new distroseriesqueue entry.
 
         This will send new, accept, announce and rejection messages as
         appropriate.
+
+        :param status: The current `PackageUploadStatus` when this
+            notification was generated.  Defaults to `self.status`.
 
         :param summary_text: Any additional text to append to the auto-
             generated summary.  This is also the only text used if there is
@@ -641,14 +643,6 @@ class IPackageUploadCustom(Interface):
             title=_("The file"), required=True, readonly=False,
             )
 
-    def temp_filename():
-        """Return a filename containing the libraryfile for this upload.
-
-        This filename will be in a temporary directory and can be the
-        ensure dir can be deleted once whatever needed the file is finished
-        with it.
-        """
-
     def publish(logger=None):
         """Publish this custom item directly into the filesystem.
 
@@ -737,17 +731,6 @@ class IPackageUploadSet(Interface):
         distroseries, same for pocket.
         """
 
-    def createDelayedCopy(archive, distroseries, pocket, signing_key):
-        """Return a `PackageUpload` record for a delayed-copy operation.
-
-        :param archive: target `IArchive`,
-        :param distroseries: target `IDistroSeries`,
-        :param pocket: target `PackagePublishingPocket`,
-        :param signing_key: `IGPGKey` of the user requesting this copy.
-
-        :return: an `IPackageUpload` record in NEW state.
-        """
-
     def getAll(distroseries, created_since_date=None, status=None,
                archive=None, pocket=None, custom_type=None,
                name=None, version=None, exact_match=False):
@@ -798,9 +781,6 @@ class IPackageUploadSet(Interface):
     def getBuildByBuildIDs(build_ids):
         """Return `PackageUploadBuilds`s for the supplied build IDs."""
 
-    def getSourceBySourcePackageReleaseIDs(spr_ids):
-        """Return `PackageUploadSource`s for the sourcepackagerelease IDs."""
-
     def getByPackageCopyJobIDs(pcj_ids):
         """Return `PackageUpload`s using `PackageCopyJob`s.
 
@@ -814,3 +794,20 @@ class IHasQueueItems(Interface):
 
     def getPackageUploadQueue(state):
         """Return an IPackageUploadQueue according to the given state."""
+
+
+class CustomUploadError(Exception):
+    """Base class for all errors associated with publishing custom uploads."""
+
+
+class ICustomUploadHandler(Interface):
+    """A custom upload handler."""
+
+    def publish(packageupload, libraryfilealias, logger=None):
+        """Publish a custom upload tarfile.
+
+        Unpack it into the archive and suite indicated by the given
+        `IPackageUpload`.
+
+        :raises CustomUploadError: if anything goes wrong.
+        """

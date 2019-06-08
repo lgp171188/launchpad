@@ -3,12 +3,15 @@ Person RDF Pages
 
 We export FOAF RDF metadata from the /~Person.name/+index document.
 
-    >>> from BeautifulSoup import BeautifulSoup, SoupStrainer
-    >>> anon_browser.open("http://launchpad.dev/~name16")
+    >>> from lp.services.beautifulsoup import (
+    ...     BeautifulSoup4 as BeautifulSoup,
+    ...     SoupStrainer4 as SoupStrainer,
+    ...     )
+    >>> anon_browser.open("http://launchpad.test/~name16")
     >>> strainer = SoupStrainer(['link'], {'type': ['application/rdf+xml']})
-    >>> soup = BeautifulSoup(anon_browser.contents, parseOnlyThese=strainer)
+    >>> soup = BeautifulSoup(anon_browser.contents, parse_only=strainer)
     >>> print soup.renderContents()
-    <link rel="meta" type="application/rdf+xml" title="FOAF" href="+rdf" />
+    <link href="+rdf" rel="meta" title="FOAF" type="application/rdf+xml"/>
 
 
 Individual RDF
@@ -17,7 +20,7 @@ Individual RDF
 And this is what the FOAF document for an individual actually looks
 like. It includes GPG information, if the user has any.
 
-    >>> anon_browser.open("http://launchpad.dev/~name16/+rdf")
+    >>> anon_browser.open("http://launchpad.test/~name16/+rdf")
     >>> print anon_browser.contents
     <?xml version="1.0"...?>
     <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
@@ -33,7 +36,7 @@ like. It includes GPG information, if the user has any.
             <wot:hex_id>12345678</wot:hex_id>
             <wot:length>1024</wot:length>
             <wot:fingerprint>ABCDEF0123456789ABCDDCBA0000111112345678</wot:fingerprint>
-            <wot:pubkeyAddress rdf:resource="http://keyserver.ubuntu.com:11371/pks/lookup?search=0xABCDEF0123456789ABCDDCBA0000111112345678&amp;op=index"/>
+            <wot:pubkeyAddress rdf:resource="https://keyserver.ubuntu.com/pks/lookup?fingerprint=on&amp;op=index&amp;search=0xABCDEF0123456789ABCDDCBA0000111112345678"/>
           </wot:PubKey>
         </wot:hasKey>
       </foaf:Person>
@@ -41,7 +44,7 @@ like. It includes GPG information, if the user has any.
 
 It also includes SSH keys:
 
-    >>> anon_browser.open("http://launchpad.dev/~name12/+rdf")
+    >>> anon_browser.open("http://launchpad.test/~name12/+rdf")
     >>> print anon_browser.contents
     <?xml version="1.0"...?>
     ...
@@ -67,14 +70,14 @@ output:
 
     >>> from lp.testing.branding import set_branding
     >>> mark_browser = setupBrowser(auth='Basic mark@example.com:test')
-    >>> mark_browser.open('http://launchpad.dev/~mark/+branding')
+    >>> mark_browser.open('http://launchpad.test/~mark/+branding')
     >>> set_branding(mark_browser, icon=False)
     >>> mark_browser.getControl('Change Branding').click()
 
 Now, generate the RDF itself:
 
     >>> from lp.services.helpers import backslashreplace
-    >>> anon_browser.open("http://launchpad.dev/~testing-spanish-team/+rdf")
+    >>> anon_browser.open("http://launchpad.test/~testing-spanish-team/+rdf")
     >>> print backslashreplace(anon_browser.contents)
     <?xml version="1.0"...?>
     <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
@@ -97,10 +100,9 @@ Corner Cases
 
 Note how ascii and non-ascii names are rendered properly:
 
-    >>> anon_browser.open("http://launchpad.dev/~carlos/+rdf")
-    >>> from BeautifulSoup import BeautifulSoup, SoupStrainer
+    >>> anon_browser.open("http://launchpad.test/~carlos/+rdf")
     >>> strainer = SoupStrainer(['foaf:name'])
-    >>> soup = BeautifulSoup(anon_browser.contents, parseOnlyThese=strainer)
+    >>> soup = BeautifulSoup(anon_browser.contents, parse_only=strainer)
     >>> for tag in soup:
     ...   tag.renderContents()
     'Carlos Perell\xc3\xb3 Mar\xc3\xadn'
@@ -108,9 +110,9 @@ Note how ascii and non-ascii names are rendered properly:
 If the team has no active members no <foaf:member> elements will be
 present:
 
-    >>> anon_browser.open("http://launchpad.dev/~name21/+rdf")
+    >>> anon_browser.open("http://launchpad.test/~name21/+rdf")
     >>> strainer = SoupStrainer(['foaf:member'])
-    >>> soup = BeautifulSoup(anon_browser.contents, parseOnlyThese=strainer)
+    >>> soup = BeautifulSoup(anon_browser.contents, parse_only=strainer)
     >>> len(soup)
     0
 

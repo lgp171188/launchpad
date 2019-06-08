@@ -1,12 +1,16 @@
-# Copyright 2009-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Helper functions for code testing live here."""
 
+from __future__ import absolute_import, print_function, unicode_literals
+
 __metaclass__ = type
 __all__ = [
     'add_revision_to_branch',
+    'BranchHostingFixture',
     'get_non_existant_source_package_branch_unique_name',
+    'GitHostingFixture',
     'make_erics_fooix_project',
     'make_linked_package_branch',
     'make_merge_proposal_without_reviewers',
@@ -23,6 +27,7 @@ from difflib import unified_diff
 from itertools import count
 
 from bzrlib.plugins.builder.recipe import RecipeParser
+import fixtures
 import transaction
 from zope.component import getUtility
 from zope.security.proxy import (
@@ -30,22 +35,28 @@ from zope.security.proxy import (
     removeSecurityProxy,
     )
 
+from lp.app.enums import InformationType
+from lp.code.interfaces.branchhosting import IBranchHostingClient
 from lp.code.interfaces.branchmergeproposal import (
     IBranchMergeProposalJobSource,
     )
+from lp.code.interfaces.githosting import IGitHostingClient
 from lp.code.interfaces.linkedbranch import ICanHasLinkedBranch
 from lp.code.interfaces.revision import IRevisionSet
 from lp.code.model.seriessourcepackagebranch import (
     SeriesSourcePackageBranchSet,
     )
-from lp.registry.enums import InformationType
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.registry.interfaces.series import SeriesStatus
 from lp.services.database.sqlbase import cursor
+from lp.services.propertycache import get_property_cache
+from lp.services.memcache.testing import MemcacheFixture
 from lp.testing import (
     run_with_login,
     time_counter,
     )
+from lp.testing.fakemethod import FakeMethod
+from lp.testing.fixture import ZopeUtilityFixture
 
 
 def mark_all_merge_proposal_jobs_done():
@@ -107,17 +118,17 @@ def make_erics_fooix_project(factory):
     proposed = factory.makeProductBranch(
         owner=fred, product=fooix, name='proposed')
     bmp = proposed.addLandingTarget(
-        registrant=fred, target_branch=trunk, needs_review=True,
+        registrant=fred, merge_target=trunk, needs_review=True,
         review_requests=[(eric, 'code')])
     # And fake a diff.
     naked_bmp = removeSecurityProxy(bmp)
     preview = removeSecurityProxy(naked_bmp.updatePreviewDiff(
-        ''.join(unified_diff('', 'random content')), u'rev-a', u'rev-b'))
+        ''.join(unified_diff('', 'random content')), 'rev-a', 'rev-b'))
     naked_bmp.source_branch.last_scanned_id = preview.source_revision_id
     naked_bmp.target_branch.last_scanned_id = preview.target_revision_id
     preview.diff_lines_count = 47
     preview.added_lines_count = 7
-    preview.remvoed_lines_count = 13
+    preview.removed_lines_count = 13
     preview.diffstat = {'file1': (3, 8), 'file2': (4, 5)}
     return {
         'eric': eric, 'fooix': fooix, 'trunk': trunk, 'feature': feature,
@@ -186,59 +197,6 @@ def make_package_branches(factory, series, sourcepackagename, branch_count,
         official.append(branch)
 
     return series, branches, official
-
-
-def make_mint_distro_with_branches(factory):
-    """This method makes a distro called mint with many branches.
-
-    The mint distro has the following series and status:
-        wild - experimental
-        dev - development
-        stable - current
-        old - supported
-        very-old - supported
-        ancient - supported
-        mouldy - supported
-        dead - obsolete
-
-    The mint distro has a team: mint-team, which has Albert, Bob, and Charlie
-    as members.
-
-    There are four different source packages:
-        twisted, zope, bzr, python
-    """
-    albert, bob, charlie = [
-        factory.makePerson(name=name, email=("%s@mint.example.com" % name))
-        for name in ('albert', 'bob', 'charlie')]
-    mint_team = factory.makeTeam(owner=albert, name="mint-team")
-    mint_team.addMember(bob, albert)
-    mint_team.addMember(charlie, albert)
-    mint = factory.makeDistribution(
-        name='mint', displayname='Mint', owner=albert, members=mint_team)
-    series = [
-        ("wild", "5.5", SeriesStatus.EXPERIMENTAL),
-        ("dev", "4.0", SeriesStatus.DEVELOPMENT),
-        ("stable", "3.0", SeriesStatus.CURRENT),
-        ("old", "2.0", SeriesStatus.SUPPORTED),
-        ("very-old", "1.5", SeriesStatus.SUPPORTED),
-        ("ancient", "1.0", SeriesStatus.SUPPORTED),
-        ("mouldy", "0.6", SeriesStatus.SUPPORTED),
-        ("dead", "0.1", SeriesStatus.OBSOLETE),
-        ]
-    for name, version, status in series:
-        factory.makeDistroSeries(
-            distribution=mint, version=version, status=status, name=name)
-
-    for pkg_index, name in enumerate(['twisted', 'zope', 'bzr', 'python']):
-        for series_index, series in enumerate(mint.series):
-            # Over the series and source packages, we want to have different
-            # combinations of official and branch counts.
-            # Make the more recent series have most official branches.
-            official_count = 6 - series_index
-            branch_count = official_count + pkg_index
-            make_package_branches(
-                factory, series, name, branch_count, official_count,
-                owner=mint_team, registrant=albert)
 
 
 def make_official_package_branch(factory, owner=None):
@@ -318,6 +276,7 @@ def make_merge_proposal_without_reviewers(factory, **kwargs):
     proposal = factory.makeBranchMergeProposal(**kwargs)
     for vote in proposal.votes:
         removeSecurityProxy(vote).destroySelf()
+    del get_property_cache(proposal).votes
     return proposal
 
 
@@ -344,3 +303,69 @@ def remove_all_sample_data_branches():
     c.execute('delete from codeimportjob')
     c.execute('delete from codeimport')
     c.execute('delete from branch')
+
+
+class BranchHostingFixture(fixtures.Fixture):
+    """A fixture that temporarily registers a fake Bazaar hosting client."""
+
+    def __init__(self, diff=None, inventory=None, file_list=None, blob=None,
+                 disable_memcache=True):
+        self.create = FakeMethod()
+        self.getDiff = FakeMethod(result=diff or {})
+        if inventory is None:
+            if file_list is not None:
+                # Simple common case.
+                inventory = {
+                    "filelist": [
+                        {"filename": filename, "file_id": file_id}
+                        for filename, file_id in file_list.items()],
+                    }
+            else:
+                inventory = {"filelist": []}
+        self.getInventory = FakeMethod(result=inventory)
+        self.getBlob = FakeMethod(result=blob)
+        self.disable_memcache = disable_memcache
+
+    def _setUp(self):
+        self.useFixture(ZopeUtilityFixture(self, IBranchHostingClient))
+        if self.disable_memcache:
+            # Most tests that involve Branch.getBlob don't want to cache the
+            # result: doing so requires more time-consuming test setup and
+            # makes it awkward to repeat the same call with different
+            # responses.  For convenience, we make it easy to disable that
+            # here.
+            self.memcache_fixture = self.useFixture(MemcacheFixture())
+
+
+class GitHostingFixture(fixtures.Fixture):
+    """A fixture that temporarily registers a fake Git hosting client."""
+
+    def __init__(self, default_branch="refs/heads/master",
+                 refs=None, commits=None, log=None, diff=None, merge_diff=None,
+                 merges=None, blob=None, disable_memcache=True):
+        self.create = FakeMethod()
+        self.getProperties = FakeMethod(
+            result={"default_branch": default_branch})
+        self.setProperties = FakeMethod()
+        self.getRefs = FakeMethod(result=({} if refs is None else refs))
+        self.getCommits = FakeMethod(
+            result=([] if commits is None else commits))
+        self.getLog = FakeMethod(result=([] if log is None else log))
+        self.getDiff = FakeMethod(result=({} if diff is None else diff))
+        self.getMergeDiff = FakeMethod(
+            result={} if merge_diff is None else merge_diff)
+        self.detectMerges = FakeMethod(
+            result=({} if merges is None else merges))
+        self.getBlob = FakeMethod(result=blob)
+        self.delete = FakeMethod()
+        self.disable_memcache = disable_memcache
+
+    def _setUp(self):
+        self.useFixture(ZopeUtilityFixture(self, IGitHostingClient))
+        if self.disable_memcache:
+            # Most tests that involve GitRef._getLog don't want to cache the
+            # result: doing so requires more time-consuming test setup and
+            # makes it awkward to repeat the same call with different log
+            # responses.  For convenience, we make it easy to disable that
+            # here.
+            self.memcache_fixture = self.useFixture(MemcacheFixture())

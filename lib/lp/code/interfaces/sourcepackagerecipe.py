@@ -1,7 +1,5 @@
-# Copyright 2009-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
-
-# pylint: disable-msg=E0211,E0213,F0401
 
 """Interface of the `SourcePackageRecipe` content type."""
 
@@ -10,15 +8,23 @@ __metaclass__ = type
 
 
 __all__ = [
+    'IRecipeBranchSource',
     'ISourcePackageRecipe',
     'ISourcePackageRecipeData',
+    'ISourcePackageRecipeDataSource',
     'ISourcePackageRecipeSource',
-    'MINIMAL_RECIPE_TEXT',
+    'MINIMAL_RECIPE_TEXT_BZR',
+    'MINIMAL_RECIPE_TEXT_GIT',
+    'RecipeBranchType',
     ]
 
 
 from textwrap import dedent
 
+from lazr.enum import (
+    EnumeratedType,
+    Item,
+    )
 from lazr.lifecycle.snapshot import doNotSnapshot
 from lazr.restful.declarations import (
     call_with,
@@ -55,6 +61,7 @@ from zope.schema import (
 from lp import _
 from lp.app.validators.name import name_validator
 from lp.code.interfaces.branch import IBranch
+from lp.code.interfaces.gitrepository import IGitRepository
 from lp.registry.interfaces.distroseries import IDistroSeries
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.registry.interfaces.role import IHasOwner
@@ -66,9 +73,15 @@ from lp.services.fields import (
 from lp.soyuz.interfaces.archive import IArchive
 
 
-MINIMAL_RECIPE_TEXT = dedent(u'''\
+MINIMAL_RECIPE_TEXT_BZR = dedent(u'''\
     # bzr-builder format 0.3 deb-version {debupstream}-0~{revno}
     %s
+    ''')
+
+
+MINIMAL_RECIPE_TEXT_GIT = dedent(u'''\
+    # git-build-recipe format 0.4 deb-version {debupstream}-0~{revtime}
+    %s %s
     ''')
 
 
@@ -78,7 +91,14 @@ class ISourcePackageRecipeData(Interface):
     base_branch = exported(
         Reference(
             IBranch, title=_("The base branch used by this recipe."),
-            required=True, readonly=True))
+            required=False, readonly=True))
+    base_git_repository = exported(
+        Reference(
+            IGitRepository,
+            title=_("The base Git repository used by this recipe."),
+            required=False, readonly=True))
+    base = Attribute(
+        "The base branch/repository used by this recipe (VCS-agnostic).")
 
     deb_version_template = exported(
         TextLine(
@@ -88,6 +108,38 @@ class ISourcePackageRecipeData(Interface):
 
     def getReferencedBranches():
         """An iterator of the branches referenced by this recipe."""
+
+
+class RecipeBranchType(EnumeratedType):
+    """The revision control system used for a recipe."""
+
+    BZR = Item("Bazaar")
+
+    GIT = Item("Git")
+
+
+class IRecipeBranchSource(Interface):
+
+    def getParsedRecipe(recipe_text):
+        """Parse recipe text into recipe data.
+
+        :param recipe_text: Recipe text as a string.
+        :return: a tuple of a `RecipeBranch` representing the recipe and a
+            `RecipeBranchType` indicating the revision control system to be
+            used for the recipe.
+        """
+
+
+class ISourcePackageRecipeDataSource(Interface):
+
+    def createManifestFromText(text, sourcepackage_recipe_build):
+        """Create a manifest for the specified build.
+
+        :param text: The text of the recipe to create a manifest for.
+        :param sourcepackage_recipe_build: The build to associate the manifest
+            with.
+        :return: an instance of `SourcePackageRecipeData`.
+        """
 
 
 class ISourcePackageRecipeView(Interface):
@@ -102,6 +154,12 @@ class ISourcePackageRecipeView(Interface):
             title=_("The person who created this recipe."),
             required=True, readonly=True,
             vocabulary='ValidPersonOrTeam'))
+
+    def getRecipeText(validate=False):
+        """Return the text of this recipe.
+
+        :param validate: If True, check that the recipe text can be parsed.
+        """
 
     recipe_text = exported(Text(readonly=True))
 
@@ -137,13 +195,6 @@ class ISourcePackageRecipeView(Interface):
             title=_("The the most recent build of this recipe."),
             readonly=True))
 
-    def isOverQuota(requester, distroseries):
-        """True if the recipe/requester/distroseries combo is >= quota.
-
-        :param requester: The Person requesting a build.
-        :param distroseries: The distroseries to build for.
-        """
-
     @call_with(requester=REQUEST_USER)
     @operation_parameters(
         archive=Reference(schema=IArchive),
@@ -177,8 +228,7 @@ class ISourcePackageRecipeView(Interface):
         Return a list of dict(
         distroseries:distroseries.displayname
         archive:archive.token)
-        The archive token is the same as that defined by the archive vocab:
-        archive.owner.name/archive.name
+        The archive reference is as defined by the archive vocab.
         This information is used to construct the request builds popup form.
         """
 
@@ -249,6 +299,10 @@ class ISourcePackageRecipeEdit(Interface):
     @operation_for_version("devel")
     def updateSeries(distroseries):
         """Replace this recipe's distro series."""
+
+
+class ISourcePackageRecipeDelete(Interface):
+    """ISourcePackageRecipe methods that require launchpad.Delete."""
 
     def destroySelf():
         """Remove this SourcePackageRecipe from the database.

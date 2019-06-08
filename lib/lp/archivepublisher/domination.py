@@ -1,4 +1,4 @@
-# Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2013 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Archive Domination class.
@@ -70,12 +70,13 @@ from storm.expr import (
     Desc,
     Select,
     )
+from zope.component import getUtility
 
 from lp.registry.model.sourcepackagename import SourcePackageName
 from lp.services.database.bulk import load_related
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.decoratedresultset import DecoratedResultSet
-from lp.services.database.lpstorm import IStore
+from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import (
     flush_database_updates,
     sqlvalues,
@@ -85,7 +86,10 @@ from lp.soyuz.enums import (
     BinaryPackageFormat,
     PackagePublishingStatus,
     )
-from lp.soyuz.interfaces.publishing import inactive_publishing_status
+from lp.soyuz.interfaces.publishing import (
+    inactive_publishing_status,
+    IPublishingSet,
+    )
 from lp.soyuz.model.binarypackagebuild import BinaryPackageBuild
 from lp.soyuz.model.binarypackagename import BinaryPackageName
 from lp.soyuz.model.binarypackagerelease import BinaryPackageRelease
@@ -289,8 +293,8 @@ class ArchSpecificPublicationsCache:
     @staticmethod
     def _lookUp(spr, archive, distroseries, pocket):
         """Look up an answer in the database."""
-        query = spr.getActiveArchSpecificPublications(
-            archive, distroseries, pocket)
+        query = getUtility(IPublishingSet).getActiveArchSpecificPublications(
+            spr, archive, distroseries, pocket)
         return not query.is_empty()
 
 
@@ -364,7 +368,8 @@ class Dominator:
         self.logger = logger
         self.archive = archive
 
-    def dominatePackage(self, sorted_pubs, live_versions, generalization):
+    def dominatePackage(self, sorted_pubs, live_versions, generalization,
+                        immutable_check=True):
         """Dominate publications for a single package.
 
         The latest publication for any version in `live_versions` stays
@@ -432,7 +437,7 @@ class Dominator:
                 # This publication is no longer live, but there is no
                 # newer version to supersede it either.  Therefore it
                 # must be deleted.
-                pub.requestDeletion(None)
+                pub.requestDeletion(None, immutable_check=immutable_check)
                 self.logger.debug2("Deleting version %s.", version)
             else:
                 # This publication is superseded.  This is what we're
@@ -517,6 +522,7 @@ class Dominator:
             binarypackagepublishinghistory.distroarchseries =
                 distroarchseries.id AND
             binarypackagepublishinghistory.scheduleddeletiondate IS NULL AND
+            binarypackagepublishinghistory.dateremoved IS NULL AND
             binarypackagepublishinghistory.archive = %s AND
             binarypackagebuild.source_package_release = %s AND
             distroarchseries.distroseries = %s AND
@@ -530,7 +536,7 @@ class Dominator:
                           'BinaryPackageBuild'])
 
             # There is at least one non-removed binary to consider
-            if considered_binaries.count() > 0:
+            if not considered_binaries.is_empty():
                 # However we can still remove *this* record if there's
                 # at least one other PUBLISHED for the spr. This happens
                 # when a package is moved between components.
@@ -542,7 +548,7 @@ class Dominator:
                     sourcepackagereleaseID=srcpkg_release.id)
                 # Zero PUBLISHED for this spr, so nothing to take over
                 # for us, so leave it for consideration next time.
-                if published.count() == 0:
+                if published.is_empty():
                     continue
 
             # Okay, so there's no unremoved binaries, let's go for it...
@@ -758,7 +764,7 @@ class Dominator:
         return query.order_by(Desc(SPR.version), Desc(SPPH.datecreated))
 
     def dominateSourceVersions(self, distroseries, pocket, package_name,
-                               live_versions):
+                               live_versions, immutable_check=True):
         """Dominate source publications based on a set of "live" versions.
 
         Active publications for the "live" versions will remain active.  All
@@ -777,7 +783,9 @@ class Dominator:
         generalization = GeneralizedPublication(is_source=True)
         pubs = self.findPublishedSPPHs(distroseries, pocket, package_name)
         pubs = generalization.sortPublications(pubs)
-        self.dominatePackage(pubs, live_versions, generalization)
+        self.dominatePackage(
+            pubs, live_versions, generalization,
+            immutable_check=immutable_check)
 
     def judge(self, distroseries, pocket):
         """Judge superseded sources and binaries."""
@@ -786,7 +794,8 @@ class Dominator:
             sourcepackagepublishinghistory.archive = %s AND
             sourcepackagepublishinghistory.pocket = %s AND
             sourcepackagepublishinghistory.status IN %s AND
-            sourcepackagepublishinghistory.scheduleddeletiondate is NULL
+            sourcepackagepublishinghistory.scheduleddeletiondate is NULL AND
+            sourcepackagepublishinghistory.dateremoved is NULL
             """ % sqlvalues(
                 distroseries, self.archive, pocket,
                 inactive_publishing_status))
@@ -798,7 +807,8 @@ class Dominator:
             binarypackagepublishinghistory.archive = %s AND
             binarypackagepublishinghistory.pocket = %s AND
             binarypackagepublishinghistory.status IN %s AND
-            binarypackagepublishinghistory.scheduleddeletiondate is NULL
+            binarypackagepublishinghistory.scheduleddeletiondate is NULL AND
+            binarypackagepublishinghistory.dateremoved is NULL
             """ % sqlvalues(
                 distroseries, self.archive, pocket,
                 inactive_publishing_status),

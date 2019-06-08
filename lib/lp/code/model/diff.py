@@ -1,4 +1,4 @@
-# Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2016 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Implementation classes for IDiff, etc."""
@@ -12,6 +12,7 @@ __all__ = [
 
 from contextlib import nested
 from cStringIO import StringIO
+from operator import attrgetter
 import sys
 from uuid import uuid1
 
@@ -23,7 +24,7 @@ from bzrlib.patches import (
     Patch,
     )
 from bzrlib.plugins.difftacular.generate_diff import diff_ignore_branches
-from lazr.delegates import delegates
+from lazr.delegates import delegate_to
 import simplejson
 from sqlobject import (
     ForeignKey,
@@ -38,7 +39,7 @@ from storm.locals import (
     )
 from zope.component import getUtility
 from zope.error.interfaces import IErrorReportingUtility
-from zope.interface import implements
+from zope.interface import implementer
 
 from lp.app.errors import NotFoundError
 from lp.code.interfaces.diff import (
@@ -46,21 +47,26 @@ from lp.code.interfaces.diff import (
     IIncrementalDiff,
     IPreviewDiff,
     )
+from lp.code.interfaces.githosting import IGitHostingClient
 from lp.codehosting.bzrutils import read_locked
 from lp.services.config import config
-from lp.services.database.bulk import load_referencing
+from lp.services.database.constants import UTC_NOW
+from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.sqlbase import SQLBase
 from lp.services.librarian.interfaces import ILibraryFileAliasSet
-from lp.services.propertycache import (
-    cachedproperty,
-    get_property_cache,
+from lp.services.librarian.interfaces.client import (
+    LIBRARIAN_SERVER_DEFAULT_TIMEOUT,
+    )
+from lp.services.propertycache import get_property_cache
+from lp.services.timeout import (
+    get_default_timeout_function,
+    reduced_timeout,
     )
 
 
+@implementer(IDiff)
 class Diff(SQLBase):
     """See `IDiff`."""
-
-    implements(IDiff)
 
     diff_text = ForeignKey(foreignKey='LibraryFileAlias')
 
@@ -94,7 +100,11 @@ class Diff(SQLBase):
         if self.diff_text is None:
             return ''
         else:
-            self.diff_text.open()
+            with reduced_timeout(
+                    0.01, webapp_max=2.0,
+                    default=LIBRARIAN_SERVER_DEFAULT_TIMEOUT):
+                timeout = get_default_timeout_function()()
+            self.diff_text.open(timeout)
             try:
                 return self.diff_text.read(config.diff.max_read_size)
             finally:
@@ -211,7 +221,8 @@ class Diff(SQLBase):
         return cls.fromFile(diff_content, size, filename)
 
     @classmethod
-    def fromFile(cls, diff_content, size, filename=None):
+    def fromFile(cls, diff_content, size, filename=None,
+                 strip_prefix_segments=0):
         """Create a Diff from a textual diff.
 
         :diff_content: The diff text
@@ -231,13 +242,10 @@ class Diff(SQLBase):
             diff_content.seek(0)
             diff_content_bytes = diff_content.read(size)
             diff_lines_count = len(diff_content_bytes.strip().split('\n'))
-        # Generation of diffstat is currently failing in some circumstances.
-        # See bug 436325.  Since diffstats are incidental to the whole
-        # process, we don't want failure here to kill the generation of the
-        # diff itself, but we do want to hear about it.  So log an error using
-        # the error reporting utility.
         try:
-            diffstat = cls.generateDiffstat(diff_content_bytes)
+            diffstat = cls.generateDiffstat(
+                diff_content_bytes,
+                strip_prefix_segments=strip_prefix_segments)
         except Exception:
             getUtility(IErrorReportingUtility).raising(sys.exc_info())
             # Set the diffstat to be empty.
@@ -255,17 +263,24 @@ class Diff(SQLBase):
                    removed_lines_count=removed_lines_count)
 
     @staticmethod
-    def generateDiffstat(diff_bytes):
+    def generateDiffstat(diff_bytes, strip_prefix_segments=0):
         """Generate statistics about the provided diff.
 
         :param diff_bytes: A unified diff, as bytes.
+        :param strip_prefix_segments: Strip the smallest prefix containing
+            this many leading slashes from each file name found in the patch
+            file, as with "patch -p".
         :return: A map of {filename: (added_line_count, removed_line_count)}
         """
         file_stats = {}
-        for patch in parse_patches(diff_bytes.splitlines(True)):
+        # Set allow_dirty, so we don't raise exceptions for dirty patches.
+        patches = parse_patches(diff_bytes.splitlines(True), allow_dirty=True)
+        for patch in patches:
             if not isinstance(patch, Patch):
                 continue
             path = patch.newname.split('\t')[0]
+            if strip_prefix_segments:
+                path = path.split('/', strip_prefix_segments)[-1]
             file_stats[path] = tuple(patch.stats_values()[:2])
         return file_stats
 
@@ -294,12 +309,10 @@ class Diff(SQLBase):
         return cls.fromFileAtEnd(diff_content)
 
 
+@implementer(IIncrementalDiff)
+@delegate_to(IDiff, context='diff')
 class IncrementalDiff(Storm):
     """See `IIncrementalDiff."""
-
-    implements(IIncrementalDiff)
-
-    delegates(IDiff, context='diff')
 
     __storm_table__ = 'IncrementalDiff'
 
@@ -324,10 +337,10 @@ class IncrementalDiff(Storm):
     new_revision = Reference(new_revision_id, 'Revision.id')
 
 
+@implementer(IPreviewDiff)
+@delegate_to(IDiff, context='diff')
 class PreviewDiff(Storm):
     """See `IPreviewDiff`."""
-    implements(IPreviewDiff)
-    delegates(IDiff, context='diff')
     __storm_table__ = 'PreviewDiff'
 
     id = Int(primary=True)
@@ -341,30 +354,52 @@ class PreviewDiff(Storm):
 
     prerequisite_revision_id = Unicode(name='dependent_revision_id')
 
+    branch_merge_proposal_id = Int(
+        name='branch_merge_proposal', allow_none=False)
+    branch_merge_proposal = Reference(
+        branch_merge_proposal_id, 'BranchMergeProposal.id')
+
+    date_created = UtcDateTimeCol(
+        dbName='date_created', default=UTC_NOW, notNull=True)
+
     conflicts = Unicode()
+
+    @property
+    def title(self):
+        """See `IPreviewDiff`."""
+        bmp = self.branch_merge_proposal
+        # XXX cprov 20140224: we fallback to revision_ids when the
+        # diff was generated for absent branch revisions (e.g. the source
+        # or target branch was overwritten). Which means some entries for
+        # the same BMP may have much wider titles depending on the
+        # branch history. It is particularly bad for rendering the diff
+        # navigator 'select' widget in the UI.
+        if bmp.source_branch is not None:
+            source_revision = bmp.source_branch.getBranchRevision(
+                revision_id=self.source_revision_id)
+            if source_revision and source_revision.sequence:
+                source_rev = u'r{0}'.format(source_revision.sequence)
+            else:
+                source_rev = self.source_revision_id
+            target_revision = bmp.target_branch.getBranchRevision(
+                revision_id=self.target_revision_id)
+            if target_revision and target_revision.sequence:
+                target_rev = u'r{0}'.format(target_revision.sequence)
+            else:
+                target_rev = self.target_revision_id
+        else:
+            # For Git, we shorten to seven characters since that's usual.
+            # We should perhaps shorten only as far as preserves uniqueness,
+            # but that requires talking to the hosting service and it's
+            # unlikely to be a problem in practice.
+            source_rev = self.source_revision_id[:7]
+            target_rev = self.target_revision_id[:7]
+
+        return u'{0} into {1}'.format(source_rev, target_rev)
 
     @property
     def has_conflicts(self):
         return self.conflicts is not None and self.conflicts != ''
-
-    @staticmethod
-    def preloadData(preview_diffs):
-        # Circular imports.
-        from lp.code.model.branchmergeproposal import BranchMergeProposal
-        bmps = load_referencing(
-            BranchMergeProposal, preview_diffs, ['preview_diff_id'])
-        bmps_preview = dict((bmp.preview_diff_id, bmp) for bmp in bmps)
-        for preview_diff in preview_diffs:
-            cache = get_property_cache(preview_diff)
-            cache.branch_merge_proposal = bmps_preview[preview_diff.id]
-
-    _branch_merge_proposal = Reference(
-        "PreviewDiff.id", "BranchMergeProposal.preview_diff_id",
-        on_remote=True)
-
-    @cachedproperty
-    def branch_merge_proposal(self):
-        return self._branch_merge_proposal
 
     @classmethod
     def fromBranchMergeProposal(cls, bmp):
@@ -374,30 +409,55 @@ class PreviewDiff(Storm):
         :param bmp: The `BranchMergeProposal` to generate a `PreviewDiff` for.
         :return: A `PreviewDiff`.
         """
-        source_branch = bmp.source_branch.getBzrBranch()
-        source_revision = source_branch.last_revision()
-        target_branch = bmp.target_branch.getBzrBranch()
-        target_revision = target_branch.last_revision()
-        preview = cls()
-        preview.source_revision_id = source_revision.decode('utf-8')
-        preview.target_revision_id = target_revision.decode('utf-8')
-        if bmp.prerequisite_branch is not None:
-            prerequisite_branch = bmp.prerequisite_branch.getBzrBranch()
+        if bmp.source_branch is not None:
+            source_branch = bmp.source_branch.getBzrBranch()
+            source_revision = source_branch.last_revision()
+            target_branch = bmp.target_branch.getBzrBranch()
+            target_revision = target_branch.last_revision()
+            if bmp.prerequisite_branch is not None:
+                prerequisite_branch = bmp.prerequisite_branch.getBzrBranch()
+            else:
+                prerequisite_branch = None
+            diff, conflicts = Diff.mergePreviewFromBranches(
+                source_branch, source_revision, target_branch,
+                prerequisite_branch)
+            preview = cls()
+            preview.source_revision_id = source_revision.decode('utf-8')
+            preview.target_revision_id = target_revision.decode('utf-8')
+            preview.branch_merge_proposal = bmp
+            preview.diff = diff
+            preview.conflicts = u''.join(
+                unicode(conflict) + '\n' for conflict in conflicts)
         else:
-            prerequisite_branch = None
-        preview.diff, conflicts = Diff.mergePreviewFromBranches(
-            source_branch, source_revision, target_branch,
-            prerequisite_branch)
-        preview.conflicts = u''.join(
-            unicode(conflict) + '\n' for conflict in conflicts)
+            source_repository = bmp.source_git_repository
+            target_repository = bmp.target_git_repository
+            if source_repository == target_repository:
+                path = source_repository.getInternalPath()
+            else:
+                path = "%s:%s" % (
+                    target_repository.getInternalPath(),
+                    source_repository.getInternalPath())
+            response = getUtility(IGitHostingClient).getMergeDiff(
+                path, bmp.target_git_commit_sha1, bmp.source_git_commit_sha1,
+                prerequisite=bmp.prerequisite_git_commit_sha1)
+            conflicts = u"".join(
+                u"Conflict in %s\n" % path for path in response['conflicts'])
+            preview = cls.create(
+                bmp, response['patch'].encode('utf-8'),
+                bmp.source_git_commit_sha1, bmp.target_git_commit_sha1,
+                bmp.prerequisite_git_commit_sha1, conflicts,
+                strip_prefix_segments=1)
+        del get_property_cache(bmp).preview_diffs
+        del get_property_cache(bmp).preview_diff
         return preview
 
     @classmethod
-    def create(cls, diff_content, source_revision_id, target_revision_id,
-               prerequisite_revision_id, conflicts):
+    def create(cls, bmp, diff_content, source_revision_id, target_revision_id,
+               prerequisite_revision_id, conflicts, strip_prefix_segments=0):
         """Create a PreviewDiff with specified values.
 
-        :param diff_content: The text of the dift, as bytes.
+        :param bmp: The `BranchMergeProposal` this diff references.
+        :param diff_content: The text of the diff, as bytes.
         :param source_revision_id: The revision_id of the source branch.
         :param target_revision_id: The revision_id of the target branch.
         :param prerequisite_revision_id: The revision_id of the prerequisite
@@ -405,15 +465,20 @@ class PreviewDiff(Storm):
         :param conflicts: The conflicts, as text.
         :return: A `PreviewDiff` with specified values.
         """
+        filename = str(uuid1()) + '.txt'
+        size = len(diff_content)
+        diff = Diff.fromFile(
+            StringIO(diff_content), size, filename,
+            strip_prefix_segments=strip_prefix_segments)
+
         preview = cls()
+        preview.branch_merge_proposal = bmp
         preview.source_revision_id = source_revision_id
         preview.target_revision_id = target_revision_id
         preview.prerequisite_revision_id = prerequisite_revision_id
         preview.conflicts = conflicts
+        preview.diff = diff
 
-        filename = str(uuid1()) + '.txt'
-        size = len(diff_content)
-        preview.diff = Diff.fromFile(StringIO(diff_content), size, filename)
         return preview
 
     @property
@@ -422,18 +487,14 @@ class PreviewDiff(Storm):
         # A preview diff is stale if the revision ids used to make the diff
         # are different from the tips of the source or target branches.
         bmp = self.branch_merge_proposal
-        if (self.source_revision_id != bmp.source_branch.last_scanned_id or
-            self.target_revision_id != bmp.target_branch.last_scanned_id):
-            # This is the simple frequent case.
+        get_id = attrgetter(
+            'last_scanned_id' if bmp.source_branch else 'commit_sha1')
+        if (self.source_revision_id != get_id(bmp.merge_source) or
+            self.target_revision_id != get_id(bmp.merge_target)):
             return True
-
-        # More complex involves the prerequisite branch too.
-        if (bmp.prerequisite_branch is not None and
-            (self.prerequisite_revision_id !=
-             bmp.prerequisite_branch.last_scanned_id)):
-            return True
-        else:
-            return False
+        return (
+            bmp.merge_prerequisite is not None and
+            self.prerequisite_revision_id != get_id(bmp.merge_prerequisite))
 
     def getFileByName(self, filename):
         """See `IPreviewDiff`."""

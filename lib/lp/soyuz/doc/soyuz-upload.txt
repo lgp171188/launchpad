@@ -39,7 +39,10 @@ Now let's copy the files into separate upload directories, as if they'd
 been uploaded over FTP.
 
     >>> from lp.services.config import config
-    >>> from lp.archiveuploader.tagfiles import parse_tagfile
+    >>> from lp.archiveuploader.tagfiles import (
+    ...     parse_tagfile,
+    ...     TagFileParseError,
+    ...     )
     >>> import glob
     >>> test_files_dir = os.path.join(config.root,
     ...                               "lib/lp/soyuz/scripts/"
@@ -52,13 +55,16 @@ been uploaded over FTP.
 
     >>> seq = 1
     >>> for changes_filepath in changes:
-    ...     tf = parse_tagfile(changes_filepath)
+    ...     try:
+    ...         tf = parse_tagfile(changes_filepath)
+    ...     except TagFileParseError:
+    ...         tf = {}
     ...
-    ...     if tf.has_key("Source"):
+    ...     if "Source" in tf:
     ...         package_names.append(tf["Source"])
     ...
     ...     send_filepaths = [changes_filepath]
-    ...     if tf.has_key("Files"):
+    ...     if "Files" in tf:
     ...         send_filepaths.extend(
     ...             [os.path.join(test_files_dir, line.split()[-1])
     ...              for line in tf["Files"].splitlines() if line])
@@ -93,11 +99,12 @@ files match the uploaded ones.
     >>> def get_md5(filename):
     ...     return hashlib.md5(open(filename).read()).digest()
 
+    >>> import scandir
     >>> def get_upload_dir(num, dir=incoming_dir):
     ...     """Return the path to the upload, if found in the dir."""
-    ...     for upload_dir in os.listdir(dir):
-    ...         if upload_dir.endswith("%06d" % num):
-    ...             return os.path.join(dir, upload_dir)
+    ...     for upload_entry in scandir.scandir(dir):
+    ...         if upload_entry.name.endswith("%06d" % num):
+    ...             return upload_entry.path
     ...     return None
 
     >>> def find_upload_dir(num):
@@ -163,7 +170,7 @@ So, load the GPG key:
     >>> key_data = open(key_path).read()
     >>> key = gpg_handler.importPublicKey(key_data)
     >>> assert key is not None
-    >>> print key.fingerprint
+    >>> print(key.fingerprint)
     33C0A61893A5DC5EB325B29E415A12CAC2F30234
 
 
@@ -172,10 +179,7 @@ do uploads:
 
     >>> from lp.services.identity.interfaces.emailaddress import (
     ...     IEmailAddressSet)
-    >>> from lp.registry.interfaces.gpg import (
-    ...     GPGKeyAlgorithm,
-    ...     IGPGKeySet,
-    ...     )
+    >>> from lp.registry.interfaces.gpg import IGPGKeySet
     >>> from lp.registry.interfaces.person import (
     ...     IPersonSet,
     ...     PersonCreationRationale,
@@ -201,8 +205,8 @@ Assign the loaded GPG key to the katie user.
     >>> key_set = getUtility(IGPGKeySet)
     >>> user_key = key_set.new(
     ...     ownerID=user.id, keyid=key.keyid, fingerprint=key.fingerprint,
-    ...     algorithm=GPGKeyAlgorithm.items[key.algorithm],
-    ...       keysize=key.keysize, can_encrypt=key.can_encrypt, active=True)
+    ...     algorithm=key.algorithm,
+    ...     keysize=key.keysize, can_encrypt=key.can_encrypt, active=True)
 
 
 Now we want to turn on the test key server to provide the key we
@@ -250,11 +254,11 @@ Check the four uploads are all where we expect - number 1 in rejected,
 the other three still in incoming.
 
     >>> for i in range(4):
-    ...     find_upload_dir_result(i + 1)
-    'rejected'
-    'incoming'
-    'incoming'
-    'incoming'
+    ...     print(find_upload_dir_result(i + 1))
+    rejected
+    incoming
+    incoming
+    incoming
 
 
 Now continue with the real upload.
@@ -268,8 +272,8 @@ Now continue with the real upload.
 
     >>> stdout, stderr = process.communicate()
     >>> if process.returncode != 0:
-    ...     print stdout
-    ...     print stderr
+    ...     print(stdout)
+    ...     print(stderr)
 
 
 Let's check if packages were uploaded correctly.
@@ -338,9 +342,11 @@ Same thing for etherwake:
 Check the four uploads all ended up where we expected.
 
     >>> for i in range(0, 4):
-    ...     find_upload_dir_result(i + 1)
-    'rejected'
-    'failed'
+    ...     print(find_upload_dir_result(i + 1))
+    rejected
+    None
+    None
+    failed
 
 Also check the upload folders contain all the files we uploaded.
 
@@ -365,7 +371,7 @@ as NEW and RELEASE.
 
     >>> from lp.soyuz.model.queue import PackageUploadSource
     >>> for name in package_names:
-    ...     print name
+    ...     print(name)
     ...     spn = SourcePackageName.selectOneBy(name=name)
     ...     spr = SourcePackageRelease.selectOneBy(sourcepackagenameID=spn.id)
     ...     us = PackageUploadSource.selectOneBy(
@@ -411,7 +417,7 @@ We use getPackageUploads to inspect the current NEW queue and accept items.
     ...          L.append("%s %s" % (queue_item.sourcepackagerelease.name,
     ...                              'ACCEPTED'))
     >>> L.sort()
-    >>> print "\n".join(L)
+    >>> print("\n".join(L))
     drdsl ACCEPTED
     etherwake ACCEPTED
 
@@ -420,7 +426,7 @@ Now we process the accepted queue items, one more time.
     >>> transaction.commit()
     >>> script = os.path.join(config.root, "scripts", "process-accepted.py")
     >>> process = subprocess.Popen(
-    ...     [sys.executable, script, "ubuntutest", "-q"])
+    ...     [sys.executable, script, "-d", "ubuntutest", "-q"])
     >>> process.wait()
     0
 
@@ -434,9 +440,9 @@ These packages must now be in the publishing history. Let's check it.
     ...     spr = SourcePackageRelease.selectOneBy(sourcepackagenameID=spn.id)
     ...     sspph = SSPPH.selectOneBy(sourcepackagereleaseID=spr.id)
     ...     if sspph:
-    ...         print name, sspph.status.title
+    ...         print(name, sspph.status.title)
     ...     else:
-    ...         print name, 'not Published'
+    ...         print(name, 'not Published')
     drdsl Pending
     etherwake Pending
 
@@ -449,7 +455,7 @@ Invoke Publisher script against the 'ubuntutest' distribution:
     ...                            stdout=subprocess.PIPE,
     ...                            stderr=subprocess.PIPE)
     >>> stdout, stderr = process.communicate()
-    >>> print stdout
+    >>> print(stdout)
     <BLANKLINE>
 
     >>> transaction.commit()
@@ -462,37 +468,59 @@ original source and the gzipped package diff:
     ...     "/var/tmp/archive/ubuntutest/pool/universe/e/etherwake"))
     3
 
+Define a helper for pretty-printing Deb822 objects, based on Deb822.dump but
+with sorted output.
+
+    >>> def pprint_deb822(deb822):
+    ...     for key in sorted(deb822):
+    ...         value = deb822.get_as_string(key)
+    ...         if not value or value[0] == '\n':
+    ...             print('%s:%s' % (key, value))
+    ...         else:
+    ...             print('%s: %s' % (key, value))
+    ...     print()
+
 Check the generation of a correct Sources tag file for the main
 component of ubuntutest/breezy-autotest, containing the only the
 required entry for 'etherwake':
 
-    >>> sources = open(
-    ...    "/var/tmp/archive/ubuntutest/dists/breezy-autotest/universe/source"
-    ...    "/Sources").read()
-    >>> import re
-    >>> sources = re.subn(r'(?sm)^Checksums-.*?(?=^[^ ])', '', sources)[0]
-    >>> print sources + '\nEND'
-    Package: etherwake
-    Binary: etherwake
-    Version: 1.08-1
-    Section: universe/net
-    Maintainer: Alain Schroeder <...@...org>
-    Build-Depends: debhelper (>> 2.0)
+    >>> import gzip
+    >>> from debian.deb822 import Sources
+
+    >>> with gzip.open(
+    ...        "/var/tmp/archive/ubuntutest/dists/breezy-autotest/universe/"
+    ...        "source/Sources.gz") as sources_file:
+    ...     for source in Sources.iter_paragraphs(sources_file):
+    ...         pprint_deb822(source)
+    ...     print('END')
     Architecture: any
-    Standards-Version: 3.5.10.0
-    Format: 1.0
+    Binary: etherwake
+    Build-Depends: debhelper (>> 2.0)
+    Checksums-Sha1:
+     2ddcdc87ab3dc35d5ce8232b0cc76bad8242725f 566 etherwake_1.08-1.dsc
+     4d8aa805cf262a613a48597e3638054dae421048 4455 etherwake_1.08.orig.tar.gz
+     f0ec9827c3ce66c0e1ea2c2f100ec144cb26b264 4145 etherwake_1.08-1.diff.gz
+    Checksums-Sha256:
+     0077eb18c0c02e931021e523ae3ae307731726f7b00736f66139fffa7181a915 566 etherwake_1.08-1.dsc
+     e309f8a45cab2d9a955efee5423b052bc040df1e9a9b85893682ab8647264495 4455 etherwake_1.08.orig.tar.gz
+     330e7f515d2da923d83131a1fbb5868adc4633e98a35d7b0e1787da46b63ffac 4145 etherwake_1.08-1.diff.gz
+    Checksums-Sha512:
+     51216a36b2ab6fde6ae04d5bcb0b7cefa9a18eb4b2b11552ca8f3abde928159e93729f30c6079e913078e966817368a6095de2cb4239676a3d6ed5d49d9de699 566 etherwake_1.08-1.dsc
+     6ab88a579ae3fdbbe0f1904712a3a42fab98fa586c3718243d2380f3cb021158c228312001b0685a77dc7171b0307d591ad971a82cd1ccd3511135b23d95ee21 4455 etherwake_1.08.orig.tar.gz
+     814074aa8349936fbec84b3ee703788159a085f0ce4a5e35d2dbef617e1c3c6e60818d155772d47b58e0823ed4bc9af29136f64eac8d643a833660e537145cb1 4145 etherwake_1.08-1.diff.gz
     Directory: pool/universe/e/etherwake
     Files:
      f13711c5b8261fbb77b43ae0e8ba9360 566 etherwake_1.08-1.dsc
      c2dc10f98bac012b900fd0b46721fc80 4455 etherwake_1.08.orig.tar.gz
      95c1e89e3ad7bc8740793bdf7aeb7334 4145 etherwake_1.08-1.diff.gz
-    <BLANKLINE>
+    Format: 1.0
+    Maintainer: Alain Schroeder <...@...org>
+    Package: etherwake
+    Section: universe/net
+    Standards-Version: 3.5.10.0
+    Version: 1.08-1
     <BLANKLINE>
     END
-
-# XXX: maxb 2010-04-15 bug=563503
-# The regex munging above can be removed once the tests no longer need to pass
-# on Karmic and earlier.
 
 Now we invoke changeOverride on just published etherwake, moving it to
 component 'multiverse'.
@@ -501,7 +529,7 @@ component 'multiverse'.
     >>> breezy_autotest = ubuntutest['breezy-autotest']
     >>> etherwake = breezy_autotest.getSourcePackage('etherwake')
     >>> etherwake_drspr = etherwake.currentrelease
-    >>> override = etherwake_drspr.current_published.changeOverride(
+    >>> override = etherwake_drspr.publishing_history.first().changeOverride(
     ...     new_component=getUtility(IComponentSet)['multiverse'])
 
 Check if we have new pending publishing record as expected
@@ -509,7 +537,7 @@ Check if we have new pending publishing record as expected
     >>> for pub in SSPPH.selectBy(
     ...    sourcepackagereleaseID=etherwake_drspr.sourcepackagerelease.id,
     ...    orderBy=['id']):
-    ...    print pub.status.name, pub.component.name, pub.pocket.name
+    ...    print(pub.status.name, pub.component.name, pub.pocket.name)
     PUBLISHED universe RELEASE
     PENDING multiverse RELEASE
 
@@ -538,23 +566,23 @@ Check the publishing history again
     >>> for pub in SSPPH.selectBy(
     ...    sourcepackagereleaseID=etherwake_drspr.sourcepackagerelease.id,
     ...    orderBy=['id']):
-    ...    print pub.status.name, pub.component.name, pub.pocket.name
+    ...    print(pub.status.name, pub.component.name, pub.pocket.name)
     SUPERSEDED universe RELEASE
     PUBLISHED multiverse RELEASE
 
 Check if the package was moved properly to the component 'multiverse':
 
-    >>> main_sources = open(
+    >>> main_sources = gzip.open(
     ...     "/var/tmp/archive/ubuntutest/dists/breezy-autotest"
-    ...     "/main/source/Sources").read()
-    >>> print main_sources + '\nEND'
+    ...     "/main/source/Sources.gz").read()
+    >>> print(main_sources + '\nEND')
     <BLANKLINE>
     END
 
-    >>> multiverse_sources = open(
+    >>> multiverse_sources = gzip.open(
     ...     "/var/tmp/archive/ubuntutest/dists/breezy-autotest"
-    ...     "/multiverse/source/Sources").read()
-    >>> print multiverse_sources + '\nEND'
+    ...     "/multiverse/source/Sources.gz").read()
+    >>> print(multiverse_sources + '\nEND')
     Package: drdsl
     ...
     Package: etherwake
@@ -574,7 +602,7 @@ and SHA256) for each index published.
 
     >>> releasefile_contents = open("/var/tmp/archive/ubuntutest/dists/"
     ...                             "breezy-autotest/Release").read()
-    >>> print releasefile_contents + '\nEND' #doctest: -NORMALIZE_WHITESPACE
+    >>> print(releasefile_contents + '\nEND') #doctest: -NORMALIZE_WHITESPACE
     Origin: ubuntutest
     Label: ubuntutest
     Suite: breezy-autotest

@@ -20,9 +20,9 @@ from Mailman.Utils import list_names
 from transaction import commit
 
 from lp.services.config import config
-from lp.services.database.lpstorm import IStore
+from lp.services.database.interfaces import IStore
 from lp.services.identity.model.emailaddress import EmailAddressSet
-from lp.services.mailman.testing import MailmanTestCase
+from lp.services.mailman.tests import MailmanTestCase
 from lp.testing import person_logged_in
 from lp.testing.layers import DatabaseFunctionalLayer
 
@@ -53,7 +53,7 @@ class TestMListSync(MailmanTestCase):
 
     def setUp(self):
         super(TestMListSync, self).setUp()
-        self.host_name = 'lists.production.launchpad.dev'
+        self.host_name = 'lists.production.launchpad.test'
         with production_config(self.host_name):
             self.team = self.factory.makeTeam(name='team-1')
             self.mailing_list = self.factory.makeMailingList(
@@ -114,9 +114,9 @@ class TestMListSync(MailmanTestCase):
         self.assertEqual(0, returncode, stderr)
         list_summary = [(
             'team-1',
-            'lists.launchpad.dev',
-            'http://lists.launchpad.dev/mailman/',
-            'team-1@lists.launchpad.dev')]
+            'lists.launchpad.test',
+            'http://lists.launchpad.test/mailman/',
+            'team-1@lists.launchpad.test')]
         self.assertEqual(list_summary, self.getListInfo())
 
     def test_staging_sync_list_without_team(self):
@@ -133,9 +133,9 @@ class TestMListSync(MailmanTestCase):
         self.assertEqual(0, returncode, stderr)
         list_summary = [(
             'team-1',
-            'lists.launchpad.dev',
-            'http://lists.launchpad.dev/mailman/',
-            'team-1@lists.launchpad.dev')]
+            'lists.launchpad.test',
+            'http://lists.launchpad.test/mailman/',
+            'team-1@lists.launchpad.test')]
         self.assertEqual(list_summary, self.getListInfo())
 
     def test_staging_sync_with_team_address(self):
@@ -148,9 +148,9 @@ class TestMListSync(MailmanTestCase):
         self.assertEqual(0, returncode, stderr)
         list_summary = [(
             'team-1',
-            'lists.launchpad.dev',
-            'http://lists.launchpad.dev/mailman/',
-            'team-1@lists.launchpad.dev')]
+            'lists.launchpad.test',
+            'http://lists.launchpad.test/mailman/',
+            'team-1@lists.launchpad.test')]
         self.assertEqual(list_summary, self.getListInfo())
         with person_logged_in(self.team.teamowner):
             self.assertEqual('team-1@eg.dom', self.team.preferredemail.email)

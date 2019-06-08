@@ -1,4 +1,4 @@
-# Copyright 2009-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -11,6 +11,7 @@ from datetime import (
 from lazr.lifecycle.snapshot import Snapshot
 from lazr.restful.utils import smartquote
 import pytz
+from storm.locals import Desc
 from storm.store import Store
 from testtools.matchers import (
     Equals,
@@ -22,7 +23,16 @@ from zope.security.interfaces import Unauthorized
 from zope.security.proxy import removeSecurityProxy
 
 from lp.answers.model.answercontact import AnswerContact
+from lp.app.enums import InformationType
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
+from lp.blueprints.enums import (
+    NewSpecificationDefinitionStatus,
+    SpecificationDefinitionStatus,
+    SpecificationFilter,
+    SpecificationImplementationStatus,
+    SpecificationPriority,
+    SpecificationSort,
+    )
 from lp.blueprints.model.specification import Specification
 from lp.bugs.interfaces.bugtasksearch import (
     get_person_bugtasks_search_params,
@@ -30,7 +40,6 @@ from lp.bugs.interfaces.bugtasksearch import (
     )
 from lp.bugs.model.bug import Bug
 from lp.registry.enums import (
-    InformationType,
     PersonVisibility,
     TeamMembershipPolicy,
     )
@@ -61,14 +70,15 @@ from lp.services.propertycache import clear_property_cache
 from lp.soyuz.enums import ArchivePurpose
 from lp.testing import (
     celebrity_logged_in,
+    launchpadlib_for,
     login,
     login_person,
     logout,
     person_logged_in,
+    RequestTimelineCollector,
     StormStatementRecorder,
     TestCaseWithFactory,
     )
-from lp.testing._webservice import QueryCollector
 from lp.testing.dbuser import dbuser
 from lp.testing.layers import DatabaseFunctionalLayer
 from lp.testing.matchers import HasQueryCount
@@ -234,28 +244,71 @@ class TestPersonTeams(TestCaseWithFactory):
 
     def test_inTeam_person_incorrect_archive(self):
         # If a person has an archive marked incorrectly that person should
-        # still be retrieved by 'all_members_prepopulated'.  See bug #680461.
+        # still be retrieved by 'api_all_members'.  See bug #680461.
         self.factory.makeArchive(
             owner=self.user, purpose=ArchivePurpose.PARTNER)
         expected_members = sorted([self.user, self.a_team.teamowner])
-        retrieved_members = sorted(list(self.a_team.all_members_prepopulated))
+        retrieved_members = sorted(list(self.a_team.api_all_members))
         self.assertEqual(expected_members, retrieved_members)
 
     def test_inTeam_person_no_archive(self):
         # If a person has no archive that person should still be retrieved by
-        # 'all_members_prepopulated'.
+        # 'api_all_members'.
         expected_members = sorted([self.user, self.a_team.teamowner])
-        retrieved_members = sorted(list(self.a_team.all_members_prepopulated))
+        retrieved_members = sorted(list(self.a_team.api_all_members))
         self.assertEqual(expected_members, retrieved_members)
 
     def test_inTeam_person_ppa_archive(self):
         # If a person has a PPA that person should still be retrieved by
-        # 'all_members_prepopulated'.
+        # 'api_all_members'.
         self.factory.makeArchive(
             owner=self.user, purpose=ArchivePurpose.PPA)
         expected_members = sorted([self.user, self.a_team.teamowner])
-        retrieved_members = sorted(list(self.a_team.all_members_prepopulated))
+        retrieved_members = sorted(list(self.a_team.api_all_members))
         self.assertEqual(expected_members, retrieved_members)
+
+    def test_getOwnedTeams(self):
+        # The iterator contains the teams that person owns, regardless of
+        # membership.
+        owner = self.a_team.teamowner
+        with person_logged_in(owner):
+            owner.leave(self.a_team)
+        results = list(owner.getOwnedTeams(self.user))
+        self.assertEqual([self.a_team], results)
+
+    def test_getOwnedTeams_visibility(self):
+        # The iterator contains the teams that the user can see.
+        owner = self.a_team.teamowner
+        p_team = self.factory.makeTeam(
+            name='p', owner=owner, visibility=PersonVisibility.PRIVATE)
+        results = list(owner.getOwnedTeams(self.user))
+        self.assertEqual([self.a_team], results)
+        results = list(owner.getOwnedTeams(owner))
+        self.assertEqual([self.a_team, p_team], results)
+
+    def test_getOwnedTeams_webservice(self):
+        # The user in the interaction is used as the user arg.
+        owner = self.a_team.teamowner
+        self.factory.makeTeam(
+            name='p', owner=owner, visibility=PersonVisibility.PRIVATE)
+        owner_name = owner.name
+        lp = launchpadlib_for('test', person=self.user)
+        lp_owner = lp.people[owner_name]
+        results = lp_owner.getOwnedTeams()
+        self.assertEqual(['a'], [t.name for t in results])
+
+    def test_getOwnedTeams_webservice_anonymous(self):
+        # The user in the interaction is used as the user arg.
+        # Anonymous scripts also do not reveal private teams.
+        owner = self.a_team.teamowner
+        self.factory.makeTeam(
+            name='p', owner=owner, visibility=PersonVisibility.PRIVATE)
+        owner_name = owner.name
+        logout()
+        lp = launchpadlib_for('test', person=None)
+        lp_owner = lp.people[owner_name]
+        results = lp_owner.getOwnedTeams()
+        self.assertEqual(['a'], [t.name for t in results])
 
     def test_administrated_teams(self):
         # The property Person.administrated_teams is a cached copy of
@@ -318,7 +371,37 @@ class TestPerson(TestCaseWithFactory):
         self.assertEqual(None, person.homepage_content)
         self.assertEqual(None, person.teamdescription)
 
-    def test_getOwnedOrDrivenPillars(self):
+    def test_getAffiliatedPillars_kinds(self):
+        # Distributions, project groups, and projects are returned in this
+        # same order.
+        user = self.factory.makePerson()
+        project = self.factory.makeProduct(owner=user)
+        project_group = self.factory.makeProject(owner=user)
+        distribution = self.factory.makeDistribution(owner=user)
+        expected_pillars = [
+            distribution.name, project_group.name, project.name]
+        received_pillars = [
+            pillar.name for pillar in  user.getAffiliatedPillars(user)]
+        self.assertEqual(expected_pillars, received_pillars)
+
+    def test_getAffiliatedPillars_roles(self):
+        # owned, driven, and supervised pillars are returned ordered by
+        # display name.
+        user = self.factory.makePerson()
+        owned_project = self.factory.makeProduct(owner=user, name="cat")
+        driven_project = self.factory.makeProduct(name="bat")
+        supervised_project = self.factory.makeProduct(name='nat')
+        with celebrity_logged_in('admin'):
+            driven_project.driver = user
+            supervised_project.bug_supervisor = user
+        expected_pillars = [
+            driven_project.name, owned_project.name, supervised_project.name]
+        received_pillars = [
+            pillar.name for pillar in  user.getAffiliatedPillars(user)]
+        self.assertEqual(expected_pillars, received_pillars)
+
+    def test_getAffiliatedPillars_active_pillars(self):
+        # Only active pillars are returned.
         user = self.factory.makePerson()
         active_project = self.factory.makeProject(owner=user)
         inactive_project = self.factory.makeProject(owner=user)
@@ -326,7 +409,76 @@ class TestPerson(TestCaseWithFactory):
             inactive_project.active = False
         expected_pillars = [active_project.name]
         received_pillars = [pillar.name for pillar in
-            user.getOwnedOrDrivenPillars()]
+            user.getAffiliatedPillars(user)]
+        self.assertEqual(expected_pillars, received_pillars)
+
+    def test_getAffiliatedPillars_minus_proprietary(self):
+        # Skip non public products if not allowed to see them.
+        owner = self.factory.makePerson()
+        user = self.factory.makePerson()
+        self.factory.makeProduct(
+            information_type=InformationType.PROPRIETARY,
+            owner=owner)
+        public = self.factory.makeProduct(
+            information_type=InformationType.PUBLIC,
+            owner=owner)
+
+        expected_pillars = [public.name]
+        received_pillars = [pillar.name for pillar in
+            owner.getAffiliatedPillars(user)]
+        self.assertEqual(expected_pillars, received_pillars)
+
+    def test_getAffiliatedPillars_visible_to_self(self):
+        # Users can see their own non-public affiliated products.
+        owner = self.factory.makePerson()
+        self.factory.makeProduct(
+            name=u'proprietary',
+            information_type=InformationType.PROPRIETARY,
+            owner=owner)
+        self.factory.makeProduct(
+            name=u'public',
+            information_type=InformationType.PUBLIC,
+            owner=owner)
+
+        expected_pillars = [u'proprietary', u'public']
+        received_pillars = [pillar.name for pillar in
+            owner.getAffiliatedPillars(owner)]
+        self.assertEqual(expected_pillars, received_pillars)
+
+    def test_getAffiliatedPillars_visible_to_admins(self):
+        # Users can see their own non-public affiliated products.
+        owner = self.factory.makePerson()
+        admin = self.factory.makeAdministrator()
+        self.factory.makeProduct(
+            name=u'proprietary',
+            information_type=InformationType.PROPRIETARY,
+            owner=owner)
+        self.factory.makeProduct(
+            name=u'public',
+            information_type=InformationType.PUBLIC,
+            owner=owner)
+
+        expected_pillars = [u'proprietary', u'public']
+        received_pillars = [pillar.name for pillar in
+            owner.getAffiliatedPillars(admin)]
+        self.assertEqual(expected_pillars, received_pillars)
+
+    def test_getAffiliatedPillars_visible_to_commercial_admins(self):
+        # Users can see their own non-public affiliated products.
+        owner = self.factory.makePerson()
+        admin = self.factory.makeCommercialAdmin()
+        self.factory.makeProduct(
+            name=u'proprietary',
+            information_type=InformationType.PROPRIETARY,
+            owner=owner)
+        self.factory.makeProduct(
+            name=u'public',
+            information_type=InformationType.PUBLIC,
+            owner=owner)
+
+        expected_pillars = [u'proprietary', u'public']
+        received_pillars = [pillar.name for pillar in
+            owner.getAffiliatedPillars(admin)]
         self.assertEqual(expected_pillars, received_pillars)
 
     def test_no_merge_pending(self):
@@ -357,11 +509,33 @@ class TestPerson(TestCaseWithFactory):
         self.assertEqual(to_person, job.to_person)
         self.assertEqual(requester, job.requester)
 
-    def test_selfgenerated_bugnotifications_none_by_default(self):
+    def test_selfgenerated_bugnotifications_false_by_default(self):
         # Default for new accounts is to not get any
-        # self-generated bug notifications by default.
+        # self-generated bug notifications.
         user = self.factory.makePerson()
         self.assertFalse(user.selfgenerated_bugnotifications)
+
+    def test_expanded_notification_footers_false_by_default(self):
+        # Default for new accounts is to disable expanded notification footers.
+        user = self.factory.makePerson()
+        self.assertFalse(user.expanded_notification_footers)
+
+    def test_require_strong_email_authentication_false_by_default(self):
+        # Default for new accounts is to not require strong email
+        # authentication.
+        user = self.factory.makePerson()
+        self.assertFalse(user.require_strong_email_authentication)
+
+    def test_require_strong_email_authentication_permissions(self):
+        # A person cannot set require_strong_email_authentication on their
+        # own account, but a registry expert can.
+        user = self.factory.makePerson()
+        with person_logged_in(user):
+            self.assertRaises(
+                Unauthorized, setattr,
+                user, 'require_strong_email_authentication', True)
+        with celebrity_logged_in('registry_experts'):
+            user.require_strong_email_authentication = True
 
     def test_canAccess__anonymous(self):
         # Anonymous users cannot call Person.canAccess()
@@ -396,9 +570,9 @@ class TestPerson(TestCaseWithFactory):
         person = self.factory.makePerson()
         product = self.factory.makeProduct()
         with person_logged_in(person):
-            self.assertFalse(person.canWrite(product, 'displayname'))
+            self.assertFalse(person.canWrite(product, 'display_name'))
         with person_logged_in(product.owner):
-            self.assertTrue(product.owner.canWrite(product, 'displayname'))
+            self.assertTrue(product.owner.canWrite(product, 'display_name'))
 
     def test_canWrite__checking_permissions_of_others(self):
         # Logged in users cannot call Person.canWrite() on Person
@@ -637,8 +811,23 @@ class TestPersonStates(TestCaseWithFactory):
         self.bzr = product_set.getByName('bzr')
         self.now = datetime.now(pytz.UTC)
 
-    def test_deactivateAccount_copes_with_names_already_in_use(self):
-        """When a user deactivates his account, its name is changed.
+    def test_canDeactivate_private_projects(self):
+        """A user owning non-public products cannot be deactivated."""
+        user = self.factory.makePerson()
+        self.factory.makeProduct(
+            information_type=InformationType.PUBLIC,
+            name="public", owner=user)
+        self.factory.makeProduct(
+            information_type=InformationType.PROPRIETARY,
+            name="private", owner=user)
+
+        login(user.preferredemail.email)
+        expected_error = ('This account cannot be deactivated because it owns '
+                        'the following non-public products: private')
+        self.assertEqual([expected_error], user.canDeactivate())
+
+    def test_deactivate_copes_with_names_already_in_use(self):
+        """When a user deactivates their account, their name is changed.
 
         We do that so that other users can use that name, which the original
         user doesn't seem to want anymore.
@@ -649,18 +838,19 @@ class TestPersonStates(TestCaseWithFactory):
         """
         sample_person = Person.byName('name12')
         login(sample_person.preferredemail.email)
-        sample_person.deactivateAccount("blah!")
-        self.failUnlessEqual(sample_person.name, 'name12-deactivatedaccount')
+        sample_person.deactivate(comment="blah!")
+        self.assertEqual(sample_person.name, 'name12-deactivatedaccount')
         # Now that name12 is free Foo Bar can use it.
         foo_bar = Person.byName('name16')
         foo_bar.name = 'name12'
-        # If Foo Bar deactivates his account, though, we'll have to use a name
-        # other than name12-deactivatedaccount because that is already in use.
+        # If Foo Bar deactivates their account, though, we'll have to use a
+        # name other than name12-deactivatedaccount because that is already
+        # in use.
         login(foo_bar.preferredemail.email)
-        foo_bar.deactivateAccount("blah!")
-        self.failUnlessEqual(foo_bar.name, 'name12-deactivatedaccount1')
+        foo_bar.deactivate(comment="blah!")
+        self.assertEqual(foo_bar.name, 'name12-deactivatedaccount1')
 
-    def test_deactivateAccountReassignsOwnerAndDriver(self):
+    def test_deactivate_reassigns_owner_and_driver(self):
         """Product owner and driver are reassigned.
 
         If a user is a product owner and/or driver, when the user is
@@ -672,12 +862,12 @@ class TestPersonStates(TestCaseWithFactory):
         product = self.factory.makeProduct(owner=user)
         with person_logged_in(user):
             product.driver = user
-            user.deactivateAccount("Going off the grid.")
+            product.bug_supervisor = user
+            user.deactivate(comment="Going off the grid.")
         registry_team = getUtility(ILaunchpadCelebrities).registry_experts
-        self.assertEqual(registry_team, product.owner,
-                         "Owner is not registry team.")
-        self.assertEqual(registry_team, product.driver,
-                         "Driver is not registry team.")
+        self.assertEqual(registry_team, product.owner)
+        self.assertIs(None, product.driver)
+        self.assertIs(None, product.bug_supervisor)
 
     def test_getDirectMemberIParticipateIn(self):
         sample_person = Person.byName('name12')
@@ -687,9 +877,9 @@ class TestPersonStates(TestCaseWithFactory):
         # turn is a proposed member of Ubuntu Team. That means
         # sample_person._getDirectMemberIParticipateIn(ubuntu_team) will fail
         # with an AssertionError.
-        self.failUnless(sample_person in warty_team.activemembers)
-        self.failUnless(warty_team in ubuntu_team.invited_members)
-        self.failUnlessRaises(
+        self.assertIn(sample_person, warty_team.activemembers)
+        self.assertIn(warty_team, ubuntu_team.invited_members)
+        self.assertRaises(
             AssertionError, sample_person._getDirectMemberIParticipateIn,
             ubuntu_team)
 
@@ -698,8 +888,8 @@ class TestPersonStates(TestCaseWithFactory):
         # warty_team.
         login(warty_team.teamowner.preferredemail.email)
         warty_team.acceptInvitationToBeMemberOf(ubuntu_team, comment="foo")
-        self.failUnless(warty_team in ubuntu_team.activemembers)
-        self.failUnlessEqual(
+        self.assertIn(warty_team, ubuntu_team.activemembers)
+        self.assertEqual(
             sample_person._getDirectMemberIParticipateIn(ubuntu_team),
             warty_team)
 
@@ -733,6 +923,7 @@ class TestPersonStates(TestCaseWithFactory):
         # needlessly run.
         fake_warning = 'Warning!  Warning!'
         naked_team = removeSecurityProxy(self.otherteam)
+        naked_team._visibility_warning_cache_key = PersonVisibility.PRIVATE
         naked_team._visibility_warning_cache = fake_warning
         warning = self.otherteam.visibilityConsistencyWarning(
             PersonVisibility.PRIVATE)
@@ -746,18 +937,33 @@ class TestPersonStates(TestCaseWithFactory):
         self.otherteam.visibility = PersonVisibility.PRIVATE
 
     def test_visibility_validator_team_private_to_public(self):
-        # A PRIVATE team cannot convert to PUBLIC.
+        # A PRIVATE team can transition to PUBLIC.
         self.otherteam.visibility = PersonVisibility.PRIVATE
+        self.otherteam.visibility = PersonVisibility.PUBLIC
+
+    def test_visibility_validator_team_private_to_public_with_forbidden(self):
+        # A PRIVATE team that owns a distribution can't become PUBLIC.
+        # XXX wgrant 2014-01-08: This probably isn't a sane constraint,
+        # but it'll do to test the forbidden case until we decide to
+        # relax it.
+        self.otherteam.visibility = PersonVisibility.PRIVATE
+        self.factory.makeDistribution(bug_supervisor=self.otherteam)
+        Store.of(self.otherteam).flush()
         try:
             self.otherteam.visibility = PersonVisibility.PUBLIC
         except ImmutableVisibilityError as exc:
             self.assertEqual(
                 str(exc),
-                'A private team cannot change visibility.')
+                'This team cannot be converted to Public since it is '
+                'referenced by a distribution.')
+        else:
+            raise AssertionError("Expected exception.")
 
     def test_visibility_validator_team_private_to_public_view(self):
         # A PRIVATE team cannot convert to PUBLIC.
         self.otherteam.visibility = PersonVisibility.PRIVATE
+        self.factory.makeDistribution(bug_supervisor=self.otherteam)
+        Store.of(self.otherteam).flush()
         view = create_initialized_view(self.otherteam, '+edit', {
             'field.name': 'otherteam',
             'field.displayname': 'Other Team',
@@ -768,16 +974,18 @@ class TestPersonStates(TestCaseWithFactory):
             })
         self.assertEqual(len(view.errors), 0)
         self.assertEqual(len(view.request.notifications), 1)
-        self.assertEqual(view.request.notifications[0].message,
-                         'A private team cannot change visibility.')
+        self.assertEqual(
+            view.request.notifications[0].message,
+            'This team cannot be converted to Public since it is '
+            'referenced by a distribution.')
 
     def test_person_snapshot(self):
         omitted = (
             'activemembers', 'adminmembers', 'allmembers',
-            'all_members_prepopulated', 'approvedmembers',
+            'api_all_members', 'approvedmembers',
             'deactivatedmembers', 'expiredmembers', 'inactivemembers',
             'invited_members', 'member_memberships', 'pendingmembers',
-            'proposedmembers', 'time_zone',
+            'ppas', 'proposedmembers', 'time_zone',
             )
         snap = Snapshot(self.myteam, providing=providedBy(self.myteam))
         for name in omitted:
@@ -814,15 +1022,14 @@ class TestPersonRelatedBugTaskSearch(TestCaseWithFactory):
         self, params, assignee=None, bug_subscriber=None,
         owner=None, bug_commenter=None, bug_reporter=None,
         structural_subscriber=None):
-        self.failUnlessEqual(assignee, params.assignee)
+        self.assertEqual(assignee, params.assignee)
         # fromSearchForm() takes a bug_subscriber parameter, but saves
         # it as subscriber on the parameter object.
-        self.failUnlessEqual(bug_subscriber, params.subscriber)
-        self.failUnlessEqual(owner, params.owner)
-        self.failUnlessEqual(bug_commenter, params.bug_commenter)
-        self.failUnlessEqual(bug_reporter, params.bug_reporter)
-        self.failUnlessEqual(structural_subscriber,
-                             params.structural_subscriber)
+        self.assertEqual(bug_subscriber, params.subscriber)
+        self.assertEqual(owner, params.owner)
+        self.assertEqual(bug_commenter, params.bug_commenter)
+        self.assertEqual(bug_reporter, params.bug_reporter)
+        self.assertEqual(structural_subscriber, params.structural_subscriber)
 
     def test_get_person_bugtasks_search_params(self):
         # With no specified options, get_person_bugtasks_search_params()
@@ -970,7 +1177,9 @@ class TestPersonKarma(TestCaseWithFactory, KarmaTestMixin):
     def test__getProjectsWithTheMostKarma_ordering(self):
         # Verify that pillars are ordered by karma.
         results = removeSecurityProxy(
-            self.person)._getProjectsWithTheMostKarma()
+            self.person)._getProjectsWithTheMostKarma(None)
+        results = [((distro or product).name, karma)
+                   for product, distro, karma in results]
         self.assertEqual(
             [('cc', 150), ('bb', 50), ('aa', 10)], results)
 
@@ -985,7 +1194,7 @@ class TestPersonKarma(TestCaseWithFactory, KarmaTestMixin):
         # Verify that a list of projects and contributed karma categories
         # is returned.
         results = removeSecurityProxy(
-            self.person).getProjectsAndCategoriesContributedTo()
+            self.person).getProjectsAndCategoriesContributedTo(None)
         names = [entry['project'].name for entry in results]
         self.assertEqual(
             ['cc', 'bb', 'aa'], names)
@@ -1001,7 +1210,7 @@ class TestPersonKarma(TestCaseWithFactory, KarmaTestMixin):
         a_product = getUtility(IProductSet).getByName('cc')
         a_product.active = False
         results = removeSecurityProxy(
-            self.person).getProjectsAndCategoriesContributedTo()
+            self.person).getProjectsAndCategoriesContributedTo(None)
         names = [entry['project'].name for entry in results]
         self.assertEqual(
             ['bb', 'aa'], names)
@@ -1018,7 +1227,32 @@ class TestPersonKarma(TestCaseWithFactory, KarmaTestMixin):
         self._makeKarmaCache(
             self.person, f_product, [('bugs', 3)])
         results = removeSecurityProxy(
-            self.person).getProjectsAndCategoriesContributedTo()
+            self.person).getProjectsAndCategoriesContributedTo(None)
+        names = [entry['project'].name for entry in results]
+        self.assertEqual(
+            ['cc', 'bb', 'aa', 'dd', 'ee'], names)
+
+    def test_getProjectsAndCategoriesContributedTo_privacy(self):
+        # Verify privacy is honored.
+        d_owner = self.factory.makePerson()
+        d_product = self.factory.makeProduct(
+            name='dd', information_type=InformationType.PROPRIETARY,
+            owner=d_owner)
+        self._makeKarmaCache(
+            self.person, d_product, [('bugs', 5)])
+        e_product = self.factory.makeProduct(name='ee')
+        self._makeKarmaCache(
+            self.person, e_product, [('bugs', 4)])
+        f_product = self.factory.makeProduct(name='ff')
+        self._makeKarmaCache(
+            self.person, f_product, [('bugs', 3)])
+        results = removeSecurityProxy(
+            self.person).getProjectsAndCategoriesContributedTo(None)
+        names = [entry['project'].name for entry in results]
+        self.assertEqual(
+            ['cc', 'bb', 'aa', 'ee', 'ff'], names)
+        results = removeSecurityProxy(
+            self.person).getProjectsAndCategoriesContributedTo(d_owner)
         names = [entry['project'].name for entry in results]
         self.assertEqual(
             ['cc', 'bb', 'aa', 'dd', 'ee'], names)
@@ -1037,7 +1271,7 @@ class TestAPIPartipication(TestCaseWithFactory):
             team.addMember(self.factory.makePerson(), team.teamowner)
             team.addMember(self.factory.makePerson(), team.teamowner)
         webservice = LaunchpadWebServiceCaller()
-        collector = QueryCollector()
+        collector = RequestTimelineCollector()
         collector.register()
         self.addCleanup(collector.unregister)
         url = "/~%s/participants" % team.name
@@ -1097,10 +1331,17 @@ class TestGetRecipients(TestCaseWithFactory):
         kwargs['email_address_status'] = EmailAddressStatus.NEW
         return self.factory.makePerson(**kwargs)
 
-    def get_test_recipients_person(self):
+    def test_get_recipients_person(self):
         person = self.factory.makePerson()
         recipients = get_recipients(person)
         self.assertEqual(set([person]), set(recipients))
+
+    def test_get_recipients_person_with_disabled_account(self):
+        """Mail is not sent to a direct recipient whose account is disabled."""
+        person = self.factory.makePerson()
+        person.setAccountStatus(AccountStatus.DEACTIVATED, None, 'gone')
+        recipients = get_recipients(person)
+        self.assertEqual(set(), set(recipients))
 
     def test_get_recipients_empty(self):
         """get_recipients returns empty set for person with no preferredemail.
@@ -1136,7 +1377,7 @@ class TestGetRecipients(TestCaseWithFactory):
         """
         owner = self.factory.makePerson(email='foo@bar.com')
         team = self.factory.makeTeam(owner)
-        owner.account.status = AccountStatus.DEACTIVATED
+        owner.setAccountStatus(AccountStatus.DEACTIVATED, None, 'gbcw')
         self.assertContentEqual([], get_recipients(team))
 
     def test_get_recipients_team_with_disabled_member_account(self):
@@ -1145,7 +1386,7 @@ class TestGetRecipients(TestCaseWithFactory):
         See <https://bugs.launchpad.net/launchpad/+bug/855150>
         """
         person = self.factory.makePerson(email='foo@bar.com')
-        person.account.status = AccountStatus.DEACTIVATED
+        person.setAccountStatus(AccountStatus.DEACTIVATED, None, 'gbcw')
         team = self.factory.makeTeam(members=[person])
         self.assertContentEqual([team.teamowner], get_recipients(team))
 
@@ -1155,7 +1396,7 @@ class TestGetRecipients(TestCaseWithFactory):
         See <https://bugs.launchpad.net/launchpad/+bug/855150>
         """
         person = self.factory.makePerson(email='foo@bar.com')
-        person.account.status = AccountStatus.DEACTIVATED
+        person.setAccountStatus(AccountStatus.DEACTIVATED, None, 'gbcw')
         team1 = self.factory.makeTeam(members=[person])
         team2 = self.factory.makeTeam(members=[team1])
         self.assertContentEqual(
@@ -1195,7 +1436,7 @@ class Test_getAssignedSpecificationWorkItemsDueBefore(TestCaseWithFactory):
             milestone=self.future_milestone)
 
         workitems = self.team.getAssignedSpecificationWorkItemsDueBefore(
-            self.current_milestone.dateexpected)
+            self.current_milestone.dateexpected, self.team)
 
         self.assertEqual([workitem], list(workitems))
 
@@ -1208,7 +1449,7 @@ class Test_getAssignedSpecificationWorkItemsDueBefore(TestCaseWithFactory):
             title=u'workitem', specification=assigned_spec, deleted=True)
 
         workitems = self.team.getAssignedSpecificationWorkItemsDueBefore(
-            self.current_milestone.dateexpected)
+            self.current_milestone.dateexpected, self.team)
         self.assertEqual([], list(workitems))
 
     def test_workitems_assigned_to_others_working_on_blueprint(self):
@@ -1228,7 +1469,7 @@ class Test_getAssignedSpecificationWorkItemsDueBefore(TestCaseWithFactory):
             assignee=self.factory.makePerson())
 
         workitems = self.team.getAssignedSpecificationWorkItemsDueBefore(
-            self.current_milestone.dateexpected)
+            self.current_milestone.dateexpected, self.team)
 
         self.assertContentEqual([workitem, workitem_for_other_person],
                                 list(workitems))
@@ -1243,7 +1484,8 @@ class Test_getAssignedSpecificationWorkItemsDueBefore(TestCaseWithFactory):
         self.factory.makeSpecificationWorkItem(
             title=u'workitem 1', specification=spec)
 
-        workitems = self.team.getAssignedSpecificationWorkItemsDueBefore(today)
+        workitems = self.team.getAssignedSpecificationWorkItemsDueBefore(
+            today, self.team)
 
         self.assertEqual([], list(workitems))
 
@@ -1263,7 +1505,7 @@ class Test_getAssignedSpecificationWorkItemsDueBefore(TestCaseWithFactory):
             milestone=self.current_milestone)
 
         workitems = self.team.getAssignedSpecificationWorkItemsDueBefore(
-            self.current_milestone.dateexpected)
+            self.current_milestone.dateexpected, self.team)
 
         self.assertEqual([workitem], list(workitems))
 
@@ -1287,9 +1529,32 @@ class Test_getAssignedSpecificationWorkItemsDueBefore(TestCaseWithFactory):
             assignee=self.team.teamowner)
 
         workitems = self.team.getAssignedSpecificationWorkItemsDueBefore(
-            self.current_milestone.dateexpected)
+            self.current_milestone.dateexpected, self.team)
 
         self.assertEqual([workitem], list(workitems))
+
+    def test_listings_consider_spec_visibility(self):
+        # This spec is visible only to the product owner, even though it is
+        # assigned to self.team.teamowner.  Therefore, it is listed only for
+        # product.owner, not the team.
+        product = self.factory.makeProduct(
+            information_type=InformationType.PROPRIETARY)
+        with person_logged_in(removeSecurityProxy(product).owner):
+            milestone = self.factory.makeMilestone(
+                dateexpected=self.current_milestone.dateexpected,
+                product=product)
+            spec = self.factory.makeSpecification(
+                milestone=milestone,
+                information_type=InformationType.PROPRIETARY)
+            workitem = self.factory.makeSpecificationWorkItem(
+                specification=spec, assignee=self.team.teamowner)
+            workitems = self.team.getAssignedSpecificationWorkItemsDueBefore(
+                milestone.dateexpected, self.team)
+        self.assertNotIn(workitem, workitems)
+        workitems = self.team.getAssignedSpecificationWorkItemsDueBefore(
+            removeSecurityProxy(milestone).dateexpected,
+            removeSecurityProxy(product).owner)
+        self.assertIn(workitem, workitems)
 
     def _makeProductSpec(self, milestone_dateexpected):
         assignee = self.factory.makePerson()
@@ -1332,7 +1597,7 @@ class Test_getAssignedSpecificationWorkItemsDueBefore(TestCaseWithFactory):
         with StormStatementRecorder() as recorder:
             workitems = list(
                 self.team.getAssignedSpecificationWorkItemsDueBefore(
-                    dateexpected))
+                    dateexpected, self.team))
             for workitem in workitems:
                 workitem.assignee
                 workitem.milestone
@@ -1520,3 +1785,295 @@ class Test_getAssignedBugTasksDueBefore(TestCaseWithFactory):
         # 10. One to get all distroseries of a bug's distro. (See comment on
         # getAssignedBugTasksDueBefore() to understand why it's needed)
         self.assertThat(recorder, HasQueryCount(Equals(12)))
+
+
+def list_result(sprint, filter=None, user=None):
+    result = sprint.specifications(
+        user, SpecificationSort.DATE, filter=filter)
+    return list(result)
+
+
+def get_specs(context, user=None, **kwargs):
+    return context.specifications(user, **kwargs)
+
+
+class TestSpecifications(TestCaseWithFactory):
+
+    layer = DatabaseFunctionalLayer
+
+    def setUp(self):
+        super(TestSpecifications, self).setUp()
+        self.date_created = datetime.now(pytz.utc)
+
+    def makeSpec(self, owner=None, date_created=0, title=None,
+                 status=NewSpecificationDefinitionStatus.NEW,
+                 name=None, priority=None, information_type=None):
+        blueprint = self.factory.makeSpecification(
+            title=title, status=status, name=name, priority=priority,
+            information_type=information_type, owner=owner,
+            )
+        removeSecurityProxy(blueprint).datecreated = (
+            self.date_created + timedelta(date_created))
+        return blueprint
+
+    def test_specifications_quantity(self):
+        # Ensure the quantity controls the maximum number of entries.
+        owner = self.factory.makePerson()
+        for count in range(10):
+            self.factory.makeSpecification(owner=owner)
+        self.assertEqual(10, get_specs(owner).count())
+        self.assertEqual(10, get_specs(owner, quantity=None).count())
+        self.assertEqual(8, get_specs(owner, quantity=8).count())
+        self.assertEqual(10, get_specs(owner, quantity=11).count())
+
+    def test_date_sort(self):
+        # Sort on date_created.
+        owner = self.factory.makePerson()
+        blueprint1 = self.makeSpec(owner, date_created=0)
+        blueprint2 = self.makeSpec(owner, date_created=-1)
+        blueprint3 = self.makeSpec(owner, date_created=1)
+        result = list_result(owner)
+        self.assertEqual([blueprint3, blueprint1, blueprint2], result)
+
+    def test_date_sort_id(self):
+        # date-sorting when no date varies uses object id.
+        owner = self.factory.makePerson()
+        blueprint1 = self.makeSpec(owner)
+        blueprint2 = self.makeSpec(owner)
+        blueprint3 = self.makeSpec(owner)
+        result = list_result(owner)
+        self.assertEqual([blueprint1, blueprint2, blueprint3], result)
+
+    def test_priority_sort(self):
+        # Sorting by priority works and is the default.
+        # When priority is supplied, status is ignored.
+        blueprint1 = self.makeSpec(priority=SpecificationPriority.UNDEFINED,
+                                   status=SpecificationDefinitionStatus.NEW)
+        owner = blueprint1.owner
+        blueprint2 = self.makeSpec(
+            owner, priority=SpecificationPriority.NOTFORUS,
+            status=SpecificationDefinitionStatus.APPROVED)
+        blueprint3 = self.makeSpec(
+            owner, priority=SpecificationPriority.LOW,
+            status=SpecificationDefinitionStatus.NEW)
+        result = get_specs(owner)
+        self.assertEqual([blueprint3, blueprint1, blueprint2], list(result))
+        result = get_specs(owner, sort=SpecificationSort.PRIORITY)
+        self.assertEqual([blueprint3, blueprint1, blueprint2], list(result))
+
+    def test_priority_sort_fallback_status(self):
+        # Sorting by priority falls back to defintion_status.
+        # When status is supplied, name is ignored.
+        blueprint1 = self.makeSpec(
+            status=SpecificationDefinitionStatus.NEW, name='a')
+        owner = blueprint1.owner
+        blueprint2 = self.makeSpec(
+            owner, status=SpecificationDefinitionStatus.APPROVED, name='c')
+        blueprint3 = self.makeSpec(
+            owner, status=SpecificationDefinitionStatus.DISCUSSION, name='b')
+        result = get_specs(owner)
+        self.assertEqual([blueprint2, blueprint3, blueprint1], list(result))
+        result = get_specs(owner, sort=SpecificationSort.PRIORITY)
+        self.assertEqual([blueprint2, blueprint3, blueprint1], list(result))
+
+    def test_priority_sort_fallback_name(self):
+        # Sorting by priority falls back to name
+        blueprint1 = self.makeSpec(name='b')
+        owner = blueprint1.owner
+        blueprint2 = self.makeSpec(owner, name='c')
+        blueprint3 = self.makeSpec(owner, name='a')
+        result = get_specs(owner)
+        self.assertEqual([blueprint3, blueprint1, blueprint2], list(result))
+        result = get_specs(owner, sort=SpecificationSort.PRIORITY)
+        self.assertEqual([blueprint3, blueprint1, blueprint2], list(result))
+
+    def test_ignore_inactive(self):
+        # Specs for inactive products are skipped.
+        product = self.factory.makeProduct()
+        with celebrity_logged_in('admin'):
+            product.active = False
+        spec = self.factory.makeSpecification(product=product)
+        self.assertNotIn(spec, get_specs(spec.owner))
+
+    def test_include_distro(self):
+        # Specs for distributions are included.
+        distribution = self.factory.makeDistribution()
+        spec = self.factory.makeSpecification(distribution=distribution)
+        self.assertIn(spec, get_specs(spec.owner))
+
+    def test_informational(self):
+        # INFORMATIONAL causes only informational specs to be shown.
+        enum = SpecificationImplementationStatus
+        informational = self.factory.makeSpecification(
+            implementation_status=enum.INFORMATIONAL)
+        owner = informational.owner
+        plain = self.factory.makeSpecification(owner=owner)
+        result = get_specs(owner)
+        self.assertIn(informational, result)
+        self.assertIn(plain, result)
+        result = get_specs(owner, filter=[SpecificationFilter.INFORMATIONAL])
+        self.assertIn(informational, result)
+        self.assertNotIn(plain, result)
+
+    def test_completeness(self):
+        # If COMPLETE is specified, completed specs are listed.  If INCOMPLETE
+        # is specified or neither is specified, only incomplete specs are
+        # listed.
+        enum = SpecificationImplementationStatus
+        implemented = self.factory.makeSpecification(
+            implementation_status=enum.IMPLEMENTED)
+        owner = implemented.owner
+        non_implemented = self.factory.makeSpecification(owner=owner)
+        result = get_specs(owner, filter=[SpecificationFilter.COMPLETE])
+        self.assertIn(implemented, result)
+        self.assertNotIn(non_implemented, result)
+        result = get_specs(owner, filter=[SpecificationFilter.INCOMPLETE])
+        self.assertNotIn(implemented, result)
+        self.assertIn(non_implemented, result)
+        result = get_specs(owner)
+        self.assertNotIn(implemented, result)
+        self.assertIn(non_implemented, result)
+
+    def test_all(self):
+        # ALL causes both complete and incomplete to be listed.
+        enum = SpecificationImplementationStatus
+        implemented = self.factory.makeSpecification(
+            implementation_status=enum.IMPLEMENTED)
+        owner = implemented.owner
+        non_implemented = self.factory.makeSpecification(owner=owner)
+        result = get_specs(owner, filter=[SpecificationFilter.ALL])
+        self.assertContentEqual([implemented, non_implemented], result)
+
+    def test_valid(self):
+        # VALID adjusts COMPLETE to exclude OBSOLETE and SUPERSEDED specs.
+        # (INCOMPLETE already excludes OBSOLETE and SUPERSEDED.)
+        i_enum = SpecificationImplementationStatus
+        d_enum = SpecificationDefinitionStatus
+        implemented = self.factory.makeSpecification(
+            implementation_status=i_enum.IMPLEMENTED)
+        owner = implemented.owner
+        self.factory.makeSpecification(owner=owner, status=d_enum.SUPERSEDED)
+        self.factory.makeSpecification(owner=owner, status=d_enum.OBSOLETE)
+        results = get_specs(
+            owner,
+            filter=[SpecificationFilter.VALID, SpecificationFilter.COMPLETE])
+        self.assertContentEqual([implemented], results)
+
+    def test_roles(self):
+        # If roles are specified, they control which specifications are shown.
+        # If no roles are specified, all roles are used.
+        created = self.factory.makeSpecification()
+        person = created.owner
+
+        def rlist(filter=None):
+            return list(get_specs(person, filter=filter))
+        assigned = self.factory.makeSpecification(assignee=person)
+        drafting = self.factory.makeSpecification(drafter=person)
+        approving = self.factory.makeSpecification(approver=person)
+        subscribed = self.factory.makeSpecification()
+        subscribed.subscribe(person)
+        self.assertEqual([created, assigned, drafting, approving, subscribed],
+                         rlist([]))
+        self.assertEqual([created], rlist([SpecificationFilter.CREATOR]))
+        self.assertEqual([assigned], rlist([SpecificationFilter.ASSIGNEE]))
+        self.assertEqual([drafting], rlist([SpecificationFilter.DRAFTER]))
+        self.assertEqual([approving], rlist([SpecificationFilter.APPROVER]))
+        self.assertEqual([subscribed],
+                         rlist([SpecificationFilter.SUBSCRIBER]))
+
+    def test_text_search(self):
+        # Text searches work.
+        blueprint1 = self.makeSpec(title='abc')
+        owner = blueprint1.owner
+        blueprint2 = self.makeSpec(owner, title='def')
+        result = list_result(owner, [u'abc'])
+        self.assertEqual([blueprint1], result)
+        result = list_result(owner, [u'def'])
+        self.assertEqual([blueprint2], result)
+
+    def test_proprietary_not_listed(self):
+        # Proprietary blueprints are not listed for random users
+        blueprint1 = self.makeSpec(
+            information_type=InformationType.PROPRIETARY)
+        owner = removeSecurityProxy(blueprint1).owner
+        self.assertEqual([], list_result(owner))
+
+    def test_proprietary_listed_for_artifact_grant(self):
+        # Proprietary blueprints are listed for users with an artifact grant.
+        blueprint1 = self.makeSpec(
+            information_type=InformationType.PROPRIETARY)
+        grant = self.factory.makeAccessArtifactGrant(
+            concrete_artifact=blueprint1)
+        owner = removeSecurityProxy(blueprint1).owner
+        self.assertEqual(
+            [blueprint1],
+            list_result(owner, user=grant.grantee))
+
+    def test_proprietary_listed_for_policy_grant(self):
+        # Proprietary blueprints are listed for users with a policy grant.
+        blueprint1 = self.makeSpec(
+            information_type=InformationType.PROPRIETARY)
+        product = removeSecurityProxy(blueprint1).product
+        policy_source = getUtility(IAccessPolicySource)
+        (policy,) = policy_source.find(
+            [(product, InformationType.PROPRIETARY)])
+        grant = self.factory.makeAccessPolicyGrant(policy)
+        owner = removeSecurityProxy(blueprint1).owner
+        self.assertEqual(
+            [blueprint1],
+            list_result(owner, user=grant.grantee))
+
+    def test_storm_sort(self):
+        # A Storm expression can be used to sort specs.
+        owner = self.factory.makePerson()
+        spec = self.factory.makeSpecification(owner=owner, name='a')
+        spec2 = self.factory.makeSpecification(owner=owner, name='z')
+        spec3 = self.factory.makeSpecification(owner=owner, name='b')
+        self.assertContentEqual(
+            [spec2, spec3, spec],
+            get_specs(owner, sort=Desc(Specification.name)))
+
+    def test_in_progress(self):
+        # In-progress filters to exclude not-started and completed.
+        enum = SpecificationImplementationStatus
+        notstarted = self.factory.makeSpecification(
+            implementation_status=enum.NOTSTARTED)
+        owner = notstarted.owner
+        started = self.factory.makeSpecification(
+            owner=owner, implementation_status=enum.STARTED)
+        self.factory.makeSpecification(
+            owner=owner, implementation_status=enum.IMPLEMENTED)
+        self.assertContentEqual([started], get_specs(owner, in_progress=True))
+
+    def test_in_progress_all(self):
+        # SpecificationFilter.ALL overrides in_progress.
+        enum = SpecificationImplementationStatus
+        notstarted = self.factory.makeSpecification(
+            implementation_status=enum.NOTSTARTED)
+        self.assertContentEqual(
+            [notstarted],
+            get_specs(
+                notstarted.owner, filter=[SpecificationFilter.ALL],
+                in_progress=True))
+
+    def test_complete_overrides_in_progress(self):
+        # SpecificationFilter.COMPLETE overrides in_progress.
+        enum = SpecificationImplementationStatus
+        started = self.factory.makeSpecification(
+            implementation_status=enum.STARTED)
+        owner = started.owner
+        implemented = self.factory.makeSpecification(
+            implementation_status=enum.IMPLEMENTED, owner=owner)
+        specs = get_specs(
+            owner, filter=[SpecificationFilter.COMPLETE], in_progress=True)
+        self.assertContentEqual([implemented], specs)
+
+    def test_incomplete_overrides_in_progress(self):
+        # SpecificationFilter.INCOMPLETE overrides in_progress.
+        enum = SpecificationImplementationStatus
+        notstarted = self.factory.makeSpecification(
+            implementation_status=enum.NOTSTARTED)
+        specs = get_specs(
+            notstarted.owner, filter=[SpecificationFilter.INCOMPLETE],
+            in_progress=True)
+        self.assertContentEqual([notstarted], specs)

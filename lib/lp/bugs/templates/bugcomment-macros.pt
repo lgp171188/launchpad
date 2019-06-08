@@ -40,7 +40,7 @@
       7 minutes ago
     </span>
   </div>
-  <div class="boardBugActivityBody">
+  <div class="boardCommentActivity">
     <metal:activity-table
         metal:use-macro="context/@@bugcomment-macros/activity-table" />
   </div>
@@ -102,7 +102,7 @@
       <span
           tal:define="duplicateof context/bug/duplicateof"
           tal:condition="not:duplicateof/required:launchpad.View"
-          tal:replace="string: a private bug." /><br>
+          tal:replace="string: a private bug." /><br/>
       Comment here only if you think the duplicate status is wrong.
     </div>
     <h2>Add comment</h2>

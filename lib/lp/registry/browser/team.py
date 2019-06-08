@@ -1,4 +1,4 @@
-# Copyright 2009-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -32,7 +32,6 @@ __all__ = [
     ]
 
 
-import cgi
 from datetime import (
     datetime,
     timedelta,
@@ -46,17 +45,18 @@ from lazr.restful.utils import smartquote
 import pytz
 import simplejson
 from z3c.ptcompat import ViewPageTemplateFile
-from zope.app.form.browser import TextAreaWidget
-from zope.app.form.browser.textwidgets import IntWidget
 from zope.component import getUtility
 from zope.formlib.form import (
     Fields,
     FormField,
     FormFields,
     )
+from zope.formlib.textwidgets import IntWidget
+from zope.formlib.widget import CustomWidgetFactory
+from zope.formlib.widgets import TextAreaWidget
 from zope.interface import (
     classImplements,
-    implements,
+    implementer,
     Interface,
     )
 from zope.publisher.interfaces.browser import IBrowserPublisher
@@ -77,11 +77,11 @@ from lp import _
 from lp.app.browser.badge import HasBadgeBase
 from lp.app.browser.launchpadform import (
     action,
-    custom_widget,
     LaunchpadFormView,
     )
 from lp.app.browser.tales import PersonFormatterAPI
 from lp.app.errors import UnexpectedFormData
+from lp.app.interfaces.headings import IHeadingBreadcrumb
 from lp.app.validators import LaunchpadValidationError
 from lp.app.validators.validation import validate_new_team_email
 from lp.app.widgets.itemswidgets import (
@@ -172,14 +172,17 @@ from lp.services.webapp.batching import (
     InactiveBatchNavigator,
     )
 from lp.services.webapp.breadcrumb import Breadcrumb
-from lp.services.webapp.interfaces import ILaunchBag
-from lp.services.webapp.menu import structured
+from lp.services.webapp.escaping import structured
+from lp.services.webapp.interfaces import (
+    ILaunchBag,
+    IMultiFacetedBreadcrumb,
+    )
+from lp.snappy.browser.hassnaps import HasSnapsMenuMixin
 
 
+@implementer(IObjectPrivacy)
 class TeamPrivacyAdapter:
     """Provides `IObjectPrivacy` for `ITeam`."""
-
-    implements(IObjectPrivacy)
 
     def __init__(self, context):
         self.context = context
@@ -231,7 +234,7 @@ class TeamFormMixin:
     * The user has a current commercial subscription.
     """
     field_names = [
-        "name", "visibility", "displayname",
+        "name", "visibility", "display_name",
         "description", "membership_policy",
         "defaultmembershipperiod", "renewal_policy",
         "defaultrenewalperiod", "teamowner",
@@ -296,14 +299,14 @@ class TeamEditView(TeamFormMixin, PersonRenameFormMixin,
 
     page_title = label
 
-    custom_widget(
-        'renewal_policy', LaunchpadRadioWidget, orientation='vertical')
-    custom_widget('defaultrenewalperiod', IntWidget,
-        widget_class='field subordinate')
-    custom_widget(
-        'membership_policy', LaunchpadRadioWidgetWithDescription,
-        orientation='vertical')
-    custom_widget('description', TextAreaWidget, height=10, width=30)
+    custom_widget_renewal_policy = CustomWidgetFactory(
+        LaunchpadRadioWidget, orientation='vertical')
+    custom_widget_defaultrenewalperiod = CustomWidgetFactory(
+        IntWidget, widget_class='field subordinate')
+    custom_widget_membership_policy = CustomWidgetFactory(
+        LaunchpadRadioWidgetWithDescription, orientation='vertical')
+    custom_widget_description = CustomWidgetFactory(
+        TextAreaWidget, height=10, width=30)
 
     def setUpFields(self):
         """See `LaunchpadViewForm`."""
@@ -374,7 +377,7 @@ class TeamEditView(TeamFormMixin, PersonRenameFormMixin,
 class TeamAdministerView(PersonAdministerView):
     """A view to administer teams on behalf of users."""
     label = "Review team"
-    default_field_names = ['name', 'displayname']
+    default_field_names = ['name', 'display_name']
 
 
 def generateTokenAndValidationEmail(email, team):
@@ -439,8 +442,8 @@ class TeamContactAddressView(MailingListTeamBaseView):
 
     schema = ITeamContactAddressForm
 
-    custom_widget(
-        'contact_method', LaunchpadRadioWidget, orientation='vertical')
+    custom_widget_contact_method = CustomWidgetFactory(
+        LaunchpadRadioWidget, orientation='vertical')
 
     @property
     def label(self):
@@ -600,7 +603,8 @@ class TeamMailingListConfigurationView(MailingListTeamBaseView):
     schema = IMailingList
     field_names = ['welcome_message']
     label = "Mailing list configuration"
-    custom_widget('welcome_message', TextAreaWidget, width=72, height=10)
+    custom_widget_welcome_message = CustomWidgetFactory(
+        TextAreaWidget, width=72, height=10)
     page_title = label
 
     def __init__(self, context, request):
@@ -998,14 +1002,13 @@ class TeamAddView(TeamFormMixin, HasRenewalPolicyMixin, LaunchpadFormView):
     page_title = 'Register a new team in Launchpad'
     label = page_title
 
-    custom_widget('teamowner', HiddenUserWidget)
-    custom_widget(
-        'renewal_policy', LaunchpadRadioWidget, orientation='vertical')
-    custom_widget(
-        'membership_policy', LaunchpadRadioWidgetWithDescription,
-        orientation='vertical')
-    custom_widget('defaultrenewalperiod', IntWidget,
-        widget_class='field subordinate')
+    custom_widget_teamowner = HiddenUserWidget
+    custom_widget_renewal_policy = CustomWidgetFactory(
+        LaunchpadRadioWidget, orientation='vertical')
+    custom_widget_membership_policy = CustomWidgetFactory(
+        LaunchpadRadioWidgetWithDescription, orientation='vertical')
+    custom_widget_defaultrenewalperiod = CustomWidgetFactory(
+        IntWidget, widget_class='field subordinate')
 
     def setUpFields(self):
         """See `LaunchpadViewForm`.
@@ -1019,13 +1022,13 @@ class TeamAddView(TeamFormMixin, HasRenewalPolicyMixin, LaunchpadFormView):
         failure=LaunchpadFormView.ajax_failure_handler)
     def create_action(self, action, data):
         name = data.get('name')
-        displayname = data.get('displayname')
+        display_name = data.get('display_name')
         defaultmembershipperiod = data.get('defaultmembershipperiod')
         defaultrenewalperiod = data.get('defaultrenewalperiod')
         membership_policy = data.get('membership_policy')
         teamowner = data.get('teamowner')
         team = getUtility(IPersonSet).newTeam(
-            teamowner, name, displayname, None, membership_policy,
+            teamowner, name, display_name, None, membership_policy,
             defaultmembershipperiod, defaultrenewalperiod)
         visibility = data.get('visibility')
         if visibility:
@@ -1065,14 +1068,13 @@ class SimpleTeamAddView(TeamAddView):
     next_url = None
 
     field_names = [
-        "name", "displayname", "visibility", "membership_policy",
+        "name", "display_name", "visibility", "membership_policy",
         "teamowner"]
 
     # Use a dropdown - Javascript will be used to change this to a choice
     # popup widget.
-    custom_widget(
-        'membership_policy', LaunchpadDropdownWidget,
-        orientation='vertical')
+    custom_widget_membership_policy = CustomWidgetFactory(
+        LaunchpadDropdownWidget, orientation='vertical')
 
 
 class ProposedTeamMembersEditView(LaunchpadFormView):
@@ -1161,8 +1163,8 @@ class TeamMemberAddView(LaunchpadFormView):
     # below should be changed to the more appropriate False bool when we're
     # making use of the JSON cache to setup pickers, rather than assembling
     # javascript in a view macro.
-    custom_widget(
-        'newmember', PersonPickerWidget,
+    custom_widget_newmember = CustomWidgetFactory(
+        PersonPickerWidget,
         show_assign_me_button='false', show_remove_button='false')
 
     @property
@@ -1245,6 +1247,7 @@ class TeamNavigation(PersonNavigation):
             person, self.context)
 
 
+@implementer(IHeadingBreadcrumb, IMultiFacetedBreadcrumb)
 class TeamBreadcrumb(Breadcrumb):
     """Builds a breadcrumb for an `ITeam`."""
 
@@ -1253,9 +1256,8 @@ class TeamBreadcrumb(Breadcrumb):
         return smartquote('"%s" team') % self.context.displayname
 
 
+@implementer(IBrowserPublisher)
 class TeamMembershipSelfRenewalView(LaunchpadFormView):
-
-    implements(IBrowserPublisher)
 
     # This is needed for our breadcrumbs, as there's no <browser:page>
     # declaration for this view.
@@ -1273,7 +1275,7 @@ class TeamMembershipSelfRenewalView(LaunchpadFormView):
     page_title = label
 
     def __init__(self, context, request):
-        # Only the member himself or admins of the member (in case it's a
+        # Only the member themselves or admins of the member (in case it's a
         # team) can see the page in which they renew memberships that are
         # about to expire.
         if not check_permission('launchpad.Edit', context.person):
@@ -1350,17 +1352,17 @@ class ITeamMembershipInvitationAcknowledgementForm(Interface):
         title=_("Comment"), required=False, readonly=False)
 
 
+@implementer(IBrowserPublisher)
 class TeamInvitationView(LaunchpadFormView):
     """Where team admins can accept/decline membership invitations."""
-
-    implements(IBrowserPublisher)
 
     # This is needed for our breadcrumbs, as there's no <browser:page>
     # declaration for this view.
     __name__ = '+invitation'
     schema = ITeamMembershipInvitationAcknowledgementForm
     field_names = ['acknowledger_comment']
-    custom_widget('acknowledger_comment', TextAreaWidget, height=5, width=60)
+    custom_widget_acknowledger_comment = CustomWidgetFactory(
+        TextAreaWidget, height=5, width=60)
     template = ViewPageTemplateFile(
         '../templates/teammembership-invitation.pt')
 
@@ -1583,7 +1585,7 @@ class TeamMenuMixin(PPANavigationMenuMixIn, CommonMenuLinks):
         if not userIsActiveTeamMember(self.person):
             enabled = False
         if self.person.teamowner == self.user:
-            # The owner cannot leave his team.
+            # The owner cannot leave their team.
             enabled = False
         target = '+leave'
         text = 'Leave the Team'
@@ -1613,7 +1615,8 @@ class TeamMenuMixin(PPANavigationMenuMixIn, CommonMenuLinks):
         return Link(target, text, icon='team', enabled=enabled)
 
 
-class TeamOverviewMenu(ApplicationMenu, TeamMenuMixin, HasRecipesMenuMixin):
+class TeamOverviewMenu(ApplicationMenu, TeamMenuMixin, HasRecipesMenuMixin,
+                       HasSnapsMenuMixin):
 
     usedfor = ITeam
     facet = 'overview'
@@ -1642,6 +1645,7 @@ class TeamOverviewMenu(ApplicationMenu, TeamMenuMixin, HasRecipesMenuMixin):
         'ppa',
         'related_software_summary',
         'view_recipes',
+        'view_snaps',
         'subscriptions',
         'structural_subscriptions',
         'upcomingwork',
@@ -1757,7 +1761,7 @@ class TeamJoinView(LaunchpadFormView, TeamJoinMixin):
 
     @property
     def label(self):
-        return 'Join ' + cgi.escape(self.context.displayname)
+        return 'Join ' + self.context.displayname
 
     page_title = label
 
@@ -1803,8 +1807,8 @@ class TeamJoinView(LaunchpadFormView, TeamJoinMixin):
     def user_can_request_to_join(self):
         """Can the logged in user request to join this team?
 
-        The user can request if he's allowed to join this team and if he's
-        not yet an active member of this team.
+        The user can request if they're allowed to join this team and if
+        they're not yet an active member of this team.
         """
         if not self.join_allowed:
             return False
@@ -1818,13 +1822,14 @@ class TeamJoinView(LaunchpadFormView, TeamJoinMixin):
                 MailingListAutoSubscribePolicy.NEVER)
 
     @property
-    def team_is_moderated(self):
-        """Is this team a moderated team?
+    def direct_team_membership_requires_approval(self):
+        """Does direct membership of this team require approval?
 
-        Return True if the team's membership policy is MODERATED.
+        Return True if the team's membership policy is DELEGATED or MODERATED.
         """
         policy = self.context.membership_policy
-        return policy == TeamMembershipPolicy.MODERATED
+        return policy in (
+            TeamMembershipPolicy.DELEGATED, TeamMembershipPolicy.MODERATED)
 
     @property
     def next_url(self):
@@ -1843,7 +1848,7 @@ class TeamJoinView(LaunchpadFormView, TeamJoinMixin):
             # control over it.
             self.user.join(self.context, may_subscribe_to_list=False)
 
-            if self.team_is_moderated:
+            if self.direct_team_membership_requires_approval:
                 response.addInfoNotification(
                     _('Your request to join ${team} is awaiting '
                       'approval.',
@@ -1868,7 +1873,7 @@ class TeamJoinView(LaunchpadFormView, TeamJoinMixin):
             # all of the error cases.
             self.context.mailing_list.subscribe(self.user)
 
-            if self.team_is_moderated:
+            if self.direct_team_membership_requires_approval:
                 response.addInfoNotification(
                     _('Your mailing list subscription is '
                       'awaiting approval.'))
@@ -1888,7 +1893,7 @@ class TeamAddMyTeamsView(LaunchpadFormView):
     """Propose/add to this team any team that you're an administrator of."""
 
     page_title = 'Propose/add one of your teams to another one'
-    custom_widget('teams', LabeledMultiCheckBoxWidget)
+    custom_widget_teams = LabeledMultiCheckBoxWidget
 
     def initialize(self):
         context = self.context
@@ -2014,7 +2019,7 @@ class TeamLeaveView(LaunchpadFormView, TeamJoinMixin):
 
     @property
     def label(self):
-        return 'Leave ' + cgi.escape(self.context.displayname)
+        return 'Leave ' + self.context.displayname
 
     page_title = label
 
@@ -2064,17 +2069,17 @@ class TeamReassignmentView(ObjectReassignmentView):
             else:
                 relationship = 'an indirect member'
                 full_path = [self.context] + path
-                path_string = '(%s)' % '&rArr;'.join(
-                    team.displayname for team in full_path)
+                path_template = '&rArr;'.join(['%s'] * len(full_path))
+                path_string = structured(
+                    '(%s)' % path_template,
+                    *[team.displayname for team in full_path])
             error = structured(
                 'Circular team memberships are not allowed. '
                 '%(new)s cannot be the new team owner, since %(context)s '
                 'is %(relationship)s of %(new)s. '
-                '<span style="white-space: nowrap">%(path)s</span>'
-                % dict(new=new_owner.displayname,
-                        context=self.context.displayname,
-                        relationship=relationship,
-                        path=path_string))
+                '<span style="white-space: nowrap">%(path)s</span>',
+                new=new_owner.displayname, context=self.context.displayname,
+                relationship=relationship, path=path_string)
             self.setFieldError(self.ownerOrMaintainerName, error)
 
     @property
@@ -2088,22 +2093,22 @@ class TeamReassignmentView(ObjectReassignmentView):
     def _afterOwnerChange(self, team, oldOwner, newOwner):
         """Add the new and the old owners as administrators of the team.
 
-        When a user creates a new team, he is added as an administrator of
+        When a user creates a new team, they are added as an administrator of
         that team. To be consistent with this, we must make the new owner an
         administrator of the team. This rule is ignored only if the new owner
-        is an inactive member of the team, as that means he's not interested
-        in being a member. The same applies to the old owner.
+        is an inactive member of the team, as that means they're not
+        interested in being a member. The same applies to the old owner.
         """
         # Both new and old owners won't be added as administrators of the team
         # only if they're inactive members. If they're either active or
         # proposed members they'll be made administrators of the team.
         if newOwner not in team.inactivemembers:
             team.addMember(
-                newOwner, reviewer=oldOwner,
+                newOwner, reviewer=self.user,
                 status=TeamMembershipStatus.ADMIN, force_team_add=True)
         if oldOwner not in team.inactivemembers:
             team.addMember(
-                oldOwner, reviewer=oldOwner,
+                oldOwner, reviewer=self.user,
                 status=TeamMembershipStatus.ADMIN, force_team_add=True)
 
         # If the current logged in user cannot see the team anymore as a

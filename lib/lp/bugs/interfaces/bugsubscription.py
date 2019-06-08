@@ -1,8 +1,6 @@
 # Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-# pylint: disable-msg=E0211,E0213
-
 """Bug subscription interfaces."""
 
 __metaclass__ = type
@@ -46,7 +44,7 @@ class IBugSubscription(Interface):
     person = exported(PersonChoice(
         title=_('Person'), required=True, vocabulary='ValidPersonOrTeam',
         readonly=True, description=_("The person's Launchpad ID or "
-        "e-mail address.")), as_of="beta")
+        "email address.")), as_of="beta")
     bug = exported(Reference(
         Interface, title=_("Bug"), required=True, readonly=True),
         as_of="beta")

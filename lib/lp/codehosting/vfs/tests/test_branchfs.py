@@ -1,7 +1,5 @@
-# Copyright 2009-2010 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
-
-# pylint: disable-msg=W0231
 
 """Tests for the branch filesystem."""
 
@@ -40,10 +38,9 @@ from bzrlib.urlutils import (
     escape,
     local_path_to_url,
     )
-from testtools.deferredruntest import (
+from testtools.twistedsupport import (
     assert_fails_with,
     AsynchronousDeferredRunTest,
-    run_with_log_observers,
     )
 from twisted.internet import defer
 
@@ -256,19 +253,18 @@ class TestLaunchpadServer(MixinBaseLaunchpadServerTests, BzrTestCase):
         return LaunchpadServer(
             XMLRPCWrapper(codehosting_api), user_id, MemoryTransport())
 
+    @defer.inlineCallbacks
     def test_translateControlPath(self):
         branch = self.factory.makeProductBranch(owner=self.requester)
         self.factory.enableDefaultStackingForProduct(branch.product, branch)
-        deferred = self.server.translateVirtualPath(
+        transport, path = yield self.server.translateVirtualPath(
             '~%s/%s/.bzr/control.conf'
             % (branch.owner.name, branch.product.name))
+        self.assertEqual(
+            'default_stack_on = %s\n' % branch_id_alias(branch),
+            transport.get_bytes(path))
 
-        def check_control_file((transport, path)):
-            self.assertEqual(
-                'default_stack_on = %s\n' % branch_id_alias(branch),
-                transport.get_bytes(path))
-        return deferred.addCallback(check_control_file)
-
+    @defer.inlineCallbacks
     def test_translate_branch_path_hosted(self):
         # translateVirtualPath returns a writable transport like that returned
         # by TransportDispatch.makeTransport for branches we can write to.
@@ -279,30 +275,25 @@ class TestLaunchpadServer(MixinBaseLaunchpadServerTests, BzrTestCase):
             '.bzr/README'))
         expected_transport, expected_path = dispatch
 
-        deferred = self.server.translateVirtualPath(
+        transport, path = yield self.server.translateVirtualPath(
             '%s/.bzr/README' % (branch.unique_name,))
+        self.assertEqual(expected_path, path)
+        # Can't test for equality of transports, since URLs and object
+        # identity differ.
+        file_data = self.factory.getUniqueString()
+        transport.mkdir(os.path.dirname(path))
+        transport.put_bytes(path, file_data)
+        self.assertEqual(file_data, expected_transport.get_bytes(path))
 
-        def check_branch_transport((transport, path)):
-            self.assertEqual(expected_path, path)
-            # Can't test for equality of transports, since URLs and object
-            # identity differ.
-            file_data = self.factory.getUniqueString()
-            transport.mkdir(os.path.dirname(path))
-            transport.put_bytes(path, file_data)
-            self.assertEqual(file_data, expected_transport.get_bytes(path))
-        return deferred.addCallback(check_branch_transport)
-
+    @defer.inlineCallbacks
     def test_translate_branch_path_mirrored(self):
         # translateVirtualPath returns a read-only transport for branches we
         # can't write to.
         branch = self.factory.makeAnyBranch(branch_type=BranchType.HOSTED)
-        deferred = self.server.translateVirtualPath(
+        transport, path = yield self.server.translateVirtualPath(
             '%s/.bzr/README' % (branch.unique_name,))
-
-        def check_branch_transport((transport, path)):
-            self.assertEqual('.bzr/README', path)
-            self.assertEqual(True, transport.is_readonly())
-        return deferred.addCallback(check_branch_transport)
+        self.assertEqual('.bzr/README', path)
+        self.assertEqual(True, transport.is_readonly())
 
     def test_createBranch_error_translation(self):
         # createBranch raises PermissionDenied if we try to create a branch
@@ -330,6 +321,7 @@ class TestLaunchpadServer(MixinBaseLaunchpadServerTests, BzrTestCase):
 class LaunchpadInternalServerTests:
     """Tests for the internal server classes, used by e.g. the scanner."""
 
+    @defer.inlineCallbacks
     def test_translate_branch_path(self):
         branch = self.factory.makeAnyBranch()
         dispatch = self.server._transport_dispatch.makeTransport((
@@ -337,18 +329,15 @@ class LaunchpadInternalServerTests:
             '.bzr/README'))
         expected_transport, expected_path = dispatch
 
-        deferred = self.server.translateVirtualPath(
+        transport, path = yield self.server.translateVirtualPath(
             '/%s/.bzr/README' % (branch.unique_name,))
-
-        def check_branch_transport((transport, path)):
-            self.assertEqual(expected_path, path)
-            # Can't test for equality of transports, since URLs and object
-            # identity differ.
-            file_data = self.factory.getUniqueString()
-            transport.mkdir(os.path.dirname(path))
-            transport.put_bytes(path, file_data)
-            self.assertEqual(file_data, expected_transport.get_bytes(path))
-        return deferred.addCallback(check_branch_transport)
+        self.assertEqual(expected_path, path)
+        # Can't test for equality of transports, since URLs and object
+        # identity differ.
+        file_data = self.factory.getUniqueString()
+        transport.mkdir(os.path.dirname(path))
+        transport.put_bytes(path, file_data)
+        self.assertEqual(file_data, expected_transport.get_bytes(path))
 
     def test_translate_control_dir_path(self):
         self.server.start_server()
@@ -956,60 +945,43 @@ class TestBranchChangedNotification(TestCaseWithTransport):
             revid,
             self._branch_changed_log[0]['last_revision'])
 
+    def assertStackedOnIsRewritten(self, input, output):
+        db_branch = self.factory.makeAnyBranch(
+            branch_type=BranchType.HOSTED, owner=self.requester)
+        branch = self.make_branch(db_branch.unique_name)
+        del self._branch_changed_log[:]
+        branch.lock_write()
+        branch._set_config_location('stacked_on_location', input)
+        branch.unlock()
+        # Clear the branch config cache to pick up the changes we made
+        # directly to the filesystem.
+        branch._get_config_store().unload()
+        self.assertEqual(output, branch.get_stacked_on_url())
+        self.assertEqual(1, len(self._branch_changed_log))
+        self.assertEqual(output, self._branch_changed_log[0]['stacked_on_url'])
+
     def test_branch_unlock_relativizes_absolute_stacked_on_url(self):
         # When a branch that has been stacked on the absolute URL of another
         # Launchpad branch is unlocked, the branch is mutated to be stacked on
         # the path part of that URL, and this relative path is passed to
         # branchChanged().
-        db_branch = self.factory.makeAnyBranch(
-            branch_type=BranchType.HOSTED, owner=self.requester)
-        branch = self.make_branch(db_branch.unique_name)
-        del self._branch_changed_log[:]
-        branch.lock_write()
-        branch.get_config().set_user_option(
-            'stacked_on_location',
-            'http://bazaar.launchpad.dev/~user/product/branch')
-        branch.unlock()
-        self.assertEqual('/~user/product/branch', branch.get_stacked_on_url())
-        self.assertEqual(1, len(self._branch_changed_log))
-        self.assertEqual(
-            '/~user/product/branch',
-            self._branch_changed_log[0]['stacked_on_url'])
+        self.assertStackedOnIsRewritten(
+            'http://bazaar.launchpad.test/~user/product/branch',
+            '/~user/product/branch')
 
     def test_branch_unlock_ignores_non_launchpad_stacked_url(self):
         # When a branch that has been stacked on the absolute URL of a branch
         # that is not on Launchpad, it is passed unchanged to branchChanged().
-        db_branch = self.factory.makeAnyBranch(
-            branch_type=BranchType.HOSTED, owner=self.requester)
-        branch = self.make_branch(db_branch.unique_name)
-        del self._branch_changed_log[:]
-        stacked_on_url = 'http://example.com/~user/foo'
-        branch.lock_write()
-        branch.get_config().set_user_option(
-            'stacked_on_location', stacked_on_url)
-        branch.unlock()
-        self.assertEqual(1, len(self._branch_changed_log))
-        self.assertEqual(
-            stacked_on_url, self._branch_changed_log[0]['stacked_on_url'])
-        self.assertEqual(stacked_on_url, branch.get_stacked_on_url())
+        self.assertStackedOnIsRewritten(
+            'http://example.com/~user/foo', 'http://example.com/~user/foo')
 
     def test_branch_unlock_ignores_odd_scheme_stacked_url(self):
         # When a branch that has been stacked on the absolute URL of a branch
         # on Launchpad with a scheme we don't understand, it is passed
         # unchanged to branchChanged().
-        db_branch = self.factory.makeAnyBranch(
-            branch_type=BranchType.HOSTED, owner=self.requester)
-        branch = self.make_branch(db_branch.unique_name)
-        del self._branch_changed_log[:]
-        stacked_on_url = 'gopher://bazaar.launchpad.dev/~user/foo'
-        branch.lock_write()
-        branch.get_config().set_user_option(
-            'stacked_on_location', stacked_on_url)
-        branch.unlock()
-        self.assertEqual(1, len(self._branch_changed_log))
-        self.assertEqual(
-            stacked_on_url, self._branch_changed_log[0]['stacked_on_url'])
-        self.assertEqual(stacked_on_url, branch.get_stacked_on_url())
+        self.assertStackedOnIsRewritten(
+            'gopher://bazaar.launchpad.test/~user/foo',
+            'gopher://bazaar.launchpad.test/~user/foo')
 
     def assertFormatStringsPassed(self, branch):
         self.assertEqual(1, len(self._branch_changed_log))
@@ -1031,6 +1003,8 @@ class TestBranchChangedNotification(TestCaseWithTransport):
 
 class TestBranchChangedErrorHandling(TestCaseWithTransport, TestCase):
     """Test handling of errors when branchChange is called."""
+
+    run_tests_with = AsynchronousDeferredRunTest
 
     def setUp(self):
         super(TestBranchChangedErrorHandling, self).setUp()
@@ -1084,8 +1058,7 @@ class TestBranchChangedErrorHandling(TestCaseWithTransport, TestCase):
         # endpoint. We will then check the error handling.
         db_branch = self.factory.makeAnyBranch(
             branch_type=BranchType.HOSTED, owner=self.requester)
-        branch = run_with_log_observers(
-            [], self.make_branch, db_branch.unique_name)
+        branch = self.make_branch(db_branch.unique_name)
         branch.lock_write()
         branch.unlock()
         stderr_text = sys.stderr.getvalue()

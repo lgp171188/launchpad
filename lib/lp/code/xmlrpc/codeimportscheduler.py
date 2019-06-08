@@ -1,4 +1,4 @@
-# Copyright 2009 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """The code import scheduler XML-RPC API."""
@@ -9,16 +9,16 @@ __all__ = [
     ]
 
 from zope.component import getUtility
-from zope.interface import implements
+from zope.interface import implementer
 from zope.security.proxy import removeSecurityProxy
 
 from lp.code.enums import CodeImportResultStatus
+from lp.code.interfaces.branch import get_blacklisted_hostnames
 from lp.code.interfaces.codeimportjob import (
     ICodeImportJobSet,
     ICodeImportJobWorkflow,
     )
 from lp.code.interfaces.codeimportscheduler import ICodeImportScheduler
-from lp.codehosting.codeimport.worker import CodeImportSourceDetails
 from lp.services.librarian.interfaces import ILibraryFileAliasSet
 from lp.services.webapp import (
     canonical_url,
@@ -28,10 +28,9 @@ from lp.xmlrpc.faults import NoSuchCodeImportJob
 from lp.xmlrpc.helpers import return_fault
 
 
+@implementer(ICodeImportScheduler)
 class CodeImportSchedulerAPI(LaunchpadXMLRPCView):
     """See `ICodeImportScheduler`."""
-
-    implements(ICodeImportScheduler)
 
     def getJobForMachine(self, hostname, worker_limit):
         """See `ICodeImportScheduler`."""
@@ -68,12 +67,14 @@ class CodeImportSchedulerAPI(LaunchpadXMLRPCView):
     @return_fault
     def _getImportDataForJobID(self, job_id):
         job = self._getJob(job_id)
-        arguments = CodeImportSourceDetails.fromCodeImport(
-            job.code_import).asArguments()
-        branch = job.code_import.branch
-        branch_url = canonical_url(branch)
-        log_file_name = '%s.log' % branch.unique_name[1:].replace('/', '-')
-        return (arguments, branch_url, log_file_name)
+        target = job.code_import.target
+        return {
+            'arguments': job.makeWorkerArguments(),
+            'target_url': canonical_url(target),
+            'log_file_name': '%s.log' % (
+                target.unique_name[1:].replace('/', '-')),
+            'blacklisted_hostnames': get_blacklisted_hostnames(),
+            }
 
     @return_fault
     def _updateHeartbeat(self, job_id, log_tail):

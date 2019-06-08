@@ -1,11 +1,10 @@
-# Copyright 2010-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2016 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test MaloneHandler."""
 
 __metaclass__ = type
 
-import email
 import time
 
 import transaction
@@ -16,6 +15,7 @@ from zope.security.management import (
     )
 from zope.security.proxy import removeSecurityProxy
 
+from lp.app.enums import InformationType
 from lp.bugs.interfaces.bug import IBugSet
 from lp.bugs.mail.commands import (
     BugEmailCommand,
@@ -28,13 +28,9 @@ from lp.bugs.mail.handler import (
     MaloneHandler,
     )
 from lp.bugs.model.bugnotification import BugNotification
-from lp.registry.enums import (
-    BugSharingPolicy,
-    InformationType,
-    )
+from lp.registry.enums import BugSharingPolicy
 from lp.services.config import config
 from lp.services.identity.interfaces.emailaddress import EmailAddressStatus
-from lp.services.mail import stub
 from lp.services.webapp.authorization import LaunchpadSecurityPolicy
 from lp.testing import (
     celebrity_logged_in,
@@ -102,7 +98,7 @@ class TestMaloneHandler(TestCaseWithFactory):
         # NB SignedMessage by default isn't actually signed, it just has the
         # capability of knowing about signing.
         message = self.factory.makeSignedMessage(body='  affects malone\nhi!')
-        self.assertEquals(message.signature, None)
+        self.assertEqual(message.signature, None)
 
         # Pretend that the mail auth has given us a logged-in user.
         handler = MaloneHandler()
@@ -110,8 +106,8 @@ class TestMaloneHandler(TestCaseWithFactory):
             mail_handled, add_comment_to_bug, commands = \
                 handler.extractAndAuthenticateCommands(message,
                     'new@bugs.launchpad.net')
-        self.assertEquals(mail_handled, None)
-        self.assertEquals(map(str, commands), [
+        self.assertEqual(mail_handled, None)
+        self.assertEqual(map(str, commands), [
             'bug new',
             'affects malone',
             ])
@@ -126,12 +122,11 @@ class TestMaloneHandler(TestCaseWithFactory):
         response = handler.extractAndAuthenticateCommands(
             message, 'help@bugs.launchpad.net')
         mail_handled, add_comment_to_bug, commands = response
-        self.assertEquals(mail_handled, True)
-        emails = self.getSentMail()
-        self.assertEquals(1, len(emails))
-        self.assertEquals(['non@eg.dom'], emails[0][1])
-        self.assertTrue(
-            'Subject: Launchpad Bug Tracker Email Interface' in emails[0][2])
+        self.assertTrue(mail_handled)
+        emails = self.assertEmailQueueLength(1)
+        self.assertEqual('non@eg.dom', emails[0]['X-Envelope-To'])
+        self.assertEqual(
+            'Launchpad Bug Tracker Email Interface Help', emails[0]['Subject'])
 
     def test_mailToHelpFromUnknownUser(self):
         """Mail from people of no account to help@ is simply dropped.
@@ -142,8 +137,8 @@ class TestMaloneHandler(TestCaseWithFactory):
         mail_handled, add_comment_to_bug, commands = \
             handler.extractAndAuthenticateCommands(message,
                 'help@bugs.launchpad.net')
-        self.assertEquals(mail_handled, True)
-        self.assertEquals(self.getSentMail(), [])
+        self.assertTrue(mail_handled)
+        self.assertEmailQueueLength(0)
 
     def test_mailToHelp(self):
         """Mail to help@ generates a help command."""
@@ -154,19 +149,11 @@ class TestMaloneHandler(TestCaseWithFactory):
             mail_handled, add_comment_to_bug, commands = \
                 handler.extractAndAuthenticateCommands(message,
                     'help@bugs.launchpad.net')
-        self.assertEquals(mail_handled, True)
-        emails = self.getSentMail()
-        self.assertEquals(1, len(emails))
-        self.assertEquals([message['From']], emails[0][1])
-        self.assertTrue(
-            'Subject: Launchpad Bug Tracker Email Interface' in emails[0][2])
-
-    def getSentMail(self):
-        # Sending mail is (unfortunately) a side effect of parsing the
-        # commands, and unfortunately you must commit the transaction to get
-        # them sent.
-        transaction.commit()
-        return stub.test_emails[:]
+        self.assertEqual(mail_handled, True)
+        emails = self.assertEmailQueueLength(1)
+        self.assertEqual(message['From'], emails[0]['X-Envelope-To'])
+        self.assertEqual(
+            'Launchpad Bug Tracker Email Interface Help', emails[0]['Subject'])
 
     def getFailureForMessage(self, to_address, from_address=None, body=None):
         mail = self.factory.makeSignedMessage(
@@ -194,12 +181,12 @@ class TestMaloneHandler(TestCaseWithFactory):
         # user back and ask that they use attachments instead.
         big_body_text = 'This is really big.' * 10000
         message = self.getFailureForMessage(
-            'new@bugs.launchpad.dev', body=big_body_text)
+            'new@bugs.launchpad.test', body=big_body_text)
         self.assertIn("The description is too long.", message)
 
     def test_bug_not_found(self):
         # Non-existent bug numbers result in an informative error.
-        message = self.getFailureForMessage('1234@bugs.launchpad.dev')
+        message = self.getFailureForMessage('1234@bugs.launchpad.test')
         self.assertIn(
             "There is no such bug in Launchpad: 1234", message)
 
@@ -213,7 +200,7 @@ class TestMaloneHandler(TestCaseWithFactory):
         # Drop the notifications from celebrity_logged_in.
         pop_notifications()
         message = self.getFailureForMessage(
-            '4@bugs.launchpad.dev',
+            '4@bugs.launchpad.test',
             from_address=removeSecurityProxy(person.preferredemail).email)
         self.assertIs(None, message)
 
@@ -222,7 +209,7 @@ class TestMaloneHandler(TestCaseWithFactory):
         with celebrity_logged_in('admin'):
             getUtility(IBugSet).get(4).setPrivate(
                 True, self.factory.makePerson())
-        message = self.getFailureForMessage('4@bugs.launchpad.dev')
+        message = self.getFailureForMessage('4@bugs.launchpad.test')
         self.assertIn(
             "There is no such bug in Launchpad: 4", message)
 
@@ -243,7 +230,7 @@ class MaloneHandlerProcessTestCase(TestCaseWithFactory):
             msg = self.factory.makeSignedMessage(
                 body='borked\n affects fnord',
                 subject='subject borked',
-                to_address='new@bugs.launchpad.dev')
+                to_address='new@bugs.launchpad.test')
             handler.process(msg, msg['To'])
         notification = self.getLatestBugNotification()
         bug = notification.bug
@@ -267,7 +254,7 @@ class MaloneHandlerProcessTestCase(TestCaseWithFactory):
             msg = self.factory.makeSignedMessage(
                 body='borked\n affects fnord',
                 subject='subject borked',
-                to_address='new@bugs.launchpad.dev')
+                to_address='new@bugs.launchpad.test')
             handler.process(msg, msg['To'])
         notification = self.getLatestBugNotification()
         bug = notification.bug
@@ -285,7 +272,7 @@ class MaloneHandlerProcessTestCase(TestCaseWithFactory):
             msg = self.factory.makeSignedMessage(
                 body='borked\n assignee pting\n affects fnord',
                 subject='affects after assignee',
-                to_address='new@bugs.launchpad.dev')
+                to_address='new@bugs.launchpad.test')
             handler.process(msg, msg['To'])
         notification = self.getLatestBugNotification()
         bug = notification.bug
@@ -303,7 +290,7 @@ class MaloneHandlerProcessTestCase(TestCaseWithFactory):
             msg = self.factory.makeSignedMessage(
                 body='unsecure\n security yes\n affects fnord\n tag ajax',
                 subject='unsecure code',
-                to_address='new@bugs.launchpad.dev')
+                to_address='new@bugs.launchpad.test')
             handler.process(msg, msg['To'])
         notification = self.getLatestBugNotification()
         bug = notification.bug
@@ -326,7 +313,7 @@ class MaloneHandlerProcessTestCase(TestCaseWithFactory):
             msg = self.factory.makeSignedMessage(
                 body='bad thing\n security yes\n affects fnord',
                 subject='security issue',
-                to_address='new@bugs.launchpad.dev')
+                to_address='new@bugs.launchpad.test')
             handler.process(msg, msg['To'])
         notification = self.getLatestBugNotification()
         bug = notification.bug
@@ -348,7 +335,7 @@ class MaloneHandlerProcessTestCase(TestCaseWithFactory):
             msg = self.factory.makeSignedMessage(
                 body='unsecure\n informationtype userdata\n affects fnord',
                 subject='unsecure code',
-                to_address='new@bugs.launchpad.dev')
+                to_address='new@bugs.launchpad.test')
             handler.process(msg, msg['To'])
         notification = self.getLatestBugNotification()
         bug = notification.bug
@@ -685,22 +672,6 @@ class FakeSignature:
         self.timestamp = timestamp
 
 
-def get_last_email():
-    from_addr, to_addrs, raw_message = stub.test_emails[-1]
-    sent_msg = email.message_from_string(raw_message)
-    error_mail, original_mail = sent_msg.get_payload()
-    # clear the emails so we don't accidentally get one from a previous test
-    return dict(
-        subject=sent_msg['Subject'],
-        body=error_mail.get_payload(decode=True))
-
-
-BAD_SIGNATURE_TIMESTAMP_MESSAGE = (
-    'The message you sent included commands to modify the bug '
-    'report, but the\nsignature was (apparently) generated too far '
-    'in the past or future.')
-
-
 class TestSignatureTimestampValidation(TestCaseWithFactory):
     """GPG signature timestamps are checked for emails containing commands."""
 
@@ -711,16 +682,15 @@ class TestSignatureTimestampValidation(TestCaseWithFactory):
         # isn't too far in the future or past.  This test shows that a
         # signature with a timestamp of appxoimately now will be accepted.
         signing_context = GPGSigningContext(
-            import_secret_test_key().fingerprint, password='test')
+            import_secret_test_key(), password='test')
         msg = self.factory.makeSignedMessage(
             body=' security no', signing_context=signing_context)
         handler = MaloneHandler()
         with person_logged_in(self.factory.makePerson()):
             handler.process(msg, msg['To'])
-        transaction.commit()
         # Since there were no commands in the poorly-timestamped message, no
         # error emails were generated.
-        self.assertEqual(stub.test_emails, [])
+        self.assertEmailQueueLength(0)
 
     def test_bad_timestamp_but_no_commands(self):
         # If an email message's GPG signature's timestamp is too far in the
@@ -734,10 +704,9 @@ class TestSignatureTimestampValidation(TestCaseWithFactory):
         msg.signature = FakeSignature(timestamp=now + one_week)
         handler = MaloneHandler()
         # Clear old emails before potentially generating more.
-        del stub.test_emails[:]
+        pop_notifications()
         with person_logged_in(self.factory.makePerson()):
             handler.process(msg, msg['To'])
-        transaction.commit()
         # Since there were no commands in the poorly-timestamped message, no
         # error emails were generated.
-        self.assertEqual(stub.test_emails, [])
+        self.assertEmailQueueLength(0)

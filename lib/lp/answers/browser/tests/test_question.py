@@ -3,16 +3,21 @@
 
 """Tests for the question module."""
 
+from __future__ import absolute_import, print_function, unicode_literals
+
 __metaclass__ = type
 
 __all__ = []
 
+from zope.security.proxy import removeSecurityProxy
+
 from lp.answers.browser.question import QuestionTargetWidget
 from lp.answers.interfaces.question import IQuestion
-from lp.answers.publisher import AnswersLayer
+from lp.app.enums import ServiceUsage
 from lp.services.webapp.servers import LaunchpadTestRequest
 from lp.testing import (
     login_person,
+    person_logged_in,
     TestCaseWithFactory,
     )
 from lp.testing.layers import DatabaseFunctionalLayer
@@ -20,7 +25,7 @@ from lp.testing.views import create_initialized_view
 
 
 class TestQuestionAddView(TestCaseWithFactory):
-    """Verify the behavior of the QuestionAddView."""
+    """Verify the behaviour of the QuestionAddView."""
 
     layer = DatabaseFunctionalLayer
 
@@ -41,23 +46,37 @@ class TestQuestionAddView(TestCaseWithFactory):
         # Titles (summary in the view) less than 250 characters are accepted.
         form = self.getSearchForm('123456789 ' * 10)
         view = create_initialized_view(
-            self.question_target, name='+addquestion', layer=AnswersLayer,
-            form=form, principal=self.user)
+            self.question_target, name='+addquestion', form=form,
+            principal=self.user)
         self.assertEqual([], view.errors)
 
     def test_question_title_exceeds_max_display_width(self):
         # Titles (summary in the view) cannot exceed 250 characters.
         form = self.getSearchForm('123456789 ' * 26)
         view = create_initialized_view(
-            self.question_target, name='+addquestion', layer=AnswersLayer,
-            form=form, principal=self.user)
+            self.question_target, name='+addquestion', form=form,
+            principal=self.user)
         self.assertEqual(1, len(view.errors))
         self.assertEqual(
             'The summary cannot exceed 250 characters.', view.errors[0])
 
+    def test_context_uses_answers(self):
+        # If a target doesn't use answers, it doesn't provide the form.
+        #logout()
+        owner = removeSecurityProxy(self.question_target).owner
+        with person_logged_in(owner):
+            self.question_target.answers_usage = ServiceUsage.NOT_APPLICABLE
+        login_person(self.user)
+        view = create_initialized_view(
+            self.question_target, name='+addquestion', principal=self.user)
+        self.assertFalse(view.context_uses_answers)
+        contents = view.render()
+        msg = "<strong>does not use</strong> Launchpad as its answer forum"
+        self.assertIn(msg, contents)
+
 
 class QuestionEditViewTestCase(TestCaseWithFactory):
-    """Verify the behavior of the QuestionEditView."""
+    """Verify the behaviour of the QuestionEditView."""
 
     layer = DatabaseFunctionalLayer
 
@@ -90,8 +109,7 @@ class QuestionEditViewTestCase(TestCaseWithFactory):
         form = self.getForm(question)
         form['field.whiteboard'] = 'comment'
         form['field.target.product'] = other_target.name
-        view = create_initialized_view(
-            question, name='+edit', layer=AnswersLayer, form=form)
+        view = create_initialized_view(question, name='+edit', form=form)
         self.assertEqual([], view.errors)
         self.assertEqual(other_target, question.target)
         self.assertEqual('comment', question.whiteboard)

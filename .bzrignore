@@ -1,5 +1,6 @@
+*.pyc
 .tags
-bzr-version-info.py
+version-info.py
 logs/*
 +*
 sourcecode/*
@@ -11,6 +12,7 @@ database/schema/diagrams/*.ps
 database/schema/diagrams/*.dot
 thread*.request
 ./TAGS
+lib/Mailman
 lib/mailman
 TAGS
 cover.txt
@@ -31,21 +33,17 @@ lib/canonical/launchpad/apidoc/wadl-test-playground.xml
 lib/canonical/launchpad/icing/build/*
 lib/canonical/launchpad/icing/combo.css
 bin
-develop-eggs
 .installed.cfg
 parts
 *.egg-info
 build
-*.egg
 dist
 ./eggs
-./yui
 ./download-cache
-./_pythonpath.py
+./env
 ./production-configs
 bzr.dev
 _trial_temp
-lazr-js
 .bazaar
 .cache
 .subversion
@@ -75,7 +73,7 @@ lib/canonical/launchpad/icing/*.positioning
 lib/canonical/launchpad/icing/yui
 .emacs.desktop
 callgrind.out.*
-scripts/mlist-sync.py
 ./celerybeat-schedule
 !logs/README.txt
 ./logs
+yarn/node_modules

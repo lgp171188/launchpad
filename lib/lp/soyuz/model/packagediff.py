@@ -1,4 +1,4 @@
-# Copyright 2009-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2015 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -7,10 +7,13 @@ __all__ = [
     'PackageDiffSet',
     ]
 
+from functools import partial
 import gzip
 import itertools
 import os
+import resource
 import shutil
+import signal
 import subprocess
 import tempfile
 
@@ -18,14 +21,15 @@ from sqlobject import ForeignKey
 from storm.expr import Desc
 from storm.store import EmptyResultSet
 from zope.component import getUtility
-from zope.interface import implements
+from zope.interface import implementer
 
+from lp.services.config import config
 from lp.services.database.bulk import load
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.enumcol import EnumCol
-from lp.services.database.lpstorm import IStore
+from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import (
     SQLBase,
     sqlvalues,
@@ -36,16 +40,24 @@ from lp.services.librarian.model import (
     LibraryFileContent,
     )
 from lp.services.librarian.utils import copy_and_close
-from lp.services.webapp.interfaces import (
-    DEFAULT_FLAVOR,
-    IStoreSelector,
-    MAIN_STORE,
-    )
 from lp.soyuz.enums import PackageDiffStatus
 from lp.soyuz.interfaces.packagediff import (
     IPackageDiff,
     IPackageDiffSet,
     )
+
+
+def limit_deb_diff(timeout, max_size):
+    """Pre-exec function to apply resource limits to debdiff.
+
+    :param timeout: Time limit in seconds.
+    :param max_size: Maximum output file size in bytes.
+    """
+    signal.alarm(timeout)
+    _, hard_fsize = resource.getrlimit(resource.RLIMIT_FSIZE)
+    if hard_fsize != resource.RLIM_INFINITY and hard_fsize < max_size:
+        max_size = hard_fsize
+    resource.setrlimit(resource.RLIMIT_FSIZE, (max_size, hard_fsize))
 
 
 def perform_deb_diff(tmp_dir, out_filename, from_files, to_files):
@@ -72,13 +84,20 @@ def perform_deb_diff(tmp_dir, out_filename, from_files, to_files):
     [to_dsc] = [name for name in to_files
                 if name.lower().endswith('.dsc')]
     args = ['debdiff', from_dsc, to_dsc]
+    env = os.environ.copy()
+    env['TMPDIR'] = tmp_dir
 
     full_path = os.path.join(tmp_dir, out_filename)
     out_file = None
     try:
         out_file = open(full_path, 'w')
         process = subprocess.Popen(
-            args, stdout=out_file, stderr=subprocess.PIPE, cwd=tmp_dir)
+            args, stdout=out_file, stderr=subprocess.PIPE,
+            preexec_fn=partial(
+                limit_deb_diff,
+                config.packagediff.debdiff_timeout,
+                config.packagediff.debdiff_max_size),
+            cwd=tmp_dir, env=env)
         stdout, stderr = process.communicate()
     finally:
         if out_file is not None:
@@ -101,17 +120,16 @@ def download_file(destination_path, libraryfile):
     copy_and_close(libraryfile, destination_file)
 
 
+@implementer(IPackageDiff)
 class PackageDiff(SQLBase):
     """A Package Diff request."""
-
-    implements(IPackageDiff)
 
     _defaultOrder = ['id']
 
     date_requested = UtcDateTimeCol(notNull=False, default=UTC_NOW)
 
     requester = ForeignKey(
-        dbName='requester', foreignKey='Person', notNull=True)
+        dbName='requester', foreignKey='Person', notNull=False)
 
     from_source = ForeignKey(
         dbName="from_source", foreignKey='SourcePackageRelease', notNull=True)
@@ -152,7 +170,6 @@ class PackageDiff(SQLBase):
     def _countDeletedLFAs(self):
         """How many files associated with either source package have been
         deleted from the librarian?"""
-        store = getUtility(IStoreSelector).get(MAIN_STORE, DEFAULT_FLAVOR)
         query = """
             SELECT COUNT(lfa.id)
             FROM
@@ -164,7 +181,7 @@ class PackageDiff(SQLBase):
                 AND sprf.libraryfile = lfa.id
                 AND lfa.content IS NULL
             """ % sqlvalues((self.from_source.id, self.to_source.id))
-        result = store.execute(query).get_one()
+        result = IStore(LibraryFileAlias).execute(query).get_one()
         return (0 if result is None else result[0])
 
     def performDiff(self):
@@ -177,6 +194,11 @@ class PackageDiff(SQLBase):
         # Make sure the files associated with the two source packages are
         # still available in the librarian.
         if self._countDeletedLFAs() > 0:
+            self.status = PackageDiffStatus.FAILED
+            return
+
+        blacklist = config.packagediff.blacklist.split()
+        if self.from_source.sourcepackagename.name in blacklist:
             self.status = PackageDiffStatus.FAILED
             return
 
@@ -257,10 +279,9 @@ class PackageDiff(SQLBase):
             shutil.rmtree(tmp_dir)
 
 
+@implementer(IPackageDiffSet)
 class PackageDiffSet:
     """This class is to deal with Distribution related stuff"""
-
-    implements(IPackageDiffSet)
 
     def __iter__(self):
         """See `IPackageDiffSet`."""
@@ -270,13 +291,6 @@ class PackageDiffSet:
         """See `IPackageDiffSet`."""
         return PackageDiff.get(diff_id)
 
-    def getPendingDiffs(self, limit=None):
-        store = getUtility(IStoreSelector).get(MAIN_STORE, DEFAULT_FLAVOR)
-        result = store.find(
-            PackageDiff, PackageDiff.status == PackageDiffStatus.PENDING)
-        result.order_by(PackageDiff.id)
-        return result.config(limit=limit)
-
     def getDiffsToReleases(self, sprs, preload_for_display=False):
         """See `IPackageDiffSet`."""
         from lp.registry.model.distribution import Distribution
@@ -284,9 +298,8 @@ class PackageDiffSet:
         from lp.soyuz.model.sourcepackagerelease import SourcePackageRelease
         if len(sprs) == 0:
             return EmptyResultSet()
-        store = getUtility(IStoreSelector).get(MAIN_STORE, DEFAULT_FLAVOR)
         spr_ids = [spr.id for spr in sprs]
-        result = store.find(
+        result = IStore(PackageDiff).find(
             PackageDiff, PackageDiff.to_sourceID.is_in(spr_ids))
         result.order_by(PackageDiff.to_sourceID,
                         Desc(PackageDiff.date_requested))

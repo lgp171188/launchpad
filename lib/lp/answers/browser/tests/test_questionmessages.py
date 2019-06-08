@@ -3,6 +3,8 @@
 
 """Tests for the various rules around question comment visibility."""
 
+from __future__ import absolute_import, print_function, unicode_literals
+
 __metaclass__ = type
 
 from zope.component import getUtility
@@ -18,6 +20,7 @@ from lp.testing import (
     person_logged_in,
     )
 from lp.testing.layers import DatabaseFunctionalLayer
+from lp.testing.pages import find_tag_by_id
 
 
 class TestQuestionMessageVisibility(
@@ -25,12 +28,14 @@ class TestQuestionMessageVisibility(
 
     layer = DatabaseFunctionalLayer
 
-    def makeHiddenMessage(self):
+    def makeHiddenMessage(self, comment_owner=None):
         """Required by the mixin."""
         administrator = getUtility(ILaunchpadCelebrities).admin.teamowner
+        if comment_owner is None:
+            comment_owner = self.factory.makePerson()
         with person_logged_in(administrator):
             question = self.factory.makeQuestion()
-            comment = question.addComment(administrator, self.comment_text)
+            comment = question.addComment(comment_owner, self.comment_text)
             removeSecurityProxy(comment).message.visible = False
         return question
 
@@ -53,10 +58,11 @@ class TestHideQuestionMessageControls(
     def getContext(self, comment_owner=None):
         """Required by the mixin."""
         administrator = getUtility(ILaunchpadCelebrities).admin.teamowner
+        user = comment_owner or administrator
         question = self.factory.makeQuestion()
         body = self.factory.getUniqueString()
-        with person_logged_in(administrator):
-            question.addComment(administrator, body)
+        with person_logged_in(user):
+            question.addComment(user, body)
         return question
 
     def getView(self, context, user=None, no_login=False):
@@ -66,3 +72,11 @@ class TestHideQuestionMessageControls(
             user=user,
             no_login=no_login)
         return view
+
+    def test_comment_owner_sees_hide_control(self):
+        # The comment owner sees the hide control.
+        user = self.factory.makePerson()
+        context = self.getContext(comment_owner=user)
+        view = self.getView(context=context, user=user)
+        hide_link = find_tag_by_id(view.contents, self.control_text)
+        self.assertIsNot(None, hide_link)

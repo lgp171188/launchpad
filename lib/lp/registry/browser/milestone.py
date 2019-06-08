@@ -1,4 +1,4 @@
-# Copyright 2009-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Milestone views."""
@@ -21,7 +21,6 @@ __all__ = [
     'MilestoneView',
     'MilestoneViewMixin',
     'ObjectMilestonesView',
-    'validate_tags',
     ]
 
 
@@ -29,7 +28,7 @@ from lazr.restful.utils import safe_hasattr
 from zope.component import getUtility
 from zope.formlib import form
 from zope.interface import (
-    implements,
+    implementer,
     Interface,
     )
 from zope.schema import (
@@ -38,16 +37,15 @@ from zope.schema import (
     )
 
 from lp import _
+from lp.app.browser.informationtype import InformationTypePortletMixin
 from lp.app.browser.launchpadform import (
     action,
-    custom_widget,
     LaunchpadEditFormView,
     LaunchpadFormView,
     safe_action,
     )
-from lp.app.validators.name import valid_name
 from lp.app.widgets.date import DateWidget
-from lp.bugs.browser.bugtask import BugTaskListingItem
+from lp.bugs.browser.buglisting import BugTaskListingItem
 from lp.bugs.browser.structuralsubscription import (
     expose_structural_subscription_data_to_js,
     StructuralSubscriptionMenuMixin,
@@ -71,7 +69,10 @@ from lp.registry.interfaces.milestone import (
 from lp.registry.interfaces.milestonetag import IProjectGroupMilestoneTag
 from lp.registry.interfaces.person import IPersonSet
 from lp.registry.interfaces.product import IProduct
-from lp.registry.model.milestonetag import ProjectGroupMilestoneTag
+from lp.registry.model.milestonetag import (
+    ProjectGroupMilestoneTag,
+    validate_tags,
+    )
 from lp.services.propertycache import cachedproperty
 from lp.services.webapp import (
     canonical_url,
@@ -213,7 +214,7 @@ class MilestoneViewMixin(object):
     @cachedproperty
     def specifications(self):
         """The list of specifications targeted to this milestone."""
-        return list(self.context.specifications)
+        return list(self.context.getSpecifications(self.user))
 
     @cachedproperty
     def _bugtasks(self):
@@ -258,12 +259,9 @@ class MilestoneViewMixin(object):
         tags = self._bug_task_tags.get(bugtask.id, ())
         people = self._bug_task_people
         return BugTaskListingItem(
-            bugtask,
-            badge_property['has_branch'],
-            badge_property['has_specification'],
-            badge_property['has_patch'],
-            tags,
-            people)
+            bugtask, badge_property['has_branch'],
+            badge_property['has_specification'], badge_property['has_patch'],
+            tags, people)
 
     @cachedproperty
     def bugtasks(self):
@@ -345,8 +343,7 @@ class MilestoneViewMixin(object):
         a project milestone tag, else return False."""
         return (
             IProjectGroupMilestone.providedBy(self.context) or
-            self.is_project_milestone_tag
-            )
+            self.is_project_milestone_tag)
 
     @property
     def has_bugs_or_specs(self):
@@ -354,12 +351,11 @@ class MilestoneViewMixin(object):
         return len(self.bugtasks) > 0 or len(self.specifications) > 0
 
 
+@implementer(IMilestoneInline)
 class MilestoneView(
-    LaunchpadView, MilestoneViewMixin, ProductDownloadFileMixin):
+    LaunchpadView, MilestoneViewMixin, ProductDownloadFileMixin,
+    InformationTypePortletMixin):
     """A View for listing milestones and releases."""
-    # XXX sinzui 2009-05-29 bug=381672: Extract the BugTaskListingItem rules
-    # to a mixin so that MilestoneView and others can use it.
-    implements(IMilestoneInline)
     show_series_context = False
 
     def __init__(self, context, request):
@@ -375,7 +371,7 @@ class MilestoneView(
         super(MilestoneView, self).__init__(context, request)
         if IMilestoneData.providedBy(context):
             self.milestone = context
-            self.release = context.product_release
+            self.release = getattr(context, "product_release", None)
         else:
             self.milestone = context.milestone
             self.release = context
@@ -428,14 +424,7 @@ class MilestoneWithoutCountsView(MilestoneView):
     should_show_bugs_and_blueprints = False
 
 
-class MilestoneAddView(LaunchpadFormView):
-    """A view for creating a new Milestone."""
-
-    schema = IMilestone
-    field_names = ['name', 'code_name', 'dateexpected', 'summary']
-    label = "Register a new milestone"
-
-    custom_widget('dateexpected', DateWidget)
+class MilestoneTagBase:
 
     def extendFields(self):
         """See `LaunchpadFormView`.
@@ -444,16 +433,25 @@ class MilestoneAddView(LaunchpadFormView):
         on the interface.
         """
         tag_entry = TextLine(
-            __name__='tags',
-            title=u'Tags',
-            required=False)
+            __name__='tags', title=u'Tags', required=False,
+            constraint=lambda value: validate_tags(value.split()))
         self.form_fields += form.Fields(
             tag_entry, render_context=self.render_context)
         # Make an instance attribute to avoid mutating the class attribute.
-        self.field_names = self.field_names[:]
+        self.field_names = getattr(self, '_field_names', self.field_names)[:]
         # Insert the tags field before the summary.
         summary_index = self.field_names.index('summary')
         self.field_names.insert(summary_index, tag_entry.__name__)
+
+
+class MilestoneAddView(MilestoneTagBase, LaunchpadFormView):
+    """A view for creating a new Milestone."""
+
+    schema = IMilestone
+    field_names = ['name', 'code_name', 'dateexpected', 'summary']
+    label = "Register a new milestone"
+
+    custom_widget_dateexpected = DateWidget
 
     @action(_('Register Milestone'), name='register')
     def register_action(self, action, data):
@@ -479,7 +477,7 @@ class MilestoneAddView(LaunchpadFormView):
         return canonical_url(self.context)
 
 
-class MilestoneEditView(LaunchpadEditFormView):
+class MilestoneEditView(MilestoneTagBase, LaunchpadEditFormView):
     """A view for editing milestone properties.
 
     This view supports editing of properties such as the name, the date it is
@@ -490,7 +488,7 @@ class MilestoneEditView(LaunchpadEditFormView):
     schema = IMilestone
     label = "Modify milestone details"
 
-    custom_widget('dateexpected', DateWidget)
+    custom_widget_dateexpected = DateWidget
 
     @property
     def cancel_url(self):
@@ -516,27 +514,7 @@ class MilestoneEditView(LaunchpadEditFormView):
 
     @property
     def initial_values(self):
-        tags = self.context.getTags()
-        tagstring = ' '.join(tags)
-        return dict(tags=tagstring)
-
-    def extendFields(self):
-        """See `LaunchpadFormView`.
-
-        Add a text-entry widget for milestone tags since there is not property
-        on the interface.
-        """
-        tag_entry = TextLine(
-            __name__='tags',
-            title=u'Tags',
-            required=False)
-        self.form_fields += form.Fields(
-            tag_entry, render_context=self.render_context)
-        # Make an instance attribute to avoid mutating the class attribute.
-        self.field_names = self._field_names[:]
-        # Insert the tags field before the summary.
-        summary_index = self.field_names.index('summary')
-        self.field_names.insert(summary_index, tag_entry.__name__)
+        return {'tags': u' '.join(self.context.getTags())}
 
     def setUpFields(self):
         """See `LaunchpadFormView`.
@@ -590,7 +568,7 @@ class MilestoneDeleteView(LaunchpadFormView, RegistryDeleteViewMixin):
     @cachedproperty
     def specifications(self):
         """The list `ISpecification`s targeted to the milestone."""
-        return self._getSpecifications(self.context)
+        return list(self.context.getSpecifications(self.user))
 
     @cachedproperty
     def product_release(self):
@@ -612,14 +590,6 @@ class MilestoneDeleteView(LaunchpadFormView, RegistryDeleteViewMixin):
         self.request.response.addInfoNotification(
             "Milestone %s deleted." % name)
         self.next_url = canonical_url(series)
-
-
-def validate_tags(tags):
-    """Check that `separator` separated `tags` are valid tag names."""
-    return (
-        all(valid_name(tag) for tag in tags) and
-        len(set(tags)) == len(tags)
-        )
 
 
 class ISearchMilestoneTagsForm(Interface):

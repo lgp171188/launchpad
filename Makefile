@@ -1,14 +1,28 @@
 # This file modified from Zope3/Makefile
 # Licensed under the ZPL, (c) Zope Corporation and contributors.
 
-PYTHON:=$(shell sed -e \
-    '/RELEASE/!d; s/.*=12.*/python2.7/; s/.*=.*/python2.6/' /etc/lsb-release)
+PYTHON:=python2.7
 
 WD:=$(shell pwd)
 PY=$(WD)/bin/py
-PYTHONPATH:=$(WD)/lib:$(WD)/lib/mailman:${PYTHONPATH}
-BUILDOUT_CFG=buildout.cfg
+PYTHONPATH:=$(WD)/lib:${PYTHONPATH}
 VERBOSITY=-vv
+
+# virtualenv and pip fail if setlocale fails, so force a valid locale.
+VIRTUALENV := LC_ALL=C.UTF-8 virtualenv
+PIP := PYTHONPATH= LC_ALL=C.UTF-8 env/bin/pip
+# Run with "make PIP_NO_INDEX=" if you want pip to find software
+# dependencies *other* than those in our download-cache.  Once you have the
+# desired software, commit it to lp:lp-source-dependencies if it is going to
+# be reviewed/merged/deployed.
+# Although --ignore-installed is slower, we need it to avoid confusion with
+# system-installed Python packages.  If we ever manage to remove the need
+# for virtualenv --system-site-packages, then we can remove this too.
+PIP_NO_INDEX := --no-index
+PIP_INSTALL_ARGS := \
+	$(PIP_NO_INDEX) \
+	--ignore-installed \
+	--find-links=file://$(WD)/download-cache/dist/ \
 
 TESTFLAGS=-p $(VERBOSITY)
 TESTOPTS=
@@ -22,57 +36,51 @@ LISTEN_ADDRESS?=127.0.0.88
 ICING=lib/canonical/launchpad/icing
 LP_BUILT_JS_ROOT=${ICING}/build
 
-ifeq ($(LPCONFIG), development)
-JS_BUILD := raw
-else
-JS_BUILD := min
-endif
-
-define JS_LP_PATHS
-lib -path 'lib/lp/*/javascript/*' \
-! -path '*/tests/*' ! -path '*/testing/*' \
-! -path 'lib/lp/services/*'
-endef
-
 JS_BUILD_DIR := build/js
-YUI_VERSIONS := 3.3.0 3.5.1
-YUI_BUILDS := $(patsubst %,$(JS_BUILD_DIR)/yui-%, $(YUI_VERSIONS))
-YUI_DEFAULT := $(JS_BUILD_DIR)/yui-3.3.0
-JS_YUI := $(shell utilities/yui-deps.py $(JS_BUILD:raw=))
-JS_LP := $(shell find -L $(JS_LP_PATHS) -name '*.js' ! -name '.*.js')
-JS_ALL := $(JS_YUI) $(JS_LP)
-JS_OUT := $(LP_BUILT_JS_ROOT)/launchpad.js
+YARN_VERSION := 1.2.1
+YARN_BUILD := $(JS_BUILD_DIR)/yarn
+YARN := utilities/yarn
+YUI_SYMLINK := $(JS_BUILD_DIR)/yui
+LP_JS_BUILD := $(JS_BUILD_DIR)/lp
 
 MINS_TO_SHUTDOWN=15
 
-CODEHOSTING_ROOT=/var/tmp/bazaar.launchpad.dev
+CODEHOSTING_ROOT=/var/tmp/bazaar.launchpad.test
 
-CONVOY_ROOT?=/srv/launchpad.dev/convoy
+CONVOY_ROOT?=/srv/launchpad.test/convoy
 
-BZR_VERSION_INFO = bzr-version-info.py
+VERSION_INFO = version-info.py
 
 APIDOC_DIR = lib/canonical/launchpad/apidoc
 APIDOC_TMPDIR = $(APIDOC_DIR).tmp/
 API_INDEX = $(APIDOC_DIR)/index.html
 
-# Do not add bin/buildout to this list.
-# It is impossible to get buildout to tell us all the files it would
-# build, since each egg's setup.py doesn't tell us that information.
+# It is impossible to get pip to tell us all the files it would build, since
+# each package's setup.py doesn't tell us that information.
 #
-# NB: It's important BUILDOUT_BIN only mentions things genuinely produced by
-# buildout.
-BUILDOUT_BIN = \
-    $(PY) bin/apiindex bin/combine-css bin/fl-build-report \
-    bin/fl-credential-ctl bin/fl-install-demo bin/fl-monitor-ctl \
-    bin/fl-record bin/fl-run-bench bin/fl-run-test bin/googletestservice \
-    bin/i18ncompile bin/i18nextract bin/i18nmergeall bin/i18nstats \
-    bin/harness bin/iharness bin/ipy bin/jsbuild bin/lpjsmin\
-    bin/killservice bin/kill-test-services bin/lint.sh bin/retest \
-    bin/run bin/run-testapp bin/sprite-util bin/start_librarian bin/stxdocs \
-    bin/tags bin/test bin/tracereport bin/twistd bin/update-download-cache \
-    bin/watch_jsbuild
-
-BUILDOUT_TEMPLATES = buildout-templates/_pythonpath.py.in
+# NB: It's important PIP_BIN only mentions things genuinely produced by pip.
+PIP_BIN = \
+    $(PY) \
+    bin/bingtestservice \
+    bin/build-twisted-plugin-cache \
+    bin/combine-css \
+    bin/harness \
+    bin/iharness \
+    bin/ipy \
+    bin/jsbuild \
+    bin/lpjsmin \
+    bin/killservice \
+    bin/kill-test-services \
+    bin/retest \
+    bin/run \
+    bin/run-testapp \
+    bin/sprite-util \
+    bin/start_librarian \
+    bin/test \
+    bin/tracereport \
+    bin/twistd \
+    bin/watch_jsbuild \
+    bin/with-xvfb
 
 # DO NOT ALTER : this should just build by default
 default: inplace
@@ -87,7 +95,7 @@ newsampledata:
 hosted_branches: $(PY)
 	$(PY) ./utilities/make-dummy-hosted-branches
 
-$(API_INDEX): $(BZR_VERSION_INFO) $(PY)
+$(API_INDEX): $(VERSION_INFO) $(PY)
 	$(RM) -r $(APIDOC_DIR) $(APIDOC_DIR).tmp
 	mkdir -p $(APIDOC_DIR).tmp
 	LPCONFIG=$(LPCONFIG) $(PY) ./utilities/create-lp-wadl-and-apidoc.py \
@@ -106,52 +114,55 @@ doc:
 	$(MAKE) -C doc/ html
 
 # Run by PQM.
-check_config: build
+check_config: build $(JS_BUILD_DIR)/.development
 	bin/test -m lp.services.config.tests -vvt test_config
 
 # Clean before running the test suite, since the build might fail depending
 # what source changes happened. (e.g. apidoc depends on interfaces)
-check: clean build
+check: clean build $(JS_BUILD_DIR)/.development
 	# Run all tests. test_on_merge.py takes care of setting up the
 	# database.
 	${PY} -t ./test_on_merge.py $(VERBOSITY) $(TESTOPTS)
 	bzr status --no-pending
 
-check_mailman: build
+check_mailman: build $(JS_BUILD_DIR)/.development
 	# Run all tests, including the Mailman integration
 	# tests. test_on_merge.py takes care of setting up the database.
 	${PY} -t ./test_on_merge.py $(VERBOSITY) $(TESTOPTS) \
-		--layer=MailmanLayer
+		lp.services.mailman.tests
 
-lint: ${PY}
-	@bash ./bin/lint.sh
+lint: ${PY} $(JS_BUILD_DIR)/.development
+	@bash ./utilities/lint
 
-lint-verbose: ${PY}
-	@bash ./bin/lint.sh -v
+lint-verbose: ${PY} $(JS_BUILD_DIR)/.development
+	@bash ./utilities/lint -v
 
 logs:
 	mkdir logs
 
-xxxreport: $(PY)
-	${PY} -t ./utilities/xxxreport.py -f csv -o xxx-report.csv ./
-
 codehosting-dir:
+	mkdir -p $(CODEHOSTING_ROOT)
 	mkdir -p $(CODEHOSTING_ROOT)/mirrors
 	mkdir -p $(CODEHOSTING_ROOT)/config
 	mkdir -p /var/tmp/bzrsync
 	touch $(CODEHOSTING_ROOT)/rewrite.log
 	chmod 777 $(CODEHOSTING_ROOT)/rewrite.log
 	touch $(CODEHOSTING_ROOT)/config/launchpad-lookup.txt
+ifneq ($(SUDO_UID),)
+	if [ "$$(id -u)" = 0 ]; then \
+		chown -R $(SUDO_UID):$(SUDO_GID) $(CODEHOSTING_ROOT); \
+	fi
+endif
 
-inplace: build combobuild logs clean_logs codehosting-dir
-	if [ -d /srv/launchpad.dev ]; then \
+inplace: build logs clean_logs codehosting-dir
+	if [ -d /srv/launchpad.test ]; then \
 		ln -sfn $(WD)/build/js $(CONVOY_ROOT); \
 	fi
 
 build: compile apidoc jsbuild css_combine
 
 # LP_SOURCEDEPS_PATH should point to the sourcecode directory, but we
-# want the parent directory where the download-cache and eggs directory
+# want the parent directory where the download-cache and env directories
 # are. We re-use the variable that is using for the rocketfuel-get script.
 download-cache:
 ifdef LP_SOURCEDEPS_PATH
@@ -162,9 +173,10 @@ else
 	@exit 1
 endif
 
-css_combine:
+css_combine: jsbuild_widget_css
 	${SHHH} bin/sprite-util create-image
 	${SHHH} bin/sprite-util create-css
+	ln -sfn ../../../../yarn/node_modules/yui $(ICING)/yui
 	${SHHH} bin/combine-css
 
 jsbuild_widget_css: bin/jsbuild
@@ -178,93 +190,86 @@ jsbuild_watch:
 $(JS_BUILD_DIR):
 	mkdir -p $@
 
-$(YUI_BUILDS): $(JS_BUILD_DIR)
-	for V in $(YUI_VERSIONS); do \
-		mkdir $(JS_BUILD_DIR)/yui-$$V $(JS_BUILD_DIR)/yui-$$V-tmp; \
-		unzip -q download-cache/dist/yui_$$V.zip -d $(JS_BUILD_DIR)/yui-$$V-tmp; \
-		mv $(JS_BUILD_DIR)/yui-$$V-tmp/yui/build/* $(JS_BUILD_DIR)/yui-$$V/; \
-		rm -rf $(JS_BUILD_DIR)/yui-$$V-tmp; \
+$(YARN_BUILD): | $(JS_BUILD_DIR)
+	mkdir -p $@/tmp
+	tar -C $@/tmp -xf download-cache/dist/yarn-$(YARN_VERSION).tar.gz
+	mv $@/tmp/yarn-v$(YARN_VERSION)/* $@
+	$(RM) -r $@/tmp
+
+$(JS_BUILD_DIR)/.production: yarn/package.json | $(YARN_BUILD)
+	$(YARN) install --offline --frozen-lockfile --production
+	# We don't use YUI's Flash components and they have a bad security
+	# record. Kill them.
+	find yarn/node_modules/yui -name '*.swf' -delete
+	touch $@
+
+$(JS_BUILD_DIR)/.development: $(JS_BUILD_DIR)/.production
+	$(YARN) install --offline --frozen-lockfile
+	touch $@
+
+$(YUI_SYMLINK): $(JS_BUILD_DIR)/.production
+	ln -sfn ../../yarn/node_modules/yui $@
+
+$(LP_JS_BUILD): | $(JS_BUILD_DIR)
+	mkdir -p $@/services
+	for jsdir in lib/lp/*/javascript lib/lp/services/*/javascript; do \
+		app=$$(echo $$jsdir | sed -e 's,lib/lp/\(.*\)/javascript,\1,'); \
+		cp -a $$jsdir $@/$$app; \
 	done
+	find $@ -name 'tests' -type d | xargs rm -rf
+	bin/lpjsmin -p $@
 
-$(JS_LP): jsbuild_widget_css
-
-build/js/yui2/%: lib/canonical/launchpad/icing/yui_2.7.0b/build/%
-	mkdir -p `dirname $@`
-	cp -a $< $@
-
-# YUI_DEFAULT is one of the targets in YUI_BUILDS which expands all of our YUI
-# versions for us.
-$(JS_ALL): $(YUI_DEFAULT)
-$(JS_OUT): $(JS_ALL)
-ifeq ($(JS_BUILD), min)
-	cat $^ | bin/lpjsmin > $@
-else
-	awk 'FNR == 1 {print "/* " FILENAME " */"} {print}' $^ > $@
-endif
-
-combobuild:
+jsbuild: $(LP_JS_BUILD) $(YUI_SYMLINK)
 	utilities/js-deps -n LP_MODULES -s build/js/lp -x '-min.js' -o \
 	build/js/lp/meta.js >/dev/null
 	utilities/check-js-deps
 
-jsbuild: $(PY) $(JS_OUT)
-	bin/combo-rootdir build/js $(YUI_DEFAULT)
-
-eggs:
-	# Usually this is linked via link-external-sourcecode, but in
-	# deployment we create this ourselves.
-	mkdir eggs
-	mkdir yui
-
-buildonce_eggs: $(PY)
-	find eggs -name '*.pyc' -exec rm {} \;
-
-# The download-cache dependency comes *before* eggs so that developers get the
-# warning before the eggs directory is made.  The target for the eggs
-# directory is only there for deployment convenience.
-# Note that the buildout version must be maintained here and in versions.cfg
-# to make sure that the build does not go over the network.
-#
-# buildout won't touch files that would have the same contents, but for Make's
-# sake we need them to get fresh timestamps, so we touch them after building.
-bin/buildout: download-cache eggs
-	$(SHHH) PYTHONPATH= $(PYTHON) bootstrap.py\
-		--setup-source=ez_setup.py \
-		--download-base=download-cache/dist --eggs=eggs \
-		--version=1.5.1
-	touch --no-create $@
-
 # This target is used by LOSAs to prepare a build to be pushed out to
-# destination machines.  We only want eggs: they are the expensive bits,
+# destination machines.  We only want wheels: they are the expensive bits,
 # and the other bits might run into problems like bug 575037.  This
-# target runs buildout, and then removes everything created except for
-# the eggs.
-build_eggs: $(BUILDOUT_BIN) clean_buildout
+# target runs pip, and then removes everything created except for the
+# wheels.
+build_wheels: $(PIP_BIN) clean_pip
 
-# This builds bin/py and all the other bin files except bin/buildout.
-# Remove the target before calling buildout to ensure that buildout
-# updates the timestamp.
-buildout_bin: $(BUILDOUT_BIN)
+# Compatibility.
+build_eggs: build_wheels
 
-# buildout won't touch files that would have the same contents, but for Make's
-# sake we need them to get fresh timestamps, so we touch them after building.
+# setuptools won't touch files that would have the same contents, but for
+# Make's sake we need them to get fresh timestamps, so we touch them after
+# building.
 #
 # If we listed every target on the left-hand side, a parallel make would try
 # multiple copies of this rule to build them all.  Instead, we nominally build
 # just $(PY), and everything else is implicitly updated by that.
-$(PY): bin/buildout versions.cfg $(BUILDOUT_CFG) setup.py \
-		$(BUILDOUT_TEMPLATES)
-	$(SHHH) PYTHONPATH= ./bin/buildout \
-                configuration:instance_name=${LPCONFIG} -c $(BUILDOUT_CFG)
+$(PY): download-cache constraints.txt setup.py
+	rm -rf env
+	mkdir -p env
+	(echo '[easy_install]'; \
+	 echo "allow_hosts = ''"; \
+	 echo 'find_links = file://$(WD)/download-cache/dist/') \
+		>env/.pydistutils.cfg
+	$(VIRTUALENV) \
+		--python=$(PYTHON) --system-site-packages --never-download \
+		--extra-search-dir=$(WD)/download-cache/dist/ \
+		env
+	ln -sfn env/bin bin
+	$(SHHH) $(PIP) install $(PIP_INSTALL_ARGS) \
+		-r pip-requirements.txt
+	$(SHHH) LPCONFIG=$(LPCONFIG) $(PIP) \
+		--cache-dir=$(WD)/download-cache/ \
+		install $(PIP_INSTALL_ARGS) \
+		-c pip-requirements.txt -c constraints.txt -e . \
+		|| { code=$$?; rm -f $@; exit $$code; }
 	touch $@
 
-$(subst $(PY),,$(BUILDOUT_BIN)): $(PY)
+$(subst $(PY),,$(PIP_BIN)): $(PY)
 
-compile: $(PY) $(BZR_VERSION_INFO)
+compile: $(PY) $(VERSION_INFO)
+	${SHHH} utilities/relocate-virtualenv env
 	${SHHH} $(MAKE) -C sourcecode build PYTHON=${PYTHON} \
 	    LPCONFIG=${LPCONFIG}
+	${SHHH} bin/build-twisted-plugin-cache
 	${SHHH} LPCONFIG=${LPCONFIG} ${PY} -t buildmailman.py
-	ln -sf ../../../../build/js/yui-3.3.0 $(ICING)/yui
 
 test_build: build
 	bin/test $(TESTFLAGS) $(TESTOPTS)
@@ -278,12 +283,8 @@ ftest_build: build
 ftest_inplace: inplace
 	bin/test -f $(TESTFLAGS) $(TESTOPTS)
 
-merge-proposal-jobs:
-	# Handle merge proposal email jobs.
-	$(PY) cronscripts/merge-proposal-jobs.py -v
-
 run: build inplace stop
-	bin/run -r librarian,google-webservice,memcached,rabbitmq,txlongpoll \
+	bin/run -r librarian,bing-webservice,memcached,rabbitmq \
 	-i $(LPCONFIG)
 
 run-testapp: LPCONFIG=testrunner-appserver
@@ -296,19 +297,19 @@ run.gdb:
 
 start-gdb: build inplace stop support_files run.gdb
 	nohup gdb -x run.gdb --args bin/run -i $(LPCONFIG) \
-		-r librarian,google-webservice
+		-r librarian,bing-webservice
 		> ${LPCONFIG}-nohup.out 2>&1 &
 
 run_all: build inplace stop
 	bin/run \
-	 -r librarian,sftp,forker,mailman,codebrowse,google-webservice,\
-	memcached,rabbitmq,txlongpoll -i $(LPCONFIG)
+	 -r librarian,sftp,forker,mailman,codebrowse,bing-webservice,\
+	memcached,rabbitmq -i $(LPCONFIG)
 
-run_codebrowse: build
-	BZR_PLUGIN_PATH=bzrplugins $(PY) scripts/start-loggerhead.py -f
+run_codebrowse: compile
+	BZR_PLUGIN_PATH=bzrplugins $(PY) scripts/start-loggerhead.py
 
-start_codebrowse: build
-	BZR_PLUGIN_PATH=$(shell pwd)/bzrplugins $(PY) scripts/start-loggerhead.py
+start_codebrowse: compile
+	BZR_PLUGIN_PATH=$(shell pwd)/bzrplugins $(PY) scripts/start-loggerhead.py --daemon
 
 stop_codebrowse:
 	$(PY) scripts/stop-loggerhead.py
@@ -322,19 +323,10 @@ start_librarian: compile
 stop_librarian:
 	bin/killservice librarian
 
-pull_branches: support_files
-	$(PY) cronscripts/supermirror-pull.py
+$(VERSION_INFO):
+	scripts/update-version-info.sh
 
-scan_branches:
-	# Scan branches from the filesystem into the database.
-	$(PY) cronscripts/scan_branches.py
-
-sync_branches: pull_branches scan_branches merge-proposal-jobs
-
-$(BZR_VERSION_INFO):
-	scripts/update-bzr-version-info.sh
-
-support_files: $(API_INDEX) $(BZR_VERSION_INFO)
+support_files: $(API_INDEX) $(VERSION_INFO)
 
 # Intended for use on developer machines
 start: inplace stop support_files initscript-start
@@ -378,34 +370,32 @@ rebuildfti:
 	$(PY) database/schema/fti.py -d launchpad_dev --force
 
 clean_js:
-	$(RM) $(JS_OUT)
-	$(RM) -r $(ICING)/yui
+	$(RM) -r $(JS_BUILD_DIR)
+	$(RM) -r yarn/node_modules
 
-clean_buildout:
+clean_pip:
 	$(RM) -r build
 	if [ -d $(CONVOY_ROOT) ]; then $(RM) -r $(CONVOY_ROOT) ; fi
 	$(RM) -r bin
 	$(RM) -r parts
-	$(RM) -r develop-eggs
 	$(RM) .installed.cfg
-	$(RM) _pythonpath.py
-	$(RM) -r yui/*
-	$(RM) scripts/mlist-sync.py
+
+# Compatibility.
+clean_buildout: clean_pip
 
 clean_logs:
 	$(RM) logs/thread*.request
 
 clean_mailman:
-	$(RM) -r \
-			  /var/tmp/mailman \
-			  /var/tmp/mailman-xmlrpc.test
+	$(RM) -r /var/tmp/mailman /var/tmp/mailman-xmlrpc.test
 ifdef LP_MAKE_KEEP_MAILMAN
 	@echo "Keeping previously built mailman."
 else
+	$(RM) lib/Mailman
 	$(RM) -r lib/mailman
 endif
 
-lxc-clean: clean_js clean_mailman clean_buildout clean_logs
+lxc-clean: clean_js clean_mailman clean_pip clean_logs
 	# XXX: BradCrittenden 2012-05-25 bug=1004514:
 	# It is important for parallel tests inside LXC that the
 	# $(CODEHOSTING_ROOT) directory not be completely removed.
@@ -413,28 +403,21 @@ lxc-clean: clean_js clean_mailman clean_buildout clean_logs
 	# it does everything expected from a clean target.  When the
 	# referenced bug is fixed, this target may be reunited with
 	# the 'clean' target.
-	$(MAKE) -C sourcecode/pygettextpo clean
-	# XXX gary 2009-11-16 bug 483782
-	# The pygettextpo Makefile should have this next line in it for its make
-	# clean, and then we should remove this line.
-	$(RM) sourcecode/pygpgme/gpgme/*.so
+	if test -f sourcecode/pygettextpo/Makefile; then \
+		$(MAKE) -C sourcecode/pygettextpo clean; \
+	fi
 	if test -f sourcecode/mailman/Makefile; then \
 		$(MAKE) -C sourcecode/mailman clean; \
 	fi
-	find . -path ./eggs -prune -false -o \
-		-type f \( -name '*.o' -o -name '*.so' -o -name '*.la' -o \
-	    -name '*.lo' -o -name '*.py[co]' -o -name '*.dll' \) \
-	    -print0 | xargs -r0 $(RM)
-	$(RM) -r lib/subvertpy/*.so
+	$(RM) -r env
 	$(RM) -r $(LP_BUILT_JS_ROOT)/*
 	$(RM) -r $(CODEHOSTING_ROOT)/*
 	$(RM) -r $(APIDOC_DIR)
 	$(RM) -r $(APIDOC_DIR).tmp
 	$(RM) -r build
-	$(RM) $(BZR_VERSION_INFO)
+	$(RM) $(VERSION_INFO)
 	$(RM) +config-overrides.zcml
-	$(RM) -r \
-			  /var/tmp/builddmaster \
+	$(RM) -r /var/tmp/builddmaster \
 			  /var/tmp/bzrsync \
 			  /var/tmp/codehosting.test \
 			  /var/tmp/codeimport \
@@ -458,17 +441,15 @@ clean: lxc-clean
 realclean: clean
 	$(RM) TAGS tags
 
-zcmldocs:
-	mkdir -p doc/zcml/namespaces.zope.org
-	bin/stxdocs \
-	    -f sourcecode/zope/src/zope/app/zcmlfiles/meta.zcml \
-	    -o doc/zcml/namespaces.zope.org
-
 potemplates: launchpad.pot
 
 # Generate launchpad.pot by extracting message ids from the source
+# XXX cjwatson 2017-09-04: This was previously done using i18nextract from
+# z3c.recipe.i18n, but has been broken for some time.  The place to start in
+# putting this together again is probably zope.app.locales.
 launchpad.pot:
-	bin/i18nextract.py
+	echo "POT generation not currently supported; help us fix this!" >&2
+	exit 1
 
 # Called by the rocketfuel-setup script. You probably don't want to run this
 # on its own.
@@ -479,37 +460,43 @@ copy-certificates:
 	cp configs/development/launchpad.crt /etc/apache2/ssl/
 	cp configs/development/launchpad.key /etc/apache2/ssl/
 
-copy-apache-config:
+copy-apache-config: codehosting-dir
 	# We insert the absolute path to the branch-rewrite script
 	# into the Apache config as we copy the file into position.
+	set -e; \
+	apachever="$$(dpkg-query -W --showformat='$${Version}' apache2)"; \
+	if dpkg --compare-versions "$$apachever" ge 2.4.1-1~; then \
+		base=local-launchpad.conf; \
+	else \
+		base=local-launchpad; \
+	fi; \
 	sed -e 's,%BRANCH_REWRITE%,$(shell pwd)/scripts/branch-rewrite.py,' \
 		-e 's,%LISTEN_ADDRESS%,$(LISTEN_ADDRESS),' \
 		configs/development/local-launchpad-apache > \
-		/etc/apache2/sites-available/local-launchpad
-	touch $(CODEHOSTING_ROOT)/rewrite.log
-	chown -R $(SUDO_UID):$(SUDO_GID) $(CODEHOSTING_ROOT)
-	if [ ! -d /srv/launchpad.dev ]; then \
-		mkdir /srv/launchpad.dev; \
-		chown $(SUDO_UID):$(SUDO_GID) /srv/launchpad.dev; \
+		/etc/apache2/sites-available/$$base
+	if [ ! -d /srv/launchpad.test ]; then \
+		mkdir /srv/launchpad.test; \
+		chown $(SUDO_UID):$(SUDO_GID) /srv/launchpad.test; \
 	fi
 
 enable-apache-launchpad: copy-apache-config copy-certificates
+	[ ! -e /etc/apache2/mods-available/version.load ] || a2enmod version
 	a2ensite local-launchpad
 
 reload-apache: enable-apache-launchpad
-	/etc/init.d/apache2 restart
+	service apache2 restart
 
 TAGS: compile
 	# emacs tags
-	bin/tags -e
+	ctags -R -e --languages=-JavaScript --python-kinds=-i -f $@.new \
+		$(CURDIR)/lib $(CURDIR)/env/lib/$(PYTHON)/site-packages
+	mv $@.new $@
 
 tags: compile
 	# vi tags
-	bin/tags -v
-
-ID: compile
-	# idutils ID file
-	bin/tags -i
+	ctags -R --languages=-JavaScript --python-kinds=-i -f $@.new \
+		$(CURDIR)/lib $(CURDIR)/env/lib/$(PYTHON)/site-packages
+	mv $@.new $@
 
 PYDOCTOR = pydoctor
 PYDOCTOR_OPTIONS =
@@ -520,11 +507,10 @@ pydoctor:
 		--docformat restructuredtext --verbose-about epytext-summary \
 		$(PYDOCTOR_OPTIONS)
 
-.PHONY: apidoc build_eggs buildonce_eggs buildout_bin check check	\
-	check_config check_mailman clean clean_buildout clean_js	\
-	clean_logs compile css_combine debug default doc ftest_build	\
-	ftest_inplace hosted_branches jsbuild jsbuild_widget_css	\
-	launchpad.pot pagetests pull_branches pydoctor realclean	\
-	reload-apache run run-testapp runner scan_branches schema	\
-	sprite_css sprite_image start stop sync_branches TAGS tags	\
-	test_build test_inplace zcmldocs
+.PHONY: apidoc build_eggs build_wheels check check_config check_mailman	\
+	clean clean_buildout clean_js clean_logs clean_pip compile	\
+	css_combine debug default doc ftest_build ftest_inplace		\
+	hosted_branches jsbuild jsbuild_widget_css launchpad.pot	\
+	pydoctor realclean reload-apache run run-testapp runner schema	\
+	sprite_css sprite_image start stop TAGS tags test_build		\
+	test_inplace $(LP_JS_BUILD)

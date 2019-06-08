@@ -1,8 +1,6 @@
 # Copyright 2009-2010 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-# pylint: disable-msg=E0211,E0213
-
 """Interfaces to handle translation files exports."""
 
 __metaclass__ = type
@@ -73,7 +71,6 @@ class ITranslationExporter(Interface):
             file format allows different encodings.
         :return: An `IExportedTranslationFile` representing the export.
         """
-
 
 
 class ITranslationFormatExporter(Interface):

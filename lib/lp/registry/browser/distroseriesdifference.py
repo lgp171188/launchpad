@@ -1,4 +1,4 @@
-# Copyright 2010-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Browser views for DistroSeriesDifferences."""
@@ -11,13 +11,13 @@ __all__ = [
 
 from lazr.restful.interfaces import IWebServiceClientRequest
 from z3c.ptcompat import ViewPageTemplateFile
-from zope.app.form.browser.itemswidgets import RadioWidget
 from zope.component import (
-    adapts,
+    adapter,
     getUtility,
     )
+from zope.formlib.itemswidgets import RadioWidget
 from zope.interface import (
-    implements,
+    implementer,
     Interface,
     )
 from zope.schema import Choice
@@ -26,10 +26,7 @@ from zope.schema.vocabulary import (
     SimpleVocabulary,
     )
 
-from lp.app.browser.launchpadform import (
-    custom_widget,
-    LaunchpadFormView,
-    )
+from lp.app.browser.launchpadform import LaunchpadFormView
 from lp.registry.enums import (
     DistroSeriesDifferenceStatus,
     DistroSeriesDifferenceType,
@@ -109,11 +106,10 @@ class IDistroSeriesDifferenceForm(Interface):
         )))
 
 
+@implementer(IConversation)
 class DistroSeriesDifferenceView(LaunchpadFormView):
-
-    implements(IConversation)
     schema = IDistroSeriesDifferenceForm
-    custom_widget('blacklist_options', RadioWidget)
+    custom_widget_blacklist_options = RadioWidget
 
     @property
     def initial_values(self):
@@ -248,13 +244,15 @@ class IDistroSeriesDifferenceDisplayComment(IComment):
     """Marker interface."""
 
 
+@implementer(IDistroSeriesDifferenceDisplayComment)
 class DistroSeriesDifferenceDisplayComment(MessageComment):
     """Used simply to provide `IComment` for rendering."""
-    implements(IDistroSeriesDifferenceDisplayComment)
 
     index = None
 
     download_url = None
+
+    visible = True
 
     def __init__(self, comment):
         """Setup the attributes required by `IComment`."""
@@ -267,11 +265,10 @@ def get_message(comment):
     return comment.comment.message
 
 
+@adapter(IDistroSeriesDifferenceComment, IWebServiceClientRequest)
+@implementer(Interface)
 class CommentXHTMLRepresentation(LaunchpadView):
     """Render individual comments when requested via the API."""
-    adapts(IDistroSeriesDifferenceComment, IWebServiceClientRequest)
-    implements(Interface)
-
     template = ViewPageTemplateFile(
         '../templates/distroseriesdifferencecomment-fragment.pt')
 

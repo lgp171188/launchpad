@@ -1,7 +1,5 @@
-# Copyright 2009 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
-
-# pylint: disable-msg=W0702,W0231
 
 """Transport utilities for the codehosting system.
 
@@ -102,9 +100,9 @@ class AsyncVirtualTransport(Transport):
         """Return the absolute, escaped path to `relpath` without the schema.
         """
         return urlutils.joinpath(
-            self.base[len(self.server.get_url())-1:], relpath)
+            self.base[len(self.server.get_url()) - 1:], relpath)
 
-    def _getUnderylingTransportAndPath(self, relpath):
+    def _getUnderlyingTransportAndPath(self, relpath):
         """Return the underlying transport and path for `relpath`."""
         virtual_url_fragment = self._abspath(relpath)
         return self.server.translateVirtualPath(virtual_url_fragment)
@@ -131,7 +129,8 @@ class AsyncVirtualTransport(Transport):
         then the method will be called on the backing transport decorated with
         'readonly+'.
         """
-        def call_method((transport, path)):
+        def call_method(result):
+            transport, path = result
             method = getattr(transport, method_name)
             try:
                 return method(path, *args, **kwargs)
@@ -142,7 +141,7 @@ class AsyncVirtualTransport(Transport):
                 # stringification on it.
                 return Failure(e)
 
-        deferred = self._getUnderylingTransportAndPath(relpath)
+        deferred = self._getUnderlyingTransportAndPath(relpath)
         deferred.addCallback(call_method)
         deferred.addErrback(self._translateError)
         return deferred
@@ -177,18 +176,24 @@ class AsyncVirtualTransport(Transport):
         return self._call('has', relpath)
 
     def iter_files_recursive(self):
-        deferred = self._getUnderylingTransportAndPath('.')
+        deferred = self._getUnderlyingTransportAndPath('.')
+
         @no_traceback_failures
-        def iter_files((transport, path)):
+        def iter_files(result):
+            transport, path = result
             return transport.clone(path).iter_files_recursive()
+
         deferred.addCallback(iter_files)
         return deferred
 
     def listable(self):
-        deferred = self._getUnderylingTransportAndPath('.')
+        deferred = self._getUnderlyingTransportAndPath('.')
+
         @no_traceback_failures
-        def listable((transport, path)):
+        def listable(result):
+            transport, path = result
             return transport.listable()
+
         deferred.addCallback(listable)
         return deferred
 
@@ -226,8 +231,8 @@ class AsyncVirtualTransport(Transport):
             'readv', relpath, offsets, adjust_for_latency, upper_limit)
 
     def rename(self, rel_from, rel_to):
-        to_deferred = self._getUnderylingTransportAndPath(rel_to)
-        from_deferred = self._getUnderylingTransportAndPath(rel_from)
+        to_deferred = self._getUnderlyingTransportAndPath(rel_to)
+        from_deferred = self._getUnderlyingTransportAndPath(rel_from)
         deferred = gatherResults([to_deferred, from_deferred])
 
         @no_traceback_failures
@@ -391,7 +396,6 @@ class AsyncVirtualServer(Server):
         """
         # bzrlib's Server class does not have a constructor, so we cannot
         # safely upcall it.
-        # pylint: disable-msg=W0231
         self._scheme = scheme
         self._is_started = False
 

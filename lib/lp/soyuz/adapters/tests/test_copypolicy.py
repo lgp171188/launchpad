@@ -3,17 +3,16 @@
 
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.registry.interfaces.series import SeriesStatus
-from lp.services.webapp.testing import verifyObject
-from lp.soyuz.adapters.copypolicy import (
-    InsecureCopyPolicy,
-    MassSyncCopyPolicy,
-    )
+from lp.soyuz.adapters.copypolicy import InsecureCopyPolicy
 from lp.soyuz.enums import (
     ArchivePurpose,
     PackageCopyPolicy,
     )
 from lp.soyuz.interfaces.copypolicy import ICopyPolicy
-from lp.testing import TestCaseWithFactory
+from lp.testing import (
+    TestCaseWithFactory,
+    verifyObject,
+    )
 from lp.testing.layers import ZopelessDatabaseLayer
 
 
@@ -98,13 +97,6 @@ class TestCopyPolicy(TestCaseWithFactory):
 
     def test_insecure_doesnt_send_emails_for_ppa(self):
         cp = InsecureCopyPolicy()
-        archive = self.factory.makeArchive(purpose=ArchivePurpose.PPA)
-        self.assertFalse(cp.send_email(archive))
-
-    def test_sync_does_not_send_emails(self):
-        cp = MassSyncCopyPolicy()
-        archive = self.factory.makeArchive(purpose=ArchivePurpose.PRIMARY)
-        self.assertFalse(cp.send_email(archive))
         archive = self.factory.makeArchive(purpose=ArchivePurpose.PPA)
         self.assertFalse(cp.send_email(archive))
 

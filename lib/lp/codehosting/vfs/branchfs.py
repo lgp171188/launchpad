@@ -1,7 +1,5 @@
-# Copyright 2009 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
-
-# pylint: disable-msg=E0213
 
 """The Launchpad code hosting file system.
 
@@ -75,6 +73,7 @@ from bzrlib.smart.request import jail_info
 from bzrlib.transport import get_transport
 from bzrlib.transport.memory import MemoryServer
 from lazr.uri import URI
+import six
 from twisted.internet import (
     defer,
     error,
@@ -85,7 +84,7 @@ from twisted.python import (
     )
 from zope.component import getUtility
 from zope.interface import (
-    implements,
+    implementer,
     Interface,
     )
 
@@ -229,6 +228,7 @@ class ITransportDispatch(Interface):
         """
 
 
+@implementer(ITransportDispatch)
 class BranchTransportDispatch:
     """Turns BRANCH_TRANSPORT tuples into transports that point to branches.
 
@@ -238,7 +238,6 @@ class BranchTransportDispatch:
 
     This is used directly by our internal services (puller and scanner).
     """
-    implements(ITransportDispatch)
 
     def __init__(self, base_transport):
         self.base_transport = base_transport
@@ -280,6 +279,7 @@ class BranchTransportDispatch:
         return transport, trailing_path
 
 
+@implementer(ITransportDispatch)
 class TransportDispatch:
     """Make transports for hosted branch areas and virtual control dirs.
 
@@ -289,7 +289,6 @@ class TransportDispatch:
 
     This is used for the rich codehosting VFS that we serve publically.
     """
-    implements(ITransportDispatch)
 
     def __init__(self, rw_transport):
         self._rw_dispatch = BranchTransportDispatch(rw_transport)
@@ -306,7 +305,8 @@ class TransportDispatch:
         data['trailing_path'] = trailing_path
         return factory(**data), trailing_path
 
-    def _makeBranchTransport(self, id, writable, trailing_path=''):
+    def _makeBranchTransport(self, id, writable, trailing_path='',
+                             private=False):
         if writable:
             dispatch = self._rw_dispatch
         else:
@@ -467,7 +467,8 @@ class DirectDatabaseLaunchpadServer(AsyncVirtualServer):
                 virtual_url_fragment.lstrip('/')))
 
         @no_traceback_failures
-        def process_result((branch, trailing)):
+        def process_result(result):
+            branch, trailing = result
             if branch is None:
                 raise NoSuchFile(virtual_url_fragment)
             else:
@@ -495,7 +496,7 @@ class AsyncLaunchpadTransport(AsyncVirtualTransport):
         # the user tries to make a directory like "~foo/bar". That is, a
         # directory that has too little information to be translated into a
         # Launchpad branch.
-        deferred = AsyncVirtualTransport._getUnderylingTransportAndPath(
+        deferred = AsyncVirtualTransport._getUnderlyingTransportAndPath(
             self, relpath)
 
         @no_traceback_failures
@@ -505,7 +506,8 @@ class AsyncLaunchpadTransport(AsyncVirtualTransport):
             return self.server.createBranch(self._abspath(relpath))
 
         @no_traceback_failures
-        def real_mkdir((transport, path)):
+        def real_mkdir(result):
+            transport, path = result
             return getattr(transport, 'mkdir')(path, mode)
 
         deferred.addCallback(real_mkdir)
@@ -602,15 +604,13 @@ class LaunchpadServer(_BaseLaunchpadServer):
             # though one might think that it would make sense to raise
             # NoSuchFile. Sadly, raising that makes the client do "clever"
             # things like say "Parent directory of
-            # bzr+ssh://bazaar.launchpad.dev/~noone/firefox/branch does not
+            # bzr+ssh://bazaar.launchpad.test/~noone/firefox/branch does not
             # exist. You may supply --create-prefix to create all leading
             # parent directories", which is just misleading.
             fault = trap_fault(
                 fail, faults.NotFound, faults.PermissionDenied,
-                faults.InvalidSourcePackageName)
-            faultString = fault.faultString
-            if isinstance(faultString, unicode):
-                faultString = faultString.encode('utf-8')
+                faults.InvalidSourcePackageName, faults.InvalidProductName)
+            faultString = six.ensure_binary(fault.faultString)
             return failure.Failure(
                 PermissionDenied(virtual_url_fragment, faultString))
 
@@ -664,7 +664,8 @@ class LaunchpadServer(_BaseLaunchpadServer):
             '/' + virtual_url_fragment)
 
         @no_traceback_failures
-        def got_path_info((transport_type, data, trailing_path)):
+        def got_path_info(result):
+            transport_type, data, trailing_path = result
             if transport_type != BRANCH_TRANSPORT:
                 raise NotABranchPath(virtual_url_fragment)
             transport, _ = self._transport_dispatch.makeTransport(

@@ -1,4 +1,4 @@
-# Copyright 2010-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2016 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Database classes for a difference between two distribution series."""
@@ -35,8 +35,8 @@ from storm.locals import (
 from storm.zope.interfaces import IResultSet
 from zope.component import getUtility
 from zope.interface import (
-    classProvides,
-    implements,
+    implementer,
+    provider,
     )
 
 from lp.code.model.sourcepackagerecipebuild import SourcePackageRecipeBuild
@@ -60,16 +60,16 @@ from lp.registry.interfaces.person import (
     IPerson,
     IPersonSet,
     )
+from lp.registry.model.distroseries import DistroSeries
 from lp.registry.model.distroseriesdifferencecomment import (
     DistroSeriesDifferenceComment,
     )
-from lp.registry.model.gpgkey import GPGKey
 from lp.registry.model.sourcepackagename import SourcePackageName
 from lp.registry.model.teammembership import TeamParticipation
 from lp.services.database import bulk
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.enumcol import DBEnum
-from lp.services.database.lpstorm import (
+from lp.services.database.interfaces import (
     IMasterStore,
     IStore,
     )
@@ -97,9 +97,6 @@ from lp.soyuz.model.archive import Archive
 from lp.soyuz.model.distributionsourcepackagerelease import (
     DistributionSourcePackageRelease,
     )
-from lp.soyuz.model.distroseriessourcepackagerelease import (
-    DistroSeriesSourcePackageRelease,
-    )
 from lp.soyuz.model.packageset import Packageset
 from lp.soyuz.model.packagesetsources import PackagesetSources
 from lp.soyuz.model.publishing import SourcePackagePublishingHistory
@@ -116,53 +113,41 @@ def most_recent_publications(dsds, in_parent, statuses, match_version=False):
     :param in_parent: A boolean indicating if we should look in the parent
         series' archive instead of the derived series' archive.
     """
+    # Check in the parent archive or the child?
+    if in_parent:
+        series_col = DistroSeriesDifference.parent_series_id
+        version_col = DistroSeriesDifference.parent_source_version
+    else:
+        series_col = DistroSeriesDifference.derived_series_id
+        version_col = DistroSeriesDifference.source_version
     columns = (
         DistroSeriesDifference.source_package_name_id,
         SourcePackagePublishingHistory,
         )
+    # DistroSeries.getPublishedSources() matches on MAIN_ARCHIVE_PURPOSES,
+    # but we are only ever going to be interested in the distribution's
+    # main (PRIMARY) archive.
+    archive_subselect = Select(
+        Archive.id, tables=[Archive, DistroSeries],
+        where=And(
+            DistroSeries.id == series_col,
+            Archive.distributionID == DistroSeries.distributionID,
+            Archive.purpose == ArchivePurpose.PRIMARY))
     conditions = And(
         DistroSeriesDifference.id.is_in(dsd.id for dsd in dsds),
-        # XXX: GavinPanella 2011-06-23 bug=801097: The + 0 in the condition
-        # below prevents PostgreSQL from using the (archive, status) index on
-        # SourcePackagePublishingHistory, the use of which results in a
-        # terrible query plan. This might be indicative of an underlying,
-        # undiagnosed issue in production with wider repurcussions.
-        SourcePackagePublishingHistory.archiveID + 0 == Archive.id,
-        SourcePackagePublishingHistory.sourcepackagereleaseID == (
-            SourcePackageRelease.id),
+        SourcePackagePublishingHistory.archiveID == archive_subselect,
+        SourcePackagePublishingHistory.distroseriesID == series_col,
         SourcePackagePublishingHistory.status.is_in(statuses),
-        SourcePackageRelease.sourcepackagenameID == (
+        SourcePackagePublishingHistory.sourcepackagenameID == (
             DistroSeriesDifference.source_package_name_id),
-        )
-    # Check in the parent archive or the child?
-    if in_parent:
-        conditions = And(
-            conditions,
-            SourcePackagePublishingHistory.distroseriesID == (
-                DistroSeriesDifference.parent_series_id),
-            )
-    else:
-        conditions = And(
-            conditions,
-            SourcePackagePublishingHistory.distroseriesID == (
-                DistroSeriesDifference.derived_series_id),
-            )
-    # Ensure that the archive has the right purpose.
-    conditions = And(
-        conditions,
-        # DistroSeries.getPublishedSources() matches on MAIN_ARCHIVE_PURPOSES,
-        # but we are only ever going to be interested in PRIMARY archives.
-        Archive.purpose == ArchivePurpose.PRIMARY,
         )
     # Do we match on DistroSeriesDifference.(parent_)source_version?
     if match_version:
-        if in_parent:
-            version_column = DistroSeriesDifference.parent_source_version
-        else:
-            version_column = DistroSeriesDifference.source_version
         conditions = And(
             conditions,
-            SourcePackageRelease.version == version_column,
+            SourcePackageRelease.id ==
+                SourcePackagePublishingHistory.sourcepackagereleaseID,
+            SourcePackageRelease.version == version_col,
             )
     # The sort order is critical so that the DISTINCT ON clause selects the
     # most recent publication (i.e. the one with the highest id).
@@ -323,16 +308,17 @@ def eager_load_dsds(dsds):
         if spn_id in source_pubs_for_release:
             spph = source_pubs_for_release[spn_id]
             cache.source_package_release = (
-                DistroSeriesSourcePackageRelease(
-                    dsd.derived_series,
+                DistributionSourcePackageRelease(
+                    dsd.derived_series.distribution,
                     spph.sourcepackagerelease))
         else:
             cache.source_package_release = None
         if spn_id in parent_source_pubs_for_release:
             spph = parent_source_pubs_for_release[spn_id]
             cache.parent_source_package_release = (
-                DistroSeriesSourcePackageRelease(
-                    dsd.parent_series, spph.sourcepackagerelease))
+                DistributionSourcePackageRelease(
+                    dsd.parent_series.distribution,
+                    spph.sourcepackagerelease))
         else:
             cache.parent_source_package_release = None
         cache.latest_comment = latest_comment_by_dsd_id.get(dsd.id)
@@ -343,17 +329,13 @@ def eager_load_dsds(dsds):
         SourcePackageRecipeBuild, sprs,
         ("source_package_recipe_build_id",))
 
-    # SourcePackageRelease.uploader can end up getting the owner of
-    # the DSC signing key.
-    gpgkeys = bulk.load_related(GPGKey, sprs, ("dscsigningkeyID",))
-
     # Load DistroSeriesDifferenceComment owners, SourcePackageRecipeBuild
     # requesters, GPGKey owners, and SourcePackageRelease creators.
     person_ids = set().union(
         (dsdc.message.ownerID for dsdc in latest_comments),
         (sprb.requester_id for sprb in sprbs),
-        (gpgkey.ownerID for gpgkey in gpgkeys),
-        (spr.creatorID for spr in sprs))
+        (spr.creatorID for spr in sprs),
+        (spr.signing_key_owner_id for spr in sprs))
     uploaders = getUtility(IPersonSet).getPrecachedPersonsFromIDs(
         person_ids, need_validity=True)
     list(uploaders)
@@ -373,10 +355,10 @@ def get_comment_with_status_change(status, new_status, comment):
     return new_comment
 
 
+@implementer(IDistroSeriesDifference)
+@provider(IDistroSeriesDifferenceSource)
 class DistroSeriesDifference(StormBase):
     """See `DistroSeriesDifference`."""
-    implements(IDistroSeriesDifference)
-    classProvides(IDistroSeriesDifferenceSource)
     __storm_table__ = 'DistroSeriesDifference'
 
     id = Int(primary=True)
@@ -476,7 +458,7 @@ class DistroSeriesDifference(StormBase):
             name_matches = [SPN.name == name_filter]
             try:
                 packageset = getUtility(IPackagesetSet).getByName(
-                    name_filter, distroseries=distro_series)
+                    distro_series, name_filter)
             except NoSuchPackageSet:
                 packageset = None
             if packageset is not None:
@@ -713,8 +695,8 @@ class DistroSeriesDifference(StormBase):
         if pub is None:
             return None
         else:
-            return DistroSeriesSourcePackageRelease(
-                distro_series, pub.sourcepackagerelease)
+            return DistributionSourcePackageRelease(
+                distro_series.distribution, pub.sourcepackagerelease)
 
     @cachedproperty
     def base_distro_source_package_release(self):

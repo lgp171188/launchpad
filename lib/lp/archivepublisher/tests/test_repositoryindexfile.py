@@ -1,7 +1,9 @@
-# Copyright 2009-2010 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for `RepositoryIndexFile`."""
+
+from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 
@@ -13,7 +15,13 @@ import stat
 import tempfile
 import unittest
 
+try:
+    import lzma
+except ImportError:
+    from backports import lzma
+
 from lp.archivepublisher.utils import RepositoryIndexFile
+from lp.soyuz.enums import IndexCompressionType
 
 
 class TestRepositoryArchiveIndex(unittest.TestCase):
@@ -32,19 +40,25 @@ class TestRepositoryArchiveIndex(unittest.TestCase):
         for path in [self.root, self.temp_root]:
             shutil.rmtree(path)
 
-    def getRepoFile(self, filename):
+    def getRepoFile(self, filename, compressors=None):
         """Return a `RepositoryIndexFile` for the given filename.
 
         The `RepositoryIndexFile` is created with the test 'root' and
         'temp_root'.
         """
+        if compressors is None:
+            compressors = [
+                IndexCompressionType.GZIP,
+                IndexCompressionType.BZIP2,
+                IndexCompressionType.XZ,
+                ]
         return RepositoryIndexFile(
-            self.root, self.temp_root, filename)
+            os.path.join(self.root, filename), self.temp_root, compressors)
 
     def testWorkflow(self):
         """`RepositoryIndexFile` workflow.
 
-        On creation, 3 temporary files are atomically created in the
+        On creation, 2 temporary files are atomically created in the
         'temp_root' location (mkstemp). One for storing the plain contents
         and other for the corresponding compressed contents. At this point,
         no files were created in the 'root' location yet.
@@ -67,7 +81,7 @@ class TestRepositoryArchiveIndex(unittest.TestCase):
 
         resulting_files = sorted(os.listdir(self.root))
         self.assertEqual(
-            ['boing', 'boing.bz2', 'boing.gz'], resulting_files)
+            ['boing.bz2', 'boing.gz', 'boing.xz'], resulting_files)
 
         for filename in resulting_files:
             file_path = os.path.join(self.root, filename)
@@ -87,14 +101,30 @@ class TestRepositoryArchiveIndex(unittest.TestCase):
         repo_file.write('hello')
         repo_file.close()
 
-        plain_content = open(os.path.join(self.root, 'boing')).read()
-        gzip_content = gzip.open(os.path.join(self.root, 'boing.gz')).read()
+        gzip_file = gzip.open(os.path.join(self.root, 'boing.gz'))
+        gzip_content = gzip_file.read()
         bz2_content = bz2.decompress(
             open(os.path.join(self.root, 'boing.bz2')).read())
+        xz_content = lzma.open(os.path.join(self.root, 'boing.xz')).read()
 
-        self.assertEqual(plain_content, bz2_content)
-        self.assertEqual(plain_content, gzip_content)
-        self.assertEqual('hello', plain_content)
+        self.assertEqual(gzip_content, bz2_content)
+        self.assertEqual(gzip_content, xz_content)
+        self.assertEqual('hello', gzip_content)
+
+        # gzip is compressed as if with "-n", ensuring that the hash
+        # doesn't change just because we're compressing at a different
+        # point in time. The filename is also blank, but Python's gzip
+        # module discards it so it's hard to test.
+        self.assertEqual(0, gzip_file.mtime)
+
+    def testCompressors(self):
+        """`RepositoryIndexFile` honours the supplied list of compressors."""
+        repo_file = self.getRepoFile(
+            'boing',
+            compressors=[
+                IndexCompressionType.UNCOMPRESSED, IndexCompressionType.XZ])
+        repo_file.close()
+        self.assertEqual(['boing', 'boing.xz'], sorted(os.listdir(self.root)))
 
     def testUnreferencing(self):
         """`RepositoryIndexFile` unreferencing.
@@ -115,20 +145,38 @@ class TestRepositoryArchiveIndex(unittest.TestCase):
     def testRootCreation(self):
         """`RepositoryIndexFile` creates given 'root' path if necessary."""
         missing_root = os.path.join(self.root, 'donotexist')
+        compressors = [
+            IndexCompressionType.GZIP,
+            IndexCompressionType.BZIP2,
+            IndexCompressionType.XZ,
+            ]
         repo_file = RepositoryIndexFile(
-            missing_root, self.temp_root, 'boing')
+            os.path.join(missing_root, 'boing'), self.temp_root, compressors)
 
         self.assertFalse(os.path.exists(missing_root))
 
         repo_file.close()
 
         self.assertEqual(
-            ['boing', 'boing.bz2', 'boing.gz'],
+            ['boing.bz2', 'boing.gz', 'boing.xz'],
             sorted(os.listdir(missing_root)))
 
     def testMissingTempRoot(self):
         """`RepositoryIndexFile` cannot be given a missing 'temp_root'."""
         missing_temp_root = os.path.join(self.temp_root, 'donotexist')
         self.assertRaises(
-            AssertionError,
-            RepositoryIndexFile, self.root, missing_temp_root, 'boing')
+            AssertionError, RepositoryIndexFile,
+            os.path.join(self.root, 'boing'), missing_temp_root,
+            [IndexCompressionType.UNCOMPRESSED])
+
+    def testRemoveOld(self):
+        """`RepositoryIndexFile` removes old index files."""
+        old_path = os.path.join(self.root, 'boing')
+        with open(old_path, 'w'):
+            pass
+        self.assertEqual(['boing'], sorted(os.listdir(self.root)))
+        repo_file = self.getRepoFile('boing')
+        repo_file.close()
+        self.assertEqual(
+            ['boing.bz2', 'boing.gz', 'boing.xz'],
+            sorted(os.listdir(self.root)))

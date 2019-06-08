@@ -1,8 +1,6 @@
 # Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-# pylint: disable-msg=C0102
-
 __metaclass__ = type
 
 from storm.exceptions import DataError
@@ -49,8 +47,8 @@ class TestTranslationSharingPOTemplate(TestCaseWithFactory):
         devel_potmsgsets = list(self.devel_potemplate.getPOTMsgSets())
         stable_potmsgsets = list(self.stable_potemplate.getPOTMsgSets())
 
-        self.assertEquals(devel_potmsgsets, [self.potmsgset])
-        self.assertEquals(devel_potmsgsets, stable_potmsgsets)
+        self.assertEqual(devel_potmsgsets, [self.potmsgset])
+        self.assertEqual(devel_potmsgsets, stable_potmsgsets)
 
     def test_getPOTMsgSetByMsgIDText(self):
         potmsgset = self.factory.makePOTMsgSet(self.devel_potemplate,
@@ -60,7 +58,7 @@ class TestTranslationSharingPOTemplate(TestCaseWithFactory):
         # We can retrieve the potmsgset by its ID text.
         read_potmsgset = self.devel_potemplate.getPOTMsgSetByMsgIDText(
             "Open file")
-        self.assertEquals(potmsgset, read_potmsgset)
+        self.assertEqual(potmsgset, read_potmsgset)
 
     def test_getPOTMsgSetBySequence(self):
         sequence = 2
@@ -70,12 +68,12 @@ class TestTranslationSharingPOTemplate(TestCaseWithFactory):
         # We can retrieve the potmsgset by its sequence.
         read_potmsgset = self.devel_potemplate.getPOTMsgSetBySequence(
             sequence)
-        self.assertEquals(potmsgset, read_potmsgset)
+        self.assertEqual(potmsgset, read_potmsgset)
 
         # It's still not present in different sharing PO template.
         read_potmsgset = self.stable_potemplate.getPOTMsgSetBySequence(
             sequence)
-        self.assertEquals(read_potmsgset, None)
+        self.assertIsNone(read_potmsgset)
 
     def test_getPOTMsgSetByID(self):
         potmsgset = self.factory.makePOTMsgSet(self.devel_potemplate,
@@ -84,16 +82,16 @@ class TestTranslationSharingPOTemplate(TestCaseWithFactory):
 
         # We can retrieve the potmsgset by its ID.
         read_potmsgset = self.devel_potemplate.getPOTMsgSetByID(id)
-        self.assertEquals(potmsgset, read_potmsgset)
+        self.assertEqual(potmsgset, read_potmsgset)
 
         # Getting this one in a different template doesn't work.
         read_potmsgset = self.stable_potemplate.getPOTMsgSetByID(id)
-        self.assertEquals(read_potmsgset, None)
+        self.assertIsNone(read_potmsgset)
 
         # Nor can you get an entry with a made up ID.
         random_id = 100000 + self.factory.getUniqueInteger()
         read_potmsgset = self.devel_potemplate.getPOTMsgSetByID(random_id)
-        self.assertEquals(read_potmsgset, None)
+        self.assertIsNone(read_potmsgset)
 
     def test_hasMessageID(self):
         naked_potemplate = removeSecurityProxy(self.devel_potemplate)
@@ -104,11 +102,11 @@ class TestTranslationSharingPOTemplate(TestCaseWithFactory):
         present_context = self.potmsgset.context
         has_message_id = naked_potemplate.hasMessageID(
             present_msgid_singular, present_msgid_plural, present_context)
-        self.assertEquals(has_message_id, True)
+        self.assertEqual(has_message_id, True)
 
     def test_hasPluralMessage(self):
         # At the moment, a POTemplate has no plural form messages.
-        self.assertEquals(self.devel_potemplate.hasPluralMessage(), False)
+        self.assertEqual(self.devel_potemplate.hasPluralMessage(), False)
 
         # Let's add a POTMsgSet with plural forms.
         self.factory.makePOTMsgSet(self.devel_potemplate,
@@ -117,21 +115,21 @@ class TestTranslationSharingPOTemplate(TestCaseWithFactory):
                                    sequence=4)
 
         # Now, template contains a plural form message.
-        self.assertEquals(self.devel_potemplate.hasPluralMessage(), True)
+        self.assertEqual(self.devel_potemplate.hasPluralMessage(), True)
 
     def test_expireAllMessages(self):
         devel_potmsgsets = list(self.devel_potemplate.getPOTMsgSets())
-        self.assertEquals(len(devel_potmsgsets) > 0, True)
+        self.assertEqual(len(devel_potmsgsets) > 0, True)
 
         # Expiring all messages brings the count back to zero.
         self.devel_potemplate.expireAllMessages()
         devel_potmsgsets = list(self.devel_potemplate.getPOTMsgSets())
-        self.assertEquals(len(devel_potmsgsets), 0)
+        self.assertEqual(len(devel_potmsgsets), 0)
 
         # Expiring all messages even when all are already expired still works.
         self.devel_potemplate.expireAllMessages()
         devel_potmsgsets = list(self.devel_potemplate.getPOTMsgSets())
-        self.assertEquals(len(devel_potmsgsets), 0)
+        self.assertEqual(len(devel_potmsgsets), 0)
 
     def test_createPOTMsgSetFromMsgIDs(self):
         # We need a 'naked' potemplate to make use of getOrCreatePOMsgID
@@ -143,19 +141,19 @@ class TestTranslationSharingPOTemplate(TestCaseWithFactory):
         msgid_singular = naked_potemplate.getOrCreatePOMsgID(singular_text)
         potmsgset = self.devel_potemplate.createPOTMsgSetFromMsgIDs(
             msgid_singular=msgid_singular)
-        self.assertEquals(potmsgset.msgid_singular, msgid_singular)
+        self.assertEqual(potmsgset.msgid_singular, msgid_singular)
 
         # And let's add it to the devel_potemplate.
         potmsgset.setSequence(self.devel_potemplate, 5)
         devel_potmsgsets = list(self.devel_potemplate.getPOTMsgSets())
-        self.assertEquals(len(devel_potmsgsets), 2)
+        self.assertEqual(len(devel_potmsgsets), 2)
 
         # Creating it with a different context also works.
         msgid_context = self.factory.getUniqueString()
         potmsgset_context = self.devel_potemplate.createPOTMsgSetFromMsgIDs(
             msgid_singular=msgid_singular, context=msgid_context)
-        self.assertEquals(potmsgset_context.msgid_singular, msgid_singular)
-        self.assertEquals(potmsgset_context.context, msgid_context)
+        self.assertEqual(potmsgset_context.msgid_singular, msgid_singular)
+        self.assertEqual(potmsgset_context.context, msgid_context)
 
     def test_getOrCreateSharedPOTMsgSet(self):
         # Let's create a new POTMsgSet.
@@ -167,13 +165,13 @@ class TestTranslationSharingPOTemplate(TestCaseWithFactory):
         # we get back the existing one.
         same_potmsgset = self.devel_potemplate.getOrCreateSharedPOTMsgSet(
             singular_text, None)
-        self.assertEquals(potmsgset, same_potmsgset)
+        self.assertEqual(potmsgset, same_potmsgset)
 
         # And even if we do it in the shared template, existing
         # POTMsgSet is returned.
         shared_potmsgset = self.stable_potemplate.getOrCreateSharedPOTMsgSet(
             singular_text, None)
-        self.assertEquals(potmsgset, shared_potmsgset)
+        self.assertEqual(potmsgset, shared_potmsgset)
 
     def test_getOrCreateSharedPOTMsgSet_initializes_file_references(self):
         # When creating a POTMsgSet, getOrCreateSharedPOTMsgSet
@@ -244,13 +242,13 @@ class TestSharingPOTemplatesByRegex(TestCaseWithFactory):
         # Baseline test.
         self.assertContentEqual(
             ['foo', 'foo-bar', 'foo-two'],
-            self._makeAndFind(['foo', 'foo-bar', 'foo-two'], 'foo.*'))
+            self._makeAndFind(['foo', 'foo-bar', 'foo-two'], u'foo.*'))
 
     def test_getSharingPOTemplatesByRegex_not_all(self):
         # A template may not match.
         self.assertContentEqual(
             ['foo-bar', 'foo-two'],
-            self._makeAndFind(['foo', 'foo-bar', 'foo-two'], 'foo-.*'))
+            self._makeAndFind(['foo', 'foo-bar', 'foo-two'], u'foo-.*'))
 
     def test_getSharingPOTemplatesByRegex_all(self):
         # Not passing a pattern returns all templates.
@@ -262,19 +260,19 @@ class TestSharingPOTemplatesByRegex(TestCaseWithFactory):
         # A not matching pattern returns no templates.
         self.assertContentEqual(
             [],
-            self._makeAndFind(['foo', 'foo-bar', 'foo-two'], "doo.+dle"))
+            self._makeAndFind(['foo', 'foo-bar', 'foo-two'], u"doo.+dle"))
 
     def test_getSharingPOTemplatesByRegex_robustness_single_quotes(self):
         # Single quotes do not confuse the regex match.
         self.assertContentEqual(
             [],
-            self._makeAndFind(['foo', 'foo-bar', 'foo-two'], "'"))
+            self._makeAndFind(['foo', 'foo-bar', 'foo-two'], u"'"))
 
     def test_getSharingPOTemplatesByRegex_robustness_double_quotes(self):
         # Double quotes do not confuse the regex match.
         self.assertContentEqual(
             [],
-            self._makeAndFind(['foo', 'foo-bar', 'foo-two'], '"'))
+            self._makeAndFind(['foo', 'foo-bar', 'foo-two'], u'"'))
 
     def test_getSharingPOTemplatesByRegex_robustness_backslash(self):
         # A backslash at the end could escape enclosing quotes without
@@ -284,7 +282,7 @@ class TestSharingPOTemplatesByRegex(TestCaseWithFactory):
         product = self.factory.makeProduct()
         subset = getUtility(IPOTemplateSet).getSharingSubset(product=product)
         self.assertRaises(
-            DataError, list, subset.getSharingPOTemplatesByRegex("foo.*\\"))
+            DataError, list, subset.getSharingPOTemplatesByRegex(u"foo.*\\"))
 
 
 class TestMessageSharingProductPackage(TestCaseWithFactory):

@@ -1,8 +1,6 @@
 # Copyright 2009 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-# pylint: disable-msg=E0211,E0213
-
 """Binary package in a distroarchseries interfaces."""
 
 __metaclass__ = type
@@ -67,4 +65,3 @@ class IDistroArchSeriesBinaryPackage(Interface):
         version, or None if there has never been a release with that
         version, in this architecture series.
         """
-

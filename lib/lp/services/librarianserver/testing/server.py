@@ -1,4 +1,4 @@
-# Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2016 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Fixture for the librarians."""
@@ -25,6 +25,7 @@ from lp.services.daemons.tachandler import (
     TacException,
     TacTestSetup,
     )
+from lp.services.librarian.model import LibraryFileContent
 from lp.services.librarianserver.storage import _relFileLocation
 from lp.services.osutils import get_pid_from_file
 
@@ -130,7 +131,7 @@ class LibrarianServerFixture(TacTestSetup):
             root_fixture = FunctionFixture(tempfile.mkdtemp, shutil.rmtree)
             self.useFixture(root_fixture)
             self._root = root_fixture.fn_result
-            os.chmod(self.root, 0700)
+            os.chmod(self.root, 0o700)
             # Give the root to the new librarian.
             os.environ['LP_LIBRARIAN_ROOT'] = self._root
         else:
@@ -139,7 +140,7 @@ class LibrarianServerFixture(TacTestSetup):
             if os.path.exists(self.root):
                 self.tearDownRoot()
             self.addCleanup(self.tearDownRoot)
-            os.makedirs(self.root, 0700)
+            os.makedirs(self.root, 0o700)
 
     def _waitForDaemonStartup(self):
         super(LibrarianServerFixture, self)._waitForDaemonStartup()
@@ -154,20 +155,24 @@ class LibrarianServerFixture(TacTestSetup):
             return
         chunks = self.getLogChunks()
         # A typical startup: upload, download, restricted up, restricted down.
-        #2010-10-20 14:28:21+0530 [-] Log opened.
-        #2010-10-20 14:28:21+0530 [-] twistd 10.1.0 (/usr/bin/python 2.6.5) starting up.
-        #2010-10-20 14:28:21+0530 [-] reactor class: twisted.internet.selectreactor.SelectReactor.
-        #2010-10-20 14:28:21+0530 [-] lp.services.librarianserver.libraryprotocol.FileUploadFactory starting on 59090
-        #2010-10-20 14:28:21+0530 [-] Starting factory <lp.services.librarianserver.libraryprotocol.FileUploadFactory instance at 0x6f8ff38>
-        #2010-10-20 14:28:21+0530 [-] twisted.web.server.Site starting on 58000
-        #2010-10-20 14:28:21+0530 [-] Starting factory <twisted.web.server.Site instance at 0x6fb2638>
-        #2010-10-20 14:28:21+0530 [-] lp.services.librarianserver.libraryprotocol.FileUploadFactory starting on 59095
-        #2010-10-20 14:28:21+0530 [-] Starting factory <lp.services.librarianserver.libraryprotocol.FileUploadFactory instance at 0x6fb25f0>
-        #2010-10-20 14:28:21+0530 [-] twisted.web.server.Site starting on 58005
-        self.upload_port = int(chunks[3].split()[-1])
-        self.download_port = int(chunks[5].split()[-1])
-        self.restricted_upload_port = int(chunks[7].split()[-1])
-        self.restricted_download_port = int(chunks[9].split()[-1])
+        #2017-12-09 06:33:13+0530 [-] Loading /home/ubuntu/launchpad/lp-branches/devel/daemons/librarian.tac...
+        #2017-12-09 06:33:19+0530 [-] Loaded.
+        #2017-12-09 06:33:19+0530 [-] twistd 16.5.0 (/home/ubuntu/launchpad/lp-branches/devel/env/bin/python2.7 2.7.12) starting up.
+        #2017-12-09 06:33:19+0530 [-] reactor class: twisted.internet.epollreactor.EPollReactor.
+        #2017-12-09 06:33:19+0530 [-] FileUploadFactory starting on 39851
+        #2017-12-09 06:33:19+0530 [-] Starting factory <lp.services.librarianserver.libraryprotocol.FileUploadFactory instance at 0xf0ef80ac>
+        #2017-12-09 06:33:19+0530 [-] Site starting on 45355
+        #2017-12-09 06:33:19+0530 [-] Starting factory <twisted.web.server.Site instance at 0xf0ef848c>
+        #2017-12-09 06:33:19+0530 [-] FileUploadFactory starting on 42150
+        #2017-12-09 06:33:19+0530 [-] Starting factory <lp.services.librarianserver.libraryprotocol.FileUploadFactory instance at 0xf0ef856c>
+        #2017-12-09 06:33:19+0530 [-] Site starting on 37341
+        #2017-12-09 06:33:19+0530 [-] Starting factory <twisted.web.server.Site instance at 0xf0ef85ec>
+        #2017-12-09 06:33:19+0530 [-] Not using upstream librarian
+        #2017-12-09 06:33:19+0530 [-] daemon ready!
+        self.upload_port = int(chunks[4].split()[-1])
+        self.download_port = int(chunks[6].split()[-1])
+        self.restricted_upload_port = int(chunks[8].split()[-1])
+        self.restricted_download_port = int(chunks[10].split()[-1])
         self.service_config = dedent("""\
             [librarian_server]
             root: %s
@@ -230,14 +235,16 @@ class LibrarianServerFixture(TacTestSetup):
         self.truncateLog()
 
 
-def fillLibrarianFile(fileid, content='Fake Content'):
+def fillLibrarianFile(fileid, content=None):
     """Write contents in disk for a librarian sampledata."""
+    if content is None:
+        content = 'x' * LibraryFileContent.get(fileid).filesize
+
     filepath = os.path.join(
         config.librarian_server.root, _relFileLocation(fileid))
 
     if not os.path.exists(os.path.dirname(filepath)):
         os.makedirs(os.path.dirname(filepath))
 
-    libfile = open(filepath, 'wb')
-    libfile.write(content)
-    libfile.close()
+    with open(filepath, 'wb') as libfile:
+        libfile.write(content)

@@ -1,56 +1,52 @@
-# Copyright 2010-2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2015 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """TALES formatter for strings."""
-from base64 import urlsafe_b64encode
-
 
 __metaclass__ = type
 __all__ = [
     'add_word_breaks',
     'break_long_words',
-    'escape',
     'extract_bug_numbers',
     'extract_email_addresses',
     'FormattersAPI',
     'linkify_bug_numbers',
+    'parse_diff',
     're_substitute',
     'split_paragraphs',
     ]
 
-import cgi
+from base64 import urlsafe_b64encode
+from itertools import izip_longest
 import re
-from lxml import html
-from xml.sax.saxutils import unescape as xml_unescape
-import markdown
+import sys
 
+from bzrlib.patches import hunk_from_header
+from lxml import html
+import markdown
 from zope.component import getUtility
-from zope.interface import implements
+from zope.error.interfaces import IErrorReportingUtility
+from zope.interface import implementer
 from zope.traversing.interfaces import (
     ITraversable,
     TraversalError,
     )
 
-from lp.services.config import config
-from lp.services.webapp import canonical_url
-from lp.services.webapp.interfaces import ILaunchBag
 from lp.answers.interfaces.faq import IFAQSet
 from lp.registry.interfaces.person import IPersonSet
+from lp.services.config import config
+from lp.services.features import getFeatureFlag
 from lp.services.utils import (
-    re_email_address,
     obfuscate_email,
+    re_email_address,
     )
-from lp.services.features import (
-    getFeatureFlag,
+from lp.services.webapp import canonical_url
+from lp.services.webapp.escaping import (
+    html_escape,
+    html_unescape,
+    structured,
     )
-
-
-def escape(text, quote=True):
-    """Escape text for insertion into HTML.
-
-    Wraps `cgi.escape` to make the default to escape double-quotes.
-    """
-    return cgi.escape(text, quote)
+from lp.services.webapp.interfaces import ILaunchBag
 
 
 def split_paragraphs(text):
@@ -250,24 +246,76 @@ def extract_email_addresses(text):
     return list(set([match.group() for match in matches]))
 
 
+def parse_diff(text):
+    """Parse a string into categorised diff lines.
+
+    Yields a sequence of (CSS class, line number in diff, line number in
+    original file, line number in modified file, line).
+    """
+    max_format_lines = config.diff.max_format_lines
+    header_next = False
+    orig_row = 0
+    mod_row = 0
+    for row, line in enumerate(text.splitlines()[:max_format_lines]):
+        row += 1
+        if (line.startswith('===') or
+                line.startswith('diff') or
+                line.startswith('index')):
+            yield 'diff-file text', row, None, None, line
+            header_next = True
+        elif (header_next and
+              (line.startswith('+++') or
+              line.startswith('---'))):
+            yield 'diff-header text', row, None, None, line
+        elif line.startswith('@@'):
+            try:
+                hunk = hunk_from_header(line + '\n')
+                # The positions indicate the per-file line numbers of
+                # the next row.
+                orig_row = hunk.orig_pos
+                mod_row = hunk.mod_pos
+            except Exception:
+                getUtility(IErrorReportingUtility).raising(sys.exc_info())
+                orig_row = 1
+                mod_row = 1
+            yield 'diff-chunk text', row, None, None, line
+            header_next = False
+        elif line.startswith('+'):
+            yield 'diff-added text', row, None, mod_row, line
+            mod_row += 1
+        elif line.startswith('-'):
+            yield 'diff-removed text', row, orig_row, None, line
+            orig_row += 1
+        elif line.startswith('#'):
+            # This doesn't occur in normal unified diffs, but does
+            # appear in merge directives, which use text/x-diff or
+            # text/x-patch.
+            yield 'diff-comment text', row, None, None, line
+            header_next = False
+        else:
+            yield 'text', row, orig_row, mod_row, line
+            orig_row += 1
+            mod_row += 1
+            header_next = False
+
+
+@implementer(ITraversable)
 class FormattersAPI:
     """Adapter from strings to HTML formatted text."""
-
-    implements(ITraversable)
 
     def __init__(self, stringtoformat):
         self._stringtoformat = stringtoformat
 
     def nl_to_br(self):
         """Quote HTML characters, then replace newlines with <br /> tags."""
-        return cgi.escape(self._stringtoformat).replace('\n', '<br />\n')
+        return html_escape(self._stringtoformat).replace('\n', '<br />\n')
 
     def escape(self):
-        return escape(self._stringtoformat)
+        return html_escape(self._stringtoformat)
 
     def break_long_words(self):
         """Add manual word breaks to long words."""
-        return break_long_words(cgi.escape(self._stringtoformat))
+        return break_long_words(html_escape(self._stringtoformat))
 
     @staticmethod
     def _substitute_matchgroup_for_spaces(match):
@@ -318,10 +366,6 @@ class FormattersAPI:
 
         :return: an unescaped url, an unescaped trailer.
         """
-        # The text will already have been cgi escaped.  We temporarily
-        # unescape it so that we can strip common trailing characters
-        # that aren't part of the URL.
-        url = xml_unescape(url)
         match = FormattersAPI._re_url_trailers.search(url)
         if match:
             trailers = match.group(1)
@@ -364,20 +408,21 @@ class FormattersAPI:
             # unescape it so that we can strip common trailing characters
             # that aren't part of the URL.
             full_url = match.group('url')
-            url, trailers = FormattersAPI._split_url_and_trailers(full_url)
+            url, trailers = FormattersAPI._split_url_and_trailers(
+                html_unescape(full_url))
             # We use nofollow for these links to reduce the value of
             # adding spam URLs to our comments; it's a way of moderately
             # devaluing the return on effort for spammers that consider
             # using Launchpad.
+            # The use of structured() in the argument here is a bit
+            # evil. Ideally add_word_breaks would return one itself.
             if not FormattersAPI._linkify_url_should_be_ignored(url):
-                link_string = (
+                return structured(
                     '<a rel="nofollow" '
-                    'href="%(url)s">%(linked_text)s</a>%(trailers)s' % {
-                        'url': cgi.escape(url, quote=True),
-                        'linked_text': add_word_breaks(cgi.escape(url)),
-                        'trailers': cgi.escape(trailers)
-                        })
-                return link_string
+                    'href="%(url)s">%(linked_text)s</a>%(trailers)s',
+                    url=url,
+                    linked_text=structured(add_word_breaks(html_escape(url))),
+                    trailers=trailers).escapedtext
             else:
                 return full_url
         elif match.group('faq') is not None:
@@ -403,18 +448,19 @@ class FormattersAPI:
         elif match.group('lpbranchurl') is not None:
             lp_url = match.group('lpbranchurl')
             path = match.group('branch')
-            lp_url, trailers = FormattersAPI._split_url_and_trailers(lp_url)
-            path, trailers = FormattersAPI._split_url_and_trailers(path)
+            lp_url, trailers = FormattersAPI._split_url_and_trailers(
+                html_unescape(lp_url))
+            path, trailers = FormattersAPI._split_url_and_trailers(
+                html_unescape(path))
             if path.isdigit():
                 return FormattersAPI._linkify_bug_number(
                     lp_url, path, trailers)
-            url = '/+branch/%s' % path
+            url = '/+code/%s' % path
             # Mark the links with a 'branch-short-link' class so they can be
             # harvested and validated when the page is rendered.
-            return '<a href="%s" class="branch-short-link">%s</a>%s' % (
-                cgi.escape(url, quote=True),
-                cgi.escape(lp_url),
-                cgi.escape(trailers))
+            return structured(
+                '<a href="%s" class="branch-short-link">%s</a>%s',
+                url, lp_url, trailers).escapedtext
         elif match.group("clbug") is not None:
             # 'clbug' matches Ubuntu changelog format bugs. 'bugnumbers' is
             # all of the bug numbers, that look something like "#1234, #434".
@@ -484,6 +530,9 @@ class FormattersAPI:
     # We will simplify "unreserved / pct-encoded / sub-delims" as the
     # following regular expression:
     #   [-a-zA-Z0-9._~%!$&'()*+,;=]
+    # But we are working on text that has already been through
+    # html_escape, so the & and ' are &amp; and &#x27; respectively. It
+    # gets a bit more complicated.
     #
     # We also require that the path-rootless form not begin with a
     # colon to avoid matching strings like "http::foo" (to avoid bug
@@ -515,36 +564,36 @@ class FormattersAPI:
             # "//" authority path-abempty
             //
             (?: # userinfo
-              [%(unreserved)s:]*
+              (?:%(unreserved)s|:)*
               @
             )?
             (?: # host
               \d+\.\d+\.\d+\.\d+ |
-              [%(unreserved)s]*
+              %(unreserved)s*
             )
             (?: # port
               : \d*
             )?
-            (?: / [%(unreserved)s:@]* )*
+            (?: / (?:%(unreserved)s|[:@])* )*
           ) | (?:
             # path-absolute
             /
-            (?: [%(unreserved)s:@]+
-                (?: / [%(unreserved)s:@]* )* )?
+            (?: (?:%(unreserved)s|[:@])+
+                (?: / (?:%(unreserved)s|[:@])* )* )?
           ) | (?:
             # path-rootless
-            [%(unreserved)s@]
-            [%(unreserved)s:@]*
-            (?: / [%(unreserved)s:@]* )*
+            (?:%(unreserved)s|@)
+            (?:%(unreserved)s|[:@])*
+            (?: / (?:%(unreserved)s|[:@])* )*
           )
         )
         (?: # query
           \?
-          [%(unreserved)s:@/\?\[\]]*
+          (?:%(unreserved)s|[:@/\?\[\]])*
         )?
         (?: # fragment
           \#
-          [%(unreserved)s:@/\?]*
+          (?:%(unreserved)s|[:@/\?])*
         )?
       ) |
       (?P<clbug>
@@ -569,9 +618,9 @@ class FormattersAPI:
       ) |
       (?P<lpbranchurl>
         \blp:(?:///|/)?
-        (?P<branch>[%(unreserved)s][%(unreserved)s/]*)
+        (?P<branch>%(unreserved)s(?:%(unreserved)s|/)*)
       )
-    ''' % {'unreserved': "-a-zA-Z0-9._~%!$&'()*+,;="},
+    ''' % {'unreserved': "(?:[-a-zA-Z0-9._~%!$'()*+,;=]|&amp;|&\#x27;)"},
                              re.IGNORECASE | re.VERBOSE)
 
     # There is various punctuation that can occur at the end of a link that
@@ -609,7 +658,7 @@ class FormattersAPI:
                     output.append('<br />\n')
                 first_line = False
                 # escape ampersands, etc in text
-                line = cgi.escape(line)
+                line = html_escape(line)
                 # convert leading space in logical line to non-breaking space
                 line = self._re_leadingspace.sub(
                     self._substitute_matchgroup_for_spaces, line)
@@ -651,7 +700,7 @@ class FormattersAPI:
         else:
             linkified_text = re_substitute(self._re_linkify,
                 self._linkify_substitution, break_long_words,
-                cgi.escape(self._stringtoformat))
+                html_escape(self._stringtoformat))
             return '<pre class="wrap">%s</pre>' % linkified_text
 
     # Match lines that start with one or more quote symbols followed
@@ -828,10 +877,14 @@ class FormattersAPI:
         may be a concern but is noted here for posterity anyway.
         """
         text = self._stringtoformat
-
+        seen_addresses = []
         matches = re.finditer(re_email_address, text)
         for match in matches:
             address = match.group()
+            # Since we globally replace the email in the text, if we have seen
+            # the address before, skip it.
+            if address in seen_addresses:
+                continue
             person = None
             # First try to find the person required in the preloaded person
             # data dictionary.
@@ -845,9 +898,9 @@ class FormattersAPI:
             if person is not None and not person.hide_email_addresses:
                 # Circular dependancies now. Should be resolved by moving the
                 # object image display api.
-                from lp.app.browser.tales import (
-                    ObjectImageDisplayAPI)
+                from lp.app.browser.tales import ObjectImageDisplayAPI
                 css_sprite = ObjectImageDisplayAPI(person).sprite_css()
+                seen_addresses.append(address)
                 text = text.replace(
                     address, '<a href="%s" class="%s">%s</a>' % (
                         canonical_url(person), css_sprite, address))
@@ -881,41 +934,107 @@ class FormattersAPI:
         text = self._stringtoformat.rstrip('\n')
         if len(text) == 0:
             return text
-        result = ['<table class="diff">']
+        result = ['<table class="diff unidiff">']
 
-        max_format_lines = config.diff.max_format_lines
-        header_next = False
-        for row, line in enumerate(text.splitlines()[:max_format_lines]):
-            result.append('<tr>')
-            result.append('<td class="line-no">%s</td>' % (row + 1))
-            if line.startswith('==='):
-                css_class = 'diff-file text'
-                header_next = True
-            elif (header_next and
-                  (line.startswith('+++') or
-                  line.startswith('---'))):
-                css_class = 'diff-header text'
-            elif line.startswith('@@'):
-                css_class = 'diff-chunk text'
-                header_next = False
-            elif line.startswith('+'):
-                css_class = 'diff-added text'
-                header_next = False
-            elif line.startswith('-'):
-                css_class = 'diff-removed text'
-                header_next = False
-            elif line.startswith('#'):
-                # This doesn't occur in normal unified diffs, but does
-                # appear in merge directives, which use text/x-diff or
-                # text/x-patch.
-                css_class = 'diff-comment text'
-                header_next = False
-            else:
-                css_class = 'text'
-                header_next = False
+        for css_class, row, _, _, line in parse_diff(text):
+            result.append('<tr id="diff-line-%s">' % row)
+            result.append('<td class="line-no unselectable">%s</td>' % row)
             result.append(
-                '<td class="%s">%s</td>' % (css_class, escape(line)))
+                structured(
+                    '<td class="%s">%s</td>', css_class, line).escapedtext)
             result.append('</tr>')
+
+        result.append('</table>')
+        return ''.join(result)
+
+    def _ssdiff_emit_line(self, result, row, cells):
+        result.append('<tr id="diff-line-%s">' % row)
+        # A line-no cell has to be present for the inline comments code to
+        # work, but displaying it would be confusing since there are also
+        # per-file line numbers.
+        result.append(
+            '<td class="line-no unselectable" '
+            'style="display: none">%s</td>' % row)
+        result.extend(cells)
+        result.append('</tr>')
+
+    def _ssdiff_emit_queued_lines(self, result, queue_removed, queue_added):
+        for removed, added in izip_longest(queue_removed, queue_added):
+            if removed:
+                removed_diff_row, removed_row, removed_line = removed
+            else:
+                removed_diff_row, removed_row, removed_line = 0, '', ''
+            if added:
+                added_diff_row, added_row, added_line = added
+            else:
+                added_diff_row, added_row, added_line = 0, '', ''
+            cells = (
+                '<td class="ss-line-no unselectable">%s</td>' % removed_row,
+                structured(
+                    '<td class="diff-removed text">%s</td>',
+                    removed_line).escapedtext,
+                '<td class="ss-line-no unselectable">%s</td>' % added_row,
+                structured(
+                    '<td class="diff-added text">%s</td>',
+                    added_line).escapedtext,
+                )
+            # Pick a reasonable row of the unified diff to attribute inline
+            # comments to.  Whichever of the removed and added rows is later
+            # will do.
+            self._ssdiff_emit_line(
+                result, max(removed_diff_row, added_diff_row), cells)
+
+    def format_ssdiff(self):
+        """Format the string as a side-by-side diff."""
+        # Trim off trailing carriage returns.
+        text = self._stringtoformat.rstrip('\n')
+        if not text:
+            return text
+        result = ['<table class="diff ssdiff">']
+
+        queue_orig = []
+        queue_mod = []
+        for css_class, row, orig_row, mod_row, line in parse_diff(text):
+            if orig_row is not None and mod_row is None:
+                # Text line only in original version.  Queue until we find a
+                # common or non-text line.
+                queue_orig.append((row, orig_row, line[1:]))
+            elif mod_row is not None and orig_row is None:
+                # Text line only in modified version.  Queue until we find a
+                # common or non-text line.
+                queue_mod.append((row, mod_row, line[1:]))
+            else:
+                # Common or non-text line; emit any queued differences, then
+                # this line.
+                if queue_orig or queue_mod:
+                    self._ssdiff_emit_queued_lines(
+                        result, queue_orig, queue_mod)
+                    queue_orig = []
+                    queue_mod = []
+                if orig_row is None and mod_row is None:
+                    # Non-text line.
+                    cells = [
+                        structured(
+                            '<td class="%s" colspan="4">%s</td>',
+                            css_class, line).escapedtext,
+                        ]
+                else:
+                    # Line common to both versions.
+                    if line.startswith(' '):
+                        line = line[1:]
+                    cells = [
+                        '<td class="ss-line-no unselectable">%s</td>' %
+                            orig_row,
+                        structured(
+                            '<td class="text">%s</td>', line).escapedtext,
+                        '<td class="ss-line-no unselectable">%s</td>' %
+                            mod_row,
+                        structured(
+                            '<td class="text">%s</td>', line).escapedtext,
+                        ]
+                self._ssdiff_emit_line(result, row, cells)
+        if queue_orig or queue_mod:
+            self._ssdiff_emit_queued_lines(result, queue_orig, queue_mod)
 
         result.append('</table>')
         return ''.join(result)
@@ -1031,6 +1150,8 @@ class FormattersAPI:
             return self.ellipsize(maxlength)
         elif name == 'diff':
             return self.format_diff()
+        elif name == 'ssdiff':
+            return self.format_ssdiff()
         elif name == 'css-id':
             if len(furtherPath) > 0:
                 return self.css_id(furtherPath.pop())

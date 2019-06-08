@@ -1,4 +1,4 @@
-# Copyright 2010-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2013 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for `StructuralSubscription`."""
@@ -13,6 +13,7 @@ from storm.store import (
 from testtools.matchers import StartsWith
 from zope.security.interfaces import Unauthorized
 
+from lp.app.enums import InformationType
 from lp.bugs.enums import BugNotificationLevel
 from lp.bugs.interfaces.bugtask import (
     BugTaskImportance,
@@ -30,7 +31,6 @@ from lp.bugs.model.structuralsubscription import (
     get_structural_subscriptions,
     get_structural_subscriptions_for_bug,
     )
-from lp.registry.enums import InformationType
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.testing import (
     anonymous_logged_in,
@@ -63,7 +63,7 @@ class TestStructuralSubscription(TestCaseWithFactory):
     def test_delete_requires_Edit_permission(self):
         # delete() is only available to the subscriber.
         # We use a lambda here because a security proxy around
-        # self.subscription is giving us the behavior we want to
+        # self.subscription is giving us the behaviour we want to
         # demonstrate.  Merely accessing the "delete" name raises
         # Unauthorized, before the method is even called.  Therefore,
         # we use a lambda to make the trigger happen within "assertRaises".
@@ -81,27 +81,26 @@ class TestStructuralSubscription(TestCaseWithFactory):
     def test_delete_cascades_to_filters(self):
         with person_logged_in(self.product.owner):
             subscription_id = self.subscription.id
-            self.subscription.newBugFilter()
+            bugfilter = self.subscription.newBugFilter()
+            bugfilter.information_types = [InformationType.USERDATA]
             self.subscription.delete()
             self.assertEqual(
                 self.product.getSubscription(self.product.owner), None)
-            store = Store.of(self.product)
             # We know that the filter is gone, because we know the
             # subscription is gone, and the database would have
             # prevented the deletion of a subscription without first
             # deleting the filters.  We'll double-check, to be sure.
-            self.assertEqual(
-                store.find(
-                    BugSubscriptionFilter,
-                    BugSubscriptionFilter.structural_subscription_id ==
-                        subscription_id).one(),
-                None)
+            bugfilter = Store.of(self.product).find(
+                BugSubscriptionFilter,
+                BugSubscriptionFilter.structural_subscription_id ==
+                    subscription_id).one()
+            self.assertIsNone(bugfilter)
 
     def test_bug_filters_default(self):
         # The bug_filters attribute has a default non-filtering bug filter
         # to begin with.
-        self.assertEqual([self.original_filter],
-                         list(self.subscription.bug_filters))
+        self.assertEqual(
+            [self.original_filter], list(self.subscription.bug_filters))
 
     def test_bug_filters(self):
         # The bug_filters attribute returns the BugSubscriptionFilter records
@@ -465,7 +464,7 @@ class TestStructuralSubscriptionFiltersForProjectGroup(
 
     def makeBugTask(self):
         return self.factory.makeBugTask(
-            target=self.factory.makeProduct(project=self.target))
+            target=self.factory.makeProduct(projectgroup=self.target))
 
 
 class TestStructuralSubscriptionFiltersForProductSeries(
@@ -533,18 +532,18 @@ class TestGetStructuralSubscriptionTargets(TestCaseWithFactory):
     def test_product_with_project_group(self):
         # get_structural_subscription_targets() will yield both a
         # product and its parent project group if it has one.
-        project = self.factory.makeProject()
+        projectgroup = self.factory.makeProject()
         product = self.factory.makeProduct(
-            project=project, owner=project.owner)
+            projectgroup=projectgroup, owner=projectgroup.owner)
         subscriber = self.factory.makePerson()
         with person_logged_in(subscriber):
-            project.addBugSubscription(subscriber, subscriber)
+            projectgroup.addBugSubscription(subscriber, subscriber)
         # This is a sanity check.
-        self.assertEqual(project, product.parent_subscription_target)
+        self.assertEqual(projectgroup, product.parent_subscription_target)
         bug = self.factory.makeBug(target=product)
         result = get_structural_subscription_targets(bug.bugtasks)
         self.assertEqual(
-            set([(bug.bugtasks[0], product), (bug.bugtasks[0], project)]),
+            set([(bug.bugtasks[0], product), (bug.bugtasks[0], projectgroup)]),
             set(result))
 
 
@@ -635,13 +634,13 @@ class TestGetStructuralSubscriptionsForBug(TestCaseWithFactory):
         # get_structural_subscriptions_for_bug() will return any
         # structural subscriptions from the parents of the targets of
         # that bug.
-        project = self.factory.makeProject()
+        projectgroup = self.factory.makeProject()
         product = self.factory.makeProduct(
-            project=project, owner=project.owner)
+            projectgroup=projectgroup, owner=projectgroup.owner)
         subscriber = self.factory.makePerson()
-        self_sub = project.addBugSubscription(subscriber, subscriber)
+        self_sub = projectgroup.addBugSubscription(subscriber, subscriber)
         # This is a sanity check.
-        self.assertEqual(project, product.parent_subscription_target)
+        self.assertEqual(projectgroup, product.parent_subscription_target)
         bug = self.factory.makeBug(target=product)
         subscriptions = get_structural_subscriptions_for_bug(
             bug, subscriber)
@@ -925,12 +924,30 @@ class TestBugSubscriptionFilterMute(TestCaseWithFactory):
             non_team_subscription = self.target.addBugSubscription(
                 person, person)
         filter = non_team_subscription.bug_filters.one()
+        expected = "This subscription cannot be muted for %s" % person.name
         self.assertFalse(filter.isMuteAllowed(person))
-        self.assertRaises(MuteNotAllowed, filter.mute, person)
+        self.assertRaisesWithContent(
+            MuteNotAllowed, expected, filter.mute, person)
 
     def test_mute_raises_error_for_non_team_members(self):
         # BugSubscriptionFilter.mute() will raise an error if called on
         # a subscription of which the calling person is not a member.
         non_team_person = self.factory.makePerson()
         self.assertFalse(self.filter.isMuteAllowed(non_team_person))
-        self.assertRaises(MuteNotAllowed, self.filter.mute, non_team_person)
+        expected = "This subscription cannot be muted for %s" % (
+            non_team_person.name,)
+        self.assertRaisesWithContent(
+            MuteNotAllowed, expected, self.filter.mute, non_team_person)
+
+    def test_mute_on_team_with_contact_address(self):
+        # BugSubscriptionFilter.mute() will raise an error if called on
+        # a subscription if the team has a contact address.
+        person = self.factory.makePerson()
+        team = self.factory.makeTeam(email='foo@example.com', owner=person)
+        with person_logged_in(person):
+            ss = self.target.addBugSubscription(team, person)
+        filter = ss.bug_filters.one()
+        expected = ("This subscription cannot be muted because team %s has a "
+            "contact address." % team.name)
+        self.assertRaisesWithContent(
+            MuteNotAllowed, expected, filter.mute, person)

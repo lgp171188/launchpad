@@ -77,8 +77,8 @@ reported bugs.
 
 The content includes a link to the distribution CVE report.
 
-    >>> print user_browser.getLink('CVE report').url
-    http://bugs.launchpad.dev/debian/+cve
+    >>> print(user_browser.getLink('CVE report').url)
+    http://bugs.launchpad.test/debian/+cve
 
 
 Distribution Series
@@ -146,8 +146,8 @@ reported bugs.
 
 The content includes a link to the distribution CVE report.
 
-    >>> print user_browser.getLink('CVE report').url
-    http://bugs.launchpad.dev/debian/woody/+cve
+    >>> print(user_browser.getLink('CVE report').url)
+    http://bugs.launchpad.test/debian/woody/+cve
 
 
 Distribution Source Package
@@ -215,7 +215,7 @@ reported bugs.
 Note that the "CVE reports" link is not shown above; distribution
 source packages do not have a CVE reports page.
 
-    >>> print user_browser.getLink('CVE report').url
+    >>> print(user_browser.getLink('CVE report').url)
     Traceback (most recent call last):
     ...
     LinkNotFoundError
@@ -287,7 +287,7 @@ reported bugs.
 Note that the "CVE reports" link is not shown above; source packages
 do not have a CVE reports page.
 
-    >>> print user_browser.getLink('CVE report').url
+    >>> print(user_browser.getLink('CVE report').url)
     Traceback (most recent call last):
     ...
     LinkNotFoundError
@@ -359,7 +359,7 @@ and reported bugs.
 Note that the "CVE reports" link is not shown above; project groups do
 not have a CVE reports page.
 
-    >>> print user_browser.getLink('CVE report').url
+    >>> print(user_browser.getLink('CVE report').url)
     Traceback (most recent call last):
     ...
     LinkNotFoundError
@@ -394,7 +394,7 @@ If the user is not logged-in general stats are shown.
     0 Bugs with patches
     1 Open CVE bug - CVE report
 
-Once the user has identified him or herself, information on assigned
+Once the user has identified themselves, information on assigned
 bugs is also shown.
 
     >>> print_bugfilters_portlet_unfilled(user_browser, path)
@@ -431,5 +431,5 @@ bugs is also shown.
 
 The content includes a link to the distribution CVE report.
 
-    >>> print user_browser.getLink('CVE report').url
-    http://bugs.launchpad.dev/firefox/+cve
+    >>> print(user_browser.getLink('CVE report').url)
+    http://bugs.launchpad.test/firefox/+cve

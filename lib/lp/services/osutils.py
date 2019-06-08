@@ -1,4 +1,4 @@
-# Copyright 2009-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Utilities for doing the sort of thing the os module does."""
@@ -6,15 +6,15 @@
 __metaclass__ = type
 __all__ = [
     'ensure_directory_exists',
+    'find_on_path',
     'get_pid_from_file',
     'kill_by_pidfile',
-    'get_pid_from_file',
     'open_for_writing',
     'override_environ',
+    'process_exists',
     'remove_if_exists',
     'remove_tree',
     'two_stage_kill',
-    'until_no_eintr',
     'write_file',
     ]
 
@@ -26,7 +26,6 @@ from signal import (
     SIGKILL,
     SIGTERM,
     )
-import socket
 import time
 
 
@@ -66,36 +65,7 @@ def override_environ(**kwargs):
         set_environ(old_values)
 
 
-def until_no_eintr(retries, function, *args, **kwargs):
-    """Run 'function' until it doesn't raise EINTR errors.
-
-    :param retries: The maximum number of times to try running 'function'.
-    :param function: The function to run.
-    :param *args: Arguments passed to the function.
-    :param **kwargs: Keyword arguments passed to the function.
-    :return: The return value of 'function'.
-    """
-    if not retries:
-        return
-    for i in range(retries):
-        try:
-            return function(*args, **kwargs)
-        except (IOError, OSError) as e:
-            if e.errno == errno.EINTR:
-                continue
-            raise
-        except socket.error as e:
-            # In Python 2.6 we can use IOError instead.  It also has
-            # reason.errno but we might be using 2.5 here so use the
-            # index hack.
-            if e[0] == errno.EINTR:
-                continue
-            raise
-    else:
-        raise
-
-
-def ensure_directory_exists(directory, mode=0777):
+def ensure_directory_exists(directory, mode=0o777):
     """Create 'directory' if it doesn't exist.
 
     :return: True if the directory had to be created, False otherwise.
@@ -109,7 +79,7 @@ def ensure_directory_exists(directory, mode=0777):
     return True
 
 
-def open_for_writing(filename, mode, dirmode=0777):
+def open_for_writing(filename, mode, dirmode=0o777):
     """Open 'filename' for writing, creating directories if necessary.
 
     :param filename: The path of the file to open.
@@ -140,13 +110,15 @@ def _kill_may_race(pid, signal_number):
         raise
 
 
-def two_stage_kill(pid, poll_interval=0.1, num_polls=50):
+def two_stage_kill(pid, poll_interval=0.1, num_polls=50, get_status=True):
     """Kill process 'pid' with SIGTERM. If it doesn't die, SIGKILL it.
 
     :param pid: The pid of the process to kill.
     :param poll_interval: The polling interval used to check if the
         process is still around.
     :param num_polls: The number of polls to do before doing a SIGKILL.
+    :param get_status: If True, collect the process' exit status (which
+        requires it to be a child of the process running this function).
     """
     # Kill the process.
     _kill_may_race(pid, SIGTERM)
@@ -154,11 +126,16 @@ def two_stage_kill(pid, poll_interval=0.1, num_polls=50):
     # Poll until the process has ended.
     for i in range(num_polls):
         try:
-            # Reap the child process and get its return value. If it's not
-            # gone yet, continue.
-            new_pid, result = os.waitpid(pid, os.WNOHANG)
-            if new_pid:
-                return result
+            if get_status:
+                # Reap the child process and get its return value. If it's
+                # not gone yet, continue.
+                new_pid, result = os.waitpid(pid, os.WNOHANG)
+                if new_pid:
+                    return result
+            else:
+                # If the process isn't gone yet, continue.
+                if not process_exists(pid):
+                    return
             time.sleep(poll_interval)
         except OSError as e:
             if e.errno in (errno.ESRCH, errno.ECHILD):
@@ -208,5 +185,33 @@ def remove_if_exists(path):
 
 
 def write_file(path, content):
-    with open_for_writing(path, 'w') as f:
+    with open_for_writing(path, 'wb') as f:
         f.write(content)
+
+
+def find_on_path(command):
+    """Is 'command' on the executable search path?"""
+    if "PATH" not in os.environ:
+        return False
+    path = os.environ["PATH"]
+    for element in path.split(os.pathsep):
+        if not element:
+            continue
+        filename = os.path.join(element, command)
+        if os.path.isfile(filename) and os.access(filename, os.X_OK):
+            return True
+    return False
+
+
+def process_exists(pid):
+    """Return True if the specified process already exists."""
+    try:
+        os.kill(pid, 0)
+    except os.error as err:
+        if err.errno == errno.ESRCH:
+            # All is well - the process doesn't exist.
+            return False
+        else:
+            # We got a strange OSError, which we'll pass upwards.
+            raise
+    return True

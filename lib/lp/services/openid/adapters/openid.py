@@ -10,43 +10,40 @@ __all__ = [
     'OpenIDPersistentIdentity',
     ]
 
-from zope.component import (
-    adapter,
-    adapts,
-    )
-from zope.interface import (
-    implementer,
-    implements,
-    )
+from zope.component import adapter
+from zope.interface import implementer
 
 from lp.registry.interfaces.person import IPerson
-from lp.services.database.lpstorm import IStore
+from lp.services.config import config
+from lp.services.database.interfaces import IStore
 from lp.services.identity.interfaces.account import IAccount
 from lp.services.openid.interfaces.openid import IOpenIDPersistentIdentity
 from lp.services.openid.model.openididentifier import OpenIdIdentifier
-from lp.services.webapp.vhosts import allvhosts
 
 
 class CurrentOpenIDEndPoint:
     """A utility for working with multiple OpenID End Points."""
 
-    @classmethod
-    def getServiceURL(cls):
+    @staticmethod
+    def getServiceURL():
         """The OpenID server URL (/+openid) for the current request."""
-        return allvhosts.configs['openid'].rooturl + '+openid'
+        return config.launchpad.openid_provider_root + '+openid'
 
-    @classmethod
-    def supportsURL(cls, identity_url):
-        """Does the OpenID current vhost support the identity_url?"""
-        root_url = allvhosts.configs['openid'].rooturl
-        return identity_url.startswith(root_url + '+id')
+    @staticmethod
+    def getAllRootURLs():
+        """All configured OpenID provider root URLs."""
+        yield config.launchpad.openid_provider_root
+        alternate_roots = config.launchpad.openid_alternate_provider_roots
+        if alternate_roots:
+            for root in [r.strip() for r in alternate_roots.split(',')]:
+                if root:
+                    yield root
 
 
+@adapter(IAccount)
+@implementer(IOpenIDPersistentIdentity)
 class OpenIDPersistentIdentity:
     """A persistent OpenID identifier for a user."""
-
-    adapts(IAccount)
-    implements(IOpenIDPersistentIdentity)
 
     def __init__(self, account):
         self.account = account
@@ -57,8 +54,9 @@ class OpenIDPersistentIdentity:
         openid_identifier = self.openid_identifier
         if openid_identifier is None:
             return None
-        identity_root_url = allvhosts.configs['openid'].rooturl
-        return identity_root_url + openid_identifier.encode('ascii')
+        return (
+            config.launchpad.openid_provider_root +
+            openid_identifier.encode('ascii'))
 
     @property
     def openid_identifier(self):

@@ -1,4 +1,4 @@
-# Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Launchpad test fixtures that have no better home."""
@@ -21,7 +21,7 @@ import os.path
 import socket
 import time
 
-import amqplib.client_0_8 as amqp
+import amqp
 from fixtures import (
     EnvironmentVariableFixture,
     Fixture,
@@ -41,7 +41,6 @@ from wsgi_intercept.urllib2_intercept import (
 from zope.component import (
     adapter,
     getGlobalSiteManager,
-    getUtility,
     provideHandler,
     )
 from zope.interface import Interface
@@ -54,15 +53,12 @@ from zope.security.checker import (
 
 from lp.services import webapp
 from lp.services.config import config
+from lp.services.database.interfaces import IStore
+from lp.services.librarian.model import LibraryFileAlias
 from lp.services.messaging.interfaces import MessagingUnavailable
 from lp.services.messaging.rabbit import connect
 from lp.services.timeline.requesttimeline import get_request_timeline
 from lp.services.webapp.errorlog import ErrorReportEvent
-from lp.services.webapp.interfaces import (
-    DEFAULT_FLAVOR,
-    IStoreSelector,
-    MAIN_STORE,
-    )
 from lp.testing.dbuser import dbuser
 
 
@@ -117,6 +113,8 @@ class PGBouncerFixture(pgbouncer.fixture.PGBouncerFixture):
         # via pgbouncer. Otherwise, we would need to temporarily
         # overwrite the database connection strings in the config.
         self.useFixture(EnvironmentVariableFixture('PGPORT', str(self.port)))
+        # Force TCP, as pgbouncer doesn't listen on a UNIX socket.
+        self.useFixture(EnvironmentVariableFixture('PGHOST', 'localhost'))
 
         # Reset database connections so they go through pgbouncer.
         self._maybe_reconnect_stores()
@@ -139,7 +137,7 @@ class PGBouncerFixture(pgbouncer.fixture.PGBouncerFixture):
         """Start PGBouncer, waiting for it to accept connections if neccesary.
         """
         super(PGBouncerFixture, self).start()
-        for i in xrange(retries):
+        for i in range(retries):
             try:
                 socket.create_connection((self.host, self.port))
             except socket.error:
@@ -158,8 +156,7 @@ class ZopeAdapterFixture(Fixture):
     def __init__(self, *args, **kwargs):
         self._args, self._kwargs = args, kwargs
 
-    def setUp(self):
-        super(ZopeAdapterFixture, self).setUp()
+    def _setUp(self):
         site_manager = getGlobalSiteManager()
         site_manager.registerAdapter(
             *self._args, **self._kwargs)
@@ -175,8 +172,7 @@ class ZopeEventHandlerFixture(Fixture):
         super(ZopeEventHandlerFixture, self).__init__()
         self._handler = handler
 
-    def setUp(self):
-        super(ZopeEventHandlerFixture, self).setUp()
+    def _setUp(self):
         gsm = getGlobalSiteManager()
         provideHandler(self._handler)
         self.addCleanup(gsm.unregisterHandler, self._handler)
@@ -209,8 +205,7 @@ class ZopeViewReplacementFixture(Fixture):
                 'Try a layer.')
         self.replacement = replacement
 
-    def setUp(self):
-        super(ZopeViewReplacementFixture, self).setUp()
+    def _setUp(self):
         if self.replacement is None:
             raise ValueError('replacement is not set')
         self.gsm.adapters.register(
@@ -232,7 +227,7 @@ class ZopeViewReplacementFixture(Fixture):
 class ZopeUtilityFixture(Fixture):
     """A fixture that temporarily registers a different utility."""
 
-    def __init__(self, component, intf, name):
+    def __init__(self, component, intf, name=""):
         """Construct a new fixture.
 
         :param component: An instance of a class that provides this
@@ -245,28 +240,30 @@ class ZopeUtilityFixture(Fixture):
         self.name = name
         self.intf = intf
 
-    def setUp(self):
-        super(ZopeUtilityFixture, self).setUp()
+    def _setUp(self):
         gsm = getGlobalSiteManager()
+        original = gsm.queryUtility(self.intf, self.name)
         gsm.registerUtility(self.component, self.intf, self.name)
         self.addCleanup(
             gsm.unregisterUtility,
             self.component, self.intf, self.name)
+        if original is not None:
+            self.addCleanup(
+                gsm.registerUtility, original, self.intf, self.name)
 
 
 class Urllib2Fixture(Fixture):
     """Let tests use urllib to connect to an in-process Launchpad.
 
-    Initially this only supports connecting to launchpad.dev because
+    Initially this only supports connecting to launchpad.test because
     that is all that is needed.  Later work could connect all
-    sub-hosts (e.g. bugs.launchpad.dev)."""
+    sub-hosts (e.g. bugs.launchpad.test)."""
 
-    def setUp(self):
+    def _setUp(self):
         # Work around circular import.
         from lp.testing.layers import wsgi_application
-        super(Urllib2Fixture, self).setUp()
-        add_wsgi_intercept('launchpad.dev', 80, lambda: wsgi_application)
-        self.addCleanup(remove_wsgi_intercept, 'launchpad.dev', 80)
+        add_wsgi_intercept('launchpad.test', 80, lambda: wsgi_application)
+        self.addCleanup(remove_wsgi_intercept, 'launchpad.test', 80)
         install_opener()
         self.addCleanup(uninstall_opener)
 
@@ -282,8 +279,7 @@ class CaptureOops(Fixture):
 
     AMQP_SENTINEL = "STOP NOW"
 
-    def setUp(self):
-        super(CaptureOops, self).setUp()
+    def _setUp(self):
         self.oopses = []
         self.oops_ids = set()
         self.useFixture(ZopeEventHandlerFixture(self._recordOops))
@@ -296,7 +292,7 @@ class CaptureOops(Fixture):
             self.channel = self.connection.channel()
             self.addCleanup(self.channel.close)
             self.oops_config = oops.Config()
-            self.oops_config.publishers.append(self._add_oops)
+            self.oops_config.publisher = self._add_oops
             self.setUpQueue()
 
     def setUpQueue(self):
@@ -323,6 +319,7 @@ class CaptureOops(Fixture):
         if report['id'] not in self.oops_ids:
             self.oopses.append(report)
             self.oops_ids.add(report['id'])
+        return [report['id']]
 
     @adapter(ErrorReportEvent)
     def _recordOops(self, event):
@@ -369,8 +366,7 @@ class CaptureTimeline(Fixture):
     reset the timeline.
     """
 
-    def setUp(self):
-        Fixture.setUp(self)
+    def _setUp(self):
         webapp.adapter.set_request_started(time.time())
         self.timeline = get_request_timeline(
             get_current_browser_request())
@@ -384,8 +380,7 @@ class DemoMode(Fixture):
     other things.
     """
 
-    def setUp(self):
-        Fixture.setUp(self)
+    def _setUp(self):
         config.push('demo-fixture', '''
 [launchpad]
 is_demo: true
@@ -401,22 +396,19 @@ class DisableTriggerFixture(Fixture):
     def __init__(self, table_triggers=None):
         self.table_triggers = table_triggers or {}
 
-    def setUp(self):
-        super(DisableTriggerFixture, self).setUp()
+    def _setUp(self):
         self._disable_triggers()
         self.addCleanup(self._enable_triggers)
 
     def _process_triggers(self, mode):
-        store = getUtility(IStoreSelector).get(MAIN_STORE, DEFAULT_FLAVOR)
         with dbuser('postgres'):
             for table, trigger in self.table_triggers.items():
                 sql = ("ALTER TABLE %(table)s %(mode)s trigger "
                        "%(trigger)s") % {
                     'table': table,
                     'mode': mode,
-                    'trigger': trigger,
-                }
-                store.execute(sql)
+                    'trigger': trigger}
+                IStore(LibraryFileAlias).execute(sql)
 
     def _disable_triggers(self):
         self._process_triggers(mode='DISABLE')

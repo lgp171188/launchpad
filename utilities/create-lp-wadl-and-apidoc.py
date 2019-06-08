@@ -1,6 +1,6 @@
 #! /usr/bin/python -S
 #
-# Copyright 2010 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2016 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Create a static WADL file describing the current webservice.
@@ -15,13 +15,14 @@ import _pythonpath
 from multiprocessing import Process
 import optparse
 import os
+import subprocess
 import sys
 
 import bzrlib
 from bzrlib.branch import Branch
 from lazr.restful.interfaces import IWebServiceConfiguration
+from z3c.ptcompat import PageTemplateFile
 from zope.component import getUtility
-from zope.pagetemplate.pagetemplatefile import PageTemplateFile
 
 from lp.services.scripts import execute_zcml_for_scripts
 from lp.services.webservice.wadl import (
@@ -137,10 +138,16 @@ def main(directory, force=False):
     # Get the time of the last commit.  We will use this as the mtime for the
     # generated files so that we can safely use it as part of Apache's etag
     # generation in the face of multiple servers/filesystems.
-    with bzrlib.initialize():
-        branch = Branch.open(os.path.dirname(os.path.dirname(__file__)))
-        timestamp = branch.repository.get_revision(
-            branch.last_revision()).timestamp
+    top = os.path.dirname(os.path.dirname(__file__))
+    if os.path.exists(os.path.join(top, ".git")):
+        timestamp = int(subprocess.check_output(
+            ["git", "log", "-1", "--format=%ct", "HEAD"],
+            universal_newlines=True))
+    else:
+        with bzrlib.initialize():
+            branch = Branch.open(top)
+            timestamp = branch.repository.get_revision(
+                branch.last_revision()).timestamp
 
     # Start a process to build each set of WADL and HTML files.
     processes = []

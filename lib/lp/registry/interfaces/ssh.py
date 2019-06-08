@@ -1,7 +1,5 @@
-# Copyright 2009 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
-
-# pylint: disable-msg=E0211,E0213
 
 """SSH key interfaces."""
 
@@ -10,19 +8,23 @@ __metaclass__ = type
 __all__ = [
     'ISSHKey',
     'ISSHKeySet',
+    'SSH_TEXT_TO_KEY_TYPE',
     'SSHKeyAdditionError',
-    'SSHKeyCompromisedError',
     'SSHKeyType',
     ]
+
+import httplib
 
 from lazr.enum import (
     DBEnumeratedType,
     DBItem,
     )
 from lazr.restful.declarations import (
+    error_status,
     export_as_webservice_entry,
     exported,
     )
+import six
 from zope.interface import Interface
 from zope.schema import (
     Choice,
@@ -36,7 +38,7 @@ from lp import _
 class SSHKeyType(DBEnumeratedType):
     """SSH key type
 
-    SSH (version 2) can use RSA or DSA keys for authentication. See
+    SSH (version 2) can use RSA, DSA, or ECDSA keys for authentication.  See
     OpenSSH's ssh-keygen(1) man page for details.
     """
 
@@ -51,6 +53,21 @@ class SSHKeyType(DBEnumeratedType):
 
         DSA
         """)
+
+    ECDSA = DBItem(3, """
+        ECDSA
+
+        ECDSA
+        """)
+
+
+SSH_TEXT_TO_KEY_TYPE = {
+    "ssh-rsa": SSHKeyType.RSA,
+    "ssh-dss": SSHKeyType.DSA,
+    "ecdsa-sha2-nistp256": SSHKeyType.ECDSA,
+    "ecdsa-sha2-nistp384": SSHKeyType.ECDSA,
+    "ecdsa-sha2-nistp521": SSHKeyType.ECDSA,
+    }
 
 
 class ISSHKey(Interface):
@@ -71,12 +88,27 @@ class ISSHKey(Interface):
     def destroySelf():
         """Remove this SSHKey from the database."""
 
+    def getFullKeyText():
+        """Get the full text of the SSH key."""
+
 
 class ISSHKeySet(Interface):
     """The set of SSHKeys."""
 
-    def new(person, sshkey):
-        """Create a new SSHKey pointing to the given Person."""
+    def new(person, sshkey, check_key=True, send_notification=True,
+            dry_run=False):
+        """Create a new SSHKey pointing to the given Person.
+
+        :param person: The IPerson to add the ssh key to.
+        :param sshkey: The full ssh key text.
+        :param check_key: Set to False to skip the check for whether the key
+            text can be deserialised by Twisted.
+        :param send_notification: Set to False to suppress sending the user an
+            email about the change.
+        :param dry_run: Perform all the format checks, but don't actually
+            add the key. Causes the method to return None, rather than an
+            instance of ISSHKey.
+        """
 
     def getByID(id, default=None):
         """Return the SSHKey object for the given id.
@@ -87,11 +119,44 @@ class ISSHKeySet(Interface):
     def getByPeople(people):
         """Return SSHKey object associated to the people provided."""
 
+    def getByPersonAndKeyText(person, sshkey):
+        """Get an SSH key for a person with a specific key text.
 
+        :param person: The person who owns the key.
+        :param sshkey: The full ssh key text.
+        :raises SSHKeyAdditionError: If 'sshkey' is invalid.
+        """
+
+
+@error_status(httplib.BAD_REQUEST)
 class SSHKeyAdditionError(Exception):
-    """Raised when the SSH public key is invalid."""
+    """Raised when the SSH public key is invalid.
 
+    WARNING: Be careful when changing the message format as
+    SSO uses a regex to recognize it.
+    """
 
-class SSHKeyCompromisedError(Exception):
-    """Raised when the SSH public key is known to be easily compromisable."""
-
+    def __init__(self, *args, **kwargs):
+        msg = ""
+        if 'key' in kwargs:
+            key = kwargs.pop('key')
+            msg = "Invalid SSH key data: '%s'" % key
+        if 'kind' in kwargs:
+            kind = kwargs.pop('kind')
+            msg = "Invalid SSH key type: '%s'" % kind
+        if 'type_mismatch' in kwargs:
+            keytype, keydatatype = kwargs.pop('type_mismatch')
+            msg = (
+                "Invalid SSH key data: key type '%s' does not match key data "
+                "type '%s'" % (keytype, keydatatype))
+        if 'exception' in kwargs:
+            exception = kwargs.pop('exception')
+            try:
+                exception_text = six.text_type(exception)
+            except UnicodeDecodeError:
+                # On Python 2, Key.fromString can raise exceptions with
+                # non-UTF-8 messages.
+                exception_text = bytes(exception).decode(
+                    'unicode_escape').encode('unicode_escape')
+            msg = "%s (%s)" % (msg, exception_text)
+        super(SSHKeyAdditionError, self).__init__(msg, *args, **kwargs)

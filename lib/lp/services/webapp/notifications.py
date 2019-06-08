@@ -1,4 +1,4 @@
-# Copyright 2009 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2016 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Browser notification messages
@@ -16,10 +16,14 @@ __metaclass__ = type
 
 from datetime import datetime
 
-from zope.interface import implements
+from zope.interface import implementer
 from zope.session.interfaces import ISession
 
 from lp.services.config import config
+from lp.services.webapp.escaping import (
+    html_escape,
+    structured,
+    )
 from lp.services.webapp.interfaces import (
     BrowserNotificationLevel,
     INotification,
@@ -28,15 +32,13 @@ from lp.services.webapp.interfaces import (
     INotificationResponse,
     )
 from lp.services.webapp.login import allowUnauthenticatedSession
-from lp.services.webapp.menu import (
-    escape,
-    structured,
-    )
 from lp.services.webapp.publisher import LaunchpadView
 
 
 SESSION_KEY = 'launchpad'
 
+
+@implementer(INotificationRequest)
 class NotificationRequest:
     """NotificationRequest extracts notifications to display to the user
     from the request and session
@@ -68,13 +70,13 @@ class NotificationRequest:
     >>> [notification.message for notification in request.notifications]
     ['Fnord', u'Aargh']
     """
-    implements(INotificationRequest)
 
     @property
     def notifications(self):
         return INotificationResponse(self).notifications
 
 
+@implementer(INotificationResponse)
 class NotificationResponse:
     """The NotificationResponse collects notifications to propogate to the
     next page loaded. Notifications are stored in the session, with a key
@@ -82,7 +84,7 @@ class NotificationResponse:
     page.
 
     It needs to be mixed in with an IHTTPApplicationResponse so its redirect
-    method intercepts the default behavior.
+    method intercepts the default behaviour.
 
     >>> class MyNotificationResponse(NotificationResponse, MockResponse):
     ...     pass
@@ -153,16 +155,15 @@ class NotificationResponse:
 
     >>> session = ISession(request)[SESSION_KEY]
     >>> del ISession(request)[SESSION_KEY]['notifications']
-    >>> session.has_key('notifications')
+    >>> 'notifications' in session
     False
     >>> len(response.notifications)
     0
     >>> response.redirect("http://example.com")
     302: http://example.com
-    >>> session.has_key('notifications')
+    >>> 'notifications' in session
     False
     """
-    implements(INotificationResponse)
 
     # We stuff our Notifications here until we are sure we should persist it
     # in the request. This avoids needless calls to the session machinery
@@ -171,8 +172,7 @@ class NotificationResponse:
 
     def addNotification(self, msg, level=BrowserNotificationLevel.INFO):
         """See `INotificationResponse`."""
-        self.notifications.append(
-            Notification(level, escape(msg)))
+        self.notifications.append(Notification(level, html_escape(msg)))
 
     @property
     def notifications(self):
@@ -243,6 +243,7 @@ class NotificationResponse:
         self.addNotification(msg, BrowserNotificationLevel.ERROR)
 
 
+@implementer(INotificationList)
 class NotificationList(list):
     """
     Collection of INotification instances with a creation date
@@ -272,7 +273,6 @@ class NotificationList(list):
     ...     print repr(notification.message)
     u'A debug message'
     """
-    implements(INotificationList)
 
     created = None
 
@@ -297,8 +297,8 @@ class NotificationList(list):
             ]
 
 
+@implementer(INotification)
 class Notification:
-    implements(INotification)
 
     level = None
     message = None
@@ -328,7 +328,7 @@ class NotificationTestView1(LaunchpadView):
             response.addInfoNotification(
                 structured('Info notification <b>%d</b>' % count))
             response.addWarningNotification(
-                structured('Warning notification <b>%d</b>' %count))
+                structured('Warning notification <b>%d</b>' % count))
             response.addErrorNotification(
                 structured('Error notification <b>%d</b>' % count))
 

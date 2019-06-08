@@ -1,64 +1,87 @@
-# Copyright 2010-2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-"""Test RecipeBuildBehavior."""
+"""Test RecipeBuildBehaviour."""
 
-# pylint: disable-msg=F0401
+from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 
-from textwrap import dedent
+import os.path
+import shutil
+import tempfile
 
-from testtools import run_test_with
-from testtools.deferredruntest import (
-    assert_fails_with,
-    AsynchronousDeferredRunTest,
-    )
-from testtools.matchers import StartsWith
+from testtools.matchers import MatchesListwise
+from testtools.twistedsupport import AsynchronousDeferredRunTest
 import transaction
 from twisted.internet import defer
+from twisted.trial.unittest import TestCase as TrialTestCase
+from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
-from lp.buildmaster.enums import BuildFarmJobType
-from lp.buildmaster.interfaces.builder import CannotBuild
-from lp.buildmaster.interfaces.buildfarmjobbehavior import (
-    IBuildFarmJobBehavior,
+from lp.archivepublisher.interfaces.archivesigningkey import (
+    IArchiveSigningKey,
     )
-from lp.buildmaster.model.buildqueue import BuildQueue
+from lp.buildmaster.enums import BuildStatus
+from lp.buildmaster.interactor import BuilderInteractor
+from lp.buildmaster.interfaces.buildfarmjobbehaviour import (
+    IBuildFarmJobBehaviour,
+    )
+from lp.buildmaster.interfaces.processor import IProcessorSet
 from lp.buildmaster.tests.mock_slaves import (
     MockBuilder,
     OkSlave,
+    WaitingSlave,
     )
-from lp.code.model.recipebuilder import RecipeBuildBehavior
+from lp.buildmaster.tests.test_buildfarmjobbehaviour import (
+    TestGetUploadMethodsMixin,
+    TestHandleStatusMixin,
+    TestVerifySuccessfulBuildMixin,
+    )
+from lp.code.model.recipebuilder import RecipeBuildBehaviour
 from lp.code.model.sourcepackagerecipebuild import SourcePackageRecipeBuild
 from lp.registry.interfaces.pocket import PackagePublishingPocket
+from lp.registry.interfaces.series import SeriesStatus
+from lp.services.config import config
 from lp.services.log.logger import BufferLogger
+from lp.services.webapp import canonical_url
 from lp.soyuz.adapters.archivedependencies import (
     get_sources_list_for_building,
     )
-from lp.soyuz.model.processor import ProcessorFamilySet
+from lp.soyuz.enums import (
+    ArchivePurpose,
+    PackagePublishingStatus,
+    )
+from lp.soyuz.tests.soyuz import Base64KeyMatches
 from lp.soyuz.tests.test_publishing import SoyuzTestPublisher
 from lp.testing import (
     person_logged_in,
     TestCaseWithFactory,
     )
+from lp.testing.fakemethod import FakeMethod
+from lp.testing.gpgkeys import gpgkeysdir
+from lp.testing.keyserver import InProcessKeyServerFixture
 from lp.testing.layers import LaunchpadZopelessLayer
+from lp.testing.mail_helpers import pop_notifications
 
 
-class TestRecipeBuilder(TestCaseWithFactory):
+class TestRecipeBuilderBase(TestCaseWithFactory):
 
     layer = LaunchpadZopelessLayer
 
     def makeJob(self, recipe_registrant=None, recipe_owner=None,
-                archive=None):
-        """Create a sample `ISourcePackageRecipeBuildJob`."""
+                archive=None, git=False, with_builder=False):
+        """Create a sample `ISourcePackageRecipeBuild`."""
         spn = self.factory.makeSourcePackageName("apackage")
-        distro = self.factory.makeDistribution(name="distro")
-        distroseries = self.factory.makeDistroSeries(name="mydistro",
-            distribution=distro)
-        processorfamily = ProcessorFamilySet().getByProcessorName('386')
-        distroseries.newArch(
-            'i386', processorfamily, True, self.factory.makePerson())
+        if archive is None:
+            distro = self.factory.makeDistribution(name="distro")
+        else:
+            distro = archive.distribution
+        distroseries = self.factory.makeDistroSeries(
+            name="mydistro", distribution=distro)
+        processor = getUtility(IProcessorSet).getByName('386')
+        distroseries.nominatedarchindep = distroseries.newArch(
+            'i386', processor, True, self.factory.makePerson())
         sourcepackage = self.factory.makeSourcePackage(spn, distroseries)
         if recipe_registrant is None:
             recipe_registrant = self.factory.makePerson(
@@ -66,62 +89,58 @@ class TestRecipeBuilder(TestCaseWithFactory):
                 name="joe", displayname="Joe User")
         if recipe_owner is None:
             recipe_owner = recipe_registrant
-        somebranch = self.factory.makeBranch(
-            owner=recipe_owner, name="pkg",
-            product=self.factory.makeProduct("someapp"))
+        if git:
+            [somebranch] = self.factory.makeGitRefs(
+                owner=recipe_owner, name="pkg",
+                target=self.factory.makeProduct("someapp"),
+                paths=["refs/heads/packaging"])
+        else:
+            somebranch = self.factory.makeBranch(
+                owner=recipe_owner, name="pkg",
+                product=self.factory.makeProduct("someapp"))
         recipe = self.factory.makeSourcePackageRecipe(
-            recipe_registrant, recipe_owner, distroseries, u"recept",
-            u"Recipe description", branches=[somebranch])
+            recipe_registrant, recipe_owner, distroseries, "recept",
+            "Recipe description", branches=[somebranch])
         spb = self.factory.makeSourcePackageRecipeBuild(
             sourcepackage=sourcepackage, archive=archive,
             recipe=recipe, requester=recipe_owner, distroseries=distroseries)
-        job = spb.makeJob()
-        job_id = removeSecurityProxy(job.job).id
-        BuildQueue(job_type=BuildFarmJobType.RECIPEBRANCHBUILD, job=job_id)
-        job = IBuildFarmJobBehavior(job)
+        job = IBuildFarmJobBehaviour(spb)
+        if with_builder:
+            builder = MockBuilder()
+            builder.processor = processor
+            job.setBuilder(builder, None)
         return job
 
+
+class TestRecipeBuilder(TestRecipeBuilderBase):
+
     def test_providesInterface(self):
-        # RecipeBuildBehavior provides IBuildFarmJobBehavior.
-        recipe_builder = RecipeBuildBehavior(None)
-        self.assertProvides(recipe_builder, IBuildFarmJobBehavior)
+        # RecipeBuildBehaviour provides IBuildFarmJobBehaviour.
+        recipe_builder = RecipeBuildBehaviour(None)
+        self.assertProvides(recipe_builder, IBuildFarmJobBehaviour)
 
-    def test_adapts_ISourcePackageRecipeBuildJob(self):
-        # IBuildFarmJobBehavior adapts a ISourcePackageRecipeBuildJob
-        job = self.factory.makeSourcePackageRecipeBuild().makeJob()
-        job = IBuildFarmJobBehavior(job)
-        self.assertProvides(job, IBuildFarmJobBehavior)
-
-    def test_display_name(self):
-        # display_name contains a sane description of the job
-        job = self.makeJob()
-        self.assertEquals(job.display_name,
-            "Mydistro, recept, joe")
-
-    def test_logStartBuild(self):
-        # logStartBuild will properly report the package that's being built
-        job = self.makeJob()
-        logger = BufferLogger()
-        job.logStartBuild(logger)
-        self.assertEquals(logger.getLogBuffer(),
-            "INFO startBuild(Mydistro, recept, joe)\n")
+    def test_adapts_ISourcePackageRecipeBuild(self):
+        # IBuildFarmJobBehaviour adapts a ISourcePackageRecipeBuild
+        build = self.factory.makeSourcePackageRecipeBuild()
+        job = IBuildFarmJobBehaviour(build)
+        self.assertProvides(job, IBuildFarmJobBehaviour)
 
     def test_verifyBuildRequest_valid(self):
         # VerifyBuildRequest won't raise any exceptions when called with a
         # valid builder set.
         job = self.makeJob()
-        builder = MockBuilder("bob-de-bouwer", OkSlave())
-        job.setBuilder(builder)
+        builder = MockBuilder("bob-de-bouwer")
+        job.setBuilder(builder, OkSlave())
         logger = BufferLogger()
         job.verifyBuildRequest(logger)
-        self.assertEquals("", logger.getLogBuffer())
+        self.assertEqual("", logger.getLogBuffer())
 
     def test_verifyBuildRequest_non_virtual(self):
         # verifyBuildRequest will raise if a non-virtual builder is proposed.
         job = self.makeJob()
-        builder = MockBuilder('non-virtual builder', OkSlave())
+        builder = MockBuilder('non-virtual builder')
         builder.virtualized = False
-        job.setBuilder(builder)
+        job.setBuilder(builder, OkSlave())
         logger = BufferLogger()
         e = self.assertRaises(AssertionError, job.verifyBuildRequest, logger)
         self.assertEqual(
@@ -131,12 +150,22 @@ class TestRecipeBuilder(TestCaseWithFactory):
         # verifyBuildRequest will raise if a bad pocket is proposed.
         build = self.factory.makeSourcePackageRecipeBuild(
             pocket=PackagePublishingPocket.SECURITY)
-        job = self.factory.makeSourcePackageRecipeBuildJob(recipe_build=build)
-        job = IBuildFarmJobBehavior(job.specific_job)
-        job.setBuilder(MockBuilder("bob-de-bouwer", OkSlave()))
+        job = IBuildFarmJobBehaviour(build)
+        job.setBuilder(MockBuilder("bob-de-bouwer"), OkSlave())
         e = self.assertRaises(
             AssertionError, job.verifyBuildRequest, BufferLogger())
         self.assertIn('invalid pocket due to the series status of', str(e))
+
+    def test_getByID(self):
+        job = self.makeJob()
+        transaction.commit()
+        self.assertEqual(
+            job.build, SourcePackageRecipeBuild.getByID(job.build.id))
+
+
+class TestAsyncRecipeBuilder(TestRecipeBuilderBase):
+
+    run_tests_with = AsynchronousDeferredRunTest.make_factory(timeout=10)
 
     def _setBuilderConfig(self):
         """Setup a temporary builder config."""
@@ -144,42 +173,50 @@ class TestRecipeBuilder(TestCaseWithFactory):
             "builddmaster",
             bzr_builder_sources_list="deb http://foo %(series)s main")
 
+    @defer.inlineCallbacks
     def test_extraBuildArgs(self):
-        # _extraBuildArgs will return a sane set of additional arguments
+        # extraBuildArgs will return a sane set of additional arguments.
         self._setBuilderConfig()
-        job = self.makeJob()
+        job = self.makeJob(with_builder=True)
         distroarchseries = job.build.distroseries.architectures[0]
-        expected_archives = get_sources_list_for_building(
-            job.build, distroarchseries, None)
-        expected_archives.append(
-            "deb http://foo %s main" % job.build.distroseries.name)
+        expected_archives, expected_trusted_keys = (
+            yield get_sources_list_for_building(
+                job.build, distroarchseries, None))
+        expected_archives.insert(
+            0, "deb http://foo %s main" % job.build.distroseries.name)
+        args = yield job.extraBuildArgs()
         self.assertEqual({
-           'archive_private': False,
-           'arch_tag': 'i386',
-           'author_email': u'requester@ubuntu.com',
-           'suite': u'mydistro',
-           'author_name': u'Joe User',
-           'archive_purpose': 'PPA',
-           'ogrecomponent': 'universe',
-           'recipe_text':
-               '# bzr-builder format 0.3 deb-version {debupstream}-0~{revno}\n'
-               'lp://dev/~joe/someapp/pkg\n',
-           'archives': expected_archives,
-           'distroseries_name': job.build.distroseries.name,
-            }, job._extraBuildArgs(distroarchseries))
+            'arch_tag': 'i386',
+            'archive_private': False,
+            'archive_purpose': 'PPA',
+            'archives': expected_archives,
+            'author_email': 'requester@ubuntu.com',
+            'author_name': 'Joe User',
+            'build_url': canonical_url(job.build),
+            'distroseries_name': job.build.distroseries.name,
+            'fast_cleanup': True,
+            'ogrecomponent': 'universe',
+            'recipe_text':
+                '# bzr-builder format 0.3 '
+                'deb-version {debupstream}-0~{revno}\n'
+                'lp://dev/~joe/someapp/pkg\n',
+            'series': job.build.distroseries.name,
+            'suite': 'mydistro',
+            'trusted_keys': expected_trusted_keys,
+        }, args)
 
+    @defer.inlineCallbacks
     def test_extraBuildArgs_private_archive(self):
         # If the build archive is private, the archive_private flag is
         # True. This tells launchpad-buildd to redact credentials from
         # build logs.
         self._setBuilderConfig()
         archive = self.factory.makeArchive(private=True)
-        job = self.makeJob(archive=archive)
-        distroarchseries = job.build.distroseries.architectures[0]
-        extra_args = job._extraBuildArgs(distroarchseries)
-        self.assertEqual(
-            True, extra_args['archive_private'])
+        job = self.makeJob(archive=archive, with_builder=True)
+        extra_args = yield job.extraBuildArgs()
+        self.assertEqual(True, extra_args['archive_private'])
 
+    @defer.inlineCallbacks
     def test_extraBuildArgs_team_owner_no_email(self):
         # If the owner of the recipe is a team without a preferred email, the
         # registrant is used.
@@ -190,13 +227,13 @@ class TestRecipeBuilder(TestCaseWithFactory):
         recipe_owner = self.factory.makeTeam(
             name='vikings', members=[recipe_registrant])
 
-        job = self.makeJob(recipe_registrant, recipe_owner)
-        distroarchseries = job.build.distroseries.architectures[0]
-        extra_args = job._extraBuildArgs(distroarchseries)
+        job = self.makeJob(recipe_registrant, recipe_owner, with_builder=True)
+        extra_args = yield job.extraBuildArgs()
         self.assertEqual(
             "Launchpad Package Builder", extra_args['author_name'])
         self.assertEqual("noreply@launchpad.net", extra_args['author_email'])
 
+    @defer.inlineCallbacks
     def test_extraBuildArgs_team_owner_with_email(self):
         # If the owner of the recipe is a team that has an email set, we use
         # that.
@@ -206,114 +243,222 @@ class TestRecipeBuilder(TestCaseWithFactory):
             name='vikings', email='everyone@vikings.r.us',
             members=[recipe_registrant])
 
-        job = self.makeJob(recipe_registrant, recipe_owner)
-        distroarchseries = job.build.distroseries.architectures[0]
-        extra_args = job._extraBuildArgs(distroarchseries)
+        job = self.makeJob(recipe_registrant, recipe_owner, with_builder=True)
+        extra_args = yield job.extraBuildArgs()
         self.assertEqual("Vikings", extra_args['author_name'])
         self.assertEqual("everyone@vikings.r.us", extra_args['author_email'])
 
+    @defer.inlineCallbacks
     def test_extraBuildArgs_owner_deactivated(self):
         # If the owner is deactivated, they have no preferred email.
         self._setBuilderConfig()
         owner = self.factory.makePerson()
         with person_logged_in(owner):
-            owner.deactivateAccount('deactivating')
-        job = self.makeJob(owner)
-        distroarchseries = job.build.distroseries.architectures[0]
-        extra_args = job._extraBuildArgs(distroarchseries)
+            owner.deactivate(comment='deactivating')
+        job = self.makeJob(owner, with_builder=True)
+        extra_args = yield job.extraBuildArgs()
         self.assertEqual(
             "Launchpad Package Builder", extra_args['author_name'])
         self.assertEqual("noreply@launchpad.net", extra_args['author_email'])
 
+    @defer.inlineCallbacks
     def test_extraBuildArgs_withBadConfigForBzrBuilderPPA(self):
-        # Ensure _extraBuildArgs doesn't blow up with a badly formatted
+        # Ensure extraBuildArgs doesn't blow up with a badly formatted
         # bzr_builder_sources_list in the config.
         self.pushConfig(
             "builddmaster",
             bzr_builder_sources_list="deb http://foo %(series) main")
         # (note the missing 's' in %(series)
-        job = self.makeJob()
+        job = self.makeJob(with_builder=True)
         distroarchseries = job.build.distroseries.architectures[0]
-        expected_archives = get_sources_list_for_building(
-            job.build, distroarchseries, None)
+        expected_archives, expected_trusted_keys = (
+            yield get_sources_list_for_building(
+                job.build, distroarchseries, None))
         logger = BufferLogger()
+        extra_args = yield job.extraBuildArgs(logger)
         self.assertEqual({
-           'archive_private': False,
-           'arch_tag': 'i386',
-           'author_email': u'requester@ubuntu.com',
-           'suite': u'mydistro',
-           'author_name': u'Joe User',
-           'archive_purpose': 'PPA',
-           'ogrecomponent': 'universe',
-           'recipe_text':
-               '# bzr-builder format 0.3 deb-version {debupstream}-0~{revno}\n'
-               'lp://dev/~joe/someapp/pkg\n',
-           'archives': expected_archives,
-           'distroseries_name': job.build.distroseries.name,
-            }, job._extraBuildArgs(distroarchseries, logger))
+            'arch_tag': 'i386',
+            'archive_private': False,
+            'archive_purpose': 'PPA',
+            'archives': expected_archives,
+            'author_email': 'requester@ubuntu.com',
+            'author_name': 'Joe User',
+            'build_url': canonical_url(job.build),
+            'distroseries_name': job.build.distroseries.name,
+            'fast_cleanup': True,
+            'ogrecomponent': 'universe',
+            'recipe_text':
+                '# bzr-builder format 0.3 '
+                'deb-version {debupstream}-0~{revno}\n'
+                'lp://dev/~joe/someapp/pkg\n',
+            'series': job.build.distroseries.name,
+            'suite': 'mydistro',
+            'trusted_keys': expected_trusted_keys,
+            }, extra_args)
         self.assertIn(
-            "Exception processing bzr_builder_sources_list:",
+            "Exception processing build tools sources.list entry:",
             logger.getLogBuffer())
 
-    def test_extraBuildArgs_withNoBZrBuilderConfigSet(self):
-        # Ensure _extraBuildArgs doesn't blow up when
+    @defer.inlineCallbacks
+    def test_extraBuildArgs_withNoBzrBuilderConfigSet(self):
+        # Ensure extraBuildArgs doesn't blow up when
         # bzr_builder_sources_list isn't set.
-        job = self.makeJob()
+        job = self.makeJob(with_builder=True)
         distroarchseries = job.build.distroseries.architectures[0]
-        args = job._extraBuildArgs(distroarchseries)
-        expected_archives = get_sources_list_for_building(
-            job.build, distroarchseries, None)
+        args = yield job.extraBuildArgs()
+        expected_archives, expected_trusted_keys = (
+            yield get_sources_list_for_building(
+                job.build, distroarchseries, None))
         self.assertEqual(args["archives"], expected_archives)
+        self.assertEqual(args["trusted_keys"], expected_trusted_keys)
 
-    def test_getByID(self):
-        job = self.makeJob()
-        transaction.commit()
-        self.assertEquals(
-            job.build, SourcePackageRecipeBuild.getByID(job.build.id))
+    @defer.inlineCallbacks
+    def test_extraBuildArgs_git(self):
+        job = self.makeJob(git=True, with_builder=True)
+        distroarchseries = job.build.distroseries.architectures[0]
+        expected_archives, expected_trusted_keys = (
+            yield get_sources_list_for_building(
+                job.build, distroarchseries, None))
+        extra_args = yield job.extraBuildArgs()
+        self.assertEqual({
+            'arch_tag': 'i386',
+            'archive_private': False,
+            'archive_purpose': 'PPA',
+            'archives': expected_archives,
+            'author_email': 'requester@ubuntu.com',
+            'author_name': 'Joe User',
+            'build_url': canonical_url(job.build),
+            'distroseries_name': job.build.distroseries.name,
+            'fast_cleanup': True,
+            'git': True,
+            'ogrecomponent': 'universe',
+            'recipe_text':
+                '# git-build-recipe format 0.4 deb-version '
+                '{debupstream}-0~{revtime}\n'
+                'lp:~joe/someapp/+git/pkg packaging\n',
+            'series': job.build.distroseries.name,
+            'suite': 'mydistro',
+            'trusted_keys': expected_trusted_keys,
+            }, extra_args)
 
-    @run_test_with(AsynchronousDeferredRunTest)
-    def test_dispatchBuildToSlave(self):
-        # Ensure dispatchBuildToSlave will make the right calls to the slave
-        job = self.makeJob()
+    @defer.inlineCallbacks
+    def test_extraBuildArgs_archive_trusted_keys(self):
+        # If the archive has a signing key, extraBuildArgs sends it.
+        yield self.useFixture(InProcessKeyServerFixture()).start()
+        archive = self.factory.makeArchive()
+        key_path = os.path.join(gpgkeysdir, "ppa-sample@canonical.com.sec")
+        yield IArchiveSigningKey(archive).setSigningKey(
+            key_path, async_keyserver=True)
+        job = self.makeJob(archive=archive, with_builder=True)
+        distroarchseries = job.build.distroseries.architectures[0]
+        self.factory.makeBinaryPackagePublishingHistory(
+            distroarchseries=distroarchseries, pocket=job.build.pocket,
+            archive=archive, status=PackagePublishingStatus.PUBLISHED)
+        args = yield job.extraBuildArgs()
+        self.assertThat(args["trusted_keys"], MatchesListwise([
+            Base64KeyMatches("0D57E99656BEFB0897606EE9A022DD1F5001B46D"),
+            ]))
+
+    @defer.inlineCallbacks
+    def test_composeBuildRequest(self):
+        job = self.makeJob(with_builder=True)
         test_publisher = SoyuzTestPublisher()
         test_publisher.addFakeChroots(job.build.distroseries)
-        slave = OkSlave()
-        builder = MockBuilder("bob-de-bouwer", slave)
-        processorfamily = ProcessorFamilySet().getByProcessorName('386')
-        builder.processor = processorfamily.processors[0]
-        job.setBuilder(builder)
-        logger = BufferLogger()
-        d = defer.maybeDeferred(job.dispatchBuildToSlave, "someid", logger)
+        das = job.build.distroseries.nominatedarchindep
+        build_request = yield job.composeBuildRequest(None)
+        extra_args = yield job.extraBuildArgs()
+        self.assertEqual(
+            ('sourcepackagerecipe', das, job.build.pocket, {}, extra_args),
+            build_request)
 
-        def check_dispatch(ignored):
-            self.assertThat(
-                logger.getLogBuffer(),
-                StartsWith(dedent("""\
-                  INFO Sending chroot file for recipe build to bob-de-bouwer
-                  INFO Initiating build 1-someid on http://fake:0000
-                  """)))
-            self.assertEquals(["ensurepresent", "build"],
-                              [call[0] for call in slave.call_log])
-            build_args = slave.call_log[1][1:]
-            self.assertEquals(
-                build_args[0], job.buildfarmjob.generateSlaveBuildCookie())
-            self.assertEquals(build_args[1], "sourcepackagerecipe")
-            self.assertEquals(build_args[3], [])
-            distroarchseries = job.build.distroseries.architectures[0]
-            self.assertEqual(
-                build_args[4], job._extraBuildArgs(distroarchseries))
-        return d.addCallback(check_dispatch)
 
-    @run_test_with(AsynchronousDeferredRunTest)
-    def test_dispatchBuildToSlave_nochroot(self):
-        # dispatchBuildToSlave will fail when there is not chroot tarball
-        # available for the distroseries to build for.
-        job = self.makeJob()
-        #test_publisher = SoyuzTestPublisher()
-        builder = MockBuilder("bob-de-bouwer", OkSlave())
-        processorfamily = ProcessorFamilySet().getByProcessorName('386')
-        builder.processor = processorfamily.processors[0]
-        job.setBuilder(builder)
-        logger = BufferLogger()
-        d = defer.maybeDeferred(job.dispatchBuildToSlave, "someid", logger)
-        return assert_fails_with(d, CannotBuild)
+class TestBuildNotifications(TrialTestCase):
+
+    layer = LaunchpadZopelessLayer
+
+    def setUp(self):
+        super(TestBuildNotifications, self).setUp()
+        from lp.testing.factory import LaunchpadObjectFactory
+        self.factory = LaunchpadObjectFactory()
+
+    def prepareBehaviour(self, fake_successful_upload=False):
+        self.queue_record = (
+            self.factory.makeSourcePackageRecipeBuild().queueBuild())
+        build = self.queue_record.specific_build
+        if fake_successful_upload:
+            removeSecurityProxy(build).verifySuccessfulUpload = FakeMethod(
+                result=True)
+            # We overwrite the buildmaster root to use a temp directory.
+            tempdir = tempfile.mkdtemp()
+            self.addCleanup(shutil.rmtree, tempdir)
+            self.upload_root = tempdir
+            tmp_builddmaster_root = """
+            [builddmaster]
+            root: %s
+            """ % self.upload_root
+            config.push('tmp_builddmaster_root', tmp_builddmaster_root)
+            self.addCleanup(config.pop, 'tmp_builddmaster_root')
+        self.queue_record.builder = self.factory.makeBuilder()
+        slave = WaitingSlave('BuildStatus.OK')
+        return BuilderInteractor.getBuildBehaviour(
+            self.queue_record, self.queue_record.builder, slave)
+
+    def assertDeferredNotifyCount(self, status, behaviour, expected_count):
+        d = behaviour.handleStatus(self.queue_record, status, {'filemap': {}})
+
+        def cb(result):
+            self.assertEqual(expected_count, len(pop_notifications()))
+
+        d.addCallback(cb)
+        return d
+
+    def test_handleStatus_PACKAGEFAIL(self):
+        """Failing to build the package immediately sends a notification."""
+        return self.assertDeferredNotifyCount(
+            "PACKAGEFAIL", self.prepareBehaviour(), 1)
+
+    def test_handleStatus_OK(self):
+        """Building the source package does _not_ immediately send mail.
+
+        (The archive uploader mail send one later.
+        """
+        return self.assertDeferredNotifyCount(
+            "OK", self.prepareBehaviour(), 0)
+
+    def test_handleStatus_OK_successful_upload(self):
+        return self.assertDeferredNotifyCount(
+            "OK", self.prepareBehaviour(True), 0)
+
+
+class MakeSPRecipeBuildMixin:
+    """Provide the common makeBuild method returning a queued build."""
+
+    def makeBuild(self):
+        build = self.factory.makeSourcePackageRecipeBuild(
+            status=BuildStatus.BUILDING)
+        build.queueBuild()
+        return build
+
+    def makeUnmodifiableBuild(self):
+        archive = self.factory.makeArchive(purpose=ArchivePurpose.PRIMARY)
+        build = self.factory.makeSourcePackageRecipeBuild(
+            archive=archive, status=BuildStatus.BUILDING)
+        build.distro_series.status = SeriesStatus.CURRENT
+        build.queueBuild()
+        return build
+
+
+class TestGetUploadMethodsForSPRecipeBuild(
+    MakeSPRecipeBuildMixin, TestGetUploadMethodsMixin, TestCaseWithFactory):
+    """IPackageBuild.getUpload-related methods work with SPRecipe builds."""
+
+
+class TestVerifySuccessfulBuildForSPRBuild(
+    MakeSPRecipeBuildMixin, TestVerifySuccessfulBuildMixin,
+    TestCaseWithFactory):
+    """IBuildFarmJobBehaviour.verifySuccessfulBuild works."""
+
+
+class TestHandleStatusForSPRBuild(
+    MakeSPRecipeBuildMixin, TestHandleStatusMixin, TrialTestCase):
+    """IPackageBuild.handleStatus works with SPRecipe builds."""

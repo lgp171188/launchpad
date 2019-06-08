@@ -1,22 +1,26 @@
-# Copyright 2009-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2017 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for BranchSet."""
+
+from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 
 from testtools.matchers import LessThan
 from zope.security.proxy import removeSecurityProxy
 
+from lp.app.enums import InformationType
 from lp.code.interfaces.branch import IBranchSet
+from lp.code.interfaces.linkedbranch import ICanHasLinkedBranch
 from lp.code.model.branch import BranchSet
-from lp.registry.enums import InformationType
+from lp.services.propertycache import clear_property_cache
 from lp.testing import (
     login_person,
     logout,
+    RequestTimelineCollector,
     TestCaseWithFactory,
     )
-from lp.testing._webservice import QueryCollector
 from lp.testing.layers import DatabaseFunctionalLayer
 from lp.testing.matchers import HasQueryCount
 from lp.testing.pages import LaunchpadWebServiceCaller
@@ -46,9 +50,19 @@ class TestBranchSet(TestCaseWithFactory):
         branches = BranchSet().getByUrls([url])
         self.assertEqual({url: None}, branches)
 
+    def test_getByPath(self):
+        branch = self.factory.makeProductBranch()
+        self.assertEqual(branch, BranchSet().getByPath(branch.shortened_path))
+        product = removeSecurityProxy(branch.product)
+        ICanHasLinkedBranch(product).setBranch(branch)
+        clear_property_cache(branch)
+        self.assertEqual(product.name, branch.shortened_path)
+        self.assertEqual(branch, BranchSet().getByPath(branch.shortened_path))
+        self.assertIsNone(BranchSet().getByPath('nonexistent'))
+
     def test_api_branches_query_count(self):
         webservice = LaunchpadWebServiceCaller()
-        collector = QueryCollector()
+        collector = RequestTimelineCollector()
         collector.register()
         self.addCleanup(collector.unregister)
         # Get 'all' of the 50 branches this collection is limited to - rather

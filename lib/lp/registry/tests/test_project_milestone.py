@@ -182,7 +182,7 @@ class ProjectMilestoneTest(unittest.TestCase):
         """
         # firefox does not belong to the Gnome project.
         firefox = getUtility(IProductSet)['firefox']
-        self.assertNotEqual(firefox.project.name, 'gnome')
+        self.assertNotEqual(firefox.projectgroup.name, 'gnome')
 
         self.createProductMilestone('1.1', 'firefox', None)
         gnome = getUtility(IProjectGroupSet)['gnome']
@@ -203,9 +203,9 @@ class ProjectMilestoneTest(unittest.TestCase):
             specurl='http://www.example.com/spec/%s' % product_name,
             summary='summary',
             definition_status=SpecificationDefinitionStatus.APPROVED,
-            priority=SpecificationPriority.HIGH,
             owner=sample_person,
-            product=product)
+            target=product)
+        spec.priority = SpecificationPriority.HIGH
         spec.milestone = product.getMilestone(milestone_name)
         return spec
 
@@ -227,7 +227,7 @@ class ProjectMilestoneTest(unittest.TestCase):
         # The spec for firefox (not a gnome product) is not included
         # in the specifications, while the other two specs are included.
         self.assertEqual(
-            [spec.name for spec in gnome_milestone.specifications],
+            [spec.name for spec in gnome_milestone.getSpecifications(None)],
             ['evolution-specification', 'gnomebaker-specification'])
 
     def _createProductBugtask(self, product_name, milestone_name):
@@ -331,7 +331,7 @@ class TestDuplicateProductReleases(TestCaseWithFactory):
         try:
             milestone.createProductRelease(1, now)
         except MultipleProductReleases as e:
-            self.assert_(
+            self.assertTrue(
                 str(e), 'A milestone can only have one ProductRelease.')
 
     def test_inappropriate_deactivation_does_not_cause_an_OOPS(self):

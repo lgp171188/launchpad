@@ -1,9 +1,7 @@
 #!/usr/bin/python
 #
-# Copyright 2009-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2016 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
-
-# pylint: disable-msg=W0141
 
 import datetime
 import os
@@ -20,6 +18,11 @@ from bzrlib.url_policy_open import BranchOpener
 from fixtures import TempDir
 import pytz
 from storm.locals import Store
+from testtools.matchers import (
+    Equals,
+    MatchesDict,
+    MatchesStructure,
+    )
 from twisted.python.util import mergeFunctionMetadata
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
@@ -45,7 +48,8 @@ from lp.codehosting.bzrutils import (
     )
 from lp.codehosting.scanner.bzrsync import BzrSync
 from lp.services.config import config
-from lp.services.database.lpstorm import IStore
+from lp.services.database.interfaces import IStore
+from lp.services.features.testing import FeatureFixture
 from lp.services.osutils import override_environ
 from lp.testing import TestCaseWithFactory
 from lp.testing.dbuser import (
@@ -86,7 +90,7 @@ class BzrSyncTestCase(TestCaseWithTransport, TestCaseWithFactory):
         self.disable_directory_isolation()
         self.useBzrBranches(direct_database=True)
         self.makeFixtures()
-        switch_dbuser(config.branchscanner.dbuser)
+        switch_dbuser("branchscanner")
         # Catch both constraints and permissions for the db user.
         self.addCleanup(Store.of(self.db_branch).flush)
 
@@ -295,13 +299,13 @@ class TestBzrSync(BzrSyncTestCase):
 
     def assertInMainline(self, revision_id, db_branch):
         """Assert that `revision_id` is in the mainline of `db_branch`."""
-        self.failUnless(
+        self.assertTrue(
             self.isMainline(db_branch, revision_id),
             "%r not in mainline of %r" % (revision_id, db_branch))
 
     def assertNotInMainline(self, revision_id, db_branch):
         """Assert that `revision_id` is not in the mainline of `db_branch`."""
-        self.failIf(
+        self.assertFalse(
             self.isMainline(db_branch, revision_id),
             "%r in mainline of %r" % (revision_id, db_branch))
 
@@ -355,7 +359,7 @@ class TestBzrSync(BzrSyncTestCase):
         self.commitRevision(committer=author)
         self.syncAndCount(new_revisions=1, new_numbers=1, new_authors=1)
         db_author = RevisionAuthor.selectOneBy(name=author)
-        self.assertEquals(db_author.name, author)
+        self.assertEqual(db_author.name, author)
 
     def test_new_parent(self):
         # Importing two revisions should import a new parent.
@@ -367,13 +371,13 @@ class TestBzrSync(BzrSyncTestCase):
     def test_sync_updates_branch(self):
         # test that the last scanned revision ID is recorded
         self.syncAndCount()
-        self.assertEquals(NULL_REVISION, self.db_branch.last_scanned_id)
+        self.assertEqual(NULL_REVISION, self.db_branch.last_scanned_id)
         last_modified = self.db_branch.date_last_modified
         last_scanned = self.db_branch.last_scanned
         self.commitRevision()
         self.syncAndCount(new_revisions=1, new_numbers=1, new_authors=1)
-        self.assertEquals(self.bzr_branch.last_revision(),
-                          self.db_branch.last_scanned_id)
+        self.assertEqual(self.bzr_branch.last_revision(),
+                         self.db_branch.last_scanned_id)
         self.assertTrue(self.db_branch.last_scanned > last_scanned,
                         "last_scanned was not updated")
         self.assertTrue(self.db_branch.date_last_modified > last_modified,
@@ -674,7 +678,7 @@ class TestUpdatePreviewDiffJob(BzrSyncTestCase):
         bmp.next_preview_diff_job.start()
         bmp.next_preview_diff_job.complete()
         self.assertIs(None, bmp.next_preview_diff_job)
-        switch_dbuser(config.branchscanner.dbuser)
+        switch_dbuser("branchscanner")
         self.makeBzrSync(self.db_branch).syncBranchAndClose()
         self.assertIsNot(None, bmp.next_preview_diff_job)
 
@@ -705,7 +709,7 @@ class TestGenerateIncrementalDiffJob(BzrSyncTestCase):
         revision_id = commit_file(self.db_branch, 'foo', 'baz')
         removeSecurityProxy(bmp).target_branch.last_scanned_id = 'rev'
         self.assertEqual([], self.getPending())
-        switch_dbuser(config.branchscanner.dbuser)
+        switch_dbuser("branchscanner")
         self.makeBzrSync(self.db_branch).syncBranchAndClose()
         (job,) = self.getPending()
         self.assertEqual(revision_id, job.new_revision_id)
@@ -721,7 +725,7 @@ class TestSetRecipeStale(BzrSyncTestCase):
         recipe = self.factory.makeSourcePackageRecipe(
             branches=[self.db_branch])
         removeSecurityProxy(recipe).is_stale = False
-        switch_dbuser(config.branchscanner.dbuser)
+        switch_dbuser("branchscanner")
         self.makeBzrSync(self.db_branch).syncBranchAndClose()
         self.assertEqual(True, recipe.is_stale)
 
@@ -731,7 +735,7 @@ class TestSetRecipeStale(BzrSyncTestCase):
         recipe = self.factory.makeSourcePackageRecipe(
             branches=[self.factory.makeBranch(), self.db_branch])
         removeSecurityProxy(recipe).is_stale = False
-        switch_dbuser(config.branchscanner.dbuser)
+        switch_dbuser("branchscanner")
         self.makeBzrSync(self.db_branch).syncBranchAndClose()
         self.assertEqual(True, recipe.is_stale)
 
@@ -740,9 +744,63 @@ class TestSetRecipeStale(BzrSyncTestCase):
         """On tip unrelated recipes are left alone."""
         recipe = self.factory.makeSourcePackageRecipe()
         removeSecurityProxy(recipe).is_stale = False
-        switch_dbuser(config.branchscanner.dbuser)
+        switch_dbuser("branchscanner")
         self.makeBzrSync(self.db_branch).syncBranchAndClose()
         self.assertEqual(False, recipe.is_stale)
+
+
+class TestMarkSnapsStale(BzrSyncTestCase):
+    """Test that snap packages associated with the branch are marked stale."""
+
+    @run_as_db_user(config.launchpad.dbuser)
+    def test_same_branch(self):
+        # On tip change, snap packages using this branch become stale.
+        snap = self.factory.makeSnap(branch=self.db_branch)
+        removeSecurityProxy(snap).is_stale = False
+        switch_dbuser("branchscanner")
+        self.makeBzrSync(self.db_branch).syncBranchAndClose()
+        self.assertTrue(snap.is_stale)
+
+    @run_as_db_user(config.launchpad.dbuser)
+    def test_unrelated_branch(self):
+        # On tip change, unrelated snap packages are left alone.
+        snap = self.factory.makeSnap()
+        removeSecurityProxy(snap).is_stale = False
+        switch_dbuser("branchscanner")
+        self.makeBzrSync(self.db_branch).syncBranchAndClose()
+        self.assertFalse(snap.is_stale)
+
+
+class TestTriggerWebhooks(BzrSyncTestCase):
+    """Test triggering of webhooks."""
+
+    def test_triggers_webhooks(self):
+        # On tip change, any relevant webhooks are triggered.
+        self.useFixture(FeatureFixture({"code.bzr.webhooks.enabled": "on"}))
+        self.syncAndCount()
+        old_revid = self.db_branch.last_scanned_id
+        with dbuser(config.launchpad.dbuser):
+            hook = self.factory.makeWebhook(
+                target=self.db_branch, event_types=["bzr:push:0.1"])
+        self.commitRevision()
+        new_revid = self.bzr_branch.last_revision()
+        self.makeBzrSync(self.db_branch).syncBranchAndClose()
+        delivery = hook.deliveries.one()
+        self.assertThat(
+            delivery,
+            MatchesStructure(
+                event_type=Equals("bzr:push:0.1"),
+                payload=MatchesDict({
+                    "bzr_branch": Equals("/" + self.db_branch.unique_name),
+                    "bzr_branch_path": Equals(self.db_branch.shortened_path),
+                    "old": Equals({"revision_id": old_revid}),
+                    "new": Equals({"revision_id": new_revid}),
+                    })))
+        with dbuser(config.IWebhookDeliveryJobSource.dbuser):
+            self.assertEqual(
+                "<WebhookDeliveryJob for webhook %d on %r>" % (
+                    hook.id, hook.target),
+                repr(delivery))
 
 
 class TestRevisionProperty(BzrSyncTestCase):
@@ -756,7 +814,7 @@ class TestRevisionProperty(BzrSyncTestCase):
         self.makeBzrSync(self.db_branch).syncBranchAndClose()
         # Check that properties were saved to the revision.
         bzr_revision = self.bzr_branch.repository.get_revision('rev1')
-        self.assertEquals(properties, bzr_revision.properties)
+        self.assertEqual(properties, bzr_revision.properties)
         # Check that properties are stored in the database.
         db_revision = getUtility(IRevisionSet).getByRevisionId('rev1')
-        self.assertEquals(properties, db_revision.getProperties())
+        self.assertEqual(properties, db_revision.getProperties())

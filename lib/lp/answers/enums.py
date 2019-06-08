@@ -1,8 +1,6 @@
 # Copyright 2009 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-# pylint: disable-msg=E0211,E0213
-
 """Question enumerations."""
 
 # Enums are kept separated from the classes that use them to avoid
@@ -287,7 +285,7 @@ class QuestionStatus(DBEnumeratedType):
     SOLVED = DBItem(20, """
         Solved
 
-        The submitter confirmed that an answer solved his question.
+        The submitter confirmed that an answer solved their question.
         """)
 
     EXPIRED = DBItem(25, """

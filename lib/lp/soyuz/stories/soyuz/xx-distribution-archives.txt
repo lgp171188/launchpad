@@ -50,17 +50,16 @@ an active one:
 Currently (until we get some UI input) there is no link to the archives
 page, but it exists at:
 
-    >>> anon_browser.open("http://launchpad.dev/ubuntu/+archives")
-    >>> print anon_browser.title
-    Ubuntu Linux Copy Archives...
+    >>> anon_browser.open("http://launchpad.test/ubuntu/+archives")
+    >>> print(anon_browser.title)
+    Ubuntu Copy Archives...
 
 This index of /ubuntu/+archives provides an overview describing
 what the viewer can expect to find here
 
     >>> main_content = find_main_content(anon_browser.contents)
-    >>> print extract_text(main_content)
-    Copy Archives related to Ubuntu Linux
-    Ubuntu...
+    >>> print(extract_text(main_content))
+    Copy Archives related to Ubuntu
     'Copy' archives containing packages copied from other archives
     (the main archive or PPAs) for a distribution.
     ...
@@ -71,46 +70,46 @@ Each copy archive includes a link to a page displaying the archive
 details:
 
     >>> link = anon_browser.getLink("intrepid-security-rebuild")
-    >>> print link
+    >>> print(link)
     <Link text='intrepid-security-rebuild'
-    url='http://launchpad.dev/ubuntu/+archive/intrepid-security-rebuild'>
+    url='http://launchpad.test/ubuntu/+archive/intrepid-security-rebuild'>
 
     >>> link.click()
-    >>> print anon_browser.title
+    >>> print(anon_browser.title)
     Copy archive intrepid-security-rebuild for Joe Bloggs : Ubuntu
 
 Copy archives only have minor differences from PPAs in their presentation.
 In particular, the source.list entries are not displayed for a copy
 archive:
 
-    >>> print find_tag_by_id(anon_browser.contents, 'sources-list-entries')
+    >>> print(find_tag_by_id(anon_browser.contents, 'sources-list-entries'))
     None
 
 The package counters are not displayed for a copy archive:
 
-    >>> print find_tag_by_id(anon_browser.contents, 'package-counters')
+    >>> print(find_tag_by_id(anon_browser.contents, 'package-counters'))
     None
 
 Neither is the repository-size javascript present:
 
-    >>> print find_tag_by_id(anon_browser.contents, 'repository-size-update')
+    >>> print(find_tag_by_id(anon_browser.contents, 'repository-size-update'))
     None
 
 Whereas, for a PPA which uses the same template, the sources list is
 present:
 
-    >>> anon_browser.open("http://launchpad.dev/~cprov/+archive")
-    >>> print find_tag_by_id(anon_browser.contents, 'sources-list-entries')
+    >>> anon_browser.open("http://launchpad.test/~cprov/+archive")
+    >>> print(find_tag_by_id(anon_browser.contents, 'sources-list-entries'))
     <pre id="sources-list-entries"...
     ...
     deb-src ...</pre>
 
 The package details can be accessed for a distribution archive.
 
-    >>> anon_browser.open("http://launchpad.dev/ubuntu/+archives")
+    >>> anon_browser.open("http://launchpad.test/ubuntu/+archives")
     >>> anon_browser.getLink("intrepid-security-rebuild").click()
     >>> anon_browser.getLink("View package details").click()
-    >>> print anon_browser.title
+    >>> print(anon_browser.title)
     Packages in “Copy archive intrepid-security-rebuild...
 
 The list of copy archives for a distribution may also include private
@@ -126,9 +125,8 @@ First, create a private copy archive:
     >>> naked_copy_location = remove_security_proxy_and_shout_at_engineer(
     ...     copy_location)
     >>> copy_archive = naked_copy_location.archive
-    >>> copy_archive.buildd_secret = 'really secret'
     >>> copy_archive.private = True
-    >>> copy_archive.owner.displayname = "Harry Potter"
+    >>> copy_archive.owner.display_name = "Harry Potter"
     >>> package_copy_request = ubuntu.main_archive.requestPackageCopy(
     ...     naked_copy_location, copy_archive.owner)
     >>> pub_src = stp.getPubSource(
@@ -139,7 +137,7 @@ First, create a private copy archive:
 Now viewing the index page anonymously should not display the private
 archive:
 
-    >>> anon_browser.open("http://launchpad.dev/ubuntu/+archives")
+    >>> anon_browser.open("http://launchpad.test/ubuntu/+archives")
     >>> main_content = find_main_content(anon_browser.contents)
     >>> 'intrepid-private-security-rebuild' in extract_text(main_content)
     False
@@ -147,7 +145,7 @@ archive:
 But when logged in as the owner or admin, the private archive does display
 For example:
 
-    >>> admin_browser.open("http://launchpad.dev/ubuntu/+archives")
+    >>> admin_browser.open("http://launchpad.test/ubuntu/+archives")
     >>> main_content = find_main_content(admin_browser.contents)
     >>> 'intrepid-private-security-rebuild' in extract_text(main_content)
     True
@@ -155,16 +153,16 @@ For example:
 Disabled copy archives are not presented in the copy archives list
 when it's accessed anonymously.
 
-    >>> anon_browser.open("http://launchpad.dev/ubuntu/+archives")
+    >>> anon_browser.open("http://launchpad.test/ubuntu/+archives")
     >>> main_content = find_main_content(anon_browser.contents)
     >>> 'disabled-security-rebuild' in extract_text(main_content)
     False
 
     >>> anon_browser.open(
-    ...     "http://launchpad.dev/ubuntu/+archive/disabled-security-rebuild")
+    ...     "http://launchpad.test/ubuntu/+archive/disabled-security-rebuild")
     Traceback (most recent call last):
     ...
-    Unauthorized: ... 'launchpad.View')
+    Unauthorized: ... 'launchpad.SubscriberView')
 
 Disabled copy archives have the title rendered in gray colour
 (class="disabled") and a warning message stating that the archive
@@ -173,17 +171,17 @@ is disabled.
     >>> nopriv_browser = setupBrowser(
     ...     auth="Basic no-priv@canonical.com:test")
     >>> nopriv_browser.open(
-    ...     "http://launchpad.dev/ubuntu/+archive/disabled-security-rebuild")
+    ...     "http://launchpad.test/ubuntu/+archive/disabled-security-rebuild")
 
-    >>> print nopriv_browser.title
+    >>> print(nopriv_browser.title)
     Copy archive disabled-security-rebuild for No Privileges Person : Ubuntu
 
     >>> main_content = find_main_content(nopriv_browser.contents)
-    >>> print main_content.h1['class']
+    >>> print(main_content.h1['class'])
     disabled
 
     >>> tag = first_tag_by_class(nopriv_browser.contents, 'warning message')
-    >>> print extract_text(tag)
+    >>> print(extract_text(tag))
     This archive has been disabled.
 
 When a COPY archive gets enabled, No Privileges users can still access
@@ -195,14 +193,14 @@ it and the 'disabled' styling is gone.
 
     >>> nopriv_browser.reload()
 
-    >>> print nopriv_browser.title
+    >>> print(nopriv_browser.title)
     Copy archive disabled-security-rebuild for No Privileges Person : Ubuntu
 
     >>> main_content = find_main_content(nopriv_browser.contents)
-    >>> print main_content.h1['class']
+    >>> print(main_content.h1['class'])
     Traceback (most recent call last):
-    KeyError: 'class'
+    KeyError: u'class'
 
-    >>> print first_tag_by_class(nopriv_browser.contents, 'warning message')
+    >>> print(first_tag_by_class(nopriv_browser.contents, 'warning message'))
     None
 

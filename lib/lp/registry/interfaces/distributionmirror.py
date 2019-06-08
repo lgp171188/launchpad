@@ -1,8 +1,6 @@
 # Copyright 2009 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-# pylint: disable-msg=E0211,E0213
-
 __metaclass__ = type
 
 __all__ = [
@@ -19,8 +17,6 @@ __all__ = [
     'MirrorStatus',
     'UnableToFetchCDImageFileList',
     ]
-
-from cgi import escape
 
 from lazr.enum import (
     DBEnumeratedType,
@@ -63,7 +59,10 @@ from lp.services.fields import (
     URIField,
     Whiteboard,
     )
-from lp.services.webapp.menu import structured
+from lp.services.webapp.escaping import (
+    html_escape,
+    structured,
+    )
 from lp.services.worlddata.interfaces.country import ICountry
 
 # The number of hours before we bother probing a mirror again
@@ -278,15 +277,15 @@ class DistroMirrorURIField(URIField):
         if IDistributionMirror.providedBy(self.context):
             orig_value = self.get(self.context)
             if orig_value is not None and URI(orig_value) == uri:
-                return # url was not changed
+                return  # url was not changed
 
         mirror = self.getMirrorByURI(str(uri))
         if mirror is not None:
             message = _(
                 'The distribution mirror <a href="${url}">${mirror}</a> '
                 'is already registered with this URL.',
-                mapping={'url': canonical_url(mirror),
-                         'mirror': escape(mirror.title)})
+                mapping={'url': html_escape(canonical_url(mirror)),
+                         'mirror': html_escape(mirror.title)})
             raise LaunchpadValidationError(structured(message))
 
 
@@ -329,9 +328,13 @@ class IDistributionMirror(Interface):
         title=_('Name'), required=True, readonly=False,
         description=_('A short and unique name for this mirror.'),
         constraint=name_validator))
-    displayname = exported(TextLine(
-        title=_('Organisation'), required=False, readonly=False,
-        description=_('The name of the organization hosting this mirror.')))
+    display_name = exported(
+        TextLine(
+            title=_('Organisation'), required=False, readonly=False,
+            description=_(
+                'The name of the organization hosting this mirror.')),
+        exported_as='displayname')
+    displayname = Attribute('Display name (deprecated)')
     description = exported(TextLine(
         title=_('Description'), required=False, readonly=False))
     http_base_url = exported(DistroMirrorHTTPURIField(
@@ -381,8 +384,6 @@ class IDistributionMirror(Interface):
     last_probe_record = Attribute(
         'The last MirrorProbeRecord for this mirror.')
     all_probe_records = Attribute('All MirrorProbeRecords for this mirror.')
-    has_ftp_or_rsync_base_url = Bool(
-        title=_('Does this mirror have a FTP or Rsync base URL?'))
     arch_mirror_freshness = Attribute(
         'The freshness of this mirror\'s archive mirrors')
     source_mirror_freshness = Attribute(

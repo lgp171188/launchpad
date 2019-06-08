@@ -1,4 +1,4 @@
-# Copyright 2009-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Generic Python utilities.
@@ -16,17 +16,17 @@ __all__ = [
     'decorate_with',
     'docstring_dedent',
     'file_exists',
-    'iter_list_chunks',
+    'iter_chunks',
     'iter_split',
     'load_bz2_pickle',
     'obfuscate_email',
     'obfuscate_structure',
     're_email_address',
     'run_capturing_output',
+    'sanitise_urls',
     'save_bz2_pickle',
-    'synchronize',
+    'seconds_since_epoch',
     'text_delta',
-    'total_seconds',
     'traceback_info',
     'utc_now',
     'value_string',
@@ -35,7 +35,10 @@ __all__ = [
 import bz2
 import cPickle as pickle
 from datetime import datetime
-from itertools import tee
+from itertools import (
+    islice,
+    tee,
+    )
 import os
 import re
 import string
@@ -140,28 +143,17 @@ def iter_split(string, splitter, splits=None):
         yield first, string[len(first):]
 
 
-def iter_list_chunks(a_list, size):
-    """Iterate over `a_list` in chunks of size `size`.
+def iter_chunks(iterable, size):
+    """Iterate over `iterable` in chunks of size `size`.
 
     I'm amazed this isn't in itertools (mwhudson).
     """
-    for i in range(0, len(a_list), size):
-        yield a_list[i:i + size]
-
-
-def synchronize(source, target, add, remove):
-    """Update 'source' to match 'target' using 'add' and 'remove'.
-
-    Changes the container 'source' so that it equals 'target', calling 'add'
-    with any object in 'target' not in 'source' and 'remove' with any object
-    not in 'target' but in 'source'.
-    """
-    need_to_add = [obj for obj in target if obj not in source]
-    need_to_remove = [obj for obj in source if obj not in target]
-    for obj in need_to_add:
-        add(obj)
-    for obj in need_to_remove:
-        remove(obj)
+    iterable = iter(iterable)
+    while True:
+        chunk = tuple(islice(iterable, size))
+        if not chunk:
+            break
+        yield chunk
 
 
 def value_string(item):
@@ -225,10 +217,13 @@ class CachingIterator:
     iterator if necessary.
     """
 
-    def __init__(self, iterator):
-        self.iterator = iterator
+    def __init__(self, iterator_factory):
+        self.iterator_factory = iterator_factory
+        self.iterator = None
 
     def __iter__(self):
+        if self.iterator is None:
+            self.iterator = self.iterator_factory()
         # Teeing an iterator previously returned by tee won't cause heat
         # death. See tee_copy in itertoolsmodule.c in the Python source.
         self.iterator, iterator = tee(self.iterator)
@@ -273,8 +268,7 @@ class CapturedOutput(Fixture):
         self.stdout = StringIO()
         self.stderr = StringIO()
 
-    def setUp(self):
-        super(CapturedOutput, self).setUp()
+    def _setUp(self):
         self.useFixture(MonkeyPatch('sys.stdout', self.stdout))
         self.useFixture(MonkeyPatch('sys.stderr', self.stderr))
 
@@ -307,6 +301,14 @@ def traceback_info(info):
 def utc_now():
     """Return a timezone-aware timestamp for the current time."""
     return datetime.now(tz=pytz.UTC)
+
+
+_epoch = datetime.fromtimestamp(0, tz=pytz.UTC)
+
+
+def seconds_since_epoch(dt):
+    """Express a `datetime` as the number of seconds since the Unix epoch."""
+    return (dt - _epoch).total_seconds()
 
 
 # This is a regular expression that matches email address embedded in
@@ -391,12 +393,13 @@ def obfuscate_structure(o):
         return o
 
 
-def total_seconds(duration):
-    """The number of total seconds in a timedelta.
+def sanitise_urls(s):
+    """Sanitise a string that may contain URLs for logging.
+
+    Some jobs are started with arguments that probably shouldn't be
+    logged in their entirety (usernames and passwords for P3As, for
+    example).  This function removes them.
     """
-    # XXX: JonathanLange 2012-05-12: In Python 2.7, spell this as
-    # duration.total_seconds().  Only needed for Python 2.6 or earlier.
-    return (
-        (duration.microseconds +
-         (duration.seconds + duration.days * 24 * 3600) * 1e6)
-        / 1e6)
+    # Remove credentials from URLs.
+    password_re = re.compile('://([^:@/]*:[^@/]*@)(\S+)')
+    return password_re.sub(r'://<redacted>@\2', s)

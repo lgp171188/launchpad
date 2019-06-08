@@ -1,5 +1,7 @@
-# Copyright 2010 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
+
+from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 
@@ -8,6 +10,10 @@ from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
 from lp.buildmaster.enums import BuildStatus
+from lp.buildmaster.interfaces.processor import (
+    IProcessorSet,
+    ProcessorNotFound,
+    )
 from lp.registry.interfaces.distroseriesparent import IDistroSeriesParentSet
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.services.features.testing import FeatureFixture
@@ -20,7 +26,6 @@ from lp.soyuz.interfaces.distributionjob import (
     InitializationPending,
     )
 from lp.soyuz.interfaces.packageset import IPackagesetSet
-from lp.soyuz.interfaces.processor import IProcessorFamilySet
 from lp.soyuz.interfaces.publishing import PackagePublishingStatus
 from lp.soyuz.interfaces.sourcepackageformat import (
     ISourcePackageFormatSelectionSet,
@@ -79,10 +84,10 @@ class InitializeDistroSeriesJobTests(TestCaseWithFactory):
         packageset2 = self.factory.makePackageset()
 
         overlays = (True, False)
-        overlay_pockets = (u'Updates', u'Release')
-        overlay_components = (u"main", u"universe")
-        arches = (u'i386', u'amd64')
-        archindep_archtag = u'amd64'
+        overlay_pockets = ('Updates', 'Release')
+        overlay_components = ("main", "universe")
+        arches = ('i386', 'amd64')
+        archindep_archtag = 'amd64'
         packagesets = (packageset1.id, packageset2.id)
         rebuild = False
 
@@ -168,9 +173,9 @@ class InitializeDistroSeriesJobTests(TestCaseWithFactory):
         be gotten out again."""
         parent = self.factory.makeDistroSeries()
         distroseries = self.factory.makeDistroSeries()
-        arches = (u'i386', u'amd64')
-        archindep_archtag = u'amd64'
-        packagesets = (u'1', u'2', u'3')
+        arches = ('i386', 'amd64')
+        archindep_archtag = 'amd64'
+        packagesets = ('1', '2', '3')
         overlays = (True, )
         overlay_pockets = ('Updates', )
         overlay_components = ('restricted', )
@@ -229,17 +234,15 @@ class InitializeDistroSeriesJobTests(TestCaseWithFactory):
 
 
 def create_child(factory):
-    pf = factory.makeProcessorFamily()
-    pf.addProcessor('x86', '', '')
+    processor = factory.makeProcessor(supports_virtualized=True)
     parent = factory.makeDistroSeries()
     parent_das = factory.makeDistroArchSeries(
-        distroseries=parent, processorfamily=pf)
+        distroseries=parent, processor=processor)
     lf = factory.makeLibraryFileAlias()
     # Since the LFA needs to be in the librarian, commit.
     transaction.commit()
     parent_das.addOrUpdateChroot(lf)
     with celebrity_logged_in('admin'):
-        parent_das.supports_virtualized = True
         parent.nominatedarchindep = parent_das
         publisher = SoyuzTestPublisher()
         publisher.prepareBreezyAutotest()
@@ -250,7 +253,7 @@ def create_child(factory):
                 version=packages[package],
                 status=PackagePublishingStatus.PUBLISHED)
         test1 = getUtility(IPackagesetSet).new(
-            u'test1', u'test 1 packageset', parent.owner,
+            'test1', 'test 1 packageset', parent.owner,
             distroseries=parent)
         test1_packageset_id = str(test1.id)
         test1.addSources('udev')
@@ -272,15 +275,17 @@ class InitializeDistroSeriesJobTestsWithPackages(TestCaseWithFactory):
     def job_source(self):
         return getUtility(IInitializeDistroSeriesJobSource)
 
-    def setupDas(self, parent, proc, arch_tag):
-        pf = getUtility(IProcessorFamilySet).getByName(proc)
+    def setupDas(self, parent, processor_name, arch_tag):
+        try:
+            processor = getUtility(IProcessorSet).getByName(processor_name)
+        except ProcessorNotFound:
+            processor = self.factory.makeProcessor(name=processor_name)
+        processor.supports_virtualized = True
         parent_das = self.factory.makeDistroArchSeries(
-            distroseries=parent, processorfamily=pf,
-            architecturetag=arch_tag)
+            distroseries=parent, processor=processor, architecturetag=arch_tag)
         lf = self.factory.makeLibraryFileAlias()
         transaction.commit()
         parent_das.addOrUpdateChroot(lf)
-        parent_das.supports_virtualized = True
         return parent_das
 
     def test_job(self):
@@ -352,7 +357,8 @@ class InitializeDistroSeriesJobTestsWithPackages(TestCaseWithFactory):
 
     def test_cronscript(self):
         run_script(
-            'cronscripts/run_jobs.py', ['-v', 'initializedistroseries'])
+            'cronscripts/process-job-source.py',
+            ['IInitializeDistroSeriesJobSource'])
         DatabaseLayer.force_dirty_database()
 
 

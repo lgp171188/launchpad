@@ -1,8 +1,6 @@
 # Copyright 2009 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-# pylint: disable-msg=E0211,E0213
-
 """Package relationship interfaces."""
 
 __metaclass__ = type
@@ -35,6 +33,7 @@ class IPackageRelationship(Interface):
     version = Attribute("The version related to")
     url = Attribute("URL to where this token should link to. It can be None, "
                     "in this case no link should be rendered.")
+
 
 class IPackageRelationshipSet(Interface):
     """IPackageRelationShip aggregator."""

@@ -1,4 +1,4 @@
-<!-- Copyright 2009 Canonical Ltd.  This software is licensed under the
+<!-- Copyright 2009-2015 Canonical Ltd.  This software is licensed under the
      GNU Affero General Public License version 3 (see the file LICENSE).
 -->
 
@@ -17,6 +17,10 @@
   <utility
       component="lp.answers.publisher.AnswersLayer"
       provides="zope.publisher.interfaces.browser.IDefaultBrowserLayer"
+      name="answers" />
+  <utility
+      component="lp.answers.publisher.AnswersFacet"
+      provides="lp.services.webapp.interfaces.IFacet"
       name="answers" />
 
     <subscriber
@@ -110,8 +114,9 @@
     <require
       permission="launchpad.AnyPerson"
       attributes="requestInfo giveAnswer expireQuestion addComment
-                  addCommentWithoutNotify linkFAQ subscribe unsubscribe"
-      set_attributes="title description datedue target language"
+                  addCommentWithoutNotify linkFAQ subscribe unsubscribe
+                  setCommentVisibility"
+      set_attributes="datedue target language"
       />
     <require
       permission="launchpad.Append"
@@ -119,8 +124,8 @@
       set_attributes="assignee"
       />
     <require
-      permission="launchpad.Moderate"
-      attributes="setCommentVisibility"
+      permission="launchpad.Edit"
+      set_attributes="title description"
       />
     <require
       permission="launchpad.Admin"
@@ -128,7 +133,7 @@
       set_attributes="priority whiteboard"
       />
     <!-- IBugLinkTarget -->
-    <allow attributes="bugs bug_links" />
+    <allow attributes="bugs" />
     <require
       permission="launchpad.AnyPerson"
       attributes="linkBug unlinkBug"
@@ -166,11 +171,6 @@
       factory=".adapters.series_to_questiontarget"
       />
   <adapter
-    for="lp.soyuz.interfaces.sourcepackagerelease.ISourcePackageRelease"
-    provides=".interfaces.questiontarget.IQuestionTarget"
-    factory=".adapters.sourcepackagerelease_to_questiontarget"
-    />
-  <adapter
     for="lp.registry.interfaces.sourcepackage.ISourcePackage"
     provides=".interfaces.questiontarget.IQuestionTarget"
     factory=".adapters.sourcepackage_to_questiontarget"
@@ -190,6 +190,17 @@
     <allow interface="zope.schema.interfaces.IVocabularyFactory"/>
   </securedutility>
 
+  <securedutility
+    name="UsesAnswersProduct"
+    component=".vocabulary.UsesAnswersProductVocabulary"
+    provides="zope.schema.interfaces.IVocabularyFactory"
+    >
+    <allow interface="zope.schema.interfaces.IVocabularyFactory"/>
+  </securedutility>
+
+  <class class=".vocabulary.UsesAnswersProductVocabulary">
+    <allow interface="lp.services.webapp.vocabulary.IHugeVocabulary"/>
+  </class>
   <!-- QuestionSet -->
   <class class=".model.question.QuestionSet">
     <allow interface=".interfaces.questioncollection.IQuestionSet" />
@@ -205,11 +216,15 @@
 
   <class class=".model.faq.FAQ">
     <!-- IFAQ-->
-    <allow interface=".interfaces.faq.IFAQ" />
+    <allow interface=".interfaces.faq.IFAQPublic" />
     <require
         permission="launchpad.Edit"
         set_attributes="title keywords content
                         last_updated_by date_last_updated"
+        />
+    <require
+        permission="launchpad.Delete"
+        attributes="destroySelf"
         />
   </class>
 
@@ -254,26 +269,7 @@
     <allow interface="lp.services.webapp.vocabulary.IHugeVocabulary"/>
   </class>
 
-
   <lp:help-folder folder="help" name="+help-answers"/>
-  <adapter
-      name="answers"
-      provides="lp.services.webapp.interfaces.IBreadcrumb"
-      for="lp.answers.interfaces.questiontarget.IQuestionTarget"
-      factory="lp.answers.browser.questiontarget.AnswersVHostBreadcrumb"
-      permission="zope.Public"/>
-  <adapter
-      name="answers"
-      provides="lp.services.webapp.interfaces.IBreadcrumb"
-      for="lp.registry.interfaces.projectgroup.IProjectGroup"
-      factory="lp.answers.browser.questiontarget.AnswersVHostBreadcrumb"
-      permission="zope.Public"/>
-  <adapter
-      name="answers"
-      provides="lp.services.webapp.interfaces.IBreadcrumb"
-      for="lp.registry.interfaces.person.IPerson"
-      factory="lp.answers.browser.questiontarget.AnswersVHostBreadcrumb"
-      permission="zope.Public"/>
 
   <webservice:register module="lp.answers.interfaces.webservice" />
 </configure>

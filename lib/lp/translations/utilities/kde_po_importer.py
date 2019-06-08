@@ -1,4 +1,4 @@
-# Copyright 2009 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2017 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Import module for legacy KDE .po files.
@@ -17,7 +17,7 @@ __all__ = [
     'KdePOImporter'
     ]
 
-from zope.interface import implements
+from zope.interface import implementer
 
 from lp.translations.interfaces.translationfileformat import (
     TranslationFileFormat,
@@ -28,9 +28,9 @@ from lp.translations.interfaces.translationimporter import (
 from lp.translations.utilities.gettext_po_importer import GettextPOImporter
 
 
+@implementer(ITranslationFormatImporter)
 class KdePOImporter(GettextPOImporter):
     """Support class for importing KDE .po files."""
-    implements(ITranslationFormatImporter)
 
     def getFormat(self, file_contents):
         """See `ITranslationFormatImporter`."""
@@ -41,11 +41,17 @@ class KdePOImporter(GettextPOImporter):
         # and with extremely big PO files, this will be too slow).  Thus,
         # a heuristic verified to be correct on all PO files from
         # Ubuntu language packs.
-        if ('msgid "_n: ' in file_contents or
-            'msgid ""\n"_n: ' in file_contents or
-            'msgid "_: ' in file_contents or
-            'msgid ""\n"_: ' in file_contents):
-            return TranslationFileFormat.KDEPO
+        msgid_start = False
+        for line in file_contents:
+            if line == b'msgid ""\n':
+                msgid_start = True
+            elif (line.startswith(b'msgid "_n: ') or
+                  (msgid_start and line.startswith(b'"_n: ')) or
+                  line.startswith(b'msgid "_: ') or
+                  (msgid_start and line.startswith(b'"_: '))):
+                return TranslationFileFormat.KDEPO
+            else:
+                msgid_start = False
         else:
             return TranslationFileFormat.PO
 

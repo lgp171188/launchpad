@@ -1,32 +1,37 @@
-# Copyright 2010-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2013 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test milestone views."""
 
 __metaclass__ = type
 
-from textwrap import dedent
-
+import soupmatchers
+from storm.store import Store
 from testtools.matchers import LessThan
 from zope.component import getUtility
 
+from lp.app.enums import InformationType
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.bugs.interfaces.bugtask import IBugTaskSet
 from lp.bugs.interfaces.bugtasksearch import BugTaskSearchParams
-from lp.registry.enums import InformationType
+from lp.registry.enums import SpecificationSharingPolicy
+from lp.registry.interfaces.accesspolicy import (
+    IAccessPolicyGrantSource,
+    IAccessPolicySource,
+    )
 from lp.registry.interfaces.person import TeamMembershipPolicy
 from lp.registry.model.milestonetag import ProjectGroupMilestoneTag
-from lp.services.config import config
 from lp.services.webapp import canonical_url
 from lp.testing import (
+    BrowserTestCase,
     login_person,
     login_team,
     logout,
     person_logged_in,
+    RequestTimelineCollector,
     StormStatementRecorder,
     TestCaseWithFactory,
     )
-from lp.testing._webservice import QueryCollector
 from lp.testing.layers import DatabaseFunctionalLayer
 from lp.testing.matchers import (
     BrowsesWithQueryLimit,
@@ -35,7 +40,7 @@ from lp.testing.matchers import (
 from lp.testing.views import create_initialized_view
 
 
-class TestMilestoneViews(TestCaseWithFactory):
+class TestMilestoneViews(BrowserTestCase):
 
     layer = DatabaseFunctionalLayer
 
@@ -53,16 +58,109 @@ class TestMilestoneViews(TestCaseWithFactory):
         view = create_initialized_view(milestone, '+index')
         self.assertIn('some work for this milestone', view.render())
 
+    def test_information_type_public(self):
+        # A milestone's view should include its information_type,
+        # which defaults to Public for new projects.
+        milestone = self.factory.makeMilestone()
+        view = create_initialized_view(milestone, '+index')
+        self.assertEqual('Public', view.information_type)
+
+    def test_information_type_proprietary(self):
+        # A milestone's view should get its information_type
+        # from the related product even if the product is changed to
+        # PROPRIETARY.
+        owner = self.factory.makePerson()
+        information_type = InformationType.PROPRIETARY
+        product = self.factory.makeProduct(
+            owner=owner, information_type=information_type)
+        milestone = self.factory.makeMilestone(product=product)
+        with person_logged_in(owner):
+            view = create_initialized_view(
+                milestone, '+index', principal=owner)
+            self.assertEqual('Proprietary', view.information_type)
+
+    def test_privacy_portlet(self):
+        # A milestone's page should include a privacy portlet that
+        # accurately describes the information_type.
+        owner = self.factory.makePerson()
+        information_type = InformationType.PROPRIETARY
+        product = self.factory.makeProduct(
+            owner=owner, information_type=information_type)
+        milestone = self.factory.makeMilestone(product=product)
+        privacy_portlet = soupmatchers.Tag(
+            'info-type-portlet', 'span',
+            attrs={'id': 'information-type-summary'})
+        privacy_portlet_proprietary = soupmatchers.Tag(
+            'info-type-text', 'strong', attrs={'id': 'information-type'},
+            text='Proprietary')
+        browser = self.getViewBrowser(milestone, '+index', user=owner)
+        # First, assert that the portlet exists.
+        self.assertThat(
+            browser.contents, soupmatchers.HTMLContains(privacy_portlet))
+        # Then, assert that the text displayed matches the information_type.
+        self.assertThat(
+            browser.contents, soupmatchers.HTMLContains(
+            privacy_portlet_proprietary))
+
+    def test_private_specifications(self):
+        # Only specifications visible to the browser user are listed.
+        owner = self.factory.makePerson()
+        enum = SpecificationSharingPolicy
+        product = self.factory.makeProduct(
+            owner=owner, specification_sharing_policy=enum.PROPRIETARY)
+        milestone = self.factory.makeMilestone(product=product)
+        specification = self.factory.makeSpecification(
+            information_type=InformationType.PROPRIETARY,
+            milestone=milestone)
+        with person_logged_in(None):
+            browser = self.getViewBrowser(milestone, '+index', user=owner)
+        with person_logged_in(owner):
+            self.assertIn(specification.name, browser.contents)
+        with person_logged_in(None):
+            browser = self.getViewBrowser(milestone, '+index')
+
+    def test_downloads_listed(self):
+        # When a release exists a list of download files and a link to
+        # add more are shown.
+        owner = self.factory.makePerson()
+        product = self.factory.makeProduct(owner=owner)
+        release = self.factory.makeProductRelease(product=product)
+        with person_logged_in(owner):
+            owner_browser = self.getViewBrowser(
+                release.milestone, '+index', user=owner)
+            html = owner_browser.contents
+            self.assertIn('Download files for this release', html)
+            self.assertIn('Add download file', html)
+        with person_logged_in(None):
+            owner_browser = self.getViewBrowser(release.milestone, '+index')
+            html = owner_browser.contents
+            self.assertIn('Download files for this release', html)
+            self.assertNotIn('Add download file', html)
+
+    def test_downloads_section_hidden_for_proprietary_product(self):
+        # Only public projects can have download files, so the downloads
+        # section is replaced with a message indicating this.
+        owner = self.factory.makePerson()
+        product = self.factory.makeProduct(
+            owner=owner, information_type=InformationType.PROPRIETARY)
+        with person_logged_in(owner):
+            release = self.factory.makeProductRelease(product=product)
+            owner_browser = self.getViewBrowser(
+                release.milestone, '+index', user=owner)
+            html = owner_browser.contents
+            self.assertIn(
+                'Only public projects can have download files.', html)
+            self.assertNotIn('Add download file', html)
+
 
 class TestAddMilestoneViews(TestCaseWithFactory):
 
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        TestCaseWithFactory.setUp(self)
+        super(TestAddMilestoneViews, self).setUp()
         self.product = self.factory.makeProduct()
-        self.series = (
-            self.factory.makeProductSeries(product=self.product))
+        self.series = self.factory.makeProductSeries(product=self.product)
         self.owner = self.product.owner
         login_person(self.owner)
 
@@ -71,8 +169,7 @@ class TestAddMilestoneViews(TestCaseWithFactory):
             'field.name': '1.1',
             'field.actions.register': 'Register Milestone',
             }
-        view = create_initialized_view(
-            self.series, '+addmilestone', form=form)
+        view = create_initialized_view(self.series, '+addmilestone', form=form)
         self.assertEqual([], view.errors)
 
     def test_add_milestone_with_good_date(self):
@@ -81,8 +178,7 @@ class TestAddMilestoneViews(TestCaseWithFactory):
             'field.dateexpected': '2010-10-10',
             'field.actions.register': 'Register Milestone',
             }
-        view = create_initialized_view(
-            self.series, '+addmilestone', form=form)
+        view = create_initialized_view(self.series, '+addmilestone', form=form)
         # It's important to make sure no errors occured,
         # but also confirm that the milestone was created.
         self.assertEqual([], view.errors)
@@ -94,8 +190,7 @@ class TestAddMilestoneViews(TestCaseWithFactory):
             'field.dateexpected': '1010-10-10',
             'field.actions.register': 'Register Milestone',
             }
-        view = create_initialized_view(
-            self.series, '+addmilestone', form=form)
+        view = create_initialized_view(self.series, '+addmilestone', form=form)
         error_msg = view.errors[0].errors[0]
         expected_msg = (
             "Date could not be formatted. Provide a date formatted "
@@ -109,11 +204,19 @@ class TestAddMilestoneViews(TestCaseWithFactory):
             'field.tags': tags,
             'field.actions.register': 'Register Milestone',
             }
-        view = create_initialized_view(
-            self.series, '+addmilestone', form=form)
+        view = create_initialized_view(self.series, '+addmilestone', form=form)
         self.assertEqual([], view.errors)
         expected = sorted(tags.split())
         self.assertEqual(expected, self.product.milestones[0].getTags())
+
+    def test_add_milestone_with_invalid_tags(self):
+        form = {
+            'field.name': '1.1',
+            'field.tags': '&%&%*',
+            'field.actions.register': 'Register Milestone',
+            }
+        view = create_initialized_view(self.series, '+addmilestone', form=form)
+        self.assertEqual(1, len(view.errors))
 
 
 class TestMilestoneEditView(TestCaseWithFactory):
@@ -121,7 +224,7 @@ class TestMilestoneEditView(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        TestCaseWithFactory.setUp(self)
+        super(TestMilestoneEditView, self).setUp()
         self.product = self.factory.makeProduct()
         self.milestone = self.factory.makeMilestone(
             name='orig-name', product=self.product)
@@ -129,35 +232,38 @@ class TestMilestoneEditView(TestCaseWithFactory):
         login_person(self.owner)
 
     def test_edit_milestone_with_tags(self):
-        orig_tags = u'b a c'
+        orig_tags = u'ba ac'
         self.milestone.setTags(orig_tags.split(), self.owner)
-        new_tags = u'z a B'
+        new_tags = u'za ab'
         form = {
             'field.name': 'new-name',
             'field.tags': new_tags,
             'field.actions.update': 'Update',
             }
-        view = create_initialized_view(
-            self.milestone, '+edit', form=form)
+        view = create_initialized_view(self.milestone, '+edit', form=form)
         self.assertEqual([], view.errors)
         self.assertEqual('new-name', self.milestone.name)
         expected = sorted(new_tags.lower().split())
         self.assertEqual(expected, self.milestone.getTags())
 
     def test_edit_milestone_clear_tags(self):
-        orig_tags = u'b a c'
+        orig_tags = u'ba ac'
         self.milestone.setTags(orig_tags.split(), self.owner)
         form = {
             'field.name': 'new-name',
             'field.tags': '',
             'field.actions.update': 'Update',
             }
-        view = create_initialized_view(
-            self.milestone, '+edit', form=form)
+        view = create_initialized_view(self.milestone, '+edit', form=form)
         self.assertEqual([], view.errors)
         self.assertEqual('new-name', self.milestone.name)
-        expected = []
-        self.assertEqual(expected, self.milestone.getTags())
+        self.assertEqual([], self.milestone.getTags())
+
+    def test_edit_milestone_with_invalid_tags(self):
+        form = {'field.tags': '&%$^', 'field.actions.update': 'Update'}
+        view = create_initialized_view(
+            self.milestone, '+edit', form=form)
+        self.assertEqual(1, len(view.errors))
 
 
 class TestMilestoneDeleteView(TestCaseWithFactory):
@@ -183,6 +289,58 @@ class TestMilestoneDeleteView(TestCaseWithFactory):
         tasks = product.development_focus.searchTasks(
             BugTaskSearchParams(user=None))
         self.assertEqual(0, tasks.count())
+
+    def test_delete_all_bugtasks(self):
+        # When a milestone is deleted, all bugtasks are deleted.
+        milestone = self.factory.makeMilestone()
+        self.factory.makeBug(milestone=milestone)
+        self.factory.makeBug(
+            milestone=milestone, information_type=InformationType.USERDATA)
+        # Remove the APG the product owner has so they can't see the private
+        # bug.
+        ap = getUtility(IAccessPolicySource).find(
+            [(milestone.product, InformationType.USERDATA)]).one()
+        getUtility(IAccessPolicyGrantSource).revoke(
+            [(ap, milestone.product.owner)])
+        form = {
+            'field.actions.delete': 'Delete Milestone',
+            }
+        with person_logged_in(milestone.product.owner):
+            view = create_initialized_view(milestone, '+delete', form=form)
+        self.assertEqual([], view.errors)
+        tasks = milestone.product.development_focus.searchTasks(
+            BugTaskSearchParams(user=None))
+        self.assertEqual(0, tasks.count())
+
+    def test_delete_milestone_with_deleted_workitems(self):
+        milestone = self.factory.makeMilestone()
+        specification = self.factory.makeSpecification(
+            product=milestone.product)
+        workitem = self.factory.makeSpecificationWorkItem(
+            specification=specification, milestone=milestone, deleted=True)
+        form = {'field.actions.delete': 'Delete Milestone'}
+        owner = milestone.product.owner
+        with person_logged_in(owner):
+            view = create_initialized_view(milestone, '+delete', form=form)
+        Store.of(workitem).flush()
+        self.assertEqual([], view.errors)
+        self.assertIs(None, workitem.milestone)
+
+    def test_delete_milestone_with_private_specification(self):
+        policy = SpecificationSharingPolicy.PROPRIETARY
+        product = self.factory.makeProduct(
+            specification_sharing_policy=policy)
+        milestone = self.factory.makeMilestone(product=product)
+        specification = self.factory.makeSpecification(
+            product=product, milestone=milestone,
+            information_type=InformationType.PROPRIETARY)
+        form = {'field.actions.delete': 'Delete Milestone'}
+        with person_logged_in(product.owner):
+            view = create_initialized_view(milestone, '+delete', form=form)
+        self.assertEqual([], view.errors)
+        Store.of(specification).flush()
+        with person_logged_in(product.owner):
+            self.assertIs(None, specification.milestone)
 
 
 class TestQueryCountBase(TestCaseWithFactory):
@@ -210,21 +368,15 @@ class TestProjectMilestoneIndexQueryCount(TestQueryCountBase):
 
     def setUp(self):
         super(TestProjectMilestoneIndexQueryCount, self).setUp()
-        # Increase cache size so that the query counts aren't affected
-        # by objects being removed from the cache early.
-        config.push('storm-cache', dedent('''
-            [launchpad]
-            storm_cache_size: 1000
-            '''))
-        self.addCleanup(config.pop, 'storm-cache')
         self.owner = self.factory.makePerson(name='product-owner')
         self.product = self.factory.makeProduct(owner=self.owner)
+        self.product_owner = self.product.owner
         login_person(self.product.owner)
         self.milestone = self.factory.makeMilestone(
             productseries=self.product.development_focus)
 
     def add_bug(self, count):
-        login_person(self.product.owner)
+        login_person(self.product_owner)
         for i in range(count):
             bug = self.factory.makeBug(target=self.product)
             bug.bugtasks[0].transitionToMilestone(
@@ -269,6 +421,7 @@ class TestProjectMilestoneIndexQueryCount(TestQueryCountBase):
         # increasing the cap.
         page_query_limit = 37
         product = self.factory.makeProduct()
+        product_owner = product.owner
         login_person(product.owner)
         milestone = self.factory.makeMilestone(
             productseries=product.development_focus)
@@ -291,7 +444,7 @@ class TestProjectMilestoneIndexQueryCount(TestQueryCountBase):
         # Seed the cookie cache and any other cross-request state we may gain
         # in future.  See lp.services.webapp.serssion: _get_secret.
         browser.open(milestone_url)
-        collector = QueryCollector()
+        collector = RequestTimelineCollector()
         collector.register()
         self.addCleanup(collector.unregister)
         browser.open(milestone_url)
@@ -301,7 +454,7 @@ class TestProjectMilestoneIndexQueryCount(TestQueryCountBase):
         with_1_private_bug = collector.count
         with_1_queries = ["%s: %s" % (pos, stmt[3]) for (pos, stmt) in
             enumerate(collector.queries)]
-        login_person(product.owner)
+        login_person(product_owner)
         bug2 = self.factory.makeBug(
             target=product, information_type=InformationType.USERDATA,
             owner=product.owner)
@@ -331,13 +484,6 @@ class TestProjectGroupMilestoneIndexQueryCount(TestQueryCountBase):
 
     def setUp(self):
         super(TestProjectGroupMilestoneIndexQueryCount, self).setUp()
-        # Increase cache size so that the query counts aren't affected
-        # by objects being removed from the cache early.
-        config.push('storm-cache', dedent('''
-            [launchpad]
-            storm_cache_size: 1000
-            '''))
-        self.addCleanup(config.pop, 'storm-cache')
         self.owner = self.factory.makePerson(name='product-owner')
         self.project_group = self.factory.makeProject(owner=self.owner)
         login_person(self.owner)
@@ -345,7 +491,7 @@ class TestProjectGroupMilestoneIndexQueryCount(TestQueryCountBase):
         # A ProjectGroup milestone doesn't exist unless one of its
         # Projects has a milestone of that name.
         product = self.factory.makeProduct(
-            owner=self.owner, project=self.project_group)
+            owner=self.owner, projectgroup=self.project_group)
         self.product_milestone = self.factory.makeMilestone(
             productseries=product.development_focus,
             name=self.milestone_name)
@@ -396,13 +542,6 @@ class TestDistributionMilestoneIndexQueryCount(TestQueryCountBase):
 
     def setUp(self):
         super(TestDistributionMilestoneIndexQueryCount, self).setUp()
-        # Increase cache size so that the query counts aren't affected
-        # by objects being removed from the cache early.
-        config.push('storm-cache', dedent('''
-            [launchpad]
-            storm_cache_size: 1000
-            '''))
-        self.addCleanup(config.pop, 'storm-cache')
         self.ubuntu = getUtility(ILaunchpadCelebrities).ubuntu
         self.owner = self.factory.makePerson(name='test-owner')
         login_team(self.ubuntu.owner)
@@ -431,19 +570,19 @@ class TestDistributionMilestoneIndexQueryCount(TestQueryCountBase):
         logout()
 
     def test_bugtasks_queries(self):
-        # The view.bugtasks attribute will make seven queries:
+        # The view.bugtasks attribute will make the following queries:
         #  1. Load ubuntu.currentseries.
         #  2. Check if the user is in the admin team.
         #  3. Check if the user is in the owner of the admin team.
         #  4. Load bugtasks and bugs.
-        #  5. load the source package names.
+        #  5. Load the distributions and source package names.
         #  6. Load assignees (Person, Account, and EmailAddress).
         #  7. Load links to specifications.
         #  8. Load links to branches.
         #  9. Load links to milestones.
         bugtask_count = 10
         self.assert_bugtasks_query_count(
-            self.milestone, bugtask_count, query_limit=11)
+            self.milestone, bugtask_count, query_limit=12)
 
     def test_milestone_eager_loading(self):
         # Verify that the number of queries does not increase with more
@@ -467,7 +606,7 @@ class TestMilestoneTagView(TestQueryCountBase):
         self.product = self.factory.makeProduct(
             name="product1",
             owner=self.owner,
-            project=self.project_group)
+            projectgroup=self.project_group)
         self.milestone = self.factory.makeMilestone(product=self.product)
         with person_logged_in(self.owner):
             self.milestone.setTags(self.tags, self.owner)

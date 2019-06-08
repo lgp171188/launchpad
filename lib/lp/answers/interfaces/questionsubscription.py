@@ -1,8 +1,6 @@
 # Copyright 2009 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-# pylint: disable-msg=E0211,E0213
-
 """Question subscription interface."""
 
 __metaclass__ = type
@@ -35,7 +33,7 @@ class IQuestionSubscription(Interface):
     person = exported(PersonChoice(
         title=_('Person'), required=True, vocabulary='ValidPersonOrTeam',
         readonly=True, description=_("The person's Launchpad ID or "
-        "e-mail address.")), as_of="devel")
+        "email address.")), as_of="devel")
     question = exported(Reference(
         Interface, title=_("Question"), required=True, readonly=True),
         as_of="devel")

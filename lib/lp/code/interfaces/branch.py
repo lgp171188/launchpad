@@ -1,7 +1,5 @@
-# Copyright 2009-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
-
-# pylint: disable-msg=E0211,E0213,F0401,W0611
 
 """Branch interfaces."""
 
@@ -19,13 +17,11 @@ __all__ = [
     'IBranchCloud',
     'IBranchDelta',
     'IBranchListingQueryOptimiser',
-    'IBranchNavigationMenu',
     'IBranchSet',
     'user_has_special_branch_access',
     'WrongNumberOfReviewTypeArguments',
     ]
 
-from cgi import escape
 import httplib
 import re
 
@@ -46,6 +42,7 @@ from lazr.restful.declarations import (
     operation_parameters,
     operation_returns_collection_of,
     operation_returns_entry,
+    rename_parameters_as,
     REQUEST_USER,
     )
 from lazr.restful.fields import (
@@ -70,7 +67,7 @@ from zope.schema import (
     )
 
 from lp import _
-from lp.app.interfaces.launchpad import ILaunchpadCelebrities
+from lp.app.enums import InformationType
 from lp.app.validators import LaunchpadValidationError
 from lp.code.bzr import (
     BranchFormat,
@@ -86,15 +83,16 @@ from lp.code.enums import (
     CodeReviewNotificationLevel,
     )
 from lp.code.interfaces.branchlookup import IBranchLookup
-from lp.code.interfaces.branchmergequeue import IBranchMergeQueue
 from lp.code.interfaces.branchtarget import IHasBranchTarget
 from lp.code.interfaces.hasbranches import IHasMergeProposals
 from lp.code.interfaces.hasrecipes import IHasRecipes
 from lp.code.interfaces.linkedbranch import ICanHasLinkedBranch
-from lp.registry.enums import InformationType
 from lp.registry.interfaces.person import IPerson
 from lp.registry.interfaces.pocket import PackagePublishingPocket
-from lp.registry.interfaces.role import IHasOwner
+from lp.registry.interfaces.role import (
+    IHasOwner,
+    IPersonRoles,
+    )
 from lp.services.config import config
 from lp.services.fields import (
     PersonChoice,
@@ -102,8 +100,12 @@ from lp.services.fields import (
     URIField,
     Whiteboard,
     )
+from lp.services.webapp.escaping import (
+    html_escape,
+    structured,
+    )
 from lp.services.webapp.interfaces import ITableBatchNavigator
-from lp.services.webapp.menu import structured
+from lp.services.webhooks.interfaces import IWebhookTarget
 
 
 DEFAULT_BRANCH_STATUS_IN_LISTING = (
@@ -164,13 +166,14 @@ class BranchURIField(URIField):
             message = _(
                 "For Launchpad to mirror a branch, the original branch "
                 "cannot be on <code>${domain}</code>.",
-                mapping={'domain': escape(launchpad_domain)})
+                mapping={'domain': html_escape(launchpad_domain)})
             raise LaunchpadValidationError(structured(message))
 
         for hostname in get_blacklisted_hostnames():
             if uri.underDomain(hostname):
                 message = _(
-                    'Launchpad cannot mirror branches from %s.' % hostname)
+                    'Launchpad cannot mirror branches from %s.'
+                    % html_escape(hostname))
                 raise LaunchpadValidationError(structured(message))
 
         # As well as the check against the config, we also need to check
@@ -180,7 +183,7 @@ class BranchURIField(URIField):
             message = _(
                 "For Launchpad to mirror a branch, the original branch "
                 "cannot be on <code>${domain}</code>.",
-                mapping={'domain': escape(constraint_text)})
+                mapping={'domain': html_escape(constraint_text)})
             raise LaunchpadValidationError(structured(message))
 
         if IBranch.providedBy(self.context) and self.context.url == str(uri):
@@ -196,8 +199,8 @@ class BranchURIField(URIField):
             message = _(
                 'The bzr branch <a href="${url}">${branch}</a> is '
                 'already registered with this URL.',
-                mapping={'url': canonical_url(branch),
-                         'branch': escape(branch.displayname)})
+                mapping={'url': html_escape(canonical_url(branch)),
+                         'branch': html_escape(branch.displayname)})
             raise LaunchpadValidationError(structured(message))
 
 
@@ -235,10 +238,6 @@ def branch_name_validator(name):
 
 class IBranchBatchNavigator(ITableBatchNavigator):
     """A marker interface for registering the appropriate branch listings."""
-
-
-class IBranchNavigationMenu(Interface):
-    """A marker interface to indicate the need to show the branch menu."""
 
 
 class IBranchPublic(Interface):
@@ -360,11 +359,12 @@ class IBranchView(IHasOwner, IHasBranchTarget, IHasMergeProposals,
              description=_("Unique name of the branch, including the "
                            "owner and project names.")))
 
-    displayname = exported(
+    display_name = exported(
         Text(title=_('Display name'), readonly=True,
              description=_(
-                "The branch unique_name.")),
-        exported_as='display_name')
+                "The branch unique_name.")))
+
+    displayname = Attribute("Display name (deprecated)")
 
     code_reviewer = Attribute(
         "The reviewer if set, otherwise the owner of the branch.")
@@ -479,6 +479,9 @@ class IBranchView(IHasOwner, IHasBranchTarget, IHasMergeProposals,
             value_type=Reference(Interface)),  # Really ISpecificationBranch
         as_of="beta")
 
+    def getSpecificationLinks(user):
+        """Fetch the `ISpecificationBranch`'s that the user can view."""
+
     @call_with(registrant=REQUEST_USER)
     @operation_parameters(
         spec=Reference(schema=Interface))  # Really ISpecification
@@ -535,28 +538,42 @@ class IBranchView(IHasOwner, IHasBranchTarget, IHasMergeProposals,
     pending_writes = Attribute(
         "Whether there is new Bazaar data for this branch.")
 
+    pending_updates = Attribute(
+        "Whether there is an update job of some kind (mirroring or scanning) "
+        "pending for the Bazaar data in this branch.  Note that "
+        "pending_writes may be True and pending_updates False if a branch "
+        "has been unscanned.")
+
     def latest_revisions(quantity=10):
         """A specific number of the latest revisions in that branch."""
 
     # These attributes actually have a value_type of IBranchMergeProposal,
     # but uses Interface to prevent circular imports, and the value_type is
     # set near IBranchMergeProposal.
-    landing_targets = exported(
+    landing_targets = Attribute(
+        'A collection of the merge proposals where this branch is '
+        'the source branch.')
+    _api_landing_targets = exported(
         CollectionField(
             title=_('Landing Targets'),
             description=_(
                 'A collection of the merge proposals where this branch is '
                 'the source branch.'),
             readonly=True,
-            value_type=Reference(Interface)))
-    landing_candidates = exported(
+            value_type=Reference(Interface)),
+        exported_as='landing_targets')
+    landing_candidates = Attribute(
+        'A collection of the merge proposals where this branch is '
+        'the target branch.')
+    _api_landing_candidates = exported(
         CollectionField(
             title=_('Landing Candidates'),
             description=_(
                 'A collection of the merge proposals where this branch is '
                 'the target branch.'),
             readonly=True,
-            value_type=Reference(Interface)))
+            value_type=Reference(Interface)),
+        exported_as='landing_candidates')
     dependent_branches = exported(
         CollectionField(
             title=_('Dependent Branches'),
@@ -566,13 +583,31 @@ class IBranchView(IHasOwner, IHasBranchTarget, IHasMergeProposals,
             readonly=True,
             value_type=Reference(Interface)))
 
+    def getPrecachedLandingTargets(user):
+        """Return precached landing targets.
+
+        Target and prerequisite branches are preloaded, along with the
+        related chains of stacked-on branches visible to `user`.
+        """
+
+    def getPrecachedLandingCandidates(user):
+        """Return precached landing candidates.
+
+        Source and prerequisite branches are preloaded, along with the
+        related chains of stacked-on branches visible to `user`.
+        """
+
     def isBranchMergeable(other_branch):
-        """Is the other branch mergeable into this branch (or vice versa)."""
+        """Is the other branch mergeable into this branch (or vice versa)?"""
 
     @export_operation_as('createMergeProposal')
+    # Rename back to Bazaar-specific names for API compatibility.
+    @rename_parameters_as(
+        merge_target='target_branch',
+        merge_prerequisite='prerequisite_branch')
     @operation_parameters(
-        target_branch=Reference(schema=Interface),
-        prerequisite_branch=Reference(schema=Interface),
+        merge_target=Reference(schema=Interface),
+        merge_prerequisite=Reference(schema=Interface),
         needs_review=Bool(title=_('Needs review'),
             description=_('If True the proposal needs review.'
             'Otherwise, it will be work in progress.')),
@@ -584,14 +619,14 @@ class IBranchView(IHasOwner, IHasBranchTarget, IHasMergeProposals,
             description=_('Message to use when committing this merge.')),
         reviewers=List(value_type=Reference(schema=IPerson)),
         review_types=List(value_type=TextLine()))
-    # target_branch and prerequisite_branch are actually IBranch, patched in
+    # merge_target and merge_prerequisite are actually IBranch, patched in
     # _schema_circular_imports.
     @call_with(registrant=REQUEST_USER)
     # IBranchMergeProposal supplied as Interface to avoid circular imports.
     @export_factory_operation(Interface, [])
     @operation_for_version('beta')
     def _createMergeProposal(
-        registrant, target_branch, prerequisite_branch=None,
+        registrant, merge_target, merge_prerequisite=None,
         needs_review=True, initial_comment=None, commit_message=None,
         reviewers=None, review_types=None):
         """Create a new BranchMergeProposal with this branch as the source.
@@ -603,22 +638,22 @@ class IBranchView(IHasOwner, IHasBranchTarget, IHasMergeProposals,
         targets.
         """
 
-    def addLandingTarget(registrant, target_branch, prerequisite_branch=None,
+    def addLandingTarget(registrant, merge_target, merge_prerequisite=None,
                          date_created=None, needs_review=False,
                          description=None, review_requests=None,
                          commit_message=None):
         """Create a new BranchMergeProposal with this branch as the source.
 
-        Both the target_branch and the prerequisite_branch, if it is there,
+        Both the merge_target and the merge_prerequisite, if it is there,
         must be branches with the same target as the source branch.
 
         Personal branches (a.k.a. junk branches) cannot specify landing
         targets.
 
         :param registrant: The person who is adding the landing target.
-        :param target_branch: Must be another branch, and different to self.
-        :param prerequisite_branch: Optional but if it is not None, it must be
-            another branch.
+        :param merge_target: Must be another branch, and different to self.
+        :param merge_prerequisite: Optional but if it is not None, it must
+            be another branch.
         :param date_created: Used to specify the date_created value of the
             merge request.
         :param needs_review: Used to specify the proposal is ready for
@@ -643,8 +678,21 @@ class IBranchView(IHasOwner, IHasBranchTarget, IHasMergeProposals,
                           merged_revnos=None, eager_load=False):
         """Return matching BranchMergeProposals."""
 
+    def getDependentMergeProposals(status=None, visible_by_user=None,
+                                   eager_load=False):
+        """Return BranchMergeProposals dependent on merging this branch."""
+
+    def getMergeProposalByID(id):
+        """Return this branch's merge proposal with this id, or None."""
+
     def scheduleDiffUpdates():
         """Create UpdatePreviewDiffJobs for this branch's targets."""
+
+    def markRecipesStale():
+        """Mark all recipes associated with this branch as stale."""
+
+    def markSnapsStale():
+        """Mark all snap packages associated with this branch as stale."""
 
     def getStackedBranches():
         """The branches that are stacked on this one."""
@@ -664,13 +712,10 @@ class IBranchView(IHasOwner, IHasBranchTarget, IHasMergeProposals,
         :returns: A resultset of tuples for (BranchRevision, Revision)
         """
 
-    def getRevisionsSince(timestamp):
-        """Revisions in the history that are more recent than timestamp."""
-
     code_is_browseable = Attribute(
         "Is the code in this branch accessable through codebrowse?")
 
-    def codebrowse_url(*extras):
+    def getCodebrowseUrl(*extras):
         """Construct a URL for this branch in codebrowse.
 
         :param extras: Zero or more path segments that will be joined onto the
@@ -680,10 +725,17 @@ class IBranchView(IHasOwner, IHasBranchTarget, IHasMergeProposals,
     browse_source_url = Attribute(
         "The URL of the source browser for this branch.")
 
+    def getCodebrowseUrlForRevision(commit):
+        """The URL to the commit of the merge to the target branch"""
+
     # Really ICodeImport, but that would cause a circular import
     code_import = exported(
         Reference(
             title=_("The associated CodeImport, if any."), schema=Interface))
+
+    shortened_path = Attribute(
+        "The shortest reasonable version of the path to this branch; as "
+        "bzr_identity but without the 'lp:' prefix.")
 
     bzr_identity = exported(
         Text(
@@ -697,6 +749,10 @@ class IBranchView(IHasOwner, IHasBranchTarget, IHasMergeProposals,
                 'lp:product/series.  Otherwise the result is '
                 'lp:~user/product/branch-name.')))
 
+    identity = Attribute(
+        "The identity of this branch: a VCS-independent synonym for "
+        "bzr_identity.")
+
     def addToLaunchBag(launchbag):
         """Add information about this branch to `launchbag'.
 
@@ -709,19 +765,38 @@ class IBranchView(IHasOwner, IHasBranchTarget, IHasMergeProposals,
         :param launchbag: `ILaunchBag`.
         """
 
+    def getBlob(filename, revision_id=None):
+        """Get a blob by file name from this branch.
+
+        :param filename: Relative path of a file in the branch.
+        :param revision_id: An optional revision ID.  Defaults to the last
+            scanned revision ID of the branch.
+        :return: The blob content as a byte string.
+        """
+
+    def getDiff(new, old):
+        """Get the diff between two revisions in this branch.
+
+        :param new: The new revno or revision ID.
+        :param old: The old revno or revision ID.  Defaults to the parent
+            revision of `new`.
+        :return: The diff as a byte string.
+        """
+
     @export_read_operation()
     @operation_for_version('beta')
     def canBeDeleted():
         """Can this branch be deleted in its current state.
 
-        A branch is considered deletable if it has no revisions, is not
-        linked to any bugs, specs, productseries, or code imports, and
-        has no subscribers.
+        A branch is considered deletable if it has no revisions and is not
+        linked to any bugs, specs, productseries, or code imports.
         """
 
-    def deletionRequirements():
+    def deletionRequirements(eager_load=False):
         """Determine what is required to delete this branch.
 
+        :param eager_load: If True, preload related information needed to
+            display the deletion requirements.
         :return: a dict of {object: (operation, reason)}, where object is the
             object that must be deleted or altered, operation is either
             "delete" or "alter", and reason is a string explaining why the
@@ -751,7 +826,7 @@ class IBranchView(IHasOwner, IHasBranchTarget, IHasMergeProposals,
         :return: A list of suite source packages ordered by pocket.
         """
 
-    def branchLinks():
+    def getBranchLinks():
         """Return a sorted list of ICanHasLinkedBranch objects.
 
         There is one result for each related linked object that the branch is
@@ -763,7 +838,7 @@ class IBranchView(IHasOwner, IHasBranchTarget, IHasMergeProposals,
         more important links are sorted first.
         """
 
-    def branchIdentities():
+    def getBranchIdentities():
         """A list of aliases for a branch.
 
         Returns a list of tuples of bzr identity and context object.  There is
@@ -776,13 +851,16 @@ class IBranchView(IHasOwner, IHasBranchTarget, IHasMergeProposals,
 
         For example, a branch linked to the development focus of the 'fooix'
         project is accessible using:
-          lp:fooix - the linked object is the product fooix
-          lp:fooix/trunk - the linked object is the trunk series of fooix
-          lp:~owner/fooix/name - the unique name of the branch where the
-              linked object is the branch itself.
+          fooix - the linked object is the product fooix
+          fooix/trunk - the linked object is the trunk series of fooix
+          ~owner/fooix/name - the unique name of the branch where the linked
+              object is the branch itself.
         """
 
     # subscription-related methods
+    def userCanBeSubscribed(person):
+        """Return if the `IPerson` can be subscribed to the branch."""
+
     @operation_parameters(
         person=Reference(
             title=_("The person to subscribe."),
@@ -818,7 +896,7 @@ class IBranchView(IHasOwner, IHasBranchTarget, IHasMergeProposals,
 
     @operation_parameters(
         person=Reference(
-            title=_("The person to unsubscribe"),
+            title=_("The person to search for"),
             schema=IPerson))
     @operation_returns_entry(Interface)  # Really IBranchSubscription
     @export_read_operation()
@@ -958,14 +1036,8 @@ class IBranchView(IHasOwner, IHasBranchTarget, IHasMergeProposals,
             detail page.
         """
 
-    def commitsForDays(since):
-        """Get a list of commit counts for days since `since`.
-
-        This method returns all commits for the branch, so this includes
-        revisions brought in through merges.
-
-        :return: A list of tuples like (date, count).
-        """
+    def getLatestScanJob():
+        """Get the latest IBranchScanJob for this branch"""
 
     def checkUpgrade():
         """Check whether an upgrade should be performed, and raise if not.
@@ -980,7 +1052,7 @@ class IBranchView(IHasOwner, IHasBranchTarget, IHasMergeProposals,
     def visibleByUser(user):
         """Can the specified user see this branch?"""
 
-    def getAllowedInformationTypes(user):
+    def getAllowedInformationTypes(who):
         """Get a list of acceptable `InformationType`s for this branch.
 
         If the user is a Launchpad admin, any type is acceptable. Otherwise
@@ -1039,6 +1111,23 @@ class IBranchModerate(Interface):
             with the `IBranchNamespacePolicy`.
         """
 
+    @operation_parameters(
+        rescan=Bool(
+            title=_("Scan the branch after resetting its scan data."),
+            default=True))
+    @export_write_operation()
+    @operation_for_version('devel')
+    def unscan(rescan=True):
+        """Reset this branch's scan data and optionally request a scan."""
+
+    @export_write_operation()
+    @operation_for_version('devel')
+    def rescan():
+        """Reset this branch's scan data and request a rescan.
+
+        A convenience function wrapper around unscan().
+        """
+
 
 class IBranchEditableAttributes(Interface):
     """IBranch attributes that can be edited.
@@ -1088,7 +1177,7 @@ class IBranchEditableAttributes(Interface):
             vocabulary=ControlFormat))
 
 
-class IBranchEdit(Interface):
+class IBranchEdit(IWebhookTarget):
     """IBranch attributes that require launchpad.Edit permission."""
 
     @call_with(user=REQUEST_USER)
@@ -1143,15 +1232,9 @@ class IBranchEdit(Interface):
             branch.
         """
 
+    @call_with(break_references=True)
     @export_destructor_operation()
     @operation_for_version('beta')
-    def destroySelfBreakReferences():
-        """Delete the specified branch.
-
-        BranchRevisions associated with this branch will also be deleted as
-        well as any items with mandatory references.
-        """
-
     def destroySelf(break_references=False):
         """Delete the specified branch.
 
@@ -1164,56 +1247,9 @@ class IBranchEdit(Interface):
         """
 
 
-class IMergeQueueable(Interface):
-    """An interface for branches that can be queued."""
-
-    merge_queue = exported(
-        Reference(
-            title=_('Branch Merge Queue'),
-            schema=IBranchMergeQueue, required=False, readonly=True,
-            description=_(
-                "The branch merge queue that manages merges for this "
-                "branch.")))
-
-    merge_queue_config = exported(
-        TextLine(
-            title=_('Name'), required=True, readonly=True,
-            description=_(
-                "A JSON string of configuration values to send to a "
-                "branch merge robot.")))
-
-    @mutator_for(merge_queue)
-    @operation_parameters(
-        queue=Reference(title=_('Branch Merge Queue'),
-              schema=IBranchMergeQueue))
-    @export_write_operation()
-    @operation_for_version('beta')
-    def addToQueue(queue):
-        """Add this branch to a specified queue.
-
-        A branch's merges can be managed by a queue.
-
-        :param queue: The branch merge queue that will manage the branch.
-        """
-
-    @mutator_for(merge_queue_config)
-    @operation_parameters(
-        config=TextLine(title=_("A JSON string of config values.")))
-    @export_write_operation()
-    @operation_for_version('beta')
-    def setMergeQueueConfig(config):
-        """Set the merge_queue_config property.
-
-        A branch can store a JSON string of configuration data for a merge
-        robot to retrieve.
-
-        :param config: A JSON string of data.
-        """
-
-
 class IBranch(IBranchPublic, IBranchView, IBranchEdit,
               IBranchEditableAttributes, IBranchModerate,
-              IBranchModerateAttributes, IBranchAnyone, IMergeQueueable):
+              IBranchModerateAttributes, IBranchAnyone):
     """A Bazaar branch."""
 
     # Mark branches as exported entries for the Launchpad API.
@@ -1325,8 +1361,7 @@ class IBranchSet(Interface):
         Return None if no match was found.
         """
 
-    @operation_parameters(
-        url=TextLine(title=_('Branch URL'), required=True))
+    @operation_parameters(url=TextLine(title=_('Branch URL'), required=True))
     @operation_returns_entry(IBranch)
     @export_read_operation()
     @operation_for_version('beta')
@@ -1367,6 +1402,29 @@ class IBranchSet(Interface):
         :param urls: An iterable of URLs expressed as strings.
         :return: A dictionary mapping URLs to branches. If the URL has no
             associated branch, the URL will map to `None`.
+        """
+
+    @operation_parameters(path=TextLine(title=_('Branch path'), required=True))
+    @operation_returns_entry(IBranch)
+    @export_read_operation()
+    @operation_for_version('devel')
+    def getByPath(path):
+        """Find a branch by its path.
+
+        The path is the same as its lp: URL, but without the leading lp:, so
+        it may be in any of these forms::
+
+            Unique names:
+                ~OWNER/PROJECT/NAME
+                ~OWNER/DISTRO/SERIES/SOURCE/NAME
+                ~OWNER/+junk/NAME
+            Aliases linked to other objects:
+                PROJECT
+                PROJECT/SERIES
+                DISTRO/SOURCE
+                DISTRO/SUITE/SOURCE
+
+        Return None if no match was found.
         """
 
     @collection_default_content()
@@ -1493,24 +1551,29 @@ class BzrIdentityMixin:
     """
 
     @property
+    def shortened_path(self):
+        """See `IBranch`."""
+        return self.getBranchIdentities()[0][0]
+
+    @property
     def bzr_identity(self):
         """See `IBranch`."""
-        identity, context = self.branchIdentities()[0]
-        return identity
+        return config.codehosting.bzr_lp_prefix + self.shortened_path
 
-    def branchIdentities(self):
+    identity = bzr_identity
+
+    def getBranchIdentities(self):
         """See `IBranch`."""
-        lp_prefix = config.codehosting.bzr_lp_prefix
-        if not self.target.supports_short_identites:
+        if not self.target.supports_short_identities:
             identities = []
         else:
             identities = [
-                (lp_prefix + link.bzr_path, link.context)
-                for link in self.branchLinks()]
-        identities.append((lp_prefix + self.unique_name, self))
+                (link.bzr_path, link.context)
+                for link in self.getBranchLinks()]
+        identities.append((self.unique_name, self))
         return identities
 
-    def branchLinks(self):
+    def getBranchLinks(self):
         """See `IBranch`."""
         links = []
         for suite_sp in self.associatedSuiteSourcePackages():
@@ -1526,15 +1589,31 @@ class BzrIdentityMixin:
         return sorted(links)
 
 
-def user_has_special_branch_access(user):
-    """Admins and bazaar experts have special access.
+def user_has_special_branch_access(user, branch=None):
+    """Admins and vcs-import members have have special access.
 
     :param user: A 'Person' or None.
+    :param branch: A branch or None when checking collection access.
     """
     if user is None:
         return False
-    celebs = getUtility(ILaunchpadCelebrities)
-    return user.inTeam(celebs.admin)
+    roles = IPersonRoles(user)
+    if roles.in_admin:
+        return True
+    if branch is None:
+        return False
+    code_import = branch.code_import
+    if code_import is None:
+        return False
+    # It used to be the case that all import branches were owned by the
+    # special, restricted team ~vcs-imports.  For these legacy code import
+    # branches, we still want the code import registrant to be able to edit
+    # them.  Similarly, we still want vcs-imports members to be able to edit
+    # those branches.
+    return (
+        roles.in_vcs_imports
+        or (IPersonRoles(branch.owner).in_vcs_imports
+            and user.inTeam(code_import.registrant)))
 
 
 def get_db_branch_info(stacked_on_url, last_revision_id, control_string,

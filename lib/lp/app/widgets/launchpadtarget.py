@@ -1,26 +1,25 @@
-# Copyright 2009-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2016 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
 
 from z3c.ptcompat import ViewPageTemplateFile
-from zope.app.form import (
-    CustomWidgetFactory,
-    InputWidget,
-    )
-from zope.app.form.browser.widget import (
-    BrowserWidget,
-    renderElement,
-    )
-from zope.app.form.interfaces import (
+from zope.component import getUtility
+from zope.formlib.interfaces import (
     ConversionError,
     IInputWidget,
     InputErrors,
     MissingInputError,
+    WidgetInputError,
     )
-from zope.app.form.utility import setUpWidget
-from zope.component import getUtility
-from zope.interface import implements
+from zope.formlib.utility import setUpWidget
+from zope.formlib.widget import (
+    BrowserWidget,
+    CustomWidgetFactory,
+    InputWidget,
+    renderElement,
+    )
+from zope.interface import implementer
 from zope.schema import Choice
 
 from lp.app.errors import (
@@ -42,10 +41,9 @@ from lp.services.webapp.interfaces import (
     )
 
 
+@implementer(IAlwaysSubmittedWidget, IMultiLineWidgetLayout, IInputWidget)
 class LaunchpadTargetWidget(BrowserWidget, InputWidget):
     """Widget for selecting a product, distribution or package target."""
-
-    implements(IAlwaysSubmittedWidget, IMultiLineWidgetLayout, IInputWidget)
 
     template = ViewPageTemplateFile('templates/launchpad-target.pt')
     default_option = "package"
@@ -53,6 +51,9 @@ class LaunchpadTargetWidget(BrowserWidget, InputWidget):
 
     def getDistributionVocabulary(self):
         return 'Distribution'
+
+    def getProductVocabulary(self):
+        return 'Product'
 
     def setUpSubWidgets(self):
         if self._widgets_set_up:
@@ -66,7 +67,7 @@ class LaunchpadTargetWidget(BrowserWidget, InputWidget):
         fields = [
             Choice(
                 __name__='product', title=u'Project',
-                required=True, vocabulary='Product'),
+                required=True, vocabulary=self.getProductVocabulary()),
             Choice(
                 __name__='distribution', title=u"Distribution",
                 required=True, vocabulary=self.getDistributionVocabulary(),
@@ -102,7 +103,7 @@ class LaunchpadTargetWidget(BrowserWidget, InputWidget):
         return self.name in self.request.form
 
     def hasValidInput(self):
-        """See zope.app.form.interfaces.IInputWidget."""
+        """See zope.formlib.interfaces.IInputWidget."""
         try:
             self.getInputValue()
             return True
@@ -110,45 +111,46 @@ class LaunchpadTargetWidget(BrowserWidget, InputWidget):
             return False
 
     def getInputValue(self):
-        """See zope.app.form.interfaces.IInputWidget."""
+        """See zope.formlib.interfaces.IInputWidget."""
         self.setUpSubWidgets()
         form_value = self.request.form_ng.getOne(self.name)
         if form_value == 'product':
             try:
                 return self.product_widget.getInputValue()
             except MissingInputError:
-                raise LaunchpadValidationError('Please enter a project name')
+                self._error = WidgetInputError(
+                    self.name, self.label,
+                    LaunchpadValidationError('Please enter a project name'))
+                raise self._error
             except ConversionError:
                 entered_name = self.request.form_ng.getOne(
                     "%s.product" % self.name)
-                raise LaunchpadValidationError(
-                    "There is no project named '%s' registered in"
-                    " Launchpad" % entered_name)
+                self._error = WidgetInputError(
+                    self.name, self.label,
+                    LaunchpadValidationError(
+                        "There is no project named '%s' registered in"
+                        " Launchpad" % entered_name))
+                raise self._error
         elif form_value == 'package':
             try:
                 distribution = self.distribution_widget.getInputValue()
             except ConversionError:
                 entered_name = self.request.form_ng.getOne(
                     "%s.distribution" % self.name)
-                raise LaunchpadValidationError(
-                    "There is no distribution named '%s' registered in"
-                    " Launchpad" % entered_name)
-
+                self._error = WidgetInputError(
+                    self.name, self.label,
+                    LaunchpadValidationError(
+                        "There is no distribution named '%s' registered in"
+                        " Launchpad" % entered_name))
+                raise self._error
             if self.package_widget.hasInput():
                 if bool(getFeatureFlag('disclosure.dsp_picker.enabled')):
                     self.package_widget.vocabulary.setDistribution(
                         distribution)
                 try:
                     package_name = self.package_widget.getInputValue()
-                except ConversionError:
-                    entered_name = self.request.form_ng.getOne(
-                        '%s.package' % self.name)
-                    raise LaunchpadValidationError(
-                        "There is no package named '%s' published in %s."
-                         % (entered_name, distribution.displayname))
-                if package_name is None:
-                    return distribution
-                try:
+                    if package_name is None:
+                        return distribution
                     if IDistributionSourcePackage.providedBy(package_name):
                         dsp = package_name
                     else:
@@ -156,10 +158,15 @@ class LaunchpadTargetWidget(BrowserWidget, InputWidget):
                             distribution.guessPublishedSourcePackageName(
                                 package_name.name))
                         dsp = distribution.getSourcePackage(source_name)
-                except NotFoundError:
-                    raise LaunchpadValidationError(
-                        "There is no package named '%s' published in %s."
-                        % (package_name.name, distribution.displayname))
+                except (ConversionError, NotFoundError):
+                    entered_name = self.request.form_ng.getOne(
+                        '%s.package' % self.name)
+                    self._error = WidgetInputError(
+                        self.name, self.label,
+                        LaunchpadValidationError(
+                            "There is no package named '%s' published in %s."
+                            % (entered_name, distribution.displayname)))
+                    raise self._error
                 return dsp
             else:
                 return distribution
@@ -182,17 +189,8 @@ class LaunchpadTargetWidget(BrowserWidget, InputWidget):
         else:
             raise AssertionError('Not a valid value: %r' % value)
 
-    def error(self):
-        """See zope.app.form.interfaces.IBrowserWidget."""
-        try:
-            if self.hasInput():
-                self.getInputValue()
-        except InputErrors as error:
-            self._error = error
-        return super(LaunchpadTargetWidget, self).error()
-
     def __call__(self):
-        """See zope.app.form.interfaces.IBrowserWidget."""
+        """See zope.formlib.interfaces.IBrowserWidget."""
         self.setUpSubWidgets()
         self.setUpOptions()
         return self.template()

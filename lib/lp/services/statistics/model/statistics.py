@@ -1,7 +1,6 @@
 # Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-# pylint: disable-msg=E0611,W0212
 """Classes that implement LaunchpadStatistics."""
 
 __metaclass__ = type
@@ -16,13 +15,16 @@ from sqlobject import (
     StringCol,
     )
 from zope.component import getUtility
-from zope.interface import implements
+from zope.interface import implementer
 
 from lp.answers.enums import QuestionStatus
 from lp.answers.model.question import Question
 from lp.app.enums import ServiceUsage
+from lp.blueprints.interfaces.specification import ISpecificationSet
 from lp.bugs.model.bug import Bug
 from lp.bugs.model.bugtask import BugTask
+from lp.code.interfaces.branchcollection import IAllBranches
+from lp.code.interfaces.gitcollection import IAllGitRepositories
 from lp.registry.interfaces.person import IPersonSet
 from lp.registry.model.product import Product
 from lp.services.database.constants import UTC_NOW
@@ -42,10 +44,9 @@ from lp.translations.model.pomsgid import POMsgID
 from lp.translations.model.potemplate import POTemplate
 
 
+@implementer(ILaunchpadStatistic)
 class LaunchpadStatistic(SQLBase):
     """A table of Launchpad Statistics."""
-
-    implements(ILaunchpadStatistic)
 
     _table = 'LaunchpadStatistic'
     _defaultOrder = 'name'
@@ -56,10 +57,9 @@ class LaunchpadStatistic(SQLBase):
     dateupdated = UtcDateTimeCol(notNull=True, default=UTC_NOW)
 
 
+@implementer(ILaunchpadStatisticSet)
 class LaunchpadStatisticSet:
     """See`ILaunchpadStatisticSet`."""
-
-    implements(ILaunchpadStatisticSet)
 
     def __iter__(self):
         """See ILaunchpadStatisticSet."""
@@ -94,7 +94,9 @@ class LaunchpadStatisticSet:
         self._updateRegistryStatistics(ztm)
         self._updateRosettaStatistics(ztm)
         self._updateQuestionStatistics(ztm)
-        getUtility(IPersonSet).updateStatistics(ztm)
+        self._updateBlueprintStatistics(ztm)
+        self._updateCodeStatistics(ztm)
+        getUtility(IPersonSet).updateStatistics()
 
     def _updateMaloneStatistics(self, ztm):
         self.update('bug_count', Bug.select().count())
@@ -223,4 +225,20 @@ class LaunchpadStatisticSet:
             "SELECT COUNT(DISTINCT product) + COUNT(DISTINCT distribution) "
             "FROM Question")
         self.update("projects_with_questions_count", cur.fetchone()[0] or 0)
+        ztm.commit()
+
+    def _updateBlueprintStatistics(self, ztm):
+        self.update(
+            'public_specification_count',
+            getUtility(ISpecificationSet).specificationCount(None))
+        ztm.commit()
+
+    def _updateCodeStatistics(self, ztm):
+        self.update(
+            'public_branch_count',
+            getUtility(IAllBranches).visibleByUser(None).count())
+        ztm.commit()
+        self.update(
+            'public_git_repository_count',
+            getUtility(IAllGitRepositories).visibleByUser(None).count())
         ztm.commit()

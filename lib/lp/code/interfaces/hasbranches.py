@@ -1,7 +1,5 @@
-# Copyright 2009 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2016 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
-
-# pylint: disable-msg=E0213
 
 """Interface definitions for IHas<code related bits>."""
 
@@ -37,6 +35,7 @@ from lp.code.enums import (
     BranchLifecycleStatus,
     BranchMergeProposalStatus,
     RevisionControlSystems,
+    TargetRevisionControlSystems,
     )
 
 
@@ -58,7 +57,7 @@ class IHasBranches(Interface):
             title=_('Limit the branches to those modified since this date.'),
             required=False))
     @call_with(visible_by_user=REQUEST_USER)
-    @operation_returns_collection_of(Interface) # Really IBranch.
+    @operation_returns_collection_of(Interface)  # Really IBranch.
     @export_read_operation()
     @operation_for_version('beta')
     def getBranches(status=None, visible_by_user=None,
@@ -89,15 +88,17 @@ class IHasMergeProposals(Interface):
         status=List(
             title=_("A list of merge proposal statuses to filter by."),
             value_type=Choice(vocabulary=BranchMergeProposalStatus)))
-    @call_with(visible_by_user=REQUEST_USER)
-    @operation_returns_collection_of(Interface) # Really IBranchMergeProposal.
+    @call_with(visible_by_user=REQUEST_USER, eager_load=True)
+    @operation_returns_collection_of(Interface)  # Really IBranchMergeProposal.
     @export_read_operation()
     @operation_for_version('beta')
-    def getMergeProposals(status=None, visible_by_user=None):
+    def getMergeProposals(status=None, visible_by_user=None, eager_load=False):
         """Returns all merge proposals of a given status.
 
         :param status: A list of statuses to filter with.
         :param visible_by_user: Normally the user who is asking.
+        :param eager_load: If True, load related objects for the whole
+            collection.
         :returns: A list of `IBranchMergeProposal`.
         """
 
@@ -117,7 +118,7 @@ class IHasRequestedReviews(Interface):
             title=_("A list of merge proposal statuses to filter by."),
             value_type=Choice(vocabulary=BranchMergeProposalStatus)))
     @call_with(visible_by_user=REQUEST_USER)
-    @operation_returns_collection_of(Interface) # Really IBranchMergeProposal.
+    @operation_returns_collection_of(Interface)  # Really IBranchMergeProposal.
     @export_read_operation()
     @operation_for_version('beta')
     def getRequestedReviews(status=None, visible_by_user=None):
@@ -132,6 +133,21 @@ class IHasRequestedReviews(Interface):
         :returns: A list of `IBranchMergeProposal`.
         """
 
+    def getOwnedAndRequestedReviews(status=None, visible_by_user=None,
+                                    project=None):
+        """Returns merge proposals for branches owned by a person, or where
+        that person was asked to review.
+
+        This does not include merge proposals that were requested from
+        teams that the person is part of. If status is not passed then
+        it will return proposals that are in the "Needs Review" state.
+
+        :param status: A list of statuses to filter with.
+        :param visible_by_user: Normally the user who is asking.
+        :param project: Limit results to branches for this `IProduct`.
+        :returns: A list of `IBranchMergeProposal`.
+        """
+
 
 class IHasCodeImports(Interface):
     """Some things can have code imports that target them.
@@ -139,13 +155,14 @@ class IHasCodeImports(Interface):
     This interface defines the common methods that for working with them.
     """
 
-    # In order to minimise dependancies the returns_collection is defined as
+    # In order to minimise dependencies the returns_collection is defined as
     # Interface here and defined fully in the circular imports file.
 
     @operation_parameters(
         branch_name=TextLine(
             title=_('Name of branch to create'), required=True),
         rcs_type=Choice(vocabulary=RevisionControlSystems, required=True),
+        target_rcs_type=Choice(vocabulary=TargetRevisionControlSystems),
         url=TextLine(title=_('Foreign VCS URL')),
         cvs_root=TextLine(title=_('CVS root URL')),
         cvs_module=TextLine(title=_('CVS module to import')),
@@ -153,21 +170,25 @@ class IHasCodeImports(Interface):
             schema=Interface)
         )
     @call_with(registrant=REQUEST_USER)
-    @export_factory_operation(Interface, []) # Really ICodeImport.
+    @export_factory_operation(Interface, [])  # Really ICodeImport.
     @operation_for_version('beta')
-    def newCodeImport(registrant=None, branch_name=None, rcs_type=None,
-                      url=None, cvs_root=None, cvs_module=None, owner=None):
+    def newCodeImport(registrant=None, branch_name=None,
+                      rcs_type=None, target_rcs_type=None, url=None,
+                      cvs_root=None, cvs_module=None, owner=None):
         """Create a new code import.
 
         :param registrant: The IPerson to record as the registrant of the
-            import
-        :param branch_name: The name of the branch to create.
+            import.
+        :param branch_name: The name of the branch or repository to create.
         :param rcs_type: The type of the foreign VCS.
+        :param target_rcs_type: The type of the branch or repository to
+            create (Bazaar or Git).
         :param url: The URL to import from if the VCS type uses a single URL
             (i.e. isn't CVS).
         :param cvs_root: The CVSROOT for a CVS import.
         :param cvs_module: The module to import for a CVS import.
-        :param owner: Who should own the created branch, or None for it to
-            be the same as the registrant, or the caller over the API.
+        :param owner: Who should own the created branch or repository, or
+            None for it to be the same as the registrant, or the caller over
+            the API.
         :returns: An instance of `ICodeImport`.
         """

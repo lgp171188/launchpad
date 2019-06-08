@@ -7,7 +7,6 @@ __metaclass__ = type
 
 import unittest
 
-from BeautifulSoup import BeautifulSoup
 from fixtures import FakeLogger
 from zope.component import getUtility
 
@@ -16,6 +15,7 @@ from lp.bugs.browser.structuralsubscription import (
     )
 from lp.registry.interfaces.person import IPersonSet
 from lp.registry.model.milestone import ProjectMilestone
+from lp.services.beautifulsoup import BeautifulSoup
 from lp.services.webapp.interaction import ANONYMOUS
 from lp.services.webapp.interfaces import ILaunchBag
 from lp.services.webapp.publisher import canonical_url
@@ -146,7 +146,7 @@ class ProjectGroupView(_TestStructSubs):
         super(ProjectGroupView, self).setUp()
         self.target = self.factory.makeProject()
         self.factory.makeProduct(
-            project=self.target, official_malone=True)
+            projectgroup=self.target, official_malone=True)
 
 
 class ProjectGroupMilestone(TestCaseWithFactory):
@@ -162,10 +162,11 @@ class ProjectGroupMilestone(TestCaseWithFactory):
             # an OOPS because adapting the milestone to
             # IStructuralSubscriptionTargetHelper would attempt to look them
             # up in the database, raising an exception.
-            project = self.factory.makeProject()
-            self.factory.makeProduct(project=project)
+            projectgroup = self.factory.makeProject()
+            product = self.factory.makeProduct(projectgroup=projectgroup)
             mixin = StructuralSubscriptionMenuMixin()
-            mixin.context = ProjectMilestone(project, '11.04', None, True)
+            mixin.context = ProjectMilestone(
+                projectgroup, '11.04', None, True, product)
             # Before bug 778689 was fixed, this would raise an exception.
             mixin._enabled
 
@@ -450,10 +451,11 @@ class ProductDoesNotUseLPView(_DoesNotUseLP):
     def test_subscribe_link_no_bugtracker_parent_bugtracker(self):
         # If there is no bugtracker, do not render links, even if the
         # parent has a bugtracker (see bug 770287).
-        project = self.factory.makeProject()
+        projectgroup = self.factory.makeProject()
         with person_logged_in(self.target.owner):
-            self.target.project = project
-        self.factory.makeProduct(project=project, official_malone=True)
+            self.target.projectgroup = projectgroup
+        self.factory.makeProduct(
+            projectgroup=projectgroup, official_malone=True)
         self._create_scenario(self.regular_user)
         self.assertLinksMissing()
 
@@ -475,7 +477,7 @@ class ProjectGroupDoesNotUseLPView(_DoesNotUseLP):
         super(ProjectGroupDoesNotUseLPView, self).setUp()
         self.target = self.factory.makeProject()
         self.factory.makeProduct(
-            project=self.target, official_malone=False)
+            projectgroup=self.target, official_malone=False)
 
 
 class ProjectGroupDoesNotUseLPBugs(ProductDoesNotUseLPBugs):
@@ -488,7 +490,7 @@ class ProjectGroupDoesNotUseLPBugs(ProductDoesNotUseLPBugs):
         super(ProjectGroupDoesNotUseLPBugs, self).setUp()
         self.target = self.factory.makeProject()
         self.factory.makeProduct(
-            project=self.target, official_malone=False)
+            projectgroup=self.target, official_malone=False)
 
     test_subscribe_link_no_bugtracker_parent_bugtracker = None
 

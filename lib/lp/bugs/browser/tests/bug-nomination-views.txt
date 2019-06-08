@@ -30,9 +30,9 @@ the bug to series for which they are drivers.
     >>> ignored = login_person(nominator)
     >>> request = LaunchpadTestRequest()
     >>> bug_one_in_ubuntu_firefox = getUtility(IBugTaskSet).get(17)
-    >>> print bug_one_in_ubuntu_firefox.bug.id
+    >>> print(bug_one_in_ubuntu_firefox.bug.id)
     1
-    >>> print bug_one_in_ubuntu_firefox.target.bugtargetdisplayname
+    >>> print(bug_one_in_ubuntu_firefox.target.bugtargetdisplayname)
     mozilla-firefox (Ubuntu)
 
     >>> nomination_view = getMultiAdapter(
@@ -80,15 +80,15 @@ Here's an example of nominating a bug for a distroseries.
     >>> len(request.response.notifications)
     1
 
-    >>> print request.response.notifications[0].message
+    >>> print(request.response.notifications[0].message)
     Added nominations for: Ubuntu Warty
 
 Here's an example of nominating a bug for a productseries.
 
     >>> bug_one_in_firefox = getUtility(IBugTaskSet).get(2)
-    >>> print bug_one_in_firefox.bug.id
+    >>> print(bug_one_in_firefox.bug.id)
     1
-    >>> print bug_one_in_firefox.target.bugtargetdisplayname
+    >>> print(bug_one_in_firefox.target.bugtargetdisplayname)
     Mozilla Firefox
 
     >>> firefox = bug_one_in_firefox.target
@@ -121,7 +121,7 @@ Here's an example of nominating a bug for a productseries.
     >>> len(request.response.notifications)
     1
 
-    >>> print request.response.notifications[0].message
+    >>> print(request.response.notifications[0].message)
     Added nominations for: Mozilla Firefox trunk
 
 
@@ -158,62 +158,13 @@ If the nomination is declined, the only possible status change is
 approval.
 
     >>> hoary_nomination.decline(launchbag.user)
-    >>> print hoary_nomination.status.title
+    >>> print(hoary_nomination.status.title)
     Declined
 
     >>> hoary_nomination_edit_form.shouldShowApproveButton(None)
     True
     >>> hoary_nomination_edit_form.shouldShowDeclineButton(None)
     False
-
-
-From a series listing
-.....................
-
-Nominations are also listed on the +nomination page for a series.
-
-    >>> ubuntu = getUtility(IDistributionSet).getByName('ubuntu')
-    >>> grumpy = ubuntu.getSeries('grumpy')
-    >>> request = LaunchpadTestRequest()
-    >>> grumpy_nominations = getMultiAdapter(
-    ...     (grumpy, request), name='+nominations')
-    >>> grumpy_nominations.initialize()
-    >>> list(grumpy_nominations.search().batch)
-    []
-
-The batch navigator used returns a BugTaskListingItem for each of the
-distribution's bugtasks that are nominated for this release, with a
-widget set up for accepting/declining the nomination. The widget is only
-set up if the user has permission to approve the nomination.
-
-    >>> from lp.bugs.interfaces.bug import CreateBugParams
-    >>> ignored = login_person(nominator)
-    >>> no_priv = getUtility(ILaunchBag).user
-    >>> ubuntu_bug = ubuntu.createBug(CreateBugParams(
-    ...     no_priv, "Ubuntu bug", comment="Test bug."))
-    >>> grumpy_nomination = ubuntu_bug.addNomination(no_priv, grumpy)
-    >>> grumpy_nomination.canApprove(no_priv)
-    False
-
-    >>> grumpy_nominations = getMultiAdapter(
-    ...     (grumpy, request), name='+nominations')
-    >>> grumpy_nominations.initialize()
-    >>> for listing_item in grumpy_nominations.search().getBugListingItems():
-    ...     has_widget = listing_item.review_action_widget is not None
-    ...     print "%s: %s" % (listing_item.bug.title, has_widget)
-    Ubuntu bug: False
-
-    >>> login("foo.bar@canonical.com")
-    >>> foo_bar = getUtility(ILaunchBag).user
-    >>> grumpy_nomination.canApprove(foo_bar)
-    True
-    >>> grumpy_nominations = getMultiAdapter(
-    ...     (grumpy, request), name='+nominations')
-    >>> grumpy_nominations.initialize()
-    >>> for listing_item in grumpy_nominations.search().getBugListingItems():
-    ...     has_widget = listing_item.review_action_widget is not None
-    ...     print "%s: %s" % (listing_item.bug.title, has_widget)
-    Ubuntu bug: True
 
 
 Series Targeting For Release Managers
@@ -228,14 +179,14 @@ For example, bug one is currently nominated for Hoary and Warty.
 
     >>> ubuntu_nominations = bug_one.getNominations(ubuntu)
     >>> for nomination in ubuntu_nominations:
-    ...     print nomination.target.bugtargetdisplayname
+    ...     print(nomination.target.bugtargetdisplayname)
     Ubuntu Hoary
     Ubuntu Warty
 
 Bug #1 currently has three tasks.
 
     >>> for bugtask in bug_one.bugtasks:
-    ...     print bugtask.bugtargetdisplayname
+    ...     print(bugtask.bugtargetdisplayname)
     Mozilla Firefox
     mozilla-firefox (Ubuntu)
     mozilla-firefox (Debian)
@@ -250,7 +201,7 @@ launchpad.Driver permission on the nomination.
     >>> login("celso.providelo@canonical.com")
 
     >>> cprov = launchbag.user
-    >>> print cprov.name
+    >>> print(cprov.name)
     cprov
 
     >>> cprov.inTeam(ubuntu_team)
@@ -269,9 +220,9 @@ launchpad.Driver permission on the nomination.
 
     >>> def print_nominations(nominations):
     ...     for nomination in nominations:
-    ...         print "%s, %s" % (
+    ...         print("%s, %s" % (
     ...             nomination.target.bugtargetdisplayname,
-    ...             nomination.status.title)
+    ...             nomination.status.title))
     >>> print_nominations(bug_one.getNominations(ubuntu))
     Ubuntu Hoary, Declined
     Ubuntu Warty, Nominated
@@ -289,7 +240,7 @@ bugtask has been added.
     Ubuntu Warty, Nominated
 
     >>> for bugtask in bug_one.bugtasks:
-    ...     print bugtask.bugtargetdisplayname
+    ...     print(bugtask.bugtargetdisplayname)
     Mozilla Firefox
     mozilla-firefox (Ubuntu)
     mozilla-firefox (Ubuntu Grumpy)
@@ -297,61 +248,5 @@ bugtask has been added.
 
 The notification message also changes slightly.
 
-    >>> print request.response.notifications[0].message
+    >>> print(request.response.notifications[0].message)
     Targeted bug to: Ubuntu Grumpy
-
-
-IPrimaryContext for BugNominations
-----------------------------------
-
-A BugNomination can be adapted to its IPrimaryContext for use with
-menus. The IPrimaryContext for a BugNomination is the IBugTarget
-traversed in the URL.
-
-    # XXX sinzui 2008-08-12 bug=257341:
-    # We need a test helper to "publish" the request's traversed objects
-    # and update the launchbag.
-    >>> from lp.services.webapp.interfaces import IPrimaryContext
-    >>> from lp.bugs.interfaces.bugnomination import (
-    ...     IBugNominationSet)
-
-    >>> bugnominationset = getUtility(IBugNominationSet)
-
-The product 'firefox' is the IBugTarget in
-/firefox/+bug/1/nominations/1/+editstatus.
-
-    >>> firefox_nomination = bugnominationset.get(1)
-    >>> firefox_nomination.bug.id
-    1
-    >>> firefox_nomination.bug == bug_one_in_firefox.bug
-    True
-
-    >>> launchbag.clear()
-    >>> launchbag.add(bug_one_in_firefox.target)
-    >>> launchbag.add(bug_one_in_firefox)
-    >>> launchbag.bugtask.target.name
-    u'firefox'
-
-    >>> bugtarget = launchbag.bugtask.target
-    >>> IPrimaryContext(firefox_nomination).context == bugtarget
-    True
-
-The source package 'mozilla-firefox in Ubuntu' is the IBugTarget in
-/ubuntu/+source/mozilla-firefox/+bug/1/nominations/2/+editstatus.
-
-    >>> ubuntu_firefox_nomination = bugnominationset.get(2)
-    >>> ubuntu_firefox_nomination.bug.id
-    1
-    >>> ubuntu_firefox_nomination.bug == bug_one_in_ubuntu_firefox.bug
-    True
-
-    >>> launchbag.clear()
-    >>> launchbag.add(bug_one_in_ubuntu_firefox.target)
-    >>> launchbag.add(bug_one_in_ubuntu_firefox)
-    >>> launchbag.bugtask.target.displayname
-    u'mozilla-firefox in Ubuntu'
-
-    >>> bugtarget = launchbag.bugtask.target
-    >>> IPrimaryContext(ubuntu_firefox_nomination).context == bugtarget
-    True
-

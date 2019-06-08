@@ -32,6 +32,7 @@ And for every distribution we publish most of its attributes.
     date_created: u'2006-10-16T18:31:43.415195+00:00'
     derivatives_collection_link: u'http://.../ubuntu/derivatives'
     description: u'Ubuntu is a new approach...'
+    development_series_alias: None
     display_name: u'Ubuntu'
     domain_name: u'ubuntulinux.org'
     driver_link: None
@@ -44,13 +45,18 @@ And for every distribution we publish most of its attributes.
     mugshot_link: u'http://.../ubuntu/mugshot'
     name: u'ubuntu'
     official_bug_tags: []
+    official_packages: True
     owner_link: u'http://.../~ubuntu-team'
+    redirect_release_uploads: False
     registrant_link: u'http://.../~registry'
     resource_type_link: u'http://.../#distribution'
     self_link: u'http://.../ubuntu'
     series_collection_link: u'http://.../ubuntu/series'
     summary: u'Ubuntu is a new approach to Linux Distribution...'
-    title: u'Ubuntu Linux'
+    supports_mirrors: True
+    supports_ppas: True
+    title: u'Ubuntu'
+    vcs: None
     web_link: u'http://launchpad.../ubuntu'
 
 
@@ -164,7 +170,8 @@ packages matching (substring) the given text.
 "getCountryMirror" returns the country DNS mirror for a given country;
 returning None if there isn't one.
 
-    >>> # Prepare stuff.
+Prepare stuff.
+
     >>> from zope.component import getUtility
     >>> from lp.testing.pages import webservice_for_person
     >>> from lp.services.webapp.interfaces import OAuthPermission
@@ -186,7 +193,8 @@ returning None if there isn't one.
     ...     permission=OAuthPermission.WRITE_PUBLIC)
     >>> logout()
 
-    >>> # Mark new mirror as official and a country mirror.
+Mark new mirror as official and a country mirror.
+
     >>> patch = {
     ...     u'status': 'Official',
     ...     u'country_dns_mirror': True

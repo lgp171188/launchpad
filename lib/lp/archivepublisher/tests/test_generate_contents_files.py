@@ -1,10 +1,13 @@
-# Copyright 2011-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2011-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test for the `generate-contents-files` script."""
 
+from __future__ import absolute_import, print_function, unicode_literals
+
 __metaclass__ = type
 
+import hashlib
 from optparse import OptionValueError
 import os
 
@@ -14,10 +17,12 @@ from lp.archivepublisher.scripts.generate_contents_files import (
     differ_in_content,
     execute,
     GenerateContentsFiles,
-    move_file,
     )
+from lp.archivepublisher.scripts.publish_ftpmaster import PublishFTPMaster
 from lp.registry.interfaces.pocket import PackagePublishingPocket
+from lp.registry.interfaces.series import SeriesStatus
 from lp.services.log.logger import DevNullLogger
+from lp.services.osutils import write_file
 from lp.services.scripts.base import LaunchpadScriptFailure
 from lp.services.scripts.tests import run_script
 from lp.services.utils import file_exists
@@ -29,33 +34,24 @@ from lp.testing.layers import (
     )
 
 
-def write_file(filename, content=""):
-    """Write `content` to `filename`, and flush."""
-    output_file = file(filename, 'w')
-    output_file.write(content)
-    output_file.close()
-
-
 def fake_overrides(script, distroseries):
     """Fake overrides files so `script` can run `apt-ftparchive`."""
-    os.makedirs(script.config.overrideroot)
-
     components = ['main', 'restricted', 'universe', 'multiverse']
     architectures = script.getArchs(distroseries.name)
     suffixes = components + ['extra.' + component for component in components]
     for suffix in suffixes:
         write_file(os.path.join(
             script.config.overrideroot,
-            "override.%s.%s" % (distroseries.name, suffix)))
+            "override.%s.%s" % (distroseries.name, suffix)), b"")
 
     for component in components:
         write_file(os.path.join(
             script.config.overrideroot,
-            "%s_%s_source" % (distroseries.name, component)))
+            "%s_%s_source" % (distroseries.name, component)), b"")
         for arch in architectures:
             write_file(os.path.join(
                 script.config.overrideroot,
-                "%s_%s_binary-%s" % (distroseries.name, component, arch)))
+                "%s_%s_binary-%s" % (distroseries.name, component, arch)), b"")
 
 
 class TestHelpers(TestCaseWithFactory):
@@ -105,24 +101,6 @@ class TestHelpers(TestCaseWithFactory):
         execute(logger, "touch", [filename])
         self.assertTrue(file_exists(filename))
 
-    def test_move_file_renames_file(self):
-        # move_file renames a file from its old name to its new name.
-        self.useTempDir()
-        text = self.factory.getUniqueString()
-        write_file("old_name", text)
-        move_file("old_name", "new_name")
-        self.assertEqual(text, file("new_name").read())
-
-    def test_move_file_overwrites_old_file(self):
-        # If move_file finds another file in the way, that file gets
-        # deleted.
-        self.useTempDir()
-        write_file("new_name", self.factory.getUniqueString())
-        new_text = self.factory.getUniqueString()
-        write_file("old_name", new_text)
-        move_file("old_name", "new_name")
-        self.assertEqual(new_text, file("new_name").read())
-
 
 class TestGenerateContentsFiles(TestCaseWithFactory):
     """Tests for the actual `GenerateContentsFiles` script."""
@@ -162,9 +140,6 @@ class TestGenerateContentsFiles(TestCaseWithFactory):
         :return: The arbitrary string that is also in the file.
         """
         marker_contents = self.factory.getUniqueString()
-        dir_name = os.path.dirname(file_path)
-        if not file_exists(dir_name):
-            os.makedirs(dir_name)
         write_file(file_path, marker_contents)
         return marker_contents
 
@@ -203,42 +178,51 @@ class TestGenerateContentsFiles(TestCaseWithFactory):
         self.assertEqual(distro, script.distribution)
 
     def test_getArchs(self):
-        # getArchs returns a list of architectures in the distroseries.
+        # getArchs returns a list of enabled architectures in the distroseries.
         distro = self.makeDistro()
         distroseries = self.factory.makeDistroSeries(distro)
         das = self.factory.makeDistroArchSeries(distroseries=distroseries)
+        self.factory.makeDistroArchSeries(
+            distroseries=distroseries, enabled=False)
         script = self.makeScript(das.distroseries.distribution)
         self.assertEqual(
             [das.architecturetag], script.getArchs(distroseries.name))
-
-    def test_getSupportedSeries(self):
-        # getSupportedSeries returns the supported distroseries in the
-        # distribution.
-        script = self.makeScript()
-        distroseries = self.factory.makeDistroSeries(
-            distribution=script.distribution)
-        self.assertIn(distroseries, script.getSupportedSeries())
 
     def test_getSuites(self):
         # getSuites returns the full names (distroseries-pocket) of the
         # pockets that have packages to publish.
         distro = self.makeDistro()
         distroseries = self.factory.makeDistroSeries(distribution=distro)
-        package = self.factory.makeSuiteSourcePackage(distroseries)
+        suite = distroseries.getSuite(PackagePublishingPocket.BACKPORTS)
         script = self.makeScript(distro)
-        os.makedirs(os.path.join(script.config.distsroot, package.suite))
-        self.assertEqual([package.suite], list(script.getSuites()))
+        os.makedirs(os.path.join(script.config.distsroot, suite))
+        self.assertEqual([suite], list(script.getSuites()))
 
     def test_getSuites_includes_release_pocket(self):
         # getSuites also includes the release pocket, which is named
         # after the distroseries without a suffix.
         distro = self.makeDistro()
-        distroseries = self.factory.makeDistroSeries(distribution=distro)
-        package = self.factory.makeSuiteSourcePackage(
-            distroseries, pocket=PackagePublishingPocket.RELEASE)
+        distroseries = self.factory.makeDistroSeries(
+            distribution=distro, status=SeriesStatus.DEVELOPMENT)
         script = self.makeScript(distro)
-        os.makedirs(os.path.join(script.config.distsroot, package.suite))
-        self.assertEqual([package.suite], list(script.getSuites()))
+        suite = distroseries.getSuite(PackagePublishingPocket.RELEASE)
+        os.makedirs(os.path.join(script.config.distsroot, suite))
+        self.assertEqual([suite], list(script.getSuites()))
+
+    def test_getSuites_excludes_immutable_suites(self):
+        # getSuites excludes suites that we would refuse to publish.
+        distro = self.makeDistro()
+        distroseries = self.factory.makeDistroSeries(
+            distribution=distro, status=SeriesStatus.CURRENT)
+        script = self.makeScript(distro)
+        pockets = [
+            PackagePublishingPocket.RELEASE,
+            PackagePublishingPocket.UPDATES,
+            ]
+        suites = [distroseries.getSuite(pocket) for pocket in pockets]
+        for suite in suites:
+            os.makedirs(os.path.join(script.config.distsroot, suite))
+        self.assertEqual([suites[1]], list(script.getSuites()))
 
     def test_writeAptContentsConf_writes_header(self):
         # writeAptContentsConf writes apt-contents.conf.  At a minimum
@@ -275,20 +259,6 @@ class TestGenerateContentsFiles(TestCaseWithFactory):
             'Architectures "%s source";' % das.architecturetag,
             apt_contents_conf)
 
-    def test_writeContentsTop(self):
-        # writeContentsTop writes a Contents.top file based on a
-        # standard template, with the distribution's title interpolated.
-        distro = self.makeDistro()
-        script = self.makeScript(distro)
-        content_archive = script.content_archive
-        script.writeContentsTop(distro.name, distro.title)
-
-        contents_top = file(
-            "%s/%s-misc/Contents.top" % (content_archive, distro.name)).read()
-
-        self.assertIn("This file maps", contents_top)
-        self.assertIn(distro.title, contents_top)
-
     def test_setUp_places_content_archive_in_distroroot(self):
         # The contents files are kept in subdirectories of distroroot.
         script = self.makeScript()
@@ -296,12 +266,14 @@ class TestGenerateContentsFiles(TestCaseWithFactory):
             script.content_archive, StartsWith(script.config.distroroot))
 
     def test_main(self):
-        # If run end-to-end, the script generates Contents.gz files.
+        # If run end-to-end, the script generates Contents.gz files, and a
+        # following publisher run will put those files in their final place
+        # and include them in the Release file.
         distro = self.makeDistro()
         distroseries = self.factory.makeDistroSeries(distribution=distro)
         processor = self.factory.makeProcessor()
         das = self.factory.makeDistroArchSeries(
-            distroseries=distroseries, processorfamily=processor.family)
+            distroseries=distroseries, processor=processor)
         package = self.factory.makeSuiteSourcePackage(distroseries)
         self.factory.makeSourcePackagePublishingHistory(
             distroseries=distroseries, pocket=package.pocket)
@@ -315,8 +287,27 @@ class TestGenerateContentsFiles(TestCaseWithFactory):
         fake_overrides(script, distroseries)
         script.process()
         self.assertTrue(file_exists(os.path.join(
-            script.config.distsroot, suite,
+            script.config.stagingroot, suite,
             "Contents-%s.gz" % das.architecturetag)))
+        publisher_script = PublishFTPMaster(test_args=["-d", distro.name])
+        publisher_script.txn = self.layer.txn
+        publisher_script.logger = DevNullLogger()
+        publisher_script.main()
+        contents_path = os.path.join(
+            script.config.distsroot, suite,
+            "Contents-%s.gz" % das.architecturetag)
+        self.assertTrue(file_exists(contents_path))
+        with open(contents_path, "rb") as contents_file:
+            contents_bytes = contents_file.read()
+        release_path = os.path.join(script.config.distsroot, suite, "Release")
+        self.assertTrue(file_exists(release_path))
+        with open(release_path) as release_file:
+            release_lines = release_file.readlines()
+        self.assertIn(
+            " %s %16s Contents-%s.gz\n" % (
+                hashlib.md5(contents_bytes).hexdigest(), len(contents_bytes),
+                das.architecturetag),
+            release_lines)
 
     def test_run_script(self):
         # The script will run stand-alone.

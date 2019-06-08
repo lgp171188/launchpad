@@ -1,7 +1,5 @@
-# Copyright 2009-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
-
-# pylint: disable-msg=E0611,W0212
 
 __metaclass__ = type
 __all__ = [
@@ -15,11 +13,11 @@ __all__ = [
 from cStringIO import StringIO as cStringIO
 from datetime import datetime
 import email
-from email.Header import (
+from email.header import (
     decode_header,
     make_header,
     )
-from email.Utils import (
+from email.utils import (
     make_msgid,
     mktime_tz,
     parseaddr,
@@ -49,7 +47,7 @@ from storm.locals import (
     Unicode,
     )
 from zope.component import getUtility
-from zope.interface import implements
+from zope.interface import implementer
 from zope.security.proxy import isinstance as zisinstance
 
 from lp.app.errors import NotFoundError
@@ -93,12 +91,11 @@ def utcdatetime_from_field(field_value):
         raise InvalidEmailMessage('Invalid date %s' % field_value)
 
 
+@implementer(IMessage)
 class Message(SQLBase):
     """A message. This is an RFC822-style message, typically it would be
     coming into the bug system, or coming in from a mailing list.
     """
-
-    implements(IMessage)
 
     _table = 'Message'
     _defaultOrder = '-id'
@@ -163,6 +160,10 @@ class Message(SQLBase):
     # interface because it is used as a UI field in MessageAddView
     content = None
 
+    def getAPIParent(self):
+        """See `IMessage`."""
+        return None
+
 
 def get_parent_msgids(parsed_message):
     """Returns a list of message ids the mail was a reply to.
@@ -189,8 +190,8 @@ def get_parent_msgids(parsed_message):
     return []
 
 
+@implementer(IMessageSet)
 class MessageSet:
-    implements(IMessageSet)
 
     extra_encoding_aliases = {
         'macintosh': 'mac_roman',
@@ -248,7 +249,7 @@ class MessageSet:
         # Unfold the header before decoding it.
         header = ''.join(header.splitlines())
 
-        bits = email.Header.decode_header(header)
+        bits = email.header.decode_header(header)
         # Re-encode the header parts using utf-8, replacing undecodable
         # characters with question marks.
         re_encoded_bits = []
@@ -258,7 +259,7 @@ class MessageSet:
             # 2008-09-26 gary:
             # The RFC 2047 encoding names and the Python encoding names are
             # not always the same. A safer and more correct approach would use
-            #   bytes.decode(email.Charset.Charset(charset).input_codec,
+            #   bytes.decode(email.charset.Charset(charset).input_codec,
             #                'replace')
             # or similar, rather than
             #   bytes.decode(charset, 'replace')
@@ -268,11 +269,11 @@ class MessageSet:
             re_encoded_bits.append(
                 (self.decode(bytes, charset).encode('utf-8'), 'utf-8'))
 
-        return unicode(email.Header.make_header(re_encoded_bits))
+        return unicode(email.header.make_header(re_encoded_bits))
 
     def fromEmail(self, email_message, owner=None, filealias=None,
                   parsed_message=None, create_missing_persons=False,
-                  fallback_parent=None, date_created=None):
+                  fallback_parent=None, date_created=None, restricted=False):
         """See IMessageSet.fromEmail."""
         # It does not make sense to handle Unicode strings, as email
         # messages may contain chunks encoded in differing character sets.
@@ -282,7 +283,7 @@ class MessageSet:
                 'email_message must be a normal string.  Got: %r'
                 % email_message)
 
-        # Parse the raw message into an email.Message.Message instance,
+        # Parse the raw message into an email.message.Message instance,
         # if we haven't been given one already.
         if parsed_message is None:
             parsed_message = email.message_from_string(email_message)
@@ -298,15 +299,12 @@ class MessageSet:
 
         # Over-long messages are checked for at the handle_on_message level.
 
-        # Stuff a copy of the raw email into the Librarian, if it isn't
-        # already in there.
-        file_alias_set = getUtility(ILibraryFileAliasSet)  # Reused later
-        if filealias is None:
-            # Avoid circular import.
-            from lp.services.mail.helpers import (
-                save_mail_to_librarian,
-                )
-            raw_email_message = save_mail_to_librarian(email_message)
+        # If it's a restricted mail (IE: for a private bug), or it hasn't been
+        # uploaded, do so now.
+        from lp.services.mail.helpers import save_mail_to_librarian
+        if restricted or filealias is None:
+            raw_email_message = save_mail_to_librarian(
+                email_message, restricted=restricted)
         else:
             raw_email_message = filealias
 
@@ -361,20 +359,19 @@ class MessageSet:
         else:
             parent = fallback_parent
 
-        # figure out the date of the message
+        # Figure out the date of the message.
         if date_created is not None:
             datecreated = date_created
         else:
             datecreated = utcdatetime_from_field(parsed_message['date'])
 
-        # make sure we don't create an email with a datecreated in the
-        # future. also make sure we don't create an ancient one
+        # Make sure we don't create an email with a datecreated in the
+        # distant past or future.
         now = datetime.now(pytz.timezone('UTC'))
         thedistantpast = datetime(1990, 1, 1, tzinfo=pytz.timezone('UTC'))
         if datecreated < thedistantpast or datecreated > now:
             datecreated = UTC_NOW
 
-        # DOIT
         message = Message(subject=subject, owner=owner,
             rfc822msgid=rfc822msgid, parent=parent,
             raw=raw_email_message, datecreated=datecreated)
@@ -444,8 +441,7 @@ class MessageSet:
 
                 if content.strip():
                     MessageChunk(
-                        message=message, sequence=sequence,
-                        content=content)
+                        message=message, sequence=sequence, content=content)
                     sequence += 1
             else:
                 filename = part.get_filename() or 'unnamed'
@@ -461,13 +457,11 @@ class MessageSet:
                     content_type = part['content-type']
 
                 if len(content) > 0:
-                    blob = file_alias_set.create(
-                        name=filename,
-                        size=len(content),
-                        file=cStringIO(content),
-                        contentType=content_type)
-                    MessageChunk(message=message, sequence=sequence,
-                                 blob=blob)
+                    blob = getUtility(ILibraryFileAliasSet).create(
+                        name=filename, size=len(content),
+                        file=cStringIO(content), contentType=content_type,
+                        restricted=restricted)
+                    MessageChunk(message=message, sequence=sequence, blob=blob)
                     sequence += 1
 
         # Don't store the epilogue
@@ -489,46 +483,10 @@ class MessageSet:
         Store.of(message).flush()
         return message
 
-    @staticmethod
-    def _parentToChild(messages):
-        """Return a mapping from parent to child and list of root messages."""
-        result = {}
-        roots = []
-        for message in messages:
-            if message.parent is None:
-                roots.append(message)
-            else:
-                result.setdefault(message.parent, []).append(message)
-            result.setdefault(message, [])
-        return result, roots
 
-    @classmethod
-    def threadMessages(klass, messages):
-        """See `IMessageSet`."""
-        result, roots = klass._parentToChild(messages)
-
-        def get_children(node):
-            children = []
-            for child in result[node]:
-                children.append((child, get_children(child)))
-            return children
-        threads = []
-        for root in roots:
-            threads.append((root, get_children(root)))
-        return threads
-
-    @classmethod
-    def flattenThreads(klass, threaded_messages, _depth=0):
-        """See `IMessageSet`."""
-        for message, children in threaded_messages:
-            yield (_depth, message)
-            for depth, message in klass.flattenThreads(children, _depth + 1):
-                yield depth, message
-
-
+@implementer(IMessageChunk)
 class MessageChunk(SQLBase):
     """One part of a possibly multipart Message"""
-    implements(IMessageChunk)
 
     _table = 'MessageChunk'
     _defaultOrder = 'sequence'
@@ -560,10 +518,9 @@ class MessageChunk(SQLBase):
                 "URL:        %s" % (blob.filename, blob.mimetype, blob.url))
 
 
+@implementer(IUserToUserEmail)
 class UserToUserEmail(Storm):
     """See `IUserToUserEmail`."""
-
-    implements(IUserToUserEmail)
 
     __storm_table__ = 'UserToUserEmail'
 
@@ -627,10 +584,9 @@ class UserToUserEmail(Storm):
         Store.of(sender).add(self)
 
 
+@implementer(IDirectEmailAuthorization)
 class DirectEmailAuthorization:
     """See `IDirectEmailAuthorization`."""
-
-    implements(IDirectEmailAuthorization)
 
     def __init__(self, sender):
         """Create a `UserContactBy` instance.

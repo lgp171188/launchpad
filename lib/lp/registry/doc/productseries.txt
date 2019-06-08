@@ -7,7 +7,7 @@ translations, version control, etc. We call these entities
 ProductSeries.
 
     >>> from zope.component import getUtility
-    >>> from lp.services.webapp.testing import verifyObject
+    >>> from lp.testing import verifyObject
     >>> from lp.registry.interfaces.person import IPersonSet
     >>> from lp.registry.interfaces.product import IProductSet
     >>> from lp.registry.interfaces.productseries import IProductSeries
@@ -86,8 +86,8 @@ owner or driver can call Product.newSeries().
     >>> print emacs_series.releasefileglob
     ftp://gnu.org/emacs*.gz
 
-When a driver creates a series, he is also the driver of the new series
-to make him the release manager.
+When a driver creates a series, they are also the driver of the new series
+to make them the release manager.
 
     >>> firefox.driver = series_driver
     >>> ignored = login_person(series_driver)
@@ -110,20 +110,20 @@ Let's check that the new series is properly associated to its product.
 
 = Drivers and release managers =
 
-A driver for an IProduct or IProjectGroup cannot modify a product series.
+A person appointed to the project or series driver role is a release
+manager and can edit a product series.
 
     >>> from lp.services.webapp.authorization import check_permission
 
-    >>> ignored = login_person(series_driver)
-    >>> print emacs_series.owner.name
-    name12
-    >>> print emacs_series.driver
-    None
+    >>> firefox_driver = factory.makePerson()
+    >>> ignored = login_person(firefox_driver)
     >>> check_permission('launchpad.Edit', emacs_series)
     False
-
-A person appointed to the series driver has the release manager role and can
-edit a product series.
+    >>> ignored = login_person(firefox.owner)
+    >>> firefox.driver = firefox_driver
+    >>> ignored = login_person(firefox_driver)
+    >>> check_permission('launchpad.Edit', emacs_series)
+    True
 
     >>> ignored = login_person(firefox.owner)
     >>> emacs_series.driver = series_driver
@@ -229,7 +229,7 @@ them informational.
 If we ask for ALL specs we should see them both.
 
     >>> filter = [SpecificationFilter.ALL]
-    >>> for s in onezero.specifications(filter=filter):
+    >>> for s in onezero.specifications(None, filter=filter):
     ...     print s.name
     a
     b
@@ -238,23 +238,23 @@ With a productseries, we can ask for ACCEPTED, PROPOSED and DECLINED
 specs:
 
     >>> filter=[SpecificationFilter.ACCEPTED]
-    >>> for spec in onezero.specifications(filter=filter):
+    >>> for spec in onezero.specifications(None, filter=filter):
     ...     print spec.name, spec.goalstatus.title
     a Accepted
 
     >>> filter=[SpecificationFilter.PROPOSED]
-    >>> onezero.specifications(filter=filter).count()
+    >>> onezero.specifications(None, filter=filter).count()
     0
 
     >>> filter=[SpecificationFilter.DECLINED]
-    >>> onezero.specifications(filter=filter).count()
+    >>> onezero.specifications(None, filter=filter).count()
     1
 
 We should see one informational spec if we ask just for that, the
 accepted one.
 
     >>> filter = [SpecificationFilter.INFORMATIONAL]
-    >>> for s in onezero.specifications(filter=filter):
+    >>> for s in onezero.specifications(None, filter=filter):
     ...     print s.name
     a
 
@@ -262,21 +262,21 @@ If we specifically ask for declined informational, we will get that:
 
     >>> filter = [
     ...    SpecificationFilter.INFORMATIONAL, SpecificationFilter.DECLINED]
-    >>> for s in onezero.specifications(filter=filter):
+    >>> for s in onezero.specifications(None, filter=filter):
     ...     print s.name
     b
 
 There are is one completed, accepted spec for 1.0:
 
     >>> filter = [SpecificationFilter.COMPLETE]
-    >>> for spec in onezero.specifications(filter=filter):
+    >>> for spec in onezero.specifications(None, filter=filter):
     ...    print spec.name, spec.is_complete, spec.goalstatus.title
     a True Accepted
 
 There is one completed, declined spec:
 
     >>> filter = [SpecificationFilter.COMPLETE, SpecificationFilter.DECLINED]
-    >>> for spec in onezero.specifications(filter=filter):
+    >>> for spec in onezero.specifications(None, filter=filter):
     ...    print spec.name, spec.is_complete, spec.goalstatus.title
     b True Declined
 
@@ -291,7 +291,7 @@ Now lets make b incomplete, but accepted.
 And if we ask just for specs, we get BOTH the incomplete and the
 complete ones that have been accepted.
 
-    >>> for spec in onezero.specifications():
+    >>> for spec in onezero.specifications(None):
     ...     print spec.name, spec.is_complete, spec.goalstatus.title
     a True Accepted
     b False Accepted
@@ -299,7 +299,7 @@ complete ones that have been accepted.
 We can search for text in specifications (in this case there are no
 matches):
 
-    >>> print len(list(onezero.specifications(filter=['new'])))
+    >>> print len(list(onezero.specifications(None, filter=[u'new'])))
     0
 
 
@@ -332,8 +332,8 @@ change the overall state of the spec to "completed".
 
 == Drivers ==
 
-Products, projects and product series have drivers, who are people that
-have permission to approve bugs and features for specific releases. The
+Products, project groups and product series have drivers, who are people
+that have permission to approve bugs and features for specific releases. The
 rules are that:
 
  1. a "driver" can be set on either ProjectGroup, Product or ProductSeries
@@ -343,19 +343,20 @@ rules are that:
 
  3. the important attribute is ".drivers" on a productseries, it is
     calculated based on the combination of owners and drivers in the
-    series, product and project. It is a LIST of drivers, which might be
-    empty, or have one, two or three people/teams in it.
+    series, product and project group. It is a LIST of drivers, which might
+    be empty, or have one, two or three people/teams in it.
 
  4. the list includes the explicitly set drivers from series, product
-    and project
+    and project group
 
  5. if there are no explicitly set drivers, then:
-      - if there is a project, then the list is the project.owner
-      - if there is no project, then the list is the product.owner in
+      - if there is a project group, then the list is the projectgroup.owner
+      - if there is no project group, then the list is the product.owner in
     other words, we use the "highest" owner as the fallback, which is
-    either the product owner or the project owner if there is a project.
+    either the product owner or the project group owner if there is a
+    project group.
 
-We test these rules below. We will create the project, product and
+We test these rules below. We will create the project group, product and
 series directly so that we don't have to deal with security permissions
 checks when setting and resetting the driver attributes.
 
@@ -365,13 +366,13 @@ checks when setting and resetting the driver attributes.
     >>> mark = getUtility(IPersonSet).getByName('mark')
     >>> jblack = getUtility(IPersonSet).getByName('jblack')
 
-    >>> project = factory.makeProject(name='testproj',
+    >>> projectgroup = factory.makeProject(name='testproj',
     ...     displayname='Test Project',
     ...     title='Test Project Title', homepageurl='http://foo.com/url',
     ...     summary='summary', description='description', owner=carlos)
     >>> product = factory.makeProduct(owner=mark, name='testprod',
     ...     displayname='Test Product', title='Test product title',
-    ...     summary='summary', project=project)
+    ...     summary='summary', projectgroup=projectgroup)
     >>> series = factory.makeProductSeries(owner=jblack, name='1.0', product=product,
     ...     summary='Series summary')
 
@@ -379,24 +380,26 @@ checks when setting and resetting the driver attributes.
 First, lets see what we get for the series drivers before we have
 anything actually set.
 
-If there is a project on the product, we would expect the project owner:
+If there is a project group on the product, we would expect the project
+group owner:
 
-    >>> print series.product.project.name
+    >>> print series.product.projectgroup.name
     testproj
     >>> for d in series.drivers:
     ...     print d.name
     carlos
 
-If there is NO project on the product, then we expect the product owner:
+If there is NO project group on the product, then we expect the product
+owner:
 
-    >>> product.project = None
+    >>> product.projectgroup = None
     >>> for d in series.drivers:
     ...     print d.name
     mark
 
-Now lets put the project back:
+Now let's put the project group back:
 
-    >>> product.project = project.id
+    >>> product.projectgroup = projectgroup.id
     >>> flush_database_updates()
 
 Edgar and cprov will be the drivers.
@@ -407,7 +410,7 @@ Edgar and cprov will be the drivers.
 Edgar becomes the driver of the project group and thus also drives the
 series.
 
-    >>> project.driver = edgar
+    >>> projectgroup.driver = edgar
     >>> for d in series.drivers:
     ...     print d.name
     edgar
@@ -423,7 +426,7 @@ In addition cprov is made driver of the series. Both are drivers now.
 With just a driver on the series, the owner of the project group is reported
 as driver, too.
 
-    >>> project.driver = None
+    >>> projectgroup.driver = None
     >>> for d in series.drivers:
     ...     print d.name
     carlos
@@ -431,7 +434,7 @@ as driver, too.
 
 Without a project group, the driver role falls back to the product owner.
 
-    >>> product.project = None
+    >>> product.projectgroup = None
     >>> for d in series.drivers:
     ...     print d.name
     cprov

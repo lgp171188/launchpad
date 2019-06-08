@@ -5,7 +5,12 @@
   <form method="get" name="filter" id="filter_form"
         style="padding-bottom: 0.5em"
         tal:attributes="action context/view/form_action|context/request/URL">
-    <label for="field.lifecycle">
+    <tal:category condition="context/view/widgets/category|nothing">
+      <tal:category-selector replace="structure context/view/widgets/category"/>
+      branches with status:
+    </tal:category>
+    <label tal:condition="not:context/view/widgets/category|nothing"
+           for="field.lifecycle">
       Branches with status:
     </label>
     <tal:lifecycle-selector replace="structure context/view/widgets/lifecycle"/>
@@ -70,7 +75,7 @@ replace='structure string:&lt;script type="text/javascript"&gt;
         Only show the warning and link if the user can actually set the development focus
       </tal:ignore>
       <tr tal:condition="product/required:launchpad.Edit"
-          tal:define="edit_link product/development_focus/fmt:url/+linkbranchtoseries">
+          tal:define="edit_link product/development_focus/fmt:url/+setbranch">
         <td colspan="5" class="branch-no-dev-focus">A development focus branch hasn't
             been specified, <a tal:attributes="href edit_link">set it now</a>.</td>
       </tr>

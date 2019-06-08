@@ -1,9 +1,9 @@
-# Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2013 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-"""
-Run the view tests.
-"""
+"""Run the view tests."""
+
+from __future__ import absolute_import, print_function, unicode_literals
 
 import logging
 import os
@@ -17,9 +17,9 @@ from lp.services.webapp import canonical_url
 from lp.testing import (
     login,
     logout,
+    RequestTimelineCollector,
     TestCaseWithFactory,
     )
-from lp.testing._webservice import QueryCollector
 from lp.testing.layers import DatabaseFunctionalLayer
 from lp.testing.matchers import HasQueryCount
 from lp.testing.sampledata import ADMIN_EMAIL
@@ -63,12 +63,12 @@ class TestAssignments(TestCaseWithFactory):
         for _ in range(10):
             specs.append(self.factory.makeSpecification(
                 **{targettype: target}))
-        collector = QueryCollector()
+        collector = RequestTimelineCollector()
         collector.register()
         self.addCleanup(collector.unregister)
+        url = canonical_url(target) + "/+assignments"
         viewer = self.factory.makePerson()
         browser = self.getUserBrowser(user=viewer)
-        url = canonical_url(target) + "/+assignments"
         # Seed the cookie cache and any other cross-request state we may gain
         # in future.  See lp.services.webapp.serssion: _get_secret.
         browser.open(url)
@@ -85,18 +85,15 @@ class TestAssignments(TestCaseWithFactory):
         logout()
         self.invalidate_and_render(browser, target, url)
         self.assertThat(
-            collector,
-            HasQueryCount(LessThan(no_assignees_count + 5)))
+            collector, HasQueryCount(LessThan(no_assignees_count + 5)))
 
     def test_product_query_counts_scale_below_unique_people(self):
         self.check_query_counts_scaling_with_unique_people(
-            self.factory.makeProduct(),
-            'product')
+            self.factory.makeProduct(), 'product')
 
     def test_distro_query_counts_scale_below_unique_people(self):
         self.check_query_counts_scaling_with_unique_people(
-            self.factory.makeDistribution(),
-            'distribution')
+            self.factory.makeDistribution(), 'distribution')
 
 
 def test_suite():
@@ -115,8 +112,7 @@ def test_suite():
         one_test = LayeredDocFileSuite(
             path, setUp=setUp, tearDown=tearDown,
             layer=DatabaseFunctionalLayer,
-            stdout_logging_level=logging.WARNING
-            )
+            stdout_logging_level=logging.WARNING)
         suite.addTest(one_test)
 
     return suite

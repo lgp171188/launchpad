@@ -4,7 +4,7 @@ The branch ~name12/gnome-terminal/pushed is an upload branch. Its index page
 shows contextual directions on how to upload to it.
 
     >>> branch_page = (
-    ...     'http://code.launchpad.dev/~name12/+branch/gnome-terminal/pushed')
+    ...     'http://code.launchpad.test/~name12/+branch/gnome-terminal/pushed')
 
 We will need multiple browsers, logged in with different users. Set them up
 now.
@@ -49,9 +49,9 @@ the branch, and suggest logging in for directions.
     >>> anon_browser.open(branch_page)
     >>> content = anon_browser.contents
     >>> instructions = find_tag_by_id(content, 'upload-directions')
-    >>> print instructions.renderContents()
+    >>> print(instructions.renderContents())
     Only
-    <a href="http://launchpad.dev/~name12">Sample Person</a>
+    <a href="http://launchpad.test/~name12">Sample Person</a>
     can upload to this branch. If you are Sample Person please
     <a href="+login">log in</a> for upload directions.
 
@@ -61,10 +61,10 @@ definitive that it is not possible to upload to this branch.
     >>> ddaa_browser.open(branch_page)
     >>> content = ddaa_browser.contents
     >>> instructions = find_tag_by_id(content, 'upload-directions')
-    >>> print instructions.renderContents()
+    >>> print(instructions.renderContents())
     <div...
     You cannot upload to this branch. Only
-    <a href="http://launchpad.dev/~name12">Sample Person</a>
+    <a href="http://launchpad.test/~name12">Sample Person</a>
     can upload to this branch.
     ...
 
@@ -74,35 +74,35 @@ URL for the branch.
     >>> name12_browser.open(branch_page)
     >>> content = name12_browser.contents
     >>> instructions = find_tag_by_id(content, 'upload-directions')
-    >>> print extract_text(instructions)
+    >>> print(extract_text(instructions))
     Update this branch:
-    bzr push --use-existing lp://dev/~name12/gnome-terminal/pushed
+    bzr push --use-existing-dir lp://dev/~name12/gnome-terminal/pushed
 
 
 == SSH key directions ==
 
-If the user has the permission to upload to a branch, but does not have a SSH
+If the user has the permission to upload to a branch, but does not have an SSH
 key registered, point to the SSH keys form.
 
 First, unregister the existing SSH key for Sample Person.
 
-    >>> name12_browser.open(url='http://launchpad.dev/~name12')
+    >>> name12_browser.open(url='http://launchpad.test/~name12')
     >>> name12_browser.getLink(url='editsshkeys').click()
     >>> name12_browser.getControl('Remove').click()
 
-The branch page now displays directions and a link to register a SSH key.
+The branch page now displays directions and a link to register an SSH key.
 
     >>> name12_browser.open(branch_page)
     >>> content = name12_browser.contents
     >>> instructions = find_tag_by_id(content, 'ssh-key-directions')
-    >>> print instructions.renderContents()
+    >>> print(instructions.renderContents())
     To authenticate with the Launchpad branch upload service, you need to
-    <a href="http://launchpad.dev/~name12/+editsshkeys">
-    register a SSH key </a>.
+    <a href="http://launchpad.test/~name12/+editsshkeys">
+    register an SSH key</a>.
 
 Click the link and register a key.
 
-    >>> name12_browser.getLink('register a SSH key').click()
+    >>> name12_browser.getLink('register an SSH key').click()
     >>> name12_browser.getControl(name='sshkey').value = some_sshkey
     >>> name12_browser.getControl('Import Public Key').click()
 
@@ -110,7 +110,7 @@ The branch page should no longer display the SSH key directions.
 
     >>> name12_browser.open(branch_page)
     >>> content = name12_browser.contents
-    >>> print find_tag_by_id(content, 'ssh-key-directions')
+    >>> print(find_tag_by_id(content, 'ssh-key-directions'))
     None
 
 If the user is not logged in, or does have the permission to upload to the
@@ -120,12 +120,12 @@ appear.
 
     >>> anon_browser.open(branch_page)
     >>> content = anon_browser.contents
-    >>> print find_tag_by_id(content, 'ssh-key-directions')
+    >>> print(find_tag_by_id(content, 'ssh-key-directions'))
     None
 
     >>> ddaa_browser.open(branch_page)
     >>> content = ddaa_browser.contents
-    >>> print find_tag_by_id(content, 'ssh-key-directions')
+    >>> print(find_tag_by_id(content, 'ssh-key-directions'))
     None
 
 
@@ -154,9 +154,9 @@ owner is a team.
     >>> anon_browser.open(branch_page)
     >>> content = anon_browser.contents
     >>> instructions = find_tag_by_id(content, 'upload-directions')
-    >>> print instructions.renderContents()
+    >>> print(instructions.renderContents())
     Members of <a
-    href="http://launchpad.dev/~landscape-developers">Landscape
+    href="http://launchpad.test/~landscape-developers">Landscape
     Developers</a> can upload to this branch. <a href="+login">Log in</a> for
     directions.
 
@@ -166,10 +166,10 @@ a link to the team.
     >>> ddaa_browser.open(branch_page)
     >>> content = ddaa_browser.contents
     >>> instructions = find_tag_by_id(content, 'upload-directions')
-    >>> print instructions.renderContents()
+    >>> print(instructions.renderContents())
     <div...
     You cannot upload to this branch. Members of <a
-    href="http://launchpad.dev/~landscape-developers">Landscape
+    href="http://launchpad.test/~landscape-developers">Landscape
     Developers</a> can upload to this branch.
     ...
 
@@ -181,9 +181,9 @@ owning team's name.
     >>> name12_browser.open(branch_page)
     >>> content = name12_browser.contents
     >>> instructions = find_tag_by_id(content, 'upload-directions')
-    >>> print extract_text(instructions)
+    >>> print(extract_text(instructions))
     Update this branch:
-    bzr push --use-existing
+    bzr push --use-existing-dir
     lp://dev/~landscape-developers/gnome-terminal/pushed
 
 
@@ -192,9 +192,9 @@ owning team's name.
 Upload directions should not be displayed for import branches.
 
     >>> import_branch_page = (
-    ...     'http://code.launchpad.dev/~vcs-imports/evolution/main')
+    ...     'http://code.launchpad.test/~vcs-imports/evolution/main')
     >>> anon_browser.open(import_branch_page)
     >>> content = anon_browser.contents
     >>> instructions = find_tag_by_id(content, 'upload-directions')
-    >>> print instructions
+    >>> print(instructions)
     None

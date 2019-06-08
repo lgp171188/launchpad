@@ -20,11 +20,13 @@ from lp.app.browser.launchpadform import (
     action,
     LaunchpadFormView,
     )
-from lp.buildmaster.enums import BuildStatus
+from lp.buildmaster.enums import (
+    BuildQueueStatus,
+    BuildStatus,
+    )
 from lp.code.interfaces.sourcepackagerecipebuild import (
     ISourcePackageRecipeBuild,
     )
-from lp.services.job.interfaces.job import JobStatus
 from lp.services.librarian.browser import FileNavigationMixin
 from lp.services.propertycache import cachedproperty
 from lp.services.webapp import (
@@ -35,13 +37,6 @@ from lp.services.webapp import (
     Link,
     Navigation,
     )
-
-
-UNEDITABLE_BUILD_STATES = (
-    BuildStatus.FULLYBUILT,
-    BuildStatus.FAILEDTOBUILD,
-    BuildStatus.SUPERSEDED,
-    BuildStatus.FAILEDTOUPLOAD,)
 
 
 class SourcePackageRecipeBuildNavigation(Navigation, FileNavigationMixin):
@@ -58,21 +53,17 @@ class SourcePackageRecipeBuildContextMenu(ContextMenu):
 
     links = ('cancel', 'rescore')
 
-    @enabled_with_permission('launchpad.Admin')
+    @enabled_with_permission('launchpad.Edit')
     def cancel(self):
-        if self.context.status in UNEDITABLE_BUILD_STATES:
-            enabled = False
-        else:
-            enabled = True
-        return Link('+cancel', 'Cancel build', icon='remove', enabled=enabled)
+        return Link(
+            '+cancel', 'Cancel build', icon='remove',
+            enabled=self.context.can_be_cancelled)
 
     @enabled_with_permission('launchpad.Admin')
     def rescore(self):
-        if self.context.status in UNEDITABLE_BUILD_STATES:
-            enabled = False
-        else:
-            enabled = True
-        return Link('+rescore', 'Rescore build', icon='edit', enabled=enabled)
+        return Link(
+            '+rescore', 'Rescore build', icon='edit',
+            enabled=self.context.can_be_rescored)
 
 
 class SourcePackageRecipeBuildView(LaunchpadView):
@@ -107,12 +98,12 @@ class SourcePackageRecipeBuildView(LaunchpadView):
         if self.context.buildqueue_record is None:
             return None
         queue_record = self.context.buildqueue_record
-        if queue_record.job.status == JobStatus.WAITING:
+        if queue_record.status == BuildQueueStatus.WAITING:
             start_time = queue_record.getEstimatedJobStartTime()
             if start_time is None:
                 return None
         else:
-            start_time = queue_record.job.date_started
+            start_time = queue_record.date_started
         duration = queue_record.estimated_duration
         return start_time + duration
 
@@ -150,7 +141,7 @@ class SourcePackageRecipeBuildCancelView(LaunchpadFormView):
     @action('Cancel build', name='cancel')
     def request_action(self, action, data):
         """Cancel the build."""
-        self.context.cancelBuild()
+        self.context.cancel()
 
 
 class SourcePackageRecipeBuildRescoreView(LaunchpadFormView):

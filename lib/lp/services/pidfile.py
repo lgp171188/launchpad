@@ -1,4 +1,4 @@
-# Copyright 2009 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -13,6 +13,7 @@ import sys
 import tempfile
 
 from lp.services.config import config
+from lp.services.osutils import process_exists
 
 
 def pidfile_path(service_name, use_config=None):
@@ -35,18 +36,19 @@ def make_pidfile(service_name):
     inside it.
     """
     pidfile = pidfile_path(service_name)
-    if os.path.exists(pidfile):
-        raise RuntimeError("PID file %s already exists. Already running?" %
-                pidfile)
+    if is_locked(service_name):
+        raise RuntimeError(
+            "PID file %s already exists. Already running?" % pidfile)
 
     atexit.register(remove_pidfile, service_name)
+
     def remove_pidfile_handler(*ignored):
         sys.exit(-1 * SIGTERM)
     signal(SIGTERM, remove_pidfile_handler)
 
     fd, tempname = tempfile.mkstemp(dir=os.path.dirname(pidfile))
     outf = os.fdopen(fd, 'w')
-    outf.write(str(os.getpid())+'\n')
+    outf.write(str(os.getpid()) + '\n')
     outf.flush()
     outf.close()
     os.rename(tempname, pidfile)
@@ -85,3 +87,27 @@ def get_pid(service_name, use_config=None):
         return None
     except ValueError:
         raise ValueError("Invalid PID %s" % repr(pid))
+
+
+def is_locked(service_name, use_config=None):
+    """Check if a PID file is locked.
+
+    Will remove an existing PID file if the owning process no longer exists.
+    """
+    pid = get_pid(service_name, use_config)
+    if pid is None:
+        return False
+
+    # There's PID file with a PID in it. But if the PID no longer exists
+    # we should remove the stale file to unlock things.
+    # This is slightly racy, as another process could conceivably be
+    # right here at the same time. But that's sufficiently unlikely, and
+    # stale PIDs are sufficiently annoying, that it's a reasonable
+    # tradeoff.
+    if not process_exists(pid):
+        remove_pidfile(service_name, use_config)
+        return False
+
+    # There's a PID file and we couldn't definitively say that the
+    # process no longer exists. Assume that we're locked.
+    return True

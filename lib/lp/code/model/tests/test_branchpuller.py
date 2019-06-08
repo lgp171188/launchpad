@@ -1,7 +1,9 @@
-# Copyright 2009-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2017 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for the branch puller model code."""
+
+from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 
@@ -15,9 +17,9 @@ import transaction
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
+from lp.app.enums import InformationType
 from lp.code.enums import BranchType
 from lp.code.interfaces.branchpuller import IBranchPuller
-from lp.registry.enums import InformationType
 from lp.services.database.constants import UTC_NOW
 from lp.testing import (
     login_person,

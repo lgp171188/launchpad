@@ -4,7 +4,7 @@
 __metaclass__ = type
 
 from zope.i18nmessageid import Message
-from zope.interface import implements
+from zope.interface import implementer
 
 from lp.app.browser.launchpad import Hierarchy
 from lp.services.webapp.breadcrumb import Breadcrumb
@@ -18,8 +18,8 @@ from lp.testing import (
 from lp.testing.breadcrumbs import BaseBreadcrumbTestCase
 
 
+@implementer(ICanonicalUrlData)
 class Cookbook:
-    implements(ICanonicalUrlData)
     rootsite = None
     path = 'cookbook'
     inside = None
@@ -60,21 +60,21 @@ class TestBreadcrumb(TestCase):
         breadcrumb._url = '/hello'
         self.assertEqual('/hello', breadcrumb.url)
         breadcrumb._url = None
-        self.assertEqual('http://launchpad.dev/cookbook', breadcrumb.url)
+        self.assertEqual('http://launchpad.test/cookbook', breadcrumb.url)
 
     def test_rootsite_defaults_to_mainsite(self):
         # When a class' ICanonicalUrlData doesn't define a rootsite, our
         # Breadcrumb adapter will use 'mainsite' as the rootsite.
         cookbook = Cookbook()
         self.assertIs(cookbook.rootsite, None)
-        self.assertEquals(Breadcrumb(cookbook).rootsite, 'mainsite')
+        self.assertEqual(Breadcrumb(cookbook).rootsite, 'mainsite')
 
     def test_urldata_rootsite_is_honored(self):
         # When a class' ICanonicalUrlData defines a rootsite, our Breadcrumb
         # adapter will use it.
         cookbook = Cookbook()
         cookbook.rootsite = 'cooking'
-        self.assertEquals(Breadcrumb(cookbook).rootsite, 'cooking')
+        self.assertEqual(Breadcrumb(cookbook).rootsite, 'cooking')
 
 
 class TestExtraBreadcrumbForLeafPageOnHierarchyView(BaseBreadcrumbTestCase):
@@ -94,12 +94,20 @@ class TestExtraBreadcrumbForLeafPageOnHierarchyView(BaseBreadcrumbTestCase):
     def test_non_default_page(self):
         crumbs = self.getBreadcrumbsForObject(self.product, '+download')
         downloads_url = "%s/+download" % self.product_url
-        self.assertEquals(
+        self.assertEqual(
             [self.product_url, downloads_url],
             [crumb.url for crumb in crumbs])
-        self.assertEquals(
+        self.assertEqual(
             '%s project files' % self.product.displayname,
             crumbs[-1].text)
+
+    def test_facet_default_page(self):
+        crumbs = self.getBreadcrumbsForObject(self.product, '+bugs')
+        bugs_url = self.product_url.replace('launchpad', 'bugs.launchpad')
+        self.assertEqual(
+            [self.product_url, bugs_url],
+            [crumb.url for crumb in crumbs])
+        self.assertEqual('Bugs', crumbs[-1].text)
 
     def test_zope_i18n_Messages_are_interpolated(self):
         # Views can use zope.i18nmessageid.Message as their title when they
@@ -110,26 +118,25 @@ class TestExtraBreadcrumbForLeafPageOnHierarchyView(BaseBreadcrumbTestCase):
             page_title = Message(
                 '${name} test', mapping={'name': 'breadcrumb'})
             __name__ = 'test-page'
+            context = self.product
         test_view = TestView()
         request = LaunchpadTestRequest()
         request.traversed_objects = [self.product, test_view]
-        hierarchy_view = Hierarchy(self.product, request)
-        breadcrumb = hierarchy_view.makeBreadcrumbForRequestedPage()
-        self.assertEquals(breadcrumb.text, 'breadcrumb test')
+        hierarchy_view = Hierarchy(test_view, request)
+        [breadcrumb] = hierarchy_view.makeBreadcrumbsForRequestedPage()
+        self.assertEqual(breadcrumb.text, 'breadcrumb test')
 
 
-class TestExtraVHostBreadcrumbsOnHierarchyView(BaseBreadcrumbTestCase):
-    """How our breadcrumbs behave when using a vhost other than the main one?
+class TestExtraFacetBreadcrumbsOnHierarchyView(BaseBreadcrumbTestCase):
+    """How our breadcrumbs behave when using a facet other than the main one?
 
-    When we go to bugs.lp.net/ubuntu, we only traversed the Ubuntu distro, so
+    When we go to lp.net/ubuntu/+bugs, we only traversed the Ubuntu distro, so
     that's what we'd have a breadcrumb for, but we also want to generate a
-    breadcrumb for bugs on Ubuntu, given that we're on the bugs vhost.
-
-    The behaviour is similar to other vhosts; read on for more.
+    breadcrumb for bugs on Ubuntu, given that we're in the bugs facet.
     """
 
     def setUp(self):
-        super(TestExtraVHostBreadcrumbsOnHierarchyView, self).setUp()
+        super(TestExtraFacetBreadcrumbsOnHierarchyView, self).setUp()
         login('test@canonical.com')
         self.product = self.factory.makeProduct(name='crumb-tester')
         self.product_url = canonical_url(self.product)
@@ -143,15 +150,15 @@ class TestExtraVHostBreadcrumbsOnHierarchyView(BaseBreadcrumbTestCase):
         self.package_bugtask_url = canonical_url(self.package_bugtask)
 
     def test_root_on_mainsite(self):
-        crumbs = self.getBreadcrumbsForUrl('http://launchpad.dev/')
-        self.assertEquals(crumbs, [])
+        crumbs = self.getBreadcrumbsForUrl('http://launchpad.test/')
+        self.assertEqual(crumbs, [])
 
     def test_product_on_mainsite(self):
         self.assertBreadcrumbUrls([self.product_url], self.product)
 
     def test_root_on_vhost(self):
-        crumbs = self.getBreadcrumbsForUrl('http://bugs.launchpad.dev/')
-        self.assertEquals(crumbs, [])
+        crumbs = self.getBreadcrumbsForUrl('http://bugs.launchpad.test/')
+        self.assertEqual(crumbs, [])
 
     def test_product_on_vhost(self):
         self.assertBreadcrumbUrls(
@@ -167,11 +174,12 @@ class TestExtraVHostBreadcrumbsOnHierarchyView(BaseBreadcrumbTestCase):
     def test_package_bugtask(self):
         target = self.package_bugtask.target
         distro_url = canonical_url(target.distribution)
-        distroseries_url = canonical_url(target.distroseries)
-        package_url = canonical_url(target)
+        dsp_url = canonical_url(target.distribution_sourcepackage)
+        dsp_bugs_url = canonical_url(
+            target.distribution_sourcepackage, rootsite='bugs')
         package_bugs_url = canonical_url(target, rootsite='bugs')
 
         self.assertBreadcrumbUrls(
-            [distro_url, distroseries_url, package_url, package_bugs_url,
+            [distro_url, dsp_url, dsp_bugs_url, package_bugs_url,
              self.package_bugtask_url],
             self.package_bugtask)

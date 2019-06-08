@@ -1,4 +1,4 @@
-# Copyright 2010 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2013 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Enumerations used in the lp/blueprints modules."""
@@ -36,10 +36,10 @@ class SpecificationImplementationStatus(DBEnumeratedType):
     feature.
 
     Note that some of the states associated with this schema correlate
-    to a "not started" definition. See Specification.started_clause for
-    further information, and make sure that it is updated (together with
-    the relevant database checks) if additional states are added that
-    are also "not started".
+    to a "not started" definition. See spec_started_clause for further
+    information, and make sure that it is updated (together with the relevant
+    database checks) if additional states are added that are also "not
+    started".
     """
     # The `UNKNOWN` state is considered "not started"
     UNKNOWN = DBItem(0, """
@@ -332,6 +332,13 @@ class SpecificationFilter(DBEnumeratedType):
 
         This indicates that the list should include all the specifications
         to which the person has subscribed.
+        """)
+
+    STARTED = DBItem(110, """
+        Started
+
+        This indicates that the list should include specifications that are
+        marked as started.
         """)
 
 

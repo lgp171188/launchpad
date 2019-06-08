@@ -1,4 +1,4 @@
-# Copyright 2009 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2017 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -75,7 +75,7 @@ class ParseApacheLogs(LaunchpadCronScript):
         # chance log rotation will have kicked in and removed our oldest
         # files. Note that we still error if a file we want to parse
         # disappears before we get around to parsing it, which is
-        # desirable behavior.
+        # desirable behaviour.
         files_to_parse = list(get_files_to_parse(
             glob.glob(os.path.join(self.root, self.log_file_glob))))
 

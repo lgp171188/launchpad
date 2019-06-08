@@ -1,4 +1,4 @@
-# Copyright 2009-2010 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2017 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Utilities for accessing the external Salesforce proxy."""
@@ -11,14 +11,14 @@ __all__ = [
     'Voucher',
     ]
 
-
+import ssl
 from xmlrpclib import (
     Fault,
     ServerProxy,
     )
 
 from zope.component import getUtility
-from zope.interface import implements
+from zope.interface import implementer
 
 from lp.registry.interfaces.product import IProductSet
 from lp.services.config import config
@@ -54,10 +54,9 @@ def fault_mapper(func):
     return decorator
 
 
+@implementer(ISalesforceVoucher)
 class Voucher:
     """A Commercial Subscription voucher."""
-
-    implements(ISalesforceVoucher)
 
     def __init__(self, values):
         """Initialize using the values as returned from the SF proxy.
@@ -88,18 +87,25 @@ class Voucher:
                                 project_name)
 
 
+@implementer(ISalesforceVoucherProxy)
 class SalesforceVoucherProxy:
 
-    implements(ISalesforceVoucherProxy)
-
     def __init__(self):
-        self.xmlrpc_transport = SafeTransportWithTimeout()
+        # XXX cjwatson 2017-05-05: The proxy currently only has a
+        # self-signed certificate.  Until that's fixed, don't bother
+        # checking it.
+        context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
+        context.options |= ssl.OP_NO_SSLv2 | ssl.OP_NO_SSLv3
+        self.xmlrpc_transport = SafeTransportWithTimeout(
+            timeout=config.commercial.voucher_proxy_timeout / 1000.0,
+            context=context)
 
     @cachedproperty
     def url(self):
         """Get the proxy URL with port."""
         return "%s:%d" % (config.commercial.voucher_proxy_url,
                           config.commercial.voucher_proxy_port)
+
     @property
     def server(self):
         """See `ISalesforceVoucherProxy`."""

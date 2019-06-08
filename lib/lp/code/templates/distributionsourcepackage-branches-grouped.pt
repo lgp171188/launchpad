@@ -10,6 +10,10 @@
 
 <div metal:fill-slot="main">
 
+  <span class="see-all" tal:condition="view/show_git_link">
+    <a tal:attributes="href context/fmt:url:code/+git">View Git repositories</a>
+  </span>
+
   <p id="distro-branch-warning">
     <strong>This page is for a packaging branch for a program in
     <tal:name replace="context/distribution/displayname"/>.</strong> Changes
@@ -103,7 +107,7 @@
         </li>
       </tal:series-branches>
     </tal:distro-series>
-    <li><a tal:attributes="href context/fmt:url:code/+branches">
+    <li><a tal:attributes="href context/fmt:url:code/+all-branches">
       All branches for the <tal:name replace="context/title"/>
     </a></li>
     </ul>

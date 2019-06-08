@@ -1,15 +1,16 @@
-# Copyright 2009 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """
 Run the doctests and pagetests.
 """
 
+from __future__ import absolute_import, print_function, unicode_literals
+
 import os
 
 from zope.security.management import setSecurityPolicy
 
-from lp.services.config import config
 from lp.services.testing import build_test_suite
 from lp.services.webapp.authorization import LaunchpadSecurityPolicy
 from lp.testing.dbuser import switch_dbuser
@@ -17,6 +18,7 @@ from lp.testing.layers import (
     LaunchpadFunctionalLayer,
     LaunchpadZopelessLayer,
     )
+from lp.testing.pages import setUpGlobs
 from lp.testing.systemdocs import (
     LayeredDocFileSuite,
     setGlobs,
@@ -30,8 +32,8 @@ here = os.path.dirname(os.path.realpath(__file__))
 
 def branchscannerSetUp(test):
     """Setup the user for the branch scanner tests."""
-    switch_dbuser(config.branchscanner.dbuser)
-    setUp(test)
+    switch_dbuser("branchscanner")
+    setUp(test, future=True)
 
 
 def zopelessLaunchpadSecuritySetUp(test):
@@ -43,7 +45,7 @@ def zopelessLaunchpadSecuritySetUp(test):
     functionality used in the webapp, it needs to use the
     LaunchpadSecurityPolicy.
     """
-    setGlobs(test)
+    setGlobs(test, future=True)
     test.old_security_policy = setSecurityPolicy(LaunchpadSecurityPolicy)
 
 
@@ -65,14 +67,28 @@ special = {
         ),
     'codeimport-result.txt': LayeredDocFileSuite(
         '../doc/codeimport-result.txt',
-        setUp=setUp, tearDown=tearDown, layer=LaunchpadFunctionalLayer,
+        setUp=lambda test: setUp(test, future=True), tearDown=tearDown,
+        layer=LaunchpadFunctionalLayer,
         ),
     'branch-merge-proposal-notifications.txt': LayeredDocFileSuite(
         '../doc/branch-merge-proposal-notifications.txt',
-        setUp=setUp, tearDown=tearDown, layer=LaunchpadFunctionalLayer,
+        setUp=lambda test: setUp(test, future=True), tearDown=tearDown,
+        layer=LaunchpadZopelessLayer,
+        ),
+    'branch-notifications.txt': LayeredDocFileSuite(
+        '../doc/branch-notifications.txt',
+        setUp=lambda test: setUp(test, future=True), tearDown=tearDown,
+        layer=LaunchpadZopelessLayer,
+        ),
+    'codereviewcomment.txt': LayeredDocFileSuite(
+        '../doc/codereviewcomment.txt',
+        setUp=lambda test: setUp(test, future=True), tearDown=tearDown,
+        layer=LaunchpadZopelessLayer,
         ),
     }
 
 
 def test_suite():
-    return build_test_suite(here, special)
+    return build_test_suite(
+        here, special, setUp=lambda test: setUp(test, future=True),
+        pageTestsSetUp=lambda test: setUpGlobs(test, future=True))

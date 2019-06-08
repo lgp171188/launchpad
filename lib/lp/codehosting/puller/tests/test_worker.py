@@ -1,8 +1,6 @@
 # Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-# pylint: disable-msg=W0231
-
 """Unit tests for worker.py."""
 
 __metaclass__ = type
@@ -371,20 +369,20 @@ class TestMirroredBranchPolicy(TestCase):
         policy = MirroredBranchPolicy()
         self.assertRaises(
             BadUrlLaunchpad, policy.check_one_url,
-            self.factory.getUniqueURL(host='bazaar.launchpad.dev'))
+            self.factory.getUniqueURL(host='bazaar.launchpad.test'))
 
     def testNoHTTPSLaunchpadURL(self):
         policy = MirroredBranchPolicy()
         self.assertRaises(
             BadUrlLaunchpad, policy.check_one_url,
             self.factory.getUniqueURL(
-                host='bazaar.launchpad.dev', scheme='https'))
+                host='bazaar.launchpad.test', scheme='https'))
 
     def testNoOtherHostLaunchpadURL(self):
         policy = MirroredBranchPolicy()
         self.assertRaises(
             BadUrlLaunchpad, policy.check_one_url,
-            self.factory.getUniqueURL(host='code.launchpad.dev'))
+            self.factory.getUniqueURL(host='code.launchpad.test'))
 
     def testLocalhost(self):
         self.pushConfig(

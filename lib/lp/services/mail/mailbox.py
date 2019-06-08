@@ -1,4 +1,4 @@
-# Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -16,12 +16,18 @@ import poplib
 import socket
 import threading
 
+import scandir
 from zope.interface import (
-    implements,
+    implementer,
     Interface,
     )
 
 from lp.services.mail import stub
+
+# XXX wgrant 2015-09-21: A Python 2.7 security update set the line
+# length limit to 2048 bytes, which real POP3 servers often exceed for
+# various reasons. http://bugs.python.org/issue23906
+poplib._MAXLINE = 10000000
 
 
 class MailBoxError(Exception):
@@ -56,12 +62,12 @@ class IMailBox(Interface):
         """Closes the mailbox."""
 
 
+@implementer(IMailBox)
 class TestMailBox:
     """Mail box used for testing.
 
     It operates on stub.test_emails.
     """
-    implements(IMailBox)
 
     def __init__(self):
         self._lock = threading.Lock()
@@ -98,9 +104,9 @@ class TestMailBox:
         self._lock.release()
 
 
+@implementer(IMailBox)
 class POP3MailBox:
     """Mail box which talks to a POP3 server."""
-    implements(IMailBox)
 
     def __init__(self, host, user, password, ssl=False):
         self._host = host
@@ -150,9 +156,9 @@ class POP3MailBox:
         self._popbox.quit()
 
 
+@implementer(IMailBox)
 class DirectoryMailBox:
     """Mail box which reads files from a directory."""
-    implements(IMailBox)
 
     def __init__(self, directory):
         self.mail_dir = os.path.abspath(directory)
@@ -163,10 +169,10 @@ class DirectoryMailBox:
 
     def items(self):
         """See IMailBox."""
-        for name in os.listdir(self.mail_dir):
-            filename = os.path.join(self.mail_dir, name)
-            if os.path.isfile(filename):
-                yield (filename, open(filename).read())
+        for entry in scandir.scandir(self.mail_dir):
+            if entry.is_file():
+                with open(entry.path) as mail_file:
+                    yield (entry.path, mail_file.read())
 
     def delete(self, id):
         """See IMailBox."""

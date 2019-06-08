@@ -1,4 +1,4 @@
-# Copyright 2009 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2016 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """SSH session implementations for the codehosting SSH server."""
@@ -14,6 +14,9 @@ import socket
 import sys
 import urlparse
 
+from lazr.sshserver.events import AvatarEvent
+from lazr.sshserver.session import DoNothingSession
+from six import reraise
 from twisted.internet import (
     error,
     interfaces,
@@ -21,12 +24,10 @@ from twisted.internet import (
     )
 from twisted.python import log
 from zope.event import notify
-from zope.interface import implements
+from zope.interface import implementer
 
 from lp.codehosting import get_bzr_path
 from lp.services.config import config
-from lp.services.sshserver.events import AvatarEvent
-from lp.services.sshserver.session import DoNothingSession
 
 
 class BazaarSSHStarted(AvatarEvent):
@@ -76,14 +77,13 @@ class _WaitForExit(process.ProcessReader):
         self.proc.processEnded(exit_status)
 
 
+@implementer(interfaces.IProcessTransport)
 class ForkedProcessTransport(process.BaseProcess):
     """Wrap the forked process in a ProcessTransport so we can talk to it.
 
     Note that instantiating the class creates the fork and sets it up in the
     reactor.
     """
-
-    implements(interfaces.IProcessTransport)
 
     # Design decisions
     # [Decision #a]
@@ -141,7 +141,7 @@ class ForkedProcessTransport(process.BaseProcess):
 
         :return: The pid, communication directory, and request socket.
         """
-        assert executable == 'bzr', executable # Maybe .endswith()
+        assert executable == 'bzr', executable  # Maybe .endswith()
         assert args[0] == 'bzr', args[0]
         message = ['fork-env %s\n' % (' '.join(args[1:]),)]
         for key, value in environment.iteritems():
@@ -209,7 +209,7 @@ class ForkedProcessTransport(process.BaseProcess):
                     # all cleanups get called so we don't get leaks. We know
                     # there is an active exception, or we wouldn't be here.
                     log.err()
-            raise exc_class, exc_value, exc_tb
+            reraise(exc_class, exc_value, tb=exc_tb)
         self.pipes['exit'] = self._exiter
 
     def _getReason(self, status):

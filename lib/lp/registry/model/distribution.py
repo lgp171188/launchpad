@@ -1,4 +1,4 @@
-# Copyright 2009-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2016 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Database classes for implementing distribution items."""
@@ -9,6 +9,7 @@ __all__ = [
     'DistributionSet',
     ]
 
+from collections import defaultdict
 import itertools
 from operator import itemgetter
 
@@ -18,12 +19,12 @@ from sqlobject import (
     SQLObjectNotFound,
     StringCol,
     )
-from sqlobject.sqlbuilder import SQLConstant
 from storm.expr import (
     And,
     Desc,
     Exists,
     Join,
+    LeftJoin,
     Max,
     Not,
     Or,
@@ -33,13 +34,9 @@ from storm.expr import (
 from storm.info import ClassAlias
 from storm.store import Store
 from zope.component import getUtility
-from zope.interface import (
-    alsoProvides,
-    implements,
-    )
+from zope.interface import implementer
 
 from lp.answers.enums import QUESTION_STATUS_DEFAULT_SEARCH
-from lp.answers.interfaces.faqtarget import IFAQTarget
 from lp.answers.model.faq import (
     FAQ,
     FAQSearch,
@@ -48,7 +45,11 @@ from lp.answers.model.question import (
     QuestionTargetMixin,
     QuestionTargetSearch,
     )
-from lp.app.enums import ServiceUsage
+from lp.app.enums import (
+    FREE_INFORMATION_TYPES,
+    InformationType,
+    ServiceUsage,
+    )
 from lp.app.errors import NotFoundError
 from lp.app.interfaces.launchpad import (
     IHasIcon,
@@ -63,22 +64,14 @@ from lp.app.validators.name import (
     valid_name,
     )
 from lp.archivepublisher.debversion import Version
-from lp.blueprints.enums import (
-    SpecificationDefinitionStatus,
-    SpecificationFilter,
-    SpecificationImplementationStatus,
-    )
 from lp.blueprints.model.specification import (
     HasSpecificationsMixin,
     Specification,
     )
+from lp.blueprints.model.specificationsearch import search_specifications
 from lp.blueprints.model.sprint import HasSprintsMixin
 from lp.bugs.interfaces.bugsummary import IBugSummaryDimension
 from lp.bugs.interfaces.bugsupervisor import IHasBugSupervisor
-from lp.bugs.interfaces.bugtask import (
-    BugTaskStatus,
-    DB_UNRESOLVED_BUGTASK_STATUSES,
-    )
 from lp.bugs.interfaces.bugtaskfilter import OrderedBugTask
 from lp.bugs.model.bugtarget import (
     BugTargetBase,
@@ -93,16 +86,12 @@ from lp.code.interfaces.seriessourcepackagebranch import (
 from lp.registry.enums import (
     BranchSharingPolicy,
     BugSharingPolicy,
-    FREE_INFORMATION_TYPES,
-    InformationType,
-    PRIVATE_INFORMATION_TYPES,
-    PUBLIC_INFORMATION_TYPES,
+    SpecificationSharingPolicy,
+    VCSType,
     )
 from lp.registry.errors import NoSuchDistroSeries
 from lp.registry.interfaces.accesspolicy import IAccessPolicySource
 from lp.registry.interfaces.distribution import (
-    IBaseDistribution,
-    IDerivativeDistribution,
     IDistribution,
     IDistributionSet,
     )
@@ -113,7 +102,6 @@ from lp.registry.interfaces.distributionmirror import (
     MirrorStatus,
     )
 from lp.registry.interfaces.oopsreferences import IHasOOPSReferences
-from lp.registry.interfaces.packaging import PackagingType
 from lp.registry.interfaces.person import (
     validate_person,
     validate_person_or_closed_team,
@@ -126,6 +114,7 @@ from lp.registry.interfaces.sourcepackagename import ISourcePackageName
 from lp.registry.model.announcement import MakesAnnouncements
 from lp.registry.model.distributionmirror import (
     DistributionMirror,
+    MirrorCDImageDistroSeries,
     MirrorDistroArchSeries,
     MirrorDistroSeriesSource,
     )
@@ -143,17 +132,19 @@ from lp.registry.model.milestone import (
 from lp.registry.model.oopsreferences import referenced_oops
 from lp.registry.model.pillar import HasAliasMixin
 from lp.registry.model.sourcepackagename import SourcePackageName
+from lp.services.database.bulk import load_referencing
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.enumcol import EnumCol
-from lp.services.database.lpstorm import IStore
+from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import (
-    cursor,
-    quote,
-    quote_like,
     SQLBase,
     sqlvalues,
+    )
+from lp.services.database.stormexpr import (
+    fti_search,
+    rank_by_fti,
     )
 from lp.services.helpers import shortlist
 from lp.services.propertycache import (
@@ -181,10 +172,7 @@ from lp.soyuz.model.binarypackagename import BinaryPackageName
 from lp.soyuz.model.distributionsourcepackagerelease import (
     DistributionSourcePackageRelease,
     )
-from lp.soyuz.model.distroarchseries import (
-    DistroArchSeries,
-    DistroArchSeriesSet,
-    )
+from lp.soyuz.model.distroarchseries import DistroArchSeries
 from lp.soyuz.model.publishing import (
     BinaryPackagePublishingHistory,
     get_current_source_releases,
@@ -197,6 +185,10 @@ from lp.translations.model.hastranslationimports import (
 from lp.translations.model.translationpolicy import TranslationPolicyMixin
 
 
+@implementer(
+    IBugSummaryDimension, IDistribution, IHasBugSupervisor,
+    IHasBuildRecords, IHasIcon, IHasLogo, IHasMugshot,
+    IHasOOPSReferences, ILaunchpadUsage, IServiceUsage)
 class Distribution(SQLBase, BugTargetBase, MakesAnnouncements,
                    HasSpecificationsMixin, HasSprintsMixin, HasAliasMixin,
                    HasTranslationImportsMixin, KarmaContextMixin,
@@ -204,17 +196,13 @@ class Distribution(SQLBase, BugTargetBase, MakesAnnouncements,
                    StructuralSubscriptionTargetMixin, HasMilestonesMixin,
                    HasDriversMixin, TranslationPolicyMixin):
     """A distribution of an operating system, e.g. Debian GNU/Linux."""
-    implements(
-        IBugSummaryDimension, IDistribution, IFAQTarget,
-        IHasBugSupervisor, IHasBuildRecords, IHasIcon, IHasLogo,
-        IHasMugshot, IHasOOPSReferences, ILaunchpadUsage, IServiceUsage)
 
     _table = 'Distribution'
     _defaultOrder = 'name'
 
     name = StringCol(notNull=True, alternateID=True, unique=True)
-    displayname = StringCol(notNull=True)
-    title = StringCol(notNull=True)
+    display_name = StringCol(dbName='displayname', notNull=True)
+    _title = StringCol(dbName='title', notNull=True)
     summary = StringCol(notNull=True)
     description = StringCol(notNull=True)
     homepage_content = StringCol(default=None)
@@ -254,22 +242,26 @@ class Distribution(SQLBase, BugTargetBase, MakesAnnouncements,
         dbName='translationpermission', notNull=True,
         schema=TranslationPermission, default=TranslationPermission.OPEN)
     active = True
+    official_packages = BoolCol(notNull=True, default=False)
+    supports_ppas = BoolCol(notNull=True, default=False)
+    supports_mirrors = BoolCol(notNull=True, default=False)
     package_derivatives_email = StringCol(notNull=False, default=None)
+    redirect_release_uploads = BoolCol(notNull=True, default=False)
+    development_series_alias = StringCol(notNull=False, default=None)
+    vcs = EnumCol(enum=VCSType, notNull=False)
 
     def __repr__(self):
-        displayname = self.displayname.encode('ASCII', 'backslashreplace')
+        display_name = self.display_name.encode('ASCII', 'backslashreplace')
         return "<%s '%s' (%s)>" % (
-            self.__class__.__name__, displayname, self.name)
+            self.__class__.__name__, display_name, self.name)
 
-    def _init(self, *args, **kw):
-        """Initialize an `IBaseDistribution` or `IDerivativeDistribution`."""
-        SQLBase._init(self, *args, **kw)
-        # Add a marker interface to set permissions for this kind
-        # of distribution.
-        if self.name == 'ubuntu':
-            alsoProvides(self, IBaseDistribution)
-        else:
-            alsoProvides(self, IDerivativeDistribution)
+    @property
+    def displayname(self):
+        return self.display_name
+
+    @property
+    def title(self):
+        return self.display_name
 
     @property
     def pillar(self):
@@ -292,6 +284,12 @@ class Distribution(SQLBase, BugTargetBase, MakesAnnouncements,
         """See `IHasSharingPolicies."""
         # Sharing policy for distributions is always PUBLIC.
         return BugSharingPolicy.PUBLIC
+
+    @property
+    def specification_sharing_policy(self):
+        """See `IHasSharingPolicies."""
+        # Sharing policy for distributions is always PUBLIC.
+        return SpecificationSharingPolicy.PUBLIC
 
     @property
     def uploaders(self):
@@ -330,8 +328,7 @@ class Distribution(SQLBase, BugTargetBase, MakesAnnouncements,
 
     _answers_usage = EnumCol(
         dbName="answers_usage", notNull=True,
-        schema=ServiceUsage,
-        default=ServiceUsage.UNKNOWN)
+        schema=ServiceUsage, default=ServiceUsage.UNKNOWN)
 
     def _get_answers_usage(self):
         if self._answers_usage != ServiceUsage.UNKNOWN:
@@ -380,8 +377,7 @@ class Distribution(SQLBase, BugTargetBase, MakesAnnouncements,
 
     translations_usage = EnumCol(
         dbName="translations_usage", notNull=True,
-        schema=ServiceUsage,
-        default=ServiceUsage.UNKNOWN)
+        schema=ServiceUsage, default=ServiceUsage.UNKNOWN)
 
     @property
     def codehosting_usage(self):
@@ -438,17 +434,21 @@ class Distribution(SQLBase, BugTargetBase, MakesAnnouncements,
         else:
             return [archive.id]
 
-    def _getActiveMirrors(self, mirror_content_type,
-            by_country=False, needs_fresh=False):
+    def _getMirrors(self, content=None, enabled=True,
+                    status=MirrorStatus.OFFICIAL, by_country=False,
+                    needs_fresh=False, needs_cdimage_series=False):
         """Builds the query to get the mirror data for various purposes."""
-        mirrors = list(Store.of(self).find(
-            DistributionMirror,
-            And(
-                DistributionMirror.distribution == self.id,
-                DistributionMirror.content == mirror_content_type,
-                DistributionMirror.enabled == True,
-                DistributionMirror.status == MirrorStatus.OFFICIAL,
-                DistributionMirror.official_candidate == True)))
+        clauses = [
+            DistributionMirror.distribution == self.id,
+            DistributionMirror.status == status,
+            ]
+        if content is not None:
+            clauses.append(DistributionMirror.content == content)
+        if enabled is not None:
+            clauses.append(DistributionMirror.enabled == enabled)
+        if status != MirrorStatus.UNOFFICIAL:
+            clauses.append(DistributionMirror.official_candidate == True)
+        mirrors = list(Store.of(self).find(DistributionMirror, And(*clauses)))
 
         if by_country and mirrors:
             # Since country data is needed, fetch countries into the cache.
@@ -488,66 +488,71 @@ class Distribution(SQLBase, BugTargetBase, MakesAnnouncements,
                     mirror.id, None)
                 cache.source_mirror_freshness = source_mirror_freshness.get(
                     mirror.id, None)
+
+        if needs_cdimage_series and mirrors:
+            all_cdimage_series = load_referencing(
+                MirrorCDImageDistroSeries, mirrors, ["distribution_mirrorID"])
+            cdimage_series = defaultdict(list)
+            for series in all_cdimage_series:
+                cdimage_series[series.distribution_mirrorID].append(series)
+            for mirror in mirrors:
+                cache = get_property_cache(mirror)
+                cache.cdimage_series = cdimage_series.get(mirror.id, [])
+
         return mirrors
 
     @property
     def archive_mirrors(self):
         """See `IDistribution`."""
-        return self._getActiveMirrors(MirrorContent.ARCHIVE)
+        return self._getMirrors(content=MirrorContent.ARCHIVE)
 
     @property
     def archive_mirrors_by_country(self):
         """See `IDistribution`."""
-        return self._getActiveMirrors(
-            MirrorContent.ARCHIVE,
+        return self._getMirrors(
+            content=MirrorContent.ARCHIVE,
             by_country=True,
             needs_fresh=True)
 
     @property
     def cdimage_mirrors(self, by_country=False):
         """See `IDistribution`."""
-        return self._getActiveMirrors(MirrorContent.RELEASE)
+        return self._getMirrors(
+            content=MirrorContent.RELEASE,
+            needs_cdimage_series=True)
 
     @property
     def cdimage_mirrors_by_country(self):
         """See `IDistribution`."""
-        return self._getActiveMirrors(
-            MirrorContent.RELEASE,
-            by_country=True)
+        return self._getMirrors(
+            content=MirrorContent.RELEASE,
+            by_country=True,
+            needs_cdimage_series=True)
 
     @property
     def disabled_mirrors(self):
         """See `IDistribution`."""
-        return Store.of(self).find(
-            DistributionMirror,
-            distribution=self,
+        return self._getMirrors(
             enabled=False,
-            status=MirrorStatus.OFFICIAL,
-            official_candidate=True)
+            by_country=True,
+            needs_fresh=True)
 
     @property
     def unofficial_mirrors(self):
         """See `IDistribution`."""
-        return Store.of(self).find(
-            DistributionMirror,
-            distribution=self,
-            status=MirrorStatus.UNOFFICIAL)
+        return self._getMirrors(
+            enabled=None,
+            status=MirrorStatus.UNOFFICIAL,
+            by_country=True,
+            needs_fresh=True)
 
     @property
     def pending_review_mirrors(self):
         """See `IDistribution`."""
-        return Store.of(self).find(
-            DistributionMirror,
-            distribution=self,
-            status=MirrorStatus.PENDING_REVIEW,
-            official_candidate=True)
-
-    @property
-    def full_functionality(self):
-        """See `IDistribution`."""
-        if IBaseDistribution.providedBy(self):
-            return True
-        return False
+        return self._getMirrors(
+            enabled=None,
+            by_country=True,
+            status=MirrorStatus.PENDING_REVIEW)
 
     @property
     def drivers(self):
@@ -613,7 +618,7 @@ class Distribution(SQLBase, BugTargetBase, MakesAnnouncements,
     @property
     def bugtargetdisplayname(self):
         """See IBugTarget."""
-        return self.displayname
+        return self.display_name
 
     @property
     def bugtargetname(self):
@@ -634,101 +639,56 @@ class Distribution(SQLBase, BugTargetBase, MakesAnnouncements,
 
     def getBranchTips(self, user=None, since=None):
         """See `IDistribution`."""
-        # This, ignoring privacy issues, is what we want.
-        base_query = """
-        SELECT Branch.unique_name,
-               Branch.last_scanned_id,
-               SPBDS.name AS distro_series_name,
-               Branch.id,
-               Branch.information_type,
-               Branch.owner
-        FROM Branch
-        JOIN DistroSeries
-            ON Branch.distroseries = DistroSeries.id
-        LEFT OUTER JOIN SeriesSourcePackageBranch
-            ON Branch.id = SeriesSourcePackageBranch.branch
-        LEFT OUTER JOIN DistroSeries SPBDS
-            -- (SPDBS stands for Source Package Branch Distro Series)
-            ON SeriesSourcePackageBranch.distroseries = SPBDS.id
-        WHERE DistroSeries.distribution = %s
-        """ % sqlvalues(self.id)
+        from lp.code.model.branch import (
+            Branch, get_branch_privacy_filter)
+        from lp.code.model.seriessourcepackagebranch import (
+            SeriesSourcePackageBranch)
+
+        # This method returns thousands of branch unique names in a
+        # single call, so the query is perilous and awkwardly tuned to
+        # get a good plan with the normal dataset (the charms distro).
+        OfficialSeries = ClassAlias(DistroSeries)
+
+        ds_ids = Select(
+            DistroSeries.id, tables=[DistroSeries],
+            where=DistroSeries.distributionID == self.id)
+        clauses = [
+            DistroSeries.id.is_in(ds_ids),
+            get_branch_privacy_filter(user),
+        ]
+
         if since is not None:
             # If "since" was provided, take into account.
-            base_query += (
-                '      AND branch.last_scanned > %s\n' % sqlvalues(since))
-        if user is None:
-            # Now we see just a touch of privacy concerns.
-            # If the current user is anonymous, they cannot see any private
-            # branches.
-            base_query += (
-                '      AND Branch.information_type in %s\n'
-                % sqlvalues(PUBLIC_INFORMATION_TYPES))
-        # We want to order the results, in part for easier grouping at the
-        # end.
-        base_query += 'ORDER BY unique_name, last_scanned_id'
-        if (user is None or
-            user.inTeam(getUtility(ILaunchpadCelebrities).admin)):
-            # Anonymous is already handled above; admins can see everything.
-            # In both cases, we can just use the query as it already stands.
-            query = base_query
-        else:
-            # Otherwise (an authenticated, non-admin user), we need to do some
-            # more sophisticated privacy dances.  Note that the one thing we
-            # are ignoring here is stacking.  See the discussion in comment 1
-            # of https://bugs.launchpad.net/launchpad/+bug/812335 . Often, we
-            # use unions for this kind of work.  The WITH statement can give
-            # us a similar approach with more flexibility. In both cases,
-            # we're essentially declaring that we have a better idea of a good
-            # high-level query plan than Postgres will.
-            query = """
-            WITH principals AS (
-                    SELECT team AS id
-                        FROM TeamParticipation
-                        WHERE TeamParticipation.person = %(user)s
-                    UNION
-                    SELECT %(user)s
-                ), all_branches AS (
-            %(base_query)s
-                ), private_branches AS (
-                    SELECT unique_name,
-                           last_scanned_id,
-                           distro_series_name,
-                           id,
-                           owner
-                    FROM all_branches
-                    WHERE information_type in %(private_branches)s
-                ), owned_branch_ids AS (
-                    SELECT private_branches.id
-                    FROM private_branches
-                    JOIN principals ON private_branches.owner = principals.id
-                ), subscribed_branch_ids AS (
-                    SELECT private_branches.id
-                    FROM private_branches
-                    JOIN BranchSubscription
-                        ON BranchSubscription.branch = private_branches.id
-                    JOIN principals
-                        ON BranchSubscription.person = principals.id
-                )
-            SELECT unique_name, last_scanned_id, distro_series_name
-            FROM all_branches
-            WHERE information_type in %(public_branches)s OR
-                  id IN (SELECT id FROM owned_branch_ids) OR
-                  id IN (SELECT id FROM subscribed_branch_ids)
-            """ % dict(
-                base_query=base_query,
-                user=quote(user.id),
-                private_branches=quote(PRIVATE_INFORMATION_TYPES),
-                public_branches=quote(PUBLIC_INFORMATION_TYPES))
+            clauses.append(Branch.last_scanned > since)
 
-        data = Store.of(self).execute(query + ';')
+        branches = IStore(self).using(
+            Branch,
+            Join(DistroSeries,
+                 DistroSeries.id == Branch.distroseriesID),
+            LeftJoin(
+                Join(
+                    SeriesSourcePackageBranch,
+                    OfficialSeries,
+                    OfficialSeries.id ==
+                        SeriesSourcePackageBranch.distroseriesID),
+                And(SeriesSourcePackageBranch.branchID == Branch.id,
+                    SeriesSourcePackageBranch.distroseriesID.is_in(ds_ids))),
+        ).find(
+            (Branch.unique_name, Branch.last_scanned_id, OfficialSeries.name),
+            And(*clauses)
+        ).order_by(
+            Branch.unique_name,
+            Branch.last_scanned_id
+        )
 
-        result = []
         # Group on location (unique_name) and revision (last_scanned_id).
-        for key, group in itertools.groupby(data, itemgetter(0, 1)):
+        result = []
+        for key, group in itertools.groupby(branches, itemgetter(0, 1)):
             result.append(list(key))
             # Pull out all the official series names and append them as a list
-            # to the end of the current record, removing Nones from the list.
+            # to the end of the current record.
             result[-1].append(filter(None, map(itemgetter(2), group)))
+
         return result
 
     def getMirrorByName(self, name):
@@ -747,7 +707,7 @@ class Distribution(SQLBase, BugTargetBase, MakesAnnouncements,
             content=mirror_type,
             country_dns_mirror=True).one()
 
-    def newMirror(self, owner, speed, country, content, displayname=None,
+    def newMirror(self, owner, speed, country, content, display_name=None,
                   description=None, http_base_url=None,
                   ftp_base_url=None, rsync_base_url=None,
                   official_candidate=False, enabled=False,
@@ -757,7 +717,7 @@ class Distribution(SQLBase, BugTargetBase, MakesAnnouncements,
         # the full functionality of Launchpad enabled. This is Ubuntu and
         # commercial derivatives that have been specifically given this
         # ability
-        if not self.full_functionality:
+        if not self.supports_mirrors:
             return None
 
         urls = {'http_base_url': http_base_url,
@@ -781,7 +741,7 @@ class Distribution(SQLBase, BugTargetBase, MakesAnnouncements,
 
         return DistributionMirror(
             distribution=self, owner=owner, name=name, speed=speed,
-            country=country, content=content, displayname=displayname,
+            country=country, content=content, display_name=display_name,
             description=description, http_base_url=urls['http_base_url'],
             ftp_base_url=urls['ftp_base_url'],
             rsync_base_url=urls['rsync_base_url'],
@@ -826,15 +786,25 @@ class Distribution(SQLBase, BugTargetBase, MakesAnnouncements,
         return getUtility(
             IArchiveSet).getByDistroAndName(self, name)
 
-    def getSeries(self, name_or_version):
+    def resolveSeriesAlias(self, name):
+        """See `IDistribution`."""
+        if self.development_series_alias == name:
+            currentseries = self.currentseries
+            if currentseries is not None:
+                return currentseries
+        raise NoSuchDistroSeries(name)
+
+    def getSeries(self, name_or_version, follow_aliases=False):
         """See `IDistribution`."""
         distroseries = Store.of(self).find(DistroSeries,
                Or(DistroSeries.name == name_or_version,
                DistroSeries.version == name_or_version),
             DistroSeries.distribution == self).one()
-        if not distroseries:
-            raise NoSuchDistroSeries(name_or_version)
-        return distroseries
+        if distroseries:
+            return distroseries
+        if follow_aliases:
+            return self.resolveSeriesAlias(name_or_version)
+        raise NoSuchDistroSeries(name_or_version)
 
     def getDevelopmentSeries(self):
         """See `IDistribution`."""
@@ -842,6 +812,12 @@ class Distribution(SQLBase, BugTargetBase, MakesAnnouncements,
             DistroSeries,
             distribution=self,
             status=SeriesStatus.DEVELOPMENT)
+
+    def getNonObsoleteSeries(self):
+        """See `IDistribution`."""
+        for series in self.series:
+            if series.status != SeriesStatus.OBSOLETE:
+                yield series
 
     def getMilestone(self, name):
         """See `IDistribution`."""
@@ -870,18 +846,9 @@ class Distribution(SQLBase, BugTargetBase, MakesAnnouncements,
         return getUtility(IDistributionSet).getCurrentSourceReleases(
             {self: source_package_names})
 
-    @property
-    def has_any_specifications(self):
-        """See `IHasSpecifications`."""
-        return self.all_specifications.count()
-
-    @property
-    def all_specifications(self):
-        """See `IHasSpecifications`."""
-        return self.specifications(filter=[SpecificationFilter.ALL])
-
-    def specifications(self, sort=None, quantity=None, filter=None,
-                       prejoin_people=True):
+    def specifications(self, user, sort=None, quantity=None, filter=None,
+                       need_people=True, need_branches=True,
+                       need_workitems=False):
         """See `IHasSpecifications`.
 
         In the case of distributions, there are two kinds of filtering,
@@ -891,89 +858,23 @@ class Distribution(SQLBase, BugTargetBase, MakesAnnouncements,
           - informationalness: we will show ANY if nothing is said
 
         """
-
-        # Make a new list of the filter, so that we do not mutate what we
-        # were passed as a filter
-        if not filter:
-            # it could be None or it could be []
-            filter = [SpecificationFilter.INCOMPLETE]
-
-        # now look at the filter and fill in the unsaid bits
-
-        # defaults for completeness: if nothing is said about completeness
-        # then we want to show INCOMPLETE
-        completeness = False
-        for option in [
-            SpecificationFilter.COMPLETE,
-            SpecificationFilter.INCOMPLETE]:
-            if option in filter:
-                completeness = True
-        if completeness is False:
-            filter.append(SpecificationFilter.INCOMPLETE)
-
-        # defaults for acceptance: in this case we have nothing to do
-        # because specs are not accepted/declined against a distro
-
-        # defaults for informationalness: we don't have to do anything
-        # because the default if nothing is said is ANY
-
-        order = self._specification_sort(sort)
-
-        # figure out what set of specifications we are interested in. for
-        # distributions, we need to be able to filter on the basis of:
-        #
-        #  - completeness. by default, only incomplete specs shown
-        #  - informational.
-        #
-        base = 'Specification.distribution = %s' % self.id
-        query = base
-        # look for informational specs
-        if SpecificationFilter.INFORMATIONAL in filter:
-            query += (' AND Specification.implementation_status = %s ' %
-                quote(SpecificationImplementationStatus.INFORMATIONAL))
-
-        # filter based on completion. see the implementation of
-        # Specification.is_complete() for more details
-        completeness = Specification.completeness_clause
-
-        if SpecificationFilter.COMPLETE in filter:
-            query += ' AND ( %s ) ' % completeness
-        elif SpecificationFilter.INCOMPLETE in filter:
-            query += ' AND NOT ( %s ) ' % completeness
-
-        # Filter for validity. If we want valid specs only then we should
-        # exclude all OBSOLETE or SUPERSEDED specs
-        if SpecificationFilter.VALID in filter:
-            query += (' AND Specification.definition_status NOT IN '
-                '( %s, %s ) ' % sqlvalues(
-                    SpecificationDefinitionStatus.OBSOLETE,
-                    SpecificationDefinitionStatus.SUPERSEDED))
-
-        # ALL is the trump card
-        if SpecificationFilter.ALL in filter:
-            query = base
-
-        # Filter for specification text
-        for constraint in filter:
-            if isinstance(constraint, basestring):
-                # a string in the filter is a text search filter
-                query += ' AND Specification.fti @@ ftq(%s) ' % quote(
-                    constraint)
-
-        if prejoin_people:
-            results = self._preload_specifications_people(query)
-        else:
-            results = Store.of(self).find(
-                Specification,
-                SQL(query))
-        results.order_by(order)
-        if quantity is not None:
-            results = results[:quantity]
-        return results
+        base_clauses = [Specification.distributionID == self.id]
+        return search_specifications(
+            self, base_clauses, user, sort, quantity, filter,
+            need_people=need_people, need_branches=need_branches,
+            need_workitems=need_workitems)
 
     def getSpecification(self, name):
         """See `ISpecificationTarget`."""
         return Specification.selectOneBy(distribution=self, name=name)
+
+    def getAllowedSpecificationInformationTypes(self):
+        """See `ISpecificationTarget`."""
+        return (InformationType.PUBLIC,)
+
+    def getDefaultSpecificationInformationType(self):
+        """See `ISpecificationTarget`."""
+        return InformationType.PUBLIC
 
     def searchQuestions(self, search_text=None,
                         status=QUESTION_STATUS_DEFAULT_SEARCH,
@@ -1035,7 +936,8 @@ class Distribution(SQLBase, BugTargetBase, MakesAnnouncements,
             search_text=search_text, owner=owner, sort=sort,
             distribution=self).getResults()
 
-    def getDistroSeriesAndPocket(self, distroseries_name):
+    def getDistroSeriesAndPocket(self, distroseries_name,
+                                 follow_aliases=False):
         """See `IDistribution`."""
         # Get the list of suffixes.
         suffixes = [suffix for suffix, ignored in suffixpocket.items()]
@@ -1044,13 +946,18 @@ class Distribution(SQLBase, BugTargetBase, MakesAnnouncements,
 
         for suffix in suffixes:
             if distroseries_name.endswith(suffix):
+                left_size = len(distroseries_name) - len(suffix)
+                left = distroseries_name[:left_size]
                 try:
-                    left_size = len(distroseries_name) - len(suffix)
-                    return (self[distroseries_name[:left_size]],
-                            suffixpocket[suffix])
+                    return self[left], suffixpocket[suffix]
                 except KeyError:
+                    if follow_aliases:
+                        try:
+                            resolved = self.resolveSeriesAlias(left)
+                            return resolved, suffixpocket[suffix]
+                        except NoSuchDistroSeries:
+                            pass
                     # Swallow KeyError to continue round the loop.
-                    pass
 
         raise NotFoundError(distroseries_name)
 
@@ -1068,15 +975,8 @@ class Distribution(SQLBase, BugTargetBase, MakesAnnouncements,
         # now).
         # The "binary_only" option is not yet supported for
         # IDistribution.
-
-        # Find out the distroarchseries in question.
-        arch_ids = DistroArchSeriesSet().getIdsForArchitectures(
-            self.architectures, arch_tag)
-
-        # Use the facility provided by IBinaryPackageBuildSet to
-        # retrieve the records.
-        return getUtility(IBinaryPackageBuildSet).getBuildsByArchIds(
-            self, arch_ids, build_state, name, pocket)
+        return getUtility(IBinaryPackageBuildSet).getBuildsForDistro(
+            self, build_state, name, pocket, arch_tag)
 
     def searchSourcePackageCaches(
         self, text, has_packaging=None, publishing_distroseries=None):
@@ -1093,7 +993,7 @@ class Distribution(SQLBase, BugTargetBase, MakesAnnouncements,
         find_spec = (
             DistributionSourcePackageCache,
             SourcePackageName,
-            SQL('rank(fti, ftq(?)) AS rank', params=(text,)),
+            SQL('ts_rank(fti, ftq(?)) AS rank', params=(text,)),
             )
         origin = [
             DistributionSourcePackageCache,
@@ -1103,23 +1003,16 @@ class Distribution(SQLBase, BugTargetBase, MakesAnnouncements,
                     SourcePackageName.id),
             ]
 
-        # quote_like SQL-escapes the string in addition to LIKE-escaping
-        # it, so we can't use params=. So we need to double-escape the %
-        # on either side of the string: once to survive the formatting
-        # here, and once to survive Storm's formatting during
-        # compilation. Storm should really %-escape literal SQL strings,
-        # but it doesn't.
         conditions = [
             DistributionSourcePackageCache.distribution == self,
-            DistributionSourcePackageCache.archiveID.is_in(
-                self.all_distro_archive_ids),
             Or(
-                SQL("DistributionSourcePackageCache.fti @@ ftq(?)",
-                    params=(text,)),
-                SQL("DistributionSourcePackageCache.name "
-                    "LIKE '%%%%' || %s || '%%%%'" % quote_like(text.lower())),
-                ),
-            ]
+                DistributionSourcePackageCache.archiveID.is_in(
+                    self.all_distro_archive_ids),
+                DistributionSourcePackageCache.archive == None),
+            Or(
+                fti_search(DistributionSourcePackageCache, text),
+                DistributionSourcePackageCache.name.contains_string(
+                    text.lower()))]
 
         if has_packaging is not None:
             packaging_query = Exists(Select(
@@ -1325,13 +1218,8 @@ class Distribution(SQLBase, BugTargetBase, MakesAnnouncements,
             """ % sqlvalues(active_publishing_status))
 
         if text:
-            orderBy.insert(
-                0, SQLConstant(
-                    'rank(Archive.fti, ftq(%s)) DESC' % quote(text)))
-
-            clauses.append("""
-                Archive.fti @@ ftq(%s)
-            """ % sqlvalues(text))
+            orderBy.insert(0, rank_by_fti(Archive, text))
+            clauses.append(fti_search(Archive, text))
 
         if user is not None:
             if not user.inTeam(getUtility(ILaunchpadCelebrities).admin):
@@ -1348,9 +1236,8 @@ class Distribution(SQLBase, BugTargetBase, MakesAnnouncements,
             clauses.append(
                 "Archive.private = FALSE AND Archive.enabled = TRUE")
 
-        query = ' AND '.join(clauses)
         return Archive.select(
-            query, orderBy=orderBy, clauseTables=clauseTables)
+            And(*clauses), orderBy=orderBy, clauseTables=clauseTables)
 
     def getPendingAcceptancePPAs(self):
         """See `IDistribution`."""
@@ -1372,7 +1259,8 @@ class Distribution(SQLBase, BugTargetBase, MakesAnnouncements,
         Archive.purpose = %s AND
         Archive.distribution = %s AND
         SourcePackagePublishingHistory.archive = archive.id AND
-        SourcePackagePublishingHistory.scheduleddeletiondate is null AND
+        SourcePackagePublishingHistory.scheduleddeletiondate IS NULL AND
+        SourcePackagePublishingHistory.dateremoved IS NULL AND
         SourcePackagePublishingHistory.status IN (%s, %s)
          """ % sqlvalues(ArchivePurpose.PPA, self,
                          PackagePublishingStatus.PENDING,
@@ -1386,7 +1274,8 @@ class Distribution(SQLBase, BugTargetBase, MakesAnnouncements,
         Archive.purpose = %s AND
         Archive.distribution = %s AND
         BinaryPackagePublishingHistory.archive = archive.id AND
-        BinaryPackagePublishingHistory.scheduleddeletiondate is null AND
+        BinaryPackagePublishingHistory.scheduleddeletiondate IS NULL AND
+        BinaryPackagePublishingHistory.dateremoved IS NULL AND
         BinaryPackagePublishingHistory.status IN (%s, %s)
         """ % sqlvalues(ArchivePurpose.PPA, self,
                         PackagePublishingStatus.PENDING,
@@ -1396,10 +1285,34 @@ class Distribution(SQLBase, BugTargetBase, MakesAnnouncements,
             bin_query, clauseTables=['BinaryPackagePublishingHistory'],
             orderBy=['archive.id'], distinct=True)
 
+        reapable_af_query = """
+        Archive.purpose = %s AND
+        Archive.distribution = %s AND
+        ArchiveFile.archive = archive.id AND
+        ArchiveFile.scheduled_deletion_date < %s
+        """ % sqlvalues(ArchivePurpose.PPA, self, UTC_NOW)
+
+        reapable_af_archives = Archive.select(
+            reapable_af_query, clauseTables=['ArchiveFile'],
+            orderBy=['archive.id'], distinct=True)
+
+        dirty_suites_query = """
+        Archive.purpose = %s AND
+        Archive.distribution = %s AND
+        Archive.dirty_suites IS NOT NULL
+        """ % sqlvalues(ArchivePurpose.PPA, self)
+
+        dirty_suites_archives = Archive.select(
+            dirty_suites_query, orderBy=['archive.id'])
+
         deleting_archives = Archive.selectBy(
+            distribution=self,
+            purpose=ArchivePurpose.PPA,
             status=ArchiveStatus.DELETING).orderBy(['archive.id'])
 
-        return src_archives.union(bin_archives).union(deleting_archives)
+        return src_archives.union(bin_archives).union(
+            reapable_af_archives).union(dirty_suites_archives).union(
+            deleting_archives)
 
     def getArchiveByComponent(self, component_name):
         """See `IDistribution`."""
@@ -1423,170 +1336,6 @@ class Distribution(SQLBase, BugTargetBase, MakesAnnouncements,
             # Otherwise we defer to the caller.
             return None
 
-    @property
-    def upstream_report_excluded_packages(self):
-        """See `IDistribution`."""
-        # If the current distribution is Ubuntu, return a specific set
-        # of excluded packages. Otherwise return an empty list.
-        ubuntu = getUtility(ILaunchpadCelebrities).ubuntu
-        if self == ubuntu:
-            #XXX gmb 2009-02-02: bug 324298
-            #    This needs to be managed in a nicer, non-hardcoded
-            #    fashion.
-            excluded_packages = [
-                'apport',
-                'casper',
-                'displayconfig-gtk',
-                'flashplugin-nonfree',
-                'gnome-app-install',
-                'nvidia-graphics-drivers-177',
-                'software-properties',
-                'sun-java6',
-                'synaptic',
-                'ubiquity',
-                'ubuntu-meta',
-                'update-manager',
-                'update-notifier',
-                'usb-creator',
-                'usplash',
-                ]
-        else:
-            excluded_packages = []
-
-        return excluded_packages
-
-    def getPackagesAndPublicUpstreamBugCounts(self, limit=50,
-                                              exclude_packages=None):
-        """See `IDistribution`."""
-        from lp.registry.model.product import Product
-
-        if exclude_packages is None or len(exclude_packages) == 0:
-            # If exclude_packages is None or an empty list we set it to
-            # be a list containing a single empty string. This is so
-            # that we can quote() it properly for the query below ('NOT
-            # IN ()' is not valid SQL).
-            exclude_packages = ['']
-        else:
-            # Otherwise, listify exclude_packages so that we're not
-            # trying to quote() a security proxy object.
-            exclude_packages = list(exclude_packages)
-
-        # This method collects three open bug counts for
-        # sourcepackagenames in this distribution first, and then caches
-        # product information before rendering everything into a list of
-        # tuples.
-        cur = cursor()
-        cur.execute("""
-            SELECT SPN.id, SPN.name,
-            COUNT(DISTINCT Bugtask.bug) AS open_bugs,
-            COUNT(DISTINCT CASE WHEN Bugtask.status = %(triaged)s THEN
-                  Bugtask.bug END) AS bugs_triaged,
-            COUNT(DISTINCT CASE WHEN Bugtask.status IN %(unresolved)s THEN
-                  RelatedBugTask.bug END) AS bugs_affecting_upstream,
-            COUNT(DISTINCT CASE WHEN Bugtask.status in %(unresolved)s AND
-                  (RelatedBugTask.bugwatch IS NOT NULL OR
-                  RelatedProduct.official_malone IS TRUE) THEN
-                  RelatedBugTask.bug END) AS bugs_with_upstream_bugwatch,
-            COUNT(DISTINCT CASE WHEN Bugtask.status in %(unresolved)s AND
-                  RelatedBugTask.bugwatch IS NULL AND
-                  RelatedProduct.official_malone IS FALSE AND
-                  Bug.latest_patch_uploaded IS NOT NULL
-                  THEN
-                  RelatedBugTask.bug END)
-                  AS bugs_with_upstream_patches
-            FROM
-                SourcePackageName AS SPN
-                JOIN Bugtask ON SPN.id = Bugtask.sourcepackagename
-                JOIN Bug ON Bug.id = Bugtask.bug
-                LEFT OUTER JOIN Bugtask AS RelatedBugtask ON (
-                    RelatedBugtask.bug = Bugtask.bug
-                    AND RelatedBugtask.id != Bugtask.id
-                    AND RelatedBugtask.product IS NOT NULL
-                    AND RelatedBugtask.status != %(invalid)s
-                    )
-                LEFT OUTER JOIN Product AS RelatedProduct ON (
-                    RelatedBugtask.product = RelatedProduct.id
-                )
-            WHERE
-                Bugtask.distribution = %(distro)s
-                AND Bugtask.sourcepackagename = spn.id
-                AND Bugtask.distroseries IS NULL
-                AND Bugtask.status IN %(unresolved)s
-                AND Bug.information_type IN %(public_types)s
-                AND Bug.duplicateof IS NULL
-                AND spn.name NOT IN %(excluded_packages)s
-            GROUP BY SPN.id, SPN.name
-            HAVING COUNT(DISTINCT Bugtask.bug) > 0
-            ORDER BY open_bugs DESC, SPN.name LIMIT %(limit)s
-        """ % {'invalid': quote(BugTaskStatus.INVALID),
-               'triaged': quote(BugTaskStatus.TRIAGED),
-               'limit': limit,
-               'distro': self.id,
-               'unresolved': quote(DB_UNRESOLVED_BUGTASK_STATUSES),
-               'excluded_packages': quote(exclude_packages),
-               'public_types': quote(PUBLIC_INFORMATION_TYPES),
-                })
-        counts = cur.fetchall()
-        cur.close()
-        if not counts:
-            # If no counts are returned it means that there are no
-            # source package names in the database -- because the counts
-            # would just return zero if no bugs existed. And if there
-            # are no packages are in the database, all bets are off.
-            return []
-
-        # Next step is to extract which IDs actually show up in the
-        # output we generate, and cache them.
-        spn_ids = [item[0] for item in counts]
-        list(SourcePackageName.select("SourcePackageName.id IN %s"
-             % sqlvalues(spn_ids)))
-
-        # Finally find out what products are attached to these source
-        # packages (if any) and cache them too. The ordering of the
-        # query by Packaging.id ensures that the dictionary holds the
-        # latest entries for situations where we have multiple entries.
-        cur = cursor()
-        cur.execute("""
-            SELECT Packaging.sourcepackagename, Product.id
-              FROM Product, Packaging, ProductSeries, DistroSeries
-             WHERE ProductSeries.product = Product.id AND
-                   DistroSeries.distribution = %s AND
-                   Packaging.distroseries = DistroSeries.id AND
-                   Packaging.productseries = ProductSeries.id AND
-                   Packaging.sourcepackagename IN %s AND
-                   Packaging.packaging = %s AND
-                   Product.active IS TRUE
-                   ORDER BY Packaging.id
-        """ % sqlvalues(self.id, spn_ids, PackagingType.PRIME))
-        sources_to_products = dict(cur.fetchall())
-        cur.close()
-        if sources_to_products:
-            # Cache some more information to avoid us having to hit the
-            # database hard for each product rendered.
-            list(Product.select("Product.id IN %s" %
-                 sqlvalues(sources_to_products.values()),
-                 prejoins=["bug_supervisor", "bugtracker", "project",
-                           "development_focus.branch"]))
-
-        # Okay, we have all the information good to go, so assemble it
-        # in a reasonable data structure.
-        results = []
-        for (spn_id, spn_name, open_bugs, bugs_triaged,
-             bugs_affecting_upstream, bugs_with_upstream_bugwatch,
-             bugs_with_upstream_patches) in counts:
-            sourcepackagename = SourcePackageName.get(spn_id)
-            dsp = self.getSourcePackage(sourcepackagename)
-            if spn_id in sources_to_products:
-                product_id = sources_to_products[spn_id]
-                product = Product.get(product_id)
-            else:
-                product = None
-            results.append(
-                (dsp, product, open_bugs, bugs_triaged,
-                 bugs_affecting_upstream, bugs_with_upstream_bugwatch,
-                 bugs_with_upstream_patches))
-        return results
-
     def getAllowedBugInformationTypes(self):
         """See `IDistribution.`"""
         return FREE_INFORMATION_TYPES
@@ -1602,13 +1351,13 @@ class Distribution(SQLBase, BugTargetBase, MakesAnnouncements,
         admins = getUtility(ILaunchpadCelebrities).admin
         return user.inTeam(self.owner) or user.inTeam(admins)
 
-    def newSeries(self, name, displayname, title, summary,
+    def newSeries(self, name, display_name, title, summary,
                   description, version, previous_series, registrant):
         """See `IDistribution`."""
         series = DistroSeries(
             distribution=self,
             name=name,
-            displayname=displayname,
+            display_name=display_name,
             title=title,
             summary=summary,
             description=description,
@@ -1693,10 +1442,9 @@ class Distribution(SQLBase, BugTargetBase, MakesAnnouncements,
         return False
 
 
+@implementer(IDistributionSet)
 class DistributionSet:
     """This class is to deal with Distribution related stuff"""
-
-    implements(IDistributionSet)
     title = "Registered Distributions"
 
     def __iter__(self):
@@ -1731,13 +1479,14 @@ class DistributionSet:
             return None
         return pillar
 
-    def new(self, name, displayname, title, description, summary, domainname,
-            members, owner, registrant, mugshot=None, logo=None, icon=None):
+    def new(self, name, display_name, title, description, summary, domainname,
+            members, owner, registrant, mugshot=None, logo=None, icon=None,
+            vcs=None):
         """See `IDistributionSet`."""
         distro = Distribution(
             name=name,
-            displayname=displayname,
-            title=title,
+            display_name=display_name,
+            _title=title,
             description=description,
             summary=summary,
             domainname=domainname,
@@ -1747,7 +1496,8 @@ class DistributionSet:
             registrant=registrant,
             mugshot=mugshot,
             logo=logo,
-            icon=icon)
+            icon=icon,
+            vcs=vcs)
         getUtility(IArchiveSet).new(distribution=distro,
             owner=owner, purpose=ArchivePurpose.PRIMARY)
         policies = itertools.product(

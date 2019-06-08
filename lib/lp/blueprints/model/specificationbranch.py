@@ -1,8 +1,6 @@
 # Copyright 2009 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-# pylint: disable-msg=E0611,W0212
-
 """Database classes for linking specifications and branches."""
 
 __metaclass__ = type
@@ -16,7 +14,7 @@ from sqlobject import (
     ForeignKey,
     IN,
     )
-from zope.interface import implements
+from zope.interface import implementer
 
 from lp.blueprints.interfaces.specificationbranch import (
     ISpecificationBranch,
@@ -28,9 +26,9 @@ from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.sqlbase import SQLBase
 
 
+@implementer(ISpecificationBranch)
 class SpecificationBranch(SQLBase):
     """See `ISpecificationBranch`."""
-    implements(ISpecificationBranch)
 
     datecreated = UtcDateTimeCol(notNull=True, default=UTC_NOW)
     specification = ForeignKey(dbName="specification",
@@ -42,9 +40,9 @@ class SpecificationBranch(SQLBase):
         storm_validator=validate_public_person, notNull=True)
 
 
+@implementer(ISpecificationBranchSet)
 class SpecificationBranchSet:
     """See `ISpecificationBranchSet`."""
-    implements(ISpecificationBranchSet)
 
     def getSpecificationBranchesForBranches(self, branches, user):
         """See `ISpecificationBranchSet`."""

@@ -1,7 +1,5 @@
-# Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
-
-# pylint: disable-msg=F0401
 
 """Browser views related to archive subscriptions."""
 
@@ -19,12 +17,12 @@ import datetime
 from operator import attrgetter
 
 import pytz
-from zope.app.form import CustomWidgetFactory
-from zope.app.form.browser import TextWidget
 from zope.component import getUtility
 from zope.formlib import form
+from zope.formlib.widget import CustomWidgetFactory
+from zope.formlib.widgets import TextWidget
 from zope.interface import (
-    implements,
+    implementer,
     Interface,
     )
 from zope.schema import (
@@ -35,7 +33,6 @@ from zope.schema import (
 from lp import _
 from lp.app.browser.launchpadform import (
     action,
-    custom_widget,
     LaunchpadEditFormView,
     LaunchpadFormView,
     )
@@ -43,7 +40,10 @@ from lp.app.widgets.date import DateWidget
 from lp.app.widgets.popup import PersonPickerWidget
 from lp.registry.interfaces.person import IPersonSet
 from lp.services.fields import PersonChoice
-from lp.services.propertycache import cachedproperty
+from lp.services.propertycache import (
+    cachedproperty,
+    get_property_cache,
+    )
 from lp.services.webapp.batching import (
     BatchNavigator,
     StormRangeFactory,
@@ -69,10 +69,9 @@ def archive_subscription_ui_adapter(archive_subscription):
     return archive_subscription
 
 
+@implementer(IPersonalArchiveSubscription)
 class PersonalArchiveSubscription:
     """See `IPersonalArchiveSubscription`."""
-
-    implements(IPersonalArchiveSubscription)
 
     def __init__(self, subscriber, archive):
         self.subscriber = subscriber
@@ -130,10 +129,10 @@ class ArchiveSubscribersView(LaunchpadFormView):
 
     schema = IArchiveSubscriberUI
     field_names = ['subscriber', 'date_expires', 'description']
-    custom_widget('description', TextWidget, displayWidth=40)
-    custom_widget('date_expires', CustomWidgetFactory(DateWidget))
-    custom_widget('subscriber', PersonPickerWidget,
-        header="Select the subscriber")
+    custom_widget_description = CustomWidgetFactory(TextWidget, displayWidth=40)
+    custom_widget_date_expires = DateWidget
+    custom_widget_subscriber = CustomWidgetFactory(
+        PersonPickerWidget, header="Select the subscriber")
 
     @property
     def label(self):
@@ -245,8 +244,9 @@ class ArchiveSubscriptionEditView(LaunchpadEditFormView):
 
     schema = IArchiveSubscriberUI
     field_names = ['date_expires', 'description']
-    custom_widget('description', TextWidget, displayWidth=40)
-    custom_widget('date_expires', CustomWidgetFactory(DateWidget))
+    custom_widget_description = CustomWidgetFactory(
+        TextWidget, displayWidth=40)
+    custom_widget_date_expires = DateWidget
 
     @property
     def label(self):
@@ -320,8 +320,13 @@ class PersonArchiveSubscriptionsView(LaunchpadView):
         cleaner.
         """
         subscriber_set = getUtility(IArchiveSubscriberSet)
-        subs_with_tokens = subscriber_set.getBySubscriberWithActiveToken(
-            self.context)
+        subs_with_tokens = list(
+            subscriber_set.getBySubscriberWithActiveToken(self.context))
+
+        # ArchiveSubscriber.archive is preloaded.
+        archives = [subscriber.archive for subscriber, _ in subs_with_tokens]
+        for archive in archives:
+            get_property_cache(archive)._known_subscribers = [self.context]
 
         # Turn the result set into a list of dicts so it can be easily
         # accessed in TAL. Note that we need to ensure that only one
@@ -333,15 +338,12 @@ class PersonArchiveSubscriptionsView(LaunchpadView):
         for subscription, token in subs_with_tokens:
             if subscription.archive in unique_archives:
                 continue
-
             unique_archives.add(subscription.archive)
 
             personal_subscription = PersonalArchiveSubscription(
                 self.context, subscription.archive)
             personal_subscription_tokens.append({
-                'subscription': personal_subscription,
-                'token': token
-                })
+                'subscription': personal_subscription, 'token': token})
 
         return personal_subscription_tokens
 
@@ -362,30 +364,25 @@ class PersonArchiveSubscriptionView(LaunchpadView, SourcesListEntriesWidget):
     def initialize(self):
         """Process any posted actions."""
         super(PersonArchiveSubscriptionView, self).initialize()
-        # Set the archive attribute so SourcesListEntriesWidget can be built
-        # correctly.
+        # Set properties for SourcesListEntriesWidget.
         self.archive = self.context.archive
+        self.sources_list_user = self.context.subscriber
 
         # If an activation was requested and there isn't a currently
         # active token, then create a token, provide a notification
         # and redirect.
         if self.request.form.get('activate') and not self.active_token:
             self.context.archive.newAuthToken(self.context.subscriber)
-
             self.request.response.redirect(self.request.getURL())
-
         # Otherwise, if a regeneration was requested and there is an
         # active token, then cancel the old token, create a new one,
         # provide a notification and redirect.
         elif self.request.form.get('regenerate') and self.active_token:
             self.active_token.deactivate()
-
             self.context.archive.newAuthToken(self.context.subscriber)
-
             self.request.response.addNotification(
                 "Launchpad has generated the new password you requested "
                 "for your access to the archive %s. Please follow "
                 "the instructions below to update your custom "
                 "\"sources.list\"." % self.context.archive.displayname)
-
             self.request.response.redirect(self.request.getURL())

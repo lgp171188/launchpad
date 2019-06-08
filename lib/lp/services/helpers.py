@@ -1,4 +1,4 @@
-# Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Various functions and classes that are useful across different parts of
@@ -10,6 +10,7 @@ be better as a method on an existing content object or IFooSet object.
 
 __metaclass__ = type
 
+from collections import OrderedDict
 from difflib import unified_diff
 import re
 from StringIO import StringIO
@@ -60,7 +61,7 @@ def text_replaced(text, replacements, _cache={}):
             list_item = '(%s)'
             join_char = '|'
         for find, replace in sorted(replacements.items(),
-                                    key=lambda (key, value): len(key),
+                                    key=lambda item: len(item[0]),
                                     reverse=True):
             L.append(list_item % re.escape(find))
         # Make a copy of the replacements dict, as it is mutable, but we're
@@ -145,12 +146,12 @@ def shortlist(sequence, longest_expected=15, hardlimit=None):
 
     It works on iterable also which don't support the extended slice protocol.
 
-    >>> xrange(5)[:1] #doctest: +ELLIPSIS
+    >>> iter(range(5))[:1] #doctest: +ELLIPSIS
     Traceback (most recent call last):
     ...
     TypeError: ...
 
-    >>> shortlist(xrange(10), 5, hardlimit=8) #doctest: +ELLIPSIS
+    >>> shortlist(iter(range(10)), 5, hardlimit=8) #doctest: +ELLIPSIS
     Traceback (most recent call last):
     ...
     ShortListTooBigError: ...
@@ -224,15 +225,37 @@ def filenameToContentType(fname):
 
     >>> filenameToContentType('test.tgz')
     'application/octet-stream'
+
+    Build logs
+    >>> filenameToContentType('buildlog.txt.gz')
+    'text/plain'
+
+    Various compressed files
+
+    >>> filenameToContentType('Packages.gz')
+    'application/x-gzip'
+    >>> filenameToContentType('Packages.bz2')
+    'application/x-bzip2'
+    >>> filenameToContentType('Packages.xz')
+    'application/x-xz'
     """
-    ftmap = {".dsc": "text/plain",
-             ".changes": "text/plain",
-             ".deb": "application/x-debian-package",
-             ".udeb": "application/x-debian-package",
-             ".txt": "text/plain",
-             # For the build master logs
-             ".txt.gz": "text/plain",
-             }
+    ftmap = OrderedDict([
+        (".dsc", "text/plain"),
+        (".changes", "text/plain"),
+        (".deb", "application/x-debian-package"),
+        (".udeb", "application/x-debian-package"),
+        (".txt", "text/plain"),
+        # For the build master logs
+        (".txt.gz", "text/plain"),
+        # For live filesystem builds
+        (".manifest", "text/plain"),
+        (".manifest-remove", "text/plain"),
+        (".size", "text/plain"),
+        # Compressed files
+        (".gz", "application/x-gzip"),
+        (".bz2", "application/x-bzip2"),
+        (".xz", "application/x-xz"),
+        ])
     for ending in ftmap:
         if fname.endswith(ending):
             return ftmap[ending]

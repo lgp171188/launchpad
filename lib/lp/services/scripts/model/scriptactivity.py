@@ -1,8 +1,6 @@
 # Copyright 2009-2010 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-# pylint: disable-msg=E0611,W0212
-
 __metaclass__ = type
 
 __all__ = [
@@ -13,7 +11,7 @@ __all__ = [
 import socket
 
 from sqlobject import StringCol
-from zope.interface import implements
+from zope.interface import implementer
 
 from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.sqlbase import SQLBase
@@ -23,9 +21,8 @@ from lp.services.scripts.interfaces.scriptactivity import (
     )
 
 
+@implementer(IScriptActivity)
 class ScriptActivity(SQLBase):
-
-    implements(IScriptActivity)
 
     name = StringCol(notNull=True)
     hostname = StringCol(notNull=True)
@@ -33,9 +30,8 @@ class ScriptActivity(SQLBase):
     date_completed = UtcDateTimeCol(notNull=True)
 
 
+@implementer(IScriptActivitySet)
 class ScriptActivitySet:
-
-    implements(IScriptActivitySet)
 
     def recordSuccess(self, name, date_started, date_completed,
                       hostname=None):

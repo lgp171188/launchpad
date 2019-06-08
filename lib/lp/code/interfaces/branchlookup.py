@@ -1,8 +1,6 @@
 # Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-# pylint: disable-msg=E0213
-
 """Utility for looking up branches by name."""
 
 __metaclass__ = type
@@ -158,6 +156,14 @@ class IBranchLookup(Interface):
         :return: a tuple of (`IBranch`, extra_path). 'extra_path' is used to
             make things like 'bzr cat lp:~foo/bar/baz/README' work. Trailing
             paths are not handled for shortcut paths.
+        """
+
+    def getByPath(path):
+        """Find the branch associated with a path.
+
+        As with `getByLPPath`, but returns None instead of raising any of
+        the documented exceptions, and returns only the `IBranch` on success
+        and not any extra path.
         """
 
 

@@ -1,8 +1,6 @@
 # Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-# pylint: disable-msg=C0102
-
 __metaclass__ = type
 
 from zope.component import getUtility
@@ -13,7 +11,6 @@ from lp.testing.layers import ZopelessDatabaseLayer
 from lp.translations.interfaces.translationmessage import (
     RosettaTranslationOrigin,
     )
-from lp.translations.model.translationmessage import TranslationMessage
 from lp.translations.tests.helpers import (
     make_translationmessage_for_context,
     summarize_current_translations,
@@ -92,30 +89,17 @@ class SetCurrentTranslationTestMixin:
         if new_current is None:
             self.assertIs(new_current, current)
         else:
-            self.assertEquals(new_current, current)
+            self.assertEqual(new_current, current)
         if new_diverged is None:
             self.assertIs(new_diverged, diverged)
         else:
-            self.assertEquals(new_diverged, diverged)
+            self.assertEqual(new_diverged, diverged)
         if new_other is None:
             self.assertIs(new_other, other_shared)
         else:
-            self.assertEquals(new_other, other_shared)
+            self.assertEqual(new_other, other_shared)
 
         self.assertContentEqual(new_divergences, divergences_elsewhere)
-
-    def assertTranslationMessageDeleted(self, translationmessage_id):
-        """Assert that a translation message doesn't exist.
-
-        Until deletion of TMs is implemented, it just checks that
-        translation message is not current in any context.
-        """
-        # XXX DaniloSegan 20100528: we should assert that tm_other
-        # doesn't exist in the DB anymore instead.
-        tm = TranslationMessage.get(translationmessage_id)
-        self.assertFalse(tm.is_current_ubuntu)
-        self.assertFalse(tm.is_current_upstream)
-        self.assertIs(None, tm.potemplate)
 
     # These tests follow a naming pattern to reflect exhaustive
     # coverage.  We had to abbreviate them.  In the names,
@@ -224,7 +208,7 @@ class SetCurrentTranslationTestMixin:
             tm_other.is_current_upstream and tm_other.is_current_ubuntu)
         self.assertTrue(
             tm_other.is_current_upstream or tm_other.is_current_ubuntu)
-        self.assertEquals(self.other_pofile.potemplate, tm_other.potemplate)
+        self.assertEqual(self.other_pofile.potemplate, tm_other.potemplate)
 
     def test_c_None__n_None__o_diverged__follows(self):
         # Current translation is None, and we have found no
@@ -250,7 +234,7 @@ class SetCurrentTranslationTestMixin:
                          tm_other.is_current_ubuntu)
         self.assertTrue(tm_other.is_current_upstream or
                          tm_other.is_current_ubuntu)
-        self.assertEquals(self.other_pofile.potemplate, tm_other.potemplate)
+        self.assertEqual(self.other_pofile.potemplate, tm_other.potemplate)
 
     def test_c_None__n_shared__o_None(self):
         # Current translation is None, and we have found a
@@ -268,7 +252,7 @@ class SetCurrentTranslationTestMixin:
 
         # We end up with tm_suggestion being activated.
         self.assertTrue(tm is not None)
-        self.assertEquals(tm_suggestion, tm)
+        self.assertEqual(tm_suggestion, tm)
         self.assert_Current_Diverged_Other_DivergencesElsewhere_are(
             tm, None, None, [])
 
@@ -289,7 +273,7 @@ class SetCurrentTranslationTestMixin:
 
         # We end up with tm_suggestion being activated in both contexts.
         self.assertTrue(tm is not None)
-        self.assertEquals(tm_suggestion, tm)
+        self.assertEqual(tm_suggestion, tm)
         self.assert_Current_Diverged_Other_DivergencesElsewhere_are(
             tm, None, tm, [])
 
@@ -311,7 +295,7 @@ class SetCurrentTranslationTestMixin:
         # tm_suggestion becomes current.
         # Current for other context one stays the same.
         self.assertTrue(tm is not None)
-        self.assertEquals(tm_suggestion, tm)
+        self.assertEqual(tm_suggestion, tm)
         self.assert_Current_Diverged_Other_DivergencesElsewhere_are(
             tm, None, tm_other, [])
 
@@ -333,7 +317,7 @@ class SetCurrentTranslationTestMixin:
 
         # tm_suggestion becomes current.
         self.assertTrue(tm is not None)
-        self.assertEquals(tm_suggestion, tm)
+        self.assertEqual(tm_suggestion, tm)
         # If a translation is set for the first time in upstream,
         # this translation becomes current in Ubuntu too, but if the
         # translation is set for the first time in Ubuntu, this does
@@ -359,7 +343,7 @@ class SetCurrentTranslationTestMixin:
         # tm_other becomes current in this context as well,
         # and remains current for the other context.
         self.assertTrue(tm is not None)
-        self.assertEquals(tm_other, tm)
+        self.assertEqual(tm_other, tm)
         self.assert_Current_Diverged_Other_DivergencesElsewhere_are(
             tm, None, tm, [])
 
@@ -384,7 +368,7 @@ class SetCurrentTranslationTestMixin:
 
         # We end up with a shared current translation.
         self.assertTrue(tm is not None)
-        self.assertEquals(tm_suggestion, tm)
+        self.assertEqual(tm_suggestion, tm)
         self.assert_Current_Diverged_Other_DivergencesElsewhere_are(
             tm, None, None, [tm_other])
 
@@ -394,7 +378,7 @@ class SetCurrentTranslationTestMixin:
                          tm_other.is_current_ubuntu)
         self.assertTrue(tm_other.is_current_upstream or
                          tm_other.is_current_ubuntu)
-        self.assertEquals(self.other_pofile.potemplate, tm_other.potemplate)
+        self.assertEqual(self.other_pofile.potemplate, tm_other.potemplate)
 
     def test_c_None__n_shared__o_diverged__follows(self):
         # Current translation is None, and we have found a
@@ -414,7 +398,7 @@ class SetCurrentTranslationTestMixin:
 
         # We end up with a shared current translation.
         self.assertTrue(tm is not None)
-        self.assertEquals(tm_suggestion, tm)
+        self.assertEqual(tm_suggestion, tm)
         self.assert_Current_Diverged_Other_DivergencesElsewhere_are(
             tm, None, tm, [tm_other])
 
@@ -424,7 +408,7 @@ class SetCurrentTranslationTestMixin:
             tm_other.is_current_upstream and tm_other.is_current_ubuntu)
         self.assertTrue(
             tm_other.is_current_upstream or tm_other.is_current_ubuntu)
-        self.assertEquals(self.other_pofile.potemplate, tm_other.potemplate)
+        self.assertEqual(self.other_pofile.potemplate, tm_other.potemplate)
 
     def test_c_shared__n_None__o_None(self):
         # Current translation is 'shared', and we have found
@@ -441,7 +425,7 @@ class SetCurrentTranslationTestMixin:
         # New translation message is shared and current only for
         # the active context.
         self.assertTrue(tm is not None)
-        self.assertNotEquals(tm_shared, tm)
+        self.assertNotEqual(tm_shared, tm)
         self.assert_Current_Diverged_Other_DivergencesElsewhere_are(
             tm, None, None, [])
 
@@ -465,7 +449,7 @@ class SetCurrentTranslationTestMixin:
         # New translation message is shared and current for both
         # active and "other" context.
         self.assertTrue(tm is not None)
-        self.assertNotEquals(tm_shared, tm)
+        self.assertNotEqual(tm_shared, tm)
         self.assert_Current_Diverged_Other_DivergencesElsewhere_are(
             tm, None, tm, [])
 
@@ -492,8 +476,8 @@ class SetCurrentTranslationTestMixin:
         # the active context.  Current for "other" context is left
         # untouched.
         self.assertTrue(tm is not None)
-        self.assertNotEquals(tm_shared, tm)
-        self.assertNotEquals(tm_other, tm)
+        self.assertNotEqual(tm_shared, tm)
+        self.assertNotEqual(tm_other, tm)
         self.assert_Current_Diverged_Other_DivergencesElsewhere_are(
             tm, None, tm_other, [])
 
@@ -524,8 +508,8 @@ class SetCurrentTranslationTestMixin:
         # New translation message is shared and current only for
         # the active context.
         self.assertTrue(tm is not None)
-        self.assertNotEquals(tm_shared, tm)
-        self.assertEquals(tm_suggestion, tm)
+        self.assertNotEqual(tm_shared, tm)
+        self.assertEqual(tm_suggestion, tm)
         self.assert_Current_Diverged_Other_DivergencesElsewhere_are(
             tm, None, None, [])
 
@@ -552,8 +536,8 @@ class SetCurrentTranslationTestMixin:
         # New translation message is shared and current only for
         # the active context.
         self.assertTrue(tm is not None)
-        self.assertNotEquals(tm_shared, tm)
-        self.assertEquals(tm_suggestion, tm)
+        self.assertNotEqual(tm_shared, tm)
+        self.assertEqual(tm_suggestion, tm)
         self.assert_Current_Diverged_Other_DivergencesElsewhere_are(
             tm, None, tm, [])
 
@@ -577,7 +561,7 @@ class SetCurrentTranslationTestMixin:
         # New translation message is shared and current only for
         # the active context.
         self.assertTrue(tm is not None)
-        self.assertEquals(tm_shared, tm)
+        self.assertEqual(tm_shared, tm)
         self.assert_Current_Diverged_Other_DivergencesElsewhere_are(
             tm, None, None, [])
 
@@ -597,7 +581,7 @@ class SetCurrentTranslationTestMixin:
 
         # New translation message is shared and current for both contexts.
         self.assertTrue(tm is not None)
-        self.assertEquals(tm_shared, tm)
+        self.assertEqual(tm_shared, tm)
         self.assert_Current_Diverged_Other_DivergencesElsewhere_are(
             tm, None, tm, [])
 
@@ -622,8 +606,8 @@ class SetCurrentTranslationTestMixin:
         # New translation message is shared and current only for
         # the active context. Translation for other context is untouched.
         self.assertTrue(tm is not None)
-        self.assertNotEquals(tm_shared, tm)
-        self.assertEquals(tm_suggestion, tm)
+        self.assertNotEqual(tm_shared, tm)
+        self.assertEqual(tm_suggestion, tm)
         self.assert_Current_Diverged_Other_DivergencesElsewhere_are(
             tm, None, tm_other, [])
 
@@ -654,8 +638,8 @@ class SetCurrentTranslationTestMixin:
 
         # New translation message is shared for both contexts.
         self.assertTrue(tm is not None)
-        self.assertNotEquals(tm_shared, tm)
-        self.assertEquals(tm_other, tm)
+        self.assertNotEqual(tm_shared, tm)
+        self.assertEqual(tm_other, tm)
         self.assert_Current_Diverged_Other_DivergencesElsewhere_are(
             tm, None, tm, [])
 
@@ -687,8 +671,8 @@ class SetCurrentTranslationTestMixin:
         # New translation message is shared for current context,
         # and identical divergence in other context is kept.
         self.assertTrue(tm is not None)
-        self.assertNotEquals(tm_shared, tm)
-        self.assertNotEquals(tm_other_diverged, tm)
+        self.assertNotEqual(tm_shared, tm)
+        self.assertNotEqual(tm_other_diverged, tm)
         self.assert_Current_Diverged_Other_DivergencesElsewhere_are(
             tm, None, None, [tm_other_diverged])
 
@@ -716,9 +700,9 @@ class SetCurrentTranslationTestMixin:
         # New translation message is shared and current only for
         # the active context.  "Other" translation is unchanged.
         self.assertTrue(tm is not None)
-        self.assertNotEquals(tm_shared, tm)
-        self.assertNotEquals(tm_other, tm)
-        self.assertNotEquals(tm_other_diverged, tm)
+        self.assertNotEqual(tm_shared, tm)
+        self.assertNotEqual(tm_other, tm)
+        self.assertNotEqual(tm_other_diverged, tm)
         self.assert_Current_Diverged_Other_DivergencesElsewhere_are(
             tm, None, tm_other, [tm_other_diverged])
 
@@ -744,8 +728,8 @@ class SetCurrentTranslationTestMixin:
         # New translation message is shared and current only for
         # the active context.  "Other" translation is unchanged.
         self.assertTrue(tm is not None)
-        self.assertNotEquals(tm_shared, tm)
-        self.assertNotEquals(tm_other_diverged, tm)
+        self.assertNotEqual(tm_shared, tm)
+        self.assertNotEqual(tm_other_diverged, tm)
         self.assert_Current_Diverged_Other_DivergencesElsewhere_are(
             tm, None, None, [tm_other_diverged])
 
@@ -772,7 +756,7 @@ class SetCurrentTranslationTestMixin:
         # converge the diverged translation (since shared is None),
         # though it's not a requirement: (tm, None, None, [])
         self.assertTrue(tm is not None)
-        self.assertNotEquals(tm_diverged, tm)
+        self.assertNotEqual(tm_diverged, tm)
         self.assert_Current_Diverged_Other_DivergencesElsewhere_are(
             None, tm, None, [])
 
@@ -803,8 +787,8 @@ class SetCurrentTranslationTestMixin:
         # New translation message stays diverged and current only for
         # the active context.
         self.assertTrue(tm is not None)
-        self.assertNotEquals(tm_diverged, tm)
-        self.assertNotEquals(tm_other, tm)
+        self.assertNotEqual(tm_diverged, tm)
+        self.assertNotEqual(tm_other, tm)
         self.assert_Current_Diverged_Other_DivergencesElsewhere_are(
             None, tm, tm_other, [])
 
@@ -839,8 +823,8 @@ class SetCurrentTranslationTestMixin:
         # converge the diverged translation (since shared is None),
         # though it's not a requirement: (tm, None, None, [])
         self.assertTrue(tm is not None)
-        self.assertNotEquals(tm_diverged, tm)
-        self.assertEquals(tm_suggestion, tm)
+        self.assertNotEqual(tm_diverged, tm)
+        self.assertEqual(tm_suggestion, tm)
         self.assert_Current_Diverged_Other_DivergencesElsewhere_are(
             None, tm, None, [])
 
@@ -870,8 +854,8 @@ class SetCurrentTranslationTestMixin:
 
         # New translation message converges for the active context.
         self.assertTrue(tm is not None)
-        self.assertNotEquals(tm_diverged, tm)
-        self.assertEquals(tm_shared, tm)
+        self.assertNotEqual(tm_diverged, tm)
+        self.assertEqual(tm_shared, tm)
         self.assert_Current_Diverged_Other_DivergencesElsewhere_are(
             tm, None, None, [])
 
@@ -899,8 +883,8 @@ class SetCurrentTranslationTestMixin:
         # The other side is not set because we're working on a diverged
         # message.
         self.assertTrue(tm is not None)
-        self.assertNotEquals(tm_diverged, tm)
-        self.assertEquals(tm_shared, tm)
+        self.assertNotEqual(tm_diverged, tm)
+        self.assertEqual(tm_shared, tm)
         self.assert_Current_Diverged_Other_DivergencesElsewhere_are(
             tm, None, None, [])
 
@@ -932,8 +916,8 @@ class SetCurrentTranslationTestMixin:
         # converge the diverged translation (since shared is None),
         # though it's not a requirement: (tm, None, None, [])
         self.assertTrue(tm is not None)
-        self.assertNotEquals(tm_diverged, tm)
-        self.assertEquals(tm_suggestion, tm)
+        self.assertNotEqual(tm_diverged, tm)
+        self.assertEqual(tm_suggestion, tm)
         self.assert_Current_Diverged_Other_DivergencesElsewhere_are(
             None, tm, tm_other, [])
 
@@ -969,8 +953,8 @@ class SetCurrentTranslationTestMixin:
         # converge the diverged translation (since shared is None),
         # though it's not a requirement: tm_other==tm and (tm, None, tm, [])
         self.assertTrue(tm is not None)
-        self.assertNotEquals(tm_diverged, tm)
-        self.assertNotEquals(tm_other, tm)
+        self.assertNotEqual(tm_diverged, tm)
+        self.assertNotEqual(tm_other, tm)
         self.assert_Current_Diverged_Other_DivergencesElsewhere_are(
             None, tm, tm_other, [])
 
@@ -1006,9 +990,9 @@ class SetCurrentTranslationTestMixin:
 
         # New translation message is shared for current context.
         self.assertTrue(tm is not None)
-        self.assertNotEquals(tm_diverged, tm)
-        self.assertNotEquals(tm_other, tm)
-        self.assertEquals(tm_shared, tm)
+        self.assertNotEqual(tm_diverged, tm)
+        self.assertNotEqual(tm_other, tm)
+        self.assertEqual(tm_shared, tm)
         self.assert_Current_Diverged_Other_DivergencesElsewhere_are(
             tm, None, tm_other, [])
 
@@ -1044,8 +1028,8 @@ class SetCurrentTranslationTestMixin:
         # converge the diverged translation (since shared is None),
         # though it's not a requirement: (tm, None, None, [])
         self.assertTrue(tm is not None)
-        self.assertNotEquals(tm_diverged, tm)
-        self.assertNotEquals(tm_diverged_elsewhere, tm)
+        self.assertNotEqual(tm_diverged, tm)
+        self.assertNotEqual(tm_diverged_elsewhere, tm)
         self.assert_Current_Diverged_Other_DivergencesElsewhere_are(
             None, tm, None, [tm_diverged_elsewhere])
 
@@ -1082,8 +1066,8 @@ class SetCurrentTranslationTestMixin:
         # converge the diverged translation (since shared is None),
         # though it's not a requirement: (tm, None, tm_other, [])
         self.assertTrue(tm is not None)
-        self.assertNotEquals(tm_diverged, tm)
-        self.assertNotEquals(tm_diverged_elsewhere, tm)
+        self.assertNotEqual(tm_diverged, tm)
+        self.assertNotEqual(tm_diverged_elsewhere, tm)
         self.assert_Current_Diverged_Other_DivergencesElsewhere_are(
             None, tm, tm_other, [tm_diverged_elsewhere])
 
@@ -1117,8 +1101,8 @@ class SetCurrentTranslationTestMixin:
         # converge the diverged translation (since shared is None),
         # though it's not a requirement: (tm, None, tm_other, [])
         self.assertTrue(tm is not None)
-        self.assertNotEquals(tm_diverged, tm)
-        self.assertNotEquals(tm_other_diverged, tm)
+        self.assertNotEqual(tm_diverged, tm)
+        self.assertNotEqual(tm_other_diverged, tm)
         self.assert_Current_Diverged_Other_DivergencesElsewhere_are(
             None, tm, None, [tm_other_diverged])
 

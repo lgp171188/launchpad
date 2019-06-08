@@ -1,4 +1,4 @@
-# Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Announcement views."""
@@ -18,7 +18,7 @@ __all__ = [
     ]
 
 from zope.interface import (
-    implements,
+    implementer,
     Interface,
     )
 from zope.schema import (
@@ -29,7 +29,6 @@ from zope.schema import (
 from lp import _
 from lp.app.browser.launchpadform import (
     action,
-    custom_widget,
     LaunchpadFormView,
     )
 from lp.app.validators.url import valid_webref
@@ -149,7 +148,7 @@ class AnnouncementAddView(LaunchpadFormView):
     label = "Make an announcement"
     page_title = label
 
-    custom_widget('publication_date', AnnouncementDateWidget)
+    custom_widget_publication_date = AnnouncementDateWidget
 
     @action(_('Make announcement'), name='announce')
     def announce_action(self, action, data):
@@ -246,7 +245,7 @@ class AnnouncementPublishView(AnnouncementFormMixin, LaunchpadFormView):
     field_names = ['publication_date']
     page_title = 'Publish announcement'
 
-    custom_widget('publication_date', AnnouncementDateWidget)
+    custom_widget_publication_date = AnnouncementDateWidget
 
     @action(_('Publish'), name='publish')
     def publish_action(self, action, data):
@@ -279,9 +278,9 @@ class AnnouncementDeleteView(AnnouncementFormMixin, LaunchpadFormView):
         self.next_url = canonical_url(self.context.target) + '/+announcements'
 
 
+@implementer(IAnnouncementCreateMenu)
 class HasAnnouncementsView(LaunchpadView, FeedsMixin):
     """A view class for pillars which have announcements."""
-    implements(IAnnouncementCreateMenu)
 
     page_title = 'News and announcements'
     batch_size = config.launchpad.announcement_batch_size
@@ -304,12 +303,16 @@ class HasAnnouncementsView(LaunchpadView, FeedsMixin):
     @cachedproperty
     def latest_announcements(self):
         published_only = not check_permission('launchpad.Edit', self.context)
-        return self.context.getAnnouncements(
-                    limit=5, published_only=published_only)
+        return list(self.context.getAnnouncements(
+                    limit=5, published_only=published_only))
+
+    @cachedproperty
+    def has_announcements(self):
+        return len(self.latest_announcements) > 0
 
     @cachedproperty
     def show_announcements(self):
-        return (self.latest_announcements.count() > 0
+        return (len(self.latest_announcements) > 0
             or check_permission('launchpad.Edit', self.context))
 
     @cachedproperty

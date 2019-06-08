@@ -1,4 +1,4 @@
-# Copyright 2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2011-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for the web resources of the testkeyserver."""
@@ -8,12 +8,14 @@ __metaclass__ = type
 import os
 import shutil
 
-from testtools.deferredruntest import AsynchronousDeferredRunTest
+from testtools.twistedsupport import AsynchronousDeferredRunTest
+import treq
 from twisted.internet.endpoints import serverFromString
 from twisted.python.failure import Failure
-from twisted.web.client import getPage
 from twisted.web.server import Site
 
+from lp.services.twistedsupport.testing import TReqFixture
+from lp.services.twistedsupport.treq import check_status
 from lp.testing import TestCase
 from lp.testing.keyserver.harness import KEYS_DIR
 from lp.testing.keyserver.web import KeyServerResource
@@ -46,10 +48,13 @@ class TestWebResources(TestCase):
     def fetchResource(self, listening_port, path):
         """GET the content at 'path' from the web server at 'listening_port'.
         """
+        from twisted.internet import reactor
         url = 'http://localhost:%s/%s' % (
             listening_port.getHost().port,
             path.lstrip('/'))
-        return getPage(url)
+        client = self.useFixture(TReqFixture(reactor)).client
+        return client.get(url).addCallback(check_status).addCallback(
+            treq.content)
 
     def getURL(self, path):
         """Start a test key server and get the content at 'path'."""
@@ -65,8 +70,8 @@ class TestWebResources(TestCase):
         d = self.getURL(path)
         return d.addCallback(self.assertThat, DocTestMatches(content))
 
-    def assertRaises500ErrorForKeyNotFound(self, path):
-        """Assert that the test server returns a 500 response
+    def assertRaises404ErrorForKeyNotFound(self, path):
+        """Assert that the test server returns a 404 response
         for attempts to retrieve an unknown key.
         ."""
         d = self.getURL(path)
@@ -94,11 +99,11 @@ class TestWebResources(TestCase):
                 self.fail('Response was not an HTTP error response.')
             if not isinstance(failure, Failure):
                 raise failure
-            self.assertEqual('500', failure.value.status)
+            self.assertEqual('404', failure.value.status)
             self.assertEqual(
                 '<html><head><title>Error handling request</title></head>\n'
                 '<body><h1>Error handling request</h1>'
-                'Error handling request: No keys found</body></html>',
+                'No results found: No keys found</body></html>',
                 failure.value.response)
 
         d.addCallback(regular_execution_callback)
@@ -107,7 +112,7 @@ class TestWebResources(TestCase):
     def test_index_lookup(self):
         # A key index lookup form via GET.
         return self.assertContentMatches(
-            '/pks/lookup?op=index&search=0xDFD20543',
+            '/pks/lookup?fingerprint=on&op=index&search=0xDFD20543',
             '''\
 <html>
 ...
@@ -120,7 +125,7 @@ pub  1024D/DFD20543 2005-04-13 Sample Person (revoked) &lt;sample.revoked@canoni
     def test_content_lookup(self):
         # A key content lookup form via GET.
         return self.assertContentMatches(
-            '/pks/lookup?op=get&'
+            '/pks/lookup?fingerprint=on&op=get&'
             'search=0xA419AE861E88BC9E04B9C26FBA2B9389DFD20543',
             '''\
 <html>
@@ -138,7 +143,7 @@ mQGiBEJdmOcRBADkNJPTBuCIefBdRAhvWyD9SSVHh8GHQWS7l9sRLEsirQkKz1yB
         # We can also request a key ID instead of a fingerprint, and it will
         # glob for the fingerprint.
         return self.assertContentMatches(
-            '/pks/lookup?op=get&search=0xDFD20543',
+            '/pks/lookup?fingerprint=on&op=get&search=0xDFD20543',
             '''\
 <html>
 ...
@@ -153,8 +158,8 @@ mQGiBEJdmOcRBADkNJPTBuCIefBdRAhvWyD9SSVHh8GHQWS7l9sRLEsirQkKz1yB
 
     def test_nonexistent_key(self):
         # If we request a nonexistent key, we get a nice error.
-        return self.assertRaises500ErrorForKeyNotFound(
-            '/pks/lookup?op=get&search=0xDFD20544')
+        return self.assertRaises404ErrorForKeyNotFound(
+            '/pks/lookup?fingerprint=on&op=get&search=0xDFD20544')
 
     def test_add_key(self):
         # A key submit form via POST (see doc/gpghandler.txt for more

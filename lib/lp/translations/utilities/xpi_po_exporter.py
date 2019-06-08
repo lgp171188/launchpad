@@ -1,7 +1,6 @@
 # Copyright 2009-2010 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-# pylint: disable-msg=W0231
 """Export module for XPI files using .po file format."""
 
 __metaclass__ = type
@@ -10,7 +9,7 @@ __all__ = [
     'XPIPOExporter',
     ]
 
-from zope.interface import implements
+from zope.interface import implementer
 
 from lp.translations.interfaces.translationexporter import (
     ITranslationFormatExporter,
@@ -21,9 +20,9 @@ from lp.translations.interfaces.translationfileformat import (
 from lp.translations.utilities.gettext_po_exporter import GettextPOExporter
 
 
+@implementer(ITranslationFormatExporter)
 class XPIPOExporter(GettextPOExporter):
     """Support class for exporting XPI files as .po files."""
-    implements(ITranslationFormatExporter)
 
     format = TranslationFileFormat.XPIPO
 

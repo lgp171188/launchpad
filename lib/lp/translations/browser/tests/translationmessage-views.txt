@@ -10,7 +10,6 @@ ITranslationMessage object.
     ...     TranslationMessage)
     >>> from lp.services.webapp import canonical_url
     >>> from lp.services.worlddata.interfaces.language import ILanguageSet
-    >>> from lp.translations.publisher import TranslationsLayer
 
 All the tests will be submitted as coming from Kurem, an editor for the
 POFile that we are going to edit.
@@ -33,12 +32,12 @@ without the plural form information.
     >>> current_translationmessage = (
     ...     potmsgset.getCurrentTranslationMessageOrDummy(pofile_tlh))
     >>> translationmessage_page_view = create_view(
-    ...     current_translationmessage, "+translate", layer=TranslationsLayer)
+    ...     current_translationmessage, "+translate")
     >>> translationmessage_page_view.initialize()
 
 Here we can see that it's lacking that information.
 
-    >>> print translationmessage_page_view.context.language.pluralforms
+    >>> print(translationmessage_page_view.context.language.pluralforms)
     None
 
 And the view class detects it correctly.
@@ -57,13 +56,12 @@ dummy ones.
     ...     [canonical_url(current_translationmessage), '+translate'])
     >>> translationmessage.setPOFile(pofile)
     >>> translationmessage_page_view = create_view(
-    ...     translationmessage, "+translate", layer=TranslationsLayer,
-    ...     server_url=server_url)
+    ...     translationmessage, "+translate", server_url=server_url)
     >>> translationmessage_page_view.initialize()
 
 We have the plural form information for this language.
 
-    >>> print translationmessage_page_view.context.language.pluralforms
+    >>> print(translationmessage_page_view.context.language.pluralforms)
     2
 
 And thus, the view class should know that it doesn't lacks the plural forms
@@ -120,7 +118,7 @@ Which is the one we wanted.
 As we didn't submit the form, the getSubmittedTranslation method will
 return None.
 
-    >>> print subview.getSubmittedTranslation(0)
+    >>> print(subview.getSubmittedTranslation(0))
     None
 
 If we request a plural form that is not valid, we get an AssertionError.
@@ -246,7 +244,7 @@ A new translation is submitted through the view.
     ...     'submit_translations': 'Save &amp; Continue'}
     >>> translationmessage_page_view = create_view(
     ...     translationmessage, "+translate", form=form,
-    ...     layer=TranslationsLayer, server_url=server_url)
+    ...     server_url=server_url)
     >>> translationmessage_page_view.request.method = 'POST'
     >>> translationmessage_page_view.initialize()
     >>> transaction.commit()
@@ -284,15 +282,15 @@ We do the submission with that lock_timestamp.
     ...     'submit_translations': 'Save &amp; Continue'}
     >>> translationmessage_page_view = create_view(
     ...     translationmessage, "+translate", form=form,
-    ...     layer=TranslationsLayer, server_url=server_url)
+    ...     server_url=server_url)
     >>> translationmessage_page_view.request.method = 'POST'
     >>> translationmessage_page_view.initialize()
     >>> for notification in (
     ...     translationmessage_page_view.request.notifications):
-    ...     print notification.message
+    ...     print(notification.message)
     There is an error in the translation you provided. Please correct it
     before continuing.
-    >>> print translationmessage_page_view.error
+    >>> print(translationmessage_page_view.error)
     This translation has changed since you last saw it.  To avoid
     accidentally reverting work done by others, we added your
     translations as suggestions.  Please review the current values.
@@ -329,7 +327,7 @@ considered?
     ...     'submit_translations': 'Save &amp; Continue'}
     >>> translationmessage_page_view = create_view(
     ...     translationmessage, "+translate", form=form,
-    ...     layer=TranslationsLayer, server_url=server_url)
+    ...     server_url=server_url)
     >>> translationmessage_page_view.request.method = 'POST'
     >>> translationmessage_page_view.initialize()
 
@@ -426,7 +424,7 @@ Spanish plural form.
 Which produces no suggestions, because Japanese only has one form but
 Spanish has two.
 
-    >>> print suggestions.submissions
+    >>> print(suggestions.submissions)
     []
 
 However, when we use the first plural form, which exists in both
@@ -446,21 +444,22 @@ languages...
     >>> submission = suggestions.submissions[0]
     >>> for attr in sorted(dir(submission)):
     ...     if not attr.startswith('_'):
-    ...         print "%s: %s" % (attr, getattr(submission, attr))
+    ...         print("%s: %s" % (attr, getattr(submission, attr)))
     date_created: ...
-    id: 703
+    id: ...
     is_empty: False
     is_local_to_pofile: False
+    is_traversable: ...
     language: ...
     legal_warning: False
-    origin_html_id: msgset_15_ja_suggestion_703_0_origin
+    origin_html_id: msgset_15_ja_suggestion_..._0_origin
     person: ...
     plural_index: 0
     pofile: ...
     potmsgset: ...
-    row_html_id:
+    row_html_id: 
     suggestion_dismissable_class: msgset_15_dismissable_button
-    suggestion_html_id: msgset_15_ja_suggestion_703_0
+    suggestion_html_id: msgset_15_ja_suggestion_..._0
     suggestion_text: Foo <code>%d</code>
     translation_html_id: msgset_15_es_translation_0
     translationmessage: ...
@@ -520,34 +519,6 @@ translation provides no text and so is ignored.
     0
 
 
-Sequence number of new shared POTMsgSets
-----------------------------------------
-
-Newly added shared POTMsgSets don't have their sequence field set, but
-they do have sequence number when being displayed with translation
-message.
-
-    >>> pofile = factory.makePOFile('sr')
-    >>> potemplate = pofile.potemplate
-    >>> potmsgset = factory.makePOTMsgSet(potemplate, sequence=1)
-    >>> potmsgset.getSequence(potemplate)
-    1
-    >>> translationmessage = factory.makeCurrentTranslationMessage(
-    ...     pofile=pofile, potmsgset=potmsgset,
-    ...     translations=[u"some translation"])
-    >>> translationmessage.setPOFile(pofile)
-    >>> server_url = '/'.join(
-    ...     [canonical_url(translationmessage), '+translate'])
-    >>> translationmessage_page_view = create_view(
-    ...     translationmessage, "+translate", layer=TranslationsLayer,
-    ...     server_url=server_url)
-    >>> translationmessage_page_view.initialize()
-    >>> subview = translationmessage_page_view.translationmessage_view
-    >>> subview.initialize()
-    >>> subview.sequence
-    1
-
-
 Sharing and diverging messages
 ------------------------------
 
@@ -565,8 +536,7 @@ message).
     >>> server_url = '/'.join(
     ...     [canonical_url(translationmessage), '+translate'])
     >>> translationmessage_page_view = create_view(
-    ...     translationmessage, "+translate", layer=TranslationsLayer,
-    ...     server_url=server_url)
+    ...     translationmessage, "+translate", server_url=server_url)
     >>> translationmessage_page_view.initialize()
     >>> subview = translationmessage_page_view.translationmessage_view
     >>> subview.initialize()
@@ -578,7 +548,7 @@ message).
 A shared translation is not explicitely shown, since the current one is
 the shared translation.
 
-    >>> print subview.shared_translationmessage
+    >>> print(subview.shared_translationmessage)
     None
 
 When looking at the entire POFile, diverging is not allowed.
@@ -586,8 +556,7 @@ When looking at the entire POFile, diverging is not allowed.
     >>> server_url = '/'.join(
     ...     [canonical_url(pofile), '+translate'])
     >>> pofile_view = create_view(
-    ...     pofile, "+translate", layer=TranslationsLayer,
-    ...     server_url=server_url)
+    ...     pofile, "+translate", server_url=server_url)
     >>> pofile_view.initialize()
     >>> subview = pofile_view.translationmessage_views[0]
     >>> subview.initialize()
@@ -605,8 +574,7 @@ translation further, since it's already diverged.
     ...     translations=[u"diverged translation"])
     >>> diverged_message.setPOFile(pofile)
     >>> translationmessage_page_view = create_view(
-    ...     diverged_message, "+translate", layer=TranslationsLayer,
-    ...     server_url=server_url)
+    ...     diverged_message, "+translate", server_url=server_url)
     >>> translationmessage_page_view.initialize()
     >>> subview = translationmessage_page_view.translationmessage_view
     >>> subview.initialize()

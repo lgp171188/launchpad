@@ -1,4 +1,4 @@
-# Copyright 2009 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2017 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 from datetime import datetime
@@ -15,12 +15,8 @@ from zope.component import getUtility
 
 from lp.services.apachelogparser.model.parsedapachelog import ParsedApacheLog
 from lp.services.config import config
+from lp.services.database.interfaces import IStore
 from lp.services.geoip.interfaces import IGeoIP
-from lp.services.webapp.interfaces import (
-    DEFAULT_FLAVOR,
-    IStoreSelector,
-    MAIN_STORE,
-    )
 
 
 parser = apachelog.parser(apachelog.formats['extended'])
@@ -34,7 +30,8 @@ def get_files_to_parse(file_paths):
 
     :param file_paths: The paths to the files.
     """
-    store = getUtility(IStoreSelector).get(MAIN_STORE, DEFAULT_FLAVOR)
+    store = IStore(ParsedApacheLog)
+    file_paths = sorted(file_paths, key=lambda path: os.stat(path).st_mtime)
     for file_path in file_paths:
         fd, file_size = get_fd_and_file_size(file_path)
         first_line = unicode(fd.readline())
@@ -168,7 +165,6 @@ def parse_file(fd, start_position, logger, get_download_key, parsed_lines=0):
             logger.error('Error (%s) while parsing "%s"' % (e, line))
             break
 
-
     if parsed_lines > 0:
         logger.info('Parsed %d lines resulting in %d download stats.' % (
             parsed_lines, len(downloads)))
@@ -179,8 +175,8 @@ def parse_file(fd, start_position, logger, get_download_key, parsed_lines=0):
 def create_or_update_parsedlog_entry(first_line, parsed_bytes):
     """Create or update the ParsedApacheLog with the given first_line."""
     first_line = unicode(first_line)
-    store = getUtility(IStoreSelector).get(MAIN_STORE, DEFAULT_FLAVOR)
-    parsed_file = store.find(ParsedApacheLog, first_line=first_line).one()
+    parsed_file = IStore(ParsedApacheLog).find(
+        ParsedApacheLog, first_line=first_line).one()
     if parsed_file is None:
         ParsedApacheLog(first_line, parsed_bytes)
     else:

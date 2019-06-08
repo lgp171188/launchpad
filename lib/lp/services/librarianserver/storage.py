@@ -1,4 +1,4 @@
-# Copyright 2009-2010 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -9,16 +9,19 @@ import os
 import shutil
 import tempfile
 
-from zope.component import getUtility
+from swiftclient import client as swiftclient
+from twisted.internet import defer
+from twisted.internet.threads import deferToThread
+from twisted.python import log
+from twisted.web.static import StaticProducer
 
+from lp.registry.model.product import Product
 from lp.services.config import dbconfig
 from lp.services.database import write_transaction
+from lp.services.database.interfaces import IStore
 from lp.services.database.postgresql import ConnectionString
-from lp.services.webapp.interfaces import (
-    DEFAULT_FLAVOR,
-    IStoreSelector,
-    MAIN_STORE,
-    )
+from lp.services.features import getFeatureFlag
+from lp.services.librarianserver import swift
 
 
 __all__ = [
@@ -32,6 +35,34 @@ __all__ = [
     '_relFileLocation',
     '_sameFile',
     ]
+
+
+def fsync_path(path, dir=False):
+    fd = os.open(path, os.O_RDONLY | (os.O_DIRECTORY if dir else 0))
+    try:
+        os.fsync(fd)
+    finally:
+        os.close(fd)
+
+
+def makedirs_fsync(name, mode=0o777):
+    """makedirs_fsync(path [, mode=0o777])
+
+    os.makedirs, but fsyncing on the way up to ensure durability.
+    """
+    head, tail = os.path.split(name)
+    if not tail:
+        head, tail = os.path.split(head)
+    if head and tail and not os.path.exists(head):
+        try:
+            makedirs_fsync(head, mode)
+        except OSError as e:
+            if e.errno != errno.EEXIST:
+                raise
+        if tail == os.curdir:
+            return
+    os.mkdir(name, mode)
+    fsync_path(head, dir=True)
 
 
 class DigestMismatchError(Exception):
@@ -59,6 +90,10 @@ class LibrarianStorage:
     files.
     """
 
+    # Class variables storing some metrics.
+    swift_download_attempts = 0
+    swift_download_fails = 0
+
     def __init__(self, directory, library):
         self.directory = directory
         self.library = library
@@ -72,6 +107,45 @@ class LibrarianStorage:
     def hasFile(self, fileid):
         return os.access(self._fileLocation(fileid), os.F_OK)
 
+    CHUNK_SIZE = StaticProducer.bufferSize
+
+    @defer.inlineCallbacks
+    def open(self, fileid):
+        if getFeatureFlag('librarian.swift.enabled'):
+            # Log our attempt.
+            self.swift_download_attempts += 1
+
+            if self.swift_download_attempts % 1000 == 0:
+                log.msg('{} Swift download attempts, {} failures'.format(
+                    self.swift_download_attempts, self.swift_download_fails))
+
+            # First, try and stream the file from Swift.
+            container, name = swift.swift_location(fileid)
+            swift_connection = swift.connection_pool.get()
+            try:
+                headers, chunks = yield deferToThread(
+                    swift.quiet_swiftclient, swift_connection.get_object,
+                    container, name, resp_chunk_size=self.CHUNK_SIZE)
+                swift_stream = TxSwiftStream(swift_connection, chunks)
+                defer.returnValue(swift_stream)
+            except swiftclient.ClientException as x:
+                if x.http_status == 404:
+                    swift.connection_pool.put(swift_connection)
+                else:
+                    self.swift_download_fails += 1
+                    log.err(x)
+            except Exception as x:
+                self.swift_download_fails += 1
+                log.err(x)
+            # If Swift failed, for any reason, fall through to try and
+            # stream the data from disk. In particular, files cannot be
+            # found in Swift until librarian-feed-swift.py has put them
+            # in there.
+
+        path = self._fileLocation(fileid)
+        if os.path.exists(path):
+            defer.returnValue(open(path, 'rb'))
+
     def _fileLocation(self, fileid):
         return os.path.join(self.directory, _relFileLocation(str(fileid)))
 
@@ -80,6 +154,35 @@ class LibrarianStorage:
 
     def getFileAlias(self, aliasid, token, path):
         return self.library.getAlias(aliasid, token, path)
+
+
+class TxSwiftStream(swift.SwiftStream):
+    @defer.inlineCallbacks
+    def read(self, size):
+        if self.closed:
+            raise ValueError('I/O operation on closed file')
+
+        if self._swift_connection is None:
+            defer.returnValue('')  # EOF already reached, connection returned.
+
+        if size == 0:
+            defer.returnValue('')
+
+        if not self._chunk:
+            self._chunk = yield deferToThread(self._next_chunk)
+            if not self._chunk:
+                # If we have drained the data successfully,
+                # the connection can be reused saving on auth
+                # handshakes.
+                swift.connection_pool.put(self._swift_connection)
+                self._swift_connection = None
+                self._chunks = None
+                defer.returnValue('')
+        return_chunk = self._chunk[:size]
+        self._chunk = self._chunk[size:]
+
+        self._offset += len(return_chunk)
+        defer.returnValue(return_chunk)
 
 
 class LibraryFileUpload(object):
@@ -102,13 +205,15 @@ class LibraryFileUpload(object):
         tmpfile, tmpfilepath = tempfile.mkstemp(dir=self.storage.incoming)
         self.tmpfile = os.fdopen(tmpfile, 'w')
         self.tmpfilepath = tmpfilepath
-        self.shaDigester = hashlib.sha1()
-        self.md5Digester = hashlib.md5()
+        self.md5_digester = hashlib.md5()
+        self.sha1_digester = hashlib.sha1()
+        self.sha256_digester = hashlib.sha256()
 
     def append(self, data):
         self.tmpfile.write(data)
-        self.shaDigester.update(data)
-        self.md5Digester.update(data)
+        self.md5_digester.update(data)
+        self.sha1_digester.update(data)
+        self.sha256_digester.update(data)
 
     @write_transaction
     def store(self):
@@ -117,7 +222,7 @@ class LibraryFileUpload(object):
         self.tmpfile.close()
 
         # Verify the digest matches what the client sent us
-        dstDigest = self.shaDigester.hexdigest()
+        dstDigest = self.sha1_digester.hexdigest()
         if self.srcDigest is not None and dstDigest != self.srcDigest:
             # XXX: Andrew Bennetts 2004-09-20: Write test that checks that
             # the file really is removed or renamed, and can't possibly be
@@ -137,9 +242,7 @@ class LibraryFileUpload(object):
                 config_dbname = ConnectionString(
                     dbconfig.rw_main_master).dbname
 
-                store = getUtility(IStoreSelector).get(
-                        MAIN_STORE, DEFAULT_FLAVOR)
-                result = store.execute("SELECT current_database()")
+                result = IStore(Product).execute("SELECT current_database()")
                 real_dbname = result.get_one()[0]
                 if self.databaseName not in (config_dbname, real_dbname):
                     raise WrongDatabaseError(
@@ -151,7 +254,8 @@ class LibraryFileUpload(object):
             # it to the client.
             if self.contentID is None:
                 contentID = self.storage.library.add(
-                        dstDigest, self.size, self.md5Digester.hexdigest())
+                        dstDigest, self.size, self.md5_digester.hexdigest(),
+                        self.sha256_digester.hexdigest())
                 aliasID = self.storage.library.addAlias(
                         contentID, self.filename, self.mimetype, self.expires)
                 self.debugLog.append('created contentID: %r, aliasID: %r.'
@@ -190,12 +294,14 @@ class LibraryFileUpload(object):
         if os.path.exists(location):
             raise DuplicateFileIDError(fileID)
         try:
-            os.makedirs(os.path.dirname(location))
+            makedirs_fsync(os.path.dirname(location))
         except OSError as e:
             # If the directory already exists, that's ok.
             if e.errno != errno.EEXIST:
                 raise
         shutil.move(self.tmpfilepath, location)
+        fsync_path(location)
+        fsync_path(os.path.dirname(location), dir=True)
 
 
 def _sameFile(path1, path2):
@@ -216,5 +322,8 @@ def _relFileLocation(file_id):
     The relative location is obtained by converting file_id into a 8-digit hex
     and then splitting it across four path segments.
     """
-    h = "%08x" % int(file_id)
+    file_id = int(file_id)
+    assert file_id <= 4294967295, (
+        'file id {!r} has exceeded filesystem db maximum'.format(file_id))
+    h = "%08x" % file_id
     return '%s/%s/%s/%s' % (h[:2], h[2:4], h[4:6], h[6:])

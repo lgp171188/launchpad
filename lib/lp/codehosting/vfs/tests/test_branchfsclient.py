@@ -1,13 +1,12 @@
-# Copyright 2009-2010 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
-
-# pylint: disable-msg=W0702
 
 """Tests for branchfsclient."""
 
 __metaclass__ = type
 
-from testtools.deferredruntest import AsynchronousDeferredRunTest
+from testtools.twistedsupport import AsynchronousDeferredRunTest
+from twisted.internet import defer
 
 from lp.code.interfaces.codehosting import BRANCH_TRANSPORT
 from lp.codehosting.inmemory import (
@@ -58,7 +57,8 @@ class TestBranchFileSystemClient(TestCase):
         deferred = client.translatePath('/' + branch.unique_name)
         deferred.addCallback(
             self.assertEqual,
-            (BRANCH_TRANSPORT, dict(id=branch.id, writable=False), ''))
+            (BRANCH_TRANSPORT,
+             dict(id=branch.id, writable=False, private=False), ''))
         return deferred
 
     def test_get_matched_part(self):
@@ -122,7 +122,7 @@ class TestBranchFileSystemClient(TestCase):
         fake_data = self.factory.getUniqueString()
         client._addToCache(
             (BRANCH_TRANSPORT, fake_data, ''), '/%s' % branch.unique_name)
-        self.advanceTime(expiry_time/2)
+        self.advanceTime(expiry_time / 2)
         result = client._getFromCache('/%s/foo/bar' % branch.unique_name)
         self.assertEqual(
             (BRANCH_TRANSPORT, fake_data, 'foo/bar'), result)
@@ -137,7 +137,7 @@ class TestBranchFileSystemClient(TestCase):
         fake_data = self.factory.getUniqueString()
         client._addToCache(
             (BRANCH_TRANSPORT, fake_data, ''), '/%s' % branch.unique_name)
-        self.advanceTime(expiry_time*2)
+        self.advanceTime(expiry_time * 2)
         self.assertRaises(NotInCache, client._getFromCache,
                           '/%s/foo/bar' % branch.unique_name)
 
@@ -161,6 +161,7 @@ class TestBranchFileSystemClient(TestCase):
         self.assertRaises(
             NotInCache, client._getFromCache, "foo")
 
+    @defer.inlineCallbacks
     def test_translatePath_retrieves_from_cache(self):
         # If the path already has a prefix in the cache, we use that prefix to
         # translate the path.
@@ -172,12 +173,11 @@ class TestBranchFileSystemClient(TestCase):
         client._addToCache(
             (BRANCH_TRANSPORT, fake_data, ''), '/%s' % branch.unique_name)
         requested_path = '/%s/foo/bar' % branch.unique_name
-        deferred = client.translatePath(requested_path)
-        def path_translated((transport_type, data, trailing_path)):
-            self.assertEqual(BRANCH_TRANSPORT, transport_type)
-            self.assertEqual(fake_data, data)
-            self.assertEqual('foo/bar', trailing_path)
-        return deferred.addCallback(path_translated)
+        transport_type, data, trailing_path = yield client.translatePath(
+            requested_path)
+        self.assertEqual(BRANCH_TRANSPORT, transport_type)
+        self.assertEqual(fake_data, data)
+        self.assertEqual('foo/bar', trailing_path)
 
     def test_translatePath_adds_to_cache(self):
         # translatePath adds successful path translations to the cache, thus
@@ -190,33 +190,33 @@ class TestBranchFileSystemClient(TestCase):
             client._getFromCache('/' + branch.unique_name))
         return deferred
 
+    @defer.inlineCallbacks
     def test_translatePath_control_branch_cache_interaction(self):
         # We don't want the caching to make us mis-interpret paths in the
         # branch as paths into the control transport.
         branch = self.factory.makeAnyBranch()
         client = self.makeClient()
         self.factory.enableDefaultStackingForProduct(branch.product)
-        deferred = client.translatePath(
+        yield client.translatePath(
             '/~' + branch.owner.name + '/' + branch.product.name +
             '/.bzr/format')
-        def call_translatePath_again(ignored):
-            return client.translatePath('/' + branch.unique_name)
-        def check_results((transport_type, data, trailing_path)):
-            self.assertEqual(BRANCH_TRANSPORT, transport_type)
-        deferred.addCallback(call_translatePath_again)
-        deferred.addCallback(check_results)
-        return deferred
+        transport_type, data, trailing_path = yield client.translatePath(
+            '/' + branch.unique_name)
+        self.assertEqual(BRANCH_TRANSPORT, transport_type)
 
     def test_errors_not_cached(self):
         # Don't cache failed translations. What would be the point?
         client = self.makeClient()
         deferred = client.translatePath('/foo/bar/baz')
+
         def translated_successfully(result):
             self.fail(
                 "Translated successfully. Expected error, got %r" % result)
+
         def failed_translation(failure):
             self.assertRaises(
                 NotInCache, client._getFromCache, '/foo/bar/baz')
+
         return deferred.addCallbacks(
             translated_successfully, failed_translation)
 

@@ -1,7 +1,9 @@
-# Copyright 2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2012-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test notification behaviour for cross-distro package syncs."""
+
+from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 
@@ -38,6 +40,7 @@ class FakeUploadPolicy:
         self.distroseries = spph.distroseries
         self.archive = spph.distroseries.main_archive
         self.pocket = spph.pocket
+        self.redirect_warning = None
 
     setDistroSeriesAndPocket = FakeMethod()
     validateUploadType = FakeMethod()
@@ -54,6 +57,7 @@ class FakeChangesFile:
         self.raw_content = open(file_path).read()
         self.signingkey = None
 
+    parseChanges = FakeMethod([])
     checkFileName = FakeMethod([])
     processAddresses = FakeMethod([])
     processFiles = FakeMethod([])
@@ -90,8 +94,7 @@ class TestSyncNotification(TestCaseWithFactory):
         self.makeUploader(requester, target_archive, spph.component)
         [synced_spph] = do_copy(
             [spph], target_archive, target_distroseries,
-            pocket=spph.pocket, person=requester, allow_delayed_copies=False,
-            close_bugs=False)
+            pocket=spph.pocket, person=requester, close_bugs=False)
         return synced_spph
 
     def makeChangesFile(self, spph, maintainer, maintainer_address,
@@ -149,10 +152,10 @@ class TestSyncNotification(TestCaseWithFactory):
         In a situation like that, we should not bother those people with the
         failure.  We notify the person who requested the sync instead.
 
-        (The logic in lp.soyuz.adapters.notification may still notify the
-        author of the last change, if that person is also an uploader for the
-        archive that the failure happened in.  For this particular situation
-        we consider that not so much an intended behaviour, as an emergent one
+        (The logic in lp.soyuz.mail.packageupload may still notify the author
+        of the last change, if that person is also an uploader for the archive
+        that the failure happened in.  For this particular situation we
+        consider that not so much an intended behaviour, as an emergent one
         that does not seem inappropriate.  It'd be hard to change if we wanted
         to.)
 

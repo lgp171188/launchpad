@@ -1,4 +1,4 @@
-# Copyright 2010-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Security adapters for the bugs module."""
@@ -12,8 +12,8 @@ from lp.app.security import (
     DelegatedAuthorization,
     )
 from lp.bugs.interfaces.bug import IBug
+from lp.bugs.interfaces.bugactivity import IBugActivity
 from lp.bugs.interfaces.bugattachment import IBugAttachment
-from lp.bugs.interfaces.bugbranch import IBugBranch
 from lp.bugs.interfaces.bugnomination import IBugNomination
 from lp.bugs.interfaces.bugsubscription import IBugSubscription
 from lp.bugs.interfaces.bugsubscriptionfilter import IBugSubscriptionFilter
@@ -23,7 +23,10 @@ from lp.bugs.interfaces.bugtracker import IBugTracker
 from lp.bugs.interfaces.bugwatch import IBugWatch
 from lp.bugs.interfaces.hasbug import IHasBug
 from lp.bugs.interfaces.structuralsubscription import IStructuralSubscription
-from lp.registry.interfaces.role import IHasOwner
+from lp.registry.interfaces.role import (
+    IHasAppointedDriver,
+    IHasOwner,
+    )
 from lp.services.messages.interfaces.message import IMessage
 
 
@@ -99,17 +102,80 @@ class PublicToAllOrPrivateToExplicitSubscribersForBugTask(AuthorizationBase):
         return not self.obj.bug.private
 
 
-class EditPublicByLoggedInUserAndPrivateByExplicitSubscribers(
-    AuthorizationBase):
-    permission = 'launchpad.Edit'
+class AppendBug(AuthorizationBase):
+    """Security adapter for appending to bugs.
+
+    This is used for operations that anyone who can see the bug can perform.
+    """
+    permission = 'launchpad.Append'
     usedfor = IBug
 
     def checkAuthenticated(self, user):
-        """Allow any logged in user to edit a public bug, and only
-        explicit subscribers to edit private bugs. Any bug that can be
-        seen can be edited.
+        """Allow any logged in user to append to a public bug, and only
+        explicit subscribers to append to private bugs. Any bug that can be
+        seen can be appended to.
         """
         return self.obj.userCanView(user)
+
+    def checkUnauthenticated(self):
+        """Never allow unauthenticated users to append to a bug."""
+        return False
+
+
+class EditBug(AuthorizationBase):
+    """Security adapter for editing bugs.
+
+    This is used for operations that are potentially destructive in some
+    way.  They aren't heavily locked down, but only users who appear to be
+    legitimate can perform them.
+    """
+    permission = 'launchpad.Edit'
+    usedfor = IBug
+
+    def _hasAnyRole(self, user, targets):
+        """Return True if the user has any role on any of these bug targets."""
+        # XXX cjwatson 2019-03-26: This is inefficient for bugs with many
+        # targets.  However, we only get here if we can't easily establish
+        # that the user seems legitimate, so it shouldn't be a big problem
+        # in practice.  We can optimise this further if it turns out to
+        # matter.
+        for target in targets:
+            roles = []
+            if IHasOwner.providedBy(target):
+                roles.append('owner')
+            if IHasAppointedDriver.providedBy(target):
+                roles.append('driver')
+            if IHasBugSupervisor.providedBy(target):
+                roles.append('bug_supervisor')
+            if user.isOneOf(target, roles):
+                return True
+        return False
+
+    def checkAuthenticated(self, user):
+        """Allow sufficiently-trusted users to edit bugs.
+
+        Only users who can append to the bug can edit it; in addition, only
+        users who seem to be generally legitimate or who have a relevant
+        role on one of the targets of the bug can edit the bug.
+        """
+        if not self.forwardCheckAuthenticated(
+                user, permission='launchpad.Append'):
+            # The user cannot even see the bug.
+            return False
+        return (
+            # If the bug is private, then we don't need more elaborate
+            # checks as they must have been explicitly subscribed.
+            self.obj.private or
+            # If the user seems generally legitimate, let them through.
+            self.forwardCheckAuthenticated(
+                user, permission='launchpad.AnyLegitimatePerson') or
+            # The bug reporter can always edit their own bug.
+            user.inTeam(self.obj.owner) or
+            # Users with relevant roles can edit the bug.
+            user.in_admin or user.in_commercial_admin or
+            user.in_registry_experts or
+            self._hasAnyRole(
+                user, [task.target for task in self.obj.bugtasks]))
 
     def checkUnauthenticated(self):
         """Never allow unauthenticated users to edit a bug."""
@@ -131,20 +197,10 @@ class PublicToAllOrPrivateToExplicitSubscribersForBug(AuthorizationBase):
         return not self.obj.private
 
 
-class EditBugBranch(EditPublicByLoggedInUserAndPrivateByExplicitSubscribers):
-    permission = 'launchpad.Edit'
-    usedfor = IBugBranch
-
-    def __init__(self, bug_branch):
-        # The same permissions as for the BugBranch's bug should apply
-        # to the BugBranch itself.
-        super(EditBugBranch, self).__init__(bug_branch.bug)
-
-
 class ViewBugAttachment(DelegatedAuthorization):
     """Security adapter for viewing a bug attachment.
 
-    If the user is authorized to view the bug, he's allowed to view the
+    If the user is authorized to view the bug, they're allowed to view the
     attachment.
     """
     permission = 'launchpad.View'
@@ -158,7 +214,7 @@ class ViewBugAttachment(DelegatedAuthorization):
 class EditBugAttachment(DelegatedAuthorization):
     """Security adapter for editing a bug attachment.
 
-    If the user is authorized to view the bug, he's allowed to edit the
+    If the user is authorized to view the bug, they're allowed to edit the
     attachment.
     """
     permission = 'launchpad.Edit'
@@ -167,6 +223,19 @@ class EditBugAttachment(DelegatedAuthorization):
     def __init__(self, bugattachment):
         super(EditBugAttachment, self).__init__(
             bugattachment, bugattachment.bug)
+
+
+class ViewBugActivity(DelegatedAuthorization):
+    """Security adapter for viewing a bug activity record.
+
+    If the user is authorized to view the bug, they're allowed to view the
+    activity.
+    """
+    permission = 'launchpad.View'
+    usedfor = IBugActivity
+
+    def __init__(self, bugactivity):
+        super(ViewBugActivity, self).__init__(bugactivity, bugactivity.bug)
 
 
 class ViewBugSubscription(AnonymousAuthorization):

@@ -16,19 +16,21 @@ from itertools import izip
 
 from lazr.restful.interfaces import IWebServiceClientRequest
 import simplejson
-from zope.app.form.interfaces import MissingInputError
-from zope.app.schema.vocabulary import IVocabularyFactory
 from zope.component import (
     adapter,
     getUtility,
     )
 from zope.component.interfaces import ComponentLookupError
+from zope.formlib.interfaces import MissingInputError
 from zope.interface import (
     Attribute,
-    implements,
+    implementer,
     Interface,
     )
+from zope.schema.interfaces import IVocabularyFactory
 from zope.security.interfaces import Unauthorized
+# This registers the registry.
+import zope.vocabularyregistry.registry
 
 from lp.app.browser.tales import (
     DateTimeFormatterAPI,
@@ -77,9 +79,9 @@ class IPickerEntry(Interface):
     target_type = Attribute('Target data for target picker entries.')
 
 
+@implementer(IPickerEntry)
 class PickerEntry:
     """See `IPickerEntry`."""
-    implements(IPickerEntry)
 
     def __init__(self, description=None, image=None, css=None, alt_title=None,
                  title_link=None, details=None, alt_title_link=None,
@@ -113,10 +115,9 @@ class IPickerEntrySource(Interface):
 
 
 @adapter(Interface)
+@implementer(IPickerEntrySource)
 class DefaultPickerEntrySourceAdapter(object):
     """Adapts Interface to IPickerEntrySource."""
-
-    implements(IPickerEntrySource)
 
     def __init__(self, context):
         self.context = context
@@ -388,8 +389,7 @@ class ArchivePickerEntrySourceAdapter(DefaultPickerEntrySourceAdapter):
             super(ArchivePickerEntrySourceAdapter, self)
                     .getPickerEntries(term_values, context_object, **kwarg))
         for archive, picker_entry in izip(term_values, entries):
-            picker_entry.description = '%s/%s' % (
-                                       archive.owner.name, archive.name)
+            picker_entry.description = archive.reference
         return entries
 
 

@@ -22,11 +22,11 @@ from storm.expr import (
     Select,
     )
 from zope.component import (
-    adapts,
+    adapter,
     getUtility,
     queryMultiAdapter,
     )
-from zope.interface import implements
+from zope.interface import implementer
 
 from lp.app.errors import NameLookupFailed
 from lp.app.validators.name import valid_name
@@ -68,34 +68,28 @@ from lp.registry.model.person import Person
 from lp.registry.model.product import Product
 from lp.registry.model.sourcepackagename import SourcePackageName
 from lp.services.config import config
-from lp.services.database.lpstorm import IStore
+from lp.services.database.interfaces import IStore
 from lp.services.webapp.authorization import check_permission
-from lp.services.webapp.interfaces import (
-    DEFAULT_FLAVOR,
-    IStoreSelector,
-    MAIN_STORE,
-    )
 
 
-def adapt(provided, interface):
+def adapt(obj, interface):
     """Adapt 'obj' to 'interface', using multi-adapters if necessary."""
-    required = interface(provided, None)
+    required = interface(obj, None)
     if required is not None:
         return required
     try:
-        return queryMultiAdapter(provided, interface)
+        return queryMultiAdapter(obj, interface)
     except TypeError:
         return None
 
 
+@implementer(ILinkedBranchTraversable)
 class RootTraversable:
     """Root traversable for linked branch objects.
 
     Corresponds to '/' in the path. From here, you can traverse to a
     distribution or a product.
     """
-
-    implements(ILinkedBranchTraversable)
 
     def traverse(self, name, segments):
         """See `ITraversable`.
@@ -106,11 +100,12 @@ class RootTraversable:
         if not valid_name(name):
             raise InvalidProductName(name)
         pillar = getUtility(IPillarNameSet).getByName(name)
-        if pillar is None:
+        if (pillar is None
+                or not check_permission('launchpad.LimitedView', pillar)):
             # Actually, the pillar is no such *anything*. The user might be
-            # trying to refer to a project, a distribution or a product. We
-            # raise a NoSuchProduct error since that's what we used to raise
-            # when we only supported product & junk branches.
+            # trying to refer to a project group, a distribution or a
+            # project. We raise a NoSuchProduct error since that's what we
+            # used to raise when we only supported project & junk branches.
             raise NoSuchProduct(name)
         return pillar
 
@@ -125,14 +120,13 @@ class _BaseTraversable:
         self.context = context
 
 
+@adapter(IProduct)
+@implementer(ILinkedBranchTraversable)
 class ProductTraversable(_BaseTraversable):
     """Linked branch traversable for products.
 
     From here, you can traverse to a product series.
     """
-
-    adapts(IProduct)
-    implements(ILinkedBranchTraversable)
 
     def traverse(self, name, segments):
         """See `ITraversable`.
@@ -147,14 +141,13 @@ class ProductTraversable(_BaseTraversable):
         return series
 
 
+@adapter(IDistribution)
+@implementer(ILinkedBranchTraversable)
 class DistributionTraversable(_BaseTraversable):
     """Linked branch traversable for distributions.
 
     From here, you can traverse to a distribution series.
     """
-
-    adapts(IDistribution)
-    implements(ILinkedBranchTraversable)
 
     def traverse(self, name, segments):
         """See `ITraversable`."""
@@ -170,14 +163,13 @@ class DistributionTraversable(_BaseTraversable):
             return sourcepackage
 
 
+@adapter(IDistroSeries, DBItem)
+@implementer(ILinkedBranchTraversable)
 class DistroSeriesTraversable:
     """Linked branch traversable for distribution series.
 
     From here, you can traverse to a source package.
     """
-
-    adapts(IDistroSeries, DBItem)
-    implements(ILinkedBranchTraversable)
 
     def __init__(self, distroseries, pocket):
         self.distroseries = distroseries
@@ -191,10 +183,9 @@ class DistroSeriesTraversable:
         return sourcepackage.getSuiteSourcePackage(self.pocket)
 
 
+@implementer(ILinkedBranchTraverser)
 class LinkedBranchTraverser:
     """Utility for traversing to objects that can have linked branches."""
-
-    implements(ILinkedBranchTraverser)
 
     def traverse(self, path):
         """See `ILinkedBranchTraverser`."""
@@ -209,10 +200,9 @@ class LinkedBranchTraverser:
         return context
 
 
+@implementer(IBranchLookup)
 class BranchLookup:
     """Utility for looking up branches."""
-
-    implements(IBranchLookup)
 
     def get(self, branch_id, default=None):
         """See `IBranchLookup`."""
@@ -258,14 +248,7 @@ class BranchLookup:
         if uri.scheme == 'lp':
             if not self._uriHostAllowed(uri):
                 return None
-            try:
-                return self.getByLPPath(uri.path.lstrip('/'))[0]
-            except (
-                CannotHaveLinkedBranch, InvalidNamespace, InvalidProductName,
-                NoSuchBranch, NoSuchPerson, NoSuchProduct,
-                NoSuchProductSeries, NoSuchDistroSeries,
-                NoSuchSourcePackageName, NoLinkedBranch):
-                return None
+            return self.getByPath(uri.path.lstrip('/'))
 
         return Branch.selectOneBy(url=url)
 
@@ -274,14 +257,14 @@ class BranchLookup:
             return (self.get(lookup['branch_id']), lookup['trailing'])
         elif lookup['type'] == 'alias':
             try:
-                return self.getByLPPath(lookup['lp_path'])
+                branch, trail = self.getByLPPath(lookup['lp_path'])
+                return branch, escape(trail)
             except (InvalidProductName, NoLinkedBranch,
                     CannotHaveLinkedBranch, NameLookupFailed,
                     InvalidNamespace):
                 pass
         elif lookup['type'] == 'branch_name':
-            store = IStore(Branch)
-            result = store.find(Branch,
+            result = IStore(Branch).find(Branch,
                                 Branch.unique_name == lookup['unique_name'])
             for branch in result:
                 return (branch, escape(lookup['trailing']))
@@ -331,31 +314,23 @@ class BranchLookup:
 
     def _getPersonalBranch(self, person, branch_name):
         """Find a personal branch given its path segments."""
-        # Avoid circular imports.
-        store = getUtility(IStoreSelector).get(MAIN_STORE, DEFAULT_FLAVOR)
         origin = [Branch, Join(Person, Branch.owner == Person.id)]
-        result = store.using(*origin).find(
+        return IStore(Branch).using(*origin).find(
             Branch, Person.name == person,
             Branch.distroseries == None,
             Branch.product == None,
             Branch.sourcepackagename == None,
-            Branch.name == branch_name)
-        branch = result.one()
-        return branch
+            Branch.name == branch_name).one()
 
     def _getProductBranch(self, person, product, branch_name):
         """Find a product branch given its path segments."""
-        # Avoid circular imports.
-        store = getUtility(IStoreSelector).get(MAIN_STORE, DEFAULT_FLAVOR)
         origin = [
             Branch,
             Join(Person, Branch.owner == Person.id),
             Join(Product, Branch.product == Product.id)]
-        result = store.using(*origin).find(
+        return IStore(Branch).using(*origin).find(
             Branch, Person.name == person, Product.name == product,
-            Branch.name == branch_name)
-        branch = result.one()
-        return branch
+            Branch.name == branch_name).one()
 
     def _getPackageBranch(self, owner, distribution, distroseries,
                           sourcepackagename, branch):
@@ -364,14 +339,12 @@ class BranchLookup:
         Only gets unofficial source package branches, that is, branches with
         names like ~jml/ubuntu/jaunty/openssh/stuff.
         """
-        # Avoid circular imports.
-        store = getUtility(IStoreSelector).get(MAIN_STORE, DEFAULT_FLAVOR)
         origin = [
             Branch,
             Join(Person, Branch.owner == Person.id),
             Join(SourcePackageName,
                  Branch.sourcepackagename == SourcePackageName.id)]
-        result = store.using(*origin).find(
+        return IStore(Branch).using(*origin).find(
             Branch, Person.name == owner,
             Branch.distroseriesID == Select(
                 DistroSeries.id, And(
@@ -379,9 +352,7 @@ class BranchLookup:
                     DistroSeries.name == distroseries,
                     Distribution.name == distribution)),
             SourcePackageName.name == sourcepackagename,
-            Branch.name == branch)
-        branch = result.one()
-        return branch
+            Branch.name == branch).one()
 
     def getByLPPath(self, path):
         """See `IBranchLookup`."""
@@ -407,6 +378,16 @@ class BranchLookup:
                 object_with_branch_link)
             suffix = path[len(bzr_path) + 1:]
         return branch, suffix
+
+    def getByPath(self, path):
+        """See `IBranchLookup`."""
+        try:
+            return self.getByLPPath(path)[0]
+        except (
+            CannotHaveLinkedBranch, InvalidNamespace, InvalidProductName,
+            NoSuchBranch, NoSuchPerson, NoSuchProduct, NoSuchProductSeries,
+            NoSuchDistroSeries, NoSuchSourcePackageName, NoLinkedBranch):
+            return None
 
     def _getLinkedBranchAndPath(self, provided):
         """Get the linked branch for 'provided', and the bzr_path.

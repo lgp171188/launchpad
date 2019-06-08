@@ -5,9 +5,9 @@
 
 __metaclass__ = type
 
-from cgi import escape
 import unittest
 
+from lp.services.webapp.escaping import html_escape
 from lp.translations.interfaces.translationimporter import (
     TranslationFormatSyntaxError,
     )
@@ -51,7 +51,7 @@ class XpiHeaderTestCase(unittest.TestCase):
         if contributors is None:
             contributors = []
         contributor_xml = [
-            "<em:contributor>%s</em:contributor>" % escape(person)
+            "<em:contributor>%s</em:contributor>" % html_escape(person)
             for person in contributors]
 
         insertions = {'contributors': '\n'.join(contributor_xml)}
@@ -104,7 +104,7 @@ class XpiHeaderTestCase(unittest.TestCase):
         self.assertEqual(header.getLastTranslator(), (None, None))
 
     def test_WeirdContributor(self):
-        # Contributor entries without well-formed email addresses are 
+        # Contributor entries without well-formed email addresses are
         # also ignored.
         header = self._produceHeader(['Hello Mom!'])
         self.assertEqual(header.getLastTranslator(), (None, None))

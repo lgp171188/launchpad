@@ -4,10 +4,10 @@ Distribution series main page
 In the main page for a distribution we have a link to help translating
 this distribution series.
 
-    >>> user_browser.open('http://launchpad.dev/ubuntu/hoary')
+    >>> user_browser.open('http://launchpad.test/ubuntu/hoary')
     >>> user_browser.getLink('Help translate').click()
     >>> print user_browser.title
-    Translations : Hoary (5.04) : Ubuntu
+    Hoary (5.04) : Translations : Ubuntu
 
 
 Registering information
@@ -16,7 +16,7 @@ Registering information
 The distroseries pages presents the 'registering' information besides
 its main 'heading'.
 
-    >>> anon_browser.open('http://launchpad.dev/ubuntu/warty')
+    >>> anon_browser.open('http://launchpad.test/ubuntu/warty')
 
     >>> print extract_text(
     ...     find_tag_by_id(anon_browser.contents, 'registration'))
@@ -29,7 +29,7 @@ its main 'heading'.
     ...
 
     >>> print anon_browser.getLink('Ubuntu Team').url
-    http://launchpad.dev/~ubuntu-team
+    http://launchpad.test/~ubuntu-team
 
 
 Details portlet
@@ -54,7 +54,7 @@ on the series' details.
 On series that have no source or binary packages, the portlet will
 change its text slightly to annouce this:
 
-    >>> anon_browser.open('http://launchpad.dev/debian/sarge')
+    >>> anon_browser.open('http://launchpad.test/debian/sarge')
     >>> print extract_text(
     ...     find_portlet(anon_browser.contents, 'Series information'))
     Series information
@@ -93,7 +93,7 @@ the series derived from this series:
     ...             derived_series=child, parent_series=sarge)
     ...         for child in children]
 
-    >>> anon_browser.open('http://launchpad.dev/debian/sarge')
+    >>> anon_browser.open('http://launchpad.test/debian/sarge')
     >>> print extract_text(
     ...     find_portlet(anon_browser.contents, 'Series information'))
     Series information
@@ -114,13 +114,13 @@ Distribution series bug subscriptions
 To receive email notifications about bugs pertaining to a distribution
 series, we can create structural bug subscriptions.
 
-    >>> admin_browser.open('http://launchpad.dev/ubuntu/warty')
+    >>> admin_browser.open('http://launchpad.test/ubuntu/warty')
     >>> admin_browser.getLink('Subscribe to bug mail').click()
     >>> print admin_browser.url
-    http://launchpad.dev/ubuntu/warty/+subscribe
+    http://launchpad.test/ubuntu/warty/+subscribe
 
     >>> print admin_browser.title
-    Subscribe : Warty (4.10) : Ubuntu
+    Subscribe : Warty (4.10) : Bugs : Ubuntu
 
 
 Upstream packaging portlet
@@ -131,7 +131,7 @@ upstream packaging.
 
     >>> # Note that warty's sourcecount is stale in sample data
     >>> # which causes -2 need linking.
-    >>> anon_browser.open('http://launchpad.dev/ubuntu/warty')
+    >>> anon_browser.open('http://launchpad.test/ubuntu/warty')
     >>> print extract_text(
     ...     find_tag_by_id(anon_browser.contents, 'series-packaging'))
     Upstream packaging

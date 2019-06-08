@@ -8,6 +8,7 @@ from testtools.matchers import MatchesRegex
 import transaction
 from zope.component import getUtility
 
+from lp.app.enums import InformationType
 from lp.bugs.interfaces.bugtask import (
     BugTaskImportance,
     BugTaskStatus,
@@ -25,9 +26,8 @@ from lp.bugs.scripts.bugsummaryrebuild import (
     RawBugSummary,
     rebuild_bugsummary_for_target,
     )
-from lp.registry.enums import InformationType
 from lp.registry.interfaces.accesspolicy import IAccessPolicySource
-from lp.services.database.lpstorm import IStore
+from lp.services.database.interfaces import IStore
 from lp.services.log.logger import BufferLogger
 from lp.testing import TestCaseWithFactory
 from lp.testing.dbuser import dbuser

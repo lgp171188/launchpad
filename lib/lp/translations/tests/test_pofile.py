@@ -20,7 +20,10 @@ from lp.app.enums import ServiceUsage
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.services.database.constants import UTC_NOW
 from lp.services.webapp.publisher import canonical_url
-from lp.testing import TestCaseWithFactory
+from lp.testing import (
+    monkey_patch,
+    TestCaseWithFactory,
+    )
 from lp.testing.fakemethod import FakeMethod
 from lp.testing.layers import ZopelessDatabaseLayer
 from lp.translations.interfaces.pofile import IPOFileSet
@@ -47,7 +50,7 @@ def set_relicensing(person, choice):
 
 
 class TestTranslationSharedPOFileSourcePackage(TestCaseWithFactory):
-    """Test behavior of PO files with shared POTMsgSets on a source package.
+    """Test behaviour of PO files with shared POTMsgSets on a source package.
     """
 
     layer = ZopelessDatabaseLayer
@@ -98,18 +101,18 @@ class TestTranslationSharedPOFileSourcePackage(TestCaseWithFactory):
         # When there are no suggestions, nothing is returned.
         found_translations = list(
             self.devel_pofile.getPOTMsgSetWithNewSuggestions())
-        self.assertEquals(found_translations, [])
+        self.assertEqual(found_translations, [])
 
         # When a suggestion is added one day after, the potmsgset is returned.
         suggestion_date = date_created + timedelta(1)
         suggestion = self.factory.makeSuggestion(
             pofile=self.devel_pofile, potmsgset=self.potmsgset,
             translations=[u"Suggestion"], date_created=suggestion_date)
-        self.assertEquals(suggestion.is_current_ubuntu, False)
+        self.assertEqual(suggestion.is_current_ubuntu, False)
 
         found_translations = list(
             self.devel_pofile.getPOTMsgSetWithNewSuggestions())
-        self.assertEquals(found_translations, [self.potmsgset])
+        self.assertEqual(found_translations, [self.potmsgset])
 
         # Setting a suggestion as current makes it have no unreviewed
         # suggestions.
@@ -122,7 +125,7 @@ class TestTranslationSharedPOFileSourcePackage(TestCaseWithFactory):
         suggestion.is_current_ubuntu = True
         found_translations = list(
             self.devel_pofile.getPOTMsgSetWithNewSuggestions())
-        self.assertEquals(found_translations, [])
+        self.assertEqual(found_translations, [])
 
         # And adding another suggestion 2 days later, the potmsgset is
         # again returned.
@@ -130,11 +133,11 @@ class TestTranslationSharedPOFileSourcePackage(TestCaseWithFactory):
         translation = self.factory.makeSuggestion(
             pofile=self.devel_pofile, potmsgset=self.potmsgset,
             translations=[u"New suggestion"], date_created=suggestion_date)
-        self.assertEquals(translation.is_current_ubuntu, False)
+        self.assertEqual(translation.is_current_ubuntu, False)
 
         found_translations = list(
             self.devel_pofile.getPOTMsgSetWithNewSuggestions())
-        self.assertEquals(found_translations, [self.potmsgset])
+        self.assertEqual(found_translations, [self.potmsgset])
 
     def test_getPOTMsgSetWithNewSuggestions_diverged(self):
         # Test listing of suggestions for POTMsgSets with a shared
@@ -170,12 +173,12 @@ class TestTranslationSharedPOFileSourcePackage(TestCaseWithFactory):
         suggestion = self.factory.makeSuggestion(
             pofile=self.devel_pofile, potmsgset=self.potmsgset,
             translations=[u"Shared suggestion"], date_created=suggestion_date)
-        self.assertEquals(suggestion.is_current_ubuntu, False)
+        self.assertEqual(suggestion.is_current_ubuntu, False)
 
         # A suggestion is shown since diverged_date < suggestion_date.
         found_translations = list(
             self.devel_pofile.getPOTMsgSetWithNewSuggestions())
-        self.assertEquals(found_translations, [self.potmsgset])
+        self.assertEqual(found_translations, [self.potmsgset])
 
         # When a diverged translation is added after the shared suggestion,
         # there are no unreviewed suggestions.
@@ -189,18 +192,18 @@ class TestTranslationSharedPOFileSourcePackage(TestCaseWithFactory):
         diverged_translation_2.is_current_ubuntu = True
         found_translations = list(
             self.devel_pofile.getPOTMsgSetWithNewSuggestions())
-        self.assertEquals(found_translations, [])
+        self.assertEqual(found_translations, [])
 
         # When a suggestion is added one day after, the potmsgset is returned.
         suggestion_date = diverged_date + timedelta(1)
         suggestion = self.factory.makeSuggestion(
             pofile=self.devel_pofile, potmsgset=self.potmsgset,
             translations=[u"Suggestion"], date_created=suggestion_date)
-        self.assertEquals(suggestion.is_current_ubuntu, False)
+        self.assertEqual(suggestion.is_current_ubuntu, False)
 
         found_translations = list(
             self.devel_pofile.getPOTMsgSetWithNewSuggestions())
-        self.assertEquals(found_translations, [self.potmsgset])
+        self.assertEqual(found_translations, [self.potmsgset])
 
         # Setting a suggestion as current makes it have no unreviewed
         # suggestions.
@@ -208,7 +211,7 @@ class TestTranslationSharedPOFileSourcePackage(TestCaseWithFactory):
         suggestion.is_current_ubuntu = True
         found_translations = list(
             self.devel_pofile.getPOTMsgSetWithNewSuggestions())
-        self.assertEquals(found_translations, [])
+        self.assertEqual(found_translations, [])
 
 
 class TestTranslationSharedPOFile(TestCaseWithFactory):
@@ -248,7 +251,7 @@ class TestTranslationSharedPOFile(TestCaseWithFactory):
     def test_POFile_canonical_url(self):
         # Test the canonical_url of the POFile.
         pofile_url = (
-            'http://translations.launchpad.dev/foo/devel/+pots/messages/'
+            'http://translations.launchpad.test/foo/devel/+pots/messages/'
             '%s' % self.devel_pofile.language.code)
         self.assertEqual(pofile_url, canonical_url(self.devel_pofile))
         view_name = '+details'
@@ -265,14 +268,14 @@ class TestTranslationSharedPOFile(TestCaseWithFactory):
 
         found_potmsgsets = list(
             self.devel_pofile.findPOTMsgSetsContaining(u"wild"))
-        self.assertEquals(found_potmsgsets, [potmsgset])
+        self.assertEqual(found_potmsgsets, [potmsgset])
 
         # Just linking an existing POTMsgSet into another POTemplate
         # will make it be returned in searches.
         potmsgset.setSequence(self.stable_potemplate, 2)
         found_potmsgsets = list(
             self.stable_pofile.findPOTMsgSetsContaining(u"wild"))
-        self.assertEquals(found_potmsgsets, [potmsgset])
+        self.assertEqual(found_potmsgsets, [potmsgset])
 
         # Searching for singular in plural messages works as well.
         plural_potmsgset = self.factory.makePOTMsgSet(self.devel_potemplate,
@@ -282,13 +285,13 @@ class TestTranslationSharedPOFile(TestCaseWithFactory):
 
         found_potmsgsets = list(
             self.devel_pofile.findPOTMsgSetsContaining(u"singular"))
-        self.assertEquals(found_potmsgsets, [plural_potmsgset])
+        self.assertEqual(found_potmsgsets, [plural_potmsgset])
 
         # And searching for plural text returns only the matching plural
         # message.
         found_potmsgsets = list(
             self.devel_pofile.findPOTMsgSetsContaining(u"plural"))
-        self.assertEquals(found_potmsgsets, [plural_potmsgset])
+        self.assertEqual(found_potmsgsets, [plural_potmsgset])
 
         # Search translations as well.
         self.factory.makeCurrentTranslationMessage(
@@ -296,7 +299,7 @@ class TestTranslationSharedPOFile(TestCaseWithFactory):
             translations=[u"One translation message"])
         found_potmsgsets = list(
             self.devel_pofile.findPOTMsgSetsContaining(u"translation"))
-        self.assertEquals(found_potmsgsets, [potmsgset])
+        self.assertEqual(found_potmsgsets, [potmsgset])
 
         # Search matches all plural forms.
         self.factory.makeCurrentTranslationMessage(
@@ -307,24 +310,24 @@ class TestTranslationSharedPOFile(TestCaseWithFactory):
         found_potmsgsets = list(
             self.devel_pofile.findPOTMsgSetsContaining(
                 u"Plural translation"))
-        self.assertEquals(found_potmsgsets, [plural_potmsgset])
+        self.assertEqual(found_potmsgsets, [plural_potmsgset])
 
         # Search works case insensitively for English strings.
         found_potmsgsets = list(
             self.devel_pofile.findPOTMsgSetsContaining(u"WiLd"))
-        self.assertEquals(found_potmsgsets, [potmsgset])
+        self.assertEqual(found_potmsgsets, [potmsgset])
         # ...English plural forms.
         found_potmsgsets = list(
             self.devel_pofile.findPOTMsgSetsContaining(u"PLurAl"))
-        self.assertEquals(found_potmsgsets, [plural_potmsgset])
+        self.assertEqual(found_potmsgsets, [plural_potmsgset])
         # ...translations.
         found_potmsgsets = list(
             self.devel_pofile.findPOTMsgSetsContaining(u"tRANSlaTIon"))
-        self.assertEquals(found_potmsgsets, [potmsgset, plural_potmsgset])
+        self.assertEqual(found_potmsgsets, [potmsgset, plural_potmsgset])
         # ...and translated plurals.
         found_potmsgsets = list(
             self.devel_pofile.findPOTMsgSetsContaining(u"THIRD"))
-        self.assertEquals(found_potmsgsets, [plural_potmsgset])
+        self.assertEqual(found_potmsgsets, [plural_potmsgset])
 
     def test_getTranslationsFilteredBy_none(self):
         # When a person has submitted no translations, empty result set
@@ -336,7 +339,7 @@ class TestTranslationSharedPOFile(TestCaseWithFactory):
         # When there are no translations, empty list is returned.
         found_translations = list(
             self.devel_pofile.getTranslationsFilteredBy(submitter))
-        self.assertEquals(found_translations, [])
+        self.assertEqual(found_translations, [])
 
     def test_getTranslationsFilteredBy(self):
         # If 'submitter' provides a translation for a pofile,
@@ -351,7 +354,7 @@ class TestTranslationSharedPOFile(TestCaseWithFactory):
             translator=submitter)
         found_translations = list(
             self.devel_pofile.getTranslationsFilteredBy(submitter))
-        self.assertEquals(found_translations, [translation])
+        self.assertEqual(found_translations, [translation])
 
     def test_getTranslationsFilteredBy_someone_else(self):
         # If somebody else provides a translation, it's not added to the
@@ -367,7 +370,7 @@ class TestTranslationSharedPOFile(TestCaseWithFactory):
             translator=someone_else)
         found_translations = list(
             self.devel_pofile.getTranslationsFilteredBy(submitter))
-        self.assertEquals(found_translations, [])
+        self.assertEqual(found_translations, [])
 
     def test_getTranslationsFilteredBy_other_pofile(self):
         # Adding a translation for the same POTMsgSet, but to a different
@@ -387,7 +390,7 @@ class TestTranslationSharedPOFile(TestCaseWithFactory):
             translator=submitter)
         found_translations = list(
             self.devel_pofile.getTranslationsFilteredBy(submitter))
-        self.assertEquals(found_translations, [])
+        self.assertEqual(found_translations, [])
 
     def test_getTranslationsFilteredBy_shared(self):
         # If a POTMsgSet is shared between two templates, a
@@ -403,10 +406,10 @@ class TestTranslationSharedPOFile(TestCaseWithFactory):
         potmsgset.setSequence(self.stable_potemplate, 1)
         stable_translations = list(
             self.stable_pofile.getTranslationsFilteredBy(submitter))
-        self.assertEquals(stable_translations, [translation])
+        self.assertEqual(stable_translations, [translation])
         devel_translations = list(
             self.devel_pofile.getTranslationsFilteredBy(submitter))
-        self.assertEquals(devel_translations, [translation])
+        self.assertEqual(devel_translations, [translation])
 
     def test_getPOTMsgSetTranslated_NoShared(self):
         # Test listing of translated POTMsgSets when there is no shared
@@ -415,7 +418,7 @@ class TestTranslationSharedPOFile(TestCaseWithFactory):
         # When there is no diverged translation either, nothing is returned.
         found_translations = list(
             self.devel_pofile.getPOTMsgSetTranslated())
-        self.assertEquals(found_translations, [])
+        self.assertEqual(found_translations, [])
 
         # When a diverged translation is added, the potmsgset is returned.
         self.factory.makeCurrentTranslationMessage(
@@ -423,7 +426,7 @@ class TestTranslationSharedPOFile(TestCaseWithFactory):
             translations=[u"Translation"], diverged=True)
         found_translations = list(
             self.devel_pofile.getPOTMsgSetTranslated())
-        self.assertEquals(found_translations, [self.potmsgset])
+        self.assertEqual(found_translations, [self.potmsgset])
 
         # If diverged translation is empty, POTMsgSet is not listed.
         self.factory.makeCurrentTranslationMessage(
@@ -431,7 +434,7 @@ class TestTranslationSharedPOFile(TestCaseWithFactory):
             translations=[u""], diverged=True)
         found_translations = list(
             self.devel_pofile.getPOTMsgSetTranslated())
-        self.assertEquals(found_translations, [])
+        self.assertEqual(found_translations, [])
 
     def test_getPOTMsgSetTranslated_Shared(self):
         # Test listing of translated POTMsgSets when there is a shared
@@ -445,7 +448,7 @@ class TestTranslationSharedPOFile(TestCaseWithFactory):
         # When there is no diverged translation, shared one is returned.
         found_translations = list(
             self.devel_pofile.getPOTMsgSetTranslated())
-        self.assertEquals(found_translations, [self.potmsgset])
+        self.assertEqual(found_translations, [self.potmsgset])
 
         # When an empty diverged translation is added, nothing is listed.
         self.factory.makeCurrentTranslationMessage(
@@ -453,7 +456,7 @@ class TestTranslationSharedPOFile(TestCaseWithFactory):
             translations=[u""], diverged=True)
         found_translations = list(
             self.devel_pofile.getPOTMsgSetTranslated())
-        self.assertEquals(found_translations, [])
+        self.assertEqual(found_translations, [])
 
         # If diverged translation is non-empty, POTMsgSet is listed.
         self.factory.makeCurrentTranslationMessage(
@@ -461,7 +464,7 @@ class TestTranslationSharedPOFile(TestCaseWithFactory):
             translations=[u"Translation"], diverged=True)
         found_translations = list(
             self.devel_pofile.getPOTMsgSetTranslated())
-        self.assertEquals(found_translations, [self.potmsgset])
+        self.assertEqual(found_translations, [self.potmsgset])
 
     def test_getPOTMsgSetTranslated_EmptyShared(self):
         # Test listing of translated POTMsgSets when there is an
@@ -476,7 +479,7 @@ class TestTranslationSharedPOFile(TestCaseWithFactory):
         # but since it's empty, there are no results.
         found_translations = list(
             self.devel_pofile.getPOTMsgSetTranslated())
-        self.assertEquals(found_translations, [])
+        self.assertEqual(found_translations, [])
 
         # When an empty diverged translation is added, nothing is listed.
         self.factory.makeCurrentTranslationMessage(
@@ -484,7 +487,7 @@ class TestTranslationSharedPOFile(TestCaseWithFactory):
             translations=[u""], diverged=True)
         found_translations = list(
             self.devel_pofile.getPOTMsgSetTranslated())
-        self.assertEquals(found_translations, [])
+        self.assertEqual(found_translations, [])
 
         # If diverged translation is non-empty, POTMsgSet is listed.
         self.factory.makeCurrentTranslationMessage(
@@ -492,7 +495,7 @@ class TestTranslationSharedPOFile(TestCaseWithFactory):
             translations=[u"Translation"], diverged=True)
         found_translations = list(
             self.devel_pofile.getPOTMsgSetTranslated())
-        self.assertEquals(found_translations, [self.potmsgset])
+        self.assertEqual(found_translations, [self.potmsgset])
 
     def test_getPOTMsgSetTranslated_Multiple(self):
         # Test listing of translated POTMsgSets if there is more than one
@@ -515,7 +518,7 @@ class TestTranslationSharedPOFile(TestCaseWithFactory):
         # Both POTMsgSets are listed.
         found_translations = list(
             self.devel_pofile.getPOTMsgSetTranslated())
-        self.assertEquals(found_translations, [self.potmsgset, potmsgset])
+        self.assertEqual(found_translations, [self.potmsgset, potmsgset])
 
     def test_getPOTMsgSetUntranslated_NoShared(self):
         # Test listing of translated POTMsgSets when there is no shared
@@ -524,7 +527,7 @@ class TestTranslationSharedPOFile(TestCaseWithFactory):
         # When there is no diverged translation either, nothing is returned.
         found_translations = list(
             self.devel_pofile.getPOTMsgSetUntranslated())
-        self.assertEquals(found_translations, [self.potmsgset])
+        self.assertEqual(found_translations, [self.potmsgset])
 
         # When a diverged translation is added, the potmsgset is returned.
         self.factory.makeCurrentTranslationMessage(
@@ -532,7 +535,7 @@ class TestTranslationSharedPOFile(TestCaseWithFactory):
             translations=[u"Translation"], diverged=True)
         found_translations = list(
             self.devel_pofile.getPOTMsgSetUntranslated())
-        self.assertEquals(found_translations, [])
+        self.assertEqual(found_translations, [])
 
         # If diverged translation is empty, POTMsgSet is not listed.
         self.factory.makeCurrentTranslationMessage(
@@ -540,7 +543,7 @@ class TestTranslationSharedPOFile(TestCaseWithFactory):
             translations=[u""], diverged=True)
         found_translations = list(
             self.devel_pofile.getPOTMsgSetUntranslated())
-        self.assertEquals(found_translations, [self.potmsgset])
+        self.assertEqual(found_translations, [self.potmsgset])
 
     def test_getPOTMsgSetUntranslated_Shared(self):
         # Test listing of translated POTMsgSets when there is a shared
@@ -554,7 +557,7 @@ class TestTranslationSharedPOFile(TestCaseWithFactory):
         # When there is no diverged translation, shared one is returned.
         found_translations = list(
             self.devel_pofile.getPOTMsgSetUntranslated())
-        self.assertEquals(found_translations, [])
+        self.assertEqual(found_translations, [])
 
         # When an empty diverged translation is added, nothing is listed.
         self.factory.makeCurrentTranslationMessage(
@@ -562,7 +565,7 @@ class TestTranslationSharedPOFile(TestCaseWithFactory):
             translations=[u""], diverged=True)
         found_translations = list(
             self.devel_pofile.getPOTMsgSetUntranslated())
-        self.assertEquals(found_translations, [self.potmsgset])
+        self.assertEqual(found_translations, [self.potmsgset])
 
         # If diverged translation is non-empty, POTMsgSet is listed.
         self.factory.makeCurrentTranslationMessage(
@@ -570,7 +573,7 @@ class TestTranslationSharedPOFile(TestCaseWithFactory):
             translations=[u"Translation"], diverged=True)
         found_translations = list(
             self.devel_pofile.getPOTMsgSetUntranslated())
-        self.assertEquals(found_translations, [])
+        self.assertEqual(found_translations, [])
 
     def test_getPOTMsgSetUntranslated_EmptyShared(self):
         # Test listing of translated POTMsgSets when there is an
@@ -585,7 +588,7 @@ class TestTranslationSharedPOFile(TestCaseWithFactory):
         # but since it's empty, there are no results.
         found_translations = list(
             self.devel_pofile.getPOTMsgSetUntranslated())
-        self.assertEquals(found_translations, [self.potmsgset])
+        self.assertEqual(found_translations, [self.potmsgset])
 
         # When an empty diverged translation is added, nothing is listed.
         self.factory.makeCurrentTranslationMessage(
@@ -593,7 +596,7 @@ class TestTranslationSharedPOFile(TestCaseWithFactory):
             translations=[u""], diverged=True)
         found_translations = list(
             self.devel_pofile.getPOTMsgSetUntranslated())
-        self.assertEquals(found_translations, [self.potmsgset])
+        self.assertEqual(found_translations, [self.potmsgset])
 
         # If diverged translation is non-empty, POTMsgSet is listed.
         self.factory.makeCurrentTranslationMessage(
@@ -601,7 +604,7 @@ class TestTranslationSharedPOFile(TestCaseWithFactory):
             translations=[u"Translation"], diverged=True)
         found_translations = list(
             self.devel_pofile.getPOTMsgSetUntranslated())
-        self.assertEquals(found_translations, [])
+        self.assertEqual(found_translations, [])
 
     def test_getPOTMsgSetUntranslated_Multiple(self):
         # Test listing of untranslated POTMsgSets if there is more than one
@@ -620,7 +623,7 @@ class TestTranslationSharedPOFile(TestCaseWithFactory):
         # Both POTMsgSets are listed.
         found_translations = list(
             self.devel_pofile.getPOTMsgSetUntranslated())
-        self.assertEquals(found_translations, [self.potmsgset, potmsgset])
+        self.assertEqual(found_translations, [self.potmsgset, potmsgset])
 
     def test_getPOTMsgSetWithNewSuggestions(self):
         # Test listing of POTMsgSets with unreviewed suggestions.
@@ -628,17 +631,17 @@ class TestTranslationSharedPOFile(TestCaseWithFactory):
         # When there are no suggestions, nothing is returned.
         found_translations = list(
             self.devel_pofile.getPOTMsgSetWithNewSuggestions())
-        self.assertEquals(found_translations, [])
+        self.assertEqual(found_translations, [])
 
         # When a suggestion is added, the potmsgset is returned.
         translation = self.factory.makeSuggestion(
             pofile=self.devel_pofile, potmsgset=self.potmsgset,
             translations=[u"Suggestion"])
-        self.assertEquals(translation.is_current_ubuntu, False)
+        self.assertEqual(translation.is_current_ubuntu, False)
 
         found_translations = list(
             self.devel_pofile.getPOTMsgSetWithNewSuggestions())
-        self.assertEquals(found_translations, [self.potmsgset])
+        self.assertEqual(found_translations, [self.potmsgset])
 
     def test_getPOTMsgSetWithNewSuggestions_multiple(self):
         # Test that multiple unreviewed POTMsgSets are returned.
@@ -666,7 +669,7 @@ class TestTranslationSharedPOFile(TestCaseWithFactory):
         # Both POTMsgSets are listed.
         found_translations = list(
             self.devel_pofile.getPOTMsgSetWithNewSuggestions())
-        self.assertEquals(found_translations, [self.potmsgset, potmsgset])
+        self.assertEqual(found_translations, [self.potmsgset, potmsgset])
 
     def test_getPOTMsgSetWithNewSuggestions_distinct(self):
         # Provide two suggestions on a single message and make sure
@@ -682,9 +685,8 @@ class TestTranslationSharedPOFile(TestCaseWithFactory):
 
         potmsgsets = list(
             self.devel_pofile.getPOTMsgSetWithNewSuggestions())
-        self.assertEquals(potmsgsets,
-                          [self.potmsgset])
-        self.assertEquals(
+        self.assertEqual(potmsgsets, [self.potmsgset])
+        self.assertEqual(
             self.devel_pofile.getPOTMsgSetWithNewSuggestions().count(),
             1)
 
@@ -695,11 +697,11 @@ class TestTranslationSharedPOFile(TestCaseWithFactory):
         translation = self.factory.makeSuggestion(
             pofile=self.devel_pofile, potmsgset=self.potmsgset,
             translations=[])
-        self.assertEquals(False, translation.is_current_ubuntu)
+        self.assertEqual(False, translation.is_current_ubuntu)
 
         found_translations = list(
             self.devel_pofile.getPOTMsgSetWithNewSuggestions())
-        self.assertEquals([], found_translations)
+        self.assertEqual([], found_translations)
 
     def _getThisSideFlag(self, translation_message):
         """Return the value of the "is_current_*" flag on this side."""
@@ -720,53 +722,53 @@ class TestTranslationSharedPOFile(TestCaseWithFactory):
         # product series, therefore they are "upstream" files. As a
         # consequence "this side" in this test refers to "upstream" and
         # "other side"  refers to "ubuntu" translations. We keep the generic
-        # terms, though, because the behavior is symmetrical.
+        # terms, though, because the behaviour is symmetrical.
 
         # If there are no translations on either side, nothing is listed.
         found_translations = list(
             self.devel_pofile.getPOTMsgSetDifferentTranslations())
-        self.assertEquals(found_translations, [])
+        self.assertEqual(found_translations, [])
 
         # Adding a current translation on one side doesn't change anything.
         translation = self.factory.makeCurrentTranslationMessage(
             pofile=self.devel_pofile, potmsgset=self.potmsgset,
             translations=[u"This side translation"])
-        self.assertEquals(self._getThisSideFlag(translation), True)
-        self.assertEquals(self._getOtherSideFlag(translation), False)
+        self.assertEqual(self._getThisSideFlag(translation), True)
+        self.assertEqual(self._getOtherSideFlag(translation), False)
         found_translations = list(
             self.devel_pofile.getPOTMsgSetDifferentTranslations())
-        self.assertEquals(found_translations, [])
+        self.assertEqual(found_translations, [])
 
         # Adding a translation on both sides does not introduce a difference.
         translation = self.factory.makeCurrentTranslationMessage(
             pofile=self.devel_pofile, potmsgset=self.potmsgset,
             translations=[u"Both sides translation"], current_other=True)
-        self.assertEquals(self._getThisSideFlag(translation), True)
-        self.assertEquals(self._getOtherSideFlag(translation), True)
+        self.assertEqual(self._getThisSideFlag(translation), True)
+        self.assertEqual(self._getOtherSideFlag(translation), True)
         found_translations = list(
             self.devel_pofile.getPOTMsgSetDifferentTranslations())
-        self.assertEquals(found_translations, [])
+        self.assertEqual(found_translations, [])
 
         # Adding a different translation on one side to creates a difference
         # between this side and the other side.
         translation = self.factory.makeCurrentTranslationMessage(
             pofile=self.devel_pofile, potmsgset=self.potmsgset,
             translations=[u"Different translation"])
-        self.assertEquals(self._getThisSideFlag(translation), True)
-        self.assertEquals(self._getOtherSideFlag(translation), False)
+        self.assertEqual(self._getThisSideFlag(translation), True)
+        self.assertEqual(self._getOtherSideFlag(translation), False)
         found_translations = list(
             self.devel_pofile.getPOTMsgSetDifferentTranslations())
-        self.assertEquals(found_translations, [self.potmsgset])
+        self.assertEqual(found_translations, [self.potmsgset])
 
         # A diverged translation is different, too.
         translation = self.factory.makeCurrentTranslationMessage(
             pofile=self.devel_pofile, potmsgset=self.potmsgset,
             translations=[u"Diverged translation"], diverged=True)
-        self.assertEquals(self._getThisSideFlag(translation), True)
-        self.assertEquals(self._getOtherSideFlag(translation), False)
+        self.assertEqual(self._getThisSideFlag(translation), True)
+        self.assertEqual(self._getOtherSideFlag(translation), False)
         found_translations = list(
             self.devel_pofile.getPOTMsgSetDifferentTranslations())
-        self.assertEquals(found_translations, [self.potmsgset])
+        self.assertEqual(found_translations, [self.potmsgset])
 
     def test_messageCount(self):
         # POFile.messageCount just forwards to POTmeplate.messageCount.
@@ -782,13 +784,13 @@ class TestTranslationSharedPOFile(TestCaseWithFactory):
         # Statistics for an empty template are all calculated as zero.
         pofile = self.factory.makePOFile()
         pofile.updateStatistics()
-        self.assertEquals(0, self.devel_pofile.messageCount())
-        self.assertEquals(0, self.devel_pofile.translatedCount())
-        self.assertEquals(0, self.devel_pofile.untranslatedCount())
-        self.assertEquals(0, self.devel_pofile.currentCount())
-        self.assertEquals(0, self.devel_pofile.rosettaCount())
-        self.assertEquals(0, self.devel_pofile.updatesCount())
-        self.assertEquals(0, self.devel_pofile.unreviewedCount())
+        self.assertEqual(0, self.devel_pofile.messageCount())
+        self.assertEqual(0, self.devel_pofile.translatedCount())
+        self.assertEqual(0, self.devel_pofile.untranslatedCount())
+        self.assertEqual(0, self.devel_pofile.currentCount())
+        self.assertEqual(0, self.devel_pofile.rosettaCount())
+        self.assertEqual(0, self.devel_pofile.updatesCount())
+        self.assertEqual(0, self.devel_pofile.unreviewedCount())
 
     def test_updateStatistics(self):
         # Test that updating statistics keeps working.
@@ -851,15 +853,15 @@ class TestTranslationSharedPOFile(TestCaseWithFactory):
 
         # Returns current, updates, rosetta, unreviewed counts.
         stats = self.devel_pofile.updateStatistics()
-        self.assertEquals((1, 1, 3, 2), stats)
+        self.assertEqual((1, 1, 3, 2), stats)
 
-        self.assertEquals(6, self.devel_pofile.messageCount())
-        self.assertEquals(4, self.devel_pofile.translatedCount())
-        self.assertEquals(2, self.devel_pofile.untranslatedCount())
-        self.assertEquals(1, self.devel_pofile.currentCount())
-        self.assertEquals(3, self.devel_pofile.rosettaCount())
-        self.assertEquals(1, self.devel_pofile.updatesCount())
-        self.assertEquals(2, self.devel_pofile.unreviewedCount())
+        self.assertEqual(6, self.devel_pofile.messageCount())
+        self.assertEqual(4, self.devel_pofile.translatedCount())
+        self.assertEqual(2, self.devel_pofile.untranslatedCount())
+        self.assertEqual(1, self.devel_pofile.currentCount())
+        self.assertEqual(3, self.devel_pofile.rosettaCount())
+        self.assertEqual(1, self.devel_pofile.updatesCount())
+        self.assertEqual(2, self.devel_pofile.unreviewedCount())
 
     def test_TranslationFileData_adapter(self):
         # Test that exporting works correctly with shared and diverged
@@ -876,9 +878,9 @@ class TestTranslationSharedPOFile(TestCaseWithFactory):
         exported_messages = [
             (msg.singular_text, msg.translations[0])
             for msg in translation_file_data.messages]
-        self.assertEquals(exported_messages,
-                          [(self.potmsgset.singular_text,
-                            "Shared translation")])
+        self.assertEqual(exported_messages,
+                         [(self.potmsgset.singular_text,
+                           "Shared translation")])
 
         # When we add a diverged translation, only that is exported.
         self.factory.makeCurrentTranslationMessage(
@@ -895,9 +897,9 @@ class TestTranslationSharedPOFile(TestCaseWithFactory):
             (msg.singular_text, msg.translations[0])
             for msg in translation_file_data.messages]
         # Only the diverged translation is exported.
-        self.assertEquals(exported_messages,
-                          [(self.potmsgset.singular_text,
-                            "Diverged translation")])
+        self.assertEqual(exported_messages,
+                         [(self.potmsgset.singular_text,
+                           "Diverged translation")])
 
 
 class TestSharingPOFileCreation(TestCaseWithFactory):
@@ -1032,6 +1034,39 @@ class TestSharingPOFileCreation(TestCaseWithFactory):
         self.assertNotEqual(None, stable_potemplate.getPOFileByLang('eo'))
         self.assertNotEqual(None, stable_potemplate.getPOFileByLang('de'))
 
+    def test_pofile_creation_sharing_with_credits(self):
+        # When pofiles are created due to sharing, any credits messages
+        # in the new pofiles are translated, even if they have different
+        # names.
+        devel_potemplate = self.factory.makePOTemplate(
+            productseries=self.foo_devel, name="messages")
+        stable_potemplate = self.factory.makePOTemplate(
+            productseries=self.foo_stable, name="messages")
+        devel_credits = self.factory.makePOTMsgSet(
+            potemplate=devel_potemplate, singular=u'translator-credits')
+        stable_credits = self.factory.makePOTMsgSet(
+            potemplate=stable_potemplate, singular=u'translation-credits')
+
+        # Create one language from the devel end, and the other from
+        # stable.
+        devel_eo = devel_potemplate.newPOFile('eo')
+        stable_eo = stable_potemplate.getPOFileByLang('eo')
+        stable_is = stable_potemplate.newPOFile('is')
+        devel_is = devel_potemplate.getPOFileByLang('is')
+
+        # Even though the devel and stable credits msgids are different,
+        # both are translated for both languages.
+        for ms, po in [
+                (devel_credits, devel_eo),
+                (devel_credits, devel_is),
+                (stable_credits, stable_eo),
+                (stable_credits, stable_is)]:
+            self.assertIsNot(
+                None,
+                ms.getCurrentTranslation(
+                    po.potemplate, po.language,
+                    po.potemplate.translation_side))
+
 
 class TestTranslationCredits(TestCaseWithFactory):
     """Test generation of translation credits."""
@@ -1074,10 +1109,10 @@ class TestTranslationCredits(TestCaseWithFactory):
         self.credits_potmsgset.setCurrentTranslation(
             self.pofile, translator, {0: 'upstream credits'},
             RosettaTranslationOrigin.SCM, share_with_other_side=True)
-        self.assertEquals(
+        self.assertEqual(
             u'upstream credits\n\n'
             'Launchpad Contributions:\n'
-            '  Launchpad Translator http://launchpad.dev/~the-translator',
+            '  Launchpad Translator http://launchpad.test/~the-translator',
             self.pofile.prepareTranslationCredits(self.credits_potmsgset))
 
     def test_prepareTranslationCredits_gnome_extending(self):
@@ -1104,7 +1139,7 @@ class TestTranslationCredits(TestCaseWithFactory):
         # The first translation credits export.
         credits_text = self.pofile.prepareTranslationCredits(
             self.credits_potmsgset)
-        self.assertEquals(
+        self.assertEqual(
             self.compose_launchpad_credits_text(imported_credits_text),
             credits_text)
 
@@ -1117,7 +1152,7 @@ class TestTranslationCredits(TestCaseWithFactory):
 
         credits_text = self.pofile.prepareTranslationCredits(
             self.credits_potmsgset)
-        self.assertEquals(
+        self.assertEqual(
             self.compose_launchpad_credits_text(imported_credits_text),
             credits_text)
 
@@ -1133,7 +1168,7 @@ class TestTranslationCredits(TestCaseWithFactory):
             self.pofile, translator,
             {0: 'Upstream credits'},
             RosettaTranslationOrigin.SCM, share_with_other_side=True)
-        self.assertEquals(
+        self.assertEqual(
             u'Upstream credits, ,Launchpad Contributions:,'
             'Launchpad Translator',
             self.pofile.prepareTranslationCredits(kde_names_potmsgset))
@@ -1150,7 +1185,7 @@ class TestTranslationCredits(TestCaseWithFactory):
             self.pofile, translator,
             {0: 'translator@upstream'},
             RosettaTranslationOrigin.SCM, share_with_other_side=True)
-        self.assertEquals(
+        self.assertEqual(
             u'translator@upstream,,,translator@launchpad',
             self.pofile.prepareTranslationCredits(kde_emails_potmsgset))
 
@@ -1167,7 +1202,7 @@ class TestTranslationCredits(TestCaseWithFactory):
             self.pofile, translator,
             {0: 'Upstream credits'},
             RosettaTranslationOrigin.SCM, share_with_other_side=True)
-        self.assertEquals(
+        self.assertEqual(
             u'Upstream credits, ,Launchpad Contributions:,'
             'Launchpad Translator',
             self.pofile.prepareTranslationCredits(kde_names_potmsgset))
@@ -1185,7 +1220,7 @@ class TestTranslationCredits(TestCaseWithFactory):
             self.pofile, translator,
             {0: 'translator@upstream'},
             RosettaTranslationOrigin.SCM, share_with_other_side=True)
-        self.assertEquals(
+        self.assertEqual(
             u'translator@upstream,,,translator@launchpad',
             self.pofile.prepareTranslationCredits(kde_emails_potmsgset))
 
@@ -1239,7 +1274,7 @@ class TestTranslationPOFilePOTMsgSetOrdering(TestCaseWithFactory):
 
         translated_potmsgsets = list(
             self.devel_pofile.getPOTMsgSetTranslated())
-        self.assertEquals(
+        self.assertEqual(
             [self.potmsgset1, self.potmsgset2], translated_potmsgsets)
 
         # Insert these two POTMsgSets into self.stable_potemplate in reverse
@@ -1250,20 +1285,20 @@ class TestTranslationPOFilePOTMsgSetOrdering(TestCaseWithFactory):
         # And they are returned in the new order as desired.
         translated_potmsgsets = list(
             self.stable_pofile.getPOTMsgSetTranslated())
-        self.assertEquals(
+        self.assertEqual(
             [self.potmsgset2, self.potmsgset1], translated_potmsgsets)
 
         # Order is unchanged for the previous template.
         translated_potmsgsets = list(
             self.devel_pofile.getPOTMsgSetTranslated())
-        self.assertEquals(
+        self.assertEqual(
             [self.potmsgset1, self.potmsgset2], translated_potmsgsets)
 
     def test_getPOTMsgSetUntranslated_ordering(self):
         # Both POTMsgSets in devel_pofile are untranslated.
         untranslated_potmsgsets = list(
             self.devel_pofile.getPOTMsgSetUntranslated())
-        self.assertEquals(
+        self.assertEqual(
             [self.potmsgset1, self.potmsgset2], untranslated_potmsgsets)
 
         # Insert these two POTMsgSets into self.stable_potemplate in reverse
@@ -1274,13 +1309,13 @@ class TestTranslationPOFilePOTMsgSetOrdering(TestCaseWithFactory):
         # And they are returned in the new order as desired.
         untranslated_potmsgsets = list(
             self.stable_pofile.getPOTMsgSetUntranslated())
-        self.assertEquals(
+        self.assertEqual(
             [self.potmsgset2, self.potmsgset1], untranslated_potmsgsets)
 
         # Order is unchanged for the previous template.
         untranslated_potmsgsets = list(
             self.devel_pofile.getPOTMsgSetUntranslated())
-        self.assertEquals(
+        self.assertEqual(
             [self.potmsgset1, self.potmsgset2], untranslated_potmsgsets)
 
     def test_getPOTMsgSetDifferentTranslations_ordering(self):
@@ -1307,7 +1342,7 @@ class TestTranslationPOFilePOTMsgSetOrdering(TestCaseWithFactory):
 
         potmsgsets = list(
             self.devel_pofile.getPOTMsgSetDifferentTranslations())
-        self.assertEquals(
+        self.assertEqual(
             [self.potmsgset1, self.potmsgset2], potmsgsets)
 
         # Insert these two POTMsgSets into self.stable_potemplate in reverse
@@ -1318,20 +1353,20 @@ class TestTranslationPOFilePOTMsgSetOrdering(TestCaseWithFactory):
         # And they are returned in the new order as desired.
         potmsgsets = list(
             self.stable_pofile.getPOTMsgSetDifferentTranslations())
-        self.assertEquals(
+        self.assertEqual(
             [self.potmsgset2, self.potmsgset1], potmsgsets)
 
         # Order is unchanged for the previous template.
         potmsgsets = list(
             self.devel_pofile.getPOTMsgSetDifferentTranslations())
-        self.assertEquals(
+        self.assertEqual(
             [self.potmsgset1, self.potmsgset2], potmsgsets)
 
     def test_getPOTMsgSets_ordering(self):
         # Both POTMsgSets in devel_potemplate are untranslated.
         potmsgsets = list(
             self.devel_potemplate.getPOTMsgSets())
-        self.assertEquals(
+        self.assertEqual(
             [self.potmsgset1, self.potmsgset2], potmsgsets)
 
         # Insert these two POTMsgSets into self.stable_potemplate in reverse
@@ -1342,13 +1377,13 @@ class TestTranslationPOFilePOTMsgSetOrdering(TestCaseWithFactory):
         # And they are returned in the new order as desired.
         potmsgsets = list(
             self.stable_potemplate.getPOTMsgSets())
-        self.assertEquals(
+        self.assertEqual(
             [self.potmsgset2, self.potmsgset1], potmsgsets)
 
         # Order is unchanged for the previous template.
         potmsgsets = list(
             self.devel_potemplate.getPOTMsgSets())
-        self.assertEquals(
+        self.assertEqual(
             [self.potmsgset1, self.potmsgset2], potmsgsets)
 
 
@@ -1547,7 +1582,7 @@ class TestPOFileSet(TestCaseWithFactory):
         sampledata_pofiles = list(
             self.pofileset.getPOFilesWithTranslationCredits())
         total = len(sampledata_pofiles)
-        self.assertEquals(3, total)
+        self.assertEqual(3, total)
 
         def list_of_tuples_into_list(list_of_tuples):
             return [item[0] for item in list_of_tuples]
@@ -1562,7 +1597,7 @@ class TestPOFileSet(TestCaseWithFactory):
         self.assertIn(sr_pofile,
                       list_of_tuples_into_list(
                           self.pofileset.getPOFilesWithTranslationCredits()))
-        self.assertEquals(
+        self.assertEqual(
             total + 1,
             self.pofileset.getPOFilesWithTranslationCredits().count())
 
@@ -1758,7 +1793,7 @@ class TestPOFileStatistics(TestCaseWithFactory):
         # Make sure count of translations which are active both
         # in import and in Launchpad is correct.
         self.pofile.updateStatistics()
-        self.assertEquals(self.pofile.currentCount(), 0)
+        self.assertEqual(self.pofile.currentCount(), 0)
 
         # Adding an imported translation increases currentCount().
         self.factory.makeCurrentTranslationMessage(
@@ -1767,7 +1802,7 @@ class TestPOFileStatistics(TestCaseWithFactory):
             translations=["Imported current"],
             current_other=True)
         self.pofile.updateStatistics()
-        self.assertEquals(self.pofile.currentCount(), 1)
+        self.assertEqual(self.pofile.currentCount(), 1)
 
         # Adding a suggestion (i.e. unused translation)
         # will not change the current count when there's
@@ -1777,13 +1812,13 @@ class TestPOFileStatistics(TestCaseWithFactory):
             potmsgset=self.potmsgset,
             translations=["A suggestion"])
         self.pofile.updateStatistics()
-        self.assertEquals(self.pofile.currentCount(), 1)
+        self.assertEqual(self.pofile.currentCount(), 1)
 
     def test_POFile_updateStatistics_newCount(self):
         # Make sure count of translations which are provided
         # only in Launchpad (and not in imports) is correct.
         self.pofile.updateStatistics()
-        self.assertEquals(self.pofile.newCount(), 0)
+        self.assertEqual(self.pofile.newCount(), 0)
 
         # Adding a current translation for an untranslated
         # message increases the count of new translations in LP.
@@ -1792,7 +1827,7 @@ class TestPOFileStatistics(TestCaseWithFactory):
             potmsgset=self.potmsgset,
             translations=["Current"])
         self.pofile.updateStatistics()
-        self.assertEquals(self.pofile.newCount(), 1)
+        self.assertEqual(self.pofile.newCount(), 1)
 
     def test_POFile_updateStatistics_newCount_reimporting(self):
         # If we get an 'imported' translation for what
@@ -1810,7 +1845,7 @@ class TestPOFileStatistics(TestCaseWithFactory):
             current_other=True)
 
         self.pofile.updateStatistics()
-        self.assertEquals(self.pofile.newCount(), 0)
+        self.assertEqual(self.pofile.newCount(), 0)
 
     def test_POFile_updateStatistics_newCount_changed(self):
         # If we change an 'imported' translation through
@@ -1826,8 +1861,8 @@ class TestPOFileStatistics(TestCaseWithFactory):
             potmsgset=self.potmsgset,
             translations=["Changed"])
         self.pofile.updateStatistics()
-        self.assertEquals(self.pofile.newCount(), 0)
-        self.assertEquals(self.pofile.updatesCount(), 1)
+        self.assertEqual(self.pofile.newCount(), 0)
+        self.assertEqual(self.pofile.updatesCount(), 1)
 
     def test_empty_messages_count_as_untranslated(self):
         # A message with all its msgstr* set to None counts as if
@@ -2047,7 +2082,7 @@ class TestPOFile(TestCaseWithFactory):
         [self._createMessageSet(msg) for msg in self.TEST_MESSAGES]
         for rownum, row in enumerate(
             self.pofile.getTranslationRows()):
-            self.failUnlessEqual(
+            self.assertEqual(
                 row.sequence, self.EXPECTED_SEQUENCE[rownum],
                 "getTranslationRows does not sort obsolete messages "
                 "(sequence=0) to the end of the file.")
@@ -2149,6 +2184,60 @@ class TestPOFile(TestCaseWithFactory):
             language.code, with_plural=True)
         self.assertTrue(pofile.hasPluralFormInformation())
 
+    def test_prepare_pomessage_error_message(self):
+        # The method returns subject, template_mail, and errorsdetails
+        # to make an email message about errors.
+        errors = []
+        errors.append({
+            'potmsgset': self.factory.makePOTMsgSet(
+                potemplate=self.pofile.potemplate, sequence=1),
+            'pomessage': 'purrs',
+            'error-message': 'claws error',
+            })
+        errors.append({
+            'potmsgset': self.factory.makePOTMsgSet(
+                potemplate=self.pofile.potemplate, sequence=2),
+            'pomessage': 'plays',
+            'error-message': 'string error',
+            })
+        replacements = {'numberofmessages': 5}
+        pofile = removeSecurityProxy(self.pofile)
+        data = pofile._prepare_pomessage_error_message(
+            errors, replacements)
+        subject, template_mail, errorsdetails = data
+        pot_displayname = self.pofile.potemplate.displayname
+        self.assertEqual(
+            'Translation problems - Esperanto (eo) - %s' % pot_displayname,
+            subject)
+        self.assertEqual('poimport-with-errors.txt', template_mail)
+        self.assertEqual(2, replacements['numberoferrors'])
+        self.assertEqual(3, replacements['numberofcorrectmessages'])
+        self.assertEqual(errorsdetails, replacements['errorsdetails'])
+        self.assertEqual(
+            '1. "claws error":\n\npurrs\n\n2. "string error":\n\nplays\n\n',
+            errorsdetails)
+
+    def test_prepare_pomessage_error_message_sequence_is_invalid(self):
+        # The errordetails can be contructed when the sequnce is invalid.
+        errors = [{
+            'potmsgset': self.factory.makePOTMsgSet(
+                potemplate=self.pofile.potemplate, sequence=None),
+            'pomessage': 'purrs',
+            'error-message': 'claws error',
+            }]
+        replacements = {'numberofmessages': 5}
+        pofile = removeSecurityProxy(self.pofile)
+        potmsgset = removeSecurityProxy(errors[0]['potmsgset'])
+
+        def get_sequence(pot):
+            return None
+
+        with monkey_patch(potmsgset, getSequence=get_sequence):
+            data = pofile._prepare_pomessage_error_message(
+                errors, replacements)
+        subject, template_mail, errorsdetails = data
+        self.assertEqual('-1. "claws error":\n\npurrs\n\n', errorsdetails)
+
 
 class TestPOFileUbuntuUpstreamSharingMixin:
     """Test sharing between Ubuntu und upstream POFiles."""
@@ -2236,7 +2325,7 @@ class TestPOFileUbuntuUpstreamSharingMixin:
         this_pofile = self.makeThisSidePOFile()
         other_pofile = self.makeOtherSidePOFile()
         self._setPackagingLink()
-        self.assertEquals(other_pofile, this_pofile.getOtherSidePOFile())
+        self.assertEqual(other_pofile, this_pofile.getOtherSidePOFile())
 
     def test_getOtherSidePOFile_automatic(self):
         # As expected, sharing POFiles are created automatically if the
@@ -2244,7 +2333,7 @@ class TestPOFileUbuntuUpstreamSharingMixin:
         self._setPackagingLink()
         other_potemplate = self.makeOtherSidePOTemplate()
         this_pofile = self.makeThisSidePOFile(create_sharing=True)
-        self.assertEquals(
+        self.assertEqual(
             other_potemplate, this_pofile.getOtherSidePOFile().potemplate)
 
 

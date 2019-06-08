@@ -1,4 +1,4 @@
-# Copyright 2010-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2015 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for ProductJobs."""
@@ -16,14 +16,16 @@ from testtools.content_type import UTF8_TEXT
 import transaction
 from zope.component import getUtility
 from zope.interface import (
-    classProvides,
-    implements,
+    implementer,
+    provider,
     )
 from zope.security.proxy import removeSecurityProxy
 
+from lp.app.enums import InformationType
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.registry.enums import (
-    InformationType,
+    BranchSharingPolicy,
+    BugSharingPolicy,
     ProductJobType,
     )
 from lp.registry.interfaces.person import TeamMembershipPolicy
@@ -49,7 +51,7 @@ from lp.registry.model.productjob import (
     SevenDayCommercialExpirationJob,
     ThirtyDayCommercialExpirationJob,
     )
-from lp.services.database.lpstorm import IStore
+from lp.services.database.interfaces import IStore
 from lp.services.job.interfaces.job import JobStatus
 from lp.services.log.logger import BufferLogger
 from lp.services.propertycache import clear_property_cache
@@ -197,18 +199,18 @@ class IProductThingJobSource(IProductJobSource):
     """An interface for testing derived job source classes."""
 
 
+@implementer(IProductThingJob)
+@provider(IProductThingJobSource)
 class FakeProductJob(ProductJobDerived):
     """A class that reuses other interfaces and types for testing."""
     class_job_type = ProductJobType.REVIEWER_NOTIFICATION
-    implements(IProductThingJob)
-    classProvides(IProductThingJobSource)
 
 
+@implementer(IProductThingJob)
+@provider(IProductThingJobSource)
 class OtherFakeProductJob(ProductJobDerived):
     """A class that reuses other interfaces and types for testing."""
     class_job_type = ProductJobType.COMMERCIAL_EXPIRED
-    implements(IProductThingJob)
-    classProvides(IProductThingJobSource)
 
 
 class ProductJobDerivedTestCase(TestCaseWithFactory):
@@ -440,6 +442,7 @@ class ProductNotificationJobTestCase(TestCaseWithFactory):
             ('X-Launchpad-Project', '%s (%s)' %
               (product.displayname, product.name)),
             ('X-Launchpad-Message-Rationale', 'Maintainer'),
+            ('X-Launchpad-Message-For', product.owner.name),
             ('Reply-To', reply_to),
             ]
         self.assertContentEqual(expected_headers, headers.items())
@@ -456,6 +459,7 @@ class ProductNotificationJobTestCase(TestCaseWithFactory):
             ('X-Launchpad-Project', '%s (%s)' %
               (product.displayname, product.name)),
             ('X-Launchpad-Message-Rationale', 'Maintainer'),
+            ('X-Launchpad-Message-For', product.owner.name),
             ]
         self.assertContentEqual(expected_headers, headers.items())
 
@@ -570,7 +574,6 @@ class CommericialExpirationMixin(CommercialHelpers):
             owner=product.owner, product=product,
             information_type=InformationType.USERDATA)
         with person_logged_in(product.owner):
-            product.setPrivateBugs(True, product.owner)
             product.development_focus.branch = private_branch
         self.expire_commercial_subscription(product)
         job = self.JOB_CLASS.create(product, reviewer)
@@ -710,7 +713,6 @@ class CommercialExpiredJobTestCase(CommericialExpirationMixin,
             owner=product.owner, product=product,
             information_type=InformationType.USERDATA)
         with person_logged_in(product.owner):
-            product.setPrivateBugs(True, product.owner)
             public_series = product.development_focus
             public_series.branch = public_branch
             private_series = product.newSeries(
@@ -721,8 +723,11 @@ class CommercialExpiredJobTestCase(CommericialExpirationMixin,
         job = CommercialExpiredJob.create(product, reviewer)
         job._deactivateCommercialFeatures()
         clear_property_cache(product)
-        self.assertIs(True, product.active)
-        self.assertIs(False, product.private_bugs)
+        self.assertTrue(product.active)
+        self.assertEqual(
+            BranchSharingPolicy.FORBIDDEN, product.branch_sharing_policy)
+        self.assertEqual(
+            BugSharingPolicy.FORBIDDEN, product.bug_sharing_policy)
         self.assertEqual(public_branch, public_series.branch)
         self.assertIs(None, private_series.branch)
         self.assertIs(None, product.commercial_subscription)

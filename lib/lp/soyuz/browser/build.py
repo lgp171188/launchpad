@@ -1,4 +1,4 @@
-# Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2014 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Browser views for builds."""
@@ -10,12 +10,12 @@ __all__ = [
     'BuildCancelView',
     'BuildContextMenu',
     'BuildNavigation',
-    'BuildNavigationMixin',
     'BuildRecordsView',
     'BuildRescoringView',
     'BuildUrl',
     'BuildView',
     'DistributionBuildRecordsView',
+    'get_build_by_id_str',
     ]
 
 
@@ -23,11 +23,10 @@ from itertools import groupby
 from operator import attrgetter
 
 from lazr.batchnavigator import ListRangeFactory
-from lazr.delegates import delegates
 from lazr.restful.utils import safe_hasattr
 from zope.component import getUtility
 from zope.interface import (
-    implements,
+    implementer,
     Interface,
     )
 from zope.security.interfaces import Unauthorized
@@ -42,17 +41,16 @@ from lp.app.errors import (
     NotFoundError,
     UnexpectedFormData,
     )
-from lp.buildmaster.enums import BuildStatus
+from lp.buildmaster.enums import (
+    BuildQueueStatus,
+    BuildStatus,
+    )
 from lp.buildmaster.interfaces.buildfarmjob import (
-    IBuildFarmJobSet,
+    IBuildFarmJobDB,
     InconsistentBuildFarmJobError,
     ISpecificBuildFarmJobSource,
     )
-from lp.buildmaster.interfaces.packagebuild import IPackageBuild
-from lp.code.interfaces.sourcepackagerecipebuild import (
-    ISourcePackageRecipeBuildSource,
-    )
-from lp.services.job.interfaces.job import JobStatus
+from lp.buildmaster.interfaces.buildqueue import IBuildQueueSet
 from lp.services.librarian.browser import (
     FileNavigationMixin,
     ProxiedLibraryFileAlias,
@@ -65,8 +63,6 @@ from lp.services.webapp import (
     GetitemNavigation,
     LaunchpadView,
     Link,
-    StandardLaunchpadFacets,
-    stepthrough,
     )
 from lp.services.webapp.authorization import check_permission
 from lp.services.webapp.batching import (
@@ -78,11 +74,28 @@ from lp.services.webapp.interfaces import ICanonicalUrlData
 from lp.soyuz.enums import PackageUploadStatus
 from lp.soyuz.interfaces.binarypackagebuild import (
     IBinaryPackageBuild,
-    IBinaryPackageBuildSet,
     IBuildRescoreForm,
     )
 
 
+def get_build_by_id_str(utility, id_str):
+    """Find a build by a utility interface and ID string.
+
+    Designed for Navigation implementations.
+
+    Returns None if the ID doesn't match a build.
+    """
+    try:
+        build_id = int(id_str)
+    except ValueError:
+        return None
+    try:
+        return getUtility(utility).getByID(build_id)
+    except NotFoundError:
+        return None
+
+
+@implementer(ICanonicalUrlData)
 class BuildUrl:
     """Dynamic URL declaration for IBinaryPackageBuild.
 
@@ -98,7 +111,6 @@ class BuildUrl:
     Copy archives will be presented under the archives page:
        /ubuntu/+archive/my-special-archive/+build/1234
     """
-    implements(ICanonicalUrlData)
     rootsite = None
 
     def __init__(self, context):
@@ -117,54 +129,6 @@ class BuildUrl:
 
 
 class BuildNavigation(GetitemNavigation, FileNavigationMixin):
-    usedfor = IBinaryPackageBuild
-
-
-class BuildNavigationMixin:
-    """Provide a simple way to traverse to builds."""
-
-    @stepthrough('+build')
-    def traverse_build(self, name):
-        try:
-            build_id = int(name)
-        except ValueError:
-            return None
-        try:
-            return getUtility(IBinaryPackageBuildSet).getByID(build_id)
-        except NotFoundError:
-            return None
-
-    @stepthrough('+recipebuild')
-    def traverse_recipebuild(self, name):
-        try:
-            build_id = int(name)
-        except ValueError:
-            return None
-        try:
-            return getUtility(ISourcePackageRecipeBuildSource).getByID(
-                build_id)
-        except NotFoundError:
-            return None
-
-    @stepthrough('+buildjob')
-    def traverse_buildjob(self, name):
-        try:
-            job_id = int(name)
-        except ValueError:
-            return None
-        try:
-            build_job = getUtility(IBuildFarmJobSet).getByID(job_id)
-            return self.redirectSubTree(
-                canonical_url(build_job.getSpecificJob()))
-        except NotFoundError:
-            return None
-
-
-class BuildFacets(StandardLaunchpadFacets):
-    """The links that will appear in the facet menu for an
-    IBinaryPackageBuild."""
-    enable_only = ['overview']
-
     usedfor = IBinaryPackageBuild
 
 
@@ -332,7 +296,7 @@ class BuildView(LaunchpadView):
         """
         return (
             self.context.status == BuildStatus.NEEDSBUILD and
-            self.context.buildqueue_record.job.status == JobStatus.WAITING)
+            self.context.buildqueue_record.status == BuildQueueStatus.WAITING)
 
     @cachedproperty
     def eta(self):
@@ -344,12 +308,12 @@ class BuildView(LaunchpadView):
         if self.context.buildqueue_record is None:
             return None
         queue_record = self.context.buildqueue_record
-        if queue_record.job.status == JobStatus.WAITING:
+        if queue_record.status == BuildQueueStatus.WAITING:
             start_time = queue_record.getEstimatedJobStartTime()
-            if start_time is None:
-                return None
         else:
-            start_time = queue_record.job.date_started
+            start_time = queue_record.date_started
+        if start_time is None:
+            return None
         duration = queue_record.estimated_duration
         return start_time + duration
 
@@ -388,7 +352,7 @@ class BuildRetryView(BuildView):
 
             # Invoke context method to retry the build record.
             self.context.retry()
-            self.request.response.addInfoNotification('Build retried')
+            self.request.response.addInfoNotification('Build has been queued')
 
         self.request.response.redirect(canonical_url(self.context))
 
@@ -455,91 +419,48 @@ class BuildCancelView(LaunchpadFormView):
             self.request.response.addNotification("Unable to cancel build.")
 
 
-class CompleteBuild:
-    """Super object to store related IBinaryPackageBuild & IBuildQueue."""
-    delegates(IBinaryPackageBuild)
-
-    def __init__(self, build, buildqueue_record):
-        self.context = build
-        self._buildqueue_record = buildqueue_record
-
-    def buildqueue_record(self):
-        return self._buildqueue_record
-
-
 def setupCompleteBuilds(batch):
-    """Pre-populate new object with buildqueue items.
-
-    Single queries, using list() statement to force fetch
-    of the results in python domain.
-
-    Receive a sequence of builds, for instance, a batch.
-
-    Return a list of built CompleteBuild instances, or empty
-    list if no builds were contained in the received batch.
-    """
-    builds = getSpecificJobs(
-        [build.build_farm_job if IPackageBuild.providedBy(build) else build
-            for build in batch])
-    if not builds:
-        return []
-
-    # This pre-population of queue entries is only implemented for
-    # IBinaryPackageBuilds.
-    prefetched_data = dict()
-    build_ids = [
-        build.id for build in builds if IBinaryPackageBuild.providedBy(build)]
-    results = getUtility(IBinaryPackageBuildSet).getQueueEntriesForBuildIDs(
-        build_ids)
-    for (buildqueue, _builder, build_job) in results:
-        # Get the build's id, 'buildqueue', 'sourcepackagerelease' and
-        # 'buildlog' (from the result set) respectively.
-        prefetched_data[build_job.build.id] = buildqueue
-
-    complete_builds = []
-    for build in builds:
-        if IBinaryPackageBuild.providedBy(build):
-            buildqueue = prefetched_data.get(build.id)
-            complete_builds.append(CompleteBuild(build, buildqueue))
-        else:
-            complete_builds.append(build)
-    return complete_builds
+    """Pre-populate new object with buildqueue items."""
+    builds = getSpecificJobs(batch)
+    getUtility(IBuildQueueSet).preloadForBuildFarmJobs(
+        [build for build in builds if build is not None])
+    return builds
 
 
 def getSpecificJobs(jobs):
     """Return the specific build jobs associated with each of the jobs
         in the provided job list.
+
+    If the job is already a specific job, it will be returned unchanged.
     """
     builds = []
     key = attrgetter('job_type.name')
-    sorted_jobs = sorted(jobs, key=key)
+    nonspecific_jobs = sorted(
+        (job for job in jobs if IBuildFarmJobDB.providedBy(job)), key=key)
     job_builds = {}
-    for job_type_name, grouped_jobs in groupby(sorted_jobs, key=key):
+    for job_type_name, grouped_jobs in groupby(nonspecific_jobs, key=key):
         # Fetch the jobs in batches grouped by their job type.
         source = getUtility(
             ISpecificBuildFarmJobSource, job_type_name)
         builds = [build for build
             in source.getByBuildFarmJobs(list(grouped_jobs))
             if build is not None]
-        is_binary_package_build = IBinaryPackageBuildSet.providedBy(
-            source)
         for build in builds:
-            if is_binary_package_build:
-                job_builds[build.package_build.build_farm_job.id] = build
-            else:
-                try:
-                    job_builds[build.build_farm_job.id] = build
-                except Unauthorized:
-                    # If the build farm job is private, we will get an
-                    # Unauthorized exception; we only use
-                    # removeSecurityProxy to get the id of build_farm_job
-                    # but the corresponding build returned in the list
-                    # will be 'None'.
-                    naked_build = removeSecurityProxy(build)
-                    job_builds[naked_build.build_farm_job.id] = None
+            try:
+                job_builds[build.build_farm_job.id] = build
+            except Unauthorized:
+                # If the build farm job is private, we will get an
+                # Unauthorized exception; we only use
+                # removeSecurityProxy to get the id of build_farm_job
+                # but the corresponding build returned in the list
+                # will be 'None'.
+                naked_build = removeSecurityProxy(build)
+                job_builds[naked_build.build_farm_job.id] = None
     # Return the corresponding builds.
     try:
-        return [job_builds[job.id] for job in jobs]
+        return [
+            job_builds[job.id]
+            if IBuildFarmJobDB.providedBy(job) else job for job in jobs]
     except KeyError:
         raise InconsistentBuildFarmJobError(
             "Could not find all the related specific jobs.")

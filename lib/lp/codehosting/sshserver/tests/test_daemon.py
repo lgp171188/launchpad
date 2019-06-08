@@ -1,10 +1,15 @@
-# Copyright 2010 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2016 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for the codehosting SSH server glue."""
 
 __metaclass__ = type
 
+from lazr.sshserver.auth import (
+    NoSuchPersonWithName,
+    SSHUserAuthServer,
+    )
+from lazr.sshserver.service import Factory
 from twisted.conch.ssh.common import NS
 from twisted.conch.ssh.keys import Key
 from twisted.test.proto_helpers import StringTransport
@@ -15,9 +20,8 @@ from lp.codehosting.sshserver.daemon import (
     PRIVATE_KEY_FILE,
     PUBLIC_KEY_FILE,
     )
-from lp.services.sshserver.auth import SSHUserAuthServer
-from lp.services.sshserver.service import Factory
 from lp.testing import TestCase
+from lp.xmlrpc import faults
 
 
 class StringTransportWith_setTcpKeepAlive(StringTransport):
@@ -68,8 +72,8 @@ class TestFactory(TestCase):
         return server_transport
 
     def test_authentication_uses_our_userauth_service(self):
-        # The service of a SSHServerTransport after authentication has started
-        # is an instance of our SSHUserAuthServer class.
+        # The service of an SSHServerTransport after authentication has
+        # started is an instance of our SSHUserAuthServer class.
         factory = self.makeFactory()
         transport = self.beginAuthentication(factory)
         self.assertIsInstance(transport.service, SSHUserAuthServer)
@@ -85,3 +89,14 @@ class TestFactory(TestCase):
         mind2 = server_transport2.service.getMind()
 
         self.assertIsNot(mind1.cache, mind2.cache)
+
+
+class TestXMLRPC(TestCase):
+    """Test XML-RPC protocol integrity."""
+
+    def test_NoSuchPersonWithName_error_code(self):
+        # The error code for NoSuchPersonWithName in lazr.sshserver matches
+        # that in lp.xmlrpc.faults.
+        self.assertEqual(
+            faults.NoSuchPersonWithName.error_code,
+            NoSuchPersonWithName.error_code)

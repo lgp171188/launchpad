@@ -1,12 +1,12 @@
 Appointing a Product Series Driver (release manager)
 ====================================================
 
-Sample Person is the driver of Firefox 1.0 series because he is also
-the project owner. He can delegate the responsibility of release manager
+Sample Person is the driver of Firefox 1.0 series because they are also
+the project owner. They can delegate the responsibility of release manager
 by appointing someone else as the driver.
 
     >>> browser.addHeader('Authorization', 'Basic test@canonical.com:test')
-    >>> browser.open('http://launchpad.dev/firefox/1.0')
+    >>> browser.open('http://launchpad.test/firefox/1.0')
     >>> content  = find_tag_by_id(browser.contents, 'series-details')
     >>> print extract_text(find_tag_by_id(content, 'series-drivers'))
     Project drivers: Sample Person
@@ -16,7 +16,7 @@ by appointing someone else as the driver.
     >>> browser.getLink('Appoint release manager').click()
 
     >>> browser.url
-    'http://launchpad.dev/firefox/1.0/+driver'
+    'http://launchpad.test/firefox/1.0/+driver'
     >>> print browser.title
     Appoint the release manager for...
     >>> browser.getControl('Release manager').value
@@ -29,7 +29,7 @@ After changing the driver, the browser shows the overview page where a
 message explains that the driver changed.
 
     >>> browser.url
-    'http://launchpad.dev/firefox/1.0'
+    'http://launchpad.test/firefox/1.0'
 
     >>> for tag in find_tags_by_class(browser.contents, 'informational'):
     ...     tag.renderContents()

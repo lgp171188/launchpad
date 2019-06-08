@@ -1,4 +1,4 @@
-# Copyright 2010 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Optimized bulk operations against the database."""
@@ -6,6 +6,7 @@
 __metaclass__ = type
 __all__ = [
     'create',
+    'dbify_value',
     'load',
     'load_referencing',
     'load_related',
@@ -15,7 +16,10 @@ __all__ = [
 
 from collections import defaultdict
 from functools import partial
-from itertools import chain
+from itertools import (
+    chain,
+    groupby,
+    )
 from operator import (
     attrgetter,
     itemgetter,
@@ -36,7 +40,7 @@ from storm.references import Reference
 from storm.store import Store
 from zope.security.proxy import removeSecurityProxy
 
-from lp.services.database.lpstorm import IStore
+from lp.services.database.interfaces import IStore
 
 
 def collate(things, key):
@@ -98,6 +102,32 @@ def _primary_key(object_type, allow_compound=False):
         return primary_key
 
 
+def _make_compound_load_clause(primary_key, values_list):
+    """Construct a bulk-loading query clause for a compound primary key.
+
+    When the primary key is compound, we expect that in practice we will
+    often want to load objects with common leading elements of the key: for
+    example, we often want to load many `GitRef` objects from the same
+    repository.  This helper returns a query clause optimised to be compact
+    in this case.
+
+    :param primary_key: The primary key columns.
+    :param values_list: A sequence of values of the primary key whose
+        corresponding rows should be loaded.  This must be sorted by the
+        caller (because this function calls itself recursively, and it's
+        usually more efficient to sort the whole sequence in one go).
+    """
+    if len(primary_key) > 1:
+        return Or(*(
+            And(
+                primary_key[0] == leading_value,
+                _make_compound_load_clause(
+                    primary_key[1:], [values[1:] for values in group]))
+            for leading_value, group in groupby(values_list, itemgetter(0))))
+    else:
+        return primary_key[0].is_in([values[0] for values in values_list])
+
+
 def load(object_type, primary_keys, store=None):
     """Load a large number of objects efficiently."""
     primary_key = _primary_key(object_type, allow_compound=True)
@@ -106,9 +136,8 @@ def load(object_type, primary_keys, store=None):
     if not primary_keys:
         return []
     if isinstance(primary_key, tuple):
-        condition = Or(*(
-            And(*(key == value for (key, value) in zip(primary_key, values)))
-            for values in primary_keys))
+        condition = _make_compound_load_clause(
+            primary_key, sorted(primary_keys))
     else:
         condition = primary_key.is_in(primary_keys)
     if store is None:
@@ -116,7 +145,8 @@ def load(object_type, primary_keys, store=None):
     return list(store.find(object_type, condition))
 
 
-def load_referencing(object_type, owning_objects, reference_keys):
+def load_referencing(object_type, owning_objects, reference_keys,
+                     extra_conditions=[]):
     """Load objects of object_type that reference owning_objects.
 
     Note that complex types like Person are best loaded through dedicated
@@ -129,6 +159,8 @@ def load_referencing(object_type, owning_objects, reference_keys):
         constraint could be lifted in future.
     :param reference_keys: A list of attributes that should be used to select
         object_type keys. e.g. ['branchID']
+    :param extra_conditions: A list of Storm clauses that will be used in the
+        final query.
     :return: A list of object_type where any of reference_keys refered to the
         primary key of any of owning_objects.
     """
@@ -146,7 +178,7 @@ def load_referencing(object_type, owning_objects, reference_keys):
     # clause.
     for column in map(partial(getattr, object_type), reference_keys):
         conditions.append(column.is_in(ids))
-    return list(store.find(object_type, Or(conditions)))
+    return list(store.find(object_type, Or(conditions), *extra_conditions))
 
 
 def load_related(object_type, owning_objects, foreign_keys):
@@ -167,7 +199,7 @@ def load_related(object_type, owning_objects, foreign_keys):
     return load(object_type, keys)
 
 
-def _dbify_value(col, val):
+def dbify_value(col, val):
     """Convert a value into a form that Storm can compile directly."""
     if isinstance(val, SQL):
         return (val,)
@@ -184,7 +216,7 @@ def _dbify_value(col, val):
         return (col.variable_factory(value=val),)
 
 
-def _dbify_column(col):
+def dbify_column(col):
     """Convert a column into a form that Storm can compile directly."""
     if isinstance(col, Reference):
         # References are mainly meant to be used as descriptors, so we
@@ -199,7 +231,7 @@ def create(columns, values, get_objects=False,
            get_primary_keys=False):
     """Create a large number of objects efficiently.
 
-    :param cols: The Storm columns to insert values into. Must be from a
+    :param columns: The Storm columns to insert values into. Must be from a
         single class.
     :param values: A list of lists of values for the columns.
     :param get_objects: Return the created objects.
@@ -207,7 +239,7 @@ def create(columns, values, get_objects=False,
     :return: A list of the created objects if get_created, otherwise None.
     """
     # Flatten Reference faux-columns into their primary keys.
-    db_cols = list(chain.from_iterable(map(_dbify_column, columns)))
+    db_cols = list(chain.from_iterable(map(dbify_column, columns)))
     clses = set(col.cls for col in db_cols)
     if len(clses) != 1:
         raise ValueError(
@@ -228,7 +260,7 @@ def create(columns, values, get_objects=False,
     # squashed into primary key variables.
     db_values = [
         list(chain.from_iterable(
-            _dbify_value(col, val) for col, val in zip(columns, value)))
+            dbify_value(col, val) for col, val in zip(columns, value)))
         for value in values]
 
     if get_objects or get_primary_keys:

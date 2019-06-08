@@ -1,7 +1,7 @@
 An anonymous user who tries to access the bugtask edit page will be
 redirected to the login page.
 
-    >>> browser.open("http://launchpad.dev/thunderbird/+bug/9/+editstatus")
+    >>> browser.open("http://launchpad.test/thunderbird/+bug/9/+editstatus")
     Traceback (most recent call last):
       ...
     Unauthorized: ...
@@ -16,17 +16,13 @@ Even when the product has a bug supervisor, see bug #49891.
 
     >>> login("test@canonical.com")
 
-    >>> from lp.services.database.lpstorm import IMasterObject
-    >>> firefox = IMasterObject(getUtility(IProductSet).getByName("firefox"))
-    >>> sample_person = IMasterObject(
-    ...     getUtility(IPersonSet).getByName("name12"))
+    >>> firefox = getUtility(IProductSet).getByName("firefox")
+    >>> sample_person = getUtility(IPersonSet).getByName("name12")
     >>> firefox.bug_supervisor = sample_person
-
-    >>> flush_database_updates()
 
     >>> logout()
 
-    >>> browser.open("http://launchpad.dev/firefox/+bug/1/+editstatus")
+    >>> browser.open("http://launchpad.test/firefox/+bug/1/+editstatus")
     Traceback (most recent call last):
       ...
     Unauthorized: ...
@@ -34,6 +30,6 @@ Even when the product has a bug supervisor, see bug #49891.
 Any logged-in user can edit a bugtask.
 
     >>> browser = setupBrowser(auth="Basic test@canonical.com:test")
-    >>> browser.open("http://launchpad.dev/firefox/+bug/6/+editstatus")
-    >>> print browser.title
+    >>> browser.open("http://launchpad.test/firefox/+bug/6/+editstatus")
+    >>> print(browser.title)
     Edit status ...

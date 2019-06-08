@@ -1,4 +1,4 @@
-# Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Sprint views."""
@@ -9,13 +9,13 @@ __all__ = [
     'SprintAddView',
     'SprintAttendeesCsvExportView',
     'SprintBrandingView',
+    'SprintDeleteView',
     'SprintEditView',
     'SprintFacets',
     'SprintMeetingExportView',
     'SprintNavigation',
     'SprintOverviewMenu',
     'SprintSetBreadcrumb',
-    'SprintSetFacets',
     'SprintSetNavigation',
     'SprintSetView',
     'SprintSpecificationsMenu',
@@ -29,25 +29,27 @@ from StringIO import StringIO
 
 from lazr.restful.utils import smartquote
 import pytz
-from zope.app.form.browser import TextAreaWidget
 from zope.component import getUtility
-from zope.interface import implements
+from zope.formlib.widget import CustomWidgetFactory
+from zope.formlib.widgets import TextAreaWidget
+from zope.interface import implementer
 
 from lp import _
 from lp.app.browser.launchpadform import (
     action,
-    custom_widget,
     LaunchpadEditFormView,
     LaunchpadFormView,
     )
-from lp.app.interfaces.headings import IMajorHeadingView
+from lp.app.interfaces.headings import (
+    IHeadingBreadcrumb,
+    IMajorHeadingView,
+    )
 from lp.app.widgets.date import DateTimeWidget
 from lp.blueprints.browser.specificationtarget import (
     HasSpecificationsMenuMixin,
     HasSpecificationsView,
     )
 from lp.blueprints.enums import (
-    SpecificationDefinitionStatus,
     SpecificationFilter,
     SpecificationPriority,
     SpecificationSort,
@@ -79,24 +81,31 @@ from lp.services.webapp import (
     StandardLaunchpadFacets,
     )
 from lp.services.webapp.batching import BatchNavigator
-from lp.services.webapp.breadcrumb import Breadcrumb
+from lp.services.webapp.breadcrumb import (
+    Breadcrumb,
+    TitleBreadcrumb,
+    )
+from lp.services.webapp.interfaces import IMultiFacetedBreadcrumb
 
 
 class SprintFacets(StandardLaunchpadFacets):
     """The links that will appear in the facet menu for an ISprint."""
 
     usedfor = ISprint
-    enable_only = ['overview', 'specifications']
-
-    def specifications(self):
-        text = 'Blueprints'
-        summary = 'Topics for discussion at %s' % self.context.title
-        return Link('', text, summary)
+    enable_only = [
+        'overview',
+        'specifications',
+        ]
 
 
 class SprintNavigation(Navigation):
 
     usedfor = ISprint
+
+
+@implementer(IHeadingBreadcrumb, IMultiFacetedBreadcrumb)
+class SprintBreadcrumb(TitleBreadcrumb):
+    pass
 
 
 class SprintOverviewMenu(NavigationMenu):
@@ -105,7 +114,7 @@ class SprintOverviewMenu(NavigationMenu):
     usedfor = ISprint
     facet = 'overview'
     links = ['attendance', 'registration', 'attendee_export', 'edit',
-             'branding']
+             'branding', 'delete']
 
     def attendance(self):
         text = 'Register yourself'
@@ -135,6 +144,10 @@ class SprintOverviewMenu(NavigationMenu):
         summary = 'Modify the imagery used to represent this meeting'
         return Link('+branding', text, summary, icon='edit')
 
+    @enabled_with_permission('launchpad.Moderate')
+    def delete(self):
+        return Link('+delete', 'Delete sprint', icon='trash-icon')
+
 
 class SprintSpecificationsMenu(NavigationMenu,
                                HasSpecificationsMenuMixin):
@@ -158,21 +171,13 @@ class SprintSetBreadcrumb(Breadcrumb):
     text = 'Meetings'
 
 
-class SprintSetFacets(StandardLaunchpadFacets):
-    """The facet menu for an ISprintSet."""
-
-    usedfor = ISprintSet
-    enable_only = ['overview', ]
-
-
 class HasSprintsView(LaunchpadView):
 
     page_title = 'Events'
 
 
+@implementer(IMajorHeadingView)
 class SprintView(HasSpecificationsView):
-
-    implements(IMajorHeadingView)
 
     # XXX Michael Nelson 20090923 bug=435255
     # This class inherits a label from HasSpecificationsView, which causes
@@ -216,7 +221,7 @@ class SprintView(HasSpecificationsView):
     @cachedproperty
     def latest_approved(self):
         filter = [SpecificationFilter.ACCEPTED]
-        return self.context.specifications(filter=filter,
+        return self.context.specifications(self.user, filter=filter,
                     quantity=self.latest_specs_limit,
                     sort=SpecificationSort.DATE)
 
@@ -253,12 +258,15 @@ class SprintAddView(LaunchpadFormView):
     schema = ISprint
     label = "Register a meeting"
     field_names = ['name', 'title', 'summary', 'home_page', 'driver',
-                   'time_zone', 'time_starts', 'time_ends', 'address',
+                   'time_zone', 'time_starts', 'time_ends', 'is_physical',
+                   'address',
                    ]
-    custom_widget('summary', TextAreaWidget, height=5)
-    custom_widget('time_starts', DateTimeWidget, display_zone=False)
-    custom_widget('time_ends', DateTimeWidget, display_zone=False)
-    custom_widget('address', TextAreaWidget, height=3)
+    custom_widget_summary = CustomWidgetFactory(TextAreaWidget, height=5)
+    custom_widget_time_starts = CustomWidgetFactory(
+        DateTimeWidget, display_zone=False)
+    custom_widget_time_ends = CustomWidgetFactory(
+        DateTimeWidget, display_zone=False)
+    custom_widget_address = CustomWidgetFactory(TextAreaWidget, height=3)
 
     sprint = None
 
@@ -292,6 +300,7 @@ class SprintAddView(LaunchpadFormView):
             time_zone=data['time_zone'],
             time_starts=data['time_starts'],
             time_ends=data['time_ends'],
+            is_physical=data['is_physical'],
             address=data['address'],
             )
         self.request.response.addInfoNotification('Sprint created.')
@@ -321,12 +330,15 @@ class SprintEditView(LaunchpadEditFormView):
     label = "Edit sprint details"
 
     field_names = ['name', 'title', 'summary', 'home_page', 'driver',
-                   'time_zone', 'time_starts', 'time_ends', 'address',
+                   'time_zone', 'time_starts', 'time_ends', 'is_physical',
+                   'address',
                    ]
-    custom_widget('summary', TextAreaWidget, height=5)
-    custom_widget('time_starts', DateTimeWidget, display_zone=False)
-    custom_widget('time_ends', DateTimeWidget, display_zone=False)
-    custom_widget('address', TextAreaWidget, height=3)
+    custom_widget_summary = CustomWidgetFactory(TextAreaWidget, height=5)
+    custom_widget_time_starts = CustomWidgetFactory(
+        DateTimeWidget, display_zone=False)
+    custom_widget_time_ends = CustomWidgetFactory(
+        DateTimeWidget, display_zone=False)
+    custom_widget_address = CustomWidgetFactory(TextAreaWidget, height=3)
 
     def setUpWidgets(self):
         LaunchpadEditFormView.setUpWidgets(self)
@@ -360,6 +372,25 @@ class SprintEditView(LaunchpadEditFormView):
     @property
     def cancel_url(self):
         return canonical_url(self.context)
+
+
+class SprintDeleteView(LaunchpadFormView):
+    """Form for deleting sprints."""
+
+    schema = ISprint
+    field_names = []
+
+    @property
+    def label(self):
+        return smartquote('Delete "%s" sprint' % self.context.displayname)
+
+    page_title = label
+
+    @action("Delete sprint", name="delete")
+    def delete_action(self, action, data):
+        owner = self.context.owner
+        self.context.destroySelf()
+        self.next_url = canonical_url(owner)
 
 
 class SprintTopicSetView(HasSpecificationsView, LaunchpadView):
@@ -464,21 +495,15 @@ class SprintMeetingExportView(LaunchpadView):
 
         model_specs = []
         for spec in self.context.specifications(
-            filter=[SpecificationFilter.ACCEPTED]):
+            self.user, filter=[SpecificationFilter.ACCEPTED]):
 
-            # skip sprints with no priority or less than low:
+            # Skip sprints with no priority or less than LOW.
             if spec.priority < SpecificationPriority.UNDEFINED:
-                continue
-
-            if (spec.definition_status not in
-                [SpecificationDefinitionStatus.NEW,
-                 SpecificationDefinitionStatus.DISCUSSION,
-                 SpecificationDefinitionStatus.DRAFT]):
                 continue
             model_specs.append(spec)
 
         people = defaultdict(dict)
-        # Attendees per specification
+        # Attendees per specification.
         for subscription in load_referencing(SpecificationSubscription,
                 model_specs, ['specificationID']):
             if subscription.personID not in attendee_set:
@@ -492,12 +517,12 @@ class SprintMeetingExportView(LaunchpadView):
         for spec in model_specs:
             # Get the list of attendees that will attend the sprint.
             spec_people = people[spec.id]
-            if spec.assigneeID is not None:
-                spec_people[spec.assigneeID] = True
-                attendee_set.add(spec.assigneeID)
-            if spec.drafterID is not None:
-                spec_people[spec.drafterID] = True
-                attendee_set.add(spec.drafterID)
+            if spec.assignee is not None:
+                spec_people[spec.assignee.id] = True
+                attendee_set.add(spec.assignee.id)
+            if spec.drafter is not None:
+                spec_people[spec.drafter.id] = True
+                attendee_set.add(spec.drafter.id)
         people_by_id = dict((person.id, person) for person in
             getUtility(IPersonSet).getPrecachedPersonsFromIDs(attendee_set))
         self.specifications = [
@@ -507,9 +532,9 @@ class SprintMeetingExportView(LaunchpadView):
                 ) for spec in model_specs]
 
     def render(self):
-        self.request.response.setHeader('content-type',
-                                        'application/xml;charset=utf-8')
-        body = LaunchpadView.render(self)
+        self.request.response.setHeader(
+            'content-type', 'application/xml;charset=utf-8')
+        body = super(SprintMeetingExportView, self).render()
         return body.encode('utf-8')
 
 
@@ -535,10 +560,9 @@ class SprintSetNavigationMenu(RegistryCollectionActionMenuBase):
         return Link('+all', text, icon='list')
 
 
+@implementer(IRegistryCollectionNavigationMenu)
 class SprintSetView(LaunchpadView):
     """View for the /sprints top level collection page."""
-
-    implements(IRegistryCollectionNavigationMenu)
 
     page_title = 'Meetings and sprints registered in Launchpad'
 

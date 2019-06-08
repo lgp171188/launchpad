@@ -1,4 +1,4 @@
-# Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -19,6 +19,10 @@ from lp.services.mail.interfaces import (
 from lp.services.webapp import canonical_url
 from lp.services.webapp.interaction import get_current_principal
 from lp.services.webapp.interfaces import ILaunchBag
+
+
+NO_KEY_TEMPLATE = 'key-not-registered.txt'
+NOT_SIGNED_TEMPLATE = 'not-signed.txt'
 
 
 class IncomingEmailError(Exception):
@@ -139,13 +143,14 @@ def get_error_message(filename, error_templates=None, **interpolation_items):
     If the error message requires some parameters, those are given in
     interpolation_items.
 
-    The files are searched for in lib/lp.services/mail/errortemplates.
+    The files are searched for in lib/lp/services/mail/errortemplates.
     """
     if error_templates is None:
         error_templates = os.path.join(
             os.path.dirname(__file__), 'errortemplates')
     fullpath = os.path.join(error_templates, filename)
-    error_template = open(fullpath).read()
+    with open(fullpath) as f:
+        error_template = f.read()
     return error_template % interpolation_items
 
 
@@ -156,6 +161,11 @@ def get_person_or_team(person_name_or_email):
     """
     # Avoid circular import problems.
     from lp.registry.vocabularies import ValidPersonOrTeamVocabulary
+
+    # "me" is a special case meaning the sender of the email.
+    if person_name_or_email == "me":
+        return getUtility(ILaunchBag).user
+
     valid_person_vocabulary = ValidPersonOrTeamVocabulary()
     try:
         person_term = valid_person_vocabulary.getTermByToken(
@@ -168,10 +178,7 @@ def get_person_or_team(person_name_or_email):
     return person_term.value
 
 
-def ensure_not_weakly_authenticated(signed_msg, context,
-                                    error_template='not-signed.txt',
-                                    no_key_template='key-not-registered.txt',
-                                    error_templates=None):
+def ensure_not_weakly_authenticated(signed_msg, context):
     """Make sure that the current principal is not weakly authenticated.
 
     NB: While handling an email, the authentication state is stored partly in
@@ -188,14 +195,12 @@ def ensure_not_weakly_authenticated(signed_msg, context,
     if IWeaklyAuthenticatedPrincipal.providedBy(cur_principal):
         if signed_msg.signature is None:
             error_message = get_error_message(
-                error_template, error_templates=error_templates,
-                context=context)
+                NOT_SIGNED_TEMPLATE, None, context=context)
         else:
             import_url = canonical_url(
                 getUtility(ILaunchBag).user) + '/+editpgpkeys'
             error_message = get_error_message(
-                no_key_template, error_templates,
-                import_url=import_url, context=context)
+                NO_KEY_TEMPLATE, None, import_url=import_url, context=context)
         raise IncomingEmailError(error_message)
 
 
@@ -225,7 +230,7 @@ def ensure_sane_signature_timestamp(timestamp, context,
         raise IncomingEmailError(error_message)
 
 
-def save_mail_to_librarian(raw_mail):
+def save_mail_to_librarian(raw_mail, restricted=False):
     """Save the message to the librarian.
 
     It can be referenced from errors, and also accessed by code that needs to
@@ -236,16 +241,16 @@ def save_mail_to_librarian(raw_mail):
     # be guessable for example.
     file_name = str(uuid1()) + '.txt'
     file_alias = getUtility(ILibraryFileAliasSet).create(
-            file_name,
-            len(raw_mail),
-            cStringIO(raw_mail), 'message/rfc822')
+        file_name, len(raw_mail), cStringIO(raw_mail), 'message/rfc822',
+        restricted=restricted)
     return file_alias
 
 
 def get_email_template(filename, app=None):
     """Returns the email template with the given file name.
 
-    The templates are located in 'lib/canonical/launchpad/emailtemplates'.
+    The templates are located in lib/lp/services/mail/emailtemplates or
+    lib/lp/<app>/emailtemplates.
     """
     if app is None:
         base = os.path.dirname(__file__)
@@ -254,7 +259,8 @@ def get_email_template(filename, app=None):
         import lp
         base = os.path.dirname(lp.__file__)
         fullpath = os.path.join(base, app, 'emailtemplates', filename)
-    return open(fullpath).read()
+    with open(fullpath) as f:
+        return f.read()
 
 
 def get_contact_email_addresses(person):

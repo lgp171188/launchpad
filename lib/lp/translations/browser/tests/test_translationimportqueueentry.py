@@ -1,4 +1,4 @@
-# Copyright 2010 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Unit tests for translation import queue views."""
@@ -6,36 +6,46 @@
 from datetime import datetime
 
 from pytz import timezone
-from zope.component import (
-    getMultiAdapter,
-    getUtility,
+from testscenarios import (
+    load_tests_apply_scenarios,
+    WithScenarios,
     )
+from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
 from lp.app.enums import ServiceUsage
-from lp.layers import setFirstLayer
+from lp.services.features.testing import FeatureFixture
 from lp.services.webapp import canonical_url
-from lp.services.webapp.servers import LaunchpadTestRequest
 from lp.testing import (
+    celebrity_logged_in,
     TestCase,
     TestCaseWithFactory,
     )
 from lp.testing.layers import LaunchpadFunctionalLayer
+from lp.testing.views import create_initialized_view
 from lp.translations.browser.translationimportqueue import escape_js_string
 from lp.translations.interfaces.translationimportqueue import (
     ITranslationImportQueue,
     )
-from lp.translations.publisher import TranslationsLayer
 
 
-class TestTranslationImportQueueEntryView(TestCaseWithFactory):
+class TestTranslationImportQueueEntryView(WithScenarios, TestCaseWithFactory):
     """Tests for the queue entry review form."""
 
     layer = LaunchpadFunctionalLayer
 
+    scenarios = [
+        ("spn_picker", {"features": {}}),
+        ("dsp_picker", {
+            "features": {u"disclosure.dsp_picker.enabled": u"on"},
+            }),
+        ]
+
     def setUp(self):
         super(TestTranslationImportQueueEntryView, self).setUp(
             'foo.bar@canonical.com')
+        if self.features:
+            self.useFixture(FeatureFixture(self.features))
         self.queue = getUtility(ITranslationImportQueue)
         self.uploader = self.factory.makePerson()
 
@@ -44,14 +54,6 @@ class TestTranslationImportQueueEntryView(TestCaseWithFactory):
         product = self.factory.makeProduct()
         product.translations_usage = ServiceUsage.LAUNCHPAD
         return product.getSeries('trunk')
-
-    def _makeView(self, entry):
-        """Create view for a queue entry."""
-        request = LaunchpadTestRequest()
-        setFirstLayer(request, TranslationsLayer)
-        view = getMultiAdapter((entry, request), name='+index')
-        view.initialize()
-        return view
 
     def _makeEntry(self, productseries=None, distroseries=None,
                    sourcepackagename=None, filename=None, potemplate=None):
@@ -69,7 +71,7 @@ class TestTranslationImportQueueEntryView(TestCaseWithFactory):
         # import_target returns.
         series = self._makeProductSeries()
         entry = self._makeEntry(productseries=series)
-        view = self._makeView(entry)
+        view = create_initialized_view(entry, '+index')
 
         self.assertEqual(series, view.import_target)
 
@@ -81,7 +83,7 @@ class TestTranslationImportQueueEntryView(TestCaseWithFactory):
         package = self.factory.makeSourcePackage(packagename, series)
         entry = self._makeEntry(
             distroseries=series, sourcepackagename=packagename)
-        view = self._makeView(entry)
+        view = create_initialized_view(entry, '+index')
 
         self.assertEqual(package, view.import_target)
 
@@ -90,7 +92,7 @@ class TestTranslationImportQueueEntryView(TestCaseWithFactory):
         # to, the series' templates.
         series = self._makeProductSeries()
         entry = self._makeEntry(productseries=series)
-        view = self._makeView(entry)
+        view = create_initialized_view(entry, '+index')
 
         # If there are no templates, there is no link.
         self.assertEqual("no templates", view.productseries_templates_link)
@@ -109,7 +111,7 @@ class TestTranslationImportQueueEntryView(TestCaseWithFactory):
         series = self._makeProductSeries()
         product = series.product
         entry = self._makeEntry(productseries=series)
-        view = self._makeView(entry)
+        view = create_initialized_view(entry, '+index')
 
         # No translatable series.
         series_text = view.product_translatable_series
@@ -135,7 +137,7 @@ class TestTranslationImportQueueEntryView(TestCaseWithFactory):
         # Many translatable series.  The list is cut short; there's an
         # ellipsis to indicate this.
         series_count = len(product.translatable_series)
-        for counter in xrange(series_count, view.max_series_to_display + 1):
+        for counter in range(series_count, view.max_series_to_display + 1):
             extra_series = self.factory.makeProductSeries(product=product)
             self.factory.makePOTemplate(productseries=extra_series)
         series_text = view.product_translatable_series
@@ -152,7 +154,7 @@ class TestTranslationImportQueueEntryView(TestCaseWithFactory):
         # status change.
         series = self._makeProductSeries()
         entry = self._makeEntry(productseries=series)
-        view = self._makeView(entry)
+        view = create_initialized_view(entry, '+index')
 
         # If the date equals the upload date, there's no need to show
         # anything.
@@ -173,7 +175,7 @@ class TestTranslationImportQueueEntryView(TestCaseWithFactory):
         series = self._makeProductSeries()
         entry = self._makeEntry(
             productseries=series, filename="My_Domain.pot")
-        view = self._makeView(entry)
+        view = create_initialized_view(entry, '+index')
 
         self.assertEqual(
             "My_Domain", view.initial_values['translation_domain'])
@@ -187,7 +189,7 @@ class TestTranslationImportQueueEntryView(TestCaseWithFactory):
             productseries=series, translation_domain=domain)
         entry = self._makeEntry(
             productseries=series, potemplate=potemplate)
-        view = self._makeView(entry)
+        view = create_initialized_view(entry, '+index')
 
         self.assertEqual(domain, view.initial_values['translation_domain'])
 
@@ -197,7 +199,7 @@ class TestTranslationImportQueueEntryView(TestCaseWithFactory):
         series = self._makeProductSeries()
         entry = self._makeEntry(
             productseries=series, filename="My_Domain.pot")
-        view = self._makeView(entry)
+        view = create_initialized_view(entry, '+index')
 
         self.assertEqual("my-domain", view.initial_values['name'])
 
@@ -210,9 +212,35 @@ class TestTranslationImportQueueEntryView(TestCaseWithFactory):
             productseries=series, name=name)
         entry = self._makeEntry(
             productseries=series, potemplate=potemplate)
-        view = self._makeView(entry)
+        view = create_initialized_view(entry, '+index')
 
         self.assertEqual(name, view.initial_values['name'])
+
+    def test_change_sourcepackage(self):
+        # Changing the source package is honoured.
+        series = self.factory.makeDistroSeries()
+        packagename = self.factory.makeSourcePackageName()
+        potemplate = self.factory.makePOTemplate(
+            distroseries=series, sourcepackagename=packagename)
+        entry = self._makeEntry(
+            distroseries=series, sourcepackagename=packagename,
+            potemplate=potemplate)
+        dsp = self.factory.makeDSPCache(distroseries=series)
+        form = {
+            'field.file_type': 'POT',
+            'field.path': entry.path,
+            'field.sourcepackagename': dsp.sourcepackagename.name,
+            'field.name': potemplate.name,
+            'field.translation_domain': potemplate.translation_domain,
+            'field.languagepack': '',
+            'field.actions.approve': 'Approve',
+            }
+        with celebrity_logged_in('rosetta_experts'):
+            view = create_initialized_view(entry, '+index', form=form)
+        self.assertEqual([], view.errors)
+        self.assertEqual(
+            dsp.sourcepackagename.name,
+            entry.potemplate.sourcepackagename.name)
 
 
 class TestEscapeJSString(TestCase):
@@ -235,3 +263,6 @@ class TestEscapeJSString(TestCase):
 
     def test_escape_js_string_ampersand(self):
         self.assertEqual('&', escape_js_string('&'))
+
+
+load_tests = load_tests_apply_scenarios

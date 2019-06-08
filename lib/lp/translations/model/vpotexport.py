@@ -1,26 +1,26 @@
 # Copyright 2009 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-# pylint: disable-msg=E0611,W0212
-
 """Database class to handle translation template export view."""
 
 __metaclass__ = type
 
-__all__ = [ 'VPOTExport' ]
+__all__ = [
+    'VPOTExport',
+    ]
 
-from zope.interface import implements
+from zope.interface import implementer
 
 from lp.translations.interfaces.vpotexport import IVPOTExport
 
 
+# XXX JeroenVermeulen 2009-07-30 bug=406540: This should be an
+# ITranslationMessageData.
+@implementer(IVPOTExport)
 class VPOTExport:
     """Present Rosetta POT files in a form suitable for exporting them
     efficiently.
     """
-    # XXX JeroenVermeulen 2009-07-30 bug=406540: This should be an
-    # ITranslationMessageData.
-    implements(IVPOTExport)
 
     def __init__(self, potemplate, tti, potmsgset, singular, plural):
         self.potemplate = potemplate

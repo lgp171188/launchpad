@@ -1,13 +1,14 @@
-# Copyright 2009 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-# Explicit is better than implicit.
-# pylint: disable-msg=W0602,W0603
 """Helpers to time out external operations."""
 
 __metaclass__ = type
 __all__ = [
+    "default_timeout",
     "get_default_timeout_function",
+    "override_timeout",
+    "reduced_timeout",
     "SafeTransportWithTimeout",
     "set_default_timeout_function",
     "TimeoutError",
@@ -16,15 +17,34 @@ __all__ = [
     "with_timeout",
     ]
 
-import httplib
+from contextlib import contextmanager
 import socket
 import sys
-from threading import Thread
-import urllib2
+from threading import (
+    Lock,
+    Thread,
+    )
 from xmlrpclib import (
     SafeTransport,
     Transport,
     )
+
+from requests import Session
+from requests.adapters import (
+    DEFAULT_POOLBLOCK,
+    HTTPAdapter,
+    )
+from requests.packages.urllib3.connectionpool import (
+    HTTPConnectionPool,
+    HTTPSConnectionPool,
+    )
+from requests.packages.urllib3.exceptions import ClosedPoolError
+from requests.packages.urllib3.poolmanager import PoolManager
+from requests_file import FileAdapter
+from requests_toolbelt.downloadutils import stream
+from six import reraise
+
+from lp.services.config import config
 
 
 default_timeout_function = None
@@ -40,6 +60,74 @@ def set_default_timeout_function(timeout_function):
     """Change the function returning the default timeout value to use."""
     global default_timeout_function
     default_timeout_function = timeout_function
+
+
+@contextmanager
+def default_timeout(default):
+    """A context manager that sets the default timeout if none is set.
+
+    :param default: The default timeout to use if none is set.
+    """
+    original_timeout_function = get_default_timeout_function()
+
+    if original_timeout_function is None:
+        set_default_timeout_function(lambda: default)
+    try:
+        yield
+    finally:
+        if original_timeout_function is None:
+            set_default_timeout_function(None)
+
+
+@contextmanager
+def reduced_timeout(clearance, webapp_max=None, default=None):
+    """A context manager that reduces the default timeout.
+
+    :param clearance: The number of seconds by which to reduce the default
+        timeout, to give the call site a chance to recover.
+    :param webapp_max: The maximum permitted time for webapp requests.
+    :param default: The default timeout to use if none is set.
+    """
+    # Circular import.
+    from lp.services.webapp.adapter import get_request_start_time
+
+    original_timeout_function = get_default_timeout_function()
+
+    def timeout():
+        if original_timeout_function is None:
+            return default
+        remaining = original_timeout_function()
+
+        if remaining is None:
+            return default
+        elif (webapp_max is not None and remaining > webapp_max and
+                get_request_start_time() is not None):
+            return webapp_max
+        elif remaining > clearance:
+            return remaining - clearance
+        else:
+            return remaining
+
+    set_default_timeout_function(timeout)
+    try:
+        yield
+    finally:
+        set_default_timeout_function(original_timeout_function)
+
+
+@contextmanager
+def override_timeout(timeout):
+    """A context manager that temporarily overrides the default timeout.
+
+    :param timeout: The new timeout to use.
+    """
+    original_timeout_function = get_default_timeout_function()
+
+    set_default_timeout_function(lambda: timeout)
+    try:
+        yield
+    finally:
+        set_default_timeout_function(original_timeout_function)
 
 
 class TimeoutError(Exception):
@@ -114,73 +202,202 @@ class with_timeout:
 
     def __call__(self, f):
         """Wraps the method."""
+        def cleanup(t, args):
+            if self.cleanup is not None:
+                if isinstance(self.cleanup, basestring):
+                    # 'self' will be first positional argument.
+                    getattr(args[0], self.cleanup)()
+                else:
+                    self.cleanup()
+                # Collect cleaned-up worker thread.
+                t.join()
+
         def call_with_timeout(*args, **kwargs):
             # Ensure that we have a timeout before we start the thread
             timeout = self.timeout
+            if getattr(timeout, '__call__', None):
+                # timeout may be a method or a function on the calling
+                # instance class.
+                if args:
+                    timeout = timeout(args[0])
+                else:
+                    timeout = timeout()
             t = ThreadCapturingResult(f, args, kwargs)
             t.start()
-            t.join(timeout)
+            try:
+                t.join(timeout)
+            except Exception as e:
+                # This will commonly be SoftTimeLimitExceeded from celery,
+                # since celery's timeout often happens before the job's due
+                # to job setup time.
+                if t.isAlive():
+                    cleanup(t, args)
+                raise
             if t.isAlive():
-                if self.cleanup is not None:
-                    if isinstance(self.cleanup, basestring):
-                        # 'self' will be first positional argument.
-                        getattr(args[0], self.cleanup)()
-                    else:
-                        self.cleanup()
-                    # Collect cleaned-up worker thread.
-                    t.join()
+                cleanup(t, args)
                 raise TimeoutError("timeout exceeded.")
             if getattr(t, 'exc_info', None) is not None:
                 exc_info = t.exc_info
                 # Remove the cyclic reference for faster GC.
                 del t.exc_info
-                raise exc_info[0], exc_info[1], exc_info[2]
+                reraise(exc_info[0], exc_info[1], tb=exc_info[2])
             return t.result
 
         return call_with_timeout
 
 
-class CleanableHTTPHandler(urllib2.HTTPHandler):
-    """Subclass of `urllib2.HTTPHandler` that can be cleaned-up."""
+class CleanableConnectionPoolMixin:
+    """Enhance urllib3's connection pools to support forced socket cleanup."""
 
-    def http_open(self, req):
-        """See `urllib2.HTTPHandler`."""
-        def connection_factory(*args, **kwargs):
-            """Save the created connection so that we can clean it up."""
-            self.__conn = httplib.HTTPConnection(*args, **kwargs)
-            return self.__conn
-        return self.do_open(connection_factory, req)
+    def __init__(self, *args, **kwargs):
+        super(CleanableConnectionPoolMixin, self).__init__(*args, **kwargs)
+        self._all_connections = []
+        self._all_connections_mutex = Lock()
 
-    def reset_connection(self):
-        """Reset the underlying HTTP connection."""
-        try:
-            self.__conn.sock.shutdown(socket.SHUT_RDWR)
-        except AttributeError:
-            # It's possible that the other thread closed the socket
-            # beforehand.
-            pass
-        self.__conn.close()
+    def _new_conn(self):
+        with self._all_connections_mutex:
+            if self._all_connections is None:
+                raise ClosedPoolError(self, "Pool is closed.")
+            conn = super(CleanableConnectionPoolMixin, self)._new_conn()
+            self._all_connections.append(conn)
+            return conn
+
+    def close(self):
+        with self._all_connections_mutex:
+            if self._all_connections is None:
+                return
+            for conn in self._all_connections:
+                sock = getattr(conn, "sock", None)
+                if sock is not None:
+                    sock.shutdown(socket.SHUT_RDWR)
+                    sock.close()
+                    conn.sock = None
+            self._all_connections = None
+        super(CleanableConnectionPoolMixin, self).close()
+
+
+class CleanableHTTPConnectionPool(
+    CleanableConnectionPoolMixin, HTTPConnectionPool):
+    pass
+
+
+class CleanableHTTPSConnectionPool(
+    CleanableConnectionPoolMixin, HTTPSConnectionPool):
+    pass
+
+
+cleanable_pool_classes_by_scheme = {
+    "http": CleanableHTTPConnectionPool,
+    "https": CleanableHTTPSConnectionPool,
+    }
+
+
+class CleanablePoolManager(PoolManager):
+    """A version of urllib3's PoolManager supporting forced socket cleanup."""
+
+    # XXX cjwatson 2015-03-11: Reimplements PoolManager._new_pool; check
+    # this when upgrading requests.
+    def _new_pool(self, scheme, host, port):
+        if scheme not in cleanable_pool_classes_by_scheme:
+            raise ValueError("Unhandled scheme: %s" % scheme)
+        pool_cls = cleanable_pool_classes_by_scheme[scheme]
+        kwargs = self.connection_pool_kw
+        if scheme == 'http':
+            kwargs = self.connection_pool_kw.copy()
+            for kw in ('key_file', 'cert_file', 'cert_reqs', 'ca_certs',
+                       'ssl_version'):
+                kwargs.pop(kw, None)
+
+        return pool_cls(host, port, **kwargs)
+
+
+class CleanableHTTPAdapter(HTTPAdapter):
+    """Enhance HTTPAdapter to use CleanablePoolManager."""
+
+    # XXX cjwatson 2015-03-11: Reimplements HTTPAdapter.init_poolmanager;
+    # check this when upgrading requests.
+    def init_poolmanager(self, connections, maxsize, block=DEFAULT_POOLBLOCK,
+                         **pool_kwargs):
+        # save these values for pickling
+        self._pool_connections = connections
+        self._pool_maxsize = maxsize
+        self._pool_block = block
+
+        self.poolmanager = CleanablePoolManager(
+            num_pools=connections, maxsize=maxsize, block=block, strict=True,
+            **pool_kwargs)
 
 
 class URLFetcher:
     """Object fetching remote URLs with a time out."""
 
+    def __init__(self):
+        self.session = None
+
     @with_timeout(cleanup='cleanup')
-    def fetch(self, url, data=None):
-        """Fetch the URL using a custom HTTP handler supporting timeout."""
-        assert url.startswith('http://'), "only http is supported."
-        self.handler = CleanableHTTPHandler()
-        opener = urllib2.build_opener(self.handler)
-        return opener.open(url, data).read()
+    def fetch(self, url, use_proxy=False, allow_ftp=False, allow_file=False,
+              output_file=None, **request_kwargs):
+        """Fetch the URL using a custom HTTP handler supporting timeout.
+
+        :param url: The URL to fetch.
+        :param use_proxy: If True, use Launchpad's configured proxy.
+        :param allow_ftp: If True, allow ftp:// URLs.
+        :param allow_file: If True, allow file:// URLs.  (Be careful to only
+            pass this if the URL is trusted.)
+        :param output_file: If not None, download the response content to
+            this file object or path.
+        :param request_kwargs: Additional keyword arguments passed on to
+            `Session.request`.
+        """
+        self.session = Session()
+        # Always ignore proxy/authentication settings in the environment; we
+        # configure that sort of thing explicitly.
+        self.session.trust_env = False
+        # Mount our custom adapters.
+        self.session.mount("https://", CleanableHTTPAdapter())
+        self.session.mount("http://", CleanableHTTPAdapter())
+        # We can do FTP, but currently only via an HTTP proxy.
+        if allow_ftp and use_proxy:
+            self.session.mount("ftp://", CleanableHTTPAdapter())
+        if allow_file:
+            self.session.mount("file://", FileAdapter())
+
+        request_kwargs.setdefault("method", "GET")
+        if use_proxy and config.launchpad.http_proxy:
+            request_kwargs.setdefault("proxies", {})
+            request_kwargs["proxies"]["http"] = config.launchpad.http_proxy
+            request_kwargs["proxies"]["https"] = config.launchpad.http_proxy
+            if allow_ftp:
+                request_kwargs["proxies"]["ftp"] = config.launchpad.http_proxy
+        if output_file is not None:
+            request_kwargs["stream"] = True
+        response = self.session.request(url=url, **request_kwargs)
+        response.raise_for_status()
+        if output_file is None:
+            # Make sure the content has been consumed before returning.
+            response.content
+        else:
+            # Download the content to the given file.
+            stream.stream_response_to_file(response, path=output_file)
+        # The responses library doesn't persist cookies in the session
+        # (https://github.com/getsentry/responses/issues/80).  Work around
+        # this.
+        session_cookies = request_kwargs.get("cookies")
+        if session_cookies is not None and response.cookies:
+            session_cookies.update(response.cookies)
+        return response
 
     def cleanup(self):
         """Reset the connection when the operation timed out."""
-        self.handler.reset_connection()
+        if self.session is not None:
+            self.session.close()
+        self.session = None
 
 
-def urlfetch(url, data=None):
-    """Wrapper for `urllib2.urlopen()` that times out."""
-    return URLFetcher().fetch(url, data)
+def urlfetch(url, **request_kwargs):
+    """Wrapper for `requests.get()` that times out."""
+    with default_timeout(config.launchpad.urlfetch_timeout):
+        return URLFetcher().fetch(url, **request_kwargs)
 
 
 class TransportWithTimeout(Transport):
@@ -199,28 +416,31 @@ class TransportWithTimeout(Transport):
 
     def cleanup(self):
         """In the event of a timeout cleanup by closing the connection."""
-        # py2.6 compatibility
-        # In Python 2.6, xmlrpclib.Transport wraps its HTTPConnection in an
-        # HTTP compatibility class. In 2.7 it just uses the conn directly.
-        http_conn = getattr(self.conn, '_conn', self.conn)
         try:
-            http_conn.sock.shutdown(socket.SHUT_RDWR)
+            self.conn.sock.shutdown(socket.SHUT_RDWR)
         except AttributeError:
             # It's possible that the other thread closed the socket
             # beforehand.
             pass
-        http_conn.close()
+        self.conn.close()
 
 
 class SafeTransportWithTimeout(SafeTransport):
     """Create a HTTPS transport for XMLRPC with timeouts."""
+
+    timeout = None
+
+    def __init__(self, timeout=None, **kwargs):
+        # Old style class call to super required.
+        SafeTransport.__init__(self, **kwargs)
+        self.timeout = timeout
 
     def make_connection(self, host):
         """Create the connection for the transport and save it."""
         self.conn = SafeTransport.make_connection(self, host)
         return self.conn
 
-    @with_timeout(cleanup='cleanup')
+    @with_timeout(cleanup='cleanup', timeout=lambda self: self.timeout)
     def request(self, host, handler, request_body, verbose=0):
         """Make the request but using the with_timeout decorator."""
         return SafeTransport.request(

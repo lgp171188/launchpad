@@ -43,7 +43,6 @@ from lp.registry.interfaces.product import IProductSet
 from lp.services.config import config
 from lp.services.log.logger import BufferLogger
 from lp.testing import (
-    login,
     TestCaseWithFactory,
     ZopeTestInSubProcess,
     )
@@ -144,13 +143,13 @@ class TestCheckwatchesWithSyncableGnomeProducts(TestCaseWithFactory):
         remote_systems_and_watches = (
             self.updater._getExternalBugTrackersAndWatches(
                 gnome_bugzilla, []))
-        self.failUnlessEqual(2, len(remote_systems_and_watches))
+        self.assertEqual(2, len(remote_systems_and_watches))
         # One will have comment syncing enabled.
-        self.failUnless(
+        self.assertTrue(
             any(remote_system.sync_comments
                 for (remote_system, watches) in remote_systems_and_watches))
         # One will have comment syncing disabled.
-        self.failUnless(
+        self.assertTrue(
             any(not remote_system.sync_comments
                 for (remote_system, watches) in remote_systems_and_watches))
         # When there are no syncable products, only one remote system
@@ -159,9 +158,9 @@ class TestCheckwatchesWithSyncableGnomeProducts(TestCaseWithFactory):
         remote_systems_and_watches = (
             self.updater._getExternalBugTrackersAndWatches(
                 gnome_bugzilla, []))
-        self.failUnlessEqual(1, len(remote_systems_and_watches))
+        self.assertEqual(1, len(remote_systems_and_watches))
         [(remote_system, watches)] = remote_systems_and_watches
-        self.failIf(remote_system.sync_comments)
+        self.assertFalse(remote_system.sync_comments)
 
 
 class BrokenCheckwatchesMaster(CheckwatchesMaster):
@@ -225,13 +224,13 @@ class TestCheckwatchesMaster(TestCaseWithFactory):
         # it accordingly.
         remote_system.batch_size = None
         checkwatches.core.suggest_batch_size(remote_system, 1)
-        self.failUnlessEqual(100, remote_system.batch_size)
+        self.assertEqual(100, remote_system.batch_size)
         remote_system.batch_size = None
         checkwatches.core.suggest_batch_size(remote_system, 12350)
-        self.failUnlessEqual(247, remote_system.batch_size)
+        self.assertEqual(247, remote_system.batch_size)
         # If the batch_size is already set, it will not be changed.
         checkwatches.core.suggest_batch_size(remote_system, 99999)
-        self.failUnlessEqual(247, remote_system.batch_size)
+        self.assertEqual(247, remote_system.batch_size)
 
     def test_xmlrpc_connection_errors_set_activity_properly(self):
         # HTTP status codes of 502, 503 and 504 indicate connection
@@ -245,7 +244,7 @@ class TestCheckwatchesMaster(TestCaseWithFactory):
         transaction.commit()
         master._updateBugTracker(bug_tracker)
         for bug_watch in bug_watches:
-            self.assertEquals(
+            self.assertEqual(
                 BugWatchActivityStatus.CONNECTION_ERROR,
                 bug_watch.last_error_type)
         self.assertEqual(
@@ -265,7 +264,7 @@ class TestCheckwatchesMaster(TestCaseWithFactory):
         transaction.commit()
         master._updateBugTracker(bug_tracker)
         for bug_watch in bug_watches:
-            self.assertEquals(
+            self.assertEqual(
                 BugWatchActivityStatus.UNKNOWN,
                 bug_watch.last_error_type)
         self.assertEqual(
@@ -288,13 +287,9 @@ class TestUpdateBugsWithLinkedQuestions(unittest.TestCase):
         bug_with_question = getUtility(IBugSet).get(10)
         question = getUtility(IQuestionSet).get(1)
 
-        # XXX gmb 2007-12-11 bug 175545:
-        #     We shouldn't have to login() here, but since
-        #     database.buglinktarget.BugLinkTargetMixin.linkBug()
-        #     doesn't accept a user parameter, instead depending on the
-        #     currently logged in user, we get an exception if we don't.
-        login('test@canonical.com')
-        question.linkBug(bug_with_question)
+        sample_person = getUtility(IPersonSet).getByEmail(
+            'test@canonical.com')
+        question.linkBug(bug_with_question, sample_person)
 
         # We subscribe launchpad_developers to the question since this
         # indirectly subscribes foo.bar@canonical.com to it, too. We can
@@ -309,8 +304,6 @@ class TestUpdateBugsWithLinkedQuestions(unittest.TestCase):
 
         # For test_can_update_bug_with_questions we also need a bug
         # watch and by extension a bug tracker.
-        sample_person = getUtility(IPersonSet).getByEmail(
-            'test@canonical.com')
         bugtracker = new_bugtracker(BugTrackerType.ROUNDUP)
         self.bugtask_with_question = getUtility(IBugTaskSet).createTask(
             bug_with_question, sample_person,
@@ -348,8 +341,8 @@ class TestSchedulerBase:
     def test_args_and_kwargs(self):
 
         def func(name, aptitude):
-            self.failUnlessEqual("Robin Hood", name)
-            self.failUnlessEqual("Riding through the glen", aptitude)
+            self.assertEqual("Robin Hood", name)
+            self.assertEqual("Riding through the glen", aptitude)
 
         # Positional args specified when adding a job are passed to
         # the job function at run time.
@@ -380,17 +373,17 @@ class TestSerialScheduler(TestSchedulerBase, unittest.TestCase):
         self.scheduler.schedule(
             list.remove, numbers, 3)
         self.scheduler.schedule(
-            lambda: self.failUnlessEqual([1, 2], numbers))
+            lambda: self.assertEqual([1, 2], numbers))
         # Remove 1 and check.
         self.scheduler.schedule(
             list.remove, numbers, 1)
         self.scheduler.schedule(
-            lambda: self.failUnlessEqual([2], numbers))
+            lambda: self.assertEqual([2], numbers))
         # Remove 2 and check.
         self.scheduler.schedule(
             list.remove, numbers, 2)
         self.scheduler.schedule(
-            lambda: self.failUnlessEqual([], numbers))
+            lambda: self.assertEqual([], numbers))
         # Run the scheduler.
         self.scheduler.run()
 

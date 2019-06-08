@@ -1,8 +1,6 @@
 # Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-# pylint: disable-msg=E0611,W0212
-
 __metaclass__ = type
 
 __all__ = [
@@ -21,7 +19,7 @@ from sqlobject import (
     StringCol,
     )
 from zope.component import getUtility
-from zope.interface import implements
+from zope.interface import implementer
 
 from lp.services.config import config
 from lp.services.database.constants import DEFAULT
@@ -37,12 +35,11 @@ from lp.services.temporaryblobstorage.interfaces import (
 from lp.services.utils import utc_now
 
 
+@implementer(ITemporaryBlobStorage)
 class TemporaryBlobStorage(SQLBase):
     """A temporary BLOB stored in Launchpad."""
 
-    implements(ITemporaryBlobStorage)
-
-    _table='TemporaryBlobStorage'
+    _table = 'TemporaryBlobStorage'
 
     uuid = StringCol(notNull=True, alternateID=True)
     file_alias = ForeignKey(
@@ -85,13 +82,13 @@ class TemporaryBlobStorage(SQLBase):
             return None
         if 'processed_data' not in job_for_blob.metadata:
             return {}
-        
+
         return job_for_blob.metadata['processed_data']
 
+
+@implementer(ITemporaryStorageManager)
 class TemporaryStorageManager:
     """A tool to create temporary BLOB's in Launchpad."""
-
-    implements(ITemporaryStorageManager)
 
     def new(self, blob, expires=None):
         """See ITemporaryStorageManager."""

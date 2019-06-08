@@ -1,8 +1,6 @@
 # Copyright 2009-2012 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-# pylint: disable-msg=E0211,E0213
-
 """Login token interfaces."""
 
 __metaclass__ = type
@@ -78,14 +76,14 @@ class LoginTokenType(DBEnumeratedType):
     VALIDATEGPG = DBItem(6, """
         Validate GPG key
 
-        A user has submited a new GPG key to his account and it need to
+        A user has submitted a new GPG key to their account and it needs to
         be validated.
         """)
 
     VALIDATESIGNONLYGPG = DBItem(7, """
         Validate a sign-only GPG key
 
-        A user has submitted a new sign-only GPG key to his account and it
+        A user has submitted a new sign-only GPG key to their account and it
         needs to be validated.
         """)
 
@@ -166,7 +164,7 @@ class IAuthToken(Interface):
 
     redirection_url = Text(
         title=_('The URL to where we should redirect the user after '
-                'processing his request'),
+                'processing their request'),
         required=False,
         )
 

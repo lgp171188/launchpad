@@ -1,4 +1,4 @@
-# Copyright 2009-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests related to bug notifications."""
@@ -6,23 +6,14 @@
 __metaclass__ = type
 
 from datetime import datetime
-from itertools import chain
 
-from lazr.lifecycle.event import ObjectModifiedEvent
-from lazr.lifecycle.snapshot import Snapshot
 import pytz
 from storm.store import Store
-from testtools.matchers import Not
 import transaction
 from zope.component import getUtility
-from zope.event import notify
-from zope.interface import providedBy
 
 from lp.answers.tests.test_question_notifications import pop_questionemailjobs
-from lp.bugs.interfaces.bugtask import (
-    BugTaskStatus,
-    IBugTask,
-    )
+from lp.bugs.interfaces.bugtask import BugTaskStatus
 from lp.bugs.mail.bugnotificationrecipients import BugNotificationRecipients
 from lp.bugs.model.bugnotification import (
     BugNotification,
@@ -34,6 +25,7 @@ from lp.bugs.model.bugsubscriptionfilter import BugSubscriptionFilterMute
 from lp.services.config import config
 from lp.services.messages.interfaces.message import IMessageSet
 from lp.services.messages.model.message import MessageSet
+from lp.services.webapp.snapshot import notify_modified
 from lp.testing import (
     person_logged_in,
     TestCaseWithFactory,
@@ -43,7 +35,6 @@ from lp.testing.layers import (
     DatabaseFunctionalLayer,
     LaunchpadZopelessLayer,
     )
-from lp.testing.matchers import Contains
 
 
 class TestNotificationsSentForBugExpiration(TestCaseWithFactory):
@@ -70,11 +61,9 @@ class TestNotificationsSentForBugExpiration(TestCaseWithFactory):
         # Ensure that notifications are sent to subscribers of a
         # question linked to the expired bug.
         bugtask = self.bug.default_bugtask
-        bugtask_before_modification = Snapshot(bugtask, providing=IBugTask)
-        bugtask.transitionToStatus(BugTaskStatus.EXPIRED, self.product.owner)
-        bug_modified = ObjectModifiedEvent(
-            bugtask, bugtask_before_modification, ["status"])
-        notify(bug_modified)
+        with notify_modified(bugtask, ["status"]):
+            bugtask.transitionToStatus(
+                BugTaskStatus.EXPIRED, self.product.owner)
         recipients = [
             job.metadata['recipient_set'] for job in pop_questionemailjobs()]
         self.assertContentEqual(
@@ -391,12 +380,9 @@ class TestNotificationsForDuplicates(TestCaseWithFactory):
 
     def test_duplicate_edit_notifications(self):
         # Bug edits for a duplicate are sent to duplicate subscribers only.
-        bug_before_modification = Snapshot(
-            self.dupe_bug, providing=providedBy(self.dupe_bug))
-        self.dupe_bug.description = 'A changed description'
-        notify(ObjectModifiedEvent(
-            self.dupe_bug, bug_before_modification, ['description'],
-            user=self.dupe_bug.owner))
+        with notify_modified(
+                self.dupe_bug, ['description'], user=self.dupe_bug.owner):
+            self.dupe_bug.description = 'A changed description'
         latest_notification = BugNotification.selectFirst(orderBy='-id')
         recipients = set(
             recipient.person
@@ -416,67 +402,6 @@ class TestNotificationsForDuplicates(TestCaseWithFactory):
             recipient.person
             for recipient in latest_notification.recipients)
         self.assertEqual(self.dupe_subscribers, recipients)
-
-
-class NotificationForRegistrantsMixin:
-    """Mixin for testing when registrants get notified."""
-
-    layer = DatabaseFunctionalLayer
-
-    def setUp(self):
-        super(NotificationForRegistrantsMixin, self).setUp(
-            user='foo.bar@canonical.com')
-        self.pillar_owner = self.factory.makePerson(name="distro-owner")
-        self.bug_owner = self.factory.makePerson(name="bug-owner")
-        self.pillar = self.makePillar()
-        self.bug = self.factory.makeBug(
-            target=self.pillar, owner=self.bug_owner)
-
-    def test_notification_does_not_use_malone(self):
-        self.pillar.official_malone = False
-        direct = self.bug.getDirectSubscribers()
-        indirect = self.bug.getIndirectSubscribers()
-        self.assertThat(direct, Not(Contains(self.pillar_owner)))
-        self.assertThat(indirect, Not(Contains(self.pillar_owner)))
-
-    def test_status_change_does_not_use_malone(self):
-        # Status changes are sent to the direct and indirect subscribers.
-        self.pillar.official_malone = False
-        [bugtask] = self.bug.bugtasks
-        all_subscribers = set(
-            [person.name for person in chain(
-                    self.bug.getDirectSubscribers(),
-                    self.bug.getIndirectSubscribers())])
-        bugtask_before_modification = Snapshot(
-            bugtask, providing=providedBy(bugtask))
-        bugtask.transitionToStatus(
-            BugTaskStatus.INVALID, self.bug.owner)
-        notify(ObjectModifiedEvent(
-            bugtask, bugtask_before_modification, ['status'],
-            user=self.bug.owner))
-        latest_notification = BugNotification.selectFirst(orderBy='-id')
-        notified_people = set(
-            recipient.person.name
-            for recipient in latest_notification.recipients)
-        self.assertEqual(all_subscribers, notified_people)
-        self.assertThat(
-            all_subscribers, Not(Contains(self.pillar_owner.name)))
-
-
-class TestNotificationsForRegistrantsForDistros(
-    NotificationForRegistrantsMixin, TestCaseWithFactory):
-    """Test when distribution registrants get notified."""
-
-    def makePillar(self):
-        return self.factory.makeDistribution(owner=self.pillar_owner)
-
-
-class TestNotificationsForRegistrantsForProducts(
-    NotificationForRegistrantsMixin, TestCaseWithFactory):
-    """Test when product registrants get notified."""
-
-    def makePillar(self):
-        return self.factory.makeProduct(owner=self.pillar_owner)
 
 
 class TestBug778847(TestCaseWithFactory):
@@ -563,7 +488,7 @@ class TestGetDeferredNotifications(TestCaseWithFactory):
 
     def test_many_deferred_notification(self):
         num = 5
-        for i in xrange(num):
+        for i in range(num):
             self._make_deferred_notification()
         results = self.bns.getDeferredNotifications()
         self.assertEqual(num, results.count())

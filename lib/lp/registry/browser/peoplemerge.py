@@ -1,4 +1,4 @@
-# Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2015 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """People Merge related wiew classes."""
@@ -25,6 +25,7 @@ from lp.app.browser.launchpadform import (
     )
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.code.interfaces.branchcollection import IAllBranches
+from lp.code.interfaces.gitcollection import IAllGitRepositories
 from lp.registry.interfaces.mailinglist import (
     MailingListStatus,
     PURGE_STATES,
@@ -35,7 +36,6 @@ from lp.registry.interfaces.person import (
     IPersonSet,
     IRequestPeopleMerge,
     )
-from lp.services.database.lpstorm import IMasterObject
 from lp.services.identity.interfaces.emailaddress import (
     EmailAddressStatus,
     IEmailAddressSet,
@@ -75,9 +75,16 @@ class ValidatingMergeView(LaunchpadFormView):
                     "deleted PPA's files.",
                     mapping=dict(name=dupe_person.name)))
             all_branches = getUtility(IAllBranches)
-            if all_branches.ownedBy(dupe_person).isPrivate().count() != 0:
+            if not all_branches.ownedBy(dupe_person).isPrivate().is_empty():
                 self.addError(
                     _("${name} owns private branches that must be "
+                      "deleted or transferred to another owner first.",
+                    mapping=dict(name=dupe_person.name)))
+            all_repositories = getUtility(IAllGitRepositories)
+            if not all_repositories.ownedBy(
+                    dupe_person).isPrivate().is_empty():
+                self.addError(
+                    _("${name} owns private Git repositories that must be "
                       "deleted or transferred to another owner first.",
                     mapping=dict(name=dupe_person.name)))
             if dupe_person.isMergePending():
@@ -140,7 +147,6 @@ class AdminMergeBaseView(ValidatingMergeView):
         if not self.dupe_person.is_team:
             # Transfer user email addresses. Team addresses will be deleted.
             for email in self.dupe_person_emails:
-                email = IMasterObject(email)
                 # EmailAddress.person is a readonly field, so we need to
                 # remove the security proxy here.
                 naked_email = removeSecurityProxy(email)
@@ -174,16 +180,16 @@ class AdminPeopleMergeView(AdminMergeBaseView):
         we'll ask for confirmation before actually performing the merge.
         """
         self.setUpPeople(data)
-        if self.dupe_person_emails.count() > 0:
+        if not self.dupe_person_emails.is_empty():
             # We're merging a person which has one or more email addresses,
-            # so we better warn the admin doing the operation and have him
-            # check the emails that will be reassigned to ensure he's not
+            # so we better warn the admin doing the operation and have them
+            # check the emails that will be reassigned to ensure they're not
             # doing anything stupid.
             self.should_confirm_email_reassignment = True
             return
         self.doMerge(data)
 
-    @action('Reassign E-mails and Merge', name='reassign_emails_and_merge')
+    @action('Reassign Emails and Merge', name='reassign_emails_and_merge')
     def reassign_emails_and_merge_action(self, action, data):
         """Reassign emails of the person to be merged and merge them."""
         self.setUpPeople(data)
@@ -238,9 +244,9 @@ class AdminTeamMergeView(AdminMergeBaseView):
         members first.
         """
         self.setUpPeople(data)
-        if self.dupe_person.activemembers.count() > 0:
+        if not self.dupe_person.activemembers.is_empty():
             # Merging teams with active members is not possible, so we'll
-            # ask the admin if he wants to deactivate all members and then
+            # ask the admin if they want to deactivate all members and then
             # merge.
             self.should_confirm_member_deactivation = True
             return
@@ -335,7 +341,7 @@ class FinishedPeopleMergeRequestView(LaunchpadView):
         result_count = results.count()
         if not result_count:
             # The user came back to visit this page with nothing to
-            # merge, so we redirect him away to somewhere useful.
+            # merge, so we redirect them away to somewhere useful.
             self.request.response.redirect(canonical_url(user))
             return
         assert result_count == 1
@@ -404,7 +410,7 @@ class RequestPeopleMergeMultipleEmailsView(LaunchpadView):
                 for emailaddress in emails:
                     email = emailaddrset.getByEmail(emailaddress)
                     if email is None or email not in self.dupeemails:
-                        # The dupe person has changes his email addresses.
+                        # The dupe person has changed their email addresses.
                         # See bug 239838.
                         self.request.response.addNotification(
                             "An address was removed from the duplicate "
@@ -438,7 +444,7 @@ class RequestPeopleMergeView(ValidatingMergeView):
     address and then redirect the user to other page saying that everything
     went fine. Otherwise we redirect the user to another page where we list
     all email addresses owned by the dupe account and the user selects which
-    of those (s)he wants to claim.
+    of those they want to claim.
     """
 
     label = 'Merge Launchpad accounts'
@@ -460,8 +466,8 @@ class RequestPeopleMergeView(ValidatingMergeView):
         emails_count = emails.count()
         if emails_count > 1:
             # The dupe account have more than one email address. Must redirect
-            # the user to another page to ask which of those emails (s)he
-            # wants to claim.
+            # the user to another page to ask which of those emails they
+            # want to claim.
             self.next_url = '+requestmerge-multiple?dupe=%d' % dupeaccount.id
             return
 

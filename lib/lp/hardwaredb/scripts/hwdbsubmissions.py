@@ -1,4 +1,4 @@
-# Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Parse Hardware Database submissions.
@@ -16,11 +16,11 @@ __all__ = [
           ]
 
 import bz2
-from cStringIO import StringIO
 from datetime import (
     datetime,
     timedelta,
     )
+import io
 from logging import getLogger
 import os
 import re
@@ -29,7 +29,7 @@ import xml.etree.cElementTree as etree
 
 import pytz
 from zope.component import getUtility
-from zope.interface import implements
+from zope.interface import implementer
 from zope.security.proxy import removeSecurityProxy
 
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
@@ -73,14 +73,15 @@ _time_regex = re.compile(r"""
     """,
     re.VERBOSE)
 
-_broken_comment_nodes_re = re.compile('(<comment>.*?</comment>)', re.DOTALL)
+_broken_comment_nodes_re = re.compile(br'(<comment>.*?</comment>)', re.DOTALL)
 _missing_udev_node_data = re.compile(
-    '<info command="udevadm info --export-db">(.*?)</info>', re.DOTALL)
+    br'<info command="udevadm info --export-db">(.*?)</info>', re.DOTALL)
 _missing_dmi_node_data = re.compile(
-    r'<info command="grep -r \. /sys/class/dmi/id/ 2&gt;/dev/null">(.*?)'
-    '</info>', re.DOTALL)
-_udev_node_exists = re.compile('<hardware>.*?<udev>.*?</hardware>', re.DOTALL)
-_dmi_node_exists = re.compile('<hardware>.*?<dmi>.*?</hardware>', re.DOTALL)
+    br'<info command="grep -r \. /sys/class/dmi/id/ 2&gt;/dev/null">(.*?)'
+    br'</info>', re.DOTALL)
+_udev_node_exists = re.compile(
+    br'<hardware>.*?<udev>.*?</hardware>', re.DOTALL)
+_dmi_node_exists = re.compile(br'<hardware>.*?<dmi>.*?</hardware>', re.DOTALL)
 
 ROOT_UDI = '/org/freedesktop/Hal/devices/computer'
 UDEV_ROOT_PATH = '/devices/LNXSYSTM:00'
@@ -103,9 +104,6 @@ PCI_SUBCLASS_BRIDGE_CARDBUS = 7
 
 PCI_CLASS_SERIALBUS_CONTROLLER = 12
 PCI_SUBCLASS_SERIALBUS_USB = 3
-
-WARNING_NO_HAL_KERNEL_VERSION = 1
-WARNING_NO_KERNEL_PACKAGE_DATA = 2
 
 DB_FORMAT_FOR_VENDOR_ID = {
     'pci': '0x%04x',
@@ -179,7 +177,7 @@ class SubmissionParser(object):
         # A considerable number of reports for Lucid has ESC characters
         # in comment nodes. We don't need the comment nodes at all, so
         # we can simply empty them.
-        submission = _broken_comment_nodes_re.sub('<comment/>', submission)
+        submission = _broken_comment_nodes_re.sub(b'<comment/>', submission)
 
         # Submissions from Natty don't have the nodes <dmi> and <udev>
         # as children of the <hardware> node. Fortunately, they provide
@@ -200,14 +198,14 @@ class SubmissionParser(object):
             mo = _missing_udev_node_data.search(submission)
             if mo is not None:
                 missing_data = mo.group(1)
-                missing_data = '<udev>%s</udev>\n</hardware>' % missing_data
-                submission = submission.replace('</hardware>', missing_data)
+                missing_data = b'<udev>%s</udev>\n</hardware>' % missing_data
+                submission = submission.replace(b'</hardware>', missing_data)
         if _dmi_node_exists.search(submission) is None:
             mo = _missing_dmi_node_data.search(submission)
             if mo is not None:
                 missing_data = mo.group(1)
-                missing_data = '<dmi>%s</dmi>\n</hardware>' % missing_data
-                submission = submission.replace('</hardware>', missing_data)
+                missing_data = b'<dmi>%s</dmi>\n</hardware>' % missing_data
+                submission = submission.replace(b'</hardware>', missing_data)
         return submission
 
     def _getValidatedEtree(self, submission, submission_key):
@@ -218,7 +216,7 @@ class SubmissionParser(object):
         """
         submission = self.fixFrequentErrors(submission)
         try:
-            tree = etree.parse(StringIO(submission), parser=self.doc_parser)
+            tree = etree.parse(io.BytesIO(submission), parser=self.doc_parser)
         except SyntaxError as error_value:
             self._logError(error_value, submission_key)
             return None
@@ -233,7 +231,6 @@ class SubmissionParser(object):
                 'invalid submission format version: %s' % repr(version),
                 submission_key)
             return None
-        self.submission_format_version = version
 
         validator = self.validator[version]
         if not validator.validate(submission):
@@ -1107,7 +1104,7 @@ class SubmissionParser(object):
         """
         udi_device_map = {}
         duplicates = []
-        for index in xrange(len(devices)):
+        for index in range(len(devices)):
             device = devices[index]
             udi = device['udi']
             if udi in udi_device_map:
@@ -2975,10 +2972,9 @@ class UdevDevice(BaseDevice):
         return self.udev['id']
 
 
+@implementer(ITunableLoop)
 class ProcessingLoopBase(object):
     """An `ITunableLoop` for processing HWDB submissions."""
-
-    implements(ITunableLoop)
 
     def __init__(self, transaction, logger, max_submissions, record_warnings):
         self.transaction = transaction

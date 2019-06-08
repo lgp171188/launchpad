@@ -1,4 +1,4 @@
-# Copyright 2010-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Source Package Recipe vocabularies used in the lp/code modules."""
@@ -10,13 +10,12 @@ __all__ = [
     ]
 
 from zope.component import getUtility
-from zope.interface import implements
+from zope.interface import implementer
 from zope.schema.vocabulary import SimpleTerm
 
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.registry.interfaces.distroseries import IDistroSeriesSet
 from lp.registry.model.distroseries import DistroSeries
-from lp.services.webapp.authorization import check_permission
 from lp.services.webapp.interfaces import ILaunchBag
 from lp.services.webapp.sorting import sorted_dotted_numbers
 from lp.services.webapp.vocabulary import (
@@ -27,8 +26,8 @@ from lp.soyuz.browser.archive import make_archive_vocabulary
 from lp.soyuz.interfaces.archive import IArchiveSet
 
 
+@implementer(IHugeVocabulary)
 class BuildableDistroSeries(SQLObjectVocabularyBase):
-    implements(IHugeVocabulary)
 
     _table = DistroSeries
 
@@ -38,8 +37,8 @@ class BuildableDistroSeries(SQLObjectVocabularyBase):
 
     @classmethod
     def findSeries(self, user):
-        ppas = getUtility(IArchiveSet).getPPAsForUser(user)
-        supported_distros = set([ppa.distribution for ppa in ppas])
+        supported_distros = set(
+            getUtility(IArchiveSet).getPPADistributionsForUser(user))
         # Now add in Ubuntu.
         supported_distros.add(getUtility(ILaunchpadCelebrities).ubuntu)
         all_series = getUtility(IDistroSeriesSet).search()
@@ -59,7 +58,5 @@ class BuildableDistroSeries(SQLObjectVocabularyBase):
 
 def target_ppas_vocabulary(context):
     """Return a vocabulary of ppas that the current user can target."""
-    ppas = getUtility(IArchiveSet).getPPAsForUser(getUtility(ILaunchBag).user)
     return make_archive_vocabulary(
-        ppa for ppa in ppas
-        if check_permission('launchpad.Append', ppa))
+        getUtility(IArchiveSet).getPPAsForUser(getUtility(ILaunchBag).user))

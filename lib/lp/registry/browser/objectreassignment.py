@@ -1,4 +1,4 @@
-# Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """A view for changing the owner or registrant of an object.
@@ -11,12 +11,12 @@ __metaclass__ = type
 __all__ = ["ObjectReassignmentView"]
 
 
-from zope.app.form.interfaces import (
+from zope.component import getUtility
+from zope.formlib.form import FormFields
+from zope.formlib.interfaces import (
     ConversionError,
     WidgetInputError,
     )
-from zope.component import getUtility
-from zope.formlib.form import FormFields
 from zope.schema import Choice
 from zope.schema.vocabulary import (
     SimpleTerm,
@@ -26,7 +26,6 @@ from zope.schema.vocabulary import (
 from lp import _
 from lp.app.browser.launchpadform import (
     action,
-    custom_widget,
     LaunchpadFormView,
     )
 from lp.app.validators.name import valid_name
@@ -63,7 +62,7 @@ class ObjectReassignmentView(LaunchpadFormView):
     callback = None
 
     schema = IObjectReassignment
-    custom_widget('existing', LaunchpadRadioWidget)
+    custom_widget_existing = LaunchpadRadioWidget
 
     @property
     def label(self):

@@ -27,8 +27,10 @@ from lp.testing.layers import LaunchpadZopelessLayer
 class StubTransactionManager:
     def __init__(self):
         self.log = []
+
     def abort(self):
         self.log.append('abort')
+
     def commit(self):
         self.log.append('commit')
 
@@ -139,7 +141,7 @@ class TestWorkingBase(TestCaseWithFactory):
         base1.init(self.email, transaction.manager, self.logger)
         base2 = WorkingBase()
         base2.initFromParent(base1)
-        self.failUnlessEqual(base1.__dict__, base2.__dict__)
+        self.assertEqual(base1.__dict__, base2.__dict__)
 
 
 class TestWorkingBaseErrorReporting(TestCaseWithFactory):

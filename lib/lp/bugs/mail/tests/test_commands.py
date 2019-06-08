@@ -6,6 +6,7 @@ from lazr.lifecycle.interfaces import (
     IObjectModifiedEvent,
     )
 
+from lp.app.enums import InformationType
 from lp.bugs.interfaces.bug import CreateBugParams
 from lp.bugs.mail.commands import (
     AffectsEmailCommand,
@@ -20,10 +21,7 @@ from lp.bugs.mail.commands import (
     TagEmailCommand,
     UnsubscribeEmailCommand,
     )
-from lp.registry.enums import (
-    BugSharingPolicy,
-    InformationType,
-    )
+from lp.registry.enums import BugSharingPolicy
 from lp.services.mail.interfaces import (
     BugTargetNotFound,
     EmailProcessingError,
@@ -76,9 +74,9 @@ class AffectsEmailCommandTestCase(TestCaseWithFactory):
         login_person(owner)
         project_group = self.factory.makeProject(name='fnord', owner=owner)
         project_1 = self.factory.makeProduct(name='pting', owner=owner)
-        project_1.project = project_group
+        project_1.projectgroup = project_group
         project_2 = self.factory.makeProduct(name='snarf', owner=owner)
-        project_2.project = project_group
+        project_2.projectgroup = project_group
         message = (
             "fnord is a group of projects. To report a bug, you need to "
             "specify which of these projects the bug applies to: "
@@ -341,7 +339,7 @@ class BugEmailCommandTestCase(TestCaseWithFactory):
         message = self.factory.makeSignedMessage(
             body='borked\n affects fnord',
             subject='title borked',
-            to_address='new@bugs.launchpad.dev')
+            to_address='new@bugs.launchpad.test')
         filealias = self.factory.makeLibraryFileAlias()
         command = BugEmailCommand('bug', ['new'])
         params, event = command.execute(message, filealias)
@@ -620,7 +618,7 @@ class CVEEmailCommandTestCase(TestCaseWithFactory):
         dummy_event = object()
         exec_bug, event = command.execute(bug, dummy_event)
         self.assertEqual(bug, exec_bug)
-        self.assertEqual([cve], [cve_link.cve for cve_link in bug.cve_links])
+        self.assertContentEqual([cve], bug.cves)
         self.assertEqual(dummy_event, event)
 
     def test_execute_bug_params(self):

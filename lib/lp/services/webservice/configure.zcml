@@ -1,4 +1,4 @@
-<!-- Copyright 2011 Canonical Ltd.  This software is licensed under the
+<!-- Copyright 2011-2018 Canonical Ltd.  This software is licensed under the
      GNU Affero General Public License version 3 (see the file LICENSE).
 -->
 
@@ -64,11 +64,31 @@
        factory="lp.services.webapp.marshallers.choiceMarshallerError"
        />
    <adapter
+       for="zope.schema.interfaces.IChoice
+            zope.publisher.interfaces.http.IHTTPRequest
+            lp.services.webapp.vocabulary.StormVocabularyBase"
+       provides="lazr.restful.interfaces.IFieldMarshaller"
+       factory="lp.services.webapp.marshallers.choiceMarshallerError"
+       />
+   <adapter
        for="lazr.restful.interfaces.IReferenceChoice
             zope.publisher.interfaces.http.IHTTPRequest
             lp.services.webapp.vocabulary.SQLObjectVocabularyBase"
        provides="lazr.restful.interfaces.IFieldMarshaller"
        factory="lazr.restful.marshallers.ObjectLookupFieldMarshaller"
+       />
+   <adapter
+       for="lazr.restful.interfaces.IReferenceChoice
+            zope.publisher.interfaces.http.IHTTPRequest
+            lp.services.webapp.vocabulary.StormVocabularyBase"
+       provides="lazr.restful.interfaces.IFieldMarshaller"
+       factory="lazr.restful.marshallers.ObjectLookupFieldMarshaller"
+       />
+   <adapter
+       for="lp.services.fields.IInlineObject
+            zope.publisher.interfaces.http.IHTTPRequest"
+       provides="lazr.restful.interfaces.IFieldMarshaller"
+       factory="lp.app.webservice.marshallers.InlineObjectFieldMarshaller"
        />
 
    <!-- The API documentation -->

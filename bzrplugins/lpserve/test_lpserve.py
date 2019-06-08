@@ -1,4 +1,4 @@
-# Copyright 2010-2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2017 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 import errno
@@ -24,7 +24,6 @@ from lp.codehosting import (
     get_bzr_path,
     get_BZR_PLUGIN_PATH_for_subprocess,
     )
-from lp.services.config import config
 from lp.testing.fakemethod import FakeMethod
 
 
@@ -319,10 +318,6 @@ class TestCaseWithSubprocess(tests.TestCaseWithTransport):
     same as the bzrlib.tests.TestCase version.
     """
 
-    def get_python_path(self):
-        """Return the path to the Python interpreter."""
-        return '%s/bin/py' % config.root
-
     def start_bzr_subprocess(self, process_args, env_changes=None,
                              working_dir=None):
         """Start bzr in a subprocess for testing.
@@ -353,15 +348,12 @@ class TestCaseWithSubprocess(tests.TestCaseWithTransport):
             cwd = osutils.getcwd()
             os.chdir(working_dir)
 
-        # LAUNCHPAD: Because of buildout, we need to get a custom Python
-        # binary, not sys.executable.
-        python_path = self.get_python_path()
         # LAUNCHPAD: We can't use self.get_bzr_path(), since it'll find
-        # lib/bzrlib, rather than the path to sourcecode/bzr/bzr.
+        # lib/bzrlib, rather than the path to bin/bzr.
         bzr_path = get_bzr_path()
         try:
             cleanup_environment()
-            command = [python_path, bzr_path]
+            command = [bzr_path]
             command.extend(process_args)
             process = self._popen(
                 command, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
@@ -597,8 +589,7 @@ class TestLPServiceInSubprocess(TestCaseWithLPForkingServiceSubprocess):
         self.assertEqual(None, self.service_process.poll())
         # Now when we send SIGTERM, it should wait for the child to exit,
         # before it tries to exit itself.
-        # In python2.6+ we could use self.service_process.terminate()
-        os.kill(self.service_process.pid, sig_id)
+        self.service_process.send_signal(sig_id)
         self.assertEqual(None, self.service_process.poll())
         # Now talk to the child, so the service can close
         stdout_content, stderr_content = self.communicate_with_fork(path)
@@ -611,8 +602,7 @@ class TestLPServiceInSubprocess(TestCaseWithLPForkingServiceSubprocess):
     def test_sigterm_exits_nicely(self):
         self._check_exits_nicely(signal.SIGTERM)
 
-    def disable_test_sigint_exits_nicely(self):
-        # XXX: frankban 2012-03-29 bug=828584: This test fails intermittently.
+    def test_sigint_exits_nicely(self):
         self._check_exits_nicely(signal.SIGINT)
 
     def test_child_exits_eventually(self):
@@ -750,10 +740,10 @@ class TestCaseWithLPForkingServiceDaemon(
         # The service should be up and responsive.
         response = self.send_message_to_service('hello\n')
         self.assertEqual('ok\nyep, still alive\n', response)
-        self.failUnless(os.path.isfile(self.service_pid_filename))
+        self.assertTrue(os.path.isfile(self.service_pid_filename))
         with open(self.service_pid_filename, 'rb') as f:
             content = f.read()
         self.assertEqualDiff('%d\n' % (self.service_process,), content)
         # We're done.  Shut it down.
         self.stop_service()
-        self.failIf(os.path.isfile(self.service_pid_filename))
+        self.assertFalse(os.path.isfile(self.service_pid_filename))

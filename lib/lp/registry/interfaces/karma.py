@@ -1,8 +1,6 @@
 # Copyright 2009 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-# pylint: disable-msg=E0211,E0213
-
 """Karma interfaces."""
 
 __metaclass__ = type
@@ -19,7 +17,6 @@ __all__ = [
     'IKarmaContext',
     ]
 
-from zope.app.form.browser.interfaces import IAddFormCustomization
 from zope.component.interfaces import IObjectEvent
 from zope.interface import (
     Attribute,
@@ -77,7 +74,7 @@ class IKarmaAction(Interface):
                       "this action."))
 
 
-class IKarmaActionSet(IAddFormCustomization):
+class IKarmaActionSet(Interface):
     """The set of actions that gives karma to a Person."""
 
     title = Attribute('Title')
@@ -133,7 +130,7 @@ class IKarmaCache(Interface):
 
     product = Attribute(_("Project"))
 
-    project = Attribute(_("Project Group"))
+    projectgroup = Attribute(_("Project Group"))
 
     distribution = Attribute(_("Distribution"))
 
@@ -152,10 +149,10 @@ class IKarmaCacheManager(Interface):
 
     def updateKarmaValue(value, person_id, category_id, product_id=None,
                          distribution_id=None, sourcepackagename_id=None,
-                         project_id=None):
+                         projectgroup_id=None):
         """Update the karmavalue attribute of the KarmaCache with the given
-        person_id, category_id, product_id, distribution_id and
-        sourcepackagename_id.
+        person_id, category_id, product_id, distribution_id,
+        sourcepackagename_id, and projectgroup_id.
 
         Raise NotFoundError if there's no KarmaCache with those attributes.
 

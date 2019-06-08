@@ -1,4 +1,4 @@
-# Copyright 2009 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for lp.services.osutils."""
@@ -7,16 +7,20 @@ __metaclass__ = type
 
 import errno
 import os
-import socket
 import tempfile
 
+from fixtures import (
+    EnvironmentVariable,
+    MockPatch,
+    )
 from testtools.matchers import FileContains
 
 from lp.services.osutils import (
     ensure_directory_exists,
+    find_on_path,
     open_for_writing,
+    process_exists,
     remove_tree,
-    until_no_eintr,
     write_file,
     )
 from lp.testing import TestCase
@@ -108,98 +112,43 @@ class TestWriteFile(TestCase):
         self.assertThat(filename, FileContains(content))
 
 
-class TestUntilNoEINTR(TestCase):
-    """Tests for until_no_eintr."""
+class TestFindOnPath(TestCase):
 
-    # The maximum number of retries used in our tests.
-    MAX_RETRIES = 10
+    def test_missing_environment(self):
+        self.useFixture(EnvironmentVariable("PATH"))
+        self.assertFalse(find_on_path("ls"))
 
-    # A number of retries less than the maximum number used in tests.
-    SOME_RETRIES = MAX_RETRIES / 2
+    def test_present_executable(self):
+        temp_dir = self.makeTemporaryDirectory()
+        bin_dir = os.path.join(temp_dir, "bin")
+        program = os.path.join(bin_dir, "program")
+        write_file(program, b"")
+        os.chmod(program, 0o755)
+        self.useFixture(EnvironmentVariable("PATH", bin_dir))
+        self.assertTrue(find_on_path("program"))
 
-    def test_no_calls(self):
-        # If the user has, bizarrely, asked for 0 attempts, then never try to
-        # call the function.
-        calls = []
-        until_no_eintr(0, calls.append, None)
-        self.assertEqual([], calls)
+    def test_present_not_executable(self):
+        temp_dir = self.makeTemporaryDirectory()
+        bin_dir = os.path.join(temp_dir, "bin")
+        write_file(os.path.join(bin_dir, "program"), b"")
+        self.useFixture(EnvironmentVariable("PATH", bin_dir))
+        self.assertFalse(find_on_path("program"))
 
-    def test_function_doesnt_raise(self):
-        # If the function doesn't raise, call it only once.
-        calls = []
-        until_no_eintr(self.MAX_RETRIES, calls.append, None)
-        self.assertEqual(1, len(calls))
 
-    def test_returns_function_return(self):
-        # If the function doesn't raise, return its value.
-        ret = until_no_eintr(1, lambda: 42)
-        self.assertEqual(42, ret)
+class TestProcessExists(TestCase):
 
-    def test_raises_exception(self):
-        # If the function raises an exception that's not EINTR, then re-raise
-        # it.
-        self.assertRaises(ZeroDivisionError, until_no_eintr, 1, lambda: 1/0)
+    def test_with_process_running(self):
+        pid = os.getpid()
+        self.assertTrue(process_exists(pid))
 
-    def test_retries_on_ioerror_eintr(self):
-        # Retry the function as long as it keeps raising IOError(EINTR).
-        calls = []
-        def function():
-            calls.append(None)
-            if len(calls) < self.SOME_RETRIES:
-                raise IOError(errno.EINTR, os.strerror(errno.EINTR))
-            return 'orange'
-        ret = until_no_eintr(self.MAX_RETRIES, function)
-        self.assertEqual(self.SOME_RETRIES, len(calls))
-        self.assertEqual('orange', ret)
+    def test_with_process_not_running(self):
+        exception = OSError()
+        exception.errno = errno.ESRCH
+        self.useFixture(MockPatch('os.kill', side_effect=exception))
+        self.assertFalse(process_exists(123))
 
-    def test_retries_on_oserror_eintr(self):
-        # Retry the function as long as it keeps raising OSError(EINTR).
-        calls = []
-        def function():
-            calls.append(None)
-            if len(calls) < self.SOME_RETRIES:
-                raise OSError(errno.EINTR, os.strerror(errno.EINTR))
-            return 'orange'
-        ret = until_no_eintr(self.MAX_RETRIES, function)
-        self.assertEqual(self.SOME_RETRIES, len(calls))
-        self.assertEqual('orange', ret)
-
-    def test_retries_on_socket_error_eintr(self):
-        # Retry the function as long as it keeps raising socket.error(EINTR).
-        # This test is redundant on Python 2.6, since socket.error is an
-        # IOError there.
-        calls = []
-        def function():
-            calls.append(None)
-            if len(calls) < self.SOME_RETRIES:
-                raise socket.error(errno.EINTR, os.strerror(errno.EINTR))
-            return 'orange'
-        ret = until_no_eintr(self.MAX_RETRIES, function)
-        self.assertEqual(self.SOME_RETRIES, len(calls))
-        self.assertEqual('orange', ret)
-
-    def test_raises_other_error_without_retry(self):
-        # Any other kind of IOError (or OSError or socket.error) is re-raised
-        # with a retry attempt.
-        calls = []
-        def function():
-            calls.append(None)
-            if len(calls) < self.SOME_RETRIES:
-                raise IOError(errno.ENOENT, os.strerror(errno.ENOENT))
-            return 'orange'
-        error = self.assertRaises(
-            IOError, until_no_eintr, self.MAX_RETRIES, function)
-        self.assertEqual(errno.ENOENT, error.errno)
-        self.assertEqual(1, len(calls))
-
-    def test_never_exceeds_retries(self):
-        # If the function keeps on raising EINTR, then stop running it after
-        # the given number of retries, and just re-raise the error.
-        calls = []
-        def function():
-            calls.append(None)
-            raise IOError(errno.EINTR, os.strerror(errno.EINTR))
-        error = self.assertRaises(
-            IOError, until_no_eintr, self.MAX_RETRIES, function)
-        self.assertEqual(errno.EINTR, error.errno)
-        self.assertEqual(self.MAX_RETRIES, len(calls))
+    def test_with_unknown_error(self):
+        exception = OSError()
+        exception.errno = errno.ENOMEM
+        self.useFixture(MockPatch('os.kill', side_effect=exception))
+        self.assertRaises(OSError, process_exists, 123)

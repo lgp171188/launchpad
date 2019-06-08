@@ -97,14 +97,23 @@ class IPersonRoles(Interface):
     in_launchpad_developers = Bool(
         title=_("True if this person is a Launchpad developer."),
         required=True, readonly=True)
+    in_ppa_admin = Bool(
+        title=_("True if this person is a PPA admin."),
+        required=True, readonly=True)
     in_ppa_key_guard = Bool(
         title=_("True if this person is the ppa key guard."),
+        required=True, readonly=True)
+    in_ppa_self_admins = Bool(
+        title=_("True if this person is a PPA self admin."),
         required=True, readonly=True)
     in_registry_experts = Bool(
         title=_("True if this person is a registry expert."),
         required=True, readonly=True)
     in_rosetta_experts = Bool(
         title=_("True if this person is a rosetta expert."),
+        required=True, readonly=True)
+    in_ubuntu_sso = Bool(
+        title=_("True if this person is Ubuntu Single Sign On."),
         required=True, readonly=True)
     in_ubuntu_techboard = Bool(
         title=_("True if this person is on the Ubuntu tech board."),
@@ -124,17 +133,14 @@ class IPersonRoles(Interface):
         """Is this person the owner of the object?"""
 
     def isDriver(obj):
-        """Is this person the driver of the object?"""
+        """Is this person one of the drivers of the object?
+
+        Works on objects that implement 'IHasDrivers', but will check the
+        driver attribute otherwise.
+        """
 
     def isBugSupervisor(obj):
         """Is this person the bug supervisor of the object?"""
-
-    def isOneOfDrivers(obj):
-        """Is this person on of the drivers of the object?
-
-        Works on objects that implement 'IHasDrivers' but will default to
-        isDriver if it doesn't, i.e. check the driver attribute.
-        """
 
     def isOneOf(obj, attributes):
         """Is this person one of the roles in relation to the object?

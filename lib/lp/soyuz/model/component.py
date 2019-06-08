@@ -1,8 +1,6 @@
 # Copyright 2009 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-# pylint: disable-msg=E0611,W0212
-
 __metaclass__ = type
 __all__ = [
     'Component',
@@ -14,7 +12,7 @@ from sqlobject import (
     ForeignKey,
     StringCol,
     )
-from zope.interface import implements
+from zope.interface import implementer
 
 from lp.app.errors import NotFoundError
 from lp.services.database.sqlbase import SQLBase
@@ -25,10 +23,9 @@ from lp.soyuz.interfaces.component import (
     )
 
 
+@implementer(IComponent)
 class Component(SQLBase):
     """See IComponent."""
-
-    implements(IComponent)
 
     _defaultOrder = ['id']
 
@@ -38,10 +35,9 @@ class Component(SQLBase):
         return "<%s '%s'>" % (self.__class__.__name__, self.name)
 
 
+@implementer(IComponentSelection)
 class ComponentSelection(SQLBase):
     """See IComponentSelection."""
-
-    implements(IComponentSelection)
 
     _defaultOrder = ['id']
 
@@ -51,10 +47,9 @@ class ComponentSelection(SQLBase):
                            foreignKey='Component', notNull=True)
 
 
+@implementer(IComponentSet)
 class ComponentSet:
     """See IComponentSet."""
-
-    implements(IComponentSet)
 
     def __iter__(self):
         """See IComponentSet."""

@@ -1,8 +1,6 @@
 # Copyright 2009-2012 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-# pylint: disable-msg=E0611,W0212
-
 __metaclass__ = type
 __all__ = [
     'EmailAddress',
@@ -19,7 +17,7 @@ from sqlobject import (
     ForeignKey,
     StringCol,
     )
-from zope.interface import implements
+from zope.interface import implementer
 
 from lp.app.validators.email import valid_email
 from lp.services.database.enumcol import EnumCol
@@ -46,8 +44,8 @@ class HasOwnerMixin:
     owner = property(operator.attrgetter('person'))
 
 
+@implementer(IEmailAddress)
 class EmailAddress(SQLBase, HasOwnerMixin):
-    implements(IEmailAddress)
 
     _table = 'EmailAddress'
     _defaultOrder = ['email']
@@ -93,8 +91,8 @@ class EmailAddress(SQLBase, HasOwnerMixin):
         return hashlib.sha1('mailto:' + self.email).hexdigest().upper()
 
 
+@implementer(IEmailAddressSet)
 class EmailAddressSet:
-    implements(IEmailAddressSet)
 
     def getByPerson(self, person):
         """See `IEmailAddressSet`."""

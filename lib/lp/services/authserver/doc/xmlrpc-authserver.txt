@@ -4,7 +4,7 @@ Private XML-RPC Authentication Server
 The AuthServer interface is available on the authserver attribute
 of our private XMLRPC instance.
 
-    >>> from lp.services.webapp.testing import verifyObject
+    >>> from lp.testing import verifyObject
     >>> from lp.xmlrpc.interfaces import IPrivateApplication
     >>> from lp.services.authserver.interfaces import (
     ...     IAuthServerApplication,
@@ -31,7 +31,7 @@ about users.
     >>> import xmlrpclib
     >>> from lp.testing.xmlrpc import XMLRPCTestTransport
     >>> authserver= xmlrpclib.ServerProxy(
-    ...     'http://xmlrpc-private.launchpad.dev:8087/authserver',
+    ...     'http://xmlrpc-private.launchpad.test:8087/authserver',
     ...     transport=XMLRPCTestTransport())
 
     >>> user_dict = authserver.getUserAndSSHKeys('name16')

@@ -1,4 +1,4 @@
-# Copyright 2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2011-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for `lp.registry.browser.distroseries`."""
@@ -12,7 +12,6 @@ from textwrap import TextWrapper
 from urllib import urlencode
 from urlparse import urlparse
 
-from BeautifulSoup import BeautifulSoup
 from fixtures import FakeLogger
 from lazr.restful.interfaces import IJSONRequestCache
 from lxml import html
@@ -25,7 +24,6 @@ from testtools.content import (
 from testtools.content_type import UTF8_TEXT
 from testtools.matchers import (
     EndsWith,
-    Equals,
     LessThan,
     Not,
     )
@@ -52,22 +50,19 @@ from lp.registry.interfaces.distribution import IDistributionSet
 from lp.registry.interfaces.person import TeamMembershipPolicy
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.registry.interfaces.series import SeriesStatus
+from lp.services.beautifulsoup import BeautifulSoup
 from lp.services.config import config
 from lp.services.database.constants import UTC_NOW
+from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import flush_database_caches
-from lp.services.features import getFeatureFlag
 from lp.services.features.testing import FeatureFixture
 from lp.services.propertycache import get_property_cache
 from lp.services.utils import utc_now
 from lp.services.webapp.authorization import check_permission
 from lp.services.webapp.batching import BatchNavigator
+from lp.services.webapp.escaping import html_escape
 from lp.services.webapp.interaction import get_current_principal
-from lp.services.webapp.interfaces import (
-    BrowserNotificationLevel,
-    IStoreSelector,
-    MAIN_STORE,
-    MASTER_FLAVOR,
-    )
+from lp.services.webapp.interfaces import BrowserNotificationLevel
 from lp.services.webapp.publisher import canonical_url
 from lp.services.webapp.url import urlappend
 from lp.soyuz.browser.archive import copy_asynchronously_message
@@ -85,7 +80,6 @@ from lp.soyuz.interfaces.packagecopyjob import IPlainPackageCopyJobSource
 from lp.soyuz.interfaces.sourcepackageformat import (
     ISourcePackageFormatSelectionSet,
     )
-from lp.soyuz.model import distroseriesdifferencejob
 from lp.soyuz.model.archivepermission import ArchivePermission
 from lp.soyuz.model.packagecopyjob import PlainPackageCopyJob
 from lp.soyuz.scripts.initialize_distroseries import InitializationError
@@ -99,7 +93,6 @@ from lp.testing import (
     normalize_whitespace,
     person_logged_in,
     StormStatementRecorder,
-    TestCase,
     TestCaseWithFactory,
     with_celebrity_logged_in,
     )
@@ -120,18 +113,6 @@ from lp.testing.pages import (
     find_tag_by_id,
     )
 from lp.testing.views import create_initialized_view
-
-
-def set_derived_series_sync_feature_flag(test_case):
-    test_case.useFixture(FeatureFixture({
-        u'soyuz.derived_series_sync.enabled': u'on',
-        }))
-
-
-def set_derived_series_difference_jobs_feature_flag(test_case):
-    test_case.useFixture(FeatureFixture({
-        distroseriesdifferencejob.FEATURE_FLAG_ENABLE_MODULE: u'on',
-        }))
 
 
 class TestDistroSeriesView(TestCaseWithFactory):
@@ -519,7 +500,7 @@ class TestDistroSeriesDerivationPortlet(TestCaseWithFactory):
         job.start()
         job.fail()
         with person_logged_in(series.distribution.owner):
-            series.distribution.owner.displayname = u"Bob Individual"
+            series.distribution.owner.display_name = u"Bob Individual"
         with anonymous_logged_in():
             view = create_initialized_view(series, '+portlet-derivation')
             html_content = view()
@@ -544,9 +525,9 @@ class TestDistroSeriesDerivationPortlet(TestCaseWithFactory):
                 "member of Team Teamy Team Team may be able to help."))
 
     def load_afresh(self, thing):
-        store = getUtility(IStoreSelector).get(MAIN_STORE, MASTER_FLAVOR)
         naked_thing = removeSecurityProxy(thing)
-        naked_thing = store.get(naked_thing.__class__, naked_thing.id)
+        naked_thing = IStore(naked_thing.__class__).get(
+            naked_thing.__class__, naked_thing.id)
         return ProxyFactory(naked_thing)
 
     def fail_job_with_error(self, job, error):
@@ -611,7 +592,7 @@ class TestMilestoneBatchNavigatorAttribute(TestCaseWithFactory):
         [launchpad]
         default_batch_size: 2
         """)
-        self.assert_(
+        self.assertTrue(
             isinstance(view.milestone_batch_navigator, BatchNavigator),
             'milestone_batch_navigator is not a BatchNavigator object: %r'
             % view.milestone_batch_navigator)
@@ -640,7 +621,7 @@ class TestDistroSeriesAddView(TestCaseWithFactory):
         form = {
             "field.name": u"polished",
             "field.version": u"12.04",
-            "field.displayname": u"Polished Polecat",
+            "field.display_name": u"Polished Polecat",
             "field.summary": u"Even The Register likes it.",
             "field.actions.create": u"Add Series",
             }
@@ -653,7 +634,7 @@ class TestDistroSeriesAddView(TestCaseWithFactory):
     def assertCreated(self, distroseries):
         self.assertEqual(u"polished", distroseries.name)
         self.assertEqual(u"12.04", distroseries.version)
-        self.assertEqual(u"Polished Polecat", distroseries.displayname)
+        self.assertEqual(u"Polished Polecat", distroseries.display_name)
         self.assertEqual(u"Polished Polecat", distroseries.title)
         self.assertEqual(u"Even The Register likes it.", distroseries.summary)
         self.assertEqual(u"", distroseries.description)
@@ -661,7 +642,7 @@ class TestDistroSeriesAddView(TestCaseWithFactory):
 
     def test_plain_submit(self):
         # When creating a new DistroSeries via DistroSeriesAddView, the title
-        # is set to the same as the displayname (title is, in any case,
+        # is set to the same as the display_name (title is, in any case,
         # deprecated), the description is left empty, and previous_series is
         # None (DistroSeriesInitializeView takes care of setting that).
         distroseries = self.createNewDistroseries()
@@ -712,7 +693,7 @@ class TestDistroSeriesInitializeView(TestCaseWithFactory):
         distroseries = self.factory.makeDistroSeries()
         formatted_dict = seriesToVocab(distroseries)
 
-        self.assertEquals(
+        self.assertEqual(
             ['api_uri', 'title', 'value'],
             sorted(formatted_dict.keys()))
 
@@ -932,7 +913,7 @@ class TestDistroSeriesLocalDiffPerformance(TestCaseWithFactory,
         login_person(self.simple_user)
 
         def add_differences(num):
-            for index in xrange(num):
+            for index in range(num):
                 version = self.factory.getUniqueInteger()
                 versions = {
                     'base': u'1.%d' % version,
@@ -960,8 +941,10 @@ class TestDistroSeriesLocalDiffPerformance(TestCaseWithFactory,
                             sourcename=spr.sourcepackagename.name,
                             distroseries=derived_series))
                 else:
-                    removeSecurityProxy(spr).dscsigningkey = (
-                        self.factory.makeGPGKey(owner=spr.creator))
+                    key = self.factory.makeGPGKey(owner=spr.creator)
+                    removeSecurityProxy(spr).signing_key_owner = key.owner
+                    removeSecurityProxy(spr).signing_key_fingerprint = (
+                        key.fingerprint)
 
         def flush_and_render():
             flush_database_caches()
@@ -1024,17 +1007,20 @@ class TestDistroSeriesLocalDiffPerformance(TestCaseWithFactory,
             text_content(u"%.2f" % statement_count_per_row))
         # Query count is ~O(1) (i.e. not dependent of the number of
         # differences displayed).
-        self.assertThat(
-            recorder3, HasQueryCount(Equals(recorder2.count)))
+        self.assertThat(recorder3, HasQueryCount.byEquality(recorder2))
 
     def test_queries_single_parent(self):
         dsp = self.factory.makeDistroSeriesParent()
         derived_series = dsp.derived_series
+        derived_series.nominatedarchindep = self.factory.makeDistroArchSeries(
+            distroseries=derived_series)
         self._assertQueryCount(derived_series)
 
     def test_queries_multiple_parents(self):
         dsp = self.factory.makeDistroSeriesParent()
         derived_series = dsp.derived_series
+        derived_series.nominatedarchindep = self.factory.makeDistroArchSeries(
+            distroseries=derived_series)
         self.factory.makeDistroSeriesParent(
             derived_series=derived_series)
         self._assertQueryCount(derived_series)
@@ -1307,7 +1293,7 @@ class TestDistroSeriesLocalDifferences(TestCaseWithFactory,
         self.assertEqual(1, len(links))
         self.assertEqual(versions['derived'], links[0].string.strip())
 
-        link = canonical_url(difference.source_pub.sourcepackagerelease)
+        link = canonical_url(difference.source_package_release)
         self.assertTrue(link, EndsWith(new_version))
         # The link points to the sourcepackagerelease referenced in the
         # difference.
@@ -1331,11 +1317,10 @@ class TestDistroSeriesLocalDifferences(TestCaseWithFactory,
             derived_series=derived_series)
 
         # Delete the publications.
-        with celebrity_logged_in("admin"):
-            difference.source_pub.status = (
-                PackagePublishingStatus.DELETED)
-            difference.parent_source_pub.status = (
-                PackagePublishingStatus.DELETED)
+        removeSecurityProxy(difference.source_pub).status = (
+            PackagePublishingStatus.DELETED)
+        removeSecurityProxy(difference.parent_source_pub).status = (
+            PackagePublishingStatus.DELETED)
         # Flush out the changes and invalidate caches (esp. property caches).
         flush_database_caches()
 
@@ -1374,8 +1359,11 @@ class TestDistroSeriesLocalDifferences(TestCaseWithFactory,
         # each difference row.
         dsd = self.makePackageUpgrade()
         uploader = self.factory.makePerson()
-        removeSecurityProxy(dsd.source_package_release).dscsigningkey = (
-            self.factory.makeGPGKey(uploader))
+        key = self.factory.makeGPGKey(uploader)
+        naked_spr = removeSecurityProxy(
+            dsd.source_package_release.sourcepackagerelease)
+        naked_spr.signing_key_fingerprint = key.fingerprint
+        naked_spr.signing_key_owner = key.owner
         view = self.makeView(dsd.derived_series)
         root = html.fromstring(view())
         [creator_cell] = root.cssselect(
@@ -1383,7 +1371,7 @@ class TestDistroSeriesLocalDifferences(TestCaseWithFactory,
         matches = DocTestMatches(
             "... ago by %s (uploaded by %s)" % (
                 dsd.source_package_release.creator.displayname,
-                dsd.source_package_release.dscsigningkey.owner.displayname))
+                dsd.source_package_release.signing_key_owner.displayname))
         self.assertThat(creator_cell.text_content(), matches)
 
     def test_diff_row_links_to_parent_changelog(self):
@@ -1413,12 +1401,6 @@ class TestDistroSeriesLocalDifferences(TestCaseWithFactory,
         dsd = self.makePackageUpgrade()
         view = self.makeView(dsd.derived_series)
         self.assertContentEqual([dsd], view.getUpgrades())
-
-    def enableDerivedSeriesSyncFeature(self):
-        """Enable the feature flag for derived-series sync."""
-        self.useFixture(
-            FeatureFixture(
-                {u'soyuz.derived_series_sync.enabled': u'on'}))
 
     def enableDerivedSeriesUpgradeFeature(self):
         """Enable the feature flag for derived-series upgrade."""
@@ -1495,9 +1477,9 @@ class TestDistroSeriesLocalDifferences(TestCaseWithFactory,
         job_source = getUtility(IPlainPackageCopyJobSource)
         jobs = list(
             job_source.getActiveJobs(series.distribution.main_archive))
-        self.assertEquals(1, len(jobs))
+        self.assertEqual(1, len(jobs))
         job = jobs[0]
-        self.assertEquals(series, job.target_distroseries)
+        self.assertEqual(series, job.target_distroseries)
         self.assertEqual(dsd.source_package_name.name, job.package_name)
         self.assertEqual(dsd.parent_source_version, job.package_version)
         self.assertEqual(PackagePublishingPocket.RELEASE, job.target_pocket)
@@ -1532,14 +1514,12 @@ class TestDistroSeriesLocalDifferences(TestCaseWithFactory,
         self.assertThat(recorder1, HasQueryCount(LessThan(12)))
 
         # The query count does not increase with the number of upgrades.
-        for index in xrange(3):
+        for index in range(3):
             self.makePackageUpgrade(derived_series=derived_series)
         flush_database_caches()
         with StormStatementRecorder() as recorder2:
             self.makeView(derived_series).requestUpgrades()
-        self.assertThat(
-            recorder2,
-            HasQueryCount(Equals(recorder1.count)))
+        self.assertThat(recorder2, HasQueryCount.byEquality(recorder1))
 
     def makeDSDJob(self, dsd):
         """Create a `DistroSeriesDifferenceJob` to update `dsd`."""
@@ -1560,8 +1540,8 @@ class TestDistroSeriesLocalDifferences(TestCaseWithFactory,
             derived_series,
             '+localpackagediffs')
 
-        radio_title = \
-            "&nbsp;Ignored packages with a higher version than in 'Lucid'"
+        radio_title = (
+            u"\xa0Ignored packages with a higher version than in 'Lucid'")
         radio_option_matches = soupmatchers.HTMLContains(
             soupmatchers.Tag(
                 "radio displays parent's name", 'label',
@@ -1578,8 +1558,8 @@ class TestDistroSeriesLocalDifferences(TestCaseWithFactory,
             derived_series,
             '+localpackagediffs')
 
-        radio_title = \
-            "&nbsp;Ignored packages with a higher version than in parent"
+        radio_title = (
+            u"\xa0Ignored packages with a higher version than in parent")
         radio_option_matches = soupmatchers.HTMLContains(
             soupmatchers.Tag(
                 "radio displays parent's name", 'label',
@@ -1781,26 +1761,11 @@ class TestDistroSeriesLocalDifferences(TestCaseWithFactory,
         # synced package.
         derived_series = self._setUpDSD()[0]
         person = self._setUpPersonWithPerm(derived_series)
-        set_derived_series_sync_feature_flag(self)
         with person_logged_in(person):
             view = create_initialized_view(
                 derived_series, '+localpackagediffs')
 
             self.assertTrue(view.canPerformSync())
-
-    def test_canPerformSync_non_anon_feature_disabled(self):
-        # Logged-in users with a permission on the destination archive
-        # are not presented with options to perform syncs when the
-        # feature flag is not enabled.
-        self.assertIs(
-            None, getFeatureFlag('soyuz.derived_series_sync.enabled'))
-        derived_series = self._setUpDSD()[0]
-        person = self._setUpPersonWithPerm(derived_series)
-        with person_logged_in(person):
-            view = create_initialized_view(
-                derived_series, '+localpackagediffs')
-
-            self.assertFalse(view.canPerformSync())
 
     def test_hasPendingDSDUpdate_returns_False_if_no_pending_update(self):
         dsd = self.factory.makeDistroSeriesDifference()
@@ -1809,7 +1774,6 @@ class TestDistroSeriesLocalDifferences(TestCaseWithFactory,
         self.assertFalse(view.hasPendingDSDUpdate(dsd))
 
     def test_hasPendingDSDUpdate_returns_True_if_pending_update(self):
-        set_derived_series_difference_jobs_feature_flag(self)
         dsd = self.factory.makeDistroSeriesDifference()
         self.makeDSDJob(dsd)
         view = create_initialized_view(
@@ -1992,7 +1956,6 @@ class TestDistroSeriesLocalDifferences(TestCaseWithFactory,
         # An error is raised when a sync is requested without any selection.
         derived_series = self._setUpDSD()[0]
         person = self._setUpPersonWithPerm(derived_series)
-        set_derived_series_sync_feature_flag(self)
         view = self._syncAndGetView(derived_series, person, [])
 
         self.assertEqual(1, len(view.errors))
@@ -2005,7 +1968,6 @@ class TestDistroSeriesLocalDifferences(TestCaseWithFactory,
             'my-src-name')
         person = self._setUpPersonWithPerm(derived_series)
         another_id = str(int(diff_id) + 1)
-        set_derived_series_sync_feature_flag(self)
         view = self._syncAndGetView(
             derived_series, person, [another_id])
 
@@ -2021,14 +1983,14 @@ class TestDistroSeriesLocalDifferences(TestCaseWithFactory,
         derived_series, unused, unused2, diff_id = self._setUpDSD(
             'my-src-name')
         person = self._setUpPersonWithPerm(derived_series)
-        set_derived_series_sync_feature_flag(self)
         view = self._syncAndGetView(
             derived_series, person, [diff_id])
 
         self.assertEqual(1, len(view.errors))
         self.assertTrue(
-            "The signer of this package has no upload rights to this "
-            "distribution's primary archive" in view.errors[0])
+            html_escape(
+                "The signer of this package has no upload rights to this "
+                "distribution's primary archive") in view.errors[0])
 
     def makePersonWithComponentPermission(self, archive, component=None):
         person = self.factory.makePerson()
@@ -2054,12 +2016,11 @@ class TestDistroSeriesLocalDifferences(TestCaseWithFactory,
 
     def test_sync_error_no_perm_component(self):
         # A user without upload rights on the destination component
-        # will get an error when he syncs packages to this component.
+        # will get an error when they sync packages to this component.
         derived_series, parent_series, unused, diff_id = self._setUpDSD(
             'my-src-name')
         person, another_component = self.makePersonWithComponentPermission(
             derived_series.main_archive)
-        set_derived_series_sync_feature_flag(self)
         view = self._syncAndGetView(
             derived_series, person, [diff_id])
 
@@ -2074,7 +2035,6 @@ class TestDistroSeriesLocalDifferences(TestCaseWithFactory,
         # metadata.
         derived_series, parent_series, sp_name, diff_id = self._setUpDSD(
             'my-src-name')
-        set_derived_series_sync_feature_flag(self)
         person, _ = self.makePersonWithComponentPermission(
             derived_series.main_archive,
             derived_series.getSourcePackage(
@@ -2099,9 +2059,7 @@ class TestDistroSeriesLocalDifferences(TestCaseWithFactory,
         self.assertEqual(0, len(view.errors))
         notifications = view.request.response.notifications
         self.assertEqual(1, len(notifications))
-        self.assertIn(
-            "Requested sync of 1 package.",
-            notifications[0].message)
+        self.assertIn("Requested sync of 1 package", notifications[0].message)
         # 302 is a redirect back to the same page.
         self.assertEqual(302, view.request.response.getStatus())
 
@@ -2124,12 +2082,11 @@ class TestDistroSeriesLocalDifferences(TestCaseWithFactory,
 
         # The inital state is that 1.0-1 is not in the derived series.
         pubs = derived_series.main_archive.getPublishedSources(
-            name='my-src-name', version=versions['parent'],
+            name=u'my-src-name', version=versions['parent'],
             distroseries=derived_series).any()
         self.assertIs(None, pubs)
 
         # Now, sync the source from the parent using the form.
-        set_derived_series_sync_feature_flag(self)
         view = self._syncAndGetView(
             derived_series, person, [diff_id], query_string=(
                 "batch=12&start=24&my-old-man=dustman"))
@@ -2157,7 +2114,6 @@ class TestDistroSeriesLocalDifferences(TestCaseWithFactory,
             'my-src-name', difference_type=missing, versions=versions)
         person, another_component = self.makePersonWithComponentPermission(
             derived_series.main_archive)
-        set_derived_series_sync_feature_flag(self)
         view = self._syncAndGetView(
             derived_series, person, [diff_id],
             view_name='+missingpackages')
@@ -2179,14 +2135,13 @@ class TestDistroSeriesLocalDifferences(TestCaseWithFactory,
             derived_series.status = SeriesStatus.CURRENT
             derived_series.datereleased = UTC_NOW
 
-        set_derived_series_sync_feature_flag(self)
         person = self.factory.makePerson()
         removeSecurityProxy(derived_series.main_archive).newPackageUploader(
             person, sp_name)
         self._syncAndGetView(
             derived_series, person, [diff_id])
         parent_series.main_archive.getPublishedSources(
-            name='my-src-name', version=versions['parent'],
+            name=u'my-src-name', version=versions['parent'],
             distroseries=parent_series).one()
 
         # We look for a PackageCopyJob with the right metadata.
@@ -2200,13 +2155,12 @@ class TestDistroSeriesLocalDifferences(TestCaseWithFactory,
         derived_series, parent_series, unused, diff_id = self._setUpDSD(
             'my-src-name')
         person = self.factory.makePerson()
-        set_derived_series_sync_feature_flag(self)
         with person_logged_in(person):
             view = create_initialized_view(
                 derived_series, '+localpackagediffs', method='GET',
                 query_string='start=1&batch=1')
 
-        self.assertEquals(
+        self.assertEqual(
             'http://127.0.0.1?start=1&batch=1',
             view.action_url)
 
@@ -2311,25 +2265,42 @@ class TestDistroSeriesLocalDifferences(TestCaseWithFactory,
             self.assertEqual(1, len(view.cached_differences.batch))
 
 
-class TestCopyAsynchronouslyMessage(TestCase):
+class TestCopyAsynchronouslyMessage(TestCaseWithFactory):
     """Test the helper function `copy_asynchronously_message`."""
+
+    layer = DatabaseFunctionalLayer
+
+    def setUp(self):
+        super(TestCopyAsynchronouslyMessage, self).setUp()
+        self.archive = self.factory.makeArchive()
+        self.series = self.factory.makeDistroSeries()
+        self.series_url = canonical_url(self.series)
+        self.series_title = self.series.displayname
+
+    def message(self, source_pubs_count):
+        return copy_asynchronously_message(
+            source_pubs_count, self.archive, dest_url=self.series_url,
+            dest_display_name=self.series_title)
 
     def test_zero_packages(self):
         self.assertEqual(
-            "Requested sync of 0 packages.",
-            copy_asynchronously_message(0).escapedtext)
+            'Requested sync of 0 packages to <a href="%s">%s</a>.' %
+                (self.series_url, self.series_title),
+            self.message(0).escapedtext)
 
     def test_one_package(self):
         self.assertEqual(
-            "Requested sync of 1 package.<br />Please "
-            "allow some time for this to be processed.",
-            copy_asynchronously_message(1).escapedtext)
+            'Requested sync of 1 package to <a href="%s">%s</a>.<br />'
+            'Please allow some time for this to be processed.' %
+                (self.series_url, self.series_title),
+            self.message(1).escapedtext)
 
     def test_multiple_packages(self):
         self.assertEqual(
-            "Requested sync of 5 packages.<br />Please "
-            "allow some time for these to be processed.",
-            copy_asynchronously_message(5).escapedtext)
+            'Requested sync of 5 packages to <a href="%s">%s</a>.<br />'
+            'Please allow some time for these to be processed.' %
+                (self.series_url, self.series_title),
+            self.message(5).escapedtext)
 
 
 class TestDistroSeriesNeedsPackagesView(TestCaseWithFactory):
@@ -2466,8 +2437,11 @@ class DistroSeriesMissingPackagesPageTestCase(TestCaseWithFactory,
         dsd = self.factory.makeDistroSeriesDifference(
             difference_type=missing_type)
         uploader = self.factory.makePerson()
-        naked_spr = removeSecurityProxy(dsd.parent_source_package_release)
-        naked_spr.dscsigningkey = self.factory.makeGPGKey(uploader)
+        key = self.factory.makeGPGKey(uploader)
+        naked_spr = removeSecurityProxy(
+            dsd.parent_source_package_release.sourcepackagerelease)
+        naked_spr.signing_key_fingerprint = key.fingerprint
+        naked_spr.signing_key_owner = key.owner
         with person_logged_in(self.simple_user):
             view = create_initialized_view(
                 dsd.derived_series, '+missingpackages',
@@ -2479,7 +2453,7 @@ class DistroSeriesMissingPackagesPageTestCase(TestCaseWithFactory,
         matches = DocTestMatches(
             "... ago by %s (uploaded by %s)" % (
                 parent_spr.creator.displayname,
-                parent_spr.dscsigningkey.owner.displayname))
+                parent_spr.signing_key_owner.displayname))
         self.assertThat(creator_cell.text_content(), matches)
 
 
@@ -2607,8 +2581,8 @@ class TestDistroSeriesEditView(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def test_edit_full_functionality_sets_datereleased(self):
-        # Full functionality distributions (IE: Ubuntu) have datereleased
-        # set when the +edit view is used.
+        # Distributions that use Launchpad for package management (eg.
+        # Ubuntu) have datereleased set when the +edit view is used.
         ubuntu = getUtility(IDistributionSet).getByName('ubuntu')
         distroseries = self.factory.makeDistroSeries(distribution=ubuntu)
         form = {

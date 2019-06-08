@@ -13,20 +13,20 @@ and has no bugs.
     ...     anybody = factory.makePerson()
     >>> with_anybody = with_person_logged_in(anybody)
     >>> patchy_product = with_anybody(factory.makeProduct)(
-    ...     name='patchy-product-1', displayname="Patchy 1")
+    ...     name='patchy-product-1', displayname="Patchy 1", title="Patchy 1")
     >>> transaction.commit()
 
 We don't see any patches when we open the patches view.
 
     >>> def show_patches_view(contents):
     ...     for tag in find_tags_by_class(contents, 'listing'):
-    ...         print extract_text(tag)
+    ...         print(extract_text(tag))
     ...     messages = find_tags_by_class(contents, 'informational')
     ...     if len(messages) > 0:
-    ...         print extract_text(messages[0])
+    ...         print(extract_text(messages[0]))
 
     >>> anon_browser.open(
-    ...     'http://bugs.launchpad.dev/patchy-product-1/+patches')
+    ...     'http://bugs.launchpad.test/patchy-product-1/+patches')
     >>> show_patches_view(anon_browser.contents)
     There are no patches associated with Patchy 1 at this time.
 
@@ -51,7 +51,7 @@ view, because that bug has no patch attachments.
     >>> bug_a = make_bug(title="bug_a title", product=patchy_product)
     >>> transaction.commit()
     >>> anon_browser.open(
-    ...     'http://bugs.launchpad.dev/patchy-product-1/+patches')
+    ...     'http://bugs.launchpad.test/patchy-product-1/+patches')
     >>> show_patches_view(anon_browser.contents)
     There are no patches associated with Patchy 1 at this time.
 
@@ -61,7 +61,7 @@ still shows no patches.
     >>> with_anybody(factory.makeBugAttachment)(bug=bug_a, is_patch=False)
     <BugAttachment at...
     >>> transaction.commit()
-    >>> anon_browser.open('http://bugs.launchpad.dev/patchy-product-1/+patches')
+    >>> anon_browser.open('http://bugs.launchpad.test/patchy-product-1/+patches')
     >>> show_patches_view(anon_browser.contents)
     There are no patches associated with Patchy 1 at this time.
 
@@ -78,19 +78,19 @@ patches view.
     <BugAttachment at...
     >>> transaction.commit()
     >>> anon_browser.open(
-    ...     'http://bugs.launchpad.dev/patchy-product-1/+patches')
+    ...     'http://bugs.launchpad.test/patchy-product-1/+patches')
     >>> show_patches_view(anon_browser.contents)
     Bug                                 Importance   Status    Patch Age
-    Bug #16: bug_a title                  Undecided     New     ...second...
+    Bug #...: bug_a title               Undecided     New     ...second...
     From: Patchy Person
     Link: patch_a.diff description of patch a
 
 The page title and other wording in the page reflects the contents.
 
     >>> print_location(anon_browser.contents)
-    Hierarchy: Patchy 1 > Bugs > Patch attachments in Patchy 1
+    Hierarchy: Patchy 1
     Tabs: ...
-    Main heading: Patch attachments in Patchy 1
+    Main heading: Patch attachments
 
 After creating some more bugs, with some non-patch and some patch
 attachments, and various statuses...
@@ -150,16 +150,16 @@ attachments, and various statuses...
 ...the youngest patch on each bug is visible in the patch report
 (except for bugs in "Fix Released" state, which aren't shown):
 
-    >>> anon_browser.open('http://bugs.launchpad.dev/patchy-product-1/+patches')
+    >>> anon_browser.open('http://bugs.launchpad.test/patchy-product-1/+patches')
     >>> show_patches_view(anon_browser.contents)
     Bug                                 Importance   Status    Patch Age
-    Bug #18: bug_c title                  Wishlist  Fix Committed ...second...
+    Bug #...: bug_c title               Wishlist  Fix Committed ...second...
     From: Patchy Person
     Link: patch_f.diff description of patch f
-    Bug #17: bug_b title                  Critical    Confirmed ...second...
+    Bug #...: bug_b title               Critical    Confirmed ...second...
     From: Patchy Person
     Link: patch_c.diff description of patch c
-    Bug #16: bug_a title                  Undecided     New     ...second...
+    Bug #...: bug_a title               Undecided     New     ...second...
     From: Patchy Person
     Link: patch_a.diff description of patch a
 
@@ -169,38 +169,38 @@ importance and status.
     >>> anon_browser.getControl(name="orderby").value = ['-importance']
     >>> anon_browser.getControl("sort").click()
     >>> anon_browser.url
-    'http://bugs.launchpad.dev/patchy-product-1/+patches?orderby=-importance'
+    'http://bugs.launchpad.test/patchy-product-1/+patches?orderby=-importance'
     >>> show_patches_view(anon_browser.contents)
     Bug                                 Importance   Status    Patch Age
-    Bug #17: bug_b title                  Critical    Confirmed ...second...
+    Bug #...: bug_b title               Critical    Confirmed ...second...
     From: Patchy Person
     Link: patch_c.diff description of patch c
-    Bug #18: bug_c title                  Wishlist  Fix Committed ...second...
+    Bug #...: bug_c title               Wishlist  Fix Committed ...second...
     From: Patchy Person
     Link: patch_f.diff description of patch f
-    Bug #16: bug_a title                  Undecided     New     ...second...
+    Bug #...: bug_a title               Undecided     New     ...second...
     From: Patchy Person
     Link: patch_a.diff description of patch a
 
     >>> anon_browser.getControl(name="orderby").value = ['status']
     >>> anon_browser.getControl("sort").click()
     >>> anon_browser.url
-    'http://bugs.launchpad.dev/patchy-product-1/+patches?orderby=status'
+    'http://bugs.launchpad.test/patchy-product-1/+patches?orderby=status'
     >>> show_patches_view(anon_browser.contents)
     Bug                                 Importance   Status    Patch Age
-    Bug #16: bug_a title                  Undecided     New     ...second...
+    Bug #...: bug_a title               Undecided     New     ...second...
     From: Patchy Person
     Link: patch_a.diff description of patch a
-    Bug #17: bug_b title                  Critical    Confirmed ...second...
+    Bug #...: bug_b title               Critical    Confirmed ...second...
     From: Patchy Person
     Link: patch_c.diff description of patch c
-    Bug #18: bug_c title                  Wishlist  Fix Committed ...second...
+    Bug #...: bug_c title               Wishlist  Fix Committed ...second...
     From: Patchy Person
     Link: patch_f.diff description of patch f
 
 But we can't sort by things that aren't validated by the view.
 
-    >>> anon_browser.open('http://bugs.launchpad.dev/patchy-product-1/+patches?orderby=star-sign')
+    >>> anon_browser.open('http://bugs.launchpad.test/patchy-product-1/+patches?orderby=star-sign')
     Traceback (most recent call last):
     ...
     UnexpectedFormData: Unexpected value for field 'orderby': 'star-sign'
@@ -255,18 +255,20 @@ Bugs in a product series show up in the patches view for that series.
     ...         bugtask.transitionToImportance(importance, ubuntu_distro.owner)
     ...     if status is not None:
     ...         bugtask.transitionToStatus(status, ubuntu_distro.owner)
+    >>> login(ANONYMOUS)
     >>> patchy_product_series = patchy_product.getSeries('trunk')
     >>> make_bugtask(bug=bug_a, target=patchy_product_series)
     >>> make_bugtask(bug=bug_c, target=patchy_product_series)
+    >>> logout()
     >>> anon_browser.open(
-    ...     'https://bugs.launchpad.dev/patchy-product-1/trunk/+patches')
+    ...     'https://bugs.launchpad.test/patchy-product-1/trunk/+patches')
     >>> show_patches_view(anon_browser.contents)
     Bug                       Importance     Status      Patch Age
-    Bug #18: bug_c title       Wishlist  Fix Committed   ...second...
+    Bug #...: bug_c title     Wishlist  Fix Committed   ...second...
     From: Patchy Person
     Link: patch_f.diff
     description of patch f
-    Bug #16: bug_a title       Undecided      New        ...second...
+    Bug #...: bug_a title     Undecided      New        ...second...
     From: Patchy Person
     Link: patch_a.diff
     description of patch a
@@ -274,6 +276,6 @@ Bugs in a product series show up in the patches view for that series.
 The page title and other wording in the page reflects the contents.
 
     >>> print_location(anon_browser.contents)
-    Hierarchy: Patchy 1 > Series trunk > Bugs > Patch attachments in trunk
+    Hierarchy: Patchy 1 > Series trunk > Patch attachments
     Tabs: ...
     Main heading: Patch attachments in trunk

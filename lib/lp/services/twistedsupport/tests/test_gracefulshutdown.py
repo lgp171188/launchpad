@@ -1,14 +1,17 @@
-# Copyright 2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2011-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for our graceful daemon shutdown support."""
 
 __metaclass__ = type
 
+import io
+
 from twisted.application import service
 from twisted.internet.defer import Deferred
 from twisted.internet.protocol import (
     Factory,
+    FileWrapper,
     Protocol,
     )
 from twisted.web import http
@@ -34,8 +37,10 @@ class TestConnTrackingFactoryWrapper(TestCase):
         self.assertTrue(ctf.isAvailable())
         ctf.stopFactory()
         self.assertFalse(ctf.isAvailable())
+
         def cb(ignored):
             self.was_fired = True
+
         ctf.allConnectionsGone.addCallback(cb)
         self.assertTrue(self.was_fired)
 
@@ -50,8 +55,10 @@ class TestConnTrackingFactoryWrapper(TestCase):
         ctf.registerProtocol(p)
         ctf.stopFactory()
         self.was_fired = False
+
         def cb(ignored):
             self.was_fired = True
+
         ctf.allConnectionsGone.addCallback(cb)
         self.assertFalse(self.was_fired)
         ctf.unregisterProtocol(p)
@@ -70,8 +77,10 @@ class TestConnTrackingFactoryWrapper(TestCase):
         ctf.registerProtocol(p2)
         ctf.stopFactory()
         self.was_fired = False
+
         def cb(ignored):
             self.was_fired = True
+
         ctf.allConnectionsGone.addCallback(cb)
         self.assertFalse(self.was_fired)
         ctf.unregisterProtocol(p1)
@@ -86,14 +95,17 @@ class TestConnTrackingFactoryWrapper(TestCase):
         ctf = gracefulshutdown.ConnTrackingFactoryWrapper(Factory())
         p = Protocol()
         ctf.registerProtocol(p)
-        ctf.unregisterProtocol(p) # No error raised.
+        ctf.unregisterProtocol(p)  # No error raised.
 
 
 class TestServerAvailableResource(TestCase):
 
     def make_dummy_http_request(self):
         """Make a dummy HTTP request for tests."""
-        return http.Request('fake channel', True)
+        transport = FileWrapper(io.BytesIO())
+        channel = http.HTTPChannel()
+        channel.makeConnection(transport)
+        return http.Request(channel, True)
 
     def test_200_when_available(self):
         """When the factory is available a 200 response is generated."""
@@ -202,8 +214,10 @@ class TestOrderedMultiService(TestCase):
         service2.setServiceParent(oms)
         oms.startService()
         self.all_stopped = False
+
         def cb_all_stopped(ignored):
             self.all_stopped = True
+
         oms.stopService().addCallback(cb_all_stopped)
         self.assertFalse(self.all_stopped)
         self.assertFalse(service1.stop_called)

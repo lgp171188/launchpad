@@ -1,34 +1,29 @@
-# Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test implementations of the IHasBuildRecords interface."""
 
-from datetime import (
-    datetime,
-    timedelta,
-    )
+from __future__ import absolute_import, print_function, unicode_literals
 
-import pytz
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
+from lp.app.errors import IncompatibleArguments
 from lp.buildmaster.enums import (
     BuildFarmJobType,
     BuildStatus,
     )
-from lp.buildmaster.interfaces.buildfarmjob import IBuildFarmJob
-from lp.buildmaster.interfaces.packagebuild import IPackageBuildSource
+from lp.buildmaster.interfaces.buildfarmjob import (
+    IBuildFarmJob,
+    IBuildFarmJobSource,
+    )
 from lp.registry.interfaces.person import IPersonSet
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.registry.model.sourcepackage import SourcePackage
-from lp.services.database.lpstorm import IStore
+from lp.services.database.interfaces import IStore
 from lp.soyuz.enums import ArchivePurpose
 from lp.soyuz.interfaces.binarypackagebuild import IBinaryPackageBuild
-from lp.soyuz.interfaces.buildrecords import (
-    IHasBuildRecords,
-    IncompatibleArguments,
-    )
-from lp.soyuz.model.processor import ProcessorFamilySet
+from lp.soyuz.interfaces.buildrecords import IHasBuildRecords
 from lp.soyuz.model.publishing import SourcePackagePublishingHistory
 from lp.soyuz.tests.test_binarypackagebuild import BaseTestCaseWithThreeBuilds
 from lp.soyuz.tests.test_publishing import SoyuzTestPublisher
@@ -53,7 +48,7 @@ class TestHasBuildRecordsInterface(BaseTestCaseWithThreeBuilds):
     def setUp(self):
         """Use `SoyuzTestPublisher` to publish some sources in archives."""
         super(TestHasBuildRecordsInterface, self).setUp()
-        self.context = self.publisher.distroseries.distribution
+        self.context = self.ds.distribution
 
     def testProvidesHasBuildRecords(self):
         # Ensure that the context does in fact provide IHasBuildRecords
@@ -69,12 +64,7 @@ class TestHasBuildRecordsInterface(BaseTestCaseWithThreeBuilds):
 
         # Target one of the builds to hppa so that we have three builds
         # in total, two of which are i386 and one hppa.
-        i386_builds = self.builds[:]
-        hppa_build = i386_builds.pop()
-        removeSecurityProxy(
-            hppa_build).distro_arch_series = self.publisher.distroseries[
-                'hppa']
-
+        i386_builds = self.builds[:2]
         builds = self.context.getBuildRecords(arch_tag="i386")
         self.assertContentEqual(i386_builds, builds)
 
@@ -89,31 +79,26 @@ class TestDistributionHasBuildRecords(TestCaseWithFactory):
         self.admin = getUtility(IPersonSet).getByEmail(ADMIN_EMAIL)
         # Create the machinery we need to create builds, such as
         # DistroArchSeries and builders.
-        self.pf_one = self.factory.makeProcessorFamily()
-        pf_proc_1 = self.pf_one.addProcessor(
-            self.factory.getUniqueString(), '', '')
-        self.pf_two = self.factory.makeProcessorFamily()
-        pf_proc_2 = self.pf_two.addProcessor(
-            self.factory.getUniqueString(), '', '')
+        self.processor_one = self.factory.makeProcessor(
+            supports_virtualized=True)
+        self.processor_two = self.factory.makeProcessor(
+            supports_virtualized=True)
         self.distroseries = self.factory.makeDistroSeries()
         self.distribution = self.distroseries.distribution
         self.das_one = self.factory.makeDistroArchSeries(
-            distroseries=self.distroseries, processorfamily=self.pf_one,
-            supports_virtualized=True)
+            distroseries=self.distroseries, processor=self.processor_one)
         self.das_two = self.factory.makeDistroArchSeries(
-            distroseries=self.distroseries, processorfamily=self.pf_two,
-            supports_virtualized=True)
+            distroseries=self.distroseries, processor=self.processor_two)
         self.archive = self.factory.makeArchive(
             distribution=self.distroseries.distribution,
             purpose=ArchivePurpose.PRIMARY)
-        self.arch_ids = [arch.id for arch in self.distroseries.architectures]
         with person_logged_in(self.admin):
             self.publisher = SoyuzTestPublisher()
             self.publisher.prepareBreezyAutotest()
             self.distroseries.nominatedarchindep = self.das_one
             self.publisher.addFakeChroots(distroseries=self.distroseries)
-            self.builder_one = self.factory.makeBuilder(processor=pf_proc_1)
-            self.builder_two = self.factory.makeBuilder(processor=pf_proc_2)
+            self.factory.makeBuilder(processors=[self.processor_one])
+            self.factory.makeBuilder(processors=[self.processor_two])
         self.builds = []
         self.createBuilds()
 
@@ -124,29 +109,28 @@ class TestDistributionHasBuildRecords(TestCaseWithFactory):
                 sourcename=self.factory.getUniqueString(),
                 version="%s.%s" % (self.factory.getUniqueInteger(), i),
                 distroseries=self.distroseries, architecturehintlist='any')
-            builds = spph.createMissingBuilds()
+            builds = removeSecurityProxy(spph.createMissingBuilds())
             for b in builds:
+                b.updateStatus(BuildStatus.BUILDING)
                 if i == 4:
-                    b.status = BuildStatus.FAILEDTOBUILD
+                    b.updateStatus(BuildStatus.FAILEDTOBUILD)
                 else:
-                    b.status = BuildStatus.FULLYBUILT
+                    b.updateStatus(BuildStatus.FULLYBUILT)
                 b.buildqueue_record.destroySelf()
-                b.date_started = datetime.now(pytz.UTC)
-                b.date_finished = b.date_started + timedelta(minutes=5)
-            self.builds += builds
+            self.builds = builds
 
     def test_get_build_records(self):
         # A Distribution also implements IHasBuildRecords.
         builds = self.distribution.getBuildRecords().count()
-        self.assertEquals(10, builds)
+        self.assertEqual(10, builds)
+
 
 class TestDistroSeriesHasBuildRecords(TestHasBuildRecordsInterface):
     """Test the DistroSeries implementation of IHasBuildRecords."""
 
     def setUp(self):
         super(TestDistroSeriesHasBuildRecords, self).setUp()
-
-        self.context = self.publisher.distroseries
+        self.context = self.ds
 
 
 class TestDistroArchSeriesHasBuildRecords(TestDistributionHasBuildRecords):
@@ -160,19 +144,19 @@ class TestDistroArchSeriesHasBuildRecords(TestDistributionHasBuildRecords):
     def test_distroarchseries(self):
         # We can fetch builds records from a DistroArchSeries.
         builds = self.das_one.getBuildRecords().count()
-        self.assertEquals(5, builds)
+        self.assertEqual(5, builds)
         builds = self.das_one.getBuildRecords(
             build_state=BuildStatus.FULLYBUILT).count()
-        self.assertEquals(4, builds)
+        self.assertEqual(4, builds)
         spn = self.builds[0].source_package_release.sourcepackagename.name
         builds = self.das_one.getBuildRecords(name=spn).count()
-        self.assertEquals(1, builds)
+        self.assertEqual(1, builds)
         builds = self.das_one.getBuildRecords(
             pocket=PackagePublishingPocket.RELEASE).count()
-        self.assertEquals(5, builds)
+        self.assertEqual(5, builds)
         builds = self.das_one.getBuildRecords(
             pocket=PackagePublishingPocket.UPDATES).count()
-        self.assertEquals(0, builds)
+        self.assertEqual(0, builds)
 
 
 class TestArchiveHasBuildRecords(TestHasBuildRecordsInterface):
@@ -181,31 +165,26 @@ class TestArchiveHasBuildRecords(TestHasBuildRecordsInterface):
     def setUp(self):
         super(TestArchiveHasBuildRecords, self).setUp()
 
-        self.context = self.publisher.distroseries.main_archive
+        self.context = self.ds.main_archive
 
     def test_binary_only_false(self):
         # An archive can optionally return the more general
         # package build objects.
-
-        # Until we have different IBuildFarmJob types implemented, we
-        # can only test this by creating a lone PackageBuild of a
-        # different type.
-        getUtility(IPackageBuildSource).new(
-            job_type=BuildFarmJobType.RECIPEBRANCHBUILD, virtualized=True,
-            archive=self.context, pocket=PackagePublishingPocket.RELEASE)
+        getUtility(IBuildFarmJobSource).new(
+            BuildFarmJobType.RECIPEBRANCHBUILD, archive=self.context)
 
         builds = self.context.getBuildRecords(binary_only=True)
-        self.failUnlessEqual(3, builds.count())
+        self.assertEqual(3, builds.count())
 
         builds = self.context.getBuildRecords(binary_only=False)
-        self.failUnlessEqual(4, builds.count())
+        self.assertEqual(4, builds.count())
 
     def test_incompatible_arguments(self):
         # binary_only=False is incompatible with arch_tag and name.
-        self.failUnlessRaises(
+        self.assertRaises(
             IncompatibleArguments, self.context.getBuildRecords,
             binary_only=False, arch_tag="anything")
-        self.failUnlessRaises(
+        self.assertRaises(
             IncompatibleArguments, self.context.getBuildRecords,
             binary_only=False, name="anything")
 
@@ -217,29 +196,19 @@ class TestBuilderHasBuildRecords(TestHasBuildRecordsInterface):
         super(TestBuilderHasBuildRecords, self).setUp()
 
         # Create a 386 builder
-        owner = self.factory.makePerson()
-        processor_family = ProcessorFamilySet().getByProcessorName('386')
-        processor = processor_family.processors[0]
-        self.context = self.factory.makeBuilder(
-            processor, 'http://example.com', 'Newbob', 'New Bob the Builder',
-            owner=owner)
+        self.context = self.factory.makeBuilder()
 
         # Ensure that our builds were all built by the test builder.
         for build in self.builds:
-            build.builder = self.context
+            build.updateStatus(BuildStatus.FULLYBUILT, builder=self.context)
 
     def test_binary_only_false(self):
         # A builder can optionally return the more general
         # build farm job objects.
-
-        # Until we have different IBuildFarmJob types implemented, we
-        # can only test this by creating a lone IBuildFarmJob of a
-        # different type.
         from lp.buildmaster.interfaces.buildfarmjob import IBuildFarmJobSource
-        build_farm_job = getUtility(IBuildFarmJobSource).new(
-            job_type=BuildFarmJobType.RECIPEBRANCHBUILD, virtualized=True,
-            status=BuildStatus.BUILDING)
-        removeSecurityProxy(build_farm_job).builder = self.context
+        getUtility(IBuildFarmJobSource).new(
+            job_type=BuildFarmJobType.RECIPEBRANCHBUILD,
+            status=BuildStatus.BUILDING, builder=self.context)
 
         builds = self.context.getBuildRecords(binary_only=True)
         binary_only_count = builds.count()
@@ -258,10 +227,10 @@ class TestBuilderHasBuildRecords(TestHasBuildRecordsInterface):
 
     def test_incompatible_arguments(self):
         # binary_only=False is incompatible with arch_tag and name.
-        self.failUnlessRaises(
+        self.assertRaises(
             IncompatibleArguments, self.context.getBuildRecords,
             binary_only=False, arch_tag="anything")
-        self.failUnlessRaises(
+        self.assertRaises(
             IncompatibleArguments, self.context.getBuildRecords,
             binary_only=False, name="anything")
 
@@ -287,24 +256,20 @@ class TestSourcePackageHasBuildRecords(TestHasBuildRecordsInterface):
 
         # Set them as sucessfully built
         for build in self.builds:
-            build.status = BuildStatus.FULLYBUILT
-            build.buildqueue_record.destroySelf()
-            removeSecurityProxy(build).date_created = (
-                self.factory.getUniqueDate())
-            build.date_started = datetime.now(pytz.UTC)
-            build.date_finished = build.date_started + timedelta(minutes=5)
+            build.updateStatus(BuildStatus.BUILDING)
+            build.updateStatus(BuildStatus.FULLYBUILT)
 
     def test_get_build_records(self):
         # We can fetch builds records from a SourcePackage.
         builds = self.context.getBuildRecords(
             build_state=BuildStatus.FULLYBUILT).count()
-        self.assertEquals(3, builds)
+        self.assertEqual(3, builds)
         builds = self.context.getBuildRecords(
             pocket=PackagePublishingPocket.RELEASE).count()
-        self.assertEquals(3, builds)
+        self.assertEqual(2, builds)
         builds = self.context.getBuildRecords(
             pocket=PackagePublishingPocket.UPDATES).count()
-        self.assertEquals(0, builds)
+        self.assertEqual(0, builds)
 
     def test_ordering_date(self):
         # Build records returned are ordered by creation date.
@@ -328,7 +293,7 @@ class TestSourcePackageHasBuildRecords(TestHasBuildRecordsInterface):
         build1.buildqueue_record.lastscore = 10
         build2.buildqueue_record.lastscore = 1000
         builds = list(source_package.getBuildRecords())
-        self.assertEquals([build2, build1], builds)
+        self.assertEqual([build2, build1], builds)
 
     def test_copy_archive_without_leak(self):
         # If source publications are copied to a .COPY archive, they don't
@@ -337,18 +302,16 @@ class TestSourcePackageHasBuildRecords(TestHasBuildRecordsInterface):
         # Set up a distroseries and related bits, so we can create builds.
         source_name = self.factory.getUniqueString()
         spn = self.factory.makeSourcePackageName(name=source_name)
-        pf = self.factory.makeProcessorFamily()
-        pf_proc = pf.addProcessor(self.factory.getUniqueString(), '', '')
+        processor = self.factory.makeProcessor(supports_virtualized=True)
         distroseries = self.factory.makeDistroSeries()
         das = self.factory.makeDistroArchSeries(
-            distroseries=distroseries, processorfamily=pf,
-            supports_virtualized=True)
+            distroseries=distroseries, processor=processor)
         with person_logged_in(admin):
             publisher = SoyuzTestPublisher()
             publisher.prepareBreezyAutotest()
             publisher.addFakeChroots(distroseries=distroseries)
             distroseries.nominatedarchindep = das
-            self.factory.makeBuilder(processor=pf_proc)
+            self.factory.makeBuilder(processors=[processor])
         spph = self.factory.makeSourcePackagePublishingHistory(
             sourcepackagename=spn, distroseries=distroseries)
         spph.createMissingBuilds()
@@ -361,8 +324,8 @@ class TestSourcePackageHasBuildRecords(TestHasBuildRecordsInterface):
             distroseries, PackagePublishingPocket.RELEASE, copy)
         [copy_build] = copy_spph.createMissingBuilds()
         builds = copy.getBuildRecords()
-        self.assertEquals([copy_build], list(builds))
+        self.assertEqual([copy_build], list(builds))
         source = SourcePackage(spn, spph.distroseries)
         # SourcePackage.getBuildRecords() doesn't have two build records.
         builds = source.getBuildRecords().count()
-        self.assertEquals(1, builds)
+        self.assertEqual(1, builds)

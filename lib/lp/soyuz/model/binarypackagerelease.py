@@ -1,8 +1,6 @@
 # Copyright 2009-2012 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-# pylint: disable-msg=E0611,W0212
-
 __metaclass__ = type
 __all__ = [
     'BinaryPackageRelease',
@@ -24,7 +22,7 @@ from storm.locals import (
     Store,
     Storm,
     )
-from zope.interface import implements
+from zope.interface import implementer
 
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.datetimecol import UtcDateTimeCol
@@ -46,8 +44,8 @@ from lp.soyuz.interfaces.binarypackagerelease import (
 from lp.soyuz.model.files import BinaryPackageFile
 
 
+@implementer(IBinaryPackageRelease)
 class BinaryPackageRelease(SQLBase):
-    implements(IBinaryPackageRelease)
     _table = 'BinaryPackageRelease'
     binarypackagename = ForeignKey(dbName='binarypackagename', notNull=True,
                                    foreignKey='BinaryPackageName')
@@ -109,40 +107,9 @@ class BinaryPackageRelease(SQLBase):
         return self.binarypackagename.name
 
     @property
-    def distributionsourcepackagerelease(self):
-        """See `IBinaryPackageRelease`."""
-        # import here to avoid circular import problems
-        from lp.soyuz.model.distributionsourcepackagerelease \
-            import DistributionSourcePackageRelease
-        return DistributionSourcePackageRelease(
-            distribution=self.build.distribution,
-            sourcepackagerelease=self.build.source_package_release)
-
-    @property
     def sourcepackagename(self):
         """See `IBinaryPackageRelease`."""
         return self.build.source_package_release.sourcepackagename.name
-
-    @property
-    def is_new(self):
-        """See `IBinaryPackageRelease`."""
-        distroarchseries = self.build.distro_arch_series
-        distroarchseries_binary_package = distroarchseries.getBinaryPackage(
-            self.binarypackagename)
-        return distroarchseries_binary_package.currentrelease is None
-
-    @property
-    def properties(self):
-        """See `IBinaryPackageRelease`."""
-        return {
-            "name": self.name,
-            "version": self.version,
-            "is_new": self.is_new,
-            "architecture": self.build.arch_tag,
-            "component": self.component.name,
-            "section": self.section.name,
-            "priority": self.priority.name,
-            }
 
     @cachedproperty
     def files(self):
@@ -179,10 +146,10 @@ class BinaryPackageRelease(SQLBase):
             self.priority = priority
 
 
+@implementer(IBinaryPackageReleaseDownloadCount)
 class BinaryPackageReleaseDownloadCount(Storm):
     """See `IBinaryPackageReleaseDownloadCount`."""
 
-    implements(IBinaryPackageReleaseDownloadCount)
     __storm_table__ = 'BinaryPackageReleaseDownloadCount'
 
     id = Int(primary=True)
@@ -214,3 +181,11 @@ class BinaryPackageReleaseDownloadCount(Storm):
     def binary_package_version(self):
         """See `IBinaryPackageReleaseDownloadCount`."""
         return self.binary_package_release.version
+
+    @property
+    def country_code(self):
+        """See `IBinaryPackageReleaseDownloadCount`."""
+        if self.country is not None:
+            return self.country.iso3166code2
+        else:
+            return "unknown"

@@ -1,7 +1,5 @@
-# Copyright 2009-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
-
-# pylint: disable-msg=E0611,W0212
 
 __metaclass__ = type
 __all__ = [
@@ -20,7 +18,6 @@ from lazr.lifecycle.event import ObjectModifiedEvent
 from lazr.lifecycle.snapshot import Snapshot
 from lazr.uri import find_uris_in_text
 from pytz import utc
-# SQL imports
 from sqlobject import (
     ForeignKey,
     SQLObjectNotFound,
@@ -39,7 +36,7 @@ from storm.store import Store
 from zope.component import getUtility
 from zope.event import notify
 from zope.interface import (
-    implements,
+    implementer,
     providedBy,
     )
 
@@ -61,14 +58,13 @@ from lp.bugs.interfaces.bugwatch import (
     UnrecognizedBugTrackerURL,
     )
 from lp.bugs.model.bugmessage import BugMessage
-from lp.bugs.model.bugset import BugSetBase
 from lp.bugs.model.bugtask import BugTask
 from lp.registry.interfaces.person import validate_public_person
 from lp.services.database import bulk
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.enumcol import EnumCol
-from lp.services.database.lpstorm import IStore
+from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import SQLBase
 from lp.services.database.stormbase import StormBase
 from lp.services.helpers import (
@@ -85,6 +81,8 @@ from lp.services.webapp import (
 BUG_TRACKER_URL_FORMATS = {
     BugTrackerType.BUGZILLA: 'show_bug.cgi?id=%s',
     BugTrackerType.DEBBUGS: 'cgi-bin/bugreport.cgi?bug=%s',
+    BugTrackerType.GITHUB: '%s',
+    BugTrackerType.GITLAB: '%s',
     BugTrackerType.GOOGLE_CODE: 'detail?id=%s',
     BugTrackerType.MANTIS: 'view.php?id=%s',
     BugTrackerType.ROUNDUP: 'issue%s',
@@ -121,9 +119,9 @@ class BugWatchDeletionError(Exception):
     """Raised when someone attempts to delete a linked watch."""
 
 
+@implementer(IBugWatch)
 class BugWatch(SQLBase):
     """See `IBugWatch`."""
-    implements(IBugWatch)
     _table = 'BugWatch'
     bug = ForeignKey(dbName='bug', foreignKey='Bug', notNull=True)
     bugtracker = ForeignKey(dbName='bugtracker',
@@ -286,19 +284,14 @@ class BugWatch(SQLBase):
             remote_comment_id=comment_id)
         return bug_message
 
+    def getBugMessages(self, clauses=[]):
+        return Store.of(self).find(
+            BugMessage, BugMessage.bug == self.bug.id,
+            BugMessage.bugwatch == self.id, *clauses)
+
     def getImportedBugMessages(self):
         """See `IBugWatch`."""
-        store = Store.of(self)
-        # If a comment is linked to a bug watch and has a
-        # remote_comment_id, it means it's imported.
-        # XXX gmb 2008-12-09 bug 244768:
-        #     The Not() needs to be in this find() call due to bug
-        #     244768; we should remove it once that is solved.
-        return store.find(
-            BugMessage,
-            BugMessage.bug == self.bug.id,
-            BugMessage.bugwatch == self.id,
-            Not(BugMessage.remote_comment_id == None))
+        return self.getBugMessages([BugMessage.remote_comment_id != None])
 
     def addActivity(self, result=None, message=None, oops_id=None):
         """See `IBugWatch`."""
@@ -388,19 +381,17 @@ class BugWatch(SQLBase):
         self.remotestatus = None
 
 
-class BugWatchSet(BugSetBase):
+@implementer(IBugWatchSet)
+class BugWatchSet:
     """A set for BugWatch"""
 
-    implements(IBugWatchSet)
-    table = BugWatch
-
     def __init__(self, bug=None):
-        BugSetBase.__init__(self, bug)
-        self.title = 'A set of bug watches'
         self.bugtracker_parse_functions = {
             BugTrackerType.BUGZILLA: self.parseBugzillaURL,
             BugTrackerType.DEBBUGS: self.parseDebbugsURL,
             BugTrackerType.EMAILADDRESS: self.parseEmailAddressURL,
+            BugTrackerType.GITHUB: self.parseGitHubURL,
+            BugTrackerType.GITLAB: self.parseGitLabURL,
             BugTrackerType.GOOGLE_CODE: self.parseGoogleCodeURL,
             BugTrackerType.MANTIS: self.parseMantisURL,
             BugTrackerType.PHPPROJECT: self.parsePHPProjectURL,
@@ -495,6 +486,8 @@ class BugWatchSet(BugSetBase):
             remote_bug = query['issue']
         else:
             return None
+        if remote_bug is None or not remote_bug.isdigit():
+            return None
         base_path = path[:-len(bug_page)]
         base_url = urlunsplit((scheme, host, base_path, '', ''))
         return base_url, remote_bug
@@ -504,9 +497,8 @@ class BugWatchSet(BugSetBase):
         bug_page = 'view.php'
         if not path.endswith(bug_page):
             return None
-        if query.get('id'):
-            remote_bug = query['id']
-        else:
+        remote_bug = query.get('id')
+        if remote_bug is None or not remote_bug.isdigit():
             return None
         base_path = path[:-len(bug_page)]
         base_url = urlunsplit((scheme, host, base_path, '', ''))
@@ -539,7 +531,7 @@ class BugWatchSet(BugSetBase):
 
     def parseRoundupURL(self, scheme, host, path, query):
         """Extract the RoundUp base URL and bug ID."""
-        match = re.match(r'(.*/)issue(\d+)', path)
+        match = re.match(r'(.*/)issue(\d+)$', path)
         if not match:
             return None
         base_path = match.group(1)
@@ -569,13 +561,15 @@ class BugWatchSet(BugSetBase):
 
         base_path = match.group(1)
         remote_bug = query['id']
+        if remote_bug is None or not remote_bug.isdigit():
+            return None
 
         base_url = urlunsplit((scheme, host, base_path, '', ''))
         return base_url, remote_bug
 
     def parseTracURL(self, scheme, host, path, query):
         """Extract the Trac base URL and bug ID."""
-        match = re.match(r'(.*/)ticket/(\d+)', path)
+        match = re.match(r'(.*/)ticket/(\d+)$', path)
         if not match:
             return None
         base_path = match.group(1)
@@ -605,6 +599,8 @@ class BugWatchSet(BugSetBase):
             return None
 
         remote_bug = query['aid']
+        if remote_bug is None or not remote_bug.isdigit():
+            return None
 
         # There's only one global SF instance registered in Launchpad,
         # so we return that if the hostnames match.
@@ -619,12 +615,20 @@ class BugWatchSet(BugSetBase):
 
     def parseSavaneURL(self, scheme, host, path, query):
         """Extract Savane base URL and bug ID."""
-        # Savane bugs URLs are in the form /bugs/?<bug-id>, so we
-        # exclude any path that isn't '/bugs/'. We also exclude query
-        # string that have a length of more or less than one, since in
-        # such cases we'd be taking a guess at the bug ID, which would
-        # probably be wrong.
-        if path != '/bugs/' or len(query) != 1:
+        # We're only interested in URLs that look like they come from a
+        # Savane bugtracker. We currently accept URL paths /bugs/ or
+        # /bugs/index.php, and accept query strings that are just the bug ID
+        # or that have an item_id parameter containing the bug ID.
+        if path not in ('/bugs/', '/bugs/index.php'):
+            return None
+        if len(query) == 1 and query.values()[0] is None:
+            # The query string is just a bare ID.
+            remote_bug = query.keys()[0]
+        elif 'item_id' in query:
+            remote_bug = query['item_id']
+        else:
+            return None
+        if not remote_bug.isdigit():
             return None
 
         # There's only one global Savannah bugtracker registered with
@@ -633,11 +637,6 @@ class BugWatchSet(BugSetBase):
         savannah_hosts = [
             urlsplit(alias)[1] for alias in savannah_tracker.aliases]
         savannah_hosts.append(urlsplit(savannah_tracker.baseurl)[1])
-
-        # The remote bug is actually a key in the query dict rather than
-        # a value, so we simply use the first and only key we come
-        # across as a best-effort guess.
-        remote_bug = query.popitem()[0]
 
         if host in savannah_hosts:
             return savannah_tracker.baseurl, remote_bug
@@ -669,7 +668,7 @@ class BugWatchSet(BugSetBase):
         if path != '/bug.php' or len(query) != 1:
             return None
         remote_bug = query.get('id')
-        if remote_bug is None:
+        if remote_bug is None or not remote_bug.isdigit():
             return None
         base_url = urlunsplit((scheme, host, '/', '', ''))
         return base_url, remote_bug
@@ -687,11 +686,33 @@ class BugWatchSet(BugSetBase):
             return None
 
         remote_bug = query.get('id')
-        if remote_bug is None:
+        if remote_bug is None or not remote_bug.isdigit():
             return None
 
         tracker_path = path_match.groupdict()['base_path']
         base_url = urlunsplit((scheme, host, tracker_path, '', ''))
+        return base_url, remote_bug
+
+    def parseGitHubURL(self, scheme, host, path, query):
+        """Extract a GitHub Issues base URL and bug ID."""
+        if host != 'github.com':
+            return None
+        match = re.match(r'(.*/issues)/(\d+)$', path)
+        if not match:
+            return None
+        base_path = match.group(1)
+        remote_bug = match.group(2)
+        base_url = urlunsplit((scheme, host, base_path, '', ''))
+        return base_url, remote_bug
+
+    def parseGitLabURL(self, scheme, host, path, query):
+        """Extract a GitLab Issues base URL and bug ID."""
+        match = re.match(r'(.*/issues)/(\d+)$', path)
+        if not match:
+            return None
+        base_path = match.group(1)
+        remote_bug = match.group(2)
+        base_url = urlunsplit((scheme, host, base_path, '', ''))
         return base_url, remote_bug
 
     def extractBugTrackerAndBug(self, url):
@@ -708,9 +729,8 @@ class BugWatchSet(BugSetBase):
             if not bugtracker_data:
                 continue
             base_url, remote_bug = bugtracker_data
-            bugtrackerset = getUtility(IBugTrackerSet)
             # Check whether we have a registered bug tracker already.
-            bugtracker = bugtrackerset.queryByBaseURL(base_url)
+            bugtracker = getUtility(IBugTrackerSet).queryByBaseURL(base_url)
 
             if bugtracker is not None:
                 return bugtracker, remote_bug
@@ -749,10 +769,9 @@ class BugWatchSet(BugSetBase):
              for bug_watch_id in set(get_bug_watch_ids(references))])
 
 
+@implementer(IBugWatchActivity)
 class BugWatchActivity(StormBase):
     """See `IBugWatchActivity`."""
-
-    implements(IBugWatchActivity)
 
     __storm_table__ = 'BugWatchActivity'
 

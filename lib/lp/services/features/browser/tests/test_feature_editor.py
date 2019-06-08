@@ -1,4 +1,4 @@
-# Copyright 2010 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2017 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for feature rule editor"""
@@ -7,6 +7,7 @@ __metaclass__ = type
 
 from textwrap import dedent
 
+from fixtures import FakeLogger
 from testtools.matchers import Equals
 from zope.component import getUtility
 from zope.security.interfaces import Unauthorized
@@ -16,6 +17,7 @@ from lp.services.features.browser.edit import FeatureControlView
 from lp.services.features.changelog import ChangeLog
 from lp.services.features.rulesource import StormFeatureRuleSource
 from lp.services.webapp import canonical_url
+from lp.services.webapp.escaping import html_escape
 from lp.services.webapp.interfaces import ILaunchpadRoot
 from lp.testing import (
     BrowserTestCase,
@@ -38,6 +40,10 @@ class TestFeatureControlPage(BrowserTestCase):
 
     layer = DatabaseFunctionalLayer
 
+    def setUp(self):
+        super(TestFeatureControlPage, self).setUp()
+        self.useFixture(FakeLogger())
+
     def getUserBrowserAsTeamMember(self, teams):
         """Make a TestBrowser authenticated as a team member.
 
@@ -51,7 +57,6 @@ class TestFeatureControlPage(BrowserTestCase):
 
     def getUserBrowserAsAdmin(self):
         """Make a new TestBrowser logged in as an admin user."""
-        url = self.getFeatureRulesViewURL()
         admin_team = getUtility(ILaunchpadCelebrities).admin
         return self.getUserBrowserAsTeamMember([admin_team])
 
@@ -81,10 +86,10 @@ class TestFeatureControlPage(BrowserTestCase):
         browser.open(self.getFeatureRulesViewURL())
         textarea = browser.getControl(name="field.feature_rules")
         self.assertThat(
-            textarea.value.replace('\r', ''),
+            textarea.value.replace('\r', '').strip(),
             Equals(
                 "ui.icing\tbeta_user\t300\t4.0\n"
-                "ui.icing\tdefault\t100\t3.0\n"))
+                "ui.icing\tdefault\t100\t3.0"))
 
     def test_feature_rules_anonymous_unauthorized(self):
         browser = self.getUserBrowser()
@@ -218,4 +223,6 @@ class TestFeatureControlPage(BrowserTestCase):
         self.assertThat(
             browser.contents,
             Contains(
-                'Invalid rule syntax: duplicate priority for flag "key": 10'))
+                html_escape(
+                    'Invalid rule syntax: duplicate priority for flag "key": '
+                    '10')))

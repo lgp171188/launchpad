@@ -1,4 +1,4 @@
-# Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2016 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -15,19 +15,16 @@ from datetime import timedelta
 import sys
 import time
 
+from six import reraise
 import transaction
-from zope.component import getUtility
 from zope.interface import (
-    implements,
+    implementer,
     Interface,
     )
 
+from lp.services.database import activity_cols
+from lp.services.database.interfaces import IMasterStore
 import lp.services.scripts
-from lp.services.webapp.interfaces import (
-    IStoreSelector,
-    MAIN_STORE,
-    MASTER_FLAVOR,
-    )
 
 
 class ITunableLoop(Interface):
@@ -167,7 +164,7 @@ class LoopTuner:
             while not self.operation.isDone():
 
                 if self._isTimedOut():
-                    self.log.warn(
+                    self.log.info(
                         "Task aborted after %d seconds.", self.abort_time)
                     break
 
@@ -219,7 +216,7 @@ class LoopTuner:
                 # failure, so log it.
                 self.log.exception("Unhandled exception in cleanUp")
             # Reraise the original exception.
-            raise exc_info[0], exc_info[1], exc_info[2]
+            reraise(exc_info[0], exc_info[1], tb=exc_info[2])
         else:
             cleanup()
 
@@ -288,7 +285,8 @@ class DBLoopTuner(LoopTuner):
     def _blockWhenLagged(self):
         """When database replication lag is high, block until it drops."""
         # Lag is most meaningful on the master.
-        store = getUtility(IStoreSelector).get(MAIN_STORE, MASTER_FLAVOR)
+        from lp.services.librarian.model import LibraryFileAlias
+        store = IMasterStore(LibraryFileAlias)
         msg_counter = 0
         while not self._isTimedOut():
             lag = store.execute("SELECT replication_lag()").get_one()[0]
@@ -311,21 +309,23 @@ class DBLoopTuner(LoopTuner):
         bloat worse."""
         if self.long_running_transaction is None:
             return
-        store = getUtility(IStoreSelector).get(MAIN_STORE, MASTER_FLAVOR)
+        from lp.services.librarian.model import LibraryFileAlias
+        store = IMasterStore(LibraryFileAlias)
         msg_counter = 0
         while not self._isTimedOut():
-            results = list(store.execute("""
+            results = list(store.execute(("""
                 SELECT
                     CURRENT_TIMESTAMP - xact_start,
-                    procpid,
+                    %(pid)s,
                     usename,
                     datname,
-                    current_query
+                    %(query)s
                 FROM activity()
-                WHERE xact_start < CURRENT_TIMESTAMP - interval '%f seconds'
+                WHERE xact_start < CURRENT_TIMESTAMP - interval '%%f seconds'
                     AND datname = current_database()
                 ORDER BY xact_start LIMIT 4
-                """ % self.long_running_transaction).get_all())
+                """ % activity_cols(store))
+                % self.long_running_transaction).get_all())
             if not results:
                 break
 
@@ -333,10 +333,10 @@ class DBLoopTuner(LoopTuner):
             # only report every 10 minutes to avoid log spam.
             msg_counter += 1
             if msg_counter % 60 == 1:
-                for runtime, procpid, usename, datname, query in results:
+                for runtime, pid, usename, datname, query in results:
                     self.log.info(
                         "Blocked on %s old xact %s@%s/%d - %s.",
-                        runtime, usename, datname, procpid, query)
+                        runtime, usename, datname, pid, query)
                 self.log.info("Sleeping for up to 10 minutes.")
             # Don't become a long running transaction!
             transaction.abort()
@@ -355,9 +355,14 @@ class DBLoopTuner(LoopTuner):
         return self._time()
 
 
+@implementer(ITunableLoop)
 class TunableLoop:
     """A base implementation of `ITunableLoop`."""
-    implements(ITunableLoop)
+
+    # DBLoopTuner blocks on replication lag and long transactions. If a
+    # subclass wants to ignore them, it can override this to be a normal
+    # LoopTuner.
+    tuner_class = DBLoopTuner
 
     goal_seconds = 2
     minimum_chunk_size = 1
@@ -375,7 +380,7 @@ class TunableLoop:
     def run(self):
         assert self.maximum_chunk_size is not None, (
             "Did not override maximum_chunk_size.")
-        DBLoopTuner(
+        self.tuner_class(
             self, self.goal_seconds,
             minimum_chunk_size=self.minimum_chunk_size,
             maximum_chunk_size=self.maximum_chunk_size,

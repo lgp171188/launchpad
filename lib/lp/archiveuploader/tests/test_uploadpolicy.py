@@ -1,7 +1,9 @@
 #!/usr/bin/python
 #
-# Copyright 2010-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
+
+from __future__ import absolute_import, print_function, unicode_literals
 
 from zope.component import getUtility
 from zope.component.interfaces import ComponentLookupError
@@ -16,10 +18,12 @@ from lp.archiveuploader.uploadpolicy import (
     InsecureUploadPolicy,
     )
 from lp.registry.interfaces.distribution import IDistributionSet
+from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.registry.interfaces.series import SeriesStatus
 from lp.services.database.sqlbase import flush_database_updates
 from lp.testing import (
     celebrity_logged_in,
+    person_logged_in,
     TestCase,
     TestCaseWithFactory,
     )
@@ -68,7 +72,7 @@ class TestUploadPolicy_validateUploadType(TestCase):
 
         policy.validateUploadType(upload)
 
-        self.assertEquals([], upload.rejections)
+        self.assertEqual([], upload.rejections)
 
     def test_binaryful_accepted(self):
         policy = make_policy(accepted_type=ArchiveUploadType.BINARY_ONLY)
@@ -76,7 +80,7 @@ class TestUploadPolicy_validateUploadType(TestCase):
 
         policy.validateUploadType(upload)
 
-        self.assertEquals([], upload.rejections)
+        self.assertEqual([], upload.rejections)
 
     def test_mixed_accepted(self):
         policy = make_policy(accepted_type=ArchiveUploadType.MIXED_ONLY)
@@ -84,7 +88,7 @@ class TestUploadPolicy_validateUploadType(TestCase):
 
         policy.validateUploadType(upload)
 
-        self.assertEquals([], upload.rejections)
+        self.assertEqual([], upload.rejections)
 
     def test_sourceful_not_accepted(self):
         policy = make_policy(accepted_type=ArchiveUploadType.BINARY_ONLY)
@@ -172,6 +176,8 @@ class TestUploadPolicy(TestCaseWithFactory):
         self.assertTrue(buildd_policy.unsigned_changes_ok)
         self.assertFalse(insecure_policy.unsigned_dsc_ok)
         self.assertTrue(buildd_policy.unsigned_dsc_ok)
+        self.assertTrue(insecure_policy.unsigned_buildinfo_ok)
+        self.assertTrue(buildd_policy.unsigned_buildinfo_ok)
 
     def test_setOptions_distro_name(self):
         # Policies pick up the distribution name from options.
@@ -192,6 +198,48 @@ class TestUploadPolicy(TestCaseWithFactory):
         self.assertRaises(
             NotFoundError, policy.setDistroSeriesAndPocket,
             'nonexistent_security')
+
+    def test_setDistroSeriesAndPocket_honours_aliases(self):
+        # setDistroSeriesAndPocket honours uploads to the development series
+        # alias, if set.
+        policy = AbstractUploadPolicy()
+        policy.distro = self.factory.makeDistribution()
+        series = self.factory.makeDistroSeries(
+            distribution=policy.distro, status=SeriesStatus.DEVELOPMENT)
+        self.assertRaises(
+            NotFoundError, policy.setDistroSeriesAndPocket, "devel")
+        with person_logged_in(policy.distro.owner):
+            policy.distro.development_series_alias = "devel"
+        policy.setDistroSeriesAndPocket("devel")
+        self.assertEqual(series, policy.distroseries)
+
+    def test_redirect_release_uploads_primary(self):
+        # With the insecure policy, the
+        # Distribution.redirect_release_uploads flag causes uploads to the
+        # RELEASE pocket to be automatically redirected to PROPOSED.
+        ubuntu = getUtility(IDistributionSet)["ubuntu"]
+        with celebrity_logged_in("admin"):
+            ubuntu.redirect_release_uploads = True
+        flush_database_updates()
+        insecure_policy = findPolicyByName("insecure")
+        insecure_policy.setOptions(FakeOptions(distroseries="hoary"))
+        self.assertEqual("hoary", insecure_policy.distroseries.name)
+        self.assertEqual(
+            PackagePublishingPocket.PROPOSED, insecure_policy.pocket)
+
+    def test_redirect_release_uploads_ppa(self):
+        # The Distribution.redirect_release_uploads flag does not affect PPA
+        # uploads.
+        ubuntu = getUtility(IDistributionSet)["ubuntu"]
+        with celebrity_logged_in("admin"):
+            ubuntu.redirect_release_uploads = True
+        flush_database_updates()
+        insecure_policy = findPolicyByName("insecure")
+        insecure_policy.archive = self.factory.makeArchive()
+        insecure_policy.setOptions(FakeOptions(distroseries="hoary"))
+        self.assertEqual("hoary", insecure_policy.distroseries.name)
+        self.assertEqual(
+            PackagePublishingPocket.RELEASE, insecure_policy.pocket)
 
     def setHoaryStatus(self, status):
         ubuntu = getUtility(IDistributionSet)["ubuntu"]
@@ -260,11 +308,32 @@ class TestUploadPolicy(TestCaseWithFactory):
         upload.changes = FakeChangesFile(custom_files=[uploadfile])
         self.assertFalse(buildd_policy.autoApprove(upload))
 
+    def test_buildd_does_not_approve_signing(self):
+        # Uploads to the primary archive containing files for signing are
+        # not approved.
+        buildd_policy = findPolicyByName("buildd")
+        uploadfile = CustomUploadFile(
+            "uefi.tar.gz", None, 0, "main/raw-signing", "extra", buildd_policy,
+            None)
+        upload = make_fake_upload(binaryful=True)
+        upload.changes = FakeChangesFile(custom_files=[uploadfile])
+        self.assertFalse(buildd_policy.autoApprove(upload))
+
     def test_buildd_approves_uefi_ppa(self):
         # Uploads to PPAs containing UEFI custom files are auto-approved.
         buildd_policy = findPolicyByName("buildd")
         uploadfile = CustomUploadFile(
             "uefi.tar.gz", None, 0, "main/raw-uefi", "extra", buildd_policy,
+            None)
+        upload = make_fake_upload(binaryful=True, is_ppa=True)
+        upload.changes = FakeChangesFile(custom_files=[uploadfile])
+        self.assertTrue(buildd_policy.autoApprove(upload))
+
+    def test_buildd_approves_signing_ppa(self):
+        # Uploads to PPAs containing UEFI custom files are auto-approved.
+        buildd_policy = findPolicyByName("buildd")
+        uploadfile = CustomUploadFile(
+            "uefi.tar.gz", None, 0, "main/raw-signing", "extra", buildd_policy,
             None)
         upload = make_fake_upload(binaryful=True, is_ppa=True)
         upload.changes = FakeChangesFile(custom_files=[uploadfile])

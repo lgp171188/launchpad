@@ -15,10 +15,8 @@ Distro series sourcepackages can be linked to product series using the
     >>> ubuntu = getUtility(ILaunchpadCelebrities).ubuntu
     >>> hoary = ubuntu.getSeries('hoary')
     >>> sourcepackagename = factory.makeSourcePackageName('hot')
-    >>> sourcepackage = factory.makeSourcePackage(
-    ...     sourcepackagename=sourcepackagename, distroseries=hoary)
-    >>> spph = factory.makeSourcePackagePublishingHistory(
-    ...     sourcepackagename=sourcepackagename, distroseries=hoary)
+    >>> dsp = factory.makeDSPCache(
+    ...     distroseries=hoary, sourcepackagename=sourcepackagename)
     >>> product = factory.makeProduct(name="hot", displayname='Hot')
     >>> productseries = factory.makeProductSeries(
     ...     product=product, name='hotter')
@@ -41,7 +39,7 @@ attribute.
     ['sourcepackagename', 'distroseries']
 
     >>> print view.cancel_url
-    http://launchpad.dev/hot/hotter
+    http://launchpad.test/hot/hotter
 
     >>> for series in ubuntu.series:
     ...     print series.name
@@ -92,7 +90,7 @@ Ubuntu package.
     ['sourcepackagename', 'distroseries']
 
     >>> print view.cancel_url
-    http://launchpad.dev/hot/hotter
+    http://launchpad.test/hot/hotter
 
 The view restricts the packaging to Ubuntu series, and default is the current
 Ubuntu series.
@@ -143,9 +141,8 @@ a history.
 
 The package in the current Ubuntu series can be updated.
 
-    >>> thunderbird_spn = factory.getOrMakeSourcePackageName('thunderbird')
-    >>> spph = factory.makeSourcePackagePublishingHistory(
-    ...     sourcepackagename=thunderbird_spn, distroseries=hoary)
+    >>> dsp = factory.makeDSPCache(
+    ...     distroseries=hoary, sourcepackagename='thunderbird')
 
     >>> form = {
     ...     'field.sourcepackagename': 'thunderbird',
@@ -279,9 +276,9 @@ instead.)
     >>> for link in table.findAll('a'):
     ...     if '+remove-packaging' in link['href']:
     ...         print link['href']
-    http://launchpad.dev/ubuntu/grumpy/+source/hot/+remove-packaging
-    http://launchpad.dev/ubuntu/hoary/+source/thunderbird/+remove-packaging
-    http://launchpad.dev/ubuntu/hoary/+source/hot/+remove-packaging
+    http://launchpad.test/ubuntu/grumpy/+source/hot/+remove-packaging
+    http://launchpad.test/ubuntu/hoary/+source/thunderbird/+remove-packaging
+    http://launchpad.test/ubuntu/hoary/+source/hot/+remove-packaging
 
     >>> [hoary_package] = [
     ...     package for series in view.series_batch.batch

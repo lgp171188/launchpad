@@ -7,7 +7,7 @@ services use Launchpad.
 Unprivileged Launchpad users cannot access the page for changing these
 details.
 
-    >>> user_browser.open('http://launchpad.dev/ubuntu')
+    >>> user_browser.open('http://launchpad.test/ubuntu')
     >>> user_browser.getLink('Change details')
     Traceback (most recent call last):
       ...
@@ -16,18 +16,25 @@ details.
     Traceback (most recent call last):
       ...
     LinkNotFound...
-    >>> user_browser.open('http://launchpad.dev/ubuntu/+edit')
+    >>> user_browser.open('http://launchpad.test/ubuntu/+edit')
     Traceback (most recent call last):
       ...
     Unauthorized...
+
+Create a restricted processor.
+
+    >>> login('admin@canonical.com')
+    >>> ign = factory.makeProcessor(
+    ...     name='arm', restricted=True, build_by_default=False)
+    >>> logout()
 
 The distribution's registrant can access the page and change the usage.
 
     >>> registrant = setupBrowser(
     ...     auth='Basic celso.providelo@canonical.com:test')
-    >>> registrant.open('http://launchpad.dev/ubuntu/+edit')
+    >>> registrant.open('http://launchpad.test/ubuntu/+edit')
     >>> print registrant.url
-    http://launchpad.dev/ubuntu/+edit
+    http://launchpad.test/ubuntu/+edit
 
     >>> print registrant.getControl(name='field.translations_usage').value[0]
     LAUNCHPAD
@@ -41,9 +48,8 @@ The distribution's registrant can access the page and change the usage.
     LAUNCHPAD
     >>> print registrant.getControl(name='field.require_virtualized').value
     False
-    >>> print registrant.getControl(
-    ...     name='field.enabled_restricted_families').value
-    ['arm']
+    >>> print registrant.getControl(name='field.processors').value
+    ['386', 'amd64', 'hppa']
 
     >>> registrant.getControl(name='field.translations_usage').value = [
     ...     'UNKNOWN']
@@ -51,7 +57,7 @@ The distribution's registrant can access the page and change the usage.
 
 Just like Launchpad administrators can.
 
-    >>> admin_browser.open('http://launchpad.dev/ubuntu')
+    >>> admin_browser.open('http://launchpad.test/ubuntu')
     >>> admin_browser.getLink('Change details').click()
     >>> print admin_browser.title
     Change Ubuntu details...
@@ -78,7 +84,7 @@ Just like Launchpad administrators can.
     >>> admin_browser.getControl('Change', index=3).click()
 
     >>> print admin_browser.url
-    http://launchpad.dev/ubuntu
+    http://launchpad.test/ubuntu
 
 Only administators can configure the publisher for the distribution:
 
@@ -95,7 +101,7 @@ Only administators can configure the publisher for the distribution:
     >>> admin_browser.getControl('Save').click()
 
     >>> print admin_browser.url
-    http://launchpad.dev/ubuntu
+    http://launchpad.test/ubuntu
 
 
 enable_bug_expiration and JavaScript
@@ -118,8 +124,8 @@ bug expiration.
 
     >>> content = find_main_content(admin_browser.contents)
 
-Foo Bar chooses to switch the bug tracker again, but this time he
-does not change the expiration check box, and he does the whole
+Foo Bar chooses to switch the bug tracker again, but this time they
+do not change the expiration check box, and they do the whole
 operation before the page complete loading.
 
     >>> admin_browser.getLink('Change details').click()

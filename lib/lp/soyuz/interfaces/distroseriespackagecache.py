@@ -1,8 +1,6 @@
 # Copyright 2009 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-# pylint: disable-msg=E0211,E0213
-
 """Cache of Binary Package in DistroSeries details interfaces."""
 
 __metaclass__ = type
@@ -39,5 +37,3 @@ class IDistroSeriesPackageCache(Interface):
     descriptions = Attribute("A concatenation of the descriptions "
         "of the binary packages from this binary package name in the "
         "distro series.")
-
-

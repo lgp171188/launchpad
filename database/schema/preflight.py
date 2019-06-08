@@ -1,5 +1,5 @@
 #!/usr/bin/python -S
-# Copyright 2011-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2011-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Confirm the database systems are ready to be patched as best we can."""
@@ -18,13 +18,18 @@ from optparse import OptionParser
 import os.path
 import time
 
+import psycopg2
+
+from dbcontroller import (
+    DBController,
+    streaming_sync,
+    )
+from lp.services.database import activity_cols
 from lp.services.database.sqlbase import (
-    connect,
     ISOLATION_LEVEL_AUTOCOMMIT,
     sqlvalues,
     )
 from lp.services.scripts import (
-    db_options,
     logger,
     logger_options,
     )
@@ -32,15 +37,14 @@ from replication.helpers import Node
 import upgrade
 
 # Ignore connections by these users.
-SYSTEM_USERS = frozenset(['postgres', 'slony', 'nagios', 'lagmon'])
+SYSTEM_USERS = set(['postgres', 'slony', 'nagios', 'lagmon'])
 
 # Fail checks if these users are connected. If a process should not be
 # interrupted by a rollout, the database user it connects as should be
 # added here. The preflight check will fail if any of these users are
 # connected, so these systems will need to be shut down manually before
 # a database update.
-FRAGILE_USERS = frozenset([
-    'buildd_manager',
+FRAGILE_USERS = set([
     # process_accepted is fragile, but also fast so we likely shouldn't
     # need to ever manually shut it down.
     'process_accepted',
@@ -52,7 +56,7 @@ FRAGILE_USERS = frozenset([
 # If these users have long running transactions, just kill 'em. Entries
 # added here must come with a bug number, a if part of Launchpad holds
 # open a long running transaction it is a bug we need to fix.
-BAD_USERS = frozenset([
+BAD_USERS = set([
     'karma',  # Bug #863109
     'rosettaadmin',  # Bug #863122
     'update-pkg-cache',  # Bug #912144
@@ -68,18 +72,21 @@ MAX_LAG = timedelta(seconds=60)
 
 
 class DatabasePreflight:
-    def __init__(self, log, standbys):
-        master_con = connect(isolation=ISOLATION_LEVEL_AUTOCOMMIT)
+    def __init__(self, log, controller, replication_paused=False):
+        master_con = psycopg2.connect(str(controller.master))
+        master_con.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
 
         self.log = log
+        self.replication_paused = replication_paused
+
         node = Node(None, None, None, True)
         node.con = master_con
         self.nodes = set([node])
         self.lpmain_nodes = self.nodes
         self.lpmain_master_node = node
 
-        # Add streaming replication standbys, which unfortunately cannot be
-        # detected reliably and has to be passed in via the command line.
+        # Add streaming replication standbys.
+        standbys = set(controller.slaves.values())
         self._num_standbys = len(standbys)
         for standby in standbys:
             standby_node = Node(None, None, standby, False)
@@ -101,7 +108,7 @@ class DatabasePreflight:
                 % (required_standbys, self._num_standbys))
             return False
         else:
-            self.log.info(
+            self.log.debug(
                 "%d streaming standby servers streaming", required_standbys)
             return True
 
@@ -140,9 +147,9 @@ class DatabasePreflight:
                 FROM pg_stat_activity
                 WHERE
                     datname=current_database()
-                    AND procpid <> pg_backend_pid()
+                    AND %(pid)s <> pg_backend_pid()
                 GROUP BY datname, usename
-                """)
+                """ % activity_cols(cur))
             for datname, usename, num_connections in cur.fetchall():
                 if usename in SYSTEM_USERS:
                     self.log.debug(
@@ -166,22 +173,23 @@ class DatabasePreflight:
         success = True
         for node in self.lpmain_nodes:
             cur = node.con.cursor()
-            cur.execute("""
+            cur.execute(("""
                 SELECT datname, usename, COUNT(*) AS num_connections
                 FROM pg_stat_activity
                 WHERE
                     datname=current_database()
-                    AND procpid <> pg_backend_pid()
-                    AND usename IN %s
+                    AND %(pid)s <> pg_backend_pid()
+                    AND usename IN %%s
                 GROUP BY datname, usename
-                """ % sqlvalues(FRAGILE_USERS))
+                """ % activity_cols(cur))
+                % sqlvalues(FRAGILE_USERS))
             for datname, usename, num_connections in cur.fetchall():
                 self.log.fatal(
                     "Fragile system %s running. %s has %d connections.",
                     usename, datname, num_connections)
                 success = False
         if success:
-            self.log.info(
+            self.log.debug(
                 "No fragile systems connected to the cluster (%s)"
                 % ', '.join(FRAGILE_USERS))
         return success
@@ -204,13 +212,13 @@ class DatabasePreflight:
             cur.execute("""
                 SELECT
                     datname, usename,
-                    age(current_timestamp, xact_start) AS age, current_query
+                    age(current_timestamp, xact_start) AS age
                 FROM pg_stat_activity
                 WHERE
                     age(current_timestamp, xact_start) > interval '%d secs'
                     AND datname=current_database()
                 """ % max_secs)
-            for datname, usename, age, current_query in cur.fetchall():
+            for datname, usename, age in cur.fetchall():
                 if usename in BAD_USERS:
                     self.log.info(
                         "%s has transactions by %s open %s (ignoring)",
@@ -221,7 +229,7 @@ class DatabasePreflight:
                         datname, usename, age)
                     success = False
         if success:
-            self.log.info("No long running transactions detected.")
+            self.log.debug("No long running transactions detected.")
         return success
 
     def check_replication_lag(self):
@@ -248,7 +256,7 @@ class DatabasePreflight:
                     max_lag = max(max_lag, lag)
             if max_lag < MAX_LAG:
                 break
-            time.sleep(0.2)
+            time.sleep(0.1)
 
         if max_lag < timedelta(0):
             streaming_lagged = False
@@ -300,9 +308,9 @@ class DatabasePreflight:
         success = True
         if not self.check_standby_count():
             success = False
-        if not self.check_replication_lag():
+        if not self.replication_paused and not self.check_replication_lag():
             success = False
-        if not self.check_can_sync():
+        if not self.replication_paused and not self.check_can_sync():
             success = False
         # Do checks on open transactions last to minimize race
         # conditions.
@@ -324,42 +332,49 @@ class KillConnectionsPreflight(DatabasePreflight):
     def check_open_connections(self):
         """Kill all non-system connections to Launchpad databases.
 
-        We only check on subscribed nodes, as there will be active systems
-        connected to other nodes in the replication cluster (such as the
-        SSO servers).
+        If replication is paused, only connections on the master database
+        are killed.
 
         System users are defined by SYSTEM_USERS.
         """
         # We keep trying to terminate connections every 0.5 seconds for
         # up to 10 seconds.
         num_tries = 20
-        seconds_to_pause = 0.5
+        seconds_to_pause = 0.1
+        if self.replication_paused:
+            nodes = set([self.lpmain_master_node])
+        else:
+            nodes = self.lpmain_nodes
+
         for loop_count in range(num_tries):
             all_clear = True
-            for node in self.lpmain_nodes:
+            for node in nodes:
                 cur = node.con.cursor()
-                cur.execute("""
+                cur.execute(("""
                     SELECT
-                        procpid, datname, usename,
-                        pg_terminate_backend(procpid)
+                        %(pid)s, datname, usename,
+                        pg_terminate_backend(%(pid)s)
                     FROM pg_stat_activity
                     WHERE
                         datname=current_database()
-                        AND procpid <> pg_backend_pid()
-                        AND usename NOT IN %s
-                    """ % sqlvalues(SYSTEM_USERS))
-                for procpid, datname, usename, ignored in cur.fetchall():
+                        AND %(pid)s <> pg_backend_pid()
+                        AND usename NOT IN %%s
+                    """ % activity_cols(cur))
+                    % sqlvalues(SYSTEM_USERS))
+                for pid, datname, usename, ignored in cur.fetchall():
                     all_clear = False
                     if loop_count == num_tries - 1:
                         self.log.fatal(
-                            "Unable to kill %s [%s] on %s",
-                            usename, procpid, datname)
+                            "Unable to kill %s [%s] on %s.",
+                            usename, pid, datname)
                     elif usename in BAD_USERS:
                         self.log.info(
-                            "Killed %s [%s] on %s", usename, procpid, datname)
+                            "Killed %s [%s] on %s.",
+                            usename, pid, datname)
                     else:
                         self.log.warning(
-                            "Killed %s [%s] on %s", usename, procpid, datname)
+                            "Killed %s [%s] on %s.",
+                            usename, pid, datname)
             if all_clear:
                 break
 
@@ -369,35 +384,8 @@ class KillConnectionsPreflight(DatabasePreflight):
         return all_clear
 
 
-def streaming_sync(con, timeout=None):
-    """Wait for streaming replicas to synchronize with master as of now.
-
-    :param timeout: seconds to wait, None for no timeout.
-
-    :returns: True if sync happened or no streaming replicas
-              False if the timeout was passed.
-    """
-    cur = con.cursor()
-
-    # Force a WAL switch, returning the current position.
-    cur.execute('SELECT pg_switch_xlog()')
-    wal_point = cur.fetchone()[0]
-    start_time = time.time()
-    while timeout is None or time.time() < start_time + timeout:
-        cur.execute("""
-            SELECT FALSE FROM pg_stat_replication
-            WHERE replay_location < %s LIMIT 1
-            """, (wal_point,))
-        if cur.fetchone() is None:
-            # All slaves, possibly 0, are in sync.
-            return True
-        time.sleep(0.2)
-    return False
-
-
 def main():
     parser = OptionParser()
-    db_options(parser)
     logger_options(parser)
     parser.add_option(
         "--skip-connection-check", dest='skip_connection_check',
@@ -408,9 +396,17 @@ def main():
         default=False, action="store_true",
         help="Kill non-system connections instead of reporting an error.")
     parser.add_option(
-        '--standby', dest='standbys', default=[], action="append",
+        '--pgbouncer', dest='pgbouncer',
+        default='host=localhost port=6432 user=pgbouncer',
         metavar='CONN_STR',
-        help="libpq connection string to a hot standby database")
+        help="libpq connection string to administer pgbouncer")
+    parser.add_option(
+        '--dbname', dest='dbname', default='launchpad_prod', metavar='DBNAME',
+        help='Database name we are updating.')
+    parser.add_option(
+        '--dbuser', dest='dbuser', default='postgres', metavar='USERNAME',
+        help='Connect as USERNAME to databases')
+
     (options, args) = parser.parse_args()
     if args:
         parser.error("Too many arguments")
@@ -421,12 +417,15 @@ def main():
 
     log = logger(options)
 
+    controller = DBController(
+        log, options.pgbouncer, options.dbname, options.dbuser)
+
     if options.kill_connections:
-        preflight_check = KillConnectionsPreflight(log, options.standbys)
+        preflight_check = KillConnectionsPreflight(log, controller)
     elif options.skip_connection_check:
-        preflight_check = NoConnectionCheckPreflight(log, options.standbys)
+        preflight_check = NoConnectionCheckPreflight(log, controller)
     else:
-        preflight_check = DatabasePreflight(log, options.standbys)
+        preflight_check = DatabasePreflight(log, controller)
 
     if preflight_check.check_all():
         log.info('Preflight check succeeded. Good to go.')

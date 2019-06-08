@@ -1,4 +1,4 @@
-# Copyright 2009-2010 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2013 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """tales.py doctests."""
@@ -28,6 +28,7 @@ from lp.app.browser.tales import (
 from lp.registry.interfaces.irc import IIrcIDSet
 from lp.registry.interfaces.person import PersonVisibility
 from lp.services.webapp.authorization import (
+    check_permission,
     clear_cache,
     precache_permission_for_objects,
     )
@@ -60,7 +61,7 @@ def test_requestapi():
     >>> class FakeApplicationRequest:
     ...    principal = FakePrincipal()
     ...    def getURL(self):
-    ...        return 'http://launchpad.dev/'
+    ...        return 'http://launchpad.test/'
     ...
 
     Let's make a fake request, where request.principal is a FakePrincipal
@@ -236,7 +237,7 @@ class TestTeamFormatterAPI(TestCaseWithFactory):
 
     def test_can_view_icon(self):
         self._test_can_view_attribute(
-            'icon', '<span class="sprite team"></span>')
+            'icon', '<span class="sprite team private"></span>')
 
 
 class TestObjectFormatterAPI(TestCaseWithFactory):
@@ -295,8 +296,8 @@ class TestFormattersAPI(TestCaseWithFactory):
         'http://www.searchtools.com/test/urls/!exclamation.html\n'
         'http://www.searchtools.com/test/urls/~tilde.html\n'
         'http://www.searchtools.com/test/urls/*asterisk.html\n'
-        'irc://irc.freenode.net/launchpad\n'
-        'irc://irc.freenode.net/%23launchpad,isserver\n'
+        'irc://chat.freenode.net/launchpad\n'
+        'irc://chat.freenode.net/%23launchpad,isserver\n'
         'mailto:noreply@launchpad.net\n'
         'jabber:noreply@launchpad.net\n'
         'http://localhost/foo?xxx&\n'
@@ -362,7 +363,7 @@ class TestNoneFormatterAPI(TestCaseWithFactory):
         # Traversal of invalid names raises an exception.
         adapter = getAdapter(None, IPathAdapter, 'fmt')
         traverse = getattr(adapter, 'traverse', None)
-        self.failUnlessRaises(TraversalError, traverse, "foo", [])
+        self.assertRaises(TraversalError, traverse, "foo", [])
 
     def test_shorten_traversal(self):
         # Traversal of 'shorten' works as expected.
@@ -394,7 +395,7 @@ class TestIRCNicknameFormatterAPI(TestCaseWithFactory):
         ircID = ircset.new(person, "<b>irc.canonical.com</b>", "fred")
         expected_html = test_tales(
             'nick/fmt:formatted_displayname', nick=ircID)
-        self.assertEquals(
+        self.assertEqual(
             u'<strong>fred</strong>\n'
             '<span class="lesser"> on </span>\n'
             '<strong>&lt;b&gt;irc.canonical.com&lt;/b&gt;</strong>\n',
@@ -474,3 +475,36 @@ class TestDateTimeFormatterAPI(TestCase):
         """Values in seconds are reported as "less than a minute."""
         self.assertEqual('less than a minute',
             self.getDurationsince(timedelta(0, 59)))
+
+
+class TestPackageBuildFormatterAPI(TestCaseWithFactory):
+    """Tests for PackageBuildFormatterAPI."""
+
+    layer = LaunchpadFunctionalLayer
+
+    def _make_public_build_for_private_team(self):
+        spph = self.factory.makeSourcePackagePublishingHistory()
+        team_owner = self.factory.makePerson()
+        private_team = self.factory.makeTeam(
+            owner=team_owner, visibility=PersonVisibility.PRIVATE)
+        p3a = self.factory.makeArchive(owner=private_team, private=True)
+        build = self.factory.makeBinaryPackageBuild(
+            source_package_release=spph.sourcepackagerelease, archive=p3a)
+        return build, p3a, team_owner
+
+    def test_public_build_private_team_no_permission(self):
+        # A `PackageBuild` for a public `SourcePackageRelease` in an archive
+        # for a private team is rendered gracefully when the user has no
+        # permission.
+        build, _, _ = self._make_public_build_for_private_team()
+        # Make sure this is a valid test; the build itself must be public.
+        self.assertTrue(check_permission('launchpad.View', build))
+        self.assertEqual('private job', format_link(build))
+
+    def test_public_build_private_team_with_permission(self):
+        # Members of a private team can see their builds.
+        build, p3a, team_owner = self._make_public_build_for_private_team()
+        login_person(team_owner)
+        self.assertIn(
+            "[~%s/%s/%s]" % (p3a.owner.name, p3a.distribution.name, p3a.name),
+            format_link(build))

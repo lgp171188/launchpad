@@ -110,31 +110,15 @@ The search does a case-insensitive, substring match.
      ('linux-source-2.6.15', u'linux-source-2.6.15')]
 
 
-BinaryPackageNameVocabulary
-...........................
-
-All the binary packages in Launchpad.
-
-    >>> bpn_vocabulary = vocabulary_registry.get(None, 'BinaryPackageName')
-    >>> len(bpn_vocabulary)
-    8
-
-    >>> bpn_terms = bpn_vocabulary.searchForTerms("mozilla")
-    >>> len(bpn_terms)
-    2
-    >>> [(term.token, term.title) for term in bpn_terms]
-    [('mozilla-firefox', u'iceweasel huh ?'),
-     ('mozilla-firefox-data', u'Mozilla Firefox Data is .....')]
-
-
 SourcePackageNameVocabulary
 ...........................
 
-All the source packages in Launchpad.
+All the source packages in Launchpad that are published in public archives
+of any distribution.
 
     >>> spn_vocabulary = vocabulary_registry.get(None, 'SourcePackageName')
     >>> len(spn_vocabulary)
-    17
+    10
 
     >>> spn_terms = spn_vocabulary.searchForTerms("mozilla")
     >>> len(spn_terms)
@@ -168,14 +152,14 @@ PPA
 The PPA vocabulary contains all the PPAs available in a particular
 collection. It provides the IHugeVocabulary interface.
 
-    >>> from lp.services.webapp.testing import verifyObject
+    >>> from lp.testing import verifyObject
     >>> from lp.services.webapp.vocabulary import IHugeVocabulary
 
     >>> vocabulary = get_naked_vocab(None, 'PPA')
     >>> verifyObject(IHugeVocabulary, vocabulary)
     True
 
-    >>> print vocabulary.displayname
+    >>> print(vocabulary.displayname)
     Select a PPA
 
 Iterations over the PPA vocabulary will return on PPA archives.
@@ -189,15 +173,15 @@ PPA vocabulary terms contain:
  * value: the IArchive object;
  * title: the first line of the PPA description text.
 
-    >>> cprov_term = vocabulary.getTermByToken('cprov/ppa')
+    >>> cprov_term = vocabulary.getTermByToken('~cprov/ubuntu/ppa')
 
-    >>> print cprov_term.token
-    cprov/ppa
+    >>> print(cprov_term.token)
+    ~cprov/ubuntu/ppa
 
-    >>> print cprov_term.value
-    <Archive ...>
+    >>> print(cprov_term.value)
+    <... lp.soyuz.model.archive.Archive instance ...>
 
-    >>> print cprov_term.title
+    >>> print(cprov_term.title)
     packages to help my friends.
 
 Not found terms result in LookupError.
@@ -212,19 +196,19 @@ PPA vocabulary searches consider the owner FTI and the PPA FTI.
     >>> def print_search_results(results):
     ...     for archive in results:
     ...         term = vocabulary.toTerm(archive)
-    ...         print '%s: %s' % (term.token, term.title)
+    ...         print('%s: %s' % (term.token, term.title))
 
-    >>> cprov_search = vocabulary.search('cprov')
+    >>> cprov_search = vocabulary.search(u'cprov')
     >>> print_search_results(cprov_search)
-    cprov/ppa: packages to help my friends.
+    ~cprov/ubuntu/ppa: packages to help my friends.
 
-    >>> celso_search = vocabulary.search('celso')
+    >>> celso_search = vocabulary.search(u'celso')
     >>> print_search_results(celso_search)
-    cprov/ppa: packages to help my friends.
+    ~cprov/ubuntu/ppa: packages to help my friends.
 
-    >>> friends_search = vocabulary.search('friends')
+    >>> friends_search = vocabulary.search(u'friends')
     >>> print_search_results(friends_search)
-    cprov/ppa: packages to help my friends.
+    ~cprov/ubuntu/ppa: packages to help my friends.
 
 We will create an additional PPA for Celso named 'testing'
 
@@ -240,17 +224,30 @@ We will create an additional PPA for Celso named 'testing'
 Now, a search for 'cprov' will return 2 ppas and the result is ordered
 by PPA name.
 
-    >>> cprov_search = vocabulary.search('cprov')
+    >>> cprov_search = vocabulary.search(u'cprov')
     >>> print_search_results(cprov_search)
-    cprov/ppa: packages to help my friends.
-    cprov/testing: testing packages.
+    ~cprov/ubuntu/ppa: packages to help my friends.
+    ~cprov/ubuntu/testing: testing packages.
 
 The vocabulary search also supports specific named PPA lookups
-follwing the same combined syntax used to build unique tokens.
+following the same combined syntax used to build unique tokens, including
+some alternate and older forms.
 
-    >>> named_search = vocabulary.search('cprov/testing')
+    >>> named_search = vocabulary.search(u'~cprov/ubuntu/testing')
     >>> print_search_results(named_search)
-    cprov/testing: testing packages.
+    ~cprov/ubuntu/testing: testing packages.
+
+    >>> named_search = vocabulary.search(u'~cprov/testing')
+    >>> print_search_results(named_search)
+    ~cprov/ubuntu/testing: testing packages.
+
+    >>> named_search = vocabulary.search(u'ppa:cprov/ubuntu/testing')
+    >>> print_search_results(named_search)
+    ~cprov/ubuntu/testing: testing packages.
+
+    >>> named_search = vocabulary.search(u'ppa:cprov/testing')
+    >>> print_search_results(named_search)
+    ~cprov/ubuntu/testing: testing packages.
 
 As mentioned the PPA vocabulary term title only contains the first
 line of the PPA description.
@@ -258,15 +255,15 @@ line of the PPA description.
     >>> cprov.archive.description = "Single line."
     >>> flush_database_updates()
 
-    >>> cprov_term = vocabulary.getTermByToken('cprov/ppa')
-    >>> print cprov_term.title
+    >>> cprov_term = vocabulary.getTermByToken('~cprov/ubuntu/ppa')
+    >>> print(cprov_term.title)
     Single line.
 
     >>> cprov.archive.description = "First line\nSecond line."
     >>> flush_database_updates()
 
-    >>> cprov_term = vocabulary.getTermByToken('cprov/ppa')
-    >>> print cprov_term.title
+    >>> cprov_term = vocabulary.getTermByToken('~cprov/ubuntu/ppa')
+    >>> print(cprov_term.title)
     First line
 
 PPAs with empty description are identified and have a title saying so.
@@ -274,12 +271,12 @@ PPAs with empty description are identified and have a title saying so.
     >>> cprov.archive.description = None
     >>> flush_database_updates()
 
-    >>> cprov_term = vocabulary.getTermByToken('cprov/ppa')
-    >>> print cprov_term.title
+    >>> cprov_term = vocabulary.getTermByToken('~cprov/ubuntu/ppa')
+    >>> print(cprov_term.title)
     No description available
 
 Queries on empty strings also results in a valid SelectResults.
 
-    >>> empty_search = vocabulary.search('')
+    >>> empty_search = vocabulary.search(u'')
     >>> empty_search.count() == 0
     True

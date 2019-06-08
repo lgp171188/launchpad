@@ -1,4 +1,4 @@
-# Copyright 2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2011-2014 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -40,6 +40,7 @@ class BugSubscriberTestCase(TestCaseWithFactory):
             self.bug, 'lifecycle-subscriber', BugNotificationLevel.LIFECYCLE)
         self.metadata_subscriber = self.newSubscriber(
             self.bug, 'metadata-subscriber', BugNotificationLevel.METADATA)
+        self.bug.clearBugNotificationRecipientsCache()
         self.old_persons = set(self.getNotifiedPersons(include_all=True))
 
     def createDelta(self, user=None, **kwargs):
@@ -54,16 +55,15 @@ class BugSubscriberTestCase(TestCaseWithFactory):
     def newSubscriber(self, bug, name, level):
         # Create a new bug subscription with a new person.
         subscriber = self.factory.makePerson(name=name)
-        subscription = bug.subscribe(
-            subscriber, subscriber, level=level)
+        bug.subscribe(subscriber, subscriber, level=level)
         return subscriber
 
     def getNotifiedPersons(self, include_all=False):
         notified_persons = Store.of(self.bug).find(
             Person,
-            BugNotification.id==BugNotificationRecipient.bug_notificationID,
-            BugNotificationRecipient.personID==Person.id,
-            BugNotification.bugID==self.bug.id)
+            BugNotification.id == BugNotificationRecipient.bug_notificationID,
+            BugNotificationRecipient.personID == Person.id,
+            BugNotification.bugID == self.bug.id)
         if include_all:
             return list(notified_persons)
         else:

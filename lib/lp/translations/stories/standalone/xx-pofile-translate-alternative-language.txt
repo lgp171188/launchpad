@@ -40,11 +40,11 @@ alternative suggestions.  We do not offer suggestions from standard English
 since that is the one language we always translate from, never to.
 
     >>> translate_page = (
-    ...     'http://translations.launchpad.dev/ubuntu/hoary/+source/'
+    ...     'http://translations.launchpad.test/ubuntu/hoary/+source/'
     ...     'evolution/+pots/evolution-2.2/es/+translate')
     >>> anon_browser.open(translate_page)
     >>> get_alternative_languages_widget(anon_browser).displayOptions[:4]
-    ['(no value)', 'Abkhazian (ab)', 'Achinese (ace)', 'Acoli (ach)']
+    ['(nothing selected)', 'Abkhazian (ab)', 'Achinese (ace)', 'Acoli (ach)']
 
 The same goes for a user who has no preferred languages set.
 
@@ -52,7 +52,7 @@ The same goes for a user who has no preferred languages set.
     ...     auth='Basic jeff.waugh@ubuntulinux.com:test')
     >>> user_browser.open(translate_page)
     >>> get_alternative_languages_widget(user_browser).displayOptions[:4]
-    ['(no value)', 'Abkhazian (ab)', 'Achinese (ace)', 'Acoli (ach)']
+    ['(nothing selected)', 'Abkhazian (ab)', 'Achinese (ace)', 'Acoli (ach)']
 
 Carlos, however, has configured his preferred languages.  Besides English he
  speaks Spanish and Catalan.
@@ -65,7 +65,7 @@ offered.  No alternative language is selected initially.
     >>> browser.open(translate_page)
     >>> dropdown = get_alternative_languages_widget(browser)
     >>> dropdown.displayOptions
-    ['(no value)', 'Catalan (ca)', 'Spanish (es)']
+    ['(nothing selected)', 'Catalan (ca)', 'Spanish (es)']
 
     >>> dropdown.value
     ['']
@@ -86,8 +86,8 @@ The Spanish translations now show up as suggestions.  For example, where
 "cards" might translate to Catalan as "targetas," the Spanish equivalent is
 "tarjetas."
 
-    >>> print extract_text(find_main_content(
-    ...     browser.contents)).encode('ASCII', 'backslashreplace')
+    >>> print(extract_text(find_main_content(
+    ...     browser.contents)).encode('ASCII', 'backslashreplace'))
     Translating into Catalan...
     ...
     English: cards
@@ -116,15 +116,14 @@ To avoid that, the page omits the suggestions.  It does warn Carlos that the
 suggestions will be shown only if he adds Japanese to his preferred languages
 first.
 
-    >>> for message in get_feedback_messages(browser.contents):
-    ...     print extract_text(message)
+    >>> print_feedback_messages(browser.contents)
     Not showing suggestions from selected alternative language Japanese (ja).
     If you wish to see suggestions from this language, add it to your
     preferred languages first.
 
 It even presents a link to where the user can set the preferred languages.
 
-    >>> print browser.getLink("add it to your preferred languages").url
+    >>> print(browser.getLink("add it to your preferred languages").url)
     http...~carlos/+editlanguages
 
 This distinction between alternative languages from the user's preferred set
@@ -135,8 +134,8 @@ languages are defined.  Suggestions just work for anonymous users.
     >>> anon_browser.getControl('Spanish (es)').selected = True
     >>> anon_browser.getControl('Change').click()
 
-    >>> print extract_text(find_main_content(
-    ...     anon_browser.contents)).encode('ASCII', 'backslashreplace')
+    >>> print(extract_text(find_main_content(
+    ...     anon_browser.contents)).encode('ASCII', 'backslashreplace'))
     Browsing Catalan translation
     ...
     English: cards
@@ -153,7 +152,7 @@ Filtering & Navigation
 ----------------------
 
 The translate page also allows the user to filter the translatable strings to
-show only the strings he is interested in.
+show only the strings they are interested in.
 
     >>> browser.getControl(name='show', index=1).displayOptions
     ['all items', 'untranslated items', 'translated items',
@@ -165,16 +164,17 @@ Carlos sets the filter to display only the untranslated strings.
     >>> browser.getControl('Catalan (ca)').selected = True
     >>> browser.getControl('untranslated').selected = True
     >>> browser.getControl('Change').click()
-    >>> print extract_url_parameter(browser.url, 'field.alternative_language')
+    >>> print(extract_url_parameter(
+    ...     browser.url, 'field.alternative_language'))
     field.alternative_language=ca
-    >>> print extract_url_parameter(browser.url, 'show')
+    >>> print(extract_url_parameter(browser.url, 'show'))
     show=untranslated
 
 Carlos can see that he is viewing the first page of results in the
 navigation bar between the translation controls and the messages.
 
     >>> navigation = find_tags_by_class(browser.contents, 'results')[0].td
-    >>> print extract_text(navigation).decode('utf-8')
+    >>> print(extract_text(navigation).decode('utf-8'))
     1 ... 10  of 15 results ...
 
 Carlos uses the 'Save & Continue' button to see the next page of
@@ -182,7 +182,7 @@ messages.
 
     >>> browser.getControl('Save & Continue').click()
     >>> navigation = find_tags_by_class(browser.contents, 'results')[0].td
-    >>> print extract_text(navigation)
+    >>> print(extract_text(navigation))
     11 ... 15  of 15 results ...
 
 
@@ -200,7 +200,7 @@ alsa-utils in Austrian German, and the 'Make suggestions from' is preset to
 German.
 
     >>> user_browser.open(
-    ...     'http://translations.launchpad.dev/alsa-utils/trunk/'
+    ...     'http://translations.launchpad.test/alsa-utils/trunk/'
     ...     '+pots/alsa-utils/de_AT/+translate')
     >>> content = find_main_content(user_browser.contents)
     >>> content.h1
@@ -210,12 +210,12 @@ German.
     ...     name='field.alternative_language', index=0).displayValue
     ['German (de)']
 
-The samer user chooses to start a new en_GB translation of alsa-utils. The
-form is displayed for him to edit, but the 'Make suggestions from' control
+The same user chooses to start a new en_GB translation of alsa-utils. The
+form is displayed for them to edit, but the 'Make suggestions from' control
 is unset.
 
     >>> user_browser.open(
-    ...     'http://translations.launchpad.dev/alsa-utils/trunk/'
+    ...     'http://translations.launchpad.test/alsa-utils/trunk/'
     ...     '+pots/alsa-utils/en_GB/+translate')
     >>> content = find_main_content(user_browser.contents)
     >>> content.h1
@@ -223,17 +223,17 @@ is unset.
 
     >>> user_browser.getControl(
     ...     name='field.alternative_language').displayValue
-    ['(no value)']
+    ['(nothing selected)']
 
 
 There is only one alternative language at a time
 ------------------------------------------------
 
-If a user specifies more than one alternative language in the URL, he
-gets an UnexpectedFormData exception:
+If a user specifies more than one alternative language in the URL, they
+get an UnexpectedFormData exception:
 
     >>> browser.open(
-    ...     'http://translations.launchpad.dev/ubuntu/hoary/+source/'
+    ...     'http://translations.launchpad.test/ubuntu/hoary/+source/'
     ...     'evolution/+pots/evolution-2.2/es/+translate'
     ...     '?field.alternative_language=ja&field.alternative_language=aj')
     Traceback (most recent call last):
@@ -252,7 +252,7 @@ alternative language is ignored and the 'Make suggestions from'
 control is unset.
 
     >>> browser.open(
-    ...     'http://translations.launchpad.dev/alsa-utils/trunk/'
+    ...     'http://translations.launchpad.test/alsa-utils/trunk/'
     ...     '+pots/alsa-utils/en_GB/+translate'
     ...     '?field.alternative_language=en')
     >>> content = find_main_content(browser.contents)
@@ -261,10 +261,10 @@ control is unset.
 
     >>> browser.getControl(
     ...     name='field.alternative_language').displayValue
-    ['(no value)']
+    ['(nothing selected)']
 
     >>> browser.open(
-    ...     'http://translations.launchpad.dev/alsa-utils/trunk/'
+    ...     'http://translations.launchpad.test/alsa-utils/trunk/'
     ...     '+pots/alsa-utils/za/+translate'
     ...     '?field.alternative_language=zh')
     >>> content = find_main_content(browser.contents)
@@ -273,5 +273,4 @@ control is unset.
 
     >>> browser.getControl(
     ...     name='field.alternative_language').displayValue
-    ['(no value)']
-
+    ['(nothing selected)']

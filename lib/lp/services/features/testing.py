@@ -4,11 +4,15 @@
 """Helpers for writing tests that use feature flags."""
 
 __metaclass__ = type
-__all__ = ['FeatureFixture']
+__all__ = [
+    'FeatureFixture',
+    'MemoryFeatureFixture',
+    ]
 
 
 from fixtures import Fixture
 from lazr.restful.utils import get_current_browser_request
+import psycopg2
 
 from lp.services.features import (
     get_relevant_feature_controller,
@@ -16,28 +20,31 @@ from lp.services.features import (
     )
 from lp.services.features.flags import FeatureController
 from lp.services.features.rulesource import (
+    MemoryFeatureRuleSource,
     Rule,
     StormFeatureRuleSource,
     )
 from lp.services.features.scopes import ScopesFromRequest
+from lp.testing.dbuser import dbuser
 
 
-class FeatureFixture(Fixture):
-    """A fixture that sets a feature.
+def dbadmin(func):
+    """Decorate a function to automatically reattempt with admin db perms.
 
-    The fixture takes a dictionary as its constructor argument. The keys of
-    the dictionary are features to be set. All existing flags will be cleared.
-
-    Call the fixture's `setUp()' method to install the features with the
-    desired values.  Calling `cleanUp()' will restore the original values.
-    You can also install this fixture by inheriting from
-    `fixtures.TestWithFixtures' and then calling the TestCase's
-    `self.useFixture()' method.
-
-    The fixture can also be used as a context manager. The value of the
-    feature within the context block is set to the dictionary's key's value.
-    The values are restored when the block exits.
+    We don't just automatically switch to the admin user as this
+    implicitly commits the transaction, and we want to avoid unnecessary
+    commits to avoid breaking database setup optimizations.
     """
+    def dbadmin_retry(*args, **kw):
+        try:
+            return func(*args, **kw)
+        except psycopg2.ProgrammingError:
+            with dbuser('testadmin'):
+                return func(*args, **kw)
+    return dbadmin_retry
+
+
+class FeatureFixtureMixin:
 
     def __init__(self, features_dict, full_feature_rules=None,
             override_scope_lookup=None):
@@ -46,21 +53,16 @@ class FeatureFixture(Fixture):
         :param features_dict: A dictionary-like object with keys and values
             that are flag names and those flags' settings.
         :param override_scope_lookup: If non-None, an argument that takes
-            a scope name and returns True if it matches.  If not specified, 
+            a scope name and returns True if it matches.  If not specified,
             scopes are looked up from the current request.
         """
         self.desired_features = features_dict
         self.full_feature_rules = full_feature_rules
         self.override_scope_lookup = override_scope_lookup
 
-    def setUp(self):
+    def _setUp(self):
         """Set the feature flags that this fixture is responsible for."""
-        super(FeatureFixture, self).setUp()
-
-        rule_source = StormFeatureRuleSource()
-        self.addCleanup(
-            rule_source.setAllRules, rule_source.getAllRulesAsTuples())
-        rule_source.setAllRules(self.makeNewRules())
+        rule_source = self.makeRuleSource(self.makeNewRules())
 
         original_controller = get_relevant_feature_controller()
 
@@ -98,3 +100,52 @@ class FeatureFixture(Fixture):
                 for rule_spec in self.full_feature_rules)
 
         return new_rules
+
+
+class FeatureFixture(FeatureFixtureMixin, Fixture):
+    """A fixture that sets a feature in a database-backed feature controller.
+
+    The fixture takes a dictionary as its constructor argument. The keys of
+    the dictionary are features to be set. All existing flags will be cleared.
+
+    Call the fixture's `setUp()' method to install the features with the
+    desired values.  Calling `cleanUp()' will restore the original values.
+    You can also install this fixture by inheriting from
+    `fixtures.TestWithFixtures' and then calling the TestCase's
+    `self.useFixture()' method.
+
+    The fixture can also be used as a context manager. The value of the
+    feature within the context block is set to the dictionary's key's value.
+    The values are restored when the block exits.
+    """
+
+    def makeRuleSource(self, rules):
+        rule_source = StormFeatureRuleSource()
+        self.addCleanup(
+            dbadmin(rule_source.setAllRules),
+            dbadmin(rule_source.getAllRulesAsTuples)())
+        dbadmin(rule_source.setAllRules)(rules)
+        return rule_source
+
+
+class MemoryFeatureFixture(FeatureFixtureMixin, Fixture):
+    """A fixture that sets a feature in an in-memory feature controller.
+
+    The fixture takes a dictionary as its constructor argument. The keys of
+    the dictionary are features to be set. All existing flags will be cleared.
+
+    Call the fixture's `setUp()' method to install the features with the
+    desired values.  Calling `cleanUp()' will restore the original values.
+    You can also install this fixture by inheriting from
+    `fixtures.TestWithFixtures' and then calling the TestCase's
+    `self.useFixture()' method.
+
+    The fixture can also be used as a context manager. The value of the
+    feature within the context block is set to the dictionary's key's value.
+    The values are restored when the block exits.
+    """
+
+    def makeRuleSource(self, rules):
+        rule_source = MemoryFeatureRuleSource()
+        rule_source.setAllRules(rules)
+        return rule_source

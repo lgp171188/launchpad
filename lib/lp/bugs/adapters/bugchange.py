@@ -1,4 +1,4 @@
-# Copyright 2009-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2016 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Implementations for bug changes."""
@@ -9,22 +9,15 @@ __all__ = [
     'ATTACHMENT_REMOVED',
     'BRANCH_LINKED',
     'BRANCH_UNLINKED',
-    'BUG_WATCH_ADDED',
-    'BUG_WATCH_REMOVED',
-    'CHANGED_DUPLICATE_MARKER',
-    'CVE_LINKED',
-    'CVE_UNLINKED',
-    'MARKED_AS_DUPLICATE',
-    'REMOVED_DUPLICATE_MARKER',
-    'REMOVED_SUBSCRIBER',
     'BranchLinkedToBug',
     'BranchUnlinkedFromBug',
+    'BUG_WATCH_ADDED',
+    'BUG_WATCH_REMOVED',
     'BugAttachmentChange',
     'BugConvertedToQuestion',
     'BugDescriptionChange',
     'BugDuplicateChange',
     'BugInformationTypeChange',
-    'BugSecurityChange',
     'BugTagsChange',
     'BugTaskAdded',
     'BugTaskAssigneeChange',
@@ -35,20 +28,29 @@ __all__ = [
     'BugTaskStatusChange',
     'BugTaskTargetChange',
     'BugTitleChange',
-    'BugVisibilityChange',
     'BugWatchAdded',
     'BugWatchRemoved',
+    'CHANGED_DUPLICATE_MARKER',
+    'CVE_LINKED',
+    'CVE_UNLINKED',
     'CveLinkedToBug',
     'CveUnlinkedFromBug',
-    'SeriesNominated',
-    'UnsubscribedFromBug',
     'get_bug_change_class',
     'get_bug_changes',
+    'MARKED_AS_DUPLICATE',
+    'MERGE_PROPOSAL_LINKED',
+    'MERGE_PROPOSAL_UNLINKED',
+    'MergeProposalLinkedToBug',
+    'MergeProposalUnlinkedFromBug',
+    'REMOVED_DUPLICATE_MARKER',
+    'REMOVED_SUBSCRIBER',
+    'SeriesNominated',
+    'UnsubscribedFromBug',
     ]
 
 from textwrap import dedent
 
-from zope.interface import implements
+from zope.interface import implementer
 from zope.security.proxy import isinstance as zope_isinstance
 
 from lp.bugs.enums import BugNotificationLevel
@@ -59,7 +61,6 @@ from lp.bugs.interfaces.bugtask import (
     UNRESOLVED_BUGTASK_STATUSES,
     )
 from lp.registry.interfaces.product import IProduct
-from lp.services.features import getFeatureFlag
 from lp.services.librarian.browser import ProxiedLibraryFileAlias
 from lp.services.webapp.publisher import canonical_url
 
@@ -76,6 +77,8 @@ CHANGED_DUPLICATE_MARKER = 'changed duplicate marker'
 CVE_LINKED = 'cve linked'
 CVE_UNLINKED = 'cve unlinked'
 MARKED_AS_DUPLICATE = 'marked as duplicate'
+MERGE_PROPOSAL_LINKED = 'merge proposal linked'
+MERGE_PROPOSAL_UNLINKED = 'merge proposal unlinked'
 REMOVED_DUPLICATE_MARKER = 'removed duplicate marker'
 REMOVED_SUBSCRIBER = 'removed subscriber'
 
@@ -105,13 +108,8 @@ def get_bug_changes(bug_delta):
     # The order of the field names in this list is important; this is
     # the order in which changes will appear both in the bug activity
     # log and in notification emails.
-    bug_change_field_names = ['duplicateof', 'title', 'description']
-    if bool(getFeatureFlag(
-        'disclosure.information_type_notifications.enabled')):
-        bug_change_field_names.append('information_type')
-    else:
-        bug_change_field_names.extend(('private', 'security_related'))
-    bug_change_field_names.extend(('tags', 'attachment'))
+    bug_change_field_names = ['duplicateof', 'title', 'description',
+        'information_type', 'tags', 'attachment']
     for field_name in bug_change_field_names:
         field_delta = getattr(bug_delta, field_name)
         if field_delta is not None:
@@ -146,10 +144,9 @@ def get_bug_changes(bug_delta):
                         new_value=field_delta['new'])
 
 
+@implementer(IBugChange)
 class BugChangeBase:
     """An abstract base class for Bug[Task]Changes."""
-
-    implements(IBugChange)
 
     # Most changes will be at METADATA level.
     change_level = BugNotificationLevel.METADATA
@@ -234,6 +231,8 @@ class BugConvertedToQuestion(BugChangeBase):
 class BugTaskAdded(BugChangeBase):
     """A bug task got added to the bug."""
 
+    change_level = BugNotificationLevel.LIFECYCLE
+
     def __init__(self, when, person, bug_task):
         super(BugTaskAdded, self).__init__(when, person)
         self.bug_task = bug_task
@@ -269,6 +268,8 @@ class BugTaskAdded(BugChangeBase):
 
 class BugTaskDeleted(BugChangeBase):
     """A bugtask was removed from the bug."""
+
+    change_level = BugNotificationLevel.LIFECYCLE
 
     def __init__(self, when, person, bugtask):
         super(BugTaskDeleted, self).__init__(when, person)
@@ -398,6 +399,60 @@ class BranchUnlinkedFromBug(BugChangeBase):
         if self.branch.private or self.bug.is_complete:
             return None
         return {'text': '** Branch unlinked: %s' % self.branch.bzr_identity}
+
+
+class MergeProposalLinkedToBug(BugChangeBase):
+    """A merge proposal got linked to the bug."""
+
+    def __init__(self, when, person, merge_proposal, bug):
+        super(MergeProposalLinkedToBug, self).__init__(when, person)
+        self.merge_proposal = merge_proposal
+        self.bug = bug
+
+    def getBugActivity(self):
+        """See `IBugChange`."""
+        if self.merge_proposal.private:
+            return None
+        return dict(
+            whatchanged=MERGE_PROPOSAL_LINKED,
+            newvalue=canonical_url(self.merge_proposal))
+
+    def getBugNotification(self):
+        """See `IBugChange`."""
+        if self.merge_proposal.private or self.bug.is_complete:
+            return None
+        return {
+            'text': (
+                '** Merge proposal linked:\n'
+                '   %s' % canonical_url(self.merge_proposal)),
+            }
+
+
+class MergeProposalUnlinkedFromBug(BugChangeBase):
+    """A merge proposal got unlinked from the bug."""
+
+    def __init__(self, when, person, merge_proposal, bug):
+        super(MergeProposalUnlinkedFromBug, self).__init__(when, person)
+        self.merge_proposal = merge_proposal
+        self.bug = bug
+
+    def getBugActivity(self):
+        """See `IBugChange`."""
+        if self.merge_proposal.private:
+            return None
+        return dict(
+            whatchanged=MERGE_PROPOSAL_UNLINKED,
+            oldvalue=canonical_url(self.merge_proposal))
+
+    def getBugNotification(self):
+        """See `IBugChange`."""
+        if self.merge_proposal.private or self.bug.is_complete:
+            return None
+        return {
+            'text': (
+                '** Merge proposal unlinked:\n'
+                '   %s' % canonical_url(self.merge_proposal)),
+            }
 
 
 class BugDescriptionChange(AttributeChange):
@@ -560,70 +615,6 @@ class BugInformationTypeChange(AttributeChange):
         return {
             'text': "** Information type changed from %s to %s" % (
                 self.old_value.title, self.new_value.title)}
-
-
-# XXX: This can be deleted when information_type_notifications is removed.
-class BugVisibilityChange(AttributeChange):
-    """Describes a change to a bug's visibility."""
-
-    def _getVisibilityString(self, private):
-        """Return a string representation of `private`.
-
-        :return: 'Public' if private is False, 'Private' if
-            private is True.
-        """
-        if private:
-            return 'Private'
-        else:
-            return 'Public'
-
-    def getBugActivity(self):
-        # Use _getVisibilityString() to set old and new values
-        # correctly. We lowercase them for UI consistency in the
-        # activity log.
-        old_value = self._getVisibilityString(self.old_value)
-        new_value = self._getVisibilityString(self.new_value)
-        return {
-           'oldvalue': old_value.lower(),
-           'newvalue': new_value.lower(),
-           'whatchanged': 'visibility',
-           }
-
-    def getBugNotification(self):
-        visibility_string = self._getVisibilityString(self.new_value)
-        return {'text': "** Visibility changed to: %s" % visibility_string}
-
-
-# XXX: This can be deleted when information_type_notifications is removed.
-class BugSecurityChange(AttributeChange):
-    """Describes a change to a bug's security setting."""
-
-    activity_mapping = {
-        (False, True): ('no', 'yes'),
-        (True, False): ('yes', 'no'),
-        }
-
-    notification_mapping = {
-        (False, True):
-            u"** This bug has been flagged as a security vulnerability",
-        (True, False):
-            u"** This bug is no longer flagged as a security vulnerability",
-        }
-
-    def getBugActivity(self):
-        old_value, new_value = self.activity_mapping[
-            (self.old_value, self.new_value)]
-        return {
-           'oldvalue': old_value,
-           'newvalue': new_value,
-           'whatchanged': 'security vulnerability',
-           }
-
-    def getBugNotification(self):
-        return {
-            'text': self.notification_mapping[
-                (self.old_value, self.new_value)],
-            }
 
 
 class BugTagsChange(AttributeChange):
@@ -912,6 +903,8 @@ class BugTaskAssigneeChange(AttributeChange):
 class BugTaskTargetChange(AttributeChange):
     """Used to represent a change in a BugTask's target."""
 
+    change_level = BugNotificationLevel.LIFECYCLE
+
     def __init__(self, bug_task, when, person,
                  what_changed, old_value, new_value):
         super(BugTaskTargetChange, self).__init__(
@@ -940,8 +933,6 @@ class BugTaskTargetChange(AttributeChange):
 
 BUG_CHANGE_LOOKUP = {
     'description': BugDescriptionChange,
-    'private': BugVisibilityChange,
-    'security_related': BugSecurityChange,
     'information_type': BugInformationTypeChange,
     'tags': BugTagsChange,
     'title': BugTitleChange,

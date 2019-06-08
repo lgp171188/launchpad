@@ -1,4 +1,4 @@
-# Copyright 2009 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2016 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """These widgets use the a YUI2 calendar widget to allow for
@@ -23,23 +23,21 @@ from datetime import datetime
 
 import pytz
 from z3c.ptcompat import ViewPageTemplateFile
-from zope.app.form.browser.textwidgets import (
-    escape,
-    TextWidget,
-    )
-from zope.app.form.browser.widget import DisplayWidget
-from zope.app.form.interfaces import (
-    ConversionError,
-    InputErrors,
-    WidgetInputError,
-    )
 from zope.component import getUtility
 from zope.datetime import (
     DateTimeError,
     parse,
     )
+from zope.formlib.interfaces import (
+    ConversionError,
+    InputErrors,
+    WidgetInputError,
+    )
+from zope.formlib.textwidgets import TextWidget
+from zope.formlib.widget import DisplayWidget
 
 from lp.app.validators import LaunchpadValidationError
+from lp.services.webapp.escaping import html_escape
 from lp.services.webapp.interfaces import ILaunchBag
 
 
@@ -180,9 +178,8 @@ class DateTimeWidget(TextWidget):
 
         The widget "system time zone" is generally UTC. It is the logged in
         users time zone, with a fallback to UTC if there is no logged in
-        user, or if the logged in user has not given us a time zone.
-        Although this isn't used directly, it influences the outcome of
-        widget.time_zone.
+        user. Although this isn't used directly, it influences the outcome
+        of widget.time_zone.
 
           >>> print widget.system_time_zone
           UTC
@@ -609,4 +606,4 @@ class DatetimeDisplayWidget(DisplayWidget):
         if value == self.context.missing_value:
             return u""
         value = value.astimezone(time_zone)
-        return escape(value.strftime("%Y-%m-%d %H:%M:%S %Z"))
+        return html_escape(value.strftime("%Y-%m-%d %H:%M:%S %Z"))

@@ -1,4 +1,4 @@
-# Copyright 2009-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """IQuestionTarget browser views."""
@@ -6,7 +6,6 @@
 __metaclass__ = type
 
 __all__ = [
-    'AnswersVHostBreadcrumb',
     'AskAQuestionButtonPortlet',
     'ManageAnswerContactView',
     'SearchQuestionsView',
@@ -14,9 +13,7 @@ __all__ = [
     'QuestionCollectionLatestQuestionsPortlet',
     'QuestionCollectionMyQuestionsView',
     'QuestionCollectionNeedAttentionView',
-    'QuestionCollectionOpenCountView',
     'QuestionCollectionAnswersMenu',
-    'QuestionTargetFacetMixin',
     'QuestionTargetPortletAnswerContactsWithDetails',
     'QuestionTargetTraversalMixin',
     'QuestionTargetAnswersMenu',
@@ -32,13 +29,14 @@ from lazr.restful.interfaces import (
     )
 from simplejson import dumps
 from z3c.ptcompat import ViewPageTemplateFile
-from zope.app.form.browser import DropdownWidget
 from zope.component import (
     getMultiAdapter,
     getUtility,
     queryMultiAdapter,
     )
 from zope.formlib import form
+from zope.formlib.widget import CustomWidgetFactory
+from zope.formlib.widgets import DropdownWidget
 from zope.schema import (
     Bool,
     Choice,
@@ -65,7 +63,6 @@ from lp.answers.interfaces.questiontarget import (
     )
 from lp.app.browser.launchpadform import (
     action,
-    custom_widget,
     LaunchpadFormView,
     safe_action,
     )
@@ -87,8 +84,7 @@ from lp.services.webapp import (
     )
 from lp.services.webapp.authorization import check_permission
 from lp.services.webapp.batching import BatchNavigator
-from lp.services.webapp.breadcrumb import Breadcrumb
-from lp.services.webapp.menu import structured
+from lp.services.webapp.escaping import structured
 from lp.services.webapp.publisher import LaunchpadView
 from lp.services.worlddata.helpers import (
     browser_languages,
@@ -167,24 +163,7 @@ class QuestionCollectionLatestQuestionsPortlet:
         is used by the +portlet-latestquestions view.
         """
         question_collection = IQuestionCollection(self.context)
-        return question_collection.searchQuestions()[:quantity]
-
-
-class QuestionCollectionOpenCountView:
-    """View used to render the number of open questions.
-
-    This view is used to render the number of open questions on
-    each IDistributionSourcePackage on the person-packages-templates.pt.
-    It is simpler to define generic view and an adapter (since
-    SourcePackageRelease does not provide IQuestionCollection), than
-    to write a specific view for that template.
-    """
-
-    def __call__(self):
-        questiontarget = IQuestionCollection(self.context)
-        open_questions = questiontarget.searchQuestions(
-            status=[QuestionStatus.OPEN, QuestionStatus.NEEDSINFO])
-        return unicode(open_questions.count())
+        return list(question_collection.searchQuestions()[:quantity])
 
 
 class SearchQuestionsView(UserSupportLanguagesMixin, LaunchpadFormView):
@@ -195,11 +174,12 @@ class SearchQuestionsView(UserSupportLanguagesMixin, LaunchpadFormView):
 
     schema = ISearchQuestionsForm
 
-    custom_widget('language', LabeledMultiCheckBoxWidget,
-                  orientation='horizontal')
-    custom_widget('sort', DropdownWidget, cssClass='inlined-widget')
-    custom_widget('status', LabeledMultiCheckBoxWidget,
-                  orientation='horizontal')
+    custom_widget_language = CustomWidgetFactory(
+        LabeledMultiCheckBoxWidget, orientation='horizontal')
+    custom_widget_sort = CustomWidgetFactory(
+        DropdownWidget, cssClass='inlined-widget')
+    custom_widget_status = CustomWidgetFactory(
+        LabeledMultiCheckBoxWidget, orientation='horizontal')
 
     default_template = ViewPageTemplateFile(
         '../templates/question-listing.pt')
@@ -618,7 +598,8 @@ class QuestionCollectionByLanguageView(SearchQuestionsView):
      for the QuestionTarget context.
      """
 
-    custom_widget('language', LabeledMultiCheckBoxWidget, visible=False)
+    custom_widget_language = CustomWidgetFactory(
+        LabeledMultiCheckBoxWidget, visible=False)
 
     # No point showing a matching FAQs link on this report.
     matching_faqs_count = 0
@@ -693,7 +674,7 @@ class ManageAnswerContactView(UserSupportLanguagesMixin, LaunchpadFormView):
         return 'Answer contact for %s' % self.context.title
 
     label = page_title
-    custom_widget('answer_contact_teams', LabeledMultiCheckBoxWidget)
+    custom_widget_answer_contact_teams = LabeledMultiCheckBoxWidget
 
     def setUpFields(self):
         """See `LaunchpadFormView`."""
@@ -786,10 +767,10 @@ class ManageAnswerContactView(UserSupportLanguagesMixin, LaunchpadFormView):
         """Check or update the Person's preferred languages as needed.
 
         Answer contacts must tell Launchpad in which languages they provide
-        help. If the Person has not already set his preferred languages, they
-        are set to his browser languages. In the case of a team without
-        languages, only English is added to the preferred languages. When
-        languages are added, a notification is added to the response.
+        help. If the Person has not already set their preferred languages,
+        they are set to their browser languages. In the case of a team
+        without languages, only English is added to the preferred languages.
+        When languages are added, a notification is added to the response.
         """
         if len(person_or_team.languages) > 0:
             return
@@ -886,16 +867,6 @@ class QuestionTargetPortletAnswerContactsWithDetails(LaunchpadView):
         return self.answercontact_data_js
 
 
-class QuestionTargetFacetMixin:
-    """Mixin for questiontarget facet definition."""
-
-    def answers(self):
-        """Return the link for Answers."""
-        summary = (
-            'Questions for %s' % self.context.displayname)
-        return Link('', 'Answers', summary)
-
-
 class QuestionTargetTraversalMixin:
     """Navigation mixin for IQuestionTarget."""
 
@@ -989,8 +960,3 @@ class QuestionTargetAnswersMenu(QuestionCollectionAnswersMenu):
         """Return a link to the manage answer contact view."""
         text = 'Set answer contact'
         return Link('+answer-contact', text, icon='edit')
-
-
-class AnswersVHostBreadcrumb(Breadcrumb):
-    rootsite = 'answers'
-    text = 'Questions'

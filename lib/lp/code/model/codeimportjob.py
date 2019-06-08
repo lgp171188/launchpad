@@ -1,4 +1,4 @@
-# Copyright 2009 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Database classes for the CodeImportJob table."""
@@ -19,7 +19,7 @@ from sqlobject import (
     StringCol,
     )
 from zope.component import getUtility
-from zope.interface import implements
+from zope.interface import implementer
 from zope.security.proxy import removeSecurityProxy
 
 from lp.code.enums import (
@@ -27,7 +27,15 @@ from lp.code.enums import (
     CodeImportMachineState,
     CodeImportResultStatus,
     CodeImportReviewStatus,
+    GitRepositoryType,
+    RevisionControlSystems,
     )
+from lp.code.interfaces.branch import IBranch
+from lp.code.interfaces.codehosting import (
+    branch_id_alias,
+    compose_public_url,
+    )
+from lp.code.interfaces.codeimport import ICodeImportSet
 from lp.code.interfaces.codeimportevent import ICodeImportEventSet
 from lp.code.interfaces.codeimportjob import (
     ICodeImportJob,
@@ -37,27 +45,28 @@ from lp.code.interfaces.codeimportjob import (
     )
 from lp.code.interfaces.codeimportmachine import ICodeImportMachineSet
 from lp.code.interfaces.codeimportresult import ICodeImportResultSet
+from lp.code.interfaces.gitrepository import IGitRepository
 from lp.code.model.codeimportresult import CodeImportResult
 from lp.registry.interfaces.person import validate_public_person
 from lp.services.config import config
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.enumcol import EnumCol
+from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import (
     SQLBase,
     sqlvalues,
     )
-from lp.services.webapp.interfaces import (
-    DEFAULT_FLAVOR,
-    IStoreSelector,
-    MAIN_STORE,
+from lp.services.macaroons.interfaces import (
+    BadMacaroonContext,
+    IMacaroonIssuer,
     )
+from lp.services.macaroons.model import MacaroonIssuerBase
 
 
+@implementer(ICodeImportJob)
 class CodeImportJob(SQLBase):
     """See `ICodeImportJob`."""
-
-    implements(ICodeImportJob)
 
     date_created = UtcDateTimeCol(notNull=True, default=UTC_NOW)
 
@@ -104,11 +113,65 @@ class CodeImportJob(SQLBase):
             "id = %s AND date_due <= %s" % sqlvalues(self.id, UTC_NOW))
         return import_job is not None
 
+    def makeWorkerArguments(self):
+        """See `ICodeImportJob`."""
+        # Keep this in sync with CodeImportSourceDetails.fromArguments.
+        code_import = self.code_import
+        target = code_import.target
 
+        if IBranch.providedBy(target):
+            target_id = target.id
+        else:
+            # We don't have a better way to identify the target repository
+            # than the mutable unique name, but the macaroon constrains
+            # pushes tightly enough that the worst case is an authentication
+            # failure.
+            target_id = target.unique_name
+
+        if code_import.rcs_type == RevisionControlSystems.BZR_SVN:
+            rcs_type = 'bzr-svn'
+            target_rcs_type = 'bzr'
+        elif code_import.rcs_type == RevisionControlSystems.CVS:
+            rcs_type = 'cvs'
+            target_rcs_type = 'bzr'
+        elif code_import.rcs_type == RevisionControlSystems.GIT:
+            rcs_type = 'git'
+            if IBranch.providedBy(target):
+                target_rcs_type = 'bzr'
+            else:
+                target_rcs_type = 'git'
+        elif code_import.rcs_type == RevisionControlSystems.BZR:
+            rcs_type = 'bzr'
+            target_rcs_type = 'bzr'
+        else:
+            raise AssertionError("Unknown rcs_type %r." % code_import.rcs_type)
+
+        result = [str(target_id), '%s:%s' % (rcs_type, target_rcs_type)]
+        if rcs_type in ('bzr-svn', 'git', 'bzr'):
+            result.append(str(code_import.url))
+            if (IBranch.providedBy(target) and
+                    target.stacked_on is not None and
+                    not target.stacked_on.private):
+                stacked_path = branch_id_alias(target.stacked_on)
+                stacked_on_url = compose_public_url('http', stacked_path)
+                result.append(stacked_on_url)
+        elif rcs_type == 'cvs':
+            result.append(str(code_import.cvs_root))
+            result.append(str(code_import.cvs_module))
+        else:
+            raise AssertionError("Unknown rcs_type %r." % rcs_type)
+        if target_rcs_type == 'git':
+            issuer = getUtility(IMacaroonIssuer, 'code-import-job')
+            macaroon = removeSecurityProxy(issuer).issueMacaroon(self)
+            # XXX cjwatson 2016-10-12: Consider arranging for this to be
+            # passed to worker processes in the environment instead.
+            result.append(macaroon.serialize())
+        return result
+
+
+@implementer(ICodeImportJobSet, ICodeImportJobSetPublic)
 class CodeImportJobSet(object):
     """See `ICodeImportJobSet`."""
-
-    implements(ICodeImportJobSet, ICodeImportJobSetPublic)
 
     # CodeImportJob database objects are created using
     # CodeImportJobWorkflow.newJob.
@@ -145,27 +208,25 @@ class CodeImportJobSet(object):
 
     def getReclaimableJobs(self):
         """See `ICodeImportJobSet`."""
-        store = getUtility(IStoreSelector).get(MAIN_STORE, DEFAULT_FLAVOR)
-        return store.find(
+        return IStore(CodeImportJob).find(
             CodeImportJob,
             "state = %s and heartbeat < %s + '-%s seconds'"
             % sqlvalues(CodeImportJobState.RUNNING, UTC_NOW,
                         config.codeimportworker.maximum_heartbeat_interval))
 
 
+@implementer(ICodeImportJobWorkflow)
 class CodeImportJobWorkflow:
     """See `ICodeImportJobWorkflow`."""
-
-    implements(ICodeImportJobWorkflow)
 
     def newJob(self, code_import, interval=None):
         """See `ICodeImportJobWorkflow`."""
         assert code_import.review_status == CodeImportReviewStatus.REVIEWED, (
             "Review status of %s is not REVIEWED: %s" % (
-            code_import.branch.unique_name, code_import.review_status.name))
+            code_import.target.unique_name, code_import.review_status.name))
         assert code_import.import_job is None, (
             "Already associated to a CodeImportJob: %s" % (
-            code_import.branch.unique_name))
+            code_import.target.unique_name))
 
         if interval is None:
             interval = code_import.effective_update_interval
@@ -190,13 +251,13 @@ class CodeImportJobWorkflow:
         """See `ICodeImportJobWorkflow`."""
         assert code_import.review_status != CodeImportReviewStatus.REVIEWED, (
             "The review status of %s is %s." % (
-            code_import.branch.unique_name, code_import.review_status.name))
+            code_import.target.unique_name, code_import.review_status.name))
         assert code_import.import_job is not None, (
             "Not associated to a CodeImportJob: %s" % (
-            code_import.branch.unique_name,))
+            code_import.target.unique_name,))
         assert code_import.import_job.state == CodeImportJobState.PENDING, (
             "The CodeImportJob associated to %s is %s." % (
-            code_import.branch.unique_name,
+            code_import.target.unique_name,
             code_import.import_job.state.name))
         # CodeImportJobWorkflow is the only class that is allowed to delete
         # CodeImportJob rows, so destroySelf is not exposed in ICodeImportJob.
@@ -206,12 +267,12 @@ class CodeImportJobWorkflow:
         """See `ICodeImportJobWorkflow`."""
         assert import_job.state == CodeImportJobState.PENDING, (
             "The CodeImportJob associated with %s is %s."
-            % (import_job.code_import.branch.unique_name,
+            % (import_job.code_import.target.unique_name,
                import_job.state.name))
         assert import_job.requesting_user is None, (
             "The CodeImportJob associated with %s "
             "was already requested by %s."
-            % (import_job.code_import.branch.unique_name,
+            % (import_job.code_import.target.unique_name,
                import_job.requesting_user.name))
         # CodeImportJobWorkflow is the only class that is allowed to set the
         # date_due and requesting_user attributes of CodeImportJob, they are
@@ -227,7 +288,7 @@ class CodeImportJobWorkflow:
         """See `ICodeImportJobWorkflow`."""
         assert import_job.state == CodeImportJobState.PENDING, (
             "The CodeImportJob associated with %s is %s."
-            % (import_job.code_import.branch.unique_name,
+            % (import_job.code_import.target.unique_name,
                import_job.state.name))
         assert machine.state == CodeImportMachineState.ONLINE, (
             "The machine %s is %s."
@@ -249,7 +310,7 @@ class CodeImportJobWorkflow:
         """See `ICodeImportJobWorkflow`."""
         assert import_job.state == CodeImportJobState.RUNNING, (
             "The CodeImportJob associated with %s is %s."
-            % (import_job.code_import.branch.unique_name,
+            % (import_job.code_import.target.unique_name,
                import_job.state.name))
         # CodeImportJobWorkflow is the only class that is allowed to
         # set the heartbeat and logtail attributes of CodeImportJob,
@@ -289,7 +350,7 @@ class CodeImportJobWorkflow:
         """See `ICodeImportJobWorkflow`."""
         assert import_job.state == CodeImportJobState.RUNNING, (
             "The CodeImportJob associated with %s is %s."
-            % (import_job.code_import.branch.unique_name,
+            % (import_job.code_import.target.unique_name,
                import_job.state.name))
         code_import = import_job.code_import
         machine = import_job.machine
@@ -319,7 +380,8 @@ class CodeImportJobWorkflow:
             naked_import.date_last_successful = result.date_created
         # If the status was successful and revisions were imported, arrange
         # for the branch to be mirrored.
-        if status == CodeImportResultStatus.SUCCESS:
+        if (status == CodeImportResultStatus.SUCCESS and
+                code_import.branch is not None):
             code_import.branch.requestMirror()
         getUtility(ICodeImportEventSet).newFinish(
             code_import, machine)
@@ -328,7 +390,7 @@ class CodeImportJobWorkflow:
         """See `ICodeImportJobWorkflow`."""
         assert import_job.state == CodeImportJobState.RUNNING, (
             "The CodeImportJob associated with %s is %s."
-            % (import_job.code_import.branch.unique_name,
+            % (import_job.code_import.target.unique_name,
                import_job.state.name))
         # Cribbing from codeimport-job.txt, this method does four things:
         # 1) deletes the passed in job,
@@ -347,3 +409,58 @@ class CodeImportJobWorkflow:
         # 4)
         getUtility(ICodeImportEventSet).newReclaim(
             code_import, machine, job_id)
+
+
+@implementer(IMacaroonIssuer)
+class CodeImportJobMacaroonIssuer(MacaroonIssuerBase):
+
+    identifier = "code-import-job"
+
+    @property
+    def _root_secret(self):
+        secret = config.launchpad.internal_macaroon_secret_key
+        if not secret:
+            raise RuntimeError(
+                "launchpad.internal_macaroon_secret_key not configured.")
+        return secret
+
+    def checkIssuingContext(self, context, **kwargs):
+        """See `MacaroonIssuerBase`."""
+        if context.code_import.git_repository is None:
+            raise BadMacaroonContext(
+                context, "context.code_import.git_repository is None")
+        return context.id
+
+    def checkVerificationContext(self, context, **kwargs):
+        """See `MacaroonIssuerBase`.
+
+        For verification, the context may be an `ICodeImportJob`, in which
+        case we check that the context job is currently running; or it may
+        be an `IGitRepository`, in which case we check that the repository
+        is an imported repository with an associated code import, and then
+        perform the previously-stated check on its code import job.
+        """
+        if IGitRepository.providedBy(context):
+            if context.repository_type != GitRepositoryType.IMPORTED:
+                raise BadMacaroonContext(
+                    context, "%r is not an IMPORTED repository." % context)
+            code_import = getUtility(ICodeImportSet).getByGitRepository(
+                context)
+            if code_import is None:
+                raise BadMacaroonContext(
+                    context, "%r does not have a code import." % context)
+            context = code_import.import_job
+        if not ICodeImportJob.providedBy(context):
+            raise BadMacaroonContext(context)
+        if context.state != CodeImportJobState.RUNNING:
+            raise BadMacaroonContext(
+                context, "%r is not in the RUNNING state." % context)
+        return context
+
+    def verifyPrimaryCaveat(self, caveat_value, context, **kwargs):
+        """See `MacaroonIssuerBase`."""
+        if context is None:
+            # We're only verifying that the macaroon could be valid for some
+            # context.
+            return True
+        return caveat_value == str(context.id)

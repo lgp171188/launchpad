@@ -91,9 +91,7 @@ Let's download it and make sure the contents look ok.
     >>> from lp.services.helpers import string_to_tarfile
     >>> tarball = string_to_tarfile(urllib2.urlopen(url).read())
     >>> for name in sorted(tarball.getnames()):
-    ...     # XXX: 2010-04-26, Salgado, bug=570244: The .rstrip('/') is to
-    ...     # make this pass on python2.5 and 2.6.
-    ...     print name.rstrip('/')
+    ...     print(name)
     pmount
     pmount/pmount-ca.po
     pmount/pmount-cs.po
@@ -117,7 +115,7 @@ queue is initially empty.
     ...         render_request(request)
     ...         for request in POExportRequest.select()]
     ...     for request in sorted(requests):
-    ...         print request
+    ...         print(request)
     >>> print_queue()
 
     >>> request_set.addRequest(person, None, [ca])
@@ -184,7 +182,7 @@ Let's try requesting an export in MO format:
     >>> emails = pop_notifications()
     >>> len(emails)
     1
-    >>> print_emails(notifications=emails)
+    >>> print_emails(notifications=emails, decode=True)
     From: ...
     To: downloader@example.com
     Subject: Launchpad translation download: Ubuntu Hoary pmount - Czech
@@ -200,10 +198,9 @@ Let's try requesting an export in MO format:
     download these translations again, you will have to request
     them again at
     <BLANKLINE>
-      http://translations.launchpad.../pmount/+pots/pmoun=
-    t/cs/+export
+      http://translations.launchpad.../pmount/+pots/pmount/cs/+export
     <BLANKLINE>
-    -- =
+    -- 
     Automatic message from Launchpad.net.
     ----------------------------------------
 
@@ -251,7 +248,7 @@ The script is run.
     ...     stderr=subprocess.STDOUT
     ...     )
     >>> (output, empty) = process.communicate()
-    >>> print output
+    >>> print(output)
     DEBUG   ...
     INFO    Creating lockfile: /var/lock/launchpad-rosetta-export-queue.lock
     DEBUG   Exporting objects for Happy Downloader, related to template
@@ -262,8 +259,8 @@ The script is run.
     netapplet in NetApplet trunk
     DEBUG   Exporting objects for Happy Downloader, related to template
     alsa-utils in alsa-utils trunk
+    ...
     INFO    Stored file at http://.../launchpad-export.tar.gz
     DEBUG   rosetta-export-queue ran in ...s (excl. load & lock)
     DEBUG   Removing lock file: /var/lock/launchpad-rosetta-export-queue.lock
     <BLANKLINE>
-

@@ -1,7 +1,5 @@
-# Copyright 2009-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2016 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
-
-# pylint: disable-msg=E0611,W0212
 
 __metaclass__ = type
 __all__ = [
@@ -9,7 +7,7 @@ __all__ = [
     'LoginTokenSet',
     ]
 
-from itertools import chain
+import hashlib
 
 import pytz
 from sqlobject import (
@@ -19,8 +17,7 @@ from sqlobject import (
     )
 from storm.expr import And
 from zope.component import getUtility
-from zope.interface import implements
-from zope.security.proxy import removeSecurityProxy
+from zope.interface import implementer
 
 from lp.app.errors import NotFoundError
 from lp.app.validators.email import valid_email
@@ -30,36 +27,34 @@ from lp.services.config import config
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.enumcol import EnumCol
+from lp.services.database.interfaces import (
+    IMasterStore,
+    IStore,
+    )
 from lp.services.database.sqlbase import (
     SQLBase,
     sqlvalues,
     )
 from lp.services.gpg.interfaces import IGPGHandler
-from lp.services.identity.interfaces.emailaddress import IEmailAddressSet
 from lp.services.mail.helpers import get_email_template
 from lp.services.mail.sendmail import (
     format_address,
     simple_sendmail,
     )
-from lp.services.tokens import create_unique_token_for_table
+from lp.services.tokens import create_token
 from lp.services.verification.interfaces.authtoken import LoginTokenType
 from lp.services.verification.interfaces.logintoken import (
     ILoginToken,
     ILoginTokenSet,
     )
 from lp.services.webapp import canonical_url
-from lp.services.webapp.interfaces import (
-    IStoreSelector,
-    MAIN_STORE,
-    MASTER_FLAVOR,
-    )
 
 
 MAIL_APP = 'services/verification'
 
 
+@implementer(ILoginToken)
 class LoginToken(SQLBase):
-    implements(ILoginToken)
     _table = 'LoginToken'
 
     redirection_url = StringCol(default=None)
@@ -67,15 +62,34 @@ class LoginToken(SQLBase):
     requesteremail = StringCol(dbName='requesteremail', notNull=False,
                                default=None)
     email = StringCol(dbName='email', notNull=True)
-    token = StringCol(dbName='token', unique=True)
+
+    # The hex SHA-256 hash of the token.
+    _token = StringCol(dbName='token', unique=True)
+
     tokentype = EnumCol(dbName='tokentype', notNull=True, enum=LoginTokenType)
     date_created = UtcDateTimeCol(dbName='created', notNull=True)
-    fingerprint = StringCol(dbName='fingerprint', notNull=False,
-                            default=None)
+    fingerprint = StringCol(dbName='fingerprint', notNull=False, default=None)
     date_consumed = UtcDateTimeCol(default=None)
     password = ''  # Quick fix for Bug #2481
 
     title = 'Launchpad Email Verification'
+
+    def __init__(self, *args, **kwargs):
+        token = kwargs.pop('token', None)
+        if token is not None:
+            self._plaintext_token = token
+            kwargs['_token'] = hashlib.sha256(token).hexdigest()
+        super(LoginToken, self).__init__(*args, **kwargs)
+
+    _plaintext_token = None
+
+    @property
+    def token(self):
+        if self._plaintext_token is None:
+            raise AssertionError(
+                "Token only available for LoginTokens obtained by token in "
+                "the first place. The DB only stores the hashed version.")
+        return self._plaintext_token
 
     def consume(self):
         """See ILoginToken."""
@@ -138,9 +152,10 @@ class LoginToken(SQLBase):
 
         # Here are the instructions that need to be encrypted.
         template = get_email_template('validate-gpg.txt', app=MAIL_APP)
+        key_type = '%s%s' % (key.keysize, key.algorithm.title)
         replacements = {'requester': self.requester.displayname,
                         'requesteremail': self.requesteremail,
-                        'displayname': key.displayname,
+                        'key_type': key_type,
                         'fingerprint': key.fingerprint,
                         'uids': formatted_uids,
                         'token_url': canonical_url(self)}
@@ -153,8 +168,8 @@ class LoginToken(SQLBase):
         # Encrypt this part's content if requested.
         if key.can_encrypt:
             gpghandler = getUtility(IGPGHandler)
-            token_text = gpghandler.encryptContent(token_text.encode('utf-8'),
-                                                   key.fingerprint)
+            token_text = gpghandler.encryptContent(
+                token_text.encode('utf-8'), key)
             # In this case, we need to include some clear text instructions
             # for people who do not have an MUA that can decrypt the ASCII
             # armored text.
@@ -167,26 +182,13 @@ class LoginToken(SQLBase):
         subject = 'Launchpad: Confirm your OpenPGP Key'
         self._send_email(from_name, subject, text)
 
-    def sendProfileCreatedEmail(self, profile, comment):
-        """See ILoginToken."""
-        template = get_email_template('profile-created.txt', app=MAIL_APP)
-        replacements = {'token_url': canonical_url(self),
-                        'requester': self.requester.displayname,
-                        'comment': comment,
-                        'profile_url': canonical_url(profile)}
-        message = template % replacements
-
-        headers = {'Reply-To': self.requester.preferredemail.email}
-        from_name = "Launchpad"
-        subject = "Launchpad profile"
-        self._send_email(from_name, subject, message, headers=headers)
-
     def sendMergeRequestEmail(self):
         """See ILoginToken."""
         template = get_email_template('request-merge.txt', app=MAIL_APP)
         from_name = "Launchpad Account Merge"
 
-        dupe = getUtility(IPersonSet).getByEmail(self.email)
+        dupe = getUtility(IPersonSet).getByEmail(
+            self.email, filter_status=False)
         replacements = {'dupename': "%s (%s)" % (dupe.displayname, dupe.name),
                         'requester': self.requester.name,
                         'requesteremail': self.requesteremail,
@@ -210,20 +212,6 @@ class LoginToken(SQLBase):
                         'admin_email': config.canonical.admin_address,
                         'token_url': canonical_url(self)}
         message = template % replacements
-        self._send_email(from_name, subject, message)
-
-    def sendClaimProfileEmail(self):
-        """See ILoginToken."""
-        template = get_email_template('claim-profile.txt', app=MAIL_APP)
-        from_name = "Launchpad"
-        profile = getUtility(IPersonSet).getByEmail(self.email)
-        replacements = {'profile_name': (
-                            "%s (%s)" % (profile.displayname, profile.name)),
-                        'email': self.email,
-                        'token_url': canonical_url(self)}
-        message = template % replacements
-
-        subject = "Launchpad: Claim Profile"
         self._send_email(from_name, subject, message)
 
     def sendClaimTeamEmail(self):
@@ -254,63 +242,17 @@ class LoginToken(SQLBase):
 
     def activateGPGKey(self, key, can_encrypt):
         """See `ILoginToken`."""
-        gpgkeyset = getUtility(IGPGKeySet)
-        lpkey, new = gpgkeyset.activate(self.requester, key, can_encrypt)
-
+        lpkey, new = getUtility(IGPGKeySet).activate(
+            self.requester, key, can_encrypt)
         self.consume()
-
-        if not new:
-            return lpkey, new, [], []
-
-        created, owned_by_others = self.createEmailAddresses(key.emails)
-        return lpkey, new, created, owned_by_others
-
-    def createEmailAddresses(self, uids):
-        """Create EmailAddresses for the GPG UIDs that do not exist yet.
-
-        For each of the given UIDs, check if it is already registered and, if
-        not, register it.
-
-        Return a tuple containing the list of newly created emails (as
-        strings) and the emails that exist and are already assigned to another
-        person (also as strings).
-        """
-        emailset = getUtility(IEmailAddressSet)
-        requester = self.requester
-        emails = chain(requester.validatedemails, [requester.preferredemail])
-        # Must remove the security proxy because the user may not be logged in
-        # and thus won't be allowed to view the requester's email addresses.
-        emails = [
-            removeSecurityProxy(email).email.lower() for email in emails]
-
-        created = []
-        existing_and_owned_by_others = []
-        for uid in uids:
-            # Here we use .lower() because the case of email addresses's chars
-            # don't matter to us (e.g. 'foo@baz.com' is the same as
-            # 'Foo@Baz.com').  However, note that we use the original form
-            # when creating a new email.
-            if uid.lower() not in emails:
-                # EmailAddressSet.getByEmail() is not case-sensitive, so
-                # there's no need to do uid.lower() here.
-                if emailset.getByEmail(uid) is not None:
-                    # This email address is registered but does not belong to
-                    # our user.
-                    existing_and_owned_by_others.append(uid)
-                else:
-                    # The email is not yet registered, so we register it for
-                    # our user.
-                    email = emailset.new(uid, requester)
-                    created.append(uid)
-
-        return created, existing_and_owned_by_others
+        return lpkey, new
 
 
+@implementer(ILoginTokenSet)
 class LoginTokenSet:
-    implements(ILoginTokenSet)
 
     def __init__(self):
-        self.title = 'Launchpad e-mail address confirmation'
+        self.title = 'Launchpad email address confirmation'
 
     def get(self, id, default=None):
         """See ILoginTokenSet."""
@@ -338,8 +280,7 @@ class LoginTokenSet:
 
         # It's important to always use the MASTER_FLAVOR store here
         # because we don't want replication lag to cause a 404 error.
-        store = getUtility(IStoreSelector).get(MAIN_STORE, MASTER_FLAVOR)
-        return store.find(LoginToken, conditions)
+        return IMasterStore(LoginToken).find(LoginToken, conditions)
 
     def deleteByEmailRequesterAndType(self, email, requester, type):
         """See ILoginTokenSet."""
@@ -366,8 +307,7 @@ class LoginTokenSet:
 
         # It's important to always use the MASTER_FLAVOR store here
         # because we don't want replication lag to cause a 404 error.
-        store = getUtility(IStoreSelector).get(MAIN_STORE, MASTER_FLAVOR)
-        return store.find(LoginToken, conditions)
+        return IMasterStore(LoginToken).find(LoginToken, conditions)
 
     def getPendingGPGKeys(self, requesterid=None):
         """See ILoginTokenSet."""
@@ -397,7 +337,7 @@ class LoginTokenSet:
             # Aha! According to our policy, we shouldn't raise ValueError.
             raise ValueError(
                 "tokentype is not an item of LoginTokenType: %s" % tokentype)
-        token = create_unique_token_for_table(20, LoginToken.token)
+        token = create_token(20)
         return LoginToken(requester=requester, requesteremail=requesteremail,
                           email=email, token=token, tokentype=tokentype,
                           created=UTC_NOW, fingerprint=fingerprint,
@@ -405,7 +345,9 @@ class LoginTokenSet:
 
     def __getitem__(self, tokentext):
         """See ILoginTokenSet."""
-        token = LoginToken.selectOneBy(token=tokentext)
+        token = IStore(LoginToken).find(
+            LoginToken, _token=hashlib.sha256(tokentext).hexdigest()).one()
         if token is None:
             raise NotFoundError(tokentext)
+        token._plaintext_token = tokentext
         return token

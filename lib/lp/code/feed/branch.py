@@ -1,4 +1,4 @@
-# Copyright 2009 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2017 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Branch feed (syndication) views."""
@@ -15,16 +15,13 @@ __all__ = [
     'ProjectRevisionFeed',
     ]
 
-from storm.locals import (
-    Asc,
-    Desc,
-    )
 from z3c.ptcompat import ViewPageTemplateFile
 from zope.component import getUtility
-from zope.interface import implements
+from zope.interface import implementer
 from zope.security.interfaces import Unauthorized
 
 from lp.code.browser.branch import BranchView
+from lp.code.enums import BranchListingSort
 from lp.code.interfaces.branch import (
     DEFAULT_BRANCH_STATUS_IN_LISTING,
     IBranch,
@@ -162,17 +159,12 @@ class BranchListingFeed(BranchFeedBase):
 
         Only `self.quantity` revisions are returned.
         """
-        from lp.code.model.branch import Branch
         collection = self._getCollection().visibleByUser(
             None).withLifecycleStatus(*DEFAULT_BRANCH_STATUS_IN_LISTING)
-        branches = collection.getBranches(eager_load=False)
-        branches.order_by(
-            Desc(Branch.date_last_modified),
-            Asc(Branch.target_suffix),
-            Desc(Branch.lifecycle_status),
-            Asc(Branch.name))
-        branches.config(limit=self.quantity)
-        return list(branches)
+        branches = collection.getBranches(
+            eager_load=False,
+            sort_by=BranchListingSort.MOST_RECENTLY_CHANGED_FIRST)
+        return list(branches.config(limit=self.quantity))
 
 
 class ProductBranchFeed(BranchListingFeed):
@@ -190,7 +182,7 @@ class ProjectBranchFeed(BranchListingFeed):
     usedfor = IProjectGroup
 
     def _getCollection(self):
-        return getUtility(IAllBranches).inProject(self.context)
+        return getUtility(IAllBranches).inProjectGroup(self.context)
 
 
 class PersonBranchFeed(BranchListingFeed):
@@ -365,15 +357,15 @@ class ProjectRevisionFeed(ProjectRevisionFeedBase):
 
     def _getRevisionCache(self):
         """See `RevisionListingFeed`."""
-        return getUtility(IRevisionCache).inProject(self.context)
+        return getUtility(IRevisionCache).inProjectGroup(self.context)
 
 
+@implementer(IFeedPerson)
 class RevisionPerson:
     """See `IFeedPerson`.
 
     Uses the `name_without_email` property for the display name.
     """
-    implements(IFeedPerson)
 
     def __init__(self, person, rootsite):
 
@@ -448,7 +440,7 @@ class BranchFeed(BranchFeedBase):
     def itemToFeedEntry(self, rev):
         """See `IFeed`."""
         title = FeedTypedData("Revision %d" % rev.sequence)
-        url = self.context.codebrowse_url('revision', str(rev.sequence))
+        url = self.context.getCodebrowseUrl('revision', str(rev.sequence))
         content_view = BranchFeedContentView(rev, self.request, self,
                                              'templates/branch-revision.pt')
         content = FeedTypedData(content=content_view.render(),

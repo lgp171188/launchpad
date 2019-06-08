@@ -7,7 +7,7 @@ person has contributed to.
 Here the person whose activity we're going to look at is Carlos.
 
     >>> anon_browser.open(
-    ...     "http://translations.launchpad.dev/people/carlos/+activity")
+    ...     "http://translations.launchpad.test/people/carlos/+activity")
 
 The user can see in the page navigation that Carlos has so far worked
 on six files, five of which are shown on this page.
@@ -21,7 +21,7 @@ listed which Carlos has contributed to.
     # Prints a heading and formatted list of POFiles and latest submissions.
     >>> def print_activity_list(listing):
     ...     for row in listing.findAll('tr'):
-    ...         print extract_text(row)
+    ...         print(extract_text(row))
 
     >>> listing = find_tag_by_id(anon_browser.contents, 'activity-table')
     >>> print_activity_list(listing)
@@ -44,7 +44,7 @@ contributions to the selected translation.
     >>> alsa_utils_link = (
     ...     'Spanish (es) translation of alsa-utils in alsa-utils trunk')
     >>> anon_browser.getLink(alsa_utils_link).click()
-    >>> print anon_browser.title
+    >>> print(anon_browser.title)
     Translations by ...Spanish (es)...
 
 
@@ -64,18 +64,18 @@ For instance, here's a user called a+b.
     >>> person_url = canonical_url(ab, rootsite='translations')
     >>> logout()
 
-When a+b goes to see the translations she has done, she sees a correctly
+When a+b goes to see the translations they have done, they see a correctly
 encoded link to a filtered PO file page.
 
     >>> user_browser.open(person_url + '/+activity')
     >>> table = find_tag_by_id(user_browser.contents, 'activity-table')
     >>> link = table.find('a')
     >>> url = link['href']
-    >>> print url.split('/')[-1]
+    >>> print(url.split('/')[-1])
     +filter?person=a%2Bb
 
 Because of this, the link actually works.
 
     >>> user_browser.open(url.encode('ascii'))
-    >>> print user_browser.title
+    >>> print(user_browser.title)
     Translations by A+b in...Serbian (sr) translation...

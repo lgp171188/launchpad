@@ -1,7 +1,6 @@
-# Copyright 2009-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2013 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-# pylint: disable-msg=E0611,W0212
 """Models for `IProductSeries`."""
 
 __metaclass__ = type
@@ -14,6 +13,7 @@ __all__ = [
 
 import datetime
 
+from lazr.delegates import delegate_to
 from sqlobject import (
     ForeignKey,
     SQLMultipleJoin,
@@ -30,7 +30,7 @@ from storm.locals import (
     )
 from storm.store import Store
 from zope.component import getUtility
-from zope.interface import implements
+from zope.interface import implementer
 
 from lp.app.enums import service_uses_launchpad
 from lp.app.errors import NotFoundError
@@ -38,17 +38,12 @@ from lp.app.interfaces.launchpad import (
     ILaunchpadCelebrities,
     IServiceUsage,
     )
-from lp.blueprints.enums import (
-    SpecificationDefinitionStatus,
-    SpecificationFilter,
-    SpecificationGoalStatus,
-    SpecificationImplementationStatus,
-    SpecificationSort,
-    )
+from lp.blueprints.interfaces.specificationtarget import ISpecificationTarget
 from lp.blueprints.model.specification import (
     HasSpecificationsMixin,
     Specification,
     )
+from lp.blueprints.model.specificationsearch import search_specifications
 from lp.bugs.interfaces.bugsummary import IBugSummaryDimension
 from lp.bugs.interfaces.bugtarget import ISeriesBugTarget
 from lp.bugs.interfaces.bugtaskfilter import OrderedBugTask
@@ -56,6 +51,7 @@ from lp.bugs.model.bugtarget import BugTargetBase
 from lp.bugs.model.structuralsubscription import (
     StructuralSubscriptionTargetMixin,
     )
+from lp.registry.errors import ProprietaryProduct
 from lp.registry.interfaces.packaging import PackagingType
 from lp.registry.interfaces.person import validate_person
 from lp.registry.interfaces.productrelease import IProductReleaseSet
@@ -69,7 +65,7 @@ from lp.registry.model.milestone import (
     HasMilestonesMixin,
     Milestone,
     )
-from lp.registry.model.packaging import Packaging
+from lp.registry.model.packaging import PackagingUtil
 from lp.registry.model.productrelease import ProductRelease
 from lp.registry.model.series import SeriesMixin
 from lp.services.database.constants import UTC_NOW
@@ -77,10 +73,10 @@ from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.enumcol import EnumCol
 from lp.services.database.sqlbase import (
-    quote,
     SQLBase,
     sqlvalues,
     )
+from lp.services.propertycache import cachedproperty
 from lp.services.webapp.publisher import canonical_url
 from lp.services.webapp.sorting import sorted_dotted_numbers
 from lp.services.worlddata.model.language import Language
@@ -114,14 +110,14 @@ def landmark_key(landmark):
     return date + landmark['name']
 
 
+@implementer(
+    IBugSummaryDimension, IProductSeries, IServiceUsage, ISeriesBugTarget)
+@delegate_to(ISpecificationTarget, context='product')
 class ProductSeries(SQLBase, BugTargetBase, HasMilestonesMixin,
                     HasSpecificationsMixin, HasTranslationImportsMixin,
                     HasTranslationTemplatesMixin,
                     StructuralSubscriptionTargetMixin, SeriesMixin):
     """A series of product releases."""
-    implements(
-        IBugSummaryDimension, IProductSeries, IServiceUsage,
-        ISeriesBugTarget)
 
     _table = 'ProductSeries'
 
@@ -142,11 +138,23 @@ class ProductSeries(SQLBase, BugTargetBase, HasMilestonesMixin,
         notNull=False, default=None)
     branch = ForeignKey(foreignKey='Branch', dbName='branch',
                              default=None)
+
+    def validate_autoimport_mode(self, attr, value):
+        # Perform the normal validation for None
+        if value is None:
+            return value
+        if (self.product.private and
+            value != TranslationsBranchImportMode.NO_IMPORT):
+            raise ProprietaryProduct('Translations are disabled for'
+                                     ' proprietary projects.')
+        return value
+
     translations_autoimport_mode = EnumCol(
         dbName='translations_autoimport_mode',
         notNull=True,
         schema=TranslationsBranchImportMode,
-        default=TranslationsBranchImportMode.NO_IMPORT)
+        default=TranslationsBranchImportMode.NO_IMPORT,
+        storm_validator=validate_autoimport_mode)
     translations_branch = ForeignKey(
         dbName='translations_branch', foreignKey='Branch', notNull=False,
         default=None)
@@ -224,6 +232,14 @@ class ProductSeries(SQLBase, BugTargetBase, HasMilestonesMixin,
         result = result.order_by(Desc('datereleased'))
         return DecoratedResultSet(result, decorate)
 
+    @cachedproperty
+    def _cached_releases(self):
+        return self.releases
+
+    def getCachedReleases(self):
+        """See `IProductSeries`."""
+        return self._cached_releases
+
     @property
     def release_files(self):
         """See `IProductSeries`."""
@@ -293,25 +309,13 @@ class ProductSeries(SQLBase, BugTargetBase, HasMilestonesMixin,
         return ret
 
     @property
-    def has_any_specifications(self):
-        """See IHasSpecifications."""
-        return self.all_specifications.count()
-
-    @property
-    def all_specifications(self):
-        return self.specifications(filter=[SpecificationFilter.ALL])
-
-    @property
-    def valid_specifications(self):
-        return self.specifications(filter=[SpecificationFilter.VALID])
-
-    @property
     def is_development_focus(self):
         """See `IProductSeries`."""
         return self == self.product.development_focus
 
-    def specifications(self, sort=None, quantity=None, filter=None,
-                       prejoin_people=True):
+    def specifications(self, user, sort=None, quantity=None, filter=None,
+                       need_people=True, need_branches=True,
+                       need_workitems=False):
         """See IHasSpecifications.
 
         The rules for filtering are that there are three areas where you can
@@ -322,116 +326,16 @@ class ProductSeries(SQLBase, BugTargetBase, HasMilestonesMixin,
           - informational, which defaults to showing BOTH if nothing is said
 
         """
+        base_clauses = [Specification.productseriesID == self.id]
+        return search_specifications(
+            self, base_clauses, user, sort, quantity, filter,
+            default_acceptance=True, need_people=need_people,
+            need_branches=need_branches, need_workitems=need_workitems)
 
-        # Make a new list of the filter, so that we do not mutate what we
-        # were passed as a filter
-        if not filter:
-            # filter could be None or [] then we decide the default
-            # which for a productseries is to show everything accepted
-            filter = [SpecificationFilter.ACCEPTED]
-
-        # defaults for completeness: in this case we don't actually need to
-        # do anything, because the default is ANY
-
-        # defaults for acceptance: in this case, if nothing is said about
-        # acceptance, we want to show only accepted specs
-        acceptance = False
-        for option in [
-            SpecificationFilter.ACCEPTED,
-            SpecificationFilter.DECLINED,
-            SpecificationFilter.PROPOSED]:
-            if option in filter:
-                acceptance = True
-        if acceptance is False:
-            filter.append(SpecificationFilter.ACCEPTED)
-
-        # defaults for informationalness: we don't have to do anything
-        # because the default if nothing is said is ANY
-
-        # sort by priority descending, by default
-        if sort is None or sort == SpecificationSort.PRIORITY:
-            order = ['-priority', 'definition_status', 'name']
-        elif sort == SpecificationSort.DATE:
-            # we are showing specs for a GOAL, so under some circumstances
-            # we care about the order in which the specs were nominated for
-            # the goal, and in others we care about the order in which the
-            # decision was made.
-
-            # we need to establish if the listing will show specs that have
-            # been decided only, or will include proposed specs.
-            show_proposed = set([
-                SpecificationFilter.ALL,
-                SpecificationFilter.PROPOSED,
-                ])
-            if len(show_proposed.intersection(set(filter))) > 0:
-                # we are showing proposed specs so use the date proposed
-                # because not all specs will have a date decided.
-                order = ['-Specification.datecreated', 'Specification.id']
-            else:
-                # this will show only decided specs so use the date the spec
-                # was accepted or declined for the sprint
-                order = ['-Specification.date_goal_decided',
-                         '-Specification.datecreated',
-                         'Specification.id']
-
-        # figure out what set of specifications we are interested in. for
-        # productseries, we need to be able to filter on the basis of:
-        #
-        #  - completeness. by default, only incomplete specs shown
-        #  - goal status. by default, only accepted specs shown
-        #  - informational.
-        #
-        base = 'Specification.productseries = %s' % self.id
-        query = base
-        # look for informational specs
-        if SpecificationFilter.INFORMATIONAL in filter:
-            query += (' AND Specification.implementation_status = %s' %
-              quote(SpecificationImplementationStatus.INFORMATIONAL))
-
-        # filter based on completion. see the implementation of
-        # Specification.is_complete() for more details
-        completeness = Specification.completeness_clause
-
-        if SpecificationFilter.COMPLETE in filter:
-            query += ' AND ( %s ) ' % completeness
-        elif SpecificationFilter.INCOMPLETE in filter:
-            query += ' AND NOT ( %s ) ' % completeness
-
-        # look for specs that have a particular goalstatus (proposed,
-        # accepted or declined)
-        if SpecificationFilter.ACCEPTED in filter:
-            query += ' AND Specification.goalstatus = %d' % (
-                SpecificationGoalStatus.ACCEPTED.value)
-        elif SpecificationFilter.PROPOSED in filter:
-            query += ' AND Specification.goalstatus = %d' % (
-                SpecificationGoalStatus.PROPOSED.value)
-        elif SpecificationFilter.DECLINED in filter:
-            query += ' AND Specification.goalstatus = %d' % (
-                SpecificationGoalStatus.DECLINED.value)
-
-        # Filter for validity. If we want valid specs only then we should
-        # exclude all OBSOLETE or SUPERSEDED specs
-        if SpecificationFilter.VALID in filter:
-            query += (
-                ' AND Specification.definition_status NOT IN ( %s, %s ) '
-                % sqlvalues(SpecificationDefinitionStatus.OBSOLETE,
-                            SpecificationDefinitionStatus.SUPERSEDED))
-
-        # ALL is the trump card
-        if SpecificationFilter.ALL in filter:
-            query = base
-
-        # Filter for specification text
-        for constraint in filter:
-            if isinstance(constraint, basestring):
-                # a string in the filter is a text search filter
-                query += ' AND Specification.fti @@ ftq(%s) ' % quote(
-                    constraint)
-
-        results = Specification.select(query, orderBy=order, limit=quantity)
-        if prejoin_people:
-            results = results.prejoin(['assignee', 'approver', 'drafter'])
-        return results
+    @property
+    def all_specifications(self):
+        return Store.of(self).find(
+            Specification, Specification.productseriesID == self.id)
 
     def _customizeSearchParams(self, search_params):
         """Customize `search_params` for this product series."""
@@ -450,10 +354,6 @@ class ProductSeries(SQLBase, BugTargetBase, HasMilestonesMixin,
         # Circular fail.
         from lp.bugs.model.bugsummary import BugSummary
         return BugSummary.productseries_id == self.id
-
-    def getSpecification(self, name):
-        """See ISpecificationTarget."""
-        return self.product.getSpecification(name)
 
     def getLatestRelease(self):
         """See `IProductRelease.`"""
@@ -493,7 +393,7 @@ class ProductSeries(SQLBase, BugTargetBase, HasMilestonesMixin,
 
     def setPackaging(self, distroseries, sourcepackagename, owner):
         """See IProductSeries."""
-        if distroseries.distribution.full_functionality:
+        if distroseries.distribution.official_packages:
             source_package = distroseries.getSourcePackage(sourcepackagename)
             if source_package.currentrelease is None:
                 raise AssertionError(
@@ -508,7 +408,7 @@ class ProductSeries(SQLBase, BugTargetBase, HasMilestonesMixin,
 
         # ok, we didn't find a packaging record that matches, let's go ahead
         # and create one
-        pkg = Packaging(
+        pkg = PackagingUtil.createPackaging(
             distroseries=distroseries,
             sourcepackagename=sourcepackagename,
             productseries=self,
@@ -683,10 +583,15 @@ class ProductSeries(SQLBase, BugTargetBase, HasMilestonesMixin,
                 return OrderedBugTask(3, bugtask.id, bugtask)
         return weight_function
 
+    def userCanView(self, user):
+        """See `IproductSeriesPublic`."""
+        # Deleate the permission check to the parent product.
+        return self.product.userCanView(user)
 
+
+@implementer(ITimelineProductSeries)
 class TimelineProductSeries:
     """See `ITimelineProductSeries`."""
-    implements(ITimelineProductSeries)
 
     def __init__(self, name, status, is_development_focus, uri, landmarks,
                  product):
@@ -698,10 +603,9 @@ class TimelineProductSeries:
         self.product = product
 
 
+@implementer(IProductSeriesSet)
 class ProductSeriesSet:
     """See IProductSeriesSet."""
-
-    implements(IProductSeriesSet)
 
     def __getitem__(self, series_id):
         """See IProductSeriesSet."""

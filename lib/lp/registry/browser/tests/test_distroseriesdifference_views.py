@@ -1,4 +1,4 @@
-# Copyright 2010-2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2016 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Unit tests for the DistroSeriesDifference views."""
@@ -7,7 +7,6 @@ __metaclass__ = type
 
 import re
 
-from BeautifulSoup import BeautifulSoup
 import soupmatchers
 from testtools.matchers import (
     MatchesAny,
@@ -27,6 +26,7 @@ from lp.registry.enums import (
 from lp.registry.interfaces.distroseriesdifference import (
     IDistroSeriesDifferenceSource,
     )
+from lp.services.beautifulsoup import BeautifulSoup
 from lp.services.comments.interfaces.conversation import (
     IComment,
     IConversation,
@@ -34,7 +34,6 @@ from lp.services.comments.interfaces.conversation import (
 from lp.services.webapp.authorization import check_permission
 from lp.services.webapp.publisher import canonical_url
 from lp.services.webapp.servers import LaunchpadTestRequest
-from lp.services.webapp.testing import verifyObject
 from lp.soyuz.enums import (
     PackageDiffStatus,
     PackagePublishingStatus,
@@ -47,6 +46,7 @@ from lp.testing import (
     celebrity_logged_in,
     person_logged_in,
     TestCaseWithFactory,
+    verifyObject,
     )
 from lp.testing.layers import LaunchpadFunctionalLayer
 from lp.testing.views import create_initialized_view
@@ -91,10 +91,10 @@ class DistroSeriesDifferenceTestCase(TestCaseWithFactory):
             source_pub = distro_series_difference.source_pub
 
         stp.makeSourcePackageSummaryData(source_pub)
-        stp.updateDistroSeriesPackageCache(source_pub.distroseries)
+        stp.updatePackageCache(source_pub.distroseries)
 
-        # updateDistroSeriesPackageCache reconnects the db, so the
-        # objects need to be reloaded.
+        # updatePackageCache reconnects the db, so the objects need to be
+        # reloaded.
         dsd_source = getUtility(IDistroSeriesDifferenceSource)
         ds_diff = dsd_source.getByDistroSeriesNameAndParentSeries(
             distro_series, source_package_name_str, parent_series)
@@ -136,8 +136,8 @@ class DistroSeriesDifferenceTestCase(TestCaseWithFactory):
         ds_diff = self.factory.makeDistroSeriesDifference(
             difference_type=(
                 DistroSeriesDifferenceType.MISSING_FROM_DERIVED_SERIES))
-        with celebrity_logged_in('admin'):
-            ds_diff.parent_source_pub.status = PackagePublishingStatus.DELETED
+        with person_logged_in(ds_diff.parent_source_pub.archive.owner):
+            ds_diff.parent_source_pub.requestDeletion(None)
         ds_diff.update()
 
         view = create_initialized_view(ds_diff, '+listing-distroseries-extra')
@@ -152,8 +152,8 @@ class DistroSeriesDifferenceTestCase(TestCaseWithFactory):
         ds_diff = self.factory.makeDistroSeriesDifference(
             difference_type=(
                 DistroSeriesDifferenceType.MISSING_FROM_DERIVED_SERIES))
-        with celebrity_logged_in('admin'):
-            ds_diff.parent_source_pub.status = PackagePublishingStatus.DELETED
+        removeSecurityProxy(ds_diff).parent_source_pub.status = (
+            PackagePublishingStatus.DELETED)
         ds_diff.update()
 
         view = create_initialized_view(ds_diff, '+listing-distroseries-extra')
@@ -391,7 +391,7 @@ class DistroSeriesDifferenceTemplateTestCase(TestCaseWithFactory):
 
         with person_logged_in(self.factory.makePerson()):
             view = create_initialized_view(
-                ds_diff, '+listing-distroseries-extra')#, principal=user)
+                ds_diff, '+listing-distroseries-extra')  # , principal=user)
             soup = BeautifulSoup(view())
         # Both diffs present simple text repr. of proposed diff.
         self.assertEqual(2, self.number_of_request_diff_texts(soup))
@@ -511,9 +511,9 @@ class DistroSeriesDifferenceTemplateTestCase(TestCaseWithFactory):
         soup = BeautifulSoup(view())
 
         self.assertEqual(
-            1, len(soup.findAll('pre', text="I'm working on this.")))
+            1, len(soup.findAll('pre', text="I&#x27;m working on this.")))
         self.assertEqual(
-            1, len(soup.findAll('pre', text="Here's another comment.")))
+            1, len(soup.findAll('pre', text="Here&#x27;s another comment.")))
 
     def test_last_common_version_is_linked(self):
         # The "Last Common Version" version text should link to the

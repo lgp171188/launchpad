@@ -17,7 +17,7 @@ from lp.registry.model.distributionsourcepackage import (
     DistributionSourcePackageInDatabase,
     )
 from lp.registry.model.karma import KarmaTotalCache
-from lp.services.database.lpstorm import IStore
+from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import flush_database_updates
 from lp.soyuz.enums import PackagePublishingStatus
 from lp.soyuz.tests.test_publishing import SoyuzTestPublisher
@@ -41,7 +41,7 @@ class TestDistributionSourcePackage(TestCaseWithFactory):
         distribution_set = getUtility(IDistributionSet)
 
         distribution = distribution_set.new(name='wart',
-            displayname='wart', title='wart', description='lots of warts',
+            display_name='wart', title='wart', description='lots of warts',
             summary='lots of warts', domainname='wart.dumb',
             members=self.factory.makeTeam(), owner=self.factory.makePerson(),
             registrant=self.factory.makePerson())
@@ -67,7 +67,8 @@ class TestDistributionSourcePackage(TestCaseWithFactory):
         # The DSP.ensure() class method creates a persistent instance
         # if one does not exist.
         spph = self.factory.makeSourcePackagePublishingHistory()
-        spph_dsp = spph.sourcepackagerelease.distrosourcepackage
+        spph_dsp = spph.distroseries.distribution.getSourcePackage(
+            spph.sourcepackagerelease.sourcepackagename)
         DistributionSourcePackage.ensure(spph)
         new_dsp = DistributionSourcePackage._get(
             spph_dsp.distribution, spph_dsp.sourcepackagename)
@@ -95,7 +96,8 @@ class TestDistributionSourcePackage(TestCaseWithFactory):
         archive = self.factory.makeArchive()
         spph = self.factory.makeSourcePackagePublishingHistory(
             archive=archive)
-        spph_dsp = spph.sourcepackagerelease.distrosourcepackage
+        spph_dsp = spph.distroseries.distribution.getSourcePackage(
+            spph.sourcepackagerelease.sourcepackagename)
         DistributionSourcePackage.ensure(spph)
         new_dsp = DistributionSourcePackage._get(
             spph_dsp.distribution, spph_dsp.sourcepackagename)
@@ -122,7 +124,8 @@ class TestDistributionSourcePackage(TestCaseWithFactory):
         # Calling delete() on a persistent DSP with SPPH returns False.
         # Once a package is uploaded, it cannot be deleted.
         spph = self.factory.makeSourcePackagePublishingHistory()
-        dsp = spph.sourcepackagerelease.distrosourcepackage
+        dsp = spph.distroseries.distribution.getSourcePackage(
+            spph.sourcepackagerelease.sourcepackagename)
         DistributionSourcePackage.ensure(spph=spph)
         transaction.commit()
         self.assertFalse(dsp.delete())

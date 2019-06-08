@@ -1,16 +1,25 @@
-# Copyright 2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2011-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Webservice unit tests related to Launchpad Questions."""
 
+from __future__ import absolute_import, print_function, unicode_literals
+
 __metaclass__ = type
 
-from BeautifulSoup import BeautifulSoup
-from lazr.restfulclient.errors import HTTPError
-from simplejson import dumps
-import transaction
-from zope.component import getUtility
+from datetime import (
+    datetime,
+    timedelta,
+    )
 
+from lazr.restfulclient.errors import HTTPError
+import pytz
+from simplejson import dumps
+from testtools.matchers import EndsWith
+import transaction
+from zope.security.proxy import removeSecurityProxy
+
+from lp.answers.enums import QuestionStatus
 from lp.answers.errors import (
     AddAnswerContactError,
     FAQTargetError,
@@ -20,14 +29,18 @@ from lp.answers.errors import (
     NotQuestionOwnerError,
     QuestionTargetError,
     )
-from lp.registry.interfaces.person import IPersonSet
+from lp.services.beautifulsoup import BeautifulSoup4 as BeautifulSoup
+from lp.services.webapp.interfaces import OAuthPermission
 from lp.testing import (
+    admin_logged_in,
     celebrity_logged_in,
     launchpadlib_for,
     logout,
     person_logged_in,
+    record_two_runs,
     TestCase,
     TestCaseWithFactory,
+    time_counter,
     ws_object,
     )
 from lp.testing.layers import (
@@ -35,7 +48,11 @@ from lp.testing.layers import (
     DatabaseFunctionalLayer,
     FunctionalLayer,
     )
-from lp.testing.pages import LaunchpadWebServiceCaller
+from lp.testing.matchers import HasQueryCount
+from lp.testing.pages import (
+    LaunchpadWebServiceCaller,
+    webservice_for_person,
+    )
 from lp.testing.views import create_webservice_error_view
 
 
@@ -83,6 +100,7 @@ class TestQuestionRepresentation(TestCaseWithFactory):
         with celebrity_logged_in('admin'):
             self.question = self.factory.makeQuestion(
                 title="This is a question")
+            self.target_name = self.question.target.name
 
         self.webservice = LaunchpadWebServiceCaller(
             'launchpad-library', 'salgado-change-anything')
@@ -91,7 +109,7 @@ class TestQuestionRepresentation(TestCaseWithFactory):
     def findQuestionTitle(self, response):
         """Find the question title field in an XHTML document fragment."""
         soup = BeautifulSoup(response.body)
-        dt = soup.find('dt', text="title").parent
+        dt = soup.find('dt', text="title")
         dd = dt.findNextSibling('dd')
         return str(dd.contents.pop())
 
@@ -105,7 +123,7 @@ class TestQuestionRepresentation(TestCaseWithFactory):
     def test_GET_xhtml_representation(self):
         # A question's xhtml representation is available on the api.
         response = self.webservice.get(
-            '/%s/+question/%d' % (self.question.target.name,
+            '/%s/+question/%d' % (self.target_name,
                 self.question.id),
             'application/xhtml+xml')
         self.assertEqual(response.status, 200)
@@ -119,7 +137,7 @@ class TestQuestionRepresentation(TestCaseWithFactory):
         new_title = "No, this is a question"
 
         question_json = self.webservice.get(
-            '/%s/+question/%d' % (self.question.target.name,
+            '/%s/+question/%d' % (self.target_name,
                 self.question.id)).jsonBody()
 
         response = self.webservice.patch(
@@ -134,6 +152,31 @@ class TestQuestionRepresentation(TestCaseWithFactory):
             self.findQuestionTitle(response),
             "<p>No, this is a question</p>")
 
+    def test_reject(self):
+        # A question can be rejected via the API.
+        question_url = '/%s/+question/%d' % (
+            self.target_name, self.question.id)
+        response = self.webservice.named_post(
+            question_url, 'reject', comment='A rejection message')
+        self.assertEqual(201, response.status)
+        self.assertThat(
+            response.getheader('location'),
+            EndsWith('%s/messages/1' % question_url))
+        self.assertEqual(QuestionStatus.INVALID, self.question.status)
+
+    def test_reject_not_answer_contact(self):
+        # If the requesting user is not an answer contact, the API returns a
+        # suitable error.
+        with celebrity_logged_in('admin'):
+            random_person = self.factory.makePerson()
+        webservice = webservice_for_person(
+            random_person, permission=OAuthPermission.WRITE_PUBLIC)
+        webservice.default_api_version = 'devel'
+        response = webservice.named_post(
+            '/%s/+question/%d' % (self.target_name, self.question.id),
+            'reject', comment='A rejection message')
+        self.assertEqual(401, response.status)
+
 
 class TestSetCommentVisibility(TestCaseWithFactory):
     """Tests who can successfully set comment visibility."""
@@ -142,13 +185,11 @@ class TestSetCommentVisibility(TestCaseWithFactory):
 
     def setUp(self):
         super(TestSetCommentVisibility, self).setUp()
-        self.person_set = getUtility(IPersonSet)
-        admins = self.person_set.getByName('admins')
-        self.admin = admins.teamowner
-        with person_logged_in(self.admin):
+        self.commenter = self.factory.makePerson()
+        with person_logged_in(self.commenter):
             self.question = self.factory.makeQuestion()
             self.message = self.question.addComment(
-                self.admin, 'Some comment')
+                self.commenter, 'Some comment')
         transaction.commit()
 
     def _get_question_for_user(self, user=None):
@@ -156,7 +197,7 @@ class TestSetCommentVisibility(TestCaseWithFactory):
         # End any open lplib instance.
         logout()
         lp = launchpadlib_for("test", user)
-        return ws_object(lp, self.question)
+        return ws_object(lp, removeSecurityProxy(self.question))
 
     def _set_visibility(self, question):
         """Method to set visibility; needed for assertRaises."""
@@ -167,8 +208,8 @@ class TestSetCommentVisibility(TestCaseWithFactory):
     def test_random_user_cannot_set_visible(self):
         # Logged in users without privs can't set question comment
         # visibility.
-        nopriv = self.person_set.getByName('no-priv')
-        question = self._get_question_for_user(nopriv)
+        random_user = self.factory.makePerson()
+        question = self._get_question_for_user(random_user)
         self.assertRaises(
             HTTPError,
             self._set_visibility,
@@ -183,13 +224,18 @@ class TestSetCommentVisibility(TestCaseWithFactory):
             self._set_visibility,
             question)
 
+    def test_comment_owner_can_set_visible(self):
+        # Members of registry experts can set question comment
+        # visibility.
+        question = self._get_question_for_user(self.commenter)
+        self._set_visibility(question)
+        self.assertFalse(self.message.visible)
+
     def test_registry_admin_can_set_visible(self):
         # Members of registry experts can set question comment
         # visibility.
-        registry = self.person_set.getByName('registry')
-        person = self.factory.makePerson()
-        with person_logged_in(registry.teamowner):
-            registry.addMember(person, registry.teamowner)
+        with celebrity_logged_in('registry_experts') as registry:
+            person = registry
         question = self._get_question_for_user(person)
         self._set_visibility(question)
         self.assertFalse(self.message.visible)
@@ -197,10 +243,8 @@ class TestSetCommentVisibility(TestCaseWithFactory):
     def test_admin_can_set_visible(self):
         # Admins can set question comment
         # visibility.
-        admins = self.person_set.getByName('admins')
-        person = self.factory.makePerson()
-        with person_logged_in(admins.teamowner):
-            admins.addMember(person, admins.teamowner)
+        with celebrity_logged_in('admin') as admin:
+            person = admin
         question = self._get_question_for_user(person)
         self._set_visibility(question)
         self.assertFalse(self.message.visible)
@@ -242,3 +286,41 @@ class TestQuestionWebServiceSubscription(TestCaseWithFactory):
 
         # Check the results.
         self.assertFalse(db_question.isSubscribed(db_person))
+
+
+class TestQuestionSetWebService(TestCaseWithFactory):
+
+    layer = DatabaseFunctionalLayer
+
+    def test_searchQuestions(self):
+        date_gen = time_counter(
+            datetime(2015, 1, 1, tzinfo=pytz.UTC), timedelta(days=1))
+        created = [
+            self.factory.makeQuestion(title="foo", datecreated=next(date_gen))
+            for i in range(10)]
+        webservice = webservice_for_person(self.factory.makePerson())
+        collection = webservice.named_get(
+            '/questions', 'searchQuestions', search_text='foo',
+            sort='oldest first', api_version='devel').jsonBody()
+        # The first few matching questions are returned.
+        self.assertEqual(
+            [q.id for q in created[:5]],
+            [int(q['self_link'].rsplit('/', 1)[-1])
+             for q in collection['entries']])
+
+    def test_searchQuestions_query_count(self):
+        webservice = webservice_for_person(self.factory.makePerson())
+
+        def create_question():
+            with admin_logged_in():
+                self.factory.makeQuestion(title="foobar")
+
+        def search_questions():
+            webservice.named_get(
+                '/questions', 'searchQuestions', search_text='foobar',
+                api_version='devel').jsonBody()
+
+        search_questions()
+        recorder1, recorder2 = record_two_runs(
+            search_questions, create_question, 2)
+        self.assertThat(recorder2, HasQueryCount.byEquality(recorder1))

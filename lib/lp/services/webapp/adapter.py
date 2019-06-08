@@ -1,8 +1,5 @@
-# Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
-
-# We use global in this module.
-# pylint: disable-msg=W0602
 
 __metaclass__ = type
 
@@ -11,6 +8,7 @@ import logging
 import os
 import re
 import sys
+from textwrap import dedent
 import thread
 import threading
 from time import time
@@ -29,10 +27,8 @@ from psycopg2.extensions import (
     QueryCanceledError,
     )
 import pytz
-from storm.database import (
-    Connection,
-    register_scheme,
-    )
+from six import reraise
+from storm.database import register_scheme
 from storm.databases.postgres import (
     Postgres,
     PostgresTimeoutTracer,
@@ -47,8 +43,8 @@ from zope.component import getUtility
 from zope.interface import (
     alsoProvides,
     classImplements,
-    classProvides,
-    implements,
+    implementer,
+    provider,
     )
 from zope.security.proxy import removeSecurityProxy
 
@@ -57,11 +53,17 @@ from lp.services.config import (
     config,
     dbconfig,
     )
-from lp.services.database.interfaces import IRequestExpired
-from lp.services.database.lpstorm import (
+from lp.services.database.interfaces import (
+    DEFAULT_FLAVOR,
     IMasterObject,
     IMasterStore,
+    IRequestExpired,
+    IStoreSelector,
+    MAIN_STORE,
+    MASTER_FLAVOR,
+    SLAVE_FLAVOR,
     )
+from lp.services.database.policy import MasterDatabasePolicy
 from lp.services.database.postgresql import ConnectionString
 from lp.services.log.loglevels import DEBUG2
 from lp.services.stacktrace import (
@@ -74,15 +76,8 @@ from lp.services.timeline.requesttimeline import (
     set_request_timeline,
     )
 from lp.services.timeout import set_default_timeout_function
-from lp.services.webapp.dbpolicy import MasterDatabasePolicy
+from lp.services.webapp import LaunchpadView
 from lp.services.webapp.interaction import get_interaction_extras
-from lp.services.webapp.interfaces import (
-    DEFAULT_FLAVOR,
-    IStoreSelector,
-    MAIN_STORE,
-    MASTER_FLAVOR,
-    SLAVE_FLAVOR,
-    )
 from lp.services.webapp.opstats import OpStats
 
 
@@ -90,6 +85,7 @@ __all__ = [
     'RequestExpired',
     'set_request_started',
     'clear_request_started',
+    'get_request_remaining_seconds',
     'get_request_statements',
     'get_request_start_time',
     'get_request_duration',
@@ -120,9 +116,9 @@ class LaunchpadTimeoutError(TimeoutError):
                 % (self.statement, self.params, self.original_error))
 
 
+@implementer(IRequestExpired)
 class RequestExpired(RuntimeError):
     """Request has timed out."""
-    implements(IRequestExpired)
 
 
 def _get_dirty_commit_flags():
@@ -156,12 +152,32 @@ class CommitLogger:
 
     def afterCompletion(self, txn):
         action = get_request_timeline(get_current_browser_request()).start(
-            "SQL-nostore", 'Transaction completed, status: %s' % txn.status)
+            u"SQL-nostore", u'Transaction completed, status: %s' % txn.status)
         action.finish()
 
 
+class FilteredTimeline(Timeline):
+    """A timeline that filters its actions.
+
+    This is useful for requests that are expected to log actions with very
+    large details (for example, large bulk SQL INSERT statements), where we
+    don't want the overhead of storing those in memory.
+    """
+
+    def __init__(self, actions=None, detail_filter=None, **kwargs):
+        super(FilteredTimeline, self).__init__(actions=actions, **kwargs)
+        self.detail_filter = detail_filter
+
+    def start(self, category, detail, allow_nested=False):
+        """See `Timeline`."""
+        if self.detail_filter is not None:
+            detail = self.detail_filter(category, detail)
+        return super(FilteredTimeline, self).start(category, detail)
+
+
 def set_request_started(
-    starttime=None, request_statements=None, txn=None, enable_timeout=True):
+    starttime=None, request_statements=None, txn=None, enable_timeout=True,
+    detail_filter=None):
     """Set the start time for the request being served by the current
     thread.
 
@@ -175,6 +191,9 @@ def set_request_started(
         txn.abort() calls are logged too.
     :param enable_timeout: If True, a timeout error is raised if the request
         runs for a longer time than the configured timeout.
+    :param detail_filter: An optional (category, detail) -> detail callable
+        that filters action details.  This may be used when some details are
+        expected to be very large.
     """
     if getattr(_local, 'request_start_time', None) is not None:
         warnings.warn('set_request_started() called before previous request '
@@ -184,13 +203,18 @@ def set_request_started(
         starttime = time()
     _local.request_start_time = starttime
     request = get_current_browser_request()
+    if detail_filter is not None:
+        timeline_factory = partial(
+            FilteredTimeline, detail_filter=detail_filter)
+    else:
+        timeline_factory = Timeline
     if request_statements is not None:
         # Specify a specific sequence object for the timeline.
-        set_request_timeline(request, Timeline(request_statements))
+        set_request_timeline(request, timeline_factory(request_statements))
     else:
         # Ensure a timeline is created, so that time offset for actions is
         # reasonable.
-        set_request_timeline(request, Timeline())
+        set_request_timeline(request, timeline_factory())
     _local.current_statement_timeout = None
     _local.enable_timeout = enable_timeout
     _local.commit_logger = CommitLogger(transaction)
@@ -442,7 +466,6 @@ def break_main_thread_db_access(*ignored):
     for using connections from the main thread.
     """
     # Record the ID of the main thread.
-    # pylint: disable-msg=W0603
     global _main_thread_id
     _main_thread_id = thread.get_ident()
 
@@ -477,7 +500,6 @@ class LaunchpadDatabase(Postgres):
         # or main_slave.
         # We don't invoke the superclass constructor as it has a very limited
         # opinion on what uri is.
-        # pylint: disable-msg=W0231
         self._uri = uri
         # A unique name for this database connection.
         self.name = uri.database
@@ -588,7 +610,6 @@ class LaunchpadTimeoutTracer(PostgresTimeoutTracer):
     """Storm tracer class to keep statement execution time bounded."""
 
     def __init__(self):
-        # pylint: disable-msg=W0231
         # The parent class __init__ just sets the granularity
         # attribute, which we are handling with a property.
         pass
@@ -626,7 +647,7 @@ class LaunchpadTimeoutTracer(PostgresTimeoutTracer):
             info = sys.exc_info()
             transaction.doom()
             try:
-                raise info[0], info[1], info[2]
+                reraise(info[0], info[1], tb=info[2])
             finally:
                 info = None
 
@@ -659,18 +680,11 @@ class LaunchpadStatementTracer:
                                statement, params):
         statement_to_log = statement
         if params:
-            # There are some bind parameters so we want to insert them into
-            # the sql statement so we can log the statement.
-            query_params = list(Connection.to_database(params))
-            # We need to ensure % symbols used for LIKE statements etc are
-            # properly quoted or else the string format operation will fail.
-            quoted_statement = re.sub(
-                    "%%%", "%%%%", re.sub("%([^s])", r"%%\1", statement))
-            # We need to massage the query parameters a little to deal with
-            # string parameters which represent encoded binary data.
-            param_strings = [repr(p) if isinstance(p, basestring) else p
-                                 for p in query_params]
-            statement_to_log = quoted_statement % tuple(param_strings)
+            statement_to_log = raw_cursor.mogrify(
+                statement, tuple(connection.to_database(params)))
+        if isinstance(statement_to_log, bytes):
+            statement_to_log = statement_to_log.decode(
+                'UTF-8', errors='replace')
         # Record traceback to log, if requested.
         print_traceback = self._debug_sql_extra
         log_sql = getattr(_local, 'sql_logging', None)
@@ -708,11 +722,11 @@ class LaunchpadStatementTracer:
                 # SQL execution.
                 connection._lp_statement_info = (
                     int(time() * 1000),
-                    'SQL-%s' % connection._database.name,
+                    u'SQL-%s' % connection._database.name,
                     statement_to_log)
             return
         action = get_request_timeline(get_current_browser_request()).start(
-            'SQL-%s' % connection._database.name, statement_to_log)
+            u'SQL-%s' % connection._database.name, statement_to_log)
         connection._lp_statement_action = action
 
     def connection_raw_execute_success(self, connection, raw_cursor,
@@ -765,9 +779,9 @@ install_tracer(LaunchpadStatementTracer())
 install_tracer(LaunchpadTimeoutTracer())
 
 
+@provider(IStoreSelector)
 class StoreSelector:
-    """See `lp.services.webapp.interfaces.IStoreSelector`."""
-    classProvides(IStoreSelector)
+    """See `lp.services.database.interfaces.IStoreSelector`."""
 
     @staticmethod
     def push(db_policy):
@@ -845,3 +859,23 @@ def get_object_from_master_store(obj):
 def get_store_name(store):
     """Helper to retrieve the store name for a ZStorm Store."""
     return getUtility(IZStorm).get_name(store)
+
+
+class WhichDbView(LaunchpadView):
+    "A page that reports which database is being used by default."
+
+    def render(self):
+        store = getUtility(IStoreSelector).get(MAIN_STORE, DEFAULT_FLAVOR)
+        dbname = store.execute("SELECT current_database()").get_one()[0]
+        return dedent("""
+                <html>
+                <body>
+                <span id="dbname">
+                %s
+                </span>
+                <form method="post">
+                <input type="submit" value="Do Post" />
+                </form>
+                </body>
+                </html>
+                """ % dbname).strip()

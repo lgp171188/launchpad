@@ -58,7 +58,7 @@ for teams (as they're defined in the ITeam interface).
     sub_teams_collection_link: u'http://.../~salgado/sub_teams'
     super_teams_collection_link: u'http://.../~salgado/super_teams'
     team_owner_link: None
-    time_zone: None
+    time_zone: u'UTC'
     visibility: u'Public'
     web_link: u'http://launchpad.../~salgado'
     wiki_names_collection_link: u'http://.../~salgado/wiki_names'
@@ -124,7 +124,7 @@ for teams (as they're defined in the ITeam interface).
     super_teams_collection_link: u'http://.../~ubuntu-team/super_teams'
     team_description: u'This Team is responsible for the Ubuntu Distribution'
     team_owner_link: u'http://.../~mark'
-    time_zone: None
+    time_zone: u'UTC'
     visibility: u'Public'
     web_link: u'http://launchpad.../~ubuntu-team'
     wiki_names_collection_link: u'http://.../~ubuntu-team/wiki_names'
@@ -193,7 +193,7 @@ The sample person "ssh-user" doesn't have any keys to begin with:
     >>> sshkeys = sample_person['sshkeys_collection_link']
     >>> print sshkeys
     http://.../~ssh-user/sshkeys
-    >>> print_self_link_of_entries(webservice.get(sshkeys).jsonBody())
+    >>> print_self_link_of_entries(anon_webservice.get(sshkeys).jsonBody())
 
 Let's give "ssh-user" a key via the back door of our internal Python APIs.
 This setting of the ssh key should trigger a notice that the key has been
@@ -215,7 +215,7 @@ added.
 Now when we get the sshkey collection for 'sssh-user' again, the key should
 show up:
 
-    >>> keys = webservice.get(sshkeys).jsonBody()
+    >>> keys = anon_webservice.get(sshkeys).jsonBody()
     >>> print_self_link_of_entries(keys)
     http://.../~ssh-user/+ssh-keys/...
 
@@ -224,7 +224,7 @@ And then we can actually retrieve the key:
 
     >>> pprint_entry(keys['entries'][0])
     comment: u'unique-...'
-    keytext: u'unique-...'
+    keytext: u'...'
     keytype: u'RSA'
     resource_type_link: u'http://.../#ssh_key'
     self_link: u'http://.../~ssh-user/+ssh-keys/...'
@@ -423,29 +423,6 @@ All participants (direct or indirect members):
     http://.../~name12
     http://.../~salgado
 
-A person/team is also linked to all teams in which they participate.
-
-    # XXX: salgado, 2008-08-01: Commented because method has been Unexported;
-    # it should be re-enabled after the operation is exported again.
-    # >>> salgado['participations_collection_link']
-    # u'http://.../~salgado/participations'
-    # >>> print_self_link_of_entries(webservice.get(
-    # ...     salgado['participations_collection_link']).jsonBody())
-    # http://.../~admins
-    # http://.../~landscape-developers
-    # http://.../~mailing-list-experts
-
-And to the teams in which they're indirect members.
-
-    # XXX: salgado, 2008-08-01: Commented because method has been Unexported;
-    # it should be re-enabled after the operation is exported again.
-    # >>> link = salgado['indirect_participations_collection_link']
-    # >>> link
-    # u'http://.../~salgado/indirect_participations'
-
-    # >>> print_self_link_of_entries(webservice.get(link).jsonBody())
-    # http://.../~mailing-list-experts
-
 There are also links to proposed, invited, deactivated and expired
 members.
 
@@ -534,7 +511,8 @@ Wiki names can be modified.
     >>> print wiki_name['url']
     http://www.example.com/MrExample
 
-But only if we supply valid data.
+But only if we supply valid data. Due to bug #1088358 the error is
+escaped as if it was HTML.
 
     >>> patch = {
     ...    u'wiki': u'javascript:void/**/',
@@ -544,7 +522,7 @@ But only if we supply valid data.
     >>> print response
     HTTP/1.1 400 Bad Request
     ...
-    wiki: The URI scheme "javascript" is not allowed.
+    wiki: The URI scheme &quot;javascript&quot; is not allowed.
     Only URIs with the following schemes may be used: http, https
 
 
@@ -602,7 +580,7 @@ too.
 
     >>> irc_id = sorted(webservice.get(irc_ids_link).jsonBody()['entries'])[0]
     >>> pprint_entry(irc_id)
-    network: u'irc.freenode.net'
+    network: u'chat.freenode.net'
     nickname: u'mark'
     person_link: u'http://.../~mark'
     resource_type_link: u'http://.../#irc_id'
@@ -623,7 +601,7 @@ We can get to the person's default PPA via the 'archive' property:
 
     >>> mark_archive_link = mark['archive_link']
     >>> print mark_archive_link
-    http://.../~mark/+archive/ppa
+    http://.../~mark/+archive/ubuntu/ppa
 
     >>> mark_archive = webservice.get(mark_archive_link).jsonBody()
     >>> print mark_archive['description']
@@ -634,31 +612,40 @@ person.
 
     >>> print_self_link_of_entries(webservice.get(
     ...     mark['ppas_collection_link']).jsonBody())
-    http://.../~mark/+archive/ppa
+    http://.../~mark/+archive/ubuntu/ppa
 
 A specific PPA can be looked up by name via 'getPPAByName'
 named-operation on IPerson.
 
     >>> print webservice.named_get(
     ...     mark['self_link'], 'getPPAByName',
+    ...     distribution='/ubuntu', name='ppa').jsonBody()['self_link']
+    http://.../~mark/+archive/ubuntu/ppa
+
+If no distribution is specified, it defaults to Ubuntu.
+
+    >>> print webservice.named_get(
+    ...     mark['self_link'], 'getPPAByName',
     ...     name='ppa').jsonBody()['self_link']
-    http://.../~mark/+archive/ppa
+    http://.../~mark/+archive/ubuntu/ppa
 
 In cases where a PPA with a given name cannot be found, a Not Found error is
 returned.
 
     >>> print webservice.named_get(
-    ...     mark['self_link'], 'getPPAByName', name='boing')
+    ...     mark['self_link'], 'getPPAByName', distribution='/debian',
+    ...     name='ppa')
     HTTP/1.1 404 Not Found
     ...
-    No such ppa: 'boing'.
+    No such ppa: 'ppa'.
 
 The method doesn't even bother to execute the lookup if the given
 'name' doesn't match the constraints for PPA names. An error message
 indicating what was wrong is returned.
 
     >>> print webservice.named_get(
-    ...     mark['self_link'], 'getPPAByName', name='XpTo@#$%')
+    ...     mark['self_link'], 'getPPAByName', distribution='/ubuntu',
+    ...     name='XpTo@#$%')
     HTTP/1.1 400 Bad Request
     ...
     name:
@@ -680,7 +667,7 @@ all the URLs to the private archives that the person can access.
     >>> launchpad = launchpadlib_for(
     ...     'person test', 'mark', 'WRITE_PUBLIC')
     >>> print launchpad.me.getArchiveSubscriptionURLs()
-    [u'http://mark:testtoken@private-ppa.launchpad.dev/mark/p3a/ubuntu']
+    [u'http://mark:testtoken@private-ppa.launchpad.test/mark/p3a/ubuntu']
 
 
 Custom operations
@@ -799,8 +786,8 @@ Accepting or declining a membership invitation:
     >>> webservice.get("/~ubuntu-team/+member/name20").jsonBody()['status']
     u'Invitation declined'
 
-The retractTeamMembership method allows a team admin to remove his team from
-another team.
+The retractTeamMembership method allows a team admin to remove their team
+from another team.
 
     >>> print webservice.named_post(
     ...     landscape_developers['self_link'], 'retractTeamMembership',
@@ -810,35 +797,6 @@ another team.
     >>> webservice.get("/~ubuntu-team/+member/landscape-developers"
     ...     ).jsonBody()['status']
     u'Deactivated'
-
-To check whether or not a given person is a participant in a team, use the
-'inTeam' custom operation.
-
-    # XXX: salgado, 2008-08-01: Commented because method has been Unexported;
-    # it should be re-enabled after the operation is exported again.
-    # >>> print webservice.named_get(
-    # ...     '/~salgado', 'inTeam', team=ubuntu_team['self_link']
-    # ...     ).jsonBody()
-    # False
-
-    # >>> print webservice.named_get(
-    # ...     '/~cprov', 'inTeam', team=ubuntu_team['self_link']
-    # ...     ).jsonBody()
-    # True
-
-To find the path from a given person to a team that person is a
-participant, use the 'findPathToTeam' custom operation.
-
-    # XXX: salgado, 2008-08-01: Commented because method has been Unexported;
-    # it should be re-enabled after the operation is exported again.
-    # >>> ml_experts = webservice.get("/~mailing-list-experts").jsonBody()
-    # >>> json = webservice.named_get(
-    # ...     '/~salgado', 'findPathToTeam', team=ml_experts['self_link']
-    # ...     ).jsonBody()
-    # >>> for entry in json['entries']:
-    # ...     print entry['self_link']
-    # http://.../~admins
-    # http://.../~mailing-list-experts
 
 
 Restrictions

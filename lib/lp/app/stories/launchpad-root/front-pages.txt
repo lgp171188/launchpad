@@ -5,9 +5,9 @@ Visit our home page with the typical configuration:
 
     >>> from lp.services.features.testing import FeatureFixture
     >>> with FeatureFixture({"app.root_blog.enabled": True}):
-    ...     browser.open('http://launchpad.dev/')
+    ...     browser.open('http://launchpad.test/')
     >>> browser.url
-    'http://launchpad.dev/'
+    'http://launchpad.test/'
 
 It contains a string which our IS uses to determine whether or not
 Launchpad is alive:
@@ -22,7 +22,7 @@ And links to the important applications and facets:
 
     >>> code_link = browser.getLink(url='code')
     >>> code_link.url
-    'http://code.launchpad.dev/'
+    'http://code.launchpad.test/'
 
 It also includes a search form...
 
@@ -60,40 +60,40 @@ blog:
 The homepage looks different when the user is logged in:
 
     >>> user_browser = setupBrowser(auth="Basic test@canonical.com:test")
-    >>> user_browser.open('http://launchpad.dev/')
+    >>> user_browser.open('http://launchpad.test/')
 
 Now there are links to create projects and teams:
 
     >>> project_link = user_browser.getLink(url='/projects')
     >>> project_link.url
-    'http://launchpad.dev/projects/+new'
+    'http://launchpad.test/projects/+new'
 
     >>> people_link = user_browser.getLink(url='/people')
     >>> people_link.url
-    'http://launchpad.dev/people/+newteam'
+    'http://launchpad.test/people/+newteam'
 
 
 The front pages for the other applications, however, do have
 application tabs. On these pages, the tab normally named "Overview"
 is labelled "Launchpad Home" to make clear where it goes.
 
-    >>> anon_browser.open('http://code.launchpad.dev/')
+    >>> anon_browser.open('http://code.launchpad.test/')
     >>> print_location_apps(anon_browser.contents)
-    * Launchpad Home - http://launchpad.dev/
-    * Code (selected) - http://code.launchpad.dev/
-    * Bugs - http://bugs.launchpad.dev/
-    * Blueprints - http://blueprints.launchpad.dev/
-    * Translations - http://translations.launchpad.dev/
-    * Answers - http://answers.launchpad.dev/
+    * Launchpad Home - http://launchpad.test/
+    * Code (selected) - http://code.launchpad.test/
+    * Bugs - http://bugs.launchpad.test/
+    * Blueprints - http://blueprints.launchpad.test/
+    * Translations - http://translations.launchpad.test/
+    * Answers - http://answers.launchpad.test/
 
-    >>> user_browser.open('http://answers.launchpad.dev/')
+    >>> user_browser.open('http://answers.launchpad.test/')
     >>> print_location_apps(user_browser.contents)
-    * Launchpad Home - http://launchpad.dev/
-    * Code - http://code.launchpad.dev/
-    * Bugs - http://bugs.launchpad.dev/
-    * Blueprints - http://blueprints.launchpad.dev/
-    * Translations - http://translations.launchpad.dev/
-    * Answers (selected) - http://answers.launchpad.dev/
+    * Launchpad Home - http://launchpad.test/
+    * Code - http://code.launchpad.test/
+    * Bugs - http://bugs.launchpad.test/
+    * Blueprints - http://blueprints.launchpad.test/
+    * Translations - http://translations.launchpad.test/
+    * Answers (selected) - http://answers.launchpad.test/
 
 The footer of those pages contains the link to the front page, tour
 and guide:

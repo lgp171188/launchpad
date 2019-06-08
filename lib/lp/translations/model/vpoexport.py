@@ -1,8 +1,6 @@
 # Copyright 2009 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-# pylint: disable-msg=E0611,W0212
-
 """Database class to handle translation export view."""
 
 __metaclass__ = type
@@ -16,14 +14,9 @@ from storm.expr import (
     And,
     Or,
     )
-from zope.component import getUtility
-from zope.interface import implements
+from zope.interface import implementer
 
-from lp.services.webapp.interfaces import (
-    IStoreSelector,
-    MAIN_STORE,
-    SLAVE_FLAVOR,
-    )
+from lp.services.database.interfaces import IStore
 from lp.soyuz.model.component import Component
 from lp.soyuz.model.publishing import SourcePackagePublishingHistory
 from lp.translations.interfaces.vpoexport import (
@@ -34,10 +27,9 @@ from lp.translations.model.pofile import POFile
 from lp.translations.model.potemplate import POTemplate
 
 
+@implementer(IVPOExportSet)
 class VPOExportSet:
     """Retrieve collections of `VPOExport` objects."""
-
-    implements(IVPOExportSet)
 
     def get_distroseries_pofiles(self, series, date=None, component=None,
                                  languagepack=None):
@@ -83,8 +75,9 @@ class VPOExportSet:
         # Use the slave store.  We may want to write to the distroseries
         # to register a language pack, but not to the translation data
         # we retrieve for it.
-        store = getUtility(IStoreSelector).get(MAIN_STORE, SLAVE_FLAVOR)
-        query = store.using(*tables).find(POFile, And(*conditions))
+        # XXX wgrant 2017-03-21: Moved to master to avoid termination
+        # due to long transactions.
+        query = IStore(POFile).using(*tables).find(POFile, And(*conditions))
 
         # Order by POTemplate.  Caching in the export scripts can be
         # much more effective when consecutive POFiles belong to the
@@ -99,9 +92,9 @@ class VPOExportSet:
             series, date, component, languagepack).count()
 
 
+@implementer(IVPOExport)
 class VPOExport:
     """Present translations in a form suitable for efficient export."""
-    implements(IVPOExport)
 
     potemplate = None
     languagepack = None

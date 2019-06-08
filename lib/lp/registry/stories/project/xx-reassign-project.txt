@@ -1,7 +1,7 @@
   Change the owner of the mozilla project.
 
 
-  Logged in as no-priv@canonical.com we can't do that, because he's not the
+  Logged in as no-priv@canonical.com we can't do that, because they're not the
   owner of the project nor a member of admins.
 
   >>> print http(r"""
@@ -32,6 +32,7 @@
   >>> print http(r"""
   ... POST /mozilla/+reassign HTTP/1.1
   ... Authorization: Basic mark@example.com:test
+  ... Referer: https://launchpad.test/
   ...
   ... field.owner=mark&field.existing=existing"""
   ... r"""&field.actions.change=Change""")

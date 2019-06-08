@@ -1,4 +1,4 @@
-# Copyright 2009-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2013 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """ISpecificationTarget browser views."""
@@ -56,7 +56,6 @@ from lp.services.webapp import (
     )
 from lp.services.webapp.authorization import check_permission
 from lp.services.webapp.batching import BatchNavigator
-from lp.services.webapp.breadcrumb import Breadcrumb
 from lp.services.webapp.menu import (
     enabled_with_permission,
     Link,
@@ -161,7 +160,7 @@ class HasSpecificationsView(LaunchpadView):
     def template(self):
         # Check for the magical "index" added by the browser:page template
         # machinery. If it exists this is actually the
-        # zope.app.pagetemplate.simpleviewclass.simple class that is magically
+        # zope.browserpage.simpleviewclass.simple class that is magically
         # mixed in by the browser:page zcml directive the template defined in
         # the directive should be used.
         if safe_hasattr(self, 'index'):
@@ -259,11 +258,11 @@ class HasSpecificationsView(LaunchpadView):
 
     @cachedproperty
     def has_any_specifications(self):
-        return self.context.has_any_specifications
+        return not self.context.visible_specifications.is_empty()
 
     @cachedproperty
     def all_specifications(self):
-        return shortlist(self.context.all_specifications)
+        return shortlist(self.context.all_specifications(self.user))
 
     @cachedproperty
     def searchrequested(self):
@@ -347,8 +346,7 @@ class HasSpecificationsView(LaunchpadView):
                 and self.context.private
                 and not check_permission('launchpad.View', self.context)):
             return []
-        filter = self.spec_filter
-        return self.context.specifications(filter=filter)
+        return self.context.specifications(self.user, filter=self.spec_filter)
 
     @cachedproperty
     def specs_batched(self):
@@ -364,7 +362,7 @@ class HasSpecificationsView(LaunchpadView):
     def documentation(self):
         filter = [SpecificationFilter.COMPLETE,
                   SpecificationFilter.INFORMATIONAL]
-        return shortlist(self.context.specifications(filter=filter))
+        return shortlist(self.context.specifications(self.user, filter=filter))
 
     @cachedproperty
     def categories(self):
@@ -405,8 +403,9 @@ class HasSpecificationsView(LaunchpadView):
         Only ACCEPTED specifications are returned.  This list is used by the
         +portlet-latestspecs view.
         """
-        return self.context.specifications(sort=SpecificationSort.DATE,
-            quantity=quantity, prejoin_people=False)
+        return self.context.specifications(self.user,
+            sort=SpecificationSort.DATE, quantity=quantity,
+            need_people=False, need_branches=False, need_workitems=False)
 
 
 class SpecificationAssignmentsView(HasSpecificationsView):
@@ -461,8 +460,3 @@ class RegisterABlueprintButtonPortlet:
               </ul>
             </div>
             """ % self.target_url
-
-
-class BlueprintsVHostBreadcrumb(Breadcrumb):
-    rootsite = 'blueprints'
-    text = 'Blueprints'

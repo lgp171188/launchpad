@@ -1,7 +1,5 @@
-# Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2012 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
-
-# pylint: disable-msg=E0211,E0213
 
 """Bug watch interfaces."""
 
@@ -47,6 +45,7 @@ from lp import _
 from lp.bugs.interfaces.bugtracker import IBugTracker
 from lp.bugs.interfaces.hasbug import IHasBug
 from lp.services.fields import StrippedTextLine
+from lp.services.webservice.apihelpers import patch_collection_property
 
 
 class BugWatchActivityStatus(DBEnumeratedType):
@@ -265,6 +264,12 @@ class IBugWatch(IHasBug):
         :param message: The imported comment as a Launchpad Message object.
         """
 
+    def getBugMessages(clauses):
+        """Return all the `IBugMessage`s that reference this BugWatch.
+
+        :param clauses: A iterable of Storm clauses to limit the messages.
+        """
+
     def getImportedBugMessages():
         """Return all the `IBugMessage`s that have been imported."""
 
@@ -291,7 +296,7 @@ class IBugWatch(IHasBug):
 
 
 # Defined here because of circular imports.
-IBugTracker['watches'].value_type.schema = IBugWatch
+patch_collection_property(IBugTracker, 'watches', IBugWatch)
 
 
 class IBugWatchSet(Interface):

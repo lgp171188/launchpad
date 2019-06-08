@@ -32,7 +32,7 @@ any other bug tracker, but with a baseurl in the form
 mailto:<email-address>.
 
     >>> from zope.component import getUtility
-    >>> from lp.services.webapp.testing import verifyObject
+    >>> from lp.testing import verifyObject
     >>> from lp.bugs.interfaces.bugtracker import (
     ...     IBugTracker,
     ...     IBugTrackerSet,
@@ -88,7 +88,7 @@ because BugWatch.remotebug is a NOT NULL field).
 By contrast, if the message ID is known it is recorded in the remotebug
 field.
 
-    >>> from email.Utils import make_msgid
+    >>> from email.utils import make_msgid
     >>> message_id = make_msgid('launchpad')
     >>> bug_watch = example_bug.addWatch(bugtracker=email_tracker,
     ...     remotebug=message_id,
@@ -114,9 +114,9 @@ return an empty list.
 Similarly, Bug.getBugWatch() will always return None for email address
 bug trackers.
 
-    >>> print example_bug.getBugWatch(email_tracker, '')
+    >>> print(example_bug.getBugWatch(email_tracker, ''))
     None
 
-    >>> print example_bug.getBugWatch(email_tracker, message_id)
+    >>> print(example_bug.getBugWatch(email_tracker, message_id))
     None
 

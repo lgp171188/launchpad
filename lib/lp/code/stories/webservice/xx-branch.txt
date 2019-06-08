@@ -46,7 +46,7 @@ Let's make a mirrored branch to play with:
 
 At the moment, it's not scheduled to be mirrored.
 
-    >>> print branch.next_mirror_time
+    >>> print(branch.next_mirror_time)
     None
 
 But we can ask for it to be mirrored using the webservice:
@@ -62,7 +62,7 @@ But we can ask for it to be mirrored using the webservice:
 The new "next mirror time" is the time when we actually submitted the
 request for a mirror:
 
-    >>> print start_time < branch.next_mirror_time < end_time
+    >>> print(start_time < branch.next_mirror_time < end_time)
     True
 
 
@@ -125,8 +125,6 @@ time goes on.
     last_scanned_id: None
     lifecycle_status: u'Development'
     linked_bugs_collection_link: u'http://.../~eric/fooix/trunk/linked_bugs'
-    merge_queue_config: None
-    merge_queue_link: None
     mirror_status_message: None
     name: u'trunk'
     owner_link: u'.../~eric'
@@ -146,6 +144,7 @@ time goes on.
     unique_name: u'~eric/fooix/trunk'
     url: None
     web_link: u'http://code.../~eric/fooix/trunk'
+    webhooks_collection_link: u'http://.../~eric/fooix/trunk/webhooks'
     whiteboard: None
 
 There is a branch merge proposal with Fooix trunk as the target branch, so it
@@ -154,7 +153,7 @@ should have a branch at the endpoint of landing_candidates.
     >>> landing_candidates = webservice.get(
     ...     fooix_trunk['landing_candidates_collection_link']).jsonBody()
     >>> for candidate in landing_candidates['entries']:
-    ...     print candidate['source_branch_link']
+    ...     print(candidate['source_branch_link'])
     http://.../~eric/fooix/feature-branch
 
 
@@ -164,13 +163,13 @@ in its landing_targets.
     >>> feature_branch_link = \
     ...     '/~eric/fooix/feature-branch'
     >>> feature_branch = webservice.get(feature_branch_link).jsonBody()
-    >>> print feature_branch['unique_name']
+    >>> print(feature_branch['unique_name'])
     ~eric/fooix/feature-branch
 
     >>> landing_targets = webservice.get(
     ...     feature_branch['landing_targets_collection_link']).jsonBody()
     >>> for target in landing_targets['entries']:
-    ...     print target['target_branch_link']
+    ...     print(target['target_branch_link'])
     http://.../~eric/fooix/trunk
 
 The isPersonTrustedReviewer method is exposed, and takes a person link.
@@ -178,7 +177,7 @@ The isPersonTrustedReviewer method is exposed, and takes a person link.
     >>> trusted = webservice.named_get(
     ...     feature_branch['self_link'], 'isPersonTrustedReviewer',
     ...     reviewer=feature_branch['owner_link']).jsonBody()
-    >>> print trusted
+    >>> print(trusted)
     True
 
 
@@ -187,18 +186,21 @@ Project branches
 
 The branches of a project are also available.
 
+    >>> from operator import itemgetter
+
     >>> def print_branch(branch):
-    ...     print branch['unique_name'] + ' - ' + branch['lifecycle_status']
+    ...     print(branch['unique_name'] + ' - ' + branch['lifecycle_status'])
     >>> def print_branches(webservice, url, status=None, modified_since=None):
     ...     branches = webservice.named_get(
     ...         url, 'getBranches',
     ...         status=status, modified_since=modified_since).jsonBody()
-    ...     for branch in branches['entries']:
+    ...     for branch in sorted(
+    ...             branches['entries'], key=itemgetter('unique_name')):
     ...         print_branch(branch)
 
     >>> print_branches(webservice, '/fooix')
-    ~eric/fooix/trunk - Development
     ~eric/fooix/feature-branch - Experimental
+    ~eric/fooix/trunk - Development
 
 The branches can be limited to those that have been modified since a specified
 time.
@@ -218,8 +220,8 @@ Branches for people
 The branches owned by a person are available from the person object.
 
     >>> print_branches(webservice, '/~eric')
-    ~eric/fooix/trunk - Development
     ~eric/fooix/feature-branch - Experimental
+    ~eric/fooix/trunk - Development
 
 As with projects, these can be filtered by the branch status.
 
@@ -232,16 +234,16 @@ Project group branches
 Branches are also accessible for a project group.
 
     >>> login('admin@canonical.com')
-    >>> project = factory.makeProject(name='widgets')
-    >>> fooix.project = project
-    >>> blob = factory.makeProduct(name='blob', project=project)
+    >>> projectgroup = factory.makeProject(name='widgets')
+    >>> fooix.projectgroup = projectgroup
+    >>> blob = factory.makeProduct(name='blob', projectgroup=projectgroup)
     >>> branch = factory.makeProductBranch(product=blob, name='bar')
     >>> branch.owner.name = 'mary'
     >>> logout()
 
     >>> print_branches(webservice, '/widgets')
-    ~eric/fooix/trunk - Development
     ~eric/fooix/feature-branch - Experimental
+    ~eric/fooix/trunk - Development
     ~mary/blob/bar - Development
 
 As with projects, these can be filtered by the branch status.
@@ -256,20 +258,20 @@ In version 'beta', a branch can be made private or public by invoking
 the named operation 'setPrivate'.
 
     >>> branch = webservice.get(branch_url).jsonBody()
-    >>> print branch['private']
+    >>> print(branch['private'])
     False
 
     >>> response = webservice.named_post(
     ...     branch_url, 'setPrivate', api_version='beta', private=True)
     >>> branch = webservice.get(branch_url).jsonBody()
-    >>> print branch['information_type']
+    >>> print(branch['information_type'])
     Private
 
 In subsequent versions, 'setPrivate' is gone; you have to use the
 'transitionToInformationType' method.
 
-    >>> print webservice.named_post(
-    ...     branch_url, 'setPrivate', api_version='devel', private=True)
+    >>> print(webservice.named_post(
+    ...     branch_url, 'setPrivate', api_version='devel', private=True))
     HTTP/1.1 400 Bad Request
     ...
     No such operation: setPrivate
@@ -282,19 +284,19 @@ delete them.
 
     >>> deletable = webservice.named_get('/~eric/fooix/feature-branch',
     ...                                  'canBeDeleted').jsonBody()
-    >>> print deletable
+    >>> print(deletable)
     False
 
     Deleting only works on branches that do not have anything else
     depending on them.
 
     >>> response = webservice.delete('/~eric/fooix/feature-branch')
-    >>> print response
+    >>> print(response)
     HTTP/1.1 200 Ok
     ...
 
     >>> response = webservice.delete('/~mary/blob/bar')
-    >>> print response
+    >>> print(response)
     HTTP/1.1 200 Ok
     ...
 

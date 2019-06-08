@@ -1,12 +1,10 @@
 # Copyright 2009 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-# pylint: disable-msg=F0401
-
 """Unit tests for browser helper functions."""
 
 __metaclass__ = type
-__all__ = ['TestGetUserAgentDistroSeries', 'test_suite']
+__all__ = ['TestGetUserAgentDistroSeries']
 
 import unittest
 
@@ -24,8 +22,8 @@ class TestGetUserAgentDistroSeries(unittest.TestCase):
                       'Firefox/3.0.10')
 
         version = get_user_agent_distroseries(user_agent)
-        self.failUnlessEqual('10.09', version,
-                             "Incorrect version string returned.")
+        self.assertEqual('10.09', version,
+                         "Incorrect version string returned.")
 
     def test_get_user_agent_distroseries_when_invalid(self):
         """None should be returned when the version is not matched."""
@@ -35,8 +33,5 @@ class TestGetUserAgentDistroSeries(unittest.TestCase):
                       'Firefox/3.0.10')
 
         version = get_user_agent_distroseries(user_agent)
-        self.failUnless(version is None,
-                        "None should be returned when the match fails.")
-
-def test_suite():
-    return unittest.TestLoader().loadTestsFromName(__name__)
+        self.assertIsNone(
+            version, "None should be returned when the match fails.")

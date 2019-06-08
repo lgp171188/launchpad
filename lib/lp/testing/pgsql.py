@@ -18,10 +18,7 @@ from bzrlib.lock import WriteLock
 import psycopg2
 
 from lp.services.config import config
-from lp.services.database.postgresql import (
-    generateResetSequencesSQL,
-    resetSequences,
-    )
+from lp.services.database import activity_cols
 
 
 class ConnectionWrapper:
@@ -178,7 +175,7 @@ class PgTestSetup:
     _reset_db = True
 
     def __init__(self, template=None, dbname=dynamic, dbuser=None,
-            host=None, port=None, reset_sequences_sql=None):
+                 host=None, port=None):
         '''Construct the PgTestSetup
 
         Note that dbuser is not used for setting up or tearing down
@@ -195,8 +192,8 @@ class PgTestSetup:
                 # available.
                 # Avoid circular imports
                 section = """[database]
-rw_main_master: dbname=%s host=localhost
-rw_main_slave:  dbname=%s host=localhost
+rw_main_master: dbname=%s
+rw_main_slave:  dbname=%s
 
 """ % (self.dbname, self.dbname)
                 if BaseLayer.config_fixture is not None:
@@ -220,7 +217,6 @@ rw_main_slave:  dbname=%s host=localhost
             self.host = host
         if port is not None:
             self.port = port
-        self.reset_sequences_sql = reset_sequences_sql
 
     def _connectionString(self, dbname, dbuser=None):
         connection_parameters = ['dbname=%s' % dbname]
@@ -237,15 +233,6 @@ rw_main_slave:  dbname=%s host=localhost
             dbname = self.dbname
         return psycopg2.connect(self._connectionString(dbname))
 
-    def generateResetSequencesSQL(self):
-        """Return a SQL statement that resets all sequences."""
-        con = self.superuser_connection()
-        cur = con.cursor()
-        try:
-            return generateResetSequencesSQL(cur)
-        finally:
-            con.close()
-
     def setUp(self):
         '''Create a fresh database (dropping the old if necessary)
 
@@ -256,18 +243,6 @@ rw_main_slave:  dbname=%s host=localhost
         if (self.template, self.dbname) != PgTestSetup._last_db:
             PgTestSetup._reset_db = True
         if not PgTestSetup._reset_db:
-            # The database doesn't need to be reset. We reset the sequences
-            # anyway (because they might have been incremented even if
-            # nothing was committed), making sure not to disturb the
-            # 'committed' flag, and we're done.
-            con = self.superuser_connection()
-            cur = con.cursor()
-            if self.reset_sequences_sql is None:
-                resetSequences(cur)
-            else:
-                cur.execute(self.reset_sequences_sql)
-            con.commit()
-            con.close()
             ConnectionWrapper.committed = False
             ConnectionWrapper.dirty = False
             return
@@ -365,6 +340,7 @@ rw_main_slave:  dbname=%s host=localhost
             l.unlock()
             if debug:
                 sys.stderr.write('released %s\n' % (pid,))
+
         ConnectionWrapper.committed = False
         ConnectionWrapper.dirty = False
         PgTestSetup._last_db = (self.template, self.dbname)
@@ -416,10 +392,11 @@ rw_main_slave:  dbname=%s host=localhost
                 try:
                     cur = con.cursor()
                     cur.execute("""
-                        SELECT pg_terminate_backend(procpid)
+                        SELECT pg_terminate_backend(%(pid)s)
                         FROM pg_stat_activity
-                        WHERE procpid <> pg_backend_pid() AND datname=%s
-                        """, [self.dbname])
+                        WHERE %(pid)s <> pg_backend_pid() AND datname=%%s
+                        """ % activity_cols(cur),
+                        [self.dbname])
                 except psycopg2.DatabaseError:
                     pass
 

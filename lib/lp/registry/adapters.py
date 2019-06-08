@@ -15,7 +15,7 @@ __all__ = [
 
 from zope.component import getUtility
 from zope.component.interfaces import ComponentLookupError
-from zope.interface import implements
+from zope.interface import implementer
 
 from lp.archivepublisher.interfaces.publisherconfig import IPublisherConfigSet
 from lp.registry.interfaces.poll import (
@@ -60,9 +60,9 @@ def person_from_principal(principal):
         raise ComponentLookupError
 
 
+@implementer(IPollSubset)
 class PollSubset:
     """Adapt an `IPoll` to an `IPollSubset`."""
-    implements(IPollSubset)
 
     title = 'Team polls'
 
@@ -133,3 +133,8 @@ def distribution_to_publisherconfig(distro):
 def package_to_sourcepackagename(package):
     """Adapts a package to its `ISourcePackageName`."""
     return package.sourcepackagename
+
+
+def information_type_from_product(milestone):
+    """Adapts a milestone to product for information_type."""
+    return milestone.product

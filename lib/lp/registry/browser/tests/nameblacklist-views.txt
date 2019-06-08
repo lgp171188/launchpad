@@ -1,6 +1,7 @@
 NameBlacklist pages
 ===================
 
+    >>> import transaction
     >>> from zope.component import getUtility
     >>> from lp.testing.sampledata import ADMIN_EMAIL
     >>> from lp.app.interfaces.launchpad import ILaunchpadCelebrities
@@ -12,6 +13,7 @@ NameBlacklist pages
     >>> registry_expert = factory.makePerson()
     >>> login(ADMIN_EMAIL)
     >>> ignore = registry_experts.addMember(registry_expert, registry_expert)
+    >>> transaction.commit()
 
 
 View all
@@ -59,9 +61,8 @@ After adding a regular expression, a notification will be displayed.
     >>> view = create_initialized_view(name_blacklist_set, '+add', form=form)
     >>> for notification in view.request.response.notifications:
     ...     print notification.message
-    Regular expression "foo" has been added to the name blacklist.
+    Regular expression &quot;foo&quot; has been added to the name blacklist.
 
-    >>> import transaction
     >>> transaction.commit()
     >>> foo_exp = name_blacklist_set.getByRegExp(u'foo')
     >>> print foo_exp.regexp

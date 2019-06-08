@@ -1,8 +1,6 @@
 # Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-# pylint: disable-msg=E0611,W0212
-
 __metaclass__ = type
 __all__ = [
     'Revision',
@@ -32,7 +30,6 @@ from storm.expr import (
     Asc,
     Desc,
     Join,
-    Not,
     Or,
     Select,
     )
@@ -45,9 +42,10 @@ from storm.locals import (
     )
 from storm.store import Store
 from zope.component import getUtility
-from zope.interface import implements
+from zope.interface import implementer
 from zope.security.proxy import removeSecurityProxy
 
+from lp.app.enums import PUBLIC_INFORMATION_TYPES
 from lp.code.interfaces.branch import DEFAULT_BRANCH_STATUS_IN_LISTING
 from lp.code.interfaces.revision import (
     IRevision,
@@ -56,18 +54,16 @@ from lp.code.interfaces.revision import (
     IRevisionProperty,
     IRevisionSet,
     )
-from lp.registry.enums import PUBLIC_INFORMATION_TYPES
 from lp.registry.interfaces.person import validate_public_person
 from lp.registry.interfaces.product import IProduct
 from lp.registry.interfaces.projectgroup import IProjectGroup
-from lp.registry.model.person import ValidPersonCache
 from lp.services.database.bulk import create
 from lp.services.database.constants import (
     DEFAULT,
     UTC_NOW,
     )
 from lp.services.database.datetimecol import UtcDateTimeCol
-from lp.services.database.lpstorm import (
+from lp.services.database.interfaces import (
     IMasterStore,
     IStore,
     )
@@ -82,10 +78,9 @@ from lp.services.identity.interfaces.emailaddress import (
     )
 
 
+@implementer(IRevision)
 class Revision(SQLBase):
     """See IRevision."""
-
-    implements(IRevision)
 
     date_created = UtcDateTimeCol(notNull=True, default=DEFAULT)
     log_body = StringCol(notNull=True)
@@ -130,9 +125,12 @@ class Revision(SQLBase):
 
     def allocateKarma(self, branch):
         """See `IRevision`."""
+        # Always set karma_allocated to True so that Lp does not reprocess
+        # junk and invalid user branches because they do not get karma.
+        self.karma_allocated = True
         # If we know who the revision author is, give them karma.
         author = self.revision_author.person
-        if author is not None:
+        if author is not None and branch is not None:
             # Backdate the karma to the time the revision was created.  If the
             # revision_date on the revision is in future (for whatever weird
             # reason) we will use the date_created from the revision (which
@@ -143,8 +141,6 @@ class Revision(SQLBase):
             karma_date = min(self.revision_date, self.date_created)
             karma = branch.target.assignKarma(
                 author, 'revisionadded', karma_date)
-            if karma is not None:
-                self.karma_allocated = True
             return karma
         else:
             return None
@@ -183,8 +179,8 @@ class Revision(SQLBase):
         return result_set.first()
 
 
+@implementer(IRevisionAuthor)
 class RevisionAuthor(SQLBase):
-    implements(IRevisionAuthor)
 
     _table = 'RevisionAuthor'
 
@@ -199,7 +195,7 @@ class RevisionAuthor(SQLBase):
         """
         if '@' not in self.name:
             return self.name
-        return email.Utils.parseaddr(self.name)[0]
+        return email.utils.parseaddr(self.name)[0]
 
     email = StringCol(notNull=False, default=None)
     person = ForeignKey(dbName='person', foreignKey='Person', notNull=False,
@@ -221,10 +217,9 @@ class RevisionAuthor(SQLBase):
             return False
 
 
+@implementer(IRevisionParent)
 class RevisionParent(SQLBase):
     """The association between a revision and its parent."""
-
-    implements(IRevisionParent)
 
     _table = 'RevisionParent'
 
@@ -235,10 +230,9 @@ class RevisionParent(SQLBase):
     parent_id = StringCol(notNull=True)
 
 
+@implementer(IRevisionProperty)
 class RevisionProperty(SQLBase):
     """A property on a revision. See IRevisionProperty."""
-
-    implements(IRevisionProperty)
 
     _table = 'RevisionProperty'
 
@@ -248,16 +242,15 @@ class RevisionProperty(SQLBase):
     value = StringCol(notNull=True)
 
 
+@implementer(IRevisionSet)
 class RevisionSet:
-
-    implements(IRevisionSet)
 
     def getByRevisionId(self, revision_id):
         return Revision.selectOneBy(revision_id=revision_id)
 
     def _createRevisionAuthor(self, revision_author):
         """Extract out the email and check to see if it matches a Person."""
-        email_address = email.Utils.parseaddr(revision_author)[1]
+        email_address = email.utils.parseaddr(revision_author)[1]
         # If there is no @, then it isn't a real email address.
         if '@' not in email_address:
             email_address = None
@@ -386,6 +379,10 @@ class RevisionSet:
             db_id = revision_db_id[bzr_revision.revision_id]
             # Property data: revision DB id, name, value.
             for name, value in bzr_revision.properties.iteritems():
+                # pristine-tar properties can be huge, and storing them
+                # in the database provides no value. Exclude them.
+                if name.startswith('deb-pristine-delta'):
+                    continue
                 property_data.append((db_id, name, value))
             parent_ids = bzr_revision.parent_ids
             # Parent data: revision DB id, sequence, revision_id
@@ -412,13 +409,6 @@ class RevisionSet:
         clause = Revision.revision_id.is_in(revids)
         present = store.find(Revision.revision_id, clause)
         return set(present)
-
-    def checkNewVerifiedEmail(self, email):
-        """See `IRevisionSet`."""
-        # Bypass zope's security because IEmailAddress.email is not public.
-        naked_email = removeSecurityProxy(email)
-        for author in RevisionAuthor.selectBy(email=naked_email.email):
-            author.personID = email.personID
 
     def getTipRevisionsForBranches(self, branches):
         """See `IRevisionSet`."""
@@ -457,23 +447,11 @@ class RevisionSet:
     @staticmethod
     def getRevisionsNeedingKarmaAllocated(limit=None):
         """See `IRevisionSet`."""
-        # Here to stop circular imports.
-        from lp.code.model.branch import Branch
-        from lp.code.model.branchrevision import BranchRevision
-
         store = IStore(Revision)
-        results_with_dupes = store.find(
+        results = store.find(
             Revision,
-            Revision.revision_author == RevisionAuthor.id,
-            RevisionAuthor.person == ValidPersonCache.id,
-            Not(Revision.karma_allocated),
-            BranchRevision.revision == Revision.id,
-            BranchRevision.branch == Branch.id,
-            Or(Branch.product != None, Branch.distroseries != None))[:limit]
-        # Eliminate duplicate rows, returning <= limit rows
-        return store.find(
-            Revision, Revision.id.is_in(
-                results_with_dupes.get_select_expr(Revision.id)))
+            Revision.karma_allocated == False)[:limit]
+        return results
 
     @staticmethod
     def getPublicRevisionsForPerson(person, day_limit=30):
@@ -532,7 +510,7 @@ class RevisionSet:
             conditions = And(conditions, Branch.product == obj)
         elif IProjectGroup.providedBy(obj):
             origin.append(Join(Product, Branch.product == Product.id))
-            conditions = And(conditions, Product.project == obj)
+            conditions = And(conditions, Product.projectgroup == obj)
         else:
             raise AssertionError(
                 "Not an IProduct or IProjectGroup: %r" % obj)

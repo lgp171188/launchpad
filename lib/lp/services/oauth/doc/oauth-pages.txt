@@ -5,7 +5,7 @@ The pages used in our implementation of the OAuth protocol.
 == +authorize-token ==
 
 This is the page where a user reviews (approving or declining) a
-consumer's request to access Launchpad on his behalf.
+consumer's request to access Launchpad on their behalf.
 
     # Define some things we're going to use throughout this test.
     >>> from zope.component import getMultiAdapter
@@ -14,10 +14,10 @@ consumer's request to access Launchpad on his behalf.
     >>> from lp.services.webapp.interfaces import ILaunchpadRoot
     >>> from lp.services.webapp.servers import LaunchpadTestRequest
 
-    >>> consumer = getUtility(IOAuthConsumerSet).getByKey('launchpad-library')
+    >>> consumer = getUtility(IOAuthConsumerSet).getByKey(u'launchpad-library')
     >>> root = getUtility(ILaunchpadRoot)
     >>> def get_view_with_fresh_token(form):
-    ...     token = consumer.newRequestToken()
+    ...     token, _ = consumer.newRequestToken()
     ...     form.update({'oauth_token': token.key})
     ...     request = LaunchpadTestRequest(form=form)
     ...     login('salgado@ubuntu.com', request)
@@ -25,12 +25,16 @@ consumer's request to access Launchpad on his behalf.
     ...     view.initialize()
     ...     return view, token
 
-    >>> from BeautifulSoup import BeautifulSoup, SoupStrainer
+    >>> from lp.services.beautifulsoup import (
+    ...     BeautifulSoup4 as BeautifulSoup,
+    ...     SoupStrainer4 as SoupStrainer,
+    ...     )
     >>> def print_hidden_fields(html):
-    ...     soup = BeautifulSoup(html, SoupStrainer(attrs={'type': 'hidden'}))
+    ...     soup = BeautifulSoup(
+    ...         html, parse_only=SoupStrainer(attrs={'type': 'hidden'}))
     ...     for tag in soup.findAll(attrs={'type': 'hidden'}):
-    ...         if tag.attrMap['value']:
-    ...             print tag.attrMap['name'], tag.attrMap['value']
+    ...         if tag['value']:
+    ...             print tag['name'], tag['value']
 
 When the client doesn't specify a duration, the resulting request
 token will have no expiration date set.
@@ -44,7 +48,6 @@ token will have no expiration date set.
 When the client specifies a duration, the resulting request
 token will have an appropriate expiration date set.
 
-    >>> from datetime import datetime
     >>> import pytz
     >>> from lp.services.oauth.browser import (
     ...     TemporaryIntegrations)

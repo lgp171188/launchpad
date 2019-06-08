@@ -1,7 +1,9 @@
-# Copyright 2009-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2017 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for the product view classes and templates."""
+
+from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 
@@ -14,14 +16,13 @@ from mechanize import LinkNotFoundError
 import pytz
 from zope.component import getUtility
 
-from lp.app.enums import ServiceUsage
-from lp.code.enums import (
-    BranchType,
-    BranchVisibilityRule,
+from lp.app.enums import (
+    InformationType,
+    ServiceUsage,
     )
+from lp.code.enums import BranchType
 from lp.code.interfaces.revision import IRevisionSet
-from lp.code.publisher import CodeLayer
-from lp.registry.enums import InformationType
+from lp.registry.enums import BranchSharingPolicy
 from lp.services.webapp import canonical_url
 from lp.testing import (
     ANONYMOUS,
@@ -29,6 +30,7 @@ from lp.testing import (
     login,
     login_person,
     logout,
+    person_logged_in,
     TestCaseWithFactory,
     time_counter,
     )
@@ -60,7 +62,7 @@ class ProductTestBase(TestCaseWithFactory):
         return product, branch
 
 
-class TestProductCodeIndexView(ProductTestBase):
+class TestProductBranchesView(ProductTestBase):
     """Tests for the product code home page."""
 
     def getBranchSummaryBrowseLinkForProduct(self, product):
@@ -103,7 +105,7 @@ class TestProductCodeIndexView(ProductTestBase):
     def test_product_code_page_visible_with_private_dev_focus(self):
         # If a user cannot see the product's development focus branch but can
         # see at least one branch for the product they can still see the
-        # +code-index page.
+        # +branches page.
         product, branch = self.makeProductAndDevelopmentFocusBranch(
             information_type=InformationType.USERDATA)
         self.factory.makeProductBranch(product=product)
@@ -113,7 +115,7 @@ class TestProductCodeIndexView(ProductTestBase):
     def test_initial_branches_contains_dev_focus_branch(self):
         product, branch = self.makeProductAndDevelopmentFocusBranch()
         view = create_initialized_view(
-            product, '+code-index', rootsite='code')
+            product, '+branches', rootsite='code')
         self.assertIn(branch, view.initial_branches)
 
     def test_initial_branches_does_not_contain_private_dev_focus_branch(self):
@@ -121,81 +123,41 @@ class TestProductCodeIndexView(ProductTestBase):
             information_type=InformationType.USERDATA)
         login(ANONYMOUS)
         view = create_initialized_view(
-            product, '+code-index', rootsite='code')
+            product, '+branches', rootsite='code')
         self.assertNotIn(branch, view.initial_branches)
-
-    def test_committer_count_with_revision_authors(self):
-        # Test that the code pathing for calling committer_count with
-        # valid revision authors is truly tested.
-        self.factory.makePerson(email='cthulu@example.com')
-        product, branch = self.makeProductAndDevelopmentFocusBranch()
-        date_generator = time_counter(
-            datetime.now(pytz.UTC) - timedelta(days=30),
-            timedelta(days=1))
-        self.factory.makeRevisionsForBranch(
-            branch, author='cthulu@example.com',
-            date_generator=date_generator)
-        getUtility(IRevisionSet).updateRevisionCacheForBranch(branch)
-
-        view = create_initialized_view(product, '+code-index',
-                                       rootsite='code')
-        self.assertEqual(view.committer_count, 1)
-
-    def test_committers_count_private_branch(self):
-        # Test that calling committer_count will return the proper value
-        # for a private branch.
-        fsm = self.factory.makePerson(email='flyingpasta@example.com')
-        product, branch = self.makeProductAndDevelopmentFocusBranch(
-            owner=fsm, information_type=InformationType.USERDATA)
-        date_generator = time_counter(
-            datetime.now(pytz.UTC) - timedelta(days=30),
-            timedelta(days=1))
-        login_person(fsm)
-        self.factory.makeRevisionsForBranch(
-            branch, author='flyingpasta@example.com',
-            date_generator=date_generator)
-        getUtility(IRevisionSet).updateRevisionCacheForBranch(branch)
-
-        view = create_initialized_view(product, '+code-index',
-                                       rootsite='code', principal=fsm)
-        self.assertEqual(view.committer_count, 1)
-
-        commit_section = find_tag_by_id(view.render(), 'commits')
-        self.assertIsNot(None, commit_section)
-
-    def test_committers_count_private_branch_non_subscriber(self):
-        # Test that calling committer_count will return the proper value
-        # for a private branch.
-        fsm = self.factory.makePerson(email='flyingpasta@example.com')
-        product, branch = self.makeProductAndDevelopmentFocusBranch(
-            owner=fsm, information_type=InformationType.USERDATA)
-        date_generator = time_counter(
-            datetime.now(pytz.UTC) - timedelta(days=30),
-            timedelta(days=1))
-        login_person(fsm)
-        self.factory.makeRevisionsForBranch(
-            branch, author='flyingpasta@example.com',
-            date_generator=date_generator)
-        getUtility(IRevisionSet).updateRevisionCacheForBranch(branch)
-
-        observer = self.factory.makePerson()
-        login_person(observer)
-        view = create_initialized_view(product, '+code-index',
-                                       rootsite='code', principal=observer)
-        self.assertEqual(view.branch_count, 0)
-        self.assertEqual(view.committer_count, 1)
-        commit_section = find_tag_by_id(view.render(), 'commits')
-        self.assertIs(None, commit_section)
 
     def test_initial_branches_contains_push_instructions(self):
         product, branch = self.makeProductAndDevelopmentFocusBranch()
         view = create_initialized_view(
-            product, '+code-index', rootsite='code', principal=product.owner)
+            product, '+branches', rootsite='code', principal=product.owner)
         content = view()
         self.assertIn('bzr push lp:~', content)
 
+    def test_product_code_index_with_private_imported_branch(self):
+        # Product:+branches will not crash if the devfoocs is a private
+        # imported branch.
+        product, branch = self.makeProductAndDevelopmentFocusBranch(
+            information_type=InformationType.USERDATA,
+            branch_type=BranchType.IMPORTED)
+        user = self.factory.makePerson()
+        with person_logged_in(user):
+            view = create_initialized_view(
+                product, '+branches', rootsite='code', principal=user)
+            html = view()
+        expected = 'There are no branches for %s' % product.displayname
+        self.assertIn(expected, html)
 
-class TestProductCodeIndexServiceUsages(ProductTestBase, BrowserTestCase):
+    def test_git_link(self):
+        product = self.factory.makeProduct()
+        view = create_initialized_view(product, '+branches')
+        self.assertNotIn('View Git repositories', view())
+
+        self.factory.makeGitRepository(target=product)
+        view = create_initialized_view(product, '+branches')
+        self.assertIn('View Git repositories', view())
+
+
+class TestProductBranchesServiceUsages(ProductTestBase, BrowserTestCase):
     """Tests for the product code page, especially the usage messasges."""
 
     def test_external_imported(self):
@@ -207,8 +169,9 @@ class TestProductCodeIndexServiceUsages(ProductTestBase, BrowserTestCase):
         login_person(product.owner)
         product.development_focus.branch = code_import.branch
         self.assertEqual(ServiceUsage.EXTERNAL, product.codehosting_usage)
+        product_url = canonical_url(product, rootsite='code')
         logout()
-        browser = self.getUserBrowser(canonical_url(product, rootsite='code'))
+        browser = self.getUserBrowser(product_url)
         login(ANONYMOUS)
         content = find_tag_by_id(browser.contents, 'external')
         text = extract_text(content)
@@ -245,10 +208,8 @@ class TestProductCodeIndexServiceUsages(ProductTestBase, BrowserTestCase):
         # A remote branch says code is hosted externally, and displays
         # upstream data.
         product, branch = self.makeProductAndDevelopmentFocusBranch(
-            branch_type=BranchType.REMOTE,
-            url="http://example.com/mybranch")
-        self.assertEqual(ServiceUsage.EXTERNAL,
-                         product.codehosting_usage)
+            branch_type=BranchType.REMOTE, url="http://example.com/mybranch")
+        self.assertEqual(ServiceUsage.EXTERNAL, product.codehosting_usage)
         browser = self.getUserBrowser(canonical_url(product, rootsite='code'))
         login(ANONYMOUS)
         content = find_tag_by_id(browser.contents, 'external')
@@ -303,11 +264,83 @@ class TestProductCodeIndexServiceUsages(ProductTestBase, BrowserTestCase):
         # Mirrors show the correct upstream url as the mirror location.
         url = "http://example.com/mybranch"
         product, branch = self.makeProductAndDevelopmentFocusBranch(
-            branch_type=BranchType.MIRRORED,
-            url=url)
-        view = create_initialized_view(product, '+code-index',
-                                       rootsite='code')
+            branch_type=BranchType.MIRRORED, url=url)
+        view = create_initialized_view(
+            product, '+branch-summary', rootsite='code')
         self.assertEqual(url, view.mirror_location)
+
+
+class TestProductBranchSummaryView(ProductTestBase):
+
+    def test_committer_count_with_revision_authors(self):
+        # Test that the code pathing for calling committer_count with
+        # valid revision authors is truly tested.
+        self.factory.makePerson(email='cthulu@example.com')
+        product, branch = self.makeProductAndDevelopmentFocusBranch()
+        date_generator = time_counter(
+            datetime.now(pytz.UTC) - timedelta(days=30),
+            timedelta(days=1))
+        self.factory.makeRevisionsForBranch(
+            branch, author='cthulu@example.com',
+            date_generator=date_generator)
+        getUtility(IRevisionSet).updateRevisionCacheForBranch(branch)
+
+        view = create_initialized_view(
+            product, '+branch-summary', rootsite='code')
+        self.assertEqual(view.committer_count, 1)
+
+    def test_committers_count_private_branch(self):
+        # Test that calling committer_count will return the proper value
+        # for a private branch.
+        fsm = self.factory.makePerson(email='flyingpasta@example.com')
+        product, branch = self.makeProductAndDevelopmentFocusBranch(
+            owner=fsm, information_type=InformationType.USERDATA)
+        date_generator = time_counter(
+            datetime.now(pytz.UTC) - timedelta(days=30),
+            timedelta(days=1))
+        login_person(fsm)
+        self.factory.makeRevisionsForBranch(
+            branch, author='flyingpasta@example.com',
+            date_generator=date_generator)
+        getUtility(IRevisionSet).updateRevisionCacheForBranch(branch)
+
+        view = create_initialized_view(product, '+branch-summary',
+                                       rootsite='code', principal=fsm)
+        self.assertEqual(view.committer_count, 1)
+
+        view = create_initialized_view(
+            product, '+portlet-product-branchstatistics', rootsite='code',
+            principal=fsm)
+        commit_section = find_tag_by_id(view.render(), 'commits')
+        self.assertIsNot(None, commit_section)
+
+    def test_committers_count_private_branch_non_subscriber(self):
+        # Test that calling committer_count will return the proper value
+        # for a private branch.
+        fsm = self.factory.makePerson(email='flyingpasta@example.com')
+        product, branch = self.makeProductAndDevelopmentFocusBranch(
+            owner=fsm, information_type=InformationType.USERDATA)
+        date_generator = time_counter(
+            datetime.now(pytz.UTC) - timedelta(days=30),
+            timedelta(days=1))
+        login_person(fsm)
+        self.factory.makeRevisionsForBranch(
+            branch, author='flyingpasta@example.com',
+            date_generator=date_generator)
+        getUtility(IRevisionSet).updateRevisionCacheForBranch(branch)
+
+        observer = self.factory.makePerson()
+        login_person(observer)
+        view = create_initialized_view(product, '+branch-summary',
+                                       rootsite='code', principal=observer)
+        self.assertEqual(view.branch_count, 0)
+        self.assertEqual(view.committer_count, 1)
+
+        view = create_initialized_view(
+            product, '+portlet-product-branchstatistics', rootsite='code',
+            principal=observer)
+        commit_section = find_tag_by_id(view.render(), 'commits')
+        self.assertIs(None, commit_section)
 
 
 class TestProductBranchesViewPortlets(ProductTestBase, BrowserTestCase):
@@ -323,7 +356,7 @@ class TestProductBranchesViewPortlets(ProductTestBase, BrowserTestCase):
         self.assertIs(None, find_tag_by_id(contents, 'privacy'))
         self.assertIs(None, find_tag_by_id(contents, 'involvement'))
         self.assertIs(None, find_tag_by_id(
-            contents, 'portlet-product-codestatistics'))
+            contents, 'portlet-product-branchstatistics'))
 
     def test_portlets_shown_for_HOSTED(self):
         # If the BranchUsage is HOSTED then the portlets are shown.
@@ -335,42 +368,39 @@ class TestProductBranchesViewPortlets(ProductTestBase, BrowserTestCase):
         self.assertIsNot(None, find_tag_by_id(contents, 'privacy'))
         self.assertIsNot(None, find_tag_by_id(contents, 'involvement'))
         self.assertIsNot(None, find_tag_by_id(
-            contents, 'portlet-product-codestatistics'))
+            contents, 'portlet-product-branchstatistics'))
 
     def test_portlets_shown_for_EXTERNAL(self):
         # If the BranchUsage is EXTERNAL then the portlets are shown.
         url = "http://example.com/mybranch"
         product, branch = self.makeProductAndDevelopmentFocusBranch(
-            branch_type=BranchType.MIRRORED,
-            url=url)
+            branch_type=BranchType.MIRRORED, url=url)
         browser = self.getUserBrowser(canonical_url(product, rootsite='code'))
         contents = browser.contents
         self.assertIsNot(None, find_tag_by_id(contents, 'branch-portlet'))
         self.assertIsNot(None, find_tag_by_id(contents, 'privacy'))
         self.assertIsNot(None, find_tag_by_id(contents, 'involvement'))
         self.assertIsNot(None, find_tag_by_id(
-            contents, 'portlet-product-codestatistics'))
+            contents, 'portlet-product-branchstatistics'))
 
     def test_is_private(self):
-        team_owner = self.factory.makePerson()
-        team = self.factory.makeTeam(team_owner)
-        product = self.factory.makeLegacyProduct(owner=team_owner)
-        branch = self.factory.makeProductBranch(product=product)
+        product = self.factory.makeProduct(
+            branch_sharing_policy=BranchSharingPolicy.PROPRIETARY)
+        branch = self.factory.makeProductBranch(
+            product=product, owner=product.owner)
         login_person(product.owner)
         product.development_focus.branch = branch
-        product.setBranchVisibilityTeamPolicy(
-            team, BranchVisibilityRule.PRIVATE)
         view = create_initialized_view(
-            product, '+code-index', rootsite='code',
-            principal=product.owner)
+            product, '+branches', rootsite='code', principal=product.owner)
         text = extract_text(find_tag_by_id(view.render(), 'privacy'))
         expected = (
-            "New branches for %(name)s are Private.*"
+            "New branches for %(name)s are Proprietary.*"
             % dict(name=product.displayname))
         self.assertTextMatchesExpressionIgnoreWhitespace(expected, text)
 
     def test_is_public(self):
         product = self.factory.makeProduct()
+        product_displayname = product.displayname
         branch = self.factory.makeProductBranch(product=product)
         login_person(product.owner)
         product.development_focus.branch = branch
@@ -378,7 +408,7 @@ class TestProductBranchesViewPortlets(ProductTestBase, BrowserTestCase):
         text = extract_text(find_tag_by_id(browser.contents, 'privacy'))
         expected = (
             "New branches for %(name)s are Public.*"
-            % dict(name=product.displayname))
+            % dict(name=product_displayname))
         self.assertTextMatchesExpressionIgnoreWhitespace(expected, text)
 
 
@@ -388,11 +418,11 @@ class TestCanConfigureBranches(TestCaseWithFactory):
 
     def test_cannot_configure_branches_product_no_edit_permission(self):
         product = self.factory.makeProduct()
-        view = create_view(product, '+branches', layer=CodeLayer)
+        view = create_view(product, '+branches')
         self.assertEqual(False, view.can_configure_branches())
 
     def test_can_configure_branches_product_with_edit_permission(self):
         product = self.factory.makeProduct()
         login_person(product.owner)
-        view = create_view(product, '+branches', layer=CodeLayer)
-        self.assertEqual(True, view.can_configure_branches())
+        view = create_view(product, '+branches')
+        self.assertTrue(view.can_configure_branches())

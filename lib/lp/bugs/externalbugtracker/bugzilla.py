@@ -1,4 +1,4 @@
-# Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Bugzilla ExternalBugTracker utility."""
@@ -11,18 +11,22 @@ __all__ = [
     'needs_authentication',
     ]
 
-from email.Utils import parseaddr
+from email.utils import parseaddr
 from httplib import BadStatusLine
 import re
 import string
-from urllib2 import URLError
 from xml.dom import minidom
 import xml.parsers.expat
 import xmlrpclib
 
 import pytz
+import requests
+import six
 from zope.component import getUtility
-from zope.interface import implements
+from zope.interface import (
+    alsoProvides,
+    implementer,
+    )
 
 from lp.bugs.externalbugtracker.base import (
     BugNotFound,
@@ -36,7 +40,7 @@ from lp.bugs.externalbugtracker.base import (
     UnparsableBugData,
     UnparsableBugTrackerVersion,
     )
-from lp.bugs.externalbugtracker.xmlrpc import UrlLib2Transport
+from lp.bugs.externalbugtracker.xmlrpc import RequestsTransport
 from lp.bugs.interfaces.bugtask import (
     BugTaskImportance,
     BugTaskStatus,
@@ -58,7 +62,7 @@ from lp.services.webapp.url import (
 
 
 class Bugzilla(ExternalBugTracker):
-    """An ExternalBugTrack for dealing with remote Bugzilla systems."""
+    """An ExternalBugTracker for dealing with remote Bugzilla systems."""
 
     batch_query_threshold = 0  # Always use the batch method.
     _test_xmlrpc_proxy = None
@@ -76,7 +80,7 @@ class Bugzilla(ExternalBugTracker):
         """Return True if the remote host offers the Bugzilla API.
 
         :return: True if the remote host offers an XML-RPC API and its
-            version is > 3.4. Return False otherwise.
+            version is >= 3.4. Return False otherwise.
         """
         api = BugzillaAPI(self.baseurl)
         if self._test_xmlrpc_proxy is not None:
@@ -112,7 +116,7 @@ class Bugzilla(ExternalBugTracker):
             # Older versions of the Bugzilla API return tuples. We
             # consider anything other than a mapping to be unsupported.
             if isinstance(remote_version, dict):
-                if remote_version['version'] >= '3.4':
+                if self._parseVersion(remote_version['version']) >= (3, 4):
                     return True
             return False
 
@@ -167,7 +171,8 @@ class Bugzilla(ExternalBugTracker):
                 return BugzillaLPPlugin(self.baseurl)
             elif self._remoteSystemHasBugzillaAPI():
                 return BugzillaAPI(self.baseurl)
-        except (xmlrpclib.ProtocolError, URLError, BadStatusLine):
+        except (xmlrpclib.ProtocolError, requests.RequestException,
+                BadStatusLine):
             pass
         return self
 
@@ -197,7 +202,7 @@ class Bugzilla(ExternalBugTracker):
         server cannot be reached `BugTrackerConnectError` will be
         raised.
         """
-        version_xml = self._getPage('xml.cgi?id=1')
+        version_xml = self._getPage('xml.cgi?id=1').content
         try:
             document = self._parseDOMString(version_xml)
         except xml.parsers.expat.ExpatError as e:
@@ -262,19 +267,22 @@ class Bugzilla(ExternalBugTracker):
         'p1': BugTaskImportance.LOW,
         'enhancement': BugTaskImportance.WISHLIST,
         'wishlist': BugTaskImportance.WISHLIST,
+        'unspecified': BugTaskImportance.UNDECIDED,
         }
 
     def convertRemoteImportance(self, remote_importance):
         """See `ExternalBugTracker`."""
         words = remote_importance.lower().split()
-        try:
-            return self._importance_lookup[words.pop()]
-        except KeyError:
-            raise UnknownRemoteImportanceError(remote_importance)
-        except IndexError:
-            return BugTaskImportance.UNKNOWN
-
-        return BugTaskImportance.UNKNOWN
+        importance = BugTaskImportance.UNKNOWN
+        while importance in (
+                BugTaskImportance.UNKNOWN, BugTaskImportance.UNDECIDED):
+            try:
+                importance = self._importance_lookup[words.pop()]
+            except KeyError:
+                raise UnknownRemoteImportanceError(remote_importance)
+            except IndexError:
+                break
+        return importance
 
     _status_lookup_titles = 'Bugzilla status', 'Bugzilla resolution'
     _status_lookup = LookupTree(
@@ -293,6 +301,7 @@ class Bugzilla(ExternalBugTracker):
                  'DOCUMENTED',
                  BugTaskStatus.FIXRELEASED),
                 ('WONTFIX', 'WILL_NOT_FIX', 'NOTOURBUG', 'UPSTREAM',
+                 'EOL', 'DEFERRED',
                  BugTaskStatus.WONTFIX),
                 ('OBSOLETE', 'INSUFFICIENT_DATA', 'INCOMPLETE', 'EXPIRED',
                  BugTaskStatus.EXPIRED),
@@ -381,16 +390,19 @@ class Bugzilla(ExternalBugTracker):
             buglist_page = 'buglist.cgi'
             data = {
                 'form_name': 'buglist.cgi',
-                'bug_id_type': 'include',
                 'columnlist':
                     ('id,product,bug_status,resolution,'
                      'priority,bug_severity'),
                 'bug_id': ','.join(bug_ids),
                 }
             if self.version < (2, 17, 1):
-                data.update({'format': 'rdf'})
+                data['format'] = 'rdf'
             else:
-                data.update({'ctype': 'rdf'})
+                data['ctype'] = 'rdf'
+            if self.version >= (3, 6, 0):
+                data['bugidtype'] = 'include'
+            else:
+                data['bug_id_type'] = 'include'
             bug_tag = 'bz:bug'
             id_tag = 'bz:id'
             status_tag = 'bz:bug_status'
@@ -399,7 +411,7 @@ class Bugzilla(ExternalBugTracker):
             severity_tag = 'bz:bug_severity'
 
         buglist_xml = self._postPage(
-            buglist_page, data, repost_on_redirect=True)
+            buglist_page, data, repost_on_redirect=True).content
 
         try:
             document = self._parseDOMString(buglist_xml)
@@ -543,11 +555,9 @@ def needs_authentication(func):
     return decorator
 
 
+@implementer(ISupportsCommentImport)
 class BugzillaAPI(Bugzilla):
     """An `ExternalBugTracker` to handle Bugzillas that offer an API."""
-
-    implements(
-        ISupportsBackLinking, ISupportsCommentImport, ISupportsCommentPushing)
 
     def __init__(self, baseurl, xmlrpc_transport=None,
                  internal_xmlrpc_transport=None):
@@ -559,9 +569,17 @@ class BugzillaAPI(Bugzilla):
 
         self.internal_xmlrpc_transport = internal_xmlrpc_transport
         if xmlrpc_transport is None:
-            self.xmlrpc_transport = UrlLib2Transport(self.xmlrpc_endpoint)
+            self.xmlrpc_transport = RequestsTransport(self.xmlrpc_endpoint)
         else:
             self.xmlrpc_transport = xmlrpc_transport
+
+        try:
+            self.credentials
+        except BugTrackerAuthenticationError:
+            pass
+        else:
+            alsoProvides(self, ISupportsBackLinking)
+            alsoProvides(self, ISupportsCommentPushing)
 
     def getExternalBugTrackerToUse(self):
         """The Bugzilla API has been chosen, so return self."""
@@ -618,8 +636,13 @@ class BugzillaAPI(Bugzilla):
             # IDs. We use the aliases dict to look up the correct ID for
             # a bug. This allows us to reference a bug by either ID or
             # alias.
-            if remote_bug.get('alias', '') != '':
-                self._bug_aliases[remote_bug['alias']] = remote_bug['id']
+            # Some versions of Bugzilla return a single alias string,
+            # others return a (possibly empty) list.
+            aliases = remote_bug.get('alias', '')
+            if isinstance(aliases, six.string_types):
+                aliases = [] if not aliases else [aliases]
+            for alias in aliases:
+                self._bug_aliases[alias] = remote_bug['id']
 
     @ensure_no_transaction
     def getCurrentDBTime(self):
@@ -632,11 +655,18 @@ class BugzillaAPI(Bugzilla):
         # is sane, we work out the server's offset from UTC by looking
         # at the difference between the web_time and the web_time_utc
         # values.
-        server_web_datetime = time_dict['web_time']
-        server_web_datetime_utc = time_dict['web_time_utc']
-        server_utc_offset = server_web_datetime - server_web_datetime_utc
-        server_db_datetime = time_dict['db_time']
-        server_utc_datetime = server_db_datetime - server_utc_offset
+        if 'web_time_utc' in time_dict:
+            # Bugzilla < 5.1.1 (although as of 3.6 the UTC offset is always
+            # 0).
+            server_web_datetime = time_dict['web_time']
+            server_web_datetime_utc = time_dict['web_time_utc']
+            server_utc_offset = server_web_datetime - server_web_datetime_utc
+            server_db_datetime = time_dict['db_time']
+            server_utc_datetime = server_db_datetime - server_utc_offset
+        else:
+            # Bugzilla >= 5.1.1.  Times are always in UTC, so we can just
+            # use db_time directly.
+            server_utc_datetime = time_dict['db_time']
         return server_utc_datetime.replace(tzinfo=pytz.timezone('UTC'))
 
     def _getActualBugId(self, bug_id):
@@ -829,14 +859,33 @@ class BugzillaAPI(Bugzilla):
         comment_id = int(comment_id)
 
         comment = self._bugs[actual_bug_id]['comments'][comment_id]
-        display_name, email = parseaddr(comment['author'])
+        if 'creator' in comment:
+            # Bugzilla >= 4.0
+            creator = comment['creator']
+        else:
+            creator = comment['author']
+        display_name, email = parseaddr(creator)
 
-        # If the name is empty then we return None so that
-        # IPersonSet.ensurePerson() can actually do something with it.
-        if not display_name:
-            display_name = None
-
-        return (display_name, email)
+        # If the email isn't valid, return the email address as the
+        # display name (a Launchpad Person will be created with this
+        # name).
+        # XXX cjwatson 2017-10-24: It's possible that an email address will
+        # be considered valid by the remote system but not by Launchpad.  To
+        # avoid disclosing email addresses as a result of this, we'll allow
+        # that case to generate an OOPS for now (in
+        # `PersonSet.createPersonAndEmail`).  If this is common then we
+        # should do a full `valid_email` check here and sanitise the name
+        # more enthusiastically in `BugTracker.ensurePersonForSelf`, perhaps
+        # just by stripping off any domain part.
+        if '@' not in email:
+            return email, None
+        # If the display name is empty, set it to None so that it's
+        # useable by IPersonSet.ensurePerson().
+        elif display_name == '':
+            return None, email
+        # Both displayname and email are valid, return both.
+        else:
+            return display_name, email
 
     def getMessageForComment(self, remote_bug_id, comment_id, poster):
         """See `ISupportsCommentImport`."""
@@ -899,12 +948,10 @@ class BugzillaAPI(Bugzilla):
         self.xmlrpc_proxy.Bug.update_see_also(request_params)
 
 
+@implementer(
+    ISupportsBackLinking, ISupportsCommentImport, ISupportsCommentPushing)
 class BugzillaLPPlugin(BugzillaAPI):
     """An `ExternalBugTracker` to handle Bugzillas using the LP Plugin."""
-
-    implements(
-        ISupportsBackLinking, ISupportsCommentImport,
-        ISupportsCommentPushing)
 
     def getExternalBugTrackerToUse(self):
         """The Bugzilla LP Plugin has been chosen, so return self."""

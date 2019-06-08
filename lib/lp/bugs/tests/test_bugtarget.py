@@ -7,8 +7,6 @@ This module runs the interface test against the Product, ProductSeries
 ProjectGroup, DistributionSourcePackage, and DistroSeries implementations
 IBugTarget. It runs the bugtarget-questiontarget.txt test.
 """
-# pylint: disable-msg=C0103
-
 __metaclass__ = type
 
 __all__ = []
@@ -19,14 +17,8 @@ import unittest
 from zope.component import getUtility
 
 from lp.bugs.interfaces.bug import CreateBugParams
-from lp.bugs.interfaces.bugtask import (
-    BugTaskStatus,
-    IBugTaskSet,
-    )
-from lp.registry.interfaces.distribution import (
-    IDistribution,
-    IDistributionSet,
-    )
+from lp.bugs.interfaces.bugtask import IBugTaskSet
+from lp.registry.interfaces.distribution import IDistributionSet
 from lp.registry.interfaces.product import IProductSet
 from lp.registry.interfaces.projectgroup import IProjectGroupSet
 from lp.services.webapp.interfaces import ILaunchBag
@@ -50,7 +42,7 @@ def bugtarget_filebug(bugtarget, summary, status=None):
 
 def productSetUp(test):
     """Setup the `IProduct` test."""
-    setUp(test)
+    setUp(test, future=True)
     test.globs['bugtarget'] = getUtility(IProductSet).getByName('firefox')
     test.globs['filebug'] = bugtarget_filebug
     test.globs['question_target'] = test.globs['bugtarget']
@@ -70,7 +62,7 @@ def project_filebug(project, summary, status=None):
 
 def projectSetUp(test):
     """Setup the `IProjectGroup` test."""
-    setUp(test)
+    setUp(test, future=True)
     projectgroups = getUtility(IProjectGroupSet)
     test.globs['bugtarget'] = projectgroups.getByName('mozilla')
     test.globs['filebug'] = project_filebug
@@ -91,7 +83,7 @@ def productseries_filebug(productseries, summary, status=None):
 
 def productSeriesSetUp(test):
     """Setup the `IProductSeries` test."""
-    setUp(test)
+    setUp(test, future=True)
     firefox = getUtility(IProductSet).getByName('firefox')
     test.globs['bugtarget'] = firefox.getSeries('trunk')
     test.globs['filebug'] = productseries_filebug
@@ -100,7 +92,7 @@ def productSeriesSetUp(test):
 
 def distributionSetUp(test):
     """Setup the `IDistribution` test."""
-    setUp(test)
+    setUp(test, future=True)
     test.globs['bugtarget'] = getUtility(IDistributionSet).getByName('ubuntu')
     test.globs['filebug'] = bugtarget_filebug
     test.globs['question_target'] = test.globs['bugtarget']
@@ -108,7 +100,7 @@ def distributionSetUp(test):
 
 def distributionSourcePackageSetUp(test):
     """Setup the `IDistributionSourcePackage` test."""
-    setUp(test)
+    setUp(test, future=True)
     ubuntu = getUtility(IDistributionSet).getByName('ubuntu')
     test.globs['bugtarget'] = ubuntu.getSourcePackage('mozilla-firefox')
     test.globs['filebug'] = bugtarget_filebug
@@ -134,7 +126,7 @@ def distroseries_filebug(distroseries, summary, sourcepackagename=None,
 
 def distributionSeriesSetUp(test):
     """Setup the `IDistroSeries` test."""
-    setUp(test)
+    setUp(test, future=True)
     ubuntu = getUtility(IDistributionSet).getByName('ubuntu')
     test.globs['bugtarget'] = ubuntu.getSeries('hoary')
     test.globs['filebug'] = distroseries_filebug
@@ -147,27 +139,6 @@ def sourcepackage_filebug(source_package, summary, status=None):
         source_package.distroseries, summary,
         sourcepackagename=source_package.sourcepackagename, status=status)
     return bug
-
-
-def sourcepackage_filebug_for_question(source_package, summary, status=None):
-    """Setup a bug with only one BugTask that can provide a QuestionTarget."""
-    bug = sourcepackage_filebug(source_package, summary, status=status)
-    # The distribution bugtask interferes with bugtarget-questiontarget.txt.
-    for bugtask in bug.bugtasks:
-        if IDistribution.providedBy(bugtask.target):
-            bugtask.transitionToStatus(
-                BugTaskStatus.INVALID, getUtility(ILaunchBag).user)
-    return bug
-
-
-def sourcePackageSetUp(test):
-    """Setup the `ISourcePackage` test."""
-    setUp(test)
-    ubuntu = getUtility(IDistributionSet).getByName('ubuntu')
-    warty = ubuntu.getSeries('warty')
-    test.globs['bugtarget'] = warty.getSourcePackage('mozilla-firefox')
-    test.globs['filebug'] = sourcepackage_filebug
-    test.globs['question_target'] = ubuntu.getSourcePackage('mozilla-firefox')
 
 
 class BugTargetQuestionTargetTestCase(TestCaseWithFactory):

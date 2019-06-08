@@ -4,19 +4,14 @@
 import unittest
 
 import transaction
-from zope.component import getUtility
 
 from lp.services.database import (
     read_transaction,
     write_transaction,
     )
+from lp.services.database.interfaces import IStore
 from lp.services.librarian.model import LibraryFileContent
 from lp.services.librarianserver import db
-from lp.services.webapp.interfaces import (
-    DEFAULT_FLAVOR,
-    IStoreSelector,
-    MAIN_STORE,
-    )
 from lp.testing.dbuser import switch_dbuser
 from lp.testing.layers import LaunchpadZopelessLayer
 
@@ -28,9 +23,8 @@ class TestTransactionDecorators(unittest.TestCase):
 
     def setUp(self):
         switch_dbuser('librarian')
-        self.store = getUtility(IStoreSelector).get(
-                MAIN_STORE, DEFAULT_FLAVOR)
-        self.content_id = db.Library().add('deadbeef', 1234, 'abababab')
+        self.store = IStore(LibraryFileContent)
+        self.content_id = db.Library().add('deadbeef', 1234, 'abababab', 'ba')
         self.file_content = self._getTestFileContent()
         transaction.commit()
 
@@ -44,8 +38,8 @@ class TestTransactionDecorators(unittest.TestCase):
         def no_op():
             pass
         no_op()
-        self.failIf(
-            self.file_content is self._getTestFileContent(),
+        self.assertIsNot(
+            self.file_content, self._getTestFileContent(),
             "Store wasn't reset properly.")
 
     def test_write_transaction_reset_store(self):
@@ -54,8 +48,8 @@ class TestTransactionDecorators(unittest.TestCase):
         def no_op():
             pass
         no_op()
-        self.failIf(
-            self.file_content is self._getTestFileContent(),
+        self.assertIsNot(
+            self.file_content, self._getTestFileContent(),
             "Store wasn't reset properly.")
 
     def test_write_transaction_reset_store_with_raise(self):
@@ -64,8 +58,8 @@ class TestTransactionDecorators(unittest.TestCase):
         def no_op():
             raise RuntimeError('an error occured')
         self.assertRaises(RuntimeError, no_op)
-        self.failIf(
-            self.file_content is self._getTestFileContent(),
+        self.assertIsNot(
+            self.file_content, self._getTestFileContent(),
             "Store wasn't reset properly.")
 
     def test_writing_transaction_reset_store_on_commit_failure(self):
@@ -85,8 +79,8 @@ class TestTransactionDecorators(unittest.TestCase):
             def no_op():
                 pass
             self.assertRaises(RuntimeError, no_op)
-            self.failIf(
-                self.file_content is self._getTestFileContent(),
+            self.assertIsNot(
+                self.file_content, self._getTestFileContent(),
                 "Store wasn't reset properly.")
         finally:
             transaction.manager.unregisterSynch(aborter)

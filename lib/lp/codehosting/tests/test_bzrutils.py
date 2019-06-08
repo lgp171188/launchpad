@@ -1,4 +1,4 @@
-# Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2016 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for bzrutils."""
@@ -17,15 +17,17 @@ from bzrlib.bzrdir import format_registry
 from bzrlib.errors import AppendRevisionsOnlyViolation
 from bzrlib.remote import RemoteBranch
 from bzrlib.tests import (
-    multiply_tests,
     test_server,
     TestCaseWithTransport,
-    TestLoader,
     TestNotApplicable,
     )
 from bzrlib.tests.per_branch import (
     branch_scenarios,
     TestCaseWithControlDir,
+    )
+from testscenarios import (
+    load_tests_apply_scenarios,
+    WithScenarios,
     )
 
 from lp.codehosting.bzrutils import (
@@ -41,8 +43,18 @@ from lp.codehosting.tests.helpers import TestResultWrapper
 from lp.testing import TestCase
 
 
-class TestGetBranchStackedOnURL(TestCaseWithControlDir):
+class TestGetBranchStackedOnURL(WithScenarios, TestCaseWithControlDir):
     """Tests for get_branch_stacked_on_url()."""
+
+    excluded_scenarios = [
+        'BranchReferenceFormat',
+        'GitBranchFormat',
+        'SvnBranchFormat',
+        ]
+
+    scenarios = [
+        scenario for scenario in branch_scenarios()
+        if scenario[0] not in excluded_scenarios]
 
     def __str__(self):
         """Return the test id so that Zope test output shows the format."""
@@ -175,8 +187,6 @@ class TestExceptionLoggingHooks(TestCase):
 
     def test_doesnt_call_hook_for_non_important_exception(self):
         # Some exceptions are exempt from OOPSes.
-        exceptions = []
-
         self.assertEqual(0, len(self.oopses))
         hook = install_oops_handler(1000)
         self.addCleanup(remove_exception_logging_hook, hook)
@@ -222,7 +232,7 @@ class TestGetVfsFormatClasses(TestCaseWithTransport):
         # Check that our set up worked: remote_branch is Remote and
         # source_branch is not.
         self.assertIsInstance(remote_branch, RemoteBranch)
-        self.failIf(isinstance(vfs_branch, RemoteBranch))
+        self.assertNotIsInstance(vfs_branch, RemoteBranch)
         # Now, get_vfs_format_classes on both branches returns the same format
         # information.
         self.assertEqual(
@@ -230,25 +240,4 @@ class TestGetVfsFormatClasses(TestCaseWithTransport):
             get_vfs_format_classes(remote_branch))
 
 
-def load_tests(basic_tests, module, loader):
-    """Parametrize the tests of get_branch_stacked_on_url by branch format."""
-    result = loader.suiteClass()
-
-    get_branch_stacked_on_url_tests = loader.loadTestsFromTestCase(
-        TestGetBranchStackedOnURL)
-    scenarios = [scenario for scenario in branch_scenarios()
-                 if scenario[0] not in (
-                     'BranchReferenceFormat', 'GitBranchFormat',
-                     'HgBranchFormat', 'SvnBranchFormat')]
-    multiply_tests(get_branch_stacked_on_url_tests, scenarios, result)
-
-    result.addTests(loader.loadTestsFromTestCase(TestIsBranchStackable))
-    result.addTests(loader.loadTestsFromTestCase(TestDenyingServer))
-    result.addTests(loader.loadTestsFromTestCase(TestExceptionLoggingHooks))
-    result.addTests(loader.loadTestsFromTestCase(TestGetVfsFormatClasses))
-    return result
-
-
-def test_suite():
-    loader = TestLoader()
-    return loader.loadTestsFromName(__name__)
+load_tests = load_tests_apply_scenarios

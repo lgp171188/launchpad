@@ -1,32 +1,47 @@
-# Copyright 2009 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2016 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 from cStringIO import StringIO
+import hashlib
+import httplib
+import os
+import re
 import textwrap
 import unittest
 from urllib2 import (
     HTTPError,
     URLError,
+    urlopen,
     )
 
+from fixtures import (
+    EnvironmentVariable,
+    TempDir,
+    )
 import transaction
 
 from lp.services.config import config
-from lp.services.database.lpstorm import ISlaveStore
+from lp.services.daemons.tachandler import TacTestSetup
+from lp.services.database.interfaces import ISlaveStore
+from lp.services.database.policy import SlaveDatabasePolicy
 from lp.services.database.sqlbase import block_implicit_flushes
 from lp.services.librarian import client as client_module
 from lp.services.librarian.client import (
+    _File,
     LibrarianClient,
     LibrarianServerError,
     RestrictedLibrarianClient,
     )
 from lp.services.librarian.interfaces.client import UploadFailed
 from lp.services.librarian.model import LibraryFileAlias
-from lp.services.webapp.dbpolicy import SlaveDatabasePolicy
+from lp.services.propertycache import cachedproperty
+from lp.testing import TestCase
 from lp.testing.layers import (
     DatabaseLayer,
+    FunctionalLayer,
     LaunchpadFunctionalLayer,
     )
+from lp.testing.views import create_webservice_error_view
 
 
 class InstrumentedLibrarianClient(LibrarianClient):
@@ -36,12 +51,14 @@ class InstrumentedLibrarianClient(LibrarianClient):
         self.check_error_calls = 0
 
     sentDatabaseName = False
+
     def _sendHeader(self, name, value):
         if name == 'Database-Name':
             self.sentDatabaseName = True
         return LibrarianClient._sendHeader(self, name, value)
 
     called_getURLForDownload = False
+
     def _getURLForDownload(self, aliasID):
         self.called_getURLForDownload = True
         return LibrarianClient._getURLForDownload(self, aliasID)
@@ -73,15 +90,89 @@ def make_mock_file(error, max_raise):
     return mock_file
 
 
+class FakeServerTestSetup(TacTestSetup):
+
+    def setUp(self):
+        self.port = None
+        super(FakeServerTestSetup, self).setUp()
+
+    def setUpRoot(self):
+        pass
+
+    @cachedproperty
+    def root(self):
+        return self.useFixture(TempDir()).path
+
+    @property
+    def tacfile(self):
+        return os.path.join(os.path.dirname(__file__), "fakeserver.tac")
+
+    @property
+    def pidfile(self):
+        return os.path.join(self.root, "fakeserver.pid")
+
+    @property
+    def logfile(self):
+        return os.path.join(self.root, "fakeserver.log")
+
+    def removeLog(self):
+        pass
+
+    def _hasDaemonStarted(self):
+        if super(FakeServerTestSetup, self)._hasDaemonStarted():
+            with open(self.logfile) as logfile:
+                self.port = int(re.search(
+                    r"Site starting on (\d+)", logfile.read()).group(1))
+            return True
+        else:
+            return False
+
+
+class LibrarianFileWrapperTestCase(TestCase):
+    """Test behaviour of the _File wrapper used by the librarian client."""
+
+    def makeFile(self, extra_content_length=None):
+        extra_content_length_str = (
+            str(extra_content_length) if extra_content_length is not None
+            else None)
+        self.useFixture(EnvironmentVariable(
+            "LP_EXTRA_CONTENT_LENGTH", extra_content_length_str))
+        port = self.useFixture(FakeServerTestSetup()).port
+        url = "http://localhost:%d/" % port
+        return _File(urlopen(url), url)
+
+    def test_unbounded_read_correct_length(self):
+        file = self.makeFile()
+        self.assertEqual(b"abcdef", file.read())
+        self.assertEqual(b"", file.read())
+
+    def test_unbounded_read_incorrect_length(self):
+        file = self.makeFile(extra_content_length=1)
+        self.assertEqual(b"abcdef", file.read())
+        self.assertRaises(httplib.IncompleteRead, file.read)
+
+    def test_bounded_read_correct_length(self):
+        file = self.makeFile()
+        self.assertEqual(b"abcd", file.read(chunksize=4))
+        self.assertEqual(b"ef", file.read(chunksize=4))
+        self.assertEqual(b"", file.read(chunksize=4))
+
+    def test_bounded_read_incorrect_length(self):
+        file = self.makeFile(extra_content_length=1)
+        self.assertEqual(b"abcd", file.read(chunksize=4))
+        self.assertEqual(b"ef", file.read(chunksize=4))
+        self.assertRaises(httplib.IncompleteRead, file.read, chunksize=4)
+
+
 class LibrarianClientTestCase(unittest.TestCase):
     layer = LaunchpadFunctionalLayer
 
     def test_addFileSendsDatabaseName(self):
         # addFile should send the Database-Name header.
         client = InstrumentedLibrarianClient()
-        id1 = client.addFile(
+        client.addFile(
             'sample.txt', 6, StringIO('sample'), 'text/plain')
-        self.failUnless(client.sentDatabaseName,
+        self.assertTrue(client.sentDatabaseName,
             "Database-Name header not sent by addFile")
 
     def test_remoteAddFileDoesntSendDatabaseName(self):
@@ -91,9 +182,9 @@ class LibrarianClientTestCase(unittest.TestCase):
         # different process, we need to explicitly tell the DatabaseLayer to
         # fully tear down and set up the database.
         DatabaseLayer.force_dirty_database()
-        id1 = client.remoteAddFile('sample.txt', 6, StringIO('sample'),
+        client.remoteAddFile('sample.txt', 6, StringIO('sample'),
                                    'text/plain')
-        self.failUnless(client.sentDatabaseName,
+        self.assertTrue(client.sentDatabaseName,
             "Database-Name header not sent by remoteAddFile")
 
     def test_clientWrongDatabase(self):
@@ -106,7 +197,7 @@ class LibrarianClientTestCase(unittest.TestCase):
             client.addFile('sample.txt', 6, StringIO('sample'), 'text/plain')
         except UploadFailed as e:
             msg = e.args[0]
-            self.failUnless(
+            self.assertTrue(
                 msg.startswith('Server said: 400 Wrong database'),
                 'Unexpected UploadFailed error: ' + msg)
         else:
@@ -151,6 +242,22 @@ class LibrarianClientTestCase(unittest.TestCase):
         # twice.
         self.assertEqual(5, client.check_error_calls)
 
+    def test_addFile_hashes(self):
+        # addFile() sets the MD5, SHA-1 and SHA-256 hashes on the
+        # LibraryFileContent record.
+        data = 'i am some data'
+        md5 = hashlib.md5(data).hexdigest()
+        sha1 = hashlib.sha1(data).hexdigest()
+        sha256 = hashlib.sha256(data).hexdigest()
+
+        client = LibrarianClient()
+        lfa = LibraryFileAlias.get(
+            client.addFile('file', len(data), StringIO(data), 'text/plain'))
+
+        self.assertEqual(md5, lfa.content.md5)
+        self.assertEqual(sha1, lfa.content.sha1)
+        self.assertEqual(sha256, lfa.content.sha256)
+
     def test__getURLForDownload(self):
         # This protected method is used by getFileByAlias. It is supposed to
         # use the internal host and port rather than the external, proxied
@@ -174,13 +281,13 @@ class LibrarianClientTestCase(unittest.TestCase):
             # download_port.
             expected_host = 'http://example.org:1234/'
             download_url = client._getURLForDownload(alias_id)
-            self.failUnless(download_url.startswith(expected_host),
+            self.assertTrue(download_url.startswith(expected_host),
                             'expected %s to start with %s' % (download_url,
                                                               expected_host))
             # If the alias has been deleted, _getURLForDownload returns None.
             lfa = LibraryFileAlias.get(alias_id)
             lfa.content = None
-            call = block_implicit_flushes( # Prevent a ProgrammingError
+            call = block_implicit_flushes(  # Prevent a ProgrammingError
                 LibrarianClient._getURLForDownload)
             self.assertEqual(call(client, alias_id), None)
         finally:
@@ -190,7 +297,7 @@ class LibrarianClientTestCase(unittest.TestCase):
     def test_restricted_getURLForDownload(self):
         # The RestrictedLibrarianClient should use the
         # restricted_download_host and restricted_download_port, but is
-        # otherwise identical to the behavior of the LibrarianClient discussed
+        # otherwise identical to the behaviour of the LibrarianClient discussed
         # and demonstrated above.
         #
         # (Set up:)
@@ -210,13 +317,13 @@ class LibrarianClientTestCase(unittest.TestCase):
             # download_port.
             expected_host = 'http://example.com:5678/'
             download_url = client._getURLForDownload(alias_id)
-            self.failUnless(download_url.startswith(expected_host),
+            self.assertTrue(download_url.startswith(expected_host),
                             'expected %s to start with %s' % (download_url,
                                                               expected_host))
             # If the alias has been deleted, _getURLForDownload returns None.
             lfa = LibraryFileAlias.get(alias_id)
             lfa.content = None
-            call = block_implicit_flushes( # Prevent a ProgrammingError
+            call = block_implicit_flushes(  # Prevent a ProgrammingError
                 RestrictedLibrarianClient._getURLForDownload)
             self.assertEqual(call(client, alias_id), None)
         finally:
@@ -231,12 +338,12 @@ class LibrarianClientTestCase(unittest.TestCase):
         client = InstrumentedLibrarianClient()
         alias_id = client.addFile(
             'sample.txt', 6, StringIO('sample'), 'text/plain')
-        transaction.commit() # Make sure the file is in the "remote" database
-        self.failIf(client.called_getURLForDownload)
+        transaction.commit()  # Make sure the file is in the "remote" database.
+        self.assertFalse(client.called_getURLForDownload)
         # (Test:)
         f = client.getFileByAlias(alias_id)
         self.assertEqual(f.read(), 'sample')
-        self.failUnless(client.called_getURLForDownload)
+        self.assertTrue(client.called_getURLForDownload)
 
     def test_getFileByAliasLookupError(self):
         # The Librarian server can return a 404 HTTPError;
@@ -306,3 +413,13 @@ class LibrarianClientTestCase(unittest.TestCase):
             client.getFileByAlias(alias_id), 'This is a fake file object', 3)
 
         client_module._File = _File
+
+
+class TestWebServiceErrors(unittest.TestCase):
+    """ Test that errors are correctly mapped to HTTP status codes."""
+
+    layer = FunctionalLayer
+
+    def test_LibrarianServerError_timeout(self):
+        error_view = create_webservice_error_view(LibrarianServerError())
+        self.assertEqual(httplib.REQUEST_TIMEOUT, error_view.status)

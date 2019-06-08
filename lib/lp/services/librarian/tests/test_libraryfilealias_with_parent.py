@@ -8,7 +8,7 @@ __all__ = []
 from zope.component import getMultiAdapter
 from zope.security.interfaces import Unauthorized
 
-from lp.registry.enums import InformationType
+from lp.app.enums import InformationType
 from lp.services.librarian.interfaces import ILibraryFileAliasWithParent
 from lp.testing import (
     login_person,
@@ -52,7 +52,7 @@ class TestLibraryFileAliasForBugAttachment(TestCaseWithFactory):
         login_person(other_person)
         self.assertRaises(
             Unauthorized, setattr, self.bug_attachment, 'title', 'whatever')
-        # ...he also can't change the LibraryFileAlias for this bug.
+        # ...they also can't change the LibraryFileAlias for this bug.
         self.assertRaises(
             Unauthorized, setattr, self.lfa_with_parent, 'restricted', True)
 

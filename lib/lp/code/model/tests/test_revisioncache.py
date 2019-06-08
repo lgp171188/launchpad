@@ -1,7 +1,9 @@
-# Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests relating to the revision cache."""
+
+from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 
@@ -16,11 +18,7 @@ from zope.security.proxy import removeSecurityProxy
 
 from lp.code.interfaces.revisioncache import IRevisionCache
 from lp.code.model.revision import RevisionCache
-from lp.services.webapp.interfaces import (
-    DEFAULT_FLAVOR,
-    IStoreSelector,
-    MAIN_STORE,
-    )
+from lp.services.database.interfaces import IStore
 from lp.testing import (
     TestCaseWithFactory,
     time_counter,
@@ -83,8 +81,7 @@ class TestRevisionCache(TestCaseWithFactory):
 
     def test_initially_empty(self):
         # A test just to confirm that the RevisionCache is empty.
-        store = getUtility(IStoreSelector).get(MAIN_STORE, DEFAULT_FLAVOR)
-        results = store.find(RevisionCache)
+        results = IStore(RevisionCache).find(RevisionCache)
         self.assertEqual(0, results.count())
 
     def makeCachedRevision(self, revision=None, product=None,
@@ -192,19 +189,20 @@ class TestRevisionCache(TestCaseWithFactory):
         revision_cache = getUtility(IRevisionCache).inProduct(product)
         self.assertCollectionContents([rev1, rev2], revision_cache)
 
-    def test_in_project(self):
+    def test_in_project_group(self):
         # Revisions across a project group can be determined using the
-        # inProject method.
-        project = self.factory.makeProject()
-        product1 = self.factory.makeProduct(project=project)
-        product2 = self.factory.makeProduct(project=project)
+        # inProjectGroup method.
+        projectgroup = self.factory.makeProject()
+        product1 = self.factory.makeProduct(projectgroup=projectgroup)
+        product2 = self.factory.makeProduct(projectgroup=projectgroup)
         rev1 = self.makeCachedRevision(product=product1)
         rev2 = self.makeCachedRevision(product=product2)
-        # Make two other revisions, on in a different product, and another
+        # Make two other revisions, one in a different product, and another
         # general one.
         self.makeCachedRevision(product=self.factory.makeProduct())
         self.makeCachedRevision()
-        revision_cache = getUtility(IRevisionCache).inProject(project)
+        revision_cache = getUtility(IRevisionCache).inProjectGroup(
+            projectgroup)
         self.assertCollectionContents([rev1, rev2], revision_cache)
 
     def test_in_source_package(self):
@@ -359,7 +357,7 @@ class TestRevisionCache(TestCaseWithFactory):
         # If there are multiple revisions with the same revision author text,
         # but not linked to a Launchpad person, then that revision_text is
         # counted as one author.
-        for counter in xrange(4):
+        for counter in range(4):
             self.makeCachedRevision(revision=self.factory.makeRevision(
                 author="Foo <foo@example.com>"))
         revision_cache = getUtility(IRevisionCache)

@@ -1,8 +1,6 @@
 # Copyright 2009 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-# pylint: disable-msg=E0213
-
 """StructuralSubscription interfaces."""
 
 __metaclass__ = type
@@ -57,7 +55,7 @@ class IStructuralSubscriptionPublic(Interface):
     product = Int(title=_('Product'), required=False, readonly=True)
     productseries = Int(
         title=_('Product series'), required=False, readonly=True)
-    project = Int(title=_('Project group'), required=False, readonly=True)
+    projectgroup = Int(title=_('Project group'), required=False, readonly=True)
     milestone = Int(title=_('Milestone'), required=False, readonly=True)
     distribution = Int(title=_('Distribution'), required=False, readonly=True)
     distroseries = Int(
@@ -79,14 +77,14 @@ class IStructuralSubscriptionPublic(Interface):
         required=False, readonly=True))
 
     target = exported(Reference(
-        schema=Interface, # IStructuralSubscriptionTarget
+        schema=Interface,  # IStructuralSubscriptionTarget
         required=True, readonly=True,
         title=_("The structure to which this subscription belongs.")))
 
     bug_filters = exported(CollectionField(
         title=_('List of bug filters that narrow this subscription.'),
         readonly=True, required=False,
-        value_type=Reference(schema=Interface))) # IBugSubscriptionFilter
+        value_type=Reference(schema=Interface)))  # IBugSubscriptionFilter
 
 
 class IStructuralSubscriptionRestricted(Interface):
@@ -200,7 +198,7 @@ class IStructuralSubscriptionTargetWrite(Interface):
                 ' subscribed.'),
             required=False))
     @call_with(subscribed_by=REQUEST_USER)
-    @export_factory_operation(Interface, []) # Really IBugSubscriptionFilter
+    @export_factory_operation(Interface, [])  # Really IBugSubscriptionFilter
     @operation_for_version('beta')
     def addBugSubscriptionFilter(subscriber, subscribed_by):
         """Add a bug subscription filter for this structure.
@@ -267,5 +265,5 @@ class IStructuralSubscriptionTargetHelper(Interface):
 class IStructuralSubscriptionForm(Interface):
     """Schema for the structural subscription form."""
     subscribe_me = Bool(
-        title=u"I want to receive these notifications by e-mail.",
+        title=u"I want to receive these notifications by email.",
         required=False)

@@ -1,10 +1,10 @@
 == Leaving the team ==
 
-Foo Bar decided to leave the 'ubuntu-team'. He visits the home page
-and chooses the "Leave" link. He confirm that wants to leave the team
+Foo Bar decided to leave the 'ubuntu-team'. They visit the home page
+and chooses the "Leave" link. They confirm that they want to leave the team
 by choosing the 'Leave' button.
 
-    >>> admin_browser.open('http://launchpad.dev/~ubuntu-team')
+    >>> admin_browser.open('http://launchpad.test/~ubuntu-team')
     >>> admin_browser.title
     'Ubuntu Team in Launchpad'
 
@@ -16,12 +16,12 @@ by choosing the 'Leave' button.
     <p>Are you sure you want to leave this team?</p>
     >>> admin_browser.getControl('Leave').click()
 
-Foo Bar is redirect to the team page after he leaves.
+Foo Bar is redirected to the team page after they leave.
 
     >>> admin_browser.title
     'Ubuntu Team in Launchpad'
     >>> admin_browser.getLink('Join').url
-    'http://launchpad.dev/~ubuntu-team/+join'
+    'http://launchpad.test/~ubuntu-team/+join'
 
 
 == Leaving a private team ==
@@ -30,7 +30,7 @@ When someone leaves a private team, they are no longer able to see the team so
 are redirected to their personal Launchpad homepage with a suitable message.
 
     >>> browser = setupBrowser(auth='Basic member@canonical.com:test')
-    >>> browser.open('http://launchpad.dev/~myteam')
+    >>> browser.open('http://launchpad.test/~myteam')
     >>> browser.title
     'My Team in Launchpad'
 
@@ -43,7 +43,7 @@ are redirected to their personal Launchpad homepage with a suitable message.
 User is redirect to their homepage page after leaving.
 
     >>> browser.url
-    'http://launchpad.dev/~member'
+    'http://launchpad.test/~member'
 
     >>> print extract_text(
     ...     first_tag_by_class(browser.contents, 'informational message'))
@@ -55,7 +55,7 @@ A member of a team can quickly leave a team by using the links on the
 team's overview page.
 
     >>> browser = setupBrowser(auth='Basic carlos@canonical.com:test')
-    >>> browser.open('http://launchpad.dev/~admins')
+    >>> browser.open('http://launchpad.test/~admins')
     >>> print extract_text(
     ...     find_tag_by_id(browser.contents, 'your-involvement'))
     You are a member of this team...
@@ -78,10 +78,10 @@ team's overview page.
 
 Team owners do not have the option to leave.
 
-    >>> browser.open('http://launchpad.dev/~testing-spanish-team')
+    >>> browser.open('http://launchpad.test/~testing-spanish-team')
     >>> print extract_text(
     ...     find_tag_by_id(browser.contents, 'your-involvement'))
-    You are the owner of this team...
+    You own this team...
     >>> browser.getLink('Leave the Team')
     Traceback (most recent call last):
     ...

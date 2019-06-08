@@ -1,4 +1,4 @@
-# Copyright 2004-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2004-2017 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Scripts for starting a Python prompt with Launchpad initialized.
@@ -12,10 +12,8 @@ One uses Python, the other iPython.
 __metaclass__ = type
 __all__ = ['python', 'ipython']
 
-# This has setup.py scripts.  It is usually installed via buildout.
-#
+# This has entry points with corresponding scripts installed by setup.py.
 
-#
 import os
 import readline
 import rlcompleter
@@ -39,20 +37,15 @@ from lp.registry.model.distroseries import DistroSeries
 from lp.registry.model.person import Person
 from lp.registry.model.product import Product
 from lp.registry.model.projectgroup import ProjectGroup
+from lp.services.config import dbconfig
+from lp.services.database.interfaces import IMasterStore
 from lp.services.scripts import execute_zcml_for_scripts
 from lp.services.webapp import canonical_url
-from lp.services.webapp.interfaces import (
-    DEFAULT_FLAVOR,
-    IStoreSelector,
-    MAIN_STORE,
-    MASTER_FLAVOR,
-    SLAVE_FLAVOR,
-    )
 from lp.testing.factory import LaunchpadObjectFactory
 
 # Silence unused name warnings
 (utc, transaction, verifyObject, removeSecurityProxy, canonical_url,
- SLAVE_FLAVOR, DEFAULT_FLAVOR)
+ getUtility, rlcompleter)
 
 
 def _get_locals():
@@ -60,6 +53,7 @@ def _get_locals():
         dbuser = sys.argv[1]
     else:
         dbuser = None
+    dbconfig.override(dbuser=dbuser)
     execute_zcml_for_scripts()
     readline.parse_and_bind('tab: complete')
     # Mimic the real interactive interpreter's loading of any
@@ -67,8 +61,7 @@ def _get_locals():
     startup = os.environ.get('PYTHONSTARTUP')
     if startup:
         execfile(startup)
-    store_selector = getUtility(IStoreSelector)
-    store = store_selector.get(MAIN_STORE, MASTER_FLAVOR)
+    store = IMasterStore(Person)
 
     if dbuser == 'launchpad':
         # Create a few variables "in case they come in handy."
@@ -115,5 +108,8 @@ def python():
 
 
 def ipython():
-    import IPython.ipapi
-    IPython.ipapi.launch_new_instance(_get_locals())
+    from IPython.frontend.terminal.ipapp import TerminalIPythonApp
+    app = TerminalIPythonApp.instance()
+    app.initialize(argv=[])
+    app.shell.user_ns.update(_get_locals())
+    app.start()

@@ -1,11 +1,10 @@
-# Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 import logging
 import os
 import threading
 import urllib
-import urllib2
 import urlparse
 import xmlrpclib
 
@@ -47,10 +46,12 @@ from paste.request import (
 from lp.code.interfaces.codehosting import (
     BRANCH_TRANSPORT,
     LAUNCHPAD_ANONYMOUS,
+    LAUNCHPAD_SERVICES,
     )
 from lp.codehosting.vfs import get_lp_server
 from lp.services.config import config
 from lp.services.webapp.errorlog import ErrorReportingUtility
+from lp.services.webapp.openid import set_default_openid_fetcher
 from lp.services.webapp.vhosts import allvhosts
 from lp.xmlrpc import faults
 
@@ -63,7 +64,10 @@ Disallow: /
 robots_app = DataApp(robots_txt, content_type='text/plain')
 
 
-thread_transports = threading.local()
+thread_locals = threading.local()
+
+
+set_default_openid_fetcher()
 
 
 def check_fault(fault, *fault_classes):
@@ -82,17 +86,22 @@ class RootApp:
 
     def __init__(self, session_var):
         self.graph_cache = lru_cache.LRUCache(10)
-        self.branchfs = xmlrpclib.ServerProxy(
-            config.codehosting.codehosting_endpoint)
         self.session_var = session_var
         self.log = logging.getLogger('lp-loggerhead')
 
     def get_transport(self):
-        t = getattr(thread_transports, 'transport', None)
+        t = getattr(thread_locals, 'transport', None)
         if t is None:
-            thread_transports.transport = get_transport(
+            thread_locals.transport = get_transport(
                 config.codehosting.internal_branch_by_id_root)
-        return thread_transports.transport
+        return thread_locals.transport
+
+    def get_branchfs(self):
+        t = getattr(thread_locals, 'branchfs', None)
+        if t is None:
+            thread_locals.branchfs = xmlrpclib.ServerProxy(
+                config.codehosting.codehosting_endpoint)
+        return thread_locals.branchfs
 
     def _make_consumer(self, environ):
         """Build an OpenID `Consumer` object with standard arguments."""
@@ -110,9 +119,8 @@ class RootApp:
         the page they were looking at, with a cookie that gives us the
         username.
         """
-        openid_vhost = config.launchpad.openid_provider_vhost
         openid_request = self._make_consumer(environ).begin(
-            allvhosts.configs[openid_vhost].rooturl)
+            config.launchpad.openid_provider_root)
         openid_request.addExtension(
             SRegRequest(required=['nickname']))
         back_to = construct_url(environ)
@@ -138,7 +146,15 @@ class RootApp:
         if response.status == SUCCESS:
             self.log.error('open id response: SUCCESS')
             sreg_info = SRegResponse.fromSuccessResponse(response)
-            print sreg_info
+            if not sreg_info:
+                self.log.error('sreg_info is None.')
+                exc = HTTPUnauthorized()
+                exc.explanation = (
+                  "You don't have a Launchpad account. Check that you're "
+                  "logged in as the right user, or log into Launchpad and try "
+                  "again.")
+                raise exc
+            environ[self.session_var]['identity_url'] = response.identity_url
             environ[self.session_var]['user'] = sreg_info['nickname']
             raise HTTPMovedPermanently(query['back_to'])
         elif response.status == FAILURE:
@@ -170,6 +186,8 @@ class RootApp:
         raise HTTPMovedPermanently(next_url)
 
     def __call__(self, environ, start_response):
+        request_is_private = (
+            environ['SERVER_PORT'] == str(config.codebrowse.private_port))
         environ['loggerhead.static.url'] = environ['SCRIPT_NAME']
         if environ['PATH_INFO'].startswith('/static/'):
             path_info_pop(environ)
@@ -178,20 +196,32 @@ class RootApp:
             return favicon_app(environ, start_response)
         elif environ['PATH_INFO'] == '/robots.txt':
             return robots_app(environ, start_response)
-        elif environ['PATH_INFO'].startswith('/+login'):
-            return self._complete_login(environ, start_response)
-        elif environ['PATH_INFO'].startswith('/+logout'):
-            return self._logout(environ, start_response)
+        elif not request_is_private:
+            if environ['PATH_INFO'].startswith('/+login'):
+                return self._complete_login(environ, start_response)
+            elif environ['PATH_INFO'].startswith('/+logout'):
+                return self._logout(environ, start_response)
         path = environ['PATH_INFO']
         trailingSlashCount = len(path) - len(path.rstrip('/'))
-        user = environ[self.session_var].get('user', LAUNCHPAD_ANONYMOUS)
-        lp_server = get_lp_server(user, branch_transport=self.get_transport())
+        if request_is_private:
+            # Requests on the private port are internal API requests from
+            # something that has already performed security checks.  As
+            # such, they get read-only access to everything.
+            identity_url = LAUNCHPAD_SERVICES
+            user = LAUNCHPAD_SERVICES
+        else:
+            identity_url = environ[self.session_var].get(
+                'identity_url', LAUNCHPAD_ANONYMOUS)
+            user = environ[self.session_var].get('user', LAUNCHPAD_ANONYMOUS)
+        lp_server = get_lp_server(
+            identity_url, branch_transport=self.get_transport())
         lp_server.start_server()
         try:
 
             try:
-                transport_type, info, trail = self.branchfs.translatePath(
-                    user, urlutils.escape(path))
+                branchfs = self.get_branchfs()
+                transport_type, info, trail = branchfs.translatePath(
+                    identity_url, urlutils.escape(path))
             except xmlrpclib.Fault as f:
                 if check_fault(f, faults.PathTranslationError):
                     raise HTTPNotFound()
@@ -238,39 +268,11 @@ class RootApp:
             if not os.path.isdir(cachepath):
                 os.makedirs(cachepath)
             self.log.info('branch_url: %s', branch_url)
-            base_api_url = allvhosts.configs['api'].rooturl
-            branch_api_url = '%s/%s/%s' % (
-                base_api_url,
-                'devel',
-                branch_name,
-                )
-            self.log.info('branch_api_url: %s', branch_api_url)
-            req = urllib2.Request(branch_api_url)
-            private = False
-            try:
-                # We need to determine if the branch is private
-                response = urllib2.urlopen(req)
-            except urllib2.HTTPError as response:
-                code = response.getcode()
-                if code in (400, 401, 403, 404):
-                    # There are several error codes that imply private data.
-                    # 400 (bad request) is a default error code from the API
-                    # 401 (unauthorized) should never be returned as the
-                    # requests are always from anon. If it is returned
-                    # however, the data is certainly private.
-                    # 403 (forbidden) is obviously private.
-                    # 404 (not found) implies privacy from a private team or
-                    # similar situation, which we hide as not existing rather
-                    # than mark as forbidden.
-                    self.log.info("Branch is private")
-                    private = True
-                self.log.info(
-                    "Branch state not determined; api error, return code: %s",
-                    code)
-                response.close()
+            private = info['private']
+            if private:
+                self.log.info("Branch is private")
             else:
                 self.log.info("Branch is public")
-                response.close()
 
             try:
                 bzr_branch = open_only_scheme(

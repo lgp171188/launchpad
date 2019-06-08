@@ -1,7 +1,5 @@
-# Copyright 2009-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2016 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
-
-# pylint: disable-msg=E0211,E0213
 
 __metaclass__ = type
 
@@ -13,8 +11,7 @@ from lazr.enum import (
     DBItem,
     use_template,
     )
-import zope.app.publication.interfaces
-from zope.app.security.interfaces import (
+from zope.authentication.interfaces import (
     IAuthentication,
     IPrincipal,
     IPrincipalSource,
@@ -22,11 +19,13 @@ from zope.app.security.interfaces import (
 from zope.component.interfaces import IObjectEvent
 from zope.interface import (
     Attribute,
-    implements,
+    implementer,
     Interface,
     )
+from zope.publisher.interfaces.browser import IBrowserApplicationRequest
 from zope.schema import (
     Bool,
+    Bytes,
     Choice,
     Datetime,
     Int,
@@ -39,15 +38,14 @@ from zope.traversing.interfaces import IContainmentRoot
 from lp import _
 
 
-class IAPIDocRoot(IContainmentRoot):
-    """Marker interface for the root object of the apidoc vhost."""
-
-
 class ILaunchpadContainer(Interface):
     """Marker interface for objects used as the context of something."""
 
-    def isWithin(scope):
-        """Return True if this context is within the given scope."""
+    def getParentContainers():
+        """Return the containers of each parent of this context."""
+
+    def isWithin(scope_url):
+        """Return True if this context is within the given scope URL."""
 
 
 class ILaunchpadRoot(IContainmentRoot):
@@ -83,6 +81,14 @@ class UnsafeFormGetSubmissionError(Exception):
 #
 # Menus and Facets
 #
+
+class IFacet(Interface):
+    """Interface for metadata about facets."""
+
+    rootsite = Attribute("Rootsite name")
+    title = Attribute("Title")
+    default_view = Attribute("Default view for multi-faceted objects")
+
 
 class IMenu(Interface):
     """Public interface for facets, menus, extra facets and extra menus."""
@@ -236,6 +242,13 @@ class IBreadcrumb(Interface):
 
     detail = Attribute('Detailed text of this breadcrumb.')
 
+    inside = Attribute(
+        'Next object up the chain. If not specified, the URL parent is used.')
+
+
+class IMultiFacetedBreadcrumb(Interface):
+    """A breadcrumb link for an object that transcends facets."""
+
 
 #
 # Canonical URLs
@@ -266,6 +279,15 @@ class NoCanonicalUrl(TypeError):
             )
 
 
+class IFavicon(Interface):
+    """A favicon."""
+
+    path = TextLine(
+        title=u"The name of the file containing the favicon data.",
+        required=True)
+    data = Bytes(title=u"The favicon data.", required=True)
+
+
 # XXX kiko 2007-02-08: this needs reconsideration if we are to make it a truly
 # generic thing. The problem lies in the fact that half of this (user, login,
 # time zone, developer) is actually useful inside webapp/, and the other half
@@ -273,7 +295,7 @@ class NoCanonicalUrl(TypeError):
 # implementation into two parts, having a different name for the webapp/ bits.
 class ILaunchBag(Interface):
     person = Attribute('IPerson, or None')
-    project = Attribute('IProjectGroup, or None')
+    projectgroup = Attribute('IProjectGroup, or None')
     product = Attribute('IProduct, or None')
     distribution = Attribute('IDistribution, or None')
     distroseries = Attribute('IDistroSeries, or None')
@@ -405,8 +427,7 @@ class IBrowserFormNG(Interface):
 
 
 class ILaunchpadBrowserApplicationRequest(
-    IBasicLaunchpadRequest,
-    zope.publisher.interfaces.browser.IBrowserApplicationRequest):
+    IBasicLaunchpadRequest, IBrowserApplicationRequest):
     """The request interface to the application for LP browser requests."""
 
     form_ng = Object(
@@ -435,16 +456,16 @@ class ILoggedInEvent(Interface):
         'The login id that was used.  For example, an email address.')
 
 
+@implementer(ILoggedInEvent)
 class CookieAuthLoggedInEvent:
-    implements(ILoggedInEvent)
 
     def __init__(self, request, login):
         self.request = request
         self.login = login
 
 
+@implementer(IPrincipalIdentifiedEvent)
 class CookieAuthPrincipalIdentifiedEvent:
-    implements(IPrincipalIdentifiedEvent)
 
     def __init__(self, principal, request, login):
         self.principal = principal
@@ -452,8 +473,8 @@ class CookieAuthPrincipalIdentifiedEvent:
         self.login = login
 
 
+@implementer(ILoggedInEvent, IPrincipalIdentifiedEvent)
 class BasicAuthLoggedInEvent:
-    implements(ILoggedInEvent, IPrincipalIdentifiedEvent)
 
     def __init__(self, request, login, principal):
         # these one from ILoggedInEvent
@@ -468,8 +489,8 @@ class ILoggedOutEvent(Interface):
     """An event which gets sent after someone has logged out via a form."""
 
 
+@implementer(ILoggedOutEvent)
 class LoggedOutEvent:
-    implements(ILoggedOutEvent)
 
     def __init__(self, request):
         self.request = request
@@ -478,12 +499,12 @@ class LoggedOutEvent:
 class IPlacelessAuthUtility(IAuthentication):
     """This is a marker interface for a utility that supplies the interface
     of the authentication service placelessly, with the addition of
-    a method to allow the acquisition of a principal using his
+    a method to allow the acquisition of a principal using their
     login name.
     """
 
     def getPrincipalByLogin(login):
-        """Return a principal based on his login name."""
+        """Return a principal based on their login name."""
 
 
 class IPlacelessLoginSource(IPrincipalSource):
@@ -493,13 +514,13 @@ class IPlacelessLoginSource(IPrincipalSource):
     """
 
     def getPrincipalByLogin(login):
-        """Return a principal based on his login name."""
+        """Return a principal based on their login name."""
 
     def getPrincipals(name):
         """Not implemented.
 
         Get principals with matching names.
-        See zope.app.pluggableauth.interfaces.IPrincipalSource
+        See zope.authentication.interfaces.IPrincipalSource
         """
 
 
@@ -680,24 +701,6 @@ class IErrorReportEvent(IObjectEvent):
     """A new error report has been created."""
 
 
-class IErrorReport(Interface):
-    id = TextLine(description=u"The name of this error report.")
-    type = TextLine(description=u"The type of the exception that occurred.")
-    value = TextLine(description=u"The value of the exception that occurred.")
-    time = Datetime(description=u"The time at which the exception occurred.")
-    pageid = TextLine(
-        description=u"""
-            The context class plus the page template where the exception
-            occurred.
-            """)
-    branch_nick = TextLine(description=u"The branch nickname.")
-    revno = TextLine(description=u"The revision number of the branch.")
-    tb_text = Text(description=u"A text version of the traceback.")
-    username = TextLine(description=u"The user associated with the request.")
-    url = TextLine(description=u"The URL for the failed request.")
-    req_vars = Attribute("The request variables.")
-
-
 class IErrorReportRequest(Interface):
     oopsid = TextLine(
         description=u"""an identifier for the exception, or None if no
@@ -742,147 +745,6 @@ class ICheckBoxWidgetLayout(IAlwaysSubmittedWidget):
     """A widget that is displayed like a check box with label to the right."""
 
 
-class IPrimaryContext(Interface):
-    """The primary context that used to determine the tabs for the web UI."""
-    context = Attribute('The primary context.')
-
-
-#
-# Database policies
-#
-
-MAIN_STORE = 'main'  # The main database.
-ALL_STORES = frozenset([MAIN_STORE])
-
-DEFAULT_FLAVOR = 'default'  # Default flavor for current state.
-MASTER_FLAVOR = 'master'  # The master database.
-SLAVE_FLAVOR = 'slave'  # A slave database.
-
-
-class IDatabasePolicy(Interface):
-    """Implement database policy based on the request.
-
-    The publisher adapts the request to `IDatabasePolicy` to
-    instantiate the policy for the current request.
-    """
-    def __enter__():
-        """Standard Python context manager interface.
-
-        The IDatabasePolicy will install itself using the IStoreSelector
-        utility.
-        """
-
-    def __exit__(exc_type, exc_value, traceback):
-        """Standard Python context manager interface.
-
-        The IDatabasePolicy will uninstall itself using the IStoreSelector
-        utility.
-        """
-
-    def getStore(name, flavor):
-        """Retrieve a Store.
-
-        :param name: one of ALL_STORES.
-
-        :param flavor: MASTER_FLAVOR, SLAVE_FLAVOR, or DEFAULT_FLAVOR.
-        """
-
-    def install():
-        """Hook called when policy is pushed onto the `IStoreSelector`."""
-
-    def uninstall():
-        """Hook called when policy is popped from the `IStoreSelector`."""
-
-
-class MasterUnavailable(Exception):
-    """A master (writable replica) database was requested but not available.
-    """
-
-
-class DisallowedStore(Exception):
-    """A request was made to access a Store that has been disabled
-    by the current policy.
-    """
-
-
-class IStoreSelector(Interface):
-    """Get a Storm store with a desired flavor.
-
-    Stores come in two flavors - MASTER_FLAVOR and SLAVE_FLAVOR.
-
-    The master is writable and up to date, but we should not use it
-    whenever possible because there is only one master and we don't want
-    it to be overloaded.
-
-    The slave is read only replica of the master and may lag behind the
-    master. For many purposes such as serving unauthenticated web requests
-    and generating reports this is fine. We can also have as many slave
-    databases as we are prepared to pay for, so they will perform better
-    because they are less loaded.
-    """
-    def push(dbpolicy):
-        """Install an `IDatabasePolicy` as the default for this thread."""
-
-    def pop():
-        """Uninstall the most recently pushed `IDatabasePolicy` from
-        this thread.
-
-        Returns the `IDatabasePolicy` removed.
-        """
-
-    def get_current():
-        """Return the currently installed `IDatabasePolicy`."""
-
-    def get(name, flavor):
-        """Retrieve a Storm Store.
-
-        Results should not be shared between threads, as which store is
-        returned for a given name or flavor can depend on thread state
-        (eg. the HTTP request currently being handled).
-
-        If a SLAVE_FLAVOR is requested, the MASTER_FLAVOR may be returned
-        anyway.
-
-        The DEFAULT_FLAVOR flavor may return either a master or slave
-        depending on process state. Application code using the
-        DEFAULT_FLAVOR flavor should assume they have a MASTER and that
-        a higher level will catch the exception raised if an attempt is
-        made to write changes to a read only store. DEFAULT_FLAVOR exists
-        for backwards compatibility, and new code should explicitly state
-        if they want a master or a slave.
-
-        :raises MasterUnavailable:
-
-        :raises DisallowedStore:
-        """
-
-
-# XXX mars 2010-07-14 bug=598816
-#
-# We need a conditional import of the request events until the real events
-# land in the Zope mainline.
-#
-# See bug 598816 for the details.
-
-try:
-    from zope.publisher.interfaces import StartRequestEvent
-except ImportError:
-    class IStartRequestEvent(Interface):
-        """An event that gets sent before the start of a request."""
-
-        request = Attribute("The request the event is about")
-
-    class StartRequestEvent:
-        """An event fired once at the start of requests.
-
-        :ivar request: The request the event is for.
-        """
-        implements(IStartRequestEvent)
-
-        def __init__(self, request):
-            self.request = request
-
-
 class IFinishReadOnlyRequestEvent(Interface):
     """An event which gets sent when the publication is ended"""
 
@@ -891,10 +753,9 @@ class IFinishReadOnlyRequestEvent(Interface):
     request = Attribute("The active request.")
 
 
+@implementer(IFinishReadOnlyRequestEvent)
 class FinishReadOnlyRequestEvent:
     """An event which gets sent when the publication is ended"""
-
-    implements(IFinishReadOnlyRequestEvent)
 
     def __init__(self, ob, request):
         self.object = ob

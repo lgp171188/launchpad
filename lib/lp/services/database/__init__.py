@@ -5,6 +5,7 @@
 
 __metaclass__ = type
 __all__ = [
+    'activity_cols',
     'read_transaction',
     'write_transaction',
     ]
@@ -23,6 +24,11 @@ from lp.services.database.sqlbase import reset_store
 RETRY_ATTEMPTS = 3
 
 
+def activity_cols(cur):
+    """Adapt pg_stat_activity column names for the current DB server."""
+    return {'query': 'query', 'pid': 'pid'}
+
+
 def retry_transaction(func):
     """Decorator used to retry database transaction failures.
 
@@ -38,7 +44,7 @@ def retry_transaction(func):
             except (DisconnectionError, IntegrityError,
                     TransactionRollbackError):
                 if attempt >= RETRY_ATTEMPTS:
-                    raise # tried too many times
+                    raise  # tried too many times
     return mergeFunctionMetadata(func, retry_transaction_decorator)
 
 
@@ -78,4 +84,3 @@ def write_transaction(func):
         return ret
     return retry_transaction(mergeFunctionMetadata(
         func, write_transaction_decorator))
-

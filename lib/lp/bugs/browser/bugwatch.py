@@ -1,4 +1,4 @@
-# Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """IBugWatch-related browser views."""
@@ -8,8 +8,8 @@ __all__ = [
     'BugWatchSetNavigation',
     'BugWatchActivityPortletView',
     'BugWatchEditView',
-    'BugWatchView']
-
+    'BugWatchView'
+    ]
 
 from zope.component import getUtility
 from zope.interface import Interface
@@ -17,7 +17,6 @@ from zope.interface import Interface
 from lp import _
 from lp.app.browser.launchpadform import (
     action,
-    custom_widget,
     LaunchpadFormView,
     )
 from lp.app.widgets.textwidgets import URIWidget
@@ -37,8 +36,8 @@ from lp.services.webapp import (
     LaunchpadView,
     )
 from lp.services.webapp.authorization import check_permission
+from lp.services.webapp.escaping import structured
 from lp.services.webapp.interfaces import ILaunchBag
-from lp.services.webapp.menu import structured
 
 
 class BugWatchSetNavigation(GetitemNavigation):
@@ -93,7 +92,7 @@ class BugWatchEditView(LaunchpadFormView):
 
     schema = BugWatchEditForm
     field_names = ['url']
-    custom_widget('url', URIWidget)
+    custom_widget_url = URIWidget
 
     @property
     def page_title(self):
@@ -105,7 +104,7 @@ class BugWatchEditView(LaunchpadFormView):
     @property
     def initial_values(self):
         """See `LaunchpadFormView.`"""
-        return {'url' : self.context.url}
+        return {'url': self.context.url}
 
     @property
     def watch_has_activity(self):
@@ -133,9 +132,10 @@ class BugWatchEditView(LaunchpadFormView):
         """Return whether the bug watch is unlinked."""
         return (
             len(self.context.bugtasks) == 0 and
-            self.context.getImportedBugMessages().is_empty())
+            self.context.getBugMessages().is_empty())
 
-    @action('Delete Bug Watch', name='delete', condition=bugWatchIsUnlinked)
+    @action('Delete Bug Watch', name='delete', condition=bugWatchIsUnlinked,
+            validator='validate_cancel')
     def delete_action(self, action, data):
         bugwatch = self.context
         # Build the notification first, whilst we still have the data.

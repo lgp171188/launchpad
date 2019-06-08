@@ -8,9 +8,9 @@ from datetime import (
     timedelta,
     )
 from operator import attrgetter
+import re
 import textwrap
 
-from BeautifulSoup import BeautifulSoup
 from pytz import UTC
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
@@ -28,6 +28,7 @@ from lp.bugs.interfaces.bugwatch import IBugWatchSet
 from lp.registry.interfaces.distribution import IDistributionSet
 from lp.registry.interfaces.person import IPersonSet
 from lp.registry.interfaces.product import IProductSet
+from lp.services.beautifulsoup import BeautifulSoup
 from lp.services.config import config
 from lp.testing.pages import (
     extract_text,
@@ -79,7 +80,7 @@ def print_bug_affects_table(content, highlighted_only=False):
         :param highlighted_only: Only print the highlighted row
     """
     main_content = find_main_content(content)
-    affects_table = main_content.first('table', {'class': 'listing'})
+    affects_table = main_content.find('table', {'class': 'listing'})
     if highlighted_only:
         tr_attrs = {'class': 'highlight'}
     else:
@@ -130,16 +131,30 @@ def print_bugtasks(text, show_heat=None):
 def extract_bugtasks(text, show_heat=None):
     """Extracts a list of strings for all the bugtasks in the text."""
     main_content = find_main_content(text)
-    table = main_content.find('table', {'id': 'buglisting'})
-    if table is None:
+    listing = main_content.find('div', {'id': 'bugs-table-listing'})
+    if listing is None:
         return []
     rows = []
-    for tr in table('tr'):
-        if tr.td is not None:
-            row_text = extract_text(tr)
-            if row_text.rsplit('\n')[-1].strip().isdigit() and not show_heat:
-                row_text = row_text[:row_text.rfind('\n')].rstrip()
-            rows.append(row_text)
+    for bugtask in listing('div', {'class': 'buglisting-row'}):
+        bug_nr = extract_text(
+            bugtask.find(None, {'class': 'bugnumber'})).replace('#', '')
+        title = extract_text(bugtask.find(None, {'class': 'bugtitle'}))
+        status = extract_text(
+            bugtask.find(None, {'class': re.compile('status')}))
+        importance = extract_text(
+            bugtask.find(None, {'class': re.compile('importance')}))
+        affects = extract_text(
+            bugtask.find(
+                None,
+                {'class': re.compile(
+                    'None|(sprite product|distribution|package-source) field')
+                }))
+        row_items = [bug_nr, title, affects, importance, status]
+        if show_heat:
+            heat = extract_text(
+                bugtask.find(None, {'class': 'bug-heat-icons'}))
+            row_items.append(heat)
+        rows.append(' '.join(row_items))
     return rows
 
 
@@ -284,10 +299,10 @@ def print_bugfilters_portlet_unfilled(browser, target):
 
     :param browser  browser from which to extract the content.
     :param target   entity from whose bugs page to fetch the portlet
-                    (e.g., http://bugs.launchpad.dev/TARGET/...)
+                    (e.g., http://bugs.launchpad.test/TARGET/...)
     """
     browser.open(
-        'http://bugs.launchpad.dev/%s/+portlet-bugfilters' % target)
+        'http://bugs.launchpad.test/%s/+portlet-bugfilters' % target)
     ul = BeautifulSoup(browser.contents).find('ul', 'data-list')
     print_ul(ul)
 
@@ -303,10 +318,10 @@ def print_bugfilters_portlet_filled(browser, target):
 
     :param browser  browser from which to extract the content.
     :param target   entity from whose bugs page to fetch the portlet
-                    (e.g., http://bugs.launchpad.dev/TARGET/...)
+                    (e.g., http://bugs.launchpad.test/TARGET/...)
     """
     browser.open(
-        'http://bugs.launchpad.dev'
+        'http://bugs.launchpad.test'
         '/%s/+bugtarget-portlet-bugfilters-stats' % target)
     ul = BeautifulSoup(browser.contents).find('ul', 'data-list')
     print_ul(ul)

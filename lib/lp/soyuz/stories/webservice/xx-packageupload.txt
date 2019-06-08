@@ -19,6 +19,7 @@ Each record exposes a number of properties.
     >>> from lazr.restful.testing.webservice import pprint_entry
     >>> pprint_entry(uploads['entries'][0])
     archive_link: u'http://.../ubuntu/+archive/primary'
+    copy_source_archive_link: None
     custom_file_urls: []
     date_created: ...
     display_arches: u'source'
@@ -84,7 +85,7 @@ Once we have the uploads, we can inspect the custom_file_urls property,
 which is a list of URLs to librarian files:
 
     >>> for entry in uploads['entries']:
-    ...     print entry['display_name']
-    ...     print entry['custom_file_urls']
+    ...     print(entry['display_name'])
+    ...     print(entry['custom_file_urls'])
     custom1, custom2
     [u'http://.../custom1', u'http://.../custom2']

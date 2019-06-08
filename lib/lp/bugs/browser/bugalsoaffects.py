@@ -1,4 +1,4 @@
-# Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -9,7 +9,6 @@ __all__ = [
     'BugAlsoAffectsProductWithProductCreationView'
     ]
 
-import cgi
 from textwrap import dedent
 
 from lazr.enum import (
@@ -18,11 +17,12 @@ from lazr.enum import (
     )
 from lazr.lifecycle.event import ObjectCreatedEvent
 from z3c.ptcompat import ViewPageTemplateFile
-from zope.app.form.browser import DropdownWidget
-from zope.app.form.interfaces import MissingInputError
 from zope.component import getUtility
 from zope.event import notify
 from zope.formlib import form
+from zope.formlib.interfaces import MissingInputError
+from zope.formlib.widget import CustomWidgetFactory
+from zope.formlib.widgets import DropdownWidget
 from zope.schema import Choice
 from zope.schema.vocabulary import (
     SimpleTerm,
@@ -32,7 +32,6 @@ from zope.schema.vocabulary import (
 from lp import _
 from lp.app.browser.launchpadform import (
     action,
-    custom_widget,
     LaunchpadFormView,
     )
 from lp.app.browser.multistep import (
@@ -81,12 +80,13 @@ from lp.registry.interfaces.product import (
     IProductSet,
     License,
     )
+from lp.registry.model.product import Product
 from lp.services.features import getFeatureFlag
 from lp.services.fields import StrippedTextLine
 from lp.services.propertycache import cachedproperty
 from lp.services.webapp import canonical_url
+from lp.services.webapp.escaping import structured
 from lp.services.webapp.interfaces import ILaunchBag
-from lp.services.webapp.menu import structured
 
 
 class BugAlsoAffectsProductMetaView(MultiStepView):
@@ -126,7 +126,7 @@ class ChooseProductStep(LinkPackgingMixin, AlsoAffectsStep):
     template = ViewPageTemplateFile(
         '../templates/bugtask-choose-affected-product.pt')
 
-    custom_widget('product', SearchForUpstreamPopupWidget)
+    custom_widget_product = SearchForUpstreamPopupWidget
     label = u"Record as affecting another project"
     step_name = "choose_product"
 
@@ -185,8 +185,8 @@ class ChooseProductStep(LinkPackgingMixin, AlsoAffectsStep):
 
         # The user has entered a product name but we couldn't find it.
         # Tell the user to search for it using the popup widget as it'll allow
-        # the user to register a new product if the one he is looking for is
-        # not yet registered.
+        # the user to register a new product if the one they are looking for
+        # is not yet registered.
         widget_link_id = self.widgets['product'].show_widget_id
         self.setFieldError(
             'product',
@@ -224,7 +224,8 @@ class BugTaskCreationStep(AlsoAffectsStep):
     registered.
     """
 
-    custom_widget('bug_url', StrippedTextWidget, displayWidth=62)
+    custom_widget_bug_url = CustomWidgetFactory(
+        StrippedTextWidget, displayWidth=62)
 
     initial_focus_widget = 'bug_url'
     step_name = 'specify_remote_bug_url'
@@ -272,7 +273,7 @@ class BugTaskCreationStep(AlsoAffectsStep):
                 extracted_bugtracker, extracted_bug = getUtility(
                     IBugWatchSet).extractBugTrackerAndBug(bug_url)
             except NoBugTrackerFound:
-                # Delegate to another view which will ask the user if (s)he
+                # Delegate to another view which will ask the user if they
                 # wants to create the bugtracker now.
                 if 'product' in self.target_field_names:
                     self.next_step = UpstreamBugTrackerCreationStep
@@ -286,13 +287,10 @@ class BugTaskCreationStep(AlsoAffectsStep):
         else:
             task_target = data['distribution']
             if data.get('sourcepackagename') is not None:
-                spn_or_dsp = data['sourcepackagename']
-                if IDistributionSourcePackage.providedBy(spn_or_dsp):
-                    task_target = spn_or_dsp
-                else:
-                    task_target = task_target.getSourcePackage(spn_or_dsp)
+                task_target = data['sourcepackagename']
+        # The new target has already been validated so don't do it again.
         self.task_added = self.context.bug.addTask(
-            getUtility(ILaunchBag).user, task_target)
+            getUtility(ILaunchBag).user, task_target, validate_target=False)
         task_added = self.task_added
 
         if extracted_bug is not None:
@@ -366,8 +364,7 @@ class DistroBugTaskCreationStep(BugTaskCreationStep):
         else:
             return IAddBugTaskForm
 
-    custom_widget(
-        'sourcepackagename', BugTaskAlsoAffectsSourcePackageNameWidget)
+    custom_widget_sourcepackagename = BugTaskAlsoAffectsSourcePackageNameWidget
 
     template = ViewPageTemplateFile('../templates/bugtask-requestfix.pt')
 
@@ -395,22 +392,23 @@ class DistroBugTaskCreationStep(BugTaskCreationStep):
             target.bug_tracking_usage != ServiceUsage.LAUNCHPAD):
             # We have no URL for the remote bug and the target does not use
             # Launchpad for bug tracking, so we warn the user this is not
-            # optimal and ask for his confirmation.
+            # optimal and ask for their confirmation.
 
             # Add a hidden field to fool LaunchpadFormView into thinking we
             # submitted the action it expected when in fact we're submiting
             # something else to indicate the user has confirmed.
-            confirm_button = (
+            confirm_button = structured(
                 '<input type="hidden" name="%s" value="1" />'
                 '<input style="font-size: smaller" type="submit"'
-                ' value="Add Anyway" name="ignore_missing_remote_bug" />'
-                % self.continue_action.__name__)
-            self.notifications.append(_(dedent("""
-                %s doesn't use Launchpad as its bug tracker. Without a bug
-                URL to watch, the %s status will not update automatically.
-                %s""" % (cgi.escape(target.displayname),
-                         cgi.escape(target.displayname),
-                         confirm_button))))
+                ' value="Add Anyway" name="ignore_missing_remote_bug" />',
+                self.continue_action.__name__)
+            self.notifications.append(structured(
+                dedent("""
+                    %s doesn't use Launchpad as its bug tracker. Without a bug
+                    URL to watch, the %s status will not update automatically.
+                    %s"""),
+                target.displayname, target.displayname,
+                confirm_button).escapedtext)
             return None
         # Create the task.
         return super(DistroBugTaskCreationStep, self).main_action(data)
@@ -453,7 +451,12 @@ class DistroBugTaskCreationStep(BugTaskCreationStep):
                 target = distribution
                 if sourcepackagename:
                     target = target.getSourcePackage(sourcepackagename)
-                validate_new_target(self.context.bug, target)
+                # The validity of the source package has already been checked
+                # by the bug target widget.
+                validate_new_target(
+                    self.context.bug, target, check_source_package=False)
+                if sourcepackagename:
+                    data['sourcepackagename'] = target
             except IllegalTarget as e:
                 if sourcepackagename:
                     self.setFieldError('sourcepackagename', e[0])
@@ -466,8 +469,12 @@ class DistroBugTaskCreationStep(BugTaskCreationStep):
         for bugtask in IBug(self.context).bugtasks:
             if (IDistributionSourcePackage.providedBy(bugtask.target) and
                 (not self.widgets['sourcepackagename'].hasInput())):
+                # Set the rendered value to the raw name string rather than
+                # the SPN object.  The widget won't have its distribution
+                # set up in order to be able to look up the SPN, and even if
+                # it did it might not correspond to a valid DSP.
                 self.widgets['sourcepackagename'].setRenderedValue(
-                    bugtask.sourcepackagename)
+                    bugtask.sourcepackagename.name)
                 break
         return super(DistroBugTaskCreationStep, self).render()
 
@@ -557,11 +564,12 @@ class ProductBugTaskCreationStep(BugTaskCreationStep):
     main_action_label = u'Add to Bug Report'
     schema = IAddBugTaskWithUpstreamLinkForm
 
-    custom_widget('link_upstream_how', LaunchpadRadioWidget,
-                  _displayItemForMissingValue=False)
-    custom_widget('bug_url', StrippedTextWidget, displayWidth=42)
-    custom_widget('upstream_email_address_done',
-                  StrippedTextWidget, displayWidth=42)
+    custom_widget_link_upstream_how = CustomWidgetFactory(
+        LaunchpadRadioWidget, _displayItemForMissingValue=False)
+    custom_widget_bug_url = CustomWidgetFactory(
+        StrippedTextWidget, displayWidth=42)
+    custom_widget_upstream_email_address_done = CustomWidgetFactory(
+        StrippedTextWidget, displayWidth=42)
 
     @property
     def field_names(self):
@@ -696,12 +704,13 @@ class ProductBugTaskCreationStep(BugTaskCreationStep):
 class BugTrackerCreationStep(AlsoAffectsStep):
     """View for creating a bugtracker from the given URL.
 
-    This view will ask the user if he really wants to register the new bug
+    This view will ask the user if they really want to register the new bug
     tracker, perform the registration and then delegate to one of
     BugTaskCreationStep's subclasses.
     """
 
-    custom_widget('bug_url', StrippedTextWidget, displayWidth=62)
+    custom_widget_bug_url = CustomWidgetFactory(
+        StrippedTextWidget, displayWidth=62)
     step_name = "bugtracker_creation"
     main_action_label = u'Register Bug Tracker and Add to Bug Report'
     _next_step = None
@@ -722,8 +731,10 @@ class DistroBugTrackerCreationStep(BugTrackerCreationStep):
 
     _next_step = DistroBugTaskCreationStep
     _field_names = ['distribution', 'sourcepackagename', 'bug_url']
-    custom_widget('distribution', DropdownWidget, visible=False)
-    custom_widget('sourcepackagename', DropdownWidget, visible=False)
+    custom_widget_distribution = CustomWidgetFactory(
+        DropdownWidget, visible=False)
+    custom_widget_sourcepackagename = CustomWidgetFactory(
+        DropdownWidget, visible=False)
     label = "Also affects distribution/package"
     template = ViewPageTemplateFile(
         '../templates/bugtask-confirm-bugtracker-creation.pt')
@@ -734,9 +745,9 @@ class UpstreamBugTrackerCreationStep(BugTrackerCreationStep):
     schema = IAddBugTaskWithUpstreamLinkForm
     _next_step = ProductBugTaskCreationStep
     _field_names = ['product', 'bug_url', 'link_upstream_how']
-    custom_widget('product', DropdownWidget, visible=False)
-    custom_widget('link_upstream_how',
-                  LaunchpadRadioWidget, visible=False)
+    custom_widget_product = CustomWidgetFactory(DropdownWidget, visible=False)
+    custom_widget_link_upstream_how = CustomWidgetFactory(
+        LaunchpadRadioWidget, visible=False)
     label = "Confirm project"
     template = ViewPageTemplateFile(
         '../templates/bugtask-confirm-bugtracker-creation.pt')
@@ -752,8 +763,9 @@ class BugAlsoAffectsProductWithProductCreationView(LinkPackgingMixin,
 
     label = "Register project affected by this bug"
     schema = IAddBugTaskWithProductCreationForm
-    custom_widget('bug_url', StrippedTextWidget, displayWidth=62)
-    custom_widget('existing_product', LaunchpadRadioWidget)
+    custom_widget_bug_url = CustomWidgetFactory(
+        StrippedTextWidget, displayWidth=62)
+    custom_widget_existing_product = LaunchpadRadioWidget
     existing_products = None
     MAX_PRODUCTS_TO_DISPLAY = 10
     licenses = [License.DONT_KNOW]
@@ -761,7 +773,7 @@ class BugAlsoAffectsProductWithProductCreationView(LinkPackgingMixin,
     @property
     def field_names(self):
         """The fields needed to choose an existing project."""
-        names = ['bug_url', 'displayname', 'name', 'summary']
+        names = ['bug_url', 'display_name', 'name', 'summary']
         if self.can_link_package:
             names.append('add_packaging')
         return names
@@ -794,9 +806,9 @@ class BugAlsoAffectsProductWithProductCreationView(LinkPackgingMixin,
             # anywhere else.
             from zope.security.proxy import removeSecurityProxy
             name_matches = removeSecurityProxy(
-                getUtility(IProductSet).search_sqlobject(
+                getUtility(IProductSet).search(self.user,
                 self.request.form.get('field.name')))
-            products = bugtracker.products.intersect(name_matches)
+            products = name_matches.find(Product.bugtracker == bugtracker.id)
             self.existing_products = list(
                 products[:self.MAX_PRODUCTS_TO_DISPLAY])
         else:
@@ -857,7 +869,7 @@ class BugAlsoAffectsProductWithProductCreationView(LinkPackgingMixin,
 
         If the URL of the remote bug given is of a bugtracker used by any
         other products registered in Launchpad, then we show these products to
-        the user and ask if he doesn't want to create the task in one of them.
+        the user and ask if they don't want to create the task in one of them.
         """
         if self.existing_products and not self.request.form.get('create_new'):
             # Present the projects using that bugtracker to the user as
@@ -869,7 +881,7 @@ class BugAlsoAffectsProductWithProductCreationView(LinkPackgingMixin,
         product = getUtility(IProductSet).createProduct(
             owner=self.user,
             name=data['name'],
-            displayname=data['displayname'], title=data['displayname'],
+            display_name=data['display_name'], title=data['display_name'],
             summary=data['summary'], licenses=self.licenses,
             registrant=self.user)
         data['product'] = product

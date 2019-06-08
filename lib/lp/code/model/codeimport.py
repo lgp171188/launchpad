@@ -1,7 +1,5 @@
-# Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2016 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
-
-# pylint: disable-msg=E0611,W0212
 
 """Database classes including and related to CodeImport."""
 
@@ -28,11 +26,14 @@ from storm.expr import (
     Func,
     Select,
     )
-from storm.locals import Store
+from storm.locals import (
+    Int,
+    Store,
+    )
 from storm.references import Reference
 from zope.component import getUtility
 from zope.event import notify
-from zope.interface import implements
+from zope.interface import implementer
 
 from lp.app.errors import NotFoundError
 from lp.code.enums import (
@@ -40,19 +41,29 @@ from lp.code.enums import (
     CodeImportJobState,
     CodeImportResultStatus,
     CodeImportReviewStatus,
+    GitRepositoryType,
+    NON_CVS_RCS_TYPES,
     RevisionControlSystems,
+    TargetRevisionControlSystems,
     )
 from lp.code.errors import (
     CodeImportAlreadyRequested,
     CodeImportAlreadyRunning,
+    CodeImportInvalidTargetType,
     CodeImportNotInReviewedState,
     )
+from lp.code.interfaces.branch import IBranch
+from lp.code.interfaces.branchtarget import IBranchTarget
 from lp.code.interfaces.codeimport import (
     ICodeImport,
     ICodeImportSet,
     )
 from lp.code.interfaces.codeimportevent import ICodeImportEventSet
 from lp.code.interfaces.codeimportjob import ICodeImportJobWorkflow
+from lp.code.interfaces.githosting import IGitHostingClient
+from lp.code.interfaces.gitnamespace import get_git_namespace
+from lp.code.interfaces.gitrepository import IGitRepository
+from lp.code.interfaces.hasgitrepositories import IHasGitRepositories
 from lp.code.mail.codeimport import code_import_updated
 from lp.code.model.codeimportjob import CodeImportJobWorkflow
 from lp.code.model.codeimportresult import CodeImportResult
@@ -61,20 +72,41 @@ from lp.services.config import config
 from lp.services.database.constants import DEFAULT
 from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.enumcol import EnumCol
-from lp.services.database.lpstorm import IStore
+from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import SQLBase
 
 
+@implementer(ICodeImport)
 class CodeImport(SQLBase):
     """See `ICodeImport`."""
-
-    implements(ICodeImport)
     _table = 'CodeImport'
     _defaultOrder = ['id']
 
+    def __init__(self, target=None, *args, **kwargs):
+        if target is not None:
+            assert 'branch' not in kwargs
+            assert 'repository' not in kwargs
+            if IBranch.providedBy(target):
+                kwargs['branch'] = target
+            elif IGitRepository.providedBy(target):
+                kwargs['git_repository'] = target
+            else:
+                raise AssertionError("Unknown code import target %s" % target)
+        super(CodeImport, self).__init__(*args, **kwargs)
+
     date_created = UtcDateTimeCol(notNull=True, default=DEFAULT)
-    branch = ForeignKey(dbName='branch', foreignKey='Branch',
-                        notNull=True)
+    branch = ForeignKey(dbName='branch', foreignKey='Branch', notNull=False)
+    git_repositoryID = Int(name='git_repository', allow_none=True)
+    git_repository = Reference(git_repositoryID, 'GitRepository.id')
+
+    @property
+    def target(self):
+        if self.branch is not None:
+            return self.branch
+        else:
+            assert self.git_repository is not None
+            return self.git_repository
+
     registrant = ForeignKey(
         dbName='registrant', foreignKey='Person',
         storm_validator=validate_public_person, notNull=True)
@@ -90,6 +122,13 @@ class CodeImport(SQLBase):
 
     rcs_type = EnumCol(schema=RevisionControlSystems,
         notNull=False, default=None)
+
+    @property
+    def target_rcs_type(self):
+        if self.branch is not None:
+            return TargetRevisionControlSystems.BZR
+        else:
+            return TargetRevisionControlSystems.GIT
 
     cvs_root = StringCol(default=None)
 
@@ -108,18 +147,15 @@ class CodeImport(SQLBase):
         default_interval_dict = {
             RevisionControlSystems.CVS:
                 config.codeimport.default_interval_cvs,
-            RevisionControlSystems.SVN:
-                config.codeimport.default_interval_subversion,
             RevisionControlSystems.BZR_SVN:
                 config.codeimport.default_interval_subversion,
             RevisionControlSystems.GIT:
                 config.codeimport.default_interval_git,
-            RevisionControlSystems.HG:
-                config.codeimport.default_interval_hg,
             RevisionControlSystems.BZR:
                 config.codeimport.default_interval_bzr,
             }
-        seconds = default_interval_dict[self.rcs_type]
+        # The default can be removed when HG is fully purged.
+        seconds = default_interval_dict.get(self.rcs_type, 21600)
         return timedelta(seconds=seconds)
 
     import_job = Reference("<primary key>", "CodeImportJob.code_importID",
@@ -148,13 +184,6 @@ class CodeImport(SQLBase):
         if job is not None:
             if job.state == CodeImportJobState.PENDING:
                 CodeImportJobWorkflow().deletePendingJob(self)
-            else:
-                # When we have job killing, we might want to kill a running
-                # job.
-                pass
-        else:
-            # No job, so nothing to do.
-            pass
 
     results = SQLMultipleJoin(
         'CodeImportResult', joinColumn='code_import',
@@ -187,12 +216,14 @@ class CodeImport(SQLBase):
         new_whiteboard = None
         if 'whiteboard' in data:
             whiteboard = data.pop('whiteboard')
-            if whiteboard != self.branch.whiteboard:
-                if whiteboard is None:
-                    new_whiteboard = ''
-                else:
-                    new_whiteboard = whiteboard
-                self.branch.whiteboard = whiteboard
+            # XXX cjwatson 2016-10-03: Do we need something similar for Git?
+            if self.branch is not None:
+                if whiteboard != self.branch.whiteboard:
+                    if whiteboard is None:
+                        new_whiteboard = ''
+                    else:
+                        new_whiteboard = whiteboard
+                    self.branch.whiteboard = whiteboard
         token = event_set.beginModify(self)
         for name, value in data.items():
             setattr(self, name, value)
@@ -208,7 +239,7 @@ class CodeImport(SQLBase):
         return event
 
     def __repr__(self):
-        return "<CodeImport for %s>" % self.branch.unique_name
+        return "<CodeImport for %s>" % self.target.unique_name
 
     def tryFailingImportAgain(self, user):
         """See `ICodeImport`."""
@@ -239,47 +270,68 @@ class CodeImport(SQLBase):
         else:
             getUtility(ICodeImportJobWorkflow).requestJob(
                 self.import_job, requester)
-        return None
 
 
+@implementer(ICodeImportSet)
 class CodeImportSet:
     """See `ICodeImportSet`."""
 
-    implements(ICodeImportSet)
-
-    def new(self, registrant, target, branch_name, rcs_type,
+    def new(self, registrant, context, branch_name, rcs_type, target_rcs_type,
             url=None, cvs_root=None, cvs_module=None, review_status=None,
             owner=None):
         """See `ICodeImportSet`."""
         if rcs_type == RevisionControlSystems.CVS:
             assert cvs_root is not None and cvs_module is not None
             assert url is None
-        elif rcs_type in (RevisionControlSystems.SVN,
-                          RevisionControlSystems.BZR_SVN,
-                          RevisionControlSystems.GIT,
-                          RevisionControlSystems.HG,
-                          RevisionControlSystems.BZR):
+        elif rcs_type in NON_CVS_RCS_TYPES:
             assert cvs_root is None and cvs_module is None
             assert url is not None
         else:
             raise AssertionError(
                 "Don't know how to sanity check source details for unknown "
                 "rcs_type %s" % rcs_type)
+        if owner is None:
+            owner = registrant
+        if target_rcs_type == TargetRevisionControlSystems.BZR:
+            # XXX cjwatson 2016-10-15: Testing
+            # IHasBranches.providedBy(context) would seem more in line with
+            # the Git case, but for some reason ProductSeries doesn't
+            # provide that.  We should sync this up somehow.
+            try:
+                target = IBranchTarget(context)
+            except TypeError:
+                raise CodeImportInvalidTargetType(context, target_rcs_type)
+            namespace = target.getNamespace(owner)
+        elif target_rcs_type == TargetRevisionControlSystems.GIT:
+            if not IHasGitRepositories.providedBy(context):
+                raise CodeImportInvalidTargetType(context, target_rcs_type)
+            if rcs_type != RevisionControlSystems.GIT:
+                raise AssertionError(
+                    "Can't import rcs_type %s into a Git repository" %
+                    rcs_type)
+            target = namespace = get_git_namespace(context, owner)
+        else:
+            raise AssertionError(
+                "Can't import to target_rcs_type %s" % target_rcs_type)
         if review_status is None:
             # Auto approve imports.
             review_status = CodeImportReviewStatus.REVIEWED
         if not target.supports_code_imports:
             raise AssertionError("%r doesn't support code imports" % target)
-        if owner is None:
-            owner = registrant
         # Create the branch for the CodeImport.
-        namespace = target.getNamespace(owner)
-        import_branch = namespace.createBranch(
-            branch_type=BranchType.IMPORTED, name=branch_name,
-            registrant=registrant)
+        if target_rcs_type == TargetRevisionControlSystems.BZR:
+            import_target = namespace.createBranch(
+                branch_type=BranchType.IMPORTED, name=branch_name,
+                registrant=registrant)
+        else:
+            import_target = namespace.createRepository(
+                repository_type=GitRepositoryType.IMPORTED, name=branch_name,
+                registrant=registrant)
+            hosting_path = import_target.getInternalPath()
+            getUtility(IGitHostingClient).create(hosting_path)
 
         code_import = CodeImport(
-            registrant=registrant, owner=owner, branch=import_branch,
+            registrant=registrant, owner=owner, target=import_target,
             rcs_type=rcs_type, url=url,
             cvs_root=cvs_root, cvs_module=cvs_module,
             review_status=review_status)
@@ -312,19 +364,34 @@ class CodeImportSet:
         return CodeImport.selectOneBy(
             cvs_root=cvs_root, cvs_module=cvs_module)
 
-    def getByURL(self, url):
+    def getByURL(self, url, target_rcs_type):
         """See `ICodeImportSet`."""
-        return CodeImport.selectOneBy(url=url)
+        clauses = [CodeImport.url == url]
+        if target_rcs_type == TargetRevisionControlSystems.BZR:
+            clauses.append(CodeImport.branch != None)
+        elif target_rcs_type == TargetRevisionControlSystems.GIT:
+            clauses.append(CodeImport.git_repository != None)
+        else:
+            raise AssertionError(
+                "Unknown target_rcs_type %s" % target_rcs_type)
+        return IStore(CodeImport).find(CodeImport, *clauses).one()
 
     def getByBranch(self, branch):
         """See `ICodeImportSet`."""
         return CodeImport.selectOneBy(branch=branch)
 
-    def search(self, review_status=None, rcs_type=None):
+    def getByGitRepository(self, repository):
+        return CodeImport.selectOneBy(git_repository=repository)
+
+    def search(self, review_status=None, rcs_type=None, target_rcs_type=None):
         """See `ICodeImportSet`."""
         clauses = []
         if review_status is not None:
             clauses.append(CodeImport.review_status == review_status)
         if rcs_type is not None:
             clauses.append(CodeImport.rcs_type == rcs_type)
+        if target_rcs_type == TargetRevisionControlSystems.BZR:
+            clauses.append(CodeImport.branch != None)
+        elif target_rcs_type == TargetRevisionControlSystems.GIT:
+            clauses.append(CodeImport.git_repository != None)
         return IStore(CodeImport).find(CodeImport, *clauses)

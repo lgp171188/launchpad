@@ -23,7 +23,7 @@ Edit packaging view
     Link to an upstream project
 
     >>> print view.view.cancel_url
-    http://launchpad.dev/youbuntu/busy/+source/bonkers
+    http://launchpad.test/youbuntu/busy/+source/bonkers
 
 
 The view allows the logged in user to change product series field. The
@@ -83,7 +83,7 @@ product can be chosen from a list of options.
 
     >>> ignored = view.view.render()
     >>> print view.view.next_url
-    http://launchpad.dev/youbuntu/busy/+source/bonkers
+    http://launchpad.test/youbuntu/busy/+source/bonkers
 
     >>> for notification in view.request.response.notifications:
     ...     print notification.message
@@ -128,7 +128,7 @@ empty.
     ...     principal=product.owner)
     >>> for error in view.view.errors:
     ...     print error
-    ('product', u'Project', RequiredMissing())
+    ('product', u'Project', RequiredMissing('product'))
 
 Submitting the same product series as the current packaging is not an error,
 but there is no notification message that the upstream link was updated.
@@ -145,7 +145,7 @@ but there is no notification message that the upstream link was updated.
     >>> print view.view
     <...SourcePackageChangeUpstreamStepTwo object...>
     >>> print view.view.next_url
-    http://launchpad.dev/youbuntu/busy/+source/bonkers
+    http://launchpad.test/youbuntu/busy/+source/bonkers
     >>> view.view.errors
     []
 
@@ -252,7 +252,7 @@ to the +edit-packaging page where the user can search for a project.
     >>> view.errors
     []
     >>> print view.next_url
-    http://launchpad.dev/youbuntu/busy/+source/lernid/+edit-packaging
+    http://launchpad.test/youbuntu/busy/+source/lernid/+edit-packaging
 
 
 Upstream connections view
@@ -321,18 +321,18 @@ If the product has no bug tracker and is in a project group with no
 bug tracker then the property is false.
 
     >>> product.bugtracker = None
-    >>> project = factory.makeProject()
-    >>> print project.bugtracker
+    >>> projectgroup = factory.makeProject()
+    >>> print projectgroup.bugtracker
     None
-    >>> product.project = project
+    >>> product.projectgroup = projectgroup
     >>> print view.has_bugtracker
     False
 
-If the product's project does have a bug tracker then the product
+If the product's project group does have a bug tracker then the product
 inherits it.
 
-    >>> ignored = login_person(project.owner)
-    >>> project.bugtracker = bugtracker
+    >>> ignored = login_person(projectgroup.owner)
+    >>> projectgroup.bugtracker = bugtracker
     >>> print view.has_bugtracker
     True
 
@@ -351,7 +351,7 @@ to the project series.
     Unlink an upstream project
 
     >>> print view.cancel_url
-    http://launchpad.dev/youbuntu/wonky/+source/stinkypackage
+    http://launchpad.test/youbuntu/wonky/+source/stinkypackage
 
     >>> user = package.packaging.owner
     >>> ignored = login_person(user)

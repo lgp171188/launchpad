@@ -1,4 +1,4 @@
-# Copyright 2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2012-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test upload and queue manipulation of dist-upgrader tarballs.
@@ -6,6 +6,8 @@
 See also lp.archivepublisher.tests.test_dist_upgrader for detailed tests of
 dist-upgrader tarball extraction.
 """
+
+from __future__ import absolute_import, print_function, unicode_literals
 
 import os
 import shutil
@@ -32,8 +34,8 @@ class TestDistroSeriesQueueDistUpgrader(TestNativePublishingBase):
     def setUp(self):
         super(TestDistroSeriesQueueDistUpgrader, self).setUp()
         import_public_test_keys()
-        # CustomUpload.installFiles requires a umask of 022.
-        old_umask = os.umask(022)
+        # CustomUpload.installFiles requires a umask of 0o022.
+        old_umask = os.umask(0o022)
         self.addCleanup(os.umask, old_umask)
         self.anything_policy = getPolicy(
             name="anything", distro="ubuntutest", distroseries=None)
@@ -72,10 +74,10 @@ class TestDistroSeriesQueueDistUpgrader(TestNativePublishingBase):
         transaction.commit()
         # Reject from accepted queue (unlikely, would normally be from
         # unapproved or new).
-        upload.queue_root.rejectFromQueue(logger=self.logger)
+        upload.queue_root.rejectFromQueue(self.factory.makePerson())
         self.assertEqual("REJECTED", upload.queue_root.status.name)
         # Accept from rejected queue (also unlikely, but only for testing).
-        upload.queue_root.acceptFromQueue(logger=self.logger)
+        upload.queue_root.acceptFromQueue()
         self.assertEqual("ACCEPTED", upload.queue_root.status.name)
 
     def test_bad_upload_remains_in_accepted(self):

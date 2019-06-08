@@ -11,13 +11,9 @@ __all__ = [
 from storm.expr import Desc
 from zope.component import getUtility
 
+from lp.services.database.interfaces import IStore
 from lp.services.librarian.interfaces.client import ILibrarianClient
 from lp.services.librarian.model import LibraryFileAlias
-from lp.services.webapp.interfaces import (
-    DEFAULT_FLAVOR,
-    IStoreSelector,
-    MAIN_STORE,
-    )
 
 
 def get_newest_librarian_file():
@@ -28,7 +24,6 @@ def get_newest_librarian_file():
 
     :return: A file-like object of the file content.
     """
-    store = getUtility(IStoreSelector).get(MAIN_STORE, DEFAULT_FLAVOR)
-    alias = store.find(LibraryFileAlias).order_by(
+    alias = IStore(LibraryFileAlias).find(LibraryFileAlias).order_by(
         Desc(LibraryFileAlias.date_created)).first()
     return getUtility(ILibrarianClient).getFileByAlias(alias.id)

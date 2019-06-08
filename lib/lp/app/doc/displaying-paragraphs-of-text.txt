@@ -14,15 +14,15 @@ Basics
     ...         '\n'
     ...         'This is another paragraph.')
     >>> test_tales('foo/fmt:text-to-html', foo=text)
-    '<p>This is a paragraph.</p>\n<p>This is another paragraph.</p>'
+    u'<p>This is a paragraph.</p>\n<p>This is another paragraph.</p>'
 
     >>> text = ('This is a line.\n'
     ...         'This is another line.')
     >>> test_tales('foo/fmt:text-to-html', foo=text)
-    '<p>This is a line.<br />\nThis is another line.</p>'
+    u'<p>This is a line.<br />\nThis is another line.</p>'
 
     >>> text = (
-    ...     'This is a paragraph that has been hard-wrapped by an e-mail'
+    ...     'This is a paragraph that has been hard-wrapped by an email'
     ...     ' application.\n'
     ...     'We used to handle this specially, but we no longer do because it'
     ...     ' was disturbing\n'
@@ -31,7 +31,7 @@ Basics
     ...     '* elation'
     ...     )
     >>> print test_tales('foo/fmt:text-to-html', foo=text)
-    <p>This is a paragraph that has been hard-wrapped by an e-mail
+    <p>This is a paragraph that has been hard-wrapped by an email
     application.<br />
     We used to handle this specially, but we no longer do because it was
     disturbing<br />
@@ -48,15 +48,15 @@ Basics
     ...     "that's fine, they're not important anyway.\n"
     ...     )
     >>> print test_tales('foo/fmt:text-to-html', foo=text)
-    <p>&nbsp;1. Here's an example<br />
+    <p>&nbsp;1. Here&#x27;s an example<br />
     &nbsp;2. where a list is followed by a paragraph.<br />
-    &nbsp;&nbsp;&nbsp;Leading spaces in a line or paragraph are presented, which means converting them to &amp;nbsp;. Trailing spaces are passed through as-is, which means browsers will ignore them, but that's fine, they're not important anyway.</p>
+    &nbsp;&nbsp;&nbsp;Leading spaces in a line or paragraph are presented, which means converting them to &amp;nbsp;. Trailing spaces are passed through as-is, which means browsers will ignore them, but that&#x27;s fine, they&#x27;re not important anyway.</p>
 
     >>> text = (
     ...     'This is a little paragraph all by itself. How cute!'
     ...     )
     >>> test_tales('foo/fmt:text-to-html', foo=text)
-    '<p>This is a little paragraph all by itself. How cute!</p>'
+    u'<p>This is a little paragraph all by itself. How cute!</p>'
 
     >>> text = (
     ...     'Here are two paragraphs with lots of whitespace between them.\n'
@@ -67,7 +67,7 @@ Basics
     ...     'But they\'re still just two paragraphs.')
     >>> print test_tales('foo/fmt:text-to-html', foo=text)
     <p>Here are two paragraphs with lots of whitespace between them.</p>
-    <p>But they're still just two paragraphs.</p>
+    <p>But they&#x27;re still just two paragraphs.</p>
 
 If a line begins with whitespace, it will not be merged with the
 previous line.  This aids in the display of code samples:
@@ -84,10 +84,10 @@ previous line.  This aids in the display of code samples:
     >>> print test_tales('foo/fmt:text-to-html', foo=text)
     <p>This is a code sample written in Python.<br />
     &nbsp;&nbsp;&nbsp;&nbsp;def messageCount(self):<br />
-    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"""See IRosettaStats."""<br />
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&quot;&quot;&quot;See IRosettaStats.&quot;&quot;&quot;<br />
     &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return self.potemplate<wbr />.messageCount(<wbr />)</p>
     <p>&nbsp;&nbsp;&nbsp;&nbsp;def currentCount(self, language=None):<br />
-    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"""See IRosettaStats."""<br />
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&quot;&quot;&quot;See IRosettaStats.&quot;&quot;&quot;<br />
     &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return self.currentCount</p>
 
 Testing a bunch of URL links.
@@ -98,7 +98,7 @@ Testing a bunch of URL links.
     ...     'You can check the PPC md5sums at '
     ...     'ftp://ftp.ubuntu.com/ubuntu/dists/breezy/main/installer-powerpc'
     ...     '/current/images/MD5SUMS\n'
-    ...     'irc://irc.freenode.net/#launchpad\n'
+    ...     'irc://chat.freenode.net/#launchpad\n'
     ...     '\n'
     ...     'I have a Jabber account (jabber:foo@jabber.example.com)\n'
     ...     'Foo Bar <mailto:foo.bar@example.net>')
@@ -106,7 +106,7 @@ Testing a bunch of URL links.
     <p><a rel="nofollow" href="https://launchpad.net/">https:/<wbr />/launchpad.<wbr />net/</a> is the new Launchpad site<br />
     <a rel="nofollow" href="http://example.com/something?foo=bar&amp;hum=baz">http://<wbr />example.<wbr />com/something?<wbr />foo=bar&amp;<wbr />hum=baz</a><br />
     You can check the PPC md5sums at <a rel="nofollow" href="ftp://ftp.ubuntu.com/ubuntu/dists/breezy/main/installer-powerpc/current/images/MD5SUMS">ftp://ftp.<wbr />ubuntu.<wbr />com/ubuntu/<wbr />dists/breezy/<wbr />main/installer-<wbr />powerpc/<wbr />current/<wbr />images/<wbr />MD5SUMS</a><br />
-    <a rel="nofollow" href="irc://irc.freenode.net/#launchpad">irc://irc.<wbr />freenode.<wbr />net/#launchpad</a></p>
+    <a rel="nofollow" href="irc://chat.freenode.net/#launchpad">irc://chat.<wbr />freenode.<wbr />net/#launchpad</a></p>
     <p>I have a Jabber account (<a rel="nofollow" href="jabber:foo@jabber.example.com">jabber:<wbr />foo@jabber.<wbr />example.<wbr />com</a>)<br />
     Foo Bar &lt;<a rel="nofollow" href="mailto:foo.bar@example.net">mailto:<wbr />foo.bar@<wbr />example.<wbr />net</a>&gt;</p>
 
@@ -149,8 +149,8 @@ fmt:text-to-html knows how to linkify URLs:
     ...     'http://www.searchtools.com/test/urls/!exclamation.html\n'
     ...     'http://www.searchtools.com/test/urls/~tilde.html\n'
     ...     'http://www.searchtools.com/test/urls/*asterisk.html\n'
-    ...     'irc://irc.freenode.net/launchpad\n'
-    ...     'irc://irc.freenode.net/%23launchpad,isserver\n'
+    ...     'irc://chat.freenode.net/launchpad\n'
+    ...     'irc://chat.freenode.net/%23launchpad,isserver\n'
     ...     'mailto:noreply@launchpad.net\n'
     ...     'jabber:noreply@launchpad.net\n'
     ...     'http://localhost/foo?xxx&\n'
@@ -181,7 +181,7 @@ fmt:text-to-html knows how to linkify URLs:
     <a rel="nofollow" href="http://localhost/bar/baz/foo.bar.html?a=b&amp;b=a">http://<wbr />localhost/<wbr />bar/baz/<wbr />foo.bar.<wbr />html?a=<wbr />b&amp;b=a</a>,<br />
     <a rel="nofollow" href="http://localhost/bar/baz/foo.bar.html?a=b&amp;b=a">http://<wbr />localhost/<wbr />bar/baz/<wbr />foo.bar.<wbr />html?a=<wbr />b&amp;b=a</a>;<br />
     <a rel="nofollow" href="http://localhost/bar/baz/foo.bar.html?a=b&amp;b=a">http://<wbr />localhost/<wbr />bar/baz/<wbr />foo.bar.<wbr />html?a=<wbr />b&amp;b=a</a>:<br />
-    <a rel="nofollow" href="http://localhost/bar/baz/foo.bar.html?a=b&amp;b=a:b;c@d_e%f~g#h,j!k-l+m$n*o'p">http://<wbr />localhost/<wbr />bar/baz/<wbr />foo.bar.<wbr />html?a=<wbr />b&amp;b=a:b;<wbr />c@d_e%f~<wbr />g#h,j!k-<wbr />l+m$n*o'<wbr />p</a><br />
+    <a rel="nofollow" href="http://localhost/bar/baz/foo.bar.html?a=b&amp;b=a:b;c@d_e%f~g#h,j!k-l+m$n*o&#x27;p">http://<wbr />localhost/<wbr />bar/baz/<wbr />foo.bar.<wbr />html?a=<wbr />b&amp;b=a:b;<wbr />c@d_e%f~<wbr />g#h,j!k-<wbr />l+m$n*o&#x27;<wbr />p</a><br />
     <a rel="nofollow" href="http://www.searchtools.com/test/urls/(parens).html">http://<wbr />www.searchtools<wbr />.com/test/<wbr />urls/(parens)<wbr />.html</a><br />
     <a rel="nofollow" href="http://www.searchtools.com/test/urls/-dash.html">http://<wbr />www.searchtools<wbr />.com/test/<wbr />urls/-dash.<wbr />html</a><br />
     <a rel="nofollow" href="http://www.searchtools.com/test/urls/_underscore.html">http://<wbr />www.searchtools<wbr />.com/test/<wbr />urls/_underscor<wbr />e.html</a><br />
@@ -189,8 +189,8 @@ fmt:text-to-html knows how to linkify URLs:
     <a rel="nofollow" href="http://www.searchtools.com/test/urls/!exclamation.html">http://<wbr />www.searchtools<wbr />.com/test/<wbr />urls/!exclamati<wbr />on.html</a><br />
     <a rel="nofollow" href="http://www.searchtools.com/test/urls/~tilde.html">http://<wbr />www.searchtools<wbr />.com/test/<wbr />urls/~tilde.<wbr />html</a><br />
     <a rel="nofollow" href="http://www.searchtools.com/test/urls/*asterisk.html">http://<wbr />www.searchtools<wbr />.com/test/<wbr />urls/*asterisk.<wbr />html</a><br />
-    <a rel="nofollow" href="irc://irc.freenode.net/launchpad">irc://irc.<wbr />freenode.<wbr />net/launchpad</a><br />
-    <a rel="nofollow" href="irc://irc.freenode.net/%23launchpad,isserver">irc://irc.<wbr />freenode.<wbr />net/%23launchpa<wbr />d,isserver</a><br />
+    <a rel="nofollow" href="irc://chat.freenode.net/launchpad">irc://chat.<wbr />freenode.<wbr />net/launchpad</a><br />
+    <a rel="nofollow" href="irc://chat.freenode.net/%23launchpad,isserver">irc://chat.<wbr />freenode.<wbr />net/%23launchpa<wbr />d,isserver</a><br />
     <a rel="nofollow" href="mailto:noreply@launchpad.net">mailto:<wbr />noreply@<wbr />launchpad.<wbr />net</a><br />
     <a rel="nofollow" href="jabber:noreply@launchpad.net">jabber:<wbr />noreply@<wbr />launchpad.<wbr />net</a><br />
     <a rel="nofollow" href="http://localhost/foo?xxx&amp;">http://<wbr />localhost/<wbr />foo?xxx&amp;</a><br />
@@ -332,12 +332,12 @@ FAQ references are global, and also linkified:
     ...     'faq  number  2\n'
     ...     )
     >>> print test_tales('foo/fmt:text-to-html', foo=text)
-    <p><a href="http://answers.launchpad.dev/ubuntu/+faq/1">faq 1</a><br />
-    <a href="http://answers.launchpad.dev/ubuntu/+faq/2">faq #2</a><br />
-    <a href="http://answers.launchpad.dev/ubuntu/+faq/2">faq-2</a><br />
-    <a href="http://answers.launchpad.dev/ubuntu/+faq/2">faq=2</a><br />
-    <a href="http://answers.launchpad.dev/ubuntu/+faq/1">faq item 1</a><br />
-    <a href="http://answers.launchpad.dev/ubuntu/+faq/2">faq number 2</a></p>
+    <p><a href="http://answers.launchpad.test/ubuntu/+faq/1">faq 1</a><br />
+    <a href="http://answers.launchpad.test/ubuntu/+faq/2">faq #2</a><br />
+    <a href="http://answers.launchpad.test/ubuntu/+faq/2">faq-2</a><br />
+    <a href="http://answers.launchpad.test/ubuntu/+faq/2">faq=2</a><br />
+    <a href="http://answers.launchpad.test/ubuntu/+faq/1">faq item 1</a><br />
+    <a href="http://answers.launchpad.test/ubuntu/+faq/2">faq number 2</a></p>
 
 Except, that is, when the FAQ doesn't exist:
 
@@ -366,17 +366,17 @@ Branch references are linkified:
     ...     'lp:///foo\n'
     ...     'lp:/foo\n')
     >>> print test_tales('foo/fmt:text-to-html', foo=text)
-    <p><a href="/+branch/~foo/bar/baz" class="...">lp:~foo/bar/baz</a><br />
-    <a href="/+branch/~foo/bar/bug-123" class="...">lp:~foo/bar/bug-123</a><br />
-    <a href="/+branch/~foo/+junk/baz" class="...">lp:~foo/+junk/baz</a><br />
-    <a href="/+branch/~foo/ubuntu/jaunty/evolution/baz" class="...">lp:~foo/ubuntu/jaunty/evolution/baz</a><br />
-    <a href="/+branch/foo/bar" class="...">lp:foo/bar</a><br />
-    <a href="/+branch/foo" class="...">lp:foo</a><br />
-    <a href="/+branch/foo" class="...">lp:foo</a>,<br />
-    <a href="/+branch/foo/bar" class="...">lp:foo/bar</a>.<br />
-    <a href="/+branch/foo/bar/baz" class="...">lp:foo/bar/baz</a><br />
-    <a href="/+branch/foo" class="...">lp:///foo</a><br />
-    <a href="/+branch/foo" class="...">lp:/foo</a></p>
+    <p><a href="/+code/~foo/bar/baz" class="...">lp:~foo/bar/baz</a><br />
+    <a href="/+code/~foo/bar/bug-123" class="...">lp:~foo/bar/bug-123</a><br />
+    <a href="/+code/~foo/+junk/baz" class="...">lp:~foo/+junk/baz</a><br />
+    <a href="/+code/~foo/ubuntu/jaunty/evolution/baz" class="...">lp:~foo/ubuntu/jaunty/evolution/baz</a><br />
+    <a href="/+code/foo/bar" class="...">lp:foo/bar</a><br />
+    <a href="/+code/foo" class="...">lp:foo</a><br />
+    <a href="/+code/foo" class="...">lp:foo</a>,<br />
+    <a href="/+code/foo/bar" class="...">lp:foo/bar</a>.<br />
+    <a href="/+code/foo/bar/baz" class="...">lp:foo/bar/baz</a><br />
+    <a href="/+code/foo" class="...">lp:///foo</a><br />
+    <a href="/+code/foo" class="...">lp:/foo</a></p>
 
 Text that looks like a branch reference, but is followed only by digits is
 treated as a link to a bug.
@@ -521,7 +521,7 @@ url to demonstrate quoting in the HTML attribute.
     >>> sorted(matchobj.groupdict().items())
     [('bug', None), ('url', 'y"y')]
     >>> FormattersAPI._linkify_substitution(matchobj)
-    '<a rel="nofollow" href="y&quot;y">y"y</a>'
+    u'<a rel="nofollow" href="y&quot;y">y&quot;y</a>'
 
 When we have a bug reference, the 'bug' group is used as the text of the link,
 and the 'bugnum' is used to look up the bug.

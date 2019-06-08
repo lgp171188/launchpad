@@ -1,4 +1,4 @@
-# Copyright 2009-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """
@@ -9,8 +9,11 @@ import logging
 import os
 import unittest
 
+import scandir
+
 from lp.code.tests.test_doc import branchscannerSetUp
 from lp.services.config import config
+from lp.services.features.testing import FeatureFixture
 from lp.services.mail.tests.test_doc import ProcessMailLayer
 from lp.soyuz.tests.test_doc import (
     lobotomize_stevea,
@@ -27,9 +30,13 @@ from lp.testing.layers import (
     LaunchpadFunctionalLayer,
     LaunchpadZopelessLayer,
     )
-from lp.testing.pages import PageTestSuite
+from lp.testing.pages import (
+    PageTestSuite,
+    setUpGlobs,
+    )
 from lp.testing.systemdocs import (
     LayeredDocFileSuite,
+    setGlobs,
     setUp,
     tearDown,
     )
@@ -41,12 +48,12 @@ here = os.path.dirname(os.path.realpath(__file__))
 def lobotomizeSteveASetUp(test):
     """Call lobotomize_stevea() and standard setUp"""
     lobotomize_stevea()
-    setUp(test)
+    setUp(test, future=True)
 
 
 def checkwatchesSetUp(test):
     """Setup the check watches script tests."""
-    setUp(test)
+    setUp(test, future=True)
     switch_dbuser(config.checkwatches.dbuser)
 
 
@@ -59,7 +66,7 @@ def branchscannerBugsSetUp(test):
 def bugNotificationSendingSetUp(test):
     lobotomize_stevea()
     switch_dbuser(config.malone.bugnotification_dbuser)
-    setUp(test)
+    setUp(test, future=True)
 
 
 def bugNotificationSendingTearDown(test):
@@ -69,7 +76,7 @@ def bugNotificationSendingTearDown(test):
 def cveSetUp(test):
     lobotomize_stevea()
     switch_dbuser(config.cveupdater.dbuser)
-    setUp(test)
+    setUp(test, future=True)
 
 
 def uploaderBugsSetUp(test):
@@ -82,7 +89,7 @@ def uploaderBugsSetUp(test):
     lobotomize_stevea()
     test_dbuser = config.uploader.dbuser
     switch_dbuser(test_dbuser)
-    setUp(test)
+    setUp(test, future=True)
     test.globs['test_dbuser'] = test_dbuser
 
 
@@ -96,19 +103,19 @@ def uploadQueueTearDown(test):
 
 def noPrivSetUp(test):
     """Set up a test logged in as no-priv."""
-    setUp(test)
+    setUp(test, future=True)
     login('no-priv@canonical.com')
 
 
 def bugtaskExpirationSetUp(test):
     """Setup globs for bug expiration."""
-    setUp(test)
+    setUp(test, future=True)
     login('test@canonical.com')
 
 
 def updateRemoteProductSetup(test):
     """Setup to use the 'updateremoteproduct' db user."""
-    setUp(test)
+    setUp(test, future=True)
     switch_dbuser(config.updateremoteproduct.dbuser)
 
 
@@ -119,13 +126,25 @@ def updateRemoteProductTeardown(test):
 
 
 def bugSetStatusSetUp(test):
-    setUp(test)
+    setUp(test, future=True)
     test.globs['test_dbuser'] = config.processmail.dbuser
 
 
 def bugmessageSetUp(test):
-    setUp(test)
+    setUp(test, future=True)
     login('no-priv@canonical.com')
+
+
+def enableDSPPickerSetUp(test):
+    setUp(test, future=True)
+    ff = FeatureFixture({u'disclosure.dsp_picker.enabled': u'on'})
+    ff.setUp()
+    test.globs['dsp_picker_feature_fixture'] = ff
+
+
+def enableDSPPickerTearDown(test):
+    test.globs['dsp_picker_feature_fixture'].cleanUp()
+    tearDown(test)
 
 
 special = {
@@ -135,7 +154,7 @@ special = {
         ),
     'bug-heat.txt': LayeredDocFileSuite(
         '../doc/bug-heat.txt',
-        setUp=setUp,
+        setUp=lambda test: setUp(test, future=True),
         tearDown=tearDown,
         layer=LaunchpadZopelessLayer
         ),
@@ -183,7 +202,7 @@ special = {
         tearDown=bugNotificationSendingTearDown),
     'bug-export.txt': LayeredDocFileSuite(
         '../doc/bug-export.txt',
-        setUp=setUp, tearDown=tearDown,
+        setUp=lambda test: setUp(test, future=True), tearDown=tearDown,
         layer=LaunchpadZopelessLayer
         ),
     'bug-set-status.txt': LayeredDocFileSuite(
@@ -205,6 +224,18 @@ special = {
         setUp=bugtaskExpirationSetUp,
         tearDown=tearDown,
         layer=LaunchpadZopelessLayer
+        ),
+    'bugtask-package-widget.txt': LayeredDocFileSuite(
+        '../doc/bugtask-package-widget.txt',
+        id_extensions=['bugtask-package-widget.txt'],
+        setUp=lambda test: setUp(test, future=True), tearDown=tearDown,
+        layer=LaunchpadFunctionalLayer
+        ),
+    'bugtask-package-widget.txt-dsp-picker': LayeredDocFileSuite(
+        '../doc/bugtask-package-widget.txt',
+        id_extensions=['bugtask-package-widget.txt-dsp-picker'],
+        setUp=enableDSPPickerSetUp, tearDown=enableDSPPickerTearDown,
+        layer=LaunchpadFunctionalLayer
         ),
     'bugmessage.txt': LayeredDocFileSuite(
         '../doc/bugmessage.txt',
@@ -233,12 +264,6 @@ special = {
         tearDown=tearDown,
         layer=LaunchpadZopelessLayer
         ),
-    'bug-private-by-default.txt': LayeredDocFileSuite(
-        '../doc/bug-private-by-default.txt',
-        setUp=setUp,
-        tearDown=tearDown,
-        layer=LaunchpadZopelessLayer
-        ),
     'bugtracker-person.txt': LayeredDocFileSuite(
         '../doc/bugtracker-person.txt',
         setUp=checkwatchesSetUp,
@@ -248,7 +273,7 @@ special = {
     'bugwatch.txt':
         LayeredDocFileSuite(
         '../doc/bugwatch.txt',
-        setUp=setUp, tearDown=tearDown,
+        setUp=lambda test: setUp(test, future=True), tearDown=tearDown,
         layer=LaunchpadZopelessLayer
         ),
     'bug-watch-activity.txt':
@@ -260,7 +285,7 @@ special = {
     'bugtracker.txt':
         LayeredDocFileSuite(
         '../doc/bugtracker.txt',
-        setUp=setUp, tearDown=tearDown,
+        setUp=lambda test: setUp(test, future=True), tearDown=tearDown,
         layer=LaunchpadZopelessLayer
         ),
     'checkwatches.txt':
@@ -281,7 +306,7 @@ special = {
     'externalbugtracker.txt':
         LayeredDocFileSuite(
         '../doc/externalbugtracker.txt',
-        setUp=setUp, tearDown=tearDown,
+        setUp=lambda test: setUp(test, future=True), tearDown=tearDown,
         stdout_logging_level=logging.WARNING,
         layer=LaunchpadZopelessLayer
         ),
@@ -420,7 +445,9 @@ special = {
         layer=LaunchpadZopelessLayer
         ),
     'filebug-data-parser.txt': LayeredDocFileSuite(
-        '../doc/filebug-data-parser.txt'),
+        '../doc/filebug-data-parser.txt',
+        setUp=lambda test: setGlobs(test, future=True),
+        ),
     'product-update-remote-product.txt': LayeredDocFileSuite(
         '../doc/product-update-remote-product.txt',
         setUp=updateRemoteProductSetup,
@@ -435,6 +462,7 @@ special = {
         ),
     'sourceforge-remote-products.txt': LayeredDocFileSuite(
         '../doc/sourceforge-remote-products.txt',
+        setUp=lambda test: setGlobs(test, future=True),
         layer=LaunchpadZopelessLayer,
         ),
     'bug-set-status.txt-processmail': LayeredDocFileSuite(
@@ -451,7 +479,8 @@ special = {
         stdout_logging=False),
     'bugs-emailinterface.txt-processmail': LayeredDocFileSuite(
         '../tests/bugs-emailinterface.txt',
-        setUp=setUp, tearDown=tearDown,
+        id_extensions=['bugs-emailinterface.txt-processmail'],
+        setUp=lambda test: setUp(test, future=True), tearDown=tearDown,
         layer=ProcessMailLayer,
         stdout_logging=False),
     }
@@ -461,14 +490,15 @@ def test_suite():
     suite = unittest.TestSuite()
 
     stories_dir = os.path.join(os.path.pardir, 'stories')
-    suite.addTest(PageTestSuite(stories_dir))
+    suite.addTest(PageTestSuite(
+        stories_dir, setUp=lambda test: setUpGlobs(test, future=True)))
     stories_path = os.path.join(here, stories_dir)
-    for story_dir in os.listdir(stories_path):
-        full_story_dir = os.path.join(stories_path, story_dir)
-        if not os.path.isdir(full_story_dir):
+    for story_entry in scandir.scandir(stories_path):
+        if not story_entry.is_dir():
             continue
-        story_path = os.path.join(stories_dir, story_dir)
-        suite.addTest(PageTestSuite(story_path))
+        story_path = os.path.join(stories_dir, story_entry.name)
+        suite.addTest(PageTestSuite(
+            story_path, setUp=lambda test: setUpGlobs(test, future=True)))
 
     testsdir = os.path.abspath(
         os.path.normpath(os.path.join(here, os.path.pardir, 'doc'))
@@ -487,7 +517,8 @@ def test_suite():
     for filename in filenames:
         path = os.path.join('../doc/', filename)
         one_test = LayeredDocFileSuite(
-            path, setUp=setUp, tearDown=tearDown,
+            path,
+            setUp=lambda test: setUp(test, future=True), tearDown=tearDown,
             layer=LaunchpadFunctionalLayer,
             stdout_logging_level=logging.WARNING
             )

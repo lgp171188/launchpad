@@ -89,7 +89,7 @@
                 <dl tal:condition="not: view/release">
                   <dt>Expected:</dt>
                   <dd><span
-                    tal:attributes="title context/dateexpected/fmt:datetime"
+                    tal:attributes="title context/dateexpected/fmt:date"
                     tal:content="context/dateexpected/fmt:approximatedate" />
                     &nbsp;
                     <a tal:replace="structure milestone_menu/create_release/fmt:icon-link" />
@@ -243,6 +243,7 @@
             <tbody>
               <tr tal:repeat="spec specs">
                 <td class="icon left">
+                  <span class="sortkey" tal:content="spec/title" />
                   <span tal:content="structure spec/image:icon" />
                 </td>
                 <td>
@@ -317,11 +318,11 @@
               milestones for
               <tal:project replace="view/milestone/target/displayname" /></a>
           </li>
-          <li tal:condition="view/milestone/target/project|nothing">
+          <li tal:condition="view/milestone/target/projectgroup|nothing">
             <a class="sprite info"
-              tal:attributes="href view/milestone/target/project/menu:overview/milestones/fmt:url">View
+              tal:attributes="href view/milestone/target/projectgroup/menu:overview/milestones/fmt:url">View
               milestones for
-              <tal:project replace="view/milestone/target/project/displayname" /></a>
+              <tal:project replace="view/milestone/target/projectgroup/displayname" /></a>
           </li>
           <li tal:condition="view/milestone/series_target|nothing">
             <a class="sprite info"
@@ -340,6 +341,7 @@
 
     <tal:side metal:fill-slot="side">
       <tal:menu replace="structure view/milestone/@@+global-actions" />
+      <tal:privacy replace="structure context/@@+portlet-privacy" />
     </tal:side>
   </body>
 </html>

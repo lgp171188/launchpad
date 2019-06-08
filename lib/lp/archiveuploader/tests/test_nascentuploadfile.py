@@ -1,17 +1,35 @@
-# Copyright 2010-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test NascentUploadFile functionality."""
 
+from __future__ import absolute_import, print_function, unicode_literals
+
 __metaclass__ = type
 
+from functools import partial
+import gzip
 import hashlib
+import io
 import os
 import subprocess
+import tarfile
 
 from debian.deb822 import (
     Changes,
+    Deb822,
     Dsc,
+    )
+try:
+    import lzma
+except ImportError:
+    from backports import lzma
+from testtools.matchers import (
+    Contains,
+    Equals,
+    MatchesAny,
+    MatchesListwise,
+    MatchesRegex,
     )
 
 from lp.archiveuploader.changesfile import ChangesFile
@@ -19,6 +37,7 @@ from lp.archiveuploader.dscfile import DSCFile
 from lp.archiveuploader.nascentuploadfile import (
     CustomUploadFile,
     DebBinaryUploadFile,
+    NascentUploadFile,
     UploadError,
     )
 from lp.archiveuploader.tests import AbsolutelyAnythingGoesUploadPolicy
@@ -31,7 +50,10 @@ from lp.soyuz.enums import (
     PackageUploadCustomFormat,
     )
 from lp.testing import TestCaseWithFactory
-from lp.testing.layers import LaunchpadZopelessLayer
+from lp.testing.layers import (
+    LaunchpadZopelessLayer,
+    ZopelessDatabaseLayer,
+    )
 
 
 class NascentUploadFileTestCase(TestCaseWithFactory):
@@ -51,15 +73,49 @@ class NascentUploadFileTestCase(TestCaseWithFactory):
 
         :param filename: Filename to use
         :param contents: Contents of the file
-        :return: Tuple with path, digest and size
+        :return: Tuple with path, md5 and size
         """
         path = os.path.join(self.makeTemporaryDirectory(), filename)
-        f = open(path, 'w')
-        try:
+        with open(path, 'w') as f:
             f.write(contents)
-        finally:
-            f.close()
-        return (path, hashlib.sha1(contents), len(contents))
+        return (
+            path, hashlib.md5(contents).hexdigest(),
+            hashlib.sha1(contents).hexdigest(), len(contents))
+
+
+class TestNascentUploadFile(NascentUploadFileTestCase):
+
+    layer = ZopelessDatabaseLayer
+
+    def test_checkSizeAndCheckSum_validates_size(self):
+        (path, md5, sha1, size) = self.writeUploadFile('foo', 'bar')
+        nuf = NascentUploadFile(
+            path, dict(MD5=md5), size - 1, 'main/devel', None, None, None)
+        self.assertRaisesWithContent(
+            UploadError,
+            'File foo mentioned in the changes has a size mismatch. 3 != 2',
+            nuf.checkSizeAndCheckSum)
+
+    def test_checkSizeAndCheckSum_validates_md5(self):
+        (path, md5, sha1, size) = self.writeUploadFile('foo', 'bar')
+        nuf = NascentUploadFile(
+            path, dict(MD5='deadbeef'), size, 'main/devel', None, None, None)
+        self.assertRaisesWithContent(
+            UploadError,
+            'File foo mentioned in the changes has a MD5 mismatch. '
+            '37b51d194a7513e45b56f6524f2d51f2 != deadbeef',
+            nuf.checkSizeAndCheckSum)
+
+    def test_checkSizeAndCheckSum_validates_sha1(self):
+        (path, md5, sha1, size) = self.writeUploadFile('foo', 'bar')
+        nuf = NascentUploadFile(
+            path, dict(MD5=md5, SHA1='foobar'), size, 'main/devel', None,
+            None, None)
+        self.assertRaisesWithContent(
+            UploadError,
+            'File foo mentioned in the changes has a SHA1 mismatch. '
+            '62cdb7020ff920e5aa642c3d4066950dd1f01f4d != foobar',
+            nuf.checkSizeAndCheckSum)
 
 
 class CustomUploadFileTests(NascentUploadFileTestCase):
@@ -70,9 +126,9 @@ class CustomUploadFileTests(NascentUploadFileTestCase):
     def createCustomUploadFile(self, filename, contents,
                                component_and_section, priority_name):
         """Simple wrapper to create a CustomUploadFile."""
-        (path, digest, size) = self.writeUploadFile(filename, contents)
+        (path, md5, sha1, size) = self.writeUploadFile(filename, contents)
         uploadfile = CustomUploadFile(
-            path, digest, size, component_and_section, priority_name,
+            path, dict(MD5=md5), size, component_and_section, priority_name,
             self.policy, self.logger)
         return uploadfile
 
@@ -80,7 +136,7 @@ class CustomUploadFileTests(NascentUploadFileTestCase):
         # The mime type gets set according to PackageUploadCustomFormat.
         uploadfile = self.createCustomUploadFile(
             "bla.txt", "data", "main/raw-installer", "extra")
-        self.assertEquals(
+        self.assertEqual(
             PackageUploadCustomFormat.DEBIAN_INSTALLER,
             uploadfile.custom_type)
 
@@ -88,10 +144,10 @@ class CustomUploadFileTests(NascentUploadFileTestCase):
         # storeInDatabase creates a library file.
         uploadfile = self.createCustomUploadFile(
             "bla.txt", "data", "main/raw-installer", "extra")
-        self.assertEquals("application/octet-stream", uploadfile.content_type)
+        self.assertEqual("application/octet-stream", uploadfile.content_type)
         libraryfile = uploadfile.storeInDatabase()
-        self.assertEquals("bla.txt", libraryfile.filename)
-        self.assertEquals("application/octet-stream", libraryfile.mimetype)
+        self.assertEqual("bla.txt", libraryfile.filename)
+        self.assertEqual("application/octet-stream", libraryfile.mimetype)
 
     def test_debian_installer_verify(self):
         # debian-installer uploads are required to have sensible filenames.
@@ -121,6 +177,12 @@ class CustomUploadFileTests(NascentUploadFileTestCase):
         # UEFI uploads are auto-approved.
         uploadfile = self.createCustomUploadFile(
             "bla.txt", "data", "main/raw-uefi", "extra")
+        self.assertFalse(uploadfile.autoApprove())
+
+    def test_signing_not_auto_approved(self):
+        # UEFI uploads are auto-approved.
+        uploadfile = self.createCustomUploadFile(
+            "bla.txt", "data", "main/raw-signing", "extra")
         self.assertFalse(uploadfile.autoApprove())
 
 
@@ -156,12 +218,11 @@ class PackageUploadFileTestCase(NascentUploadFileTestCase):
     def createChangesFile(self, filename, changes):
         tempdir = self.makeTemporaryDirectory()
         path = os.path.join(tempdir, filename)
-        changes_fd = open(path, "w")
-        try:
+        with open(path, "w") as changes_fd:
             changes.dump(changes_fd)
-        finally:
-            changes_fd.close()
-        return ChangesFile(path, self.policy, self.logger)
+        changesfile = ChangesFile(path, self.policy, self.logger)
+        self.assertEqual([], list(changesfile.parseChanges()))
+        return changesfile
 
 
 class DSCFileTests(PackageUploadFileTestCase):
@@ -185,19 +246,19 @@ class DSCFileTests(PackageUploadFileTestCase):
 
     def createDSCFile(self, filename, dsc, component_and_section,
                       priority_name, package, version, changes):
-        (path, digest, size) = self.writeUploadFile(filename, dsc.dump())
+        (path, md5, sha1, size) = self.writeUploadFile(filename, dsc.dump())
         if changes:
-            self.assertEquals([], list(changes.processAddresses()))
+            self.assertEqual([], list(changes.processAddresses()))
         return DSCFile(
-            path, digest, size, component_and_section, priority_name, package,
-            version, changes, self.policy, self.logger)
+            path, dict(MD5=md5), size, component_and_section, priority_name,
+            package, version, changes, self.policy, self.logger)
 
     def test_filetype(self):
         # The filetype attribute is set based on the file extension.
         dsc = self.getBaseDsc()
         uploadfile = self.createDSCFile(
             "foo.dsc", dsc, "main/net", "extra", "dulwich", "0.42", None)
-        self.assertEquals(
+        self.assertEqual(
             "text/x-debian-source-package", uploadfile.content_type)
 
     def test_storeInDatabase(self):
@@ -211,8 +272,8 @@ class DSCFileTests(PackageUploadFileTestCase):
         uploadfile.changelog = "DUMMY"
         uploadfile.files = []
         release = uploadfile.storeInDatabase(None)
-        self.assertEquals("0.42", release.version)
-        self.assertEquals("dpkg, bzr", release.builddepends)
+        self.assertEqual("0.42", release.version)
+        self.assertEqual("dpkg, bzr", release.builddepends)
 
     def test_storeInDatabase_case_sensitivity(self):
         # storeInDatabase supports field names with different cases,
@@ -226,7 +287,7 @@ class DSCFileTests(PackageUploadFileTestCase):
         uploadfile.files = []
         uploadfile.changelog = "DUMMY"
         release = uploadfile.storeInDatabase(None)
-        self.assertEquals("dpkg, bzr", release.builddepends)
+        self.assertEqual("dpkg, bzr", release.builddepends)
 
     def test_user_defined_fields(self):
         # storeInDatabase updates user_defined_fields.
@@ -240,7 +301,7 @@ class DSCFileTests(PackageUploadFileTestCase):
         uploadfile.files = []
         release = uploadfile.storeInDatabase(None)
         # DSCFile lowercases the field names
-        self.assertEquals(
+        self.assertEqual(
             [["Python-Version", u"2.5"]], release.user_defined_fields)
 
     def test_homepage(self):
@@ -254,10 +315,13 @@ class DSCFileTests(PackageUploadFileTestCase):
         uploadfile.changelog = "DUMMY"
         uploadfile.files = []
         release = uploadfile.storeInDatabase(None)
-        self.assertEquals(u"http://samba.org/~jelmer/bzr", release.homepage)
+        self.assertEqual(u"http://samba.org/~jelmer/bzr", release.homepage)
 
     def test_checkBuild(self):
         # checkBuild() verifies consistency with a build.
+        self.policy.distroseries.nominatedarchindep = (
+            self.factory.makeDistroArchSeries(
+                distroseries=self.policy.distroseries))
         build = self.factory.makeSourcePackageRecipeBuild(
             pocket=self.policy.pocket, distroseries=self.policy.distroseries,
             archive=self.policy.archive)
@@ -268,15 +332,17 @@ class DSCFileTests(PackageUploadFileTestCase):
         uploadfile.checkBuild(build)
         # checkBuild() sets the build status to FULLYBUILT and
         # removes the upload log.
-        self.assertEquals(BuildStatus.FULLYBUILT, build.status)
+        self.assertEqual(BuildStatus.FULLYBUILT, build.status)
         self.assertIs(None, build.upload_log)
 
     def test_checkBuild_inconsistent(self):
         # checkBuild() raises UploadError if inconsistencies between build
         # and upload file are found.
+        distroseries = self.factory.makeDistroSeries()
+        distroseries.nominatedarchindep = self.factory.makeDistroArchSeries(
+            distroseries=distroseries)
         build = self.factory.makeSourcePackageRecipeBuild(
-            pocket=self.policy.pocket,
-            distroseries=self.factory.makeDistroSeries(),
+            pocket=self.policy.pocket, distroseries=distroseries,
             archive=self.policy.archive)
         dsc = self.getBaseDsc()
         uploadfile = self.createDSCFile(
@@ -292,32 +358,69 @@ class DebBinaryUploadFileTests(PackageUploadFileTestCase):
 
     def getBaseControl(self):
         return {
-            "Package": "python-dulwich",
-            "Source": "dulwich",
-            "Version": "0.42",
-            "Architecture": "i386",
-            "Maintainer": "Jelmer Vernooij <jelmer@debian.org>",
-            "Installed-Size": "524",
-            "Depends": "python (<< 2.7), python (>= 2.5)",
-            "Provides": "python2.5-dulwich, python2.6-dulwich",
-            "Section": "python",
-            "Priority": "optional",
-            "Homepage": "http://samba.org/~jelmer/dulwich",
-            "Description": "Pure-python Git library\n"
-                "Dulwich is a Python implementation of the file formats and "
-                "protocols",
+            "Package": b"python-dulwich",
+            "Source": b"dulwich",
+            "Version": b"0.42",
+            "Architecture": b"i386",
+            "Maintainer": b"Jelmer Vernooij <jelmer@debian.org>",
+            "Installed-Size": b"524",
+            "Depends": b"python (<< 2.7), python (>= 2.5)",
+            "Provides": b"python2.5-dulwich, python2.6-dulwich",
+            "Section": b"python",
+            "Priority": b"optional",
+            "Homepage": b"http://samba.org/~jelmer/dulwich",
+            "Description": b"Pure-python Git library\n"
+                b" Dulwich is a Python implementation of the file formats and"
+                b" protocols",
             }
 
-    def createDeb(self, filename, data_format):
+    def _writeCompressedFile(self, filename, data):
+        if filename.endswith(".gz"):
+            open_func = gzip.open
+        elif filename.endswith(".xz"):
+            open_func = partial(lzma.LZMAFile, format=lzma.FORMAT_XZ)
+        else:
+            raise ValueError(
+                "Unhandled compression extension in '%s'" % filename)
+        with open_func(filename, "wb") as f:
+            f.write(data)
+
+    def createDeb(self, filename, control, control_format, data_format,
+                  members=None):
         """Return the contents of a dummy .deb file."""
         tempdir = self.makeTemporaryDirectory()
-        members = [
-            "debian-binary",
-            "control.tar.gz",
-            "data.tar.%s" % data_format,
-            ]
+        if members is None:
+            members = [
+                "debian-binary",
+                "control.tar.%s" % control_format,
+                "data.tar.%s" % data_format,
+                ]
         for member in members:
-            write_file(os.path.join(tempdir, member), "")
+            if member == "debian-binary":
+                write_file(os.path.join(tempdir, member), b"2.0\n")
+            elif member.startswith("control.tar."):
+                with io.BytesIO() as control_tar_buf:
+                    with tarfile.open(
+                            mode="w", fileobj=control_tar_buf) as control_tar:
+                        with io.BytesIO() as control_buf:
+                            Deb822(control).dump(
+                                fd=control_buf, encoding="UTF-8")
+                            control_buf.seek(0)
+                            tarinfo = tarfile.TarInfo(name="control")
+                            tarinfo.size = len(control_buf.getvalue())
+                            control_tar.addfile(tarinfo, fileobj=control_buf)
+                    control_tar_bytes = control_tar_buf.getvalue()
+                self._writeCompressedFile(
+                    os.path.join(tempdir, member), control_tar_bytes)
+            elif member.startswith("data.tar."):
+                with io.BytesIO() as data_tar_buf:
+                    with tarfile.open(mode="w", fileobj=data_tar_buf):
+                        pass
+                    data_tar_bytes = data_tar_buf.getvalue()
+                self._writeCompressedFile(
+                    os.path.join(tempdir, member), data_tar_bytes)
+            else:
+                raise ValueError("Unhandled .deb member '%s'" % member)
         retcode = subprocess.call(
             ["ar", "rc", filename] + members, cwd=tempdir)
         self.assertEqual(0, retcode)
@@ -326,22 +429,28 @@ class DebBinaryUploadFileTests(PackageUploadFileTestCase):
 
     def createDebBinaryUploadFile(self, filename, component_and_section,
                                   priority_name, package, version, changes,
-                                  data_format=None):
+                                  control=None, control_format=None,
+                                  data_format=None, members=None):
         """Create a DebBinaryUploadFile."""
-        if data_format:
-            data = self.createDeb(filename, data_format)
+        if (control is not None or control_format is not None or
+                data_format is not None or members is not None):
+            if control is None:
+                control = self.getBaseControl()
+            data = self.createDeb(
+                filename, control, control_format, data_format,
+                members=members)
         else:
             data = "DUMMY DATA"
-        (path, digest, size) = self.writeUploadFile(filename, data)
+        (path, md5, sha1, size) = self.writeUploadFile(filename, data)
         return DebBinaryUploadFile(
-            path, digest, size, component_and_section, priority_name, package,
-            version, changes, self.policy, self.logger)
+            path, dict(MD5=md5), size, component_and_section, priority_name,
+            package, version, changes, self.policy, self.logger)
 
     def test_unknown_priority(self):
         # Unknown priorities automatically get changed to 'extra'.
         uploadfile = self.createDebBinaryUploadFile(
             "foo_0.42_i386.deb", "main/net", "unknown", "mypkg", "0.42", None)
-        self.assertEquals("extra", uploadfile.priority_name)
+        self.assertEqual("extra", uploadfile.priority_name)
 
     def test_parseControl(self):
         # parseControl sets various fields on DebBinaryUploadFile.
@@ -350,19 +459,75 @@ class DebBinaryUploadFileTests(PackageUploadFileTestCase):
             None)
         control = self.getBaseControl()
         uploadfile.parseControl(control)
-        self.assertEquals("python", uploadfile.section_name)
-        self.assertEquals("dulwich", uploadfile.source_name)
-        self.assertEquals("0.42", uploadfile.source_version)
-        self.assertEquals("0.42", uploadfile.control_version)
+        self.assertEqual("python", uploadfile.section_name)
+        self.assertEqual("dulwich", uploadfile.source_name)
+        self.assertEqual("0.42", uploadfile.source_version)
+        self.assertEqual("0.42", uploadfile.control_version)
 
-    def test_verifyFormat_xz(self):
-        # verifyFormat accepts xz-compressed .debs.
+    def test_verifyFormat_missing_control(self):
+        # verifyFormat rejects .debs with no control member.
         uploadfile = self.createDebBinaryUploadFile(
             "foo_0.42_i386.deb", "main/python", "unknown", "mypkg", "0.42",
-            None, data_format="xz")
-        control = self.getBaseControl()
-        uploadfile.parseControl(control)
+            None, members=["debian-binary", "data.tar.gz"])
+        self.assertThat(
+            ["".join(error.args) for error in uploadfile.verifyFormat()],
+            MatchesListwise([
+                Equals(
+                    "%s: 'dpkg-deb -I' invocation failed." %
+                    uploadfile.filename),
+                MatchesRegex(
+                    r"^ \[dpkg-deb output:\] .* has premature member "
+                    r"'data\.tar\.gz'"),
+                Equals(
+                    "%s: 'dpkg-deb -c' invocation failed." %
+                    uploadfile.filename),
+                MatchesRegex(
+                    r"^ \[dpkg-deb output:\] .* has premature member "
+                    r"'data\.tar\.gz'"),
+                ]))
+
+    def test_verifyFormat_missing_data(self):
+        # verifyFormat rejects .debs with no data member.
+        uploadfile = self.createDebBinaryUploadFile(
+            "foo_0.42_i386.deb", "main/python", "unknown", "mypkg", "0.42",
+            None, members=["debian-binary", "control.tar.gz"])
+        self.assertThat(
+            ["".join(error.args) for error in uploadfile.verifyFormat()],
+            MatchesListwise([
+                Equals(
+                    "%s: 'dpkg-deb -c' invocation failed." %
+                    uploadfile.filename),
+                MatchesRegex(
+                    r"^ \[dpkg-deb output:\] .* unexpected end of file"),
+                ]))
+
+    def test_verifyFormat_control_xz(self):
+        # verifyFormat accepts .debs with an xz-compressed control member.
+        uploadfile = self.createDebBinaryUploadFile(
+            "foo_0.42_i386.deb", "main/python", "unknown", "mypkg", "0.42",
+            None, control_format="xz", data_format="gz")
+        uploadfile.extractAndParseControl()
         self.assertEqual([], list(uploadfile.verifyFormat()))
+
+    def test_verifyFormat_data_xz(self):
+        # verifyFormat accepts .debs with an xz-compressed data member.
+        uploadfile = self.createDebBinaryUploadFile(
+            "foo_0.42_i386.deb", "main/python", "unknown", "mypkg", "0.42",
+            None, control_format="gz", data_format="xz")
+        uploadfile.extractAndParseControl()
+        self.assertEqual([], list(uploadfile.verifyFormat()))
+
+    def test_verifyDebTimestamp_SystemError(self):
+        # verifyDebTimestamp produces a reasonable error if we provoke a
+        # SystemError from apt_inst.DebFile.
+        uploadfile = self.createDebBinaryUploadFile(
+            "empty_0.1_all.deb", "main/admin", "extra", "empty", "0.1", None,
+            members=[])
+        self.assertThat(
+            ["".join(error.args) for error in uploadfile.verifyDebTimestamp()],
+            MatchesListwise([MatchesAny(
+                Equals("No debian archive, missing control.tar.gz"),
+                Contains("could not locate member control.tar."))]))
 
     def test_storeInDatabase(self):
         # storeInDatabase creates a BinaryPackageRelease.
@@ -373,15 +538,15 @@ class DebBinaryUploadFileTests(PackageUploadFileTestCase):
         uploadfile.parseControl(control)
         build = self.factory.makeBinaryPackageBuild()
         bpr = uploadfile.storeInDatabase(build)
-        self.assertEquals(u'python (<< 2.7), python (>= 2.5)', bpr.depends)
-        self.assertEquals(
-            u"Dulwich is a Python implementation of the file formats "
-            u"and protocols", bpr.description)
-        self.assertEquals(False, bpr.essential)
-        self.assertEquals(524, bpr.installedsize)
-        self.assertEquals(True, bpr.architecturespecific)
-        self.assertEquals(u"", bpr.recommends)
-        self.assertEquals("0.42", bpr.version)
+        self.assertEqual(u'python (<< 2.7), python (>= 2.5)', bpr.depends)
+        self.assertEqual(
+            u" Dulwich is a Python implementation of the file formats and"
+            u" protocols", bpr.description)
+        self.assertEqual(False, bpr.essential)
+        self.assertEqual(524, bpr.installedsize)
+        self.assertEqual(True, bpr.architecturespecific)
+        self.assertEqual(u"", bpr.recommends)
+        self.assertEqual("0.42", bpr.version)
 
     def test_user_defined_fields(self):
         # storeInDatabase stores user defined fields.
@@ -389,11 +554,11 @@ class DebBinaryUploadFileTests(PackageUploadFileTestCase):
             "foo_0.42_i386.deb", "main/python", "unknown", "mypkg", "0.42",
             None)
         control = self.getBaseControl()
-        control["Python-Version"] = "2.5"
+        control["Python-Version"] = b"2.5"
         uploadfile.parseControl(control)
         build = self.factory.makeBinaryPackageBuild()
         bpr = uploadfile.storeInDatabase(build)
-        self.assertEquals(
+        self.assertEqual(
             [[u"Python-Version", u"2.5"]], bpr.user_defined_fields)
 
     def test_user_defined_fields_newlines(self):
@@ -402,11 +567,11 @@ class DebBinaryUploadFileTests(PackageUploadFileTestCase):
             "foo_0.42_i386.deb", "main/python", "unknown", "mypkg", "0.42",
             None)
         control = self.getBaseControl()
-        control["RandomData"] = "Foo\nbar\nbla\n"
+        control["RandomData"] = b"Foo\nbar\nbla\n"
         uploadfile.parseControl(control)
         build = self.factory.makeBinaryPackageBuild()
         bpr = uploadfile.storeInDatabase(build)
-        self.assertEquals(
+        self.assertEqual(
             [
                 [u"RandomData", u"Foo\nbar\nbla\n"],
             ], bpr.user_defined_fields)
@@ -417,11 +582,11 @@ class DebBinaryUploadFileTests(PackageUploadFileTestCase):
             "foo_0.42_i386.deb", "main/python", "unknown", "mypkg", "0.42",
             None)
         control = self.getBaseControl()
-        control["Python-Version"] = "2.5"
+        control["Python-Version"] = b"2.5"
         uploadfile.parseControl(control)
         build = self.factory.makeBinaryPackageBuild()
         bpr = uploadfile.storeInDatabase(build)
-        self.assertEquals(
+        self.assertEqual(
             u"http://samba.org/~jelmer/dulwich", bpr.homepage)
 
     def test_checkBuild(self):
@@ -437,7 +602,7 @@ class DebBinaryUploadFileTests(PackageUploadFileTestCase):
         uploadfile.checkBuild(build)
         # checkBuild() sets the build status to FULLYBUILT and
         # removes the upload log.
-        self.assertEquals(BuildStatus.FULLYBUILT, build.status)
+        self.assertEqual(BuildStatus.FULLYBUILT, build.status)
         self.assertIs(None, build.upload_log)
 
     def test_checkBuild_inconsistent(self):
@@ -468,9 +633,9 @@ class DebBinaryUploadFileTests(PackageUploadFileTestCase):
             distroseries=self.policy.distroseries,
             version="0.42", archive=self.policy.archive)
         control = self.getBaseControl()
-        control["Source"] = "foo"
+        control["Source"] = b"foo"
         uploadfile.parseControl(control)
-        self.assertEquals(
+        self.assertEqual(
             spph.sourcepackagerelease, uploadfile.findSourcePackageRelease())
 
     def test_findSourcePackageRelease_no_spph(self):
@@ -485,7 +650,7 @@ class DebBinaryUploadFileTests(PackageUploadFileTestCase):
             "foo_0.42_i386.deb", "main/python", "unknown", "mypkg", "0.42",
             None)
         control = self.getBaseControl()
-        control["Source"] = "foo"
+        control["Source"] = b"foo"
         uploadfile.parseControl(control)
         self.assertRaises(UploadError, uploadfile.findSourcePackageRelease)
 
@@ -513,7 +678,7 @@ class DebBinaryUploadFileTests(PackageUploadFileTestCase):
             version="0.42", archive=self.policy.archive,
             status=PackagePublishingStatus.PENDING)
         control = self.getBaseControl()
-        control["Source"] = "foo"
+        control["Source"] = b"foo"
         uploadfile.parseControl(control)
-        self.assertEquals(
+        self.assertEqual(
             spph2.sourcepackagerelease, uploadfile.findSourcePackageRelease())

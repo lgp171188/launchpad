@@ -1,6 +1,6 @@
 #!/usr/bin/python
 #
-# Copyright 2009-2010 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Import version control metadata from a Bazaar branch into the database."""
@@ -19,6 +19,7 @@ import logging
 from bzrlib.graph import DictParentsProvider
 from bzrlib.revision import NULL_REVISION
 import pytz
+import six
 from storm.locals import Store
 import transaction
 from zope.component import getUtility
@@ -34,9 +35,11 @@ from lp.code.model.branchrevision import BranchRevision
 from lp.code.model.revision import Revision
 from lp.codehosting.scanner import events
 from lp.services.config import config
-from lp.services.utils import iter_list_chunks
-from lp.translations.interfaces.translationtemplatesbuildjob import (
-    ITranslationTemplatesBuildJobSource,
+from lp.services.features import getFeatureFlag
+from lp.services.utils import iter_chunks
+from lp.services.webhooks.interfaces import IWebhookSet
+from lp.translations.interfaces.translationtemplatesbuild import (
+    ITranslationTemplatesBuildSource,
     )
 
 
@@ -102,18 +105,20 @@ class BzrSync:
         new_db_revs = (
             new_ancestry - getUtility(IRevisionSet).onlyPresent(new_ancestry))
         self.logger.info("Adding %s new revisions.", len(new_db_revs))
-        for revids in iter_list_chunks(list(new_db_revs), 10000):
+        for revids in iter_chunks(new_db_revs, 10000):
             revisions = self.getBazaarRevisions(bzr_branch, revids)
             self.syncRevisions(bzr_branch, revisions, revids_to_insert)
         self.deleteBranchRevisions(branchrevisions_to_delete)
         self.insertBranchRevisions(bzr_branch, revids_to_insert)
         transaction.commit()
         # Synchronize the RevisionCache for this branch.
+        self.logger.info("Updating revision cache.")
         getUtility(IRevisionSet).updateRevisionCacheForBranch(self.db_branch)
         transaction.commit()
 
         # Notify any listeners that the tip of the branch has changed, but
         # before we've actually updated the database branch.
+        self.logger.info("Firing tip change event.")
         initial_scan = (len(db_history) == 0)
         notify(events.TipChanged(self.db_branch, bzr_branch, initial_scan))
 
@@ -124,7 +129,9 @@ class BzrSync:
         # not been updated. Since this has no ill-effect, and can only err on
         # the pessimistic side (tell the user the data has not yet been
         # updated although it has), the race is acceptable.
+        self.logger.info("Updating branch status.")
         self.updateBranchStatus(bzr_history)
+        self.logger.info("Firing scan completion event.")
         notify(
             events.ScanCompleted(
                 self.db_branch, bzr_branch, self.logger, new_ancestry))
@@ -155,6 +162,7 @@ class BzrSync:
         return bzr_branch.repository.get_graph(PPSource)
 
     def getAncestryDelta(self, bzr_branch):
+        self.logger.info("Calculating ancestry delta.")
         bzr_last = bzr_branch.last_revision()
         db_last = self.db_branch.last_scanned_id
         if db_last is None:
@@ -219,6 +227,7 @@ class BzrSync:
                 added_history, last_revno, added_ancestry))
         # We must remove any stray BranchRevisions that happen to already be
         # present.
+        self.logger.info("Finding stray BranchRevisions.")
         existing_branchrevisions = Store.of(self.db_branch).find(
             Revision.revision_id, BranchRevision.branch == self.db_branch,
             BranchRevision.revision_id == Revision.id,
@@ -289,8 +298,8 @@ class BzrSync:
         """Insert a batch of BranchRevision rows."""
         self.logger.info("Inserting %d branchrevision records.",
             len(revids_to_insert))
-        revid_seq_pairs = revids_to_insert.items()
-        for revid_seq_pair_chunk in iter_list_chunks(revid_seq_pairs, 10000):
+        revid_seq_pairs = six.iteritems(revids_to_insert)
+        for revid_seq_pair_chunk in iter_chunks(revid_seq_pairs, 10000):
             self.db_branch.createBranchRevisionFromIDs(revid_seq_pair_chunk)
 
     def updateBranchStatus(self, bzr_history):
@@ -313,7 +322,7 @@ def schedule_translation_upload(tip_changed):
 
 
 def schedule_translation_templates_build(tip_changed):
-    utility = getUtility(ITranslationTemplatesBuildJobSource)
+    utility = getUtility(ITranslationTemplatesBuildSource)
     utility.scheduleTranslationTemplatesBuild(tip_changed.db_branch)
 
 
@@ -322,5 +331,18 @@ def schedule_diff_updates(tip_changed):
 
 
 def update_recipes(tip_changed):
-    for recipe in tip_changed.db_branch.recipes:
-        recipe.is_stale = True
+    tip_changed.db_branch.markRecipesStale()
+
+
+def update_snaps(tip_changed):
+    tip_changed.db_branch.markSnapsStale()
+
+
+def trigger_webhooks(tip_changed):
+    old_revid = tip_changed.old_tip_revision_id
+    new_revid = tip_changed.new_tip_revision_id
+    if getFeatureFlag("code.bzr.webhooks.enabled") and old_revid != new_revid:
+        payload = tip_changed.composeWebhookPayload(
+            tip_changed.db_branch, old_revid, new_revid)
+        getUtility(IWebhookSet).trigger(
+            tip_changed.db_branch, "bzr:push:0.1", payload)

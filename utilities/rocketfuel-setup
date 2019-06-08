@@ -42,30 +42,30 @@ if [ $? -ne 0 ]; then
   echo "Adding development hosts on local machine"
   echo "
 # Launchpad virtual domains. This should be on one line.
-127.0.0.88      launchpad.dev
+127.0.0.88      launchpad.test
 " | sudo tee -a /etc/hosts > /dev/null
-  echo "launchpad.dev added to /etc/hosts"
+  echo "launchpad.test added to /etc/hosts"
 fi
 
 declare -a hostnames
 hostnames=$(cat <<EOF
-    answers.launchpad.dev
-    archive.launchpad.dev
-    api.launchpad.dev
-    bazaar.launchpad.dev
-    bazaar-internal.launchpad.dev
-    blueprints.launchpad.dev
-    bugs.launchpad.dev
-    code.launchpad.dev
-    feeds.launchpad.dev
-    keyserver.launchpad.dev
-    lists.launchpad.dev
-    ppa.launchpad.dev
-    private-ppa.launchpad.dev
-    testopenid.dev
-    translations.launchpad.dev
-    xmlrpc-private.launchpad.dev
-    xmlrpc.launchpad.dev
+    answers.launchpad.test
+    archive.launchpad.test
+    api.launchpad.test
+    bazaar.launchpad.test
+    bazaar-internal.launchpad.test
+    blueprints.launchpad.test
+    bugs.launchpad.test
+    code.launchpad.test
+    feeds.launchpad.test
+    keyserver.launchpad.test
+    lists.launchpad.test
+    ppa.launchpad.test
+    private-ppa.launchpad.test
+    testopenid.test
+    translations.launchpad.test
+    xmlrpc-private.launchpad.test
+    xmlrpc.launchpad.test
 EOF
     )
 
@@ -74,12 +74,12 @@ for hostname in $hostnames; do
 done
 
 # Enable relevant Ubuntu package repositories
-grep -q "^deb http:.* ${DISTRIB_CODENAME} .*universe" /etc/apt/sources.list
+grep -qE "^deb https?:.* ${DISTRIB_CODENAME} .*universe" /etc/apt/sources.list
 if [ $? -ne 0 ]; then
     echo "Please enable the 'universe' component in /etc/apt/sources.list'"
     exit 1
 fi
-grep -q "^deb http:.* ${DISTRIB_CODENAME} .*multiverse" /etc/apt/sources.list
+grep -qE "^deb https?:.* ${DISTRIB_CODENAME} .*multiverse" /etc/apt/sources.list
 if [ $? -ne 0 ]; then
     echo "Please enable the 'multiverse' component in /etc/apt/sources.list'"
     exit 1
@@ -96,18 +96,22 @@ if [ $? -ne 0 ]; then
   echo "Adding ~launchpad PPA repository to package source list."
   echo "$LP_PPA"  | sudo tee -a $LPDEV_SOURCES
 fi
+REQUIRED_PPA_KEYS="2AF499CB24AC5F65461405572D1FFB6C0A5174AF"
 
-BZR_PPA="deb http://ppa.launchpad.net/bzr/ppa/ubuntu ${DISTRIB_CODENAME} main"
-grep -q "^${BZR_PPA}" $LPDEV_SOURCES
-if [ $? -ne 0 ]; then
-  echo "Adding ~bzr PPA repository to package source list."
-  echo "$BZR_PPA" | sudo tee -a $LPDEV_SOURCES
+if [ "$DISTRIB_CODENAME" = precise ]; then
+  BZR_PPA="deb http://ppa.launchpad.net/bzr/ppa/ubuntu ${DISTRIB_CODENAME} main"
+  grep -q "^${BZR_PPA}" $LPDEV_SOURCES
+  if [ $? -ne 0 ]; then
+    echo "Adding ~bzr PPA repository to package source list."
+    echo "$BZR_PPA" | sudo tee -a $LPDEV_SOURCES
+  fi
+  REQUIRED_PPA_KEYS="$REQUIRED_PPA_KEYS ECE2800BACF028B31EE3657CD702BF6B8C6C1EFD"
 fi
 
 # Get the key used to sign the launchpad-developer-dependencies in the PPA.
-REQUIRED_PPA_KEYS="0A5174AF 8C6C1EFD"
 for key in $REQUIRED_PPA_KEYS; do
-   sudo apt-key list | grep -q $key
+   sudo APT_KEY_DONT_WARN_ON_DANGEROUS_USAGE=1 \
+       apt-key adv --list-keys --with-colons --fingerprint | grep -qE "^fpr:+$key"
    if [ $? -ne 0 ]; then
      echo "Retrieving key $key."
      gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys $key
@@ -136,14 +140,19 @@ do_install() {
   }
 
 sudo apt-get update
-REQUIRED_PACKAGES="launchpad-developer-dependencies apache2 apache2-mpm-worker libapache2-mod-wsgi"
+REQUIRED_PACKAGES="launchpad-developer-dependencies apache2 libapache2-mod-wsgi"
+case $DISTRIB_CODENAME in
+  precise|trusty)
+    REQUIRED_PACKAGES="$REQUIRED_PACKAGES apache2-mpm-worker"
+    ;;
+esac
 for pkg in $REQUIRED_PACKAGES; do
   do_install;
 done
 
 # Create the document root(s) to avoid Apache warnings
-mkdir -p /var/tmp/bazaar.launchpad.dev/static
-mkdir -p /var/tmp/bazaar.launchpad.dev/mirrors
+mkdir -p /var/tmp/bazaar.launchpad.test/static
+mkdir -p /var/tmp/bazaar.launchpad.test/mirrors
 
 sudo a2enmod proxy > /dev/null
 if [ $? -ne 0 ]; then
@@ -187,7 +196,7 @@ Branches have not been created, as requested.  You will need to do some or all
 of the following steps:
 $ bzr branch lp:launchpad devel
 $ cd devel
-$ bzr branch lp:~launchpad/lp-source-dependencies/trunk/ download-cache
+$ git clone --depth=1 lp:lp-source-dependencies download-cache
 $ utilities/update-sourcecode
 $ utilities/launchpad-database-setup
 $ make schema
@@ -259,6 +268,19 @@ if [ $? -ne 0 ]; then
   echo "with Launchpad.  Registering an SSH key is only important if you"
   echo "are writing data to Launchpad, or trying to access private data."
   echo ""
+fi
+
+# Make sure "git clone lp:..." works.  Yes, it's pretty odd to use bzr to
+# help configure git, but it knows how to check whether the user has SSH
+# keys.  If we eventually want to drop our dependency on bzr then we can
+# write this out longhand in Python.
+echo "Configuring git..."
+if [ "$(git ls-remote --get-url lp:launchpad)" = lp:launchpad ]; then
+  if bzr launchpad-login --verbose 2>/dev/null | grep -q 'has SSH keys'; then
+    git config --global url.git+ssh://git.launchpad.net/.insteadof lp:
+  else
+    git config --global url.https://git.launchpad.net/.insteadof lp:
+  fi
 fi
 
 cd $LP_SHARED_REPO
@@ -344,14 +366,6 @@ fi
 ls -l rocketfuel-get | cut -d">" -f2 | grep -q "$LP_TRUNK_NAME\/utilities\/rocketfuel"
 if [ $? -ne 0 ]; then
   echo "WARNING: /usr/local/bin/rocketfuel-get should be deleted so I can
-         recreate it."
-fi
-if [ ! -e rocketfuel-flakes ]; then
-  sudo ln -s $LP_TRUNK_PATH/utilities/rocketfuel-flakes
-fi
-ls -l rocketfuel-flakes | cut -d">" -f2 | grep -q "$LP_TRUNK_NAME\/utilities\/rocketfuel"
-if [ $? -ne 0 ]; then
-  echo "WARNING: /usr/local/bin/rocketfuel-flakes should be deleted so I can
          recreate it."
 fi
 if [ ! -e rocketfuel-branch ]; then

@@ -20,40 +20,34 @@ from storm.locals import (
     )
 from zope.component import getUtility
 from zope.interface import (
-    classProvides,
-    implements,
+    implementer,
+    provider,
     )
 
 from lp.services.config import config
+from lp.services.database.interfaces import IStore
 from lp.services.database.stormbase import StormBase
 from lp.services.job.interfaces.job import IRunnableJob
 from lp.services.job.model.job import Job
 from lp.services.job.runner import BaseRunnableJob
-from lp.services.webapp.interfaces import (
-    DEFAULT_FLAVOR,
-    IStoreSelector,
-    MAIN_STORE,
-    )
 from lp.translations.interfaces.pofilestatsjob import IPOFileStatsJobSource
 from lp.translations.interfaces.potemplate import IPOTemplateSet
 from lp.translations.model.pofile import POFile
 
 
+# Instances of this class are runnable jobs.
+@implementer(IRunnableJob)
+# Oddly, BaseRunnableJob inherits from BaseRunnableJobSource so this class
+# is both the factory for jobs (the "implementer", above) and the source for
+# runnable jobs (not the constructor of the job source, the class provides
+# the IJobSource interface itself).
+@provider(IPOFileStatsJobSource)
 class POFileStatsJob(StormBase, BaseRunnableJob):
     """The details for a POFile status update job."""
 
     __storm_table__ = 'POFileStatsJob'
 
-    config = config.pofile_stats
-
-    # Instances of this class are runnable jobs.
-    implements(IRunnableJob)
-
-    # Oddly, BaseRunnableJob inherits from BaseRunnableJobSource so this class
-    # is both the factory for jobs (the "implements", above) and the source
-    # for runnable jobs (not the constructor of the job source, the class
-    # provides the IJobSource interface itself).
-    classProvides(IPOFileStatsJobSource)
+    config = config.IPOFileStatsJobSource
 
     # The Job table contains core job details.
     job_id = Int('job', primary=True)
@@ -98,8 +92,7 @@ class POFileStatsJob(StormBase, BaseRunnableJob):
     @staticmethod
     def iterReady():
         """See `IJobSource`."""
-        store = getUtility(IStoreSelector).get(MAIN_STORE, DEFAULT_FLAVOR)
-        return store.find((POFileStatsJob),
+        return IStore(POFileStatsJob).find((POFileStatsJob),
             And(POFileStatsJob.job == Job.id,
                 Job.id.is_in(Job.ready_jobs)))
 

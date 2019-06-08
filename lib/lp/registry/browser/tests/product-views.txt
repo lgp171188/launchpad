@@ -119,7 +119,7 @@ Reviewing a project's licensing
 Launchpad admins and members of the registry experts team can review a
 project's licences.
 
-The Commercial Admin user is not in the registry admins team so he
+The Commercial Admin user is not in the registry admins team so they
 cannot access the page.
 
     >>> login('commercial-member@canonical.com')
@@ -138,12 +138,13 @@ Mark is in the registry admins team and is allowed to access the page.
     Review project
 
 Adding the Commercial Admin to the registry experts team will give
-him access.
+them access.
 
     >>> commercial_member = getUtility(IPersonSet).getByEmail(
     ...     'commercial-member@canonical.com')
     >>> registry_experts = getUtility(IPersonSet).getByName('registry')
     >>> ignored = registry_experts.addMember(commercial_member, reviewer=mark)
+    >>> transaction.commit()
     >>> login('commercial-member@canonical.com')
     >>> view = create_initialized_view(firefox, name='+review-license')
     >>> print view.label
@@ -153,8 +154,7 @@ The view allow the reviewer to see and change project privileges and
 judge the licences.
 
     >>> view.field_names
-    ['project_reviewed', 'license_approved', 'active', 'private_bugs',
-     'reviewer_whiteboard']
+    ['project_reviewed', 'license_approved', 'active', 'reviewer_whiteboard']
 
 The reviewer cannot deactivate a project if it is linked
 to a source package.
@@ -173,7 +173,7 @@ to a source package.
     [...This project cannot be deactivated since it is linked to
     ...source packages</a>.']
 
-The reviewer can deactivate a project if he concludes it is bogus.
+The reviewer can deactivate a project if they conclude it is bogus.
 
     >>> product = factory.makeProduct(name='tomato', title='Tomato')
     >>> product.active
@@ -193,15 +193,10 @@ The reviewer can deactivate a project if he concludes it is bogus.
     >>> print product.reviewer_whiteboard
     Looks bogus
 
-The reviewer can enable privileged features like private bugs. He can
-also reactivate the project at the same time.
-
-    >>> firefox.private_bugs
-    False
+The reviewer can reactivate the project.
 
     >>> form = {
     ...     'field.active': 'on',
-    ...     'field.private_bugs': 'on',
     ...     'field.reviewer_whiteboard': 'Reinstated old project',
     ...     'field.actions.change': 'Change',
     ...     }
@@ -212,8 +207,6 @@ also reactivate the project at the same time.
     []
     >>> firefox.active
     True
-    >>> firefox.private_bugs
-    True
     >>> print firefox.reviewer_whiteboard
     Reinstated old project
 
@@ -222,7 +215,6 @@ purchase a commercial subscription.
 
     >>> from lp.registry.interfaces.product import License
 
-    >>> firefox.setPrivateBugs(False, commercial_member)
     >>> login('test@canonical.com')
     >>> firefox.licenses = [License.OTHER_PROPRIETARY]
 
@@ -363,7 +355,7 @@ too.
     Register a new Mozilla Firefox release series
 
     >>> print view.cancel_url
-    http://launchpad.dev/firefox
+    http://launchpad.test/firefox
 
 The view allows the driver to set series name, summary, branch and
 releasefileglob fields.

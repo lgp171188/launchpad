@@ -12,7 +12,7 @@ In this test, we'll use interfaces ICountrySet, ICountry and ITown, which we
 will put in lp.testing.
 
     >>> from lp.services.webapp.interfaces import ICanonicalUrlData
-    >>> from zope.interface import Interface, Attribute, implements
+    >>> from zope.interface import Interface, Attribute, implementer
 
     >>> class ICountrySet(Interface):
     ...     pass
@@ -24,6 +24,19 @@ will put in lp.testing.
     ...     """Dummy interface for use in browser:url tests."""
     ...     country = Attribute('the country the town is in')
     ...     name = Attribute('the name of this town')
+
+XXX: This is evil, as it changes the hash of the interfaces. It *must* be done
+before they're registered anywhere.
+
+Put the interfaces into lp.testing, ensuring that there
+are not already objects with those names there.
+
+    >>> import lp.testing
+    >>> for interface in ICountrySet, ICountry, ITown:
+    ...     name = interface.getName()
+    ...     assert getattr(lp.testing, name, None) is None
+    ...     setattr(lp.testing, name, interface)
+    ...     interface.__module__ = 'lp.testing'
 
 Add a view for Country/+map.
 
@@ -41,17 +54,19 @@ Define a navigation for the Country URL.
     ...     Navigation, redirection, stepto, stepthrough)
     >>> from zope.publisher.interfaces.browser import IBrowserPublisher
     >>> class CountryNavigation(Navigation):
-    ...     redirection('+capital', '+towns/London')
+    ...     @redirection('+capital')
+    ...     def redirect_capital(self):
+    ...         return '+towns/London'
     ...
     ...     @stepthrough('+towns')
-    ...     def stepthrown_town(self, name):
+    ...     def stepthrough_town(self, name):
     ...         if name == 'London':
     ...             return town_instance
     ...         else:
     ...             return None
     ...
     ...     @stepto('+greenwich')
-    ...     def stepto_greenwhich(self):
+    ...     def stepto_greenwich(self):
     ...         town = Town()
     ...         town.name = 'Greenwich'
     ...         return town
@@ -59,30 +74,21 @@ Define a navigation for the Country URL.
     ...     CountryNavigation, [ICountry, IDefaultBrowserLayer], 
     ...     IBrowserPublisher)
 
-Put the interfaces into lp.testing, ensuring that there
-are not already objects with those names there.
-
-    >>> import lp.testing
-    >>> for interface in ICountrySet, ICountry, ITown:
-    ...     name = interface.getName()
-    ...     assert getattr(lp.testing, name, None) is None
-    ...     setattr(lp.testing, name, interface)
-    ...     interface.__module__ = 'lp.testing'
-
 We don't have ICanonicalUrlData adapters for objects that provide any of these
 interfaces.  First, we create some countryset, country and town objects.
 
-    >>> class CountrySet:
-    ...     implements(ICountrySet)
+    >>> @implementer(ICountrySet)
+    ... class CountrySet:
+    ...     pass
     >>> countryset_instance = CountrySet()
 
-    >>> class Country:
-    ...    implements(ICountry)
+    >>> @implementer(ICountry)
+    ... class Country:
     ...    name = 'England'
     >>> country_instance = Country()
 
-    >>> class Town:
-    ...     implements(ITown)
+    >>> @implementer(ITown)
+    ... class Town:
     ...     country = country_instance
     ...     name = 'London'
     >>> town_instance = Town()
@@ -98,7 +104,8 @@ Configure a browser:url for ITown.  Our first attempt fails because we mistyped
     >>> from zope.configuration import xmlconfig
     >>> zcmlcontext = xmlconfig.string("""
     ... <configure xmlns:browser="http://namespaces.zope.org/browser">
-    ...   <include file="lib/lp/services/webapp/meta.zcml" />
+    ...   <include package="zope.component" file="meta.zcml" />
+    ...   <include package="lp.services.webapp" file="meta.zcml" />
     ...   <browser:url
     ...       for="lp.testing.ITown"
     ...       path_expression="string:+towns/${name}"
@@ -113,7 +120,7 @@ Configure a browser:url for ITown.  Our first attempt fails because we mistyped
 
     >>> zcmlcontext = xmlconfig.string("""
     ... <configure xmlns:browser="http://namespaces.zope.org/browser">
-    ...   <include file="lib/lp/services/webapp/meta.zcml" />
+    ...   <include package="lp.services.webapp" file="meta.zcml" />
     ...   <browser:url
     ...       for="lp.testing.ITown"
     ...       path_expression="string:+towns/${name}"
@@ -125,7 +132,7 @@ Configure a browser:url for ITown.  Our first attempt fails because we mistyped
 Now, there is an ICanonicalUrlData registered for ITown.
 
     >>> town_urldata = ICanonicalUrlData(town_instance)
-    >>> from lp.services.webapp.testing import verifyObject
+    >>> from lp.testing import verifyObject
     >>> verifyObject(ICanonicalUrlData, town_urldata)
     True
     >>> town_urldata.path
@@ -147,8 +154,9 @@ at it from zcml.  I'll put it in lp.testing.
     ... <configure
     ...     xmlns="http://namespaces.zope.org/zope"
     ...     xmlns:browser="http://namespaces.zope.org/browser">
-    ...   <include file="lib/lp/services/webapp/meta.zcml" />
-    ...   <configure package="zope.app.component">
+    ...   <include package="zope.component" file="meta.zcml" />
+    ...   <include package="lp.services.webapp" file="meta.zcml" />
+    ...   <configure package="zope.security">
     ...       <include file="meta.zcml" />
     ...   </configure>
     ...   <utility
@@ -166,7 +174,7 @@ at it from zcml.  I'll put it in lp.testing.
 Now, there is an ICanonicalUrlData registered for ICountry.
 
     >>> country_urldata = ICanonicalUrlData(country_instance)
-    >>> from lp.services.webapp.testing import verifyObject
+    >>> from lp.testing import verifyObject
     >>> verifyObject(ICanonicalUrlData, country_urldata)
     True
     >>> country_urldata.path
@@ -185,9 +193,8 @@ But, here, I want to test the variant of the zcml directive that specifes
 an adapter.
 
     >>> from lp.services.webapp.interfaces import ILaunchpadRoot
-    >>> class CountrySetUrl:
-    ...
-    ...     implements(ICanonicalUrlData)
+    >>> @implementer(ICanonicalUrlData)
+    ... class CountrySetUrl:
     ...
     ...     def __init__(self, context):
     ...         self.context = context
@@ -207,7 +214,7 @@ in lp.testing.
 
     >>> zcmlcontext = xmlconfig.string("""
     ... <configure xmlns:browser="http://namespaces.zope.org/browser">
-    ...   <include file="lib/lp/services/webapp/meta.zcml" />
+    ...   <include package="lp.services.webapp" file="meta.zcml" />
     ...   <browser:url
     ...       for="lp.testing.ICountrySet"
     ...       urldata="lp.testing.CountrySetUrl"
@@ -218,7 +225,7 @@ in lp.testing.
 Now, there is an ICanonicalUrlData registered for ICountrySet.
 
     >>> countryset_urldata = ICanonicalUrlData(countryset_instance)
-    >>> from lp.services.webapp.testing import verifyObject
+    >>> from lp.testing import verifyObject
     >>> verifyObject(ICanonicalUrlData, countryset_urldata)
     True
     >>> countryset_urldata.path
@@ -248,19 +255,19 @@ and the objects it is inside of (or in other words, hierarchically below).
 
     >>> from lp.services.webapp import canonical_url
     >>> canonical_url(getUtility(ILaunchpadRoot))
-    u'http://launchpad.dev/'
+    u'http://launchpad.test/'
     >>> canonical_url(countryset_instance)
-    u'http://launchpad.dev/countries'
+    u'http://launchpad.test/countries'
     >>> canonical_url(country_instance)
-    u'http://launchpad.dev/countries/England'
+    u'http://launchpad.test/countries/England'
     >>> canonical_url(town_instance)
-    u'http://launchpad.dev/countries/England/+towns/London'
+    u'http://launchpad.test/countries/England/+towns/London'
 
 We can see that this is the mainsite rooturl as configured in launchpad.conf.
 
     >>> from lp.services.webapp.vhosts import allvhosts
     >>> print allvhosts.configs['mainsite'].rooturl
-    http://launchpad.dev/
+    http://launchpad.test/
 
 If anywhere in the chain we have an object that cannot be adapted to
 ICanonicalUrlData, a NoCanonicalUrl error is raised.
@@ -277,8 +284,8 @@ itself be adapted to ICanonicalUrlData.
 Now, we must test the case where the object can be adapted to
 ICanonicalUrlData, but its parent or its parent's parent (and so on) cannot.
 
-    >>> class ObjectThatHasUrl:
-    ...     implements(ICanonicalUrlData)
+    >>> @implementer(ICanonicalUrlData)
+    ... class ObjectThatHasUrl:
     ...     def __init__(self, name, parent):
     ...         self.path = name
     ...         self.inside = parent
@@ -353,9 +360,8 @@ getApplicationURL() from
 zope.publisher.interfaces.http.IHTTPApplicationRequest.
 
     >>> from zope.publisher.interfaces.http import IHTTPApplicationRequest
-    >>> class FakeRequest:
-    ...
-    ...     implements(IHTTPApplicationRequest)
+    >>> @implementer(IHTTPApplicationRequest)
+    ... class FakeRequest:
     ...
     ...     def __init__(self, applicationurl):
     ...         self.applicationurl = applicationurl
@@ -374,7 +380,7 @@ zope.publisher.interfaces.http.IHTTPApplicationRequest.
 
     >>> mandrill_request = FakeRequest('https://mandrill.example.org:23')
     >>> canonical_url(country_instance)
-    u'http://launchpad.dev/countries/England'
+    u'http://launchpad.test/countries/England'
     >>> canonical_url(country_instance, mandrill_request)
     u'https://mandrill.example.org:23/countries/England'
 
@@ -403,14 +409,25 @@ Overriding the rootsite from the default request:
     >>> canonical_url(country_instance)
     u'http://muppet.example.com/countries/England'
     >>> canonical_url(country_instance, rootsite='code')
-    u'http://code.launchpad.dev/countries/England'
+    u'http://code.launchpad.test/countries/England'
+
+Webapp vhost overrides can be ignored by setting the
+app.mainsite_only.canonical_url feature flag, so all links end up on
+mainsite. Non-webapp vhosts (eg. api and feeds) are unaffected.
+
+    >>> from lp.services.features.testing import MemoryFeatureFixture
+    >>> with MemoryFeatureFixture({'app.mainsite_only.canonical_url': 'on'}):
+    ...     canonical_url(country_instance, rootsite='code')
+    ...     canonical_url(country_instance, rootsite='api')
+    u'http://launchpad.test/countries/England'
+    u'http://api.launchpad.test/countries/England'
 
 Overriding the rootsite from the specified request:
 
     >>> canonical_url(country_instance, mandrill_request)
     u'https://mandrill.example.org:23/countries/England'
     >>> canonical_url(country_instance, mandrill_request, rootsite='code')
-    u'http://code.launchpad.dev/countries/England'
+    u'http://code.launchpad.test/countries/England'
 
 And if the configuration does provide a rootsite:
 
@@ -418,10 +435,8 @@ And if the configuration does provide a rootsite:
     ... <configure
     ...     xmlns="http://namespaces.zope.org/zope"
     ...     xmlns:browser="http://namespaces.zope.org/browser">
-    ...   <include file="lib/lp/services/webapp/meta.zcml" />
-    ...   <configure package="zope.app.component">
-    ...       <include file="meta.zcml" />
-    ...   </configure>
+    ...   <include package="zope.component" file="meta.zcml" />
+    ...   <include package="lp.services.webapp" file="meta.zcml" />
     ...   <utility
     ...       provides="lp.testing.ICountrySet"
     ...       component="lp.testing.countryset_instance"
@@ -436,11 +451,14 @@ And if the configuration does provide a rootsite:
     ... """)
 
     >>> canonical_url(country_instance)
-    u'http://bugs.launchpad.dev/countries/England'
+    u'http://bugs.launchpad.test/countries/England'
     >>> canonical_url(country_instance, rootsite='code')
-    u'http://code.launchpad.dev/countries/England'
+    u'http://code.launchpad.test/countries/England'
     >>> canonical_url(country_instance, mandrill_request, rootsite='code')
-    u'http://code.launchpad.dev/countries/England'
+    u'http://code.launchpad.test/countries/England'
+    >>> with MemoryFeatureFixture({'app.mainsite_only.canonical_url': 'on'}):
+    ...     canonical_url(country_instance)
+    u'http://launchpad.test/countries/England'
 
 
 == canonical_url and named views ==
@@ -449,19 +467,19 @@ The url for a particular view of an object can be generated by specifying
 the view's name.
 
     >>> canonical_url(country_instance, view_name="+map")
-    u'http://bugs.launchpad.dev/countries/England/+map'
+    u'http://bugs.launchpad.test/countries/England/+map'
 
 view_name also works when the view_name refers to a Navigation stepto,
 stepthrough, or redirection:
 
     >>> canonical_url(country_instance, view_name="+greenwich")
-    u'http://bugs.launchpad.dev/countries/England/+greenwich'
+    u'http://bugs.launchpad.test/countries/England/+greenwich'
 
     >>> canonical_url(country_instance, view_name="+capital")
-    u'http://bugs.launchpad.dev/countries/England/+capital'
+    u'http://bugs.launchpad.test/countries/England/+capital'
 
     >>> canonical_url(country_instance, view_name="+towns")
-    u'http://bugs.launchpad.dev/countries/England/+towns'
+    u'http://bugs.launchpad.test/countries/England/+towns'
 
 Giving an unregistered view name will trigger an assertion failure.
 
@@ -495,12 +513,12 @@ canonical url chain that provides at least one of the interfaces given.
 
 canonical_url() is sometimes used in code that doesn't have direct
 access to the current request, and always wants a URL that can be used
-in a browser (for example e-mail notifications or XHTML representations
+in a browser (for example email notifications or XHTML representations
 of objects). Therefore, if no request is explicitly given,
 canonical_url() returns the browser URL, even if the current request is
 a web service request
 
-    >>> from zope.app.security.principalregistry import (
+    >>> from zope.principalregistry.principalregistry import (
     ...     UnauthenticatedPrincipal)
     >>> from lp.services.webapp.interaction import setupInteraction
     >>> from lp.services.webapp.servers import WebServiceTestRequest
@@ -512,14 +530,14 @@ a web service request
     True
 
     >>> canonical_url(countryset_instance)
-    u'http://launchpad.dev/countries'
+    u'http://launchpad.test/countries'
 
 
 If an URL that can be used in the web service is required, a web service
 request has to be passed in explicitly.
 
     >>> canonical_url(countryset_instance, request=api_request)
-    u'http://api.launchpad.dev/countries'
+    u'http://api.launchpad.test/countries'
 
 It is often the case that the web application wants to provide URLs that will
 be written out onto the pages that the Javascript can process using the

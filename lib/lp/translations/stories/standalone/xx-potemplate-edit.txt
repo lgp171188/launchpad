@@ -9,7 +9,7 @@ An unpriviledged user cannot reach this page.
 
     >>> browser = setupBrowser(auth='Basic no-priv@canonical.com:test')
     >>> browser.open(
-    ...     'http://translations.launchpad.dev/evolution/trunk/+pots/'
+    ...     'http://translations.launchpad.test/evolution/trunk/+pots/'
     ...     'evolution-2.2/+edit')
     Traceback (most recent call last):
     ...
@@ -18,7 +18,7 @@ An unpriviledged user cannot reach this page.
 In fact, the "Change details" option won't even appear for them.
 
     >>> browser.open(
-    ...     'http://translations.launchpad.dev/evolution/trunk/+pots/'
+    ...     'http://translations.launchpad.test/evolution/trunk/+pots/'
     ...     'evolution-2.2/')
     >>> browser.getLink('Change details').click()
     Traceback (most recent call last):
@@ -30,19 +30,19 @@ page.
 
     >>> browser = setupBrowser(auth='Basic jordi@ubuntu.com:test')
     >>> browser.open(
-    ...     'http://translations.launchpad.dev/evolution/trunk/+pots/'
+    ...     'http://translations.launchpad.test/evolution/trunk/+pots/'
     ...     'evolution-2.2/')
     >>> browser.getLink('Change details').click()
-    >>> print browser.url
+    >>> print(browser.url)
     http://translations.../evolution/trunk/+pots/evolution-2.2/+edit
 
 The owner of a product has access to edit page for PO templates.
 
     >>> browser = setupBrowser(auth='Basic test@canonical.com:test')
     >>> browser.open(
-    ...     'http://translations.launchpad.dev/evolution/trunk/+pots/'
+    ...     'http://translations.launchpad.test/evolution/trunk/+pots/'
     ...     'evolution-2.2/+edit')
-    >>> print browser.url
+    >>> print(browser.url)
     http://translations.../evolution/trunk/+pots/evolution-2.2/+edit
 
 Owner will not see admin fields, only those fields designated for the
@@ -69,11 +69,6 @@ edit page.
     LookupError:...
 
     >>> browser.getControl(name='field.sourcepackageversion').value
-    Traceback (most recent call last):
-    ...
-    LookupError:...
-
-    >>> browser.getControl(name='field.binarypackagename').value
     Traceback (most recent call last):
     ...
     LookupError:...
@@ -126,14 +121,14 @@ The visible fields can be changed and saved.
     >>> browser.getControl(name='field.owner').value = u'name12'
     >>> browser.getControl(name='field.description').value = u'foo'
     >>> browser.getControl('Change').click()
-    >>> print browser.url
-    http://translations.launchpad.dev/evolution/trunk/+pots/evo
+    >>> print(browser.url)
+    http://translations.launchpad.test/evolution/trunk/+pots/evo
 
 The changed values will be stored and visible by accesing again the edit
 page.
 
     >>> browser.open(
-    ...     'http://translations.launchpad.dev/evolution/trunk/+pots/'
+    ...     'http://translations.launchpad.test/evolution/trunk/+pots/'
     ...     'evo/+edit')
     >>> browser.getControl(name='field.name').value
     'evo'
@@ -173,11 +168,11 @@ priority that is not in this range the form validation will inform users
 about what values are accepted for the priority field.
 
     >>> admin_browser.open(
-    ...     'http://translations.launchpad.dev/evolution/trunk/+pots/'
+    ...     'http://translations.launchpad.test/evolution/trunk/+pots/'
     ...     'evolution-2.2/+edit')
     >>> admin_browser.getControl(name='field.priority').value = '-1'
     >>> admin_browser.getControl('Change').click()
-    >>> print admin_browser.url
+    >>> print(admin_browser.url)
     http://translations.../evolution/trunk/+pots/evolution-2.2/+edit
 
     >>> print_feedback_messages(admin_browser.contents)
@@ -185,11 +180,11 @@ about what values are accepted for the priority field.
     The priority value must be between ...
 
     >>> admin_browser.open(
-    ...     'http://translations.launchpad.dev/evolution/trunk/+pots/'
+    ...     'http://translations.launchpad.test/evolution/trunk/+pots/'
     ...     'evolution-2.2/+edit')
     >>> admin_browser.getControl(name='field.priority').value = '100001'
     >>> admin_browser.getControl('Change').click()
-    >>> print admin_browser.url
+    >>> print(admin_browser.url)
     http://translations.../evolution/trunk/+pots/evolution-2.2/+edit
 
     >>> print_feedback_messages(admin_browser.contents)
@@ -206,7 +201,7 @@ previous page from you navigation.
 The edit page can be access from the templates list.
 
     >>> referrer = (
-    ...     'http://translations.launchpad.dev/evolution/trunk/+templates')
+    ...     'http://translations.launchpad.test/evolution/trunk/+templates')
     >>> admin_browser.open(referrer)
     >>> admin_browser.getLink(url='+pots/evolution-2.2/+edit').click()
     >>> admin_browser.getControl('Change').click()
@@ -218,10 +213,8 @@ was no previous page in the navigation), you will be directed to the
 template index page.
 
     >>> admin_browser.open(
-    ...   'http://translations.launchpad.dev/evolution/trunk/+pots/'
+    ...   'http://translations.launchpad.test/evolution/trunk/+pots/'
     ...   'evolution-2.2/+edit')
     >>> admin_browser.getLink('Cancel').click()
-    >>> print admin_browser.url
-    http://translations.launchpad.dev/evolution/trunk/+pots/evolution-2.2
-
-
+    >>> print(admin_browser.url)
+    http://translations.launchpad.test/evolution/trunk/+pots/evolution-2.2

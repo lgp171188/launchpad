@@ -1,4 +1,4 @@
-# Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2013 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Logic for bulk copying of source/binary publishing history data."""
@@ -13,23 +13,17 @@ __all__ = [
 
 import transaction
 from zope.component import getUtility
-from zope.interface import implements
-from zope.security.proxy import removeSecurityProxy
+from zope.interface import implementer
 
-from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.services.database.constants import UTC_NOW
+from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import (
     quote,
     sqlvalues,
     )
-from lp.services.webapp.interfaces import (
-    DEFAULT_FLAVOR,
-    IStoreSelector,
-    MAIN_STORE,
-    )
 from lp.soyuz.enums import PackagePublishingStatus
-from lp.soyuz.interfaces.archivearch import IArchiveArchSet
 from lp.soyuz.interfaces.packagecloner import IPackageCloner
+from lp.soyuz.model.publishing import BinaryPackagePublishingHistory
 
 
 def clone_packages(origin, destination, distroarchseries_list=None):
@@ -54,15 +48,13 @@ def clone_packages(origin, destination, distroarchseries_list=None):
     pkg_cloner.clonePackages(origin, destination, distroarchseries_list)
 
 
+@implementer(IPackageCloner)
 class PackageCloner:
     """Used for copying of various publishing history data across archives.
     """
 
-    implements(IPackageCloner)
-
     def clonePackages(self, origin, destination, distroarchseries_list=None,
-                      proc_families=None, sourcepackagenames=None,
-                      always_create=False):
+                      processors=None, sourcepackagenames=None):
         """Copies packages from origin to destination package location.
 
         Binary packages are only copied for the `DistroArchSeries` pairs
@@ -76,14 +68,11 @@ class PackageCloner:
             distroarchseries instances.
         @param distroarchseries_list: the binary packages will be copied
             for the distroarchseries pairs specified (if any).
-        @param proc_families: the processor families to create builds for.
-        @type proc_families: Iterable
+        @param processors: the processors to create builds for.
+        @type processors: Iterable
         @param sourcepackagenames: the sourcepackages to copy to the
             destination
         @type sourcepackagenames: Iterable
-        @param always_create: if we should create builds for every source
-            package copied, useful if no binaries are to be copied.
-        @type always_create: Boolean
         """
         # First clone the source packages.
         self._clone_source_packages(
@@ -97,22 +86,20 @@ class PackageCloner:
                     origin, destination, origin_das, destination_das,
                     sourcepackagenames)
 
-        if proc_families is None:
-            proc_families = []
+        if processors is None:
+            processors = []
 
         self._create_missing_builds(
             destination.distroseries, destination.archive,
-            distroarchseries_list, proc_families, always_create)
+            distroarchseries_list, processors)
 
-    def _create_missing_builds(
-        self, distroseries, archive, distroarchseries_list,
-        proc_families, always_create):
+    def _create_missing_builds(self, distroseries, archive,
+                               distroarchseries_list, processors):
         """Create builds for all cloned source packages.
 
         :param distroseries: the distro series for which to create builds.
         :param archive: the archive for which to create builds.
-        :param proc_families: the list of processor families for
-            which to create builds.
+        :param processors: the list of processors for which to create builds.
         """
         # Avoid circular imports.
         from lp.soyuz.interfaces.publishing import active_publishing_status
@@ -122,9 +109,9 @@ class PackageCloner:
         architectures = list(distroseries.architectures)
 
         # Filter the list of DistroArchSeries so that only the ones
-        # specified in proc_families remain
+        # specified in processors remain.
         architectures = [architecture for architecture in architectures
-             if architecture.processorfamily in proc_families]
+             if architecture.processor in processors]
 
         if len(architectures) == 0:
             return
@@ -136,16 +123,7 @@ class PackageCloner:
             distroseries=distroseries, status=active_publishing_status)
 
         for pubrec in sources_published:
-            builds = pubrec.createMissingBuilds(
-                architectures_available=architectures)
-            # If the last build was sucessful, we should create a new
-            # build, since createMissingBuilds() won't.
-            if not builds and always_create:
-                for arch in architectures:
-                    build = pubrec.sourcepackagerelease.createBuild(
-                        distro_arch_series=arch, archive=archive,
-                        pocket=PackagePublishingPocket.RELEASE)
-                    build.queueBuild(suspended=not archive.enabled)
+            pubrec.createMissingBuilds(architectures_available=architectures)
             # Commit to avoid MemoryError: bug 304459
             transaction.commit()
 
@@ -170,7 +148,6 @@ class PackageCloner:
             the copy to
         @type sourcepackagenames: Iterable
         """
-        store = getUtility(IStoreSelector).get(MAIN_STORE, DEFAULT_FLAVOR)
         use_names = (sourcepackagenames and len(sourcepackagenames) > 0)
         clause_tables = "FROM BinaryPackagePublishingHistory AS bpph"
         if use_names:
@@ -180,6 +157,9 @@ class PackageCloner:
                 SourcePackageRelease AS spr,
                 SourcePackageName AS spn
                 """
+        # We do not need to set phased_update_percentage; that is heavily
+        # context-dependent and should be set afresh for the new location if
+        # required.
         query = """
             INSERT INTO BinaryPackagePublishingHistory (
                 binarypackagerelease, distroarchseries, status,
@@ -222,7 +202,7 @@ class PackageCloner:
                 AND spn.name IN %s
             """ % sqlvalues(sourcepackagenames)
 
-        store.execute(query)
+        IStore(BinaryPackagePublishingHistory).execute(query)
 
     def mergeCopy(self, origin, destination):
         """Please see `IPackageCloner`."""
@@ -231,7 +211,7 @@ class PackageCloner:
         self.packageSetDiff(origin, destination)
 
         # Now copy the fresher or new packages.
-        store = getUtility(IStoreSelector).get(MAIN_STORE, DEFAULT_FLAVOR)
+        store = IStore(BinaryPackagePublishingHistory)
         store.execute("""
             INSERT INTO SourcePackagePublishingHistory (
                 sourcepackagerelease, distroseries, status, component,
@@ -265,17 +245,9 @@ class PackageCloner:
             """ % sqlvalues(
                 PackagePublishingStatus.SUPERSEDED, UTC_NOW))
 
-        def get_family(archivearch):
-            """Extract the processor family from an `IArchiveArch`."""
-            return removeSecurityProxy(archivearch).processorfamily
-
-        proc_families = [
-            get_family(archivearch) for archivearch
-            in getUtility(IArchiveArchSet).getByArchive(destination.archive)]
-
         self._create_missing_builds(
             destination.distroseries, destination.archive, (),
-            proc_families, False)
+            destination.archive.processors)
 
     def _compute_packageset_delta(self, origin):
         """Given a source/target archive find obsolete or missing packages.
@@ -283,7 +255,7 @@ class PackageCloner:
         This means finding out which packages in a given source archive are
         fresher or new with respect to a target archive.
         """
-        store = getUtility(IStoreSelector).get(MAIN_STORE, DEFAULT_FLAVOR)
+        store = IStore(BinaryPackagePublishingHistory)
         # The query below will find all packages in the source archive that
         # are fresher than their counterparts in the target archive.
         find_newer_packages = """
@@ -370,7 +342,7 @@ class PackageCloner:
         table that lists what packages exist in the target archive
         (additionally considering the distroseries, pocket and component).
         """
-        store = getUtility(IStoreSelector).get(MAIN_STORE, DEFAULT_FLAVOR)
+        store = IStore(BinaryPackagePublishingHistory)
         # Use a temporary table to hold the data needed for the package set
         # delta computation. This will prevent multiple, parallel delta
         # calculations from interfering with each other.
@@ -446,7 +418,7 @@ class PackageCloner:
         @param sourcepackagenames: List of source packages to restrict
             the copy to
         """
-        store = getUtility(IStoreSelector).get(MAIN_STORE, DEFAULT_FLAVOR)
+        store = IStore(BinaryPackagePublishingHistory)
         query = '''
             INSERT INTO SourcePackagePublishingHistory (
                 sourcepackagerelease, distroseries, status, component,
@@ -507,7 +479,7 @@ class PackageCloner:
     def packageSetDiff(self, origin, destination, logger=None):
         """Please see `IPackageCloner`."""
         # Find packages that are obsolete or missing in the target archive.
-        store = getUtility(IStoreSelector).get(MAIN_STORE, DEFAULT_FLAVOR)
+        store = IStore(BinaryPackagePublishingHistory)
         self._init_packageset_delta(destination)
         self._compute_packageset_delta(origin)
 

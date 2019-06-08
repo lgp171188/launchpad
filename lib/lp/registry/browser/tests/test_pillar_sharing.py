@@ -1,11 +1,10 @@
-# Copyright 2012 Canonical Ltd. This software is licensed under the
+# Copyright 2012-2015 Canonical Ltd. This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test views that manage sharing."""
 
 __metaclass__ = type
 
-from BeautifulSoup import BeautifulSoup
 from fixtures import FakeLogger
 from lazr.restful.interfaces import IJSONRequestCache
 from lazr.restful.utils import get_current_web_service_request
@@ -19,22 +18,24 @@ from testtools.matchers import (
 from zope.component import getUtility
 from zope.traversing.browser.absoluteurl import absoluteURL
 
+from lp.app.enums import InformationType
 from lp.app.interfaces.services import IService
 from lp.registry.enums import (
     BranchSharingPolicy,
     BugSharingPolicy,
-    InformationType,
     )
 from lp.registry.interfaces.accesspolicy import IAccessPolicyGrantFlatSource
 from lp.registry.model.pillar import PillarPerson
+from lp.services.beautifulsoup import BeautifulSoup
 from lp.services.config import config
-from lp.services.database.lpstorm import IStore
 from lp.services.webapp.interfaces import StormRangeFactoryError
 from lp.services.webapp.publisher import canonical_url
 from lp.testing import (
     login_person,
     logout,
+    normalize_whitespace,
     person_logged_in,
+    record_two_runs,
     StormStatementRecorder,
     TestCaseWithFactory,
     )
@@ -75,11 +76,13 @@ class SharingBaseTestCase(TestCaseWithFactory):
         return grantee
 
     def makeArtifactGrantee(self, grantee=None, with_bug=True,
-                            with_branch=False, security=False):
+                            with_branch=False, with_gitrepository=True,
+                            security=False):
         if grantee is None:
             grantee = self.factory.makePerson()
 
         branch = None
+        gitrepository = None
         bug = None
         artifacts = []
 
@@ -89,6 +92,13 @@ class SharingBaseTestCase(TestCaseWithFactory):
                 information_type=InformationType.PRIVATESECURITY)
             artifacts.append(
                 self.factory.makeAccessArtifact(concrete=branch))
+
+        if with_gitrepository and self.pillar_type == 'product':
+            gitrepository = self.factory.makeGitRepository(
+                target=self.pillar, owner=self.pillar.owner,
+                information_type=InformationType.PRIVATESECURITY)
+            artifacts.append(
+                self.factory.makeAccessArtifact(concrete=gitrepository))
 
         if with_bug:
             if security:
@@ -120,7 +130,7 @@ class PillarSharingDetailsMixin:
     """Test the pillar sharing details view."""
 
     def getPillarPerson(self, person=None, security=False):
-        person = self.makeArtifactGrantee(person, True, True, security)
+        person = self.makeArtifactGrantee(person, True, True, True, security)
         return PillarPerson(self.pillar, person)
 
     def test_view_filters_security_wisely(self):
@@ -144,7 +154,7 @@ class PillarSharingDetailsMixin:
         expected = "Sharing details for %s : Sharing : %s" % (
                 pillarperson.person.displayname,
                 pillarperson.pillar.displayname)
-        url = 'http://launchpad.dev/%s/+sharing/%s' % (
+        url = 'http://launchpad.test/%s/+sharing/%s' % (
             pillarperson.pillar.name, pillarperson.person.name)
         browser = self.getUserBrowser(user=self.owner, url=url)
         self.assertEqual(expected, browser.title)
@@ -156,11 +166,12 @@ class PillarSharingDetailsMixin:
         # encounters.
         pillarperson = PillarPerson(
             self.pillar, self.factory.makePerson())
-        url = 'http://launchpad.dev/%s/+sharing/%s' % (
+        url = 'http://launchpad.test/%s/+sharing/%s' % (
             pillarperson.pillar.name, pillarperson.person.name)
         browser = self.getUserBrowser(user=self.owner, url=url)
         self.assertIn(
-            'There are no shared bugs or branches.', browser.contents)
+            'There are no shared bugs, Bazaar branches, Git repositories, or '
+            'blueprints.', normalize_whitespace(browser.contents))
 
     def test_init_works(self):
         # The view works with a feature flag.
@@ -202,19 +213,25 @@ class PillarSharingDetailsMixin:
                 'web_link': canonical_url(branch, path_only_if_possible=True),
                 'self_link': absoluteURL(branch, request),
             }, cache.objects.get('branches')[0])
+            gitrepository = list(view.gitrepositories)[0]
+            self.assertEqual({
+                'repository_id': gitrepository.id,
+                'repository_name': gitrepository.unique_name,
+                'information_type': gitrepository.information_type.title,
+                'web_link': canonical_url(
+                    gitrepository, path_only_if_possible=True),
+                'self_link': absoluteURL(gitrepository, request),
+            }, cache.objects.get('gitrepositories')[0])
 
     def test_view_query_count(self):
         # Test that the view bulk loads artifacts.
         person = self.factory.makePerson()
-        for x in range(0, 15):
-            self.makeArtifactGrantee(person, True, True, False)
         pillarperson = PillarPerson(self.pillar, person)
-
-        # Invalidate the Storm cache and check the query count.
-        IStore(self.pillar).invalidate()
-        with StormStatementRecorder() as recorder:
-            create_initialized_view(pillarperson, '+index')
-        self.assertThat(recorder, HasQueryCount(LessThan(13)))
+        recorder1, recorder2 = record_two_runs(
+            lambda: create_initialized_view(pillarperson, '+index'),
+            lambda: self.makeArtifactGrantee(person, True, True, True, False),
+            5, login_method=lambda: login_person(self.owner))
+        self.assertThat(recorder2, HasQueryCount.byEquality(recorder1))
 
 
 class TestProductSharingDetailsView(
@@ -242,10 +259,10 @@ class PillarSharingViewTestMixin:
 
     def test_sharing_menu(self):
         url = canonical_url(self.pillar)
+        sharing_url = canonical_url(self.pillar, view_name='+sharing')
         browser = setupBrowserForUser(user=self.driver)
         browser.open(url)
         soup = BeautifulSoup(browser.contents)
-        sharing_url = canonical_url(self.pillar, view_name='+sharing')
         sharing_menu = soup.find('a', {'href': sharing_url})
         self.assertIsNotNone(sharing_menu)
 
@@ -268,6 +285,8 @@ class PillarSharingViewTestMixin:
         self.assertIsNotNone(cache.objects.get('branch_sharing_policies'))
         self.assertIsNotNone(cache.objects.get('bug_sharing_policies'))
         self.assertIsNotNone(cache.objects.get('sharing_permissions'))
+        self.assertIsNotNone(
+            cache.objects.get('specification_sharing_policies'))
         batch_size = config.launchpad.default_batch_size
         apgfs = getUtility(IAccessPolicyGrantFlatSource)
         grantees = apgfs.findGranteePermissionsByPolicy(
@@ -304,7 +323,7 @@ class PillarSharingViewTestMixin:
         view = create_view(self.pillar, name='+sharing')
         with StormStatementRecorder() as recorder:
             view.initialize()
-        self.assertThat(recorder, HasQueryCount(LessThan(10)))
+        self.assertThat(recorder, HasQueryCount(LessThan(11)))
 
     def test_view_invisible_information_types(self):
         # Test the expected invisible information type  data is in the
@@ -317,6 +336,30 @@ class PillarSharingViewTestMixin:
         self.assertContentEqual(
             ['Private Security', 'Private'],
             cache.objects.get('invisible_information_types'))
+
+    def run_sharing_message_test(self, pillar, owner, public):
+        with person_logged_in(owner):
+            public_pillar_sharing_info = (
+                "Everyone can see %s's public information."
+                % pillar.displayname)
+            url = canonical_url(pillar, view_name='+sharing')
+        browser = setupBrowserForUser(user=owner)
+        browser.open(url)
+        if public:
+            self.assertTrue(public_pillar_sharing_info in browser.contents)
+            self.assertFalse(
+                "This project has no public information." in browser.contents)
+        else:
+            self.assertFalse(public_pillar_sharing_info in browser.contents)
+            self.assertTrue(
+                "This project has no public information." in browser.contents)
+
+    def test_who_its_shared_with__public_pillar(self):
+        # For public projects and distributions, the sharing page
+        # shows the message "Everyone can see project's public
+        # information".
+        self.run_sharing_message_test(
+            self.pillar, self.pillar.owner, public=True)
 
 
 class TestProductSharingView(PillarSharingViewTestMixin,
@@ -357,6 +400,12 @@ class TestProductSharingView(PillarSharingViewTestMixin,
             'p', {'id': 'non-commercial-project-text'})
         self.assertIsNotNone(commercial_text)
         self.assertIsNone(non_commercial_text)
+
+    def test_who_its_shared_with__proprietary_product(self):
+        owner = self.factory.makePerson()
+        product = self.factory.makeProduct(
+            owner=owner, information_type=InformationType.PROPRIETARY)
+        self.run_sharing_message_test(product, owner, public=False)
 
 
 class TestDistributionSharingView(PillarSharingViewTestMixin,

@@ -1,8 +1,6 @@
 # Copyright 2009 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-# pylint: disable-msg=E0611,W0212
-
 __metaclass__ = type
 __all__ = ['BugAttachment', 'BugAttachmentSet']
 
@@ -17,7 +15,7 @@ from sqlobject import (
     )
 from storm.store import Store
 from zope.event import notify
-from zope.interface import implements
+from zope.interface import implementer
 
 from lp.app.errors import NotFoundError
 from lp.bugs.interfaces.bugattachment import (
@@ -30,10 +28,9 @@ from lp.services.database.sqlbase import SQLBase
 from lp.services.propertycache import cachedproperty
 
 
+@implementer(IBugAttachment)
 class BugAttachment(SQLBase):
     """A bug attachment."""
-
-    implements(IBugAttachment)
 
     _table = 'BugAttachment'
 
@@ -85,10 +82,9 @@ class BugAttachment(SQLBase):
         raise NotFoundError(filename)
 
 
+@implementer(IBugAttachmentSet)
 class BugAttachmentSet:
     """A set for bug attachments."""
-
-    implements(IBugAttachmentSet)
 
     def __getitem__(self, attach_id):
         """See IBugAttachmentSet."""

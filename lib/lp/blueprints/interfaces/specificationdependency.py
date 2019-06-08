@@ -1,8 +1,6 @@
 # Copyright 2009 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-# pylint: disable-msg=E0211,E0213
-
 """Interfaces for creating a dependency for a given specification. The
 dependency is a second specification, so this is really a way of storing the
 order in which specs must be implemented. No attempt is made to prevent
@@ -17,7 +15,7 @@ __all__ = [
     ]
 
 from zope.interface import (
-    implements,
+    implementer,
     Interface,
     )
 from zope.schema import (
@@ -52,8 +50,8 @@ class ISpecificationDependencyRemoval(Interface):
         vocabulary='SpecificationDependencies')
 
 
+@implementer(ISpecificationDependencyRemoval)
 class SpecDependencyIsAlsoRemoval:
-    implements(ISpecificationDependencyRemoval)
 
     def __init__(self, specdep):
         self.specdep = specdep
@@ -65,4 +63,3 @@ class SpecDependencyIsAlsoRemoval:
     @property
     def dependency(self):
         return self.specdep.dependency
-

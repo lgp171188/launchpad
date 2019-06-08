@@ -2,9 +2,9 @@
 It is possible for anybody to upload a BLOB to Launchpad which will be
 stored for a short period of time, and deleted if unused.
 
-    >>> anon_browser.open('http://launchpad.dev/+storeblob')
+    >>> anon_browser.open('http://launchpad.test/+storeblob')
     >>> anon_browser.url
-    'http://launchpad.dev/+storeblob'
+    'http://launchpad.test/+storeblob'
 
 And we test the ability to upload a blob. We have a \0 character in the
 middle of the data so we can ensure binary data is handled correctly.
@@ -17,7 +17,8 @@ middle of the data so we can ensure binary data is handled correctly.
     >>> anon_browser.getControl('Continue').click()
 
     >>> import re
-    >>> match = re.search('Your ticket is "([\w-]+)"', anon_browser.contents)
+    >>> match = re.search(
+    ...     'Your ticket is &quot;([\w-]+)&quot;', anon_browser.contents)
     >>> match is not None
     True
     >>> ticket = match.group(1)

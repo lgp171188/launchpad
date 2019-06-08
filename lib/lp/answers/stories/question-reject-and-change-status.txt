@@ -4,42 +4,42 @@ Answer contacts and administrators can reject a question.
 This should be done when the question isn't an actual pertinent question
 for the product. For example, if the question is a duplicate or spam.
 
-No Privileges Person isn't an answer contact or administrator, so he
-doesn't have access to that feature.
+No Privileges Person isn't an answer contact or administrator, so they
+don't have access to that feature.
 
-    >>> user_browser.open('http://launchpad.dev/firefox/+question/2')
+    >>> user_browser.open('http://launchpad.test/firefox/+question/2')
     >>> user_browser.getLink('Reject question')
     Traceback (most recent call last):
       ...
     LinkNotFoundError...
 
-Even when trying to access the page directly, he will get an unauthorized
+Even when trying to access the page directly, they will get an unauthorized
 error.
 
     >>> user_browser.open(
-    ...     'http://launchpad.dev/firefox/+question/2/+reject')
+    ...     'http://launchpad.test/firefox/+question/2/+reject')
     Traceback (most recent call last):
       ...
     Unauthorized: ...
 
 To reject the question, the user clicks on the 'Reject Question' link.
 
-    >>> admin_browser.open('http://answers.launchpad.dev/firefox/+question/2')
+    >>> admin_browser.open('http://answers.launchpad.test/firefox/+question/2')
     >>> admin_browser.getLink('Reject question').click()
     >>> admin_browser.getControl('Reject').click()
 
-He needs to enter a message explaining the rejection:
+They need to enter a message explaining the rejection:
 
     >>> for message in find_tags_by_class(admin_browser.contents, 'message'):
-    ...     print message.renderContents()
+    ...     print(message.renderContents())
     There is 1 error.
     You must provide an explanation message.
 
 At this point the user might decide this is a bad idea, so there is a
-cancel link to take him back to the question:
+cancel link to take them back to the question:
 
-    >>> print admin_browser.getLink('Cancel').url
-    http://answers.launchpad.dev/firefox/+question/2
+    >>> print(admin_browser.getLink('Cancel').url)
+    http://answers.launchpad.test/firefox/+question/2
 
 Entering an explanation message and clicking the 'Reject' button,
 will reject the question.
@@ -51,14 +51,14 @@ will reject the question.
 Once the question is rejected, a confirmation message is shown;
 
     >>> for message in find_tags_by_class(admin_browser.contents, 'message'):
-    ...     print message.renderContents()
+    ...     print(message.renderContents())
     You have rejected this question.
 
 its status is changed to 'Invalid';
 
     >>> def print_question_status(browser):
-    ...     print extract_text(
-    ...         find_tag_by_id(browser.contents, 'question-status'))
+    ...     print(extract_text(
+    ...         find_tag_by_id(browser.contents, 'question-status')))
 
     >>> print_question_status(admin_browser)
     Status: Invalid ...
@@ -66,22 +66,22 @@ its status is changed to 'Invalid';
 and the rejection message is added to the question board.
 
     >>> content = find_main_content(admin_browser.contents)
-    >>> print content.findAll('div', 'boardCommentBody')[-1].renderContents()
-    <p>Rejecting because it's a duplicate of <a...>bug #1</a>.</p>
+    >>> print(content.findAll('div', 'boardCommentBody')[-1].renderContents())
+    <p>Rejecting because it&#x27;s a duplicate of <a...>bug #1</a>.</p>
 
 The call to help with this problem is not displayed.
 
-    >>> print content.find(id='can-you-help-with-this-problem')
+    >>> print(content.find(id='can-you-help-with-this-problem'))
     None
 
 Selecting the 'Reject' action again, will simply display a message
 stating that the question is already rejected:
 
     >>> admin_browser.getLink('Reject question').click()
-    >>> print admin_browser.url
-    http://answers.launchpad.dev/firefox/+question/2
+    >>> print(admin_browser.url)
+    http://answers.launchpad.test/firefox/+question/2
     >>> for message in find_tags_by_class(admin_browser.contents, 'message'):
-    ...     print message.renderContents()
+    ...     print(message.renderContents())
     The question is already rejected.
 
 = Changing the Question Status =
@@ -97,7 +97,7 @@ set the question status to an arbitrary value without workflow constraint.
 
 That action isn't available to a non-privileged user:
 
-    >>> browser.open('http://launchpad.dev/firefox/+question/2')
+    >>> browser.open('http://launchpad.test/firefox/+question/2')
     >>> browser.getLink('Change status')
     Traceback (most recent call last):
       ...
@@ -106,7 +106,7 @@ That action isn't available to a non-privileged user:
 The change status form is available to an administrator through the
 'Change status' link.
 
-    >>> admin_browser.open('http://launchpad.dev/firefox/+question/2')
+    >>> admin_browser.open('http://launchpad.test/firefox/+question/2')
     >>> admin_browser.getLink('Change status').click()
 
 The form has a select widget displaying the current status.
@@ -116,17 +116,17 @@ The form has a select widget displaying the current status.
 
 There is also a cancel link should the user decide otherwise:
 
-    >>> print admin_browser.getLink('Cancel').url
-    http://answers.launchpad.dev/firefox/+question/2
+    >>> print(admin_browser.getLink('Cancel').url)
+    http://answers.launchpad.test/firefox/+question/2
 
 The user needs to select a status and enter a message explaining the
 status change:
 
     >>> admin_browser.getControl('Change Status').click()
     >>> for error in find_tags_by_class(admin_browser.contents, 'message'):
-    ...     print error.renderContents()
+    ...     print(error.renderContents())
     There are 2 errors.
-    You didn't change the status.
+    You didn&#x27;t change the status.
     You must provide an explanation message.
 
 To correct the mistake of the previous example, the administrator would
@@ -141,7 +141,7 @@ select back the 'Open' status and provide an appropriate message:
 Once the operation is completed, a confirmation message is displayed;
 
     >>> for message in find_tags_by_class(admin_browser.contents, 'message'):
-    ...     print message.renderContents()
+    ...     print(message.renderContents())
     Question status updated.
 
 its status is updated;
@@ -152,6 +152,6 @@ its status is updated;
 and the explanation message is added to the question discussion:
 
     >>> content = find_main_content(admin_browser.contents)
-    >>> print content.findAll('div', 'boardCommentBody')[-1].renderContents()
-    <p>Setting status back to 'Open'. Questions similar to a bug report
-    should be linked to it, not rejected.</p>
+    >>> print(content.findAll('div', 'boardCommentBody')[-1].renderContents())
+    <p>Setting status back to &#x27;Open&#x27;. Questions similar to a
+    bug report should be linked to it, not rejected.</p>

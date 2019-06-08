@@ -1,8 +1,9 @@
-# Copyright 2010 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2017 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Unit tests for methods of BranchMergeProposal."""
 
+from __future__ import absolute_import, print_function, unicode_literals
 
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
@@ -11,8 +12,11 @@ from lp.code.interfaces.linkedbranch import ICanHasLinkedBranch
 from lp.code.tests.test_branch import PermissionTest
 from lp.registry.interfaces.person import IPersonSet
 from lp.registry.interfaces.pocket import PackagePublishingPocket
+from lp.services.webapp.authorization import check_permission
 from lp.soyuz.interfaces.archivepermission import IArchivePermissionSet
 from lp.testing import (
+    admin_logged_in,
+    person_logged_in,
     run_with_login,
     with_celebrity_logged_in,
     )
@@ -75,6 +79,20 @@ class TestEditMergeProposal(PermissionTest):
         self.assertCanEdit(person, proposal.target_branch)
         # And that means they can edit the proposal too
         self.assertCanEdit(person, proposal)
+
+    def test_reviewer_can_edit_git_merge_proposal(self):
+        person = self.factory.makePerson()
+        product = self.factory.makeProduct()
+        [target] = self.factory.makeGitRefs(target=product)
+        [source] = self.factory.makeGitRefs(target=product)
+        mp = self.factory.makeBranchMergeProposalForGit(
+            source_ref=source, target_ref=target)
+        with person_logged_in(person):
+            self.assertFalse(check_permission('launchpad.Edit', mp))
+        with admin_logged_in():
+            target.repository.reviewer = person
+        with person_logged_in(person):
+            self.assertTrue(check_permission('launchpad.Edit', mp))
 
 
 class TestViewMergeProposal(PermissionTest):

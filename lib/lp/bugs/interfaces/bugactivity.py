@@ -1,8 +1,6 @@
 # Copyright 2009 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-# pylint: disable-msg=E0211,E0213
-
 """Bug activity interfaces."""
 
 __metaclass__ = type
@@ -16,7 +14,10 @@ from lazr.restful.declarations import (
     export_as_webservice_entry,
     exported,
     )
-from zope.interface import Interface
+from zope.interface import (
+    Attribute,
+    Interface,
+    )
 from zope.schema import (
     Datetime,
     Text,
@@ -42,10 +43,11 @@ class IBugActivity(Interface):
                  description=_("The date on which this activity occurred."),
                  readonly=True))
 
+    personID = Attribute('DB ID for Person')
     person = exported(PersonChoice(
         title=_('Person'), required=True, vocabulary='ValidPersonOrTeam',
         readonly=True, description=_("The person's Launchpad ID or "
-        "e-mail address.")))
+        "email address.")))
 
     whatchanged = exported(
         TextLine(title=_('What Changed'),

@@ -1,4 +1,4 @@
-# Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -17,7 +17,7 @@ import pytz
 from storm.exceptions import TimeoutError
 import transaction
 from zope.component import getUtility
-from zope.interface import implements
+from zope.interface import implementer
 
 from lp.registry.interfaces.person import (
     IPersonSet,
@@ -25,6 +25,7 @@ from lp.registry.interfaces.person import (
     )
 from lp.registry.interfaces.sourcepackage import ISourcePackageFactory
 from lp.services.config import config
+from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import (
     cursor,
     quote,
@@ -98,14 +99,14 @@ def is_identical_translation(existing_msg, new_msg):
         return False
     length_overlap = min(
         len(existing_msg.translations), len(new_msg.translations))
-    for pluralform_index in xrange(length_overlap):
+    for pluralform_index in range(length_overlap):
         # Plural forms that both messages have.  Translations for each
         # must match.
         existing_text = existing_msg.translations[pluralform_index]
         new_text = new_msg.translations[pluralform_index]
         if existing_text != new_text:
             return False
-    for pluralform_index in xrange(length_overlap, len(new_msg.translations)):
+    for pluralform_index in range(length_overlap, len(new_msg.translations)):
         # Plural forms that exist in new_translations but not in
         # existing_translations.  That's okay, as long as all of them are
         # None.
@@ -143,11 +144,11 @@ class ExistingPOFileInDatabase:
         msgstr_joins = [
             "LEFT OUTER JOIN POTranslation AS pt%d "
             "ON pt%d.id = TranslationMessage.msgstr%d" % (form, form, form)
-            for form in xrange(TranslationConstants.MAX_PLURAL_FORMS)]
+            for form in range(TranslationConstants.MAX_PLURAL_FORMS)]
 
         translations = [
             "pt%d.translation AS translation%d" % (form, form)
-            for form in xrange(TranslationConstants.MAX_PLURAL_FORMS)]
+            for form in range(TranslationConstants.MAX_PLURAL_FORMS)]
 
         substitutions = {
             'translation_columns': ', '.join(translations),
@@ -232,7 +233,7 @@ class ExistingPOFileInDatabase:
                 message.msgid_singular = msgid
                 message.msgid_plural = msgid_plural
 
-            for plural in xrange(TranslationConstants.MAX_PLURAL_FORMS):
+            for plural in range(TranslationConstants.MAX_PLURAL_FORMS):
                 msgstr = msgstrs.get(plural, None)
                 if (msgstr is not None and
                     ((len(message.translations) > plural and
@@ -243,12 +244,6 @@ class ExistingPOFileInDatabase:
     def markMessageAsSeen(self, message):
         """Marks a message as seen in the import, to avoid expiring it."""
         self.seen.add(self._getMessageKey(message))
-
-    def getUnseenMessages(self):
-        """Return a set of messages present in the database but not seen
-        in the file being imported.
-        """
-        return self.current_messages - self.seen
 
     def _getMessageKey(self, message):
         """Return tuple identifying `message`.
@@ -272,10 +267,9 @@ class ExistingPOFileInDatabase:
             return is_identical_translation(msg_in_db, message)
 
 
+@implementer(ITranslationImporter)
 class TranslationImporter:
     """Handle translation resources imports."""
-
-    implements(ITranslationImporter)
 
     @cachedproperty
     def supported_file_extensions(self):
@@ -373,7 +367,7 @@ class FileImporter(object):
     """
 
     def __init__(self, translation_import_queue_entry,
-                 importer, logger = None):
+                 importer, logger=None):
         """Base constructor to set up common attributes and parse the imported
         file into a member variable (self.translation_file).
 
@@ -536,6 +530,10 @@ class FileImporter(object):
             potmsgset.singular_text, message_data.translations,
             self.pofile.language.pluralforms)
 
+        # Flush the store now because flush order rules can cause messages
+        # to be flushed before the potmsgset arrives in the database.
+        IStore(potmsgset).flush()
+
         if potmsgset.is_translation_credit:
             # Translation credits cannot be added as suggestions.
             return self._storeCredits(potmsgset, sanitized_translations)
@@ -680,7 +678,7 @@ class POTFileImporter(FileImporter):
             message._translations = None
 
         if len(message.flags) > 0:
-            flags_comment = u", "+u", ".join(message.flags)
+            flags_comment = u", " + u", ".join(message.flags)
         else:
             flags_comment = u""
 

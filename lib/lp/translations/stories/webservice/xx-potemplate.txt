@@ -34,7 +34,7 @@ Anonymous users have read access to PO templates attributes.
 
     >>> translation_files = anon_webservice.get(
     ...     potemplate['translation_files_collection_link']).jsonBody()
-    >>> print translation_files['total_size']
+    >>> print(translation_files['total_size'])
     9
     >>> print(translation_files['entries'][0]['resource_type_link'])
     http://.../#translation_file
@@ -71,14 +71,16 @@ All translation templates for a product series are available using the
 
     >>> login('admin@canonical.com')
     >>> productseries = factory.makeProductSeries()
+    >>> productseries_name = productseries.name
+    >>> product_name = productseries.product.name
     >>> potemplate_1 = factory.makePOTemplate(productseries=productseries)
     >>> potemplate_2 = factory.makePOTemplate(productseries=productseries)
     >>> potemplate_count = 2
     >>> logout()
     >>> all_translation_templates = anon_webservice.named_get(
     ...     '/%s/%s' % (
-    ...         productseries.product.name,
-    ...         productseries.name),
+    ...         product_name,
+    ...         productseries_name),
     ...     'getTranslationTemplates'
     ...     ).jsonBody()
     >>> api_count = all_translation_templates['total_size']
@@ -116,4 +118,3 @@ All translation templates for a source package are available using the
     True
     >>> print(all_translation_templates['entries'][0]['resource_type_link'])
     http://.../#translation_template
-

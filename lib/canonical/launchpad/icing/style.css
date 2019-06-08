@@ -27,13 +27,19 @@
  */
 div#edit-description,
 div#edit-commit_message {
-    font-family: 'Ubuntu Mono', monospace;
+    font-family: monospace;
     margin: 1em 0;
     }
 
 .yui3-ieditor-multiline .yui3-ieditor-input {
     top: 0;
     }
+
+.unselectable {
+  -moz-user-select: none;
+  -webkit-user-select: none;
+  -ms-user-select: none;
+}
 
 /* === Fonts and colors === */
 
@@ -64,8 +70,22 @@ dd .whiteboard {
     padding-left: 1em;
 }
 
+form label {
+    font-weight: bold;
+}
+
 form.primary.search {
     margin-bottom: 2em;
+}
+
+.infobox {
+    color: #666;
+    display: inline-block;
+    padding: 0.5em 0.5em 0.5em 2em;
+    background: url(/@@/info) 0.5em 0.5em no-repeat;
+    background-color: rgb(249, 249, 249);
+    border: 1px solid #ddd;
+    border-radius: 3px
 }
 
 div#bugs-search-form.dynamic_bug_listing {
@@ -237,21 +257,30 @@ a.bg-image {
     width:2%;
     border-left: 1px solid #ddd;
 }
+.boardCommentDetails .editorShortcutTip {
+    float: right;
+    font-size: 0.9em;
+    color: gray;
+}
 .boardCommentBody {padding: 0.5em 12px 0;}
-.boardBugActivityBody {
+.boardCommentActivity {
   padding: 0.5em 12px;
   background-color: #fafafa;
 }
-.boardBugActivityBody table {
+.boardCommentActivity table {
   margin-bottom: 0.5em;
   margin-top: 0.5em;
 }
 .boardCommentContent { line-height: 1.4em;}
 .boardCommentFooter {
-  background-color: #eee;
+  background-color: #F8F8F8;
   color: #666;
-  padding: 0.5em 12px;
+  padding: 0.15em 12px;
   border-top: 1px solid #ddd;
+  text-align: right;
+}
+.boardCommentFooter a {
+  margin-left: 1.5em;
 }
 .from-superseded {background-color: #ffffcc;}
 .adminHiddenComment {background-color:gray;}
@@ -437,6 +466,9 @@ a.update-retry {
     overflow: hidden;
     display: block;
 }
+#ppa-install .ppa-reference {
+    white-space: nowrap;
+}
 
 /* Brand the related PPA versions with the PPA icon (not currently
    in the sprite image.) */
@@ -485,7 +517,7 @@ div.logtail {
     padding: 5px;
     border: solid gray;
     border-width: 1px;
-    font-family: 'Ubuntu Mono', monospace;
+    font-family: monospace;
     border-radius: 5px;
 }
 
@@ -526,17 +558,36 @@ div.ppa-packaging-tmp-actions .portlet {
 
 /* --- Code --- */
 
+code.command {
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+    color: #626262;
+    padding: 4px;
+    font-family: "DejaVu Sans Mono", "Courier New", monospace;
+    font-size: 1.05em;
+}
+code.command-block {
+    display: block;
+    margin-bottom: 1em;
+    padding: 6px;
+}
+code.command-block:last-child {
+    margin: 0;
+}
 table.code {
     margin-bottom: 1em;
-    }
+}
 table.code th {
     text-align: left;
     font-weight: bold;
-    }
+}
 table.code th, table.code td {
     padding-right: 3em;
-    }
-
+}
+#git-expander-content {
+    margin-top: 1em;
+}
 .branch-no-dev-focus {
   background: #FFF59C;
   vertical-align: middle;
@@ -569,9 +620,6 @@ table.code th, table.code td {
 .commentVote {
   float: right;
 }
-.replyLink {
-  text-align: right;
-}
 .codereviewcomment .attachment, #review-diff .attachment,
 div.diff .attachmentBody {
   background-color: #f6f6f6;
@@ -587,18 +635,69 @@ table.diff {
    background-color: white;
    margin-bottom: 0.5em;
 }
+table.unidiff {
+   table-layout: fixed;
+}
+
+table.diff .nav-cursor:before {
+   content: "\0025B6";
+   font-weight: bold;
+   display: block;
+   float: left;
+   margin-left: 1.25em;
+}
 table.diff .text { padding-left: 0.5em; }
-table.diff .line-no {
+table.diff .line-no, table.diff .ss-line-no {
   text-align: right;
   background-color: #f6f6f6;
   color: #999;
   border-right: solid 4px white;
+  width: 4em;
+  cursor: pointer;
+}
+
+table.diff .line-no.active {
+  background: url(/@@/add) #f6f6f6 center left no-repeat;
 }
 table.diff .diff-chunk, table.diff .diff-file, table.diff .diff-header {
  font-weight: bold;
 }
 table.diff .diff-added { background-color: #92ED92; }
 table.diff .diff-removed { background-color: #FF7F7F; }
+table.diff .inline-comments > td > div {
+  margin: 0 1em 1.5em 1em;
+}
+table.diff .inline-comments .yui3-ieditor { padding-right:0!important; }
+table.diff .inline-comments .yui3-ieditor-multiline .yui3-ieditor-btns
+    .bg-top-label button.lazr-btn {
+  word-wrap: normal;
+}
+table.diff .inline-comments .boardComment {
+  margin: 1em 0;
+}
+table.diff .inline-comments .boardCommentBody {
+  word-wrap: break-word;
+  font-family: monospace;
+  padding-bottom: 0.5em;
+}
+table.diff .inline-comments .yui3-ieditor-multiline .yui3-ieditor-btns
+    .bg-top-label {
+  background-image: none!important;
+  margin-right: -7px!important;
+  margin-top: 18px!important;
+}
+table.diff .inline-comments .yui3-ieditor-input textarea {
+  width: 92%;
+  max-width: 92%;
+  float: left;
+}
+table.diff .inline-comments .yui3-ieditor-input {
+  width: auto!important;
+  margin-right: 0;
+  margin-bottom: 5px;
+  overflow: hidden;
+}
+
 .back-link { margin-top: 3em; }
 
 .reviews {
@@ -628,13 +727,20 @@ dl.reviews dd {
   margin: 0 0 0 0;
 }
 
+tr.ict-header {
+    background-color: #EEEEEE;
+}
+
+p#personal-git-directions pre{
+    max-width: 100%;
+}
 
 /* === Bugs === */
 
-tr.bug-branch-summary td {
+tr.buglink-summary td {
     padding: 0px 6px;
     }
-tr.bug-branch-summary td.first {
+tr.buglink-summary td.first {
     padding-left: 0px;
     }
 
@@ -706,8 +812,8 @@ input.translate {width: 90%; max-width: 60em;}
 /* Templates listing.
  *
  * Examples:
- *   https://translations.launchpad.dev/ubuntu/hoary/+templates
- *   https://translations.launchpad.dev/evolution/trunk/+templates
+ *   https://translations.launchpad.test/ubuntu/hoary/+templates
+ *   https://translations.launchpad.test/evolution/trunk/+templates
  */
 .inactive-template td {
     background-color: #fee;
@@ -717,8 +823,8 @@ input.translate {width: 90%; max-width: 60em;}
 /* Translations statistics and legend.
  *
  * Examples:
- *   https://translations.launchpad.dev/ubuntu/hoary/+lang/es
- *   https://translations.launchpad.dev/evolution/trunk/+lang/es
+ *   https://translations.launchpad.test/ubuntu/hoary/+lang/es
+ *   https://translations.launchpad.test/evolution/trunk/+lang/es
  */
 
 div.translations-legend {
@@ -751,9 +857,9 @@ table.translation-stats tfoot td {
 /* Translations help links.
  *
  * Examples:
- *   https://translations.launchpad.dev/ubuntu/hoary/+source/evolution/+pots/evolution-2.2/
- *   https://translations.launchpad.dev/ubuntu/hoary/+source/evolution/+translations
- *   https://translations.launchpad.dev/ubuntu/hoary/
+ *   https://translations.launchpad.test/ubuntu/hoary/+source/evolution/+pots/evolution-2.2/
+ *   https://translations.launchpad.test/ubuntu/hoary/+source/evolution/+translations
+ *   https://translations.launchpad.test/ubuntu/hoary/
  *
  */
 div.translation-help-links a {
@@ -768,6 +874,13 @@ div.translation-help-links div {
     z-index: 9999;
     }
 
+
+/* === Webhooks === */
+
+table.listing tr.webhook-delivery:hover {
+    text-decoration: underline;
+    cursor: pointer;
+}
 
 
 /* ====== Content area styles ====== */
@@ -831,6 +944,11 @@ div.popupTitle {
   border: 1px black solid;
   position: absolute;
   display: none;
+}
+
+/* Hide the packageset picker widget on the Initialize series page */
+.yui3-packagesetpickerwidget-hidden {
+    display: none;
 }
 
 /* Search results*/

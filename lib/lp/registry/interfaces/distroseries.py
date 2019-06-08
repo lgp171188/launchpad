@@ -1,7 +1,5 @@
-# Copyright 2009-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2017 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
-
-# pylint: disable-msg=E0211,E0213
 
 """Interfaces including and related to IDistroSeries."""
 
@@ -9,6 +7,7 @@ __metaclass__ = type
 
 __all__ = [
     'DerivationError',
+    'DistroSeriesNameField',
     'IDistroSeries',
     'IDistroSeriesEditRestricted',
     'IDistroSeriesPublic',
@@ -17,7 +16,7 @@ __all__ = [
 
 import httplib
 
-from lazr.enum import DBEnumeratedType
+from lazr.lifecycle.snapshot import doNotSnapshot
 from lazr.restful.declarations import (
     call_with,
     error_status,
@@ -26,7 +25,6 @@ from lazr.restful.declarations import (
     export_read_operation,
     export_write_operation,
     exported,
-    LAZR_WEBSERVICE_EXPORTED,
     operation_for_version,
     operation_parameters,
     operation_returns_collection_of,
@@ -63,10 +61,15 @@ from lp.blueprints.interfaces.specificationtarget import ISpecificationGoal
 from lp.bugs.interfaces.bugtarget import (
     IBugTarget,
     IHasBugs,
+    IHasExpirableBugs,
     IHasOfficialBugTags,
     )
 from lp.bugs.interfaces.structuralsubscription import (
     IStructuralSubscriptionTarget,
+    )
+from lp.registry.enums import (
+    DistroSeriesDifferenceStatus,
+    DistroSeriesDifferenceType,
     )
 from lp.registry.errors import NoSuchDistroSeries
 from lp.registry.interfaces.milestone import (
@@ -74,6 +77,7 @@ from lp.registry.interfaces.milestone import (
     IMilestone,
     )
 from lp.registry.interfaces.person import IPerson
+from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.registry.interfaces.role import (
     IHasAppointedDriver,
     IHasOwner,
@@ -89,6 +93,12 @@ from lp.services.fields import (
     PublicPersonChoice,
     Title,
     UniqueField,
+    )
+from lp.services.webservice.apihelpers import patch_plain_parameter_type
+from lp.soyuz.enums import (
+    IndexCompressionType,
+    PackageUploadCustomFormat,
+    PackageUploadStatus,
     )
 from lp.soyuz.interfaces.buildrecords import IHasBuildRecords
 from lp.translations.interfaces.hastranslationimports import (
@@ -144,15 +154,10 @@ class DistroSeriesVersionField(UniqueField):
         The distribution is the context's distribution (which may
         the context itself); A version is unique to a distribution.
         """
-        found_series = None
-        for series in getUtility(IDistroSeriesSet).findByVersion(version):
-            if (series.distribution == self._distribution
-                and series != self.context):
-                # A version is unique to a distribution, but a distroseries
-                # may edit itself.
-                found_series = series
-                break
-        return found_series
+        existing = getUtility(IDistroSeriesSet).queryByVersion(
+            self._distribution, version)
+        if existing != self.context:
+            return existing
 
     def _getByAttribute(self, version):
         """Return the content object with the given attribute."""
@@ -180,7 +185,7 @@ class IDistroSeriesPublic(
     ISeriesMixin, IHasAppointedDriver, IHasOwner, IBugTarget,
     ISpecificationGoal, IHasMilestones, IHasOfficialBugTags,
     IHasBuildRecords, IHasTranslationImports, IHasTranslationTemplates,
-    IServiceUsage):
+    IServiceUsage, IHasExpirableBugs):
     """Public IDistroSeries properties."""
 
     id = Attribute("The distroseries's unique number.")
@@ -189,10 +194,12 @@ class IDistroSeriesPublic(
             title=_("Name"), required=True,
             description=_("The name of this series."),
             constraint=name_validator))
-    displayname = exported(
+    display_name = exported(
         TextLine(
             title=_("Display name"), required=True,
-            description=_("The series displayname.")))
+            description=_("The series displayname.")),
+        exported_as="displayname")
+    displayname = Attribute("Display name (deprecated)")
     fullseriesname = exported(
         TextLine(
             title=_("Series full name"), required=False,
@@ -269,8 +276,8 @@ class IDistroSeriesPublic(
             required=False, vocabulary='ValidPersonOrTeam', schema=IPerson))
     changeslist = exported(
         TextLine(
-            title=_("E-mail changes to"), required=True,
-            description=_("The mailing list or other e-mail address that "
+            title=_("Email changes to"), required=True,
+            description=_("The mailing list or other email address that "
                           "Launchpad should notify about new uploads."),
             constraint=email_validator))
     sourcecount = Attribute("Source Packages Counter")
@@ -331,13 +338,13 @@ class IDistroSeriesPublic(
             language pack update for this distribution series.
             '''), vocabulary='FilteredLanguagePack')
 
-    language_pack_full_export_requested = Bool(
+    language_pack_full_export_requested = exported(Bool(
         title=_('Request a full language pack export'), required=True,
         description=_('''
             Whether next language pack generation will be a full export. This
             information is useful when update packs are too big and want to
             merge all those changes in the base pack.
-            '''))
+            ''')))
 
     last_full_language_pack_exported = Object(
         title=_('Latest exported language pack with all translation files.'),
@@ -380,8 +387,40 @@ class IDistroSeriesPublic(
                 on clients, which requires downloading Packages files for
                 multiple architectures.""")))
 
-    def priorReleasedSeries():
-        """Prior series *by date* from the same distribution."""
+    index_compressors = exported(List(
+        value_type=Choice(vocabulary=IndexCompressionType),
+        title=_("Compression types to use for published index files"),
+        required=True,
+        description=_("""
+            A list of compression types to use for published index files
+            (Packages, Sources, etc.).""")))
+
+    publish_by_hash = exported(Bool(
+        title=_("Publish by-hash directories"), required=True,
+        description=_("""
+            Publish archive index files in by-hash directories so that apt
+            can retrieve them based on their hash, avoiding race conditions
+            between InRelease and other files during mirror updates.""")))
+
+    advertise_by_hash = exported(Bool(
+        title=_("Advertise by-hash directories"), required=True,
+        description=_("""
+            Advertise by-hash directories with a flag in the Release file so
+            that apt uses them by default.  Only effective if
+            publish_by_hash is also set.""")))
+
+    strict_supported_component_dependencies = exported(Bool(
+        title=_("Strict dependencies of supported components"), required=True,
+        description=_("""
+            If True, packages in supported components (main and restricted)
+            may not build-depend on packages in unsupported components.  Do
+            not rely on the name of this attribute, even for reading; it is
+            currently subject to change.""")),
+        as_of="devel")
+
+    inherit_overrides_from_parents = Bool(
+        title=_("Inherit overrides from parents"),
+        readonly=False, required=True)
 
     main_archive = exported(
         Reference(
@@ -406,18 +445,20 @@ class IDistroSeriesPublic(
         """Return the latest five source uploads for this DistroSeries.
 
         It returns a list containing up to five elements as
-        IDistroSeriesSourcePackageRelease instances
+        IDistributionSourcePackageRelease instances
         """
 
     # DistroArchSeries lookup properties/methods.
-    architectures = exported(
-        CollectionField(
-            title=_("All architectures in this series."),
-            value_type=Reference(schema=Interface),  # IDistroArchSeries.
-            readonly=True))
+    architectures = Attribute("All architectures in this series.")
 
-    enabled_architectures = Attribute(
-        "All architectures in this series with the 'enabled' flag set.")
+    enabled_architectures = exported(doNotSnapshot(
+        CollectionField(
+            title=_("Enabled architectures"),
+            description=_("All architectures in this series with the "
+                          "'enabled' flag set."),
+            value_type=Reference(schema=Interface),  # IDistroArchSeries
+            readonly=True)),
+        exported_as="architectures")
 
     virtualized_architectures = Attribute(
         "All architectures in this series where PPA is supported.")
@@ -500,9 +541,7 @@ class IDistroSeriesPublic(
                 "Return items that are more recent than this timestamp."),
             required=False),
         status=Choice(
-            # Really PackageUploadCustomFormat, patched in
-            # _schema_circular_imports.py
-            vocabulary=DBEnumeratedType,
+            vocabulary=PackageUploadStatus,
             title=_("Package Upload Status"),
             description=_("Return only items that have this status."),
             required=False),
@@ -513,16 +552,12 @@ class IDistroSeriesPublic(
             description=_("Return only items for this archive."),
             required=False),
         pocket=Choice(
-            # Really PackagePublishingPocket, patched in
-            # _schema_circular_imports.py
-            vocabulary=DBEnumeratedType,
+            vocabulary=PackagePublishingPocket,
             title=_("Pocket"),
             description=_("Return only items targeted to this pocket"),
             required=False),
         custom_type=Choice(
-            # Really PackageUploadCustomFormat, patched in
-            # _schema_circular_imports.py
-            vocabulary=DBEnumeratedType,
+            vocabulary=PackageUploadCustomFormat,
             title=_("Custom Type"),
             description=_("Return only items with custom files of this "
                           "type."),
@@ -573,12 +608,6 @@ class IDistroSeriesPublic(
         binary package may not be published in the distro series.
         """
 
-    def getSourcePackageRelease(sourcepackagerelease):
-        """Return a IDistroSeriesSourcePackageRelease
-
-        sourcepackagerelease is an ISourcePackageRelease.
-        """
-
     def getCurrentSourceReleases(source_package_names):
         """Get the current release of a list of source packages.
 
@@ -586,7 +615,7 @@ class IDistroSeriesPublic(
             instances.
 
         :return: a dict where the key is a `ISourcePackage`
-            and the value is a `IDistroSeriesSourcePackageRelease`.
+            and the value is a `IDistributionSourcePackageRelease`.
         """
 
     def getPublishedSources(sourcepackage_or_name, pocket=None, version=None,
@@ -638,22 +667,6 @@ class IDistroSeriesPublic(
         Return publications in the main archives only.
         """
 
-    def getSourcesPublishedForAllArchives():
-        """Return all sourcepackages published across all the archives.
-
-        It's only used in the buildmaster/master.py context for calculating
-        the publication that are still missing build records.
-
-        It will consider all publishing records in PENDING or PUBLISHED status
-        as part of the 'build-unpublished-source' specification.
-
-        For 'main_archive' candidates it will automatically exclude RELEASE
-        pocket records of released distroseries (ensuring that we won't waste
-        time with records that can't be accepted).
-
-        Return a SelectResult of SourcePackagePublishingHistory.
-        """
-
     def getDistroSeriesLanguage(language):
         """Return the DistroSeriesLanguage for this distroseries and the
         given language, or None if there's no DistroSeriesLanguage for this
@@ -673,7 +686,7 @@ class IDistroSeriesPublic(
         dsc_binaries, archive, copyright, build_conflicts,
         build_conflicts_indep, dateuploaded=None,
         source_package_recipe_build=None, user_defined_fields=None,
-        homepage=None):
+        homepage=None, buildinfo=None):
         """Create an uploads `SourcePackageRelease`.
 
         Set this distroseries set to be the uploadeddistroseries.
@@ -713,6 +726,7 @@ class IDistroSeriesPublic(
                                      user defined fields.
          :param homepage: optional string with (unchecked) upstream homepage
                           URL
+         :param buildinfo: optional LFA with build information file
          :return: the just creates `SourcePackageRelease`
         """
 
@@ -733,23 +747,18 @@ class IDistroSeriesPublic(
     def addSection(section):
         """SQLObject provided method to fill a related join key section."""
 
-    def getBinaryPackagePublishing(
-        name=None, version=None, archtag=None, sourcename=None, orderBy=None,
-        pocket=None, component=None, archive=None):
+    def getBinaryPackagePublishing(archtag, pocket, component, archive):
         """Get BinaryPackagePublishings in a DistroSeries.
 
-        Can optionally restrict the results by name, version,
-        architecturetag, pocket and/or component.
+        Can optionally restrict the results by architecturetag, pocket and/or
+        component.
 
-        If sourcename is passed, only packages that are built from
-        source packages by that name will be returned.
         If archive is passed, restricted the results to the given archive,
         if it is suppressed the results will be restricted to the
         distribution 'main_archive'.
         """
 
-    def getSourcePackagePublishing(status, pocket, component=None,
-                                   archive=None):
+    def getSourcePackagePublishing(pocket, component, archive):
         """Return a selectResult of ISourcePackagePublishingHistory.
 
         According status and pocket.
@@ -793,23 +802,8 @@ class IDistroSeriesPublic(
         :return: A new `PackageUpload`.
         """
 
-    def newArch(architecturetag, processorfamily, official, owner,
-                supports_virtualized=False, enabled=True):
+    def newArch(architecturetag, processor, official, owner, enabled=True):
         """Create a new port or DistroArchSeries for this DistroSeries."""
-
-    def copyTranslationsFromParent(ztm):
-        """Copy any translation done in parent that we lack.
-
-        If there is another translation already added to this one, we ignore
-        the one from parent.
-
-        The supplied transaction manager will be used for intermediate
-        commits to break up large copying jobs into palatable smaller
-        chunks.
-
-        This method starts and commits transactions, so don't rely on `self`
-        or any other database object remaining valid across this call!
-        """
 
     def getPOFileContributorsByLanguage(language):
         """People who translated strings to the given language.
@@ -847,14 +841,14 @@ class IDistroSeriesPublic(
             title=_("The parent series to consider."),
             required=False),
         difference_type=Choice(
-            vocabulary=DBEnumeratedType,  # DistroSeriesDifferenceType
+            vocabulary=DistroSeriesDifferenceType,
             title=_("Only return differences of this type."), required=False),
         source_package_name_filter=TextLine(
             title=_("Only return differences for packages matching this "
                     "name."),
             required=False),
         status=Choice(
-            vocabulary=DBEnumeratedType,  # DistroSeriesDifferenceStatus
+            vocabulary=DistroSeriesDifferenceStatus,
             title=_("Only return differences of this status."),
             required=False),
         child_version_higher=Bool(
@@ -1010,8 +1004,8 @@ class IDistroSeries(IDistroSeriesEditRestricted, IDistroSeriesPublic,
 
 # We assign the schema for an `IHasBugs` method argument here
 # in order to avoid circular dependencies.
-IHasBugs['searchTasks'].queryTaggedValue(LAZR_WEBSERVICE_EXPORTED)[
-    'params']['nominated_for'].schema = IDistroSeries
+patch_plain_parameter_type(
+    IHasBugs, 'searchTasks', 'nominated_for', IDistroSeries)
 
 
 class IDistroSeriesSet(Interface):
@@ -1024,25 +1018,23 @@ class IDistroSeriesSet(Interface):
         """Return a set of distroseriess that can be translated in
         rosetta."""
 
-    def findByName(name):
-        """Find a DistroSeries by name.
+    def queryByName(distribution, name, follow_aliases=False):
+        """Query a DistroSeries by name.
 
-        Returns a list of matching distributions, which may be empty.
+        :distribution: An IDistribution.
+        :name: A string.
+        :follow_aliases: If True, follow series aliases.
+
+        Returns the matching DistroSeries, or None if not found.
         """
 
-    def queryByName(distribution, name):
-        """Query a DistroSeries by name.
+    def queryByVersion(distribution, version):
+        """Query a DistroSeries by version.
 
         :distribution: An IDistribution.
         :name: A string.
 
         Returns the matching DistroSeries, or None if not found.
-        """
-
-    def findByVersion(version):
-        """Find a DistroSeries by version.
-
-        Returns a list of matching distributions, which may be empty.
         """
 
     def fromSuite(distribution, suite):
@@ -1076,24 +1068,8 @@ class IDistroSeriesSet(Interface):
         released == None will do no filtering on status.
         """
 
-    def priorReleasedSeries(distribution, prior_to_date):
-        """Find distroseries for the supplied distro  released before a
-        certain date.
-
-        :param distribution: An `IDistribution` in which to search for its
-            series.
-        :param prior_to_date: A `datetime`
-
-        :return: `IResultSet` of `IDistroSeries` that were released before
-            prior_to_date, ordered in increasing order of age.
-        """
-
 
 @error_status(httplib.BAD_REQUEST)
 class DerivationError(Exception):
     """Raised when there is a problem deriving a distroseries."""
     _message_prefix = "Error deriving distro series"
-
-
-# Monkey patch for circular import avoidance done in
-# _schema_circular_imports.py

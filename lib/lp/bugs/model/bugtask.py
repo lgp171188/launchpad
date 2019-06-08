@@ -1,4 +1,4 @@
-# Copyright 2009-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Classes that implement IBugTask and its related interfaces."""
@@ -30,11 +30,7 @@ from operator import (
     )
 import re
 
-from lazr.lifecycle.event import (
-    ObjectDeletedEvent,
-    ObjectModifiedEvent,
-    )
-from lazr.lifecycle.snapshot import Snapshot
+from lazr.lifecycle.event import ObjectDeletedEvent
 import pytz
 from sqlobject import (
     ForeignKey,
@@ -46,7 +42,6 @@ from storm.expr import (
     Cast,
     Count,
     Exists,
-    Join,
     LeftJoin,
     Not,
     Or,
@@ -62,12 +57,15 @@ from storm.store import (
 from zope.component import getUtility
 from zope.event import notify
 from zope.interface import (
-    implements,
+    implementer,
     providedBy,
     )
 from zope.security.proxy import removeSecurityProxy
 
-from lp.app.enums import ServiceUsage
+from lp.app.enums import (
+    PROPRIETARY_INFORMATION_TYPES,
+    PUBLIC_INFORMATION_TYPES,
+    )
 from lp.app.errors import NotFoundError
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.bugs.interfaces.bug import IBugSet
@@ -93,10 +91,6 @@ from lp.bugs.interfaces.bugtask import (
     UserCannotEditBugTaskStatus,
     )
 from lp.bugs.interfaces.bugtasksearch import BugTaskSearchParams
-from lp.registry.enums import (
-    PROPRIETARY_INFORMATION_TYPES,
-    PUBLIC_INFORMATION_TYPES,
-    )
 from lp.registry.interfaces.distribution import (
     IDistribution,
     IDistributionSet,
@@ -132,7 +126,7 @@ from lp.services.database.constants import UTC_NOW
 from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.enumcol import EnumCol
-from lp.services.database.lpstorm import IStore
+from lp.services.database.interfaces import IStore
 from lp.services.database.nl_search import nl_phrase_search
 from lp.services.database.sqlbase import (
     block_implicit_flushes,
@@ -144,12 +138,9 @@ from lp.services.database.sqlbase import (
 from lp.services.helpers import shortlist
 from lp.services.propertycache import get_property_cache
 from lp.services.searchbuilder import any
-from lp.services.webapp.interfaces import (
-    DEFAULT_FLAVOR,
-    ILaunchBag,
-    IStoreSelector,
-    MAIN_STORE,
-    )
+from lp.services.webapp.interfaces import ILaunchBag
+from lp.services.webapp.snapshot import notify_modified
+from lp.services.xref.interfaces import IXRefSet
 
 
 def bugtask_sort_key(bugtask):
@@ -241,10 +232,9 @@ def bug_target_to_key(target):
     return values
 
 
+@implementer(IBugTaskDelta)
 class BugTaskDelta:
     """See `IBugTaskDelta`."""
-
-    implements(IBugTaskDelta)
 
     def __init__(self, bugtask, status=None, importance=None,
                  assignee=None, milestone=None, bugwatch=None, target=None):
@@ -309,16 +299,36 @@ def validate_status(self, attr, value):
         return value
 
 
+def map_status_for_storage(bug, status, when=None):
+    if status == BugTaskStatus.INCOMPLETE:
+        # We store INCOMPLETE as INCOMPLETE_WITHOUT_RESPONSE so that it
+        # can be queried on efficiently.
+        if (when is None or bug.date_last_message is None or
+            when > bug.date_last_message):
+            return BugTaskStatusSearch.INCOMPLETE_WITHOUT_RESPONSE
+        else:
+            return BugTaskStatusSearch.INCOMPLETE_WITH_RESPONSE
+    else:
+        return status
+
+
 def validate_assignee(self, attr, value):
     value = validate_conjoined_attribute(self, attr, value)
     # Check if this person is valid and not None.
     return validate_person(self, attr, value)
 
 
-def validate_target(bug, target, retarget_existing=True):
+def validate_target(bug, target, retarget_existing=True,
+                    check_source_package=True):
     """Validate a bugtask target against a bug's existing tasks.
 
     Checks that no conflicting tasks already exist.
+
+    If the target is a source package, we need to check that it has been
+    published in the distribution since we don't trust the vocabulary to
+    enforce this. However, when using the UI, this check is done during the
+    validation stage of form submission and we don't want to do it again since
+    it uses an expensive query. So 'check_source_package' can be set to False.
     """
     if bug.getBugTask(target):
         raise IllegalTarget(
@@ -329,7 +339,7 @@ def validate_target(bug, target, retarget_existing=True):
         ISourcePackage.providedBy(target)):
         # If the distribution has at least one series, check that the
         # source package has been published in the distribution.
-        if (target.sourcepackagename is not None and
+        if (check_source_package and target.sourcepackagename is not None and
             len(target.distribution.series) > 0):
             try:
                 target.distribution.guessPublishedSourcePackageName(
@@ -338,7 +348,8 @@ def validate_target(bug, target, retarget_existing=True):
                 raise IllegalTarget(e[0])
 
     legal_types = target.pillar.getAllowedBugInformationTypes()
-    if bug.information_type not in legal_types:
+    new_pillar = target.pillar not in bug.affected_pillars
+    if new_pillar and bug.information_type not in legal_types:
         raise IllegalTarget(
             "%s doesn't allow %s bugs." % (
             target.pillar.bugtargetdisplayname, bug.information_type.title))
@@ -357,7 +368,7 @@ def validate_target(bug, target, retarget_existing=True):
                     % bug.default_bugtask.target.pillar.bugtargetdisplayname)
 
 
-def validate_new_target(bug, target):
+def validate_new_target(bug, target, check_source_package=True):
     """Validate a bugtask target to be added.
 
     Make sure that the isn't already a distribution task without a
@@ -391,12 +402,14 @@ def validate_new_target(bug, target):
                 "specified. You should fill in a package name for "
                 "the existing bug." % target.distribution.displayname)
 
-    validate_target(bug, target, retarget_existing=False)
+    validate_target(
+        bug, target, retarget_existing=False,
+        check_source_package=check_source_package)
 
 
+@implementer(IBugTask)
 class BugTask(SQLBase):
     """See `IBugTask`."""
-    implements(IBugTask)
     _table = "BugTask"
     _defaultOrder = ['distribution', 'product', 'productseries',
                      'distroseries', 'milestone', 'sourcepackagename']
@@ -515,10 +528,7 @@ class BugTask(SQLBase):
     @property
     def related_tasks(self):
         """See `IBugTask`."""
-        other_tasks = [
-            task for task in self.bug.bugtasks if task != self]
-
-        return other_tasks
+        return [task for task in self.bug.bugtasks if task != self]
 
     @property
     def pillar(self):
@@ -664,10 +674,11 @@ class BugTask(SQLBase):
             if relevant:
                 key = bug_target_to_key(bugtask.target)
                 key['sourcepackagename'] = new_spn
+                # The relevance check above and the fact that the distro series
+                # task is already on the bug means we don't need to revalidate.
                 bugtask.transitionToTarget(
                     bug_target_from_key(**key),
-                    user,
-                    _sync_sourcepackages=False)
+                    user, validate=False, _sync_sourcepackages=False)
 
     def getContributorInfo(self, user, person):
         """See `IBugTask`."""
@@ -772,8 +783,10 @@ class BugTask(SQLBase):
             raise UserCannotEditBugTaskMilestone(
                 "User does not have sufficient permissions "
                 "to edit the bug task milestone.")
-        else:
-            self.milestone = new_milestone
+        self.milestone = new_milestone
+        # Clear the recipient caches so that the milestone subscribers are
+        # notified.
+        self.bug.clearBugNotificationRecipientsCache()
 
     def transitionToImportance(self, new_importance, user):
         """See `IBugTask`."""
@@ -790,7 +803,7 @@ class BugTask(SQLBase):
     def _checkAutoconfirmFeatureFlag(self):
         """Does a feature flag enable automatic switching of our bugtasks?"""
         # This method should be ripped out if we determine that we like
-        # this behavior for all projects.
+        # this behaviour for all projects.
         # This is a bit of a feature flag hack, but has been discussed as
         # a reasonable way to deploy this quickly.
         pillar = self.pillar
@@ -823,29 +836,29 @@ class BugTask(SQLBase):
             # END TEMPORARY BIT FOR BUGTASK AUTOCONFIRM FEATURE FLAG.
             ):
             janitor = getUtility(ILaunchpadCelebrities).janitor
-            bugtask_before_modification = Snapshot(
-                self, providing=providedBy(self))
-            # Create a bug message explaining why the janitor auto-confirmed
-            # the bugtask.
-            msg = ("Status changed to 'Confirmed' because the bug "
-                   "affects multiple users.")
-            self.bug.newMessage(owner=janitor, content=msg)
-            self.transitionToStatus(BugTaskStatus.CONFIRMED, janitor)
-            notify(ObjectModifiedEvent(
-                self, bugtask_before_modification, ['status'], user=janitor))
+            with notify_modified(self, ['status'], user=janitor):
+                # Create a bug message explaining why the janitor
+                # auto-confirmed the bugtask.
+                msg = ("Status changed to 'Confirmed' because the bug "
+                       "affects multiple users.")
+                self.bug.newMessage(owner=janitor, content=msg)
+                self.transitionToStatus(BugTaskStatus.CONFIRMED, janitor)
 
     def canTransitionToStatus(self, new_status, user):
         """See `IBugTask`."""
         new_status = normalize_bugtask_status(new_status)
-        if (self.status == BugTaskStatus.FIXRELEASED and
-           (user.id == self.bug.ownerID or user.inTeam(self.bug.owner))):
+        if self.userHasBugSupervisorPrivileges(user):
+            # Bug supervisor can always set any status.
             return True
-        elif self.userHasBugSupervisorPrivileges(user):
-            return True
-        else:
-            return (self.status not in (
-                        BugTaskStatus.WONTFIX, BugTaskStatus.FIXRELEASED)
-                    and new_status not in BUG_SUPERVISOR_BUGTASK_STATUSES)
+        elif (self.status == BugTaskStatus.FIXRELEASED and
+              user.id != self.bug.ownerID and not user.inTeam(self.bug.owner)):
+            # The bug reporter can reopen a Fix Released bug.
+            return False
+        elif self.status == BugTaskStatus.WONTFIX:
+            # Only bug supervisors can switch away from WONTFIX.
+            return False
+        # Non-supervisors can transition to non-supervisor statuses.
+        return new_status not in BUG_SUPERVISOR_BUGTASK_STATUSES
 
     def transitionToStatus(self, new_status, user, when=None):
         """See `IBugTask`."""
@@ -862,20 +875,14 @@ class BugTask(SQLBase):
                 "Only Bug Supervisors may change status to %s." % (
                     new_status.title,))
 
-        if new_status == BugTaskStatus.INCOMPLETE:
-            # We store INCOMPLETE as INCOMPLETE_WITHOUT_RESPONSE so that it
-            # can be queried on efficiently.
-            if (when is None or self.bug.date_last_message is None or
-                when > self.bug.date_last_message):
-                new_status = BugTaskStatusSearch.INCOMPLETE_WITHOUT_RESPONSE
-            else:
-                new_status = BugTaskStatusSearch.INCOMPLETE_WITH_RESPONSE
+        new_status = map_status_for_storage(self.bug, new_status, when=when)
+        self._setStatusDateProperties(self.status, new_status, when=when)
 
-        if self._status == new_status:
+    def _setStatusDateProperties(self, old_status, new_status, when=None):
+        if old_status == new_status:
             # No change in the status, so nothing to do.
             return
 
-        old_status = self.status
         self._status = new_status
 
         if new_status == BugTaskStatus.UNKNOWN:
@@ -890,7 +897,6 @@ class BugTask(SQLBase):
             self.date_triaged = None
             self.date_fix_committed = None
             self.date_fix_released = None
-
             return
 
         if when is None:
@@ -1010,13 +1016,13 @@ class BugTask(SQLBase):
                 (assignee is None and self.userCanUnassign(user)) or
                 self.userCanSetAnyAssignee(user)))
 
-    def transitionToAssignee(self, assignee):
+    def transitionToAssignee(self, assignee, validate=True):
         """See `IBugTask`."""
         if assignee == self.assignee:
             # No change to the assignee, so nothing to do.
             return
 
-        if not self.canTransitionToAssignee(assignee):
+        if validate and not self.canTransitionToAssignee(assignee):
             raise UserCannotEditBugTaskAssignee(
                 'Regular users can assign and unassign only themselves and '
                 'their teams. Only project owners, bug supervisors, drivers '
@@ -1033,7 +1039,7 @@ class BugTask(SQLBase):
 
         self.assignee = assignee
 
-    def validateTransitionToTarget(self, target):
+    def validateTransitionToTarget(self, target, check_source_package=True):
         """See `IBugTask`."""
         from lp.registry.model.distroseries import DistroSeries
 
@@ -1092,10 +1098,16 @@ class BugTask(SQLBase):
                         "tasks may only be retargeted to a different "
                         "package.")
 
-        validate_target(self.bug, target)
+        validate_target(
+            self.bug, target, check_source_package=check_source_package)
 
-    def transitionToTarget(self, target, user, _sync_sourcepackages=True):
+    def transitionToTarget(self, target, user, validate=True,
+                           _sync_sourcepackages=True):
         """See `IBugTask`.
+
+        If validate is True then we need to check that the new target is valid,
+        otherwise the check has already been done (eg during form submission)
+        and we don't need to repeat it.
 
         If _sync_sourcepackages is True (the default) and the
         sourcepackagename is being changed, any other tasks for the same
@@ -1105,7 +1117,8 @@ class BugTask(SQLBase):
         if self.target == target:
             return
 
-        self.validateTransitionToTarget(target)
+        if validate:
+            self.validateTransitionToTarget(target)
 
         target_before_change = self.target
 
@@ -1141,6 +1154,7 @@ class BugTask(SQLBase):
         # As a result of the transition, some subscribers may no longer
         # have access to the parent bug. We need to run a job to remove any
         # such subscriptions.
+        self.bug.clearBugNotificationRecipientsCache()
         getUtility(IRemoveArtifactSubscriptionsJobSource).create(
             user, [self.bug], pillar=target_before_change.pillar)
 
@@ -1279,8 +1293,7 @@ class BugTask(SQLBase):
         owner_context = context
         if IBugTarget.providedBy(context):
             owner_context = context.pillar
-        return (
-            role.isOwner(owner_context) or role.isOneOfDrivers(context))
+        return role.isOwner(owner_context) or role.isDriver(context)
 
     @classmethod
     def userHasBugSupervisorPrivilegesContext(cls, context, user):
@@ -1313,9 +1326,9 @@ class BugTask(SQLBase):
         return "<BugTask for bug %s on %r>" % (self.bugID, self.target)
 
 
+@implementer(IBugTaskSet)
 class BugTaskSet:
     """See `IBugTaskSet`."""
-    implements(IBugTaskSet)
 
     title = "A set of bug tasks"
 
@@ -1338,20 +1351,6 @@ class BugTaskSet:
             raise NotFoundError("BugTask with ID %s does not exist." %
                                 str(task_id))
         return bugtask
-
-    def getBugTasks(self, bug_ids):
-        """See `IBugTaskSet`."""
-        from lp.bugs.model.bug import Bug
-        store = getUtility(IStoreSelector).get(MAIN_STORE, DEFAULT_FLAVOR)
-        origin = [BugTask, Join(Bug, BugTask.bug == Bug.id)]
-        columns = (Bug, BugTask)
-        result = store.using(*origin).find(columns, Bug.id.is_in(bug_ids))
-        bugs_and_tasks = {}
-        for bug, task in result:
-            if bug not in bugs_and_tasks:
-                bugs_and_tasks[bug] = []
-            bugs_and_tasks[bug].append(task)
-        return bugs_and_tasks
 
     def getBugTaskTags(self, bugtasks):
         """See `IBugTaskSet`"""
@@ -1384,14 +1383,14 @@ class BugTaskSet:
     def getBugTaskBadgeProperties(self, bugtasks):
         """See `IBugTaskSet`."""
         # Import locally to avoid circular imports.
-        from lp.blueprints.model.specificationbug import SpecificationBug
         from lp.bugs.model.bug import Bug
         from lp.bugs.model.bugbranch import BugBranch
 
         bug_ids = set(bugtask.bugID for bugtask in bugtasks)
-        bug_ids_with_specifications = set(IStore(SpecificationBug).find(
-            SpecificationBug.bugID,
-            SpecificationBug.bugID.is_in(bug_ids)))
+        bug_ids_with_specifications = set(
+            int(id) for _, id in getUtility(IXRefSet).findFromMany(
+                [(u'bug', unicode(bug_id)) for bug_id in bug_ids],
+                types=[u'specification']).keys())
         bug_ids_with_branches = set(IStore(BugBranch).find(
                 BugBranch.bugID, BugBranch.bugID.is_in(bug_ids)))
         # Badging looks up milestones too : eager load into the storm cache.
@@ -1475,7 +1474,10 @@ class BugTaskSet:
             claim they were inefficient and unwanted.
         """
         # Prevent circular import problems.
+        from lp.registry.model.distribution import Distribution
+        from lp.registry.model.distroseries import DistroSeries
         from lp.registry.model.product import Product
+        from lp.registry.model.productseries import ProductSeries
         from lp.bugs.model.bug import Bug
         from lp.bugs.model.bugtasksearch import search_bugs
         _noprejoins = kwargs.get('_noprejoins', False)
@@ -1485,6 +1487,9 @@ class BugTaskSet:
             def eager_load(rows):
                 load_related(Bug, rows, ['bugID'])
                 load_related(Product, rows, ['productID'])
+                load_related(ProductSeries, rows, ['productseriesID'])
+                load_related(Distribution, rows, ['distributionID'])
+                load_related(DistroSeries, rows, ['distroseriesID'])
                 load_related(SourcePackageName, rows, ['sourcepackagenameID'])
         return search_bugs(eager_load, (params,) + args)
 
@@ -1567,17 +1572,20 @@ class BugTaskSet:
         params = BugTaskSearchParams(user, **kwargs)
         return self.search(params)
 
-    def createManyTasks(self, bug, owner, targets, status=None,
-                        importance=None, assignee=None, milestone=None):
+    def createManyTasks(self, bug, owner, targets, validate_target=True,
+                        status=None, importance=None, assignee=None,
+                        milestone=None):
         """See `IBugTaskSet`."""
         if status is None:
             status = IBugTask['status'].default
+        status = map_status_for_storage(bug, status)
         if importance is None:
             importance = IBugTask['importance'].default
         target_keys = []
         pillars = set()
         for target in targets:
-            validate_new_target(bug, target)
+            if validate_target:
+                validate_new_target(bug, target)
             pillars.add(target.pillar)
             target_keys.append(bug_target_to_key(target))
 
@@ -1599,11 +1607,15 @@ class BugTaskSet:
             bugtask.updateTargetNameCache()
             if bugtask.conjoined_slave:
                 bugtask._syncFromConjoinedSlave()
+            else:
+                # Set date_* properties, if we're not conjoined.
+                bugtask._setStatusDateProperties(
+                    BugTaskStatus.NEW, status, when=bugtask.datecreated)
         removeSecurityProxy(bug)._reconcileAccess()
         return tasks
 
-    def createTask(self, bug, owner, target, status=None, importance=None,
-                   assignee=None, milestone=None):
+    def createTask(self, bug, owner, target, validate_target=True, status=None,
+                   importance=None, assignee=None, milestone=None):
         """See `IBugTaskSet`."""
         # Create tasks for accepted nominations if this is a source
         # package addition. Distribution nominations are for all the
@@ -1619,8 +1631,9 @@ class BugTaskSet:
                         key['sourcepackagename']))
 
         tasks = self.createManyTasks(
-            bug, owner, targets, status=status, importance=importance,
-            assignee=assignee, milestone=milestone)
+            bug, owner, targets, validate_target=validate_target,
+            status=status, importance=importance, assignee=assignee,
+            milestone=milestone)
         return [task for task in tasks if task.target == target][0]
 
     def getStatusCountsForProductSeries(self, user, product_series):
@@ -1935,6 +1948,8 @@ class BugTaskSet:
             distro_ids.add(task.distributionID)
             distro_series_ids.add(task.distroseriesID)
             product_ids.add(task.productID)
+            if task.productseries:
+                product_ids.add(task.productseries.productID)
             product_series_ids.add(task.productseriesID)
 
         distro_ids.discard(None)
@@ -1944,6 +1959,7 @@ class BugTaskSet:
 
         milestones = store.find(
             Milestone,
+            Milestone.active == True,
             Or(
                 Milestone.distributionID.is_in(distro_ids),
                 Milestone.distroseriesID.is_in(distro_series_ids),

@@ -4,7 +4,7 @@ HTML feeds produce snippets of html for inclusion in user's own web pages.
 The content of an HTML feed is very similar to an Atom feed, but is formatted
 as HTML instead of Atom.
 
-    >>> from BeautifulSoup import (
+    >>> from lp.services.beautifulsoup import (
     ...     BeautifulSoup,
     ...     SoupStrainer,
     ...     )
@@ -20,16 +20,16 @@ And two for printing the results:
 
     >>> def print_entry(entry):
     ...     tds = entry('td')
-    ...     print "number:", extract_text(tds[1])
-    ...     print "href:", tds[1].a['href']
-    ...     print "title:", extract_text(tds[2])
+    ...     print("number:", extract_text(tds[1]))
+    ...     print("href:", tds[1].a['href'])
+    ...     print("title:", extract_text(tds[2]))
     ...     if len(tds) < 6:
-    ...         print "importance:", extract_text(tds[3])
-    ...         print "status:", extract_text(tds[4])
+    ...         print("importance:", extract_text(tds[3]))
+    ...         print("status:", extract_text(tds[4]))
     ...     else:
-    ...         print "project:", extract_text(tds[3])
-    ...         print "importance:", extract_text(tds[4])
-    ...         print "status:", extract_text(tds[5])
+    ...         print("project:", extract_text(tds[3]))
+    ...         print("importance:", extract_text(tds[4]))
+    ...         print("status:", extract_text(tds[5]))
 
     >>> def get_bug_numbers(entries):
     ...     bug_numbers = []
@@ -45,20 +45,20 @@ This feed gets the latest bugs reported against a product. The feed includes
 summary information about the bugs such as ID, title, author, and a link to
 the bug itself.
 
-    >>> browser.open('http://feeds.launchpad.dev/jokosher/latest-bugs.html?'
+    >>> browser.open('http://feeds.launchpad.test/jokosher/latest-bugs.html?'
     ...              'show_column=bugtargetdisplayname')
     >>> browser.title
     'Bugs in Jokosher'
     >>> browser.url
-    'http://feeds.launchpad.dev/jokosher/latest-bugs.html?show_column=bugtargetdisplayname'
+    'http://feeds.launchpad.test/jokosher/latest-bugs.html?show_column=bugtargetdisplayname'
 
     >>> entries = parse_entries(browser.contents)
-    >>> print len(entries)
+    >>> print(len(entries))
     3
 
     >>> print_entry(entries[1])
     number: 12
-    href: http://bugs.launchpad.dev/jokosher/+bug/12
+    href: http://bugs.launchpad.test/jokosher/+bug/12
     title: Copy, Cut and Delete operations should work on selections
     importance: Critical
     status: Confirmed
@@ -71,20 +71,20 @@ the bug itself.
 This feed gets the latest bugs for a project, and has the same type of content
 as the latest bugs feed for a product.
 
-    >>> browser.open('http://feeds.launchpad.dev/mozilla/latest-bugs.html?'
+    >>> browser.open('http://feeds.launchpad.test/mozilla/latest-bugs.html?'
     ...              'show_column=bugtargetdisplayname')
     >>> browser.title
     'Bugs in The Mozilla Project'
     >>> browser.url
-    'http://feeds.launchpad.dev/mozilla/latest-bugs.html?show_column=bugtargetdisplayname'
+    'http://feeds.launchpad.test/mozilla/latest-bugs.html?show_column=bugtargetdisplayname'
 
     >>> entries = parse_entries(browser.contents)
-    >>> print len(entries)
+    >>> print(len(entries))
     12
 
     >>> print_entry(entries[1])
     number: 15
-    href: http://bugs.launchpad.dev/redfish/+bug/15
+    href: http://bugs.launchpad.test/redfish/+bug/15
     title: Nonsensical bugs are useless
     importance: Undecided
     status: New
@@ -92,24 +92,51 @@ as the latest bugs feed for a product.
     >>> get_bug_numbers(entries)
     [15, 15, 9, 9, 5, 5, 5, 4, 1, 1, 1]
 
+=== Private teams as assignees ===
+
+Create a private team and assign a mozilla bug to that team.
+
+    >>> from zope.component import getUtility
+    >>> from lp.bugs.interfaces.bug import IBugSet
+    >>> from lp.registry.interfaces.person import PersonVisibility
+
+    >>> login('foo.bar@canonical.com')
+    >>> priv_team = factory.makeTeam(visibility=PersonVisibility.PRIVATE)
+    >>> bug = getUtility(IBugSet).get(1)
+    >>> print(bug.title)
+    Firefox does not support SVG
+    >>> print(len(bug.bugtasks))
+    3
+    >>> from zope.security.proxy import removeSecurityProxy
+    >>> bugtask = removeSecurityProxy(bug.bugtasks[1])
+    >>> bugtask.assignee = priv_team
+    >>> logout()
+
+Get the mozilla/latest-bugs feed. The previous bug should be included.
+
+    >>> browser.open('http://feeds.launchpad.test/mozilla/latest-bugs.html?'
+    ...              'show_column=bugtargetdisplayname')
+    >>> entries = parse_entries(browser.contents)
+    >>> get_bug_numbers(entries)
+    [15, 15, 9, 9, 5, 5, 5, 4, 1, 1, 1]
 
 == Latest bugs for a person ==
 
 This feed gets the latest bugs for a person.
 
-    >>> browser.open('http://feeds.launchpad.dev/~name16/latest-bugs.html')
+    >>> browser.open('http://feeds.launchpad.test/~name16/latest-bugs.html')
     >>> browser.title
     'Bugs for Foo Bar'
     >>> browser.url
-    'http://feeds.launchpad.dev/~name16/latest-bugs.html'
+    'http://feeds.launchpad.test/~name16/latest-bugs.html'
 
     >>> entries = parse_entries(browser.contents)
-    >>> print len(entries)
+    >>> print(len(entries))
     13
 
     >>> print_entry(entries[1])
     number: 15
-    href: http://bugs.launchpad.dev/redfish/+bug/15
+    href: http://bugs.launchpad.test/redfish/+bug/15
     title: Nonsensical bugs are useless
     project: Redfish
     importance: Undecided
@@ -119,12 +146,39 @@ This feed gets the latest bugs for a person.
     [15, 15, 12, 11, 10, 9, 9, 7, 7, 3, 3, 3]
 
 
+== Latest bugs for any target ==
+
+This feed gets the latest bugs reported against any target.
+
+    >>> browser.open('http://feeds.launchpad.test/bugs/latest-bugs.html?'
+    ...              'show_column=bugtargetdisplayname')
+    >>> browser.title
+    'Launchpad bugs'
+    >>> browser.url
+    'http://feeds.launchpad.test/bugs/latest-bugs.html?show_column=bugtargetdisplayname'
+
+    >>> entries = parse_entries(browser.contents)
+    >>> print(len(entries))
+    27
+
+    >>> print_entry(entries[1])
+    number: 15
+    href: http://bugs.launchpad.test/redfish/+bug/15
+    title: Nonsensical bugs are useless
+    importance: Undecided
+    status: New
+
+    >>> get_bug_numbers(entries)
+    [15, 15, 13, 12, 11, 10, 9, 9, 8, 7, 7, 5, 5, 5, 4, 3, 3, 3, 2, 2, 2, 2,
+     2, 1, 1, 1]
+
+
 == General bug search ==
 
 This feed is the most useful of them all. Any bug search can be turned into
 a feed.
 
-    >>> url = ("http://feeds.launchpad.dev/bugs/+bugs.html?"
+    >>> url = ("http://feeds.launchpad.test/bugs/+bugs.html?"
     ...        "field.searchtext=&search=Search+Bug+Reports&"
     ...        "field.scope=all&field.scope.target=")
 
@@ -156,12 +210,12 @@ to True.
     'Bugs from custom search'
 
     >>> entries = parse_entries(browser.contents)
-    >>> print len(entries)
+    >>> print(len(entries))
     26
 
     >>> print_entry(entries[1])
     number: 15
-    href: http://bugs.launchpad.dev/redfish/+bug/15
+    href: http://bugs.launchpad.test/redfish/+bug/15
     title: Nonsensical bugs are useless
     project: Redfish
     importance: Undecided

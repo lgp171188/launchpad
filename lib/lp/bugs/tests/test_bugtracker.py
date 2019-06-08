@@ -1,4 +1,4 @@
-# Copyright 2009 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -13,13 +13,16 @@ from doctest import (
     NORMALIZE_WHITESPACE,
     )
 import unittest
-from urllib2 import (
-    HTTPError,
-    Request,
-    )
 
 from lazr.lifecycle.snapshot import Snapshot
 from pytz import utc
+import responses
+from six.moves.urllib_parse import urlencode
+from testtools.matchers import (
+    Equals,
+    MatchesListwise,
+    MatchesStructure,
+    )
 import transaction
 from zope.component import getUtility
 from zope.security.interfaces import Unauthorized
@@ -29,7 +32,6 @@ from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.bugs.externalbugtracker import (
     BugTrackerConnectError,
     Mantis,
-    MantisLoginHandler,
     )
 from lp.bugs.interfaces.bugtracker import (
     BugTrackerType,
@@ -40,7 +42,6 @@ from lp.bugs.model.bugtracker import (
     make_bugtracker_name,
     make_bugtracker_title,
     )
-from lp.bugs.tests.externalbugtracker import UrlLib2TransportTestHandler
 from lp.registry.interfaces.person import IPersonSet
 from lp.testing import (
     login,
@@ -64,19 +65,19 @@ class TestBugTrackerSet(TestCaseWithFactory):
         tracker = self.factory.makeBugTracker()
         trackers = BugTrackerSet()
         # Active trackers are in all trackers,
-        self.assertTrue(tracker in trackers.trackers())
+        self.assertTrue(tracker in trackers.getAllTrackers())
         # and active,
-        self.assertTrue(tracker in trackers.trackers(active=True))
+        self.assertTrue(tracker in trackers.getAllTrackers(active=True))
         # But not inactive.
-        self.assertFalse(tracker in trackers.trackers(active=False))
+        self.assertFalse(tracker in trackers.getAllTrackers(active=False))
         login(ADMIN_EMAIL)
         tracker.active = False
         # Inactive trackers are in all trackers
-        self.assertTrue(tracker in trackers.trackers())
+        self.assertTrue(tracker in trackers.getAllTrackers())
         # and inactive,
-        self.assertTrue(tracker in trackers.trackers(active=False))
+        self.assertTrue(tracker in trackers.getAllTrackers(active=False))
         # but not in active.
-        self.assertFalse(tracker in trackers.trackers(active=True))
+        self.assertFalse(tracker in trackers.getAllTrackers(active=True))
 
     def test_inactive_products_in_pillars(self):
         # the list of pillars should only contain active
@@ -168,48 +169,47 @@ class BugTrackerTestCase(TestCaseWithFactory):
             'watches_with_unpushed_comments',
             ]
         for attribute in attributes:
-            self.failUnless(
+            self.assertTrue(
                 getattr(original, attribute, marker) is not marker,
                 "Attribute %s missing from bug tracker." % attribute)
         snapshot = Snapshot(original, providing=IBugTracker)
         for attribute in attributes:
-            self.failUnless(
+            self.assertTrue(
                 getattr(snapshot, attribute, marker) is marker,
                 "Attribute %s not missing from snapshot." % attribute)
 
     def test_watches_ready_to_check(self):
         bug_tracker = self.factory.makeBugTracker()
         # Initially there are no watches, so none need to be checked.
-        self.failUnless(bug_tracker.watches_ready_to_check.is_empty())
+        self.assertTrue(bug_tracker.watches_ready_to_check.is_empty())
         # A bug watch without a next_check set is not ready either.
         bug_watch = self.factory.makeBugWatch(bugtracker=bug_tracker)
         removeSecurityProxy(bug_watch).next_check = None
-        self.failUnless(bug_tracker.watches_ready_to_check.is_empty())
+        self.assertTrue(bug_tracker.watches_ready_to_check.is_empty())
         # If we set its next_check date, it will be ready.
         removeSecurityProxy(bug_watch).next_check = (
             datetime.now(utc) - timedelta(hours=1))
-        self.failUnless(1, bug_tracker.watches_ready_to_check.count())
-        self.failUnlessEqual(
-            bug_watch, bug_tracker.watches_ready_to_check.one())
+        self.assertTrue(1, bug_tracker.watches_ready_to_check.count())
+        self.assertEqual(bug_watch, bug_tracker.watches_ready_to_check.one())
 
     def test_watches_with_unpushed_comments(self):
         bug_tracker = self.factory.makeBugTracker()
         # Initially there are no watches, so there are no unpushed
         # comments.
-        self.failUnless(bug_tracker.watches_with_unpushed_comments.is_empty())
+        self.assertTrue(bug_tracker.watches_with_unpushed_comments.is_empty())
         # A new bug watch has no comments, so the same again.
         bug_watch = self.factory.makeBugWatch(bugtracker=bug_tracker)
-        self.failUnless(bug_tracker.watches_with_unpushed_comments.is_empty())
+        self.assertTrue(bug_tracker.watches_with_unpushed_comments.is_empty())
         # A comment linked to the bug watch will be found.
         login_person(bug_watch.bug.owner)
         message = self.factory.makeMessage(owner=bug_watch.owner)
         bug_message = bug_watch.bug.linkMessage(message, bug_watch)
-        self.failUnless(1, bug_tracker.watches_with_unpushed_comments.count())
-        self.failUnlessEqual(
+        self.assertTrue(1, bug_tracker.watches_with_unpushed_comments.count())
+        self.assertEqual(
             bug_watch, bug_tracker.watches_with_unpushed_comments.one())
         # Once the comment has been pushed, it will no longer be found.
         removeSecurityProxy(bug_message).remote_comment_id = 'brains'
-        self.failUnless(bug_tracker.watches_with_unpushed_comments.is_empty())
+        self.assertTrue(bug_tracker.watches_with_unpushed_comments.is_empty())
 
     def _assertBugWatchesAreCheckedInTheFuture(self):
         """Check the dates of all self.bug_tracker.watches.
@@ -287,91 +287,79 @@ class TestMantis(TestCaseWithFactory):
         # checkwatches isolation protection code.
         transaction.commit()
 
+    @responses.activate
     def test_mantis_login_redirects(self):
         # The Mantis bug tracker needs a special HTTP redirect handler
         # in order to login in. Ensure that redirects to the page with
         # the login form are indeed changed to redirects the form submit
         # URL.
-        handler = MantisLoginHandler()
-        request = Request('http://mantis.example.com/some/path')
-        # Let's pretend that Mantis sent a redirect request to the
-        # login page.
-        new_request = handler.redirect_request(
-            request, None, 302, None, None,
-            'http://mantis.example.com/login_page.php'
-            '?return=%2Fview.php%3Fid%3D3301')
+        location = '/login_page.php?' + urlencode({'return': '/some/page'})
+        responses.add(
+            'GET', 'http://mantis.example.com/some/page',
+            status=302, headers={'Location': location})
+        responses.add(
+            'GET',
+            'http://mantis.example.com/login.php?'
+            'username=guest&password=guest&return=%2Fsome%2Fpage',
+            match_querystring=True, status=200, body='sentinel')
+        tracker = Mantis('http://mantis.example.com')
+        response = tracker.makeRequest(
+            'GET', 'http://mantis.example.com/some/page')
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(b'sentinel', response.content)
+        # The request visited the original URL followed by the URL rewritten
+        # by mantis_login_hook.
+        self.assertThat(response.history, MatchesListwise([
+            MatchesStructure(
+                status_code=Equals(302),
+                request=MatchesStructure.byEquality(
+                    url='http://mantis.example.com/some/page')),
+            ]))
         self.assertEqual(
             'http://mantis.example.com/login.php?'
-            'username=guest&password=guest&return=%2Fview.php%3Fid%3D3301',
-            new_request.get_full_url())
+            'username=guest&password=guest&return=%2Fsome%2Fpage',
+            response.request.url)
 
-    def test_mantis_login_redirect_handler_is_used(self):
-        # Ensure that the special Mantis login handler is used
-        # by the Mantis tracker
-        tracker = Mantis('http://mantis.example.com')
-        test_handler = UrlLib2TransportTestHandler()
-        test_handler.setRedirect('http://mantis.example.com/login_page.php'
-            '?return=%2Fsome%2Fpage')
-        opener = tracker._opener
-        opener.add_handler(test_handler)
-        opener.open('http://mantis.example.com/some/page')
-        # We should now have two entries in the test handler's list
-        # of visited URLs: The original URL we wanted to visit and the
-        # URL changed by the MantisLoginHandler.
-        self.assertEqual(
-            ['http://mantis.example.com/some/page',
-             'http://mantis.example.com/login.php?'
-             'username=guest&password=guest&return=%2Fsome%2Fpage'],
-            test_handler.accessed_urls)
-
-    def test_mantis_opener_can_handle_cookies(self):
-        # Ensure that the OpenerDirector of the Mantis bug tracker
+    @responses.activate
+    def test_mantis_makeRequest_can_handle_cookies(self):
+        # Ensure that the makeRequest method of the Mantis bug tracker
         # handles cookies.
+        responses.add(
+            'GET', 'http://mantis.example.com/', status=200,
+            headers={'Set-Cookie': 'foo=bar'})
         tracker = Mantis('http://mantis.example.com')
-        test_handler = UrlLib2TransportTestHandler()
-        opener = tracker._opener
-        opener.add_handler(test_handler)
-        opener.open('http://mantis.example.com', '')
-        cookies = list(tracker._cookie_handler.cookiejar)
-        self.assertEqual(1, len(cookies))
-        self.assertEqual('foo', cookies[0].name)
-        self.assertEqual('bar', cookies[0].value)
+        tracker.makeRequest('GET', 'http://mantis.example.com/')
+        self.assertThat(tracker._cookie_jar, MatchesListwise([
+            MatchesStructure.byEquality(name='foo', value='bar'),
+            ]))
 
+    @responses.activate
     def test_mantis_csv_file_http_500_error(self):
         # If a Mantis bug tracker returns a HTTP 500 error when the
         # URL for CSV data is accessed, we treat this as an
         # indication that we should screen scrape the bug data and
         # thus set csv_data to None.
+        responses.add(
+            'POST', 'http://mantis.example.com/view_all_set.php', status=200)
+        responses.add(
+            'GET', 'http://mantis.example.com/csv_export.php', status=500)
         tracker = Mantis('http://mantis.example.com')
-        test_handler = UrlLib2TransportTestHandler()
-        opener = tracker._opener
-        opener.add_handler(test_handler)
-        test_handler.setError(
-            HTTPError(
-                'http://mantis.example.com/csv_export.php', 500,
-                'Internal Error', {}, None),
-            'http://mantis.example.com/csv_export.php')
-        self.assertIs(None, tracker.csv_data)
+        self.assertIsNone(tracker.csv_data)
 
+    @responses.activate
     def test_mantis_csv_file_other_http_errors(self):
         # If the Mantis server returns other HTTP errors than 500,
         # they appear as BugTrackerConnectErrors.
+        responses.add(
+            'POST', 'http://mantis.example.com/view_all_set.php', status=200)
+        responses.add(
+            'GET', 'http://mantis.example.com/csv_export.php', status=503)
         tracker = Mantis('http://mantis.example.com')
-        test_handler = UrlLib2TransportTestHandler()
-        opener = tracker._opener
-        opener.add_handler(test_handler)
-        test_handler.setError(
-            HTTPError(
-                'http://mantis.example.com/csv_export.php', 503,
-                'Service Unavailable', {}, None),
-            'http://mantis.example.com/csv_export.php')
         self.assertRaises(BugTrackerConnectError, tracker._csv_data)
 
-        test_handler.setError(
-            HTTPError(
-                'http://mantis.example.com/csv_export.php', 404,
-                'Not Found', {}, None),
-            'http://mantis.example.com/csv_export.php')
+        responses.remove('GET', 'http://mantis.example.com/csv_export.php')
+        responses.add(
+            'GET', 'http://mantis.example.com/csv_export.php', status=404)
         self.assertRaises(BugTrackerConnectError, tracker._csv_data)
 
 
@@ -396,31 +384,69 @@ class TestMakeBugtrackerName(TestCase):
     """Tests for make_bugtracker_name."""
 
     def test_url(self):
-        self.assertEquals(
+        self.assertEqual(
             'auto-bugs.example.com',
             make_bugtracker_name('http://bugs.example.com/shrubbery'))
 
     def test_email_address(self):
-        self.assertEquals(
+        self.assertEqual(
             'auto-foo.bar',
             make_bugtracker_name('mailto:foo.bar@somewhere.com'))
 
     def test_sanitises_forbidden_characters(self):
-        self.assertEquals(
+        self.assertEqual(
             'auto-foobar',
             make_bugtracker_name('mailto:foo_bar@somewhere.com'))
+
+    def test_github(self):
+        self.assertEqual(
+            'auto-github-user-repository',
+            make_bugtracker_name('https://github.com/user/repository/issues'))
+        self.assertEqual(
+            'auto-github-user-repository',
+            make_bugtracker_name('https://github.com/user/Repository/issues'))
+        # Invalid on the GitHub side, but let's make sure these don't blow up.
+        self.assertEqual(
+            'auto-github-user',
+            make_bugtracker_name('https://github.com/user/issues'))
+        self.assertEqual(
+            'auto-github-user-foo-bar',
+            make_bugtracker_name('https://github.com/user/foo/bar/issues'))
+
+    def test_gitlab(self):
+        self.assertEqual(
+            'auto-gitlab.com-user-repository',
+            make_bugtracker_name('https://gitlab.com/user/repository/issues'))
+        self.assertEqual(
+            'auto-gitlab.com-user-repository',
+            make_bugtracker_name('https://gitlab.com/user/Repository/issues'))
+        self.assertEqual(
+            'auto-salsa.debian.org-user-repository',
+            make_bugtracker_name(
+                'https://salsa.debian.org/user/repository/issues'))
+        self.assertEqual(
+            'auto-salsa.debian.org-user-repository',
+            make_bugtracker_name(
+                'https://salsa.debian.org/user/Repository/issues'))
+        # Invalid on the GitLab side, but let's make sure these don't blow up.
+        self.assertEqual(
+            'auto-gitlab.com-user',
+            make_bugtracker_name('https://gitlab.com/user/issues'))
+        self.assertEqual(
+            'auto-gitlab.com-user-foo-bar',
+            make_bugtracker_name('https://gitlab.com/user/foo/bar/issues'))
 
 
 class TestMakeBugtrackerTitle(TestCase):
     """Tests for make_bugtracker_title."""
 
     def test_url(self):
-        self.assertEquals(
+        self.assertEqual(
             'bugs.example.com/shrubbery',
             make_bugtracker_title('http://bugs.example.com/shrubbery'))
 
     def test_email_address(self):
-        self.assertEquals(
+        self.assertEqual(
             'Email to foo.bar@somewhere',
             make_bugtracker_title('mailto:foo.bar@somewhere.com'))
 
@@ -429,6 +455,6 @@ def test_suite():
     suite = unittest.TestLoader().loadTestsFromName(__name__)
     doctest_suite = DocTestSuite(
         'lp.bugs.model.bugtracker',
-        optionflags=NORMALIZE_WHITESPACE|ELLIPSIS)
+        optionflags=NORMALIZE_WHITESPACE | ELLIPSIS)
     suite.addTest(doctest_suite)
     return suite

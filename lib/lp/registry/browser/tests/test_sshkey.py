@@ -1,4 +1,4 @@
-# Copyright 2010 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for GPG key on the web."""
@@ -51,13 +51,16 @@ class TestSSHKeyView(TestCaseWithFactory):
         with person_logged_in(person):
             # Add the key for the user here,
             # since we only care about testing removal.
-            getUtility(ISSHKeySet).new(person, public_key)
+            getUtility(ISSHKeySet).new(person, public_key, check_key=False)
             browser = setupBrowserFreshLogin(person)
             browser.open(url)
             browser.getControl('Remove').click()
-            msg = 'Key "x&lt;script&gt;alert()&lt;/script&gt;example.com" removed'
+            msg = (
+                'Key "x&lt;script&gt;alert()&lt;/script&gt;example.com" '
+                'removed')
             self.assertEqual(
-                extract_text(find_tags_by_class(browser.contents, 'message')[0]),
+                extract_text(
+                    find_tags_by_class(browser.contents, 'message')[0]),
                 msg)
 
     def test_edit_ssh_keys_login_redirect(self):
