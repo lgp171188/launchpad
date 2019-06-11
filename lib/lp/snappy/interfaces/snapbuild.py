@@ -1,4 +1,4 @@
-# Copyright 2015-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Snap package build interfaces."""
@@ -164,8 +164,8 @@ class ISnapBuildView(IPackageBuild):
         title=_("Source snap channels to use for this build."),
         description=_(
             "A dictionary mapping snap names to channels to use for this "
-            "build.  Currently only 'core' and 'snapcraft' keys are "
-            "supported."),
+            "build.  Currently only 'core', 'core18', and 'snapcraft' keys "
+            "are supported."),
         key_type=TextLine()))
 
     virtualized = Bool(
