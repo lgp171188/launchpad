@@ -1,4 +1,4 @@
-# Copyright 2009-2017 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -192,6 +192,10 @@ class BuildQueue(SQLBase):
             # it into Unicode as best we can.
             self.logtail = str(
                 slave_status.get("logtail")).decode("UTF-8", errors="replace")
+            # PostgreSQL text columns can't contain \0 characters, and since
+            # we only use this for web UI display purposes there's no point
+            # in going through contortions to store them.
+            self.logtail = self.logtail.replace("\0", "")
 
     def suspend(self):
         """See `IBuildQueue`."""

@@ -95,6 +95,8 @@ class SigningUpload(CustomUpload):
             self.kmod_x509 = None
             self.opal_pem = None
             self.opal_x509 = None
+            self.sipl_pem = None
+            self.sipl_x509 = None
             self.autokey = False
         else:
             self.uefi_key = os.path.join(pubconf.signingroot, "uefi.key")
@@ -103,6 +105,8 @@ class SigningUpload(CustomUpload):
             self.kmod_x509 = os.path.join(pubconf.signingroot, "kmod.x509")
             self.opal_pem = os.path.join(pubconf.signingroot, "opal.pem")
             self.opal_x509 = os.path.join(pubconf.signingroot, "opal.x509")
+            self.sipl_pem = os.path.join(pubconf.signingroot, "sipl.pem")
+            self.sipl_x509 = os.path.join(pubconf.signingroot, "sipl.x509")
             self.autokey = pubconf.signingautokey
 
         self.setComponents(tarfile_path)
@@ -176,6 +180,8 @@ class SigningUpload(CustomUpload):
                     yield (os.path.join(dirpath, filename), self.signKmod)
                 elif filename.endswith(".opal"):
                     yield (os.path.join(dirpath, filename), self.signOpal)
+                elif filename.endswith(".sipl"):
+                    yield (os.path.join(dirpath, filename), self.signSipl)
 
     def getKeys(self, which, generate, *keynames):
         """Validate and return the uefi key and cert for encryption."""
@@ -242,7 +248,7 @@ class SigningUpload(CustomUpload):
         cmdl = ["sbsign", "--key", key, "--cert", cert, image]
         return self.callLog("UEFI signing", cmdl)
 
-    openssl_config_opal = textwrap.dedent("""
+    openssl_config_base = textwrap.dedent("""\
         [ req ]
         default_bits = 4096
         distinguished_name = req_distinguished_name
@@ -260,37 +266,35 @@ class SigningUpload(CustomUpload):
         authorityKeyIdentifier=keyid
         """)
 
-    openssl_config_kmod = openssl_config_opal + textwrap.dedent("""
+    openssl_config_opal = "# OPAL OpenSSL config\n" + openssl_config_base
+
+    openssl_config_kmod = "# KMOD OpenSSL config\n" + openssl_config_base + \
+        textwrap.dedent("""
         # codeSigning:  specifies that this key is used to sign code.
         # 1.3.6.1.4.1.2312.16.1.2:  defines this key as used for
         #   module signing only. See https://lkml.org/lkml/2015/8/26/741.
         extendedKeyUsage        = codeSigning,1.3.6.1.4.1.2312.16.1.2
         """)
 
-    def generateOpensslConfig(self, key_type, common_name):
-        if key_type == 'Kmod':
-            genkey_tmpl = self.openssl_config_kmod
-        elif key_type == 'Opal':
-            genkey_tmpl = self.openssl_config_opal
-        else:
-            raise ValueError("unknown key_type " + key_type)
+    openssl_config_sipl = "# SIPL OpenSSL config\n" + openssl_config_base
+
+    def generateOpensslConfig(self, key_type, genkey_tmpl):
+        # Truncate name to 64 character maximum.
+        common_name = self.generateKeyCommonName(
+            self.archive.owner.name, self.archive.name, key_type)
 
         return genkey_tmpl.format(common_name=common_name)
 
-    def generatePemX509Pair(self, key_type, pem_filename, x509_filename):
+    def generatePemX509Pair(self, key_type, genkey_text, pem_filename,
+            x509_filename):
         """Generate new pem/x509 key pairs."""
         directory = os.path.dirname(pem_filename)
         if not os.path.exists(directory):
             os.makedirs(directory)
 
-        # Truncate name to 64 character maximum.
-        common_name = self.generateKeyCommonName(
-            self.archive.owner.name, self.archive.name, key_type)
-
         old_mask = os.umask(0o077)
         try:
             with tempfile.NamedTemporaryFile(suffix='.keygen') as tf:
-                genkey_text = self.generateOpensslConfig(key_type, common_name)
                 print(genkey_text, file=tf)
 
                 # Close out the underlying file so we know it is complete.
@@ -318,7 +322,8 @@ class SigningUpload(CustomUpload):
 
     def generateKmodKeys(self):
         """Generate new Kernel Signing Keys for this archive."""
-        self.generatePemX509Pair("Kmod", self.kmod_pem, self.kmod_x509)
+        config = self.generateOpensslConfig("Kmod", self.openssl_config_kmod)
+        self.generatePemX509Pair("Kmod", config, self.kmod_pem, self.kmod_x509)
 
     def signKmod(self, image):
         """Attempt to sign a kernel module."""
@@ -333,7 +338,8 @@ class SigningUpload(CustomUpload):
 
     def generateOpalKeys(self):
         """Generate new Opal Signing Keys for this archive."""
-        self.generatePemX509Pair("Opal", self.opal_pem, self.opal_x509)
+        config = self.generateOpensslConfig("Opal", self.openssl_config_opal)
+        self.generatePemX509Pair("Opal", config, self.opal_pem, self.opal_x509)
 
     def signOpal(self, image):
         """Attempt to sign a kernel image for Opal."""
@@ -345,6 +351,22 @@ class SigningUpload(CustomUpload):
         self.publishPublicKey(cert)
         cmdl = ["kmodsign", "-D", "sha512", pem, cert, image, image + ".sig"]
         return self.callLog("Opal signing", cmdl)
+
+    def generateSiplKeys(self):
+        """Generate new Sipl Signing Keys for this archive."""
+        config = self.generateOpensslConfig("SIPL", self.openssl_config_sipl)
+        self.generatePemX509Pair("SIPL", config, self.sipl_pem, self.sipl_x509)
+
+    def signSipl(self, image):
+        """Attempt to sign a kernel image for Sipl."""
+        remove_if_exists("%s.sig" % image)
+        (pem, cert) = self.getKeys('SIPL Kernel', self.generateSiplKeys,
+            self.sipl_pem, self.sipl_x509)
+        if not pem or not cert:
+            return
+        self.publishPublicKey(cert)
+        cmdl = ["kmodsign", "-D", "sha512", pem, cert, image, image + ".sig"]
+        return self.callLog("SIPL signing", cmdl)
 
     def convertToTarball(self):
         """Convert unpacked output to signing tarball."""

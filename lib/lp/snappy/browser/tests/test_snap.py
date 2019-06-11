@@ -428,6 +428,8 @@ class TestSnapAddView(BaseTestSnapView):
         browser.getControl(
             name="field.auto_build_channels.core").value = "stable"
         browser.getControl(
+            name="field.auto_build_channels.core18").value = "beta"
+        browser.getControl(
             name="field.auto_build_channels.snapcraft").value = "edge"
         browser.getControl("Create snap package").click()
 
@@ -444,7 +446,7 @@ class TestSnapAddView(BaseTestSnapView):
             MatchesTagText(content, "auto_build_pocket"))
         self.assertThat(
             "Source snap channels for automatic builds:\nEdit snap package\n"
-            "core\nstable\nsnapcraft\nedge\n",
+            "core\nstable\ncore18\nbeta\nsnapcraft\nedge\n",
             MatchesTagText(content, "auto_build_channels"))
 
     @responses.activate
@@ -1670,6 +1672,7 @@ class TestSnapRequestBuildsView(BaseTestSnapView):
             when building the snap package.
             Source snap channels:
             core
+            core18
             snapcraft
             The channels to use for build tools when building the snap
             package.
