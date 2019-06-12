@@ -1,4 +1,4 @@
-# Copyright 2014-2017 Canonical Ltd.  This software is licensed under the
+# Copyright 2014-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Live filesystem interfaces."""
@@ -261,6 +261,13 @@ class ILiveFSModerateAttributes(Interface):
         description=_(
             "A delta to apply to all build scores for the live filesystem.  "
             "Builds with a higher score will build sooner.")))
+
+    keep_binary_files_days = exported(Int(
+        title=_("Binary file retention period"),
+        required=True, readonly=False,
+        description=_(
+            "Keep binary files attached to builds of this live filesystem "
+            "for at least this many days.")))
 
 
 class ILiveFSAdminAttributes(Interface):

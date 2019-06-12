@@ -1574,13 +1574,14 @@ class LiveFSFilePruner(BulkPruner):
     target_table_class = LiveFSFile
     ids_to_prune_query = """
         SELECT DISTINCT LiveFSFile.id
-        FROM LiveFSFile, LiveFSBuild, LibraryFileAlias
+        FROM LiveFSFile, LiveFSBuild, LiveFS, LibraryFileAlias
         WHERE
             LiveFSFile.livefsbuild = LiveFSBuild.id
+            AND LiveFSBuild.livefs = LiveFS.id
             AND LiveFSFile.libraryfile = LibraryFileAlias.id
             AND LiveFSBuild.date_finished <
                 CURRENT_TIMESTAMP AT TIME ZONE 'UTC'
-                - CAST('1 day' AS interval)
+                - LiveFS.keep_binary_files_interval
             AND LibraryFileAlias.mimetype != 'text/plain'
         """
 
