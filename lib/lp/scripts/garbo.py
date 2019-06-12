@@ -1566,10 +1566,11 @@ class ProductVCSPopulator(TunableLoop):
 class LiveFSFilePruner(BulkPruner):
     """A BulkPruner to remove old `LiveFSFile`s.
 
-    We remove binary files attached to `LiveFSBuild`s that are more than a
-    day old; these files are very large and are only useful for builds in
-    progress.  Text files are typically small (<1MiB) and useful for
-    retrospective analysis, so we preserve those indefinitely.
+    We remove binary files attached to `LiveFSBuild`s that are more than
+    `LiveFS.keep_binary_files_interval` old; these files are very large and
+    are only useful for builds in progress.  Text files are typically small
+    (<1MiB) and useful for retrospective analysis, so we preserve those
+    indefinitely.
     """
     target_table_class = LiveFSFile
     # Note that a NULL keep_binary_files_interval disables pruning, due to
