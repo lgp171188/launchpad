@@ -132,8 +132,14 @@ class TestLiveFS(TestCaseWithFactory):
                 Unauthorized, setattr, livefs, "keep_binary_files_days", 2)
         with celebrity_logged_in("buildd_admin"):
             livefs.keep_binary_files_days = 2
+        self.assertEqual(2, livefs.keep_binary_files_days)
         self.assertEqual(
             timedelta(days=2),
+            removeSecurityProxy(livefs).keep_binary_files_interval)
+        with celebrity_logged_in("buildd_admin"):
+            livefs.keep_binary_files_days = None
+        self.assertIsNone(livefs.keep_binary_files_days)
+        self.assertIsNone(
             removeSecurityProxy(livefs).keep_binary_files_interval)
 
     def test_requestBuild(self):

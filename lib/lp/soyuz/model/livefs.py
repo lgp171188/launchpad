@@ -118,7 +118,7 @@ class LiveFS(Storm):
     relative_build_score = Int(name='relative_build_score', allow_none=False)
 
     keep_binary_files_interval = TimeDelta(
-        name='keep_binary_files_interval', allow_none=False)
+        name='keep_binary_files_interval', allow_none=True)
 
     def __init__(self, registrant, owner, distro_series, name,
                  metadata, require_virtualized, keep_binary_files_days,
@@ -136,23 +136,24 @@ class LiveFS(Storm):
         self.relative_build_score = 0
         self.date_created = date_created
         self.date_last_modified = date_created
-        if keep_binary_files_days is None:
-            keep_binary_files_days = 1
-        self.keep_binary_files_interval = timedelta(
-            days=keep_binary_files_days)
+        self.keep_binary_files_days = keep_binary_files_days
 
     @property
     def keep_binary_files_days(self):
         """See `ILiveFS`."""
         # Rounding up preserves the "at least this many days" part of the
         # contract, and makes the interface simpler.
-        return int(math.ceil(
-            self.keep_binary_files_interval.total_seconds() / 86400))
+        if self.keep_binary_files_interval is not None:
+            return int(math.ceil(
+                self.keep_binary_files_interval.total_seconds() / 86400))
+        else:
+            return None
 
     @keep_binary_files_days.setter
     def keep_binary_files_days(self, days):
         """See `ILiveFS`."""
-        self.keep_binary_files_interval = timedelta(days=days)
+        self.keep_binary_files_interval = (
+            timedelta(days=days) if days is not None else None)
 
     def requestBuild(self, requester, archive, distro_arch_series, pocket,
                      unique_key=None, metadata_override=None, version=None):
@@ -255,7 +256,7 @@ class LiveFSSet:
     """See `ILiveFSSet`."""
 
     def new(self, registrant, owner, distro_series, name, metadata,
-            require_virtualized=True, keep_binary_files_days=None,
+            require_virtualized=True, keep_binary_files_days=1,
             date_created=DEFAULT):
         """See `ILiveFSSet`."""
         if not registrant.inTeam(owner):

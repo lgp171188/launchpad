@@ -4628,7 +4628,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
 
     def makeLiveFS(self, registrant=None, owner=None, distroseries=None,
                    name=None, metadata=None, require_virtualized=True,
-                   keep_binary_files_days=None, date_created=DEFAULT):
+                   keep_binary_files_days=1, date_created=DEFAULT):
         """Make a new LiveFS."""
         if registrant is None:
             registrant = self.makePerson()

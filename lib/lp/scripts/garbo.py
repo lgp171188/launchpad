@@ -1572,6 +1572,8 @@ class LiveFSFilePruner(BulkPruner):
     retrospective analysis, so we preserve those indefinitely.
     """
     target_table_class = LiveFSFile
+    # Note that a NULL keep_binary_files_interval disables pruning, due to
+    # SQL NULL propagation.
     ids_to_prune_query = """
         SELECT DISTINCT LiveFSFile.id
         FROM LiveFSFile, LiveFSBuild, LiveFS, LibraryFileAlias

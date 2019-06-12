@@ -264,10 +264,10 @@ class ILiveFSModerateAttributes(Interface):
 
     keep_binary_files_days = exported(Int(
         title=_("Binary file retention period"),
-        required=True, readonly=False,
+        required=False, readonly=False,
         description=_(
             "Keep binary files attached to builds of this live filesystem "
-            "for at least this many days.")))
+            "for at least this many days.  If unset, disable pruning.")))
 
 
 class ILiveFSAdminAttributes(Interface):
