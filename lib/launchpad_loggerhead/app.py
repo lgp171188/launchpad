@@ -14,11 +14,11 @@ from bzrlib import (
     urlutils,
     )
 from bzrlib.transport import get_transport
+from bzrlib.url_policy_open import open_only_scheme
 from loggerhead.apps import (
     favicon_app,
     static_app,
     )
-from bzrlib.url_policy_open import open_only_scheme
 from loggerhead.apps.branch import BranchWSGIApp
 import oops_wsgi
 from openid.consumer.consumer import (
