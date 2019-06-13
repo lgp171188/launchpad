@@ -1384,7 +1384,7 @@ class CodeImportBranchOpenPolicyTests(TestCase):
         self.assertGoodUrl("bzr://bzr.example.com/somebzrurl/")
         self.assertBadUrl("bzr://bazaar.launchpad.test/example")
 
-    def test_checkOneURL_git_to_bzr(self):
+    def test_check_one_url_git_to_bzr(self):
         self.policy = CodeImportBranchOpenPolicy("git", "bzr")
         self.assertBadUrl("/etc/passwd")
         self.assertBadUrl("file:///etc/passwd")
@@ -1392,7 +1392,7 @@ class CodeImportBranchOpenPolicyTests(TestCase):
         self.assertGoodUrl("git://git.example.com/repo")
         self.assertGoodUrl("git://git.launchpad.test/example")
 
-    def test_checkOneURL_git_to_git(self):
+    def test_check_one_url_git_to_git(self):
         self.policy = CodeImportBranchOpenPolicy("git", "git")
         self.assertBadUrl("/etc/passwd")
         self.assertBadUrl("file:///etc/passwd")

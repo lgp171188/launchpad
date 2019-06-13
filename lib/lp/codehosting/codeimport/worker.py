@@ -1047,7 +1047,7 @@ class GitToGitImportWorker(ImportWorker):
     def _doImport(self):
         self._logger.info("Starting job.")
         try:
-            self._opener_policy.checkOneURL(self.source_details.url)
+            self._opener_policy.check_one_url(self.source_details.url)
         except BadUrl as e:
             self._logger.info("Invalid URL: %s" % e)
             return CodeImportWorkerExitCode.FAILURE_FORBIDDEN
