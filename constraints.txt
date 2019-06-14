@@ -236,6 +236,7 @@ billiard==3.5.0.5
 bson==0.3.3
 bzr==2.6.0.lp.3
 celery==4.1.1
+certifi==2019.3.9
 cffi==1.11.2
 Chameleon==2.11
 chardet==3.0.4
@@ -341,9 +342,9 @@ python-openid==2.2.5-fix1034376
 python-swiftclient==2.0.3
 PyYAML==3.10
 rabbitfixture==0.4.1
-requests==2.7.0
+requests==2.22.0
 requests-file==1.4.3
-requests-toolbelt==0.6.2
+requests-toolbelt==0.9.1
 responses==0.9.0
 scandir==1.7
 service-identity==18.1.0
@@ -371,6 +372,7 @@ txfixtures==0.4.2
 txpkgupload==0.2
 typing==3.6.2
 unittest2==1.1.0
+urllib3==1.25.3
 van.testing==3.0.0
 vine==1.1.4
 virtualenv-tools3==2.0.0

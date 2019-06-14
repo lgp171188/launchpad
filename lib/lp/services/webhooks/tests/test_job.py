@@ -175,7 +175,7 @@ class TestWebhookClient(TestCase):
                 'request': self.request_matcher,
                 'response': MatchesDict({
                     'status_code': Equals(200),
-                    'headers': Equals({'content-type': 'text/plain'}),
+                    'headers': Equals({'Content-Type': 'text/plain'}),
                     'body': Equals('Content'),
                     }),
                 }))
@@ -188,7 +188,7 @@ class TestWebhookClient(TestCase):
                 'request': self.request_matcher,
                 'response': MatchesDict({
                     'status_code': Equals(404),
-                    'headers': Equals({'content-type': 'text/plain'}),
+                    'headers': Equals({'Content-Type': 'text/plain'}),
                     'body': Equals('Content'),
                     }),
                 }))
