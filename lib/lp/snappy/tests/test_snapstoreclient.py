@@ -9,6 +9,7 @@ __metaclass__ = type
 
 import base64
 from cgi import FieldStorage
+from datetime import datetime, timedelta
 import hashlib
 import io
 import json
@@ -18,6 +19,7 @@ from pymacaroons import (
     Macaroon,
     Verifier,
     )
+import pytz
 from requests import Request
 from requests.utils import parse_dict_header
 import responses
@@ -348,14 +350,16 @@ class TestSnapStoreClient(TestCaseWithFactory):
             self.client.requestPackageUploadPermission,
             snappy_series, "test-snap")
 
-    def makeUploadableSnapBuild(self, store_secrets=None):
+    def makeUploadableSnapBuild(self, store_secrets=None, build_kwargs=None):
         if store_secrets is None:
             store_secrets = self._make_store_secrets()
+        if build_kwargs is None:
+            build_kwargs = {}
         snap = self.factory.makeSnap(
             store_upload=True,
             store_series=self.factory.makeSnappySeries(name="rolling"),
             store_name="test-snap", store_secrets=store_secrets)
-        snapbuild = self.factory.makeSnapBuild(snap=snap)
+        snapbuild = self.factory.makeSnapBuild(snap=snap, **build_kwargs)
         snap_lfa = self.factory.makeLibraryFileAlias(
             filename="test-snap.snap", content="dummy snap content")
         self.factory.makeSnapFile(snapbuild=snapbuild, libraryfile=snap_lfa)
@@ -394,6 +398,44 @@ class TestSnapStoreClient(TestCaseWithFactory):
                 auth=("Macaroon", MacaroonsVerify(self.root_key)),
                 json_data={
                     "name": "test-snap", "updown_id": 1, "series": "rolling",
+                    }),
+            ]))
+
+    @responses.activate
+    def test_upload_with_built_at(self):
+        timestamp = datetime(2019, 06, 14, 02, 00, tzinfo=pytz.UTC)
+        build_kwargs = {
+            'date_created': timestamp,
+            'duration': timedelta(seconds=60)
+        }
+        snapbuild = self.makeUploadableSnapBuild(build_kwargs=build_kwargs)
+        transaction.commit()
+        self._addUnscannedUploadResponse()
+        self._addSnapPushResponse()
+        with dbuser(config.ISnapStoreUploadJobSource.dbuser):
+            self.assertEqual(
+                "http://sca.example/dev/api/snaps/1/builds/1/status",
+                self.client.upload(snapbuild))
+        requests = [call.request for call in responses.calls]
+        self.assertThat(requests, MatchesListwise([
+            RequestMatches(
+                url=Equals("http://updown.example/unscanned-upload/"),
+                method=Equals("POST"),
+                form_data={
+                    "binary": MatchesStructure.byEquality(
+                        name="binary", filename="test-snap.snap",
+                        value="dummy snap content",
+                        type="application/octet-stream",
+                        )}),
+            RequestMatches(
+                url=Equals("http://sca.example/dev/api/snap-push/"),
+                method=Equals("POST"),
+                headers=ContainsDict(
+                    {"Content-Type": Equals("application/json")}),
+                auth=("Macaroon", MacaroonsVerify(self.root_key)),
+                json_data={
+                    "name": "test-snap", "updown_id": 1, "series": "rolling",
+                    "built_at": timestamp.isoformat(), "only_if_newer": True
                     }),
             ]))
 

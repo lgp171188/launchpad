@@ -253,8 +253,9 @@ class SnapStoreClient:
             lfa.close()
 
     @classmethod
-    def _uploadApp(cls, snap, upload_data):
+    def _uploadApp(cls, snapbuild, upload_data):
         """Create a new store upload based on the uploaded file."""
+        snap = snapbuild.snap
         assert config.snappy.store_url is not None
         assert snap.store_name is not None
         upload_url = urlappend(config.snappy.store_url, "dev/api/snap-push/")
@@ -263,6 +264,11 @@ class SnapStoreClient:
             "updown_id": upload_data["upload_id"],
             "series": snap.store_series.name,
             }
+        if snapbuild.date_started:
+            data.update({
+                "built_at": snapbuild.date_started.isoformat(),
+                "only_if_newer": True
+                })
         # XXX cjwatson 2016-05-09: This should add timeline information, but
         # that's currently difficult in jobs.
         try:
@@ -293,7 +299,7 @@ class SnapStoreClient:
                 continue
             upload_data = cls._uploadFile(lfa, lfc)
             return cls.refreshIfNecessary(
-                snapbuild.snap, cls._uploadApp, snapbuild.snap, upload_data)
+                snapbuild.snap, cls._uploadApp, snapbuild, upload_data)
 
     @classmethod
     def refreshDischargeMacaroon(cls, snap):
