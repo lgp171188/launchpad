@@ -35,6 +35,7 @@ from testtools.matchers import (
 import transaction
 from zope.component import getUtility
 
+from lp.buildmaster.enums import BuildStatus
 from lp.services.config import config
 from lp.services.features.testing import FeatureFixture
 from lp.services.log.logger import BufferLogger
@@ -363,6 +364,8 @@ class TestSnapStoreClient(TestCaseWithFactory):
             filename="test-snap.manifest", content="dummy manifest content")
         self.factory.makeSnapFile(
             snapbuild=snapbuild, libraryfile=manifest_lfa)
+        snapbuild.updateStatus(BuildStatus.BUILDING)
+        snapbuild.updateStatus(BuildStatus.FULLYBUILT)
         return snapbuild
 
     @responses.activate
@@ -394,6 +397,7 @@ class TestSnapStoreClient(TestCaseWithFactory):
                 auth=("Macaroon", MacaroonsVerify(self.root_key)),
                 json_data={
                     "name": "test-snap", "updown_id": 1, "series": "rolling",
+                    "built_at": snapbuild.date_started.isoformat(),
                     }),
             ]))
 
@@ -429,6 +433,7 @@ class TestSnapStoreClient(TestCaseWithFactory):
                 auth=("Macaroon", MacaroonsVerify(root_key)),
                 json_data={
                     "name": "test-snap", "updown_id": 1, "series": "rolling",
+                    "built_at": snapbuild.date_started.isoformat(),
                     }),
             ]))
 
