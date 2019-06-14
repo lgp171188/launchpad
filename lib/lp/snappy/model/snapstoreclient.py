@@ -258,17 +258,15 @@ class SnapStoreClient:
         snap = snapbuild.snap
         assert config.snappy.store_url is not None
         assert snap.store_name is not None
+        assert snapbuild.date_started is not None
         upload_url = urlappend(config.snappy.store_url, "dev/api/snap-push/")
         data = {
             "name": snap.store_name,
             "updown_id": upload_data["upload_id"],
             "series": snap.store_series.name,
+            "built_at": snapbuild.date_started.isoformat(),
+            "only_if_newer": True,
             }
-        if snapbuild.date_started:
-            data.update({
-                "built_at": snapbuild.date_started.isoformat(),
-                "only_if_newer": True
-                })
         # XXX cjwatson 2016-05-09: This should add timeline information, but
         # that's currently difficult in jobs.
         try:
