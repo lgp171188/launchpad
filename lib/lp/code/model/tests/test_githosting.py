@@ -43,7 +43,6 @@ from lp.code.errors import (
     GitRepositoryScanFault,
     )
 from lp.code.interfaces.githosting import IGitHostingClient
-from lp.services.config import config
 from lp.services.job.interfaces.job import (
     IRunnableJob,
     JobStatus,
@@ -118,9 +117,6 @@ class TestGitHostingClient(TestCase):
         self.assertEqual(
             "/" + url_suffix.split("?", 1)[0], action.detail.split(" ", 1)[0])
 
-    def makeHostingURL(self, path):
-        return urljoin(config.codehosting.internal_git_api_endpoint, path)
-
     def test_create(self):
         with self.mockRequests("POST"):
             self.client.create("123")
@@ -139,8 +135,7 @@ class TestGitHostingClient(TestCase):
             self.assertRaisesWithContent(
                 GitRepositoryCreationFault,
                 "Failed to create Git repository: "
-                "400 Client Error: Bad Request for url: " +
-                self.makeHostingURL("/repo"),
+                "400 Client Error: Bad Request",
                 self.client.create, "123")
 
     def test_getProperties(self):
@@ -155,8 +150,7 @@ class TestGitHostingClient(TestCase):
             self.assertRaisesWithContent(
                 GitRepositoryScanFault,
                 "Failed to get properties of Git repository: "
-                "400 Client Error: Bad Request for url: " +
-                self.makeHostingURL("/repo/123"),
+                "400 Client Error: Bad Request",
                 self.client.getProperties, "123")
 
     def test_setProperties(self):
@@ -171,8 +165,7 @@ class TestGitHostingClient(TestCase):
             self.assertRaisesWithContent(
                 GitRepositoryScanFault,
                 "Failed to set properties of Git repository: "
-                "400 Client Error: Bad Request for url: " +
-                self.makeHostingURL("/repo/123"),
+                "400 Client Error: Bad Request",
                 self.client.setProperties, "123",
                 default_branch="refs/heads/a")
 
@@ -197,8 +190,7 @@ class TestGitHostingClient(TestCase):
             self.assertRaisesWithContent(
                 GitRepositoryScanFault,
                 "Failed to get refs from Git repository: "
-                "400 Client Error: Bad Request for url: " +
-                self.makeHostingURL("/repo/123/refs"),
+                "400 Client Error: Bad Request",
                 self.client.getRefs, "123")
 
     def test_getCommits(self):
@@ -213,8 +205,7 @@ class TestGitHostingClient(TestCase):
             self.assertRaisesWithContent(
                 GitRepositoryScanFault,
                 "Failed to get commit details from Git repository: "
-                "400 Client Error: Bad Request for url: " +
-                self.makeHostingURL("/repo/123/commits"),
+                "400 Client Error: Bad Request",
                 self.client.getCommits, "123", ["0"])
 
     def test_getLog(self):
@@ -237,8 +228,7 @@ class TestGitHostingClient(TestCase):
             self.assertRaisesWithContent(
                 GitRepositoryScanFault,
                 "Failed to get commit log from Git repository: "
-                "400 Client Error: Bad Request for url: " +
-                self.makeHostingURL("/repo/123/log/refs/heads/master"),
+                "400 Client Error: Bad Request",
                 self.client.getLog, "123", "refs/heads/master")
 
     def test_getDiff(self):
@@ -265,8 +255,7 @@ class TestGitHostingClient(TestCase):
             self.assertRaisesWithContent(
                 GitRepositoryScanFault,
                 "Failed to get diff from Git repository: "
-                "400 Client Error: Bad Request for url: " +
-                self.makeHostingURL("/repo/123/compare/a..b"),
+                "400 Client Error: Bad Request",
                 self.client.getDiff, "123", "a", "b")
 
     def test_getMergeDiff(self):
@@ -298,8 +287,7 @@ class TestGitHostingClient(TestCase):
             self.assertRaisesWithContent(
                 GitRepositoryScanFault,
                 "Failed to get merge diff from Git repository: "
-                "400 Client Error: Bad Request for url: " +
-                self.makeHostingURL("/repo/123/compare-merge/a:b"),
+                "400 Client Error: Bad Request",
                 self.client.getMergeDiff, "123", "a", "b")
 
     def test_detectMerges(self):
@@ -315,8 +303,7 @@ class TestGitHostingClient(TestCase):
             self.assertRaisesWithContent(
                 GitRepositoryScanFault,
                 "Failed to detect merges in Git repository: "
-                "400 Client Error: Bad Request for url: " +
-                self.makeHostingURL("/repo/123/detect-merges/a"),
+                "400 Client Error: Bad Request",
                 self.client.detectMerges, "123", "a", ["b", "c"])
 
     def test_delete(self):
@@ -329,8 +316,7 @@ class TestGitHostingClient(TestCase):
             self.assertRaisesWithContent(
                 GitRepositoryDeletionFault,
                 "Failed to delete Git repository: "
-                "400 Client Error: Bad Request for url: " +
-                self.makeHostingURL("/repo/123"),
+                "400 Client Error: Bad Request",
                 self.client.delete, "123")
 
     def test_getBlob(self):
@@ -371,8 +357,7 @@ class TestGitHostingClient(TestCase):
             self.assertRaisesWithContent(
                 GitRepositoryScanFault,
                 "Failed to get file from Git repository: "
-                "400 Client Error: Bad Request for url: " +
-                self.makeHostingURL("/repo/123/blob/dir/path/file/name"),
+                "400 Client Error: Bad Request",
                 self.client.getBlob, "123", "dir/path/file/name")
 
     def test_getBlob_url_quoting(self):

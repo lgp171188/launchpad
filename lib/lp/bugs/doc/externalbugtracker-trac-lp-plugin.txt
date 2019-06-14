@@ -135,8 +135,7 @@ If authentication fails, a BugTrackerAuthenticationError will be raised.
     Traceback (most recent call last):
       ...
     BugTrackerAuthenticationError: http://example.com:
-    401 Client Error: Unauthorized for url:
-    http://example.com/launchpad-auth/...
+    401 Client Error: Unauthorized
 
 
 Current time

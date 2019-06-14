@@ -1,4 +1,4 @@
-# Copyright 2016-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2016-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for communication with the snap store."""
@@ -341,11 +341,10 @@ class TestSnapStoreClient(TestCaseWithFactory):
     @responses.activate
     def test_requestPackageUploadPermission_404(self):
         snappy_series = self.factory.makeSnappySeries()
-        acl_url = "http://sca.example/dev/api/acl/"
-        responses.add("POST", acl_url, status=404)
+        responses.add("POST", "http://sca.example/dev/api/acl/", status=404)
         self.assertRaisesWithContent(
             BadRequestPackageUploadResponse,
-            b"404 Client Error: Not Found for url: " + acl_url.encode("UTF-8"),
+            b"404 Client Error: Not Found",
             self.client.requestPackageUploadPermission,
             snappy_series, "test-snap")
 
@@ -500,17 +499,13 @@ class TestSnapStoreClient(TestCaseWithFactory):
         store_secrets = self._make_store_secrets()
         snapbuild = self.makeUploadableSnapBuild(store_secrets=store_secrets)
         transaction.commit()
-        unscanned_upload_url = "http://updown.example/unscanned-upload/"
         responses.add(
-            "POST", unscanned_upload_url, status=502,
+            "POST", "http://updown.example/unscanned-upload/", status=502,
             body="The proxy exploded.\n")
         with dbuser(config.ISnapStoreUploadJobSource.dbuser):
             err = self.assertRaises(
                 UploadFailedResponse, self.client.upload, snapbuild)
-            self.assertEqual(
-                "502 Server Error: Bad Gateway for url: " +
-                unscanned_upload_url,
-                str(err))
+            self.assertEqual("502 Server Error: Bad Gateway", str(err))
             self.assertEqual(b"The proxy exploded.\n", err.detail)
             self.assertTrue(err.can_retry)
 
@@ -597,9 +592,7 @@ class TestSnapStoreClient(TestCaseWithFactory):
         status_url = "http://sca.example/dev/api/snaps/1/builds/1/status"
         responses.add("GET", status_url, status=404)
         self.assertRaisesWithContent(
-            BadScanStatusResponse,
-            b"404 Client Error: Not Found for url: " +
-            status_url.encode("UTF-8"),
+            BadScanStatusResponse, b"404 Client Error: Not Found",
             self.client.checkStatus, status_url)
 
     @responses.activate
@@ -620,12 +613,10 @@ class TestSnapStoreClient(TestCaseWithFactory):
 
     @responses.activate
     def test_listChannels_404(self):
-        channels_url = "http://search.example/api/v1/channels"
-        responses.add("GET", channels_url, status=404)
+        responses.add(
+            "GET", "http://search.example/api/v1/channels", status=404)
         self.assertRaisesWithContent(
-            BadSearchResponse,
-            b"404 Client Error: Not Found for url: " +
-            channels_url.encode("UTF-8"),
+            BadSearchResponse, b"404 Client Error: Not Found",
             self.client.listChannels)
 
     @responses.activate
@@ -734,10 +725,8 @@ class TestSnapStoreClient(TestCaseWithFactory):
             store_name="test-snap", store_secrets=self._make_store_secrets(),
             store_channels=["stable", "edge"])
         snapbuild = self.factory.makeSnapBuild(snap=snap)
-        release_url = "http://sca.example/dev/api/snap-release/"
-        responses.add("POST", release_url, status=404)
+        responses.add(
+            "POST", "http://sca.example/dev/api/snap-release/", status=404)
         self.assertRaisesWithContent(
-            ReleaseFailedResponse,
-            b"404 Client Error: Not Found for url: " +
-            release_url.encode("UTF-8"),
+            ReleaseFailedResponse, b"404 Client Error: Not Found",
             self.client.release, snapbuild, 1)

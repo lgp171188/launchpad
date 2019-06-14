@@ -111,7 +111,6 @@ remote server, it will be logged.
     ...     requests_mock.add('GET', re.compile(r'.*'), status=500)
     ...     finder.getRemoteProductFromSourceForge('fronobulator')
     ERROR...Error fetching project...: 500 Server Error: Internal Server Error
-    for url: http://sourceforge.net/projects/fronobulator
 
 SourceForgeRemoteProductFinder.setRemoteProductsFromSourceForge()
 iterates over the list of products returned by

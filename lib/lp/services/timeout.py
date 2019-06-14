@@ -8,6 +8,7 @@ __all__ = [
     "default_timeout",
     "get_default_timeout_function",
     "override_timeout",
+    "raise_for_status_redacted",
     "reduced_timeout",
     "SafeTransportWithTimeout",
     "set_default_timeout_function",
@@ -18,6 +19,7 @@ __all__ = [
     ]
 
 from contextlib import contextmanager
+import re
 import socket
 import sys
 from threading import (
@@ -29,7 +31,10 @@ from xmlrpclib import (
     Transport,
     )
 
-from requests import Session
+from requests import (
+    HTTPError,
+    Session,
+    )
 from requests.adapters import (
     DEFAULT_POOLBLOCK,
     HTTPAdapter,
@@ -317,6 +322,19 @@ class CleanableHTTPAdapter(HTTPAdapter):
             **pool_kwargs)
 
 
+def raise_for_status_redacted(response):
+    """Like L{requests.models.Response.raise_for_status}, but without the URL.
+
+    In some cases, the URL may contain sensitive information such as a
+    password.
+    """
+    try:
+        response.raise_for_status()
+    except HTTPError as e:
+        raise HTTPError(
+            re.sub(r" for url: .*", "", e.args[0]), response=e.response)
+
+
 class URLFetcher:
     """Object fetching remote URLs with a time out."""
 
@@ -361,7 +379,7 @@ class URLFetcher:
         if output_file is not None:
             request_kwargs["stream"] = True
         response = self.session.request(url=url, **request_kwargs)
-        response.raise_for_status()
+        raise_for_status_redacted(response)
         if output_file is None:
             # Make sure the content has been consumed before returning.
             response.content
