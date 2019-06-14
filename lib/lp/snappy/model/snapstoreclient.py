@@ -265,7 +265,6 @@ class SnapStoreClient:
             "updown_id": upload_data["upload_id"],
             "series": snap.store_series.name,
             "built_at": snapbuild.date_started.isoformat(),
-            "only_if_newer": True,
             }
         # XXX cjwatson 2016-05-09: This should add timeline information, but
         # that's currently difficult in jobs.

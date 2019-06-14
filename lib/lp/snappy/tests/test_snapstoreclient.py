@@ -398,7 +398,6 @@ class TestSnapStoreClient(TestCaseWithFactory):
                 json_data={
                     "name": "test-snap", "updown_id": 1, "series": "rolling",
                     "built_at": snapbuild.date_started.isoformat(),
-                    "only_if_newer": True,
                     }),
             ]))
 
@@ -435,7 +434,6 @@ class TestSnapStoreClient(TestCaseWithFactory):
                 json_data={
                     "name": "test-snap", "updown_id": 1, "series": "rolling",
                     "built_at": snapbuild.date_started.isoformat(),
-                    "only_if_newer": True,
                     }),
             ]))
 
