@@ -1764,6 +1764,64 @@ class TestSnapSet(TestCaseWithFactory):
         self.assertEqual(0, unsafe_load.mock.call_count)
         self.assertEqual(1, safe_load.mock.call_count)
 
+    @responses.activate
+    def test_getSnapcraftYaml_symlink(self):
+        for path in ("snap/snapcraft.yaml", "build-aux/snap/snapcraft.yaml"):
+            responses.add(
+                "GET",
+                "https://raw.githubusercontent.com/owner/name/HEAD/%s" % path,
+                status=404)
+        responses.add(
+            "GET",
+            "https://raw.githubusercontent.com/owner/name/HEAD/snapcraft.yaml",
+            body=b"pkg/snap/snapcraft.yaml")
+        responses.add(
+            "GET",
+            "https://raw.githubusercontent.com/owner/name/HEAD/"
+            "pkg/snap/snapcraft.yaml",
+            body=b"name: test-snap")
+        git_ref = self.factory.makeGitRefRemote(
+            repository_url="https://github.com/owner/name", path="HEAD")
+        snap = self.factory.makeSnap(git_ref=git_ref)
+        with default_timeout(1.0):
+            self.assertEqual(
+                {"name": "test-snap"},
+                getUtility(ISnapSet).getSnapcraftYaml(snap))
+
+    @responses.activate
+    def test_getSnapcraftYaml_symlink_via_parent(self):
+        responses.add(
+            "GET",
+            "https://raw.githubusercontent.com/owner/name/HEAD/"
+            "snap/snapcraft.yaml",
+            body=b"../pkg/snap/snapcraft.yaml")
+        responses.add(
+            "GET",
+            "https://raw.githubusercontent.com/owner/name/HEAD/"
+            "pkg/snap/snapcraft.yaml",
+            body=b"name: test-snap")
+        git_ref = self.factory.makeGitRefRemote(
+            repository_url="https://github.com/owner/name", path="HEAD")
+        snap = self.factory.makeSnap(git_ref=git_ref)
+        with default_timeout(1.0):
+            self.assertEqual(
+                {"name": "test-snap"},
+                getUtility(ISnapSet).getSnapcraftYaml(snap))
+
+    @responses.activate
+    def test_getSnapcraftYaml_symlink_above_root(self):
+        responses.add(
+            "GET",
+            "https://raw.githubusercontent.com/owner/name/HEAD/snapcraft.yaml",
+            body=b"../pkg/snap/snapcraft.yaml")
+        git_ref = self.factory.makeGitRefRemote(
+            repository_url="https://github.com/owner/name", path="HEAD")
+        snap = self.factory.makeSnap(git_ref=git_ref)
+        with default_timeout(1.0):
+            self.assertRaises(
+                CannotFetchSnapcraftYaml,
+                getUtility(ISnapSet).getSnapcraftYaml, snap)
+
     def test__findStaleSnaps(self):
         # Stale; not built automatically.
         self.factory.makeSnap(is_stale=True)

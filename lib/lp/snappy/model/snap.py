@@ -14,9 +14,12 @@ from datetime import (
 from operator import attrgetter
 from urlparse import urlsplit
 
+from bzrlib import urlutils
+from bzrlib.errors import InvalidURLJoin
 from lazr.lifecycle.event import ObjectCreatedEvent
 from pymacaroons import Macaroon
 import pytz
+import six
 from storm.expr import (
     And,
     Desc,
@@ -1298,6 +1301,21 @@ class SnapSet:
             for path in paths:
                 try:
                     blob = context.getBlob(path)
+                    if (IGitRef.providedBy(context) and
+                            context.repository_url is not None and
+                            isinstance(blob, bytes) and
+                            b":" not in blob and b"\n" not in blob):
+                        # Heuristic.  It seems somewhat common for Git
+                        # hosting sites to return the symlink target path
+                        # when fetching a blob corresponding to a symlink
+                        # committed to a repository: GitHub and GitLab both
+                        # have this property.  If it looks like this is what
+                        # has happened here, try resolving the symlink (only
+                        # to one level).
+                        resolved_path = urlutils.join(
+                            urlutils.dirname(path),
+                            six.ensure_str(blob)).lstrip("/")
+                        blob = context.getBlob(resolved_path)
                     break
                 except (BranchFileNotFound, GitRepositoryBlobNotFound):
                     pass
@@ -1309,6 +1327,8 @@ class SnapSet:
                 raise MissingSnapcraftYaml(context.unique_name)
         except GitRepositoryBlobUnsupportedRemote as e:
             raise CannotFetchSnapcraftYaml(str(e), unsupported_remote=True)
+        except InvalidURLJoin as e:
+            raise CannotFetchSnapcraftYaml(str(e))
         except (BranchHostingFault, GitRepositoryScanFault) as e:
             msg = "Failed to get snap manifest from %s"
             if logger is not None:
