@@ -88,7 +88,10 @@ from lp.codehosting.safe_open import (
     )
 from lp.services.config import config
 from lp.services.propertycache import cachedproperty
-from lp.services.timeout import urlfetch
+from lp.services.timeout import (
+    raise_for_status_redacted,
+    urlfetch,
+    )
 from lp.services.utils import sanitise_urls
 
 
@@ -1011,7 +1014,7 @@ class GitToGitImportWorker(ImportWorker):
         body = pkt_line("HEAD %s" % target_ref) + pkt_line(None)
         try:
             response = urlfetch(url, method="POST", headers=headers, data=body)
-            response.raise_for_status()
+            raise_for_status_redacted(response)
         except Exception as e:
             raise GitProtocolError(str(e))
         content_type = response.headers.get("Content-Type")

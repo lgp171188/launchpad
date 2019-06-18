@@ -8,6 +8,7 @@ __all__ = [
     "default_timeout",
     "get_default_timeout_function",
     "override_timeout",
+    "raise_for_status_redacted",
     "reduced_timeout",
     "SafeTransportWithTimeout",
     "set_default_timeout_function",
@@ -18,6 +19,7 @@ __all__ = [
     ]
 
 from contextlib import contextmanager
+import re
 import socket
 import sys
 from threading import (
@@ -29,20 +31,23 @@ from xmlrpclib import (
     Transport,
     )
 
-from requests import Session
+from requests import (
+    HTTPError,
+    Session,
+    )
 from requests.adapters import (
     DEFAULT_POOLBLOCK,
     HTTPAdapter,
     )
-from requests.packages.urllib3.connectionpool import (
-    HTTPConnectionPool,
-    HTTPSConnectionPool,
-    )
-from requests.packages.urllib3.exceptions import ClosedPoolError
-from requests.packages.urllib3.poolmanager import PoolManager
 from requests_file import FileAdapter
 from requests_toolbelt.downloadutils import stream
 from six import reraise
+from urllib3.connectionpool import (
+    HTTPConnectionPool,
+    HTTPSConnectionPool,
+    )
+from urllib3.exceptions import ClosedPoolError
+from urllib3.poolmanager import PoolManager
 
 from lp.services.config import config
 
@@ -295,20 +300,9 @@ cleanable_pool_classes_by_scheme = {
 class CleanablePoolManager(PoolManager):
     """A version of urllib3's PoolManager supporting forced socket cleanup."""
 
-    # XXX cjwatson 2015-03-11: Reimplements PoolManager._new_pool; check
-    # this when upgrading requests.
-    def _new_pool(self, scheme, host, port):
-        if scheme not in cleanable_pool_classes_by_scheme:
-            raise ValueError("Unhandled scheme: %s" % scheme)
-        pool_cls = cleanable_pool_classes_by_scheme[scheme]
-        kwargs = self.connection_pool_kw
-        if scheme == 'http':
-            kwargs = self.connection_pool_kw.copy()
-            for kw in ('key_file', 'cert_file', 'cert_reqs', 'ca_certs',
-                       'ssl_version'):
-                kwargs.pop(kw, None)
-
-        return pool_cls(host, port, **kwargs)
+    def __init__(self, *args, **kwargs):
+        super(CleanablePoolManager, self).__init__(*args, **kwargs)
+        self.pool_classes_by_scheme = cleanable_pool_classes_by_scheme
 
 
 class CleanableHTTPAdapter(HTTPAdapter):
@@ -326,6 +320,19 @@ class CleanableHTTPAdapter(HTTPAdapter):
         self.poolmanager = CleanablePoolManager(
             num_pools=connections, maxsize=maxsize, block=block, strict=True,
             **pool_kwargs)
+
+
+def raise_for_status_redacted(response):
+    """Like L{requests.models.Response.raise_for_status}, but without the URL.
+
+    In some cases, the URL may contain sensitive information such as a
+    password.
+    """
+    try:
+        response.raise_for_status()
+    except HTTPError as e:
+        raise HTTPError(
+            re.sub(r" for url: .*", "", e.args[0]), response=e.response)
 
 
 class URLFetcher:
@@ -372,7 +379,7 @@ class URLFetcher:
         if output_file is not None:
             request_kwargs["stream"] = True
         response = self.session.request(url=url, **request_kwargs)
-        response.raise_for_status()
+        raise_for_status_redacted(response)
         if output_file is None:
             # Make sure the content has been consumed before returning.
             response.content
