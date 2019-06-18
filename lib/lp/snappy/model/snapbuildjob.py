@@ -350,7 +350,6 @@ class SnapStoreUploadJob(SnapBuildJobDerived):
                     raise ManualReview(
                         "Package held for manual review on the store; "
                         "cannot release it automatically.")
-                client.release(self.snapbuild, self.store_revision)
             self.error_message = None
         except self.retry_error_types:
             raise
