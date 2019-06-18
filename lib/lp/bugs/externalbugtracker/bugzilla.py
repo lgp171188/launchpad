@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Bugzilla ExternalBugTracker utility."""
@@ -15,10 +15,10 @@ from email.utils import parseaddr
 from httplib import BadStatusLine
 import re
 import string
-from xml.dom import minidom
 import xml.parsers.expat
 import xmlrpclib
 
+from defusedxml import minidom
 import pytz
 import requests
 import six
@@ -192,6 +192,8 @@ class Bugzilla(ExternalBugTracker):
             bad_chars = bad_chars.replace(char, '')
         trans_map = string.maketrans(bad_chars, ' ' * len(bad_chars))
         contents = contents.translate(trans_map)
+        # Don't use forbid_dtd=True here; Bugzilla XML responses seem to
+        # include DOCTYPE declarations.
         return minidom.parseString(contents)
 
     def _probe_version(self):

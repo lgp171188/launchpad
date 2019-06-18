@@ -1,4 +1,4 @@
-# Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests of the HWDB submissions parser."""
@@ -10,8 +10,9 @@ import io
 import logging
 import os
 from textwrap import dedent
-import xml.etree.cElementTree as etree
+from xml.etree.cElementTree import Element
 
+import defusedxml.cElementTree as etree
 import pytz
 from zope.testing.loghandler import Handler
 
@@ -155,7 +156,7 @@ class TestHWDBSubmissionParser(TestCase):
 
     def getTimestampETreeNode(self, time_string):
         """Return an Elementtree node for an XML tag with a timestamp."""
-        return etree.Element('date_created', value=time_string)
+        return Element('date_created', value=time_string)
 
     def testTimeConversion(self):
         """Test of the conversion of a "time string" into datetime object."""
