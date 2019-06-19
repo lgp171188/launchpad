@@ -272,7 +272,7 @@ class SnapStoreClient:
             data.update({
                 "channels": channels,
                 "only_if_newer": True,
-            })
+                })
         # XXX cjwatson 2016-05-09: This should add timeline information, but
         # that's currently difficult in jobs.
         try:
