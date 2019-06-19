@@ -281,20 +281,6 @@ class TestSnapStoreClient(TestCaseWithFactory):
         self.addCleanup(
             getUtility(IMemcacheClient).delete, self.channels_memcache_key)
 
-    def _addSnapReleaseResponse(self):
-        responses.add(
-            "POST", "http://sca.example/dev/api/snap-release/",
-            json={
-                "success": True,
-                "channel_map": [
-                    {"channel": "stable", "info": "specific",
-                     "version": "1.0", "revision": 1},
-                    {"channel": "edge", "info": "specific",
-                     "version": "1.0", "revision": 1},
-                    ],
-                "opened_channels": ["stable", "edge"],
-                })
-
     @responses.activate
     def test_requestPackageUploadPermission(self):
         snappy_series = self.factory.makeSnappySeries(name="rolling")
