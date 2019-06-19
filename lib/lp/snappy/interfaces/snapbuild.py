@@ -111,6 +111,9 @@ class SnapBuildStoreUploadStatus(EnumeratedType):
         The last attempt to upload this snap build to the store failed.
         """)
 
+    # This is an impossible state for new releases (2019-06-19), due
+    # to the store handling releases for us, however historical tasks
+    # can have this status, so it is maintained here.
     FAILEDTORELEASE = Item("""
         Failed to release to channels
 
