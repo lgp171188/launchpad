@@ -349,7 +349,7 @@ class BuildFarmJobBehaviourBase:
                 raise BuildDaemonError(
                     "Build returned a file named %r." % filename)
             filenames_to_download.append((sha1, out_file_name))
-        yield self._slave.getFiles(filenames_to_download)
+        yield self._slave.getFiles(filenames_to_download, logger=logger)
 
         transaction.commit()
 
