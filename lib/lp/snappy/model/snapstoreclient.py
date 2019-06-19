@@ -354,7 +354,7 @@ class SnapStoreClient:
                 raise ScanFailedResponse(
                     error_message, messages=error_messages)
             else:
-                return response_data["url"], response_data.get("revision")
+                return response_data["url"], response_data["revision"]
         except requests.HTTPError as e:
             raise cls._makeSnapStoreError(BadScanStatusResponse, e)
 
