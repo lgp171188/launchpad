@@ -65,7 +65,6 @@ class FakeSnapStoreClient:
         self.upload = FakeMethod()
         self.checkStatus = FakeMethod()
         self.listChannels = FakeMethod(result=[])
-        self.release = FakeMethod()
 
 
 class TestSnapBuildJob(TestCaseWithFactory):
@@ -160,7 +159,6 @@ class TestSnapStoreUploadJob(TestCaseWithFactory):
             JobRunner([job]).runAll()
         self.assertEqual([((snapbuild,), {})], client.upload.calls)
         self.assertEqual([((self.status_url,), {})], client.checkStatus.calls)
-        self.assertEqual([], client.release.calls)
         self.assertContentEqual([job], snapbuild.store_upload_jobs)
         self.assertEqual(self.store_url, job.store_url)
         self.assertEqual(1, job.store_revision)
@@ -180,7 +178,6 @@ class TestSnapStoreUploadJob(TestCaseWithFactory):
             JobRunner([job]).runAll()
         self.assertEqual([((snapbuild,), {})], client.upload.calls)
         self.assertEqual([], client.checkStatus.calls)
-        self.assertEqual([], client.release.calls)
         self.assertContentEqual([job], snapbuild.store_upload_jobs)
         self.assertIsNone(job.store_url)
         self.assertIsNone(job.store_revision)
@@ -206,7 +203,6 @@ class TestSnapStoreUploadJob(TestCaseWithFactory):
             JobRunner([job]).runAll()
         self.assertEqual([((snapbuild,), {})], client.upload.calls)
         self.assertEqual([], client.checkStatus.calls)
-        self.assertEqual([], client.release.calls)
         self.assertContentEqual([job], snapbuild.store_upload_jobs)
         self.assertIsNone(job.store_url)
         self.assertIsNone(job.store_revision)
@@ -253,7 +249,6 @@ class TestSnapStoreUploadJob(TestCaseWithFactory):
             JobRunner([job]).runAll()
         self.assertEqual([((snapbuild,), {})], client.upload.calls)
         self.assertEqual([], client.checkStatus.calls)
-        self.assertEqual([], client.release.calls)
         self.assertContentEqual([job], snapbuild.store_upload_jobs)
         self.assertIsNone(job.store_url)
         self.assertIsNone(job.store_revision)
@@ -272,7 +267,6 @@ class TestSnapStoreUploadJob(TestCaseWithFactory):
             JobRunner([job]).runAll()
         self.assertEqual([((snapbuild,), {})], client.upload.calls)
         self.assertEqual([((self.status_url,), {})], client.checkStatus.calls)
-        self.assertEqual([], client.release.calls)
         self.assertContentEqual([job], snapbuild.store_upload_jobs)
         self.assertEqual(self.store_url, job.store_url)
         self.assertEqual(1, job.store_revision)
@@ -298,7 +292,6 @@ class TestSnapStoreUploadJob(TestCaseWithFactory):
             JobRunner([job]).runAll()
         self.assertEqual([((snapbuild,), {})], client.upload.calls)
         self.assertEqual([], client.checkStatus.calls)
-        self.assertEqual([], client.release.calls)
         self.assertContentEqual([job], snapbuild.store_upload_jobs)
         self.assertIsNone(job.store_url)
         self.assertIsNone(job.store_revision)
@@ -349,7 +342,6 @@ class TestSnapStoreUploadJob(TestCaseWithFactory):
             JobRunner([job]).runAll()
         self.assertEqual([((snapbuild,), {})], client.upload.calls)
         self.assertEqual([], client.checkStatus.calls)
-        self.assertEqual([], client.release.calls)
         self.assertContentEqual([job], snapbuild.store_upload_jobs)
         self.assertIsNone(job.store_url)
         self.assertIsNone(job.store_revision)
@@ -399,7 +391,6 @@ class TestSnapStoreUploadJob(TestCaseWithFactory):
             JobRunner([job]).runAll()
         self.assertEqual([((snapbuild,), {})], client.upload.calls)
         self.assertEqual([((self.status_url,), {})], client.checkStatus.calls)
-        self.assertEqual([], client.release.calls)
         self.assertContentEqual([job], snapbuild.store_upload_jobs)
         self.assertIsNone(job.store_url)
         self.assertIsNone(job.store_revision)
@@ -418,7 +409,6 @@ class TestSnapStoreUploadJob(TestCaseWithFactory):
             JobRunner([job]).runAll()
         self.assertEqual([], client.upload.calls)
         self.assertEqual([((self.status_url,), {})], client.checkStatus.calls)
-        self.assertEqual([], client.release.calls)
         self.assertContentEqual([job], snapbuild.store_upload_jobs)
         self.assertEqual(self.store_url, job.store_url)
         self.assertEqual(1, job.store_revision)
@@ -448,7 +438,6 @@ class TestSnapStoreUploadJob(TestCaseWithFactory):
             JobRunner([job]).runAll()
         self.assertEqual([((snapbuild,), {})], client.upload.calls)
         self.assertEqual([((self.status_url,), {})], client.checkStatus.calls)
-        self.assertEqual([], client.release.calls)
         self.assertContentEqual([job], snapbuild.store_upload_jobs)
         self.assertIsNone(job.store_url)
         self.assertIsNone(job.store_revision)
@@ -497,7 +486,6 @@ class TestSnapStoreUploadJob(TestCaseWithFactory):
             JobRunner([job]).runAll()
         self.assertEqual([((snapbuild,), {})], client.upload.calls)
         self.assertEqual([((self.status_url,), {})], client.checkStatus.calls)
-        self.assertEqual([((snapbuild, 1), {})], client.release.calls)
         self.assertContentEqual([job], snapbuild.store_upload_jobs)
         self.assertEqual(self.store_url, job.store_url)
         self.assertEqual(1, job.store_revision)
@@ -525,7 +513,6 @@ class TestSnapStoreUploadJob(TestCaseWithFactory):
             JobRunner([job]).runAll()
         self.assertEqual([((snapbuild,), {})], client.upload.calls)
         self.assertEqual([((self.status_url,), {})], client.checkStatus.calls)
-        self.assertEqual([], client.release.calls)
         self.assertContentEqual([job], snapbuild.store_upload_jobs)
         self.assertEqual(self.store_url, job.store_url)
         self.assertIsNone(job.store_revision)
@@ -550,57 +537,6 @@ class TestSnapStoreUploadJob(TestCaseWithFactory):
             "snap-build-release-manual-review",
             notification["X-Launchpad-Notification-Type"])
         body, footer = notification.get_payload(decode=True).split("\n-- \n")
-        self.assertIn(self.store_url, body)
-        self.assertEqual(
-            "http://launchpad.test/~requester-team/+snap/test-snap/+build/%d\n"
-            "Your team Requester Team is the requester of the build.\n" %
-            snapbuild.id, footer)
-        self.assertWebhookDeliveries(
-            snapbuild, ["Pending", "Failed to release to channels"])
-
-    def test_run_release_failure_notifies(self):
-        # A run configured to automatically release the package to certain
-        # channels but that fails to do so sends mail.
-        requester = self.factory.makePerson(name="requester")
-        requester_team = self.factory.makeTeam(
-            owner=requester, name="requester-team", members=[requester])
-        snapbuild = self.makeSnapBuild(
-            requester=requester_team, name="test-snap", owner=requester_team,
-            store_channels=["stable", "edge"])
-        self.assertContentEqual([], snapbuild.store_upload_jobs)
-        job = SnapStoreUploadJob.create(snapbuild)
-        client = FakeSnapStoreClient()
-        client.upload.result = self.status_url
-        client.checkStatus.result = (self.store_url, 1)
-        client.release.failure = ReleaseFailedResponse("Failed to publish")
-        self.useFixture(ZopeUtilityFixture(client, ISnapStoreClient))
-        with dbuser(config.ISnapStoreUploadJobSource.dbuser):
-            JobRunner([job]).runAll()
-        self.assertEqual([((snapbuild,), {})], client.upload.calls)
-        self.assertEqual([((self.status_url,), {})], client.checkStatus.calls)
-        self.assertEqual([((snapbuild, 1), {})], client.release.calls)
-        self.assertContentEqual([job], snapbuild.store_upload_jobs)
-        self.assertEqual(self.store_url, job.store_url)
-        self.assertEqual(1, job.store_revision)
-        self.assertEqual("Failed to publish", job.error_message)
-        [notification] = pop_notifications()
-        self.assertEqual(
-            config.canonical.noreply_from_address, notification["From"])
-        self.assertEqual(
-            "Requester <%s>" % requester.preferredemail.email,
-            notification["To"])
-        subject = notification["Subject"].replace("\n ", " ")
-        self.assertEqual("Store release failed for test-snap", subject)
-        self.assertEqual(
-            "Requester @requester-team",
-            notification["X-Launchpad-Message-Rationale"])
-        self.assertEqual(
-            requester_team.name, notification["X-Launchpad-Message-For"])
-        self.assertEqual(
-            "snap-build-release-failed",
-            notification["X-Launchpad-Notification-Type"])
-        body, footer = notification.get_payload(decode=True).split("\n-- \n")
-        self.assertIn("Failed to publish", body)
         self.assertIn(self.store_url, body)
         self.assertEqual(
             "http://launchpad.test/~requester-team/+snap/test-snap/+build/%d\n"
@@ -655,15 +591,12 @@ class TestSnapStoreUploadJob(TestCaseWithFactory):
         client = FakeSnapStoreClient()
         client.upload.result = self.status_url
         client.checkStatus.result = (self.store_url, 1)
-        client.release.failure = UploadFailedResponse(
-            "Proxy error", can_retry=True)
         self.useFixture(ZopeUtilityFixture(client, ISnapStoreClient))
         with dbuser(config.ISnapStoreUploadJobSource.dbuser):
             JobRunner([job]).runAll()
 
         previous_upload = client.upload.calls
         previous_checkStatus = client.checkStatus.calls
-        len_previous_release = len(client.release.calls)
 
         # Check we uploaded as expected
         self.assertEqual(self.store_url, job.store_url)
@@ -676,10 +609,10 @@ class TestSnapStoreUploadJob(TestCaseWithFactory):
         with dbuser(config.ISnapStoreUploadJobSource.dbuser):
             JobRunner([job]).runAll()
 
-        # We should not have called `upload`, but moved straight to `release`
+        # Release is not called due to release intent in upload
+        # but ensure that we have not called upload twice
         self.assertEqual(previous_upload, client.upload.calls)
         self.assertEqual(previous_checkStatus, client.checkStatus.calls)
-        self.assertEqual(len_previous_release + 1, len(client.release.calls))
         self.assertIsNone(job.error_message)
 
     def test_with_snapbuild_metadata_as_none(self):
