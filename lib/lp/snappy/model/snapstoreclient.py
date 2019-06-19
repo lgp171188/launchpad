@@ -266,10 +266,10 @@ class SnapStoreClient:
             "series": snap.store_series.name,
             "built_at": snapbuild.date_started.isoformat(),
             }
+        # The security proxy is useless and breaks JSON serialisation.
         channels = removeSecurityProxy(snap.store_channels)
         if channels:
             # This will cause a release
-            # The security proxy is useless and breaks JSON serialisation.
             data.update({
                 "channels": channels,
                 "only_if_newer": True,
