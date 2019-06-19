@@ -58,7 +58,6 @@ from lp.snappy.interfaces.snapstoreclient import (
     BadRefreshResponse,
     BadScanStatusResponse,
     ISnapStoreClient,
-    ReleaseFailedResponse,
     ScanFailedResponse,
     SnapStoreError,
     UnauthorizedUploadResponse,
@@ -169,10 +168,6 @@ class SnapBuildJobDerived(BaseRunnableJob):
         return oops_vars
 
 
-class ManualReview(SnapStoreError):
-    pass
-
-
 class RetryableSnapStoreError(SnapStoreError):
     pass
 
@@ -192,8 +187,6 @@ class SnapStoreUploadJob(SnapBuildJobDerived):
     user_error_types = (
         UnauthorizedUploadResponse,
         ScanFailedResponse,
-        ManualReview,
-        ReleaseFailedResponse,
         )
 
     retry_error_types = (UploadNotScannedYetResponse, RetryableSnapStoreError)
@@ -345,11 +338,6 @@ class SnapStoreUploadJob(SnapBuildJobDerived):
                     client.checkStatus(self.status_url))
                 # We made progress, so reset attempt_count.
                 self.attempt_count = 1
-            if self.snapbuild.snap.store_channels:
-                if self.store_revision is None:
-                    raise ManualReview(
-                        "Package held for manual review on the store; "
-                        "cannot release it automatically.")
             self.error_message = None
         except self.retry_error_types:
             raise
@@ -371,12 +359,6 @@ class SnapStoreUploadJob(SnapBuildJobDerived):
                 mailer.sendAll()
             elif isinstance(e, (BadScanStatusResponse, ScanFailedResponse)):
                 mailer = SnapBuildMailer.forUploadScanFailure(self.snapbuild)
-                mailer.sendAll()
-            elif isinstance(e, ManualReview):
-                mailer = SnapBuildMailer.forManualReview(self.snapbuild)
-                mailer.sendAll()
-            elif isinstance(e, ReleaseFailedResponse):
-                mailer = SnapBuildMailer.forReleaseFailure(self.snapbuild)
                 mailer.sendAll()
             # The normal job infrastructure will abort the transaction, but
             # we want to commit instead: the only database changes we make

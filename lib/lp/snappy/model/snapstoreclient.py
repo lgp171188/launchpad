@@ -43,7 +43,6 @@ from lp.snappy.interfaces.snapstoreclient import (
     BadSearchResponse,
     ISnapStoreClient,
     NeedsRefreshResponse,
-    ReleaseFailedResponse,
     ScanFailedResponse,
     UnauthorizedUploadResponse,
     UploadFailedResponse,
