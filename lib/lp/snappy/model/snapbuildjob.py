@@ -334,10 +334,12 @@ class SnapStoreUploadJob(SnapBuildJobDerived):
                 # We made progress, so reset attempt_count.
                 self.attempt_count = 1
             if self.store_url is None:
+                # This is no longer strictly necessary as the store is handling
+                # releases via the release intent, but we export various fields
+                # via the api, so once this is called, we're done with
+                # this task
                 self.store_url, self.store_revision = (
                     client.checkStatus(self.status_url))
-                # We made progress, so reset attempt_count.
-                self.attempt_count = 1
             self.error_message = None
         except self.retry_error_types:
             raise
