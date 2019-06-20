@@ -16,9 +16,11 @@ from urllib2 import (
     urlopen,
     )
 
+from fixtures import FakeLogger
 from pymacaroons import Macaroon
 import pytz
 from testtools.matchers import (
+    ContainsDict,
     Equals,
     Is,
     MatchesDict,
@@ -50,6 +52,7 @@ from lp.services.macaroons.testing import MacaroonTestMixin
 from lp.services.propertycache import clear_property_cache
 from lp.services.webapp.interfaces import OAuthPermission
 from lp.services.webapp.publisher import canonical_url
+from lp.services.webhooks.testing import LogsScheduledWebhooks
 from lp.snappy.interfaces.snap import SNAP_TESTING_FLAGS
 from lp.snappy.interfaces.snapbuild import (
     CannotScheduleStoreUpload,
@@ -268,6 +271,7 @@ class TestSnapBuild(TestCaseWithFactory):
     def test_updateStatus_triggers_webhooks(self):
         # Updating the status of a SnapBuild triggers webhooks on the
         # corresponding Snap.
+        logger = self.useFixture(FakeLogger())
         hook = self.factory.makeWebhook(
             target=self.build.snap, event_types=["snap:build:0.1"])
         self.build.updateStatus(BuildStatus.FULLYBUILT)
@@ -291,22 +295,39 @@ class TestSnapBuild(TestCaseWithFactory):
                 "<WebhookDeliveryJob for webhook %d on %r>" % (
                     hook.id, hook.target),
                 repr(delivery))
+            self.assertThat(
+                logger.output, LogsScheduledWebhooks([
+                    (hook, "snap:build:0.1", MatchesDict(expected_payload))]))
 
     def test_updateStatus_no_change_does_not_trigger_webhooks(self):
         # An updateStatus call that changes details such as the revision_id
         # but that doesn't change the build's status attribute does not
         # trigger webhooks.
+        logger = self.useFixture(FakeLogger())
         hook = self.factory.makeWebhook(
             target=self.build.snap, event_types=["snap:build:0.1"])
         builder = self.factory.makeBuilder()
         self.build.updateStatus(BuildStatus.BUILDING)
+        expected_logs = [
+            (hook, "snap:build:0.1", ContainsDict({
+                "action": Equals("status-changed"),
+                "status": Equals("Currently building"),
+                }))]
         self.assertEqual(1, hook.deliveries.count())
+        self.assertThat(logger.output, LogsScheduledWebhooks(expected_logs))
         self.build.updateStatus(
             BuildStatus.BUILDING, builder=builder,
             slave_status={"revision_id": "1"})
         self.assertEqual(1, hook.deliveries.count())
+        self.assertThat(logger.output, LogsScheduledWebhooks(expected_logs))
         self.build.updateStatus(BuildStatus.UPLOADING)
+        expected_logs.append(
+            (hook, "snap:build:0.1", ContainsDict({
+                "action": Equals("status-changed"),
+                "status": Equals("Uploading build"),
+                })))
         self.assertEqual(2, hook.deliveries.count())
+        self.assertThat(logger.output, LogsScheduledWebhooks(expected_logs))
 
     def test_updateStatus_failure_does_not_trigger_store_uploads(self):
         # A failed SnapBuild does not trigger store uploads.
@@ -565,6 +586,7 @@ class TestSnapBuild(TestCaseWithFactory):
     def test_scheduleStoreUpload_triggers_webhooks(self):
         # Scheduling a store upload triggers webhooks on the corresponding
         # snap.
+        logger = self.useFixture(FakeLogger())
         self.setUpStoreUpload()
         self.build.updateStatus(BuildStatus.FULLYBUILT)
         self.factory.makeSnapFile(
@@ -593,6 +615,9 @@ class TestSnapBuild(TestCaseWithFactory):
                 "<WebhookDeliveryJob for webhook %d on %r>" % (
                     hook.id, hook.target),
                 repr(delivery))
+            self.assertThat(
+                logger.output, LogsScheduledWebhooks([
+                    (hook, "snap:build:0.1", MatchesDict(expected_payload))]))
 
 
 class TestSnapBuildSet(TestCaseWithFactory):

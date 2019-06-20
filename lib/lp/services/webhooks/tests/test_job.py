@@ -11,6 +11,7 @@ from datetime import (
     )
 import re
 
+from fixtures import FakeLogger
 from pytz import utc
 import requests
 import requests.exceptions
@@ -58,6 +59,7 @@ from lp.services.webhooks.model import (
     WebhookJobDerived,
     WebhookJobType,
     )
+from lp.services.webhooks.testing import LogsScheduledWebhooks
 from lp.testing import (
     login_person,
     TestCaseWithFactory,
@@ -295,6 +297,7 @@ class TestWebhookDeliveryJob(TestCaseWithFactory):
 
     def test_create(self):
         # `WebhookDeliveryJob` objects provide `IWebhookDeliveryJob`.
+        logger = self.useFixture(FakeLogger())
         hook = self.factory.makeWebhook()
         job = WebhookDeliveryJob.create(hook, 'test', payload={'foo': 'bar'})
         self.assertProvides(job, IWebhookDeliveryJob)
@@ -302,6 +305,9 @@ class TestWebhookDeliveryJob(TestCaseWithFactory):
             job,
             MatchesStructure.byEquality(
                 webhook=hook, event_type='test', payload={'foo': 'bar'}))
+        self.assertThat(
+            logger.output,
+            LogsScheduledWebhooks([(hook, 'test', Equals({'foo': 'bar'}))]))
 
     def test_gitrepository__repr__(self):
         # `WebhookDeliveryJob` objects for Git repositories have an
