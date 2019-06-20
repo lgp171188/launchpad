@@ -1,4 +1,4 @@
-# Copyright 2016-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2016-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for snap build jobs."""
@@ -27,6 +27,7 @@ from lp.services.features.testing import FeatureFixture
 from lp.services.job.interfaces.job import JobStatus
 from lp.services.job.runner import JobRunner
 from lp.services.webapp.publisher import canonical_url
+from lp.services.webhooks.testing import LogsScheduledWebhooks
 from lp.snappy.interfaces.snap import SNAP_TESTING_FLAGS
 from lp.snappy.interfaces.snapbuildjob import (
     ISnapBuildJob,
@@ -117,7 +118,7 @@ class TestSnapStoreUploadJob(TestCaseWithFactory):
         return snapbuild
 
     def assertWebhookDeliveries(self, snapbuild,
-                                expected_store_upload_statuses):
+                                expected_store_upload_statuses, logger):
         hook = snapbuild.snap.webhooks.one()
         deliveries = list(hook.deliveries)
         deliveries.reverse()
@@ -143,10 +144,15 @@ class TestSnapStoreUploadJob(TestCaseWithFactory):
                     "<WebhookDeliveryJob for webhook %d on %r>" % (
                         hook.id, hook.target),
                     repr(delivery))
+            self.assertThat(
+                logger.output, LogsScheduledWebhooks([
+                    (hook, "snap:build:0.1", MatchesDict(expected_payload))
+                    for expected_payload in expected_payloads]))
 
     def test_run(self):
         # The job uploads the build to the store and records the store URL
         # and revision.
+        logger = self.useFixture(FakeLogger())
         snapbuild = self.makeSnapBuild()
         self.assertContentEqual([], snapbuild.store_upload_jobs)
         job = SnapStoreUploadJob.create(snapbuild)
@@ -163,10 +169,12 @@ class TestSnapStoreUploadJob(TestCaseWithFactory):
         self.assertEqual(1, job.store_revision)
         self.assertIsNone(job.error_message)
         self.assertEqual([], pop_notifications())
-        self.assertWebhookDeliveries(snapbuild, ["Pending", "Uploaded"])
+        self.assertWebhookDeliveries(
+            snapbuild, ["Pending", "Uploaded"], logger)
 
     def test_run_failed(self):
         # A failed run sets the store upload status to FAILED.
+        logger = self.useFixture(FakeLogger())
         snapbuild = self.makeSnapBuild()
         self.assertContentEqual([], snapbuild.store_upload_jobs)
         job = SnapStoreUploadJob.create(snapbuild)
@@ -183,10 +191,11 @@ class TestSnapStoreUploadJob(TestCaseWithFactory):
         self.assertEqual("An upload failure", job.error_message)
         self.assertEqual([], pop_notifications())
         self.assertWebhookDeliveries(
-            snapbuild, ["Pending", "Failed to upload"])
+            snapbuild, ["Pending", "Failed to upload"], logger)
 
     def test_run_unauthorized_notifies(self):
         # A run that gets 401 from the store sends mail.
+        logger = self.useFixture(FakeLogger())
         requester = self.factory.makePerson(name="requester")
         requester_team = self.factory.makeTeam(
             owner=requester, name="requester-team", members=[requester])
@@ -231,12 +240,12 @@ class TestSnapStoreUploadJob(TestCaseWithFactory):
             "Your team Requester Team is the requester of the build.\n" %
             snapbuild.id, footer)
         self.assertWebhookDeliveries(
-            snapbuild, ["Pending", "Failed to upload"])
+            snapbuild, ["Pending", "Failed to upload"], logger)
 
     def test_run_502_retries(self):
         # A run that gets a 502 error from the store schedules itself to be
         # retried.
-        self.useFixture(FakeLogger())
+        logger = self.useFixture(FakeLogger())
         snapbuild = self.makeSnapBuild()
         self.assertContentEqual([], snapbuild.store_upload_jobs)
         job = SnapStoreUploadJob.create(snapbuild)
@@ -254,7 +263,7 @@ class TestSnapStoreUploadJob(TestCaseWithFactory):
         self.assertIsNone(job.error_message)
         self.assertEqual([], pop_notifications())
         self.assertEqual(JobStatus.WAITING, job.job.status)
-        self.assertWebhookDeliveries(snapbuild, ["Pending"])
+        self.assertWebhookDeliveries(snapbuild, ["Pending"], logger)
         # Try again.  The upload part of the job is retried, and this time
         # it succeeds.
         job.scheduled_start = None
@@ -272,11 +281,13 @@ class TestSnapStoreUploadJob(TestCaseWithFactory):
         self.assertIsNone(job.error_message)
         self.assertEqual([], pop_notifications())
         self.assertEqual(JobStatus.COMPLETED, job.job.status)
-        self.assertWebhookDeliveries(snapbuild, ["Pending", "Uploaded"])
+        self.assertWebhookDeliveries(
+            snapbuild, ["Pending", "Uploaded"], logger)
 
     def test_run_refresh_failure_notifies(self):
         # A run that gets a failure when trying to refresh macaroons sends
         # mail.
+        logger = self.useFixture(FakeLogger())
         requester = self.factory.makePerson(name="requester")
         requester_team = self.factory.makeTeam(
             owner=requester, name="requester-team", members=[requester])
@@ -321,11 +332,12 @@ class TestSnapStoreUploadJob(TestCaseWithFactory):
             "Your team Requester Team is the requester of the build.\n" %
             snapbuild.id, footer)
         self.assertWebhookDeliveries(
-            snapbuild, ["Pending", "Failed to upload"])
+            snapbuild, ["Pending", "Failed to upload"], logger)
 
     def test_run_upload_failure_notifies(self):
         # A run that gets some other upload failure from the store sends
         # mail.
+        logger = self.useFixture(FakeLogger())
         requester = self.factory.makePerson(name="requester")
         requester_team = self.factory.makeTeam(
             owner=requester, name="requester-team", members=[requester])
@@ -371,14 +383,14 @@ class TestSnapStoreUploadJob(TestCaseWithFactory):
             "%s\nYour team Requester Team is the requester of the build.\n" %
             build_url, footer)
         self.assertWebhookDeliveries(
-            snapbuild, ["Pending", "Failed to upload"])
+            snapbuild, ["Pending", "Failed to upload"], logger)
         self.assertIn(
             ("error_detail", "The proxy exploded.\n"), job.getOopsVars())
 
     def test_run_scan_pending_retries(self):
         # A run that finds that the store has not yet finished scanning the
         # package schedules itself to be retried.
-        self.useFixture(FakeLogger())
+        logger = self.useFixture(FakeLogger())
         snapbuild = self.makeSnapBuild()
         self.assertContentEqual([], snapbuild.store_upload_jobs)
         job = SnapStoreUploadJob.create(snapbuild)
@@ -396,7 +408,7 @@ class TestSnapStoreUploadJob(TestCaseWithFactory):
         self.assertIsNone(job.error_message)
         self.assertEqual([], pop_notifications())
         self.assertEqual(JobStatus.WAITING, job.job.status)
-        self.assertWebhookDeliveries(snapbuild, ["Pending"])
+        self.assertWebhookDeliveries(snapbuild, ["Pending"], logger)
         # Try again.  The upload part of the job is not retried, and this
         # time the scan completes.
         job.scheduled_start = None
@@ -414,10 +426,12 @@ class TestSnapStoreUploadJob(TestCaseWithFactory):
         self.assertIsNone(job.error_message)
         self.assertEqual([], pop_notifications())
         self.assertEqual(JobStatus.COMPLETED, job.job.status)
-        self.assertWebhookDeliveries(snapbuild, ["Pending", "Uploaded"])
+        self.assertWebhookDeliveries(
+            snapbuild, ["Pending", "Uploaded"], logger)
 
     def test_run_scan_failure_notifies(self):
         # A run that gets a scan failure from the store sends mail.
+        logger = self.useFixture(FakeLogger())
         requester = self.factory.makePerson(name="requester")
         requester_team = self.factory.makeTeam(
             owner=requester, name="requester-team", members=[requester])
@@ -469,11 +483,12 @@ class TestSnapStoreUploadJob(TestCaseWithFactory):
             "Your team Requester Team is the requester of the build.\n" %
             snapbuild.id, footer)
         self.assertWebhookDeliveries(
-            snapbuild, ["Pending", "Failed to upload"])
+            snapbuild, ["Pending", "Failed to upload"], logger)
 
     def test_run_release(self):
         # A run configured to automatically release the package to certain
         # channels does so.
+        logger = self.useFixture(FakeLogger())
         snapbuild = self.makeSnapBuild(store_channels=["stable", "edge"])
         self.assertContentEqual([], snapbuild.store_upload_jobs)
         job = SnapStoreUploadJob.create(snapbuild)
@@ -490,7 +505,8 @@ class TestSnapStoreUploadJob(TestCaseWithFactory):
         self.assertEqual(1, job.store_revision)
         self.assertIsNone(job.error_message)
         self.assertEqual([], pop_notifications())
-        self.assertWebhookDeliveries(snapbuild, ["Pending", "Uploaded"])
+        self.assertWebhookDeliveries(
+            snapbuild, ["Pending", "Uploaded"], logger)
 
     def test_retry_delay(self):
         # The job is retried every minute, unless it just made one of its
