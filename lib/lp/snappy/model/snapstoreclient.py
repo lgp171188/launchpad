@@ -343,6 +343,11 @@ class SnapStoreClient:
             if not response_data["processed"]:
                 raise UploadNotScannedYetResponse()
             elif "errors" in response_data:
+                # This is returned as error in the upload,
+                # but there is nothing we can do about it,
+                # our upload has been successful
+                if response_data['code'] == 'need_manual_review':
+                    return response_data["url"], response_data["revision"]
                 error_message = "\n".join(
                     error["message"] for error in response_data["errors"])
                 error_messages = []
