@@ -16,7 +16,10 @@ from operator import attrgetter
 from textwrap import dedent
 from urlparse import urlsplit
 
-from fixtures import MockPatch
+from fixtures import (
+    FakeLogger,
+    MockPatch,
+    )
 import iso8601
 from pymacaroons import Macaroon
 import pytz
@@ -85,6 +88,7 @@ from lp.services.timeout import default_timeout
 from lp.services.webapp.interfaces import OAuthPermission
 from lp.services.webapp.publisher import canonical_url
 from lp.services.webapp.snapshot import notify_modified
+from lp.services.webhooks.testing import LogsScheduledWebhooks
 from lp.snappy.interfaces.snap import (
     BadSnapSearchContext,
     CannotFetchSnapcraftYaml,
@@ -418,6 +422,7 @@ class TestSnap(TestCaseWithFactory):
 
     def test_requestBuild_triggers_webhooks(self):
         # Requesting a build triggers webhooks.
+        logger = self.useFixture(FakeLogger())
         processor = self.factory.makeProcessor(supports_virtualized=True)
         distroarchseries = self.makeBuildableDistroArchSeries(
             processor=processor)
@@ -447,6 +452,11 @@ class TestSnap(TestCaseWithFactory):
                     "<WebhookDeliveryJob for webhook %d on %r>" % (
                         hook.id, hook.target),
                     repr(delivery))
+                self.assertThat(
+                    logger.output,
+                    LogsScheduledWebhooks([
+                        (hook, "snap:build:0.1",
+                         MatchesDict(expected_payload))]))
 
     def test_requestBuilds(self):
         # requestBuilds schedules a job and returns a corresponding
@@ -704,6 +714,7 @@ class TestSnap(TestCaseWithFactory):
               - build-on: avr
               - build-on: riscv64
             """)))
+        logger = self.useFixture(FakeLogger())
         job = self.makeRequestBuildsJob(["avr", "riscv64", "sparc"])
         hook = self.factory.makeWebhook(
             target=job.snap, event_types=["snap:build:0.1"])
@@ -713,21 +724,29 @@ class TestSnap(TestCaseWithFactory):
                 removeSecurityProxy(job.channels),
                 build_request=job.build_request)
             self.assertEqual(2, len(builds))
+            payload_matchers = [
+                MatchesDict({
+                    "snap_build": Equals(canonical_url(
+                        build, force_local_path=True)),
+                    "action": Equals("created"),
+                    "snap": Equals(canonical_url(
+                        job.snap, force_local_path=True)),
+                    "build_request": Equals(canonical_url(
+                        job.build_request, force_local_path=True)),
+                    "status": Equals("Needs building"),
+                    "store_upload_status": Equals("Unscheduled"),
+                    })
+                for build in builds]
             self.assertThat(hook.deliveries, MatchesSetwise(*(
                 MatchesStructure(
                     event_type=Equals("snap:build:0.1"),
-                    payload=MatchesDict({
-                        "snap_build": Equals(canonical_url(
-                            build, force_local_path=True)),
-                        "action": Equals("created"),
-                        "snap": Equals(canonical_url(
-                            job.snap, force_local_path=True)),
-                        "build_request": Equals(canonical_url(
-                            job.build_request, force_local_path=True)),
-                        "status": Equals("Needs building"),
-                        "store_upload_status": Equals("Unscheduled"),
-                        }))
-                for build in builds)))
+                    payload=payload_matcher)
+                for payload_matcher in payload_matchers)))
+            self.assertThat(
+                logger.output,
+                LogsScheduledWebhooks([
+                    (hook, "snap:build:0.1", payload_matcher)
+                    for payload_matcher in payload_matchers]))
 
     def test_requestAutoBuilds(self):
         # requestAutoBuilds creates new builds for all configured
