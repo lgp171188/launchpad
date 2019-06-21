@@ -1,4 +1,4 @@
-# Copyright 2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2018-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Snap package jobs."""
@@ -184,13 +184,18 @@ class SnapRequestBuildsJob(SnapJobDerived):
     config = config.ISnapRequestBuildsJobSource
 
     @classmethod
-    def create(cls, snap, requester, archive, pocket, channels):
+    def create(cls, snap, requester, archive, pocket, channels,
+               architectures=None):
         """See `ISnapRequestBuildsJobSource`."""
         metadata = {
             "requester": requester.id,
             "archive": archive.id,
             "pocket": pocket.value,
             "channels": channels,
+            # Really a set or None, but sets aren't directly
+            # JSON-serialisable.
+            "architectures": (
+                list(architectures) if architectures is not None else None),
             }
         snap_job = SnapJob(snap, cls.class_job_type, metadata)
         job = cls(snap_job)
@@ -292,6 +297,12 @@ class SnapRequestBuildsJob(SnapJobDerived):
         return self.metadata["channels"]
 
     @property
+    def architectures(self):
+        """See `ISnapRequestBuildsJob`."""
+        architectures = self.metadata["architectures"]
+        return set(architectures) if architectures is not None else None
+
+    @property
     def date_created(self):
         """See `ISnapRequestBuildsJob`."""
         return self.context.job.date_created
@@ -346,6 +357,7 @@ class SnapRequestBuildsJob(SnapJobDerived):
         try:
             self.builds = self.snap.requestBuildsFromJob(
                 requester, archive, self.pocket, channels=self.channels,
+                architectures=self.architectures,
                 build_request=self.build_request, logger=log)
             self.error_message = None
         except self.retry_error_types:

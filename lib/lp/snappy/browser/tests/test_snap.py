@@ -29,6 +29,7 @@ from testtools.matchers import (
     AfterPreprocessing,
     Equals,
     Is,
+    MatchesDict,
     MatchesListwise,
     MatchesSetwise,
     MatchesStructure,
@@ -1690,8 +1691,8 @@ class TestSnapRequestBuildsView(BaseTestSnapView):
             Unauthorized, self.getViewBrowser, self.snap, "+request-builds")
 
     def test_request_builds_with_architectures_action(self):
-        # Requesting a build with architectures selected creates pending
-        # builds.
+        # Requesting a build with architectures selected creates a pending
+        # build request limited to those architectures.
         browser = self.getViewBrowser(
             self.snap, "+request-builds", user=self.person)
         browser.getControl("amd64").selected = True
@@ -1699,21 +1700,24 @@ class TestSnapRequestBuildsView(BaseTestSnapView):
         browser.getControl("Request builds").click()
 
         login_person(self.person)
-        builds = self.snap.pending_builds
-        self.assertContentEqual(
-            [self.ubuntu.main_archive], set(build.archive for build in builds))
-        self.assertContentEqual(
-            ["amd64", "i386"],
-            [build.distro_arch_series.architecturetag for build in builds])
-        self.assertContentEqual(
-            [PackagePublishingPocket.UPDATES],
-            set(build.pocket for build in builds))
-        self.assertContentEqual(
-            [2510], set(build.buildqueue_record.lastscore for build in builds))
+        [request] = self.snap.pending_build_requests
+        self.assertThat(removeSecurityProxy(request), MatchesStructure(
+            snap=Equals(self.snap),
+            status=Equals(SnapBuildRequestStatus.PENDING),
+            error_message=Is(None),
+            builds=AfterPreprocessing(list, Equals([])),
+            archive=Equals(self.ubuntu.main_archive),
+            _job=MatchesStructure(
+                requester=Equals(self.person),
+                pocket=Equals(PackagePublishingPocket.UPDATES),
+                channels=Equals({}),
+                architectures=MatchesSetwise(Equals("amd64"), Equals("i386")),
+                )))
 
     def test_request_builds_with_architectures_ppa(self):
         # Selecting a different archive with architectures selected creates
-        # builds in that archive.
+        # a build request targeting that archive and limited to those
+        # architectures.
         ppa = self.factory.makeArchive(
             distribution=self.ubuntu, owner=self.person, name="snap-ppa")
         browser = self.getViewBrowser(
@@ -1725,12 +1729,15 @@ class TestSnapRequestBuildsView(BaseTestSnapView):
         browser.getControl("Request builds").click()
 
         login_person(self.person)
-        builds = self.snap.pending_builds
-        self.assertEqual([ppa], [build.archive for build in builds])
+        [request] = self.snap.pending_build_requests
+        self.assertThat(request, MatchesStructure(
+            archive=Equals(ppa),
+            architectures=MatchesSetwise(Equals("amd64"))))
 
     def test_request_builds_with_architectures_channels(self):
-        # Selecting different channels with architectures selected creates
-        # builds using those channels.
+        # Selecting different channels with architectures selected creates a
+        # build request using those channels and limited to those
+        # architectures.
         browser = self.getViewBrowser(
             self.snap, "+request-builds", user=self.person)
         browser.getControl(name="field.channels.core").value = "edge"
@@ -1739,25 +1746,10 @@ class TestSnapRequestBuildsView(BaseTestSnapView):
         browser.getControl("Request builds").click()
 
         login_person(self.person)
-        builds = self.snap.pending_builds
-        self.assertEqual(
-            [{"core": "edge"}], [build.channels for build in builds])
-
-    def test_request_builds_with_architectures_rejects_duplicate(self):
-        # A duplicate build request with architectures selected causes a
-        # notification.
-        self.snap.requestBuild(
-            self.person, self.ubuntu.main_archive, self.distroseries["amd64"],
-            PackagePublishingPocket.UPDATES)
-        browser = self.getViewBrowser(
-            self.snap, "+request-builds", user=self.person)
-        browser.getControl("amd64").selected = True
-        browser.getControl("i386").selected = True
-        browser.getControl("Request builds").click()
-        main_text = extract_text(find_main_content(browser.contents))
-        self.assertIn("1 new build has been queued.", main_text)
-        self.assertIn(
-            "An identical build is already pending for amd64.", main_text)
+        [request] = self.snap.pending_build_requests
+        self.assertThat(request, MatchesStructure(
+            channels=MatchesDict({"core": Equals("edge")}),
+            architectures=MatchesSetwise(Equals("amd64"))))
 
     def test_request_builds_no_architectures_action(self):
         # Requesting a build with no architectures selected creates a
@@ -1779,7 +1771,8 @@ class TestSnapRequestBuildsView(BaseTestSnapView):
             _job=MatchesStructure(
                 requester=Equals(self.person),
                 pocket=Equals(PackagePublishingPocket.UPDATES),
-                channels=Equals({}))))
+                channels=Equals({}),
+                architectures=Is(None))))
 
     def test_request_builds_no_architectures_ppa(self):
         # Selecting a different archive with no architectures selected
@@ -1796,7 +1789,9 @@ class TestSnapRequestBuildsView(BaseTestSnapView):
 
         login_person(self.person)
         [request] = self.snap.pending_build_requests
-        self.assertEqual(ppa, request.archive)
+        self.assertThat(request, MatchesStructure(
+            archive=Equals(ppa),
+            architectures=Is(None)))
 
     def test_request_builds_no_architectures_channels(self):
         # Selecting different channels with no architectures selected
