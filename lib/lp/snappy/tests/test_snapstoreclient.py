@@ -621,6 +621,27 @@ class TestSnapStoreClient(TestCaseWithFactory):
             self.client.checkStatus, status_url)
 
     @responses.activate
+    def test_checkStatus_manual_review(self):
+        status_url = "http://sca.example/dev/api/snaps/1/builds/1/status"
+        responses.add(
+            "GET", status_url,
+            json={
+                "errors": [
+                    {"code": None,
+                     "link": None,
+                     "message": "found potentially sensitive files in package",
+                     }],
+                "url": "http://sca.example/dev/click-apps/1/rev/1/",
+                "code": "need_manual_review",
+                "processed": True,
+                "can_release": False,
+                "revision": 1
+                })
+        self.assertEqual(
+            ("http://sca.example/dev/click-apps/1/rev/1/", 1),
+            self.client.checkStatus(status_url))
+
+    @responses.activate
     def test_listChannels(self):
         self._addChannelsResponse()
         self.assertEqual(self.channels, self.client.listChannels())
