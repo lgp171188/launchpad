@@ -666,21 +666,26 @@ class Snap(Storm, WebhookTargetMixin):
     def _findBase(snapcraft_data):
         """Find a suitable base for a build."""
         snap_base_set = getUtility(ISnapBaseSet)
-        if "base" in snapcraft_data:
-            snap_base_name = snapcraft_data["base"]
+        snap_base_name = snapcraft_data.get("base")
+        if isinstance(snap_base_name, bytes):
+            snap_base_name = snap_base_name.decode("UTF-8")
+        if snap_base_name == "none":
+            snap_base_name = snapcraft_data.get("build-base")
             if isinstance(snap_base_name, bytes):
                 snap_base_name = snap_base_name.decode("UTF-8")
-            return snap_base_set.getByName(snap_base_name)
+        if snap_base_name is not None:
+            return snap_base_set.getByName(snap_base_name), snap_base_name
         else:
-            return snap_base_set.getDefault()
+            return snap_base_set.getDefault(), snap_base_name
 
-    def _pickDistroSeries(self, snap_base, snapcraft_data):
+    def _pickDistroSeries(self, snap_base, snap_base_name):
         """Pick a suitable `IDistroSeries` for a build."""
         if snap_base is not None:
             return self.distro_series or snap_base.distro_series
         elif self.distro_series is None:
             # A base is mandatory if there's no configured distro series.
-            raise NoSuchSnapBase(snapcraft_data.get("base", "<default>"))
+            raise NoSuchSnapBase(
+                snap_base_name if snap_base_name is not None else "<default>")
         else:
             return self.distro_series
 
@@ -721,8 +726,8 @@ class Snap(Storm, WebhookTargetMixin):
             # Find a suitable SnapBase, and combine it with other
             # configuration to find a suitable distro series and suitable
             # channels.
-            snap_base = self._findBase(snapcraft_data)
-            distro_series = self._pickDistroSeries(snap_base, snapcraft_data)
+            snap_base, snap_base_name = self._findBase(snapcraft_data)
+            distro_series = self._pickDistroSeries(snap_base, snap_base_name)
             channels = self._pickChannels(snap_base, channels=channels)
 
             # Sort by Processor.id for determinism.  This is chosen to be
