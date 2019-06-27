@@ -1,4 +1,4 @@
-# Copyright 2016-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2016-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Communication with the snap store."""
@@ -30,6 +30,10 @@ from zope.interface import implementer
 from zope.security.proxy import removeSecurityProxy
 
 from lp.services.config import config
+from lp.services.crypto.interfaces import (
+    CryptoError,
+    IEncryptedContainer,
+    )
 from lp.services.features import getFeatureFlag
 from lp.services.memcache.interfaces import IMemcacheClient
 from lp.services.scripts import log
@@ -154,6 +158,26 @@ class MacaroonAuth(requests.auth.AuthBase):
         return r
 
 
+def _get_discharge_macaroon_raw(snap):
+    """Get the serialised discharge macaroon for a snap, if any.
+
+    This copes with either unencrypted (the historical default) or encrypted
+    macaroons.
+    """
+    if snap.store_secrets is None:
+        raise AssertionError("snap.store_secrets is None")
+    if "discharge_encrypted" in snap.store_secrets:
+        container = getUtility(IEncryptedContainer, "snap-store-secrets")
+        try:
+            return container.decrypt(
+                snap.store_secrets["discharge_encrypted"]).decode("UTF-8")
+        except CryptoError as e:
+            raise UnauthorizedUploadResponse(
+                "Failed to decrypt discharge macaroon: %s" % e)
+    else:
+        return snap.store_secrets.get("discharge")
+
+
 # Hardcoded fallback.
 _default_store_channels = [
     {"name": "candidate", "display_name": "Candidate"},
@@ -257,6 +281,7 @@ class SnapStoreClient:
         snap = snapbuild.snap
         assert config.snappy.store_url is not None
         assert snap.store_name is not None
+        assert snap.store_secrets is not None
         assert snapbuild.date_started is not None
         upload_url = urlappend(config.snappy.store_url, "dev/api/snap-push/")
         data = {
@@ -276,12 +301,11 @@ class SnapStoreClient:
         # XXX cjwatson 2016-05-09: This should add timeline information, but
         # that's currently difficult in jobs.
         try:
-            assert snap.store_secrets is not None
             response = urlfetch(
                 upload_url, method="POST", json=data,
                 auth=MacaroonAuth(
                     snap.store_secrets["root"],
-                    snap.store_secrets.get("discharge")))
+                    _get_discharge_macaroon_raw(snap)))
             response_data = response.json()
             return response_data["status_details_url"]
         except requests.HTTPError as e:
@@ -312,7 +336,12 @@ class SnapStoreClient:
         assert snap.store_secrets is not None
         refresh_url = urlappend(
             config.launchpad.openid_provider_root, "api/v2/tokens/refresh")
-        data = {"discharge_macaroon": snap.store_secrets["discharge"]}
+        discharge_macaroon_raw = _get_discharge_macaroon_raw(snap)
+        if discharge_macaroon_raw is None:
+            raise UnauthorizedUploadResponse(
+                "Tried to refresh discharge for snap with no discharge "
+                "macaroon")
+        data = {"discharge_macaroon": discharge_macaroon_raw}
         try:
             response = urlfetch(refresh_url, method="POST", json=data)
             response_data = response.json()
@@ -320,7 +349,15 @@ class SnapStoreClient:
                 raise BadRefreshResponse(response.text)
             # Set a new dict here to avoid problems with security proxies.
             new_secrets = dict(snap.store_secrets)
-            new_secrets["discharge"] = response_data["discharge_macaroon"]
+            container = getUtility(IEncryptedContainer, "snap-store-secrets")
+            if container.can_encrypt:
+                new_secrets["discharge_encrypted"] = (
+                    removeSecurityProxy(container.encrypt(
+                        response_data["discharge_macaroon"].encode("UTF-8"))))
+                new_secrets.pop("discharge", None)
+            else:
+                new_secrets["discharge"] = response_data["discharge_macaroon"]
+                new_secrets.pop("discharge_encrypted", None)
             snap.store_secrets = new_secrets
         except requests.HTTPError as e:
             raise cls._makeSnapStoreError(BadRefreshResponse, e)
