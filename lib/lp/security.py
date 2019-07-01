@@ -304,7 +304,7 @@ class AnyAllowedPersonDeferredToView(AuthorizationBase):
         return False
 
     def checkAuthenticated(self, user):
-        return self.forwardCheckAuthenticated(user, self.obj, 'launchpad.View')
+        yield self.obj, 'launchpad.View'
 
 
 class AnyLegitimatePerson(AuthorizationBase):
@@ -347,11 +347,10 @@ class LimitedViewDeferredToView(AuthorizationBase):
     usedfor = Interface
 
     def checkUnauthenticated(self):
-        return self.forwardCheckUnauthenticated(permission='launchpad.View')
+        yield self.obj, 'launchpad.View'
 
     def checkAuthenticated(self, user):
-        return self.forwardCheckAuthenticated(
-            user, permission='launchpad.View')
+        yield self.obj, 'launchpad.View'
 
 
 class AdminByAdminsTeam(AuthorizationBase):
@@ -2767,12 +2766,10 @@ class LimitedViewArchive(AuthorizationBase):
     usedfor = IArchive
 
     def checkUnauthenticated(self):
-        return self.forwardCheckUnauthenticated(
-            permission='launchpad.SubscriberView')
+        yield self.obj, 'launchpad.SubscriberView'
 
     def checkAuthenticated(self, user):
-        return self.forwardCheckAuthenticated(
-            user, permission='launchpad.SubscriberView')
+        yield self.obj, 'launchpad.SubscriberView'
 
 
 class EditArchive(AuthorizationBase):
@@ -2998,12 +2995,10 @@ class ViewSourcePackagePublishingHistory(AuthorizationBase):
     usedfor = ISourcePackagePublishingHistory
 
     def checkUnauthenticated(self):
-        return self.forwardCheckUnauthenticated(
-            self.obj.archive, 'launchpad.SubscriberView')
+        yield self.obj.archive, 'launchpad.SubscriberView'
 
     def checkAuthenticated(self, user):
-        return self.forwardCheckAuthenticated(
-            user, self.obj.archive, 'launchpad.SubscriberView')
+        yield self.obj.archive, 'launchpad.SubscriberView'
 
 
 class EditPublishing(DelegatedAuthorization):
@@ -3294,8 +3289,7 @@ class ViewWebhook(AuthorizationBase):
         return False
 
     def checkAuthenticated(self, user):
-        return self.forwardCheckAuthenticated(
-            user, self.obj.target, 'launchpad.Edit')
+        yield self.obj.target, 'launchpad.Edit'
 
 
 class ViewWebhookDeliveryJob(DelegatedAuthorization):
