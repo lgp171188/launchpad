@@ -1,4 +1,4 @@
-# Copyright 2009-2017 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -57,6 +57,7 @@ from lp.bugs.model.bug import (
     BugAffectsPerson,
     BugTag,
     )
+from lp.bugs.model.bugactivity import BugActivity
 from lp.bugs.model.bugattachment import BugAttachment
 from lp.bugs.model.bugbranch import BugBranch
 from lp.bugs.model.bugmessage import BugMessage
@@ -612,11 +613,22 @@ def _build_query(params):
 
     if params.bug_commenter:
         extra_clauses.append(
-            BugTaskFlat.bug_id.is_in(Select(
-                BugMessage.bugID, tables=[BugMessage],
-                where=And(
-                    BugMessage.index > 0,
-                    BugMessage.owner == params.bug_commenter))))
+            BugTaskFlat.bug_id.is_in(Union(
+                Select(
+                    BugMessage.bugID, tables=[BugMessage],
+                    where=And(
+                        BugMessage.index > 0,
+                        BugMessage.owner == params.bug_commenter)),
+                Select(
+                    BugActivity.bugID, tables=[BugActivity],
+                    where=And(
+                        BugActivity.person == params.bug_commenter,
+                        # This is distressingly fragile, but BugActivity
+                        # doesn't really give us any better way to exclude
+                        # the bug creation event.
+                        Or(
+                            BugActivity.whatchanged != u'bug',
+                            BugActivity.message != u'added bug'))))))
 
     if params.affects_me:
         params.affected_user = params.user
