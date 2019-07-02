@@ -475,7 +475,9 @@ class TestSnap(TestCaseWithFactory):
             status=Equals(SnapBuildRequestStatus.PENDING),
             error_message=Is(None),
             builds=AfterPreprocessing(set, MatchesSetwise()),
-            archive=Equals(snap.distro_series.main_archive)))
+            archive=Equals(snap.distro_series.main_archive),
+            channels=MatchesDict({"snapcraft": Equals("edge")}),
+            architectures=Is(None)))
         [job] = getUtility(ISnapRequestBuildsJobSource).iterReady()
         self.assertThat(job, MatchesStructure(
             job_id=Equals(request.id),
@@ -484,7 +486,8 @@ class TestSnap(TestCaseWithFactory):
             requester=Equals(snap.owner.teamowner),
             archive=Equals(snap.distro_series.main_archive),
             pocket=Equals(PackagePublishingPocket.UPDATES),
-            channels=Equals({"snapcraft": "edge"})))
+            channels=Equals({"snapcraft": "edge"}),
+            architectures=Is(None)))
 
     def test_requestBuilds_without_distroseries(self):
         # requestBuilds schedules a job for a snap without a distroseries.
@@ -502,7 +505,9 @@ class TestSnap(TestCaseWithFactory):
             status=Equals(SnapBuildRequestStatus.PENDING),
             error_message=Is(None),
             builds=AfterPreprocessing(set, MatchesSetwise()),
-            archive=Equals(archive)))
+            archive=Equals(archive),
+            channels=MatchesDict({"snapcraft": Equals("edge")}),
+            architectures=Is(None)))
         [job] = getUtility(ISnapRequestBuildsJobSource).iterReady()
         self.assertThat(job, MatchesStructure(
             job_id=Equals(request.id),
@@ -511,7 +516,40 @@ class TestSnap(TestCaseWithFactory):
             requester=Equals(snap.owner.teamowner),
             archive=Equals(archive),
             pocket=Equals(PackagePublishingPocket.UPDATES),
-            channels=Equals({"snapcraft": "edge"})))
+            channels=Equals({"snapcraft": "edge"}),
+            architectures=Is(None)))
+
+    def test_requestBuilds_with_architectures(self):
+        # If asked to build for particular architectures, requestBuilds
+        # passes those through to the job.
+        snap = self.factory.makeSnap()
+        now = get_transaction_timestamp(IStore(snap))
+        with person_logged_in(snap.owner.teamowner):
+            request = snap.requestBuilds(
+                snap.owner.teamowner, snap.distro_series.main_archive,
+                PackagePublishingPocket.UPDATES,
+                channels={"snapcraft": "edge"},
+                architectures={"amd64", "i386"})
+        self.assertThat(request, MatchesStructure(
+            date_requested=Equals(now),
+            date_finished=Is(None),
+            snap=Equals(snap),
+            status=Equals(SnapBuildRequestStatus.PENDING),
+            error_message=Is(None),
+            builds=AfterPreprocessing(set, MatchesSetwise()),
+            archive=Equals(snap.distro_series.main_archive),
+            channels=MatchesDict({"snapcraft": Equals("edge")}),
+            architectures=MatchesSetwise(Equals("amd64"), Equals("i386"))))
+        [job] = getUtility(ISnapRequestBuildsJobSource).iterReady()
+        self.assertThat(job, MatchesStructure(
+            job_id=Equals(request.id),
+            job=MatchesStructure.byEquality(status=JobStatus.WAITING),
+            snap=Equals(snap),
+            requester=Equals(snap.owner.teamowner),
+            archive=Equals(snap.distro_series.main_archive),
+            pocket=Equals(PackagePublishingPocket.UPDATES),
+            channels=Equals({"snapcraft": "edge"}),
+            architectures=MatchesSetwise(Equals("amd64"), Equals("i386"))))
 
     def test__findBase(self):
         snap_base_set = getUtility(ISnapBaseSet)
@@ -585,7 +623,7 @@ class TestSnap(TestCaseWithFactory):
         with person_logged_in(job.requester):
             builds = job.snap.requestBuildsFromJob(
                 job.requester, job.archive, job.pocket,
-                removeSecurityProxy(job.channels),
+                channels=removeSecurityProxy(job.channels),
                 build_request=job.build_request)
         self.assertRequestedBuildsMatch(builds, job, ["sparc"], job.channels)
 
@@ -601,10 +639,28 @@ class TestSnap(TestCaseWithFactory):
         with person_logged_in(job.requester):
             builds = job.snap.requestBuildsFromJob(
                 job.requester, job.archive, job.pocket,
-                removeSecurityProxy(job.channels),
+                channels=removeSecurityProxy(job.channels),
                 build_request=job.build_request)
         self.assertRequestedBuildsMatch(
             builds, job, ["mips64el", "riscv64"], job.channels)
+
+    def test_requestBuildsFromJob_architectures_parameter(self):
+        # If an explicit set of architectures was given as a parameter,
+        # requestBuildsFromJob intersects those with any other constraints
+        # when requesting builds.
+        self.useFixture(GitHostingFixture(blob="name: foo\n"))
+        job = self.makeRequestBuildsJob(["avr", "mips64el", "riscv64"])
+        self.assertEqual(
+            get_transaction_timestamp(IStore(job.snap)), job.date_created)
+        transaction.commit()
+        with person_logged_in(job.requester):
+            builds = job.snap.requestBuildsFromJob(
+                job.requester, job.archive, job.pocket,
+                channels=removeSecurityProxy(job.channels),
+                architectures={"avr", "riscv64"},
+                build_request=job.build_request)
+        self.assertRequestedBuildsMatch(
+            builds, job, ["avr", "riscv64"], job.channels)
 
     def test_requestBuildsFromJob_no_distroseries_explicit_base(self):
         # If the snap doesn't specify a distroseries but has an explicit
