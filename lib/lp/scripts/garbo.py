@@ -1569,9 +1569,15 @@ class LiveFSFilePruner(BulkPruner):
     We remove binary files attached to `LiveFSBuild`s that are more than
     `LiveFS.keep_binary_files_interval` old and that are not set as base
     images for a `DistroArchSeries`; these files are very large and are only
-    useful for builds in progress.  Text files are typically small (<1MiB)
-    and useful for retrospective analysis, so we preserve those
-    indefinitely.
+    useful for builds in progress.
+
+    DAS base images are excluded because
+    `DistroArchSeries.setChrootFromBuild` takes a `LiveFSBuild` and we want
+    to have the option of reverting to a previous base image shortly after
+    upgrading to a newer one.
+
+    Text files are typically small (<1MiB) and useful for retrospective
+    analysis, so we preserve those indefinitely.
     """
     target_table_class = LiveFSFile
     # Note that a NULL keep_binary_files_interval disables pruning, due to
