@@ -378,6 +378,9 @@ class URLFetcher:
                 request_kwargs["proxies"]["ftp"] = config.launchpad.http_proxy
         if output_file is not None:
             request_kwargs["stream"] = True
+        if config.launchpad.ca_certificates_path is not None:
+            request_kwargs.setdefault(
+                "verify", config.launchpad.ca_certificates_path)
         response = self.session.request(url=url, **request_kwargs)
         raise_for_status_redacted(response)
         if output_file is None:
