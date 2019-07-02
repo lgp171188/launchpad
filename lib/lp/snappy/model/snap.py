@@ -252,6 +252,11 @@ class SnapBuildRequest:
         """See `ISnapBuildRequest`."""
         return self._job.channels
 
+    @property
+    def architectures(self):
+        """See `ISnapBuildRequest`."""
+        return self._job.architectures
+
 
 @implementer(ISnap, IHasOwner)
 class Snap(Storm, WebhookTargetMixin):
@@ -658,11 +663,13 @@ class Snap(Storm, WebhookTargetMixin):
         notify(ObjectCreatedEvent(build, user=requester))
         return build
 
-    def requestBuilds(self, requester, archive, pocket, channels=None):
+    def requestBuilds(self, requester, archive, pocket, channels=None,
+                      architectures=None):
         """See `ISnap`."""
         self._checkRequestBuild(requester, archive)
         job = getUtility(ISnapRequestBuildsJobSource).create(
-            self, requester, archive, pocket, channels)
+            self, requester, archive, pocket, channels,
+            architectures=architectures)
         return self.getBuildRequest(job.job_id)
 
     @staticmethod
@@ -697,7 +704,8 @@ class Snap(Storm, WebhookTargetMixin):
         else:
             return channels
 
-    def requestBuildsFromJob(self, requester, archive, pocket, channels=None,
+    def requestBuildsFromJob(self, requester, archive, pocket,
+                             channels=None, architectures=None,
                              allow_failures=False, fetch_snapcraft_yaml=True,
                              build_request=None, logger=None):
         """See `ISnap`."""
@@ -734,7 +742,9 @@ class Snap(Storm, WebhookTargetMixin):
             supported_arches = OrderedDict(
                 (das.architecturetag, das) for das in sorted(
                     self.getAllowedArchitectures(distro_series),
-                    key=attrgetter("processor.id")))
+                    key=attrgetter("processor.id"))
+                if (architectures is None or
+                    das.architecturetag in architectures))
             architectures_to_build = determine_architectures_to_build(
                 snapcraft_data, supported_arches.keys())
         except Exception as e:

@@ -22,6 +22,7 @@ from zope.schema import (
     Datetime,
     Dict,
     List,
+    Set,
     TextLine,
     )
 
@@ -78,6 +79,10 @@ class ISnapRequestBuildsJob(IRunnableJob):
             "are supported."),
         key_type=TextLine(), required=False, readonly=True)
 
+    architectures = Set(
+        title=_("If set, limit builds to these architecture tags."),
+        value_type=TextLine(), required=False, readonly=True)
+
     date_created = Datetime(
         title=_("Time when this job was created."),
         required=True, readonly=True)
@@ -101,7 +106,7 @@ class ISnapRequestBuildsJob(IRunnableJob):
 
 class ISnapRequestBuildsJobSource(IJobSource):
 
-    def create(snap, requester, archive, pocket, channels):
+    def create(snap, requester, archive, pocket, channels, architectures=None):
         """Request builds of a snap package.
 
         :param snap: The snap package to build.
@@ -110,6 +115,9 @@ class ISnapRequestBuildsJobSource(IJobSource):
         :param pocket: The pocket that should be targeted.
         :param channels: A dictionary mapping snap names to channels to use
             for these builds.
+        :param architectures: If not None, limit builds to architectures
+            with these architecture tags (in addition to any other
+            applicable constraints).
         """
 
     def findBySnap(snap, statuses=None, job_ids=None):
