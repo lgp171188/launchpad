@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """An XMLRPC transport which uses requests."""
@@ -19,6 +19,7 @@ from xmlrpclib import (
     Transport,
     )
 
+from defusedxml.xmlrpc import monkey_patch
 import requests
 from requests.cookies import RequestsCookieJar
 import six
@@ -30,6 +31,9 @@ from lp.services.timeout import (
     urlfetch,
     )
 from lp.services.utils import traceback_info
+
+# Protect against various XML parsing vulnerabilities.
+monkey_patch()
 
 
 class RequestsTransport(Transport):
