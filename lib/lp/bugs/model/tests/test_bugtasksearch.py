@@ -1,4 +1,4 @@
-# Copyright 2010-2016 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -73,6 +73,7 @@ from lp.services.searchbuilder import (
     greater_than,
     not_equals,
     )
+from lp.services.webapp.snapshot import notify_modified
 from lp.soyuz.interfaces.archive import ArchivePurpose
 from lp.soyuz.interfaces.component import IComponentSet
 from lp.soyuz.interfaces.publishing import PackagePublishingStatus
@@ -217,12 +218,29 @@ class OnceTests:
         # Note that this does not include the bug description (which is
         # stored as the first comment of a bug.) Hence, if we let the
         # reporter of our first test bug comment on the second test bug,
-        # a search for bugs having comments from this person retruns only
+        # a search for bugs having comments from this person returns only
         # the second bug.
         commenter = self.bugtasks[0].bug.owner
         expected = self.bugtasks[1]
         with person_logged_in(commenter):
             expected.bug.newMessage(owner=commenter, content='a comment')
+        params = self.getBugTaskSearchParams(
+            user=None, bug_commenter=commenter)
+        self.assertSearchFinds(params, [expected])
+
+    def test_search_by_bug_commenter_finds_activity(self):
+        # Searching by bug commenter also includes bugs where the given
+        # person only made a change to the bug's metadata but did not leave
+        # an actual comment.
+        # Note that this does not include the activity log entry created
+        # when the bug is added. Hence, if we let the reporter of our first
+        # test bug change the second test bug, a search for bugs having
+        # comments from this person returns only the second bug.
+        commenter = self.bugtasks[0].bug.owner
+        expected = self.bugtasks[1]
+        with person_logged_in(commenter):
+            with notify_modified(expected.bug, ['title']):
+                expected.bug.title = 'some modified title'
         params = self.getBugTaskSearchParams(
             user=None, bug_commenter=commenter)
         self.assertSearchFinds(params, [expected])
