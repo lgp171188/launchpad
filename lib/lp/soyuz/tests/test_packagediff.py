@@ -1,4 +1,4 @@
-# Copyright 2010-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test source package diffs."""
@@ -173,6 +173,9 @@ class TestPackageDiffs(TestCaseWithFactory):
         with open(mock_debdiff_path, "w") as mock_debdiff:
             print(dedent("""\
                 #! /bin/sh
+                # Make sure we don't rely on the child leaving its SIGALRM
+                # disposition undisturbed.
+                trap '' ALRM
                 (echo "$$"; echo "$TMPDIR") >%s
                 sleep 5
                 """ % marker_path), end="", file=mock_debdiff)
