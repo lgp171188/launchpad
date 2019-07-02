@@ -388,6 +388,24 @@ class TestTimeout(TestCase):
             {scheme: proxy for scheme in ('http', 'https')},
             fake_send.calls[0][1]['proxies'])
 
+    def test_urlfetch_no_ca_certificates(self):
+        """If ca_certificates_path is None, urlfetch uses bundled certs."""
+        self.pushConfig('launchpad', ca_certificates_path='none')
+        fake_send = FakeMethod(result=Response())
+        self.useFixture(
+            MonkeyPatch('requests.adapters.HTTPAdapter.send', fake_send))
+        urlfetch('http://example.com/')
+        self.assertIs(True, fake_send.calls[0][1]['verify'])
+
+    def test_urlfetch_ca_certificates_if_configured(self):
+        """urlfetch uses the configured ca_certificates_path if it is set."""
+        self.pushConfig('launchpad', ca_certificates_path='/path/to/certs')
+        fake_send = FakeMethod(result=Response())
+        self.useFixture(
+            MonkeyPatch('requests.adapters.HTTPAdapter.send', fake_send))
+        urlfetch('http://example.com/')
+        self.assertEqual('/path/to/certs', fake_send.calls[0][1]['verify'])
+
     def test_urlfetch_does_not_support_ftp_urls_by_default(self):
         """urlfetch() does not support ftp urls by default."""
         url = 'ftp://localhost/'
