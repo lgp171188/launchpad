@@ -246,6 +246,7 @@ cryptography==2.7
 cssselect==0.9.1
 cssutils==0.9.10
 d2to1==0.2.12
+defusedxml==0.6.0
 Django==1.4
 dkimpy==0.5.4
 # Required by dkimpy

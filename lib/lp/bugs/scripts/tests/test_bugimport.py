@@ -1,12 +1,12 @@
-# Copyright 2009-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
 
 import os
 import re
-import xml.etree.cElementTree as ET
 
+import defusedxml.cElementTree as ET
 import pytz
 from testtools.content import text_content
 import transaction

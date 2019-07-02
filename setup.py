@@ -153,6 +153,7 @@ setup(
         'celery',
         'cssselect',
         'cssutils',
+        'defusedxml',
         'dkimpy',
         # Required for dkimpy
         'dnspython',
