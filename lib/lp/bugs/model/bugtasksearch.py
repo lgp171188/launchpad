@@ -16,6 +16,7 @@ from storm.expr import (
     Alias,
     And,
     Coalesce,
+    Column,
     Count,
     Desc,
     Exists,
@@ -28,6 +29,7 @@ from storm.expr import (
     Select,
     SQL,
     Union,
+    With,
     )
 from storm.info import ClassAlias
 from storm.references import Reference
@@ -85,7 +87,10 @@ from lp.registry.model.teammembership import TeamParticipation
 from lp.services.database.bulk import load
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.interfaces import IStore
-from lp.services.database.sqlbase import sqlvalues
+from lp.services.database.sqlbase import (
+    convert_storm_clause_to_string,
+    sqlvalues,
+    )
 from lp.services.database.stormexpr import (
     ArrayAgg,
     ArrayIntersects,
@@ -612,8 +617,8 @@ def _build_query(params):
         extra_clauses.append(BugTaskFlat.bug_owner == params.bug_reporter)
 
     if params.bug_commenter:
-        extra_clauses.append(
-            BugTaskFlat.bug_id.is_in(Union(
+        with_clauses.append(convert_storm_clause_to_string(
+            With('commented_bug_ids', Union(
                 Select(
                     BugMessage.bugID, tables=[BugMessage],
                     where=And(
@@ -628,7 +633,10 @@ def _build_query(params):
                         # the bug creation event.
                         Or(
                             BugActivity.whatchanged != u'bug',
-                            BugActivity.message != u'added bug'))))))
+                            BugActivity.message != u'added bug')))))))
+        extra_clauses.append(
+            BugTaskFlat.bug_id.is_in(
+                Select(Column('bug', 'commented_bug_ids'))))
 
     if params.affects_me:
         params.affected_user = params.user
