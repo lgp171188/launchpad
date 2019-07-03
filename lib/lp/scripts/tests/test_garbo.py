@@ -154,6 +154,9 @@ from lp.translations.model.translationtemplateitem import (
     )
 
 
+_default = object()
+
+
 class TestGarboScript(TestCase):
     layer = LaunchpadScriptLayer
 
@@ -1513,31 +1516,46 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
             'PopulateLatestPersonSourcePackageReleaseCache')
         self.assertEqual(spph_2.id, job_data['last_spph_id'])
 
-    def _test_LiveFSFilePruner(self, content_type, interval, expected_count=0):
+    def _test_LiveFSFilePruner(self, content_type, interval,
+                               keep_binary_files_days=_default,
+                               base_image=False, expected_count=0,
+                               **livefsbuild_kwargs):
         # Garbo should (or should not, if `expected_count=1`) remove LiveFS
         # files of MIME type `content_type` that finished more than
-        # `interval` days ago.
+        # `interval` days ago.  If `keep_binary_files_days` is given, set
+        # that on the test LiveFS.  If `base_image` is True, install the
+        # test LiveFS file as a base image for its DAS.
         now = datetime.now(UTC)
         switch_dbuser('testadmin')
         self.useFixture(FeatureFixture({LIVEFS_FEATURE_FLAG: u'on'}))
         store = IMasterStore(LiveFSFile)
+        initial_count = store.find(LiveFSFile).count()
 
+        livefsbuild_kwargs = dict(livefsbuild_kwargs)
+        if keep_binary_files_days is not _default:
+            livefsbuild_kwargs['keep_binary_files_days'] = (
+                keep_binary_files_days)
         db_build = self.factory.makeLiveFSBuild(
             date_created=now - timedelta(days=interval, minutes=15),
-            status=BuildStatus.FULLYBUILT, duration=timedelta(minutes=10))
+            status=BuildStatus.FULLYBUILT, duration=timedelta(minutes=10),
+            **livefsbuild_kwargs)
         db_lfa = self.factory.makeLibraryFileAlias(content_type=content_type)
         db_file = self.factory.makeLiveFSFile(
             livefsbuild=db_build, libraryfile=db_lfa)
-        Store.of(db_file).flush()
-        self.assertEqual(1, store.find(LiveFSFile).count())
+        if base_image:
+            db_build.distro_arch_series.setChrootFromBuild(
+                db_build, db_file.libraryfile.filename)
+        store.flush()
 
         self.runDaily()
 
         switch_dbuser('testadmin')
-        self.assertEqual(expected_count, store.find(LiveFSFile).count())
+        self.assertEqual(
+            initial_count + expected_count, store.find(LiveFSFile).count())
 
     def test_LiveFSFilePruner_old_binary_files(self):
-        # LiveFS binary files attached to builds over a day old are pruned.
+        # By default, LiveFS binary files attached to builds over a day old
+        # are pruned.
         self._test_LiveFSFilePruner('application/octet-stream', 1)
 
     def test_LiveFSFilePruner_old_text_files(self):
@@ -1549,6 +1567,50 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
         # retained.
         self._test_LiveFSFilePruner(
             'application/octet-stream', 0, expected_count=1)
+
+    def test_LiveFSFilePruner_custom_interval_old_binary_files(self):
+        # If a custom retention interval is set, LiveFS binary files
+        # attached to builds over that interval old are pruned.
+        self._test_LiveFSFilePruner(
+            'application/octet-stream', 7, keep_binary_files_days=7)
+
+    def test_LiveFSFilePruner_custom_interval_recent_binary_files(self):
+        # If a custom retention interval is set, LiveFS binary files
+        # attached to builds less than that interval old are pruned.
+        self._test_LiveFSFilePruner(
+            'application/octet-stream', 6, keep_binary_files_days=7,
+            expected_count=1)
+
+    def test_LiveFSFilePruner_null_interval_disables_pruning(self):
+        # A null retention interval disables pruning.
+        self._test_LiveFSFilePruner(
+            'application/octet-stream', 100, keep_binary_files_days=None,
+            expected_count=1)
+
+    def test_LiveFSFilePruner_base_image(self):
+        # An old LiveFS binary file is not pruned if it is a base image.
+        self._test_LiveFSFilePruner(
+            'application/octet-stream', 100, base_image=True, expected_count=1)
+
+    def test_LiveFSFilePruner_other_base_image(self):
+        # An old LiveFS binary file is pruned even if some other base image
+        # exists.
+        switch_dbuser('testadmin')
+        self.useFixture(FeatureFixture({LIVEFS_FEATURE_FLAG: u'on'}))
+        store = IMasterStore(LiveFSFile)
+        other_build = self.factory.makeLiveFSBuild(
+            status=BuildStatus.FULLYBUILT, duration=timedelta(minutes=10))
+        other_lfa = self.factory.makeLibraryFileAlias(
+            content_type='application/octet-stream')
+        other_file = self.factory.makeLiveFSFile(
+            livefsbuild=other_build, libraryfile=other_lfa)
+        other_build.distro_arch_series.setChrootFromBuild(
+            other_build, other_file.libraryfile.filename)
+        store.flush()
+        self._test_LiveFSFilePruner(
+            'application/octet-stream', 100,
+            distroarchseries=other_build.distro_arch_series)
+        self.assertContentEqual([other_file], store.find(LiveFSFile))
 
     def _test_SnapFilePruner(self, filename, job_status, interval,
                              expected_count=0):
