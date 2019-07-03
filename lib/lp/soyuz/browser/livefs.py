@@ -1,4 +1,4 @@
-# Copyright 2014-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2014-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """LiveFS views."""
@@ -181,6 +181,7 @@ class ILiveFSEditSchema(Interface):
         'name',
         'require_virtualized',
         'relative_build_score',
+        'keep_binary_files_days',
         ])
     distro_series = Choice(
         vocabulary='BuildableDistroSeries', title=u'Distribution series')
@@ -282,13 +283,18 @@ class LiveFSAdminView(BaseLiveFSEditView):
 
     label = title
 
-    field_names = ['require_virtualized', 'relative_build_score']
+    field_names = [
+        'require_virtualized',
+        'relative_build_score',
+        'keep_binary_files_days',
+        ]
 
     @property
     def initial_values(self):
         return {
             'require_virtualized': self.context.require_virtualized,
             'relative_build_score': self.context.relative_build_score,
+            'keep_binary_files_days': self.context.keep_binary_files_days,
             }
 
 

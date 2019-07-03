@@ -1,4 +1,4 @@
-# Copyright 2014-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2014-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test live filesystems."""
@@ -121,6 +121,26 @@ class TestLiveFS(TestCaseWithFactory):
                 Unauthorized, setattr, livefs, "relative_build_score", 100)
         with celebrity_logged_in("buildd_admin"):
             livefs.relative_build_score = 100
+
+    def test_keep_binary_files_days(self):
+        # Buildd admins can change the binary file retention period of a
+        # LiveFS, but ordinary users cannot.
+        livefs = self.factory.makeLiveFS()
+        self.assertEqual(1, livefs.keep_binary_files_days)
+        with person_logged_in(livefs.owner):
+            self.assertRaises(
+                Unauthorized, setattr, livefs, "keep_binary_files_days", 2)
+        with celebrity_logged_in("buildd_admin"):
+            livefs.keep_binary_files_days = 2
+        self.assertEqual(2, livefs.keep_binary_files_days)
+        self.assertEqual(
+            timedelta(days=2),
+            removeSecurityProxy(livefs).keep_binary_files_interval)
+        with celebrity_logged_in("buildd_admin"):
+            livefs.keep_binary_files_days = None
+        self.assertIsNone(livefs.keep_binary_files_days)
+        self.assertIsNone(
+            removeSecurityProxy(livefs).keep_binary_files_interval)
 
     def test_requestBuild(self):
         # requestBuild creates a new LiveFSBuild.
