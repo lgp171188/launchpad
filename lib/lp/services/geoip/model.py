@@ -40,7 +40,8 @@ class GeoIP:
 
     def getRecordByAddress(self, ip_address):
         """See `IGeoIP`."""
-        ip_address = ensure_address_is_not_private(ip_address)
+        if ipaddress_is_private(ip_address):
+            return None
         try:
             return self._gi.record_by_addr(ip_address)
         except SystemError:
@@ -51,7 +52,8 @@ class GeoIP:
 
     def getCountryByAddr(self, ip_address):
         """See `IGeoIP`."""
-        ip_address = ensure_address_is_not_private(ip_address)
+        if ipaddress_is_private(ip_address):
+            return None
         geoip_record = self.getRecordByAddress(ip_address)
         if geoip_record is None:
             return None
@@ -128,13 +130,8 @@ class RequestPreferredLanguages(object):
         return sorted(languages, key=lambda x: x.englishname)
 
 
-def ensure_address_is_not_private(ip_address):
-    """Return the given IP address if it doesn't start with '127.'.
-
-    If it does start with '127.' then we return a South African IP address.
-    Notice that we have no specific reason for using a South African IP
-    address here -- we could have used any other non-private IP address.
-    """
+def ipaddress_is_private(ip_address):
+    """Return True if the given IP address is private, otherwise False."""
     private_prefixes = (
         '127.',
         '192.168.',
@@ -142,12 +139,7 @@ def ensure_address_is_not_private(ip_address):
         '10.',
         )
 
-    for prefix in private_prefixes:
-        if ip_address.startswith(prefix):
-            # This is an arbitrary South African IP which was handy at the
-            # time of writing; it's not special in any way.
-            return '196.36.161.227'
-    return ip_address
+    return any(ip_address.startswith(prefix) for prefix in private_prefixes)
 
 
 class NoGeoIPDatabaseFound(Exception):

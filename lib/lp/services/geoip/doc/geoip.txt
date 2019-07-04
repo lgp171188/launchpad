@@ -15,22 +15,27 @@ address.
     u'Brazil'
 
 When running tests the IP address will start with '127.', and GeoIP
-would, obviously, fail to find the country for, so we use a South
-African IP address in that case.
+would, obviously, fail to find the country for that, so we return None.
 
-    >>> geoip.getCountryByAddr('127.0.0.88').name
-    u'South Africa'
+    >>> print(geoip.getCountryByAddr('127.0.0.88'))
+    None
 
 We do the same trick for any IP addresses on private networks.
 
-    >>> geoip.getCountryByAddr('10.0.0.88').name
-    u'South Africa'
+    >>> print(geoip.getCountryByAddr('10.0.0.88'))
+    None
 
-    >>> geoip.getCountryByAddr('192.168.0.7').name
-    u'South Africa'
+    >>> print(geoip.getCountryByAddr('192.168.0.7'))
+    None
 
-    >>> geoip.getCountryByAddr('172.16.0.1').name
-    u'South Africa'
+    >>> print(geoip.getCountryByAddr('172.16.0.1'))
+    None
+
+    >>> print(geoip.getCountryByAddr('::1'))
+    None
+
+    >>> print(geoip.getCountryByAddr('fc00::1'))
+    None
 
 IGeoIP also provides a getRecordByAddress() method, which returns a dict
 containing a bunch more information about that IP's location.
@@ -51,23 +56,10 @@ containing a bunch more information about that IP's location.
     region_name: ...
     time_zone: ...
 
-And again we'll use a South African IP if the address starts with '127.'.
+And again we'll return None if the address is private.
 
-    >>> record = geoip.getRecordByAddress('127.0.0.1')
-    >>> for key, value in sorted(record.items()):
-    ...     print "%s: %s" % (key, value)
-    area_code: ...
-    city: ...
-    country_code: ZA
-    country_code3: ZAF
-    country_name: South Africa
-    dma_code: ...
-    latitude: ...
-    longitude: ...
-    postal_code: ...
-    region: ...
-    region_name: ...
-    time_zone: ...
+    >>> print(geoip.getRecordByAddress('127.0.0.1'))
+    None
 
 If it can't find a GeoIP record for the given IP address, it will return
 None.
