@@ -15,7 +15,10 @@ from zope.i18n.interfaces import IUserPreferredLanguages
 from zope.interface import implementer
 
 from lp.services.config import config
-from lp.services.geoip.helpers import ipaddress_from_request
+from lp.services.geoip.helpers import (
+    ipaddress_from_request,
+    ipaddress_is_global,
+    )
 from lp.services.geoip.interfaces import (
     IGeoIP,
     IRequestLocalLanguages,
@@ -40,7 +43,7 @@ class GeoIP:
 
     def getRecordByAddress(self, ip_address):
         """See `IGeoIP`."""
-        if ipaddress_is_private(ip_address):
+        if not ipaddress_is_global(ip_address):
             return None
         try:
             return self._gi.record_by_addr(ip_address)
@@ -52,7 +55,7 @@ class GeoIP:
 
     def getCountryByAddr(self, ip_address):
         """See `IGeoIP`."""
-        if ipaddress_is_private(ip_address):
+        if not ipaddress_is_global(ip_address):
             return None
         geoip_record = self.getRecordByAddress(ip_address)
         if geoip_record is None:
@@ -128,18 +131,6 @@ class RequestPreferredLanguages(object):
 
         languages = [language for language in languages if language.visible]
         return sorted(languages, key=lambda x: x.englishname)
-
-
-def ipaddress_is_private(ip_address):
-    """Return True if the given IP address is private, otherwise False."""
-    private_prefixes = (
-        '127.',
-        '192.168.',
-        '172.16.',
-        '10.',
-        )
-
-    return any(ip_address.startswith(prefix) for prefix in private_prefixes)
 
 
 class NoGeoIPDatabaseFound(Exception):
