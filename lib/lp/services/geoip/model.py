@@ -1,9 +1,8 @@
-# Copyright 2009 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
     'GeoIP',
-    'GeoIPRequest',
     'RequestLocalLanguages',
     'RequestPreferredLanguages',
     ]
@@ -19,7 +18,6 @@ from lp.services.config import config
 from lp.services.geoip.helpers import ipaddress_from_request
 from lp.services.geoip.interfaces import (
     IGeoIP,
-    IGeoIPRecord,
     IRequestLocalLanguages,
     IRequestPreferredLanguages,
     )
@@ -66,44 +64,6 @@ class GeoIP:
             return None
         else:
             return country
-
-
-@implementer(IGeoIPRecord)
-class GeoIPRequest:
-    """An adapter for a BrowserRequest into an IGeoIPRecord."""
-
-    def __init__(self, request):
-        self.request = request
-        ip_address = ipaddress_from_request(self.request)
-        if ip_address is None:
-            # This happens during page testing, when the REMOTE_ADDR is not
-            # set by Zope.
-            ip_address = '127.0.0.1'
-        ip_address = ensure_address_is_not_private(ip_address)
-        self.ip_address = ip_address
-        self.geoip_record = getUtility(IGeoIP).getRecordByAddress(
-            self.ip_address)
-
-    @property
-    def latitude(self):
-        """See `IGeoIPRecord`."""
-        if self.geoip_record is None:
-            return None
-        return self.geoip_record['latitude']
-
-    @property
-    def longitude(self):
-        """See `IGeoIPRecord`."""
-        if self.geoip_record is None:
-            return None
-        return self.geoip_record['longitude']
-
-    @property
-    def time_zone(self):
-        """See `IGeoIPRecord`."""
-        if self.geoip_record is None:
-            return None
-        return self.geoip_record['time_zone']
 
 
 @implementer(IRequestLocalLanguages)
