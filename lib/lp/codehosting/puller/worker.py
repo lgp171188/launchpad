@@ -30,11 +30,10 @@ from bzrlib.ui import SilentUIFactory
 from bzrlib.url_policy_open import (
     BadUrl,
     BranchLoopError,
+    BranchOpener,
     BranchOpenPolicy,
     BranchReferenceForbidden,
-    BranchOpener,
     )
-
 from lazr.uri import (
     InvalidURIError,
     URI,

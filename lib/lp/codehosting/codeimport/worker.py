@@ -55,16 +55,15 @@ from bzrlib.transport import (
     )
 import bzrlib.ui
 from bzrlib.upgrade import upgrade
+from bzrlib.url_policy_open import (
+    BadUrl,
+    BranchOpener,
+    BranchOpenPolicy,
+    )
 from bzrlib.urlutils import (
     join as urljoin,
     local_path_from_url,
     )
-from bzrlib.url_policy_open import (
-    BadUrl,
-    BranchOpenPolicy,
-    BranchOpener,
-    )
-
 import cscvs
 from cscvs.cmds import totla
 import CVS

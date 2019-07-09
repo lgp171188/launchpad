@@ -36,16 +36,16 @@ from bzrlib.transport import (
     get_transport,
     get_transport_from_url,
     )
-from bzrlib.urlutils import (
-    join as urljoin,
-    local_path_from_url,
-    )
 from bzrlib.url_policy_open import (
     _BlacklistPolicy,
     AcceptAnythingPolicy,
     BadUrl,
-    BranchOpenPolicy,
     BranchOpener,
+    BranchOpenPolicy,
+    )
+from bzrlib.urlutils import (
+    join as urljoin,
+    local_path_from_url,
     )
 from CVS import (
     Repository,

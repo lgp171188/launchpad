@@ -25,8 +25,8 @@ from bzrlib.transport import get_transport
 from bzrlib.url_policy_open import (
     AcceptAnythingPolicy,
     BadUrl,
-    BranchOpenPolicy,
     BranchOpener,
+    BranchOpenPolicy,
     )
 
 from lp.code.enums import BranchType
