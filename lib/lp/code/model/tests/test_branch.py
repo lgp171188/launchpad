@@ -16,6 +16,7 @@ import json
 from bzrlib.branch import Branch
 from bzrlib.bzrdir import BzrDir
 from bzrlib.revision import NULL_REVISION
+from bzrlib.url_policy_open import BadUrl
 from pytz import UTC
 from sqlobject import SQLObjectNotFound
 from storm.exceptions import LostObjectError
@@ -116,7 +117,6 @@ from lp.code.tests.helpers import (
     add_revision_to_branch,
     BranchHostingFixture,
     )
-from lp.codehosting.safe_open import BadUrl
 from lp.codehosting.vfs.branchfs import get_real_branch_path
 from lp.registry.enums import (
     BranchSharingPolicy,
@@ -3271,7 +3271,7 @@ class TestGetBzrBranch(TestCaseWithFactory):
         self.useBzrBranches(direct_database=True)
 
     def test_simple(self):
-        # safe_open returns the underlying bzr branch of a database branch in
+        # open_only_scheme returns the underlying bzr branch of a database branch in
         # the simple, unstacked, case.
         db_branch, tree = self.create_branch_and_tree()
         # XXX: AaronBentley 2010-08-06 bug=614404: a bzr username is
@@ -3283,7 +3283,7 @@ class TestGetBzrBranch(TestCaseWithFactory):
 
     def test_acceptable_stacking(self):
         # If the underlying bzr branch of a database branch is stacked on
-        # another launchpad branch safe_open returns it.
+        # another launchpad branch open_only_scheme returns it.
         db_stacked_on, stacked_on_tree = self.create_branch_and_tree()
         db_stacked, stacked_tree = self.create_branch_and_tree()
         stacked_tree.branch.set_stacked_on_url(

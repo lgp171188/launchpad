@@ -16,6 +16,7 @@ import os.path
 
 from bzrlib import urlutils
 from bzrlib.revision import NULL_REVISION
+from bzrlib.url_policy_open import open_only_scheme
 from lazr.lifecycle.event import ObjectCreatedEvent
 import pytz
 import six
@@ -138,7 +139,6 @@ from lp.code.model.revision import (
     RevisionAuthor,
     )
 from lp.code.model.seriessourcepackagebranch import SeriesSourcePackageBranch
-from lp.codehosting.safe_open import safe_open
 from lp.registry.enums import PersonVisibility
 from lp.registry.errors import CannotChangeInformationType
 from lp.registry.interfaces.accesspolicy import (
@@ -733,11 +733,11 @@ class Branch(SQLBase, WebhookTargetMixin, BzrIdentityMixin):
 
     def getInternalBzrUrl(self):
         """See `IBranch`."""
-        return 'lp-internal:///' + self.unique_name
+        return six.ensure_str('lp-internal:///' + self.unique_name)
 
     def getBzrBranch(self):
         """See `IBranch`."""
-        return safe_open('lp-internal', self.getInternalBzrUrl())
+        return open_only_scheme('lp-internal', self.getInternalBzrUrl())
 
     @property
     def display_name(self):

@@ -21,6 +21,7 @@ from optparse import OptionParser
 import sys
 
 from bzrlib.transport import get_transport
+from bzrlib.url_policy_open import AcceptAnythingPolicy
 
 from lp.codehosting.codeimport.worker import (
     BzrImportWorker,
@@ -32,7 +33,6 @@ from lp.codehosting.codeimport.worker import (
     GitImportWorker,
     GitToGitImportWorker,
     )
-from lp.codehosting.safe_open import AcceptAnythingPolicy
 from lp.services import scripts
 from lp.services.config import config
 from lp.services.timeout import set_default_timeout_function
