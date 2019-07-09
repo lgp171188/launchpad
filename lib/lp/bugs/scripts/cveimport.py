@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """A set of functions related to the ability to parse the XML CVE database,
@@ -10,8 +10,8 @@ __metaclass__ = type
 import gzip
 import io
 import time
-import xml.etree.cElementTree as cElementTree
 
+import defusedxml.cElementTree as cElementTree
 import requests
 from zope.component import getUtility
 from zope.event import notify
@@ -248,7 +248,7 @@ class CVEUpdater(LaunchpadCronScript):
 
         :param cve_xml: The CVE XML as a string.
         """
-        dom = cElementTree.fromstring(cve_xml)
+        dom = cElementTree.fromstring(cve_xml, forbid_dtd=True)
         items = dom.findall(CVEDB_NS + 'item')
         if len(items) == 0:
             raise LaunchpadScriptFailure("No CVEs found in XML file.")

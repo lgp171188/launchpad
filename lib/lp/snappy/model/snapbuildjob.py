@@ -1,4 +1,4 @@
-# Copyright 2016-2017 Canonical Ltd.  This software is licensed under the
+# Copyright 2016-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Snap build jobs."""
@@ -58,7 +58,6 @@ from lp.snappy.interfaces.snapstoreclient import (
     BadRefreshResponse,
     BadScanStatusResponse,
     ISnapStoreClient,
-    ReleaseFailedResponse,
     ScanFailedResponse,
     SnapStoreError,
     UnauthorizedUploadResponse,
@@ -169,10 +168,6 @@ class SnapBuildJobDerived(BaseRunnableJob):
         return oops_vars
 
 
-class ManualReview(SnapStoreError):
-    pass
-
-
 class RetryableSnapStoreError(SnapStoreError):
     pass
 
@@ -192,8 +187,6 @@ class SnapStoreUploadJob(SnapBuildJobDerived):
     user_error_types = (
         UnauthorizedUploadResponse,
         ScanFailedResponse,
-        ManualReview,
-        ReleaseFailedResponse,
         )
 
     retry_error_types = (UploadNotScannedYetResponse, RetryableSnapStoreError)
@@ -287,11 +280,15 @@ class SnapStoreUploadJob(SnapBuildJobDerived):
     # Ideally we'd just override Job._set_status or similar, but
     # lazr.delegates makes that difficult, so we use this to override all
     # the individual Job lifecycle methods instead.
-    def _do_lifecycle(self, method_name, *args, **kwargs):
+    def _do_lifecycle(self, method_name, manage_transaction=False,
+                      *args, **kwargs):
         old_store_upload_status = self.snapbuild.store_upload_status
-        getattr(super(SnapStoreUploadJob, self), method_name)(*args, **kwargs)
+        getattr(super(SnapStoreUploadJob, self), method_name)(
+            *args, manage_transaction=manage_transaction, **kwargs)
         if self.snapbuild.store_upload_status != old_store_upload_status:
             notify(SnapBuildStoreUploadStatusChangedEvent(self.snapbuild))
+            if manage_transaction:
+                transaction.commit()
 
     def start(self, *args, **kwargs):
         self._do_lifecycle("start", *args, **kwargs)
@@ -336,49 +333,42 @@ class SnapStoreUploadJob(SnapBuildJobDerived):
         """See `IRunnableJob`."""
         client = getUtility(ISnapStoreClient)
         try:
-            if "status_url" not in self.store_metadata:
-                self.status_url = client.upload(self.snapbuild)
-                # We made progress, so reset attempt_count.
-                self.attempt_count = 1
-            if self.store_url is None:
-                self.store_url, self.store_revision = (
-                    client.checkStatus(self.status_url))
-                # We made progress, so reset attempt_count.
-                self.attempt_count = 1
-            if self.snapbuild.snap.store_channels:
-                if self.store_revision is None:
-                    raise ManualReview(
-                        "Package held for manual review on the store; "
-                        "cannot release it automatically.")
-                client.release(self.snapbuild, self.store_revision)
-            self.error_message = None
-        except self.retry_error_types:
-            raise
-        except Exception as e:
-            if (isinstance(e, SnapStoreError) and e.can_retry and
-                    self.attempt_count <= self.max_retries):
-                raise RetryableSnapStoreError(e.message, detail=e.detail)
-            self.error_message = str(e)
-            self.error_messages = getattr(e, "messages", None)
-            self.error_detail = getattr(e, "detail", None)
-            if isinstance(e, UnauthorizedUploadResponse):
-                mailer = SnapBuildMailer.forUnauthorizedUpload(self.snapbuild)
-                mailer.sendAll()
-            elif isinstance(e, BadRefreshResponse):
-                mailer = SnapBuildMailer.forRefreshFailure(self.snapbuild)
-                mailer.sendAll()
-            elif isinstance(e, UploadFailedResponse):
-                mailer = SnapBuildMailer.forUploadFailure(self.snapbuild)
-                mailer.sendAll()
-            elif isinstance(e, (BadScanStatusResponse, ScanFailedResponse)):
-                mailer = SnapBuildMailer.forUploadScanFailure(self.snapbuild)
-                mailer.sendAll()
-            elif isinstance(e, ManualReview):
-                mailer = SnapBuildMailer.forManualReview(self.snapbuild)
-                mailer.sendAll()
-            elif isinstance(e, ReleaseFailedResponse):
-                mailer = SnapBuildMailer.forReleaseFailure(self.snapbuild)
-                mailer.sendAll()
+            try:
+                if "status_url" not in self.store_metadata:
+                    self.status_url = client.upload(self.snapbuild)
+                    # We made progress, so reset attempt_count.
+                    self.attempt_count = 1
+                if self.store_url is None:
+                    # This is no longer strictly necessary as the store is
+                    # handling releases via the release intent, but we
+                    # export various fields via the API, so once this is
+                    # called, we're done with this task.
+                    self.store_url, self.store_revision = (
+                        client.checkStatus(self.status_url))
+                self.error_message = None
+            except self.retry_error_types:
+                raise
+            except Exception as e:
+                if (isinstance(e, SnapStoreError) and e.can_retry and
+                        self.attempt_count <= self.max_retries):
+                    raise RetryableSnapStoreError(e.message, detail=e.detail)
+                self.error_message = str(e)
+                self.error_messages = getattr(e, "messages", None)
+                self.error_detail = getattr(e, "detail", None)
+                mailer_factory = None
+                if isinstance(e, UnauthorizedUploadResponse):
+                    mailer_factory = SnapBuildMailer.forUnauthorizedUpload
+                elif isinstance(e, BadRefreshResponse):
+                    mailer_factory = SnapBuildMailer.forRefreshFailure
+                elif isinstance(e, UploadFailedResponse):
+                    mailer_factory = SnapBuildMailer.forUploadFailure
+                elif isinstance(e,
+                                (BadScanStatusResponse, ScanFailedResponse)):
+                    mailer_factory = SnapBuildMailer.forUploadScanFailure
+                if mailer_factory is not None:
+                    mailer_factory(self.snapbuild).sendAll()
+                raise
+        except Exception:
             # The normal job infrastructure will abort the transaction, but
             # we want to commit instead: the only database changes we make
             # are to this job's metadata and should be preserved.

@@ -142,7 +142,7 @@ class OkSlave:
         return urlappend(
             'http://localhost:8221/filecache/', sha1).encode('utf8')
 
-    def getFiles(self, files):
+    def getFiles(self, files, logger=None):
         dl = defer.gatherResults([
             self.getFile(builder_file, local_file)
             for builder_file, local_file in files])

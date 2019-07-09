@@ -14,9 +14,12 @@ from datetime import (
 from operator import attrgetter
 from urlparse import urlsplit
 
+from bzrlib import urlutils
+from bzrlib.errors import InvalidURLJoin
 from lazr.lifecycle.event import ObjectCreatedEvent
 from pymacaroons import Macaroon
 import pytz
+import six
 from storm.expr import (
     And,
     Desc,
@@ -248,6 +251,11 @@ class SnapBuildRequest:
     def channels(self):
         """See `ISnapBuildRequest`."""
         return self._job.channels
+
+    @property
+    def architectures(self):
+        """See `ISnapBuildRequest`."""
+        return self._job.architectures
 
 
 @implementer(ISnap, IHasOwner)
@@ -655,11 +663,13 @@ class Snap(Storm, WebhookTargetMixin):
         notify(ObjectCreatedEvent(build, user=requester))
         return build
 
-    def requestBuilds(self, requester, archive, pocket, channels=None):
+    def requestBuilds(self, requester, archive, pocket, channels=None,
+                      architectures=None):
         """See `ISnap`."""
         self._checkRequestBuild(requester, archive)
         job = getUtility(ISnapRequestBuildsJobSource).create(
-            self, requester, archive, pocket, channels)
+            self, requester, archive, pocket, channels,
+            architectures=architectures)
         return self.getBuildRequest(job.job_id)
 
     @staticmethod
@@ -694,7 +704,8 @@ class Snap(Storm, WebhookTargetMixin):
         else:
             return channels
 
-    def requestBuildsFromJob(self, requester, archive, pocket, channels=None,
+    def requestBuildsFromJob(self, requester, archive, pocket,
+                             channels=None, architectures=None,
                              allow_failures=False, fetch_snapcraft_yaml=True,
                              build_request=None, logger=None):
         """See `ISnap`."""
@@ -731,7 +742,9 @@ class Snap(Storm, WebhookTargetMixin):
             supported_arches = OrderedDict(
                 (das.architecturetag, das) for das in sorted(
                     self.getAllowedArchitectures(distro_series),
-                    key=attrgetter("processor.id")))
+                    key=attrgetter("processor.id"))
+                if (architectures is None or
+                    das.architecturetag in architectures))
             architectures_to_build = determine_architectures_to_build(
                 snapcraft_data, supported_arches.keys())
         except Exception as e:
@@ -1298,6 +1311,21 @@ class SnapSet:
             for path in paths:
                 try:
                     blob = context.getBlob(path)
+                    if (IGitRef.providedBy(context) and
+                            context.repository_url is not None and
+                            isinstance(blob, bytes) and
+                            b":" not in blob and b"\n" not in blob):
+                        # Heuristic.  It seems somewhat common for Git
+                        # hosting sites to return the symlink target path
+                        # when fetching a blob corresponding to a symlink
+                        # committed to a repository: GitHub and GitLab both
+                        # have this property.  If it looks like this is what
+                        # has happened here, try resolving the symlink (only
+                        # to one level).
+                        resolved_path = urlutils.join(
+                            urlutils.dirname(path),
+                            six.ensure_str(blob)).lstrip("/")
+                        blob = context.getBlob(resolved_path)
                     break
                 except (BranchFileNotFound, GitRepositoryBlobNotFound):
                     pass
@@ -1309,6 +1337,8 @@ class SnapSet:
                 raise MissingSnapcraftYaml(context.unique_name)
         except GitRepositoryBlobUnsupportedRemote as e:
             raise CannotFetchSnapcraftYaml(str(e), unsupported_remote=True)
+        except InvalidURLJoin as e:
+            raise CannotFetchSnapcraftYaml(str(e))
         except (BranchHostingFault, GitRepositoryScanFault) as e:
             msg = "Failed to get snap manifest from %s"
             if logger is not None:

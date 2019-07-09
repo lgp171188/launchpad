@@ -2,7 +2,7 @@
 # NOTE: The first line above must stay first; do not move the copyright
 # notice to the top.  See http://www.python.org/dev/peps/pep-0263/.
 #
-# Copyright 2016-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2016-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Unit tests for `GitHostingClient`.
@@ -21,7 +21,17 @@ import re
 
 from lazr.restful.utils import get_current_browser_request
 import responses
-from testtools.matchers import MatchesStructure
+from six.moves.urllib.parse import (
+    parse_qsl,
+    urljoin,
+    urlsplit,
+    )
+from testtools.matchers import (
+    AfterPreprocessing,
+    Equals,
+    MatchesListwise,
+    MatchesStructure,
+    )
 from zope.component import getUtility
 from zope.interface import implementer
 from zope.security.proxy import removeSecurityProxy
@@ -52,6 +62,24 @@ from lp.testing import TestCase
 from lp.testing.layers import ZopelessDatabaseLayer
 
 
+class MatchesURL(AfterPreprocessing):
+    """Matches a URL, disregarding the order of query string parameters."""
+
+    def __init__(self, url):
+        split_url = urlsplit(url)
+        query_matcher = AfterPreprocessing(
+            lambda qs: sorted(parse_qsl(qs)),
+            MatchesListwise(
+                [Equals(pair) for pair in sorted(parse_qsl(split_url.query))]))
+        super(MatchesURL, self).__init__(
+            urlsplit, MatchesStructure(
+                scheme=Equals(split_url.scheme),
+                netloc=Equals(split_url.netloc),
+                path=Equals(split_url.path),
+                query=query_matcher,
+                fragment=Equals(split_url.fragment)))
+
+
 class TestGitHostingClient(TestCase):
 
     layer = ZopelessDatabaseLayer
@@ -77,8 +105,10 @@ class TestGitHostingClient(TestCase):
 
     def assertRequest(self, url_suffix, json_data=None, method=None, **kwargs):
         [request] = self.requests
-        self.assertThat(request, MatchesStructure.byEquality(
-            url=urlappend(self.endpoint, url_suffix), method=method, **kwargs))
+        self.assertThat(request, MatchesStructure(
+            url=MatchesURL(urlappend(self.endpoint, url_suffix)),
+            method=Equals(method),
+            **{key: Equals(value) for key, value in kwargs.items()}))
         if json_data is not None:
             self.assertEqual(json_data, json.loads(request.body))
         timeline = get_request_timeline(get_current_browser_request())

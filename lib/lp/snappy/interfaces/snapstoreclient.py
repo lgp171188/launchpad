@@ -13,7 +13,6 @@ __all__ = [
     'BadSearchResponse',
     'ISnapStoreClient',
     'NeedsRefreshResponse',
-    'ReleaseFailedResponse',
     'ScanFailedResponse',
     'SnapStoreError',
     'UnauthorizedUploadResponse',
@@ -72,10 +71,6 @@ class ScanFailedResponse(SnapStoreError):
 
 
 class BadSearchResponse(SnapStoreError):
-    pass
-
-
-class ReleaseFailedResponse(SnapStoreError):
     pass
 
 
@@ -149,14 +144,4 @@ class ISnapStoreClient(Interface):
             channels from the store fails.
         :return: A list of dictionaries, one per channel, each of which
             contains at least "name" and "display_name" keys.
-        """
-
-    def release(snapbuild, revision):
-        """Tell the store to release a snap build to specified channels.
-
-        :param snapbuild: The `ISnapBuild` to release.
-        :param revision: The revision returned by the store when uploading
-            the build.
-        :raises ReleaseFailedResponse: if the store failed to release the
-            build.
         """

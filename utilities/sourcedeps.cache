@@ -20,16 +20,12 @@
         "launchpad@pqm.canonical.com-20130816043319-bts3l3bckmx431q1"
     ], 
     "difftacular": [
-        6, 
-        "aaron@aaronbentley.com-20100715135013-uoi3q430urx9gwb8"
+        11, 
+        "cjwatson@canonical.com-20190614154330-091l9edcnubsjmsx"
     ], 
     "loggerhead": [
-        492, 
-        "cjwatson@canonical.com-20180221151136-cfapvzjpo8px3cue"
-    ], 
-    "lpreview": [
-        23, 
-        "launchpad@pqm.canonical.com-20090720061538-euyh68ifavhy0pi8"
+        493, 
+        "cjwatson@canonical.com-20190621112125-3aaxj3hrmty19lr6"
     ], 
     "mailman": [
         977, 

@@ -16,7 +16,10 @@ from operator import attrgetter
 from textwrap import dedent
 from urlparse import urlsplit
 
-from fixtures import MockPatch
+from fixtures import (
+    FakeLogger,
+    MockPatch,
+    )
 import iso8601
 from pymacaroons import Macaroon
 import pytz
@@ -85,6 +88,7 @@ from lp.services.timeout import default_timeout
 from lp.services.webapp.interfaces import OAuthPermission
 from lp.services.webapp.publisher import canonical_url
 from lp.services.webapp.snapshot import notify_modified
+from lp.services.webhooks.testing import LogsScheduledWebhooks
 from lp.snappy.interfaces.snap import (
     BadSnapSearchContext,
     CannotFetchSnapcraftYaml,
@@ -418,6 +422,7 @@ class TestSnap(TestCaseWithFactory):
 
     def test_requestBuild_triggers_webhooks(self):
         # Requesting a build triggers webhooks.
+        logger = self.useFixture(FakeLogger())
         processor = self.factory.makeProcessor(supports_virtualized=True)
         distroarchseries = self.makeBuildableDistroArchSeries(
             processor=processor)
@@ -447,6 +452,11 @@ class TestSnap(TestCaseWithFactory):
                     "<WebhookDeliveryJob for webhook %d on %r>" % (
                         hook.id, hook.target),
                     repr(delivery))
+                self.assertThat(
+                    logger.output,
+                    LogsScheduledWebhooks([
+                        (hook, "snap:build:0.1",
+                         MatchesDict(expected_payload))]))
 
     def test_requestBuilds(self):
         # requestBuilds schedules a job and returns a corresponding
@@ -465,7 +475,9 @@ class TestSnap(TestCaseWithFactory):
             status=Equals(SnapBuildRequestStatus.PENDING),
             error_message=Is(None),
             builds=AfterPreprocessing(set, MatchesSetwise()),
-            archive=Equals(snap.distro_series.main_archive)))
+            archive=Equals(snap.distro_series.main_archive),
+            channels=MatchesDict({"snapcraft": Equals("edge")}),
+            architectures=Is(None)))
         [job] = getUtility(ISnapRequestBuildsJobSource).iterReady()
         self.assertThat(job, MatchesStructure(
             job_id=Equals(request.id),
@@ -474,7 +486,8 @@ class TestSnap(TestCaseWithFactory):
             requester=Equals(snap.owner.teamowner),
             archive=Equals(snap.distro_series.main_archive),
             pocket=Equals(PackagePublishingPocket.UPDATES),
-            channels=Equals({"snapcraft": "edge"})))
+            channels=Equals({"snapcraft": "edge"}),
+            architectures=Is(None)))
 
     def test_requestBuilds_without_distroseries(self):
         # requestBuilds schedules a job for a snap without a distroseries.
@@ -492,7 +505,9 @@ class TestSnap(TestCaseWithFactory):
             status=Equals(SnapBuildRequestStatus.PENDING),
             error_message=Is(None),
             builds=AfterPreprocessing(set, MatchesSetwise()),
-            archive=Equals(archive)))
+            archive=Equals(archive),
+            channels=MatchesDict({"snapcraft": Equals("edge")}),
+            architectures=Is(None)))
         [job] = getUtility(ISnapRequestBuildsJobSource).iterReady()
         self.assertThat(job, MatchesStructure(
             job_id=Equals(request.id),
@@ -501,7 +516,40 @@ class TestSnap(TestCaseWithFactory):
             requester=Equals(snap.owner.teamowner),
             archive=Equals(archive),
             pocket=Equals(PackagePublishingPocket.UPDATES),
-            channels=Equals({"snapcraft": "edge"})))
+            channels=Equals({"snapcraft": "edge"}),
+            architectures=Is(None)))
+
+    def test_requestBuilds_with_architectures(self):
+        # If asked to build for particular architectures, requestBuilds
+        # passes those through to the job.
+        snap = self.factory.makeSnap()
+        now = get_transaction_timestamp(IStore(snap))
+        with person_logged_in(snap.owner.teamowner):
+            request = snap.requestBuilds(
+                snap.owner.teamowner, snap.distro_series.main_archive,
+                PackagePublishingPocket.UPDATES,
+                channels={"snapcraft": "edge"},
+                architectures={"amd64", "i386"})
+        self.assertThat(request, MatchesStructure(
+            date_requested=Equals(now),
+            date_finished=Is(None),
+            snap=Equals(snap),
+            status=Equals(SnapBuildRequestStatus.PENDING),
+            error_message=Is(None),
+            builds=AfterPreprocessing(set, MatchesSetwise()),
+            archive=Equals(snap.distro_series.main_archive),
+            channels=MatchesDict({"snapcraft": Equals("edge")}),
+            architectures=MatchesSetwise(Equals("amd64"), Equals("i386"))))
+        [job] = getUtility(ISnapRequestBuildsJobSource).iterReady()
+        self.assertThat(job, MatchesStructure(
+            job_id=Equals(request.id),
+            job=MatchesStructure.byEquality(status=JobStatus.WAITING),
+            snap=Equals(snap),
+            requester=Equals(snap.owner.teamowner),
+            archive=Equals(snap.distro_series.main_archive),
+            pocket=Equals(PackagePublishingPocket.UPDATES),
+            channels=Equals({"snapcraft": "edge"}),
+            architectures=MatchesSetwise(Equals("amd64"), Equals("i386"))))
 
     def test__findBase(self):
         snap_base_set = getUtility(ISnapBaseSet)
@@ -575,7 +623,7 @@ class TestSnap(TestCaseWithFactory):
         with person_logged_in(job.requester):
             builds = job.snap.requestBuildsFromJob(
                 job.requester, job.archive, job.pocket,
-                removeSecurityProxy(job.channels),
+                channels=removeSecurityProxy(job.channels),
                 build_request=job.build_request)
         self.assertRequestedBuildsMatch(builds, job, ["sparc"], job.channels)
 
@@ -591,10 +639,28 @@ class TestSnap(TestCaseWithFactory):
         with person_logged_in(job.requester):
             builds = job.snap.requestBuildsFromJob(
                 job.requester, job.archive, job.pocket,
-                removeSecurityProxy(job.channels),
+                channels=removeSecurityProxy(job.channels),
                 build_request=job.build_request)
         self.assertRequestedBuildsMatch(
             builds, job, ["mips64el", "riscv64"], job.channels)
+
+    def test_requestBuildsFromJob_architectures_parameter(self):
+        # If an explicit set of architectures was given as a parameter,
+        # requestBuildsFromJob intersects those with any other constraints
+        # when requesting builds.
+        self.useFixture(GitHostingFixture(blob="name: foo\n"))
+        job = self.makeRequestBuildsJob(["avr", "mips64el", "riscv64"])
+        self.assertEqual(
+            get_transaction_timestamp(IStore(job.snap)), job.date_created)
+        transaction.commit()
+        with person_logged_in(job.requester):
+            builds = job.snap.requestBuildsFromJob(
+                job.requester, job.archive, job.pocket,
+                channels=removeSecurityProxy(job.channels),
+                architectures={"avr", "riscv64"},
+                build_request=job.build_request)
+        self.assertRequestedBuildsMatch(
+            builds, job, ["avr", "riscv64"], job.channels)
 
     def test_requestBuildsFromJob_no_distroseries_explicit_base(self):
         # If the snap doesn't specify a distroseries but has an explicit
@@ -704,6 +770,7 @@ class TestSnap(TestCaseWithFactory):
               - build-on: avr
               - build-on: riscv64
             """)))
+        logger = self.useFixture(FakeLogger())
         job = self.makeRequestBuildsJob(["avr", "riscv64", "sparc"])
         hook = self.factory.makeWebhook(
             target=job.snap, event_types=["snap:build:0.1"])
@@ -713,21 +780,29 @@ class TestSnap(TestCaseWithFactory):
                 removeSecurityProxy(job.channels),
                 build_request=job.build_request)
             self.assertEqual(2, len(builds))
+            payload_matchers = [
+                MatchesDict({
+                    "snap_build": Equals(canonical_url(
+                        build, force_local_path=True)),
+                    "action": Equals("created"),
+                    "snap": Equals(canonical_url(
+                        job.snap, force_local_path=True)),
+                    "build_request": Equals(canonical_url(
+                        job.build_request, force_local_path=True)),
+                    "status": Equals("Needs building"),
+                    "store_upload_status": Equals("Unscheduled"),
+                    })
+                for build in builds]
             self.assertThat(hook.deliveries, MatchesSetwise(*(
                 MatchesStructure(
                     event_type=Equals("snap:build:0.1"),
-                    payload=MatchesDict({
-                        "snap_build": Equals(canonical_url(
-                            build, force_local_path=True)),
-                        "action": Equals("created"),
-                        "snap": Equals(canonical_url(
-                            job.snap, force_local_path=True)),
-                        "build_request": Equals(canonical_url(
-                            job.build_request, force_local_path=True)),
-                        "status": Equals("Needs building"),
-                        "store_upload_status": Equals("Unscheduled"),
-                        }))
-                for build in builds)))
+                    payload=payload_matcher)
+                for payload_matcher in payload_matchers)))
+            self.assertThat(
+                logger.output,
+                LogsScheduledWebhooks([
+                    (hook, "snap:build:0.1", payload_matcher)
+                    for payload_matcher in payload_matchers]))
 
     def test_requestAutoBuilds(self):
         # requestAutoBuilds creates new builds for all configured
@@ -1763,6 +1838,64 @@ class TestSnapSet(TestCaseWithFactory):
             getUtility(ISnapSet).getSnapcraftYaml, git_ref)
         self.assertEqual(0, unsafe_load.mock.call_count)
         self.assertEqual(1, safe_load.mock.call_count)
+
+    @responses.activate
+    def test_getSnapcraftYaml_symlink(self):
+        for path in ("snap/snapcraft.yaml", "build-aux/snap/snapcraft.yaml"):
+            responses.add(
+                "GET",
+                "https://raw.githubusercontent.com/owner/name/HEAD/%s" % path,
+                status=404)
+        responses.add(
+            "GET",
+            "https://raw.githubusercontent.com/owner/name/HEAD/snapcraft.yaml",
+            body=b"pkg/snap/snapcraft.yaml")
+        responses.add(
+            "GET",
+            "https://raw.githubusercontent.com/owner/name/HEAD/"
+            "pkg/snap/snapcraft.yaml",
+            body=b"name: test-snap")
+        git_ref = self.factory.makeGitRefRemote(
+            repository_url="https://github.com/owner/name", path="HEAD")
+        snap = self.factory.makeSnap(git_ref=git_ref)
+        with default_timeout(1.0):
+            self.assertEqual(
+                {"name": "test-snap"},
+                getUtility(ISnapSet).getSnapcraftYaml(snap))
+
+    @responses.activate
+    def test_getSnapcraftYaml_symlink_via_parent(self):
+        responses.add(
+            "GET",
+            "https://raw.githubusercontent.com/owner/name/HEAD/"
+            "snap/snapcraft.yaml",
+            body=b"../pkg/snap/snapcraft.yaml")
+        responses.add(
+            "GET",
+            "https://raw.githubusercontent.com/owner/name/HEAD/"
+            "pkg/snap/snapcraft.yaml",
+            body=b"name: test-snap")
+        git_ref = self.factory.makeGitRefRemote(
+            repository_url="https://github.com/owner/name", path="HEAD")
+        snap = self.factory.makeSnap(git_ref=git_ref)
+        with default_timeout(1.0):
+            self.assertEqual(
+                {"name": "test-snap"},
+                getUtility(ISnapSet).getSnapcraftYaml(snap))
+
+    @responses.activate
+    def test_getSnapcraftYaml_symlink_above_root(self):
+        responses.add(
+            "GET",
+            "https://raw.githubusercontent.com/owner/name/HEAD/snapcraft.yaml",
+            body=b"../pkg/snap/snapcraft.yaml")
+        git_ref = self.factory.makeGitRefRemote(
+            repository_url="https://github.com/owner/name", path="HEAD")
+        snap = self.factory.makeSnap(git_ref=git_ref)
+        with default_timeout(1.0):
+            self.assertRaises(
+                CannotFetchSnapcraftYaml,
+                getUtility(ISnapSet).getSnapcraftYaml, snap)
 
     def test__findStaleSnaps(self):
         # Stale; not built automatically.

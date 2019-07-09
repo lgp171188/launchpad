@@ -76,6 +76,7 @@ from zope.schema import (
     Dict,
     Int,
     List,
+    Set,
     Text,
     TextLine,
     )
@@ -336,6 +337,10 @@ class ISnapBuildRequest(Interface):
         title=_("Source snap channels for builds produced by this request"),
         key_type=TextLine(), required=False, readonly=True)
 
+    architectures = Set(
+        title=_("If set, this request is limited to these architecture tags"),
+        value_type=TextLine(), required=False, readonly=True)
+
 
 class ISnapView(Interface):
     """`ISnap` attributes that require launchpad.View permission."""
@@ -387,8 +392,8 @@ class ISnapView(Interface):
             title=_("Source snap channels to use for this build."),
             description=_(
                 "A dictionary mapping snap names to channels to use for this "
-                "build.  Currently only 'core' and 'snapcraft' keys are "
-                "supported."),
+                "build.  Currently only 'core', 'core18', and 'snapcraft' "
+                "keys are supported."),
             key_type=TextLine(), required=False))
     # Really ISnapBuild, patched in lp.snappy.interfaces.webservice.
     @export_factory_operation(Interface, [])
@@ -416,8 +421,8 @@ class ISnapView(Interface):
             title=_("Source snap channels to use for this build."),
             description=_(
                 "A dictionary mapping snap names to channels to use for this "
-                "build.  Currently only 'core' and 'snapcraft' keys are "
-                "supported."),
+                "build.  Currently only 'core', 'core18', and 'snapcraft' "
+                "keys are supported."),
             key_type=TextLine(), required=False))
     @export_factory_operation(ISnapBuildRequest, [])
     @operation_for_version("devel")
@@ -437,8 +442,9 @@ class ISnapView(Interface):
         """
 
     def requestBuildsFromJob(requester, archive, pocket, channels=None,
-                             allow_failures=False, fetch_snapcraft_yaml=True,
-                             build_request=None, logger=None):
+                             architectures=None, allow_failures=False,
+                             fetch_snapcraft_yaml=True, build_request=None,
+                             logger=None):
         """Synchronous part of `Snap.requestBuilds`.
 
         Request that the snap package be built for relevant architectures.
@@ -448,6 +454,9 @@ class ISnapView(Interface):
         :param pocket: The pocket that should be targeted.
         :param channels: A dictionary mapping snap names to channels to use
             for these builds.
+        :param architectures: If not None, limit builds to architectures
+            with these architecture tags (in addition to any other
+            applicable constraints).
         :param allow_failures: If True, log exceptions other than "already
             pending" from individual build requests; if False, raise them to
             the caller.
@@ -744,8 +753,8 @@ class ISnapEditableAttributes(IHasOwner):
         key_type=TextLine(), required=False, readonly=False,
         description=_(
             "A dictionary mapping snap names to channels to use when building "
-            "this snap package.  Currently only 'core' and 'snapcraft' keys "
-            "are supported.")))
+            "this snap package.  Currently only 'core', 'core18', and "
+            "'snapcraft' keys are supported.")))
 
     is_stale = Bool(
         title=_("Snap package is stale and is due to be rebuilt."),

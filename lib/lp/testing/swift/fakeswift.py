@@ -245,17 +245,19 @@ class SwiftObject(resource.Resource):
 
     def render_GET(self, request):
         """Render the response for a GET or HEAD request on this object."""
-        request.setHeader("Content-Type", self.content_type)
-        request.setHeader("ETag", self._etag)
+        if self.content_type is not None:
+            request.setHeader("Content-Type", self.content_type)
+        if self._etag is not None:
+            request.setHeader("ETag", self._etag)
         range = request.getHeader("Range")
         size = len(self.contents)
         if request.method == 'HEAD':
-            request.setHeader("Content-Length", size)
+            request.setHeader("Content-Length", str(size))
             return ""
         if range:
             ranges = parse_range_header(range)
             length = 0
-            if len(ranges)==1:
+            if len(ranges) == 1:
                 begin, end = ranges[0]
                 if begin is None:
                     request.setResponseCode(
@@ -276,7 +278,7 @@ class SwiftObject(resource.Resource):
                         'content-range',
                         'bytes %d-%d/%d' % (begin, end-1, size))
                 length = (end - begin)
-                request.setHeader("Content-Length", length)
+                request.setHeader("Content-Length", str(length))
                 request.setResponseCode(http.PARTIAL_CONTENT)
                 contents = io.BytesIO(self.contents[begin:end])
             else:

@@ -1,4 +1,4 @@
-# Copyright 2010-2017 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for branch merge proposal jobs."""
@@ -13,6 +13,7 @@ from datetime import (
     )
 import hashlib
 
+from fixtures import FakeLogger
 from lazr.lifecycle.event import ObjectModifiedEvent
 from lazr.lifecycle.interfaces import IObjectModifiedEvent
 import pytz
@@ -72,6 +73,7 @@ from lp.services.job.tests import (
     )
 from lp.services.osutils import override_environ
 from lp.services.webapp import canonical_url
+from lp.services.webhooks.testing import LogsScheduledWebhooks
 from lp.testing import (
     EventRecorder,
     TestCaseWithFactory,
@@ -373,22 +375,27 @@ class TestUpdatePreviewDiffJob(DiffTestCase):
         expiry_delta = job.lease_expires - datetime.now(pytz.UTC)
         self.assertTrue(500 <= expiry_delta.seconds, expiry_delta)
 
-    def assertCorrectPreviewDiffDelivery(self, bmp, delivery):
+    def assertCorrectPreviewDiffDelivery(self, bmp, delivery, logger):
         bmp_url = canonical_url(bmp, force_local_path=True)
         diff_url = canonical_url(bmp.preview_diff, force_local_path=True)
+        payload_matcher = MatchesDict({
+            "merge_proposal": Equals(bmp_url),
+            "action": Equals("modified"),
+            "old": ContainsDict({"preview_diff": Is(None)}),
+            "new": ContainsDict({"preview_diff": Equals(diff_url)}),
+            })
         self.assertThat(
             delivery, MatchesStructure(
                 event_type=Equals("merge-proposal:0.1"),
-                payload=MatchesDict({
-                    "merge_proposal": Equals(bmp_url),
-                    "action": Equals("modified"),
-                    "old": ContainsDict({"preview_diff": Is(None)}),
-                    "new": ContainsDict({"preview_diff": Equals(diff_url)}),
-                    })))
+                payload=payload_matcher))
+        self.assertThat(
+            logger.output, LogsScheduledWebhooks([
+                (delivery.webhook, "merge-proposal:0.1", payload_matcher)]))
 
     def test_triggers_webhooks_bzr(self):
         self.useFixture(FeatureFixture(
             {BRANCH_MERGE_PROPOSAL_WEBHOOKS_FEATURE_FLAG: "on"}))
+        logger = self.useFixture(FakeLogger())
         bmp = self.createExampleBzrMerge()[0]
         hook = self.factory.makeWebhook(
             target=bmp.target_branch, event_types=["merge-proposal:0.1"])
@@ -397,11 +404,13 @@ class TestUpdatePreviewDiffJob(DiffTestCase):
         bmp.source_branch.next_mirror_time = None
         with dbuser("merge-proposal-jobs"):
             JobRunner([job]).runAll()
-        self.assertCorrectPreviewDiffDelivery(bmp, hook.deliveries.one())
+        self.assertCorrectPreviewDiffDelivery(
+            bmp, hook.deliveries.one(), logger)
 
     def test_triggers_webhooks_git(self):
         self.useFixture(FeatureFixture(
             {BRANCH_MERGE_PROPOSAL_WEBHOOKS_FEATURE_FLAG: "on"}))
+        logger = self.useFixture(FakeLogger())
         bmp = self.createExampleGitMerge()[0]
         hook = self.factory.makeWebhook(
             target=bmp.target_git_repository,
@@ -409,7 +418,8 @@ class TestUpdatePreviewDiffJob(DiffTestCase):
         job = UpdatePreviewDiffJob.create(bmp)
         with dbuser("merge-proposal-jobs"):
             JobRunner([job]).runAll()
-        self.assertCorrectPreviewDiffDelivery(bmp, hook.deliveries.one())
+        self.assertCorrectPreviewDiffDelivery(
+            bmp, hook.deliveries.one(), logger)
 
 
 def make_runnable_incremental_diff_job(test_case):

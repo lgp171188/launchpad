@@ -43,7 +43,6 @@ from lp.snappy.interfaces.snapstoreclient import (
     BadSearchResponse,
     ISnapStoreClient,
     NeedsRefreshResponse,
-    ReleaseFailedResponse,
     ScanFailedResponse,
     UnauthorizedUploadResponse,
     UploadFailedResponse,
@@ -253,16 +252,27 @@ class SnapStoreClient:
             lfa.close()
 
     @classmethod
-    def _uploadApp(cls, snap, upload_data):
+    def _uploadApp(cls, snapbuild, upload_data):
         """Create a new store upload based on the uploaded file."""
+        snap = snapbuild.snap
         assert config.snappy.store_url is not None
         assert snap.store_name is not None
+        assert snapbuild.date_started is not None
         upload_url = urlappend(config.snappy.store_url, "dev/api/snap-push/")
         data = {
             "name": snap.store_name,
             "updown_id": upload_data["upload_id"],
             "series": snap.store_series.name,
+            "built_at": snapbuild.date_started.isoformat(),
             }
+        # The security proxy is useless and breaks JSON serialisation.
+        channels = removeSecurityProxy(snap.store_channels)
+        if channels:
+            # This will cause a release
+            data.update({
+                "channels": channels,
+                "only_if_newer": True,
+                })
         # XXX cjwatson 2016-05-09: This should add timeline information, but
         # that's currently difficult in jobs.
         try:
@@ -293,7 +303,7 @@ class SnapStoreClient:
                 continue
             upload_data = cls._uploadFile(lfa, lfc)
             return cls.refreshIfNecessary(
-                snapbuild.snap, cls._uploadApp, snapbuild.snap, upload_data)
+                snapbuild.snap, cls._uploadApp, snapbuild, upload_data)
 
     @classmethod
     def refreshDischargeMacaroon(cls, snap):
@@ -333,6 +343,11 @@ class SnapStoreClient:
             if not response_data["processed"]:
                 raise UploadNotScannedYetResponse()
             elif "errors" in response_data:
+                # This is returned as error in the upload,
+                # but there is nothing we can do about it,
+                # our upload has been successful
+                if response_data['code'] == 'need_manual_review':
+                    return response_data["url"], response_data["revision"]
                 error_message = "\n".join(
                     error["message"] for error in response_data["errors"])
                 error_messages = []
@@ -343,8 +358,6 @@ class SnapStoreClient:
                     error_messages.append(error_detail)
                 raise ScanFailedResponse(
                     error_message, messages=error_messages)
-            elif not response_data["can_release"]:
-                return response_data["url"], None
             else:
                 return response_data["url"], response_data["revision"]
         except requests.HTTPError as e:
@@ -391,41 +404,3 @@ class SnapStoreClient:
         if channels is None:
             channels = _default_store_channels
         return channels
-
-    @classmethod
-    def _release(cls, snap, revision):
-        """Release a snap revision to specified channels."""
-        release_url = urlappend(
-            config.snappy.store_url, "dev/api/snap-release/")
-        data = {
-            "name": snap.store_name,
-            "revision": revision,
-            # The security proxy is useless and breaks JSON serialisation.
-            "channels": removeSecurityProxy(snap.store_channels),
-            "series": snap.store_series.name,
-            }
-        # XXX cjwatson 2016-06-28: This should add timeline information, but
-        # that's currently difficult in jobs.
-        try:
-            assert snap.store_secrets is not None
-            urlfetch(
-                release_url, method="POST", json=data,
-                auth=MacaroonAuth(
-                    snap.store_secrets["root"],
-                    snap.store_secrets.get("discharge")))
-        except requests.HTTPError as e:
-            if e.response.status_code == 401:
-                if (e.response.headers.get("WWW-Authenticate") ==
-                        "Macaroon needs_refresh=1"):
-                    raise NeedsRefreshResponse()
-            raise cls._makeSnapStoreError(ReleaseFailedResponse, e)
-
-    @classmethod
-    def release(cls, snapbuild, revision):
-        """See `ISnapStoreClient`."""
-        assert config.snappy.store_url is not None
-        snap = snapbuild.snap
-        assert snap.store_name is not None
-        assert snap.store_series is not None
-        assert snap.store_channels
-        cls.refreshIfNecessary(snap, cls._release, snap, revision)

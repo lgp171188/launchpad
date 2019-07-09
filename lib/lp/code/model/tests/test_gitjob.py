@@ -1,4 +1,4 @@
-# Copyright 2015-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for `GitJob`s."""
@@ -13,6 +13,7 @@ from datetime import (
     )
 import hashlib
 
+from fixtures import FakeLogger
 from lazr.lifecycle.snapshot import Snapshot
 import pytz
 from testtools.matchers import (
@@ -55,6 +56,7 @@ from lp.services.job.runner import JobRunner
 from lp.services.utils import seconds_since_epoch
 from lp.services.webapp import canonical_url
 from lp.services.webapp.snapshot import notify_modified
+from lp.services.webhooks.testing import LogsScheduledWebhooks
 from lp.testing import (
     person_logged_in,
     TestCaseWithFactory,
@@ -179,6 +181,7 @@ class TestGitRefScanJob(TestCaseWithFactory):
     def test_triggers_webhooks(self):
         # Jobs trigger any relevant webhooks when they're enabled.
         self.useFixture(FeatureFixture({'code.git.webhooks.enabled': 'on'}))
+        logger = self.useFixture(FakeLogger())
         repository = self.factory.makeGitRepository()
         self.factory.makeGitRefs(
             repository, paths=['refs/heads/master', 'refs/tags/1.0'])
@@ -191,30 +194,35 @@ class TestGitRefScanJob(TestCaseWithFactory):
             JobRunner([job]).runAll()
         delivery = hook.deliveries.one()
         sha1 = lambda s: hashlib.sha1(s).hexdigest()
+        payload_matcher = MatchesDict({
+            'git_repository': Equals('/' + repository.unique_name),
+            'git_repository_path': Equals(repository.unique_name),
+            'ref_changes': Equals({
+                'refs/tags/1.0': {
+                    'old': {'commit_sha1': sha1('refs/tags/1.0')},
+                    'new': None},
+                'refs/tags/2.0': {
+                    'old': None,
+                    'new': {'commit_sha1': sha1('refs/tags/2.0')}},
+            })})
         self.assertThat(
             delivery,
             MatchesStructure(
                 event_type=Equals('git:push:0.1'),
-                payload=MatchesDict({
-                    'git_repository': Equals('/' + repository.unique_name),
-                    'git_repository_path': Equals(repository.unique_name),
-                    'ref_changes': Equals({
-                        'refs/tags/1.0': {
-                            'old': {'commit_sha1': sha1('refs/tags/1.0')},
-                            'new': None},
-                        'refs/tags/2.0': {
-                            'old': None,
-                            'new': {'commit_sha1': sha1('refs/tags/2.0')}},
-                    })})))
+                payload=payload_matcher))
         with dbuser(config.IWebhookDeliveryJobSource.dbuser):
             self.assertEqual(
                 "<WebhookDeliveryJob for webhook %d on %r>" % (
                     hook.id, hook.target),
                 repr(delivery))
+            self.assertThat(
+                logger.output, LogsScheduledWebhooks([
+                    (hook, "git:push:0.1", payload_matcher)]))
 
     def test_merge_detection_triggers_webhooks(self):
         self.useFixture(FeatureFixture(
             {BRANCH_MERGE_PROPOSAL_WEBHOOKS_FEATURE_FLAG: 'on'}))
+        logger = self.useFixture(FakeLogger())
         repository = self.factory.makeGitRepository()
         target, source = self.factory.makeGitRefs(
             repository, paths=['refs/heads/target', 'refs/heads/source'])
@@ -238,23 +246,26 @@ class TestGitRefScanJob(TestCaseWithFactory):
         with dbuser('branchscanner'):
             JobRunner([job]).runAll()
         delivery = hook.deliveries.one()
+        payload_matcher = MatchesDict({
+            'merge_proposal': Equals(
+                canonical_url(bmp, force_local_path=True)),
+            'action': Equals('modified'),
+            'old': ContainsDict({'queue_status': Equals('Work in progress')}),
+            'new': ContainsDict({'queue_status': Equals('Merged')}),
+            })
         self.assertThat(
             delivery,
             MatchesStructure(
                 event_type=Equals('merge-proposal:0.1'),
-                payload=MatchesDict({
-                    'merge_proposal': Equals(
-                        canonical_url(bmp, force_local_path=True)),
-                    'action': Equals('modified'),
-                    'old': ContainsDict(
-                        {'queue_status': Equals('Work in progress')}),
-                    'new': ContainsDict({'queue_status': Equals('Merged')}),
-                    })))
+                payload=payload_matcher))
         with dbuser(config.IWebhookDeliveryJobSource.dbuser):
             self.assertEqual(
                 "<WebhookDeliveryJob for webhook %d on %r>" % (
                     hook.id, hook.target),
                 repr(delivery))
+            self.assertThat(
+                logger.output, LogsScheduledWebhooks([
+                    (hook, "merge-proposal:0.1", payload_matcher)]))
 
     def test_composeWebhookPayload(self):
         repository = self.factory.makeGitRepository()

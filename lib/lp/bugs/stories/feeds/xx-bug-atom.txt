@@ -358,7 +358,7 @@ This feed gets the latest bugs for a person.
 
     >>> entries = parse_entries(browser.contents)
     >>> print(len(entries))
-    7
+    9
 
     >>> entry = entries[0]
     >>> print(extract_text(entry.title))
