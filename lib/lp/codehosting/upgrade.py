@@ -29,6 +29,10 @@ from bzrlib.plugins.loom import (
     )
 from bzrlib.repofmt.groupcompress_repo import RepositoryFormat2aSubtree
 from bzrlib.upgrade import upgrade
+from bzrlib.url_policy_open import (
+    BranchOpener,
+    SingleSchemePolicy,
+    )
 
 from lp.code.bzr import (
     branch_changed,
@@ -36,7 +40,6 @@ from lp.code.bzr import (
     )
 from lp.code.model.branch import Branch
 from lp.codehosting.bzrutils import read_locked
-from lp.codehosting.safe_open import safe_open
 from lp.codehosting.vfs.branchfs import get_real_branch_path
 from lp.services.database.interfaces import IStore
 
@@ -52,9 +55,9 @@ class Upgrader:
         self.branch = branch
         self.bzr_branch = bzr_branch
         if self.bzr_branch is None:
-            self.bzr_branch = safe_open('lp-internal',
-                                        self.branch.getInternalBzrUrl(),
-                                        ignore_fallbacks=True)
+            opener = BranchOpener(SingleSchemePolicy('lp-internal'))
+            self.bzr_branch = opener.open(
+                self.branch.getInternalBzrUrl(), ignore_fallbacks=True)
         self.target_dir = target_dir
         self.target_subdir = os.path.join(
             self.target_dir, str(self.branch.id))

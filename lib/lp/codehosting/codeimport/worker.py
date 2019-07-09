@@ -55,6 +55,11 @@ from bzrlib.transport import (
     )
 import bzrlib.ui
 from bzrlib.upgrade import upgrade
+from bzrlib.url_policy_open import (
+    BadUrl,
+    BranchOpener,
+    BranchOpenPolicy,
+    )
 from bzrlib.urlutils import (
     join as urljoin,
     local_path_from_url,
@@ -81,11 +86,6 @@ from lp.codehosting.codeimport.tarball import (
     extract_tarball,
     )
 from lp.codehosting.codeimport.uifactory import LoggingUIFactory
-from lp.codehosting.safe_open import (
-    BadUrl,
-    BranchOpenPolicy,
-    SafeBranchOpener,
-    )
 from lp.services.config import config
 from lp.services.propertycache import cachedproperty
 from lp.services.timeout import (
@@ -111,8 +111,8 @@ class CodeImportBranchOpenPolicy(BranchOpenPolicy):
         self.rcstype = rcstype
         self.target_rcstype = target_rcstype
 
-    def shouldFollowReferences(self):
-        """See `BranchOpenPolicy.shouldFollowReferences`.
+    def should_follow_references(self):
+        """See `BranchOpenPolicy.should_follow_references`.
 
         We traverse branch references for MIRRORED branches because they
         provide a useful redirection mechanism and we want to be consistent
@@ -120,16 +120,16 @@ class CodeImportBranchOpenPolicy(BranchOpenPolicy):
         """
         return True
 
-    def transformFallbackLocation(self, branch, url):
-        """See `BranchOpenPolicy.transformFallbackLocation`.
+    def transform_fallback_location(self, branch, url):
+        """See `BranchOpenPolicy.transform_fallback_location`.
 
         For mirrored branches, we stack on whatever the remote branch claims
         to stack on, but this URL still needs to be checked.
         """
         return urljoin(branch.base, url), True
 
-    def checkOneURL(self, url):
-        """See `BranchOpenPolicy.checkOneURL`.
+    def check_one_url(self, url):
+        """See `BranchOpenPolicy.check_one_url`.
 
         We refuse to mirror Bazaar branches from Launchpad, or any branches
         from a ssh-like or file URL.
@@ -729,7 +729,7 @@ class PullingImportWorker(ToBzrImportWorker):
     def _doImport(self):
         self._logger.info("Starting job.")
         saved_factory = bzrlib.ui.ui_factory
-        opener = SafeBranchOpener(self._opener_policy, self.probers)
+        opener = BranchOpener(self._opener_policy, self.probers)
         bzrlib.ui.ui_factory = LoggingUIFactory(logger=self._logger)
         try:
             self._logger.info(
@@ -1049,7 +1049,7 @@ class GitToGitImportWorker(ImportWorker):
     def _doImport(self):
         self._logger.info("Starting job.")
         try:
-            self._opener_policy.checkOneURL(self.source_details.url)
+            self._opener_policy.check_one_url(self.source_details.url)
         except BadUrl as e:
             self._logger.info("Invalid URL: %s" % e)
             return CodeImportWorkerExitCode.FAILURE_FORBIDDEN

@@ -234,7 +234,8 @@ BeautifulSoup==3.2.1
 beautifulsoup4[lxml]==4.7.1
 billiard==3.5.0.5
 bson==0.3.3
-bzr==2.6.0.lp.3
+# lp:~launchpad/bzr/lp
+bzr==2.6.0.lp.4
 celery==4.1.1
 certifi==2019.3.9
 cffi==1.11.2

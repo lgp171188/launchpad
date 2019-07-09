@@ -36,6 +36,13 @@ from bzrlib.transport import (
     get_transport,
     get_transport_from_url,
     )
+from bzrlib.url_policy_open import (
+    _BlacklistPolicy,
+    AcceptAnythingPolicy,
+    BadUrl,
+    BranchOpener,
+    BranchOpenPolicy,
+    )
 from bzrlib.urlutils import (
     join as urljoin,
     local_path_from_url,
@@ -75,13 +82,6 @@ from lp.codehosting.codeimport.worker import (
     GitImportWorker,
     ImportDataStore,
     ToBzrImportWorker,
-    )
-from lp.codehosting.safe_open import (
-    AcceptAnythingPolicy,
-    BadUrl,
-    BlacklistPolicy,
-    BranchOpenPolicy,
-    SafeBranchOpener,
     )
 from lp.codehosting.tests.helpers import create_branch_with_one_revision
 from lp.services.config import config
@@ -129,7 +129,7 @@ class WorkerTest(TestCaseWithTransport, TestCase):
     def setUp(self):
         super(WorkerTest, self).setUp()
         self.disable_directory_isolation()
-        SafeBranchOpener.install_hook()
+        BranchOpener.install_hook()
 
     def assertDirectoryTreesEqual(self, directory1, directory2):
         """Assert that `directory1` has the same structure as `directory2`.
@@ -1242,7 +1242,7 @@ class TestBzrSvnImport(WorkerTest, SubversionImportHelpers,
         cache_dir = get_cache(uuid).create_cache_dir()
         cache_dir_contents = os.listdir(cache_dir)
         self.assertNotEqual([], cache_dir_contents)
-        opener = SafeBranchOpener(worker._opener_policy, worker.probers)
+        opener = BranchOpener(worker._opener_policy, worker.probers)
         remote_branch = opener.open(worker.source_details.url)
         worker.pushBazaarBranch(
             self.make_branch('.'), remote_branch=remote_branch)
@@ -1331,7 +1331,7 @@ class TestBzrImport(WorkerTest, TestActualImportMixin,
         reference_url, target_url = self.createBranchReference()
         source_details = self.factory.makeCodeImportSourceDetails(
             url=reference_url, rcstype='bzr')
-        policy = BlacklistPolicy(True, [target_url])
+        policy = _BlacklistPolicy(True, [target_url])
         worker = self.makeImportWorker(source_details, opener_policy=policy)
         self.assertEqual(
             CodeImportWorkerExitCode.FAILURE_FORBIDDEN, worker.run())
@@ -1363,15 +1363,15 @@ class CodeImportBranchOpenPolicyTests(TestCase):
         self.policy = CodeImportBranchOpenPolicy("bzr", "bzr")
 
     def test_follows_references(self):
-        self.assertEqual(True, self.policy.shouldFollowReferences())
+        self.assertEqual(True, self.policy.should_follow_references())
 
     def assertBadUrl(self, url):
-        self.assertRaises(BadUrl, self.policy.checkOneURL, url)
+        self.assertRaises(BadUrl, self.policy.check_one_url, url)
 
     def assertGoodUrl(self, url):
-        self.policy.checkOneURL(url)
+        self.policy.check_one_url(url)
 
-    def test_checkOneURL(self):
+    def test_check_one_url(self):
         self.assertBadUrl("sftp://somehost/")
         self.assertBadUrl("/etc/passwd")
         self.assertBadUrl("file:///etc/passwd")
@@ -1384,7 +1384,7 @@ class CodeImportBranchOpenPolicyTests(TestCase):
         self.assertGoodUrl("bzr://bzr.example.com/somebzrurl/")
         self.assertBadUrl("bzr://bazaar.launchpad.test/example")
 
-    def test_checkOneURL_git_to_bzr(self):
+    def test_check_one_url_git_to_bzr(self):
         self.policy = CodeImportBranchOpenPolicy("git", "bzr")
         self.assertBadUrl("/etc/passwd")
         self.assertBadUrl("file:///etc/passwd")
@@ -1392,7 +1392,7 @@ class CodeImportBranchOpenPolicyTests(TestCase):
         self.assertGoodUrl("git://git.example.com/repo")
         self.assertGoodUrl("git://git.launchpad.test/example")
 
-    def test_checkOneURL_git_to_git(self):
+    def test_check_one_url_git_to_git(self):
         self.policy = CodeImportBranchOpenPolicy("git", "git")
         self.assertBadUrl("/etc/passwd")
         self.assertBadUrl("file:///etc/passwd")
@@ -1408,7 +1408,7 @@ class RedirectTests(http_utils.TestCaseWithRedirectedWebserver, TestCase):
     def setUp(self):
         http_utils.TestCaseWithRedirectedWebserver.setUp(self)
         self.disable_directory_isolation()
-        SafeBranchOpener.install_hook()
+        BranchOpener.install_hook()
         tree = self.make_branch_and_tree('.')
         self.revid = tree.commit("A commit")
         self.bazaar_store = BazaarBranchStore(
@@ -1438,14 +1438,14 @@ class RedirectTests(http_utils.TestCaseWithRedirectedWebserver, TestCase):
             def __init__(self, new_url):
                 self.new_url = new_url
 
-            def shouldFollowReferences(self):
+            def should_follow_references(self):
                 return True
 
-            def checkOneURL(self, url):
+            def check_one_url(self, url):
                 if url.startswith(self.new_url):
                     raise BadUrl(url)
 
-            def transformFallbackLocation(self, branch, url):
+            def transform_fallback_location(self, branch, url):
                 return urlutils.join(branch.base, url), False
 
         policy = NewUrlBlacklistPolicy(self.get_new_url())

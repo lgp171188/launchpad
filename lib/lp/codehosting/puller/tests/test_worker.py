@@ -22,6 +22,12 @@ from bzrlib.tests import (
     TestCaseWithTransport,
     )
 from bzrlib.transport import get_transport
+from bzrlib.url_policy_open import (
+    AcceptAnythingPolicy,
+    BadUrl,
+    BranchOpener,
+    BranchOpenPolicy,
+    )
 
 from lp.code.enums import BranchType
 from lp.codehosting.puller.tests import (
@@ -37,13 +43,7 @@ from lp.codehosting.puller.worker import (
     install_worker_ui_factory,
     MirroredBranchPolicy,
     PullerWorkerProtocol,
-    SafeBranchOpener,
     WORKER_ACTIVITY_NETWORK,
-    )
-from lp.codehosting.safe_open import (
-    AcceptAnythingPolicy,
-    BadUrl,
-    BranchOpenPolicy,
     )
 from lp.testing import TestCase
 from lp.testing.factory import (
@@ -86,7 +86,7 @@ class TestPullerWorker(TestCaseWithTransport, PullerWorkerMixin):
 
     def setUp(self):
         super(TestPullerWorker, self).setUp()
-        SafeBranchOpener.install_hook()
+        BranchOpener.install_hook()
 
     def test_mirror_opener_with_stacked_on_url(self):
         # A PullerWorker for a mirrored branch gets a MirroredBranchPolicy as
@@ -277,7 +277,7 @@ class TestReferenceOpener(TestCaseWithTransport):
 
     def setUp(self):
         super(TestReferenceOpener, self).setUp()
-        SafeBranchOpener.install_hook()
+        BranchOpener.install_hook()
 
     def createBranchReference(self, url):
         """Create a pure branch reference that points to the specified URL.
@@ -318,20 +318,20 @@ class TestReferenceOpener(TestCaseWithTransport):
         self.assertEqual(opened_branch.base, target_branch.base)
 
     def testFollowReferenceValue(self):
-        # SafeBranchOpener.followReference gives the reference value for
+        # BranchOpener.follow_reference gives the reference value for
         # a branch reference.
-        opener = SafeBranchOpener(BranchOpenPolicy())
+        opener = BranchOpener(BranchOpenPolicy())
         reference_value = 'http://example.com/branch'
         reference_url = self.createBranchReference(reference_value)
         self.assertEqual(
-            reference_value, opener.followReference(reference_url))
+            reference_value, opener.follow_reference(reference_url))
 
     def testFollowReferenceNone(self):
-        # SafeBranchOpener.followReference gives None for a normal branch.
+        # BranchOpener.follow_reference gives None for a normal branch.
         self.make_branch('repo')
         branch_url = self.get_url('repo')
-        opener = SafeBranchOpener(BranchOpenPolicy())
-        self.assertIs(None, opener.followReference(branch_url))
+        opener = BranchOpener(BranchOpenPolicy())
+        self.assertIs(None, opener.follow_reference(branch_url))
 
 
 class TestMirroredBranchPolicy(TestCase):
@@ -344,44 +344,44 @@ class TestMirroredBranchPolicy(TestCase):
     def testNoFileURL(self):
         policy = MirroredBranchPolicy()
         self.assertRaises(
-            BadUrlScheme, policy.checkOneURL,
+            BadUrlScheme, policy.check_one_url,
             self.factory.getUniqueURL(scheme='file'))
 
     def testNoUnknownSchemeURLs(self):
         policy = MirroredBranchPolicy()
         self.assertRaises(
-            BadUrlScheme, policy.checkOneURL,
+            BadUrlScheme, policy.check_one_url,
             self.factory.getUniqueURL(scheme='decorator+scheme'))
 
     def testNoSSHURL(self):
         policy = MirroredBranchPolicy()
         self.assertRaises(
-            BadUrlSsh, policy.checkOneURL,
+            BadUrlSsh, policy.check_one_url,
             self.factory.getUniqueURL(scheme='bzr+ssh'))
 
     def testNoSftpURL(self):
         policy = MirroredBranchPolicy()
         self.assertRaises(
-            BadUrlSsh, policy.checkOneURL,
+            BadUrlSsh, policy.check_one_url,
             self.factory.getUniqueURL(scheme='sftp'))
 
     def testNoLaunchpadURL(self):
         policy = MirroredBranchPolicy()
         self.assertRaises(
-            BadUrlLaunchpad, policy.checkOneURL,
+            BadUrlLaunchpad, policy.check_one_url,
             self.factory.getUniqueURL(host='bazaar.launchpad.test'))
 
     def testNoHTTPSLaunchpadURL(self):
         policy = MirroredBranchPolicy()
         self.assertRaises(
-            BadUrlLaunchpad, policy.checkOneURL,
+            BadUrlLaunchpad, policy.check_one_url,
             self.factory.getUniqueURL(
                 host='bazaar.launchpad.test', scheme='https'))
 
     def testNoOtherHostLaunchpadURL(self):
         policy = MirroredBranchPolicy()
         self.assertRaises(
-            BadUrlLaunchpad, policy.checkOneURL,
+            BadUrlLaunchpad, policy.check_one_url,
             self.factory.getUniqueURL(host='code.launchpad.test'))
 
     def testLocalhost(self):
@@ -389,9 +389,9 @@ class TestMirroredBranchPolicy(TestCase):
             'codehosting', blacklisted_hostnames='localhost,127.0.0.1')
         policy = MirroredBranchPolicy()
         localhost_url = self.factory.getUniqueURL(host='localhost')
-        self.assertRaises(BadUrl, policy.checkOneURL, localhost_url)
+        self.assertRaises(BadUrl, policy.check_one_url, localhost_url)
         localhost_url = self.factory.getUniqueURL(host='127.0.0.1')
-        self.assertRaises(BadUrl, policy.checkOneURL, localhost_url)
+        self.assertRaises(BadUrl, policy.check_one_url, localhost_url)
 
     def test_no_stacked_on_url(self):
         # By default, a MirroredBranchPolicy does not stack branches.
@@ -495,7 +495,7 @@ class TestWorkerProgressReporting(TestCaseWithTransport):
 
     def setUp(self):
         super(TestWorkerProgressReporting, self).setUp()
-        SafeBranchOpener.install_hook()
+        BranchOpener.install_hook()
         self.saved_factory = bzrlib.ui.ui_factory
         self.disable_directory_isolation()
         self.addCleanup(setattr, bzrlib.ui, 'ui_factory', self.saved_factory)

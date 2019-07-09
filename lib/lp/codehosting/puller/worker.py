@@ -27,6 +27,13 @@ from bzrlib.plugins.weave_fmt.repository import (
 from bzrlib.transport import get_transport
 import bzrlib.ui
 from bzrlib.ui import SilentUIFactory
+from bzrlib.url_policy_open import (
+    BadUrl,
+    BranchLoopError,
+    BranchOpener,
+    BranchOpenPolicy,
+    BranchReferenceForbidden,
+    )
 from lazr.uri import (
     InvalidURIError,
     URI,
@@ -39,13 +46,6 @@ from lp.code.bzr import (
 from lp.code.enums import BranchType
 from lp.codehosting.bzrutils import identical_formats
 from lp.codehosting.puller import get_lock_id_for_branch_id
-from lp.codehosting.safe_open import (
-    BadUrl,
-    BranchLoopError,
-    BranchOpenPolicy,
-    BranchReferenceForbidden,
-    SafeBranchOpener,
-    )
 from lp.services.config import config
 from lp.services.webapp import errorlog
 
@@ -75,7 +75,7 @@ class BadUrlScheme(BadUrl):
     """Found a URL with an untrusted scheme."""
 
     def __init__(self, scheme, url):
-        BadUrl.__init__(self, scheme, url)
+        BadUrl.__init__(self, url)
         self.scheme = scheme
 
 
@@ -195,7 +195,7 @@ class BranchMirrorer(object):
         """
         self.policy = policy
         self.protocol = protocol
-        self.opener = SafeBranchOpener(policy)
+        self.opener = BranchOpener(policy)
         if log is not None:
             self.log = log
         else:
@@ -213,7 +213,7 @@ class BranchMirrorer(object):
             URL must point to a writable location.
         :return: The destination branch.
         """
-        return self.opener.runWithTransformFallbackLocationHookInstalled(
+        return self.opener.run_with_transform_fallback_location_hook_installed(
             self.policy.createDestinationBranch, source_branch,
             destination_url)
 
@@ -552,8 +552,8 @@ class MirroredBranchPolicy(BranchMirrorerPolicy):
             return None
         return self.stacked_on_url
 
-    def shouldFollowReferences(self):
-        """See `BranchOpenPolicy.shouldFollowReferences`.
+    def should_follow_references(self):
+        """See `BranchOpenPolicy.should_follow_references`.
 
         We traverse branch references for MIRRORED branches because they
         provide a useful redirection mechanism and we want to be consistent
@@ -561,16 +561,16 @@ class MirroredBranchPolicy(BranchMirrorerPolicy):
         """
         return True
 
-    def transformFallbackLocation(self, branch, url):
-        """See `BranchOpenPolicy.transformFallbackLocation`.
+    def transform_fallback_location(self, branch, url):
+        """See `BranchOpenPolicy.transform_fallback_location`.
 
         For mirrored branches, we stack on whatever the remote branch claims
         to stack on, but this URL still needs to be checked.
         """
         return urlutils.join(branch.base, url), True
 
-    def checkOneURL(self, url):
-        """See `BranchOpenPolicy.checkOneURL`.
+    def check_one_url(self, url):
+        """See `BranchOpenPolicy.check_one_url`.
 
         We refuse to mirror from Launchpad or a ssh-like or file URL.
         """
@@ -619,23 +619,23 @@ class ImportedBranchPolicy(BranchMirrorerPolicy):
                 break
         return Branch.open_from_transport(dest_transport)
 
-    def shouldFollowReferences(self):
-        """See `BranchOpenerPolicy.shouldFollowReferences`.
+    def should_follow_references(self):
+        """See `BranchOpenerPolicy.should_follow_references`.
 
         We do not traverse references for IMPORTED branches because the
         code-import system should never produce branch references.
         """
         return False
 
-    def transformFallbackLocation(self, branch, url):
-        """See `BranchOpenerPolicy.transformFallbackLocation`.
+    def transform_fallback_location(self, branch, url):
+        """See `BranchOpenerPolicy.transform_fallback_location`.
 
         Import branches should not be stacked, ever.
         """
         raise AssertionError("Import branch unexpectedly stacked!")
 
-    def checkOneURL(self, url):
-        """See `BranchOpenerPolicy.checkOneURL`.
+    def check_one_url(self, url):
+        """See `BranchOpenerPolicy.check_one_url`.
 
         If the URL we are mirroring from does not start how we expect the pull
         URLs of import branches to start, something has gone badly wrong, so
