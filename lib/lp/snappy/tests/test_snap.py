@@ -551,28 +551,46 @@ class TestSnap(TestCaseWithFactory):
             channels=Equals({"snapcraft": "edge"}),
             architectures=MatchesSetwise(Equals("amd64"), Equals("i386"))))
 
-    def test__findBase(self):
-        snap_base_set = getUtility(ISnapBaseSet)
+    def test__findBase_without_default(self):
         with admin_logged_in():
             snap_bases = [self.factory.makeSnapBase() for _ in range(2)]
         for snap_base in snap_bases:
             self.assertEqual(
-                snap_base,
+                (snap_base, snap_base.name),
                 Snap._findBase({"base": snap_base.name}))
+            self.assertEqual(
+                (snap_base, snap_base.name),
+                Snap._findBase({"base": "bare", "build-base": snap_base.name}))
         self.assertRaises(
             NoSuchSnapBase, Snap._findBase,
             {"base": "nonexistent"})
-        self.assertIsNone(Snap._findBase({}))
+        self.assertRaises(
+            NoSuchSnapBase, Snap._findBase,
+            {"base": "bare", "build-base": "nonexistent"})
+        self.assertEqual((None, None), Snap._findBase({}))
+        self.assertEqual((None, None), Snap._findBase({"base": "bare"}))
+
+    def test__findBase_with_default(self):
         with admin_logged_in():
-            snap_base_set.setDefault(snap_bases[0])
+            snap_bases = [self.factory.makeSnapBase() for _ in range(2)]
+        with admin_logged_in():
+            getUtility(ISnapBaseSet).setDefault(snap_bases[0])
         for snap_base in snap_bases:
             self.assertEqual(
-                snap_base,
+                (snap_base, snap_base.name),
                 Snap._findBase({"base": snap_base.name}))
+            self.assertEqual(
+                (snap_base, snap_base.name),
+                Snap._findBase({"base": "bare", "build-base": snap_base.name}))
         self.assertRaises(
             NoSuchSnapBase, Snap._findBase,
             {"base": "nonexistent"})
-        self.assertEqual(snap_bases[0], Snap._findBase({}))
+        self.assertRaises(
+            NoSuchSnapBase, Snap._findBase,
+            {"base": "bare", "build-base": "nonexistent"})
+        self.assertEqual((snap_bases[0], None), Snap._findBase({}))
+        self.assertEqual(
+            (snap_bases[0], None), Snap._findBase({"base": "bare"}))
 
     def makeRequestBuildsJob(self, arch_tags, git_ref=None):
         distro = self.factory.makeDistribution()
