@@ -669,7 +669,7 @@ class Snap(Storm, WebhookTargetMixin):
         snap_base_name = snapcraft_data.get("base")
         if isinstance(snap_base_name, bytes):
             snap_base_name = snap_base_name.decode("UTF-8")
-        if snap_base_name == "none":
+        if snap_base_name == "bare":
             snap_base_name = snapcraft_data.get("build-base")
             if isinstance(snap_base_name, bytes):
                 snap_base_name = snap_base_name.decode("UTF-8")
