@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -688,7 +688,9 @@ def probe_archive_mirror(mirror, logfile, unchecked_keys, logger):
         callbacks = ArchiveMirrorProberCallbacks(
             mirror, series, pocket, component, url, logfile)
         unchecked_keys.append(url)
-        prober = ProberFactory(url)
+        # APT has supported redirects since 0.7.21 (2009-04-14), so allow
+        # them here too.
+        prober = RedirectAwareProberFactory(url)
 
         deferred = request_manager.run(prober.request_host, prober.probe)
         deferred.addCallbacks(
