@@ -21,7 +21,7 @@ def main():
         description=__doc__,
         formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument(
-        '--attribute',
+        '-a', '--attribute',
         choices=['revision', 'display_revision', 'date', 'branch_nick'],
         help='Display a single version information attribute.')
     args = parser.parse_args()

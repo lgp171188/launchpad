@@ -44,27 +44,32 @@ class TestVersionInfo(TestCase):
         return stdout
 
     def test_attribute_revision(self):
-        self.assertEqual(
-            versioninfo.revision + '\n',
-            self.runScript(['--attribute', 'revision']))
+        for option in '-a', '--attribute':
+            self.assertEqual(
+                versioninfo.revision + '\n',
+                self.runScript([option, 'revision']))
 
     def test_attribute_display_revision(self):
-        self.assertEqual(
-            versioninfo.display_revision + '\n',
-            self.runScript(['--attribute', 'display_revision']))
+        for option in '-a', '--attribute':
+            self.assertEqual(
+                versioninfo.display_revision + '\n',
+                self.runScript([option, 'display_revision']))
 
     def test_attribute_date(self):
-        self.assertEqual(
-            versioninfo.date + '\n',
-            self.runScript(['--attribute', 'date']))
+        for option in '-a', '--attribute':
+            self.assertEqual(
+                versioninfo.date + '\n',
+                self.runScript([option, 'date']))
 
     def test_attribute_branch_nick(self):
-        self.assertEqual(
-            versioninfo.branch_nick + '\n',
-            self.runScript(['--attribute', 'branch_nick']))
+        for option in '-a', '--attribute':
+            self.assertEqual(
+                versioninfo.branch_nick + '\n',
+                self.runScript([option, 'branch_nick']))
 
     def test_attribute_nonsense(self):
-        self.runScript(['--attribute', 'nonsense'], expect_exit=True)
+        for option in '-a', '--attribute':
+            self.runScript([option, 'nonsense'], expect_exit=True)
 
     def test_all_attributes(self):
         expected_output = dedent('''\
