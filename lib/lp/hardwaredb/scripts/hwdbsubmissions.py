@@ -3038,9 +3038,6 @@ class ProcessingLoopBase(object):
                     self._validateSubmission(submission)
                 else:
                     self._invalidateSubmission(submission)
-            except (KeyboardInterrupt, SystemExit):
-                # We should never catch these exceptions.
-                raise
             except LibrarianServerError:
                 # LibrarianServerError is raised when the server could
                 # not be reaches for 30 minutes.

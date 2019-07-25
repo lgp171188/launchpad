@@ -145,9 +145,7 @@ class CloseDbResult:
             DatabaseLayer.testTearDown()
             yield ''
             LibrarianLayer.testSetUp()
-        except (SystemExit, KeyboardInterrupt):
-            raise
-        except:
+        except Exception:
             print "Hm, serious error when trying to clean up the test."
             traceback.print_exc()
         # We're done, so we can yield the body.

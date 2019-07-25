@@ -208,9 +208,7 @@ bug reporting guidelines can be changed, but admins do.
     ...     user_browser.open(overview_url)
     ...     try:
     ...         user_browser.getLink(url=edit_url_re)
-    ...     except (SystemExit, KeyboardInterrupt):
-    ...         raise
-    ...     except:
+    ...     except Exception:
     ...         print(sys.exc_info()[0].__name__)
     ...     print('  - Admin:', end=' ')
     ...     admin_browser.open(overview_url)
@@ -236,9 +234,7 @@ guidelines.
     ...     print('* ' + context_name)
     ...     try:
     ...         user_browser.open(edit_url)
-    ...     except (SystemExit, KeyboardInterrupt):
-    ...         raise
-    ...     except:
+    ...     except Exception:
     ...         print(sys.exc_info()[0].__name__)
     * Ubuntu
       Unauthorized

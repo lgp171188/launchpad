@@ -388,14 +388,11 @@ def process_request(person, objects, format, logger):
         exported_file = translation_exporter.exportTranslationFiles(
             generate_translationfiledata(requested_objects, format),
             target_format=format)
-    except (KeyboardInterrupt, SystemExit):
-        # We should never catch KeyboardInterrupt or SystemExit.
-        raise
     except psycopg2.Error:
         # It's a DB exception, we don't catch it either, the export
         # should be done again in a new transaction.
         raise
-    except:
+    except Exception:
         # The export for the current entry failed with an unexpected
         # error, we add the entry to the list of errors.
         result.addFailure()
