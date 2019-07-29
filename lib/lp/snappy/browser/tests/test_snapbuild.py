@@ -1,4 +1,4 @@
-# Copyright 2015-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test snap package build views."""
@@ -25,6 +25,7 @@ from zope.security.proxy import removeSecurityProxy
 
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.buildmaster.enums import BuildStatus
+from lp.services.config import config
 from lp.services.job.interfaces.job import JobStatus
 from lp.services.webapp import canonical_url
 from lp.snappy.interfaces.snapbuildjob import ISnapStoreUploadJobSource
@@ -118,6 +119,23 @@ class TestSnapBuildView(TestCaseWithFactory):
                     "store link", "a", attrs={"href": job.store_url},
                     text=re.compile(
                         r"^\s*Manage this package in the store\s*$")))))
+
+    def test_store_upload_status_completed_no_url(self):
+        # A package that has been uploaded to the store may lack a URL if
+        # the upload was queued behind others for manual review.
+        build = self.factory.makeSnapBuild(status=BuildStatus.FULLYBUILT)
+        job = getUtility(ISnapStoreUploadJobSource).create(build)
+        naked_job = removeSecurityProxy(job)
+        naked_job.job._status = JobStatus.COMPLETED
+        build_view = create_initialized_view(build, "+index")
+        self.assertThat(build_view(), soupmatchers.HTMLContains(
+            soupmatchers.Within(
+                soupmatchers.Tag(
+                    "store upload status", "li",
+                    attrs={"id": "store-upload-status"}),
+                soupmatchers.Tag(
+                    "store link", "a", attrs={"href": config.snappy.store_url},
+                    text=re.compile(r"^\s*Uploaded to the store\s*$")))))
 
     def test_store_upload_status_failed(self):
         build = self.factory.makeSnapBuild(status=BuildStatus.FULLYBUILT)

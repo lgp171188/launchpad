@@ -1,4 +1,4 @@
-# Copyright 2016-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2016-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for communication with the snap store."""
@@ -640,6 +640,24 @@ class TestSnapStoreClient(TestCaseWithFactory):
         self.assertEqual(
             ("http://sca.example/dev/click-apps/1/rev/1/", 1),
             self.client.checkStatus(status_url))
+
+    @responses.activate
+    def test_checkStatus_review_queued(self):
+        status_url = "http://sca.example/dev/api/snaps/1/builds/1/status"
+        responses.add(
+            "GET", status_url,
+            json={
+                "errors": [
+                    {"code": "review-queued",
+                     "message": (
+                         "Waiting for previous upload(s) to complete their "
+                         "review process."),
+                     }],
+                "code": "processing_error",
+                "processed": True,
+                "can_release": False,
+                })
+        self.assertEqual((None, None), self.client.checkStatus(status_url))
 
     @responses.activate
     def test_listChannels(self):
