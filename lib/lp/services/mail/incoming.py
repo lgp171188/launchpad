@@ -439,14 +439,12 @@ def handleMail(trans=transaction, signature_timestamp_checker=None):
                     signature_timestamp_checker)
                 trans.commit()
                 mailbox.delete(mail_id)
-            except (KeyboardInterrupt, SystemExit):
-                raise
-            except:
-                # This bare except is needed in order to prevent any bug
-                # in the email handling from causing the email interface
-                # to lock up. We simply log the error, then send an oops, and
-                # continue through the mailbox, so that it doesn't stop the
-                # rest of the emails from being processed.
+            except (GeneratorExit, Exception):
+                # This general exception handler is needed in order to
+                # prevent any bug in the email handling from causing the
+                # email interface to lock up. We simply log the error, then
+                # send an oops, and continue through the mailbox, so that it
+                # doesn't stop the rest of the emails from being processed.
                 log.exception(
                     "An exception was raised inside the handler:\n%s"
                     % (file_alias_url,))

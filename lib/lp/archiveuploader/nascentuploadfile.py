@@ -555,9 +555,7 @@ class BaseBinaryUploadFile(PackageUploadFile):
             deb_file = apt_inst.DebFile(self.filepath)
             control_file = deb_file.control.extractdata("control")
             control_lines = apt_pkg.TagSection(control_file, bytes=True)
-        except (SystemExit, KeyboardInterrupt):
-            raise
-        except:
+        except Exception:
             yield UploadError(
                 "%s: extracting control file raised %s, giving up."
                  % (self.filename, sys.exc_type))
@@ -758,8 +756,6 @@ class BaseBinaryUploadFile(PackageUploadFile):
                     "far in the past (e.g. %s [%s])."
                      % (self.filename, len(ancient_files), first_file,
                         timestamp))
-        except (SystemExit, KeyboardInterrupt):
-            raise
         except Exception as error:
             # There is a very large number of places where we
             # might get an exception while checking the timestamps.

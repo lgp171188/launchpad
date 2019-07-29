@@ -155,8 +155,6 @@ def parse_file(fd, start_position, logger, get_download_key, parsed_lines=0):
             if country_code not in daily_downloads:
                 daily_downloads[country_code] = 0
             daily_downloads[country_code] += 1
-        except (KeyboardInterrupt, SystemExit):
-            raise
         except Exception as e:
             # Update parsed_bytes to the end of the last line we parsed
             # successfully, log this as an error and break the loop so that

@@ -252,9 +252,7 @@ class BugImporter:
                 self.loadCache()
                 self.importBug(bugnode)
                 self.saveCache()
-            except (SystemExit, KeyboardInterrupt):
-                raise
-            except:
+            except Exception:
                 self.logger.exception(
                     'Could not import bug #%s', bugnode.get('id'))
                 ztm.abort()

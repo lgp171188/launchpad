@@ -155,9 +155,6 @@ class ThreadCapturingResult(Thread):
         """See `Thread`."""
         try:
             self.result = self.target(*self.args, **self.kwargs)
-        except (SystemExit, KeyboardInterrupt):
-            # Don't trap those.
-            raise
         except Exception:
             self.exc_info = sys.exc_info()
 

@@ -489,9 +489,7 @@ def end_request(event):
         encoding = content_type_params.get('charset', 'utf-8')
         try:
             added_html = template(**template_context).encode(encoding)
-        except (SystemExit, KeyboardInterrupt):
-            raise
-        except:
+        except Exception:
             error = ''.join(format_exception(*sys.exc_info(), as_html=True))
             added_html = (
                 '<div class="profiling_info">' + error + '</div>')
