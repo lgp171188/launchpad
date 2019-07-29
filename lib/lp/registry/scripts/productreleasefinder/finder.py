@@ -150,9 +150,7 @@ class ProductReleaseFinder:
                 try:
                     self.handleRelease(
                         product_name, series_name, url, file_names)
-                except (KeyboardInterrupt, SystemExit):
-                    raise
-                except:
+                except Exception:
                     self.log.exception("Could not successfully process "
                                        "URL %s for %s/%s",
                                        url, product_name, series_name)

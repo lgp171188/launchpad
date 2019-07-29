@@ -443,10 +443,6 @@ class PullerWorker:
         except InvalidURIError as e:
             self._mirrorFailed(e)
 
-        except (KeyboardInterrupt, SystemExit):
-            # Do not record OOPS for those exceptions.
-            raise
-
         else:
             revid_after = dest_branch.last_revision()
             # XXX: Aaron Bentley 2008-06-13

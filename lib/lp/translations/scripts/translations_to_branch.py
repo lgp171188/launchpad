@@ -254,8 +254,6 @@ class ExportTranslationsToBranch(LaunchpadCronScript):
 
                 if self.txn:
                     self.txn.commit()
-            except (KeyboardInterrupt, SystemExit):
-                raise
             except NotBranchError:
                 unpushed_branches += 1
                 if self.txn:

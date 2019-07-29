@@ -723,8 +723,6 @@ class NascentUpload:
                 changes_file_object.close()
             return True
 
-        except (SystemExit, KeyboardInterrupt):
-            raise
         except QueueInconsistentStateError as e:
             # A QueueInconsistentStateError is expected if the rejection
             # is a routine rejection due to a bad package upload.

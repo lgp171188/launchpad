@@ -369,8 +369,6 @@ class UploadHandler:
                               "%s " % e)
                 logger.debug(
                     "UploadPolicyError escaped upload.process", exc_info=True)
-            except (KeyboardInterrupt, SystemExit):
-                raise
             except EarlyReturnUploadError:
                 # An error occurred that prevented further error collection,
                 # add this fact to the list of errors.
@@ -510,9 +508,7 @@ class UserUploadHandler(UploadHandler):
             try:
                 results.add(self.processChangesFile(
                     changes_file, self.processor.log))
-            except (KeyboardInterrupt, SystemExit):
-                raise
-            except:
+            except Exception:
                 info = sys.exc_info()
                 message = (
                     'Exception while processing upload %s' % self.upload_path)
@@ -680,9 +676,7 @@ class BuildUploadHandler(UploadHandler):
                 [changes_file] = self.locateChangesFiles()
                 logger.debug("Considering changefile %s" % changes_file)
                 result = self.processChangesFile(changes_file, logger)
-        except (KeyboardInterrupt, SystemExit):
-            raise
-        except:
+        except Exception:
             info = sys.exc_info()
             message = (
                 'Exception while processing upload %s' % self.upload_path)
