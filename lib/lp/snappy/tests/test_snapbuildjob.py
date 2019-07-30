@@ -497,6 +497,30 @@ class TestSnapStoreUploadJob(TestCaseWithFactory):
         self.assertWebhookDeliveries(
             snapbuild, ["Pending", "Failed to upload"], logger)
 
+    def test_run_scan_review_queued(self):
+        # A run that finds that the store has queued the package behind
+        # others for manual review completes, but without recording a store
+        # URL or revision.
+        logger = self.useFixture(FakeLogger())
+        snapbuild = self.makeSnapBuild()
+        self.assertContentEqual([], snapbuild.store_upload_jobs)
+        job = SnapStoreUploadJob.create(snapbuild)
+        client = FakeSnapStoreClient()
+        client.upload.result = self.status_url
+        client.checkStatus.result = (None, None)
+        self.useFixture(ZopeUtilityFixture(client, ISnapStoreClient))
+        with dbuser(config.ISnapStoreUploadJobSource.dbuser):
+            run_isolated_jobs([job])
+        self.assertEqual([((snapbuild,), {})], client.upload.calls)
+        self.assertEqual([((self.status_url,), {})], client.checkStatus.calls)
+        self.assertContentEqual([job], snapbuild.store_upload_jobs)
+        self.assertIsNone(job.store_url)
+        self.assertIsNone(job.store_revision)
+        self.assertIsNone(job.error_message)
+        self.assertEqual([], pop_notifications())
+        self.assertWebhookDeliveries(
+            snapbuild, ["Pending", "Uploaded"], logger)
+
     def test_run_release(self):
         # A run configured to automatically release the package to certain
         # channels does so.
