@@ -54,6 +54,7 @@ from lp.soyuz.interfaces.binarypackagebuild import IBinaryPackageBuildSet
 from lp.soyuz.interfaces.binarypackagename import IBinaryPackageName
 from lp.soyuz.interfaces.buildrecords import IHasBuildRecords
 from lp.soyuz.interfaces.distroarchseries import (
+    ChrootNotPublic,
     IDistroArchSeries,
     InvalidChrootUploaded,
     IPocketChroot,
@@ -236,6 +237,16 @@ class DistroArchSeries(SQLBase):
     def setChrootFromBuild(self, livefsbuild, filename, pocket=None,
                            image_type=None):
         """See `IDistroArchSeries`."""
+        if livefsbuild.is_private:
+            # This is disallowed partly because files that act as base
+            # images for other builds (including public ones) ought to be
+            # public on principle, and partly because
+            # BuildFarmJobBehaviourBase.dispatchBuildToSlave doesn't
+            # currently support sending a token that would allow builders to
+            # fetch private URLs.  If we ever need to change this (perhaps
+            # for the sake of short-lived security fixes in base images?),
+            # then we need to fix the latter problem first.
+            raise ChrootNotPublic()
         self.addOrUpdateChroot(
             livefsbuild.getFileByName(filename), pocket=pocket,
             image_type=image_type)
