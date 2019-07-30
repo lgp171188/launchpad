@@ -20,6 +20,7 @@ from zope.component import getUtility
 from zope.security.interfaces import Unauthorized
 from zope.security.proxy import removeSecurityProxy
 
+from lp.app.interfaces.launchpad import IPrivacy
 from lp.buildmaster.enums import (
     BuildQueueStatus,
     BuildStatus,
@@ -85,10 +86,11 @@ class TestLiveFS(TestCaseWithFactory):
         self.useFixture(FeatureFixture({LIVEFS_FEATURE_FLAG: "on"}))
 
     def test_implements_interfaces(self):
-        # LiveFS implements ILiveFS.
+        # LiveFS implements ILiveFS and IPrivacy.
         livefs = self.factory.makeLiveFS()
         with person_logged_in(livefs.owner):
             self.assertProvides(livefs, ILiveFS)
+            self.assertProvides(livefs, IPrivacy)
 
     def test_avoids_problematic_snapshots(self):
         self.assertThat(
@@ -111,6 +113,20 @@ class TestLiveFS(TestCaseWithFactory):
             pass
         self.assertSqlAttributeEqualsDate(
             livefs, "date_last_modified", UTC_NOW)
+
+    def test_private_owner(self):
+        # A LiveFS is private if its owner is.
+        person = self.factory.makePerson()
+        team = self.factory.makeTeam(
+            owner=person, visibility=PersonVisibility.PRIVATE)
+        with person_logged_in(person):
+            livefs = self.factory.makeLiveFS(registrant=person, owner=team)
+            self.assertTrue(livefs.private)
+
+    def test_public(self):
+        # A LiveFS is public if its owner is.
+        livefs = self.factory.makeLiveFS()
+        self.assertFalse(livefs.private)
 
     def test_relative_build_score(self):
         # Buildd admins can change the relative build score of a LiveFS, but
@@ -665,7 +681,10 @@ class TestLiveFSWebservice(TestCaseWithFactory):
             private=True)
         archive_url = api_url(archive)
         livefs, _ = self.makeLiveFS(distroseries=distroseries)
-        response = self.webservice.named_post(
+        private_webservice = webservice_for_person(
+            self.person, permission=OAuthPermission.WRITE_PRIVATE)
+        private_webservice.default_api_version = "devel"
+        response = private_webservice.named_post(
             livefs["self_link"], "requestBuild", archive=archive_url,
             distro_arch_series=distroarchseries_url, pocket="Release")
         self.assertEqual(201, response.status)
