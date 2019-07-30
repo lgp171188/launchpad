@@ -1,4 +1,4 @@
-# Copyright 2016-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2016-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Communication with the snap store."""
@@ -348,6 +348,17 @@ class SnapStoreClient:
                 # our upload has been successful
                 if response_data['code'] == 'need_manual_review':
                     return response_data["url"], response_data["revision"]
+                # The review-queued state is a little odd.  It shows up as a
+                # processing error of sorts, and it doesn't contain a URL or
+                # a revision; on the other hand, it means that there's no
+                # point waiting any longer because a manual review might
+                # take an arbitrary amount of time.  We'll just return
+                # (None, None) to indicate that we have no information but
+                # that it's OK to continue.
+                if (response_data["code"] == "processing_error" and
+                    any(error["code"] == "review-queued"
+                        for error in response_data["errors"])):
+                    return None, None
                 error_message = "\n".join(
                     error["message"] for error in response_data["errors"])
                 error_messages = []
