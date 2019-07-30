@@ -32,4 +32,4 @@ def main():
         print('Revision:', versioninfo.revision)
         print('Display revision:', versioninfo.display_revision)
         print('Date:', versioninfo.date)
-        print("Branch nick:", versioninfo.branch_nick)
+        print('Branch nick:', versioninfo.branch_nick)
