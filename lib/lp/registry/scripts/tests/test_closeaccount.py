@@ -216,6 +216,14 @@ class TestCloseAccount(TestCaseWithFactory):
         self.assertRemoved(account_ids[1], person_ids[1])
         self.assertNotRemoved(account_ids[2], person_ids[2])
 
+    def test_multiple_email_addresses(self):
+        person, person_id, account_id = self.makePopulatedUser()
+        self.factory.makeEmail('%s@another-domain.test' % person.name, person)
+        script = self.makeScript([six.ensure_str(person.name)])
+        with dbuser('launchpad'):
+            self.runScript(script)
+        self.assertRemoved(account_id, person_id)
+
     def test_unactivated(self):
         person = self.factory.makePerson(
             account_status=AccountStatus.NOACCOUNT)
