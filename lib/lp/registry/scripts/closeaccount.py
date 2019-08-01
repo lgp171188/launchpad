@@ -63,7 +63,8 @@ def close_account(username, log):
     ).find(
         Person,
         Or(Person.name == username,
-           Lower(EmailAddress.email) == Lower(username))).one()
+           Lower(EmailAddress.email) == Lower(username))
+    ).order_by(Person.id).config(distinct=True).one()
     if person is None:
         raise LaunchpadScriptFailure("User %s does not exist" % username)
     person_name = person.name
