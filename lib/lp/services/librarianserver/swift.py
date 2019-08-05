@@ -1,4 +1,4 @@
-# Copyright 2013-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2013-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Move files from Librarian disk storage into Swift."""
@@ -316,7 +316,9 @@ class SwiftStream:
 
     def close(self):
         self.closed = True
-        self._swift_connection = None
+        if self._swift_connection is not None:
+            self._swift_connection.close()
+            self._swift_connection = None
 
     def seek(self, offset):
         if offset < self._offset:

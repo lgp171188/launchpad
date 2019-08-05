@@ -1,34 +1,44 @@
-# Copyright 2009 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 import hashlib
-import shutil
-import tempfile
-import unittest
+import os.path
+import time
+
+from fixtures import TempDir
+from testtools.testcase import ExpectedException
+from testtools.twistedsupport import AsynchronousDeferredRunTest
+import transaction
+from twisted.internet import defer
 
 from lp.services.database.sqlbase import flush_database_updates
+from lp.services.features.testing import FeatureFixture
 from lp.services.librarian.model import LibraryFileContent
-from lp.services.librarianserver import db
+from lp.services.librarianserver import (
+    db,
+    swift,
+    )
 from lp.services.librarianserver.storage import (
     DigestMismatchError,
     DuplicateFileIDError,
     LibrarianStorage,
     LibraryFileUpload,
     )
+from lp.services.log.logger import DevNullLogger
+from lp.testing import TestCase
 from lp.testing.dbuser import switch_dbuser
 from lp.testing.layers import LaunchpadZopelessLayer
+from lp.testing.swift.fixture import SwiftFixture
 
 
-class LibrarianStorageDBTests(unittest.TestCase):
+class LibrarianStorageDBTests(TestCase):
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
+        super(LibrarianStorageDBTests, self).setUp()
         switch_dbuser('librarian')
-        self.directory = tempfile.mkdtemp()
+        self.directory = self.useFixture(TempDir()).path
         self.storage = LibrarianStorage(self.directory, db.Library())
-
-    def tearDown(self):
-        shutil.rmtree(self.directory, ignore_errors=True)
 
     def test_addFile(self):
         data = 'data ' * 50
@@ -129,3 +139,98 @@ class LibrarianStorageDBTests(unittest.TestCase):
 
         flush_database_updates()
         # And no errors should have been raised!
+
+
+class LibrarianStorageSwiftTests(TestCase):
+
+    layer = LaunchpadZopelessLayer
+    run_tests_with = AsynchronousDeferredRunTest.make_factory(timeout=10)
+
+    def setUp(self):
+        super(LibrarianStorageSwiftTests, self).setUp()
+        switch_dbuser('librarian')
+        self.swift_fixture = self.useFixture(SwiftFixture())
+        self.useFixture(FeatureFixture({'librarian.swift.enabled': True}))
+        self.directory = self.useFixture(TempDir()).path
+        self.pushConfig('librarian_server', root=self.directory)
+        self.storage = LibrarianStorage(self.directory, db.Library())
+        transaction.commit()
+        self.addCleanup(swift.connection_pool.clear)
+
+    def moveToSwift(self, lfc_id):
+        # Move a file to Swift so that we know it can't accidentally be
+        # retrieved from the local file system.  We set its modification
+        # time far enough in the past that it isn't considered potentially
+        # in progress.
+        path = swift.filesystem_path(lfc_id)
+        mtime = time.time() - 25 * 60 * 60
+        os.utime(path, (mtime, mtime))
+        self.assertTrue(os.path.exists(path))
+        swift.to_swift(DevNullLogger(), remove_func=os.unlink)
+        self.assertFalse(os.path.exists(path))
+
+    @defer.inlineCallbacks
+    def test_completed_fetch_reuses_connection(self):
+        # A completed fetch returns the expected data and reuses the Swift
+        # connection.
+        data = b'x' * (self.storage.CHUNK_SIZE * 4 + 1)
+        newfile = self.storage.startAddFile('file', len(data))
+        newfile.mimetype = 'text/plain'
+        newfile.append(data)
+        lfc_id, _ = newfile.store()
+        self.moveToSwift(lfc_id)
+        stream = yield self.storage.open(lfc_id)
+        self.assertIsNotNone(stream)
+        chunks = []
+        while True:
+            chunk = yield stream.read(self.storage.CHUNK_SIZE)
+            if not chunk:
+                break
+            chunks.append(chunk)
+        self.assertEqual(b''.join(chunks), data)
+        self.assertEqual(1, len(swift.connection_pool._pool))
+
+    @defer.inlineCallbacks
+    def test_partial_fetch_does_not_reuse_connection(self):
+        # If only part of a file is fetched, the Swift connection is not
+        # reused.
+        data = b'x' * self.storage.CHUNK_SIZE * 4
+        newfile = self.storage.startAddFile('file', len(data))
+        newfile.mimetype = 'text/plain'
+        newfile.append(data)
+        lfc_id, _ = newfile.store()
+        self.moveToSwift(lfc_id)
+        stream = yield self.storage.open(lfc_id)
+        self.assertIsNotNone(stream)
+        chunk = yield stream.read(self.storage.CHUNK_SIZE)
+        self.assertEqual(b'x' * self.storage.CHUNK_SIZE, chunk)
+        stream.close()
+        with ExpectedException(ValueError, 'I/O operation on closed file'):
+            yield stream.read(self.storage.CHUNK_SIZE)
+        self.assertEqual(0, len(swift.connection_pool._pool))
+
+    @defer.inlineCallbacks
+    def test_fetch_with_close_at_end_does_not_reuse_connection(self):
+        num_chunks = 4
+        data = b'x' * self.storage.CHUNK_SIZE * num_chunks
+        newfile = self.storage.startAddFile('file', len(data))
+        newfile.mimetype = 'text/plain'
+        newfile.append(data)
+        lfc_id, _ = newfile.store()
+        self.moveToSwift(lfc_id)
+        stream = yield self.storage.open(lfc_id)
+        self.assertIsNotNone(stream)
+        # Read exactly the number of chunks we expect to make up the file.
+        for _ in range(num_chunks):
+            chunk = yield stream.read(self.storage.CHUNK_SIZE)
+            self.assertEqual(b'x' * self.storage.CHUNK_SIZE, chunk)
+        # Start the read that should return an empty byte string (indicating
+        # EOF), but close the stream before finishing it.  This exercises
+        # the connection-reuse path in TxSwiftStream.read.
+        d = stream.read(self.storage.CHUNK_SIZE)
+        stream.close()
+        chunk = yield d
+        self.assertEqual(b'', chunk)
+        # In principle we might be able to reuse the connection here, but
+        # SwiftStream.close doesn't know that.
+        self.assertEqual(0, len(swift.connection_pool._pool))
