@@ -1,8 +1,7 @@
-# Copyright 2009 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 import hashlib
-import os
 import shutil
 import tempfile
 import unittest
@@ -12,7 +11,6 @@ from lp.services.librarian.model import LibraryFileContent
 from lp.services.librarianserver import db
 from lp.services.librarianserver.storage import (
     _relFileLocation,
-    _sameFile,
     LibrarianStorage,
     )
 from lp.testing.layers import LaunchpadZopelessLayer
@@ -53,49 +51,6 @@ class LibrarianStorageTestCase(unittest.TestCase):
     def test_hasFile_missing(self):
         # Make sure hasFile returns False when a file is missing
         self.assertFalse(self.storage.hasFile(9999999))
-
-    def _sameFileTestHelper(self, data1, data2):
-        # Make two temporary files
-        fd1, path1 = tempfile.mkstemp()
-        fd2, path2 = tempfile.mkstemp()
-        file1 = os.fdopen(fd1, 'wb')
-        file2 = os.fdopen(fd2, 'wb')
-
-        # Put the test data in them, and close them
-        file1.write(data1)
-        file2.write(data2)
-        file1.close()
-        file2.close()
-
-        # Do the test, and clean up afterwards
-        try:
-            return _sameFile(path1, path2)
-        finally:
-            os.remove(path1)
-            os.remove(path2)
-
-    def test_sameFile(self):
-        # Make sure sameFile returns True when the files are the same
-        self.assertTrue(
-            self._sameFileTestHelper('data ' * 5000, 'data ' * 5000))
-
-    def test_notSameFile(self):
-        # Make sure sameFile returns False when the files are different, even
-        # if they are the same length.
-        self.assertFalse(
-            self._sameFileTestHelper('data ' * 5000, 'fred ' * 5000))
-
-    def test_differentFileShorter(self):
-        # Make sure sameFile returns False when the second file is shorter
-        # than the first, even if they were the same up to that length.
-        self.assertFalse(
-            self._sameFileTestHelper('data ' * 5000, 'data ' * 4999))
-
-    def test_differentFileLonger(self):
-        # Make sure sameFile returns False when the second file is longer than
-        # the first, even if they were the same up to that length.
-        self.assertFalse(
-            self._sameFileTestHelper('data ' * 5000, 'data ' * 5001))
 
     def test_prefixDirectories(self):
         # _relFileLocation splits eight hex digits across four path segments

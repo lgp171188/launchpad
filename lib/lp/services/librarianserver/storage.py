@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -33,7 +33,6 @@ __all__ = [
     # _relFileLocation needed by other modules in this package.
     # Listed here to keep the import fascist happy
     '_relFileLocation',
-    '_sameFile',
     ]
 
 
@@ -302,18 +301,6 @@ class LibraryFileUpload(object):
         shutil.move(self.tmpfilepath, location)
         fsync_path(location)
         fsync_path(os.path.dirname(location), dir=True)
-
-
-def _sameFile(path1, path2):
-    file1 = open(path1, 'rb')
-    file2 = open(path2, 'rb')
-
-    blk = 1024 * 64
-    chunksIter = iter(lambda: (file1.read(blk), file2.read(blk)), ('', ''))
-    for chunk1, chunk2 in chunksIter:
-        if chunk1 != chunk2:
-            return False
-    return True
 
 
 def _relFileLocation(file_id):
