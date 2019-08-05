@@ -173,8 +173,9 @@ class TxSwiftStream(swift.SwiftStream):
                 # If we have drained the data successfully,
                 # the connection can be reused saving on auth
                 # handshakes.
-                swift.connection_pool.put(self._swift_connection)
-                self._swift_connection = None
+                if self._swift_connection is not None:
+                    swift.connection_pool.put(self._swift_connection)
+                    self._swift_connection = None
                 self._chunks = None
                 defer.returnValue('')
         return_chunk = self._chunk[:size]
