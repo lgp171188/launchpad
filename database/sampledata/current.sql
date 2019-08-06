@@ -1,4 +1,4 @@
--- Copyright 2010-2017 Canonical Ltd.  This software is licensed under the
+-- Copyright 2010-2019 Canonical Ltd.  This software is licensed under the
 -- GNU Affero General Public License version 3 (see the file LICENSE).
 -- Created using pg_dump (PostgreSQL) 9.3.5
 
@@ -3380,6 +3380,7 @@ INSERT INTO distributionmirror (id, distribution, name, http_base_url, ftp_base_
 INSERT INTO distributionmirror (id, distribution, name, http_base_url, ftp_base_url, rsync_base_url, displayname, description, owner, speed, country, content, official_candidate, enabled, date_created, whiteboard, status, date_reviewed, reviewer, country_dns_mirror) VALUES (8, 1, 'canonical-archive', 'http://archive.ubuntu.com/ubuntu/', NULL, NULL, NULL, NULL, 1, 70, 225, 1, true, true, '2006-10-16 18:31:43.434567', NULL, 30, NULL, NULL, false);
 INSERT INTO distributionmirror (id, distribution, name, http_base_url, ftp_base_url, rsync_base_url, displayname, description, owner, speed, country, content, official_candidate, enabled, date_created, whiteboard, status, date_reviewed, reviewer, country_dns_mirror) VALUES (9, 1, 'canonical-releases', 'http://releases.ubuntu.com/', NULL, NULL, NULL, NULL, 1, 70, 225, 2, true, true, '2006-10-16 18:31:43.434567', NULL, 30, NULL, NULL, false);
 INSERT INTO distributionmirror (id, distribution, name, http_base_url, ftp_base_url, rsync_base_url, displayname, description, owner, speed, country, content, official_candidate, enabled, date_created, whiteboard, status, date_reviewed, reviewer, country_dns_mirror) VALUES (10, 1, 'random-releases-mirror', 'http://releases.random.com/', NULL, NULL, NULL, NULL, 1, 70, 225, 2, true, true, '2006-10-16 18:31:43.434567', NULL, 10, NULL, NULL, false);
+INSERT INTO distributionmirror (id, distribution, name, http_base_url, ftp_base_url, rsync_base_url, displayname, description, owner, speed, country, content, official_candidate, enabled, date_created, whiteboard, status, date_reviewed, reviewer, country_dns_mirror) VALUES (11, 1, 'archive-redirect-mirror', 'http://localhost:11375/redirect-to-valid-mirror/', NULL, NULL, NULL, NULL, 1, 10, 9, 1, true, true, '2019-07-23 13:16:51.953354', NULL, 30, NULL, NULL, false);
 
 
 ALTER TABLE distributionmirror ENABLE TRIGGER ALL;
