@@ -1,4 +1,4 @@
-# Copyright 2009-2017 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 from datetime import datetime
@@ -148,10 +148,7 @@ def parse_file(fd, start_position, logger, get_download_key, parsed_lines=0):
                 file_downloads[day] = {}
             daily_downloads = file_downloads[day]
 
-            country_code = None
-            geoip_record = geoip.getRecordByAddress(host)
-            if geoip_record is not None:
-                country_code = geoip_record['country_code']
+            country_code = geoip.getCountryCodeByAddr(host)
             if country_code not in daily_downloads:
                 daily_downloads[country_code] = 0
             daily_downloads[country_code] += 1

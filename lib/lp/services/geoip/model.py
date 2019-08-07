@@ -41,12 +41,12 @@ class GeoIP:
         return libGeoIP.open(
             config.launchpad.geoip_database, libGeoIP.GEOIP_MEMORY_CACHE)
 
-    def getRecordByAddress(self, ip_address):
+    def getCountryCodeByAddr(self, ip_address):
         """See `IGeoIP`."""
         if not ipaddress_is_global(ip_address):
             return None
         try:
-            return self._gi.record_by_addr(ip_address)
+            return self._gi.country_code_by_addr(ip_address)
         except SystemError:
             # libGeoIP may raise a SystemError if it doesn't find a record for
             # some IP addresses (e.g. 255.255.255.255), so we need to catch
@@ -57,10 +57,9 @@ class GeoIP:
         """See `IGeoIP`."""
         if not ipaddress_is_global(ip_address):
             return None
-        geoip_record = self.getRecordByAddress(ip_address)
-        if geoip_record is None:
+        countrycode = self.getCountryCodeByAddr(ip_address)
+        if countrycode is None:
             return None
-        countrycode = geoip_record['country_code']
 
         countryset = getUtility(ICountrySet)
         try:
