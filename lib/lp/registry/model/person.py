@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Implementation classes for a Person."""
@@ -4040,6 +4040,12 @@ class PersonSet:
         # Adapt the result into a cached Person.
         columns = tuple(columns)
         raw_result = store.using(*origin).find(columns, conditions)
+        if need_api:
+            # Collections exported on the API need to be sorted in order to
+            # provide stable batching.  In some ways Person.name might make
+            # more sense, but we use the same ordering as in web UI views to
+            # minimise confusion.
+            raw_result = raw_result.order_by(Person.sortingColumns)
 
         def preload_for_people(rows):
             if need_teamowner or need_api:
