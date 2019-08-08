@@ -309,6 +309,7 @@ setup(
             'test = lp.scripts.utilities.test:main',
             'tracereport = zc.zservertracelog.tracereport:main',
             'twistd = twisted.scripts.twistd:run',
+            'version-info = lp.scripts.utilities.versioninfo:main',
             'watch_jsbuild = lp.scripts.utilities.js.watchjsbuild:main',
             'with-xvfb = lp.scripts.utilities.withxvfb:main',
         ]
