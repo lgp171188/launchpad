@@ -47,6 +47,8 @@ from lp.services.log.logger import (
     DevNullLogger,
     )
 from lp.services.scripts.base import LaunchpadScriptFailure
+from lp.services.verification.interfaces.authtoken import LoginTokenType
+from lp.services.verification.interfaces.logintoken import ILoginTokenSet
 from lp.soyuz.enums import (
     ArchiveSubscriberStatus,
     PackagePublishingStatus,
@@ -520,3 +522,21 @@ class TestCloseAccount(TestCaseWithFactory):
         self.assertRemoved(account_id, person_id)
         self.assertEqual(person, code_imports[0].registrant)
         self.assertEqual(person, code_imports[1].registrant)
+
+    def test_handles_login_token(self):
+        person = self.factory.makePerson()
+        email = '%s@another-domain.test' % person.name
+        login_token_set = getUtility(ILoginTokenSet)
+        token = login_token_set.new(
+            person, person.preferredemail.email, email,
+            LoginTokenType.VALIDATEEMAIL)
+        plaintext_token = token.token
+        self.assertEqual(token, login_token_set[plaintext_token])
+        person_id = person.id
+        account_id = person.account.id
+        script = self.makeScript([six.ensure_str(person.name)])
+        with dbuser('launchpad'):
+            self.runScript(script)
+        self.assertRemoved(account_id, person_id)
+        self.assertRaises(
+            KeyError, login_token_set.__getitem__, plaintext_token)
