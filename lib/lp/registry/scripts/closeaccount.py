@@ -256,6 +256,10 @@ def close_account(username, log):
         # concerned with being removed from our systems.
         ('EmailAddress', 'person'),
 
+        # Login tokens are no longer interesting if the user can no longer
+        # log in.
+        ('LoginToken', 'requester'),
+
         # Trash their codes of conduct and GPG keys
         ('SignedCodeOfConduct', 'owner'),
         ('GpgKey', 'owner'),
