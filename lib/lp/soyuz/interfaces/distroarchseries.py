@@ -6,6 +6,7 @@
 __metaclass__ = type
 
 __all__ = [
+    'ChrootNotPublic',
     'IDistroArchSeries',
     'InvalidChrootUploaded',
     'IPocketChroot',
@@ -53,6 +54,15 @@ from lp.soyuz.interfaces.buildrecords import IHasBuildRecords
 @error_status(httplib.BAD_REQUEST)
 class InvalidChrootUploaded(Exception):
     """Raised when the sha1sum of an uploaded chroot does not match."""
+
+
+@error_status(httplib.BAD_REQUEST)
+class ChrootNotPublic(Exception):
+    """Raised when trying to set a chroot from a private livefs build."""
+
+    def __init__(self):
+        super(Exception, self).__init__(
+            "Cannot set chroot from a private build.")
 
 
 class IDistroArchSeriesPublic(IHasBuildRecords, IHasOwner):

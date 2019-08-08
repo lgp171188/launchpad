@@ -14,6 +14,7 @@ from lazr.restfulclient.errors import (
 from zope.security.management import endInteraction
 
 from lp.buildmaster.enums import BuildBaseImageType
+from lp.registry.enums import PersonVisibility
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.services.features.testing import FeatureFixture
 from lp.soyuz.interfaces.livefs import LIVEFS_FEATURE_FLAG
@@ -93,8 +94,9 @@ class TestDistroArchSeriesWebservice(TestCaseWithFactory):
         user = das.distroseries.distribution.main_archive.owner
         webservice = launchpadlib_for("testing", user)
         ws_das = ws_object(webservice, das)
-        self.assertRaises(
+        e = self.assertRaises(
             BadRequest, ws_das.setChroot, data='zyx', sha1sum='x')
+        self.assertEqual("Chroot upload checksums do not match", e.content)
 
     def test_setChroot_missing_trailing_cr(self):
         # Due to http://bugs.python.org/issue1349106 launchpadlib sends
@@ -229,6 +231,28 @@ class TestDistroArchSeriesWebservice(TestCaseWithFactory):
         self.assertRaises(
             Unauthorized, ws_das.setChrootFromBuild,
             livefsbuild=build_url, filename="livecd.ubuntu-base.rootfs.tar.gz")
+
+    def test_setChrootFromBuild_private(self):
+        # Chroots may not be set to the output of a private livefs build.
+        self.useFixture(FeatureFixture({LIVEFS_FEATURE_FLAG: "on"}))
+        das = self.factory.makeDistroArchSeries()
+        owner = self.factory.makePerson()
+        private_team = self.factory.makeTeam(
+            owner=owner, visibility=PersonVisibility.PRIVATE)
+        login_as(owner)
+        build = self.factory.makeLiveFSBuild(
+            requester=owner, owner=private_team)
+        build_url = api_url(build)
+        build.addFile(self.factory.makeLibraryFileAlias(
+            filename="livecd.ubuntu-base.rootfs.tar.gz"))
+        user = das.distroseries.distribution.main_archive.owner
+        private_team.addMember(user, owner)
+        webservice = launchpadlib_for("testing", user)
+        ws_das = ws_object(webservice, das)
+        e = self.assertRaises(
+            BadRequest, ws_das.setChrootFromBuild,
+            livefsbuild=build_url, filename="livecd.ubuntu-base.rootfs.tar.gz")
+        self.assertEqual("Cannot set chroot from a private build.", e.content)
 
     def test_setChrootFromBuild_pocket(self):
         self.useFixture(FeatureFixture({LIVEFS_FEATURE_FLAG: "on"}))
