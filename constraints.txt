@@ -261,6 +261,7 @@ feedvalidator==0.0.0DEV-r1049
 fixtures==3.0.0
 FormEncode==1.2.4
 futures==3.2.0
+geoip2==2.9.0
 grokcore.component==1.6
 gunicorn==19.8.1
 html5browser==0.0.9
@@ -298,6 +299,7 @@ m2r==0.1.13
 manuel==1.7.2
 Markdown==2.3.1
 martian==0.11
+maxminddb==1.4.1
 meliae==0.2.0.final.0
 mistune==0.8.3
 mock==1.0.1
