@@ -209,7 +209,6 @@ class OCIRecipeBuild(PackageBuildMixin, Storm):
             return result
         raise NotFoundError(filename)
 
-
     @cachedproperty
     def eta(self):
         """The datetime when the build job is estimated to complete.
@@ -309,6 +308,38 @@ class OCIRecipeBuild(PackageBuildMixin, Storm):
             build=self, library_file=lfa, layer_file_digest=layer_file_digest)
         IMasterStore(OCIFile).add(oci_file)
         return oci_file
+
+    @property
+    def manifest(self):
+        result = Store.of(self).find(
+            (OCIFile, LibraryFileAlias, LibraryFileContent),
+            OCIFile.build == self.id,
+            LibraryFileAlias.id == OCIFile.library_file_id,
+            LibraryFileContent.id == LibraryFileAlias.contentID,
+            LibraryFileAlias.filename == 'manifest.json')
+        return result.one()
+
+    @property
+    def digests(self):
+        result = Store.of(self).find(
+            (OCIFile, LibraryFileAlias, LibraryFileContent),
+            OCIFile.build == self.id,
+            LibraryFileAlias.id == OCIFile.library_file_id,
+            LibraryFileContent.id == LibraryFileAlias.contentID,
+            LibraryFileAlias.filename == 'digests.json')
+        return result.one()
+
+    def verifySuccessfulUpload(self):
+        """See `IPackageBuild`."""
+        manifest = self.manifest
+        layer_files = Store.of(self).find(
+            OCIFile,
+            OCIFile.build == self.id,
+            OCIFile.layer_file_digest is not None)
+        layer_files_present = not layer_files.is_empty()
+        metadata_present = (self.manifest is not None
+                            and self.digests is not None)
+        return layer_files_present and metadata_present
 
 
 @implementer(IOCIRecipeBuildSet)

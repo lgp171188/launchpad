@@ -61,6 +61,7 @@ from lp.archiveuploader.nascentupload import (
     EarlyReturnUploadError,
     NascentUpload,
     )
+from lp.archiveuploader.ocirecipeupload import OCIRecipeUpload
 from lp.archiveuploader.snapupload import SnapUpload
 from lp.archiveuploader.uploadpolicy import (
     BuildDaemonUploadPolicy,
@@ -72,6 +73,7 @@ from lp.buildmaster.interfaces.buildfarmjob import ISpecificBuildFarmJobSource
 from lp.code.interfaces.sourcepackagerecipebuild import (
     ISourcePackageRecipeBuild,
     )
+from lp.oci.interfaces.ocirecipebuild import IOCIRecipeBuild
 from lp.registry.interfaces.distribution import IDistributionSet
 from lp.registry.interfaces.person import IPersonSet
 from lp.services.log.logger import BufferLogger
@@ -630,6 +632,32 @@ class BuildUploadHandler(UploadHandler):
             self.processor.ztm.abort()
             raise
 
+    def processOCIRecipeBuild(self, logger=None):
+        """Process an OCI image upload."""
+        assert IOCIRecipeBuild.providedBy(self.build)
+        if logger is None:
+            logger = self.processor.log
+        try:
+            logger.info(
+                "Processing OCI Image upload {}".format(self.upload_path))
+            OCIRecipeUpload(self.upload_path, logger).process(self.build)
+
+            if self.processor.dry_run:
+                logger.info("Dry run, aborting transaction.")
+                self.processor.ztm.abort()
+            else:
+                logger.info(
+                    "Commiting the transaction and any mails associated "
+                    "with this upload.")
+                self.processor.ztm.commit()
+            return UploadStatusEnum.ACCEPTED
+        except UploadError as e:
+            logger.error(str(e))
+            return UploadStatusEnum.REJECTED
+        except BaseException:
+            self.processor.ztm.abort()
+            raise
+
     def process(self):
         """Process an upload that is the result of a build.
 
@@ -671,6 +699,8 @@ class BuildUploadHandler(UploadHandler):
                 result = self.processLiveFS(logger)
             elif ISnapBuild.providedBy(self.build):
                 result = self.processSnap(logger)
+            elif IOCIRecipeBuild.providedBy(self.build):
+                result = self.processOCIRecipeBuild(logger)
             else:
                 self.processor.log.debug("Build %s found" % self.build.id)
                 [changes_file] = self.locateChangesFiles()
