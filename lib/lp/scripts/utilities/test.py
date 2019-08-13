@@ -27,7 +27,7 @@ from zope.testing import testrunner
 from zope.testing.testrunner import options
 
 from lp.scripts.utilities import (
-    importfascist,
+    importpedant,
     warninghandler,
     )
 from lp.services.config import config
@@ -60,8 +60,8 @@ def configure_environment():
     # lp_sitecustomize.py, which our custom sitecustomize.py ran.
     assert os.environ['STORM_CEXTENSIONS'] == '1'
 
-    # Install the import fascist import hook and atexit handler.
-    importfascist.install_import_fascist()
+    # Install the import pedant import hook and atexit handler.
+    importpedant.install_import_pedant()
 
     # Install the warning handler hook and atexit handler.
     warninghandler.install_warning_handler()
