@@ -31,7 +31,7 @@ __all__ = [
     'DuplicateFileIDError',
     'WrongDatabaseError',
     # _relFileLocation needed by other modules in this package.
-    # Listed here to keep the import fascist happy
+    # Listed here to keep the import pedant happy
     '_relFileLocation',
     ]
 
