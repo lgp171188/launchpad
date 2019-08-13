@@ -22,6 +22,8 @@ from zope.security.proxy import removeSecurityProxy
 from lp.answers.enums import QuestionStatus
 from lp.app.enums import InformationType
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
+from lp.archivepublisher.config import getPubConfig
+from lp.archivepublisher.publishing import Publisher
 from lp.bugs.model.bugsummary import BugSummary
 from lp.code.enums import TargetRevisionControlSystems
 from lp.code.tests.helpers import GitHostingFixture
@@ -53,6 +55,7 @@ from lp.soyuz.enums import (
     ArchiveSubscriberStatus,
     PackagePublishingStatus,
     )
+from lp.soyuz.model.archive import Archive
 from lp.soyuz.tests.test_publishing import SoyuzTestPublisher
 from lp.testing import TestCaseWithFactory
 from lp.testing.dbuser import dbuser
@@ -540,3 +543,62 @@ class TestCloseAccount(TestCaseWithFactory):
         self.assertRemoved(account_id, person_id)
         self.assertRaises(
             KeyError, login_token_set.__getitem__, plaintext_token)
+
+    def test_fails_on_undeleted_ppa(self):
+        person = self.factory.makePerson()
+        ppa = self.factory.makeArchive(owner=person)
+        procs = [self.factory.makeProcessor() for _ in range(2)]
+        ppa.setProcessors(procs)
+        person_id = person.id
+        account_id = person.account.id
+        script = self.makeScript([six.ensure_str(person.name)])
+        with dbuser('launchpad'):
+            self.assertRaisesWithContent(
+                LaunchpadScriptFailure,
+                'User %s is still referenced' % person.name,
+                self.runScript, script)
+        self.assertIn(
+            'ERROR User %s is still referenced by 1 archive.owner values' % (
+                person.name),
+            script.logger.getLogBuffer())
+        self.assertNotRemoved(account_id, person_id)
+
+    def test_fails_on_deleted_ppa_with_builds(self):
+        # XXX cjwatson 2019-08-09: A PPA that has ever had builds can't
+        # currently be purged.  It's not clear what to do about this case.
+        person = self.factory.makePerson()
+        ppa = self.factory.makeArchive(owner=person)
+        self.factory.makeBinaryPackageBuild(archive=ppa)
+        ppa.delete(person)
+        Publisher(
+            DevNullLogger(), getPubConfig(ppa), None, ppa).deleteArchive()
+        person_id = person.id
+        account_id = person.account.id
+        script = self.makeScript([six.ensure_str(person.name)])
+        with dbuser('launchpad'):
+            self.assertRaisesWithContent(
+                LaunchpadScriptFailure,
+                "Can't delete non-trivial PPAs for user %s" % person.name,
+                self.runScript, script)
+        self.assertNotRemoved(account_id, person_id)
+
+    def test_handles_empty_deleted_ppa(self):
+        person = self.factory.makePerson()
+        ppa = self.factory.makeArchive(owner=person)
+        ppa_id = ppa.id
+        other_ppa = self.factory.makeArchive()
+        other_ppa_id = other_ppa.id
+        procs = [self.factory.makeProcessor() for _ in range(2)]
+        ppa.setProcessors(procs)
+        ppa.delete(person)
+        Publisher(
+            DevNullLogger(), getPubConfig(ppa), None, ppa).deleteArchive()
+        store = Store.of(ppa)
+        person_id = person.id
+        account_id = person.account.id
+        script = self.makeScript([six.ensure_str(person.name)])
+        with dbuser('launchpad'):
+            self.runScript(script)
+        self.assertRemoved(account_id, person_id)
+        self.assertIsNone(store.get(Archive, ppa_id))
+        self.assertEqual(other_ppa, store.get(Archive, other_ppa_id))
