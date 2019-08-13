@@ -204,7 +204,7 @@ class MailingList(SQLBase):
                      default=MailingListStatus.APPROVED,
                      notNull=True)
 
-    # Use a trailing underscore because SQLObject/importfascist doesn't like
+    # Use a trailing underscore because SQLObject/importpedant doesn't like
     # the typical leading underscore.
     welcome_message_ = StringCol(default=None, dbName='welcome_message')
 

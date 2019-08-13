@@ -114,8 +114,8 @@ class attrsgetter:
         return tuple(getattr(obj, name) for name in self.names)
 
 
-class JackbootError(ImportError):
-    """Import Fascist says you can't make this import."""
+class PedantDisagreesError(ImportError):
+    """Import Pedant says you can't make this import."""
 
     def __init__(self, import_into, name, *args):
         ImportError.__init__(self, import_into, name, *args)
@@ -123,14 +123,14 @@ class JackbootError(ImportError):
         self.name = name
 
     def format_message(self):
-        return 'Generic JackbootError: %s imported into %s' % (
+        return 'Generic PedantDisagreesError: %s imported into %s' % (
             self.name, self.import_into)
 
     def __str__(self):
         return self.format_message()
 
 
-class DatabaseImportPolicyViolation(JackbootError):
+class DatabaseImportPolicyViolation(PedantDisagreesError):
     """Database code is imported directly into other code."""
 
     def format_message(self):
@@ -138,7 +138,7 @@ class DatabaseImportPolicyViolation(JackbootError):
             self.name, self.import_into)
 
 
-class FromStarPolicyViolation(JackbootError):
+class FromStarPolicyViolation(PedantDisagreesError):
     """import * from a module that has no __all__."""
 
     def format_message(self):
@@ -146,11 +146,11 @@ class FromStarPolicyViolation(JackbootError):
                 ' (in %s)' % (self.name, self.import_into))
 
 
-class NotInModuleAllPolicyViolation(JackbootError):
+class NotInModuleAllPolicyViolation(PedantDisagreesError):
     """import of a name that does not appear in a module's __all__."""
 
     def __init__(self, import_into, name, attrname):
-        JackbootError.__init__(self, import_into, name, attrname)
+        PedantDisagreesError.__init__(self, import_into, name, attrname)
         self.attrname = attrname
 
     def format_message(self):
@@ -159,11 +159,11 @@ class NotInModuleAllPolicyViolation(JackbootError):
                 (self.attrname, self.import_into, self.name))
 
 
-class NotFoundPolicyViolation(JackbootError):
+class NotFoundPolicyViolation(PedantDisagreesError):
     """import of zope.exceptions.NotFoundError into lp models modules."""
 
     def __init__(self, import_into):
-        JackbootError.__init__(self, import_into, '')
+        PedantDisagreesError.__init__(self, import_into, '')
 
     def format_message(self):
         return ('%s\nDo not import zope.exceptions.NotFoundError.\n'
@@ -174,7 +174,7 @@ class NotFoundPolicyViolation(JackbootError):
 # The names of the arguments form part of the interface of __import__(...),
 # and must not be changed, as code may choose to invoke __import__ using
 # keyword arguments - e.g. the encodings module in Python 2.6.
-def import_fascist(name, globals={}, locals={}, fromlist=[], level=-1):
+def import_pedant(name, globals={}, locals={}, fromlist=[], level=-1):
     global naughty_imports
 
     module = original_import(name, globals, locals, fromlist, level)
@@ -316,6 +316,6 @@ def report_naughty_imports():
                     print "   ", import_into
 
 
-def install_import_fascist():
-    __builtin__.__import__ = import_fascist
+def install_import_pedant():
+    __builtin__.__import__ = import_pedant
     atexit.register(report_naughty_imports)
