@@ -6,6 +6,7 @@
 __metaclass__ = type
 __all__ = ['CloseAccountScript']
 
+from storm.exceptions import IntegrityError
 from storm.expr import (
     LeftJoin,
     Lower,
@@ -40,8 +41,12 @@ from lp.services.scripts.base import (
     LaunchpadScript,
     LaunchpadScriptFailure,
     )
-from lp.soyuz.enums import ArchiveSubscriberStatus
+from lp.soyuz.enums import (
+    ArchiveStatus,
+    ArchiveSubscriberStatus,
+    )
 from lp.soyuz.interfaces.archivesubscriber import IArchiveSubscriberSet
+from lp.soyuz.model.archive import Archive
 from lp.soyuz.model.archivesubscriber import ArchiveSubscriber
 
 
@@ -363,6 +368,22 @@ def close_account(username, log):
         """, (person.id,))
     table_notification('HWSubmission')
     store.find(HWSubmission, HWSubmission.ownerID == person.id).remove()
+
+    # Purge deleted PPAs.  This is safe because the archive can only be in
+    # the DELETED status if the publisher has removed it from disk and set
+    # all its publications to DELETED.
+    # XXX cjwatson 2019-08-09: This will fail if anything non-trivial has
+    # been done in this person's PPAs; and it's not obvious what to do in
+    # more complicated cases such as builds having been copied out
+    # elsewhere.  It's good enough for some simple cases, though.
+    try:
+        store.find(
+            Archive,
+            Archive.owner == person,
+            Archive.status == ArchiveStatus.DELETED).remove()
+    except IntegrityError:
+        raise LaunchpadScriptFailure(
+            "Can't delete non-trivial PPAs for user %s" % person_name)
 
     has_references = False
 
