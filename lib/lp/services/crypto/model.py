@@ -27,10 +27,6 @@ from lp.services.crypto.interfaces import (
     )
 
 
-def _make_public_key(public_key_bytes):
-    pass
-
-
 @implementer(IEncryptedContainer)
 class NaClEncryptedContainerBase:
     """A container that can encrypt and decrypt data using NaCl.
