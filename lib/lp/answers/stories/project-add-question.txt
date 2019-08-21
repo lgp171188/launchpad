@@ -9,6 +9,11 @@ the product the question is about, so we ask the user to select one.
 Secondly, without knowing the product, we cannot show the which of the
 user's preferred languages are supported.
 
+Make the test browser look like it's coming from an arbitrary South African
+IP address, since we'll use that later.
+
+    >>> user_browser.addHeader('X_FORWARDED_FOR', '196.36.161.227')
+
 
 Ask a question about a Product in a ProjectGroup
 ------------------------------------------------

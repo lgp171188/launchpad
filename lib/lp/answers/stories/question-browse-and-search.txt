@@ -3,6 +3,11 @@
 This story describes some common use cases about using the browsing and
 searching features of the Answer Tracker.
 
+Make the test browser look like it's coming from an arbitrary South African
+IP address, since we'll use that later.
+
+    >>> browser.addHeader('X_FORWARDED_FOR', '196.36.161.227')
+
 
 == When Nobody Uses the Answer Tracker ==
 

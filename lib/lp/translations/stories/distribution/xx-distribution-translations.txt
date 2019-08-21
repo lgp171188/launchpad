@@ -5,6 +5,11 @@ This page shows a list of PO templates contained within all source
 packages for the distroseries that is the translation focus for a
 given distribution.
 
+Make the test browser look like it's coming from an arbitrary South African
+IP address, since we'll use that later.
+
+    >>> browser.addHeader('X_FORWARDED_FOR', '196.36.161.227')
+
 We can reach it from the main distribution page:
 
     >>> browser.open('http://launchpad.test/ubuntu')
