@@ -82,6 +82,18 @@ class TestLineParsing(TestCase):
         self.assertEqual(
             request, 'GET /10133748/cramfsswap_1.4.1.tar.gz HTTP/1.0')
 
+    def test_parsing_line_with_ipv6_address(self):
+        # IPv6 addresses in the hostname field are parsed.
+        line = (r'2001:67c:1560:8003::8003 - - [25/Jan/2009:15:48:07 +0000] '
+                r'"GET /10133748/cramfsswap_1.4.1.tar.gz HTTP/1.0" 200 12341 '
+                r'"http://foo.bar/baz" "Mozilla/5.0"')
+        host, date, status, request = get_host_date_status_and_request(line)
+        self.assertEqual(host, '2001:67c:1560:8003::8003')
+        self.assertEqual(date, '[25/Jan/2009:15:48:07 +0000]')
+        self.assertEqual(status, '200')
+        self.assertEqual(
+            request, 'GET /10133748/cramfsswap_1.4.1.tar.gz HTTP/1.0')
+
     def test_day_extraction(self):
         date = '[13/Jun/2008:18:38:57 +0100]'
         self.assertEqual(get_day(date), datetime(2008, 6, 13))

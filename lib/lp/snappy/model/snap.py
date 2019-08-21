@@ -6,6 +6,7 @@ __all__ = [
     'Snap',
     ]
 
+import base64
 from collections import OrderedDict
 from datetime import (
     datetime,
@@ -100,6 +101,8 @@ from lp.registry.model.distroseries import DistroSeries
 from lp.registry.model.series import ACTIVE_STATUSES
 from lp.registry.model.teammembership import TeamParticipation
 from lp.services.config import config
+from lp.services.crypto.interfaces import IEncryptedContainer
+from lp.services.crypto.model import NaClEncryptedContainerBase
 from lp.services.database.bulk import load_related
 from lp.services.database.constants import (
     DEFAULT,
@@ -602,9 +605,18 @@ class Snap(Storm, WebhookTargetMixin):
                     "beginAuthorization must be called before "
                     "completeAuthorization.")
         if discharge_macaroon is not None:
-            self.store_secrets["discharge"] = discharge_macaroon
+            container = getUtility(IEncryptedContainer, "snap-store-secrets")
+            if container.can_encrypt:
+                self.store_secrets["discharge_encrypted"] = (
+                    removeSecurityProxy(container.encrypt(
+                        discharge_macaroon.encode("UTF-8"))))
+                self.store_secrets.pop("discharge", None)
+            else:
+                self.store_secrets["discharge"] = discharge_macaroon
+                self.store_secrets.pop("discharge_encrypted", None)
         else:
             self.store_secrets.pop("discharge", None)
+            self.store_secrets.pop("discharge_encrypted", None)
 
     @property
     def can_upload_to_store(self):
@@ -617,7 +629,8 @@ class Snap(Storm, WebhookTargetMixin):
             return False
         root_macaroon = Macaroon.deserialize(self.store_secrets["root"])
         if (self.extractSSOCaveats(root_macaroon) and
-                "discharge" not in self.store_secrets):
+                "discharge" not in self.store_secrets and
+                "discharge_encrypted" not in self.store_secrets):
             return False
         return True
 
@@ -1415,3 +1428,23 @@ class SnapSet:
     def empty_list(self):
         """See `ISnapSet`."""
         return []
+
+
+@implementer(IEncryptedContainer)
+class SnapStoreSecretsEncryptedContainer(NaClEncryptedContainerBase):
+
+    @property
+    def public_key_bytes(self):
+        if config.snappy.store_secrets_public_key is not None:
+            return base64.b64decode(
+                config.snappy.store_secrets_public_key.encode("UTF-8"))
+        else:
+            return None
+
+    @property
+    def private_key_bytes(self):
+        if config.snappy.store_secrets_private_key is not None:
+            return base64.b64decode(
+                config.snappy.store_secrets_private_key.encode("UTF-8"))
+        else:
+            return None

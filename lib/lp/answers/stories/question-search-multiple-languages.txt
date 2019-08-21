@@ -3,6 +3,12 @@
 By default, only questions written in English or one of the user
 preferred languages are listed and searched.
 
+Make the test browsers look like they're coming from an arbitrary South
+African IP address, since we'll use that later.
+
+    >>> anon_browser.addHeader('X_FORWARDED_FOR', '196.36.161.227')
+    >>> user_browser.addHeader('X_FORWARDED_FOR', '196.36.161.227')
+
 
 == Anonymous searching ==
 
@@ -29,10 +35,9 @@ information.
     ...     print(question.find('a').renderContents())
     Installation failed
 
-The questions match the languages inferred from by GeoIP
-127.0.0.1 is mapped to South Africa in the test suite. The language
-control shows the intersection of the user's languages and the
-languages of the target's questions. In this example:
+The questions match the languages inferred from GeoIP (South Africa in
+this case). The language control shows the intersection of the user's
+languages and the languages of the target's questions. In this example:
 set(['af', 'en', 'st', 'xh', 'zu']) & set(['en', 'es']) == set(en).
 
     >>> sorted(anon_browser.getControl(name='field.language').options)
@@ -113,6 +118,10 @@ The mozilla-firefox sourcepackage only has English questions. When the
 anonymous user makes a request from a GeoIP that has no languages
 mapped, we assume they speak the default language of English.
 
+    >>> for pos, (key, _) in enumerate(anon_browser.mech_browser.addheaders):
+    ...     if key == 'X_FORWARDED_FOR':
+    ...         del anon_browser.mech_browser.addheaders[pos]
+    ...         break
     >>> anon_browser.addHeader('X_FORWARDED_FOR', '172.16.1.1')
     >>> anon_browser.open(
     ...     'http://launchpad.test/ubuntu/+source/mozilla-firefox/+questions')
@@ -166,6 +175,10 @@ languages and the target's question languages is 'en'.
 When the project languages are just English, and the user speaks
 that language, we do not show the language controls.
 
+    >>> for pos, (key, _) in enumerate(user_browser.mech_browser.addheaders):
+    ...     if key == 'X_FORWARDED_FOR':
+    ...         del user_browser.mech_browser.addheaders[pos]
+    ...         break
     >>> user_browser.addHeader('X_FORWARDED_FOR', '172.16.1.1')
     >>> user_browser.open(
     ...     'http://launchpad.test/ubuntu/+source/mozilla-firefox/+questions')

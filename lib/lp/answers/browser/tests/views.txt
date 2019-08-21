@@ -573,14 +573,14 @@ When the user has not configured their preferred languages, the vocabulary
 will contain languages from the HTTP request, or the most likely
 interesting languages based on GeoIP information.
 
-For example, if the user doesn't log in and their browser is configured to
-accept Brazilian Portuguese, the vocabulary will contain the languages
-spoken in South Africa (because the 127.0.0.1 IP address is mapped to
-South Africa in the tests).
+For example, if the user doesn't log in, their browser is configured to
+accept Brazilian Portuguese, and their request appears to come from a South
+African IP address, the vocabulary will contain the languages spoken in
+South Africa.
 
     >>> login(ANONYMOUS)
     >>> request = LaunchpadTestRequest(
-    ...     HTTP_ACCEPT_LANGUAGE='pt_BR')
+    ...     HTTP_ACCEPT_LANGUAGE='pt_BR', REMOTE_ADDR='196.36.161.227')
     >>> from lp.answers.browser.question import (
     ...     QuestionLanguageVocabularyFactory)
     >>> view = getMultiAdapter((firefox, request), name='+addticket')
@@ -676,7 +676,7 @@ languages configured in the browser, plus other inferred from the GeoIP
 database.
 
     >>> request = LaunchpadTestRequest(
-    ...     HTTP_ACCEPT_LANGUAGE='fr, en_CA')
+    ...     HTTP_ACCEPT_LANGUAGE='fr, en_CA', REMOTE_ADDR='196.36.161.227')
 
     >>> login(ANONYMOUS)
     >>> view = UserSupportLanguagesView(None, request)

@@ -30,6 +30,10 @@ from zope.interface import implementer
 from zope.security.proxy import removeSecurityProxy
 
 from lp.services.config import config
+from lp.services.crypto.interfaces import (
+    CryptoError,
+    IEncryptedContainer,
+    )
 from lp.services.features import getFeatureFlag
 from lp.services.memcache.interfaces import IMemcacheClient
 from lp.services.scripts import log
@@ -154,6 +158,45 @@ class MacaroonAuth(requests.auth.AuthBase):
         return r
 
 
+def _get_discharge_macaroon_raw(snap):
+    """Get the serialised discharge macaroon for a snap, if any.
+
+    This copes with either unencrypted (the historical default) or encrypted
+    macaroons.
+    """
+    if snap.store_secrets is None:
+        raise AssertionError("snap.store_secrets is None")
+    if "discharge_encrypted" in snap.store_secrets:
+        container = getUtility(IEncryptedContainer, "snap-store-secrets")
+        try:
+            return container.decrypt(
+                snap.store_secrets["discharge_encrypted"]).decode("UTF-8")
+        except CryptoError as e:
+            raise UnauthorizedUploadResponse(
+                "Failed to decrypt discharge macaroon: %s" % e)
+    else:
+        return snap.store_secrets.get("discharge")
+
+
+def _set_discharge_macaroon_raw(snap, discharge_macaroon_raw):
+    """Set the serialised discharge macaroon for a snap.
+
+    The macaroon is encrypted if possible.
+    """
+    # Set a new dict here to avoid problems with security proxies.
+    new_secrets = dict(snap.store_secrets)
+    container = getUtility(IEncryptedContainer, "snap-store-secrets")
+    if container.can_encrypt:
+        new_secrets["discharge_encrypted"] = (
+            removeSecurityProxy(container.encrypt(
+                discharge_macaroon_raw.encode("UTF-8"))))
+        new_secrets.pop("discharge", None)
+    else:
+        new_secrets["discharge"] = discharge_macaroon_raw
+        new_secrets.pop("discharge_encrypted", None)
+    snap.store_secrets = new_secrets
+
+
 # Hardcoded fallback.
 _default_store_channels = [
     {"name": "candidate", "display_name": "Candidate"},
@@ -257,6 +300,7 @@ class SnapStoreClient:
         snap = snapbuild.snap
         assert config.snappy.store_url is not None
         assert snap.store_name is not None
+        assert snap.store_secrets is not None
         assert snapbuild.date_started is not None
         upload_url = urlappend(config.snappy.store_url, "dev/api/snap-push/")
         data = {
@@ -276,12 +320,11 @@ class SnapStoreClient:
         # XXX cjwatson 2016-05-09: This should add timeline information, but
         # that's currently difficult in jobs.
         try:
-            assert snap.store_secrets is not None
             response = urlfetch(
                 upload_url, method="POST", json=data,
                 auth=MacaroonAuth(
                     snap.store_secrets["root"],
-                    snap.store_secrets.get("discharge")))
+                    _get_discharge_macaroon_raw(snap)))
             response_data = response.json()
             return response_data["status_details_url"]
         except requests.HTTPError as e:
@@ -312,18 +355,20 @@ class SnapStoreClient:
         assert snap.store_secrets is not None
         refresh_url = urlappend(
             config.launchpad.openid_provider_root, "api/v2/tokens/refresh")
-        data = {"discharge_macaroon": snap.store_secrets["discharge"]}
+        discharge_macaroon_raw = _get_discharge_macaroon_raw(snap)
+        if discharge_macaroon_raw is None:
+            raise UnauthorizedUploadResponse(
+                "Tried to refresh discharge for snap with no discharge "
+                "macaroon")
+        data = {"discharge_macaroon": discharge_macaroon_raw}
         try:
             response = urlfetch(refresh_url, method="POST", json=data)
-            response_data = response.json()
-            if "discharge_macaroon" not in response_data:
-                raise BadRefreshResponse(response.text)
-            # Set a new dict here to avoid problems with security proxies.
-            new_secrets = dict(snap.store_secrets)
-            new_secrets["discharge"] = response_data["discharge_macaroon"]
-            snap.store_secrets = new_secrets
         except requests.HTTPError as e:
             raise cls._makeSnapStoreError(BadRefreshResponse, e)
+        response_data = response.json()
+        if "discharge_macaroon" not in response_data:
+            raise BadRefreshResponse(response.text)
+        _set_discharge_macaroon_raw(snap, response_data["discharge_macaroon"])
 
     @classmethod
     def refreshIfNecessary(cls, snap, f, *args, **kwargs):

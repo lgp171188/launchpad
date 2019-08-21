@@ -1,5 +1,10 @@
 = DistributionSourcePackage translations =
 
+Make the test browser look like it's coming from an arbitrary South African
+IP address, since we'll use that later.
+
+    >>> anon_browser.addHeader('X_FORWARDED_FOR', '196.36.161.227')
+
 This page directs users to SourcePackage translations pages.
 
     >>> anon_browser.open(
