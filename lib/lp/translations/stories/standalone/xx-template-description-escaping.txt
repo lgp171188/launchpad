@@ -1,3 +1,8 @@
+Make the test browser look like it's coming from an arbitrary South African
+IP address, since we'll use that later.
+
+    >>> user_browser.addHeader('X_FORWARDED_FOR', '196.36.161.227')
+
     >>> import re
     >>> from zope.security.proxy import removeSecurityProxy
     >>> from lp.app.enums import ServiceUsage

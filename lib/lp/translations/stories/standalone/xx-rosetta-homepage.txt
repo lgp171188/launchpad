@@ -14,6 +14,11 @@ Set up
     >>> logout()
     >>> transaction.commit()
 
+Make the test browser look like it's coming from an arbitrary South African
+IP address, since we'll use that later.
+
+    >>> browser.addHeader('X_FORWARDED_FOR', '196.36.161.227')
+
 The front page
 --------------
 
