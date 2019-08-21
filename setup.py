@@ -164,6 +164,7 @@ setup(
         'gunicorn[gthread]',
         'html5browser',
         'importlib-resources',
+        'ipaddress',
         'ipython',
         'jsautobuild',
         'launchpad-buildd',
