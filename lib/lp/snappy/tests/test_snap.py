@@ -1682,15 +1682,25 @@ class TestSnapSet(TestCaseWithFactory):
         snaps = []
         for store_name in store_names:
             for owner in owners:
-                snaps.append(self.factory.makeSnap(
-                    registrant=owner, owner=owner, store_name=store_name))
+                for private in (False, True):
+                    snaps.append(self.factory.makeSnap(
+                        registrant=owner, owner=owner, private=private,
+                        store_name=store_name))
         snaps.append(self.factory.makeSnap())
         self.assertContentEqual(
-            snaps[:2], getUtility(ISnapSet).findByStoreName(store_names[0]))
-        self.assertContentEqual(
-            [snaps[0]],
-            getUtility(ISnapSet).findByStoreName(
-                store_names[0], owner=owners[0]))
+            [snaps[0], snaps[2]],
+            getUtility(ISnapSet).findByStoreName(store_names[0]))
+        with person_logged_in(owners[0]):
+            self.assertContentEqual(
+                snaps[:2],
+                getUtility(ISnapSet).findByStoreName(
+                    store_names[0], owner=owners[0],
+                    visible_by_user=owners[0]))
+            self.assertContentEqual(
+                [snaps[2]],
+                getUtility(ISnapSet).findByStoreName(
+                    store_names[0], owner=owners[1],
+                    visible_by_user=owners[0]))
 
     def test_getSnapcraftYaml_bzr_snap_snapcraft_yaml(self):
         def getInventory(unique_name, dirname, *args, **kwargs):
