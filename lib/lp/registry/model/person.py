@@ -4030,9 +4030,17 @@ class PersonSet:
             columns.extend(valid_stuff["tables"])
             decorators.extend(valid_stuff["decorators"])
         if need_icon:
-            IconAlias = ClassAlias(LibraryFileAlias, "LibraryFileAlias")
+            IconAlias = ClassAlias(LibraryFileAlias, "IconAlias")
             origin.append(LeftJoin(IconAlias, Person.icon == IconAlias.id))
             columns.append(IconAlias)
+        if need_api:
+            LogoAlias = ClassAlias(LibraryFileAlias, "LogoAlias")
+            MugshotAlias = ClassAlias(LibraryFileAlias, "MugshotAlias")
+            origin.extend([
+                LeftJoin(LogoAlias, Person.logo == LogoAlias.id),
+                LeftJoin(MugshotAlias, Person.mugshot == MugshotAlias.id),
+                ])
+            columns.extend([LogoAlias, MugshotAlias])
         if len(columns) == 1:
             column = columns[0]
             # Return a simple ResultSet
@@ -4088,6 +4096,17 @@ class PersonSet:
                 column = row[index]
                 index += 1
                 decorator(result, column)
+            if need_icon:
+                icon = row[index]
+                index += 1
+                cache.icon = icon
+            if need_api:
+                logo = row[index]
+                index += 1
+                cache.logo = logo
+                mugshot = row[index]
+                index += 1
+                cache.mugshot = mugshot
             return result
         return DecoratedResultSet(raw_result,
             pre_iter_hook=preload_for_people,
