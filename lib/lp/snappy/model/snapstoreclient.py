@@ -178,6 +178,25 @@ def _get_discharge_macaroon_raw(snap):
         return snap.store_secrets.get("discharge")
 
 
+def _set_discharge_macaroon_raw(snap, discharge_macaroon_raw):
+    """Set the serialised discharge macaroon for a snap.
+
+    The macaroon is encrypted if possible.
+    """
+    # Set a new dict here to avoid problems with security proxies.
+    new_secrets = dict(snap.store_secrets)
+    container = getUtility(IEncryptedContainer, "snap-store-secrets")
+    if container.can_encrypt:
+        new_secrets["discharge_encrypted"] = (
+            removeSecurityProxy(container.encrypt(
+                discharge_macaroon_raw.encode("UTF-8"))))
+        new_secrets.pop("discharge", None)
+    else:
+        new_secrets["discharge"] = discharge_macaroon_raw
+        new_secrets.pop("discharge_encrypted", None)
+    snap.store_secrets = new_secrets
+
+
 # Hardcoded fallback.
 _default_store_channels = [
     {"name": "candidate", "display_name": "Candidate"},
@@ -344,23 +363,12 @@ class SnapStoreClient:
         data = {"discharge_macaroon": discharge_macaroon_raw}
         try:
             response = urlfetch(refresh_url, method="POST", json=data)
-            response_data = response.json()
-            if "discharge_macaroon" not in response_data:
-                raise BadRefreshResponse(response.text)
-            # Set a new dict here to avoid problems with security proxies.
-            new_secrets = dict(snap.store_secrets)
-            container = getUtility(IEncryptedContainer, "snap-store-secrets")
-            if container.can_encrypt:
-                new_secrets["discharge_encrypted"] = (
-                    removeSecurityProxy(container.encrypt(
-                        response_data["discharge_macaroon"].encode("UTF-8"))))
-                new_secrets.pop("discharge", None)
-            else:
-                new_secrets["discharge"] = response_data["discharge_macaroon"]
-                new_secrets.pop("discharge_encrypted", None)
-            snap.store_secrets = new_secrets
         except requests.HTTPError as e:
             raise cls._makeSnapStoreError(BadRefreshResponse, e)
+        response_data = response.json()
+        if "discharge_macaroon" not in response_data:
+            raise BadRefreshResponse(response.text)
+        _set_discharge_macaroon_raw(snap, response_data["discharge_macaroon"])
 
     @classmethod
     def refreshIfNecessary(cls, snap, f, *args, **kwargs):
