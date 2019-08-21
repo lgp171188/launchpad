@@ -78,6 +78,7 @@
                 <a class="sprite branch"
                   tal:attributes="href apphomes/code">Code hosting</a>
                 using <a href="http://bazaar.canonical.com/">Bazaar</a>
+                and <a href="https://git-scm.com/">Git</a>
               </li>
               <li>
                 <a class="sprite yes"
