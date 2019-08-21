@@ -7,6 +7,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 
+import base64
 from datetime import (
     datetime,
     timedelta,
@@ -21,6 +22,7 @@ from fixtures import (
     MockPatch,
     )
 import iso8601
+from nacl.public import PrivateKey
 from pymacaroons import Macaroon
 import pytz
 import responses
@@ -67,6 +69,7 @@ from lp.registry.interfaces.distribution import IDistributionSet
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.registry.interfaces.series import SeriesStatus
 from lp.services.config import config
+from lp.services.crypto.interfaces import IEncryptedContainer
 from lp.services.database.constants import (
     ONE_DAY_AGO,
     UTC_NOW,
@@ -3231,6 +3234,37 @@ class TestSnapWebservice(TestCaseWithFactory):
         self.assertEqual(200, response.status)
         with person_logged_in(self.person):
             self.assertEqual({"root": "dummy-root"}, snap.store_secrets)
+
+    def test_completeAuthorization_encrypted(self):
+        private_key = PrivateKey.generate()
+        self.pushConfig(
+            "snappy",
+            store_secrets_public_key=base64.b64encode(
+                bytes(private_key.public_key)).decode("UTF-8"))
+        with admin_logged_in():
+            snappy_series = self.factory.makeSnappySeries()
+        snap = self.factory.makeSnap(
+            registrant=self.person, store_upload=True,
+            store_series=snappy_series,
+            store_name=self.factory.getUniqueUnicode(),
+            store_secrets={"root": "dummy-root"})
+        snap_url = api_url(snap)
+        logout()
+        response = self.webservice.named_post(
+            snap_url, "completeAuthorization",
+            discharge_macaroon="dummy-discharge")
+        self.assertEqual(200, response.status)
+        self.pushConfig(
+            "snappy",
+            store_secrets_private_key=base64.b64encode(
+                bytes(private_key)).decode("UTF-8"))
+        container = getUtility(IEncryptedContainer, "snap-store-secrets")
+        with person_logged_in(self.person):
+            self.assertThat(snap.store_secrets, MatchesDict({
+                "root": Equals("dummy-root"),
+                "discharge_encrypted": AfterPreprocessing(
+                    container.decrypt, Equals("dummy-discharge")),
+                }))
 
     def makeBuildableDistroArchSeries(self, **kwargs):
         das = self.factory.makeDistroArchSeries(**kwargs)
