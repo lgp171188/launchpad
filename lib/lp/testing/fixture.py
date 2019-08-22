@@ -13,6 +13,7 @@ __all__ = [
     'Urllib2Fixture',
     'ZopeAdapterFixture',
     'ZopeEventHandlerFixture',
+    'ZopeUtilityFixture',
     'ZopeViewReplacementFixture',
     ]
 
