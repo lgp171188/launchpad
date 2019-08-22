@@ -84,22 +84,16 @@ class SigningUpload(CustomUpload):
 
     def getSeriesPath(self, signingroot, key_name, archive, autokey):
         # If there are no series, use the one at the root of the filesystem
-        if not archive.distribution.series:
+        # autokeys are generally created manually, so use the root
+        if not archive.distribution.series or autokey:
             return os.path.join(signingroot, key_name)
-        # If we are creating the key, we don't care if it exists
-        if autokey:
-            return os.path.join(
-                signingroot,
-                archive.distribution.series[0].name,
-                key_name,
-                )
         # Walk the series backwards, looking for a key
         for series in archive.distribution.series:
             path = os.path.join(
                 signingroot,
                 series.name,
                 key_name
-            )
+                )
             if os.path.exists(path):
                 return path
         # If we have exhausted all available series, return the root
