@@ -315,7 +315,7 @@ def _gpgAuthenticateEmail(mail, principal, person,
             canonicalise_line_endings(mail.signedContent), signature)
         log.debug("got signature %r" % sig)
     except GPGVerificationError as e:
-        # verifySignature failed to verify the signature.
+        # getVerifiedSignature failed to verify the signature.
         message = "Signature couldn't be verified: %s" % e
         log.debug(message)
         raise InvalidSignature(message)

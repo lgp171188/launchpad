@@ -172,7 +172,7 @@ basically checking we pass the right arguments to it.
     >>> from zope.component import getUtility
     >>> from lp.services.gpg.interfaces import IGPGHandler
     >>> gpghandler = getUtility(IGPGHandler)
-    >>> sig = gpghandler.verifySignature(content)
+    >>> sig = gpghandler.getVerifiedSignature(content)
 
     >>> sig.fingerprint == packager.gpg_key_fingerprint[2:]
     True
