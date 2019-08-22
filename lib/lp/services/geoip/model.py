@@ -10,6 +10,8 @@ __all__ = [
 import os
 
 import GeoIP as libGeoIP
+from geoip2.database import Reader
+from geoip2.errors import AddressNotFoundError
 from zope.component import getUtility
 from zope.i18n.interfaces import IUserPreferredLanguages
 from zope.interface import implementer
@@ -38,20 +40,29 @@ class GeoIP:
         if not os.path.exists(config.launchpad.geoip_database):
             raise NoGeoIPDatabaseFound(
                 "No GeoIP DB found. Please install launchpad-dependencies.")
-        return libGeoIP.open(
-            config.launchpad.geoip_database, libGeoIP.GEOIP_MEMORY_CACHE)
+        if config.launchpad.geoip_database.endswith('.mmdb'):
+            return Reader(config.launchpad.geoip_database)
+        else:
+            return libGeoIP.open(
+                config.launchpad.geoip_database, libGeoIP.GEOIP_MEMORY_CACHE)
 
     def getCountryCodeByAddr(self, ip_address):
         """See `IGeoIP`."""
         if not ipaddress_is_global(ip_address):
             return None
-        try:
-            return self._gi.country_code_by_addr(ip_address)
-        except SystemError:
-            # libGeoIP may raise a SystemError if it doesn't find a record for
-            # some IP addresses (e.g. 255.255.255.255), so we need to catch
-            # that and return None here.
-            return None
+        if isinstance(self._gi, Reader):
+            try:
+                return self._gi.country(ip_address).country.iso_code
+            except AddressNotFoundError:
+                return None
+        else:
+            try:
+                return self._gi.country_code_by_addr(ip_address)
+            except SystemError:
+                # libGeoIP may raise a SystemError if it doesn't find a
+                # record for some IP addresses (e.g. 255.255.255.255), so we
+                # need to catch that and return None here.
+                return None
 
     def getCountryByAddr(self, ip_address):
         """See `IGeoIP`."""
