@@ -1244,7 +1244,7 @@ class SnapSet:
             snaps.order_by(Desc(Snap.date_last_modified))
         return snaps
 
-    def _findByURLVisibilityClause(self, visible_by_user):
+    def _findSnapVisibilityClause(self, visible_by_user):
         # XXX cjwatson 2016-11-25: This is in principle a poor query, but we
         # don't yet have the access grant infrastructure to do better, and
         # in any case the numbers involved should be very small.
@@ -1266,7 +1266,7 @@ class SnapSet:
         clauses = [Snap.git_repository_url == url]
         if owner is not None:
             clauses.append(Snap.owner == owner)
-        clauses.append(self._findByURLVisibilityClause(visible_by_user))
+        clauses.append(self._findSnapVisibilityClause(visible_by_user))
         return IStore(Snap).find(Snap, *clauses)
 
     def findByURLPrefix(self, url_prefix, owner=None, visible_by_user=None):
@@ -1283,7 +1283,15 @@ class SnapSet:
         clauses = [Or(*prefix_clauses)]
         if owner is not None:
             clauses.append(Snap.owner == owner)
-        clauses.append(self._findByURLVisibilityClause(visible_by_user))
+        clauses.append(self._findSnapVisibilityClause(visible_by_user))
+        return IStore(Snap).find(Snap, *clauses)
+
+    def findByStoreName(self, store_name, owner=None, visible_by_user=None):
+        """See `ISnapSet`."""
+        clauses = [Snap.store_name == store_name]
+        if owner is not None:
+            clauses.append(Snap.owner == owner)
+        clauses.append(self._findSnapVisibilityClause(visible_by_user))
         return IStore(Snap).find(Snap, *clauses)
 
     def preloadDataForSnaps(self, snaps, user=None):

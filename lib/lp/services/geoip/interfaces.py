@@ -14,8 +14,8 @@ __all__ = [
 class IGeoIP(Interface):
     """The GeoIP utility, which represents the GeoIP database."""
 
-    def getRecordByAddress(ip_address):
-        """Return the GeoIP record for the given IP address, or None."""
+    def getCountryCodeByAddr(ip_address):
+        """Return the country code for the given IP address, or None."""
 
     def getCountryByAddr(ip_address):
         """Find and return an ICountry based on the given IP address.

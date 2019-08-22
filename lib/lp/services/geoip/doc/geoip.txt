@@ -37,32 +37,19 @@ We do the same trick for any IP addresses on private networks.
     >>> print(geoip.getCountryByAddr('fc00::1'))
     None
 
-IGeoIP also provides a getRecordByAddress() method, which returns a dict
-containing a bunch more information about that IP's location.
+IGeoIP also provides a getCountryCodeByAddr() method, which returns just the
+country code without looking it up in the database.
 
-    >>> record = geoip.getRecordByAddress('201.13.165.145')
-    >>> for key, value in sorted(record.items()):
-    ...     print "%s: %s" % (key, value)
-    area_code: ...
-    city: ...
-    country_code: BR
-    country_code3: BRA
-    country_name: Brazil
-    dma_code: ...
-    latitude: ...
-    longitude: ...
-    postal_code: ...
-    region: ...
-    region_name: ...
-    time_zone: ...
+    >>> print(geoip.getCountryCodeByAddr('201.13.165.145'))
+    BR
 
 And again we'll return None if the address is private.
 
-    >>> print(geoip.getRecordByAddress('127.0.0.1'))
+    >>> print(geoip.getCountryCodeByAddr('127.0.0.1'))
     None
 
 If it can't find a GeoIP record for the given IP address, it will return
 None.
 
-    >>> print geoip.getRecordByAddress('255.255.255.255')
+    >>> print(geoip.getCountryCodeByAddr('255.255.255.255'))
     None

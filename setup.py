@@ -161,6 +161,7 @@ setup(
         'feedparser',
         'feedvalidator',
         'fixtures',
+        'geoip2',
         'gunicorn[gthread]',
         'html5browser',
         'importlib-resources',
