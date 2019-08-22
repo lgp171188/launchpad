@@ -11,7 +11,6 @@ from testtools.matchers import (
     Equals,
     IsInstance,
     MatchesAll,
-    MatchesDict,
     MatchesListwise,
     MatchesSetwise,
     MatchesStructure,
@@ -193,25 +192,18 @@ class TestGitAPIMixin:
                                 permissions, macaroon_raw=None):
         auth_params = _make_auth_params(requester, macaroon_raw=macaroon_raw)
         translated_path = removeSecurityProxy(repository).getInternalPath()
-        if all(isinstance(ref_path, bytes) for ref_path in ref_paths):
-            ref_paths = [
-                xmlrpc_client.Binary(ref_path) for ref_path in ref_paths]
-            results = self.git_api.checkRefPermissions(
-                translated_path, ref_paths, auth_params)
-            self.assertThat(results, MatchesSetwise(*(
-                MatchesListwise([
-                    MatchesAll(
-                        IsInstance(xmlrpc_client.Binary),
-                        MatchesStructure.byEquality(data=ref_path)),
-                    Equals(ref_permissions),
-                    ])
-                for ref_path, ref_permissions in permissions.items())))
-        else:
-            results = self.git_api.checkRefPermissions(
-                translated_path, ref_paths, auth_params)
-            self.assertThat(results, MatchesDict({
-                ref_path: Equals(ref_permissions)
-                for ref_path, ref_permissions in permissions.items()}))
+        ref_paths = [
+            xmlrpc_client.Binary(ref_path) for ref_path in ref_paths]
+        results = self.git_api.checkRefPermissions(
+            translated_path, ref_paths, auth_params)
+        self.assertThat(results, MatchesSetwise(*(
+            MatchesListwise([
+                MatchesAll(
+                    IsInstance(xmlrpc_client.Binary),
+                    MatchesStructure.byEquality(data=ref_path)),
+                Equals(ref_permissions),
+                ])
+            for ref_path, ref_permissions in permissions.items())))
 
     def test_translatePath_private_repository(self):
         requester = self.factory.makePerson()
@@ -380,10 +372,10 @@ class TestGitAPIMixin:
             rule=rule, grantee=stable_team, can_create=True)
 
         test_ref_paths = [
-            'refs/heads/stable/next', 'refs/heads/stable/protected',
-            'refs/heads/stable/foo', 'refs/heads/archived/foo',
-            'refs/heads/foo/next', 'refs/heads/unprotected',
-            'refs/tags/1.0',
+            b'refs/heads/stable/next', b'refs/heads/stable/protected',
+            b'refs/heads/stable/foo', b'refs/heads/archived/foo',
+            b'refs/heads/foo/next', b'refs/heads/unprotected',
+            b'refs/tags/1.0',
         ]
 
         return (user_a, user_b, user_c, stable_team, next_team, repository,
@@ -391,76 +383,52 @@ class TestGitAPIMixin:
 
     def test_checkRefPermissions_scenario_one_user_a(self):
         user_a, _, _, _, _, repo, paths = self._make_scenario_one_repository()
-
-        results = self.git_api.checkRefPermissions(
-            repo.getInternalPath(),
-            paths,
-            {'uid': user_a.id})
-
-        self.assertThat(results, MatchesDict({
-            'refs/heads/stable/next': Equals(['push', 'force_push']),
-            'refs/heads/stable/protected': Equals(['create', 'push']),
-            'refs/heads/stable/foo': Equals(['create', 'push']),
-            'refs/heads/archived/foo': Equals([]),
-            'refs/heads/foo/next': Equals(['create', 'push']),
-            'refs/heads/unprotected': Equals(['create', 'push', 'force_push']),
-            'refs/tags/1.0': Equals(['create']),
-        }))
+        self.assertHasRefPermissions(user_a, repo, paths, {
+            b'refs/heads/stable/next': ['push', 'force_push'],
+            b'refs/heads/stable/protected': ['create', 'push'],
+            b'refs/heads/stable/foo': ['create', 'push'],
+            b'refs/heads/archived/foo': [],
+            b'refs/heads/foo/next': ['create', 'push'],
+            b'refs/heads/unprotected': ['create', 'push', 'force_push'],
+            b'refs/tags/1.0': ['create'],
+            })
 
     def test_checkRefPermissions_scenario_one_user_b(self):
         _, user_b, _, _, _, repo, paths = self._make_scenario_one_repository()
-
-        results = self.git_api.checkRefPermissions(
-            repo.getInternalPath(),
-            paths,
-            {'uid': user_b.id})
-
-        self.assertThat(results, MatchesDict({
-            'refs/heads/stable/next': Equals(['push', 'force_push']),
-            'refs/heads/stable/protected': Equals([]),
-            'refs/heads/stable/foo': Equals(['push']),
-            'refs/heads/archived/foo': Equals(['create']),
-            'refs/heads/foo/next': Equals(['push', 'force_push']),
-            'refs/heads/unprotected': Equals([]),
-            'refs/tags/1.0': Equals(['create']),
-        }))
+        self.assertHasRefPermissions(user_b, repo, paths, {
+            b'refs/heads/stable/next': ['push', 'force_push'],
+            b'refs/heads/stable/protected': [],
+            b'refs/heads/stable/foo': ['push'],
+            b'refs/heads/archived/foo': ['create'],
+            b'refs/heads/foo/next': ['push', 'force_push'],
+            b'refs/heads/unprotected': [],
+            b'refs/tags/1.0': ['create'],
+            })
 
     def test_checkRefPermissions_scenario_one_user_c(self):
         _, _, user_c, _, _, repo, paths = self._make_scenario_one_repository()
-
-        results = self.git_api.checkRefPermissions(
-            repo.getInternalPath(),
-            paths,
-            {'uid': user_c.id})
-
-        self.assertThat(results, MatchesDict({
-            'refs/heads/stable/next': Equals(['push', 'force_push']),
-            'refs/heads/stable/protected': Equals([]),
-            'refs/heads/stable/foo': Equals([]),
-            'refs/heads/archived/foo': Equals([]),
-            'refs/heads/foo/next': Equals(['push', 'force_push']),
-            'refs/heads/unprotected': Equals([]),
-            'refs/tags/1.0': Equals([]),
-        }))
+        self.assertHasRefPermissions(user_c, repo, paths, {
+            b'refs/heads/stable/next': ['push', 'force_push'],
+            b'refs/heads/stable/protected': [],
+            b'refs/heads/stable/foo': [],
+            b'refs/heads/archived/foo': [],
+            b'refs/heads/foo/next': ['push', 'force_push'],
+            b'refs/heads/unprotected': [],
+            b'refs/tags/1.0': [],
+            })
 
     def test_checkRefPermissions_scenario_one_user_d(self):
         user_d = self.factory.makePerson()
-        _, _, user_c, _, _, repo, paths = self._make_scenario_one_repository()
-
-        results = self.git_api.checkRefPermissions(
-            repo.getInternalPath(),
-            paths,
-            {'uid': user_d.id})
-
-        self.assertThat(results, MatchesDict({
-            'refs/heads/stable/next': Equals([]),
-            'refs/heads/stable/protected': Equals([]),
-            'refs/heads/stable/foo': Equals([]),
-            'refs/heads/archived/foo': Equals([]),
-            'refs/heads/foo/next': Equals([]),
-            'refs/heads/unprotected': Equals([]),
-            'refs/tags/1.0': Equals([]),
-        }))
+        _, _, _, _, _, repo, paths = self._make_scenario_one_repository()
+        self.assertHasRefPermissions(user_d, repo, paths, {
+            b'refs/heads/stable/next': [],
+            b'refs/heads/stable/protected': [],
+            b'refs/heads/stable/foo': [],
+            b'refs/heads/archived/foo': [],
+            b'refs/heads/foo/next': [],
+            b'refs/heads/unprotected': [],
+            b'refs/tags/1.0': [],
+            })
 
     def _make_scenario_two_repository(self):
         user_a = self.factory.makePerson()
@@ -485,52 +453,37 @@ class TestGitAPIMixin:
         self.factory.makeGitRuleGrant(
             rule=rule, grantee=user_b, can_push=True)
 
-        test_ref_paths = ['refs/heads/master', 'refs/heads/foo',
-                          'refs/tags/1.0', 'refs/other']
+        test_ref_paths = [b'refs/heads/master', b'refs/heads/foo',
+                          b'refs/tags/1.0', b'refs/other']
         return user_a, user_b, repository, test_ref_paths
 
     def test_checkRefPermissions_scenario_two_user_a(self):
         user_a, _, repo, paths = self._make_scenario_two_repository()
-        results = self.git_api.checkRefPermissions(
-            repo.getInternalPath(),
-            paths,
-            {'uid': user_a.id})
-
-        self.assertThat(results, MatchesDict({
-            'refs/heads/master': Equals(['create', 'push', 'force_push']),
-            'refs/heads/foo': Equals(['create', 'push', 'force_push']),
-            'refs/tags/1.0': Equals(['create', 'push']),
-            'refs/other': Equals(['create', 'push', 'force_push']),
-        }))
+        self.assertHasRefPermissions(user_a, repo, paths, {
+            b'refs/heads/master': ['create', 'push', 'force_push'],
+            b'refs/heads/foo': ['create', 'push', 'force_push'],
+            b'refs/tags/1.0': ['create', 'push'],
+            b'refs/other': ['create', 'push', 'force_push'],
+            })
 
     def test_checkRefPermissions_scenario_two_user_b(self):
         _, user_b, repo, paths = self._make_scenario_two_repository()
-        results = self.git_api.checkRefPermissions(
-            repo.getInternalPath(),
-            paths,
-            {'uid': user_b.id})
-
-        self.assertThat(results, MatchesDict({
-            'refs/heads/master': Equals(['push']),
-            'refs/heads/foo': Equals([]),
-            'refs/tags/1.0': Equals(['push']),
-            'refs/other': Equals([]),
-        }))
+        self.assertHasRefPermissions(user_b, repo, paths, {
+            b'refs/heads/master': ['push'],
+            b'refs/heads/foo': [],
+            b'refs/tags/1.0': ['push'],
+            b'refs/other': [],
+            })
 
     def test_checkRefPermissions_scenario_two_user_c(self):
         _, _, repo, paths = self._make_scenario_two_repository()
         user_c = self.factory.makePerson()
-        results = self.git_api.checkRefPermissions(
-            repo.getInternalPath(),
-            paths,
-            {'uid': user_c.id})
-
-        self.assertThat(results, MatchesDict({
-            'refs/heads/master': Equals([]),
-            'refs/heads/foo': Equals([]),
-            'refs/tags/1.0': Equals([]),
-            'refs/other': Equals([]),
-        }))
+        self.assertHasRefPermissions(user_c, repo, paths, {
+            b'refs/heads/master': [],
+            b'refs/heads/foo': [],
+            b'refs/tags/1.0': [],
+            b'refs/other': [],
+            })
 
     def test_checkRefPermissions_bytes(self):
         owner = self.factory.makePerson()
@@ -555,26 +508,6 @@ class TestGitAPIMixin:
         login(ANONYMOUS)
         self.assertHasRefPermissions(
             no_privileges, repository, paths, {path: [] for path in paths})
-
-    def test_checkRefPermissions_unicode(self):
-        # Actual Unicode ref paths work too.
-        # XXX cjwatson 2018-11-21: Remove this when the transition to the
-        # new protocol is complete.
-        owner = self.factory.makePerson()
-        grantee = self.factory.makePerson()
-        no_privileges = self.factory.makePerson()
-        repository = removeSecurityProxy(
-            self.factory.makeGitRepository(owner=owner))
-        self.factory.makeGitRuleGrant(
-            repository=repository, ref_pattern=u"refs/heads/next/*",
-            grantee=grantee, can_push=True)
-        path = u"refs/heads/next/\N{SNOWMAN}"
-
-        self.assertHasRefPermissions(
-            grantee, repository, [path], {path: ["push"]})
-        login(ANONYMOUS)
-        self.assertHasRefPermissions(
-            no_privileges, repository, [path], {path: []})
 
     def test_checkRefPermissions_nonexistent_repository(self):
         requester = self.factory.makePerson()
@@ -1245,7 +1178,7 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
         macaroons = [
             removeSecurityProxy(issuer).issueMacaroon(job) for job in jobs]
         repository = code_imports[0].git_repository
-        ref_path = "refs/heads/master"
+        ref_path = b"refs/heads/master"
         self.assertHasRefPermissions(
             LAUNCHPAD_SERVICES, repository, [ref_path], {ref_path: []},
             macaroon_raw=macaroons[0].serialize())
@@ -1292,7 +1225,7 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
         macaroons = [
             removeSecurityProxy(issuer).issueMacaroon(job) for job in jobs]
         repository = code_imports[0].git_repository
-        ref_path = "refs/heads/master"
+        ref_path = b"refs/heads/master"
         self.assertHasRefPermissions(
             LAUNCHPAD_SERVICES, repository, [ref_path], {ref_path: []},
             macaroon_raw=macaroons[0].serialize())

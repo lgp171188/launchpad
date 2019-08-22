@@ -74,7 +74,7 @@ class FakeLibraryFileAlias:
     def __init__(self, filename):
         self.filename = filename
         self.content = FakeLibraryFileContent(filename)
-        self.http_url = 'http://librarian.dev/%s' % filename
+        self.http_url = 'http://librarian.test/%s' % filename
 
 
 class FakePocketChroot:
@@ -174,7 +174,7 @@ class TestDispatchBuildToSlave(TestCase):
         # files, and then to start the build.
         expected_calls = [
             ('ensurepresent',
-             'http://librarian.dev/%s' % chroot_filename, '', ''),
+             'http://librarian.test/%s' % chroot_filename, '', ''),
             ('ensurepresent', 'http://host/bar.tar', 'admin', 'sekrit'),
             ('ensurepresent', 'http://host/foo.dsc', '', ''),
             ('build', 'PACKAGEBUILD-1', 'foobuild',

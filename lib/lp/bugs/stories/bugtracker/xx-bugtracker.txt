@@ -4,7 +4,7 @@ External bug trackers
 Launchpad can link to bugs in external bug trackers. The list of bug
 trackers Launchpad knows about is accessible from the Bugs front page.
 
-    >>> user_browser.open('http://bugs.launchpad.dev/')
+    >>> user_browser.open('http://bugs.launchpad.test/')
     >>> user_browser.getLink('bug trackers').click()
     >>> user_browser.title
     'Bug trackers registered in Launchpad'
@@ -13,7 +13,7 @@ Anyone logged in is able to register a new bug tracker.
 
     >>> user_browser.getLink('Register another bug tracker').click()
     >>> user_browser.url
-    'http://bugs.launchpad.dev/bugs/bugtrackers/+newbugtracker'
+    'http://bugs.launchpad.test/bugs/bugtrackers/+newbugtracker'
 
     >>> print(user_browser.title)
     Register an external bug tracker...
@@ -22,7 +22,7 @@ In case the user gets cold feet, there is always a cancel link that
 takes them back to the bug tracker listing page.
 
     >>> user_browser.getLink('Cancel').url
-    'http://bugs.launchpad.dev/bugs/bugtrackers'
+    'http://bugs.launchpad.test/bugs/bugtrackers'
 
 Supported external bug tracker types include Bugzilla, Debbugs, Roundup,
 SourceForge and Trac. We don't provide all of these as options to the
@@ -58,7 +58,7 @@ aren't allowed.
     >>> user_browser.getControl('Add').click()
 
     >>> user_browser.url
-    'http://bugs.launchpad.dev/bugs/bugtrackers/+newbugtracker'
+    'http://bugs.launchpad.test/bugs/bugtrackers/+newbugtracker'
 
     >>> for message in find_tags_by_class(user_browser.contents, 'message'):
     ...     print(extract_text(message))
@@ -74,7 +74,7 @@ is informed about it.
     >>> user_browser.getControl('Add').click()
 
     >>> user_browser.url
-    'http://bugs.launchpad.dev/bugs/bugtrackers/+newbugtracker'
+    'http://bugs.launchpad.test/bugs/bugtrackers/+newbugtracker'
 
     >>> for message in find_tags_by_class(user_browser.contents, 'message'):
     ...     print(extract_text(message))
@@ -101,7 +101,7 @@ we'll dig directly to the database.
     >>> user_browser.getControl('Add').click()
 
     >>> user_browser.url
-    'http://bugs.launchpad.dev/bugs/bugtrackers/+newbugtracker'
+    'http://bugs.launchpad.test/bugs/bugtrackers/+newbugtracker'
 
     >>> for message in find_tags_by_class(user_browser.contents, 'message'):
     ...     print(extract_text(message))
@@ -116,7 +116,7 @@ to the bug tracker page.
     >>> user_browser.getControl('Add').click()
 
     >>> user_browser.url
-    'http://bugs.launchpad.dev/bugs/bugtrackers/testmantis'
+    'http://bugs.launchpad.test/bugs/bugtrackers/testmantis'
 
     >>> print(user_browser.title)
     Test Mantis Tracker : Bug trackers
@@ -130,10 +130,10 @@ to the bug tracker page.
 For Email Address bug trackers, we show the upstream email address as
 the location of the bug tracker, but obfuscate it for anonymous users:
 
-    >>> user_browser.open('http://launchpad.dev/bugs/bugtrackers/email')
+    >>> user_browser.open('http://launchpad.test/bugs/bugtrackers/email')
     >>> user_bugtracker_url_list = find_tag_by_id(
     ...     user_browser.contents, 'bugtracker-urls')
-    >>> anon_browser.open('http://launchpad.dev/bugs/bugtrackers/email')
+    >>> anon_browser.open('http://launchpad.test/bugs/bugtrackers/email')
     >>> anon_bugtracker_url_list = find_tag_by_id(
     ...     anon_browser.contents, 'bugtracker-urls')
 
@@ -147,7 +147,7 @@ The `Summary` and `Contact Details` fields are optional - creating a
 bugtracker without them is acceptable.
 
     >>> user_browser.open(
-    ...     'http://launchpad.dev/bugs/bugtrackers/+newbugtracker')
+    ...     'http://launchpad.test/bugs/bugtrackers/+newbugtracker')
     >>> user_browser.getControl('Name').value = 'test-bugzilla'
     >>> user_browser.getControl('Title').value = 'Test Bugzilla'
     >>> user_browser.getControl('Bug Tracker Type').value = ['Bugzilla']
@@ -155,7 +155,7 @@ bugtracker without them is acceptable.
     ...     'http://bugzilla.example.org/')
     >>> user_browser.getControl('Add').click()
     >>> user_browser.url
-    'http://bugs.launchpad.dev/bugs/bugtrackers/test-bugzilla'
+    'http://bugs.launchpad.test/bugs/bugtrackers/test-bugzilla'
 
     >>> login('test@canonical.com')
     >>> bugtrackerset = getUtility(IBugTrackerSet)
@@ -169,7 +169,7 @@ If we try to add a bugtracker with the same name of a existing one,
 we'll get a nice error message.
 
     >>> user_browser.open(
-    ...     'http://launchpad.dev/bugs/bugtrackers/+newbugtracker')
+    ...     'http://launchpad.test/bugs/bugtrackers/+newbugtracker')
 
     >>> user_browser.getControl('Name').value = 'testmantis'
     >>> user_browser.getControl(
@@ -188,11 +188,11 @@ we'll get a nice error message.
 
 We can edit the details of the newly added bugtracker.
 
-    >>> user_browser.open('http://launchpad.dev/bugs/bugtrackers/testmantis/')
+    >>> user_browser.open('http://launchpad.test/bugs/bugtrackers/testmantis/')
     >>> user_browser.getLink('Change details').click()
 
     >>> user_browser.url
-    'http://bugs.launchpad.dev/bugs/bugtrackers/testmantis/+edit'
+    'http://bugs.launchpad.test/bugs/bugtrackers/testmantis/+edit'
 
     >>> print(user_browser.title)
     Change details for the...
@@ -207,7 +207,7 @@ We can edit the details of the newly added bugtracker.
 There is a cancel link if we change our mind:
 
     >>> user_browser.getLink('Cancel').url
-    'http://bugs.launchpad.dev/bugs/bugtrackers/testmantis'
+    'http://bugs.launchpad.test/bugs/bugtrackers/testmantis'
 
 It's not possible to change the base URL to something that another bug
 tracker uses.
@@ -217,7 +217,7 @@ tracker uses.
     >>> user_browser.getControl('Change').click()
 
     >>> user_browser.url
-    'http://bugs.launchpad.dev/bugs/bugtrackers/testmantis/+edit'
+    'http://bugs.launchpad.test/bugs/bugtrackers/testmantis/+edit'
 
     >>> print_feedback_messages(user_browser.contents)
     There is 1 error.
@@ -251,7 +251,7 @@ bugtracker name is reflected in the url.
     >>> user_browser.getControl('Change').click()
 
     >>> user_browser.url
-    'http://bugs.launchpad.dev/bugs/bugtrackers/testbugzilla'
+    'http://bugs.launchpad.test/bugs/bugtrackers/testbugzilla'
 
 And now the test tracker should have been updated:
 
@@ -272,7 +272,7 @@ But we forgot, the URL we need actually uses the https scheme. It's easy
 to change.
 
     >>> user_browser.open(
-    ...     'http://launchpad.dev/bugs/bugtrackers/testbugzilla')
+    ...     'http://launchpad.test/bugs/bugtrackers/testbugzilla')
     >>> print(extract_text(find_tag_by_id(
     ...         user_browser.contents, 'bugtracker-urls')))
     http://trac.example.org/tickets
@@ -300,7 +300,7 @@ primary Location is used to access the remote bug tracker.
 They're added on the normal Change Details page.
 
     >>> user_browser.open(
-    ...     'http://launchpad.dev/bugs/bugtrackers/testbugzilla')
+    ...     'http://launchpad.test/bugs/bugtrackers/testbugzilla')
     >>> user_browser.getLink('Change details').click()
 
     >>> user_browser.getControl('Location aliases').value = (
@@ -317,7 +317,7 @@ It's not possible to add an alias that already refers to another
 bugtracker.
 
     >>> user_browser.open(
-    ...     'http://launchpad.dev/bugs/bugtrackers/testbugzilla/+edit')
+    ...     'http://launchpad.test/bugs/bugtrackers/testbugzilla/+edit')
     >>> user_browser.getControl('Location aliases').value = (
     ...     'http://bugzilla.mozilla.org/')
     >>> user_browser.getControl('Change').click()
@@ -349,7 +349,7 @@ If the user inadvertently enters one or more invalid URLs, they are
 shown informative error messages.
 
     >>> user_browser.open(
-    ...     'http://launchpad.dev/bugs/bugtrackers/testbugzilla/+edit')
+    ...     'http://launchpad.test/bugs/bugtrackers/testbugzilla/+edit')
     >>> user_browser.getControl('Location aliases').value = (
     ...     b'ξνεr been http://fishing?')
     >>> user_browser.getControl('Change').click()
@@ -367,7 +367,7 @@ The Delete button is in the Change Details page. But first we need an
 example bug tracker:
 
     >>> user_browser.open(
-    ...     'http://launchpad.dev/bugs/bugtrackers/+newbugtracker')
+    ...     'http://launchpad.test/bugs/bugtrackers/+newbugtracker')
     >>> user_browser.getControl('Name').value = 'freddy'
     >>> user_browser.getControl('Title').value = "Freddy's Bugs"
     >>> user_browser.getControl('Location').value = (
@@ -378,13 +378,13 @@ Being brand-new and pristine, there will be nothing to prevent its
 deletion yet:
 
     >>> user_browser.url
-    'http://bugs.launchpad.dev/bugs/bugtrackers/freddy'
+    'http://bugs.launchpad.test/bugs/bugtrackers/freddy'
 
     >>> user_browser.getLink('Change details').click()
     >>> user_browser.getControl('Delete').click()
 
     >>> user_browser.url
-    'http://bugs.launchpad.dev/bugs/bugtrackers'
+    'http://bugs.launchpad.test/bugs/bugtrackers'
 
     >>> print_feedback_messages(user_browser.contents)
     Freddy&#x27;s Bugs has been deleted.
@@ -414,7 +414,7 @@ button is not displayed and a list of reasons are shown.
 The first and second restrictions both apply to the GNOME Bugzilla:
 
     >>> user_browser.open(
-    ...     'http://launchpad.dev/bugs/bugtrackers/gnome-bugzilla/+edit')
+    ...     'http://launchpad.test/bugs/bugtrackers/gnome-bugzilla/+edit')
     >>> print(extract_text(find_tag_by_id(
     ...     user_browser.contents, 'bugtracker-delete-not-possible-reasons')))
     Please note, this bug tracker cannot be deleted because:
@@ -438,7 +438,7 @@ The second, third and fourth restrictions apply to the Debian Bug
 Tracker:
 
     >>> user_browser.open(
-    ...     'http://launchpad.dev/bugs/bugtrackers/debbugs/+edit')
+    ...     'http://launchpad.test/bugs/bugtrackers/debbugs/+edit')
 
     >>> print(extract_text(find_tag_by_id(
     ...     user_browser.contents, 'bugtracker-delete-not-possible-reasons')))
@@ -456,7 +456,7 @@ on. A more privileged user would not stumble at the second hurdle,
 deleting bug watches en masse:
 
     >>> admin_browser.open(
-    ...     'http://launchpad.dev/bugs/bugtrackers/debbugs/+edit')
+    ...     'http://launchpad.test/bugs/bugtrackers/debbugs/+edit')
     >>> print(extract_text(find_tag_by_id(
     ...     admin_browser.contents, 'bugtracker-delete-not-possible-reasons')))
     Please note, this bug tracker cannot be deleted because:
@@ -478,7 +478,7 @@ misbehave and cause a lot of noise in the checkwatches output.
 Ordinary users can't disable a bug tracker.
 
     >>> user_browser.open(
-    ...     'http://launchpad.dev/bugs/bugtrackers/debbugs/+edit')
+    ...     'http://launchpad.test/bugs/bugtrackers/debbugs/+edit')
     >>> user_browser.getControl(name='field.active')
     Traceback (most recent call last):
       ...
@@ -487,7 +487,7 @@ Ordinary users can't disable a bug tracker.
 But admins can.
 
     >>> admin_browser.open(
-    ...     'http://launchpad.dev/bugs/bugtrackers/debbugs/+edit')
+    ...     'http://launchpad.test/bugs/bugtrackers/debbugs/+edit')
     >>> admin_browser.getControl(name='field.active').value = ['Off']
     >>> admin_browser.getControl('Change').click()
 
@@ -498,7 +498,7 @@ But admins can.
 If a user looks at a disabled bug tracker they'll see a message
 notifying them that it has been disabled.
 
-    >>> user_browser.open('http://launchpad.dev/bugs/bugtrackers/debbugs')
+    >>> user_browser.open('http://launchpad.test/bugs/bugtrackers/debbugs')
     >>> message = find_tag_by_id(user_browser.contents, 'inactive-message')
     >>> print(extract_text(message))
     Bug watch updates for Debian Bug tracker are disabled.
@@ -507,14 +507,14 @@ And if the users views a bug with a watch against a disabled bug tracker
 they'll see a notification telling them that the bug tracker has been
 disabled.
 
-    >>> user_browser.open('http://launchpad.dev/bugs/15')
+    >>> user_browser.open('http://launchpad.test/bugs/15')
     >>> print_feedback_messages(user_browser.contents)
     Bug watch updates for Debian Bug tracker are disabled.
 
 Inactive bug trackers are displayed in a separate table from the active
 ones on the bug tracker index page.
 
-    >>> user_browser.open('http://launchpad.dev/bugs/bugtrackers')
+    >>> user_browser.open('http://launchpad.test/bugs/bugtrackers')
     >>> inactive_trackers_table = find_tag_by_id(
     ...     user_browser.contents, 'inactive-trackers')
     >>> print(extract_text(inactive_trackers_table))
@@ -524,7 +524,7 @@ ones on the bug tracker index page.
 The admin can re-activate the bug tracker.
 
     >>> admin_browser.open(
-    ...     'http://launchpad.dev/bugs/bugtrackers/debbugs/+edit')
+    ...     'http://launchpad.test/bugs/bugtrackers/debbugs/+edit')
     >>> admin_browser.getControl(name='field.active').value = ['On']
     >>> admin_browser.getControl('Change').click()
 
@@ -534,14 +534,14 @@ The admin can re-activate the bug tracker.
 
 The user will no longer see any messages.
 
-    >>> user_browser.open('http://launchpad.dev/bugs/bugtrackers/debbugs')
+    >>> user_browser.open('http://launchpad.test/bugs/bugtrackers/debbugs')
     >>> message = find_tag_by_id(user_browser.contents, 'inactive-message')
     >>> print(message)
     None
 
 The message won't appear on the bug pages either.
 
-    >>> user_browser.open('http://launchpad.dev/bugs/15')
+    >>> user_browser.open('http://launchpad.test/bugs/15')
     >>> print_feedback_messages(user_browser.contents)
 
 And the inactive bug trackers table will have disappeared since there
@@ -559,7 +559,7 @@ Overview pages
 When looking at a bug tracker page, a list of bug watches is displayed:
 
     >>> anon_browser.open(
-    ...     'http://launchpad.dev/bugs/bugtrackers/debbugs')
+    ...     'http://launchpad.test/bugs/bugtrackers/debbugs')
     >>> print(extract_text(find_tag_by_id(
     ...     anon_browser.contents, 'latestwatches')))
     Launchpad bug  Remote bug  Status  Last check  Next check
@@ -583,7 +583,7 @@ Scheduling any of the watches will change their "Next check" column.
     >>> logout()
 
     >>> anon_browser.open(
-    ...     'http://launchpad.dev/bugs/bugtrackers/debbugs')
+    ...     'http://launchpad.test/bugs/bugtrackers/debbugs')
     >>> print(extract_text(find_tag_by_id(
     ...     anon_browser.contents, 'latestwatches')))
     Launchpad bug  Remote bug  Status  Last check  Next check
@@ -602,12 +602,12 @@ details are displayed. For example, when a bug watch is associated with
 a private bug:
 
     >>> admin_browser.open(
-    ...     'http://launchpad.dev/debian/+source/mozilla-firefox/+bug/3/+secrecy')
+    ...     'http://launchpad.test/debian/+source/mozilla-firefox/+bug/3/+secrecy')
     >>> admin_browser.getControl('Private', index=1).selected = True
     >>> admin_browser.getControl('Change').click()
 
     >>> anon_browser.open(
-    ...     'http://launchpad.dev/bugs/bugtrackers/debbugs')
+    ...     'http://launchpad.test/bugs/bugtrackers/debbugs')
     >>> print(extract_text(find_tag_by_id(
     ...     anon_browser.contents, 'latestwatches')))
     Launchpad bug                      Remote bug  Status...
@@ -645,7 +645,7 @@ anonymous users.
 First we must create a new bug watch on an Email Address bug tracker:
 
     >>> user_browser.open(
-    ...     'http://bugs.launchpad.dev'
+    ...     'http://bugs.launchpad.test'
     ...     '/jokosher/+bug/12/+choose-affected-product')
     >>> user_browser.getControl('Project').value = 'gnome-terminal'
     >>> user_browser.getControl('Continue').click()
@@ -670,14 +670,14 @@ Then we can see how logged-in users and anonymous users see the page:
     ...             (remote_bug.a and remote_bug.a.get('href'))))
 
     >>> user_browser.open(
-    ...     'http://launchpad.dev/bugs/bugtrackers/email')
+    ...     'http://launchpad.test/bugs/bugtrackers/email')
     >>> print_watches(user_browser)
     #12:
     Copy, Cut and Delete operations should work on selections
       --> &mdash;: mailto:bugs@example.com
 
     >>> anon_browser.open(
-    ...     'http://launchpad.dev/bugs/bugtrackers/email')
+    ...     'http://launchpad.test/bugs/bugtrackers/email')
     >>> print_watches(anon_browser)
     #12:
     Copy, Cut and Delete operations should work on selections
@@ -689,7 +689,7 @@ Info portlet
 Some information about the bug tracker is displayed in a portlet on the
 bug tracker page.
 
-    >>> user_browser.open('http://launchpad.dev/bugs/bugtrackers/email')
+    >>> user_browser.open('http://launchpad.test/bugs/bugtrackers/email')
     >>> print(extract_text(find_portlet(
     ...     user_browser.contents, 'Details')))
     Details
@@ -703,7 +703,7 @@ bug tracker page.
 If the user is not logged in, email addresses in the Location field
 above are obfuscated:
 
-    >>> anon_browser.open('http://launchpad.dev/bugs/bugtrackers/email')
+    >>> anon_browser.open('http://launchpad.test/bugs/bugtrackers/email')
     >>> print(extract_text(find_portlet(
     ...     anon_browser.contents, 'Details')))
     Details
@@ -714,7 +714,7 @@ above are obfuscated:
 If the bug tracker has contact details, they will be shown:
 
     >>> anon_browser.open(
-    ...     'http://bugs.launchpad.dev/bugs/bugtrackers/gnome-bugzilla')
+    ...     'http://bugs.launchpad.test/bugs/bugtrackers/gnome-bugzilla')
     >>> print(extract_text(find_portlet(
     ...     anon_browser.contents, 'Details')))
     Details

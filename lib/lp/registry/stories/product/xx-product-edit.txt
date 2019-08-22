@@ -5,10 +5,10 @@ Product Edit and Administer
 Page to edit a product - does the page load as the product owner?
 
     >>> browser = setupBrowser(auth='Basic test@canonical.com:test')
-    >>> browser.open('http://launchpad.dev/firefox')
+    >>> browser.open('http://launchpad.test/firefox')
     >>> browser.getLink('Change details').click()
     >>> print browser.url
-    http://launchpad.dev/firefox/+edit
+    http://launchpad.test/firefox/+edit
 
     >>> print browser.title
     Change Mozilla Firefox's details...
@@ -31,7 +31,7 @@ Now we try to edit with a project that exists.
     >>> browser.getControl('Part of', index=0).value = 'gnome'
     >>> browser.getControl(name='field.actions.change').click()
     >>> print browser.url
-    http://launchpad.dev/firefox
+    http://launchpad.test/firefox
 
 Now we test if we edited it successfully.
 
@@ -44,11 +44,11 @@ Administering Products
 
 But administrators can access the page:
 
-    >>> admin_browser.open('http://launchpad.dev/firefox')
+    >>> admin_browser.open('http://launchpad.test/firefox')
     >>> admin_browser.getLink('Administer').click()
 
     >>> admin_browser.url
-    'http://launchpad.dev/firefox/+admin'
+    'http://launchpad.test/firefox/+admin'
 
     >>> print admin_browser.title
     Administer Mozilla Firefox...
@@ -71,7 +71,7 @@ Renaming Products
 
 First a user adds a product named newproductname.
 
-    >>> user_browser.open('http://launchpad.dev/products/+new')
+    >>> user_browser.open('http://launchpad.test/products/+new')
     >>> user_browser.getControl('URL', index=0).value = 'newproductname'
     >>> user_browser.getControl('Name').value = 'dname'
     >>> user_browser.getControl('Summary').value = 'summary'
@@ -83,11 +83,11 @@ First a user adds a product named newproductname.
     >>> user_browser.getControl(name='field.license_info').value = 'foo'
     >>> user_browser.getControl('Complete Registration').click()
     >>> print user_browser.url
-    http://launchpad.dev/newproductname
+    http://launchpad.test/newproductname
 
 Then a product named newproductname2.
 
-    >>> user_browser.open('http://launchpad.dev/products/+new')
+    >>> user_browser.open('http://launchpad.test/products/+new')
     >>> user_browser.getControl('URL', index=0).value = 'newproductname2'
     >>> user_browser.getControl('Name').value = 'dname2'
     >>> user_browser.getControl('Summary').value = 'summary2'
@@ -99,12 +99,12 @@ Then a product named newproductname2.
     >>> user_browser.getControl(name='field.license_info').value = 'foo'
     >>> user_browser.getControl('Complete Registration').click()
     >>> print user_browser.url
-    http://launchpad.dev/newproductname2
+    http://launchpad.test/newproductname2
 
 Now we try to change newproductname2's name to newproductname.
 
     >>> admin_browser.open(
-    ...     'http://launchpad.dev/newproductname2/+admin')
+    ...     'http://launchpad.test/newproductname2/+admin')
     >>> admin_browser.getControl('Name').value = 'newproductname'
     >>> admin_browser.getControl(name='field.actions.change').click()
     >>> for message in find_tags_by_class(admin_browser.contents, 'error'):
@@ -122,7 +122,7 @@ will be accepted because there is no product called newproductname3
     >>> admin_browser.getControl('Name').value = 'newproductname3'
     >>> admin_browser.getControl(name='field.actions.change').click()
     >>> print admin_browser.url
-    http://launchpad.dev/newproductname3
+    http://launchpad.test/newproductname3
 
 
 Changing Maintainer and Registrant
@@ -131,13 +131,13 @@ Changing Maintainer and Registrant
 Administrators can change the owner of a project.
 
     >>> admin_browser.open(
-    ...     'http://launchpad.dev/newproductname3')
+    ...     'http://launchpad.test/newproductname3')
     >>> print extract_text(find_tag_by_id(admin_browser.contents, 'owner'))
     Maintainer: No Privileges Person
     ...
 
     >>> admin_browser.open(
-    ...     'http://launchpad.dev/newproductname3/+admin')
+    ...     'http://launchpad.test/newproductname3/+admin')
     >>> admin_browser.getControl('Maintainer').value = 'cprov'
     >>> admin_browser.getControl(name='field.actions.change').click()
     >>> print extract_text(find_tag_by_id(admin_browser.contents, 'owner'))
@@ -149,13 +149,13 @@ happen. The registrant is a read-only field that is set when the product
 is created but we allow admins to change it to correct data.
 
     >>> admin_browser.open(
-    ...     'http://launchpad.dev/newproductname3')
+    ...     'http://launchpad.test/newproductname3')
     >>> print extract_text(
     ...     find_tag_by_id(admin_browser.contents, 'registration'))
     Registered ... by No Privileges Person
 
     >>> admin_browser.open(
-    ...     'http://launchpad.dev/newproductname3/+admin')
+    ...     'http://launchpad.test/newproductname3/+admin')
     >>> admin_browser.getControl('Registrant').value = 'cprov'
     >>> admin_browser.getControl(name='field.actions.change').click()
     >>> print extract_text(
@@ -166,7 +166,7 @@ The registrant really should only be a person, not a team, but that
 constraint has to be relaxed to account for old data where we do have
 teams as registrants.
 
-    >>> admin_browser.open('http://launchpad.dev/newproductname3/+admin')
+    >>> admin_browser.open('http://launchpad.test/newproductname3/+admin')
     >>> admin_browser.getControl('Registrant').value = 'registry'
     >>> admin_browser.getControl('Change').click()
     >>> print extract_text(
@@ -179,7 +179,7 @@ Registry Experts
 
 If we add them to the Registry Experts team:
 
-    >>> admin_browser.open("http://launchpad.dev/~registry/+addmember")
+    >>> admin_browser.open("http://launchpad.test/~registry/+addmember")
     >>> admin_browser.getControl('New member').value = 'no-priv'
     >>> admin_browser.getControl('Add Member').click()
 
@@ -194,7 +194,7 @@ The registry experts do not have access to the maintainer or
 registrant fields.
 
     >>> browser = setupBrowser(auth="Basic no-priv@canonical.com:test")
-    >>> browser.open('http://launchpad.dev/trebuche/+admin')
+    >>> browser.open('http://launchpad.test/trebuche/+admin')
     >>> browser.getControl('Maintainer')
     Traceback (most recent call last):
     ...
@@ -236,22 +236,22 @@ The Admins and Registry Experts can deactivate a project.
     >>> registry_browser = setupBrowser(
     ...     auth='Basic reggie@example.com:test')
 
-    >>> registry_browser.open('http://launchpad.dev/bzr/+review-license')
+    >>> registry_browser.open('http://launchpad.test/bzr/+review-license')
     >>> registry_browser.getControl(name='field.active').value = False
     >>> registry_browser.getControl(name='field.actions.change').click()
     >>> print registry_browser.url
-    http://launchpad.dev/bzr
+    http://launchpad.test/bzr
 
 The product overview page should show a notice that a product is
 inactive with a link to a form to re-activate it. Admins and Commercial
 Admins can still see the product, but regular users can't.
 
-    >>> registry_browser.open('http://launchpad.dev/bzr')
+    >>> registry_browser.open('http://launchpad.test/bzr')
     >>> contents = find_main_content(registry_browser.contents)
     >>> print extract_text(contents.find(id='project-inactive'))
     This project is currently inactive ...
 
-    >>> admin_browser.open('http://launchpad.dev/bzr')
+    >>> admin_browser.open('http://launchpad.test/bzr')
     >>> contents = find_main_content(admin_browser.contents)
     >>> print extract_text(contents.find(id='project-inactive'))
     This project is currently inactive ...
@@ -260,12 +260,12 @@ The product can then be reactivated.
 
     >>> registry_browser.getLink('Review project').click()
     >>> print registry_browser.url
-    http://launchpad.dev/bzr/+review-license
+    http://launchpad.test/bzr/+review-license
 
     >>> registry_browser.getControl(name='field.active').value = True
     >>> registry_browser.getControl(name='field.actions.change').click()
     >>> print registry_browser.url
-    http://launchpad.dev/bzr
+    http://launchpad.test/bzr
 
     >>> contents = find_main_content(registry_browser.contents)
     >>> print contents.find(id='project-inactive')

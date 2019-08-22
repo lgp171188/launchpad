@@ -1,4 +1,4 @@
-# Copyright 2009-2017 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for lp.services.osutils."""
@@ -122,7 +122,7 @@ class TestFindOnPath(TestCase):
         temp_dir = self.makeTemporaryDirectory()
         bin_dir = os.path.join(temp_dir, "bin")
         program = os.path.join(bin_dir, "program")
-        write_file(program, "")
+        write_file(program, b"")
         os.chmod(program, 0o755)
         self.useFixture(EnvironmentVariable("PATH", bin_dir))
         self.assertTrue(find_on_path("program"))
@@ -130,7 +130,7 @@ class TestFindOnPath(TestCase):
     def test_present_not_executable(self):
         temp_dir = self.makeTemporaryDirectory()
         bin_dir = os.path.join(temp_dir, "bin")
-        write_file(os.path.join(bin_dir, "program"), "")
+        write_file(os.path.join(bin_dir, "program"), b"")
         self.useFixture(EnvironmentVariable("PATH", bin_dir))
         self.assertFalse(find_on_path("program"))
 

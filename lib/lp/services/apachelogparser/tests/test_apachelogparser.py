@@ -1,4 +1,4 @@
-# Copyright 2009-2017 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 from datetime import datetime
@@ -77,6 +77,18 @@ class TestLineParsing(TestCase):
                 r'Configuration/CLDC-1.1\""')
         host, date, status, request = get_host_date_status_and_request(line)
         self.assertEqual(host, '1.1.1.1')
+        self.assertEqual(date, '[25/Jan/2009:15:48:07 +0000]')
+        self.assertEqual(status, '200')
+        self.assertEqual(
+            request, 'GET /10133748/cramfsswap_1.4.1.tar.gz HTTP/1.0')
+
+    def test_parsing_line_with_ipv6_address(self):
+        # IPv6 addresses in the hostname field are parsed.
+        line = (r'2001:67c:1560:8003::8003 - - [25/Jan/2009:15:48:07 +0000] '
+                r'"GET /10133748/cramfsswap_1.4.1.tar.gz HTTP/1.0" 200 12341 '
+                r'"http://foo.bar/baz" "Mozilla/5.0"')
+        host, date, status, request = get_host_date_status_and_request(line)
+        self.assertEqual(host, '2001:67c:1560:8003::8003')
         self.assertEqual(date, '[25/Jan/2009:15:48:07 +0000]')
         self.assertEqual(status, '200')
         self.assertEqual(
@@ -395,7 +407,7 @@ class TestParsedFilesDetection(TestCase):
         file_paths = [root.join(str(name)) for name in range(3)]
         now = time.time()
         for i, path in enumerate(file_paths):
-            write_file(path, '%s\n' % i)
+            write_file(path, ('%s\n' % i).encode('UTF-8'))
             os.utime(path, (now - i, now - i))
         contents = []
         for fd, _ in get_files_to_parse(file_paths):

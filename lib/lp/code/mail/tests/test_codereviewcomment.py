@@ -139,7 +139,7 @@ class TestCodeReviewComment(TestCaseWithFactory):
         """Ensure that the reply-to address is reasonable."""
         mailer, subscriber = self.makeMailer()
         merge_proposal = mailer.code_review_comment.branch_merge_proposal
-        expected = 'mp+%d@code.launchpad.dev' % merge_proposal.id
+        expected = 'mp+%d@code.launchpad.test' % merge_proposal.id
         self.assertEqual(
             expected,
             mailer._getReplyToAddress(

@@ -17,6 +17,7 @@ import tempfile
 
 import transaction
 from twisted.internet import defer
+from twisted.web import xmlrpc
 from zope.component import getUtility
 
 from lp.buildmaster.enums import (
@@ -52,6 +53,9 @@ class BuildFarmJobBehaviourBase:
         """Store a reference to the job_type with which we were created."""
         self.build = build
         self._builder = None
+        self._authserver = xmlrpc.Proxy(
+            config.builddmaster.authentication_endpoint,
+            connectTimeout=config.builddmaster.authentication_timeout)
 
     @property
     def archive(self):
@@ -345,7 +349,7 @@ class BuildFarmJobBehaviourBase:
                 raise BuildDaemonError(
                     "Build returned a file named %r." % filename)
             filenames_to_download.append((sha1, out_file_name))
-        yield self._slave.getFiles(filenames_to_download)
+        yield self._slave.getFiles(filenames_to_download, logger=logger)
 
         transaction.commit()
 

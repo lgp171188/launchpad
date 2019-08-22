@@ -58,7 +58,7 @@ them first.
     >>> print(response)
     HTTP/1.1 201 Created
     ...
-    Location: http://api.launchpad.dev/beta/.../+subscriptions/joe
+    Location: http://api.launchpad.test/beta/.../+subscriptions/joe
     ...
 
 Now the agent can query the sources.list entry for an archive for the
@@ -71,7 +71,7 @@ which is create on demand if necessary:
     >>> print(response)
     HTTP/1.1 200 Ok
     ...
-    "http://joe:...@private-ppa.launchpad.dev/.../commercial/ubuntu"
+    "http://joe:...@private-ppa.launchpad.test/.../commercial/ubuntu"
 
 The agent can also query all sources.list entries for the test user
 (and any other user too):
@@ -81,7 +81,7 @@ The agent can also query all sources.list entries for the test user
     >>> print(response)
     HTTP/1.1 200 Ok
     ...
-    ["http://joe:...@private-ppa.launchpad.dev/.../commercial/ubuntu"]
+    ["http://joe:...@private-ppa.launchpad.test/.../commercial/ubuntu"]
 
 Joe can query his own entry:
 
@@ -91,7 +91,7 @@ Joe can query his own entry:
     >>> print(response)
     HTTP/1.1 200 Ok
     ...
-    "http://joe:...@private-ppa.launchpad.dev/.../commercial/ubuntu"
+    "http://joe:...@private-ppa.launchpad.test/.../commercial/ubuntu"
 
 But Joe can not query the entry of cprov:
 

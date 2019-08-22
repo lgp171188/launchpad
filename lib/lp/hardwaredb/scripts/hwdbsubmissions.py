@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Parse Hardware Database submissions.
@@ -25,8 +25,8 @@ from logging import getLogger
 import os
 import re
 import sys
-import xml.etree.cElementTree as etree
 
+import defusedxml.cElementTree as etree
 import pytz
 from zope.component import getUtility
 from zope.interface import implementer
@@ -133,7 +133,6 @@ class SubmissionParser(object):
         if logger is None:
             logger = getLogger()
         self.logger = logger
-        self.doc_parser = etree.XMLParser()
         self._logged_warnings = set()
 
         self.validator = {}
@@ -216,7 +215,7 @@ class SubmissionParser(object):
         """
         submission = self.fixFrequentErrors(submission)
         try:
-            tree = etree.parse(io.BytesIO(submission), parser=self.doc_parser)
+            tree = etree.parse(io.BytesIO(submission), forbid_dtd=True)
         except SyntaxError as error_value:
             self._logError(error_value, submission_key)
             return None
@@ -3039,9 +3038,6 @@ class ProcessingLoopBase(object):
                     self._validateSubmission(submission)
                 else:
                     self._invalidateSubmission(submission)
-            except (KeyboardInterrupt, SystemExit):
-                # We should never catch these exceptions.
-                raise
             except LibrarianServerError:
                 # LibrarianServerError is raised when the server could
                 # not be reaches for 30 minutes.

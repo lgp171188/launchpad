@@ -154,7 +154,7 @@ class PillarSharingDetailsMixin:
         expected = "Sharing details for %s : Sharing : %s" % (
                 pillarperson.person.displayname,
                 pillarperson.pillar.displayname)
-        url = 'http://launchpad.dev/%s/+sharing/%s' % (
+        url = 'http://launchpad.test/%s/+sharing/%s' % (
             pillarperson.pillar.name, pillarperson.person.name)
         browser = self.getUserBrowser(user=self.owner, url=url)
         self.assertEqual(expected, browser.title)
@@ -166,7 +166,7 @@ class PillarSharingDetailsMixin:
         # encounters.
         pillarperson = PillarPerson(
             self.pillar, self.factory.makePerson())
-        url = 'http://launchpad.dev/%s/+sharing/%s' % (
+        url = 'http://launchpad.test/%s/+sharing/%s' % (
             pillarperson.pillar.name, pillarperson.person.name)
         browser = self.getUserBrowser(user=self.owner, url=url)
         self.assertIn(

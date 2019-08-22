@@ -65,7 +65,7 @@ The user receives a confirmation email.
     download these translations again, you will have to request
     them again at
     <BLANKLINE>
-      http://translations.launchpad.dev/evolution/trunk/+export
+      http://translations.launchpad.test/evolution/trunk/+export
     <BLANKLINE>
     -- =
     Automatic message from Launchpad.net.

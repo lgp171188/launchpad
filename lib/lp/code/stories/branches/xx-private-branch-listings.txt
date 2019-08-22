@@ -47,7 +47,7 @@ The code home page shows lists of recently imported, changed, and
 registered branches.
 
     >>> def print_recently_registered_branches(browser):
-    ...     browser.open('http://code.launchpad.dev')
+    ...     browser.open('http://code.launchpad.test')
     ...     branches = find_tag_by_id(browser.contents, 'recently-registered')
     ...     for list_item in branches.ul.findAll('li'):
     ...         print("%r" % list_item.renderContents())
@@ -104,7 +104,7 @@ listing tab.
 
     >>> def print_landscape_code_listing(browser):
     ...     browser.open(
-    ...         'http://code.launchpad.dev/landscape/+branches'
+    ...         'http://code.launchpad.test/landscape/+branches'
     ...         '?field.sort_by=by+status')
     ...     table = find_tag_by_id(browser.contents, 'branchtable')
     ...     # If there are no branches, the table is not shown.
@@ -148,7 +148,7 @@ viewable branches.
     ...         params['field.category'] = category
     ...     # The batch argument is given to override the default batch
     ...     # size of five.
-    ...     full_url = 'http://code.launchpad.dev/~name12?%s' % (
+    ...     full_url = 'http://code.launchpad.test/~name12?%s' % (
     ...         urllib.urlencode(params),)
     ...     browser.open(full_url)
     ...     table = find_tag_by_id(browser.contents, 'branchtable')
@@ -213,7 +213,7 @@ Bug branch links
 When a private branch is linked to a bug, the bug branch link is only
 visible to those that would be able to see the branch.
 
-    >>> landscape_dev_browser.open('http://launchpad.dev/bugs/10')
+    >>> landscape_dev_browser.open('http://launchpad.test/bugs/10')
 
 There are no branches linked to this bug.
 
@@ -240,7 +240,7 @@ Now link to a private branch.
 Since the link is to a private branch, the entire section is not
 visible to a user that isn't able to see the branch itself.
 
-    >>> anon_browser.open('http://launchpad.dev/bugs/10')
+    >>> anon_browser.open('http://launchpad.test/bugs/10')
     >>> printBugBranchLinks(anon_browser)
     No bug branch links
 
@@ -252,7 +252,7 @@ When a branch is set as the user branch for product series, the details
 must be visible to those that are entitled to see it, but hidden from
 those who shouldn't be able to see it.
 
-    >>> admin_browser.open('http://launchpad.dev/landscape/trunk')
+    >>> admin_browser.open('http://launchpad.test/landscape/trunk')
     >>> admin_browser.getLink('Change details').click()
     >>> admin_browser.getControl('Branch').value = (
     ...     '~landscape-developers/landscape/trunk')
@@ -267,14 +267,14 @@ are shown.
 
 Landscape developers can see it.
 
-    >>> landscape_dev_browser.open('http://launchpad.dev/landscape/trunk')
+    >>> landscape_dev_browser.open('http://launchpad.test/landscape/trunk')
     >>> print(extract_text(find_tag_by_id(
     ...     landscape_dev_browser.contents, 'branch-details')))
     lp://dev/... - Landscape Developers ...
 
 But normal people can't.
 
-    >>> anon_browser.open('http://launchpad.dev/landscape/trunk')
+    >>> anon_browser.open('http://launchpad.test/landscape/trunk')
     >>> print(extract_text(find_tag_by_id(
     ...     anon_browser.contents, 'branch-details')))
     No revision control details recorded for

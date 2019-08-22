@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for BranchMergeProposals."""
@@ -15,6 +15,7 @@ from difflib import unified_diff
 import hashlib
 from unittest import TestCase
 
+from fixtures import FakeLogger
 from lazr.lifecycle.event import ObjectCreatedEvent
 from lazr.restfulclient.errors import BadRequest
 from pytz import UTC
@@ -83,6 +84,7 @@ from lp.services.database.constants import UTC_NOW
 from lp.services.features.testing import FeatureFixture
 from lp.services.job.interfaces.job import JobStatus
 from lp.services.webapp import canonical_url
+from lp.services.webhooks.testing import LogsScheduledWebhooks
 from lp.services.xref.interfaces import IXRefSet
 from lp.testing import (
     ExpectedException,
@@ -1036,7 +1038,7 @@ class TestMergeProposalWebhooksMixin:
             return None
 
     @classmethod
-    def getExpectedPayload(cls, proposal):
+    def getExpectedPayload(cls, proposal, redact=False):
         payload = {
             "registrant": "/~%s" % proposal.registrant.name,
             "source_branch": cls.getURL(proposal.source_branch),
@@ -1052,9 +1054,10 @@ class TestMergeProposalWebhooksMixin:
                 proposal.prerequisite_git_repository),
             "prerequisite_git_path": proposal.prerequisite_git_path,
             "queue_status": proposal.queue_status.title,
-            "commit_message": proposal.commit_message,
-            "whiteboard": proposal.whiteboard,
-            "description": proposal.description,
+            "commit_message": (
+                "<redacted>" if redact else proposal.commit_message),
+            "whiteboard": "<redacted>" if redact else proposal.whiteboard,
+            "description": "<redacted>" if redact else proposal.description,
             "preview_diff": cls.getURL(proposal.preview_diff),
             }
         return {k: Equals(v) for k, v in payload.items()}
@@ -1070,9 +1073,17 @@ class TestMergeProposalWebhooksMixin:
                     hook.id, hook.target),
                 repr(delivery))
 
+    def assertCorrectLogging(self, expected_redacted_payload, hook, logger):
+        with dbuser(config.IWebhookDeliveryJobSource.dbuser):
+            self.assertThat(
+                logger.output, LogsScheduledWebhooks([
+                    (hook, "merge-proposal:0.1",
+                     MatchesDict(expected_redacted_payload))]))
+
     def test_create_triggers_webhooks(self):
         # When a merge proposal is created, any relevant webhooks are
         # triggered.
+        logger = self.useFixture(FakeLogger())
         source = self.makeBranch()
         target = self.makeBranch(same_target_as=source)
         registrant = self.factory.makePerson()
@@ -1088,9 +1099,14 @@ class TestMergeProposalWebhooksMixin:
             "action": Equals("created"),
             "new": MatchesDict(self.getExpectedPayload(proposal)),
             }
+        expected_redacted_payload = dict(
+            expected_payload,
+            new=MatchesDict(self.getExpectedPayload(proposal, redact=True)))
         self.assertCorrectDelivery(expected_payload, hook, delivery)
+        self.assertCorrectLogging(expected_redacted_payload, hook, logger)
 
     def test_modify_triggers_webhooks(self):
+        logger = self.useFixture(FakeLogger())
         # When an existing merge proposal is modified, any relevant webhooks
         # are triggered.
         source = self.makeBranch()
@@ -1107,18 +1123,25 @@ class TestMergeProposalWebhooksMixin:
             "action": Equals("modified"),
             "old": MatchesDict(self.getExpectedPayload(proposal)),
             }
+        expected_redacted_payload = dict(
+            expected_payload,
+            old=MatchesDict(self.getExpectedPayload(proposal, redact=True)))
         with BranchMergeProposalNoPreviewDiffDelta.monitor(proposal):
             proposal.setStatus(
                 BranchMergeProposalStatus.CODE_APPROVED, user=target.owner)
             proposal.description = "An excellent proposal."
         expected_payload["new"] = MatchesDict(
             self.getExpectedPayload(proposal))
+        expected_redacted_payload["new"] = MatchesDict(
+            self.getExpectedPayload(proposal, redact=True))
         delivery = hook.deliveries.one()
         self.assertCorrectDelivery(expected_payload, hook, delivery)
+        self.assertCorrectLogging(expected_redacted_payload, hook, logger)
 
     def test_delete_triggers_webhooks(self):
         # When an existing merge proposal is deleted, any relevant webhooks
         # are triggered.
+        logger = self.useFixture(FakeLogger())
         source = self.makeBranch()
         target = self.makeBranch(same_target_as=source)
         registrant = self.factory.makePerson()
@@ -1133,9 +1156,13 @@ class TestMergeProposalWebhooksMixin:
             "action": Equals("deleted"),
             "old": MatchesDict(self.getExpectedPayload(proposal)),
             }
+        expected_redacted_payload = dict(
+            expected_payload,
+            old=MatchesDict(self.getExpectedPayload(proposal, redact=True)))
         proposal.deleteProposal()
         delivery = hook.deliveries.one()
         self.assertCorrectDelivery(expected_payload, hook, delivery)
+        self.assertCorrectLogging(expected_redacted_payload, hook, logger)
 
 
 class TestMergeProposalWebhooksBzr(
@@ -1174,7 +1201,7 @@ class TestGetAddress(TestCaseWithFactory):
 
     def test_address(self):
         merge_proposal = self.factory.makeBranchMergeProposal()
-        expected = 'mp+%d@code.launchpad.dev' % merge_proposal.id
+        expected = 'mp+%d@code.launchpad.test' % merge_proposal.id
         self.assertEqual(expected, merge_proposal.address)
 
 

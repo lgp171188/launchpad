@@ -265,9 +265,6 @@ class CheckwatchesMaster(WorkingBase):
 
         try:
             self._updateBugTracker(bug_tracker, batch_size)
-        except (KeyboardInterrupt, SystemExit):
-            # We should never catch KeyboardInterrupt or SystemExit.
-            raise
         except Exception as error:
             # If something unexpected goes wrong, we log it and
             # continue: a failure shouldn't break the updating of

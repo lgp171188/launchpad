@@ -32,7 +32,7 @@ Attempts to claim a revoked OpenPGP key fail:
     >>> name12 = getUtility(IPersonSet).getByEmail('test@canonical.com')
     >>> logout()
     >>> browser = setupBrowserFreshLogin(name12)
-    >>> browser.open('http://launchpad.dev/~name12/+editpgpkeys')
+    >>> browser.open('http://launchpad.test/~name12/+editpgpkeys')
     >>> browser.getControl(
     ...     name='fingerprint').value = (
     ...     '84D205F03E1E67096CB54E262BE83793AACCD97C')
@@ -86,7 +86,7 @@ will create login tokens for the revoked and expired test keys:
 Try to validate the revoked OpenPGP key:
 
     >>> browser.open(
-    ...     'http://launchpad.dev/token/%s/+validategpg' % revoked_key_token)
+    ...     'http://launchpad.test/token/%s/+validategpg' % revoked_key_token)
     >>> browser.getControl('Continue').click()
     >>> for tag in find_tags_by_class(browser.contents, 'error message'):
     ...     print tag.renderContents()
@@ -95,14 +95,14 @@ Try to validate the revoked OpenPGP key:
     because it has been publicly revoked.
     You will need to generate a new key (using <kbd>gpg --genkey</kbd>) and
     repeat the previous process to
-    <a href="http://launchpad.dev/~name12/+editpgpkeys">find and import</a>
+    <a href="http://launchpad.test/~name12/+editpgpkeys">find and import</a>
     the new key.
 
 
 Try to validate the revoked OpenPGP key:
 
     >>> browser.open(
-    ...     'http://launchpad.dev/token/%s/+validategpg' % expired_key_token)
+    ...     'http://launchpad.test/token/%s/+validategpg' % expired_key_token)
     >>> browser.getControl('Continue').click()
     >>> for tag in find_tags_by_class(browser.contents, 'error message'):
     ...     print tag.renderContents()

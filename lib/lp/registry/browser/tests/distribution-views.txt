@@ -37,7 +37,7 @@ Lists of archive mirrors
     ...     for mirror in mirrors:
     ...         assert mirror.country.name == country
     ...     print "%s: %d mirror(s)" % (country, len(mirrors))
-    Antarctica: 1 mirror(s)
+    Antarctica: 2 mirror(s)
     France: 2 mirror(s)
     United Kingdom: 1 mirror(s)
 
@@ -61,7 +61,7 @@ The +add view of the DistributionSet allows admins to register distributions.
 The view provides a cancel link.
 
     >>> print view.cancel_url
-    http://launchpad.dev/distros
+    http://launchpad.test/distros
 
 The view accepts the basic fields to register a distribution.
 
@@ -86,7 +86,7 @@ The view accepts the basic fields to register a distribution.
     >>> view.errors
     []
     >>> print view.next_url
-    http://launchpad.dev/youbuntu
+    http://launchpad.test/youbuntu
 
     >>> distribution = distributionset.getByName("youbuntu")
     >>> print distribution.name
@@ -119,7 +119,7 @@ a label, page_title, and cancel_url.
     Change YoUbuntu details
 
     >>> print view.cancel_url
-    http://launchpad.dev/youbuntu
+    http://launchpad.test/youbuntu
 
 The view accepts most of the distribution fields.
 
@@ -143,7 +143,7 @@ The view accepts most of the distribution fields.
     >>> view.errors
     []
     >>> print view.next_url
-    http://launchpad.dev/youbuntu
+    http://launchpad.test/youbuntu
 
     >>> print distribution.bug_reporting_guidelines
     guidelines
@@ -176,7 +176,7 @@ administrator.
     Change the YoUbuntu mirror administrator
 
     >>> print view.cancel_url
-    http://launchpad.dev/youbuntu
+    http://launchpad.test/youbuntu
 
 The view accepts the mirror_admin field.
 
@@ -195,7 +195,7 @@ The view accepts the mirror_admin field.
     >>> view.errors
     []
     >>> print view.next_url
-    http://launchpad.dev/youbuntu
+    http://launchpad.test/youbuntu
 
     >>> print distribution.mirror_admin.name
     no-priv
@@ -224,7 +224,7 @@ the +selectmirroradmins allows the owner or admin to change the members team.
     Change the YoUbuntu members team
 
     >>> print view.cancel_url
-    http://launchpad.dev/youbuntu
+    http://launchpad.test/youbuntu
 
 The view accepts the members field.
 
@@ -243,7 +243,7 @@ The view accepts the members field.
     >>> view.errors
     []
     >>> print view.next_url
-    http://launchpad.dev/youbuntu
+    http://launchpad.test/youbuntu
 
     >>> print distribution.members.name
     ubuntu-team

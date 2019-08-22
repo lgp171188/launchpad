@@ -1,10 +1,13 @@
-# Copyright 2014-2017 Canonical Ltd.  This software is licensed under the
+# Copyright 2014-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
 __all__ = [
     'LiveFS',
     ]
+
+from datetime import timedelta
+import math
 
 import pytz
 from storm.locals import (
@@ -17,6 +20,7 @@ from storm.locals import (
     Reference,
     Store,
     Storm,
+    TimeDelta,
     Unicode,
     )
 from zope.component import getUtility
@@ -113,8 +117,12 @@ class LiveFS(Storm):
 
     relative_build_score = Int(name='relative_build_score', allow_none=False)
 
+    keep_binary_files_interval = TimeDelta(
+        name='keep_binary_files_interval', allow_none=True)
+
     def __init__(self, registrant, owner, distro_series, name,
-                 metadata, require_virtualized, date_created):
+                 metadata, require_virtualized, keep_binary_files_days,
+                 date_created):
         """Construct a `LiveFS`."""
         if not getFeatureFlag(LIVEFS_FEATURE_FLAG):
             raise LiveFSFeatureDisabled
@@ -128,6 +136,24 @@ class LiveFS(Storm):
         self.relative_build_score = 0
         self.date_created = date_created
         self.date_last_modified = date_created
+        self.keep_binary_files_days = keep_binary_files_days
+
+    @property
+    def keep_binary_files_days(self):
+        """See `ILiveFS`."""
+        # Rounding up preserves the "at least this many days" part of the
+        # contract, and makes the interface simpler.
+        if self.keep_binary_files_interval is not None:
+            return int(math.ceil(
+                self.keep_binary_files_interval.total_seconds() / 86400))
+        else:
+            return None
+
+    @keep_binary_files_days.setter
+    def keep_binary_files_days(self, days):
+        """See `ILiveFS`."""
+        self.keep_binary_files_interval = (
+            timedelta(days=days) if days is not None else None)
 
     def requestBuild(self, requester, archive, distro_arch_series, pocket,
                      unique_key=None, metadata_override=None, version=None):
@@ -230,7 +256,8 @@ class LiveFSSet:
     """See `ILiveFSSet`."""
 
     def new(self, registrant, owner, distro_series, name, metadata,
-            require_virtualized=True, date_created=DEFAULT):
+            require_virtualized=True, keep_binary_files_days=1,
+            date_created=DEFAULT):
         """See `ILiveFSSet`."""
         if not registrant.inTeam(owner):
             if owner.is_team:
@@ -248,7 +275,7 @@ class LiveFSSet:
         store = IMasterStore(LiveFS)
         livefs = LiveFS(
             registrant, owner, distro_series, name, metadata,
-            require_virtualized, date_created)
+            require_virtualized, keep_binary_files_days, date_created)
         store.add(livefs)
 
         return livefs

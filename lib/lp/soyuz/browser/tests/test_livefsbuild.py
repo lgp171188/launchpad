@@ -64,7 +64,7 @@ class TestCanonicalUrlForLiveFSBuild(TestCaseWithFactory):
         self.assertThat(
             canonical_url(build),
             StartsWith(
-                "http://launchpad.dev/~person/+livefs/distro/unstable/livefs/"
+                "http://launchpad.test/~person/+livefs/distro/unstable/livefs/"
                 "+build/"))
 
 

@@ -1,4 +1,4 @@
-# Copyright 2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2018-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for snap package jobs."""
@@ -132,6 +132,46 @@ class TestSnapRequestBuildsJob(TestCaseWithFactory):
                     pocket=Equals(PackagePublishingPocket.RELEASE),
                     channels=Equals({"core": "stable"}))
                 for arch in ("avr2001", "x32")]))))
+
+    def test_run_with_architectures(self):
+        # If the user explicitly requested architectures, the job passes
+        # those through when requesting builds, intersecting them with other
+        # constraints.
+        distroseries, processors = self.makeSeriesAndProcessors(
+            ["avr2001", "sparc64", "x32"])
+        [git_ref] = self.factory.makeGitRefs()
+        snap = self.factory.makeSnap(
+            git_ref=git_ref, distroseries=distroseries, processors=processors)
+        expected_date_created = get_transaction_timestamp(IStore(snap))
+        job = SnapRequestBuildsJob.create(
+            snap, snap.registrant, distroseries.main_archive,
+            PackagePublishingPocket.RELEASE, {"core": "stable"},
+            architectures=["sparc64", "x32"])
+        snapcraft_yaml = dedent("""\
+            architectures:
+              - build-on: avr2001
+              - build-on: x32
+            """)
+        self.useFixture(GitHostingFixture(blob=snapcraft_yaml))
+        with dbuser(config.ISnapRequestBuildsJobSource.dbuser):
+            JobRunner([job]).runAll()
+        now = get_transaction_timestamp(IStore(snap))
+        self.assertEmailQueueLength(0)
+        self.assertThat(job, MatchesStructure(
+            job=MatchesStructure.byEquality(status=JobStatus.COMPLETED),
+            date_created=Equals(expected_date_created),
+            date_finished=MatchesAll(
+                GreaterThan(expected_date_created), LessThan(now)),
+            error_message=Is(None),
+            builds=AfterPreprocessing(set, MatchesSetwise(
+                MatchesStructure(
+                    build_request=MatchesStructure.byEquality(id=job.job.id),
+                    requester=Equals(snap.registrant),
+                    snap=Equals(snap),
+                    archive=Equals(distroseries.main_archive),
+                    distro_arch_series=Equals(distroseries["x32"]),
+                    pocket=Equals(PackagePublishingPocket.RELEASE),
+                    channels=Equals({"core": "stable"}))))))
 
     def test_run_failed(self):
         # A failed run sets the job status to FAILED and records the error

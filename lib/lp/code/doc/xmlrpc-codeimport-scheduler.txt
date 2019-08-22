@@ -45,7 +45,7 @@ The point of all this is for it to be accessed over XMLRPC.
     >>> import xmlrpclib
     >>> from lp.testing.xmlrpc import XMLRPCTestTransport
     >>> codeimportscheduler = xmlrpclib.ServerProxy(
-    ...     'http://xmlrpc-private.launchpad.dev:8087/codeimportscheduler',
+    ...     'http://xmlrpc-private.launchpad.test:8087/codeimportscheduler',
     ...     transport=XMLRPCTestTransport())
     >>> codeimportscheduler.getJobForMachine('bazaar-importer', 2)
     0

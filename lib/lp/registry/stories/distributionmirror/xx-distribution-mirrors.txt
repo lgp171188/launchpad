@@ -37,13 +37,15 @@ the release (cdimage) ones.
 
 The archive mirrors display the "freshness", how far behind they are.
 
-    >>> browser.open('http://launchpad.dev/ubuntu')
+    >>> browser.open('http://launchpad.test/ubuntu')
     >>> browser.getLink('Archive mirrors').click()
     >>> print browser.title
     Mirrors :...
     >>> print_mirrors_by_countries(browser.contents)
-    Antarctica: [(u'Archive-mirror2', u'http', u'128 Kbps',
-      u'Six hours behind')]
+    Antarctica:
+      [(u'Archive-mirror2', u'http', u'128 Kbps', u'Six hours behind'),
+       (u'Archive-redirect-mirror', u'http', u'128 Kbps',
+        u'Last update unknown')]
     France:
       [(u'Archive-404-mirror', u'http', u'512 Kbps', u'Last update unknown'),
        (u'Archive-mirror', u'http', u'128 Kbps', u'Last update unknown')]
@@ -58,10 +60,10 @@ The archive mirrors display the "freshness", how far behind they are.
 
 Freshness doesn't make sense for CD mirrors so it is not shown for them.
 
-    >>> browser.open('http://launchpad.dev/ubuntu')
+    >>> browser.open('http://launchpad.test/ubuntu')
     >>> browser.getLink('CD mirrors').click()
     >>> browser.url
-    'http://launchpad.dev/ubuntu/+cdmirrors'
+    'http://launchpad.test/ubuntu/+cdmirrors'
     >>> print_mirrors_by_countries(browser.contents)
     France:
       [(u'Releases-mirror', u'http', u'2 Mbps'),
@@ -77,15 +79,15 @@ These are official mirrors for which the last check wasn't successful (e.g.
 they were out of date, missing some content, etc). This list can only be
 seen by distro owners, mirror admins of the distro or launchpad admins.
 
-    >>> user_browser.open('http://launchpad.dev/ubuntu/+disabledmirrors')
+    >>> user_browser.open('http://launchpad.test/ubuntu/+disabledmirrors')
     Traceback (most recent call last):
     ...
     Unauthorized: ...
 
     >>> browser = setupBrowser(auth='Basic karl@canonical.com:test')
-    >>> browser.open('http://launchpad.dev/ubuntu/+disabledmirrors')
+    >>> browser.open('http://launchpad.test/ubuntu/+disabledmirrors')
     >>> browser.url
-    'http://launchpad.dev/ubuntu/+disabledmirrors'
+    'http://launchpad.test/ubuntu/+disabledmirrors'
 
     >>> print find_tag_by_id(browser.contents, 'maincontent').renderContents()
     <BLANKLINE>
@@ -99,15 +101,15 @@ The unofficial mirrors are listed in a separate page, which is not public.
 It's only visible to distro owners, mirror admins of the distro or
 launchpad admins.
 
-    >>> user_browser.open('http://launchpad.dev/ubuntu/+unofficialmirrors')
+    >>> user_browser.open('http://launchpad.test/ubuntu/+unofficialmirrors')
     Traceback (most recent call last):
     ...
     Unauthorized: ...
 
     >>> browser = setupBrowser(auth='Basic karl@canonical.com:test')
-    >>> browser.open('http://launchpad.dev/ubuntu/+unofficialmirrors')
+    >>> browser.open('http://launchpad.test/ubuntu/+unofficialmirrors')
     >>> browser.url
-    'http://launchpad.dev/ubuntu/+unofficialmirrors'
+    'http://launchpad.test/ubuntu/+unofficialmirrors'
 
     >>> print_mirrors_by_countries(browser.contents)
     France: [(u'Invalid-mirror', u'http', u'2 Mbps', u'Last update unknown')]
@@ -121,14 +123,14 @@ looked at yet.  Since all pending mirrors are grouped on one page the
 type of mirror is shown.  Also the freshness is not visible since
 pending mirrors have never been probed.
 
-    >>> user_browser.open('http://launchpad.dev/ubuntu/+pendingreviewmirrors')
+    >>> user_browser.open('http://launchpad.test/ubuntu/+pendingreviewmirrors')
     Traceback (most recent call last):
     ...
     Unauthorized: ...
 
     >>> browser = setupBrowser(auth='Basic karl@canonical.com:test')
     >>> # Register an unreviewed archive mirror.
-    >>> browser.open('http://launchpad.dev/ubuntu/+newmirror')
+    >>> browser.open('http://launchpad.test/ubuntu/+newmirror')
     >>> browser.getControl(
     ...     name='field.display_name').value = 'Kabul LUG mirror'
     >>> browser.getControl(name='field.ftp_base_url').value = (
@@ -138,7 +140,7 @@ pending mirrors have never been probed.
     >>> browser.getControl(name='field.content').value = ["ARCHIVE"]
     >>> browser.getControl('Register Mirror').click()
 
-    >>> browser.open('http://launchpad.dev/ubuntu/+pendingreviewmirrors')
+    >>> browser.open('http://launchpad.test/ubuntu/+pendingreviewmirrors')
     >>> print_mirrors_by_countries(browser.contents)
     Afghanistan:
      [(u'Kabul LUG mirror', u'ftp', u'10 Gbps',

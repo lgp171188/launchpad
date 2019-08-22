@@ -377,7 +377,7 @@ class TestBuildViews(TestCaseWithFactory):
         # equivalent new URLs.
         build = self.factory.makeBinaryPackageBuild()
         build.queueBuild()
-        url = "http://launchpad.dev/+builds/+build/%s" % build.id
+        url = "http://launchpad.test/+builds/+build/%s" % build.id
         expected_url = canonical_url(build)
         browser = self.getUserBrowser(url)
         self.assertEqual(expected_url, browser.url)

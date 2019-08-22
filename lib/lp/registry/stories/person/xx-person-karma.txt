@@ -6,7 +6,7 @@ Launchpad assigns a person karma for performing actions beneficial to
 the community.  A person's current total karma is available on their
 profile page.
 
-    >>> anon_browser.open('http://launchpad.dev/~name12')
+    >>> anon_browser.open('http://launchpad.test/~name12')
     >>> print anon_browser.title
     Sample Person in Launchpad
 
@@ -41,7 +41,7 @@ Any user can see that a user has latest actions.
 
 The karma page can also show any user that a user has never earned karma.
 
-    >>> anon_browser.open('http://launchpad.dev/~salgado/+karma')
+    >>> anon_browser.open('http://launchpad.test/~salgado/+karma')
     >>> content = find_main_content(anon_browser.contents)
     >>> print extract_text(find_tag_by_id(content, 'no-karma'))
     No karma has yet been assigned to Guilherme Salgado. Karma is updated
@@ -50,7 +50,7 @@ The karma page can also show any user that a user has never earned karma.
 The karma page will explain that a user's karma has expired, and show
 a that user's last karma actions
 
-    >>> anon_browser.open('http://launchpad.dev/~karl/+karma')
+    >>> anon_browser.open('http://launchpad.test/~karl/+karma')
     >>> content = find_main_content(anon_browser.contents)
     >>> print extract_text(find_tag_by_id(content, 'no-karma'))
     Karl Tilbury's karma has expired.

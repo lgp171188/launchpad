@@ -1,8 +1,8 @@
 Say hello to Bugs. :)
 
-    >>> browser.open('http://bugs.launchpad.dev/')
+    >>> browser.open('http://bugs.launchpad.test/')
     >>> browser.url
-    'http://bugs.launchpad.dev/'
+    'http://bugs.launchpad.test/'
 
     >>> print(browser.title)
     Launchpad Bugs
@@ -13,6 +13,6 @@ There are a few related pages linked in a portlet:
     >>> for link in related_pages.findAll('a'):
     ...     print("%s\n  --> %s" % (extract_text(link), link.get('href')))
     Bug trackers
-    --> http://bugs.launchpad.dev/bugs/bugtrackers
+    --> http://bugs.launchpad.test/bugs/bugtrackers
     CVE tracker
-    --> http://bugs.launchpad.dev/bugs/cve
+    --> http://bugs.launchpad.test/bugs/cve

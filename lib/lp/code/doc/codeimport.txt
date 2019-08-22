@@ -113,7 +113,7 @@ three members of the vcs-imports team.
     vcs-imports
     >>> print(message.get_payload(decode=True))
     A new CVS code import has been requested by Code Import Person:
-        http://code.launchpad.dev/~import-person/widget/trunk-cvs
+        http://code.launchpad.test/~import-person/widget/trunk-cvs
     from
         :pserver:anonymous@cvs.example.com:/cvsroot, hello
     <BLANKLINE>
@@ -270,7 +270,7 @@ created if done through the web UI, so we'll add nopriv here.
     <BLANKLINE>
     -- =
     <BLANKLINE>
-    http://code.launchpad.dev/~person.../product.../name...
+    http://code.launchpad.test/~person.../product.../name...
     You are getting this email because you are a member of the vcs-imports
     team.
     <BLANKLINE>
@@ -286,7 +286,7 @@ created if done through the web UI, so we'll add nopriv here.
     <BLANKLINE>
     -- =
     <BLANKLINE>
-    http://code.launchpad.dev/~person.../product.../name...
+    http://code.launchpad.test/~person.../product.../name...
     You are receiving this email as you are subscribed to the branch.
     To unsubscribe from this branch go to .../+edit-subscription.
     <BLANKLINE>
@@ -443,16 +443,16 @@ site:
 
     >>> from lp.services.webapp import canonical_url
     >>> print(canonical_url(code_import_set))
-    http://code.launchpad.dev/+code-imports
+    http://code.launchpad.test/+code-imports
 
 The code imports themselves have a canonical URL that is subordinate of
 the branches, though they cannot currently be viewed that way in the webapp,
 only over the API.
 
     >>> print(canonical_url(svn_import.branch))
-    http://code.launchpad.dev/~import-person/widget/trunk-svn
+    http://code.launchpad.test/~import-person/widget/trunk-svn
     >>> print(canonical_url(svn_import))
-    http://code.launchpad.dev/~import-person/widget/trunk-svn/+code-import
+    http://code.launchpad.test/~import-person/widget/trunk-svn/+code-import
 
 
 Modifying CodeImports

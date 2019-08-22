@@ -34,7 +34,7 @@ update bookmarks.
     >>> request.response.getStatus()
     301
     >>> print request.response.getHeader('Location')
-    http://launchpad.dev/ubuntu/+questions
+    http://launchpad.test/ubuntu/+questions
 
 The view can also work for names registered on the root, and the
 new_name can be a relative path.
@@ -47,7 +47,7 @@ new_name can be a relative path.
     >>> request.response.getStatus()
     301
     >>> print view.request.response.getHeader('Location')
-    http://launchpad.dev/+tour/index.html
+    http://launchpad.test/+tour/index.html
 
 
 == Handling GET parameters ==
@@ -61,7 +61,7 @@ to the redirected URL.
     >>> view()
     u''
     >>> print request.response.getHeader('Location')
-    http://launchpad.dev/ubuntu/+questions?field.status=Open
+    http://launchpad.test/ubuntu/+questions?field.status=Open
 
 
 == Redirecting to another virtual host ==
@@ -75,14 +75,14 @@ change the virtual host used for the redirection.
     >>> view()
     u''
     >>> print request.response.getHeader('Location')
-    http://answers.launchpad.dev/ubuntu/+questions
+    http://answers.launchpad.test/ubuntu/+questions
 
 
 == Traversal errors ==
 
 If an object cannot be found during traversal, RenamedView will raise
 a NotFound error. For example, requesting a non-existent question will
-raise an error. e.g. http://launchpad.dev/ubuntu/+tickets/foo
+raise an error. e.g. http://launchpad.test/ubuntu/+tickets/foo
 
     >>> request = LaunchpadTestRequest()
     >>> view = RenamedView(ubuntu, request, '+tickets')
@@ -117,4 +117,4 @@ browser:renamed-page is available for this purpose.
     >>> view()
     u''
     >>> print request.response.getHeader('Location')
-    http://answers.launchpad.dev/ubuntu/+questions
+    http://answers.launchpad.test/ubuntu/+questions

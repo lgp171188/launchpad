@@ -137,7 +137,7 @@ class TestBingSearchService(TestCase):
         self.assertThat(matches, MatchesListwise([
             MatchesStructure.byEquality(
                 title='GCleaner in Launchpad',
-                url='http://launchpad.dev/gcleaner'),
+                url='http://launchpad.test/gcleaner'),
             ]))
 
     def test_parse_search_response_missing_summary(self):
@@ -177,7 +177,7 @@ class TestBingSearchService(TestCase):
         self.assertThat(matches, MatchesListwise([
             MatchesStructure.byEquality(
                 title='LongoMatch in Launchpad',
-                url='http://launchpad.dev/longomatch'),
+                url='http://launchpad.test/longomatch'),
             ]))
 
     def test_parse_search_response_with_no_meaningful_results(self):
@@ -267,11 +267,11 @@ class TestBingSearchService(TestCase):
         self.assertEqual(25, matches.total)
         self.assertEqual(5, len(matches))
         self.assertEqual([
-            'http://bugs.launchpad.dev/ubuntu/hoary/+bug/2',
-            'http://bugs.launchpad.dev/debian/+source/mozilla-firefox/+bug/2',
-            'http://bugs.launchpad.dev/debian/+source/mozilla-firefox/+bug/3',
-            'http://bugs.launchpad.dev/bugs/bugtrackers',
-            'http://bugs.launchpad.dev/bugs/bugtrackers/debbugs'],
+            'http://bugs.launchpad.test/ubuntu/hoary/+bug/2',
+            'http://bugs.launchpad.test/debian/+source/mozilla-firefox/+bug/2',
+            'http://bugs.launchpad.test/debian/+source/mozilla-firefox/+bug/3',
+            'http://bugs.launchpad.test/bugs/bugtrackers',
+            'http://bugs.launchpad.test/bugs/bugtrackers/debbugs'],
             [match.url for match in matches])
 
     def test_search_no_results(self):
@@ -299,7 +299,7 @@ class TestBingSearchService(TestCase):
     def test_search_xss(self):
         matches = self.search_service.search('xss')
         self.assertThat(matches[0], MatchesStructure.byEquality(
-            url='http://bugs.launchpad.dev/horizon/+bug/1349491',
+            url='http://bugs.launchpad.test/horizon/+bug/1349491',
             title=(
                 'Bug #1349491 \u201c[OSSA 2014-027] Persistent &lt;XSS&gt; in '
                 'the Host Aggrega...\u201d : Bugs ...'),

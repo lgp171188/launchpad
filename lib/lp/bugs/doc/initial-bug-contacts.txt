@@ -214,7 +214,7 @@ of the email with the bug title and URL.
     <BLANKLINE>
     --
     Firefox does not support SVG
-    http://bugs.launchpad.dev/bugs/1
+    http://bugs.launchpad.test/bugs/1
     You received this bug notification because you
     are subscribed to pmount in Ubuntu.
 

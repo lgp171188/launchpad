@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -31,9 +31,8 @@ __all__ = [
     'DuplicateFileIDError',
     'WrongDatabaseError',
     # _relFileLocation needed by other modules in this package.
-    # Listed here to keep the import fascist happy
+    # Listed here to keep the import pedant happy
     '_relFileLocation',
-    '_sameFile',
     ]
 
 
@@ -174,8 +173,9 @@ class TxSwiftStream(swift.SwiftStream):
                 # If we have drained the data successfully,
                 # the connection can be reused saving on auth
                 # handshakes.
-                swift.connection_pool.put(self._swift_connection)
-                self._swift_connection = None
+                if self._swift_connection is not None:
+                    swift.connection_pool.put(self._swift_connection)
+                    self._swift_connection = None
                 self._chunks = None
                 defer.returnValue('')
         return_chunk = self._chunk[:size]
@@ -302,18 +302,6 @@ class LibraryFileUpload(object):
         shutil.move(self.tmpfilepath, location)
         fsync_path(location)
         fsync_path(os.path.dirname(location), dir=True)
-
-
-def _sameFile(path1, path2):
-    file1 = open(path1, 'rb')
-    file2 = open(path2, 'rb')
-
-    blk = 1024 * 64
-    chunksIter = iter(lambda: (file1.read(blk), file2.read(blk)), ('', ''))
-    for chunk1, chunk2 in chunksIter:
-        if chunk1 != chunk2:
-            return False
-    return True
 
 
 def _relFileLocation(file_id):

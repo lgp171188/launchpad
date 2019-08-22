@@ -59,7 +59,7 @@ class TestLoginToken(TestCaseWithFactory):
             To confirm you want to do this, please follow
             this link:
 
-                http://launchpad.dev/token/...
+                http://launchpad.test/token/...
 
             If you didn't ask to merge these accounts, please
             either ignore this email or report it to the

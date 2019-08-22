@@ -134,8 +134,8 @@ class TestGitRepositoryView(BrowserTestCase):
         username = repository.owner.name
         text = self.getMainText(repository, "+index", user=repository.owner)
         self.assertTextMatchesExpressionIgnoreWhitespace(r"""
-            git clone https://git.launchpad.dev/.*
-            git clone git\+ssh://{username}@git.launchpad.dev/.*
+            git clone https://git.launchpad.test/.*
+            git clone git\+ssh://{username}@git.launchpad.test/.*
             """.format(username=username), text)
 
     def test_user_can_push(self):
@@ -176,7 +176,7 @@ class TestGitRepositoryView(BrowserTestCase):
         login_person(self.user)
         self.assertThat(directions.renderContents(), DocTestMatches(dedent("""
             Only <a
-            href="http://launchpad.dev/~{owner.name}">{owner.display_name}</a>
+            href="http://launchpad.test/~{owner.name}">{owner.display_name}</a>
             can upload to this repository. If you are {owner.display_name}
             please <a href="+login">log in</a> for upload directions.
             """).format(owner=repository.owner),
@@ -192,7 +192,7 @@ class TestGitRepositoryView(BrowserTestCase):
         login_person(self.user)
         self.assertThat(directions.renderContents(), DocTestMatches(dedent("""
             Members of <a
-            href="http://launchpad.dev/~{owner.name}">{owner.display_name}</a>
+            href="http://launchpad.test/~{owner.name}">{owner.display_name}</a>
             can upload to this repository. <a href="+login">Log in</a> for
             directions.
             """).format(owner=repository.owner),
@@ -210,7 +210,7 @@ class TestGitRepositoryView(BrowserTestCase):
         self.assertThat(extract_text(directions), DocTestMatches(dedent("""
             Update this repository:
             git push
-            git+ssh://{username}@git.launchpad.dev/{repository.shortened_path}
+            git+ssh://{username}@git.launchpad.test/{repository.shortened_path}
             """).format(username=username, repository=repository),
             flags=doctest.NORMALIZE_WHITESPACE))
 
@@ -223,7 +223,7 @@ class TestGitRepositoryView(BrowserTestCase):
         login_person(self.user)
         self.assertThat(directions.renderContents(), DocTestMatches(dedent("""
             To authenticate with the Launchpad Git hosting service, you need
-            to <a href="http://launchpad.dev/~{user.name}/+editsshkeys">
+            to <a href="http://launchpad.test/~{user.name}/+editsshkeys">
             register an SSH key</a>.
             """).format(user=self.user),
             flags=doctest.NORMALIZE_WHITESPACE))
@@ -237,7 +237,7 @@ class TestGitRepositoryView(BrowserTestCase):
         login_person(self.user)
         self.assertThat(directions.renderContents(), DocTestMatches(dedent("""
             You cannot push to this repository. Only <a
-            href="http://launchpad.dev/~{owner.name}">{owner.display_name}</a>
+            href="http://launchpad.test/~{owner.name}">{owner.display_name}</a>
             can push to this repository.
             """).format(owner=repository.owner),
             flags=doctest.NORMALIZE_WHITESPACE))
@@ -252,7 +252,7 @@ class TestGitRepositoryView(BrowserTestCase):
         login_person(self.user)
         self.assertThat(directions.renderContents(), DocTestMatches(dedent("""
             You cannot push to this repository. Members of <a
-            href="http://launchpad.dev/~{owner.name}">{owner.display_name}</a>
+            href="http://launchpad.test/~{owner.name}">{owner.display_name}</a>
             can push to this repository.
             """).format(owner=repository.owner),
             flags=doctest.NORMALIZE_WHITESPACE))

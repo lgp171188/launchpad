@@ -1,4 +1,4 @@
-# Copyright 2016-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2016-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for communication with the snap store."""
@@ -14,6 +14,7 @@ import io
 import json
 
 from lazr.restful.utils import get_current_browser_request
+from nacl.public import PrivateKey
 from pymacaroons import (
     Macaroon,
     Verifier,
@@ -34,8 +35,11 @@ from testtools.matchers import (
     )
 import transaction
 from zope.component import getUtility
+from zope.security.proxy import removeSecurityProxy
 
+from lp.buildmaster.enums import BuildStatus
 from lp.services.config import config
+from lp.services.crypto.interfaces import IEncryptedContainer
 from lp.services.features.testing import FeatureFixture
 from lp.services.log.logger import BufferLogger
 from lp.services.memcache.interfaces import IMemcacheClient
@@ -46,7 +50,6 @@ from lp.snappy.interfaces.snapstoreclient import (
     BadScanStatusResponse,
     BadSearchResponse,
     ISnapStoreClient,
-    ReleaseFailedResponse,
     ScanFailedResponse,
     UnauthorizedUploadResponse,
     UploadFailedResponse,
@@ -229,7 +232,7 @@ class TestSnapStoreClient(TestCaseWithFactory):
             ]
         self.channels_memcache_key = "search.example:channels".encode("UTF-8")
 
-    def _make_store_secrets(self):
+    def _make_store_secrets(self, encrypted=False):
         self.root_key = hashlib.sha256(
             self.factory.getUniqueString()).hexdigest()
         root_macaroon = Macaroon(key=self.root_key)
@@ -241,10 +244,15 @@ class TestSnapStoreClient(TestCaseWithFactory):
         unbound_discharge_macaroon = Macaroon(
             location="sso.example", key=self.discharge_key,
             identifier=self.discharge_caveat_id)
-        return {
-            "root": root_macaroon.serialize(),
-            "discharge": unbound_discharge_macaroon.serialize(),
-            }
+        secrets = {"root": root_macaroon.serialize()}
+        if encrypted:
+            container = getUtility(IEncryptedContainer, "snap-store-secrets")
+            secrets["discharge_encrypted"] = (
+                removeSecurityProxy(container.encrypt(
+                    unbound_discharge_macaroon.serialize().encode("UTF-8"))))
+        else:
+            secrets["discharge"] = unbound_discharge_macaroon.serialize()
+        return secrets
 
     def _addUnscannedUploadResponse(self):
         responses.add(
@@ -280,20 +288,6 @@ class TestSnapStoreClient(TestCaseWithFactory):
             json={"_embedded": {"clickindex:channel": self.channels}})
         self.addCleanup(
             getUtility(IMemcacheClient).delete, self.channels_memcache_key)
-
-    def _addSnapReleaseResponse(self):
-        responses.add(
-            "POST", "http://sca.example/dev/api/snap-release/",
-            json={
-                "success": True,
-                "channel_map": [
-                    {"channel": "stable", "info": "specific",
-                     "version": "1.0", "revision": 1},
-                    {"channel": "edge", "info": "specific",
-                     "version": "1.0", "revision": 1},
-                    ],
-                "opened_channels": ["stable", "edge"],
-                })
 
     @responses.activate
     def test_requestPackageUploadPermission(self):
@@ -348,9 +342,9 @@ class TestSnapStoreClient(TestCaseWithFactory):
             self.client.requestPackageUploadPermission,
             snappy_series, "test-snap")
 
-    def makeUploadableSnapBuild(self, store_secrets=None):
+    def makeUploadableSnapBuild(self, store_secrets=None, encrypted=False):
         if store_secrets is None:
-            store_secrets = self._make_store_secrets()
+            store_secrets = self._make_store_secrets(encrypted=encrypted)
         snap = self.factory.makeSnap(
             store_upload=True,
             store_series=self.factory.makeSnappySeries(name="rolling"),
@@ -363,6 +357,8 @@ class TestSnapStoreClient(TestCaseWithFactory):
             filename="test-snap.manifest", content="dummy manifest content")
         self.factory.makeSnapFile(
             snapbuild=snapbuild, libraryfile=manifest_lfa)
+        snapbuild.updateStatus(BuildStatus.BUILDING)
+        snapbuild.updateStatus(BuildStatus.FULLYBUILT)
         return snapbuild
 
     @responses.activate
@@ -394,6 +390,42 @@ class TestSnapStoreClient(TestCaseWithFactory):
                 auth=("Macaroon", MacaroonsVerify(self.root_key)),
                 json_data={
                     "name": "test-snap", "updown_id": 1, "series": "rolling",
+                    "built_at": snapbuild.date_started.isoformat(),
+                    }),
+            ]))
+
+    @responses.activate
+    def test_upload_with_release_intent(self):
+        snapbuild = self.makeUploadableSnapBuild()
+        snapbuild.snap.store_channels = ['beta', 'edge']
+        transaction.commit()
+        self._addUnscannedUploadResponse()
+        self._addSnapPushResponse()
+        with dbuser(config.ISnapStoreUploadJobSource.dbuser):
+            self.assertEqual(
+                "http://sca.example/dev/api/snaps/1/builds/1/status",
+                self.client.upload(snapbuild))
+        requests = [call.request for call in responses.calls]
+        self.assertThat(requests, MatchesListwise([
+            RequestMatches(
+                url=Equals("http://updown.example/unscanned-upload/"),
+                method=Equals("POST"),
+                form_data={
+                    "binary": MatchesStructure.byEquality(
+                        name="binary", filename="test-snap.snap",
+                        value="dummy snap content",
+                        type="application/octet-stream",
+                        )}),
+            RequestMatches(
+                url=Equals("http://sca.example/dev/api/snap-push/"),
+                method=Equals("POST"),
+                headers=ContainsDict(
+                    {"Content-Type": Equals("application/json")}),
+                auth=("Macaroon", MacaroonsVerify(self.root_key)),
+                json_data={
+                    "name": "test-snap", "updown_id": 1, "series": "rolling",
+                    "built_at": snapbuild.date_started.isoformat(),
+                    "only_if_newer": True, "channels": ['beta', 'edge'],
                     }),
             ]))
 
@@ -429,6 +461,47 @@ class TestSnapStoreClient(TestCaseWithFactory):
                 auth=("Macaroon", MacaroonsVerify(root_key)),
                 json_data={
                     "name": "test-snap", "updown_id": 1, "series": "rolling",
+                    "built_at": snapbuild.date_started.isoformat(),
+                    }),
+            ]))
+
+    @responses.activate
+    def test_upload_encrypted_discharge(self):
+        private_key = PrivateKey.generate()
+        self.pushConfig(
+            "snappy",
+            store_secrets_public_key=base64.b64encode(
+                bytes(private_key.public_key)).decode("UTF-8"),
+            store_secrets_private_key=base64.b64encode(
+                bytes(private_key)).decode("UTF-8"))
+        snapbuild = self.makeUploadableSnapBuild(encrypted=True)
+        transaction.commit()
+        self._addUnscannedUploadResponse()
+        self._addSnapPushResponse()
+        with dbuser(config.ISnapStoreUploadJobSource.dbuser):
+            self.assertEqual(
+                "http://sca.example/dev/api/snaps/1/builds/1/status",
+                self.client.upload(snapbuild))
+        requests = [call.request for call in responses.calls]
+        self.assertThat(requests, MatchesListwise([
+            RequestMatches(
+                url=Equals("http://updown.example/unscanned-upload/"),
+                method=Equals("POST"),
+                form_data={
+                    "binary": MatchesStructure.byEquality(
+                        name="binary", filename="test-snap.snap",
+                        value="dummy snap content",
+                        type="application/octet-stream",
+                        )}),
+            RequestMatches(
+                url=Equals("http://sca.example/dev/api/snap-push/"),
+                method=Equals("POST"),
+                headers=ContainsDict(
+                    {"Content-Type": Equals("application/json")}),
+                auth=("Macaroon", MacaroonsVerify(self.root_key)),
+                json_data={
+                    "name": "test-snap", "updown_id": 1, "series": "rolling",
+                    "built_at": snapbuild.date_started.isoformat(),
                     }),
             ]))
 
@@ -479,6 +552,39 @@ class TestSnapStoreClient(TestCaseWithFactory):
             snapbuild.snap.store_secrets["discharge"])
 
     @responses.activate
+    def test_upload_needs_encrypted_discharge_macaroon_refresh(self):
+        private_key = PrivateKey.generate()
+        self.pushConfig(
+            "snappy",
+            store_secrets_public_key=base64.b64encode(
+                bytes(private_key.public_key)).decode("UTF-8"),
+            store_secrets_private_key=base64.b64encode(
+                bytes(private_key)).decode("UTF-8"))
+        store_secrets = self._make_store_secrets(encrypted=True)
+        snapbuild = self.makeUploadableSnapBuild(store_secrets=store_secrets)
+        transaction.commit()
+        self._addUnscannedUploadResponse()
+        responses.add(
+            "POST", "http://sca.example/dev/api/snap-push/", status=401,
+            headers={"WWW-Authenticate": "Macaroon needs_refresh=1"})
+        self._addMacaroonRefreshResponse()
+        self._addSnapPushResponse()
+        with dbuser(config.ISnapStoreUploadJobSource.dbuser):
+            self.assertEqual(
+                "http://sca.example/dev/api/snaps/1/builds/1/status",
+                self.client.upload(snapbuild))
+        requests = [call.request for call in responses.calls]
+        self.assertThat(requests, MatchesListwise([
+            MatchesStructure.byEquality(path_url="/unscanned-upload/"),
+            MatchesStructure.byEquality(path_url="/dev/api/snap-push/"),
+            MatchesStructure.byEquality(path_url="/api/v2/tokens/refresh"),
+            MatchesStructure.byEquality(path_url="/dev/api/snap-push/"),
+            ]))
+        self.assertNotEqual(
+            store_secrets["discharge_encrypted"],
+            snapbuild.snap.store_secrets["discharge_encrypted"])
+
+    @responses.activate
     def test_upload_unsigned_agreement(self):
         store_secrets = self._make_store_secrets()
         snapbuild = self.makeUploadableSnapBuild(store_secrets=store_secrets)
@@ -526,6 +632,36 @@ class TestSnapStoreClient(TestCaseWithFactory):
             json_data={"discharge_macaroon": store_secrets["discharge"]}))
         self.assertNotEqual(
             store_secrets["discharge"], snap.store_secrets["discharge"])
+
+    @responses.activate
+    def test_refresh_encrypted_discharge_macaroon(self):
+        private_key = PrivateKey.generate()
+        self.pushConfig(
+            "snappy",
+            store_secrets_public_key=base64.b64encode(
+                bytes(private_key.public_key)).decode("UTF-8"),
+            store_secrets_private_key=base64.b64encode(
+                bytes(private_key)).decode("UTF-8"))
+        store_secrets = self._make_store_secrets(encrypted=True)
+        snap = self.factory.makeSnap(
+            store_upload=True,
+            store_series=self.factory.makeSnappySeries(name="rolling"),
+            store_name="test-snap", store_secrets=store_secrets)
+        self._addMacaroonRefreshResponse()
+        with dbuser(config.ISnapStoreUploadJobSource.dbuser):
+            self.client.refreshDischargeMacaroon(snap)
+        container = getUtility(IEncryptedContainer, "snap-store-secrets")
+        self.assertThat(responses.calls[-1].request, RequestMatches(
+            url=Equals("http://sso.example/api/v2/tokens/refresh"),
+            method=Equals("POST"),
+            headers=ContainsDict({"Content-Type": Equals("application/json")}),
+            json_data={
+                "discharge_macaroon": container.decrypt(
+                    store_secrets["discharge_encrypted"]).decode("UTF-8"),
+                }))
+        self.assertNotEqual(
+            store_secrets["discharge_encrypted"],
+            snap.store_secrets["discharge_encrypted"])
 
     @responses.activate
     def test_checkStatus_pending(self):
@@ -596,6 +732,45 @@ class TestSnapStoreClient(TestCaseWithFactory):
             self.client.checkStatus, status_url)
 
     @responses.activate
+    def test_checkStatus_manual_review(self):
+        status_url = "http://sca.example/dev/api/snaps/1/builds/1/status"
+        responses.add(
+            "GET", status_url,
+            json={
+                "errors": [
+                    {"code": None,
+                     "link": None,
+                     "message": "found potentially sensitive files in package",
+                     }],
+                "url": "http://sca.example/dev/click-apps/1/rev/1/",
+                "code": "need_manual_review",
+                "processed": True,
+                "can_release": False,
+                "revision": 1
+                })
+        self.assertEqual(
+            ("http://sca.example/dev/click-apps/1/rev/1/", 1),
+            self.client.checkStatus(status_url))
+
+    @responses.activate
+    def test_checkStatus_review_queued(self):
+        status_url = "http://sca.example/dev/api/snaps/1/builds/1/status"
+        responses.add(
+            "GET", status_url,
+            json={
+                "errors": [
+                    {"code": "review-queued",
+                     "message": (
+                         "Waiting for previous upload(s) to complete their "
+                         "review process."),
+                     }],
+                "code": "processing_error",
+                "processed": True,
+                "can_release": False,
+                })
+        self.assertEqual((None, None), self.client.checkStatus(status_url))
+
+    @responses.activate
     def test_listChannels(self):
         self._addChannelsResponse()
         self.assertEqual(self.channels, self.client.listChannels())
@@ -633,100 +808,3 @@ class TestSnapStoreClient(TestCaseWithFactory):
         self.assertContentEqual([], responses.calls)
         self.assertIsNone(
             getUtility(IMemcacheClient).get(self.channels_memcache_key))
-
-    @responses.activate
-    def test_release(self):
-        snap = self.factory.makeSnap(
-            store_upload=True,
-            store_series=self.factory.makeSnappySeries(name="rolling"),
-            store_name="test-snap",
-            store_secrets=self._make_store_secrets(),
-            store_channels=["stable", "edge"])
-        snapbuild = self.factory.makeSnapBuild(snap=snap)
-        self._addSnapReleaseResponse()
-        self.client.release(snapbuild, 1)
-        self.assertThat(responses.calls[-1].request, RequestMatches(
-            url=Equals("http://sca.example/dev/api/snap-release/"),
-            method=Equals("POST"),
-            headers=ContainsDict({"Content-Type": Equals("application/json")}),
-            auth=("Macaroon", MacaroonsVerify(self.root_key)),
-            json_data={
-                "name": "test-snap", "revision": 1,
-                "channels": ["stable", "edge"], "series": "rolling",
-                }))
-
-    @responses.activate
-    def test_release_no_discharge(self):
-        root_key = hashlib.sha256(self.factory.getUniqueString()).hexdigest()
-        root_macaroon = Macaroon(key=root_key)
-        snap = self.factory.makeSnap(
-            store_upload=True,
-            store_series=self.factory.makeSnappySeries(name="rolling"),
-            store_name="test-snap",
-            store_secrets={"root": root_macaroon.serialize()},
-            store_channels=["stable", "edge"])
-        snapbuild = self.factory.makeSnapBuild(snap=snap)
-        self._addSnapReleaseResponse()
-        self.client.release(snapbuild, 1)
-        self.assertThat(responses.calls[-1].request, RequestMatches(
-            url=Equals("http://sca.example/dev/api/snap-release/"),
-            method=Equals("POST"),
-            headers=ContainsDict({"Content-Type": Equals("application/json")}),
-            auth=("Macaroon", MacaroonsVerify(root_key)),
-            json_data={
-                "name": "test-snap", "revision": 1,
-                "channels": ["stable", "edge"], "series": "rolling",
-                }))
-
-    @responses.activate
-    def test_release_needs_discharge_macaroon_refresh(self):
-        store_secrets = self._make_store_secrets()
-        snap = self.factory.makeSnap(
-            store_upload=True,
-            store_series=self.factory.makeSnappySeries(name="rolling"),
-            store_name="test-snap", store_secrets=store_secrets,
-            store_channels=["stable", "edge"])
-        snapbuild = self.factory.makeSnapBuild(snap=snap)
-        responses.add(
-            "POST", "http://sca.example/dev/api/snap-release/", status=401,
-            headers={"WWW-Authenticate": "Macaroon needs_refresh=1"})
-        self._addMacaroonRefreshResponse()
-        self._addSnapReleaseResponse()
-        self.client.release(snapbuild, 1)
-        requests = [call.request for call in responses.calls]
-        self.assertThat(requests, MatchesListwise([
-            MatchesStructure.byEquality(path_url="/dev/api/snap-release/"),
-            MatchesStructure.byEquality(path_url="/api/v2/tokens/refresh"),
-            MatchesStructure.byEquality(path_url="/dev/api/snap-release/"),
-            ]))
-        self.assertNotEqual(
-            store_secrets["discharge"], snap.store_secrets["discharge"])
-
-    @responses.activate
-    def test_release_error(self):
-        snap = self.factory.makeSnap(
-            store_upload=True,
-            store_series=self.factory.makeSnappySeries(name="rolling"),
-            store_name="test-snap", store_secrets=self._make_store_secrets(),
-            store_channels=["stable", "edge"])
-        snapbuild = self.factory.makeSnapBuild(snap=snap)
-        responses.add(
-            "POST", "http://sca.example/dev/api/snap-release/", status=503,
-            json={"error_list": [{"message": "Failed to publish"}]})
-        self.assertRaisesWithContent(
-            ReleaseFailedResponse, "Failed to publish",
-            self.client.release, snapbuild, 1)
-
-    @responses.activate
-    def test_release_404(self):
-        snap = self.factory.makeSnap(
-            store_upload=True,
-            store_series=self.factory.makeSnappySeries(name="rolling"),
-            store_name="test-snap", store_secrets=self._make_store_secrets(),
-            store_channels=["stable", "edge"])
-        snapbuild = self.factory.makeSnapBuild(snap=snap)
-        responses.add(
-            "POST", "http://sca.example/dev/api/snap-release/", status=404)
-        self.assertRaisesWithContent(
-            ReleaseFailedResponse, b"404 Client Error: Not Found",
-            self.client.release, snapbuild, 1)

@@ -42,7 +42,7 @@ The view provides a label, page_title, and cancel_url
     Register a new mirror for Ubuntu
 
     >>> print view.cancel_url
-    http://launchpad.dev/ubuntu
+    http://launchpad.test/ubuntu
 
 A HTTP or FTP URL is required to register a mirror.
 
@@ -68,7 +68,7 @@ A HTTP or FTP URL is required to register a mirror.
     >>> view.errors
     []
     >>> print view.next_url
-    http://launchpad.dev/ubuntu/+mirror/secret.me-archive
+    http://launchpad.test/ubuntu/+mirror/secret.me-archive
 
     >>> transaction.commit()
 
@@ -160,7 +160,7 @@ The view provides a label, page_title, and cancel_url.
     Review mirror Illuminati
 
     >>> print view.cancel_url
-    http://launchpad.dev/ubuntu/+mirror/secret.me-archive
+    http://launchpad.test/ubuntu/+mirror/secret.me-archive
 
 If the status is not changed, the reviewer and date_reviewed won't be
 changed either.
@@ -189,7 +189,7 @@ changed.
     >>> view.errors
     []
     >>> print view.next_url
-    http://launchpad.dev/ubuntu/+mirror/secret.me-archive
+    http://launchpad.test/ubuntu/+mirror/secret.me-archive
 
     >>> print mirror.status.name
     OFFICIAL
@@ -234,7 +234,7 @@ The +edit view provides a label, page_title, and cancel_url.
     Edit mirror Illuminati
 
     >>> print view.cancel_url
-    http://launchpad.dev/ubuntu/+mirror/secret.me-archive
+    http://launchpad.test/ubuntu/+mirror/secret.me-archive
 
 The user can edit the mirror fields.
 
@@ -252,7 +252,7 @@ The user can edit the mirror fields.
     >>> view.errors
     []
     >>> print view.next_url
-    http://launchpad.dev/ubuntu/+mirror/secret.me-archive
+    http://launchpad.test/ubuntu/+mirror/secret.me-archive
 
     >>> print mirror.ftp_base_url
     ftp://secret.me/
@@ -297,7 +297,7 @@ The +delete view provides a label, page_title, and cancel_url.
     Delete mirror Illuminati
 
     >>> print view.cancel_url
-    http://launchpad.dev/ubuntu/+mirror/secret.me-archive
+    http://launchpad.test/ubuntu/+mirror/secret.me-archive
 
 A mirror that have been probed cannot be deleted.
 
@@ -324,7 +324,7 @@ Deletion is permanent.
     >>> view.errors
     []
     >>> print view.next_url
-    http://launchpad.dev/ubuntu/+pendingreviewmirrors
+    http://launchpad.test/ubuntu/+pendingreviewmirrors
 
     >>> transaction.commit()
     >>> print ubuntu.getMirrorByName('secret.me-archive')
@@ -464,13 +464,13 @@ Any user can see the RSS for an archive mirror
     >>> user = getUtility(ILaunchBag).user
     >>> view = create_initialized_view(
     ...     ubuntu, '+archivemirrors-rss', principal=user,
-    ...     server_url='http://launchpad.dev/ubuntu/+archivemirrors-rss')
+    ...     server_url='http://launchpad.test/ubuntu/+archivemirrors-rss')
     >>> print view()
     <?xml version="1.0"...?>
     <rss xmlns:mirror="https://launchpad.net/" version="2.0">
       <channel>
         <title>Ubuntu Archive Mirrors Status</title>
-        <link>http://launchpad.dev/ubuntu/+archivemirrors-rss</link>
+        <link>http://launchpad.test/ubuntu/+archivemirrors-rss</link>
         <description>Status of Ubuntu Archive Mirrors</description>
         ...
         <item>
@@ -497,7 +497,7 @@ Any user can see the RSS for an CD mirror
 
     >>> view = create_initialized_view(
     ...     ubuntu, '+cdmirrors-rss', principal=user,
-    ...     server_url='http://launchpad.dev/ubuntu/+cdmirrors-rss')
+    ...     server_url='http://launchpad.test/ubuntu/+cdmirrors-rss')
     >>> print view()
     <?xml version="1.0"...?>
     <rss ...

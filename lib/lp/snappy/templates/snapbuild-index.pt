@@ -199,6 +199,20 @@
             <input type="submit" name="field.actions.upload" value="Retry" />
           </form>
         </tal:failed-release>
+        <tal:uploaded
+            condition="context/store_upload_status/enumvalue:UPLOADED">
+          <tal:comment condition="nothing">
+            If the package is in the uploaded state, we normally have a URL
+            (rendered above), but we might not if the upload was queued for
+            manual review behind other uploads of the same package.  Linking
+            to the front page of the store in that case isn't great, but
+            it's the best we can reasonably do.
+          </tal:comment>
+          <a tal:condition="not: context/store_upload_url"
+             tal:attributes="href modules/lp.services.config/config/snappy/store_url">
+            Uploaded to the store
+          </a>
+        </tal:uploaded>
       </li>
       <li id="store-upload-status"
           tal:condition="python:

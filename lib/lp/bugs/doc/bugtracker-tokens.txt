@@ -9,7 +9,7 @@ Launchpad offers an XML-RPC interface for generating bug tracker tokens.
     >>> from lp.services.verification.interfaces.logintoken import (
     ...     ILoginTokenSet)
     >>> bugtracker_api = xmlrpclib.ServerProxy(
-    ...     'http://xmlrpc-private.launchpad.dev:8087/bugs',
+    ...     'http://xmlrpc-private.launchpad.test:8087/bugs',
     ...     transport=XMLRPCTestTransport())
 
     >>> token_string = bugtracker_api.newBugTrackerToken()
@@ -28,7 +28,7 @@ POST request to the token's canonical URL to validate it.
     ...     view_name='+bugtracker-handshake')
 
     >>> print(token_url)
-    http://launchpad.dev/token/.../+bugtracker-handshake
+    http://launchpad.test/token/.../+bugtracker-handshake
 
 Visiting the token's +bugtracker-handshake URL will result in an HTTP
 200 response if the token is valid.

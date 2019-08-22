@@ -6,6 +6,7 @@ __all__ = [
     'Snap',
     ]
 
+import base64
 from collections import OrderedDict
 from datetime import (
     datetime,
@@ -14,9 +15,12 @@ from datetime import (
 from operator import attrgetter
 from urlparse import urlsplit
 
+from bzrlib import urlutils
+from bzrlib.errors import InvalidURLJoin
 from lazr.lifecycle.event import ObjectCreatedEvent
 from pymacaroons import Macaroon
 import pytz
+import six
 from storm.expr import (
     And,
     Desc,
@@ -97,6 +101,8 @@ from lp.registry.model.distroseries import DistroSeries
 from lp.registry.model.series import ACTIVE_STATUSES
 from lp.registry.model.teammembership import TeamParticipation
 from lp.services.config import config
+from lp.services.crypto.interfaces import IEncryptedContainer
+from lp.services.crypto.model import NaClEncryptedContainerBase
 from lp.services.database.bulk import load_related
 from lp.services.database.constants import (
     DEFAULT,
@@ -243,6 +249,16 @@ class SnapBuildRequest:
     def archive(self):
         """See `ISnapBuildRequest`."""
         return self._job.archive
+
+    @property
+    def channels(self):
+        """See `ISnapBuildRequest`."""
+        return self._job.channels
+
+    @property
+    def architectures(self):
+        """See `ISnapBuildRequest`."""
+        return self._job.architectures
 
 
 @implementer(ISnap, IHasOwner)
@@ -589,9 +605,18 @@ class Snap(Storm, WebhookTargetMixin):
                     "beginAuthorization must be called before "
                     "completeAuthorization.")
         if discharge_macaroon is not None:
-            self.store_secrets["discharge"] = discharge_macaroon
+            container = getUtility(IEncryptedContainer, "snap-store-secrets")
+            if container.can_encrypt:
+                self.store_secrets["discharge_encrypted"] = (
+                    removeSecurityProxy(container.encrypt(
+                        discharge_macaroon.encode("UTF-8"))))
+                self.store_secrets.pop("discharge", None)
+            else:
+                self.store_secrets["discharge"] = discharge_macaroon
+                self.store_secrets.pop("discharge_encrypted", None)
         else:
             self.store_secrets.pop("discharge", None)
+            self.store_secrets.pop("discharge_encrypted", None)
 
     @property
     def can_upload_to_store(self):
@@ -604,7 +629,8 @@ class Snap(Storm, WebhookTargetMixin):
             return False
         root_macaroon = Macaroon.deserialize(self.store_secrets["root"])
         if (self.extractSSOCaveats(root_macaroon) and
-                "discharge" not in self.store_secrets):
+                "discharge" not in self.store_secrets and
+                "discharge_encrypted" not in self.store_secrets):
             return False
         return True
 
@@ -627,13 +653,18 @@ class Snap(Storm, WebhookTargetMixin):
         if not self._isArchitectureAllowed(distro_arch_series, pocket):
             raise SnapBuildDisallowedArchitecture(distro_arch_series, pocket)
 
+        if not channels:
+            channels_clause = Or(
+                SnapBuild.channels == None, SnapBuild.channels == {})
+        else:
+            channels_clause = SnapBuild.channels == channels
         pending = IStore(self).find(
             SnapBuild,
             SnapBuild.snap_id == self.id,
             SnapBuild.archive_id == archive.id,
             SnapBuild.distro_arch_series_id == distro_arch_series.id,
             SnapBuild.pocket == pocket,
-            SnapBuild.channels == channels,
+            channels_clause,
             SnapBuild.status == BuildStatus.NEEDSBUILD)
         if pending.any() is not None:
             raise SnapBuildAlreadyPending
@@ -645,32 +676,39 @@ class Snap(Storm, WebhookTargetMixin):
         notify(ObjectCreatedEvent(build, user=requester))
         return build
 
-    def requestBuilds(self, requester, archive, pocket, channels=None):
+    def requestBuilds(self, requester, archive, pocket, channels=None,
+                      architectures=None):
         """See `ISnap`."""
         self._checkRequestBuild(requester, archive)
         job = getUtility(ISnapRequestBuildsJobSource).create(
-            self, requester, archive, pocket, channels)
+            self, requester, archive, pocket, channels,
+            architectures=architectures)
         return self.getBuildRequest(job.job_id)
 
     @staticmethod
     def _findBase(snapcraft_data):
         """Find a suitable base for a build."""
         snap_base_set = getUtility(ISnapBaseSet)
-        if "base" in snapcraft_data:
-            snap_base_name = snapcraft_data["base"]
+        snap_base_name = snapcraft_data.get("base")
+        if isinstance(snap_base_name, bytes):
+            snap_base_name = snap_base_name.decode("UTF-8")
+        if snap_base_name == "bare":
+            snap_base_name = snapcraft_data.get("build-base")
             if isinstance(snap_base_name, bytes):
                 snap_base_name = snap_base_name.decode("UTF-8")
-            return snap_base_set.getByName(snap_base_name)
+        if snap_base_name is not None:
+            return snap_base_set.getByName(snap_base_name), snap_base_name
         else:
-            return snap_base_set.getDefault()
+            return snap_base_set.getDefault(), snap_base_name
 
-    def _pickDistroSeries(self, snap_base, snapcraft_data):
+    def _pickDistroSeries(self, snap_base, snap_base_name):
         """Pick a suitable `IDistroSeries` for a build."""
         if snap_base is not None:
             return self.distro_series or snap_base.distro_series
         elif self.distro_series is None:
             # A base is mandatory if there's no configured distro series.
-            raise NoSuchSnapBase(snapcraft_data.get("base", "<default>"))
+            raise NoSuchSnapBase(
+                snap_base_name if snap_base_name is not None else "<default>")
         else:
             return self.distro_series
 
@@ -684,7 +722,8 @@ class Snap(Storm, WebhookTargetMixin):
         else:
             return channels
 
-    def requestBuildsFromJob(self, requester, archive, pocket, channels=None,
+    def requestBuildsFromJob(self, requester, archive, pocket,
+                             channels=None, architectures=None,
                              allow_failures=False, fetch_snapcraft_yaml=True,
                              build_request=None, logger=None):
         """See `ISnap`."""
@@ -711,8 +750,8 @@ class Snap(Storm, WebhookTargetMixin):
             # Find a suitable SnapBase, and combine it with other
             # configuration to find a suitable distro series and suitable
             # channels.
-            snap_base = self._findBase(snapcraft_data)
-            distro_series = self._pickDistroSeries(snap_base, snapcraft_data)
+            snap_base, snap_base_name = self._findBase(snapcraft_data)
+            distro_series = self._pickDistroSeries(snap_base, snap_base_name)
             channels = self._pickChannels(snap_base, channels=channels)
 
             # Sort by Processor.id for determinism.  This is chosen to be
@@ -721,7 +760,9 @@ class Snap(Storm, WebhookTargetMixin):
             supported_arches = OrderedDict(
                 (das.architecturetag, das) for das in sorted(
                     self.getAllowedArchitectures(distro_series),
-                    key=attrgetter("processor.id")))
+                    key=attrgetter("processor.id"))
+                if (architectures is None or
+                    das.architecturetag in architectures))
             architectures_to_build = determine_architectures_to_build(
                 snapcraft_data, supported_arches.keys())
         except Exception as e:
@@ -1203,7 +1244,7 @@ class SnapSet:
             snaps.order_by(Desc(Snap.date_last_modified))
         return snaps
 
-    def _findByURLVisibilityClause(self, visible_by_user):
+    def _findSnapVisibilityClause(self, visible_by_user):
         # XXX cjwatson 2016-11-25: This is in principle a poor query, but we
         # don't yet have the access grant infrastructure to do better, and
         # in any case the numbers involved should be very small.
@@ -1225,7 +1266,7 @@ class SnapSet:
         clauses = [Snap.git_repository_url == url]
         if owner is not None:
             clauses.append(Snap.owner == owner)
-        clauses.append(self._findByURLVisibilityClause(visible_by_user))
+        clauses.append(self._findSnapVisibilityClause(visible_by_user))
         return IStore(Snap).find(Snap, *clauses)
 
     def findByURLPrefix(self, url_prefix, owner=None, visible_by_user=None):
@@ -1242,7 +1283,15 @@ class SnapSet:
         clauses = [Or(*prefix_clauses)]
         if owner is not None:
             clauses.append(Snap.owner == owner)
-        clauses.append(self._findByURLVisibilityClause(visible_by_user))
+        clauses.append(self._findSnapVisibilityClause(visible_by_user))
+        return IStore(Snap).find(Snap, *clauses)
+
+    def findByStoreName(self, store_name, owner=None, visible_by_user=None):
+        """See `ISnapSet`."""
+        clauses = [Snap.store_name == store_name]
+        if owner is not None:
+            clauses.append(Snap.owner == owner)
+        clauses.append(self._findSnapVisibilityClause(visible_by_user))
         return IStore(Snap).find(Snap, *clauses)
 
     def preloadDataForSnaps(self, snaps, user=None):
@@ -1288,6 +1337,21 @@ class SnapSet:
             for path in paths:
                 try:
                     blob = context.getBlob(path)
+                    if (IGitRef.providedBy(context) and
+                            context.repository_url is not None and
+                            isinstance(blob, bytes) and
+                            b":" not in blob and b"\n" not in blob):
+                        # Heuristic.  It seems somewhat common for Git
+                        # hosting sites to return the symlink target path
+                        # when fetching a blob corresponding to a symlink
+                        # committed to a repository: GitHub and GitLab both
+                        # have this property.  If it looks like this is what
+                        # has happened here, try resolving the symlink (only
+                        # to one level).
+                        resolved_path = urlutils.join(
+                            urlutils.dirname(path),
+                            six.ensure_str(blob)).lstrip("/")
+                        blob = context.getBlob(resolved_path)
                     break
                 except (BranchFileNotFound, GitRepositoryBlobNotFound):
                     pass
@@ -1299,6 +1363,8 @@ class SnapSet:
                 raise MissingSnapcraftYaml(context.unique_name)
         except GitRepositoryBlobUnsupportedRemote as e:
             raise CannotFetchSnapcraftYaml(str(e), unsupported_remote=True)
+        except InvalidURLJoin as e:
+            raise CannotFetchSnapcraftYaml(str(e))
         except (BranchHostingFault, GitRepositoryScanFault) as e:
             msg = "Failed to get snap manifest from %s"
             if logger is not None:
@@ -1370,3 +1436,23 @@ class SnapSet:
     def empty_list(self):
         """See `ISnapSet`."""
         return []
+
+
+@implementer(IEncryptedContainer)
+class SnapStoreSecretsEncryptedContainer(NaClEncryptedContainerBase):
+
+    @property
+    def public_key_bytes(self):
+        if config.snappy.store_secrets_public_key is not None:
+            return base64.b64decode(
+                config.snappy.store_secrets_public_key.encode("UTF-8"))
+        else:
+            return None
+
+    @property
+    def private_key_bytes(self):
+        if config.snappy.store_secrets_private_key is not None:
+            return base64.b64decode(
+                config.snappy.store_secrets_private_key.encode("UTF-8"))
+        else:
+            return None

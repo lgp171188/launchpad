@@ -697,9 +697,9 @@ class LaunchpadStatementTracer:
                     log_traceback = conditional(
                         self._normalize_whitespace(
                             statement_to_log.strip()).upper())
-                except (MemoryError, SystemExit, KeyboardInterrupt):
+                except MemoryError:
                     raise
-                except:
+                except (GeneratorExit, Exception):
                     exc_type, exc_value, tb = sys.exc_info()
                     log_sql[-1]['exception'] = (exc_type, exc_value)
                     log_sql[-1]['stack'] = extract_tb(tb)

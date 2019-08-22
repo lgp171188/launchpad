@@ -21,17 +21,17 @@ import tempfile
 
 
 vhosts = [
-    "launchpad.dev",
-    "answers.launchpad.dev",
-    "api.launchpad.dev",
-    "bazaar.launchpad.dev",
-    "blueprints.launchpad.dev",
-    "bugs.launchpad.dev",
-    "code.launchpad.dev",
-    "feeds.launchpad.dev",
-    "translations.launchpad.dev",
-    "xmlrpc.launchpad.dev",
-    "testopenid.dev",
+    "launchpad.test",
+    "answers.launchpad.test",
+    "api.launchpad.test",
+    "bazaar.launchpad.test",
+    "blueprints.launchpad.test",
+    "bugs.launchpad.test",
+    "code.launchpad.test",
+    "feeds.launchpad.test",
+    "translations.launchpad.test",
+    "xmlrpc.launchpad.test",
+    "testopenid.test",
     ]
 
 

@@ -340,7 +340,7 @@ class TestComposePublicURL(TestCaseWithFactory):
         # supports.
         branch = self.factory.makeAnyBranch()
 
-        url_pattern = '%%s://bazaar.launchpad.dev/~%s/%s/%s' % (
+        url_pattern = '%%s://bazaar.launchpad.test/~%s/%s/%s' % (
             branch.owner.name, branch.product.name, branch.name)
         for scheme in SUPPORTED_SCHEMES:
             public_url = branch.composePublicURL(scheme)

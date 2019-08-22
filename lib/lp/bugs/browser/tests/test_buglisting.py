@@ -244,7 +244,7 @@ class TestBugTaskSearchListingPage(BrowserTestCase):
         default_bugtask_url = canonical_url(
             bug.default_bugtask, rootsite='bugs')
 
-        browser = self.getUserBrowser("http://bugs.launchpad.dev/")
+        browser = self.getUserBrowser("http://bugs.launchpad.test/")
         input_field = browser.getControl(name='field.searchtext')
         input_field.value = term_format_string.format(bug.id)
         browser.getControl(name='search').click()

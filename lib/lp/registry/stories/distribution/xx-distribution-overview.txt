@@ -13,7 +13,7 @@ Distribution listings
 
 There is a listing of all distributions at /distros/:
 
-    >>> anon_browser.open('http://launchpad.dev/distros/')
+    >>> anon_browser.open('http://launchpad.test/distros/')
     >>> print anon_browser.title
     Distributions registered in Launchpad
 
@@ -27,7 +27,7 @@ series.
 
 Some distributions have listings of major versions, for example Debian:
 
-    >>> anon_browser.open('http://launchpad.dev/debian')
+    >>> anon_browser.open('http://launchpad.test/debian')
     >>> print extract_text(find_tag_by_id(anon_browser.contents, 'sandm'))
     Active series and milestones
     3.1 &#8220;Sarge&#8221; series - frozen
@@ -39,11 +39,11 @@ Some distributions have listings of major versions, for example Debian:
 If we add another milestone the list is well formatted using English grammar
 rules.
 
-    >>> admin_browser.open("http://launchpad.dev/debian/woody/+addmilestone")
+    >>> admin_browser.open("http://launchpad.test/debian/woody/+addmilestone")
     >>> admin_browser.getControl("Name:").value = "testmilestone"
     >>> admin_browser.getControl("Register Milestone").click()
 
-    >>> anon_browser.open('http://launchpad.dev/debian')
+    >>> anon_browser.open('http://launchpad.test/debian')
     >>> print extract_text(find_tag_by_id(anon_browser.contents, 'sandm'))
     Active series and milestones
     ...
@@ -69,21 +69,21 @@ There are also two links "All series" and "All milestones" that take you
 to the distribution series and milestones pages respectively.
 
     >>> anon_browser.getLink('All series').url
-    'http://launchpad.dev/debian/+series'
+    'http://launchpad.test/debian/+series'
 
     >>> anon_browser.getLink('All milestones').url
-    'http://launchpad.dev/debian/+milestones'
+    'http://launchpad.test/debian/+milestones'
 
 Others do not have any series so the portlet is not shown.
 
-    >>> anon_browser.open('http://launchpad.dev/gentoo')
+    >>> anon_browser.open('http://launchpad.test/gentoo')
     >>> print find_tag_by_id(anon_browser.contents, 'sandm')
     None
 
 The 5 latest derivatives are displayed on the home page
 along with a link to list all of them.
 
-    >>> anon_browser.open('http://launchpad.dev/ubuntu')
+    >>> anon_browser.open('http://launchpad.test/ubuntu')
     >>> print extract_text(
     ...     find_tag_by_id(anon_browser.contents, 'derivatives'))
     Latest derivatives
@@ -105,12 +105,12 @@ along with a link to list all of them.
 The "All derivatives" link takes you to the derivatives page.
 
     >>> anon_browser.getLink('All derivatives').url
-    'http://launchpad.dev/ubuntu/+derivatives'
+    'http://launchpad.test/ubuntu/+derivatives'
 
 If there are no derivatives, the link to the derivatives page is
 not there.
 
-    >>> anon_browser.open('http://launchpad.dev/ubuntutest')
+    >>> anon_browser.open('http://launchpad.test/ubuntutest')
     >>> print extract_text(
     ...     find_tag_by_id(anon_browser.contents, 'derivatives'))
     Latest derivatives
@@ -123,7 +123,7 @@ If there is a development series alias, it becomes a redirect.
     >>> from lp.testing import celebrity_logged_in
     >>> from zope.component import getUtility
 
-    >>> anon_browser.open("http://launchpad.dev/ubuntu/devel")
+    >>> anon_browser.open("http://launchpad.test/ubuntu/devel")
     Traceback (most recent call last):
     ...
     NotFound: Object: <Distribution ...>, name: u'devel'
@@ -131,12 +131,12 @@ If there is a development series alias, it becomes a redirect.
     >>> with celebrity_logged_in("admin"):
     ...     ubuntu = getUtility(IDistributionSet).getByName(u"ubuntu")
     ...     ubuntu.development_series_alias = "devel"
-    >>> anon_browser.open("http://launchpad.dev/ubuntu/devel")
+    >>> anon_browser.open("http://launchpad.test/ubuntu/devel")
     >>> print anon_browser.url
-    http://launchpad.dev/ubuntu/hoary
-    >>> anon_browser.open("http://launchpad.dev/ubuntu/devel/+builds")
+    http://launchpad.test/ubuntu/hoary
+    >>> anon_browser.open("http://launchpad.test/ubuntu/devel/+builds")
     >>> print anon_browser.url
-    http://launchpad.dev/ubuntu/hoary/+builds
+    http://launchpad.test/ubuntu/hoary/+builds
 
 
 Registration information
@@ -144,7 +144,7 @@ Registration information
 
 The distroseries pages presents the registration information.
 
-    >>> anon_browser.open('http://launchpad.dev/ubuntu')
+    >>> anon_browser.open('http://launchpad.test/ubuntu')
 
     >>> print extract_text(
     ...     find_tag_by_id(anon_browser.contents, 'registration'))
@@ -153,7 +153,7 @@ The distroseries pages presents the registration information.
     on 2006-10-16
 
     >>> print anon_browser.getLink('Ubuntu Team').url
-    http://launchpad.dev/~ubuntu-team
+    http://launchpad.test/~ubuntu-team
 
 
 Redirection for webservice URLs
@@ -163,24 +163,24 @@ The webservice exposes a URL for the archive associated with the distribution.
 Displaying the page for that URL is nonsensical (it looks like the PPA
 index page), so the view redirect it to the distribution index page.
 
-    >>> anon_browser.open("http://launchpad.dev/ubuntu/+archive/primary")
+    >>> anon_browser.open("http://launchpad.test/ubuntu/+archive/primary")
     >>> print anon_browser.url
-    http://launchpad.dev/ubuntu
+    http://launchpad.test/ubuntu
 
-    >>> anon_browser.open("http://launchpad.dev/ubuntu/+archive/partner")
+    >>> anon_browser.open("http://launchpad.test/ubuntu/+archive/partner")
     >>> print anon_browser.url
-    http://launchpad.dev/ubuntu
+    http://launchpad.test/ubuntu
 
 Any attempt to access an incomplete URL (missing the archive name
 term) or an unavailable name (only 'primary' and 'partner' exist)
 results in a NotFound error.
 
-    >>> anon_browser.open("http://launchpad.dev/ubuntu/+archive")
+    >>> anon_browser.open("http://launchpad.test/ubuntu/+archive")
     Traceback (most recent call last):
     ...
     NotFound: Object: <Distribution ...>, name: u'+archive'
 
-    >>> anon_browser.open("http://launchpad.dev/ubuntu/+archive/boing")
+    >>> anon_browser.open("http://launchpad.test/ubuntu/+archive/boing")
     Traceback (most recent call last):
     ...
     NotFound: Object: <Distribution ...>, name: u'boing'

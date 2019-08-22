@@ -251,7 +251,7 @@ class TestTranslationSharedPOFile(TestCaseWithFactory):
     def test_POFile_canonical_url(self):
         # Test the canonical_url of the POFile.
         pofile_url = (
-            'http://translations.launchpad.dev/foo/devel/+pots/messages/'
+            'http://translations.launchpad.test/foo/devel/+pots/messages/'
             '%s' % self.devel_pofile.language.code)
         self.assertEqual(pofile_url, canonical_url(self.devel_pofile))
         view_name = '+details'
@@ -1112,7 +1112,7 @@ class TestTranslationCredits(TestCaseWithFactory):
         self.assertEqual(
             u'upstream credits\n\n'
             'Launchpad Contributions:\n'
-            '  Launchpad Translator http://launchpad.dev/~the-translator',
+            '  Launchpad Translator http://launchpad.test/~the-translator',
             self.pofile.prepareTranslationCredits(self.credits_potmsgset))
 
     def test_prepareTranslationCredits_gnome_extending(self):

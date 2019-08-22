@@ -11,7 +11,7 @@ an user-PPA by its own user.
 A section named 'Personal Package Archives' is presented in the
 user/team page.
 
-    >>> anon_browser.open("http://launchpad.dev/~cprov")
+    >>> anon_browser.open("http://launchpad.test/~cprov")
 
     >>> print_tag_with_id(anon_browser.contents, 'ppas')
     Personal package archives
@@ -28,7 +28,7 @@ On the other hand, Sample Person hasn't activated their PPA yet, so they
 can quickly activate one via the link in their PPA section.
 
     >>> sample_browser = setupBrowser(auth="Basic test@canonical.com:test")
-    >>> sample_browser.open("http://launchpad.dev/~name12")
+    >>> sample_browser.open("http://launchpad.test/~name12")
 
     >>> print_tag_with_id(sample_browser.contents, 'ppas')
     Personal package archives
@@ -158,7 +158,7 @@ anyone with 'launchpad.Edit' permission in the team in question:
 /
     >>> cprov_browser = setupBrowser(
     ...     auth="Basic celso.providelo@canonical.com:test")
-    >>> cprov_browser.open("http://launchpad.dev/~landscape-developers")
+    >>> cprov_browser.open("http://launchpad.test/~landscape-developers")
 
     >>> print(find_tag_by_id(cprov_browser.contents, 'ppas'))
     None
@@ -166,14 +166,14 @@ anyone with 'launchpad.Edit' permission in the team in question:
 Even if we try the URL directly:
 
     >>> cprov_browser.open(
-    ...    "http://launchpad.dev/~landscape-developers/+activate-ppa")
+    ...    "http://launchpad.test/~landscape-developers/+activate-ppa")
     Traceback (most recent call last):
     ...
     Unauthorized: (..., 'launchpad.Edit')
 
 Let's proceed with the required permissions:
 
-    >>> sample_browser.open("http://launchpad.dev/~landscape-developers")
+    >>> sample_browser.open("http://launchpad.test/~landscape-developers")
 
     >>> print_tag_with_id(sample_browser.contents, 'ppas')
     Personal package archives
@@ -265,7 +265,7 @@ Create a publication in the team's PPA.
 Similarly to users, teams with active PPAs cannot be renamed either.
 
     >>> sample_browser.open(
-    ...     "http://launchpad.dev/~landscape-developers/+edit")
+    ...     "http://launchpad.test/~landscape-developers/+edit")
     >>> sample_browser.getControl(name='field.name').value = 'duderinos'
     Traceback (most recent call last):
     ...
@@ -284,7 +284,7 @@ Activating someone else's Personal Package Archives
 We also allow LP-admins to create Personal Package Archives in the
 name of other users or teams:
 
-    >>> admin_browser.open("http://launchpad.dev/~jblack")
+    >>> admin_browser.open("http://launchpad.test/~jblack")
     >>> print_tag_with_id(admin_browser.contents, 'ppas')
     Personal package archives
     Create a new PPA
@@ -316,20 +316,20 @@ to LP administrators, LP commercial administrators, and LP PPA
 administrators, as they need to be able to make PPAs private, change their
 virtualisation settings, and so on.
 
-    >>> sample_browser.open("http://launchpad.dev/~jblack/+archive")
+    >>> sample_browser.open("http://launchpad.test/~jblack/+archive")
     >>> print(sample_browser.getLink("Administer archive"))
     Traceback (most recent call last):
     ...
     LinkNotFoundError
 
-    >>> admin_browser.open("http://launchpad.dev/~jblack/+archive")
+    >>> admin_browser.open("http://launchpad.test/~jblack/+archive")
     >>> admin_browser.getLink("Administer archive").click()
     >>> print(admin_browser.title)
     Administer : Hack PPA...
 
     >>> commercial_browser = setupBrowser(
     ...     auth='Basic commercial-member@canonical.com:test')
-    >>> commercial_browser.open("http://launchpad.dev/~jblack/+archive")
+    >>> commercial_browser.open("http://launchpad.test/~jblack/+archive")
     >>> commercial_browser.getLink("Administer archive") is not None
     True
 
@@ -340,7 +340,7 @@ virtualisation settings, and so on.
     >>> logout()
     >>> ppa_admin_browser = setupBrowser(
     ...     auth='Basic ppa-member@canonical.com:test')
-    >>> ppa_admin_browser.open("http://launchpad.dev/~jblack/+archive")
+    >>> ppa_admin_browser.open("http://launchpad.test/~jblack/+archive")
     >>> ppa_admin_browser.getLink("Administer archive") is not None
     True
 
@@ -348,7 +348,7 @@ virtualisation settings, and so on.
 Trying to shortcut the URL as a non-privileged user does not work:
 
     >>> sample_browser.open(
-    ...     "http://launchpad.dev/~jblack/+archive/ppa/+admin")
+    ...     "http://launchpad.test/~jblack/+archive/ppa/+admin")
     Traceback (most recent call last):
     ...
     Unauthorized...
@@ -434,7 +434,7 @@ the size limit is 2 PiB.
     >>> limit = 2 ** 31 - 1
 
     >>> admin_browser.open(
-    ...     "http://launchpad.dev/~jblack/+archive/ppa/+admin")
+    ...     "http://launchpad.test/~jblack/+archive/ppa/+admin")
     >>> admin_browser.getControl(
     ...     name="field.authorized_size").value = str(limit)
     >>> admin_browser.getControl("Save").click()
@@ -480,10 +480,10 @@ activating on the first, then it will just go to the archive page.
 Set up two browsers (waiting for bug #68655):
 
     >>> browser1 = setupBrowser(auth="Basic foo.bar@canonical.com:test")
-    >>> browser1.open("http://launchpad.dev/~name16/+activate-ppa")
+    >>> browser1.open("http://launchpad.test/~name16/+activate-ppa")
 
     >>> browser2 = setupBrowser(auth="Basic foo.bar@canonical.com:test")
-    >>> browser2.open("http://launchpad.dev/~name16/+activate-ppa")
+    >>> browser2.open("http://launchpad.test/~name16/+activate-ppa")
 
 Prepare the forms in both browsers to activate the default PPA for the
 user 'Foo Bar'.
@@ -531,7 +531,7 @@ Activating an additional PPA
 Users who already have a PPA may activate a second one.  That's the case for
 Celso.
 
-    >>> cprov_browser.open("http://launchpad.dev/~cprov")
+    >>> cprov_browser.open("http://launchpad.test/~cprov")
 
     >>> print_tag_with_id(cprov_browser.contents, 'ppas')
     Personal package archives
@@ -561,7 +561,7 @@ all their PPAs.
     >>> print(extract_text(
     ...     first_tag_by_class(cprov_browser.contents, 'form')))
     URL:
-      http://ppa.launchpad.dev/cprov/
+      http://ppa.launchpad.test/cprov/
       At least one lowercase letter or number, followed by letters, numbers,
       dots, hyphens or pluses. Keep this name short; it is used in URLs.
     Display name:
@@ -647,12 +647,12 @@ requested it. An administrator can disable Celso's 'edge' PPA.
 Anonymous users or others with no special permissions on the disabled PPA
 are unable to see it on Celso's profile page.
 
-    >>> anon_browser.open("http://launchpad.dev/~cprov")
+    >>> anon_browser.open("http://launchpad.test/~cprov")
     >>> print_tag_with_id(anon_browser.contents, 'ppas')
     Personal package archives
     PPA for Celso Providelo
 
-    >>> browser.open("http://launchpad.dev/~cprov")
+    >>> browser.open("http://launchpad.test/~cprov")
     >>> print_tag_with_id(browser.contents, 'ppas')
     Personal package archives
     PPA for Celso Providelo
@@ -660,7 +660,7 @@ are unable to see it on Celso's profile page.
 Celso himself can see the PPA, and it's linked so he can reenable it if
 required.
 
-    >>> cprov_browser.open("http://launchpad.dev/~cprov")
+    >>> cprov_browser.open("http://launchpad.test/~cprov")
     >>> print_tag_with_id(cprov_browser.contents, 'ppas')
     Personal package archives
     Edge PPA
@@ -672,12 +672,12 @@ required.
 
 And direct access to the PPA page is also denied.
 
-    >>> anon_browser.open("http://launchpad.dev/~cprov/+archive/edge")
+    >>> anon_browser.open("http://launchpad.test/~cprov/+archive/edge")
     Traceback (most recent call last):
     ...
     Unauthorized: ...
 
-    >>> browser.open("http://launchpad.dev/~cprov/+archive/edge")
+    >>> browser.open("http://launchpad.test/~cprov/+archive/edge")
     Traceback (most recent call last):
     ...
     Unauthorized: ...
@@ -690,7 +690,7 @@ Deleted PPAs don't even show up for the owner.
     >>> cprov.getPPAByName(ubuntu, 'edge').status = ArchiveStatus.DELETED
     >>> logout()
 
-    >>> cprov_browser.open("http://launchpad.dev/~cprov")
+    >>> cprov_browser.open("http://launchpad.test/~cprov")
     >>> print_tag_with_id(cprov_browser.contents, 'ppas')
     Personal package archives
     PPA for Celso Providelo
@@ -706,7 +706,7 @@ They may also change whether the PPA is published to disk or not.
     >>> no_priv_browser = setupBrowser(
     ...     auth='Basic no-priv@canonical.com:test')
     >>> no_priv_browser.open(
-    ...     "http://launchpad.dev/~no-priv/+archive/ppa/+edit")
+    ...     "http://launchpad.test/~no-priv/+archive/ppa/+edit")
 
 Initially, the PPA is enabled and publishes.
 
@@ -727,7 +727,7 @@ After disabling the PPA a warning message is displayed on its page.
 Going back to the edit page, we can see the publish flag was cleared:
 
     >>> no_priv_browser.open(
-    ...     "http://launchpad.dev/~no-priv/+archive/ppa/+edit")
+    ...     "http://launchpad.test/~no-priv/+archive/ppa/+edit")
     >>> print(no_priv_browser.getControl(name='field.publish').value)
     False
 
@@ -749,13 +749,13 @@ Deleting a PPA
 Users with launchpad.Edit permission see a "Delete PPA" link in the
 navigation menu.
 
-    >>> anon_browser.open("http://launchpad.dev/~no-priv/+archive/ppa")
+    >>> anon_browser.open("http://launchpad.test/~no-priv/+archive/ppa")
     >>> print(anon_browser.getLink("Delete PPA"))
     Traceback (most recent call last):
     ...
     LinkNotFoundError
 
-    >>> no_priv_browser.open("http://launchpad.dev/~no-priv/+archive/ppa")
+    >>> no_priv_browser.open("http://launchpad.test/~no-priv/+archive/ppa")
     >>> no_priv_browser.getLink("Delete PPA").click()
 
 Clicking this link takes the user to a page that allows deletion of a PPA:
@@ -779,7 +779,7 @@ If the user changes their mind, they can click on the cancel link to go back
 a page:
 
     >>> print(no_priv_browser.getLink("Cancel").url)
-    http://launchpad.dev/~no-priv/+archive/ubuntu/ppa
+    http://launchpad.test/~no-priv/+archive/ubuntu/ppa
 
 Otherwise, they have a button to press to confirm the deletion.
 
@@ -789,7 +789,7 @@ This action will redirect the user back to their profile page, which will
 contain a notification message that the deletion is in progress.
 
     >>> print(no_priv_browser.url)
-    http://launchpad.dev/~no-priv
+    http://launchpad.test/~no-priv
 
     >>> print_feedback_messages(no_priv_browser.contents)
     Deletion of &#x27;PPA for No Privileges Person&#x27; has been
@@ -823,13 +823,13 @@ Even if someone URL-hacks to the edit form, it's not possible to
 reenable the PPA or turn on publishing.
 
     >>> no_priv_browser.open(
-    ...     "http://launchpad.dev/~no-priv/+archive/ppa/+edit")
+    ...     "http://launchpad.test/~no-priv/+archive/ppa/+edit")
     >>> no_priv_browser.getControl(name='field.enabled').value = True
     >>> no_priv_browser.getControl('Save').click()
     >>> "Deleted PPAs can&#x27;t be enabled." in no_priv_browser.contents
     True
     >>> no_priv_browser.open(
-    ...     "http://launchpad.dev/~no-priv/+archive/ppa/+edit")
+    ...     "http://launchpad.test/~no-priv/+archive/ppa/+edit")
     >>> no_priv_browser.getControl(name='field.publish').value = True
     >>> no_priv_browser.getControl('Save').click()
     >>> "Deleted PPAs can&#x27;t be enabled." in no_priv_browser.contents

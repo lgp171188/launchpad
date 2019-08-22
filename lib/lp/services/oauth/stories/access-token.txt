@@ -26,7 +26,7 @@ access token.
     ...     oauth_signature_method='PLAINTEXT',
     ...     oauth_signature='&'.join(['', secret]))
     >>> anon_browser.open(
-    ...     'http://launchpad.dev/+access-token', data=urlencode(data))
+    ...     'http://launchpad.test/+access-token', data=urlencode(data))
 
     >>> print anon_browser.contents
     oauth_token=...&oauth_token_secret=...
@@ -35,7 +35,7 @@ Any further attempt to exchange that request token for an access token
 will fail because request tokens can be used only once.
 
     >>> anon_browser.open(
-    ...     'http://launchpad.dev/+access-token', data=urlencode(data))
+    ...     'http://launchpad.test/+access-token', data=urlencode(data))
     Traceback (most recent call last):
     ...
     HTTPError: HTTP Error 401: Unauthorized
@@ -55,7 +55,7 @@ with the token's key and secret.
     >>> data2['oauth_token'] = token.key
     >>> data2['oauth_signature'] = '&'.join(['', secret])
     >>> anon_browser.open(
-    ...     'http://launchpad.dev/+access-token', data=urlencode(data2))
+    ...     'http://launchpad.test/+access-token', data=urlencode(data2))
     >>> print anon_browser.contents
     oauth_token=...&oauth_token_secret=...&lp.context=firefox
 
@@ -68,7 +68,7 @@ before it's been reviewed, though, or it'll get a 401 response.
     >>> data2['oauth_signature'] = '&'.join(['', secret])
     >>> print http(r"""
     ... GET /+access-token?%s HTTP/1.1
-    ... Host: launchpad.dev
+    ... Host: launchpad.test
     ... """ % urlencode(data2))
     HTTP/1.1 401 Unauthorized
     ...
@@ -80,7 +80,7 @@ also be 401.
     >>> data2['oauth_signature'] = '&'.join(['foobar', secret])
     >>> print http(r"""
     ... GET /+access-token?%s HTTP/1.1
-    ... Host: launchpad.dev
+    ... Host: launchpad.test
     ... """ % urlencode(data2))
     HTTP/1.1 401 Unauthorized
     ...
@@ -90,7 +90,7 @@ also be 401.
     >>> del(data3['oauth_token'])
     >>> print http(r"""
     ... GET /+access-token?%s HTTP/1.1
-    ... Host: launchpad.dev
+    ... Host: launchpad.test
     ... """ % urlencode(data3))
     HTTP/1.1 401 Unauthorized
     ...
@@ -105,7 +105,7 @@ exchanged for an access token.
     >>> data2['oauth_signature'] = '&'.join(['', secret])
     >>> print http(r"""
     ... GET /+access-token?%s HTTP/1.1
-    ... Host: launchpad.dev
+    ... Host: launchpad.test
     ... """ % urlencode(data2))
     HTTP/1.1 403 Forbidden
     ...

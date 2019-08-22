@@ -1,4 +1,4 @@
-# Copyright 2009-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """An XML bug importer
@@ -20,8 +20,8 @@ import datetime
 import logging
 import os
 import time
-from xml.etree import cElementTree
 
+from defusedxml import cElementTree
 import pytz
 from storm.store import Store
 from zope.component import getUtility
@@ -237,7 +237,7 @@ class BugImporter:
 
     def importBugs(self, ztm):
         """Import bugs from a file."""
-        tree = cElementTree.parse(self.bugs_filename)
+        tree = cElementTree.parse(self.bugs_filename, forbid_dtd=True)
         root = tree.getroot()
         assert root.tag == '{%s}launchpad-bugs' % BUGS_XMLNS, (
             "Root element is wrong: %s" % root.tag)
@@ -252,9 +252,7 @@ class BugImporter:
                 self.loadCache()
                 self.importBug(bugnode)
                 self.saveCache()
-            except (SystemExit, KeyboardInterrupt):
-                raise
-            except:
+            except Exception:
                 self.logger.exception(
                     'Could not import bug #%s', bugnode.get('id'))
                 ztm.abort()

@@ -22,6 +22,7 @@ from lazr.enum import (
     DBItem,
     )
 from pytz import utc
+import six
 from storm.expr import Desc
 from storm.properties import (
     Bool,
@@ -63,6 +64,7 @@ from lp.services.job.model.job import (
     Job,
     )
 from lp.services.job.runner import BaseRunnableJob
+from lp.services.scripts import log
 from lp.services.webhooks.interfaces import (
     IWebhook,
     IWebhookClient,
@@ -370,6 +372,30 @@ class WebhookJobDerived(BaseRunnableJob):
         return (cls(job) for job in jobs)
 
 
+def _redact_payload(event_type, payload):
+    """Redact a webhook payload for logging.
+
+    Webhook payloads don't generally contain anything that's particularly
+    sensitive for the purposes of logging (i.e. no credentials), although
+    they may contain information that's private to their target.  However,
+    we still don't want logs to be clogged up with excessive detail from
+    long user-supplied text fields, so redact some fields that are known to
+    be boring, and truncate any multi-line strings that may slip through.
+    """
+    redacted = {}
+    for key, value in payload.items():
+        if isinstance(value, dict):
+            redacted[key] = _redact_payload(event_type, value)
+        elif (event_type.startswith("merge-proposal:") and
+              key in ("commit_message", "whiteboard", "description")):
+            redacted[key] = "<redacted>"
+        elif isinstance(value, six.string_types) and "\n" in value:
+            redacted[key] = "%s\n<redacted>" % value.split("\n", 1)[0]
+        else:
+            redacted[key] = value
+    return redacted
+
+
 @provider(IWebhookDeliveryJobSource)
 @implementer(IWebhookDeliveryJob)
 class WebhookDeliveryJob(WebhookJobDerived):
@@ -400,6 +426,9 @@ class WebhookDeliveryJob(WebhookJobDerived):
             {"event_type": event_type, "payload": payload})
         job = cls(webhook_job)
         job.celeryRunOnCommit()
+        log.info(
+            "Scheduled %r (%s): %s" %
+            (job, event_type, _redact_payload(event_type, payload)))
         return job
 
     @property

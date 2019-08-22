@@ -4,10 +4,10 @@ Adding members to a team
 Any administrator of a team can add new members to that team.
 
     >>> browser = setupBrowser(auth='Basic test@canonical.com:test')
-    >>> browser.open('http://launchpad.dev/~landscape-developers')
+    >>> browser.open('http://launchpad.test/~landscape-developers')
     >>> browser.getLink('Add member').click()
     >>> browser.url
-    'http://launchpad.dev/~landscape-developers/+addmember'
+    'http://launchpad.test/~landscape-developers/+addmember'
     >>> browser.getControl('New member').value = 'cprov'
     >>> browser.getControl('Add Member').click()
 
@@ -38,7 +38,7 @@ Teams are not added as members like we do with people. Instead, teams are
 invited and one of their admins have to accept the invitation for them to
 become a member.
 
-    >>> browser.open('http://launchpad.dev/~landscape-developers/+addmember')
+    >>> browser.open('http://launchpad.test/~landscape-developers/+addmember')
     >>> browser.getControl('New member').value = 'launchpad'
     >>> browser.getControl('Add Member').click()
 
@@ -63,7 +63,7 @@ with the TeamMembership representing the invitation sent to the Launchpad
 team, not even if they manually craft the URL.
 
     >>> browser.open(
-    ...     'http://launchpad.dev/~landscape-developers/+member/launchpad')
+    ...     'http://launchpad.test/~landscape-developers/+member/launchpad')
 
     >>> print extract_text(find_tag_by_id(browser.contents, 'not-responded'))
     Launchpad Developers (launchpad) has been invited to join this team, but
@@ -80,17 +80,17 @@ it. Although they get a link to the invitation's page, there's also a page
 listing all open invitation sent to a given team.
 
     >>> browser = setupBrowser(auth='Basic foo.bar@canonical.com:test')
-    >>> browser.open('http://launchpad.dev/~launchpad')
+    >>> browser.open('http://launchpad.test/~launchpad')
     >>> browser.getLink('Show received invitations').click()
     >>> browser.url
-    'http://launchpad.dev/~launchpad/+invitations'
+    'http://launchpad.test/~launchpad/+invitations'
 
 As said above, only admins of the invited team can accept/decline the
 invitation. Not even an admin of the landscape team (which as so has the
 rights to edit the membership in question) can do it.
 
     >>> landscape_admin_browser.open(
-    ...    'http://launchpad.dev/~launchpad/+invitation/landscape-developers')
+    ...    'http://launchpad.test/~launchpad/+invitation/landscape-developers')
     Traceback (most recent call last):
     ...
     Unauthorized: ...
@@ -105,14 +105,14 @@ the Launchpad Developers.
     >>> browser.getLink(
     ...     url='/~launchpad/+invitation/landscape-developers').click()
     >>> browser.url
-    'http://launchpad.dev/~launchpad/+invitation/landscape-developers'
+    'http://launchpad.test/~launchpad/+invitation/landscape-developers'
 
     >>> browser.getControl(name='field.acknowledger_comment').value = (
     ...     'This is just a test')
     >>> browser.getControl('Accept').click()
 
     >>> browser.url
-    'http://launchpad.dev/~launchpad'
+    'http://launchpad.test/~launchpad'
     >>> print extract_text(
     ...     find_tags_by_class(browser.contents, 'informational')[0])
     This team is now a member of Landscape Developers.
@@ -120,10 +120,10 @@ the Launchpad Developers.
 Now we'll decline the invitation sent on behalf of Ubuntu Team to
 Warty Security Team:
 
-    >>> browser.open('http://launchpad.dev/~name20/+invitation/ubuntu-team')
+    >>> browser.open('http://launchpad.test/~name20/+invitation/ubuntu-team')
     >>> browser.getControl('Decline').click()
     >>> browser.url
-    'http://launchpad.dev/~name20'
+    'http://launchpad.test/~name20'
     >>> print extract_text(
     ...     find_tags_by_class(browser.contents, 'informational')[0])
     Declined the invitation to join Ubuntu Team
@@ -141,7 +141,7 @@ First invite name20 to be a member of ubuntu-team.
 
     >>> browser = setupBrowser(
     ...     auth='Basic colin.watson@ubuntulinux.com:test')
-    >>> browser.open('http://launchpad.dev/~ubuntu-team/+addmember')
+    >>> browser.open('http://launchpad.test/~ubuntu-team/+addmember')
     >>> browser.getControl('New member:').value = 'name20'
     >>> browser.getControl('Add Member').click()
 
@@ -153,19 +153,19 @@ First invite name20 to be a member of ubuntu-team.
 Open the invitations page with one admin browser.
 
     >>> browser = setupBrowser(auth='Basic mark@example.com:test')
-    >>> browser.open('http://launchpad.dev/~name20/+invitation/ubuntu-team')
+    >>> browser.open('http://launchpad.test/~name20/+invitation/ubuntu-team')
 
 Open the same page with another admin browser.
 
     >>> second_browser = setupBrowser(auth='Basic mark@example.com:test')
     >>> second_browser.open(
-    ...     'http://launchpad.dev/~name20/+invitation/ubuntu-team')
+    ...     'http://launchpad.test/~name20/+invitation/ubuntu-team')
 
 Accept the invitation in the first browser.
 
     >>> browser.getControl('Accept').click()
     >>> browser.url
-    'http://launchpad.dev/~name20'
+    'http://launchpad.test/~name20'
 
     >>> for tag in find_tags_by_class(browser.contents,
     ...                               'informational message'):
@@ -177,7 +177,7 @@ and a message is displayed.
 
     >>> second_browser.getControl('Accept').click()
     >>> second_browser.url
-    'http://launchpad.dev/~name20'
+    'http://launchpad.test/~name20'
 
     >>> for tag in find_tags_by_class(second_browser.contents,
     ...                               'informational message'):

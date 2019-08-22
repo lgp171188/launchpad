@@ -123,11 +123,11 @@ entry is created:
     To start downloading and using software from this archive you need to
     view your access details by visiting this link:
     <BLANKLINE>
-    <http://launchpad.dev/~/+archivesubscriptions>
+    <http://launchpad.test/~/+archivesubscriptions>
     <BLANKLINE>
     You can find out more about Celso Providelo here:
     <BLANKLINE>
-    <http://launchpad.dev/~cprov>
+    <http://launchpad.test/~cprov>
     <BLANKLINE>
     If you'd prefer not to use software from this archive, you can safely
     ignore this email. However, if you have any concerns you can contact the
@@ -159,11 +159,11 @@ the email does not contain the description.
     To start downloading and using software from this archive you need to
     view your access details by visiting this link:
     <BLANKLINE>
-    <http://launchpad.dev/~/+archivesubscriptions>
+    <http://launchpad.test/~/+archivesubscriptions>
     <BLANKLINE>
     You can find out more about Celso Providelo here:
     <BLANKLINE>
-    <http://launchpad.dev/~cprov>
+    <http://launchpad.test/~cprov>
     <BLANKLINE>
     If you'd prefer not to use software from this archive, you can safely
     ignore this email. However, if you have any concerns you can contact the
@@ -348,7 +348,7 @@ for the activated tokens.
 
     >>> for url in joesmith.getArchiveSubscriptionURLs(joesmith):
     ...     print(url)
-    http://joesmith:test_token@private-ppa.launchpad.dev/cprov/p3a/ubuntu
+    http://joesmith:test_token@private-ppa.launchpad.test/cprov/p3a/ubuntu
 
 This method can only be used by someone with launchpad.Edit on the context
 IPerson:

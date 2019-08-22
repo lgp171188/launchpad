@@ -31,7 +31,7 @@ Foux needs more strings translated.
 Jean visits his Translations dashboard.
 
     >>> jean_browser = setupBrowser(auth='Basic jean@example.com:test')
-    >>> jean_home = 'http://translations.launchpad.dev/~jean'
+    >>> jean_home = 'http://translations.launchpad.test/~jean'
     >>> jean_browser.open(jean_home)
 
 The dashboard shows a listing of translations that need Jean's help.
@@ -55,7 +55,7 @@ Pierre is not a translator.  Pierre does not get such a listing either.
     >>> logout()
 
     >>> pierre_browser = setupBrowser(auth='Basic pierre@example.com:test')
-    >>> pierre_browser.open('http://translations.launchpad.dev/~pierre')
+    >>> pierre_browser.open('http://translations.launchpad.test/~pierre')
     >>> tag = find_tag_by_id(
     ...     pierre_browser.contents, 'translations-to-complete-table')
     >>> print(tag)
@@ -79,7 +79,7 @@ page does not show any translations to complete--even to a member of the team.
     >>> logout()
 
     >>> carlos_browser = setupBrowser('Basic carlos@canonical.com:test')
-    >>> experts_home = 'http://translations.launchpad.dev/~rosetta-admins'
+    >>> experts_home = 'http://translations.launchpad.test/~rosetta-admins'
     >>> carlos_browser.open(experts_home)
 
     >>> print(extract_text(find_tag_by_id(

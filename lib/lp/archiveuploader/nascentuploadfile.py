@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Specific models for uploaded files"""
@@ -555,9 +555,7 @@ class BaseBinaryUploadFile(PackageUploadFile):
             deb_file = apt_inst.DebFile(self.filepath)
             control_file = deb_file.control.extractdata("control")
             control_lines = apt_pkg.TagSection(control_file, bytes=True)
-        except (SystemExit, KeyboardInterrupt):
-            raise
-        except:
+        except Exception:
             yield UploadError(
                 "%s: extracting control file raised %s, giving up."
                  % (self.filename, sys.exc_type))
@@ -697,41 +695,26 @@ class BaseBinaryUploadFile(PackageUploadFile):
     def verifyFormat(self):
         """Check if the DEB format is sane.
 
-        Debian packages are in fact 'ar' files. Thus we run '/usr/bin/ar'
-        to look at the contents of the deb files to confirm they make sense.
+        We run 'dpkg-deb' to look at the contents of the deb files to
+        confirm they make sense.
         """
-        ar_process = subprocess.Popen(
-            ["/usr/bin/ar", "t", self.filepath],
-            stdout=subprocess.PIPE)
-        output = ar_process.stdout.read()
-        result = ar_process.wait()
-        if result != 0:
+        try:
+            subprocess.check_output(
+                ["dpkg-deb", "-I", self.filepath], stderr=subprocess.STDOUT)
+        except subprocess.CalledProcessError as e:
             yield UploadError(
-                "%s: 'ar t' invocation failed." % self.filename)
+                "%s: 'dpkg-deb -I' invocation failed." % self.filename)
             yield UploadError(
-                prefix_multi_line_string(output, " [ar output:] "))
+                prefix_multi_line_string(e.output, " [dpkg-deb output:] "))
 
-        chunks = output.strip().split("\n")
-        if len(chunks) != 3:
+        try:
+            subprocess.check_output(
+                ["dpkg-deb", "-c", self.filepath], stderr=subprocess.STDOUT)
+        except subprocess.CalledProcessError as e:
             yield UploadError(
-                "%s: found %d chunks, expecting 3. %r" % (
-                self.filename, len(chunks), chunks))
-
-        debian_binary, control_tar, data_tar = chunks
-        if debian_binary != "debian-binary":
+                "%s: 'dpkg-deb -c' invocation failed." % self.filename)
             yield UploadError(
-                "%s: first chunk is %s, expected debian-binary." % (
-                self.filename, debian_binary))
-        if control_tar not in ("control.tar.gz", "control.tar.xz"):
-            yield UploadError(
-                "%s: second chunk is %s, expected control.tar.gz or "
-                "control.tar.xz." % (self.filename, control_tar))
-        if data_tar not in ("data.tar.gz", "data.tar.bz2", "data.tar.lzma",
-                            "data.tar.xz"):
-            yield UploadError(
-                "%s: third chunk is %s, expected data.tar.gz, "
-                "data.tar.bz2, data.tar.lzma or data.tar.xz." %
-                (self.filename, data_tar))
+                prefix_multi_line_string(e.output, " [dpkg-deb output:] "))
 
     def verifyDebTimestamp(self):
         """Check specific DEB format timestamp checks."""
@@ -773,8 +756,6 @@ class BaseBinaryUploadFile(PackageUploadFile):
                     "far in the past (e.g. %s [%s])."
                      % (self.filename, len(ancient_files), first_file,
                         timestamp))
-        except (SystemExit, KeyboardInterrupt):
-            raise
         except Exception as error:
             # There is a very large number of places where we
             # might get an exception while checking the timestamps.

@@ -22,7 +22,7 @@ class TestCanonicalSSOApplication(TestCaseWithFactory):
     def setUp(self):
         super(TestCanonicalSSOApplication, self).setUp()
         self.rpc_proxy = xmlrpclib.ServerProxy(
-            'http://xmlrpc-private.launchpad.dev:8087/canonicalsso',
+            'http://xmlrpc-private.launchpad.test:8087/canonicalsso',
             transport=XMLRPCTestTransport())
 
     def test_getPersonDetailsByOpenIDIdentifier(self):
@@ -52,7 +52,7 @@ class TestCanonicalSSOApplication(TestCaseWithFactory):
             person.account).openid_identifiers.any().identifier
         public_rpc_proxy = xmlrpclib.ServerProxy(
             'http://test@canonical.com:test@'
-            'xmlrpc.launchpad.dev/canonicalsso',
+            'xmlrpc.launchpad.test/canonicalsso',
             transport=XMLRPCTestTransport())
         e = self.assertRaises(
             xmlrpclib.ProtocolError,

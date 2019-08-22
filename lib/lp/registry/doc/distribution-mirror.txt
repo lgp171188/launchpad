@@ -122,7 +122,8 @@ archive_mirrors and cdimage_mirrors properties of IDistribution.
     [(u'canonical-archive', '100 Mbps', 'OFFICIAL'),
      (u'archive-404-mirror', '512 Kbps', 'OFFICIAL'),
      (u'archive-mirror', '128 Kbps', 'OFFICIAL'),
-     (u'archive-mirror2', '128 Kbps', 'OFFICIAL')]
+     (u'archive-mirror2', '128 Kbps', 'OFFICIAL'),
+     (u'archive-redirect-mirror', '128 Kbps', 'OFFICIAL')]
 
     >>> [(mirror.name, mirror.speed.title, mirror.status.name)
     ...  for mirror in ubuntu.cdimage_mirrors]
@@ -242,7 +243,7 @@ weren't probed in the last 23 (the value of PROBE_INTERVAL) hours.
     >>> [mirror.name
     ...  for mirror in mirrorset.getMirrorsToProbe(MirrorContent.ARCHIVE)]
     [u'canonical-archive', u'archive-404-mirror', u'archive-mirror',
-     u'archive-mirror2']
+     u'archive-mirror2', u'archive-redirect-mirror']
 
     >>> [mirror.name
     ...  for mirror in mirrorset.getMirrorsToProbe(MirrorContent.RELEASE)]
@@ -263,7 +264,8 @@ weren't probed in the last 23 (the value of PROBE_INTERVAL) hours.
 
     >>> [mirror.name
     ...  for mirror in mirrorset.getMirrorsToProbe(MirrorContent.ARCHIVE)]
-    [u'canonical-archive', u'archive-404-mirror', u'archive-mirror2']
+    [u'canonical-archive', u'archive-404-mirror', u'archive-mirror2',
+     u'archive-redirect-mirror']
 
     >>> [mirror.name
     ...  for mirror in mirrorset.getMirrorsToProbe(MirrorContent.RELEASE)]
@@ -278,7 +280,7 @@ mirrors.
     ...     MirrorContent.ARCHIVE, ignore_last_probe=True)
     >>> [mirror.name for mirror in mirrors]
     [u'canonical-archive', u'archive-404-mirror', u'archive-mirror',
-     u'archive-mirror2']
+     u'archive-mirror2', u'archive-redirect-mirror']
 
 It's also possible to limit the number of mirrors we want to probe by
 passing an extra limit= argument to mirrorset.getMirrorsToProbe().  If
@@ -306,9 +308,10 @@ probed as we don't care about it anyway.
     archive-404-mirror NEVER
     archive-mirror TODAY
     archive-mirror2 2006-05-24...
+    archive-redirect-mirror NEVER
 
     >>> mirrors = mirrorset.getMirrorsToProbe(
-    ...     MirrorContent.ARCHIVE, ignore_last_probe=True, limit=3)
+    ...     MirrorContent.ARCHIVE, ignore_last_probe=True, limit=4)
     >>> for mirror in mirrors:
     ...     last_probe = mirror.last_probe_record
     ...     last_probe_date = 'NEVER'
@@ -318,6 +321,7 @@ probed as we don't care about it anyway.
     canonical-archive NEVER
     archive-404-mirror NEVER
     archive-mirror2 2006-05-24...
+    archive-redirect-mirror NEVER
 
 
 If when we finish probing a mirror, that mirror doesn't have any
@@ -400,6 +404,7 @@ component, pocket] tuple). The paths to these files are given by the
 getExpectedPackagesPaths() and getExpectedSourcesPaths() methods of
 IDistributionMirror.
 
+    >>> mirror = mirrorset.getByName('archive-mirror2')
     >>> paths = mirror.getExpectedPackagesPaths()
     >>> [path for (series, pocket, component, path) in paths]
     [u'dists/breezy-autotest/main/binary-i386/Packages.gz',
@@ -646,11 +651,11 @@ is correct.
     >>> print stderr
     INFO    Creating lockfile: /var/lock/launchpad-distributionmirror-prober.lock
     INFO    Probing Archive Mirrors
-    INFO    Probed 4 mirrors.
+    INFO    Probed 5 mirrors.
     INFO    Disabling 1 mirror(s):
-            http://launchpad.dev/ubuntu/+mirror/archive-404-mirror
+            http://launchpad.test/ubuntu/+mirror/archive-404-mirror
     INFO    Re-enabling 1 mirror(s):
-            http://launchpad.dev/ubuntu/+mirror/archive-mirror
+            http://launchpad.test/ubuntu/+mirror/archive-mirror
     INFO    Done.
     <BLANKLINE>
 
@@ -662,7 +667,7 @@ is correct.
     INFO    Probing CD Image Mirrors
     INFO    Probed 4 mirrors.
     INFO    Disabling 1 mirror(s):
-            http://launchpad.dev/ubuntu/+mirror/unreachable-mirror
+            http://launchpad.test/ubuntu/+mirror/unreachable-mirror
     INFO    Done.
     <BLANKLINE>
 
@@ -710,7 +715,7 @@ we'll enable them again.
     INFO    Probing CD Image Mirrors
     INFO    Probed 4 mirrors.
     INFO    Re-enabling 1 mirror(s):
-            http://launchpad.dev/ubuntu/+mirror/releases-mirror
+            http://launchpad.test/ubuntu/+mirror/releases-mirror
     INFO    Done.
     <BLANKLINE>
 

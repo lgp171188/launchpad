@@ -118,7 +118,7 @@ def _clean_up_cache(cache):
 
 def launchpadlib_for(
     consumer_name, person=None, permission=OAuthPermission.WRITE_PRIVATE,
-    context=None, version="devel", service_root="http://api.launchpad.dev/"):
+    context=None, version="devel", service_root="http://api.launchpad.test/"):
     """Create a Launchpad object for the given person.
 
     :param consumer_name: An OAuth consumer name.

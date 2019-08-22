@@ -8,7 +8,7 @@ Sample Person is the owner of the Firefox product. They decide to plan
 when bugs should be fixed by setting up some milestones.
 
     >>> owner_browser = setupBrowser('Basic test@canonical.com:test')
-    >>> owner_browser.open('http://launchpad.dev/firefox/+bug/1')
+    >>> owner_browser.open('http://launchpad.test/firefox/+bug/1')
 
 Bug 1 affects the Firefox project. The 1.0 milestone is available for
 use, but the bug is not yet targeted to that milestone.
@@ -43,7 +43,7 @@ Affects table, and in the selected value of the Milestone menu.
 
 Sample Person defines milestone 1.0.1 for firefox series 1.0...
 
-    >>> owner_browser.open('http://launchpad.dev/firefox/1.0/+addmilestone')
+    >>> owner_browser.open('http://launchpad.test/firefox/1.0/+addmilestone')
     >>> name_field = owner_browser.getControl('Name:')
     >>> name_field.value = '1.0.1'
     >>> owner_browser.getControl('Register Milestone').click()
@@ -51,7 +51,7 @@ Sample Person defines milestone 1.0.1 for firefox series 1.0...
 
 ...and then they approve the nomination of bug #1 for the firefox series 1.0.
 
-    >>> owner_browser.open('http://launchpad.dev/firefox/+bug/1')
+    >>> owner_browser.open('http://launchpad.test/firefox/+bug/1')
     >>> owner_browser.getControl('Approve', index=0).click()
 
 Sample Person assigns the firefox series 1.0 bugtask for bug 1 to
@@ -75,14 +75,14 @@ Foo Bar is a member of the Ubuntu team that owns the Ubuntu
 distribution. They decide to assign some bug to some milestones.
 First they register a new milestone.
 
-    >>> admin_browser.open('http://launchpad.dev/ubuntu/hoary/+addmilestone')
+    >>> admin_browser.open('http://launchpad.test/ubuntu/hoary/+addmilestone')
     >>> name_field = admin_browser.getControl('Name:')
     >>> name_field.value = '5.04.rc1'
     >>> admin_browser.getControl('Register Milestone').click()
 
 They target bug #1 to milestone 5.04-rc1 for Ubuntu.
 
-    >>> admin_browser.open('http://launchpad.dev/firefox/+bug/1')
+    >>> admin_browser.open('http://launchpad.test/firefox/+bug/1')
     >>> table = find_tag_by_id(admin_browser.contents, 'affected-software')
     >>> print(extract_text(table))
     Affects                      Status  Importance  Assigned to           Milestone

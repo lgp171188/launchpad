@@ -1,4 +1,4 @@
-# Copyright 2011-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2011-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test for the `generate-contents-files` script."""
@@ -42,16 +42,16 @@ def fake_overrides(script, distroseries):
     for suffix in suffixes:
         write_file(os.path.join(
             script.config.overrideroot,
-            "override.%s.%s" % (distroseries.name, suffix)), "")
+            "override.%s.%s" % (distroseries.name, suffix)), b"")
 
     for component in components:
         write_file(os.path.join(
             script.config.overrideroot,
-            "%s_%s_source" % (distroseries.name, component)), "")
+            "%s_%s_source" % (distroseries.name, component)), b"")
         for arch in architectures:
             write_file(os.path.join(
                 script.config.overrideroot,
-                "%s_%s_binary-%s" % (distroseries.name, component, arch)), "")
+                "%s_%s_binary-%s" % (distroseries.name, component, arch)), b"")
 
 
 class TestHelpers(TestCaseWithFactory):

@@ -5,7 +5,7 @@ link to it yet because we are not yet sure of the benefits of doing
 this, since the audience of this page is still restricted.
 
     >>> anon_browser.mech_browser.set_handle_equiv(False)
-    >>> anon_browser.open('http://launchpad.dev/+builds')
+    >>> anon_browser.open('http://launchpad.test/+builds')
 
 The BuildFarm contains a list of all builders registered in Launchpad
 ordered by build domain ('nonvirt' then 'virt'), then processor and
@@ -33,7 +33,7 @@ corresponding 'Build' page.
 
     >>> print anon_browser.getLink(
     ...     'i386 build of mozilla-firefox 0.9').url
-    http://launchpad.dev/ubuntu/+source/mozilla-firefox/0.9/+build/8
+    http://launchpad.test/ubuntu/+source/mozilla-firefox/0.9/+build/8
 
 The build status portlets contain the number of builds waiting
 in queue and the sum of their 'estimated_duration' for each
@@ -108,13 +108,13 @@ builders.
 Anonymous users are not given the option to register a new build
 and are not permitted if they go directly to the URL.
 
-    >>> anon_browser.open("http://launchpad.dev/+builds/+index")
+    >>> anon_browser.open("http://launchpad.test/+builds/+index")
     >>> anon_browser.getLink("Register a new build machine")
     Traceback (most recent call last):
     ...
     LinkNotFoundError
 
-    >>> anon_browser.open("http://launchpad.dev/+builds/+new")
+    >>> anon_browser.open("http://launchpad.test/+builds/+new")
     Traceback (most recent call last):
     ...
     Unauthorized: ..., 'launchpad.Admin')
@@ -122,7 +122,7 @@ and are not permitted if they go directly to the URL.
 Administrators can create new builders.
 
     >>> admin_browser.mech_browser.set_handle_equiv(False)
-    >>> admin_browser.open("http://launchpad.dev/+builds/+index")
+    >>> admin_browser.open("http://launchpad.test/+builds/+index")
 
     >>> admin_browser.getLink("Register a new build machine").click()
 

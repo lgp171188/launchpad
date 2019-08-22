@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Utilities for doing the sort of thing the os module does."""
@@ -185,7 +185,7 @@ def remove_if_exists(path):
 
 
 def write_file(path, content):
-    with open_for_writing(path, 'w') as f:
+    with open_for_writing(path, 'wb') as f:
         f.write(content)
 
 

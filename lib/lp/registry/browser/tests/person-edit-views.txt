@@ -20,7 +20,7 @@ The +editircnickname provides a label and a title.
     Basil's IRC nicknames
 
     >>> print view.cancel_url
-    http://launchpad.dev/~basil
+    http://launchpad.test/~basil
 
 The IRC form requires a nickname.
 

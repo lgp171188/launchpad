@@ -17,7 +17,7 @@ It is possible to get a batched list of all the project groups.
     >>> from lp.testing._login import logout
     >>> logout()
     >>> lp_anon = Launchpad.login_anonymously('launchpadlib test',
-    ...                                       'http://api.launchpad.dev/')
+    ...                                       'http://api.launchpad.test/')
     >>> len(lp_anon.project_groups)
     7
 
@@ -38,7 +38,7 @@ It is possible to get a batched list of all the project groups.
 It's possible to search the list and get a subset of the project groups.
 
     >>> lp_anon = Launchpad.login_anonymously('launchpadlib test',
-    ...                                       'http://api.launchpad.dev/')
+    ...                                       'http://api.launchpad.test/')
     >>> project_groups = lp_anon.project_groups.search(text="Apache")
     >>> for project_group in project_groups:
     ...   print project_group.display_name
@@ -122,7 +122,7 @@ collection and the all_milestones collection.
     ...         print item
 
     >>> print_collection(sorted(mozilla.active_milestones))
-    http://api.launchpad.dev/.../mozilla/+milestone/1.0
+    http://api.launchpad.test/.../mozilla/+milestone/1.0
 
     >>> print_collection(sorted(mozilla.all_milestones))
     http://.../mozilla/+milestone/0.8
@@ -222,7 +222,7 @@ collection and the all_milestones collection.
     >>> # 301-Moved Permanently exception.
     >>> firefox = lp_anon.projects['firefox']
     >>> print_collection(sorted(firefox.active_milestones))
-    http://api.launchpad.dev/.../firefox/+milestone/1.0
+    http://api.launchpad.test/.../firefox/+milestone/1.0
 
     >>> print_collection(sorted(firefox.all_milestones))
     http://.../firefox/+milestone/0.9

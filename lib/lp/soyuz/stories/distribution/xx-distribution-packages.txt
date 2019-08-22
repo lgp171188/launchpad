@@ -144,7 +144,7 @@ It will thus not be listed in the "...other untrusted versions of..." portlet.
 A /$DISTRO/+source/$PACKAGE page shows an overview of a source package in
 a distribution.  There are several sections of information.
 
-    >>> user_browser.open("http://launchpad.dev/ubuntu/+source/iceweasel/")
+    >>> user_browser.open("http://launchpad.test/ubuntu/+source/iceweasel/")
 
 The page has an appropriate title and main heading.
 
@@ -156,11 +156,11 @@ The page has an appropriate title and main heading.
     Hierarchy: Ubuntu > iceweasel package
     Tabs:
     * Overview (selected) - not linked
-    * Code - http://code.launchpad.dev/ubuntu/+source/iceweasel
-    * Bugs - http://bugs.launchpad.dev/ubuntu/+source/iceweasel
+    * Code - http://code.launchpad.test/ubuntu/+source/iceweasel
+    * Bugs - http://bugs.launchpad.test/ubuntu/+source/iceweasel
     * Blueprints - not linked
-    * Translations - http://translations.launchpad.dev/ubuntu/+source/iceweasel
-    * Answers - http://answers.launchpad.dev/ubuntu/+source/iceweasel
+    * Translations - http://translations.launchpad.test/ubuntu/+source/iceweasel
+    * Answers - http://answers.launchpad.test/ubuntu/+source/iceweasel
     Main heading: iceweasel package in Ubuntu
 
 Under the title there's a short paragraph that says how many 'new' bugs
@@ -173,10 +173,10 @@ and open questions the package has.
 Links exist to jump to the query page for the new bugs and open questions.
 
     >>> print(user_browser.getLink("0 new bugs").url)
-    http://bugs.launchpad.dev/ubuntu/+source/iceweasel/+bugs?field.status:list=NEW
+    http://bugs.launchpad.test/ubuntu/+source/iceweasel/+bugs?field.status:list=NEW
 
     >>> print(user_browser.getLink("0 open questions").url)
-    http://answers.launchpad.dev/ubuntu/+source/iceweasel/+questions?field.status=OPEN
+    http://answers.launchpad.test/ubuntu/+source/iceweasel/+questions?field.status=OPEN
 
 The page also has a table that shows the distro series in which the package is
 published, and if there is a link to a product series. If there is no upstream
@@ -248,7 +248,7 @@ As can be seen, the packaging is not linked yet.  We can do that now using the
 
     >>> user_browser.getLink("Set upstream link").click()
     >>> print(user_browser.url)
-    http://launchpad.dev/ubuntu/warty/+source/iceweasel/+edit-packaging
+    http://launchpad.test/ubuntu/warty/+source/iceweasel/+edit-packaging
 
 In step one the project is specified.
 
@@ -267,7 +267,7 @@ In step two, one of the series for that project can be selected.
 Go back to the source page, and now the upstream's description is shown and
 linked.
 
-    >>> user_browser.open("http://launchpad.dev/ubuntu/+source/iceweasel/")
+    >>> user_browser.open("http://launchpad.test/ubuntu/+source/iceweasel/")
     >>> print(extract_text(find_tag_by_id(user_browser.contents, 'upstream')))
     Upstream connections
     The Mozilla Project...
@@ -276,7 +276,7 @@ linked.
     The Mozilla Firefox web browser...
 
     >>> user_browser.getLink('Mozilla Firefox')
-    <Link text='Mozilla Firefox' url='http://launchpad.dev/firefox'>
+    <Link text='Mozilla Firefox' url='http://launchpad.test/firefox'>
 
 
 Distribution source packages side-bar
@@ -314,7 +314,7 @@ Related PPAs
 Switching to a different source now, "netapplet" is published in two
 distroseries.  The distroseries are presented in order, most recent first.
 
-    >>> browser.open("http://launchpad.dev/ubuntutest/+source/netapplet/")
+    >>> browser.open("http://launchpad.test/ubuntutest/+source/netapplet/")
     >>> print(extract_text(find_tag_by_id(browser.contents, 'packages_list')))
     Mock Hoary (active development)                   Set upstream link
       1.0.1a  release  (main)  ...
@@ -336,7 +336,7 @@ are displayed.
 A link to further PPA searches is also included.
 
     >>> link = browser.getLink(
-    ...     url='http://launchpad.dev/ubuntutest/+ppas?name_filter=netapplet')
+    ...     url='http://launchpad.test/ubuntutest/+ppas?name_filter=netapplet')
     >>> link.text
     "...other untrusted versions of..."
 
@@ -349,7 +349,7 @@ lists each published version of a package with its changelog entry for that
 version.  To navigate to this page, click on the "View full change log" link
 from the index page.
 
-    >>> browser.open("http://launchpad.dev/ubuntu/+source/foobar/")
+    >>> browser.open("http://launchpad.test/ubuntu/+source/foobar/")
     >>> browser.getLink("View full change log").click()
 
     >>> print(backslashreplace(browser.title))
@@ -358,12 +358,12 @@ from the index page.
     >>> print_location(browser.contents)
     Hierarchy: Ubuntu > foobar package
     Tabs:
-    * Overview (selected) - http://launchpad.dev/ubuntu/+source/foobar
-    * Code - http://code.launchpad.dev/ubuntu/+source/foobar
-    * Bugs - http://bugs.launchpad.dev/ubuntu/+source/foobar
+    * Overview (selected) - http://launchpad.test/ubuntu/+source/foobar
+    * Code - http://code.launchpad.test/ubuntu/+source/foobar
+    * Bugs - http://bugs.launchpad.test/ubuntu/+source/foobar
     * Blueprints - not linked
-    * Translations - http://translations.launchpad.dev/ubuntu/+source/foobar
-    * Answers - http://answers.launchpad.dev/ubuntu/+source/foobar
+    * Translations - http://translations.launchpad.test/ubuntu/+source/foobar
+    * Answers - http://answers.launchpad.test/ubuntu/+source/foobar
     Main heading: Change log for foobar package in Ubuntu
 
 Each version history entry has a header with the version as the title
@@ -381,7 +381,7 @@ Package "foobar" is deleted:
 Package "alsa-utils" is pending in Warty and published in Hoary:
 
     >>> browser.open(
-    ...     "http://launchpad.dev/ubuntu/+source/alsa-utils/+changelog")
+    ...     "http://launchpad.test/ubuntu/+source/alsa-utils/+changelog")
     >>> first_header = find_tag_by_id(browser.contents,
     ...     'detail_alsa-utils_1.0.9a-4ubuntu1')
     >>> print(extract_text(first_header))
@@ -419,7 +419,7 @@ If we view the same page as a logged-in user, we can see the email
 address:
 
     >>> user_browser.open(
-    ...     "http://launchpad.dev/ubuntu/+source/alsa-utils/+changelog")
+    ...     "http://launchpad.test/ubuntu/+source/alsa-utils/+changelog")
     >>> print(extract_text(find_tag_by_id(user_browser.contents,
     ...     'body_alsa-utils_1.0.9a-4ubuntu1')))
     alsa-utils (1.0.9a-4ubuntu1) hoary; urgency=low
@@ -430,7 +430,7 @@ The presented changelog is also linkified for any bugs mentioned in the
 form LP: #nnn where nnn is the bug number.
 
     >>> browser.getLink('#10').url
-    'http://launchpad.dev/bugs/10'
+    'http://launchpad.test/bugs/10'
 
 If any email addresses in the changelog are recognised as registered in
 Launchpad, they are linkified to point to the person's profile page.
@@ -438,7 +438,7 @@ Here, 'commercialpackage' happens to have a recognised address in its
 changelog:
 
     >>> user_browser.open(
-    ...     "http://launchpad.dev/ubuntu/+source/commercialpackage/"
+    ...     "http://launchpad.test/ubuntu/+source/commercialpackage/"
     ...     "+changelog")
     >>> changelog = find_tag_by_id(
     ...     user_browser.contents, 'commercialpackage_1.0-1')
@@ -452,7 +452,7 @@ Packages that are not published
 If the package being viewed has no publishing history, a blank table is
 displayed:
 
-    >>> user_browser.open("http://launchpad.dev/ubuntu/+source/a52dec/")
+    >>> user_browser.open("http://launchpad.test/ubuntu/+source/a52dec/")
     >>> print(extract_text(find_tag_by_id(
     ...     user_browser.contents, 'packages_list')))
 
@@ -478,7 +478,7 @@ as mentioned above.
     ...         print(extract_text(section.div))
 
     >>> anon_browser.open(
-    ...     "http://launchpad.dev/ubuntu/+source/alsa-utils/+changelog")
+    ...     "http://launchpad.test/ubuntu/+source/alsa-utils/+changelog")
 
     >>> print_displayed_versions(anon_browser.contents)
     1.0.9a-4ubuntu1
@@ -549,12 +549,12 @@ source package hierarchy.
     >>> print_location(anon_browser.contents)
     Hierarchy: Ubuntu > alsa-utils package
     Tabs:
-    * Overview (selected) - http://launchpad.dev/ubuntu/+source/alsa-utils
-    * Code - http://code.launchpad.dev/ubuntu/+source/alsa-utils
-    * Bugs - http://bugs.launchpad.dev/ubuntu/+source/alsa-utils
+    * Overview (selected) - http://launchpad.test/ubuntu/+source/alsa-utils
+    * Code - http://code.launchpad.test/ubuntu/+source/alsa-utils
+    * Bugs - http://bugs.launchpad.test/ubuntu/+source/alsa-utils
     * Blueprints - not linked
-    * Translations - http://translations.launchpad.dev/ubuntu/+source/alsa-utils
-    * Answers - http://answers.launchpad.dev/ubuntu/+source/alsa-utils
+    * Translations - http://translations.launchpad.test/ubuntu/+source/alsa-utils
+    * Answers - http://answers.launchpad.test/ubuntu/+source/alsa-utils
     Main heading: Publishing history of alsa-utils package in Ubuntu
 
 Returning to the distribution source package index is also possible via

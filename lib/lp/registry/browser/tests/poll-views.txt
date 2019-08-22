@@ -14,7 +14,7 @@ polls.
     >>> def create_team_view(team, name=None, principal=None):
     ...     # XRDS inheritance requires a lot of setup.
     ...     path_info = '/~%s' % team.name
-    ...     server_url = 'http://launchpad.dev'
+    ...     server_url = 'http://launchpad.test'
     ...     view = create_view(
     ...         team, name=name, principal=principal,
     ...         server_url=server_url, path_info=path_info)

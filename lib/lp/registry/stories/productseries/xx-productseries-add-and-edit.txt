@@ -8,12 +8,12 @@ Only product owners  and drivers can add a series to product. This means that
 only Sample Person can add series in the Firefox product. No Privileges
 Person won't even see the link nor can access the page directly.
 
-    >>> user_browser.open('http://launchpad.dev/firefox')
+    >>> user_browser.open('http://launchpad.test/firefox')
     >>> user_browser.getLink('Register a series').click()
     Traceback (most recent call last):
       ...
     LinkNotFoundError
-    >>> user_browser.open('http://launchpad.dev/firefox/+addseries')
+    >>> user_browser.open('http://launchpad.test/firefox/+addseries')
     Traceback (most recent call last):
       ...
     Unauthorized: ...
@@ -21,10 +21,10 @@ Person won't even see the link nor can access the page directly.
 But Sample Person will and be able to add a series.
 
     >>> browser.addHeader('Authorization', 'Basic test@canonical.com:test')
-    >>> browser.open('http://launchpad.dev/firefox')
+    >>> browser.open('http://launchpad.test/firefox')
     >>> browser.getLink('Register a series').click()
     >>> print browser.url
-    http://launchpad.dev/firefox/+addseries
+    http://launchpad.test/firefox/+addseries
 
     >>> print find_main_content(browser.contents).find('h1').renderContents()
     Register a new Mozilla Firefox release series
@@ -41,13 +41,13 @@ After checking that the page +addseries is there, we try to add a new series.
 Now we are redirected to the Overview page of the product series we just added
 
     >>> browser.url
-    'http://launchpad.dev/firefox/stable'
+    'http://launchpad.test/firefox/stable'
 
     >>> print extract_text(find_tag_by_id(browser.contents, 'description'))
     Product series add testing
 
     >>> browser.getLink('lp://dev/~mark/firefox/release-0.9.2')
-    <Link ... url='http://code.launchpad.dev/~mark/firefox/release-0.9.2'>
+    <Link ... url='http://code.launchpad.test/~mark/firefox/release-0.9.2'>
 
 
 Editing a series
@@ -58,7 +58,7 @@ can reach the +edit page.
 
     >>> browser.getLink('Change details').click()
     >>> browser.url
-    'http://launchpad.dev/firefox/stable/+edit'
+    'http://launchpad.test/firefox/stable/+edit'
     >>> browser.getControl('Name').value
     'stable'
     >>> browser.getControl('Status').displayValue
@@ -92,7 +92,7 @@ of firefox:
     >>> browser.getControl('Change').click()
 
     >>> browser.url
-    'http://launchpad.dev/firefox/unstable'
+    'http://launchpad.test/firefox/unstable'
 
 The new values are then shown in the series' page.
 
@@ -103,7 +103,7 @@ The new values are then shown in the series' page.
 And if we try to add another series with the same name to same product, we
 should get a nice error message.
 
-    >>> browser.open('http://launchpad.dev/firefox/+addseries')
+    >>> browser.open('http://launchpad.test/firefox/+addseries')
 
     >>> browser.getControl('Name').value = 'unstable'
     >>> browser.getControl('Summary').value = 'The same name'
@@ -121,9 +121,9 @@ Product series bug subscriptions
 To receive email notifications about bugs pertaining to a product series,
 we can create structural bug subscriptions.
 
-    >>> browser.open('http://launchpad.dev/firefox/unstable')
+    >>> browser.open('http://launchpad.test/firefox/unstable')
     >>> browser.getLink('Subscribe to bug mail').click()
     >>> print browser.url
-    http://launchpad.dev/firefox/unstable/+subscribe
+    http://launchpad.test/firefox/unstable/+subscribe
     >>> print browser.title
     Subscribe : Series unstable : Bugs : Mozilla Firefox

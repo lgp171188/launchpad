@@ -32,7 +32,7 @@ class ObjectFormatterAPITestCase(TestCaseWithFactory, FakeAdapterMixin):
     def test_pagetitle_vhost(self):
         project = self.factory.makeProduct(name='fnord')
         view = create_view(project, name='+bugs', rootsite='bugs',
-            current_request=True, server_url='https://bugs.launchpad.dev/')
+            current_request=True, server_url='https://bugs.launchpad.test/')
         view.request.traversed_objects = [project, view]
         formatter = ObjectFormatterAPI(view)
         self.assertEqual('Bugs : Fnord', formatter.pagetitle())
@@ -62,7 +62,7 @@ class ObjectFormatterAPITestCase(TestCaseWithFactory, FakeAdapterMixin):
         bug = self.factory.makeBug(target=project, title='bang')
         view = create_view(
             bug.bugtasks[0], name='+index', rootsite='bugs',
-            current_request=True, server_url='https://bugs.launchpad.dev/')
+            current_request=True, server_url='https://bugs.launchpad.test/')
         view.request.traversed_objects = [project, bug.bugtasks[0], view]
         formatter = ObjectFormatterAPI(view)
         self.assertEqual(
@@ -75,7 +75,7 @@ class ObjectFormatterAPITestCase(TestCaseWithFactory, FakeAdapterMixin):
         bug = self.factory.makeBug(target=project, title=title)
         view = create_view(
             bug.bugtasks[0], name='+index', rootsite='bugs',
-            current_request=True, server_url='https://bugs.launchpad.dev/')
+            current_request=True, server_url='https://bugs.launchpad.test/')
         view.request.traversed_objects = [project, bug.bugtasks[0], view]
         formatter = ObjectFormatterAPI(view)
         detail = u'%s \u201c%s\u201d' % (bug.displayname, title)

@@ -25,7 +25,7 @@ and/or revoked from that user's +oauth-tokens page.
 
     # View the tokens.
     >>> my_browser = setupBrowser(auth='Basic salgado@ubuntu.com:test')
-    >>> my_browser.open('http://launchpad.dev/~salgado/+oauth-tokens')
+    >>> my_browser.open('http://launchpad.test/~salgado/+oauth-tokens')
     >>> print my_browser.title
     Authorized applications...
     >>> main_content = find_tag_by_id(my_browser.contents, 'maincontent')
@@ -90,7 +90,7 @@ shown as one of the authorized ones.
     >>> print_feedback_messages(my_browser.contents)
     Authorization revoked successfully.
 
-    >>> my_browser.open('http://launchpad.dev/~salgado/+oauth-tokens')
+    >>> my_browser.open('http://launchpad.test/~salgado/+oauth-tokens')
     >>> print extract_text(find_tag_by_id(my_browser.contents, 'maincontent'))
     Authorized applications
     ...
@@ -117,7 +117,7 @@ include that.
     ...              context=getUtility(IProductSet)['firefox'])
     >>> access_token, _ = token.createAccessToken()
     >>> logout()
-    >>> my_browser.open('http://launchpad.dev/~salgado/+oauth-tokens')
+    >>> my_browser.open('http://launchpad.test/~salgado/+oauth-tokens')
     >>> print extract_text(find_tag_by_id(my_browser.contents, 'maincontent'))
     Authorized applications
     ...
@@ -129,7 +129,7 @@ include that.
 That page is protected with the launchpad.Edit permission, for obvious
 reasons, so users can only access their own.
 
-    >>> user_browser.open('http://launchpad.dev/~salgado/+oauth-tokens')
+    >>> user_browser.open('http://launchpad.test/~salgado/+oauth-tokens')
     Traceback (most recent call last):
     ...
     Unauthorized: ...launchpad.Edit...

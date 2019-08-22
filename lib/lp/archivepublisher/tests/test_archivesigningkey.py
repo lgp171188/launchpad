@@ -1,4 +1,4 @@
-# Copyright 2016-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2016-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test ArchiveSigningKey."""
@@ -56,7 +56,7 @@ class TestSignableArchiveWithSigningKey(TestCaseWithFactory):
 
     def test_signFile_absolute_within_archive(self):
         filename = os.path.join(self.archive_root, "signme")
-        write_file(filename, "sign this")
+        write_file(filename, b"sign this")
 
         signer = ISignableArchive(self.archive)
         self.assertTrue(signer.can_sign)
@@ -66,7 +66,7 @@ class TestSignableArchiveWithSigningKey(TestCaseWithFactory):
 
     def test_signFile_absolute_outside_archive(self):
         filename = os.path.join(self.temp_dir, "signme")
-        write_file(filename, "sign this")
+        write_file(filename, b"sign this")
 
         signer = ISignableArchive(self.archive)
         self.assertTrue(signer.can_sign)
@@ -76,7 +76,7 @@ class TestSignableArchiveWithSigningKey(TestCaseWithFactory):
     def test_signFile_relative_within_archive(self):
         filename_relative = "signme"
         filename = os.path.join(self.archive_root, filename_relative)
-        write_file(filename, "sign this")
+        write_file(filename, b"sign this")
 
         signer = ISignableArchive(self.archive)
         self.assertTrue(signer.can_sign)
@@ -87,7 +87,7 @@ class TestSignableArchiveWithSigningKey(TestCaseWithFactory):
     def test_signFile_relative_outside_archive(self):
         filename_relative = "../signme"
         filename = os.path.join(self.temp_dir, filename_relative)
-        write_file(filename, "sign this")
+        write_file(filename, b"sign this")
 
         signer = ISignableArchive(self.archive)
         self.assertTrue(signer.can_sign)
@@ -125,7 +125,7 @@ class TestSignableArchiveWithRunParts(RunPartsMixin, TestCaseWithFactory):
     def test_signRepository_runs_parts(self):
         suite_dir = os.path.join(self.archive_root, "dists", self.suite)
         release_path = os.path.join(suite_dir, "Release")
-        write_file(release_path, "Release contents")
+        write_file(release_path, b"Release contents")
 
         signer = ISignableArchive(self.archive)
         self.assertTrue(signer.can_sign)
@@ -150,7 +150,7 @@ class TestSignableArchiveWithRunParts(RunPartsMixin, TestCaseWithFactory):
         pubconf.distsroot = self.makeTemporaryDirectory()
         suite_dir = os.path.join(pubconf.distsroot, self.suite)
         release_path = os.path.join(suite_dir, "Release")
-        write_file(release_path, "Release contents")
+        write_file(release_path, b"Release contents")
 
         signer = ISignableArchive(self.archive)
         self.assertTrue(signer.can_sign)
@@ -174,7 +174,7 @@ class TestSignableArchiveWithRunParts(RunPartsMixin, TestCaseWithFactory):
 
     def test_signFile_runs_parts(self):
         filename = os.path.join(self.archive_root, "signme")
-        write_file(filename, "sign this")
+        write_file(filename, b"sign this")
 
         signer = ISignableArchive(self.archive)
         self.assertTrue(signer.can_sign)

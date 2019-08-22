@@ -61,7 +61,7 @@ checking at some future date.
 
     >>> reschedule_button.click()
     >>> print(lp_dev_browser.url)
-    http://bugs.launchpad.dev/bugs/bugtrackers/our-bugtracker
+    http://bugs.launchpad.test/bugs/bugtrackers/our-bugtracker
 
     >>> for message in find_tags_by_class(
     ...     lp_dev_browser.contents, 'informational message'):

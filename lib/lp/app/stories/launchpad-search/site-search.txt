@@ -27,10 +27,10 @@ bugs, teams, etc.).
 
 The search form is available on almost every Launchpad page.
 
-    >>> anon_browser.open('http://launchpad.dev/ubuntu')
+    >>> anon_browser.open('http://launchpad.test/ubuntu')
     >>> search_for('test1')
     >>> print anon_browser.url
-    http://launchpad.dev/+search?field.text=test1
+    http://launchpad.test/+search?field.text=test1
 
 But the search results page has its own search form, so the global one
 is omitted.
@@ -43,7 +43,7 @@ is omitted.
 If by chance someone ends up at /+search with no search parameters, they
 get an explanation of the search function.
 
-    >>> anon_browser.open('http://launchpad.dev/+search')
+    >>> anon_browser.open('http://launchpad.test/+search')
     >>> print anon_browser.title
     Search Launchpad
 
@@ -258,7 +258,7 @@ matching pages.
     <p id="no-page-service">
     The page search service was not available when this search was
     performed.
-    <a href="http://launchpad.dev/+search?field.text=gnomebaker">Search
+    <a href="http://launchpad.test/+search?field.text=gnomebaker">Search
     again</a> to see the matching pages.
     </p>
 
@@ -302,19 +302,19 @@ Searching from any page
 Most pages have the global search form in them. Any user can enter terms
 in the page they are viewing and submit the form to see the results.
 
-    >>> anon_browser.open('http://bugs.launchpad.dev/firefox')
+    >>> anon_browser.open('http://bugs.launchpad.test/firefox')
     >>> print anon_browser.title
     Bugs : Mozilla Firefox
 
     >>> print anon_browser.url
-    http://bugs.launchpad.dev/firefox
+    http://bugs.launchpad.test/firefox
 
     >>> search_for('mozilla')
     >>> print anon_browser.title
     Pages matching "mozilla" in Launchpad
 
     >>> print anon_browser.url
-    http://launchpad.dev/+search?...
+    http://launchpad.test/+search?...
 
     >>> print_search_results()
     Exact matches
@@ -341,7 +341,7 @@ the logged in users has the permission to see it.
     ...     visibility=PersonVisibility.PRIVATE)
     >>> logout()
     >>> browser = setupBrowser(auth='Basic salgado@ubuntu.com:test')
-    >>> browser.open('http://launchpad.dev/+search')
+    >>> browser.open('http://launchpad.test/+search')
     >>> search_for('Private Benjamin', browser=browser)
     >>> print_search_results(browser.contents)
     Exact matches
@@ -352,7 +352,7 @@ the logged in users has the permission to see it.
 A user who is not in the private team will not see the team listed in
 the results.
 
-    >>> user_browser.open('http://launchpad.dev/+search')
+    >>> user_browser.open('http://launchpad.test/+search')
     >>> search_for('Private Benjamin', browser=user_browser)
     >>> print_search_results(user_browser.contents)
 

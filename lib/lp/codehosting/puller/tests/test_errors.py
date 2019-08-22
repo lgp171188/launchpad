@@ -18,6 +18,10 @@ from bzrlib.errors import (
     UnknownFormatError,
     UnsupportedFormatError,
     )
+from bzrlib.url_policy_open import (
+    BranchLoopError,
+    BranchReferenceForbidden,
+    )
 from lazr.uri import InvalidURIError
 
 from lp.code.enums import BranchType
@@ -28,10 +32,6 @@ from lp.codehosting.puller.worker import (
     BranchMirrorer,
     PullerWorker,
     PullerWorkerProtocol,
-    )
-from lp.codehosting.safe_open import (
-    BranchLoopError,
-    BranchReferenceForbidden,
     )
 from lp.testing import TestCase
 
@@ -109,7 +109,7 @@ class TestErrorCatching(TestCase):
         # is displayed to the user.
         expected_msg = "Launchpad does not mirror branches from Launchpad."
         msg = self.getMirrorFailureForException(
-            BadUrlLaunchpad('http://launchpad.dev/foo'))
+            BadUrlLaunchpad('http://launchpad.test/foo'))
         self.assertTrue(msg.startswith(expected_msg))
 
     def testHostedBranchReference(self):

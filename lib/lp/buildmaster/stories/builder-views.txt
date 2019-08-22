@@ -86,7 +86,7 @@ The BuilderEditView also has a next_url property for redirecting after
 a successful form submission.
 
     >>> print builder_view.next_url
-    http://launchpad.dev/builders/bob
+    http://launchpad.test/builders/bob
 
 The BuilderEditView can be used to update the relevant fields on the
 builder.

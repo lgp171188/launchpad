@@ -42,12 +42,12 @@ class TestBugTaskBreadcrumb(BaseBreadcrumbTestCase):
             bug=self.bug, owner=self.bug.owner,
             subject="test comment subject", body="test comment body")
         expected_breadcrumbs = [
-            ('Crumb Tester', 'http://launchpad.dev/crumb-tester'),
-            ('Bugs', 'http://bugs.launchpad.dev/crumb-tester'),
+            ('Crumb Tester', 'http://launchpad.test/crumb-tester'),
+            ('Bugs', 'http://bugs.launchpad.test/crumb-tester'),
             ('Bug #%s' % self.bug.id,
-             'http://bugs.launchpad.dev/crumb-tester/+bug/%s' % self.bug.id),
+             'http://bugs.launchpad.test/crumb-tester/+bug/%s' % self.bug.id),
             ('Comment #1',
-             'http://bugs.launchpad.dev/crumb-tester/+bug/%s/comments/1' % (
+             'http://bugs.launchpad.test/crumb-tester/+bug/%s/comments/1' % (
                 self.bug.id)),
             ]
         self.assertBreadcrumbs(expected_breadcrumbs, comment)

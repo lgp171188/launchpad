@@ -31,7 +31,7 @@ about users.
     >>> import xmlrpclib
     >>> from lp.testing.xmlrpc import XMLRPCTestTransport
     >>> authserver= xmlrpclib.ServerProxy(
-    ...     'http://xmlrpc-private.launchpad.dev:8087/authserver',
+    ...     'http://xmlrpc-private.launchpad.test:8087/authserver',
     ...     transport=XMLRPCTestTransport())
 
     >>> user_dict = authserver.getUserAndSSHKeys('name16')

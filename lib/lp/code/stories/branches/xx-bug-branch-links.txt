@@ -17,7 +17,7 @@ There is an action link to "Link to bug report" that is visible to all bug
 if the user is not logged in, they will be asked to log in.
 
     >>> anon_browser.open(
-    ...     'http://code.launchpad.dev/~name12/gnome-terminal/klingon')
+    ...     'http://code.launchpad.test/~name12/gnome-terminal/klingon')
     >>> anon_browser.getLink('Link a bug report').click()
     Traceback (most recent call last):
     ...
@@ -33,7 +33,7 @@ if the user is not logged in, they will be asked to log in.
 
     >>> browser = setupBrowser(auth="Basic test@canonical.com:test")
     >>> browser.open(
-    ...     'http://code.launchpad.dev/~name12/gnome-terminal/klingon')
+    ...     'http://code.launchpad.test/~name12/gnome-terminal/klingon')
     >>> printBugBranchLinks(browser)
     No bug branch links
 
@@ -61,7 +61,7 @@ Attempting to link to the same bug again gives no error.
 The bug-branch link is also shown on the bug page.
 
     >>> browser.open(
-    ...     'http://code.launchpad.dev/~name12/gnome-terminal/klingon')
+    ...     'http://code.launchpad.test/~name12/gnome-terminal/klingon')
     >>> browser.getLink('Reflow problems with complex page layouts').click()
 
     >>> printBugBranchLinks(browser)
@@ -73,7 +73,7 @@ If the bug is private, then the bug branch link isn't shows on the
 branch page for people that are not able to see it.  Get an admin
 to mark the bug private.
 
-    >>> admin_browser.open('http://launchpad.dev/firefox/+bug/4/+secrecy')
+    >>> admin_browser.open('http://launchpad.test/firefox/+bug/4/+secrecy')
     >>> admin_browser.getControl('Private', index=1).click()
     >>> admin_browser.getControl('Change').click()
     >>> print(extract_text(find_tag_by_id(admin_browser.contents, 'privacy')))
@@ -82,7 +82,7 @@ to mark the bug private.
 Sample person can see it...
 
     >>> browser.open(
-    ...     'http://code.launchpad.dev/~name12/gnome-terminal/klingon')
+    ...     'http://code.launchpad.test/~name12/gnome-terminal/klingon')
     >>> printBugBranchLinks(browser)
     Bug #4: Reflow problems with complex page layouts
     Medium
@@ -91,7 +91,7 @@ Sample person can see it...
 ... but an anonymous user cannot.
 
     >>> anon_browser.open(
-    ...     'http://code.launchpad.dev/~name12/gnome-terminal/klingon')
+    ...     'http://code.launchpad.test/~name12/gnome-terminal/klingon')
     >>> printBugBranchLinks(anon_browser)
     No bug branch links
 
@@ -103,14 +103,14 @@ The action link on the bug page is "Link a related branch".  Again this
 links to a page restricted with the launchpad.AnyPerson permission.
 
     >>> anon_browser.open(
-    ...     'http://launchpad.dev/bugs/11')
+    ...     'http://launchpad.test/bugs/11')
     >>> anon_browser.getLink('Link a related branch').click()
     Traceback (most recent call last):
     ...
     Unauthorized: (...launchpad.AnyPerson')
 
     >>> browser.open(
-    ...     'http://launchpad.dev/bugs/11')
+    ...     'http://launchpad.test/bugs/11')
     >>> printBugBranchLinks(browser)
     No bug branch links
 
@@ -135,7 +135,7 @@ Deleting bug branch links
 The edit view for the bug branch also now has a delete button to unlink
 the bug from the branch.
 
-    >>> browser.open('http://bugs.launchpad.dev/thunderbird/+bug/15')
+    >>> browser.open('http://bugs.launchpad.test/thunderbird/+bug/15')
 
     >>> browser.getLink(url="+delete").click()
     >>> printBugBranchLinks(browser)

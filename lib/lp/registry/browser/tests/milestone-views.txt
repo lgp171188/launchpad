@@ -16,7 +16,7 @@ The default url for a milestone is to the main site.
     >>> request = LaunchpadTestRequest(SERVER_URL='http://bugs.launchpad.net')
     >>> login(ANONYMOUS, request)
     >>> print test_tales("milestone/fmt:url", milestone=milestone)
-    http://launchpad.dev/puffin/+milestone/kakapo
+    http://launchpad.test/puffin/+milestone/kakapo
 
 Milestone defines several menus.
 
@@ -351,7 +351,7 @@ cancel_url property can be used to return to the milestone.
      'productseries']
 
     >>> print view.cancel_url
-    http://launchpad.dev/firefox/+milestone/1.0.8
+    http://launchpad.test/firefox/+milestone/1.0.8
 
 This milestone belongs to a product, so the productseries field is
 included in the list of field names. The user can change the field
@@ -523,10 +523,10 @@ The view provides an action_url and cancel_url properties that form
 submitting the form or aborting the action.
 
     >>> print view.action_url
-    http://launchpad.dev/firefox/1.0/+addmilestone
+    http://launchpad.test/firefox/1.0/+addmilestone
 
     >>> print view.cancel_url
-    http://launchpad.dev/firefox/1.0
+    http://launchpad.test/firefox/1.0
 
 Only the name of the milestone is required.
 

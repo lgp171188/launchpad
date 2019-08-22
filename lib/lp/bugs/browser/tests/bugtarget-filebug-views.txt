@@ -61,14 +61,14 @@ The inline_filebug_form_url property returns the URL of the inline
 filebug form so that it may be loaded asynchronously.
 
     >>> print(filebug_view.inline_filebug_form_url)
-    http://launchpad.dev/firefox/+filebug-inline-form
+    http://launchpad.test/firefox/+filebug-inline-form
 
 Similarly, the duplicate_search_url property returns the base URL for
 the duplicate search view, which can be used to load the list of
 possible duplicates for a bug asynchronously.
 
     >>> print(filebug_view.duplicate_search_url)
-    http://launchpad.dev/firefox/+filebug-show-similar
+    http://launchpad.test/firefox/+filebug-show-similar
 
 
 Adding tags to filed bugs

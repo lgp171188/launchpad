@@ -11,6 +11,7 @@ from datetime import (
     )
 import re
 
+from fixtures import FakeLogger
 from pytz import utc
 import requests
 import requests.exceptions
@@ -58,6 +59,7 @@ from lp.services.webhooks.model import (
     WebhookJobDerived,
     WebhookJobType,
     )
+from lp.services.webhooks.testing import LogsScheduledWebhooks
 from lp.testing import (
     login_person,
     TestCaseWithFactory,
@@ -175,7 +177,7 @@ class TestWebhookClient(TestCase):
                 'request': self.request_matcher,
                 'response': MatchesDict({
                     'status_code': Equals(200),
-                    'headers': Equals({'content-type': 'text/plain'}),
+                    'headers': Equals({'Content-Type': 'text/plain'}),
                     'body': Equals('Content'),
                     }),
                 }))
@@ -188,7 +190,7 @@ class TestWebhookClient(TestCase):
                 'request': self.request_matcher,
                 'response': MatchesDict({
                     'status_code': Equals(404),
-                    'headers': Equals({'content-type': 'text/plain'}),
+                    'headers': Equals({'Content-Type': 'text/plain'}),
                     'body': Equals('Content'),
                     }),
                 }))
@@ -295,6 +297,7 @@ class TestWebhookDeliveryJob(TestCaseWithFactory):
 
     def test_create(self):
         # `WebhookDeliveryJob` objects provide `IWebhookDeliveryJob`.
+        logger = self.useFixture(FakeLogger())
         hook = self.factory.makeWebhook()
         job = WebhookDeliveryJob.create(hook, 'test', payload={'foo': 'bar'})
         self.assertProvides(job, IWebhookDeliveryJob)
@@ -302,6 +305,9 @@ class TestWebhookDeliveryJob(TestCaseWithFactory):
             job,
             MatchesStructure.byEquality(
                 webhook=hook, event_type='test', payload={'foo': 'bar'}))
+        self.assertThat(
+            logger.output,
+            LogsScheduledWebhooks([(hook, 'test', Equals({'foo': 'bar'}))]))
 
     def test_gitrepository__repr__(self):
         # `WebhookDeliveryJob` objects for Git repositories have an
@@ -380,7 +386,7 @@ class TestWebhookDeliveryJob(TestCaseWithFactory):
         self.assertEqual([
             ('POST', 'http://example.com/ep',
              {'Content-Type': 'application/json',
-              'User-Agent': 'launchpad.dev-Webhooks/r%s' % (
+              'User-Agent': 'launchpad.test-Webhooks/r%s' % (
                   versioninfo.revision),
               'X-Launchpad-Event-Type': 'test',
               'X-Launchpad-Delivery': str(job.job_id)}),
@@ -396,7 +402,7 @@ class TestWebhookDeliveryJob(TestCaseWithFactory):
         self.assertEqual([
             ('POST', 'http://example.com/ep',
              {'Content-Type': 'application/json',
-              'User-Agent': 'launchpad.dev-Webhooks/r%s' % (
+              'User-Agent': 'launchpad.test-Webhooks/r%s' % (
                   versioninfo.revision),
               'X-Hub-Signature':
                   'sha1=de75f136c37d89f5eb24834468c1ecd602fa95dd',

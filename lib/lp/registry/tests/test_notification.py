@@ -46,7 +46,7 @@ class SendDirectContactEmailTestCase(TestCaseWithFactory):
                 '%s' % body,
                 '-- ',
                 'This message was sent from Launchpad by',
-                'Me (http://launchpad.dev/~me)',
+                'Me (http://launchpad.test/~me)',
                 'test reason.',
                 'For more information see',
                 'https://help.launchpad.net/YourAccount/ContactingPeople']),

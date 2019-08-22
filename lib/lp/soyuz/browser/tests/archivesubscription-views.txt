@@ -48,7 +48,7 @@ POSTing with out data just causes the validation to display:
     >>> view = create_initialized_view(
     ...     cprov_private_ppa, name="+subscriptions",
     ...     server_url=
-    ...         "https://launchpad.dev/~cprov/+archive/ppa/+subscriptions",
+    ...         "https://launchpad.test/~cprov/+archive/ppa/+subscriptions",
     ...     form={
     ...         'field.actions.add': 'Add',
     ...         'field.date_expires': '',
@@ -62,7 +62,7 @@ The view can be used to add a new subscriber:
     >>> view = create_initialized_view(
     ...     cprov_private_ppa, name="+subscriptions",
     ...     server_url=
-    ...         "https://launchpad.dev/~cprov/+archive/ppa/+subscriptions",
+    ...         "https://launchpad.test/~cprov/+archive/ppa/+subscriptions",
     ...     form={
     ...         'field.subscriber': 'spiv',
     ...         'field.description': "spiv's my friend",
@@ -76,7 +76,7 @@ successfully:
     >>> view.request.response.getStatus()
     302
     >>> print(view.request.response.getHeader('location'))
-    https://launchpad.dev/~cprov/+archive/ppa/+subscriptions
+    https://launchpad.test/~cprov/+archive/ppa/+subscriptions
     >>> view.has_subscriptions
     True
 
@@ -137,7 +137,7 @@ subscriber, but the date_expires must be in the future:
     >>> view = create_initialized_view(
     ...     mark_private_ppa, name="+subscriptions",
     ...     server_url=
-    ...         "https://launchpad.dev/~cprov/+archive/ppa/+subscriptions",
+    ...         "https://launchpad.test/~cprov/+archive/ppa/+subscriptions",
     ...     form={
     ...         'field.subscriber': 'launchpad',
     ...         'field.description': "The launchpad team can use it.",
@@ -155,7 +155,7 @@ So we try again with an expiry date in the future:
     >>> view = create_initialized_view(
     ...     mark_private_ppa, name="+subscriptions",
     ...     server_url=
-    ...         "https://launchpad.dev/~cprov/+archive/ppa/+subscriptions",
+    ...         "https://launchpad.test/~cprov/+archive/ppa/+subscriptions",
     ...     form={
     ...         'field.subscriber': 'launchpad',
     ...         'field.description': "The launchpad team can use it.",
@@ -196,7 +196,7 @@ for editing, together with Update and Cancel actions:
 The ArchiveSubscriptionEditView has a next_url helper property.
 
     >>> print(view.next_url)
-    http://launchpad.dev/~cprov/+archive/ubuntu/pppa/+subscriptions
+    http://launchpad.test/~cprov/+archive/ubuntu/pppa/+subscriptions
 
 The ArchiveSubscriptionEditView can be used to update the description field:
 
@@ -347,7 +347,7 @@ Now the view can then access the token and the source list entries sub-view:
     Andrew Bennetts
 
     >>> print(view.sources_list_entries.context.archive_url)
-    http://spiv:...@private-ppa.launchpad.dev/cprov/pppa/...
+    http://spiv:...@private-ppa.launchpad.test/cprov/pppa/...
 
 The view can also be used to regenerate the source.list entries.
 

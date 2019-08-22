@@ -3,7 +3,7 @@ Changing bug assignment
 
 A bug is unassigned by choosing the "Assigned to" -> "Nobody" option.
 
-    >>> admin_browser.open("http://launchpad.dev/firefox/+bug/1")
+    >>> admin_browser.open("http://launchpad.test/firefox/+bug/1")
 
 Bug 1 is currently assigned to someone.
 
@@ -31,7 +31,7 @@ contributor (they have no bugs currently assigned to them) the user is
 warned immediately after the assignment, so that they can change their
 choice if it was mistaken.
 
-    >>> admin_browser.open("http://launchpad.dev/firefox/+bug/1")
+    >>> admin_browser.open("http://launchpad.test/firefox/+bug/1")
     >>> assignee_control = admin_browser.getControl(
     ...     name="firefox.assignee.option", index=0)
     >>> assignee_control.value = ["firefox.assignee.assign_to"]
@@ -50,7 +50,7 @@ choice if it was mistaken.
 If the new assignee does have bugs assigned, but not in the relevant pillar,
 the user will be warned too.
 
-    >>> admin_browser.open("http://bugs.launchpad.dev/jokosher/+bug/11")
+    >>> admin_browser.open("http://bugs.launchpad.test/jokosher/+bug/11")
     >>> assignee_control = admin_browser.getControl(
     ...     name="jokosher.assignee.option", index=0)
     >>> assignee_control.value = ["jokosher.assignee.assign_to"]
@@ -77,13 +77,13 @@ When assigning a bug to oneself, though, the warning message is suppreseed.
 
     >>> logout()
 
-    >>> user_browser.open("http://bugs.launchpad.dev/jokosher/+bug/11")
+    >>> user_browser.open("http://bugs.launchpad.test/jokosher/+bug/11")
     >>> assignee_control = user_browser.getControl(
     ...     name="jokosher.assignee.option", index=0)
     >>> assignee_control.value = ["jokosher.assignee.assign_to_me"]
     >>> user_browser.getControl("Save Changes", index=0).click()
     >>> print(user_browser.url)
-    http://bugs.launchpad.dev/jokosher/+bug/11
+    http://bugs.launchpad.test/jokosher/+bug/11
     >>> print(first_tag_by_class(
     ...     user_browser.contents, 'warning message'))
     None
@@ -113,7 +113,7 @@ any team and hence does no see the option to asign somebody else.
     0
 
     >>> logout()
-    >>> user_browser.open("http://bugs.launchpad.dev/jokosher/+bug/11")
+    >>> user_browser.open("http://bugs.launchpad.test/jokosher/+bug/11")
     >>> assignee_control = user_browser.getControl(
     ...     name="jokosher.assignee.option", index=0)
     >>> assignee_control.value = ["jokosher.assignee.assign_to"]
@@ -131,7 +131,7 @@ Once no_priv is a member of a team, the option is shown.
     >>> login('no-priv@canonical.com')
     >>> no_privs_team_name = factory.makeTeam(owner=no_priv).name
     >>> logout()
-    >>> user_browser.open("http://bugs.launchpad.dev/jokosher/+bug/11")
+    >>> user_browser.open("http://bugs.launchpad.test/jokosher/+bug/11")
     >>> assignee_control = user_browser.getControl(
     ...     name="jokosher.assignee.option", index=0)
     >>> assignee_control.value = ["jokosher.assignee.assign_to"]
@@ -143,7 +143,7 @@ Once no_priv is a member of a team, the option is shown.
 
 But if they try to set other persons or teams, they get an error message.
 
-    >>> user_browser.open("http://bugs.launchpad.dev/jokosher/+bug/11")
+    >>> user_browser.open("http://bugs.launchpad.test/jokosher/+bug/11")
     >>> assignee_control = user_browser.getControl(
     ...     name="jokosher.assignee.option", index=0)
     >>> assignee_control.value = ["jokosher.assignee.assign_to"]

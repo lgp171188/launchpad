@@ -121,7 +121,7 @@ publication to play with first.
     >>> pprint_entry(pubs['entries'][0])
     archive_link: u'http://.../~cprov/+archive/ubuntu/ppa'
     component_name: u'main'
-    creator_link: u'http://api.launchpad.dev/beta/~name16'
+    creator_link: u'http://api.launchpad.test/beta/~name16'
     date_created: ...
     date_made_pending: None
     date_published: None
@@ -330,7 +330,7 @@ cprov's ppa:
     >>> src_link = cprov_srcs['entries'][0]['self_link']
 
 The src_link will be of the form:
-u'http://api.launchpad.dev/beta/~cprov/+archive/ubuntu/ppa/+sourcepub/27'
+u'http://api.launchpad.test/beta/~cprov/+archive/ubuntu/ppa/+sourcepub/27'
 so:
 
     >>> source_id = int(src_link.split('/')[-1])
@@ -405,7 +405,7 @@ the librarian.
     ...     spph_url = canonical_url(spph, path_only_if_possible=True)
     >>> print(webservice.named_get(
     ...     spph_url, 'changelogUrl', api_version='devel').jsonBody())
-    http://launchpad.dev/.../+sourcepub/.../+files/changelog
+    http://launchpad.test/.../+sourcepub/.../+files/changelog
 
 The debdiff to a particular version can also be retrieved using the
 packageDiffUrl() method.  It takes one parameter, 'to_version' which
@@ -445,7 +445,7 @@ And then obtain the URL to the diff:
 The URL is a standard proxied URL in case the file is private:
 
     >>> print(diff_url)
-    http://launchpad.dev/~cprov/+archive/ubuntu/ppa/+files/...
+    http://launchpad.test/~cprov/+archive/ubuntu/ppa/+files/...
 
 It will match the fake content we added earlier:
 

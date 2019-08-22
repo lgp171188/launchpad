@@ -107,19 +107,19 @@ class TestApplicationServerSettingRequestFactory(TestCase):
         # Ensure that the factory sets the HTTPS variable in the request
         # when the protocol is https.
         factory = ApplicationServerSettingRequestFactory(
-            LaunchpadBrowserRequest, 'launchpad.dev', 'https', 443)
-        request = factory(StringIO.StringIO(), {'HTTP_HOST': 'launchpad.dev'})
+            LaunchpadBrowserRequest, 'launchpad.test', 'https', 443)
+        request = factory(StringIO.StringIO(), {'HTTP_HOST': 'launchpad.test'})
         self.assertEqual(
             request.get('HTTPS'), 'on', "factory didn't set the HTTPS env")
         # This is a sanity check ensuring that effect of this works as
         # expected with the Zope request implementation.
-        self.assertEqual(request.getURL(), 'https://launchpad.dev')
+        self.assertEqual(request.getURL(), 'https://launchpad.test')
 
     def test___call___should_not_set_HTTPS(self):
         # Ensure that the factory doesn't put an HTTPS variable in the
         # request when the protocol is http.
         factory = ApplicationServerSettingRequestFactory(
-            LaunchpadBrowserRequest, 'launchpad.dev', 'http', 80)
+            LaunchpadBrowserRequest, 'launchpad.test', 'http', 80)
         request = factory(StringIO.StringIO(), {})
         self.assertEqual(
             request.get('HTTPS'), None,
@@ -144,7 +144,7 @@ class TestVhostWebserviceFactory(WebServiceTestCase):
         """Simulate a WSGI application environment."""
         return {
             'PATH_INFO': path,
-            'HTTP_HOST': 'bugs.launchpad.dev',
+            'HTTP_HOST': 'bugs.launchpad.test',
             'REQUEST_METHOD': method,
             }
 
@@ -337,11 +337,11 @@ class TestWebServiceRequest(WebServiceTestCase):
         host, not api.launchpad.net.
         """
         # Simulate a request to bugs.launchpad.net/api
-        server_url = 'http://bugs.launchpad.dev'
+        server_url = 'http://bugs.launchpad.test'
         env = {
             'PATH_INFO': '/api/devel',
             'SERVER_URL': server_url,
-            'HTTP_HOST': 'bugs.launchpad.dev',
+            'HTTP_HOST': 'bugs.launchpad.test',
             }
 
         # WebServiceTestRequest will suffice, as it too should conform to

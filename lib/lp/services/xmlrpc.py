@@ -1,4 +1,4 @@
-# Copyright 2010 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Generic code for XML-RPC in Launchpad."""
@@ -11,6 +11,11 @@ __all__ = [
 
 import socket
 import xmlrpclib
+
+from defusedxml.xmlrpc import monkey_patch
+
+# Protect against various XML parsing vulnerabilities.
+monkey_patch()
 
 
 class LaunchpadFault(xmlrpclib.Fault):

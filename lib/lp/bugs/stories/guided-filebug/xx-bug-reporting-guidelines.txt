@@ -14,7 +14,7 @@ filed.
     ...     ]
 
     >>> for context_name, context_path, view in contexts:
-    ...     edit_url = 'http://launchpad.dev/%s/%s' % (context_path, view)
+    ...     edit_url = 'http://launchpad.test/%s/%s' % (context_path, view)
     ...     admin_browser.open(edit_url)
     ...     admin_browser.getControl(
     ...         name='field.bug_reporting_guidelines').value = (
@@ -22,7 +22,7 @@ filed.
     ...         "See http://example.com for more details." % (context_name,))
     ...     admin_browser.getControl(
     ...         name='field.bug_reported_acknowledgement').value = (
-    ...         "Thank you for filing a bug for https://launchpad.dev/%s" %
+    ...         "Thank you for filing a bug for https://launchpad.test/%s" %
     ...         context_path)
     ...     if context_path == 'ubuntu':
     ...         admin_browser.getControl('Change', index=3).click()
@@ -54,7 +54,7 @@ page, because that page does not include a bug description field.
 
     >>> for context_name, context_path, view in contexts:
     ...     filebug_url = (
-    ...         'http://launchpad.dev/%s/+filebug' % (context_path,))
+    ...         'http://launchpad.test/%s/+filebug' % (context_path,))
     ...     user_browser.open(filebug_url)
     ...     guidelines = find_tag_by_id(
     ...         user_browser.contents, 'bug-reporting-guidelines')
@@ -66,7 +66,7 @@ description.
 
     >>> for context_name, context_path, view in contexts:
     ...     filebug_url = (
-    ...         'http://bugs.launchpad.dev/%s/+filebug' % (context_path,))
+    ...         'http://bugs.launchpad.test/%s/+filebug' % (context_path,))
     ...     user_browser.open(filebug_url)
     ...     user_browser.getControl('Summary', index=0).value = (
     ...         "It doesn't work")
@@ -78,28 +78,28 @@ description.
     ...     print_acknowledgement_message(user_browser)
     *
     Ubuntu
-      <http://bugs.launchpad.dev/ubuntu/+filebug>
+      <http://bugs.launchpad.test/ubuntu/+filebug>
     Ubuntu bug reporting guidelines:
     The version of Ubuntu you&#x27;re using.
     See http://example.com for more details.
-    Thank you for filing a bug for https://launchpad.dev/ubuntu
+    Thank you for filing a bug for https://launchpad.test/ubuntu
     *
     Mozilla
       <http://.../firefox/+filebug?field.title=It+doesn%27t+work&field.tags=>
     Mozilla Firefox bug reporting guidelines:
     The version of Firefox you&#x27;re using.
     See http://example.com for more details.
-    Thank you for filing a bug for https://launchpad.dev/firefox
+    Thank you for filing a bug for https://launchpad.test/firefox
     *
     Firefox
-      <http://bugs.launchpad.dev/firefox/+filebug>
+      <http://bugs.launchpad.test/firefox/+filebug>
     Mozilla Firefox bug reporting guidelines:
     The version of Firefox you&#x27;re using.
     See http://example.com for more details.
-    Thank you for filing a bug for https://launchpad.dev/firefox
+    Thank you for filing a bug for https://launchpad.test/firefox
     *
     alsa-utils in Ubuntu
-      <http://bugs.launchpad.dev/ubuntu/+source/alsa-utils/+filebug>
+      <http://bugs.launchpad.test/ubuntu/+source/alsa-utils/+filebug>
     alsa-utils (Ubuntu) bug reporting guidelines:
     The version of alsa-utils in Ubuntu you&#x27;re using.
     See http://example.com for more details.
@@ -107,14 +107,14 @@ description.
     The version of Ubuntu you&#x27;re using.
     See http://example.com for more details.
     Thank you for filing a bug for
-    https://launchpad.dev/ubuntu/+source/alsa-utils
+    https://launchpad.test/ubuntu/+source/alsa-utils
 
 URLs are linkified.
 
     >>> print(find_tags_by_class(
     ...     user_browser.contents, 'informational message')[0])
     <div ...><p class="last">Thank you for filing a bug for
-    <a...https://launchpad.dev/ubuntu/+source/alsa-utils.../a></p></div>
+    <a...https://launchpad.test/ubuntu/+source/alsa-utils.../a></p></div>
 
 Note how the alsa-utils in Ubuntu specific guidelines were displayed
 followed by the general Ubuntu bug reporting guidelines.
@@ -123,7 +123,7 @@ Bugs can also be reported directly against a distribution series, for
 which the guidelines are taken from the respective distribution.
 
     >>> user_browser.open(
-    ...     'http://launchpad.dev/ubuntu/warty/+filebug')
+    ...     'http://launchpad.test/ubuntu/warty/+filebug')
     >>> user_browser.getControl('Summary', index=0).value = "It doesn't work"
     >>> user_browser.getControl('Continue').click()
     >>> print(extract_text(find_tag_by_id(
@@ -161,7 +161,7 @@ may mean that no guidelines are shown or the wrong guidelines are
 shown.
 
     >>> user_browser.open(
-    ...     'http://launchpad.dev/ubuntu/+filebug')
+    ...     'http://launchpad.test/ubuntu/+filebug')
     >>> user_browser.getControl('Summary', index=0).value = "It doesn't work"
     >>> user_browser.getControl('Continue').click()
     >>> print(extract_text(find_tag_by_id(
@@ -202,15 +202,13 @@ bug reporting guidelines can be changed, but admins do.
 
     >>> edit_url_re = re.compile('/[+]edit$')
     >>> for context_name, context_path, view in contexts:
-    ...     overview_url = 'http://launchpad.dev/%s' % (context_path,)
+    ...     overview_url = 'http://launchpad.test/%s' % (context_path,)
     ...     print('* ' + context_name)
     ...     print('  - User:', end=' ')
     ...     user_browser.open(overview_url)
     ...     try:
     ...         user_browser.getLink(url=edit_url_re)
-    ...     except (SystemExit, KeyboardInterrupt):
-    ...         raise
-    ...     except:
+    ...     except Exception:
     ...         print(sys.exc_info()[0].__name__)
     ...     print('  - Admin:', end=' ')
     ...     admin_browser.open(overview_url)
@@ -232,13 +230,11 @@ Unprivileged cannot access the page for changing bug reporting
 guidelines.
 
     >>> for context_name, context_path, view in contexts:
-    ...     edit_url = 'http://launchpad.dev/%s/%s' % (context_path, view)
+    ...     edit_url = 'http://launchpad.test/%s/%s' % (context_path, view)
     ...     print('* ' + context_name)
     ...     try:
     ...         user_browser.open(edit_url)
-    ...     except (SystemExit, KeyboardInterrupt):
-    ...         raise
-    ...     except:
+    ...     except Exception:
     ...         print(sys.exc_info()[0].__name__)
     * Ubuntu
       Unauthorized

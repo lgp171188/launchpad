@@ -14,7 +14,7 @@ builder state. In the sampledata, the builder 'bob' is building
     >>> logout()
 
     >>> anon_browser.mech_browser.set_handle_equiv(False)
-    >>> anon_browser.open("http://launchpad.dev/builders")
+    >>> anon_browser.open("http://launchpad.test/builders")
     >>> anon_browser.getLink("bob").click()
 
     >>> print extract_text(find_main_content(anon_browser.contents))
@@ -74,7 +74,7 @@ Idle builders show more details of their status.
     >>> with admin_logged_in():
     ...     builder = factory.makeBuilder(name='victim')
     ...     builder.setCleanStatus(BuilderCleanStatus.DIRTY)
-    >>> anon_browser.open('http://launchpad.dev/builders/victim')
+    >>> anon_browser.open('http://launchpad.test/builders/victim')
     >>> print extract_text(find_portlet(
     ...     anon_browser.contents, 'View full history Current status'))
     View full history Current status
@@ -109,7 +109,7 @@ the builder actions.
     ...     auth='Basic celso.providelo@canonical.com:test')
     >>> cprov_browser.mech_browser.set_handle_equiv(False)
 
-    >>> cprov_browser.open('http://launchpad.dev/builders')
+    >>> cprov_browser.open('http://launchpad.test/builders')
     >>> cprov_browser.getLink('bob').click()
 
 Celso sees both the Change details and Toggle mode actions, which are
@@ -235,7 +235,7 @@ The builder administrators can hide a builder from the public list
 when they judge it convenient, for instance, when the builder present
 transient failures or is used for another purpose.
 
-    >>> cprov_browser.open('http://launchpad.dev/builders')
+    >>> cprov_browser.open('http://launchpad.test/builders')
     >>> cprov_browser.getLink('bob').click()
     >>> print backslashreplace(cprov_browser.title)
     Bob The Builder : Build Farm
@@ -275,7 +275,7 @@ Farm list. Celso cannot see the link to it.
 
 But Celso can access the deactivated builder via its URL.
 
-    >>> cprov_browser.open('http://launchpad.dev/+builds/bob')
+    >>> cprov_browser.open('http://launchpad.test/+builds/bob')
     >>> print backslashreplace(cprov_browser.title)
     Bob The Builder : Build Farm
 

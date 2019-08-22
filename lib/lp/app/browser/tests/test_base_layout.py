@@ -56,7 +56,7 @@ class TestBaseLayout(TestCaseWithFactory):
             self.context = context
 
         request = LaunchpadTestRequest(
-            SERVER_URL='http://launchpad.dev', PATH_INFO='/~waffles/+layout')
+            SERVER_URL='http://launchpad.test', PATH_INFO='/~waffles/+layout')
         request.setPrincipal(self.user)
         request.traversed_objects.append(self.context)
         view = TemplateView(self.context, request)

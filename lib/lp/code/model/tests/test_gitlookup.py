@@ -211,43 +211,43 @@ class TestGetByUrl(TestCaseWithFactory):
         # Trailing slashes are stripped from the URL prior to searching.
         repository = self.makeProjectRepository()
         self.assertUrlMatches(
-            "git://git.launchpad.dev/~aa/bb/+git/cc/", repository)
+            "git://git.launchpad.test/~aa/bb/+git/cc/", repository)
 
     def test_getByUrl_with_trailing_segments(self):
         # URLs with trailing segments beyond the repository are rejected.
         self.makeProjectRepository()
         self.assertIsNone(
-            self.lookup.getByUrl("git://git.launchpad.dev/~aa/bb/+git/cc/foo"))
+            self.lookup.getByUrl("git://git.launchpad.test/~aa/bb/+git/cc/foo"))
 
     def test_getByUrl_with_git(self):
         # getByUrl recognises LP repositories for git URLs.
         repository = self.makeProjectRepository()
         self.assertUrlMatches(
-            "git://git.launchpad.dev/~aa/bb/+git/cc", repository)
+            "git://git.launchpad.test/~aa/bb/+git/cc", repository)
 
     def test_getByUrl_with_git_ssh(self):
         # getByUrl recognises LP repositories for git+ssh URLs.
         repository = self.makeProjectRepository()
         self.assertUrlMatches(
-            "git+ssh://git.launchpad.dev/~aa/bb/+git/cc", repository)
+            "git+ssh://git.launchpad.test/~aa/bb/+git/cc", repository)
 
     def test_getByUrl_with_https(self):
         # getByUrl recognises LP repositories for https URLs.
         repository = self.makeProjectRepository()
         self.assertUrlMatches(
-            "https://git.launchpad.dev/~aa/bb/+git/cc", repository)
+            "https://git.launchpad.test/~aa/bb/+git/cc", repository)
 
     def test_getByUrl_with_ssh(self):
         # getByUrl recognises LP repositories for ssh URLs.
         repository = self.makeProjectRepository()
         self.assertUrlMatches(
-            "ssh://git.launchpad.dev/~aa/bb/+git/cc", repository)
+            "ssh://git.launchpad.test/~aa/bb/+git/cc", repository)
 
     def test_getByUrl_with_ftp(self):
         # getByUrl does not recognise LP repositories for ftp URLs.
         self.makeProjectRepository()
         self.assertIsNone(
-            self.lookup.getByUrl("ftp://git.launchpad.dev/~aa/bb/+git/cc"))
+            self.lookup.getByUrl("ftp://git.launchpad.test/~aa/bb/+git/cc"))
 
     def test_getByUrl_with_lp(self):
         # getByUrl supports lp: URLs.

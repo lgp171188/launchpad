@@ -40,7 +40,7 @@ class TestProductAlias(TestCaseWithFactory):
             'launchpad-library', 'salgado-change-anything')
         response = webservice.get('/monkey')
         self.assertEqual(
-            'http://api.launchpad.dev/beta/lemur',
+            'http://api.launchpad.test/beta/lemur',
             response.getheader('location'))
 
 

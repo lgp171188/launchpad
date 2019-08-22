@@ -16,9 +16,11 @@ from urllib2 import (
     urlopen,
     )
 
+from fixtures import FakeLogger
 from pymacaroons import Macaroon
 import pytz
 from testtools.matchers import (
+    ContainsDict,
     Equals,
     Is,
     MatchesDict,
@@ -50,6 +52,7 @@ from lp.services.macaroons.testing import MacaroonTestMixin
 from lp.services.propertycache import clear_property_cache
 from lp.services.webapp.interfaces import OAuthPermission
 from lp.services.webapp.publisher import canonical_url
+from lp.services.webhooks.testing import LogsScheduledWebhooks
 from lp.snappy.interfaces.snap import SNAP_TESTING_FLAGS
 from lp.snappy.interfaces.snapbuild import (
     CannotScheduleStoreUpload,
@@ -89,7 +92,7 @@ expected_body = """\
  * Duration: 10 minutes
  * Build Log: %s
  * Upload Log: %s
- * Builder: http://launchpad.dev/builders/bob
+ * Builder: http://launchpad.test/builders/bob
 """
 
 
@@ -268,6 +271,7 @@ class TestSnapBuild(TestCaseWithFactory):
     def test_updateStatus_triggers_webhooks(self):
         # Updating the status of a SnapBuild triggers webhooks on the
         # corresponding Snap.
+        logger = self.useFixture(FakeLogger())
         hook = self.factory.makeWebhook(
             target=self.build.snap, event_types=["snap:build:0.1"])
         self.build.updateStatus(BuildStatus.FULLYBUILT)
@@ -291,22 +295,39 @@ class TestSnapBuild(TestCaseWithFactory):
                 "<WebhookDeliveryJob for webhook %d on %r>" % (
                     hook.id, hook.target),
                 repr(delivery))
+            self.assertThat(
+                logger.output, LogsScheduledWebhooks([
+                    (hook, "snap:build:0.1", MatchesDict(expected_payload))]))
 
     def test_updateStatus_no_change_does_not_trigger_webhooks(self):
         # An updateStatus call that changes details such as the revision_id
         # but that doesn't change the build's status attribute does not
         # trigger webhooks.
+        logger = self.useFixture(FakeLogger())
         hook = self.factory.makeWebhook(
             target=self.build.snap, event_types=["snap:build:0.1"])
         builder = self.factory.makeBuilder()
         self.build.updateStatus(BuildStatus.BUILDING)
+        expected_logs = [
+            (hook, "snap:build:0.1", ContainsDict({
+                "action": Equals("status-changed"),
+                "status": Equals("Currently building"),
+                }))]
         self.assertEqual(1, hook.deliveries.count())
+        self.assertThat(logger.output, LogsScheduledWebhooks(expected_logs))
         self.build.updateStatus(
             BuildStatus.BUILDING, builder=builder,
             slave_status={"revision_id": "1"})
         self.assertEqual(1, hook.deliveries.count())
+        self.assertThat(logger.output, LogsScheduledWebhooks(expected_logs))
         self.build.updateStatus(BuildStatus.UPLOADING)
+        expected_logs.append(
+            (hook, "snap:build:0.1", ContainsDict({
+                "action": Equals("status-changed"),
+                "status": Equals("Uploading build"),
+                })))
         self.assertEqual(2, hook.deliveries.count())
+        self.assertThat(logger.output, LogsScheduledWebhooks(expected_logs))
 
     def test_updateStatus_failure_does_not_trigger_store_uploads(self):
         # A failed SnapBuild does not trigger store uploads.
@@ -375,7 +396,7 @@ class TestSnapBuild(TestCaseWithFactory):
         body, footer = notification.get_payload(decode=True).split("\n-- \n")
         self.assertEqual(expected_body % (build.log_url, ""), body)
         self.assertEqual(
-            "http://launchpad.dev/~person/+snap/snap-1/+build/%d\n"
+            "http://launchpad.test/~person/+snap/snap-1/+build/%d\n"
             "You are the requester of the build.\n" % build.id, footer)
 
     def addFakeBuildLog(self, build):
@@ -385,7 +406,7 @@ class TestSnapBuild(TestCaseWithFactory):
         # The log URL for a snap package build will use the archive context.
         self.addFakeBuildLog(self.build)
         self.assertEqual(
-            "http://launchpad.dev/~%s/+snap/%s/+build/%d/+files/"
+            "http://launchpad.test/~%s/+snap/%s/+build/%d/+files/"
             "mybuildlog.txt" % (
                 self.build.snap.owner.name, self.build.snap.name,
                 self.build.id),
@@ -565,6 +586,7 @@ class TestSnapBuild(TestCaseWithFactory):
     def test_scheduleStoreUpload_triggers_webhooks(self):
         # Scheduling a store upload triggers webhooks on the corresponding
         # snap.
+        logger = self.useFixture(FakeLogger())
         self.setUpStoreUpload()
         self.build.updateStatus(BuildStatus.FULLYBUILT)
         self.factory.makeSnapFile(
@@ -593,6 +615,9 @@ class TestSnapBuild(TestCaseWithFactory):
                 "<WebhookDeliveryJob for webhook %d on %r>" % (
                     hook.id, hook.target),
                 repr(delivery))
+            self.assertThat(
+                logger.output, LogsScheduledWebhooks([
+                    (hook, "snap:build:0.1", MatchesDict(expected_payload))]))
 
 
 class TestSnapBuildSet(TestCaseWithFactory):
@@ -810,7 +835,7 @@ class TestSnapBuildMacaroonIssuer(MacaroonTestMixin, TestCaseWithFactory):
         issuer = getUtility(IMacaroonIssuer, "snap-build")
         macaroon = removeSecurityProxy(issuer).issueMacaroon(build)
         self.assertThat(macaroon, MatchesStructure(
-            location=Equals("launchpad.dev"),
+            location=Equals("launchpad.test"),
             identifier=Equals("snap-build"),
             caveats=MatchesListwise([
                 MatchesStructure.byEquality(
@@ -825,7 +850,7 @@ class TestSnapBuildMacaroonIssuer(MacaroonTestMixin, TestCaseWithFactory):
         macaroon = Macaroon.deserialize(
             authserver.issueMacaroon("snap-build", "SnapBuild", build.id))
         self.assertThat(macaroon, MatchesStructure(
-            location=Equals("launchpad.dev"),
+            location=Equals("launchpad.test"),
             identifier=Equals("snap-build"),
             caveats=MatchesListwise([
                 MatchesStructure.byEquality(

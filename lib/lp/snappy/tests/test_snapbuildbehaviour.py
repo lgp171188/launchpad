@@ -46,11 +46,14 @@ from twisted.trial.unittest import TestCase as TrialTestCase
 from twisted.web import (
     resource,
     server,
+    xmlrpc,
     )
 from zope.component import getUtility
 from zope.proxy import isProxy
+from zope.publisher.xmlrpc import TestRequest
 from zope.security.proxy import removeSecurityProxy
 
+from lp.app.enums import InformationType
 from lp.archivepublisher.interfaces.archivesigningkey import (
     IArchiveSigningKey,
     )
@@ -75,6 +78,7 @@ from lp.buildmaster.tests.test_buildfarmjobbehaviour import (
     )
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.registry.interfaces.series import SeriesStatus
+from lp.services.authserver.xmlrpc import AuthServerAPIView
 from lp.services.config import config
 from lp.services.features.testing import FeatureFixture
 from lp.services.log.logger import (
@@ -102,9 +106,13 @@ from lp.testing import (
     TestCaseWithFactory,
     )
 from lp.testing.dbuser import dbuser
-from lp.testing.gpgkeys import gpgkeysdir
+from lp.testing.gpgkeys import (
+    gpgkeysdir,
+    import_public_key,
+    )
 from lp.testing.keyserver import InProcessKeyServerFixture
 from lp.testing.layers import LaunchpadZopelessLayer
+from lp.xmlrpc.interfaces import IPrivateApplication
 
 
 class ProxyAuthAPITokensResource(resource.Resource):
@@ -168,6 +176,34 @@ class InProcessProxyAuthAPIFixture(fixtures.Fixture):
             """) %
             (port.getHost().host, port.getHost().port))
         self.addCleanup(config.pop, "in-process-proxy-auth-api-fixture")
+
+
+class InProcessAuthServer(xmlrpc.XMLRPC):
+
+    def __init__(self, *args, **kwargs):
+        xmlrpc.XMLRPC.__init__(self, *args, **kwargs)
+        private_root = getUtility(IPrivateApplication)
+        self.authserver = AuthServerAPIView(
+            private_root.authserver, TestRequest())
+
+    def __getattr__(self, name):
+        if name.startswith("xmlrpc_"):
+            return getattr(self.authserver, name[len("xmlrpc_"):])
+        else:
+            raise AttributeError("%r has no attribute '%s'" % name)
+
+
+class InProcessAuthServerFixture(fixtures.Fixture, xmlrpc.XMLRPC):
+    """A fixture that runs an in-process authserver."""
+
+    def _setUp(self):
+        listener = reactor.listenTCP(0, server.Site(InProcessAuthServer()))
+        self.addCleanup(listener.stopListening)
+        config.push("in-process-auth-server-fixture", (dedent("""
+            [builddmaster]
+            authentication_endpoint: http://localhost:%d/
+            """) % listener.getHost().port).encode("UTF-8"))
+        self.addCleanup(config.pop, "in-process-auth-server-fixture")
 
 
 class FormatAsRfc3339TestCase(TestCase):
@@ -390,7 +426,7 @@ class TestAsyncSnapBuildBehaviour(TestSnapBuildBehaviourBase):
                 "headers": ContainsDict({
                     b"Authorization": MatchesListwise([
                         Equals(b"Basic " + base64.b64encode(
-                            b"admin-launchpad.dev:admin-secret"))]),
+                            b"admin-launchpad.test:admin-secret"))]),
                     b"Content-Type": MatchesListwise([
                         Equals(b"application/json; charset=UTF-8"),
                         ]),
@@ -496,6 +532,51 @@ class TestAsyncSnapBuildBehaviour(TestSnapBuildBehaviourBase):
             }))
 
     @defer.inlineCallbacks
+    def test_extraBuildArgs_git_private(self):
+        # extraBuildArgs returns appropriate arguments if asked to build a
+        # job for a private Git branch.
+        self.useFixture(FeatureFixture({SNAP_PRIVATE_FEATURE_FLAG: "on"}))
+        self.useFixture(InProcessAuthServerFixture())
+        self.pushConfig(
+            "launchpad", internal_macaroon_secret_key="some-secret")
+        [ref] = self.factory.makeGitRefs(
+            information_type=InformationType.USERDATA)
+        job = self.makeJob(git_ref=ref, private=True)
+        expected_archives, expected_trusted_keys = (
+            yield get_sources_list_for_building(
+                job.build, job.build.distro_arch_series, None))
+        args = yield job.extraBuildArgs()
+        split_browse_root = urlsplit(config.codehosting.git_browse_root)
+        self.assertThat(args, MatchesDict({
+            "archive_private": Is(False),
+            "archives": Equals(expected_archives),
+            "arch_tag": Equals("i386"),
+            "build_source_tarball": Is(False),
+            "build_url": Equals(canonical_url(job.build)),
+            "fast_cleanup": Is(True),
+            "git_repository": AfterPreprocessing(urlsplit, MatchesStructure(
+                scheme=Equals(split_browse_root.scheme),
+                username=Equals(""),
+                password=AfterPreprocessing(
+                    Macaroon.deserialize, MatchesStructure(
+                        location=Equals(config.vhost.mainsite.hostname),
+                        identifier=Equals("snap-build"),
+                        caveats=MatchesListwise([
+                            MatchesStructure.byEquality(
+                                caveat_id="lp.snap-build %s" % job.build.id),
+                            ]))),
+                hostname=Equals(split_browse_root.hostname),
+                port=Equals(split_browse_root.port))),
+            "git_path": Equals(ref.name),
+            "name": Equals("test-snap"),
+            "private": Is(True),
+            "proxy_url": self.getProxyURLMatcher(job),
+            "revocation_endpoint": self.getRevocationEndpointMatcher(job),
+            "series": Equals("unstable"),
+            "trusted_keys": Equals(expected_trusted_keys),
+            }))
+
+    @defer.inlineCallbacks
     def test_extraBuildArgs_git_url(self):
         # extraBuildArgs returns appropriate arguments if asked to build a
         # job for a Git branch backed by a URL for an external repository.
@@ -580,6 +661,48 @@ class TestAsyncSnapBuildBehaviour(TestSnapBuildBehaviourBase):
         self.assertThat(args["trusted_keys"], MatchesListwise([
             Base64KeyMatches("0D57E99656BEFB0897606EE9A022DD1F5001B46D"),
             ]))
+
+    @defer.inlineCallbacks
+    def test_extraBuildArgs_tools_source_channels_apt(self):
+        # If snapcraft is being installed from apt, extraBuildArgs sends an
+        # extra archive to provide updates.
+        yield self.useFixture(InProcessKeyServerFixture()).start()
+        tools_source = (
+            "deb http://ppa.launchpad.net/snappy-dev/snapcraft-daily/ubuntu "
+            "%(series)s main")
+        tools_fingerprint = "A419AE861E88BC9E04B9C26FBA2B9389DFD20543"
+        self.pushConfig(
+            "snappy",
+            tools_source=tools_source, tools_fingerprint=tools_fingerprint)
+        import_public_key("test@canonical.com")
+        job = self.makeJob(channels={"snapcraft": "apt"})
+        with dbuser(config.builddmaster.dbuser):
+            args = yield job.extraBuildArgs()
+        self.assertEqual(
+            tools_source % {"series": job.build.distro_series.name},
+            args["archives"][0])
+        self.assertThat(args["trusted_keys"], MatchesListwise([
+            Base64KeyMatches("A419AE861E88BC9E04B9C26FBA2B9389DFD20543"),
+            ]))
+
+    @defer.inlineCallbacks
+    def test_extraBuildArgs_tools_source_channels_snap(self):
+        # If snapcraft is being installed from apt, extraBuildArgs ignores
+        # tools_source.
+        yield self.useFixture(InProcessKeyServerFixture()).start()
+        tools_source = (
+            "deb http://ppa.launchpad.net/snappy-dev/snapcraft-daily/ubuntu "
+            "%(series)s main")
+        tools_fingerprint = "A419AE861E88BC9E04B9C26FBA2B9389DFD20543"
+        self.pushConfig(
+            "snappy",
+            tools_source=tools_source, tools_fingerprint=tools_fingerprint)
+        import_public_key("test@canonical.com")
+        job = self.makeJob(channels={"snapcraft": "stable"})
+        with dbuser(config.builddmaster.dbuser):
+            args = yield job.extraBuildArgs()
+        self.assertNotIn(tools_source, args["archives"])
+        self.assertEqual([], args["trusted_keys"])
 
     @defer.inlineCallbacks
     def test_extraBuildArgs_channels(self):

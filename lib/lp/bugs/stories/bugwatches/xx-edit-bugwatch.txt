@@ -4,12 +4,12 @@ Edi a bug watch
 
 After a bug watch is recorded, it is possible to go back and change it.
 
-    >>> admin_browser.open('http://bugs.launchpad.dev/bugs/1/+watch/2')
+    >>> admin_browser.open('http://bugs.launchpad.test/bugs/1/+watch/2')
     >>> admin_browser.getControl('URL').value = (
     ...     'https://bugzilla.mozilla.org/show_bug.cgi?id=1000')
     >>> admin_browser.getControl('Change').click()
     >>> admin_browser.url
-    'http://bugs.launchpad.dev/firefox/+bug/1'
+    'http://bugs.launchpad.test/firefox/+bug/1'
     >>> b'https://bugzilla.mozilla.org/show_bug.cgi?id=1000' in (
     ...     admin_browser.contents)
     True
@@ -17,12 +17,12 @@ After a bug watch is recorded, it is possible to go back and change it.
 The URL supplied must be a valid bug tracker URL and must point to a
 bug tracker already registered with Launchpad.
 
-    >>> admin_browser.open('http://bugs.launchpad.dev/bugs/1/+watch/2')
+    >>> admin_browser.open('http://bugs.launchpad.test/bugs/1/+watch/2')
     >>> admin_browser.getControl('URL').value = (
     ...     'https://bugzilla.mozilla.org/foo_bug.cgi?id=1000')
     >>> admin_browser.getControl('Change').click()
     >>> admin_browser.url
-    'http://bugs.launchpad.dev/bugs/1/+watch/2/+edit'
+    'http://bugs.launchpad.test/bugs/1/+watch/2/+edit'
     >>> for message in find_tags_by_class(admin_browser.contents, 'message'):
     ...     print(extract_text(message))
     There is 1 error.
@@ -33,7 +33,7 @@ Likewise, stupid URLs are rejected with a polite error message.
     >>> admin_browser.getControl('URL').value = 'GELLER'
     >>> admin_browser.getControl('Change').click()
     >>> admin_browser.url
-    'http://bugs.launchpad.dev/bugs/1/+watch/2/+edit'
+    'http://bugs.launchpad.test/bugs/1/+watch/2/+edit'
     >>> for message in find_tags_by_class(admin_browser.contents, 'message'):
     ...     print(extract_text(message))
     There is 1 error.
@@ -74,7 +74,7 @@ Next check column.
     ...     2010, 4, 8, 16, 7, tzinfo=utc)
     >>> logout()
 
-    >>> admin_browser.open('http://bugs.launchpad.dev/bugs/1/+watch/2')
+    >>> admin_browser.open('http://bugs.launchpad.test/bugs/1/+watch/2')
     >>> data_tag = find_tag_by_id(
     ...     admin_browser.contents, 'bugwatch-next_check')
     >>> print(extract_text(data_tag.renderContents()))
@@ -88,7 +88,7 @@ Recent activity on a bug watch is shown on the page as a list of
 activity entries. When a watch has not been checked, no activity is
 shown.
 
-    >>> user_browser.open('http://bugs.launchpad.dev/bugs/1/+watch/2')
+    >>> user_browser.open('http://bugs.launchpad.test/bugs/1/+watch/2')
     >>> recent_activity_list = find_tag_by_id(
     ...     user_browser.contents, 'recent-watch-activity')
     >>> print(recent_activity_list)
@@ -102,7 +102,7 @@ activity list.
     >>> watch.addActivity()
     >>> logout()
 
-    >>> user_browser.open('http://bugs.launchpad.dev/bugs/1/+watch/2')
+    >>> user_browser.open('http://bugs.launchpad.test/bugs/1/+watch/2')
     >>> recent_activity_list = find_tag_by_id(
     ...     user_browser.contents, 'recent-watch-activity')
     >>> print(extract_text(recent_activity_list))
@@ -116,7 +116,7 @@ If an update fails, that too will be reflected in the list.
     >>> watch.addActivity(result=BugWatchActivityStatus.BUG_NOT_FOUND)
     >>> logout()
 
-    >>> user_browser.open('http://bugs.launchpad.dev/bugs/1/+watch/2')
+    >>> user_browser.open('http://bugs.launchpad.test/bugs/1/+watch/2')
     >>> recent_activity_list = find_tag_by_id(
     ...     user_browser.contents, 'recent-watch-activity')
     >>> print(extract_text(recent_activity_list))
@@ -133,7 +133,7 @@ in the list.
     ...     oops_id="OOPS-12345TEST")
     >>> logout()
 
-    >>> user_browser.open('http://bugs.launchpad.dev/bugs/1/+watch/2')
+    >>> user_browser.open('http://bugs.launchpad.test/bugs/1/+watch/2')
     >>> recent_activity_list = find_tag_by_id(
     ...     user_browser.contents, 'recent-watch-activity')
     >>> print(extract_text(recent_activity_list))
@@ -143,7 +143,7 @@ in the list.
 
 If a Launchpad developer views the page the OOPS IDs will be linkified.
 
-    >>> admin_browser.open('http://bugs.launchpad.dev/bugs/1/+watch/2')
+    >>> admin_browser.open('http://bugs.launchpad.test/bugs/1/+watch/2')
     >>> oops_link = admin_browser.getLink('OOPS-12345TEST')
     >>> print(oops_link.url)
     http...OOPS-12345TEST
@@ -161,7 +161,7 @@ For a new watch, the "Update Now" button isn't shown.
     >>> bug_watch = factory.makeBugWatch()
     >>> removeSecurityProxy(bug_watch).next_check = None
     >>> watch_url = (
-    ...     'http://bugs.launchpad.dev/bugs/%s/+watch/%s' %
+    ...     'http://bugs.launchpad.test/bugs/%s/+watch/%s' %
     ...     (bug_watch.bug.id, bug_watch.id))
     >>> logout()
 
@@ -233,7 +233,7 @@ shown.
     >>> removeSecurityProxy(bug_watch).next_check = None
     >>> bug_watch.addActivity(result=BugWatchActivityStatus.BUG_NOT_FOUND)
     >>> watch_url = (
-    ...     'http://bugs.launchpad.dev/bugs/%s/+watch/%s' %
+    ...     'http://bugs.launchpad.test/bugs/%s/+watch/%s' %
     ...     (bug_watch.bug.id, bug_watch.id))
     >>> logout()
 
@@ -277,7 +277,7 @@ watch" button on the watch's page.
     >>> bug_watch = factory.makeBugWatch()
     >>> removeSecurityProxy(bug_watch).lastchecked = datetime.now(utc)
     >>> watch_url = (
-    ...     'http://bugs.launchpad.dev/bugs/%s/+watch/%s' %
+    ...     'http://bugs.launchpad.test/bugs/%s/+watch/%s' %
     ...     (bug_watch.bug.id, bug_watch.id))
     >>> logout()
 

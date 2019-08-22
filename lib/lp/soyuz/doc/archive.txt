@@ -102,7 +102,7 @@ As a Launchpad admin, setting this property will work.
 Useful properties:
 
     >>> print(cprov_archive.archive_url)
-    http://ppa.launchpad.dev/cprov/ppa/ubuntu
+    http://ppa.launchpad.test/cprov/ppa/ubuntu
 
 Inquire what Distribution Series this archive has published sources to:
 
@@ -1059,14 +1059,14 @@ PunlisherConfig require us to log in as an admin:
 
     >>> login('admin@canonical.com')
     >>> print(partner_archive.archive_url)
-    http://archive.launchpad.dev/ubuntutest-partner
+    http://archive.launchpad.test/ubuntutest-partner
 
     >>> print(sandbox_archive.archive_url)
-    http://ppa.launchpad.dev/name16/ppa/ubuntu
+    http://ppa.launchpad.test/name16/ppa/ubuntu
 
     >>> print(getUtility(IArchiveSet).getByDistroPurpose(
     ...     ubuntutest, ArchivePurpose.PRIMARY).archive_url)
-    http://archive.launchpad.dev/ubuntutest
+    http://archive.launchpad.test/ubuntutest
 
 COPY archives use a URL format of <distro-name>-<archive-name>:
 
@@ -1080,10 +1080,10 @@ are published to a secure location.
 
     >>> login("celso.providelo@canonical.com")
     >>> print(cprov_archive.archive_url)
-    http://ppa.launchpad.dev/cprov/ppa/ubuntu
+    http://ppa.launchpad.test/cprov/ppa/ubuntu
 
     >>> print(cprov_private_ppa.archive_url)
-    http://private-ppa.launchpad.dev/cprov/myprivateppa/ubuntu
+    http://private-ppa.launchpad.test/cprov/myprivateppa/ubuntu
 
 IArchive.allowUpdatesToReleasePocket returns whether the archive is allowed
 to publish to the RELEASE pocket no matter what state the distroseries is in.

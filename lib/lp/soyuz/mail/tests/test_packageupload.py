@@ -241,7 +241,7 @@ class TestNotificationRequiringLibrarian(TestCaseWithFactory):
             to launchpad-users@lists.launchpad.net for help (requires membership).
 
             %s
-            http://launchpad.dev/~archiver/+archive/ubuntu/ppa
+            http://launchpad.test/~archiver/+archive/ubuntu/ppa
             You are receiving this email because you made this upload.
             """ % "-- ")
         self.assertEqual(expected_body, body)

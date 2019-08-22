@@ -17,7 +17,7 @@ The +bugs page for the project states that the project does
 not use Launchpad for bug tracking.
 
     >>> anon_browser.open(
-    ...     'http://bugs.launchpad.dev/test-project/+bugs')
+    ...     'http://bugs.launchpad.test/test-project/+bugs')
     >>> uses_malone_p = find_tag_by_id(anon_browser.contents, 'no-malone')
     >>> print(extract_text(uses_malone_p))
     Test-project must be configured in order for Launchpad to forward bugs to
@@ -30,7 +30,7 @@ for a project.
     True
 
     >>> admin_browser.open(
-    ...   'http://bugs.launchpad.dev/test-project/+bugs')
+    ...   'http://bugs.launchpad.test/test-project/+bugs')
     >>> enable_tracker = find_tag_by_id(
     ...     admin_browser.contents, 'no-malone-edit')
     >>> print(extract_text(enable_tracker))
@@ -46,7 +46,7 @@ bugs have been filed.
     ...     official_malone=True)
     >>> logout()
 
-    >>> anon_browser.open('http://bugs.launchpad.dev/uses-malone/+bugs')
+    >>> anon_browser.open('http://bugs.launchpad.test/uses-malone/+bugs')
     >>> bug_supervisor = find_tag_by_id(
     ...     anon_browser.contents, 'bug-supervisor')
     >>> print(extract_text(bug_supervisor))
@@ -67,7 +67,7 @@ Projects that use an external bug tracker will list the tracker on a
     >>> test_project.bugtracker = some_tracker
     >>> logout()
     >>> anon_browser.open(
-    ...   'http://bugs.launchpad.dev/test-project/+bugs')
+    ...   'http://bugs.launchpad.test/test-project/+bugs')
     >>> tracker_text = find_tag_by_id(anon_browser.contents, 'bugtracker')
     >>> print(extract_text(tracker_text))
     Bugs are tracked in tracker.example.com/.
@@ -83,7 +83,7 @@ be reported on the project's source packages.
     ...     in_ubuntu=True)
     >>> logout()
     >>> anon_browser.open(
-    ...   'http://bugs.launchpad.dev/test-project/+bugs')
+    ...   'http://bugs.launchpad.test/test-project/+bugs')
     >>> print(extract_text(
     ...     find_tag_by_id(anon_browser.contents, 'also-in-ubuntu')))
     Ubuntu also tracks bugs for packages derived from this project:

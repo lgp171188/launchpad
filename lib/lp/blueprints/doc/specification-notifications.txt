@@ -135,7 +135,7 @@ Now let's take a look at what the notification looks like:
     <BLANKLINE>
     --
     Support Native SVG Objects
-    http://blueprints.launchpad.dev/firefox/+spec/svg-support
+    http://blueprints.launchpad.test/firefox/+spec/svg-support
     <BLANKLINE>
 
 Whiteboard change:
@@ -179,7 +179,7 @@ Whiteboard change:
     <BLANKLINE>
     --
     Support Native SVG Objects
-    http://blueprints.launchpad.dev/firefox/+spec/svg-support
+    http://blueprints.launchpad.test/firefox/+spec/svg-support
     <BLANKLINE>
 
 
@@ -222,7 +222,7 @@ Definition status and whiteboard change:
     <BLANKLINE>
     --
     Support Native SVG Objects
-    http://blueprints.launchpad.dev/firefox/+spec/svg-support
+    http://blueprints.launchpad.test/firefox/+spec/svg-support
     <BLANKLINE>
 
 Change priority:
@@ -255,7 +255,7 @@ Change priority:
     <BLANKLINE>
     --
     Support Native SVG Objects
-    http://blueprints.launchpad.dev/firefox/+spec/svg-support
+    http://blueprints.launchpad.test/firefox/+spec/svg-support
     <BLANKLINE>
 
 Change approver, assignee and drafter:
@@ -291,7 +291,7 @@ Change approver, assignee and drafter:
     <BLANKLINE>
     --
     Support Native SVG Objects
-    http://blueprints.launchpad.dev/firefox/+spec/svg-support
+    http://blueprints.launchpad.test/firefox/+spec/svg-support
     <BLANKLINE>
 
 If we do a change, which we don't yet support sending a notification

@@ -1055,7 +1055,7 @@ class FunctionalLayer(BaseLayer):
         wsgi_intercept.add_wsgi_intercept(
             'localhost', 80, lambda: wsgi_application)
         wsgi_intercept.add_wsgi_intercept(
-            'api.launchpad.dev', 80, lambda: wsgi_application)
+            'api.launchpad.test', 80, lambda: wsgi_application)
         httplib2_intercept.install()
 
     @classmethod
@@ -1063,7 +1063,7 @@ class FunctionalLayer(BaseLayer):
     def tearDown(cls):
         FunctionalLayer.isSetUp = False
         wsgi_intercept.remove_wsgi_intercept('localhost', 80)
-        wsgi_intercept.remove_wsgi_intercept('api.launchpad.dev', 80)
+        wsgi_intercept.remove_wsgi_intercept('api.launchpad.test', 80)
         httplib2_intercept.uninstall()
         # Signal Layer cannot be torn down fully
         raise NotImplementedError

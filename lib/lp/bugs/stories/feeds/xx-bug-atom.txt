@@ -22,14 +22,14 @@ and a link to the bug itself. The alternate link for the feed points to
 the bugs page for the product, while the alternate link for entries
 point to the bugs themselves.
 
-    >>> browser.open('http://feeds.launchpad.dev/jokosher/latest-bugs.atom')
+    >>> browser.open('http://feeds.launchpad.test/jokosher/latest-bugs.atom')
     >>> validate_feed(browser.contents,
     ...              browser.headers['content-type'], browser.url)
     No Errors
     >>> BSS(browser.contents).title.contents
     [u'Bugs in Jokosher']
     >>> browser.url
-    'http://feeds.launchpad.dev/jokosher/latest-bugs.atom'
+    'http://feeds.launchpad.test/jokosher/latest-bugs.atom'
 
     >>> soup = BSS(browser.contents, parseOnlyThese=SoupStrainer('id'))
     >>> print(extract_text(soup.find('id')))
@@ -37,14 +37,14 @@ point to the bugs themselves.
     >>> alternate_links = parse_links(browser.contents, 'alternate')
     >>> for link in alternate_links:
     ...     print(link)
-    <link rel="alternate" href="http://bugs.launchpad.dev/jokosher" />
-    <link rel="alternate" href="http://bugs.launchpad.dev/bugs/12" />
-    <link rel="alternate" href="http://bugs.launchpad.dev/bugs/11" />
+    <link rel="alternate" href="http://bugs.launchpad.test/jokosher" />
+    <link rel="alternate" href="http://bugs.launchpad.test/bugs/12" />
+    <link rel="alternate" href="http://bugs.launchpad.test/bugs/11" />
 
     >>> self_links = parse_links(browser.contents, 'self')
     >>> for link in self_links:
     ...     print(link)
-    <link rel="self" href="http://feeds.launchpad.dev/jokosher/latest-bugs.atom" />
+    <link rel="self" href="http://feeds.launchpad.test/jokosher/latest-bugs.atom" />
 
     >>> entries = parse_entries(browser.contents)
     >>> print(len(entries))
@@ -55,7 +55,7 @@ point to the bugs themselves.
     >>> print(extract_text(entry.author('name')[0]))
     Foo Bar
     >>> print(extract_text(entry.author('uri')[0]))
-    http://bugs.launchpad.dev/~name16
+    http://bugs.launchpad.test/~name16
     >>> print(extract_text(entry.id))
     tag:launchpad.net,2007-03-15:/bugs/12
 
@@ -65,7 +65,7 @@ point to the bugs themselves.
     >>> print(extract_text(entry.author('name')[0]))
     Foo Bar
     >>> print(extract_text(entry.author('uri')[0]))
-    http://bugs.launchpad.dev/~name16
+    http://bugs.launchpad.test/~name16
     >>> print(extract_text(entry.id))
     tag:launchpad.net,2007-03-15:/bugs/11
 
@@ -79,14 +79,14 @@ The Atom feed must have the content-type of "application/atom+xml".
 This feed gets the latest bugs for a project, and has the same type of content
 as the latest bugs feed for a product.
 
-    >>> browser.open('http://feeds.launchpad.dev/mozilla/latest-bugs.atom')
+    >>> browser.open('http://feeds.launchpad.test/mozilla/latest-bugs.atom')
     >>> validate_feed(browser.contents,
     ...              browser.headers['content-type'], browser.url)
     No Errors
     >>> BSS(browser.contents).title.contents
     [u'Bugs in The Mozilla Project']
     >>> browser.url
-    'http://feeds.launchpad.dev/mozilla/latest-bugs.atom'
+    'http://feeds.launchpad.test/mozilla/latest-bugs.atom'
 
     >>> soup = BSS(browser.contents, parseOnlyThese=SoupStrainer('id'))
     >>> print(extract_text(soup.find('id')))
@@ -95,7 +95,7 @@ as the latest bugs feed for a product.
     >>> self_links = parse_links(browser.contents, 'self')
     >>> for link in self_links:
     ...     print(link)
-    <link rel="self" href="http://feeds.launchpad.dev/mozilla/latest-bugs.atom" />
+    <link rel="self" href="http://feeds.launchpad.test/mozilla/latest-bugs.atom" />
 
     >>> entries = parse_entries(browser.contents)
     >>> print(len(entries))
@@ -107,7 +107,7 @@ as the latest bugs feed for a product.
     >>> print(extract_text(entry.author('name')[0]))
     Foo Bar
     >>> print(extract_text(entry.author('uri')[0]))
-    http://bugs.launchpad.dev/~name16
+    http://bugs.launchpad.test/~name16
 
     >>> entry = entries[1]
     >>> print(extract_text(entry.title))
@@ -115,7 +115,7 @@ as the latest bugs feed for a product.
     >>> print(extract_text(entry.author('name')[0]))
     Foo Bar
     >>> print(extract_text(entry.author('uri')[0]))
-    http://bugs.launchpad.dev/~name16
+    http://bugs.launchpad.test/~name16
 
     >>> entry = entries[2]
     >>> print(extract_text(entry.title))
@@ -123,7 +123,7 @@ as the latest bugs feed for a product.
     >>> print(extract_text(entry.author('name')[0]))
     Sample Person
     >>> print(extract_text(entry.author('uri')[0]))
-    http://bugs.launchpad.dev/~name12
+    http://bugs.launchpad.test/~name12
 
 Ensure the entries are in reverse chronological order by published date.
 
@@ -140,14 +140,14 @@ Ensure the entries are in reverse chronological order by published date.
 This feed gets the latest bugs for a distribution, and has the same type
 of content as the latest bugs feed for a product.
 
-    >>> browser.open('http://feeds.launchpad.dev/ubuntu/latest-bugs.atom')
+    >>> browser.open('http://feeds.launchpad.test/ubuntu/latest-bugs.atom')
     >>> validate_feed(browser.contents,
     ...              browser.headers['content-type'], browser.url)
     No Errors
     >>> BSS(browser.contents).title.contents
     [u'Bugs in Ubuntu']
     >>> browser.url
-    'http://feeds.launchpad.dev/ubuntu/latest-bugs.atom'
+    'http://feeds.launchpad.test/ubuntu/latest-bugs.atom'
 
     >>> soup = BSS(browser.contents, parseOnlyThese=SoupStrainer('id'))
     >>> print(extract_text(soup.find('id')))
@@ -156,7 +156,7 @@ of content as the latest bugs feed for a product.
     >>> self_links = parse_links(browser.contents, 'self')
     >>> for link in self_links:
     ...     print(link)
-    <link rel="self" href="http://feeds.launchpad.dev/ubuntu/latest-bugs.atom" />
+    <link rel="self" href="http://feeds.launchpad.test/ubuntu/latest-bugs.atom" />
 
     >>> entries = parse_entries(browser.contents)
     >>> print(len(entries))
@@ -168,7 +168,7 @@ of content as the latest bugs feed for a product.
     >>> print(extract_text(entry.author('name')[0]))
     Foo Bar
     >>> print(extract_text(entry.author('uri')[0]))
-    http://bugs.launchpad.dev/~name16
+    http://bugs.launchpad.test/~name16
 
     >>> assert check_entries_order(entries), (
     ...     "Published dates are not sorted.")
@@ -197,7 +197,7 @@ Create a private team and assign an ubuntu distro bug to that team.
 
 Get the ubuntu/latest-bugs feed.
 
-    >>> browser.open('http://feeds.launchpad.dev/ubuntu/latest-bugs.atom')
+    >>> browser.open('http://feeds.launchpad.test/ubuntu/latest-bugs.atom')
     >>> validate_feed(browser.contents,
     ...              browser.headers['content-type'], browser.url)
     No Errors
@@ -227,7 +227,7 @@ This feed gets the latest bugs for a source package, and has the same
 type of content as the latest bugs feed for a product.
 
     >>> browser.open(
-    ...     'http://feeds.launchpad.dev/ubuntu/+source/thunderbird'
+    ...     'http://feeds.launchpad.test/ubuntu/+source/thunderbird'
     ...     '/latest-bugs.atom')
     >>> validate_feed(browser.contents,
     ...              browser.headers['content-type'], browser.url)
@@ -235,7 +235,7 @@ type of content as the latest bugs feed for a product.
     >>> BSS(browser.contents).title.contents
     [u'Bugs in thunderbird in Ubuntu']
     >>> browser.url
-    'http://feeds.launchpad.dev/ubuntu/+source/thunderbird/latest-bugs.atom'
+    'http://feeds.launchpad.test/ubuntu/+source/thunderbird/latest-bugs.atom'
     >>> soup = BSS(browser.contents, parseOnlyThese=SoupStrainer('id'))
     >>> print(extract_text(soup.find('id')))
     tag:launchpad.net,2008:/bugs/ubuntu/+source/thunderbird
@@ -248,7 +248,7 @@ type of content as the latest bugs feed for a product.
     >>> print(extract_text(entry.author('name')[0]))
     Foo Bar
     >>> print(extract_text(entry.author('uri')[0]))
-    http://bugs.launchpad.dev/~name16
+    http://bugs.launchpad.test/~name16
 
     >>> assert check_entries_order(entries), (
     ...     "Published dates are not sorted.")
@@ -260,14 +260,14 @@ This feed gets the latest bugs for a distribution series, and has the same
 type of content as the latest bugs feed for a product.
 
     >>> browser.open(
-    ...     'http://feeds.launchpad.dev/ubuntu/hoary/latest-bugs.atom')
+    ...     'http://feeds.launchpad.test/ubuntu/hoary/latest-bugs.atom')
     >>> validate_feed(browser.contents,
     ...              browser.headers['content-type'], browser.url)
     No Errors
     >>> BSS(browser.contents).title.contents
     [u'Bugs in Hoary']
     >>> browser.url
-    'http://feeds.launchpad.dev/ubuntu/hoary/latest-bugs.atom'
+    'http://feeds.launchpad.test/ubuntu/hoary/latest-bugs.atom'
 
     >>> soup = BSS(browser.contents, parseOnlyThese=SoupStrainer('id'))
     >>> print(extract_text(soup.find('id')))
@@ -276,7 +276,7 @@ type of content as the latest bugs feed for a product.
     >>> self_links = parse_links(browser.contents, 'self')
     >>> for link in self_links:
     ...     print(link)
-    <link rel="self" href="http://feeds.launchpad.dev/ubuntu/hoary/latest-bugs.atom" />
+    <link rel="self" href="http://feeds.launchpad.test/ubuntu/hoary/latest-bugs.atom" />
 
     >>> entries = parse_entries(browser.contents)
     >>> print(len(entries))
@@ -288,7 +288,7 @@ type of content as the latest bugs feed for a product.
     >>> print(extract_text(entry.author('name')[0]))
     Sample Person
     >>> print(extract_text(entry.author('uri')[0]))
-    http://bugs.launchpad.dev/~name12
+    http://bugs.launchpad.test/~name12
 
     >>> assert check_entries_order(entries), (
     ...     "Published dates are not sorted.")
@@ -300,14 +300,14 @@ This feed gets the latest bugs for a product series, and has the same
 type of content as the latest bugs feed for a product.
 
     >>> browser.open(
-    ...     'http://feeds.launchpad.dev/firefox/1.0/latest-bugs.atom')
+    ...     'http://feeds.launchpad.test/firefox/1.0/latest-bugs.atom')
     >>> validate_feed(browser.contents,
     ...              browser.headers['content-type'], browser.url)
     No Errors
     >>> BSS(browser.contents).title.contents
     [u'Bugs in 1.0']
     >>> browser.url
-    'http://feeds.launchpad.dev/firefox/1.0/latest-bugs.atom'
+    'http://feeds.launchpad.test/firefox/1.0/latest-bugs.atom'
 
     >>> soup = BSS(browser.contents, parseOnlyThese=SoupStrainer('id'))
     >>> print(extract_text(soup.find('id')))
@@ -316,7 +316,7 @@ type of content as the latest bugs feed for a product.
     >>> self_links = parse_links(browser.contents, 'self')
     >>> for link in self_links:
     ...     print(link)
-    <link rel="self" href="http://feeds.launchpad.dev/firefox/1.0/latest-bugs.atom" />
+    <link rel="self" href="http://feeds.launchpad.test/firefox/1.0/latest-bugs.atom" />
 
     >>> entries = parse_entries(browser.contents)
     >>> print(len(entries))
@@ -328,7 +328,7 @@ type of content as the latest bugs feed for a product.
     >>> print(extract_text(entry.author('name')[0]))
     Sample Person
     >>> print(extract_text(entry.author('uri')[0]))
-    http://bugs.launchpad.dev/~name12
+    http://bugs.launchpad.test/~name12
 
     >>> assert check_entries_order(entries), (
     ...     "Published dates are not sorted.")
@@ -338,14 +338,14 @@ type of content as the latest bugs feed for a product.
 
 This feed gets the latest bugs for a person.
 
-    >>> browser.open('http://feeds.launchpad.dev/~name16/latest-bugs.atom')
+    >>> browser.open('http://feeds.launchpad.test/~name16/latest-bugs.atom')
     >>> validate_feed(browser.contents,
     ...              browser.headers['content-type'], browser.url)
     No Errors
     >>> BSS(browser.contents).title.contents
     [u'Bugs for Foo Bar']
     >>> browser.url
-    'http://feeds.launchpad.dev/~name16/latest-bugs.atom'
+    'http://feeds.launchpad.test/~name16/latest-bugs.atom'
 
     >>> soup = BSS(browser.contents, parseOnlyThese=SoupStrainer('id'))
     >>> print(extract_text(soup.find('id')))
@@ -354,11 +354,11 @@ This feed gets the latest bugs for a person.
     >>> self_links = parse_links(browser.contents, 'self')
     >>> for link in self_links:
     ...     print(link)
-    <link rel="self" href="http://feeds.launchpad.dev/~name16/latest-bugs.atom" />
+    <link rel="self" href="http://feeds.launchpad.test/~name16/latest-bugs.atom" />
 
     >>> entries = parse_entries(browser.contents)
     >>> print(len(entries))
-    7
+    9
 
     >>> entry = entries[0]
     >>> print(extract_text(entry.title))
@@ -366,7 +366,7 @@ This feed gets the latest bugs for a person.
     >>> print(extract_text(entry.author('name')[0]))
     Foo Bar
     >>> print(extract_text(entry.author('uri')[0]))
-    http://bugs.launchpad.dev/~name16
+    http://bugs.launchpad.test/~name16
 
     >>> entry = entries[1]
     >>> print(extract_text(entry.title))
@@ -374,7 +374,7 @@ This feed gets the latest bugs for a person.
     >>> print(extract_text(entry.author('name')[0]))
     Foo Bar
     >>> print(extract_text(entry.author('uri')[0]))
-    http://bugs.launchpad.dev/~name16
+    http://bugs.launchpad.test/~name16
 
     >>> assert check_entries_order(entries), (
     ...     "Published dates are not sorted.")
@@ -393,17 +393,17 @@ First, make a team responsible for some bugs.
 
 Subscribe simple-team to a number of bugs.
 
-    >>> one_mem_browser.open('http://launchpad.dev/bugs/1')
+    >>> one_mem_browser.open('http://launchpad.test/bugs/1')
     >>> one_mem_browser.getLink('Subscribe someone else').click()
     >>> one_mem_browser.getControl('Person').value = 'simple-team'
     >>> one_mem_browser.getControl('Subscribe user').click()
 
-    >>> one_mem_browser.open('http://launchpad.dev/bugs/2')
+    >>> one_mem_browser.open('http://launchpad.test/bugs/2')
     >>> one_mem_browser.getLink('Subscribe someone else').click()
     >>> one_mem_browser.getControl('Person').value = 'simple-team'
     >>> one_mem_browser.getControl('Subscribe user').click()
 
-    >>> one_mem_browser.open('http://launchpad.dev/bugs/3')
+    >>> one_mem_browser.open('http://launchpad.test/bugs/3')
     >>> one_mem_browser.getLink('Subscribe someone else').click()
     >>> one_mem_browser.getControl('Person').value = 'simple-team'
     >>> one_mem_browser.getControl('Subscribe user').click()
@@ -413,7 +413,7 @@ Now we can do a query on the lastest bugs for simple team and expect
 some results.
 
     >>> browser.open(
-    ...    'http://feeds.launchpad.dev/~simple-team/latest-bugs.atom')
+    ...    'http://feeds.launchpad.test/~simple-team/latest-bugs.atom')
     >>> validate_feed(browser.contents,
     ...              browser.headers['content-type'], browser.url)
     No Errors
@@ -427,7 +427,7 @@ some results.
     >>> self_links = parse_links(browser.contents, 'self')
     >>> for link in self_links:
     ...     print(link)
-    <link rel="self" href="http://feeds.launchpad.dev/~simple-team/latest-bugs.atom" />
+    <link rel="self" href="http://feeds.launchpad.test/~simple-team/latest-bugs.atom" />
 
     >>> entries = parse_entries(browser.contents)
     >>> print(len(entries))
@@ -441,14 +441,14 @@ some results.
 
 This feed gets the latest bugs reported against any target.
 
-    >>> browser.open('http://feeds.launchpad.dev/bugs/latest-bugs.atom')
+    >>> browser.open('http://feeds.launchpad.test/bugs/latest-bugs.atom')
     >>> validate_feed(browser.contents,
     ...               browser.headers['content-type'], browser.url)
     No Errors
     >>> BSS(browser.contents).title.contents
     [u'Launchpad bugs']
     >>> browser.url
-    'http://feeds.launchpad.dev/bugs/latest-bugs.atom'
+    'http://feeds.launchpad.test/bugs/latest-bugs.atom'
 
     >>> soup = BSS(browser.contents, parseOnlyThese=SoupStrainer('id'))
     >>> print(extract_text(soup.find('id')))
@@ -457,7 +457,7 @@ This feed gets the latest bugs reported against any target.
     >>> self_links = parse_links(browser.contents, 'self')
     >>> for link in self_links:
     ...     print(link)
-    <link rel="self" href="http://feeds.launchpad.dev/bugs/latest-bugs.atom" />
+    <link rel="self" href="http://feeds.launchpad.test/bugs/latest-bugs.atom" />
 
     >>> entries = parse_entries(browser.contents)
     >>> print(len(entries))
@@ -469,7 +469,7 @@ This feed gets the latest bugs reported against any target.
     >>> print(extract_text(entry.author('name')[0]))
     Foo Bar
     >>> print(extract_text(entry.author('uri')[0]))
-    http://bugs.launchpad.dev/~name16
+    http://bugs.launchpad.test/~name16
 
     >>> assert check_entries_order(entries), (
     ...     "Published dates are not sorted.")
@@ -480,7 +480,7 @@ This feed gets the latest bugs reported against any target.
 This feed is the most useful of them all. Any bug search can be turned into
 a feed.
 
-    >>> url = ("http://feeds.launchpad.dev/bugs/+bugs.atom?"
+    >>> url = ("http://feeds.launchpad.test/bugs/+bugs.atom?"
     ...        "field.searchtext=&search=Search+Bug+Reports&"
     ...        "field.scope=all&field.scope.target=")
 
@@ -518,12 +518,12 @@ to True.
 
     >>> from lp.services.webapp.escaping import html_escape
     >>> print(html_escape(browser.url))
-    http://feeds.launchpad.dev/bugs/+bugs.atom?field.scope.target=&amp;field.scope=all&amp;field.searchtext=&amp;search=Search+Bug+Reports
+    http://feeds.launchpad.test/bugs/+bugs.atom?field.scope.target=&amp;field.scope=all&amp;field.searchtext=&amp;search=Search+Bug+Reports
 
     >>> self_links = parse_links(browser.contents, 'self')
     >>> for link in self_links:
     ...     print(link)
-    <link rel="self" href="http://feeds.launchpad.dev/bugs/+bugs.atom?field.scope.target=&amp;field.scope=all&amp;field.searchtext=&amp;search=Search+Bug+Reports" />
+    <link rel="self" href="http://feeds.launchpad.test/bugs/+bugs.atom?field.scope.target=&amp;field.scope=all&amp;field.searchtext=&amp;search=Search+Bug+Reports" />
 
     >>> entries = parse_entries(browser.contents)
     >>> print(len(entries))
@@ -535,7 +535,7 @@ to True.
     >>> print(extract_text(entry.author('name')[0]))
     Foo Bar
     >>> print(extract_text(entry.author('uri')[0]))
-    http://bugs.launchpad.dev/~name16
+    http://bugs.launchpad.test/~name16
 
     >>> entry = entries[1]
     >>> print(extract_text(entry.title))
@@ -543,14 +543,14 @@ to True.
     >>> print(extract_text(entry.author('name')[0]))
     Sample Person
     >>> print(extract_text(entry.author('uri')[0]))
-    http://bugs.launchpad.dev/~name12
+    http://bugs.launchpad.test/~name12
 
 
 == Results for a single bug ==
 
 This feed shows the status of a single bug.
 
-    >>> browser.open('http://feeds.launchpad.dev/bugs/1/bug.atom')
+    >>> browser.open('http://feeds.launchpad.test/bugs/1/bug.atom')
     >>> validate_feed(browser.contents,
     ...              browser.headers['content-type'], browser.url)
     No Errors
@@ -565,7 +565,7 @@ This feed shows the status of a single bug.
     >>> self_links = parse_links(browser.contents, 'self')
     >>> for link in self_links:
     ...     print(link)
-    <link rel="self" href="http://feeds.launchpad.dev/bugs/1/bug.atom" />
+    <link rel="self" href="http://feeds.launchpad.test/bugs/1/bug.atom" />
 
 == Feeds Configuration Options ==
 
@@ -577,7 +577,7 @@ of the feeds servers.
     >>> import time
     >>> old_time = time.time
     >>> time.time = lambda: 17
-    >>> browser.open('http://feeds.launchpad.dev/bugs/1/bug.atom')
+    >>> browser.open('http://feeds.launchpad.test/bugs/1/bug.atom')
     >>> config.launchpad.max_bug_feed_cache_minutes
     30
     >>> browser.headers['Expires']

@@ -11,10 +11,10 @@ import" that leads to the page to request such imports.
     >>> browser.addHeader('Authorization',
     ...                   'Basic test@canonical.com:test')
     >>> browser.open(
-    ...     'http://translations.launchpad.dev/evolution/trunk/')
+    ...     'http://translations.launchpad.test/evolution/trunk/')
     >>> browser.getLink('Request an import from bazaar').click()
     >>> print(browser.url)
-    http://translations.l...d.dev/evolution/trunk/+request-bzr-import
+    http://translations.l...d.test/evolution/trunk/+request-bzr-import
 
 == The request page with a branch ==
 The product series must have a branch configured in order to be able
@@ -33,7 +33,7 @@ continuously, the user is reminded of that here.
     To enable continuous imports please change the settings here.
     >>> browser.getLink('here').click()
     >>> print(browser.url)
-    http://translations.l...d.dev/evolution/trunk/+translations-settings
+    http://translations.l...d.test/evolution/trunk/+translations-settings
 
 Changing that setting will make that message disappear from the page.
 
@@ -42,7 +42,7 @@ Changing that setting will make that message disappear from the page.
     ...         ['IMPORT_TEMPLATES'])
     >>> browser.getControl('Save settings').click()
     >>> browser.open(
-    ...     'http://translations.launchpad.dev/evolution/trunk/'
+    ...     'http://translations.launchpad.test/evolution/trunk/'
     ...     '+request-bzr-import')
     >>> settings = find_tag_by_id(browser.contents, 'settings-display')
     >>> print(settings)
@@ -57,14 +57,14 @@ The request is made by clicking on a button labeled
     <input type="submit"...value="Request one-time import"...
     >>> browser.getControl("Request one-time import").click()
     >>> print(browser.url)
-    http://translations.launchpad.dev/evolution/trunk
+    http://translations.launchpad.test/evolution/trunk
     >>> print_feedback_messages(browser.contents)
     The import has been requested.
 
 == The request page without a branch ==
 The official Bazaar branch gets removed from the product series.
 
-    >>> browser.open('http://launchpad.dev/evolution/trunk/+setbranch')
+    >>> browser.open('http://launchpad.test/evolution/trunk/+setbranch')
     >>> browser.getControl(name='field.branch_location').value = ''
     >>> browser.getControl('Update').click()
 
@@ -73,7 +73,7 @@ import is pointless. The page points the user to the fact and where to
 set the branch.
 
     >>> browser.open(
-    ...     'http://translations.launchpad.dev/evolution/trunk/'
+    ...     'http://translations.launchpad.test/evolution/trunk/'
     ...     '+request-bzr-import')
     >>> branch = find_tag_by_id(browser.contents, 'no-branch-display')
     >>> print(extract_text(branch))
@@ -81,12 +81,12 @@ set the branch.
     Please set it first.
     >>> browser.getLink('Please set it first.').click()
     >>> print(browser.url)
-    http://launchpad.dev/evolution/trunk/+setbranch
+    http://launchpad.test/evolution/trunk/+setbranch
 
 The request button is missing completely from the page.
 
     >>> browser.open(
-    ...     'http://translations.launchpad.dev/evolution/trunk/'
+    ...     'http://translations.launchpad.test/evolution/trunk/'
     ...     '+request-bzr-import')
     >>> request_button = find_tag_by_id(
     ...     browser.contents, 'field.actions.request_import')

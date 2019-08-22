@@ -7,7 +7,7 @@ large and what is the current maximum.
 
     >>> from zope.testbrowser.testing import Browser
     >>> anon_browser = Browser()
-    >>> anon_browser.open('http://launchpad.dev/projects/+all?start=0&batch=1000')
+    >>> anon_browser.open('http://launchpad.test/projects/+all?start=0&batch=1000')
     Traceback (most recent call last):
     ...
     HTTPError: HTTP Error 400: Bad Request

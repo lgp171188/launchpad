@@ -1,4 +1,4 @@
-# Copyright 2009-2017 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -16,6 +16,7 @@ from storm.expr import (
     Alias,
     And,
     Coalesce,
+    Column,
     Count,
     Desc,
     Exists,
@@ -28,6 +29,7 @@ from storm.expr import (
     Select,
     SQL,
     Union,
+    With,
     )
 from storm.info import ClassAlias
 from storm.references import Reference
@@ -57,6 +59,7 @@ from lp.bugs.model.bug import (
     BugAffectsPerson,
     BugTag,
     )
+from lp.bugs.model.bugactivity import BugActivity
 from lp.bugs.model.bugattachment import BugAttachment
 from lp.bugs.model.bugbranch import BugBranch
 from lp.bugs.model.bugmessage import BugMessage
@@ -84,7 +87,10 @@ from lp.registry.model.teammembership import TeamParticipation
 from lp.services.database.bulk import load
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.interfaces import IStore
-from lp.services.database.sqlbase import sqlvalues
+from lp.services.database.sqlbase import (
+    convert_storm_clause_to_string,
+    sqlvalues,
+    )
 from lp.services.database.stormexpr import (
     ArrayAgg,
     ArrayIntersects,
@@ -611,12 +617,26 @@ def _build_query(params):
         extra_clauses.append(BugTaskFlat.bug_owner == params.bug_reporter)
 
     if params.bug_commenter:
+        with_clauses.append(convert_storm_clause_to_string(
+            With('commented_bug_ids', Union(
+                Select(
+                    BugMessage.bugID, tables=[BugMessage],
+                    where=And(
+                        BugMessage.index > 0,
+                        BugMessage.owner == params.bug_commenter)),
+                Select(
+                    BugActivity.bugID, tables=[BugActivity],
+                    where=And(
+                        BugActivity.person == params.bug_commenter,
+                        # This is distressingly fragile, but BugActivity
+                        # doesn't really give us any better way to exclude
+                        # the bug creation event.
+                        Or(
+                            BugActivity.whatchanged != u'bug',
+                            BugActivity.message != u'added bug')))))))
         extra_clauses.append(
-            BugTaskFlat.bug_id.is_in(Select(
-                BugMessage.bugID, tables=[BugMessage],
-                where=And(
-                    BugMessage.index > 0,
-                    BugMessage.owner == params.bug_commenter))))
+            BugTaskFlat.bug_id.is_in(
+                Select(Column('bug', 'commented_bug_ids'))))
 
     if params.affects_me:
         params.affected_user = params.user

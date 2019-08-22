@@ -11,7 +11,7 @@ A user with permission to edit a bug may create a question from a bug.
 An anonymous user cannot create a question.
 
     >>> anon_browser.open(
-    ...     'http://bugs.launchpad.dev'
+    ...     'http://bugs.launchpad.test'
     ...     '/ubuntu/+source/linux-source-2.6.15/+bug/10')
     >>> anon_browser.title
     'Bug #10 ... : Bugs : linux-source-2.6.15 package : Ubuntu'
@@ -25,7 +25,7 @@ No Privileges Person is doing triage for Ubuntu. They recognize bug 10 is
 really a question. They choose to make a question from it.
 
     >>> user_browser.open(
-    ...     'http://bugs.launchpad.dev'
+    ...     'http://bugs.launchpad.test'
     ...     '/ubuntu/+source/linux-source-2.6.15/+bug/10')
     >>> user_browser.title
     'Bug #10 ... : Bugs : linux-source-2.6.15 package : Ubuntu'
@@ -68,7 +68,7 @@ Nor can the bugtask be edited if No Privileges Person accesses the
 bugtask directly.
 
     >>> user_browser.open(
-    ...     'http://bugs.launchpad.dev'
+    ...     'http://bugs.launchpad.test'
     ...     '/ubuntu/+source/linux-source-2.6.15/+bug/10/+editstatus')
     >>> print_feedback_messages(user_browser.contents)
     This bug was converted into a question. It cannot be edited.
@@ -91,7 +91,7 @@ the bug owner. They see the link to the question in the 'Related
 questions' portlet, and uses it to go to the question page.
 
     >>> print(user_browser.url)
-    http://bugs.launchpad.dev/ubuntu/.../+bug/10
+    http://bugs.launchpad.test/ubuntu/.../+bug/10
 
     >>> portlet = find_portlet(user_browser.contents, 'Related questions')
     >>> question_anchor = portlet.a
@@ -124,7 +124,7 @@ made from its bugs. When No Privileges Person uses the link in the Bug
 Actions menu, the page explains why they cannot make the bug into a
 question.
 
-    >>> user_browser.open('http://bugs.launchpad.dev/thunderbird/+bug/9')
+    >>> user_browser.open('http://bugs.launchpad.test/thunderbird/+bug/9')
     >>> user_browser.title
     'Bug #9 ...'
 
@@ -156,7 +156,7 @@ return to the create a question from a bug page using their back button or
 a bookmark, they see that they cannot create the question again.
 
     >>> user_browser.open(
-    ...     'http://bugs.launchpad.dev'
+    ...     'http://bugs.launchpad.test'
     ...     '/ubuntu/+source/linux-source-2.6.15/+bug/10/+create-question')
     >>> user_browser.title
     'Convert this bug to a question...
@@ -188,7 +188,7 @@ could not be created.
     >>> logout()
 
     >>> user_browser.open(
-    ...     'http://bugs.launchpad.dev/jokosher/+bug/12')
+    ...     'http://bugs.launchpad.test/jokosher/+bug/12')
     >>> user_browser.title
     'Bug #12 ...'
 
@@ -283,7 +283,7 @@ page. No Privileges Person sees a message that there is no question to
 remove.
 
     >>> user_browser.open(
-    ...     'http://bugs.launchpad.dev/jokosher/+bug/12/+remove-question')
+    ...     'http://bugs.launchpad.test/jokosher/+bug/12/+remove-question')
     >>> print(user_browser.title)
     Bug #12 - Convert this...
 

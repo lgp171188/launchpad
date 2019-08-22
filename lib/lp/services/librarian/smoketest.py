@@ -37,10 +37,10 @@ def store_file(client):
 def read_file(url):
     try:
         data = urllib.urlopen(url).read()
-    except (MemoryError, KeyboardInterrupt, SystemExit):
+    except MemoryError:
         # Re-raise catastrophic errors.
         raise
-    except:
+    except Exception:
         # An error is represented by returning None, which won't match when
         # comapred against FILE_DATA.
         return None

@@ -4,12 +4,12 @@ Adding projects
 Sample Person decides to register their new project, which they can do
 either from the Launchpad home page or the projects home page.
 
-    >>> user_browser.open('http://launchpad.dev')
+    >>> user_browser.open('http://launchpad.test')
     >>> user_browser.getLink('Register a project').click()
     >>> print user_browser.title
     Register a project in Launchpad...
 
-    >>> user_browser.open('http://launchpad.dev/projects')
+    >>> user_browser.open('http://launchpad.test/projects')
     >>> user_browser.getLink('Register a project').click()
     >>> print user_browser.title
     Register a project in Launchpad...
@@ -52,7 +52,7 @@ forgetting to enter a title or summary.
     >>> print_errors(user_browser.contents)
     There are 2 errors.
     URL:
-    http://launchpad.dev/
+    http://launchpad.test/
     Invalid name 'aard vark'. Names must be at least two characters ...
     At least one lowercase letter or number, followed by letters, numbers,
     dots, hyphens or pluses. Keep this name short; it is used in URLs as
@@ -132,7 +132,7 @@ that exists elsewhere as an upstream.  They want it to exist in
 Launchpad so they can file a bug, for instance, but they are not
 interested in being the project maintainer for the long run.
 
-    >>> user_browser.open('http://launchpad.dev')
+    >>> user_browser.open('http://launchpad.test')
     >>> user_browser.getLink('Register a project').click()
 
     >>> user_browser.getControl('Name').value = 'kittyhawk'
@@ -165,7 +165,7 @@ Search results
 Sample Person has another project they want to register.  It is similar to
 Firefox.
 
-    >>> user_browser.open('http://launchpad.dev')
+    >>> user_browser.open('http://launchpad.test')
     >>> user_browser.getLink('Register a project').click()
     >>> print user_browser.title
     Register a project in Launchpad...
@@ -194,9 +194,9 @@ The project registration workflow used to get started at
 /projects/+new-guided.  To prevent bitrot, we redirect that URL to the new
 location at /projects/+new.
 
-    >>> user_browser.open('http://launchpad.dev/projects/+new-guided')
+    >>> user_browser.open('http://launchpad.test/projects/+new-guided')
     >>> print user_browser.title
     Register a project in Launchpad...
 
     >>> print user_browser.url
-    http://launchpad.dev/projects/+new
+    http://launchpad.test/projects/+new

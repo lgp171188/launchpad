@@ -45,6 +45,7 @@ from lp.bugs.interfaces.externalbugtracker import (
 from lp.services.config import config
 from lp.services.database.isolation import ensure_no_transaction
 from lp.services.timeout import (
+    raise_for_status_redacted,
     override_timeout,
     urlfetch,
     )
@@ -273,7 +274,7 @@ class ExternalBugTracker:
             url = urljoin(url, page)
             response = self.makeRequest(
                 "GET", url, headers=self._getHeaders(), **kwargs)
-            response.raise_for_status()
+            raise_for_status_redacted(response)
             return response
         except requests.RequestException as e:
             raise BugTrackerConnectError(self.baseurl, e)
@@ -301,7 +302,7 @@ class ExternalBugTracker:
             response = self.makeRequest(
                 "POST", url, headers=self._getHeaders(), data=form,
                 hooks=hooks)
-            response.raise_for_status()
+            raise_for_status_redacted(response)
             return response
         except requests.RequestException as e:
             raise BugTrackerConnectError(self.baseurl, e)

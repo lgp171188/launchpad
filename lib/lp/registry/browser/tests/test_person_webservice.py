@@ -1,10 +1,12 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
 
+from operator import attrgetter
 import textwrap
 
+from lazr.uri import URI
 from storm.store import Store
 from zope.component import getUtility
 from zope.security.management import endInteraction
@@ -189,6 +191,37 @@ class PersonWebServiceTests(TestCaseWithFactory):
             get_members, create_member, 2)
         self.assertThat(recorder2, HasQueryCount.byEquality(recorder1))
 
+    def test_members_ordering(self):
+        # Entries in the various members collections are sorted by
+        # (Person.display_name, Person.name).
+        with admin_logged_in():
+            team = self.factory.makeTeam()
+            owner = team.teamowner
+            name = team.name
+        members = [owner]
+        with admin_logged_in():
+            for member_suffix in (
+                    'a1', 'b1', 'a2', 'b2', 'a3', 'b4', 'a4', 'b3',
+                    'a5', 'b5'):
+                person = self.factory.makePerson(
+                    name='member-' + member_suffix)
+                team.addMember(person, owner)
+                members.append(person)
+        expected_member_names = [
+            member.name for member in sorted(
+                members, key=attrgetter('display_name', 'name'))]
+        ws = webservice_for_person(owner)
+        observed_member_names = []
+        batch = ws.get('/~%s/members' % name).jsonBody()
+        while True:
+            for entry in batch['entries']:
+                observed_member_names.append(entry['name'])
+            next_link = batch.get('next_collection_link')
+            if next_link is None:
+                break
+            batch = ws.get(URI(next_link)).jsonBody()
+        self.assertEqual(expected_member_names, observed_member_names)
+
     def test_many_ppas(self):
         # POSTing to a person with many PPAs doesn't OOPS.
         with admin_logged_in():
@@ -315,7 +348,7 @@ class PersonSetWebServiceTests(TestCaseWithFactory):
             person_name,
             self.webservice.get(
                 '/people?ws.op=getByOpenIDIdentifier&'
-                'identifier=http://login1.dev/%%2Bid/%s'
+                'identifier=http://login1.test/%%2Bid/%s'
                 % person_openid,
                 api_version='devel').jsonBody()['name'])
 
@@ -424,7 +457,7 @@ class PersonSetWebServiceTests(TestCaseWithFactory):
         with admin_logged_in():
             by_name = getUtility(IPersonSet).getByName('bar')
             by_openid = getUtility(IPersonSet).getByOpenIDIdentifier(
-                u'http://testopenid.dev/+id/foo')
+                u'http://testopenid.test/+id/foo')
             self.assertEqual(by_name, by_openid)
             self.assertEqual(
                 AccountStatus.PLACEHOLDER, by_name.account_status)

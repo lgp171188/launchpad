@@ -43,7 +43,7 @@ using BeautifulStoneSoup instead of BeautifulSoup or the helper functions.
 The feed for a person's branches will show the most recent 25 branches
 which will include an entry for each branch.
 
-    >>> anon_browser.open('http://feeds.launchpad.dev/~mike/branches.atom')
+    >>> anon_browser.open('http://feeds.launchpad.test/~mike/branches.atom')
     >>> def validate_browser_feed(browser):
     ...     validate_feed(
     ...         browser.contents, browser.headers['content-type'], browser.url)
@@ -71,7 +71,7 @@ Ensure the self link is correct and there is only one.
     ...     for link in parse_links(browser.contents, rel="self"):
     ...         print(link)
     >>> print_parse_links(anon_browser)
-    <link rel="self" href="http://feeds.launchpad.dev/~mike/branches.atom" />
+    <link rel="self" href="http://feeds.launchpad.test/~mike/branches.atom" />
 
 The <update> field for the feed will be the most recent value for the
 updated field in all of the entries.
@@ -87,7 +87,7 @@ updated field in all of the entries.
 If an anonymous user fetches the same feed the email addresses will
 still be hidden:
 
-    >>> anon_browser.open('http://feeds.launchpad.dev/~name12/branches.atom')
+    >>> anon_browser.open('http://feeds.launchpad.test/~name12/branches.atom')
     >>> validate_browser_feed(anon_browser)
     No Errors
     >>> BSS(anon_browser.contents).title.contents
@@ -122,7 +122,7 @@ developers team has two branches which are both private.
 If we look at the feed for landscape developers there will be no
 branches listed, just an id for the feed.
 
-    >>> browser.open('http://feeds.launchpad.dev/~landscape-developers/branches.atom')
+    >>> browser.open('http://feeds.launchpad.test/~landscape-developers/branches.atom')
     >>> validate_browser_feed(browser)
     No Errors
     >>> BSS(browser.contents).title.contents
@@ -136,7 +136,7 @@ branches listed, just an id for the feed.
 The feed for a product's branches will show the most recent 25 branches
 which will include an entry for each branch.
 
-    >>> anon_browser.open('http://feeds.launchpad.dev/fooix/branches.atom')
+    >>> anon_browser.open('http://feeds.launchpad.test/fooix/branches.atom')
     >>> validate_browser_feed(anon_browser)
     No Errors
     >>> BSS(anon_browser.contents).title.contents
@@ -148,7 +148,7 @@ which will include an entry for each branch.
     <id>tag:launchpad.net,2007-12-01:/code/~mike/fooix/first</id>
 
     >>> print_parse_links(anon_browser)
-    <link rel="self" href="http://feeds.launchpad.dev/fooix/branches.atom" />
+    <link rel="self" href="http://feeds.launchpad.test/fooix/branches.atom" />
 
 The <update> field for the feed will be the most recent value for the
 updated field in all of the entries.
@@ -167,7 +167,7 @@ updated field in all of the entries.
 The feed for a project group's branches will show the most recent 25
 branches which will include an entry for each branch.
 
-    >>> anon_browser.open('http://feeds.launchpad.dev/oh-man/branches.atom')
+    >>> anon_browser.open('http://feeds.launchpad.test/oh-man/branches.atom')
     >>> validate_browser_feed(anon_browser)
     No Errors
     >>> BSS(anon_browser.contents).title.contents
@@ -182,7 +182,7 @@ branches which will include an entry for each branch.
     <id>tag:launchpad.net,2007-12-01:/code/~mike/fooix/first</id>
 
     >>> print_parse_links(anon_browser)
-    <link rel="self" href="http://feeds.launchpad.dev/oh-man/branches.atom" />
+    <link rel="self" href="http://feeds.launchpad.test/oh-man/branches.atom" />
 
 The <update> field for the feed will be the most recent value for the
 updated field in all of the entries.
@@ -201,7 +201,7 @@ updated field in all of the entries.
 A single branch can have an Atom feed with each revision being a
 different entry.
 
-    >>> url = 'http://feeds.launchpad.dev/~mark/firefox/release--0.9.1/branch.atom'
+    >>> url = 'http://feeds.launchpad.test/~mark/firefox/release--0.9.1/branch.atom'
     >>> browser.open(url)
     >>> validate_feed(browser.contents,
     ...              browser.headers['content-type'], browser.url)
@@ -209,7 +209,7 @@ different entry.
     >>> BSS(browser.contents).title.contents
     [u'Latest Revisions for Branch lp://dev/~mark/firefox/release--0.9.1']
     >>> print(browser.url)
-    http://feeds.launchpad.dev/~mark/firefox/release--0.9.1/branch.atom
+    http://feeds.launchpad.test/~mark/firefox/release--0.9.1/branch.atom
 
 The first <id> in a feed identifies the feed.  Each entry then has its
 own <id>, which in the case of a single branch feed will be identical.
@@ -221,7 +221,7 @@ own <id>, which in the case of a single branch feed will be identical.
     <id>tag:launchpad.net,2006-10-16:/code/~mark/firefox/release--0.9.1</id>
     <id>tag:launchpad.net,2005-03-09:/code/~mark/firefox/release--0.9.1/revision/1</id>
     >>> print_parse_links(browser)
-    <link rel="self" href="http://feeds.launchpad.dev/~mark/firefox/release--0.9.1/branch.atom" />
+    <link rel="self" href="http://feeds.launchpad.test/~mark/firefox/release--0.9.1/branch.atom" />
     >>> strainer = SoupStrainer('updated')
     >>> updated_dates = [extract_text(tag) for tag in BSS(browser.contents,
     ...                  parseOnlyThese=strainer)]

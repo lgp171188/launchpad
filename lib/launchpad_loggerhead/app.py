@@ -14,6 +14,7 @@ from bzrlib import (
     urlutils,
     )
 from bzrlib.transport import get_transport
+from bzrlib.url_policy_open import open_only_scheme
 from loggerhead.apps import (
     favicon_app,
     static_app,
@@ -47,7 +48,6 @@ from lp.code.interfaces.codehosting import (
     LAUNCHPAD_ANONYMOUS,
     LAUNCHPAD_SERVICES,
     )
-from lp.codehosting.safe_open import safe_open
 from lp.codehosting.vfs import get_lp_server
 from lp.services.config import config
 from lp.services.webapp.errorlog import ErrorReportingUtility
@@ -275,7 +275,7 @@ class RootApp:
                 self.log.info("Branch is public")
 
             try:
-                bzr_branch = safe_open(
+                bzr_branch = open_only_scheme(
                     lp_server.get_url().strip(':/'), branch_url)
             except errors.NotBranchError as err:
                 self.log.warning('Not a branch: %s', err)

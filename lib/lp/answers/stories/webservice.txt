@@ -115,7 +115,7 @@ is an answer contact for using getDirectAnswerQuestionTargets.
     ...     contact['self_link'], 'getDirectAnswerQuestionTargets',
     ...     api_version='devel').jsonBody()
     >>> print_self_link_of_entries(targets)
-    http://api.launchpad.dev/devel/my-project
+    http://api.launchpad.test/devel/my-project
 
 Anyone can retrieve the collection of `IQuestionTarget`s that a person's
 teams is an answer contact for using getTeamAnswerQuestionTargets.
@@ -124,7 +124,7 @@ teams is an answer contact for using getTeamAnswerQuestionTargets.
     ...     contact['self_link'], 'getTeamAnswerQuestionTargets',
     ...     api_version='devel').jsonBody()
     >>> print_self_link_of_entries(targets)
-    http://api.launchpad.dev/devel/team-project
+    http://api.launchpad.test/devel/team-project
 
 
 Question collections
@@ -208,16 +208,16 @@ a link to retrieve the question's messages.
     date_solved: None
     description: u'description...'
     id: ...
-    language_link: u'http://api.launchpad.dev/devel/+languages/en'
+    language_link: u'http://api.launchpad.test/devel/+languages/en'
     messages_collection_link:
-        u'http://api.launchpad.dev/devel/my-project/+question/.../messages'
-    owner_link: u'http://api.launchpad.dev/devel/~asker'
-    resource_type_link: u'http://api.launchpad.dev/devel/#question'
-    self_link: u'http://api.launchpad.dev/devel/my-project/+question/...'
+        u'http://api.launchpad.test/devel/my-project/+question/.../messages'
+    owner_link: u'http://api.launchpad.test/devel/~asker'
+    resource_type_link: u'http://api.launchpad.test/devel/#question'
+    self_link: u'http://api.launchpad.test/devel/my-project/+question/...'
     status: u'Answered'
-    target_link: u'http://api.launchpad.dev/devel/my-project'
+    target_link: u'http://api.launchpad.test/devel/my-project'
     title: u'Q 1 great'
-    web_link: u'http://answers.launchpad.dev/my-project/+question/...'
+    web_link: u'http://answers.launchpad.test/my-project/+question/...'
 
 
 Question messages
@@ -236,13 +236,13 @@ that indicate how the message changed the question.
     date_created: u'20...+00:00'
     index: 1
     new_status: u'Answered'
-    owner_link: u'http://api.launchpad.dev/devel/~contact'
+    owner_link: u'http://api.launchpad.test/devel/~contact'
     parent_link: None
-    question_link: u'http://api.launchpad.dev/devel/my-project/+question/...'
-    resource_type_link: u'http://api.launchpad.dev/devel/#question_message'
+    question_link: u'http://api.launchpad.test/devel/my-project/+question/...'
+    resource_type_link: u'http://api.launchpad.test/devel/#question_message'
     self_link:
-        u'http://api.launchpad.dev/devel/my-project/+question/.../messages/1'
+        u'http://api.launchpad.test/devel/my-project/+question/.../messages/1'
     subject: u'Re: Q 1 great'
     visible: True
     web_link:
-        u'http://answers.launchpad.dev/my-project/+question/.../messages/1'
+        u'http://answers.launchpad.test/my-project/+question/.../messages/1'

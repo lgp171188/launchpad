@@ -139,7 +139,7 @@ class LaunchpadWebServiceCaller(WebServiceCaller):
 
     def __init__(self, oauth_consumer_key=None, oauth_access_key=None,
                  oauth_access_secret=None, handle_errors=True,
-                 domain='api.launchpad.dev', protocol='http'):
+                 domain='api.launchpad.test', protocol='http'):
         """Create a LaunchpadWebServiceCaller.
         :param oauth_consumer_key: The OAuth consumer key to use.
         :param oauth_access_key: The OAuth access key to use for the request.

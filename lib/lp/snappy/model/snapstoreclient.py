@@ -1,4 +1,4 @@
-# Copyright 2016-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2016-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Communication with the snap store."""
@@ -30,6 +30,10 @@ from zope.interface import implementer
 from zope.security.proxy import removeSecurityProxy
 
 from lp.services.config import config
+from lp.services.crypto.interfaces import (
+    CryptoError,
+    IEncryptedContainer,
+    )
 from lp.services.features import getFeatureFlag
 from lp.services.memcache.interfaces import IMemcacheClient
 from lp.services.scripts import log
@@ -43,7 +47,6 @@ from lp.snappy.interfaces.snapstoreclient import (
     BadSearchResponse,
     ISnapStoreClient,
     NeedsRefreshResponse,
-    ReleaseFailedResponse,
     ScanFailedResponse,
     UnauthorizedUploadResponse,
     UploadFailedResponse,
@@ -155,6 +158,45 @@ class MacaroonAuth(requests.auth.AuthBase):
         return r
 
 
+def _get_discharge_macaroon_raw(snap):
+    """Get the serialised discharge macaroon for a snap, if any.
+
+    This copes with either unencrypted (the historical default) or encrypted
+    macaroons.
+    """
+    if snap.store_secrets is None:
+        raise AssertionError("snap.store_secrets is None")
+    if "discharge_encrypted" in snap.store_secrets:
+        container = getUtility(IEncryptedContainer, "snap-store-secrets")
+        try:
+            return container.decrypt(
+                snap.store_secrets["discharge_encrypted"]).decode("UTF-8")
+        except CryptoError as e:
+            raise UnauthorizedUploadResponse(
+                "Failed to decrypt discharge macaroon: %s" % e)
+    else:
+        return snap.store_secrets.get("discharge")
+
+
+def _set_discharge_macaroon_raw(snap, discharge_macaroon_raw):
+    """Set the serialised discharge macaroon for a snap.
+
+    The macaroon is encrypted if possible.
+    """
+    # Set a new dict here to avoid problems with security proxies.
+    new_secrets = dict(snap.store_secrets)
+    container = getUtility(IEncryptedContainer, "snap-store-secrets")
+    if container.can_encrypt:
+        new_secrets["discharge_encrypted"] = (
+            removeSecurityProxy(container.encrypt(
+                discharge_macaroon_raw.encode("UTF-8"))))
+        new_secrets.pop("discharge", None)
+    else:
+        new_secrets["discharge"] = discharge_macaroon_raw
+        new_secrets.pop("discharge_encrypted", None)
+    snap.store_secrets = new_secrets
+
+
 # Hardcoded fallback.
 _default_store_channels = [
     {"name": "candidate", "display_name": "Candidate"},
@@ -253,25 +295,36 @@ class SnapStoreClient:
             lfa.close()
 
     @classmethod
-    def _uploadApp(cls, snap, upload_data):
+    def _uploadApp(cls, snapbuild, upload_data):
         """Create a new store upload based on the uploaded file."""
+        snap = snapbuild.snap
         assert config.snappy.store_url is not None
         assert snap.store_name is not None
+        assert snap.store_secrets is not None
+        assert snapbuild.date_started is not None
         upload_url = urlappend(config.snappy.store_url, "dev/api/snap-push/")
         data = {
             "name": snap.store_name,
             "updown_id": upload_data["upload_id"],
             "series": snap.store_series.name,
+            "built_at": snapbuild.date_started.isoformat(),
             }
+        # The security proxy is useless and breaks JSON serialisation.
+        channels = removeSecurityProxy(snap.store_channels)
+        if channels:
+            # This will cause a release
+            data.update({
+                "channels": channels,
+                "only_if_newer": True,
+                })
         # XXX cjwatson 2016-05-09: This should add timeline information, but
         # that's currently difficult in jobs.
         try:
-            assert snap.store_secrets is not None
             response = urlfetch(
                 upload_url, method="POST", json=data,
                 auth=MacaroonAuth(
                     snap.store_secrets["root"],
-                    snap.store_secrets.get("discharge")))
+                    _get_discharge_macaroon_raw(snap)))
             response_data = response.json()
             return response_data["status_details_url"]
         except requests.HTTPError as e:
@@ -293,7 +346,7 @@ class SnapStoreClient:
                 continue
             upload_data = cls._uploadFile(lfa, lfc)
             return cls.refreshIfNecessary(
-                snapbuild.snap, cls._uploadApp, snapbuild.snap, upload_data)
+                snapbuild.snap, cls._uploadApp, snapbuild, upload_data)
 
     @classmethod
     def refreshDischargeMacaroon(cls, snap):
@@ -302,18 +355,20 @@ class SnapStoreClient:
         assert snap.store_secrets is not None
         refresh_url = urlappend(
             config.launchpad.openid_provider_root, "api/v2/tokens/refresh")
-        data = {"discharge_macaroon": snap.store_secrets["discharge"]}
+        discharge_macaroon_raw = _get_discharge_macaroon_raw(snap)
+        if discharge_macaroon_raw is None:
+            raise UnauthorizedUploadResponse(
+                "Tried to refresh discharge for snap with no discharge "
+                "macaroon")
+        data = {"discharge_macaroon": discharge_macaroon_raw}
         try:
             response = urlfetch(refresh_url, method="POST", json=data)
-            response_data = response.json()
-            if "discharge_macaroon" not in response_data:
-                raise BadRefreshResponse(response.text)
-            # Set a new dict here to avoid problems with security proxies.
-            new_secrets = dict(snap.store_secrets)
-            new_secrets["discharge"] = response_data["discharge_macaroon"]
-            snap.store_secrets = new_secrets
         except requests.HTTPError as e:
             raise cls._makeSnapStoreError(BadRefreshResponse, e)
+        response_data = response.json()
+        if "discharge_macaroon" not in response_data:
+            raise BadRefreshResponse(response.text)
+        _set_discharge_macaroon_raw(snap, response_data["discharge_macaroon"])
 
     @classmethod
     def refreshIfNecessary(cls, snap, f, *args, **kwargs):
@@ -333,6 +388,22 @@ class SnapStoreClient:
             if not response_data["processed"]:
                 raise UploadNotScannedYetResponse()
             elif "errors" in response_data:
+                # This is returned as error in the upload,
+                # but there is nothing we can do about it,
+                # our upload has been successful
+                if response_data['code'] == 'need_manual_review':
+                    return response_data["url"], response_data["revision"]
+                # The review-queued state is a little odd.  It shows up as a
+                # processing error of sorts, and it doesn't contain a URL or
+                # a revision; on the other hand, it means that there's no
+                # point waiting any longer because a manual review might
+                # take an arbitrary amount of time.  We'll just return
+                # (None, None) to indicate that we have no information but
+                # that it's OK to continue.
+                if (response_data["code"] == "processing_error" and
+                    any(error["code"] == "review-queued"
+                        for error in response_data["errors"])):
+                    return None, None
                 error_message = "\n".join(
                     error["message"] for error in response_data["errors"])
                 error_messages = []
@@ -343,8 +414,6 @@ class SnapStoreClient:
                     error_messages.append(error_detail)
                 raise ScanFailedResponse(
                     error_message, messages=error_messages)
-            elif not response_data["can_release"]:
-                return response_data["url"], None
             else:
                 return response_data["url"], response_data["revision"]
         except requests.HTTPError as e:
@@ -391,41 +460,3 @@ class SnapStoreClient:
         if channels is None:
             channels = _default_store_channels
         return channels
-
-    @classmethod
-    def _release(cls, snap, revision):
-        """Release a snap revision to specified channels."""
-        release_url = urlappend(
-            config.snappy.store_url, "dev/api/snap-release/")
-        data = {
-            "name": snap.store_name,
-            "revision": revision,
-            # The security proxy is useless and breaks JSON serialisation.
-            "channels": removeSecurityProxy(snap.store_channels),
-            "series": snap.store_series.name,
-            }
-        # XXX cjwatson 2016-06-28: This should add timeline information, but
-        # that's currently difficult in jobs.
-        try:
-            assert snap.store_secrets is not None
-            urlfetch(
-                release_url, method="POST", json=data,
-                auth=MacaroonAuth(
-                    snap.store_secrets["root"],
-                    snap.store_secrets.get("discharge")))
-        except requests.HTTPError as e:
-            if e.response.status_code == 401:
-                if (e.response.headers.get("WWW-Authenticate") ==
-                        "Macaroon needs_refresh=1"):
-                    raise NeedsRefreshResponse()
-            raise cls._makeSnapStoreError(ReleaseFailedResponse, e)
-
-    @classmethod
-    def release(cls, snapbuild, revision):
-        """See `ISnapStoreClient`."""
-        assert config.snappy.store_url is not None
-        snap = snapbuild.snap
-        assert snap.store_name is not None
-        assert snap.store_series is not None
-        assert snap.store_channels
-        cls.refreshIfNecessary(snap, cls._release, snap, revision)

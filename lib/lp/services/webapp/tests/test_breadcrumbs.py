@@ -60,7 +60,7 @@ class TestBreadcrumb(TestCase):
         breadcrumb._url = '/hello'
         self.assertEqual('/hello', breadcrumb.url)
         breadcrumb._url = None
-        self.assertEqual('http://launchpad.dev/cookbook', breadcrumb.url)
+        self.assertEqual('http://launchpad.test/cookbook', breadcrumb.url)
 
     def test_rootsite_defaults_to_mainsite(self):
         # When a class' ICanonicalUrlData doesn't define a rootsite, our
@@ -150,14 +150,14 @@ class TestExtraFacetBreadcrumbsOnHierarchyView(BaseBreadcrumbTestCase):
         self.package_bugtask_url = canonical_url(self.package_bugtask)
 
     def test_root_on_mainsite(self):
-        crumbs = self.getBreadcrumbsForUrl('http://launchpad.dev/')
+        crumbs = self.getBreadcrumbsForUrl('http://launchpad.test/')
         self.assertEqual(crumbs, [])
 
     def test_product_on_mainsite(self):
         self.assertBreadcrumbUrls([self.product_url], self.product)
 
     def test_root_on_vhost(self):
-        crumbs = self.getBreadcrumbsForUrl('http://bugs.launchpad.dev/')
+        crumbs = self.getBreadcrumbsForUrl('http://bugs.launchpad.test/')
         self.assertEqual(crumbs, [])
 
     def test_product_on_vhost(self):

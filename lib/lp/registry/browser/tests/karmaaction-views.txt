@@ -39,7 +39,7 @@ view provides a label, page_title and a cancel_url
     Edit New branch registered karma action
 
     >>> print view.cancel_url
-    http://launchpad.dev/karmaaction
+    http://launchpad.test/karmaaction
 
 The admin can edit the karma action's fields.
 
@@ -59,7 +59,7 @@ The admin can edit the karma action's fields.
     []
 
     >>> print view.next_url
-    http://launchpad.dev/karmaaction
+    http://launchpad.test/karmaaction
 
     >>> action.points
     2

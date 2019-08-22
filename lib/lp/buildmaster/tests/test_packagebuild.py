@@ -65,7 +65,7 @@ class TestPackageBuildMixin(TestCaseWithFactory):
         self.package_build.setLog(lfa)
         log_url = self.package_build.log_url
         self.assertEqual(
-            'http://launchpad.dev/~joe/+archive/ubuntu/ppa/'
+            'http://launchpad.test/~joe/+archive/ubuntu/ppa/'
             '+recipebuild/%d/+files/mybuildlog.txt' % (
                 self.package_build.id),
             log_url)
@@ -104,7 +104,7 @@ class TestPackageBuildMixin(TestCaseWithFactory):
         self.package_build.storeUploadLog("Some content")
         log_url = self.package_build.upload_log_url
         self.assertEqual(
-            'http://launchpad.dev/~joe/+archive/ubuntu/ppa/'
+            'http://launchpad.test/~joe/+archive/ubuntu/ppa/'
             '+recipebuild/%d/+files/upload_%d_log.txt' % (
                 self.package_build.id, self.package_build.id),
             log_url)

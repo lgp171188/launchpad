@@ -1300,17 +1300,12 @@ class TestCodeImportJobMacaroonIssuer(MacaroonTestMixin, TestCaseWithFactory):
         job = self.makeJob()
         issuer = getUtility(IMacaroonIssuer, "code-import-job")
         macaroon = removeSecurityProxy(issuer).issueMacaroon(job)
-        self.assertEqual("launchpad.dev", macaroon.location)
+        self.assertEqual("launchpad.test", macaroon.location)
         self.assertEqual("code-import-job", macaroon.identifier)
         self.assertThat(macaroon.caveats, MatchesListwise([
             MatchesStructure.byEquality(
                 caveat_id="lp.code-import-job %s" % job.id),
             ]))
-
-    def test_issueMacaroon_good_old_config(self):
-        self.pushConfig("launchpad", internal_macaroon_secret_key="")
-        self.pushConfig("codeimport", macaroon_secret_key="some-secret")
-        self.test_issueMacaroon_good()
 
     def test_issueMacaroon_not_via_authserver(self):
         job = self.makeJob()

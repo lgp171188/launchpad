@@ -7,7 +7,7 @@ comments, external references, details of places in which this bug needs
 to be fixed, and so forth.
 
     >>> anon_browser.open(
-    ...     "http://launchpad.dev/debian/+source/mozilla-firefox/+bug/2")
+    ...     "http://launchpad.test/debian/+source/mozilla-firefox/+bug/2")
     >>> anon_browser.title
     '...Blackhole Trash folder...'
 
@@ -16,20 +16,20 @@ The breadcrumbs and other navigation include a link to the bug itself.
     >>> print_location(anon_browser.contents)
     Hierarchy: Debian > mozilla-firefox package
     Tabs:
-    * Overview - http://launchpad.dev/debian/+source/mozilla-firefox
-    * Code - http://code.launchpad.dev/debian/+source/mozilla-firefox
+    * Overview - http://launchpad.test/debian/+source/mozilla-firefox
+    * Code - http://code.launchpad.test/debian/+source/mozilla-firefox
     * Bugs (selected) -
-      http://bugs.launchpad.dev/debian/+source/mozilla-firefox
+      http://bugs.launchpad.test/debian/+source/mozilla-firefox
     * Blueprints - not linked
-    * Translations - http://translations.launchpad.dev/debian/+source/mozilla-firefox
-    * Answers - http://answers.launchpad.dev/debian/+source/mozilla-firefox
+    * Translations - http://translations.launchpad.test/debian/+source/mozilla-firefox
+    * Answers - http://answers.launchpad.test/debian/+source/mozilla-firefox
     Main heading: Blackhole Trash folder
 
 The page features a table of places where people have asked for the bug
 to be fixed. The row for the current context (and not any other row) is
 highlighted.
 
-    >>> anon_browser.open('http://launchpad.dev/firefox/+bug/1')
+    >>> anon_browser.open('http://launchpad.test/firefox/+bug/1')
     >>> print(anon_browser.contents)
     <!DOCTYPE...
     ...
@@ -46,7 +46,7 @@ highlighted.
     1
 
     >>> anon_browser.open(
-    ...     'http://launchpad.dev/debian/+source/mozilla-firefox/+bug/1')
+    ...     'http://launchpad.test/debian/+source/mozilla-firefox/+bug/1')
     >>> print(anon_browser.contents)
     <!DOCTYPE...
     ...
@@ -79,7 +79,7 @@ If you are logged in, each "Affects" row contains a form for editing the
 status in that context. The forms are hidden initially using CSS.
 
     >>> user_browser.open(
-    ...     "http://launchpad.dev/debian/+source/mozilla-firefox/+bug/2")
+    ...     "http://launchpad.test/debian/+source/mozilla-firefox/+bug/2")
     >>> print(user_browser.contents)
     <!DOCTYPE...
     ...
@@ -99,7 +99,7 @@ Alongside the form is a table displaying details about the context,
 including the latest release if it is a distribution package.
 
     >>> user_browser.open(
-    ...     "http://launchpad.dev/ubuntu/+source/mozilla-firefox/+bug/1")
+    ...     "http://launchpad.test/ubuntu/+source/mozilla-firefox/+bug/1")
     >>> print(extract_text(find_tag_by_id(user_browser.contents, 'task17')))
     Affecting: mozilla-firefox (Ubuntu)
     Filed here by: Foo Bar
@@ -109,20 +109,20 @@ including the latest release if it is a distribution package.
 
 The bug page includes a link to report another bug.
 
-    >>> user_browser.open('http://bugs.launchpad.dev/firefox/+bug/1')
+    >>> user_browser.open('http://bugs.launchpad.test/firefox/+bug/1')
     >>> print(user_browser.getLink('Report a bug').url)
-    http://bugs.launchpad.dev/firefox/+filebug
+    http://bugs.launchpad.test/firefox/+filebug
 
     >>> user_browser.open(
-    ...     'http://launchpad.dev/ubuntu/+source/mozilla-firefox/+bug/1')
+    ...     'http://launchpad.test/ubuntu/+source/mozilla-firefox/+bug/1')
     >>> print(user_browser.getLink('Report a bug').url)
-    http://launchpad.dev/ubuntu/+source/mozilla-firefox/+filebug
+    http://launchpad.test/ubuntu/+source/mozilla-firefox/+filebug
 
 There's also a link on the page that will take the user to the "Add
 attachment or patch" page, for use when JavaScript isn't available.
 
     >>> print(user_browser.getLink('Add attachment or patch').url)
-    http://bugs.launchpad.dev/ubuntu/+source/.../+bug/1/+addcomment
+    http://bugs.launchpad.test/ubuntu/+source/.../+bug/1/+addcomment
 
 
 Navigating to a bug in the wrong context
@@ -131,9 +131,9 @@ Navigating to a bug in the wrong context
 If we navigate to a bug in a context in which it doesn't exist, we are
 redirected to the default context.
 
-    >>> browser.open('http://bugs.launchpad.dev/jokosher/+bug/10')
+    >>> browser.open('http://bugs.launchpad.test/jokosher/+bug/10')
     >>> print(browser.url)
-    http://bugs.launchpad.dev/ubuntu/+source/linux-source-2.6.15/+bug/10
+    http://bugs.launchpad.test/ubuntu/+source/linux-source-2.6.15/+bug/10
 
 
 Bugs with many tasks

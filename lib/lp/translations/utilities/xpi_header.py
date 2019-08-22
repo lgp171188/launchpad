@@ -1,4 +1,4 @@
-# Copyright 2009 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -7,13 +7,10 @@ __all__ = [
     'XpiHeader',
     ]
 
-try:
-    import xml.etree.cElementTree as cElementTree
-except ImportError:
-    import cElementTree
 from email.utils import parseaddr
 from StringIO import StringIO
 
+import defusedxml.cElementTree as cElementTree
 from zope.interface import implementer
 
 from lp.translations.interfaces.translationcommonformat import (
@@ -68,7 +65,8 @@ class XpiHeader:
         # Both cElementTree and elementtree fail when trying to parse
         # proper unicode strings.  Use our raw input instead.
         try:
-            parse = cElementTree.iterparse(StringIO(self._raw_content))
+            parse = cElementTree.iterparse(
+                StringIO(self._raw_content), forbid_dtd=True)
             for event, elem in parse:
                 if elem.tag == contributor_tag:
                     # An XPI header can list multiple contributors, but

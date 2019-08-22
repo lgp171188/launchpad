@@ -3359,10 +3359,10 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
             repository_url = api_url(repository_db)
         repository = webservice.get(repository_url).jsonBody()
         self.assertEqual(
-            "https://git.launchpad.dev/~person/project/+git/repository",
+            "https://git.launchpad.test/~person/project/+git/repository",
             repository["git_https_url"])
         self.assertEqual(
-            "git+ssh://git.launchpad.dev/~person/project/+git/repository",
+            "git+ssh://git.launchpad.test/~person/project/+git/repository",
             repository["git_ssh_url"])
 
     def assertGetRepositoriesWorks(self, target_db):

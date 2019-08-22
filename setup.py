@@ -153,6 +153,7 @@ setup(
         'celery',
         'cssselect',
         'cssutils',
+        'defusedxml',
         'dkimpy',
         # Required for dkimpy
         'dnspython',
@@ -160,9 +161,11 @@ setup(
         'feedparser',
         'feedvalidator',
         'fixtures',
+        'geoip2',
         'gunicorn[gthread]',
         'html5browser',
         'importlib-resources',
+        'ipaddress',
         'ipython',
         'jsautobuild',
         'launchpad-buildd',
@@ -308,6 +311,7 @@ setup(
             'test = lp.scripts.utilities.test:main',
             'tracereport = zc.zservertracelog.tracereport:main',
             'twistd = twisted.scripts.twistd:run',
+            'version-info = lp.scripts.utilities.versioninfo:main',
             'watch_jsbuild = lp.scripts.utilities.js.watchjsbuild:main',
             'with-xvfb = lp.scripts.utilities.withxvfb:main',
         ]

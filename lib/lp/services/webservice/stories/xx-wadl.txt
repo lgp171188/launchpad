@@ -76,7 +76,7 @@ The WADL we received is keyed to the 'devel' version of the web
 service. The URL to this version's service root will always be
 present.
 
-    >>> 'http://api.launchpad.dev/devel/' in wadl
+    >>> 'http://api.launchpad.test/devel/' in wadl
     True
 
 If we retrieve the WADL for the '1.0' version of the web service,
@@ -86,7 +86,7 @@ we'll get a document keyed to the '1.0' version.
     ...     '/', 'application/vd.sun.wadl+xml', api_version='1.0').body
     >>> wadl_10 = wadl_10.decode('UTF-8')
 
-    >>> 'http://api.launchpad.dev/1.0/' in wadl_10
+    >>> 'http://api.launchpad.test/1.0/' in wadl_10
     True
 
 All of these documents were cached as they were generated:

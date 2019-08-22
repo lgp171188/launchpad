@@ -1,6 +1,6 @@
 Just make sure this page contains the right links:
 
-    >>> user_browser.open("http://launchpad.dev/projects/")
+    >>> user_browser.open("http://launchpad.test/projects/")
 
 This link was removed.
 
@@ -12,4 +12,4 @@ This link was removed.
 The "Show all projects" link is still there.
 
     >>> user_browser.getLink("Show all projects").url
-    'http://launchpad.dev/projects/+all'
+    'http://launchpad.test/projects/+all'

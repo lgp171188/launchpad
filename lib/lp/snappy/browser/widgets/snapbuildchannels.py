@@ -1,4 +1,4 @@
-# Copyright 2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2018-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """A widget for selecting source snap channels for builds."""
@@ -36,7 +36,7 @@ class SnapBuildChannelsWidget(BrowserWidget, InputWidget):
 
     template = ViewPageTemplateFile("templates/snapbuildchannels.pt")
     hint = False
-    snap_names = ["core", "snapcraft"]
+    snap_names = ["core", "core18", "snapcraft"]
     _widgets_set_up = False
 
     def __init__(self, context, request):
@@ -77,8 +77,9 @@ class SnapBuildChannelsWidget(BrowserWidget, InputWidget):
         self.setUpSubWidgets()
         if not zope_isinstance(value, dict):
             value = {}
-        self.core_widget.setRenderedValue(value.get("core"))
-        self.snapcraft_widget.setRenderedValue(value.get("snapcraft"))
+        for snap_name in self.snap_names:
+            getattr(self, "%s_widget" % snap_name).setRenderedValue(
+                value.get(snap_name))
 
     def hasInput(self):
         """See `IInputWidget`."""

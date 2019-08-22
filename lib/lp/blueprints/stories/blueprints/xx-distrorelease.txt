@@ -8,10 +8,10 @@ First we try to access the addspec page.
 
   >>> user_browser = browser
   >>> user_browser.addHeader('Authorization', 'Basic test@canonical.com:test')
-  >>> url = 'http://blueprints.launchpad.dev/ubuntu/+addspec'
+  >>> url = 'http://blueprints.launchpad.test/ubuntu/+addspec'
   >>> user_browser.open(url)
   >>> user_browser.url
-  'http://blueprints.launchpad.dev/ubuntu/+addspec'
+  'http://blueprints.launchpad.test/ubuntu/+addspec'
 
 Then we try to add a specification to that distro
 
@@ -29,35 +29,35 @@ Then we try to add a specification to that distro
 We're redirected to the Specification page
 
   >>> user_browser.url
-  'http://blueprints.launchpad.dev/ubuntu/+spec/testspec'
+  'http://blueprints.launchpad.test/ubuntu/+spec/testspec'
 
 Now we try to open the +setdistroseries page, where there is a form to
 target the newly created spec to a distribution.
 
 
-  >>> url = 'http://blueprints.launchpad.dev/ubuntu/+spec/testspec/+setdistroseries'
+  >>> url = 'http://blueprints.launchpad.test/ubuntu/+spec/testspec/+setdistroseries'
   >>> user_browser.open(url)
   >>> user_browser.url
-  'http://blueprints.launchpad.dev/ubuntu/+spec/testspec/+setdistroseries'
+  'http://blueprints.launchpad.test/ubuntu/+spec/testspec/+setdistroseries'
 
 The page contains a link back to the blueprint, in case you change your mind.
 
     >>> back_link = browser.getLink('Test Specification')
     >>> back_link.url
-    'http://blueprints.launchpad.dev/ubuntu/+spec/testspec'
+    'http://blueprints.launchpad.test/ubuntu/+spec/testspec'
     >>> browser.getLink('Cancel').url
-    'http://blueprints.launchpad.dev/ubuntu/+spec/testspec'
+    'http://blueprints.launchpad.test/ubuntu/+spec/testspec'
 
 We are able to target a specification to a distroseries. We expect to be
 redirected back to the spec page when we are done.
 
-  >>> user_browser.open('http://blueprints.launchpad.dev/ubuntu/+spec/media-integrity-check/+setdistroseries')
+  >>> user_browser.open('http://blueprints.launchpad.test/ubuntu/+spec/media-integrity-check/+setdistroseries')
   >>> user_browser.url
-  'http://blueprints.launchpad.dev/ubuntu/+spec/media-integrity-check/+setdistroseries'
+  'http://blueprints.launchpad.test/ubuntu/+spec/media-integrity-check/+setdistroseries'
   >>> user_browser.getControl('Goal').value = ['5']
   >>> user_browser.getControl('Continue').click()
   >>> user_browser.url
-  'http://blueprints.launchpad.dev/ubuntu/+spec/media-integrity-check'
+  'http://blueprints.launchpad.test/ubuntu/+spec/media-integrity-check'
  
 
 After the POST we should see the goal on the specification page, as
@@ -82,19 +82,19 @@ first be approved.
 
 However, we can expect to find it on the approvals page.
 
-  >>> user_browser.open('http://blueprints.launchpad.dev/ubuntu/grumpy/+specs')
+  >>> user_browser.open('http://blueprints.launchpad.test/ubuntu/grumpy/+specs')
   >>> "CD Media Integrity Check" in user_browser.contents
   False
 
 We will accept it:
 
-  >>> admin_browser.open('http://blueprints.launchpad.dev/ubuntu/grumpy/+setgoals')
+  >>> admin_browser.open('http://blueprints.launchpad.test/ubuntu/grumpy/+setgoals')
   >>> 'CD Media Integrity' in admin_browser.contents
   True
   >>> admin_browser.getControl('CD Media Integrity Check').selected = True
   >>> admin_browser.getControl('Accept').click()
   >>> admin_browser.url
-  'http://blueprints.launchpad.dev/ubuntu/grumpy'
+  'http://blueprints.launchpad.test/ubuntu/grumpy'
   >>> 'Accepted 1 specification(s)' in admin_browser.contents
   True
 

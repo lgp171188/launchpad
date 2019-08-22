@@ -255,15 +255,15 @@ class ZopeUtilityFixture(Fixture):
 class Urllib2Fixture(Fixture):
     """Let tests use urllib to connect to an in-process Launchpad.
 
-    Initially this only supports connecting to launchpad.dev because
+    Initially this only supports connecting to launchpad.test because
     that is all that is needed.  Later work could connect all
-    sub-hosts (e.g. bugs.launchpad.dev)."""
+    sub-hosts (e.g. bugs.launchpad.test)."""
 
     def _setUp(self):
         # Work around circular import.
         from lp.testing.layers import wsgi_application
-        add_wsgi_intercept('launchpad.dev', 80, lambda: wsgi_application)
-        self.addCleanup(remove_wsgi_intercept, 'launchpad.dev', 80)
+        add_wsgi_intercept('launchpad.test', 80, lambda: wsgi_application)
+        self.addCleanup(remove_wsgi_intercept, 'launchpad.test', 80)
         install_opener()
         self.addCleanup(uninstall_opener)
 

@@ -29,6 +29,7 @@ from zope.formlib.widget import CustomWidgetFactory
 from zope.interface import Interface
 from zope.schema import (
     Choice,
+    Dict,
     List,
     TextLine,
     )
@@ -56,7 +57,6 @@ from lp.code.interfaces.gitref import IGitRef
 from lp.registry.enums import VCSType
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.services.features import getFeatureFlag
-from lp.services.helpers import english_list
 from lp.services.propertycache import cachedproperty
 from lp.services.scripts import log
 from lp.services.utils import seconds_since_epoch
@@ -91,7 +91,6 @@ from lp.snappy.interfaces.snap import (
     MissingSnapcraftYaml,
     NoSuchSnap,
     SNAP_PRIVATE_FEATURE_FLAG,
-    SnapBuildAlreadyPending,
     SnapPrivateFeatureDisabled,
     )
 from lp.snappy.interfaces.snapbuild import ISnapBuildSet
@@ -255,20 +254,6 @@ def builds_and_requests_for_snap(snap):
     return items
 
 
-def new_builds_notification_text(builds, already_pending=None):
-    nr_builds = len(builds)
-    if not nr_builds:
-        builds_text = "All requested builds are already queued."
-    elif nr_builds == 1:
-        builds_text = "1 new build has been queued."
-    else:
-        builds_text = "%d new builds have been queued." % nr_builds
-    if nr_builds and already_pending:
-        return structured("<p>%s</p><p>%s</p>", builds_text, already_pending)
-    else:
-        return builds_text
-
-
 class SnapRequestBuildsView(LaunchpadFormView):
     """A view for requesting builds of a snap package."""
 
@@ -294,10 +279,14 @@ class SnapRequestBuildsView(LaunchpadFormView):
             description=(
                 u'The package stream within the source distribution series '
                 u'to use when building the snap package.'))
+        channels = Dict(
+            title=u'Source snap channels', key_type=TextLine(), required=True,
+            description=ISnap['auto_build_channels'].description)
 
     custom_widget_archive = SnapArchiveWidget
     custom_widget_distro_arch_series = LabeledMultiCheckBoxWidget
     custom_widget_pocket = LaunchpadDropdownWidget
+    custom_widget_channels = SnapBuildChannelsWidget
 
     help_links = {
         "pocket": u"/+help-snappy/snap-build-pocket.html",
@@ -320,45 +309,21 @@ class SnapRequestBuildsView(LaunchpadFormView):
                 else self.context.distro_series.main_archive),
             'distro_arch_series': [],
             'pocket': PackagePublishingPocket.UPDATES,
+            'channels': self.context.auto_build_channels,
             }
-
-    def requestBuild(self, data):
-        """User action for requesting a number of builds.
-
-        We raise exceptions for most errors, but if there's already a
-        pending build for a particular architecture, we simply record that
-        so that other builds can be queued and a message displayed to the
-        caller.
-        """
-        informational = {}
-        builds = []
-        already_pending = []
-        for arch in data['distro_arch_series']:
-            try:
-                build = self.context.requestBuild(
-                    self.user, data['archive'], arch, data['pocket'])
-                builds.append(build)
-            except SnapBuildAlreadyPending:
-                already_pending.append(arch)
-        if already_pending:
-            informational['already_pending'] = (
-                "An identical build is already pending for %s." %
-                english_list(arch.architecturetag for arch in already_pending))
-        return builds, informational
 
     @action('Request builds', name='request')
     def request_action(self, action, data):
         if data.get('distro_arch_series', []):
-            builds, informational = self.requestBuild(data)
-            already_pending = informational.get('already_pending')
-            notification_text = new_builds_notification_text(
-                builds, already_pending)
-            self.request.response.addNotification(notification_text)
+            architectures = [
+                arch.architecturetag for arch in data['distro_arch_series']]
         else:
-            self.context.requestBuilds(
-                self.user, data['archive'], data['pocket'])
-            self.request.response.addNotification(
-                _('Builds will be dispatched soon.'))
+            architectures = None
+        self.context.requestBuilds(
+            self.user, data['archive'], data['pocket'],
+            architectures=architectures, channels=data['channels'])
+        self.request.response.addNotification(
+            _('Builds will be dispatched soon.'))
         self.next_url = self.cancel_url
 
 

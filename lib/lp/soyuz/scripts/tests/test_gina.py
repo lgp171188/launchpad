@@ -399,7 +399,7 @@ class TestSourcePackageHandler(TestCaseWithFactory):
         sp_data.date_uploaded = UTC_NOW
         # We don't need a real .dsc here.
         write_file(
-            os.path.join(archive_root, "pool/main/f/foo/foo_1.0-1.dsc"), "x")
+            os.path.join(archive_root, "pool/main/f/foo/foo_1.0-1.dsc"), b"x")
         spr = sphandler.createSourcePackageRelease(sp_data, series)
         self.assertIsNotNone(spr)
         self.assertEqual(
@@ -490,7 +490,7 @@ class TestBinaryPackageHandler(TestCaseWithFactory):
         # We don't need a real .deb here.
         write_file(
             os.path.join(archive_root, "pool/main/f/foo/foo_1.0-1_amd64.deb"),
-            "x")
+            b"x")
         bpr = bphandler.createBinaryPackage(bp_data, spr, das, "amd64")
         self.assertIsNotNone(bpr)
         self.assertEqual([["Python-Version", "2.7"]], bpr.user_defined_fields)

@@ -70,4 +70,4 @@ It has a link to +topcontributors page.
     >>> css_class = {'class': 'menu-link-top_contributors sprite info'}
     >>> link = content.find('a', css_class)
     >>> print link['href']
-    http://launchpad.dev/evolution/+topcontributors
+    http://launchpad.test/evolution/+topcontributors

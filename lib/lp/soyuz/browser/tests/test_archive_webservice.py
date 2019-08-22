@@ -1,4 +1,4 @@
-# Copyright 2010-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 from __future__ import absolute_import, print_function, unicode_literals
@@ -14,7 +14,10 @@ from lazr.restfulclient.errors import (
     Unauthorized as LRUnauthorized,
     )
 from testtools import ExpectedException
-from testtools.matchers import MatchesStructure
+from testtools.matchers import (
+    Equals,
+    MatchesStructure,
+    )
 import transaction
 from zope.component import getUtility
 
@@ -544,6 +547,34 @@ class TestgetPublishedBinaries(WebServiceTestCase):
 
         recorder1, recorder2 = record_two_runs(get_binaries, create_bpph, 1)
         self.assertThat(recorder2, HasQueryCount.byEquality(recorder1))
+
+    def test_getPublishedBinaries_query_count_private_archive(self):
+        # getPublishedBinaries has a query count (almost) constant in the
+        # number of packages returned, even for private archives.
+        archive = self.factory.makeArchive(private=True)
+        uploader = self.factory.makePerson()
+        with person_logged_in(archive.owner):
+            archive.newComponentUploader(uploader, archive.default_component)
+        archive_url = api_url(archive)
+        ws = webservice_for_person(
+            uploader, permission=OAuthPermission.READ_PRIVATE)
+
+        def create_bpph():
+            with admin_logged_in():
+                self.factory.makeBinaryPackagePublishingHistory(
+                    archive=archive)
+
+        def get_binaries():
+            ws.named_get(archive_url, 'getPublishedBinaries').jsonBody()
+
+        recorder1, recorder2 = record_two_runs(get_binaries, create_bpph, 1)
+        # XXX cjwatson 2019-07-01: There are still some O(n) queries from
+        # security adapters (e.g. ViewSourcePackageRelease) that are
+        # currently hard to avoid.  To fix this properly, I think we somehow
+        # need to arrange for AuthorizationBase.forwardCheckAuthenticated to
+        # be able to use iter_authorization's cache.
+        self.assertThat(
+            recorder2, HasQueryCount(Equals(recorder1.count + 3), recorder1))
 
 
 class TestremoveCopyNotification(WebServiceTestCase):

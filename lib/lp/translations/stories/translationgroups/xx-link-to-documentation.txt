@@ -5,7 +5,7 @@ Currently, the translation group responsible for the Spanish translations of
 evolution do not have such a link.
 
     >>> anon_browser.open(
-    ...     'http://translations.launchpad.dev/evolution/trunk/'
+    ...     'http://translations.launchpad.test/evolution/trunk/'
     ...     '+pots/evolution-2.2/es/+translate')
     >>> print(first_tag_by_class(anon_browser.contents, 'style_guide_url'))
     None
@@ -15,7 +15,7 @@ translators.
 
     >>> carlos_browser = setupBrowser(auth='Basic carlos@canonical.com:test')
     >>> carlos_browser.open(
-    ...     'http://translations.launchpad.dev/'
+    ...     'http://translations.launchpad.test/'
     ...     '+groups/testing-translation-team/es/+admin')
     >>> print(carlos_browser.title)
     Just a testing team...
@@ -26,7 +26,7 @@ This way he can also set the documentation URL.
     ...     'http://www.ubuntu.com/')
     >>> carlos_browser.getControl('Change').click()
     >>> print(carlos_browser.url)
-    http://translations.launchpad.dev/+groups/testing-translation-team
+    http://translations.launchpad.test/+groups/testing-translation-team
 
 The link now appears in the table next to the name of the team.
 
@@ -41,7 +41,7 @@ The link now appears in the table next to the name of the team.
 Back on the translations page, the link is now present, too.
 
     >>> anon_browser.open(
-    ...     'http://translations.launchpad.dev/evolution/trunk/'
+    ...     'http://translations.launchpad.test/evolution/trunk/'
     ...     '+pots/evolution-2.2/es/+translate')
     >>> style_guide_url = first_tag_by_class(
     ...     anon_browser.contents, 'style-guide-url')
@@ -53,13 +53,13 @@ Back on the translations page, the link is now present, too.
 Carlos appoints Sample Person as a translator for Esperanto.
 
     >>> carlos_browser.open(
-    ...     'http://translations.launchpad.dev/'
+    ...     'http://translations.launchpad.test/'
     ...     '+groups/testing-translation-team/+appoint')
     >>> carlos_browser.getControl('Language').value = ['eo']
     >>> carlos_browser.getControl('Translator').value = 'name12'
     >>> carlos_browser.getControl('Appoint').click()
     >>> print(carlos_browser.url)
-    http://translations.launchpad.dev/+groups/testing-translation-team
+    http://translations.launchpad.test/+groups/testing-translation-team
 
 Sample Person can not administer their ITranslator record but they can edit
 the documentation url through the edit view.
@@ -68,13 +68,13 @@ the documentation url through the edit view.
     >>> from zope.security.interfaces import Unauthorized
     >>> try:
     ...     test_browser.open(
-    ...         'http://translations.launchpad.dev/'
+    ...         'http://translations.launchpad.test/'
     ...         '+groups/testing-translation-team/eo/+admin')
     ... except Unauthorized as e:
     ...     print(e)
     (...'launchpad.Admin')
     >>> test_browser.open(
-    ...     'http://translations.launchpad.dev/'
+    ...     'http://translations.launchpad.test/'
     ...     '+groups/testing-translation-team/eo/+edit')
     >>> print(test_browser.title)
     Set Esperanto guidelines...
@@ -83,7 +83,7 @@ the documentation url through the edit view.
     ...     'http://www.launchpad.net/')
     >>> test_browser.getControl('Set guidelines').click()
     >>> print(test_browser.url)
-    http://translations.launchpad.dev/~name12
+    http://translations.launchpad.test/~name12
     >>> translator_listing = find_tag_by_id(
     ...     test_browser.contents, 'translation-group-memberships')
     >>> print(extract_text(translator_listing))
@@ -102,20 +102,20 @@ Notification display
 You can see on Spanish Evolution translation page how are translation
 instructions displayed.
 
-    >>> evolution_spanish_url = ('http://translations.launchpad.dev/'
+    >>> evolution_spanish_url = ('http://translations.launchpad.test/'
     ...     'evolution/trunk/+pots/evolution-2.2/es/+translate')
 
     # We've already confirmed setting URLs works: define methods
     # to change them more easily.
     >>> def set_group_url(browser, url):
-    ...     group_edit_url = ("http://translations.launchpad.dev/"
+    ...     group_edit_url = ("http://translations.launchpad.test/"
     ...         "+groups/testing-translation-team/+edit")
     ...     browser.open(group_edit_url)
     ...     browser.getControl('Translation instructions').value = url
     ...     browser.getControl('Change').click()
 
     >>> def set_team_url(browser, url):
-    ...     team_edit_url = ("http://translations.launchpad.dev/"
+    ...     team_edit_url = ("http://translations.launchpad.test/"
     ...         "+groups/testing-translation-team/es/+edit")
     ...     browser.open(team_edit_url)
     ...     browser.getControl('Translation guidelines').value = url

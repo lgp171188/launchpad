@@ -6,7 +6,7 @@ so it cannot tell that it will end up overwriting the existing cookie.
     >>> feeds_root_url = BaseLayer.appserver_root_url('feeds')
     >>> browser.open('%s/announcements.atom' % feeds_root_url)
     >>> browser.vhost
-    'http://feeds.launchpad.dev'
+    'http://feeds.launchpad.test'
     >>> browser.urlpath
     '/announcements.atom'
     >>> len(browser.cookies)
@@ -31,8 +31,8 @@ are sent to other vhosts in the same domain.
     >>> print extract_text(find_tag_by_id(browser.contents, 'logincontrol'))
     Foo Bar (name16) ...
 
-    # Open a page again so that we see the cookie for a launchpad.dev request
-    # and not a testopenid.dev request (as above).
+    # Open a page again so that we see the cookie for a launchpad.test request
+    # and not a testopenid.test request (as above).
     >>> browser.open(blueprints_root_url)
     >>> len(browser.cookies)
     1
@@ -40,26 +40,26 @@ are sent to other vhosts in the same domain.
     ['launchpad_tests']
     >>> session_cookie_name = browser.cookies.keys()[0]
     >>> browser.cookies.getinfo(session_cookie_name)['domain']
-    '.launchpad.dev'
+    '.launchpad.test'
 
 If we visit another vhost in the domain, we remain logged in.
 
     >>> root_url = BaseLayer.appserver_root_url()
     >>> browser.open(root_url)
     >>> browser.vhost
-    'http://launchpad.dev'
+    'http://launchpad.test'
     >>> browser.urlpath
     '/'
     >>> print extract_text(find_tag_by_id(browser.contents, 'logincontrol'))
     Foo Bar (name16) ...
     >>> browser.cookies.getinfo(session_cookie_name)['domain']
-    '.launchpad.dev'
+    '.launchpad.test'
 
 Even if the browser passes in a cookie, the feeds vhost should not set one.
 
     >>> browser.open('%s/announcements.atom' % feeds_root_url)
     >>> browser.vhost
-    'http://feeds.launchpad.dev'
+    'http://feeds.launchpad.test'
     >>> browser.urlpath
     '/announcements.atom'
     >>> print browser.headers.get('Set-Cookie')

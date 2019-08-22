@@ -382,7 +382,7 @@ error if a duplicate name is used.
     >>> print view.errors_in_action
     False
     >>> print view.next_url
-    http://launchpad.dev/chevy/corvair
+    http://launchpad.test/chevy/corvair
     >>> for notification in view.request.response.notifications:
     ...     print notification.message
 

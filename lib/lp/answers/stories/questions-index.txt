@@ -16,7 +16,7 @@ First, we need to set some values for the later tests.
     >>> logout()
     >>> transaction.commit()
 
-    >>> anon_browser.open('http://answers.launchpad.dev/')
+    >>> anon_browser.open('http://answers.launchpad.test/')
     >>> print(anon_browser.title)
     Launchpad Answers
 
@@ -71,7 +71,7 @@ Add some recent questions so that this listing contains something.
     ...    ('firefox', 1)])
     >>> logout()
 
-    >>> anon_browser.open('http://answers.launchpad.dev/')
+    >>> anon_browser.open('http://answers.launchpad.test/')
     >>> print(extract_text(find_tag_by_id(
     ...     anon_browser.contents, 'most-active-projects')))
     Most active projects
@@ -83,6 +83,6 @@ Answers front page:
 
     >>> anon_browser.getLink('Ubuntu').click()
     >>> print(anon_browser.url)
-    http://answers.launchpad.dev/ubuntu
+    http://answers.launchpad.test/ubuntu
     >>> print(anon_browser.title)
     Questions : Ubuntu
