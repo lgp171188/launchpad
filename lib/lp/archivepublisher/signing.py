@@ -82,6 +82,29 @@ class SigningUpload(CustomUpload):
         self.package, self.version, self.arch = self.parsePath(
             tarfile_path)
 
+    def getSeriesPath(self, signingroot, key_name, archive, autokey):
+        # If there are no series, use the one at the root of the filesystem
+        if not archive.distribution.series:
+            return os.path.join(signingroot, key_name)
+        # If we are creating the key, we don't care if it exists
+        if autokey:
+            return os.path.join(
+                signingroot,
+                archive.distribution.series[0].name,
+                key_name,
+                )
+        # Walk the series backwards, looking for a key
+        for series in archive.distribution.series:
+            path = os.path.join(
+                signingroot,
+                series.name,
+                key_name
+            )
+            if os.path.exists(path):
+                return path
+        # If we have exhausted all available series, return the root
+        return os.path.join(signingroot, key_name)
+
     def setTargetDirectory(self, archive, tarfile_path, suite):
         self.archive = archive
         pubconf = getPubConfig(archive)
@@ -101,8 +124,20 @@ class SigningUpload(CustomUpload):
             self.fit_cert = None
             self.autokey = False
         else:
-            self.uefi_key = os.path.join(pubconf.signingroot, "uefi.key")
-            self.uefi_cert = os.path.join(pubconf.signingroot, "uefi.crt")
+            # Per series uefi signing keys. This can be walked backwards
+            # in the series list if it doesn't exist in the current series
+            self.uefi_key = self.getSeriesPath(
+                pubconf.signingroot,
+                "uefi.key",
+                archive,
+                pubconf.signingautokey
+                )
+            self.uefi_cert = self.getSeriesPath(
+                pubconf.signingroot,
+                "uefi.crt",
+                archive,
+                pubconf.signingautokey
+                )
             self.kmod_pem = os.path.join(pubconf.signingroot, "kmod.pem")
             self.kmod_x509 = os.path.join(pubconf.signingroot, "kmod.x509")
             self.opal_pem = os.path.join(pubconf.signingroot, "opal.pem")
