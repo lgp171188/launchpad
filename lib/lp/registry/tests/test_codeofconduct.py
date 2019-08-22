@@ -24,6 +24,7 @@ from lp.services.config import config
 from lp.services.gpg.handler import PymeSignature
 from lp.services.gpg.interfaces import (
     GPGKeyExpired,
+    GPGKeyNotFoundError,
     GPGVerificationError,
     IGPGHandler,
     )
@@ -52,6 +53,15 @@ class FakeGPGHandlerExpired:
 
     def getVerifiedSignature(self, content, signature=None):
         raise GPGKeyExpired(self.key)
+
+
+class FakeGPGHandlerNotFound:
+
+    def __init__(self, fingerprint):
+        self.fingerprint = fingerprint
+
+    def getVerifiedSignature(self, content, signature=None):
+        raise GPGKeyNotFoundError(self.fingerprint)
 
 
 class FakeGPGHandlerGood:
@@ -83,6 +93,16 @@ class TestSignedCodeOfConductSet(TestCaseWithFactory):
         user = self.factory.makePerson()
         self.assertEqual(
             "%s has expired" % key.fingerprint,
+            getUtility(ISignedCodeOfConductSet).verifyAndStore(
+                user, "signed data"))
+
+    def test_verifyAndStore_not_found(self):
+        fingerprint = "0" * 40
+        self.useFixture(ZopeUtilityFixture(
+            FakeGPGHandlerNotFound(fingerprint), IGPGHandler))
+        user = self.factory.makePerson()
+        self.assertEqual(
+            "No GPG key found with the given content: %s" % fingerprint,
             getUtility(ISignedCodeOfConductSet).verifyAndStore(
                 user, "signed data"))
 
