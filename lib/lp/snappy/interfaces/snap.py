@@ -1005,6 +1005,23 @@ class ISnapSet(Interface):
             this user; otherwise, only return publicly-visible packages.
         """
 
+    @operation_parameters(
+        store_name=TextLine(
+            title=_("The registered store package name to search for.")),
+        owner=Reference(IPerson, title=_("Owner"), required=False))
+    @call_with(visible_by_user=REQUEST_USER)
+    @operation_returns_collection_of(ISnap)
+    @export_read_operation()
+    @operation_for_version("devel")
+    def findByStoreName(store_name, owner=None, visible_by_user=None):
+        """Return all snap packages with the given store package name.
+
+        :param store_name: A registered store package name.
+        :param owner: Only return packages owned by this user.
+        :param visible_by_user: If not None, only return packages visible by
+            this user; otherwise, only return publicly-visible packages.
+        """
+
     def preloadDataForSnaps(snaps, user):
         """Load the data related to a list of snap packages."""
 
