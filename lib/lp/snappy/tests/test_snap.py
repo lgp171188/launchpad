@@ -2757,6 +2757,7 @@ class TestSnapWebservice(TestCaseWithFactory):
         commercial_admin = (
             getUtility(ILaunchpadCelebrities).commercial_admin.teamowner)
         logout()
+
         # Anonymous requests can only see public snaps.
         anon_webservice = LaunchpadWebServiceCaller("test", "")
         response = anon_webservice.named_get(
@@ -2766,6 +2767,7 @@ class TestSnapWebservice(TestCaseWithFactory):
         self.assertContentEqual(
             [ws_snaps[0]],
             [entry["self_link"] for entry in response.jsonBody()["entries"]])
+
         # persons[0] can see their own private snap as well, but not those
         # for other people.
         webservice = webservice_for_person(
@@ -2784,6 +2786,7 @@ class TestSnapWebservice(TestCaseWithFactory):
         self.assertContentEqual(
             [ws_snaps[2]],
             [entry["self_link"] for entry in response.jsonBody()["entries"]])
+
         # Admins can see all snaps.
         commercial_admin_webservice = webservice_for_person(
             commercial_admin, permission=OAuthPermission.READ_PRIVATE)
@@ -2822,6 +2825,7 @@ class TestSnapWebservice(TestCaseWithFactory):
         commercial_admin = (
             getUtility(ILaunchpadCelebrities).commercial_admin.teamowner)
         logout()
+
         # Anonymous requests can only see public snaps.
         anon_webservice = LaunchpadWebServiceCaller("test", "")
         response = anon_webservice.named_get(
@@ -2837,6 +2841,7 @@ class TestSnapWebservice(TestCaseWithFactory):
         self.assertContentEqual(
             [ws_snaps[0]],
             [entry["self_link"] for entry in response.jsonBody()["entries"]])
+
         # persons[0] can see both public snaps with this URL, as well as
         # their own private snap.
         webservice = webservice_for_person(
@@ -2854,6 +2859,7 @@ class TestSnapWebservice(TestCaseWithFactory):
         self.assertContentEqual(
             ws_snaps[:2],
             [entry["self_link"] for entry in response.jsonBody()["entries"]])
+
         # Admins can see all snaps with this URL.
         commercial_admin_webservice = webservice_for_person(
             commercial_admin, permission=OAuthPermission.READ_PRIVATE)
@@ -2898,6 +2904,7 @@ class TestSnapWebservice(TestCaseWithFactory):
             getUtility(ILaunchpadCelebrities).commercial_admin.teamowner)
         logout()
         prefix = "https://git.example.org/foo/"
+
         # Anonymous requests can only see public snaps.
         anon_webservice = LaunchpadWebServiceCaller("test", "")
         response = anon_webservice.named_get(
@@ -2914,6 +2921,7 @@ class TestSnapWebservice(TestCaseWithFactory):
         self.assertContentEqual(
             [ws_snaps[i] for i in (0, 4)],
             [entry["self_link"] for entry in response.jsonBody()["entries"]])
+
         # persons[0] can see all public snaps with this URL prefix, as well
         # as their own matching private snaps.
         webservice = webservice_for_person(
@@ -2932,6 +2940,7 @@ class TestSnapWebservice(TestCaseWithFactory):
         self.assertContentEqual(
             [ws_snaps[i] for i in (0, 1, 4, 5)],
             [entry["self_link"] for entry in response.jsonBody()["entries"]])
+
         # Admins can see all snaps with this URL prefix.
         commercial_admin_webservice = webservice_for_person(
             commercial_admin, permission=OAuthPermission.READ_PRIVATE)
@@ -2980,6 +2989,7 @@ class TestSnapWebservice(TestCaseWithFactory):
         logout()
         prefixes = [
             "https://git.example.org/foo/", "https://git.example.org/bar/"]
+
         # Anonymous requests can only see public snaps.
         anon_webservice = LaunchpadWebServiceCaller("test", "")
         response = anon_webservice.named_get(
@@ -2996,6 +3006,7 @@ class TestSnapWebservice(TestCaseWithFactory):
         self.assertContentEqual(
             [ws_snaps[i] for i in (0, 4, 8, 12)],
             [entry["self_link"] for entry in response.jsonBody()["entries"]])
+
         # persons[0] can see all public snaps with any of these URL
         # prefixes, as well as their own matching private snaps.
         webservice = webservice_for_person(
@@ -3014,6 +3025,7 @@ class TestSnapWebservice(TestCaseWithFactory):
         self.assertContentEqual(
             [ws_snaps[i] for i in (0, 1, 4, 5, 8, 9, 12, 13)],
             [entry["self_link"] for entry in response.jsonBody()["entries"]])
+
         # Admins can see all snaps with any of these URL prefixes.
         commercial_admin_webservice = webservice_for_person(
             commercial_admin, permission=OAuthPermission.READ_PRIVATE)
@@ -3052,6 +3064,7 @@ class TestSnapWebservice(TestCaseWithFactory):
         commercial_admin = (
             getUtility(ILaunchpadCelebrities).commercial_admin.teamowner)
         logout()
+
         # Anonymous requests can only see public snaps.
         anon_webservice = LaunchpadWebServiceCaller("test", "")
         response = anon_webservice.named_get(
@@ -3068,6 +3081,7 @@ class TestSnapWebservice(TestCaseWithFactory):
         self.assertContentEqual(
             [ws_snaps[0]],
             [entry["self_link"] for entry in response.jsonBody()["entries"]])
+
         # persons[0] can see both public snaps with this store name, as well
         # as their own private snap.
         webservice = webservice_for_person(
@@ -3086,6 +3100,7 @@ class TestSnapWebservice(TestCaseWithFactory):
         self.assertContentEqual(
             ws_snaps[:2],
             [entry["self_link"] for entry in response.jsonBody()["entries"]])
+
         # Admins can see all snaps with this store name.
         commercial_admin_webservice = webservice_for_person(
             commercial_admin, permission=OAuthPermission.READ_PRIVATE)
