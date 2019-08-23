@@ -256,6 +256,7 @@ class IGPGHandler(Interface):
 
         :raise GPGVerificationError: if the signature cannot be verified.
         :raise GPGKeyExpired: if the signature was made with an expired key.
+        :raise GPGKeyNotFoundError: if the key was not found on the keyserver.
         :return: a `PymeSignature` object.
         """
 
