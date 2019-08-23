@@ -4096,17 +4096,6 @@ class PersonSet:
                 column = row[index]
                 index += 1
                 decorator(result, column)
-            if need_icon:
-                icon = row[index]
-                index += 1
-                cache.icon = icon
-            if need_api:
-                logo = row[index]
-                index += 1
-                cache.logo = logo
-                mugshot = row[index]
-                index += 1
-                cache.mugshot = mugshot
             return result
         return DecoratedResultSet(raw_result,
             pre_iter_hook=preload_for_people,
