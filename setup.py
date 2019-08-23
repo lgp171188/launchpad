@@ -297,6 +297,8 @@ setup(
             'build-twisted-plugin-cache = '
                 'lp.services.twistedsupport.plugincache:main',
             'combine-css = lp.scripts.utilities.js.combinecss:main',
+            'generate-key-pair = '
+                'lp.services.crypto.scripts.generatekeypair:main',
             'harness = lp.scripts.harness:python',
             'iharness = lp.scripts.harness:ipython',
             'ipy = IPython.frontend.terminal.ipapp:launch_new_instance',
