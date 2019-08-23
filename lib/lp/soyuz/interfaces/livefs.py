@@ -59,6 +59,7 @@ from zope.security.interfaces import (
 
 from lp import _
 from lp.app.errors import NameLookupFailed
+from lp.app.interfaces.launchpad import IPrivacy
 from lp.app.validators.name import name_validator
 from lp.registry.interfaces.distroseries import IDistroSeries
 from lp.registry.interfaces.person import IPerson
@@ -139,7 +140,7 @@ class CannotDeleteLiveFS(Exception):
     """This live filesystem cannot be deleted."""
 
 
-class ILiveFSView(Interface):
+class ILiveFSView(IPrivacy):
     """`ILiveFS` attributes that require launchpad.View permission."""
 
     id = exported(Int(title=_("ID"), required=True, readonly=True))

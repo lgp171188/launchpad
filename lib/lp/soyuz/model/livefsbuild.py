@@ -1,4 +1,4 @@
-# Copyright 2014-2017 Canonical Ltd.  This software is licensed under the
+# Copyright 2014-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -170,6 +170,8 @@ class LiveFSBuild(PackageBuildMixin, Storm):
     def is_private(self):
         """See `IBuildFarmJob`."""
         return self.livefs.owner.private or self.archive.private
+
+    private = is_private
 
     @property
     def title(self):

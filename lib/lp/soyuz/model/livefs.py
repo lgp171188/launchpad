@@ -139,6 +139,13 @@ class LiveFS(Storm):
         self.keep_binary_files_days = keep_binary_files_days
 
     @property
+    def private(self):
+        """See `IPrivacy`."""
+        # A LiveFS has no privacy support of its own, but it is private if
+        # its owner is.
+        return self.owner.private
+
+    @property
     def keep_binary_files_days(self):
         """See `ILiveFS`."""
         # Rounding up preserves the "at least this many days" part of the

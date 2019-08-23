@@ -1,4 +1,4 @@
-# Copyright 2014-2015 Canonical Ltd.  This software is licensed under the
+# Copyright 2014-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Live filesystem build interfaces."""
@@ -30,6 +30,7 @@ from zope.schema import (
     )
 
 from lp import _
+from lp.app.interfaces.launchpad import IPrivacy
 from lp.buildmaster.interfaces.buildfarmjob import ISpecificBuildFarmJobSource
 from lp.buildmaster.interfaces.packagebuild import IPackageBuild
 from lp.registry.interfaces.person import IPerson
@@ -54,7 +55,7 @@ class ILiveFSFile(Interface):
         required=True, readonly=True)
 
 
-class ILiveFSBuildView(IPackageBuild):
+class ILiveFSBuildView(IPackageBuild, IPrivacy):
     """`ILiveFSBuild` attributes that require launchpad.View permission."""
 
     requester = exported(Reference(

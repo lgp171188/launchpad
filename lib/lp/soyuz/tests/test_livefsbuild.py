@@ -1,4 +1,4 @@
-# Copyright 2014-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2014-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test live filesystem build features."""
@@ -21,7 +21,10 @@ from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
 from lp.app.errors import NotFoundError
-from lp.app.interfaces.launchpad import ILaunchpadCelebrities
+from lp.app.interfaces.launchpad import (
+    ILaunchpadCelebrities,
+    IPrivacy,
+    )
 from lp.buildmaster.enums import BuildStatus
 from lp.buildmaster.interfaces.buildqueue import IBuildQueue
 from lp.buildmaster.interfaces.packagebuild import IPackageBuild
@@ -96,9 +99,10 @@ class TestLiveFSBuild(TestCaseWithFactory):
         self.build = self.factory.makeLiveFSBuild()
 
     def test_implements_interfaces(self):
-        # LiveFSBuild implements IPackageBuild and ILiveFSBuild.
+        # LiveFSBuild implements IPackageBuild, ILiveFSBuild, and IPrivacy.
         self.assertProvides(self.build, IPackageBuild)
         self.assertProvides(self.build, ILiveFSBuild)
+        self.assertProvides(self.build, IPrivacy)
 
     def test_queueBuild(self):
         # LiveFSBuild can create the queue entry for itself.
@@ -127,16 +131,19 @@ class TestLiveFSBuild(TestCaseWithFactory):
     def test_is_private(self):
         # A LiveFSBuild is private iff its LiveFS and archive are.
         self.assertFalse(self.build.is_private)
+        self.assertFalse(self.build.private)
         private_team = self.factory.makeTeam(
             visibility=PersonVisibility.PRIVATE)
         with person_logged_in(private_team.teamowner):
             build = self.factory.makeLiveFSBuild(
                 requester=private_team.teamowner, owner=private_team)
             self.assertTrue(build.is_private)
+            self.assertTrue(build.private)
         private_archive = self.factory.makeArchive(private=True)
         with person_logged_in(private_archive.owner):
             build = self.factory.makeLiveFSBuild(archive=private_archive)
             self.assertTrue(build.is_private)
+            self.assertTrue(build.private)
 
     def test_can_be_cancelled(self):
         # For all states that can be cancelled, can_be_cancelled returns True.
