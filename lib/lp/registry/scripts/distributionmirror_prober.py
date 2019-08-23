@@ -505,7 +505,7 @@ class ArchiveMirrorProberCallbacks(LoggingMixin):
         # there.
         arch_or_source_mirror.freshness = MirrorFreshness.UNKNOWN
         for freshness, url in freshness_url_map.items():
-            prober = ProberFactory(url)
+            prober = RedirectAwareProberFactory(url)
             deferred = request_manager.run(prober.request_host, prober.probe)
             deferred.addCallback(
                 self.setMirrorFreshness, arch_or_source_mirror, freshness,
