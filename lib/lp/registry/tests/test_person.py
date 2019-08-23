@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -13,10 +13,7 @@ from lazr.restful.utils import smartquote
 import pytz
 from storm.locals import Desc
 from storm.store import Store
-from testtools.matchers import (
-    Equals,
-    LessThan,
-    )
+from testtools.matchers import Equals
 from zope.component import getUtility
 from zope.interface import providedBy
 from zope.security.interfaces import Unauthorized
@@ -72,10 +69,11 @@ from lp.testing import (
     celebrity_logged_in,
     launchpadlib_for,
     login,
+    login_admin,
     login_person,
     logout,
     person_logged_in,
-    RequestTimelineCollector,
+    record_two_runs,
     StormStatementRecorder,
     TestCaseWithFactory,
     )
@@ -1258,33 +1256,39 @@ class TestPersonKarma(TestCaseWithFactory, KarmaTestMixin):
             ['cc', 'bb', 'aa', 'dd', 'ee'], names)
 
 
-class TestAPIPartipication(TestCaseWithFactory):
+class TestAPIParticipation(TestCaseWithFactory):
 
     layer = DatabaseFunctionalLayer
 
-    def test_participation_query_limit(self):
-        # A team with 3 members should only query once for all their
-        # attributes.
+    def test_participation_query_count(self):
+        # The query count of team.participants is constant in the number of
+        # members.
         team = self.factory.makeTeam()
-        with person_logged_in(team.teamowner):
-            team.addMember(self.factory.makePerson(), team.teamowner)
-            team.addMember(self.factory.makePerson(), team.teamowner)
-            team.addMember(self.factory.makePerson(), team.teamowner)
+        teamowner = team.teamowner
         webservice = LaunchpadWebServiceCaller()
-        collector = RequestTimelineCollector()
-        collector.register()
-        self.addCleanup(collector.unregister)
         url = "/~%s/participants" % team.name
-        logout()
-        response = webservice.get(url,
-            headers={'User-Agent': 'AnonNeedsThis'})
-        self.assertEqual(response.status, 200,
-            "Got %d for url %r with response %r" % (
-            response.status, url, response.body))
-        # XXX: This number should really be 12, but see
-        # https://bugs.launchpad.net/storm/+bug/619017 which is adding 3
-        # queries to the test.
-        self.assertThat(collector, HasQueryCount(LessThan(16)))
+
+        def make_team_member():
+            person = self.factory.makePerson()
+            person.logo = self.factory.makeLibraryFileAlias(
+                content_type='image/png', db_only=True)
+            person.mugshot = self.factory.makeLibraryFileAlias(
+                content_type='image/png', db_only=True)
+            team.addMember(person, teamowner)
+
+        def get_participants():
+            logout()
+            response = webservice.get(
+                url, headers={'User-Agent': 'AnonNeedsThis'})
+            self.assertEqual(
+                200, response.status,
+                "Got %d for url %r with response %r" % (
+                    response.status, url, response.body))
+
+        recorder1, recorder2 = record_two_runs(
+            get_participants, make_team_member, 1, 2, login_method=login_admin,
+            record_request=True)
+        self.assertThat(recorder2, HasQueryCount.byEquality(recorder1))
 
 
 class TestGetRecipients(TestCaseWithFactory):
