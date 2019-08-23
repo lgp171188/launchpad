@@ -1219,11 +1219,11 @@ class TestBinaryDomination(TestNativePublishingBase):
 
 
 class TestBinaryGetOtherPublications(TestNativePublishingBase):
-    """Test BinaryPackagePublishingHistory._getOtherPublications() works."""
+    """Test BinaryPackagePublishingHistory.getOtherPublications() works."""
 
     def checkOtherPublications(self, this, others):
         self.assertContentEqual(
-            removeSecurityProxy(this)._getOtherPublications(), others)
+            removeSecurityProxy(this).getOtherPublications(), others)
 
     def testFindsOtherArchIndepPublications(self):
         """Arch-indep publications with the same overrides should be found."""

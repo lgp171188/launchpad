@@ -726,17 +726,8 @@ class BinaryPackagePublishingHistory(SQLBase, ArchivePublisherBase):
         else:
             super(BinaryPackagePublishingHistory, self).publish(diskpool, log)
 
-    def _getOtherPublications(self):
-        """Return remaining publications with the same overrides.
-
-        Only considers binary publications in the same archive, distroseries,
-        pocket, component, section, priority and phased-update-percentage
-        context. These publications are candidates for domination if this is
-        an architecture-independent package.
-
-        The override match is critical -- it prevents a publication created
-        by new overrides from superseding itself.
-        """
+    def getOtherPublications(self):
+        """See `IBinaryPackagePublishingHistory`."""
         available_architectures = [
             das.id for das in
                 self.distroarchseries.distroseries.architectures]
@@ -810,7 +801,7 @@ class BinaryPackagePublishingHistory(SQLBase, ArchivePublisherBase):
         # If this is architecture-independent, all publications with the same
         # context and overrides should be dominated simultaneously.
         if not self.binarypackagerelease.architecturespecific:
-            for dominated in self._getOtherPublications():
+            for dominated in self.getOtherPublications():
                 if keep is None or dominated not in keep:
                     dominated.supersede(dominant, logger)
 

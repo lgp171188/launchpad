@@ -753,6 +753,18 @@ class IBinaryPackagePublishingHistoryPublic(IPublishingView):
             required=False, readonly=True),
         as_of="devel")
 
+    def getOtherPublications(self):
+        """Return remaining publications with the same overrides.
+
+        Only considers binary publications in the same archive, distroseries,
+        pocket, component, section, priority and phased-update-percentage
+        context. These publications are candidates for domination if this is
+        an architecture-independent package.
+
+        The override match is critical -- it prevents a publication created
+        by new overrides from superseding itself.
+        """
+
     def supersede(dominant=None, supersede_associated=True, logger=None):
         """Supersede this publication.
 
