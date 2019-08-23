@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Functions dealing with mails coming into Launchpad."""
@@ -26,6 +26,8 @@ from zope.interface import (
 from lp.registry.interfaces.person import IPerson
 from lp.services.features import getFeatureFlag
 from lp.services.gpg.interfaces import (
+    GPGKeyExpired,
+    GPGKeyNotFoundError,
     GPGVerificationError,
     IGPGHandler,
     )
@@ -314,7 +316,7 @@ def _gpgAuthenticateEmail(mail, principal, person,
         sig = gpghandler.getVerifiedSignature(
             canonicalise_line_endings(mail.signedContent), signature)
         log.debug("got signature %r" % sig)
-    except GPGVerificationError as e:
+    except (GPGVerificationError, GPGKeyExpired, GPGKeyNotFoundError) as e:
         # getVerifiedSignature failed to verify the signature.
         message = "Signature couldn't be verified: %s" % e
         log.debug(message)
