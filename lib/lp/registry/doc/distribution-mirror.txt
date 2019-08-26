@@ -767,6 +767,19 @@ freshness will also be 'Up to date'.
     >>> archive_mirror.getOverallFreshness().title
     'Up to date'
 
+apt has supported HTTP redirects since Ubuntu 9.04, so mirrors that redirect are treated as good:
+
+    >>> archive_mirror = mirrorset.getByName('archive-redirect-mirror')
+    >>> mirror_arch_series = (
+    ...     archive_mirror.getSummarizedMirroredArchSeries())
+
+    # We only have a few publishing records, so most of the cdimage mirrors
+    # will have Unknown as their freshness.
+    >>> for mirror_arch_series in mirror_arch_series:
+    ...     print (mirror_arch_series.distro_arch_series.displayname,
+    ...            mirror_arch_series.freshness.title)
+    (u'Ubuntu Warty i386', 'Up to date')
+
 
 Now we check the MirrorCDImageDistroSeriess of a cdimage mirror.
 
