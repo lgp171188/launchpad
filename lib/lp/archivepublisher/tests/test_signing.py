@@ -215,9 +215,13 @@ class TestSigningHelpers(TestCaseWithFactory):
             yield IArchiveSigningKey(self.archive).setSigningKey(
                 key_path, async_keyserver=True)
 
-    def setUpUefiKeys(self, create=True):
-        self.key = os.path.join(self.signing_dir, "uefi.key")
-        self.cert = os.path.join(self.signing_dir, "uefi.crt")
+    def setUpUefiKeys(self, create=True, series=None):
+        if not series:
+            self.key = os.path.join(self.signing_dir, "uefi.key")
+            self.cert = os.path.join(self.signing_dir, "uefi.crt")
+        else:
+            self.key = os.path.join(self.signing_dir, series.name, "uefi.key")
+            self.cert = os.path.join(self.signing_dir, series.name, "uefi.crt")
         if create:
             write_file(self.key, b"")
             write_file(self.cert, b"")
@@ -970,6 +974,32 @@ class TestSigning(RunPartsMixin, TestSigningHelpers):
         upload = self.process()
         self.assertEqual(1, upload.signUefi.call_count)
 
+    def test_signs_uefi_image_per_series(self):
+        """Check that signing can be per series.
+        This should fall through to the first series,
+        as the second does not have keys.
+        """
+        first_series = self.factory.makeDistroSeries(
+            self.distro,
+            name="existing-keys"
+            )
+        self.factory.makeDistroSeries(
+            self.distro,
+            name="no-keys"
+            )
+        # Each image in the tarball is signed.
+        self.setUpUefiKeys()
+        self.setUpUefiKeys(series=first_series)
+        self.openArchive("test", "1.0", "amd64")
+        self.tarfile.add_file("1.0/empty.efi", b"")
+        upload = self.process_emulate()
+        expected_callers = [('UEFI signing', 1),]
+        self.assertContentEqual(expected_callers, upload.callLog.caller_list())
+        # Check the correct series name appears in the call arguments
+        self.assertIn(
+            "existing-keys",
+            upload.callLog.extract_args()[0][1][2])
+
     def test_signs_fit_image(self):
         # Each image in the tarball is signed.
         self.setUpFitKeys()
@@ -1350,6 +1380,73 @@ class TestSigning(RunPartsMixin, TestSigningHelpers):
             "DISTRIBUTION": Equals(self.distro.name),
             "SUITE": Equals(self.suite),
             }))
+
+    def test_getSeriesKeyName_no_series(self):
+        upload = SigningUpload()
+        config = getPubConfig(self.archive)
+        result = upload.getSeriesPath(
+            config, 'key.key', self.archive)
+        expected_path = os.path.join(config.signingroot, 'key.key')
+        self.assertEqual(expected_path, result)
+
+    def test_getSeriesKeyName_autokey(self):
+        self.setUpPPA()
+        self.factory.makeDistroSeries(self.distro, name='newdistroseries')
+        upload = SigningUpload()
+        config = getPubConfig(self.archive)
+        result = upload.getSeriesPath(
+            config, "uefi.key", self.archive)
+        expected_path = os.path.join(config.signingroot, "uefi.key")
+        self.assertEqual(expected_path, result)
+
+    def test_getSeriesKeyName_one_distroseries(self):
+        self.setUpUefiKeys(
+            series=self.factory.makeDistroSeries(
+                self.distro, name="newdistroseries"))
+        upload = SigningUpload()
+        config = getPubConfig(self.archive)
+        result = upload.getSeriesPath(
+            config, "uefi.key", self.archive)
+        expected_path = os.path.join(
+            config.signingroot,
+            "newdistroseries",
+            "uefi.key",
+            )
+        self.assertEqual(expected_path, result)
+
+    def test_getSeriesKeyName_two_distroseries(self):
+        self.setUpUefiKeys(
+            series=self.factory.makeDistroSeries(
+                self.distro, name="newdistroseries"))
+        self.setUpUefiKeys(
+            series=self.factory.makeDistroSeries(
+                self.distro, name="seconddistroseries"))
+        upload = SigningUpload()
+        config = getPubConfig(self.archive)
+        result = upload.getSeriesPath(
+            config, "uefi.key", self.archive)
+        expected_path = os.path.join(
+            config.signingroot,
+            "seconddistroseries",
+            "uefi.key",
+            )
+        self.assertEqual(expected_path, result)
+
+    def test_getSeriesKeyName_two_distroseries_fallthrough(self):
+        self.setUpUefiKeys(
+            series=self.factory.makeDistroSeries(
+                self.distro, name="newdistroseries"))
+        self.factory.makeDistroSeries(self.distro, name="seconddistroseries")
+        upload = SigningUpload()
+        config = getPubConfig(self.archive)
+        result = upload.getSeriesPath(
+            config, "uefi.key", self.archive)
+        expected_path = os.path.join(
+            config.signingroot,
+            "newdistroseries",
+            "uefi.key",
+            )
+        self.assertEqual(expected_path, result)
 
 
 class TestUefi(TestSigningHelpers):
