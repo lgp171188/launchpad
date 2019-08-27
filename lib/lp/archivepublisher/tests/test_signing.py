@@ -1449,6 +1449,24 @@ class TestSigning(RunPartsMixin, TestSigningHelpers):
             )
         self.assertEqual(expected_path, result)
 
+    def test_getSeriesKeyName_correct_list(self):
+        self.setUpUefiKeys(
+            series=self.factory.makeDistroSeries(
+                self.distro, name="newdistroseries"))
+        self.setUpUefiKeys(
+            series=self.factory.makeDistroSeries(
+                self.distro, name="seconddistroseries"))
+        upload = SigningUpload()
+        config = getPubConfig(self.archive)
+        result = upload.getSeriesPath(
+            config, "uefi.key", self.archive, "newdistroseries")
+        expected_path = os.path.join(
+            config.signingroot,
+            "newdistroseries",
+            "uefi.key",
+            )
+        self.assertEqual(expected_path, result)
+
 
 class TestUefi(TestSigningHelpers):
 
