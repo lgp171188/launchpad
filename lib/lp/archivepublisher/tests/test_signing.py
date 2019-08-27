@@ -1384,16 +1384,17 @@ class TestSigning(RunPartsMixin, TestSigningHelpers):
         upload = SigningUpload()
         config = getPubConfig(self.archive)
         result = upload.getSeriesPath(
-            config.signingroot, 'key.key', self.archive, False)
+            config, 'key.key', self.archive)
         expected_path = os.path.join(config.signingroot, 'key.key')
         self.assertEqual(expected_path, result)
 
     def test_getSeriesKeyName_autokey(self):
         self.factory.makeDistroSeries(self.distro, name='newdistro')
+        self.setUpPPA()
         upload = SigningUpload()
         config = getPubConfig(self.archive)
         result = upload.getSeriesPath(
-            config.signingroot, "uefi.key", self.archive, True)
+            config, "uefi.key", self.archive)
         expected_path = os.path.join(config.signingroot, "uefi.key")
         self.assertEqual(expected_path, result)
 
@@ -1404,7 +1405,7 @@ class TestSigning(RunPartsMixin, TestSigningHelpers):
         upload = SigningUpload()
         config = getPubConfig(self.archive)
         result = upload.getSeriesPath(
-            config.signingroot, "uefi.key", self.archive, False)
+            config, "uefi.key", self.archive)
         expected_path = os.path.join(
             config.signingroot,
             "newdistro",
@@ -1422,7 +1423,7 @@ class TestSigning(RunPartsMixin, TestSigningHelpers):
         upload = SigningUpload()
         config = getPubConfig(self.archive)
         result = upload.getSeriesPath(
-            config.signingroot, "uefi.key", self.archive, False)
+            config, "uefi.key", self.archive)
         expected_path = os.path.join(
             config.signingroot,
             "seconddistro",
@@ -1437,7 +1438,7 @@ class TestSigning(RunPartsMixin, TestSigningHelpers):
         upload = SigningUpload()
         config = getPubConfig(self.archive)
         result = upload.getSeriesPath(
-            config.signingroot, "uefi.key", self.archive, False)
+            config, "uefi.key", self.archive)
         expected_path = os.path.join(
             config.signingroot,
             "newdistro",

@@ -82,22 +82,18 @@ class SigningUpload(CustomUpload):
         self.package, self.version, self.arch = self.parsePath(
             tarfile_path)
 
-    def getSeriesPath(self, signingroot, key_name, archive, autokey):
-        # If there are no series, use the one at the root of the filesystem
-        # autokeys are generally created manually, so use the root
-        if not archive.distribution.series or autokey:
-            return os.path.join(signingroot, key_name)
+    def getSeriesPath(self, pubconf, key_name, archive):
         # Walk the series backwards, looking for a key
         for series in archive.distribution.series:
             path = os.path.join(
-                signingroot,
+                pubconf.signingroot,
                 series.name,
                 key_name
                 )
             if os.path.exists(path):
                 return path
         # If we have exhausted all available series, return the root
-        return os.path.join(signingroot, key_name)
+        return os.path.join(pubconf.signingroot, key_name)
 
     def setTargetDirectory(self, archive, tarfile_path, suite):
         self.archive = archive
@@ -121,16 +117,14 @@ class SigningUpload(CustomUpload):
             # Per series uefi signing keys. This can be walked backwards
             # in the series list if it doesn't exist in the current series
             self.uefi_key = self.getSeriesPath(
-                pubconf.signingroot,
+                pubconf,
                 "uefi.key",
-                archive,
-                pubconf.signingautokey
+                archive
                 )
             self.uefi_cert = self.getSeriesPath(
-                pubconf.signingroot,
+                pubconf,
                 "uefi.crt",
-                archive,
-                pubconf.signingautokey
+                archive
                 )
             self.kmod_pem = os.path.join(pubconf.signingroot, "kmod.pem")
             self.kmod_x509 = os.path.join(pubconf.signingroot, "kmod.x509")
