@@ -979,13 +979,14 @@ class TestSigning(RunPartsMixin, TestSigningHelpers):
         This should fall through to the first series,
         as the second does not have keys.
         """
+        self.suite = "nokeys-distroseries"
         first_series = self.factory.makeDistroSeries(
             self.distro,
-            name="existing-keys"
+            name="existingkeys"
             )
         self.factory.makeDistroSeries(
             self.distro,
-            name="no-keys"
+            name="nokeys"
             )
         # Each image in the tarball is signed.
         self.setUpUefiKeys()
@@ -997,7 +998,7 @@ class TestSigning(RunPartsMixin, TestSigningHelpers):
         self.assertContentEqual(expected_callers, upload.callLog.caller_list())
         # Check the correct series name appears in the call arguments
         self.assertIn(
-            "existing-keys",
+            "existingkeys",
             upload.callLog.extract_args()[0][1][2])
 
     def test_signs_fit_image(self):
@@ -1385,7 +1386,7 @@ class TestSigning(RunPartsMixin, TestSigningHelpers):
         upload = SigningUpload()
         config = getPubConfig(self.archive)
         result = upload.getSeriesPath(
-            config, 'key.key', self.archive)
+            config, 'key.key', self.archive, 'notaseries')
         expected_path = os.path.join(config.signingroot, 'key.key')
         self.assertEqual(expected_path, result)
 
@@ -1395,7 +1396,7 @@ class TestSigning(RunPartsMixin, TestSigningHelpers):
         upload = SigningUpload()
         config = getPubConfig(self.archive)
         result = upload.getSeriesPath(
-            config, "uefi.key", self.archive)
+            config, "uefi.key", self.archive, "newdistroseries")
         expected_path = os.path.join(config.signingroot, "uefi.key")
         self.assertEqual(expected_path, result)
 
@@ -1406,7 +1407,7 @@ class TestSigning(RunPartsMixin, TestSigningHelpers):
         upload = SigningUpload()
         config = getPubConfig(self.archive)
         result = upload.getSeriesPath(
-            config, "uefi.key", self.archive)
+            config, "uefi.key", self.archive, "newdistroseries")
         expected_path = os.path.join(
             config.signingroot,
             "newdistroseries",
@@ -1424,7 +1425,7 @@ class TestSigning(RunPartsMixin, TestSigningHelpers):
         upload = SigningUpload()
         config = getPubConfig(self.archive)
         result = upload.getSeriesPath(
-            config, "uefi.key", self.archive)
+            config, "uefi.key", self.archive, "seconddistroseries")
         expected_path = os.path.join(
             config.signingroot,
             "seconddistroseries",
@@ -1440,7 +1441,7 @@ class TestSigning(RunPartsMixin, TestSigningHelpers):
         upload = SigningUpload()
         config = getPubConfig(self.archive)
         result = upload.getSeriesPath(
-            config, "uefi.key", self.archive)
+            config, "uefi.key", self.archive, "seconddistroseries")
         expected_path = os.path.join(
             config.signingroot,
             "newdistroseries",
