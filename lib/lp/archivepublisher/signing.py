@@ -83,7 +83,11 @@ class SigningUpload(CustomUpload):
             tarfile_path)
 
     def getSeriesPath(self, pubconf, key_name, archive):
-        # Walk the series backwards, looking for a key
+        """Find the key path for a given series.
+
+        Will iterate the series list until either one exists,
+        or we reach the key at the filesystem root.
+        """
         for series in archive.distribution.series:
             path = os.path.join(
                 pubconf.signingroot,
@@ -114,29 +118,27 @@ class SigningUpload(CustomUpload):
             self.fit_cert = None
             self.autokey = False
         else:
-            # Per series uefi signing keys. This can be walked backwards
-            # in the series list if it doesn't exist in the current series
-            self.uefi_key = self.getSeriesPath(
-                pubconf,
-                "uefi.key",
-                archive
-                )
-            self.uefi_cert = self.getSeriesPath(
-                pubconf,
-                "uefi.crt",
-                archive
-                )
-            self.kmod_pem = os.path.join(pubconf.signingroot, "kmod.pem")
-            self.kmod_x509 = os.path.join(pubconf.signingroot, "kmod.x509")
-            self.opal_pem = os.path.join(pubconf.signingroot, "opal.pem")
-            self.opal_x509 = os.path.join(pubconf.signingroot, "opal.x509")
-            self.sipl_pem = os.path.join(pubconf.signingroot, "sipl.pem")
-            self.sipl_x509 = os.path.join(pubconf.signingroot, "sipl.x509")
+            self.uefi_key = self.getSeriesPath(pubconf, "uefi.key", archive)
+            self.uefi_cert = self.getSeriesPath(pubconf, "uefi.crt", archive)
+            self.kmod_pem = self.getSeriesPath(pubconf, "kmod.pem", archive)
+            self.kmod_x509 = self.getSeriesPath(pubconf, "kmod.x509", archive)
+            self.opal_pem = self.getSeriesPath(pubconf, "opal.pem", archive)
+            self.opal_x509 = self.getSeriesPath(pubconf, "opal.x509", archive)
+            self.sipl_pem = self.getSeriesPath(pubconf, "sipl.pem", archive)
+            self.sipl_x509 = self.getSeriesPath(pubconf, "sipl.x509", archive)
             # Note: the signature tool allows a collection of keys and takes
             #       a directory name with all valid keys.  Avoid mixing the
             #       other signing types' keys with the fit keys.
-            self.fit_key = os.path.join(pubconf.signingroot, "fit", "fit.key")
-            self.fit_cert = os.path.join(pubconf.signingroot, "fit", "fit.crt")
+            self.fit_key = self.getSeriesPath(
+                pubconf,
+                os.path.join("fit", "fit.key"),
+                archive
+                )
+            self.fit_cert = self.getSeriesPath(
+                pubconf,
+                os.path.join("fit", "fit.crt"),
+                archive
+                )
             self.autokey = pubconf.signingautokey
 
         self.setComponents(tarfile_path)
