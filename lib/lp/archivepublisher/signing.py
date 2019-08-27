@@ -85,7 +85,7 @@ class SigningUpload(CustomUpload):
     def getSeriesPath(self, pubconf, key_name, archive):
         """Find the key path for a given series.
 
-        Will iterate the series list until either one exists,
+        Will iterate the series list backwards until either one exists,
         or we reach the key at the filesystem root.
         """
         for series in archive.distribution.series:

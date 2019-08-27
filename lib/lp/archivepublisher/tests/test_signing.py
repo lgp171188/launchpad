@@ -1390,8 +1390,8 @@ class TestSigning(RunPartsMixin, TestSigningHelpers):
         self.assertEqual(expected_path, result)
 
     def test_getSeriesKeyName_autokey(self):
-        self.factory.makeDistroSeries(self.distro, name='newdistroseries')
         self.setUpPPA()
+        self.factory.makeDistroSeries(self.distro, name='newdistroseries')
         upload = SigningUpload()
         config = getPubConfig(self.archive)
         result = upload.getSeriesPath(
