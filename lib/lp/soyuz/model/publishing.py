@@ -452,7 +452,7 @@ class SourcePackagePublishingHistory(SQLBase, ArchivePublisherBase):
         name = release.sourcepackagename.name
         return "%s %s in %s" % (name, release.version, self.distroseries.name)
 
-    def supersede(self, dominant=None, supersede_associated=True, logger=None):
+    def supersede(self, dominant=None, logger=None):
         """See `ISourcePackagePublishingHistory`."""
         assert self.status in active_publishing_status, (
             "Should not dominate unpublished source %s" %
@@ -745,7 +745,7 @@ class BinaryPackagePublishingHistory(SQLBase, ArchivePublisherBase):
                 priority=self.priority,
                 phased_update_percentage=self.phased_update_percentage)
 
-    def supersede(self, dominant=None, supersede_associated=True, logger=None):
+    def supersede(self, dominant=None, logger=None):
         """See `IBinaryPackagePublishingHistory`."""
         # At this point only PUBLISHED (ancient versions) or PENDING (
         # multiple overrides/copies) publications should be given. We
@@ -792,18 +792,6 @@ class BinaryPackagePublishingHistory(SQLBase, ArchivePublisherBase):
             [self])
         for dominated in debug:
             dominated.supersede(dominant, logger)
-
-        if supersede_associated:
-            self.supersedeAssociated(dominant, logger=logger)
-
-    def supersedeAssociated(self, dominant=None, keep=None, logger=None):
-        """See `IBinaryPackagePublishingHistory`."""
-        # If this is architecture-independent, all publications with the same
-        # context and overrides should be dominated simultaneously.
-        if not self.binarypackagerelease.architecturespecific:
-            for dominated in self.getOtherPublications():
-                if keep is None or dominated not in keep:
-                    dominated.supersede(dominant, logger)
 
     def changeOverride(self, new_component=None, new_section=None,
                        new_priority=None, new_phased_update_percentage=None):

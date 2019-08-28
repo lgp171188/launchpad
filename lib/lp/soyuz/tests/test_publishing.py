@@ -1194,8 +1194,8 @@ class TestBinaryGetOtherPublications(TestNativePublishingBase):
         """Superseded publications shouldn't be found."""
         bins = self.getPubBinaries(architecturespecific=False)
         self.checkOtherPublications(bins[0], bins)
-        # This will supersede both atomically.
-        bins[0].supersede()
+        for bpph in bins:
+            bpph.supersede()
         self.checkOtherPublications(bins[0], [])
 
     def testDoesntFindPublicationsInOtherSeries(self):

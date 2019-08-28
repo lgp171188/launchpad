@@ -32,7 +32,6 @@ from lp.archivepublisher.domination import (
 from lp.archivepublisher.publishing import Publisher
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.registry.interfaces.series import SeriesStatus
-from lp.services.database.sqlbase import flush_database_updates
 from lp.services.log.logger import DevNullLogger
 from lp.soyuz.enums import PackagePublishingStatus
 from lp.soyuz.interfaces.publishing import (
@@ -91,18 +90,14 @@ class TestDominator(TestNativePublishingBase):
 
         pubs = [dominant, dominated]
         live_versions = [generalization.getPackageVersion(dominant)]
-        dominator.dominatePackage(pubs, live_versions, generalization)
-        flush_database_updates()
+        supersede, keep, delete = dominator.planPackageDomination(
+            pubs, live_versions, generalization)
 
-        # The dominant version remains correctly published.
-        self.checkPublication(dominant, PackagePublishingStatus.PUBLISHED)
-        self.assertTrue(dominant.supersededby is None)
-        self.assertTrue(dominant.datesuperseded is None)
-
-        # The dominated version is correctly dominated.
-        self.checkPublication(dominated, PackagePublishingStatus.SUPERSEDED)
-        self.assertEqual(dominated.supersededby, supersededby)
-        self.checkPastDate(dominated.datesuperseded)
+        # The dominant version will remain published, while the dominated
+        # version will be superseded.
+        self.assertEqual([(dominated, dominant)], supersede)
+        self.assertEqual({dominant}, keep)
+        self.assertEqual([], delete)
 
     def testManualSourceDomination(self):
         """Test source domination procedure."""
@@ -662,77 +657,80 @@ class TestDominatorMethods(TestCaseWithFactory):
             archive = publications[0].archive
         return Dominator(DevNullLogger(), archive)
 
-    def test_dominatePackage_survives_empty_publications_list(self):
-        # Nothing explodes when dominatePackage is called with an empty
-        # packages list.
-        self.makeDominator([]).dominatePackage(
+    def test_planPackageDomination_survives_empty_publications_list(self):
+        # Nothing explodes when planPackageDomination is called with an
+        # empty packages list.
+        self.makeDominator([]).planPackageDomination(
             [], [], GeneralizedPublication(True))
         # The test is that we get here without error.
         pass
 
-    def test_dominatePackage_leaves_live_version_untouched(self):
-        # dominatePackage does not supersede live versions.
+    def test_planPackageDomination_leaves_live_version_untouched(self):
+        # planPackageDomination does not supersede live versions.
         [pub] = make_spphs_for_versions(self.factory, ['3.1'])
-        self.makeDominator([pub]).dominatePackage(
+        dominator = self.makeDominator([pub])
+        supersede, _, delete = dominator.planPackageDomination(
             [pub], ['3.1'], GeneralizedPublication(True))
-        self.assertEqual(PackagePublishingStatus.PUBLISHED, pub.status)
+        self.assertEqual([], supersede)
+        self.assertEqual([], delete)
 
-    def test_dominatePackage_deletes_dead_version_without_successor(self):
-        # dominatePackage marks non-live package versions without
+    def test_planPackageDomination_deletes_dead_version_without_successor(
+            self):
+        # planPackageDomination marks non-live package versions without
         # superseding versions as deleted.
         [pub] = make_spphs_for_versions(self.factory, ['1.1'])
-        self.makeDominator([pub]).dominatePackage(
+        dominator = self.makeDominator([pub])
+        supersede, _, delete = dominator.planPackageDomination(
             [pub], [], GeneralizedPublication(True))
-        self.assertEqual(PackagePublishingStatus.DELETED, pub.status)
+        self.assertEqual([], supersede)
+        self.assertEqual([pub], delete)
 
-    def test_dominatePackage_supersedes_older_pub_with_newer_live_pub(self):
-        # When marking a package as superseded, dominatePackage
+    def test_planPackageDomination_supersedes_older_pub_with_newer_live_pub(
+            self):
+        # When marking a package as superseded, planPackageDomination
         # designates a newer live version as the superseding version.
         generalization = GeneralizedPublication(True)
         pubs = make_spphs_for_versions(self.factory, ['1.0', '1.1'])
-        self.makeDominator(pubs).dominatePackage(
+        dominator = self.makeDominator(pubs)
+        supersede, _, _ = dominator.planPackageDomination(
             generalization.sortPublications(pubs), ['1.1'], generalization)
-        self.assertEqual(PackagePublishingStatus.SUPERSEDED, pubs[0].status)
-        self.assertEqual(pubs[1].sourcepackagerelease, pubs[0].supersededby)
-        self.assertEqual(PackagePublishingStatus.PUBLISHED, pubs[1].status)
+        self.assertEqual([(pubs[0], pubs[1])], supersede)
 
-    def test_dominatePackage_only_supersedes_with_live_pub(self):
-        # When marking a package as superseded, dominatePackage will
+    def test_planPackageDomination_only_supersedes_with_live_pub(self):
+        # When marking a package as superseded, planPackageDomination will
         # only pick a live version as the superseding one.
         generalization = GeneralizedPublication(True)
         pubs = make_spphs_for_versions(
             self.factory, ['1.0', '2.0', '3.0', '4.0'])
-        self.makeDominator(pubs).dominatePackage(
+        dominator = self.makeDominator(pubs)
+        supersede, _, _ = dominator.planPackageDomination(
             generalization.sortPublications(pubs), ['3.0'], generalization)
-        self.assertEqual([
-                pubs[2].sourcepackagerelease,
-                pubs[2].sourcepackagerelease,
-                None,
-                None,
-                ],
-            [pub.supersededby for pub in pubs])
+        self.assertEqual([(pubs[1], pubs[2]), (pubs[0], pubs[2])], supersede)
 
-    def test_dominatePackage_supersedes_with_oldest_newer_live_pub(self):
-        # When marking a package as superseded, dominatePackage picks
+    def test_planPackageDomination_supersedes_with_oldest_newer_live_pub(self):
+        # When marking a package as superseded, planPackageDomination picks
         # the oldest of the newer, live versions as the superseding one.
         generalization = GeneralizedPublication(True)
         pubs = make_spphs_for_versions(self.factory, ['2.7', '2.8', '2.9'])
-        self.makeDominator(pubs).dominatePackage(
+        dominator = self.makeDominator(pubs)
+        supersede, _, _ = dominator.planPackageDomination(
             generalization.sortPublications(pubs), ['2.8', '2.9'],
             generalization)
-        self.assertEqual(pubs[1].sourcepackagerelease, pubs[0].supersededby)
+        self.assertEqual([(pubs[0], pubs[1])], supersede)
 
-    def test_dominatePackage_only_supersedes_with_newer_live_pub(self):
-        # When marking a package as superseded, dominatePackage only
+    def test_planPackageDomination_only_supersedes_with_newer_live_pub(self):
+        # When marking a package as superseded, planPackageDomination only
         # considers a newer version as the superseding one.
         generalization = GeneralizedPublication(True)
         pubs = make_spphs_for_versions(self.factory, ['0.1', '0.2'])
-        self.makeDominator(pubs).dominatePackage(
+        dominator = self.makeDominator(pubs)
+        supersede, _, delete = dominator.planPackageDomination(
             generalization.sortPublications(pubs), ['0.1'], generalization)
-        self.assertEqual(None, pubs[1].supersededby)
-        self.assertEqual(PackagePublishingStatus.DELETED, pubs[1].status)
+        self.assertEqual([], supersede)
+        self.assertEqual([pubs[1]], delete)
 
-    def test_dominatePackage_supersedes_replaced_pub_for_live_version(self):
+    def test_planPackageDomination_supersedes_replaced_pub_for_live_version(
+            self):
         # Even if a publication record is for a live version, a newer
         # one for the same version supersedes it.
         generalization = GeneralizedPublication(True)
@@ -751,31 +749,26 @@ class TestDominatorMethods(TestCaseWithFactory):
             datetime.timedelta(1),
             ])
 
-        self.makeDominator(pubs).dominatePackage(
+        dominator = self.makeDominator(pubs)
+        supersede, _, delete = dominator.planPackageDomination(
             generalization.sortPublications(pubs), [spr.version],
             generalization)
-        self.assertEqual([
-            PackagePublishingStatus.SUPERSEDED,
-            PackagePublishingStatus.SUPERSEDED,
-            PackagePublishingStatus.PUBLISHED,
-            ],
-            [pub.status for pub in pubs])
-        self.assertEqual(
-            [spr, spr, None], [pub.supersededby for pub in pubs])
+        self.assertEqual([(pubs[1], pubs[2]), (pubs[0], pubs[2])], supersede)
+        self.assertEqual([], delete)
 
-    def test_dominatePackage_is_efficient(self):
-        # dominatePackage avoids issuing too many queries.
+    def test_planPackageDomination_is_efficient(self):
+        # planPackageDomination avoids issuing too many queries.
         generalization = GeneralizedPublication(True)
         versions = ["1.%s" % revision for revision in range(5)]
         pubs = make_spphs_for_versions(self.factory, versions)
         with StormStatementRecorder() as recorder:
-            self.makeDominator(pubs).dominatePackage(
+            self.makeDominator(pubs).planPackageDomination(
                 generalization.sortPublications(pubs), versions[2:-1],
                 generalization)
         self.assertThat(recorder, HasQueryCount(LessThan(5)))
 
-    def test_dominatePackage_advanced_scenario(self):
-        # Put dominatePackage through its paces with complex combined
+    def test_planPackageDomination_advanced_scenario(self):
+        # Put planPackageDomination through its paces with complex combined
         # data.
         # This test should be redundant in theory (which in theory
         # equates practice but in practice does not).  If this fails,
@@ -828,10 +821,13 @@ class TestDominatorMethods(TestCaseWithFactory):
         last_version_alive = sorted(live_versions)[-1]
 
         all_pubs = sum(pubs_by_version.itervalues(), [])
-        Dominator(DevNullLogger(), series.main_archive).dominatePackage(
+        dominator = Dominator(DevNullLogger(), series.main_archive)
+        supersede, _, delete = dominator.planPackageDomination(
             generalization.sortPublications(all_pubs), live_versions,
             generalization)
 
+        expected_supersede = []
+        expected_delete = []
         for version in reversed(versions):
             pubs = pubs_by_version[version]
 
@@ -840,36 +836,28 @@ class TestDominatorMethods(TestCaseWithFactory):
                 # but tells later iterations what the highest-versioned
                 # release so far was.  This is used in tracking
                 # supersededby links.
-                superseding_release = pubs[-1].sourcepackagerelease
+                superseding = pubs[-1]
 
             if version in live_versions:
                 # The live versions' latest publications are Published,
                 # their older ones Superseded.
-                expected_status = (
-                    [PackagePublishingStatus.SUPERSEDED] * (len(pubs) - 1) +
-                    [PackagePublishingStatus.PUBLISHED])
-                expected_supersededby = (
-                    [superseding_release] * (len(pubs) - 1) + [None])
+                expected_supersede.extend(
+                    [(pub, superseding) for pub in pubs[:-1]])
             elif version < last_version_alive:
                 # The superseded versions older than the last live
                 # version have all been superseded.
-                expected_status = (
-                    [PackagePublishingStatus.SUPERSEDED] * len(pubs))
-                expected_supersededby = [superseding_release] * len(pubs)
+                expected_supersede.extend([(pub, superseding) for pub in pubs])
             else:
                 # Versions that are newer than any live release have
                 # been deleted.
-                expected_status = (
-                    [PackagePublishingStatus.DELETED] * len(pubs))
-                expected_supersededby = [None] * len(pubs)
+                expected_delete.extend(pubs)
 
-            self.assertEqual(expected_status, [pub.status for pub in pubs])
-            self.assertEqual(
-                expected_supersededby, [pub.supersededby for pub in pubs])
+        self.assertContentEqual(expected_supersede, supersede)
+        self.assertContentEqual(expected_delete, delete)
 
     def test_dominateSourceVersions_dominates_publications(self):
-        # dominateSourceVersions finds the publications for a package
-        # and calls dominatePackage on them.
+        # dominateSourceVersions finds the publications for a package, then
+        # plans and carries out domination on them.
         pubs = make_spphs_for_versions(self.factory, ['0.1', '0.2', '0.3'])
         package_name = pubs[0].sourcepackagerelease.sourcepackagename.name
 

@@ -368,9 +368,9 @@ class Dominator:
         self.logger = logger
         self.archive = archive
 
-    def dominatePackage(self, sorted_pubs, live_versions, generalization,
-                        immutable_check=True):
-        """Dominate publications for a single package.
+    def planPackageDomination(self, sorted_pubs, live_versions,
+                              generalization):
+        """Plan domination of publications for a single package.
 
         The latest publication for any version in `live_versions` stays
         active.  Any older publications (including older publications for
@@ -397,19 +397,19 @@ class Dominator:
             are listed in `live_versions` are marked as Deleted.
         :param generalization: A `GeneralizedPublication` helper representing
             the kind of publications these are: source or binary.
-        :param immutable_check: If True, fail if a deletion would modify an
-            immutable suite (e.g. the RELEASE pocket of a CURRENT series).
-        :return: A tuple of `(superseded, kept)`.  `superseded` is a list of
-            (superseded publication, dominant publication) pairs of
-            publications marked as superseded, used to supersede other
+        :return: A tuple of `(supersede, keep, delete)`.  `supersede` is a
+            list of (superseded publication, dominant publication) pairs of
+            publications to be marked as superseded, used to supersede other
             publications associated with the superseded ones.  `keep` is a
             set of publications that have been confirmed as live, used to
             ensure that these live publications are not superseded when
-            superseding associated publications.
+            superseding associated publications.  `delete` is a list of
+            publications to delete.
         """
         live_versions = frozenset(live_versions)
-        superseded = []
-        kept = set()
+        supersede = []
+        keep = set()
+        delete = []
 
         self.logger.debug(
             "Package has %d live publication(s).  Live versions: %s",
@@ -434,10 +434,7 @@ class Dominator:
                 # This publication is for a live version, but has been
                 # superseded by a newer publication of the same version.
                 # Supersede it.
-                pub.supersede(
-                    current_dominant, supersede_associated=False,
-                    logger=self.logger)
-                superseded.append((pub, current_dominant))
+                supersede.append((pub, current_dominant))
                 self.logger.debug2(
                     "Superseding older publication for version %s.", version)
             elif version in live_versions:
@@ -446,30 +443,27 @@ class Dominator:
                 # this is the release that they are superseded by.
                 current_dominant = pub
                 dominant_version = version
-                kept.add(pub)
+                keep.add(pub)
                 self.logger.debug2("Keeping version %s.", version)
             elif current_dominant is None:
                 # This publication is no longer live, but there is no
                 # newer version to supersede it either.  Therefore it
                 # must be deleted.
-                pub.requestDeletion(None, immutable_check=immutable_check)
+                delete.append(pub)
                 self.logger.debug2("Deleting version %s.", version)
             else:
                 # This publication is superseded.  This is what we're
                 # here to do.
-                pub.supersede(
-                    current_dominant, supersede_associated=False,
-                    logger=self.logger)
-                superseded.append((pub, current_dominant))
+                supersede.append((pub, current_dominant))
                 self.logger.debug2("Superseding version %s.", version)
 
-        return superseded, kept
+        return supersede, keep, delete
 
     def _sortPackages(self, publications, generalization):
         """Partition publications by package name, and sort them.
 
         The publications are sorted from most current to least current,
-        as required by `dominatePackage` etc.
+        as required by `planPackageDomination` etc.
 
         :param publications: An iterable of `SourcePackagePublishingHistory`
             or of `BinaryPackagePublishingHistory`.
@@ -635,8 +629,29 @@ class Dominator:
         # published, architecture-independent publications; anything
         # else will have completed domination in the first pass.
         packages_w_arch_indep = set()
-        superseded = []
-        kept = set()
+        supersede = []
+        keep = set()
+        delete = []
+
+        def plan(pubs, live_versions):
+            cur_supersede, cur_keep, cur_delete = self.planPackageDomination(
+                pubs, live_versions, generalization)
+            supersede.extend(cur_supersede)
+            keep.update(cur_keep)
+            delete.extend(cur_delete)
+
+        def execute_plan():
+            for pub, dominant in supersede:
+                pub.supersede(dominant, logger=self.logger)
+                # If this is architecture-independent, all publications with
+                # the same context and overrides should be dominated
+                # simultaneously.
+                if not pub.architecture_specific:
+                    for dominated in pub.getOtherPublications():
+                        if dominated != pub and dominated not in keep:
+                            dominated.supersede(dominant, logger=self.logger)
+            for pub in delete:
+                pub.requestDeletion(None)
 
         for distroarchseries in distroseries.architectures:
             self.logger.info(
@@ -652,20 +667,16 @@ class Dominator:
                 self.logger.debug("Dominating %s" % name)
                 assert len(pubs) > 0, "Dominating zero binaries!"
                 live_versions = find_live_binary_versions_pass_1(pubs)
-                cur_superseded, cur_kept = self.dominatePackage(
-                    pubs, live_versions, generalization)
-                superseded.extend(cur_superseded)
-                kept.update(cur_kept)
+                plan(pubs, live_versions)
                 if contains_arch_indep(pubs):
                     packages_w_arch_indep.add(name)
 
-        self.logger.info("Dominating associated binaries...")
-        for pub, dominant in superseded:
-            pub.supersedeAssociated(dominant, keep=kept, logger=self.logger)
+        execute_plan()
 
         packages_w_arch_indep = frozenset(packages_w_arch_indep)
-        superseded = []
-        kept = set()
+        supersede = []
+        keep = set()
+        delete = []
 
         # The second pass attempts to supersede arch-all publications of
         # older versions, from source package releases that no longer
@@ -686,14 +697,9 @@ class Dominator:
                 assert len(pubs) > 0, "Dominating zero binaries in 2nd pass!"
                 live_versions = find_live_binary_versions_pass_2(
                     pubs, reprieve_cache)
-                cur_superseded, cur_kept = self.dominatePackage(
-                    pubs, live_versions, generalization)
-                superseded.extend(cur_superseded)
-                kept.update(cur_kept)
+                plan(pubs, live_versions)
 
-        self.logger.info("Dominating associated binaries...(2nd pass)")
-        for pub, dominant in superseded:
-            pub.supersedeAssociated(dominant, keep=kept, logger=self.logger)
+        execute_plan()
 
     def _composeActiveSourcePubsCondition(self, distroseries, pocket):
         """Compose ORM condition for restricting relevant source pubs."""
@@ -758,13 +764,23 @@ class Dominator:
         self.logger.debug("Finding sources...")
         sources = self.findSourcesForDomination(distroseries, pocket)
         sorted_packages = self._sortPackages(sources, generalization)
+        supersede = []
+        delete = []
 
         self.logger.debug("Dominating sources...")
         for name, pubs in sorted_packages.iteritems():
             self.logger.debug("Dominating %s" % name)
             assert len(pubs) > 0, "Dominating zero sources!"
             live_versions = find_live_source_versions(pubs)
-            self.dominatePackage(pubs, live_versions, generalization)
+            cur_supersede, _, cur_delete = self.planPackageDomination(
+                pubs, live_versions, generalization)
+            supersede.extend(cur_supersede)
+            delete.extend(cur_delete)
+
+        for pub, dominant in supersede:
+            pub.supersede(dominant, logger=self.logger)
+        for pub in delete:
+            pub.requestDeletion(None)
 
         flush_database_updates()
 
@@ -821,9 +837,12 @@ class Dominator:
         generalization = GeneralizedPublication(is_source=True)
         pubs = self.findPublishedSPPHs(distroseries, pocket, package_name)
         pubs = generalization.sortPublications(pubs)
-        self.dominatePackage(
-            pubs, live_versions, generalization,
-            immutable_check=immutable_check)
+        supersede, _, delete = self.planPackageDomination(
+            pubs, live_versions, generalization)
+        for pub, dominant in supersede:
+            pub.supersede(dominant, logger=self.logger)
+        for pub in delete:
+            pub.requestDeletion(None, immutable_check=immutable_check)
 
     def judge(self, distroseries, pocket):
         """Judge superseded sources and binaries."""
