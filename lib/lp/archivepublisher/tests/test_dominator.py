@@ -330,10 +330,56 @@ class TestDominator(TestNativePublishingBase):
         self.checkPublications(foo_10_all_bins + [foo_10_i386_bin],
                                PackagePublishingStatus.SUPERSEDED)
 
-    def test_dominatePackage_handles_double_arch_indep_override(self):
+    def test_supersedes_arch_indep_binaries_atomically(self):
+        # Check that domination supersedes arch-indep binaries atomically.
+        #
+        # Architecture-independent binaries should be removed from all
+        # architectures when they are superseded on at least one (bug
+        # #48760).
+        bins = self.getPubBinaries(
+            architecturespecific=False,
+            status=PackagePublishingStatus.PUBLISHED)
+        super_bins = self.getPubBinaries(
+            architecturespecific=False,
+            status=PackagePublishingStatus.PUBLISHED)
+        dominator = Dominator(self.logger, bins[0].archive)
+        dominator.judgeAndDominate(bins[0].distroseries, bins[0].pocket)
+        self.checkSuperseded([bins[0]], super_bins[0])
+
+    def test_atomic_domination_respects_overrides(self):
+        # Check that atomic domination only covers identical overrides.
+        #
+        # This is important, as otherwise newly-overridden arch-indep
+        # binaries will supersede themselves, and vanish entirely (bug
+        # #178102).  We check both DEBs and DDEBs.
+        for name, override in (
+                ("component", {"new_component": "universe"}),
+                ("section", {"new_section": "games"}),
+                ("priority", {"new_priority": "extra"}),
+                ("phase", {"new_phased_update_percentage": 50}),
+                ):
+            bins = self.getPubBinaries(
+                binaryname=name, architecturespecific=False,
+                status=PackagePublishingStatus.PUBLISHED)
+
+            super_bins = []
+            for bin in bins:
+                super_bin = bin.changeOverride(**override)
+                super_bin.setPublished()
+                super_bins.append(super_bin)
+
+            dominator = Dominator(self.logger, bins[0].archive)
+            dominator.judgeAndDominate(bins[0].distroseries, bins[0].pocket)
+            self.checkSuperseded(bins, super_bins[0])
+            self.checkPublications(
+                super_bins, PackagePublishingStatus.PUBLISHED)
+
+    def test_dominateBinaries_handles_double_arch_indep_override(self):
         # If there are multiple identical publications of an
-        # architecture-independent binary, dominatePackage leaves the most
-        # recent one live.
+        # architecture-independent binary, dominateBinaries leaves the most
+        # recent one live.  (For example, this can happen if two archive
+        # admins call changeOverride with the same parameters at nearly the
+        # same time.)
         originals = self.getPubBinaries(
             status=PackagePublishingStatus.PUBLISHED,
             architecturespecific=False)

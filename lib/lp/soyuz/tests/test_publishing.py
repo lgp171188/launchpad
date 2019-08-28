@@ -15,10 +15,7 @@ import tempfile
 import pytz
 import scandir
 from storm.store import Store
-from testtools.matchers import (
-    Equals,
-    GreaterThan,
-    )
+from testtools.matchers import Equals
 import transaction
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
@@ -1082,42 +1079,6 @@ class TestBinaryDomination(TestNativePublishingBase):
         self.checkSuperseded([bins[0]], super_bins[0])
         self.checkPublication(bins[1], PackagePublishingStatus.PENDING)
 
-    def testSupersedesArchIndepBinariesAtomically(self):
-        """Check that supersede() supersedes arch-indep binaries atomically.
-
-        Architecture-independent binaries should be removed from all
-        architectures when they are superseded on at least one (bug #48760).
-        """
-        bins = self.getPubBinaries(architecturespecific=False)
-        super_bins = self.getPubBinaries(architecturespecific=False)
-        bins[0].supersede(super_bins[0])
-        self.checkSuperseded(bins, super_bins[0])
-
-    def testAtomicDominationRespectsOverrides(self):
-        """Check that atomic domination only covers identical overrides.
-
-        This is important, as otherwise newly-overridden arch-indep binaries
-        will supersede themselves, and vanish entirely (bug #178102).  We
-        check both DEBs and DDEBs.
-        """
-        universe = getUtility(IComponentSet)['universe']
-        games = getUtility(ISectionSet)['games']
-        for name, override in (
-            ("component", {"new_component": universe}),
-            ("section", {"new_section": games}),
-            ("priority", {"new_priority": PackagePublishingPriority.EXTRA}),
-            ("phase", {"new_phased_update_percentage": 50})):
-            bins = self.getPubBinaries(
-                binaryname=name, architecturespecific=False)
-
-            super_bins = []
-            for bin in bins:
-                super_bins.append(bin.changeOverride(**override))
-
-            bins[0].supersede(super_bins[0])
-            self.checkSuperseded(bins, super_bins[0])
-            self.checkPublications(super_bins, PackagePublishingStatus.PENDING)
-
     def testSupersedingSupersededArchSpecificBinaryFails(self):
         """Check that supersede() fails with a superseded arch-dep binary.
 
@@ -1159,31 +1120,6 @@ class TestBinaryDomination(TestNativePublishingBase):
         bin.supersede(super_bin)
         self.checkSuperseded([bin], super_bin)
         self.assertEqual(super_date, bin.datesuperseded)
-
-    def testSkipsDominantArchIndependentBinaries(self):
-        """Check that supersedeAssociated skips dominant arch-indep binaries.
-
-        It's possible for there to be multiple pending publications with
-        identical overrides, for instance if two archive admins call
-        changeOverride with the same parameters at nearly the same time.  In
-        this situation, we make sure not to supersede the dominant one.
-        """
-        originals = self.getPubBinaries(architecturespecific=False)
-        self.assertThat(len(originals), GreaterThan(1))
-        self.assertNotEqual("universe", originals[0].component.name)
-        overrides_1 = [
-            pub.changeOverride(new_component="universe") for pub in originals]
-        transaction.commit()
-        overrides_2 = [
-            pub.changeOverride(new_component="universe") for pub in originals]
-        for pub, dominant in zip(overrides_1 + originals, overrides_2 * 2):
-            pub.supersede(dominant, supersede_associated=False)
-        for pub, dominant in zip(overrides_1 + originals, overrides_2 * 2):
-            pub.supersedeAssociated(dominant, keep=overrides_2)
-        for original, override_1, override_2 in zip(
-                originals, overrides_1, overrides_2):
-            self.checkSuperseded([original, override_1], override_2)
-        self.checkPublications(overrides_2, PackagePublishingStatus.PENDING)
 
     def testSupersedesCorrespondingDDEB(self):
         """Check that supersede() takes with it any corresponding DDEB.
