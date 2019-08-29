@@ -247,7 +247,7 @@ class MirrorStatus(DBEnumeratedType):
     BROKEN = DBItem(40, """
         Broken
 
-        This mirror has been scanned and seems to not respond or
+        This mirror has been reviewed and seems to not respond or
         is otherwise misconfigured.
         """)
 
