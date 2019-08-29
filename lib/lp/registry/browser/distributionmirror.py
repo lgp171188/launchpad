@@ -52,7 +52,7 @@ class DistributionMirrorOverviewMenu(NavigationMenu):
 
     usedfor = IDistributionMirror
     facet = 'overview'
-    links = ['proberlogs', 'edit', 'review', 'reassign', 'delete']
+    links = ['proberlogs', 'edit', 'review', 'reassign', 'delete', 'resubmit']
 
     @enabled_with_permission('launchpad.Edit')
     def edit(self):
@@ -80,6 +80,11 @@ class DistributionMirrorOverviewMenu(NavigationMenu):
     def review(self):
         text = 'Review mirror'
         return Link('+review', text, icon='edit')
+
+    @enabled_with_permission('launchpad.Edit')
+    def resubmit(self):
+        text = 'Resubmit for review'
+        return Link('+resubmit', text, icon='edit')
 
 
 class _FlavoursByDistroSeries:
