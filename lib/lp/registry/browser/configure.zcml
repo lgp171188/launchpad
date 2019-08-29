@@ -2439,6 +2439,13 @@
         template="../templates/distributionmirror-edit.pt">
     </browser:page>
     <browser:page
+        name="+resubmit"
+        for="lp.registry.interfaces.distributionmirror.IDistributionMirror"
+        class="lp.registry.browser.distributionmirror.DistributionMirrorResubmitView"
+        permission="launchpad.Edit"
+        template="../templates/distributionmirror-resubmit.pt">
+    </browser:page>
+    <browser:page
         name="+review"
         for="lp.registry.interfaces.distributionmirror.IDistributionMirror"
         class="lp.registry.browser.distributionmirror.DistributionMirrorReviewView"

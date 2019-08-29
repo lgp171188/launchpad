@@ -298,6 +298,27 @@ class DistributionMirrorEditView(LaunchpadEditFormView):
         self.next_url = canonical_url(self.context)
 
 
+class DistributionMirrorResubmitView(LaunchpadEditFormView):
+
+    schema = IDistributionMirror
+    field_names = []
+
+    @property
+    def label(self):
+        """See `LaunchpadFormView`."""
+        return 'Resubmit mirror %s' % self.context.title
+
+    @property
+    def page_title(self):
+        """The page title."""
+        return self.label
+
+    @action(_("Resubmit"), name="resubmit")
+    def action_resubmit(self, action, data):
+        self.context.resubmitForReview()
+        self.next_url = canonical_url(self.context)
+
+
 class DistributionMirrorReassignmentView(ObjectReassignmentView):
 
     @property

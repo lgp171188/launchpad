@@ -331,6 +331,12 @@ class DistributionMirror(SQLBase):
         return (self.official_candidate
                 and self.status == MirrorStatus.OFFICIAL)
 
+    def resubmitForReview(self):
+        """See IDistributionMirror"""
+        if self.status != MirrorStatus.BROKEN:
+            raise AssertionError("DistributionMirror.status is not BROKEN")
+        self.status = MirrorStatus.PENDING_REVIEW
+
     def shouldDisable(self, expected_file_count=None):
         """See IDistributionMirror"""
         if self.content == MirrorContent.RELEASE:

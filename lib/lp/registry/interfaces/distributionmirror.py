@@ -509,6 +509,12 @@ class IDistributionMirror(Interface):
         previously enabled or if it was probed only once.
         """
 
+    def resubmitForReview():
+        """Allow the owner (launchpad.Edit) to resubmit for review.
+
+        Only allows the transition state from 'Broken' to 'Pending Review'.
+        """
+
     def newProbeRecord(log_file):
         """Create and return a new MirrorProbeRecord for this mirror."""
 
