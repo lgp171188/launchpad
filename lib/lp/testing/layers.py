@@ -676,7 +676,9 @@ class MemcachedLayer(BaseLayer):
 class RabbitMQLayer(BaseLayer):
     """Provides tests access to a rabbitMQ instance."""
 
-    rabbit = RabbitServer()
+    # The default timeout is 15 seconds, but increase this a bit to allow
+    # some more leeway for slow test environments.
+    rabbit = RabbitServer(ctltimeout=60)
 
     _is_setup = False
 
