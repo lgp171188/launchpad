@@ -645,7 +645,9 @@ class Dominator:
                 pub.supersede(dominant, logger=self.logger)
                 # If this is architecture-independent, all publications with
                 # the same context and overrides should be dominated
-                # simultaneously.
+                # simultaneously, unless one of the plans decided to keep
+                # it.  For this reason, an architecture's plan can't be
+                # executed until all architectures have been planned.
                 if not pub.architecture_specific:
                     for dominated in pub.getOtherPublications():
                         if dominated != pub and dominated not in keep:
