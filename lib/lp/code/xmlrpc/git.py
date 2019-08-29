@@ -69,7 +69,10 @@ from lp.registry.interfaces.product import (
     NoSuchProduct,
     )
 from lp.registry.interfaces.sourcepackagename import ISourcePackageNameSet
-from lp.services.macaroons.interfaces import IMacaroonIssuer
+from lp.services.macaroons.interfaces import (
+    IMacaroonIssuer,
+    NO_USER,
+    )
 from lp.services.webapp import LaunchpadXMLRPCView
 from lp.services.webapp.authorization import check_permission
 from lp.services.webapp.errorlog import ScriptRequest
@@ -96,17 +99,6 @@ def _get_requester_id(auth_params):
         return LAUNCHPAD_SERVICES
     else:
         return LAUNCHPAD_ANONYMOUS
-
-
-def _is_issuer_internal(verified):
-    """Was the authorising macaroon issued by an internal-only issuer?
-
-    These macaroons are privileged in various ways, and are used by internal
-    services.
-
-    :param verified: An `IMacaroonVerificationResult`.
-    """
-    return verified.issuer_name in ("code-import-job", "snap-build")
 
 
 def _can_internal_issuer_write(verified):
@@ -139,8 +131,19 @@ class GitAPI(LaunchpadXMLRPCView):
             issuer = getUtility(IMacaroonIssuer, macaroon.identifier)
         except ComponentLookupError:
             return False
-        return issuer.verifyMacaroon(
+        verified = issuer.verifyMacaroon(
             macaroon, repository, require_context=False, user=user)
+        if verified:
+            # Double-check user verification to prevent accidents.  Internal
+            # macaroons may only be used by internal services, and user
+            # macaroons may only be used by the corresponding real user.
+            if user is None:
+                if verified.user is not NO_USER:
+                    raise faults.Unauthorized()
+            else:
+                if verified.user != user:
+                    raise faults.Unauthorized()
+        return verified
 
     def _performLookup(self, requester, path, auth_params):
         repository, extra_path = getUtility(IGitLookup).getByPath(path)
@@ -165,19 +168,12 @@ class GitAPI(LaunchpadXMLRPCView):
                 # credentials.
                 raise faults.Unauthorized()
 
-            # Internal macaroons may only be used by internal services, and
-            # user macaroons may only be used by real users.  Forbid
-            # potential confusion.
-            internal = _is_issuer_internal(verified)
-            if (requester == LAUNCHPAD_SERVICES) != internal:
-                raise faults.Unauthorized()
-
-            if internal:
+            if verified.user is NO_USER:
                 # We know that the authentication parameters specifically
                 # grant access to this repository because we were able to
                 # verify the macaroon using the repository as its context,
                 # so we can bypass other checks.  This is only permitted for
-                # selected macaroon issuers used by internal services.
+                # macaroons not bound to a user.
                 hosting_path = naked_repository.getInternalPath()
                 writable = _can_internal_issuer_write(verified)
                 private = naked_repository.private
@@ -406,7 +402,7 @@ class GitAPI(LaunchpadXMLRPCView):
             auth_params = {"macaroon": password}
             if user is not None:
                 auth_params["uid"] = user.id
-            elif _is_issuer_internal(verified):
+            else:
                 auth_params["user"] = LAUNCHPAD_SERVICES
             return auth_params
         # Only macaroons are supported for password authentication.
@@ -446,14 +442,7 @@ class GitAPI(LaunchpadXMLRPCView):
                     # have additional constraints.
                     raise faults.Unauthorized()
 
-                # Internal macaroons may only be used by internal services,
-                # and user macaroons may only be used by real users.  Forbid
-                # potential confusion.
-                internal = _is_issuer_internal(verified)
-                if (requester == LAUNCHPAD_SERVICES) != internal:
-                    raise faults.Unauthorized()
-
-                if internal:
+                if verified.user is NO_USER:
                     if not _can_internal_issuer_write(verified):
                         raise faults.Unauthorized()
 

@@ -16,6 +16,7 @@ from testtools.matchers import (
     MatchesStructure,
     )
 from zope.component import getUtility
+from zope.interface import implementer
 from zope.security.proxy import removeSecurityProxy
 
 from lp.app.enums import InformationType
@@ -32,6 +33,7 @@ from lp.code.interfaces.gitcollection import IAllGitRepositories
 from lp.code.interfaces.gitjob import IGitRefScanJobSource
 from lp.code.interfaces.gitrepository import (
     GIT_REPOSITORY_NAME_VALIDATION_ERROR_MESSAGE,
+    IGitRepository,
     IGitRepositorySet,
     )
 from lp.code.tests.helpers import GitHostingFixture
@@ -39,7 +41,12 @@ from lp.code.xmlrpc.git import GitAPI
 from lp.registry.enums import TeamMembershipPolicy
 from lp.services.config import config
 from lp.services.features.testing import FeatureFixture
-from lp.services.macaroons.interfaces import IMacaroonIssuer
+from lp.services.macaroons.interfaces import (
+    BadMacaroonContext,
+    IMacaroonIssuer,
+    NO_USER,
+    )
+from lp.services.macaroons.model import MacaroonIssuerBase
 from lp.services.webapp.escaping import html_escape
 from lp.snappy.interfaces.snap import SNAP_TESTING_FLAGS
 from lp.testing import (
@@ -50,6 +57,7 @@ from lp.testing import (
     person_logged_in,
     TestCaseWithFactory,
     )
+from lp.testing.fixture import ZopeUtilityFixture
 from lp.testing.layers import (
     AppServerLayer,
     LaunchpadFunctionalLayer,
@@ -66,6 +74,38 @@ def _make_auth_params(requester, can_authenticate=False, macaroon_raw=None):
     if macaroon_raw is not None:
         auth_params["macaroon"] = macaroon_raw
     return auth_params
+
+
+@implementer(IMacaroonIssuer)
+class DummyMacaroonIssuer(MacaroonIssuerBase):
+
+    identifier = "test"
+    _root_secret = "test"
+    _verified_user = NO_USER
+
+    def checkIssuingContext(self, context, **kwargs):
+        """See `MacaroonIssuerBase`."""
+        if not IGitRepository.providedBy(context):
+            raise BadMacaroonContext(context)
+        return context.id
+
+    def checkVerificationContext(self, context, **kwargs):
+        """See `IMacaroonIssuerBase`."""
+        if not IGitRepository.providedBy(context):
+            raise BadMacaroonContext(context)
+        return context
+
+    def verifyPrimaryCaveat(self, verified, caveat_value, context, **kwargs):
+        """See `MacaroonIssuerBase`."""
+        if context is None:
+            # We're only verifying that the macaroon could be valid for some
+            # context.
+            ok = True
+        else:
+            ok = caveat_value == str(context.id)
+        if ok:
+            verified.user = self._verified_user
+        return ok
 
 
 class TestGitAPIMixin:
@@ -1054,6 +1094,37 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
                 requester, paths[i], permission="write",
                 macaroon_raw="nonsense")
 
+    def test_translatePath_user_mismatch(self):
+        # translatePath refuses macaroons in the case where the user doesn't
+        # match what the issuer claims was verified.  (We use a dummy issuer
+        # for this, since this is a stopgap check to defend against issuer
+        # bugs; and we test read permissions since write permissions for
+        # internal macaroons are restricted to particular named issuers.)
+        issuer = DummyMacaroonIssuer()
+        self.useFixture(ZopeUtilityFixture(
+            issuer, IMacaroonIssuer, name="test"))
+        repository = self.factory.makeGitRepository()
+        path = u"/%s" % repository.unique_name
+        macaroon = issuer.issueMacaroon(repository)
+        requesters = [self.factory.makePerson() for _ in range(2)]
+        for verified_user, authorized, unauthorized in (
+                (NO_USER, [LAUNCHPAD_SERVICES], requesters),
+                (requesters[0], [requesters[0]],
+                 [LAUNCHPAD_SERVICES, requesters[1]]),
+                (None, [], [LAUNCHPAD_SERVICES] + requesters),
+                ):
+            issuer._verified_user = verified_user
+            for requester in authorized:
+                login(ANONYMOUS)
+                self.assertTranslates(
+                    requester, path, repository, False, permission="read",
+                    macaroon_raw=macaroon.serialize())
+            for requester in unauthorized:
+                login(ANONYMOUS)
+                self.assertUnauthorized(
+                    requester, path, permission="read",
+                    macaroon_raw=macaroon.serialize())
+
     def test_notify(self):
         # The notify call creates a GitRefScanJob.
         repository = self.factory.makeGitRepository()
@@ -1158,6 +1229,48 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
         self.assertIsInstance(
             self.git_api.authenticateWithPassword(requester.name, "nonsense"),
             faults.Unauthorized)
+
+    def test_authenticateWithPassword_user_mismatch(self):
+        # authenticateWithPassword refuses macaroons in the case where the
+        # user doesn't match what the issuer claims was verified.  (We use a
+        # dummy issuer for this, since this is a stopgap check to defend
+        # against issuer bugs; and we test read permissions since write
+        # permissions for internal macaroons are restricted to particular
+        # named issuers.)
+        issuer = DummyMacaroonIssuer()
+        self.useFixture(ZopeUtilityFixture(
+            issuer, IMacaroonIssuer, name="test"))
+        macaroon = issuer.issueMacaroon(self.factory.makeGitRepository())
+        requesters = [self.factory.makePerson() for _ in range(2)]
+        for verified_user, authorized, unauthorized in (
+                (NO_USER, [LAUNCHPAD_SERVICES], requesters),
+                (requesters[0], [requesters[0]],
+                 [LAUNCHPAD_SERVICES, requesters[1]]),
+                (None, [], [LAUNCHPAD_SERVICES] + requesters),
+                ):
+            issuer._verified_user = verified_user
+            for requester in authorized:
+                login(ANONYMOUS)
+                expected_auth_params = {"macaroon": macaroon.serialize()}
+                if requester == LAUNCHPAD_SERVICES:
+                    name = requester
+                    expected_auth_params["user"] = requester
+                else:
+                    name = requester.name
+                    expected_auth_params["uid"] = requester.id
+                self.assertEqual(
+                    expected_auth_params,
+                    self.git_api.authenticateWithPassword(
+                        name, macaroon.serialize()))
+            for requester in unauthorized:
+                login(ANONYMOUS)
+                name = (
+                    requester if requester == LAUNCHPAD_SERVICES
+                    else requester.name)
+                self.assertIsInstance(
+                    self.git_api.authenticateWithPassword(
+                        name, macaroon.serialize()),
+                    faults.Unauthorized)
 
     def test_checkRefPermissions_code_import(self):
         # A code import worker with a suitable macaroon has repository owner
@@ -1315,6 +1428,42 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
             self.assertHasRefPermissions(
                 requester, repository, [ref_path], {ref_path: []},
                 macaroon_raw="nonsense")
+
+    def test_checkRefPermissions_user_mismatch(self):
+        # checkRefPermissions refuses macaroons in the case where the user
+        # doesn't match what the issuer claims was verified.  (We use a
+        # dummy issuer for this, since this is a stopgap check to defend
+        # against issuer bugs.)
+        issuer = DummyMacaroonIssuer()
+        # Claim to be the code-import-job issuer.  This is a bit weird, but
+        # it gets us past the difficulty that only certain named issuers are
+        # allowed to confer write permissions.
+        issuer.identifier = "code-import-job"
+        self.useFixture(ZopeUtilityFixture(
+            issuer, IMacaroonIssuer, name="code-import-job"))
+        requesters = [self.factory.makePerson() for _ in range(2)]
+        owner = self.factory.makeTeam(members=requesters)
+        repository = self.factory.makeGitRepository(owner=owner)
+        ref_path = b"refs/heads/master"
+        macaroon = issuer.issueMacaroon(repository)
+        for verified_user, authorized, unauthorized in (
+                (NO_USER, [LAUNCHPAD_SERVICES], requesters),
+                (requesters[0], [requesters[0]],
+                 [LAUNCHPAD_SERVICES, requesters[1]]),
+                (None, [], [LAUNCHPAD_SERVICES] + requesters),
+                ):
+            issuer._verified_user = verified_user
+            for requester in authorized:
+                login(ANONYMOUS)
+                self.assertHasRefPermissions(
+                    requester, repository, [ref_path],
+                    {ref_path: ["create", "push", "force_push"]},
+                    macaroon_raw=macaroon.serialize())
+            for requester in unauthorized:
+                login(ANONYMOUS)
+                self.assertHasRefPermissions(
+                    requester, repository, [ref_path], {ref_path: []},
+                    macaroon_raw=macaroon.serialize())
 
 
 class TestGitAPISecurity(TestGitAPIMixin, TestCaseWithFactory):
