@@ -641,6 +641,8 @@ class Dominator:
             delete.extend(cur_delete)
 
         def execute_plan():
+            if supersede:
+                self.logger.info("Applying supersessions...")
             for pub, dominant in supersede:
                 pub.supersede(dominant, logger=self.logger)
                 # If this is architecture-independent, all publications with
@@ -652,6 +654,8 @@ class Dominator:
                     for dominated in pub.getOtherPublications():
                         if dominated != pub and dominated not in keep:
                             dominated.supersede(dominant, logger=self.logger)
+            if delete:
+                self.logger.info("Applying deletions...")
             for pub in delete:
                 pub.requestDeletion(None)
 
@@ -664,9 +668,9 @@ class Dominator:
             self.logger.info("Finding binaries...")
             bins = self.findBinariesForDomination(distroarchseries, pocket)
             sorted_packages = self._sortPackages(bins, generalization)
-            self.logger.info("Dominating binaries...")
+            self.logger.info("Planning domination of binaries...")
             for name, pubs in sorted_packages.iteritems():
-                self.logger.debug("Dominating %s" % name)
+                self.logger.debug("Planning domination of %s" % name)
                 assert len(pubs) > 0, "Dominating zero binaries!"
                 live_versions = find_live_binary_versions_pass_1(pubs)
                 plan(pubs, live_versions)
@@ -692,10 +696,10 @@ class Dominator:
             self.logger.info("Finding binaries...(2nd pass)")
             bins = self.findBinariesForDomination(distroarchseries, pocket)
             sorted_packages = self._sortPackages(bins, generalization)
-            self.logger.info("Dominating binaries...(2nd pass)")
+            self.logger.info("Planning domination of binaries...(2nd pass)")
             for name in packages_w_arch_indep.intersection(sorted_packages):
                 pubs = sorted_packages[name]
-                self.logger.debug("Dominating %s" % name)
+                self.logger.debug("Planning domination of %s" % name)
                 assert len(pubs) > 0, "Dominating zero binaries in 2nd pass!"
                 live_versions = find_live_binary_versions_pass_2(
                     pubs, reprieve_cache)
