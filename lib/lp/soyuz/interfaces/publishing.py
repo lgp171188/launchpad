@@ -751,7 +751,7 @@ class IBinaryPackagePublishingHistoryPublic(IPublishingView):
             required=False, readonly=True),
         as_of="devel")
 
-    def getOtherPublications(self):
+    def getOtherPublications():
         """Return remaining publications with the same overrides.
 
         Only considers binary publications in the same archive, distroseries,
