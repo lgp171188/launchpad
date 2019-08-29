@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -726,17 +726,8 @@ class BinaryPackagePublishingHistory(SQLBase, ArchivePublisherBase):
         else:
             super(BinaryPackagePublishingHistory, self).publish(diskpool, log)
 
-    def _getOtherPublications(self):
-        """Return remaining publications with the same overrides.
-
-        Only considers binary publications in the same archive, distroseries,
-        pocket, component, section, priority and phased-update-percentage
-        context. These publications are candidates for domination if this is
-        an architecture-independent package.
-
-        The override match is critical -- it prevents a publication created
-        by new overrides from superseding itself.
-        """
+    def getOtherPublications(self):
+        """See `IBinaryPackagePublishingHistory`."""
         available_architectures = [
             das.id for das in
                 self.distroarchseries.distroseries.architectures]
@@ -801,12 +792,6 @@ class BinaryPackagePublishingHistory(SQLBase, ArchivePublisherBase):
             [self])
         for dominated in debug:
             dominated.supersede(dominant, logger)
-
-        # If this is architecture-independent, all publications with the same
-        # context and overrides should be dominated simultaneously.
-        if not self.binarypackagerelease.architecturespecific:
-            for dominated in self._getOtherPublications():
-                dominated.supersede(dominant, logger)
 
     def changeOverride(self, new_component=None, new_section=None,
                        new_priority=None, new_phased_update_percentage=None):

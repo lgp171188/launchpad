@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test native publication workflow for Soyuz. """
@@ -635,7 +635,7 @@ class TestNativePublishingBase(TestCaseWithFactory, SoyuzTestPublisher):
     def checkPublication(self, pub, status):
         """Assert the publication has the given status."""
         self.assertEqual(
-            pub.status, status, "%s is not %s (%s)" % (
+            status, pub.status, "%s is not %s (%s)" % (
             pub.displayname, status.name, pub.status.name))
 
     def checkPublications(self, pubs, status):
@@ -1079,42 +1079,6 @@ class TestBinaryDomination(TestNativePublishingBase):
         self.checkSuperseded([bins[0]], super_bins[0])
         self.checkPublication(bins[1], PackagePublishingStatus.PENDING)
 
-    def testSupersedesArchIndepBinariesAtomically(self):
-        """Check that supersede() supersedes arch-indep binaries atomically.
-
-        Architecture-independent binaries should be removed from all
-        architectures when they are superseded on at least one (bug #48760).
-        """
-        bins = self.getPubBinaries(architecturespecific=False)
-        super_bins = self.getPubBinaries(architecturespecific=False)
-        bins[0].supersede(super_bins[0])
-        self.checkSuperseded(bins, super_bins[0])
-
-    def testAtomicDominationRespectsOverrides(self):
-        """Check that atomic domination only covers identical overrides.
-
-        This is important, as otherwise newly-overridden arch-indep binaries
-        will supersede themselves, and vanish entirely (bug #178102).  We
-        check both DEBs and DDEBs.
-        """
-        universe = getUtility(IComponentSet)['universe']
-        games = getUtility(ISectionSet)['games']
-        for name, override in (
-            ("component", {"new_component": universe}),
-            ("section", {"new_section": games}),
-            ("priority", {"new_priority": PackagePublishingPriority.EXTRA}),
-            ("phase", {"new_phased_update_percentage": 50})):
-            bins = self.getPubBinaries(
-                binaryname=name, architecturespecific=False)
-
-            super_bins = []
-            for bin in bins:
-                super_bins.append(bin.changeOverride(**override))
-
-            bins[0].supersede(super_bins[0])
-            self.checkSuperseded(bins, super_bins[0])
-            self.checkPublications(super_bins, PackagePublishingStatus.PENDING)
-
     def testSupersedingSupersededArchSpecificBinaryFails(self):
         """Check that supersede() fails with a superseded arch-dep binary.
 
@@ -1191,11 +1155,11 @@ class TestBinaryDomination(TestNativePublishingBase):
 
 
 class TestBinaryGetOtherPublications(TestNativePublishingBase):
-    """Test BinaryPackagePublishingHistory._getOtherPublications() works."""
+    """Test BinaryPackagePublishingHistory.getOtherPublications() works."""
 
     def checkOtherPublications(self, this, others):
         self.assertContentEqual(
-            removeSecurityProxy(this)._getOtherPublications(), others)
+            removeSecurityProxy(this).getOtherPublications(), others)
 
     def testFindsOtherArchIndepPublications(self):
         """Arch-indep publications with the same overrides should be found."""
@@ -1230,8 +1194,8 @@ class TestBinaryGetOtherPublications(TestNativePublishingBase):
         """Superseded publications shouldn't be found."""
         bins = self.getPubBinaries(architecturespecific=False)
         self.checkOtherPublications(bins[0], bins)
-        # This will supersede both atomically.
-        bins[0].supersede()
+        for bpph in bins:
+            bpph.supersede()
         self.checkOtherPublications(bins[0], [])
 
     def testDoesntFindPublicationsInOtherSeries(self):
