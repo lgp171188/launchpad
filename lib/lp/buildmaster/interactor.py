@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -62,16 +62,14 @@ class FileWritingProtocol(Protocol):
         self.finished = finished
         if isinstance(file_to_write, (bytes, unicode)):
             self.filename = file_to_write
-            self.file = None
+            self.file = tempfile.NamedTemporaryFile(
+                mode="wb", prefix=os.path.basename(self.filename) + "_",
+                dir=os.path.dirname(self.filename), delete=False)
         else:
             self.filename = None
             self.file = file_to_write
 
     def dataReceived(self, data):
-        if self.file is None:
-            self.file = tempfile.NamedTemporaryFile(
-                mode="wb", prefix=os.path.basename(self.filename) + "_",
-                dir=os.path.dirname(self.filename), delete=False)
         try:
             self.file.write(data)
         except IOError:

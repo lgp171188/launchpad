@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test BuilderInteractor features."""
@@ -10,6 +10,7 @@ __all__ = [
     'MockBuilderFactory',
     ]
 
+import hashlib
 import os
 import signal
 import tempfile
@@ -883,4 +884,18 @@ class TestSlaveWithLibrarian(TestCaseWithFactory):
         yield slave.getFiles([(lf.content.sha1, os.fdopen(temp_fd, "w"))])
         with open(temp_name) as f:
             self.assertEqual('content', f.read())
+        yield slave.pool.closeCachedConnections()
+
+    @defer.inlineCallbacks
+    def test_getFiles_with_empty_file(self):
+        # getFiles works with zero-length files.
+        tachandler = self.slave_helper.getServerSlave()
+        slave = self.slave_helper.getClientSlave()
+        temp_fd, temp_name = tempfile.mkstemp()
+        self.addCleanup(os.remove, temp_name)
+        empty_sha1 = hashlib.sha1(b'').hexdigest()
+        self.slave_helper.makeCacheFile(tachandler, empty_sha1, contents=b'')
+        yield slave.getFiles([(empty_sha1, temp_name)])
+        with open(temp_name) as f:
+            self.assertEqual(b'', f.read())
         yield slave.pool.closeCachedConnections()
