@@ -1,4 +1,4 @@
-# Copyright 2014-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2014-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Process a live filesystem upload."""
@@ -47,7 +47,7 @@ class LiveFSUpload:
                     livefs_file, os.stat(livefs_path).st_size,
                     open(livefs_path, "rb"),
                     filenameToContentType(livefs_path),
-                    restricted=build.is_private)
+                    restricted=build.is_private, allow_zero_length=True)
                 build.addFile(libraryfile)
 
         # The master verifies the status to confirm successful upload.

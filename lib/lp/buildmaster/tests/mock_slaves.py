@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Mock Build objects for tests soyuz buildd-system."""
@@ -316,18 +316,18 @@ class SlaveTestHelpers(fixtures.Fixture):
             self.base_url, 'vmhost', config.builddmaster.socket_timeout,
             reactor=reactor, proxy=proxy, pool=pool)
 
-    def makeCacheFile(self, tachandler, filename):
+    def makeCacheFile(self, tachandler, filename, contents=b'something'):
         """Make a cache file available on the remote slave.
 
         :param tachandler: The TacTestSetup object used to start the remote
             slave.
         :param filename: The name of the file to create in the file cache
             area.
+        :param contents: Bytes to write to the file.
         """
         path = os.path.join(tachandler.root, 'filecache', filename)
-        fd = open(path, 'w')
-        fd.write('something')
-        fd.close()
+        with open(path, 'wb') as fd:
+            fd.write(contents)
         self.addCleanup(os.unlink, path)
 
     def triggerGoodBuild(self, slave, build_id=None):
