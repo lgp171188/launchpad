@@ -43,6 +43,7 @@ from lp.services.database.sqlbase import (
     )
 from lp.services.gpg.interfaces import (
     GPGKeyExpired,
+    GPGKeyNotFoundError,
     GPGVerificationError,
     IGPGHandler,
     )
@@ -272,7 +273,7 @@ class SignedCodeOfConductSet:
 
         try:
             sig = gpghandler.getVerifiedSignature(sane_signedcode)
-        except (GPGVerificationError, GPGKeyExpired) as e:
+        except (GPGVerificationError, GPGKeyExpired, GPGKeyNotFoundError) as e:
             return str(e)
 
         if not sig.fingerprint:

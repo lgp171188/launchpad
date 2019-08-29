@@ -17,6 +17,11 @@ from zope.interface import implementer
 from zope.security.management import setSecurityPolicy
 
 from lp.services.config import config
+from lp.services.gpg.interfaces import (
+    GPGKeyExpired,
+    GPGKeyNotFoundError,
+    IGPGHandler,
+    )
 from lp.services.log.logger import BufferLogger
 from lp.services.mail import helpers
 from lp.services.mail.handlers import mail_handlers
@@ -34,6 +39,7 @@ from lp.services.webapp.authorization import LaunchpadSecurityPolicy
 from lp.testing import TestCaseWithFactory
 from lp.testing.dbuser import switch_dbuser
 from lp.testing.factory import GPGSigningContext
+from lp.testing.fixture import ZopeUtilityFixture
 from lp.testing.gpgkeys import import_secret_test_key
 from lp.testing.layers import LaunchpadZopelessLayer
 from lp.testing.mail_helpers import pop_notifications
@@ -50,6 +56,30 @@ class FakeHandler:
     def process(self, mail, to_addr, filealias):
         self.handledMails.append(mail)
         return True
+
+
+class FakePymeKey:
+
+    def __init__(self, fingerprint):
+        self.fingerprint = fingerprint
+
+
+class FakeGPGHandlerExpired:
+
+    def __init__(self, key):
+        self.key = key
+
+    def getVerifiedSignature(self, content, signature=None):
+        raise GPGKeyExpired(self.key)
+
+
+class FakeGPGHandlerNotFound:
+
+    def __init__(self, fingerprint):
+        self.fingerprint = fingerprint
+
+    def getVerifiedSignature(self, content, signature=None):
+        raise GPGKeyNotFoundError(self.fingerprint)
 
 
 class IncomingTestCase(TestCaseWithFactory):
@@ -84,6 +114,72 @@ class IncomingTestCase(TestCaseWithFactory):
             "Launchpad's email\ninterface.\n\n\n"
             "Error message:\n\nSignature couldn't be verified: "
             "(7, 58, u'No data')",
+            body)
+
+    def test_expired_key(self):
+        """An expired key should not be handled as an OOPS.
+
+        It should produce a message explaining to the user what went wrong.
+        """
+        person = self.factory.makePerson()
+        key = FakePymeKey("0" * 40)
+        self.useFixture(ZopeUtilityFixture(
+            FakeGPGHandlerExpired(key), IGPGHandler))
+        transaction.commit()
+        email_address = person.preferredemail.email
+        invalid_body = (
+            '-----BEGIN PGP SIGNED MESSAGE-----\n'
+            'Hash: SHA1\n\n'
+            'Body\n'
+            '-----BEGIN PGP SIGNATURE-----\n'
+            'Not a signature.\n'
+            '-----END PGP SIGNATURE-----\n')
+        ctrl = MailController(
+            email_address, 'to@example.com', 'subject', invalid_body,
+            bulk=False)
+        ctrl.send()
+        handleMail()
+        self.assertEqual([], self.oopses)
+        [notification] = pop_notifications()
+        body = notification.get_payload()[0].get_payload(decode=True)
+        self.assertIn(
+            "An error occurred while processing a mail you sent to "
+            "Launchpad's email\ninterface.\n\n\n"
+            "Error message:\n\nSignature couldn't be verified: "
+            "%s\nhas expired" % key.fingerprint,
+            body)
+
+    def test_key_not_found(self):
+        """A key not found on the keyserver should not be handled as an OOPS.
+
+        It should produce a message explaining to the user what went wrong.
+        """
+        person = self.factory.makePerson()
+        fingerprint = "0" * 40
+        self.useFixture(ZopeUtilityFixture(
+            FakeGPGHandlerNotFound(fingerprint), IGPGHandler))
+        transaction.commit()
+        email_address = person.preferredemail.email
+        invalid_body = (
+            '-----BEGIN PGP SIGNED MESSAGE-----\n'
+            'Hash: SHA1\n\n'
+            'Body\n'
+            '-----BEGIN PGP SIGNATURE-----\n'
+            'Not a signature.\n'
+            '-----END PGP SIGNATURE-----\n')
+        ctrl = MailController(
+            email_address, 'to@example.com', 'subject', invalid_body,
+            bulk=False)
+        ctrl.send()
+        handleMail()
+        self.assertEqual([], self.oopses)
+        [notification] = pop_notifications()
+        body = notification.get_payload()[0].get_payload(decode=True)
+        self.assertIn(
+            "An error occurred while processing a mail you sent to "
+            "Launchpad's email\ninterface.\n\n\n"
+            "Error message:\n\nSignature couldn't be verified: "
+            "No GPG key found with the given content:\n%s" % fingerprint,
             body)
 
     def test_mail_too_big(self):
