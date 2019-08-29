@@ -67,3 +67,21 @@ class TestLiveFSBuildUploads(TestUploadProcessorBase):
             "LiveFS upload failed\nGot: %s" % self.log.getLogBuffer())
         self.assertEqual(BuildStatus.FULLYBUILT, self.build.status)
         self.assertTrue(self.build.verifySuccessfulUpload())
+
+    def test_empty_file(self):
+        # The upload processor can cope with empty build artifacts.  (LiveFS
+        # is quite a general method and can include a variety of artifacts:
+        # in particular it often includes an additional log file which can
+        # be empty.)
+        self.assertFalse(self.build.verifySuccessfulUpload())
+        upload_dir = os.path.join(
+            self.incoming_folder, "test", str(self.build.id), "ubuntu")
+        write_file(os.path.join(upload_dir, "livecd.magic-proxy.log"), b"")
+        handler = UploadHandler.forProcessor(
+            self.uploadprocessor, self.incoming_folder, "test", self.build)
+        result = handler.processLiveFS(self.log)
+        self.assertEqual(
+            UploadStatusEnum.ACCEPTED, result,
+            "LiveFS upload failed\nGot: %s" % self.log.getLogBuffer())
+        self.assertEqual(BuildStatus.FULLYBUILT, self.build.status)
+        self.assertTrue(self.build.verifySuccessfulUpload())

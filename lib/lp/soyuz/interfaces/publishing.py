@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Publishing interfaces."""
@@ -750,6 +750,18 @@ class IBinaryPackagePublishingHistoryPublic(IPublishingView):
             description=_("Is this a debug package publication?"),
             required=False, readonly=True),
         as_of="devel")
+
+    def getOtherPublications():
+        """Return remaining publications with the same overrides.
+
+        Only considers binary publications in the same archive, distroseries,
+        pocket, component, section, priority and phased-update-percentage
+        context. These publications are candidates for domination if this is
+        an architecture-independent package.
+
+        The override match is critical -- it prevents a publication created
+        by new overrides from superseding itself.
+        """
 
     def supersede(dominant=None, logger=None):
         """Supersede this publication.

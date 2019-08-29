@@ -130,15 +130,6 @@ class GPGHandler:
             if os.path.exists(filename):
                 os.remove(filename)
 
-    def verifySignature(self, content, signature=None):
-        """See IGPGHandler."""
-        try:
-            return self.getVerifiedSignature(content, signature)
-        except (GPGVerificationError, GPGKeyExpired):
-            # Swallow GPG verification errors
-            pass
-        return None
-
     def getVerifiedSignatureResilient(self, content, signature=None):
         """See IGPGHandler."""
         errors = []

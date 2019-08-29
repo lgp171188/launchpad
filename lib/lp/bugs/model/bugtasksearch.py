@@ -617,6 +617,15 @@ def _build_query(params):
         extra_clauses.append(BugTaskFlat.bug_owner == params.bug_reporter)
 
     if params.bug_commenter:
+        # Make sure that the planner makes effective use of BugTaskFlat
+        # indexes.  Searching for commented-on tasks first is almost always
+        # going to be much more selective than any other filter conditions.
+        # Note that just searching for bug IDs isn't sufficient in all
+        # cases, as the planner can still end up choosing an index scan over
+        # all of BugTaskFlat with quite non-selective conditions before it
+        # considers that CTE; but picking out the task IDs as well causes it
+        # to use a much quicker index scan of BugTaskFlat(bugtask) before
+        # doing any other filtering.
         with_clauses.append(convert_storm_clause_to_string(
             With('commented_bug_ids', Union(
                 Select(
@@ -634,9 +643,15 @@ def _build_query(params):
                         Or(
                             BugActivity.whatchanged != u'bug',
                             BugActivity.message != u'added bug')))))))
+        with_clauses.append(convert_storm_clause_to_string(
+            With('commented_bugtask_ids',
+                Select(
+                    BugTaskFlat.bugtask_id, tables=[BugTaskFlat],
+                    where=BugTaskFlat.bug_id.is_in(
+                        Select(Column('bug', 'commented_bug_ids')))))))
         extra_clauses.append(
-            BugTaskFlat.bug_id.is_in(
-                Select(Column('bug', 'commented_bug_ids'))))
+            BugTaskFlat.bugtask_id.is_in(
+                Select(Column('bugtask', 'commented_bugtask_ids'))))
 
     if params.affects_me:
         params.affected_user = params.user

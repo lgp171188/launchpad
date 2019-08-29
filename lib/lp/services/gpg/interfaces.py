@@ -223,13 +223,6 @@ class IGPGHandler(Interface):
         If the firgerprint cannot be sanitized return None.
         """
 
-    def verifySignature(content, signature=None):
-        """See `getVerifiedSignature`.
-
-        Suppress all exceptions and simply return None if the could not
-        be verified.
-        """
-
     def getURLForKeyInServer(fingerprint, action=None, public=False):
         """Return the URL for that fingerprint on the configured keyserver.
 
@@ -263,6 +256,7 @@ class IGPGHandler(Interface):
 
         :raise GPGVerificationError: if the signature cannot be verified.
         :raise GPGKeyExpired: if the signature was made with an expired key.
+        :raise GPGKeyNotFoundError: if the key was not found on the keyserver.
         :return: a `PymeSignature` object.
         """
 
