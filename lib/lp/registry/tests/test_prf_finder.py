@@ -224,13 +224,13 @@ class HandleReleaseTestCase(TestCase):
             fp.write('foo')
         return file_path, file_name
 
-    def add_tarball_response(self, file_path):
+    def add_tarball_response(self, file_path, scheme='http'):
         def callback(request):
             with open(file_path, 'rb') as f:
                 file_size = os.fstat(f.fileno()).st_size
                 return 200, {'Content-Length': str(file_size)}, f.read()
 
-        url = 'http://example.com/' + file_path.lstrip('/')
+        url = scheme + '://example.com/' + file_path.lstrip('/')
         responses.add_callback('GET', url, callback)
         return url
 
@@ -366,6 +366,24 @@ class HandleReleaseTestCase(TestCase):
         self.assertEqual(len(release_filenames), 2)
         self.assertTrue(file_name in release_filenames)
         self.assertTrue(alt_file_name in release_filenames)
+
+    @responses.activate
+    def test_handleRelease_ftp(self):
+        """handleRelease copes with ftp:// URLs."""
+        ztm = self.layer.txn
+        logging.basicConfig(level=logging.CRITICAL)
+        prf = ProductReleaseFinder(ztm, logging.getLogger())
+        file_path, file_name = self.create_tarball('evolution-45.0.tar.gz')
+        file_names = set()
+        url = self.add_tarball_response(file_path, scheme='ftp')
+        self.assertStartsWith(url, 'ftp://')
+        prf.handleRelease('evolution', 'trunk', url, file_names)
+        evo = getUtility(IProductSet).getByName('evolution')
+        trunk = evo.getSeries('trunk')
+        release = trunk.getRelease('45.0')
+        release_filenames = [file_info.libraryfile.filename
+                             for file_info in release.files]
+        self.assertEqual([file_name], release_filenames)
 
     def test_handleReleaseUnableToParseVersion(self):
         # Test that handleRelease() handles the case where a version can't be
