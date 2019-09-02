@@ -31,7 +31,10 @@ from lp.app.browser.launchpadform import (
 from lp.archivepublisher.debversion import Version
 from lp.registry.browser.objectreassignment import ObjectReassignmentView
 from lp.registry.interfaces.distribution import IDistributionMirrorMenuMarker
-from lp.registry.interfaces.distributionmirror import IDistributionMirror
+from lp.registry.interfaces.distributionmirror import (
+    IDistributionMirror,
+    MirrorStatus,
+    )
 from lp.services.propertycache import cachedproperty
 from lp.services.webapp import (
     canonical_url,
@@ -84,7 +87,8 @@ class DistributionMirrorOverviewMenu(NavigationMenu):
     @enabled_with_permission('launchpad.Edit')
     def resubmit(self):
         text = 'Resubmit for review'
-        return Link('+resubmit', text, icon='edit')
+        enabled = self.context.status == MirrorStatus.BROKEN
+        return Link('+resubmit', text, icon='edit', enabled=enabled)
 
 
 class _FlavoursByDistroSeries:
