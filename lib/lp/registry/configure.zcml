@@ -2010,7 +2010,6 @@
                 getSummarizedMirroredArchSeries
                 getOverallFreshness
                 isOfficial
-                resubmitForReview
                 shouldDisable
                 disable
                 newProbeRecord
@@ -2028,9 +2027,8 @@
             permission="launchpad.Edit"
             set_attributes="name display_name description whiteboard
                             http_base_url ftp_base_url rsync_base_url enabled
-                            speed country content official_candidate owner
-                            resubmitForReview"
-            attributes="official_candidate whiteboard" />
+                            speed country content official_candidate owner"
+            attributes="official_candidate whiteboard resubmitForReview" />
         <require
             permission="launchpad.Admin"
             set_attributes="status reviewer date_reviewed"
