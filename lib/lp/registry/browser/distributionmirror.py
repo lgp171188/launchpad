@@ -30,6 +30,7 @@ from lp.app.browser.launchpadform import (
     )
 from lp.archivepublisher.debversion import Version
 from lp.registry.browser.objectreassignment import ObjectReassignmentView
+from lp.registry.errors import InvalidMirrorReviewState
 from lp.registry.interfaces.distribution import IDistributionMirrorMenuMarker
 from lp.registry.interfaces.distributionmirror import (
     IDistributionMirror,
@@ -316,7 +317,12 @@ class DistributionMirrorResubmitView(LaunchpadEditFormView):
 
     @action(_("Resubmit"), name="resubmit")
     def action_resubmit(self, action, data):
-        self.context.resubmitForReview()
+        try:
+            self.context.resubmitForReview()
+        except InvalidMirrorReviewState:
+            self.request.response.addInfoNotification(
+                "The mirror is not in the correct state"
+                " (broken) and cannot be resubmitted")
         self.next_url = canonical_url(self.context)
 
 

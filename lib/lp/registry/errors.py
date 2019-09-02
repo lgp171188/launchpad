@@ -13,6 +13,7 @@ __all__ = [
     'CountryMirrorAlreadySet',
     'DeleteSubscriptionError',
     'InvalidFilename',
+    'InvalidMirrorReviewState',
     'InvalidName',
     'JoinNotAllowed',
     'MirrorNotOfficial',
@@ -221,6 +222,11 @@ class CannotDeleteCommercialSubscription(Exception):
 @error_status(httplib.BAD_REQUEST)
 class CannotChangeInformationType(Exception):
     """The information type cannot be changed."""
+
+
+@error_status(httplib.BAD_REQUEST)
+class InvalidMirrorReviewState(Exception):
+    """The mirror is in an invalid state in the review workflow."""
 
 
 class CannotPackageProprietaryProduct(Exception):
