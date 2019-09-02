@@ -322,7 +322,7 @@ class DistributionMirrorResubmitView(LaunchpadEditFormView):
         except InvalidMirrorReviewState:
             self.request.response.addInfoNotification(
                 "The mirror is not in the correct state"
-                " (broken) and cannot be resubmitted")
+                " (broken) and cannot be resubmitted.")
         self.next_url = canonical_url(self.context)
 
 
