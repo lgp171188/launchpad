@@ -312,10 +312,7 @@ class DistributionMirrorResubmitView(LaunchpadEditFormView):
         """See `LaunchpadFormView`."""
         return 'Resubmit mirror %s' % self.context.title
 
-    @property
-    def page_title(self):
-        """The page title."""
-        return self.label
+    page_title = label
 
     @action(_("Resubmit"), name="resubmit")
     def action_resubmit(self, action, data):
