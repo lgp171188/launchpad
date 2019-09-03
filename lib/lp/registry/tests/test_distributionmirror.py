@@ -233,8 +233,8 @@ class TestDistributionMirror(TestCaseWithFactory):
         login_as(self.archive_mirror.owner)
         self.archive_mirror.status = MirrorStatus.BROKEN
         self.archive_mirror.resubmitForReview()
-        self.assertTrue(
-            self.archive_mirror.status == MirrorStatus.PENDING_REVIEW)
+        self.assertEqual(
+            MirrorStatus.PENDING_REVIEW, self.archive_mirror.status)
 
 
 class TestDistributionMirrorSet(TestCase):
