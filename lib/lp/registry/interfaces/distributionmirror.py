@@ -244,6 +244,13 @@ class MirrorStatus(DBEnumeratedType):
         the official mirrors for its distribution.
         """)
 
+    BROKEN = DBItem(40, """
+        Broken
+
+        This mirror has been reviewed and seems to not respond or
+        is otherwise misconfigured.
+        """)
+
 
 class DistributionMirrorNameField(ContentNameField):
     errormessage = _("%s is already in use by another distribution mirror.")
@@ -500,6 +507,12 @@ class IDistributionMirror(Interface):
 
         The notification(s) are actually sent only if this mirror was
         previously enabled or if it was probed only once.
+        """
+
+    def resubmitForReview():
+        """Allow the owner (launchpad.Edit) to resubmit for review.
+
+        Only allows the transition state from 'Broken' to 'Pending Review'.
         """
 
     def newProbeRecord(log_file):

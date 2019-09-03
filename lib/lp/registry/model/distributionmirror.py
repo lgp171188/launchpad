@@ -39,6 +39,7 @@ from lp.archivepublisher.diskpool import poolify
 from lp.registry.errors import (
     CannotTransitionToCountryMirror,
     CountryMirrorAlreadySet,
+    InvalidMirrorReviewState,
     MirrorHasNoHTTPURL,
     MirrorNotOfficial,
     MirrorNotProbed,
@@ -330,6 +331,13 @@ class DistributionMirror(SQLBase):
         """See IDistributionMirror"""
         return (self.official_candidate
                 and self.status == MirrorStatus.OFFICIAL)
+
+    def resubmitForReview(self):
+        """See IDistributionMirror"""
+        if self.status != MirrorStatus.BROKEN:
+            raise InvalidMirrorReviewState(
+                "DistributionMirror.status is not BROKEN")
+        self.status = MirrorStatus.PENDING_REVIEW
 
     def shouldDisable(self, expected_file_count=None):
         """See IDistributionMirror"""
