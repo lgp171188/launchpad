@@ -1337,7 +1337,8 @@ class BinaryPackageBuildSet(SpecificBuildFarmJobSourceMixin):
                  archive,
                  architectures_available
                     or distroseries.buildable_architectures)
-             if das.architecturetag not in skip_archtags],
+             if das.architecturetag not in skip_archtags and
+                das.isSourceIncluded(sourcepackagerelease.sourcepackagename)],
             key=attrgetter('processor.id'))
         nominated_arch_indep_tag = (
             distroseries.nominatedarchindep.architecturetag
