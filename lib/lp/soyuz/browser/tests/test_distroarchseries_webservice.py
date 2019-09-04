@@ -11,12 +11,14 @@ from lazr.restfulclient.errors import (
     BadRequest,
     Unauthorized,
     )
+from testtools.matchers import MatchesStructure
 from zope.security.management import endInteraction
 
 from lp.buildmaster.enums import BuildBaseImageType
 from lp.registry.enums import PersonVisibility
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.services.features.testing import FeatureFixture
+from lp.soyuz.enums import DistroArchSeriesFilterSense
 from lp.soyuz.interfaces.livefs import LIVEFS_FEATURE_FLAG
 from lp.testing import (
     api_url,
@@ -291,3 +293,56 @@ class TestDistroArchSeriesWebservice(TestCaseWithFactory):
             image_type="LXD image")
         self.assertIsNone(das.getChroot(image_type=BuildBaseImageType.CHROOT))
         self.assertEqual(lfa, das.getChroot(image_type=BuildBaseImageType.LXD))
+
+    def test_setFilter_removeFilter_random_user(self):
+        # Random users are not allowed to set or remove filters.
+        das = self.factory.makeDistroArchSeries()
+        packageset = self.factory.makePackageset(distroseries=das.distroseries)
+        user = self.factory.makePerson()
+        packageset_url = api_url(packageset)
+        webservice = launchpadlib_for("testing", user, version="devel")
+        ws_das = ws_object(webservice, das)
+        self.assertRaises(
+            Unauthorized, ws_das.setFilter,
+            packageset=packageset_url, sense="Include")
+        self.assertRaises(Unauthorized, ws_das.removeFilter)
+
+    def test_setFilter_wrong_distroseries(self):
+        # Trying to set a filter using a packageset for the wrong
+        # distroseries returns an error.
+        das = self.factory.makeDistroArchSeries()
+        packageset = self.factory.makePackageset()
+        user = das.distroseries.distribution.main_archive.owner
+        packageset_url = api_url(packageset)
+        webservice = launchpadlib_for("testing", user, version="devel")
+        ws_das = ws_object(webservice, das)
+        e = self.assertRaises(
+            BadRequest, ws_das.setFilter,
+            packageset=packageset_url, sense="Include")
+        self.assertEqual(
+            "The requested package set is for %s and cannot be set as a "
+            "filter for %s %s." % (
+                packageset.distroseries.fullseriesname,
+                das.distroseries.fullseriesname, das.architecturetag),
+            e.content)
+
+    def test_setFilter_removeFilter(self):
+        das = self.factory.makeDistroArchSeries()
+        packageset = self.factory.makePackageset(distroseries=das.distroseries)
+        user = das.distroseries.distribution.main_archive.owner
+        packageset_url = api_url(packageset)
+        webservice = launchpadlib_for("testing", user, version="devel")
+        ws_das = ws_object(webservice, das)
+        ws_das.setFilter(packageset=packageset_url, sense="Include")
+        with person_logged_in(user):
+            dasf = das.getFilter()
+        self.assertThat(dasf, MatchesStructure.byEquality(
+            packageset=packageset, sense=DistroArchSeriesFilterSense.INCLUDE))
+        ws_das.setFilter(packageset=packageset_url, sense="Exclude")
+        with person_logged_in(user):
+            dasf = das.getFilter()
+        self.assertThat(dasf, MatchesStructure.byEquality(
+            packageset=packageset, sense=DistroArchSeriesFilterSense.EXCLUDE))
+        ws_das.removeFilter()
+        with person_logged_in(user):
+            self.assertIsNone(das.getFilter())

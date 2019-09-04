@@ -16,6 +16,7 @@ __all__ = [
 import httplib
 
 from lazr.restful.declarations import (
+    call_with,
     error_status,
     export_as_webservice_entry,
     export_read_operation,
@@ -23,6 +24,7 @@ from lazr.restful.declarations import (
     exported,
     operation_for_version,
     operation_parameters,
+    REQUEST_USER,
     )
 from lazr.restful.fields import (
     Reference,
@@ -49,6 +51,7 @@ from lp.registry.interfaces.distroseries import IDistroSeries
 from lp.registry.interfaces.person import IPerson
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.registry.interfaces.role import IHasOwner
+from lp.soyuz.enums import DistroArchSeriesFilterSense
 from lp.soyuz.interfaces.buildrecords import IHasBuildRecords
 
 
@@ -292,6 +295,15 @@ class IDistroArchSeriesModerate(Interface):
         tarball".
         """
 
+    @operation_parameters(
+        # Really IPackageset, patched in _schema_circular_imports.py.
+        packageset=Reference(Interface, title=_("Package set"), required=True),
+        sense=Choice(
+            vocabulary=DistroArchSeriesFilterSense,
+            title=_("Sense"), required=True))
+    @call_with(creator=REQUEST_USER)
+    @export_write_operation()
+    @operation_for_version("devel")
     def setFilter(packageset, sense, creator):
         """Set a filter for packages to build for this architecture.
 
@@ -314,6 +326,8 @@ class IDistroArchSeriesModerate(Interface):
         :param creator: The `IPerson` who is creating this filter.
         """
 
+    @export_write_operation()
+    @operation_for_version("devel")
     def removeFilter():
         """Remove any filter for packages to build for this architecture.
 
