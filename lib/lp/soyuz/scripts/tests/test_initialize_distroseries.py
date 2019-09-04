@@ -5,6 +5,7 @@
 
 __metaclass__ = type
 
+from testtools.matchers import MatchesStructure
 import transaction
 from zope.component import getUtility
 
@@ -22,6 +23,7 @@ from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.services.database.interfaces import IStore
 from lp.soyuz.enums import (
     ArchivePurpose,
+    DistroArchSeriesFilterSense,
     IndexCompressionType,
     PackageUploadStatus,
     SourcePackageFormat,
@@ -828,6 +830,56 @@ class TestInitializeDistroSeries(InitializationHelperTestCase):
                 series.main_archive.canAdministerQueue(
                     releaser, pocket=PackagePublishingPocket.RELEASE,
                     distroseries=series))
+
+    def test_intra_distro_filter_copying(self):
+        # If child.distribution equals parent.distribution, we also copy any
+        # DAS filters.
+        parent, parent_das1 = self.setupParent(proc='386', arch_tag='i386')
+        _, parent_das2 = self.setupParent(
+            parent=parent, proc='amd64', arch_tag='amd64')
+        _, parent_das3 = self.setupParent(
+            parent=parent, proc='hppa', arch_tag='hppa')
+        parent_dasf1 = self.factory.makeDistroArchSeriesFilter(
+            distroarchseries=parent_das1,
+            sense=DistroArchSeriesFilterSense.INCLUDE)
+        parent_dasf2 = self.factory.makeDistroArchSeriesFilter(
+            distroarchseries=parent_das2,
+            sense=DistroArchSeriesFilterSense.EXCLUDE)
+        # Create child series in the same distribution.
+        child = self.factory.makeDistroSeries(
+            distribution=parent.distribution, previous_series=parent)
+        self._fullInitialize([parent], child=child)
+
+        # The child series has corresponding packagesets and DAS filters.
+        parent_set1 = parent_dasf1.packageset
+        parent_set2 = parent_dasf2.packageset
+        child_set1 = getUtility(IPackagesetSet).getByName(
+            child, parent_set1.name)
+        child_set2 = getUtility(IPackagesetSet).getByName(
+            child, parent_set2.name)
+        self.assertEqual(parent_set1.description, child_set1.description)
+        self.assertEqual(parent_set2.description, child_set2.description)
+        self.assertEqual(parent_set1, child_set1.relatedSets().one())
+        self.assertEqual(parent_set2, child_set2.relatedSets().one())
+        self.assertThat(
+            child['i386'].getFilter(), MatchesStructure.byEquality(
+                packageset=child_set1,
+                sense=DistroArchSeriesFilterSense.INCLUDE,
+                creator=parent_dasf1.creator))
+        self.assertThat(
+            child['amd64'].getFilter(), MatchesStructure.byEquality(
+                packageset=child_set2,
+                sense=DistroArchSeriesFilterSense.EXCLUDE,
+                creator=parent_dasf2.creator))
+        self.assertIsNone(child['hppa'].getFilter())
+
+    def test_no_cross_distro_filter_copying(self):
+        # No cross-distro DAS filter copying should happen.
+        parent, parent_das = self.setupParent()
+        self.factory.makeDistroArchSeriesFilter(distroarchseries=parent_das)
+        child = self._fullInitialize([parent])
+        for child_das in child.architectures:
+            self.assertIsNone(child_das.getFilter())
 
     def test_packageset_owner_preserved_within_distro(self):
         # When initializing a new series within a distro, the copied
