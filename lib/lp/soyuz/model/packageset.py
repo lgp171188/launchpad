@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -142,8 +142,7 @@ class Packageset(Storm):
         ''' % ','.join(str(packageset.id) for packageset in packagesets)
         store.execute(rdsq, (self.id,), noresult=True)
 
-    def sourcesIncluded(self, direct_inclusion=False):
-        """See `IPackageset`."""
+    def _sourcesIncludedClause(self, direct_inclusion=False):
         if direct_inclusion == False:
             source_name_query = '''
                 SELECT pss.sourcepackagename
@@ -155,16 +154,29 @@ class Packageset(Storm):
                 SELECT pss.sourcepackagename FROM packagesetsources pss
                 WHERE pss.packageset = ?
             '''
+        return SourcePackageName.id.is_in(SQL(source_name_query, (self.id,)))
+
+    def sourcesIncluded(self, direct_inclusion=False):
+        """See `IPackageset`."""
         store = IStore(Packageset)
-        source_names = SQL(source_name_query, (self.id,))
         result_set = store.find(
-            SourcePackageName, SourcePackageName.id.is_in(source_names))
+            SourcePackageName,
+            self._sourcesIncludedClause(direct_inclusion=direct_inclusion))
         return _order_result_set(result_set)
 
     def getSourcesIncluded(self, direct_inclusion=False):
         """See `IPackageset`."""
         result_set = self.sourcesIncluded(direct_inclusion)
         return list(result_set.values(SourcePackageName.name))
+
+    def isSourceIncluded(self, sourcepackagename, direct_inclusion=False):
+        """See `IPackageset`."""
+        store = IStore(Packageset)
+        result_set = store.find(
+            SourcePackageName,
+            SourcePackageName.id == sourcepackagename.id,
+            self._sourcesIncludedClause(direct_inclusion=direct_inclusion))
+        return not result_set.is_empty()
 
     def setsIncludedBy(self, direct_inclusion=False):
         """See `IPackageset`."""
