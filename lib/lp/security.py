@@ -229,6 +229,7 @@ from lp.soyuz.interfaces.binarypackagerelease import (
     IBinaryPackageReleaseDownloadCount,
     )
 from lp.soyuz.interfaces.distroarchseries import IDistroArchSeries
+from lp.soyuz.interfaces.distroarchseriesfilter import IDistroArchSeriesFilter
 from lp.soyuz.interfaces.livefs import ILiveFS
 from lp.soyuz.interfaces.livefsbuild import ILiveFSBuild
 from lp.soyuz.interfaces.packagecopyjob import IPlainPackageCopyJob
@@ -1466,6 +1467,24 @@ class ModerateDistroArchSeries(AuthorizationBase):
         return (
             user.isOwner(self.obj.distroseries.distribution.main_archive)
             or user.in_admin)
+
+
+class ViewDistroArchSeriesFilter(DelegatedAuthorization):
+    permission = 'launchpad.View'
+    usedfor = IDistroArchSeriesFilter
+
+    def __init__(self, obj):
+        super(ViewDistroArchSeriesFilter, self).__init__(
+            obj, obj.distroarchseries, 'launchpad.View')
+
+
+class EditDistroArchSeriesFilter(DelegatedAuthorization):
+    permission = 'launchpad.Edit'
+    usedfor = IDistroArchSeriesFilter
+
+    def __init__(self, obj):
+        super(EditDistroArchSeriesFilter, self).__init__(
+            obj, obj.distroarchseries, 'launchpad.Moderate')
 
 
 class ViewAnnouncement(AuthorizationBase):

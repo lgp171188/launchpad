@@ -255,3 +255,37 @@ alphabetically by 'architecturetag'.
     >>> print_architectures(hoary.buildable_architectures)
     The Hoary Hedgehog Release for hppa (hppa) (ppa)
     The Hoary Hedgehog Release for i386 (386) (official, ppa)
+
+An architecture can have an associated filter that controls which packages
+are included in it.  It has an `isSourceIncluded` method that allows
+querying inclusion by `SourcePackageName`.
+
+    >>> from lp.soyuz.enums import DistroArchSeriesFilterSense
+
+    >>> spns = [factory.makeSourcePackageName() for _ in range(3)]
+    >>> hoary.getDistroArchSeries('i386').isSourceIncluded(spns[0])
+    True
+
+    >>> packageset_include = factory.makePackageset(distroseries=hoary)
+    >>> packageset_include.add(spns[:2])
+    >>> hoary.getDistroArchSeries('i386').setFilter(
+    ...     packageset_include, DistroArchSeriesFilterSense.INCLUDE,
+    ...     factory.makePerson())
+    >>> packageset_exclude = factory.makePackageset(distroseries=hoary)
+    >>> packageset_exclude.add(spns[1:])
+    >>> hoary.getDistroArchSeries('hppa').setFilter(
+    ...     packageset_exclude, DistroArchSeriesFilterSense.EXCLUDE,
+    ...     factory.makePerson())
+
+    >>> hoary.getDistroArchSeries('i386').isSourceIncluded(spns[0])
+    True
+    >>> hoary.getDistroArchSeries('i386').isSourceIncluded(spns[1])
+    True
+    >>> hoary.getDistroArchSeries('i386').isSourceIncluded(spns[2])
+    False
+    >>> hoary.getDistroArchSeries('hppa').isSourceIncluded(spns[0])
+    True
+    >>> hoary.getDistroArchSeries('hppa').isSourceIncluded(spns[1])
+    False
+    >>> hoary.getDistroArchSeries('hppa').isSourceIncluded(spns[2])
+    False

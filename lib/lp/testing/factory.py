@@ -297,6 +297,7 @@ from lp.soyuz.enums import (
     ArchivePurpose,
     BinaryPackageFileType,
     BinaryPackageFormat,
+    DistroArchSeriesFilterSense,
     PackageDiffStatus,
     PackagePublishingPriority,
     PackagePublishingStatus,
@@ -326,6 +327,7 @@ from lp.soyuz.model.component import ComponentSelection
 from lp.soyuz.model.distributionsourcepackagecache import (
     DistributionSourcePackageCache,
     )
+from lp.soyuz.model.distroarchseriesfilter import DistroArchSeriesFilter
 from lp.soyuz.model.files import BinaryPackageFile
 from lp.soyuz.model.livefsbuild import LiveFSFile
 from lp.soyuz.model.packagediff import PackageDiff
@@ -4197,6 +4199,27 @@ class BareLaunchpadObjectFactory(ObjectFactory):
                 name, description, owner, distroseries, related_set))
         run_with_login(owner, lambda: package_set.add(packages))
         return package_set
+
+    def makeDistroArchSeriesFilter(self, distroarchseries=None,
+                                   packageset=None,
+                                   sense=DistroArchSeriesFilterSense.INCLUDE,
+                                   creator=None, date_created=DEFAULT):
+        """Make a new `DistroArchSeriesFilter`."""
+        if distroarchseries is None:
+            if packageset is not None:
+                distroseries = packageset.distroseries
+            else:
+                distroseries = None
+            distroarchseries = self.makeDistroArchSeries(
+                distroseries=distroseries)
+        if packageset is None:
+            packageset = self.makePackageset(
+                distroseries=distroarchseries.distroseries)
+        if creator is None:
+            creator = self.makePerson()
+        return DistroArchSeriesFilter(
+            distroarchseries=distroarchseries, packageset=packageset,
+            sense=sense, creator=creator, date_created=date_created)
 
     def getAnyPocket(self):
         return PackagePublishingPocket.BACKPORTS

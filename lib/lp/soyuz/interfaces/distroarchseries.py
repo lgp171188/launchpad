@@ -7,6 +7,7 @@ __metaclass__ = type
 
 __all__ = [
     'ChrootNotPublic',
+    'FilterSeriesMismatch',
     'IDistroArchSeries',
     'InvalidChrootUploaded',
     'IPocketChroot',
@@ -63,6 +64,19 @@ class ChrootNotPublic(Exception):
     def __init__(self):
         super(Exception, self).__init__(
             "Cannot set chroot from a private build.")
+
+
+@error_status(httplib.BAD_REQUEST)
+class FilterSeriesMismatch(Exception):
+    """DAS and packageset distroseries do not match when setting a filter."""
+
+    def __init__(self, distroarchseries, packageset):
+        super(Exception, self).__init__(
+            "The requested package set is for %s and cannot be set as a "
+            "filter for %s %s." % (
+                packageset.distroseries.fullseriesname,
+                distroarchseries.distroseries.fullseriesname,
+                distroarchseries.architecturetag))
 
 
 class IDistroArchSeriesPublic(IHasBuildRecords, IHasOwner):
@@ -216,6 +230,21 @@ class IDistroArchSeriesPublic(IHasBuildRecords, IHasOwner):
         this distro arch series.
         """
 
+    def getFilter():
+        """Get the filter for packages to build for this architecture, if any.
+
+        Packages are normally built for all available architectures, subject
+        to any constraints in their `Architecture` field.  If a filter is
+        set, then it applies the additional constraint that packages not
+        included by the filter will not be built for this architecture.
+        """
+
+    def isSourceIncluded(sourcepackagerelease):
+        """Is this source package included in this distro arch series?
+
+        :param sourcepackagerelease: An `ISourcePackageRelease` to check.
+        """
+
 
 class IDistroArchSeriesModerate(Interface):
 
@@ -261,6 +290,36 @@ class IDistroArchSeriesModerate(Interface):
 
         The pocket defaults to "Release"; the image type defaults to "Chroot
         tarball".
+        """
+
+    def setFilter(packageset, sense, creator):
+        """Set a filter for packages to build for this architecture.
+
+        Packages are normally built for all available architectures, subject
+        to any constraints in their `Architecture` field.  If a filter is
+        set, then it applies the additional constraint that packages not
+        included by the filter will not be built for this architecture.
+
+        If the sense of the filter is "Include", then the filter only
+        includes packages in the given package set.  If the sense of the
+        filter is "Exclude", then the filter only includes packages not in
+        the given package set.
+
+        Later changes to the given package set will also affect any filters
+        using it.
+
+        :param packageset: An `IPackageset` to use as a filter.
+        :param sense: A `DistroArchSeriesFilterSense` item indicating
+            whether the filter includes or excludes packages.
+        :param creator: The `IPerson` who is creating this filter.
+        """
+
+    def removeFilter():
+        """Remove any filter for packages to build for this architecture.
+
+        This causes packages to be built for this architecture when they
+        might previously have been filtered, subject to any constraints in
+        their `Architecture` field.
         """
 
 

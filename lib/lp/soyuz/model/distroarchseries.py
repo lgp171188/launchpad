@@ -55,9 +55,13 @@ from lp.soyuz.interfaces.binarypackagename import IBinaryPackageName
 from lp.soyuz.interfaces.buildrecords import IHasBuildRecords
 from lp.soyuz.interfaces.distroarchseries import (
     ChrootNotPublic,
+    FilterSeriesMismatch,
     IDistroArchSeries,
     InvalidChrootUploaded,
     IPocketChroot,
+    )
+from lp.soyuz.interfaces.distroarchseriesfilter import (
+    IDistroArchSeriesFilterSet,
     )
 from lp.soyuz.interfaces.publishing import active_publishing_status
 from lp.soyuz.model.binarypackagename import BinaryPackageName
@@ -340,6 +344,32 @@ class DistroArchSeries(SQLBase):
     @property
     def main_archive(self):
         return self.distroseries.distribution.main_archive
+
+    def getFilter(self):
+        """See `IDistroArchSeries`."""
+        return getUtility(IDistroArchSeriesFilterSet).getByDistroArchSeries(
+            self)
+
+    def setFilter(self, packageset, sense, creator):
+        """See `IDistroArchSeries`."""
+        if self.distroseries != packageset.distroseries:
+            raise FilterSeriesMismatch(self, packageset)
+        self.removeFilter()
+        getUtility(IDistroArchSeriesFilterSet).new(
+            self, packageset, sense, creator)
+
+    def removeFilter(self):
+        """See `IDistroArchSeries`."""
+        dasf = self.getFilter()
+        if dasf is not None:
+            dasf.destroySelf()
+
+    def isSourceIncluded(self, sourcepackagename):
+        """See `IDistroArchSeries`."""
+        dasf = self.getFilter()
+        if dasf is None:
+            return True
+        return dasf.isSourceIncluded(sourcepackagename)
 
 
 @implementer(IPocketChroot)
