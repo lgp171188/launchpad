@@ -155,6 +155,8 @@ class GitAPI(LaunchpadXMLRPCView):
         writable = None
 
         if macaroon_raw is not None:
+            if requester is None:
+                raise faults.Unauthorized()
             verify_user = (
                 None if requester == LAUNCHPAD_SERVICES else requester)
             verified = self._verifyMacaroon(
@@ -432,6 +434,8 @@ class GitAPI(LaunchpadXMLRPCView):
         try:
             macaroon_raw = auth_params.get("macaroon")
             if macaroon_raw is not None:
+                if requester is None:
+                    raise faults.Unauthorized()
                 verify_user = (
                     None if requester == LAUNCHPAD_SERVICES else requester)
                 verified = self._verifyMacaroon(

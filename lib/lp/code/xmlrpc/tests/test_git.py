@@ -1108,10 +1108,10 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
         macaroon = issuer.issueMacaroon(repository)
         requesters = [self.factory.makePerson() for _ in range(2)]
         for verified_user, authorized, unauthorized in (
-                (NO_USER, [LAUNCHPAD_SERVICES], requesters),
+                (NO_USER, [LAUNCHPAD_SERVICES], requesters + [None]),
                 (requesters[0], [requesters[0]],
-                 [LAUNCHPAD_SERVICES, requesters[1]]),
-                (None, [], [LAUNCHPAD_SERVICES] + requesters),
+                 [LAUNCHPAD_SERVICES, requesters[1], None]),
+                (None, [], [LAUNCHPAD_SERVICES] + requesters + [None]),
                 ):
             issuer._verified_user = verified_user
             for requester in authorized:
@@ -1447,10 +1447,10 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
         ref_path = b"refs/heads/master"
         macaroon = issuer.issueMacaroon(repository)
         for verified_user, authorized, unauthorized in (
-                (NO_USER, [LAUNCHPAD_SERVICES], requesters),
+                (NO_USER, [LAUNCHPAD_SERVICES], requesters + [None]),
                 (requesters[0], [requesters[0]],
-                 [LAUNCHPAD_SERVICES, requesters[1]]),
-                (None, [], [LAUNCHPAD_SERVICES] + requesters),
+                 [LAUNCHPAD_SERVICES, requesters[1], None]),
+                (None, [], [LAUNCHPAD_SERVICES] + requesters + [None]),
                 ):
             issuer._verified_user = verified_user
             for requester in authorized:
