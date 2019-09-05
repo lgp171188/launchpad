@@ -144,6 +144,11 @@ class SourcePackageRelease(SQLBase):
         if 'copyright' in kwargs:
             copyright = kwargs.pop('copyright')
         super(SourcePackageRelease, self).__init__(*args, **kwargs)
+        # PostgresSQL text columns can't contain null
+        # characters, so remove them as this is only
+        # used for display
+        if copyright is not None:
+            copyright = copyright.replace("\0", "")
         self.copyright = copyright
 
     def __repr__(self):
