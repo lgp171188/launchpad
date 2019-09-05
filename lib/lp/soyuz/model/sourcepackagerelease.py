@@ -147,7 +147,9 @@ class SourcePackageRelease(SQLBase):
         # PostgresSQL text columns can't contain null
         # characters, so remove them as this is only
         # used for display
-        self.copyright = copyright.replace("\0", "")
+        if copyright is not None:
+            copyright = copyright.replace("\0", "")
+        self.copyright = copyright
 
     def __repr__(self):
         """Returns an informative representation of a SourcePackageRelease."""
