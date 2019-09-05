@@ -145,22 +145,43 @@ class GitAPI(LaunchpadXMLRPCView):
                     raise faults.Unauthorized()
         return verified
 
-    def _performLookup(self, requester, path, auth_params):
-        repository, extra_path = getUtility(IGitLookup).getByPath(path)
-        if repository is None:
-            return None
+    def _verifyAuthParams(self, requester, repository, auth_params):
+        """Verify authentication parameters in the context of a repository.
 
+        There are several possibilities:
+
+         * Anonymous authentication with no macaroon.  We do no additional
+           checks here.
+         * Anonymous authentication with a macaroon.  This is forbidden.
+         * User authentication with no macaroon.  We do no additional checks
+           here.
+         * User authentication with a macaroon.  In this case, the macaroon
+           is required to match the requester, and constrains their
+           permissions.
+         * Internal-services authentication with a macaroon.  In this case,
+           we require that the macaroon does not identify a user.
+         * Internal-services authentication with no macaroon.  This is
+           forbidden.
+
+        :param requester: The logged-in `IPerson`, `LAUNCHPAD_SERVICES`, or
+            None for anonymous access.
+        :param repository: The context `IGitRepository`.
+        :param auth_params: A dictionary of authentication parameters.
+        :return: An `IMacaroonVerificationResult` if macaroon authentication
+            was used, otherwise None.
+        :raises faults.Unauthorized: if the authentication parameters are
+            not sufficient to grant access to the repository for this
+            requester.
+        """
         macaroon_raw = auth_params.get("macaroon")
-        naked_repository = removeSecurityProxy(repository)
-        writable = None
-
         if macaroon_raw is not None:
             if requester is None:
                 raise faults.Unauthorized()
             verify_user = (
                 None if requester == LAUNCHPAD_SERVICES else requester)
             verified = self._verifyMacaroon(
-                macaroon_raw, naked_repository, user=verify_user)
+                macaroon_raw, removeSecurityProxy(repository),
+                user=verify_user)
             if not verified:
                 # Macaroon authentication failed.  Don't fall back to the
                 # requester's permissions, since macaroons typically have
@@ -169,25 +190,31 @@ class GitAPI(LaunchpadXMLRPCView):
                 # existence of repositories without presenting valid
                 # credentials.
                 raise faults.Unauthorized()
-
-            if verified.user is NO_USER:
-                # We know that the authentication parameters specifically
-                # grant access to this repository because we were able to
-                # verify the macaroon using the repository as its context,
-                # so we can bypass other checks.  This is only permitted for
-                # macaroons not bound to a user.
-                hosting_path = naked_repository.getInternalPath()
-                writable = _can_internal_issuer_write(verified)
-                private = naked_repository.private
-
-            # In any other case, the macaroon constrains the permissions of
-            # the principal, so fall through to doing normal user
-            # authorisation.
+            # _verifyMacaroon checks that any user indicated by the macaroon
+            # matches the requester.
+            return verified
         elif requester == LAUNCHPAD_SERVICES:
             # Internal services must authenticate using a macaroon.
             raise faults.Unauthorized()
 
-        if writable is None:
+    def _performLookup(self, requester, path, auth_params):
+        repository, extra_path = getUtility(IGitLookup).getByPath(path)
+        if repository is None:
+            return None
+
+        verified = self._verifyAuthParams(requester, repository, auth_params)
+        naked_repository = removeSecurityProxy(repository)
+
+        if verified is not None and verified.user is NO_USER:
+            # We have verified that the authentication parameters correctly
+            # specify internal-services authentication with a suitable
+            # macaroon that specifically grants access to this repository,
+            # so we can bypass other checks.  This is only permitted for
+            # macaroons not bound to a user.
+            hosting_path = naked_repository.getInternalPath()
+            writable = _can_internal_issuer_write(verified)
+            private = naked_repository.private
+        else:
             # This isn't an authorised internal service, so perform normal
             # user authorisation.
             try:
@@ -432,35 +459,19 @@ class GitAPI(LaunchpadXMLRPCView):
             raise faults.GitRepositoryNotFound(translated_path)
 
         try:
-            macaroon_raw = auth_params.get("macaroon")
-            if macaroon_raw is not None:
-                if requester is None:
-                    raise faults.Unauthorized()
-                verify_user = (
-                    None if requester == LAUNCHPAD_SERVICES else requester)
-                verified = self._verifyMacaroon(
-                    macaroon_raw, repository, user=verify_user)
-                if not verified:
-                    # Macaroon authentication failed.  Don't fall back to
-                    # the requester's permissions, since macaroons typically
-                    # have additional constraints.
+            verified = self._verifyAuthParams(
+                requester, repository, auth_params)
+            if verified is not None and verified.user is NO_USER:
+                if not _can_internal_issuer_write(verified):
                     raise faults.Unauthorized()
 
-                if verified.user is NO_USER:
-                    if not _can_internal_issuer_write(verified):
-                        raise faults.Unauthorized()
-
-                    # We know that the authentication parameters
-                    # specifically grant access to this repository because
-                    # we were able to verify the macaroon using the
-                    # repository as its context, so we can bypass other
-                    # checks and grant access as an anonymous repository
-                    # owner.  This is only permitted for selected macaroon
-                    # issuers used by internal services.
-                    requester = GitGranteeType.REPOSITORY_OWNER
-            elif requester == LAUNCHPAD_SERVICES:
-                # Internal services must authenticate using a macaroon.
-                raise faults.Unauthorized()
+                # We have verified that the authentication parameters
+                # correctly specify internal-services authentication with a
+                # suitable macaroon that specifically grants access to this
+                # repository, so we can bypass other checks and grant access
+                # as an anonymous repository owner.  This is only permitted
+                # for selected macaroon issuers.
+                requester = GitGranteeType.REPOSITORY_OWNER
         except faults.Unauthorized:
             # XXX cjwatson 2019-05-09: It would be simpler to just raise
             # this directly, but turnip won't handle it very gracefully at
