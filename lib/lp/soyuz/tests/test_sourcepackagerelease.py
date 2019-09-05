@@ -115,3 +115,10 @@ class TestSourcePackageRelease(TestCaseWithFactory):
         observed = spph.sourcepackagerelease.aggregate_changelog(
             since_version=None)
         self.assertEqual(changelog_main.decode("UTF-8", "replace"), observed)
+
+    def test_null_string_in_copyright(self):
+        test_string = "test string with null \0 character"
+        package = self.factory.makeSourcePackageRelease(copyright=test_string)
+        self.assertEqual(
+            package.copyright,
+            "test string with null  character")
