@@ -121,4 +121,4 @@ class TestSourcePackageRelease(TestCaseWithFactory):
         package = self.factory.makeSourcePackageRelease(copyright=test_string)
         self.assertEqual(
             package.copyright,
-            "test string will null character")
+            "test string with null  character")
