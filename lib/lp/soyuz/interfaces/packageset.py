@@ -182,6 +182,16 @@ class IPackagesetViewOnly(IHasOwner):
             names.
         """
 
+    def isSourceIncluded(sourcepackagename, direct_inclusion=False):
+        """Is this source package name included in this package set?
+
+        :param sourcepackagename: an `ISourcePackageName`.
+        :param direct_inclusion: if this flag is set to True only sources
+            directly included by this package set will be considered.
+        :return: True if the source is included in this package set,
+            otherwise False.
+        """
+
     @operation_parameters(
         other_package_set=Reference(
             Interface,
