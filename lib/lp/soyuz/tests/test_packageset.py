@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test Packageset features."""
@@ -452,6 +452,30 @@ class TestPackageset(TestCaseWithFactory):
         self.assertEqual(
             sorted(packageset1.sourcesIncluded()),
             sorted(packages1 + packages2))
+
+    def test_is_source_included(self):
+        # Test if a source package name is included in a set
+        packageset, packages = self.buildSet()
+        for spn in packages:
+            self.assertTrue(packageset.isSourceIncluded(spn))
+        self.assertFalse(
+            packageset.isSourceIncluded(self.factory.makeSourcePackageName()))
+
+    def test_is_source_included_indirect(self):
+        # isSourceIncluded traverses the set tree, by default
+        packageset1, packages1 = self.buildSet()
+        packageset2, packages2 = self.buildSet()
+        packageset1.add((packageset2,))
+        for spn in packages1 + packages2:
+            self.assertTrue(packageset1.isSourceIncluded(spn))
+
+        # direct_inclusion disables traversal
+        for spn in packages1:
+            self.assertTrue(
+                packageset1.isSourceIncluded(spn, direct_inclusion=True))
+        for spn in packages2:
+            self.assertFalse(
+                packageset1.isSourceIncluded(spn, direct_inclusion=True))
 
     def test_add_already_included_sources(self):
         # Adding source packages to a package set repeatedly has no effect
