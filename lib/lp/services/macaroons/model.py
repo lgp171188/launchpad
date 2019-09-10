@@ -29,6 +29,7 @@ class MacaroonVerificationResult:
 
     def __init__(self, identifier):
         self._issuer_name = identifier
+        self.user = None
 
     @property
     def issuer_name(self):
@@ -42,11 +43,12 @@ class MacaroonIssuerBase:
 
     # A mapping of caveat names to "checker" callables that verify the
     # corresponding caveat text.  The signature of each checker is
-    # (caveat_value, context, **kwargs) -> bool, where caveat_value is the
-    # text of the caveat with the caveat name removed, context is the
-    # issuer-specific context to check, and kwargs is any other keyword
-    # arguments that were given to verifyMacaroon; it should return True if
-    # the caveat is allowed, otherwise False.
+    # (verified, caveat_value, context, **kwargs) -> bool, where verified is
+    # an `IMacaroonVerificationResult` that the checker may update,
+    # caveat_value is the text of the caveat with the caveat name removed,
+    # context is the issuer-specific context to check, and kwargs is any
+    # other keyword arguments that were given to verifyMacaroon; it should
+    # return True if the caveat is allowed, otherwise False.
     #
     # The context passed in may be None, in which case the checker may
     # choose to only verify that the caveat could be valid for some context,
@@ -125,9 +127,12 @@ class MacaroonIssuerBase:
         """
         return context
 
-    def verifyPrimaryCaveat(self, caveat_value, context, **kwargs):
+    def verifyPrimaryCaveat(self, verified, caveat_value, context, **kwargs):
         """Verify the primary context caveat on one of this issuer's macaroons.
 
+        :param verified: An `IMacaroonVerificationResult`.  Implementations
+            of this method may update this with additional information
+            resulting from the verification process.
         :param caveat_value: The text of the caveat with the caveat name
             removed.
         :param context: The context to check.
@@ -182,7 +187,7 @@ class MacaroonIssuerBase:
                         errors.append(
                             "Unhandled caveat name '%s'." % caveat_name)
                     return False
-            if not checker(caveat_value, context, **kwargs):
+            if not checker(verified, caveat_value, context, **kwargs):
                 if errors is not None:
                     errors.append("Caveat check for '%s' failed." % caveat)
                 return False
