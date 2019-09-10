@@ -153,11 +153,15 @@ class GitAPI(LaunchpadXMLRPCView):
          * Anonymous authentication with no macaroon.  We do no additional
            checks here.
          * Anonymous authentication with a macaroon.  This is forbidden.
-         * User authentication with no macaroon.  We do no additional checks
-           here.
-         * User authentication with a macaroon.  In this case, the macaroon
-           is required to match the requester, and constrains their
-           permissions.
+         * User authentication with no macaroon.  We can only get here if
+           something else has already verified user authentication (SSH with
+           a key checked against the authserver, or
+           `authenticateWithPassword`); we do no additional checks beyond
+           that.
+         * User authentication with a macaroon.  As above, we can only get
+           here if something else has already verified user authentication.
+           In this case, the macaroon is required to match the requester,
+           and constrains their permissions.
          * Internal-services authentication with a macaroon.  In this case,
            we require that the macaroon does not identify a user.
          * Internal-services authentication with no macaroon.  This is
