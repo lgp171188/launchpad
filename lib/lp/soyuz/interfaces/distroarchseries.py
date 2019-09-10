@@ -239,10 +239,10 @@ class IDistroArchSeriesPublic(IHasBuildRecords, IHasOwner):
         included by the filter will not be built for this architecture.
         """
 
-    def isSourceIncluded(sourcepackagerelease):
+    def isSourceIncluded(sourcepackagename):
         """Is this source package included in this distro arch series?
 
-        :param sourcepackagerelease: An `ISourcePackageRelease` to check.
+        :param sourcepackagename: An `ISourcePackageName` to check.
         """
 
 
