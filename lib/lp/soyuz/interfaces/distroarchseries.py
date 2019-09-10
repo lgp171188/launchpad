@@ -230,7 +230,7 @@ class IDistroArchSeriesPublic(IHasBuildRecords, IHasOwner):
         this distro arch series.
         """
 
-    def getFilter():
+    def getSourceFilter():
         """Get the filter for packages to build for this architecture, if any.
 
         Packages are normally built for all available architectures, subject
@@ -292,7 +292,7 @@ class IDistroArchSeriesModerate(Interface):
         tarball".
         """
 
-    def setFilter(packageset, sense, creator):
+    def setSourceFilter(packageset, sense, creator):
         """Set a filter for packages to build for this architecture.
 
         Packages are normally built for all available architectures, subject
@@ -314,7 +314,7 @@ class IDistroArchSeriesModerate(Interface):
         :param creator: The `IPerson` who is creating this filter.
         """
 
-    def removeFilter():
+    def removeSourceFilter():
         """Remove any filter for packages to build for this architecture.
 
         This causes packages to be built for this architecture when they

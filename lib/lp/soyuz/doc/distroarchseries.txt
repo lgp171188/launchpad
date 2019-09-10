@@ -268,12 +268,12 @@ querying inclusion by `SourcePackageName`.
 
     >>> packageset_include = factory.makePackageset(distroseries=hoary)
     >>> packageset_include.add(spns[:2])
-    >>> hoary.getDistroArchSeries('i386').setFilter(
+    >>> hoary.getDistroArchSeries('i386').setSourceFilter(
     ...     packageset_include, DistroArchSeriesFilterSense.INCLUDE,
     ...     factory.makePerson())
     >>> packageset_exclude = factory.makePackageset(distroseries=hoary)
     >>> packageset_exclude.add(spns[1:])
-    >>> hoary.getDistroArchSeries('hppa').setFilter(
+    >>> hoary.getDistroArchSeries('hppa').setSourceFilter(
     ...     packageset_exclude, DistroArchSeriesFilterSense.EXCLUDE,
     ...     factory.makePerson())
 
