@@ -1843,7 +1843,7 @@ class GitRepositoryMacaroonIssuer(MacaroonIssuerBase):
             raise ValueError("Cannot handle context %r." % context)
         return context
 
-    def verifyPrimaryCaveat(self, caveat_value, context, **kwargs):
+    def verifyPrimaryCaveat(self, verified, caveat_value, context, **kwargs):
         """See `MacaroonIssuerBase`."""
         if context is None:
             # We're only verifying that the macaroon could be valid for some
@@ -1851,17 +1851,20 @@ class GitRepositoryMacaroonIssuer(MacaroonIssuerBase):
             return True
         return caveat_value == str(context.id)
 
-    def verifyOpenIDIdentifier(self, caveat_value, context, **kwargs):
+    def verifyOpenIDIdentifier(self, verified, caveat_value, context,
+                               user=None, **kwargs):
         """Verify an lp.principal.openid-identifier caveat."""
-        user = kwargs.get("user")
         try:
             account = getUtility(IAccountSet).getByOpenIDIdentifier(
                 caveat_value)
         except LookupError:
             return False
-        return IPerson.providedBy(user) and user.account == account
+        ok = IPerson.providedBy(user) and user.account == account
+        if ok:
+            verified.user = user
+        return ok
 
-    def verifyExpires(self, caveat_value, context, **kwargs):
+    def verifyExpires(self, verified, caveat_value, context, **kwargs):
         """Verify an lp.expires caveat."""
         try:
             expires = datetime.strptime(

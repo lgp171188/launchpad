@@ -70,6 +70,7 @@ from lp.services.librarian.model import (
 from lp.services.macaroons.interfaces import (
     BadMacaroonContext,
     IMacaroonIssuer,
+    NO_USER,
     )
 from lp.services.macaroons.model import MacaroonIssuerBase
 from lp.services.propertycache import (
@@ -617,7 +618,8 @@ class SnapBuildMacaroonIssuer(MacaroonIssuerBase):
             raise BadMacaroonContext(context)
         return context
 
-    def verifyPrimaryCaveat(self, caveat_value, context, **kwargs):
+    def verifyPrimaryCaveat(self, verified, caveat_value, context, user=None,
+                            **kwargs):
         """See `MacaroonIssuerBase`.
 
         For verification, the context is an `IGitRepository`.  We check that
@@ -627,6 +629,12 @@ class SnapBuildMacaroonIssuer(MacaroonIssuerBase):
         """
         # Circular import.
         from lp.snappy.model.snap import Snap
+
+        # Snap builds only support free-floating macaroons for Git
+        # authentication, not ones bound to a user.
+        if user:
+            return False
+        verified.user = NO_USER
 
         if context is None:
             # We're only verifying that the macaroon could be valid for some
