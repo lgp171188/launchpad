@@ -1,4 +1,4 @@
-# Copyright 2015-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Git repository interfaces."""
@@ -649,6 +649,22 @@ class IGitRepositoryView(IHasRecipes):
         :param changed_after: If supplied, only return entries for changes
             made after this date.
         :return: A `ResultSet` of `IGitActivity`.
+        """
+
+    @export_write_operation()
+    @operation_for_version("devel")
+    def issueAccessToken():
+        """Issue an access token for this repository.
+
+        Access tokens can be used to push to this repository over HTTPS.
+        They are only valid for a single repository, and have a short expiry
+        period (currently one week), so at the moment they are only suitable
+        in some limited situations.
+
+        This interface is experimental, and may be changed or removed
+        without notice.
+
+        :return: A serialised macaroon.
         """
 
 
