@@ -604,6 +604,8 @@ class BasicLaunchpadRequest(LaunchpadBrowserRequestMixin):
         self.response.setHeader('Vary', 'Cookie, Authorization')
 
         # Prevent clickjacking and content sniffing attacks.
+        self.response.setHeader(
+            'Content-Security-Policy', "frame-ancestors 'self';")
         self.response.setHeader('X-Frame-Options', 'SAMEORIGIN')
         self.response.setHeader('X-Content-Type-Options', 'nosniff')
         self.response.setHeader('X-XSS-Protection', '1; mode=block')

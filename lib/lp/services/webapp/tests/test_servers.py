@@ -400,6 +400,9 @@ class TestBasicLaunchpadRequest(TestCase):
     def test_baserequest_security_headers(self):
         response = LaunchpadBrowserRequest(StringIO.StringIO(''), {}).response
         self.assertEqual(
+            response.getHeader('Content-Security-Policy'),
+            "frame-ancestors 'self';")
+        self.assertEqual(
             response.getHeader('X-Frame-Options'), 'SAMEORIGIN')
         self.assertEqual(
             response.getHeader('X-Content-Type-Options'), 'nosniff')
