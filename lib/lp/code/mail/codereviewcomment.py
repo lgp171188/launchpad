@@ -10,6 +10,7 @@ __all__ = [
     'CodeReviewCommentMailer',
     ]
 
+from bzrlib.patches import BinaryPatch
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
@@ -20,8 +21,8 @@ from lp.code.interfaces.branchmergeproposal import (
 from lp.code.interfaces.codereviewinlinecomment import (
     ICodeReviewInlineCommentSet,
     )
-from lp.code.mail import patches
 from lp.code.mail.branchmergeproposal import BMPMailer
+from lp.code.mail.patches import parse_patches
 from lp.services.mail.sendmail import (
     append_footer,
     format_address,
@@ -188,8 +189,7 @@ def build_inline_comments_section(comments, diff_text):
     """
     diff_lines = diff_text.splitlines(True)
 
-    diff_patches = patches.parse_patches(
-        diff_lines, allow_dirty=True, keep_dirty=True)
+    diff_patches = parse_patches(diff_lines, allow_dirty=True, keep_dirty=True)
     result_lines = []
     line_count = 0  # track lines in original diff
 
@@ -210,7 +210,7 @@ def build_inline_comments_section(comments, diff_text):
             patch = patch['patch']
 
         # call type here as patch is an instance of both Patch and BinaryPatch
-        if type(patch) is patches.BinaryPatch:
+        if type(patch) is BinaryPatch:
             if dirty_comment:
                 result_lines.extend(dirty_head)
                 result_lines.append(u'> %s' % str(patch).rstrip('\n'))
