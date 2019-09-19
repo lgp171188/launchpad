@@ -26,7 +26,7 @@ from datetime import timedelta
 from difflib import unified_diff
 from itertools import count
 
-from bzrlib.plugins.builder.recipe import RecipeParser
+from breezy.plugins.builder.recipe import RecipeParser
 import fixtures
 import transaction
 from zope.component import getUtility

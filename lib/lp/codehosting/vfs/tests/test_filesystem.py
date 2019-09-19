@@ -7,12 +7,12 @@ __metaclass__ = type
 
 import stat
 
-from bzrlib import errors
-from bzrlib.bzrdir import BzrDir
-from bzrlib.tests import TestCaseWithTransport
-from bzrlib.transport import get_transport
-from bzrlib.transport.memory import MemoryTransport
-from bzrlib.urlutils import escape
+from breezy import errors
+from breezy.bzr.bzrdir import BzrDir
+from breezy.tests import TestCaseWithTransport
+from breezy.transport import get_transport
+from breezy.transport.memory import MemoryTransport
+from breezy.urlutils import escape
 
 from lp.code.interfaces.branchtarget import IBranchTarget
 from lp.code.interfaces.codehosting import branch_id_alias
@@ -218,7 +218,7 @@ class TestFilesystem(TestCaseWithTransport):
         transport.mkdir(branch_path)
         self.assertRaises(
             errors.PermissionDenied,
-            transport.put_bytes, '%s/README' % branch_path, 'Hello!')
+            transport.put_bytes, '%s/README' % branch_path, b'Hello!')
 
     def test_rename_to_non_bzr_directory_fails(self):
         # Users cannot create an allowed directory (e.g. '.bzr' or
@@ -296,7 +296,7 @@ class TestFilesystem(TestCaseWithTransport):
         # unescape(path).encode('utf-8') != path.
         path = '%41%42%43'
         escaped_path = escape(path)
-        content = 'content'
+        content = b'content'
         transport.put_bytes(escaped_path, content)
 
         # We can use the escaped path to reach the file.

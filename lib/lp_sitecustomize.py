@@ -77,11 +77,12 @@ def silence_amqp_logger():
     amqp_logger.propagate = False
 
 
-def silence_bzr_logger():
-    """Install the NullHandler on the bzr logger to silence logs."""
-    bzr_logger = logging.getLogger('bzr')
-    bzr_logger.addHandler(logging.NullHandler())
-    bzr_logger.propagate = False
+def silence_bzr_loggers():
+    """Install the NullHandler on the bzr/brz loggers to silence logs."""
+    for logger_name in ('bzr', 'brz'):
+        logger = logging.getLogger(logger_name)
+        logger.addHandler(logging.NullHandler())
+        logger.propagate = False
 
 
 def silence_swiftclient_logger():
@@ -154,7 +155,7 @@ def customize_logger():
     logging between tests.
     """
     silence_amqp_logger()
-    silence_bzr_logger()
+    silence_bzr_loggers()
     silence_zcml_logger()
     silence_transaction_logger()
     silence_swiftclient_logger()
@@ -185,3 +186,9 @@ def main(instance_name=None):
     # through actually using itertools.groupby.
     grouper = type(list(itertools.groupby([0]))[0][1])
     checker.BasicTypes[grouper] = checker._iteratorChecker
+
+    # XXX 2019-09-17: git must be disabled until codeimport is upgraded,
+    # since the required dulwich versions for our current version of bzr-git
+    # and for Breezy are incompatible in both directions.
+    import types
+    sys.modules['breezy.git'] = types.ModuleType('breezy.git')

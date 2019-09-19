@@ -1,15 +1,15 @@
 The Launchpad Code front page
 =============================
 
-First we manually set the Bazaar version, so that this document will not need
-updating when Launchpad upgrades Bazaar.
+First we manually set the Breezy version, so that this document will not need
+updating when Launchpad upgrades Breezy.
 
-    >>> import bzrlib
-    >>> bzrlib_version = bzrlib.__version__
-    >>> bzrlib.__version__ = '0.92.0'
+    >>> import breezy
+    >>> breezy_version = breezy.__version__
+    >>> breezy.__version__ = '3.0.0'
 
 
-Check that the Bazaar home page works.
+Check that the Code home page works.
 
     >>> browser.open('http://code.launchpad.test/')
     >>> footer = find_tag_by_id(browser.contents, 'application-footer')
@@ -18,12 +18,12 @@ Check that the Bazaar home page works.
     30 branches registered in
     6 projects
     1 imported branches
-    Launchpad uses Bazaar 0.92.0.
+    Launchpad uses Breezy 3.0.0.
 
 
-Restore the original Bazaar version:
+Restore the original Breezy version:
 
-    >>> bzrlib.__version__ = bzrlib_version
+    >>> breezy.__version__ = breezy_version
 
 
 The main code home page now has a subset of the project tag cloud,

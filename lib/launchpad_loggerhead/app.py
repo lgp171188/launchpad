@@ -8,13 +8,13 @@ import urllib
 import urlparse
 import xmlrpclib
 
-from bzrlib import (
+from breezy import (
     errors,
     lru_cache,
     urlutils,
     )
-from bzrlib.transport import get_transport
-from bzrlib.url_policy_open import open_only_scheme
+from breezy.transport import get_transport
+from breezy.url_policy_open import open_only_scheme
 from loggerhead.apps import (
     favicon_app,
     static_app,

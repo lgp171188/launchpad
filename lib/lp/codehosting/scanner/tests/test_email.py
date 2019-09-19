@@ -8,7 +8,7 @@ __metaclass__ = type
 import email
 import os
 
-from bzrlib.uncommit import uncommit
+from breezy.uncommit import uncommit
 from zope.component import getUtility
 from zope.event import notify
 

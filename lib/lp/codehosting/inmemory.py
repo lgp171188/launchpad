@@ -12,7 +12,7 @@ __all__ = [
 import operator
 from xmlrpclib import Fault
 
-from bzrlib.urlutils import (
+from breezy.urlutils import (
     escape,
     unescape,
     )

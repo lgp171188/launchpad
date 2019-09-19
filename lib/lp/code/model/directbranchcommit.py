@@ -12,9 +12,9 @@ __all__ = [
 
 import os.path
 
-from bzrlib.generate_ids import gen_file_id
-from bzrlib.revision import NULL_REVISION
-from bzrlib.transform import (
+from breezy.bzr.generate_ids import gen_file_id
+from breezy.revision import NULL_REVISION
+from breezy.transform import (
     ROOT_PARENT,
     TransformPreview,
     )
@@ -226,10 +226,11 @@ class DirectBranchCommit:
             if rev_id == NULL_REVISION:
                 if list(self.transform_preview.iter_changes()) == []:
                     return
+            self.transform_preview.fixup_new_roots()
             committer_id = self.getBzrCommitterID()
             # XXX: AaronBentley 2010-08-06 bug=614404: a bzr username is
             # required to generate the revision-id.
-            with override_environ(BZR_EMAIL=committer_id):
+            with override_environ(BRZ_EMAIL=committer_id):
                 new_rev_id = self.transform_preview.commit(
                     self.bzrbranch, commit_message, self.merge_parents,
                     committer=committer_id)

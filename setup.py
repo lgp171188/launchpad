@@ -149,6 +149,7 @@ setup(
         'backports.lzma',
         'BeautifulSoup',
         'beautifulsoup4[lxml]',
+        'breezy',
         'bzr',
         'celery',
         'cssselect',
@@ -283,6 +284,7 @@ setup(
         'zope.vocabularyregistry',
         # Loggerhead dependencies. These should be removed once
         # bug 383360 is fixed and we include it as a source dist.
+        'bleach',
         'Paste',
         'PasteDeploy',
         'SimpleTAL',

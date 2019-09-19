@@ -13,15 +13,15 @@ from subprocess import (
     Popen,
     )
 
-from bzrlib import errors
-from bzrlib.branch import Branch
-from bzrlib.bzrdir import BzrDir
-from bzrlib.upgrade import upgrade
-from bzrlib.urlutils import (
+from breezy import errors
+from breezy.branch import Branch
+from breezy.bzr.bzrdir import BzrDir
+from breezy.upgrade import upgrade
+from breezy.urlutils import (
     join as urljoin,
     local_path_from_url,
     )
-from bzrlib.workingtree import WorkingTree
+from breezy.workingtree import WorkingTree
 from fixtures import TempDir
 import transaction
 from zope.component import getUtility
@@ -284,7 +284,7 @@ class TestBranchPuller(PullerBranchTestCase, LoomTestMixin):
         branch_url = urljoin(
             config.launchpad.bzr_imports_root_url, '%08x' % db_branch.id)
         branch = BzrDir.create_branch_convenience(branch_url)
-        tree = branch.bzrdir.open_workingtree()
+        tree = branch.controldir.open_workingtree()
         tree.commit('rev1')
 
         transaction.commit()

@@ -21,7 +21,7 @@ from itertools import izip_longest
 import re
 import sys
 
-from bzrlib.patches import hunk_from_header
+from breezy.patches import hunk_from_header
 from lxml import html
 import markdown
 from zope.component import getUtility

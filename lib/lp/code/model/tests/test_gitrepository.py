@@ -20,7 +20,7 @@ from functools import partial
 import hashlib
 import json
 
-from bzrlib import urlutils
+from breezy import urlutils
 from fixtures import MockPatch
 from lazr.lifecycle.event import ObjectModifiedEvent
 from pymacaroons import Macaroon

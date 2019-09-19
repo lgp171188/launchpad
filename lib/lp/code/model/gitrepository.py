@@ -27,7 +27,7 @@ from itertools import (
 from operator import attrgetter
 from urllib import quote_plus
 
-from bzrlib import urlutils
+from breezy import urlutils
 from lazr.enum import DBItem
 from lazr.lifecycle.event import ObjectModifiedEvent
 from lazr.lifecycle.snapshot import Snapshot

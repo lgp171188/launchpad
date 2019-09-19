@@ -1191,19 +1191,19 @@
        />
   </class>
   <class
-     class="bzrlib.plugins.builder.recipe.BaseRecipeBranch">
+     class="breezy.plugins.builder.recipe.BaseRecipeBranch">
     <allow attributes="name url revspec revid child_branches deb_version __str__" />
   </class>
   <class
-     class="bzrlib.plugins.builder.recipe.RecipeBranch">
+     class="breezy.plugins.builder.recipe.RecipeBranch">
     <allow attributes="name url revspec revid child_branches __str__" />
   </class>
   <class
-     class="bzrlib.plugins.builder.recipe.MergeInstruction">
+     class="breezy.plugins.builder.recipe.MergeInstruction">
     <allow attributes="as_tuple recipe_branch nest_path" />
   </class>
   <class
-     class="bzrlib.plugins.builder.recipe.NestInstruction">
+     class="breezy.plugins.builder.recipe.NestInstruction">
     <allow attributes="as_tuple recipe_branch nest_path" />
   </class>
 

@@ -7,7 +7,7 @@ import errno
 import os
 import tarfile
 
-from bzrlib.bzrdir import BzrDir
+from breezy.controldir import ControlDir
 
 from lp.testing import TestCase
 from lp.translations.pottery.detect_intltool import is_intltool_structure
@@ -56,7 +56,7 @@ class SetupTestPackageMixin:
 class TestDetectIntltoolInBzrTree(TestCase, SetupTestPackageMixin):
 
     def prepare_tree(self):
-        return BzrDir.create_standalone_workingtree(".")
+        return ControlDir.create_standalone_workingtree(".")
 
     def test_detect_intltool_structure(self):
         # Detect a simple intltool structure.

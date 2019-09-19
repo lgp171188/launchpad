@@ -15,10 +15,9 @@ __all__ = [
 
 import os
 
-from bzrlib.bzrdir import BzrDir
-from bzrlib.errors import FileExists
-from bzrlib.plugins.loom import branch as loom_branch
-from bzrlib.tests import (
+from breezy.errors import FileExists
+from breezy.plugins.loom import branch as loom_branch
+from breezy.tests import (
     TestNotApplicable,
     TestSkipped,
     )
@@ -60,7 +59,7 @@ class LoomTestMixin:
             loom_branch.loomify(tree.branch)
         finally:
             tree.unlock()
-        loom_tree = tree.bzrdir.open_workingtree()
+        loom_tree = tree.controldir.open_workingtree()
         loom_tree.lock_write()
         loom_tree.branch.new_thread('bottom-thread')
         loom_tree.commit('this is a commit', rev_id='commit-1')
@@ -78,7 +77,7 @@ class LoomTestMixin:
             loom_branch.loomify(tree.branch)
         finally:
             tree.unlock()
-        loom_tree = tree.bzrdir.open_workingtree()
+        loom_tree = tree.controldir.open_workingtree()
         loom_tree.lock_write()
         loom_tree.branch.new_thread('bottom-thread')
         loom_tree.commit('this is a commit', rev_id='commit-1')
@@ -100,6 +99,9 @@ def make_bazaar_branch_and_tree(db_branch):
 
 def create_branch_with_one_revision(branch_dir, format=None):
     """Create a dummy Bazaar branch at the given directory."""
+    # XXX cjwatson 2019-06-13: This still uses bzrlib until such time as the
+    # code import workers are ported to Breezy.
+    from bzrlib.bzrdir import BzrDir
     if not os.path.exists(branch_dir):
         os.makedirs(branch_dir)
     try:
@@ -124,7 +126,7 @@ def force_stacked_on_url(branch, url):
 
 
 class TestResultWrapper:
-    """A wrapper for `TestResult` that knows about bzrlib's `TestSkipped`."""
+    """A wrapper for `TestResult` that knows about breezy's `TestSkipped`."""
 
     def __init__(self, result):
         self.result = result

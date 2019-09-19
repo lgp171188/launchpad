@@ -66,7 +66,7 @@ __all__ = [
 
 import httplib
 
-from bzrlib.plugins.builder.recipe import RecipeParseError
+from breezy.plugins.builder.recipe import RecipeParseError
 from lazr.restful.declarations import error_status
 import six
 

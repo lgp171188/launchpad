@@ -24,52 +24,52 @@ import lp.codehosting
 # Silence lint warning.
 lp.codehosting
 
-from bzrlib.branch import (
+from breezy.branch import UnstackableBranchFormat
+from breezy.bzr.branch import (
     BranchReferenceFormat,
     BzrBranchFormat6,
     BzrBranchFormat7,
     )
-from bzrlib.branchfmt.fullhistory import BzrBranchFormat5
-from bzrlib.bzrdir import (
+from breezy.bzr.bzrdir import (
     BzrDirMetaFormat1,
     BzrDirMetaFormat1Colo,
     )
-from bzrlib.errors import (
-    NotStacked,
-    NoSuchRevision,
-    UnstackableBranchFormat,
-    )
-from bzrlib.plugins.loom.branch import (
-    BzrBranchLoomFormat1,
-    BzrBranchLoomFormat6,
-    )
-from bzrlib.plugins.weave_fmt.branch import BzrBranchFormat4
-from bzrlib.plugins.weave_fmt.bzrdir import (
-    BzrDirFormat4,
-    BzrDirFormat5,
-    BzrDirFormat6,
-    )
-from bzrlib.plugins.weave_fmt.repository import (
-    RepositoryFormat4,
-    RepositoryFormat5,
-    RepositoryFormat6,
-    RepositoryFormat7,
-    )
-from bzrlib.repofmt.groupcompress_repo import RepositoryFormat2a
-from bzrlib.repofmt.knitpack_repo import (
+from breezy.bzr.fullhistory import BzrBranchFormat5
+from breezy.bzr.groupcompress_repo import RepositoryFormat2a
+from breezy.bzr.knitpack_repo import (
     RepositoryFormatKnitPack1,
     RepositoryFormatKnitPack3,
     RepositoryFormatKnitPack4,
     RepositoryFormatKnitPack5,
     )
-from bzrlib.revision import (
-    is_null,
-    NULL_REVISION,
-    )
-from bzrlib.repofmt.knitrepo import (
+from breezy.bzr.knitrepo import (
     RepositoryFormatKnit1,
     RepositoryFormatKnit3,
     RepositoryFormatKnit4,
+    )
+from breezy.errors import (
+    NotStacked,
+    NoSuchRevision,
+    )
+from breezy.plugins.loom.branch import (
+    BzrBranchLoomFormat1,
+    BzrBranchLoomFormat6,
+    )
+from breezy.plugins.weave_fmt.branch import BzrBranchFormat4
+from breezy.plugins.weave_fmt.bzrdir import (
+    BzrDirFormat4,
+    BzrDirFormat5,
+    BzrDirFormat6,
+    )
+from breezy.plugins.weave_fmt.repository import (
+    RepositoryFormat4,
+    RepositoryFormat5,
+    RepositoryFormat6,
+    RepositoryFormat7,
+    )
+from breezy.revision import (
+    is_null,
+    NULL_REVISION,
     )
 from lazr.enum import (
     DBEnumeratedType,
@@ -305,7 +305,7 @@ def get_branch_formats(bzr_branch):
 
     :returns: tuple of (ControlFormat, BranchFormat, RepositoryFormat)
     """
-    control_string = bzr_branch.bzrdir._format.get_format_string()
+    control_string = bzr_branch.controldir._format.get_format_string()
     branch_string = bzr_branch._format.get_format_string()
     repository_string = bzr_branch.repository._format.get_format_string()
     return (ControlFormat.get_enum(control_string),

@@ -12,29 +12,27 @@ from StringIO import StringIO
 import sys
 import xmlrpclib
 
-from bzrlib import errors
-from bzrlib.bzrdir import (
-    BzrDir,
-    format_registry,
-    )
-from bzrlib.tests import (
+from breezy import errors
+from breezy.bzr.bzrdir import BzrDir
+from breezy.controldir import format_registry
+from breezy.tests import (
     TestCase as BzrTestCase,
     TestCaseInTempDir,
     TestCaseWithTransport,
     )
-from bzrlib.transport import (
+from breezy.transport import (
     _get_protocol_handlers,
     get_transport,
     register_transport,
     Server,
     unregister_transport,
     )
-from bzrlib.transport.chroot import ChrootTransport
-from bzrlib.transport.memory import (
+from breezy.transport.chroot import ChrootTransport
+from breezy.transport.memory import (
     MemoryServer,
     MemoryTransport,
     )
-from bzrlib.urlutils import (
+from breezy.urlutils import (
     escape,
     local_path_to_url,
     )
@@ -142,7 +140,7 @@ class TestTransportDispatch(TestCase):
             default_stack_on='/~foo/bar/baz')
         self.assertRaises(
             errors.TransportNotPossible,
-            transport.put_bytes, '.bzr/control.conf', 'data')
+            transport.put_bytes, '.bzr/control.conf', b'data')
 
     def test_control_conf_with_stacking(self):
         transport = self.factory._makeControlTransport(
@@ -159,7 +157,7 @@ class TestTransportDispatch(TestCase):
         transport = self.factory._makeBranchTransport(id=5, writable=False)
         self.assertRaises(
             errors.TransportNotPossible, transport.put_bytes,
-            '.bzr/README', 'data')
+            '.bzr/README', b'data')
 
     def test_writable_implies_writable(self):
         transport = self.factory._makeBranchTransport(id=5, writable=True)
@@ -559,7 +557,7 @@ class LaunchpadTransportTests:
             transport.put_bytes,
             '~%s/%s/.bzr/control.conf' % (
                 branch.owner.name, branch.product.name),
-            'hello nurse!')
+            b'hello nurse!')
 
     def _makeOnBackingTransport(self, branch):
         """Make directories for 'branch' on the backing transport.
@@ -578,7 +576,7 @@ class LaunchpadTransportTests:
         branch = self.factory.makeAnyBranch(
             branch_type=BranchType.HOSTED, owner=self.requester)
         backing_transport = self._makeOnBackingTransport(branch)
-        backing_transport.put_bytes('hello.txt', 'Hello World!')
+        backing_transport.put_bytes('hello.txt', b'Hello World!')
         deferred = self._ensureDeferred(
             transport.get_bytes, '%s/.bzr/hello.txt' % branch.unique_name)
         return deferred.addCallback(self.assertEqual, 'Hello World!')
@@ -589,7 +587,7 @@ class LaunchpadTransportTests:
         branch = self.factory.makeAnyBranch(
             branch_type=BranchType.HOSTED, owner=self.requester)
         backing_transport = self._makeOnBackingTransport(branch)
-        backing_transport.put_bytes('hello.txt', 'Hello World!')
+        backing_transport.put_bytes('hello.txt', b'Hello World!')
         url = escape('%s/.bzr/hello.txt' % branch.unique_name)
         transport = self.getTransport()
         deferred = self._ensureDeferred(transport.get_bytes, url)
@@ -601,7 +599,7 @@ class LaunchpadTransportTests:
         branch = self.factory.makeAnyBranch(
             branch_type=BranchType.HOSTED, owner=self.requester)
         backing_transport = self._makeOnBackingTransport(branch)
-        data = 'Hello World!'
+        data = b'Hello World!'
         backing_transport.put_bytes('hello.txt', data)
         transport = self.getTransport()
         deferred = self._ensureDeferred(
@@ -622,7 +620,7 @@ class LaunchpadTransportTests:
         backing_transport = self._makeOnBackingTransport(branch)
         deferred = self._ensureDeferred(
             transport.put_bytes,
-            '%s/.bzr/goodbye.txt' % branch.unique_name, "Goodbye")
+            '%s/.bzr/goodbye.txt' % branch.unique_name, b"Goodbye")
 
         def check_bytes_written(ignored):
             self.assertEqual(
@@ -659,7 +657,7 @@ class LaunchpadTransportTests:
         branch = self.factory.makeAnyBranch(
             branch_type=BranchType.HOSTED, owner=self.requester)
         backing_transport = self._makeOnBackingTransport(branch)
-        backing_transport.put_bytes('hello.txt', 'Hello World!')
+        backing_transport.put_bytes('hello.txt', b'Hello World!')
         transport = transport.clone('~%s' % branch.owner.name)
         deferred = self._ensureDeferred(
             transport.get_bytes,
@@ -696,7 +694,7 @@ class LaunchpadTransportTests:
         branch = self.factory.makeAnyBranch(
             branch_type=BranchType.HOSTED, owner=self.requester)
         backing_transport = self._makeOnBackingTransport(branch)
-        backing_transport.put_bytes('hello.txt', 'Hello World!')
+        backing_transport.put_bytes('hello.txt', b'Hello World!')
 
         transport = self.getTransport().clone(branch.unique_name)
 
@@ -735,7 +733,7 @@ class LaunchpadTransportTests:
         branch = self.factory.makeAnyBranch(
             branch_type=BranchType.HOSTED, owner=self.requester)
         backing_transport = self._makeOnBackingTransport(branch)
-        backing_transport.put_bytes('hello.txt', 'Hello World!')
+        backing_transport.put_bytes('hello.txt', b'Hello World!')
         transport = self.getTransport().clone(branch.unique_name)
         backing_transport = self.backing_transport.clone(
             branch_to_path(branch))
@@ -985,7 +983,7 @@ class TestBranchChangedNotification(TestCaseWithTransport):
 
     def assertFormatStringsPassed(self, branch):
         self.assertEqual(1, len(self._branch_changed_log))
-        control_string = branch.bzrdir._format.get_format_string()
+        control_string = branch.controldir._format.get_format_string()
         branch_string = branch._format.get_format_string()
         repository_string = branch.repository._format.get_format_string()
         self.assertEqual(
@@ -1130,7 +1128,7 @@ class TestLaunchpadTransportReadOnly(BzrTestCase):
             self.requester.id, codehosting_api, backing_transport)
         self.lp_transport = get_transport(self.lp_server.get_url())
         self.lp_transport.mkdir(os.path.dirname(self.writable_file))
-        self.lp_transport.put_bytes(self.writable_file, 'Hello World!')
+        self.lp_transport.put_bytes(self.writable_file, b'Hello World!')
 
     def _setUpMemoryServer(self):
         memory_server = MemoryServer()

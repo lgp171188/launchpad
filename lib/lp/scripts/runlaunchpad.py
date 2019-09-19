@@ -202,13 +202,13 @@ class ForkingSessionService(Service):
         # service.
         if not self.should_launch:
             return
-        from lp.codehosting import get_bzr_path
-        command = [config.root + '/bin/py', get_bzr_path(),
+        from lp.codehosting import get_brz_path
+        command = [config.root + '/bin/py', get_brz_path(),
                    'launchpad-forking-service',
                    '--path', config.codehosting.forking_daemon_socket,
                   ]
         env = dict(os.environ)
-        env['BZR_PLUGIN_PATH'] = config.root + '/bzrplugins'
+        env['BRZ_PLUGIN_PATH'] = config.root + '/brzplugins'
         logfile = self.logfile
         if logfile == '-':
             # This process uses a different logging infrastructure from the
@@ -216,7 +216,7 @@ class ForkingSessionService(Service):
             # as the logfile. So we just ignore this setting.
             pass
         else:
-            env['BZR_LOG'] = logfile
+            env['BRZ_LOG'] = logfile
         process = subprocess.Popen(command, env=env, stdin=subprocess.PIPE)
         self.addCleanup(stop_process, process)
         process.stdin.close()

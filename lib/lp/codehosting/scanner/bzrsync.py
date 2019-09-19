@@ -16,8 +16,8 @@ __all__ = [
 
 import logging
 
-from bzrlib.graph import DictParentsProvider
-from bzrlib.revision import NULL_REVISION
+from breezy.graph import DictParentsProvider
+from breezy.revision import NULL_REVISION
 import pytz
 import six
 from storm.locals import Store
@@ -91,7 +91,7 @@ class BzrSync:
         self.logger.info("    from %s", bzr_branch.base)
         # Get the history and ancestry from the branch first, to fail early
         # if something is wrong with the branch.
-        self.logger.info("Retrieving history from bzrlib.")
+        self.logger.info("Retrieving history from breezy.")
         bzr_history = branch_revision_history(bzr_branch)
         # The BranchRevision, Revision and RevisionParent tables are only
         # written to by the branch-scanner, so they are not subject to
@@ -197,7 +197,7 @@ class BzrSync:
 
     def planDatabaseChanges(self, bzr_branch, bzr_history, db_ancestry,
                             db_history):
-        """Plan database changes to synchronize with bzrlib data.
+        """Plan database changes to synchronize with breezy data.
 
         Use the data retrieved by `retrieveDatabaseAncestry` and
         `retrieveBranchDetails` to plan the changes to apply to the database.
@@ -240,7 +240,7 @@ class BzrSync:
     def getBazaarRevisions(self, bzr_branch, revisions):
         """Like ``get_revisions(revisions)`` but filter out ghosts first.
 
-        :param revisions: the set of Bazaar revision IDs to return bzrlib
+        :param revisions: the set of Breezy revision IDs to return breezy
             Revision objects for.
         """
         revisions = bzr_branch.repository.get_parent_map(revisions)
@@ -249,9 +249,9 @@ class BzrSync:
     def syncRevisions(self, bzr_branch, bzr_revisions, revids_to_insert):
         """Import the supplied revisions.
 
-        :param bzr_branch: The Bazaar branch that's being scanned.
+        :param bzr_branch: The Breezy branch that's being scanned.
         :param bzr_revisions: the revisions to import
-        :type bzr_revision: bzrlib.revision.Revision
+        :type bzr_revision: breezy.revision.Revision
         :param revids_to_insert: a dict of revision ids to integer
             revno. Non-mainline revisions will be mapped to None.
         """

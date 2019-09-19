@@ -512,7 +512,7 @@ class IBranchView(IHasOwner, IHasBranchTarget, IHasMergeProposals,
 
         They are ordered with the most recent revision first, and the list
         only contains those in the "leftmost tree", or in other words
-        the revisions that match the revision history from bzrlib for this
+        the revisions that match the revision history from breezy for this
         branch.
 
         The revisions are listed as tuples of (`BranchRevision`, `Revision`).
@@ -719,7 +719,7 @@ class IBranchView(IHasOwner, IHasBranchTarget, IHasMergeProposals,
         """Construct a URL for this branch in codebrowse.
 
         :param extras: Zero or more path segments that will be joined onto the
-            end of the URL (with `bzrlib.urlutils.join`).
+            end of the URL (with `breezy.urlutils.join`).
         """
 
     browse_source_url = Attribute(
@@ -993,7 +993,7 @@ class IBranchView(IHasOwner, IHasBranchTarget, IHasMergeProposals,
         :return: tuple of three items.
             1. Ancestry set of bzr revision-ids.
             2. History list of bzr revision-ids. Similar to the result of
-               bzrlib.Branch.revision_history().
+               breezy.Branch.revision_history().
             3. Dictionnary mapping bzr bzr revision-ids to the database ids of
                the corresponding BranchRevision rows for this branch.
         """
@@ -1012,7 +1012,7 @@ class IBranchView(IHasOwner, IHasBranchTarget, IHasMergeProposals,
         You can only call this if a server returned by `get_ro_server` or
         `get_rw_server` is running.
 
-        :raise bzrlib.url_policy_open.BadUrl: If the branch is stacked
+        :raise breezy.url_policy_open.BadUrl: If the branch is stacked
             on or a reference to an unacceptable URL.
         """
 

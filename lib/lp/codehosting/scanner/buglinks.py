@@ -10,7 +10,7 @@ __all__ = [
 
 import urlparse
 
-from bzrlib.errors import InvalidBugStatus
+from breezy.bugtracker import InvalidBugStatus
 from zope.component import getUtility
 
 from lp.app.errors import NotFoundError
