@@ -503,6 +503,9 @@ class LaunchpadDatabase(Postgres):
         self._uri = uri
         # A unique name for this database connection.
         self.name = uri.database
+        # We have to set this manually since we're bypassing the superclass
+        # constructor (see above).
+        self._exception_types = {}
 
     @property
     def dsn_without_user(self):
