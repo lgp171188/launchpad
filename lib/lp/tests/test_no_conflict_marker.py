@@ -24,8 +24,8 @@ class NoSpuriousConflictsMarkerTest(unittest.TestCase):
     def test_noSpuriousConflictsMarker(self):
         """Fail if any spurious conflicts marker are found."""
         root_dir = os.path.join(os.path.dirname(__file__), '../../..')
-        shell_command = "cd '%s' && bzr ls --versioned | xargs grep '%s'" % (
-                root_dir, self.CONFLICT_MARKER_RE)
+        shell_command = "bzr ls --versioned | xargs grep '%s'" % (
+            self.CONFLICT_MARKER_RE)
 
         # We need to reset PYTHONPATH here otherwise the bzrlib in our
         # tree will be picked up.
@@ -34,7 +34,7 @@ class NoSpuriousConflictsMarkerTest(unittest.TestCase):
         process = subprocess.Popen(
             shell_command, shell=True, stdin=subprocess.PIPE,
             stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-            env=new_env)
+            cwd=root_dir, env=new_env)
         out, err = process.communicate()
         self.assertFalse(
             len(out), 'Found spurious conflicts marker:\n%s' % out)
