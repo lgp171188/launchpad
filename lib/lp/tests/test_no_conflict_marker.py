@@ -10,7 +10,7 @@ import subprocess
 import unittest
 
 
-class NoSpuriousConlictsMarkerTest(unittest.TestCase):
+class NoSpuriousConflictsMarkerTest(unittest.TestCase):
     """Check each file in the working tree for spurious conflicts marker."""
 
     # We do not check for ======= because it might match some
@@ -42,7 +42,7 @@ class NoSpuriousConlictsMarkerTest(unittest.TestCase):
 
 def test_suite():
     suite = unittest.TestSuite()
-    suite.addTest(unittest.makeSuite(NoSpuriousConlictsMarkerTest))
+    suite.addTest(unittest.makeSuite(NoSpuriousConflictsMarkerTest))
     return suite
 
 
