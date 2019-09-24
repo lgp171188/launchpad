@@ -15,7 +15,7 @@ class NoSpuriousConflictsMarkerTest(unittest.TestCase):
 
     # We do not check for ======= because it might match some
     # old heading style in some doctests.
-    CONFLICT_MARKER_RE = r'^\(<<<<<<< TREE\|>>>>>>> MERGE-SOURCE\)$'
+    CONFLICT_MARKER_RE = r'^\(<<<<<<< \|>>>>>>> \)'
 
     # We could use bzrlib.workingtree for that test, but this cause
     # problems when the system bzr (so the developer's branch) isn't at
@@ -25,16 +25,24 @@ class NoSpuriousConflictsMarkerTest(unittest.TestCase):
         """Fail if any spurious conflicts markers are found."""
         root_dir = os.path.join(os.path.dirname(__file__), '../../..')
 
+        if os.path.exists(os.path.join(root_dir, '.git')):
+            list_files_command = ['git', 'ls-files']
+        else:
+            list_files_command = ['bzr', 'ls', '-R', '--versioned']
+
         # We need to reset PYTHONPATH here, otherwise the bzr in our tree
         # will be picked up.
         new_env = dict(os.environ)
         new_env['PYTHONPATH'] = ''
         list_files = subprocess.Popen(
-            ['bzr', 'ls', '-R', '--versioned'],
+            list_files_command,
             stdout=subprocess.PIPE, cwd=root_dir, env=new_env)
+        unique_files = subprocess.Popen(
+            ['sort', '-u'],
+            stdin=list_files.stdout, stdout=subprocess.PIPE)
         grep = subprocess.Popen(
             ['xargs', 'grep', '-s', self.CONFLICT_MARKER_RE],
-            stdin=list_files.stdout, stdout=subprocess.PIPE, cwd=root_dir)
+            stdin=unique_files.stdout, stdout=subprocess.PIPE, cwd=root_dir)
         out = grep.communicate()[0]
         self.assertFalse(
             len(out), 'Found spurious conflicts marker:\n%s' % out)
