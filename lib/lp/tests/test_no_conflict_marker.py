@@ -24,7 +24,7 @@ class NoSpuriousConflictsMarkerTest(unittest.TestCase):
     def test_noSpuriousConflictsMarker(self):
         """Fail if any spurious conflicts marker are found."""
         root_dir = os.path.join(os.path.dirname(__file__), '../../..')
-        shell_command = "bzr ls --versioned | xargs grep '%s'" % (
+        shell_command = "bzr ls -R --versioned | xargs grep '%s'" % (
             self.CONFLICT_MARKER_RE)
 
         # We need to reset PYTHONPATH here otherwise the bzrlib in our
