@@ -496,16 +496,9 @@ class LaunchpadDatabase(Postgres):
     _dsn_user_re = re.compile('user=[^ ]*')
 
     def __init__(self, uri):
-        # The uri is just a property name in the config, such as main_master
-        # or main_slave.
-        # We don't invoke the superclass constructor as it has a very limited
-        # opinion on what uri is.
-        self._uri = uri
+        super(LaunchpadDatabase, self).__init__(uri)
         # A unique name for this database connection.
         self.name = uri.database
-        # We have to set this manually since we're bypassing the superclass
-        # constructor (see above).
-        self._exception_types = {}
 
     @property
     def dsn_without_user(self):
