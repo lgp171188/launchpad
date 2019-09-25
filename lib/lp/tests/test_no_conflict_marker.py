@@ -21,6 +21,8 @@ class NoSpuriousConflictsMarkerTest(unittest.TestCase):
     # problems when the system bzr (so the developer's branch) isn't at
     # the same level than the bzrlib included in our tree. Anyway, it's
     # probably faster to use grep.
+    # XXX cjwatson 2019-09-25: Once we're on git, it may be simpler to use
+    # something based on "git diff --check".
     def test_noSpuriousConflictsMarker(self):
         """Fail if any spurious conflicts markers are found."""
         root_dir = os.path.join(os.path.dirname(__file__), '../../..')
