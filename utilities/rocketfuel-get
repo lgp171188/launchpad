@@ -33,9 +33,16 @@ YUI_PATH="$LP_PROJECT_ROOT/$LP_SOURCEDEPS_DIR/yui"
 LP_DOWNLOAD_CACHE_PATH="$(eval echo ${LP_DOWNLOAD_CACHE_PATH})"
 
 # Pull launchpad devel from launchpad.
-INITIAL_REV=$(bzr revno "$LP_TRUNK_PATH")
-bzr pull -d "$LP_TRUNK_PATH"
-FINAL_REV=$(bzr revno "$LP_TRUNK_PATH")
+if [ -d "$LP_TRUNK_PATH/.git" ]
+then
+    INITIAL_REV=$(git -C "$LP_TRUNK_PATH" rev-parse HEAD)
+    git -C "$LP_TRUNK_PATH" pull
+    FINAL_REV=$(git -C "$LP_TRUNK_PATH" rev-parse HEAD)
+else
+    INITIAL_REV=$(bzr revno "$LP_TRUNK_PATH")
+    bzr pull -d "$LP_TRUNK_PATH"
+    FINAL_REV=$(bzr revno "$LP_TRUNK_PATH")
+fi
 
 # Make sure our directories are around.
 mkdir -p "$LP_SOURCEDEPS_PATH" "$YUI_PATH"
