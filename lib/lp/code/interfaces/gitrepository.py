@@ -25,6 +25,7 @@ from lazr.restful.declarations import (
     export_as_webservice_collection,
     export_as_webservice_entry,
     export_destructor_operation,
+    export_factory_operation,
     export_operation_as,
     export_read_operation,
     export_write_operation,
@@ -927,10 +928,21 @@ class IGitRepositorySet(Interface):
 
     export_as_webservice_collection(IGitRepository)
 
-    def new(registrant, owner, target, name, information_type=None,
-            date_created=None):
+    @call_with(
+        repository_type=GitRepositoryType.HOSTED,
+        registrant=REQUEST_USER,
+        with_hosting=True)
+    @operation_parameters(
+        information_type=copy_field(
+            IGitRepositoryView["information_type"], required=False))
+    @export_factory_operation(IGitRepository, ["owner", "target", "name"])
+    @operation_for_version("devel")
+    def new(repository_type, registrant, owner, target, name,
+            information_type=None, date_created=None, with_hosting=False):
         """Create a Git repository and return it.
 
+        :param repository_type: The `GitRepositoryType` of the new
+            repository.
         :param registrant: The `IPerson` who registered the new repository.
         :param owner: The `IPerson` who owns the new repository.
         :param target: The `IProduct`, `IDistributionSourcePackage`, or
@@ -939,6 +951,7 @@ class IGitRepositorySet(Interface):
         :param information_type: Set the repository's information type to
             one different from the target's default.  The type must conform
             to the target's code sharing policy.  (optional)
+        :param with_hosting: Create the repository on the hosting service.
         """
 
     # Marker for references to Git URL layouts: ##GITNAMESPACE##

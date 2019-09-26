@@ -1658,13 +1658,15 @@ class DeleteCodeImport(DeletionOperation):
 class GitRepositorySet:
     """See `IGitRepositorySet`."""
 
-    def new(self, registrant, owner, target, name, information_type=None,
-            date_created=DEFAULT, description=None):
+    def new(self, repository_type, registrant, owner, target, name,
+            information_type=None, date_created=DEFAULT, description=None,
+            with_hosting=False):
         """See `IGitRepositorySet`."""
         namespace = get_git_namespace(target, owner)
         return namespace.createRepository(
-            registrant, name, information_type=information_type,
-            date_created=date_created, description=description)
+            repository_type, registrant, name,
+            information_type=information_type, date_created=date_created,
+            description=description, with_hosting=with_hosting)
 
     def getByPath(self, user, path):
         """See `IGitRepositorySet`."""
