@@ -1,4 +1,4 @@
-# Copyright 2015-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Interface for a Git repository namespace."""
@@ -32,10 +32,14 @@ class IGitNamespace(Interface):
     name = Attribute(
         "The name of the namespace. This is prepended to the repository name.")
 
+    owner = Attribute("The `IPerson` who owns this namespace.")
+
     target = Attribute("The `IHasGitRepositories` for this namespace.")
 
     def createRepository(repository_type, registrant, name,
-                         information_type=None, date_created=None):
+                         information_type=None, date_created=None,
+                         target_default=False, owner_default=False,
+                         with_hosting=False):
         """Create and return an `IGitRepository` in this namespace."""
 
     def isNameUsed(name):

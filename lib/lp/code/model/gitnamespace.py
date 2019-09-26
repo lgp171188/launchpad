@@ -1,4 +1,4 @@
-# Copyright 2015-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Implementations of `IGitNamespace`."""
@@ -39,6 +39,7 @@ from lp.code.errors import (
     GitRepositoryCreatorNotMemberOfOwnerTeam,
     GitRepositoryCreatorNotOwner,
     GitRepositoryExists,
+    GitTargetError,
     )
 from lp.code.interfaces.gitcollection import IAllGitRepositories
 from lp.code.interfaces.gitnamespace import (
@@ -72,8 +73,11 @@ class _BaseGitNamespace:
 
     def createRepository(self, repository_type, registrant, name,
                          reviewer=None, information_type=None,
-                         date_created=DEFAULT, description=None):
+                         date_created=DEFAULT, description=None,
+                         target_default=False, owner_default=False,
+                         with_hosting=False):
         """See `IGitNamespace`."""
+        repository_set = getUtility(IGitRepositorySet)
 
         self.validateRegistrant(registrant)
         self.validateRepositoryName(name)
@@ -101,6 +105,42 @@ class _BaseGitNamespace:
             registrant)
 
         notify(ObjectCreatedEvent(repository))
+
+        if target_default:
+            repository_set.setDefaultRepository(self.target, repository)
+        if owner_default:
+            repository_set.setDefaultRepositoryForOwner(
+                self.owner, self.target, repository, registrant)
+
+        if with_hosting:
+            # Ask the hosting service to create the repository on disk.  Do
+            # this as late as possible, since if this succeeds it can't
+            # easily be rolled back with the rest of the transaction.
+
+            # Flush to make sure that repository.id is populated.
+            IStore(repository).flush()
+            assert repository.id is not None
+
+            # If repository has target_default, clone from default.
+            clone_from_repository = None
+            try:
+                default = repository_set.getDefaultRepository(
+                    repository.target)
+                if default is not None and default.visibleByUser(registrant):
+                    clone_from_repository = default
+                else:
+                    default = repository_set.getDefaultRepositoryForOwner(
+                        repository.owner, repository.target)
+                    if (default is not None and
+                            default.visibleByUser(registrant)):
+                        clone_from_repository = default
+            except GitTargetError:
+                pass  # Ignore Personal repositories.
+            if clone_from_repository == repository:
+                clone_from_repository = None
+
+            repository._createOnHostingService(
+                clone_from_repository=clone_from_repository)
 
         return repository
 

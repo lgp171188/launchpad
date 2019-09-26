@@ -1,4 +1,4 @@
-# Copyright 2015-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Communication with the Git hosting service."""
@@ -98,7 +98,7 @@ class GitHostingClient:
             self._post("/repo", json=request)
         except requests.RequestException as e:
             raise GitRepositoryCreationFault(
-                "Failed to create Git repository: %s" % unicode(e))
+                "Failed to create Git repository: %s" % unicode(e), path)
 
     def getProperties(self, path):
         """See `IGitHostingClient`."""

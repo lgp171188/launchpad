@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Errors used in the lp/code modules."""
@@ -431,6 +431,10 @@ class GitRepositoryCreatorNotOwner(GitRepositoryCreationException):
 
 class GitRepositoryCreationFault(Exception):
     """Raised when there is a hosting fault creating a Git repository."""
+
+    def __init__(self, message, path):
+        super(GitRepositoryCreationFault, self).__init__(message)
+        self.path = path
 
 
 class GitRepositoryScanFault(Exception):

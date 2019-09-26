@@ -197,7 +197,7 @@ from lp.services.propertycache import (
     cachedproperty,
     get_property_cache,
     )
-from lp.services.webapp.authorization import available_with_permission
+from lp.services.webapp.authorization import check_permission
 from lp.services.webapp.interfaces import ILaunchBag
 from lp.services.webhooks.interfaces import IWebhookSet
 from lp.services.webhooks.model import WebhookTargetMixin
@@ -341,6 +341,16 @@ class GitRepository(StormBase, WebhookTargetMixin, GitIdentityMixin):
             self.sourcepackagename = target.sourcepackagename
         self.owner_default = False
         self.target_default = False
+
+    def _createOnHostingService(self, clone_from_repository=None):
+        """Create this repository on the hosting service."""
+        hosting_path = self.getInternalPath()
+        if clone_from_repository is not None:
+            clone_from_path = clone_from_repository.getInternalPath()
+        else:
+            clone_from_path = None
+        getUtility(IGitHostingClient).create(
+            hosting_path, clone_from=clone_from_path)
 
     @property
     def valid_webhook_event_types(self):
@@ -1724,13 +1734,16 @@ class GitRepositorySet:
                 "Personal repositories cannot be defaults for any target.")
         return IStore(GitRepository).find(GitRepository, *clauses).one()
 
-    @available_with_permission('launchpad.Edit', 'target')
     def setDefaultRepository(self, target, repository):
         """See `IGitRepositorySet`."""
         if IPerson.providedBy(target):
             raise GitTargetError(
                 "Cannot set a default Git repository for a person, only "
                 "for a project or a package.")
+        if not check_permission("launchpad.Edit", target):
+            raise Unauthorized(
+                "You cannot set the default Git repository for %s." %
+                target.display_name)
         if repository is not None and repository.target != target:
             raise GitTargetError(
                 "Cannot set default Git repository to one attached to "
