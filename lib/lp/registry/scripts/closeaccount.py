@@ -114,6 +114,7 @@ def close_account(username, log):
         ('codeimport', 'owner'),
         ('codeimport', 'registrant'),
         ('codeimportevent', 'person'),
+        ('distroarchseriesfilter', 'creator'),
         ('faq', 'last_updated_by'),
         ('featureflagchangelogentry', 'person'),
         ('gitactivity', 'changee'),
