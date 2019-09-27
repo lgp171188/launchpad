@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Definition of the internet servers that Launchpad uses."""
@@ -1067,8 +1067,8 @@ class LaunchpadAccessLogger(CommonAccessLogger):
         response bytes written
         number of nonpython statements (sql, email, memcache, rabbit etc)
         request duration
-        number of ticks during traversal
-        number of ticks during publication
+        traversal duration
+        publication duration
         launchpad user id
         launchpad page id
         REFERER
@@ -1088,8 +1088,8 @@ class LaunchpadAccessLogger(CommonAccessLogger):
         pageid = cgi_env.get('launchpad.pageid', '')
         nonpython_actions = cgi_env.get('launchpad.nonpythonactions', 0)
         request_duration = cgi_env.get('launchpad.requestduration', 0)
-        traversal_ticks = cgi_env.get('launchpad.traversalticks', 0)
-        publication_ticks = cgi_env.get('launchpad.publicationticks', 0)
+        traversal_duration = cgi_env.get('launchpad.traversalduration', 0)
+        publication_duration = cgi_env.get('launchpad.publicationduration', 0)
         referer = request_headers.get('REFERER', '')
         user_agent = request_headers.get('USER_AGENT', '')
 
@@ -1106,8 +1106,8 @@ class LaunchpadAccessLogger(CommonAccessLogger):
                 bytes_written,
                 nonpython_actions,
                 request_duration,
-                traversal_ticks,
-                publication_ticks,
+                traversal_duration,
+                publication_duration,
                 userid,
                 pageid,
                 referer,
