@@ -862,16 +862,16 @@ class TestInitializeDistroSeries(InitializationHelperTestCase):
         self.assertEqual(parent_set1, child_set1.relatedSets().one())
         self.assertEqual(parent_set2, child_set2.relatedSets().one())
         self.assertThat(
-            child['i386'].getFilter(), MatchesStructure.byEquality(
+            child['i386'].getSourceFilter(), MatchesStructure.byEquality(
                 packageset=child_set1,
                 sense=DistroArchSeriesFilterSense.INCLUDE,
                 creator=parent_dasf1.creator))
         self.assertThat(
-            child['amd64'].getFilter(), MatchesStructure.byEquality(
+            child['amd64'].getSourceFilter(), MatchesStructure.byEquality(
                 packageset=child_set2,
                 sense=DistroArchSeriesFilterSense.EXCLUDE,
                 creator=parent_dasf2.creator))
-        self.assertIsNone(child['hppa'].getFilter())
+        self.assertIsNone(child['hppa'].getSourceFilter())
 
     def test_no_cross_distro_filter_copying(self):
         # No cross-distro DAS filter copying should happen.
@@ -879,7 +879,7 @@ class TestInitializeDistroSeries(InitializationHelperTestCase):
         self.factory.makeDistroArchSeriesFilter(distroarchseries=parent_das)
         child = self._fullInitialize([parent])
         for child_das in child.architectures:
-            self.assertIsNone(child_das.getFilter())
+            self.assertIsNone(child_das.getSourceFilter())
 
     def test_packageset_owner_preserved_within_distro(self):
         # When initializing a new series within a distro, the copied
