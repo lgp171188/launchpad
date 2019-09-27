@@ -5,6 +5,7 @@ __metaclass__ = type
 
 import transaction
 from zope.component import getUtility
+from zope.security.interfaces import Unauthorized
 from zope.security.proxy import removeSecurityProxy
 
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
@@ -13,11 +14,13 @@ from lp.registry.interfaces.distributionmirror import (
     IDistributionMirrorSet,
     MirrorContent,
     MirrorFreshness,
+    MirrorStatus,
     )
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.registry.model.distributionmirror import DistributionMirror
 from lp.services.database.sqlbase import flush_database_updates
 from lp.services.mail import stub
+from lp.services.webapp.authorization import check_permission
 from lp.services.worlddata.interfaces.country import ICountrySet
 from lp.testing import (
     login,
@@ -223,6 +226,15 @@ class TestDistributionMirror(TestCaseWithFactory):
         mirror.disable(notify_owner=True, log="It broke.")
         transaction.commit()
         self.assertEqual(len(stub.test_emails), 1)
+
+    def test_permissions_for_resubmit(self):
+        self.assertRaises(
+            Unauthorized, getattr,  self.archive_mirror, 'resubmitForReview')
+        login_as(self.archive_mirror.owner)
+        self.archive_mirror.status = MirrorStatus.BROKEN
+        self.archive_mirror.resubmitForReview()
+        self.assertEqual(
+            MirrorStatus.PENDING_REVIEW, self.archive_mirror.status)
 
 
 class TestDistributionMirrorSet(TestCase):

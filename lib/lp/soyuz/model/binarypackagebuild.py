@@ -85,6 +85,7 @@ from lp.services.librarian.model import (
 from lp.services.macaroons.interfaces import (
     BadMacaroonContext,
     IMacaroonIssuer,
+    NO_USER,
     )
 from lp.services.macaroons.model import MacaroonIssuerBase
 from lp.soyuz.adapters.buildarch import determine_architectures_to_build
@@ -1404,7 +1405,8 @@ class BinaryPackageBuildMacaroonIssuer(MacaroonIssuerBase):
             raise BadMacaroonContext(context)
         return context
 
-    def verifyPrimaryCaveat(self, caveat_value, context, **kwargs):
+    def verifyPrimaryCaveat(self, verified, caveat_value, context, user=None,
+                            **kwargs):
         """See `MacaroonIssuerBase`.
 
         For verification, the context is an `ILibraryFileAlias`.  We check
@@ -1414,6 +1416,12 @@ class BinaryPackageBuildMacaroonIssuer(MacaroonIssuerBase):
         """
         # Circular import.
         from lp.soyuz.model.sourcepackagerelease import SourcePackageRelease
+
+        # Binary package builds only support free-floating macaroons for
+        # librarian authentication, not ones bound to a user.
+        if user:
+            return False
+        verified.user = NO_USER
 
         try:
             build_id = int(caveat_value)

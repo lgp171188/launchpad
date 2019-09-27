@@ -34,6 +34,7 @@ from testtools.matchers import (
     MatchesListwise,
     MatchesSetwise,
     MatchesStructure,
+    StartsWith,
     )
 import transaction
 from zope.component import getUtility
@@ -158,6 +159,7 @@ from lp.testing import (
     api_url,
     celebrity_logged_in,
     login_person,
+    logout,
     person_logged_in,
     record_two_runs,
     TestCaseWithFactory,
@@ -174,7 +176,10 @@ from lp.testing.matchers import (
     DoesNotSnapshot,
     HasQueryCount,
     )
-from lp.testing.pages import webservice_for_person
+from lp.testing.pages import (
+    LaunchpadWebServiceCaller,
+    webservice_for_person,
+    )
 from lp.xmlrpc import faults
 from lp.xmlrpc.interfaces import IPrivateApplication
 
@@ -3908,6 +3913,50 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
             "refs/heads/next": Equals(["push", "force-push"]),
             "refs/other": Equals([]),
             }))
+
+    def test_issueAccessToken(self):
+        # A user can request an access token via the webservice API.
+        self.pushConfig("codehosting", git_macaroon_secret_key="some-secret")
+        repository = self.factory.makeGitRepository()
+        # Write access to the repository isn't checked at this stage
+        # (although the access token will only be useful if the user has
+        # some kind of write access).
+        requester = self.factory.makePerson()
+        with person_logged_in(requester):
+            repository_url = api_url(repository)
+        webservice = webservice_for_person(
+            requester, permission=OAuthPermission.WRITE_PUBLIC)
+        webservice.default_api_version = "devel"
+        response = webservice.named_post(repository_url, "issueAccessToken")
+        self.assertEqual(200, response.status)
+        macaroon = Macaroon.deserialize(json.loads(response.body))
+        with person_logged_in(ANONYMOUS):
+            self.assertThat(macaroon, MatchesStructure(
+                location=Equals(config.vhost.mainsite.hostname),
+                identifier=Equals("git-repository"),
+                caveats=MatchesListwise([
+                    MatchesStructure.byEquality(
+                        caveat_id="lp.git-repository %s" % repository.id),
+                    MatchesStructure(
+                        caveat_id=StartsWith(
+                            "lp.principal.openid-identifier ")),
+                    MatchesStructure(caveat_id=StartsWith("lp.expires ")),
+                    ])))
+
+    def test_issueAccessToken_anonymous(self):
+        # An anonymous user cannot request an access token via the
+        # webservice API.
+        repository = self.factory.makeGitRepository()
+        with person_logged_in(repository.owner):
+            repository_url = api_url(repository)
+        logout()
+        webservice = LaunchpadWebServiceCaller()
+        webservice.default_api_version = "devel"
+        response = webservice.named_post(repository_url, "issueAccessToken")
+        self.assertEqual(401, response.status)
+        self.assertEqual(
+            "git-repository macaroons may only be issued for a logged-in "
+            "user.", response.body)
 
 
 class TestGitRepositoryMacaroonIssuer(MacaroonTestMixin, TestCaseWithFactory):

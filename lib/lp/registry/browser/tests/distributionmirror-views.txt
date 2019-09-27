@@ -283,6 +283,32 @@ is the common object reassignment view.)
     False
 
 
+Resubmit distribution mirror
+----------------------------
+
+The mirror owner can resubmit a 'Broken' mirror for a new review.
+
+    >>> login('karl@canonical.com')
+    >>> review_form['field.status'] = 'BROKEN'
+    >>> review_form['field.whiteboard'] = 'This site is broken.'
+    >>> view =  create_initialized_view(mirror, '+review', form=review_form)
+    >>> form['field.actions.resubmit'] = 'Resubmit'
+    >>> view = create_initialized_view(mirror, '+resubmit', form=form)
+    >>> print mirror.status.name
+    PENDING_REVIEW
+
+The resubmit view should only be available to people with launchpad.Edit.
+
+    >>> login('karl@canonical.com')
+    >>> view = create_initialized_view(mirror, '+resubmit')
+    >>> check_permission('launchpad.Edit', view)
+    True
+
+    >>> login('no-priv@canonical.com')
+    >>> check_permission('launchpad.Edit', view)
+    False
+
+
 Delete distribution mirror
 --------------------------
 
@@ -376,7 +402,7 @@ The page shows which country the mirror is in:
     Antarctica
 
 The page shows which kind of mirror a mirror is:
-    
+
     >>> print extract_text(find_tag_by_id(content, 'type'))
     Type:
     Archive

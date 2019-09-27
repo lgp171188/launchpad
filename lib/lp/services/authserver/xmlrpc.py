@@ -28,6 +28,7 @@ from lp.services.librarian.interfaces import ILibraryFileAliasSet
 from lp.services.macaroons.interfaces import (
     BadMacaroonContext,
     IMacaroonIssuer,
+    NO_USER,
     )
 from lp.services.webapp import LaunchpadXMLRPCView
 from lp.snappy.interfaces.snapbuild import ISnapBuildSet
@@ -114,7 +115,13 @@ class AuthServerAPIView(LaunchpadXMLRPCView):
         context = self._resolveContext(context_type, context)
         if context is None:
             return faults.Unauthorized()
-        if not issuer.verifyMacaroon(macaroon, context):
+        verified = issuer.verifyMacaroon(macaroon, context)
+        if not verified:
+            return faults.Unauthorized()
+        if verified.user != NO_USER:
+            # The authserver interface currently only permits verifying
+            # standalone macaroons, not ones issued on behalf of a
+            # particular user.
             return faults.Unauthorized()
         return True
 

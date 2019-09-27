@@ -6,9 +6,9 @@ import os
 import shutil
 from StringIO import StringIO
 import tempfile
-import unittest
 
 import responses
+from testtools import ExpectedException
 import transaction
 from zope.component import getUtility
 from zope.interface.verify import verifyObject
@@ -28,13 +28,14 @@ from lp.registry.scripts.productreleasefinder.finder import (
 from lp.services.config import config
 from lp.testing import (
     reset_logging,
+    TestCase,
     TestCaseWithFactory,
     )
 from lp.testing.dbuser import switch_dbuser
 from lp.testing.layers import LaunchpadZopelessLayer
 
 
-class FindReleasesTestCase(unittest.TestCase):
+class FindReleasesTestCase(TestCase):
 
     def test_findReleases(self):
         # test that the findReleases() method behaves as expected
@@ -147,16 +148,15 @@ class GetFiltersTestCase(TestCaseWithFactory):
         self.assertEqual(filters[0].key, 'trunk')
 
 
-class HandleProductTestCase(unittest.TestCase):
+class HandleProductTestCase(TestCase):
 
     def setUp(self):
+        super(HandleProductTestCase, self).setUp()
         # path for release tree
         self.release_root = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, self.release_root, ignore_errors=True)
         self.release_url = 'file://' + self.release_root
-
-    def tearDown(self):
-        shutil.rmtree(self.release_root, ignore_errors=True)
-        reset_logging()
+        self.addCleanup(reset_logging)
 
     def test_handleProduct(self):
         # test that handleProduct() correctly calls handleRelease()
@@ -213,7 +213,7 @@ class HandleProductTestCase(unittest.TestCase):
                          ('product', 'series2', 'product-2.1.tar.gz'))
 
 
-class HandleReleaseTestCase(unittest.TestCase):
+class HandleReleaseTestCase(TestCase):
 
     layer = LaunchpadZopelessLayer
 
@@ -224,23 +224,22 @@ class HandleReleaseTestCase(unittest.TestCase):
             fp.write('foo')
         return file_path, file_name
 
-    def add_tarball_response(self, file_path):
+    def add_tarball_response(self, file_path, scheme='http'):
         def callback(request):
             with open(file_path, 'rb') as f:
                 file_size = os.fstat(f.fileno()).st_size
                 return 200, {'Content-Length': str(file_size)}, f.read()
 
-        url = 'http://example.com/' + file_path.lstrip('/')
+        url = scheme + '://example.com/' + file_path.lstrip('/')
         responses.add_callback('GET', url, callback)
         return url
 
     def setUp(self):
+        super(HandleReleaseTestCase, self).setUp()
         switch_dbuser(config.productreleasefinder.dbuser)
         self.release_root = tempfile.mkdtemp()
-
-    def tearDown(self):
-        shutil.rmtree(self.release_root, ignore_errors=True)
-        reset_logging()
+        self.addCleanup(shutil.rmtree, self.release_root, ignore_errors=True)
+        self.addCleanup(reset_logging)
 
     @responses.activate
     def test_handleRelease(self):
@@ -368,6 +367,24 @@ class HandleReleaseTestCase(unittest.TestCase):
         self.assertTrue(file_name in release_filenames)
         self.assertTrue(alt_file_name in release_filenames)
 
+    @responses.activate
+    def test_handleRelease_ftp(self):
+        """handleRelease copes with ftp:// URLs."""
+        ztm = self.layer.txn
+        logging.basicConfig(level=logging.CRITICAL)
+        prf = ProductReleaseFinder(ztm, logging.getLogger())
+        file_path, file_name = self.create_tarball('evolution-45.0.tar.gz')
+        file_names = set()
+        url = self.add_tarball_response(file_path, scheme='ftp')
+        self.assertStartsWith(url, 'ftp://')
+        prf.handleRelease('evolution', 'trunk', url, file_names)
+        evo = getUtility(IProductSet).getByName('evolution')
+        trunk = evo.getSeries('trunk')
+        release = trunk.getRelease('45.0')
+        release_filenames = [file_info.libraryfile.filename
+                             for file_info in release.files]
+        self.assertEqual([file_name], release_filenames)
+
     def test_handleReleaseUnableToParseVersion(self):
         # Test that handleRelease() handles the case where a version can't be
         # parsed from the url given.
@@ -408,16 +425,14 @@ class HandleReleaseTestCase(unittest.TestCase):
 
         url = 'http://example.com/' + file_path.lstrip('/')
         responses.add_callback('GET', url, callback)
-        with self.assertRaises(IOError) as ctx:
+        expected_re = r'^Incomplete read: got %d, expected %d$' % (
+            file_size, file_size + 1)
+        with ExpectedException(IOError, expected_re):
             prf.handleRelease('evolution', 'trunk', url, file_names)
-        self.assertEqual(
-            'Incomplete read: got %d, expected %d' % (
-                file_size, file_size + 1),
-            str(ctx.exception))
         self.assertNotIn(file_name, file_names)
 
 
-class ExtractVersionTestCase(unittest.TestCase):
+class ExtractVersionTestCase(TestCase):
     """Verify that release version names are correctly extracted."""
 
     def test_extract_version_common_name(self):

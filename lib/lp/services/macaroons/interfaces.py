@@ -10,6 +10,7 @@ __all__ = [
     'BadMacaroonContext',
     'IMacaroonIssuer',
     'IMacaroonVerificationResult',
+    'NO_USER',
     ]
 
 from zope.interface import (
@@ -29,10 +30,21 @@ class BadMacaroonContext(Exception):
         self.context = context
 
 
+# Used in verification results to indicate a macaroon that has been
+# positively verified as not having been issued on behalf of a particular
+# user.
+NO_USER = object()
+
+
 class IMacaroonVerificationResult(Interface):
     """Information about a verified macaroon."""
 
     issuer_name = Attribute("The name of the macaroon's issuer.")
+
+    user = Attribute(
+        "The user on whose behalf the macaroon was issued, if positively "
+        "verified (may be an `IPerson` or `NO_USER`), or None if no user "
+        "verification was performed.")
 
 
 class IMacaroonIssuerPublic(Interface):
@@ -44,7 +56,7 @@ class IMacaroonIssuerPublic(Interface):
         "Does this issuer allow issuing macaroons via the authserver?")
 
     def verifyMacaroon(macaroon, context, require_context=True, errors=None,
-                       **kwargs):
+                       user=None, **kwargs):
         """Verify that `macaroon` is valid for `context`.
 
         :param macaroon: A `Macaroon`.

@@ -345,28 +345,28 @@ class DistroArchSeries(SQLBase):
     def main_archive(self):
         return self.distroseries.distribution.main_archive
 
-    def getFilter(self):
+    def getSourceFilter(self):
         """See `IDistroArchSeries`."""
         return getUtility(IDistroArchSeriesFilterSet).getByDistroArchSeries(
             self)
 
-    def setFilter(self, packageset, sense, creator):
+    def setSourceFilter(self, packageset, sense, creator):
         """See `IDistroArchSeries`."""
         if self.distroseries != packageset.distroseries:
             raise FilterSeriesMismatch(self, packageset)
-        self.removeFilter()
+        self.removeSourceFilter()
         getUtility(IDistroArchSeriesFilterSet).new(
             self, packageset, sense, creator)
 
-    def removeFilter(self):
+    def removeSourceFilter(self):
         """See `IDistroArchSeries`."""
-        dasf = self.getFilter()
+        dasf = self.getSourceFilter()
         if dasf is not None:
             dasf.destroySelf()
 
     def isSourceIncluded(self, sourcepackagename):
         """See `IDistroArchSeries`."""
-        dasf = self.getFilter()
+        dasf = self.getSourceFilter()
         if dasf is None:
             return True
         return dasf.isSourceIncluded(sourcepackagename)
