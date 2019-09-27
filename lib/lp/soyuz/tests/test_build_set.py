@@ -1,4 +1,4 @@
-# Copyright 2011-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2011-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 from __future__ import absolute_import, print_function, unicode_literals
@@ -13,6 +13,7 @@ from lp.registry.interfaces.person import IPersonSet
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.soyuz.enums import (
     ArchivePurpose,
+    DistroArchSeriesFilterSense,
     SourcePackageFormat,
     )
 from lp.soyuz.interfaces.binarypackagebuild import (
@@ -32,6 +33,7 @@ from lp.testing import (
     person_logged_in,
     TestCaseWithFactory,
     )
+from lp.testing.dbuser import lp_dbuser
 from lp.testing.layers import (
     LaunchpadFunctionalLayer,
     ZopelessDatabaseLayer,
@@ -558,6 +560,30 @@ class BuildRecordCreationTests(TestNativePublishingBase):
         self.completeBuilds(builds, {'sparc': True, 'avr': True})
         new_builds = self.createBuilds(spr, self.distroseries)
         self.assertBuildsMatch({}, new_builds)
+
+    def test_createForSource_honours_filters(self):
+        # If there are DistroArchSeriesFilters for some architectures,
+        # createForSource honours them.
+        sprs = [
+            self.factory.makeSourcePackageRelease(architecturehintlist='any')
+            for _ in range(3)]
+        with lp_dbuser():
+            avr_filter = self.factory.makeDistroArchSeriesFilter(
+                distroarchseries=self.distroseries2.getDistroArchSeries('avr'),
+                sense=DistroArchSeriesFilterSense.INCLUDE)
+            sparc_filter = self.factory.makeDistroArchSeriesFilter(
+                distroarchseries=self.distroseries2.getDistroArchSeries(
+                    'sparc'),
+                sense=DistroArchSeriesFilterSense.EXCLUDE)
+        avr_filter.packageset.add(
+            [spr.sourcepackagename for spr in sprs[:2]])
+        sparc_filter.packageset.add(
+            [spr.sourcepackagename for spr in sprs[1:]])
+        builds = [self.createBuilds(spr, self.distroseries2) for spr in sprs]
+        self.assertBuildsMatch(
+            {'avr': False, 'sparc': False, 'x32': True}, builds[0])
+        self.assertBuildsMatch({'avr': False, 'x32': True}, builds[1])
+        self.assertBuildsMatch({'x32': True}, builds[2])
 
 
 class TestFindBuiltOrPublishedBySourceAndArchive(TestCaseWithFactory):
