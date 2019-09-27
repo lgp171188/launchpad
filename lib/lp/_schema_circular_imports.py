@@ -496,8 +496,6 @@ patch_reference_property(
 patch_reference_property(IDistroArchSeries, 'main_archive', IArchive)
 patch_plain_parameter_type(
     IDistroArchSeries, 'setChrootFromBuild', 'livefsbuild', ILiveFSBuild)
-patch_plain_parameter_type(
-    IDistroArchSeries, 'setSourceFilter', 'packageset', IPackageset)
 
 # IGitRef
 patch_reference_property(IGitRef, 'repository', IGitRepository)
