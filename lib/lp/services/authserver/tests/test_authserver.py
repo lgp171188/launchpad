@@ -26,6 +26,7 @@ from lp.services.librarian.interfaces import (
 from lp.services.macaroons.interfaces import (
     BadMacaroonContext,
     IMacaroonIssuer,
+    NO_USER,
     )
 from lp.services.macaroons.model import MacaroonIssuerBase
 from lp.testing import (
@@ -88,6 +89,7 @@ class DummyMacaroonIssuer(MacaroonIssuerBase):
     identifier = 'test'
     issuable_via_authserver = True
     _root_secret = 'test'
+    _verified_user = NO_USER
 
     def checkIssuingContext(self, context, **kwargs):
         """See `MacaroonIssuerBase`."""
@@ -101,9 +103,12 @@ class DummyMacaroonIssuer(MacaroonIssuerBase):
             raise BadMacaroonContext(context)
         return context
 
-    def verifyPrimaryCaveat(self, caveat_value, context, **kwargs):
+    def verifyPrimaryCaveat(self, verified, caveat_value, context, **kwargs):
         """See `MacaroonIssuerBase`."""
-        return caveat_value == str(context.id)
+        ok = caveat_value == str(context.id)
+        if ok:
+            verified.user = self._verified_user
+        return ok
 
 
 class MacaroonTests(TestCaseWithFactory):
@@ -195,6 +200,28 @@ class MacaroonTests(TestCaseWithFactory):
             faults.Unauthorized(),
             self.authserver.verifyMacaroon(
                 macaroon.serialize(), 'LibraryFileAlias', lfa_id))
+
+    def test_verify_unverified_user(self):
+        # The authserver refuses macaroons whose issuer doesn't explicitly
+        # indicate whether they were issued on behalf of a particular user.
+        self.issuer._verified_user = None
+        lfa = getUtility(ILibraryFileAliasSet)[1]
+        macaroon = self.issuer.issueMacaroon(lfa)
+        self.assertEqual(
+            faults.Unauthorized(),
+            self.authserver.verifyMacaroon(
+                macaroon.serialize(), 'LibraryFileAlias', lfa.id))
+
+    def test_verify_specific_user(self):
+        # The authserver refuses macaroons that were issued on behalf of a
+        # particular user, rather than being standalone.
+        self.issuer._verified_user = self.factory.makePerson()
+        lfa = getUtility(ILibraryFileAliasSet)[1]
+        macaroon = self.issuer.issueMacaroon(lfa)
+        self.assertEqual(
+            faults.Unauthorized(),
+            self.authserver.verifyMacaroon(
+                macaroon.serialize(), 'LibraryFileAlias', lfa.id))
 
     def test_verify_success(self):
         lfa = getUtility(ILibraryFileAliasSet)[1]

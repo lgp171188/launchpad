@@ -1428,6 +1428,20 @@ class GitRepository(StormBase, WebhookTargetMixin, GitIdentityMixin):
         return DecoratedResultSet(
             results, pre_iter_hook=preloadDataForActivities)
 
+    def issueAccessToken(self):
+        """See `IGitRepository`."""
+        issuer = getUtility(IMacaroonIssuer, "git-repository")
+        # It's more usual in model code to pass the user as an argument,
+        # e.g. using @call_with(user=REQUEST_USER) in the webservice
+        # interface.  However, in this case that would allow anyone who
+        # constructs a way to call this method not via the webservice to
+        # issue a token for any user, which seems like a bad idea.
+        user = getUtility(ILaunchBag).user
+        # Our security adapter has already done the checks we need, apart
+        # from forbidding anonymous users which is done by the issuer.
+        return removeSecurityProxy(issuer).issueMacaroon(
+            self, user=user).serialize()
+
     def canBeDeleted(self):
         """See `IGitRepository`."""
         # Can't delete if the repository is associated with anything.
@@ -1843,7 +1857,7 @@ class GitRepositoryMacaroonIssuer(MacaroonIssuerBase):
             raise ValueError("Cannot handle context %r." % context)
         return context
 
-    def verifyPrimaryCaveat(self, caveat_value, context, **kwargs):
+    def verifyPrimaryCaveat(self, verified, caveat_value, context, **kwargs):
         """See `MacaroonIssuerBase`."""
         if context is None:
             # We're only verifying that the macaroon could be valid for some
@@ -1851,17 +1865,20 @@ class GitRepositoryMacaroonIssuer(MacaroonIssuerBase):
             return True
         return caveat_value == str(context.id)
 
-    def verifyOpenIDIdentifier(self, caveat_value, context, **kwargs):
+    def verifyOpenIDIdentifier(self, verified, caveat_value, context,
+                               user=None, **kwargs):
         """Verify an lp.principal.openid-identifier caveat."""
-        user = kwargs.get("user")
         try:
             account = getUtility(IAccountSet).getByOpenIDIdentifier(
                 caveat_value)
         except LookupError:
             return False
-        return IPerson.providedBy(user) and user.account == account
+        ok = IPerson.providedBy(user) and user.account == account
+        if ok:
+            verified.user = user
+        return ok
 
-    def verifyExpires(self, caveat_value, context, **kwargs):
+    def verifyExpires(self, verified, caveat_value, context, **kwargs):
         """Verify an lp.expires caveat."""
         try:
             expires = datetime.strptime(

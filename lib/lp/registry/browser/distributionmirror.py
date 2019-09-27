@@ -30,8 +30,12 @@ from lp.app.browser.launchpadform import (
     )
 from lp.archivepublisher.debversion import Version
 from lp.registry.browser.objectreassignment import ObjectReassignmentView
+from lp.registry.errors import InvalidMirrorReviewState
 from lp.registry.interfaces.distribution import IDistributionMirrorMenuMarker
-from lp.registry.interfaces.distributionmirror import IDistributionMirror
+from lp.registry.interfaces.distributionmirror import (
+    IDistributionMirror,
+    MirrorStatus,
+    )
 from lp.services.propertycache import cachedproperty
 from lp.services.webapp import (
     canonical_url,
@@ -52,7 +56,7 @@ class DistributionMirrorOverviewMenu(NavigationMenu):
 
     usedfor = IDistributionMirror
     facet = 'overview'
-    links = ['proberlogs', 'edit', 'review', 'reassign', 'delete']
+    links = ['proberlogs', 'edit', 'review', 'reassign', 'delete', 'resubmit']
 
     @enabled_with_permission('launchpad.Edit')
     def edit(self):
@@ -80,6 +84,12 @@ class DistributionMirrorOverviewMenu(NavigationMenu):
     def review(self):
         text = 'Review mirror'
         return Link('+review', text, icon='edit')
+
+    @enabled_with_permission('launchpad.Edit')
+    def resubmit(self):
+        text = 'Resubmit for review'
+        enabled = self.context.status == MirrorStatus.BROKEN
+        return Link('+resubmit', text, icon='edit', enabled=enabled)
 
 
 class _FlavoursByDistroSeries:
@@ -290,6 +300,29 @@ class DistributionMirrorEditView(LaunchpadEditFormView):
     @action(_("Save"), name="save")
     def action_save(self, action, data):
         self.updateContextFromData(data)
+        self.next_url = canonical_url(self.context)
+
+
+class DistributionMirrorResubmitView(LaunchpadEditFormView):
+
+    schema = IDistributionMirror
+    field_names = []
+
+    @property
+    def label(self):
+        """See `LaunchpadFormView`."""
+        return 'Resubmit mirror %s' % self.context.title
+
+    page_title = label
+
+    @action(_("Resubmit"), name="resubmit")
+    def action_resubmit(self, action, data):
+        try:
+            self.context.resubmitForReview()
+        except InvalidMirrorReviewState:
+            self.request.response.addInfoNotification(
+                "The mirror is not in the correct state"
+                " (broken) and cannot be resubmitted.")
         self.next_url = canonical_url(self.context)
 
 

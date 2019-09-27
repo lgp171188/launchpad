@@ -3721,7 +3721,8 @@ class BareLaunchpadObjectFactory(ObjectFactory):
                                  user_defined_fields=None,
                                  changelog_entry=None,
                                  homepage=None,
-                                 changelog=None):
+                                 changelog=None,
+                                 copyright=None):
         """Make a `SourcePackageRelease`."""
         if distroseries is None:
             if source_package_recipe_build is not None:
@@ -3766,6 +3767,9 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         if version is None:
             version = unicode(self.getUniqueInteger()) + 'version'
 
+        if copyright is None:
+            copyright = self.getUniqueString()
+
         return distroseries.createUploadedSourcePackageRelease(
             sourcepackagename=sourcepackagename,
             maintainer=maintainer,
@@ -3782,7 +3786,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             changelog=changelog,
             changelog_entry=changelog_entry,
             dsc=None,
-            copyright=self.getUniqueString(),
+            copyright=copyright,
             dscsigningkey=dscsigningkey,
             dsc_maintainer_rfc822=dsc_maintainer_rfc822,
             dsc_standards_version=dsc_standards_version,

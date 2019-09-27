@@ -70,7 +70,7 @@ class TestDistroArchSeriesFilter(TestCaseWithFactory):
         # Ordinary users cannot delete a filter.
         das = self.factory.makeDistroArchSeries()
         self.factory.makeDistroArchSeriesFilter(distroarchseries=das)
-        dasf = das.getFilter()
+        dasf = das.getSourceFilter()
         with person_logged_in(self.factory.makePerson()):
             self.assertRaises(Unauthorized, getattr, dasf, "destroySelf")
 
@@ -78,10 +78,10 @@ class TestDistroArchSeriesFilter(TestCaseWithFactory):
         # Owners of the DAS's archive can delete a filter.
         das = self.factory.makeDistroArchSeries()
         self.factory.makeDistroArchSeriesFilter(distroarchseries=das)
-        dasf = das.getFilter()
+        dasf = das.getSourceFilter()
         with person_logged_in(das.main_archive.owner):
             dasf.destroySelf()
-        self.assertIsNone(das.getFilter())
+        self.assertIsNone(das.getSourceFilter())
 
 
 class TestDistroArchSeriesFilterSet(TestCaseWithFactory):
