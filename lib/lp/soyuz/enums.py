@@ -1,4 +1,4 @@
-# Copyright 2010-2017 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Enumerations used in the lp/soyuz modules."""
@@ -13,6 +13,7 @@ __all__ = [
     'archive_suffixes',
     'BinaryPackageFileType',
     'BinaryPackageFormat',
+    'DistroArchSeriesFilterSense',
     'IndexCompressionType',
     'PackageCopyPolicy',
     'PackageCopyStatus',
@@ -597,3 +598,18 @@ class IndexCompressionType(DBEnumeratedType):
     GZIP = DBItem(1, "gzip")
     BZIP2 = DBItem(2, "bzip2")
     XZ = DBItem(3, "xz")
+
+
+class DistroArchSeriesFilterSense(DBEnumeratedType):
+
+    INCLUDE = DBItem(1, """
+        Include
+
+        Packages in this package set are included in the distro arch series.
+        """)
+
+    EXCLUDE = DBItem(2, """
+        Exclude
+
+        Packages in this package set are excluded from the distro arch series.
+        """)

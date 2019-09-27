@@ -616,6 +616,26 @@
             set_schema="lp.soyuz.interfaces.distroarchseries.IPocketChroot"/>
     </class>
 
+    <!-- DistroArchSeriesFilter -->
+    <class
+        class="lp.soyuz.model.distroarchseriesfilter.DistroArchSeriesFilter">
+        <allow
+            interface="lp.soyuz.interfaces.distroarchseriesfilter.IDistroArchSeriesFilterView" />
+        <require
+            permission="launchpad.Edit"
+            interface="lp.soyuz.interfaces.distroarchseriesfilter.IDistroArchSeriesFilterEdit" />
+    </class>
+    <securedutility
+        class="lp.soyuz.model.distroarchseriesfilter.DistroArchSeriesFilterSet"
+        provides="lp.soyuz.interfaces.distroarchseriesfilter.IDistroArchSeriesFilterSet">
+        <allow
+            interface="lp.soyuz.interfaces.distroarchseriesfilter.IDistroArchSeriesFilterSet" />
+    </securedutility>
+    <subscriber
+        for="lp.soyuz.interfaces.distroarchseriesfilter.IDistroArchSeriesFilter
+             lazr.lifecycle.interfaces.IObjectModifiedEvent"
+        handler="lp.soyuz.model.distroarchseriesfilter.distro_arch_series_filter_modified" />
+
     <!-- Component -->
 
     <class
