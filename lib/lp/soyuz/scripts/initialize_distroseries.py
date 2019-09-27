@@ -693,8 +693,8 @@ class InitializeDistroSeries:
             Packageset,
             Packageset.distroseries_id.is_in(self.derivation_parent_ids))
         parent_to_child = {}
-        # Create the packagesets and any archivepermissions if we're not
-        # copying cross-distribution.
+        # Create the packagesets and any archivepermissions and filters if
+        # we're not copying cross-distribution.
         parent_distro_ids = [
             parent.distribution.id for parent in self.derivation_parents]
         for parent_ps in packagesets:
@@ -718,7 +718,7 @@ class InitializeDistroSeries:
                     new_owner, distroseries=self.distroseries,
                     related_set=parent_ps)
             parent_to_child[parent_ps] = child_ps
-            # Copy archivepermissions if we're not copying
+            # Copy archivepermissions and filters if we're not copying
             # cross-distribution.
             if (self.distroseries.distribution ==
                     parent_ps.distroseries.distribution):
@@ -730,6 +730,28 @@ class InitializeDistroSeries:
                     """ % sqlvalues(
                         self.distroseries.main_archive, child_ps.id,
                         parent_ps.id))
+                self._store.execute("""
+                    INSERT INTO DistroArchSeriesFilter
+                    (distroarchseries, packageset, sense,
+                     creator, date_created, date_last_modified)
+                    SELECT
+                        newdas.id AS distroarchseries,
+                        %s AS packageset, dasf.sense, dasf.creator,
+                        CURRENT_TIMESTAMP AT TIME ZONE 'UTC',
+                        CURRENT_TIMESTAMP AT TIME ZONE 'UTC'
+                    FROM DistroArchSeriesFilter AS dasf
+                    LEFT JOIN DistroArchSeries AS olddas ON
+                        dasf.distroarchseries = olddas.id
+                    LEFT JOIN DistroArchSeries AS newdas ON
+                        newdas.distroseries = %s
+                        AND newdas.architecturetag = olddas.architecturetag
+                    WHERE
+                        dasf.packageset = %s
+                        AND olddas.distroseries = %s
+                        AND newdas.id IS NOT NULL
+                    """ % sqlvalues(
+                        child_ps.id, self.distroseries.id,
+                        parent_ps.id, parent_ps.distroseries.id))
         # Copy the relations between sets, and the contents.
         for old_series_ps, new_series_ps in parent_to_child.items():
             old_series_sets = old_series_ps.setsIncluded(
