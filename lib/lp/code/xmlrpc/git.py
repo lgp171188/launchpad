@@ -427,8 +427,13 @@ class GitAPI(LaunchpadXMLRPCView):
             removeSecurityProxy(repository))
 
     @return_fault
-    def authenticateWithPassword(self, username, password):
-        """See `IGitAPI`."""
+    def _authenticateWithPassword(self, username, password):
+        """Authenticate a user by username and password.
+
+        This is a separate method from `authenticateWithPassword` because
+        otherwise Zope's XML-RPC publication machinery gets confused by the
+        decorator and publishes a method that takes zero arguments.
+        """
         user = getUtility(IPersonSet).getByName(username) if username else None
         verified = self._verifyMacaroon(password, user=user)
         if verified:
@@ -439,7 +444,11 @@ class GitAPI(LaunchpadXMLRPCView):
                 auth_params["user"] = LAUNCHPAD_SERVICES
             return auth_params
         # Only macaroons are supported for password authentication.
-        return faults.Unauthorized()
+        raise faults.Unauthorized()
+
+    def authenticateWithPassword(self, username, password):
+        """See `IGitAPI`."""
+        return self._authenticateWithPassword(username, password)
 
     def _renderPermissions(self, set_of_permissions):
         """Render a set of permission strings for XML-RPC output."""

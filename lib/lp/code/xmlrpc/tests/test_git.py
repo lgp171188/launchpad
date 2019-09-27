@@ -6,6 +6,7 @@
 __metaclass__ = type
 
 from pymacaroons import Macaroon
+import six
 from six.moves import xmlrpc_client
 from testtools.matchers import (
     Equals,
@@ -37,7 +38,6 @@ from lp.code.interfaces.gitrepository import (
     IGitRepositorySet,
     )
 from lp.code.tests.helpers import GitHostingFixture
-from lp.code.xmlrpc.git import GitAPI
 from lp.registry.enums import TeamMembershipPolicy
 from lp.services.config import config
 from lp.services.features.testing import FeatureFixture
@@ -62,6 +62,7 @@ from lp.testing.layers import (
     AppServerLayer,
     LaunchpadFunctionalLayer,
     )
+from lp.testing.xmlrpc import XMLRPCTestTransport
 from lp.xmlrpc import faults
 
 
@@ -108,14 +109,48 @@ class DummyMacaroonIssuer(MacaroonIssuerBase):
         return ok
 
 
+class MatchesFault(MatchesStructure):
+    """Match an XML-RPC fault.
+
+    This can be given either::
+
+        - a subclass of LaunchpadFault (matches only the fault code)
+        - an instance of Fault (matches the fault code and the fault string
+          from this instance exactly)
+    """
+
+    def __init__(self, expected_fault):
+        fault_matchers = {}
+        if (isinstance(expected_fault, six.class_types) and
+                issubclass(expected_fault, faults.LaunchpadFault)):
+            fault_matchers["faultCode"] = Equals(expected_fault.error_code)
+        else:
+            fault_matchers["faultCode"] = Equals(expected_fault.faultCode)
+            fault_string = expected_fault.faultString
+            # XXX cjwatson 2019-09-27: InvalidBranchName.faultString is
+            # bytes, so we need this to handle that case.  Should it be?
+            if not isinstance(fault_string, six.text_type):
+                fault_string = fault_string.decode("UTF-8")
+            fault_matchers["faultString"] = Equals(fault_string)
+        super(MatchesFault, self).__init__(**fault_matchers)
+
+
 class TestGitAPIMixin:
     """Helper methods for `IGitAPI` tests, and security-relevant tests."""
 
     def setUp(self):
         super(TestGitAPIMixin, self).setUp()
-        self.git_api = GitAPI(None, None)
+        self.git_api = xmlrpc_client.ServerProxy(
+            "http://xmlrpc-private.launchpad.test:8087/git",
+            transport=XMLRPCTestTransport())
         self.hosting_fixture = self.useFixture(GitHostingFixture())
         self.repository_set = getUtility(IGitRepositorySet)
+
+    def assertFault(self, expected_fault, func, *args, **kwargs):
+        """Assert that a call raises the expected fault."""
+        fault = self.assertRaises(xmlrpc_client.Fault, func, *args, **kwargs)
+        self.assertThat(fault, MatchesFault(expected_fault))
+        return fault
 
     def assertGitRepositoryNotFound(self, requester, path, permission="read",
                                     can_authenticate=False, macaroon_raw=None):
@@ -123,9 +158,9 @@ class TestGitAPIMixin:
         auth_params = _make_auth_params(
             requester, can_authenticate=can_authenticate,
             macaroon_raw=macaroon_raw)
-        fault = self.git_api.translatePath(path, permission, auth_params)
-        self.assertEqual(
-            faults.GitRepositoryNotFound(path.strip("/")), fault)
+        self.assertFault(
+            faults.GitRepositoryNotFound(path.strip("/")),
+            self.git_api.translatePath, path, permission, auth_params)
 
     def assertPermissionDenied(self, requester, path,
                                message="Permission denied.",
@@ -135,8 +170,9 @@ class TestGitAPIMixin:
         auth_params = _make_auth_params(
             requester, can_authenticate=can_authenticate,
             macaroon_raw=macaroon_raw)
-        fault = self.git_api.translatePath(path, permission, auth_params)
-        self.assertEqual(faults.PermissionDenied(message), fault)
+        self.assertFault(
+            faults.PermissionDenied(message),
+            self.git_api.translatePath, path, permission, auth_params)
 
     def assertUnauthorized(self, requester, path,
                            message="Authorisation required.",
@@ -146,16 +182,18 @@ class TestGitAPIMixin:
         auth_params = _make_auth_params(
             requester, can_authenticate=can_authenticate,
             macaroon_raw=macaroon_raw)
-        fault = self.git_api.translatePath(path, permission, auth_params)
-        self.assertEqual(faults.Unauthorized(message), fault)
+        self.assertFault(
+            faults.Unauthorized(message),
+            self.git_api.translatePath, path, permission, auth_params)
 
     def assertNotFound(self, requester, path, message, permission="read",
                        can_authenticate=False):
         """Assert that looking at the given path returns NotFound."""
         auth_params = _make_auth_params(
             requester, can_authenticate=can_authenticate)
-        fault = self.git_api.translatePath(path, permission, auth_params)
-        self.assertEqual(faults.NotFound(message), fault)
+        self.assertFault(
+            faults.NotFound(message),
+            self.git_api.translatePath, path, permission, auth_params)
 
     def assertInvalidSourcePackageName(self, requester, path, name,
                                        permission="read",
@@ -164,24 +202,27 @@ class TestGitAPIMixin:
         InvalidSourcePackageName."""
         auth_params = _make_auth_params(
             requester, can_authenticate=can_authenticate)
-        fault = self.git_api.translatePath(path, permission, auth_params)
-        self.assertEqual(faults.InvalidSourcePackageName(name), fault)
+        self.assertFault(
+            faults.InvalidSourcePackageName(name),
+            self.git_api.translatePath, path, permission, auth_params)
 
     def assertInvalidBranchName(self, requester, path, message,
                                 permission="read", can_authenticate=False):
         """Assert that looking at the given path returns InvalidBranchName."""
         auth_params = _make_auth_params(
             requester, can_authenticate=can_authenticate)
-        fault = self.git_api.translatePath(path, permission, auth_params)
-        self.assertEqual(faults.InvalidBranchName(Exception(message)), fault)
+        self.assertFault(
+            faults.InvalidBranchName(Exception(message)),
+            self.git_api.translatePath, path, permission, auth_params)
 
     def assertOopsOccurred(self, requester, path,
                            permission="read", can_authenticate=False):
         """Assert that looking at the given path OOPSes."""
         auth_params = _make_auth_params(
             requester, can_authenticate=can_authenticate)
-        fault = self.git_api.translatePath(path, permission, auth_params)
-        self.assertIsInstance(fault, faults.OopsOccurred)
+        fault = self.assertFault(
+            faults.OopsOccurred,
+            self.git_api.translatePath, path, permission, auth_params)
         prefix = (
             "An unexpected error has occurred while creating a Git "
             "repository. Please report a Launchpad bug and quote: ")
@@ -551,10 +592,10 @@ class TestGitAPIMixin:
 
     def test_checkRefPermissions_nonexistent_repository(self):
         requester = self.factory.makePerson()
-        self.assertEqual(
+        self.assertFault(
             faults.GitRepositoryNotFound("nonexistent"),
-            self.git_api.checkRefPermissions(
-                "nonexistent", [], {"uid": requester.id}))
+            self.git_api.checkRefPermissions,
+            "nonexistent", [], {"uid": requester.id})
 
 
 class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
@@ -1136,8 +1177,7 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
     def test_notify_missing_repository(self):
         # A notify call on a non-existent repository returns a fault and
         # does not create a job.
-        fault = self.git_api.notify("10000")
-        self.assertIsInstance(fault, faults.NotFound)
+        self.assertFault(faults.NotFound, self.git_api.notify, "10000")
         job_source = getUtility(IGitRefScanJobSource)
         self.assertEqual([], list(job_source.iterReady()))
 
@@ -1153,9 +1193,9 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
         self.assertEqual(repository, job.repository)
 
     def test_authenticateWithPassword(self):
-        self.assertIsInstance(
-            self.git_api.authenticateWithPassword('foo', 'bar'),
-            faults.Unauthorized)
+        self.assertFault(
+            faults.Unauthorized,
+            self.git_api.authenticateWithPassword, "foo", "bar")
 
     def test_authenticateWithPassword_code_import(self):
         self.pushConfig(
@@ -1170,13 +1210,13 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
             {"macaroon": macaroon.serialize(), "user": "+launchpad-services"},
             self.git_api.authenticateWithPassword("", macaroon.serialize()))
         other_macaroon = Macaroon(identifier="another", key="another-secret")
-        self.assertIsInstance(
-            self.git_api.authenticateWithPassword(
-                "", other_macaroon.serialize()),
-            faults.Unauthorized)
-        self.assertIsInstance(
-            self.git_api.authenticateWithPassword("", "nonsense"),
-            faults.Unauthorized)
+        self.assertFault(
+            faults.Unauthorized,
+            self.git_api.authenticateWithPassword,
+            "", other_macaroon.serialize())
+        self.assertFault(
+            faults.Unauthorized,
+            self.git_api.authenticateWithPassword, "", "nonsense")
 
     def test_authenticateWithPassword_private_snap_build(self):
         self.useFixture(FeatureFixture(SNAP_TESTING_FLAGS))
@@ -1193,13 +1233,13 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
             {"macaroon": macaroon.serialize(), "user": "+launchpad-services"},
             self.git_api.authenticateWithPassword("", macaroon.serialize()))
         other_macaroon = Macaroon(identifier="another", key="another-secret")
-        self.assertIsInstance(
-            self.git_api.authenticateWithPassword(
-                "", other_macaroon.serialize()),
-            faults.Unauthorized)
-        self.assertIsInstance(
-            self.git_api.authenticateWithPassword("", "nonsense"),
-            faults.Unauthorized)
+        self.assertFault(
+            faults.Unauthorized,
+            self.git_api.authenticateWithPassword,
+            "", other_macaroon.serialize())
+        self.assertFault(
+            faults.Unauthorized,
+            self.git_api.authenticateWithPassword, "", "nonsense")
 
     def test_authenticateWithPassword_user_macaroon(self):
         # A user with a suitable macaroon can authenticate using it, in
@@ -1214,21 +1254,21 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
             {"macaroon": macaroon.serialize(), "uid": requester.id},
             self.git_api.authenticateWithPassword(
                 requester.name, macaroon.serialize()))
-        self.assertIsInstance(
-            self.git_api.authenticateWithPassword("", macaroon.serialize()),
-            faults.Unauthorized)
-        self.assertIsInstance(
-            self.git_api.authenticateWithPassword(
-                "nonexistent", macaroon.serialize()),
-            faults.Unauthorized)
+        self.assertFault(
+            faults.Unauthorized,
+            self.git_api.authenticateWithPassword, "", macaroon.serialize())
+        self.assertFault(
+            faults.Unauthorized,
+            self.git_api.authenticateWithPassword,
+            "nonexistent", macaroon.serialize())
         other_macaroon = Macaroon(identifier="another", key="another-secret")
-        self.assertIsInstance(
-            self.git_api.authenticateWithPassword(
-                requester.name, other_macaroon.serialize()),
-            faults.Unauthorized)
-        self.assertIsInstance(
-            self.git_api.authenticateWithPassword(requester.name, "nonsense"),
-            faults.Unauthorized)
+        self.assertFault(
+            faults.Unauthorized,
+            self.git_api.authenticateWithPassword,
+            requester.name, other_macaroon.serialize())
+        self.assertFault(
+            faults.Unauthorized,
+            self.git_api.authenticateWithPassword, requester.name, "nonsense")
 
     def test_authenticateWithPassword_user_mismatch(self):
         # authenticateWithPassword refuses macaroons in the case where the
@@ -1267,10 +1307,10 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
                 name = (
                     requester if requester == LAUNCHPAD_SERVICES
                     else requester.name)
-                self.assertIsInstance(
-                    self.git_api.authenticateWithPassword(
-                        name, macaroon.serialize()),
-                    faults.Unauthorized)
+                self.assertFault(
+                    faults.Unauthorized,
+                    self.git_api.authenticateWithPassword,
+                    name, macaroon.serialize())
 
     def test_checkRefPermissions_code_import(self):
         # A code import worker with a suitable macaroon has repository owner

@@ -64,8 +64,13 @@ class IGitAPI(Interface):
     def authenticateWithPassword(username, password):
         """Authenticate a user by username and password.
 
-        :returns: An `Unauthorized` fault, as password authentication is
-            not yet supported.
+        This currently only works when using macaroon authentication.
+
+        :returns: An `Unauthorized` fault if the username and password do
+            not match; otherwise, a dict containing a "uid" (for a real
+            user) or "user" (for internal services) key indicating the
+            authenticated principal, and possibly "macaroon" with a macaroon
+            that requires further authorisation by other methods.
         """
 
     def checkRefPermissions(translated_paths, ref_paths, auth_params):
