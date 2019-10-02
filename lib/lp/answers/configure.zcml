@@ -269,7 +269,5 @@
     <allow interface="lp.services.webapp.vocabulary.IHugeVocabulary"/>
   </class>
 
-  <lp:help-folder folder="help" name="+help-answers"/>
-
   <webservice:register module="lp.answers.interfaces.webservice" />
 </configure>

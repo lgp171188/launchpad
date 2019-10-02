@@ -35,10 +35,6 @@ class TestHelpSystemSetup(unittest.TestCase):
             "Expected help folder %s, got %s" % (
                 expected_folder_path, view.folder))
 
-    def test_answers_help_folder(self):
-        self.assertHasHelpFolderView(
-            '+help-answers', os.path.join(ROOT, 'lib/lp/answers/help'))
-
     def test_blueprints_help_folder(self):
         self.assertHasHelpFolderView(
             '+help-blueprints', os.path.join(ROOT, 'lib/lp/blueprints/help'))
