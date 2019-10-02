@@ -17,6 +17,7 @@ if [ -d .git ]; then
 
     branch_nick="$(git rev-parse --abbrev-ref HEAD | sed "s/'/\\\\'/g")"
     revision_id="$(git rev-parse HEAD)"
+    date="$(git show -s --format=%ci HEAD)"
     cat > $newfile <<EOF
 #! /usr/bin/env python
 
@@ -24,6 +25,7 @@ from __future__ import print_function
 
 version_info = {
     'branch_nick': u'$branch_nick',
+    'date': u'$date',
     'revision_id': u'$revision_id',
     }
 
