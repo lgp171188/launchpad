@@ -3,7 +3,7 @@
 # Copyright 2009-2017 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 #
-# Update your copy of trunk and the necessary source dependencies, and make
+# Update your copy of master and the necessary source dependencies, and make
 # sure all source dependencies are properly linked in to all the branches you
 # are working on.
 
@@ -33,16 +33,9 @@ YUI_PATH="$LP_PROJECT_ROOT/$LP_SOURCEDEPS_DIR/yui"
 LP_DOWNLOAD_CACHE_PATH="$(eval echo ${LP_DOWNLOAD_CACHE_PATH})"
 
 # Pull launchpad devel from launchpad.
-if [ -d "$LP_TRUNK_PATH/.git" ]
-then
-    INITIAL_REV=$(git -C "$LP_TRUNK_PATH" rev-parse HEAD)
-    git -C "$LP_TRUNK_PATH" pull
-    FINAL_REV=$(git -C "$LP_TRUNK_PATH" rev-parse HEAD)
-else
-    INITIAL_REV=$(bzr revno "$LP_TRUNK_PATH")
-    bzr pull -d "$LP_TRUNK_PATH"
-    FINAL_REV=$(bzr revno "$LP_TRUNK_PATH")
-fi
+INITIAL_REV=$(git -C "$LP_TRUNK_PATH" rev-parse HEAD)
+git -C "$LP_TRUNK_PATH" pull
+FINAL_REV=$(git -C "$LP_TRUNK_PATH" rev-parse HEAD)
 
 # Make sure our directories are around.
 mkdir -p "$LP_SOURCEDEPS_PATH" "$YUI_PATH"
@@ -76,14 +69,13 @@ echo "Updating sourcecode dependencies in current local branches:"
 # Prints each as a null-terminated record (since Unix filenames may contain
 # newlines).
 find_branches_to_relink() {
-    find "$LP_PROJECT_PATH" \
+    find "$LP_PROJECT_ROOT" \
         -mindepth 2 -maxdepth 2 -type d -name sourcecode -printf '%h\0'
 }
 
-# Some old setups (notably dogfood) may have lp-sourcedeps mixed in with the
-# local branches.  Echo stdin to stdout, with these filenames filtered out.
-# Filenames must be null-terminated on input, and remain null-terminated on
-# output.
+# Some setups may have lp-sourcedeps mixed in with the local branches.  Echo
+# stdin to stdout, with these filenames filtered out.  Filenames must be
+# null-terminated on input, and remain null-terminated on output.
 filter_branches_to_relink() {
     grep -vz '/lp-sourcedeps$'
 }

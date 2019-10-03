@@ -55,8 +55,9 @@ Everyday Usage
 ======================
 
 If you typically use ``rocketfuel-get``, and you don't change source
-dependencies, then you don't need to know any more.  ``rocketfuel-branch``
-and ``link-external-dependencies`` will Do the Right Thing.
+dependencies, then you don't need to know any more.  Switching between
+ordinary git branches will do the right thing; if you're using worktrees,
+then you can use ``link-external-dependencies``.
 
 Manual
 ======
