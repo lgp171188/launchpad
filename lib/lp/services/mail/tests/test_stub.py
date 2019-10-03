@@ -104,6 +104,7 @@ def test_simple_sendmail():
     shows the git revision and instance name.
 
     >>> message.get_params(header='X-Generated-By')
+    ... # doctest: +NORMALIZE_WHITESPACE
     [('Launchpad (canonical.com)', ''),
      ('revision', '0000000000000000000000000000000000000000'),
      ('instance', 'launchpad-lazr.conf')]
