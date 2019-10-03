@@ -101,16 +101,19 @@ def test_simple_sendmail():
 
     The message has a number of additional headers added by default.
     'X-Generated-By' not only indicates that the source is Launchpad, but
-    shows the bzr revision and instance name.
+    shows the git revision and instance name.
 
-    >>> message['X-Generated-By'].replace('\n\t', '\n ')
-    'Launchpad (canonical.com); Revision="1999";\n Instance="launchpad-lazr.conf"'
-
+    >>> message.get_params(header='X-Generated-By')
+    ... # doctest: +NORMALIZE_WHITESPACE
+    [('Launchpad (canonical.com)', ''),
+     ('revision', '0000000000000000000000000000000000000000'),
+     ('instance', 'launchpad-lazr.conf')]
     """
 
 
 def test_suite():
     suite = DocTestSuite(checker=RENormalizing([
-        (re.compile(r'Revision="\d+"'), 'Revision="1999"')]))
+        (re.compile(r"'revision', '[0-9a-f]+'"),
+         "'revision', '%s'" % ('0' * 40))]))
     suite.layer = LaunchpadFunctionalLayer
     return suite
