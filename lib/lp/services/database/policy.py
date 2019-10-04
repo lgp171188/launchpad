@@ -96,7 +96,7 @@ def get_connected_store(name, flavor):
         # be put into reconnect state at the end of the transaction.
         store._connection._event.emit('register-transaction')
         raise
-    except psycopg2.OperationalError, exc:
+    except psycopg2.OperationalError as exc:
         # Per Bug #1025264, Storm emits psycopg2 errors when we
         # want DisconnonnectionErrors, eg. attempting to open a
         # new connection to a non-existent database.

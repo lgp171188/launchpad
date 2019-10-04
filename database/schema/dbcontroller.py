@@ -104,7 +104,7 @@ class DBController:
                 con = pg_connect(conn_str)
                 cur = con.cursor()
                 cur.execute('select pg_wal_replay_pause()')
-            except psycopg2.Error, x:
+            except psycopg2.Error as x:
                 self.log.error(
                     'Unable to pause replication to %s (%s).'
                     % (name, str(x)))
@@ -120,7 +120,7 @@ class DBController:
                 con = pg_connect(conn_str)
                 cur = con.cursor()
                 cur.execute('select pg_wal_replay_resume()')
-            except psycopg2.Error, x:
+            except psycopg2.Error as x:
                 success = False
                 self.log.error(
                     'Failed to resume replication to %s (%s).'
@@ -146,7 +146,7 @@ class DBController:
                     self.log.warn("Replication paused on %s. Resuming.", name)
                     cur.execute("SELECT pg_wal_replay_resume()")
                     wait_for_sync = True
-            except psycopg2.Error, x:
+            except psycopg2.Error as x:
                 success = False
                 self.log.error(
                     "Failed to resume replication on %s (%s)", name, str(x))
@@ -159,7 +159,7 @@ class DBController:
             self.pgbouncer_cmd("DISABLE %s" % name, results=False)
             self.pgbouncer_cmd("KILL %s" % name, results=False)
             return True
-        except psycopg2.Error, x:
+        except psycopg2.Error as x:
             self.log.error("Unable to disable %s (%s)", name, str(x))
             return False
 
@@ -168,7 +168,7 @@ class DBController:
             self.pgbouncer_cmd("RESUME %s" % name, results=False)
             self.pgbouncer_cmd("ENABLE %s" % name, results=False)
             return True
-        except psycopg2.Error, x:
+        except psycopg2.Error as x:
             self.log.error("Unable to enable %s (%s)", name, str(x))
             return False
 

@@ -105,7 +105,7 @@ def main():
         # Master connection, not running in autocommit to allow us to
         # rollback changes on failure.
         master_con = psycopg2.connect(str(controller.master))
-    except Exception, x:
+    except Exception as x:
         log.fatal("Unable to open connection to master db (%s)", str(x))
         return 94
 

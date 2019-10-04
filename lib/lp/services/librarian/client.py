@@ -343,7 +343,7 @@ class FileDownloadClient:
     #     lines = results.split('\n')
     #     count, paths = lines[0], lines[1:]
     #     if int(count) != len(paths):
-    #         raise DownloadFailed, 'Incomplete response'
+    #         raise DownloadFailed('Incomplete response')
     #     return paths
 
     def _getAlias(self, aliasID, secure=False):
