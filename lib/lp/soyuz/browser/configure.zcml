@@ -1,4 +1,4 @@
-<!-- Copyright 2009-2015 Canonical Ltd.  This software is licensed under the
+<!-- Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
      GNU Affero General Public License version 3 (see the file LICENSE).
 -->
 
@@ -155,6 +155,10 @@
             name="+portlet-details"
             template="../templates/distroarchseriesbinarypackagerelease-portlet-details.pt"/>
     </browser:pages>
+    <browser:url
+        for="lp.soyuz.interfaces.distroarchseriesfilter.IDistroArchSeriesFilter"
+        path_expression="string:+source-filter"
+        attribute_to_parent="distroarchseries"/>
     <browser:url
         for="lp.soyuz.interfaces.archive.IArchiveSet"
         path_expression="string:archives"
