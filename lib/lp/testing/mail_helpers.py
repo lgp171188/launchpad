@@ -1,8 +1,10 @@
 # Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-"""Helper functions dealing with emails in tests.
-"""
+"""Helper functions dealing with emails in tests."""
+
+from __future__ import absolute_import, print_function
+
 __metaclass__ = type
 
 import email
@@ -102,23 +104,23 @@ def print_emails(include_reply_to=False, group_similar=False,
             distinct_bodies[body] = (message, recipients)
     for body in sorted(distinct_bodies):
         message, recipients = distinct_bodies[body]
-        print 'From:', message['From']
-        print 'To:', ", ".join(sorted(recipients))
+        print('From:', message['From'])
+        print('To:', ", ".join(sorted(recipients)))
         if include_reply_to:
-            print 'Reply-To:', message['Reply-To']
+            print('Reply-To:', message['Reply-To'])
         rationale_header = 'X-Launchpad-Message-Rationale'
         if include_rationale and rationale_header in message:
-            print '%s: %s' % (rationale_header, message[rationale_header])
+            print('%s: %s' % (rationale_header, message[rationale_header]))
         for_header = 'X-Launchpad-Message-For'
         if include_for and for_header in message:
-            print '%s: %s' % (for_header, message[for_header])
+            print('%s: %s' % (for_header, message[for_header]))
         notification_type_header = 'X-Launchpad-Notification-Type'
         if include_notification_type and notification_type_header in message:
-            print '%s: %s' % (
-                notification_type_header, message[notification_type_header])
-        print 'Subject:', message['Subject']
-        print body
-        print "-" * 40
+            print('%s: %s' % (
+                notification_type_header, message[notification_type_header]))
+        print('Subject:', message['Subject'])
+        print(body)
+        print("-" * 40)
 
 
 def print_distinct_emails(include_reply_to=False, include_rationale=True,

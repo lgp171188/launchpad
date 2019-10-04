@@ -3,6 +3,8 @@
 
 """Fake transaction manager."""
 
+from __future__ import absolute_import, print_function, unicode_literals
+
 __metaclass__ = type
 __all__ = ['FakeTransaction']
 
@@ -23,7 +25,7 @@ class FakeTransaction:
     def _log(self, call):
         """Print calls that are being made, if desired."""
         if self.log_calls:
-            print call
+            print(call)
 
     def begin(self):
         """Pretend to begin a transaction.  Does not log."""

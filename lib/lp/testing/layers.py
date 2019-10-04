@@ -18,6 +18,8 @@ of one, forcing us to attempt to make some sort of layer tree.
 -- StuartBishop 20060619
 """
 
+from __future__ import absolute_import, print_function
+
 __metaclass__ = type
 __all__ = [
     'AppServerLayer',
@@ -447,9 +449,9 @@ class BaseLayer:
             # tests that leave threads behind from failing. Its use
             # should only ever be temporary.
             if BaseLayer.disable_thread_check:
-                print (
+                print((
                     "ERROR DISABLED: "
-                    "Test left new live threads: %s") % repr(new_threads)
+                    "Test left new live threads: %s") % repr(new_threads))
             else:
                 BaseLayer.flagTestIsolationFailure(
                     "Test left new live threads: %s" % repr(new_threads))

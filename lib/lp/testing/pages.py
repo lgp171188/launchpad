@@ -3,6 +3,8 @@
 
 """Testing infrastructure for page tests."""
 
+from __future__ import absolute_import, print_function
+
 __metaclass__ = type
 
 from contextlib import contextmanager
@@ -216,7 +218,7 @@ def find_tag_by_id(content, id):
         return elements_with_id[0]
     else:
         raise DuplicateIdError(
-            'Found %d elements with id %r' % (len(elements_with_id), id))
+            "Found %d elements with id '%s'" % (len(elements_with_id), id))
 
 
 def first_tag_by_class(content, class_):
@@ -286,7 +288,7 @@ def get_feedback_messages(content):
 def print_feedback_messages(content, formatter='minimal'):
     """Print out the feedback messages."""
     for message in get_feedback_messages(content):
-        print extract_text(message, formatter=formatter)
+        print(extract_text(message, formatter=formatter))
 
 
 def print_table(content, columns=None, skip_rows=None, sep="\t"):
@@ -307,7 +309,7 @@ def print_table(content, columns=None, skip_rows=None, sep="\t"):
             if columns is None or col_num in columns:
                 row_content.append(extract_text(item))
         if len(row_content) > 0:
-            print sep.join(row_content)
+            print(sep.join(row_content))
 
 
 def get_radio_button_text_for_field(soup, name):
@@ -340,7 +342,7 @@ def print_radio_button_field(content, name):
     """
     main = BeautifulSoup(content)
     for field in get_radio_button_text_for_field(main, name):
-        print field
+        print(field)
 
 
 def strip_label(label):
@@ -474,48 +476,48 @@ def parse_relationship_section(content):
     section = soup.find('ul')
     whitespace_re = re.compile('\s+')
     if section is None:
-        print 'EMPTY SECTION'
+        print('EMPTY SECTION')
         return
     for li in section.findAll('li'):
         if li.a:
             link = li.a
             content = whitespace_re.sub(' ', link.string.strip())
             url = link['href']
-            print 'LINK: "%s" -> %s' % (content, url)
+            print('LINK: "%s" -> %s' % (content, url))
         else:
             content = whitespace_re.sub(' ', li.string.strip())
-            print 'TEXT: "%s"' % content
+            print('TEXT: "%s"' % content)
 
 
 def print_action_links(content):
     """Print action menu urls."""
     actions = find_tag_by_id(content, 'actions')
     if actions is None:
-        print "No actions portlet"
+        print("No actions portlet")
         return
     entries = actions.findAll('li')
     for entry in entries:
         if entry.a:
-            print '%s: %s' % (entry.a.string, entry.a['href'])
+            print('%s: %s' % (entry.a.string, entry.a['href']))
         elif entry.strong:
-            print entry.strong.string
+            print(entry.strong.string)
 
 
 def print_navigation_links(content):
     """Print navigation menu urls."""
     navigation_links = find_tag_by_id(content, 'navigation-tabs')
     if navigation_links is None:
-        print "No navigation links"
+        print("No navigation links")
         return
     title = navigation_links.find('label')
     if title is not None:
-        print '= %s =' % title.string
+        print('= %s =' % title.string)
     entries = navigation_links.findAll(['strong', 'a'])
     for entry in entries:
         try:
-            print '%s: %s' % (entry.span.string, entry['href'])
+            print('%s: %s' % (entry.span.string, entry['href']))
         except KeyError:
-            print entry.span.string
+            print(entry.span.string)
 
 
 def print_portlet_links(content, name, base=None):
@@ -536,15 +538,15 @@ def print_portlet_links(content, name, base=None):
 
     portlet_contents = find_portlet(content, name)
     if portlet_contents is None:
-        print "No portlet found with name:", name
+        print("No portlet found with name:", name)
         return
     portlet_links = portlet_contents.findAll('a')
     if len(portlet_links) == 0:
-        print "No links were found in the portlet."
+        print("No links were found in the portlet.")
         return
     for portlet_link in portlet_links:
-        print '%s: %s' % (portlet_link.string,
-            extract_link_from_tag(portlet_link, base))
+        print('%s: %s' % (portlet_link.string,
+            extract_link_from_tag(portlet_link, base)))
 
 
 def print_submit_buttons(content):
@@ -555,10 +557,10 @@ def print_submit_buttons(content):
     buttons = find_main_content(content).findAll(
         'input', attrs={'class': 'button', 'type': 'submit'})
     if buttons is None:
-        print "No buttons found"
+        print("No buttons found")
     else:
         for button in buttons:
-            print button['value']
+            print(button['value'])
 
 
 def print_comments(page):
@@ -566,31 +568,31 @@ def print_comments(page):
     main_content = find_main_content(page)
     for comment in main_content('div', 'boardCommentBody'):
         for li_tag in comment('li'):
-            print "Attachment: %s" % li_tag.a.renderContents()
-        print comment.div.renderContents()
-        print "-" * 40
+            print("Attachment: %s" % li_tag.a.renderContents())
+        print(comment.div.renderContents())
+        print("-" * 40)
 
 
 def print_batch_header(soup):
     """Print the batch navigator header."""
     navigation = soup.find('td', {'class': 'batch-navigation-index'})
-    print extract_text(navigation).encode('ASCII', 'backslashreplace')
+    print(extract_text(navigation).encode('ASCII', 'backslashreplace'))
 
 
 def print_self_link_of_entries(json_body):
     """Print the self_link attribute of each entry in the given JSON body."""
     links = sorted(entry['self_link'] for entry in json_body['entries'])
     for link in links:
-        print link
+        print(link)
 
 
 def print_ppa_packages(contents):
     packages = find_tags_by_class(contents, 'archive_package_row')
     for pkg in packages:
-        print extract_text(pkg)
+        print(extract_text(pkg))
     empty_section = find_tag_by_id(contents, 'empty-result')
     if empty_section is not None:
-        print extract_text(empty_section)
+        print(extract_text(empty_section))
 
 
 def print_location(contents):
@@ -614,8 +616,8 @@ def print_location(contents):
     else:
         breadcrumbs = ' > '.join(segments)
 
-    print 'Hierarchy:', breadcrumbs
-    print 'Tabs:'
+    print('Hierarchy:', breadcrumbs)
+    print('Tabs:')
     print_location_apps(contents)
     main_heading = doc.h1
     if main_heading:
@@ -623,7 +625,7 @@ def print_location(contents):
             'us-ascii', 'replace')
     else:
         main_heading = '(No main heading)'
-    print "Main heading: %s" % main_heading
+    print("Main heading: %s" % main_heading)
 
 
 def print_location_apps(contents):
@@ -636,9 +638,9 @@ def print_location_apps(contents):
     else:
         location_apps = location_apps.findAll('span')
     if location_apps is None:
-        print "(Application tabs omitted)"
+        print("(Application tabs omitted)")
     elif len(location_apps) == 0:
-        print "(No application tabs)"
+        print("(No application tabs)")
     else:
         for tab in location_apps:
             tab_text = extract_text(tab)
@@ -652,13 +654,13 @@ def print_location_apps(contents):
                 link = tab.a['href']
             else:
                 link = 'not linked'
-            print "* %s - %s" % (tab_text, link)
+            print("* %s - %s" % (tab_text, link))
 
 
 def print_tag_with_id(contents, id):
     """A simple helper to print the extracted text of the tag."""
     tag = find_tag_by_id(contents, id)
-    print extract_text(tag)
+    print(extract_text(tag))
 
 
 def print_errors(contents):
@@ -666,7 +668,7 @@ def print_errors(contents):
     errors = find_tags_by_class(contents, 'error')
     error_texts = [extract_text(error) for error in errors]
     for error in error_texts:
-        print error
+        print(error)
 
 
 def setupBrowser(auth=None):
