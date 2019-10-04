@@ -16,41 +16,23 @@ from os.path import (
     exists,
     islink,
     join,
+    realpath,
     relpath,
     )
+import subprocess
 from sys import (
     stderr,
     stdout,
     )
-from urllib import unquote
-from urlparse import urlparse
-
-# This comes before other bzrlib stuff, because imports may cause warnings,
-# etc.
-from bzrlib.trace import enable_default_logging
-enable_default_logging()
-
-from bzrlib.branch import Branch
-from bzrlib.plugin import load_plugins
-load_plugins()
 
 
-def url2path(url):
-    """Convert a URL to a local filesystem path.
-
-    Returns `None` if the URL does not reference the local filesystem.
-    """
-    scheme, netloc, path, params, query, fragment = urlparse(url)
-    if scheme == 'file' and netloc in ['', 'localhost']:
-        return unquote(path)
-    return None
-
-
-def get_parent(branch_dir):
-    """Return the parent branch directory, otherwise `None`."""
-    parent_dir = Branch.open(branch_dir).get_parent()
-    if parent_dir is not None:
-        return url2path(parent_dir)
+def get_main_worktree(branch_dir):
+    """Return the main worktree directory, otherwise `None`."""
+    worktree_list = subprocess.check_output(
+        ['git', 'worktree', 'list', '--porcelain'], universal_newlines=True)
+    main_worktree = worktree_list.splitlines()[0].split(' ', 1)[1]
+    if realpath(main_worktree) != realpath(branch_dir):
+        return main_worktree
     return None
 
 
@@ -96,7 +78,7 @@ if __name__ == '__main__':
     parser.add_option(
         '-p', '--parent', dest='parent', default=None,
         help=("The directory of the parent tree. If not specified, "
-              "the Bazaar parent branch."),
+              "the main Git worktree."),
         metavar="DIR")
     parser.add_option(
         '-t', '--target', dest='target', default=curdir,
@@ -123,13 +105,12 @@ if __name__ == '__main__':
     elif len(args) >= 2:
         parser.error("Too many arguments.")
 
-    # Discover the parent branch using Bazaar.
+    # Discover the parent tree using Git.
     if options.parent is None:
-        options.parent = get_parent(options.target)
+        options.parent = get_main_worktree(options.target)
 
     if options.parent is None:
-        parser.error(
-            "Parent branch not specified, and could not be discovered.")
+        parser.error("Parent tree not specified.")
 
     missing_files = gen_missing_files(
         abspath(join(options.parent, 'sourcecode')),
