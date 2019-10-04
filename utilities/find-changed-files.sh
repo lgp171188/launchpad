@@ -9,7 +9,7 @@
 set -e
 set -o pipefail
 
-if [ -d .git ]; then
+if [ -e .git ]; then
     git_diff_files() {
         git diff --name-only -z $@ | perl -l -0 -ne '
             # Only show paths that exist and are not symlinks.
