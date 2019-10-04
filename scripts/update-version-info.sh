@@ -9,7 +9,7 @@
 
 newfile=version-info-${RANDOM}.py
 
-if [ -d .git ]; then
+if [ -e .git ]; then
     if ! which git > /dev/null || ! test -x $(which git); then
         echo "No working 'git' executable found" >&2
         exit 1
