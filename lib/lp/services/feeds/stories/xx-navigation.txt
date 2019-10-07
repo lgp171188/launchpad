@@ -104,7 +104,7 @@ on feeds.launchpad.test and does not work on all the other vhosts.
     ...             print "Error accessing:", url
     ...             raise
     ...         else:
-    ...             raise AssertionError, "Page should not exist: %s" % url
+    ...             raise AssertionError("Page should not exist: %s" % url)
 
 These atom feeds should only exist on feeds.launchpad.test:
 

@@ -3,6 +3,8 @@
 
 """Snap views."""
 
+from __future__ import absolute_import, print_function, unicode_literals
+
 __metaclass__ = type
 __all__ = [
     'SnapAddView',
@@ -266,21 +268,21 @@ class SnapRequestBuildsView(LaunchpadFormView):
     class schema(Interface):
         """Schema for requesting a build."""
 
-        archive = Reference(IArchive, title=u'Source archive', required=True)
+        archive = Reference(IArchive, title='Source archive', required=True)
         distro_arch_series = List(
             Choice(vocabulary='SnapDistroArchSeries'),
-            title=u'Architectures', required=True,
+            title='Architectures', required=True,
             description=(
-                u'If you do not explicitly select any architectures, then '
-                u'the snap package will be built for all architectures '
-                u'allowed by its configuration.'))
+                'If you do not explicitly select any architectures, then the '
+                'snap package will be built for all architectures allowed by '
+                'its configuration.'))
         pocket = Choice(
-            title=u'Pocket', vocabulary=PackagePublishingPocket, required=True,
+            title='Pocket', vocabulary=PackagePublishingPocket, required=True,
             description=(
-                u'The package stream within the source distribution series '
-                u'to use when building the snap package.'))
+                'The package stream within the source distribution series to '
+                'use when building the snap package.'))
         channels = Dict(
-            title=u'Source snap channels', key_type=TextLine(), required=True,
+            title='Source snap channels', key_type=TextLine(), required=True,
             description=ISnap['auto_build_channels'].description)
 
     custom_widget_archive = SnapArchiveWidget
@@ -289,7 +291,7 @@ class SnapRequestBuildsView(LaunchpadFormView):
     custom_widget_channels = SnapBuildChannelsWidget
 
     help_links = {
-        "pocket": u"/+help-snappy/snap-build-pocket.html",
+        "pocket": "/+help-snappy/snap-build-pocket.html",
         }
 
     @property
@@ -343,8 +345,8 @@ class ISnapEditSchema(Interface):
         ])
     store_distro_series = Choice(
         vocabulary='BuildableSnappyDistroSeries', required=True,
-        title=u'Series')
-    vcs = Choice(vocabulary=VCSType, required=True, title=u'VCS')
+        title='Series')
+    vcs = Choice(vocabulary=VCSType, required=True, title='VCS')
 
     # Each of these is only required if vcs has an appropriate value.  Later
     # validation takes care of adjusting the required attribute.
@@ -408,7 +410,7 @@ class SnapAddView(
     custom_widget_store_channels = StoreChannelsWidget
 
     help_links = {
-        "auto_build_pocket": u"/+help-snappy/snap-build-pocket.html",
+        "auto_build_pocket": "/+help-snappy/snap-build-pocket.html",
         }
 
     def initialize(self):
@@ -427,9 +429,9 @@ class SnapAddView(
         super(SnapAddView, self).setUpFields()
         self.form_fields += self.createEnabledProcessors(
             getUtility(IProcessorSet).getAll(),
-            u"The architectures that this snap package builds for. Some "
-            u"architectures are restricted and may only be enabled or "
-            u"disabled by administrators.")
+            "The architectures that this snap package builds for. Some "
+            "architectures are restricted and may only be enabled or "
+            "disabled by administrators.")
 
     def setUpWidgets(self):
         """See `LaunchpadFormView`."""
@@ -608,19 +610,19 @@ class BaseSnapEditView(LaunchpadEditFormView, SnapAuthorizeMixin):
                 if owner is not None and owner.private:
                     self.setFieldError(
                         'private' if 'private' in data else 'owner',
-                        u'A public snap cannot have a private owner.')
+                        'A public snap cannot have a private owner.')
             if 'private' in data or 'branch' in data:
                 branch = data.get('branch', self.context.branch)
                 if branch is not None and branch.private:
                     self.setFieldError(
                         'private' if 'private' in data else 'branch',
-                        u'A public snap cannot have a private branch.')
+                        'A public snap cannot have a private branch.')
             if 'private' in data or 'git_ref' in data:
                 ref = data.get('git_ref', self.context.git_ref)
                 if ref is not None and ref.private:
                     self.setFieldError(
                         'private' if 'private' in data else 'git_ref',
-                        u'A public snap cannot have a private repository.')
+                        'A public snap cannot have a private repository.')
 
     def _needStoreReauth(self, data):
         """Does this change require reauthorizing to the store?"""
@@ -696,7 +698,7 @@ class SnapAdminView(BaseSnapEditView):
             if not getFeatureFlag(SNAP_PRIVATE_FEATURE_FLAG):
                 self.setFieldError(
                     'private',
-                    u'You do not have permission to create private snaps.')
+                    'You do not have permission to create private snaps.')
 
 
 class SnapEditView(BaseSnapEditView, EnableProcessorsMixin):
@@ -734,7 +736,7 @@ class SnapEditView(BaseSnapEditView, EnableProcessorsMixin):
     custom_widget_store_channels = StoreChannelsWidget
 
     help_links = {
-        "auto_build_pocket": u"/+help-snappy/snap-build-pocket.html",
+        "auto_build_pocket": "/+help-snappy/snap-build-pocket.html",
         }
 
     def setUpFields(self):
@@ -742,9 +744,9 @@ class SnapEditView(BaseSnapEditView, EnableProcessorsMixin):
         super(SnapEditView, self).setUpFields()
         self.form_fields += self.createEnabledProcessors(
             self.context.available_processors,
-            u"The architectures that this snap package builds for. Some "
-            u"architectures are restricted and may only be enabled or "
-            u"disabled by administrators.")
+            "The architectures that this snap package builds for. Some "
+            "architectures are restricted and may only be enabled or "
+            "disabled by administrators.")
 
     @property
     def initial_values(self):
@@ -804,7 +806,7 @@ class SnapAuthorizeView(LaunchpadEditFormView):
         """Schema for authorizing snap package uploads to the store."""
 
         discharge_macaroon = TextLine(
-            title=u'Serialized discharge macaroon', required=True)
+            title='Serialized discharge macaroon', required=True)
 
     render_context = False
 
@@ -842,13 +844,13 @@ class SnapAuthorizeView(LaunchpadEditFormView):
     def complete_action(self, action, data):
         if not data.get('discharge_macaroon'):
             self.addError(structured(
-                _(u'Uploads of %(snap)s to the store were not authorized.'),
+                _('Uploads of %(snap)s to the store were not authorized.'),
                 snap=self.context.name))
             return
         self.context.completeAuthorization(
             discharge_macaroon=data['discharge_macaroon'])
         self.request.response.addInfoNotification(structured(
-            _(u'Uploads of %(snap)s to the store are now authorized.'),
+            _('Uploads of %(snap)s to the store are now authorized.'),
             snap=self.context.name))
         self.request.response.redirect(canonical_url(self.context))
 

@@ -1,6 +1,8 @@
 # Copyright 2017-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
+from __future__ import absolute_import, print_function, unicode_literals
+
 __metaclass__ = type
 
 __all__ = [
@@ -59,17 +61,17 @@ class StoreChannelsWidget(BrowserWidget, InputWidget):
             return
         fields = [
             TextLine(
-                __name__="track", title=u"Track", required=False,
+                __name__="track", title="Track", required=False,
                 description=_(
                     "Track defines a series for your software. "
                     "If not specified, the default track ('latest') is "
                     "assumed.")),
             List(
-                __name__="risks", title=u"Risk", required=False,
+                __name__="risks", title="Risk", required=False,
                 value_type=Choice(vocabulary="SnapStoreChannel"),
                 description=_("Risks denote the stability of your software.")),
             TextLine(
-                __name__="branch", title=u"Branch", required=False,
+                __name__="branch", title="Branch", required=False,
                 description=_(
                     "Branches provide users with an easy way to test bug "
                     "fixes.  They are temporary and created on demand.  If "

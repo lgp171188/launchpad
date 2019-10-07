@@ -6,6 +6,8 @@
 Dispatches snap package build jobs to build-farm slaves.
 """
 
+from __future__ import absolute_import, print_function, unicode_literals
+
 __metaclass__ = type
 __all__ = [
     'SnapBuildBehaviour',
@@ -169,7 +171,7 @@ class SnapBuildBehaviour(BuildFarmJobBehaviourBase):
             # "git clone -b" doesn't accept full ref names.  If this becomes
             # a problem then we could change launchpad-buildd to do "git
             # clone" followed by "git checkout" instead.
-            if build.snap.git_path != u"HEAD":
+            if build.snap.git_path != "HEAD":
                 args["git_path"] = build.snap.git_ref.name
         else:
             raise CannotBuild(
