@@ -23,6 +23,7 @@ __all__ = [
     'NoSuchAccount',
     'NoSuchDistroSeries',
     'NoSuchSourcePackageName',
+    'NoSuchRecipeName',
     'NotPlaceholderAccount',
     'InclusiveTeamLinkageError',
     'PPACreationError',
@@ -108,6 +109,10 @@ class ProprietaryProduct(Exception):
 class NoSuchSourcePackageName(NameLookupFailed):
     """Raised when we can't find a particular sourcepackagename."""
     _message_prefix = "No such source package"
+
+class NoSuchRecipeName(NameLookupFailed):
+    """Raised when we can't find a particular ocirecipename."""
+    _message_prefix = "No such OCI recipe"
 
 
 @error_status(httplib.BAD_REQUEST)

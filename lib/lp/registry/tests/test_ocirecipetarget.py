@@ -7,12 +7,12 @@ __metaclass__ = type
 from lp.registry.model.ocirecipename import OCIRecipeName
 from lp.registry.model.ocirecipetarget import OCIRecipeTarget
 from lp.testing import TestCaseWithFactory
-from lp.testing.layers import DatabaseLayer
+from lp.testing.layers import DatabaseFunctionalLayer
 
 
 class OCIRecipeTargetTest(TestCaseWithFactory):
 
-    layer = DatabaseLayer
+    layer = DatabaseFunctionalLayer
 
     def test_create(self):
         name = OCIRecipeName(name="Test OCI Recipe Name")
