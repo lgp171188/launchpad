@@ -201,7 +201,6 @@ from lp.registry.interfaces.mailinglistsubscription import (
     MailingListAutoSubscribePolicy,
     )
 from lp.registry.interfaces.ocirecipename import IOCIRecipeNameSet
-from lp.registry.interfaces.ocirecipetarget import IOCIRecipeTarget
 from lp.registry.interfaces.packaging import (
     IPackagingUtil,
     PackagingType,
