@@ -200,6 +200,7 @@ from lp.registry.interfaces.mailinglist import (
 from lp.registry.interfaces.mailinglistsubscription import (
     MailingListAutoSubscribePolicy,
     )
+<<<<<<< 546542abaa3d47fdee94ff919c721cd4da32551c
 <<<<<<< 5ba322e3ff3edc0049f99280067a4ab73093de5b
 <<<<<<< 6905652081de1e06ada1dc0893f14702f9d8758e
 from lp.registry.interfaces.ociprojectname import IOCIProjectNameSet
@@ -210,6 +211,14 @@ from lp.registry.interfaces.ocirecipetarget import IOCIRecipeTarget
 =======
 from lp.registry.interfaces.ociprojectname import IOCIProjectNameSet
 >>>>>>> Rename OCIRecipeName to OCIProjectName
+=======
+<<<<<<< a37cf09149945c30a46a521644c44fa60bb904cd
+from lp.registry.interfaces.ociprojectname import IOCIProjectNameSet
+=======
+from lp.registry.interfaces.ocirecipename import IOCIRecipeNameSet
+from lp.registry.interfaces.ocirecipetarget import IOCIRecipeTargetSet
+>>>>>>> Implement OCIRecipeTarget
+>>>>>>> Implement OCIRecipeTarget
 from lp.registry.interfaces.packaging import (
     IPackagingUtil,
     PackagingType,
@@ -4908,12 +4917,26 @@ class BareLaunchpadObjectFactory(ObjectFactory):
 
     def makeOCIProjectName(self, name=None):
         if name is None:
-<<<<<<< 5ba322e3ff3edc0049f99280067a4ab73093de5b
             name = self.getUniqueString(u"oci-project-name")
-=======
-            name = self.getUniqueString(u"oci-recipe-name")
->>>>>>> Rename OCIRecipeName to OCIProjectName
         return getUtility(IOCIProjectNameSet).new(name)
+
+    def makeOCIRecipeTarget(self, registrant=None, project=None,
+                            distribution=None, ocirecipename=None,
+                            date_created=None, description=None,
+                            bug_supervisor=None, bug_reporting_guidelines=None,
+                            bug_reported_acknowledgement=None,
+                            bugfiling_duplicate_search=False):
+        """Make a new OCIRecipeTarget."""
+        if registrant is None:
+            registrant = self.makePerson()
+        if project is None and distribution is None:
+            project = self.makeProduct()
+        if ocirecipename is None:
+            ocirecipename = self.makeOCIRecipeName()
+        return getUtility(IOCIRecipeTargetSet).new(
+            registrant, project, distribution, ocirecipename, date_created,
+            description, bug_supervisor, bug_reporting_guidelines,
+            bug_reported_acknowledgement, bugfiling_duplicate_search)
 
 
 # Some factory methods return simple Python types. We don't add

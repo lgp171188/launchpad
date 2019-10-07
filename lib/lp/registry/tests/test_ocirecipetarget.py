@@ -4,9 +4,13 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 
+from lp.services.database.interfaces import IStore
 from lp.registry.model.ocirecipename import OCIRecipeName
 from lp.registry.model.ocirecipetarget import OCIRecipeTarget
-from lp.testing import TestCaseWithFactory
+from lp.testing import (
+    admin_logged_in,
+    TestCaseWithFactory,
+    )
 from lp.testing.layers import DatabaseFunctionalLayer
 
 
@@ -15,10 +19,29 @@ class OCIRecipeTargetTest(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def test_create(self):
-        name = OCIRecipeName(name="Test OCI Recipe Name")
-        registrant = self.factory.makePerson()
+        recipe_target = self.factory.makeOCIRecipeTarget()
+        self.assertTrue(recipe_target)
+
+    def test_getByProduct(self):
         project = self.factory.makeProduct()
+        recipe_target = self.factory.makeOCIRecipeTarget(project=project)
+
+        # Make sure there's more than one to get the result from
+        self.factory.makeOCIRecipeTarget(project=self.factory.makeProduct())
+
+        fetched_targets = OCIRecipeTarget.getByProject(project)
+        self.assertEqual(1, fetched_targets.count())
+        self.assertEqual(recipe_target, fetched_targets.first())
+
+    def test_getByDistribution(self):
         distribution = self.factory.makeDistribution()
-        target = OCIRecipeTarget(registrant, project, distribution, name)
-        print(target.date_created)
-        self.assertTrue(target)
+        recipe_target = self.factory.makeOCIRecipeTarget(
+            distribution=distribution)
+
+        # Make sure there's more than one to get the result from
+        self.factory.makeOCIRecipeTarget(
+            distribution=self.factory.makeDistribution())
+
+        fetched_targets = OCIRecipeTarget.getByDistribution(distribution)
+        self.assertEqual(1, fetched_targets.count())
+        self.assertEqual(recipe_target, fetched_targets.first())
