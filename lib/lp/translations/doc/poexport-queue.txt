@@ -37,7 +37,7 @@ exception handling so we can get the exception error:
 Record the error.
 
     >>> try:
-    ...     raise AssertionError, "It's just an error for testing purposes"
+    ...     raise AssertionError("It's just an error for testing purposes")
     ... except AssertionError:
     ...     result.addFailure()
 
@@ -131,7 +131,7 @@ characters and can't be reported without triggering an error themselves.
 Those are specially handled and reported.
 
     >>> try:
-    ...     raise AssertionError, b"Really nasty \xc3 non-ASCII error!"
+    ...     raise AssertionError(b"Really nasty \xc3 non-ASCII error!")
     ... except AssertionError:
     ...     result.addFailure()
     >>> result.notify()

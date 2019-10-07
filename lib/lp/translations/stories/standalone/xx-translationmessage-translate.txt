@@ -30,12 +30,12 @@ We are in read only mode, so there shouldn't be any textareas:
     >>> main_content = find_tag_by_id(
     ...     browser.contents, 'messages_to_translate')
     >>> for textarea in main_content.findAll('textarea'):
-    ...     raise AssertionError, 'Found textarea:\n%s' % textarea
+    ...     raise AssertionError('Found textarea:\n%s' % textarea)
 
 Neither any input widget:
 
     >>> for input in main_content.findAll('input'):
-    ...     raise AssertionError, 'Found input:\n%s' % input
+    ...     raise AssertionError('Found input:\n%s' % input)
 
 As an anynoymous user you will have access to the download and details
 pages for the pofile this message belongs to. The link to upload page
