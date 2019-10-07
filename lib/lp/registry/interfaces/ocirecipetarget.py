@@ -69,7 +69,7 @@ class IOCIRecipeTarget(IOCIRecipeTargetView,
     export_as_webservice_entry()
 
 
-class IOCIRecipeTargetSource(Interface):
+class IOCIRecipeTargetSet(Interface):
     """A utility of this interface that can be used to create and access
        recipe targets.
     """

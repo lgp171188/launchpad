@@ -19,14 +19,14 @@ from lp.services.database.interfaces import (
 from lp.services.database.stormbase import StormBase
 from lp.registry.interfaces.ocirecipetarget import (
     IOCIRecipeTarget,
-    IOCIRecipeTargetSource,
+    IOCIRecipeTargetSet,
     )
 
 
 @implementer(IOCIRecipeTarget)
-@provider(IOCIRecipeTargetSource)
+@provider(IOCIRecipeTargetSet)
 class OCIRecipeTarget(StormBase):
-    """See `IOCIRecipeTarget` and `IOCIRecipeTargetSource`."""
+    """See `IOCIRecipeTarget` and `IOCIRecipeTargetSet`."""
 
     __storm_table__ = "OCIRecipeTarget"
 
@@ -64,7 +64,7 @@ class OCIRecipeTarget(StormBase):
                  bug_reporting_guidelines=None,
                  bug_reported_acknowledgement=None,
                  bugfiling_duplicate_search=False):
-        """See `IOCIRecipeTargetSource.new`."""
+        """See `IOCIRecipeTarIOCIRecipeTargetSetgetSource.new`."""
         store = IMasterStore(OCIRecipeTarget)
         target = OCIRecipeTarget()
         if not date_created:
@@ -84,7 +84,7 @@ class OCIRecipeTarget(StormBase):
 
     @staticmethod
     def getByProject(project):
-        """See `IOCIRecipeTargetSource`."""
+        """See `IOCIRecipeTargetSet`."""
         targets = IStore(OCIRecipeTarget).find(
             OCIRecipeTarget, OCIRecipeTarget.project == project).order_by(
                 OCIRecipeTarget.date_created)
@@ -92,7 +92,7 @@ class OCIRecipeTarget(StormBase):
 
     @staticmethod
     def getByDistribution(distribution):
-        """See `IOCIRecipeTargetSource`."""
+        """See `IOCIRecipeTargetSet`."""
         targets = IStore(OCIRecipeTarget).find(
             OCIRecipeTarget,
             OCIRecipeTarget.distribution == distribution).order_by(
