@@ -3,6 +3,8 @@
 
 """Snap package interfaces."""
 
+from __future__ import absolute_import, print_function, unicode_literals
+
 __metaclass__ = type
 
 __all__ = [
@@ -112,14 +114,14 @@ from lp.soyuz.interfaces.archive import IArchive
 from lp.soyuz.interfaces.distroarchseries import IDistroArchSeries
 
 
-SNAP_PRIVATE_FEATURE_FLAG = u"snap.allow_private"
-SNAP_SNAPCRAFT_CHANNEL_FEATURE_FLAG = u"snap.channels.snapcraft"
-SNAP_WEBHOOKS_FEATURE_FLAG = u"snap.webhooks.enabled"
+SNAP_PRIVATE_FEATURE_FLAG = "snap.allow_private"
+SNAP_SNAPCRAFT_CHANNEL_FEATURE_FLAG = "snap.channels.snapcraft"
+SNAP_WEBHOOKS_FEATURE_FLAG = "snap.webhooks.enabled"
 
 
 SNAP_TESTING_FLAGS = {
-    SNAP_PRIVATE_FEATURE_FLAG: u"on",
-    SNAP_WEBHOOKS_FEATURE_FLAG: u"on",
+    SNAP_PRIVATE_FEATURE_FLAG: "on",
+    SNAP_WEBHOOKS_FEATURE_FLAG: "on",
     }
 
 
@@ -330,7 +332,7 @@ class ISnapBuildRequest(Interface):
 
     archive = Reference(
         IArchive,
-        title=u"The source archive for builds produced by this request",
+        title="The source archive for builds produced by this request",
         required=True, readonly=True)
 
     channels = Dict(
