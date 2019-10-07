@@ -200,7 +200,12 @@ from lp.registry.interfaces.mailinglist import (
 from lp.registry.interfaces.mailinglistsubscription import (
     MailingListAutoSubscribePolicy,
     )
+<<<<<<< 6905652081de1e06ada1dc0893f14702f9d8758e
 from lp.registry.interfaces.ociprojectname import IOCIProjectNameSet
+=======
+from lp.registry.interfaces.ocirecipename import IOCIRecipeNameSet
+from lp.registry.interfaces.ocirecipetarget import IOCIRecipeTarget
+>>>>>>> Implement OCIRecipeNameSet
 from lp.registry.interfaces.packaging import (
     IPackagingUtil,
     PackagingType,
