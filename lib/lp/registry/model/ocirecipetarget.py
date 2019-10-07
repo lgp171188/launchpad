@@ -1,3 +1,13 @@
+# Copyright 2019 Canonical Ltd.  This software is licensed under the
+# GNU Affero General Public License version 3 (see the file LICENSE).
+
+from __future__ import unicode_literals
+
+__metaclass__ = type
+__all__ = [
+    'OCIRecipeTarget',
+    ]
+
 from datetime import datetime
 import pytz
 from storm.locals import (

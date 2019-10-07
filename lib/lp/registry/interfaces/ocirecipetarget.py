@@ -1,3 +1,14 @@
+# Copyright 2019 Canonical Ltd.  This software is licensed under the
+# GNU Affero General Public License version 3 (see the file LICENSE).
+
+from __future__ import unicode_literals
+
+__metaclass__ = type
+__all__ = [
+    'IOCIRecipeTarget',
+    'IOCIRecipeTargetSet',
+    ]
+
 from lazr.restful.declarations import (
     export_as_webservice_entry,
     exported,
@@ -34,6 +45,7 @@ class IOCIRecipeTargetView(Interface):
         title=_("The person that registered this recipe."),
         required=True))
 
+
 class IOCIRecipeTargetEditableAttributes(IHasOwner):
     """IOCIRecipeTarget attributes that can be edited.
 
@@ -62,6 +74,7 @@ class IOCIRecipeTargetEditableAttributes(IHasOwner):
         title=_("Enable duplicate search on filing a bug on this recipe."),
         required=True,
         default=True))
+
 
 class IOCIRecipeTarget(IOCIRecipeTargetView,
                        IOCIRecipeTargetEditableAttributes):
