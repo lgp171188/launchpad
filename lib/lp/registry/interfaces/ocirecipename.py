@@ -21,7 +21,11 @@ from lp import _
 
 
 class IOCIRecipeName(Interface):
+    """Interface provided by an OCIRecipeName.
 
+    This is a tiny table that allows multiple OCIRecipeTarget entities to share
+    a single name.
+    """
     id = Int(title=_("OCI Recipe Name ID"),
              required=True,
              readonly=True
@@ -31,6 +35,7 @@ class IOCIRecipeName(Interface):
 
 
 class IOCIRecipeNameSet(Interface):
+    """A set of OCIRecipeName."""
 
     def __getitem__(name):
         """Retrieve a ocirecipename by name."""

@@ -28,11 +28,11 @@ from lp.registry.interfaces.ocirecipename import (
     IOCIRecipeName,
     IOCIRecipeNameSet,
     )
-from lp.services.helpers import ensure_unicode
 
 
 @implementer(IOCIRecipeName)
 class OCIRecipeName(StormBase):
+    """See `IOCIRecipeName`."""
 
     __storm_table__ = "OCIRecipeName"
 
@@ -46,6 +46,7 @@ class OCIRecipeName(StormBase):
 
 @implementer(IOCIRecipeNameSet)
 class OCIRecipeNameSet:
+    """See `IOCIRecipeNameSet`."""
 
     def __getitem__(self, name):
         """See `IOCIRecipeNameSet`."""
@@ -53,7 +54,7 @@ class OCIRecipeNameSet:
 
     def getByName(self, name):
         """See `IOCIRecipeNameSet`."""
-        recipe_name  = IStore(OCIRecipeName).find(
+        recipe_name = IStore(OCIRecipeName).find(
             OCIRecipeName, OCIRecipeName.name == name).one()
         if recipe_name is None:
             raise NoSuchRecipeName(name)
