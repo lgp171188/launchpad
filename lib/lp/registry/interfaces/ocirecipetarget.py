@@ -78,6 +78,7 @@ class IOCIRecipeTargetEditableAttributes(IHasOwner):
 
 class IOCIRecipeTarget(IOCIRecipeTargetView,
                        IOCIRecipeTargetEditableAttributes):
+    """A target of project or distribution for an OCIRecipe."""
 
     export_as_webservice_entry()
 
