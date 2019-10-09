@@ -42,6 +42,9 @@ class OCIRecipeName(StormBase):
 
     def __init__(self, name):
         super(OCIRecipeName, self).__init__()
+        if not valid_name(name):
+            raise InvalidName(
+                "%s is not a valid name for an OCI recipe." % name)
         self.name = name
 
 
@@ -63,9 +66,6 @@ class OCIRecipeNameSet:
 
     def new(self, name):
         """See `IOCIRecipeNameSet`."""
-        if not valid_name(name):
-            raise InvalidName(
-                "%s is not a valid name for an OCI recipe." % name)
         store = IMasterStore(OCIRecipeName)
         recipe_name = OCIRecipeName(name=name)
         store.add(recipe_name)
