@@ -4,9 +4,9 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 
-from lp.services.database.interfaces import IStore
 from lp.registry.model.ocirecipename import OCIRecipeName
 from lp.registry.model.ocirecipetarget import OCIRecipeTarget
+from lp.services.database.interfaces import IStore
 from lp.testing import (
     admin_logged_in,
     TestCaseWithFactory,

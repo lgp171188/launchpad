@@ -9,6 +9,7 @@ __all__ = [
     ]
 
 from datetime import datetime
+
 import pytz
 from storm.locals import (
     Bool,
@@ -22,15 +23,15 @@ from zope.interface import (
     provider,
     )
 
+from lp.registry.interfaces.ocirecipetarget import (
+    IOCIRecipeTarget,
+    IOCIRecipeTargetSet,
+    )
 from lp.services.database.interfaces import (
     IMasterStore,
     IStore,
     )
 from lp.services.database.stormbase import StormBase
-from lp.registry.interfaces.ocirecipetarget import (
-    IOCIRecipeTarget,
-    IOCIRecipeTargetSet,
-    )
 
 
 @implementer(IOCIRecipeTarget)
