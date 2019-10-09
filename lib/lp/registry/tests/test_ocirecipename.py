@@ -13,16 +13,20 @@ from lp.registry.errors import (
     InvalidName,
     NoSuchOCIRecipeName,
     )
+from lp.registry.interfaces.ocirecipename import IOCIRecipeName
 from lp.registry.model.ocirecipename import (
     OCIRecipeName,
     OCIRecipeNameSet,
     )
 from lp.services.database.interfaces import IStore
-from lp.testing import TestCaseWithFactory
+from lp.testing import (
+    admin_logged_in,
+    TestCaseWithFactory,
+    )
 from lp.testing.layers import DatabaseFunctionalLayer
 
 
-class OCIRecipeNameTest(TestCaseWithFactory):
+class TestOCIRecipeName(TestCaseWithFactory):
 
     layer = DatabaseFunctionalLayer
 
@@ -33,8 +37,8 @@ class OCIRecipeNameTest(TestCaseWithFactory):
     def test_invalid_name(self):
         with ExpectedException(
             InvalidName,
-            'invalid%20name is not a valid name for an OCI recipe.'):
-            OCIRecipeNameSet().new('invalid%20name')
+            ""):
+            OCIRecipeNameSet().new(name='invalid%20name')
 
     def test_get_missing(self):
         with ExpectedException(
@@ -45,5 +49,16 @@ class OCIRecipeNameTest(TestCaseWithFactory):
     def test_get(self):
         created = self.factory.makeOCIRecipeName()
         IStore(OCIRecipeName).flush()
+        fetched = OCIRecipeNameSet()[created.name]
+        self.assertEqual(fetched, created)
+
+    def test_getByName(self):
+        created = self.factory.makeOCIRecipeName()
+        IStore(OCIRecipeName).flush()
         fetched = OCIRecipeNameSet().getByName(created.name)
         self.assertEqual(fetched, created)
+
+    def test_implements_interface(self):
+        recipe_name = OCIRecipeName('test-name')
+        with admin_logged_in():
+            self.assertProvides(recipe_name, IOCIRecipeName)

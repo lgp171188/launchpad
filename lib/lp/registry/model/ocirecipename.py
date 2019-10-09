@@ -51,7 +51,7 @@ class OCIRecipeNameSet:
 
     def __getitem__(self, name):
         """See `IOCIRecipeNameSet`."""
-        return self.getByName
+        return self.getByName(name)
 
     def getByName(self, name):
         """See `IOCIRecipeNameSet`."""

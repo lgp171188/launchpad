@@ -14,7 +14,7 @@ __all__ = [
 from zope.interface import Interface
 from zope.schema import (
     Int,
-    Text,
+    TextLine,
     )
 
 from lp import _
@@ -29,7 +29,10 @@ class IOCIRecipeName(Interface):
     """
     id = Int(title=_("ID"), required=True, readonly=True)
 
-    name = Text(title=_("Name of recipe"), constraint=name_validator)
+    name = TextLine(
+        title=_("Name"), constraint=name_validator,
+        required=True, readonly=False,
+        description=_("The name of the OCI Recipe."))
 
 
 class IOCIRecipeNameSet(Interface):
