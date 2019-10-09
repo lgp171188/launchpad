@@ -23,7 +23,9 @@
       For more details on importing source code into Launchpad,
       see the help wiki page
       <a href="https://help.launchpad.net/VcsImports">
-          VcsImports</a>.
+          VcsImports</a>. 
+      You will not be able to push directly to the imported 
+      branch or repository.
     </p>
 
     <metal:formbody fill-slot="widgets">

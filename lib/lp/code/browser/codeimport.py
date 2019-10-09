@@ -282,8 +282,7 @@ class NewCodeImportForm(Interface):
             "The URL of the Git repository.  For imports to Bazaar, the "
             "HEAD branch will be imported by default, but you can import "
             "different branches by appending ',branch=$name' to the URL.  "
-            "For imports to Git, the entire repository will be imported.  "
-            "You will not be able to push directly to the imported repository."),
+            "For imports to Git, the entire repository will be imported.  "),
         allowed_schemes=["git", "http", "https"],
         allow_userinfo=True,
         allow_port=True,
