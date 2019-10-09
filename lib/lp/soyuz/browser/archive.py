@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Browser views for archive."""
@@ -23,7 +23,6 @@ __all__ = [
     'ArchiveView',
     'ArchiveViewBase',
     'EnableProcessorsMixin',
-    'make_archive_vocabulary',
     'PackageCopyingMixin',
     'traverse_named_ppa',
     ]
@@ -175,6 +174,7 @@ from lp.soyuz.model.archive import (
     )
 from lp.soyuz.model.publishing import SourcePackagePublishingHistory
 from lp.soyuz.scripts.packagecopier import check_copy_permissions
+from lp.soyuz.vocabularies import make_archive_vocabulary
 
 
 class ArchiveBadges(HasBadgeBase):
@@ -1431,15 +1431,6 @@ class PackageCopyingMixin:
 
         self.request.response.addNotification(notification)
         return True
-
-
-def make_archive_vocabulary(archives):
-    terms = []
-    for archive in archives:
-        label = '%s [%s]' % (archive.displayname, archive.reference)
-        terms.append(SimpleTerm(archive, archive.reference, label))
-    terms.sort(key=lambda x: x.value.reference)
-    return SimpleVocabulary(terms)
 
 
 class ArchivePackageCopyingView(ArchiveSourceSelectionFormView,
