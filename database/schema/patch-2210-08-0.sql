@@ -23,7 +23,6 @@ CREATE TABLE OCIRecipeTarget (
     distribution integer NOT NULL REFERENCES distribution,
     ocirecipename integer NOT NULL REFERENCES ocirecipename,
     description text,
-    bug_supervisor integer REFERENCES person,
     bug_reporting_guidelines text,
     bug_reported_acknowledgement text,
     enable_bugfiling_duplicate_search boolean DEFAULT true NOT NULL
@@ -36,7 +35,6 @@ COMMENT ON COLUMN OCIRecipeTarget.registrant IS 'The user who registered this ta
 COMMENT ON COLUMN OCIRecipeTarget.distribution IS 'The distribution that this target belongs to.';
 COMMENT ON COLUMN OCIRecipeTarget.ocirecipename IS 'The name of this target.';
 COMMENT ON COLUMN OCIRecipeTarget.description IS 'A short description of this target.';
-COMMENT ON COLUMN OCIRecipeTarget.bug_supervisor IS 'Person who is responsible for managing bugs on this target.';
 COMMENT ON COLUMN OCIRecipeTarget.bug_reporting_guidelines IS 'Guidelines to the end user for reporting bugs on this target';
 COMMENT ON COLUMN OCIRecipeTarget.bug_reported_acknowledgement IS 'A message of acknowledgement to display to a bug reporter after they''ve reported a new bug.';
 COMMENT ON COLUMN OCIRecipeTarget.enable_bugfiling_duplicate_search IS 'Enable/disable a search for possible duplicates when a bug is filed.';
