@@ -110,6 +110,7 @@ class NoSuchSourcePackageName(NameLookupFailed):
     """Raised when we can't find a particular sourcepackagename."""
     _message_prefix = "No such source package"
 
+
 class NoSuchOCIRecipeName(NameLookupFailed):
     """Raised when we can't find a particular OCIRecipeName."""
     _message_prefix = "No such OCI recipe"
