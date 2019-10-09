@@ -189,6 +189,11 @@ a name for the import branch, and a Git repository location.
     >>> browser.open("http://code.launchpad.test/+code-imports/+new")
     >>> browser.getControl('Project').value = "firefox"
     >>> browser.getControl('Name').value = "git-import"
+
+Mention that the user won't be able to push directly to the imported repository.
+    >>> 'You will not be able to push directly to the imported repository' in browser.contents
+    True
+
     >>> browser.getControl('Git', index=0).click()
     >>> browser.getControl('Repo URL', index=0).value = (
     ...     "git://example.com/firefox.git")
