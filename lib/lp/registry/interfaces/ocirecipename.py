@@ -11,46 +11,38 @@ __all__ = [
     'IOCIRecipeNameSet',
     ]
 
-from zope.interface import (
-    Interface
-)
+from zope.interface import Interface
 from zope.schema import (
     Int,
     Text,
     )
 
 from lp import _
+from lp.app.validators.name import name_validator
 
 
 class IOCIRecipeName(Interface):
-    """Interface provided by an OCIRecipeName.
+    """A name of an Open Container Initiative recipe.
 
     This is a tiny table that allows multiple OCIRecipeTarget entities to share
     a single name.
     """
-    id = Int(title=_("OCI Recipe Name ID"),
-             required=True,
-             readonly=True
-             )
+    id = Int(title=_("ID"), required=True, readonly=True)
 
-    name = Text(title=_("Name of recipe"))
+    name = Text(title=_("Name of recipe"), constraint=name_validator)
 
 
 class IOCIRecipeNameSet(Interface):
-    """A set of OCIRecipeName."""
+    """A set of `OCIRecipeName`."""
 
     def __getitem__(name):
-        """Retrieve a ocirecipename by name."""
+        """Retrieve a `OCIRecipeName` by name."""
 
     def getByName(name):
-        """Return a ocirecipename by its name.
+        """Return a `OCIRecipeName` by its name.
 
-        If the ocirecipename can't be found a NoSuchOCIRecipeName will be
-        raised.
+        :raises NoSuchOCIRecipeName: if the `OCIRecipeName` can't be found.
         """
 
-    def getAll():
-        """return an iselectresults representing all package names"""
-
     def new(name):
-        """Create a new oci recipe name."""
+        """Create a new `OCIRecipeName`."""

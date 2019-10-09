@@ -7,7 +7,6 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 
-import transaction
 from testtools.testcase import ExpectedException
 
 from lp.registry.errors import (
@@ -48,9 +47,3 @@ class OCIRecipeNameTest(TestCaseWithFactory):
         IStore(OCIRecipeName).flush()
         fetched = OCIRecipeNameSet().getByName(created.name)
         self.assertEqual(fetched, created)
-
-    def test_get_all(self):
-        for i in range(5):
-            self.factory.makeOCIRecipeName()
-        all_recipes = OCIRecipeNameSet().getAll()
-        self.assertEqual(all_recipes.count(), 5)

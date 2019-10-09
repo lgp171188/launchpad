@@ -12,10 +12,7 @@ __all__ = [
     ]
 
 from storm.properties import Unicode
-from storm.locals import (
-    Desc,
-    Int,
-    )
+from storm.locals import Int
 from zope.interface import implementer
 
 from lp.app.validators.name import valid_name
@@ -63,11 +60,6 @@ class OCIRecipeNameSet:
         if recipe_name is None:
             raise NoSuchOCIRecipeName(name)
         return recipe_name
-
-    def getAll(self):
-        """See `IOCIRecipeNameSet`."""
-        return IStore(OCIRecipeName).find(OCIRecipeName).order_by(
-            Desc(OCIRecipeName.name))
 
     def new(self, name):
         """See `IOCIRecipeNameSet`."""
