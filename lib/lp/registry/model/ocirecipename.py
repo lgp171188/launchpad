@@ -11,16 +11,11 @@ __all__ = [
     'OCIRecipeNameSet',
     ]
 
-from storm.properties import Unicode
 from storm.locals import Int
+from storm.properties import Unicode
 from zope.interface import implementer
 
 from lp.app.validators.name import valid_name
-from lp.services.database.interfaces import (
-    IMasterStore,
-    IStore,
-    )
-from lp.services.database.stormbase import StormBase
 from lp.registry.errors import (
     InvalidName,
     NoSuchOCIRecipeName,
@@ -29,6 +24,11 @@ from lp.registry.interfaces.ocirecipename import (
     IOCIRecipeName,
     IOCIRecipeNameSet,
     )
+from lp.services.database.interfaces import (
+    IMasterStore,
+    IStore,
+    )
+from lp.services.database.stormbase import StormBase
 
 
 @implementer(IOCIRecipeName)
