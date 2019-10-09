@@ -22,7 +22,7 @@ from lp.services.database.interfaces import (
 from lp.services.database.stormbase import StormBase
 from lp.registry.errors import (
     InvalidName,
-    NoSuchRecipeName,
+    NoSuchOCIRecipeName,
     )
 from lp.registry.interfaces.ocirecipename import (
     IOCIRecipeName,
@@ -57,7 +57,7 @@ class OCIRecipeNameSet:
         recipe_name = IStore(OCIRecipeName).find(
             OCIRecipeName, OCIRecipeName.name == name).one()
         if recipe_name is None:
-            raise NoSuchRecipeName(name)
+            raise NoSuchOCIRecipeName(name)
         return recipe_name
 
     def getAll(self):

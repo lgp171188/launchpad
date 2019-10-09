@@ -22,8 +22,8 @@ __all__ = [
     'NameAlreadyTaken',
     'NoSuchAccount',
     'NoSuchDistroSeries',
+    'NoSuchOCIRecipeName',
     'NoSuchSourcePackageName',
-    'NoSuchRecipeName',
     'NotPlaceholderAccount',
     'InclusiveTeamLinkageError',
     'PPACreationError',
@@ -110,8 +110,8 @@ class NoSuchSourcePackageName(NameLookupFailed):
     """Raised when we can't find a particular sourcepackagename."""
     _message_prefix = "No such source package"
 
-class NoSuchRecipeName(NameLookupFailed):
-    """Raised when we can't find a particular ocirecipename."""
+class NoSuchOCIRecipeName(NameLookupFailed):
+    """Raised when we can't find a particular OCIRecipeName."""
     _message_prefix = "No such OCI recipe"
 
 

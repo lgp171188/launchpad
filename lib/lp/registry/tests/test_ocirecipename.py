@@ -12,7 +12,7 @@ from testtools.testcase import ExpectedException
 
 from lp.registry.errors import (
     InvalidName,
-    NoSuchRecipeName,
+    NoSuchOCIRecipeName,
     )
 from lp.registry.model.ocirecipename import (
     OCIRecipeName,
@@ -39,7 +39,7 @@ class OCIRecipeNameTest(TestCaseWithFactory):
 
     def test_get_missing(self):
         with ExpectedException(
-            NoSuchRecipeName,
+            NoSuchOCIRecipeName,
             "No such OCI recipe: 'invalid'"):
             OCIRecipeNameSet().getByName(u'invalid')
 

@@ -43,7 +43,7 @@ class IOCIRecipeNameSet(Interface):
     def getByName(name):
         """Return a ocirecipename by its name.
 
-        If the ocirecipename can't be found a NoSuchRecipeName will be
+        If the ocirecipename can't be found a NoSuchOCIRecipeName will be
         raised.
         """
 
