@@ -25,6 +25,7 @@ from zope.interface import (
     provider,
     )
 
+from lp.registry.interfaces.distribution import IDistribution
 from lp.registry.interfaces.ocirecipetarget import (
     IOCIRecipeTarget,
     IOCIRecipeTargetSet,
@@ -66,7 +67,7 @@ class OCIRecipeTarget(StormBase):
         name="enable_bugfiling_duplicate_search")
 
     @staticmethod
-    def new(registrant, distribution, ocirecipename,
+    def new(registrant, pillar, ocirecipename,
                  date_created=None, description=None, bug_supervisor=None,
                  bug_reporting_guidelines=None,
                  bug_reported_acknowledgement=None,
@@ -78,8 +79,13 @@ class OCIRecipeTarget(StormBase):
             created_date = datetime.now(pytz.timezone('UTC'))
             target.date_created = created_date
             target.date_last_modified = created_date
+
+        if IDistribution.providedBy(pillar):
+            target.distribution = pillar
+        else:
+            raise ValueError("Pillar was not of suitable type.")
+
         target.registrant = registrant
-        target.distribution = distribution
         target.ocirecipename = ocirecipename
         target.description = description
         target.bug_reporting_guidelines = bug_reporting_guidelines

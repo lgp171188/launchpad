@@ -74,7 +74,7 @@ class IOCIRecipeTarget(IOCIRecipeTargetView,
 class IOCIRecipeTargetSet(Interface):
     """A utility to create and access OCI recipe targets."""
 
-    def new(registrant, project, distribution, ocirecipename,
+    def new(registrant, pillar, ocirecipename,
             date_created=None, description=None, bug_supervisor=None,
             bug_reporting_guidelines=None, bug_reported_acknowledgement=None,
             bugfiling_duplicate_search=False):
