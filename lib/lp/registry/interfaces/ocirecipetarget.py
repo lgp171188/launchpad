@@ -18,7 +18,6 @@ from lazr.restful.declarations import (
 from lazr.restful.fields import Reference
 from zope.interface import Interface
 from zope.schema import (
-    Bool,
     Datetime,
     Int,
     Text,
@@ -29,7 +28,6 @@ from lp.bugs.interfaces.bugtarget import IBugTarget
 from lp.registry.interfaces.distribution import IDistribution
 from lp.registry.interfaces.ocirecipename import IOCIRecipeName
 from lp.registry.interfaces.person import IPerson
-from lp.registry.interfaces.product import IProduct
 from lp.registry.interfaces.role import IHasOwner
 
 

@@ -11,8 +11,6 @@ __all__ = [
     'OCIRecipeTargetSet',
     ]
 
-from datetime import datetime
-
 import pytz
 from storm.locals import (
     Bool,
@@ -21,10 +19,7 @@ from storm.locals import (
     Reference,
     Unicode,
     )
-from zope.interface import (
-    implementer,
-    provider,
-    )
+from zope.interface import implementer
 
 from lp.bugs.model.bugtarget import BugTargetBase
 from lp.registry.interfaces.distribution import IDistribution
