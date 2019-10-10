@@ -4930,12 +4930,14 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             registrant = self.makePerson()
         if pillar is None:
             pillar = self.makeDistribution()
-        if ocirecipename is None:
-            ocirecipename = self.makeOCIRecipeName()
+        if ocirecipename is None or isinstance(ocirecipename, six.text_type):
+            ocirecipename = self.makeOCIRecipeName(ocirecipename)
         return getUtility(IOCIRecipeTargetSet).new(
-            registrant, pillar, ocirecipename, date_created,
-            description, bug_reporting_guidelines,
-            bug_reported_acknowledgement, bugfiling_duplicate_search)
+            registrant, pillar, ocirecipename, date_created=date_created,
+            description=description,
+            bug_reporting_guidelines=bug_reporting_guidelines,
+            bug_reported_acknowledgement=bug_reported_acknowledgement,
+            bugfiling_duplicate_search=bugfiling_duplicate_search)
 
 
 # Some factory methods return simple Python types. We don't add

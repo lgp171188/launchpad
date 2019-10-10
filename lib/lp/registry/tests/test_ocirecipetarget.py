@@ -9,7 +9,10 @@ __metaclass__ = type
 
 from zope.component import getUtility
 
-from lp.registry.interfaces.ocirecipetarget import IOCIRecipeTargetSet
+from lp.registry.interfaces.ocirecipetarget import (
+    IOCIRecipeTarget,
+    IOCIRecipeTargetSet,
+    )
 from lp.registry.model.ocirecipename import OCIRecipeName
 from lp.registry.model.ocirecipetarget import OCIRecipeTarget
 from lp.services.database.interfaces import IStore
@@ -21,13 +24,14 @@ from lp.testing import (
 from lp.testing.layers import DatabaseFunctionalLayer
 
 
-class OCIRecipeTargetTest(TestCaseWithFactory):
+class TestOCIRecipeTarget(TestCaseWithFactory):
 
     layer = DatabaseFunctionalLayer
 
     def test_create(self):
         recipe_target = self.factory.makeOCIRecipeTarget()
-        self.assertTrue(recipe_target)
+        with admin_logged_in():
+            self.assertProvides(recipe_target, IOCIRecipeTarget)
 
     def test_getByDistributionAndName(self):
         person = self.factory.makePerson()

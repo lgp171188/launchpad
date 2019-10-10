@@ -26,6 +26,7 @@ from zope.interface import (
     provider,
     )
 
+from lp.bugs.model.bugtarget import BugTargetBase
 from lp.registry.interfaces.distribution import IDistribution
 from lp.registry.interfaces.ocirecipetarget import (
     IOCIRecipeTarget,
@@ -41,7 +42,7 @@ from lp.services.database.stormbase import StormBase
 
 
 @implementer(IOCIRecipeTarget)
-class OCIRecipeTarget(StormBase):
+class OCIRecipeTarget(BugTargetBase, StormBase):
     """See `IOCIRecipeTarget` and `IOCIRecipeTargetSet`."""
 
     __storm_table__ = "OCIRecipeTarget"
@@ -67,6 +68,26 @@ class OCIRecipeTarget(StormBase):
     bug_reported_acknowledgement = Unicode(name="bug_reported_acknowledgement")
     enable_bugfiling_duplicate_search = Bool(
         name="enable_bugfiling_duplicate_search")
+
+    @property
+    def pillar(self):
+        """See `IBugTarget`."""
+        return self.distribution
+
+    @property
+    def bugtargetname(self):
+        """See `IBugTarget`."""
+        return self.ocirecipename
+
+    @property
+    def bugtargetdisplayname(self):
+        """See `IBugTarget`."""
+        return self.ocirecipename.name
+
+    @property
+    def owner(self):
+        """See `IHasOwner`."""
+        return self.registrant
 
 
 @implementer(IOCIRecipeTargetSet)
