@@ -25,17 +25,6 @@ class OCIRecipeTargetTest(TestCaseWithFactory):
         recipe_target = self.factory.makeOCIRecipeTarget()
         self.assertTrue(recipe_target)
 
-    def test_getByProduct(self):
-        project = self.factory.makeProduct()
-        recipe_target = self.factory.makeOCIRecipeTarget(project=project)
-
-        # Make sure there's more than one to get the result from
-        self.factory.makeOCIRecipeTarget(project=self.factory.makeProduct())
-
-        fetched_targets = OCIRecipeTarget.getByProject(project)
-        self.assertEqual(1, fetched_targets.count())
-        self.assertEqual(recipe_target, fetched_targets.first())
-
     def test_getByDistribution(self):
         distribution = self.factory.makeDistribution()
         recipe_target = self.factory.makeOCIRecipeTarget(

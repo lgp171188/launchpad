@@ -52,9 +52,6 @@ class OCIRecipeTarget(StormBase):
     registrant_id = Int(name='registrant', allow_none=False)
     registrant = Reference(registrant_id, "Person.id")
 
-    project_id = Int(name="project", allow_none=True)
-    project = Reference(project_id, "Product.id")
-
     distribution_id = Int(name="distribution", allow_none=True)
     distribution = Reference(distribution_id, "Distribution.id")
 
@@ -63,16 +60,13 @@ class OCIRecipeTarget(StormBase):
 
     description = Unicode(name="description")
 
-    bug_supervisor_id = Int(name="bug_supervisor", allow_none=True)
-    bug_supervisor = Reference(bug_supervisor_id, "Person.id")
-
     bug_reporting_guidelines = Unicode(name="bug_reporting_guidelines")
     bug_reported_acknowledgement = Unicode(name="bug_reported_acknowledgement")
     enable_bugfiling_duplicate_search = Bool(
         name="enable_bugfiling_duplicate_search")
 
     @staticmethod
-    def new(registrant, project, distribution, ocirecipename,
+    def new(registrant, distribution, ocirecipename,
                  date_created=None, description=None, bug_supervisor=None,
                  bug_reporting_guidelines=None,
                  bug_reported_acknowledgement=None,
@@ -85,11 +79,9 @@ class OCIRecipeTarget(StormBase):
             target.date_created = created_date
             target.date_last_modified = created_date
         target.registrant = registrant
-        target.project = project
         target.distribution = distribution
         target.ocirecipename = ocirecipename
         target.description = description
-        target.bug_supervisor = bug_supervisor,
         target.bug_reporting_guidelines = bug_reporting_guidelines
         target.enable_bugfiling_duplicate_search = bugfiling_duplicate_search
         store.add(target)

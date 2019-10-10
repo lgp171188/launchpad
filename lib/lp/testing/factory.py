@@ -4920,22 +4920,21 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             name = self.getUniqueString(u"oci-project-name")
         return getUtility(IOCIProjectNameSet).new(name)
 
-    def makeOCIRecipeTarget(self, registrant=None, project=None,
-                            distribution=None, ocirecipename=None,
-                            date_created=None, description=None,
-                            bug_supervisor=None, bug_reporting_guidelines=None,
+    def makeOCIRecipeTarget(self, registrant=None,distribution=None,
+                            ocirecipename=None, date_created=None,
+                            description=None, bug_reporting_guidelines=None,
                             bug_reported_acknowledgement=None,
                             bugfiling_duplicate_search=False):
         """Make a new OCIRecipeTarget."""
         if registrant is None:
             registrant = self.makePerson()
-        if project is None and distribution is None:
-            project = self.makeProduct()
+        if distribution is None:
+            distribution = self.makeDistribution()
         if ocirecipename is None:
             ocirecipename = self.makeOCIRecipeName()
         return getUtility(IOCIRecipeTargetSet).new(
-            registrant, project, distribution, ocirecipename, date_created,
-            description, bug_supervisor, bug_reporting_guidelines,
+            registrant, distribution, ocirecipename, date_created,
+            description, bug_reporting_guidelines,
             bug_reported_acknowledgement, bugfiling_duplicate_search)
 
 

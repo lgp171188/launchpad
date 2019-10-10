@@ -25,6 +25,7 @@ from zope.schema import (
     )
 
 from lp import _
+from lp.bugs.interfaces.bugtarget import IBugTarget
 from lp.registry.interfaces.distribution import IDistribution
 from lp.registry.interfaces.ocirecipename import IOCIRecipeName
 from lp.registry.interfaces.person import IPerson
@@ -33,62 +34,45 @@ from lp.registry.interfaces.role import IHasOwner
 
 
 class IOCIRecipeTargetView(Interface):
-    """IOCIRecipeTarget attributes that require launchpad.View permision."""
+    """IOCIRecipeTarget attributes that require launchpad.View permission."""
 
-    id = Int(title=_("OCI Recipe Target ID"),
-             required=True,
-             readonly=True
-             )
+    id = Int(title=_("OCI Recipe Target ID"), required=True, readonly=True)
     date_created = Datetime(title=_("Date created"), required=True)
     date_last_modified = Datetime(title=_("Date last modified"), required=True)
 
     registrant = exported(Reference(
         IPerson,
         title=_("The person that registered this recipe."),
-        required=True))
+        required=True,
+        readonly=True))
 
 
-class IOCIRecipeTargetEditableAttributes(IHasOwner):
+class IOCIRecipeTargetEditableAttributes(IBugTarget, IHasOwner):
     """IOCIRecipeTarget attributes that can be edited.
 
     These attributes need launchpad.View to see, and launchpad.Edit to change.
     """
 
-    project = exported(Reference(
-        IProduct,
-        title=_("The project that this recipe is for.")))
     distribution = exported(Reference(
         IDistribution,
         title=_("The distribution that this recipe is associated with.")))
     ocirecipename = exported(Reference(
         IOCIRecipeName,
         title=_("The name of this recipe."),
-        required=True))
-    description = exported(Text(title=_("The description for this recipe.")))
-    bug_supervisor = exported(Reference(
-        IPerson,
-        title=_("The supervisor for bug reports on this recipe.")))
-    bug_reporting_guidelines = exported(Text(
-        title=_("Guidelines for reporting bugs with this recipe")))
-    bug_reported_acknowledgement = exported(Text(
-        title=_("Text displayed on a bug being successfully filed")))
-    enable_bugfiling_duplicate_search = exported(Bool(
-        title=_("Enable duplicate search on filing a bug on this recipe."),
         required=True,
-        default=True))
+        readonly=True))
+    description = exported(Text(title=_("The description for this recipe.")))
 
 
 class IOCIRecipeTarget(IOCIRecipeTargetView,
                        IOCIRecipeTargetEditableAttributes):
-    """A target of project or distribution for an OCIRecipe."""
+    """A target (pillar and name) for Open Container Initiative recipes."""
 
     export_as_webservice_entry()
 
 
 class IOCIRecipeTargetSet(Interface):
-    """A utility of this interface that can be used to create and access
-       recipe targets.
-    """
+    """A utility to create and access OCI recipe targets."""
 
     def new(registrant, project, distribution, ocirecipename,
             date_created=None, description=None, bug_supervisor=None,
