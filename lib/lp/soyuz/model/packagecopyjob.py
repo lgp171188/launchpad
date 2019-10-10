@@ -1,4 +1,4 @@
-# Copyright 2010-2016 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -275,7 +275,7 @@ class PlainPackageCopyJob(PackageCopyJobDerived):
                       include_binaries, sponsored=None, unembargo=False,
                       auto_approve=False, silent=False,
                       source_distroseries=None, source_pocket=None,
-                      phased_update_percentage=None):
+                      phased_update_percentage=None, move=False):
         """Produce a metadata dict for this job."""
         return {
             'target_pocket': target_pocket.value,
@@ -289,6 +289,7 @@ class PlainPackageCopyJob(PackageCopyJobDerived):
                 source_distroseries.name if source_distroseries else None,
             'source_pocket': source_pocket.value if source_pocket else None,
             'phased_update_percentage': phased_update_percentage,
+            'move': move,
         }
 
     @classmethod
@@ -298,14 +299,14 @@ class PlainPackageCopyJob(PackageCopyJobDerived):
                copy_policy=PackageCopyPolicy.INSECURE, requester=None,
                sponsored=None, unembargo=False, auto_approve=False,
                silent=False, source_distroseries=None, source_pocket=None,
-               phased_update_percentage=None):
+               phased_update_percentage=None, move=False):
         """See `IPlainPackageCopyJobSource`."""
         assert package_version is not None, "No package version specified."
         assert requester is not None, "No requester specified."
         metadata = cls._makeMetadata(
             target_pocket, package_version, include_binaries, sponsored,
             unembargo, auto_approve, silent, source_distroseries,
-            source_pocket, phased_update_percentage)
+            source_pocket, phased_update_percentage, move)
         job = PackageCopyJob(
             job_type=cls.class_job_type,
             source_archive=source_archive,
@@ -323,7 +324,7 @@ class PlainPackageCopyJob(PackageCopyJobDerived):
     @classmethod
     def _composeJobInsertionTuple(cls, copy_policy, include_binaries, job_id,
                                   copy_task, sponsored, unembargo,
-                                  auto_approve, silent):
+                                  auto_approve, silent, move):
         """Create an SQL fragment for inserting a job into the database.
 
         :return: A string representing an SQL tuple containing initializers
@@ -340,7 +341,7 @@ class PlainPackageCopyJob(PackageCopyJobDerived):
         ) = copy_task
         metadata = cls._makeMetadata(
             target_pocket, package_version, include_binaries, sponsored,
-            unembargo, auto_approve, silent)
+            unembargo, auto_approve, silent, move=move)
         data = (
             cls.class_job_type, target_distroseries, copy_policy,
             source_archive, target_archive, package_name, job_id,
@@ -351,14 +352,15 @@ class PlainPackageCopyJob(PackageCopyJobDerived):
     def createMultiple(cls, copy_tasks, requester,
                        copy_policy=PackageCopyPolicy.INSECURE,
                        include_binaries=False, sponsored=None,
-                       unembargo=False, auto_approve=False, silent=False):
+                       unembargo=False, auto_approve=False, silent=False,
+                       move=False):
         """See `IPlainPackageCopyJobSource`."""
         store = IMasterStore(Job)
         job_ids = Job.createMultiple(store, len(copy_tasks), requester)
         job_contents = [
             cls._composeJobInsertionTuple(
                 copy_policy, include_binaries, job_id, task, sponsored,
-                unembargo, auto_approve, silent)
+                unembargo, auto_approve, silent, move)
             for job_id, task in zip(job_ids, copy_tasks)]
         return bulk.create(
                 (PackageCopyJob.job_type, PackageCopyJob.target_distroseries,
@@ -465,6 +467,10 @@ class PlainPackageCopyJob(PackageCopyJobDerived):
     @property
     def phased_update_percentage(self):
         return self.metadata.get('phased_update_percentage')
+
+    @property
+    def move(self):
+        return self.metadata.get('move', False)
 
     @property
     def requester_can_admin_target(self):
@@ -659,7 +665,7 @@ class PlainPackageCopyJob(PackageCopyJobDerived):
             sponsored=self.sponsored, packageupload=pu,
             unembargo=self.unembargo,
             phased_update_percentage=self.phased_update_percentage,
-            logger=self.logger)
+            move=self.move, logger=self.logger)
 
         # Add a PackageDiff for this new upload if it has ancestry.
         if copied_publications and not ancestry.is_empty():
