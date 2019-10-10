@@ -1,4 +1,4 @@
-# Copyright 2016-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2016-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Event subscribers for snap builds."""
@@ -11,6 +11,7 @@ from zope.component import getUtility
 
 from lp.buildmaster.enums import BuildStatus
 from lp.services.features import getFeatureFlag
+from lp.services.scripts import log
 from lp.services.webapp.publisher import canonical_url
 from lp.services.webhooks.interfaces import IWebhookSet
 from lp.services.webhooks.payload import compose_webhook_payload
@@ -41,9 +42,14 @@ def snap_build_status_changed(snapbuild, event):
     """Trigger events when snap package build statuses change."""
     _trigger_snap_build_webhook(snapbuild, "status-changed")
 
-    if (snapbuild.snap.can_upload_to_store and snapbuild.snap.store_upload and
-            snapbuild.status == BuildStatus.FULLYBUILT):
-        getUtility(ISnapStoreUploadJobSource).create(snapbuild)
+    if snapbuild.status == BuildStatus.FULLYBUILT:
+        if snapbuild.snap.can_upload_to_store and snapbuild.snap.store_upload:
+            log.info("Scheduling upload of %r to the store." % snapbuild)
+            getUtility(ISnapStoreUploadJobSource).create(snapbuild)
+        else:
+            log.info(
+                "%r is not configured for upload to the store." %
+                snapbuild.snap)
 
 
 def snap_build_store_upload_status_changed(snapbuild, event):
