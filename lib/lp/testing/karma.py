@@ -3,6 +3,8 @@
 
 """Helper functions/classes to be used when testing the karma framework."""
 
+from __future__ import absolute_import, print_function, unicode_literals
+
 __metaclass__ = type
 __all__ = [
     'KarmaAssignedEventListener',
@@ -123,4 +125,4 @@ class KarmaAssignedEventListener(KarmaRecorder):
             text += " distribution=%s" % karma.distribution.name
         if self.show_person:
             text += ", person=%s" % karma.person.name
-        print text
+        print(text)

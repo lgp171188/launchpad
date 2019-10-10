@@ -3,6 +3,8 @@
 
 """Infrastructure for setting up doctests."""
 
+from __future__ import absolute_import, print_function
+
 __metaclass__ = type
 __all__ = [
     'default_optionflags',
@@ -85,8 +87,8 @@ class StdoutHandler(Handler):
     """
     def emit(self, record):
         Handler.emit(self, record)
-        print >> sys.stdout, '%s:%s:%s' % (
-            record.levelname, record.name, self.format(record))
+        print('%s:%s:%s' % (
+            record.levelname, record.name, self.format(record)))
 
 
 def LayeredDocFileSuite(paths, id_extensions=None, **kw):

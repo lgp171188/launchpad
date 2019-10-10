@@ -3,6 +3,8 @@
 
 """Helpers for testing menus."""
 
+from __future__ import absolute_import, print_function
+
 __metaclass__ = type
 __all__ = [
     'summarise_tal_links',
@@ -62,14 +64,14 @@ def summarise_tal_links(links):
         else:
             link = key
         if ILink.providedBy(link):
-            print 'link %s' % link.name
+            print('link %s' % link.name)
             attributes = ('url', 'enabled', 'menu', 'selected', 'linked')
             for attrname in attributes:
                 if not safe_hasattr(link, attrname):
                     continue
-                print '    %s:' % attrname, getattr(link, attrname)
+                print('    %s:' % attrname, getattr(link, attrname))
         else:
-            print 'attribute %s: %s' % (key, link)
+            print('attribute %s: %s' % (key, link))
 
 
 def make_fake_request(url, traversed_objects=None):
