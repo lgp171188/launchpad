@@ -24,7 +24,6 @@ from zope.component import getUtility
 from zope.security.interfaces import Unauthorized
 from zope.security.proxy import removeSecurityProxy
 
-from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.bugs.interfaces.bugtask import (
     BugTaskImportance,
     BugTaskStatus,
@@ -52,6 +51,7 @@ from lp.services.webapp import urlsplit
 from lp.testing import (
     ANONYMOUS,
     login,
+    login_celebrity,
     login_person,
     TestCase,
     TestCaseWithFactory,
@@ -717,14 +717,9 @@ class TestBugWatchResetting(TestCaseWithFactory):
         login_person(unprivileged_user)
         self.assertRaises(Unauthorized, getattr, self.bug_watch, 'reset')
 
-    def test_lp_developer_can_reset_watches(self):
-        # A Launchpad developer can call the reset() method on a bug
-        # watch.
-        admin_user = getUtility(IPersonSet).getByEmail(ADMIN_EMAIL)
-        lp_developers = getUtility(ILaunchpadCelebrities).launchpad_developers
-        lp_dev = self.factory.makePerson()
-        lp_developers.addMember(lp_dev, admin_user)
-        login_person(lp_dev)
+    def test_registry_expert_can_reset_watches(self):
+        # A registry expert can call the reset() method on a bug watch.
+        login_celebrity("registry_experts")
         self.bug_watch.reset()
         self._assertBugWatchHasBeenChanged()
 

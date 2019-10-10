@@ -256,15 +256,9 @@ class BugTrackerTestCase(TestCaseWithFactory):
         self.bug_tracker.resetWatches()
         self._assertBugWatchesAreCheckedInTheFuture()
 
-    def test_lp_dev_can_reset_watches(self):
-        # Launchpad developers can reset the watches on a bugtracker.
-        login(ADMIN_EMAIL)
-        admin = getUtility(IPersonSet).getByEmail(ADMIN_EMAIL)
-        launchpad_developers = getUtility(
-            ILaunchpadCelebrities).launchpad_developers
-        lp_dev = self.factory.makePerson()
-        launchpad_developers.addMember(lp_dev, admin)
-        login_person(lp_dev)
+    def test_registry_can_reset_watches(self):
+        # Registry experts can reset the watches on a bugtracker.
+        login_celebrity("registry_experts")
         self.bug_tracker.resetWatches()
         self._assertBugWatchesAreCheckedInTheFuture()
 
