@@ -739,10 +739,11 @@
         class="lp.registry.model.ocirecipetarget.OCIRecipeTarget">
         <require
             permission="launchpad.View"
-            interface="lp.registry.interfaces.ocirecipetarget.IOCIRecipeTargetView"/>
+            interface="lp.registry.interfaces.ocirecipetarget.IOCIRecipeTargetView
+                       lp.registry.interfaces.ocirecipetarget.IOCIRecipeTargetEditableAttributes"/>
         <require
             permission="launchpad.Edit"
-            interface="lp.registry.interfaces.ocirecipetarget.IOCIRecipeTargetEditableAttributes" />
+            set_schema="lp.registry.interfaces.ocirecipetarget.IOCIRecipeTargetEditableAttributes" />
     </class>
     <securedutility
         class="lp.registry.model.ocirecipetarget.OCIRecipeTarget"

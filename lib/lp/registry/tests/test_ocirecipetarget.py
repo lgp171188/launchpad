@@ -15,6 +15,7 @@ from lp.registry.model.ocirecipetarget import OCIRecipeTarget
 from lp.services.database.interfaces import IStore
 from lp.testing import (
     admin_logged_in,
+    person_logged_in,
     TestCaseWithFactory,
     )
 from lp.testing.layers import DatabaseFunctionalLayer
@@ -28,16 +29,18 @@ class OCIRecipeTargetTest(TestCaseWithFactory):
         recipe_target = self.factory.makeOCIRecipeTarget()
         self.assertTrue(recipe_target)
 
-    def test_getByDistribution(self):
-        distribution = self.factory.makeDistribution()
+    def test_getByDistributionAndName(self):
+        person = self.factory.makePerson()
+        distribution = self.factory.makeDistribution(owner=person)
         recipe_target = self.factory.makeOCIRecipeTarget(
-            pillar=distribution)
+            registrant=person, pillar=distribution)
 
         # Make sure there's more than one to get the result from
         self.factory.makeOCIRecipeTarget(
             pillar=self.factory.makeDistribution())
 
-        fetched_targets = getUtility(
-            IOCIRecipeTargetSet).findByDistribution(distribution)
-        self.assertEqual(1, fetched_targets.count())
-        self.assertEqual(recipe_target, fetched_targets.first())
+        with person_logged_in(person):
+            fetched_result = getUtility(
+                IOCIRecipeTargetSet).getByDistributionAndName(
+                    distribution, recipe_target.ocirecipename.name)
+            self.assertEqual(recipe_target, fetched_result)

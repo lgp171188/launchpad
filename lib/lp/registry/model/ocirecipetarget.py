@@ -31,6 +31,7 @@ from lp.registry.interfaces.ocirecipetarget import (
     IOCIRecipeTarget,
     IOCIRecipeTargetSet,
     )
+from lp.registry.model.ocirecipename import OCIRecipeName
 from lp.services.database.constants import DEFAULT
 from lp.services.database.interfaces import (
     IMasterStore,
@@ -99,10 +100,11 @@ class OCIRecipeTargetSet:
         store.add(target)
         return target
 
-    def findByDistribution(self, distribution):
+    def getByDistributionAndName(self, distribution, search_name):
         """See `IOCIRecipeTargetSet`."""
-        targets = IStore(OCIRecipeTarget).find(
+        target = IStore(OCIRecipeTarget).find(
             OCIRecipeTarget,
-            OCIRecipeTarget.distribution == distribution).order_by(
-                OCIRecipeTarget.date_created)
-        return targets
+            OCIRecipeTarget.distribution == distribution,
+            OCIRecipeTarget.ocirecipename == OCIRecipeName.id,
+            OCIRecipeName.name == search_name).one()
+        return target
