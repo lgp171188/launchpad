@@ -7,6 +7,9 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 
+from zope.component import getUtility
+
+from lp.registry.interfaces.ocirecipetarget import IOCIRecipeTargetSet
 from lp.registry.model.ocirecipename import OCIRecipeName
 from lp.registry.model.ocirecipetarget import OCIRecipeTarget
 from lp.services.database.interfaces import IStore
@@ -28,12 +31,13 @@ class OCIRecipeTargetTest(TestCaseWithFactory):
     def test_getByDistribution(self):
         distribution = self.factory.makeDistribution()
         recipe_target = self.factory.makeOCIRecipeTarget(
-            distribution=distribution)
+            pillar=distribution)
 
         # Make sure there's more than one to get the result from
         self.factory.makeOCIRecipeTarget(
-            distribution=self.factory.makeDistribution())
+            pillar=self.factory.makeDistribution())
 
-        fetched_targets = OCIRecipeTarget.getByDistribution(distribution)
+        fetched_targets = getUtility(
+            IOCIRecipeTargetSet).findByDistribution(distribution)
         self.assertEqual(1, fetched_targets.count())
         self.assertEqual(recipe_target, fetched_targets.first())

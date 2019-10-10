@@ -8,6 +8,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 __metaclass__ = type
 __all__ = [
     'OCIRecipeTarget',
+    'OCIRecipeTargetSet',
     ]
 
 from datetime import datetime
@@ -30,6 +31,7 @@ from lp.registry.interfaces.ocirecipetarget import (
     IOCIRecipeTarget,
     IOCIRecipeTargetSet,
     )
+from lp.services.database.constants import DEFAULT
 from lp.services.database.interfaces import (
     IMasterStore,
     IStore,
@@ -38,7 +40,6 @@ from lp.services.database.stormbase import StormBase
 
 
 @implementer(IOCIRecipeTarget)
-@provider(IOCIRecipeTargetSet)
 class OCIRecipeTarget(StormBase):
     """See `IOCIRecipeTarget` and `IOCIRecipeTargetSet`."""
 
@@ -66,24 +67,29 @@ class OCIRecipeTarget(StormBase):
     enable_bugfiling_duplicate_search = Bool(
         name="enable_bugfiling_duplicate_search")
 
-    @staticmethod
-    def new(registrant, pillar, ocirecipename,
-                 date_created=None, description=None, bug_supervisor=None,
-                 bug_reporting_guidelines=None,
-                 bug_reported_acknowledgement=None,
-                 bugfiling_duplicate_search=False):
-        """See `IOCIRecipeTarIOCIRecipeTargetSetgetSource.new`."""
+
+@implementer(IOCIRecipeTargetSet)
+class OCIRecipeTargetSet:
+
+    def new(self, registrant, pillar, ocirecipename,
+            date_created=DEFAULT, description=None, bug_supervisor=None,
+            bug_reporting_guidelines=None,
+            bug_reported_acknowledgement=None,
+            bugfiling_duplicate_search=False):
+        """See `IOCIRecipeTargetSet`."""
         store = IMasterStore(OCIRecipeTarget)
         target = OCIRecipeTarget()
-        if not date_created:
-            created_date = datetime.now(pytz.timezone('UTC'))
-            target.date_created = created_date
-            target.date_last_modified = created_date
+        target.date_created = date_created
+        target.date_last_modified = date_created
 
+        # XXX twom 2019-10-10 This needs to have IProduct support
+        # when the model supports it
         if IDistribution.providedBy(pillar):
             target.distribution = pillar
         else:
-            raise ValueError("Pillar was not of suitable type.")
+            raise ValueError(
+                'The target of an OCIRecipeTarget must be either an '
+                'IDistribution instance or an IProduct instance.')
 
         target.registrant = registrant
         target.ocirecipename = ocirecipename
@@ -93,16 +99,7 @@ class OCIRecipeTarget(StormBase):
         store.add(target)
         return target
 
-    @staticmethod
-    def getByProject(project):
-        """See `IOCIRecipeTargetSet`."""
-        targets = IStore(OCIRecipeTarget).find(
-            OCIRecipeTarget, OCIRecipeTarget.project == project).order_by(
-                OCIRecipeTarget.date_created)
-        return targets
-
-    @staticmethod
-    def getByDistribution(distribution):
+    def findByDistribution(self, distribution):
         """See `IOCIRecipeTargetSet`."""
         targets = IStore(OCIRecipeTarget).find(
             OCIRecipeTarget,

@@ -4921,7 +4921,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         return getUtility(IOCIProjectNameSet).new(name)
 
     def makeOCIRecipeTarget(self, registrant=None, pillar=None,
-                            ocirecipename=None, date_created=None,
+                            ocirecipename=None, date_created=DEFAULT,
                             description=None, bug_reporting_guidelines=None,
                             bug_reported_acknowledgement=None,
                             bugfiling_duplicate_search=False):

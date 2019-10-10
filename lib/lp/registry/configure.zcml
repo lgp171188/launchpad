@@ -751,7 +751,7 @@
             interface="lp.registry.interfaces.ocirecipetarget.IOCIRecipeTarget"/>
     </securedutility>
     <securedutility
-        class="lp.registry.model.ocirecipetarget.OCIRecipeTarget"
+        class="lp.registry.model.ocirecipetarget.OCIRecipeTargetSet"
         provides="lp.registry.interfaces.ocirecipetarget.IOCIRecipeTargetSet">
         <allow
             interface="lp.registry.interfaces.ocirecipetarget.IOCIRecipeTargetSet"/>

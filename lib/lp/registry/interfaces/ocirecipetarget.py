@@ -80,8 +80,5 @@ class IOCIRecipeTargetSet(Interface):
             bugfiling_duplicate_search=False):
         """Create an `IOCIRecipeTarget`."""
 
-    def getByProject(project):
-        """Get the OCIRecipeTargets for a given project."""
-
-    def getByDistribution(distribution):
+    def findByDistribution(distribution):
         """Get the OCIRecipeTargets for a given distribution."""
