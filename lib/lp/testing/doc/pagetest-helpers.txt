@@ -30,32 +30,32 @@ one should be use for all anonymous browsing tests.
     ...   return dict(browser.mech_browser.addheaders).get('Authorization','')
 
     >>> anon_browser = test.globs['anon_browser']
-    >>> getAuthorizationHeader(anon_browser)
-    ''
+    >>> print(getAuthorizationHeader(anon_browser))
+    <BLANKLINE>
 
 A browser with a logged in user without any privileges is available
 under 'user_browser'. This one should be use all workflows involving
 logged in users, when it shouldn't require any special privileges.
 
     >>> user_browser = test.globs['user_browser']
-    >>> getAuthorizationHeader(user_browser)
-    'Basic no-priv@canonical.com:test'
+    >>> print(getAuthorizationHeader(user_browser))
+    Basic no-priv@canonical.com:test
 
 A browser with a logged in user with administrative privileges is
 available under 'admin_browser'. This one should be used for testing
 administrative workflows.
 
     >>> admin_browser = test.globs['admin_browser']
-    >>> getAuthorizationHeader(admin_browser)
-    'Basic foo.bar@canonical.com:test'
+    >>> print(getAuthorizationHeader(admin_browser))
+    Basic foo.bar@canonical.com:test
 
 Finally, here is a 'browser' instance that simply contain a pre-
 initialized Browser instance. It doesn't have any authentication
 configured. It can be used when you need to configure another user.
 
     >>> browser = test.globs['browser']
-    >>> getAuthorizationHeader(browser)
-    ''
+    >>> print(getAuthorizationHeader(browser))
+    <BLANKLINE>
 
 All these browser instances are configured with handleErrors set to
 False. This means that exception are raised instead of returning the
@@ -111,15 +111,15 @@ This routine will return the tag with the given id:
     ... </html>
     ... '''
 
-    >>> print find_tag_by_id(content, 'para-1')
+    >>> print(find_tag_by_id(content, 'para-1'))
     <p id="para-1">Paragraph 1</p>
 
-    >>> print find_tag_by_id(content, 'para-2')
+    >>> print(find_tag_by_id(content, 'para-2'))
     <p id="para-2">Paragraph <b>2</b></p>
 
 If an unknown ID is used, None is returned:
 
-    >>> print find_tag_by_id(content, 'para-3')
+    >>> print(find_tag_by_id(content, 'para-3'))
     None
 
 If more than one element has the requested id, raise a DuplicateIdError
@@ -140,10 +140,10 @@ A BeautifulSoup PageElement can be passed instead of a string so that
 content can be retrieved without reparsing the entire page.
 
     >>> parsed_content = find_tag_by_id(content, 'root')
-    >>> print parsed_content.name
+    >>> print(parsed_content.name)
     html
 
-    >>> print find_tag_by_id(parsed_content, 'para-1')
+    >>> print(find_tag_by_id(parsed_content, 'para-1'))
     <p id="para-1">Paragraph 1</p>
 
 
@@ -172,18 +172,18 @@ class:
     ... '''
 
     >>> for tag in find_tags_by_class(content, 'message'):
-    ...     print tag
+    ...     print(tag)
     <p class="message">Message</p>
     <p class="error message">Error message</p>
     <p class="warning message">Warning message</p>
 
     >>> for tag in find_tags_by_class(content, 'error'):
-    ...     print tag
+    ...     print(tag)
     <p class="error message">Error message</p>
     <p class="error">Error</p>
 
     >>> for tag in find_tags_by_class(content, 'warning'):
-    ...     print tag
+    ...     print(tag)
     <p class="warning message">Warning message</p>
     <p class="warning">
       Warning (outer)
@@ -218,7 +218,7 @@ matching Tag object, if one exists:
     ... </html>
     ... '''
 
-    >>> print first_tag_by_class(content, 'light')
+    >>> print(first_tag_by_class(content, 'light'))
     <p class="light">Error message</p>
 
 If no tags have the given class, then "None" is returned.
@@ -235,7 +235,7 @@ If no tags have the given class, then "None" is returned.
     ... </html>
     ... '''
 
-    >>> print first_tag_by_class(content, 'light')
+    >>> print(first_tag_by_class(content, 'light'))
     None
 
 
@@ -276,11 +276,11 @@ find a portlet by its title and return it:
     ... </html>
     ... '''
 
-    >>> print find_portlet(content, 'Portlet 1')
+    >>> print(find_portlet(content, 'Portlet 1'))
     <div...
     ...Contents of portlet 1...
 
-    >>> print find_portlet(content, 'Portlet 2')
+    >>> print(find_portlet(content, 'Portlet 2'))
     <div class="portlet">
       <h2>Portlet 2</h2>
       Contents of portlet 2
@@ -290,14 +290,14 @@ When looking for a portlet to match, any two sequences of whitespace are
 considered equivalent. Whitespace at the beginning or end of the title
 is also ignored.
 
-    >>> print find_portlet(
-    ...     content, 'Portlet with  title broken on multiple lines  ')
+    >>> print(find_portlet(
+    ...     content, 'Portlet with  title broken on multiple lines  '))
       <div class="portlet">
         <h2> Portlet with title...
 
 If the portlet doesn't exist, then None is returned:
 
-    >>> print find_portlet(content, 'No such portlet')
+    >>> print(find_portlet(content, 'No such portlet'))
     None
 
 
@@ -309,7 +309,7 @@ the main content of the page.  The find_main_content() method can be
 used to do this:
 
     >>> find_main_content = test.globs['find_main_content']
-    >>> print find_main_content(content)
+    >>> print(find_main_content(content))
     <...
     Main content area
     ...
@@ -323,16 +323,16 @@ to the end user, and we don't want necessarily to check how the text is
 displayed (ie. bold, italics, coloured et al).
 
     >>> extract_text = test.globs['extract_text']
-    >>> print extract_text(
-    ...     '<p>A paragraph with <b>inline</b> <i>style</i>.</p>')
+    >>> print(extract_text(
+    ...     '<p>A paragraph with <b>inline</b> <i>style</i>.</p>'))
     A paragraph with inline style.
 
 The function also takes care of inserting proper white space for block
 level and other elements introducing a visual separation:
 
-    >>> print extract_text( # doctest: -NORMALIZE_WHITESPACE
+    >>> print(extract_text( # doctest: -NORMALIZE_WHITESPACE
     ...     '<p>Para 1</p><p>Para 2<br>Line 2</p><ul><li>Item 1</li>'
-    ...     '<li>Item 2</li></ul><div>Div 1</div><h1>A heading</h1>')
+    ...     '<li>Item 2</li></ul><div>Div 1</div><h1>A heading</h1>'))
     Para 1
     Para 2
     Line 2
@@ -344,9 +344,9 @@ level and other elements introducing a visual separation:
 Of course, the function ignores processing instructions, declaration,
 comments and render CDATA section has plain text.
 
-    >>> print extract_text(
+    >>> print(extract_text(
     ...     '<?php echo("Hello world!")?><!-- A comment -->'
-    ...     '<?A declaration.><![CDATA[Some << characters >>]]>')
+    ...     '<?A declaration.><![CDATA[Some << characters >>]]>'))
     Some << characters >>
 
 The function also does some white space normalization, since formatted
@@ -358,10 +358,10 @@ single space. Runs of newlines is replaced by one newline. (Note also
 that non-breaking space entities are also transformed into regular
 space.)
 
-    >>> print extract_text( # doctest: -NORMALIZE_WHITESPACE
+    >>> print(extract_text( # doctest: -NORMALIZE_WHITESPACE
     ...     '   <p>Some  \t  white space    <br /></p>   '
     ...     '<p>Another&nbsp; &#160;  paragraph.</p><p><p>'
-    ...     '<p>A final one</p>   ')
+    ...     '<p>A final one</p>   '))
     Some white space
     Another paragraph.
     A final one
@@ -369,10 +369,10 @@ space.)
 The function also knows about the sortkey class used in many tables. The
 sortkey is not displayed but is used for the javascript table sorting.
 
-    >>> print extract_text(
+    >>> print(extract_text(
     ...    '<table><tr><td><span class="sortkey">1</span>First</td></tr>'
     ...    '<tr><td><span class="sortkey">2</span>Second</td></tr>'
-    ...    '<tr><td><span class="sortkey">3</span>Third</td></tr></table>')
+    ...    '<tr><td><span class="sortkey">3</span>Third</td></tr></table>'))
     First Second Third
 
 The extract_text method is often used in conjunction with the other
@@ -380,7 +380,7 @@ find_xxx helper methods to identify the text to display.  Because of
 this the function also accepts BeautifulSoup instance as a parameter
 rather than a plain string.
 
-    >>> print extract_text(find_portlet(content, 'Portlet 2'))
+    >>> print(extract_text(find_portlet(content, 'Portlet 2')))
     Portlet 2
     Contents of portlet 2
 

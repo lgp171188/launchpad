@@ -3,6 +3,8 @@
 
 """Helpers for testing out publication related code."""
 
+from __future__ import absolute_import, print_function
+
 __metaclass__ = type
 __all__ = [
     'get_request_and_publication',
@@ -67,15 +69,15 @@ def print_request_and_publication(host='localhost', port=None,
     request, publication = get_request_and_publication(
         host, port, method, mime_type,
         extra_environment=extra_environment)
-    print type(request).__name__.split('.')[-1]
+    print(type(request).__name__.split('.')[-1])
     publication_classname = type(publication).__name__.split('.')[-1]
     if isinstance(publication, ProtocolErrorPublication):
-        print "%s: status=%d" % (
-            publication_classname, publication.status)
+        print("%s: status=%d" % (
+            publication_classname, publication.status))
         for name, value in publication.headers.items():
-            print "  %s: %s" % (name, value)
+            print("  %s: %s" % (name, value))
     else:
-        print publication_classname
+        print(publication_classname)
 
 
 def test_traverse(url):

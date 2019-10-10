@@ -3,6 +3,8 @@
 
 """Fixture code for YUITest + XHR integration testing."""
 
+from __future__ import absolute_import, print_function
+
 __metaclass__ = type
 __all__ = [
     'login_as_person',
@@ -146,7 +148,7 @@ class CloseDbResult:
             yield ''
             LibrarianLayer.testSetUp()
         except Exception:
-            print "Hm, serious error when trying to clean up the test."
+            print("Hm, serious error when trying to clean up the test.")
             traceback.print_exc()
         # We're done, so we can yield the body.
         yield '\n'

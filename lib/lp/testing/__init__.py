@@ -1,7 +1,7 @@
 # Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-from __future__ import absolute_import
+from __future__ import absolute_import, print_function
 
 
 __metaclass__ = type
@@ -258,21 +258,21 @@ class FakeTime:
     calls of advance() or next_now().
 
     >>> faketime = FakeTime(1000)
-    >>> print faketime.now()
+    >>> print(faketime.now())
     1000
-    >>> print faketime.now()
+    >>> print(faketime.now())
     1000
     >>> faketime.advance(10)
-    >>> print faketime.now()
+    >>> print(faketime.now())
     1010
-    >>> print faketime.next_now()
+    >>> print(faketime.next_now())
     1011
-    >>> print faketime.next_now(100)
+    >>> print(faketime.next_now(100))
     1111
     >>> faketime = FakeTime(1000, 5)
-    >>> print faketime.next_now()
+    >>> print(faketime.next_now())
     1005
-    >>> print faketime.next_now()
+    >>> print(faketime.next_now())
     1010
     """
 
