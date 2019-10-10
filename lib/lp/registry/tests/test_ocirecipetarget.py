@@ -49,22 +49,23 @@ class TestOCIRecipeTargetSet(TestCaseWithFactory):
             distribution,
             recipe_name
         )
-        self.assertEqual(target.registrant, registrant)
-        self.assertEqual(target.distribution, distribution)
-        self.assertEqual(target.pillar, distribution)
-        self.assertEqual(target.ocirecipename, recipe_name)
+        with person_logged_in(registrant):
+            self.assertEqual(target.registrant, registrant)
+            self.assertEqual(target.distribution, distribution)
+            self.assertEqual(target.pillar, distribution)
+            self.assertEqual(target.ocirecipename, recipe_name)
 
     def test_getByDistributionAndName(self):
-        person = self.factory.makePerson()
-        distribution = self.factory.makeDistribution(owner=person)
+        registrant = self.factory.makePerson()
+        distribution = self.factory.makeDistribution(owner=registrant)
         recipe_target = self.factory.makeOCIRecipeTarget(
-            registrant=person, pillar=distribution)
+            registrant=registrant, pillar=distribution)
 
         # Make sure there's more than one to get the result from
         self.factory.makeOCIRecipeTarget(
             pillar=self.factory.makeDistribution())
 
-        with person_logged_in(person):
+        with person_logged_in(registrant):
             fetched_result = getUtility(
                 IOCIRecipeTargetSet).getByDistributionAndName(
                     distribution, recipe_target.ocirecipename.name)
