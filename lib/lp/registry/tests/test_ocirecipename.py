@@ -38,15 +38,11 @@ class TestOCIRecipeName(TestCaseWithFactory):
         self.assertTrue(recipe_name.name.startswith('oci-recipe-name'))
 
     def test_invalid_name(self):
-        with ExpectedException(
-                InvalidName,
-                ""):
-            OCIRecipeName(name='invalid%20name')
+        self.assertRaises(InvalidName, OCIRecipeName, name='invalid%20name')
 
     def test_implements_interface(self):
         recipe_name = OCIRecipeName('test-name')
-        with admin_logged_in():
-            self.assertProvides(recipe_name, IOCIRecipeName)
+        self.assertProvides(recipe_name, IOCIRecipeName)
 
 
 class TestOCIRecipeNameSet(TestCaseWithFactory):
@@ -54,28 +50,34 @@ class TestOCIRecipeNameSet(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def test_invalid_name(self):
-        with ExpectedException(
-                InvalidName,
-                ""):
-            getUtility(IOCIRecipeNameSet).new(name='invalid%20name')
+        recipe_name_set = OCIRecipeNameSet()
+        self.assertRaises(
+            InvalidName, recipe_name_set.new, name='invalid%20name')
 
     def test_getByName_missing(self):
-        with ExpectedException(
-                NoSuchOCIRecipeName,
-                "No such OCI recipe: 'invalid'"):
-            getUtility(IOCIRecipeNameSet).getByName(u'invalid')
+        self.factory.makeOCIRecipeName(name='first')
+        self.factory.makeOCIRecipeName(name='second')
+
+        recipe_name_set = OCIRecipeNameSet()
+        self.assertRaises(
+            NoSuchOCIRecipeName, recipe_name_set.getByName, 'invalid')
 
     def test_getitem(self):
+        self.factory.makeOCIRecipeName(name='first')
+        self.factory.makeOCIRecipeName(name='second')
+
         created = self.factory.makeOCIRecipeName()
         fetched = getUtility(IOCIRecipeNameSet)[created.name]
         self.assertEqual(fetched, created)
 
     def test_getByName(self):
+        self.factory.makeOCIRecipeName(name='first')
+        self.factory.makeOCIRecipeName(name='second')
+
         created = self.factory.makeOCIRecipeName()
         fetched = getUtility(IOCIRecipeNameSet).getByName(created.name)
         self.assertEqual(fetched, created)
 
     def test_implements_interface(self):
-        recipe_name = OCIRecipeNameSet()
-        with admin_logged_in():
-            self.assertProvides(recipe_name, IOCIRecipeNameSet)
+        recipe_name_set = OCIRecipeNameSet()
+        self.assertProvides(recipe_name_set, IOCIRecipeNameSet)
