@@ -35,26 +35,26 @@ class OCIRecipeTargetSeries(StormBase):
 
     id = Int(primary=True)
 
-    ocirecipetarget_id = Int(name='ocirecipetarget', allow_none=False)
-    ocirecipetarget = Reference(ocirecipetarget_id, "OCIRecipeTarget.id")
+    ociproject_id = Int(name='ociproject', allow_none=False)
+    ociproject = Reference(ociproject_id, "OCIProject.id")
 
     name = Unicode(name="name", allow_none=False)
 
-    def __init__(self, ocirecipetarget, name):
+    def __init__(self, ociproject, name):
         if not valid_name(name):
             raise InvalidName(
                 "%s is not a valid name for an OCI recipe series." % name)
         self.name = name
-        self.ocirecipetarget = ocirecipetarget
+        self.ociproject = ociproject
 
 
 @implementer(IOCIRecipeTargetSeriesSet)
 class OCIRecipeTargetSeriesSet:
     """See `IOCIRecipeTargetSeriesSet`."""
 
-    def new(self, ocirecipetarget, name):
+    def new(self, ociproject, name):
         """See `IOCIRecipeTargetSeriesSet`."""
         store = IMasterStore(OCIRecipeTargetSeries)
-        target_series = OCIRecipeTargetSeries(ocirecipetarget, name)
+        target_series = OCIRecipeTargetSeries(ociproject, name)
         store.add(target_series)
         return target_series

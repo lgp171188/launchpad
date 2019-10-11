@@ -23,15 +23,15 @@ class TestOCIRecipeTargetSeries(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def test_implements_interface(self):
-        recipe_target = self.factory.makeOCIRecipeTarget()
-        target_series = OCIRecipeTargetSeries(recipe_target, 'test-name')
+        oci_project = self.factory.makeOCIProject()
+        target_series = OCIRecipeTargetSeries(oci_project, 'test-name')
         self.assertProvides(target_series, IOCIRecipeTargetSeries)
 
     def test_init(self):
         name = 'test-name'
-        recipe_target = self.factory.makeOCIRecipeTarget()
-        target_series = OCIRecipeTargetSeries(recipe_target, name)
-        self.assertEqual(recipe_target, target_series.ocirecipetarget)
+        oci_project = self.factory.makeOCIProject()
+        target_series = OCIRecipeTargetSeries(oci_project, name)
+        self.assertEqual(oci_project, target_series.ociproject)
         self.assertEqual(name, target_series.name)
 
 
@@ -45,8 +45,8 @@ class TestOCIRecipeTargetSeriesSet(TestCaseWithFactory):
 
     def test_new(self):
         name = 'test-name'
-        recipe_target = self.factory.makeOCIRecipeTarget()
+        oci_project = self.factory.makeOCIProject()
         target_series = getUtility(IOCIRecipeTargetSeriesSet).new(
-            recipe_target, name)
-        self.assertEqual(recipe_target, target_series.ocirecipetarget)
+            oci_project, name)
+        self.assertEqual(oci_project, target_series.ociproject)
         self.assertEqual(name, target_series.name)
