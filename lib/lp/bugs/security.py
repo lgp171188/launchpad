@@ -290,7 +290,7 @@ class AdminBugTracker(AuthorizationBase):
         return (
             user.in_janitor or
             user.in_admin or
-            user.in_launchpad_developers)
+            user.in_registry_experts)
 
 
 class AdminBugWatch(AuthorizationBase):
@@ -298,8 +298,7 @@ class AdminBugWatch(AuthorizationBase):
     usedfor = IBugWatch
 
     def checkAuthenticated(self, user):
-        return (
-            user.in_admin or user.in_launchpad_developers)
+        return user.in_admin or user.in_registry_experts
 
 
 class EditStructuralSubscription(AuthorizationBase):
