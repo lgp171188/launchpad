@@ -91,14 +91,14 @@ for the ubuntutest distribution.
     >>> breezy.previous_series = breezy_autotest
     >>> ids = InitializeDistroSeries(breezy, [breezy_autotest.id])
     >>> ids.initialize()
-    INFO:root:Setting distroseries parents.
-    INFO:root:Copying distroseries configuration from parents.
-    INFO:root:Copying distroarchseries from parents.
-    INFO:root:Setting nominated arch-indep configuration.
-    INFO:root:Copying packages from parents.
-    INFO:root:Copying packagesets from parents.
-    INFO:root:Copying permissions from parents.
-    INFO:root:Creating DistroSeriesDifferences.
+    INFO:...:Setting distroseries parents.
+    INFO:...:Copying distroseries configuration from parents.
+    INFO:...:Copying distroarchseries from parents.
+    INFO:...:Setting nominated arch-indep configuration.
+    INFO:...:Copying packages from parents.
+    INFO:...:Copying packagesets from parents.
+    INFO:...:Copying permissions from parents.
+    INFO:...:Creating DistroSeriesDifferences.
     >>> breezy.changeslist = 'breezy-changes@ubuntu.com'
     >>> fake_chroot = LibraryFileAlias.get(1)
     >>> unused = breezy['i386'].addOrUpdateChroot(fake_chroot)
