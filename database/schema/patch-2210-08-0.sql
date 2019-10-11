@@ -48,12 +48,21 @@ CREATE TABLE OCIProjectSeries (
     id serial PRIMARY KEY,
     ociproject integer NOT NULL REFERENCES ociproject,
     name text NOT NULL,
+    summary text NOT NULL,
+    date_created timestamp without time zone DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'UTC') NOT NULL,
+    registrant integer NOT NULL REFERENCES person,
+    -- 2 == DEVELOPMENT
+    status integer DEFAULT 2 NOT NULL,
     CONSTRAINT valid_name CHECK (valid_name(name))
 );
 
 COMMENT ON TABLE OCIProjectSeries IS 'A series of an Open Container Initiative project, used to allow tracking bugs against multiple versions of images.';
 COMMENT ON COLUMN OCIProjectSeries.ociproject IS 'The OCI project that this series belongs to.';
 COMMENT ON COLUMN OCIProjectSeries.name IS 'The name of this series.';
+COMMENT ON COLUMN OCIProjectSeries.summary IS 'A brief summary of this series.';
+COMMENT ON COLUMN OCIProjectSeries.date_created IS 'The date on which this series was created in Launchpad.';
+COMMENT ON COLUMN OCIProjectSeries.registrant IS 'The user who registered this series.';
+COMMENT ON COLUMN OCIProjectSeries.status IS 'The current status of this series.';
 
 CREATE UNIQUE INDEX ociprojectseries__ociproject__name__key
     ON OCIProjectSeries (ociproject, name);
