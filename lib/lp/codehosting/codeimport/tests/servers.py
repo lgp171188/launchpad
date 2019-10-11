@@ -300,7 +300,7 @@ class HTTPGitServerThread(threading.Thread):
 
     def __init__(self, backend, address, port=None):
         super(HTTPGitServerThread, self).__init__()
-        self.setName("HTTP Git server on %s:%s" % (address, port))
+        self.name = "HTTP Git server on %s:%s" % (address, port)
         app = HTTPGitApplication(
             backend,
             handlers={'turnip-set-symbolic-ref': TurnipSetSymbolicRefHandler})

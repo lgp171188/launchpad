@@ -768,7 +768,7 @@ class LaunchpadBrowserPublication(
                     OpStats.stats['5XXs_b'] += 1
 
         # Make sure our databases are in a sane state for the next request.
-        thread_name = threading.currentThread().getName()
+        thread_name = threading.current_thread().name
         for name, store in getUtility(IZStorm).iterstores():
             try:
                 assert store._connection._state != STATE_DISCONNECTED, (

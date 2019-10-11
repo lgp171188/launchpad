@@ -410,7 +410,7 @@ class OutputFileForThreads:
         self.lock = threading.Lock()
 
     def write(self, data):
-        thread_name = threading.currentThread().getName()
+        thread_name = threading.current_thread().name
         with self.lock:
             if thread_name in self.output:
                 self.output[thread_name].append(data)

@@ -95,10 +95,10 @@ class TestingLPForkingServiceInAThread(lpserve.LPForkingService):
         thread = threading.Thread(target=new_service.main_loop,
                                   name='TestingLPForkingServiceInAThread')
         new_service.this_thread = thread
-        # should we be doing thread.setDaemon(True) ?
+        # should we be doing thread.daemon = True ?
         thread.start()
         new_service.service_started.wait(10.0)
-        if not new_service.service_started.isSet():
+        if not new_service.service_started.is_set():
             raise RuntimeError(
                 'Failed to start the TestingLPForkingServiceInAThread')
         test.addCleanup(new_service.stop_service)
@@ -112,7 +112,7 @@ class TestingLPForkingServiceInAThread(lpserve.LPForkingService):
             return
         self._should_terminate.set()
         self.service_stopped.wait(10.0)
-        if not self.service_stopped.isSet():
+        if not self.service_stopped.is_set():
             raise RuntimeError(
                 'Failed to stop the TestingLPForkingServiceInAThread')
         self.this_thread.join()
@@ -213,7 +213,7 @@ class TestLPForkingService(TestCaseWithLPForkingService):
         response = self.send_message_to_service('quit\n')
         self.assertEqual('ok\nquit command requested... exiting\n', response)
         self.service.service_stopped.wait(10.0)
-        self.assertTrue(self.service.service_stopped.isSet())
+        self.assertTrue(self.service.service_stopped.is_set())
 
     def test_send_invalid_message_fails(self):
         response = self.send_message_to_service('unknown\n')

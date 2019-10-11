@@ -1762,7 +1762,7 @@ class BaseDatabaseGarbageCollector(LaunchpadCronScript):
         has timed out.
         """
         self.logger.debug(
-            "Worker thread %s running.", threading.currentThread().name)
+            "Worker thread %s running.", threading.current_thread().name)
         install_feature_controller(make_script_feature_controller(self.name))
         self.login()
 
@@ -1772,7 +1772,7 @@ class BaseDatabaseGarbageCollector(LaunchpadCronScript):
                 # Exit silently. We warn later.
                 self.logger.debug(
                     "Worker thread %s detected script timeout.",
-                    threading.currentThread().name)
+                    threading.current_thread().name)
                 break
 
             try:

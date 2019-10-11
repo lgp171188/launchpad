@@ -627,7 +627,7 @@ class LPForkingService(object):
         trace.note('Exiting')
 
     def _do_loop(self):
-        while not self._should_terminate.isSet():
+        while not self._should_terminate.is_set():
             try:
                 conn, client_addr = self._server_socket.accept()
             except self._socket_timeout:

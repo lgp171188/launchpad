@@ -210,7 +210,7 @@ def logInThread(n=30):
     reflog = file('/tmp/refs.log', 'w')
     t = threading.Thread(target=_logRefsEverySecond, args=(reflog, n))
     # Allow process to exit without explicitly stopping thread.
-    t.setDaemon(True)
+    t.daemon = True
     t.start()
 
 
