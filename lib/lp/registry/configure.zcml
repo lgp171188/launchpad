@@ -758,6 +758,26 @@
             interface="lp.registry.interfaces.ociproject.IOCIProjectSet"/>
     </securedutility>
 
+    <!-- OCIRecipeTargetSeries -->
+    <class
+        class="lp.registry.model.ocirecipetargetseries.OCIRecipeTargetSeries">
+        <allow
+            interface="lp.registry.interfaces.ocirecipetargetseries.IOCIRecipeTargetSeries"/>
+    </class>
+
+    <!-- OCIRecipeTargetSeriesSet -->
+    <securedutility
+        class="lp.registry.model.ocirecipetargetseries.OCIRecipeTargetSeriesSet"
+        provides="lp.registry.interfaces.ocirecipetargetseries.IOCIRecipeTargetSeriesSet">
+        <allow
+            interface="lp.registry.interfaces.ocirecipetargetseries.IOCIRecipeTargetSeriesSet"/>
+    </securedutility>
+    <class
+        class="lp.registry.model.ocirecipetargetseries.OCIRecipeTargetSeriesSet">
+        <allow
+            interface="lp.registry.interfaces.ocirecipetargetseries.IOCIRecipeTargetSeriesSet"/>
+    </class>
+
     <!-- SourcePackageName -->
 
     <class
