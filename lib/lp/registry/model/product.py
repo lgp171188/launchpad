@@ -42,6 +42,8 @@ from storm.expr import (
     SQL,
     )
 from storm.locals import (
+    Int,
+    List,
     Store,
     Unicode,
     )
@@ -362,6 +364,11 @@ class Product(SQLBase, BugTargetBase, MakesAnnouncements,
     remote_product = Unicode(
         name='remote_product', allow_none=True, default=None)
     vcs = EnumCol(enum=VCSType, notNull=False)
+
+    # Cache of AccessPolicy.ids that convey launchpad.LimitedView.
+    # Unlike artifacts' cached access_policies, an AccessArtifactGrant
+    # to an artifact in the policy is sufficient for access.
+    access_policies = List(type=Int())
 
     @property
     def displayname(self):
@@ -759,18 +766,12 @@ class Product(SQLBase, BugTargetBase, MakesAnnouncements,
         # Security was somehow left around when a project was
         # transitioned to Proprietary.
         if self.information_type in PROPRIETARY_INFORMATION_TYPES:
-            policy_ids = [
+            self.access_policies = [
                 policy.id for policy in
                 getUtility(IAccessPolicySource).find(
                     [(self, type) for type in PROPRIETARY_INFORMATION_TYPES])]
         else:
-            policy_ids = None
-        # XXX wgrant 2015-06-30: We must set this manually, as Storm's
-        # MutableValueVariable causes a PostgresConnection to be
-        # uncollectable in some circumstances involving a Store.reset.
-        Store.of(self).execute(
-            "UPDATE Product SET access_policies = ? WHERE id = ?",
-            (policy_ids, self.id))
+            self.access_policies = None
 
     def _pruneUnusedPolicies(self):
         allowed_bug_types = set(
