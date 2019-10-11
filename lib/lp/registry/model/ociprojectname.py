@@ -1,7 +1,7 @@
 # Copyright 2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-"""OCI Project Name implementation."""
+"""OCI Recipe Name implementation."""
 
 from __future__ import absolute_import, print_function, unicode_literals
 
@@ -44,7 +44,7 @@ class OCIProjectName(StormBase):
         super(OCIProjectName, self).__init__()
         if not valid_name(name):
             raise InvalidName(
-                "%s is not a valid name for an OCI project." % name)
+                "%s is not a valid name for an OCI recipe." % name)
         self.name = name
 
 
@@ -58,15 +58,15 @@ class OCIProjectNameSet:
 
     def getByName(self, name):
         """See `IOCIProjectNameSet`."""
-        project_name = IStore(OCIProjectName).find(
+        recipe_name = IStore(OCIProjectName).find(
             OCIProjectName, OCIProjectName.name == name).one()
-        if project_name is None:
+        if recipe_name is None:
             raise NoSuchOCIProjectName(name)
-        return project_name
+        return recipe_name
 
     def new(self, name):
         """See `IOCIProjectNameSet`."""
         store = IMasterStore(OCIProjectName)
-        project_name = OCIProjectName(name=name)
-        store.add(project_name)
-        return project_name
+        recipe_name = OCIProjectName(name=name)
+        store.add(recipe_name)
+        return recipe_name

@@ -200,12 +200,16 @@ from lp.registry.interfaces.mailinglist import (
 from lp.registry.interfaces.mailinglistsubscription import (
     MailingListAutoSubscribePolicy,
     )
+<<<<<<< 5ba322e3ff3edc0049f99280067a4ab73093de5b
 <<<<<<< 6905652081de1e06ada1dc0893f14702f9d8758e
 from lp.registry.interfaces.ociprojectname import IOCIProjectNameSet
 =======
 from lp.registry.interfaces.ocirecipename import IOCIRecipeNameSet
 from lp.registry.interfaces.ocirecipetarget import IOCIRecipeTarget
 >>>>>>> Implement OCIRecipeNameSet
+=======
+from lp.registry.interfaces.ociprojectname import IOCIProjectNameSet
+>>>>>>> Rename OCIRecipeName to OCIProjectName
 from lp.registry.interfaces.packaging import (
     IPackagingUtil,
     PackagingType,
@@ -4904,7 +4908,11 @@ class BareLaunchpadObjectFactory(ObjectFactory):
 
     def makeOCIProjectName(self, name=None):
         if name is None:
+<<<<<<< 5ba322e3ff3edc0049f99280067a4ab73093de5b
             name = self.getUniqueString(u"oci-project-name")
+=======
+            name = self.getUniqueString(u"oci-recipe-name")
+>>>>>>> Rename OCIRecipeName to OCIProjectName
         return getUtility(IOCIProjectNameSet).new(name)
 
 

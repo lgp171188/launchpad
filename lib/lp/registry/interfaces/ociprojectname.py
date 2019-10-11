@@ -1,7 +1,7 @@
 # Copyright 2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-"""OCI Project Name interfaces."""
+"""OCI Recipe Name interfaces."""
 
 from __future__ import absolute_import, print_function, unicode_literals
 
@@ -22,9 +22,9 @@ from lp.app.validators.name import name_validator
 
 
 class IOCIProjectName(Interface):
-    """A name of an Open Container Initiative project.
+    """A name of an Open Container Initiative recipe.
 
-    This is a tiny table that allows multiple OCIProject entities to share
+    This is a tiny table that allows multiple OCIRecipeTarget entities to share
     a single name.
     """
     id = Int(title=_("ID"), required=True, readonly=True)
@@ -32,7 +32,7 @@ class IOCIProjectName(Interface):
     name = TextLine(
         title=_("Name"), constraint=name_validator,
         required=True, readonly=False,
-        description=_("The name of the OCI Project."))
+        description=_("The name of the OCI Recipe."))
 
 
 class IOCIProjectNameSet(Interface):
