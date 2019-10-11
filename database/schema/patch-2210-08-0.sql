@@ -12,6 +12,7 @@ CREATE TABLE OCIRecipeName (
 COMMENT ON TABLE OCIRecipeName IS 'A name of an Open Container Initiative recipe.';
 COMMENT ON COLUMN OCIRecipeName.name IS 'A lowercase name identifying an OCI recipe.';
 
+CREATE UNIQUE INDEX ocirecipename__name__key ON OCIRecipeName (name);
 CREATE INDEX ocirecipename__name__trgm ON OCIRecipeName
     USING gin (name trgm.gin_trgm_ops);
 
