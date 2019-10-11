@@ -166,7 +166,7 @@ class TestGPGHandler(TestCase):
         # raises GPGKeyTemporarilyNotFoundError.
         # We simulate a timeout using responses rather than by setting a low
         # timeout, as otherwise the test will fail if the fetch thread
-        # happens to complete between Thread.start and Thread.isAlive.
+        # happens to complete between Thread.start and Thread.is_alive.
         responses.add(
             'GET',
             self.gpg_handler.getURLForKeyInServer(

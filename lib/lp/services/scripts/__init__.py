@@ -101,7 +101,7 @@ def execute_zcml_for_scripts(use_web_security=False):
                 thread, zope.sendmail.delivery.QueueProcessorThread):
                 thread.stop()
                 thread.join(30)
-                if thread.isAlive():
+                if thread.is_alive():
                     raise RuntimeError(
                         "QueueProcessorThread did not shut down")
     atexit.register(kill_queue_processor_threads)
