@@ -7,8 +7,8 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 __all__ = [
-    'OCIRecipeTarget',
-    'OCIRecipeTargetSet',
+    'OCIProject',
+    'OCIProjectSet',
     ]
 
 import pytz
@@ -23,11 +23,11 @@ from zope.interface import implementer
 
 from lp.bugs.model.bugtarget import BugTargetBase
 from lp.registry.interfaces.distribution import IDistribution
-from lp.registry.interfaces.ocirecipetarget import (
-    IOCIRecipeTarget,
-    IOCIRecipeTargetSet,
+from lp.registry.interfaces.ociproject import (
+    IOCIProject,
+    IOCIProjectSet,
     )
-from lp.registry.model.ocirecipename import OCIRecipeName
+from lp.registry.model.ociprojectname import OCIProjectName
 from lp.services.database.constants import DEFAULT
 from lp.services.database.interfaces import (
     IMasterStore,
@@ -36,11 +36,11 @@ from lp.services.database.interfaces import (
 from lp.services.database.stormbase import StormBase
 
 
-@implementer(IOCIRecipeTarget)
-class OCIRecipeTarget(BugTargetBase, StormBase):
-    """See `IOCIRecipeTarget` and `IOCIRecipeTargetSet`."""
+@implementer(IOCIProject)
+class OCIProject(BugTargetBase, StormBase):
+    """See `IOCIProject` and `IOCIProjectSet`."""
 
-    __storm_table__ = "OCIRecipeTarget"
+    __storm_table__ = "OCIProject"
 
     id = Int(primary=True)
     date_created = DateTime(
@@ -54,8 +54,8 @@ class OCIRecipeTarget(BugTargetBase, StormBase):
     distribution_id = Int(name="distribution", allow_none=True)
     distribution = Reference(distribution_id, "Distribution.id")
 
-    ocirecipename_id = Int(name="ocirecipename", allow_none=False)
-    ocirecipename = Reference(ocirecipename_id, "OCIRecipeName.id")
+    ociprojectname_id = Int(name="ociprojectname", allow_none=False)
+    ociprojectname = Reference(ociprojectname_id, "OCIProjectName.id")
 
     description = Unicode(name="description")
 
@@ -72,12 +72,12 @@ class OCIRecipeTarget(BugTargetBase, StormBase):
     @property
     def bugtargetname(self):
         """See `IBugTarget`."""
-        return self.ocirecipename
+        return self.ociprojectname
 
     @property
     def bugtargetdisplayname(self):
         """See `IBugTarget`."""
-        return self.ocirecipename.name
+        return self.ociprojectname.name
 
     @property
     def owner(self):
@@ -85,17 +85,17 @@ class OCIRecipeTarget(BugTargetBase, StormBase):
         return self.registrant
 
 
-@implementer(IOCIRecipeTargetSet)
-class OCIRecipeTargetSet:
+@implementer(IOCIProjectSet)
+class OCIProjectSet:
 
-    def new(self, registrant, pillar, ocirecipename,
+    def new(self, registrant, pillar, ociprojectname,
             date_created=DEFAULT, description=None, bug_supervisor=None,
             bug_reporting_guidelines=None,
             bug_reported_acknowledgement=None,
             bugfiling_duplicate_search=False):
-        """See `IOCIRecipeTargetSet`."""
-        store = IMasterStore(OCIRecipeTarget)
-        target = OCIRecipeTarget()
+        """See `IOCIProjectSet`."""
+        store = IMasterStore(OCIProject)
+        target = OCIProject()
         target.date_created = date_created
         target.date_last_modified = date_created
 
@@ -105,11 +105,11 @@ class OCIRecipeTargetSet:
             target.distribution = pillar
         else:
             raise ValueError(
-                'The target of an OCIRecipeTarget must be either an '
+                'The target of an OCIProject must be either an '
                 'IDistribution instance or an IProduct instance.')
 
         target.registrant = registrant
-        target.ocirecipename = ocirecipename
+        target.ociprojectname = ociprojectname
         target.description = description
         target.bug_reporting_guidelines = bug_reporting_guidelines
         target.enable_bugfiling_duplicate_search = bugfiling_duplicate_search
@@ -117,10 +117,10 @@ class OCIRecipeTargetSet:
         return target
 
     def getByDistributionAndName(self, distribution, search_name):
-        """See `IOCIRecipeTargetSet`."""
-        target = IStore(OCIRecipeTarget).find(
-            OCIRecipeTarget,
-            OCIRecipeTarget.distribution == distribution,
-            OCIRecipeTarget.ocirecipename == OCIRecipeName.id,
-            OCIRecipeName.name == search_name).one()
+        """See `IOCIProjectSet`."""
+        target = IStore(OCIProject).find(
+            OCIProject,
+            OCIProject.distribution == distribution,
+            OCIProject.ociprojectname == OCIProjectName.id,
+            OCIProjectName.name == search_name).one()
         return target

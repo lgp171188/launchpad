@@ -734,28 +734,28 @@
             interface="lp.registry.interfaces.ociprojectname.IOCIProjectNameSet"/>
     </class>
 
-    <!-- OCIRecipeTarget -->
+    <!-- OCIProject -->
     <class
-        class="lp.registry.model.ocirecipetarget.OCIRecipeTarget">
+        class="lp.registry.model.ociproject.OCIProject">
         <require
             permission="launchpad.View"
-            interface="lp.registry.interfaces.ocirecipetarget.IOCIRecipeTargetView
-                       lp.registry.interfaces.ocirecipetarget.IOCIRecipeTargetEditableAttributes"/>
+            interface="lp.registry.interfaces.ociproject.IOCIProjectView
+                       lp.registry.interfaces.ociproject.IOCIProjectEditableAttributes"/>
         <require
             permission="launchpad.Edit"
-            set_schema="lp.registry.interfaces.ocirecipetarget.IOCIRecipeTargetEditableAttributes" />
+            set_schema="lp.registry.interfaces.ociproject.IOCIProjectEditableAttributes" />
     </class>
     <securedutility
-        class="lp.registry.model.ocirecipetarget.OCIRecipeTarget"
-        provides="lp.registry.interfaces.ocirecipetarget.IOCIRecipeTarget">
+        class="lp.registry.model.ociproject.OCIProject"
+        provides="lp.registry.interfaces.ociproject.IOCIProject">
         <allow
-            interface="lp.registry.interfaces.ocirecipetarget.IOCIRecipeTarget"/>
+            interface="lp.registry.interfaces.ociproject.IOCIProject"/>
     </securedutility>
     <securedutility
-        class="lp.registry.model.ocirecipetarget.OCIRecipeTargetSet"
-        provides="lp.registry.interfaces.ocirecipetarget.IOCIRecipeTargetSet">
+        class="lp.registry.model.ociproject.OCIProjectSet"
+        provides="lp.registry.interfaces.ociproject.IOCIProjectSet">
         <allow
-            interface="lp.registry.interfaces.ocirecipetarget.IOCIRecipeTargetSet"/>
+            interface="lp.registry.interfaces.ociproject.IOCIProjectSet"/>
     </securedutility>
 
     <!-- SourcePackageName -->

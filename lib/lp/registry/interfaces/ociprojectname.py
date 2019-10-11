@@ -24,7 +24,7 @@ from lp.app.validators.name import name_validator
 class IOCIProjectName(Interface):
     """A name of an Open Container Initiative recipe.
 
-    This is a tiny table that allows multiple OCIRecipeTarget entities to share
+    This is a tiny table that allows multiple OCIProject entities to share
     a single name.
     """
     id = Int(title=_("ID"), required=True, readonly=True)

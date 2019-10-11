@@ -200,25 +200,9 @@ from lp.registry.interfaces.mailinglist import (
 from lp.registry.interfaces.mailinglistsubscription import (
     MailingListAutoSubscribePolicy,
     )
-<<<<<<< 546542abaa3d47fdee94ff919c721cd4da32551c
-<<<<<<< 5ba322e3ff3edc0049f99280067a4ab73093de5b
-<<<<<<< 6905652081de1e06ada1dc0893f14702f9d8758e
+
+from lp.registry.interfaces.ociproject import IOCIProjectSet
 from lp.registry.interfaces.ociprojectname import IOCIProjectNameSet
-=======
-from lp.registry.interfaces.ocirecipename import IOCIRecipeNameSet
-from lp.registry.interfaces.ocirecipetarget import IOCIRecipeTarget
->>>>>>> Implement OCIRecipeNameSet
-=======
-from lp.registry.interfaces.ociprojectname import IOCIProjectNameSet
->>>>>>> Rename OCIRecipeName to OCIProjectName
-=======
-<<<<<<< a37cf09149945c30a46a521644c44fa60bb904cd
-from lp.registry.interfaces.ociprojectname import IOCIProjectNameSet
-=======
-from lp.registry.interfaces.ocirecipename import IOCIRecipeNameSet
-from lp.registry.interfaces.ocirecipetarget import IOCIRecipeTargetSet
->>>>>>> Implement OCIRecipeTarget
->>>>>>> Implement OCIRecipeTarget
 from lp.registry.interfaces.packaging import (
     IPackagingUtil,
     PackagingType,
@@ -4920,20 +4904,20 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             name = self.getUniqueString(u"oci-project-name")
         return getUtility(IOCIProjectNameSet).new(name)
 
-    def makeOCIRecipeTarget(self, registrant=None, pillar=None,
-                            ocirecipename=None, date_created=DEFAULT,
+    def makeOCIProject(self, registrant=None, pillar=None,
+                            ociprojectname=None, date_created=DEFAULT,
                             description=None, bug_reporting_guidelines=None,
                             bug_reported_acknowledgement=None,
                             bugfiling_duplicate_search=False):
-        """Make a new OCIRecipeTarget."""
+        """Make a new OCIProject."""
         if registrant is None:
             registrant = self.makePerson()
         if pillar is None:
             pillar = self.makeDistribution()
-        if ocirecipename is None or isinstance(ocirecipename, six.text_type):
-            ocirecipename = self.makeOCIRecipeName(ocirecipename)
-        return getUtility(IOCIRecipeTargetSet).new(
-            registrant, pillar, ocirecipename, date_created=date_created,
+        if ociprojectname is None or isinstance(ociprojectname, six.text_type):
+            ociprojectname = self.makeOCIProjectName(ociprojectname)
+        return getUtility(IOCIProjectSet).new(
+            registrant, pillar, ociprojectname, date_created=date_created,
             description=description,
             bug_reporting_guidelines=bug_reporting_guidelines,
             bug_reported_acknowledgement=bug_reported_acknowledgement,

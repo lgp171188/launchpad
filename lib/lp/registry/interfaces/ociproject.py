@@ -7,8 +7,8 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 __all__ = [
-    'IOCIRecipeTarget',
-    'IOCIRecipeTargetSet',
+    'IOCIProject',
+    'IOCIProjectSet',
     ]
 
 from lazr.restful.declarations import (
@@ -26,13 +26,13 @@ from zope.schema import (
 from lp import _
 from lp.bugs.interfaces.bugtarget import IBugTarget
 from lp.registry.interfaces.distribution import IDistribution
-from lp.registry.interfaces.ocirecipename import IOCIRecipeName
+from lp.registry.interfaces.ociprojectname import IOCIProjectName
 from lp.registry.interfaces.person import IPerson
 from lp.registry.interfaces.role import IHasOwner
 
 
-class IOCIRecipeTargetView(Interface):
-    """IOCIRecipeTarget attributes that require launchpad.View permission."""
+class IOCIProjectView(Interface):
+    """IOCIProject attributes that require launchpad.View permission."""
 
     id = Int(title=_("OCI Recipe Target ID"), required=True, readonly=True)
     date_created = Datetime(title=_("Date created"), required=True)
@@ -45,8 +45,8 @@ class IOCIRecipeTargetView(Interface):
         readonly=True))
 
 
-class IOCIRecipeTargetEditableAttributes(IBugTarget, IHasOwner):
-    """IOCIRecipeTarget attributes that can be edited.
+class IOCIProjectEditableAttributes(IBugTarget, IHasOwner):
+    """IOCIProject attributes that can be edited.
 
     These attributes need launchpad.View to see, and launchpad.Edit to change.
     """
@@ -54,29 +54,29 @@ class IOCIRecipeTargetEditableAttributes(IBugTarget, IHasOwner):
     distribution = exported(Reference(
         IDistribution,
         title=_("The distribution that this recipe is associated with.")))
-    ocirecipename = exported(Reference(
-        IOCIRecipeName,
+    ociprojectname = exported(Reference(
+        IOCIProjectName,
         title=_("The name of this recipe."),
         required=True,
         readonly=True))
     description = exported(Text(title=_("The description for this recipe.")))
 
 
-class IOCIRecipeTarget(IOCIRecipeTargetView,
-                       IOCIRecipeTargetEditableAttributes):
+class IOCIProject(IOCIProjectView,
+                       IOCIProjectEditableAttributes):
     """A target (pillar and name) for Open Container Initiative recipes."""
 
     export_as_webservice_entry()
 
 
-class IOCIRecipeTargetSet(Interface):
+class IOCIProjectSet(Interface):
     """A utility to create and access OCI recipe targets."""
 
-    def new(registrant, pillar, ocirecipename,
+    def new(registrant, pillar, ociprojectname,
             date_created=None, description=None, bug_supervisor=None,
             bug_reporting_guidelines=None, bug_reported_acknowledgement=None,
             bugfiling_duplicate_search=False):
-        """Create an `IOCIRecipeTarget`."""
+        """Create an `IOCIProject`."""
 
     def getByDistributionAndName(distribution, name):
-        """Get the OCIRecipeTargets for a given distribution."""
+        """Get the OCIProjects for a given distribution."""
