@@ -7,8 +7,8 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 __all__ = [
-    'OCIRecipeName',
-    'OCIRecipeNameSet',
+    'OCIProjectName',
+    'OCIProjectNameSet',
     ]
 
 from storm.locals import Int
@@ -18,11 +18,11 @@ from zope.interface import implementer
 from lp.app.validators.name import valid_name
 from lp.registry.errors import (
     InvalidName,
-    NoSuchOCIRecipeName,
+    NoSuchOCIProjectName,
     )
-from lp.registry.interfaces.ocirecipename import (
-    IOCIRecipeName,
-    IOCIRecipeNameSet,
+from lp.registry.interfaces.ociprojectname import (
+    IOCIProjectName,
+    IOCIProjectNameSet,
     )
 from lp.services.database.interfaces import (
     IMasterStore,
@@ -31,42 +31,42 @@ from lp.services.database.interfaces import (
 from lp.services.database.stormbase import StormBase
 
 
-@implementer(IOCIRecipeName)
-class OCIRecipeName(StormBase):
-    """See `IOCIRecipeName`."""
+@implementer(IOCIProjectName)
+class OCIProjectName(StormBase):
+    """See `IOCIProjectName`."""
 
-    __storm_table__ = "OCIRecipeName"
+    __storm_table__ = "OCIProjectName"
 
     id = Int(primary=True)
     name = Unicode(name="name", allow_none=False)
 
     def __init__(self, name):
-        super(OCIRecipeName, self).__init__()
+        super(OCIProjectName, self).__init__()
         if not valid_name(name):
             raise InvalidName(
                 "%s is not a valid name for an OCI recipe." % name)
         self.name = name
 
 
-@implementer(IOCIRecipeNameSet)
-class OCIRecipeNameSet:
-    """See `IOCIRecipeNameSet`."""
+@implementer(IOCIProjectNameSet)
+class OCIProjectNameSet:
+    """See `IOCIProjectNameSet`."""
 
     def __getitem__(self, name):
-        """See `IOCIRecipeNameSet`."""
+        """See `IOCIProjectNameSet`."""
         return self.getByName(name)
 
     def getByName(self, name):
-        """See `IOCIRecipeNameSet`."""
-        recipe_name = IStore(OCIRecipeName).find(
-            OCIRecipeName, OCIRecipeName.name == name).one()
+        """See `IOCIProjectNameSet`."""
+        recipe_name = IStore(OCIProjectName).find(
+            OCIProjectName, OCIProjectName.name == name).one()
         if recipe_name is None:
-            raise NoSuchOCIRecipeName(name)
+            raise NoSuchOCIProjectName(name)
         return recipe_name
 
     def new(self, name):
-        """See `IOCIRecipeNameSet`."""
-        store = IMasterStore(OCIRecipeName)
-        recipe_name = OCIRecipeName(name=name)
+        """See `IOCIProjectNameSet`."""
+        store = IMasterStore(OCIProjectName)
+        recipe_name = OCIProjectName(name=name)
         store.add(recipe_name)
         return recipe_name

@@ -7,8 +7,8 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 __all__ = [
-    'IOCIRecipeName',
-    'IOCIRecipeNameSet',
+    'IOCIProjectName',
+    'IOCIProjectNameSet',
     ]
 
 from zope.interface import Interface
@@ -21,7 +21,7 @@ from lp import _
 from lp.app.validators.name import name_validator
 
 
-class IOCIRecipeName(Interface):
+class IOCIProjectName(Interface):
     """A name of an Open Container Initiative recipe.
 
     This is a tiny table that allows multiple OCIRecipeTarget entities to share
@@ -35,17 +35,17 @@ class IOCIRecipeName(Interface):
         description=_("The name of the OCI Recipe."))
 
 
-class IOCIRecipeNameSet(Interface):
-    """A set of `OCIRecipeName`."""
+class IOCIProjectNameSet(Interface):
+    """A set of `OCIProjectName`."""
 
     def __getitem__(name):
-        """Retrieve a `OCIRecipeName` by name."""
+        """Retrieve a `OCIProjectName` by name."""
 
     def getByName(name):
-        """Return a `OCIRecipeName` by its name.
+        """Return a `OCIProjectName` by its name.
 
-        :raises NoSuchOCIRecipeName: if the `OCIRecipeName` can't be found.
+        :raises NoSuchOCIProjectName: if the `OCIProjectName` can't be found.
         """
 
     def new(name):
-        """Create a new `OCIRecipeName`."""
+        """Create a new `OCIProjectName`."""

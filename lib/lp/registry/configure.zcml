@@ -714,24 +714,24 @@
             interface="lp.registry.interfaces.pillar.IPillarPersonFactory"/>
     </securedutility>
 
-    <!-- OCIRecipeName -->
+    <!-- OCIProjectName -->
     <class
-        class="lp.registry.model.ocirecipename.OCIRecipeName">
+        class="lp.registry.model.ociprojectname.OCIProjectName">
         <allow
-            interface="lp.registry.interfaces.ocirecipename.IOCIRecipeName"/>
+            interface="lp.registry.interfaces.ociprojectname.IOCIProjectName"/>
     </class>
 
-    <!-- OCIRecipeNameSet -->
+    <!-- OCIProjectNameSet -->
     <securedutility
-        class="lp.registry.model.ocirecipename.OCIRecipeNameSet"
-        provides="lp.registry.interfaces.ocirecipename.IOCIRecipeNameSet">
+        class="lp.registry.model.ociprojectname.OCIProjectNameSet"
+        provides="lp.registry.interfaces.ociprojectname.IOCIProjectNameSet">
         <allow
-            interface="lp.registry.interfaces.ocirecipename.IOCIRecipeNameSet"/>
+            interface="lp.registry.interfaces.ociprojectname.IOCIProjectNameSet"/>
     </securedutility>
     <class
-        class="lp.registry.model.ocirecipename.OCIRecipeNameSet">
+        class="lp.registry.model.ociprojectname.OCIProjectNameSet">
         <allow
-            interface="lp.registry.interfaces.ocirecipename.IOCIRecipeNameSet"/>
+            interface="lp.registry.interfaces.ociprojectname.IOCIProjectNameSet"/>
     </class>
 
     <!-- SourcePackageName -->

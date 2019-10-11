@@ -200,7 +200,7 @@ from lp.registry.interfaces.mailinglist import (
 from lp.registry.interfaces.mailinglistsubscription import (
     MailingListAutoSubscribePolicy,
     )
-from lp.registry.interfaces.ocirecipename import IOCIRecipeNameSet
+from lp.registry.interfaces.ociprojectname import IOCIProjectNameSet
 from lp.registry.interfaces.packaging import (
     IPackagingUtil,
     PackagingType,
@@ -4897,10 +4897,10 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             registrant, name, display_name, distro_series, build_channels,
             date_created=date_created)
 
-    def makeOCIRecipeName(self, name=None):
+    def makeOCIProjectName(self, name=None):
         if name is None:
             name = self.getUniqueString(u"oci-recipe-name")
-        return getUtility(IOCIRecipeNameSet).new(name)
+        return getUtility(IOCIProjectNameSet).new(name)
 
 
 # Some factory methods return simple Python types. We don't add
