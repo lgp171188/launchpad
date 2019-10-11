@@ -1,4 +1,4 @@
-# Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -11,6 +11,7 @@ import re
 import sys
 import thread
 import threading
+import time
 import traceback
 import urllib
 
@@ -26,7 +27,6 @@ from storm.exceptions import (
     IntegrityError,
     )
 from storm.zope.interfaces import IZStorm
-import tickcount
 import transaction
 from zc.zservertracelog.interfaces import ITraceLog
 import zope.app.publication.browser
@@ -192,6 +192,17 @@ class LoginRoot:
             return self
 
 
+def _get_thread_time():
+    """Get the CPU time spent in the current thread.
+
+    This requires Python >= 3.3, and otherwise returns None.
+    """
+    if hasattr(time, 'CLOCK_THREAD_CPUTIME_ID'):
+        return time.clock_gettime(time.CLOCK_THREAD_CPUTIME_ID)
+    else:
+        return None
+
+
 class LaunchpadBrowserPublication(
     zope.app.publication.browser.BrowserPublication):
     """Subclass of z.a.publication.BrowserPublication that removes ZODB.
@@ -240,7 +251,8 @@ class LaunchpadBrowserPublication(
 
     def beforeTraversal(self, request):
         notify(StartRequestEvent(request))
-        request._traversalticks_start = tickcount.tickcount()
+        request._traversal_start = time.time()
+        request._traversal_thread_start = _get_thread_time()
         threadid = thread.get_ident()
         threadrequestfile = open_for_writing(
             'logs/thread-%s.request' % threadid, 'w')
@@ -416,7 +428,8 @@ class LaunchpadBrowserPublication(
         It also sets the launchpad.userid and launchpad.pageid WSGI
         environment variables.
         """
-        request._publicationticks_start = tickcount.tickcount()
+        request._publication_start = time.time()
+        request._publication_thread_start = _get_thread_time()
         if request.response.getStatus() in [301, 302, 303, 307]:
             return ''
 
@@ -470,12 +483,17 @@ class LaunchpadBrowserPublication(
         Because of this we cannot chain to the superclass and implement
         the whole behaviour here.
         """
-        assert hasattr(request, '_publicationticks_start'), (
-            'request._publicationticks_start, which should have been set by '
+        assert hasattr(request, '_publication_start'), (
+            'request._publication_start, which should have been set by '
             'callObject(), was not found.')
-        ticks = tickcount.difference(
-            request._publicationticks_start, tickcount.tickcount())
-        request.setInWSGIEnvironment('launchpad.publicationticks', ticks)
+        publication_duration = time.time() - request._publication_start
+        if request._publication_thread_start is not None:
+            publication_thread_duration = (
+                _get_thread_time() - request._publication_thread_start)
+        else:
+            publication_thread_duration = None
+        request.setInWSGIEnvironment(
+            'launchpad.publicationduration', publication_duration)
 
         # Calculate SQL statement statistics.
         sql_statements = da.get_request_statements()
@@ -483,10 +501,16 @@ class LaunchpadBrowserPublication(
             endtime - starttime
                 for starttime, endtime, id, statement, tb in sql_statements)
 
-        # Log publication tickcount, sql statement count, and sql time
-        # to the tracelog.
-        tracelog(request, 't', '%d %d %d' % (
-            ticks, len(sql_statements), sql_milliseconds))
+        # Log publication duration (in milliseconds), sql statement count,
+        # and sql time (in milliseconds) to the tracelog.  If we have the
+        # publication time spent in this thread, then log that too (in
+        # milliseconds).
+        tracelog_entry = '%d %d %d' % (
+            publication_duration * 1000,
+            len(sql_statements), sql_milliseconds)
+        if publication_thread_duration is not None:
+            tracelog_entry += ' %d' % (publication_thread_duration * 1000)
+        tracelog(request, 't', tracelog_entry)
 
         # Annotate the transaction with user data. That was done by
         # zope.app.publication.zopepublication.ZopePublication.
@@ -547,12 +571,17 @@ class LaunchpadBrowserPublication(
         # Log the URL including vhost information to the ZServer tracelog.
         tracelog(request, 'u', request.getURL())
 
-        assert hasattr(request, '_traversalticks_start'), (
-            'request._traversalticks_start, which should have been set by '
+        assert hasattr(request, '_traversal_start'), (
+            'request._traversal_start, which should have been set by '
             'beforeTraversal(), was not found.')
-        ticks = tickcount.difference(
-            request._traversalticks_start, tickcount.tickcount())
-        request.setInWSGIEnvironment('launchpad.traversalticks', ticks)
+        traversal_duration = time.time() - request._traversal_start
+        request.setInWSGIEnvironment(
+            'launchpad.traversalduration', traversal_duration)
+        if request._traversal_thread_start is not None:
+            traversal_thread_duration = (
+                _get_thread_time() - request._traversal_thread_start)
+            request.setInWSGIEnvironment(
+                'launchpad.traversalthreadduration', traversal_thread_duration)
 
     def _maybePlacefullyAuthenticate(self, request, ob):
         """ This should never be called because we've excised it in
@@ -569,22 +598,35 @@ class LaunchpadBrowserPublication(
             db_policy = None
 
         orig_env = request._orig_env
-        ticks = tickcount.tickcount()
-        if (hasattr(request, '_publicationticks_start') and
-            ('launchpad.publicationticks' not in orig_env)):
+        now = time.time()
+        thread_now = _get_thread_time()
+        if (hasattr(request, '_publication_start') and
+            ('launchpad.publicationduration' not in orig_env)):
             # The traversal process has been started but hasn't completed.
-            assert 'launchpad.traversalticks' in orig_env, (
+            assert 'launchpad.traversalduration' in orig_env, (
                 'We reached the publication process so we must have finished '
                 'the traversal.')
-            ticks = tickcount.difference(
-                request._publicationticks_start, ticks)
-            request.setInWSGIEnvironment('launchpad.publicationticks', ticks)
-        elif (hasattr(request, '_traversalticks_start') and
-              ('launchpad.traversalticks' not in orig_env)):
+            publication_duration = now - request._publication_start
+            request.setInWSGIEnvironment(
+                'launchpad.publicationduration', publication_duration)
+            if thread_now is not None:
+                publication_thread_duration = (
+                    thread_now - request._publication_thread_start)
+                request.setInWSGIEnvironment(
+                    'launchpad.publicationthreadduration',
+                    publication_thread_duration)
+        elif (hasattr(request, '_traversal_start') and
+              ('launchpad.traversalduration' not in orig_env)):
             # The traversal process has been started but hasn't completed.
-            ticks = tickcount.difference(
-                request._traversalticks_start, ticks)
-            request.setInWSGIEnvironment('launchpad.traversalticks', ticks)
+            traversal_duration = now - request._traversal_start
+            request.setInWSGIEnvironment(
+                'launchpad.traversalduration', traversal_duration)
+            if thread_now is not None:
+                traversal_thread_duration = (
+                    thread_now - request._traversal_thread_start)
+                request.setInWSGIEnvironment(
+                    'launchpad.traversalthreadduration',
+                    traversal_thread_duration)
         else:
             # The exception wasn't raised in the middle of the traversal nor
             # the publication, so there's nothing we need to do here.
@@ -639,10 +681,12 @@ class LaunchpadBrowserPublication(
         # is a normal part of operation.
         if should_retry(exc_info):
             if request.supportsRetry():
-                # Remove variables used for counting ticks as this request is
-                # going to be retried.
-                orig_env.pop('launchpad.traversalticks', None)
-                orig_env.pop('launchpad.publicationticks', None)
+                # Remove variables used for counting publication/traversal
+                # durations as this request is going to be retried.
+                orig_env.pop('launchpad.traversalduration', None)
+                orig_env.pop('launchpad.traversalthreadduration', None)
+                orig_env.pop('launchpad.publicationduration', None)
+                orig_env.pop('launchpad.publicationthreadduration', None)
             # Our endRequest needs to know if a retry is pending or not.
             request._wants_retry = True
             # Abort any in-progress transaction and reset any

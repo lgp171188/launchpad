@@ -24,6 +24,7 @@ from lp.services.database import bulk
 from lp.services.database.interfaces import IMasterStore
 from lp.services.database.sqlbase import sqlvalues
 from lp.services.helpers import ensure_unicode
+from lp.services.scripts import log
 from lp.soyuz.adapters.packagelocation import PackageLocation
 from lp.soyuz.enums import (
     ArchivePurpose,
@@ -296,6 +297,7 @@ class InitializeDistroSeries:
         transaction.commit()
 
     def _set_parents(self):
+        log.info("Setting distroseries parents.")
         count = 0
         for parent in self.parents:
             dsp_set = getUtility(IDistroSeriesParentSet)
@@ -332,6 +334,7 @@ class InitializeDistroSeries:
         return set(previous_series_parents) == set(self.parents)
 
     def _create_dsds(self):
+        log.info("Creating DistroSeriesDifferences.")
         if not self.first_derivation:
             if (self._has_same_parents_as_previous_series() and
                 self.packagesets_ids is None):
@@ -373,6 +376,7 @@ class InitializeDistroSeries:
         job_source.massCreateForSeries(self.distroseries)
 
     def _copy_configuration(self):
+        log.info("Copying distroseries configuration from parents.")
         self.distroseries.backports_not_automatic = any(
             parent.backports_not_automatic
                 for parent in self.derivation_parents)
@@ -392,6 +396,7 @@ class InitializeDistroSeries:
                 for parent in self.derivation_parents)
 
     def _copy_architectures(self):
+        log.info("Copying distroarchseries from parents.")
         das_filter = ' AND distroseries IN %s ' % (
                 sqlvalues([p.id for p in self.derivation_parents]))
         if self.arches:
@@ -408,6 +413,7 @@ class InitializeDistroSeries:
         self._store.flush()
 
     def _set_nominatedarchindep(self):
+        log.info("Setting nominated arch-indep configuration.")
         if self.archindep_archtag is None:
             # Select the arch-indep builder from the intersection between
             # the selected architectures and the list of the parent's
@@ -433,6 +439,7 @@ class InitializeDistroSeries:
 
     def _copy_packages(self):
         # Perform the copies
+        log.info("Copying packages from parents.")
         self._copy_component_section_and_format_selections()
 
         # Prepare the lists of distroarchseries for which binary packages
@@ -689,6 +696,7 @@ class InitializeDistroSeries:
 
     def _copy_packagesets(self):
         """Copy packagesets from the parent distroseries."""
+        log.info("Copying packagesets from parents.")
         packagesets = self._store.find(
             Packageset,
             Packageset.distroseries_id.is_in(self.derivation_parent_ids))
@@ -763,6 +771,7 @@ class InitializeDistroSeries:
 
     def _copy_pocket_permissions(self):
         """Copy per-distroseries/pocket permissions from the parent series."""
+        log.info("Copying permissions from parents.")
         for parent in self.derivation_parents:
             if self.distroseries.distribution == parent.distribution:
                 self._store.execute("""

@@ -621,52 +621,62 @@ name of the context class and the view class name.
     TestContext:TestView
 
 
-Tick counts
------------
+Durations
+---------
 
 Similarly to our page IDs, our publication implementation will store the
-tick counts for the traversal and object publication processes in WSGI
+durations for the traversal and object publication processes in WSGI
 variables which aren't set originally.
 
-    >>> import tickcount
+    >>> import time
     >>> request, publication = get_request_and_publication()
     >>> request.setPrincipal(auth_utility.unauthenticatedPrincipal())
     >>> logout()
 
-For traversal we start counting the ticks during the beforeTraversal()
-hook and stop the count in afterTraversal().  The tick count is then
-available as launchpad.traversalticks in the WSGI environment.
+For traversal we start counting the duration during the beforeTraversal()
+hook and stop the count in afterTraversal().  The duration is then available
+as launchpad.traversalduration in the WSGI environment.  On Python >= 3.3,
+there is also launchpad.traversalthreadduration with the time spent in the
+current thread.
 
-    >>> 'launchpad.traversalticks' in request._orig_env
+    >>> 'launchpad.traversalduration' in request._orig_env
+    False
+    >>> 'launchpad.traversalthreadduration' in request._orig_env
     False
     >>> publication.beforeTraversal(request)
-    >>> tickcount.difference(
-    ...     request._traversalticks_start, tickcount.tickcount()) > 0
-    True
-
     >>> publication.afterTraversal(request, None)
-    >>> request._orig_env['launchpad.traversalticks'] < 200
+    >>> 'launchpad.traversalduration' in request._orig_env
+    True
+    >>> if hasattr(time, 'CLOCK_THREAD_CPUTIME_ID'):
+    ...     'launchpad.traversalthreadduration' in request._orig_env
+    ... else:
+    ...     True
     True
 
-For publication we start counting the ticks during the callObject()
-hook and stop the count in afterCall().  The tick count is then
-available as launchpad.publicationticks in the WSGI environment.
+For publication we start counting the duration during the callObject()
+hook and stop the count in afterCall().  The duration is then available as
+launchpad.publicationduration in the WSGI environment.  On Python >= 3.3,
+there is also launchpad.publicationthreadduration with the time spent in the
+current thread.
 
-    >>> 'launchpad.publicationticks' in request._orig_env
+    >>> 'launchpad.publicationduration' in request._orig_env
+    False
+    >>> 'launchpad.publicationthreadduration' in request._orig_env
     False
     >>> publication.callObject(request, TestView(TestContext(), request))
     u'Result'
-    >>> tickcount.difference(
-    ...     request._publicationticks_start, tickcount.tickcount()) > 0
-    True
-
     >>> publication.afterCall(request, None)
-    >>> request._orig_env['launchpad.publicationticks'] < 60
+    >>> 'launchpad.publicationduration' in request._orig_env
+    True
+    >>> if hasattr(time, 'CLOCK_THREAD_CPUTIME_ID'):
+    ...     'launchpad.publicationthreadduration' in request._orig_env
+    ... else:
+    ...     True
     True
     >>> publication.endRequest(request, None)
 
 If an exception is raised during traversal or object publication, we'll
-store the ticks up to the point in which the exception is raised.  This
+store the durations up to the point in which the exception is raised.  This
 is done inside the handleException() hook.  (The hook also sets and resets
 the request timer from lp.services.webapp.adapter, so you'll notice
 some calls to prepare that code to what handleException expects.)
@@ -687,26 +697,37 @@ there's nothing to store.
     >>> set_request_started()
     >>> publication.handleException(
     ...     None, request, exc_info, retry_allowed=False)
-    >>> 'launchpad.traversalticks' in request._orig_env
+    >>> 'launchpad.traversalduration' in request._orig_env
     False
-    >>> 'launchpad.publicationticks' in request._orig_env
+    >>> 'launchpad.traversalthreadduration' in request._orig_env
+    False
+    >>> 'launchpad.publicationduration' in request._orig_env
+    False
+    >>> 'launchpad.publicationthreadduration' in request._orig_env
     False
     >>> clear_request_started()
 
 If we started the traversal, but haven't finished it, we'll only have
-the ticks for the traversal and not for the publication.
+the duration for the traversal and not for the publication.
 
     >>> publication.beforeTraversal(request)
     >>> publication.handleException(
     ...     None, request, exc_info, retry_allowed=False)
-    >>> request._orig_env['launchpad.traversalticks'] < 200
+    >>> 'launchpad.traversalduration' in request._orig_env
     True
-    >>> 'launchpad.publicationticks' in request._orig_env
+    >>> if hasattr(time, 'CLOCK_THREAD_CPUTIME_ID'):
+    ...     'launchpad.traversalthreadduration' in request._orig_env
+    ... else:
+    ...     True
+    True
+    >>> 'launchpad.publicationduration' in request._orig_env
+    False
+    >>> 'launchpad.publicationthreadduration' in request._orig_env
     False
     >>> clear_request_started()
 
 If we started the publication (which means the traversal has been
-completed), we'll have the ticks for the traversal and the ticks for
+completed), we'll have the duration for the traversal and the duration for
 the publication, up to the point where it was forcefully stopped.
 
     >>> publication.afterTraversal(request, None)
@@ -715,22 +736,34 @@ the publication, up to the point where it was forcefully stopped.
     >>> set_request_started()
     >>> publication.handleException(
     ...     None, request, exc_info, retry_allowed=False)
-    >>> request._orig_env['launchpad.traversalticks'] < 500
+    >>> 'launchpad.traversalduration' in request._orig_env
     True
-    >>> request._orig_env['launchpad.publicationticks'] < 50
+    >>> if hasattr(time, 'CLOCK_THREAD_CPUTIME_ID'):
+    ...     'launchpad.traversalthreadduration' in request._orig_env
+    ... else:
+    ...     True
+    True
+    >>> 'launchpad.publicationduration' in request._orig_env
+    True
+    >>> if hasattr(time, 'CLOCK_THREAD_CPUTIME_ID'):
+    ...     'launchpad.publicationthreadduration' in request._orig_env
+    ... else:
+    ...     True
     True
     >>> publication.endRequest(request, None)
     >>> logger.setLevel(old_level)
 
 When a Retry or DisconnectionError exception is raised and the request
 supports retry, it will be retried with a copy of the WSGI environment.
-If that happens, though, we'll remove the [publication,traversal]ticks
-variables from there.
+If that happens, though, we'll remove the
+{publication,traversal}{,thread}duration variables from there.
 
     >>> request, publication = get_request_and_publication()
     >>> request.setPrincipal(auth_utility.unauthenticatedPrincipal())
-    >>> request._orig_env['launchpad.traversalticks'] = 500
-    >>> request._orig_env['launchpad.publicationticks'] = 500
+    >>> request._orig_env['launchpad.traversalduration'] = 0.5
+    >>> request._orig_env['launchpad.traversalthreadduration'] = 0.4
+    >>> request._orig_env['launchpad.publicationduration'] = 0.5
+    >>> request._orig_env['launchpad.publicationthreadduration'] = 0.4
     >>> request.supportsRetry()
     True
     >>> from zope.publisher.interfaces import Retry
@@ -744,15 +777,21 @@ variables from there.
     ...
     Retry: foo
 
-    >>> 'launchpad.publicationticks' in request._orig_env
+    >>> 'launchpad.publicationduration' in request._orig_env
     False
-    >>> 'launchpad.traversalticks' in request._orig_env
+    >>> 'launchpad.publicationthreadduration' in request._orig_env
+    False
+    >>> 'launchpad.traversalduration' in request._orig_env
+    False
+    >>> 'launchpad.traversalthreadduration' in request._orig_env
     False
 
     >>> request, publication = get_request_and_publication()
     >>> request.setPrincipal(auth_utility.unauthenticatedPrincipal())
-    >>> request._orig_env['launchpad.traversalticks'] = 500
-    >>> request._orig_env['launchpad.publicationticks'] = 500
+    >>> request._orig_env['launchpad.traversalduration'] = 0.5
+    >>> request._orig_env['launchpad.traversalthreadduration'] = 0.4
+    >>> request._orig_env['launchpad.publicationduration'] = 0.5
+    >>> request._orig_env['launchpad.publicationthreadduration'] = 0.4
     >>> request.supportsRetry()
     True
     >>> from storm.exceptions import DisconnectionError
@@ -766,19 +805,25 @@ variables from there.
     ...
     Retry: foo DisconnectionError
 
-    >>> 'launchpad.publicationticks' in request._orig_env
+    >>> 'launchpad.publicationduration' in request._orig_env
     False
-    >>> 'launchpad.traversalticks' in request._orig_env
+    >>> 'launchpad.publicationthreadduration' in request._orig_env
+    False
+    >>> 'launchpad.traversalduration' in request._orig_env
+    False
+    >>> 'launchpad.traversalthreadduration' in request._orig_env
     False
 
 Of course, any request can only be retried a certain number of times and
-when we reach that number of retries we don't pop the tick conts from the
+when we reach that number of retries we don't pop the durations from the
 WSGI env.
 
     >>> request, publication = get_request_and_publication()
     >>> request.setPrincipal(auth_utility.unauthenticatedPrincipal())
-    >>> request._orig_env['launchpad.traversalticks'] = 500
-    >>> request._orig_env['launchpad.publicationticks'] = 500
+    >>> request._orig_env['launchpad.traversalduration'] = 0.5
+    >>> request._orig_env['launchpad.traversalthreadduration'] = 0.4
+    >>> request._orig_env['launchpad.publicationduration'] = 0.5
+    >>> request._orig_env['launchpad.publicationthreadduration'] = 0.4
     >>> request.supportsRetry = lambda: False
     >>> request.supportsRetry()
     False
@@ -792,10 +837,14 @@ WSGI env.
     ...
     Retry: foo
 
-    >>> request._orig_env['launchpad.publicationticks']
-    500
-    >>> request._orig_env['launchpad.traversalticks']
-    500
+    >>> request._orig_env['launchpad.publicationduration']
+    0.5
+    >>> request._orig_env['launchpad.publicationthreadduration']
+    0.4
+    >>> request._orig_env['launchpad.traversalduration']
+    0.5
+    >>> request._orig_env['launchpad.traversalthreadduration']
+    0.4
 
 (A bit of cleanup so the test can continue)
 
@@ -818,11 +867,12 @@ The user attribute is an empty string, when no user is logged in.
     >>> print request.principal
     None
 
-    # Our afterCall() implementation expects to find a
-    # _publicationticks_start in its request, which is set by
+    # Our afterCall() implementation expects to find _publication_start and
+    # _publication_thread_start in its request, which are set by
     # callObject(). Since we don't want to callObject() here, we'll
     # have to change the request manually.
-    >>> request._publicationticks_start = 1345
+    >>> request._publication_start = 1.345
+    >>> request._publication_thread_start = None
     >>> publication.afterCall(request, None)
     >>> txn.user
     ''
@@ -883,11 +933,12 @@ be automatically reverted in a GET request.
 
     >>> request, publication = get_request_and_publication(method='GET')
 
-    # Our afterCall() implementation expects to find a
-    # _publicationticks_start in its request, which is set by
+    # Our afterCall() implementation expects to find _publication_start and
+    # _publication_thread_start in its request, which are set by
     # callObject(). Since we don't want to callObject() here, we'll
     # have to change the request manually.
-    >>> request._publicationticks_start = 1345
+    >>> request._publication_start = 1.345
+    >>> request._publication_thread_start = None
     >>> publication.afterCall(request, None)
     >>> txn = transaction.begin()
     >>> foo_bar = get_foo_bar_person()
@@ -901,11 +952,12 @@ But not if the request uses POST, the changes will be preserved.
 
     >>> request, publication = get_request_and_publication(method='POST')
 
-    # Our afterCall() implementation expects to find a
-    # _publicationticks_start in its request, which is set by
+    # Our afterCall() implementation expects to find _publication_start and
+    # _publication_thread_start in its request, which are set by
     # callObject(). Since we don't want to callObject() here, we'll
     # have to change the request manually.
-    >>> request._publicationticks_start = 1345
+    >>> request._publication_start = 1.345
+    >>> request._publication_thread_start = None
     >>> publication.afterCall(request, None)
     >>> txn = transaction.begin()
     >>> print get_foo_bar_person().description
@@ -934,11 +986,12 @@ Doomed transactions are aborted.
     >>> txn.isDoomed()
     True
 
-    # Our afterCall() implementation expects to find a
-    # _publicationticks_start in its request, which is set by
+    # Our afterCall() implementation expects to find _publication_start and
+    # _publication_thread_start in its request, which are set by
     # callObject(). Since we don't want to callObject() here, we'll
     # have to change the request manually.
-    >>> request._publicationticks_start = 1345
+    >>> request._publication_start = 1.345
+    >>> request._publication_thread_start = None
 
     >>> publication.afterCall(request, None)
     Aborted
@@ -976,11 +1029,12 @@ afterCall() publication hook.)
     >>> response = request.response
     >>> response.setResult('Content that will disappear.')
 
-    # Our afterCall() implementation expects to find a
-    # _publicationticks_start in its request, which is set by
+    # Our afterCall() implementation expects to find _publication_start and
+    # _publication_thread_start in its request, which are set by
     # callObject(). Since we don't want to callObject() here, we'll
     # have to change the request manually.
-    >>> request._publicationticks_start = 1345
+    >>> request._publication_start = 1.345
+    >>> request._publication_thread_start = None
     >>> publication.afterCall(request, None)
     >>> request.response.consumeBody()
     ''
@@ -992,11 +1046,12 @@ In other cases, like a GET, the body would be unchanged.
     >>> response = request.response
     >>> response.setResult('Some boring content.')
 
-    # Our afterCall() implementation expects to find a
-    # _publicationticks_start in its request, which is set by
+    # Our afterCall() implementation expects to find _publication_start and
+    # _publication_thread_start in its request, which are set by
     # callObject(). Since we don't want to callObject() here, we'll
     # have to change the request manually.
-    >>> request._publicationticks_start = 1345
+    >>> request._publication_start = 1.345
+    >>> request._publication_thread_start = None
     >>> publication.afterCall(request, None)
     >>> print request.response.consumeBody()
     Some boring content.
@@ -1060,7 +1115,6 @@ associated with the access token specified in the request.  The
 principal's access_level and scope will match what was specified in the
 token.
 
-    >>> import time
     >>> from lp.registry.interfaces.product import IProductSet
     >>> from lp.services.database.policy import MasterDatabasePolicy
     >>> from lp.services.database.interfaces import IStoreSelector
