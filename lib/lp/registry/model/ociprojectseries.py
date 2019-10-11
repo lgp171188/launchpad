@@ -1,13 +1,13 @@
 # Copyright 2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-"""Model implementing `OCIRecipeTargetSeries`."""
+"""Model implementing `OCIProjectSeries`."""
 
 from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 __all__ = [
-    'OCIRecipeTargetSeries',
+    'OCIProjectSeries',
     ]
 
 from storm.locals import (
@@ -19,19 +19,19 @@ from zope.interface import implementer
 
 from lp.app.validators.name import valid_name
 from lp.registry.errors import InvalidName
-from lp.registry.interfaces.ocirecipetargetseries import (
-    IOCIRecipeTargetSeries,
-    IOCIRecipeTargetSeriesSet,
+from lp.registry.interfaces.ociprojectseries import (
+    IOCIProjectSeries,
+    IOCIProjectSeriesSet,
     )
 from lp.services.database.interfaces import IMasterStore
 from lp.services.database.stormbase import StormBase
 
 
-@implementer(IOCIRecipeTargetSeries)
-class OCIRecipeTargetSeries(StormBase):
-    """See `IOCIRecipeTargetSeries`."""
+@implementer(IOCIProjectSeries)
+class OCIProjectSeries(StormBase):
+    """See `IOCIProjectSeries`."""
 
-    __storm_table__ = "OCIRecipeTargetSeries"
+    __storm_table__ = "OCIProjectSeries"
 
     id = Int(primary=True)
 
@@ -48,13 +48,13 @@ class OCIRecipeTargetSeries(StormBase):
         self.ociproject = ociproject
 
 
-@implementer(IOCIRecipeTargetSeriesSet)
-class OCIRecipeTargetSeriesSet:
-    """See `IOCIRecipeTargetSeriesSet`."""
+@implementer(IOCIProjectSeriesSet)
+class OCIProjectSeriesSet:
+    """See `IOCIProjectSeriesSet`."""
 
     def new(self, ociproject, name):
-        """See `IOCIRecipeTargetSeriesSet`."""
-        store = IMasterStore(OCIRecipeTargetSeries)
-        target_series = OCIRecipeTargetSeries(ociproject, name)
+        """See `IOCIProjectSeriesSet`."""
+        store = IMasterStore(OCIProjectSeries)
+        target_series = OCIProjectSeries(ociproject, name)
         store.add(target_series)
         return target_series

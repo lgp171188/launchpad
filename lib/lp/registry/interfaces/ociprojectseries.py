@@ -1,14 +1,14 @@
 # Copyright 2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-"""Interface implementing `OCIRecipeTargetSeries`."""
+"""Interface implementing `OCIProjectSeries`."""
 
 from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 __all__ = [
-    'IOCIRecipeTargetSeries',
-    'IOCIRecipeTargetSeriesSet'
+    'IOCIProjectSeries',
+    'IOCIProjectSeriesSet'
     ]
 
 from lazr.restful.fields import Reference
@@ -23,7 +23,7 @@ from lp.app.validators.name import name_validator
 from lp.registry.interfaces.ociproject import IOCIProject
 
 
-class IOCIRecipeTargetSeries(Interface):
+class IOCIProjectSeries(Interface):
     """A series of an Open Container Initiative recipe target,
        used to allow tracking bugs against multiple versions of images.
     """
@@ -41,8 +41,8 @@ class IOCIRecipeTargetSeries(Interface):
         description=_("The name of this series."))
 
 
-class IOCIRecipeTargetSeriesSet(Interface):
-    """A set of OCIRecipeTargetSeries."""
+class IOCIProjectSeriesSet(Interface):
+    """A set of OCIProjectSeries."""
 
     def new(ociproject, name):
-        """Create a new `OCIRecipeTargetSeries`."""
+        """Create a new `OCIProjectSeries`."""
