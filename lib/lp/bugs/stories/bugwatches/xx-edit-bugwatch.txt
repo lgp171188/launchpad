@@ -287,32 +287,23 @@ The "Reset this watch" button will appear for administrators.
     >>> admin_browser.getControl('Reset this watch')
     <SubmitControl...>
 
-It also appears for Launchpad Developers.
+It also appears for registry experts.
 
-    >>> from zope.component import getUtility
-    >>> from lp.app.interfaces.launchpad import ILaunchpadCelebrities
-    >>> from lp.registry.interfaces.person import IPersonSet
+    >>> from lp.testing import login_celebrity
 
-    >>> login(ADMIN_EMAIL)
-    >>> admin_user = getUtility(IPersonSet).getByEmail(ADMIN_EMAIL)
-    >>> new_lp_developer = factory.makePerson()
-    >>> launchpad_developers = getUtility(
-    ...     ILaunchpadCelebrities).launchpad_developers
-    >>> dev_added = launchpad_developers.addMember(
-    ...     new_lp_developer, admin_user)
-
-    >>> lp_dev_browser = setupBrowser(
-    ...     auth='Basic %s:test' % new_lp_developer.preferredemail.email)
+    >>> registry_expert = login_celebrity('registry_experts')
+    >>> registry_browser = setupBrowser(
+    ...     auth='Basic %s:test' % registry_expert.preferredemail.email)
     >>> logout()
 
-    >>> lp_dev_browser.open(watch_url)
-    >>> reset_button = lp_dev_browser.getControl('Reset this watch')
+    >>> registry_browser.open(watch_url)
+    >>> reset_button = registry_browser.getControl('Reset this watch')
 
 Clicking the button will reset the watch completely.
 
     >>> reset_button.click()
     >>> for message in find_tags_by_class(
-    ...     lp_dev_browser.contents, 'informational message'):
+    ...         registry_browser.contents, 'informational message'):
     ...     print(extract_text(message))
     The ... bug watch has been reset.
 

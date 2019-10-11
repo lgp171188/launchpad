@@ -113,6 +113,14 @@ class TestSnapBuild(TestCaseWithFactory):
         self.assertProvides(self.build, IPackageBuild)
         self.assertProvides(self.build, ISnapBuild)
 
+    def test___repr__(self):
+        # SnapBuild has an informative __repr__.
+        self.assertEqual(
+            "<SnapBuild ~%s/+snap/%s/+build/%s>" % (
+                self.build.snap.owner.name, self.build.snap.name,
+                self.build.id),
+            repr(self.build))
+
     def test_title(self):
         # SnapBuild has an informative title.
         das = self.build.distro_arch_series
@@ -339,8 +347,21 @@ class TestSnapBuild(TestCaseWithFactory):
             self.build.updateStatus(BuildStatus.FAILEDTOBUILD)
         self.assertContentEqual([], self.build.store_upload_jobs)
 
+    def test_updateStatus_fullybuilt_not_configured(self):
+        # A completed SnapBuild does not trigger store uploads if the snap
+        # is not properly configured for that.
+        logger = self.useFixture(FakeLogger())
+        with dbuser(config.builddmaster.dbuser):
+            self.build.updateStatus(BuildStatus.FULLYBUILT)
+        self.assertEqual(0, len(list(self.build.store_upload_jobs)))
+        self.assertIn(
+            "<Snap ~%s/+snap/%s> is not configured for upload to the "
+            "store." % (self.build.snap.owner.name, self.build.snap.name),
+            logger.output.splitlines())
+
     def test_updateStatus_fullybuilt_triggers_store_uploads(self):
         # A completed SnapBuild triggers store uploads.
+        logger = self.useFixture(FakeLogger())
         self.build.snap.store_series = self.factory.makeSnappySeries()
         self.build.snap.store_name = self.factory.getUniqueUnicode()
         self.build.snap.store_upload = True
@@ -348,6 +369,12 @@ class TestSnapBuild(TestCaseWithFactory):
         with dbuser(config.builddmaster.dbuser):
             self.build.updateStatus(BuildStatus.FULLYBUILT)
         self.assertEqual(1, len(list(self.build.store_upload_jobs)))
+        self.assertIn(
+            "Scheduling upload of <SnapBuild ~%s/+snap/%s/+build/%d> to the "
+            "store." % (
+                self.build.snap.owner.name, self.build.snap.name,
+                self.build.id),
+            logger.output.splitlines())
 
     def test_notify_fullybuilt(self):
         # notify does not send mail when a SnapBuild completes normally.
