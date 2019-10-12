@@ -21,7 +21,7 @@ def sigusr1_handler(signum, frame):
         # isn't an appserver thread.
         if not hasattr(thread, 'lp_last_request'):
             continue
-        message.append('\t%s' % thread.getName())
+        message.append('\t%s' % thread.name)
         message.append('\t\tLast Request: %s' % thread.lp_last_request)
         message.append('\t\tMost recent OOPS IDs: %s' %
                        ', '.join(getattr(thread, 'lp_last_oops', [])))
@@ -38,7 +38,7 @@ def setup_sigusr1(event):
 def before_traverse(event):
     """Record the request URL (provided that the request has a URL)"""
     request = event.request
-    threading.currentThread().lp_last_request = str(
+    threading.current_thread().lp_last_request = str(
         getattr(request, 'URL', ''))
 
 
@@ -46,7 +46,7 @@ def end_request(event):
     """Record the OOPS ID in the thread, if one occurred."""
     request = event.request
     if request.oopsid is not None:
-        thread = threading.currentThread()
+        thread = threading.current_thread()
         last_oops_ids = getattr(thread, 'lp_last_oops', [])
         # make sure the OOPS ID list has at most 5 elements
         thread.lp_last_oops = last_oops_ids[-4:] + [request.oopsid]

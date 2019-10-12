@@ -321,7 +321,7 @@ def end_request(event):
             oops_report = request.oops
         filename = '%s-%s-%s-%s' % (
             timestamp, pageid, oopsid,
-            threading.currentThread().getName())
+            threading.current_thread().name)
         if 'callgrind' in actions:
             # The stats class looks at the filename to know to use
             # callgrind syntax.

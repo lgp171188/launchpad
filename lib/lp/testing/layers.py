@@ -421,7 +421,7 @@ class BaseLayer:
         def new_live_threads():
             return [
                 thread for thread in threading.enumerate()
-                    if thread not in BaseLayer._threads and thread.isAlive()]
+                    if thread not in BaseLayer._threads and thread.is_alive()]
 
         if BaseLayer.disable_thread_check:
             new_threads = None
@@ -434,7 +434,7 @@ class BaseLayer:
                 has_live_threads = False
                 for new_thread in new_threads:
                     new_thread.join(0.1)
-                    if new_thread.isAlive():
+                    if new_thread.is_alive():
                         has_live_threads = True
                 if has_live_threads:
                     # Trigger full garbage collection that might be

@@ -232,10 +232,10 @@ class with_timeout:
                 # This will commonly be SoftTimeLimitExceeded from celery,
                 # since celery's timeout often happens before the job's due
                 # to job setup time.
-                if t.isAlive():
+                if t.is_alive():
                     cleanup(t, args)
                 raise
-            if t.isAlive():
+            if t.is_alive():
                 cleanup(t, args)
                 raise TimeoutError("timeout exceeded.")
             if getattr(t, 'exc_info', None) is not None:

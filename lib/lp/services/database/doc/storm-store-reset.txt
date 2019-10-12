@@ -23,7 +23,7 @@ we rely on that to find out whether or not to reset stores.
     >>> def request_salgados_homepage():
     ...     global alive_items
     ...     global thread_name
-    ...     thread_name = threading.currentThread().getName()
+    ...     thread_name = threading.current_thread().name
     ...     from lp.testing.pages import setupBrowser
     ...     http = setupBrowser(auth="Basic foo.bar@canonical.com:test")
     ...     http.open("http://launchpad.test/~salgado/+edit")

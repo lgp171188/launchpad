@@ -174,15 +174,15 @@ class CheckwatchesMaster(WorkingBase):
         def make_updater(bug_tracker_name, bug_tracker_id):
             """Returns a function that can update the given bug tracker."""
             def updater(batch_size=None):
-                thread = threading.currentThread()
-                thread_name = thread.getName()
-                thread.setName(bug_tracker_name)
+                thread = threading.current_thread()
+                thread_name = thread.name
+                thread.name = bug_tracker_name
                 try:
                     with self.statement_logging:
                         return self.updateBugTracker(
                             bug_tracker_id, batch_size)
                 finally:
-                    thread.setName(thread_name)
+                    thread.name = thread_name
             return updater
 
         for bug_tracker_name in bug_tracker_names:
