@@ -89,7 +89,7 @@ class OCIProject(BugTargetBase, StormBase):
 class OCIProjectSet:
 
     def new(self, registrant, pillar, ociprojectname,
-            date_created=DEFAULT, description=None, bug_supervisor=None,
+            date_created=DEFAULT, description=None,
             bug_reporting_guidelines=None,
             bug_reported_acknowledgement=None,
             bugfiling_duplicate_search=False):

@@ -73,7 +73,7 @@ class IOCIProjectSet(Interface):
     """A utility to create and access OCI recipe targets."""
 
     def new(registrant, pillar, ociprojectname,
-            date_created=None, description=None, bug_supervisor=None,
+            date_created=None, description=None,
             bug_reporting_guidelines=None, bug_reported_acknowledgement=None,
             bugfiling_duplicate_search=False):
         """Create an `IOCIProject`."""
