@@ -1,4 +1,4 @@
-# Copyright 2010-2016 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -57,6 +57,7 @@ from lp.testing.pages import (
     find_main_content,
     find_tag_by_id,
     )
+from lp.testing.publication import test_traverse
 from lp.testing.views import (
     create_initialized_view,
     create_view,
@@ -832,6 +833,32 @@ class TestFileBugSourcePackage(WithScenarios, TestCaseWithFactory):
             notification.message
             for notification in view.request.response.notifications])
         self.assertIn("Thank you for your bug report.", msg)
+
+    def test_filebug_packagename_option_none(self):
+        # Setting "In what package did you find this bug?" to "I don't know"
+        # is honoured even if the context is a DistributionSourcePackage.
+        dsp = self.factory.makeDistributionSourcePackage()
+        user = self.factory.makePerson()
+        login_person(user)
+
+        view = create_initialized_view(
+            context=dsp, name='+filebug',
+            form={
+                'field.title': 'A bug',
+                'field.comment': 'A comment',
+                'packagename_option': 'none',
+                'field.packagename': dsp.name,
+                'field.actions.submit_bug': 'Submit Bug Report',
+                }, principal=user)
+        msg = "\n".join([
+            notification.message
+            for notification in view.request.response.notifications])
+        self.assertIn("Thank you for your bug report.", msg)
+
+        login_person(user)
+        bugtask, _, _ = test_traverse(
+            view.request.response.getHeader('Location'))
+        self.assertEqual(dsp.distribution, bugtask.target)
 
 
 class ProjectGroupFileBugGuidedViewTestCase(TestCaseWithFactory):
