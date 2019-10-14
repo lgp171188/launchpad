@@ -23,6 +23,7 @@ from zope.schema import (
 from lp import _
 from lp.app.validators.name import name_validator
 from lp.registry.interfaces.ociproject import IOCIProject
+from lp.registry.interfaces.person import IPerson
 
 
 class IOCIProjectSeries(Interface):
@@ -50,11 +51,11 @@ class IOCIProjectSeries(Interface):
         title=_("Date created"), required=True,
         description=_("The date on which this series was created in Launchpad."))
 
-    registrant = exported(Reference(
+    registrant = Reference(
         IPerson,
         title=_("The person that registered this series."),
         required=True,
-        readonly=True))
+        readonly=True)
 
     status = Int(
         title=_("Status"), required=True, readonly=False,
@@ -65,5 +66,5 @@ class IOCIProjectSeries(Interface):
 class IOCIProjectSeriesSet(Interface):
     """A set of OCIProjectSeries."""
 
-    def new(ociproject, name):
+    def new(ociproject, name, summary, registrant, status, date_created):
         """Create a new `OCIProjectSeries`."""

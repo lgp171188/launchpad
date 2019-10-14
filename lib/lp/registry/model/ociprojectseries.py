@@ -10,7 +10,9 @@ __all__ = [
     'OCIProjectSeries',
     ]
 
+import pytz
 from storm.locals import (
+    DateTime,
     Int,
     Reference,
     Unicode,
@@ -23,6 +25,7 @@ from lp.registry.interfaces.ociprojectseries import (
     IOCIProjectSeries,
     IOCIProjectSeriesSet,
     )
+from lp.services.database.constants import DEFAULT
 from lp.services.database.interfaces import IMasterStore
 from lp.services.database.stormbase import StormBase
 
@@ -50,21 +53,28 @@ class OCIProjectSeries(StormBase):
 
     status = Int(default=2)
 
-    def __init__(self, ociproject, name):
+    def __init__(self, ociproject, name, summary,
+                 registrant, status, date_created=DEFAULT):
         if not valid_name(name):
             raise InvalidName(
                 "%s is not a valid name for an OCI recipe series." % name)
         self.name = name
         self.ociproject = ociproject
+        self.summary = summary
+        self.registrant = registrant
+        self.status = status
 
 
 @implementer(IOCIProjectSeriesSet)
 class OCIProjectSeriesSet:
     """See `IOCIProjectSeriesSet`."""
 
-    def new(self, ociproject, name):
+    def new(self, ociproject, name, summary, registrant, status,
+            date_created=DEFAULT):
         """See `IOCIProjectSeriesSet`."""
         store = IMasterStore(OCIProjectSeries)
-        target_series = OCIProjectSeries(ociproject, name)
+        target_series = OCIProjectSeries(
+            ociproject, name, summary, registrant, status,
+            date_created=date_created)
         store.add(target_series)
         return target_series

@@ -202,6 +202,7 @@ from lp.registry.interfaces.mailinglistsubscription import (
     )
 from lp.registry.interfaces.ociproject import IOCIProjectSet
 from lp.registry.interfaces.ociprojectname import IOCIProjectNameSet
+from lp.registry.interfaces.ociprojectseries import IOCIProjectSeriesSet
 from lp.registry.interfaces.packaging import (
     IPackagingUtil,
     PackagingType,
@@ -4904,10 +4905,10 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         return getUtility(IOCIProjectNameSet).new(name)
 
     def makeOCIProject(self, registrant=None, pillar=None,
-                            ociprojectname=None, date_created=DEFAULT,
-                            description=None, bug_reporting_guidelines=None,
-                            bug_reported_acknowledgement=None,
-                            bugfiling_duplicate_search=False):
+                       ociprojectname=None, date_created=DEFAULT,
+                       description=None, bug_reporting_guidelines=None,
+                       bug_reported_acknowledgement=None,
+                       bugfiling_duplicate_search=False):
         """Make a new OCIProject."""
         if registrant is None:
             registrant = self.makePerson()
@@ -4921,6 +4922,23 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             bug_reporting_guidelines=bug_reporting_guidelines,
             bug_reported_acknowledgement=bug_reported_acknowledgement,
             bugfiling_duplicate_search=bugfiling_duplicate_search)
+
+    def makeOCIProjectSeries(self, ociproject=None, name=None, summary=None,
+                             registrant=None, status=None,
+                             date_created=DEFAULT):
+        """Make a new OCIProjectSeries."""
+        if ociproject is None:
+            ociproject = self.makeOCIProject()
+        if name is None:
+            name = self.getUniqueString(u"oci-recipe-series-name")
+        if summary is None:
+            summary = self.getUniqueString(u"oci-recipe-series-summary")
+        if registrant is None:
+            registrant = self.makePerson()
+        if status is None:
+            status = 2
+        return getUtility(IOCIProjectSeriesSet).new(
+            ociproject, name, summary, registrant, status, date_created)
 
 
 # Some factory methods return simple Python types. We don't add

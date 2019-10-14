@@ -23,16 +23,22 @@ class TestOCIProjectSeries(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def test_implements_interface(self):
-        oci_project = self.factory.makeOCIProject()
-        target_series = OCIProjectSeries(oci_project, 'test-name')
+        target_series = self.factory.makeOCIProjectSeries()
         self.assertProvides(target_series, IOCIProjectSeries)
 
     def test_init(self):
         name = 'test-name'
         oci_project = self.factory.makeOCIProject()
-        target_series = OCIProjectSeries(oci_project, name)
+        summary = 'test_summary'
+        registrant = self.factory.makePerson()
+        status = 2
+        target_series = OCIProjectSeries(
+            oci_project, name, summary, registrant, status)
         self.assertEqual(oci_project, target_series.ociproject)
         self.assertEqual(name, target_series.name)
+        self.assertEqual(summary, target_series.summary)
+        self.assertEqual(registrant, target_series.registrant)
+        self.assertEqual(status, target_series.status)
 
 
 class TestOCIProjectSeriesSet(TestCaseWithFactory):
@@ -46,7 +52,13 @@ class TestOCIProjectSeriesSet(TestCaseWithFactory):
     def test_new(self):
         name = 'test-name'
         oci_project = self.factory.makeOCIProject()
+        summary = 'test_summary'
+        registrant = self.factory.makePerson()
+        status = 2
         target_series = getUtility(IOCIProjectSeriesSet).new(
-            oci_project, name)
+            oci_project, name, summary, registrant, status)
         self.assertEqual(oci_project, target_series.ociproject)
         self.assertEqual(name, target_series.name)
+        self.assertEqual(summary, target_series.summary)
+        self.assertEqual(registrant, target_series.registrant)
+        self.assertEqual(status, target_series.status)
