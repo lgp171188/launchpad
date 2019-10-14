@@ -40,6 +40,16 @@ class OCIProjectSeries(StormBase):
 
     name = Unicode(name="name", allow_none=False)
 
+    summary = Unicode(name="summary", allow_none=False)
+
+    date_created = DateTime(
+        name="date_created", tzinfo=pytz.UTC, allow_none=False)
+
+    registrant_id = Int(name='registrant', allow_none=False)
+    registrant = Reference(registrant_id, "Person.id")
+
+    status = Int(default=2)
+
     def __init__(self, ociproject, name):
         if not valid_name(name):
             raise InvalidName(

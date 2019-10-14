@@ -14,7 +14,9 @@ __all__ = [
 from lazr.restful.fields import Reference
 from zope.interface import Interface
 from zope.schema import (
+    Datetime,
     Int,
+    Text,
     TextLine,
     )
 
@@ -39,6 +41,25 @@ class IOCIProjectSeries(Interface):
         title=_("Name"), constraint=name_validator,
         required=True, readonly=False,
         description=_("The name of this series."))
+
+    summary = Text(
+        title=_("Summary"), required=True, readonly=False,
+        description=_("A brief summary of this series."))
+
+    date_created = Datetime(
+        title=_("Date created"), required=True,
+        description=_("The date on which this series was created in Launchpad."))
+
+    registrant = exported(Reference(
+        IPerson,
+        title=_("The person that registered this series."),
+        required=True,
+        readonly=True))
+
+    status = Int(
+        title=_("Status"), required=True, readonly=False,
+        description=_("The current status of this series."))
+
 
 
 class IOCIProjectSeriesSet(Interface):
