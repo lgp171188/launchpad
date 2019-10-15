@@ -9,6 +9,7 @@ __all__ = [
     'InitializeDistroSeries',
     ]
 
+from collections import OrderedDict
 from operator import methodcaller
 
 import transaction
@@ -54,13 +55,15 @@ class InitializationError(Exception):
     """Raised when there is an exception during the initialization process."""
 
 
-# Pockets to consider when initializing the derived series from its parent(s).
-INIT_POCKETS = [
-    PackagePublishingPocket.RELEASE,
-    PackagePublishingPocket.SECURITY,
-    PackagePublishingPocket.UPDATES,
-    PackagePublishingPocket.PROPOSED,
-    ]
+# Pockets to consider when initializing the derived series from its
+# parent(s), mapped to the pockets that they should be cloned/copied to.  We
+# need this because some pockets are unmodifiable in unreleased series.
+INIT_POCKETS = OrderedDict([
+    (PackagePublishingPocket.RELEASE, PackagePublishingPocket.RELEASE),
+    (PackagePublishingPocket.SECURITY, PackagePublishingPocket.RELEASE),
+    (PackagePublishingPocket.UPDATES, PackagePublishingPocket.RELEASE),
+    (PackagePublishingPocket.PROPOSED, PackagePublishingPocket.PROPOSED),
+    ])
 
 
 class InitializeDistroSeries:
@@ -233,7 +236,7 @@ class InitializeDistroSeries:
 
         arch_tags = self.arches if len(self.arches) != 0 else None
         pending_builds = parent.getBuildRecords(
-            BuildStatus.NEEDSBUILD, pocket=INIT_POCKETS,
+            BuildStatus.NEEDSBUILD, pocket=list(INIT_POCKETS),
             arch_tag=arch_tags, name=spns)
 
         if not pending_builds.is_empty():
@@ -263,7 +266,7 @@ class InitializeDistroSeries:
         # all sources.
 
         items = getUtility(IPackageUploadSet).getBuildsForSources(
-            parent, statuses, INIT_POCKETS, spns)
+            parent, statuses, list(INIT_POCKETS), spns)
         if not items.is_empty():
             raise InitializationError(
                 "The parent series has sources waiting in its upload "
@@ -548,40 +551,43 @@ class InitializeDistroSeries:
                     assert target_archive is not None, (
                         "Target archive doesn't exist?")
                 if self._use_cloner(target_archive, archive):
-                    origin = PackageLocation(
-                        archive, parent.distribution, parent,
-                        PackagePublishingPocket.RELEASE)
-                    destination = PackageLocation(
-                        target_archive, self.distroseries.distribution,
-                        self.distroseries, PackagePublishingPocket.RELEASE)
-                    processors = None
-                    if self.rebuild:
-                        processors = [
-                            das[1].processor for das in distroarchseries_list]
-                        distroarchseries_list = ()
-                    getUtility(IPackageCloner).clonePackages(
-                        origin, destination, distroarchseries_list,
-                        processors, spns)
+                    for source_pocket, target_pocket in INIT_POCKETS.items():
+                        origin = PackageLocation(
+                            archive, parent.distribution, parent,
+                            source_pocket)
+                        destination = PackageLocation(
+                            target_archive, self.distroseries.distribution,
+                            self.distroseries, target_pocket)
+                        processors = None
+                        if self.rebuild:
+                            processors = [
+                                das[1].processor
+                                for das in distroarchseries_list]
+                            distroarchseries_list = ()
+                        getUtility(IPackageCloner).clonePackages(
+                            origin, destination, distroarchseries_list,
+                            processors, spns)
                 else:
-                    # There is only one available pocket in an unreleased
-                    # series.
-                    target_pocket = PackagePublishingPocket.RELEASE
-                    sources = archive.getPublishedSources(
-                        distroseries=parent, pocket=INIT_POCKETS,
-                        status=(PackagePublishingStatus.PENDING,
-                                PackagePublishingStatus.PUBLISHED),
-                        name=spns)
                     # XXX: rvb 2011-06-23 bug=801112: do_copy is atomic (all
                     # or none of the sources will be copied). This might
                     # lead to a partially initialised series if there is a
                     # single conflict in the destination series.
+                    sources_published = []
                     try:
-                        sources_published = do_copy(
-                            sources, target_archive, self.distroseries,
-                            target_pocket, include_binaries=not self.rebuild,
-                            check_permissions=False, strict_binaries=False,
-                            close_bugs=False, create_dsd_job=False,
-                            person=None)
+                        for source_pocket, target_pocket in (
+                                INIT_POCKETS.items()):
+                            sources = archive.getPublishedSources(
+                                distroseries=parent, pocket=source_pocket,
+                                status=(PackagePublishingStatus.PENDING,
+                                        PackagePublishingStatus.PUBLISHED),
+                                name=spns)
+                            sources_published.extend(do_copy(
+                                sources, target_archive, self.distroseries,
+                                target_pocket,
+                                include_binaries=not self.rebuild,
+                                check_permissions=False, strict_binaries=False,
+                                close_bugs=False, create_dsd_job=False,
+                                person=None))
                         if self.rebuild:
                             rebuilds = []
                             for pubrec in sources_published:

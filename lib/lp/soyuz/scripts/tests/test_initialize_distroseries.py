@@ -374,21 +374,73 @@ class TestInitializeDistroSeries(InitializationHelperTestCase):
         # No exception should be raised.
         ids.check()
 
-    def test_success_with_updates_packages(self):
-        # Initialization copies all the package from the UPDATES pocket.
+    def test_success_with_updates_packages_cloner(self):
+        # Initialization using the cloner copies all the packages from the
+        # UPDATES pocket.
+        self.parent, self.parent_das = self.setupParent(
+            pocket=PackagePublishingPocket.UPDATES)
+        self.factory.makeSourcePackagePublishingHistory(
+            distroseries=self.parent)
+        child = self._fullInitialize(
+            [self.parent], previous_series=self.parent,
+            distribution=self.parent.distribution)
+        self.assertDistroSeriesInitializedCorrectly(
+            child, self.parent, self.parent_das)
+
+    def test_success_with_updates_packages_copier(self):
+        # Initialization using the copier copies all the packages from the
+        # UPDATES pocket.
         self.parent, self.parent_das = self.setupParent(
             pocket=PackagePublishingPocket.UPDATES)
         child = self._fullInitialize([self.parent])
         self.assertDistroSeriesInitializedCorrectly(
             child, self.parent, self.parent_das)
 
-    def test_success_with_security_packages(self):
-        # Initialization copies all the package from the SECURITY pocket.
+    def test_success_with_security_packages_cloner(self):
+        # Initialization using the cloner copies all the packages from the
+        # SECURITY pocket.
+        self.parent, self.parent_das = self.setupParent(
+            pocket=PackagePublishingPocket.SECURITY)
+        self.factory.makeSourcePackagePublishingHistory(
+            distroseries=self.parent)
+        child = self._fullInitialize(
+            [self.parent], previous_series=self.parent,
+            distribution=self.parent.distribution)
+        self.assertDistroSeriesInitializedCorrectly(
+            child, self.parent, self.parent_das)
+
+    def test_success_with_security_packages_copier(self):
+        # Initialization using the copier copies all the packages from the
+        # SECURITY pocket.
         self.parent, self.parent_das = self.setupParent(
             pocket=PackagePublishingPocket.SECURITY)
         child = self._fullInitialize([self.parent])
         self.assertDistroSeriesInitializedCorrectly(
             child, self.parent, self.parent_das)
+
+    def test_success_with_proposed_packages_cloner(self):
+        # Initialization using the cloner copies all the packages from the
+        # PROPOSED pocket.
+        self.parent, self.parent_das = self.setupParent(
+            pocket=PackagePublishingPocket.PROPOSED)
+        self.factory.makeSourcePackagePublishingHistory(
+            distroseries=self.parent)
+        child = self._fullInitialize(
+            [self.parent], previous_series=self.parent,
+            distribution=self.parent.distribution)
+        self.assertDistroSeriesInitializedCorrectly(
+            child, self.parent, self.parent_das,
+            child_pocket=PackagePublishingPocket.PROPOSED)
+
+    def test_success_with_proposed_packages_copier(self):
+        # Initialization using the copier copies all the packages from the
+        # PROPOSED pocket.
+        self.parent, self.parent_das = self.setupParent(
+            pocket=PackagePublishingPocket.PROPOSED)
+        child = self._fullInitialize([self.parent])
+        self.assertDistroSeriesInitializedCorrectly(
+            child, self.parent, self.parent_das,
+            child_pocket=PackagePublishingPocket.PROPOSED)
 
     def test_do_not_copy_superseded_sources(self):
         # Make sure we don't copy superseded sources from the parent,
@@ -578,8 +630,9 @@ class TestInitializeDistroSeries(InitializationHelperTestCase):
              "queues that match your selection."),
             ids.check)
 
-    def assertDistroSeriesInitializedCorrectly(self, child, parent,
-                                               parent_das):
+    def assertDistroSeriesInitializedCorrectly(
+            self, child, parent, parent_das,
+            child_pocket=PackagePublishingPocket.RELEASE):
         # Check that 'udev' has been copied correctly.
         parent_udev_pubs = parent.main_archive.getPublishedSources(
             u'udev', distroseries=parent)
@@ -587,12 +640,16 @@ class TestInitializeDistroSeries(InitializationHelperTestCase):
             u'udev', distroseries=child)
         self.assertEqual(
             parent_udev_pubs.count(), child_udev_pubs.count())
+        self.assertEqual(
+            {child_pocket}, set(pub.pocket for pub in child_udev_pubs))
         parent_arch_udev_pubs = parent.main_archive.getAllPublishedBinaries(
             distroarchseries=parent[parent_das.architecturetag], name=u'udev')
         child_arch_udev_pubs = child.main_archive.getAllPublishedBinaries(
             distroarchseries=child[parent_das.architecturetag], name=u'udev')
         self.assertEqual(
             parent_arch_udev_pubs.count(), child_arch_udev_pubs.count())
+        self.assertEqual(
+            {child_pocket}, set(pub.pocket for pub in child_arch_udev_pubs))
         # And the binary package, and linked source package look fine too.
         udev_bin = child_arch_udev_pubs[0].binarypackagerelease
         self.assertEqual(udev_bin.title, u'udev-0.1-1')
