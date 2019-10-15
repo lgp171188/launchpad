@@ -43,6 +43,8 @@ COMMENT ON COLUMN OCIProject.enable_bugfiling_duplicate_search IS 'Enable/disabl
 CREATE UNIQUE INDEX ociproject__distribution__ociprojectname__key
     ON OCIProject (distribution, ociprojectname)
     WHERE distribution IS NOT NULL;
+CREATE INDEX ociproject__registrant__idx
+    ON OCIProject (registrant);
 
 CREATE TABLE OCIProjectSeries (
     id serial PRIMARY KEY,
@@ -66,5 +68,7 @@ COMMENT ON COLUMN OCIProjectSeries.status IS 'The current status of this series.
 
 CREATE UNIQUE INDEX ociprojectseries__ociproject__name__key
     ON OCIProjectSeries (ociproject, name);
+CREATE INDEX ociprojectseries__registrant__idx
+    ON OCIProjectSeries (registrant);
 
 INSERT INTO LaunchpadDatabaseRevision VALUES (2210, 08, 0);
