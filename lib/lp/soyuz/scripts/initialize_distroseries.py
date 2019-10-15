@@ -60,8 +60,8 @@ class InitializationError(Exception):
 # need this because some pockets are unmodifiable in unreleased series.
 INIT_POCKETS = OrderedDict([
     (PackagePublishingPocket.RELEASE, PackagePublishingPocket.RELEASE),
-    (PackagePublishingPocket.SECURITY, PackagePublishingPocket.RELEASE),
-    (PackagePublishingPocket.UPDATES, PackagePublishingPocket.RELEASE),
+    (PackagePublishingPocket.SECURITY, PackagePublishingPocket.PROPOSED),
+    (PackagePublishingPocket.UPDATES, PackagePublishingPocket.PROPOSED),
     (PackagePublishingPocket.PROPOSED, PackagePublishingPocket.PROPOSED),
     ])
 

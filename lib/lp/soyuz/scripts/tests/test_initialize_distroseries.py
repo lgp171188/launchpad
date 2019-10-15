@@ -385,7 +385,8 @@ class TestInitializeDistroSeries(InitializationHelperTestCase):
             [self.parent], previous_series=self.parent,
             distribution=self.parent.distribution)
         self.assertDistroSeriesInitializedCorrectly(
-            child, self.parent, self.parent_das)
+            child, self.parent, self.parent_das,
+            child_pocket=PackagePublishingPocket.PROPOSED)
 
     def test_success_with_updates_packages_copier(self):
         # Initialization using the copier copies all the packages from the
@@ -394,7 +395,8 @@ class TestInitializeDistroSeries(InitializationHelperTestCase):
             pocket=PackagePublishingPocket.UPDATES)
         child = self._fullInitialize([self.parent])
         self.assertDistroSeriesInitializedCorrectly(
-            child, self.parent, self.parent_das)
+            child, self.parent, self.parent_das,
+            child_pocket=PackagePublishingPocket.PROPOSED)
 
     def test_success_with_security_packages_cloner(self):
         # Initialization using the cloner copies all the packages from the
@@ -407,7 +409,8 @@ class TestInitializeDistroSeries(InitializationHelperTestCase):
             [self.parent], previous_series=self.parent,
             distribution=self.parent.distribution)
         self.assertDistroSeriesInitializedCorrectly(
-            child, self.parent, self.parent_das)
+            child, self.parent, self.parent_das,
+            child_pocket=PackagePublishingPocket.PROPOSED)
 
     def test_success_with_security_packages_copier(self):
         # Initialization using the copier copies all the packages from the
@@ -416,7 +419,8 @@ class TestInitializeDistroSeries(InitializationHelperTestCase):
             pocket=PackagePublishingPocket.SECURITY)
         child = self._fullInitialize([self.parent])
         self.assertDistroSeriesInitializedCorrectly(
-            child, self.parent, self.parent_das)
+            child, self.parent, self.parent_das,
+            child_pocket=PackagePublishingPocket.PROPOSED)
 
     def test_success_with_proposed_packages_cloner(self):
         # Initialization using the cloner copies all the packages from the
