@@ -998,7 +998,7 @@ class BranchMergeProposal(SQLBase, BugLinkTargetMixin):
                 stop=self.target_git_commit_sha1,
                 union_repository=self.target_git_repository)
 
-    def createComment(self, owner, subject, content=None, vote=None,
+    def createComment(self, owner, subject=None, content=None, vote=None,
                       review_type=None, parent=None, _date_created=DEFAULT,
                       previewdiff_id=None, inline_comments=None,
                       _notify_listeners=True):

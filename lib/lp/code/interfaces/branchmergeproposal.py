@@ -692,7 +692,7 @@ class IBranchMergeProposalAnyAllowedPerson(IBugLinkTarget):
     @call_with(owner=REQUEST_USER)
     # ICodeReviewComment supplied as Interface to avoid circular imports.
     @export_factory_operation(Interface, [])
-    def createComment(owner, subject, content=None, vote=None,
+    def createComment(owner, subject=None, content=None, vote=None,
                       review_type=None, parent=None,
                       previewdiff_id=None, inline_comments=None):
         """Create an ICodeReviewComment associated with this merge proposal.
