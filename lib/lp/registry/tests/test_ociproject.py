@@ -43,12 +43,11 @@ class TestOCIProjectSet(TestCaseWithFactory):
     def test_new_oci_project(self):
         registrant = self.factory.makePerson()
         distribution = self.factory.makeDistribution(owner=registrant)
-        oci_project = self.factory.makeOCIProjectName()
+        oci_project_name = self.factory.makeOCIProjectName()
         target = getUtility(IOCIProjectSet).new(
             registrant,
             distribution,
-            oci_project
-        )
+            oci_project_name)
         with person_logged_in(registrant):
             self.assertEqual(target.registrant, registrant)
             self.assertEqual(target.distribution, distribution)
