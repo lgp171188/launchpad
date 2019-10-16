@@ -2543,6 +2543,24 @@ class TestBranchMergeProposalInlineComments(TestCaseWithFactory):
         self.assertEqual(1, len(self.getInlineComments()))
         self.assertEqual(1, self.bmp.all_comments.count())
 
+    def test_publish_no_subject_on_comment(self):
+        # Not passing in a Subject when creating a comment
+        # does not fail and the MP comment is created
+        # with the default subject.
+        self.bmp.createComment(
+            owner=self.bmp.registrant,
+            previewdiff_id=self.previewdiff.id,
+            inline_comments=None,
+            content='Test comment'
+        )
+        self.assertEqual(1, self.bmp.all_comments.count())
+        comment = self.bmp.all_comments[0]
+        self.assertEqual('Test comment', comment.message.chunks[0].content)
+        self.assertEqual(
+            'Re: [Merge] %s into %s' % (
+                self.bmp.source_branch.bzr_identity,
+                self.bmp.target_branch.bzr_identity), comment.message.subject)
+
     def test_publish_no_inlines(self):
         # Suppressing 'inline_comments' does not result in any inline
         # comments, but the MP comment itself is created.

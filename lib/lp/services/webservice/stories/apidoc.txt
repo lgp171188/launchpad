@@ -22,34 +22,3 @@ http://launchpad.test/+apidoc/{version}.html.
     >>> print browser.title
     About this service
 
-Test the Subject is not a required parameter for branch_merge_proposal 
-createComment in apidoc (bug 530505).
-
-    >>> browser.open('http://launchpad.test/+apidoc/devel.html#branch_merge_proposal')
-    >>> print extract_text(browser.contents)
-    About this service
-    ...
-    branch_merge_proposal
-    ...
-    createComment
-    ...
-    ws.op
-    (required)
-    Fixed: createComment
-    content
-    inline_comments
-    parent
-    Link to a code_review_comment.
-    previewdiff_id
-    review_type
-    subject
-    vote
-    One of:
-    Approve
-    Needs Fixing
-    Needs Information
-    Abstain
-    Disapprove
-    Resubmit
-    On success, the response status will be 201
-    ...
