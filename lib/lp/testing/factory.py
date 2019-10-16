@@ -200,7 +200,6 @@ from lp.registry.interfaces.mailinglist import (
 from lp.registry.interfaces.mailinglistsubscription import (
     MailingListAutoSubscribePolicy,
     )
-
 from lp.registry.interfaces.ociproject import IOCIProjectSet
 from lp.registry.interfaces.ociprojectname import IOCIProjectNameSet
 from lp.registry.interfaces.packaging import (
