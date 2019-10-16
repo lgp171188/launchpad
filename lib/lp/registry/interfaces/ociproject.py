@@ -16,7 +16,10 @@ from lazr.restful.declarations import (
     exported,
     )
 from lazr.restful.fields import Reference
-from zope.interface import Interface
+from zope.interface import (
+    Attribute,
+    Interface,
+    )
 from zope.schema import (
     Datetime,
     Int,
@@ -27,8 +30,8 @@ from lp import _
 from lp.bugs.interfaces.bugtarget import IBugTarget
 from lp.registry.interfaces.distribution import IDistribution
 from lp.registry.interfaces.ociprojectname import IOCIProjectName
-from lp.registry.interfaces.person import IPerson
 from lp.registry.interfaces.role import IHasOwner
+from lp.services.fields import PublicPersonChoice
 
 
 class IOCIProjectView(Interface):
@@ -40,11 +43,10 @@ class IOCIProjectView(Interface):
     date_last_modified = exported(
         Datetime(title=_("Date last modified"), required=True), readonly=True)
 
-    registrant = exported(Reference(
-        IPerson,
-        title=_("The person that registered this project."),
-        required=True,
-        readonly=True))
+    registrant = exported(PublicPersonChoice(
+        title=_("Registrant"),
+        description=_("The person that registered this project."),
+        vocabulary='ValidPersonOrTeam', required=True, readonly=True))
 
 
 class IOCIProjectEditableAttributes(IBugTarget):
@@ -63,8 +65,9 @@ class IOCIProjectEditableAttributes(IBugTarget):
         readonly=True))
     description = exported(
         Text(title=_("The description for this OCI project.")))
-    pillar = exported(
-        Attribute("The pillar containing this target."), readonly=True)
+    pillar = exported(Reference(
+        IDistribution,
+        title=_("The pillar containing this target."), readonly=True))
 
 
 class IOCIProject(IOCIProjectView,

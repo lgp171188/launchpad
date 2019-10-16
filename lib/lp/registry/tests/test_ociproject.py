@@ -52,7 +52,7 @@ class TestOCIProjectSet(TestCaseWithFactory):
             self.assertEqual(target.registrant, registrant)
             self.assertEqual(target.distribution, distribution)
             self.assertEqual(target.pillar, distribution)
-            self.assertEqual(target.ociprojectname, oci_project)
+            self.assertEqual(target.ociprojectname, oci_project_name)
 
     def test_getByDistributionAndName(self):
         registrant = self.factory.makePerson()
