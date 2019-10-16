@@ -1,7 +1,7 @@
 # Copyright 2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-"""OCI Recipe Target interfaces."""
+"""OCI Project interfaces."""
 
 from __future__ import absolute_import, print_function, unicode_literals
 
@@ -34,13 +34,13 @@ from lp.registry.interfaces.role import IHasOwner
 class IOCIProjectView(Interface):
     """IOCIProject attributes that require launchpad.View permission."""
 
-    id = Int(title=_("OCI Recipe Target ID"), required=True, readonly=True)
+    id = Int(title=_("ID"), required=True, readonly=True)
     date_created = Datetime(title=_("Date created"), required=True)
     date_last_modified = Datetime(title=_("Date last modified"), required=True)
 
     registrant = exported(Reference(
         IPerson,
-        title=_("The person that registered this recipe."),
+        title=_("The person that registered this project."),
         required=True,
         readonly=True))
 
@@ -53,24 +53,24 @@ class IOCIProjectEditableAttributes(IBugTarget, IHasOwner):
 
     distribution = exported(Reference(
         IDistribution,
-        title=_("The distribution that this recipe is associated with.")))
+        title=_("The distribution that this project is associated with.")))
     ociprojectname = exported(Reference(
         IOCIProjectName,
-        title=_("The name of this recipe."),
+        title=_("The name of this project."),
         required=True,
         readonly=True))
-    description = exported(Text(title=_("The description for this recipe.")))
+    description = exported(Text(title=_("The description for this project.")))
 
 
 class IOCIProject(IOCIProjectView,
                        IOCIProjectEditableAttributes):
-    """A target (pillar and name) for Open Container Initiative recipes."""
+    """A target (pillar and name) for Open Container Initiative project."""
 
     export_as_webservice_entry()
 
 
 class IOCIProjectSet(Interface):
-    """A utility to create and access OCI recipe targets."""
+    """A utility to create and access OCI Projects."""
 
     def new(registrant, pillar, ociprojectname,
             date_created=None, description=None,
