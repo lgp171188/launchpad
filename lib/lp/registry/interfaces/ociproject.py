@@ -63,6 +63,8 @@ class IOCIProjectEditableAttributes(IBugTarget):
         readonly=True))
     description = exported(
         Text(title=_("The description for this OCI project.")))
+    pillar = exported(
+        Attribute("The pillar containing this target."), readonly=True)
 
 
 class IOCIProject(IOCIProjectView,
