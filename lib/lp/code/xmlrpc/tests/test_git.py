@@ -949,7 +949,7 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
         # If the hosting service is down, trying to create a repository
         # fails and doesn't leave junk around in the Launchpad database.
         self.hosting_fixture.create.failure = GitRepositoryCreationFault(
-            "nothing here")
+            "nothing here", path="123")
         requester = self.factory.makePerson()
         initial_count = getUtility(IAllGitRepositories).count()
         oops_id = self.assertOopsOccurred(

@@ -26,6 +26,7 @@ from storm.exceptions import LostObjectError
 from storm.store import Store
 from testtools.matchers import (
     AnyMatch,
+    ContainsDict,
     EndsWith,
     Equals,
     Is,
@@ -2990,6 +2991,35 @@ class TestGitRepositorySet(TestCaseWithFactory):
         super(TestGitRepositorySet, self).setUp()
         self.repository_set = getUtility(IGitRepositorySet)
 
+    def test_new(self):
+        # By default, GitRepositorySet.new creates a new repository in the
+        # database but not on the hosting service.
+        hosting_fixture = self.useFixture(GitHostingFixture())
+        owner = self.factory.makePerson()
+        target = self.factory.makeProduct()
+        name = self.factory.getUniqueUnicode()
+        repository = self.repository_set.new(
+            GitRepositoryType.HOSTED, owner, owner, target, name)
+        self.assertThat(repository, MatchesStructure.byEquality(
+            registrant=owner, owner=owner, target=target, name=name))
+        self.assertEqual(0, hosting_fixture.create.call_count)
+
+    def test_new_with_hosting(self):
+        # GitRepositorySet.new(with_hosting=True) creates a new repository
+        # in both the database and the hosting service.
+        hosting_fixture = self.useFixture(GitHostingFixture())
+        owner = self.factory.makePerson()
+        target = self.factory.makeProduct()
+        name = self.factory.getUniqueUnicode()
+        repository = self.repository_set.new(
+            GitRepositoryType.HOSTED, owner, owner, target, name,
+            with_hosting=True)
+        self.assertThat(repository, MatchesStructure.byEquality(
+            registrant=owner, owner=owner, target=target, name=name))
+        self.assertEqual(
+            [((repository.getInternalPath(),), {"clone_from": None})],
+            hosting_fixture.create.calls)
+
     def test_provides_IGitRepositorySet(self):
         # GitRepositorySet instances provide IGitRepositorySet.
         verifyObject(IGitRepositorySet, self.repository_set)
@@ -3369,6 +3399,42 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
         self.assertEqual(
             "git+ssh://git.launchpad.test/~person/project/+git/repository",
             repository["git_ssh_url"])
+
+    def assertNewWorks(self, target_db):
+        hosting_fixture = self.useFixture(GitHostingFixture())
+        if IPerson.providedBy(target_db):
+            owner_db = target_db
+        else:
+            owner_db = self.factory.makePerson()
+        owner_url = api_url(owner_db)
+        target_url = api_url(target_db)
+        name = "repository"
+        webservice = webservice_for_person(
+            owner_db, permission=OAuthPermission.WRITE_PUBLIC)
+        webservice.default_api_version = "devel"
+        response = webservice.named_post(
+            "/+git", "new", owner=owner_url, target=target_url, name=name)
+        self.assertEqual(201, response.status)
+        repository = webservice.get(response.getHeader("Location")).jsonBody()
+        self.assertThat(repository, ContainsDict({
+            "repository_type": Equals("Hosted"),
+            "registrant_link": EndsWith(owner_url),
+            "owner_link": EndsWith(owner_url),
+            "target_link": EndsWith(target_url),
+            "name": Equals(name),
+            "owner_default": Is(False),
+            "target_default": Is(False),
+            }))
+        self.assertEqual(1, hosting_fixture.create.call_count)
+
+    def test_new_project(self):
+        self.assertNewWorks(self.factory.makeProduct())
+
+    def test_new_package(self):
+        self.assertNewWorks(self.factory.makeDistributionSourcePackage())
+
+    def test_new_person(self):
+        self.assertNewWorks(self.factory.makePerson())
 
     def assertGetRepositoriesWorks(self, target_db):
         if IPerson.providedBy(target_db):

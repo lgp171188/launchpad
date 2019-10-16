@@ -13,7 +13,6 @@ import sys
 from pymacaroons import Macaroon
 import six
 from six.moves import xmlrpc_client
-from storm.store import Store
 import transaction
 from zope.component import (
     ComponentLookupError,
@@ -36,7 +35,6 @@ from lp.code.errors import (
     GitRepositoryCreationFault,
     GitRepositoryCreationForbidden,
     GitRepositoryExists,
-    GitTargetError,
     InvalidNamespace,
     )
 from lp.code.interfaces.codehosting import (
@@ -44,7 +42,6 @@ from lp.code.interfaces.codehosting import (
     LAUNCHPAD_SERVICES,
     )
 from lp.code.interfaces.gitapi import IGitAPI
-from lp.code.interfaces.githosting import IGitHostingClient
 from lp.code.interfaces.gitjob import IGitRefScanJobSource
 from lp.code.interfaces.gitlookup import (
     IGitLookup,
@@ -282,20 +279,15 @@ class GitAPI(LaunchpadXMLRPCView):
         if repository_name is None and not namespace.has_defaults:
             raise InvalidNamespace(path)
         if repository_name is None:
-            def default_func(new_repository):
-                if owner is None:
-                    self.repository_set.setDefaultRepository(
-                        target, new_repository)
-                if (owner is not None or
-                    self.repository_set.getDefaultRepositoryForOwner(
-                        repository_owner, target) is None):
-                    self.repository_set.setDefaultRepositoryForOwner(
-                        repository_owner, target, new_repository, requester)
-
             repository_name = namespace.findUnusedName(target.name)
-            return namespace, repository_name, default_func
+            target_default = owner is None
+            owner_default = (
+                owner is None or
+                self.repository_set.getDefaultRepositoryForOwner(
+                    repository_owner, target) is None)
+            return namespace, repository_name, target_default, owner_default
         else:
-            return namespace, repository_name, None
+            return namespace, repository_name, False, False
 
     def _reportError(self, path, exception, hosting_path=None):
         properties = [
@@ -310,7 +302,7 @@ class GitAPI(LaunchpadXMLRPCView):
 
     def _createRepository(self, requester, path, clone_from=None):
         try:
-            namespace, repository_name, default_func = (
+            namespace, repository_name, target_default, owner_default = (
                 self._getGitNamespaceExtras(path, requester))
         except InvalidNamespace:
             raise faults.PermissionDenied(
@@ -331,56 +323,27 @@ class GitAPI(LaunchpadXMLRPCView):
             raise faults.PermissionDenied(unicode(e))
 
         try:
-            repository = namespace.createRepository(
-                GitRepositoryType.HOSTED, requester, repository_name)
-        except LaunchpadValidationError as e:
-            # Despite the fault name, this just passes through the exception
-            # text so there's no need for a new Git-specific fault.
-            raise faults.InvalidBranchName(e)
-        except GitRepositoryExists as e:
-            # We should never get here, as we just tried to translate the
-            # path and found nothing (not even an inaccessible private
-            # repository).  Log an OOPS for investigation.
-            self._reportError(path, e)
-        except GitRepositoryCreationException as e:
-            raise faults.PermissionDenied(unicode(e))
-
-        try:
-            if default_func:
-                try:
-                    default_func(repository)
-                except Unauthorized:
-                    raise faults.PermissionDenied(
-                        "You cannot set the default Git repository for '%s'." %
-                        path)
-
-            # Flush to make sure that repository.id is populated.
-            Store.of(repository).flush()
-            assert repository.id is not None
-
-            # If repository has target_default, clone from default.
-            target_path = None
             try:
-                default = self.repository_set.getDefaultRepository(
-                    repository.target)
-                if default is not None and default.visibleByUser(requester):
-                    target_path = default.getInternalPath()
-                else:
-                    default = self.repository_set.getDefaultRepositoryForOwner(
-                        repository.owner, repository.target)
-                    if (default is not None and
-                            default.visibleByUser(requester)):
-                        target_path = default.getInternalPath()
-            except GitTargetError:
-                pass  # Ignore Personal repositories.
-
-            hosting_path = repository.getInternalPath()
-            try:
-                getUtility(IGitHostingClient).create(
-                    hosting_path, clone_from=target_path)
+                namespace.createRepository(
+                    GitRepositoryType.HOSTED, requester, repository_name,
+                    target_default=target_default, owner_default=owner_default,
+                    with_hosting=True)
+            except LaunchpadValidationError as e:
+                # Despite the fault name, this just passes through the
+                # exception text so there's no need for a new Git-specific
+                # fault.
+                raise faults.InvalidBranchName(e)
+            except GitRepositoryExists as e:
+                # We should never get here, as we just tried to translate
+                # the path and found nothing (not even an inaccessible
+                # private repository).  Log an OOPS for investigation.
+                self._reportError(path, e)
+            except (GitRepositoryCreationException, Unauthorized) as e:
+                raise faults.PermissionDenied(unicode(e))
             except GitRepositoryCreationFault as e:
                 # The hosting service failed.  Log an OOPS for investigation.
-                self._reportError(path, e, hosting_path=hosting_path)
+                self._reportError(path, e, hosting_path=e.path)
+                raise
         except Exception:
             # We don't want to keep the repository we created.
             transaction.abort()
