@@ -57,7 +57,7 @@ class OCIProjectSeries(StormBase):
                  registrant, status, date_created=DEFAULT):
         if not valid_name(name):
             raise InvalidName(
-                "%s is not a valid name for an OCI recipe series." % name)
+                "%s is not a valid name for an OCI project series." % name)
         self.name = name
         self.ociproject = ociproject
         self.summary = summary

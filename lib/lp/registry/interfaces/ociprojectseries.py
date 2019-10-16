@@ -27,7 +27,7 @@ from lp.registry.interfaces.person import IPerson
 
 
 class IOCIProjectSeries(Interface):
-    """A series of an Open Container Initiative recipe target,
+    """A series of an Open Container Initiative project,
        used to allow tracking bugs against multiple versions of images.
     """
 

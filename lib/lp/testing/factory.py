@@ -4930,9 +4930,9 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         if ociproject is None:
             ociproject = self.makeOCIProject()
         if name is None:
-            name = self.getUniqueString(u"oci-recipe-series-name")
+            name = self.getUniqueString(u"oci-project-series-name")
         if summary is None:
-            summary = self.getUniqueString(u"oci-recipe-series-summary")
+            summary = self.getUniqueString(u"oci-project-series-summary")
         if registrant is None:
             registrant = self.makePerson()
         if status is None:
