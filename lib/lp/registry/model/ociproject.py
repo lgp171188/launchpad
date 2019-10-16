@@ -102,8 +102,8 @@ class OCIProjectSet:
             target.distribution = pillar
         else:
             raise ValueError(
-                'The target of an OCIProject must be either an '
-                'IDistribution instance or an IProduct instance.')
+                'The target of an OCIProject must be an '
+                'IDistribution instance.')
 
         target.registrant = registrant
         target.ociprojectname = ociprojectname
@@ -113,11 +113,11 @@ class OCIProjectSet:
         store.add(target)
         return target
 
-    def getByDistributionAndName(self, distribution, search_name):
+    def getByDistributionAndName(self, distribution, name):
         """See `IOCIProjectSet`."""
         target = IStore(OCIProject).find(
             OCIProject,
             OCIProject.distribution == distribution,
             OCIProject.ociprojectname == OCIProjectName.id,
-            OCIProjectName.name == search_name).one()
+            OCIProjectName.name == name).one()
         return target
