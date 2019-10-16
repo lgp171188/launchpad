@@ -35,8 +35,10 @@ class IOCIProjectView(Interface):
     """IOCIProject attributes that require launchpad.View permission."""
 
     id = Int(title=_("ID"), required=True, readonly=True)
-    date_created = Datetime(title=_("Date created"), required=True)
-    date_last_modified = Datetime(title=_("Date last modified"), required=True)
+    date_created = exported(
+        Datetime(title=_("Date created"), required=True), readonly=True)
+    date_last_modified = exported(
+        Datetime(title=_("Date last modified"), required=True), readonly=True)
 
     registrant = exported(Reference(
         IPerson,
@@ -45,26 +47,27 @@ class IOCIProjectView(Interface):
         readonly=True))
 
 
-class IOCIProjectEditableAttributes(IBugTarget, IHasOwner):
+class IOCIProjectEditableAttributes(IBugTarget):
     """IOCIProject attributes that can be edited.
 
     These attributes need launchpad.View to see, and launchpad.Edit to change.
     """
 
-    distribution = exported(Reference(
+    distribution = Reference(
         IDistribution,
-        title=_("The distribution that this project is associated with.")))
+        title=_("The distribution that this OCI project is associated with."))
     ociprojectname = exported(Reference(
         IOCIProjectName,
-        title=_("The name of this project."),
+        title=_("The name of this OCI project."),
         required=True,
         readonly=True))
-    description = exported(Text(title=_("The description for this project.")))
+    description = exported(
+        Text(title=_("The description for this OCI project.")))
 
 
 class IOCIProject(IOCIProjectView,
                        IOCIProjectEditableAttributes):
-    """A target (pillar and name) for Open Container Initiative project."""
+    """A project containing Open Container Initiative recipes."""
 
     export_as_webservice_entry()
 

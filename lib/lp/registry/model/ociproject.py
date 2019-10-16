@@ -72,17 +72,14 @@ class OCIProject(BugTargetBase, StormBase):
     @property
     def bugtargetname(self):
         """See `IBugTarget`."""
-        return self.ociprojectname
+        return "OCI project %s for %s" % (
+            self.ociprojectname.name, self.pillar.name)
 
     @property
     def bugtargetdisplayname(self):
         """See `IBugTarget`."""
-        return self.ociprojectname.name
-
-    @property
-    def owner(self):
-        """See `IHasOwner`."""
-        return self.registrant
+        return "OCI project %s for %s" % (
+            self.ociprojectname.name, self.pillar.name)
 
 
 @implementer(IOCIProjectSet)
