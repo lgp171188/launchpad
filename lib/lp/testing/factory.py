@@ -4899,7 +4899,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
 
     def makeOCIProjectName(self, name=None):
         if name is None:
-            name = self.getUniqueString(u"oci-recipe-name")
+            name = self.getUniqueString(u"oci-project-name")
         return getUtility(IOCIProjectNameSet).new(name)
 
 

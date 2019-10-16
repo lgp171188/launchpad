@@ -34,15 +34,15 @@ class TestOCIProjectName(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def test_create(self):
-        recipe_name = self.factory.makeOCIProjectName()
-        self.assertTrue(recipe_name.name.startswith('oci-recipe-name'))
+        project_name = self.factory.makeOCIProjectName()
+        self.assertTrue(project_name.name.startswith('oci-project-name'))
 
     def test_invalid_name(self):
         self.assertRaises(InvalidName, OCIProjectName, name='invalid%20name')
 
     def test_implements_interface(self):
-        recipe_name = OCIProjectName('test-name')
-        self.assertProvides(recipe_name, IOCIProjectName)
+        project_name = OCIProjectName('test-name')
+        self.assertProvides(project_name, IOCIProjectName)
 
 
 class TestOCIProjectNameSet(TestCaseWithFactory):
@@ -50,17 +50,17 @@ class TestOCIProjectNameSet(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def test_invalid_name(self):
-        recipe_name_set = OCIProjectNameSet()
+        project_name_set = OCIProjectNameSet()
         self.assertRaises(
-            InvalidName, recipe_name_set.new, name='invalid%20name')
+            InvalidName, project_name_set.new, name='invalid%20name')
 
     def test_getByName_missing(self):
         self.factory.makeOCIProjectName(name='first')
         self.factory.makeOCIProjectName(name='second')
 
-        recipe_name_set = OCIProjectNameSet()
+        project_name_set = OCIProjectNameSet()
         self.assertRaises(
-            NoSuchOCIProjectName, recipe_name_set.getByName, 'invalid')
+            NoSuchOCIProjectName, project_name_set.getByName, 'invalid')
 
     def test_getitem(self):
         self.factory.makeOCIProjectName(name='first')
@@ -79,5 +79,5 @@ class TestOCIProjectNameSet(TestCaseWithFactory):
         self.assertEqual(fetched, created)
 
     def test_implements_interface(self):
-        recipe_name_set = OCIProjectNameSet()
-        self.assertProvides(recipe_name_set, IOCIProjectNameSet)
+        project_name_set = OCIProjectNameSet()
+        self.assertProvides(project_name_set, IOCIProjectNameSet)

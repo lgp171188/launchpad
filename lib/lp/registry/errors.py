@@ -113,7 +113,7 @@ class NoSuchSourcePackageName(NameLookupFailed):
 
 class NoSuchOCIProjectName(NameLookupFailed):
     """Raised when we can't find a particular OCIProjectName."""
-    _message_prefix = "No such OCI recipe"
+    _message_prefix = "No such OCI Project"
 
 
 @error_status(httplib.BAD_REQUEST)
