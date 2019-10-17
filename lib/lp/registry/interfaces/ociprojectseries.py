@@ -1,14 +1,13 @@
 # Copyright 2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-"""Interface implementing `OCIProjectSeries`."""
+"""Interfaces to allow bug filing on multiple versions of an OCI Project."""
 
 from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 __all__ = [
     'IOCIProjectSeries',
-    'IOCIProjectSeriesSet'
     ]
 
 from lazr.restful.fields import Reference
@@ -24,6 +23,7 @@ from lp import _
 from lp.app.validators.name import name_validator
 from lp.registry.interfaces.ociproject import IOCIProject
 from lp.registry.interfaces.person import IPerson
+from lp.services.fields import PublicPersonChoice
 
 
 class IOCIProjectSeries(Interface):
@@ -35,7 +35,7 @@ class IOCIProjectSeries(Interface):
 
     ociproject = Reference(
         IOCIProject,
-        title=_("The target that this series belongs to."),
+        title=_("The OCI project that this series belongs to."),
         required=True)
 
     name = TextLine(
@@ -48,14 +48,14 @@ class IOCIProjectSeries(Interface):
         description=_("A brief summary of this series."))
 
     date_created = Datetime(
-        title=_("Date created"), required=True,
-        description=_("The date on which this series was created in Launchpad."))
+        title=_("Date created"), required=True, readonly=True,
+        description=_(
+            "The date on which this series was created in Launchpad."))
 
-    registrant = Reference(
-        IPerson,
-        title=_("The person that registered this series."),
-        required=True,
-        readonly=True)
+    registrant = PublicPersonChoice(
+        title=_("Registrant"),
+        description=_("The person that registered this series."),
+        vocabulary='ValidPersonOrTeam', required=True, readonly=True)
 
     status = Int(
         title=_("Status"), required=True, readonly=False,
