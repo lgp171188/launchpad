@@ -13,6 +13,7 @@ from lp.registry.interfaces.ociprojectseries import (
     IOCIProjectSeries,
     IOCIProjectSeriesSet,
     )
+from lp.registry.interfaces.series import SeriesStatus
 from lp.registry.model.ociprojectseries import OCIProjectSeries
 from lp.testing import TestCaseWithFactory
 from lp.testing.layers import DatabaseFunctionalLayer
@@ -28,20 +29,20 @@ class TestOCIProjectSeries(TestCaseWithFactory):
         summary = 'test_summary'
         registrant = self.factory.makePerson()
         status = 2
-        target_series = OCIProjectSeries(
+        project_series = OCIProjectSeries(
             oci_project, name, summary, registrant, status)
-        self.assertProvides(target_series, IOCIProjectSeries)
+        self.assertProvides(project_series, IOCIProjectSeries)
 
     def test_init(self):
         name = 'test-name'
         oci_project = self.factory.makeOCIProject()
         summary = 'test_summary'
         registrant = self.factory.makePerson()
-        status = 2
-        target_series = OCIProjectSeries(
+        status = SeriesStatus.DEVELOPMENT
+        project_series = OCIProjectSeries(
             oci_project, name, summary, registrant, status)
-        self.assertEqual(oci_project, target_series.ociproject)
-        self.assertEqual(name, target_series.name)
-        self.assertEqual(summary, target_series.summary)
-        self.assertEqual(registrant, target_series.registrant)
-        self.assertEqual(status, target_series.status)
+        self.assertEqual(oci_project, project_series.ociproject)
+        self.assertEqual(name, project_series.name)
+        self.assertEqual(summary, project_series.summary)
+        self.assertEqual(registrant, project_series.registrant)
+        self.assertEqual(status, project_series.status)
