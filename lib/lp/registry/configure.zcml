@@ -765,19 +765,6 @@
             interface="lp.registry.interfaces.ociprojectseries.IOCIProjectSeries"/>
     </class>
 
-    <!-- OCIProjectSeriesSet -->
-    <securedutility
-        class="lp.registry.model.ociprojectseries.OCIProjectSeriesSet"
-        provides="lp.registry.interfaces.ociprojectseries.IOCIProjectSeriesSet">
-        <allow
-            interface="lp.registry.interfaces.ociprojectseries.IOCIProjectSeriesSet"/>
-    </securedutility>
-    <class
-        class="lp.registry.model.ociprojectseries.OCIProjectSeriesSet">
-        <allow
-            interface="lp.registry.interfaces.ociprojectseries.IOCIProjectSeriesSet"/>
-    </class>
-
     <!-- SourcePackageName -->
 
     <class

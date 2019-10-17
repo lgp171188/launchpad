@@ -21,10 +21,7 @@ from zope.interface import implementer
 
 from lp.app.validators.name import valid_name
 from lp.registry.errors import InvalidName
-from lp.registry.interfaces.ociprojectseries import (
-    IOCIProjectSeries,
-    IOCIProjectSeriesSet,
-    )
+from lp.registry.interfaces.ociprojectseries import IOCIProjectSeries
 from lp.services.database.constants import DEFAULT
 from lp.services.database.interfaces import IMasterStore
 from lp.services.database.stormbase import StormBase
@@ -63,18 +60,3 @@ class OCIProjectSeries(StormBase):
         self.summary = summary
         self.registrant = registrant
         self.status = status
-
-
-@implementer(IOCIProjectSeriesSet)
-class OCIProjectSeriesSet:
-    """See `IOCIProjectSeriesSet`."""
-
-    def new(self, ociproject, name, summary, registrant, status,
-            date_created=DEFAULT):
-        """See `IOCIProjectSeriesSet`."""
-        store = IMasterStore(OCIProjectSeries)
-        target_series = OCIProjectSeries(
-            ociproject, name, summary, registrant, status,
-            date_created=date_created)
-        store.add(target_series)
-        return target_series

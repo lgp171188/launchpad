@@ -60,11 +60,3 @@ class IOCIProjectSeries(Interface):
     status = Int(
         title=_("Status"), required=True, readonly=False,
         description=_("The current status of this series."))
-
-
-
-class IOCIProjectSeriesSet(Interface):
-    """A set of OCIProjectSeries."""
-
-    def new(ociproject, name, summary, registrant, status, date_created):
-        """Create a new `OCIProjectSeries`."""
