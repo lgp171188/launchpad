@@ -743,6 +743,7 @@
                        lp.registry.interfaces.ociproject.IOCIProjectEditableAttributes"/>
         <require
             permission="launchpad.Edit"
+            interface="lp.registry.interfaces.ociproject.IOCIProjectEdit"
             set_schema="lp.registry.interfaces.ociproject.IOCIProjectEditableAttributes" />
     </class>
     <securedutility

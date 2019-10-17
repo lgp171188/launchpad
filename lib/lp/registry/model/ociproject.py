@@ -28,6 +28,8 @@ from lp.registry.interfaces.ociproject import (
     IOCIProjectSet,
     )
 from lp.registry.model.ociprojectname import OCIProjectName
+from lp.registry.model.ociprojectseries import OCIProjectSeries
+from lp.registry.interfaces.series import SeriesStatus
 from lp.services.database.constants import DEFAULT
 from lp.services.database.interfaces import (
     IMasterStore,
@@ -80,6 +82,17 @@ class OCIProject(BugTargetBase, StormBase):
         """See `IBugTarget`."""
         return "OCI project %s for %s" % (
             self.ociprojectname.name, self.pillar.name)
+
+    def newSeries(self, name, summary, registrant,
+                  status=SeriesStatus.DEVELOPMENT, date_created=DEFAULT):
+        series = OCIProjectSeries(
+            ociproject=self,
+            name=name,
+            summary=summary,
+            registrant=registrant,
+            status=status,
+        )
+        return series
 
 
 @implementer(IOCIProjectSet)

@@ -9,10 +9,7 @@ __metaclass__ = type
 
 from zope.component import getUtility
 
-from lp.registry.interfaces.ociprojectseries import (
-    IOCIProjectSeries,
-    IOCIProjectSeriesSet,
-    )
+from lp.registry.interfaces.ociprojectseries import IOCIProjectSeries
 from lp.registry.interfaces.series import SeriesStatus
 from lp.registry.model.ociprojectseries import OCIProjectSeries
 from lp.testing import TestCaseWithFactory
@@ -28,7 +25,7 @@ class TestOCIProjectSeries(TestCaseWithFactory):
         oci_project = self.factory.makeOCIProject()
         summary = 'test_summary'
         registrant = self.factory.makePerson()
-        status = 2
+        status = SeriesStatus.DEVELOPMENT
         project_series = OCIProjectSeries(
             oci_project, name, summary, registrant, status)
         self.assertProvides(project_series, IOCIProjectSeries)

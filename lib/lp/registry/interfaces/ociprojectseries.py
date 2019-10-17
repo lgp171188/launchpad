@@ -13,6 +13,7 @@ __all__ = [
 from lazr.restful.fields import Reference
 from zope.interface import Interface
 from zope.schema import (
+    Choice,
     Datetime,
     Int,
     Text,
@@ -23,6 +24,7 @@ from lp import _
 from lp.app.validators.name import name_validator
 from lp.registry.interfaces.ociproject import IOCIProject
 from lp.registry.interfaces.person import IPerson
+from lp.registry.interfaces.series import SeriesStatus
 from lp.services.fields import PublicPersonChoice
 
 
@@ -57,6 +59,6 @@ class IOCIProjectSeries(Interface):
         description=_("The person that registered this series."),
         vocabulary='ValidPersonOrTeam', required=True, readonly=True)
 
-    status = Int(
-        title=_("Status"), required=True, readonly=False,
-        description=_("The current status of this series."))
+    status = Choice(
+            title=_("Status"), required=True,
+            vocabulary=SeriesStatus)

@@ -22,7 +22,9 @@ from zope.interface import implementer
 from lp.app.validators.name import valid_name
 from lp.registry.errors import InvalidName
 from lp.registry.interfaces.ociprojectseries import IOCIProjectSeries
+from lp.registry.interfaces.series import SeriesStatus
 from lp.services.database.constants import DEFAULT
+from lp.services.database.enumcol import EnumCol
 from lp.services.database.interfaces import IMasterStore
 from lp.services.database.stormbase import StormBase
 
@@ -48,7 +50,8 @@ class OCIProjectSeries(StormBase):
     registrant_id = Int(name='registrant', allow_none=False)
     registrant = Reference(registrant_id, "Person.id")
 
-    status = Int(default=2)
+    status = EnumCol(
+        dbName='releasestatus', notNull=True, schema=SeriesStatus)
 
     def __init__(self, ociproject, name, summary,
                  registrant, status, date_created=DEFAULT):

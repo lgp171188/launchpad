@@ -30,7 +30,9 @@ from lp import _
 from lp.bugs.interfaces.bugtarget import IBugTarget
 from lp.registry.interfaces.distribution import IDistribution
 from lp.registry.interfaces.ociprojectname import IOCIProjectName
+from lp.registry.interfaces.series import SeriesStatus
 from lp.registry.interfaces.role import IHasOwner
+from lp.services.database.constants import DEFAULT
 from lp.services.fields import PublicPersonChoice
 
 
@@ -70,7 +72,15 @@ class IOCIProjectEditableAttributes(IBugTarget):
         title=_("The pillar containing this target."), readonly=True))
 
 
-class IOCIProject(IOCIProjectView,
+class IOCIProjectEdit(Interface):
+    """IOCIProject attributes that require launchpad.Edit permission"""
+
+    def newSeries(name, summary, registrant,
+                  status=SeriesStatus.DEVELOPMENT, date_created=DEFAULT):
+        """Creates a new `IOCIProjectSeries`."""
+
+
+class IOCIProject(IOCIProjectView, IOCIProjectEdit,
                        IOCIProjectEditableAttributes):
     """A project containing Open Container Initiative recipes."""
 

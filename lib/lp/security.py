@@ -136,6 +136,7 @@ from lp.registry.interfaces.nameblacklist import (
     INameBlacklist,
     INameBlacklistSet,
     )
+from lp.registry.interfaces.ociproject import IOCIProject
 from lp.registry.interfaces.packaging import IPackaging
 from lp.registry.interfaces.person import (
     IPerson,
@@ -3430,3 +3431,13 @@ class EditSnapBase(EditByRegistryExpertsOrAdmins):
 
 class EditSnapBaseSet(EditByRegistryExpertsOrAdmins):
     usedfor = ISnapBaseSet
+
+
+class EditOCIProject(AuthorizationBase):
+    permission = 'launchpad.Edit'
+    usedfor = IOCIProject
+
+    def checkAuthenticated(self, user):
+        """Maintainers, drivers, and admins can drive projects."""
+        return (user.in_admin or
+                user.isDriver(self.obj.pillar))

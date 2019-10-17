@@ -13,6 +13,7 @@ from lp.registry.interfaces.ociproject import (
     IOCIProject,
     IOCIProjectSet,
     )
+from lp.registry.interfaces.ociprojectseries import IOCIProjectSeries
 from lp.testing import (
     admin_logged_in,
     person_logged_in,
@@ -29,6 +30,19 @@ class TestOCIProject(TestCaseWithFactory):
         oci_project = self.factory.makeOCIProject()
         with admin_logged_in():
             self.assertProvides(oci_project, IOCIProject)
+
+    def test_newSeries(self):
+        driver = self.factory.makePerson()
+        distribution = self.factory.makeDistribution(driver=driver)
+        registrant = self.factory.makePerson()
+        oci_project = self.factory.makeOCIProject(pillar=distribution)
+        with person_logged_in(driver):
+            series = oci_project.newSeries(
+                'test-series',
+                'test-summary',
+                registrant
+            )
+            self.assertProvides(series, IOCIProjectSeries)
 
 
 class TestOCIProjectSet(TestCaseWithFactory):
