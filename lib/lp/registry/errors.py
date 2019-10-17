@@ -22,6 +22,7 @@ __all__ = [
     'NameAlreadyTaken',
     'NoSuchAccount',
     'NoSuchDistroSeries',
+    'NoSuchOCIProjectName',
     'NoSuchSourcePackageName',
     'NotPlaceholderAccount',
     'InclusiveTeamLinkageError',
@@ -108,6 +109,11 @@ class ProprietaryProduct(Exception):
 class NoSuchSourcePackageName(NameLookupFailed):
     """Raised when we can't find a particular sourcepackagename."""
     _message_prefix = "No such source package"
+
+
+class NoSuchOCIProjectName(NameLookupFailed):
+    """Raised when we can't find a particular OCIProjectName."""
+    _message_prefix = "No such OCI Project"
 
 
 @error_status(httplib.BAD_REQUEST)
