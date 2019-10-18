@@ -126,6 +126,15 @@ def filter_warnings():
          r'Use \"message.getOpenIDNamespace\(\)\" instead'),
         DeprecationWarning
     )
+    # XXX cjwatson 2019-10-18: This can be dropped once the port to Breezy
+    # is complete.
+    warnings.filterwarnings(
+        'ignore',
+        re.escape(
+            'RefsContainer._follow is deprecated. '
+            'Use RefsContainer.follow instead.'),
+        DeprecationWarning, r'dulwich\.refs',
+        )
     # This warning will be triggered if the beforeTraversal hook fails. We
     # want to ensure it is not raised as an error, as this will mask the
     # real problem.
