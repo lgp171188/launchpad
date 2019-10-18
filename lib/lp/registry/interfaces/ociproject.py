@@ -15,7 +15,10 @@ from lazr.restful.declarations import (
     export_as_webservice_entry,
     exported,
     )
-from lazr.restful.fields import Reference
+from lazr.restful.fields import (
+    CollectionField,
+    Reference,
+    )
 from zope.interface import (
     Attribute,
     Interface,
@@ -49,6 +52,11 @@ class IOCIProjectView(Interface):
         title=_("Registrant"),
         description=_("The person that registered this project."),
         vocabulary='ValidPersonOrTeam', required=True, readonly=True))
+
+    series = exported(CollectionField(
+            title=_("Series inside this OCI project."),
+            # Really IOCIProjectSeries, see _schema_circular_imports.py.
+            value_type=Reference(schema=Interface)))
 
 
 class IOCIProjectEditableAttributes(IBugTarget):

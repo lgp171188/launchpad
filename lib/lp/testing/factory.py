@@ -4922,6 +4922,19 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             bug_reported_acknowledgement=bug_reported_acknowledgement,
             bugfiling_duplicate_search=bugfiling_duplicate_search)
 
+    def makeOCIProjectSeries(self, name=None, summary=None, registrant=None,
+                             oci_project=None):
+        """Make a new OCIProjectSeries attached to an OCIProject."""
+        if name is None:
+            name = self.getUniqueString(u"oci-project-series-name")
+        if summary is None:
+            summary = self.getUniqueString(u"oci-project-series-summary")
+        if registrant is None:
+            registrant = self.makePerson()
+        if oci_project is None:
+            oci_project = self.makeOCIProject()
+        return oci_project.newSeries(name, summary, registrant)
+
 
 # Some factory methods return simple Python types. We don't add
 # security wrappers for them, as well as for objects created by

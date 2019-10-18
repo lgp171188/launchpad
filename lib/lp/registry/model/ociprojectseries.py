@@ -51,7 +51,7 @@ class OCIProjectSeries(StormBase):
     registrant = Reference(registrant_id, "Person.id")
 
     status = EnumCol(
-        dbName='releasestatus', notNull=True, schema=SeriesStatus)
+        dbName='status', notNull=True, schema=SeriesStatus)
 
     def __init__(self, ociproject, name, summary,
                  registrant, status, date_created=DEFAULT):

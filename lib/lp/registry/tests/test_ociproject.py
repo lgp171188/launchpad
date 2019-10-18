@@ -44,6 +44,19 @@ class TestOCIProject(TestCaseWithFactory):
             )
             self.assertProvides(series, IOCIProjectSeries)
 
+    def test_series(self):
+        driver = self.factory.makePerson()
+        distribution = self.factory.makeDistribution(driver=driver)
+        first_oci_project = self.factory.makeOCIProject(pillar=distribution)
+        second_oci_project = self.factory.makeOCIProject(pillar=distribution)
+        with person_logged_in(driver):
+            first_series = self.factory.makeOCIProjectSeries(
+                oci_project=first_oci_project)
+            second_series = self.factory.makeOCIProjectSeries(
+                oci_project=second_oci_project)
+            self.assertEqual(1, first_oci_project.series.count())
+            self.assertEqual(first_series, first_oci_project.series[0])
+
 
 class TestOCIProjectSet(TestCaseWithFactory):
 

@@ -85,6 +85,7 @@ class OCIProject(BugTargetBase, StormBase):
 
     def newSeries(self, name, summary, registrant,
                   status=SeriesStatus.DEVELOPMENT, date_created=DEFAULT):
+        """See `IOCIProject`."""
         series = OCIProjectSeries(
             ociproject=self,
             name=name,
@@ -93,6 +94,16 @@ class OCIProject(BugTargetBase, StormBase):
             status=status,
         )
         return series
+
+    @property
+    def series(self):
+        """See `IOCIProject`."""
+        ret = IStore(OCIProjectSeries).find(
+            OCIProjectSeries,
+            OCIProjectSeries.ociproject == self
+            ).order_by(OCIProjectSeries.date_created)
+        return ret
+
 
 
 @implementer(IOCIProjectSet)
