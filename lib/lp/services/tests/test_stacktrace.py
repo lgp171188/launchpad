@@ -1,12 +1,14 @@
-# Copyright 2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2011-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test the stacktrace module."""
 
 __metaclass__ = type
 
-import StringIO
 import sys
+
+from fixtures import MonkeyPatch
+import six
 
 from lp.services import stacktrace
 from lp.testing import TestCase
@@ -14,7 +16,7 @@ from lp.testing.layers import BaseLayer
 
 # This constant must always be equal to the line number on which it lives for
 # the tests to pass.
-MY_LINE_NUMBER = 17
+MY_LINE_NUMBER = 19
 
 MY_FILE_NAME = __file__[:__file__.rindex('.py')] + '.py'
 
@@ -148,17 +150,16 @@ class TestStacktrace(TestCase):
     def test_get_frame_data_supplement_bad_getInfo_with_traceback(self):
         def boo_hiss():
             raise ValueError()
-        original_stderr = sys.__stderr__
-        stderr = sys.stderr = StringIO.StringIO()
+        stderr = six.StringIO()
         self.assertFalse(stacktrace.DEBUG_EXCEPTION_FORMATTER)
         stacktrace.DEBUG_EXCEPTION_FORMATTER = True
         try:
-            filename, lineno, name, line, modname, supplement, info = (
-                stacktrace._get_frame_data(
-                    get_frame(supplement=dict(getInfo=boo_hiss)),
-                    MY_LINE_NUMBER))
+            with MonkeyPatch('sys.stderr', stderr):
+                filename, lineno, name, line, modname, supplement, info = (
+                    stacktrace._get_frame_data(
+                        get_frame(supplement=dict(getInfo=boo_hiss)),
+                        MY_LINE_NUMBER))
         finally:
-            sys.stderr = original_stderr
             stacktrace.DEBUG_EXCEPTION_FORMATTER = False
         self.assertEqual(
             dict(source_url=None, line=None, column=None, expression=None,
@@ -276,50 +277,43 @@ class TestStacktrace(TestCase):
     def test_format_list_extra_errors(self):
         extracted = stacktrace.extract_stack(get_frame(supplement=dict()))
         extracted[-1][-2]['warnings'] = object()  # This should never happen.
-        original_stderr = sys.__stderr__
-        stderr = sys.stderr = StringIO.StringIO()
+        stderr = six.StringIO()
         self.assertFalse(stacktrace.DEBUG_EXCEPTION_FORMATTER)
         stacktrace.DEBUG_EXCEPTION_FORMATTER = True
         try:
-            formatted = stacktrace.format_list(extracted)
+            with MonkeyPatch('sys.stderr', stderr):
+                formatted = stacktrace.format_list(extracted)
         finally:
-            sys.stderr = original_stderr
             stacktrace.DEBUG_EXCEPTION_FORMATTER = False
         self.assertStartsWith(stderr.getvalue(), 'Traceback (most recent')
         self.assertEndsWith(formatted[-1], '    return sys._getframe()\n')
 
     def test_print_list_default(self):
         extracted = stacktrace.extract_stack(get_frame())
-        original_stderr = sys.__stderr__
-        stderr = sys.stderr = StringIO.StringIO()
-        try:
+        stderr = six.StringIO()
+        with MonkeyPatch('sys.stderr', stderr):
             stacktrace.print_list(extracted)
-        finally:
-            sys.stderr = original_stderr
         self.assertEndsWith(stderr.getvalue(), 'return sys._getframe()\n')
 
     def test_print_list_file(self):
         extracted = stacktrace.extract_stack(get_frame())
-        f = StringIO.StringIO()
+        f = six.StringIO()
         stacktrace.print_list(extracted, file=f)
         self.assertEndsWith(f.getvalue(), 'return sys._getframe()\n')
 
     def test_print_stack_default(self):
-        original_stderr = sys.__stderr__
-        stderr = sys.stderr = StringIO.StringIO()
-        try:
+        stderr = six.StringIO()
+        with MonkeyPatch('sys.stderr', stderr):
             stacktrace.print_stack()
-        finally:
-            sys.stderr = original_stderr
         self.assertEndsWith(stderr.getvalue(), 'stacktrace.print_stack()\n')
 
     def test_print_stack_options(self):
-        f = StringIO.StringIO()
+        f = six.StringIO()
         frame = get_frame()
         stacktrace.print_stack(f=frame, limit=100, file=f)
         self.assertEndsWith(f.getvalue(), 'return sys._getframe()\n')
         self.assertTrue(len(f.getvalue().split('\n')) > 4)
-        f = StringIO.StringIO()
+        f = six.StringIO()
         stacktrace.print_stack(f=frame, limit=2, file=f)
         self.assertEqual(4, len(f.getvalue().strip().split('\n')))
         self.assertEndsWith(f.getvalue(), 'return sys._getframe()\n')
