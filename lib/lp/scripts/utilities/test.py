@@ -13,6 +13,7 @@
 ##############################################################################
 """Test script."""
 
+import argparse
 import doctest
 import os
 import random
@@ -23,8 +24,9 @@ import time
 import warnings
 
 import six
-from zope.testing import testrunner
-from zope.testing.testrunner import options
+from zope.testrunner import options
+from zope.testrunner.feature import Feature
+from zope.testrunner.runner import Runner
 
 from lp.scripts.utilities import (
     importpedant,
@@ -63,9 +65,6 @@ def configure_environment():
     # Install the import pedant import hook and atexit handler.
     importpedant.install_import_pedant()
 
-    # Install the warning handler hook and atexit handler.
-    warninghandler.install_warning_handler()
-
     # Ensure that atexit handlers are executed on TERM.
     def exit_with_atexit_handlers(*ignored):
         sys.exit(-1 * signal.SIGTERM)
@@ -101,9 +100,6 @@ def filter_warnings():
         )
     warnings.filterwarnings(
         'ignore', 'twisted.python.plugin', DeprecationWarning,
-        )
-    warnings.filterwarnings(
-        'ignore', 'zope.testing.doctest', DeprecationWarning,
         )
     warnings.filterwarnings(
         'ignore', 'bzrlib.*was deprecated', DeprecationWarning,
@@ -150,6 +146,19 @@ def filter_warnings():
     warnings.filterwarnings('error', r'shortlist\(\)')
 
 
+class LaunchpadWarnings(Feature):
+    """Install Launchpad's warning handler and filters."""
+
+    active = True
+
+    def global_setup(self):
+        warnings.showwarning = warninghandler.launchpad_showwarning
+        filter_warnings()
+
+    def global_teardown(self):
+        warninghandler.report_warnings()
+
+
 def install_fake_pgsql_connect():
     from lp.testing import pgsql
     # If this is removed, make sure lp.testing.pgsql is updated
@@ -186,6 +195,13 @@ defaults = {
     }
 
 
+class LaunchpadRunner(Runner):
+
+    def configure(self):
+        super(LaunchpadRunner, self).configure()
+        self.features.insert(0, LaunchpadWarnings(self))
+
+
 def main():
     # The working directory change is just so that the test script
     # can be invoked from places other than the root of the source
@@ -196,7 +212,6 @@ def main():
 
     fix_doctest_output()
     configure_environment()
-    filter_warnings()
     install_fake_pgsql_connect()
     randomise_listdir()
 
@@ -232,43 +247,46 @@ def main():
         from lp.services.testing.parallel import main
         sys.exit(main(sys.argv))
 
-    def load_list(option, opt_str, list_name, parser):
-        patch_find_tests(filter_tests(list_name, '--shuffle' in sys.argv))
-    options.parser.add_option(
-        '--load-list', type=str, action='callback', callback=load_list)
-    options.parser.add_option(
+    class LoadListAction(argparse.Action):
+        def __call__(self, parser, namespace, values, option_string=None):
+            patch_find_tests(filter_tests(values, '--shuffle' in sys.argv))
+
+    options.parser.add_argument(
+        '--load-list', type=str, action=LoadListAction)
+    options.parser.add_argument(
         '--parallel', action='store_true',
         help='Run tests in parallel processes. '
             'Poorly isolated tests will break.')
 
     # tests_pattern is a regexp, so the parsed value is hard to compare
     # with the default value in the loop below.
-    options.parser.defaults['tests_pattern'] = defaults['tests_pattern']
+    options.parser.set_defaults(tests_pattern=defaults['tests_pattern'])
     local_options = options.get_options(args=args)
     # Set our default options, if the options aren't specified.
     for name, value in defaults.items():
         parsed_option = getattr(local_options, name)
-        if ((parsed_option == []) or
-            (parsed_option == options.parser.defaults.get(name))):
+        if (parsed_option == [] or
+                parsed_option == options.parser.get_default(name)):
             # The option probably wasn't specified on the command line,
             # let's replace it with our default value. It could be that
-            # the real default (as specified in
-            # zope.testing.testrunner.options) was specified, and we
-            # shouldn't replace it with our default, but it's such and
-            # edge case, so we don't have to care about it.
-            options.parser.defaults[name] = value
+            # the real default (as specified in zope.testrunner.options)
+            # was specified, and we shouldn't replace it with our
+            # default, but it's such an edge case, so we don't have to
+            # care about it.
+            options.parser.set_defaults(**{name: value})
 
     # Turn on Layer profiling if requested.
     if local_options.verbose >= 3 and main_process:
         profiled.setup_profiling()
 
     try:
-        try:
-            testrunner.run([])
-        except SystemExit:
-            # Print Layer profiling report if requested.
-            if main_process and local_options.verbose >= 3:
-                profiled.report_profile_stats()
-            raise
+        script_parts = [os.path.abspath(sys.argv[0])]
+        runner = LaunchpadRunner(
+            [], script_parts=script_parts, cwd=os.getcwd())
+        runner.run()
+        # Print Layer profiling report if requested.
+        if main_process and local_options.verbose >= 3:
+            profiled.report_profile_stats()
+        return int(runner.failed)
     finally:
         os.chdir(there)

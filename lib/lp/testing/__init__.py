@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 from __future__ import absolute_import, print_function
@@ -124,7 +124,7 @@ from zope.security.proxy import (
     isinstance as zope_isinstance,
     removeSecurityProxy,
     )
-from zope.testing.testrunner.runner import TestResult as ZopeTestResult
+from zope.testrunner.runner import TestResult as ZopeTestResult
 
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.app.interfaces.security import IAuthorization
@@ -243,8 +243,8 @@ def reset_logging():
     logging._handlers.clear()
 
     # Reset the setup
-    from zope.testing.testrunner.runner import Runner
-    from zope.testing.testrunner.logsupport import Logging
+    from zope.testrunner.runner import Runner
+    from zope.testrunner.logsupport import Logging
     Logging(Runner()).global_setup()
     lp_sitecustomize.customize_logger()
 

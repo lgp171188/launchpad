@@ -1,4 +1,4 @@
-# Copyright 2009 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -6,7 +6,7 @@ __metaclass__ = type
 from doctest import DocTestSuite
 import re
 
-from zope.testing.renormalizing import RENormalizing
+from zope.testing.renormalizing import OutputChecker
 
 from lp.testing.layers import LaunchpadFunctionalLayer
 
@@ -112,7 +112,7 @@ def test_simple_sendmail():
 
 
 def test_suite():
-    suite = DocTestSuite(checker=RENormalizing([
+    suite = DocTestSuite(checker=OutputChecker([
         (re.compile(r"'revision', '[0-9a-f]+'"),
          "'revision', '%s'" % ('0' * 40))]))
     suite.layer = LaunchpadFunctionalLayer

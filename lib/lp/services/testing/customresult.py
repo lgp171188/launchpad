@@ -1,4 +1,4 @@
-# Copyright 2009-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Support code for using a custom test result in test.py."""
@@ -11,11 +11,11 @@ __all__ = [
 
 from unittest import TestSuite
 
-from zope.testing.testrunner import find
+from zope.testrunner import find
 
 
 def patch_find_tests(hook):
-    """Add a post-processing hook to zope.testing.testrunner.find_tests.
+    """Add a post-processing hook to zope.testrunner.find_tests.
 
     This is useful for things like filtering tests or listing tests.
 

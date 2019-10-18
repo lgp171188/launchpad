@@ -7,7 +7,6 @@ from __future__ import print_function
 
 __metaclass__ = type
 
-import atexit
 import inspect
 import StringIO
 import sys
@@ -221,8 +220,3 @@ def report_warnings():
     report_need_page_titles()
     report_no_order_by()
     report_other_warnings()
-
-
-def install_warning_handler():
-    warnings.showwarning = launchpad_showwarning
-    atexit.register(report_warnings)
