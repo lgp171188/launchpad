@@ -734,6 +734,30 @@
             interface="lp.registry.interfaces.ociprojectname.IOCIProjectNameSet"/>
     </class>
 
+    <!-- OCIProject -->
+    <class
+        class="lp.registry.model.ociproject.OCIProject">
+        <require
+            permission="launchpad.View"
+            interface="lp.registry.interfaces.ociproject.IOCIProjectView
+                       lp.registry.interfaces.ociproject.IOCIProjectEditableAttributes"/>
+        <require
+            permission="launchpad.Edit"
+            set_schema="lp.registry.interfaces.ociproject.IOCIProjectEditableAttributes" />
+    </class>
+    <securedutility
+        class="lp.registry.model.ociproject.OCIProject"
+        provides="lp.registry.interfaces.ociproject.IOCIProject">
+        <allow
+            interface="lp.registry.interfaces.ociproject.IOCIProject"/>
+    </securedutility>
+    <securedutility
+        class="lp.registry.model.ociproject.OCIProjectSet"
+        provides="lp.registry.interfaces.ociproject.IOCIProjectSet">
+        <allow
+            interface="lp.registry.interfaces.ociproject.IOCIProjectSet"/>
+    </securedutility>
+
     <!-- SourcePackageName -->
 
     <class

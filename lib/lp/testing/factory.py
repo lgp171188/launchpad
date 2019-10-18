@@ -200,6 +200,7 @@ from lp.registry.interfaces.mailinglist import (
 from lp.registry.interfaces.mailinglistsubscription import (
     MailingListAutoSubscribePolicy,
     )
+from lp.registry.interfaces.ociproject import IOCIProjectSet
 from lp.registry.interfaces.ociprojectname import IOCIProjectNameSet
 from lp.registry.interfaces.packaging import (
     IPackagingUtil,
@@ -4901,6 +4902,25 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         if name is None:
             name = self.getUniqueString(u"oci-project-name")
         return getUtility(IOCIProjectNameSet).new(name)
+
+    def makeOCIProject(self, registrant=None, pillar=None,
+                            ociprojectname=None, date_created=DEFAULT,
+                            description=None, bug_reporting_guidelines=None,
+                            bug_reported_acknowledgement=None,
+                            bugfiling_duplicate_search=False):
+        """Make a new OCIProject."""
+        if registrant is None:
+            registrant = self.makePerson()
+        if pillar is None:
+            pillar = self.makeDistribution()
+        if ociprojectname is None or isinstance(ociprojectname, six.text_type):
+            ociprojectname = self.makeOCIProjectName(ociprojectname)
+        return getUtility(IOCIProjectSet).new(
+            registrant, pillar, ociprojectname, date_created=date_created,
+            description=description,
+            bug_reporting_guidelines=bug_reporting_guidelines,
+            bug_reported_acknowledgement=bug_reported_acknowledgement,
+            bugfiling_duplicate_search=bugfiling_duplicate_search)
 
 
 # Some factory methods return simple Python types. We don't add
