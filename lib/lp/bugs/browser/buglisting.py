@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """IBugTask-related browser views."""
@@ -21,10 +21,8 @@ __all__ = [
     'TextualBugTaskSearchListingView',
     ]
 
-import cgi
 import os.path
 import urllib
-import urlparse
 
 from lazr.delegates import delegate_to
 from lazr.restful.interfaces import IJSONRequestCache
@@ -32,6 +30,10 @@ from lazr.uri import URI
 import pystache
 from simplejson import dumps
 from simplejson.encoder import JSONEncoderForHTML
+from six.moves.urllib.parse import (
+    parse_qs,
+    parse_qsl,
+    )
 from z3c.pt.pagetemplate import ViewPageTemplateFile
 from zope.authentication.interfaces import IUnauthenticatedPrincipal
 from zope.component import (
@@ -231,7 +233,7 @@ def rewrite_old_bugtask_status_query_string(query_string):
     corrected query string for the search, else return the original
     query string.
     """
-    query_elements = cgi.parse_qsl(
+    query_elements = parse_qsl(
         query_string, keep_blank_values=True, strict_parsing=False)
     query_elements_mapped = []
 
@@ -766,7 +768,7 @@ class BugListingBatchNavigator(TableBatchNavigator):
         # field/value pairs.
         if cookie is None:
             return
-        for field, value in urlparse.parse_qsl(cookie):
+        for field, value in parse_qsl(cookie):
             # Skip unsupported fields (from old cookies).
             if field not in self.field_visibility:
                 continue
@@ -1129,7 +1131,7 @@ class BugTaskSearchListingView(LaunchpadFormView, FeedsMixin, BugsInfoMixin):
     @property
     def template(self):
         query_string = self.request.get('QUERY_STRING') or ''
-        query_params = urlparse.parse_qs(query_string)
+        query_params = parse_qs(query_string)
         if 'batch_request' in query_params:
             return self.bugtask_table_template
         else:

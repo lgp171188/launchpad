@@ -1,11 +1,12 @@
-# Copyright 2011-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2011-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
 
-import cgi
 import os
 import urlparse
+
+from six.moves.urllib.parse import parse_qsl
 
 from jsbuild import (
     CSSComboFile,
@@ -27,7 +28,7 @@ def parse_qs(query):
 
     Returns the list of arguments in the original order.
     """
-    params = cgi.parse_qsl(query, keep_blank_values=True)
+    params = parse_qsl(query, keep_blank_values=True)
     return tuple([param for param, value in params])
 
 

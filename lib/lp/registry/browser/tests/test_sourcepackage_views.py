@@ -1,13 +1,13 @@
-# Copyright 2010-2016 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for SourcePackage view code."""
 
 __metaclass__ = type
 
-import cgi
 import urllib
 
+from six.moves.urllib.parse import parse_qsl
 from soupmatchers import (
     HTMLContains,
     Tag,
@@ -61,7 +61,7 @@ class TestSourcePackageViewHelpers(TestCaseWithFactory):
 
     def assertInQueryString(self, url, field, value):
         base, query = urllib.splitquery(url)
-        params = cgi.parse_qsl(query)
+        params = parse_qsl(query)
         self.assertTrue((field, value) in params)
 
     def test_get_register_upstream_url_fields(self):
@@ -74,7 +74,7 @@ class TestSourcePackageViewHelpers(TestCaseWithFactory):
         url = get_register_upstream_url(source_package)
         base, query = urllib.splitquery(url)
         self.assertEqual('/projects/+new', base)
-        params = cgi.parse_qsl(query)
+        params = parse_qsl(query)
         expected_params = [
             ('_return_url',
              'http://launchpad.test/zoobuntu/walrus/'

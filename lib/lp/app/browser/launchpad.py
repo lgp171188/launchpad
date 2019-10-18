@@ -22,7 +22,6 @@ __all__ = [
     ]
 
 
-import cgi
 from datetime import timedelta
 import operator
 import os
@@ -30,6 +29,7 @@ import re
 import time
 import urllib
 
+from six.moves.urllib.parse import parse_qs
 from zope import i18n
 from zope.component import (
     getGlobalSiteManager,
@@ -631,7 +631,7 @@ class LoginStatus:
         # If we have a query string, remove some things we don't want, and
         # keep it around.
         if query_string:
-            query_dict = cgi.parse_qs(query_string, keep_blank_values=True)
+            query_dict = parse_qs(query_string, keep_blank_values=True)
             query_dict.pop('loggingout', None)
             query_string = urllib.urlencode(
                 sorted(query_dict.items()), doseq=True)
