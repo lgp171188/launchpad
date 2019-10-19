@@ -1,4 +1,4 @@
-# Copyright 2013-2017 Canonical Ltd.  This software is licensed under the
+# Copyright 2013-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Testing the mock Swift test fixture."""
@@ -68,7 +68,7 @@ class TestSwiftFixture(TestCase):
         self.assertEqual(
             'Authorization Failure. '
             'Authorization Failed: Forbidden (HTTP 403)',
-            exc.message)
+            str(exc))
 
     def test_put(self):
         client = self.swift_fixture.connect()
