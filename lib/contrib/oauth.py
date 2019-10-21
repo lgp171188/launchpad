@@ -1,10 +1,16 @@
-import cgi
-import urllib
-import time
-import random
-import urlparse
-import hmac
 import base64
+import hmac
+import random
+import time
+
+from six.moves.urllib.parse import (
+    parse_qs,
+    quote,
+    unquote,
+    urlencode,
+    urlparse,
+    )
+
 
 VERSION = '1.0' # Hi Blaine!
 HTTP_METHOD = 'GET'
@@ -22,7 +28,7 @@ def build_authenticate_header(realm=''):
 # url escape
 def escape(s):
     # escape '/' too
-    return urllib.quote(s, safe='~')
+    return quote(s, safe='~')
 
 # util function: current timestamp
 # seconds since epoch (UTC)
@@ -60,13 +66,13 @@ class OAuthToken(object):
         self.secret = secret
 
     def to_string(self):
-        return urllib.urlencode({'oauth_token': self.key, 'oauth_token_secret': self.secret})
+        return urlencode({'oauth_token': self.key, 'oauth_token_secret': self.secret})
 
     # return a token from something like:
     # oauth_token_secret=digg&oauth_token=digg
     @staticmethod   
     def from_string(s):
-        params = cgi.parse_qs(s, keep_blank_values=False)
+        params = parse_qs(s, keep_blank_values=False)
         key = params['oauth_token'][0]
         secret = params['oauth_token_secret'][0]
         return OAuthToken(key, secret)
@@ -155,7 +161,7 @@ class OAuthRequest(object):
 
     # parses the url and rebuilds it to be scheme://host/path
     def get_normalized_http_url(self):
-        parts = urlparse.urlparse(self.http_url)
+        parts = urlparse(self.http_url)
         url_string = '%s://%s%s' % (parts[0], parts[1], parts[2]) # scheme, netloc, path
         return url_string
         
@@ -197,7 +203,7 @@ class OAuthRequest(object):
 
         # from the url string
         elif http_method == 'GET':
-            param_str = urlparse.urlparse(http_url).query
+            param_str = urlparse(http_url).query
             parameters = OAuthRequest._split_url_string(param_str)
 
         if parameters:
@@ -256,15 +262,15 @@ class OAuthRequest(object):
                 # section 3.4.1.3.1.
                 continue
             # remove quotes and unescape the value
-            params[param_parts[0]] = urllib.unquote(param_parts[1].strip('\"'))
+            params[param_parts[0]] = unquote(param_parts[1].strip('\"'))
         return params
     
     # util function: turn url string into parameters, has to do some unescaping
     @staticmethod
     def _split_url_string(param_str):
-        parameters = cgi.parse_qs(param_str, keep_blank_values=False)
+        parameters = parse_qs(param_str, keep_blank_values=False)
         for k, v in parameters.iteritems():
-            parameters[k] = urllib.unquote(v[0])
+            parameters[k] = unquote(v[0])
         return parameters
 
 # OAuthServer is a worker to check a requests validity against a data store

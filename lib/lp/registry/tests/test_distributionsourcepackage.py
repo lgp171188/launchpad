@@ -1,4 +1,4 @@
-# Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for DistributionSourcePackage."""
@@ -298,7 +298,7 @@ class TestDistributionSourcePackageInDatabase(TestCaseWithFactory):
         DistributionSourcePackageInDatabase._cache["Frank"] = "Sinatra"
         transaction.abort()
         self.assertEqual(
-            {}, DistributionSourcePackageInDatabase._cache.items())
+            {}, DistributionSourcePackageInDatabase._cache.as_dict())
 
     def test_mapping_cache_cleared_on_commit(self):
         # DistributionSourcePackageInDatabase._cache is cleared when a
@@ -306,7 +306,7 @@ class TestDistributionSourcePackageInDatabase(TestCaseWithFactory):
         DistributionSourcePackageInDatabase._cache["Frank"] = "Sinatra"
         transaction.commit()
         self.assertEqual(
-            {}, DistributionSourcePackageInDatabase._cache.items())
+            {}, DistributionSourcePackageInDatabase._cache.as_dict())
 
     def test_new(self):
         # DistributionSourcePackageInDatabase.new() creates a new DSP, adds it
@@ -318,7 +318,7 @@ class TestDistributionSourcePackageInDatabase(TestCaseWithFactory):
         self.assertIs(Store.of(distribution), Store.of(dsp))
         self.assertEqual(
             {(distribution.id, sourcepackagename.id): dsp.id},
-            DistributionSourcePackageInDatabase._cache.items())
+            DistributionSourcePackageInDatabase._cache.as_dict())
 
     def test_getDirect_not_found(self):
         # DistributionSourcePackageInDatabase.getDirect() returns None if a
@@ -333,7 +333,7 @@ class TestDistributionSourcePackageInDatabase(TestCaseWithFactory):
             self.assertIs(None, dsp)
         self.assertThat(recorder, HasQueryCount(Equals(1)))
         self.assertEqual(
-            {}, DistributionSourcePackageInDatabase._cache.items())
+            {}, DistributionSourcePackageInDatabase._cache.as_dict())
 
     def test_getDirect_found(self):
         # DistributionSourcePackageInDatabase.getDirect() returns the
@@ -351,7 +351,7 @@ class TestDistributionSourcePackageInDatabase(TestCaseWithFactory):
         self.assertThat(recorder, HasQueryCount(Equals(1)))
         self.assertEqual(
             {(distribution.id, sourcepackagename.id): dsp.id},
-            DistributionSourcePackageInDatabase._cache.items())
+            DistributionSourcePackageInDatabase._cache.as_dict())
 
     def test_get_not_cached_and_not_found(self):
         # DistributionSourcePackageInDatabase.get() returns None if a DSP does
@@ -366,7 +366,7 @@ class TestDistributionSourcePackageInDatabase(TestCaseWithFactory):
             self.assertIs(None, dsp)
         self.assertThat(recorder, HasQueryCount(Equals(1)))
         self.assertEqual(
-            {}, DistributionSourcePackageInDatabase._cache.items())
+            {}, DistributionSourcePackageInDatabase._cache.as_dict())
 
     def test_get_cached_and_not_found(self):
         # DistributionSourcePackageInDatabase.get() returns None if a DSP does
@@ -451,7 +451,7 @@ class TestDistributionSourcePackageInDatabase(TestCaseWithFactory):
         self.assertThat(recorder, HasQueryCount(Equals(1)))
         self.assertEqual(
             {(distribution.id, sourcepackagename.id): dsp.id},
-            DistributionSourcePackageInDatabase._cache.items())
+            DistributionSourcePackageInDatabase._cache.as_dict())
 
     def test_get_cached_and_found(self):
         # DistributionSourcePackageInDatabase.get() returns the DSP if it's
