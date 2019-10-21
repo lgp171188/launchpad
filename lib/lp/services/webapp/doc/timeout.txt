@@ -13,7 +13,7 @@ time remaining before the request should time out.
     ...     set_launchpad_default_timeout)
     >>> old_func = get_default_timeout_function()
 
-    >>> from zope.app.appsetup import ProcessStarting
+    >>> from zope.processlifetime import ProcessStarting
 
     # We don't use notify here, because we don't want to invoke the
     # other subscribers.
