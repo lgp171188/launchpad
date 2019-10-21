@@ -272,6 +272,7 @@ setup(
         'zope.tales',
         'zope.testbrowser',
         'zope.testing',
+        'zope.testrunner[subunit]',
         'zope.traversing',
         'zope.viewlet',  # only fixing a broken dependency
         'zope.vocabularyregistry',
