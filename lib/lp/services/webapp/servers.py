@@ -5,7 +5,6 @@
 
 __metaclass__ = type
 
-import cgi
 import threading
 import xmlrpclib
 
@@ -21,6 +20,7 @@ from lazr.restful.publisher import (
 from lazr.restful.utils import get_current_browser_request
 from lazr.uri import URI
 import six
+from six.moves.urllib.parse import parse_qs
 import transaction
 from transaction.interfaces import ISynchronizer
 from zc.zservertracelog.tracelog import Server as ZServerTracelogServer
@@ -525,7 +525,7 @@ def get_query_string_params(request):
     if query_string is None:
         query_string = ''
 
-    parsed_qs = cgi.parse_qs(query_string, keep_blank_values=True)
+    parsed_qs = parse_qs(query_string, keep_blank_values=True)
     # Use BrowserRequest._decode() for decoding the received parameters.
     decoded_qs = {}
     for key, values in parsed_qs.iteritems():

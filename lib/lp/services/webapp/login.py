@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 """Stuff to do with logging in and logging out."""
 
@@ -414,7 +414,7 @@ class OpenIDCallbackView(OpenIDLogin):
                 return self.processPositiveAssertion()
             except HTTPException as error:
                 return OpenIDLoginErrorView(
-                    self.context, self.request, login_error=error.message)()
+                    self.context, self.request, login_error=str(error))()
 
         if self.account is not None:
             # The authentication failed (or was canceled), but the user is

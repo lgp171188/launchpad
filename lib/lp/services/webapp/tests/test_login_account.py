@@ -1,10 +1,10 @@
-# Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-import cgi
 from datetime import datetime
 
 import lazr.uri
+from six.moves.urllib.parse import parse_qs
 from zope.component import getUtility
 from zope.event import notify
 from zope.session.interfaces import ISession
@@ -133,7 +133,7 @@ class TestLoginAndLogout(TestCaseWithFactory):
         # which we provide in our query string.  See
         # launchpad_loggerhead.tests.TestLogout for the pertinent tests.
 
-        query = cgi.parse_qs(location.query)
+        query = parse_qs(location.query)
         self.assertEqual(query['next_to'][0], 'http://testopenid.test/+logout')
 
     def test_logging_in_and_logging_out_the_old_way(self):

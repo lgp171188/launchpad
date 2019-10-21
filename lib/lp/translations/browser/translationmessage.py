@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """View classes for ITranslationMessage interface."""
@@ -18,13 +18,13 @@ __all__ = [
     'TranslationMessageSuggestions',
     ]
 
-import cgi
 import datetime
 import operator
 import re
 import urllib
 
 import pytz
+from six.moves.urllib.parse import parse_qsl
 from z3c.ptcompat import ViewPageTemplateFile
 from zope import datetime as zope_datetime
 from zope.component import getUtility
@@ -851,8 +851,7 @@ class BaseTranslationView(LaunchpadView):
         if '?' in new_url:
             # Get current query string
             base_url, old_query_string = new_url.split('?')
-            query_parts = cgi.parse_qsl(
-                old_query_string, strict_parsing=False)
+            query_parts = parse_qsl(old_query_string, strict_parsing=False)
 
             # Combine parameters provided by _buildRedirectParams with those
             # that came with our page request.  The latter take precedence.
