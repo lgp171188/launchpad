@@ -79,7 +79,7 @@ zope.tales==3.5.3
 zope.testing==4.7
 #zope.testrunner==4.0.4
 # lp:~launchpad-committers/zope.testrunner:launchpad
-zope.testrunner[subunit]==5.1+lp1
+zope.testrunner[subunit]==5.1+lp2
 zope.traversing==3.14.0
 zope.viewlet==3.7.2
 
