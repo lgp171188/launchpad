@@ -177,7 +177,11 @@ Projects are available at their canonical URL on the API virtual host.
     licenses: [u'MIT / X / Expat Licence']
     logo_link: u'http://.../firefox/logo'
     name: u'firefox'
+    official_answers: True
+    official_blueprints: False
     official_bug_tags: []
+    official_bugs: True
+    official_codehosting: False
     owner_link: u'http://.../~name12'
     private: False
     private_bugs: False
