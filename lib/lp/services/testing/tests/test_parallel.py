@@ -1,4 +1,4 @@
-# Copyright 2010 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Parallel test glue."""
@@ -102,7 +102,7 @@ class TestUtilities(TestCase, TestWithFixtures):
             self.assertEqual(
                 ['bin/test', '-vt', 'filter', '--list-tests', '--subunit'],
                 args['args'])
-            return {'stdin': StringIO(), 'stdout': StringIO(u"""\
+            return {'stdin': StringIO(), 'stdout': StringIO("""\
 test: quux
 successful: quux
 test: glom

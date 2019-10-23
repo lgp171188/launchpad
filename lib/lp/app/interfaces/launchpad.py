@@ -115,18 +115,22 @@ class IServiceUsage(Interface):
 
 class ILaunchpadUsage(Interface):
     """How the project uses Launchpad."""
-    official_answers = Bool(
-        title=_('People can ask questions in Launchpad Answers'),
-        required=True)
-    official_blueprints = Bool(
-        title=_('This project uses blueprints'), required=True)
-    official_codehosting = Bool(
-        title=_('Code for this project is published in Bazaar branches on'
-                ' Launchpad'),
-        required=True)
-    official_malone = Bool(
-        title=_('Bugs in this project are tracked in Launchpad'),
-        required=True)
+    official_answers = exported(
+        Bool(
+            title=_('People can ask questions in Launchpad Answers'),
+            required=True))
+    official_blueprints = exported(
+        Bool(title=_('This project uses blueprints'), required=True))
+    official_codehosting = exported(
+        Bool(
+            title=_('Code for this project is published in Bazaar branches on'
+                    ' Launchpad'),
+            required=True))
+    official_malone = exported(
+        Bool(
+            title=_('Bugs in this project are tracked in Launchpad'),
+            required=True),
+        exported_as='official_bugs')
     official_anything = Bool(
         title=_('Uses Launchpad for something'))
     enable_bug_expiration = Bool(

@@ -237,7 +237,6 @@ setup(
         'z3c.pt',
         'z3c.ptcompat',
         'zc.zservertracelog',
-        'zope.app.appsetup',
         'zope.app.http',
         'zope.app.publication',
         'zope.app.publisher',
@@ -260,6 +259,7 @@ setup(
         'zope.login',
         'zope.pagetemplate',
         'zope.principalregistry',
+        'zope.processlifetime',
         'zope.proxy',
         'zope.publisher',
         'zope.schema',
@@ -272,6 +272,7 @@ setup(
         'zope.tales',
         'zope.testbrowser',
         'zope.testing',
+        'zope.testrunner[subunit]',
         'zope.traversing',
         'zope.viewlet',  # only fixing a broken dependency
         'zope.vocabularyregistry',

@@ -339,31 +339,31 @@
 
     <!-- Signal handlers -->
     <subscriber
-        for="zope.app.appsetup.IProcessStartingEvent"
+        for="zope.processlifetime.IProcessStarting"
         handler="lp.services.webapp.sighup.setup_sighup"
         />
     <subscriber
-        for="zope.app.appsetup.IProcessStartingEvent"
+        for="zope.processlifetime.IProcessStarting"
         handler="lp.services.webapp.sigusr1.setup_sigusr1"
         />
     <subscriber
-        for="zope.app.appsetup.IProcessStartingEvent"
+        for="zope.processlifetime.IProcessStarting"
         handler="lp.services.webapp.sigusr2.setup_sigusr2"
         />
     <subscriber
-        for="zope.app.appsetup.IProcessStartingEvent"
+        for="zope.processlifetime.IProcessStarting"
         handler="lp.services.webapp.sigdumpmem.setup_sigdumpmem"
         />
 
     <!-- Confirm that no main thread event handlers use the connection cache -->
     <subscriber
-        for="zope.app.appsetup.IProcessStartingEvent"
+        for="zope.processlifetime.IProcessStarting"
         handler="lp.services.webapp.adapter.break_main_thread_db_access"
         />
 
     <!-- Set the default timeout function. -->
     <subscriber
-        for="zope.app.appsetup.IProcessStartingEvent"
+        for="zope.processlifetime.IProcessStarting"
         handler="lp.services.webapp.adapter.set_launchpad_default_timeout"
         />
 

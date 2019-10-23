@@ -1,11 +1,12 @@
-# Copyright 2009-2016 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Handlers for warnings, to be installed when testing."""
 
+from __future__ import print_function
+
 __metaclass__ = type
 
-import atexit
 import inspect
 import StringIO
 import sys
@@ -188,39 +189,34 @@ def launchpad_showwarning(message, category, filename, lineno, file=None,
 def report_need_page_titles():
     global need_page_titles
     if need_page_titles:
-        print
-        print "The following pages need titles."
+        print(file=sys.stderr)
+        print("The following pages need titles.", file=sys.stderr)
         for message in need_page_titles:
-            print "   ", message
+            print("   ", message, file=sys.stderr)
 
 
 def report_no_order_by():
     global no_order_by
     if no_order_by:
-        print
-        print ("The following code has issues with"
-               " ambiguous select results ordering.")
+        print(file=sys.stderr)
+        print("The following code has issues with"
+              " ambiguous select results ordering.", file=sys.stderr)
         for report in no_order_by:
-            print
-            print report
+            print(file=sys.stderr)
+            print(report, file=sys.stderr)
 
 
 def report_other_warnings():
     global other_warnings
     if other_warnings:
-        print
-        print "General warnings."
+        print(file=sys.stderr)
+        print("General warnings.", file=sys.stderr)
         for warninginfo in other_warnings.itervalues():
-            print
-            print warninginfo
+            print(file=sys.stderr)
+            print(warninginfo, file=sys.stderr)
 
 
 def report_warnings():
     report_need_page_titles()
     report_no_order_by()
     report_other_warnings()
-
-
-def install_warning_handler():
-    warnings.showwarning = launchpad_showwarning
-    atexit.register(report_warnings)
