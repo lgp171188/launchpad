@@ -2015,7 +2015,7 @@ class TestBugTaskSearchListingView(BrowserTestCase):
             lambda: self.getUserBrowser(url),
             lambda: self.factory.makeBug(target=product),
             1, 10, login_method=lambda: login(ANONYMOUS))
-        self.assertThat(recorder1, HasQueryCount(LessThan(46)))
+        self.assertThat(recorder1, HasQueryCount(LessThan(47)))
         self.assertThat(recorder2, HasQueryCount.byEquality(recorder1))
 
     def test_mustache_model_in_json(self):
