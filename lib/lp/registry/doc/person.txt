@@ -442,16 +442,17 @@ PersonSet.newTeam() will also fire an ObjectCreatedEvent for the newly
 created team.
 
     >>> from zope.lifecycleevent.interfaces import IObjectCreatedEvent
-    >>> from lp.testing.event import TestEventListener
+    >>> from lp.testing.fixture import ZopeEventHandlerFixture
     >>> def print_event(team, event):
     ...     print "ObjectCreatedEvent fired for team '%s'" % team.name
 
-    >>> listener = TestEventListener(
-    ...     ITeam, IObjectCreatedEvent, print_event)
+    >>> listener = ZopeEventHandlerFixture(
+    ...     print_event, (ITeam, IObjectCreatedEvent))
+    >>> listener.setUp()
     >>> another_team = personset.newTeam(ddaa, 'new3', 'Another a new team')
     ObjectCreatedEvent fired for team 'new3'
 
-    >>> listener.unregister()
+    >>> listener.cleanUp()
 
 
 Turning people into teams

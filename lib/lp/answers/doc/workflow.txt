@@ -604,17 +604,19 @@ the message they create and a ObjectModifiedEvent for the question.
     # Register an event listener that will print events it receives.
     >>> from lazr.lifecycle.interfaces import (
     ...     IObjectCreatedEvent, IObjectModifiedEvent)
-    >>> from lp.testing.event import TestEventListener
+    >>> from lp.testing.fixture import ZopeEventHandlerFixture
     >>> from lp.answers.interfaces.question import IQuestion
 
     >>> def print_event(object, event):
     ...     print("Received %s on %s" % (
     ...         event.__class__.__name__.split('.')[-1],
     ...         object.__class__.__name__.split('.')[-1]))
-    >>> questionmessage_event_listener = TestEventListener(
-    ...     IQuestionMessage, IObjectCreatedEvent, print_event)
-    >>> question_event_listener = TestEventListener(
-    ...     IQuestion, IObjectModifiedEvent, print_event)
+    >>> questionmessage_event_listener = ZopeEventHandlerFixture(
+    ...     print_event, (IQuestionMessage, IObjectCreatedEvent))
+    >>> questionmessage_event_listener.setUp()
+    >>> question_event_listener = ZopeEventHandlerFixture(
+    ...     print_event, (IQuestion, IObjectModifiedEvent))
+    >>> question_event_listener.setUp()
 
 Changing the status triggers the event.
 
@@ -639,8 +641,8 @@ these events.
     Received ObjectModifiedEvent on Question
 
     # Cleanup
-    >>> questionmessage_event_listener.unregister()
-    >>> question_event_listener.unregister()
+    >>> questionmessage_event_listener.cleanUp()
+    >>> question_event_listener.cleanUp()
 
 
 Reopening the question
@@ -652,8 +654,9 @@ is reopened, a QuestionReopening is created.
     # Register an event listener to notify us whenever a QuestionReopening is
     # created.
     >>> from lp.answers.interfaces.questionreopening import IQuestionReopening
-    >>> reopening_event_listener = TestEventListener(
-    ...     IQuestionReopening, IObjectCreatedEvent, print_event)
+    >>> reopening_event_listener = ZopeEventHandlerFixture(
+    ...     print_event, (IQuestionReopening, IObjectCreatedEvent))
+    >>> reopening_event_listener.setUp()
 
 The most common use case is when a user confirms a solution, and then
 comes back to say that it doesn't, in fact, work.
@@ -732,7 +735,7 @@ having been rejected.
     INVALID
 
     # Cleanup
-    >>> reopening_event_listener.unregister()
+    >>> reopening_event_listener.cleanUp()
 
 
 Using an IMessage as an explanation

@@ -30,13 +30,14 @@ Register an event listener that will print events it receives.
 
     >>> from lazr.lifecycle.interfaces import IObjectModifiedEvent
     >>> from lp.answers.interfaces.question import IQuestion
-    >>> from lp.testing.event import TestEventListener
+    >>> from lp.testing.fixture import ZopeEventHandlerFixture
 
     >>> def print_modified_event(object, event):
     ...     print("Received ObjectModifiedEvent: %s" % (
     ...         ", ".join(sorted(event.edited_fields))))
-    >>> question_event_listener = TestEventListener(
-    ...     IQuestion, IObjectModifiedEvent, print_modified_event)
+    >>> question_event_listener = ZopeEventHandlerFixture(
+    ...     print_modified_event, (IQuestion, IObjectModifiedEvent))
+    >>> question_event_listener.setUp()
 
     >>> view = create_initialized_view(question_three, name='+subscribe')
     >>> print(view.label)
@@ -82,7 +83,7 @@ Unsubscription works in a similar manner.
     >>> view.request.response.getHeader('Location')
     '.../+question/3'
 
-    >>> question_event_listener.unregister()
+    >>> question_event_listener.cleanUp()
 
 
 QuestionWorkflowView

@@ -1600,12 +1600,14 @@ An email can contain multiple commands, even for different bugs.
     ...         bugtask.importance.title))
     >>> from lazr.lifecycle.interfaces import (
     ...     IObjectCreatedEvent, IObjectModifiedEvent)
-    >>> from lp.testing.event import TestEventListener
     >>> from lp.bugs.interfaces.bugtask import IBugTask
-    >>> bugtask_modified_listener = TestEventListener(
-    ...     IBugTask, IObjectModifiedEvent, print_bugtask_modified_event)
-    >>> bugtask_created_listener = TestEventListener(
-    ...     IBugTask, IObjectCreatedEvent, print_bugtask_created_event)
+    >>> from lp.testing.fixture import ZopeEventHandlerFixture
+    >>> bugtask_modified_listener = ZopeEventHandlerFixture(
+    ...     print_bugtask_modified_event, (IBugTask, IObjectModifiedEvent))
+    >>> bugtask_modified_listener.setUp()
+    >>> bugtask_created_listener = ZopeEventHandlerFixture(
+    ...     print_bugtask_created_event, (IBugTask, IObjectCreatedEvent))
+    >>> bugtask_created_listener.setUp()
     >>> bug_four_upstream_task = bug_four.bugtasks[0]
     >>> print(bug_four_upstream_task.status.name)
     NEW
@@ -1634,8 +1636,8 @@ An email can contain multiple commands, even for different bugs.
     >>> print(bug_five_upstream_task.importance.name)
     HIGH
 
-    >>> bugtask_modified_listener.unregister()
-    >>> bugtask_created_listener.unregister()
+    >>> bugtask_modified_listener.cleanUp()
+    >>> bugtask_created_listener.cleanUp()
 
 
 Default 'affects' target

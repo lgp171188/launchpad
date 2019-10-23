@@ -171,14 +171,15 @@ In order to show that all the events get fired off, let's create an
 event listener and register it:
 
     >>> from zope.interface import Interface
-    >>> from lp.testing.event import TestEventListener
     >>> from lazr.lifecycle.interfaces import IObjectCreatedEvent
+    >>> from lp.testing.fixture import ZopeEventHandlerFixture
 
     >>> def on_created_event(object, event):
     ...     print("ObjectCreatedEvent: %r" % object)
 
-    >>> on_created_listener = TestEventListener(
-    ...     Interface, IObjectCreatedEvent, on_created_event)
+    >>> on_created_listener = ZopeEventHandlerFixture(
+    ...     on_created_event, (Interface, IObjectCreatedEvent))
+    >>> on_created_listener.setUp()
 
 
 If an invalid product is specified, or a product that fails the
@@ -449,7 +450,7 @@ package will be converted to the corresponding source package.
     ...
     mozilla-firefox (Ubuntu)
 
-    >>> on_created_listener.unregister()
+    >>> on_created_listener.cleanUp()
 
 
 Registering a product while adding a bugtask
