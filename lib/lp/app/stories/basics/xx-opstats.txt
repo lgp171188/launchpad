@@ -98,13 +98,18 @@ may also include the odd case where the OOPS system has failed and a
 fallback error page is rendered by Zope3. There doesn't seem to be any
 particular need to differentiate these cases though:
 
-    >>> from zope.app.testing import ztapi
+    >>> from zope.interface import Interface
+    >>> from zope.publisher.interfaces.browser import IDefaultBrowserLayer
+    >>> from lp.testing.fixture import ZopeAdapterFixture
+
     >>> class ErrorView(object):
     ...     """A broken view"""
     ...     def __call__(self, *args, **kw):
     ...         raise Exception('Oops')
     ...
-    >>> ztapi.browserView(None, "error-test", ErrorView)
+    >>> error_view_fixture = ZopeAdapterFixture(
+    ...     ErrorView, (None, IDefaultBrowserLayer), Interface, "error-test")
+    >>> error_view_fixture.setUp()
     >>> output = http("GET /error-test HTTP/1.1\nHost: launchpad.test\n")
     >>> output.getStatus()
     500
@@ -133,6 +138,8 @@ the site.
     5XXs_b: 1
     http requests: 1
     requests: 1
+
+    >>> error_view_fixture.cleanUp()
 
 Number of XML-RPC Faults
 ------------------------

@@ -107,7 +107,6 @@ from testtools.matchers import (
     )
 from testtools.testcase import ExpectedException as TTExpectedException
 import transaction
-from zope.app.testing import ztapi
 from zope.component import (
     ComponentLookupError,
     getMultiAdapter,
@@ -185,7 +184,10 @@ from lp.testing._webservice import (
     oauth_access_token_for,
     )
 from lp.testing.dbuser import switch_dbuser
-from lp.testing.fixture import CaptureOops
+from lp.testing.fixture import (
+    CaptureOops,
+    ZopeEventHandlerFixture,
+    )
 from lp.testing.karma import KarmaRecorder
 from lp.testing.mail_helpers import pop_notifications
 
@@ -390,6 +392,7 @@ class RequestTimelineCollector:
         self._active = False
         self.count = None
         self.queries = None
+        self._event_fixture = None
 
     def register(self):
         """Start counting queries.
@@ -398,7 +401,9 @@ class RequestTimelineCollector:
 
         After each web request the count and queries attributes are updated.
         """
-        ztapi.subscribe((IEndRequestEvent, ), None, self)
+        self._event_fixture = ZopeEventHandlerFixture(
+            self, (IEndRequestEvent, ))
+        self._event_fixture.setUp()
         self._active = True
 
     def __enter__(self):
@@ -412,6 +417,9 @@ class RequestTimelineCollector:
 
     def unregister(self):
         self._active = False
+        if self._event_fixture is not None:
+            self._event_fixture.cleanUp()
+            self._event_fixture = None
 
     def __exit__(self, exc_type, exc_value, traceback):
         self.unregister()
