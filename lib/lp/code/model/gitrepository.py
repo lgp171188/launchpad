@@ -558,13 +558,14 @@ class GitRepository(StormBase, WebhookTargetMixin, GitIdentityMixin):
         """See `IGitRepository`."""
         if self.repository_type != GitRepositoryType.HOSTED:
             raise CannotModifyNonHostedGitRepository(self)
-        ref = self.getRefByPath(value)
-        if ref is None:
+        if value is None:
             raise NoSuchGitReference(self, value)
-        if self._default_branch != ref.path:
-            self._default_branch = ref.path
-            getUtility(IGitHostingClient).setProperties(
-                self.getInternalPath(), default_branch=ref.path)
+        else:
+            ref = self.getRefByPath(value)
+            if self._default_branch != ref.path:
+                self._default_branch = ref.path
+                getUtility(IGitHostingClient).setProperties(
+                    self.getInternalPath(), default_branch=ref.path)
 
     def getRefByPath(self, path):
         if path == u"HEAD":

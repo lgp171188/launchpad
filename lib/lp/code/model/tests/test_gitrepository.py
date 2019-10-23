@@ -158,6 +158,7 @@ from lp.testing import (
     admin_logged_in,
     ANONYMOUS,
     api_url,
+    time_counter,
     celebrity_logged_in,
     login_person,
     logout,
@@ -3399,6 +3400,34 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
         self.assertEqual(
             "git+ssh://git.launchpad.test/~person/project/+git/repository",
             repository["git_ssh_url"])
+
+    def test_getRepoWorksForDefaultBranchNone(self):
+        # Ensure we're not getting an error when calling
+        # GET on the Webservice when a Git Repo exists in the DB
+        # with a NULL default branch
+
+        hosting_fixture = self.useFixture(GitHostingFixture())
+        owner = self.factory.makePerson(name="testowner")
+        repository = self.factory.makeGitRepository(
+            owner=owner, name="empty_default_branch_repo"
+        )
+        webservice = webservice_for_person(
+            repository.owner, permission=OAuthPermission.READ_PUBLIC)
+        webservice.default_api_version = "devel"
+        with person_logged_in(ANONYMOUS):
+            repository_url = api_url(repository)
+        response = webservice.get(repository_url).jsonBody()
+        self.assertEqual(
+            None,
+            response["default_branch"])
+
+        removeSecurityProxy(repository)._default_branch = "refs/heads/master"
+        with person_logged_in(ANONYMOUS):
+            repository_url = api_url(repository)
+        response = webservice.get(repository_url).jsonBody()
+        self.assertEqual(
+            "refs/heads/master",
+            response["default_branch"])
 
     def assertNewWorks(self, target_db):
         hosting_fixture = self.useFixture(GitHostingFixture())
