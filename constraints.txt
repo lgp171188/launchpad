@@ -276,7 +276,7 @@ m2r==0.1.13
 manuel==1.7.2
 Markdown==2.3.1
 martian==0.11
-maxminddb==1.4.1
+maxminddb==1.5.1
 meliae==0.2.0.final.0
 mistune==0.8.3
 mock==1.0.1
