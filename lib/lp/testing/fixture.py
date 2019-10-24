@@ -42,7 +42,6 @@ from wsgi_intercept.urllib2_intercept import (
 from zope.component import (
     adapter,
     getGlobalSiteManager,
-    provideHandler,
     )
 from zope.interface import Interface
 from zope.publisher.interfaces.browser import IDefaultBrowserLayer
@@ -169,14 +168,16 @@ class ZopeAdapterFixture(Fixture):
 class ZopeEventHandlerFixture(Fixture):
     """A fixture that provides and then unprovides a Zope event handler."""
 
-    def __init__(self, handler):
+    def __init__(self, handler, required=None):
         super(ZopeEventHandlerFixture, self).__init__()
         self._handler = handler
+        self._required = required
 
     def _setUp(self):
         gsm = getGlobalSiteManager()
-        provideHandler(self._handler)
-        self.addCleanup(gsm.unregisterHandler, self._handler)
+        gsm.registerHandler(self._handler, required=self._required)
+        self.addCleanup(
+            gsm.unregisterHandler, self._handler, required=self._required)
 
 
 class ZopeViewReplacementFixture(Fixture):

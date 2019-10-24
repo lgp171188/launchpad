@@ -103,7 +103,7 @@ from lp.testing import (
     TestCaseWithFactory,
     WebServiceTestCase,
     )
-from lp.testing.event import TestEventListener
+from lp.testing.fixture import ZopeEventHandlerFixture
 from lp.testing.layers import (
     DatabaseFunctionalLayer,
     LaunchpadFunctionalLayer,
@@ -1514,16 +1514,11 @@ class ProductLicensingTestCase(TestCaseWithFactory):
     """Test the rules of licences and commercial subscriptions."""
 
     layer = DatabaseFunctionalLayer
-    event_listener = None
 
     def setup_event_listener(self):
         self.events = []
-        if self.event_listener is None:
-            self.event_listener = TestEventListener(
-                IProduct, IObjectModifiedEvent, self.on_event)
-        else:
-            self.event_listener._active = True
-        self.addCleanup(self.event_listener.unregister)
+        self.useFixture(ZopeEventHandlerFixture(
+            self.on_event, (IProduct, IObjectModifiedEvent)))
 
     def on_event(self, thing, event):
         self.events.append(event)

@@ -49,15 +49,16 @@ First, let's define a simple event listener to show that the
 IObjectCreatedEvent is being published when a bug is reported through
 the XML-RPC interface.
 
-    >>> from lp.testing.event import TestEventListener
     >>> from lazr.lifecycle.interfaces import IObjectCreatedEvent
     >>> from lp.bugs.interfaces.bug import IBug
+    >>> from lp.testing.fixture import ZopeEventHandlerFixture
 
     >>> def on_created_event(obj, event):
     ...     print("ObjectCreatedEvent: %r" % obj)
 
-    >>> on_created_listener = TestEventListener(
-    ...     IBug, IObjectCreatedEvent, on_created_event)
+    >>> on_created_listener = ZopeEventHandlerFixture(
+    ...     on_created_event, (IBug, IObjectCreatedEvent))
+    >>> on_created_listener.setUp()
 
 Reporting a product bug.
 
@@ -228,7 +229,7 @@ Invalid subscriber.
     Fault: <Fault 20: 'Invalid subscriber: No user with the email address
             "nosuch@subscriber.com" was found'>
 
-    >>> on_created_listener.unregister()
+    >>> on_created_listener.cleanUp()
 
 
 Generating bugtracker authentication tokens

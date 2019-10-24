@@ -28,12 +28,13 @@ ObjectCreatedEvent in order to trigger email notifications:
 
     >>> from io import BytesIO
 
-    >>> from lp.testing.event import TestEventListener
     >>> from lazr.lifecycle.event import IObjectCreatedEvent
+    >>> from lp.testing.fixture import ZopeEventHandlerFixture
     >>> def attachment_added(attachment, event):
     ...     print("Attachment added: %r" % attachment.libraryfile.filename)
-    >>> event_listener = TestEventListener(
-    ...     IBugAttachment, IObjectCreatedEvent, attachment_added)
+    >>> event_listener = ZopeEventHandlerFixture(
+    ...     attachment_added, (IBugAttachment, IObjectCreatedEvent))
+    >>> event_listener.setUp()
 
     >>> filecontent = b"Some useful information."
     >>> data = BytesIO(filecontent)
@@ -293,7 +294,7 @@ from the librarian.
     'http://.../foo-bar-baz'
 
     >>> config_data = config.pop('max_attachment_size')
-    >>> event_listener.unregister()
+    >>> event_listener.cleanUp()
 
 
 Security
