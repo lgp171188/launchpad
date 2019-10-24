@@ -491,7 +491,7 @@ class GitRepositoryEditFormView(LaunchpadEditFormView):
             This is necessary to make various fields editable that are not
             normally editable through the interface.
             """
-            use_template(IGitRepository, include=["default_branch"], required=True)
+            use_template(IGitRepository, include=["default_branch"])
             information_type = copy_field(
                 IGitRepository["information_type"], readonly=False,
                 vocabulary=InformationTypeVocabulary(types=info_types))
