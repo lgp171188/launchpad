@@ -716,7 +716,7 @@ class IGitRepositoryEditableAttributes(Interface):
     """
 
     default_branch = exported(TextLine(
-        title=_("Default branch"), required=True, readonly=False,
+        title=_("Default branch"), required=False, readonly=False,
         description=_(
             "The full path to the default branch for this repository, e.g. "
             "refs/heads/master.")))
