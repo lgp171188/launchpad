@@ -6,13 +6,18 @@ occurs. Other users get no traceback and only the OOPS ID.
 To be able to test, a page that generates HTTP 500 errors is registered.
 Accessing that page gives us the OOPS error page.
 
-    >>> from zope.app.testing import ztapi
+    >>> from zope.interface import Interface
+    >>> from zope.publisher.interfaces.browser import IDefaultBrowserLayer
+    >>> from lp.testing.fixture import ZopeAdapterFixture
+
     >>> class ErrorView(object):
     ...     """A broken view"""
     ...     def __call__(self, *args, **kw):
     ...         raise Exception('Oops')
     ...
-    >>> ztapi.browserView(None, "error-test", ErrorView)
+    >>> error_view_fixture = ZopeAdapterFixture(
+    ...     ErrorView, (None, IDefaultBrowserLayer), Interface, "error-test")
+    >>> error_view_fixture.setUp()
 
 As our test runner runs in 'always show tracebacks' mode, we need to
 switch this off for these tests to work
@@ -82,11 +87,13 @@ And the OOPS ID is displayed but not linkified.
     <code class="oopsid">OOPS-...</code>)
     ...
 
-To avoid affecting other tests, reset the show_tracebacks config item.
+To avoid affecting other tests, reset the show_tracebacks config item and
+unregister the adapter.
 
     >>> test_config_data = config.pop('test_data')
     >>> config.canonical.show_tracebacks
     True
+    >>> error_view_fixture.cleanUp()
 
 
 = HTTPCaller handle_errors =

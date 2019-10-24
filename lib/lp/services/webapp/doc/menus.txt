@@ -768,11 +768,16 @@ object. Let's say that the default view name for an IStreet is '+baz'.
 This is the common case where the overview link is the default view
 name.
 
+    >>> from zope.publisher.interfaces import IDefaultViewName
+    >>> from zope.publisher.interfaces.browser import IBrowserRequest
+    >>> from lp.testing.fixture import ZopeAdapterFixture
+
     >>> class IStreet(Interface):
     ...     """A street."""
     >>> directlyProvides(street, IStreet, IThingHavingFacets)
-    >>> from zope.app.testing import ztapi
-    >>> ztapi.setDefaultViewName(IStreet, '+baz', None)
+    >>> street_default_view_fixture = ZopeAdapterFixture(
+    ...     '+baz', (IStreet, IBrowserRequest), IDefaultViewName)
+    >>> street_default_view_fixture.setUp()
 
     >>> request = FakeRequest(
     ...     'http://launchpad.test/sesamestreet/+baz',
@@ -794,6 +799,8 @@ infrastructure actually calculates a shortened URL for this case.
     http://launchpad.test/sesamestreet/+foo True
     http://launchpad.test/sesamestreet/+bar True
     http://launchpad.test/sesamestreet False
+
+    >>> street_default_view_fixture.cleanUp()
 
 You can traverse to an individual menu item from the facet menu:
 
