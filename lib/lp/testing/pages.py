@@ -49,11 +49,11 @@ from zope.app.testing.functional import (
     HTTPCaller,
     SimpleCookie,
     )
+from zope.app.testing.testbrowser import Browser
 from zope.component import getUtility
 from zope.security.management import setSecurityPolicy
 from zope.security.proxy import removeSecurityProxy
 from zope.session.interfaces import ISession
-from zope.testbrowser.testing import Browser
 
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.registry.errors import NameAlreadyTaken

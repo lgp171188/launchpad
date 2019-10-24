@@ -218,6 +218,7 @@ Check that when editing a hosted branch the URL field is not shown.
     Traceback (most recent call last):
     ...
     LookupError: label u'Branch URL'
+    ...
 
 
 Editing the whiteboard

@@ -17,7 +17,7 @@ First we create a view that will provoke a TimeoutError, a view for the
 exception, and a time machine.
 
     >>> from zope.publisher.browser import BrowserView
-    >>> from zope.testbrowser.testing import Browser
+    >>> from zope.app.testing.testbrowser import Browser
     >>> from textwrap import dedent
     >>> from zope.publisher.interfaces.browser import (
     ...     IBrowserRequest, IBrowserView, IBrowserPublisher)

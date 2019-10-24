@@ -172,6 +172,7 @@ This specialized list does not include the search form. So there is no
     Traceback (most recent call last):
     ...
     LookupError: label u'Search'
+    ...
 
 The 'Report a bug' link is also not present.
 

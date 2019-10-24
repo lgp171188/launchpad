@@ -41,6 +41,7 @@ membership can't be renewed and explain why.
     Traceback (most recent call last):
     ...
     LookupError: label 'Renew'
+    ...
     >>> print extract_text(find_tag_by_id(browser.contents, 'maincontent'))
     Renew membership of Karl Tilbury in Mirror Administrators
     This membership cannot be renewed because Mirror Administrators
@@ -70,6 +71,7 @@ the user to renew that membership because it's not about to expire.
     Traceback (most recent call last):
     ...
     LookupError: label 'Renew'
+    ...
     >>> print extract_text(find_tag_by_id(browser.contents, 'maincontent'))
     Renew membership of Karl Tilbury in Mirror Administrators
     This membership cannot be renewed because it is not set to expire in
@@ -126,6 +128,7 @@ Karl can't renew it again, since it's now not set to expire soon.
     Traceback (most recent call last):
     ...
     LookupError: label 'Renew'
+    ...
     >>> print extract_text(find_tag_by_id(browser.contents, 'maincontent'))
     Renew membership of Karl Tilbury in Mirror Administrators
     This membership cannot be renewed because it is not set to expire in
