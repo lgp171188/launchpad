@@ -558,6 +558,8 @@ class GitRepository(StormBase, WebhookTargetMixin, GitIdentityMixin):
         """See `IGitRepository`."""
         if self.repository_type != GitRepositoryType.HOSTED:
             raise CannotModifyNonHostedGitRepository(self)
+        if value is None:
+            raise NoSuchGitReference(self, value)
         ref = self.getRefByPath(value)
         if ref is None:
             raise NoSuchGitReference(self, value)
