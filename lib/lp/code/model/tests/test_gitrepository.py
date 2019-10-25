@@ -68,6 +68,7 @@ from lp.code.errors import (
     GitRepositoryCreatorNotOwner,
     GitRepositoryExists,
     GitTargetError,
+    NoSuchGitReference,
     )
 from lp.code.event.git import GitRefsUpdatedEvent
 from lp.code.interfaces.branchmergeproposal import (
@@ -153,12 +154,12 @@ from lp.services.propertycache import clear_property_cache
 from lp.services.utils import seconds_since_epoch
 from lp.services.webapp.authorization import check_permission
 from lp.services.webapp.interfaces import OAuthPermission
+from lp.services.webapp.publisher import canonical_url
 from lp.services.webapp.snapshot import notify_modified
 from lp.testing import (
     admin_logged_in,
     ANONYMOUS,
     api_url,
-    time_counter,
     celebrity_logged_in,
     login_person,
     logout,
@@ -1798,6 +1799,40 @@ class TestGitRepositoryRefs(TestCaseWithFactory):
         self.assertEqual([], hosting_fixture.setProperties.calls)
         self.assertEqual("refs/heads/master", repository.default_branch)
 
+    def test_exception_unset_default_branch(self):
+        # attempting to set the default branch to None
+        # should raise NoSuchGitReference
+        hosting_fixture = self.useFixture(GitHostingFixture())
+        repository = self.factory.makeGitRepository()
+        with person_logged_in(repository.owner):
+            self.assertRaisesWithContent(
+                NoSuchGitReference,
+                "The repository at %s does not contain "
+                "a reference named 'None'." %
+                    repository.display_name ,
+                setattr, repository, "default_branch", None)
+        self.assertEqual(None, repository.default_branch)
+
+    def test_exception_set_default_branch_nonexistent_ref(self):
+        # Attempting to set the default branch
+        # to a ref path that doesn't exist in the repository
+        # should raise NoSuchGitReference
+        hosting_fixture = self.useFixture(GitHostingFixture())
+        repository = self.factory.makeGitRepository()
+        self.factory.makeGitRefs(
+            repository=repository,
+            paths=("refs/heads/master", "refs/heads/new"))
+        removeSecurityProxy(repository)._default_branch = \
+            "refs/heads/master"
+        with person_logged_in(repository.owner):
+            self.assertRaisesWithContent(
+                NoSuchGitReference,
+                "The repository at %s does not contain "
+                "a reference named 'refs/heads/nonexistent'." %
+                    repository.display_name ,
+                setattr, repository,
+                "default_branch", "refs/heads/nonexistent")
+        self.assertEqual("refs/heads/master", repository.default_branch)
 
 class TestGitRepositoryGetAllowedInformationTypes(TestCaseWithFactory):
     """Test `IGitRepository.getAllowedInformationTypes`."""
@@ -3401,34 +3436,6 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
             "git+ssh://git.launchpad.test/~person/project/+git/repository",
             repository["git_ssh_url"])
 
-    def test_getRepoWorksForDefaultBranchNone(self):
-        # Ensure we're not getting an error when calling
-        # GET on the Webservice when a Git Repo exists in the DB
-        # with a NULL default branch
-
-        hosting_fixture = self.useFixture(GitHostingFixture())
-        owner = self.factory.makePerson(name="testowner")
-        repository = self.factory.makeGitRepository(
-            owner=owner, name="empty_default_branch_repo"
-        )
-        webservice = webservice_for_person(
-            repository.owner, permission=OAuthPermission.READ_PUBLIC)
-        webservice.default_api_version = "devel"
-        with person_logged_in(ANONYMOUS):
-            repository_url = api_url(repository)
-        response = webservice.get(repository_url).jsonBody()
-        self.assertEqual(
-            None,
-            response["default_branch"])
-
-        removeSecurityProxy(repository)._default_branch = "refs/heads/master"
-        with person_logged_in(ANONYMOUS):
-            repository_url = api_url(repository)
-        response = webservice.get(repository_url).jsonBody()
-        self.assertEqual(
-            "refs/heads/master",
-            response["default_branch"])
-
     def assertNewWorks(self, target_db):
         hosting_fixture = self.useFixture(GitHostingFixture())
         if IPerson.providedBy(target_db):
@@ -3510,6 +3517,22 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
 
     def test_getRepositories_personal(self):
         self.assertGetRepositoriesWorks(self.factory.makePerson())
+
+    def test_get_without_default_branch(self):
+        # Ensure we're not getting an error when calling
+        # GET on the Webservice when a Git Repo exists in the DB
+        # with a NULL default branch
+
+        hosting_fixture = self.useFixture(GitHostingFixture())
+        owner = self.factory.makePerson()
+        repository = self.factory.makeGitRepository()
+        webservice = webservice_for_person(
+            repository.owner, permission=OAuthPermission.READ_PUBLIC)
+        webservice.default_api_version = "devel"
+        with person_logged_in(ANONYMOUS):
+            repository_url = api_url(repository)
+        response = webservice.get(repository_url).jsonBody()
+        self.assertIsNone(response["default_branch"])
 
     def test_set_information_type(self):
         # The repository owner can change the information type.

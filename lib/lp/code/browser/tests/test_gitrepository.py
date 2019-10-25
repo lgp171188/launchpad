@@ -98,7 +98,7 @@ from lp.testing.views import (
     create_initialized_view,
     create_view,
     )
-from lp.code.errors import NoSuchGitReference
+
 
 class TestGitRepositoryNavigation(TestCaseWithFactory):
 
@@ -1000,22 +1000,6 @@ class TestGitRepositoryEditView(TestCaseWithFactory):
                  {"default_branch": "refs/heads/new"})],
                 hosting_fixture.setProperties.calls)
             self.assertEqual("refs/heads/new", repository.default_branch)
-
-    def unset_default_branch(self, newBranch):
-        hosting_fixture = self.useFixture(GitHostingFixture())
-        person = self.factory.makePerson()
-        repository = self.factory.makeGitRepository(owner=person)
-        master, new = self.factory.makeGitRefs(
-            repository = repository,
-            paths = ["refs/heads/master", "refs/heads/other"])
-        removeSecurityProxy(repository)._default_branch = "refs/heads/master"
-        browser = self.getUserBrowser(
-            canonical_url(repository) + "/+edit", user=person)
-        browser.getControl(name="field.default_branch").value = newBranch
-        browser.getControl("Change Git Repository").click()
-
-    def test_exception_unset_default_branch(self):
-        self.assertRaises(NoSuchGitReference, self.unset_default_branch, '')
 
     def test_change_default_branch_nonexistent(self):
         # Trying to change the default branch to one that doesn't exist
