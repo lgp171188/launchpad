@@ -103,26 +103,6 @@ class Browser(_Browser):
         super(Browser, self)._changed()
         transaction.commit()
 
-    def _clickSubmit(self, form, control, coord):
-        # XXX gary 2010-03-08 bug=98437
-        # This change is taken from
-        # https://bugs.launchpad.net/zope3/+bug/98437/comments/9 .  It
-        # should be pushed upstream, per that comment.
-        labels = control.get_labels()
-        if labels:
-            label = labels[0].text
-        else:
-            label = None
-        self.mech_browser.form = form
-        self._start_timer()
-        try:
-            self.mech_browser.submit(id=control.id, name=control.name,
-                label=label, coord=coord)
-        except Exception as e:
-            fix_exception_name(e)
-            raise
-        self._stop_timer()
-
     @property
     def vhost(self):
         uri = URI(self.url)
