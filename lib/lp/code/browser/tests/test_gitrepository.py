@@ -701,6 +701,24 @@ class TestGitRepositoryEditView(TestCaseWithFactory):
         self.assertEqual(
             project.title, view.widgets["target"].project_widget())
 
+    def test_repository_default_branch_widget_required(self):
+        # The repository default_branch widget is
+        # required if the repository default_branch is set
+        # and it's optional otherwise.
+        person = self.factory.makePerson()
+        repository = self.factory.makeGitRepository(
+            owner=person)
+        login_person(person)
+        view = create_initialized_view(repository, name="+edit")
+        self.assertFalse(
+            view.widgets['default_branch'].context.required)
+
+        removeSecurityProxy(repository)._default_branch = \
+            "refs/heads/master"
+        view = create_initialized_view(repository, name="+edit")
+        self.assertTrue(
+            view.widgets['default_branch'].context.required)
+
     def test_repository_target_widget_renders_personal(self):
         # The repository target widget renders correctly for a personal
         # repository.

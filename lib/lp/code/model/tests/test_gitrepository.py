@@ -154,7 +154,6 @@ from lp.services.propertycache import clear_property_cache
 from lp.services.utils import seconds_since_epoch
 from lp.services.webapp.authorization import check_permission
 from lp.services.webapp.interfaces import OAuthPermission
-from lp.services.webapp.publisher import canonical_url
 from lp.services.webapp.snapshot import notify_modified
 from lp.testing import (
     admin_logged_in,
@@ -1802,14 +1801,13 @@ class TestGitRepositoryRefs(TestCaseWithFactory):
     def test_exception_unset_default_branch(self):
         # attempting to set the default branch to None
         # should raise NoSuchGitReference
-        hosting_fixture = self.useFixture(GitHostingFixture())
         repository = self.factory.makeGitRepository()
         with person_logged_in(repository.owner):
             self.assertRaisesWithContent(
                 NoSuchGitReference,
                 "The repository at %s does not contain "
                 "a reference named 'None'." %
-                    repository.display_name ,
+                    repository.display_name,
                 setattr, repository, "default_branch", None)
         self.assertEqual(None, repository.default_branch)
 
@@ -1817,7 +1815,6 @@ class TestGitRepositoryRefs(TestCaseWithFactory):
         # Attempting to set the default branch
         # to a ref path that doesn't exist in the repository
         # should raise NoSuchGitReference
-        hosting_fixture = self.useFixture(GitHostingFixture())
         repository = self.factory.makeGitRepository()
         self.factory.makeGitRefs(
             repository=repository,
@@ -1829,10 +1826,11 @@ class TestGitRepositoryRefs(TestCaseWithFactory):
                 NoSuchGitReference,
                 "The repository at %s does not contain "
                 "a reference named 'refs/heads/nonexistent'." %
-                    repository.display_name ,
+                    repository.display_name,
                 setattr, repository,
                 "default_branch", "refs/heads/nonexistent")
         self.assertEqual("refs/heads/master", repository.default_branch)
+
 
 class TestGitRepositoryGetAllowedInformationTypes(TestCaseWithFactory):
     """Test `IGitRepository.getAllowedInformationTypes`."""
@@ -3522,9 +3520,6 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
         # Ensure we're not getting an error when calling
         # GET on the Webservice when a Git Repo exists in the DB
         # with a NULL default branch
-
-        hosting_fixture = self.useFixture(GitHostingFixture())
-        owner = self.factory.makePerson()
         repository = self.factory.makeGitRepository()
         webservice = webservice_for_person(
             repository.owner, permission=OAuthPermission.READ_PUBLIC)
