@@ -24,7 +24,8 @@ from testtools.matchers import (
     MatchesListwise,
     )
 import transaction
-from zope.app.testing import ztapi
+from zope.interface import Interface
+from zope.publisher.interfaces.browser import IDefaultBrowserLayer
 
 from lp.services.webapp.error import (
     DisconnectionErrorView,
@@ -37,6 +38,7 @@ from lp.testing.fixture import (
     CaptureOops,
     PGBouncerFixture,
     Urllib2Fixture,
+    ZopeAdapterFixture,
     )
 from lp.testing.layers import (
     DatabaseLayer,
@@ -234,7 +236,9 @@ class TestDatabaseErrorViews(TestCase):
             """A view that raises an OperationalError"""
             def __call__(self, *args, **kw):
                 raise OperationalError()
-        ztapi.browserView(None, "error-test", BrokenView())
+        self.useFixture(ZopeAdapterFixture(
+            BrokenView(), (None, IDefaultBrowserLayer), Interface,
+            "error-test"))
 
         url = 'http://launchpad.test/error-test'
         error = self.getHTTPError(url)

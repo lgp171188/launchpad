@@ -13,11 +13,12 @@ The +linkbug and +unlinkbug views operates on IBugLinkTarget.
     >>> cve = getUtility(ICveSet)['2005-2730']
 
     (Setup an event listener.)
-    >>> from lp.testing.event import TestEventListener
+    >>> from lp.testing.fixture import ZopeEventHandlerFixture
     >>> collected_events = []
-    >>> modified_listener = TestEventListener(
-    ...     IBugLinkTarget, ObjectModifiedEvent,
-    ...     lambda object, event: collected_events.append(event))
+    >>> modified_listener = ZopeEventHandlerFixture(
+    ...     lambda object, event: collected_events.append(event),
+    ...     (IBugLinkTarget, ObjectModifiedEvent))
+    >>> modified_listener.setUp()
 
     (Login because bug link management is only available to registered users.)
     >>> login('no-priv@canonical.com')
@@ -151,4 +152,4 @@ The notification contains the escaped bug title.
 == Cleanup ==
 
     (Deactivate the event listener.)
-    >>> modified_listener.unregister()
+    >>> modified_listener.cleanUp()

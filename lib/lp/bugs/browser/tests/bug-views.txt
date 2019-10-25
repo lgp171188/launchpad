@@ -8,16 +8,18 @@ There are three objects on which you can file a bug. An
 ObjectCreatedEvent is published when the bug is filed. Let's register
 an event listener to demonstrate this.
 
-    >>> from lp.services.database.sqlbase import flush_database_updates
+    >>> from lazr.lifecycle.event import IObjectCreatedEvent
     >>> import transaction
 
-    >>> from lp.testing.event import TestEventListener
-    >>> from lazr.lifecycle.event import IObjectCreatedEvent
     >>> from lp.bugs.interfaces.bug import IBug
+    >>> from lp.services.database.sqlbase import flush_database_updates
+    >>> from lp.testing.fixture import ZopeEventHandlerFixture
+
     >>> def on_created_event(object, event):
     ...     print("ObjectCreatedEvent: %r" % object)
-    >>> on_created_listener = TestEventListener(
-    ...     IBug, IObjectCreatedEvent, on_created_event)
+    >>> on_created_listener = ZopeEventHandlerFixture(
+    ...     on_created_event, (IBug, IObjectCreatedEvent))
+    >>> on_created_listener.setUp()
 
 1. Filing a bug on a distribution.
 
@@ -210,7 +212,7 @@ indentical to the second, we really only display one comment:
 
 (Unregister our listener, since we no longer need it.)
 
-    >>> on_created_listener.unregister()
+    >>> on_created_listener.cleanUp()
 
 
 Bug Portlets

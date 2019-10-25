@@ -10,18 +10,12 @@ from random import getrandbits
 import StringIO
 
 import transaction
-from zope.app.testing import ztapi
-from zope.component import (
-    provideAdapter,
-    provideUtility,
-    )
 from zope.interface import (
     implementer,
     Interface,
     provider,
     )
 from zope.security.interfaces import Unauthorized
-import zope.testing.cleanup
 
 from lp.app.interfaces.security import IAuthorization
 from lp.app.security import AuthorizationBase
@@ -61,7 +55,10 @@ from lp.testing import (
     TestCase,
     )
 from lp.testing.factory import ObjectFactory
-from lp.testing.fixture import ZopeAdapterFixture
+from lp.testing.fixture import (
+    ZopeAdapterFixture,
+    ZopeUtilityFixture,
+    )
 from lp.testing.layers import (
     DatabaseFunctionalLayer,
     ZopelessLayer,
@@ -226,11 +223,9 @@ class TestCheckPermissionCaching(TestCase):
 
     def setUp(self):
         """Register a new permission and a fake store selector."""
-        zope.testing.cleanup.cleanUp()
         super(TestCheckPermissionCaching, self).setUp()
         self.factory = ObjectFactory()
-        provideUtility(FakeStoreSelector, IStoreSelector)
-        self.addCleanup(zope.testing.cleanup.cleanUp)
+        self.useFixture(ZopeUtilityFixture(FakeStoreSelector, IStoreSelector))
 
     def makeRequest(self):
         """Construct an arbitrary `LaunchpadBrowserRequest` object."""
@@ -246,11 +241,11 @@ class TestCheckPermissionCaching(TestCase):
             `Checker` created by ``checker_factory``.
         """
         permission = self.factory.getUniqueString()
-        provideUtility(
-            PermissionAccessLevel(), ILaunchpadPermission, permission)
+        self.useFixture(ZopeUtilityFixture(
+            PermissionAccessLevel(), ILaunchpadPermission, permission))
         checker_factory = CheckerFactory()
-        provideAdapter(
-            checker_factory, [Object], IAuthorization, name=permission)
+        self.useFixture(ZopeAdapterFixture(
+            checker_factory, [Object], IAuthorization, name=permission))
         return Object(), permission, checker_factory
 
     def test_checkPermission_cache_unauthenticated(self):
@@ -386,9 +381,8 @@ class TestCheckPermissionCaching(TestCase):
         # checkUnauthenticatedPermission caches the result of
         # checkUnauthenticated for a particular object and permission.
         # We set a principal to ensure that it is not used even if set.
-        provideUtility(PlacelessAuthUtility(), IPlacelessAuthUtility)
-        zope.testing.cleanup.addCleanUp(
-            ztapi.unprovideUtility, (IPlacelessAuthUtility,))
+        self.useFixture(ZopeUtilityFixture(
+            PlacelessAuthUtility(), IPlacelessAuthUtility))
         principal = FakeLaunchpadPrincipal()
         request = self.makeRequest()
         request.setPrincipal(principal)
@@ -409,9 +403,8 @@ class TestCheckPermissionCaching(TestCase):
     def test_checkUnauthenticatedPermission_commit_clears_cache(self):
         # Committing a transaction clears the cache.
         # We set a principal to ensure that it is not used even if set.
-        provideUtility(PlacelessAuthUtility(), IPlacelessAuthUtility)
-        zope.testing.cleanup.addCleanUp(
-            ztapi.unprovideUtility, (IPlacelessAuthUtility,))
+        self.useFixture(ZopeUtilityFixture(
+            PlacelessAuthUtility(), IPlacelessAuthUtility))
         principal = FakeLaunchpadPrincipal()
         request = self.makeRequest()
         request.setPrincipal(principal)
@@ -435,16 +428,15 @@ class TestCheckPermissionCaching(TestCase):
 class TestLaunchpadSecurityPolicy_getPrincipalsAccessLevel(TestCase):
 
     def setUp(self):
-        zope.testing.cleanup.cleanUp()
         cls = TestLaunchpadSecurityPolicy_getPrincipalsAccessLevel
         super(cls, self).setUp()
         self.principal = LaunchpadPrincipal(
             'foo.bar@canonical.com', 'foo', 'foo', object())
         self.security = LaunchpadSecurityPolicy()
-        provideAdapter(
-            adapt_loneobject_to_container, [ILoneObject], ILaunchpadContainer)
-        provideAdapter(LoneObjectURL, [ILoneObject], ICanonicalUrlData)
-        self.addCleanup(zope.testing.cleanup.cleanUp)
+        self.useFixture(ZopeAdapterFixture(
+            adapt_loneobject_to_container, [ILoneObject], ILaunchpadContainer))
+        self.useFixture(ZopeAdapterFixture(
+            LoneObjectURL, [ILoneObject], ICanonicalUrlData))
 
     def test_no_scope(self):
         """Principal's access level is used when no scope is given."""

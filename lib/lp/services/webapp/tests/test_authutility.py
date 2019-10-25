@@ -6,14 +6,9 @@ __metaclass__ = type
 import base64
 
 import testtools
-from zope.app.testing import ztapi
 from zope.app.testing.placelesssetup import PlacelessSetup
 from zope.authentication.interfaces import ILoginPassword
-from zope.component import (
-    getUtility,
-    provideAdapter,
-    provideUtility,
-    )
+from zope.component import getUtility
 from zope.interface import implementer
 from zope.principalregistry.principalregistry import UnauthenticatedPrincipal
 from zope.publisher.browser import TestRequest
@@ -30,6 +25,10 @@ from lp.services.webapp.authentication import (
 from lp.services.webapp.interfaces import (
     IPlacelessAuthUtility,
     IPlacelessLoginSource,
+    )
+from lp.testing.fixture import (
+    ZopeAdapterFixture,
+    ZopeUtilityFixture,
     )
 
 
@@ -64,13 +63,14 @@ class TestPlacelessAuth(PlacelessSetup, testtools.TestCase):
     def setUp(self):
         testtools.TestCase.setUp(self)
         PlacelessSetup.setUp(self)
-        provideUtility(DummyPlacelessLoginSource(), IPlacelessLoginSource)
-        provideUtility(PlacelessAuthUtility(), IPlacelessAuthUtility)
-        provideAdapter(BasicAuthAdapter, (IHTTPCredentials,), ILoginPassword)
+        self.useFixture(ZopeUtilityFixture(
+            DummyPlacelessLoginSource(), IPlacelessLoginSource))
+        self.useFixture(ZopeUtilityFixture(
+            PlacelessAuthUtility(), IPlacelessAuthUtility))
+        self.useFixture(ZopeAdapterFixture(
+            BasicAuthAdapter, (IHTTPCredentials,), ILoginPassword))
 
     def tearDown(self):
-        ztapi.unprovideUtility(IPlacelessLoginSource)
-        ztapi.unprovideUtility(IPlacelessAuthUtility)
         PlacelessSetup.tearDown(self)
         testtools.TestCase.tearDown(self)
 

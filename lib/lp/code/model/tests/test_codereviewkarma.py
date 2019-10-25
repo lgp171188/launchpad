@@ -14,7 +14,7 @@ from lp.testing import (
     login_person,
     TestCaseWithFactory,
     )
-from lp.testing.event import TestEventListener
+from lp.testing.fixture import ZopeEventHandlerFixture
 from lp.testing.layers import DatabaseFunctionalLayer
 
 
@@ -27,29 +27,14 @@ class TestCodeReviewKarma(TestCaseWithFactory):
     """
 
     layer = DatabaseFunctionalLayer
-    karma_listener = None
 
     def setUp(self):
         # Use an admin to get launchpad.Edit on all the branches to easily
         # approve and reject the proposals.
         super(TestCodeReviewKarma, self).setUp('admin@canonical.com')
-        # The way the zope infrastructure works is that we can register
-        # subscribers easily, but there is no way to unregister them (bug
-        # 2338).  TestEventListener does this with by setting a property to
-        # stop calling the callback function.  Instead of ending up with a
-        # whole pile of registered inactive event listeners, we just
-        # reactivate the one we have if there is one.
-        if self.karma_listener is None:
-            self.karma_listener = TestEventListener(
-                IPerson, IKarmaAssignedEvent, self._on_karma_assigned)
-        else:
-            self.karma_listener._active = True
-
+        self.useFixture(ZopeEventHandlerFixture(
+            self._on_karma_assigned, (IPerson, IKarmaAssignedEvent)))
         self.karma_events = []
-
-    def tearDown(self):
-        self.karma_listener.unregister()
-        super(TestCodeReviewKarma, self).tearDown()
 
     def _on_karma_assigned(self, object, event):
         # Store the karma event for checking in the test method.

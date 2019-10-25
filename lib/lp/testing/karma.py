@@ -13,9 +13,10 @@ __all__ = [
 
 from lp.registry.interfaces.karma import IKarmaAssignedEvent
 from lp.registry.interfaces.person import IPerson
-from lp.testing.event import TestEventListener
+from lp.testing.fixture import ZopeEventHandlerFixture
 
 
+# XXX cjwatson 2019-10-23: This should be a fixture.
 class KarmaRecorder:
     """Helper that records selected karma events.
 
@@ -80,12 +81,14 @@ class KarmaRecorder:
 
     def register_listener(self):
         """Register listener.  Must be `unregister`ed later."""
-        self.listener = TestEventListener(
-            IPerson, IKarmaAssignedEvent, self.receive)
+        self.listener = ZopeEventHandlerFixture(
+            self.receive, (IPerson, IKarmaAssignedEvent))
+        self.listener.setUp()
 
     def unregister_listener(self):
         """Unregister listener after `register`."""
-        self.listener.unregister()
+        self.listener.cleanUp()
+        self.listener = None
 
 
 class KarmaAssignedEventListener(KarmaRecorder):
