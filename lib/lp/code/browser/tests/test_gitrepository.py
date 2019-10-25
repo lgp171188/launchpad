@@ -844,6 +844,23 @@ class TestGitRepositoryEditView(TestCaseWithFactory):
                 % (dsp.displayname, dsp.name),
             view.request.response.notifications[0].message)
 
+    def test_repository_default_branch_widget_required(self):
+        # The repository default_branch widget is
+        # required if the repository default_branch is set
+        # and it's optional otherwise.
+        person = self.factory.makePerson()
+        repository = self.factory.makeGitRepository(
+            owner=person)
+        login_person(person)
+        view = create_initialized_view(repository, name="+edit")
+        self.assertFalse(
+            view.widgets['default_branch'].context.required)
+
+        removeSecurityProxy(repository)._default_branch = "refs/heads/master"
+        view = create_initialized_view(repository, name="+edit")
+        self.assertTrue(
+            view.widgets['default_branch'].context.required)
+
     def test_forbidden_target_is_error(self):
         # An error is displayed if a repository is saved with a target that
         # is not allowed by the sharing policy.

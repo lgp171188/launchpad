@@ -270,6 +270,7 @@ Similarly to users, teams with active PPAs cannot be renamed either.
     Traceback (most recent call last):
     ...
     LookupError: name u'field.name'
+    ...
 
     >>> print(extract_text(
     ...     first_tag_by_class(sample_browser.contents, 'form')))
@@ -557,6 +558,7 @@ all their PPAs.
     Traceback (most recent call last):
     ...
     LookupError: name u'field.accepted'
+    ...
 
     >>> print(extract_text(
     ...     first_tag_by_class(cprov_browser.contents, 'form')))

@@ -8,7 +8,7 @@ is used in tests which utilize the AppServerLayer to run the app server in a
 child process.  The Zope testing browser fakes its connections in-process, so
 that's not good enough.
 
-The browser provided here extends `zope.testbrowser.testing.Browser` by
+The browser provided here extends `zope.app.testing.testbrowser.Browser` by
 providing a close() method that delegates to the underlying mechanize browser,
 and it tracks all Browser instances to ensure that they are closed.  This
 latter prevents open socket leaks even when the doctest doesn't explicitly

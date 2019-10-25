@@ -21,7 +21,7 @@ from openid.consumer.discover import (
     OPENID_IDP_2_0_TYPE,
     OpenIDServiceEndpoint,
     )
-from zope.testbrowser.testing import PublisherConnection
+from zope.app.testing.testbrowser import PublisherConnection
 
 from lp.services.webapp import LaunchpadView
 from lp.testopenid.interfaces.server import get_server_url

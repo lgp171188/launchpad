@@ -130,6 +130,7 @@ Anonymous users cannot see this button.
     Traceback (most recent call last):
       ...
     LookupError: label u'Import Now'
+    ...
 
 If the logged in user clicks this button, the import will be scheduled
 to run ASAP and the fact that the import has been requested is

@@ -270,7 +270,7 @@ setup(
         'zope.session',
         'zope.tal',
         'zope.tales',
-        'zope.testbrowser',
+        'zope.testbrowser[wsgi]',
         'zope.testing',
         'zope.testrunner[subunit]',
         'zope.traversing',

@@ -426,6 +426,7 @@ The first and second restrictions both apply to the GNOME Bugzilla:
     Traceback (most recent call last):
     ...
     LookupError: label u'Delete'
+    ...
 
 Note how we tell the user about _all_ the restrictions they face. In
 this instance the user would have the option of persuading the GNOME
@@ -450,6 +451,7 @@ Tracker:
     Traceback (most recent call last):
     ...
     LookupError: label u'Delete'
+    ...
 
 Again, we tell the user about all the restrictions they have stumbled
 on. A more privileged user would not stumble at the second hurdle,
@@ -467,6 +469,7 @@ deleting bug watches en masse:
     Traceback (most recent call last):
     ...
     LookupError: label u'Delete'
+    ...
 
 
 Disabling a bug tracker
@@ -483,6 +486,7 @@ Ordinary users can't disable a bug tracker.
     Traceback (most recent call last):
       ...
     LookupError: name u'field.active'
+    ...
 
 But admins can.
 

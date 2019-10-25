@@ -106,6 +106,7 @@ The 'search' form is also suppresed.
     Traceback (most recent call last):
     ...
     LookupError: label u'Search'
+    ...
 
 
 == Searching PPAs ==

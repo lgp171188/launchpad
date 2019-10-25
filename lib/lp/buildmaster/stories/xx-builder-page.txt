@@ -296,6 +296,7 @@ Nor is the toggle mode control included on the index page.
     >>> user_browser.getControl(name="field.actions.update")
     Traceback (most recent call last):
     LookupError: name 'field.actions.update'
+    ...
 
 Nor can they access the edit page directly via URL.
 
@@ -314,6 +315,7 @@ The same is true for the anonymous user:
     >>> anon_browser.getControl(name="field.actions.update")
     Traceback (most recent call last):
     LookupError: name 'field.actions.update'
+    ...
 
     >>> anon_browser.open("http://localhost/+builds/bob/+edit")
     Traceback (most recent call last):
