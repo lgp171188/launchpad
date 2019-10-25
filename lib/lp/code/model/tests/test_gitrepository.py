@@ -1818,8 +1818,7 @@ class TestGitRepositoryRefs(TestCaseWithFactory):
         self.factory.makeGitRefs(
             repository=repository,
             paths=("refs/heads/master", "refs/heads/new"))
-        removeSecurityProxy(repository)._default_branch = \
-            "refs/heads/master"
+        removeSecurityProxy(repository)._default_branch = "refs/heads/master"
         with person_logged_in(repository.owner):
             self.assertRaisesWithContent(
                 NoSuchGitReference,
