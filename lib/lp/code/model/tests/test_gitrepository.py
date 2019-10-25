@@ -1809,7 +1809,6 @@ class TestGitRepositoryRefs(TestCaseWithFactory):
                 "a reference named 'None'." %
                     repository.display_name,
                 setattr, repository, "default_branch", None)
-        self.assertEqual(None, repository.default_branch)
 
     def test_exception_set_default_branch_nonexistent_ref(self):
         # Attempting to set the default branch
