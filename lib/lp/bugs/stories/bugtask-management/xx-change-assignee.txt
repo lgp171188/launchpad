@@ -125,6 +125,7 @@ any team and hence does no see the option to asign somebody else.
     Traceback (most recent call last):
     ...
     LookupError: name u'jokosher.assignee'
+    ...
 
 Once no_priv is a member of a team, the option is shown.
 

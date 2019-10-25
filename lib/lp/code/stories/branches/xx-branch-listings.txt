@@ -329,6 +329,7 @@ The implicitly sorted listings do not have an ordering widget at all.
     Traceback (most recent call last):
     ...
     LookupError: name u'field.sort_by'
+    ...
 
 Finally, sorting by a particular criterion has the desired effect.
 

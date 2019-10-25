@@ -1021,8 +1021,8 @@ def wsgi_application(environ, start_response):
         request, handle_errors=handle_errors)
     response = request.response
     # We sort these, and then put the status first, because
-    # zope.testbrowser.testing does--and because it makes it easier to write
-    # reliable tests.
+    # zope.app.testing.testbrowser does--and because it makes it easier to
+    # write reliable tests.
     headers = sorted(response.getHeaders())
     status = response.getStatusString()
     headers.insert(0, ('Status', status))

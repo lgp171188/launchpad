@@ -143,6 +143,7 @@ It's not possible to vote on closed polls, even if we manually craft the URL.
     Traceback (most recent call last):
     ...
     LookupError: name 'continue'
+    ...
 
 The same is true for condorcet polls too.
 
@@ -159,6 +160,7 @@ The same is true for condorcet polls too.
     Traceback (most recent call last):
     ...
     LookupError: name 'continue'
+    ...
 
     >>> team_admin_browser.open(
     ...     'http://launchpad.test/~ubuntu-team/+poll/director-2004/+vote')
