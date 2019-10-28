@@ -23,6 +23,7 @@ from lp.buildmaster.interfaces.buildfarmjob import (
     )
 from lp.registry.interfaces.person import IPersonSet
 from lp.services.database.sqlbase import flush_database_updates
+from lp.services.webapp.authorization import clear_cache
 from lp.soyuz.browser.build import getSpecificJobs
 from lp.testing import (
     celebrity_logged_in,
@@ -224,6 +225,7 @@ class TestBuilderHistoryView(TestCaseWithFactory, BuildCreationMixin):
         self.createRecipeBuildWithBuilder(builder=self.builder)
         self.createRecipeBuildWithBuilder(
             private_branch=True, builder=self.builder)
+        clear_cache()
         view = create_initialized_view(self.builder, '+history')
         view.setupBuildList()
 
@@ -233,6 +235,7 @@ class TestBuilderHistoryView(TestCaseWithFactory, BuildCreationMixin):
         self.createRecipeBuildWithBuilder(builder=self.builder)
         self.createRecipeBuildWithBuilder(
             private_branch=True, builder=self.builder)
+        clear_cache()
         view = create_initialized_view(self.builder, '+history')
         private_build_icon_matcher = soupmatchers.HTMLContains(
             soupmatchers.Tag(
