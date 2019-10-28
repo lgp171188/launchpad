@@ -762,8 +762,14 @@
     <!-- OCIProjectSeries -->
     <class
         class="lp.registry.model.ociprojectseries.OCIProjectSeries">
-        <allow
-            interface="lp.registry.interfaces.ociprojectseries.IOCIProjectSeries"/>
+        <require
+            permission="launchpad.View"
+            interface="lp.registry.interfaces.ociprojectseries.IOCIProjectSeriesView
+                       lp.registry.interfaces.ociprojectseries.IOCIProjectSeriesEditableAttributes"/>
+        <require
+            permission="launchpad.Edit"
+            interface="lp.registry.interfaces.ociprojectseries.IOCIProjectSeriesEdit"
+            set_schema="lp.registry.interfaces.ociprojectseries.IOCIProjectSeriesEditableAttributes" />
     </class>
 
     <!-- SourcePackageName -->
