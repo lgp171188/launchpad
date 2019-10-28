@@ -30,10 +30,7 @@ import urllib2
 import weakref
 
 import transaction
-from zope.testbrowser.browser import (
-    Browser as _Browser,
-    fix_exception_name,
-    )
+from zope.testbrowser.browser import Browser as _Browser
 
 from lp.testing.pages import (
     extract_text,
