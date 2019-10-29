@@ -3440,6 +3440,9 @@ class EditOCIProject(AuthorizationBase):
 
     def checkAuthenticated(self, user):
         """Maintainers, drivers, and admins can drive projects."""
+        # XXX twom 2019-10-29 This ideally shouldn't be driver, but a
+        # new role name that cascades upwards from the OCIProject
+        # to the pillar
         return (user.in_admin or
                 user.isDriver(self.obj.pillar))
 
@@ -3451,4 +3454,4 @@ class EditOCIProjectSeries(AuthorizationBase):
     def checkAuthenticated(self, user):
         """Maintainers, drivers, and admins can drive projects."""
         return (user.in_admin or
-                user.isDriver(self.obj.pillar))
+                user.isDriver(self.obj.ociproject.pillar))
