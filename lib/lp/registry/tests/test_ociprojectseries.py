@@ -7,8 +7,6 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 
-from zope.component import getUtility
-
 from lp.registry.interfaces.ociprojectseries import IOCIProjectSeries
 from lp.registry.interfaces.series import SeriesStatus
 from lp.registry.model.ociprojectseries import OCIProjectSeries

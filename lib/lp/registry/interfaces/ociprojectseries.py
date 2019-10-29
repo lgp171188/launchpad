@@ -12,10 +12,6 @@ __all__ = [
     'IOCIProjectSeriesView',
     ]
 
-from lazr.restful.declarations import (
-    export_as_webservice_entry,
-    exported,
-    )
 from lazr.restful.fields import Reference
 from zope.interface import Interface
 from zope.schema import (
@@ -29,7 +25,6 @@ from zope.schema import (
 from lp import _
 from lp.app.validators.name import name_validator
 from lp.registry.interfaces.ociproject import IOCIProject
-from lp.registry.interfaces.person import IPerson
 from lp.registry.interfaces.series import SeriesStatus
 from lp.services.fields import PublicPersonChoice
 

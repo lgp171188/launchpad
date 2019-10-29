@@ -25,7 +25,6 @@ from lp.registry.interfaces.ociprojectseries import IOCIProjectSeries
 from lp.registry.interfaces.series import SeriesStatus
 from lp.services.database.constants import DEFAULT
 from lp.services.database.enumcol import EnumCol
-from lp.services.database.interfaces import IMasterStore
 from lp.services.database.stormbase import StormBase
 
 

@@ -19,10 +19,7 @@ from lazr.restful.fields import (
     CollectionField,
     Reference,
     )
-from zope.interface import (
-    Attribute,
-    Interface,
-    )
+from zope.interface import Interface
 from zope.schema import (
     Datetime,
     Int,
@@ -34,7 +31,6 @@ from lp.bugs.interfaces.bugtarget import IBugTarget
 from lp.registry.interfaces.distribution import IDistribution
 from lp.registry.interfaces.ociprojectname import IOCIProjectName
 from lp.registry.interfaces.series import SeriesStatus
-from lp.registry.interfaces.role import IHasOwner
 from lp.services.database.constants import DEFAULT
 from lp.services.fields import PublicPersonChoice
 

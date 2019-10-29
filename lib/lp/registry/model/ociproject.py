@@ -105,7 +105,6 @@ class OCIProject(BugTargetBase, StormBase):
         return ret
 
 
-
 @implementer(IOCIProjectSet)
 class OCIProjectSet:
 

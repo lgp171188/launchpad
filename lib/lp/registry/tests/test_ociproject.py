@@ -52,7 +52,7 @@ class TestOCIProject(TestCaseWithFactory):
         with person_logged_in(driver):
             first_series = self.factory.makeOCIProjectSeries(
                 oci_project=first_oci_project)
-            second_series = self.factory.makeOCIProjectSeries(
+            self.factory.makeOCIProjectSeries(
                 oci_project=second_oci_project)
             self.assertEqual(1, first_oci_project.series.count())
             self.assertEqual(first_series, first_oci_project.series[0])
