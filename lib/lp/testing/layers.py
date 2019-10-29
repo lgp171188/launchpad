@@ -1085,6 +1085,20 @@ class FunctionalLayer(BaseLayer):
         root = fs.connection.root()
         root[ZopePublication.root_name] = MockRootFolder()
 
+        # Allow the WSGI test browser to talk to our various test hosts.
+        def assert_allowed_host(self):
+            host = self.host
+            if ':' in host:
+                host = host.split(':')[0]
+            if host == 'localhost' or host.endswith('.test'):
+                return
+            self._allowed = False
+
+        FunctionalLayer._testbrowser_allowed = MonkeyPatch(
+            'zope.testbrowser.wsgi.WSGIConnection.assert_allowed_host',
+            assert_allowed_host)
+        FunctionalLayer._testbrowser_allowed.setUp()
+
         # Should be impossible, as the CA cannot be unloaded. Something
         # mighty nasty has happened if this is triggered.
         if not is_ca_available():
@@ -1094,6 +1108,8 @@ class FunctionalLayer(BaseLayer):
     @classmethod
     @profiled
     def testTearDown(cls):
+        FunctionalLayer._testbrowser_allowed.cleanUp()
+
         # Should be impossible, as the CA cannot be unloaded. Something
         # mighty nasty has happened if this is triggered.
         if not is_ca_available():
