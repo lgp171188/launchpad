@@ -464,10 +464,7 @@ class BugTaskView(LaunchpadView, BugViewMixin, FeedsMixin):
     def next_url(self):
         """Provided so returning to the page they came from works."""
         referer = self.request.getHeader('referer')
-
-        # XXX bdmurray 2010-09-30 bug=98437: work around zope's test
-        # browser setting referer to localhost.
-        if referer and referer != 'localhost':
+        if referer:
             next_url = referer
         else:
             next_url = canonical_url(self.context)
@@ -477,10 +474,7 @@ class BugTaskView(LaunchpadView, BugViewMixin, FeedsMixin):
     def cancel_url(self):
         """Provided so returning to the page they came from works."""
         referer = self.request.getHeader('referer')
-
-        # XXX bdmurray 2010-09-30 bug=98437: work around zope's test
-        # browser setting referer to localhost.
-        if referer and referer != 'localhost':
+        if referer:
             cancel_url = referer
         else:
             cancel_url = canonical_url(self.context)
