@@ -37,7 +37,7 @@ class IOCIProjectSeriesView(Interface):
     ociproject = Reference(
         IOCIProject,
         title=_("The OCI project that this series belongs to."),
-        required=True)
+        required=True, readonly=True)
 
     date_created = Datetime(
         title=_("Date created"), required=True, readonly=True,
@@ -66,16 +66,17 @@ class IOCIProjectSeriesEditableAttributes(Interface):
         description=_("A brief summary of this series."))
 
     status = Choice(
-            title=_("Status"), required=True,
-            vocabulary=SeriesStatus)
+        title=_("Status"), required=True,
+        vocabulary=SeriesStatus)
 
 
 class IOCIProjectSeriesEdit(Interface):
-    """IOCIProjectSeries attributes that require launchpad.Edit permission"""
+    """IOCIProjectSeries attributes that require launchpad.Edit permission."""
 
 
 class IOCIProjectSeries(IOCIProjectSeriesView, IOCIProjectSeriesEdit,
                         IOCIProjectSeriesEditableAttributes):
-    """A series of an Open Container Initiative project,
-       used to allow tracking bugs against multiple versions of images.
+    """A series of an Open Container Initiative project.
+
+    This is used to allow tracking bugs against multiple versions of images.
     """

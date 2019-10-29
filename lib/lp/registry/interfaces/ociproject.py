@@ -11,10 +11,6 @@ __all__ = [
     'IOCIProjectSet',
     ]
 
-from lazr.restful.declarations import (
-    export_as_webservice_entry,
-    exported,
-    )
 from lazr.restful.fields import (
     CollectionField,
     Reference,
@@ -39,20 +35,20 @@ class IOCIProjectView(Interface):
     """IOCIProject attributes that require launchpad.View permission."""
 
     id = Int(title=_("ID"), required=True, readonly=True)
-    date_created = exported(
-        Datetime(title=_("Date created"), required=True), readonly=True)
-    date_last_modified = exported(
-        Datetime(title=_("Date last modified"), required=True), readonly=True)
+    date_created = Datetime(
+        title=_("Date created"), required=True, readonly=True)
+    date_last_modified = Datetime(
+        title=_("Date last modified"), required=True, readonly=True)
 
-    registrant = exported(PublicPersonChoice(
+    registrant = PublicPersonChoice(
         title=_("Registrant"),
         description=_("The person that registered this project."),
-        vocabulary='ValidPersonOrTeam', required=True, readonly=True))
+        vocabulary='ValidPersonOrTeam', required=True, readonly=True)
 
-    series = exported(CollectionField(
-            title=_("Series inside this OCI project."),
-            # Really IOCIProjectSeries, see _schema_circular_imports.py.
-            value_type=Reference(schema=Interface)))
+    series = CollectionField(
+        title=_("Series inside this OCI project."),
+        # Really IOCIProjectSeries
+        value_type=Reference(schema=Interface))
 
 
 class IOCIProjectEditableAttributes(IBugTarget):
@@ -64,20 +60,19 @@ class IOCIProjectEditableAttributes(IBugTarget):
     distribution = Reference(
         IDistribution,
         title=_("The distribution that this OCI project is associated with."))
-    ociprojectname = exported(Reference(
+    ociprojectname = Reference(
         IOCIProjectName,
         title=_("The name of this OCI project."),
         required=True,
-        readonly=True))
-    description = exported(
-        Text(title=_("The description for this OCI project.")))
-    pillar = exported(Reference(
+        readonly=True)
+    description = Text(title=_("The description for this OCI project."))
+    pillar = Reference(
         IDistribution,
-        title=_("The pillar containing this target."), readonly=True))
+        title=_("The pillar containing this target."), readonly=True)
 
 
 class IOCIProjectEdit(Interface):
-    """IOCIProject attributes that require launchpad.Edit permission"""
+    """IOCIProject attributes that require launchpad.Edit permission."""
 
     def newSeries(name, summary, registrant,
                   status=SeriesStatus.DEVELOPMENT, date_created=DEFAULT):
@@ -87,8 +82,6 @@ class IOCIProjectEdit(Interface):
 class IOCIProject(IOCIProjectView, IOCIProjectEdit,
                        IOCIProjectEditableAttributes):
     """A project containing Open Container Initiative recipes."""
-
-    export_as_webservice_entry()
 
 
 class IOCIProjectSet(Interface):

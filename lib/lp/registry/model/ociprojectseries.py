@@ -1,7 +1,7 @@
 # Copyright 2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-"""Model implementing `OCIProjectSeries`."""
+"""Model implementing `IOCIProjectSeries`."""
 
 from __future__ import absolute_import, print_function, unicode_literals
 
@@ -24,7 +24,7 @@ from lp.registry.errors import InvalidName
 from lp.registry.interfaces.ociprojectseries import IOCIProjectSeries
 from lp.registry.interfaces.series import SeriesStatus
 from lp.services.database.constants import DEFAULT
-from lp.services.database.enumcol import EnumCol
+from lp.services.database.enumcol import DBEnum
 from lp.services.database.stormbase import StormBase
 
 
@@ -49,8 +49,8 @@ class OCIProjectSeries(StormBase):
     registrant_id = Int(name='registrant', allow_none=False)
     registrant = Reference(registrant_id, "Person.id")
 
-    status = EnumCol(
-        dbName='status', notNull=True, schema=SeriesStatus)
+    status = DBEnum(
+        name='status', allow_none=False, enum=SeriesStatus)
 
     def __init__(self, ociproject, name, summary,
                  registrant, status, date_created=DEFAULT):
@@ -62,3 +62,4 @@ class OCIProjectSeries(StormBase):
         self.summary = summary
         self.registrant = registrant
         self.status = status
+        self.date_created = date_created
