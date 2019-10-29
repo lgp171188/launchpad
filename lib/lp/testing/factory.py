@@ -4923,7 +4923,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             bugfiling_duplicate_search=bugfiling_duplicate_search)
 
     def makeOCIProjectSeries(self, name=None, summary=None, registrant=None,
-                             oci_project=None):
+                             oci_project=None, **kwargs):
         """Make a new OCIProjectSeries attached to an OCIProject."""
         if name is None:
             name = self.getUniqueString(u"oci-project-series-name")
@@ -4932,7 +4932,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         if registrant is None:
             registrant = self.makePerson()
         if oci_project is None:
-            oci_project = self.makeOCIProject()
+            oci_project = self.makeOCIProject(**kwargs)
         return oci_project.newSeries(name, summary, registrant)
 
 
