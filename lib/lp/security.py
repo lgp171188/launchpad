@@ -136,6 +136,8 @@ from lp.registry.interfaces.nameblacklist import (
     INameBlacklist,
     INameBlacklistSet,
     )
+from lp.registry.interfaces.ociproject import IOCIProject
+from lp.registry.interfaces.ociprojectseries import IOCIProjectSeries
 from lp.registry.interfaces.packaging import IPackaging
 from lp.registry.interfaces.person import (
     IPerson,
@@ -3430,3 +3432,26 @@ class EditSnapBase(EditByRegistryExpertsOrAdmins):
 
 class EditSnapBaseSet(EditByRegistryExpertsOrAdmins):
     usedfor = ISnapBaseSet
+
+
+class EditOCIProject(AuthorizationBase):
+    permission = 'launchpad.Edit'
+    usedfor = IOCIProject
+
+    def checkAuthenticated(self, user):
+        """Maintainers, drivers, and admins can drive projects."""
+        # XXX twom 2019-10-29 This ideally shouldn't be driver, but a
+        # new role name that cascades upwards from the OCIProject
+        # to the pillar
+        return (user.in_admin or
+                user.isDriver(self.obj.pillar))
+
+
+class EditOCIProjectSeries(AuthorizationBase):
+    permission = 'launchpad.Edit'
+    usedfor = IOCIProjectSeries
+
+    def checkAuthenticated(self, user):
+        """Maintainers, drivers, and admins can drive projects."""
+        return (user.in_admin or
+                user.isDriver(self.obj.ociproject.pillar))
