@@ -27,9 +27,9 @@ from lp.registry.interfaces.ociproject import (
     IOCIProject,
     IOCIProjectSet,
     )
+from lp.registry.interfaces.series import SeriesStatus
 from lp.registry.model.ociprojectname import OCIProjectName
 from lp.registry.model.ociprojectseries import OCIProjectSeries
-from lp.registry.interfaces.series import SeriesStatus
 from lp.services.database.constants import DEFAULT
 from lp.services.database.interfaces import (
     IMasterStore,
