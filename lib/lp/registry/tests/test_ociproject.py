@@ -50,7 +50,7 @@ class TestOCIProject(TestCaseWithFactory):
         registrant = self.factory.makePerson()
         oci_project = self.factory.makeOCIProject(pillar=distribution)
         with ExpectedException(Unauthorized):
-            series = oci_project.newSeries(
+            oci_project.newSeries(
                 'test-series',
                 'test-summary',
                 registrant)

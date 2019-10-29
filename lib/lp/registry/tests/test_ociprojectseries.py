@@ -17,8 +17,6 @@ from lp.registry.interfaces.series import SeriesStatus
 from lp.registry.model.ociprojectseries import OCIProjectSeries
 from lp.services.database.constants import UTC_NOW
 from lp.testing import (
-    admin_logged_in,
-    anonymous_logged_in,
     person_logged_in,
     TestCaseWithFactory,
     )
@@ -64,8 +62,7 @@ class TestOCIProjectSeries(TestCaseWithFactory):
         registrant = self.factory.makePerson()
         status = SeriesStatus.DEVELOPMENT
         with ExpectedException(InvalidName):
-            project_series = OCIProjectSeries(
-                oci_project, name, summary, registrant, status)
+            OCIProjectSeries(oci_project, name, summary, registrant, status)
 
     def test_edit_permissions_invalid(self):
         name = 'test-name'
@@ -86,11 +83,9 @@ class TestOCIProjectSeries(TestCaseWithFactory):
                 project_series.name = 'not-allowed'
 
     def test_edit_permissions_valid(self):
-
         name = 'test-name'
         summary = 'test_summary'
         registrant = self.factory.makePerson()
-        another_person = self.factory.makePerson()
 
         driver = self.factory.makePerson()
         distribution = self.factory.makeDistribution(driver=driver)
