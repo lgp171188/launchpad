@@ -546,7 +546,7 @@ class GitNamespaceSet:
     """Only implementation of `IGitNamespaceSet`."""
 
     def get(self, person, project=None, distribution=None,
-            sourcepackagename=None):
+            sourcepackagename=None, ociprojectname=None):
         """See `IGitNamespaceSet`."""
         if project is not None:
             assert distribution is None and sourcepackagename is None, (
@@ -555,10 +555,14 @@ class GitNamespaceSet:
                 % (project, distribution, sourcepackagename))
             return ProjectGitNamespace(person, project)
         elif distribution is not None:
+            if sourcepackagename is not None:
+                return PackageGitNamespace(
+                    person, distribution.getSourcePackage(sourcepackagename))
+            elif ocirecipename is not None:
+                # fillin
             assert sourcepackagename is not None, (
-                "distribution implies sourcepackagename. Got %r, %r"
-                % (distribution, sourcepackagename))
-            return PackageGitNamespace(
-                person, distribution.getSourcePackage(sourcepackagename))
+                "distribution implies sourcepackagename or ociprojectname. "
+                "Got %r, %r, %r"
+                % (distribution, sourcepackagename, ocirecipename))
         else:
             return PersonalGitNamespace(person)

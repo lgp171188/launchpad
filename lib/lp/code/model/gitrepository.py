@@ -153,6 +153,7 @@ from lp.registry.interfaces.accesspolicy import (
 from lp.registry.interfaces.distributionsourcepackage import (
     IDistributionSourcePackage,
     )
+from lp.registry.interfaces.ociproject import IOCIProject
 from lp.registry.interfaces.person import (
     IPerson,
     IPersonSet,
@@ -318,6 +319,9 @@ class GitRepository(StormBase, WebhookTargetMixin, GitIdentityMixin):
 
     _default_branch = Unicode(name='default_branch', allow_none=True)
 
+    ociprojectname_id = Int(name='ociprojectname', allow_none=True)
+    ociprojectname = Reference(ociprojectname_id, 'OCIProjectName.id')
+
     def __init__(self, repository_type, registrant, owner, target, name,
                  information_type, date_created, reviewer=None,
                  description=None):
@@ -339,6 +343,10 @@ class GitRepository(StormBase, WebhookTargetMixin, GitIdentityMixin):
         elif IDistributionSourcePackage.providedBy(target):
             self.distribution = target.distribution
             self.sourcepackagename = target.sourcepackagename
+        elif IOCIProject.providedBy(target):
+            # XXX twom 2019-10-28 This should have support for product
+            self.distribution = target.pillar
+            self.ociprojectname = target.ociprojectname
         self.owner_default = False
         self.target_default = False
 

@@ -73,6 +73,7 @@ from lp.code.interfaces.hasrecipes import IHasRecipes
 from lp.registry.interfaces.distributionsourcepackage import (
     IDistributionSourcePackage,
     )
+from lp.registry.interfaces.ociprojectname import IOCIProjectName
 from lp.registry.interfaces.person import IPerson
 from lp.registry.interfaces.persondistributionsourcepackage import (
     IPersonDistributionSourcePackageFactory,
@@ -203,6 +204,12 @@ class IGitRepositoryView(IHasRecipes):
 
     shortened_path = Attribute(
         "The shortest reasonable version of the path to this repository.")
+
+    ociprojectname = exported(
+        Reference(
+            title=_("OCI Project Name"), required=False, readonly=False,
+            schema=IOCIProjectName,
+            description=_("The OCI project that this repository belongs to.")))
 
     @operation_parameters(
         reviewer=Reference(
