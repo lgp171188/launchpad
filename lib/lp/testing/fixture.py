@@ -10,7 +10,6 @@ __all__ = [
     'DisableTriggerFixture',
     'PGBouncerFixture',
     'PGNotReadyError',
-    'Urllib2Fixture',
     'ZopeAdapterFixture',
     'ZopeEventHandlerFixture',
     'ZopeUtilityFixture',
@@ -31,14 +30,6 @@ from lazr.restful.utils import get_current_browser_request
 import oops
 import oops_amqp
 import pgbouncer.fixture
-from wsgi_intercept import (
-    add_wsgi_intercept,
-    remove_wsgi_intercept,
-    )
-from wsgi_intercept.urllib2_intercept import (
-    install_opener,
-    uninstall_opener,
-    )
 from zope.component import (
     adapter,
     getGlobalSiteManager,
@@ -252,22 +243,6 @@ class ZopeUtilityFixture(Fixture):
         if original is not None:
             self.addCleanup(
                 gsm.registerUtility, original, self.intf, self.name)
-
-
-class Urllib2Fixture(Fixture):
-    """Let tests use urllib to connect to an in-process Launchpad.
-
-    Initially this only supports connecting to launchpad.test because
-    that is all that is needed.  Later work could connect all
-    sub-hosts (e.g. bugs.launchpad.test)."""
-
-    def _setUp(self):
-        # Work around circular import.
-        from lp.testing.layers import wsgi_application
-        add_wsgi_intercept('launchpad.test', 80, lambda: wsgi_application)
-        self.addCleanup(remove_wsgi_intercept, 'launchpad.test', 80)
-        install_opener()
-        self.addCleanup(uninstall_opener)
 
 
 class CaptureOops(Fixture):
