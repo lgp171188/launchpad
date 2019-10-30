@@ -738,7 +738,6 @@ class FTPArchiveHandler:
                 f.write("\n")
             os.rename(new_path, final_path)
 
-
     #
     # Config Generation
     #
