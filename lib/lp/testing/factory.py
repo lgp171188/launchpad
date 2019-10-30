@@ -4904,10 +4904,10 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         return getUtility(IOCIProjectNameSet).new(name)
 
     def makeOCIProject(self, registrant=None, pillar=None,
-                            ociprojectname=None, date_created=DEFAULT,
-                            description=None, bug_reporting_guidelines=None,
-                            bug_reported_acknowledgement=None,
-                            bugfiling_duplicate_search=False):
+                       ociprojectname=None, date_created=DEFAULT,
+                       description=None, bug_reporting_guidelines=None,
+                       bug_reported_acknowledgement=None,
+                       bugfiling_duplicate_search=False):
         """Make a new OCIProject."""
         if registrant is None:
             registrant = self.makePerson()
@@ -4921,6 +4921,19 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             bug_reporting_guidelines=bug_reporting_guidelines,
             bug_reported_acknowledgement=bug_reported_acknowledgement,
             bugfiling_duplicate_search=bugfiling_duplicate_search)
+
+    def makeOCIProjectSeries(self, name=None, summary=None, registrant=None,
+                             oci_project=None, **kwargs):
+        """Make a new OCIProjectSeries attached to an OCIProject."""
+        if name is None:
+            name = self.getUniqueString(u"oci-project-series-name")
+        if summary is None:
+            summary = self.getUniqueString(u"oci-project-series-summary")
+        if registrant is None:
+            registrant = self.makePerson()
+        if oci_project is None:
+            oci_project = self.makeOCIProject(**kwargs)
+        return oci_project.newSeries(name, summary, registrant)
 
 
 # Some factory methods return simple Python types. We don't add

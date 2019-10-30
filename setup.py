@@ -179,7 +179,6 @@ setup(
         'lazr.restful',
         'lazr.smtptest',
         'lazr.sshserver',
-        'lazr.testing',
         'lazr.uri',
         'lpjsmin',
         'Markdown',

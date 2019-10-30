@@ -203,14 +203,6 @@ class TestBlockingOffsitePosts(TestCase):
         request = LaunchpadTestRequest(method='SOMETHING')
         maybe_block_offsite_form_post(request)
 
-    def test_localhost_is_ok(self):
-        # we accept "localhost" and "localhost:9000" as valid referrers.  See
-        # comments in the code as to why and for a related bug report.
-        request = LaunchpadTestRequest(
-            method='POST', environ=dict(PATH_INFO='/', REFERER='localhost'))
-        # this doesn't raise an exception
-        maybe_block_offsite_form_post(request)
-
     def test_whitelisted_paths(self):
         # There are a few whitelisted POST targets that don't require the
         # referrer be LP.  See comments in the code as to why and for related
