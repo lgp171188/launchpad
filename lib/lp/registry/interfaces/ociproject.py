@@ -24,6 +24,7 @@ from zope.schema import (
 
 from lp import _
 from lp.bugs.interfaces.bugtarget import IBugTarget
+from lp.code.interfaces.hasgitrepositories import IHasGitRepositories
 from lp.registry.interfaces.distribution import IDistribution
 from lp.registry.interfaces.ociprojectname import IOCIProjectName
 from lp.registry.interfaces.series import SeriesStatus
@@ -79,7 +80,7 @@ class IOCIProjectEdit(Interface):
         """Creates a new `IOCIProjectSeries`."""
 
 
-class IOCIProject(IOCIProjectView, IOCIProjectEdit,
+class IOCIProject(IHasGitRepositories, IOCIProjectView, IOCIProjectEdit,
                        IOCIProjectEditableAttributes):
     """A project containing Open Container Initiative recipes."""
 

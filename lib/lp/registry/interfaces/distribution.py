@@ -500,6 +500,11 @@ class IDistributionPublic(
         order to create a mirror.
         """
 
+    def getOCIProject(name):
+        """Return a OCIProject with the given name for this
+        distribution, or None.
+        """
+
     @operation_parameters(
         name=TextLine(title=_("Package name"), required=True))
     # Really returns IDistributionSourcePackage, see

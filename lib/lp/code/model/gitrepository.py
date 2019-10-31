@@ -392,8 +392,12 @@ class GitRepository(StormBase, WebhookTargetMixin, GitIdentityMixin):
         """See `IGitRepository`."""
         if self.project is not None:
             return self.project
-        elif self.distribution is not None:
+        elif (self.distribution is not None
+              and self.sourcepackagename is not None):
             return self.distribution.getSourcePackage(self.sourcepackagename)
+        elif (self.distribution is not None
+              and self.ociprojectname is not None):
+            return self.distribution.getOCIProject(self.ociprojectname.name)
         else:
             return self.owner
 

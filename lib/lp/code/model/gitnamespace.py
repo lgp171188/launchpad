@@ -6,6 +6,7 @@
 __metaclass__ = type
 __all__ = [
     'GitNamespaceSet',
+    'OCIProjectGitNamespace',
     'PackageGitNamespace',
     'PersonalGitNamespace',
     'ProjectGitNamespace',
@@ -541,6 +542,44 @@ class PackageGitNamespace(_BaseGitNamespace):
             self_dsp.sourcepackagename == other_dsp.sourcepackagename)
 
 
+@implementer(IGitNamespace, IGitNamespacePolicy)
+class OCIProjectGitNamespace(_BaseGitNamespace):
+    """A namespace for OCI Project repositories.
+
+    This namesace is for all the repositories owned by a particular person
+    in a particular OCI Project in a particular distribution.
+    """
+
+    has_defaults = True
+    allow_push_to_set_default = False
+    supports_merge_proposals = True
+    supports_code_imports = True
+    allow_recipe_name_from_target = True
+
+    def __init__(self, person, oci_project):
+        self.owner = person
+        self.oci_project = oci_project
+
+    def _getRepositoriesClause(self):
+        return And(
+            GitRepository.owner == self.owner,
+            GitRepository.ociprojectname == None,
+            GitRepository.distribution == None)
+
+    def getAllowedInformationTypes(self, who=None):
+        """See `IGitNamespace`."""
+        return PUBLIC_INFORMATION_TYPES
+
+    def getDefaultInformationType(self, who=None):
+        """See `IGitNamespace`."""
+        return InformationType.PUBLIC
+
+    @property
+    def target(self):
+        """See `IGitNamespace`."""
+        return IHasGitRepositories(self.oci_project)
+
+
 @implementer(IGitNamespaceSet)
 class GitNamespaceSet:
     """Only implementation of `IGitNamespaceSet`."""
@@ -558,11 +597,12 @@ class GitNamespaceSet:
             if sourcepackagename is not None:
                 return PackageGitNamespace(
                     person, distribution.getSourcePackage(sourcepackagename))
-            elif ocirecipename is not None:
-                # fillin
+            elif ociprojectname is not None:
+                return OCIProjectGitNamespace(
+                    person, distribution.getOCIProject(ociprojectname.name))
             assert sourcepackagename is not None, (
                 "distribution implies sourcepackagename or ociprojectname. "
                 "Got %r, %r, %r"
-                % (distribution, sourcepackagename, ocirecipename))
+                % (distribution, sourcepackagename, ociprojectname))
         else:
             return PersonalGitNamespace(person)

@@ -894,6 +894,10 @@
     <allow interface="lp.code.interfaces.gitnamespace.IGitNamespace" />
     <allow interface="lp.code.interfaces.gitnamespace.IGitNamespacePolicy" />
   </class>
+  <class class="lp.code.model.gitnamespace.OCIProjectGitNamespace">
+    <allow interface="lp.code.interfaces.gitnamespace.IGitNamespace" />
+    <allow interface="lp.code.interfaces.gitnamespace.IGitNamespacePolicy" />
+  </class>
   <securedutility
       class="lp.code.model.gitnamespace.GitNamespaceSet"
       provides="lp.code.interfaces.gitnamespace.IGitNamespaceSet">

@@ -219,11 +219,15 @@ class TestGitRepository(TestCaseWithFactory):
             repository.unique_name)
 
     def test_unique_name_oci_project(self):
-        oci_project_name = self.factory.makeOCIProjectName()
+        driver = self.factory.makePerson()
+        distribution = self.factory.makeDistribution(driver=driver)
+        ociprojectname = self.factory.makeOCIProjectName()
         oci_project = self.factory.makeOCIProject(
-            ociprojectname=oci_project_name)
-        repository = self.factory.makeGitRepository(target=oci_project)
-        self.assertEqual(oci_project_name, repository.ociprojectname)
+            pillar=distribution,
+            ociprojectname=ociprojectname)
+        with person_logged_in(driver):
+            repository = self.factory.makeGitRepository(target=oci_project)
+            self.assertEqual(ociprojectname, repository.ociprojectname)
 
     def test_unique_name_personal(self):
         owner = self.factory.makePerson()
@@ -243,9 +247,12 @@ class TestGitRepository(TestCaseWithFactory):
         self.assertEqual(dsp, repository.target)
 
     def test_target_ociproject(self):
-        oci_project = self.factory.makeOCIProject()
-        repository = self.factory.makeGitRepository(target=oci_project)
-        self.assertEqual(oci_project, repository.target)
+        driver = self.factory.makePerson()
+        distribution = self.factory.makeDistribution(driver=driver)
+        oci_project = self.factory.makeOCIProject(pillar=distribution)
+        with person_logged_in(driver):
+            repository = self.factory.makeGitRepository(target=oci_project)
+            self.assertEqual(oci_project, repository.target)
 
     def test_target_personal(self):
         owner = self.factory.makePerson()
