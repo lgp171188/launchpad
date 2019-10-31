@@ -312,10 +312,8 @@ class TestDistribution(TestCaseWithFactory):
             pillar=distro)
         # make another project to ensure we don't default
         self.factory.makeOCIProject(pillar=distro)
-
-        with person_logged_in(distro.driver):
-            result = distro.getOCIProject(u'first-project')
-            self.assertEqual(first_project, result)
+        result = distro.getOCIProject(u'first-project')
+        self.assertEqual(first_project, result)
 
 
 class TestDistributionCurrentSourceReleases(

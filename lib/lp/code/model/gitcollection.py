@@ -460,8 +460,8 @@ class GenericGitCollection:
 
     def inOCIProject(self, oci_project):
         """See `IGitcollection`."""
-        distribution = self.oci_project.pillar
-        ociprojectname = self.oci_project.ociprojectname
+        distribution = oci_project.pillar
+        ociprojectname = oci_project.ociprojectname
         return self._filterBy(
             [GitRepository.distribution == distribution,
              GitRepository.ociprojectname == ociprojectname])
