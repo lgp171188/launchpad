@@ -566,6 +566,25 @@ class OCIProjectGitNamespace(_BaseGitNamespace):
             GitRepository.ociprojectname == None,
             GitRepository.distribution == None)
 
+    # Marker for references to Git URL layouts: ##GITNAMESPACE##
+    @property
+    def name(self):
+        """See `IGitNamespace`."""
+        ocip = self.oci_project
+        return '~%s/%s/+source/%s' % (
+            self.owner.name, ocip.pillar.name, ocip.ociprojectname.name)
+
+    @property
+    def target(self):
+        """See `IGitNamespace`."""
+        return IHasGitRepositories(self.oci_project)
+
+    def _retargetRepository(self, repository):
+        ocip = self.oci_project
+        repository.project = None
+        repository.distribution = ocip.distribution
+        repository.ociprojectname = ocip.ociprojectname
+
     def getAllowedInformationTypes(self, who=None):
         """See `IGitNamespace`."""
         return PUBLIC_INFORMATION_TYPES
@@ -574,10 +593,26 @@ class OCIProjectGitNamespace(_BaseGitNamespace):
         """See `IGitNamespace`."""
         return InformationType.PUBLIC
 
+    def areRepositoriesMergeable(self, this, other):
+        """See `IGitNamespacePolicy`."""
+        # Repositories are mergeable into a oci project repository if the
+        # package is the same.
+        # XXX cjwatson 2015-04-18: Allow merging from a project repository
+        # if any (active?) series links this package to that project.
+        if this.namespace != self:
+            raise AssertionError(
+                "Namespace of %s is not %s." % (this.unique_name, self.name))
+        other_namespace = other.namespace
+        if zope_isinstance(other_namespace, OCIProjectGitNamespace):
+            return self.target == other_namespace.target
+        else:
+            return False
+
     @property
-    def target(self):
-        """See `IGitNamespace`."""
-        return IHasGitRepositories(self.oci_project)
+    def collection(self):
+        """See `IGitNamespacePolicy`."""
+        return getUtility(IAllGitRepositories).inOCIProject(
+            self.oci_project)
 
 
 @implementer(IGitNamespaceSet)

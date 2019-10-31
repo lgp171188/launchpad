@@ -458,6 +458,14 @@ class GenericGitCollection:
             [GitRepository.distribution == distribution,
              GitRepository.sourcepackagename == sourcepackagename])
 
+    def inOCIProject(self, oci_project):
+        """See `IGitcollection`."""
+        distribution = self.oci_project.pillar
+        ociprojectname = self.oci_project.ociprojectname
+        return self._filterBy(
+            [GitRepository.distribution == distribution,
+             GitRepository.ociprojectname == ociprojectname])
+
     def isPersonal(self):
         """See `IGitCollection`."""
         return self._filterBy(
