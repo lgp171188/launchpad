@@ -304,6 +304,19 @@ class TestDistribution(TestCaseWithFactory):
             InformationType.PUBLIC,
             distro.getDefaultSpecificationInformationType())
 
+    def test_getOCIProject(self):
+        distro = self.factory.makeDistribution()
+        ociprojectname = self.factory.makeOCIProjectName(name=u'first-project')
+        first_project = self.factory.makeOCIProject(
+            ociprojectname=ociprojectname,
+            pillar=distro)
+        # make another project to ensure we don't default
+        self.factory.makeOCIProject(pillar=distro)
+
+        with person_logged_in(distro.driver):
+            result = distro.getOCIProject(u'first-project')
+            self.assertEqual(first_project, result)
+
 
 class TestDistributionCurrentSourceReleases(
     CurrentSourceReleasesMixin, TestCase):
