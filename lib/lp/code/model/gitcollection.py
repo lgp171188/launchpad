@@ -52,6 +52,7 @@ from lp.code.model.gitrepository import (
 from lp.code.model.gitrule import GitRuleGrant
 from lp.code.model.gitsubscription import GitSubscription
 from lp.registry.enums import EXCLUSIVE_TEAM_POLICY
+from lp.registry.interfaces.distribution import IDistribution
 from lp.registry.model.distribution import Distribution
 from lp.registry.model.person import Person
 from lp.registry.model.product import Product
@@ -459,7 +460,9 @@ class GenericGitCollection:
              GitRepository.sourcepackagename == sourcepackagename])
 
     def inOCIProject(self, oci_project):
-        """See `IGitcollection`."""
+        """See `IGitCollection`."""
+        # XXX twom 2019-11-1 This will eventually have project support
+        assert IDistribution.providedBy(oci_project.pillar)
         distribution = oci_project.pillar
         ociprojectname = oci_project.ociprojectname
         return self._filterBy(
