@@ -31,7 +31,7 @@ from lp.code.interfaces.gitnamespace import (
     )
 from lp.code.interfaces.gitrepository import IGitRepositorySet
 from lp.code.model.gitnamespace import (
-    OCIProjectGitNamespace,
+    DistributionOCIGitNamespace,
     PackageGitNamespace,
     PersonalGitNamespace,
     ProjectGitNamespace,
@@ -437,8 +437,8 @@ class TestProjectGitNamespace(TestCaseWithFactory, NamespaceMixin):
             repositories[0].namespace.collection.getRepositories())
 
 
-class TestOCIProjectGitNamespace(TestCaseWithFactory, NamespaceMixin):
-    """Tests for `OCIProjectGitNamespace`."""
+class TestDistributionOCIGitNamespace(TestCaseWithFactory, NamespaceMixin):
+    """Tests for `DistributionOCIGitNamespace`."""
 
     layer = DatabaseFunctionalLayer
 
@@ -450,7 +450,7 @@ class TestOCIProjectGitNamespace(TestCaseWithFactory, NamespaceMixin):
     def test_name(self):
         person = self.factory.makePerson()
         oci_project = self.factory.makeOCIProject()
-        namespace = OCIProjectGitNamespace(person, oci_project)
+        namespace = DistributionOCIGitNamespace(person, oci_project)
         self.assertEqual(
             "~%s/%s/+oci/%s" % (
                 person.name, oci_project.distribution.name,

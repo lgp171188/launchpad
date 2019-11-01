@@ -894,7 +894,7 @@
     <allow interface="lp.code.interfaces.gitnamespace.IGitNamespace" />
     <allow interface="lp.code.interfaces.gitnamespace.IGitNamespacePolicy" />
   </class>
-  <class class="lp.code.model.gitnamespace.OCIProjectGitNamespace">
+  <class class="lp.code.model.gitnamespace.DistributionOCIGitNamespace">
     <allow interface="lp.code.interfaces.gitnamespace.IGitNamespace" />
     <allow interface="lp.code.interfaces.gitnamespace.IGitNamespacePolicy" />
   </class>

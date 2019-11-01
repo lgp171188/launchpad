@@ -6,7 +6,7 @@
 __metaclass__ = type
 __all__ = [
     'GitNamespaceSet',
-    'OCIProjectGitNamespace',
+    'DistributionOCIGitNamespace',
     'PackageGitNamespace',
     'PersonalGitNamespace',
     'ProjectGitNamespace',
@@ -543,7 +543,7 @@ class PackageGitNamespace(_BaseGitNamespace):
 
 
 @implementer(IGitNamespace, IGitNamespacePolicy)
-class OCIProjectGitNamespace(_BaseGitNamespace):
+class DistributionOCIGitNamespace(_BaseGitNamespace):
     """A namespace for OCI Project repositories.
 
     This namesace is for all the repositories owned by a particular person
@@ -603,7 +603,7 @@ class OCIProjectGitNamespace(_BaseGitNamespace):
             raise AssertionError(
                 "Namespace of %s is not %s." % (this.unique_name, self.name))
         other_namespace = other.namespace
-        if zope_isinstance(other_namespace, OCIProjectGitNamespace):
+        if zope_isinstance(other_namespace, DistributionOCIGitNamespace):
             return self.target == other_namespace.target
         else:
             return False
@@ -633,7 +633,7 @@ class GitNamespaceSet:
                 return PackageGitNamespace(
                     person, distribution.getSourcePackage(sourcepackagename))
             elif ociprojectname is not None:
-                return OCIProjectGitNamespace(
+                return DistributionOCIGitNamespace(
                     person, distribution.getOCIProject(ociprojectname.name))
             assert sourcepackagename is not None, (
                 "distribution implies sourcepackagename or ociprojectname. "
