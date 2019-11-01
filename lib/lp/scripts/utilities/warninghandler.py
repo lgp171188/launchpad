@@ -22,7 +22,7 @@ class WarningReport:
     def __str__(self):
         info = str(self.info)
         if info:
-            return info
+            return '\n'.join((info, self.message))
         else:
             return self.message
 
