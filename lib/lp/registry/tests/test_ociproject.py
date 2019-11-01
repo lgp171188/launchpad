@@ -67,6 +67,12 @@ class TestOCIProject(TestCaseWithFactory):
                 oci_project=second_oci_project)
             self.assertContentEqual([first_series], first_oci_project.series)
 
+    def test_name(self):
+        oci_project_name = self.factory.makeOCIProjectName(name='test-name')
+        oci_project = self.factory.makeOCIProject(
+            ociprojectname=oci_project_name)
+        self.assertEqual(oci_project.name, 'test-name')
+
 
 class TestOCIProjectSet(TestCaseWithFactory):
 

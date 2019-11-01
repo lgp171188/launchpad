@@ -67,6 +67,10 @@ class OCIProject(BugTargetBase, StormBase):
         name="enable_bugfiling_duplicate_search")
 
     @property
+    def name(self):
+        return self.ociprojectname.name
+
+    @property
     def pillar(self):
         """See `IBugTarget`."""
         return self.distribution

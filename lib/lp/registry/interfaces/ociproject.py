@@ -15,7 +15,10 @@ from lazr.restful.fields import (
     CollectionField,
     Reference,
     )
-from zope.interface import Interface
+from zope.interface import (
+    Attribute,
+    Interface,
+    )
 from zope.schema import (
     Datetime,
     Int,
@@ -50,6 +53,8 @@ class IOCIProjectView(Interface):
         title=_("Series inside this OCI project."),
         # Really IOCIProjectSeries
         value_type=Reference(schema=Interface))
+
+    name = Attribute(_("Name"))
 
 
 class IOCIProjectEditableAttributes(IBugTarget):
