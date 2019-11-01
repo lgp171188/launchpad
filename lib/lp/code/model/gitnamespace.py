@@ -563,15 +563,15 @@ class OCIProjectGitNamespace(_BaseGitNamespace):
     def _getRepositoriesClause(self):
         return And(
             GitRepository.owner == self.owner,
-            GitRepository.ociprojectname == None,
-            GitRepository.distribution == None)
+            GitRepository.ociprojectname == self.oci_project.ociprojectname,
+            GitRepository.distribution == self.oci_project.distribution)
 
     # Marker for references to Git URL layouts: ##GITNAMESPACE##
     @property
     def name(self):
         """See `IGitNamespace`."""
         ocip = self.oci_project
-        return '~%s/%s/+source/%s' % (
+        return '~%s/%s/+oci/%s' % (
             self.owner.name, ocip.pillar.name, ocip.ociprojectname.name)
 
     @property

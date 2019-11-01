@@ -345,8 +345,8 @@ class GitRepository(StormBase, WebhookTargetMixin, GitIdentityMixin):
             self.sourcepackagename = target.sourcepackagename
         elif IOCIProject.providedBy(target):
             # XXX twom 2019-10-28 This should have support for product
-            self.distribution = target.pillar
             self.ociprojectname = target.ociprojectname
+            self.distribution = target.pillar
         self.owner_default = False
         self.target_default = False
 
@@ -375,10 +375,16 @@ class GitRepository(StormBase, WebhookTargetMixin, GitIdentityMixin):
         if self.project is not None:
             fmt = "~%(owner)s/%(project)s"
             names["project"] = self.project.name
-        elif self.distribution is not None:
+        elif (self.distribution is not None
+              and self.sourcepackagename is not None):
             fmt = "~%(owner)s/%(distribution)s/+source/%(source)s"
             names["distribution"] = self.distribution.name
             names["source"] = self.sourcepackagename.name
+        elif (self.distribution is not None
+              and self.ociprojectname is not None):
+            fmt = "~%(owner)s/%(distribution)s/+oci/%(ociproject)s"
+            names["distribution"] = self.distribution.name
+            names["ociproject"] = self.ociprojectname.name
         else:
             fmt = "~%(owner)s"
         fmt += "/+git/%(repository)s"
