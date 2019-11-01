@@ -501,7 +501,7 @@ class IDistributionPublic(
         """
 
     def getOCIProject(name):
-        """Return a OCIProject with the given name for this
+        """Return a `OCIProject` with the given name for this
         distribution, or None.
         """
 
