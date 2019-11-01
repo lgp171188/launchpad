@@ -212,6 +212,8 @@ def get_git_namespace(target, owner):
             owner, distribution=target.distribution,
             sourcepackagename=target.sourcepackagename)
     elif IOCIProject.providedBy(target):
+        # This will eventually be allowable, but is not right now.
+        assert target.distribution is not None
         return getUtility(IGitNamespaceSet).get(
             owner, distribution=target.distribution,
             ociprojectname=target.ociprojectname)
