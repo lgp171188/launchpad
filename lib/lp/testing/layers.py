@@ -2005,6 +2005,26 @@ class TwistedAppServerLayer(TwistedLaunchpadZopelessLayer):
 class YUITestLayer(FunctionalLayer):
     """The layer for all YUITests cases."""
 
+    @classmethod
+    @profiled
+    def setUp(cls):
+        pass
+
+    @classmethod
+    @profiled
+    def tearDown(cls):
+        pass
+
+    @classmethod
+    @profiled
+    def testSetUp(cls):
+        pass
+
+    @classmethod
+    @profiled
+    def testTearDown(cls):
+        pass
+
 
 class YUIAppServerLayer(MemcachedLayer):
     """The layer for all YUIAppServer test cases."""
