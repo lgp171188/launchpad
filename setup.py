@@ -233,6 +233,8 @@ setup(
         'txpkgupload',
         'virtualenv-tools3',
         'wadllib',
+        'WebOb',
+        'WebTest',
         'WSGIProxy2',
         'z3c.pt',
         'z3c.ptcompat',
