@@ -16,19 +16,22 @@ timed out.
 First we create a view that will provoke a TimeoutError, a view for the
 exception, and a time machine.
 
-    >>> from zope.publisher.browser import BrowserView
-    >>> from zope.app.testing.testbrowser import Browser
     >>> from textwrap import dedent
+
+    >>> from storm.exceptions import TimeoutError
+    >>> import zope.component
+    >>> from zope.interface import Interface, implementer
+    >>> from zope.publisher.browser import BrowserView
     >>> from zope.publisher.interfaces.browser import (
     ...     IBrowserRequest, IBrowserView, IBrowserPublisher)
-    >>> from zope.interface import Interface, implementer
     >>> from zope.security.checker import CheckerPublic, MultiChecker
-    >>> import zope.component
+
+    >>> from lp.services.config import config
     >>> import lp.services.webapp.adapter
     >>> from lp.services.webapp.interfaces import (
     ...     IStoreSelector, MAIN_STORE, MASTER_FLAVOR)
-    >>> from lp.services.config import config
-    >>> from storm.exceptions import TimeoutError
+    >>> from lp.testing.pages import setupBrowser
+
     >>> config.push('set_timeout', dedent('''
     ...     [database]
     ...     db_statement_timeout = 5000
@@ -82,8 +85,7 @@ Now we actually demonstrate the behaviour.  The view did raise a TimeoutError.
     >>> from lp.testing.fixture import CaptureOops
     >>> capture = CaptureOops()
     >>> capture.setUp()
-    >>> browser = Browser()
-    >>> browser.handleErrors = False
+    >>> browser = setupBrowser()
     >>> browser.open('http://launchpad.test/doom_test')
     Traceback (most recent call last):
     ...
