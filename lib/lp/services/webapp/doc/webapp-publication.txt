@@ -466,8 +466,7 @@ less nice.
     ...
 
     >>> print http("GET /foo/bar HTTP/1.1\n"
-    ...            "Host: xmlrpc.launchpad.test\n"
-    ...            "X-zope-handle-errors: False")
+    ...            "Host: xmlrpc.launchpad.test")
     HTTP/1.1 405 Method Not Allowed
     Allow: POST
     ...
