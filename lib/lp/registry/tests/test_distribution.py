@@ -305,11 +305,7 @@ class TestDistribution(TestCaseWithFactory):
             distro.getDefaultSpecificationInformationType())
 
     def test_getOCIProject(self):
-        distro = self.factory.makeDistribution()
-        ociprojectname = self.factory.makeOCIProjectName(name=u'first-project')
-        first_project = self.factory.makeOCIProject(
-            ociprojectname=ociprojectname,
-            pillar=distro)
+        first_project = self.factory.makeOCIProject(pillar=distro)
         # make another project to ensure we don't default
         self.factory.makeOCIProject(pillar=distro)
         result = distro.getOCIProject(u'first-project')
