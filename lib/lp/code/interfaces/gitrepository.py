@@ -413,9 +413,10 @@ class IGitRepositoryView(IHasRecipes):
         itself.  For default repositories, the context object is the
         appropriate default object.
 
-        Where a repository is the default for a product or a distribution
-        source package, the repository is available through a number of
-        different URLs.  These URLs are the aliases for the repository.
+        Where a repository is the default for a product, distribution
+        source package or OCI project, the repository is available
+        through a number of different URLs.
+        These URLs are the aliases for the repository.
 
         For example, a repository which is the default for the 'fooix'
         project and which is also its owner's default repository for that
