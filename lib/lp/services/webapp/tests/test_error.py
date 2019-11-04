@@ -12,6 +12,7 @@ import urllib2
 
 from fixtures import FakeLogger
 import psycopg2
+from six.moves.urllib.error import HTTPError
 from storm.exceptions import (
     DisconnectionError,
     OperationalError,
@@ -26,6 +27,7 @@ from testtools.matchers import (
 import transaction
 from zope.interface import Interface
 from zope.publisher.interfaces.browser import IDefaultBrowserLayer
+from zope.testbrowser.wsgi import Browser
 
 from lp.services.webapp.error import (
     DisconnectionErrorView,
@@ -37,12 +39,12 @@ from lp.testing import TestCase
 from lp.testing.fixture import (
     CaptureOops,
     PGBouncerFixture,
-    Urllib2Fixture,
     ZopeAdapterFixture,
     )
 from lp.testing.layers import (
     DatabaseLayer,
     LaunchpadFunctionalLayer,
+    wsgi_application,
     )
 from lp.testing.matchers import Contains
 
@@ -78,8 +80,8 @@ class TestDatabaseErrorViews(TestCase):
 
     def getHTTPError(self, url):
         try:
-            urllib2.urlopen(url)
-        except urllib2.HTTPError as error:
+            Browser(wsgi_app=wsgi_application).open(url)
+        except HTTPError as error:
             return error
         else:
             self.fail("We should have gotten an HTTP error")
@@ -103,13 +105,14 @@ class TestDatabaseErrorViews(TestCase):
     def retryConnection(self, url, bouncer, retries=60):
         """Retry to connect to *url* for *retries* times.
 
-        Return the file-like object returned by *urllib2.urlopen(url)*.
-        Raise a TimeoutException if the connection can not be established.
+        Raise a TimeoutException if the connection cannot be established.
         """
+        browser = Browser(wsgi_app=wsgi_application)
         for i in range(retries):
             try:
-                return urllib2.urlopen(url)
-            except urllib2.HTTPError as e:
+                browser.open(url)
+                return
+            except HTTPError as e:
                 if e.code != httplib.SERVICE_UNAVAILABLE:
                     raise
             time.sleep(1)
@@ -122,7 +125,6 @@ class TestDatabaseErrorViews(TestCase):
     def test_disconnectionerror_view_integration(self):
         # Test setup.
         self.useFixture(FakeLogger('SiteError', level=logging.CRITICAL))
-        self.useFixture(Urllib2Fixture())
         bouncer = PGBouncerFixture()
         # XXX gary bug=974617, bug=1011847, bug=504291 2011-07-03:
         # In parallel tests, we are rarely encountering instances of
@@ -230,7 +232,6 @@ class TestDatabaseErrorViews(TestCase):
     def test_operationalerror_view_integration(self):
         # Test setup.
         self.useFixture(FakeLogger('SiteError', level=logging.CRITICAL))
-        self.useFixture(Urllib2Fixture())
 
         class BrokenView(object):
             """A view that raises an OperationalError"""

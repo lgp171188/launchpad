@@ -1,4 +1,4 @@
-# Copyright 2009 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """A real, socket connecting browser.
@@ -7,30 +7,24 @@ This browser performs actual socket connections to a real HTTP server.  This
 is used in tests which utilize the AppServerLayer to run the app server in a
 child process.  The Zope testing browser fakes its connections in-process, so
 that's not good enough.
-
-The browser provided here extends `zope.app.testing.testbrowser.Browser` by
-providing a close() method that delegates to the underlying mechanize browser,
-and it tracks all Browser instances to ensure that they are closed.  This
-latter prevents open socket leaks even when the doctest doesn't explicitly
-close or delete the browser instance.
 """
-from lazr.uri._uri import URI
-
 
 __metaclass__ = type
 __all__ = [
-    'Browser',
     'setUp',
-    'tearDown',
     ]
 
+import ssl
 
-import base64
-import urllib2
-import weakref
-
+from lazr.uri import URI
 import transaction
-from zope.testbrowser.browser import Browser as _Browser
+from urllib3 import PoolManager
+from wsgiproxy.proxies import TransparentProxy
+from wsgiproxy.urllib3_client import HttpClient
+from zope.testbrowser.wsgi import (
+    AuthorizationMiddleware,
+    Browser as _Browser,
+    )
 
 from lp.testing.pages import (
     extract_text,
@@ -40,65 +34,36 @@ from lp.testing.pages import (
     )
 
 
-class SocketClosingOnErrorHandler(urllib2.BaseHandler):
-    """A handler that ensures that the socket gets closed on errors.
+class TransactionMiddleware:
+    """Middleware to commit the current transaction before the test.
 
-    Interestingly enough <wink> without this, a 404 will cause mechanize to
-    leak open socket objects.
+    This is like `zope.app.wsgi.TransactionMiddleware`, but avoids ZODB.
     """
-    # Ensure that this handler is the first default error handler to execute,
-    # because right after this, the built-in default handler will raise an
-    # exception.
-    handler_order = 0
 
-    # Copy signature from base class.
-    def http_error_default(self, req, fp, code, msg, hdrs):
-        """See `urllib2.BaseHandler`."""
-        fp.close()
+    def __init__(self, app):
+        self.app = app
 
-
-# To ensure that the mechanize browser doesn't leak socket connections past
-# the end of the test, we manage a set of weak references to live browser
-# objects.  The layer can then call a function here to ensure that all live
-# browsers get properly closed.
-_live_browser_set = set()
+    def __call__(self, environ, start_response):
+        transaction.commit()
+        for entry in self.app(environ, start_response):
+            yield entry
 
 
 class Browser(_Browser):
-    """A browser subclass that knows about basic auth."""
 
-    def __init__(self, auth=None, mech_browser=None):
-        super(Browser, self).__init__(mech_browser=mech_browser)
-        # We have to add the error handler to the mechanize browser underlying
-        # the Zope browser, because it's the former that's actually doing all
-        # the work.
-        self.mech_browser.add_handler(SocketClosingOnErrorHandler())
-        if auth:
-            # Unlike the higher level Zope test browser, we actually have to
-            # encode the basic auth information.
-            userpass = base64.b64encode(auth)
-            self.addHeader('Authorization', 'Basic ' + userpass)
-        _live_browser_set.add(weakref.ref(self, self._refclose))
-
-    def _refclose(self, obj):
-        """For weak reference cleanup."""
-        self.close()
-
-    def close(self):
-        """Yay!  Zope browsers don't have a close() method."""
-        self.mech_browser.close()
-
-    def _changed(self):
-        """Ensure the current transaction is committed.
-
-        Because this browser is used in the AppServerLayer where it talks
-        real-HTTP to a child process, we need to ensure that the parent
-        process also gets its current transaction in sync with the child's
-        changes.  The easiest way to do that is to just commit the current
-        transaction.
-        """
-        super(Browser, self)._changed()
-        transaction.commit()
+    def __init__(self, url=None, wsgi_app=None):
+        if wsgi_app is None:
+            # urllib3 is carefully-chosen: both the httplib and requests
+            # clients incorrectly comma-join multiple Set-Cookie headers, at
+            # least on Python 2.7, which causes failures in some of the
+            # +login tests.  However, we have to go to a bit of effort to
+            # disable certificate verification to avoid problems with e.g.
+            # +logout redirecting to https://bazaar.launchpad.test/+logout.
+            client = HttpClient(pool=PoolManager(10, cert_reqs=ssl.CERT_NONE))
+            wsgi_app = AuthorizationMiddleware(
+                TransactionMiddleware(
+                    TransparentProxy(client=client)))
+        super(Browser, self).__init__(url=url, wsgi_app=wsgi_app)
 
     @property
     def vhost(self):
@@ -124,11 +89,3 @@ def setUp(test):
     test.globs['find_main_content'] = find_main_content
     test.globs['print_feedback_messages'] = print_feedback_messages
     test.globs['extract_text'] = extract_text
-
-
-def tearDown(test):
-    """Tear down appserver tests."""
-    for ref in _live_browser_set:
-        browser = ref()
-        if browser is not None:
-            browser.close()

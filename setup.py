@@ -233,6 +233,7 @@ setup(
         'txpkgupload',
         'virtualenv-tools3',
         'wadllib',
+        'WSGIProxy2',
         'z3c.pt',
         'z3c.ptcompat',
         'zc.zservertracelog',

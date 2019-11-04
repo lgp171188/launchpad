@@ -1020,12 +1020,9 @@ def wsgi_application(environ, start_response):
     request = zope.publisher.publish.publish(
         request, handle_errors=handle_errors)
     response = request.response
-    # We sort these, and then put the status first, because
-    # zope.app.testing.testbrowser does--and because it makes it easier to
-    # write reliable tests.
+    # We sort these because it makes it easier to write reliable tests.
     headers = sorted(response.getHeaders())
     status = response.getStatusString()
-    headers.insert(0, ('Status', status))
     # Start the WSGI server response.
     start_response(status, headers)
     # Return the result body iterable.
@@ -1085,6 +1082,20 @@ class FunctionalLayer(BaseLayer):
         root = fs.connection.root()
         root[ZopePublication.root_name] = MockRootFolder()
 
+        # Allow the WSGI test browser to talk to our various test hosts.
+        def assert_allowed_host(self):
+            host = self.host
+            if ':' in host:
+                host = host.split(':')[0]
+            if host == 'localhost' or host.endswith('.test'):
+                return
+            self._allowed = False
+
+        FunctionalLayer._testbrowser_allowed = MonkeyPatch(
+            'zope.testbrowser.wsgi.WSGIConnection.assert_allowed_host',
+            assert_allowed_host)
+        FunctionalLayer._testbrowser_allowed.setUp()
+
         # Should be impossible, as the CA cannot be unloaded. Something
         # mighty nasty has happened if this is triggered.
         if not is_ca_available():
@@ -1094,6 +1105,8 @@ class FunctionalLayer(BaseLayer):
     @classmethod
     @profiled
     def testTearDown(cls):
+        FunctionalLayer._testbrowser_allowed.cleanUp()
+
         # Should be impossible, as the CA cannot be unloaded. Something
         # mighty nasty has happened if this is triggered.
         if not is_ca_available():
