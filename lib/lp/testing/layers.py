@@ -1020,12 +1020,9 @@ def wsgi_application(environ, start_response):
     request = zope.publisher.publish.publish(
         request, handle_errors=handle_errors)
     response = request.response
-    # We sort these, and then put the status first, because
-    # zope.app.testing.testbrowser does--and because it makes it easier to
-    # write reliable tests.
+    # We sort these because it makes it easier to write reliable tests.
     headers = sorted(response.getHeaders())
     status = response.getStatusString()
-    headers.insert(0, ('Status', status))
     # Start the WSGI server response.
     start_response(status, headers)
     # Return the result body iterable.
