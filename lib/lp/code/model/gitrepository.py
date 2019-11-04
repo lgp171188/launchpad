@@ -150,6 +150,7 @@ from lp.registry.interfaces.accesspolicy import (
     IAccessArtifactSource,
     IAccessPolicySource,
     )
+from lp.registry.interfaces.distribution import IDistribution
 from lp.registry.interfaces.distributionsourcepackage import (
     IDistributionSourcePackage,
     )
@@ -309,6 +310,9 @@ class GitRepository(StormBase, WebhookTargetMixin, GitIdentityMixin):
     sourcepackagename_id = Int(name='sourcepackagename', allow_none=True)
     sourcepackagename = Reference(sourcepackagename_id, 'SourcePackageName.id')
 
+    ociprojectname_id = Int(name='ociprojectname', allow_none=True)
+    ociprojectname = Reference(ociprojectname_id, 'OCIProjectName.id')
+
     name = Unicode(name='name', allow_none=False)
 
     description = Unicode(name='description', allow_none=True)
@@ -318,9 +322,6 @@ class GitRepository(StormBase, WebhookTargetMixin, GitIdentityMixin):
     target_default = Bool(name='target_default', allow_none=False)
 
     _default_branch = Unicode(name='default_branch', allow_none=True)
-
-    ociprojectname_id = Int(name='ociprojectname', allow_none=True)
-    ociprojectname = Reference(ociprojectname_id, 'OCIProjectName.id')
 
     def __init__(self, repository_type, registrant, owner, target, name,
                  information_type, date_created, reviewer=None,
@@ -345,6 +346,7 @@ class GitRepository(StormBase, WebhookTargetMixin, GitIdentityMixin):
             self.sourcepackagename = target.sourcepackagename
         elif IOCIProject.providedBy(target):
             # XXX twom 2019-10-28 This should have support for product
+            assert IDistribution.providedBy(target.pillar)
             self.ociprojectname = target.ociprojectname
             self.distribution = target.pillar
         self.owner_default = False
