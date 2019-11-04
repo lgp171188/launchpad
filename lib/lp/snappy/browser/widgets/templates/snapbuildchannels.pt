@@ -8,10 +8,6 @@
     <td><div tal:content="structure view/core_widget" /></td>
   </tr>
   <tr>
-    <td>core16</td>
-    <td><div tal:content="structure view/core16_widget" /></td>
-  </tr>
-  <tr>
     <td>core18</td>
     <td><div tal:content="structure view/core18_widget" /></td>
   </tr>

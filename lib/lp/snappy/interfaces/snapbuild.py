@@ -169,7 +169,7 @@ class ISnapBuildView(IPackageBuild):
         title=_("Source snap channels to use for this build."),
         description=_(
             "A dictionary mapping snap names to channels to use for this "
-            "build.  Currently only 'core', 'core16', 'core18', 'core20' "
+            "build.  Currently only 'core', 'core18', 'core20' "
             "and 'snapcraft' keys are supported."),
         key_type=TextLine()))
 

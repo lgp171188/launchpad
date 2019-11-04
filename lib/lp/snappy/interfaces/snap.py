@@ -394,7 +394,7 @@ class ISnapView(Interface):
             title=_("Source snap channels to use for this build."),
             description=_(
                 "A dictionary mapping snap names to channels to use for this "
-                "build.  Currently only 'core', 'core16', 'core18', 'core20' "
+                "build.  Currently only 'core', 'core18', 'core20' "
                 "and 'snapcraft' keys are supported."),
             key_type=TextLine(), required=False))
     # Really ISnapBuild, patched in lp.snappy.interfaces.webservice.
@@ -423,7 +423,7 @@ class ISnapView(Interface):
             title=_("Source snap channels to use for this build."),
             description=_(
                 "A dictionary mapping snap names to channels to use for this "
-                "build.  Currently only 'core', 'core16', 'core18', 'core20' "
+                "build.  Currently only 'core', 'core18', 'core20' "
                 "and 'snapcraft' keys are supported."),
             key_type=TextLine(), required=False))
     @export_factory_operation(ISnapBuildRequest, [])
@@ -755,7 +755,7 @@ class ISnapEditableAttributes(IHasOwner):
         key_type=TextLine(), required=False, readonly=False,
         description=_(
             "A dictionary mapping snap names to channels to use when building "
-            "this snap package.  Currently only 'core', 'core16', 'core18', "
+            "this snap package.  Currently only 'core', 'core18', "
             "'core20' and 'snapcraft' keys are supported.")))
 
     is_stale = Bool(
