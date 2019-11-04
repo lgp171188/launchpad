@@ -463,7 +463,7 @@ class GenericGitCollection:
 
     def inOCIProject(self, oci_project):
         """See `IGitCollection`."""
-        # XXX twom 2019-11-1 This will eventually have project support
+        # XXX twom 2019-11-01 This will eventually have project support
         assert IDistribution.providedBy(oci_project.pillar)
         distribution = oci_project.pillar
         ociprojectname = oci_project.ociprojectname

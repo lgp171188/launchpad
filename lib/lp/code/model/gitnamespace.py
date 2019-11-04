@@ -5,8 +5,8 @@
 
 __metaclass__ = type
 __all__ = [
-    'GitNamespaceSet',
     'DistributionOCIGitNamespace',
+    'GitNamespaceSet',
     'PackageGitNamespace',
     'PersonalGitNamespace',
     'ProjectGitNamespace',
