@@ -656,9 +656,10 @@ class GitNamespaceSet:
             elif ociprojectname is not None:
                 return DistributionOCIGitNamespace(
                     person, distribution.getOCIProject(ociprojectname.name))
-            assert sourcepackagename is not None, (
-                "distribution implies sourcepackagename or ociprojectname. "
-                "Got %r, %r, %r"
-                % (distribution, sourcepackagename, ociprojectname))
+            else:
+                raise AssertionError(
+                    "distribution implies sourcepackagename or "
+                    "ociprojectname. Got %r, %r, %r"
+                    % (distribution, sourcepackagename, ociprojectname))
         else:
             return PersonalGitNamespace(person)
