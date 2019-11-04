@@ -54,9 +54,13 @@ time for browsers with bad system clocks.
     >>> # XXX 2010-05-08 bac bug=577596 This work-around for the fact
     >>> # that loggerhead is not running needs to be replaced with
     >>> # something more robust and clear.
+    >>> import warnings
     >>> from urllib2 import HTTPError, URLError
+    >>> from urllib3.exceptions import InsecureRequestWarning
     >>> try:
-    ...     browser.getControl('Log Out').click()
+    ...     with warnings.catch_warnings():
+    ...         warnings.simplefilter('ignore', InsecureRequestWarning)
+    ...         browser.getControl('Log Out').click()
     ... except (HTTPError, URLError):
     ...     pass
 
