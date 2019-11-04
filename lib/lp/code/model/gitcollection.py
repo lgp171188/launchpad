@@ -54,6 +54,7 @@ from lp.code.model.gitsubscription import GitSubscription
 from lp.registry.enums import EXCLUSIVE_TEAM_POLICY
 from lp.registry.interfaces.distribution import IDistribution
 from lp.registry.model.distribution import Distribution
+from lp.registry.model.ociprojectname import OCIProjectName
 from lp.registry.model.person import Person
 from lp.registry.model.product import Product
 from lp.registry.model.sourcepackagename import SourcePackageName
@@ -200,6 +201,7 @@ class GenericGitCollection:
         load_related(Distribution, repositories, ['distribution_id'])
         load_related(SourcePackageName, repositories, ['sourcepackagename_id'])
         load_related(Product, repositories, ['project_id'])
+        load_related(OCIProjectName, repositories, ['ociprojectname_id'])
         caches = {
             repository.id: get_property_cache(repository)
             for repository in repositories}
