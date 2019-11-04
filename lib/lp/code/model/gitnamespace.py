@@ -320,6 +320,7 @@ class PersonalGitNamespace(_BaseGitNamespace):
         repository.project = None
         repository.distribution = None
         repository.sourcepackagename = None
+        repository.ociprojectname = None
         repository.target_default = False
         repository.owner_default = False
 
@@ -400,6 +401,7 @@ class ProjectGitNamespace(_BaseGitNamespace):
         repository.project = self.project
         repository.distribution = None
         repository.sourcepackagename = None
+        repository.ociprojectname = None
 
     def getAllowedInformationTypes(self, who=None):
         """See `IGitNamespace`."""
@@ -495,6 +497,7 @@ class PackageGitNamespace(_BaseGitNamespace):
         repository.project = None
         repository.distribution = dsp.distribution
         repository.sourcepackagename = dsp.sourcepackagename
+        repository.ociprojectname = None
 
     def getAllowedInformationTypes(self, who=None):
         """See `IGitNamespace`."""
@@ -546,7 +549,7 @@ class PackageGitNamespace(_BaseGitNamespace):
 class DistributionOCIGitNamespace(_BaseGitNamespace):
     """A namespace for OCI Project repositories.
 
-    This namesace is for all the repositories owned by a particular person
+    This namespace is for all the repositories owned by a particular person
     in a particular OCI Project in a particular distribution.
     """
 
@@ -558,13 +561,15 @@ class DistributionOCIGitNamespace(_BaseGitNamespace):
 
     def __init__(self, person, oci_project):
         self.owner = person
+        # Ensure we have a valid target for this namespace
+        assert oci_project.distribution is not None
         self.oci_project = oci_project
 
     def _getRepositoriesClause(self):
         return And(
             GitRepository.owner == self.owner,
-            GitRepository.ociprojectname == self.oci_project.ociprojectname,
-            GitRepository.distribution == self.oci_project.distribution)
+            GitRepository.distribution == self.oci_project.distribution,
+            GitRepository.ociprojectname == self.oci_project.ociprojectname)
 
     # Marker for references to Git URL layouts: ##GITNAMESPACE##
     @property
@@ -572,7 +577,7 @@ class DistributionOCIGitNamespace(_BaseGitNamespace):
         """See `IGitNamespace`."""
         ocip = self.oci_project
         return '~%s/%s/+oci/%s' % (
-            self.owner.name, ocip.pillar.name, ocip.ociprojectname.name)
+            self.owner.name, ocip.pillar.name, ocip.name)
 
     @property
     def target(self):
@@ -583,6 +588,7 @@ class DistributionOCIGitNamespace(_BaseGitNamespace):
         ocip = self.oci_project
         repository.project = None
         repository.distribution = ocip.distribution
+        repository.sourcepackagename = None
         repository.ociprojectname = ocip.ociprojectname
 
     def getAllowedInformationTypes(self, who=None):
@@ -595,10 +601,10 @@ class DistributionOCIGitNamespace(_BaseGitNamespace):
 
     def areRepositoriesMergeable(self, this, other):
         """See `IGitNamespacePolicy`."""
-        # Repositories are mergeable into a oci project repository if the
-        # package is the same.
+        # Repositories are mergeable into an OCI Project repository if the
+        # OCI Project is the same.
         # XXX cjwatson 2015-04-18: Allow merging from a project repository
-        # if any (active?) series links this package to that project.
+        # if any (active?) series links this OCI Project to that project.
         if this.namespace != self:
             raise AssertionError(
                 "Namespace of %s is not %s." % (this.unique_name, self.name))
@@ -614,6 +620,11 @@ class DistributionOCIGitNamespace(_BaseGitNamespace):
         return getUtility(IAllGitRepositories).inOCIProject(
             self.oci_project)
 
+    def assignKarma(self, person, action_name, date_created=None):
+        """See `IGitNamespacePolicy`."""
+        # Does nothing. Currently no karma for OCI Project Namespaces.
+        return None
+
 
 @implementer(IGitNamespaceSet)
 class GitNamespaceSet:
@@ -623,12 +634,22 @@ class GitNamespaceSet:
             sourcepackagename=None, ociprojectname=None):
         """See `IGitNamespaceSet`."""
         if project is not None:
-            assert distribution is None and sourcepackagename is None, (
-                "project implies no distribution or sourcepackagename. "
-                "Got %r, %r, %r."
-                % (project, distribution, sourcepackagename))
+            assert (distribution is None and sourcepackagename is None
+                    and ociprojectname is None), (
+                "project implies no distribution, sourcepackagename"
+                " or ociprojectname. "
+                "Got %r, %r, %r, %r."
+                % (project, distribution, sourcepackagename, ociprojectname))
             return ProjectGitNamespace(person, project)
         elif distribution is not None:
+            assert (sourcepackagename is None or ociprojectname is None), (
+                "One of sourcepackagename and ociprojectname must be set."
+                "Got %r, %r."
+                % (sourcepackagename, ociprojectname))
+            assert not (sourcepackagename and ociprojectname), (
+                "Only one of sourcepackagename and ociprojectname can be set."
+                "Got %r, %r."
+                % (sourcepackagename, ociprojectname))
             if sourcepackagename is not None:
                 return PackageGitNamespace(
                     person, distribution.getSourcePackage(sourcepackagename))
