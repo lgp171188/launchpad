@@ -35,7 +35,7 @@ from lp.services.database.constants import DEFAULT
 from lp.services.fields import PublicPersonChoice
 
 
-class IOCIProjectView(Interface):
+class IOCIProjectView(IHasGitRepositories, Interface):
     """IOCIProject attributes that require launchpad.View permission."""
 
     id = Int(title=_("ID"), required=True, readonly=True)
@@ -85,7 +85,7 @@ class IOCIProjectEdit(Interface):
         """Creates a new `IOCIProjectSeries`."""
 
 
-class IOCIProject(IHasGitRepositories, IOCIProjectView, IOCIProjectEdit,
+class IOCIProject(IOCIProjectView, IOCIProjectEdit,
                        IOCIProjectEditableAttributes):
     """A project containing Open Container Initiative recipes."""
 

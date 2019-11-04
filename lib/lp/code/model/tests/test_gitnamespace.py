@@ -534,6 +534,15 @@ class TestDistributionOCIGitNamespace(TestCaseWithFactory, NamespaceMixin):
         other = self.factory.makeGitRepository(owner=owner, target=project)
         self.assertFalse(this.namespace.areRepositoriesMergeable(this, other))
 
+    def test_areRepositoriesMergeable_package(self):
+        # Package repositories are not mergeable into OCI Project repositories.
+        owner = self.factory.makePerson()
+        oci_project = self.factory.makeOCIProject()
+        this = self.factory.makeGitRepository(owner=owner, target=oci_project)
+        package = self.factory.makeDistributionSourcePackage()
+        other = self.factory.makeGitRepository(owner=owner, target=package)
+        self.assertFalse(this.namespace.areRepositoriesMergeable(this, other))
+
     def test_collection(self):
         # An OCI Project namespace's collection is of
         # repositories for the same oci project.
