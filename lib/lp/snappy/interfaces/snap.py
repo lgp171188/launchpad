@@ -784,7 +784,7 @@ class ISnapEditableAttributes(IHasOwner):
 
     store_distro_series = ReferenceChoice(
         title=_("Store and distro series"),
-        schema=ISnappyDistroSeries, vocabulary="SnappyDistroSeries",
+        schema=IDistroSeries, vocabulary="DistroSeries",
         required=False, readonly=False)
 
     store_name = exported(TextLine(

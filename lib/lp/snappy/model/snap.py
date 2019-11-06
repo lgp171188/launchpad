@@ -170,7 +170,7 @@ from lp.snappy.interfaces.snapbase import (
     )
 from lp.snappy.interfaces.snapbuild import ISnapBuildSet
 from lp.snappy.interfaces.snapjob import ISnapRequestBuildsJobSource
-from lp.snappy.interfaces.snappyseries import ISnappyDistroSeriesSet
+from lp.snappy.interfaces.snappyseries import IDistroSeriesSet
 from lp.snappy.interfaces.snapstoreclient import ISnapStoreClient
 from lp.snappy.model.snapbuild import SnapBuild
 from lp.snappy.model.snapjob import SnapJob
@@ -543,13 +543,11 @@ class Snap(Storm, WebhookTargetMixin):
     def store_distro_series(self):
         if self.store_series is None:
             return None
-        return getUtility(ISnappyDistroSeriesSet).getByBothSeries(
-            self.store_series, self.distro_series)
+        return getUtility(IDistroSeriesSet).getDistroSeries(self.distro_series)
 
     @store_distro_series.setter
     def store_distro_series(self, value):
         self.distro_series = value.distro_series
-        self.store_series = value.snappy_series
 
     @property
     def store_channels(self):

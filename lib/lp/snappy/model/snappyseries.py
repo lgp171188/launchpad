@@ -37,6 +37,7 @@ from lp.services.propertycache import (
     get_property_cache,
     )
 from lp.snappy.interfaces.snappyseries import (
+    IDistroSeriesSet,
     ISnappyDistroSeries,
     ISnappyDistroSeriesSet,
     ISnappySeries,
@@ -246,3 +247,20 @@ class SnappyDistroSeriesSet:
     def getAll(self):
         """See `ISnappyDistroSeriesSet`."""
         return IStore(SnappyDistroSeries).find(SnappyDistroSeries)
+
+@implementer(IDistroSeriesSet)
+class DistroSeriesSet:
+    """See `IDistroSeriesSet`."""
+
+    def getDistroSeries(self, distro_series):
+        """See `IDistroSeriesSet`."""
+        distro = IStore(DistroSeries).find(DistroSeries,
+             DistroSeries.display_name == distro_series).one()
+
+        # distro = DistroSeries.select(DistroSeries.q.display_name == distro_series)
+
+        return distro
+
+    def getAll(self):
+        """See `IDistroSeriesSet`."""
+        return IStore(DistroSeries).find(DistroSeries)

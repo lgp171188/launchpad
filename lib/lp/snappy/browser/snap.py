@@ -97,6 +97,7 @@ from lp.snappy.interfaces.snap import (
     )
 from lp.snappy.interfaces.snapbuild import ISnapBuildSet
 from lp.snappy.interfaces.snappyseries import (
+    IDistroSeriesSet,
     ISnappyDistroSeriesSet,
     ISnappySeriesSet,
     )
@@ -344,7 +345,7 @@ class ISnapEditSchema(Interface):
         'store_upload',
         ])
     store_distro_series = Choice(
-        vocabulary='BuildableSnappyDistroSeries', required=True,
+        vocabulary='DistroSeriesVocabulary', required=True,
         title='Series')
     vcs = Choice(vocabulary=VCSType, required=True, title='VCS')
 
@@ -463,9 +464,9 @@ class SnapAddView(
             distro_series = store_series.preferred_distro_series
         else:
             distro_series = store_series.usable_distro_series.first()
-        sds_set = getUtility(ISnappyDistroSeriesSet)
-        store_distro_series = sds_set.getByBothSeries(
-            store_series, distro_series)
+        sds_set = getUtility(IDistroSeriesSet)
+        store_distro_series = sds_set.getDistroSeries(
+            distro_series.display_name)
 
         return {
             'store_name': store_name,
@@ -519,7 +520,7 @@ class SnapAddView(
             data['auto_build_pocket'] = None
         snap = getUtility(ISnapSet).new(
             self.user, data['owner'],
-            data['store_distro_series'].distro_series, data['name'],
+            data['store_distro_series'], data['name'],
             auto_build=data['auto_build'],
             auto_build_archive=data['auto_build_archive'],
             auto_build_pocket=data['auto_build_pocket'],
@@ -527,7 +528,7 @@ class SnapAddView(
             processors=data['processors'], private=private,
             build_source_tarball=data['build_source_tarball'],
             store_upload=data['store_upload'],
-            store_series=data['store_distro_series'].snappy_series,
+#            store_series=data['store_distro_series'].snappy_series,
             store_name=data['store_name'],
             store_channels=data.get('store_channels'), **kwargs)
         if data['store_upload']:

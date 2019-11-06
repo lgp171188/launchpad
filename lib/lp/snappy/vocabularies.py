@@ -9,6 +9,7 @@ __metaclass__ = type
 
 __all__ = [
     'BuildableSnappyDistroSeriesVocabulary',
+    'DistroSeriesVocabulary',
     'SnapDistroArchSeriesVocabulary',
     'SnappyDistroSeriesVocabulary',
     'SnappySeriesVocabulary',
@@ -70,6 +71,13 @@ class SnappySeriesVocabulary(StormVocabularyBase):
     _table = SnappySeries
     _clauses = [SnappySeries.status.is_in(ACTIVE_STATUSES)]
     _order_by = Desc(SnappySeries.date_created)
+
+
+class DistroSeriesVocabulary(StormVocabularyBase):
+    """A vocabulary for searching distro series."""
+
+    _table = DistroSeries
+    _order_by = Desc(DistroSeries.date_created)
 
 
 class SnappyDistroSeriesVocabulary(StormVocabularyBase):

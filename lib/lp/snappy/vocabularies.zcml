@@ -48,6 +48,17 @@
         <allow interface="lp.services.webapp.vocabulary.IHugeVocabulary" />
     </class>
 
+    <securedutility
+        name="DistroSeriesVocabulary"
+        component="lp.snappy.vocabularies.DistroSeriesVocabulary"
+        provides="zope.schema.interfaces.IVocabularyFactory">
+        <allow interface="zope.schema.interfaces.IVocabularyFactory" />
+    </securedutility>
+
+    <class class="lp.snappy.vocabularies.DistroSeriesVocabulary">
+        <allow interface="lp.services.webapp.vocabulary.IHugeVocabulary" />
+    </class>
+
     <class class="lp.snappy.vocabularies.SnapStoreChannel">
         <allow interface="zope.schema.interfaces.ITitledTokenizedTerm
                           lazr.restful.interfaces.IJSONPublishable" />
