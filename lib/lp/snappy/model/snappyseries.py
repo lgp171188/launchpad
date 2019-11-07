@@ -26,6 +26,7 @@ from zope.interface import implementer
 
 from lp.registry.interfaces.series import SeriesStatus
 from lp.registry.model.distroseries import DistroSeries
+from lp.registry.errors import NoSuchDistroSeries
 from lp.services.database.constants import DEFAULT
 from lp.services.database.enumcol import EnumCol
 from lp.services.database.interfaces import (
@@ -252,13 +253,12 @@ class SnappyDistroSeriesSet:
 class DistroSeriesSet:
     """See `IDistroSeriesSet`."""
 
-    def getDistroSeries(self, distro_series):
+    def getDistroSeries(self,distro_series):
         """See `IDistroSeriesSet`."""
         distro = IStore(DistroSeries).find(DistroSeries,
-             DistroSeries.display_name == distro_series).one()
-
-        # distro = DistroSeries.select(DistroSeries.q.display_name == distro_series)
-
+             DistroSeries.id == distro_series.id).one()
+        if distro is None:
+            raise NoSuchDistroSeries(distro_series.display_name)
         return distro
 
     def getAll(self):

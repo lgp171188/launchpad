@@ -465,8 +465,7 @@ class SnapAddView(
         else:
             distro_series = store_series.usable_distro_series.first()
         sds_set = getUtility(IDistroSeriesSet)
-        store_distro_series = sds_set.getDistroSeries(
-            distro_series.display_name)
+        store_distro_series = sds_set.getAll()
 
         return {
             'store_name': store_name,
