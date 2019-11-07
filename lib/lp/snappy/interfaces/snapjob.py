@@ -75,8 +75,8 @@ class ISnapRequestBuildsJob(IRunnableJob):
         title=_("Source snap channels to use for these builds."),
         description=_(
             "A dictionary mapping snap names to channels to use for these "
-            "builds.  Currently only 'core', 'core18', and 'snapcraft' keys "
-            "are supported."),
+            "builds.  Currently only 'core', 'core18', 'core20' "
+            "and 'snapcraft' keys are supported."),
         key_type=TextLine(), required=False, readonly=True)
 
     architectures = Set(
