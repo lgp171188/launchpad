@@ -547,7 +547,7 @@ class Snap(Storm, WebhookTargetMixin):
 
     @store_distro_series.setter
     def store_distro_series(self, value):
-        self.distro_series = value.distro_series
+        self.distro_series = value
 
     @property
     def store_channels(self):
