@@ -1051,6 +1051,7 @@
   <adapter factory="lp.code.model.defaultgit.PackageDefaultGitRepository" />
   <adapter factory="lp.code.model.defaultgit.OwnerProjectDefaultGitRepository" />
   <adapter factory="lp.code.model.defaultgit.OwnerPackageDefaultGitRepository" />
+  <adapter factory="lp.code.model.defaultgit.DistributionOCIDefaultGitRepository" />
 
   <class class="lp.code.model.gitlookup.GitLookup">
     <allow interface="lp.code.interfaces.gitlookup.IGitLookup" />
@@ -1069,6 +1070,7 @@
   <adapter factory="lp.code.model.gitlookup.ProjectGitTraversable" />
   <adapter factory="lp.code.model.gitlookup.DistributionGitTraversable" />
   <adapter factory="lp.code.model.gitlookup.DistributionSourcePackageGitTraversable" />
+  <adapter factory="lp.code.model.gitlookup.DistributionOCIGitTraversable" />
 
   <!-- Git hosting -->
   <securedutility

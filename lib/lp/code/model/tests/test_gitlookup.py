@@ -107,6 +107,14 @@ class TestGetByUniqueName(TestCaseWithFactory):
         self.assertIsNone(self.lookup.getByUniqueName(
             repository.unique_name + "-nonexistent"))
 
+    def test_ociproject(self):
+        ociproject = self.factory.makeOCIProject()
+        repository = self.factory.makeGitRepository(target=ociproject)
+        self.assertEqual(
+            repository, self.lookup.getByUniqueName(repository.unique_name))
+        self.assertIsNone(self.lookup.getByUniqueName(
+            repository.unique_name + "-nonexistent"))
+
 
 class TestGetByPath(TestCaseWithFactory):
     """Test `IGitLookup.getByPath`."""
@@ -150,6 +158,21 @@ class TestGetByPath(TestCaseWithFactory):
         repository = self.factory.makeGitRepository(owner=owner, target=owner)
         self.assertEqual(
             (repository, ""), self.lookup.getByPath(repository.unique_name))
+
+    def test_ociproject(self):
+        oci_project = self.factory.makeOCIProject()
+        repository = self.factory.makeGitRepository(target=oci_project)
+        self.assertEqual(
+            (repository, ""), self.lookup.getByPath(repository.unique_name))
+
+    def test_ociproject_default(self):
+        oci_project = self.factory.makeOCIProject()
+        repository = self.factory.makeGitRepository(target=oci_project)
+        with person_logged_in(repository.target.distribution.owner):
+            getUtility(IGitRepositorySet).setDefaultRepository(
+                repository.target, repository, force_oci=True)
+        self.assertEqual(
+            (repository, ""), self.lookup.getByPath(repository.shortened_path))
 
     def test_extra_path(self):
         repository = self.factory.makeGitRepository()
@@ -534,3 +557,11 @@ class TestGitTraverser(TestCaseWithFactory):
         self.assertEqual(
             (person, person, repository, None),
             self.traverser.traverse(iter(segments[1:]), owner=person))
+
+    def test_ociproject(self):
+        # `traverse_path` resolves 'distro/+oci/ociproject' to the
+        # OCI project.
+        oci_project = self.factory.makeOCIProject()
+        path = "%s/+oci/%s" % (
+            oci_project.distribution.name, oci_project.name)
+        self.assertTraverses(path, None, oci_project)

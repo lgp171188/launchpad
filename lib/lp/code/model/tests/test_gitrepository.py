@@ -3220,6 +3220,29 @@ class TestGitRepositorySet(TestCaseWithFactory):
                 self.repository_set.setDefaultRepositoryForOwner,
                 person, person, repository, user)
 
+    def test_setDefaultRepository_refuses_oci_project(self):
+        # setDefaultRepository refuses if the target is an OCI project.
+        oci_project = self.factory.makeOCIProject()
+        repository = self.factory.makeGitRepository(target=oci_project)
+        with admin_logged_in():
+            self.assertRaises(
+                GitTargetError, self.repository_set.setDefaultRepository,
+                oci_project, repository)
+
+    def test_setDefaultRepository_accepts_oci_project_override(self):
+        # setDefaultRepository refuses if the target is an OCI project.
+        oci_project = self.factory.makeOCIProject()
+        repository = self.factory.makeGitRepository(target=oci_project)
+        with admin_logged_in():
+            self.repository_set.setDefaultRepository(
+                oci_project, repository, force_oci=True)
+        identity_path = "%s/+oci/%s" % (
+                oci_project.distribution.name, oci_project.name)
+        self.assertEqual(
+            identity_path, repository.shortened_path, "shortened path")
+        self.assertEqual(
+            "lp:%s" % identity_path, repository.git_identity, "git identity")
+
     def test_setDefaultRepositoryForOwner_noop(self):
         # If a repository is already the target owner default, setting
         # the default again should no-op.
