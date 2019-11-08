@@ -104,13 +104,12 @@ request, with the OAuth consumer name being equal to the User-Agent.
     None
     >>> logout()
 
-    >>> from zope.app.testing.functional import HTTPCaller
+    >>> from lp.testing.pages import http
     >>> def request_with_user_agent(agent, url="/devel"):
     ...     if agent is None:
     ...         agent_string = ''
     ...     else:
     ...         agent_string = '\nUser-Agent: %s' % agent
-    ...     http = HTTPCaller()
     ...     request = ("GET %s HTTP/1.1\n"
     ...                "Host: api.launchpad.test"
     ...                "%s\n\n") % (url, agent_string)

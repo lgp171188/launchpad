@@ -18,7 +18,10 @@ variable.
 
 The pagetests profiler is created by the layer during its setUp.
 
-    >>> from lp.testing.layers import PageTestLayer
+    >>> from lp.testing.layers import (
+    ...     PageTestLayer,
+    ...     wsgi_application,
+    ...     )
 
 (Save the existing configuration.)
 
@@ -39,15 +42,14 @@ The pagetests profiler is created by the layer during its setUp.
     >>> len(PageTestLayer.profiler.getstats())
     0
 
-The layer also replaces the standard HTTPCaller.__call__ by a wrapper
-that takes care of profiling (among other things).
+The layer also adds WSGI middleware that takes care of profiling (among
+other things).
 
-    >>> from zope.app.testing.functional import HTTPCaller
+    >>> from lp.testing.pages import http
 
     # We need to close the default interaction.
     >>> logout()
 
-    >>> http = HTTPCaller()
     >>> response = http('GET / HTTP/1.0')
     >>> profile_count = len(PageTestLayer.profiler.getstats())
     >>> profile_count > 0
@@ -55,8 +57,8 @@ that takes care of profiling (among other things).
 
 Requests made with a testbrowser will also be profiled.
 
-    >>> from zope.app.testing.testbrowser import Browser
-    >>> browser = Browser()
+    >>> from zope.testbrowser.wsgi import Browser
+    >>> browser = Browser(wsgi_app=wsgi_application)
     >>> browser.open('http://launchpad.test/')
     >>> len(PageTestLayer.profiler.getstats()) > profile_count
     True

@@ -61,6 +61,7 @@ treat all empty-equivalent values equally.
     ... Authorization: Basic test@canonical.com:test
     ... Referer: https://launchpad.test/
     ... Content-Type: multipart/form-data; boundary=---------------------------2051078912280543729816242321
+    ...
     ... -----------------------------2051078912280543729816242321
     ... Content-Disposition: form-data; name="field.title"
     ... 

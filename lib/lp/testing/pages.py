@@ -10,9 +10,9 @@ __metaclass__ = type
 from contextlib import contextmanager
 from datetime import datetime
 import doctest
+from io import BytesIO
 from itertools import chain
 import os
-import pdb
 import pprint
 import re
 import unittest
@@ -45,15 +45,16 @@ from contrib.oauth import (
 from lazr.restful.testing.webservice import WebServiceCaller
 import six
 import transaction
-from zope.app.testing.functional import (
-    HTTPCaller,
-    SimpleCookie,
-    )
-from zope.app.testing.testbrowser import Browser
+from webtest import TestRequest
+from zope.app.wsgi.testlayer import FakeResponse as _FakeResponse
 from zope.component import getUtility
 from zope.security.management import setSecurityPolicy
 from zope.security.proxy import removeSecurityProxy
 from zope.session.interfaces import ISession
+from zope.testbrowser.wsgi import (
+    AuthorizationMiddleware,
+    Browser,
+    )
 
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.registry.errors import NameAlreadyTaken
@@ -82,7 +83,10 @@ from lp.testing import (
     )
 from lp.testing.dbuser import dbuser
 from lp.testing.factory import LaunchpadObjectFactory
-from lp.testing.layers import PageTestLayer
+from lp.testing.layers import (
+    PageTestLayer,
+    wsgi_application,
+    )
 from lp.testing.systemdocs import (
     LayeredDocFileSuite,
     stop,
@@ -96,44 +100,53 @@ SAMPLEDATA_ACCESS_SECRETS = {
     }
 
 
-class UnstickyCookieHTTPCaller(HTTPCaller):
-    """HTTPCaller subclass that do not carry cookies across requests.
+class FakeResponse(_FakeResponse):
+    """A fake response for use in tests.
 
-    HTTPCaller propogates cookies between subsequent requests.
-    This is a nice feature, except it triggers a bug in Launchpad where
-    sending both Basic Auth and cookie credentials raises an exception
-    (Bug 39881).
+    This is like `zope.app.wsgi.FakeResponse`, but does a better job of
+    emulating `zope.app.testing.functional` by using the request's
+    `SERVER_PROTOCOL` in the response.
     """
 
-    def __init__(self, *args, **kw):
-        if kw.get('debug'):
-            self._debug = True
-            del kw['debug']
+    def __init__(self, response, request):
+        self.response = response
+        self.request = request
+
+    def getOutput(self):
+        output = super(FakeResponse, self).getOutput()
+        protocol = self.request.environ['SERVER_PROTOCOL']
+        if not isinstance(protocol, bytes):
+            protocol = protocol.encode('ISO-8859-1')
+        return (
+            (b'%s %s\n' % (protocol, self.response.status)) +
+            output.split(b'\n', 1)[1])
+
+    __str__ = getOutput
+
+
+def http(string, handle_errors=True):
+    """Make a test HTTP request.
+
+    This is like `zope.app.wsgi.testlayer.http`, but it forces `SERVER_NAME`
+    and `SERVER_PORT` to be set according to the HTTP Host header.  Left to
+    itself, `zope.app.wsgi.testlayer.http` will (via WebOb) set
+    `SERVER_PORT` to 80, which confuses
+    `VirtualHostRequestPublicationFactory.canHandle`.
+    """
+    if not isinstance(string, bytes):
+        string = string.encode('UTF-8')
+    request = TestRequest.from_file(BytesIO(string.lstrip()))
+    request.environ['wsgi.handleErrors'] = handle_errors
+    if 'HTTP_HOST' in request.environ:
+        if ':' in request.environ['HTTP_HOST']:
+            host, port = request.environ['HTTP_HOST'].split(':', 1)
         else:
-            self._debug = False
-        HTTPCaller.__init__(self, *args, **kw)
-
-    def __call__(self, *args, **kw):
-        if self._debug:
-            pdb.set_trace()
-        try:
-            return HTTPCaller.__call__(self, *args, **kw)
-        finally:
-            self.resetCookies()
-
-    def chooseRequestClass(self, method, path, environment):
-        """See `HTTPCaller`.
-
-        This version adds the 'PATH_INFO' variable to the environment,
-        because some of our factories expects it.
-        """
-        if 'PATH_INFO' not in environment:
-            environment = dict(environment)
-            environment['PATH_INFO'] = path
-        return HTTPCaller.chooseRequestClass(self, method, path, environment)
-
-    def resetCookies(self):
-        self.cookies = SimpleCookie()
+            host = request.environ['HTTP_HOST']
+            port = 80
+        request.environ['SERVER_NAME'] = host
+        request.environ['SERVER_PORT'] = int(port)
+    response = request.get_response(AuthorizationMiddleware(wsgi_application))
+    return FakeResponse(response, request)
 
 
 class LaunchpadWebServiceCaller(WebServiceCaller):
@@ -148,7 +161,8 @@ class LaunchpadWebServiceCaller(WebServiceCaller):
         :param handle_errors: Should errors raise exception or be handled by
             the publisher. Default is to let the publisher handle them.
 
-        Other parameters are passed to the HTTPCaller used to make the calls.
+        Other parameters are passed to the WebServiceCaller used to make the
+        calls.
         """
         if oauth_consumer_key is not None and oauth_access_key is not None:
             # XXX cjwatson 2016-01-25: Callers should be updated to pass
@@ -678,7 +692,7 @@ def setupBrowser(auth=None):
         string of the form 'Basic email:password' for an authenticated user.
     :return: A `Browser` object.
     """
-    browser = Browser()
+    browser = Browser(wsgi_app=AuthorizationMiddleware(wsgi_application))
     # Set up our Browser objects with handleErrors set to False, since
     # that gives a tracebacks instead of unhelpful error messages.
     browser.handleErrors = False
@@ -814,7 +828,7 @@ def permissive_security_policy(dbuser_name=None):
 # unconditional.
 def setUpGlobs(test, future=False):
     test.globs['transaction'] = transaction
-    test.globs['http'] = UnstickyCookieHTTPCaller()
+    test.globs['http'] = http
     test.globs['webservice'] = LaunchpadWebServiceCaller(
         'launchpad-library', 'salgado-change-anything')
     test.globs['public_webservice'] = LaunchpadWebServiceCaller(

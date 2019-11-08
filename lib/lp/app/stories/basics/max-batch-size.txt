@@ -5,8 +5,7 @@ batching have a maximum on the batch size. For example, requesting 1000
 products will display a page telling the users that the batch is too
 large and what is the current maximum.
 
-    >>> from zope.app.testing.testbrowser import Browser
-    >>> anon_browser = Browser()
+    >>> anon_browser.handleErrors = True
     >>> anon_browser.open('http://launchpad.test/projects/+all?start=0&batch=1000')
     Traceback (most recent call last):
     ...

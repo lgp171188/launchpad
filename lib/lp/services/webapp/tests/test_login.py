@@ -38,11 +38,11 @@ from testtools.matchers import (
     Equals,
     MatchesListwise,
     )
-from zope.app.testing.testbrowser import Browser as TestBrowser
 from zope.component import getUtility
 from zope.security.management import newInteraction
 from zope.security.proxy import removeSecurityProxy
 from zope.session.interfaces import ISession
+from zope.testbrowser.wsgi import Browser as TestBrowser
 
 from lp.registry.interfaces.person import IPerson
 from lp.services.database.interfaces import (
@@ -81,6 +81,7 @@ from lp.testing.layers import (
     AppServerLayer,
     DatabaseFunctionalLayer,
     FunctionalLayer,
+    wsgi_application,
     )
 from lp.testing.pages import (
     extract_text,
@@ -731,7 +732,7 @@ class TestMissingServerShowsNiceErrorPage(TestCase):
 
         fixture.replacement = OpenIDLoginThatFailsDiscovery
         self.useFixture(fixture)
-        browser = TestBrowser()
+        browser = TestBrowser(wsgi_app=wsgi_application)
         self.assertRaises(HTTPError,
                           browser.open, 'http://launchpad.test/+login')
         self.assertEqual('503 Service Unavailable',
