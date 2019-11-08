@@ -702,7 +702,7 @@ class TestViaCronscript(TestCaseWithFactory):
             expect_returncode=0)
         self.assertEqual('', stdout)
         self.assertIn(
-            'WARNING Scheduling retry due to WebhookDeliveryRetry', stderr)
+            'INFO    Scheduling retry due to WebhookDeliveryRetry', stderr)
         self.assertIn(
             'INFO    1 WebhookDeliveryJob jobs did not complete.\n', stderr)
 
