@@ -44,6 +44,7 @@ from lp.services.job.runner import (
     TwistedJobRunner,
     )
 from lp.services.log.logger import BufferLogger
+from lp.services.scripts.logger import OopsHandler
 from lp.services.timeline.requesttimeline import get_request_timeline
 from lp.services.timeout import (
     get_default_timeout_function,
@@ -366,7 +367,16 @@ class TestJobRunner(TestCaseWithFactory):
 
     def test_runJobHandleErrors_user_error_no_oops(self):
         """If the job raises a user error, there is no oops."""
+        logging.getLogger().addHandler(OopsHandler('test_runner'))
         job = RaisingJobUserError('boom')
+        runner = JobRunner([job])
+        runner.runJobHandleError(job)
+        self.assertEqual(0, len(self.oopses))
+
+    def test_runJobHandleErrors_retry_error_no_oops(self):
+        """If the job raises a retry error, there is no oops."""
+        logging.getLogger().addHandler(OopsHandler('test_runner'))
+        job = RaisingRetryJob('completion')
         runner = JobRunner([job])
         runner.runJobHandleError(job)
         self.assertEqual(0, len(self.oopses))
@@ -374,10 +384,12 @@ class TestJobRunner(TestCaseWithFactory):
     def test_runJob_raising_retry_error(self):
         """If a job raises a retry_error, it should be re-queued."""
         job = RaisingRetryJob('completion')
-        runner = JobRunner([job])
+        logger = BufferLogger()
+        logger.setLevel(logging.INFO)
+        runner = JobRunner([job], logger=logger)
         self.assertIs(None, job.scheduled_start)
-        with self.expectedLog('Scheduling retry due to RetryError'):
-            runner.runJob(job, None)
+        self.addCleanup(lambda: self.addDetail('log', logger.content))
+        runner.runJob(job, None)
         self.assertEqual(JobStatus.WAITING, job.status)
         expected_delay = datetime.now(UTC) + timedelta(minutes=10)
         self.assertThat(
@@ -388,6 +400,8 @@ class TestJobRunner(TestCaseWithFactory):
         self.assertIsNone(job.lease_expires)
         self.assertNotIn(job, runner.completed_jobs)
         self.assertIn(job, runner.incomplete_jobs)
+        self.assertIn(
+            'Scheduling retry due to RetryError', logger.getLogBuffer())
 
     def test_runJob_exceeding_max_retries(self):
         """If a job exceeds maximum retries, it should raise normally."""
