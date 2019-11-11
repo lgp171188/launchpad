@@ -243,7 +243,6 @@ setup(
         'zope.app.publication',
         'zope.app.publisher',
         'zope.app.server',
-        'zope.app.testing',
         'zope.app.wsgi',
         'zope.authentication',
         'zope.component[zcml]',

@@ -46,14 +46,17 @@ from lazr.restful.testing.webservice import WebServiceCaller
 import six
 import transaction
 from webtest import TestRequest
-from zope.app.wsgi.testlayer import FakeResponse as _FakeResponse
+from zope.app.wsgi.testlayer import (
+    FakeResponse as _FakeResponse,
+    NotInBrowserLayer,
+    )
 from zope.component import getUtility
 from zope.security.management import setSecurityPolicy
 from zope.security.proxy import removeSecurityProxy
 from zope.session.interfaces import ISession
 from zope.testbrowser.wsgi import (
-    AuthorizationMiddleware,
     Browser,
+    Layer as TestBrowserWSGILayer,
     )
 
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
@@ -83,10 +86,7 @@ from lp.testing import (
     )
 from lp.testing.dbuser import dbuser
 from lp.testing.factory import LaunchpadObjectFactory
-from lp.testing.layers import (
-    PageTestLayer,
-    wsgi_application,
-    )
+from lp.testing.layers import PageTestLayer
 from lp.testing.systemdocs import (
     LayeredDocFileSuite,
     stop,
@@ -103,8 +103,8 @@ SAMPLEDATA_ACCESS_SECRETS = {
 class FakeResponse(_FakeResponse):
     """A fake response for use in tests.
 
-    This is like `zope.app.wsgi.FakeResponse`, but does a better job of
-    emulating `zope.app.testing.functional` by using the request's
+    This is like `zope.app.wsgi.testlayer.FakeResponse`, but does a better
+    job of emulating `zope.app.testing.functional` by using the request's
     `SERVER_PROTOCOL` in the response.
     """
 
@@ -133,6 +133,10 @@ def http(string, handle_errors=True):
     `SERVER_PORT` to 80, which confuses
     `VirtualHostRequestPublicationFactory.canHandle`.
     """
+    app = TestBrowserWSGILayer.get_app()
+    if app is None:
+        raise NotInBrowserLayer(NotInBrowserLayer.__doc__)
+
     if not isinstance(string, bytes):
         string = string.encode('UTF-8')
     request = TestRequest.from_file(BytesIO(string.lstrip()))
@@ -145,7 +149,7 @@ def http(string, handle_errors=True):
             port = 80
         request.environ['SERVER_NAME'] = host
         request.environ['SERVER_PORT'] = int(port)
-    response = request.get_response(AuthorizationMiddleware(wsgi_application))
+    response = request.get_response(app)
     return FakeResponse(response, request)
 
 
@@ -191,7 +195,11 @@ class LaunchpadWebServiceCaller(WebServiceCaller):
             request.sign_request(
                 OAuthSignatureMethod_PLAINTEXT(), self.consumer,
                 self.access_token)
-            full_headers.update(request.to_header(OAUTH_REALM))
+            oauth_headers = request.to_header(OAUTH_REALM)
+            full_headers.update({
+                six.ensure_str(key, encoding='ISO-8859-1'):
+                    six.ensure_str(value, encoding='ISO-8859-1')
+                for key, value in oauth_headers.items()})
         if not self.handle_errors:
             full_headers['X_Zope_handle_errors'] = 'False'
 
@@ -692,7 +700,7 @@ def setupBrowser(auth=None):
         string of the form 'Basic email:password' for an authenticated user.
     :return: A `Browser` object.
     """
-    browser = Browser(wsgi_app=AuthorizationMiddleware(wsgi_application))
+    browser = Browser()
     # Set up our Browser objects with handleErrors set to False, since
     # that gives a tracebacks instead of unhelpful error messages.
     browser.handleErrors = False

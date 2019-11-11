@@ -81,7 +81,6 @@ from lp.testing.layers import (
     AppServerLayer,
     DatabaseFunctionalLayer,
     FunctionalLayer,
-    wsgi_application,
     )
 from lp.testing.pages import (
     extract_text,
@@ -732,7 +731,7 @@ class TestMissingServerShowsNiceErrorPage(TestCase):
 
         fixture.replacement = OpenIDLoginThatFailsDiscovery
         self.useFixture(fixture)
-        browser = TestBrowser(wsgi_app=wsgi_application)
+        browser = TestBrowser()
         self.assertRaises(HTTPError,
                           browser.open, 'http://launchpad.test/+login')
         self.assertEqual('503 Service Unavailable',
