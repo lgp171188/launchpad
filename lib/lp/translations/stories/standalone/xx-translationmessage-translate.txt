@@ -348,7 +348,8 @@ Check for the translator note:
 
 Also check that the alternative language selection is working:
 
-    >>> browser.getControl('Catalan (ca)').click()
+    >>> browser.getControl(name='field.alternative_language').getControl(
+    ...     'Catalan (ca)').click()
     >>> browser.getControl('Change').click()
     >>> browser.url
     'http:/...field.alternative_language=ca...'
