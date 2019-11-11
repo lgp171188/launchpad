@@ -201,8 +201,7 @@ navigation.
     1 ... 10  of 22 results
 
     >>> user_browser.getControl(
-    ...     name='msgset_1_en_AU_translation_0_new_checkbox').value = [
-    ...         'msgset_1_en_AU_translation_0_new']
+    ...     name='msgset_1_en_AU_translation_0_new_checkbox').value = True
     >>> user_browser.getControl(
     ...     name='msgset_1_en_AU_translation_0_new').value = 'fnord'
     >>> user_browser.getControl('Save & Continue').click()

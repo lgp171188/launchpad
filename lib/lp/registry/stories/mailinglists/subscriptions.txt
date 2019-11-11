@@ -217,8 +217,7 @@ Now Jdub can apply for team membership and mailing list access.
     >>> browser.url
     'http://launchpad.test/~rosetta-admins/+join'
 
-    >>> browser.getControl(name='field.mailinglist_subscribe').value = [
-    ...     'checked']
+    >>> browser.getControl(name='field.mailinglist_subscribe').value = True
     >>> browser.getControl(name='field.actions.join').click()
     >>> browser.url
     'http://launchpad.test/~rosetta-admins'
