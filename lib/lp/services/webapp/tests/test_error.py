@@ -147,11 +147,13 @@ class TestDatabaseErrorViews(TestCase):
                 super(Disconnects, self).__init__(
                     ('DisconnectionError', message))
 
+        browser = Browser()
+        browser.raiseHttpErrors = False
         with CaptureOops() as oopses:
-            error = self.getHTTPError(url)
-        self.assertEqual(503, error.code)
-        self.assertThat(error.read(),
-                        Contains(DisconnectionErrorView.reason))
+            browser.open(url)
+        self.assertEqual(503, int(browser.headers['Status'].split(' ', 1)[0]))
+        self.assertThat(
+            browser.contents, Contains(DisconnectionErrorView.reason))
         self.assertThat(
             [(oops['type'], oops['value'].split('\n')[0])
              for oops in oopses.oopses],
@@ -168,10 +170,10 @@ class TestDatabaseErrorViews(TestCase):
 
         # We keep seeing the correct exception on subsequent requests.
         with CaptureOops() as oopses:
-            error = self.getHTTPError(url)
-        self.assertEqual(503, error.code)
-        self.assertThat(error.read(),
-                        Contains(DisconnectionErrorView.reason))
+            browser.open(url)
+        self.assertEqual(503, int(browser.headers['Status'].split(' ', 1)[0]))
+        self.assertThat(
+            browser.contents, Contains(DisconnectionErrorView.reason))
         self.assertThat(
             [(oops['type'], oops['value'].split('\n')[0])
              for oops in oopses.oopses],
@@ -198,10 +200,10 @@ class TestDatabaseErrorViews(TestCase):
         cur.execute("RESUME " + dbname)
 
         with CaptureOops() as oopses:
-            error = self.getHTTPError(url)
-        self.assertEqual(503, error.code)
-        self.assertThat(error.read(),
-                        Contains(DisconnectionErrorView.reason))
+            browser.open(url)
+        self.assertEqual(503, int(browser.headers['Status'].split(' ', 1)[0]))
+        self.assertThat(
+            browser.contents, Contains(DisconnectionErrorView.reason))
         self.assertThat(
             [(oops['type'], oops['value'].split('\n')[0])
              for oops in oopses.oopses],
@@ -209,10 +211,10 @@ class TestDatabaseErrorViews(TestCase):
 
         # A second request doesn't log any OOPSes.
         with CaptureOops() as oopses:
-            error = self.getHTTPError(url)
-        self.assertEqual(503, error.code)
-        self.assertThat(error.read(),
-                        Contains(DisconnectionErrorView.reason))
+            browser.open(url)
+        self.assertEqual(503, int(browser.headers['Status'].split(' ', 1)[0]))
+        self.assertThat(
+            browser.contents, Contains(DisconnectionErrorView.reason))
         self.assertEqual(
             [],
             [(oops['type'], oops['value'].split('\n')[0])
@@ -240,10 +242,14 @@ class TestDatabaseErrorViews(TestCase):
             "error-test"))
 
         url = 'http://launchpad.test/error-test'
-        error = self.getHTTPError(url)
-        self.assertEqual(httplib.SERVICE_UNAVAILABLE, error.code)
-        self.assertThat(error.read(),
-                        Contains(OperationalErrorView.reason))
+        browser = Browser()
+        browser.raiseHttpErrors = False
+        browser.open(url)
+        self.assertEqual(
+            httplib.SERVICE_UNAVAILABLE,
+            int(browser.headers['Status'].split(' ', 1)[0]))
+        self.assertThat(
+            browser.contents, Contains(OperationalErrorView.reason))
 
     def test_operationalerror_view(self):
         request = LaunchpadTestRequest()
