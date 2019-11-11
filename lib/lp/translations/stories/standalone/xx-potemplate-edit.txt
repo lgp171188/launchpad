@@ -139,7 +139,7 @@ page.
     >>> browser.getControl(name='field.priority').value
     '100'
 
-    >>> browser.getControl(name='field.iscurrent').value
+    >>> bool(browser.getControl(name='field.iscurrent').value)
     False
 
     >>> browser.getControl(name='field.path').value

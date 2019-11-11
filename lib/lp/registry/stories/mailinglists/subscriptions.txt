@@ -594,7 +594,8 @@ lists will not have the box checked.
 
     >>> browser.open('http://launchpad.test/~rosetta-admins')
     >>> browser.getLink('Join the team').click()
-    >>> print browser.getControl(name='field.mailinglist_subscribe').value
+    >>> print bool(
+    ...     browser.getControl(name='field.mailinglist_subscribe').value)
     False
 
     # Restore James' setting.
