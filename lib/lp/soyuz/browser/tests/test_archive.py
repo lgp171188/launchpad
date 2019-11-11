@@ -124,7 +124,7 @@ class TestArchiveEditView(TestCaseWithFactory):
         # enables it, they can't enable the restricted processor.
         for control in processors.controls:
             if control.optionValue == "armhf":
-                control.mech_item.disabled = False
+                del control._control.attrs["disabled"]
         processors.value = ["386", "amd64", "armhf"]
         self.assertRaises(
             CannotModifyArchiveProcessor, browser.getControl("Save").click)
@@ -147,7 +147,8 @@ class TestArchiveEditView(TestCaseWithFactory):
         browser = self.getUserBrowser(
             canonical_url(ppa) + "/+edit", user=ppa.owner)
         processors = browser.getControl(name="field.processors")
-        self.assertContentEqual(["386", "amd64"], processors.value)
+        # armhf is checked but disabled.
+        self.assertContentEqual(["386", "amd64", "armhf"], processors.value)
         self.assertProcessorControls(
             processors, ["386", "amd64", "hppa"], ["armhf"])
         processors.value = ["386"]

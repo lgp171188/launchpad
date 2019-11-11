@@ -10,7 +10,6 @@ __metaclass__ = type
 import re
 
 from fixtures import FakeLogger
-from mechanize import LinkNotFoundError
 from pymacaroons import Macaroon
 import soupmatchers
 from storm.locals import Store
@@ -22,6 +21,7 @@ import transaction
 from zope.component import getUtility
 from zope.security.interfaces import Unauthorized
 from zope.security.proxy import removeSecurityProxy
+from zope.testbrowser.browser import LinkNotFoundError
 
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.buildmaster.enums import BuildStatus
@@ -34,7 +34,6 @@ from lp.testing import (
     ANONYMOUS,
     BrowserTestCase,
     login,
-    logout,
     person_logged_in,
     TestCaseWithFactory,
     )
@@ -425,24 +424,19 @@ class TestSnapBuildOperations(BrowserTestCase):
 
     def test_builder_index_public(self):
         build = self.makeBuildingSnap()
-        builder_url = canonical_url(build.builder)
-        logout()
-        browser = self.getNonRedirectingBrowser(
-            url=builder_url, user=ANONYMOUS)
+        browser = self.getViewBrowser(build.builder, no_login=True)
         self.assertIn("tail of the log", browser.contents)
 
     def test_builder_index_private(self):
         archive = self.factory.makeArchive(private=True)
         with admin_logged_in():
             build = self.makeBuildingSnap(archive=archive)
-            builder_url = canonical_url(build.builder)
-        logout()
+        builder = removeSecurityProxy(build).builder
 
         # An unrelated user can't see the logtail of a private build.
-        browser = self.getNonRedirectingBrowser(url=builder_url)
+        browser = self.getViewBrowser(builder)
         self.assertNotIn("tail of the log", browser.contents)
 
         # But someone who can see the archive can.
-        browser = self.getNonRedirectingBrowser(
-            url=builder_url, user=archive.owner)
+        browser = self.getViewBrowser(builder, user=archive.owner)
         self.assertIn("tail of the log", browser.contents)

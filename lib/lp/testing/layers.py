@@ -79,7 +79,10 @@ from fixtures import (
     MonkeyPatch,
     )
 import psycopg2
-from six.moves.urllib.parse import quote
+from six.moves.urllib.parse import (
+    quote,
+    urlparse,
+    )
 from storm.zope.interfaces import IZStorm
 import transaction
 from webob.request import environ_from_url as orig_environ_from_url
@@ -101,6 +104,7 @@ from zope.security.management import (
     getSecurityPolicy,
     )
 from zope.server.logger.pythonlogger import PythonLogger
+from zope.testbrowser.browser import HostNotAllowed
 import zope.testbrowser.wsgi
 from zope.testbrowser.wsgi import AuthorizationMiddleware
 
@@ -1153,17 +1157,16 @@ class FunctionalLayer(BaseLayer):
         transaction.begin()
 
         # Allow the WSGI test browser to talk to our various test hosts.
-        def assert_allowed_host(self):
-            host = self.host
-            if ':' in host:
-                host = host.split(':')[0]
+        def _assertAllowed(self, url):
+            parsed = urlparse(url)
+            host = parsed.netloc.partition(':')[0]
             if host == 'localhost' or host.endswith('.test'):
                 return
-            self._allowed = False
+            raise HostNotAllowed(url)
 
         FunctionalLayer._testbrowser_allowed = MonkeyPatch(
-            'zope.testbrowser.wsgi.WSGIConnection.assert_allowed_host',
-            assert_allowed_host)
+            'zope.testbrowser.browser.TestbrowserApp._assertAllowed',
+            _assertAllowed)
         FunctionalLayer._testbrowser_allowed.setUp()
         FunctionalLayer.browser_layer.testSetUp()
 

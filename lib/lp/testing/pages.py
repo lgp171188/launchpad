@@ -28,6 +28,7 @@ from BeautifulSoup import (
     Tag,
     )
 from bs4.element import (
+    CData as CData4,
     Comment as Comment4,
     Declaration as Declaration4,
     Doctype as Doctype4,
@@ -44,8 +45,12 @@ from contrib.oauth import (
     )
 from lazr.restful.testing.webservice import WebServiceCaller
 import six
+from soupsieve import escape as css_escape
 import transaction
-from webtest import TestRequest
+from webtest import (
+    forms,
+    TestRequest,
+    )
 from zope.app.wsgi.testlayer import (
     FakeResponse as _FakeResponse,
     NotInBrowserLayer,
@@ -54,8 +59,15 @@ from zope.component import getUtility
 from zope.security.management import setSecurityPolicy
 from zope.security.proxy import removeSecurityProxy
 from zope.session.interfaces import ISession
+from zope.testbrowser.browser import (
+    BrowserStateError,
+    isMatching,
+    Link as _Link,
+    LinkNotFoundError,
+    normalizeWhitespace,
+    )
 from zope.testbrowser.wsgi import (
-    Browser,
+    Browser as _Browser,
     Layer as TestBrowserWSGILayer,
     )
 
@@ -74,7 +86,10 @@ from lp.services.oauth.interfaces import (
 from lp.services.webapp import canonical_url
 from lp.services.webapp.authorization import LaunchpadPermissiveSecurityPolicy
 from lp.services.webapp.interfaces import OAuthPermission
-from lp.services.webapp.servers import LaunchpadTestRequest
+from lp.services.webapp.servers import (
+    LaunchpadTestRequest,
+    wsgi_native_string,
+    )
 from lp.services.webapp.url import urlsplit
 from lp.testing import (
     ANONYMOUS,
@@ -98,6 +113,11 @@ SAMPLEDATA_ACCESS_SECRETS = {
     u'salgado-change-anything': u'test',
     u'nopriv-read-nonprivate': u'mystery',
     }
+
+
+# Teach WebTest about <input type="search" />.
+# https://github.com/Pylons/webtest/pull/219
+forms.Field.classes['search'] = forms.Text
 
 
 class FakeResponse(_FakeResponse):
@@ -197,8 +217,7 @@ class LaunchpadWebServiceCaller(WebServiceCaller):
                 self.access_token)
             oauth_headers = request.to_header(OAUTH_REALM)
             full_headers.update({
-                six.ensure_str(key, encoding='ISO-8859-1'):
-                    six.ensure_str(value, encoding='ISO-8859-1')
+                wsgi_native_string(key): wsgi_native_string(value)
                 for key, value in oauth_headers.items()})
         if not self.handle_errors:
             full_headers['X_Zope_handle_errors'] = 'False'
@@ -691,6 +710,67 @@ def print_errors(contents):
     error_texts = [extract_text(error) for error in errors]
     for error in error_texts:
         print(error)
+
+
+class Link(_Link):
+    """`zope.testbrowser.browser.Link`, but with image alt text handling."""
+
+    @property
+    def text(self):
+        txt = normalizeWhitespace(self.browser._getText(self._link))
+        return self.browser.toStr(txt)
+
+
+class Browser(_Browser):
+    """A modified Browser with behaviour more suitable for pagetests."""
+
+    def reload(self):
+        """Make a new request rather than reusing an existing one."""
+        if self.url is None:
+            raise BrowserStateError("no URL has yet been .open()ed")
+        self.open(self.url, referrer=self._req_referrer)
+
+    def addHeader(self, key, value):
+        """Make sure headers are native strings."""
+        super(Browser, self).addHeader(
+            wsgi_native_string(key), wsgi_native_string(value))
+
+    def _getText(self, element):
+        def get_strings(elem):
+            for descendant in elem.descendants:
+                if isinstance(descendant, (NavigableString4, CData4)):
+                    yield descendant
+                elif isinstance(descendant, Tag4) and descendant.name == 'img':
+                    yield u'%s[%s]' % (
+                        descendant.get('alt', u''), descendant.name.upper())
+
+        return u''.join(list(get_strings(element)))
+
+    def getLink(self, text=None, url=None, id=None, index=0):
+        """Search for both text nodes and image alt attributes."""
+        # XXX cjwatson 2019-11-09: This should be merged back into
+        # `zope.testbrowser.browser.Browser.getLink`.
+        qa = 'a' if id is None else 'a#%s' % css_escape(id)
+        qarea = 'area' if id is None else 'area#%s' % css_escape(id)
+        html = self._html
+        links = html.select(qa)
+        links.extend(html.select(qarea))
+
+        matching = []
+        for elem in links:
+            matches = (isMatching(self._getText(elem), text) and
+                       isMatching(elem.get('href', ''), url))
+
+            if matches:
+                matching.append(elem)
+
+        if index >= len(matching):
+            raise LinkNotFoundError()
+        elem = matching[index]
+
+        baseurl = self._getBaseUrl()
+
+        return Link(elem, self, baseurl)
 
 
 def setupBrowser(auth=None):

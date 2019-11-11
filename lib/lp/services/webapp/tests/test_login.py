@@ -656,9 +656,6 @@ class TestOpenIDCallbackRedirects(TestCaseWithFactory):
             view.request.response.getHeader('Location'), self.APPLICATION_URL)
 
 
-urls_redirected_to = []
-
-
 def fill_login_form_and_submit(browser, email_address):
     assert browser.getControl(name='field.email') is not None, (
         "We don't seem to be looking at a login form.")
@@ -671,7 +668,7 @@ class TestOpenIDReplayAttack(TestCaseWithFactory):
 
     def test_replay_attacks_do_not_succeed(self):
         browser = Browser()
-        browser.mech_browser.set_handle_redirect(False)
+        browser.followRedirects = False
         browser.open('%s/+login' % self.layer.appserver_root_url())
         # On a JS-enabled browser this page would've been auto-submitted
         # (thanks to the onload handler), but here we have to do it manually.
@@ -679,24 +676,22 @@ class TestOpenIDReplayAttack(TestCaseWithFactory):
         browser.getControl('Continue').click()
 
         self.assertEqual('Login', browser.title)
-        redirection = self.assertRaises(
-            HTTPError,
-            fill_login_form_and_submit, browser, 'test@canonical.com')
-        self.assertEqual(httplib.FOUND, redirection.code)
-        callback_url = redirection.hdrs['Location']
-        self.assertIn('+openid-callback', callback_url)
-        callback_redirection = self.assertRaises(
-            HTTPError, browser.open, callback_url)
+        fill_login_form_and_submit(browser, 'test@canonical.com')
         self.assertEqual(
-            httplib.TEMPORARY_REDIRECT, callback_redirection.code)
-        browser.open(callback_redirection.hdrs['Location'])
+            httplib.FOUND, int(browser.headers['Status'].split(' ', 1)[0]))
+        callback_url = browser.headers['Location']
+        self.assertIn('+openid-callback', callback_url)
+        browser.open(callback_url)
+        self.assertEqual(
+            httplib.TEMPORARY_REDIRECT,
+            int(browser.headers['Status'].split(' ', 1)[0]))
+        browser.open(browser.headers['Location'])
         login_status = extract_text(
             find_tag_by_id(browser.contents, 'logincontrol'))
         self.assertIn('Sample Person (name12)', login_status)
 
-        # Now we look up (in urls_redirected_to) the +openid-callback URL that
-        # was used to complete the authentication and open it on a different
-        # browser with a fresh set of cookies.
+        # Now we open the +openid-callback URL that was used to complete the
+        # authentication on a different browser with a fresh set of cookies.
         replay_browser = Browser()
         replay_browser.open(callback_url)
         login_status = extract_text(

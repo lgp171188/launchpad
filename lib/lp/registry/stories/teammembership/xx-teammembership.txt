@@ -415,7 +415,7 @@ error message:
     ...     '2049-04-16'
     >>> browser2.getControl("Reactivate").click()
     >>> browser2.url
-    'http://launchpad.test/%7Emyemail/+member/karl/+index'
+    'http://launchpad.test/~myemail/+member/karl/+index'
     >>> for tag in find_tags_by_class(browser2.contents, 'error message'):
     ...     print tag.renderContents()
     The membership request for Karl Tilbury has already been processed.
