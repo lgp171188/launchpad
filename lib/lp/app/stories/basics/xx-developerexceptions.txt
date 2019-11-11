@@ -96,9 +96,9 @@ unregister the adapter.
     >>> error_view_fixture.cleanUp()
 
 
-= HTTPCaller handle_errors =
+= http handle_errors =
 
-The HTTPCaller instance accepts the handle_errors parameter in case you
+lp.testing.pages.http accepts the handle_errors parameter in case you
 want to see tracebacks instead of error pages.
 
   >>> print http(r"""
