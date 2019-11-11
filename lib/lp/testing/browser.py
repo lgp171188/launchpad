@@ -17,7 +17,6 @@ __all__ = [
 import ssl
 
 from lazr.uri import URI
-import transaction
 from urllib3 import PoolManager
 from wsgiproxy.proxies import TransparentProxy
 from wsgiproxy.urllib3_client import HttpClient
@@ -26,27 +25,13 @@ from zope.testbrowser.wsgi import (
     Browser as _Browser,
     )
 
+from lp.testing.layers import TransactionMiddleware
 from lp.testing.pages import (
     extract_text,
     find_main_content,
     find_tag_by_id,
     print_feedback_messages,
     )
-
-
-class TransactionMiddleware:
-    """Middleware to commit the current transaction before the test.
-
-    This is like `zope.app.wsgi.TransactionMiddleware`, but avoids ZODB.
-    """
-
-    def __init__(self, app):
-        self.app = app
-
-    def __call__(self, environ, start_response):
-        transaction.commit()
-        for entry in self.app(environ, start_response):
-            yield entry
 
 
 class Browser(_Browser):

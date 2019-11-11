@@ -22,7 +22,6 @@ from six.moves.urllib.error import HTTPError
 from zope.testbrowser.wsgi import Browser
 
 from lp.services.webapp import LaunchpadView
-from lp.testing.layers import wsgi_application
 from lp.testopenid.interfaces.server import get_server_url
 
 
@@ -42,7 +41,7 @@ class ZopeFetcher(fetchers.HTTPFetcher):
     """An `HTTPFetcher` based on zope.testbrowser."""
 
     def fetch(self, url, body=None, headers=None):
-        browser = Browser(wsgi_app=wsgi_application)
+        browser = Browser()
         if headers is not None:
             for key, value in headers.items():
                 browser.addHeader(key, value)

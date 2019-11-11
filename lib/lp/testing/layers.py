@@ -50,7 +50,6 @@ __all__ = [
     'ZopelessLayer',
     'disconnect_stores',
     'reconnect_stores',
-    'wsgi_application',
     ]
 
 from cProfile import Profile
@@ -86,26 +85,24 @@ import transaction
 from webob.request import environ_from_url as orig_environ_from_url
 import wsgi_intercept
 from wsgi_intercept import httplib2_intercept
-from zope.app.publication.httpfactory import (
-    chooseClasses,
-    HTTPPublicationRequestFactory,
-    )
-from zope.app.testing.functional import (
-    FunctionalTestSetup,
-    ZopePublication,
-    )
+from zope.app.publication.httpfactory import HTTPPublicationRequestFactory
+from zope.app.wsgi import WSGIPublisherApplication
 from zope.component import (
     getUtility,
     globalregistry,
     provideUtility,
     )
 from zope.component.interfaces import ComponentLookupError
-import zope.publisher.publish
+from zope.component.testlayer import ZCMLFileLayer
+from zope.event import notify
+from zope.processlifetime import DatabaseOpened
 from zope.security.management import (
     endInteraction,
     getSecurityPolicy,
     )
 from zope.server.logger.pythonlogger import PythonLogger
+import zope.testbrowser.wsgi
+from zope.testbrowser.wsgi import AuthorizationMiddleware
 
 from lp.services import pidfile
 from lp.services.auditor.server import AuditorServer
@@ -157,14 +154,11 @@ from lp.testing import (
     )
 from lp.testing.pgsql import PgTestSetup
 from lp.testing.smtpd import SMTPController
+import zcml
 
 
 COMMA = ','
 WAIT_INTERVAL = datetime.timedelta(seconds=180)
-
-
-def set_up_functional_test():
-    return FunctionalTestSetup('zcml/ftesting.zcml')
 
 
 class LayerError(Exception):
@@ -256,20 +250,6 @@ def wait_children(seconds=120):
             break
         if until is not None and now() > until:
             break
-
-
-class MockRootFolder:
-    """Implement the minimum functionality required by Z3 ZODB dependencies
-
-    Installed as part of FunctionalLayer.testSetUp() to allow the http()
-    method (zope.app.testing.functional.HTTPCaller) to work.
-    """
-    @property
-    def _p_jar(self):
-        return self
-
-    def sync(self):
-        pass
 
 
 class BaseLayer:
@@ -993,59 +973,110 @@ class LaunchpadLayer(LibrarianLayer, MemcachedLayer, RabbitMQLayer):
             "DELETE FROM SessionData")
 
 
-def raw_wsgi_application(environ, start_response):
-    """This is a wsgi application for Zope functional testing.
+class TransactionMiddleware:
+    """Middleware to commit the current transaction before the test.
 
-    We use it with wsgi_intercept, which is itself mostly interesting
-    for our webservice (lazr.restful) tests.
+    This is like `zope.app.wsgi.testlayer.TransactionMiddleware`, but avoids
+    ZODB.
     """
-    # Committing work done up to now is a convenience that the Zope
-    # zope.app.testing.functional.HTTPCaller does.  We're replacing that bit,
-    # so it is easiest to follow that lead, even if it feels a little loose.
-    transaction.commit()
-    # Let's support post-mortem debugging.
-    if environ.pop('HTTP_X_ZOPE_HANDLE_ERRORS', 'True') == 'False':
-        environ['wsgi.handleErrors'] = False
-    handle_errors = environ.get('wsgi.handleErrors', True)
 
-    # Make sure the request method is something Launchpad will
-    # recognize. httplib2 usually takes care of this, but we've
-    # bypassed that code in our test environment.
-    environ['REQUEST_METHOD'] = environ['REQUEST_METHOD'].upper()
-    # zope.app.testing.functional.HTTPCaller used to set this, but WebTest
-    # doesn't.  However, some tests rely on it.
-    environ.setdefault('REMOTE_ADDR', wsgi_native_string('127.0.0.1'))
-    # Now we do the proper dance to get the desired request.  This is an
-    # almalgam of code from zope.app.testing.functional.HTTPCaller and
-    # zope.publisher.paste.Application.
-    request_cls, publication_cls = chooseClasses(
-        environ['REQUEST_METHOD'], environ)
-    publication = publication_cls(set_up_functional_test().db)
-    request = request_cls(environ['wsgi.input'], environ)
-    request.setPublication(publication)
-    # The rest of this function is an amalgam of
-    # zope.publisher.paste.Application.__call__ and van.testing.layers.
-    request = zope.publisher.publish.publish(
-        request, handle_errors=handle_errors)
-    response = request.response
-    # We sort these because it makes it easier to write reliable tests.
-    headers = sorted(response.getHeaders())
-    status = response.getStatusString()
-    # Start the WSGI server response.
-    start_response(status, headers)
-    # Return the result body iterable.
-    return response.consumeBodyIter()
+    def __init__(self, app):
+        self.app = app
+
+    def __call__(self, environ, start_response):
+        transaction.commit()
+        for entry in self.app(environ, start_response):
+            yield entry
 
 
-_wsgi_application_middlewares = []
+class RemoteAddrMiddleware:
+    """Middleware to set a default for `REMOTE_ADDR`.
+
+    zope.app.testing.functional.HTTPCaller used to set this, but WebTest
+    doesn't.  However, some tests rely on it.
+    """
+
+    def __init__(self, app):
+        self.app = app
+
+    def __call__(self, environ, start_response):
+        environ.setdefault('REMOTE_ADDR', wsgi_native_string('127.0.0.1'))
+        return self.app(environ, start_response)
 
 
-def wsgi_application(environ, start_response):
-    """As `raw_wsgi_application`, but possibly wrapped in middleware."""
-    app = raw_wsgi_application
-    for middleware in reversed(_wsgi_application_middlewares):
-        app = middleware(app)
-    return app(environ, start_response)
+class SortHeadersMiddleware:
+    """Middleware to sort response headers.
+
+    This makes it easier to write reliable tests.
+    """
+
+    def __init__(self, app):
+        self.app = app
+
+    def __call__(self, environ, start_response):
+        def wrap_start_response(status, response_headers, exc_info=None):
+            return start_response(status, sorted(response_headers), exc_info)
+
+        return self.app(environ, wrap_start_response)
+
+
+class _FunctionalBrowserLayer(zope.testbrowser.wsgi.Layer, ZCMLFileLayer):
+    """A variant of zope.app.wsgi.testlayer.BrowserLayer for FunctionalLayer.
+
+    This is not a layer for use in Launchpad tests (hence the leading
+    underscore), as zope.component's layer composition strategy is different
+    from the one zope.testrunner expects.
+    """
+
+    # A meaningless object passed to publication classes that just require
+    # something other than None.  In Zope this would be a ZODB connection,
+    # but we don't use ZODB in Launchpad.
+    fake_db = object()
+
+    def __init__(self, *args, **kwargs):
+        super(_FunctionalBrowserLayer, self).__init__(*args, **kwargs)
+        self.middlewares = [
+            AuthorizationMiddleware,
+            RemoteAddrMiddleware,
+            SortHeadersMiddleware,
+            TransactionMiddleware,
+            ]
+
+    def setUp(self):
+        super(_FunctionalBrowserLayer, self).setUp()
+        # We don't use ZODB, but the webapp subscribes to IDatabaseOpened to
+        # perform some post-configuration tasks, so emit that event
+        # manually.
+        notify(DatabaseOpened(None))
+
+    def _resetWSGIApp(self):
+        """Reset `zope.testbrowser.wsgi.Layer.get_app`'s cache.
+
+        `zope.testbrowser.wsgi.Layer` sets up a cached WSGI application in
+        `setUp` and assumes that it won't change for the lifetime of the
+        layer.  This assumption doesn't hold in Launchpad, but
+        `zope.testbrowser.wsgi.Layer` doesn't provide a straightforward way
+        to avoid making it.  We do our best.
+        """
+        zope.testbrowser.wsgi._APP_UNDER_TEST = self.make_wsgi_app()
+
+    def addMiddlewares(self, *middlewares):
+        self.middlewares.extend(middlewares)
+        self._resetWSGIApp()
+
+    def removeMiddlewares(self, *middlewares):
+        for middleware in middlewares:
+            self.middlewares.remove(middleware)
+        self._resetWSGIApp()
+
+    def setupMiddleware(self, app):
+        for middleware in self.middlewares:
+            app = middleware(app)
+        return app
+
+    def make_wsgi_app(self):
+        """See `zope.testbrowser.wsgi.Layer`."""
+        return self.setupMiddleware(WSGIPublisherApplication(self.fake_db))
 
 
 class FunctionalLayer(BaseLayer):
@@ -1058,9 +1089,17 @@ class FunctionalLayer(BaseLayer):
     @profiled
     def setUp(cls):
         FunctionalLayer.isSetUp = True
-        set_up_functional_test().setUp()
 
-        # Assert that set_up_functional_test did what it says it does
+        # zope.component.testlayer.LayerBase has a different strategy for
+        # layer composition that doesn't play well with zope.testrunner's
+        # approach to setting up and tearing down individual layers.  Work
+        # around this by creating a BrowserLayer instance here rather than
+        # having this layer subclass it.
+        FunctionalLayer.browser_layer = _FunctionalBrowserLayer(
+            zcml, zcml_file='ftesting.zcml')
+        FunctionalLayer.browser_layer.setUp()
+
+        # Assert that ZCMLFileLayer did what it says it does
         if not is_ca_available():
             raise LayerInvariantError("Component architecture failed to load")
 
@@ -1068,14 +1107,18 @@ class FunctionalLayer(BaseLayer):
         # If we don't, it may issue extra queries depending on test order.
         lp.services.webapp.session.idmanager.secret
         # If our request publication factories were defined using ZCML,
-        # they'd be set up by set_up_functional_test().setUp(). Since
-        # they're defined by Python code, we need to call that code
-        # here.
+        # they'd be set up by ZCMLFileLayer. Since they're defined by Python
+        # code, we need to call that code here.
         register_launchpad_request_publication_factories()
+
+        # Most tests use the WSGI application directly via
+        # zope.testbrowser.wsgi.Layer.get_app, but some (especially those
+        # that use lazr.restfulclient or launchpadlib) still talk to the app
+        # server over HTTP and need to be intercepted.
         wsgi_intercept.add_wsgi_intercept(
-            'localhost', 80, lambda: wsgi_application)
+            'localhost', 80, _FunctionalBrowserLayer.get_app)
         wsgi_intercept.add_wsgi_intercept(
-            'api.launchpad.test', 80, lambda: wsgi_application)
+            'api.launchpad.test', 80, _FunctionalBrowserLayer.get_app)
         httplib2_intercept.install()
 
         # webob.request.environ_from_url defaults to HTTP/1.0, which is
@@ -1099,6 +1142,7 @@ class FunctionalLayer(BaseLayer):
         wsgi_intercept.remove_wsgi_intercept('localhost', 80)
         wsgi_intercept.remove_wsgi_intercept('api.launchpad.test', 80)
         httplib2_intercept.uninstall()
+        FunctionalLayer.browser_layer.tearDown()
         # Signal Layer cannot be torn down fully
         raise NotImplementedError
 
@@ -1107,13 +1151,6 @@ class FunctionalLayer(BaseLayer):
     def testSetUp(cls):
         transaction.abort()
         transaction.begin()
-
-        # Fake a root folder to keep Z3 ZODB dependencies happy.
-        fs = set_up_functional_test()
-        if not fs.connection:
-            fs.connection = fs.db.open()
-        root = fs.connection.root()
-        root[ZopePublication.root_name] = MockRootFolder()
 
         # Allow the WSGI test browser to talk to our various test hosts.
         def assert_allowed_host(self):
@@ -1128,6 +1165,7 @@ class FunctionalLayer(BaseLayer):
             'zope.testbrowser.wsgi.WSGIConnection.assert_allowed_host',
             assert_allowed_host)
         FunctionalLayer._testbrowser_allowed.setUp()
+        FunctionalLayer.browser_layer.testSetUp()
 
         # Should be impossible, as the CA cannot be unloaded. Something
         # mighty nasty has happened if this is triggered.
@@ -1138,6 +1176,7 @@ class FunctionalLayer(BaseLayer):
     @classmethod
     @profiled
     def testTearDown(cls):
+        FunctionalLayer.browser_layer.testTearDown()
         FunctionalLayer._testbrowser_allowed.cleanUp()
 
         # Should be impossible, as the CA cannot be unloaded. Something
@@ -1676,18 +1715,19 @@ class PageTestLayer(LaunchpadFunctionalLayer, BingServiceLayer):
             ProfilingMiddleware, profiler=PageTestLayer.profiler)
         PageTestLayer._access_logging_middleware = partial(
             AccessLoggingMiddleware, access_logger=access_logger)
-        _wsgi_application_middlewares.extend([
+        FunctionalLayer.browser_layer.addMiddlewares(
             PageTestLayer._profiling_middleware,
-            PageTestLayer._access_logging_middleware,
-            ])
+            PageTestLayer._access_logging_middleware)
 
     @classmethod
     @profiled
     def tearDown(cls):
-        _wsgi_application_middlewares.remove(
-            PageTestLayer._access_logging_middleware)
-        _wsgi_application_middlewares.remove(
+        FunctionalLayer.browser_layer.removeMiddlewares(
+            PageTestLayer._access_logging_middleware,
             PageTestLayer._profiling_middleware)
+        logger = PythonLogger('pagetests-access')
+        for handler in list(logger.logger.handlers):
+            logger.logger.removeHandler(handler)
         if PageTestLayer.profiler:
             PageTestLayer.profiler.dump_stats(
                 os.environ.get('PROFILE_PAGETESTS_REQUESTS'))

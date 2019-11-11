@@ -8,7 +8,6 @@ import httplib
 import logging
 import socket
 import time
-import urllib2
 
 from fixtures import FakeLogger
 import psycopg2
@@ -44,7 +43,6 @@ from lp.testing.fixture import (
 from lp.testing.layers import (
     DatabaseLayer,
     LaunchpadFunctionalLayer,
-    wsgi_application,
     )
 from lp.testing.matchers import Contains
 
@@ -80,7 +78,7 @@ class TestDatabaseErrorViews(TestCase):
 
     def getHTTPError(self, url):
         try:
-            Browser(wsgi_app=wsgi_application).open(url)
+            Browser().open(url)
         except HTTPError as error:
             return error
         else:
@@ -107,7 +105,7 @@ class TestDatabaseErrorViews(TestCase):
 
         Raise a TimeoutException if the connection cannot be established.
         """
-        browser = Browser(wsgi_app=wsgi_application)
+        browser = Browser()
         for i in range(retries):
             try:
                 browser.open(url)
