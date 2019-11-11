@@ -20,9 +20,9 @@ guided filebug form.
 No Privileges Person chooses to add an attachment to the bug. We create
 a file-like object to demonstrate this.
 
-    >>> from cStringIO import StringIO
-    >>> example_file = StringIO('Traceback...')
-    >>> example_file.seek(0)
+    >>> from io import BytesIO
+    >>> example_file = BytesIO(b'Traceback...')
+    >>> _ = example_file.seek(0)
 
     >>> user_browser.getControl('Attachment').add_file(
     ...   example_file, 'text/plain', 'example.txt')
