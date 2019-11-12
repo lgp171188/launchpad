@@ -1,4 +1,4 @@
-# Copyright 2015-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Git reference ("ref") interfaces."""
@@ -419,7 +419,9 @@ class IGitRefEdit(Interface):
             # _schema_circular_imports.py.
             value_type=InlineObject(schema=Interface),
             description=_(dedent("""\
-                The new list of grants for this reference.  For example::
+                The new list of grants for this reference.
+
+                For example::
 
                     [
                         {

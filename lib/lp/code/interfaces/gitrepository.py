@@ -812,7 +812,9 @@ class IGitRepositoryEdit(IWebhookTarget):
             # _schema_circular_imports.py.
             value_type=InlineObject(schema=Interface),
             description=_(dedent("""\
-                The new list of rules for this repository.  For example::
+                The new list of rules for this repository.
+
+                For example::
 
                     [
                         {
