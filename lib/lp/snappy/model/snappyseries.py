@@ -5,6 +5,8 @@
 
 from __future__ import absolute_import, print_function, unicode_literals
 
+from lp.registry.model.series import ACTIVE_STATUSES
+
 __metaclass__ = type
 __all__ = [
     'SnappyDistroSeries',
@@ -26,7 +28,6 @@ from zope.interface import implementer
 
 from lp.registry.interfaces.series import SeriesStatus
 from lp.registry.model.distroseries import DistroSeries
-from lp.registry.errors import NoSuchDistroSeries
 from lp.services.database.constants import DEFAULT
 from lp.services.database.enumcol import EnumCol
 from lp.services.database.interfaces import (
@@ -38,7 +39,6 @@ from lp.services.propertycache import (
     get_property_cache,
     )
 from lp.snappy.interfaces.snappyseries import (
-    IDistroSeriesSet,
     ISnappyDistroSeries,
     ISnappyDistroSeriesSet,
     ISnappySeries,
@@ -245,22 +245,15 @@ class SnappyDistroSeriesSet:
             SnappyDistroSeries.snappy_series == snappy_series,
             SnappyDistroSeries.distro_series == distro_series).one()
 
+    def getDistroSeries(self):
+        distros = IStore(DistroSeries).find(
+            DistroSeries,
+            SnappyDistroSeries.distro_series == DistroSeries.id,
+            SnappySeries.status.is_in(ACTIVE_STATUSES)
+        ).config(distinct=True)
+
+        return distros
+
     def getAll(self):
         """See `ISnappyDistroSeriesSet`."""
         return IStore(SnappyDistroSeries).find(SnappyDistroSeries)
-
-@implementer(IDistroSeriesSet)
-class DistroSeriesSet:
-    """See `IDistroSeriesSet`."""
-
-    def getDistroSeries(self,distro_series):
-        """See `IDistroSeriesSet`."""
-        distro = IStore(DistroSeries).find(DistroSeries,
-             DistroSeries.id == distro_series.id).one()
-        if distro is None:
-            raise NoSuchDistroSeries(distro_series.display_name)
-        return distro
-
-    def getAll(self):
-        """See `IDistroSeriesSet`."""
-        return IStore(DistroSeries).find(DistroSeries)

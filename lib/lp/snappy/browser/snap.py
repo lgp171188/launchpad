@@ -97,7 +97,6 @@ from lp.snappy.interfaces.snap import (
     )
 from lp.snappy.interfaces.snapbuild import ISnapBuildSet
 from lp.snappy.interfaces.snappyseries import (
-    IDistroSeriesSet,
     ISnappyDistroSeriesSet,
     ISnappySeriesSet,
     )
@@ -345,7 +344,7 @@ class ISnapEditSchema(Interface):
         'store_upload',
         ])
     store_distro_series = Choice(
-        vocabulary='DistroSeriesVocabulary', required=True,
+        vocabulary='BuildableSnappyDistroSeries', required=True,
         title='Series')
     vcs = Choice(vocabulary=VCSType, required=True, title='VCS')
 
@@ -464,8 +463,9 @@ class SnapAddView(
             distro_series = store_series.preferred_distro_series
         else:
             distro_series = store_series.usable_distro_series.first()
-        sds_set = getUtility(IDistroSeriesSet)
-        store_distro_series = sds_set.getAll()
+        sds_set = getUtility(ISnappyDistroSeriesSet)
+        store_distro_series = sds_set.getByBothSeries(
+            store_series, distro_series)
 
         return {
             'store_name': store_name,
@@ -527,7 +527,7 @@ class SnapAddView(
             processors=data['processors'], private=private,
             build_source_tarball=data['build_source_tarball'],
             store_upload=data['store_upload'],
-#            store_series=data['store_distro_series'].snappy_series,
+            store_series=2,
             store_name=data['store_name'],
             store_channels=data.get('store_channels'), **kwargs)
         if data['store_upload']:

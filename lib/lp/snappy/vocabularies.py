@@ -5,11 +5,12 @@
 
 from __future__ import absolute_import, print_function, unicode_literals
 
+from lp.snappy.interfaces.snappyseries import ISnappyDistroSeriesSet
+
 __metaclass__ = type
 
 __all__ = [
     'BuildableSnappyDistroSeriesVocabulary',
-    'DistroSeriesVocabulary',
     'SnapDistroArchSeriesVocabulary',
     'SnappyDistroSeriesVocabulary',
     'SnappySeriesVocabulary',
@@ -71,13 +72,6 @@ class SnappySeriesVocabulary(StormVocabularyBase):
     _table = SnappySeries
     _clauses = [SnappySeries.status.is_in(ACTIVE_STATUSES)]
     _order_by = Desc(SnappySeries.date_created)
-
-
-class DistroSeriesVocabulary(StormVocabularyBase):
-    """A vocabulary for searching distro series."""
-
-    _table = DistroSeries
-    _order_by = Desc(DistroSeries.date_created)
 
 
 class SnappyDistroSeriesVocabulary(StormVocabularyBase):
@@ -146,12 +140,35 @@ class SnappyDistroSeriesVocabulary(StormVocabularyBase):
         return self.toTerm(entry)
 
 
-class BuildableSnappyDistroSeriesVocabulary(SnappyDistroSeriesVocabulary):
+class BuildableSnappyDistroSeriesVocabulary(SimpleVocabulary):
     """A vocabulary for searching active snappy/distro series combinations."""
 
-    _clauses = SnappyDistroSeriesVocabulary._clauses + [
-        SnappySeries.status.is_in(ACTIVE_STATUSES),
-        ]
+    # _clauses = SnappyDistroSeriesVocabulary._clauses + [
+    #     SnappySeries.status.is_in(ACTIVE_STATUSES),
+    #     ]
+
+    def __init__(self, context=None):
+
+        if ISnap.providedBy(context):
+            # We are editing the Snap
+            store_series = removeSecurityProxy(context).store_series
+            if store_series is not None:
+                if store_series == 1:
+                    # We allow editting to upgrade to 2
+                    print(store_series)
+        # we show all Distro Series only
+
+        sds_set = getUtility(ISnappyDistroSeriesSet)
+        store_distro_series = removeSecurityProxy(sds_set.getDistroSeries())
+        terms = [
+            self.createTerm(distro)
+            for distro in store_distro_series]
+
+        super(BuildableSnappyDistroSeriesVocabulary, self).__init__(terms)
+
+    @classmethod
+    def createTerm(cls, *args):
+        return SimpleTerm(*args)
 
 
 @implementer(IJSONPublishable)

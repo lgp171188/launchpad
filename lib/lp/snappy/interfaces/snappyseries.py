@@ -7,7 +7,6 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 __all__ = [
-    'IDistroSeriesSet',
     'ISnappyDistroSeries',
     'ISnappyDistroSeriesSet',
     'ISnappySeries',
@@ -199,12 +198,5 @@ class ISnappyDistroSeriesSet(Interface):
     def getAll():
         """Return all `SnappyDistroSeries`."""
 
-
-class IDistroSeriesSet(Interface):
-    """Interface representing the set of distro series links."""
-
-    def getDistroSeries(distro_series):
-        """Return a `DistroSeries`, or None."""
-
-    def getAll():
+    def getDistroSeries():
         """Return all `DistroSeries`."""
