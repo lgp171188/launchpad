@@ -3,11 +3,11 @@
 
 __metaclass__ = type
 
-from cStringIO import StringIO
 from datetime import (
     datetime,
     timedelta,
     )
+from io import BytesIO
 
 import pytz
 from storm.locals import Store
@@ -1421,8 +1421,8 @@ class TestProductFiles(TestCase):
         filename = u'foo\xa5.txt'.encode('utf-8')
         firefox_owner.open(
             'http://launchpad.test/firefox/1.0/1.0.0/+adddownloadfile')
-        foo_file = StringIO('Foo installer package...')
-        foo_signature = StringIO('Dummy GPG signature for the Foo installer')
+        foo_file = BytesIO(b'Foo installer package...')
+        foo_signature = BytesIO(b'Dummy GPG signature for the Foo installer')
         firefox_owner.getControl(name='field.filecontent').add_file(
             foo_file, 'text/plain', filename)
         firefox_owner.getControl(name='field.signature').add_file(

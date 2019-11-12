@@ -35,12 +35,12 @@ def set_branding(browser, icon=True, logo=True, mugshot=True):
     if icon:
         browser.getControl(name='field.icon.action').value = ['change']
         browser.getControl(name='field.icon.image').add_file(
-          open(icon_file), 'image/png', 'icon.png')
+          open(icon_file, 'rb'), 'image/png', 'icon.png')
     if logo:
         browser.getControl(name='field.logo.action').value = ['change']
         browser.getControl(name='field.logo.image').add_file(
-          open(logo_file), 'image/png', 'logo.png')
+          open(logo_file, 'rb'), 'image/png', 'logo.png')
     if mugshot:
         browser.getControl(name='field.mugshot.action').value = ['change']
         browser.getControl(name='field.mugshot.image').add_file(
-          open(mugshot_file), 'image/png', 'mugshot.png')
+          open(mugshot_file, 'rb'), 'image/png', 'mugshot.png')

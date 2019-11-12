@@ -1113,7 +1113,7 @@ an error message back.
 Uploading files with an unkown file format notifies the user that it
 cannot be handled.
 
-    >>> from StringIO import StringIO
+    >>> from io import BytesIO
     >>> af_file = b'''
     ... # Afrikaans translation for Silky
     ... # Copyright (C) 2004 Free Software Foundation, Inc.
@@ -1141,7 +1141,7 @@ cannot be handled.
     ... msgstr "Hierdie program loop as prosesnommer %1."'''
 
     >>> upload = admin_browser.getControl(name='file')
-    >>> upload.add_file(StringIO(af_file), 'application/msword', 'af.doc')
+    >>> upload.add_file(BytesIO(af_file), 'application/msword', 'af.doc')
     >>> admin_browser.getControl('Upload').click()
     >>> print(admin_browser.url)
     http://translations.launchpad.test/ubuntu/hoary/+source/evolution/+pots/evolution-2.2/af/+upload
@@ -1154,7 +1154,7 @@ cannot be handled.
 With all the correct information, a file can be uploaded.
 
     >>> upload = admin_browser.getControl(name='file')
-    >>> upload.add_file(StringIO(af_file), 'application/x-po', 'af.po')
+    >>> upload.add_file(BytesIO(af_file), 'application/x-po', 'af.po')
     >>> admin_browser.getControl('Upload').click()
     >>> print(admin_browser.url)
     http://translations.launchpad.test/ubuntu/hoary/+source/evolution/+pots/evolution-2.2/af/+upload
