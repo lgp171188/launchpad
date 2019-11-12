@@ -179,7 +179,7 @@ class ProductBugTrackerWidget(LaunchpadRadioWidget):
             projectgroup_bugtracker_caption = "Somewhere else"
         else:
             projectgroup_bugtracker_caption = structured(
-                'In the %s bug tracker (<a href="%s">%s</a>)</label>',
+                'In the %s bug tracker (<a href="%s">%s</a>)',
                 projectgroup.displayname,
                 canonical_url(projectgroup.bugtracker),
                 projectgroup.bugtracker.title).escapedtext
