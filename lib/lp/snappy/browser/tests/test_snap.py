@@ -5,6 +5,12 @@
 
 from __future__ import absolute_import, print_function, unicode_literals
 
+from storm.expr import Min
+from storm.expr import Max
+
+from lp.services.database.interfaces import IStore
+from lp.snappy.model.snappyseries import SnappySeries
+
 __metaclass__ = type
 
 from datetime import (
@@ -709,18 +715,30 @@ class TestSnapEditView(BaseTestSnapView):
             self.snappyseries = self.factory.makeSnappySeries(
                 usable_distro_series=[self.distroseries])
 
-    def test_edit_snap(self):
+    def test_edit_Asnap(self):
         old_series = self.factory.makeUbuntuDistroSeries()
         old_branch = self.factory.makeAnyBranch()
+
+        snappy_series = IStore(SnappySeries).find(SnappySeries, SnappySeries.id == 1).one()
+
+        print(snappy_series.id)
+        print(snappy_series.name)
+        print(snappy_series.display_name)
+        print(snappy_series.status)
         snap = self.factory.makeSnap(
             registrant=self.person, owner=self.person, distroseries=old_series,
-            branch=old_branch)
+            store_series=snappy_series, branch=old_branch)
         self.factory.makeTeam(
             name="new-team", displayname="New Team", members=[self.person])
         new_series = self.factory.makeUbuntuDistroSeries()
         with admin_logged_in():
             new_snappy_series = self.factory.makeSnappySeries(
                 usable_distro_series=[new_series])
+
+        print(new_snappy_series.id)
+        print(new_snappy_series.name)
+        print(new_snappy_series.display_name)
+        print(new_snappy_series.status)
         [new_git_ref] = self.factory.makeGitRefs()
         archive = self.factory.makeArchive()
 
