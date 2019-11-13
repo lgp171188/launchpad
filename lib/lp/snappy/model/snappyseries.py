@@ -5,6 +5,9 @@
 
 from __future__ import absolute_import, print_function, unicode_literals
 
+from storm.expr import LeftJoin
+from lp.registry.model.distribution import Distribution
+
 from lp.registry.model.series import ACTIVE_STATUSES
 
 __metaclass__ = type
@@ -246,11 +249,21 @@ class SnappyDistroSeriesSet:
             SnappyDistroSeries.distro_series == distro_series).one()
 
     def getDistroSeries(self):
-        distros = IStore(DistroSeries).find(
-            DistroSeries,
-            SnappyDistroSeries.distro_series == DistroSeries.id,
+        tables = [
+            SnappyDistroSeries,
+            LeftJoin(
+                DistroSeries,
+                SnappyDistroSeries.distro_series_id == DistroSeries.id),
+            LeftJoin(Distribution, DistroSeries.distributionID == Distribution.id),
+            SnappySeries,
+        ]
+        expressions = [
+            SnappyDistroSeries.snappy_series_id == SnappySeries.id,
             SnappySeries.status.is_in(ACTIVE_STATUSES)
-        ).config(distinct=True)
+        ]
+
+        distros = IStore(DistroSeries).using(*tables).find(
+            DistroSeries, *expressions).config(distinct=True)
 
         return distros
 

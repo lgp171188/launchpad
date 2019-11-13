@@ -162,17 +162,17 @@ class BuildableSnappyDistroSeriesVocabulary(SimpleVocabulary):
                 if store_series.id == 1:
                     # We allow editting to upgrade to 2
                     print('debug breakpoint')
-                    terms = [
-                        self.createTerm(distro.display_name + ' for Store Series 1')
-                        for distro in store_distro_series]
+
+                    terms = [self.createTerm(context.distro_series.display_name + ' for Store Series 1')]
 
                     [terms.append(self.createTerm(distro.display_name +
                                      ' for Store Series 2'))
                     for distro in store_distro_series]
-
                     print('debug breakpoint')
 
         # we show all Distro Series only
+
+
         super(BuildableSnappyDistroSeriesVocabulary, self).__init__(terms)
         print('debug breakpoint')
 
