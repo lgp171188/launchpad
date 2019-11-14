@@ -231,6 +231,14 @@ class SnappySeriesSet:
             raise NoSuchSnappySeries(name)
         return snappy_series
 
+    def getById(self, id):
+        """See `ISnappySeriesSet`."""
+        snappy_series = IStore(SnappySeries).find(
+            SnappySeries, SnappySeries.id == id).one()
+        if snappy_series is None:
+            raise NoSuchSnappySeries(id)
+        return snappy_series
+
     def getAll(self):
         """See `ISnappySeriesSet`."""
         return IStore(SnappySeries).find(SnappySeries).order_by(

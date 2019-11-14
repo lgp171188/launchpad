@@ -5,6 +5,7 @@
 
 from __future__ import absolute_import, print_function, unicode_literals
 
+from lp.registry.interfaces.distribution import IDistributionSet
 from lp.snappy.interfaces.snappyseries import ISnappyDistroSeriesSet
 
 __metaclass__ = type
@@ -149,10 +150,12 @@ class BuildableSnappyDistroSeriesVocabulary(SimpleVocabulary):
     #     ]
 
     def __init__(self, context=None):
+
+
         sds_set = getUtility(ISnappyDistroSeriesSet)
         store_distro_series = removeSecurityProxy(sds_set.getDistroSeries())
         terms = [
-            self.createTerm(distro)
+            self.createTerm(distro, distro.distribution.display_name + ' ' +distro.display_name)
             for distro in store_distro_series]
 
         if ISnap.providedBy(context):
@@ -160,19 +163,22 @@ class BuildableSnappyDistroSeriesVocabulary(SimpleVocabulary):
             store_series = removeSecurityProxy(context).store_series
             if store_series is not None:
                 if store_series.id == 1:
-                    # We allow editting to upgrade to 2
-                    print('debug breakpoint')
+                    # We allow editting to upgrade to
+                    # Store Series 2
+                    terms = [self.createTerm(
+                                distro.distribution.display_name
+                                +' '+
+                                context.distro_series.display_name +
+                                ' for Store Series 1')]
 
-                    terms = [self.createTerm(context.distro_series.display_name + ' for Store Series 1')]
-
-                    [terms.append(self.createTerm(distro.display_name +
-                                     ' for Store Series 2'))
+                    [terms.append(self.createTerm(
+                        distro.distribution.display_name +
+                        ' ' +
+                        distro.display_name +
+                        ' for Store Series 2'))
                     for distro in store_distro_series]
-                    print('debug breakpoint')
 
-        # we show all Distro Series only
-
-
+        # we show all Distro Series
         super(BuildableSnappyDistroSeriesVocabulary, self).__init__(terms)
         print('debug breakpoint')
 

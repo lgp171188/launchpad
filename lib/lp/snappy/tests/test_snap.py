@@ -5,6 +5,9 @@
 
 from __future__ import absolute_import, print_function, unicode_literals
 
+from lp.registry.model.distroseries import DistroSeries
+from lp.snappy.model.snappyseries import SnappySeries
+
 __metaclass__ = type
 
 import base64
@@ -168,12 +171,12 @@ class TestSnapFeatureFlag(TestCaseWithFactory):
             branch=self.factory.makeAnyBranch(), private=True)
 
 
-class TestSnap(TestCaseWithFactory):
+class TestSnapModel(TestCaseWithFactory):
 
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestSnap, self).setUp()
+        super(TestSnapModel, self).setUp()
         self.useFixture(FeatureFixture(SNAP_TESTING_FLAGS))
 
     def test_implements_interfaces(self):
@@ -200,6 +203,38 @@ class TestSnap(TestCaseWithFactory):
         # The initial value of date_last_modified is date_created.
         snap = self.factory.makeSnap(date_created=ONE_DAY_AGO)
         self.assertEqual(snap.date_created, snap.date_last_modified)
+
+    def test_Aediting_store_series(self):
+
+        distro_series = self.factory.makeUbuntuDistroSeries(name='artful', displayname='Artful')
+        branch = self.factory.makeAnyBranch()
+
+        snappy_series = IStore(SnappySeries).find(SnappySeries, SnappySeries.id == 1).one()
+
+        snap = self.factory.makeSnap(distroseries=distro_series,
+                                     store_series=snappy_series,
+                                     branch=branch)
+
+        removeSecurityProxy(snap).store_distro_series = 'Ubuntu Artful for Store Series 1'
+        self.assertEqual(snap.store_series.id, 1)
+
+        self.assertEqual(snap.distro_series.display_name, 'Artful')
+
+
+    def test_Aupgrading_store_series(self):
+        distro_series = self.factory.makeUbuntuDistroSeries(name='bionic', displayname='Bionic')
+        branch = self.factory.makeAnyBranch()
+
+        snappy_series = IStore(SnappySeries).find(SnappySeries, SnappySeries.id == 1).one()
+
+        snap = self.factory.makeSnap(distroseries=distro_series,
+                                     store_series=snappy_series,
+                                     branch=branch)
+
+        removeSecurityProxy(snap).store_distro_series = 'Ubuntu Bionic for Store Series 2'
+        self.assertEqual(snap.store_series.id, 2)
+
+        self.assertEqual(snap.distro_series.display_name, 'Bionic')
 
     def test_modifiedevent_sets_date_last_modified(self):
         # When a Snap receives an object modified event, the last modified
