@@ -5,11 +5,6 @@
 
 from __future__ import absolute_import, print_function, unicode_literals
 
-from storm.expr import Min
-from storm.expr import Max
-
-from lp.services.database.interfaces import IStore
-from lp.snappy.model.snappyseries import SnappySeries
 
 __metaclass__ = type
 
@@ -64,6 +59,7 @@ from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.registry.interfaces.series import SeriesStatus
 from lp.services.config import config
 from lp.services.database.constants import UTC_NOW
+from lp.services.database.interfaces import IStore
 from lp.services.features.testing import FeatureFixture
 from lp.services.job.interfaces.job import JobStatus
 from lp.services.propertycache import get_property_cache
@@ -84,6 +80,7 @@ from lp.snappy.interfaces.snap import (
     )
 from lp.snappy.interfaces.snappyseries import ISnappyDistroSeriesSet
 from lp.snappy.interfaces.snapstoreclient import ISnapStoreClient
+from lp.snappy.model.snappyseries import SnappySeries
 from lp.testing import (
     admin_logged_in,
     BrowserTestCase,
@@ -721,10 +718,6 @@ class TestSnapEditView(BaseTestSnapView):
 
         snappy_series = IStore(SnappySeries).find(SnappySeries, SnappySeries.id == 1).one()
 
-        print(snappy_series.id)
-        print(snappy_series.name)
-        print(snappy_series.display_name)
-        print(snappy_series.status)
         snap = self.factory.makeSnap(
             registrant=self.person, owner=self.person, distroseries=old_series,
             store_series=snappy_series, branch=old_branch)
@@ -735,10 +728,6 @@ class TestSnapEditView(BaseTestSnapView):
             new_snappy_series = self.factory.makeSnappySeries(
                 usable_distro_series=[new_series])
 
-        print(new_snappy_series.id)
-        print(new_snappy_series.name)
-        print(new_snappy_series.display_name)
-        print(new_snappy_series.status)
         [new_git_ref] = self.factory.makeGitRefs()
         archive = self.factory.makeArchive()
 

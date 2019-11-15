@@ -145,12 +145,7 @@ class SnappyDistroSeriesVocabulary(StormVocabularyBase):
 class BuildableSnappyDistroSeriesVocabulary(SimpleVocabulary):
     """A vocabulary for searching active snappy/distro series combinations."""
 
-    # _clauses = SnappyDistroSeriesVocabulary._clauses + [
-    #     SnappySeries.status.is_in(ACTIVE_STATUSES),
-    #     ]
-
     def __init__(self, context=None):
-
 
         sds_set = getUtility(ISnappyDistroSeriesSet)
         store_distro_series = removeSecurityProxy(sds_set.getDistroSeries())
@@ -163,8 +158,9 @@ class BuildableSnappyDistroSeriesVocabulary(SimpleVocabulary):
             store_series = removeSecurityProxy(context).store_series
             if store_series is not None:
                 if store_series.id == 1:
-                    # We allow editting to upgrade to
-                    # Store Series 2
+                    # We allow editing to upgrade to
+                    # Store Series 2 or to remain on the same version
+                    # but not to downgrade from Store version 2 to 1
                     terms = [self.createTerm(
                                 distro.distribution.display_name
                                 +' '+
@@ -178,9 +174,7 @@ class BuildableSnappyDistroSeriesVocabulary(SimpleVocabulary):
                         ' for Store Series 2'))
                     for distro in store_distro_series]
 
-        # we show all Distro Series
         super(BuildableSnappyDistroSeriesVocabulary, self).__init__(terms)
-        print('debug breakpoint')
 
     @classmethod
     def createTerm(cls, *args):
