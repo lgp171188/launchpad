@@ -30,15 +30,12 @@ import subprocess
 import sys
 import textwrap
 
-from zope.component import getUtility
-from zope.security.proxy import removeSecurityProxy
+from six.moves.xmlrpc_client import Fault
 
-from lp.registry.interfaces.mailinglist import IMailingListSet
-from lp.registry.interfaces.person import IPersonSet
 from lp.services.config import config
-from lp.services.identity.interfaces.emailaddress import IEmailAddressSet
 from lp.services.mailman.config import configure_prefix
 from lp.services.scripts.base import LaunchpadScript
+from lp.xmlrpc import faults
 
 
 RSYNC_OPTIONS = ('-avz', '--delete')
@@ -118,10 +115,11 @@ class MailingListSyncScript(LaunchpadScript):
         from Mailman import Utils
         from Mailman import mm_cfg
         from Mailman.MailList import MailList
+        from Mailman.Queue import XMLRPCRunner
 
-        # Grab a couple of useful components.
-        email_address_set = getUtility(IEmailAddressSet)
-        mailing_list_set = getUtility(IMailingListSet)
+        # Ask Launchpad to update all the team email addresses.
+        proxy = XMLRPCRunner.get_mailing_list_api_proxy()
+        proxy.updateTeamAddresses(self.options.hostname)
 
         # Clean things up per mailing list.
         for list_name in Utils.list_names():
@@ -141,39 +139,20 @@ class MailingListSyncScript(LaunchpadScript):
             finally:
                 mailing_list.Unlock()
 
-            # Patch up the email address for the list in the Launchpad
-            # database.
-            lp_mailing_list = mailing_list_set.get(list_name)
-            if lp_mailing_list is None:
-                # We found a mailing list in Mailman that does not exist in
-                # the Launchpad database.  This can happen if we rsync'd the
-                # Mailman directories after the lists were created, but we
-                # copied the LP database /before/ the lists were created.
-                # If we don't delete the Mailman lists, we won't be able to
-                # create the mailing lists on staging.
-                self.logger.error('No LP mailing list for: %s', list_name)
-                self.deleteMailmanList(list_name)
-                continue
-
-            # Clean up the team email addresses corresponding to their mailing
-            # lists.  Note that teams can have two email addresses if they
-            # have a different contact address.
-            team = getUtility(IPersonSet).getByName(list_name)
-            mlist_addresses = email_address_set.getByPerson(team)
-            if mlist_addresses.count() == 0:
-                self.logger.error('No LP email address for: %s', list_name)
-            else:
-                # Teams can have both a mailing list and a contact address.
-                old_address = '%s@%s' % (list_name, self.options.hostname)
-                for email_address in mlist_addresses:
-                    if email_address.email == old_address:
-                        new_address = lp_mailing_list.address
-                        removeSecurityProxy(email_address).email = new_address
-                        self.logger.info('%s -> %s', old_address, new_address)
-                        break
-                else:
-                    self.logger.error('No change to LP email address for: %s',
-                                      list_name)
+            try:
+                proxy.isTeamPublic(list_name)
+            except Fault as fault:
+                if fault.faultCode == faults.NoSuchPersonWithName.error_code:
+                    # We found a mailing list in Mailman that does not exist
+                    # in the Launchpad database.  This can happen if we
+                    # rsynced the Mailman directories after the lists were
+                    # created, but we copied the LP database /before/ the
+                    # lists were created.  If we don't delete the Mailman
+                    # lists, we won't be able to create the mailing lists on
+                    # staging.
+                    self.logger.error('No LP mailing list for: %s', list_name)
+                    self.deleteMailmanList(list_name)
+                    continue
 
     def deleteMailmanList(self, list_name):
         """Delete all Mailman data structures for `list_name`."""

@@ -45,6 +45,19 @@ def production_config(host_name):
         config.pop('production')
 
 
+@contextmanager
+def staging_config():
+    """Simulate a staging Launchpad config."""
+    config.push('staging', """\
+        [launchpad]
+        is_demo: True
+        """)
+    try:
+        yield
+    finally:
+        config.pop('staging')
+
+
 class TestMListSync(MailmanTestCase):
     """Test mlist-sync script."""
 
@@ -85,7 +98,7 @@ class TestMListSync(MailmanTestCase):
             logger=BufferLogger())
         script.txn = transaction
         try:
-            with dbuser('mlist-sync'):
+            with dbuser('mlist-sync'), staging_config():
                 return script.main()
         finally:
             self.addDetail('log', script.logger.content)

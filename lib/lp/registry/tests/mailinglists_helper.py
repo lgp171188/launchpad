@@ -133,3 +133,8 @@ class MailingListXMLRPCTestProxy(MailingListAPIView):
     @fault_catcher
     def isTeamPublic(self, team_name):
         return super(MailingListXMLRPCTestProxy, self).isTeamPublic(team_name)
+
+    @fault_catcher
+    def updateTeamAddresses(self, old_hostname):
+        return super(MailingListXMLRPCTestProxy, self).updateTeamAddresses(
+            old_hostname)
