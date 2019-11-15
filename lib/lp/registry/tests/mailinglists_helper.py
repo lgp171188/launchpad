@@ -1,4 +1,4 @@
-# Copyright 2009-2010 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Helper functions for testing XML-RPC services."""
@@ -31,24 +31,16 @@ from lp.services.database.sqlbase import flush_database_updates
 def fault_catcher(func):
     """Decorator for displaying Faults in a cross-compatible way.
 
-    When running the same doctest with the ServerProxy, faults are turned into
+    When running tests with the ServerProxy, faults are turned into
     exceptions by the XMLRPC machinery, but with the direct view the faults
-    are just returned.  This causes an impedance mismatch with exception
-    display in the doctest that cannot be papered over by using ellipses.  So
-    to make this work in a consistent way, a subclass of the view class is
-    used which prints faults to match the output of ServerProxy (proper
-    exceptions aren't really necessary).
+    are just returned.  To paper over the resulting impedance mismatch,
+    check whether the result is a fault and if so raise it.
     """
 
     def caller(self, *args, **kws):
         result = func(self, *args, **kws)
         if isinstance(result, xmlrpclib.Fault):
-            # Fake this to look like exception output.  The second line is
-            # necessary to match ellipses in the doctest, but its contents are
-            # completely ignored; /something/ just has to be there.
-            print 'Traceback (most recent call last):'
-            print 'ignore'
-            print 'Fault:', result
+            raise result
         else:
             return result
     return caller
