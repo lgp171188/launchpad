@@ -267,6 +267,17 @@ class BaseRunnableJob(BaseRunnableJobSource):
             response = self.runViaCelery(ignore_result)
             if not ignore_result:
                 BaseRunnableJob.celery_responses.append(response)
+            # transaction >= 1.6.0 removes data managers from the
+            # transaction before calling after-commit hooks; this means that
+            # the transaction begun in runViaCelery to look up details of
+            # the job doesn't get committed or rolled back, and so
+            # subsequent SQL statements executed by the caller confusingly
+            # see a database snapshot from before the Celery job was run,
+            # even if they use the block_on_job test helper.  Since
+            # runViaCelery never issues any data-modifying statements
+            # itself, the least confusing thing to do here is to just roll
+            # back its transaction.
+            transaction.abort()
 
     def celeryRunOnCommit(self):
         """Configure transaction so that commit runs this job via Celery."""
