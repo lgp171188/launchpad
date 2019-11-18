@@ -750,25 +750,19 @@ We temporarily silence the logging from this function because we're not
 interested in it. Again, the watch's lastchecked field will also be
 updated.
 
-    >>> from lp.testing.fixture import CaptureOops
-    >>> capture = CaptureOops()
-    >>> capture.setUp()
-
     >>> external_bugtracker.initialize_remote_bugdb_error = None
     >>> for error in [UnparsableBugData, Exception]:
     ...     example_bugwatch.lastchecked = None
     ...     external_bugtracker.get_remote_status_error = error
     ...     bug_watch_updater.updateBugWatches(
     ...         external_bugtracker, [example_bugwatch])
-    ...     oops = capture.oopses[-1]
+    ...     oops = oops_capture.oopses[-1]
     ...     print("%s: %s (%s; %s)" % (
     ...         example_bugwatch.last_error_type.title,
     ...         example_bugwatch.lastchecked is not None,
     ...         oops['id'], oops['url']))
     Unparsable Bug: True (OOPS-...; http://bugs.example.com/show_bug.cgi?id=1)
     Unknown: True (OOPS-...; http://bugs.example.com/show_bug.cgi?id=1)
-
-    >>> capture.cleanUp()
 
 
 Using `LookupTree` to map statuses
