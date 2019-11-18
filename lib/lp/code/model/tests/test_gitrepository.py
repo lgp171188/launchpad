@@ -3036,19 +3036,6 @@ class TestGitRepositorySet(TestCaseWithFactory):
             registrant=owner, owner=owner, target=target, name=name))
         self.assertEqual(0, hosting_fixture.create.call_count)
 
-    def test_new_not_owner(self):
-        # By default, GitRepositorySet.new creates a new repository in the
-        # database but not on the hosting service.
-        hosting_fixture = self.useFixture(GitHostingFixture())
-        owner = self.factory.makePerson()
-        user = self.factory.makePerson()
-        target = self.factory.makeProduct()
-        name = self.factory.getUniqueUnicode()
-
-        self.assertRaises(GitRepositoryCreatorNotOwner,
-                          self.repository_set.new, GitRepositoryType.HOSTED,
-                          user, owner, target, name)
-
     def test_new_with_hosting(self):
         # GitRepositorySet.new(with_hosting=True) creates a new repository
         # in both the database and the hosting service.
@@ -3480,6 +3467,21 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
 
     def test_new_person(self):
         self.assertNewWorks(self.factory.makePerson())
+
+    def test_new_snap(self):
+        hosting_fixture = self.useFixture(GitHostingFixture())
+        other_user = self.factory.makePerson()
+        owner_url = api_url(other_user)
+        target_url = api_url(self.factory.makeSnap(registrant=other_user,
+                                                   owner=other_user))
+        owner_db = self.factory.makePerson()
+        name = "repository"
+        webservice = webservice_for_person(
+            owner_db, permission=OAuthPermission.WRITE_PUBLIC)
+        webservice.default_api_version = "devel"
+        response = webservice.named_post(
+            "/+git", "new", owner=owner_url, target=target_url, name=name)
+        self.assertEqual(400, response.status)
 
     def assertGetRepositoriesWorks(self, target_db):
         if IPerson.providedBy(target_db):
