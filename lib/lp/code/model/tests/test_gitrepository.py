@@ -3469,18 +3469,15 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
         self.assertNewWorks(self.factory.makePerson())
 
     def test_new_snap(self):
-        hosting_fixture = self.useFixture(GitHostingFixture())
         other_user = self.factory.makePerson()
         owner_url = api_url(other_user)
-        target_url = api_url(self.factory.makeSnap(registrant=other_user,
-                                                   owner=other_user))
         owner_db = self.factory.makePerson()
         name = "repository"
         webservice = webservice_for_person(
             owner_db, permission=OAuthPermission.WRITE_PUBLIC)
         webservice.default_api_version = "devel"
         response = webservice.named_post(
-            "/+git", "new", owner=owner_url, target=target_url, name=name)
+            "/+git", "new", owner=owner_url, target=owner_url, name=name)
         self.assertEqual(400, response.status)
 
     def assertGetRepositoriesWorks(self, target_db):
