@@ -158,7 +158,8 @@ class LaunchpadWebServiceCaller(WebServiceCaller):
 
     def __init__(self, oauth_consumer_key=None, oauth_access_key=None,
                  oauth_access_secret=None, handle_errors=True,
-                 domain='api.launchpad.test', protocol='http'):
+                 domain='api.launchpad.test', protocol='http',
+                 default_api_version=None):
         """Create a LaunchpadWebServiceCaller.
         :param oauth_consumer_key: The OAuth consumer key to use.
         :param oauth_access_key: The OAuth access key to use for the request.
@@ -184,6 +185,8 @@ class LaunchpadWebServiceCaller(WebServiceCaller):
             self.consumer = None
             self.access_token = None
         self.handle_errors = handle_errors
+        if default_api_version is not None:
+            self.default_api_version = default_api_version
         WebServiceCaller.__init__(self, handle_errors, domain, protocol)
 
     default_api_version = "beta"
@@ -745,7 +748,7 @@ def safe_canonical_url(*args, **kwargs):
 
 def webservice_for_person(person, consumer_key=u'launchpad-library',
                           permission=OAuthPermission.READ_PUBLIC,
-                          context=None):
+                          context=None, default_api_version=None):
     """Return a valid LaunchpadWebServiceCaller for the person.
 
     Use this method to create a way to test the webservice that doesn't depend
@@ -763,7 +766,8 @@ def webservice_for_person(person, consumer_key=u'launchpad-library',
     access_token, access_secret = request_token.createAccessToken()
     logout()
     service = LaunchpadWebServiceCaller(
-        consumer_key, access_token.key, access_secret)
+        consumer_key, access_token.key, access_secret,
+        default_api_version=default_api_version)
     service.user = person
     return service
 
