@@ -132,7 +132,7 @@ Other administration fields are available on the 'Change details' form
 as currently administrators are the only users with permission to use the
 Edit page:
 
-    >>> cprov_browser.getControl(name="field.manual").value
+    >>> bool(cprov_browser.getControl(name="field.manual").value)
     False
 
     >>> cprov_browser.getControl(name="field.vm_host").value

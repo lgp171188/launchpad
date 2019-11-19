@@ -217,8 +217,7 @@ Now Jdub can apply for team membership and mailing list access.
     >>> browser.url
     'http://launchpad.test/~rosetta-admins/+join'
 
-    >>> browser.getControl(name='field.mailinglist_subscribe').value = [
-    ...     'checked']
+    >>> browser.getControl(name='field.mailinglist_subscribe').value = True
     >>> browser.getControl(name='field.actions.join').click()
     >>> browser.url
     'http://launchpad.test/~rosetta-admins'
@@ -595,7 +594,8 @@ lists will not have the box checked.
 
     >>> browser.open('http://launchpad.test/~rosetta-admins')
     >>> browser.getLink('Join the team').click()
-    >>> print browser.getControl(name='field.mailinglist_subscribe').value
+    >>> print bool(
+    ...     browser.getControl(name='field.mailinglist_subscribe').value)
     False
 
     # Restore James' setting.

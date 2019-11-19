@@ -322,7 +322,7 @@ We'll use a specific URL pattern to avoid matching unrelated links.
 Let's start with the first bug task:
 
     >>> import re
-    >>> edit_status_url = re.compile(r'1.0/\+bug/[0-9]+/\+editstatus')
+    >>> edit_status_url = re.compile(r'.*/1.0/\+bug/[0-9]+/\+editstatus')
     >>> browser.getLink(url=edit_status_url).click()
 
 Completing the "edit status" form allows us to add the bug task to the
@@ -339,7 +339,7 @@ milestone:
 Now we'll add the second bug task to the test milestone, using the same
 method. However this time we'll use a different importance:
 
-    >>> edit_status_url = re.compile(r'2.0/\+bug/[0-9]+/\+editstatus')
+    >>> edit_status_url = re.compile(r'.*/2.0/\+bug/[0-9]+/\+editstatus')
     >>> browser.getLink(url=edit_status_url).click()
     >>> browser.getControl('Milestone').displayValue = [milestone]
     >>> browser.getControl('Importance').value = ['High']

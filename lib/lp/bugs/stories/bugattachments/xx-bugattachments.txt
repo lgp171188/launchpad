@@ -260,7 +260,7 @@ We can also edit the attachment details, let's navigate to that page.
 
     >>> import re
     >>> user_browser.open('http://bugs.launchpad.test/firefox/+bug/1')
-    >>> user_browser.getLink(url=re.compile(r'[+]attachment/\d+$')).click()
+    >>> user_browser.getLink(url=re.compile(r'.*/\+attachment/\d+$')).click()
     >>> user_browser.url
     'http://bugs.launchpad.test/firefox/+bug/1/+attachment/...'
 
@@ -290,7 +290,7 @@ whitespace to test that's correctly stripped)...
 
 We can edit the attachment to be a patch.
 
-    >>> user_browser.getLink(url=re.compile(r'[+]attachment/\d+$')).click()
+    >>> user_browser.getLink(url=re.compile(r'.*/\+attachment/\d+$')).click()
     >>> patch_control = user_browser.getControl(
     ...     'This attachment contains a solution (patch) for this bug')
     >>> patch_control.selected = True

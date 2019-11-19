@@ -142,7 +142,7 @@ interested in being the project maintainer for the long run.
     >>> user_browser.getControl('Continue').click()
     >>> user_browser.getControl('Python Licence').click()
     >>> disclaim = user_browser.getControl(name='field.disclaim_maintainer')
-    >>> disclaim.value = ['checked']
+    >>> disclaim.value = True
     >>> user_browser.getControl('Complete Registration').click()
 
 Sample person is shown as the registrant but the maintainer is now

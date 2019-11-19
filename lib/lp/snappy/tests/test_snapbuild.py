@@ -11,10 +11,7 @@ from datetime import (
     datetime,
     timedelta,
     )
-from urllib2 import (
-    HTTPError,
-    urlopen,
-    )
+from urllib2 import urlopen
 
 from fixtures import FakeLogger
 from pymacaroons import Macaroon
@@ -802,9 +799,9 @@ class TestSnapBuildWebservice(TestCaseWithFactory):
         self.assertEqual(5000, build["score"])
 
     def assertCanOpenRedirectedUrl(self, browser, url):
-        redirection = self.assertRaises(HTTPError, browser.open, url)
-        self.assertEqual(303, redirection.code)
-        urlopen(redirection.hdrs["Location"]).close()
+        browser.open(url)
+        self.assertEqual(303, int(browser.headers["Status"].split(" ", 1)[0]))
+        urlopen(browser.headers["Location"]).close()
 
     def test_logs(self):
         # API clients can fetch the build and upload logs.
@@ -815,6 +812,7 @@ class TestSnapBuildWebservice(TestCaseWithFactory):
         logout()
         build = self.webservice.get(build_url).jsonBody()
         browser = self.getNonRedirectingBrowser(user=self.person)
+        browser.raiseHttpErrors = False
         self.assertIsNotNone(build["build_log_url"])
         self.assertCanOpenRedirectedUrl(browser, build["build_log_url"])
         self.assertIsNotNone(build["upload_log_url"])
@@ -834,6 +832,7 @@ class TestSnapBuildWebservice(TestCaseWithFactory):
         self.assertEqual(200, response.status)
         self.assertContentEqual(file_urls, response.jsonBody())
         browser = self.getNonRedirectingBrowser(user=self.person)
+        browser.raiseHttpErrors = False
         for file_url in file_urls:
             self.assertCanOpenRedirectedUrl(browser, file_url)
 

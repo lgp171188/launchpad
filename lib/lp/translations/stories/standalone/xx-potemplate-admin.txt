@@ -59,7 +59,7 @@ a Rosetta Expert to administer it.
     ''
     >>> browser.getControl(name='field.sourcepackageversion').value
     ''
-    >>> browser.getControl(name='field.languagepack').value
+    >>> bool(browser.getControl(name='field.languagepack').value)
     False
     >>> browser.getControl(name='field.path').value
     'po/evolution-2.2.pot'
@@ -105,7 +105,7 @@ an admin to administer it.
     ''
     >>> admin_browser.getControl(name='field.sourcepackageversion').value
     ''
-    >>> admin_browser.getControl(name='field.languagepack').value
+    >>> bool(admin_browser.getControl(name='field.languagepack').value)
     False
     >>> admin_browser.getControl(name='field.path').value
     'po/evolution-2.2.pot'
