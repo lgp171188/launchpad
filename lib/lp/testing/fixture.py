@@ -279,12 +279,15 @@ class CaptureOops(Fixture):
         that it will be automatically nuked and must be recreated.
         """
         self.queue_name, _, _ = self.channel.queue_declare(
-            durable=True, auto_delete=True)
+            durable=True, auto_delete=False)
+        self.addCleanup(self.channel.queue_delete, self.queue_name)
         # In production the exchange already exists and is durable, but
         # here we make it just-in-time, and tell it to go when the test
         # fixture goes.
         self.channel.exchange_declare(config.error_reports.error_exchange,
-            "fanout", durable=True, auto_delete=True)
+            "fanout", durable=True, auto_delete=False)
+        self.addCleanup(
+            self.channel.exchange_delete, config.error_reports.error_exchange)
         self.channel.queue_bind(
             self.queue_name, config.error_reports.error_exchange)
 
