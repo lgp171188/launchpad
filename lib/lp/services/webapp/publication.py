@@ -219,7 +219,7 @@ class LaunchpadBrowserPublication(
         # It is possible that request.principal is None if the principal has
         # not been set yet.
         if request.principal is not None:
-            txn.setUser(request.principal.id)
+            txn.user = u"/ %s" % (request.principal.id,)
 
         return txn
 

@@ -1379,7 +1379,7 @@ Queries about permissions that don't exist will raise an exception:
     >>> test_tales('person/required:mushroom.Badger', person=mark)
     Traceback (most recent call last):
     ...
-    ValueError: ('Undefined permission id', 'mushroom.Badger')
+    ValueError: ('Undefined permission ID', 'mushroom.Badger')
 
 
 The somevalue/enumvalue:ENUMVALUE helper

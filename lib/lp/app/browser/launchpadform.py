@@ -227,6 +227,16 @@ class LaunchpadFormView(LaunchpadView):
         return {}
 
     @property
+    def invariant_context(self):
+        """The context against which to check form invariants.
+
+        If None, invariants will only be checked against values in the form
+        itself.  This is useful for forms that create new objects, since
+        their context may not be adaptable to their schema.
+        """
+        return self.context
+
+    @property
     def action_url(self):
         """Set the default action URL for the form."""
 
@@ -320,7 +330,8 @@ class LaunchpadFormView(LaunchpadView):
             widgets = form.Widgets(widgets, len(self.prefix) + 1)
         for error in form.getWidgetsData(widgets, self.prefix, data):
             self.errors.append(error)
-        for error in form.checkInvariants(self.form_fields, data):
+        for error in form.checkInvariants(
+                self.form_fields, data, self.invariant_context):
             self.addError(error)
         return self.errors
 

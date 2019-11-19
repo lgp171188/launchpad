@@ -211,6 +211,7 @@ class DistributionMirrorAddView(LaunchpadFormView):
         "ftp_base_url", "rsync_base_url", "speed", "country", "content",
         "official_candidate",
         ]
+    invariant_context = None
 
     @property
     def label(self):
