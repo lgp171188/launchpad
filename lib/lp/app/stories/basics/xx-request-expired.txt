@@ -8,9 +8,6 @@ causing a soft timeout to be logged.
 
     >>> from lp.services.config import config
     >>> from textwrap import dedent
-    >>> from lp.testing.fixture import CaptureOops
-    >>> capture = CaptureOops()
-    >>> capture.setUp()
     >>> test_data = dedent("""
     ...     [database]
     ...     db_statement_timeout: 1
@@ -28,10 +25,8 @@ causing a soft timeout to be logged.
     <title>Error: Timeout</title>
     ...
 
-    >>> capture.oopses[0]['type']
+    >>> oops_capture.oopses[-1]['type']
     'RequestExpired'
-
-    >>> capture.cleanUp()
 
 Let's reset the config value we changed:
 

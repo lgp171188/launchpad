@@ -82,9 +82,6 @@ exception, and a time machine.
 
 Now we actually demonstrate the behaviour.  The view did raise a TimeoutError.
 
-    >>> from lp.testing.fixture import CaptureOops
-    >>> capture = CaptureOops()
-    >>> capture.setUp()
     >>> browser = setupBrowser()
     >>> browser.open('http://launchpad.test/doom_test')
     Traceback (most recent call last):
@@ -98,12 +95,11 @@ The exception view did not.
 
 The OOPS has the SQL from the main view.
 
-    >>> print capture.oopses[0]['timeline']
+    >>> print oops_capture.oopses[-1]['timeline']
     [(0, 0, 'SELECT ... FROM ... WHERE ...'), ...]
 
 All that's left is to clean up after ourselves.
 
-    >>> capture.cleanUp()
     >>> sm.unregisterAdapter(
     ...     DoomedView, required=(Interface, IBrowserRequest),
     ...     provided=IBrowserView, name='doom_test')
