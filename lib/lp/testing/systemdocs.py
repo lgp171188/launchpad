@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Infrastructure for setting up doctests."""
@@ -43,6 +43,7 @@ from lp.testing import (
     verifyObject,
     )
 from lp.testing.factory import LaunchpadObjectFactory
+from lp.testing.fixture import CaptureOops
 from lp.testing.views import (
     create_initialized_view,
     create_view,
@@ -91,6 +92,41 @@ class StdoutHandler(Handler):
             record.levelname, record.name, self.format(record)))
 
 
+def setUpStdoutLogging(test, prev_set_up=None,
+                       stdout_logging_level=logging.INFO):
+    if prev_set_up is not None:
+        prev_set_up(test)
+    log = StdoutHandler('')
+    log.setLoggerLevel(stdout_logging_level)
+    log.install()
+    test.globs['log'] = log
+    # Store as instance attribute so we can uninstall it.
+    test._stdout_logger = log
+
+
+def tearDownStdoutLogging(test, prev_tear_down=None):
+    if prev_tear_down is not None:
+        prev_tear_down(test)
+    reset_logging()
+    test._stdout_logger.uninstall()
+
+
+def setUpOopsCapturing(test, prev_set_up=None):
+    oops_capture = CaptureOops()
+    oops_capture.setUp()
+    test.globs['oops_capture'] = oops_capture
+    # Store as instance attribute so we can clean it up.
+    test._oops_capture = oops_capture
+    if prev_set_up is not None:
+        prev_set_up(test)
+
+
+def tearDownOopsCapturing(test, prev_tear_down=None):
+    if prev_tear_down is not None:
+        prev_tear_down(test)
+    test._oops_capture.cleanUp()
+
+
 def LayeredDocFileSuite(paths, id_extensions=None, **kw):
     """Create a DocFileSuite, optionally applying a layer to it.
 
@@ -119,29 +155,15 @@ def LayeredDocFileSuite(paths, id_extensions=None, **kw):
     stdout_logging_level = kw.pop('stdout_logging_level', logging.INFO)
 
     if stdout_logging:
-        kw_setUp = kw.get('setUp')
+        kw['setUp'] = partial(
+            setUpStdoutLogging, prev_set_up=kw.get('setUp'),
+            stdout_logging_level=stdout_logging_level)
+        kw['tearDown'] = partial(
+            tearDownStdoutLogging, prev_tear_down=kw.get('tearDown'))
 
-        def setUp(test):
-            if kw_setUp is not None:
-                kw_setUp(test)
-            log = StdoutHandler('')
-            log.setLoggerLevel(stdout_logging_level)
-            log.install()
-            test.globs['log'] = log
-            # Store as instance attribute so we can uninstall it.
-            test._stdout_logger = log
-
-        kw['setUp'] = setUp
-
-        kw_tearDown = kw.get('tearDown')
-
-        def tearDown(test):
-            if kw_tearDown is not None:
-                kw_tearDown(test)
-            reset_logging()
-            test._stdout_logger.uninstall()
-
-        kw['tearDown'] = tearDown
+    kw['setUp'] = partial(setUpOopsCapturing, prev_set_up=kw.get('setUp'))
+    kw['tearDown'] = partial(
+        tearDownOopsCapturing, prev_tear_down=kw.get('tearDown'))
 
     layer = kw.pop('layer', None)
     suite = doctest.DocFileSuite(*paths, **kw)

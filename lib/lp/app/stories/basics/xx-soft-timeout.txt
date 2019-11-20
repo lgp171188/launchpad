@@ -39,9 +39,6 @@ If we set soft_request_timeout to some value, the page will take
 slightly longer then the soft_request_timeout value to generate, thus
 causing a soft timeout to be logged.
 
-    >>> from lp.testing.fixture import CaptureOops
-    >>> capture = CaptureOops()
-    >>> capture.setUp()
     >>> from textwrap import dedent
     >>> test_data = (dedent("""
     ...     [database]
@@ -57,12 +54,8 @@ causing a soft timeout to be logged.
     ...
     Soft timeout threshold is set to 1 ms. This page took ... ms to render.
 
-    >>> capture.oopses[0]['type']
+    >>> oops_capture.oopses[-1]['type']
     'SoftRequestTimeout'
-
-Unregister from the oops collection:
-
-    >>> capture.cleanUp()
 
 Since the page rendered correctly, we assume it's a soft timeout error,
 since otherwise we would have gotten an OOPS page when we tried to

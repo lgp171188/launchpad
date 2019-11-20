@@ -301,7 +301,7 @@ Canceling creation, brings one back to the blueprints Hoary home.
 
 By default, blueprints are not proposed as series goals:
 
-    >>> control('series goal').control.value
+    >>> bool(control('series goal').control.value)
     False
 
 Pressing the "Register Blueprint" button creates a blueprint targeted to the
@@ -414,7 +414,7 @@ Let's register a blueprint from the Mozilla Firefox 1.0 product series:
 
 By default, blueprints are not proposed as series goals:
 
-    >>> control('series goal').control.value
+    >>> bool(control('series goal').control.value)
     False
 
 Pressing the "Register Blueprint" button creates a blueprint targeted to the
