@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # Copyright 2015-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
@@ -3036,6 +3037,19 @@ class TestGitRepositorySet(TestCaseWithFactory):
             registrant=owner, owner=owner, target=target, name=name))
         self.assertEqual(0, hosting_fixture.create.call_count)
 
+    def test_Anew_not_owner(self):
+        # By default, GitRepositorySet.new creates a new repository in the
+        # database but not on the hosting service.
+        hosting_fixture = self.useFixture(GitHostingFixture())
+        owner = self.factory.makePerson()
+        user = '/~devnull'
+        target = self.factory.makeProduct()
+        name = self.factory.getUniqueUnicode()
+
+        self.assertRaises(GitRepositoryCreatorNotOwner,
+                          self.repository_set.new, GitRepositoryType.HOSTED,
+                          user, owner, target, name)
+
     def test_new_with_hosting(self):
         # GitRepositorySet.new(with_hosting=True) creates a new repository
         # in both the database and the hosting service.
@@ -3469,7 +3483,8 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
         self.assertNewWorks(self.factory.makePerson())
 
     def test_new_snap(self):
-        other_user = self.factory.makePerson()
+        non_ascii_name = u'André Luís Lopes'
+        other_user = self.factory.makePerson(displayname=non_ascii_name)
         owner_url = api_url(other_user)
         owner_db = self.factory.makePerson()
         name = "repository"
