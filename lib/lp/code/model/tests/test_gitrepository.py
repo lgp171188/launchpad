@@ -3469,7 +3469,7 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
     def test_new_person(self):
         self.assertNewWorks(self.factory.makePerson())
 
-    def test_new_snap(self):
+    def test_new_repo_non_owner(self):
         non_ascii_name = u'André Luís Lopes'
         other_user = self.factory.makePerson(displayname=non_ascii_name)
         owner_url = api_url(other_user)
