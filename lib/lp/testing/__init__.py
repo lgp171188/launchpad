@@ -827,6 +827,12 @@ class TestCase(testtools.TestCase, fixtures.TestWithFixtures):
                 "\n\n".join(str(n) for n in notifications)))
         return notifications
 
+    def getWebserviceJSON(self, webservice, url):
+        """Get the JSON representation of a webservice object given its URL."""
+        response = webservice.get(url)
+        self.assertEqual(200, response.status)
+        return response.jsonBody()
+
 
 class TestCaseWithFactory(TestCase):
 
