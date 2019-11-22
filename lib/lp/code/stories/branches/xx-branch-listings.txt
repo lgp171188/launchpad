@@ -300,7 +300,7 @@ options that can be selected.
     >>> sort_by_control.value = ['by project name']
     Traceback (most recent call last):
       ...
-    ItemNotFoundError: insufficient items with name u'by project name'
+    ValueError: Option u'by project name' not found ...
     >>> for option in sort_by_control.options:
     ...     print(option)
     by most interesting

@@ -867,8 +867,7 @@ class TestCaseWithFactory(TestCase):
             browser = setupBrowser()
         else:
             browser = self.getUserBrowser(user=user)
-        browser.mech_browser.set_handle_redirect(False)
-        browser.mech_browser.set_handle_equiv(False)
+        browser.followRedirects = False
         if url is not None:
             browser.open(url)
         return browser

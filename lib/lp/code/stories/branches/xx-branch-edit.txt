@@ -185,7 +185,7 @@ already own in the same product.
     >>> browser.getControl('Name').value = '2.6'
     >>> browser.getControl('Change Branch').click()
     >>> browser.url
-    'http://code.launchpad.test/%7Ename12/gnome-terminal/main/+edit'
+    'http://code.launchpad.test/~name12/gnome-terminal/main/+edit'
 
     >>> print_feedback_messages(browser.contents)
     There is 1 error.

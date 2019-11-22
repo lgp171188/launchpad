@@ -52,14 +52,11 @@ minute time interval (set in lp.services.webapp.login and enforced
 with an assert in lp.services.webapp.session) is intended to be fudge
 time for browsers with bad system clocks.
 
-    >>> from six.moves.urllib.error import HTTPError
-    >>> browser.mech_browser.set_handle_redirect(False)
-    >>> try:
-    ...     browser.getControl('Log Out').click()
-    ... except HTTPError as redirection:
-    ...     print(redirection)
-    ...     print(redirection.hdrs['Location'])
-    HTTP Error 303: See Other
+    >>> browser.followRedirects = False
+    >>> browser.getControl('Log Out').click()
+    >>> print(browser.headers['Status'])
+    303 See Other
+    >>> print(browser.headers['Location'])
     https://bazaar.launchpad.test/+logout?next_to=...
 
 After ensuring the browser has not left the launchpad.test domain, the

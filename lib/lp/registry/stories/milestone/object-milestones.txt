@@ -232,8 +232,8 @@ Next, we'll target each bug to the 1.0 milestone:
     >>> control = browser.getControl('Milestone')
     >>> milestone_name = '1.0'
     >>> [milestone_id] = [
-    ...     option.name for option in control.mech_control.items
-    ...     if option.get_labels()[0].text.endswith(milestone_name)]
+    ...     option.optionValue for option in control.controls
+    ...     if option.labels[0].endswith(milestone_name)]
     >>> control.value = [milestone_id]
     >>> browser.getControl('Save Changes').click()
 

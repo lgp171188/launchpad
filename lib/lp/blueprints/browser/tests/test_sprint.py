@@ -8,11 +8,11 @@ from __future__ import absolute_import, print_function, unicode_literals
 __metaclass__ = type
 
 from fixtures import FakeLogger
-from mechanize import LinkNotFoundError
 from testtools.matchers import Equals
 from zope.publisher.interfaces import NotFound
 from zope.security.interfaces import Unauthorized
 from zope.security.proxy import removeSecurityProxy
+from zope.testbrowser.browser import LinkNotFoundError
 
 from lp.app.enums import InformationType
 from lp.services.webapp.publisher import canonical_url

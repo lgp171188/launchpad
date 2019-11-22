@@ -13,7 +13,6 @@ builder state. In the sampledata, the builder 'bob' is building
     >>> bob_builder.version = "100"
     >>> logout()
 
-    >>> anon_browser.mech_browser.set_handle_equiv(False)
     >>> anon_browser.open("http://launchpad.test/builders")
     >>> anon_browser.getLink("bob").click()
 
@@ -37,7 +36,6 @@ When accessed by logged in users, the builder page renders the
 timezone. This way they can easily find out if they are reading
 outdated information.
 
-    >>> user_browser.mech_browser.set_handle_equiv(False)
     >>> user_browser.open(anon_browser.url)
     >>> print extract_text(find_portlet(
     ...     user_browser.contents, 'View full history Current status'))
@@ -107,7 +105,6 @@ the builder actions.
 
     >>> cprov_browser = setupBrowser(
     ...     auth='Basic celso.providelo@canonical.com:test')
-    >>> cprov_browser.mech_browser.set_handle_equiv(False)
 
     >>> cprov_browser.open('http://launchpad.test/builders')
     >>> cprov_browser.getLink('bob').click()

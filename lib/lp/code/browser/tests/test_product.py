@@ -12,9 +12,9 @@ from datetime import (
     timedelta,
     )
 
-from mechanize import LinkNotFoundError
 import pytz
 from zope.component import getUtility
+from zope.testbrowser.browser import LinkNotFoundError
 
 from lp.app.enums import (
     InformationType,

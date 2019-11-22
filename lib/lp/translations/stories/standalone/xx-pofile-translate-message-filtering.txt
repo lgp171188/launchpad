@@ -411,7 +411,8 @@ Person submits Chinese translations using Spanish suggestions.
     ...     '+source/evolution/+pots/evolution-2.2/zh_CN/+translate')
     >>> user_browser.getControl(name='show', index=1).value = ['untranslated']
     >>> user_browser.getControl('Change').click()
-    >>> user_browser.getControl('Spanish (es)').selected = True
+    >>> user_browser.getControl(name='field.alternative_language').getControl(
+    ...     user_browser.toStr('Spanish (es)')).selected = True
     >>> user_browser.getControl('Change').click()
 
     >>> user_browser.getControl(

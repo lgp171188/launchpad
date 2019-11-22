@@ -29,7 +29,6 @@ archive mirrors, plus the canonical one.
 Using a request with no IP address information will give us only the
 canonical mirror.
 
-    >>> anon_browser.addHeader('X_FORWARDED_FOR', None)
     >>> anon_browser.open(
     ...     'http://launchpad.test/ubuntu/+countrymirrors-archive')
     >>> print anon_browser.headers['X-Generated-For-Country']

@@ -15,13 +15,13 @@ import re
 from textwrap import dedent
 
 from fixtures import FakeLogger
-from mechanize import LinkNotFoundError
 from pytz import UTC
 from testtools.matchers import Equals
 import transaction
 from zope.component import getUtility
 from zope.security.interfaces import Unauthorized
 from zope.security.proxy import removeSecurityProxy
+from zope.testbrowser.browser import LinkNotFoundError
 
 from lp.app.enums import InformationType
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities

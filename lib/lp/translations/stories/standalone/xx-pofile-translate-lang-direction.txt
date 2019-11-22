@@ -16,11 +16,11 @@ the separator in language codes rather than an underscore.
   ...     'http://translations.launchpad.test/ubuntu/hoary/+source/evolution/'
   ...     '+pots/evolution-2.2/en_AU/+translate')
   >>> control = browser.getControl(name="msgset_130_en_AU_translation_0_new")
-  >>> control.mech_control.attrs.get('dir')
-  'ltr'
+  >>> print(control._control.attrs.get('dir'))
+  ltr
   >>> control = browser.getControl(name="msgset_139_en_AU_translation_0_new")
-  >>> control.mech_control.attrs.get('dir')
-  'ltr'
+  >>> print(control._control.attrs.get('dir'))
+  ltr
 
 When entering Hebrew translations, the form controls are set to right to left:
 
@@ -28,11 +28,11 @@ When entering Hebrew translations, the form controls are set to right to left:
   ...     'http://translations.launchpad.test/ubuntu/hoary/+source/evolution/'
   ...     '+pots/evolution-2.2/he/+translate')
   >>> control = browser.getControl(name="msgset_130_he_translation_0_new")
-  >>> control.mech_control.attrs.get('dir')
-  'rtl'
+  >>> print(control._control.attrs.get('dir'))
+  rtl
   >>> control = browser.getControl(name="msgset_139_he_translation_0_new")
-  >>> control.mech_control.attrs.get('dir')
-  'rtl'
+  >>> print(control._control.attrs.get('dir'))
+  rtl
 
 If we post the form with suggestions, the form controls are still set to rtl:
 
@@ -40,8 +40,8 @@ If we post the form with suggestions, the form controls are still set to rtl:
   ...     'http://translations.launchpad.test/ubuntu/hoary/+source/evolution/'
   ...     '+pots/evolution-2.2/he/+translate?field.alternative_language=es')
   >>> control = browser.getControl(name="msgset_130_he_translation_0_new")
-  >>> control.mech_control.attrs.get('dir')
-  'rtl'
+  >>> print(control._control.attrs.get('dir'))
+  rtl
 
 But suggestion text is tagged with its language code and its own text
 direction:
