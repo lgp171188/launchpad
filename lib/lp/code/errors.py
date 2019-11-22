@@ -68,12 +68,12 @@ import httplib
 
 from bzrlib.plugins.builder.recipe import RecipeParseError
 from lazr.restful.declarations import error_status
+import six
 
 from lp.app.errors import (
     NameLookupFailed,
     NotFoundError,
     )
-import six
 
 # Annotate the RecipeParseError's with a 400 webservice status.
 error_status(httplib.BAD_REQUEST)(RecipeParseError)
