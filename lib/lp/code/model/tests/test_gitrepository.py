@@ -1,3 +1,7 @@
+# -*- coding: utf-8 -*-
+# NOTE: The first line above must stay first; do not move the copyright
+# notice to the top.  See http://www.python.org/dev/peps/pep-0263/.
+#
 # Copyright 2015-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
@@ -3467,6 +3471,21 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
 
     def test_new_person(self):
         self.assertNewWorks(self.factory.makePerson())
+
+    def test_new_repo_not_owner(self):
+        non_ascii_name = u'André Luís Lopes'
+        other_user = self.factory.makePerson(displayname=non_ascii_name)
+        owner_url = api_url(other_user)
+        webservice_user = self.factory.makePerson()
+        name = "repository"
+        webservice = webservice_for_person(
+            webservice_user, permission=OAuthPermission.WRITE_PUBLIC)
+        webservice.default_api_version = "devel"
+        response = webservice.named_post(
+            "/+git", "new", owner=owner_url, target=owner_url, name=name)
+        self.assertEqual(400, response.status)
+        self.assertIn(u'cannot create Git repositories owned by'
+                      u' André Luís Lopes', response.body.decode('utf-8'))
 
     def assertGetRepositoriesWorks(self, target_db):
         if IPerson.providedBy(target_db):
