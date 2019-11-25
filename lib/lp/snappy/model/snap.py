@@ -88,8 +88,6 @@ from lp.code.model.branchcollection import GenericBranchCollection
 from lp.code.model.gitcollection import GenericGitCollection
 from lp.code.model.gitrepository import GitRepository
 from lp.registry.errors import PrivatePersonLinkageError
-from lp.registry.interfaces.distribution import IDistributionSet
-from lp.registry.interfaces.distroseries import IDistroSeriesSet
 from lp.registry.interfaces.person import (
     IPerson,
     IPersonSet,
@@ -172,7 +170,7 @@ from lp.snappy.interfaces.snapbase import (
     )
 from lp.snappy.interfaces.snapbuild import ISnapBuildSet
 from lp.snappy.interfaces.snapjob import ISnapRequestBuildsJobSource
-from lp.snappy.interfaces.snappyseries import ISnappyDistroSeriesSet, ISnappySeriesSet
+from lp.snappy.interfaces.snappyseries import ISnappyDistroSeriesSet
 from lp.snappy.interfaces.snapstoreclient import ISnapStoreClient
 from lp.snappy.model.snapbuild import SnapBuild
 from lp.snappy.model.snapjob import SnapJob
@@ -550,20 +548,8 @@ class Snap(Storm, WebhookTargetMixin):
 
     @store_distro_series.setter
     def store_distro_series(self, value):
-        if isinstance(value, unicode):
-            store_series = int(value.split('Store Series ')[1])
-            snappySet = getUtility(ISnappySeriesSet)
-            self.store_series = snappySet.getById(store_series)
-
-            distro_series = value.split()[1]
-            distribution = value.split(distro_series)[0]
-
-            dist = getUtility(IDistributionSet).getByName(distribution.strip().lower())
-            distro = getUtility(IDistroSeriesSet).queryByName(dist, distro_series.lower())
-            self.distro_series = distro
-
-        else:
-            self.distro_series = value
+        self.distro_series = value.distro_series
+        self.store_series = value.snappy_series
 
     @property
     def store_channels(self):

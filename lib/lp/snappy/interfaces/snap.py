@@ -394,8 +394,8 @@ class ISnapView(Interface):
             title=_("Source snap channels to use for this build."),
             description=_(
                 "A dictionary mapping snap names to channels to use for this "
-                "build.  Currently only 'core', 'core18', and 'snapcraft' "
-                "keys are supported."),
+                "build.  Currently only 'core', 'core18', 'core20' "
+                "and 'snapcraft' keys are supported."),
             key_type=TextLine(), required=False))
     # Really ISnapBuild, patched in lp.snappy.interfaces.webservice.
     @export_factory_operation(Interface, [])
@@ -423,8 +423,8 @@ class ISnapView(Interface):
             title=_("Source snap channels to use for this build."),
             description=_(
                 "A dictionary mapping snap names to channels to use for this "
-                "build.  Currently only 'core', 'core18', and 'snapcraft' "
-                "keys are supported."),
+                "build.  Currently only 'core', 'core18', 'core20' "
+                "and 'snapcraft' keys are supported."),
             key_type=TextLine(), required=False))
     @export_factory_operation(ISnapBuildRequest, [])
     @operation_for_version("devel")
@@ -755,8 +755,8 @@ class ISnapEditableAttributes(IHasOwner):
         key_type=TextLine(), required=False, readonly=False,
         description=_(
             "A dictionary mapping snap names to channels to use when building "
-            "this snap package.  Currently only 'core', 'core18', and "
-            "'snapcraft' keys are supported.")))
+            "this snap package.  Currently only 'core', 'core18', "
+            "'core20' and 'snapcraft' keys are supported.")))
 
     is_stale = Bool(
         title=_("Snap package is stale and is due to be rebuilt."),
@@ -784,7 +784,7 @@ class ISnapEditableAttributes(IHasOwner):
 
     store_distro_series = ReferenceChoice(
         title=_("Store and distro series"),
-        schema=IDistroSeries, vocabulary="DistroSeries",
+        schema=ISnappyDistroSeries, vocabulary="SnappyDistroSeries",
         required=False, readonly=False)
 
     store_name = exported(TextLine(

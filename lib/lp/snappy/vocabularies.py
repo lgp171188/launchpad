@@ -5,9 +5,6 @@
 
 from __future__ import absolute_import, print_function, unicode_literals
 
-from lp.registry.interfaces.distribution import IDistributionSet
-from lp.snappy.interfaces.snappyseries import ISnappyDistroSeriesSet
-
 __metaclass__ = type
 
 __all__ = [
@@ -20,7 +17,7 @@ __all__ = [
     ]
 
 from lazr.restful.interfaces import IJSONPublishable
-from storm.expr import LeftJoin
+from storm.expr import LeftJoin, Or
 from storm.locals import (
     Desc,
     Not,
@@ -87,8 +84,7 @@ class SnappyDistroSeriesVocabulary(StormVocabularyBase):
         LeftJoin(Distribution, DistroSeries.distributionID == Distribution.id),
         SnappySeries,
         ]
-    _clauses = [SnappyDistroSeries.snappy_series_id == SnappySeries.id,
-                SnappySeries.status.is_in(ACTIVE_STATUSES)]
+    _clauses = [SnappyDistroSeries.snappy_series_id == SnappySeries.id]
 
     @property
     def _entries(self):
@@ -142,43 +138,21 @@ class SnappyDistroSeriesVocabulary(StormVocabularyBase):
         return self.toTerm(entry)
 
 
-class BuildableSnappyDistroSeriesVocabulary(SimpleVocabulary):
+class BuildableSnappyDistroSeriesVocabulary(SnappyDistroSeriesVocabulary):
     """A vocabulary for searching active snappy/distro series combinations."""
 
-    def __init__(self, context=None):
+    _clauses = SnappyDistroSeriesVocabulary._clauses + [
+        SnappySeries.status.is_in(ACTIVE_STATUSES),
+        ]
 
-        sds_set = getUtility(ISnappyDistroSeriesSet)
-        store_distro_series = removeSecurityProxy(sds_set.getDistroSeries())
-        terms = [
-            self.createTerm(distro, distro.distribution.display_name + ' ' +distro.display_name)
-            for distro in store_distro_series]
-
-        if ISnap.providedBy(context):
-            # We are editing the Snap
-            store_series = removeSecurityProxy(context).store_series
-            if store_series is not None:
-                if store_series.id == 1:
-                    # We allow editing to upgrade to
-                    # Store Series 2 or to remain on the same version
-                    # but not to downgrade from Store version 2 to 1
-                    terms = [self.createTerm(
-                                distro.distribution.display_name
-                                +' '+
-                                context.distro_series.display_name +
-                                ' for Store Series 1')]
-
-                    [terms.append(self.createTerm(
-                        distro.distribution.display_name +
-                        ' ' +
-                        distro.display_name +
-                        ' for Store Series 2'))
-                    for distro in store_distro_series]
-
-        super(BuildableSnappyDistroSeriesVocabulary, self).__init__(terms)
-
-    @classmethod
-    def createTerm(cls, *args):
-        return SimpleTerm(*args)
+    @property
+    def _clauses(self, context=None):
+        active_clause = SnappySeries.status.is_in(ACTIVE_STATUSES)
+        if (ISnap.providedBy(context) and
+                context.store_series.status not in ACTIVE_STATUSES):
+            active_clause = Or(
+                active_clause, SnappySeries.id == context.store_series_id)
+        return SnappyDistroSeriesVocabulary._clauses + [active_clause]
 
 
 @implementer(IJSONPublishable)

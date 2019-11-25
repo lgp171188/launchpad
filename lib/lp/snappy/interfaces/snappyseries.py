@@ -184,17 +184,6 @@ class ISnappySeriesSet(ISnappySeriesSetEdit):
         :raises NoSuchSnappySeries: if no snappy series exists with this name.
         """
 
-    @operation_parameters(
-        id=TextLine(title=_("Snappy series ID"), required=True))
-    @operation_returns_entry(ISnappySeries)
-    @export_read_operation()
-    @operation_for_version("devel")
-    def getById(id):
-        """Return the `ISnappySeries` with this ID.
-
-        :raises NoSuchSnappySeries: if no snappy series exists with this ID.
-        """
-
     @collection_default_content()
     def getAll():
         """Return all `ISnappySeries`."""
