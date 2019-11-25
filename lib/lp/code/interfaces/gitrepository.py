@@ -205,11 +205,6 @@ class IGitRepositoryView(IHasRecipes):
     shortened_path = Attribute(
         "The shortest reasonable version of the path to this repository.")
 
-    ociprojectname = Reference(
-            title=_("OCI Project Name"), required=False, readonly=False,
-            schema=IOCIProjectName,
-            description=_("The OCI project that this repository belongs to."))
-
     @operation_parameters(
         reviewer=Reference(
             title=_("A person for which the reviewer status is in question."),
