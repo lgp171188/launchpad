@@ -1,4 +1,4 @@
-<!-- Copyright 2009-2015 Canonical Ltd.  This software is licensed under the
+<!-- Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
      GNU Affero General Public License version 3 (see the file LICENSE).
 -->
 
@@ -2517,6 +2517,11 @@
         module="lp.registry.browser.persondistributionsourcepackage"
         classes="
                  PersonDistributionSourcePackageFacets"
+        />
+    <browser:url
+        for="lp.registry.interfaces.personociproject.IPersonOCIProject"
+        path_expression="string:${oci_project/pillar/name}/+oci/${oci_project/name}"
+        attribute_to_parent="person"
         />
     <browser:url
         for="lp.registry.interfaces.personproduct.IPersonProduct"

@@ -76,16 +76,13 @@ class OCIProject(BugTargetBase, StormBase):
         return self.distribution
 
     @property
-    def bugtargetname(self):
-        """See `IBugTarget`."""
+    def display_name(self):
+        """See `IOCIProject`."""
         return "OCI project %s for %s" % (
             self.ociprojectname.name, self.pillar.name)
 
-    @property
-    def bugtargetdisplayname(self):
-        """See `IBugTarget`."""
-        return "OCI project %s for %s" % (
-            self.ociprojectname.name, self.pillar.name)
+    bugtargetname = display_name
+    bugtargetdisplayname = display_name
 
     def newSeries(self, name, summary, registrant,
                   status=SeriesStatus.DEVELOPMENT, date_created=DEFAULT):
