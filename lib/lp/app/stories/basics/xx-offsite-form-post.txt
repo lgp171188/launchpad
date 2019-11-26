@@ -4,17 +4,36 @@ Referrer Checking on Form Posts
 To help mitigate cross site request forgery attacks, we check that the
 referrer for a form post exists and is a URI from one of the Launchpad sites.
 
-First a helper to set up a browser object that doesn't handle the
-"Referer" header automatically.  We need to poke into the internal
-mechanize browser object here because Zope's test browser does not
-expose the required functionality:
+First a helper to set up a browser object that doesn't handle the "Referer"
+header automatically.  We need to poke into the internals of
+zope.testbrowser.browser.Browser here because it doesn't expose the required
+functionality:
+
+  >>> from contextlib import contextmanager
+  >>> from lp.testing.pages import Browser
+
+  >>> class BrowserWithReferrer(Browser):
+  ...     def __init__(self, referrer):
+  ...         self._referrer = referrer
+  ...         super(BrowserWithReferrer, self).__init__()
+  ...
+  ...     @contextmanager
+  ...     def _preparedRequest(self, url):
+  ...         with super(BrowserWithReferrer, self)._preparedRequest(
+  ...                 url) as reqargs:
+  ...             reqargs["headers"] = [
+  ...                 (key, value) for key, value in reqargs["headers"]
+  ...                 if key.lower() != "referer"]
+  ...             if self._referrer is not None:
+  ...                 reqargs["headers"].append(("Referer", self._referrer))
+  ...             yield reqargs
 
   >>> def setupBrowserWithReferrer(referrer):
-  ...      browser = setupBrowser("Basic no-priv@canonical.com:test")
-  ...      browser.mech_browser.set_handle_referer(False)
-  ...      if referrer is not None:
-  ...          browser.addHeader("Referer", referrer)
-  ...      return browser
+  ...     browser = BrowserWithReferrer(referrer)
+  ...     browser.handleErrors = False
+  ...     browser.addHeader(
+  ...         "Authorization", "Basic no-priv@canonical.com:test")
+  ...     return browser
 
 
 If we try to create a new team with with the referrer set to

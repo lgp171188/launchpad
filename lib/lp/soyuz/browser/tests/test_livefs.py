@@ -14,11 +14,11 @@ from datetime import (
 import json
 
 from fixtures import FakeLogger
-from mechanize import LinkNotFoundError
 import pytz
 from zope.component import getUtility
 from zope.publisher.interfaces import NotFound
 from zope.security.interfaces import Unauthorized
+from zope.testbrowser.browser import LinkNotFoundError
 
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.buildmaster.enums import BuildStatus

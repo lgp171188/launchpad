@@ -119,8 +119,7 @@ any team and hence does no see the option to asign somebody else.
     >>> assignee_control.value = ["jokosher.assignee.assign_to"]
     Traceback (most recent call last):
     ...
-    ItemNotFoundError: insufficient items with name
-    u'jokosher.assignee.assign_to'
+    ValueError: Option u'jokosher.assignee.assign_to' not found ...
     >>> user_browser.getControl(name="jokosher.assignee", index=0)
     Traceback (most recent call last):
     ...

@@ -746,12 +746,6 @@ languages, they will not be able to add or change translations.
 Let's see if No Privileges Person can see the translated strings in
 Southern Sotho. We expect them to see a readonly form:
 
-    >>> delpoints = []
-    >>> for pos, (key, _) in enumerate(browser.mech_browser.addheaders):
-    ...     if key == 'Authorization':
-    ...         delpoints.append(pos)
-    >>> for pos in reversed(delpoints):
-    ...         del browser.mech_browser.addheaders[pos]
     >>> browser.addHeader(
     ...     'Authorization', 'Basic no-priv@canonical.com:test')
     >>> browser.open(

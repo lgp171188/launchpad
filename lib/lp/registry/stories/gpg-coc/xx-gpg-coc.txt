@@ -631,10 +631,6 @@ Test if the advertisement email was sent:
 
   Let's login with an Launchpad Admin
 
-  >>> for pos, (key, _) in enumerate(browser.mech_browser.addheaders):
-  ...     if key == 'Authorization':
-  ...         del browser.mech_browser.addheaders[pos]
-  ...         break
   >>> browser.addHeader(
   ...   'Authorization', 'Basic guilherme.salgado@canonical.com:test')
 

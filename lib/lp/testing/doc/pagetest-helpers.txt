@@ -27,7 +27,7 @@ one should be use for all anonymous browsing tests.
   # Shortcut to fetch the Authorization header from the testbrowser
 
     >>> def getAuthorizationHeader(browser):
-    ...   return dict(browser.mech_browser.addheaders).get('Authorization','')
+    ...   return browser._req_headers.get('Authorization', '')
 
     >>> anon_browser = test.globs['anon_browser']
     >>> print(getAuthorizationHeader(anon_browser))

@@ -166,17 +166,19 @@ An nonexistent source:
 
     >>> admin_browser.getControl(
     ...    name='field.selected_sources').value = ['100']
-    Traceback (most recent call last):
-    ...
-    ItemNotFoundError: insufficient items with name u'100'
+    >>> admin_browser.getControl('Request Deletion').click()
+    >>> print_feedback_messages(admin_browser.contents)
+    There is 1 error.
+    No sources selected.
 
 An invalid value.
 
     >>> admin_browser.getControl(
     ...    name='field.selected_sources').value = ['blah']
-    Traceback (most recent call last):
-    ...
-    ItemNotFoundError: insufficient items with name u'blah'
+    >>> admin_browser.getControl('Request Deletion').click()
+    >>> print_feedback_messages(admin_browser.contents)
+    There is 1 error.
+    No sources selected.
 
 The deleted record is now presented accordingly in the +index page. We
 will use another browser to inspect the results of our deletions.

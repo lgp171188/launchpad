@@ -74,9 +74,6 @@ class TestLogout(TestCase):
         app = SessionHandler(app, SESSION_VAR, SECRET)
         self.cookie_name = app.cookie_handler.cookie_name
         self.browser = Browser(wsgi_app=app)
-        # We want to pretend we are not a robot, or else mechanize will honor
-        # robots.txt.
-        self.browser.mech_browser.set_handle_robots(False)
         self.browser.open(
             config.codehosting.secure_codebrowse_root + '+login')
 

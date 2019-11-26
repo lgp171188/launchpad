@@ -165,12 +165,9 @@ class _BaseGitNamespace:
         if not registrant.inTeam(owner):
             if owner.is_team:
                 raise GitRepositoryCreatorNotMemberOfOwnerTeam(
-                    "%s is not a member of %s"
-                    % (registrant.displayname, owner.displayname))
+                    registrant, owner)
             else:
-                raise GitRepositoryCreatorNotOwner(
-                    "%s cannot create Git repositories owned by %s"
-                    % (registrant.displayname, owner.displayname))
+                raise GitRepositoryCreatorNotOwner(registrant, owner)
 
         if not self.getAllowedInformationTypes(registrant):
             raise GitRepositoryCreationForbidden(

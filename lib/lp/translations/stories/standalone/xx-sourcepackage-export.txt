@@ -32,7 +32,7 @@ users who are involved in certain ways, in order to keep load to a
 reasonable level.
 
     >>> from zope.security.interfaces import Unauthorized
-    >>> from mechanize import LinkNotFoundError
+    >>> from zope.testbrowser.browser import LinkNotFoundError
 
     >>> def can_download_translations(browser):
     ...     """Can browser download full package translations?
