@@ -1,4 +1,4 @@
-# Copyright 2010-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """IBugTarget-related browser views."""
@@ -528,6 +528,8 @@ class FileBugViewBase(LaunchpadFormView):
         # enters a package name but then selects "I don't know".
         if self.request.form.get("packagename_option") == "none":
             packagename = None
+            if IDistributionSourcePackage.providedBy(context):
+                context = context.distribution
 
         linkified_ack = structured(FormattersAPI(
             self.getAcknowledgementMessage(self.context)).text_to_html(
