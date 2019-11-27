@@ -305,10 +305,11 @@ class TestDistribution(TestCaseWithFactory):
             distro.getDefaultSpecificationInformationType())
 
     def test_getOCIProject(self):
+        distro = self.factory.makeDistribution()
         first_project = self.factory.makeOCIProject(pillar=distro)
         # make another project to ensure we don't default
         self.factory.makeOCIProject(pillar=distro)
-        result = distro.getOCIProject(u'first-project')
+        result = distro.getOCIProject(first_project.name)
         self.assertEqual(first_project, result)
 
 
