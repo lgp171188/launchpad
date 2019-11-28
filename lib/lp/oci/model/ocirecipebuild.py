@@ -118,4 +118,3 @@ class OCIRecipeBuildSet:
             virtualized, date_created)
         store.add(ocirecipebuild)
         return ocirecipebuild
-

@@ -13,18 +13,9 @@ __all__ = [
 
 from lazr.restful.fields import Reference
 from zope.interface import Interface
-from zope.schema import (
-    Bool,
-    Datetime,
-    Int,
-    Text,
-    )
 
 from lp import _
-from lp.buildmaster.enums import BuildStatus
-from lp.buildmaster.interfaces.builder import IBuilder
 from lp.buildmaster.interfaces.packagebuild import IPackageBuild
-from lp.buildmaster.interfaces.processor import IProcessor
 from lp.oci.interfaces.ocirecipe import IOCIRecipe
 from lp.services.database.constants import DEFAULT
 from lp.services.fields import PublicPersonChoice
@@ -57,6 +48,7 @@ class IOCIRecipeBuildView(IPackageBuild):
 
 class IOCIRecipeBuildAdmin(Interface):
     pass
+
 
 class IOCIRecipeBuild(IOCIRecipeBuildAdmin, IOCIRecipeBuildEdit,
                       IOCIRecipeBuildView):

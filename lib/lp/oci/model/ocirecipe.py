@@ -14,13 +14,11 @@ __all__ = [
 
 from lazr.lifecycle.event import ObjectCreatedEvent
 import pytz
-from storm.expr import Or
 from storm.locals import (
     Bool,
     DateTime,
     Int,
     Reference,
-    Store,
     Storm,
     Unicode,
     )
@@ -82,7 +80,7 @@ class OCIRecipe(Storm):
         """See `IOCIRecipe`."""
         # XXX twom 2019-11-26 This needs to expand as more build artifacts
         # are added
-        store = IStore(Snap)
+        store = IStore(OCIRecipe)
         store.remove(self)
 
     def _checkRequestBuild(self, requester):
