@@ -563,6 +563,18 @@ class TestGitIdentityMixin(TestCaseWithFactory):
             "%s/+source/%s" % (
                 dsp.distribution.name, dsp.sourcepackagename.name))
 
+    def test_git_identity_default_for_oci_project(self):
+        # If a repository is the default for an OCI project, then its Git
+        # identity uses the path to that OCI project.
+        oci_project = self.factory.makeOCIProject()
+        repository = self.factory.makeGitRepository(target=oci_project)
+        with admin_logged_in():
+            self.repository_set.setDefaultRepository(
+                oci_project, repository, force_oci=True)
+        self.assertGitIdentity(
+            repository,
+            "%s/+oci/%s" % (oci_project.pillar.name, oci_project.name))
+
     def test_git_identity_owner_default_for_project(self):
         # If a repository is a person's default for a project, then its Git
         # identity is a combination of the person and project names.
@@ -643,6 +655,27 @@ class TestGitIdentityMixin(TestCaseWithFactory):
             [("mint/+source/choc", dsp),
              ("~eric/mint/+source/choc", eric_dsp),
              ("~eric/mint/+source/choc/+git/choc-repo", repository)],
+            repository.getRepositoryIdentities())
+
+    def test_default_for_oci_project(self):
+        # If a repository is the default for an OCI project, then that is
+        # the preferred identity.
+        mint = self.factory.makeDistribution(name="mint")
+        eric = self.factory.makePerson(name="eric")
+        mint_choc = self.factory.makeOCIProject(
+            pillar=mint, ociprojectname="choc")
+        repository = self.factory.makeGitRepository(
+            owner=eric, target=mint_choc, name="choc-repo")
+        oci_project = repository.target
+        with admin_logged_in():
+            self.repository_set.setDefaultRepository(
+                oci_project, repository, force_oci=True)
+        self.assertEqual(
+            [ICanHasDefaultGitRepository(oci_project)],
+            repository.getRepositoryDefaults())
+        self.assertEqual(
+            [("mint/+oci/choc", oci_project),
+             ("~eric/mint/+oci/choc/+git/choc-repo", repository)],
             repository.getRepositoryIdentities())
 
 
@@ -3387,6 +3420,26 @@ class TestGitRepositorySetDefaultsPackage(
     @staticmethod
     def getPersonForLogin(target):
         return target.distribution.owner
+
+
+class TestGitRepositorySetDefaultsOCIProject(
+    TestGitRepositorySetDefaultsMixin, TestCaseWithFactory):
+
+    def setUp(self):
+        super(TestGitRepositorySetDefaultsOCIProject, self).setUp()
+        self.set_method = (lambda target, repository, user:
+            self.repository_set.setDefaultRepository(
+                target, repository, force_oci=True))
+
+    def makeTarget(self, template=None):
+        kwargs = {}
+        if template is not None:
+            kwargs["pillar"] = template.pillar
+        return self.factory.makeOCIProject(**kwargs)
+
+    @staticmethod
+    def getPersonForLogin(target):
+        return target.pillar.owner
 
 
 class TestGitRepositorySetDefaultsOwnerMixin(
