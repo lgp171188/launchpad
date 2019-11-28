@@ -166,7 +166,7 @@ class DistributionGitTraversable(_BaseGitTraversable):
         """
         # Distributions don't support named repositories themselves, so
         # ignore the base traverse method.
-        if name not in ["+source", "+oci"]:
+        if name not in {"+source", "+oci"}:
             raise InvalidNamespace("/".join(segments.traversed))
         try:
             spn_name = next(segments)
@@ -182,6 +182,8 @@ class DistributionGitTraversable(_BaseGitTraversable):
             if oci_project is None:
                 raise NoSuchOCIProjectName(spn_name)
             return owner, oci_project, None
+        else:
+            raise AssertionError("name '%s' is not +source or +oci" % name)
 
 
 @adapter(IDistributionSourcePackage)
