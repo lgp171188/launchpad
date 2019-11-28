@@ -7,7 +7,7 @@
     xmlns:lp="http://namespaces.canonical.com/lp"
     i18n_domain="launchpad">
 
-    <!-- ocirecipe -->
+    <!-- OCIRecipe -->
     <class
         class="lp.oci.model.ocirecipe.OCIRecipe">
         <require
