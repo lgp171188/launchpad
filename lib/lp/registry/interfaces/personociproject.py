@@ -24,7 +24,7 @@ class IPersonOCIProject(Interface):
 
     person = Reference(IPerson)
     oci_project = Reference(IOCIProject)
-    displayname = TextLine()
+    display_name = TextLine()
 
 
 class IPersonOCIProjectFactory(Interface):

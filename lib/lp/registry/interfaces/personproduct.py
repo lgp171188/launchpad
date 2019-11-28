@@ -10,7 +10,10 @@ __all__ = [
     ]
 
 from lazr.restful.fields import Reference
-from zope.interface import Interface
+from zope.interface import (
+    Attribute,
+    Interface,
+    )
 from zope.schema import TextLine
 
 from lp.app.interfaces.launchpad import IPrivacy
@@ -27,7 +30,8 @@ class IPersonProduct(IHasMergeProposals, IHasBranches, IPrivacy):
 
     person = Reference(IPerson)
     product = Reference(IProduct)
-    displayname = TextLine()
+    display_name = TextLine()
+    displayname = Attribute("Display name (deprecated)")
 
 
 class IPersonProductFactory(Interface):

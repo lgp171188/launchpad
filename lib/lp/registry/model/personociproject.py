@@ -32,7 +32,7 @@ class PersonOCIProject:
         return PersonOCIProject(person, oci_project)
 
     @property
-    def displayname(self):
+    def display_name(self):
         return '%s in %s' % (
             self.person.display_name, self.oci_project.display_name)
 

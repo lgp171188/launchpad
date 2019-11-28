@@ -32,9 +32,11 @@ class PersonDistributionSourcePackage:
         return PersonDistributionSourcePackage(person, distro_source_package)
 
     @property
-    def displayname(self):
+    def display_name(self):
         return '%s in %s' % (
             self.person.displayname, self.distro_source_package.displayname)
+
+    displayname = display_name
 
     def __eq__(self, other):
         return (
