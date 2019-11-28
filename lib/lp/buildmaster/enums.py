@@ -164,7 +164,7 @@ class BuildFarmJobType(DBEnumeratedType):
         Build a snap package from a recipe.
         """)
 
-    OCIBUILD = DBItem(7, """
+    OCIRECIPEBUILD = DBItem(7, """
         OCI image build
 
         Build an OCI image from a recipe.

@@ -44,7 +44,7 @@ class OCIRecipeBuild(PackageBuildMixin, Storm):
 
     __storm_table__ = 'OCIRecipeBuild'
 
-    job_type = BuildFarmJobType.OCIBUILD
+    job_type = BuildFarmJobType.OCIRECIPEBUILD
 
     id = Int(name='id', primary=True)
 
