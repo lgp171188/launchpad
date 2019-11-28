@@ -7,6 +7,7 @@ __metaclass__ = type
 __all__ = [
     'git_collection_for_distribution',
     'git_collection_for_distro_source_package',
+    'git_collection_for_oci_project',
     'git_collection_for_person',
     'git_collection_for_person_distro_source_package',
     'git_collection_for_person_product',
@@ -39,6 +40,11 @@ def git_collection_for_distro_source_package(distro_source_package):
     """Adapt a distro_source_package to a Git repository collection."""
     return getUtility(IAllGitRepositories).inDistributionSourcePackage(
         distro_source_package)
+
+
+def git_collection_for_oci_project(oci_project):
+    """Adapt an OCI project to a Git repository collection."""
+    return getUtility(IAllGitRepositories).inOCIProject(oci_project)
 
 
 def git_collection_for_person(person):

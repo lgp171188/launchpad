@@ -1028,6 +1028,10 @@
       provides="lp.code.interfaces.gitcollection.IGitCollection"
       factory="lp.code.adapters.gitcollection.git_collection_for_distro_source_package"/>
   <adapter
+      for="lp.registry.interfaces.ociproject.IOCIProject"
+      provides="lp.code.interfaces.gitcollection.IGitCollection"
+      factory="lp.code.adapters.gitcollection.git_collection_for_oci_project"/>
+  <adapter
       for="lp.registry.interfaces.person.IPerson"
       provides="lp.code.interfaces.gitcollection.IGitCollection"
       factory="lp.code.adapters.gitcollection.git_collection_for_person"/>

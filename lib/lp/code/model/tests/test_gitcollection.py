@@ -85,6 +85,10 @@ class TestGitCollectionAdaptation(TestCaseWithFactory):
         # collection.
         self.assertCollection(self.factory.makeDistributionSourcePackage())
 
+    def test_oci_project(self):
+        # An OCI project can be adapted to a Git repository collection.
+        self.assertCollection(self.factory.makeOCIProject())
+
     def test_person(self):
         # A person can be adapted to a Git repository collection.
         self.assertCollection(self.factory.makePerson())
