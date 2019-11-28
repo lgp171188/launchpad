@@ -5,8 +5,8 @@
 
 __metaclass__ = type
 __all__ = [
-    'DistributionOCIGitNamespace',
     'GitNamespaceSet',
+    'OCIProjectGitNamespace',
     'PackageGitNamespace',
     'PersonalGitNamespace',
     'ProjectGitNamespace',
@@ -546,11 +546,11 @@ class PackageGitNamespace(_BaseGitNamespace):
 
 
 @implementer(IGitNamespace, IGitNamespacePolicy)
-class DistributionOCIGitNamespace(_BaseGitNamespace):
+class OCIProjectGitNamespace(_BaseGitNamespace):
     """A namespace for OCI Project repositories.
 
     This namespace is for all the repositories owned by a particular person
-    in a particular OCI Project in a particular distribution.
+    in a particular OCI Project in a particular pillar.
     """
 
     has_defaults = True
@@ -561,11 +561,12 @@ class DistributionOCIGitNamespace(_BaseGitNamespace):
 
     def __init__(self, person, oci_project):
         self.owner = person
-        # Ensure we have a valid target for this namespace
-        assert oci_project.distribution is not None
         self.oci_project = oci_project
 
     def _getRepositoriesClause(self):
+        # XXX cjwatson 2019-11-25: This will eventually need project support,
+        # but assert that we have a distribution for now.
+        assert self.oci_project.distribution is not None
         return And(
             GitRepository.owner == self.owner,
             GitRepository.distribution == self.oci_project.distribution,
@@ -586,6 +587,7 @@ class DistributionOCIGitNamespace(_BaseGitNamespace):
 
     def _retargetRepository(self, repository):
         ocip = self.oci_project
+        # XXX cjwatson 2019-11-25: This will eventually need project support.
         repository.project = None
         repository.distribution = ocip.distribution
         repository.sourcepackagename = None
@@ -609,7 +611,7 @@ class DistributionOCIGitNamespace(_BaseGitNamespace):
             raise AssertionError(
                 "Namespace of %s is not %s." % (this.unique_name, self.name))
         other_namespace = other.namespace
-        if zope_isinstance(other_namespace, DistributionOCIGitNamespace):
+        if zope_isinstance(other_namespace, OCIProjectGitNamespace):
             return self.target == other_namespace.target
         else:
             return False
@@ -633,6 +635,8 @@ class GitNamespaceSet:
     def get(self, person, project=None, distribution=None,
             sourcepackagename=None, ociprojectname=None):
         """See `IGitNamespaceSet`."""
+        # XXX cjwatson 2019-11-25: This will eventually need project-based
+        # OCIProject support.
         if project is not None:
             assert (distribution is None and sourcepackagename is None
                     and ociprojectname is None), (
@@ -654,7 +658,7 @@ class GitNamespaceSet:
                 return PackageGitNamespace(
                     person, distribution.getSourcePackage(sourcepackagename))
             elif ociprojectname is not None:
-                return DistributionOCIGitNamespace(
+                return OCIProjectGitNamespace(
                     person, distribution.getOCIProject(ociprojectname.name))
             else:
                 raise AssertionError(

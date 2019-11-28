@@ -240,10 +240,11 @@ class PersonGitTraversable(_BaseGitTraversable):
 
 @adapter(IOCIProject)
 @implementer(IGitTraversable)
-class DistributionOCIGitTraversable(_BaseGitTraversable):
-    """Git repository traversable for OCI Projects.
+class DistributionOCIProjectGitTraversable(_BaseGitTraversable):
+    """Git repository traversable for distribution-based OCI Projects.
 
-    From here, you can traverse to a named OCI Project repository.
+    From here, you can traverse to a named distribution-based OCI Project
+    repository.
     """
 
     def getNamespace(self, owner):

@@ -112,7 +112,7 @@ class OwnerPackageDefaultGitRepository(BaseDefaultGitRepository):
 
 @adapter(IOCIProject)
 @implementer(ICanHasDefaultGitRepository)
-class DistributionOCIDefaultGitRepository(BaseDefaultGitRepository):
+class OCIProjectDefaultGitRepository(BaseDefaultGitRepository):
     """Implement a default Git repository for an OCI project."""
 
     sort_order = 1
@@ -123,6 +123,4 @@ class DistributionOCIDefaultGitRepository(BaseDefaultGitRepository):
     @property
     def path(self):
         """See `ICanHasDefaultGitRepository`."""
-        return "%s/+oci/%s" % (
-            self.context.distribution.name,
-            self.context.name)
+        return "%s/+oci/%s" % (self.context.pillar.name, self.context.name)
