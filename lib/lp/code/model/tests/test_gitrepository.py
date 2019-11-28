@@ -1326,6 +1326,17 @@ class TestGitRepositoryNamespace(TestCaseWithFactory):
             sourcepackagename=dsp.sourcepackagename)
         self.assertEqual(namespace, repository.namespace)
 
+    def test_namespace_oci_project(self):
+        # The namespace attribute of an OCI project repository points to the
+        # namespace that corresponds to
+        # ~owner/distribution/+oci/ociprojectname.
+        oci_project = self.factory.makeOCIProject()
+        repository = self.factory.makeGitRepository(target=oci_project)
+        namespace = getUtility(IGitNamespaceSet).get(
+            person=repository.owner, distribution=oci_project.pillar,
+            ociprojectname=oci_project.ociprojectname)
+        self.assertEqual(namespace, repository.namespace)
+
 
 class TestGitRepositoryPendingUpdates(TestCaseWithFactory):
     """Are there changes to this repository not reflected in the database?"""
@@ -1386,6 +1397,15 @@ class TestGitRepositoryPrivacy(TestCaseWithFactory):
         # no AccessPolicyArtifact is created for a package repository.
         repository = self.factory.makeGitRepository(
             target=self.factory.makeDistributionSourcePackage(),
+            information_type=InformationType.USERDATA)
+        removeSecurityProxy(repository)._reconcileAccess()
+        self.assertEqual([], get_policies_for_artifact(repository))
+
+    def test__reconcileAccess_for_oci_project_repository(self):
+        # Git repository privacy isn't yet supported for OCI projects, so no
+        # AccessPolicyArtifact is created for an OCI project repository.
+        repository = self.factory.makeGitRepository(
+            target=self.factory.makeOCIProject(),
             information_type=InformationType.USERDATA)
         removeSecurityProxy(repository)._reconcileAccess()
         self.assertEqual([], get_policies_for_artifact(repository))
@@ -2177,6 +2197,15 @@ class TestGitRepositorySetTarget(TestCaseWithFactory):
             repository.setTarget(target=dsp, user=owner)
         self.assertEqual(dsp, repository.target)
 
+    def test_personal_to_oci_project(self):
+        # A personal repository can be moved to an OCI project.
+        owner = self.factory.makePerson()
+        repository = self.factory.makeGitRepository(owner=owner, target=owner)
+        oci_project = self.factory.makeOCIProject()
+        with person_logged_in(owner):
+            repository.setTarget(target=oci_project, user=owner)
+        self.assertEqual(oci_project, repository.target)
+
     def test_project_to_other_project(self):
         # Move a repository from one project to another.
         repository = self.factory.makeGitRepository()
@@ -2192,6 +2221,14 @@ class TestGitRepositorySetTarget(TestCaseWithFactory):
         with person_logged_in(repository.owner):
             repository.setTarget(target=dsp, user=repository.owner)
         self.assertEqual(dsp, repository.target)
+
+    def test_project_to_oci_project(self):
+        # Move a repository from a project to an OCI project.
+        repository = self.factory.makeGitRepository()
+        oci_project = self.factory.makeOCIProject()
+        with person_logged_in(repository.owner):
+            repository.setTarget(target=oci_project, user=repository.owner)
+        self.assertEqual(oci_project, repository.target)
 
     def test_project_to_personal(self):
         # Move a repository from a project to a personal namespace.
@@ -2219,11 +2256,56 @@ class TestGitRepositorySetTarget(TestCaseWithFactory):
             repository.setTarget(target=project, user=repository.owner)
         self.assertEqual(project, repository.target)
 
+    def test_package_to_oci_project(self):
+        # Move a repository from a package to an OCI project.
+        repository = self.factory.makeGitRepository(
+            target=self.factory.makeDistributionSourcePackage())
+        oci_project = self.factory.makeOCIProject()
+        with person_logged_in(repository.owner):
+            repository.setTarget(target=oci_project, user=repository.owner)
+        self.assertEqual(oci_project, repository.target)
+
     def test_package_to_personal(self):
         # Move a repository from a package to a personal namespace.
         owner = self.factory.makePerson()
         repository = self.factory.makeGitRepository(
             owner=owner, target=self.factory.makeDistributionSourcePackage())
+        with person_logged_in(owner):
+            repository.setTarget(target=owner, user=owner)
+        self.assertEqual(owner, repository.target)
+
+    def test_oci_project_to_other_package(self):
+        # Move a repository from one OCI project to another.
+        repository = self.factory.makeGitRepository(
+            target=self.factory.makeOCIProject())
+        oci_project = self.factory.makeOCIProject()
+        with person_logged_in(repository.owner):
+            repository.setTarget(target=oci_project, user=repository.owner)
+        self.assertEqual(oci_project, repository.target)
+
+    def test_oci_project_to_project(self):
+        # Move a repository from an OCI project to a project.
+        repository = self.factory.makeGitRepository(
+            target=self.factory.makeOCIProject())
+        project = self.factory.makeProduct()
+        with person_logged_in(repository.owner):
+            repository.setTarget(target=project, user=repository.owner)
+        self.assertEqual(project, repository.target)
+
+    def test_oci_project_to_oci_project(self):
+        # Move a repository from an OCI project to an OCI project.
+        repository = self.factory.makeGitRepository(
+            target=self.factory.makeOCIProject())
+        oci_project = self.factory.makeOCIProject()
+        with person_logged_in(repository.owner):
+            repository.setTarget(target=oci_project, user=repository.owner)
+        self.assertEqual(oci_project, repository.target)
+
+    def test_oci_project_to_personal(self):
+        # Move a repository from an OCI project to a personal namespace.
+        owner = self.factory.makePerson()
+        repository = self.factory.makeGitRepository(
+            owner=owner, target=self.factory.makeOCIProject())
         with person_logged_in(owner):
             repository.setTarget(target=owner, user=owner)
         self.assertEqual(owner, repository.target)

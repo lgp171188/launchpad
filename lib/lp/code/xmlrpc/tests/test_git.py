@@ -725,6 +725,16 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
                 requester.name,
                 dsp.distribution.name, dsp.sourcepackagename.name))
 
+    def test_translatePath_create_oci_project(self):
+        # translatePath creates an OCI project repository that doesn't
+        # exist, if it can.
+        requester = self.factory.makePerson()
+        oci_project = self.factory.makeOCIProject()
+        self.assertCreates(
+            requester,
+            u"/~%s/%s/+oci/%s/+git/random" % (
+                requester.name, oci_project.pillar.name, oci_project.name))
+
     def test_translatePath_create_personal(self):
         # translatePath creates a personal repository that doesn't exist, if
         # it can.
@@ -866,6 +876,18 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
         dsp = self.factory.makeDistributionSourcePackage()
         path = u"/%s/+source/%s" % (
             dsp.distribution.name, dsp.sourcepackagename.name)
+        message = (
+            "Cannot automatically set the default repository for this target; "
+            "push to a named repository instead.")
+        self.assertPermissionDenied(
+            requester, path, message=message, permission="write")
+
+    def test_translatePath_create_oci_project_default_denied(self):
+        # A repository cannot (yet) be created and immediately set as the
+        # default for an OCI project.
+        requester = self.factory.makePerson()
+        oci_project = self.factory.makeOCIProject()
+        path = u"/%s/+oci/%s" % (oci_project.pillar.name, oci_project.name)
         message = (
             "Cannot automatically set the default repository for this target; "
             "push to a named repository instead.")
