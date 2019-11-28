@@ -157,14 +157,11 @@ from lp.hardwaredb.interfaces.hwdb import (
     IHWSubmissionDeviceSet,
     IHWSubmissionSet,
     )
-<<<<<<< b425f19fdd2db836764872dd4391e5d540c5cffb
-=======
 from lp.oci.model.ocirecipe import (
     OCIRecipe,
     OCIRecipeArch,
     )
 from lp.oci.model.ocirecipechannel import OCIRecipeChannel
->>>>>>> Wire up requestBuild
 from lp.registry.enums import (
     BranchSharingPolicy,
     BugSharingPolicy,
@@ -4944,8 +4941,6 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             oci_project = self.makeOCIProject(**kwargs)
         return oci_project.newSeries(name, summary, registrant)
 
-<<<<<<< b425f19fdd2db836764872dd4391e5d540c5cffb
-=======
     def makeOCIRecipe(self, registrant=None, owner=None, ociproject=None,
                       ociproject_default=False, require_virtualized=True):
         """Make a new OCIRecipe."""
@@ -4986,7 +4981,6 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         oci_arch = OCIRecipeArch(recipe, processor)
         return oci_arch
 
->>>>>>> Wire up requestBuild
 
 # Some factory methods return simple Python types. We don't add
 # security wrappers for them, as well as for objects created by
