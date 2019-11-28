@@ -1,7 +1,7 @@
 # Copyright 2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-"""A recipe for building Open Container Initiative images."""
+"""A channel of name and location for OCI Recipes."""
 
 from __future__ import absolute_import, print_function, unicode_literals
 
