@@ -12,7 +12,8 @@ __all__ = [
     'IOCIRecipeEditableAttributes',
     'IOCIRecipeSet',
     'IOCIRecipeView',
-    'OCIRecipeNotOwner'
+    'OCIBuildAlreadyPending',
+    'OCIRecipeNotOwner',
     ]
 
 import httplib

@@ -1,9 +1,11 @@
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
+from lp.buildmaster.enums import BuildStatus
 from lp.oci.interfaces.ocirecipe import (
     IOCIRecipe,
     IOCIRecipeSet,
+    OCIBuildAlreadyPending,
     OCIRecipeNotOwner,
     )
 from lp.testing import (
@@ -36,7 +38,19 @@ class TestOCIRecipe(TestCaseWithFactory):
         oci_arch = self.factory.makeOCIRecipeArch(recipe=ocirecipe)
         build = ocirecipe.requestBuild(
             ocirecipe.owner, ocirecipechannel, oci_arch)
-        self.assertTrue(build)
+        self.assertEqual(build.status, BuildStatus.NEEDSBUILD)
+
+    def test_requestBuild_already_exists(self):
+        ocirecipe = self.factory.makeOCIRecipe()
+        ocirecipechannel = self.factory.makeOCIRecipeChannel(recipe=ocirecipe)
+        oci_arch = self.factory.makeOCIRecipeArch(recipe=ocirecipe)
+        ocirecipe.requestBuild(
+            ocirecipe.owner, ocirecipechannel, oci_arch)
+
+        self.assertRaises(
+            OCIBuildAlreadyPending,
+            ocirecipe.requestBuild,
+            ocirecipe.owner, ocirecipechannel, oci_arch)
 
 
 class TestOCIRecipeSet(TestCaseWithFactory):

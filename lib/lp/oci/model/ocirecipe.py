@@ -32,6 +32,7 @@ from lp.buildmaster.enums import BuildStatus
 from lp.oci.interfaces.ocirecipe import (
     IOCIRecipe,
     IOCIRecipeSet,
+    OCIBuildAlreadyPending,
     OCIRecipeNotOwner,
     )
 from lp.oci.interfaces.ocirecipebuild import IOCIRecipeBuildSet

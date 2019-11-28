@@ -95,6 +95,7 @@ class OCIRecipeBuild(PackageBuildMixin, Storm):
         self.processor = processor
         self.virtualized = virtualized
         self.date_created = date_created
+        self.status = BuildStatus.NEEDSBUILD
 
     def queueBuild(self):
         """See `IPackageBuild`."""
