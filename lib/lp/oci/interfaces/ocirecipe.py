@@ -68,7 +68,7 @@ class IOCIRecipeEdit(Interface):
     """`IOCIRecipe` methods that require launchpad.Edit permission."""
 
     def destroySelf():
-        """Delete this snap package, provided that it has no builds."""
+        """Delete this OCI recipe, provided that it has no builds."""
 
 
 class IOCIRecipeEditableAttributes(IHasOwner):
@@ -83,7 +83,9 @@ class IOCIRecipeEditableAttributes(IHasOwner):
         required=True,
         readonly=True)
     ociproject_default = Bool(
-        title=_("OCI Project default"), required=True, default=False)
+        title=_("OCI Project default"), required=True, default=False,
+        description=_("True if this recipe is the default "
+                      "for its OCI project."))
 
     description = Text(title=_("A short description of this recipe."))
 
