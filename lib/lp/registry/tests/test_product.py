@@ -125,6 +125,7 @@ from lp.translations.interfaces.translations import (
     TranslationsBranchImportMode,
     )
 
+
 PRIVATE_PROJECT_TYPES = [InformationType.PROPRIETARY]
 
 

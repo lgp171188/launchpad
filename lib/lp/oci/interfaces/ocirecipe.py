@@ -20,7 +20,6 @@ import httplib
 
 from lazr.restful.declarations import error_status
 from lazr.restful.fields import Reference
-
 from zope.interface import Interface
 from zope.schema import (
     Bool,
@@ -31,8 +30,8 @@ from zope.schema import (
 from zope.security.interfaces import Unauthorized
 
 from lp import _
-from lp.registry.interfaces.role import IHasOwner
 from lp.registry.interfaces.ociproject import IOCIProject
+from lp.registry.interfaces.role import IHasOwner
 from lp.services.fields import PublicPersonChoice
 
 

@@ -11,7 +11,6 @@ __all__ = [
     'IOCIRecipeBuildSet'
     ]
 
-from lp.buildmaster.enums import BuildStatus
 from lazr.restful.fields import Reference
 from zope.interface import Interface
 from zope.schema import (
@@ -22,6 +21,7 @@ from zope.schema import (
     )
 
 from lp import _
+from lp.buildmaster.enums import BuildStatus
 from lp.buildmaster.interfaces.builder import IBuilder
 from lp.buildmaster.interfaces.packagebuild import IPackageBuild
 from lp.buildmaster.interfaces.processor import IProcessor
