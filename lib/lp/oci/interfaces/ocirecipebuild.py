@@ -22,14 +22,7 @@ from lp.services.fields import PublicPersonChoice
 
 
 class IOCIRecipeBuildEdit(Interface):
-
-    def addLayerFile(lfa, digest=None):
-        """Add an OCI layer file to this build.
-
-        :param lfa: An `ILibraryFileAlias`.
-        :param digest: OCI digest for this layer. Usually a sha256.
-        :return: An `IOCIFile`.
-        """
+    pass
 
 
 class IOCIRecipeBuildView(IPackageBuild):
