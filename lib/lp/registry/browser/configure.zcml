@@ -2562,6 +2562,10 @@
         path_expression="string:${oci_project/pillar/name}/+oci/${oci_project/name}"
         attribute_to_parent="person"
         />
+    <browser:navigation
+        module="lp.registry.browser.personociproject"
+        classes="PersonOCIProjectNavigation"
+        />
     <browser:url
         for="lp.registry.interfaces.personproduct.IPersonProduct"
         path_expression="product/name"

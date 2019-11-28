@@ -26,7 +26,7 @@
           <span tal:condition="not: view/default_information_type"
             id="privacy-text">
             You can't create new repositories for
-            <tal:name replace="context/displayname"/>.
+            <tal:name replace="context/display_name"/>.
             <tal:sharing-link condition="context/required:launchpad.Edit">
             <br/>This can be fixed by changing the branch sharing policy on the
             <a tal:attributes="href string:${view/target/fmt:url:mainsite}/+sharing">sharing page</a>.
@@ -36,7 +36,7 @@
           <span tal:condition="view/default_information_type"
             tal:attributes="class string:sprite ${private_class}"
             id="privacy-text">
-            New repositories for <tal:name replace="view/target/displayname"/> are
+            New repositories for <tal:name replace="view/target/display_name"/> are
             <strong tal:content="view/default_information_type_title" />.
           </span>
         </div>
@@ -78,7 +78,7 @@ git push --set-upstream origin master
           tal:define="count context/menu:branches/active_review_count|nothing;
                       link context/menu:branches/active_reviews|nothing"
           tal:condition="python: count &gt; 0">
-          <tal:project replace="context/displayname"/> has
+          <tal:project replace="context/display_name"/> has
           <tal:active-count replace="count"/>
           <tal:link replace="structure python: link.render().lower()"/>.
         </p>
