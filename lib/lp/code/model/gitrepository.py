@@ -1757,6 +1757,10 @@ class GitRepositorySet:
             clauses.append(GitRepository.distribution == target.distribution)
             clauses.append(
                 GitRepository.sourcepackagename == target.sourcepackagename)
+        elif IOCIProject.providedBy(target):
+            clauses.append(GitRepository.distribution == target.distribution)
+            clauses.append(
+                GitRepository.ociprojectname == target.ociprojectname)
         else:
             raise GitTargetError(
                 "Personal repositories cannot be defaults for any target.")

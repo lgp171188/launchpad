@@ -1043,6 +1043,10 @@
       for="lp.registry.interfaces.persondistributionsourcepackage.IPersonDistributionSourcePackage"
       provides="lp.code.interfaces.gitcollection.IGitCollection"
       factory="lp.code.adapters.gitcollection.git_collection_for_person_distro_source_package"/>
+  <adapter
+      for="lp.registry.interfaces.personociproject.IPersonOCIProject"
+      provides="lp.code.interfaces.gitcollection.IGitCollection"
+      factory="lp.code.adapters.gitcollection.git_collection_for_person_oci_project"/>
   <securedutility
       class="lp.code.model.gitcollection.GenericGitCollection"
       provides="lp.code.interfaces.gitcollection.IAllGitRepositories">
@@ -1056,6 +1060,7 @@
   <adapter factory="lp.code.model.defaultgit.OCIProjectDefaultGitRepository" />
   <adapter factory="lp.code.model.defaultgit.OwnerProjectDefaultGitRepository" />
   <adapter factory="lp.code.model.defaultgit.OwnerPackageDefaultGitRepository" />
+  <adapter factory="lp.code.model.defaultgit.OwnerOCIProjectDefaultGitRepository" />
 
   <class class="lp.code.model.gitlookup.GitLookup">
     <allow interface="lp.code.interfaces.gitlookup.IGitLookup" />

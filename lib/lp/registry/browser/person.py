@@ -161,6 +161,7 @@ from lp.registry.interfaces.mailinglist import (
 from lp.registry.interfaces.mailinglistsubscription import (
     MailingListAutoSubscribePolicy,
     )
+from lp.registry.interfaces.ociproject import IOCIProject
 from lp.registry.interfaces.person import (
     IPerson,
     IPersonClaim,
@@ -169,6 +170,7 @@ from lp.registry.interfaces.person import (
 from lp.registry.interfaces.persondistributionsourcepackage import (
     IPersonDistributionSourcePackageFactory,
     )
+from lp.registry.interfaces.personociproject import IPersonOCIProjectFactory
 from lp.registry.interfaces.personproduct import IPersonProductFactory
 from lp.registry.interfaces.persontransferjob import (
     IPersonDeactivateJobSource,
@@ -392,19 +394,21 @@ class BranchTraversalMixin:
             for _ in range(num_traversed):
                 self.request.stepstogo.consume()
 
+            using_pillar_alias = False
             if IProduct.providedBy(target):
                 if target.name != pillar_name:
-                    # This repository was accessed through one of its
-                    # project's aliases, so we must redirect to its
-                    # canonical URL.
-                    return self.redirectSubTree(canonical_url(repository))
-
-            if IDistributionSourcePackage.providedBy(target):
+                    using_pillar_alias = True
+            elif IDistributionSourcePackage.providedBy(target):
                 if target.distribution.name != pillar_name:
-                    # This branch or repository was accessed through one of its
-                    # distribution's aliases, so we must redirect to its
-                    # canonical URL.
-                    return self.redirectSubTree(canonical_url(repository))
+                    using_pillar_alias = True
+            elif IOCIProject.providedBy(target):
+                if target.pillar.name != pillar_name:
+                    using_pillar_alias = True
+
+            if using_pillar_alias:
+                # This repository was accessed through one of its project's
+                # aliases, so we must redirect to its canonical URL.
+                return self.redirectSubTree(canonical_url(repository))
 
             return repository
         except (NotFoundError, InvalidNamespace, InvalidProductName):
@@ -412,7 +416,9 @@ class BranchTraversalMixin:
 
         # If the pillar is a product, then return the PersonProduct; if it
         # is a distribution and further segments provide a source package,
-        # then return the PersonDistributionSourcePackage.
+        # then return the PersonDistributionSourcePackage; if it is a
+        # distribution and further segments provide an OCI project, then
+        # return the PersonOCIProject.
         pillar = getUtility(IPillarNameSet).getByName(pillar_name)
         if IProduct.providedBy(pillar):
             person_product = getUtility(IPersonProductFactory).create(
@@ -424,24 +430,30 @@ class BranchTraversalMixin:
                     status=301)
             getUtility(IOpenLaunchBag).add(pillar)
             return person_product
-        elif IDistribution.providedBy(pillar):
-            if (len(self.request.stepstogo) >= 2 and
-                self.request.stepstogo.peek() == "+source"):
+        elif (IDistribution.providedBy(pillar) and
+                len(self.request.stepstogo) >= 2):
+            if self.request.stepstogo.peek() == "+source":
+                get_target = IDistribution(pillar).getSourcePackage
+                factory = getUtility(IPersonDistributionSourcePackageFactory)
+            elif self.request.stepstogo.peek() == "+oci":
+                get_target = IDistribution(pillar).getOCIProject
+                factory = getUtility(IPersonOCIProjectFactory)
+            else:
+                get_target, factory = None, None
+            if get_target is not None:
                 self.request.stepstogo.consume()
                 spn_name = self.request.stepstogo.consume()
-                dsp = IDistribution(pillar).getSourcePackage(spn_name)
-                if dsp is not None:
-                    factory = getUtility(
-                        IPersonDistributionSourcePackageFactory)
-                    person_dsp = factory.create(self.context, dsp)
+                target = get_target(spn_name)
+                if target is not None:
+                    person_target = factory.create(self.context, target)
                     # If accessed through an alias, redirect to the proper
                     # name.
                     if pillar.name != pillar_name:
                         return self.redirectSubTree(
-                            canonical_url(person_dsp, request=self.request),
+                            canonical_url(person_target, request=self.request),
                             status=301)
                     getUtility(IOpenLaunchBag).add(pillar)
-                    return person_dsp
+                    return person_target
 
         # Otherwise look for a branch.
         try:

@@ -10,6 +10,7 @@ __all__ = [
     'git_collection_for_oci_project',
     'git_collection_for_person',
     'git_collection_for_person_distro_source_package',
+    'git_collection_for_person_oci_project',
     'git_collection_for_person_product',
     'git_collection_for_project',
     'git_collection_for_project_group',
@@ -65,4 +66,12 @@ def git_collection_for_person_distro_source_package(person_dsp):
     collection = getUtility(IAllGitRepositories).ownedBy(person_dsp.person)
     collection = collection.inDistributionSourcePackage(
         person_dsp.distro_source_package)
+    return collection
+
+
+def git_collection_for_person_oci_project(person_oci_project):
+    """Adapt a PersonOCIProject to a Git repository collection."""
+    collection = getUtility(IAllGitRepositories).ownedBy(
+        person_oci_project.person)
+    collection = collection.inOCIProject(person_oci_project.oci_project)
     return collection

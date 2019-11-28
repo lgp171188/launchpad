@@ -967,6 +967,44 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
         self.assertTrue(repository.owner_default)
         self.assertEqual(team, repository.owner)
 
+    def test_translatePath_create_oci_project_owner_default(self):
+        # A repository can be created and immediately set as its owner's
+        # default for an OCI project.
+        requester = self.factory.makePerson()
+        oci_project = self.factory.makeOCIProject()
+        path = u"/~%s/%s/+oci/%s" % (
+            requester.name, oci_project.pillar.name, oci_project.name)
+        repository = self.assertCreates(requester, path)
+        self.assertFalse(repository.target_default)
+        self.assertTrue(repository.owner_default)
+        self.assertEqual(requester, repository.owner)
+
+    def test_translatePath_create_oci_project_team_owner_default(self):
+        # The owner of a team can create a team-owned repository and
+        # immediately set it as that team's default for an OCI project.
+        requester = self.factory.makePerson()
+        team = self.factory.makeTeam(owner=requester)
+        oci_project = self.factory.makeOCIProject()
+        path = u"/~%s/%s/+oci/%s" % (
+            team.name, oci_project.pillar.name, oci_project.name)
+        repository = self.assertCreates(requester, path)
+        self.assertFalse(repository.target_default)
+        self.assertTrue(repository.owner_default)
+        self.assertEqual(team, repository.owner)
+
+    def test_translatePath_create_oci_project_team_member_default(self):
+        # A non-owner member of a team can create a team-owned repository
+        # and immediately set it as that team's default for an OCI project.
+        requester = self.factory.makePerson()
+        team = self.factory.makeTeam(members=[requester])
+        oci_project = self.factory.makeOCIProject()
+        path = u"/~%s/%s/+oci/%s" % (
+            team.name, oci_project.pillar.name, oci_project.name)
+        repository = self.assertCreates(requester, path)
+        self.assertFalse(repository.target_default)
+        self.assertTrue(repository.owner_default)
+        self.assertEqual(team, repository.owner)
+
     def test_translatePath_create_broken_hosting_service(self):
         # If the hosting service is down, trying to create a repository
         # fails and doesn't leave junk around in the Launchpad database.

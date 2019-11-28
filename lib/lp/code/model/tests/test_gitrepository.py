@@ -132,6 +132,7 @@ from lp.registry.interfaces.person import IPerson
 from lp.registry.interfaces.persondistributionsourcepackage import (
     IPersonDistributionSourcePackageFactory,
     )
+from lp.registry.interfaces.personociproject import IPersonOCIProjectFactory
 from lp.registry.interfaces.personproduct import IPersonProductFactory
 from lp.registry.tests.test_accesspolicy import get_policies_for_artifact
 from lp.services.authserver.xmlrpc import AuthServerAPIView
@@ -600,6 +601,21 @@ class TestGitIdentityMixin(TestCaseWithFactory):
                 repository.owner.name, dsp.distribution.name,
                 dsp.sourcepackagename.name))
 
+    def test_git_identity_owner_default_for_oci_project(self):
+        # If a repository is a person's default for an OCI project, then its
+        # Git identity is a combination of the person name and the OCI
+        # project path.
+        oci_project = self.factory.makeOCIProject()
+        repository = self.factory.makeGitRepository(target=oci_project)
+        with person_logged_in(repository.owner) as user:
+            self.repository_set.setDefaultRepositoryForOwner(
+                repository.owner, oci_project, repository, user)
+        self.assertGitIdentity(
+            repository,
+            "~%s/%s/+oci/%s" % (
+                repository.owner.name, oci_project.pillar.name,
+                oci_project.name))
+
     def test_identities_no_defaults(self):
         # If there are no defaults, the only repository identity is the
         # unique name.
@@ -659,7 +675,8 @@ class TestGitIdentityMixin(TestCaseWithFactory):
 
     def test_default_for_oci_project(self):
         # If a repository is the default for an OCI project, then that is
-        # the preferred identity.
+        # the preferred identity.  Target defaults are preferred over
+        # owner-target defaults.
         mint = self.factory.makeDistribution(name="mint")
         eric = self.factory.makePerson(name="eric")
         mint_choc = self.factory.makeOCIProject(
@@ -668,13 +685,19 @@ class TestGitIdentityMixin(TestCaseWithFactory):
             owner=eric, target=mint_choc, name="choc-repo")
         oci_project = repository.target
         with admin_logged_in():
+            self.repository_set.setDefaultRepositoryForOwner(
+                repository.owner, oci_project, repository, repository.owner)
             self.repository_set.setDefaultRepository(
                 oci_project, repository, force_oci=True)
+        eric_oci_project = getUtility(IPersonOCIProjectFactory).create(
+            eric, oci_project)
         self.assertEqual(
-            [ICanHasDefaultGitRepository(oci_project)],
+            [ICanHasDefaultGitRepository(target)
+             for target in (oci_project, eric_oci_project)],
             repository.getRepositoryDefaults())
         self.assertEqual(
             [("mint/+oci/choc", oci_project),
+             ("~eric/mint/+oci/choc", eric_oci_project),
              ("~eric/mint/+oci/choc/+git/choc-repo", repository)],
             repository.getRepositoryIdentities())
 
@@ -3578,6 +3601,12 @@ class TestGitRepositorySetDefaultsOwnerProject(
 class TestGitRepositorySetDefaultsOwnerPackage(
     TestGitRepositorySetDefaultsOwnerMixin,
     TestGitRepositorySetDefaultsPackage):
+    pass
+
+
+class TestGitRepositorySetDefaultsOwnerOCIProject(
+    TestGitRepositorySetDefaultsOwnerMixin,
+    TestGitRepositorySetDefaultsOCIProject):
     pass
 
 
