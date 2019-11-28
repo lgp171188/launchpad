@@ -28,6 +28,7 @@ from zope.schema import (
     )
 
 from lp import _
+from lp.app.validators.name import name_validator
 from lp.bugs.interfaces.bugtarget import IBugTarget
 from lp.code.interfaces.hasgitrepositories import IHasGitRepositories
 from lp.registry.interfaces.distribution import IDistribution
@@ -69,7 +70,10 @@ class IOCIProjectEditableAttributes(IBugTarget):
         title=_("The distribution that this OCI project is associated with."),
         schema=IDistribution, vocabulary="Distribution",
         required=True, readonly=False)
-    name = TextLine(title=_("The name of this OCI project."))
+    name = TextLine(
+        title=_("Name"), required=True, readonly=False,
+        constraint=name_validator,
+        description=_("The name of this OCI project."))
     ociprojectname = Reference(
         IOCIProjectName,
         title=_("The name of this OCI project, as an `IOCIProjectName`."),

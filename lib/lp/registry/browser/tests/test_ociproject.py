@@ -139,3 +139,14 @@ class TestOCIProjectEditView(BrowserTestCase):
             "There is already an OCI project in %s with this name." % (
                 pillar_display_name),
             extract_text(find_tags_by_class(browser.contents, "message")[1]))
+
+    def test_edit_oci_project_invalid_name(self):
+        oci_project = self.factory.makeOCIProject()
+        browser = self.getViewBrowser(
+            oci_project, user=oci_project.pillar.owner)
+        browser.getLink("Edit OCI project").click()
+        browser.getControl(name="field.name").value = "invalid name"
+        browser.getControl("Update OCI project").click()
+        self.assertStartsWith(
+            extract_text(find_tags_by_class(browser.contents, "message")[1]),
+            "Invalid name 'invalid name'.")
