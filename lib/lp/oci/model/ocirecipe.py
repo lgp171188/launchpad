@@ -30,7 +30,7 @@ from lp.buildmaster.enums import BuildStatus
 from lp.oci.interfaces.ocirecipe import (
     IOCIRecipe,
     IOCIRecipeSet,
-    OCIBuildAlreadyPending,
+    OCIRecipeBuildAlreadyPending,
     OCIRecipeNotOwner,
     )
 from lp.oci.interfaces.ocirecipebuild import IOCIRecipeBuildSet
@@ -98,7 +98,7 @@ class OCIRecipe(Storm):
             OCIRecipeBuild.channel_name == channel.name,
             OCIRecipeBuild.status == BuildStatus.NEEDSBUILD)
         if pending.any() is not None:
-            raise OCIBuildAlreadyPending
+            raise OCIRecipeBuildAlreadyPending
 
         build = getUtility(IOCIRecipeBuildSet).new(
             requester, self, channel.name, architecture.processor,

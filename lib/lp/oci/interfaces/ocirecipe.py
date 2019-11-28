@@ -41,11 +41,11 @@ class OCIRecipeNotOwner(Unauthorized):
 
 
 @error_status(httplib.BAD_REQUEST)
-class OCIBuildAlreadyPending(Exception):
+class OCIRecipeBuildAlreadyPending(Exception):
     """A build was requested when an identical build was already pending."""
 
     def __init__(self):
-        super(OCIBuildAlreadyPending, self).__init__(
+        super(OCIRecipeBuildAlreadyPending, self).__init__(
             "An identical build of this snap package is already pending.")
 
 
