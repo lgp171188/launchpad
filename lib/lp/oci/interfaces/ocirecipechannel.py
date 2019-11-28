@@ -32,7 +32,7 @@ class IOCIRecipeChannel(Interface):
         required=True)
 
     git_path = TextLine(
-        title=_("The branch within this recipes Git "
+        title=_("The branch within this recipe's Git "
                 "repository where its build files are maintained."),
         required=True)
 
