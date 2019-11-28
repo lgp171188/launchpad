@@ -8,6 +8,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 __metaclass__ = type
 __all__ = [
     'IOCIRecipeBuild',
+    'IOCIRecipeBuildSet'
     ]
 
 from lp.buildmaster.enums import BuildStatus
@@ -25,9 +26,22 @@ from lp.buildmaster.interfaces.builder import IBuilder
 from lp.buildmaster.interfaces.packagebuild import IPackageBuild
 from lp.buildmaster.interfaces.processor import IProcessor
 from lp.oci.interfaces.ocirecipe import IOCIRecipe
+from lp.services.database.constants import DEFAULT
+from lp.services.fields import PublicPersonChoice
 
 
-class IOCIRecipeBuild(IPackageBuild):
+class IOCIRecipeBuildEdit(Interface):
+
+    def addLayerFile(lfa, digest=None):
+        """Add an OCI layer file to this build.
+
+        :param lfa: An `ILibraryFileAlias`.
+        :param digest: OCI digest for this layer. Usually a sha256.
+        :return: An `IOCIFile`.
+        """
+
+
+class IOCIRecipeBuildView(IPackageBuild):
 
     requester = PublicPersonChoice(
         title=_("Requester"),
@@ -39,3 +53,19 @@ class IOCIRecipeBuild(IPackageBuild):
         title=_("The OCI recipe to build."),
         required=True,
         readonly=True)
+
+
+class IOCIRecipeBuildAdmin(Interface):
+    pass
+
+class IOCIRecipeBuild(IOCIRecipeBuildAdmin, IOCIRecipeBuildEdit,
+                      IOCIRecipeBuildView):
+    """A build record for an OCI recipe."""
+
+
+class IOCIRecipeBuildSet(Interface):
+    """A utility to create and access OCIRecipeBuilds."""
+
+    def new(requester, recipe, channel_name, processor, virtualized,
+            date_created=DEFAULT):
+        """Create an `IOCIRecipeBuild`."""

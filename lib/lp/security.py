@@ -112,6 +112,8 @@ from lp.hardwaredb.interfaces.hwdb import (
     IHWSubmissionDevice,
     IHWVendorID,
     )
+from lp.oci.interfaces.ocirecipe import IOCIRecipe
+from lp.oci.interfaces.ocirecipebuild import IOCIRecipeBuild
 from lp.registry.enums import PersonVisibility
 from lp.registry.interfaces.announcement import IAnnouncement
 from lp.registry.interfaces.distribution import IDistribution
@@ -3470,3 +3472,13 @@ class EditOCIProjectSeries(AuthorizationBase):
         """Maintainers, drivers, and admins can drive projects."""
         return (user.in_admin or
                 user.isDriver(self.obj.ociproject.pillar))
+
+
+class ViewOCIRecipe(AnonymousAuthorization):
+    """Anyone can view an `IOCIRecipe`."""
+    usedfor = IOCIRecipe
+
+
+class ViewOCIRecipeBuild(AnonymousAuthorization):
+    """Anyone can view an `IOCIRecipe`."""
+    usedfor = IOCIRecipeBuild

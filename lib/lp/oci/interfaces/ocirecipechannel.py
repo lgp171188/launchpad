@@ -7,7 +7,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 __all__ = [
-    'IOCIChannel',
+    'IOCIRecipeChannel',
     ]
 
 from lazr.restful.fields import Reference
@@ -18,7 +18,7 @@ from lp import _
 from lp.oci.interfaces.ocirecipe import IOCIRecipe
 
 
-class IOCIChannel(Interface):
+class IOCIRecipeChannel(Interface):
     """The channels that exist for an OCI recipe."""
 
     recipe = Reference(

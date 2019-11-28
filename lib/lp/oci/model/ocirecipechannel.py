@@ -19,19 +19,24 @@ from storm.locals import (
     )
 from zope.interface import implementer
 
-from lp.oci.interface.ocirecipechannel import IOCIRecipeChannel
+from lp.oci.interfaces.ocirecipechannel import IOCIRecipeChannel
 
 
-@implementer(IOCIRecipeChannel):
+@implementer(IOCIRecipeChannel)
 class OCIRecipeChannel(Storm):
 
     __storm_table__ = "OCIRecipeChannel"
     __storm_primary__ = ("recipe_id", "name")
 
     recipe_id = Int(name="recipe", allow_none=False)
-    recipe = Reference(recipe_id, "Recipe.id")
+    recipe = Reference(recipe_id, "OCIRecipe.id")
 
     name = Unicode(name="name", allow_none=False)
     git_path = Unicode(name="git_path", allow_none=False)
     build_file = Unicode(name="build_file", allow_none=False)
 
+    def __init__(self, recipe, name, git_path, build_file):
+        self.recipe = recipe
+        self.name = name
+        self.git_path = git_path
+        self.build_file = build_file

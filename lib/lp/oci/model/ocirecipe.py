@@ -12,7 +12,9 @@ __all__ = [
     ]
 
 
+from lazr.lifecycle.event import ObjectCreatedEvent
 import pytz
+from storm.expr import Or
 from storm.locals import (
     Bool,
     DateTime,
@@ -22,14 +24,22 @@ from storm.locals import (
     Storm,
     Unicode,
     )
+from zope.component import getUtility
+from zope.event import notify
 from zope.interface import implementer
 
+from lp.buildmaster.enums import BuildStatus
 from lp.oci.interfaces.ocirecipe import (
     IOCIRecipe,
     IOCIRecipeSet,
     OCIRecipeNotOwner,
     )
-from lp.services.database.interfaces import IMasterStore
+from lp.oci.interfaces.ocirecipebuild import IOCIRecipeBuildSet
+from lp.oci.model.ocirecipebuild import OCIRecipeBuild
+from lp.services.database.interfaces import (
+    IMasterStore,
+    IStore,
+    )
 
 
 @implementer(IOCIRecipe)
@@ -80,8 +90,23 @@ class OCIRecipe(Storm):
                 "%s cannot create OCI image builds owned by %s." %
                 (requester.displayname, self.owner.displayname))
 
-    def requestBuild(self, requester, channels=None, architectures=None):
+    def requestBuild(self, requester, channel, architecture):
         self._checkRequestBuild(requester)
+
+        pending = IStore(self).find(
+            OCIRecipeBuild,
+            OCIRecipeBuild.recipe == self.id,
+            OCIRecipeBuild.channel_name == channel.name,
+            OCIRecipeBuild.status == BuildStatus.NEEDSBUILD)
+        if pending.any() is not None:
+            raise OCIBuildAlreadyPending
+
+        build = getUtility(IOCIRecipeBuildSet).new(
+            requester, self, channel.name, architecture.processor,
+            self.require_virtualized)
+        build.queueBuild()
+        notify(ObjectCreatedEvent(build, user=requester))
+        return build
 
 
 class OCIRecipeArch(Storm):
@@ -91,10 +116,14 @@ class OCIRecipeArch(Storm):
     __storm_primary__ = ("recipe_id", "processor_id")
 
     recipe_id = Int(name="recipe", allow_none=False)
-    recipe = Reference(recipe_id, "Recipe.id")
+    recipe = Reference(recipe_id, "OCIRecipe.id")
 
     processor_id = Int(name="processor", allow_none=False)
     processor = Reference(processor_id, "Processor.id")
+
+    def __init__(self, recipe, processor):
+        self.recipe = recipe
+        self.processor = processor
 
 
 @implementer(IOCIRecipeSet)

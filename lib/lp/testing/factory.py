@@ -157,6 +157,14 @@ from lp.hardwaredb.interfaces.hwdb import (
     IHWSubmissionDeviceSet,
     IHWSubmissionSet,
     )
+<<<<<<< b425f19fdd2db836764872dd4391e5d540c5cffb
+=======
+from lp.oci.model.ocirecipe import (
+    OCIRecipe,
+    OCIRecipeArch,
+    )
+from lp.oci.model.ocirecipechannel import OCIRecipeChannel
+>>>>>>> Wire up requestBuild
 from lp.registry.enums import (
     BranchSharingPolicy,
     BugSharingPolicy,
@@ -4936,6 +4944,49 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             oci_project = self.makeOCIProject(**kwargs)
         return oci_project.newSeries(name, summary, registrant)
 
+<<<<<<< b425f19fdd2db836764872dd4391e5d540c5cffb
+=======
+    def makeOCIRecipe(self, registrant=None, owner=None, ociproject=None,
+                      ociproject_default=False, require_virtualized=True):
+        """Make a new OCIRecipe."""
+        if registrant is None:
+            registrant = self.makePerson()
+        if owner is None:
+            owner = self.makeTeam(members=[registrant])
+        if ociproject is None:
+            ociproject = self.makeOCIProject()
+        ocirecipe = OCIRecipe(
+            registrant=registrant,
+            owner=owner,
+            ociproject=ociproject,
+            ociproject_default=ociproject_default,
+            require_virtualized=require_virtualized)
+        return ocirecipe
+
+    def makeOCIRecipeChannel(self, recipe=None, name=None, git_path=None,
+                             build_file=None):
+        """Make a new OCIRecipeChannel."""
+        if recipe is None:
+            recipe = self.makeOCIRecipe()
+        if name is None:
+            name = self.getUniqueString(u"oci-recipe-channel-name")
+        if git_path is None:
+            git_path = self.getUniqueString(u"oci-recipe-channel-git-path")
+        if build_file is None:
+            build_file = self.getUniqueString(u"oci-recipe-channel-build-file")
+        oci_channel = OCIRecipeChannel(recipe, name, git_path, build_file)
+        return oci_channel
+
+    def makeOCIRecipeArch(self, recipe=None, processor=None):
+        """Make a new OCIRecipeArch."""
+        if recipe is None:
+            recipe = self.makeOCIRecipe()
+        if processor is None:
+            processor = self.makeProcessor()
+        oci_arch = OCIRecipeArch(recipe, processor)
+        return oci_arch
+
+>>>>>>> Wire up requestBuild
 
 # Some factory methods return simple Python types. We don't add
 # security wrappers for them, as well as for objects created by
