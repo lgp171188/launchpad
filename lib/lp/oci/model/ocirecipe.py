@@ -96,6 +96,7 @@ class OCIRecipe(Storm):
             OCIRecipeBuild,
             OCIRecipeBuild.recipe == self.id,
             OCIRecipeBuild.channel_name == channel.name,
+            OCIRecipeBuild.processor == architecture.processor,
             OCIRecipeBuild.status == BuildStatus.NEEDSBUILD)
         if pending.any() is not None:
             raise OCIRecipeBuildAlreadyPending

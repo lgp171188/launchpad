@@ -5,7 +5,7 @@ from lp.buildmaster.enums import BuildStatus
 from lp.oci.interfaces.ocirecipe import (
     IOCIRecipe,
     IOCIRecipeSet,
-    OCIBuildAlreadyPending,
+    OCIRecipeBuildAlreadyPending,
     OCIRecipeNotOwner,
     )
 from lp.testing import (
@@ -48,7 +48,7 @@ class TestOCIRecipe(TestCaseWithFactory):
             ocirecipe.owner, ocirecipechannel, oci_arch)
 
         self.assertRaises(
-            OCIBuildAlreadyPending,
+            OCIRecipeBuildAlreadyPending,
             ocirecipe.requestBuild,
             ocirecipe.owner, ocirecipechannel, oci_arch)
 

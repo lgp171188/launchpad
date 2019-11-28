@@ -12,7 +12,7 @@ __all__ = [
     'IOCIRecipeEditableAttributes',
     'IOCIRecipeSet',
     'IOCIRecipeView',
-    'OCIBuildAlreadyPending',
+    'OCIRecipeBuildAlreadyPending',
     'OCIRecipeNotOwner',
     ]
 
