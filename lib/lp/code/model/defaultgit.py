@@ -74,6 +74,22 @@ class PackageDefaultGitRepository(BaseDefaultGitRepository):
             self.context.sourcepackagename.name)
 
 
+@adapter(IOCIProject)
+@implementer(ICanHasDefaultGitRepository)
+class OCIProjectDefaultGitRepository(BaseDefaultGitRepository):
+    """Implement a default Git repository for an OCI project."""
+
+    sort_order = 0
+
+    def __init__(self, oci_project):
+        self.context = oci_project
+
+    @property
+    def path(self):
+        """See `ICanHasDefaultGitRepository`."""
+        return "%s/+oci/%s" % (self.context.pillar.name, self.context.name)
+
+
 @adapter(IPersonProduct)
 @implementer(ICanHasDefaultGitRepository)
 class OwnerProjectDefaultGitRepository(BaseDefaultGitRepository):
@@ -108,19 +124,3 @@ class OwnerPackageDefaultGitRepository(BaseDefaultGitRepository):
         return "~%s/%s/+source/%s" % (
             self.context.person.name, dsp.distribution.name,
             dsp.sourcepackagename.name)
-
-
-@adapter(IOCIProject)
-@implementer(ICanHasDefaultGitRepository)
-class OCIProjectDefaultGitRepository(BaseDefaultGitRepository):
-    """Implement a default Git repository for an OCI project."""
-
-    sort_order = 1
-
-    def __init__(self, oci_project):
-        self.context = oci_project
-
-    @property
-    def path(self):
-        """See `ICanHasDefaultGitRepository`."""
-        return "%s/+oci/%s" % (self.context.pillar.name, self.context.name)

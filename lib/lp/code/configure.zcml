@@ -1049,9 +1049,9 @@
 
   <adapter factory="lp.code.model.defaultgit.ProjectDefaultGitRepository" />
   <adapter factory="lp.code.model.defaultgit.PackageDefaultGitRepository" />
+  <adapter factory="lp.code.model.defaultgit.OCIProjectDefaultGitRepository" />
   <adapter factory="lp.code.model.defaultgit.OwnerProjectDefaultGitRepository" />
   <adapter factory="lp.code.model.defaultgit.OwnerPackageDefaultGitRepository" />
-  <adapter factory="lp.code.model.defaultgit.OCIProjectDefaultGitRepository" />
 
   <class class="lp.code.model.gitlookup.GitLookup">
     <allow interface="lp.code.interfaces.gitlookup.IGitLookup" />
