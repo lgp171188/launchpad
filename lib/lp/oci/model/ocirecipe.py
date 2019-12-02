@@ -32,6 +32,7 @@ from zope.event import notify
 from zope.interface import implementer
 
 from lp.buildmaster.enums import BuildStatus
+from lp.buildmaster.interfaces.buildqueue import IBuildQueueSet
 from lp.oci.interfaces.ocirecipe import (
     IOCIRecipe,
     IOCIRecipeSet,
@@ -139,10 +140,10 @@ class OCIRecipe(Storm):
         result.order_by(order_by)
 
         def eager_load(rows):
-            getUtility(OCIRecipeBuildSet).preloadBuildsData(rows)
+            getUtility(IOCIRecipeBuildSet).preloadBuildsData(rows)
             getUtility(IBuildQueueSet).preloadForBuildFarmJobs(rows)
 
-        return DecoratedResultSet(result) #, pre_iter_hook=eager_load)
+        return DecoratedResultSet(result, pre_iter_hook=eager_load)
 
     @property
     def builds(self):

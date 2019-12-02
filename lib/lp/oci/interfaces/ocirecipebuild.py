@@ -54,3 +54,6 @@ class IOCIRecipeBuildSet(Interface):
     def new(requester, recipe, channel_name, processor, virtualized,
             date_created=DEFAULT):
         """Create an `IOCIRecipeBuild`."""
+
+    def preloadBuildsData(self, builds):
+        """Load the data related to a list of OCI recipe builds."""

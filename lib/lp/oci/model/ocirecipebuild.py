@@ -118,3 +118,8 @@ class OCIRecipeBuildSet:
             virtualized, date_created)
         store.add(ocirecipebuild)
         return ocirecipebuild
+
+    def preloadBuildsData(self, builds):
+        """See `IOCIRecipeBuildSet`."""
+        # XXX twom 2019-12-02 Currently a no-op skeleton, to be filled in
+        return
