@@ -12,7 +12,8 @@ CREATE TABLE OCIRecipe (
     ociproject integer NOT NULL REFERENCES ociproject,
     ociproject_default boolean DEFAULT false NOT NULL,
     description text,
-    require_virtualized boolean DEFAULT true NOT NULL
+    require_virtualized boolean DEFAULT true NOT NULL,
+    build_daily boolean DEFAULT false NOT NULL
 );
 
 COMMENT ON TABLE OCIRecipe IS 'A recipe for building Open Container Initiative images.';
@@ -24,6 +25,7 @@ COMMENT ON COLUMN OCIRecipe.ociproject IS 'The OCI project that this recipe is f
 COMMENT ON COLUMN OCIRecipe.ociproject_default IS 'True if this recipe is the default for its OCI project.';
 COMMENT ON COLUMN OCIRecipe.description IS 'A short description of this recipe.';
 COMMENT ON COLUMN OCIRecipe.require_virtualized IS 'If True, this recipe must be built only on a virtual machine.';
+COMMENT ON COLUMN OCIRecipe.build_daily IS 'If True, this recipe should be built daily.';
 
 CREATE UNIQUE INDEX ocirecipe__owner__ociproject__key
     ON OCIRecipe (owner, ociproject);
