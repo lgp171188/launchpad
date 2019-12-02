@@ -69,12 +69,21 @@ class IOCIRecipeView(Interface):
         description=_("The user who registered this recipe."),
         vocabulary='ValidPersonOrTeam', required=True, readonly=True)
 
+    builds = CollectionField(
+        title=_("Completed builds of this OCI recipe."),
+        description=_(
+            "Completed builds of this OCI recipe, sorted in descending "
+            "order of finishing."),
+        # Really IOCIRecipeBuild, patched in _schema_circular_imports.
+        value_type=Reference(schema=Interface),
+        required=True, readonly=True)
+
     completed_builds = CollectionField(
         title=_("Completed builds of this OCI recipe."),
         description=_(
             "Completed builds of this OCI recipe, sorted in descending "
             "order of finishing."),
-        # Really IOCIRecipeBuild, patched in lp.snappy.interfaces.webservice.
+        # Really IOCIRecipeBuild, patched in _schema_circular_imports.
         value_type=Reference(schema=Interface), readonly=True)
 
     pending_builds = CollectionField(
@@ -82,7 +91,7 @@ class IOCIRecipeView(Interface):
         description=_(
             "Pending builds of this OCI recipe, sorted in descending "
             "order of creation."),
-        # Really IOCIRecipeBuild, patched in lp.snappy.interfaces.webservice.
+        # Really IOCIRecipeBuild, patched in _schema_circular_imports.
         value_type=Reference(schema=Interface), readonly=True)
 
     channels = Attribute("The channels that this OCI recipe can be build for.")

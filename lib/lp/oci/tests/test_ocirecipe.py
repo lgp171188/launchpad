@@ -52,6 +52,38 @@ class TestOCIRecipe(TestCaseWithFactory):
             ocirecipe.requestBuild,
             ocirecipe.owner, ocirecipechannel, oci_arch)
 
+    def test_getBuilds(self):
+        # Test the various getBuilds methods.
+        oci_recipe = self.factory.makeOCIRecipe()
+        builds = [self.factory.makeOCIRecipeBuild(recipe=oci_recipe)
+                  for x in range(3)]
+        # We want the latest builds first.
+        builds.reverse()
+
+        self.assertEqual(builds, list(oci_recipe.builds))
+        self.assertEqual([], list(oci_recipe.completed_builds))
+        self.assertEqual(builds, list(oci_recipe.pending_builds))
+
+        # Change the status of one of the builds and retest.
+        builds[0].updateStatus(BuildStatus.BUILDING)
+        builds[0].updateStatus(BuildStatus.FULLYBUILT)
+        self.assertEqual(builds, list(oci_recipe.builds))
+        self.assertEqual(builds[:1], list(oci_recipe.completed_builds))
+        self.assertEqual(builds[1:], list(oci_recipe.pending_builds))
+
+    def test_getBuilds_cancelled_never_started_last(self):
+        # A cancelled build that was never even started sorts to the end.
+        oci_recipe = self.factory.makeOCIRecipe()
+        fullybuilt = self.factory.makeOCIRecipeBuild(recipe=oci_recipe)
+        instacancelled = self.factory.makeOCIRecipeBuild(recipe=oci_recipe)
+        fullybuilt.updateStatus(BuildStatus.BUILDING)
+        fullybuilt.updateStatus(BuildStatus.FULLYBUILT)
+        instacancelled.updateStatus(BuildStatus.CANCELLED)
+        self.assertEqual([fullybuilt, instacancelled], list(oci_recipe.builds))
+        self.assertEqual(
+            [fullybuilt, instacancelled], list(oci_recipe.completed_builds))
+        self.assertEqual([], list(oci_recipe.pending_builds))
+
 
 class TestOCIRecipeSet(TestCaseWithFactory):
 

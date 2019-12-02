@@ -14,11 +14,16 @@ __all__ = [
 
 from lazr.lifecycle.event import ObjectCreatedEvent
 import pytz
+from storm.expr import (
+    Desc,
+    Not,
+    )
 from storm.locals import (
     Bool,
     DateTime,
     Int,
     Reference,
+    Store,
     Storm,
     Unicode,
     )
@@ -35,9 +40,14 @@ from lp.oci.interfaces.ocirecipe import (
     )
 from lp.oci.interfaces.ocirecipebuild import IOCIRecipeBuildSet
 from lp.oci.model.ocirecipebuild import OCIRecipeBuild
+from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.interfaces import (
     IMasterStore,
     IStore,
+    )
+from lp.services.database.stormexpr import (
+    Greatest,
+    NullsLast,
     )
 
 
@@ -109,14 +119,61 @@ class OCIRecipe(Storm):
         return build
 
     @property
+    def _pending_states(self):
+        """All the build states we consider pending (non-final)."""
+        return [
+            BuildStatus.NEEDSBUILD,
+            BuildStatus.BUILDING,
+            BuildStatus.UPLOADING,
+            BuildStatus.CANCELLING,
+            ]
+
+    def _getBuilds(self, filter_term, order_by):
+        """The actual query to get the builds."""
+        query_args = [
+            OCIRecipeBuild.recipe == self,
+            ]
+        if filter_term is not None:
+            query_args.append(filter_term)
+        result = Store.of(self).find(OCIRecipeBuild, *query_args)
+        result.order_by(order_by)
+
+        def eager_load(rows):
+            getUtility(OCIRecipeBuildSet).preloadBuildsData(rows)
+            getUtility(IBuildQueueSet).preloadForBuildFarmJobs(rows)
+
+        return DecoratedResultSet(result) #, pre_iter_hook=eager_load)
+
+    @property
+    def builds(self):
+        """See `IOCIRecipe`."""
+        order_by = (
+            NullsLast(Desc(Greatest(
+                OCIRecipeBuild.date_started,
+                OCIRecipeBuild.date_finished))),
+            Desc(OCIRecipeBuild.date_created),
+            Desc(OCIRecipeBuild.id))
+        return self._getBuilds(None, order_by)
+
+    @property
     def completed_builds(self):
         """See `IOCIRecipe`."""
-        pass
+        filter_term = (Not(OCIRecipeBuild.status.is_in(self._pending_states)))
+        order_by = (
+            NullsLast(Desc(Greatest(
+                OCIRecipeBuild.date_started,
+                OCIRecipeBuild.date_finished))),
+            Desc(OCIRecipeBuild.id))
+        return self._getBuilds(filter_term, order_by)
 
     @property
     def pending_builds(self):
         """See `IOCIRecipe`."""
-        pass
+        filter_term = (OCIRecipeBuild.status.is_in(self._pending_states))
+        # We want to order by date_created but this is the same as ordering
+        # by id (since id increases monotonically) and is less expensive.
+        order_by = Desc(OCIRecipeBuild.id)
+        return self._getBuilds(filter_term, order_by)
 
     @property
     def channels(self):

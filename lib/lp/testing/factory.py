@@ -157,6 +157,7 @@ from lp.hardwaredb.interfaces.hwdb import (
     IHWSubmissionDeviceSet,
     IHWSubmissionSet,
     )
+from lp.oci.interfaces.ocirecipebuild import IOCIRecipeBuildSet
 from lp.oci.model.ocirecipe import (
     OCIRecipe,
     OCIRecipeArch,
@@ -4980,6 +4981,22 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             processor = self.makeProcessor()
         oci_arch = OCIRecipeArch(recipe, processor)
         return oci_arch
+
+    def makeOCIRecipeBuild(self, requester=None, recipe=None,
+                           channel_name=None, processor=None,
+                           virtualized=False, date_created=DEFAULT):
+        """Make a new OCIRecipeBuild."""
+        if requester is None:
+            requester = self.makePerson()
+        if channel_name is None:
+            channel_name = self.getUniqueString(u"oci-recipe-channel-name")
+        if processor is None:
+            processor = self.makeProcessor()
+
+        oci_recipe_build = getUtility(IOCIRecipeBuildSet).new(
+            requester, recipe, channel_name, processor, virtualized,
+            date_created)
+        return oci_recipe_build
 
 
 # Some factory methods return simple Python types. We don't add

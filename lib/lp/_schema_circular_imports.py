@@ -1094,5 +1094,6 @@ patch_operations_explicit_version(
 patch_entry_explicit_version(IWikiName, 'beta')
 
 # IOCIRecipe
+patch_collection_property(IOCIRecipe, 'builds', IOCIRecipeBuild)
 patch_collection_property(IOCIRecipe, 'completed_builds', IOCIRecipeBuild)
 patch_collection_property(IOCIRecipe, 'pending_builds', IOCIRecipeBuild)
