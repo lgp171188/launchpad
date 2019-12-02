@@ -4966,9 +4966,9 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         if name is None:
             name = self.getUniqueString(u"oci-recipe-channel-name")
         if git_path is None:
-            git_path = "test/path/for/{}".format(name)
+            git_path = u"test/path/for/{}".format(name)
         if build_file is None:
-            build_file = "build_file_for_{}".format(name)
+            build_file = u"build_file_for_{}".format(name)
         oci_channel = OCIRecipeChannel(recipe, name, git_path, build_file)
         return oci_channel
 

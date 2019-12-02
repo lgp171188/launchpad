@@ -108,6 +108,28 @@ class OCIRecipe(Storm):
         notify(ObjectCreatedEvent(build, user=requester))
         return build
 
+    @property
+    def completed_builds(self):
+        """See `IOCIRecipe`."""
+        pass
+
+    @property
+    def pending_builds(self):
+        """See `IOCIRecipe`."""
+        pass
+
+    @property
+    def channels(self):
+        """See `IOCIRecipe`."""
+
+    def addChannel(self, name):
+        """See `IOCIRecipe`."""
+        pass
+
+    def removeChannel(self, name):
+        """See `IOCIRecipe`."""
+        pass
+
 
 class OCIRecipeArch(Storm):
     """Link table back to `OCIRecipe.processors`."""

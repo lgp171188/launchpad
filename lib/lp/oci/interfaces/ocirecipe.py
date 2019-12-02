@@ -19,8 +19,14 @@ __all__ = [
 import httplib
 
 from lazr.restful.declarations import error_status
-from lazr.restful.fields import Reference
-from zope.interface import Interface
+from lazr.restful.fields import (
+    CollectionField,
+    Reference,
+    )
+from zope.interface import (
+    Attribute,
+    Interface,
+    )
 from zope.schema import (
     Bool,
     Datetime,
@@ -63,9 +69,32 @@ class IOCIRecipeView(Interface):
         description=_("The user who registered this recipe."),
         vocabulary='ValidPersonOrTeam', required=True, readonly=True)
 
+    completed_builds = CollectionField(
+        title=_("Completed builds of this OCI recipe."),
+        description=_(
+            "Completed builds of this OCI recipe, sorted in descending "
+            "order of finishing."),
+        # Really IOCIRecipeBuild, patched in lp.snappy.interfaces.webservice.
+        value_type=Reference(schema=Interface), readonly=True)
+
+    pending_builds = CollectionField(
+        title=_("Pending builds of this OCI recipe."),
+        description=_(
+            "Pending builds of this OCI recipe, sorted in descending "
+            "order of creation."),
+        # Really IOCIRecipeBuild, patched in lp.snappy.interfaces.webservice.
+        value_type=Reference(schema=Interface), readonly=True)
+
+    channels = Attribute("The channels that this OCI recipe can be build for.")
 
 class IOCIRecipeEdit(Interface):
     """`IOCIRecipe` methods that require launchpad.Edit permission."""
+
+    def addChannel(name):
+        """Add a channel to this recipe."""
+
+    def removeChannel(name):
+        """Remove a channel from this recipe."""
 
     def destroySelf():
         """Delete this OCI recipe, provided that it has no builds."""
