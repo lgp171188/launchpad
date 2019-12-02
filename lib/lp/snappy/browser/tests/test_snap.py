@@ -80,7 +80,7 @@ from lp.snappy.interfaces.snap import (
     )
 from lp.snappy.interfaces.snappyseries import ISnappyDistroSeriesSet
 from lp.snappy.interfaces.snapstoreclient import ISnapStoreClient
-from lp.snappy.model.snappyseries import SnappySeries
+from lp.snappy.model.snappyseries import SnappySeries, SnappyDistroSeries
 from lp.testing import (
     admin_logged_in,
     BrowserTestCase,
@@ -344,7 +344,7 @@ class TestSnapAddView(BaseTestSnapView):
             ["Test Person (test-person)", "Test Team (test-team)"],
             sorted(str(option) for option in options))
 
-    def test_create_new_snap_public(self):
+    def test_Acreate_new_snap_public(self):
         # Public owner implies public snap.
         self.useFixture(BranchHostingFixture(blob=b""))
         branch = self.factory.makeAnyBranch()
@@ -712,7 +712,30 @@ class TestSnapEditView(BaseTestSnapView):
             self.snappyseries = self.factory.makeSnappySeries(
                 usable_distro_series=[self.distroseries])
 
-    def test_edit_Asnap(self):
+    def test_edit_Asnap_built_for_OBSOLETE(self):
+        # Test that Ubuntu 15.04 Core doesn't show in the bullet list
+        # and that if the Snap was built for SnappySeries 15.04 Core
+
+        old_series = self.factory.makeUbuntuDistroSeries(
+            status=SeriesStatus.SUPPORTED)
+        with admin_logged_in():
+            snappy_series = self.factory.makeOlderSnappySeries(
+                name='15.04Obsolete', status=SeriesStatus.SUPPORTED)
+        snap = self.factory.makeSnap(
+            registrant=self.person, owner=self.person, distroseries=old_series,
+            store_series=snappy_series, branch=self.factory.makeAnyBranch())
+        self.factory.makeTeam(
+            name="new-team", displayname="New Team", members=[self.person])
+
+        snappy_series = IStore(SnappyDistroSeries).find(SnappyDistroSeries,
+                            SnappyDistroSeries.snappy_series == 1).remove()
+        browser = self.getViewBrowser(snap, view_name="+edit", user=snap.owner)
+        series = browser.getControl(
+            name="field.store_distro_series").displayOptions
+        series = [el.decode("utf8").replace(u'\xa0', '') for el in series]
+        self.assertIn('Ubuntu distroseries-100127 for 15.04Obsolete', series)
+
+    def test_edit_snap(self):
         old_series = self.factory.makeUbuntuDistroSeries()
         old_branch = self.factory.makeAnyBranch()
 

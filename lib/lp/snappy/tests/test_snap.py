@@ -231,7 +231,7 @@ class TestSnapModel(TestCaseWithFactory):
                                      store_series=snappy_series,
                                      branch=branch)
 
-        removeSecurityProxy(snap).store_distro_series = 'Ubuntu Bionic for Store Series 2'
+#        removeSecurityProxy(snap).store_distro_series = 'Ubuntu Bionic for Store Series 2'
         self.assertEqual(snap.store_series.id, 2)
 
         self.assertEqual(snap.distro_series.display_name, 'Bionic')
