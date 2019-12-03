@@ -95,6 +95,8 @@ class OCIRecipe(Storm):
         # XXX twom 2019-11-26 This needs to expand as more build artifacts
         # are added
         store = IStore(OCIRecipe)
+        store.find(OCIRecipeBuild, OCIRecipeBuild.recipe == self).remove()
+        store.find(OCIRecipeChannel, OCIRecipeChannel.recipe == self).remove()
         store.remove(self)
 
     def _checkRequestBuild(self, requester):

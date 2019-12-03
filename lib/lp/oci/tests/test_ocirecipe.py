@@ -15,6 +15,9 @@ from lp.oci.interfaces.ocirecipe import (
     OCIRecipeBuildAlreadyPending,
     OCIRecipeNotOwner,
     )
+from lp.oci.interfaces.ocirecipebuild import IOCIRecipeBuildSet
+from lp.oci.model.ocirecipechannel import OCIRecipeChannel
+from lp.services.database.interfaces import IMasterStore
 from lp.testing import (
     admin_logged_in,
     TestCaseWithFactory,
@@ -58,6 +61,22 @@ class TestOCIRecipe(TestCaseWithFactory):
             OCIRecipeBuildAlreadyPending,
             ocirecipe.requestBuild,
             ocirecipe.owner, ocirecipechannel, oci_arch)
+
+    def test_destroySelf(self):
+        oci_recipe = self.factory.makeOCIRecipe()
+        build_ids = []
+        for x in range(3):
+            build_ids.append(
+                self.factory.makeOCIRecipeBuild(recipe=oci_recipe).id)
+            self.factory.makeOCIRecipeChannel(recipe=oci_recipe)
+
+        oci_recipe.destroySelf()
+
+        for build_id in build_ids:
+            self.assertIsNone(getUtility(IOCIRecipeBuildSet).getByID(build_id))
+
+        channels_store = IMasterStore(OCIRecipeChannel).find(OCIRecipeChannel)
+        self.assertEqual(channels_store.count(), 0)
 
     def test_getBuilds(self):
         # Test the various getBuilds methods.
@@ -112,7 +131,6 @@ class TestOCIRecipe(TestCaseWithFactory):
         oci_recipe.removeChannel(removed_name)
         for channel in oci_recipe.channels:
             self.assertNotEqual(channel.name, removed_name)
-
 
 
 class TestOCIRecipeSet(TestCaseWithFactory):

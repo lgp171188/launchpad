@@ -15,6 +15,7 @@ from zope.interface import Interface
 from zope.schema import TextLine
 
 from lp import _
+from lp.app.validators.name import name_validator
 from lp.oci.interfaces.ocirecipe import IOCIRecipe
 
 
@@ -29,6 +30,7 @@ class IOCIRecipeChannel(Interface):
 
     name = TextLine(
         title=_("The name of this channel."),
+        constraint=name_validator,
         required=True)
 
     git_path = TextLine(

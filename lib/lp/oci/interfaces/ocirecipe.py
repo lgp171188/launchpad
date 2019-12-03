@@ -38,7 +38,10 @@ from zope.security.interfaces import Unauthorized
 from lp import _
 from lp.registry.interfaces.ociproject import IOCIProject
 from lp.registry.interfaces.role import IHasOwner
-from lp.services.fields import PublicPersonChoice
+from lp.services.fields import (
+    PersonChoice,
+    PublicPersonChoice,
+    )
 
 
 @error_status(httplib.UNAUTHORIZED)
@@ -96,6 +99,7 @@ class IOCIRecipeView(Interface):
 
     channels = Attribute("The channels that this OCI recipe can be build for.")
 
+
 class IOCIRecipeEdit(Interface):
     """`IOCIRecipe` methods that require launchpad.Edit permission."""
 
@@ -114,6 +118,11 @@ class IOCIRecipeEditableAttributes(IHasOwner):
 
     These attributes need launchpad.View to see, and launchpad.Edit to change.
     """
+
+    owner = PersonChoice(
+        title=_("Owner"), required=True, readonly=False,
+        vocabulary="AllUserTeamsParticipationPlusSelf",
+        description=_("The owner of this OCI recipe."))
 
     ociproject = Reference(
         IOCIProject,

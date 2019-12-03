@@ -29,6 +29,7 @@ from lp.buildmaster.enums import (
     BuildStatus,
     )
 from lp.buildmaster.interfaces.buildfarmjob import IBuildFarmJobSource
+from lp.buildmaster.model.buildfarmjob import SpecificBuildFarmJobSourceMixin
 from lp.buildmaster.model.packagebuild import PackageBuildMixin
 from lp.oci.interfaces.ocirecipebuild import (
     IOCIRecipeBuild,
@@ -104,7 +105,7 @@ class OCIRecipeBuild(PackageBuildMixin, Storm):
 
 
 @implementer(IOCIRecipeBuildSet)
-class OCIRecipeBuildSet:
+class OCIRecipeBuildSet(SpecificBuildFarmJobSourceMixin):
     """See `IOCIRecipeBuildSet`."""
 
     def new(self, requester, recipe, channel_name, processor, virtualized,
@@ -123,3 +124,8 @@ class OCIRecipeBuildSet:
         """See `IOCIRecipeBuildSet`."""
         # XXX twom 2019-12-02 Currently a no-op skeleton, to be filled in
         return
+
+    def getByID(self, build_id):
+        """See `ISpecificBuildFarmJobSource`."""
+        store = IMasterStore(OCIRecipeBuild)
+        return store.get(OCIRecipeBuild, build_id)
