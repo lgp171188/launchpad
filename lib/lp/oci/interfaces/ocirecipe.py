@@ -130,6 +130,10 @@ class IOCIRecipeEditableAttributes(IHasOwner):
     require_virtualized = Bool(
         title=_("Require virtualized"), required=True, default=True)
 
+    build_daily = Bool(
+        title=_("Build daily"), required=True, default=False,
+        description=_("If True, this recipe should be built daily."))
+
 
 class IOCIRecipe(IOCIRecipeView, IOCIRecipeEdit, IOCIRecipeEditableAttributes):
     """A recipe for building Open Container Initiative images."""

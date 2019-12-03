@@ -79,6 +79,8 @@ class OCIRecipe(Storm):
 
     require_virtualized = Bool(name="require_virtualized", default=True)
 
+    build_daily = Bool(name="build_daily", default=False)
+
     def __init__(self, registrant, owner, ociproject, ociproject_default=False,
                  require_virtualized=True):
         super(OCIRecipe, self).__init__()
