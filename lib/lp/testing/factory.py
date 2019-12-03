@@ -4951,13 +4951,12 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             owner = self.makeTeam(members=[registrant])
         if ociproject is None:
             ociproject = self.makeOCIProject()
-        ocirecipe = OCIRecipe(
+        return OCIRecipe(
             registrant=registrant,
             owner=owner,
             ociproject=ociproject,
             ociproject_default=ociproject_default,
             require_virtualized=require_virtualized)
-        return ocirecipe
 
     def makeOCIRecipeChannel(self, recipe=None, name=None, git_path=None,
                              build_file=None):
@@ -4980,8 +4979,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             recipe = self.makeOCIRecipe()
         if processor is None:
             processor = self.makeProcessor()
-        oci_arch = OCIRecipeArch(recipe, processor)
-        return oci_arch
+        return OCIRecipeArch(recipe, processor)
 
     def makeOCIRecipeBuild(self, requester=None, recipe=None,
                            channel_name=None, processor=None,
@@ -4994,10 +4992,9 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         if processor is None:
             processor = self.makeProcessor()
 
-        oci_recipe_build = getUtility(IOCIRecipeBuildSet).new(
+        return getUtility(IOCIRecipeBuildSet).new(
             requester, recipe, channel_name, processor, virtualized,
             date_created)
-        return oci_recipe_build
 
 
 # Some factory methods return simple Python types. We don't add
