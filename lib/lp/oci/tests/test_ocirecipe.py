@@ -1,3 +1,10 @@
+# Copyright 2019 Canonical Ltd.  This software is licensed under the
+# GNU Affero General Public License version 3 (see the file LICENSE).
+
+"""Tests for OCI image building recipe functionality."""
+
+from __future__ import absolute_import, print_function, unicode_literals
+
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
@@ -83,6 +90,29 @@ class TestOCIRecipe(TestCaseWithFactory):
         self.assertEqual(
             [fullybuilt, instacancelled], list(oci_recipe.completed_builds))
         self.assertEqual([], list(oci_recipe.pending_builds))
+
+    def test_channels(self):
+        oci_recipe = self.factory.makeOCIRecipe()
+        channels = [self.factory.makeOCIRecipeChannel(recipe=oci_recipe)
+                    for x in range(3)]
+        channels.reverse()
+
+        self.assertEqual(channels, list(oci_recipe.channels))
+
+    def test_addChannel(self):
+        oci_recipe = self.factory.makeOCIRecipe()
+        oci_recipe.addChannel('test-channel', '/a/path', 'afile.file')
+        self.assertEqual(oci_recipe.channels.count(), 1)
+
+    def test_removeChannel(self):
+        oci_recipe = self.factory.makeOCIRecipe()
+        channels = [self.factory.makeOCIRecipeChannel(recipe=oci_recipe)
+                    for x in range(3)]
+        removed_name = channels[0].name
+        oci_recipe.removeChannel(removed_name)
+        for channel in oci_recipe.channels:
+            self.assertNotEqual(channel.name, removed_name)
+
 
 
 class TestOCIRecipeSet(TestCaseWithFactory):

@@ -99,7 +99,7 @@ class IOCIRecipeView(Interface):
 class IOCIRecipeEdit(Interface):
     """`IOCIRecipe` methods that require launchpad.Edit permission."""
 
-    def addChannel(name):
+    def addChannel(name, git_path, build_file):
         """Add a channel to this recipe."""
 
     def removeChannel(name):

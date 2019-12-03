@@ -41,6 +41,7 @@ from lp.oci.interfaces.ocirecipe import (
     )
 from lp.oci.interfaces.ocirecipebuild import IOCIRecipeBuildSet
 from lp.oci.model.ocirecipebuild import OCIRecipeBuild
+from lp.oci.model.ocirecipechannel import OCIRecipeChannel
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.interfaces import (
     IMasterStore,
@@ -176,17 +177,39 @@ class OCIRecipe(Storm):
         order_by = Desc(OCIRecipeBuild.id)
         return self._getBuilds(filter_term, order_by)
 
+    def _findChannels(self, filter_term, order_by):
+        query_args = [OCIRecipeChannel.recipe == self]
+        if filter_term is not None:
+            query_args.append(filter_term)
+        result = Store.of(self).find(OCIRecipeChannel, *query_args)
+        result.order_by(order_by)
+        return result
+
     @property
     def channels(self):
         """See `IOCIRecipe`."""
+        order_by = Desc(OCIRecipeChannel.name)
+        result = self._findChannels(None, order_by)
+        return result
 
-    def addChannel(self, name):
+    def addChannel(self, name, git_path, build_file):
         """See `IOCIRecipe`."""
-        pass
+        existing = self._findChannels([OCIRecipeChannel.name == name], None)
+        if existing.count():
+            raise Exception
+        store = IMasterStore(OCIRecipeBuild)
+        channel = OCIRecipeChannel(self, name, git_path, build_file)
+        store.add(channel)
+        return channel
 
     def removeChannel(self, name):
         """See `IOCIRecipe`."""
-        pass
+        result = Store.of(self).find(
+            OCIRecipeChannel,
+            OCIRecipeChannel.recipe == self,
+            OCIRecipeChannel.name == name)
+        if not result.is_empty():
+            result.remove()
 
 
 class OCIRecipeArch(Storm):
