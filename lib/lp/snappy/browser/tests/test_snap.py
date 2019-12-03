@@ -5,7 +5,6 @@
 
 from __future__ import absolute_import, print_function, unicode_literals
 
-
 __metaclass__ = type
 
 from datetime import (
@@ -59,7 +58,6 @@ from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.registry.interfaces.series import SeriesStatus
 from lp.services.config import config
 from lp.services.database.constants import UTC_NOW
-from lp.services.database.interfaces import IStore
 from lp.services.features.testing import FeatureFixture
 from lp.services.job.interfaces.job import JobStatus
 from lp.services.propertycache import get_property_cache
@@ -80,7 +78,6 @@ from lp.snappy.interfaces.snap import (
     )
 from lp.snappy.interfaces.snappyseries import ISnappyDistroSeriesSet
 from lp.snappy.interfaces.snapstoreclient import ISnapStoreClient
-from lp.snappy.model.snappyseries import SnappySeries, SnappyDistroSeries
 from lp.testing import (
     admin_logged_in,
     BrowserTestCase,
@@ -132,7 +129,8 @@ class TestSnapNavigation(TestCaseWithFactory):
     def test_snap(self):
         snap = self.factory.makeSnap()
         obj, _, _ = test_traverse(
-            "http://launchpad.test/~%s/+snap/%s" % (snap.owner.name, snap.name))
+            "http://launchpad.test/~%s/+snap/%s" %
+            (snap.owner.name, snap.name))
         self.assertEqual(snap, obj)
 
 
@@ -344,7 +342,7 @@ class TestSnapAddView(BaseTestSnapView):
             ["Test Person (test-person)", "Test Team (test-team)"],
             sorted(str(option) for option in options))
 
-    def test_Acreate_new_snap_public(self):
+    def test_create_new_snap_public(self):
         # Public owner implies public snap.
         self.useFixture(BranchHostingFixture(blob=b""))
         branch = self.factory.makeAnyBranch()
@@ -434,6 +432,8 @@ class TestSnapAddView(BaseTestSnapView):
         browser.getControl(
             name="field.auto_build_channels.core18").value = "beta"
         browser.getControl(
+            name="field.auto_build_channels.core20").value = "edge/feature"
+        browser.getControl(
             name="field.auto_build_channels.snapcraft").value = "edge"
         browser.getControl("Create snap package").click()
 
@@ -450,7 +450,8 @@ class TestSnapAddView(BaseTestSnapView):
             MatchesTagText(content, "auto_build_pocket"))
         self.assertThat(
             "Source snap channels for automatic builds:\nEdit snap package\n"
-            "core\nstable\ncore18\nbeta\nsnapcraft\nedge\n",
+            "core\nstable\ncore18\nbeta\n"
+            "core20\nedge/feature\nsnapcraft\nedge\n",
             MatchesTagText(content, "auto_build_channels"))
 
     @responses.activate
@@ -712,45 +713,18 @@ class TestSnapEditView(BaseTestSnapView):
             self.snappyseries = self.factory.makeSnappySeries(
                 usable_distro_series=[self.distroseries])
 
-    def test_edit_Asnap_built_for_OBSOLETE(self):
-        # Test that Ubuntu 15.04 Core doesn't show in the bullet list
-        # and that if the Snap was built for SnappySeries 15.04 Core
-
-        old_series = self.factory.makeUbuntuDistroSeries(
-            status=SeriesStatus.SUPPORTED)
-        with admin_logged_in():
-            snappy_series = self.factory.makeOlderSnappySeries(
-                name='15.04Obsolete', status=SeriesStatus.SUPPORTED)
-        snap = self.factory.makeSnap(
-            registrant=self.person, owner=self.person, distroseries=old_series,
-            store_series=snappy_series, branch=self.factory.makeAnyBranch())
-        self.factory.makeTeam(
-            name="new-team", displayname="New Team", members=[self.person])
-
-        snappy_series = IStore(SnappyDistroSeries).find(SnappyDistroSeries,
-                            SnappyDistroSeries.snappy_series == 1).remove()
-        browser = self.getViewBrowser(snap, view_name="+edit", user=snap.owner)
-        series = browser.getControl(
-            name="field.store_distro_series").displayOptions
-        series = [el.decode("utf8").replace(u'\xa0', '') for el in series]
-        self.assertIn('Ubuntu distroseries-100127 for 15.04Obsolete', series)
-
     def test_edit_snap(self):
         old_series = self.factory.makeUbuntuDistroSeries()
         old_branch = self.factory.makeAnyBranch()
-
-        snappy_series = IStore(SnappySeries).find(SnappySeries, SnappySeries.id == 1).one()
-
         snap = self.factory.makeSnap(
             registrant=self.person, owner=self.person, distroseries=old_series,
-            store_series=snappy_series, branch=old_branch)
+            branch=old_branch)
         self.factory.makeTeam(
             name="new-team", displayname="New Team", members=[self.person])
         new_series = self.factory.makeUbuntuDistroSeries()
         with admin_logged_in():
             new_snappy_series = self.factory.makeSnappySeries(
                 usable_distro_series=[new_series])
-
         [new_git_ref] = self.factory.makeGitRefs()
         archive = self.factory.makeArchive()
 
@@ -1704,6 +1678,7 @@ class TestSnapRequestBuildsView(BaseTestSnapView):
             Source snap channels:
             core
             core18
+            core20
             snapcraft
             The channels to use for build tools when building the snap
             package.

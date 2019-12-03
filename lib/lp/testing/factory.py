@@ -4879,32 +4879,6 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         IStore(snappy_series).flush()
         return snappy_series
 
-    def makeOlderSnappySeries(self, registrant=None, name=None, display_name=None,
-                         status=None,
-                         preferred_distro_series=None, date_created=DEFAULT,
-                         usable_distro_series=None,
-                         can_infer_distro_series=False):
-        """Make a new SnappySeries."""
-        if registrant is None:
-            registrant = self.makePerson()
-        if name is None:
-            name = self.getUniqueString(u"snappy-series-name")
-        if display_name is None:
-            display_name = SPACE.join(
-                word.capitalize() for word in name.split('-'))
-        snappy_series = getUtility(ISnappySeriesSet).new(
-            registrant, name, display_name, status,
-            preferred_distro_series=preferred_distro_series,
-            date_created=date_created)
-        if usable_distro_series is not None:
-            snappy_series.usable_distro_series = usable_distro_series
-        elif preferred_distro_series is not None:
-            snappy_series.usable_distro_series = [preferred_distro_series]
-        if can_infer_distro_series:
-            snappy_series.can_infer_distro_series = True
-        IStore(snappy_series).flush()
-        return snappy_series
-
     def makeSnapBase(self, registrant=None, name=None, display_name=None,
                      distro_series=None, build_channels=None,
                      date_created=DEFAULT):

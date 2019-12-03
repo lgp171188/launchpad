@@ -20,7 +20,7 @@ __all__ = [
     ]
 
 from lazr.restful.interfaces import IJSONPublishable
-from storm.expr import LeftJoin, Or
+from storm.expr import LeftJoin
 from storm.locals import (
     Desc,
     Not,
@@ -87,7 +87,6 @@ class SnappyDistroSeriesVocabulary(StormVocabularyBase):
         LeftJoin(Distribution, DistroSeries.distributionID == Distribution.id),
         SnappySeries,
         ]
-
     _clauses = [SnappyDistroSeries.snappy_series_id == SnappySeries.id]
 
     @property
@@ -101,19 +100,13 @@ class SnappyDistroSeriesVocabulary(StormVocabularyBase):
 
     def toTerm(self, obj):
         """See `IVocabulary`."""
-
-        # obj[0] = Distribution.display_name
-        # obj[1] = DistroSeries.name
-        # obj[2] = SnappySeries.name
-
-        obj = [str(obj[x]) for x in range(len(obj))]
-
-        if obj[1] is None:
-            token = obj[2]
+        if obj.distro_series is None:
+            token = obj.snappy_series.name
         else:
-            token = ' '.join([str(elem) for elem in obj])
-        term = SimpleTerm(obj, token, token)
-        return term
+            token = "%s/%s/%s" % (
+                obj.distro_series.distribution.name, obj.distro_series.name,
+                obj.snappy_series.name)
+        return SimpleTerm(obj, token, obj.title)
 
     def __contains__(self, value):
         """See `IVocabulary`."""
@@ -127,8 +120,6 @@ class SnappyDistroSeriesVocabulary(StormVocabularyBase):
 
     def getTermByToken(self, token):
         """See `IVocabularyTokenized`."""
-        print('TOKEN: ')
-        print(token)
         if "/" in token:
             try:
                 distribution_name, distro_series_name, snappy_series_name = (
@@ -146,10 +137,10 @@ class SnappyDistroSeriesVocabulary(StormVocabularyBase):
             SnappySeries.name == snappy_series_name,
             *self._clauses).one()
         if entry is None:
-            old_store_distro = IStore(SnappySeries).find(SnappySeries, SnappySeries.name == snappy_series_name).one()
-            removeSecurityProxy(old_store_distro)
-            if old_store_distro.status == SeriesStatus.SUPPORTED:
-                return token
+            if ISnap.providedBy(self.context):
+                removeSecurityProxy(self.context.store_series)
+                entry = SyntheticSnappyDistroSeries(self.context.store_series,
+                                                    self.context.distro_series)
             else:
                 raise LookupError(token)
         return self.toTerm(entry)
@@ -167,38 +158,24 @@ class BuildableSnappyDistroSeriesVocabulary(SnappyDistroSeriesVocabulary):
 
         entries = IStore(self._table).using(*self._origin).find(
             self._table, *self._clauses)
-        array = entries.order_by(
+        entries_as_list = list(entries.order_by(
             NullsFirst(Distribution.display_name),
             Desc(DistroSeries.date_created),
-            Desc(SnappySeries.date_created)).values(
-            Distribution.display_name, DistroSeries.name, SnappySeries.name)
-        list_entries = list(array)
-        new_list = []
-        for line in list_entries:
-            new_line = [str(line[x]) for x in range(len(line))]
-            new_list.append(new_line)
+            Desc(SnappySeries.date_created)))
+        synthetic_entries = []
+        for line in entries_as_list:
+            synthetic_obj = SyntheticSnappyDistroSeries(line.snappy_series,
+                                                        line.distro_series)
+            synthetic_entries.append(synthetic_obj)
+
         if ISnap.providedBy(self.context):
             removeSecurityProxy(self.context.store_series)
-            if self.context.store_series.status == SeriesStatus.SUPPORTED:
-                token = [
-                    str(self.context.distro_series.distribution.displayname),
-                    str(self.context.distro_series.name),
-                    'for '+str(self.context.store_series.name)]
-                if token not in new_list:
-                    new_list.append(token)
-        return new_list
+            context_obj = SyntheticSnappyDistroSeries(
+                self.context.store_series, self.context.distro_series)
+            if context_obj not in synthetic_entries:
+                synthetic_entries.append(context_obj)
 
-    @property
-    def _clauses(self):
-
-        active_clause = SnappySeries.status.is_in(ACTIVE_STATUSES)
-#        removeSecurityProxy(self.context.store_series)
-
-        if (ISnap.providedBy(self.context) and
-                 self.context.store_series.status not in ACTIVE_STATUSES):
-            active_clause = Or(
-                active_clause, SnappySeries.id == self.context.store_series.id)
-        return SnappyDistroSeriesVocabulary._clauses + [active_clause]
+        return synthetic_entries
 
 
 @implementer(IJSONPublishable)
@@ -208,6 +185,27 @@ class SnapStoreChannel(SimpleTerm):
     def toDataForJSON(self, media_type):
         """See `IJSONPublishable`."""
         return self.token
+
+
+@implementer(ISnappyDistroSeries)
+class SyntheticSnappyDistroSeries:
+    def __init__(self, snappy_series, distro_series):
+        self.snappy_series = snappy_series
+        self.distro_series = distro_series
+
+    preferred = False
+
+    @property
+    def title(self):
+        if self.snappy_series.status != SeriesStatus.CURRENT:
+            return "%s, for %s" % (
+                self.distro_series.fullseriesname, self.snappy_series.title)
+        else:
+            if self.distro_series is not None:
+                return "%s" % (
+                    self.distro_series.fullseriesname)
+            else:
+                return self.snappy_series.title
 
 
 class SnapStoreChannelVocabulary(SimpleVocabulary):

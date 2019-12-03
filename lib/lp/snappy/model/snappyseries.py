@@ -5,11 +5,6 @@
 
 from __future__ import absolute_import, print_function, unicode_literals
 
-from storm.expr import LeftJoin
-from lp.registry.model.distribution import Distribution
-
-from lp.registry.model.series import ACTIVE_STATUSES
-
 __metaclass__ = type
 __all__ = [
     'SnappyDistroSeries',
@@ -193,8 +188,7 @@ class SnappyDistroSeries(Storm):
 
     @property
     def title(self):
-        # change here the title
-        if self.snappy_series.status == SeriesStatus.SUPPORTED:
+        if self.snappy_series.status != SeriesStatus.CURRENT:
             return "%s, for %s" % (
                 self.distro_series.fullseriesname, self.snappy_series.title)
         else:
@@ -236,14 +230,6 @@ class SnappySeriesSet:
             raise NoSuchSnappySeries(name)
         return snappy_series
 
-    def getById(self, id):
-        """See `ISnappySeriesSet`."""
-        snappy_series = IStore(SnappySeries).find(
-            SnappySeries, SnappySeries.id == id).one()
-        if snappy_series is None:
-            raise NoSuchSnappySeries(id)
-        return snappy_series
-
     def getAll(self):
         """See `ISnappySeriesSet`."""
         return IStore(SnappySeries).find(SnappySeries).order_by(
@@ -260,25 +246,6 @@ class SnappyDistroSeriesSet:
             SnappyDistroSeries,
             SnappyDistroSeries.snappy_series == snappy_series,
             SnappyDistroSeries.distro_series == distro_series).one()
-
-    def getDistroSeries(self):
-        tables = [
-            SnappyDistroSeries,
-            LeftJoin(
-                DistroSeries,
-                SnappyDistroSeries.distro_series_id == DistroSeries.id),
-            LeftJoin(Distribution, DistroSeries.distributionID == Distribution.id),
-            SnappySeries,
-        ]
-        expressions = [
-            SnappyDistroSeries.snappy_series_id == SnappySeries.id,
-            SnappySeries.status.is_in(ACTIVE_STATUSES)
-        ]
-
-        distros = IStore(DistroSeries).using(*tables).find(
-            DistroSeries, *expressions).config(distinct=True)
-
-        return distros
 
     def getAll(self):
         """See `ISnappyDistroSeriesSet`."""
