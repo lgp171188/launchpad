@@ -37,6 +37,7 @@ from lp.oci.interfaces.ocirecipe import (
     IOCIRecipe,
     IOCIRecipeSet,
     OCIRecipeBuildAlreadyPending,
+    OCIRecipeChannelAlreadyExists,
     OCIRecipeNotOwner,
     )
 from lp.oci.interfaces.ocirecipebuild import IOCIRecipeBuildSet
@@ -181,26 +182,23 @@ class OCIRecipe(Storm):
         order_by = Desc(OCIRecipeBuild.id)
         return self._getBuilds(filter_term, order_by)
 
-    def _findChannels(self, filter_term, order_by):
-        query_args = [OCIRecipeChannel.recipe == self]
-        if filter_term is not None:
-            query_args.append(filter_term)
-        result = Store.of(self).find(OCIRecipeChannel, *query_args)
-        result.order_by(order_by)
-        return result
-
     @property
     def channels(self):
         """See `IOCIRecipe`."""
-        order_by = Desc(OCIRecipeChannel.name)
-        result = self._findChannels(None, order_by)
+        result = Store.of(self).find(
+            OCIRecipeChannel,
+            OCIRecipeChannel.recipe == self)
+        result.order_by(Desc(OCIRecipeChannel.name))
         return result
 
     def addChannel(self, name, git_path, build_file):
         """See `IOCIRecipe`."""
-        existing = self._findChannels([OCIRecipeChannel.name == name], None)
+        existing = Store.of(self).find(
+            OCIRecipeChannel,
+            OCIRecipeChannel.recipe == self,
+            OCIRecipeChannel.name == name)
         if existing.count():
-            raise Exception
+            raise OCIRecipeChannelAlreadyExists
         store = IMasterStore(OCIRecipeBuild)
         channel = OCIRecipeChannel(self, name, git_path, build_file)
         store.add(channel)
@@ -217,7 +215,7 @@ class OCIRecipe(Storm):
 
 
 class OCIRecipeArch(Storm):
-    """Link table back to `OCIRecipe.processors`."""
+    """Link table to back `OCIRecipe.processors`."""
 
     __storm_table__ = "OCIRecipeArch"
     __storm_primary__ = ("recipe_id", "processor_id")

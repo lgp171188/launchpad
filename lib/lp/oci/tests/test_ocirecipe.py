@@ -13,6 +13,7 @@ from lp.oci.interfaces.ocirecipe import (
     IOCIRecipe,
     IOCIRecipeSet,
     OCIRecipeBuildAlreadyPending,
+    OCIRecipeChannelAlreadyExists,
     OCIRecipeNotOwner,
     )
 from lp.oci.interfaces.ocirecipebuild import IOCIRecipeBuildSet
@@ -122,6 +123,16 @@ class TestOCIRecipe(TestCaseWithFactory):
         oci_recipe = self.factory.makeOCIRecipe()
         oci_recipe.addChannel('test-channel', '/a/path', 'afile.file')
         self.assertEqual(oci_recipe.channels.count(), 1)
+
+    def test_addChannel_existing(self):
+        oci_recipe = self.factory.makeOCIRecipe()
+        oci_recipe.addChannel('test-channel', '/a/path', 'afile.file')
+        self.assertRaises(
+            OCIRecipeChannelAlreadyExists,
+            oci_recipe.addChannel,
+            'test-channel',
+            '/a/path',
+            'afile.file')
 
     def test_removeChannel(self):
         oci_recipe = self.factory.makeOCIRecipe()

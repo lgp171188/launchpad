@@ -13,6 +13,7 @@ __all__ = [
     'IOCIRecipeSet',
     'IOCIRecipeView',
     'OCIRecipeBuildAlreadyPending',
+    'OCIRecipeChannelAlreadyExists',
     'OCIRecipeNotOwner',
     ]
 
@@ -56,6 +57,15 @@ class OCIRecipeBuildAlreadyPending(Exception):
     def __init__(self):
         super(OCIRecipeBuildAlreadyPending, self).__init__(
             "An identical build of this snap package is already pending.")
+
+
+@error_status(httplib.BAD_REQUEST)
+class OCIRecipeChannelAlreadyExists(Exception):
+    """A channel with that name already exists for this OCI recipe."""
+
+    def __init__(self):
+        super(OCIRecipeChannelAlreadyExists, self).__init__(
+            "A channel with that name already exists for this OCI recipe.")
 
 
 class IOCIRecipeView(Interface):
