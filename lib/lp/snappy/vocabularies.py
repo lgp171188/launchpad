@@ -11,7 +11,6 @@ from lp.snappy.interfaces.snappyseries import ISnappyDistroSeries
 __metaclass__ = type
 
 __all__ = [
-    'BuildableSnappyDistroSeriesVocabulary',
     'SnapDistroArchSeriesVocabulary',
     'SnappyDistroSeriesVocabulary',
     'SnappySeriesVocabulary',
@@ -39,7 +38,6 @@ from lp.registry.model.series import ACTIVE_STATUSES
 from lp.services.database.interfaces import IStore
 from lp.services.database.stormexpr import (
     IsDistinctFrom,
-    NullsFirst,
     )
 from lp.services.webapp.vocabulary import StormVocabularyBase
 from lp.snappy.interfaces.snap import ISnap
@@ -112,12 +110,24 @@ class SnappyDistroSeriesVocabulary(StormVocabularyBase):
 
     @property
     def _entries(self):
-        entries = IStore(self._table).using(*self._origin).find(
-            self._table, *self._clauses)
-        return entries.order_by(
-            NullsFirst(Distribution.display_name),
-            Desc(DistroSeries.date_created),
-            Desc(SnappySeries.date_created))
+        entries = list(IStore(self._table).using(*self._origin).find(
+            self._table, *self._clauses))
+
+        if (ISnap.providedBy(self.context) and not
+                any(entry.snappy_series == self.context.store_series
+                and entry.distro_series == self.context.distro_series
+                for entry in entries)):
+            entries.append(SyntheticSnappyDistroSeries(
+                self.context.store_series, self.context.distro_series))
+
+        sorted_entries = sorted(entries,
+                key=lambda x: x.distro_series.distribution.display_name)
+        sorted_entries = sorted(sorted_entries,
+                key=lambda x: x.distro_series.date_created)
+        sorted_entries = sorted(sorted_entries,
+                key=lambda x: x.snappy_series.date_created)
+
+        return sorted_entries
 
     def toTerm(self, obj):
         """See `IVocabulary`."""
@@ -176,36 +186,6 @@ class SnappyDistroSeriesVocabulary(StormVocabularyBase):
             raise LookupError(token)
 
         return self.toTerm(entry)
-
-
-class BuildableSnappyDistroSeriesVocabulary(SnappyDistroSeriesVocabulary):
-    """A vocabulary for searching active snappy/distro series combinations."""
-
-    _clauses = SnappyDistroSeriesVocabulary._clauses + [
-        SnappySeries.status.is_in(ACTIVE_STATUSES),
-        ]
-
-    @property
-    def _entries(self):
-
-        entries = list(IStore(self._table).using(*self._origin).find(
-            self._table, *self._clauses))
-
-        if (ISnap.providedBy(self.context) and not
-                any(entry.snappy_series == self.context.store_series
-                and entry.distro_series == self.context.distro_series
-                for entry in entries)):
-            entries.append(SyntheticSnappyDistroSeries(
-                self.context.store_series, self.context.distro_series))
-
-        sorted_entries = sorted(entries,
-                key=lambda x: x.distro_series.distribution.display_name)
-        sorted_entries = sorted(sorted_entries,
-                key=lambda x: x.distro_series.date_created)
-        sorted_entries = sorted(sorted_entries,
-                key=lambda x: x.snappy_series.date_created)
-
-        return sorted_entries
 
 
 @implementer(IJSONPublishable)
