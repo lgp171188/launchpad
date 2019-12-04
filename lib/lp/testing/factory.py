@@ -4758,6 +4758,9 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             owner = self.makeTeam(registrant)
         if distroseries is _DEFAULT:
             distroseries = self.makeDistroSeries()
+        if store_series is None:
+            store_series = self.makeSnappySeries(
+                status=SeriesStatus.DEVELOPMENT)
         if name is None:
             name = self.getUniqueString(u"snap-name")
         if branch is None and git_ref is None:
@@ -4854,7 +4857,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             SnapFile(snapbuild=snapbuild, libraryfile=libraryfile))
 
     def makeSnappySeries(self, registrant=None, name=None, display_name=None,
-                         status=SeriesStatus.DEVELOPMENT,
+                         status=None,
                          preferred_distro_series=None, date_created=DEFAULT,
                          usable_distro_series=None,
                          can_infer_distro_series=False):
