@@ -16,6 +16,7 @@ from zope.schema import TextLine
 
 from lp import _
 from lp.app.validators.name import name_validator
+from lp.app.validators.path import path_within_repo
 from lp.oci.interfaces.ocirecipe import IOCIRecipe
 
 
@@ -41,4 +42,5 @@ class IOCIRecipeChannel(Interface):
     build_file = TextLine(
         title=_("The relative path to the file within this recipe's "
                 "branch that defines how to build the recipe."),
+        constraint=path_within_repo,
         required=True)
