@@ -33,9 +33,13 @@ from lp.buildmaster.enums import (
     BuildStatus,
     )
 from lp.buildmaster.interfaces.buildfarmjob import IBuildFarmJobSource
-from lp.buildmaster.model.buildfarmjob import SpecificBuildFarmJobSourceMixin
+from lp.buildmaster.model.buildfarmjob import (
+    BuildFarmJobMixin,
+    SpecificBuildFarmJobSourceMixin,
+    )
 from lp.buildmaster.model.packagebuild import PackageBuildMixin
 from lp.oci.interfaces.ocirecipebuild import (
+    IOCIFile,
     IOCIRecipeBuild,
     IOCIRecipeBuildSet,
     )
@@ -46,6 +50,29 @@ from lp.services.database.interfaces import (
     IMasterStore,
     IStore,
     )
+
+
+@implementer(IOCIFile)
+class IOCIFile(Storm):
+
+    __storm_table__ = 'OCIFile'
+
+    id = Int(name='id', primary=True)
+
+    build_id = Int(name='build', allow_none=False)
+    build = Reference(build_id, 'OCIBuild.id')
+
+    libraryfile_id = Int(name='libraryfile', allow_none=False)
+    libraryfile = Reference(libraryfile_id, 'LibraryFileAlias.id')
+
+    digest = Unicode(name='digest', allow_none=True)
+
+    def __init__(self, ocibuild, libraryfile, digest):
+        """Construct a `OCILayerFile`."""
+        super(OCILayerFile, self).__init__()
+        self.build = build
+        self.libraryfile = libraryfile
+        self.digest = digest
 
 
 @implementer(IOCIRecipeBuild)
@@ -93,6 +120,11 @@ class OCIRecipeBuild(PackageBuildMixin, Storm):
     build_farm_job_id = Int(name='build_farm_job', allow_none=False)
     build_farm_job = Reference(build_farm_job_id, 'BuildFarmJob.id')
 
+    # Stub attributes to match the IPackageBuild interface that we
+    # will not use in this implementation.
+    pocket = None
+    distro_series = None
+
     def __init__(self, build_farm_job, requester, recipe,
                  processor, virtualized, date_created):
 
@@ -131,10 +163,42 @@ class OCIRecipeBuild(PackageBuildMixin, Storm):
         return durations[len(durations) // 2]
 
     @property
+    def upload_log_url(self):
+        """See `IOCIRecipeBuild`."""
+        if self.upload_log is None:
+            return None
+        return ProxiedLibraryFileAlias(self.upload_log, self).http_url
+
+    def getFileByFileName(self, filename):
+        result = Store.of(self).find(
+            (OCIFile, LibraryFileAlias, LibraryFileContent),
+            OCIFile.build == self.id,
+            LibraryFileAlias.id == OCIFile.libraryfile_id,
+            LibraryFileContent.id == LibraryFileAlias.contentID,
+            LibraryFileAlias.filename == filename)
+        return result.one()
+
+    def getLayerFileByDigest(self, digest):
+        file_object = Store.of(self).find(
+            LibraryFileAlias,
+            OCILayerFile.build == self.id,
+            LibraryFileAlias.id == OCILayerFile.libraryfile_id,
+            OCILayerFile.digest == digest).one()
+        if file_object is not None:
+            return file_object
+        raise NotFoundError(digest)
+
+    def addFile(self, lfa, digest=None):
+        oci_file = OCIFile(
+            build=self, libraryfile=lfa, digest=digest)
+        IMasterStore(OCIFile).add(oci_file)
+        return layer_file
+
+    @property
     def archive(self):
         # XXX twom 2019-12-05 This may need to change when an OCIProject
         # pillar isn't just a distribution
-        return self.recipe.oci_project.distribution.main_archive
+        return self.recipe.ociproject.distribution.main_archive
 
     @property
     def distribution(self):

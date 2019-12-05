@@ -7,13 +7,14 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 __all__ = [
+    'IOCIFile',
     'IOCIRecipeBuild',
     'IOCIRecipeBuildSet',
     ]
 
 from lazr.restful.fields import Reference
 from zope.interface import Interface
-from zope.schema import Text
+from zope.schema import TextLine
 
 from lp import _
 from lp.buildmaster.interfaces.buildfarmjob import ISpecificBuildFarmJobSource
@@ -21,6 +22,7 @@ from lp.buildmaster.interfaces.packagebuild import IPackageBuild
 from lp.oci.interfaces.ocirecipe import IOCIRecipe
 from lp.services.database.constants import DEFAULT
 from lp.services.fields import PublicPersonChoice
+from lp.services.librarian.interfaces import ILibraryFileAlias
 
 
 class IOCIRecipeBuildEdit(Interface):
@@ -61,3 +63,22 @@ class IOCIRecipeBuildSet(ISpecificBuildFarmJobSource):
 
     def preloadBuildsData(builds):
         """Load the data related to a list of OCI recipe builds."""
+
+
+class IOCIFile(Interface):
+    """A link between an OCI recipe build and a file in the librarian."""
+
+    build = Reference(
+        # Really IOCIBuild, patched in _schema_circular_imports.py.
+        Interface,
+        title=_("The OCI recipe build producing this file."),
+        required=True, readonly=True)
+
+    libraryfile = Reference(
+        ILibraryFileAlias, title=_("A file in the librarian."),
+        required=True, readonly=True)
+
+    digest = TextLine(
+        title=_("Content-addressable hash of the file''s contents, "
+                "used for image layers."),
+        required=False, readonly=True)
