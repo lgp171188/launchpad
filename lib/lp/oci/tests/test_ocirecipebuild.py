@@ -5,17 +5,20 @@
 
 from __future__ import absolute_import, print_function, unicode_literals
 
+from datetime import timedelta
+
 from zope.component import getUtility
+from zope.security.proxy import removeSecurityProxy
 
 from lp.app.errors import NotFoundError
+from lp.buildmaster.enums import BuildStatus
+from lp.buildmaster.interfaces.buildqueue import IBuildQueue
+from lp.buildmaster.interfaces.packagebuild import IPackageBuild
 from lp.oci.interfaces.ocirecipebuild import (
     IOCIRecipeBuild,
     IOCIRecipeBuildSet,
     )
-from lp.oci.model.ocirecipebuild import (
-    OCIFile,
-    OCIRecipeBuildSet,
-    )
+from lp.oci.model.ocirecipebuild import OCIRecipeBuildSet
 from lp.testing import (
     admin_logged_in,
     TestCaseWithFactory,
@@ -30,47 +33,68 @@ class TestOCIRecipeBuild(TestCaseWithFactory):
 
     layer = LaunchpadZopelessLayer
 
+    def setUp(self):
+        super(TestOCIRecipeBuild, self).setUp()
+        self.build = self.factory.makeOCIRecipeBuild()
+
     def test_implements_interface(self):
-        target = self.factory.makeOCIRecipeBuild()
         with admin_logged_in():
-            self.assertProvides(target, IOCIRecipeBuild)
+            self.assertProvides(self.build, IOCIRecipeBuild)
+            self.assertProvides(self.build, IPackageBuild)
 
     def test_addFile(self):
-        target = self.factory.makeOCIRecipeBuild()
         lfa = self.factory.makeLibraryFileAlias()
-        target.addFile(lfa)
-
-        _, result_lfa, _ = target.getFileByFileName(lfa.filename)
+        self.build.addFile(lfa)
+        _, result_lfa, _ = self.build.getFileByFileName(lfa.filename)
         self.assertEqual(result_lfa, lfa)
 
     def test_getFileByFileName(self):
-        oci_build = self.factory.makeOCIRecipeBuild()
-        files = [self.factory.makeOCIFile(build=oci_build) for x in range(3)]
-
-        result, _, _ = oci_build.getFileByFileName(
+        files = [self.factory.makeOCIFile(build=self.build) for x in range(3)]
+        result, _, _ = self.build.getFileByFileName(
             files[0].library_file.filename)
-
         self.assertEqual(result, files[0])
 
     def test_getLayerFileByDigest(self):
-        oci_build = self.factory.makeOCIRecipeBuild()
-        files = [self.factory.makeOCILayerFile(build=oci_build)
+        files = [self.factory.makeOCILayerFile(build=self.build)
                  for x in range(3)]
-
-        result, _, _ = oci_build.getLayerFileByDigest(
+        result, _, _ = self.build.getLayerFileByDigest(
             files[0].layer_file_digest)
-
         self.assertEqual(result, files[0])
 
     def test_getLayerFileByDigest_missing(self):
-        oci_build = self.factory.makeOCIRecipeBuild()
-        files = [self.factory.makeOCILayerFile(build=oci_build)
+        [self.factory.makeOCILayerFile(build=self.build)
                  for x in range(3)]
-
         self.assertRaises(
             NotFoundError,
-            oci_build.getLayerFileByDigest,
+            self.build.getLayerFileByDigest,
             'missing')
+
+    def test_estimateDuration(self):
+        # Without previous builds, the default time estimate is 30m.
+        self.assertEqual(1800, self.build.estimateDuration().seconds)
+
+    def test_estimateDuration_with_history(self):
+        # Previous successful builds of the same OCI recipe are used for
+        # estimates.
+        oci_build = self.factory.makeOCIRecipeBuild(
+            status=BuildStatus.FULLYBUILT, duration=timedelta(seconds=335))
+        for i in range(3):
+            self.factory.makeOCIRecipeBuild(
+                requester=oci_build.requester, recipe=oci_build.recipe,
+                status=BuildStatus.FAILEDTOBUILD,
+                duration=timedelta(seconds=20))
+        self.assertEqual(335, oci_build.estimateDuration().seconds)
+
+    def test_queueBuild(self):
+        # OCIRecipeBuild can create the queue entry for itself.
+        bq = self.build.queueBuild()
+        self.assertProvides(bq, IBuildQueue)
+        self.assertEqual(
+            self.build.build_farm_job, removeSecurityProxy(bq)._build_farm_job)
+        self.assertEqual(self.build, bq.specific_build)
+        self.assertEqual(self.build.virtualized, bq.virtualized)
+        self.assertIsNotNone(bq.processor)
+        self.assertEqual(bq, self.build.buildqueue_record)
 
 
 class TestOCIRecipeBuildSet(TestCaseWithFactory):

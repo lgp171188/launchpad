@@ -4984,7 +4984,9 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         return OCIRecipeArch(recipe, processor)
 
     def makeOCIRecipeBuild(self, requester=None, recipe=None,
-                           distro_arch_series=None, date_created=DEFAULT):
+                           distro_arch_series=None, date_created=DEFAULT,
+                           status=BuildStatus.NEEDSBUILD, builder=None,
+                           duration=None):
         """Make a new OCIRecipeBuild."""
         if requester is None:
             requester = self.makePerson()
@@ -4992,8 +4994,19 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             distro_arch_series = self.makeDistroArchSeries()
         if recipe is None:
             recipe = self.makeOCIRecipe()
-        return getUtility(IOCIRecipeBuildSet).new(
+        oci_build = getUtility(IOCIRecipeBuildSet).new(
             requester, recipe, distro_arch_series, date_created)
+        if duration is not None:
+            removeSecurityProxy(oci_build).updateStatus(
+                BuildStatus.BUILDING, builder=builder,
+                date_started=oci_build.date_created)
+            removeSecurityProxy(oci_build).updateStatus(
+                status, builder=builder,
+                date_finished=oci_build.date_started + duration)
+        else:
+            removeSecurityProxy(oci_build).updateStatus(
+                status, builder=builder)
+        return oci_build
 
     def makeOCIFile(self, build=None, library_file=None,
                     layer_file_digest=None):

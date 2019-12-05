@@ -15,6 +15,7 @@ __all__ = [
 from datetime import timedelta
 
 from datetime import timedelta
+
 import pytz
 from storm.locals import (
     Bool,
@@ -43,6 +44,8 @@ from lp.oci.interfaces.ocirecipebuild import (
     IOCIRecipeBuild,
     IOCIRecipeBuildSet,
     )
+from lp.registry.model.person import Person
+from lp.services.database.bulk import load_related
 from lp.services.database.constants import DEFAULT
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.enumcol import DBEnum
@@ -50,9 +53,10 @@ from lp.services.database.interfaces import (
     IMasterStore,
     IStore,
     )
+from lp.services.librarian.browser import ProxiedLibraryFileAlias
 from lp.services.librarian.model import (
-    LibraryFileContent,
     LibraryFileAlias,
+    LibraryFileContent,
     )
 
 
@@ -265,7 +269,14 @@ class OCIRecipeBuildSet(SpecificBuildFarmJobSourceMixin):
 
     def preloadBuildsData(self, builds):
         """See `IOCIRecipeBuildSet`."""
-        # XXX twom 2019-12-02 Currently a no-op skeleton, to be filled in
+        # Circular import.
+        from lp.oci.model.ocirecipe import OCIRecipe
+        load_related(Person, builds, ["requester_id"])
+        lfas = load_related(LibraryFileAlias, builds, ["log_id"])
+        load_related(LibraryFileContent, lfas, ["contentID"])
+        load_related(OCIRecipe, builds, ["recipe_id"])
+        # XXX twom 2019-12-05 This needs to be extended to include
+        # OCIRecipeBuildJob when that exists.
         return
 
     def getByID(self, build_id):
