@@ -7,6 +7,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 __all__ = [
+    'OCIFile',
     'OCIRecipeBuild',
     'OCIRecipeBuildSet',
     ]
@@ -28,15 +29,13 @@ from storm.store import EmptyResultSet
 from zope.component import getUtility
 from zope.interface import implementer
 
+from lp.app.errors import NotFoundError
 from lp.buildmaster.enums import (
     BuildFarmJobType,
     BuildStatus,
     )
 from lp.buildmaster.interfaces.buildfarmjob import IBuildFarmJobSource
-from lp.buildmaster.model.buildfarmjob import (
-    BuildFarmJobMixin,
-    SpecificBuildFarmJobSourceMixin,
-    )
+from lp.buildmaster.model.buildfarmjob import SpecificBuildFarmJobSourceMixin
 from lp.buildmaster.model.packagebuild import PackageBuildMixin
 from lp.oci.interfaces.ocirecipebuild import (
     IOCIFile,
@@ -50,29 +49,33 @@ from lp.services.database.interfaces import (
     IMasterStore,
     IStore,
     )
+from lp.services.librarian.model import (
+    LibraryFileContent,
+    LibraryFileAlias,
+    )
 
 
 @implementer(IOCIFile)
-class IOCIFile(Storm):
+class OCIFile(Storm):
 
     __storm_table__ = 'OCIFile'
 
     id = Int(name='id', primary=True)
 
     build_id = Int(name='build', allow_none=False)
-    build = Reference(build_id, 'OCIBuild.id')
+    build = Reference(build_id, 'OCIRecipeBuild.id')
 
-    libraryfile_id = Int(name='libraryfile', allow_none=False)
-    libraryfile = Reference(libraryfile_id, 'LibraryFileAlias.id')
+    libraryfile_id = Int(name='library_file', allow_none=False)
+    library_file = Reference(libraryfile_id, 'LibraryFileAlias.id')
 
-    digest = Unicode(name='digest', allow_none=True)
+    layer_file_digest = Unicode(name='layer_file_digest', allow_none=True)
 
-    def __init__(self, ocibuild, libraryfile, digest):
-        """Construct a `OCILayerFile`."""
-        super(OCILayerFile, self).__init__()
+    def __init__(self, build, library_file, layer_file_digest=None):
+        """Construct a `OCIFile`."""
+        super(OCIFile, self).__init__()
         self.build = build
-        self.libraryfile = libraryfile
-        self.digest = digest
+        self.library_file = library_file
+        self.layer_file_digest = layer_file_digest
 
 
 @implementer(IOCIRecipeBuild)
@@ -178,21 +181,22 @@ class OCIRecipeBuild(PackageBuildMixin, Storm):
             LibraryFileAlias.filename == filename)
         return result.one()
 
-    def getLayerFileByDigest(self, digest):
+    def getLayerFileByDigest(self, layer_file_digest):
         file_object = Store.of(self).find(
-            LibraryFileAlias,
-            OCILayerFile.build == self.id,
-            LibraryFileAlias.id == OCILayerFile.libraryfile_id,
-            OCILayerFile.digest == digest).one()
+            (OCIFile, LibraryFileAlias, LibraryFileContent),
+            OCIFile.build == self.id,
+            LibraryFileAlias.id == OCIFile.libraryfile_id,
+            LibraryFileContent.id == LibraryFileAlias.contentID,
+            OCIFile.layer_file_digest == layer_file_digest).one()
         if file_object is not None:
             return file_object
-        raise NotFoundError(digest)
+        raise NotFoundError(layer_file_digest)
 
-    def addFile(self, lfa, digest=None):
+    def addFile(self, lfa, layer_file_digest=None):
         oci_file = OCIFile(
-            build=self, libraryfile=lfa, digest=digest)
+            build=self, library_file=lfa, layer_file_digest=layer_file_digest)
         IMasterStore(OCIFile).add(oci_file)
-        return layer_file
+        return oci_file
 
     @property
     def archive(self):

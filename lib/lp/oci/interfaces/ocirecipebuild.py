@@ -26,8 +26,16 @@ from lp.services.librarian.interfaces import ILibraryFileAlias
 
 
 class IOCIRecipeBuildEdit(Interface):
+
     # XXX twom 2020-02-10 This will probably need cancel() implementing
-    pass
+
+    def addFile(lfa, layer_file_digest):
+        """Add an OCI file to this build.
+
+        :param lfa: An `ILibraryFileAlias`.
+        :param layer_file_digest: Digest for this file, used for image layers.
+        :return: An `IOCILayerFile`.
+        """
 
 
 class IOCIRecipeBuildView(IPackageBuild):
@@ -42,6 +50,21 @@ class IOCIRecipeBuildView(IPackageBuild):
         title=_("The OCI recipe to build."),
         required=True,
         readonly=True)
+
+    def getFileByFileName():
+        """Retrieve a file by filename
+
+        :return: A result set of (`IOCIFile`, `ILibraryFileAlias`,
+            `ILibraryFileContent`).
+        """
+
+    def getLayerFileByDigest(layer_file_digest):
+        """Retrieve a layer file by the digest.
+
+        :param layer_file_digest: The digest to look up.
+        :raises NotFoundError: if no file exists with the given digest.
+        :return: The corresponding `ILibraryFileAlias`.
+        """
 
 
 class IOCIRecipeBuildAdmin(Interface):
@@ -74,11 +97,11 @@ class IOCIFile(Interface):
         title=_("The OCI recipe build producing this file."),
         required=True, readonly=True)
 
-    libraryfile = Reference(
+    library_file = Reference(
         ILibraryFileAlias, title=_("A file in the librarian."),
         required=True, readonly=True)
 
-    digest = TextLine(
+    layer_file_digest = TextLine(
         title=_("Content-addressable hash of the file''s contents, "
                 "used for image layers."),
         required=False, readonly=True)

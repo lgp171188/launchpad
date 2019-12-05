@@ -1102,4 +1102,4 @@ patch_collection_property(IOCIRecipe, 'completed_builds', IOCIRecipeBuild)
 patch_collection_property(IOCIRecipe, 'pending_builds', IOCIRecipeBuild)
 
 # IOCIRecipeBuild
-patch_reference_property(IOCIFile, 'digest', IOCIRecipeBuild)
+patch_reference_property(IOCIFile, 'layer_file_digest', IOCIRecipeBuild)
