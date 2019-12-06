@@ -64,6 +64,7 @@ of properties:
     score: None
     self_link: u'http://api.launchpad.test/beta/~cprov/+archive/ubuntu/ppa/+build/26'
     source_package_name: u'cdrkit'
+    source_package_version: u'1.0'
     status: u'Failed to build'
     title: u'i386 build of cdrkit 1.0 in ubuntu breezy-autotest RELEASE'
     upload_log_url: None
@@ -97,6 +98,7 @@ Whereas the 1.0 webservice for builds maintains the old property names
     score: None
     self_link: u'http://.../~cprov/+archive/ubuntu/ppa/+build/26'
     source_package_name: u'cdrkit'
+    source_package_version: u'1.0'
     title: u'i386 build of cdrkit 1.0 in ubuntu breezy-autotest RELEASE'
     upload_log_url: None
     web_link: u'http://launchpad.../~cprov/+archive/ubuntu/ppa/+build/26'
@@ -131,6 +133,7 @@ devel webservice also contains build date_started and duration.
     score: None
     self_link: u'http://.../~cprov/+archive/ubuntu/ppa/+build/26'
     source_package_name: u'cdrkit'
+    source_package_version: u'1.0'
     title: u'i386 build of cdrkit 1.0 in ubuntu breezy-autotest RELEASE'
     upload_log_url: None
     web_link: u'http://launchpad.../~cprov/+archive/ubuntu/ppa/+build/26'
