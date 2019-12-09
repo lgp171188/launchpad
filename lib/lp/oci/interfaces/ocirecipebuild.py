@@ -92,8 +92,7 @@ class IOCIFile(Interface):
     """A link between an OCI recipe build and a file in the librarian."""
 
     build = Reference(
-        # Really IOCIBuild, patched in _schema_circular_imports.py.
-        Interface,
+        IOCIRecipeBuild,
         title=_("The OCI recipe build producing this file."),
         required=True, readonly=True)
 
@@ -102,6 +101,6 @@ class IOCIFile(Interface):
         required=True, readonly=True)
 
     layer_file_digest = TextLine(
-        title=_("Content-addressable hash of the file''s contents, "
+        title=_("Content-addressable hash of the file's contents, "
                 "used for image layers."),
         required=False, readonly=True)
