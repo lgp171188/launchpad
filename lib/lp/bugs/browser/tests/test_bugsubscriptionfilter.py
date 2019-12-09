@@ -1,18 +1,15 @@
-# Copyright 2010-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for bug subscription filter browser code."""
 
 __metaclass__ = type
 
-from functools import partial
+import json
 from urlparse import urlparse
 
-from lazr.restfulclient.errors import BadRequest
 from lxml import html
-from storm.exceptions import LostObjectError
 from testtools.matchers import StartsWith
-import transaction
 
 from lp.app.enums import InformationType
 from lp.bugs.browser.structuralsubscription import (
@@ -23,21 +20,19 @@ from lp.bugs.interfaces.bugtask import (
     BugTaskImportance,
     BugTaskStatus,
     )
+from lp.services.webapp.interfaces import OAuthPermission
 from lp.services.webapp.publisher import canonical_url
 from lp.services.webapp.servers import LaunchpadTestRequest
 from lp.testing import (
     anonymous_logged_in,
+    api_url,
     login_person,
     normalize_whitespace,
     person_logged_in,
     TestCaseWithFactory,
-    ws_object,
     )
-from lp.testing.layers import (
-    AppServerLayer,
-    DatabaseFunctionalLayer,
-    LaunchpadFunctionalLayer,
-    )
+from lp.testing.layers import DatabaseFunctionalLayer
+from lp.testing.pages import webservice_for_person
 from lp.testing.views import create_initialized_view
 
 
@@ -53,12 +48,14 @@ class TestBugSubscriptionFilterBase:
                 self.owner, self.owner)
             self.initial_filter = self.subscription.bug_filters.one()
             self.subscription_filter = self.subscription.newBugFilter()
+            self.subscription_url = api_url(self.subscription)
+            self.subscription_filter_url = api_url(self.subscription_filter)
 
 
 class TestBugSubscriptionFilterNavigation(
     TestBugSubscriptionFilterBase, TestCaseWithFactory):
 
-    layer = LaunchpadFunctionalLayer
+    layer = DatabaseFunctionalLayer
 
     def test_canonical_url(self):
         url = urlparse(canonical_url(self.subscription_filter))
@@ -80,35 +77,34 @@ class TestBugSubscriptionFilterNavigation(
 class TestBugSubscriptionFilterAPI(
     TestBugSubscriptionFilterBase, TestCaseWithFactory):
 
-    layer = AppServerLayer
+    layer = DatabaseFunctionalLayer
 
     def test_visible_attributes(self):
         # Bug subscription filters are not private objects. All attributes are
         # visible to everyone.
-        transaction.commit()
-        # Create a service for a new person.
-        service = self.factory.makeLaunchpadService()
-        get_ws_object = partial(ws_object, service)
-        ws_subscription = get_ws_object(self.subscription)
-        ws_subscription_filter = get_ws_object(self.subscription_filter)
+        webservice = webservice_for_person(self.factory.makePerson())
+        ws_subscription = self.getWebserviceJSON(
+            webservice, self.subscription_url)
+        ws_subscription_filter = self.getWebserviceJSON(
+            webservice, self.subscription_filter_url)
         self.assertEqual(
-            ws_subscription.self_link,
-            ws_subscription_filter.structural_subscription_link)
+            ws_subscription["self_link"],
+            ws_subscription_filter["structural_subscription_link"])
         self.assertEqual(
             self.subscription_filter.find_all_tags,
-            ws_subscription_filter.find_all_tags)
+            ws_subscription_filter["find_all_tags"])
         self.assertEqual(
             self.subscription_filter.description,
-            ws_subscription_filter.description)
+            ws_subscription_filter["description"])
         self.assertEqual(
             list(self.subscription_filter.statuses),
-            ws_subscription_filter.statuses)
+            ws_subscription_filter["statuses"])
         self.assertEqual(
             list(self.subscription_filter.importances),
-            ws_subscription_filter.importances)
+            ws_subscription_filter["importances"])
         self.assertEqual(
             list(self.subscription_filter.tags),
-            ws_subscription_filter.tags)
+            ws_subscription_filter["tags"])
 
     def test_structural_subscription_cannot_be_modified(self):
         # Bug filters cannot be moved from one structural subscription to
@@ -117,15 +113,14 @@ class TestBugSubscriptionFilterAPI(
         user = self.factory.makePerson(name=u"baz")
         with person_logged_in(self.owner):
             user_subscription = self.structure.addBugSubscription(user, user)
-        transaction.commit()
-        # Create a service for the structure owner.
-        service = self.factory.makeLaunchpadService(self.owner)
-        get_ws_object = partial(ws_object, service)
-        ws_user_subscription = get_ws_object(user_subscription)
-        ws_subscription_filter = get_ws_object(self.subscription_filter)
-        ws_subscription_filter.structural_subscription = ws_user_subscription
-        error = self.assertRaises(BadRequest, ws_subscription_filter.lp_save)
-        self.assertEqual(400, error.response.status)
+            user_subscription_url = api_url(user_subscription)
+        webservice = webservice_for_person(
+            self.owner, permission=OAuthPermission.WRITE_PUBLIC)
+        response = webservice.patch(
+            self.subscription_filter_url, "application/json",
+            json.dumps(
+                {"structural_subscription_link": user_subscription_url}))
+        self.assertEqual(400, response.status)
         self.assertEqual(
             self.subscription,
             self.subscription_filter.structural_subscription)
@@ -134,14 +129,12 @@ class TestBugSubscriptionFilterAPI(
 class TestBugSubscriptionFilterAPIModifications(
     TestBugSubscriptionFilterBase, TestCaseWithFactory):
 
-    layer = AppServerLayer
+    layer = DatabaseFunctionalLayer
 
     def setUp(self):
         super(TestBugSubscriptionFilterAPIModifications, self).setUp()
-        transaction.commit()
-        self.service = self.factory.makeLaunchpadService(self.owner)
-        self.ws_subscription_filter = ws_object(
-            self.service, self.subscription_filter)
+        self.webservice = webservice_for_person(
+            self.owner, permission=OAuthPermission.WRITE_PUBLIC)
 
     def test_modify_tags_fields(self):
         # Two tags-related fields - find_all_tags and tags - can be
@@ -154,11 +147,14 @@ class TestBugSubscriptionFilterAPIModifications(
         self.assertFalse(self.subscription_filter.exclude_any_tags)
         self.assertEqual(set(), self.subscription_filter.tags)
 
-        # Modify, save, and start a new transaction.
-        self.ws_subscription_filter.find_all_tags = True
-        self.ws_subscription_filter.tags = ["foo", "-bar", "*", "-*"]
-        self.ws_subscription_filter.lp_save()
-        transaction.begin()
+        # Apply changes.
+        response = self.webservice.patch(
+            self.subscription_filter_url, "application/json",
+            json.dumps({
+                "find_all_tags": True,
+                "tags": ["foo", "-bar", "*", "-*"],
+                }))
+        self.assertEqual(209, response.status)
 
         # Updated state.
         self.assertTrue(self.subscription_filter.find_all_tags)
@@ -170,13 +166,13 @@ class TestBugSubscriptionFilterAPIModifications(
 
     def test_modify_description(self):
         # The description can be modified.
-        self.assertEqual(
-            None, self.subscription_filter.description)
+        self.assertIsNone(self.subscription_filter.description)
 
-        # Modify, save, and start a new transaction.
-        self.ws_subscription_filter.description = u"It's late."
-        self.ws_subscription_filter.lp_save()
-        transaction.begin()
+        # Apply changes.
+        response = self.webservice.patch(
+            self.subscription_filter_url, "application/json",
+            json.dumps({"description": u"It's late."}))
+        self.assertEqual(209, response.status)
 
         # Updated state.
         self.assertEqual(
@@ -186,10 +182,11 @@ class TestBugSubscriptionFilterAPIModifications(
         # The statuses field can be modified.
         self.assertEqual(set(), self.subscription_filter.statuses)
 
-        # Modify, save, and start a new transaction.
-        self.ws_subscription_filter.statuses = ["New", "Triaged"]
-        self.ws_subscription_filter.lp_save()
-        transaction.begin()
+        # Apply changes.
+        response = self.webservice.patch(
+            self.subscription_filter_url, "application/json",
+            json.dumps({"statuses": ["New", "Triaged"]}))
+        self.assertEqual(209, response.status)
 
         # Updated state.
         self.assertEqual(
@@ -200,10 +197,11 @@ class TestBugSubscriptionFilterAPIModifications(
         # The importances field can be modified.
         self.assertEqual(set(), self.subscription_filter.importances)
 
-        # Modify, save, and start a new transaction.
-        self.ws_subscription_filter.importances = ["Low", "High"]
-        self.ws_subscription_filter.lp_save()
-        transaction.begin()
+        # Apply changes.
+        response = self.webservice.patch(
+            self.subscription_filter_url, "application/json",
+            json.dumps({"importances": ["Low", "High"]}))
+        self.assertEqual(209, response.status)
 
         # Updated state.
         self.assertEqual(
@@ -212,11 +210,13 @@ class TestBugSubscriptionFilterAPIModifications(
 
     def test_delete(self):
         # Subscription filters can be deleted.
-        self.ws_subscription_filter.lp_delete()
-        transaction.begin()
-        self.assertRaises(
-            LostObjectError, getattr, self.subscription_filter,
-            "find_all_tags")
+        self.assertContentEqual(
+            [self.initial_filter, self.subscription_filter],
+            self.subscription.bug_filters)
+        response = self.webservice.delete(self.subscription_filter_url)
+        self.assertEqual(200, response.status)
+        self.assertContentEqual(
+            [self.initial_filter], self.subscription.bug_filters)
 
 
 class TestBugSubscriptionFilterView(
@@ -489,7 +489,7 @@ class TestBugSubscriptionFilterEditView(
 class TestBugSubscriptionFilterAdvancedFeatures(TestCaseWithFactory):
     """A base class for testing advanced structural subscription features."""
 
-    layer = LaunchpadFunctionalLayer
+    layer = DatabaseFunctionalLayer
 
     def setUp(self):
         super(TestBugSubscriptionFilterAdvancedFeatures, self).setUp()
