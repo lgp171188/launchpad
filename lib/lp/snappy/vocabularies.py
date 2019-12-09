@@ -138,7 +138,7 @@ class SnappyDistroSeriesVocabulary(StormVocabularyBase):
     def toTerm(self, obj):
         """See `IVocabulary`."""
         if obj.distro_series is None:
-                token = obj.snappy_series.name
+            token = obj.snappy_series.name
         else:
             token = "%s/%s/%s" % (
                 obj.distro_series.distribution.name, obj.distro_series.name,
