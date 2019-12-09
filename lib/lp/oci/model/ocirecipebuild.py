@@ -39,6 +39,7 @@ from lp.buildmaster.enums import (
 from lp.buildmaster.interfaces.buildfarmjob import IBuildFarmJobSource
 from lp.buildmaster.model.buildfarmjob import SpecificBuildFarmJobSourceMixin
 from lp.buildmaster.model.packagebuild import PackageBuildMixin
+from lp.oci.interfaces.ocirecipe import IOCIRecipeSet
 from lp.oci.interfaces.ocirecipebuild import (
     IOCIFile,
     IOCIRecipeBuild,
@@ -268,7 +269,8 @@ class OCIRecipeBuildSet(SpecificBuildFarmJobSourceMixin):
         load_related(Person, builds, ["requester_id"])
         lfas = load_related(LibraryFileAlias, builds, ["log_id"])
         load_related(LibraryFileContent, lfas, ["contentID"])
-        load_related(OCIRecipe, builds, ["recipe_id"])
+        recipes = load_related(OCIRecipe, builds, ["recipe_id"])
+        getUtility(IOCIRecipeSet).preloadDataForOCIRecipes(recipes)
         # XXX twom 2019-12-05 This needs to be extended to include
         # OCIRecipeBuildJob when that exists.
         return

@@ -55,15 +55,17 @@ class TestOCIRecipeBuild(TestCaseWithFactory):
         self.assertEqual(result, files[0])
 
     def test_getLayerFileByDigest(self):
-        files = [self.factory.makeOCILayerFile(build=self.build)
+        files = [self.factory.makeOCIFile(
+                    build=self.build, layer_file_digest=unicode(x))
                  for x in range(3)]
         result, _, _ = self.build.getLayerFileByDigest(
             files[0].layer_file_digest)
         self.assertEqual(result, files[0])
 
     def test_getLayerFileByDigest_missing(self):
-        [self.factory.makeOCILayerFile(build=self.build)
-                 for x in range(3)]
+        [self.factory.makeOCIFile(
+            build=self.build, layer_file_digest=unicode(x))
+         for x in range(3)]
         self.assertRaises(
             NotFoundError,
             self.build.getLayerFileByDigest,
