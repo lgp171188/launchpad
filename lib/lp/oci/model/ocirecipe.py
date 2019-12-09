@@ -308,15 +308,5 @@ class OCIRecipeSet:
             person_ids.add(recipe.registrant_id)
             person_ids.add(recipe.owner_id)
 
-        repositories = load_related(
-            GitRepository, recipes, ["git_repository_id"])
-        if repositories:
-            GenericGitCollection.preloadDataForRepositories(repositories)
-        GenericGitCollection.preloadVisibleRepositories(repositories, user)
-
-        # We need the target repository owner as well; unlike branches,
-        # repository unique names aren't trigger-maintained.
-        person_ids.update(repository.owner_id for repository in repositories)
-
         list(getUtility(IPersonSet).getPrecachedPersonsFromIDs(
             person_ids, need_validity=True))
