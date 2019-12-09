@@ -117,7 +117,7 @@ class TestOCIRecipeBuildSet(TestCaseWithFactory):
         with admin_logged_in():
             self.assertProvides(target, IOCIRecipeBuild)
 
-    def test_getById(self):
+    def test_getByID(self):
         builds = [self.factory.makeOCIRecipeBuild() for x in range(3)]
         result = getUtility(IOCIRecipeBuildSet).getByID(builds[1].id)
         self.assertEqual(result, builds[1])

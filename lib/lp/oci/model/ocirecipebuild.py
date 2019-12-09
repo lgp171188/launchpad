@@ -170,13 +170,6 @@ class OCIRecipeBuild(PackageBuildMixin, Storm):
         durations.sort()
         return durations[len(durations) // 2]
 
-    @property
-    def upload_log_url(self):
-        """See `IOCIRecipeBuild`."""
-        if self.upload_log is None:
-            return None
-        return ProxiedLibraryFileAlias(self.upload_log, self).http_url
-
     def getFileByFileName(self, filename):
         result = Store.of(self).find(
             (OCIFile, LibraryFileAlias, LibraryFileContent),
@@ -226,7 +219,8 @@ class OCIRecipeBuild(PackageBuildMixin, Storm):
         result = store.find(
             (OCIRecipeBuild.date_started, OCIRecipeBuild.date_finished),
             OCIRecipeBuild.recipe == self.recipe,
-            OCIRecipeBuild.status == BuildStatus.FULLYBUILT)
+            OCIRecipeBuild.status == BuildStatus.FULLYBUILT,
+            OCIRecipeBuild.processor == self.processor)
         result.order_by(Desc(OCIRecipeBuild.date_finished))
         durations = [row[1] - row[0] for row in result[:9]]
         if len(durations) == 0:
