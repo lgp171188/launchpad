@@ -8,6 +8,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 from lp.registry.interfaces.series import SeriesStatus
 from lp.snappy.interfaces.snappyseries import ISnappyDistroSeries
 
+
 __metaclass__ = type
 
 __all__ = [
@@ -83,15 +84,27 @@ class SyntheticSnappyDistroSeries:
 
     @property
     def title(self):
-        if self.snappy_series.status != SeriesStatus.CURRENT:
-            return "%s, for %s" % (
-                self.distro_series.fullseriesname, self.snappy_series.title)
-        else:
-            if self.distro_series is not None:
-                return "%s" % (
-                    self.distro_series.fullseriesname)
+        if self.distro_series is not None:
+            if self.snappy_series.status != SeriesStatus.CURRENT:
+                return "%s, for %s" % (
+                    self.distro_series.fullseriesname,
+                    self.snappy_series.title)
             else:
-                return self.snappy_series.title
+                return self.distro_series.fullseriesname
+        else:
+            return self.snappy_series.title
+
+
+def sorting_tuple_date_created(element):
+
+    if element.distro_series is not None:
+        if element.snappy_series is not None:
+            return ((1, element.distro_series.display_name),
+                    (1, element.distro_series.date_created),
+                    element.snappy_series.date_created)
+    else:
+        if element.snappy_series is not None:
+            return ((0, None), (0, None), element.snappy_series.date_created)
 
 
 class SnappyDistroSeriesVocabulary(StormVocabularyBase):
@@ -106,7 +119,8 @@ class SnappyDistroSeriesVocabulary(StormVocabularyBase):
         LeftJoin(Distribution, DistroSeries.distributionID == Distribution.id),
         SnappySeries,
         ]
-    _clauses = [SnappyDistroSeries.snappy_series_id == SnappySeries.id]
+    _clauses = [SnappyDistroSeries.snappy_series_id == SnappySeries.id,
+                SnappySeries.status.is_in(ACTIVE_STATUSES)]
 
     @property
     def _entries(self):
@@ -115,24 +129,16 @@ class SnappyDistroSeriesVocabulary(StormVocabularyBase):
 
         if (ISnap.providedBy(self.context) and not
                 any(entry.snappy_series == self.context.store_series
-                and entry.distro_series == self.context.distro_series
-                for entry in entries)):
+                    and entry.distro_series == self.context.distro_series
+                    for entry in entries)):
             entries.append(SyntheticSnappyDistroSeries(
                 self.context.store_series, self.context.distro_series))
-
-        sorted_entries = sorted(entries,
-                key=lambda x: x.distro_series.distribution.display_name)
-        sorted_entries = sorted(sorted_entries,
-                key=lambda x: x.distro_series.date_created)
-        sorted_entries = sorted(sorted_entries,
-                key=lambda x: x.snappy_series.date_created)
-
-        return sorted_entries
+        return sorted(entries, key=sorting_tuple_date_created)
 
     def toTerm(self, obj):
         """See `IVocabulary`."""
         if obj.distro_series is None:
-            token = obj.snappy_series.name
+                token = obj.snappy_series.name
         else:
             token = "%s/%s/%s" % (
                 obj.distro_series.distribution.name, obj.distro_series.name,
@@ -171,8 +177,8 @@ class SnappyDistroSeriesVocabulary(StormVocabularyBase):
         if entry is None and ISnap.providedBy(self.context):
             context_store_series_name = self.context.store_series.name
             if self.context.distro_series is not None:
-                context_distribution_name = \
-                    self.context.distro_series.distribution.name
+                context_distribution_name = (
+                    self.context.distro_series.distribution.name)
                 context_distro_series_name = self.context.distro_series.name
             else:
                 context_distribution_name = None

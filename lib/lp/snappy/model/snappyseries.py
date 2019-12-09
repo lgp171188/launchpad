@@ -188,15 +188,15 @@ class SnappyDistroSeries(Storm):
 
     @property
     def title(self):
-        if self.snappy_series.status != SeriesStatus.CURRENT:
-            return "%s, for %s" % (
-                self.distro_series.fullseriesname, self.snappy_series.title)
-        else:
-            if self.distro_series is not None:
-                return "%s" % (
-                    self.distro_series.fullseriesname)
+        if self.distro_series is not None:
+            if self.snappy_series.status != SeriesStatus.CURRENT:
+                return "%s, for %s" % (
+                    self.distro_series.fullseriesname,
+                    self.snappy_series.title)
             else:
-                return self.snappy_series.title
+                return self.distro_series.fullseriesname
+        else:
+            return self.snappy_series.title
 
 
 @implementer(ISnappySeriesSet)

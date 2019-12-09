@@ -197,6 +197,3 @@ class ISnappyDistroSeriesSet(Interface):
 
     def getAll():
         """Return all `SnappyDistroSeries`."""
-
-    def getDistroSeries():
-        """Return all `DistroSeries`."""

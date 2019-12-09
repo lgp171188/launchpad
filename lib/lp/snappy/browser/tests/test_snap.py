@@ -432,8 +432,6 @@ class TestSnapAddView(BaseTestSnapView):
         browser.getControl(
             name="field.auto_build_channels.core18").value = "beta"
         browser.getControl(
-            name="field.auto_build_channels.core20").value = "edge/feature"
-        browser.getControl(
             name="field.auto_build_channels.snapcraft").value = "edge"
         browser.getControl("Create snap package").click()
 
@@ -450,8 +448,7 @@ class TestSnapAddView(BaseTestSnapView):
             MatchesTagText(content, "auto_build_pocket"))
         self.assertThat(
             "Source snap channels for automatic builds:\nEdit snap package\n"
-            "core\nstable\ncore18\nbeta\n"
-            "core20\nedge/feature\nsnapcraft\nedge\n",
+            "core\nstable\ncore18\nbeta\nsnapcraft\nedge\n",
             MatchesTagText(content, "auto_build_channels"))
 
     @responses.activate
@@ -711,15 +708,16 @@ class TestSnapEditView(BaseTestSnapView):
             version="13.10")
         with admin_logged_in():
             self.snappyseries = self.factory.makeSnappySeries(
-                usable_distro_series=[self.distroseries],
-                status=SeriesStatus.DEVELOPMENT)
+                usable_distro_series=[self.distroseries])
 
     def test_edit_snap(self):
         old_series = self.factory.makeUbuntuDistroSeries()
         old_branch = self.factory.makeAnyBranch()
+        with admin_logged_in():
+            snappy_series = self.factory.makeSnappySeries()
         snap = self.factory.makeSnap(
             registrant=self.person, owner=self.person, distroseries=old_series,
-            branch=old_branch)
+            branch=old_branch, store_series=snappy_series)
         self.factory.makeTeam(
             name="new-team", displayname="New Team", members=[self.person])
         new_series = self.factory.makeUbuntuDistroSeries()
@@ -816,10 +814,14 @@ class TestSnapEditView(BaseTestSnapView):
         self.assertSqlAttributeEqualsDate(snap, "date_last_modified", UTC_NOW)
 
     def test_edit_snap_already_exists(self):
+        with admin_logged_in():
+            snappy_series = self.factory.makeSnappySeries()
         snap = self.factory.makeSnap(
-            registrant=self.person, owner=self.person, name="one")
+            registrant=self.person, owner=self.person, name="one",
+            store_series=snappy_series)
         self.factory.makeSnap(
-            registrant=self.person, owner=self.person, name="two")
+            registrant=self.person, owner=self.person, name="two",
+            store_series=snappy_series)
         browser = self.getViewBrowser(snap, user=self.person)
         browser.getLink("Edit snap package").click()
         browser.getControl(name="field.name").value = "two"
@@ -833,8 +835,7 @@ class TestSnapEditView(BaseTestSnapView):
         series = self.factory.makeUbuntuDistroSeries()
         with admin_logged_in():
             snappy_series = self.factory.makeSnappySeries(
-                usable_distro_series=[series],
-                status=SeriesStatus.DEVELOPMENT)
+                usable_distro_series=[series])
         login_person(self.person)
         snap = self.factory.makeSnap(
             registrant=self.person, owner=self.person, distroseries=series,
@@ -854,8 +855,7 @@ class TestSnapEditView(BaseTestSnapView):
         series = self.factory.makeUbuntuDistroSeries()
         with admin_logged_in():
             snappy_series = self.factory.makeSnappySeries(
-                usable_distro_series=[series],
-                status=SeriesStatus.DEVELOPMENT)
+                usable_distro_series=[series])
         login_person(self.person)
         snap = self.factory.makeSnap(
             registrant=self.person, owner=self.person, distroseries=series,
@@ -876,8 +876,7 @@ class TestSnapEditView(BaseTestSnapView):
         series = self.factory.makeUbuntuDistroSeries()
         with admin_logged_in():
             snappy_series = self.factory.makeSnappySeries(
-                usable_distro_series=[series],
-                status=SeriesStatus.DEVELOPMENT)
+                usable_distro_series=[series])
         login_person(self.person)
         snap = self.factory.makeSnap(
             registrant=self.person, owner=self.person, distroseries=series,
@@ -901,8 +900,7 @@ class TestSnapEditView(BaseTestSnapView):
         series = self.factory.makeUbuntuDistroSeries()
         with admin_logged_in():
             snappy_series = self.factory.makeSnappySeries(
-                usable_distro_series=[series],
-                status=SeriesStatus.DEVELOPMENT)
+                usable_distro_series=[series])
         old_ref = self.factory.makeGitRefRemote()
         new_ref = self.factory.makeGitRefRemote()
         new_repository_url = new_ref.repository_url
@@ -932,8 +930,7 @@ class TestSnapEditView(BaseTestSnapView):
                 processor=processor)
         with admin_logged_in():
             snappyseries = self.factory.makeSnappySeries(
-                usable_distro_series=[distroseries],
-                status=SeriesStatus.DEVELOPMENT)
+                usable_distro_series=[distroseries])
         return distroseries, snappyseries
 
     def assertSnapProcessors(self, snap, names):
@@ -1078,8 +1075,7 @@ class TestSnapEditView(BaseTestSnapView):
         # Changing the store series requires reauthorization.
         with admin_logged_in():
             new_snappyseries = self.factory.makeSnappySeries(
-                usable_distro_series=[self.distroseries],
-                status=SeriesStatus.DEVELOPMENT)
+                usable_distro_series=[self.distroseries])
         sds = getUtility(ISnappyDistroSeriesSet).getByBothSeries(
             new_snappyseries, self.distroseries)
         self.assertNeedStoreReauth(True, {}, {"store_distro_series": sds})
@@ -1703,7 +1699,6 @@ class TestSnapRequestBuildsView(BaseTestSnapView):
             Source snap channels:
             core
             core18
-            core20
             snapcraft
             The channels to use for build tools when building the snap
             package.
