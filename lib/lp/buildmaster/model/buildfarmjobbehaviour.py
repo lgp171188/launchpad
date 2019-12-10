@@ -301,6 +301,22 @@ class BuildFarmJobBehaviourBase:
         transaction.commit()
 
     @defer.inlineCallbacks
+    def _downloadFiles(self, filemap, upload_path, logger):
+        filenames_to_download = []
+        for filename, sha1 in filemap.items():
+            logger.info("Grabbing file: %s (%s)" % (
+                filename, self._slave.getURL(sha1)))
+            out_file_name = os.path.join(upload_path, filename)
+            # If the evaluated output file name is not within our
+            # upload path, then we don't try to copy this or any
+            # subsequent files.
+            if not os.path.realpath(out_file_name).startswith(upload_path):
+                raise BuildDaemonError(
+                    "Build returned a file named %r." % filename)
+            filenames_to_download.append((sha1, out_file_name))
+        yield self._slave.getFiles(filenames_to_download, logger=logger)
+
+    @defer.inlineCallbacks
     def handleSuccess(self, slave_status, logger):
         """Handle a package that built successfully.
 
@@ -349,7 +365,7 @@ class BuildFarmJobBehaviourBase:
                 raise BuildDaemonError(
                     "Build returned a file named %r." % filename)
             filenames_to_download.append((sha1, out_file_name))
-        yield self._slave.getFiles(filenames_to_download, logger=logger)
+        yield self._downloadFiles(filemap, upload_path, logger)
 
         transaction.commit()
 
