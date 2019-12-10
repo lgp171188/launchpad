@@ -217,6 +217,25 @@ class WaitingSlave(OkSlave):
         return defer.succeed(None)
 
 
+class WaitingSlaveWithFiles(WaitingSlave):
+    """A mock slave that has files that can be downloaded."""
+
+    def __init__(self, *args, **kwargs):
+        self._test_files = {}
+        self._got_file_record = []
+        super(WaitingSlaveWithFiles, self).__init__(*args, **kwargs)
+
+    def getFile(self, hash, file_to_write):
+        if hash in self.valid_file_hashes:
+            if isinstance(file_to_write, types.StringTypes):
+                file_to_write = open(file_to_write, 'wb')
+            with open(self._test_files[hash], 'rb') as source:
+                file_to_write.write(source.read())
+                file_to_write.close()
+                self._got_file_record.append(hash)
+            return defer.succeed(None)
+
+
 class AbortingSlave(OkSlave):
     """A mock slave that looks like it's in the process of aborting."""
 
