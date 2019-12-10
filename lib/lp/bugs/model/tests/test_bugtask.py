@@ -10,7 +10,6 @@ import subprocess
 import unittest
 
 from lazr.lifecycle.snapshot import Snapshot
-from lazr.restfulclient.errors import Unauthorized
 from storm.store import Store
 from testtools.matchers import Equals
 from testtools.testcase import ExpectedException
@@ -86,12 +85,16 @@ from lp.services.log.logger import DevNullLogger
 from lp.services.propertycache import get_property_cache
 from lp.services.searchbuilder import any
 from lp.services.webapp.authorization import check_permission
-from lp.services.webapp.interfaces import ILaunchBag
+from lp.services.webapp.interfaces import (
+    ILaunchBag,
+    OAuthPermission,
+    )
 from lp.services.webapp.snapshot import notify_modified
 from lp.soyuz.interfaces.archive import ArchivePurpose
 from lp.testing import (
     admin_logged_in,
     ANONYMOUS,
+    api_url,
     EventRecorder,
     feature_flags,
     login,
@@ -103,15 +106,14 @@ from lp.testing import (
     StormStatementRecorder,
     TestCase,
     TestCaseWithFactory,
-    ws_object,
     )
 from lp.testing.fakemethod import FakeMethod
 from lp.testing.layers import (
-    AppServerLayer,
     CeleryJobLayer,
     DatabaseFunctionalLayer,
     )
 from lp.testing.matchers import HasQueryCount
+from lp.testing.pages import webservice_for_person
 
 
 BugData = namedtuple("BugData", ['owner', 'distro', 'distro_release',
@@ -2953,29 +2955,32 @@ class TestValidateNewTarget(TestCaseWithFactory, ValidateTargetMixin):
 class TestWebservice(TestCaseWithFactory):
     """Tests for the webservice."""
 
-    layer = AppServerLayer
+    layer = DatabaseFunctionalLayer
 
     def test_delete_bugtask(self):
         """Test that a bugtask can be deleted."""
         owner = self.factory.makePerson()
         some_person = self.factory.makePerson()
-        db_bug = self.factory.makeBug()
-        db_bugtask = self.factory.makeBugTask(bug=db_bug, owner=owner)
-        transaction.commit()
-        logout()
+        bug = self.factory.makeBug()
+        bugtask = self.factory.makeBugTask(bug=bug, owner=owner)
+        bugtask_url = api_url(bugtask)
 
         # It will fail for an unauthorised user.
-        launchpad = self.factory.makeLaunchpadService(some_person)
-        bugtask = ws_object(launchpad, db_bugtask)
-        self.assertRaises(Unauthorized, bugtask.lp_delete)
+        webservice = webservice_for_person(
+            some_person, permission=OAuthPermission.WRITE_PUBLIC,
+            default_api_version="devel")
+        response = webservice.delete(bugtask_url)
+        self.assertEqual(401, response.status)
 
-        launchpad = self.factory.makeLaunchpadService(owner)
-        bugtask = ws_object(launchpad, db_bugtask)
-        bugtask.lp_delete()
-        transaction.commit()
+        webservice = webservice_for_person(
+            owner, permission=OAuthPermission.WRITE_PUBLIC,
+            default_api_version="devel")
+        response = webservice.delete(bugtask_url)
+        self.assertEqual(200, response.status)
+
         # Check the delete really worked.
-        with person_logged_in(removeSecurityProxy(db_bug).owner):
-            self.assertEqual([db_bug.default_bugtask], db_bug.bugtasks)
+        with person_logged_in(removeSecurityProxy(bug).owner):
+            self.assertEqual([bug.default_bugtask], bug.bugtasks)
 
 
 class TestBugTaskUserHasBugSupervisorPrivileges(TestCaseWithFactory):
