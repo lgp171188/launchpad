@@ -60,6 +60,7 @@ CREATE UNIQUE INDEX ocirecipe__owner__ociproject__key
 CREATE UNIQUE INDEX ocirecipe__ociproject__ociproject_default__key
     ON OCIRecipe (ociproject)
     WHERE ociproject_default;
+CREATE INDEX ocirecipe__registrant__idx ON OCIRecipe (registrant);
 CREATE INDEX ocirecipe__ociproject__idx ON OCIRecipe (ociproject);
 CREATE INDEX ocirecipe__registry__idx ON OCIRecipe (registry);
 
