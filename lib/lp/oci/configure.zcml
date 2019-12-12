@@ -63,4 +63,10 @@
         <allow interface="lp.buildmaster.interfaces.buildfarmjob.ISpecificBuildFarmJobSource" />
     </securedutility>
 
+    <adapter
+        for="lp.oci.interfaces.ocirecipebuild.IOCIRecipeBuild"
+        provides="lp.buildmaster.interfaces.buildfarmjobbehaviour.IBuildFarmJobBehaviour"
+        factory="lp.oci.model.ocirecipebuildbehaviour.OCIRecipeBuildBehaviour"
+        permission="zope.Public" />
+
 </configure>

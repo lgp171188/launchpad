@@ -45,6 +45,7 @@ from lp.oci.interfaces.ocirecipebuild import (
     IOCIRecipeBuildSet,
     )
 from lp.registry.model.person import Person
+from lp.services.config import config
 from lp.services.database.bulk import load_related
 from lp.services.database.constants import DEFAULT
 from lp.services.database.decoratedresultset import DecoratedResultSet
@@ -256,6 +257,14 @@ class OCIRecipeBuild(PackageBuildMixin, Storm):
         # XXX twom 2019-12-05 This may need to change when an OCIProject
         # pillar isn't just a distribution
         return self.recipe.oci_project.distribution
+
+    def notify(self, extra_info=None):
+        """See `IPackageBuild`."""
+        if not config.builddmaster.send_build_notification:
+            return
+        if self.status == BuildStatus.FULLYBUILT:
+            return
+        # XXX twom 2019-12-11 This should send mail
 
 
 @implementer(IOCIRecipeBuildSet)
