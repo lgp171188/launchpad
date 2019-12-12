@@ -3,6 +3,32 @@
 
 SET client_min_messages=ERROR;
 
+CREATE TABLE OCIRegistry (
+    id serial PRIMARY KEY,
+    date_created timestamp without time zone DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'UTC') NOT NULL,
+    registrant integer NOT NULL REFERENCES person,
+    name text NOT NULL,
+    title text NOT NULL,
+    base_url text NOT NULL,
+    active boolean DEFAULT true NOT NULL,
+    CONSTRAINT valid_name CHECK (valid_name(name))
+);
+
+COMMENT ON TABLE OCIRegistry IS 'A registry for Open Container Initiative images.';
+COMMENT ON COLUMN OCIRegistry.date_created IS 'The date on which this registry was created in Launchpad.';
+COMMENT ON COLUMN OCIRegistry.registrant IS 'The user who registered this registry.';
+COMMENT ON COLUMN OCIRegistry.name IS 'The name of this registry.';
+COMMENT ON COLUMN OCIRegistry.title IS 'A title for this registry.';
+COMMENT ON COLUMN OCIRegistry.base_url IS 'The base URL for this registry.';
+COMMENT ON COLUMN OCIRegistry.active IS 'If True, this registry is active.';
+
+CREATE UNIQUE INDEX ociregistry__name__key
+    ON OCIRegistry (name);
+CREATE UNIQUE INDEX ociregistry__base_url__key
+    ON OCIRegistry (base_url);
+CREATE INDEX ociregistry__registrant__idx
+    ON OCIRegistry (registrant);
+
 CREATE TABLE OCIRecipe (
     id serial PRIMARY KEY,
     date_created timestamp without time zone DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'UTC') NOT NULL,
@@ -13,7 +39,8 @@ CREATE TABLE OCIRecipe (
     ociproject_default boolean DEFAULT false NOT NULL,
     description text,
     require_virtualized boolean DEFAULT true NOT NULL,
-    build_daily boolean DEFAULT false NOT NULL
+    build_daily boolean DEFAULT false NOT NULL,
+    registry integer REFERENCES ociregistry
 );
 
 COMMENT ON TABLE OCIRecipe IS 'A recipe for building Open Container Initiative images.';
@@ -26,6 +53,7 @@ COMMENT ON COLUMN OCIRecipe.ociproject_default IS 'True if this recipe is the de
 COMMENT ON COLUMN OCIRecipe.description IS 'A short description of this recipe.';
 COMMENT ON COLUMN OCIRecipe.require_virtualized IS 'If True, this recipe must be built only on a virtual machine.';
 COMMENT ON COLUMN OCIRecipe.build_daily IS 'If True, this recipe should be built daily.';
+COMMENT ON COLUMN OCIRecipe.registry IS 'The OCI registry that builds of this recipe should be pushed to.';
 
 CREATE UNIQUE INDEX ocirecipe__owner__ociproject__key
     ON OCIRecipe (owner, ociproject);
@@ -33,6 +61,7 @@ CREATE UNIQUE INDEX ocirecipe__ociproject__ociproject_default__key
     ON OCIRecipe (ociproject)
     WHERE ociproject_default;
 CREATE INDEX ocirecipe__ociproject__idx ON OCIRecipe (ociproject);
+CREATE INDEX ocirecipe__registry__idx ON OCIRecipe (registry);
 
 CREATE TABLE OCIRecipeChannel (
     recipe integer NOT NULL REFERENCES ocirecipe,
