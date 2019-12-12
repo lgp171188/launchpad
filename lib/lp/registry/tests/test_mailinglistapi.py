@@ -1,4 +1,4 @@
-# Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Unit tests for the private MailingList API."""
@@ -10,8 +10,14 @@ from email import message_from_string
 from textwrap import dedent
 import xmlrpclib
 
+from testtools.matchers import (
+    Equals,
+    MatchesDict,
+    MatchesSetwise,
+    )
 import transaction
 from zope.component import getUtility
+from zope.security.proxy import removeSecurityProxy
 
 from lp.registry.enums import TeamMembershipPolicy
 from lp.registry.interfaces.mailinglist import (
@@ -32,7 +38,10 @@ from lp.registry.xmlrpc.mailinglist import (
     )
 from lp.services.config import config
 from lp.services.identity.interfaces.account import AccountStatus
-from lp.services.identity.interfaces.emailaddress import EmailAddressStatus
+from lp.services.identity.interfaces.emailaddress import (
+    EmailAddressStatus,
+    IEmailAddressSet,
+    )
 from lp.services.messages.interfaces.message import IMessageSet
 from lp.testing import (
     admin_logged_in,
@@ -157,6 +166,85 @@ class MailingListAPITestCase(TestCaseWithFactory):
             yes_person.personal_standing = PersonalStanding.GOOD
         self.assertIs(True, self.api.inGoodStanding('yes@eg.dom'))
         self.assertIs(False, self.api.inGoodStanding('no@eg.dom'))
+
+    def test_updateTeamAddresses(self):
+        production_config_name = self.factory.getUniqueString()
+        config.push(
+            production_config_name,
+            '\n[mailman]\nbuild_host_name: lists.launchpad.net\n')
+        try:
+            teams = [
+                self.factory.makeTeam(name='team-%d' % i) for i in range(3)]
+            # A person with an ordinary email address.
+            example_person = self.factory.makePerson(
+                email='person@example.org')
+            # A person who has weirdly ended up with a lists email address.
+            lists_person = self.factory.makePerson(
+                email='person@lists.launchpad.net')
+            for i in (0, 1):
+                self.factory.makeMailingList(teams[i], teams[i].teamowner)
+            for i in (1, 2):
+                # Give some teams another email address; updateTeamAddresses
+                # leaves these alone.
+                self.factory.makeEmail('team-%d@example.org' % i, teams[i])
+        finally:
+            config.pop(production_config_name)
+
+        def getEmails(people):
+            email_address_set = getUtility(IEmailAddressSet)
+            return {
+                person.name: set(
+                    removeSecurityProxy(email_address).email
+                    for email_address in email_address_set.getByPerson(person))
+                for person in people}
+
+        self.assertThat(
+            getEmails(teams + [example_person, lists_person]),
+            MatchesDict({
+                teams[0].name: MatchesSetwise(
+                    Equals('team-0@lists.launchpad.net')),
+                teams[1].name: MatchesSetwise(
+                    Equals('team-1@lists.launchpad.net'),
+                    Equals('team-1@example.org')),
+                teams[2].name: MatchesSetwise(
+                    Equals('team-2@example.org')),
+                example_person.name: MatchesSetwise(
+                    Equals('person@example.org')),
+                lists_person.name: MatchesSetwise(
+                    Equals('person@lists.launchpad.net')),
+                }))
+
+        staging_config_name = self.factory.getUniqueString()
+        config.push(
+            staging_config_name,
+            '\n[launchpad]\nis_demo: True\n'
+            '\n[mailman]\nbuild_host_name: lists.launchpad.test\n')
+        try:
+            self.api.updateTeamAddresses('lists.launchpad.net')
+        finally:
+            config.pop(staging_config_name)
+
+        self.assertThat(
+            getEmails(teams + [example_person, lists_person]),
+            MatchesDict({
+                teams[0].name: MatchesSetwise(
+                    Equals('team-0@lists.launchpad.test')),
+                teams[1].name: MatchesSetwise(
+                    Equals('team-1@lists.launchpad.test'),
+                    Equals('team-1@example.org')),
+                teams[2].name: MatchesSetwise(
+                    Equals('team-2@example.org')),
+                example_person.name: MatchesSetwise(
+                    Equals('person@example.org')),
+                lists_person.name: MatchesSetwise(
+                    Equals('person@lists.launchpad.net')),
+                }))
+
+    def test_updateTeamAddresses_refuses_on_production(self):
+        self.pushConfig('launchpad', is_demo=False)
+        self.assertIsInstance(
+            self.api.updateTeamAddresses('lists.launchpad.net'),
+            faults.PermissionDenied)
 
 
 class MailingListAPIWorkflowTestCase(TestCaseWithFactory):

@@ -1,4 +1,4 @@
-# Copyright 2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2011-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 """Test the  mlist-sync script."""
 
@@ -8,23 +8,22 @@ __all__ = []
 from contextlib import contextmanager
 import os
 import shutil
-from subprocess import (
-    PIPE,
-    Popen,
-    )
 import tempfile
 
 from Mailman import mm_cfg
 from Mailman.MailList import MailList
 from Mailman.Utils import list_names
-from transaction import commit
+import transaction
 
 from lp.services.config import config
 from lp.services.database.interfaces import IStore
 from lp.services.identity.model.emailaddress import EmailAddressSet
+from lp.services.log.logger import BufferLogger
+from lp.services.mailman.scripts.mlist_sync import MailingListSyncScript
 from lp.services.mailman.tests import MailmanTestCase
 from lp.testing import person_logged_in
-from lp.testing.layers import DatabaseFunctionalLayer
+from lp.testing.dbuser import dbuser
+from lp.testing.layers import ZopelessDatabaseLayer
 
 
 @contextmanager
@@ -46,10 +45,23 @@ def production_config(host_name):
         config.pop('production')
 
 
+@contextmanager
+def staging_config():
+    """Simulate a staging Launchpad config."""
+    config.push('staging', """\
+        [launchpad]
+        is_demo: True
+        """)
+    try:
+        yield
+    finally:
+        config.pop('staging')
+
+
 class TestMListSync(MailmanTestCase):
     """Test mlist-sync script."""
 
-    layer = DatabaseFunctionalLayer
+    layer = ZopelessDatabaseLayer
 
     def setUp(self):
         super(TestMListSync, self).setUp()
@@ -79,16 +91,17 @@ class TestMListSync(MailmanTestCase):
         """Run mlist-sync.py."""
         store = IStore(self.team)
         store.flush()
-        commit()
+        transaction.commit()
         store.invalidate()
-        proc = Popen(
-            ('scripts/mlist-sync.py', '--hostname',
-             self.host_name, source_dir),
-            stdout=PIPE, stderr=PIPE,
-            cwd=config.root,
-            env=dict(LPCONFIG=DatabaseFunctionalLayer.appserver_config_name))
-        stdout, stderr = proc.communicate()
-        return proc.returncode, stderr
+        script = MailingListSyncScript(
+            test_args=['--hostname', self.host_name, source_dir],
+            logger=BufferLogger())
+        script.txn = transaction
+        try:
+            with dbuser('mlist-sync'), staging_config():
+                return script.main()
+        finally:
+            self.addDetail('log', script.logger.content)
 
     def getListInfo(self):
         """Return a list of 4-tuples of Mailman mailing list info."""
@@ -110,8 +123,7 @@ class TestMListSync(MailmanTestCase):
     def test_staging_sync(self):
         # List is synced with updated URLs and email addresses.
         source_dir = self.setupProductionFiles()
-        returncode, stderr = self.runMListSync(source_dir)
-        self.assertEqual(0, returncode, stderr)
+        self.assertEqual(0, self.runMListSync(source_dir))
         list_summary = [(
             'team-1',
             'lists.launchpad.test',
@@ -129,8 +141,7 @@ class TestMListSync(MailmanTestCase):
                 mm_cfg.VAR_PREFIX, 'mhonarc', 'no-team'))
         self.addCleanup(self.cleanMailmanList, None, 'no-team')
         source_dir = self.setupProductionFiles()
-        returncode, stderr = self.runMListSync(source_dir)
-        self.assertEqual(0, returncode, stderr)
+        self.assertEqual(0, self.runMListSync(source_dir))
         list_summary = [(
             'team-1',
             'lists.launchpad.test',
@@ -144,8 +155,7 @@ class TestMListSync(MailmanTestCase):
         with production_config(self.host_name):
             self.team.setContactAddress(email)
         source_dir = self.setupProductionFiles()
-        returncode, stderr = self.runMListSync(source_dir)
-        self.assertEqual(0, returncode, stderr)
+        self.assertEqual(0, self.runMListSync(source_dir))
         list_summary = [(
             'team-1',
             'lists.launchpad.test',
