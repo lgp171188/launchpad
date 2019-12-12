@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -25,8 +25,10 @@ from sqlobject import (
     )
 from storm.expr import (
     And,
+    Func,
     Join,
     Or,
+    Select,
     )
 from storm.info import ClassAlias
 from storm.store import Store
@@ -73,6 +75,7 @@ from lp.services.database.sqlbase import (
     SQLBase,
     sqlvalues,
     )
+from lp.services.database.stormexpr import Concatenate
 from lp.services.identity.interfaces.account import AccountStatus
 from lp.services.identity.interfaces.emailaddress import (
     EmailAddressStatus,
@@ -700,6 +703,30 @@ class MailingListSet:
         """See `IMailingListSet`."""
         return MailingList.select('status IN %s' % sqlvalues(
             (MailingListStatus.CONSTRUCTING, MailingListStatus.UPDATING)))
+
+    def updateTeamAddresses(self, old_hostname):
+        """See `IMailingListSet`."""
+        # Circular import.
+        from lp.registry.model.person import Person
+        # This is really an operation on EmailAddress rows, but it's so
+        # specific to mailing lists that it seems better to keep it here.
+        old_suffix = u"@" + old_hostname
+        if config.mailman.build_host_name:
+            new_suffix = u"@" + config.mailman.build_host_name
+        else:
+            new_suffix = u"@" + getfqdn()
+        clauses = [
+            EmailAddress.person == Person.id,
+            Person.teamowner != None,
+            Person.id == MailingList.teamID,
+            EmailAddress.email.endswith(old_suffix),
+            ]
+        addresses = IMasterStore(EmailAddress).find(
+            EmailAddress,
+            EmailAddress.id.is_in(Select(EmailAddress.id, And(*clauses))))
+        addresses.set(email=Concatenate(
+            Func("left", EmailAddress.email, -len(old_suffix)),
+            new_suffix))
 
 
 @implementer(IMailingListSubscription)

@@ -1,4 +1,4 @@
-# Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """XMLRPC APIs for mailing lists."""
@@ -29,9 +29,7 @@ from lp.registry.interfaces.person import (
     )
 from lp.services.config import config
 from lp.services.encoding import escape_nonascii_uniquely
-from lp.services.identity.interfaces.account import (
-    INACTIVE_ACCOUNT_STATUSES,
-    )
+from lp.services.identity.interfaces.account import INACTIVE_ACCOUNT_STATUSES
 from lp.services.identity.interfaces.emailaddress import (
     EmailAddressStatus,
     IEmailAddressSet,
@@ -285,3 +283,11 @@ class MailingListAPIView(LaunchpadXMLRPCView):
                 response[message_id] = (team_name, disposition)
             message_set.acknowledgeMessagesWithStatus(status)
         return response
+
+    def updateTeamAddresses(self, old_hostname):
+        """See `IMailingListAPIView`."""
+        # For safety, we only permit this on non-production sites.
+        if not config.launchpad.is_demo:
+            return faults.PermissionDenied()
+        getUtility(IMailingListSet).updateTeamAddresses(old_hostname)
+        return True
