@@ -1,4 +1,4 @@
-# Copyright 2009 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """An IMailer that stores messages in a specified mbox file."""
@@ -69,3 +69,10 @@ class MboxMailer:
             chained_mailer = getUtility(IMailer, self.mailer)
             chained_mailer.send(fromaddr, toaddrs, message)
         return message_id
+
+    def vote(self, fromaddr, toaddrs, message):
+        pass
+
+    def abort(self):
+        # We don't do any work until send() is called, so aborting is trivial.
+        pass
