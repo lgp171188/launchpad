@@ -201,7 +201,7 @@ class TestHandleStatusForOCIRecipeBuild(MakeOCIBuildMixin,
         with ExpectedException(
                 BuildDaemonError,
                 "Build returned a file named "
-                "u'/notvalid/config_file_1.json'."):
+                "'/notvalid/config_file_1.json'."):
             with dbuser(config.builddmaster.dbuser):
                 yield self.behaviour.handleStatus(
                     self.build.buildqueue_record, 'OK',
@@ -221,7 +221,7 @@ class TestHandleStatusForOCIRecipeBuild(MakeOCIBuildMixin,
         # the upload directory will not be collected.
         with ExpectedException(
                 BuildDaemonError,
-                "Build returned a file named u'../config_file_1.json'."):
+                "Build returned a file named '../config_file_1.json'."):
             with dbuser(config.builddmaster.dbuser):
                 yield self.behaviour.handleStatus(
                     self.build.buildqueue_record, 'OK',

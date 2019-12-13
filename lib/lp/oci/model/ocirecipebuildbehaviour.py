@@ -42,17 +42,19 @@ class OCIRecipeBuildBehaviour(BuildFarmJobBehaviourBase):
     # but are not used in this implementation.
     distro_arch_series = None
 
-    def _fetchIntermediaryFile(self, name, filemap, upload_path):
-        file_hash = filemap[name]
-        file_path = os.path.join(upload_path, name)
-        self._slave.getFile(file_hash, file_path)
-
+    def _ensureFilePath(self, file_name, file_path, upload_path):
         # If the evaluated output file name is not within our
         # upload path, then we don't try to copy this or any
         # subsequent files.
-        if not os.path.realpath(file_path).startswith(upload_path):
+        if not os.path.normpath(file_path).startswith(upload_path):
             raise BuildDaemonError(
-                "Build returned a file named %r." % name)
+                "Build returned a file named '%s'." % file_name)
+
+    def _fetchIntermediaryFile(self, name, filemap, upload_path):
+        file_hash = filemap[name]
+        file_path = os.path.join(upload_path, name)
+        self._ensureFilePath(name, file_path, upload_path)
+        self._slave.getFile(file_hash, file_path)
 
         with open(file_path, 'r') as file_fp:
             contents = json.load(file_fp)
@@ -77,17 +79,15 @@ class OCIRecipeBuildBehaviour(BuildFarmJobBehaviourBase):
             with open(layer_path, 'wb') as layer_fp:
                 copy_and_close(librarian_layer_file, layer_fp)
 
-    def _convertToRetrievableFile(self, upload_path, filename, filemap):
-        out_path = os.path.join(upload_path, filename)
-        if not os.path.realpath(out_path).startswith(upload_path):
-            raise BuildDaemonError(
-                "Build returned a file named %r." % filename)
-        return (filemap[filename], out_path)
+    def _convertToRetrievableFile(self, upload_path, file_name, filemap):
+        file_path = os.path.join(upload_path, file_name)
+        self._ensureFilePath(file_name, file_path, upload_path)
+        return (filemap[file_name], file_path)
 
     @defer.inlineCallbacks
     def _downloadFiles(self, filemap, upload_path, logger):
         """Download required artifact files."""
-        # We don't want to download all of the file that have been created,
+        # We don't want to download all of the files that have been created,
         # just the ones that are mentioned in the manifest and config.
 
         manifest = self._fetchIntermediaryFile(
@@ -110,6 +110,6 @@ class OCIRecipeBuildBehaviour(BuildFarmJobBehaviourBase):
     def verifySuccessfulBuild(self):
         """See `IBuildFarmJobBehaviour`."""
         # The implementation in BuildFarmJobBehaviourBase checks whether the
-        # target suite is modifiable in the target archive.  However, a
+        # target suite is modifiable in the target archive.  However, an
         # `OCIRecipeBuild` does not use an archive in this manner.
         return True
