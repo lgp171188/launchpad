@@ -68,10 +68,15 @@ class TestOCIBuildBehaviour(TestCaseWithFactory):
 
 class TestHandleStatusForOCIRecipeBuild(MakeOCIBuildMixin,
                                         TestCaseWithFactory):
+    # This is mostly copied from TestHandleStatusMixin, however
+    # we can't use all of those tests, due to the way OCIRecipeBuildBehaviour
+    # parses the file contents, rather than just retrieving all that are
+    # available. There's also some differences in the filemap handling, as
+    # we need a much more complex filemap here.
 
     layer = LaunchpadZopelessLayer
 
-    def _create_test_file(self, name, content, hash):
+    def _createTestFile(self, name, content, hash):
         path = os.path.join(self.test_files_dir, name)
         with open(path, 'wb') as fp:
             fp.write(content)
@@ -96,11 +101,7 @@ class TestHandleStatusForOCIRecipeBuild(MakeOCIBuildMixin,
         tempdir = tempfile.mkdtemp()
         self.addCleanup(shutil.rmtree, tempdir)
         self.upload_root = tempdir
-        tmp_builddmaster_root = """
-        [builddmaster]
-        root: %s
-        """ % self.upload_root
-        config.push('tmp_builddmaster_root', tmp_builddmaster_root)
+        self.pushConfig('builddmaster', root=self.upload_root)
 
         # We stub out our builds getUploaderCommand() method so
         # we can check whether it was called as well as
@@ -122,21 +123,21 @@ class TestHandleStatusForOCIRecipeBuild(MakeOCIBuildMixin,
         }
 
         self.test_files_dir = tempfile.mkdtemp()
-        self._create_test_file('buildlog', '', 'buildlog')
-        self._create_test_file(
+        self._createTestFile('buildlog', '', 'buildlog')
+        self._createTestFile(
             'manifest.json',
             '[{"Config": "config_file_1.json", '
             '"Layers": ["layer_1/layer.tar", "layer_2/layer.tar"]}]',
             'manifest_hash')
-        self._create_test_file(
+        self._createTestFile(
             'digests.json',
             json.dumps(digests),
             'digests_hash')
-        self._create_test_file(
+        self._createTestFile(
             'config_file_1.json',
             '{"rootfs": {"diff_ids": ["diff_id_1", "diff_id_2"]}}',
             'config_1_hash')
-        self._create_test_file(
+        self._createTestFile(
             'layer_2.tar.gz',
             '',
             'layer_2_hash'
@@ -168,7 +169,7 @@ class TestHandleStatusForOCIRecipeBuild(MakeOCIBuildMixin,
              'layer_2_hash'],
             self.slave._got_file_record)
         # This hash should not appear as it is already in the librarian
-        self.assertTrue('layer_1_hash' not in self.slave._got_file_record)
+        self.assertNotIn('layer_1_hash', self.slave._got_file_record)
         self.assertEqual(BuildStatus.UPLOADING, self.build.status)
         self.assertResultCount(1, "incoming")
 
@@ -188,7 +189,7 @@ class TestHandleStatusForOCIRecipeBuild(MakeOCIBuildMixin,
     @defer.inlineCallbacks
     def test_handleStatus_OK_absolute_filepath(self):
 
-        self._create_test_file(
+        self._createTestFile(
             'manifest.json',
             '[{"Config": "/notvalid/config_file_1.json", '
             '"Layers": ["layer_1/layer.tar", "layer_2/layer.tar"]}]',
@@ -210,7 +211,7 @@ class TestHandleStatusForOCIRecipeBuild(MakeOCIBuildMixin,
     @defer.inlineCallbacks
     def test_handleStatus_OK_relative_filepath(self):
 
-        self._create_test_file(
+        self._createTestFile(
             'manifest.json',
             '[{"Config": "../config_file_1.json", '
             '"Layers": ["layer_1/layer.tar", "layer_2/layer.tar"]}]',
