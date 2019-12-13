@@ -1,4 +1,4 @@
-# Copyright 2010-2017 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -38,10 +38,7 @@ from zope.interface.exceptions import (
     DoesNotImplement,
     )
 from zope.interface.verify import verifyObject
-from zope.security.proxy import (
-    builtin_isinstance,
-    Proxy,
-    )
+from zope.security.proxy import Proxy
 
 from lp.services.database.sqlbase import flush_database_caches
 from lp.services.webapp import canonical_url
@@ -249,7 +246,7 @@ class IsProxied(Matcher):
         return "Is proxied."
 
     def match(self, matchee):
-        if not builtin_isinstance(matchee, Proxy):
+        if not isinstance(matchee, Proxy):
             return IsNotProxied(matchee)
         return None
 

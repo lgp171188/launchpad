@@ -1,4 +1,4 @@
-# Copyright 2009 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
@@ -171,7 +171,9 @@ class IPoll(Interface):
             raise Invalid(
                 "A poll cannot close at the time (or before) it opens.")
         now = datetime.now(pytz.UTC)
-        twelve_hours_ahead = now + timedelta(hours=12)
+        # Allow a bit of slack to account for time between form creation and
+        # validation.
+        twelve_hours_ahead = now + timedelta(hours=12) - timedelta(seconds=60)
         start_date = poll.dateopens.astimezone(pytz.UTC)
         if start_date < twelve_hours_ahead:
             raise Invalid(

@@ -1,10 +1,13 @@
-# Copyright 2009-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 import datetime
+import hashlib
+import hmac
 
 from testtools import TestCase
 from testtools.matchers import Contains
+from zope.session.session import digestEncode
 
 from lp.services.webapp.login import (
     isFreshLogin,
@@ -66,6 +69,23 @@ class TestLaunchpadCookieClientIdManager(TestCase):
         self.assertThat(
             dict(request.response.getHeaders())['Set-Cookie'],
             Contains('; httponly;'))
+
+    def test_stable_client_id(self):
+        # Changing the HMAC algorithm used for client IDs would invalidate
+        # existing sessions, so be careful that that doesn't happen
+        # accidentally across upgrades.
+        request = LaunchpadTestRequest()
+        idmanager = LaunchpadCookieClientIdManager()
+        idmanager._secret = 'secret'
+        data = b'random'
+        s = digestEncode(hashlib.sha1(data).digest())
+        mac = hmac.new(
+            s, idmanager.secret.encode(), digestmod=hashlib.sha1).digest()
+        sid = (s + digestEncode(mac)).decode()
+        idmanager.setRequestId(request, sid)
+        # getRequestId will only return the previously-set ID if it was
+        # generated using the correct secret with the correct algorithm.
+        self.assertEqual(sid, idmanager.getRequestId(request))
 
 
 class TestSessionRelatedFunctions(TestCaseWithFactory):

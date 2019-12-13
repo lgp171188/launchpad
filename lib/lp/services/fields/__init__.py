@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -65,7 +65,10 @@ from lazr.uri import (
     URI,
     )
 from zope.component import getUtility
-from zope.interface import implementer
+from zope.interface import (
+    implementer,
+    Interface,
+    )
 from zope.schema import (
     Bool,
     Bytes,
@@ -83,7 +86,6 @@ from zope.schema.interfaces import (
     IBytes,
     IDate,
     IDatetime,
-    Interface,
     IObject,
     IText,
     ITextLine,

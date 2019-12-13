@@ -64,7 +64,6 @@ from zope.component import (
     getUtility,
     )
 from zope.security.proxy import (
-    builtin_isinstance,
     Proxy,
     ProxyFactory,
     removeSecurityProxy,
@@ -4955,7 +4954,7 @@ def is_security_proxied_or_harmless(obj):
     """Check that the object is security wrapped or a harmless object."""
     if obj is None:
         return True
-    if builtin_isinstance(obj, Proxy):
+    if isinstance(obj, Proxy):
         return True
     if type(obj) in unwrapped_types:
         return True
