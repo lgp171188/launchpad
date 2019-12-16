@@ -280,6 +280,11 @@ class BinaryPackageBuild(PackageBuildMixin, SQLBase):
         return self.source_package_release.name
 
     @property
+    def source_package_version(self):
+        """See `IBuild`."""
+        return self.source_package_release.version
+
+    @property
     def upload_changesfile(self):
         """See `IBuild`"""
         package_upload = self.package_upload
