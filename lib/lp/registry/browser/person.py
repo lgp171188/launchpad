@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Person-related view classes."""
@@ -653,12 +653,12 @@ class PersonSetContextMenu(ContextMenu, TopLevelMenuMixin):
         text = 'Merge accounts'
         return Link('+requestmerge', text, icon='edit')
 
-    @enabled_with_permission('launchpad.Admin')
+    @enabled_with_permission('launchpad.Moderate')
     def adminpeoplemerge(self):
         text = 'Admin merge people'
         return Link('+adminpeoplemerge', text, icon='edit')
 
-    @enabled_with_permission('launchpad.Admin')
+    @enabled_with_permission('launchpad.Moderate')
     def adminteammerge(self):
         text = 'Admin merge teams'
         return Link('+adminteammerge', text, icon='edit')
