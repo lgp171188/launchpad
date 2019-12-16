@@ -29,6 +29,7 @@ import os
 import subprocess
 import sys
 import textwrap
+import time
 
 from six.moves.xmlrpc_client import Fault
 
@@ -117,9 +118,22 @@ class MailingListSyncScript(LaunchpadScript):
         from Mailman.MailList import MailList
         from Mailman.Queue import XMLRPCRunner
 
-        # Ask Launchpad to update all the team email addresses.
+        # Ask Launchpad to update all the team email addresses.  This can be
+        # a bit timeout-prone if the relevant tables are cold, but should
+        # warm up reasonably quickly, so allow for a few retries.
         proxy = XMLRPCRunner.get_mailing_list_api_proxy()
-        proxy.updateTeamAddresses(self.options.hostname)
+        max_retries = 3
+        for i in range(max_retries + 1):
+            try:
+                proxy.updateTeamAddresses(self.options.hostname)
+            except Fault as fault:
+                if (fault.faultCode == faults.OopsOccurred.error_code and
+                        i < max_retries):
+                    self.logger.warning(
+                        "updateTeamAddresses OOPSed.  Retrying ...")
+                    time.sleep(2 ** i)
+                else:
+                    raise
 
         # Clean things up per mailing list.
         for list_name in Utils.list_names():
