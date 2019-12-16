@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<!--
+Copyright 2014 Canonical Ltd.  This software is licensed under the
+GNU Affero General Public License version 3 (see the file LICENSE).
+-->
+
+<html>
+  <head>
+      <title>code.branchmergeproposal.ss_inlinecomments Tests</title>
+
+      <!-- YUI and test setup -->
+      <script type="text/javascript"
+              src="../../../../../build/js/yui/yui/yui.js">
+      </script>
+      <link rel="stylesheet"
+      href="../../../../../build/js/yui/console/assets/console-core.css" />
+      <link rel="stylesheet"
+      href="../../../../../build/js/yui/test-console/assets/skins/sam/test-console.css" />
+      <link rel="stylesheet"
+      href="../../../../../build/js/yui/test/assets/skins/sam/test.css" />
+
+      <script type="text/javascript"
+              src="../../../../../build/js/lp/app/testing/testrunner.js"></script>
+      <script type="text/javascript"
+              src="../../../../../build/js/lp/app/testing/helpers.js"></script>
+
+      <link rel="stylesheet" href="../../../app/javascript/testing/test.css" />
+
+      <!-- Dependencies -->
+      <script type="text/javascript"
+              src="../../../../../build/js/lp/app/lp.js"></script>
+      <script type="text/javascript"
+              src="../../../../../build/js/lp/app/client.js"></script>
+      <script type="text/javascript"
+              src="../../../../../build/js/lp/app/date.js"></script>
+      <script type="text/javascript"
+              src="../../../../../build/js/lp/app/testing/mockio.js"></script>
+      <script type="text/javascript"
+              src="../../../../../build/js/lp/app/ui/ui.js"></script>
+      <script type="text/javascript"
+              src="../../../../../build/js/lp/app/extras/extras.js"></script>
+      <script type="text/javascript"
+              src="../../../../../build/js/lp/app/anim/anim.js"></script>
+      <script type="text/javascript"
+              src="../../../../../build/js/lp/app/errors.js"></script>
+      <script type="text/javascript"
+              src="../../../../../build/js/lp/app/overlay/overlay.js"></script>
+      <script type="text/javascript"
+              src="../../../../../build/js/lp/app/formoverlay/formoverlay.js"></script>
+      <script type="text/javascript"
+              src="../../../../../build/js/lp/app/formwidgets/resizing_textarea.js"></script>
+      <script type="text/javascript"
+              src="../../../../../build/js/lp/app/ellipsis.js"></script>
+      <script type="text/javascript"
+              src="../../../../../build/js/lp/app/inlineedit/editor.js"></script>
+
+      <!-- The module under test. -->
+      <script type="text/javascript" src="../branchmergeproposal.reviewcomment.js"></script>
+      <script type="text/javascript" src="../branchmergeproposal.inlinecomments.js"></script>
+
+      <!-- The test suite -->
+      <script type="text/javascript" src="test_branchmergeproposal.ss_inlinecomments.js"></script>
+
+      <!-- expected variable -->
+      <script type="text/javascript">
+        var LP = {
+            cache: {}
+        };
+      </script>
+
+    </head>
+    <body class="yui3-skin-sam">
+        <ul id="suites">
+            <li>lp.code.branchmergeproposal.ss_inlinecomments.test</li>
+        </ul>
+
+      <div id="add-comment-form">
+        <textarea id="field.comment"></textarea>
+        <input id="field.review_type" type="text"></input>
+        <input id="field.actions.add" type="submit" value="Save"></input>
+      </div>
+
+      <table class="conversation">
+      <tr>
+        <td data-previewdiff-id="102" data-from-superseded="True">
+           Comment from superseded </td>
+      </tr><tr>
+        <td data-previewdiff-id="101" data-from-superseded="False">
+           Comment One </td>
+      </tr><tr>
+        <td data-previewdiff-id="202" data-from-superseded="False">
+           Comment Two </td>
+      </tr><tr>
+        <td data-from-superseded="False">
+           No inlines </td>
+      </tr>
+      </table>
+
+      <div id="review-diff">
+
+        <h2>Preview Diff</h2>
+
+        <div class="diff-navigator">
+        </div>
+
+        <div class="diff-content">
+
+        <div>
+        <div>
+           <ul class="horizontal">
+           </ul>
+        </div>
+
+        <!-- side-by-side diff -->
+        <table class="diff">
+            <tbody>
+                <tr id="diff-line-1">
+                    <td class="line-no unselectable">1</td>
+                    <td class="diff-file text" colspan="4">
+                        === zbqvsvrq svyr 'yvo/yc/nafjref/grfgf/grfg_dhrfgvba_jrofreivpr.cl'
+                    </td>
+                </tr>
+                    <tr id="diff-line-2">
+                        <td class="line-no">2</td>
+                        <td class="diff-header text" colspan="4">
+                            --- yvo/yc/nafjref/grfgf/grfg_dhrfgvba_jrofreivpr.cl 2015-03-13 04:07:31 +0000
+                        </td>
+                    </tr>
+                    <tr id="ss-diff-line-3">
+                        <td class="line-no">3</td>
+                        <td class="diff-header text" colspan="4">
+                            +++ yvo/yc/nafjref/grfgf/grfg_dhrfgvba_jrofreivpr.cl 2015-03-17 15:34:05 +0000
+                        </td>
+                    </tr>
+                    <tr id="diff-line-4">
+                        <td class="line-no">4</td>
+                        <td class="diff-chunk text" colspan="4">
+                            @@ -1,12 +1,18 @@
+                        </td>
+                    </tr>
+                    <tr id="diff-line-5">
+                        <td class="line-no unselectable" style="display: none">5</td>
+                        <td class="ss-line-no unselectable">1</td>
+                        <td class="text">
+                            -# Pbclevtug 2011 Pnabavpny Ygq.  Guvf fbsgjner vf yvprafrq haqre gur
+                        </td>
+                        <td class="ss-line-no unselectable">1</td>
+                        <td class="text">
+                            +# Foo 2011 Pnabavpny Ygq.  Guvf fbsgjner vf yvprafrq haqre gur
+                        </td>
+                    </tr>
+                    <tr id="diff-line-6">
+                        <td class="line-no unselectable" style="display: none">6</td>
+                        <td class="ss-line-no unselectable">2</td>
+                        <td class="text">
+                            -# Pbclevtug 2011 Pnabavpny Ygq.  Guvf fbsgjner vf yvprafrq haqre gur
+                        </td>
+                        <td class="ss-line-no unselectable">2</td>
+                        <td class="text">
+                            +# Foo 2011 Pnabavpny Ygq.  Guvf fbsgjner vf yvprafrq haqre gur
+                        </td>
+                    </tr>
+                    <tr id="diff-line-7">
+                        <td class="line-no unselectable" style="display: none">7</td>
+                        <td class="ss-line-no unselectable">3</td>
+                        <td class="text">
+                            -# Pbclevtug 2011 Pnabavpny Ygq.  Guvf fbsgjner vf yvprafrq haqre gur
+                        </td>
+                        <td class="ss-line-no unselectable">3</td>
+                        <td class="text">
+                            +# Foo 2011 Pnabavpny Ygq.  Guvf fbsgjner vf yvprafrq haqre gur
+                        </td>
+                    </tr>
+            </tbody>
+        </table>
+
+        </div>
+        </div>
+
+      </div>
+
+    </body>
+</html>
