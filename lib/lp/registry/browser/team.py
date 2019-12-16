@@ -999,6 +999,7 @@ class TeamAddView(TeamFormMixin, HasRenewalPolicyMixin, LaunchpadFormView):
     """View for adding a new team."""
 
     schema = ITeam
+    invariant_context = None
     page_title = 'Register a new team in Launchpad'
     label = page_title
 

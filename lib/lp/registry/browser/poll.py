@@ -396,6 +396,7 @@ class PollAddView(LaunchpadFormView):
     schema = IPoll
     field_names = ["name", "title", "proposition", "allowspoilt", "dateopens",
                    "datecloses"]
+    invariant_context = None
 
     page_title = 'New poll'
 

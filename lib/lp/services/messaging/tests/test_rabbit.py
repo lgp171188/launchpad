@@ -391,7 +391,7 @@ class TestRabbit(RabbitTestCase):
 
     def get_synced_sessions(self):
         try:
-            syncs_set = transaction.manager._synchs
+            syncs_set = transaction.manager.manager._synchs
         except KeyError:
             return set()
         else:

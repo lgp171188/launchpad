@@ -219,7 +219,12 @@ class LaunchpadBrowserPublication(
         # It is possible that request.principal is None if the principal has
         # not been set yet.
         if request.principal is not None:
-            txn.setUser(request.principal.id)
+            # Zope sets the transaction's user attribute to a
+            # space-separated pair of path and user ID, where the path is a
+            # record of traversed objects.  This is mostly a ZODB thing that
+            # we don't care about, so just use something minimal that fits
+            # the syntax.
+            txn.user = u"/ %s" % (request.principal.id,)
 
         return txn
 

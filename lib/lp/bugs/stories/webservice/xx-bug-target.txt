@@ -111,7 +111,7 @@ Official tags must conform to the same format as ordinary tags.
     ...     tag='an invalid tag !!!'))
     HTTP/1.1 400 Bad Request
     ...
-    tag: an invalid tag !!!
+    tag: ...an invalid tag !!!...
 
 We can also access official tags as a list.
 
