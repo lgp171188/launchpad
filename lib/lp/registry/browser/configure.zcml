@@ -1,4 +1,4 @@
-<!-- Copyright 2009-2015 Canonical Ltd.  This software is licensed under the
+<!-- Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
      GNU Affero General Public License version 3 (see the file LICENSE).
 -->
 
@@ -1409,7 +1409,7 @@
         name="+adminpeoplemerge"
         for="lp.registry.interfaces.person.IPersonSet"
         class="lp.registry.browser.peoplemerge.AdminPeopleMergeView"
-        permission="launchpad.Admin"
+        permission="launchpad.Moderate"
         template="../templates/people-adminrequestmerge.pt"
         />
     <browser:page
