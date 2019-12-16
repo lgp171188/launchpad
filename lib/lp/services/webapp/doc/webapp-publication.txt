@@ -872,8 +872,8 @@ The user attribute is an empty string, when no user is logged in.
     >>> request._publication_start = 1.345
     >>> request._publication_thread_start = None
     >>> publication.afterCall(request, None)
-    >>> txn.user
-    ''
+    >>> print txn.user
+    <BLANKLINE>
 
 But if there is a logged in user, the transaction user attribute will
 contain its ID (as well as an empty '/' path, which is a Zope artefact
