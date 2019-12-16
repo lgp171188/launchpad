@@ -194,7 +194,8 @@ class WaitingSlave(OkSlave):
 
         # By default, the slave only has a buildlog, but callsites
         # can update this list as needed.
-        self.valid_file_hashes = ['buildlog']
+        self.valid_files = {'buildlog': ''}
+        self._got_file_record = []
 
     def status(self):
         self.call_log.append('status')
@@ -208,32 +209,18 @@ class WaitingSlave(OkSlave):
 
     def getFile(self, hash, file_to_write):
         self.call_log.append('getFile')
-        if hash in self.valid_file_hashes:
-            content = "This is a %s" % hash
+        if hash in self.valid_files:
             if isinstance(file_to_write, types.StringTypes):
                 file_to_write = open(file_to_write, 'wb')
+            if not self.valid_files[hash]:
+                content = "This is a %s" % hash
+            else:
+                with open(self.valid_files[hash], 'rb') as source:
+                    content = source.read()
             file_to_write.write(content)
             file_to_write.close()
+            self._got_file_record.append(hash)
         return defer.succeed(None)
-
-
-class WaitingSlaveWithFiles(WaitingSlave):
-    """A mock slave that has files that can be downloaded."""
-
-    def __init__(self, *args, **kwargs):
-        self._test_files = {}
-        self._got_file_record = []
-        super(WaitingSlaveWithFiles, self).__init__(*args, **kwargs)
-
-    def getFile(self, hash, file_to_write):
-        if hash in self.valid_file_hashes:
-            if isinstance(file_to_write, types.StringTypes):
-                file_to_write = open(file_to_write, 'wb')
-            with open(self._test_files[hash], 'rb') as source:
-                file_to_write.write(source.read())
-                file_to_write.close()
-                self._got_file_record.append(hash)
-            return defer.succeed(None)
 
 
 class AbortingSlave(OkSlave):

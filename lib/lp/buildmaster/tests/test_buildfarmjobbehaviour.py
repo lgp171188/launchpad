@@ -337,7 +337,7 @@ class TestHandleStatusMixin:
         self.builder = self.factory.makeBuilder()
         self.build.buildqueue_record.markAsBuilding(self.builder)
         self.slave = WaitingSlave('BuildStatus.OK')
-        self.slave.valid_file_hashes.append('test_file_hash')
+        self.slave.valid_file_hashes['test_file_hash'] = ''
         self.interactor = BuilderInteractor()
         self.behaviour = self.interactor.getBuildBehaviour(
             self.build.buildqueue_record, self.builder, self.slave)

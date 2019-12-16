@@ -22,7 +22,7 @@ from lp.buildmaster.interfaces.builder import BuildDaemonError
 from lp.buildmaster.interfaces.buildfarmjobbehaviour import (
     IBuildFarmJobBehaviour,
     )
-from lp.buildmaster.tests.mock_slaves import WaitingSlaveWithFiles
+from lp.buildmaster.tests.mock_slaves import WaitingSlave
 from lp.buildmaster.tests.test_buildfarmjobbehaviour import (
     TestGetUploadMethodsMixin,
     )
@@ -80,8 +80,7 @@ class TestHandleStatusForOCIRecipeBuild(MakeOCIBuildMixin,
         path = os.path.join(self.test_files_dir, name)
         with open(path, 'wb') as fp:
             fp.write(content)
-        self.slave._test_files[hash] = path
-        self.slave.valid_file_hashes.append(hash)
+        self.slave.valid_files[hash] = path
 
     def setUp(self):
         super(TestHandleStatusForOCIRecipeBuild, self).setUp()
@@ -91,8 +90,8 @@ class TestHandleStatusForOCIRecipeBuild(MakeOCIBuildMixin,
         # handleStatus_OK can get a reference to the slave.
         self.builder = self.factory.makeBuilder()
         self.build.buildqueue_record.markAsBuilding(self.builder)
-        self.slave = WaitingSlaveWithFiles('BuildStatus.OK')
-        self.slave.valid_file_hashes.append('test_file_hash')
+        self.slave = WaitingSlave('BuildStatus.OK')
+        self.slave.valid_files['test_file_hash'] = ''
         self.interactor = BuilderInteractor()
         self.behaviour = self.interactor.getBuildBehaviour(
             self.build.buildqueue_record, self.builder, self.slave)
