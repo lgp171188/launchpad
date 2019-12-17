@@ -38,6 +38,7 @@ CREATE TABLE OCIRecipe (
     ociproject integer NOT NULL REFERENCES ociproject,
     ociproject_default boolean DEFAULT false NOT NULL,
     description text,
+    git_repository integer REFERENCES gitrepository,
     require_virtualized boolean DEFAULT true NOT NULL,
     build_daily boolean DEFAULT false NOT NULL,
     registry integer REFERENCES ociregistry
@@ -51,6 +52,7 @@ COMMENT ON COLUMN OCIRecipe.owner IS 'The owner of the recipe.';
 COMMENT ON COLUMN OCIRecipe.ociproject IS 'The OCI project that this recipe is for.';
 COMMENT ON COLUMN OCIRecipe.ociproject_default IS 'True if this recipe is the default for its OCI project.';
 COMMENT ON COLUMN OCIRecipe.description IS 'A short description of this recipe.';
+COMMENT ON COLUMN OCIRecipe.git_repository IS 'A Git repository with a branch containing an OCI recipe.';
 COMMENT ON COLUMN OCIRecipe.require_virtualized IS 'If True, this recipe must be built only on a virtual machine.';
 COMMENT ON COLUMN OCIRecipe.build_daily IS 'If True, this recipe should be built daily.';
 COMMENT ON COLUMN OCIRecipe.registry IS 'The OCI registry that builds of this recipe should be pushed to.';
