@@ -321,8 +321,6 @@ z3c.ptcompat==0.5.7
 zc.zservertracelog==1.3.2
 zope.app.applicationcontrol==4.0.0
 zope.app.appsetup==4.1.0
-zope.app.debug==3.4.1
-zope.app.dependable==3.5.1
 zope.app.http==4.0.1
 zope.app.pagetemplate==3.11.2
 zope.app.publication==4.3.1
