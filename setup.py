@@ -236,7 +236,7 @@ setup(
         'WebTest',
         'WSGIProxy2',
         'z3c.pt',
-        'z3c.ptcompat',
+        'z3c.ptcompat[zpt]',
         'zc.zservertracelog',
         'zope.app.http',
         'zope.app.publication',
