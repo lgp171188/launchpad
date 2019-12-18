@@ -177,7 +177,9 @@ def attach_http_request(report, context):
 
     missing = object()
     principal = getattr(request, 'principal', missing)
-    if safe_hasattr(principal, 'getLogin'):
+    if safe_hasattr(principal, 'person'):
+        login = principal.person.name
+    elif safe_hasattr(principal, 'getLogin'):
         login = principal.getLogin()
     elif principal is missing or principal is None:
         # Request has no principal (e.g. scriptrequest)

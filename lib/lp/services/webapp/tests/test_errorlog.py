@@ -11,6 +11,7 @@ from textwrap import dedent
 import traceback
 
 from fixtures import TempDir
+import mock
 from lazr.batchnavigator.interfaces import InvalidBatchSizeError
 from lazr.restful.declarations import error_status
 import oops_amqp
@@ -166,6 +167,35 @@ class TestErrorReportingUtility(TestCase):
         # verify that the oopsid was set on the request
         self.assertEqual(request.oopsid, report['id'])
         self.assertEqual(request.oops, report)
+
+    def test_raising_request_with_principal_person(self):
+        utility = ErrorReportingUtility()
+        utility._main_publishers[0].__call__ = lambda report: []
+
+        request = TestRequestWithPrincipal(
+            environ={
+                'SERVER_URL': 'http://localhost:9000/foo',
+                'HTTP_COOKIE': 'lp=cookies_hidden_for_security_reasons',
+                'name1': 'value1',
+            },
+            form={
+                'name1': 'value3 \xa7',
+                'name2': 'value2',
+                u'\N{BLACK SQUARE}': u'value4',
+            })
+
+        request.setInWSGIEnvironment('launchpad.pageid', 'IFoo:+foo-template')
+        # Set a fake person attached to the request.
+        # Report should use his name (instead of principal.getLogin)
+        request.principal.person = mock.Mock()
+        request.principal.person.name = 'my_username'
+
+        try:
+            raise ArbitraryException('xyz\nabc')
+        except ArbitraryException:
+            report = utility.raising(sys.exc_info(), request)
+        self.assertEqual(u'my_username, 42, title, description |\u25a0|',
+                         report['username'])
 
     def test_raising_with_xmlrpc_request(self):
         # Test ErrorReportingUtility.raising() with an XML-RPC request.
@@ -545,15 +575,19 @@ class TestRequestWithUnauthenticatedPrincipal(TestRequest):
 
 
 class TestRequestWithPrincipal(TestRequest):
+    def __init__(self, *args, **kw):
+        super(TestRequestWithPrincipal, self).__init__(*args, **kw)
+        self._principal = TestRequestWithPrincipal.Principal()
 
     def setInWSGIEnvironment(self, key, value):
         self._orig_env[key] = value
 
-    class principal:
-        id = 42
-        title = u'title'
-        # non ASCII description
-        description = u'description |\N{BLACK SQUARE}|'
+    class Principal:
+        def __init__(self):
+            self.id = 42
+            self.title = u'title'
+            # non ASCII description
+            self.description = u'description |\N{BLACK SQUARE}|'
 
         @staticmethod
         def getLogin():
