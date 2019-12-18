@@ -5,11 +5,11 @@ __metaclass__ = type
 
 import inspect
 
-from z3c.ptcompat.zcml import (
-    page_directive as original_page,
-    pages_directive as original_pages,
-    )
 from zope.app.publication.metaconfigure import publisher
+from zope.browserpage.metaconfigure import (
+    page as original_page,
+    pages as original_pages,
+    )
 import zope.browserpage.metadirectives
 from zope.component import getUtility
 from zope.component.security import PublicPermission

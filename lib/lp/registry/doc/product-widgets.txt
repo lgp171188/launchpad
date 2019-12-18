@@ -402,7 +402,7 @@ GhostWidget to suppress the markup.
 Launchpad form macros do not generate table rows for the GhostWidget.
 
     >>> from lp.services.config import config
-    >>> from z3c.ptcompat import ViewPageTemplateFile
+    >>> from zope.browserpage import ViewPageTemplateFile
     >>> from lp.app.browser.launchpadform import LaunchpadFormView
 
     >>> class GhostWidgetView(LaunchpadFormView):

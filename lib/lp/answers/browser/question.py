@@ -31,7 +31,7 @@ import re
 
 from lazr.restful.interface import copy_field
 from lazr.restful.utils import smartquote
-from z3c.ptcompat import ViewPageTemplateFile
+from zope.browserpage import ViewPageTemplateFile
 from zope.component import getUtility
 from zope.formlib import form
 from zope.formlib.interfaces import IWidgetFactory

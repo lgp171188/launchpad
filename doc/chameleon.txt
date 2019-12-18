@@ -1,21 +1,11 @@
 Running Launchpad with Chameleon Template Engine
 ================================================
 
-- Need to pull the following dependencies into ``sourcecode``:
-
-  - lp:sourcecodegen/trunk
-  - lp:chameleon.core/trunk
-  - lp:chameleon.zpt/trunk
-  - lp:z3c.pt/trunk
-  - lp:z3c.ptcompat/trunk
-
-- Run launchpad with ``PREFER_Z3C_PT=true make run`` to enable
-  ``z3c.pt``. Omitting it or setting to ``false`` will disable
-  ``z3c.pt`` and use ``zope.pagetemplate`` instead. Yes, it's that
-  simple. This is possible thanks to ``z3c.ptcompat``.
+- Uncomment ``<include package="z3c.ptcompat" />`` in ``zcml/zopeapp.zcml``
+  to enable ``z3c.pt``.
 
 
-Other useful environment options for ``z3c.pt``::
+Useful environment options for ``z3c.pt``::
 
   # in debug-mode, templates on disk are reloaded if they're modified
   CHAMELEON_DEBUG (default: false)

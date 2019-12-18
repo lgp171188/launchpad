@@ -12,7 +12,7 @@ YUI grid classes for positioning.
 
     >>> from lp.services.webapp.publisher import LaunchpadView
     >>> from lp.services.webapp.servers import LaunchpadTestRequest
-    >>> from z3c.ptcompat import ViewPageTemplateFile
+    >>> from zope.browserpage import ViewPageTemplateFile
 
     >>> user = factory.makePerson(name='waffles')
     >>> request = LaunchpadTestRequest(

@@ -34,8 +34,8 @@ from six.moves.urllib.parse import (
     parse_qs,
     parse_qsl,
     )
-from z3c.pt.pagetemplate import ViewPageTemplateFile
 from zope.authentication.interfaces import IUnauthenticatedPrincipal
+from zope.browserpage import ViewPageTemplateFile
 from zope.component import (
     getAdapter,
     getUtility,

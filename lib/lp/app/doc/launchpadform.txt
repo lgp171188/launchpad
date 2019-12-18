@@ -469,7 +469,7 @@ template and thus is way simpler.
 
   >>> from StringIO import StringIO
   >>> from tempfile import mkstemp
-  >>> from z3c.ptcompat import ViewPageTemplateFile
+  >>> from zope.browserpage import ViewPageTemplateFile
   >>> file, filename = mkstemp()
   >>> f = open(filename, 'w')
   >>> f.write(u'<div metal:use-macro="context/@@launchpad_form/form" />')
