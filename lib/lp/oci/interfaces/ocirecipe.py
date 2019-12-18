@@ -37,6 +37,7 @@ from zope.schema import (
 from zope.security.interfaces import Unauthorized
 
 from lp import _
+from lp.code.interfaces.gitrepository import IGitRepository
 from lp.registry.interfaces.ociproject import IOCIProject
 from lp.registry.interfaces.role import IHasOwner
 from lp.services.fields import (
@@ -143,6 +144,10 @@ class IOCIRecipeEditableAttributes(IHasOwner):
         title=_("OCI Project default"), required=True, default=False,
         description=_("True if this recipe is the default "
                       "for its OCI project."))
+
+    git_repository = Reference(
+        IGitRepository,
+        title=_("A Git repository with a branch containing an OCI recipe."))
 
     description = Text(title=_("A short description of this recipe."))
 

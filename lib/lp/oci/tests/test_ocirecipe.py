@@ -157,14 +157,17 @@ class TestOCIRecipeSet(TestCaseWithFactory):
         registrant = self.factory.makePerson()
         owner = self.factory.makeTeam(members=[registrant])
         ociproject = self.factory.makeOCIProject()
+        git_repo = self.factory.makeGitRepository()
         target = getUtility(IOCIRecipeSet).new(
             registrant=registrant,
             owner=owner,
             ociproject=ociproject,
             ociproject_default=False,
-            require_virtualized=False)
+            require_virtualized=False,
+            git_repository=git_repo)
         self.assertEqual(target.registrant, registrant)
         self.assertEqual(target.owner, owner)
         self.assertEqual(target.ociproject, ociproject)
         self.assertEqual(target.ociproject_default, False)
         self.assertEqual(target.require_virtualized, False)
+        self.assertEqual(target.git_repository, git_repo)

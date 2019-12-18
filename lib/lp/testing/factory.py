@@ -4943,7 +4943,8 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         return oci_project.newSeries(name, summary, registrant)
 
     def makeOCIRecipe(self, registrant=None, owner=None, ociproject=None,
-                      ociproject_default=False, require_virtualized=True):
+                      ociproject_default=False, require_virtualized=True,
+                      git_repository=DEFAULT):
         """Make a new OCIRecipe."""
         if registrant is None:
             registrant = self.makePerson()
@@ -4956,7 +4957,8 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             owner=owner,
             ociproject=ociproject,
             ociproject_default=ociproject_default,
-            require_virtualized=require_virtualized)
+            require_virtualized=require_virtualized,
+            git_repository=git_repository)
 
     def makeOCIRecipeChannel(self, recipe=None, name=None, git_path=None,
                              build_file=None):

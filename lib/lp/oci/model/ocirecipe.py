@@ -78,18 +78,22 @@ class OCIRecipe(Storm):
 
     description = Unicode(name="description")
 
+    git_repository_id = Int(name="git_repository")
+    git_repository = Reference(git_repository_id, "GitRepository.id")
+
     require_virtualized = Bool(name="require_virtualized", default=True)
 
     build_daily = Bool(name="build_daily", default=False)
 
     def __init__(self, registrant, owner, ociproject, ociproject_default=False,
-                 require_virtualized=True):
+                 require_virtualized=True, git_repository=None):
         super(OCIRecipe, self).__init__()
         self.registrant = registrant
         self.owner = owner
         self.ociproject = ociproject
         self.ociproject_default = ociproject_default
         self.require_virtualized = require_virtualized
+        self.git_repository = git_repository
 
     def destroySelf(self):
         """See `IOCIRecipe`."""
@@ -235,7 +239,7 @@ class OCIRecipeArch(Storm):
 class OCIRecipeSet:
 
     def new(self, registrant, owner, ociproject, ociproject_default,
-            require_virtualized):
+            require_virtualized, git_repository):
         """See `IOCIRecipeSet`."""
         if not registrant.inTeam(owner):
             if owner.is_team:
@@ -250,7 +254,7 @@ class OCIRecipeSet:
         store = IMasterStore(OCIRecipe)
         oci_recipe = OCIRecipe(
             registrant, owner, ociproject, ociproject_default,
-            require_virtualized)
+            require_virtualized, git_repository)
         store.add(oci_recipe)
 
         return oci_recipe
