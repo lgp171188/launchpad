@@ -177,7 +177,7 @@ class TestErrorReportingUtility(TestCase):
         request = TestRequestWithPrincipal()
 
         # Set a fake person attached to the request.
-        # Report should use his name (instead of principal.getLogin)
+        # Report should use their name (instead of principal.getLogin)
         request.principal.person = FakePerson()
         request.principal.person.name = 'my_username'
 
