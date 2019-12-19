@@ -17,6 +17,7 @@ from lazr.restful.utils import (
     )
 import oops.createhooks
 import oops_amqp
+from lp.registry.interfaces.person import IPerson
 from oops_datedir_repo import DateDirRepo
 import oops_timeline
 import pytz
@@ -41,7 +42,7 @@ from lp.services.webapp.interfaces import (
     IErrorReportEvent,
     IErrorReportRequest,
     IUnloggedException,
-    )
+    ILaunchpadPrincipal)
 from lp.services.webapp.opstats import OpStats
 from lp.services.webapp.pgsession import PGSessionBase
 from lp.services.webapp.vhosts import allvhosts
@@ -177,8 +178,11 @@ def attach_http_request(report, context):
 
     missing = object()
     principal = getattr(request, 'principal', missing)
-    if safe_hasattr(principal, 'person'):
-        login = principal.person.name
+
+    person = principal.person if ILaunchpadPrincipal.providedBy(principal) \
+        else None
+    if person is not None:
+        login = person.name
     elif safe_hasattr(principal, 'getLogin'):
         login = principal.getLogin()
     elif principal is missing or principal is None:

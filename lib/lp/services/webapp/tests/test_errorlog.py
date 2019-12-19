@@ -11,12 +11,13 @@ from textwrap import dedent
 import traceback
 
 from fixtures import TempDir
-import mock
 from lazr.batchnavigator.interfaces import InvalidBatchSizeError
 from lazr.restful.declarations import error_status
 import oops_amqp
 import pytz
 import testtools
+from lp.registry.interfaces.person import IPerson
+from lp.registry.interfaces.role import IPersonRoles
 from timeline.timeline import Timeline
 from zope.authentication.interfaces import IUnauthenticatedPrincipal
 from zope.interface import (
@@ -45,7 +46,7 @@ from lp.services.webapp.errorlog import (
 from lp.services.webapp.interfaces import (
     IUnloggedException,
     NoReferrerError,
-    )
+    ILaunchpadPrincipal)
 from lp.testing import TestCase
 from lp.testing.layers import LaunchpadLayer
 
@@ -172,22 +173,11 @@ class TestErrorReportingUtility(TestCase):
         utility = ErrorReportingUtility()
         utility._main_publishers[0].__call__ = lambda report: []
 
-        request = TestRequestWithPrincipal(
-            environ={
-                'SERVER_URL': 'http://localhost:9000/foo',
-                'HTTP_COOKIE': 'lp=cookies_hidden_for_security_reasons',
-                'name1': 'value1',
-            },
-            form={
-                'name1': 'value3 \xa7',
-                'name2': 'value2',
-                u'\N{BLACK SQUARE}': u'value4',
-            })
+        request = TestRequestWithPrincipal()
 
-        request.setInWSGIEnvironment('launchpad.pageid', 'IFoo:+foo-template')
         # Set a fake person attached to the request.
         # Report should use his name (instead of principal.getLogin)
-        request.principal.person = mock.Mock()
+        request.principal.person = FakePerson()
         request.principal.person.name = 'my_username'
 
         try:
@@ -195,6 +185,30 @@ class TestErrorReportingUtility(TestCase):
         except ArbitraryException:
             report = utility.raising(sys.exc_info(), request)
         self.assertEqual(u'my_username, 42, title, description |\u25a0|',
+                         report['username'])
+
+    def test_raising_request_with_principal_person_set_to_none(self):
+        """
+        Tests oops report generated when request.principal is set to None
+        @see webapp.authentication.PlacelessAuthUtility
+             (_authenticateUsingCookieAuth method) for details
+             about when the principal could be set to None
+        """
+        utility = ErrorReportingUtility()
+        utility._main_publishers[0].__call__ = lambda report: []
+
+        request = TestRequestWithPrincipal()
+
+        # Explicitly sets principal.person to None,
+        # and expects OOPS to fallback to getLogin method (which should
+        # handle this case)
+        request.principal.person = None
+
+        try:
+            raise ArbitraryException('xyz\nabc')
+        except ArbitraryException:
+            report = utility.raising(sys.exc_info(), request)
+        self.assertEqual(u'Login, 42, title, description |\u25a0|',
                          report['username'])
 
     def test_raising_with_xmlrpc_request(self):
@@ -574,24 +588,32 @@ class TestRequestWithUnauthenticatedPrincipal(TestRequest):
     principal = UnauthenticatedPrincipal()
 
 
+@implementer(IPerson, IPersonRoles)
+class FakePerson(object):
+    pass
+
+
+@implementer(ILaunchpadPrincipal)
+class AuthenticatedPrincipal:
+    def __init__(self):
+        self.id = 42
+        self.title = u'title'
+        # non ASCII description
+        self.description = u'description |\N{BLACK SQUARE}|'
+        self.person = None
+
+    @staticmethod
+    def getLogin():
+        return u'Login'
+
+
 class TestRequestWithPrincipal(TestRequest):
     def __init__(self, *args, **kw):
         super(TestRequestWithPrincipal, self).__init__(*args, **kw)
-        self._principal = TestRequestWithPrincipal.Principal()
+        self.setPrincipal(AuthenticatedPrincipal())
 
     def setInWSGIEnvironment(self, key, value):
         self._orig_env[key] = value
-
-    class Principal:
-        def __init__(self):
-            self.id = 42
-            self.title = u'title'
-            # non ASCII description
-            self.description = u'description |\N{BLACK SQUARE}|'
-
-        @staticmethod
-        def getLogin():
-            return u'Login'
 
 
 class TestOopsIgnoring(testtools.TestCase):
