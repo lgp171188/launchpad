@@ -1,4 +1,4 @@
-# Copyright 2009-2017 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Error logging facilities."""
@@ -17,7 +17,6 @@ from lazr.restful.utils import (
     )
 import oops.createhooks
 import oops_amqp
-from lp.registry.interfaces.person import IPerson
 from oops_datedir_repo import DateDirRepo
 import oops_timeline
 import pytz
@@ -31,6 +30,7 @@ from zope.traversing.namespace import view
 
 from lp.app import versioninfo
 from lp.layers import WebServiceLayer
+from lp.registry.interfaces.person import IPerson
 from lp.services.config import config
 from lp.services.messaging import rabbit
 from lp.services.timeline.requesttimeline import get_request_timeline
@@ -41,8 +41,9 @@ from lp.services.webapp.adapter import (
 from lp.services.webapp.interfaces import (
     IErrorReportEvent,
     IErrorReportRequest,
+    ILaunchpadPrincipal,
     IUnloggedException,
-    ILaunchpadPrincipal)
+    )
 from lp.services.webapp.opstats import OpStats
 from lp.services.webapp.pgsession import PGSessionBase
 from lp.services.webapp.vhosts import allvhosts
@@ -179,8 +180,9 @@ def attach_http_request(report, context):
     missing = object()
     principal = getattr(request, 'principal', missing)
 
-    person = principal.person if ILaunchpadPrincipal.providedBy(principal) \
-        else None
+    person = (
+        principal.person if ILaunchpadPrincipal.providedBy(principal)
+        else None)
     if person is not None:
         login = person.name
     elif safe_hasattr(principal, 'getLogin'):

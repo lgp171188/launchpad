@@ -16,8 +16,6 @@ from lazr.restful.declarations import error_status
 import oops_amqp
 import pytz
 import testtools
-from lp.registry.interfaces.person import IPerson
-from lp.registry.interfaces.role import IPersonRoles
 from timeline.timeline import Timeline
 from zope.authentication.interfaces import IUnauthenticatedPrincipal
 from zope.interface import (
@@ -34,6 +32,8 @@ from lp.app.errors import (
     TranslationUnavailable,
     )
 from lp.layers import WebServiceLayer
+from lp.registry.interfaces.person import IPerson
+from lp.registry.interfaces.role import IPersonRoles
 from lp.services.config import config
 from lp.services.webapp.errorlog import (
     _filter_session_statement,
@@ -44,9 +44,10 @@ from lp.services.webapp.errorlog import (
     ScriptRequest,
     )
 from lp.services.webapp.interfaces import (
+    ILaunchpadPrincipal,
     IUnloggedException,
     NoReferrerError,
-    ILaunchpadPrincipal)
+    )
 from lp.testing import TestCase
 from lp.testing.layers import LaunchpadLayer
 
@@ -588,9 +589,8 @@ class TestRequestWithUnauthenticatedPrincipal(TestRequest):
     principal = UnauthenticatedPrincipal()
 
 
-@implementer(IPerson, IPersonRoles)
-class FakePerson(object):
-    pass
+class FakePerson:
+    """Used to test attach_http_request"""
 
 
 @implementer(ILaunchpadPrincipal)
