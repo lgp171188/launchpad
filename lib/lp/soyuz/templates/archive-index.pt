@@ -271,7 +271,7 @@ sudo apt-get update
 
         <div id="empty-result"
              tal:define="name_filter view/specified_name_filter|nothing"
-             tal:condition="not: batch">
+             tal:condition="python: not batch and name_filter">
           No matching package for '<tal:name_filter replace="name_filter" />'.
         </div>
 
