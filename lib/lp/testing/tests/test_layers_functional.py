@@ -26,7 +26,6 @@ from fixtures import (
     TestWithFixtures,
     )
 from lazr.config import as_host_port
-import testtools
 from zope.component import (
     ComponentLookupError,
     getUtility,
@@ -40,6 +39,7 @@ from lp.services.librarian.client import (
 from lp.services.librarian.interfaces.client import ILibrarianClient
 from lp.services.memcache.client import memcache_client_factory
 from lp.services.pidfile import pidfile_path
+from lp.testing import TestCase
 from lp.testing.layers import (
     AppServerLayer,
     BaseLayer,
@@ -107,7 +107,7 @@ class LayerFixture(Fixture):
         self.addCleanup(self.layer.tearDown)
 
 
-class TestBaseLayer(testtools.TestCase, TestWithFixtures):
+class TestBaseLayer(TestCase):
 
     def test_allocates_LP_TEST_INSTANCE(self):
         self.useFixture(BaseLayerIsolator())
@@ -155,7 +155,7 @@ class TestBaseLayer(testtools.TestCase, TestWithFixtures):
         self.assertFalse(os.path.exists(runner_appserver_root))
 
 
-class BaseTestCase(testtools.TestCase):
+class BaseTestCase(TestCase):
     """Both the Base layer tests, as well as the base Test Case
     for all the other Layer tests.
     """
@@ -304,7 +304,7 @@ class LibrarianTestCase(BaseTestCase):
             'foo.txt', len(data), StringIO(data), 'text/plain')
 
 
-class LibrarianLayerTest(testtools.TestCase, TestWithFixtures):
+class LibrarianLayerTest(TestCase, TestWithFixtures):
 
     def test_makes_unique_instance(self):
         # Capture the original settings
@@ -335,7 +335,7 @@ class LibrarianLayerTest(testtools.TestCase, TestWithFixtures):
             self.assertFalse(os.path.exists(active_root))
 
 
-class LibrarianResetTestCase(testtools.TestCase):
+class LibrarianResetTestCase(TestCase):
     """Our page tests need to run multple tests without destroying
     the librarian database in between.
     """
@@ -364,7 +364,7 @@ class LibrarianResetTestCase(testtools.TestCase):
         self.assertNotEqual(data, self.sample_data)
 
 
-class LibrarianHideTestCase(testtools.TestCase):
+class LibrarianHideTestCase(TestCase):
     layer = LaunchpadLayer
 
     def testHideLibrarian(self):
@@ -516,7 +516,7 @@ class LayerProcessControllerInvariantsTestCase(BaseTestCase):
                           LayerProcessController.startSMTPServer)
 
 
-class LayerProcessControllerTestCase(testtools.TestCase):
+class LayerProcessControllerTestCase(TestCase):
     """Tests for the `LayerProcessController`."""
     # We need the database to be set up, no more.
     layer = DatabaseLayer
@@ -564,11 +564,11 @@ class LayerProcessControllerTestCase(testtools.TestCase):
         self.assertEqual(True, LaunchpadTestSetup()._reset_db)
 
 
-class TestNameTestCase(testtools.TestCase):
+class TestNameTestCase(TestCase):
     layer = BaseLayer
 
     def testTestName(self):
         self.assertEqual(
-                BaseLayer.test_name,
-                "testTestName "
-                "(lp.testing.tests.test_layers_functional.TestNameTestCase)")
+            BaseLayer.test_name,
+            "lp.testing.tests.test_layers_functional.TestNameTestCase."
+            "testTestName")
