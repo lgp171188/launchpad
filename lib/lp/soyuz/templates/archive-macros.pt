@@ -273,7 +273,13 @@ div.package-details {
     A recent upload has resulted in
     <span class="build-count pending"
           tal:content="view/build_counters/pending">100</span>
-    pending builds.
+    pending
+    <tal:singular
+        condition="python: view.build_counters['pending'] == 1"
+        replace="string:build." />
+    <tal:plural
+        condition="python: view.build_counters['pending'] != 1"
+        replace="string:builds." />
   </p>
   </div>
 </metal:build_status_summary>
