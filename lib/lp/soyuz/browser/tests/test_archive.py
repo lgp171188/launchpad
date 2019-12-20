@@ -1,4 +1,4 @@
-# Copyright 2014-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2014-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 from __future__ import absolute_import, print_function, unicode_literals
@@ -6,15 +6,18 @@ from __future__ import absolute_import, print_function, unicode_literals
 __metaclass__ = type
 
 from fixtures import FakeLogger
+import soupmatchers
 from testtools.matchers import (
     MatchesSetwise,
     MatchesStructure,
+    Not,
     )
 from zope.component import getUtility
 
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.buildmaster.interfaces.processor import IProcessorSet
 from lp.services.webapp import canonical_url
+from lp.soyuz.enums import PackagePublishingStatus
 from lp.soyuz.interfaces.archive import CannotModifyArchiveProcessor
 from lp.testing import (
     admin_logged_in,
@@ -30,6 +33,28 @@ from lp.testing.layers import (
 from lp.testing.matchers import HasQueryCount
 from lp.testing.pages import extract_text
 from lp.testing.views import create_initialized_view
+
+
+class TestArchiveIndexView(TestCaseWithFactory):
+
+    layer = LaunchpadFunctionalLayer
+
+    def test_index_page_without_packages(self):
+        ppa = self.factory.makeArchive()
+        self.factory.makeSourcePackagePublishingHistory(
+            archive=ppa, status=PackagePublishingStatus.DELETED)
+        owner = login_person(ppa.owner)
+        browser = self.getUserBrowser(
+            canonical_url(ppa), user=owner)
+        html = browser.contents
+        empty_package_msg_exists = soupmatchers.HTMLContains(
+            soupmatchers.Tag(
+                'no packages message', 'div',
+                attrs={'id': 'empty-result'}),
+        )
+        self.assertThat(
+            html, Not(empty_package_msg_exists),
+            'Message "No matching package for (...)" should not appear')
 
 
 class TestArchiveEditView(TestCaseWithFactory):
