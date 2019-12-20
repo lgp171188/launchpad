@@ -24,6 +24,7 @@ from zope.error.interfaces import IErrorReportingUtility
 from zope.interface import implementer
 from zope.security.interfaces import Unauthorized
 from zope.security.proxy import removeSecurityProxy
+from lp.services.config import config
 
 from lp.app.errors import NameLookupFailed
 from lp.app.validators import LaunchpadValidationError
@@ -54,6 +55,7 @@ from lp.code.interfaces.gitnamespace import (
     split_git_unique_name,
     )
 from lp.code.interfaces.gitrepository import IGitRepositorySet
+from lp.code.model.branch import Branch
 from lp.code.xmlrpc.codehosting import run_with_login
 from lp.registry.errors import (
     InvalidName,
@@ -72,7 +74,7 @@ from lp.services.macaroons.interfaces import (
     IMacaroonIssuer,
     NO_USER,
     )
-from lp.services.webapp import LaunchpadXMLRPCView
+from lp.services.webapp import LaunchpadXMLRPCView, canonical_url
 from lp.services.webapp.authorization import check_permission
 from lp.services.webapp.errorlog import ScriptRequest
 from lp.xmlrpc import faults
@@ -425,6 +427,25 @@ class GitAPI(LaunchpadXMLRPCView):
         getUtility(IGitRefScanJobSource).create(
             removeSecurityProxy(repository))
         logger.info("notify succeeded")
+
+    def getMPurlRPC(self, translated_path, branch):
+        """See `IGitAPI`."""
+        logger = self._getLogger()
+        logger.info("Request received: getMPurlRPC('%s')", translated_path)
+        repository = getUtility(IGitLookup).getByHostingPath(translated_path)
+        if repository is None:
+            fault = faults.NotFound(
+                "No repository found for '%s'." % translated_path)
+            logger.error("getMPurlRPC failed: %r", fault)
+            return fault
+
+        base_url = canonical_url(repository, rootsite='code')
+        if 'refs/heads/'+branch != repository.default_branch:
+            mp_url = (base_url+'/+ref/'+branch+'/+register-merge')
+            logger.info("getMPurlRPC succeeded in forming MP URL : '%s'" % mp_url)
+            return mp_url
+
+        logger.info("getMPurlRPC succeeded")
 
     @return_fault
     def _authenticateWithPassword(self, username, password):
