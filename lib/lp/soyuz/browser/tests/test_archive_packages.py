@@ -11,7 +11,6 @@ __all__ = [
     'TestPPAPackages',
     ]
 
-from compiler.ast import Not
 import re
 
 import soupmatchers
