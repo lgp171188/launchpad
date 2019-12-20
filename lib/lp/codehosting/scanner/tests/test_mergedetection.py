@@ -7,7 +7,7 @@ __metaclass__ = type
 
 import logging
 
-from bzrlib.revision import NULL_REVISION
+from breezy.revision import NULL_REVISION
 from lazr.lifecycle.event import ObjectModifiedEvent
 import transaction
 from zope.component import getUtility
@@ -143,7 +143,7 @@ class TestAutoMergeDetectionForMergeProposals(BzrSyncTestCase):
 
         # XXX: AaronBentley 2010-08-06 bug=614404: a bzr username is
         # required to generate the revision-id.
-        with override_environ(BZR_EMAIL='me@example.com'):
+        with override_environ(BRZ_EMAIL='me@example.com'):
             branch_tree.commit(u'another revision', rev_id='another-rev')
         current_proposal_status = proposal.queue_status
         self.assertNotEqual(
@@ -164,7 +164,7 @@ class TestAutoMergeDetectionForMergeProposals(BzrSyncTestCase):
 
         # XXX: AaronBentley 2010-08-06 bug=614404: a bzr username is
         # required to generate the revision-id.
-        with override_environ(BZR_EMAIL='me@example.com'):
+        with override_environ(BRZ_EMAIL='me@example.com'):
             branch_tree.commit(u'another revision', rev_id='another-rev')
         current_proposal_status = proposal.queue_status
         self.assertNotEqual(

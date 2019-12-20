@@ -1,15 +1,15 @@
 {
-    "bzr-builder": [
-        70, 
-        "launchpad@pqm.canonical.com-20111114140506-6bmt9isw6lcud7yt"
+    "brz-builder": [
+        180, 
+        "jelmer@jelmer.uk-20180624153632-1f0weftl0pawz6wj"
+    ], 
+    "brz-loom": [
+        166, 
+        "jelmer@jelmer.uk-20190822193925-ydrq7fgdi78lpgm7"
     ], 
     "bzr-git": [
         280, 
         "launchpad@pqm.canonical.com-20171222005919-u98ut0f5z2g618um"
-    ], 
-    "bzr-loom": [
-        55, 
-        "launchpad@pqm.canonical.com-20120830090804-cg49kky93htwax7s"
     ], 
     "bzr-svn": [
         2725, 
@@ -24,8 +24,8 @@
         "cjwatson@canonical.com-20190614154330-091l9edcnubsjmsx"
     ], 
     "loggerhead": [
-        493, 
-        "cjwatson@canonical.com-20190621112125-3aaxj3hrmty19lr6"
+        494, 
+        "cjwatson@canonical.com-20190919081036-q1symc2h2iedtlh3"
     ], 
     "mailman": [
         977, 

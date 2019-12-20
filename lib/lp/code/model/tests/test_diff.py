@@ -12,8 +12,8 @@ from difflib import unified_diff
 import logging
 from textwrap import dedent
 
-from bzrlib import trace
-from bzrlib.patches import (
+from breezy import trace
+from breezy.patches import (
     InsertLine,
     parse_patches,
     RemoveLine,
@@ -565,7 +565,7 @@ class TestPreviewDiff(DiffTestCase):
         reload(trace)
         bmp, source_rev_id, target_rev_id = self.createExampleBzrMerge()
         handler = RecordLister()
-        logger = logging.getLogger('bzr')
+        logger = logging.getLogger('brz')
         logger.addHandler(handler)
         try:
             PreviewDiff.fromBranchMergeProposal(bmp)

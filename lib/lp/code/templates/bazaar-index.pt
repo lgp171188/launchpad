@@ -128,8 +128,8 @@
           </a>
         </div>
         <div>
-          Launchpad uses <a href="http://bazaar.canonical.com/">Bazaar</a>
-          <tal:version tal:content="view/bzr_version">2.0</tal:version>.
+          Launchpad uses <a href="https://www.breezy-vcs.org/">Breezy</a>
+          <tal:version tal:content="view/brz_version">3.0.0</tal:version>.
         </div>
       </div>
 

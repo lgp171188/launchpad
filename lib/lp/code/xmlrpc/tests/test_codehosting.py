@@ -8,8 +8,8 @@ __metaclass__ = type
 import datetime
 import os
 
-from bzrlib import bzrdir
-from bzrlib.urlutils import escape
+from breezy import controldir
+from breezy.urlutils import escape
 import pytz
 from testscenarios import (
     load_tests_apply_scenarios,
@@ -659,7 +659,7 @@ class CodehostingTest(WithScenarios, TestCaseWithFactory):
             branch, 'next_mirror_time', UTC_NOW)
 
     def getFormatStringsForFormatName(self, format_name):
-        default_format = bzrdir.format_registry.get(format_name)()
+        default_format = controldir.format_registry.get(format_name)()
         control_string = default_format.get_format_string()
         branch_string = default_format.get_branch_format().get_format_string()
         repository_string = \

@@ -5,14 +5,14 @@
 
 __metaclass__ = type
 
-from bzrlib.tests import per_transport
-from bzrlib.transport import (
+from breezy.tests import per_transport
+from breezy.transport import (
     chroot,
     get_transport,
     Transport,
     )
-from bzrlib.transport.local import LocalTransport
-from bzrlib.urlutils import local_path_to_url
+from breezy.transport.local import LocalTransport
+from breezy.urlutils import local_path_to_url
 
 from lp.codehosting.inmemory import InMemoryFrontend
 from lp.codehosting.tests.helpers import TestResultWrapper

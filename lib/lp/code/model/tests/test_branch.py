@@ -13,10 +13,10 @@ from datetime import (
     )
 import json
 
-from bzrlib.branch import Branch
-from bzrlib.bzrdir import BzrDir
-from bzrlib.revision import NULL_REVISION
-from bzrlib.url_policy_open import BadUrl
+from breezy.branch import Branch
+from breezy.bzr.bzrdir import BzrDir
+from breezy.revision import NULL_REVISION
+from breezy.url_policy_open import BadUrl
 from pytz import UTC
 from sqlobject import SQLObjectNotFound
 from storm.exceptions import LostObjectError
@@ -2257,7 +2257,7 @@ class TestRevisionHistory(TestCaseWithFactory):
     def test_tip_revision_when_no_revisions(self):
         # When a branch has no revisions but does have Bazaar data, its tip
         # revision is None and its last_scanned_id is
-        # bzrlib.revision.NULL_REVISION.
+        # breezy.revision.NULL_REVISION.
         branch = self.factory.makeBranch()
         branch.updateScannedDetails(None, 0)
         self.assertEqual(NULL_REVISION, branch.last_scanned_id)
@@ -3276,7 +3276,7 @@ class TestGetBzrBranch(TestCaseWithFactory):
         db_branch, tree = self.create_branch_and_tree()
         # XXX: AaronBentley 2010-08-06 bug=614404: a bzr username is
         # required to generate the revision-id.
-        with override_environ(BZR_EMAIL='me@example.com'):
+        with override_environ(BRZ_EMAIL='me@example.com'):
             revid = tree.commit('')
         bzr_branch = db_branch.getBzrBranch()
         self.assertEqual(revid, bzr_branch.last_revision())

@@ -18,8 +18,8 @@ import os
 import subprocess
 import sys
 
-import bzrlib
-from bzrlib.branch import Branch
+import breezy
+from breezy.branch import Branch
 from lazr.restful.interfaces import IWebServiceConfiguration
 from z3c.ptcompat import PageTemplateFile
 from zope.component import getUtility
@@ -144,7 +144,7 @@ def main(directory, force=False):
             ["git", "log", "-1", "--format=%ct", "HEAD"],
             universal_newlines=True))
     else:
-        with bzrlib.initialize():
+        with breezy.get_global_state():
             branch = Branch.open(top)
             timestamp = branch.repository.get_revision(
                 branch.last_revision()).timestamp

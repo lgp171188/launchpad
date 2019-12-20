@@ -13,8 +13,8 @@ from twisted.internet.process import ProcessExitedAlready
 from twisted.internet.protocol import ProcessProtocol
 
 from lp.codehosting import (
-    get_bzr_path,
-    get_BZR_PLUGIN_PATH_for_subprocess,
+    get_brz_path,
+    get_BRZ_PLUGIN_PATH_for_subprocess,
     )
 from lp.codehosting.sshserver.daemon import CodehostingAvatar
 from lp.codehosting.sshserver.session import (
@@ -382,18 +382,18 @@ class TestSessionIntegration(AvatarTestCase):
             "ISession(avatar) doesn't adapt to ExecOnlySession. "
             "Got %r instead." % (session,))
         self.assertEqual(
-            get_BZR_PLUGIN_PATH_for_subprocess(),
-            session.environment['BZR_PLUGIN_PATH'])
+            get_BRZ_PLUGIN_PATH_for_subprocess(),
+            session.environment['BRZ_PLUGIN_PATH'])
         self.assertEqual(
             '%s@bazaar.launchpad.test' % self.avatar.username,
-            session.environment['BZR_EMAIL'])
+            session.environment['BRZ_EMAIL'])
 
         executable, arguments = session.getCommandToRun(
             'bzr serve --inet --directory=/ --allow-writes')
         interpreter = '%s/bin/py' % config.root
         self.assertEqual(interpreter, executable)
         self.assertEqual(
-            [interpreter, get_bzr_path(), 'lp-serve',
+            [interpreter, get_brz_path(), 'lp-serve',
              '--inet', str(self.avatar.user_id)],
             list(arguments))
         self.assertRaises(
@@ -422,9 +422,9 @@ class TestSessionIntegration(AvatarTestCase):
             'bzr serve --inet --directory=/ --allow-writes')
         executable, arguments, env = session.getCommandToFork(
             executable, arguments, session.environment)
-        self.assertEqual('bzr', executable)
+        self.assertEqual('brz', executable)
         self.assertEqual(
-             ['bzr', 'lp-serve',
+             ['brz', 'lp-serve',
               '--inet', str(self.avatar.user_id)],
              list(arguments))
 
@@ -436,7 +436,14 @@ class TestLookupCommand(TestCase):
 
     def test_bzr(self):
         self.assertEqual(
-            config.root + '/bin/py ' + get_bzr_path() +
+            config.root + '/bin/py ' + get_brz_path() +
             ' lp-serve --inet %(user_id)s',
             lookup_command_template(
                 'bzr serve --inet --directory=/ --allow-writes'))
+
+    def test_brz(self):
+        self.assertEqual(
+            config.root + '/bin/py ' + get_brz_path() +
+            ' lp-serve --inet %(user_id)s',
+            lookup_command_template(
+                'brz serve --inet --directory=/ --allow-writes'))

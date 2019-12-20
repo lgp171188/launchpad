@@ -6,13 +6,13 @@
 from contextlib import closing
 import os
 
-from bzrlib import (
+from breezy import (
     errors as bzr_errors,
     urlutils,
     )
-from bzrlib.tests import TestCaseInTempDir
-from bzrlib.transport import get_transport
-from bzrlib.transport.memory import MemoryTransport
+from breezy.tests import TestCaseInTempDir
+from breezy.transport import get_transport
+from breezy.transport.memory import MemoryTransport
 from lazr.sshserver.sftp import FileIsADirectory
 from testtools.twistedsupport import (
     assert_fails_with,
@@ -70,7 +70,7 @@ class TestFatLocalTransport(TestCaseInTempDir):
     def test_writeChunk(self):
         # writeChunk writes a chunk of data to a file at a given offset.
         filename = 'foo'
-        self.transport.put_bytes(filename, 'content')
+        self.transport.put_bytes(filename, b'content')
         self.transport.writeChunk(filename, 1, 'razy')
         self.assertEqual('crazynt', self.transport.get_bytes(filename))
 
@@ -612,7 +612,7 @@ class TestSFTPServer(TestCaseInTempDir, SFTPTestMixin):
     def test_openDirectoryMemory(self):
         """openDirectory works on MemoryTransport."""
         transport = MemoryTransport()
-        transport.put_bytes('hello', 'hello')
+        transport.put_bytes('hello', b'hello')
         sftp_server = TransportSFTPServer(AsyncTransport(transport))
         deferred = sftp_server.openDirectory('.')
 

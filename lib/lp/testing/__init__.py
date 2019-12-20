@@ -81,12 +81,13 @@ import tempfile
 import time
 import unittest
 
-from bzrlib import trace
-from bzrlib.bzrdir import (
-    BzrDir,
+from breezy import trace
+from breezy.controldir import (
+    ControlDir,
     format_registry,
     )
-from bzrlib.transport import get_transport
+from breezy.transport import get_transport
+from bzrlib import trace as bzr_trace
 import fixtures
 from lazr.restful.testing.tales import test_tales
 from lazr.restful.testing.webservice import FakeRequest
@@ -846,11 +847,12 @@ class TestCaseWithFactory(TestCase):
         self._use_bzr_branch_called = False
         # XXX: JonathanLange 2010-12-24 bug=694140: Because of Launchpad's
         # messing with global log state (see
-        # lp.services.scripts.logger), trace._bzr_logger does not
-        # necessarily equal logging.getLogger('bzr'), so we have to explicitly
-        # make it so in order to avoid "No handlers for "bzr" logger'
+        # lp.services.scripts.logger), trace._brz_logger does not
+        # necessarily equal logging.getLogger('brz'), so we have to explicitly
+        # make it so in order to avoid "No handlers for "brz" logger'
         # messages.
-        trace._bzr_logger = logging.getLogger('bzr')
+        trace._brz_logger = logging.getLogger('brz')
+        bzr_trace._bzr_logger = logging.getLogger('bzr')
 
     def getUserBrowser(self, url=None, user=None):
         """Return a Browser logged in as a fresh user, maybe opened at `url`.
@@ -887,8 +889,7 @@ class TestCaseWithFactory(TestCase):
         """
         if format is not None and isinstance(format, basestring):
             format = format_registry.get(format)()
-        return BzrDir.create_branch_convenience(
-            branch_url, format=format)
+        return ControlDir.create_branch_convenience(branch_url, format=format)
 
     def create_branch_and_tree(self, tree_location=None, product=None,
                                db_branch=None, format=None,
@@ -948,6 +949,7 @@ class TestCaseWithFactory(TestCase):
         self.useTempDir()
         # Avoid leaking local user configuration into tests.
         self.useContext(override_environ(
+            BRZ_HOME=os.getcwd(), BRZ_EMAIL=None,
             BZR_HOME=os.getcwd(), BZR_EMAIL=None, EMAIL=None,
             ))
 
@@ -1405,7 +1407,7 @@ def map_branch_contents(branch):
             for entry in entries:
                 file_path, file_name, file_type = entry[:3]
                 if file_type == 'file':
-                    stored_file = tree.get_file_by_path(file_path)
+                    stored_file = tree.get_file(file_path)
                     contents[file_path] = stored_file.read()
     finally:
         tree.unlock()

@@ -9,16 +9,21 @@ all plugins in the bzrplugins/ directory underneath the rocketfuel checkout.
 
 __metaclass__ = type
 __all__ = [
-    'get_bzr_path',
+    'get_brz_path',
     'get_BZR_PLUGIN_PATH_for_subprocess',
     ]
 
 
 import os
 
-import bzrlib
-from bzrlib.branch import Branch
-from bzrlib.plugin import load_plugins
+import breezy
+from breezy import ui as brz_ui
+from breezy.branch import Branch
+from breezy.library_state import BzrLibraryState as BrzLibraryState
+from breezy.plugin import load_plugins as brz_load_plugins
+# This import is needed so that brz's logger gets registered.
+import breezy.trace
+from bzrlib.plugin import load_plugins as bzr_load_plugins
 # This import is needed so that bzr's logger gets registered.
 import bzrlib.trace
 from zope.security import checker
@@ -26,9 +31,9 @@ from zope.security import checker
 from lp.services.config import config
 
 
-def get_bzr_path():
-    """Find the path to the copy of Bazaar for this rocketfuel instance"""
-    return os.path.join(config.root, 'bin', 'bzr')
+def get_brz_path():
+    """Find the path to the copy of Breezy for this rocketfuel instance"""
+    return os.path.join(config.root, 'bin', 'brz')
 
 
 def _get_bzr_plugins_path():
@@ -48,23 +53,50 @@ def get_BZR_PLUGIN_PATH_for_subprocess():
     return ":".join((_get_bzr_plugins_path(), "-site"))
 
 
+def _get_brz_plugins_path():
+    """Find the path to the Breezy plugins for this rocketfuel instance."""
+    return os.path.join(config.root, 'brzplugins')
+
+
+def get_BRZ_PLUGIN_PATH_for_subprocess():
+    """Calculate the appropriate value for the BRZ_PLUGIN_PATH environment.
+
+    The '-site' token tells breezy not to include the 'site specific plugins
+    directory' (which is usually something like
+    /usr/lib/pythonX.Y/dist-packages/breezy/plugins/) in the plugin search
+    path, which would be inappropriate for Launchpad, which may have an
+    incompatible version of breezy in its virtualenv.
+    """
+    return ":".join((_get_brz_plugins_path(), "-site"))
+
+
+# We must explicitly initialize Breezy, as otherwise it will initialize
+# itself with a terminal-oriented UI.
+if breezy._global_state is None:
+    brz_state = BrzLibraryState(
+        ui=brz_ui.SilentUIFactory(), trace=breezy.trace.Config())
+    brz_state._start()
+
+
+# XXX cjwatson 2019-06-13: Remove BZR_PLUGIN_PATH and supporting code once
+# all of Launchpad has been ported to Breezy.
 os.environ['BZR_PLUGIN_PATH'] = get_BZR_PLUGIN_PATH_for_subprocess()
+os.environ['BRZ_PLUGIN_PATH'] = get_BRZ_PLUGIN_PATH_for_subprocess()
+
+# Disable some Breezy plugins that are likely to cause trouble if used on
+# the server.  (Unfortunately there doesn't seem to be a good way to load
+# only explicitly-specified plugins at the moment.)
+os.environ['BRZ_DISABLE_PLUGINS'] = ':'.join([
+    'cvs',
+    'darcs',
+    'email',
+    'mtn',
+    ])
 
 # We want to have full access to Launchpad's Bazaar plugins throughout the
 # codehosting package.
-load_plugins([_get_bzr_plugins_path()])
-
-
-def load_bundled_plugin(plugin_name):
-    """Load a plugin bundled with Bazaar."""
-    from bzrlib.plugin import get_core_plugin_path
-    from bzrlib import plugins
-    if get_core_plugin_path() not in plugins.__path__:
-        plugins.__path__.append(get_core_plugin_path())
-    __import__("bzrlib.plugins.%s" % plugin_name)
-
-
-load_bundled_plugin("weave_fmt")
+bzr_load_plugins([_get_bzr_plugins_path()])
+brz_load_plugins()
 
 
 def dont_wrap_class_and_subclasses(cls):
@@ -75,6 +107,6 @@ def dont_wrap_class_and_subclasses(cls):
 
 # Don't wrap Branch or its subclasses in Zope security proxies.  Make sure
 # the various LoomBranch classes are present first.
-import bzrlib.plugins.loom.branch
-bzrlib.plugins.loom.branch
+import breezy.plugins.loom.branch
+breezy.plugins.loom.branch
 dont_wrap_class_and_subclasses(Branch)

@@ -18,7 +18,7 @@ __all__ = [
 
 import os.path
 
-from bzrlib.revision import NULL_REVISION
+from breezy.revision import NULL_REVISION
 from zope.component import getUtility
 from zope.publisher.browser import FileUpload
 

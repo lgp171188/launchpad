@@ -8,20 +8,23 @@ __metaclass__ = type
 import gc
 import sys
 
-from bzrlib import (
+from breezy import (
     errors,
     trace,
     )
-from bzrlib.branch import Branch
-from bzrlib.bzrdir import format_registry
-from bzrlib.errors import AppendRevisionsOnlyViolation
-from bzrlib.remote import RemoteBranch
-from bzrlib.tests import (
+from breezy.branch import (
+    Branch,
+    UnstackableBranchFormat,
+    )
+from breezy.bzr.remote import RemoteBranch
+from breezy.controldir import format_registry
+from breezy.errors import AppendRevisionsOnlyViolation
+from breezy.tests import (
     test_server,
     TestCaseWithTransport,
     TestNotApplicable,
     )
-from bzrlib.tests.per_branch import (
+from breezy.tests.per_branch import (
     branch_scenarios,
     TestCaseWithControlDir,
     )
@@ -80,14 +83,14 @@ class TestGetBranchStackedOnURL(WithScenarios, TestCaseWithControlDir):
         stacked_branch = self.make_branch('stacked')
         try:
             stacked_branch.set_stacked_on_url('../stacked-on')
-        except errors.UnstackableBranchFormat:
+        except UnstackableBranchFormat:
             raise TestNotApplicable('This format does not support stacking.')
         # Deleting the stacked-on branch ensures that Bazaar will raise an
         # error if it tries to open the stacked-on branch.
         self.get_transport('.').delete_tree('stacked-on')
         self.assertEqual(
             '../stacked-on',
-            get_branch_stacked_on_url(stacked_branch.bzrdir))
+            get_branch_stacked_on_url(stacked_branch.controldir))
 
     def testGetBranchStackedOnUrlUnstackable(self):
         # get_branch_stacked_on_url raises UnstackableBranchFormat if it's
@@ -97,11 +100,11 @@ class TestGetBranchStackedOnURL(WithScenarios, TestCaseWithControlDir):
             branch.get_stacked_on_url()
         except errors.NotStacked:
             raise TestNotApplicable('This format supports stacked branches.')
-        except errors.UnstackableBranchFormat:
+        except UnstackableBranchFormat:
             pass
         self.assertRaises(
-            errors.UnstackableBranchFormat,
-            get_branch_stacked_on_url, branch.bzrdir)
+            UnstackableBranchFormat,
+            get_branch_stacked_on_url, branch.controldir)
 
     def testGetBranchStackedOnUrlNotStacked(self):
         # get_branch_stacked_on_url raises NotStacked if it's called on the
@@ -111,16 +114,16 @@ class TestGetBranchStackedOnURL(WithScenarios, TestCaseWithControlDir):
             branch.get_stacked_on_url()
         except errors.NotStacked:
             pass
-        except errors.UnstackableBranchFormat:
+        except UnstackableBranchFormat:
             raise TestNotApplicable(
                 'This format does not support stacked branches')
         self.assertRaises(
-            errors.NotStacked, get_branch_stacked_on_url, branch.bzrdir)
+            errors.NotStacked, get_branch_stacked_on_url, branch.controldir)
 
     def testGetBranchStackedOnUrlNoBranch(self):
         # get_branch_stacked_on_url raises a NotBranchError if it's called on
         # a bzrdir that's not got a branch.
-        a_bzrdir = self.make_bzrdir('source')
+        a_bzrdir = self.make_controldir('source')
         if a_bzrdir.has_branch():
             raise TestNotApplicable(
                 'This format does not support branchless bzrdirs.')

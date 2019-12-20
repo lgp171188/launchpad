@@ -1,10 +1,10 @@
 # Copyright 2009 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-"""Utilities for dealing with Bazaar.
+"""Utilities for dealing with Breezy.
 
 Much of the code in here should be submitted upstream. The rest is code that
-integrates between Bazaar's infrastructure and Launchpad's infrastructure.
+integrates between Breezy's infrastructure and Launchpad's infrastructure.
 """
 
 __metaclass__ = type
@@ -28,30 +28,30 @@ from contextlib import contextmanager
 import os
 import sys
 
-from bzrlib import (
+from breezy import (
     config,
     trace,
     )
-from bzrlib.errors import (
-    AppendRevisionsOnlyViolation,
-    ConnectionTimeout,
-    GhostRevisionsHaveNoRevno,
-    NotStacked,
-    UnstackableBranchFormat,
-    UnstackableRepositoryFormat,
-    UnsupportedProtocol,
-    )
-from bzrlib.remote import (
+from breezy.branch import UnstackableBranchFormat
+from breezy.bzr.remote import (
     RemoteBranch,
     RemoteBzrDir,
     RemoteRepository,
     )
-from bzrlib.transport import (
+from breezy.errors import (
+    AppendRevisionsOnlyViolation,
+    ConnectionTimeout,
+    GhostRevisionsHaveNoRevno,
+    NotStacked,
+    UnstackableRepositoryFormat,
+    UnsupportedProtocol,
+    )
+from breezy.transport import (
     get_transport,
     register_transport,
     unregister_transport,
     )
-from bzrlib.transport.local import LocalTransport
+from breezy.transport.local import LocalTransport
 from lazr.uri import URI
 
 from lp.services.webapp.errorlog import (
@@ -221,7 +221,7 @@ class HttpAsLocalTransport(LocalTransport):
     """A LocalTransport that works using http URLs.
 
     We have this because the Launchpad database has constraints on URLs for
-    branches, disallowing file:/// URLs. bzrlib itself disallows
+    branches, disallowing file:/// URLs. breezy itself disallows
     file://localhost/ URLs.
     """
 
@@ -287,7 +287,7 @@ def get_vfs_format_classes(branch):
     if isinstance(repository, RemoteRepository):
         repository._ensure_real()
         repository = repository._real_repository
-    bzrdir = branch.bzrdir
+    bzrdir = branch.controldir
     if isinstance(bzrdir, RemoteBzrDir):
         bzrdir._ensure_real()
         bzrdir = bzrdir._real_bzrdir
@@ -325,7 +325,7 @@ def get_branch_info(branch):
     # XXX: Aaron Bentley 2008-06-13
     # Bazaar does not provide a public API for learning about
     # format markers.  Fix this in Bazaar, then here.
-    info['control_string'] = branch.bzrdir._format.get_format_string()
+    info['control_string'] = branch.controldir._format.get_format_string()
     info['branch_string'] = branch._format.get_format_string()
     info['repository_string'] = branch.repository._format.get_format_string()
     return info

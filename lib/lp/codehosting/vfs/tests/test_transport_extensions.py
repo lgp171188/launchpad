@@ -5,7 +5,7 @@
 
 __metaclass__ = type
 
-from bzrlib.transport.memory import MemoryTransport
+from breezy.transport.memory import MemoryTransport
 
 from lp.codehosting.vfs.transport import get_readonly_transport
 from lp.testing import TestCase
