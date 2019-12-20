@@ -32,6 +32,8 @@ from lp.app.errors import (
     TranslationUnavailable,
     )
 from lp.layers import WebServiceLayer
+from lp.registry.interfaces.person import IPerson
+from lp.registry.interfaces.role import IPersonRoles
 from lp.services.config import config
 from lp.services.webapp.errorlog import (
     _filter_session_statement,
@@ -42,6 +44,7 @@ from lp.services.webapp.errorlog import (
     ScriptRequest,
     )
 from lp.services.webapp.interfaces import (
+    ILaunchpadPrincipal,
     IUnloggedException,
     NoReferrerError,
     )
@@ -166,6 +169,48 @@ class TestErrorReportingUtility(TestCase):
         # verify that the oopsid was set on the request
         self.assertEqual(request.oopsid, report['id'])
         self.assertEqual(request.oops, report)
+
+    def test_raising_request_with_principal_person(self):
+        utility = ErrorReportingUtility()
+        utility._main_publishers[0].__call__ = lambda report: []
+
+        request = TestRequestWithPrincipal()
+
+        # Set a fake person attached to the request.
+        # Report should use their name (instead of principal.getLogin)
+        request.principal.person = FakePerson()
+        request.principal.person.name = 'my_username'
+
+        try:
+            raise ArbitraryException('xyz\nabc')
+        except ArbitraryException:
+            report = utility.raising(sys.exc_info(), request)
+        self.assertEqual(u'my_username, 42, title, description |\u25a0|',
+                         report['username'])
+
+    def test_raising_request_with_principal_person_set_to_none(self):
+        """
+        Tests oops report generated when request.principal is set to None
+        @see webapp.authentication.PlacelessAuthUtility
+             (_authenticateUsingCookieAuth method) for details
+             about when the principal could be set to None
+        """
+        utility = ErrorReportingUtility()
+        utility._main_publishers[0].__call__ = lambda report: []
+
+        request = TestRequestWithPrincipal()
+
+        # Explicitly sets principal.person to None,
+        # and expects OOPS to fallback to getLogin method (which should
+        # handle this case)
+        request.principal.person = None
+
+        try:
+            raise ArbitraryException('xyz\nabc')
+        except ArbitraryException:
+            report = utility.raising(sys.exc_info(), request)
+        self.assertEqual(u'Login, 42, title, description |\u25a0|',
+                         report['username'])
 
     def test_raising_with_xmlrpc_request(self):
         # Test ErrorReportingUtility.raising() with an XML-RPC request.
@@ -544,20 +589,31 @@ class TestRequestWithUnauthenticatedPrincipal(TestRequest):
     principal = UnauthenticatedPrincipal()
 
 
+class FakePerson:
+    """Used to test attach_http_request"""
+
+
+@implementer(ILaunchpadPrincipal)
+class AuthenticatedPrincipal:
+    def __init__(self):
+        self.id = 42
+        self.title = u'title'
+        # non ASCII description
+        self.description = u'description |\N{BLACK SQUARE}|'
+        self.person = None
+
+    @staticmethod
+    def getLogin():
+        return u'Login'
+
+
 class TestRequestWithPrincipal(TestRequest):
+    def __init__(self, *args, **kw):
+        super(TestRequestWithPrincipal, self).__init__(*args, **kw)
+        self.setPrincipal(AuthenticatedPrincipal())
 
     def setInWSGIEnvironment(self, key, value):
         self._orig_env[key] = value
-
-    class principal:
-        id = 42
-        title = u'title'
-        # non ASCII description
-        description = u'description |\N{BLACK SQUARE}|'
-
-        @staticmethod
-        def getLogin():
-            return u'Login'
 
 
 class TestOopsIgnoring(testtools.TestCase):
