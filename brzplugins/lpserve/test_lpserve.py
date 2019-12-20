@@ -11,18 +11,18 @@ import tempfile
 import threading
 import time
 
-from bzrlib import (
+from breezy import (
     errors,
     osutils,
     tests,
     trace,
     )
-from bzrlib.plugins import lpserve
+from breezy.plugins import lpserve
 from testtools import content
 
 from lp.codehosting import (
-    get_bzr_path,
-    get_BZR_PLUGIN_PATH_for_subprocess,
+    get_brz_path,
+    get_BRZ_PLUGIN_PATH_for_subprocess,
     )
 from lp.testing.fakemethod import FakeMethod
 
@@ -187,13 +187,13 @@ class TestLPForkingServiceParseEnv(tests.TestCase):
         self.assertEnv({}, 'end\n')
 
     def test_one_entries(self):
-        self.assertEnv({'BZR_EMAIL': 'joe@foo.com'},
-                       'BZR_EMAIL: joe@foo.com\n'
+        self.assertEnv({'BRZ_EMAIL': 'joe@foo.com'},
+                       'BRZ_EMAIL: joe@foo.com\n'
                        'end\n')
 
     def test_two_entries(self):
-        self.assertEnv({'BZR_EMAIL': 'joe@foo.com', 'BAR': 'foo'},
-                       'BZR_EMAIL: joe@foo.com\n'
+        self.assertEnv({'BRZ_EMAIL': 'joe@foo.com', 'BAR': 'foo'},
+                       'BRZ_EMAIL: joe@foo.com\n'
                        'BAR: foo\n'
                        'end\n')
 
@@ -201,10 +201,10 @@ class TestLPForkingServiceParseEnv(tests.TestCase):
         self.assertInvalid('')
 
     def test_invalid_end(self):
-        self.assertInvalid("BZR_EMAIL: joe@foo.com\n")
+        self.assertInvalid("BRZ_EMAIL: joe@foo.com\n")
 
     def test_invalid_entry(self):
-        self.assertInvalid("BZR_EMAIL joe@foo.com\nend\n")
+        self.assertInvalid("BRZ_EMAIL joe@foo.com\nend\n")
 
 
 class TestLPForkingService(TestCaseWithLPForkingService):
@@ -238,19 +238,19 @@ class TestLPForkingService(TestCaseWithLPForkingService):
     def test_send_fork_env_with_env(self):
         response = self.send_message_to_service(
             'fork-env rocks\n'
-            'BZR_EMAIL: joe@example.com\n'
+            'BRZ_EMAIL: joe@example.com\n'
             'end\n')
         self.assertEqual('ok\nfake forking\n', response)
-        self.assertEqual([(['rocks'], {'BZR_EMAIL': 'joe@example.com'})],
+        self.assertEqual([(['rocks'], {'BRZ_EMAIL': 'joe@example.com'})],
                          self.service.fork_log)
 
     def test_send_fork_env_slowly(self):
         response = self.send_message_to_service(
             'fork-env rocks\n'
-            'BZR_EMAIL: joe@example.com\n'
+            'BRZ_EMAIL: joe@example.com\n'
             'end\n', one_byte_at_a_time=True)
         self.assertEqual('ok\nfake forking\n', response)
-        self.assertEqual([(['rocks'], {'BZR_EMAIL': 'joe@example.com'})],
+        self.assertEqual([(['rocks'], {'BRZ_EMAIL': 'joe@example.com'})],
                          self.service.fork_log)
 
     def test_send_incomplete_fork_env_timeout(self):
@@ -258,7 +258,7 @@ class TestLPForkingService(TestCaseWithLPForkingService):
         # content
         response = self.send_message_to_service(
             'fork-env rocks\n'
-            'BZR_EMAIL: joe@example.com\n',
+            'BRZ_EMAIL: joe@example.com\n',
             one_byte_at_a_time=True)
         # Note that we *don't* send a final 'end\n'
         self.assertStartsWith(response, 'FAILURE\n')
@@ -315,24 +315,24 @@ class TestCaseWithSubprocess(tests.TestCaseWithTransport):
     The launchpad infrastructure requires a fair amount of configuration to
     get paths, etc correct. This provides a "start_bzr_subprocess" command
     that has all of those paths appropriately set, but otherwise functions the
-    same as the bzrlib.tests.TestCase version.
+    same as the breezy.tests.TestCase version.
     """
 
     def start_bzr_subprocess(self, process_args, env_changes=None,
                              working_dir=None):
         """Start bzr in a subprocess for testing.
 
-        Copied and modified from `bzrlib.tests.TestCase.start_bzr_subprocess`.
+        Copied and modified from `breezy.tests.TestCase.start_bzr_subprocess`.
         This version removes some of the skipping stuff, some of the
         irrelevant comments (e.g. about win32) and uses Launchpad's own
-        mechanisms for getting the path to 'bzr'.
+        mechanisms for getting the path to 'brz'.
 
         Comments starting with 'LAUNCHPAD' are comments about our
         modifications.
         """
         if env_changes is None:
             env_changes = {}
-        env_changes['BZR_PLUGIN_PATH'] = get_BZR_PLUGIN_PATH_for_subprocess()
+        env_changes['BRZ_PLUGIN_PATH'] = get_BRZ_PLUGIN_PATH_for_subprocess()
         old_env = {}
 
         def cleanup_environment():
@@ -348,12 +348,12 @@ class TestCaseWithSubprocess(tests.TestCaseWithTransport):
             cwd = osutils.getcwd()
             os.chdir(working_dir)
 
-        # LAUNCHPAD: We can't use self.get_bzr_path(), since it'll find
-        # lib/bzrlib, rather than the path to bin/bzr.
-        bzr_path = get_bzr_path()
+        # LAUNCHPAD: We can't use self.get_brz_path(), since it'll find
+        # lib/breezy, rather than the path to bin/brz.
+        brz_path = get_brz_path()
         try:
             cleanup_environment()
-            command = [bzr_path]
+            command = [brz_path]
             command.extend(process_args)
             process = self._popen(
                 command, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
@@ -464,8 +464,8 @@ class TestCaseWithLPForkingServiceSubprocess(TestCaseWithSubprocess):
         # The service wants to create this file as a socket.
         os.remove(path)
         env_changes = {
-            'BZR_PLUGIN_PATH': lpserve.__path__[0],
-            'BZR_LOG': tempname,
+            'BRZ_PLUGIN_PATH': lpserve.__path__[0],
+            'BRZ_LOG': tempname,
             }
         proc = self._start_subprocess(path, env_changes)
         return proc, path
@@ -579,7 +579,7 @@ class TestLPServiceInSubprocess(TestCaseWithLPForkingServiceSubprocess):
 
     def test_fork_respects_env_vars(self):
         path, pid, sock = self.send_fork_request('whoami',
-            env={'BZR_EMAIL': 'this_test@example.com'})
+            env={'BRZ_EMAIL': 'this_test@example.com'})
         stdout_content, stderr_content = self.communicate_with_fork(path)
         self.assertEqual('', stderr_content)
         self.assertEqual('this_test@example.com\n', stdout_content)

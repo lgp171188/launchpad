@@ -24,12 +24,12 @@ import errno
 import os
 import stat
 
-from bzrlib import (
+from breezy import (
     errors as bzr_errors,
     osutils,
     urlutils,
     )
-from bzrlib.transport.local import LocalTransport
+from breezy.transport.local import LocalTransport
 from lazr.sshserver.sftp import FileIsADirectory
 from twisted.conch.interfaces import (
     ISFTPFile,
@@ -160,7 +160,7 @@ class TransportSFTPFile:
     def _truncateFile(self):
         """Truncate this file."""
         self._written = True
-        return self.transport.put_bytes(self._escaped_path, '')
+        return self.transport.put_bytes(self._escaped_path, b'')
 
     @with_sftp_error
     def writeChunk(self, offset, data):
@@ -198,7 +198,7 @@ class TransportSFTPFile:
 
             Doing things this way around, by trying to read all the data
             requested and then handling the short read error, might be a bit
-            inefficient, but the bzrlib sftp transport doesn't read past the
+            inefficient, but the breezy sftp transport doesn't read past the
             end of files, so we don't need to worry too much about performance
             here.
             """

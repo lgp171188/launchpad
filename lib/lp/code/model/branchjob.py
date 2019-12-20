@@ -19,20 +19,20 @@ import shutil
 from StringIO import StringIO
 import tempfile
 
-from bzrlib.branch import Branch as BzrBranch
-from bzrlib.diff import show_diff_trees
-from bzrlib.errors import (
+from breezy.branch import Branch as BzrBranch
+from breezy.diff import show_diff_trees
+from breezy.errors import (
     NoSuchFile,
     NotBranchError,
     )
-from bzrlib.log import (
+from breezy.log import (
     log_formatter,
     show_log,
     )
-from bzrlib.revision import NULL_REVISION
-from bzrlib.revisionspec import RevisionInfo
-from bzrlib.transport import get_transport
-from bzrlib.upgrade import upgrade
+from breezy.revision import NULL_REVISION
+from breezy.revisionspec import RevisionInfo
+from breezy.transport import get_transport
+from breezy.upgrade import upgrade
 from lazr.delegates import delegate_to
 from lazr.enum import (
     DBEnumeratedType,
@@ -533,7 +533,7 @@ class RevisionsAddedJob(BranchJobDerived):
         repository = self.bzr_branch.repository
         added_revisions = repository.get_graph().find_unique_ancestors(
             self.last_revision_id, [self.last_scanned_id])
-        # Avoid hitting the database since bzrlib makes it easy to check.
+        # Avoid hitting the database since breezy makes it easy to check.
         # There are possibly more efficient ways to get the mainline
         # revisions, but this is simple and it works.
         history = branch_revision_history(self.bzr_branch)
@@ -625,7 +625,7 @@ class RevisionsAddedJob(BranchJobDerived):
         """Determine which revisions were merged by this revision.
 
         :param revision_id: ID of the revision to examine.
-        :param graph: a bzrlib.graph.Graph.
+        :param graph: a breezy.graph.Graph.
         :return: a set of revision IDs.
         """
         parents = graph.get_parent_map([revision_id])[revision_id]
@@ -901,7 +901,7 @@ class RosettaUploadJob(BranchJobDerived):
                             continue
                         file_id, (from_path, to_path) = changed_file[:2]
                         changed_files.append((
-                            to_path, to_tree.get_file_text(file_id)))
+                            to_path, to_tree.get_file_text(to_path)))
             finally:
                 from_tree.unlock()
         finally:

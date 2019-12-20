@@ -9,7 +9,7 @@ __metaclass__ = type
 __all__ = []
 
 
-from bzrlib.urlutils import escape
+from breezy.urlutils import escape
 from lazr.enum import DBItem
 from lazr.uri import (
     InvalidURIError,

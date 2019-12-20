@@ -14,9 +14,9 @@ import json
 import operator
 import os.path
 
-from bzrlib import urlutils
-from bzrlib.revision import NULL_REVISION
-from bzrlib.url_policy_open import open_only_scheme
+from breezy import urlutils
+from breezy.revision import NULL_REVISION
+from breezy.url_policy_open import open_only_scheme
 from lazr.lifecycle.event import ObjectCreatedEvent
 import pytz
 import six

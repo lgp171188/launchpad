@@ -46,8 +46,8 @@ from types import InstanceType
 import uuid
 import warnings
 
-from bzrlib.plugins.builder.recipe import BaseRecipeBranch
-from bzrlib.revision import Revision as BzrRevision
+from breezy.plugins.builder.recipe import BaseRecipeBranch
+from breezy.revision import Revision as BzrRevision
 from cryptography.utils import int_to_bytes
 from lazr.jobrunner.jobrunner import SuspendJobException
 import pytz
@@ -3036,7 +3036,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         If no branches are passed, return a recipe text that references an
         arbitrary branch.
         """
-        from bzrlib.plugins.builder.recipe import RecipeParser
+        from breezy.plugins.builder.recipe import RecipeParser
         parser = RecipeParser(self.makeRecipeText(*branches))
         return parser.parse()
 

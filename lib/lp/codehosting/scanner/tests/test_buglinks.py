@@ -1,11 +1,11 @@
 # Copyright 2009 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-"""Tests for creating BugBranch items based on Bazaar revisions."""
+"""Tests for creating BugBranch items based on Breezy revisions."""
 
 __metaclass__ = type
 
-from bzrlib.revision import Revision
+from breezy.revision import Revision
 from zope.component import getUtility
 from zope.event import notify
 
@@ -192,7 +192,7 @@ class TestBugLinking(BzrSyncTestCase):
         author = self.factory.getUniqueString()
         # XXX: AaronBentley 2010-08-06 bug=614404: a bzr username is
         # required to generate the revision-id.
-        with override_environ(BZR_EMAIL='me@example.com'):
+        with override_environ(BRZ_EMAIL='me@example.com'):
             self.bzr_tree.commit(
                 u'common parent', committer=author, rev_id='r1',
                 allow_pointless=True)
@@ -253,7 +253,7 @@ class TestSubscription(TestCaseWithFactory):
         switch_dbuser("branchscanner")
         # XXX: AaronBentley 2010-08-06 bug=614404: a bzr username is
         # required to generate the revision-id.
-        with override_environ(BZR_EMAIL='me@example.com'):
+        with override_environ(BRZ_EMAIL='me@example.com'):
             revision_id = tree.commit('fix revision',
                 revprops={
                     'bugs': 'https://launchpad.net/bugs/%d fixed' % bug.id})

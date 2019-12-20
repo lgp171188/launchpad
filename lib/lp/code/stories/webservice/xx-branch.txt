@@ -3,7 +3,7 @@ Introduction
 
 Launchpad provides two ways to programmatically interact with your
 branches. You can either interact with the branches themselves using
-`bzrlib`, or you can use Launchpad's webservice APIs to explore
+`breezy`, or you can use Launchpad's webservice APIs to explore
 information about the branches and how they relate to the rest of
 the things on Launchpad.
 

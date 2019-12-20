@@ -11,14 +11,14 @@ import socket
 import tempfile
 import urllib2
 
-from bzrlib.errors import (
+from breezy.errors import (
     BzrError,
     NotBranchError,
     ParamikoNotPresent,
     UnknownFormatError,
     UnsupportedFormatError,
     )
-from bzrlib.url_policy_open import (
+from breezy.url_policy_open import (
     BranchLoopError,
     BranchReferenceForbidden,
     )

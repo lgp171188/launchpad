@@ -5,10 +5,10 @@
 
 __metaclass__ = type
 
-from bzrlib import errors
-from bzrlib.plugins.lpserve.test_lpserve import TestCaseWithSubprocess
-from bzrlib.smart import medium
-from bzrlib.transport import remote
+from breezy import errors
+from breezy.bzr.smart import medium
+from breezy.plugins.lpserve.test_lpserve import TestCaseWithSubprocess
+from breezy.transport import remote
 
 from lp.testing.fixture import CaptureOops
 from lp.testing.layers import LaunchpadLayer
@@ -112,8 +112,8 @@ class TestLaunchpadServe(TestCaseWithSubprocess):
 
 
 def test_suite():
-    from bzrlib import tests
-    from bzrlib.plugins import lpserve
+    from breezy import tests
+    from breezy.plugins import lpserve
 
     loader = tests.TestLoader()
     suite = loader.loadTestsFromName(__name__)

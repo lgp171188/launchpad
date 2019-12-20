@@ -14,11 +14,11 @@ import time
 import urllib2
 import xmlrpclib
 
-import bzrlib.branch
-from bzrlib.tests import TestCaseWithTransport
-from bzrlib.tests.per_repository import all_repository_format_scenarios
-from bzrlib.urlutils import local_path_from_url
-from bzrlib.workingtree import WorkingTree
+import breezy.branch
+from breezy.tests import TestCaseWithTransport
+from breezy.tests.per_repository import all_repository_format_scenarios
+from breezy.urlutils import local_path_from_url
+from breezy.workingtree import WorkingTree
 from testscenarios import (
     load_tests_apply_scenarios,
     WithScenarios,
@@ -37,8 +37,8 @@ from lp.code.tests.helpers import (
     get_non_existant_source_package_branch_unique_name,
     )
 from lp.codehosting import (
-    get_bzr_path,
-    get_BZR_PLUGIN_PATH_for_subprocess,
+    get_brz_path,
+    get_BRZ_PLUGIN_PATH_for_subprocess,
     )
 from lp.codehosting.bzrutils import DenyingServer
 from lp.codehosting.tests.helpers import LoomTestMixin
@@ -64,10 +64,10 @@ class ForkingServerForTests(object):
         self.socket_path = None
 
     def setUp(self):
-        bzr_path = get_bzr_path()
-        BZR_PLUGIN_PATH = get_BZR_PLUGIN_PATH_for_subprocess()
+        brz_path = get_brz_path()
+        BRZ_PLUGIN_PATH = get_BRZ_PLUGIN_PATH_for_subprocess()
         env = os.environ.copy()
-        env['BZR_PLUGIN_PATH'] = BZR_PLUGIN_PATH
+        env['BRZ_PLUGIN_PATH'] = BRZ_PLUGIN_PATH
         # TODO: We probably want to use a random disk path for
         #       forking_daemon_socket, but we need to update config so that
         #       the CodeHosting service can find it.
@@ -77,7 +77,7 @@ class ForkingServerForTests(object):
         #       settings, we have to somehow pass it a new config-on-disk to
         #       use.
         self.socket_path = config.codehosting.forking_daemon_socket
-        command = [sys.executable, bzr_path, 'launchpad-forking-service',
+        command = [sys.executable, brz_path, 'launchpad-forking-service',
                    '--path', self.socket_path, '-Derror']
         process = subprocess.Popen(
             command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env)
@@ -110,12 +110,12 @@ class ForkingServerForTests(object):
             print process.stderr.read()
             print "-" * 70
             raise RuntimeError(
-                'Bzr server did not start correctly.  See stdout and stderr '
-                'reported above. Command was "%s".  PYTHONPATH was "%s".  '
-                'BZR_PLUGIN_PATH was "%s".' %
+                'Breezy server did not start correctly.  See stdout and '
+                'stderr reported above. Command was "%s".  PYTHONPATH was '
+                '"%s".  BRZ_PLUGIN_PATH was "%s".' %
                 (' '.join(command),
                  env.get('PYTHONPATH'),
-                 env.get('BZR_PLUGIN_PATH')))
+                 env.get('BRZ_PLUGIN_PATH')))
 
     def tearDown(self):
         # SIGTERM is the graceful exit request, potentially we could wait a
@@ -234,8 +234,8 @@ class SSHTestCase(TestCaseWithTransport, LoomTestMixin, TestCaseWithFactory):
         """
         return self.run_bzr_subprocess(
             args, env_changes={
-                'BZR_SSH': 'paramiko',
-                'BZR_PLUGIN_PATH': get_BZR_PLUGIN_PATH_for_subprocess()
+                'BRZ_SSH': 'paramiko',
+                'BRZ_PLUGIN_PATH': get_BRZ_PLUGIN_PATH_for_subprocess()
             },
             allow_plugins=True, retcode=retcode)
 
@@ -244,7 +244,7 @@ class SSHTestCase(TestCaseWithTransport, LoomTestMixin, TestCaseWithFactory):
         """
         output, error = self._run_bzr(args, retcode=3)
         for line in error.splitlines():
-            if line.startswith("bzr: ERROR"):
+            if line.startswith("brz: ERROR"):
                 return line
         raise AssertionError(
             "Didn't find error line in output:\n\n%s\n" % error)
@@ -253,12 +253,12 @@ class SSHTestCase(TestCaseWithTransport, LoomTestMixin, TestCaseWithFactory):
         """Branch from the given URL to a local directory."""
         self._run_bzr(['branch', remote_url, local_directory])
 
-    def get_bzr_path(self):
-        """See `bzrlib.tests.TestCase.get_bzr_path`.
+    def get_brz_path(self):
+        """See `breezy.tests.TestCase.get_brz_path`.
 
-        We override this to return the 'bzr' executable from sourcecode.
+        We override this to return our own 'brz' executable.
         """
-        return get_bzr_path()
+        return get_brz_path()
 
     def push(self, local_directory, remote_url, extra_args=None):
         """Push the local branch to the given URL."""
@@ -271,19 +271,19 @@ class SSHTestCase(TestCaseWithTransport, LoomTestMixin, TestCaseWithFactory):
         """Check that we cannot push from 'local_directory' to 'remote_url'.
 
         In addition, if a list of messages is supplied as the error_messages
-        argument, check that the bzr client printed one of these messages
-        which shouldn't include the 'bzr: ERROR:' part of the message.
+        argument, check that the brz client printed one of these messages
+        which shouldn't include the 'brz: ERROR:' part of the message.
 
         :return: The last line of the stderr from the subprocess, which will
-            be the 'bzr: ERROR: <repr of Exception>' line.
+            be the 'brz: ERROR: <repr of Exception>' line.
         """
         error_line = self._run_bzr_error(
             ['push', '-d', local_directory, remote_url])
-        # This will be the will be the 'bzr: ERROR: <repr of Exception>' line.
+        # This will be the 'brz: ERROR: <repr of Exception>' line.
         if not error_messages:
             return error_line
         for msg in error_messages:
-            if error_line.startswith('bzr: ERROR: ' + msg):
+            if error_line.startswith('brz: ERROR: ' + msg):
                 return error_line
         self.fail(
             "Error message %r didn't match any of those supplied."
@@ -340,11 +340,11 @@ class SmokeTest(WithScenarios, SSHTestCase):
     """Smoke test for repository support."""
 
     excluded_scenarios = [
-        # RepositoryFormat4 is not initializable (bzrlib raises TestSkipped
+        # RepositoryFormat4 is not initializable (breezy raises TestSkipped
         # when you try).
         'RepositoryFormat4',
         # Fetching weave formats from the smart server is known to be broken.
-        # See bug 173807 and bzrlib.tests.test_repository.
+        # See bug 173807 and breezy.tests.test_repository.
         'RepositoryFormat5',
         'RepositoryFormat6',
         'RepositoryFormat7',
@@ -364,14 +364,14 @@ class SmokeTest(WithScenarios, SSHTestCase):
         self.second_tree = 'second'
 
     def make_branch_specifying_repo_format(self, relpath, repo_format):
-        bd = self.make_bzrdir(relpath, format=self.bzrdir_format)
+        bd = self.make_controldir(relpath, format=self.bzrdir_format)
         repo_format.initialize(bd)
         return bd.create_branch()
 
     def make_branch_and_tree(self, relpath):
         b = self.make_branch_specifying_repo_format(
             relpath, self.repository_format)
-        return b.bzrdir.create_workingtree()
+        return b.controldir.create_workingtree()
 
     def test_smoke(self):
         # Make a new branch
@@ -411,7 +411,7 @@ class AcceptanceTests(WithScenarios, SSHTestCase):
         error_line = self._run_bzr_error(
             ['cat-revision', '-r', 'branch:' + url])
         self.assertTrue(
-            error_line.startswith('bzr: ERROR: Not a branch:'),
+            error_line.startswith('brz: ERROR: Not a branch:'),
             'Expected "Not a branch", found %r' % error_line)
 
     def makeDatabaseBranch(self, owner_name, product_name, branch_name,
@@ -693,7 +693,7 @@ class SmartserverTests(WithScenarios, SSHTestCase):
         # We can get information from a read-only branch.
         ro_branch_url = self.createBazaarBranch(
             'mark', '+junk', 'ro-branch')
-        revision = bzrlib.branch.Branch.open(ro_branch_url).last_revision()
+        revision = breezy.branch.Branch.open(ro_branch_url).last_revision()
         remote_revision = self.getLastRevision(
             self.getTransportURL('~mark/+junk/ro-branch'))
         self.assertEqual(revision, remote_revision)
@@ -715,7 +715,7 @@ class SmartserverTests(WithScenarios, SSHTestCase):
         # Added to catch bug 126245.
         ro_branch_url = self.makeMirroredBranch(
             'testuser', 'firefox', 'mirror')
-        revision = bzrlib.branch.Branch.open(ro_branch_url).last_revision()
+        revision = breezy.branch.Branch.open(ro_branch_url).last_revision()
         remote_revision = self.getLastRevision(
             self.getTransportURL('~testuser/firefox/mirror'))
         self.assertEqual(revision, remote_revision)
@@ -724,7 +724,7 @@ class SmartserverTests(WithScenarios, SSHTestCase):
         # Users should be able to read mirrored branches even if they don't
         # own those branches.
         ro_branch_url = self.makeMirroredBranch('mark', 'firefox', 'mirror')
-        revision = bzrlib.branch.Branch.open(ro_branch_url).last_revision()
+        revision = breezy.branch.Branch.open(ro_branch_url).last_revision()
         remote_revision = self.getLastRevision(
             self.getTransportURL('~mark/firefox/mirror'))
         self.assertEqual(revision, remote_revision)

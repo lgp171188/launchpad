@@ -5,9 +5,9 @@
 
 __metaclass__ = type
 
-from bzrlib.branch import format_registry as branch_format_registry
-from bzrlib.bzrdir import BzrProber
-from bzrlib.repository import format_registry as repo_format_registry
+from breezy.branch import format_registry as branch_format_registry
+from breezy.bzr import BzrProber
+from breezy.repository import format_registry as repo_format_registry
 
 from lp.code.bzr import (
     BranchFormat,
@@ -27,21 +27,21 @@ class TestFormatSupport(TestCase):
     """
 
     def test_control_format_complement(self):
-        self.bzrlib_is_subset(BzrProber.formats.keys(), ControlFormat)
+        self.breezy_is_subset(BzrProber.formats.keys(), ControlFormat)
 
     def test_branch_format_complement(self):
-        self.bzrlib_is_subset(branch_format_registry.keys(), BranchFormat)
+        self.breezy_is_subset(branch_format_registry.keys(), BranchFormat)
 
     def test_repository_format_complement(self):
-        self.bzrlib_is_subset(repo_format_registry.keys(), RepositoryFormat)
+        self.breezy_is_subset(repo_format_registry.keys(), RepositoryFormat)
 
-    def bzrlib_is_subset(self, bzrlib_formats, launchpad_enum):
-        """Ensure the bzr format marker list is a subset of launchpad."""
-        bzrlib_format_strings = set(bzrlib_formats)
+    def breezy_is_subset(self, breezy_formats, launchpad_enum):
+        """Ensure the Breezy format marker list is a subset of Launchpad."""
+        breezy_format_strings = set(breezy_formats)
         launchpad_format_strings = set(format.title for format
                                        in launchpad_enum.items)
         self.assertEqual(
-            set(), bzrlib_format_strings.difference(launchpad_format_strings))
+            set(), breezy_format_strings.difference(launchpad_format_strings))
 
     def test_repositoryDescriptions(self):
         self.checkDescriptions(RepositoryFormat)

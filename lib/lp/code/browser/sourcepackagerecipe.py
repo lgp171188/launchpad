@@ -17,7 +17,7 @@ __all__ = [
 
 import itertools
 
-from bzrlib.plugins.builder.recipe import (
+from breezy.plugins.builder.recipe import (
     ForbiddenInstructionError,
     RecipeParseError,
     )

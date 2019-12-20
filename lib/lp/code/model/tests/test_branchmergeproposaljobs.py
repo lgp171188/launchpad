@@ -190,7 +190,7 @@ class TestMergeProposalNeedsReviewEmailJobBzr(
         target_branch, tree = self.create_branch_and_tree()
         # XXX: AaronBentley 2010-08-06 bug=614404: a bzr username is
         # required to generate the revision-id.
-        with override_environ(BZR_EMAIL='me@example.com'):
+        with override_environ(BRZ_EMAIL='me@example.com'):
             tree.commit('test')
         source_branch = self.factory.makeProductBranch(
             product=target_branch.product)
@@ -212,7 +212,7 @@ class TestMergeProposalNeedsReviewEmailJobBzr(
         tree = self.create_branch_and_tree(db_branch=bmp.target_branch)[1]
         # XXX: AaronBentley 2010-08-06 bug=614404: a bzr username is
         # required to generate the revision-id.
-        with override_environ(BZR_EMAIL='me@example.com'):
+        with override_environ(BRZ_EMAIL='me@example.com'):
             tree.commit('Initial commit')
         self.createBzrBranch(bmp.source_branch, tree.branch)
         self.factory.makeRevisionsForBranch(bmp.source_branch, count=1)

@@ -15,7 +15,7 @@ import os
 import shutil
 import tempfile
 
-from bzrlib.transport import (
+from breezy.transport import (
     get_transport,
     Server,
     )

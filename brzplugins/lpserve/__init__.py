@@ -28,7 +28,7 @@ import tempfile
 import threading
 import time
 
-from bzrlib import (
+from breezy import (
     commands,
     errors,
     lockdir,
@@ -36,15 +36,15 @@ from bzrlib import (
     trace,
     ui,
     )
-from bzrlib.commands import (
+from breezy.commands import (
     Command,
     register_command,
     )
-from bzrlib.option import (
+from breezy.option import (
     Option,
     RegistryOption,
     )
-from bzrlib.transport import (
+from breezy.transport import (
     get_transport,
     transport_server_registry,
     )
@@ -88,7 +88,7 @@ class cmd_launchpad_server(Command):
             type=unicode),
         RegistryOption(
             'protocol', help="Protocol to serve.",
-            lazy_registry=('bzrlib.transport', 'transport_server_registry'),
+            lazy_registry=('breezy.transport', 'transport_server_registry'),
             value_switches=True),
         ]
 
@@ -192,7 +192,7 @@ class LPForkingService(object):
             that should be reset.
 
             fork-env allows you to supply environment variables such as
-            "BZR_EMAIL: joe@foo.com" which will be set in os.environ before
+            "BRZ_EMAIL: joe@foo.com" which will be set in os.environ before
             the command is run.
     """
 
@@ -301,9 +301,9 @@ class LPForkingService(object):
     #       don't know any way to *remove* a function registered via
     #       'atexit()' so if the forking service has some state, we my try to
     #       clean it up incorrectly.
-    #       Note that the bzr script itself uses sys.exitfunc(); os._exit() in
-    #       the 'bzr' main script, as the teardown time of all the python
-    #       state was quite noticeable in real-world runtime. As such, bzrlib
+    #       Note that the brz script itself uses sys.exitfunc(); os._exit() in
+    #       the 'brz' main script, as the teardown time of all the python
+    #       state was quite noticeable in real-world runtime. As such, breezy
     #       should be pretty safe, or it would have been failing for people
     #       already.
     # [Decision #7]
@@ -483,7 +483,7 @@ class LPForkingService(object):
         os.rmdir(base_path)
 
     def _bind_child_file_descriptors(self, base_path):
-        # Note: by this point bzrlib has opened stderr for logging
+        # Note: by this point breezy has opened stderr for logging
         # (as part of starting the service process in the first place).
         # As such, it has a stream handler that writes to stderr.
         # logging tries to flush and close that, but the file is already
@@ -975,16 +975,16 @@ register_command(cmd_launchpad_replay)
 # manually, and observe what was expensive to import.  It doesn't seem
 # very easy to get this right automatically.
 libraries_to_preload = [
-    'bzrlib.errors',
-    'bzrlib.repofmt.groupcompress_repo',
-    'bzrlib.repository',
-    'bzrlib.smart',
-    'bzrlib.smart.protocol',
-    'bzrlib.smart.request',
-    'bzrlib.smart.server',
-    'bzrlib.smart.vfs',
-    'bzrlib.transport.local',
-    'bzrlib.transport.readonly',
+    'breezy.bzr.groupcompress_repo',
+    'breezy.bzr.smart',
+    'breezy.bzr.smart.protocol',
+    'breezy.bzr.smart.request',
+    'breezy.bzr.smart.server',
+    'breezy.bzr.smart.vfs',
+    'breezy.errors',
+    'breezy.repository',
+    'breezy.transport.local',
+    'breezy.transport.readonly',
     'lp.codehosting.bzrutils',
     'lp.codehosting.vfs',
     'lp.codehosting.vfs.branchfs',

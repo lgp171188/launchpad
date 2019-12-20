@@ -16,7 +16,7 @@ from datetime import (
     )
 import email
 
-from bzrlib.revision import NULL_REVISION
+from breezy.revision import NULL_REVISION
 import pytz
 from sqlobject import (
     BoolCol,
@@ -322,7 +322,7 @@ class RevisionSet:
         This works around a bug in Python that causes datetime.fromtimestamp
         to raise an exception if it is given a negative, fractional timestamp.
 
-        :param timestamp: A timestamp from a bzrlib.revision.Revision
+        :param timestamp: A timestamp from a breezy.revision.Revision
         :type timestamp: float
 
         :return: A datetime corresponding to the given timestamp.

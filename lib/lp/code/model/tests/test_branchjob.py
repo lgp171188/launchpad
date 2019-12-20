@@ -11,11 +11,11 @@ import datetime
 import os
 import shutil
 
-from bzrlib import errors as bzr_errors
-from bzrlib.branch import Branch
-from bzrlib.bzrdir import BzrDir
-from bzrlib.revision import NULL_REVISION
-from bzrlib.transport import get_transport
+from breezy import errors as bzr_errors
+from breezy.branch import Branch
+from breezy.bzr.bzrdir import BzrDir
+from breezy.revision import NULL_REVISION
+from breezy.transport import get_transport
 from fixtures import MockPatch
 import pytz
 from sqlobject import SQLObjectNotFound
@@ -149,7 +149,7 @@ class TestBranchScanJob(TestCaseWithFactory):
         db_branch, bzr_tree = self.create_branch_and_tree()
         # XXX: AaronBentley 2010-08-06 bug=614404: a bzr username is
         # required to generate the revision-id.
-        with override_environ(BZR_EMAIL='me@example.com'):
+        with override_environ(BRZ_EMAIL='me@example.com'):
             bzr_tree.commit('First commit', rev_id=b'rev1')
             bzr_tree.commit('Second commit', rev_id=b'rev2')
             bzr_tree.commit('Third commit', rev_id=b'rev3')
@@ -177,7 +177,7 @@ class TestBranchScanJob(TestCaseWithFactory):
         db_branch, bzr_tree = self.create_branch_and_tree()
         # XXX: AaronBentley 2010-08-06 bug=614404: a bzr username is
         # required to generate the revision-id.
-        with override_environ(BZR_EMAIL='me@example.com'):
+        with override_environ(BRZ_EMAIL='me@example.com'):
             bzr_tree.commit('First commit', rev_id=b'rev1')
             LaunchpadZopelessLayer.commit()
 
@@ -198,7 +198,7 @@ class TestBranchScanJob(TestCaseWithFactory):
         private_bug = self.factory.makeBug(
             target=product, information_type=InformationType.USERDATA)
         bug_line = b'https://launchpad.net/bugs/%s fixed' % private_bug.id
-        with override_environ(BZR_EMAIL='me@example.com'):
+        with override_environ(BRZ_EMAIL='me@example.com'):
             bzr_tree.commit(
                 'First commit', rev_id=b'rev1', revprops={b'bugs': bug_line})
         job = BranchScanJob.create(db_branch)
@@ -314,7 +314,7 @@ class TestBranchUpgradeJob(TestCaseWithFactory):
         db_branch, tree = self.create_branch_and_tree()
         branch2 = BzrDir.create_branch_convenience('.')
         tree.branch.set_stacked_on_url(branch2.base)
-        branch2.bzrdir.destroy_branch()
+        branch2.controldir.destroy_branch()
         # Create BranchUpgradeJob manually, because we're trying to upgrade a
         # branch that doesn't need upgrading.
         requester = self.factory.makePerson()
@@ -463,7 +463,7 @@ class TestRevisionsAddedJob(TestCaseWithFactory):
         try:
             # XXX: AaronBentley 2010-08-06 bug=614404: a bzr username is
             # required to generate the revision-id.
-            with override_environ(BZR_EMAIL='me@example.com'):
+            with override_environ(BRZ_EMAIL='me@example.com'):
                 tree.commit('rev1', rev_id=b'rev1')
                 tree.commit('rev2', rev_id=b'rev2')
                 tree.commit('rev3', rev_id=b'rev3')
@@ -492,7 +492,7 @@ class TestRevisionsAddedJob(TestCaseWithFactory):
         tree.add_parent_tree_id(b'rev3')
         # XXX: AaronBentley 2010-08-06 bug=614404: a bzr username is
         # required to generate the revision-id.
-        with override_environ(BZR_EMAIL='me@example.com'):
+        with override_environ(BRZ_EMAIL='me@example.com'):
             tree.commit('rev3a', rev_id=b'rev3a')
         self.updateDBRevisions(branch, tree.branch, [b'rev3', b'rev3a'])
         job = RevisionsAddedJob.create(branch, 'rev1', 'rev3', '')
@@ -533,7 +533,7 @@ class TestRevisionsAddedJob(TestCaseWithFactory):
         self.addCleanup(tree.unlock)
         # XXX: AaronBentley 2010-08-06 bug=614404: a bzr username is
         # required to generate the revision-id.
-        with override_environ(BZR_EMAIL='me@example.com'):
+        with override_environ(BRZ_EMAIL='me@example.com'):
             tree.commit(
                 'rev1', rev_id=b'rev1', timestamp=1000, timezone=0,
                 committer='J. Random Hacker <jrandom@example.org>')
@@ -552,14 +552,14 @@ class TestRevisionsAddedJob(TestCaseWithFactory):
         tree.branch.nick = 'nicholas'
         # XXX: AaronBentley 2010-08-06 bug=614404: a bzr username is
         # required to generate the revision-id.
-        with override_environ(BZR_EMAIL='me@example.com'):
+        with override_environ(BRZ_EMAIL='me@example.com'):
             tree.commit('rev1')
-            tree2 = tree.bzrdir.sprout('tree2').open_workingtree()
+            tree2 = tree.controldir.sprout('tree2').open_workingtree()
             tree2.commit('rev2a', rev_id=b'rev2a-id', committer='foo@')
             tree2.commit('rev3', rev_id=b'rev3-id',
                          authors=['bar@', 'baz@blaine.com'])
             tree.merge_from_branch(tree2.branch)
-            tree3 = tree.bzrdir.sprout('tree3').open_workingtree()
+            tree3 = tree.controldir.sprout('tree3').open_workingtree()
             tree3.commit('rev2b', rev_id=b'rev2b-id', committer='qux@')
             tree.merge_from_branch(tree3.branch, force=True)
             if include_ghost:
@@ -808,17 +808,17 @@ class TestRevisionsAddedJob(TestCaseWithFactory):
         self.useBzrBranches(direct_database=True)
         db_branch, tree = self.create_branch_and_tree()
         first_revision = b'rev-1'
-        tree.bzrdir.root_transport.put_bytes('hello.txt', 'Hello World\n')
+        tree.controldir.root_transport.put_bytes('hello.txt', b'Hello World\n')
         tree.add('hello.txt')
         # XXX: AaronBentley 2010-08-06 bug=614404: a bzr username is
         # required to generate the revision-id.
-        with override_environ(BZR_EMAIL='me@example.com'):
+        with override_environ(BRZ_EMAIL='me@example.com'):
             tree.commit(
                 rev_id=first_revision, message="Log message",
                 committer="Joe Bloggs <joe@example.com>",
                 timestamp=1000000000.0, timezone=0)
-            tree.bzrdir.root_transport.put_bytes(
-                'hello.txt', 'Hello World\n\nFoo Bar\n')
+            tree.controldir.root_transport.put_bytes(
+                'hello.txt', b'Hello World\n\nFoo Bar\n')
             second_revision = b'rev-2'
             tree.commit(
                 rev_id=second_revision, message="Extended contents",
@@ -864,7 +864,7 @@ class TestRevisionsAddedJob(TestCaseWithFactory):
         rev_id = b'rev-1'
         # XXX: AaronBentley 2010-08-06 bug=614404: a bzr username is
         # required to generate the revision-id.
-        with override_environ(BZR_EMAIL='me@example.com'):
+        with override_environ(BRZ_EMAIL='me@example.com'):
             tree.commit(
                 rev_id=rev_id, message="Non ASCII: \xe9",
                 committer="Non ASCII: \xed", timestamp=1000000000.0,
@@ -971,8 +971,9 @@ class TestRosettaUploadJob(TestCaseWithFactory):
             except IndexError:
                 file_content = self.factory.getUniqueString()
             dname = os.path.dirname(file_name)
-            self.tree.bzrdir.root_transport.clone(dname).create_prefix()
-            self.tree.bzrdir.root_transport.put_bytes(file_name, file_content)
+            self.tree.controldir.root_transport.clone(dname).create_prefix()
+            self.tree.controldir.root_transport.put_bytes(
+                file_name, file_content)
         if len(files) > 0:
             self.tree.smart_add(
                 [self.tree.abspath(file_pair[0]) for file_pair in files])
@@ -980,7 +981,7 @@ class TestRosettaUploadJob(TestCaseWithFactory):
             commit_message = self.factory.getUniqueString('commit')
         # XXX: AaronBentley 2010-08-06 bug=614404: a bzr username is
         # required to generate the revision-id.
-        with override_environ(BZR_EMAIL='me@example.com'):
+        with override_environ(BRZ_EMAIL='me@example.com'):
             revision_id = self.tree.commit(commit_message)
         self.branch.last_scanned_id = revision_id
         self.branch.last_mirrored_id = revision_id
@@ -1076,7 +1077,7 @@ class TestRosettaUploadJob(TestCaseWithFactory):
         # An empty POT cannot be uploaded, if if the product series is
         # configured for template import.
         entries = self._runJobWithFile(
-            TranslationsBranchImportMode.IMPORT_TEMPLATES, 'empty.pot', '')
+            TranslationsBranchImportMode.IMPORT_TEMPLATES, 'empty.pot', b'')
         self.assertEqual(entries, [])
 
     def test_upload_hidden_pot(self):
@@ -1103,7 +1104,7 @@ class TestRosettaUploadJob(TestCaseWithFactory):
     def test_upload_pot_content(self):
         # The content of the uploaded file is stored in the librarian.
         # The uploader of a POT is the series owner.
-        POT_CONTENT = "pot content\n"
+        POT_CONTENT = b"pot content\n"
         self._runJobWithFile(
             TranslationsBranchImportMode.IMPORT_TEMPLATES,
             'foo.pot', POT_CONTENT)

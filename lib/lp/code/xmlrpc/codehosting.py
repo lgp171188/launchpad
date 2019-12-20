@@ -13,7 +13,7 @@ __all__ = [
 
 import datetime
 
-from bzrlib.urlutils import (
+from breezy.urlutils import (
     escape,
     unescape,
     )

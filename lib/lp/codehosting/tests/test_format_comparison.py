@@ -45,7 +45,7 @@ class StubObjectWithFormat:
 class StubBranch:
     """A stub branch object that just has formats."""
     def __init__(self, bzrdir_format, repo_format, branch_format):
-        self.bzrdir = StubObjectWithFormat(bzrdir_format)
+        self.controldir = StubObjectWithFormat(bzrdir_format)
         self.repository = StubObjectWithFormat(repo_format)
         self._format = branch_format
 

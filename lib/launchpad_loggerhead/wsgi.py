@@ -153,16 +153,16 @@ class LoggerheadApplication(Application):
         cfg.update(self.options)
         return cfg
 
-    def _load_bzr_plugins(self):
-        from bzrlib.plugin import load_plugins
+    def _load_brz_plugins(self):
+        from breezy.plugin import load_plugins
         load_plugins()
 
-        import bzrlib.plugins
-        if getattr(bzrlib.plugins, "loom", None) is None:
+        import breezy.plugins
+        if getattr(breezy.plugins, "loom", None) is None:
             log.error("Loom plugin loading failed.")
 
     def load(self):
-        self._load_bzr_plugins()
+        self._load_brz_plugins()
 
         with open(os.path.join(
                 config.root, config.codebrowse.secret_path)) as secret_file:

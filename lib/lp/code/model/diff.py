@@ -16,14 +16,14 @@ from operator import attrgetter
 import sys
 from uuid import uuid1
 
-from bzrlib import trace
-from bzrlib.diff import show_diff_trees
-from bzrlib.merge import Merge3Merger
-from bzrlib.patches import (
+from breezy import trace
+from breezy.diff import show_diff_trees
+from breezy.merge import Merge3Merger
+from breezy.patches import (
     parse_patches,
     Patch,
     )
-from bzrlib.plugins.difftacular.generate_diff import diff_ignore_branches
+from breezy.plugins.difftacular.generate_diff import diff_ignore_branches
 from lazr.delegates import delegate_to
 import simplejson
 from sqlobject import (
