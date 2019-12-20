@@ -269,17 +269,15 @@ div.package-details {
         failed</dd>
     </dl>
 
-  <p tal:condition="view/build_counters/pending">
+  <p tal:define="count view/build_counters/pending;
+                 singular string:build;
+                 plural string:builds"
+     tal:condition="count">
     A recent upload has resulted in
     <span class="build-count pending"
           tal:content="view/build_counters/pending">100</span>
     pending
-    <tal:singular
-        condition="python: view.build_counters['pending'] == 1"
-        replace="string:build." />
-    <tal:plural
-        condition="python: view.build_counters['pending'] != 1"
-        replace="string:builds." />
+    <metal:builds use-macro="context/@@+base-layout-macros/plural-message" />.
   </p>
   </div>
 </metal:build_status_summary>
