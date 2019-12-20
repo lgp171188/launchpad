@@ -26,11 +26,11 @@ from zope.event import notify
 from zope.exceptions.exceptionformatter import format_exception
 from zope.interface import implementer
 from zope.publisher.interfaces.xmlrpc import IXMLRPCRequest
+from zope.security.proxy import removeSecurityProxy
 from zope.traversing.namespace import view
 
 from lp.app import versioninfo
 from lp.layers import WebServiceLayer
-from lp.registry.interfaces.person import IPerson
 from lp.services.config import config
 from lp.services.messaging import rabbit
 from lp.services.timeline.requesttimeline import get_request_timeline
@@ -181,7 +181,8 @@ def attach_http_request(report, context):
     principal = getattr(request, 'principal', missing)
 
     person = (
-        principal.person if ILaunchpadPrincipal.providedBy(principal)
+        removeSecurityProxy(principal.person)
+        if ILaunchpadPrincipal.providedBy(principal)
         else None)
     if person is not None:
         login = person.name
