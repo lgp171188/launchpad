@@ -1,6 +1,8 @@
 # Copyright 2011-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
+from __future__ import absolute_import, print_function, unicode_literals
+
 __metaclass__ = type
 
 import os
@@ -8,10 +10,11 @@ import urlparse
 
 from six.moves.urllib.parse import parse_qsl
 
-from jsbuild import (
+from lp.scripts.utilities.js.jsbuild import (
     CSSComboFile,
     JSComboFile,
     )
+from lp.services.encoding import wsgi_native_string
 
 
 def parse_url(url):
@@ -32,7 +35,7 @@ def parse_qs(query):
     return tuple([param for param, value in params])
 
 
-def combine_files(fnames, root, resource_prefix="",
+def combine_files(fnames, root, resource_prefix=b"",
                   minify_css=True, rewrite_urls=True):
     """Combine many files into one.
 
@@ -56,13 +59,12 @@ def combine_files(fnames, root, resource_prefix="",
         if not full.startswith(root) or not os.path.exists(full):
             yield combo.get_comment("[missing]")
         else:
-            f = open(full, "r")
-            content = f.read()
-            f.close()
+            with open(full, "rb") as f:
+                content = f.read()
             yield combo.filter_file_content(content, full)
 
 
-def combo_app(root, resource_prefix="", minify_css=True, rewrite_urls=True):
+def combo_app(root, resource_prefix=b"", minify_css=True, rewrite_urls=True):
     """A simple YUI Combo Service WSGI app.
 
     Serves any files under C{root}, setting an appropriate
@@ -78,11 +80,14 @@ def combo_app(root, resource_prefix="", minify_css=True, rewrite_urls=True):
                 content_type = "text/javascript"
             elif fnames[0].endswith(".css"):
                 content_type = "text/css"
+            status = "200 OK"
+            body = combine_files(
+                fnames, root, resource_prefix, minify_css, rewrite_urls)
         else:
-            start_response("404 Not Found", [("Content-Type", content_type)])
-            return ("Not Found",)
-        start_response("200 OK", [("Content-Type", content_type)])
-        return combine_files(fnames, root, resource_prefix,
-                             minify_css, rewrite_urls)
+            status = "404 Not Found"
+            body = (b"Not Found",)
+        response_headers = [("Content-Type", wsgi_native_string(content_type))]
+        start_response(wsgi_native_string(status), response_headers)
+        return body
 
     return app
