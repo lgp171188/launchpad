@@ -1,6 +1,8 @@
 # Copyright 2009-2016 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
+from __future__ import absolute_import, print_function, unicode_literals
+
 import __builtin__
 import atexit
 import itertools
@@ -254,8 +256,8 @@ def import_pedant(name, globals={}, locals={}, fromlist=[], level=-1):
 
 def report_naughty_imports():
     if naughty_imports:
-        print
-        print '** %d import policy violations **' % len(naughty_imports)
+        print()
+        print('** %d import policy violations **' % len(naughty_imports))
 
         database_violations = []
         fromstar_violations = []
@@ -269,38 +271,38 @@ def report_naughty_imports():
             sorting_map[error.__class__].append(error)
 
         if database_violations:
-            print
-            print "There were %s database import violations." % (
-                len(database_violations))
+            print()
+            print("There were %s database import violations." % (
+                len(database_violations)))
             sorted_violations = sorted(
                 database_violations,
                 key=attrsgetter('name', 'import_into'))
 
             for name, sequence in itertools.groupby(
                 sorted_violations, attrgetter('name')):
-                print "You should not import %s into:" % name
+                print("You should not import %s into:" % name)
                 for import_into, unused_duplicates_seq in itertools.groupby(
                     sequence, attrgetter('import_into')):
                     # Show first occurrence only, to avoid duplicates.
-                    print "   ", import_into
+                    print("   ", import_into)
 
         if fromstar_violations:
-            print
-            print "There were %s imports 'from *' without an __all__." % (
-                len(fromstar_violations))
+            print()
+            print("There were %s imports 'from *' without an __all__." % (
+                len(fromstar_violations)))
             sorted_violations = sorted(
                 fromstar_violations,
                 key=attrsgetter('import_into', 'name'))
 
             for import_into, sequence in itertools.groupby(
                 sorted_violations, attrgetter('import_into')):
-                print "You should not import * into %s from" % import_into
+                print("You should not import * into %s from" % import_into)
                 for error in sequence:
-                    print "   ", error.name
+                    print("   ", error.name)
 
         if notinall_violations:
-            print
-            print (
+            print()
+            print(
                 "There were %s imports of names not appearing in the __all__."
                 % len(notinall_violations))
             sorted_violations = sorted(
@@ -309,11 +311,11 @@ def report_naughty_imports():
 
             for (name, attrname), sequence in itertools.groupby(
                 sorted_violations, attrsgetter('name', 'attrname')):
-                print "You should not import %s from %s:" % (attrname, name)
+                print("You should not import %s from %s:" % (attrname, name))
                 import_intos = sorted(
                     set([error.import_into for error in sequence]))
                 for import_into in import_intos:
-                    print "   ", import_into
+                    print("   ", import_into)
 
 
 def install_import_pedant():
