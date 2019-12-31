@@ -14,7 +14,6 @@ from lp.scripts.utilities.js.jsbuild import (
     CSSComboFile,
     JSComboFile,
     )
-from lp.services.encoding import wsgi_native_string
 
 
 def parse_url(url):
@@ -62,32 +61,3 @@ def combine_files(fnames, root, resource_prefix=b"",
             with open(full, "rb") as f:
                 content = f.read()
             yield combo.filter_file_content(content, full)
-
-
-def combo_app(root, resource_prefix=b"", minify_css=True, rewrite_urls=True):
-    """A simple YUI Combo Service WSGI app.
-
-    Serves any files under C{root}, setting an appropriate
-    C{Content-Type} header.
-    """
-    root = os.path.abspath(root)
-
-    def app(environ, start_response, root=root):
-        fnames = parse_qs(environ["QUERY_STRING"])
-        content_type = "text/plain"
-        if fnames:
-            if fnames[0].endswith(".js"):
-                content_type = "text/javascript"
-            elif fnames[0].endswith(".css"):
-                content_type = "text/css"
-            status = "200 OK"
-            body = combine_files(
-                fnames, root, resource_prefix, minify_css, rewrite_urls)
-        else:
-            status = "404 Not Found"
-            body = (b"Not Found",)
-        response_headers = [("Content-Type", wsgi_native_string(content_type))]
-        start_response(wsgi_native_string(status), response_headers)
-        return body
-
-    return app
