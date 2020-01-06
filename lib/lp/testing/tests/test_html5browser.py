@@ -22,8 +22,8 @@
 # THE SOFTWARE.
 
 from tempfile import NamedTemporaryFile
-import unittest
 
+from lp.testing import TestCase
 from lp.testing.html5browser import (
     Command,
     Browser,
@@ -74,14 +74,13 @@ initial_long_wait_page = """\
     </head><body></body></html>"""
 
 
-class BrowserTestCase(unittest.TestCase):
+class BrowserTestCase(TestCase):
     """Verify Browser methods."""
 
     def setUp(self):
+        super(BrowserTestCase, self).setUp()
         self.file = NamedTemporaryFile(prefix='html5browser_', suffix='.html')
-
-    def tearDown(self):
-        self.file.close()
+        self.addCleanup(self.file.close)
 
     def test_init_default(self):
         browser = Browser()
