@@ -29,12 +29,7 @@ __all__ = [
     'Command',
     ]
 
-import os
-
 import gi
-
-# Suppress accessibility warning because the test runner does not have UI.
-os.environ['GTK_MODULES'] = ''
 
 gi.require_version('Gtk', '3.0')
 gi.require_version('WebKit', '3.0')
