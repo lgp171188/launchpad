@@ -174,7 +174,7 @@ class TestPPAPackages(TestCaseWithFactory):
         pending_build_exists = soupmatchers.HTMLContains(
             soupmatchers.Tag(
                 'pending build', 'p',
-                text=re.compile(r'(?s).*(pending\s*build.)')),
+                text=re.compile(r'(?s).*(pending\s*build\.)')),
         )
         self.assertThat(
             html, pending_build_exists,
@@ -193,7 +193,7 @@ class TestPPAPackages(TestCaseWithFactory):
         pending_build_exists = soupmatchers.HTMLContains(
             soupmatchers.Tag(
                 'pending build', 'p',
-                text=re.compile(r'(?s).*(pending\s*builds.)')),
+                text=re.compile(r'(?s).*(pending\s*builds\.)')),
         )
         self.assertThat(
             html, pending_build_exists,
