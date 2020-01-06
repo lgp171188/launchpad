@@ -211,6 +211,42 @@ class TestPPAPackages(TestCaseWithFactory):
         view = self.getPackagesView('field.name_filter=blah')
         self.assertEqual('blah', view.specified_name_filter)
 
+    def test_page_with_filter_parameter_shows_message(self):
+        ppa = self.factory.makeArchive()
+        self.factory.makeSourcePackagePublishingHistory(archive=ppa)
+        owner = login_person(ppa.owner)
+        browser = self.getUserBrowser(
+            canonical_url(ppa) + '/+packages?field.name_filter=unknown_name',
+            user=owner)
+        html = browser.contents
+        empty_package_msg_exists = soupmatchers.HTMLContains(
+            soupmatchers.Tag(
+                'no matching packages message', 'div',
+                text=re.compile(
+                    r"\s*No matching package for 'unknown_name'\s*"),
+                attrs={'id': 'empty-result'}),
+        )
+        self.assertThat(
+            html, empty_package_msg_exists,
+            'Message "No matching package for (...)" should appear')
+
+    def test_page_without_filter_parameter_doesnt_show_message(self):
+        ppa = self.factory.makeArchive()
+        self.factory.makeSourcePackagePublishingHistory(
+            archive=ppa, status=PackagePublishingStatus.DELETED)
+        owner = login_person(ppa.owner)
+        browser = self.getUserBrowser(
+            canonical_url(ppa) + '/+packages', user=owner)
+        html = browser.contents
+        empty_package_msg_exists = soupmatchers.HTMLContains(
+            soupmatchers.Tag(
+                'no matching packages message', 'div',
+                attrs={'id': 'empty-result'}),
+        )
+        self.assertThat(
+            html, Not(empty_package_msg_exists),
+            'Message "No matching package for (...)" should *NOT* appear')
+
     def test_specified_name_filter_returns_none_on_omission(self):
         view = self.getPackagesView()
         self.assertIs(None, view.specified_name_filter)
