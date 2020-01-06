@@ -1,4 +1,4 @@
-# Copyright 2010-2017 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """All the interfaces that are exposed through the webservice.
@@ -30,6 +30,7 @@ __all__ = [
     'IBinaryPackagePublishingHistory',
     'IBinaryPackageReleaseDownloadCount',
     'IDistroArchSeries',
+    'IDistroArchSeriesFilter',
     'ILiveFS',
     'ILiveFSBuild',
     'ILiveFSSet',
@@ -87,6 +88,7 @@ from lp.soyuz.interfaces.binarypackagerelease import (
     IBinaryPackageReleaseDownloadCount,
     )
 from lp.soyuz.interfaces.distroarchseries import IDistroArchSeries
+from lp.soyuz.interfaces.distroarchseriesfilter import IDistroArchSeriesFilter
 from lp.soyuz.interfaces.livefs import (
     ILiveFS,
     ILiveFSSet,

@@ -29,7 +29,7 @@ from lazr.enum import (
     Item,
     )
 from lazr.restful.interface import copy_field
-from z3c.ptcompat import ViewPageTemplateFile
+from zope.browserpage import ViewPageTemplateFile
 from zope.component import (
     adapter,
     getMultiAdapter,

@@ -1,4 +1,4 @@
-# Copyright 2009-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -33,7 +33,10 @@ from lp.services.webapp.menu import (
     Link,
     NavigationMenu,
     )
-from lp.services.webapp.publisher import canonical_url
+from lp.services.webapp.publisher import (
+    canonical_url,
+    stepto,
+    )
 from lp.soyuz.browser.packagesearch import PackageSearchViewBase
 from lp.soyuz.interfaces.distroarchseries import IDistroArchSeries
 
@@ -41,6 +44,11 @@ from lp.soyuz.interfaces.distroarchseries import IDistroArchSeries
 class DistroArchSeriesNavigation(GetitemNavigation):
 
     usedfor = IDistroArchSeries
+
+    @stepto('+source-filter')
+    def traverse_source_filter(self):
+        """Traverse to the `IDistroArchSeriesFilter` for this DAS, if any."""
+        return self.context.getSourceFilter()
 
 
 class DistroArchSeriesBreadcrumb(Breadcrumb):

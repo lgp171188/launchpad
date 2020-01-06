@@ -10,7 +10,7 @@ __all__ = [
     'SnapBuildChannelsWidget',
     ]
 
-from z3c.ptcompat import ViewPageTemplateFile
+from zope.browserpage import ViewPageTemplateFile
 from zope.formlib.interfaces import IInputWidget
 from zope.formlib.utility import setUpWidget
 from zope.formlib.widget import (

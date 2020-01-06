@@ -1090,7 +1090,7 @@ NavigationMenus used in the previous TALES section.
 
     >>> import operator
     >>> import tempfile
-    >>> from z3c.ptcompat import ViewPageTemplateFile
+    >>> from zope.browserpage import ViewPageTemplateFile
     >>> from lp.services.webapp.menu import (
     ...     get_facet, get_current_view)
 

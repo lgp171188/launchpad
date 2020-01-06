@@ -65,7 +65,7 @@ from lazr.restful.utils import smartquote
 from lazr.uri import URI
 import pytz
 from storm.zope.interfaces import IResultSet
-from z3c.ptcompat import ViewPageTemplateFile
+from zope.browserpage import ViewPageTemplateFile
 from zope.component import (
     adapter,
     getUtility,

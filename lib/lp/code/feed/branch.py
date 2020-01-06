@@ -15,7 +15,7 @@ __all__ = [
     'ProjectRevisionFeed',
     ]
 
-from z3c.ptcompat import ViewPageTemplateFile
+from zope.browserpage import ViewPageTemplateFile
 from zope.component import getUtility
 from zope.interface import implementer
 from zope.security.interfaces import Unauthorized

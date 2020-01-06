@@ -51,8 +51,8 @@ from lazr.restful.utils import smartquote
 from pytz import utc
 from simplejson import dumps
 import transaction
-from z3c.pt.pagetemplate import ViewPageTemplateFile
 from zope import formlib
+from zope.browserpage import ViewPageTemplateFile
 from zope.component import (
     adapter,
     ComponentLookupError,

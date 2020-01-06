@@ -420,13 +420,14 @@ filter is 'Any Status', but the user can choose another.
     ['']
 
 When the user selects 'Published' filter and update the results, no
-records are presented.
+records are presented. No error message should be shown, since no text
+filter was added.
 
     >>> user_browser.getControl(
     ...     name='field.status_filter').value = ['published']
     >>> user_browser.getControl("Filter").click()
     >>> print_ppa_packages(user_browser.contents)
-    No matching package for ''.
+
 
 When they select 'Superseded' the SUPERSEDED source shows up again.
 

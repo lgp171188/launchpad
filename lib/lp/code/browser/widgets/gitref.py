@@ -8,7 +8,7 @@ __all__ = [
     ]
 
 import six
-from z3c.ptcompat import ViewPageTemplateFile
+from zope.browserpage import ViewPageTemplateFile
 from zope.component import getUtility
 from zope.formlib.interfaces import (
     ConversionError,
