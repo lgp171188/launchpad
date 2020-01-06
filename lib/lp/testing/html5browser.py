@@ -17,26 +17,12 @@ dist = platform.linux_distribution()[2]
 
 # Suppress accessibility warning because the test runner does not have UI.
 os.environ['GTK_MODULES'] = ''
-use_pygkt = (
-    dist == 'lucid' or os.environ.get('HTML5BROWSER_USE_PYGTK') == 'true')
 
-if not use_pygkt:
-    from gi.repository import GObject
-    from gi.repository  import Gtk
-    from gi.repository import WebKit
-    # Hush lint
-    GObject, Gtk, WebKit
-else:
-    # Support for lucid.
-    import pygtk
-    pygtk.require("2.0")
-    import glib as GObject
-    import gtk as Gtk
-    import webkit as WebKit
-    # XXX sinzui 2011-06-16 LP:27112:
-    # This evil encoding fix undoes the evil done by import gtk.
-    reload(sys)
-    sys.setdefaultencoding('ascii')
+from gi.repository import GObject
+from gi.repository import Gtk
+from gi.repository import WebKit
+# Hush lint
+GObject, Gtk, WebKit
 
 HERE = __file__
 REQUIRES_EXTERNAL = False
