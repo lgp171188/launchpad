@@ -4,7 +4,6 @@
 from tempfile import NamedTemporaryFile
 import unittest
 
-from lp.testing import html5browser
 from lp.testing.html5browser import (
     Command,
     Browser,
@@ -60,11 +59,9 @@ class BrowserTestCase(unittest.TestCase):
 
     def setUp(self):
         self.file = NamedTemporaryFile(prefix='html5browser_', suffix='.html')
-        self.default_requires_external = html5browser.REQUIRES_EXTERNAL
 
     def tearDown(self):
         self.file.close()
-        html5browser.REQUIRES_EXTERNAL = self.default_requires_external
 
     def test_init_default(self):
         browser = Browser()
@@ -215,38 +212,6 @@ class BrowserTestCase(unittest.TestCase):
         self.assertEqual(Command.CODE_SUCCESS, command.return_code)
         self.assertEqual('pting', command.content)
 
-    def test_run_external_browser_set_window_status_returned(self):
-        # When window status is set with leading ::::, the command ends.
-        self.file.write(load_page_set_window_status_returned)
-        self.file.flush()
-        browser = Browser()
-        browser.run_external_browser(self.file.name, Browser.TIMEOUT)
-        command = browser.command
-        self.assertEqual(Command.STATUS_COMPLETE, command.status)
-        self.assertEqual(Command.CODE_SUCCESS, command.return_code)
-        self.assertEqual('fnord', command.content)
-
-    def test_run_external_browser_set_window_status_ignored_non_command(self):
-        # Setting window status without a leading :::: is ignored.
-        self.file.write(load_page_set_window_status_ignores_non_commands)
-        self.file.flush()
-        browser = Browser()
-        browser.run_external_browser(self.file.name, Browser.TIMEOUT)
-        command = browser.command
-        self.assertEqual(Command.STATUS_COMPLETE, command.status)
-        self.assertEqual(Command.CODE_SUCCESS, command.return_code)
-        self.assertEqual('pting', command.content)
-
-    def test_run_external_browser_timeout(self):
-        # A page that does not set window.status in 5 seconds will timeout.
-        self.file.write(timeout_page)
-        browser = Browser()
-        browser.run_external_browser(self.file.name, 1000)
-        command = browser.command
-        self.assertEqual(Command.STATUS_COMPLETE, command.status)
-        self.assertEqual(Command.CODE_FAIL, command.return_code)
-        self.assertEqual(5000, Browser.TIMEOUT)
-
     def test__on_console_message(self):
         # The method return the value of hide_console_messages.
         # You should not see "** Message: console message:" on stderr
@@ -259,17 +224,3 @@ class BrowserTestCase(unittest.TestCase):
         self.assertEqual(
             True,
             browser._on_console_message(browser, 'message', 1, None, None))
-
-    def test_default_encoding(self):
-        # The default enconding is ascii, which is corrupted by the import
-        # for gtk from pygtk. There is a hack in place to ensure the default
-        # encoding is ascii.
-        test_data = ["100", "A-101", u'La Pe\xf1a']
-        test_string = ','.join(test_data)
-        self.assertRaises(UnicodeEncodeError, test_string.encode)
-
-    def test_requires_external_process(self):
-        html5browser.requires_external_process(True)
-        self.assertEqual(True, html5browser.REQUIRES_EXTERNAL)
-        html5browser.requires_external_process(False)
-        self.assertEqual(False, html5browser.REQUIRES_EXTERNAL)

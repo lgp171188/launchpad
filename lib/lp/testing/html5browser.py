@@ -1,4 +1,3 @@
-#!/usr/bin/python
 """A Web browser that can be driven by an application."""
 
 __metaclass__ = type
@@ -7,13 +6,7 @@ __all__ = [
     'Command',
     ]
 
-import platform
 import os
-import subprocess
-import sys
-
-arch = platform.architecture()[0]
-dist = platform.linux_distribution()[2]
 
 # Suppress accessibility warning because the test runner does not have UI.
 os.environ['GTK_MODULES'] = ''
@@ -23,22 +16,6 @@ from gi.repository import Gtk
 from gi.repository import WebKit
 # Hush lint
 GObject, Gtk, WebKit
-
-HERE = __file__
-REQUIRES_EXTERNAL = False
-if arch == '64bit' and dist in ('natty', 'oneiric'):
-    REQUIRES_EXTERNAL = True
-
-
-def requires_external_process(requires_external):
-    """Run the browser in an external process.
-
-    Some 64bit architecture experience segfaults when a process uses
-    multiple browsers. Set this to true to run each browser in a stable
-    subprocess. See LP:800741.
-    """
-    global REQUIRES_EXTERNAL
-    REQUIRES_EXTERNAL = requires_external
 
 
 class Command:
@@ -66,12 +43,10 @@ class Browser(WebKit.WebView):
     INITIAL_TIMEOUT = None
     INCREMENTAL_TIMEOUT = None
 
-    def __init__(self, show_window=False, hide_console_messages=True,
-                 force_internal=False):
+    def __init__(self, show_window=False, hide_console_messages=True):
         super(Browser, self).__init__()
         self.show_window = show_window
         self.hide_console_messages = hide_console_messages
-        self.force_internal = force_internal
         self.browser_window = None
         self.script = None
         self.command = None
@@ -83,16 +58,12 @@ class Browser(WebKit.WebView):
                   initial_timeout=INITIAL_TIMEOUT,
                   incremental_timeout=INCREMENTAL_TIMEOUT):
         """Load a page and return the content."""
-        if REQUIRES_EXTERNAL and not self.force_internal:
-            self.run_external_browser(
-                uri, timeout, initial_timeout, incremental_timeout)
-        else:
-            self._setup_listening_operation(
-                timeout, initial_timeout, incremental_timeout)
-            if uri.startswith('/'):
-                uri = 'file://' + uri
-            self.load_uri(uri)
-            Gtk.main()
+        self._setup_listening_operation(
+            timeout, initial_timeout, incremental_timeout)
+        if uri.startswith('/'):
+            uri = 'file://' + uri
+        self.load_uri(uri)
+        Gtk.main()
         return self.command
 
     def run_script(self, script,
@@ -109,26 +80,6 @@ class Browser(WebKit.WebView):
             'text/html', 'UTF-8', 'file:///')
         Gtk.main()
         return self.command
-
-    def run_external_browser(self, uri, timeout,
-                             initial_timeout=None, incremental_timeout=None):
-        """Load the page and run the script in an external process."""
-        self.command = Command()
-        command_line = ['python', HERE, '-t', str(timeout)]
-        if initial_timeout is not None:
-            command_line.extend(['-i', str(initial_timeout)])
-        if incremental_timeout is not None:
-            command_line.extend(['-s', str(incremental_timeout)])
-        command_line.append(uri)
-        browser = subprocess.Popen(
-            command_line, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        content, ignore = browser.communicate()
-        self.command.status = Command.STATUS_COMPLETE
-        self.command.content = content.strip()
-        if browser.returncode == 1:
-            self.command.return_code = Command.CODE_FAIL
-        else:
-            self.command.return_code = Command.CODE_SUCCESS
 
     @staticmethod
     def escape_script(text):
@@ -236,51 +187,3 @@ class Browser(WebKit.WebView):
         for key in signals:
             self.disconnect(self.listeners[key])
             del self.listeners[key]
-
-
-from optparse import OptionParser
-
-
-def main(argv=None):
-    """Load a page an return the result set by a page script."""
-    if argv is None:
-        argv = sys.argv
-    (options, uri) = parser_options(args=argv[1:])
-    client = Browser(force_internal=True)
-    page = client.load_page(uri, timeout=options.timeout,
-                            initial_timeout=options.initial_timeout,
-                            incremental_timeout=options.incremental_timeout)
-    has_page_content = page.content is not None and page.content.strip() != ''
-    if has_page_content:
-        print page.content
-    if page.return_code == page.CODE_FAIL:
-        sys.exit(1)
-    elif not has_page_content:
-        sys.exit(2)
-    else:
-        sys.exit(0)
-
-
-def parser_options(args):
-    """Return the option parser for this program."""
-    usage = "usage: %prog [options] uri"
-    epilog = (
-        'Return codes: 0 Success, '
-        '1 Script failed to execute, '
-        '2 Script returned nothing.')
-    parser = OptionParser(usage=usage, epilog=epilog)
-    parser.add_option(
-        "-t", "--timeout", type="int", dest="timeout")
-    parser.add_option(
-        "-i", "--initial-timeout", type="int", dest="initial_timeout")
-    parser.add_option(
-        "-s", "--test-timeout", type="int", dest="incremental_timeout")
-    parser.set_defaults(timeout=Browser.TIMEOUT)
-    (options, uris) = parser.parse_args(args)
-    if len(uris) != 1:
-        parser.error("Expected a uri.")
-    return options, uris[0]
-
-
-if __name__ == '__main__':
-    main()
