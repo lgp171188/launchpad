@@ -77,17 +77,6 @@ class BrowserTestCase(unittest.TestCase):
         browser = Browser(show_window=True)
         self.assertEqual(True, browser.show_window)
 
-    def test_escape_script(self):
-        # backslashes, newlines, and quotes are escaped for interpolation.
-        self.assertEqual(
-            r'backslash: \\', Browser.escape_script('backslash: \\'))
-        self.assertEqual(
-            r'newline: \n', Browser.escape_script('newline: \n'))
-        self.assertEqual(
-            r'double: \"', Browser.escape_script('double: "'))
-        self.assertEqual(
-            r"single: \'", Browser.escape_script("single: '"))
-
     def test_load_page_set_window_status_returned(self):
         # When window status is set with leading ::::, the command ends.
         self.file.write(load_page_set_window_status_returned)

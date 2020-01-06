@@ -81,13 +81,6 @@ class Browser(WebKit.WebView):
         Gtk.main()
         return self.command
 
-    @staticmethod
-    def escape_script(text):
-        """Escape the text so that it can be interpolated in to JS."""
-        return text.replace(
-            '\\', '\\\\').replace('"', '\\"').replace("'", "\\'").replace(
-            '\n', '\\n')
-
     def _setup_listening_operation(self, timeout, initial_timeout,
                                    incremental_timeout):
         """Setup a one-time listening operation for command's completion."""
