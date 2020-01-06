@@ -19,7 +19,7 @@ from itertools import islice
 import urllib
 
 import pytz
-from z3c.ptcompat import ViewPageTemplateFile
+from zope.browserpage import ViewPageTemplateFile
 from zope.component import getUtility
 from zope.formlib.widget import CustomWidgetFactory
 from zope.formlib.widgets import TextWidget

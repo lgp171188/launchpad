@@ -26,8 +26,8 @@ from openid.server.server import (
     Server,
     )
 from openid.store.memstore import MemoryStore
-from z3c.ptcompat import ViewPageTemplateFile
 from zope.authentication.interfaces import IUnauthenticatedPrincipal
+from zope.browserpage import ViewPageTemplateFile
 from zope.component import getUtility
 from zope.interface import implementer
 from zope.security.proxy import isinstance as zisinstance

@@ -1,7 +1,7 @@
 # Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-from z3c.ptcompat import ViewPageTemplateFile
+from zope.browserpage import ViewPageTemplateFile
 from zope.formlib.interfaces import (
     IWidgetInputError,
     IWidgetInputErrorView,

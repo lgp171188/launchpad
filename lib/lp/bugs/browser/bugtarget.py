@@ -31,7 +31,7 @@ from lazr.restful.interfaces import IJSONRequestCache
 from pytz import timezone
 from simplejson import dumps
 from sqlobject import SQLObjectNotFound
-from z3c.ptcompat import ViewPageTemplateFile
+from zope.browserpage import ViewPageTemplateFile
 from zope.component import getUtility
 from zope.formlib.form import Fields
 from zope.formlib.interfaces import InputErrors

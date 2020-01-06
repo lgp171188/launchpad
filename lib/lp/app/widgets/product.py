@@ -15,7 +15,7 @@ __all__ = [
 import math
 
 from lazr.restful.interface import copy_field
-from z3c.ptcompat import ViewPageTemplateFile
+from zope.browserpage import ViewPageTemplateFile
 from zope.component import getUtility
 from zope.formlib.boolwidgets import CheckBoxWidget
 from zope.formlib.interfaces import IInputWidget

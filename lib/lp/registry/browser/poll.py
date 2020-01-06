@@ -18,7 +18,7 @@ __all__ = [
     'TeamPollsView',
     ]
 
-from z3c.ptcompat import ViewPageTemplateFile
+from zope.browserpage import ViewPageTemplateFile
 from zope.component import getUtility
 from zope.event import notify
 from zope.formlib.widget import CustomWidgetFactory

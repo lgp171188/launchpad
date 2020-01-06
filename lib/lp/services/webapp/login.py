@@ -28,8 +28,8 @@ from paste.httpexceptions import (
     )
 import six
 import transaction
-from z3c.ptcompat import ViewPageTemplateFile
 from zope.authentication.interfaces import IUnauthenticatedPrincipal
+from zope.browserpage import ViewPageTemplateFile
 from zope.component import (
     getSiteManager,
     getUtility,

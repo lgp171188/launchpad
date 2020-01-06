@@ -18,7 +18,7 @@ import mimetypes
 
 from lazr.restful.interface import copy_field
 from lazr.restful.utils import smartquote
-from z3c.ptcompat import ViewPageTemplateFile
+from zope.browserpage import ViewPageTemplateFile
 from zope.event import notify
 from zope.formlib.form import FormFields
 from zope.formlib.widget import CustomWidgetFactory

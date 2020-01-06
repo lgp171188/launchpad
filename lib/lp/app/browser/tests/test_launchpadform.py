@@ -13,7 +13,7 @@ from os.path import (
 from lxml import html
 import simplejson
 from testtools.content import text_content
-from z3c.ptcompat import ViewPageTemplateFile
+from zope.browserpage import ViewPageTemplateFile
 from zope.formlib.form import action
 from zope.interface import Interface
 from zope.schema import (

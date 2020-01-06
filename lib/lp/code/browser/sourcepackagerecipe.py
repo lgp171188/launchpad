@@ -33,8 +33,8 @@ from lazr.restful.interfaces import (
     )
 import simplejson
 from storm.locals import Store
-from z3c.ptcompat import ViewPageTemplateFile
 from zope import component
+from zope.browserpage import ViewPageTemplateFile
 from zope.component import getUtility
 from zope.event import notify
 from zope.formlib import form

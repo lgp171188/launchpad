@@ -16,7 +16,7 @@ from lazr.enum import (
     Item,
     )
 from lazr.lifecycle.event import ObjectCreatedEvent
-from z3c.ptcompat import ViewPageTemplateFile
+from zope.browserpage import ViewPageTemplateFile
 from zope.component import getUtility
 from zope.event import notify
 from zope.formlib import form

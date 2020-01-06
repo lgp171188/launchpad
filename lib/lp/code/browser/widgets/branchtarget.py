@@ -7,7 +7,7 @@ __all__ = [
     'BranchTargetWidget',
     ]
 
-from z3c.ptcompat import ViewPageTemplateFile
+from zope.browserpage import ViewPageTemplateFile
 from zope.formlib.interfaces import (
     ConversionError,
     IInputWidget,

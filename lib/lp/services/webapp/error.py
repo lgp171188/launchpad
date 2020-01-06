@@ -17,8 +17,8 @@ import httplib
 import sys
 import traceback
 
-from z3c.ptcompat import ViewPageTemplateFile
 from zope.browser.interfaces import ISystemErrorView
+from zope.browserpage import ViewPageTemplateFile
 from zope.component import getUtility
 from zope.exceptions.exceptionformatter import format_exception
 from zope.interface import implementer

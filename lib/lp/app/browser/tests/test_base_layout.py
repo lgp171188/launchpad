@@ -13,7 +13,7 @@ in the root element. The template provides common layout to Launchpad.
 
 __metaclass__ = type
 
-from z3c.ptcompat import ViewPageTemplateFile
+from zope.browserpage import ViewPageTemplateFile
 
 from lp.registry.interfaces.person import PersonVisibility
 from lp.services.beautifulsoup import BeautifulSoup4 as BeautifulSoup
