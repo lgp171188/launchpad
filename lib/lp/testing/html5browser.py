@@ -37,8 +37,6 @@ os.environ['GTK_MODULES'] = ''
 from gi.repository import GObject
 from gi.repository import Gtk
 from gi.repository import WebKit
-# Hush lint
-GObject, Gtk, WebKit
 
 
 class Command:
