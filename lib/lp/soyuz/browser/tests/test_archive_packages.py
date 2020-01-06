@@ -186,7 +186,7 @@ class TestPPAPackages(TestCaseWithFactory):
             soupmatchers.Tag(
                 'no matching packages message', 'div',
                 text=re.compile(
-                    '\s*No matching package for \'unknown_name\'\s*'),
+                    r"\s*No matching package for 'unknown_name'\s*"),
                 attrs={'id': 'empty-result'}),
         )
         self.assertThat(
