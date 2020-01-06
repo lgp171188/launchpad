@@ -31,12 +31,19 @@ __all__ = [
 
 import os
 
+import gi
+
 # Suppress accessibility warning because the test runner does not have UI.
 os.environ['GTK_MODULES'] = ''
 
-from gi.repository import GObject
-from gi.repository import Gtk
-from gi.repository import WebKit
+gi.require_version('Gtk', '3.0')
+gi.require_version('WebKit', '3.0')
+
+from gi.repository import (
+    GLib,
+    Gtk,
+    WebKit,
+    )
 
 
 class Command:
@@ -111,11 +118,11 @@ class Browser(WebKit.WebView):
         self._incremental_timeout = incremental_timeout
         self._connect(
             'status-bar-text-changed', self._on_status_bar_text_changed)
-        self._timeout_source = GObject.timeout_add(timeout, self._on_timeout)
+        self._timeout_source = GLib.timeout_add(timeout, self._on_timeout)
         if initial_timeout is None:
             initial_timeout = incremental_timeout
         if initial_timeout is not None:
-            self._incremental_timeout_source = GObject.timeout_add(
+            self._incremental_timeout_source = GLib.timeout_add(
                 initial_timeout, self._on_timeout)
         else:
             self._incremental_timeout_source = None
@@ -145,7 +152,7 @@ class Browser(WebKit.WebView):
             self._clear_status()
             self._last_status = text[4:]
             if self._incremental_timeout:
-                self._incremental_timeout_source = GObject.timeout_add(
+                self._incremental_timeout_source = GLib.timeout_add(
                     self._incremental_timeout, self._on_timeout)
         elif text.startswith(self.STATUS_PREFIX):
             self._clear_timeout()
@@ -168,12 +175,12 @@ class Browser(WebKit.WebView):
 
     def _clear_incremental_timeout(self):
         if self._incremental_timeout_source is not None:
-            GObject.source_remove(self._incremental_timeout_source)
+            GLib.source_remove(self._incremental_timeout_source)
             self._incremental_timeout_source = None
 
     def _clear_timeout(self):
         if self._timeout_source is not None:
-            GObject.source_remove(self._timeout_source)
+            GLib.source_remove(self._timeout_source)
             self._timeout_source = None
 
     def _on_timeout(self):
