@@ -466,8 +466,8 @@ class BugTrackerEditComponentView(LaunchpadEditFormView):
     linked to source packages in the Ubuntu distribution.
     """
     schema = IBugTrackerComponent
-    custom_widget_sourcepackagename = UbuntuSourcePackageNameWidget
-    field_names = ['sourcepackagename']
+    custom_widget_source_package_name = UbuntuSourcePackageNameWidget
+    field_names = ['source_package_name']
     page_title = 'Link component'
 
     @property
