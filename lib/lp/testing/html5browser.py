@@ -198,7 +198,7 @@ class Browser(WebKit.WebView):
     def _disconnect(self, signal=None):
         if signal is None:
             signals = self.listeners.keys()
-        elif isinstance(signal, basestring):
+        elif isinstance(signal, str):
             signals = [signal]
         for key in signals:
             self.disconnect(self.listeners[key])
