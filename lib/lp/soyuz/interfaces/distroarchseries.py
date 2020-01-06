@@ -24,6 +24,7 @@ from lazr.restful.declarations import (
     exported,
     operation_for_version,
     operation_parameters,
+    operation_returns_entry,
     REQUEST_USER,
     )
 from lazr.restful.fields import (
@@ -233,6 +234,10 @@ class IDistroArchSeriesPublic(IHasBuildRecords, IHasOwner):
         this distro arch series.
         """
 
+    # Really IDistroArchSeriesFilter, patched in _schema_circular_imports.py.
+    @operation_returns_entry(Interface)
+    @export_read_operation()
+    @operation_for_version("devel")
     def getSourceFilter():
         """Get the filter for packages to build for this architecture, if any.
 

@@ -189,6 +189,7 @@ from lp.soyuz.interfaces.binarypackagerelease import (
     )
 from lp.soyuz.interfaces.buildrecords import IHasBuildRecords
 from lp.soyuz.interfaces.distroarchseries import IDistroArchSeries
+from lp.soyuz.interfaces.distroarchseriesfilter import IDistroArchSeriesFilter
 from lp.soyuz.interfaces.livefs import ILiveFSView
 from lp.soyuz.interfaces.livefsbuild import (
     ILiveFSBuild,
@@ -496,6 +497,8 @@ patch_reference_property(
 patch_reference_property(IDistroArchSeries, 'main_archive', IArchive)
 patch_plain_parameter_type(
     IDistroArchSeries, 'setChrootFromBuild', 'livefsbuild', ILiveFSBuild)
+patch_entry_return_type(
+    IDistroArchSeries, 'getSourceFilter', IDistroArchSeriesFilter)
 patch_plain_parameter_type(
     IDistroArchSeries, 'setSourceFilter', 'packageset', IPackageset)
 

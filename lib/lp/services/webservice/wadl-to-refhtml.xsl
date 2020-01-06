@@ -299,6 +299,15 @@
                 <xsl:text>/</xsl:text>
                 <var>&lt;architecture_tag&gt;</var>
             </xsl:when>
+            <xsl:when test="@id = 'distro_arch_series_filter'">
+                <xsl:text>/</xsl:text>
+                <var>&lt;distribution.name&gt;</var>
+                <xsl:text>/</xsl:text>
+                <var>&lt;distroseries.name&gt;</var>
+                <xsl:text>/</xsl:text>
+                <var>&lt;architecture_tag&gt;</var>
+                <xsl:text>/+source-filter</xsl:text>
+            </xsl:when>
             <xsl:when test="@id = 'distro_series'">
                 <xsl:text>/</xsl:text>
                 <var>&lt;distribution.name&gt;</var>
