@@ -85,17 +85,17 @@ class BrowserTestCase(unittest.TestCase):
 
     def test_init_default(self):
         browser = Browser()
-        self.assertEqual(False, browser.show_window)
-        self.assertEqual(True, browser.hide_console_messages)
-        self.assertEqual(None, browser.command)
-        self.assertEqual(None, browser.script)
-        self.assertEqual(None, browser.browser_window)
+        self.assertFalse(browser.show_window)
+        self.assertTrue(browser.hide_console_messages)
+        self.assertIsNone(browser.command)
+        self.assertIsNone(browser.script)
+        self.assertIsNone(browser.browser_window)
         self.assertEqual(['console-message'], browser.listeners.keys())
 
     def test_init_show_browser(self):
         # The Browser can be set to show the window.
         browser = Browser(show_window=True)
-        self.assertEqual(True, browser.show_window)
+        self.assertTrue(browser.show_window)
 
     def test_load_page_set_window_status_returned(self):
         # When window status is set with leading ::::, the command ends.
@@ -175,13 +175,13 @@ class BrowserTestCase(unittest.TestCase):
             incremental_timeout=3000, timeout=100)
         self.assertEqual(Command.STATUS_COMPLETE, command.status)
         self.assertEqual(Command.CODE_FAIL, command.return_code)
-        self.assertEqual(None, command.content)
+        self.assertIsNone(command.content)
 
     def test_load_page_default_timeout_values(self):
         # Verify our expected class defaults.
         self.assertEqual(5000, Browser.TIMEOUT)
-        self.assertEqual(None, Browser.INITIAL_TIMEOUT)
-        self.assertEqual(None, Browser.INCREMENTAL_TIMEOUT)
+        self.assertIsNone(Browser.INITIAL_TIMEOUT)
+        self.assertIsNone(Browser.INCREMENTAL_TIMEOUT)
 
     def test_load_page_timeout(self):
         # A page that does not set window.status in 5 seconds will timeout.
@@ -211,7 +211,7 @@ class BrowserTestCase(unittest.TestCase):
         self.assertEqual(Command.CODE_FAIL, command.return_code)
 
     def test_run_script_complete(self):
-        # A script that does sets window.status with a the prefix completes.
+        # A script that sets window.status with the status prefix completes.
         browser = Browser()
         script = (
             "document.body.innerHTML = '<p>pting</p>';"
@@ -222,7 +222,7 @@ class BrowserTestCase(unittest.TestCase):
         self.assertEqual('pting', command.content)
 
     def test__on_console_message(self):
-        # The method return the value of hide_console_messages.
+        # The method returns the value of hide_console_messages.
         # You should not see "** Message: console message:" on stderr
         # when running this test.
         browser = Browser(hide_console_messages=True)
@@ -230,6 +230,5 @@ class BrowserTestCase(unittest.TestCase):
             "console.log('hello');"
             "window.status = '::::goodbye;'")
         browser.run_script(script, timeout=1000)
-        self.assertEqual(
-            True,
+        self.assertTrue(
             browser._on_console_message(browser, 'message', 1, None, None))

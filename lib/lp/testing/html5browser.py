@@ -139,7 +139,7 @@ class Browser(WebKit.WebView):
         Gtk.main_quit()
 
     def _clear_status(self):
-            self.execute_script('window.status = "";')
+        self.execute_script('window.status = "";')
 
     def _on_status_bar_text_changed(self, view, text):
         if text.startswith(self.INCREMENTAL_PREFIX):
