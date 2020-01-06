@@ -188,7 +188,7 @@ constantly==15.1.0
 cookies==2.2.1
 cryptography==2.7
 cssselect==0.9.1
-cssutils==0.9.10
+cssutils==1.0.2
 d2to1==0.2.12
 defusedxml==0.6.0
 Django==1.4
