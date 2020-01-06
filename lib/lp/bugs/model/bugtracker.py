@@ -208,26 +208,26 @@ class BugTrackerComponent(StormBase):
         distribution_id,
         'Distribution.id')
 
-    source_package_name_id = Int('source_package_name')
-    source_package_name = Reference(
-        source_package_name_id,
+    sourcepackagename_id = Int('source_package_name')
+    sourcepackagename = Reference(
+        sourcepackagename_id,
         'SourcePackageName.id')
 
     def _get_distro_source_package(self):
         """Retrieves the corresponding source package"""
-        if self.distribution is None or self.source_package_name is None:
+        if self.distribution is None or self.sourcepackagename is None:
             return None
         return self.distribution.getSourcePackage(
-            self.source_package_name)
+            self.sourcepackagename)
 
     def _set_distro_source_package(self, dsp):
         """Links this component to its corresponding source package"""
         if dsp is None:
             self.distribution = None
-            self.source_package_name = None
+            self.sourcepackagename = None
         else:
             self.distribution = dsp.distribution
-            self.source_package_name = dsp.sourcepackagename
+            self.sourcepackagename = dsp.sourcepackagename
 
     distro_source_package = property(
         _get_distro_source_package,
@@ -730,8 +730,8 @@ class BugTracker(SQLBase):
         return Store.of(self).find(
             BugTrackerComponent,
             BugTrackerComponent.distribution == distribution.id,
-            BugTrackerComponent.source_package_name ==
-                dsp.sourcepackagename.id).one()
+            BugTrackerComponent.sourcepackagename ==
+            dsp.sourcepackagename.id).one()
 
     def getRelatedPillars(self, user=None):
         """See `IBugTracker`."""
