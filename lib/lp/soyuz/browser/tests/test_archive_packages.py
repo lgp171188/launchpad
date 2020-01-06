@@ -24,6 +24,7 @@ from zope.security.interfaces import Unauthorized
 from zope.security.proxy import removeSecurityProxy
 
 from lp.app.utilities.celebrities import ILaunchpadCelebrities
+from lp.buildmaster.enums import BuildStatus
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.services.beautifulsoup import BeautifulSoup4 as BeautifulSoup
 from lp.services.webapp import canonical_url
@@ -161,6 +162,42 @@ class TestPPAPackages(TestCaseWithFactory):
         removeSecurityProxy(ppa).publish = False
         self.assertNotifications(
             ppa, 'Publishing has been disabled for this archive.')
+
+    def test_page_show_singular_pending_builds(self):
+        ppa = self.factory.makeArchive()
+        self.factory.makeBinaryPackageBuild(
+            archive=ppa, status=BuildStatus.NEEDSBUILD)
+        owner = login_person(ppa.owner)
+        browser = self.getUserBrowser(
+            canonical_url(ppa) + '/+packages', user=owner)
+        html = browser.contents
+        pending_build_exists = soupmatchers.HTMLContains(
+            soupmatchers.Tag(
+                'pending build', 'p',
+                text=re.compile(r'(?s).*(pending\s*build\.)')),
+        )
+        self.assertThat(
+            html, pending_build_exists,
+            'Pending builds message was not found')
+
+    def test_page_show_plural_pending_builds(self):
+        ppa = self.factory.makeArchive()
+        self.factory.makeBinaryPackageBuild(
+            archive=ppa, status=BuildStatus.NEEDSBUILD)
+        self.factory.makeBinaryPackageBuild(
+            archive=ppa, status=BuildStatus.NEEDSBUILD)
+        owner = login_person(ppa.owner)
+        browser = self.getUserBrowser(
+            canonical_url(ppa) + '/+packages', user=owner)
+        html = browser.contents
+        pending_build_exists = soupmatchers.HTMLContains(
+            soupmatchers.Tag(
+                'pending build', 'p',
+                text=re.compile(r'(?s).*(pending\s*builds\.)')),
+        )
+        self.assertThat(
+            html, pending_build_exists,
+            'Pending builds message was not found')
 
     def test_ppa_packages_menu_is_enabled(self):
         joe = self.factory.makePerson()
