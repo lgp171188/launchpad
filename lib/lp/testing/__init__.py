@@ -1097,7 +1097,7 @@ class AbstractYUITestCase(TestCase):
         super(AbstractYUITestCase, self).setUp()
         # html5browser imports from the gir/pygtk stack which causes
         # twisted tests to break because of gtk's initialize.
-        import html5browser
+        from lp.testing import html5browser
         client = html5browser.Browser()
         page = client.load_page(self.html_uri,
                                 timeout=self.suite_timeout,

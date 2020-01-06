@@ -164,7 +164,6 @@ setup(
         'fixtures',
         'geoip2',
         'gunicorn[gthread]',
-        'html5browser',
         'importlib-resources',
         'ipaddress',
         'ipython',
