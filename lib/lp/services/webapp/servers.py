@@ -64,6 +64,7 @@ from lp.app import versioninfo
 from lp.app.errors import UnexpectedFormData
 import lp.layers
 from lp.services.config import config
+from lp.services.encoding import wsgi_native_string
 from lp.services.features import get_relevant_feature_controller
 from lp.services.features.flags import NullFeatureController
 from lp.services.feeds.interfaces.application import IFeedsApplication
@@ -532,21 +533,6 @@ def get_query_string_params(request):
         decoded_qs[key] = [
             request._decode(value) for value in values]
     return decoded_qs
-
-
-def wsgi_native_string(s):
-    """Make a native string suitable for use in WSGI.
-
-    PEP 3333 requires environment variables to be native strings that
-    contain only code points representable in ISO-8859-1.  To support
-    porting to Python 3 via an intermediate stage of Unicode literals in
-    Python 2, we enforce this here.
-    """
-    result = six.ensure_str(s, encoding='ISO-8859-1')
-    if six.PY3 and isinstance(s, six.text_type):
-        # Ensure we're limited to ISO-8859-1.
-        result.encode('ISO-8859-1')
-    return result
 
 
 class LaunchpadBrowserRequestMixin:

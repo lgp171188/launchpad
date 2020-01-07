@@ -79,6 +79,7 @@ from lp.services.beautifulsoup import (
     SoupStrainer,
     )
 from lp.services.config import config
+from lp.services.encoding import wsgi_native_string
 from lp.services.oauth.interfaces import (
     IOAuthConsumerSet,
     OAUTH_REALM,
@@ -86,10 +87,7 @@ from lp.services.oauth.interfaces import (
 from lp.services.webapp import canonical_url
 from lp.services.webapp.authorization import LaunchpadPermissiveSecurityPolicy
 from lp.services.webapp.interfaces import OAuthPermission
-from lp.services.webapp.servers import (
-    LaunchpadTestRequest,
-    wsgi_native_string,
-    )
+from lp.services.webapp.servers import LaunchpadTestRequest
 from lp.services.webapp.url import urlsplit
 from lp.testing import (
     ANONYMOUS,
