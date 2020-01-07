@@ -208,7 +208,6 @@ futures==3.2.0
 geoip2==2.9.0
 grokcore.component==1.6
 gunicorn==19.8.1
-html5browser==0.0.9
 httplib2==0.8
 hyperlink==18.0.0
 importlib==1.0.2

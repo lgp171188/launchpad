@@ -7,7 +7,7 @@ __metaclass__ = type
 
 import os
 
-import sphinx
+from sphinx.cmd.build import main as sphinx_main
 from testtools.content import text_content
 
 from lp.services.config import config
@@ -28,8 +28,8 @@ class TestSphinxDocumentation(TestCase):
         output_dir = self.makeTemporaryDirectory()
         doc_dir = os.path.join(config.root, 'doc')
         returncode, stdout, stderr = run_capturing_output(
-            sphinx.main,
-            ['sphinx-build', '-d', '%s/doctrees' % output_dir,
+            sphinx_main,
+            ['-d', '%s/doctrees' % output_dir,
              '-aNqW', doc_dir, '%s/html' % output_dir])
         self.addDetail('stdout', text_content(stdout))
         self.addDetail('stderr', text_content(stderr))
