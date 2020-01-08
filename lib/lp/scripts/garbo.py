@@ -3,6 +3,8 @@
 
 """Database garbage collection."""
 
+from __future__ import absolute_import, print_function, unicode_literals
+
 __metaclass__ = type
 __all__ = [
     'DailyDatabaseGarbageCollector',
@@ -456,7 +458,7 @@ class VoucherRedeemer(TunableLoop):
     def _pending_subscriptions(self):
         return self.store.find(
             CommercialSubscription,
-            Like(CommercialSubscription.sales_system_id, u'pending-%')
+            Like(CommercialSubscription.sales_system_id, 'pending-%')
         )
 
     def isDone(self):

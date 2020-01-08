@@ -1,6 +1,8 @@
 # Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
+from __future__ import absolute_import, print_function, unicode_literals
+
 __metaclass__ = type
 __all__ = ['start_launchpad']
 
@@ -377,9 +379,9 @@ def start_testapp(argv=list(sys.argv)):
         teardowns.append(LayerProcessController.stopSMTPServer)
         if interactive_tests:
             root_url = config.appserver_root_url()
-            print '*' * 70
-            print 'In a few seconds, go to ' + root_url + '/+yuitest'
-            print '*' * 70
+            print('*' * 70)
+            print('In a few seconds, go to ' + root_url + '/+yuitest')
+            print('*' * 70)
     try:
         start_launchpad(argv, setup)
     finally:
@@ -422,19 +424,19 @@ def start_launchpad(argv=list(sys.argv), setup=None):
                 except KeyboardInterrupt:
                     pass
     except Exception as e:
-        print >> sys.stderr, "stopping services on exception %r" % e
+        print("stopping services on exception %r" % e, file=sys.stderr)
         for service in services:
-            print >> sys.stderr, service, "fixture details:"
+            print(service, "fixture details:", file=sys.stderr)
             # There may be no details on some services if they haven't been
             # initialized yet.
             if getattr(service, '_details', None) is None:
-                print >> sys.stderr, "(not ready yet?)"
+                print("(not ready yet?)", file=sys.stderr)
                 continue
             details_str = _details_to_str(service.getDetails())
             if details_str:
-                print >> sys.stderr, details_str
+                print(details_str, file=sys.stderr)
             else:
-                print >> sys.stderr, "(no details present)"
+                print("(no details present)", file=sys.stderr)
         raise
 
 

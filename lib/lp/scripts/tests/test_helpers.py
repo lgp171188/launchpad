@@ -3,6 +3,8 @@
 
 """Test the helpers."""
 
+from __future__ import absolute_import, print_function, unicode_literals
+
 __metaclass__ = type
 
 from testtools.testcase import ExpectedException
