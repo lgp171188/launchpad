@@ -45,7 +45,14 @@ class ProcessJobSource(LaunchpadCronScript):
 
     @property
     def config_section(self):
-        return getattr(config, self.config_name)
+        cfg = getattr(config, self.config_name)
+
+        # If the config section is just a link to another section,
+        # use the linked one
+        if hasattr(cfg, 'link'):
+            return getattr(config, cfg.link)
+
+        return cfg
 
     @property
     def dbuser(self):
