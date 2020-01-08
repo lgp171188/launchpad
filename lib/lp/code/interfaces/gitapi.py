@@ -80,9 +80,12 @@ class IGitAPI(Interface):
         :returns: A list of rules for the user in the specified repository
         """
 
-    def getMPurlRPC(translated_paths, branch, auth_params):
-        """Return the URL for a Merge Proposal for a `branch` in a `repository`..
+    def getMergeProposalURL(translated_paths, branch, auth_params):
+        """Return the URL for a Merge Proposal for a `branch`
+        in a `repository`.
 
         :returns: The URL for a Merge Proposal for the branch in the
-            specified repository
+            specified repository; or empty string if the branch that has
+            been pushed is the default branch of the repository. A `NotFound`
+            fault if no repository can be found for 'translated_path'.
         """

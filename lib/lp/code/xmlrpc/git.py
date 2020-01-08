@@ -10,6 +10,7 @@ __all__ = [
 
 import logging
 import sys
+import urllib
 import uuid
 
 from pymacaroons import Macaroon
@@ -24,7 +25,6 @@ from zope.error.interfaces import IErrorReportingUtility
 from zope.interface import implementer
 from zope.security.interfaces import Unauthorized
 from zope.security.proxy import removeSecurityProxy
-from lp.services.config import config
 
 from lp.app.errors import NameLookupFailed
 from lp.app.validators import LaunchpadValidationError
@@ -55,7 +55,6 @@ from lp.code.interfaces.gitnamespace import (
     split_git_unique_name,
     )
 from lp.code.interfaces.gitrepository import IGitRepositorySet
-from lp.code.model.branch import Branch
 from lp.code.xmlrpc.codehosting import run_with_login
 from lp.registry.errors import (
     InvalidName,
@@ -74,7 +73,10 @@ from lp.services.macaroons.interfaces import (
     IMacaroonIssuer,
     NO_USER,
     )
-from lp.services.webapp import LaunchpadXMLRPCView, canonical_url
+from lp.services.webapp import (
+    canonical_url,
+    LaunchpadXMLRPCView,
+    )
 from lp.services.webapp.authorization import check_permission
 from lp.services.webapp.errorlog import ScriptRequest
 from lp.xmlrpc import faults
@@ -428,24 +430,28 @@ class GitAPI(LaunchpadXMLRPCView):
             removeSecurityProxy(repository))
         logger.info("notify succeeded")
 
-    def getMPurlRPC(self, translated_path, branch):
+    def getMergeProposalURL(self, translated_path, branch):
         """See `IGitAPI`."""
         logger = self._getLogger()
-        logger.info("Request received: getMPurlRPC('%s')", translated_path)
+        logger.info("Request received: getMergeProposalURL('%s')",
+                    translated_path)
         repository = getUtility(IGitLookup).getByHostingPath(translated_path)
         if repository is None:
             fault = faults.NotFound(
                 "No repository found for '%s'." % translated_path)
-            logger.error("getMPurlRPC failed: %r", fault)
+            logger.error("getMergeProposalURL failed: %r", fault)
             return fault
 
+        # we assemble the URL this way here
+        # because the ref may not exist yet
         base_url = canonical_url(repository, rootsite='code')
-        if 'refs/heads/'+branch != repository.default_branch:
-            mp_url = (base_url+'/+ref/'+branch+'/+register-merge')
-            logger.info("getMPurlRPC succeeded in forming MP URL : '%s'" % mp_url)
-            return mp_url
-
-        logger.info("getMPurlRPC succeeded")
+        pushed_branch = "refs/heads/%s" % branch
+        mp_url = ''
+        if pushed_branch != repository.default_branch:
+            mp_url = ("%s/+ref/%s/+register-merge" % (
+                        base_url, urllib.quote(branch)))
+        logger.info("getMergeProposalURL succeeded: %s" % mp_url)
+        return mp_url
 
     @return_fault
     def _authenticateWithPassword(self, username, password):

@@ -1265,6 +1265,19 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
                     requester, path, permission="read",
                     macaroon_raw=macaroon.serialize())
 
+    def test_getMergeProposalURL(self):
+        # Test the MP Url is returned for the branch
+        repository = self.factory.makeGitRepository()
+        mp_url = (u'+ref/branch1/+register-merge')
+        results = getattr(self.git_api, "getMergeProposalURL")(
+            repository.getInternalPath(), 'branch1')
+        self.assertIn(mp_url, results, "")
+
+    def test_getMergeProposalURL_missing_repository(self):
+        # Test we return fault for a non existing repo
+        self.assertFault(faults.NotFound, None, "getMergeProposalURL",
+                         "", "branch1")
+
     def test_notify(self):
         # The notify call creates a GitRefScanJob.
         repository = self.factory.makeGitRepository()
