@@ -41,6 +41,10 @@ def combine_files(fnames, root, resource_prefix=b"",
     Returns an iterator with the combined content of all the
     files. The relative path to root will be included as a comment
     between each file.
+
+    Although CSS files are conceptually closer to text than bytes, we always
+    yield bytes here since that's closer to what cssutils gives us, and it
+    saves having to know the encoding.
     """
 
     combo_by_kind = {
