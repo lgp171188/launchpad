@@ -14,6 +14,7 @@ from lp.registry.interfaces.teammembership import (
     TeamMembershipStatus,
     )
 from lp.services.config import config
+from lp.services.job.scripts import process_job_source
 from lp.services.scripts.tests import run_script
 from lp.testing import (
     login_person,
@@ -24,41 +25,20 @@ from lp.testing.layers import LaunchpadScriptLayer
 from lp.testing.matchers import DocTestMatches
 
 
-class AScript:
-    link = 'BScript'
-
-
-class BScript:
-    module = 'lp.registry.tests.test_process_job_sources_cronjob'
-
-
 class ProcessJobSourceConfigTest(TestCase):
     """
     This test case is specific for unit testing ProcessJobSource's usage of
     config.
     """
     def test_config_section_link(self):
-        import sys
-        sys.path.append('./cronscripts/')
-        process_job_source = __import__('process-job-source')
+        module_name = "lp.code.interfaces.branchmergeproposal"
+        self.pushConfig("IBranchMergeProposalJobSource", module=module_name)
+        self.pushConfig("IUpdatePreviewDiffJobSource",
+                        link="IBranchMergeProposalJobSource")
 
-        # Overrides config to mimic the following config file:
-        # [AScript]
-        # link: BScript
-        #
-        # [BScript]
-        # module: lp.registry.tests.test_process_job_sources_cronjob
-        cfg = mock.Mock()
-        cfg.AScript = AScript()
-        cfg.BScript = BScript()
-
-        process_job_source.config = cfg
-
-        # Now, tries to ProcessJobSource the AScript and check if it uses
-        # BScript config section
-        proc = process_job_source.ProcessJobSource(test_args=['AScript'])
-
-        self.assertEqual(proc.config_section, cfg.BScript)
+        proc = process_job_source.ProcessJobSource(
+            test_args=['IUpdatePreviewDiffJobSource'])
+        self.assertEqual(proc.config_section.module, module_name)
 
 
 class ProcessJobSourceTest(TestCaseWithFactory):

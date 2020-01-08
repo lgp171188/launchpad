@@ -7,8 +7,6 @@
 
 __metaclass__ = type
 
-import _pythonpath
-
 from collections import defaultdict
 import sys
 
