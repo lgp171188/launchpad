@@ -79,5 +79,5 @@ def main():
         for content in combine_files(names, icing):
             result += content.decode('utf8')
 
-        with open(target, 'w') as f:
-            f.write(result.encode('utf8'))
+        with open(target, 'wb') as f:
+            f.write(result)
