@@ -1,8 +1,9 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 from __future__ import absolute_import, print_function, unicode_literals
 
+from io import open
 import os
 
 import scandir
@@ -79,5 +80,5 @@ def main():
         for content in combine_files(names, icing):
             result += content.decode('utf8')
 
-        with open(target, 'wb') as f:
+        with open(target, 'w', encoding='utf8') as f:
             f.write(result)
