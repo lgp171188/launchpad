@@ -5,7 +5,6 @@
 
 __metaclass__ = type
 
-import mock
 import transaction
 from zope.component import getUtility
 
