@@ -31,8 +31,8 @@ class ProcessJobSource(LaunchpadCronScript):
     description = (
         "Takes pending jobs of the given type off the queue and runs them.")
 
-    def __init__(self):
-        super(ProcessJobSource, self).__init__()
+    def __init__(self, test_args=None):
+        super(ProcessJobSource, self).__init__(test_args=test_args)
         # The fromlist argument is necessary so that __import__()
         # returns the bottom submodule instead of the top one.
         module = __import__(self.config_section.module,
@@ -51,7 +51,6 @@ class ProcessJobSource(LaunchpadCronScript):
         # use the linked one
         if hasattr(cfg, 'link'):
             return getattr(config, cfg.link)
-
         return cfg
 
     @property

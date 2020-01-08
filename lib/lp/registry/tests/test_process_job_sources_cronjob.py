@@ -1,10 +1,11 @@
-# Copyright 2010 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test cron script for processing jobs from any job source class."""
 
 __metaclass__ = type
 
+import mock
 import transaction
 from zope.component import getUtility
 
@@ -16,10 +17,48 @@ from lp.services.config import config
 from lp.services.scripts.tests import run_script
 from lp.testing import (
     login_person,
+    TestCase,
     TestCaseWithFactory,
     )
 from lp.testing.layers import LaunchpadScriptLayer
 from lp.testing.matchers import DocTestMatches
+
+
+class AScript:
+    link = 'BScript'
+
+
+class BScript:
+    module = 'lp.registry.tests.test_process_job_sources_cronjob'
+
+
+class ProcessJobSourceConfigTest(TestCase):
+    """
+    This test case is specific for unit testing ProcessJobSource's usage of
+    config.
+    """
+    def test_config_section_link(self):
+        import sys
+        sys.path.append('./cronscripts/')
+        process_job_source = __import__('process-job-source')
+
+        # Overrides config to mimic the following config file:
+        # [AScript]
+        # link: BScript
+        #
+        # [BScript]
+        # module: lp.registry.tests.test_process_job_sources_cronjob
+        cfg = mock.Mock()
+        cfg.AScript = AScript()
+        cfg.BScript = BScript()
+
+        process_job_source.config = cfg
+
+        # Now, tries to ProcessJobSource the AScript and check if it uses
+        # BScript config section
+        proc = process_job_source.ProcessJobSource(test_args=['AScript'])
+
+        self.assertEqual(proc.config_section, cfg.BScript)
 
 
 class ProcessJobSourceTest(TestCaseWithFactory):
