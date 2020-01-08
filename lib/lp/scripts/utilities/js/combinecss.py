@@ -3,7 +3,6 @@
 
 from __future__ import absolute_import, print_function, unicode_literals
 
-from io import open
 import os
 
 import scandir
@@ -80,5 +79,5 @@ def main():
         for content in combine_files(names, icing):
             result += content.decode('utf8')
 
-        with open(target, 'w', encoding='utf8') as f:
-            f.write(result)
+        with open(target, 'wb') as f:
+            f.write(result.encode('utf8'))
