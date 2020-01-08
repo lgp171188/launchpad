@@ -152,6 +152,7 @@ setup(
         'breezy',
         'bzr',
         'celery',
+        'contextlib2',
         'cssselect',
         'cssutils',
         'defusedxml',

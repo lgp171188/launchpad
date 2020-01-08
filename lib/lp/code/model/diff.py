@@ -1,4 +1,4 @@
-# Copyright 2009-2016 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Implementation classes for IDiff, etc."""
@@ -10,7 +10,6 @@ __all__ = [
     'PreviewDiff',
     ]
 
-from contextlib import nested
 from cStringIO import StringIO
 from operator import attrgetter
 import sys
@@ -24,6 +23,7 @@ from breezy.patches import (
     Patch,
     )
 from breezy.plugins.difftacular.generate_diff import diff_ignore_branches
+from contextlib2 import ExitStack
 from lazr.delegates import delegate_to
 import simplejson
 from sqlobject import (
@@ -300,9 +300,9 @@ class Diff(SQLBase):
         :return: a `Diff`.
         """
         diff_content = StringIO()
-        read_locks = [read_locked(branch) for branch in [source_branch] +
-                ignore_branches]
-        with nested(*read_locks):
+        with ExitStack() as stack:
+            for branch in [source_branch] + ignore_branches:
+                stack.enter_context(read_locked(branch))
             diff_ignore_branches(
                 source_branch, ignore_branches, old_revision.revision_id,
                 new_revision.revision_id, diff_content)
