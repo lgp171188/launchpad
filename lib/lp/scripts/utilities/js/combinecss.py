@@ -75,9 +75,9 @@ def main():
 
     combo = ComboFile(absolute_names, target)
     if combo.needs_update():
-        result = ''
+        result = u''
         for content in combine_files(names, icing):
-            result += content
+            result += content.decode('utf8')
 
         with open(target, 'w') as f:
-            f.write(result)
+            f.write(result.encode('utf8'))
