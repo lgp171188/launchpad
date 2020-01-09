@@ -1,4 +1,4 @@
-# Copyright 2010 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test cron script for processing jobs from any job source class."""
@@ -13,13 +13,31 @@ from lp.registry.interfaces.teammembership import (
     TeamMembershipStatus,
     )
 from lp.services.config import config
+from lp.services.job.scripts import process_job_source
 from lp.services.scripts.tests import run_script
 from lp.testing import (
     login_person,
+    TestCase,
     TestCaseWithFactory,
     )
 from lp.testing.layers import LaunchpadScriptLayer
 from lp.testing.matchers import DocTestMatches
+
+
+class ProcessJobSourceConfigTest(TestCase):
+    """
+    This test case is specific for unit testing ProcessJobSource's usage of
+    config.
+    """
+    def test_config_section_link(self):
+        module_name = "lp.code.interfaces.branchmergeproposal"
+        self.pushConfig("IBranchMergeProposalJobSource", module=module_name)
+        self.pushConfig("IUpdatePreviewDiffJobSource",
+                        link="IBranchMergeProposalJobSource")
+
+        proc = process_job_source.ProcessJobSource(
+            test_args=['IUpdatePreviewDiffJobSource'])
+        self.assertEqual(proc.config_section.module, module_name)
 
 
 class ProcessJobSourceTest(TestCaseWithFactory):
