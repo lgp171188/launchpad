@@ -17,11 +17,8 @@ import oops_amqp
 import pytz
 import testtools
 from timeline.timeline import Timeline
-from zope.authentication.interfaces import IUnauthenticatedPrincipal
-from zope.interface import (
-    directlyProvides,
-    implementer,
-    )
+from zope.interface import directlyProvides
+from zope.principalregistry.principalregistry import UnauthenticatedPrincipal
 from zope.publisher.browser import TestRequest
 from zope.publisher.interfaces import NotFound
 from zope.publisher.interfaces.xmlrpc import IXMLRPCRequest
@@ -32,9 +29,8 @@ from lp.app.errors import (
     TranslationUnavailable,
     )
 from lp.layers import WebServiceLayer
-from lp.registry.interfaces.person import IPerson
-from lp.registry.interfaces.role import IPersonRoles
 from lp.services.config import config
+from lp.services.webapp.authentication import LaunchpadPrincipal
 from lp.services.webapp.errorlog import (
     _filter_session_statement,
     _is_sensitive,
@@ -44,12 +40,11 @@ from lp.services.webapp.errorlog import (
     ScriptRequest,
     )
 from lp.services.webapp.interfaces import (
-    ILaunchpadPrincipal,
     IUnloggedException,
     NoReferrerError,
     )
-from lp.testing import TestCase
-from lp.testing.layers import LaunchpadLayer
+from lp.testing import TestCaseWithFactory
+from lp.testing.layers import LaunchpadZopelessLayer
 
 
 UTC = pytz.utc
@@ -59,10 +54,10 @@ class ArbitraryException(Exception):
     """Used to test handling of exceptions in OOPS reports."""
 
 
-class TestErrorReportingUtility(TestCase):
+class TestErrorReportingUtility(TestCaseWithFactory):
 
     # want rabbit
-    layer = LaunchpadLayer
+    layer = LaunchpadZopelessLayer
 
     def setUp(self):
         super(TestErrorReportingUtility, self).setUp()
@@ -152,8 +147,9 @@ class TestErrorReportingUtility(TestCase):
 
         # topic is obtained from the request
         self.assertEqual('IFoo:+foo-template', report['topic'])
-        self.assertEqual(u'Login, 42, title, description |\u25a0|',
-                report['username'])
+        self.assertEqual(
+            u'account-name, 42, account-name, description |\u25a0|',
+            report['username'])
         self.assertEqual('http://localhost:9000/foo', report['url'])
         self.assertEqual({
             'CONTENT_LENGTH': '0',
@@ -174,19 +170,17 @@ class TestErrorReportingUtility(TestCase):
         utility = ErrorReportingUtility()
         utility._main_publishers[0].__call__ = lambda report: []
 
-        request = TestRequestWithPrincipal()
-
-        # Set a fake person attached to the request.
-        # Report should use their name (instead of principal.getLogin)
-        request.principal.person = FakePerson()
-        request.principal.person.name = 'my_username'
+        # Attach a person to the request; the report uses their name.
+        person = self.factory.makePerson(name='my-username')
+        request = TestRequestWithPrincipal(account=person.account)
 
         try:
             raise ArbitraryException('xyz\nabc')
         except ArbitraryException:
             report = utility.raising(sys.exc_info(), request)
-        self.assertEqual(u'my_username, 42, title, description |\u25a0|',
-                         report['username'])
+        self.assertEqual(
+            u'my-username, 42, account-name, description |\u25a0|',
+            report['username'])
 
     def test_raising_request_with_principal_person_set_to_none(self):
         """
@@ -200,17 +194,17 @@ class TestErrorReportingUtility(TestCase):
 
         request = TestRequestWithPrincipal()
 
-        # Explicitly sets principal.person to None,
-        # and expects OOPS to fallback to getLogin method (which should
-        # handle this case)
+        # Explicitly sets principal.person to None; the report falls back to
+        # the account's display name.
         request.principal.person = None
 
         try:
             raise ArbitraryException('xyz\nabc')
         except ArbitraryException:
             report = utility.raising(sys.exc_info(), request)
-        self.assertEqual(u'Login, 42, title, description |\u25a0|',
-                         report['username'])
+        self.assertEqual(
+            u'account-name, 42, account-name, description |\u25a0|',
+            report['username'])
 
     def test_raising_with_xmlrpc_request(self):
         # Test ErrorReportingUtility.raising() with an XML-RPC request.
@@ -578,39 +572,19 @@ class TestSensitiveRequestVariables(testtools.TestCase):
         self.assertTrue(_is_sensitive(request, 'oauth_signature'))
 
 
-@implementer(IUnauthenticatedPrincipal)
-class UnauthenticatedPrincipal:
-    id = 0
-    title = ''
-    description = ''
-
-
 class TestRequestWithUnauthenticatedPrincipal(TestRequest):
-    principal = UnauthenticatedPrincipal()
-
-
-class FakePerson:
-    """Used to test attach_http_request"""
-
-
-@implementer(ILaunchpadPrincipal)
-class AuthenticatedPrincipal:
-    def __init__(self):
-        self.id = 42
-        self.title = u'title'
-        # non ASCII description
-        self.description = u'description |\N{BLACK SQUARE}|'
-        self.person = None
-
-    @staticmethod
-    def getLogin():
-        return u'Login'
+    principal = UnauthenticatedPrincipal(
+        u'Anonymous', u'Anonymous', u'Anonymous User')
 
 
 class TestRequestWithPrincipal(TestRequest):
-    def __init__(self, *args, **kw):
+    def __init__(self, account=None, *args, **kw):
         super(TestRequestWithPrincipal, self).__init__(*args, **kw)
-        self.setPrincipal(AuthenticatedPrincipal())
+        self.setPrincipal(LaunchpadPrincipal(
+            42, u'account-name',
+            # non-ASCII description
+            u'description |\N{BLACK SQUARE}|',
+            account))
 
     def setInWSGIEnvironment(self, key, value):
         self._orig_env[key] = value
