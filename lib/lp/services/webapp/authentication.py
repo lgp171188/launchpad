@@ -264,9 +264,14 @@ class LaunchpadPrincipal:
         self.scope_url = scope_url
         self.account = account
         self.person = IPerson(account, None)
+        self.person_name = (
+            self.person.name if self.person is not None else None)
 
     def getLogin(self):
-        return self.title
+        if self.person_name is not None:
+            return self.person_name
+        else:
+            return self.title
 
 
 def get_oauth_authorization(request):

@@ -593,6 +593,9 @@ class ILaunchpadPrincipal(IPrincipal):
 
     person = Attribute("The IPerson the principal represents.")
 
+    person_name = Attribute(
+        "The name of the IPerson the principal represents.")
+
 
 #
 # Browser notifications

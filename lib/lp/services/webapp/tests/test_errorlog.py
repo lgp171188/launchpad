@@ -30,6 +30,7 @@ from lp.app.errors import (
     )
 from lp.layers import WebServiceLayer
 from lp.services.config import config
+from lp.services.database.sqlbase import flush_database_caches
 from lp.services.webapp.authentication import LaunchpadPrincipal
 from lp.services.webapp.errorlog import (
     _filter_session_statement,
@@ -174,10 +175,14 @@ class TestErrorReportingUtility(TestCaseWithFactory):
         person = self.factory.makePerson(name='my-username')
         request = TestRequestWithPrincipal(account=person.account)
 
+        # Make sure Storm would have to reload person.name if it were used.
+        flush_database_caches()
+
         try:
             raise ArbitraryException('xyz\nabc')
         except ArbitraryException:
-            report = utility.raising(sys.exc_info(), request)
+            report = self.assertStatementCount(
+                0, utility.raising, sys.exc_info(), request)
         self.assertEqual(
             u'my-username, 42, account-name, description |\u25a0|',
             report['username'])
