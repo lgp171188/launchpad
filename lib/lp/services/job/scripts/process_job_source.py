@@ -1,5 +1,3 @@
-#!/usr/bin/python -S
-#
 # Copyright 2009, 2010 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
@@ -24,7 +22,7 @@ class ProcessJobSource(LaunchpadCronScript):
     usage = (
         "Usage: %prog [options] JOB_SOURCE\n\n"
         "For more help, run:\n"
-        "    cronscripts/process-job-source-groups.py --help")
+        "    cronscripts/process-job-source.py --help")
 
     description = (
         "Takes pending jobs of the given type off the queue and runs them.")
@@ -99,8 +97,3 @@ class ProcessJobSource(LaunchpadCronScript):
             self.logger.info('Ran %d %s jobs.', count, name)
         for name, count in self.job_counts(runner.incomplete_jobs):
             self.logger.info('%d %s jobs did not complete.', count, name)
-
-
-if __name__ == '__main__':
-    script = ProcessJobSource()
-    script.lock_and_run()
