@@ -129,8 +129,7 @@ class TestSnapNavigation(TestCaseWithFactory):
     def test_snap(self):
         snap = self.factory.makeSnap()
         obj, _, _ = test_traverse(
-            "http://launchpad.test/~%s/+snap/%s" %
-            (snap.owner.name, snap.name))
+            "http://launchpad.test/~%s/+snap/%s" % (snap.owner.name, snap.name))
         self.assertEqual(snap, obj)
 
 
@@ -713,11 +712,9 @@ class TestSnapEditView(BaseTestSnapView):
     def test_edit_snap(self):
         old_series = self.factory.makeUbuntuDistroSeries()
         old_branch = self.factory.makeAnyBranch()
-        with admin_logged_in():
-            snappy_series = self.factory.makeSnappySeries()
         snap = self.factory.makeSnap(
             registrant=self.person, owner=self.person, distroseries=old_series,
-            branch=old_branch, store_series=snappy_series)
+            branch=old_branch)
         self.factory.makeTeam(
             name="new-team", displayname="New Team", members=[self.person])
         new_series = self.factory.makeUbuntuDistroSeries()
@@ -784,19 +781,43 @@ class TestSnapEditView(BaseTestSnapView):
         distro_series = self.factory.makeUbuntuDistroSeries()
         with admin_logged_in():
             snappy_series = self.factory.makeSnappySeries(
-                name='15.04obsolete', status=SeriesStatus.SUPPORTED)
+                status=SeriesStatus.SUPPORTED)
         snap = self.factory.makeSnap(
             registrant=self.person, owner=self.person,
             distroseries=distro_series,
             store_series=snappy_series,
             branch=self.factory.makeAnyBranch())
         browser = self.getViewBrowser(snap, view_name="+edit", user=snap.owner)
-        series_in_browser = browser.getControl(
-            name="field.store_distro_series").displayOptions
-        series_list = [el.decode("utf8").replace(u'\xa0', '')
-                       for el in series_in_browser]
-        self.assertIn((u'%s, for %s' % (distro_series.fullseriesname,
-                                        snappy_series.name)), series_list)
+        self.assertIn(
+            "ubuntu/%s/%s" % (distro_series.name, snappy_series.name),
+            browser.getControl(name="field.store_distro_series").options)
+
+    def test_edit_snap_built_for_distro_series_None(self):
+        with admin_logged_in():
+            snappy_series = self.factory.makeSnappySeries(
+                status=SeriesStatus.SUPPORTED)
+        snap = self.factory.makeSnap(
+            registrant=self.person, owner=self.person,
+            distroseries=None,
+            store_series=snappy_series,
+            branch=self.factory.makeAnyBranch())
+        browser = self.getViewBrowser(snap, view_name="+edit", user=snap.owner)
+        self.assertIn(
+            snappy_series.name,
+            browser.getControl(name="field.store_distro_series").options)
+
+    def test_edit_snap_built_for_snappy_series_None(self):
+        distro_series = self.factory.makeUbuntuDistroSeries()
+
+        snap = self.factory.makeSnap(
+            registrant=self.person, owner=self.person,
+            distroseries=distro_series,
+            store_series=None,
+            branch=self.factory.makeAnyBranch())
+        browser = self.getViewBrowser(snap, view_name="+edit", user=snap.owner)
+        self.assertIn(
+            "ubuntu/%s" % distro_series.name,
+            browser.getControl(name="field.store_distro_series").options)
 
     def test_edit_snap_sets_date_last_modified(self):
         # Editing a snap package sets the date_last_modified property.
@@ -814,14 +835,10 @@ class TestSnapEditView(BaseTestSnapView):
         self.assertSqlAttributeEqualsDate(snap, "date_last_modified", UTC_NOW)
 
     def test_edit_snap_already_exists(self):
-        with admin_logged_in():
-            snappy_series = self.factory.makeSnappySeries()
         snap = self.factory.makeSnap(
-            registrant=self.person, owner=self.person, name="one",
-            store_series=snappy_series)
+            registrant=self.person, owner=self.person, name="one")
         self.factory.makeSnap(
-            registrant=self.person, owner=self.person, name="two",
-            store_series=snappy_series)
+            registrant=self.person, owner=self.person, name="two")
         browser = self.getViewBrowser(snap, user=self.person)
         browser.getLink("Edit snap package").click()
         browser.getControl(name="field.name").value = "two"

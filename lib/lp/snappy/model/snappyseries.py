@@ -188,15 +188,27 @@ class SnappyDistroSeries(Storm):
 
     @property
     def title(self):
+        # The conditional for SeriesStatus.CURRENT here
+        # was introduced in 2020 when CURRENT meant 16
+        # When we need to introduce a new store_series;
+        # we can initially add it as FUTURE or EXPERIMENTAL
+        # until we sort out the UI.
+
         if self.distro_series is not None:
-            if self.snappy_series.status != SeriesStatus.CURRENT:
-                return "%s, for %s" % (
-                    self.distro_series.fullseriesname,
-                    self.snappy_series.title)
-            else:
-                return self.distro_series.fullseriesname
+            if self.snappy_series is not None:
+                if self.snappy_series.status != SeriesStatus.CURRENT:
+                    return "%s, for %s" % (
+                        self.distro_series.fullseriesname,
+                        self.snappy_series.title)
+            return self.distro_series.fullseriesname
         else:
-            return self.snappy_series.title
+            if self.snappy_series is not None:
+                if self.snappy_series.status == SeriesStatus.CURRENT:
+                    return "Infer from snapcraft.yaml (recommended)"
+                else:
+                    return self.snappy_series.title
+            else:
+                return None
 
 
 @implementer(ISnappySeriesSet)

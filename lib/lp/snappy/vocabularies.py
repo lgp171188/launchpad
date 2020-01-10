@@ -40,6 +40,9 @@ from lp.services.database.interfaces import IStore
 from lp.services.database.stormexpr import (
     IsDistinctFrom,
     )
+from lp.services.utils import (
+    seconds_since_epoch,
+    )
 from lp.services.webapp.vocabulary import StormVocabularyBase
 from lp.snappy.interfaces.snap import ISnap
 from lp.snappy.interfaces.snapstoreclient import ISnapStoreClient
@@ -84,27 +87,48 @@ class SyntheticSnappyDistroSeries:
 
     @property
     def title(self):
+        # The conditional for SeriesStatus.CURRENT here
+        # was introduced in 2020 when CURRENT meant 16
+        # When we need to introduce a new store_series;
+        # we can initially add it as FUTURE or EXPERIMENTAL
+        # until we sort out the UI.
+
         if self.distro_series is not None:
-            if self.snappy_series.status != SeriesStatus.CURRENT:
-                return "%s, for %s" % (
-                    self.distro_series.fullseriesname,
-                    self.snappy_series.title)
-            else:
-                return self.distro_series.fullseriesname
+            if self.snappy_series is not None:
+                if self.snappy_series.status != SeriesStatus.CURRENT:
+                    return "%s, for %s" % (
+                        self.distro_series.fullseriesname,
+                        self.snappy_series.title)
+            return self.distro_series.fullseriesname
         else:
-            return self.snappy_series.title
+            if self.snappy_series is not None:
+                if self.snappy_series.status == SeriesStatus.CURRENT:
+                    return "Infer from snapcraft.yaml (recommended)"
+                else:
+                    return self.snappy_series.title
+            else:
+                return None
 
 
 def sorting_tuple_date_created(element):
-
+    # we negate the conversion to epoch here of
+    # the two date_created in order to achieve
+    # descending order
     if element.distro_series is not None:
         if element.snappy_series is not None:
-            return ((1, element.distro_series.display_name),
-                    (1, element.distro_series.date_created),
-                    element.snappy_series.date_created)
+            return (1, element.distro_series.distribution.display_name,
+                    (-seconds_since_epoch(element.distro_series.date_created)),
+                    (-seconds_since_epoch(element.snappy_series.date_created)))
+        else:
+            return (1, element.distro_series.distribution.display_name,
+                    (-seconds_since_epoch(element.distro_series.date_created)),
+                    None)
     else:
         if element.snappy_series is not None:
-            return ((0, None), (0, None), element.snappy_series.date_created)
+            return (0, None, None,
+                    (-seconds_since_epoch(element.snappy_series.date_created)))
+        else:
+            return 0, None, None, None
 
 
 class SnappyDistroSeriesVocabulary(StormVocabularyBase):
@@ -137,12 +161,18 @@ class SnappyDistroSeriesVocabulary(StormVocabularyBase):
 
     def toTerm(self, obj):
         """See `IVocabulary`."""
-        if obj.distro_series is None:
-            token = obj.snappy_series.name
+        if obj.snappy_series is not None:
+            if obj.distro_series is None:
+                token = obj.snappy_series.name
+            else:
+                token = "%s/%s/%s" % (
+                    obj.distro_series.distribution.name,
+                    obj.distro_series.name,
+                    obj.snappy_series.name)
         else:
-            token = "%s/%s/%s" % (
-                obj.distro_series.distribution.name, obj.distro_series.name,
-                obj.snappy_series.name)
+            token = "%s/%s" % (
+                    obj.distro_series.distribution.name,
+                    obj.distro_series.name)
         return SimpleTerm(obj, token, obj.title)
 
     def __contains__(self, value):
