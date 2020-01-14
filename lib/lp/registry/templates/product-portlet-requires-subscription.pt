@@ -18,16 +18,6 @@
     <tal:date_expire
      tal:replace="context/commercial_subscription/date_expires/fmt:displaydate"
      />.</strong>
-    <tal:can-subscribe
-        condition="not: request/features/commercial_subscriptions.new.disabled">
-      <span
-          tal:define="user_menu view/user/menu:overview"
-          tal:condition="context/qualifies_for_free_hosting">
-        <br />Purchase a commercial subscription from your
-        <a tal:replace="structure user_menu/manage_vouchers/fmt:link" />
-        page.
-      </span>
-    </tal:can-subscribe>
   </p>
 
   <tal:proprietary condition="not: context/qualifies_for_free_hosting">
@@ -38,13 +28,7 @@
     </p>
 
     <ul class="bulleted" style="clear:left;">
-      <li tal:define="user_menu view/user/menu:overview"
-          tal:condition="not: request/features/commercial_subscriptions.new.disabled">
-        Purchase a commercial subscription from your
-        <a tal:replace="structure user_menu/manage_vouchers/fmt:link" />
-        page.
-      </li>
-      <li tal:condition="request/features/commercial_subscriptions.new.disabled">
+      <li>
         If you have authorization from Canonical to use Launchpad's
         commercial features, then
         <a href="mailto:commercial@launchpad.net">contact us</a>

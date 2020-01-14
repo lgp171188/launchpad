@@ -1589,7 +1589,7 @@ class ProductReviewLicenseView(ReturnToReferrerMixin, ProductEditView,
                     'license_approved',
                     'Proprietary projects may not be manually '
                     'approved to use Launchpad.  Proprietary projects '
-                    'must use the commercial subscription voucher system '
+                    'must be granted a commercial subscription '
                     'to be allowed to use Launchpad.')
             else:
                 # An Other/Open Source licence was specified so it may be

@@ -4639,7 +4639,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             expiry = datetime.now(pytz.UTC) - timedelta(days=1)
         else:
             expiry = datetime.now(pytz.UTC) + timedelta(days=30)
-        CommercialSubscription(
+        commercial_subscription = CommercialSubscription(
             product=product,
             date_starts=datetime.now(pytz.UTC) - timedelta(days=90),
             date_expires=expiry,
@@ -4647,12 +4647,14 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             purchaser=product.owner,
             sales_system_id=voucher_id,
             whiteboard='')
+        del get_property_cache(product).commercial_subscription
+        return commercial_subscription
 
-    def grantCommercialSubscription(self, person, months=12):
+    def grantCommercialSubscription(self, person):
         """Give 'person' a commercial subscription."""
         product = self.makeProduct(owner=person)
-        product.redeemSubscriptionVoucher(
-            self.getUniqueString(), person, person, months)
+        self.makeCommercialSubscription(
+            product, voucher_id=self.getUniqueString())
 
     def makeLiveFS(self, registrant=None, owner=None, distroseries=None,
                    name=None, metadata=None, require_virtualized=True,
