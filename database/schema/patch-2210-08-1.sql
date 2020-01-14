@@ -7,17 +7,14 @@ ALTER TABLE GitRepository
     ADD COLUMN ociprojectname integer REFERENCES ociprojectname,
     DROP CONSTRAINT one_container,
     ADD CONSTRAINT one_container CHECK (
-        -- At most one pillar.
-        (project IS NULL OR distribution IS NULL)
-        -- At most one sub-pillar structure.
-        AND (sourcepackagename IS NULL OR ociprojectname IS NULL)
-        -- Source packages only exist within distributions.
-        AND (distribution IS NOT NULL OR sourcepackagename IS NULL)
-        -- OCI projects currently only exist within distributions.
-        AND (distribution IS NOT NULL OR ociprojectname IS NULL)
-        -- No repositories for bare distributions.
-        AND ((distribution IS NULL) =
-             (sourcepackagename IS NULL AND ociprojectname IS NULL)));
+        -- Project
+        (project IS NOT NULL AND distribution IS NULL AND sourcepackagename IS NULL AND ociprojectname IS NULL) OR
+        -- Distribution source package
+        (project IS NULL AND distribution IS NOT NULL AND sourcepackagename IS NOT NULL AND ociprojectname IS NULL) OR
+        -- Distribution OCI project
+        (project IS NULL AND distribution IS NOT NULL AND sourcepackagename IS NULL AND ociprojectname IS NOT NULL) OR
+        -- Personal
+        (project IS NULL AND distribution IS NULL AND sourcepackagename IS NULL AND ociprojectname IS NULL));
 
 COMMENT ON COLUMN GitRepository.ociprojectname IS 'The OCI project that this repository belongs to.';
 
