@@ -588,6 +588,7 @@ class PackageUpload(SQLBase):
 
     def acceptFromQueue(self, user=None):
         """See `IPackageUpload`."""
+        self._addLog(user, PackageUploadStatus.ACCEPTED, None)
         if self.package_copy_job is None:
             self._acceptNonSyncFromQueue()
         else:
@@ -1179,7 +1180,7 @@ class PackageUploadLog(SQLBase):
     date_created = DateTime(tzinfo=pytz.UTC, allow_none=False,
                             default=UTC_NOW)
 
-    person_id = Int(name='person')
+    person_id = Int(name='person', allow_none=True)
     person = Reference(person_id, 'Person.id')
 
     old_status = EnumCol(schema=PackageUploadStatus)

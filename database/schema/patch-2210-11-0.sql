@@ -9,7 +9,7 @@ CREATE TABLE packageuploadlog (
     package_upload integer NOT NULL REFERENCES packageupload,
     date_created timestamp without time zone NOT NULL
         DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'UTC'),
-    person integer NOT NULL REFERENCES person,
+    person integer NULL REFERENCES person,
     old_status integer NOT NULL,
     new_status integer NOT NULL,
     comment text
