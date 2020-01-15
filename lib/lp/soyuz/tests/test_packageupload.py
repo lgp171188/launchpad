@@ -16,7 +16,10 @@ from lazr.restfulclient.errors import (
     BadRequest,
     Unauthorized,
     )
-from testtools.matchers import Equals
+from testtools.matchers import (
+    Equals,
+    MatchesStructure,
+    )
 import transaction
 from zope.component import (
     getUtility,
@@ -90,6 +93,20 @@ class PackageUploadTestCase(TestCaseWithFactory):
         super(PackageUploadTestCase, self).tearDown()
         if os.path.exists(config.personalpackagearchive.root):
             shutil.rmtree(config.personalpackagearchive.root)
+
+    def test_add_log_entry(self):
+        upload = self.factory.makePackageUpload(
+            status=PackageUploadStatus.UNAPPROVED)
+        upload = removeSecurityProxy(upload)
+        self.assertEqual(upload.logs.count(), 0)
+
+        person = self.factory.makePerson()
+
+        upload._addLog(person, PackageUploadStatus.REJECTED, 'just because')
+
+        self.assertThat(upload.logs.one(), MatchesStructure.byEquality(
+            person=person, old_status=PackageUploadStatus.UNAPPROVED,
+            new_status=PackageUploadStatus.REJECTED, comment='just because'))
 
     def test_realiseUpload_for_overridden_component_archive(self):
         # If the component of an upload is overridden to 'Partner' for
@@ -368,8 +385,15 @@ class PackageUploadTestCase(TestCaseWithFactory):
         self.assertEqual("UNAPPROVED", upload_two.status.name)
 
         # Rejecting the second upload works.
-        upload_two.rejectFromQueue(self.factory.makePerson())
+        person = self.factory.makePerson()
+        upload_two.rejectFromQueue(person, 'Because yes')
         self.assertEqual("REJECTED", upload_two.status.name)
+
+        log = removeSecurityProxy(upload_two.logs.one())
+        self.assertThat(log, MatchesStructure.byEquality(
+            person=person, old_status=PackageUploadStatus.UNAPPROVED,
+            new_status=PackageUploadStatus.REJECTED, comment='Because yes'
+        ))
 
     def test_rejectFromQueue_source_sends_email(self):
         # Rejecting a source package sends an email to the uploader.
