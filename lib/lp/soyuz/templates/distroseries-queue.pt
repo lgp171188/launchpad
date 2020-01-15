@@ -149,16 +149,14 @@
            </tbody>
            <tbody tal:attributes="class string:${filelist_class}">
              <metal:filelist use-macro="template/macros/package-filelist"/>
-             <tr tal:repeat="log packageupload/logs">
-               <td>
-                 <span tal:content="structure log/person/fmt:link"></span>
-                 changed
-                 from <span tal:replace="log/old_status"></span>
-                 to <span tal:content="log/new_status"></span>
-                 <span tal:content="log/comment"></span>
+             <tr class="log-content" tal:repeat="log packageupload/logs">
+               <td></td>
+               <td colspan="9">
+                 <span tal:content="log/new_status"></span>
                  <span tal:attributes="title log/date_created/fmt:datetime"
-                 tal:content="log/date_created/fmt:displaydate
-                 "></span>
+                       tal:content="log/date_created/fmt:displaydate" />
+                 by <span tal:content="structure log/person/fmt:link"></span>
+                 <p><span tal:content="log/comment"></span></p>
                </td>
              </tr>
            </tbody>

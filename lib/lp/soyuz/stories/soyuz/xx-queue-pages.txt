@@ -546,6 +546,15 @@ Rejecting 'alsa-utils' source:
     netapplet...ddtp... -                                           Release 2006-...
     netapplet...dist... -                                           Release 2006-...
 
+    >>> upload_manager_browser.getControl(
+    ...     name="queue_state", index=0).displayValue=['Rejected']
+    >>> upload_manager_browser.getControl("Update").click()
+    >>> logs = find_tags_by_class(
+    ...     upload_manager_browser.contents, "log-content")
+    >>> for log in logs:
+    ...     print(extract_text(log))
+    Rejected...a moment ago...by Sample Person...Foo
+
 One rejection email is generated:
 
     >>> run_package_upload_notification_jobs()
