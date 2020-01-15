@@ -184,6 +184,11 @@
             set_attributes="status distroseries pocket changesfile archive"/>
     </class>
     <class
+        class="lp.soyuz.model.queue.PackageUploadLog">
+        <allow
+            interface="lp.soyuz.interfaces.queue.IPackageUploadLog"/>
+    </class>
+    <class
         class="lp.soyuz.model.queue.PackageUploadSource">
         <allow
             interface="lp.soyuz.interfaces.queue.IPackageUploadSource"/>
