@@ -377,6 +377,12 @@ class PackageUploadTestCase(TestCaseWithFactory):
         # it goes straight to DONE.)
         upload_one.acceptFromQueue()
         self.assertEqual("DONE", upload_one.status.name)
+
+        log = upload_one.logs.one()
+        self.assertThat(log, MatchesStructure.byEquality(
+            person=None, old_status=PackageUploadStatus.UNAPPROVED,
+            new_status=PackageUploadStatus.ACCEPTED, comment=None
+        ))
         transaction.commit()
 
         # Trying to accept the second fails.
@@ -389,7 +395,8 @@ class PackageUploadTestCase(TestCaseWithFactory):
         upload_two.rejectFromQueue(person, 'Because yes')
         self.assertEqual("REJECTED", upload_two.status.name)
 
-        log = upload_two.logs.one()
+        self.assertEqual(upload_two.logs.count(), 2)
+        log = upload_two.logs.order_by('id')[1]
         self.assertThat(log, MatchesStructure.byEquality(
             person=person, old_status=PackageUploadStatus.UNAPPROVED,
             new_status=PackageUploadStatus.REJECTED, comment='Because yes'
