@@ -155,8 +155,10 @@
                  <span tal:content="log/new_status"></span>
                  <span tal:attributes="title log/date_created/fmt:datetime"
                        tal:content="log/date_created/fmt:displaydate" />
-                 by <span tal:content="structure log/person/fmt:link"></span>
-                 <p><span tal:content="log/comment"></span></p>
+                 <span tal:condition="log/person">
+                    by <span tal:content="structure log/person/fmt:link" />
+                 </span>
+                 <p tal:condition="log/comment" tal:content="log/comment" />
                </td>
              </tr>
            </tbody>
