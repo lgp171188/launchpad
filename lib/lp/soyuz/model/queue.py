@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -13,6 +13,7 @@ __all__ = [
 
 from itertools import chain
 
+import pytz
 from sqlobject import (
     ForeignKey,
     SQLMultipleJoin,
@@ -29,6 +30,8 @@ from storm.locals import (
     SQL,
     Unicode,
     )
+from storm.properties import DateTime
+from storm.references import ReferenceSet
 from storm.store import (
     EmptyResultSet,
     Store,
@@ -203,6 +206,20 @@ class PackageUpload(SQLBase):
         if self.package_copy_job:
             self.addSearchableNames([self.package_copy_job.package_name])
             self.addSearchableVersions([self.package_copy_job.package_version])
+
+    @property
+    def logs(self):
+        return Store.of(self).find(PackageUploadLog,
+                                   PackageUploadLog.package_upload == self)
+
+    def _addLog(self, person, new_status, comment=None):
+        return Store.of(self).add(PackageUploadLog(
+            package_upload=self,
+            person=person,
+            old_status=self.status,
+            new_status=new_status,
+            comment=comment
+        ))
 
     @cachedproperty
     def sources(self):
@@ -581,6 +598,7 @@ class PackageUpload(SQLBase):
 
     def rejectFromQueue(self, user, comment=None):
         """See `IPackageUpload`."""
+        self._addLog(user, PackageUploadStatus.REJECTED, comment)
         self.setRejected()
         if self.package_copy_job is not None:
             # Circular imports :(
@@ -1151,6 +1169,23 @@ def get_properties_for_binary(bpr):
         "section": bpr.section.name,
         "priority": bpr.priority.name,
         }
+
+
+class PackageUploadLog(SQLBase):
+    package_upload_id = Int(name='package_upload')
+    package_upload = Reference(package_upload_id, PackageUpload.id)
+
+    date_created = DateTime(tzinfo=pytz.UTC, allow_none=False,
+                            default=UTC_NOW)
+
+    person_id = Int(name='person')
+    person = Reference(person_id, 'Person.id')
+
+    old_status = EnumCol(schema=PackageUploadStatus)
+
+    new_status = EnumCol(schema=PackageUploadStatus)
+
+    comment = Unicode(allow_none=True)
 
 
 @implementer(IPackageUploadBuild)
