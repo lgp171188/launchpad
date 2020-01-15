@@ -109,7 +109,7 @@ from lp.soyuz.interfaces.queue import (
     QueueInconsistentStateError,
     QueueSourceAcceptError,
     QueueStateWriteProtectedError,
-    )
+    IPackageUploadLog)
 from lp.soyuz.interfaces.section import ISectionSet
 from lp.soyuz.mail.packageupload import PackageUploadMailer
 from lp.soyuz.model.binarypackagename import BinaryPackageName
@@ -1171,6 +1171,7 @@ def get_properties_for_binary(bpr):
         }
 
 
+@implementer(IPackageUploadLog)
 class PackageUploadLog(SQLBase):
     package_upload_id = Int(name='package_upload')
     package_upload = Reference(package_upload_id, PackageUpload.id)
