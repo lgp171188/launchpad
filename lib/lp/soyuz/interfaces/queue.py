@@ -11,6 +11,7 @@ __all__ = [
     'IHasQueueItems',
     'IPackageUploadQueue',
     'IPackageUpload',
+    'IPackageUploadLog',
     'IPackageUploadBuild',
     'IPackageUploadSource',
     'IPackageUploadCustom',
