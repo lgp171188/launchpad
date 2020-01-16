@@ -381,8 +381,7 @@ class PackageUploadTestCase(TestCaseWithFactory):
         log = upload_one.logs.one()
         self.assertThat(log, MatchesStructure.byEquality(
             person=None, old_status=PackageUploadStatus.UNAPPROVED,
-            new_status=PackageUploadStatus.ACCEPTED, comment=None
-        ))
+            new_status=PackageUploadStatus.ACCEPTED, comment=None))
         transaction.commit()
 
         # Trying to accept the second fails.
@@ -399,8 +398,7 @@ class PackageUploadTestCase(TestCaseWithFactory):
         log = upload_two.logs.order_by('id')[1]
         self.assertThat(log, MatchesStructure.byEquality(
             person=person, old_status=PackageUploadStatus.UNAPPROVED,
-            new_status=PackageUploadStatus.REJECTED, comment='Because yes'
-        ))
+            new_status=PackageUploadStatus.REJECTED, comment='Because yes'))
 
     def test_rejectFromQueue_source_sends_email(self):
         # Rejecting a source package sends an email to the uploader.
