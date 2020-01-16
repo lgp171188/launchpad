@@ -722,6 +722,15 @@
             <xsl:when test="@id = 'hwdb'">
                 <xsl:text>/+hwdb</xsl:text>
             </xsl:when>
+            <xsl:when test="@id = 'snap_bases'">
+                <xsl:text>/+snap-bases</xsl:text>
+            </xsl:when>
+            <xsl:when test="@id = 'snappy_serieses'">
+                <xsl:text>/+snappy-series</xsl:text>
+            </xsl:when>
+            <xsl:when test="@id = 'snaps'">
+                <xsl:text>/+snaps</xsl:text>
+            </xsl:when>
             <xsl:otherwise>
                 <xsl:text>/</xsl:text><xsl:value-of select="@id" />
             </xsl:otherwise>
