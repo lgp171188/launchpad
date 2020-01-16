@@ -150,7 +150,7 @@ class IPackageUpload(Interface):
             title=_('Date created'),
             description=_("The date this package upload was done.")))
 
-    logs = Attribute(_("The change log of this PackageUpload"))
+    logs = Attribute(_("The change log of this PackageUpload."))
 
     changesfile = Attribute("The librarian alias for the changes file "
                             "associated with this upload")
@@ -715,17 +715,17 @@ class IPackageUploadCustom(Interface):
 
 
 class IPackageUploadLog(Interface):
-    package_upload = Attribute("Original package upload")
+    package_upload = Attribute("Original package upload.")
 
-    date_created = Attribute("When this action happened")
+    date_created = Attribute("When this action happened.")
 
-    person = Attribute("Who did this action")
+    person = Attribute("Who did this action.")
 
-    old_status = Attribute("Old status")
+    old_status = Attribute("Old status.")
 
-    new_status = Attribute("New status")
+    new_status = Attribute("New status.")
 
-    comment = Attribute("User's comment about this change")
+    comment = Attribute("User's comment about this change.")
 
 
 class IPackageUploadSet(Interface):
