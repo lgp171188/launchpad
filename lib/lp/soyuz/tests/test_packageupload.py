@@ -98,7 +98,7 @@ class PackageUploadTestCase(TestCaseWithFactory):
         upload = self.factory.makePackageUpload(
             status=PackageUploadStatus.UNAPPROVED)
         upload = removeSecurityProxy(upload)
-        self.assertEqual(upload.logs.count(), 0)
+        self.assertEqual(0, upload.logs.count())
 
         person = self.factory.makePerson(name='lpusername')
 
@@ -401,7 +401,7 @@ class PackageUploadTestCase(TestCaseWithFactory):
         upload_two.rejectFromQueue(person, 'Because yes')
         self.assertEqual("REJECTED", upload_two.status.name)
 
-        self.assertEqual(upload_two.logs.count(), 1)
+        self.assertEqual(1, upload_two.logs.count())
         log = upload_two.logs[0]
         self.assertThat(log, MatchesStructure.byEquality(
             reviewer=person, old_status=PackageUploadStatus.UNAPPROVED,
