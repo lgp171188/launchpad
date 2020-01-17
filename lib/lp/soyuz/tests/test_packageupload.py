@@ -100,13 +100,20 @@ class PackageUploadTestCase(TestCaseWithFactory):
         upload = removeSecurityProxy(upload)
         self.assertEqual(upload.logs.count(), 0)
 
-        person = self.factory.makePerson()
+        person = self.factory.makePerson(name='lpusername')
 
         upload._addLog(person, PackageUploadStatus.REJECTED, 'just because')
 
-        self.assertThat(upload.logs.one(), MatchesStructure.byEquality(
-            person=person, old_status=PackageUploadStatus.UNAPPROVED,
+        log = upload.logs.one()
+        self.assertThat(log, MatchesStructure.byEquality(
+            reviewer=person, old_status=PackageUploadStatus.UNAPPROVED,
             new_status=PackageUploadStatus.REJECTED, comment='just because'))
+
+        expected_repr = (
+            "<PackageUploadLog ~lpusername "
+            "changed {self.package_upload} to Rejected "
+            "{self.date_created}>").format(self=log)
+        self.assertEqual(str(expected_repr), repr(log))
 
     def test_realiseUpload_for_overridden_component_archive(self):
         # If the component of an upload is overridden to 'Partner' for
@@ -375,12 +382,13 @@ class PackageUploadTestCase(TestCaseWithFactory):
 
         # Accepting one of them works.  (Since it's a single source upload,
         # it goes straight to DONE.)
-        upload_one.acceptFromQueue()
+        person = self.factory.makePerson()
+        upload_one.acceptFromQueue(person)
         self.assertEqual("DONE", upload_one.status.name)
 
         log = upload_one.logs.one()
         self.assertThat(log, MatchesStructure.byEquality(
-            person=None, old_status=PackageUploadStatus.UNAPPROVED,
+            reviewer=person, old_status=PackageUploadStatus.UNAPPROVED,
             new_status=PackageUploadStatus.ACCEPTED, comment=None))
         transaction.commit()
 
@@ -390,14 +398,13 @@ class PackageUploadTestCase(TestCaseWithFactory):
         self.assertEqual("UNAPPROVED", upload_two.status.name)
 
         # Rejecting the second upload works.
-        person = self.factory.makePerson()
         upload_two.rejectFromQueue(person, 'Because yes')
         self.assertEqual("REJECTED", upload_two.status.name)
 
-        self.assertEqual(upload_two.logs.count(), 2)
-        log = upload_two.logs.order_by('id')[1]
+        self.assertEqual(upload_two.logs.count(), 1)
+        log = upload_two.logs[0]
         self.assertThat(log, MatchesStructure.byEquality(
-            person=person, old_status=PackageUploadStatus.UNAPPROVED,
+            reviewer=person, old_status=PackageUploadStatus.UNAPPROVED,
             new_status=PackageUploadStatus.REJECTED, comment='Because yes'))
 
     def test_rejectFromQueue_source_sends_email(self):

@@ -62,6 +62,7 @@ from lp.services.database.sqlbase import (
     SQLBase,
     sqlvalues,
     )
+from lp.services.database.stormbase import StormBase
 from lp.services.database.stormexpr import (
     Array,
     ArrayContains,
@@ -101,6 +102,7 @@ from lp.soyuz.interfaces.queue import (
     IPackageUpload,
     IPackageUploadBuild,
     IPackageUploadCustom,
+    IPackageUploadLog,
     IPackageUploadQueue,
     IPackageUploadSet,
     IPackageUploadSource,
@@ -110,7 +112,7 @@ from lp.soyuz.interfaces.queue import (
     QueueInconsistentStateError,
     QueueSourceAcceptError,
     QueueStateWriteProtectedError,
-    IPackageUploadLog)
+    )
 from lp.soyuz.interfaces.section import ISectionSet
 from lp.soyuz.mail.packageupload import PackageUploadMailer
 from lp.soyuz.model.binarypackagename import BinaryPackageName
@@ -210,13 +212,15 @@ class PackageUpload(SQLBase):
 
     @property
     def logs(self):
-        return Store.of(self).find(PackageUploadLog,
-                                   PackageUploadLog.package_upload == self)
+        result_set = Store.of(self).find(
+            PackageUploadLog,
+            PackageUploadLog.package_upload == self)
+        return result_set.order_by(Desc('date_created'))
 
-    def _addLog(self, person, new_status, comment=None):
+    def _addLog(self, reviewer, new_status, comment=None):
         return Store.of(self).add(PackageUploadLog(
             package_upload=self,
-            person=person,
+            reviewer=reviewer,
             old_status=self.status,
             new_status=new_status,
             comment=comment
@@ -589,7 +593,10 @@ class PackageUpload(SQLBase):
 
     def acceptFromQueue(self, user=None):
         """See `IPackageUpload`."""
-        self._addLog(user, PackageUploadStatus.ACCEPTED, None)
+        # XXX: Only tests are not passing user here. We should adjust the
+        # tests and always create the log entries after
+        if user is not None:
+            self._addLog(user, PackageUploadStatus.ACCEPTED, None)
         if self.package_copy_job is None:
             self._acceptNonSyncFromQueue()
         else:
@@ -1174,21 +1181,43 @@ def get_properties_for_binary(bpr):
 
 
 @implementer(IPackageUploadLog)
-class PackageUploadLog(SQLBase):
+class PackageUploadLog(StormBase):
+    __storm_table__ = "PackageUploadLog"
+
+    id = Int(primary=True)
+
     package_upload_id = Int(name='package_upload')
     package_upload = Reference(package_upload_id, PackageUpload.id)
 
     date_created = DateTime(tzinfo=pytz.UTC, allow_none=False,
                             default=UTC_NOW)
 
-    person_id = Int(name='person', allow_none=True)
-    person = Reference(person_id, 'Person.id')
+    reviewer_id = Int(name='reviewer', allow_none=True)
+    reviewer = Reference(reviewer_id, 'Person.id')
 
     old_status = EnumCol(schema=PackageUploadStatus)
 
     new_status = EnumCol(schema=PackageUploadStatus)
 
     comment = Unicode(allow_none=True)
+
+    def __init__(self, package_upload, reviewer, old_status, new_status,
+                 comment=None, date_created=None):
+        self.package_upload = package_upload
+        self.reviewer = reviewer
+        self.old_status = old_status
+        self.new_status = new_status
+        if comment is not None:
+            self.comment = comment
+        if date_created is not None:
+            self.date_created = date_created
+
+    def __repr__(self):
+        return (
+            "<{self.__class__.__name__} ~{self.reviewer.name} "
+            "changed {self.package_upload} to {self.new_status} "
+            "{self.date_created}>").format(self=self)
+
 
 
 @implementer(IPackageUploadBuild)

@@ -615,12 +615,13 @@ Accepting alsa again, and check that the package upload log has more rows
     >>> upload_manager_browser.getControl(
     ...     name="queue_state", index=0).displayValue=['Accepted']
     >>> upload_manager_browser.getControl("Update").click()
-    >>> logs = find_tags_by_class(
-    ...     upload_manager_browser.contents, "log-content")
+    >>> pkg_content = first_tag_by_class(upload_manager_browser.contents,
+                                         "queue-4")
+    >>> logs = find_tags_by_class(str(pkg_content), "log-content")
     >>> for log in logs:
     ...     print(extract_text(log))
-    Rejected...a moment ago...by Sample Person...Foo
     Accepted...a moment ago...by Sample Person...
+    Rejected...a moment ago...by Sample Person...Foo
 
 
 Clean up
