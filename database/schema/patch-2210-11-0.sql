@@ -9,7 +9,7 @@ CREATE TABLE packageuploadlog (
     package_upload integer NOT NULL REFERENCES packageupload,
     date_created timestamp without time zone NOT NULL
         DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'UTC'),
-    person integer NULL REFERENCES person,
+    reviewer integer NOT NULL REFERENCES person,
     old_status integer NOT NULL,
     new_status integer NOT NULL,
     comment text
@@ -18,7 +18,7 @@ CREATE TABLE packageuploadlog (
 CREATE INDEX packageuploadlog__package_upload__date_created__idx
     ON packageuploadlog(package_upload, date_created);
 
-CREATE INDEX packageuploadlog__person__idx ON packageuploadlog(person);
+CREATE INDEX packageuploadlog__reviewer__idx ON packageuploadlog(reviewer);
 
 
 INSERT INTO LaunchpadDatabaseRevision VALUES (2210, 11, 0);
