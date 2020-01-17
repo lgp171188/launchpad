@@ -53,7 +53,10 @@ from lp.services.database.bulk import (
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.decoratedresultset import DecoratedResultSet
-from lp.services.database.enumcol import EnumCol
+from lp.services.database.enumcol import (
+    DBEnum,
+    EnumCol,
+    )
 from lp.services.database.interfaces import (
     IMasterStore,
     IStore,
@@ -1182,6 +1185,8 @@ def get_properties_for_binary(bpr):
 
 @implementer(IPackageUploadLog)
 class PackageUploadLog(StormBase):
+    """Tracking of status changes for a given package upload"""
+
     __storm_table__ = "PackageUploadLog"
 
     id = Int(primary=True)
@@ -1195,9 +1200,9 @@ class PackageUploadLog(StormBase):
     reviewer_id = Int(name='reviewer', allow_none=True)
     reviewer = Reference(reviewer_id, 'Person.id')
 
-    old_status = EnumCol(schema=PackageUploadStatus)
+    old_status = DBEnum(enum=PackageUploadStatus, allow_none=False)
 
-    new_status = EnumCol(schema=PackageUploadStatus)
+    new_status = DBEnum(enum=PackageUploadStatus, allow_none=False)
 
     comment = Unicode(allow_none=True)
 

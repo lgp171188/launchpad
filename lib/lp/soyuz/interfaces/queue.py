@@ -38,6 +38,7 @@ from lazr.restful.declarations import (
     REQUEST_USER,
     )
 from lazr.restful.fields import Reference
+from twisted.words.im.interfaces import IPerson
 from zope.interface import (
     Attribute,
     Interface,
@@ -715,19 +716,30 @@ class IPackageUploadCustom(Interface):
 
 
 class IPackageUploadLog(Interface):
-    id = Attribute("This object's identification.")
+    id = Int(title=_('ID'), required=True, readonly=True)
 
-    package_upload = Attribute("Original package upload.")
+    package_upload = Reference(
+        IPackageUpload,
+        title=_("Original package upload."), required=True, readonly=True)
 
-    date_created = Attribute("When this action happened.")
+    date_created = Datetime(
+        title=_("When this action happened."), required=True, readonly=True)
 
-    reviewer = Attribute("Who did this action.")
+    reviewer = Reference(
+        IPerson, title=_("Who did this action."),
+        required=True, readonly=True)
 
-    old_status = Attribute("Old status.")
+    old_status = Choice(
+        vocabulary=PackageUploadStatus, description=_("Old status."),
+        required=True, readonly=True)
 
-    new_status = Attribute("New status.")
+    new_status = Choice(
+        vocabulary=PackageUploadStatus, description=_("New status."),
+        required=True, readonly=True)
 
-    comment = Attribute("User's comment about this change.")
+    comment = TextLine(
+        title=_("User's comment about this change."),
+        required=False, readonly=True)
 
 
 class IPackageUploadSet(Interface):
