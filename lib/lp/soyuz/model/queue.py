@@ -3,13 +3,13 @@
 
 __metaclass__ = type
 __all__ = [
-    'PackageUploadQueue',
     'PackageUpload',
-    'PackageUploadLog',
     'PackageUploadBuild',
-    'PackageUploadSource',
     'PackageUploadCustom',
+    'PackageUploadLog',
+    'PackageUploadQueue',
     'PackageUploadSet',
+    'PackageUploadSource',
     ]
 
 from itertools import chain
