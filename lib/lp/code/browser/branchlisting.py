@@ -35,7 +35,7 @@ from lazr.enum import (
     Item,
     )
 from storm.expr import Desc
-from z3c.ptcompat import ViewPageTemplateFile
+from zope.browserpage import ViewPageTemplateFile
 from zope.component import getUtility
 from zope.formlib import form
 from zope.interface import (

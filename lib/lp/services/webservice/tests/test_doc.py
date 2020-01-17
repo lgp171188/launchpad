@@ -1,4 +1,4 @@
-# Copyright 2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2011-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """
@@ -37,13 +37,11 @@ special = {
     # properly isolates the database between tests.
     'launchpadlib.txt': LayeredDocFileSuite(
         '../doc/launchpadlib.txt',
-        layer=AppServerLayer,
-        setUp=browser.setUp, tearDown=browser.tearDown,),
+        layer=AppServerLayer, setUp=browser.setUp),
     'launchpadlib.txt-2': LayeredDocFileSuite(
         '../doc/launchpadlib.txt',
         id_extensions=['launchpadlib.txt-2'],
-        layer=AppServerLayer,
-        setUp=browser.setUp, tearDown=browser.tearDown,),
+        layer=AppServerLayer, setUp=browser.setUp),
     }
 
 

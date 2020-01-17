@@ -8,8 +8,11 @@ __metaclass__ = type
 from doctest import DocTestSuite
 import unittest
 
-from zope.app.testing import placelesssetup
 from zope.component import provideAdapter
+from zope.container.testing import (
+    setUp as containerSetUp,
+    tearDown as containerTearDown,
+    )
 from zope.interface import implementer
 from zope.publisher.browser import TestRequest
 from zope.publisher.interfaces.browser import IBrowserRequest
@@ -68,7 +71,7 @@ def adaptNotificationRequestToResponse(request):
 
 
 def setUp(test):
-    placelesssetup.setUp()
+    containerSetUp()
     mock_session = MockSession()
     provideAdapter(lambda x: mock_session, (INotificationRequest,), ISession)
     provideAdapter(lambda x: mock_session, (INotificationResponse,), ISession)
@@ -86,7 +89,7 @@ def setUp(test):
 
 
 def tearDown(test):
-    placelesssetup.tearDown()
+    containerTearDown()
 
 
 def test_suite():

@@ -54,8 +54,8 @@ consumer keys.
 
     >>> caller = LaunchpadWebServiceCaller(u'new-consumer', u'access-key')
     >>> response = caller.get(root)
-    >>> print response.getheader('status')
-    401 Unauthorized
+    >>> response.status
+    401
     >>> print response.body
     Unknown consumer (new-consumer).
 
@@ -73,14 +73,14 @@ doesn't recognize the client.
 
     >>> caller = LaunchpadWebServiceCaller(u'another-new-consumer', u'')
     >>> response = caller.get(root)
-    >>> print response.getheader('status')
-    200 Ok
+    >>> response.status
+    200
 
 Anonymous requests can't access certain data.
 
     >>> response = anon_webservice.get(body['me_link'])
-    >>> print response.getheader('status')
-    401 Unauthorized
+    >>> response.status
+    401
     >>> print response.body
     You need to be logged in to view this URL.
 
@@ -90,8 +90,8 @@ Anonymous requests can't change the dataset.
     >>> data = simplejson.dumps({'display_name' : "This won't work"})
     >>> response = anon_webservice.patch(root + "/~salgado",
     ...     'application/json', data)
-    >>> print response.getheader('status')
-    401 Unauthorized
+    >>> response.status
+    401
     >>> print response.body
     (<Person at...>, 'display_name', 'launchpad.Edit')
 
@@ -104,13 +104,12 @@ request, with the OAuth consumer name being equal to the User-Agent.
     None
     >>> logout()
 
-    >>> from zope.app.testing.functional import HTTPCaller
+    >>> from lp.testing.pages import http
     >>> def request_with_user_agent(agent, url="/devel"):
     ...     if agent is None:
     ...         agent_string = ''
     ...     else:
     ...         agent_string = '\nUser-Agent: %s' % agent
-    ...     http = HTTPCaller()
     ...     request = ("GET %s HTTP/1.1\n"
     ...                "Host: api.launchpad.test"
     ...                "%s\n\n") % (url, agent_string)

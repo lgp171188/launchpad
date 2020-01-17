@@ -10,7 +10,6 @@ __all__ = [
     'DisableTriggerFixture',
     'PGBouncerFixture',
     'PGNotReadyError',
-    'Urllib2Fixture',
     'ZopeAdapterFixture',
     'ZopeEventHandlerFixture',
     'ZopeUtilityFixture',
@@ -31,18 +30,9 @@ from lazr.restful.utils import get_current_browser_request
 import oops
 import oops_amqp
 import pgbouncer.fixture
-from wsgi_intercept import (
-    add_wsgi_intercept,
-    remove_wsgi_intercept,
-    )
-from wsgi_intercept.urllib2_intercept import (
-    install_opener,
-    uninstall_opener,
-    )
 from zope.component import (
     adapter,
     getGlobalSiteManager,
-    provideHandler,
     )
 from zope.interface import Interface
 from zope.publisher.interfaces.browser import IDefaultBrowserLayer
@@ -169,14 +159,16 @@ class ZopeAdapterFixture(Fixture):
 class ZopeEventHandlerFixture(Fixture):
     """A fixture that provides and then unprovides a Zope event handler."""
 
-    def __init__(self, handler):
+    def __init__(self, handler, required=None):
         super(ZopeEventHandlerFixture, self).__init__()
         self._handler = handler
+        self._required = required
 
     def _setUp(self):
         gsm = getGlobalSiteManager()
-        provideHandler(self._handler)
-        self.addCleanup(gsm.unregisterHandler, self._handler)
+        gsm.registerHandler(self._handler, required=self._required)
+        self.addCleanup(
+            gsm.unregisterHandler, self._handler, required=self._required)
 
 
 class ZopeViewReplacementFixture(Fixture):
@@ -253,22 +245,6 @@ class ZopeUtilityFixture(Fixture):
                 gsm.registerUtility, original, self.intf, self.name)
 
 
-class Urllib2Fixture(Fixture):
-    """Let tests use urllib to connect to an in-process Launchpad.
-
-    Initially this only supports connecting to launchpad.test because
-    that is all that is needed.  Later work could connect all
-    sub-hosts (e.g. bugs.launchpad.test)."""
-
-    def _setUp(self):
-        # Work around circular import.
-        from lp.testing.layers import wsgi_application
-        add_wsgi_intercept('launchpad.test', 80, lambda: wsgi_application)
-        self.addCleanup(remove_wsgi_intercept, 'launchpad.test', 80)
-        install_opener()
-        self.addCleanup(uninstall_opener)
-
-
 class CaptureOops(Fixture):
     """Capture OOPSes notified via zope event notification.
 
@@ -303,12 +279,15 @@ class CaptureOops(Fixture):
         that it will be automatically nuked and must be recreated.
         """
         self.queue_name, _, _ = self.channel.queue_declare(
-            durable=True, auto_delete=True)
+            durable=True, auto_delete=False)
+        self.addCleanup(self.channel.queue_delete, self.queue_name)
         # In production the exchange already exists and is durable, but
         # here we make it just-in-time, and tell it to go when the test
         # fixture goes.
         self.channel.exchange_declare(config.error_reports.error_exchange,
-            "fanout", durable=True, auto_delete=True)
+            "fanout", durable=True, auto_delete=False)
+        self.addCleanup(
+            self.channel.exchange_delete, config.error_reports.error_exchange)
         self.channel.queue_bind(
             self.queue_name, config.error_reports.error_exchange)
 

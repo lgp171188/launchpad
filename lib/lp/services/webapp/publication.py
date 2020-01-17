@@ -153,14 +153,6 @@ def maybe_block_offsite_form_post(request):
     referrer = request.getHeader('referer')  # Match HTTP spec misspelling.
     if not referrer:
         raise NoReferrerError('No value for REFERER header')
-    # XXX: jamesh 2007-04-26 bug=98437:
-    # The Zope testing infrastructure sets a default (incorrect)
-    # referrer value of "localhost" or "localhost:9000" if no
-    # referrer is included in the request.  We let it pass through
-    # here for the benefits of the tests.  Web browsers send full
-    # URLs so this does not open us up to extra XSRF attacks.
-    if referrer in ['localhost', 'localhost:9000']:
-        return
     # Extract the hostname from the referrer URI
     try:
         hostname = URI(referrer).host
@@ -227,7 +219,12 @@ class LaunchpadBrowserPublication(
         # It is possible that request.principal is None if the principal has
         # not been set yet.
         if request.principal is not None:
-            txn.setUser(request.principal.id)
+            # Zope sets the transaction's user attribute to a
+            # space-separated pair of path and user ID, where the path is a
+            # record of traversed objects.  This is mostly a ZODB thing that
+            # we don't care about, so just use something minimal that fits
+            # the syntax.
+            txn.user = u"/ %s" % (request.principal.id,)
 
         return txn
 

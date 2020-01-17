@@ -8,7 +8,7 @@ First, we need to feed the import queue.
   >>> test_file_name = os.path.join(
   ...     os.path.dirname(lp.translations.__file__),
   ...     'stories/importqueue/xx-translation-import-queue-edit-autofilling.tar.gz')
-  >>> tarball = open(test_file_name)
+  >>> tarball = open(test_file_name, 'rb')
 
   >>> browser = setupBrowser(auth='Basic carlos@canonical.com:test')
   >>> browser.open(

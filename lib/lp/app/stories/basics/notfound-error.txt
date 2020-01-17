@@ -29,22 +29,19 @@ It also contains instructions specific to broken links.
 If you go to a non-existent page directly, without sending a Referer:
 header, the 404 page does not try to link to the referring page.
 And the advice about broken links is gone, replaced with advice about
-mistyped URLs.
+things like mistyped URLs.
 
-XXX 20080114 mpt: At the time of writing, this test passed if
-'"HTTP_REFERER": self.host_and_port,' was commented out of
-sourcecode/zope/src/zope/app/testing/functional.py. The test is
-disabled until bug 98437 is fixed.
-
-    # >>> page_with_no_referer = str(http(r"""
-    # ... GET /+fhqwhgads HTTP/1.1
-    # ... """))
-    # >>> print page_with_no_referer
-    # HTTP/1.1 404 Not Found
-    # ...
-    # >>> main_content = find_main_content(page_with_no_referer)
-    # >>> for paragraph in main_content('p'):
-    # ...     print extract_text(paragraph)
-    # There&#8217;s no page with this address in Launchpad.
-    # Check that you entered the address correctly.
-    # ...
+    >>> page_with_no_referer = str(http(r"""
+    ... GET /+fhqwhgads HTTP/1.1
+    ... """))
+    >>> print page_with_no_referer
+    HTTP/1.1 404 Not Found
+    ...
+    >>> main_content = find_main_content(page_with_no_referer)
+    >>> for paragraph in main_content('p'):
+    ...     print extract_text(paragraph)
+    This page does not exist, or you may not have permission to see it.
+    If you have been to this page before, it is possible it has been removed.
+    Check that you are logged in with the correct account, or that you
+    entered the address correctly, or search for it:
+    ...

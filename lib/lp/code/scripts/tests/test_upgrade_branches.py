@@ -4,7 +4,7 @@
 """Test the upgrade_branches script."""
 
 
-from bzrlib.branch import Branch as BzrBranch
+from breezy.branch import Branch as BzrBranch
 import transaction
 
 from lp.code.model.branch import (

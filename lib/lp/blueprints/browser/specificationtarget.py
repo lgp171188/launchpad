@@ -19,7 +19,7 @@ from lazr.restful.utils import (
     safe_hasattr,
     smartquote,
     )
-from z3c.ptcompat import ViewPageTemplateFile
+from zope.browserpage import ViewPageTemplateFile
 from zope.component import (
     getMultiAdapter,
     queryMultiAdapter,

@@ -29,7 +29,7 @@ the `IBranchFileSystem` interface and passing what that returns to a
 `ITransportDispatch` object.
 
 We hook the `LaunchpadServer` into Bazaar by implementing a
-`AsyncVirtualTransport`, a `bzrlib.transport.Transport` that wraps all of its
+`AsyncVirtualTransport`, a `breezy.transport.Transport` that wraps all of its
 operations so that they are translated by an object that implements
 `translateVirtualPath`.  See transport.py for more information.
 
@@ -58,20 +58,18 @@ import os.path
 import sys
 import xmlrpclib
 
-from bzrlib import urlutils
-from bzrlib.bzrdir import (
-    BzrDir,
-    BzrDirFormat,
-    )
-from bzrlib.config import TransportConfig
-from bzrlib.errors import (
+from breezy import urlutils
+from breezy.bzr.bzrdir import BzrDir
+from breezy.bzr.smart.request import jail_info
+from breezy.config import TransportConfig
+from breezy.controldir import ControlDirFormat
+from breezy.errors import (
     NoSuchFile,
     PermissionDenied,
     TransportNotPossible,
     )
-from bzrlib.smart.request import jail_info
-from bzrlib.transport import get_transport
-from bzrlib.transport.memory import MemoryServer
+from breezy.transport import get_transport
+from breezy.transport.memory import MemoryServer
 from lazr.uri import URI
 import six
 from twisted.internet import (
@@ -224,7 +222,7 @@ class ITransportDispatch(Interface):
 
         :return: A transport and a path on that transport that point to a
             place that matches the one described in transport_tuple.
-        :rtype: (`bzrlib.transport.Transport`, str)
+        :rtype: (`breezy.transport.Transport`, str)
         """
 
 
@@ -333,7 +331,7 @@ class TransportDispatch:
         transport = get_transport(memory_server.get_url())
         if default_stack_on == '':
             return transport
-        format = BzrDirFormat.get_default_format()
+        format = ControlDirFormat.get_default_format()
         bzrdir = format.initialize_on_transport(transport)
         bzrdir.get_config().set_default_stack_on(
             urlutils.unescape(default_stack_on))

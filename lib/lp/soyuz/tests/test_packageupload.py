@@ -7,10 +7,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 from datetime import timedelta
 import io
-from urllib2 import (
-    HTTPError,
-    urlopen,
-    )
+from urllib2 import urlopen
 
 from debian.deb822 import Changes
 from lazr.restfulclient.errors import (
@@ -1044,9 +1041,9 @@ class TestPackageUploadWebservice(TestCaseWithFactory):
         return upload, self.load(upload, person)
 
     def assertCanOpenRedirectedUrl(self, browser, url):
-        redirection = self.assertRaises(HTTPError, browser.open, url)
-        self.assertEqual(303, redirection.code)
-        urlopen(redirection.hdrs["Location"]).close()
+        browser.open(url)
+        self.assertEqual(303, int(browser.headers["Status"].split(" ", 1)[0]))
+        urlopen(browser.headers["Location"]).close()
 
     def assertRequiresEdit(self, method_name, **kwargs):
         """Test that a web service queue method requires launchpad.Edit."""
@@ -1128,6 +1125,7 @@ class TestPackageUploadWebservice(TestCaseWithFactory):
         self.assertContentEqual(source_file_urls, ws_source_file_urls)
 
         browser = self.getNonRedirectingBrowser(user=person)
+        browser.raiseHttpErrors = False
         for ws_source_file_url in ws_source_file_urls:
             self.assertCanOpenRedirectedUrl(browser, ws_source_file_url)
         self.assertCanOpenRedirectedUrl(browser, ws_upload.changes_file_url)
@@ -1217,6 +1215,7 @@ class TestPackageUploadWebservice(TestCaseWithFactory):
         self.assertContentEqual(binary_file_urls, ws_binary_file_urls)
 
         browser = self.getNonRedirectingBrowser(user=person)
+        browser.raiseHttpErrors = False
         for ws_binary_file_url in ws_binary_file_urls:
             self.assertCanOpenRedirectedUrl(browser, ws_binary_file_url)
         self.assertCanOpenRedirectedUrl(browser, ws_upload.changes_file_url)
@@ -1380,6 +1379,7 @@ class TestPackageUploadWebservice(TestCaseWithFactory):
         self.assertContentEqual(custom_file_urls, ws_custom_file_urls)
 
         browser = self.getNonRedirectingBrowser(user=person)
+        browser.raiseHttpErrors = False
         for ws_custom_file_url in ws_custom_file_urls:
             self.assertCanOpenRedirectedUrl(browser, ws_custom_file_url)
         self.assertCanOpenRedirectedUrl(browser, ws_upload.changes_file_url)

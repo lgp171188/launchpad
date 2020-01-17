@@ -1,4 +1,4 @@
-# Copyright 2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2011-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Webservice unit tests related to Launchpad Bug messages."""
@@ -24,36 +24,43 @@ from lp.testing import (
     logout,
     person_logged_in,
     TestCaseWithFactory,
-    WebServiceTestCase,
     )
 from lp.testing.layers import (
     DatabaseFunctionalLayer,
     LaunchpadFunctionalLayer,
     )
-from lp.testing.pages import LaunchpadWebServiceCaller
+from lp.testing.pages import (
+    LaunchpadWebServiceCaller,
+    webservice_for_person,
+    )
 
 
-class TestMessageTraversal(WebServiceTestCase):
+class TestMessageTraversal(TestCaseWithFactory):
     """Tests safe traversal of bugs.
 
     See bug 607438."""
 
+    layer = LaunchpadFunctionalLayer
+
     def test_message_with_attachments(self):
-        bugowner = self.factory.makePerson()
-        bug = self.factory.makeBug(owner=bugowner)
+        bug = self.factory.makeBug()
         # Traversal over bug messages attachments has no errors.
         expected_messages = []
-        with person_logged_in(bugowner):
+        with person_logged_in(bug.owner):
             for i in range(3):
                 att = self.factory.makeBugAttachment(bug)
                 expected_messages.append(att.message.subject)
+        bug_url = api_url(bug)
 
-        lp_user = self.factory.makePerson()
-        lp_bug = self.wsObject(bug, lp_user)
-
-        attachments = lp_bug.attachments
-        messages = [a.message.subject for a in attachments
-            if a.message is not None]
+        webservice = webservice_for_person(self.factory.makePerson())
+        ws_bug = self.getWebserviceJSON(webservice, bug_url)
+        ws_bug_attachments = self.getWebserviceJSON(
+            webservice, ws_bug['attachments_collection_link'])
+        messages = [
+            self.getWebserviceJSON(
+                webservice, attachment['message_link'])['subject']
+            for attachment in ws_bug_attachments['entries']
+            if attachment['message_link'] is not None]
         self.assertContentEqual(
             messages,
             expected_messages)
@@ -67,15 +74,21 @@ class TestMessageTraversal(WebServiceTestCase):
         message_2 = self.factory.makeMessage()
         message_2.parent = message_1
         bug = self.factory.makeBug()
-        bug.linkMessage(message_2)
+        with person_logged_in(bug.owner):
+            bug.linkMessage(message_2)
+        bug_url = api_url(bug)
+        message_2_url = api_url(message_2)
         user = self.factory.makePerson()
-        lp_bug = self.wsObject(bug, user)
-        for lp_message in lp_bug.messages:
+        webservice = webservice_for_person(user)
+        ws_bug = self.getWebserviceJSON(webservice, bug_url)
+        ws_bug_messages = self.getWebserviceJSON(
+            webservice, ws_bug['messages_collection_link'])
+        for ws_message in ws_bug_messages['entries']:
             # An IIndexedMessage's representation.
-            self.assertIs(None, lp_message.parent)
+            self.assertIsNone(ws_message['parent_link'])
         # An IMessage's representation.
-        lp_message = self.wsObject(message_2, user)
-        self.assertIs(None, lp_message.parent)
+        ws_message = self.getWebserviceJSON(webservice, message_2_url)
+        self.assertIsNone(ws_message['parent_link'])
 
 
 class TestBugMessage(TestCaseWithFactory):

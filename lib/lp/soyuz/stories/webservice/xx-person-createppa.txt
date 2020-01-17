@@ -22,7 +22,6 @@
   ...     name='yay', displayname='My shiny new PPA',
   ...     description='Shinyness!'))
   HTTP/1.1 201 Created
-  Status: 201
   ...
   Location: http://api.launchpad.test/.../+archive/ubuntu/yay
   ...
@@ -32,7 +31,6 @@
   ...     displayname='My shiny new PPA', description='Shinyness!',
   ...     ))
   HTTP/1.1 400 Bad Request
-  Status: 400 Bad Request
   ...
   A PPA cannot have the same name as its distribution.
 
@@ -52,7 +50,6 @@ They aren't a commercial admin, so they cannot create private PPAs.
   ...     private=True,
   ...     ))
   HTTP/1.1 400 Bad Request
-  Status: 400
   ...
   ... is not allowed to make private PPAs
 
@@ -78,7 +75,6 @@ Once they have commercial access, they can create private PPAs:
   ...     private=True,
   ...     ))
   HTTP/1.1 201 Created
-  Status: 201
   ...
   Location: http://api.launchpad.test/.../+archive/ubuntu/secret
   ...
@@ -103,7 +99,6 @@ It's possible to create PPAs for all sorts of distributions.
   ...     ppa_owner['self_link'], 'createPPA', {}, distribution='/ubuntutest',
   ...     name='ppa'))
   HTTP/1.1 201 Created
-  Status: 201
   ...
   Location: http://api.launchpad.test/.../+archive/ubuntutest/ppa
   ...
@@ -114,7 +109,6 @@ But not for distributions that don't have PPAs enabled.
   ...     ppa_owner['self_link'], 'createPPA', {}, distribution='/redhat',
   ...     name='ppa'))
   HTTP/1.1 400 Bad Request
-  Status: 400
   ...
   Red Hat does not support PPAs.
 
@@ -128,7 +122,6 @@ respectively.
   >>> print(ppa_owner_webservice.named_post(
   ...     ppa_owner['self_link'], 'createPPA', {}))
   HTTP/1.1 201 Created
-  Status: 201
   ...
   Location: http://api.launchpad.test/.../+archive/ubuntu/ppa
   ...

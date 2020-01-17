@@ -12,7 +12,6 @@ from testtools.matchers import (
     Contains,
     MatchesAll,
     )
-from zope.app.testing.functional import HTTPCaller
 from zope.component import getUtility
 from zope.publisher.interfaces import NotFound
 from zope.security.interfaces import Unauthorized
@@ -37,6 +36,7 @@ from lp.testing import (
     TestCaseWithFactory,
     )
 from lp.testing.layers import LaunchpadFunctionalLayer
+from lp.testing.pages import http
 from lp.testing.sampledata import ADMIN_EMAIL
 
 
@@ -182,7 +182,7 @@ class TestSourcePackagePublishingHistoryNavigation(TestCaseWithFactory):
             canonical_url(spph, path_only_if_possible=True)
             + '/+files/changelog')
         logout()
-        response = str(HTTPCaller()("GET %s HTTP/1.1\n\n" % redir_url))
+        response = str(http("GET %s HTTP/1.1\n\n" % redir_url))
         self.assertThat(
             response,
             MatchesAll(

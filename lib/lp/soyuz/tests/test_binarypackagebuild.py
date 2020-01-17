@@ -579,6 +579,13 @@ class TestBinaryPackageBuildWebservice(TestCaseWithFactory):
         entry = self.webservice.get(build_url, api_version='devel').jsonBody()
         self.assertEqual(name, entry['source_package_name'])
 
+    def test_source_package_version(self):
+        version = self.build.source_package_release.version
+        build_url = api_url(self.build)
+        logout()
+        entry = self.webservice.get(build_url, api_version='devel').jsonBody()
+        self.assertEqual(version, entry['source_package_version'])
+
     def test_external_dependencies_random_user(self):
         # Normal users can look but not touch.
         person = self.factory.makePerson()

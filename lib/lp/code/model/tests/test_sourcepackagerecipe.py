@@ -13,7 +13,7 @@ from datetime import (
     )
 import textwrap
 
-from bzrlib.plugins.builder.recipe import ForbiddenInstructionError
+from breezy.plugins.builder.recipe import ForbiddenInstructionError
 from pytz import UTC
 from storm.locals import Store
 from testtools.matchers import Equals

@@ -22,7 +22,7 @@ import os
 import time
 from urlparse import urljoin
 
-from z3c.ptcompat import ViewPageTemplateFile
+from zope.browserpage import ViewPageTemplateFile
 from zope.component import getUtility
 from zope.datetime import rfc1123_date
 from zope.interface import implementer

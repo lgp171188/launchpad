@@ -1,4 +1,4 @@
-# Copyright 2009-2016 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 """Test harness for running the new-login.txt tests."""
 
@@ -20,10 +20,8 @@ from datetime import (
 import httplib
 import unittest
 import urllib
-import urllib2
 import urlparse
 
-import mechanize
 from openid.consumer.consumer import (
     FAILURE,
     SUCCESS,
@@ -33,6 +31,7 @@ from openid.extensions import (
     sreg,
     )
 from openid.yadis.discover import DiscoveryFailure
+from six.moves.urllib.error import HTTPError
 from testtools.matchers import (
     Contains,
     ContainsDict,
@@ -43,7 +42,7 @@ from zope.component import getUtility
 from zope.security.management import newInteraction
 from zope.security.proxy import removeSecurityProxy
 from zope.session.interfaces import ISession
-from zope.testbrowser.testing import Browser as TestBrowser
+from zope.testbrowser.wsgi import Browser as TestBrowser
 
 from lp.registry.interfaces.person import IPerson
 from lp.services.database.interfaces import (
@@ -76,7 +75,6 @@ from lp.testing import (
 from lp.testing.browser import (
     Browser,
     setUp,
-    tearDown,
     )
 from lp.testing.fixture import ZopeViewReplacementFixture
 from lp.testing.layers import (
@@ -658,24 +656,6 @@ class TestOpenIDCallbackRedirects(TestCaseWithFactory):
             view.request.response.getHeader('Location'), self.APPLICATION_URL)
 
 
-urls_redirected_to = []
-
-
-class MyHTTPRedirectHandler(mechanize.HTTPRedirectHandler):
-    """Custom HTTPRedirectHandler which stores the URLs redirected to."""
-
-    def redirect_request(self, req, fp, code, msg, headers, newurl):
-        urls_redirected_to.append(newurl)
-        return mechanize.HTTPRedirectHandler.redirect_request(
-            self, req, fp, code, msg, headers, newurl)
-
-
-class MyMechanizeBrowser(mechanize.Browser):
-    """Custom Browser which uses MyHTTPRedirectHandler to handle redirects."""
-    handler_classes = mechanize.Browser.handler_classes.copy()
-    handler_classes['_redirect'] = MyHTTPRedirectHandler
-
-
 def fill_login_form_and_submit(browser, email_address):
     assert browser.getControl(name='field.email') is not None, (
         "We don't seem to be looking at a login form.")
@@ -687,7 +667,8 @@ class TestOpenIDReplayAttack(TestCaseWithFactory):
     layer = AppServerLayer
 
     def test_replay_attacks_do_not_succeed(self):
-        browser = Browser(mech_browser=MyMechanizeBrowser())
+        browser = Browser()
+        browser.followRedirects = False
         browser.open('%s/+login' % self.layer.appserver_root_url())
         # On a JS-enabled browser this page would've been auto-submitted
         # (thanks to the onload handler), but here we have to do it manually.
@@ -696,17 +677,22 @@ class TestOpenIDReplayAttack(TestCaseWithFactory):
 
         self.assertEqual('Login', browser.title)
         fill_login_form_and_submit(browser, 'test@canonical.com')
+        self.assertEqual(
+            httplib.FOUND, int(browser.headers['Status'].split(' ', 1)[0]))
+        callback_url = browser.headers['Location']
+        self.assertIn('+openid-callback', callback_url)
+        browser.open(callback_url)
+        self.assertEqual(
+            httplib.TEMPORARY_REDIRECT,
+            int(browser.headers['Status'].split(' ', 1)[0]))
+        browser.open(browser.headers['Location'])
         login_status = extract_text(
             find_tag_by_id(browser.contents, 'logincontrol'))
         self.assertIn('Sample Person (name12)', login_status)
 
-        # Now we look up (in urls_redirected_to) the +openid-callback URL that
-        # was used to complete the authentication and open it on a different
-        # browser with a fresh set of cookies.
+        # Now we open the +openid-callback URL that was used to complete the
+        # authentication on a different browser with a fresh set of cookies.
         replay_browser = Browser()
-        [callback_url] = [
-            url for url in urls_redirected_to if '+openid-callback' in url]
-        self.assertIsNot(None, callback_url)
         replay_browser.open(callback_url)
         login_status = extract_text(
             find_tag_by_id(replay_browser.contents, 'logincontrol'))
@@ -741,7 +727,7 @@ class TestMissingServerShowsNiceErrorPage(TestCase):
         fixture.replacement = OpenIDLoginThatFailsDiscovery
         self.useFixture(fixture)
         browser = TestBrowser()
-        self.assertRaises(urllib2.HTTPError,
+        self.assertRaises(HTTPError,
                           browser.open, 'http://launchpad.test/+login')
         self.assertEqual('503 Service Unavailable',
                          browser.headers.get('status'))
@@ -946,5 +932,5 @@ def test_suite():
     suite = unittest.TestSuite()
     suite.addTest(unittest.TestLoader().loadTestsFromName(__name__))
     suite.addTest(LayeredDocFileSuite(
-        'login.txt', setUp=setUp, tearDown=tearDown, layer=AppServerLayer))
+        'login.txt', setUp=setUp, layer=AppServerLayer))
     return suite

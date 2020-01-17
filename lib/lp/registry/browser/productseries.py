@@ -29,7 +29,7 @@ __all__ = [
 from operator import attrgetter
 
 from lazr.restful.interface import copy_field
-from z3c.ptcompat import ViewPageTemplateFile
+from zope.browserpage import ViewPageTemplateFile
 from zope.component import getUtility
 from zope.formlib import form
 from zope.formlib.widget import CustomWidgetFactory

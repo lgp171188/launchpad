@@ -36,12 +36,12 @@ which would enable the input when the radio button was clicked to indicate
 that a specific expiration date was desired. There is also no TestBrowser
 way to "enable" the input. So, we have to reach into the guts of the
 TestBrowser to manually re-enable the input. That's what the
-control.mech_control.disabled=False stuff is.
+`del expiry._control.attrs['disabled']` stuff is.
 
     >>> browser.getControl(name='admin').value = ['no']
     >>> browser.getControl(name='expires').value = ['date']
     >>> expiry = browser.getControl(name='membership.expirationdate')
-    >>> expiry.mech_control.disabled = False # control may have been disabled
+    >>> del expiry._control.attrs['disabled']
     >>> expiry.value = 'ssdf'
     >>> browser.getControl('Change').click()
 
@@ -80,7 +80,7 @@ next year -- successfully.
     >>> browser.getControl(name='admin').value = ['no']
     >>> browser.getControl(name='expires').value = ['date']
     >>> expiry = browser.getControl(name='membership.expirationdate')
-    >>> expiry.mech_control.disabled = False # control may have been disabled
+    >>> del expiry._control.attrs['disabled']
     >>> expiry.value = expire_date.strftime('%Y-%m-%d')
     >>> browser.getControl(name='comment').value = 'Arfie'
     >>> browser.getControl('Change').click()

@@ -9,7 +9,7 @@ provisions to handle Bazaar branches.
 
 __metaclass__ = type
 
-from bzrlib.revision import NULL_REVISION
+from breezy.revision import NULL_REVISION
 import transaction
 from zope.component import getUtility
 
@@ -43,11 +43,11 @@ class TestRosettaBranchesScript(TestCaseWithFactory):
         self.useBzrBranches()
         pot_content = self.factory.getUniqueString()
         branch, tree = self.create_branch_and_tree()
-        tree.bzrdir.root_transport.put_bytes(pot_path, pot_content)
+        tree.controldir.root_transport.put_bytes(pot_path, pot_content)
         tree.add(pot_path)
         # XXX: AaronBentley 2010-08-06 bug=614404: a bzr username is
         # required to generate the revision-id.
-        with override_environ(BZR_EMAIL='me@example.com'):
+        with override_environ(BRZ_EMAIL='me@example.com'):
             revision_id = tree.commit("first commit")
         branch.last_scanned_id = revision_id
         branch.last_mirrored_id = revision_id

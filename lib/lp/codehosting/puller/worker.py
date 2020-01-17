@@ -12,22 +12,25 @@ import urllib2
 # line below this comment.
 import lp.codehosting
 
-from bzrlib import (
+from breezy import (
     errors,
     urlutils,
     )
-from bzrlib.branch import Branch
-from bzrlib.plugins.loom.branch import LoomSupport
-from bzrlib.plugins.weave_fmt.branch import BzrBranchFormat4
-from bzrlib.plugins.weave_fmt.repository import (
+from breezy.branch import (
+    Branch,
+    UnstackableBranchFormat,
+    )
+from breezy.plugins.loom.branch import LoomSupport
+from breezy.plugins.weave_fmt.branch import BzrBranchFormat4
+from breezy.plugins.weave_fmt.repository import (
     RepositoryFormat4,
     RepositoryFormat5,
     RepositoryFormat6,
     )
-from bzrlib.transport import get_transport
-import bzrlib.ui
-from bzrlib.ui import SilentUIFactory
-from bzrlib.url_policy_open import (
+from breezy.transport import get_transport
+import breezy.ui
+from breezy.ui import SilentUIFactory
+from breezy.url_policy_open import (
     BadUrl,
     BranchLoopError,
     BranchOpener,
@@ -158,7 +161,7 @@ class BranchMirrorerPolicy(BranchOpenPolicy):
             revision_id = None
         else:
             revision_id = 'null:'
-        source_branch.bzrdir.clone_on_transport(
+        source_branch.controldir.clone_on_transport(
             dest_transport, revision_id=revision_id)
         return Branch.open(destination_url)
 
@@ -251,7 +254,7 @@ class BranchMirrorer(object):
         try:
             dest_branch.set_stacked_on_url(stacked_on_url)
         except (errors.UnstackableRepositoryFormat,
-                errors.UnstackableBranchFormat,
+                UnstackableBranchFormat,
                 errors.IncompatibleRepositories):
             stacked_on_url = None
         if stacked_on_url is None:
@@ -448,7 +451,7 @@ class PullerWorker:
             # XXX: Aaron Bentley 2008-06-13
             # Bazaar does not provide a public API for learning about
             # format markers.  Fix this in Bazaar, then here.
-            control_string = dest_branch.bzrdir._format.get_format_string()
+            control_string = dest_branch.controldir._format.get_format_string()
             if dest_branch._format.__class__ is BzrBranchFormat4:
                 branch_string = BranchFormat.BZR_BRANCH_4.title
             else:
@@ -488,8 +491,10 @@ class PullerWorkerUIFactory(SilentUIFactory):
     def confirm_action(self, prompt, confirmation_id, args):
         """If we're asked to break a lock like a stale lock of ours, say yes.
         """
-        assert confirmation_id == 'bzrlib.lockdir.break', \
-            "Didn't expect confirmation id %r" % (confirmation_id,)
+        if confirmation_id not in (
+                'bzrlib.lockdir.break', 'breezy.lockdir.break'):
+            raise AssertionError(
+                "Didn't expect confirmation id %r" % (confirmation_id,))
         branch_id = self.puller_worker_protocol.branch_id
         prompt = prompt % args
         if get_lock_id_for_branch_id(branch_id) in prompt:
@@ -518,7 +523,7 @@ def install_worker_ui_factory(puller_worker_protocol):
     2) Break locks if and only if they appear to be stale locks
        created by another puller worker process.
     """
-    bzrlib.ui.ui_factory = PullerWorkerUIFactory(puller_worker_protocol)
+    breezy.ui.ui_factory = PullerWorkerUIFactory(puller_worker_protocol)
 
 
 class MirroredBranchPolicy(BranchMirrorerPolicy):
@@ -600,7 +605,7 @@ class ImportedBranchPolicy(BranchMirrorerPolicy):
         Because we control the process that creates import branches, a
         vfs-level copy is safe and more efficient than a bzr fetch.
         """
-        source_transport = source_branch.bzrdir.root_transport
+        source_transport = source_branch.controldir.root_transport
         dest_transport = get_transport(destination_url)
         while True:
             # We loop until the remote file list before and after the copy is

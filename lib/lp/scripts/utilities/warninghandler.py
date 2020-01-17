@@ -22,7 +22,7 @@ class WarningReport:
     def __str__(self):
         info = str(self.info)
         if info:
-            return info
+            return '\n'.join((info, self.message))
         else:
             return self.message
 
@@ -60,7 +60,7 @@ class ImportantInfo:
         return '\n'.join(L)
 
 # ViewPageTemplateFile has .filename.
-from z3c.ptcompat import ViewPageTemplateFile
+from zope.browserpage import ViewPageTemplateFile
 
 # PythonExpr has .text, the text of the expression.
 from zope.tales.pythonexpr import PythonExpr

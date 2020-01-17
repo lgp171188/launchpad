@@ -175,6 +175,7 @@ class ClaimTeamView(
     field_names = [
         'teamowner', 'display_name', 'description', 'membership_policy',
         'defaultmembershipperiod', 'renewal_policy', 'defaultrenewalperiod']
+    invariant_context = None
     label = 'Claim Launchpad team'
     custom_widget_description = CustomWidgetFactory(
         TextAreaWidget, height=10, width=30)

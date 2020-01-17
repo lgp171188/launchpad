@@ -25,8 +25,8 @@ import urllib
 
 import pytz
 from six.moves.urllib.parse import parse_qsl
-from z3c.ptcompat import ViewPageTemplateFile
 from zope import datetime as zope_datetime
+from zope.browserpage import ViewPageTemplateFile
 from zope.component import getUtility
 from zope.formlib.interfaces import IInputWidget
 from zope.formlib.utility import setUpWidgets

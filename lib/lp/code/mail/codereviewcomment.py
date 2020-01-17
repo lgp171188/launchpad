@@ -10,7 +10,7 @@ __all__ = [
     'CodeReviewCommentMailer',
     ]
 
-from bzrlib.patches import BinaryPatch
+from breezy.patches import BinaryPatch
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
@@ -174,9 +174,9 @@ def format_comment(comment):
     """Returns a list of correctly formatted comment(s)."""
     comment_lines = []
     if comment is not None:
-        comment_lines.append('')
+        comment_lines.append(b'')
         comment_lines.extend(comment.splitlines())
-        comment_lines.append('')
+        comment_lines.append(b'')
     return comment_lines
 
 
@@ -201,7 +201,7 @@ def build_inline_comments_section(comments, diff_text):
 
         if isinstance(patch, dict) and 'dirty_head' in patch:
             for line in patch['dirty_head']:
-                dirty_head.append(u'> %s' % line.rstrip('\n'))
+                dirty_head.append(b'> %s' % line.rstrip(b'\n'))
                 line_count += 1  # inc for dirty headers
                 comment = comments.get(str(line_count))
                 if comment:
@@ -213,7 +213,7 @@ def build_inline_comments_section(comments, diff_text):
         if type(patch) is BinaryPatch:
             if dirty_comment:
                 result_lines.extend(dirty_head)
-                result_lines.append(u'> %s' % str(patch).rstrip('\n'))
+                result_lines.append(b'> %s' % patch.as_bytes().rstrip(b'\n'))
             line_count += 1
             comment = comments.get(str(line_count))
             if comment:
@@ -224,7 +224,7 @@ def build_inline_comments_section(comments, diff_text):
             line_count += 1  # inc patch headers
             comment = comments.get(str(line_count))
 
-            patch_lines.append('> {0}'.format(ph))
+            patch_lines.append(b'> %s' % ph)
             if comment:
                 patch_lines.extend(format_comment(comment))
                 patch_comment = True
@@ -236,8 +236,7 @@ def build_inline_comments_section(comments, diff_text):
 
             # add context line (hunk header)
             line_count += 1  # inc hunk context line
-            hunk_lines.append(u'> %s' % hunk.get_header().rstrip('\n').decode(
-                'utf-8', 'replace'))
+            hunk_lines.append(b'> %s' % hunk.get_header().rstrip(b'\n'))
 
             # comment for context line (hunk header)
             comment = comments.get(str(line_count))
@@ -248,11 +247,9 @@ def build_inline_comments_section(comments, diff_text):
             for hunk_line in hunk.lines:
                 # A single HunkLine can actually represent multiple
                 # lines in the "No newline at end of file" case.
-                hunk_line = str(hunk_line)
-                for line in hunk_line.splitlines():
+                for line in hunk_line.as_bytes().splitlines():
                     line_count += 1  # inc hunk lines
-                    hunk_lines.append(u'> %s' % line.rstrip('\n').decode(
-                        'utf-8', 'replace'))
+                    hunk_lines.append(b'> %s' % line.rstrip(b'\n'))
                     comment = comments.get(str(line_count))
                     if comment:
                         hunk_lines.extend(format_comment(comment))
@@ -270,5 +267,5 @@ def build_inline_comments_section(comments, diff_text):
         elif dirty_comment:
             result_lines.extend(dirty_head)
 
-    result_text = '\n'.join(result_lines)
+    result_text = b'\n'.join(result_lines).decode('UTF-8', errors='replace')
     return '\n\nDiff comments:\n\n%s\n\n' % result_text

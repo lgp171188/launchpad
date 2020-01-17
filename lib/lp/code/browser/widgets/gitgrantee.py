@@ -12,7 +12,7 @@ __all__ = [
 
 from lazr.enum import DBItem
 from lazr.restful.fields import Reference
-from z3c.ptcompat import ViewPageTemplateFile
+from zope.browserpage import ViewPageTemplateFile
 from zope.formlib.interfaces import (
     ConversionError,
     IDisplayWidget,

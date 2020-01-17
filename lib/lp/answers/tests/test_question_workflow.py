@@ -20,7 +20,6 @@ from datetime import (
     timedelta,
     )
 import traceback
-import unittest
 
 from lazr.lifecycle.interfaces import (
     IObjectCreatedEvent,
@@ -54,12 +53,13 @@ from lp.testing import (
     ANONYMOUS,
     login,
     login_person,
+    TestCase,
     )
-from lp.testing.event import TestEventListener
+from lp.testing.fixture import ZopeEventHandlerFixture
 from lp.testing.layers import DatabaseFunctionalLayer
 
 
-class BaseAnswerTrackerWorkflowTestCase(unittest.TestCase):
+class BaseAnswerTrackerWorkflowTestCase(TestCase):
     """Base class for test cases related to the Answer Tracker workflow.
 
     It provides the common fixture and test helper methods.
@@ -68,6 +68,8 @@ class BaseAnswerTrackerWorkflowTestCase(unittest.TestCase):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
+        super(BaseAnswerTrackerWorkflowTestCase, self).setUp()
+
         self.now = datetime.now(UTC)
 
         # Login as the question owner.
@@ -90,10 +92,7 @@ class BaseAnswerTrackerWorkflowTestCase(unittest.TestCase):
             self.owner, 'Help!', 'I need help with Ubuntu',
             datecreated=self.now)
 
-    def tearDown(self):
-        if hasattr(self, 'created_event_listener'):
-            self.created_event_listener.unregister()
-            self.modified_event_listener.unregister()
+        self.registered_event_listeners = False
 
     def setQuestionStatus(self, question, new_status,
                           comment="Status change."):
@@ -110,13 +109,12 @@ class BaseAnswerTrackerWorkflowTestCase(unittest.TestCase):
     def setUpEventListeners(self):
         """Install a listener for events emitted during the test."""
         self.collected_events = []
-        if hasattr(self, 'modified_event_listener'):
-            # Event listeners is already registered.
-            return
-        self.modified_event_listener = TestEventListener(
-            IQuestion, IObjectModifiedEvent, self.collectEvent)
-        self.created_event_listener = TestEventListener(
-            IQuestionMessage, IObjectCreatedEvent, self.collectEvent)
+        if not self.registered_event_listeners:
+            self.useFixture(ZopeEventHandlerFixture(
+                self.collectEvent, (IQuestion, IObjectModifiedEvent)))
+            self.useFixture(ZopeEventHandlerFixture(
+                self.collectEvent, (IQuestionMessage, IObjectCreatedEvent)))
+            self.registered_event_listeners = True
 
     def collectEvent(self, object, event):
         """Collect events"""
@@ -518,7 +516,7 @@ class LinkFAQTestCase(BaseAnswerTrackerWorkflowTestCase):
 
     def setUp(self):
         """Create an additional FAQ."""
-        BaseAnswerTrackerWorkflowTestCase.setUp(self)
+        super(LinkFAQTestCase, self).setUp()
 
         # Only admin can create FAQ on ubuntu.
         login_person(self.admin)

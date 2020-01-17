@@ -1,13 +1,16 @@
-# Copyright 2012-2017 Canonical Ltd.  This software is licensed under the
+# Copyright 2012-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for core services infrastructure."""
 
+import json
+
 from fixtures import FakeLogger
 from lazr.restful.interfaces._rest import IHTTPResource
+from six.moves.urllib.parse import urlparse
 from zope.component import getUtility
 from zope.interface import implementer
-from zope.publisher.interfaces import NotFound
+from zope.interface.interfaces import ComponentLookupError
 
 from lp.app.interfaces.services import (
     IService,
@@ -48,16 +51,18 @@ class TestServiceFactory(TestCaseWithFactory, FakeAdapterMixin):
         self.assertEqual(getUtility(IServiceFactory), context)
         self.assertEqual(fake_service, view)
 
-    def test_invalid_traversal(self):
-        # Test that traversal to +services without a service specified fails.
-        self.useFixture(FakeLogger())
-        self.assertRaises(
-            NotFound, self.getUserBrowser,
+    def test_service_factory_traversal(self):
+        # Test that traversal to the service factory works.
+        context, view, request = test_traverse(
             'https://launchpad.test/api/devel/+services')
+        self.assertEqual(getUtility(IServiceFactory), context)
+        self.assertEqual(
+            'service_factory',
+            urlparse(json.loads(view())['resource_type_link']).fragment)
 
     def test_invalid_service(self):
-        # Test that traversal an invalid service name fails.
+        # Test that traversal to an invalid service name fails.
         self.useFixture(FakeLogger())
         self.assertRaises(
-            NotFound, self.getUserBrowser,
+            ComponentLookupError, test_traverse,
             'https://launchpad.test/api/devel/+services/invalid')

@@ -1,4 +1,4 @@
-# Copyright 2009 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """A stub IMailer for use in development and unittests."""
@@ -52,6 +52,13 @@ class StubMailer:
         sendmail = getUtility(IMailer, self.mailer)
         sendmail.send(self.from_addr, self.to_addrs, message)
 
+    def vote(self, fromaddr, toaddrs, message):
+        pass
+
+    def abort(self):
+        # We don't do any work until send() is called, so aborting is trivial.
+        pass
+
 
 test_emails = []
 
@@ -67,3 +74,10 @@ class TestMailer:
 
     def send(self, from_addr, to_addrs, message):
         test_emails.append((from_addr, to_addrs, message))
+
+    def vote(self, fromaddr, toaddrs, message):
+        pass
+
+    def abort(self):
+        # We don't do any work until send() is called, so aborting is trivial.
+        pass

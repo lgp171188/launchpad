@@ -8,8 +8,6 @@ __all__ = []
 
 from textwrap import dedent
 
-from zope.app.testing.functional import HTTPCaller
-
 from lp.services.config import config
 from lp.services.database.policy import (
     DatabaseBlockedPolicy,
@@ -19,6 +17,7 @@ from lp.services.webapp import haproxy
 from lp.services.webapp.servers import LaunchpadTestRequest
 from lp.testing import TestCase
 from lp.testing.layers import FunctionalLayer
+from lp.testing.pages import http
 
 
 class HAProxyIntegrationTest(TestCase):
@@ -26,18 +25,17 @@ class HAProxyIntegrationTest(TestCase):
 
     def setUp(self):
         TestCase.setUp(self)
-        self.http = HTTPCaller()
         self.original_flag = haproxy.going_down_flag
         self.addCleanup(haproxy.set_going_down_flag, self.original_flag)
 
     def test_HAProxyStatusView_all_good_returns_200(self):
-        result = self.http(u'GET /+haproxy HTTP/1.0', handle_errors=False)
+        result = http(u'GET /+haproxy HTTP/1.0', handle_errors=False)
         self.assertEqual(200, result.getStatus())
 
     def test_authenticated_HAProxyStatusView_works(self):
         # We don't use authenticated requests, but this keeps us from
         # generating oopses.
-        result = self.http(
+        result = http(
             u'GET /+haproxy HTTP/1.0\n'
             u'Authorization: Basic Zm9vLmJhckBjYW5vbmljYWwuY29tOnRlc3Q=\n',
             handle_errors=False)
@@ -45,7 +43,7 @@ class HAProxyIntegrationTest(TestCase):
 
     def test_HAProxyStatusView_going_down_returns_500(self):
         haproxy.set_going_down_flag(True)
-        result = self.http(u'GET /+haproxy HTTP/1.0', handle_errors=False)
+        result = http(u'GET /+haproxy HTTP/1.0', handle_errors=False)
         self.assertEqual(500, result.getStatus())
 
     def test_haproxy_url_uses_DatabaseBlocked_policy(self):
@@ -67,5 +65,5 @@ class HAProxyIntegrationTest(TestCase):
             '''))
         self.addCleanup(config.pop, 'change_haproxy_status_code')
         haproxy.set_going_down_flag(True)
-        result = self.http(u'GET /+haproxy HTTP/1.0', handle_errors=False)
+        result = http(u'GET /+haproxy HTTP/1.0', handle_errors=False)
         self.assertEqual(499, result.getStatus())

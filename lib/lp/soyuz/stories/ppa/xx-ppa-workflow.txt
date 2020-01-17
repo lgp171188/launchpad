@@ -270,6 +270,7 @@ Similarly to users, teams with active PPAs cannot be renamed either.
     Traceback (most recent call last):
     ...
     LookupError: name u'field.name'
+    ...
 
     >>> print(extract_text(
     ...     first_tag_by_class(sample_browser.contents, 'form')))
@@ -371,10 +372,10 @@ build on a virtualized builder.
 
     >>> admin_browser.getControl(name="field.enabled").value
     True
-    >>> admin_browser.getControl(name="field.private").value
+    >>> bool(admin_browser.getControl(name="field.private").value)
     False
-    >>> admin_browser.getControl(
-    ...     name="field.suppress_subscription_notifications").value
+    >>> bool(admin_browser.getControl(
+    ...     name="field.suppress_subscription_notifications").value)
     False
     >>> admin_browser.getControl(name="field.require_virtualized").value
     True
@@ -557,6 +558,7 @@ all their PPAs.
     Traceback (most recent call last):
     ...
     LookupError: name u'field.accepted'
+    ...
 
     >>> print(extract_text(
     ...     first_tag_by_class(cprov_browser.contents, 'form')))
@@ -728,12 +730,12 @@ Going back to the edit page, we can see the publish flag was cleared:
 
     >>> no_priv_browser.open(
     ...     "http://launchpad.test/~no-priv/+archive/ppa/+edit")
-    >>> print(no_priv_browser.getControl(name='field.publish').value)
+    >>> bool(no_priv_browser.getControl(name='field.publish').value)
     False
 
 Once we re-enable the PPA the "disabled" warning message will be gone.
 
-    >>> print(no_priv_browser.getControl(name='field.enabled').value)
+    >>> bool(no_priv_browser.getControl(name='field.enabled').value)
     False
 
     >>> no_priv_browser.getControl(name='field.enabled').value = True

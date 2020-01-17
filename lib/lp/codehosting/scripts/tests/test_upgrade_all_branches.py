@@ -8,7 +8,7 @@ import logging
 import os
 from os.path import dirname
 
-from bzrlib.repofmt.groupcompress_repo import RepositoryFormat2a
+from breezy.bzr.groupcompress_repo import RepositoryFormat2a
 from fixtures import TempDir
 import transaction
 

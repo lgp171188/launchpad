@@ -16,7 +16,7 @@ comment.
     >>> from lp.services.config import config
     >>> testfiles = os.path.join(config.root, 'lib/lp/bugs/tests/testfiles')
     >>> extra_filebug_data = open(
-    ...     os.path.join(testfiles, 'extra_filebug_data.msg'))
+    ...     os.path.join(testfiles, 'extra_filebug_data.msg'), 'rb')
 
     NOTE: The form names are used instead of their labels here, because
           external tools depend on them.
@@ -157,7 +157,7 @@ If the uploaded message contains a Subject field in the initial headers,
 that will be used to automatically fill in a suggested title.
 
     >>> extra_filebug_data_with_subject = open(
-    ...     os.path.join(testfiles, 'extra_filebug_data_subject.msg'))
+    ...     os.path.join(testfiles, 'extra_filebug_data_subject.msg'), 'rb')
     >>> anon_browser.open('http://launchpad.test/+storeblob')
     >>> anon_browser.getControl(name='field.blob').add_file( # Don't change!
     ...     extra_filebug_data_with_subject, 'not/important', 'not.important')
@@ -186,7 +186,7 @@ If the uploaded message contains a Tags field, the tags widget will be
 initialized with that value.
 
     >>> extra_filebug_data_with_subject = open(
-    ...     os.path.join(testfiles, 'extra_filebug_data_tags.msg'))
+    ...     os.path.join(testfiles, 'extra_filebug_data_tags.msg'), 'rb')
     >>> anon_browser.open('http://launchpad.test/+storeblob')
     >>> anon_browser.getControl(name='field.blob').add_file( # Don't change!
     ...     extra_filebug_data_with_subject, 'not/important', 'not.important')
@@ -249,8 +249,11 @@ Our test data contains such a header, mentioning two HWDB submision key.
 The database knows only the first key.
 
     >>> extra_filebug_data_with_hwdb_submission = open(
-    ...     os.path.join(testfiles, 'extra_filebug_data_hwdb_submission.msg'))
-    >>> print(extra_filebug_data_with_hwdb_submission.read().split('\n')[2])
+    ...     os.path.join(testfiles, 'extra_filebug_data_hwdb_submission.msg'),
+    ...     'rb')
+    >>> print(
+    ...     extra_filebug_data_with_hwdb_submission.read()
+    ...     .decode('UTF-8').split('\n')[2])
     HWDB-Submission: sample-submission, non-existing-submission-key
 
 Once we submit the bug report...

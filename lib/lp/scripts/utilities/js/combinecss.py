@@ -1,5 +1,7 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
+
+from __future__ import absolute_import, print_function, unicode_literals
 
 import os
 
@@ -73,9 +75,9 @@ def main():
 
     combo = ComboFile(absolute_names, target)
     if combo.needs_update():
-        result = ''
+        result = b''
         for content in combine_files(names, icing):
             result += content
 
-        with open(target, 'w') as f:
+        with open(target, 'wb') as f:
             f.write(result)

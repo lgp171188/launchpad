@@ -181,13 +181,10 @@ class BugSubscriptionSubscribeSelfView(LaunchpadFormView,
         referer = self._return_url
         context_url = canonical_url(self.context)
 
-        # XXX bdmurray 2010-09-30 bug=98437: work around zope's test
-        # browser setting referer to localhost.
-        # We also ignore the current request URL and the context URL as
-        # far as referrers are concerned so that we can handle privacy
-        # issues properly.
-        ignored_referrer_urls = (
-            'localhost', self.request.getURL(), context_url)
+        # Ignore the current request URL and the context URL as far as
+        # referrers are concerned so that we can handle privacy issues
+        # properly.
+        ignored_referrer_urls = (self.request.getURL(), context_url)
         if referer and referer not in ignored_referrer_urls:
             next_url = referer
         elif self._redirecting_to_bug_list:

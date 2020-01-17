@@ -18,7 +18,6 @@
   <include package="zope.sendmail" file="meta.zcml" />
   <include package="zope.app.publication" file="meta.zcml" />
   <include package="zope.app.publisher.xmlrpc" file="meta.zcml" />
-  <includeOverrides package="z3c.ptcompat" file="meta.zcml" />
 
   <!-- Note that we need to do this early, as later startup
        subscribers may break without fixups -->
@@ -33,7 +32,9 @@
   <include package="zope.session" />
 
   <include package="zope.app.publisher.xmlrpc" />
-  <include package="z3c.pt" />
+
+  <!-- Uncomment this to use Chameleon for page template rendering -->
+  <!-- <include package="z3c.ptcompat" /> -->
 
 
   <!-- selected things from zope.traversing -->

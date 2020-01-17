@@ -874,12 +874,12 @@ methods.
 
     >>> response = webservice.named_get(
     ...     cprov_archive['self_link'], 'getPublishedSources')
-    >>> print(response.getheader('status'))
-    200 Ok
+    >>> response.status
+    200
     >>> response = webservice.named_get(
     ...     cprov_archive['self_link'], 'getPublishedBinaries')
-    >>> print(response.getheader('status'))
-    200 Ok
+    >>> response.status
+    200
 
 If either method is called with the version parameter, the name must
 be specified too, otherwise it is considered a bad webservice
@@ -887,13 +887,13 @@ request.
 
     >>> response = webservice.named_get(
     ...     cprov_archive['self_link'], 'getPublishedSources', version='1.0')
-    >>> print(response.getheader('status'))
-    400 Bad Request
+    >>> response.status
+    400
     >>> response = webservice.named_get(
     ...     cprov_archive['self_link'], 'getPublishedBinaries',
     ...     version='1.0')
-    >>> print(response.getheader('status'))
-    400 Bad Request
+    >>> response.status
+    400
 
 We don't have to specify any filters when getting published sources:
 

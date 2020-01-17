@@ -5,19 +5,19 @@
 
 __metaclass__ = type
 
-from bzrlib.branch import Branch
-from bzrlib.bzrdir import BzrDirMetaFormat1
-from bzrlib.plugins.weave_fmt.bzrdir import BzrDirFormat6
-from bzrlib.plugins.weave_fmt.repository import (
+from breezy.branch import Branch
+from breezy.bzr.bzrdir import BzrDirMetaFormat1
+from breezy.bzr.knitpack_repo import RepositoryFormatKnitPack5
+from breezy.bzr.knitrepo import RepositoryFormatKnit1
+from breezy.plugins.weave_fmt.bzrdir import BzrDirFormat6
+from breezy.plugins.weave_fmt.repository import (
     RepositoryFormat6,
     RepositoryFormat7,
     )
-from bzrlib.repofmt.knitpack_repo import RepositoryFormatKnitPack5
-from bzrlib.repofmt.knitrepo import RepositoryFormatKnit1
-from bzrlib.tests.per_repository import TestCaseWithRepository
-from bzrlib.url_policy_open import BranchOpener
+from breezy.tests.per_repository import TestCaseWithRepository
+from breezy.url_policy_open import BranchOpener
 
-import lp.codehosting  # For bzr plugins.
+import lp.codehosting  # For brz plugins.
 from lp.codehosting.puller.tests import PullerWorkerMixin
 from lp.codehosting.tests.helpers import LoomTestMixin
 
@@ -27,7 +27,7 @@ class TestPullerWorkerFormats(TestCaseWithRepository, PullerWorkerMixin,
 
     def setUp(self):
         TestCaseWithRepository.setUp(self)
-        # make_bzrdir relies on this being a relative filesystem path.
+        # make_controldir relies on this being a relative filesystem path.
         self._source_branch_path = 'source-branch'
         BranchOpener.install_hook()
         self.worker = self.makePullerWorker(
@@ -39,7 +39,8 @@ class TestPullerWorkerFormats(TestCaseWithRepository, PullerWorkerMixin,
         """Make a source branch with the given formats."""
         if branch_format is not None:
             bzrdir_format.set_branch_format(branch_format)
-        bd = self.make_bzrdir(self._source_branch_path, format=bzrdir_format)
+        bd = self.make_controldir(
+            self._source_branch_path, format=bzrdir_format)
         repository_format.initialize(bd)
         branch = bd.create_branch()
         tree = branch.create_checkout('source-checkout')
@@ -58,8 +59,8 @@ class TestPullerWorkerFormats(TestCaseWithRepository, PullerWorkerMixin,
             source_branch.repository._format.get_format_description(),
             dest_branch.repository._format.get_format_description())
         self.assertEqual(
-            source_branch.bzrdir._format.get_format_description(),
-            dest_branch.bzrdir._format.get_format_description())
+            source_branch.controldir._format.get_format_description(),
+            dest_branch.controldir._format.get_format_description())
 
     def _testMirrorWithFormats(self, repository_format, bzrdir_format):
         """Make a branch with certain formats, mirror it and check the mirror.
@@ -85,9 +86,8 @@ class TestPullerWorkerFormats(TestCaseWithRepository, PullerWorkerMixin,
         self.assertMirrored(branch, mirrored_branch)
 
     # XXX: JonathanLange 2008-06-25: These next three tests should be
-    # implemented against all supported repository formats using bzrlib's test
-    # adaptation APIs. Unfortunately, this API changes between 1.5 and 1.6, so
-    # it'd be a bit silly to do the work now.
+    # implemented against all supported repository formats using breezy's test
+    # adaptation APIs.
     def testMirrorKnitAsKnit(self):
         # Create a source branch in knit format, and check that the mirror is
         # in knit format.

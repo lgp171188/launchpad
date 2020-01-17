@@ -7,9 +7,6 @@ Submission and cancellation links
 If we load an import queue entry directly from the global import queue and
 approve it, we end up back on the global translations import queue.
 
-XXX DaniloSegan 2009-09-01: due to Zope bug #98437 we can't test that
-this works properly when no "referer" header is sent.
-
     >>> admin_browser.open('http://translations.launchpad.test/+imports')
     >>> admin_browser.getLink(url='imports/1').click()
     >>> print(admin_browser.getLink('Cancel').url)

@@ -1,4 +1,4 @@
-# Copyright 2009-2015 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Character encoding utilities"""
@@ -8,10 +8,13 @@ __all__ = [
     'escape_nonascii_uniquely',
     'guess',
     'is_ascii_only',
+    'wsgi_native_string',
     ]
 
 import codecs
 import re
+
+import six
 
 
 _boms = [
@@ -212,3 +215,18 @@ def is_ascii_only(string):
         return False
     else:
         return True
+
+
+def wsgi_native_string(s):
+    """Make a native string suitable for use in WSGI.
+
+    PEP 3333 requires environment variables to be native strings that
+    contain only code points representable in ISO-8859-1.  To support
+    porting to Python 3 via an intermediate stage of Unicode literals in
+    Python 2, we enforce this here.
+    """
+    result = six.ensure_str(s, encoding='ISO-8859-1')
+    if six.PY3 and isinstance(s, six.text_type):
+        # Ensure we're limited to ISO-8859-1.
+        result.encode('ISO-8859-1')
+    return result

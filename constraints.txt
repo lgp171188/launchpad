@@ -1,194 +1,162 @@
-# ztk-versions.cfg from ZTK 1.1.6, with some upgrades
-# ---------------------------------------------------
+# ztk-versions.cfg from ZTK a9eb2093b5 (2019-10-23), with some upgrades
+# ---------------------------------------------------------------------
 
-zope.annotation==3.6.0
-zope.applicationcontrol==3.5.5
-zope.authentication==3.7.1
-zope.broken==3.6.0
-zope.browser==1.3
-zope.browsermenu==3.9.1
-zope.browserpage==3.12.2
-zope.browserresource==3.12.0
-zope.cachedescriptors==3.5.1
-zope.catalog==3.8.2
-#zope.component==3.10.0
+zope.annotation==4.7.0
+zope.applicationcontrol==4.2.0
+zope.authentication==4.4.0
+zope.browser==2.3
+zope.browsermenu==4.4
+zope.browserpage==4.3.0
+zope.browserresource==4.3
+zope.cachedescriptors==4.3.1
+zope.catalog==4.2.1
 # Tell pip about extras to work around https://github.com/pypa/pip/issues/3046
 # XXX cjwatson 2017-09-03: This should be fixed in pip 9.0.0, but apparently
 # isn't.
-# Upgrade from ZTK 1.1.6 for ZCML registration performance.
-zope.component[hook,zcml]==3.11.0
-zope.componentvocabulary==1.0.1
-zope.configuration==3.7.4
-zope.container==3.12.0
-zope.contentprovider==3.7.2
-zope.contenttype==3.5.5
-zope.copy==3.5.0
-zope.copypastemove==3.8.0
-zope.datetime==3.4.1
-zope.deferredimport==3.5.3
-zope.deprecation==3.4.1
-zope.dottedname==3.4.6
-zope.dublincore==3.8.2
-zope.error==3.7.4
-zope.event==3.5.2
-zope.exceptions==3.6.2
-zope.filerepresentation==3.6.1
-zope.formlib==4.0.6
-zope.hookable==3.4.1
-#zope.i18n==3.7.4
-zope.i18n==4.3.1
-zope.i18nmessageid==3.5.3
-zope.index==3.6.4
-#zope.interface==3.7.0
-# Upgrade from ZTK 1.1.6 for ZCML registration performance.
-zope.interface==4.4.3
-zope.intid==3.7.2
-zope.keyreference==3.6.4
-zope.lifecycleevent==3.6.2
-zope.location==3.9.1
-zope.login==1.0.0
-zope.mimetype==1.3.1
-zope.minmax==1.1.2
-#zope.pagetemplate==3.5.2
-zope.pagetemplate==4.3.0
-zope.password==3.6.1
-zope.pluggableauth==1.2
-zope.principalannotation==3.6.1
-zope.principalregistry==3.7.1
-zope.processlifetime==1.0
-zope.proxy==3.6.1
-zope.ptresource==3.9.0
-zope.publisher==3.12.6
-zope.ramcache==1.0
-zope.schema==3.7.1
-zope.security==3.8.3
-zope.securitypolicy==3.7.0
-zope.sendmail==3.7.5
-zope.sequencesort==3.4.0
-zope.server==3.8.6
-#zope.session==3.9.5
-# XXX: downgraded to avoid 3.9.2 cookie calculation changes
-zope.session==3.9.1
-zope.site==3.9.2
-zope.size==3.4.1
-zope.structuredtext==3.5.1
-#zope.tal==3.5.2
-zope.tal==4.3.0
-zope.tales==3.5.3
-#zope.testing==3.10.3
+zope.component[hook,zcml]==4.5
+zope.componentvocabulary==2.2.0
+zope.configuration==4.3.1
+zope.container==4.2.2
+zope.contentprovider==4.2.1
+zope.contenttype==4.4
+zope.copy==4.2
+zope.copypastemove==4.1.0
+zope.datetime==4.2.0
+zope.deferredimport==4.3
+zope.deprecation==4.4.0
+zope.dottedname==4.3
+zope.dublincore==4.2.0
+zope.error==4.5.0
+zope.event==4.4
+zope.exceptions==4.3
+zope.filerepresentation==4.2.0
+zope.formlib==4.6.0
+zope.hookable==4.2.0
+zope.i18n==4.6.2
+zope.i18nmessageid==4.3.1
+zope.index==4.4.0
+zope.interface==4.6.0
+zope.intid==4.3.0
+zope.keyreference==4.2.0
+zope.lifecycleevent==4.3
+zope.location==4.2
+zope.login==2.1.0
+zope.mimetype==2.4.0
+zope.minmax==2.2.0
+zope.pagetemplate==4.4.1
+zope.password==4.3.1
+zope.pluggableauth==2.3.0
+zope.principalannotation==4.3.0
+zope.principalregistry==4.2.0
+zope.processlifetime==2.3.0
+zope.proxy==4.3.1
+zope.ptresource==4.2.0
+zope.publisher==5.0.1
+zope.ramcache==2.3
+zope.schema==4.9.3
+zope.security==4.3.1
+zope.securitypolicy==4.3.1
+zope.sendmail==5.0
+#zope.session==4.3.0
+# lp:~launchpad-committers/zope.session:launchpad
+zope.session==4.3.0+lp1
+zope.site==4.2.2
+zope.size==4.3
+zope.structuredtext==4.3
+zope.tal==4.4
+zope.tales==5.0
 zope.testing==4.7
-#zope.testrunner==4.0.4
+#zope.testrunner==5.0
 # lp:~launchpad-committers/zope.testrunner:launchpad
 zope.testrunner[subunit]==5.1+lp2
-zope.traversing==3.14.0
-zope.viewlet==3.7.2
+zope.traversing==4.3.1
+zope.viewlet==4.2.1
 
-# Deprecating
+# Direct dependencies
+BTrees==4.5.1
+persistent==4.4.3
+python-gettext==4.0
+pytz==2018.9
+setuptools==41.0.0
+six==1.12.0
+transaction==2.4.0
 
-# Dependencies
-#distribute==0.6.36
-distribute==0.7.3
-#docutils==0.7
-docutils==0.14
-Jinja2==2.5.5
-mechanize==0.2.5
-Paste==1.7.5.1
-PasteDeploy==1.3.4
-PasteScript==1.7.5
-py==1.4.8
-#Pygments==1.4
-Pygments==2.2.0
-#python-gettext==1.0
-python-gettext==3.0
-#python-subunit==0.0.7
-python-subunit==1.3.0
-#pytz==2014.10
-pytz==2017.2
+# zope.password needs these
+bcrypt==3.1.6
+cffi==1.12.2
+pycparser==2.19
+
+# Python2-only
+zope.untrustedpython==4.0.0
+# Required by zope.untrustedpython
 RestrictedPython==3.6.0
-#setuptools==0.6c11
-setuptools==36.4.0
-#Sphinx==1.0.8
-Sphinx==1.6.5
-#testtools==0.9.12
+
+# Testing dependencies
+ZConfig==3.4.0
+ZODB==5.5.1
+argparse==1.4.0
+colorama==0.4.1
+extras==1.0.0
+fixtures==3.0.0
+linecache2==1.0.0
+manuel==1.10.1
+pbr==5.1.3
+pyparsing==2.4.0
+python-mimeparse==1.6.0
+python-subunit==1.3.0
 testtools==2.3.0
-transaction==1.1.1
-z3c.recipe.sphinxdoc==0.0.8
-zc.buildout==1.7.1
-zc.lockfile==1.0.2
-#ZConfig==2.8.0
-ZConfig==2.9.1dev-20110728
-zc.recipe.egg==1.3.2
-zc.recipe.testrunner==1.4.0
-zc.resourcelibrary==1.3.4
-zdaemon==2.0.7
-ZODB3==3.10.5
-zope.mkzeoinstance==3.9.5
+traceback2==1.4.0
+unittest2==1.1.0
+zc.lockfile==1.4
+zdaemon==4.3
+zodbpickle==1.0.3
 
-# toolchain
-#argparse==1.1
-argparse==1.2.1
-coverage==3.5.2
-lxml==2.2.8
-mr.developer==1.25
-nose==1.1.2
-tl.eggdeps==0.4
-z3c.checkversions==0.4.1
-z3c.recipe.compattest==0.13.1
-z3c.recipe.depgraph==0.5
-z3c.recipe.scripts==1.0.1
-zope.kgs==1.2.0
 
-# zopeapp-versions.cfg from ZTK 1.1.6, with some upgrades
-# -------------------------------------------------------
+# Testing tools
+coverage==4.5.3
+nose==1.3.7
 
-# ZopeApp
-zc.sourcefactory==0.7.0
-zope.app.applicationcontrol==3.5.10
-zope.app.appsetup==3.15.0
-zope.app.debug==3.4.1
-zope.app.http==3.9.0
-zope.app.publication==3.12.0
-zope.app.wsgi==3.10.0
-zope.testbrowser==3.10.4
+# Documentation dependencies
+# We have to keep a version < 2 to still support Python 2
+Sphinx==1.8.5
+docutils==0.14
+imagesize==1.1.0
+alabaster==0.7.12
+babel==2.6.0
+Jinja2==2.10.1
+MarkupSafe==1.1.1
+Pygments==2.3.1
+snowballstemmer==1.2.1
+lxml==4.4.1
+repoze.sphinx.autointerface==0.8
+#requests==2.21.0
+requests==2.22.0
+certifi==2019.3.9
+#urllib3==1.24.1
+urllib3==1.25.3
+idna==2.8
+chardet==3.0.4
+sphinxcontrib-programoutput==0.14
+sphinxcontrib-websupport==1.1.0
+sphinx-rtd-theme==0.4.3
+packaging==19.0
+typing==3.6.6
+z3c.recipe.sphinxdoc==1.1.0
 
-# Deprecated
-roman==1.4.0
-#wsgi-intercept==0.4
-# Upgrade from ZTK 1.1.5 to intercept lazr.restfulclient.
-wsgi-intercept==0.5.1
-zope.app.authentication==3.9.0
-zope.app.basicskin==3.5.1
-zope.app.broken==3.6.0
-zope.app.component==3.9.3
-zope.app.container==3.9.2
-zope.app.content==3.5.1
-zope.app.dependable==3.5.1
-zope.app.error==3.5.3
-zope.app.exception==3.6.3
-zope.app.folder==3.5.2
-zope.app.form==4.0.2
-zope.app.generations==3.7.1
-zope.app.i18n==3.6.4
-zope.app.locales==3.6.2
-zope.app.localpermission==3.7.2
-zope.app.pagetemplate==3.11.2
-zope.app.principalannotation==3.7.0
-zope.app.publisher==3.10.2
-zope.app.renderer==3.5.1
-zope.app.rotterdam==3.5.3
-zope.app.schema==3.5.0
-zope.app.security==3.7.5
-zope.app.testing==3.8.1
-zope.app.zcmlfiles==3.7.1
-zope.app.zopeappgenerations==3.6.1
-zope.generations==3.7.1
+# ZTK buildout dependencies
+collective.recipe.cmd==0.11
+mr.developer==2.0.0
+z3c.checkversions==1.1
+z3c.recipe.compattest==1.0
+zc.buildout==2.13.1
+zc.recipe.egg==2.0.7
+zc.recipe.testrunner==2.0.0
 
 # Launchpad
 # ---------
 
 # Alphabetical, case-insensitive, please! :-)
 
-alabaster==0.7.10
 # lp:~launchpad/ampoule/lp
 # post1 Don't add a process back to the ready set if it received an error
 # such as a timeout.
@@ -205,23 +173,22 @@ Automat==0.6.0
 Babel==2.5.1
 backports.functools-lru-cache==1.5
 backports.lzma==0.0.3
-bcrypt==3.1.4
 BeautifulSoup==3.2.1
 beautifulsoup4[lxml]==4.7.1
 billiard==3.5.0.5
+bleach==3.1.0
+breezy==3.0.1
 bson==0.3.3
 # lp:~launchpad/bzr/lp
 bzr==2.6.0.lp.4
 celery==4.1.1
-certifi==2019.3.9
-cffi==1.11.2
-Chameleon==2.11
-chardet==3.0.4
+Chameleon==3.6.2
+configobj==5.0.6
 constantly==15.1.0
 cookies==2.2.1
 cryptography==2.7
 cssselect==0.9.1
-cssutils==0.9.10
+cssutils==1.0.2
 d2to1==0.2.12
 defusedxml==0.6.0
 Django==1.4
@@ -229,23 +196,20 @@ dkimpy==0.5.4
 # Required by dkimpy
 dnspython==1.10.0
 dulwich==0.18.6
+eggtestinfo==0.3
 elementtree==1.2.6-20050316
 enum34==1.1.6
 epydoc==3.0.1
-extras==1.0.0
+fastimport==0.9.8
 feedparser==5.2.1
 feedvalidator==0.0.0DEV-r1049
-fixtures==3.0.0
 FormEncode==1.2.4
 futures==3.2.0
 geoip2==2.9.0
 grokcore.component==1.6
 gunicorn==19.8.1
-html5browser==0.0.9
 httplib2==0.8
 hyperlink==18.0.0
-idna==2.6
-imagesize==0.7.1
 importlib==1.0.2
 importlib-resources==0.5
 incremental==17.5.0
@@ -256,51 +220,50 @@ jsautobuild==0.2
 keyring==0.6.2
 kombu==4.4.0
 launchpad-buildd==159
-launchpadlib==1.10.7
+launchpadlib==1.10.9
 lazr.authentication==0.1.1
-lazr.batchnavigator==1.2.11
-lazr.config==2.2.1
+lazr.batchnavigator==1.3.0
+lazr.config==2.2.2
 lazr.delegates==2.0.4
 lazr.enum==1.1.3
-lazr.jobrunner==0.14
-lazr.lifecycle==1.1
-lazr.restful==0.20.1
+lazr.jobrunner==0.16
+lazr.lifecycle==1.2
+lazr.restful==0.21.0
 lazr.restfulclient==0.13.2
 lazr.smtptest==1.3
-lazr.sshserver==0.1.8
-lazr.testing==0.1.1
+lazr.sshserver==0.1.10
 lazr.uri==1.0.3
 libnacl==1.3.6
 lpjsmin==0.5
 m2r==0.1.13
-manuel==1.7.2
 Markdown==2.3.1
 martian==0.11
-maxminddb==1.4.1
+maxminddb==1.5.1
 meliae==0.2.0.final.0
 mistune==0.8.3
 mock==1.0.1
 mocker==1.1.1
 netaddr==0.7.19
 oauth==1.0
-oops==0.0.13
+oops==0.0.14
 oops-amqp==0.1.0
-oops-datedir-repo==0.0.23
-oops-timeline==0.0.1
-oops-twisted==0.0.7
-oops-wsgi==0.0.8
+oops-datedir-repo==0.0.24
+oops-timeline==0.0.3
+oops-twisted==0.0.8
+oops-wsgi==0.0.14
 ordereddict==1.1
 oslo.config==1.3.0
 paramiko==2.4.1
+Paste==1.7.5.1
+PasteDeploy==1.3.4
+PasteScript==1.7.5
 pathlib2==2.3.2
-pbr==0.11.1
 pgbouncer==0.0.8
 prettytable==0.7.2
 psutil==5.4.2
 psycopg2==2.7.4
 pyasn1==0.4.2
 pyasn1-modules==0.2.1
-pycparser==2.18
 # lp:~launchpad/pygpgme/pthread
 # lp1 Link against libgpgme-pthread for thread-safety.
 pygpgme==0.3+lp1
@@ -314,7 +277,6 @@ python-dateutil==1.5
 python-debian==0.1.32
 python-keystoneclient==0.7.1
 python-memcached==1.58
-python-mimeparse==0.1.4
 # XXX: deryck 2012-08-10
 # See lp:~deryck/python-openid/python-openid-fix1034376 which
 # reapplied a patch from wgrant to get codehosting going again.
@@ -322,7 +284,6 @@ python-openid==2.2.5-fix1034376
 python-swiftclient==2.0.3
 PyYAML==3.10
 rabbitfixture==0.4.2
-requests==2.22.0
 requests-file==1.4.3
 requests-toolbelt==0.9.1
 responses==0.9.0
@@ -333,36 +294,42 @@ setuptools-git==1.2
 setuptools-scm==1.15.7
 simplejson==3.8.2
 SimpleTAL==4.3
-six==1.12.0
-snowballstemmer==1.2.1
 soupmatchers==0.4
 soupsieve==1.9
-sphinxcontrib-websupport==1.0.1
 # lp:~launchpad-committers/storm/lp
 storm==0.21.0.99+lp413
 subprocess32==3.2.6
 subvertpy==0.9.1
 testresources==0.2.7
 testscenarios==0.4
-timeline==0.0.3
+timeline==0.0.7
 treq==18.6.0
 Twisted[conch,tls]==19.2.1
 txAMQP==0.6.2
 txfixtures==0.4.2
 txpkgupload==0.2
-typing==3.6.2
-unittest2==1.1.0
-urllib3==1.25.3
 van.testing==3.0.0
 vine==1.1.4
 virtualenv-tools3==2.0.0
 wadllib==1.3.2
+waitress==1.3.1
+webencodings==0.5.1
+WebOb==1.8.5
+WebTest==2.0.33
 wheel==0.29.0
+wsgi-intercept==0.5.1
+WSGIProxy2==0.4.6
 wsgiref==0.1.2
-z3c.pt==2.2.3
-z3c.ptcompat==0.5.7
-zc.zservertracelog==1.3.2
-# Not in ZTK 1.1.5
-zope.app.server==3.6.0
-# Not in ZTK 1.1.5 (extracted from zope.app.schema)
-zope.vocabularyregistry==1.0.0
+z3c.pt==3.2.0
+z3c.ptcompat==2.2.0
+zc.zservertracelog==2.0.0
+zope.app.applicationcontrol==4.0.0
+zope.app.appsetup==4.1.0
+zope.app.http==4.0.1
+zope.app.publication==4.3.1
+zope.app.publisher==4.2.0
+zope.app.server==4.0.0
+zope.app.wsgi[testlayer]==4.1.0
+zope.server==4.0.2
+zope.testbrowser==5.5.1
+zope.vocabularyregistry==1.1.1

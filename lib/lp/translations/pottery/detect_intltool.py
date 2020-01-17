@@ -26,7 +26,7 @@ def is_intltool_structure(tree):
 
     Currently this just checks for the existence of POTFILES.in.
 
-    :param tree: A bzrlib.Tree object to search for the intltool structure.
+    :param tree: A breezy.Tree object to search for the intltool structure.
     :returns: True if signs of an intltool structure were found.
     """
     with read_lock_tree(tree):

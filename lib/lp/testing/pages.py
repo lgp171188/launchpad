@@ -10,9 +10,9 @@ __metaclass__ = type
 from contextlib import contextmanager
 from datetime import datetime
 import doctest
+from io import BytesIO
 from itertools import chain
 import os
-import pdb
 import pprint
 import re
 import unittest
@@ -28,6 +28,7 @@ from BeautifulSoup import (
     Tag,
     )
 from bs4.element import (
+    CData as CData4,
     Comment as Comment4,
     Declaration as Declaration4,
     Doctype as Doctype4,
@@ -44,16 +45,31 @@ from contrib.oauth import (
     )
 from lazr.restful.testing.webservice import WebServiceCaller
 import six
+from soupsieve import escape as css_escape
 import transaction
-from zope.app.testing.functional import (
-    HTTPCaller,
-    SimpleCookie,
+from webtest import (
+    forms,
+    TestRequest,
+    )
+from zope.app.wsgi.testlayer import (
+    FakeResponse as _FakeResponse,
+    NotInBrowserLayer,
     )
 from zope.component import getUtility
 from zope.security.management import setSecurityPolicy
 from zope.security.proxy import removeSecurityProxy
 from zope.session.interfaces import ISession
-from zope.testbrowser.testing import Browser
+from zope.testbrowser.browser import (
+    BrowserStateError,
+    isMatching,
+    Link as _Link,
+    LinkNotFoundError,
+    normalizeWhitespace,
+    )
+from zope.testbrowser.wsgi import (
+    Browser as _Browser,
+    Layer as TestBrowserWSGILayer,
+    )
 
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.registry.errors import NameAlreadyTaken
@@ -63,6 +79,7 @@ from lp.services.beautifulsoup import (
     SoupStrainer,
     )
 from lp.services.config import config
+from lp.services.encoding import wsgi_native_string
 from lp.services.oauth.interfaces import (
     IOAuthConsumerSet,
     OAUTH_REALM,
@@ -96,44 +113,62 @@ SAMPLEDATA_ACCESS_SECRETS = {
     }
 
 
-class UnstickyCookieHTTPCaller(HTTPCaller):
-    """HTTPCaller subclass that do not carry cookies across requests.
+# Teach WebTest about <input type="search" />.
+# https://github.com/Pylons/webtest/pull/219
+forms.Field.classes['search'] = forms.Text
 
-    HTTPCaller propogates cookies between subsequent requests.
-    This is a nice feature, except it triggers a bug in Launchpad where
-    sending both Basic Auth and cookie credentials raises an exception
-    (Bug 39881).
+
+class FakeResponse(_FakeResponse):
+    """A fake response for use in tests.
+
+    This is like `zope.app.wsgi.testlayer.FakeResponse`, but does a better
+    job of emulating `zope.app.testing.functional` by using the request's
+    `SERVER_PROTOCOL` in the response.
     """
 
-    def __init__(self, *args, **kw):
-        if kw.get('debug'):
-            self._debug = True
-            del kw['debug']
+    def __init__(self, response, request):
+        self.response = response
+        self.request = request
+
+    def getOutput(self):
+        output = super(FakeResponse, self).getOutput()
+        protocol = self.request.environ['SERVER_PROTOCOL']
+        if not isinstance(protocol, bytes):
+            protocol = protocol.encode('ISO-8859-1')
+        return (
+            (b'%s %s\n' % (protocol, self.response.status)) +
+            output.split(b'\n', 1)[1])
+
+    __str__ = getOutput
+
+
+def http(string, handle_errors=True):
+    """Make a test HTTP request.
+
+    This is like `zope.app.wsgi.testlayer.http`, but it forces `SERVER_NAME`
+    and `SERVER_PORT` to be set according to the HTTP Host header.  Left to
+    itself, `zope.app.wsgi.testlayer.http` will (via WebOb) set
+    `SERVER_PORT` to 80, which confuses
+    `VirtualHostRequestPublicationFactory.canHandle`.
+    """
+    app = TestBrowserWSGILayer.get_app()
+    if app is None:
+        raise NotInBrowserLayer(NotInBrowserLayer.__doc__)
+
+    if not isinstance(string, bytes):
+        string = string.encode('UTF-8')
+    request = TestRequest.from_file(BytesIO(string.lstrip()))
+    request.environ['wsgi.handleErrors'] = handle_errors
+    if 'HTTP_HOST' in request.environ:
+        if ':' in request.environ['HTTP_HOST']:
+            host, port = request.environ['HTTP_HOST'].split(':', 1)
         else:
-            self._debug = False
-        HTTPCaller.__init__(self, *args, **kw)
-
-    def __call__(self, *args, **kw):
-        if self._debug:
-            pdb.set_trace()
-        try:
-            return HTTPCaller.__call__(self, *args, **kw)
-        finally:
-            self.resetCookies()
-
-    def chooseRequestClass(self, method, path, environment):
-        """See `HTTPCaller`.
-
-        This version adds the 'PATH_INFO' variable to the environment,
-        because some of our factories expects it.
-        """
-        if 'PATH_INFO' not in environment:
-            environment = dict(environment)
-            environment['PATH_INFO'] = path
-        return HTTPCaller.chooseRequestClass(self, method, path, environment)
-
-    def resetCookies(self):
-        self.cookies = SimpleCookie()
+            host = request.environ['HTTP_HOST']
+            port = 80
+        request.environ['SERVER_NAME'] = host
+        request.environ['SERVER_PORT'] = int(port)
+    response = request.get_response(app)
+    return FakeResponse(response, request)
 
 
 class LaunchpadWebServiceCaller(WebServiceCaller):
@@ -141,14 +176,16 @@ class LaunchpadWebServiceCaller(WebServiceCaller):
 
     def __init__(self, oauth_consumer_key=None, oauth_access_key=None,
                  oauth_access_secret=None, handle_errors=True,
-                 domain='api.launchpad.test', protocol='http'):
+                 domain='api.launchpad.test', protocol='http',
+                 default_api_version=None):
         """Create a LaunchpadWebServiceCaller.
         :param oauth_consumer_key: The OAuth consumer key to use.
         :param oauth_access_key: The OAuth access key to use for the request.
         :param handle_errors: Should errors raise exception or be handled by
             the publisher. Default is to let the publisher handle them.
 
-        Other parameters are passed to the HTTPCaller used to make the calls.
+        Other parameters are passed to the WebServiceCaller used to make the
+        calls.
         """
         if oauth_consumer_key is not None and oauth_access_key is not None:
             # XXX cjwatson 2016-01-25: Callers should be updated to pass
@@ -166,6 +203,8 @@ class LaunchpadWebServiceCaller(WebServiceCaller):
             self.consumer = None
             self.access_token = None
         self.handle_errors = handle_errors
+        if default_api_version is not None:
+            self.default_api_version = default_api_version
         WebServiceCaller.__init__(self, handle_errors, domain, protocol)
 
     default_api_version = "beta"
@@ -177,7 +216,10 @@ class LaunchpadWebServiceCaller(WebServiceCaller):
             request.sign_request(
                 OAuthSignatureMethod_PLAINTEXT(), self.consumer,
                 self.access_token)
-            full_headers.update(request.to_header(OAUTH_REALM))
+            oauth_headers = request.to_header(OAUTH_REALM)
+            full_headers.update({
+                wsgi_native_string(key): wsgi_native_string(value)
+                for key, value in oauth_headers.items()})
         if not self.handle_errors:
             full_headers['X_Zope_handle_errors'] = 'False'
 
@@ -671,6 +713,67 @@ def print_errors(contents):
         print(error)
 
 
+class Link(_Link):
+    """`zope.testbrowser.browser.Link`, but with image alt text handling."""
+
+    @property
+    def text(self):
+        txt = normalizeWhitespace(self.browser._getText(self._link))
+        return self.browser.toStr(txt)
+
+
+class Browser(_Browser):
+    """A modified Browser with behaviour more suitable for pagetests."""
+
+    def reload(self):
+        """Make a new request rather than reusing an existing one."""
+        if self.url is None:
+            raise BrowserStateError("no URL has yet been .open()ed")
+        self.open(self.url, referrer=self._req_referrer)
+
+    def addHeader(self, key, value):
+        """Make sure headers are native strings."""
+        super(Browser, self).addHeader(
+            wsgi_native_string(key), wsgi_native_string(value))
+
+    def _getText(self, element):
+        def get_strings(elem):
+            for descendant in elem.descendants:
+                if isinstance(descendant, (NavigableString4, CData4)):
+                    yield descendant
+                elif isinstance(descendant, Tag4) and descendant.name == 'img':
+                    yield u'%s[%s]' % (
+                        descendant.get('alt', u''), descendant.name.upper())
+
+        return u''.join(list(get_strings(element)))
+
+    def getLink(self, text=None, url=None, id=None, index=0):
+        """Search for both text nodes and image alt attributes."""
+        # XXX cjwatson 2019-11-09: This should be merged back into
+        # `zope.testbrowser.browser.Browser.getLink`.
+        qa = 'a' if id is None else 'a#%s' % css_escape(id)
+        qarea = 'area' if id is None else 'area#%s' % css_escape(id)
+        html = self._html
+        links = html.select(qa)
+        links.extend(html.select(qarea))
+
+        matching = []
+        for elem in links:
+            matches = (isMatching(self._getText(elem), text) and
+                       isMatching(elem.get('href', ''), url))
+
+            if matches:
+                matching.append(elem)
+
+        if index >= len(matching):
+            raise LinkNotFoundError()
+        elem = matching[index]
+
+        baseurl = self._getBaseUrl()
+
+        return Link(elem, self, baseurl)
+
+
 def setupBrowser(auth=None):
     """Create a testbrowser object for use in pagetests.
 
@@ -723,7 +826,7 @@ def safe_canonical_url(*args, **kwargs):
 
 def webservice_for_person(person, consumer_key=u'launchpad-library',
                           permission=OAuthPermission.READ_PUBLIC,
-                          context=None):
+                          context=None, default_api_version=None):
     """Return a valid LaunchpadWebServiceCaller for the person.
 
     Use this method to create a way to test the webservice that doesn't depend
@@ -741,7 +844,8 @@ def webservice_for_person(person, consumer_key=u'launchpad-library',
     access_token, access_secret = request_token.createAccessToken()
     logout()
     service = LaunchpadWebServiceCaller(
-        consumer_key, access_token.key, access_secret)
+        consumer_key, access_token.key, access_secret,
+        default_api_version=default_api_version)
     service.user = person
     return service
 
@@ -814,7 +918,7 @@ def permissive_security_policy(dbuser_name=None):
 # unconditional.
 def setUpGlobs(test, future=False):
     test.globs['transaction'] = transaction
-    test.globs['http'] = UnstickyCookieHTTPCaller()
+    test.globs['http'] = http
     test.globs['webservice'] = LaunchpadWebServiceCaller(
         'launchpad-library', 'salgado-change-anything')
     test.globs['public_webservice'] = LaunchpadWebServiceCaller(

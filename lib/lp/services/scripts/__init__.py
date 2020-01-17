@@ -1,4 +1,4 @@
-# Copyright 2009-2011 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Library functions for use in all scripts.
@@ -20,10 +20,10 @@ import os
 import sys
 import threading
 
+import zope.component.hooks
 from zope.configuration.config import ConfigurationMachine
 from zope.security.management import setSecurityPolicy
 import zope.sendmail.delivery
-import zope.site.hooks
 
 from lp.services.config import config
 from lp.services.database.postgresql import ConnectionString
@@ -76,7 +76,7 @@ def execute_zcml_for_scripts(use_web_security=False):
     from zope.configuration import xmlconfig
 
     # Hook up custom component architecture calls
-    zope.site.hooks.setHooks()
+    zope.component.hooks.setHooks()
 
     # Load server-independent site config
     context = ConfigurationMachine()

@@ -13,7 +13,6 @@ builder state. In the sampledata, the builder 'bob' is building
     >>> bob_builder.version = "100"
     >>> logout()
 
-    >>> anon_browser.mech_browser.set_handle_equiv(False)
     >>> anon_browser.open("http://launchpad.test/builders")
     >>> anon_browser.getLink("bob").click()
 
@@ -37,7 +36,6 @@ When accessed by logged in users, the builder page renders the
 timezone. This way they can easily find out if they are reading
 outdated information.
 
-    >>> user_browser.mech_browser.set_handle_equiv(False)
     >>> user_browser.open(anon_browser.url)
     >>> print extract_text(find_portlet(
     ...     user_browser.contents, 'View full history Current status'))
@@ -107,7 +105,6 @@ the builder actions.
 
     >>> cprov_browser = setupBrowser(
     ...     auth='Basic celso.providelo@canonical.com:test')
-    >>> cprov_browser.mech_browser.set_handle_equiv(False)
 
     >>> cprov_browser.open('http://launchpad.test/builders')
     >>> cprov_browser.getLink('bob').click()
@@ -132,7 +129,7 @@ Other administration fields are available on the 'Change details' form
 as currently administrators are the only users with permission to use the
 Edit page:
 
-    >>> cprov_browser.getControl(name="field.manual").value
+    >>> bool(cprov_browser.getControl(name="field.manual").value)
     False
 
     >>> cprov_browser.getControl(name="field.vm_host").value
@@ -296,6 +293,7 @@ Nor is the toggle mode control included on the index page.
     >>> user_browser.getControl(name="field.actions.update")
     Traceback (most recent call last):
     LookupError: name 'field.actions.update'
+    ...
 
 Nor can they access the edit page directly via URL.
 
@@ -314,6 +312,7 @@ The same is true for the anonymous user:
     >>> anon_browser.getControl(name="field.actions.update")
     Traceback (most recent call last):
     LookupError: name 'field.actions.update'
+    ...
 
     >>> anon_browser.open("http://localhost/+builds/bob/+edit")
     Traceback (most recent call last):

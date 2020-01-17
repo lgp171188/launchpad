@@ -263,11 +263,12 @@ we can confirm that an event is indeed fired off.
     ...     if bugtask.importance != old_bugtask.importance:
     ...         print("%s => %s" % (old_bugtask.importance.title,
     ...             bugtask.importance.title))
-    >>> from lp.testing.event import TestEventListener
     >>> from lazr.lifecycle.interfaces import IObjectModifiedEvent
     >>> from lp.bugs.interfaces.bugtask import IBugTask
-    >>> event_listener = TestEventListener(
-    ...     IBugTask, IObjectModifiedEvent, print_bugtask_modified)
+    >>> from lp.testing.fixture import ZopeEventHandlerFixture
+    >>> event_listener = ZopeEventHandlerFixture(
+    ...     print_bugtask_modified, (IBugTask, IObjectModifiedEvent))
+    >>> event_listener.setUp()
 
 If we pass in a different Malone status than the existing one, an event
 will be fired off, even though the remote status stays the same.
@@ -391,7 +392,7 @@ manner:
     ** Changed in: mozilla-firefox (Debian)
        Importance: Low => Critical
 
-    >>> event_listener.unregister()
+    >>> event_listener.cleanUp()
 
 The Bug Watch Updater can transition a bug to any status or importance:
 

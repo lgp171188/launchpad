@@ -10,13 +10,13 @@ import shutil
 import socket
 from StringIO import StringIO
 
-from bzrlib.tests import TestCaseWithTransport
-from bzrlib.tests.http_server import (
+from breezy.tests import TestCaseWithTransport
+from breezy.tests.http_server import (
     HttpServer,
     TestingHTTPServer,
     TestingThreadingHTTPServer,
     )
-from bzrlib.url_policy_open import AcceptAnythingPolicy
+from breezy.url_policy_open import AcceptAnythingPolicy
 
 from lp.codehosting.puller.worker import (
     BranchMirrorer,

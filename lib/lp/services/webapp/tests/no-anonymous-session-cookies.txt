@@ -51,14 +51,13 @@ The cookie will be set to expire in ten minutes when you log out.  The ten
 minute time interval (set in lp.services.webapp.login and enforced
 with an assert in lp.services.webapp.session) is intended to be fudge
 time for browsers with bad system clocks.
-    >>> # XXX 2010-05-08 bac bug=577596 This work-around for the fact
-    >>> # that loggerhead is not running needs to be replaced with
-    >>> # something more robust and clear.
-    >>> from urllib2 import HTTPError, URLError
-    >>> try:
-    ...     browser.getControl('Log Out').click()
-    ... except (HTTPError, URLError):
-    ...     pass
+
+    >>> browser.followRedirects = False
+    >>> browser.getControl('Log Out').click()
+    >>> print(browser.headers['Status'])
+    303 See Other
+    >>> print(browser.headers['Location'])
+    https://bazaar.launchpad.test/+logout?next_to=...
 
 After ensuring the browser has not left the launchpad.test domain, the
 single cookie is shown to have the ten minute expiration.

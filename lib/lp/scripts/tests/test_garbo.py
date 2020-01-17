@@ -3,6 +3,8 @@
 
 """Test the database garbage collector."""
 
+from __future__ import absolute_import, print_function, unicode_literals
+
 __metaclass__ = type
 __all__ = []
 
@@ -274,12 +276,12 @@ class TestSessionPruner(TestCase):
         yesterday = recent - timedelta(days=1)
         ancient = recent - timedelta(days=61)
 
-        self.make_session(u'recent_auth', recent, 'auth1')
-        self.make_session(u'recent_unauth', recent, False)
-        self.make_session(u'yesterday_auth', yesterday, 'auth2')
-        self.make_session(u'yesterday_unauth', yesterday, False)
-        self.make_session(u'ancient_auth', ancient, 'auth3')
-        self.make_session(u'ancient_unauth', ancient, False)
+        self.make_session('recent_auth', recent, b'auth1')
+        self.make_session('recent_unauth', recent, False)
+        self.make_session('yesterday_auth', yesterday, b'auth2')
+        self.make_session('yesterday_unauth', yesterday, False)
+        self.make_session('ancient_auth', ancient, b'auth3')
+        self.make_session('ancient_unauth', ancient, False)
 
         self.log = logging.getLogger('garbo')
 
@@ -293,16 +295,16 @@ class TestSessionPruner(TestCase):
             # Add login time information.
             session_pkg_data = SessionPkgData()
             session_pkg_data.client_id = client_id
-            session_pkg_data.product_id = u'launchpad.authenticateduser'
-            session_pkg_data.key = u'logintime'
-            session_pkg_data.pickle = 'value is ignored'
+            session_pkg_data.product_id = 'launchpad.authenticateduser'
+            session_pkg_data.key = 'logintime'
+            session_pkg_data.pickle = b'value is ignored'
             IMasterStore(SessionPkgData).add(session_pkg_data)
 
             # Add authenticated as information.
             session_pkg_data = SessionPkgData()
             session_pkg_data.client_id = client_id
-            session_pkg_data.product_id = u'launchpad.authenticateduser'
-            session_pkg_data.key = u'accountid'
+            session_pkg_data.product_id = 'launchpad.authenticateduser'
+            session_pkg_data.key = 'accountid'
             # Normally Account.id, but the session pruning works
             # at the SQL level and doesn't unpickle anything.
             session_pkg_data.pickle = authenticated
@@ -323,12 +325,12 @@ class TestSessionPruner(TestCase):
             pruner.cleanUp()
 
         expected_sessions = set([
-            u'recent_auth',
-            u'recent_unauth',
-            u'yesterday_auth',
-            u'yesterday_unauth',
-            # u'ancient_auth',
-            # u'ancient_unauth',
+            'recent_auth',
+            'recent_unauth',
+            'yesterday_auth',
+            'yesterday_unauth',
+            # 'ancient_auth',
+            # 'ancient_unauth',
             ])
 
         found_sessions = set(
@@ -346,12 +348,12 @@ class TestSessionPruner(TestCase):
             pruner.cleanUp()
 
         expected_sessions = set([
-            u'recent_auth',
-            u'recent_unauth',
-            u'yesterday_auth',
-            # u'yesterday_unauth',
-            u'ancient_auth',
-            # u'ancient_unauth',
+            'recent_auth',
+            'recent_unauth',
+            'yesterday_auth',
+            # 'yesterday_unauth',
+            'ancient_auth',
+            # 'ancient_unauth',
             ])
 
         found_sessions = set(
@@ -363,12 +365,12 @@ class TestSessionPruner(TestCase):
         # None of the sessions created in setUp() are duplicates, so
         # they will all survive the pruning.
         expected_sessions = set([
-            u'recent_auth',
-            u'recent_unauth',
-            u'yesterday_auth',
-            u'yesterday_unauth',
-            u'ancient_auth',
-            u'ancient_unauth',
+            'recent_auth',
+            'recent_unauth',
+            'yesterday_auth',
+            'yesterday_unauth',
+            'ancient_auth',
+            'ancient_unauth',
             ])
 
         now = datetime.now(UTC)
@@ -378,17 +380,17 @@ class TestSessionPruner(TestCase):
         # most recent 'old dupe 1'.
         for count in range(1, 10):
             self.make_session(
-                u'old dupe %d' % count,
+                'old dupe %d' % count,
                 now - timedelta(days=2, seconds=count),
-                'old dupe')
+                b'old dupe')
         for count in range(1, 7):
-            expected_sessions.add(u'old dupe %d' % count)
+            expected_sessions.add('old dupe %d' % count)
 
         # Make some other duplicate logins less than an hour old.
         # All of these will be kept.
         for count in range(1, 10):
-            self.make_session(u'new dupe %d' % count, now, 'new dupe')
-            expected_sessions.add(u'new dupe %d' % count)
+            self.make_session('new dupe %d' % count, now, b'new dupe')
+            expected_sessions.add('new dupe %d' % count)
 
         chunk_size = 2
         pruner = DuplicateSessionPruner(self.log)
@@ -483,8 +485,7 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
         self.assertEqual(store.find(OpenIDConsumerNonce).count(), 0)
 
         for timestamp in timestamps:
-            store.add(OpenIDConsumerNonce(
-                    u'http://server/', timestamp, u'aa'))
+            store.add(OpenIDConsumerNonce('http://server/', timestamp, 'aa'))
         transaction.commit()
 
         # Make sure we have 4 nonces now.
@@ -1171,7 +1172,7 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
         # There should now be 0 pending vouchers in Launchpad.
         num_rows = IMasterStore(CommercialSubscription).find(
             CommercialSubscription,
-            Like(CommercialSubscription.sales_system_id, u'pending-%')
+            Like(CommercialSubscription.sales_system_id, 'pending-%')
             ).count()
         self.assertThat(num_rows, Equals(0))
         # Salesforce should also now have redeemed the voucher.
@@ -1268,7 +1269,7 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
         naked_bug = removeSecurityProxy(bug)
         naked_bug.heat_last_updated = old_update
         IMasterStore(FeatureFlag).add(FeatureFlag(
-            u'default', 0, u'bugs.heat_updates.cutoff',
+            'default', 0, 'bugs.heat_updates.cutoff',
             cutoff.isoformat().decode('ascii')))
         transaction.commit()
         self.assertEqual(old_update, naked_bug.heat_last_updated)
@@ -1452,7 +1453,7 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
         self.assertIsNotNone(
             store.execute(
                 'SELECT * FROM GarboJobState WHERE name=?',
-                params=[u'PopulateLatestPersonSourcePackageReleaseCache']
+                params=['PopulateLatestPersonSourcePackageReleaseCache']
             ).get_one())
 
         def _assert_releases_by_creator(creator, sprs):
@@ -1527,7 +1528,7 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
         # test LiveFS file as a base image for its DAS.
         now = datetime.now(UTC)
         switch_dbuser('testadmin')
-        self.useFixture(FeatureFixture({LIVEFS_FEATURE_FLAG: u'on'}))
+        self.useFixture(FeatureFixture({LIVEFS_FEATURE_FLAG: 'on'}))
         store = IMasterStore(LiveFSFile)
         initial_count = store.find(LiveFSFile).count()
 
@@ -1596,7 +1597,7 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
         # An old LiveFS binary file is pruned even if some other base image
         # exists.
         switch_dbuser('testadmin')
-        self.useFixture(FeatureFixture({LIVEFS_FEATURE_FLAG: u'on'}))
+        self.useFixture(FeatureFixture({LIVEFS_FEATURE_FLAG: 'on'}))
         store = IMasterStore(LiveFSFile)
         other_build = self.factory.makeLiveFSBuild(
             status=BuildStatus.FULLYBUILT, duration=timedelta(minutes=10))

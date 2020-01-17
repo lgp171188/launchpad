@@ -81,12 +81,13 @@ import tempfile
 import time
 import unittest
 
-from bzrlib import trace
-from bzrlib.bzrdir import (
-    BzrDir,
+from breezy import trace
+from breezy.controldir import (
+    ControlDir,
     format_registry,
     )
-from bzrlib.transport import get_transport
+from breezy.transport import get_transport
+from bzrlib import trace as bzr_trace
 import fixtures
 from lazr.restful.testing.tales import test_tales
 from lazr.restful.testing.webservice import FakeRequest
@@ -107,7 +108,6 @@ from testtools.matchers import (
     )
 from testtools.testcase import ExpectedException as TTExpectedException
 import transaction
-from zope.app.testing import ztapi
 from zope.component import (
     ComponentLookupError,
     getMultiAdapter,
@@ -185,7 +185,10 @@ from lp.testing._webservice import (
     oauth_access_token_for,
     )
 from lp.testing.dbuser import switch_dbuser
-from lp.testing.fixture import CaptureOops
+from lp.testing.fixture import (
+    CaptureOops,
+    ZopeEventHandlerFixture,
+    )
 from lp.testing.karma import KarmaRecorder
 from lp.testing.mail_helpers import pop_notifications
 
@@ -390,6 +393,7 @@ class RequestTimelineCollector:
         self._active = False
         self.count = None
         self.queries = None
+        self._event_fixture = None
 
     def register(self):
         """Start counting queries.
@@ -398,7 +402,9 @@ class RequestTimelineCollector:
 
         After each web request the count and queries attributes are updated.
         """
-        ztapi.subscribe((IEndRequestEvent, ), None, self)
+        self._event_fixture = ZopeEventHandlerFixture(
+            self, (IEndRequestEvent, ))
+        self._event_fixture.setUp()
         self._active = True
 
     def __enter__(self):
@@ -412,6 +418,9 @@ class RequestTimelineCollector:
 
     def unregister(self):
         self._active = False
+        if self._event_fixture is not None:
+            self._event_fixture.cleanUp()
+            self._event_fixture = None
 
     def __exit__(self, exc_type, exc_value, traceback):
         self.unregister()
@@ -819,6 +828,12 @@ class TestCase(testtools.TestCase, fixtures.TestWithFixtures):
                 "\n\n".join(str(n) for n in notifications)))
         return notifications
 
+    def getWebserviceJSON(self, webservice, url):
+        """Get the JSON representation of a webservice object given its URL."""
+        response = webservice.get(url)
+        self.assertEqual(200, response.status)
+        return response.jsonBody()
+
 
 class TestCaseWithFactory(TestCase):
 
@@ -832,11 +847,12 @@ class TestCaseWithFactory(TestCase):
         self._use_bzr_branch_called = False
         # XXX: JonathanLange 2010-12-24 bug=694140: Because of Launchpad's
         # messing with global log state (see
-        # lp.services.scripts.logger), trace._bzr_logger does not
-        # necessarily equal logging.getLogger('bzr'), so we have to explicitly
-        # make it so in order to avoid "No handlers for "bzr" logger'
+        # lp.services.scripts.logger), trace._brz_logger does not
+        # necessarily equal logging.getLogger('brz'), so we have to explicitly
+        # make it so in order to avoid "No handlers for "brz" logger'
         # messages.
-        trace._bzr_logger = logging.getLogger('bzr')
+        trace._brz_logger = logging.getLogger('brz')
+        bzr_trace._bzr_logger = logging.getLogger('bzr')
 
     def getUserBrowser(self, url=None, user=None):
         """Return a Browser logged in as a fresh user, maybe opened at `url`.
@@ -859,8 +875,7 @@ class TestCaseWithFactory(TestCase):
             browser = setupBrowser()
         else:
             browser = self.getUserBrowser(user=user)
-        browser.mech_browser.set_handle_redirect(False)
-        browser.mech_browser.set_handle_equiv(False)
+        browser.followRedirects = False
         if url is not None:
             browser.open(url)
         return browser
@@ -874,8 +889,7 @@ class TestCaseWithFactory(TestCase):
         """
         if format is not None and isinstance(format, basestring):
             format = format_registry.get(format)()
-        return BzrDir.create_branch_convenience(
-            branch_url, format=format)
+        return ControlDir.create_branch_convenience(branch_url, format=format)
 
     def create_branch_and_tree(self, tree_location=None, product=None,
                                db_branch=None, format=None,
@@ -935,6 +949,7 @@ class TestCaseWithFactory(TestCase):
         self.useTempDir()
         # Avoid leaking local user configuration into tests.
         self.useContext(override_environ(
+            BRZ_HOME=os.getcwd(), BRZ_EMAIL=None,
             BZR_HOME=os.getcwd(), BZR_EMAIL=None, EMAIL=None,
             ))
 
@@ -1082,7 +1097,7 @@ class AbstractYUITestCase(TestCase):
         super(AbstractYUITestCase, self).setUp()
         # html5browser imports from the gir/pygtk stack which causes
         # twisted tests to break because of gtk's initialize.
-        import html5browser
+        from lp.testing import html5browser
         client = html5browser.Browser()
         page = client.load_page(self.html_uri,
                                 timeout=self.suite_timeout,
@@ -1392,7 +1407,7 @@ def map_branch_contents(branch):
             for entry in entries:
                 file_path, file_name, file_type = entry[:3]
                 if file_type == 'file':
-                    stored_file = tree.get_file_by_path(file_path)
+                    stored_file = tree.get_file(file_path)
                     contents[file_path] = stored_file.read()
     finally:
         tree.unlock()

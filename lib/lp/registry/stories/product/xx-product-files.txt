@@ -123,6 +123,7 @@ A project owner should not see the delete button when there are no files.
     Traceback (most recent call last):
     ...
     LookupError: label 'Delete Files'
+    ...
 
 
 The download file layout
@@ -225,9 +226,9 @@ The maximum size of the upload file is shown on the page.
 Create a file to upload, and upload it. We'll also upload a dummy signature.
 Uploading file signatures is optional, so we'll just try it this once.
 
-    >>> from cStringIO import StringIO
-    >>> foo_file = StringIO('Foo installer package...')
-    >>> foo_signature = StringIO('Dummy GPG signature for the Foo installer')
+    >>> from io import BytesIO
+    >>> foo_file = BytesIO(b'Foo installer package...')
+    >>> foo_signature = BytesIO(b'Dummy GPG signature for the Foo installer')
     >>> firefox_owner.getControl(name='field.filecontent').add_file(foo_file,
     ...    'text/plain', 'foo.txt')
     >>> firefox_owner.getControl(name='field.signature').add_file(
@@ -243,7 +244,7 @@ A file can be uploaded without a GPG signature.
 
     >>> firefox_owner.open(
     ...     'http://launchpad.test/firefox/1.0/1.0.0/+adddownloadfile')
-    >>> bar_file = StringIO('Bar installer package...')
+    >>> bar_file = BytesIO(b'Bar installer package...')
     >>> firefox_owner.getControl(name='field.filecontent').add_file(bar_file,
     ...    'text/plain', 'bar.txt')
     >>> firefox_owner.getControl('Description').value="Bar installer"
@@ -307,7 +308,7 @@ Try to add a file with no description.
 
 Create a file to upload.
 
-    >>> foo_file = StringIO('Foo installer package...')
+    >>> foo_file = BytesIO(b'Foo installer package...')
     >>> firefox_owner.getControl(name='field.filecontent').add_file(foo_file,
     ...    'text/plain', 'foo1.txt')
     >>> firefox_owner.getControl(
@@ -324,7 +325,7 @@ Try to add a file that is empty.
 
 Create a file to upload.
 
-    >>> foo_file = StringIO('')
+    >>> foo_file = BytesIO(b'')
     >>> firefox_owner.getControl(name='field.filecontent').add_file(foo_file,
     ...    'text/plain', 'foo2.txt')
     >>> firefox_owner.getControl('Description').value="Foo installer"
@@ -339,7 +340,7 @@ Now let's successfully upload two more files.
 
     >>> firefox_owner.open('http://launchpad.test/firefox/1.0/1.0.0')
     >>> firefox_owner.getLink('Add download file').click()
-    >>> foo_file = StringIO('Foo2 installer package...')
+    >>> foo_file = BytesIO(b'Foo2 installer package...')
     >>> firefox_owner.getControl(name='field.filecontent').add_file(foo_file,
     ...    'text/plain', 'foo2.txt')
     >>> firefox_owner.getControl('Description').value="Foo2 installer"
@@ -351,7 +352,7 @@ Now let's successfully upload two more files.
 
     >>> firefox_owner.open('http://launchpad.test/firefox/1.0/1.0.0')
     >>> firefox_owner.getLink('Add download file').click()
-    >>> foo_file = StringIO('Foo installer package...')
+    >>> foo_file = BytesIO(b'Foo installer package...')
     >>> firefox_owner.getControl(name='field.filecontent').add_file(foo_file,
     ...    'text/plain', 'foo3.txt')
     >>> firefox_owner.getControl('Description').value="Foo3 installer"
@@ -365,7 +366,7 @@ Add a file to a different release on the same project.
 
     >>> firefox_owner.open('http://launchpad.test/firefox/trunk/0.9')
     >>> firefox_owner.getLink('Add download file').click()
-    >>> foo_file = StringIO('Foo installer package...')
+    >>> foo_file = BytesIO(b'Foo installer package...')
     >>> firefox_owner.getControl(name='field.filecontent').add_file(foo_file,
     ...    'text/plain', 'foo09.txt')
     >>> firefox_owner.getControl('Description').value="Foo09 installer"
@@ -474,6 +475,7 @@ And no "Delete Files" button is shown.
     Traceback (most recent call last):
     ...
     LookupError: label 'Delete Files'
+    ...
 
 As with the other listing, the administrators have the option to
 delete files.  In this context the 'Release' column would be redundant

@@ -1,7 +1,6 @@
 # Copyright 2010-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-import lazr.uri
 from paste.httpexceptions import HTTPExceptionHandler
 import requests
 from six.moves.urllib_parse import (
@@ -11,12 +10,7 @@ from six.moves.urllib_parse import (
 import soupmatchers
 from testtools.content import Content
 from testtools.content_type import UTF8_TEXT
-import wsgi_intercept
-from wsgi_intercept.urllib2_intercept import (
-    install_opener,
-    uninstall_opener,
-    )
-import wsgi_intercept.zope_testbrowser
+from zope.testbrowser.wsgi import Browser
 from zope.security.proxy import removeSecurityProxy
 
 from launchpad_loggerhead.app import RootApp
@@ -50,12 +44,6 @@ def session_scribbler(app, test):
     return scribble
 
 
-def dummy_destination(environ, start_response):
-    """Return a fake response."""
-    start_response('200 OK', [('Content-type', 'text/plain')])
-    return ['This is a dummy destination.\n']
-
-
 class SimpleLogInRootApp(RootApp):
     """A mock root app that doesn't require open id."""
     def _complete_login(self, environ, start_response):
@@ -63,52 +51,31 @@ class SimpleLogInRootApp(RootApp):
         start_response('200 OK', [('Content-type', 'text/plain')])
         return ['\n']
 
+    def __call__(self, environ, start_response):
+        codebrowse_netloc = urlsplit(
+            config.codehosting.secure_codebrowse_root).netloc
+        if environ['HTTP_HOST'] == codebrowse_netloc:
+            return RootApp.__call__(self, environ, start_response)
+        else:
+            # Return a fake response.
+            start_response('200 OK', [('Content-type', 'text/plain')])
+            return ['This is a dummy destination.\n']
+
 
 class TestLogout(TestCase):
     layer = DatabaseFunctionalLayer
 
-    def intercept(self, uri, app):
-        """Install wsgi interceptors for the uri, app tuple."""
-        if isinstance(uri, basestring):
-            uri = lazr.uri.URI(uri)
-        port = uri.port
-        if port is None:
-            if uri.scheme == 'http':
-                port = 80
-            elif uri.scheme == 'https':
-                port = 443
-            else:
-                raise NotImplementedError(uri.scheme)
-        else:
-            port = int(port)
-        wsgi_intercept.add_wsgi_intercept(uri.host, port, lambda: app)
-        self.intercepted.append((uri.host, port))
-
     def setUp(self):
         TestCase.setUp(self)
-        self.intercepted = []
         self.session = None
-        self.root = app = SimpleLogInRootApp(SESSION_VAR)
+        app = SimpleLogInRootApp(SESSION_VAR)
         app = session_scribbler(app, self)
         app = HTTPExceptionHandler(app)
         app = SessionHandler(app, SESSION_VAR, SECRET)
         self.cookie_name = app.cookie_handler.cookie_name
-        self.intercept(config.codehosting.secure_codebrowse_root, app)
-        self.intercept(allvhosts.configs['mainsite'].rooturl,
-                       dummy_destination)
-        install_opener()
-        self.browser = wsgi_intercept.zope_testbrowser.WSGI_Browser()
-        # We want to pretend we are not a robot, or else mechanize will honor
-        # robots.txt.
-        self.browser.mech_browser.set_handle_robots(False)
+        self.browser = Browser(wsgi_app=app)
         self.browser.open(
             config.codehosting.secure_codebrowse_root + '+login')
-
-    def tearDown(self):
-        uninstall_opener()
-        for host, port in self.intercepted:
-            wsgi_intercept.remove_wsgi_intercept(host, port)
-        TestCase.tearDown(self)
 
     def testLoggerheadLogout(self):
         # We start logged in as 'bob'.
@@ -143,8 +110,7 @@ class TestLogout(TestCase):
         # TestLoginAndLogout.test_CookieLogoutPage).
 
         # Here, we will have a more useless example of the basic machinery.
-        dummy_root = 'http://dummy.dev/'
-        self.intercept(dummy_root, dummy_destination)
+        dummy_root = 'http://dummy.test/'
         self.browser.open(
             config.codehosting.secure_codebrowse_root +
             '+logout?' + urlencode(dict(next_to=dummy_root + '+logout')))

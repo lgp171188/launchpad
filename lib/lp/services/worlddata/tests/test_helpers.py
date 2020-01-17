@@ -95,8 +95,8 @@ class DummyLaunchBag:
 
 def test_preferred_or_request_languages():
     '''
-    >>> from zope.app.testing.placelesssetup import setUp, tearDown
     >>> from zope.component import provideAdapter, provideUtility
+    >>> from zope.container.testing import setUp, tearDown
     >>> from zope.i18n.interfaces import IUserPreferredLanguages
     >>> from lp.services.geoip.interfaces import IRequestPreferredLanguages
     >>> from lp.services.geoip.interfaces import IRequestLocalLanguages

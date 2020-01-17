@@ -6,19 +6,16 @@ __metaclass__ = type
 import base64
 
 import testtools
-from zope.app.testing import ztapi
-from zope.app.testing.placelesssetup import PlacelessSetup
 from zope.authentication.interfaces import ILoginPassword
-from zope.component import (
-    getUtility,
-    provideAdapter,
-    provideUtility,
-    )
+from zope.component import getUtility
+from zope.container.testing import ContainerPlacelessSetup
 from zope.interface import implementer
 from zope.principalregistry.principalregistry import UnauthenticatedPrincipal
 from zope.publisher.browser import TestRequest
 from zope.publisher.http import BasicAuthAdapter
 from zope.publisher.interfaces.http import IHTTPCredentials
+from zope.security.management import newInteraction
+from zope.security.testing import addCheckerPublic
 
 from lp.registry.interfaces.person import IPerson
 from lp.services.config import config
@@ -30,6 +27,10 @@ from lp.services.webapp.authentication import (
 from lp.services.webapp.interfaces import (
     IPlacelessAuthUtility,
     IPlacelessLoginSource,
+    )
+from lp.testing.fixture import (
+    ZopeAdapterFixture,
+    ZopeUtilityFixture,
     )
 
 
@@ -59,19 +60,22 @@ class DummyPlacelessLoginSource(object):
         return [Bruce]
 
 
-class TestPlacelessAuth(PlacelessSetup, testtools.TestCase):
+class TestPlacelessAuth(ContainerPlacelessSetup, testtools.TestCase):
 
     def setUp(self):
         testtools.TestCase.setUp(self)
-        PlacelessSetup.setUp(self)
-        provideUtility(DummyPlacelessLoginSource(), IPlacelessLoginSource)
-        provideUtility(PlacelessAuthUtility(), IPlacelessAuthUtility)
-        provideAdapter(BasicAuthAdapter, (IHTTPCredentials,), ILoginPassword)
+        ContainerPlacelessSetup.setUp(self)
+        addCheckerPublic()
+        newInteraction()
+        self.useFixture(ZopeUtilityFixture(
+            DummyPlacelessLoginSource(), IPlacelessLoginSource))
+        self.useFixture(ZopeUtilityFixture(
+            PlacelessAuthUtility(), IPlacelessAuthUtility))
+        self.useFixture(ZopeAdapterFixture(
+            BasicAuthAdapter, (IHTTPCredentials,), ILoginPassword))
 
     def tearDown(self):
-        ztapi.unprovideUtility(IPlacelessLoginSource)
-        ztapi.unprovideUtility(IPlacelessAuthUtility)
-        PlacelessSetup.tearDown(self)
+        ContainerPlacelessSetup.tearDown(self)
         testtools.TestCase.tearDown(self)
 
     def _make(self, login, pwd):

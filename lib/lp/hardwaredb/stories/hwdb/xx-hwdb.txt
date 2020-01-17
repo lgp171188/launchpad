@@ -6,7 +6,7 @@ Submissions to the hardware database are done at the following URL:
 
 All form fields must be filled with valid values.
 
-    >>> from StringIO import StringIO
+    >>> from io import BytesIO
     >>> submit_data = {
     ...     'Date Created:': '2007-01-01',
     ...     'Format Version:': ['VERSION_1'],
@@ -21,7 +21,7 @@ All form fields must be filled with valid values.
     ...     'Private Submission': False,
     ...     'Contactable': False,
     ... }
-    >>> submit_file = StringIO('some data')
+    >>> submit_file = BytesIO(b'some data')
     >>> def fill_form(
     ...     browser, submit_data, submit_data_checkboxes, filedata, filename):
     ...     for label in submit_data.keys():
@@ -263,7 +263,6 @@ Submissions that are marked as private are only displayed to the
 submitter themselves.
 
     >>> browser.open('http://launchpad.test/+hwdb/+submit')
-    >>> from StringIO import StringIO
     >>> submit_data = {
     ...     'Date Created:': '2007-01-01',
     ...     'Format Version:': ['VERSION_1'],
@@ -278,19 +277,6 @@ submitter themselves.
     ...     'Private Submission': True,
     ...     'Contactable': False,
     ... }
-    >>> submit_file = StringIO('some data')
-    >>> def fill_form(
-    ...    browser, submit_data, submit_data_checkboxes, filedata, filename):
-    ...     for label in submit_data.keys():
-    ...         control = browser.getControl(label)
-    ...         control.value = submit_data[label]
-    ...     for label in submit_data_checkboxes.keys():
-    ...         control = browser.getControl(label)
-    ...         control.selected = submit_data_checkboxes[label]
-    ...     if filedata is not None:
-    ...         filedata.seek(0)
-    ...         control = browser.getControl('Submission data:')
-    ...         control.add_file(filedata, 'text/plain', filename)
     >>> fill_form(
     ...     browser, submit_data, submit_data_checkboxes, submit_file,
     ...     'test2.txt')
@@ -344,7 +330,6 @@ visible for members of the team and admins.
     ...     'Private Submission': True,
     ...     'Contactable': False,
     ... }
-    >>> submit_file = StringIO('some data')
     >>> fill_form(
     ...     browser, team_submit_data, team_submit_data_checkboxes,
     ...     submit_file, 'teamtest.txt')

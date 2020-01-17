@@ -13,14 +13,12 @@ from datetime import (
     )
 import json
 import re
-from urllib2 import HTTPError
 from urlparse import (
     parse_qs,
     urlsplit,
     )
 
 from fixtures import FakeLogger
-from mechanize import LinkNotFoundError
 from pymacaroons import Macaroon
 import pytz
 import responses
@@ -40,6 +38,7 @@ from zope.component import getUtility
 from zope.publisher.interfaces import NotFound
 from zope.security.interfaces import Unauthorized
 from zope.security.proxy import removeSecurityProxy
+from zope.testbrowser.browser import LinkNotFoundError
 
 from lp.app.enums import InformationType
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
@@ -431,6 +430,8 @@ class TestSnapAddView(BaseTestSnapView):
         browser.getControl(
             name="field.auto_build_channels.core18").value = "beta"
         browser.getControl(
+            name="field.auto_build_channels.core20").value = "edge/feature"
+        browser.getControl(
             name="field.auto_build_channels.snapcraft").value = "edge"
         browser.getControl("Create snap package").click()
 
@@ -447,7 +448,8 @@ class TestSnapAddView(BaseTestSnapView):
             MatchesTagText(content, "auto_build_pocket"))
         self.assertThat(
             "Source snap channels for automatic builds:\nEdit snap package\n"
-            "core\nstable\ncore18\nbeta\nsnapcraft\nedge\n",
+            "core\nstable\ncore18\nbeta\n"
+            "core20\nedge/feature\nsnapcraft\nedge\n",
             MatchesTagText(content, "auto_build_channels"))
 
     @responses.activate
@@ -475,8 +477,7 @@ class TestSnapAddView(BaseTestSnapView):
         responses.add(
             "POST", "http://sca.example/dev/api/acl/",
             json={"macaroon": root_macaroon_raw})
-        redirection = self.assertRaises(
-            HTTPError, browser.getControl("Create snap package").click)
+        browser.getControl("Create snap package").click()
         login_person(self.person)
         snap = getUtility(ISnapSet).getByName(self.person, "snap-name")
         self.assertThat(snap, MatchesStructure.byEquality(
@@ -496,8 +497,8 @@ class TestSnapAddView(BaseTestSnapView):
             "permissions": ["package_upload"],
             }
         self.assertEqual(expected_body, json.loads(call.request.body))
-        self.assertEqual(303, redirection.code)
-        parsed_location = urlsplit(redirection.hdrs["Location"])
+        self.assertEqual(303, int(browser.headers["Status"].split(" ", 1)[0]))
+        parsed_location = urlsplit(browser.headers["Location"])
         self.assertEqual(
             urlsplit(
                 canonical_url(snap, rootsite="code") +
@@ -993,7 +994,7 @@ class TestSnapEditView(BaseTestSnapView):
         # enables it, they can't enable the restricted processor.
         for control in processors.controls:
             if control.optionValue == "armhf":
-                control.mech_item.disabled = False
+                del control._control.attrs["disabled"]
         processors.value = ["386", "amd64", "armhf"]
         self.assertRaises(
             CannotModifySnapProcessor,
@@ -1020,7 +1021,8 @@ class TestSnapEditView(BaseTestSnapView):
         browser = self.getUserBrowser(
             canonical_url(snap) + "/+edit", user=snap.owner)
         processors = browser.getControl(name="field.processors")
-        self.assertContentEqual(["386", "amd64"], processors.value)
+        # armhf is checked but disabled.
+        self.assertContentEqual(["386", "amd64", "armhf"], processors.value)
         self.assertProcessorControls(
             processors, ["386", "amd64", "hppa"], ["armhf"])
         processors.value = ["386"]
@@ -1094,8 +1096,7 @@ class TestSnapEditView(BaseTestSnapView):
         responses.add(
             "POST", "http://sca.example/dev/api/acl/",
             json={"macaroon": root_macaroon_raw})
-        redirection = self.assertRaises(
-            HTTPError, browser.getControl("Update snap package").click)
+        browser.getControl("Update snap package").click()
         login_person(self.person)
         self.assertThat(snap, MatchesStructure.byEquality(
             store_name="two", store_secrets={"root": root_macaroon_raw},
@@ -1108,8 +1109,8 @@ class TestSnapEditView(BaseTestSnapView):
             "permissions": ["package_upload"],
             }
         self.assertEqual(expected_body, json.loads(call.request.body))
-        self.assertEqual(303, redirection.code)
-        parsed_location = urlsplit(redirection.hdrs["Location"])
+        self.assertEqual(303, int(browser.headers["Status"].split(" ", 1)[0]))
+        parsed_location = urlsplit(browser.headers["Location"])
         self.assertEqual(
             urlsplit(canonical_url(snap) + "/+authorize/+login")[:3],
             parsed_location[:3])
@@ -1160,8 +1161,7 @@ class TestSnapAuthorizeView(BaseTestSnapView):
             json={"macaroon": root_macaroon_raw})
         browser = self.getNonRedirectingBrowser(
             url=snap_url + "/+authorize", user=self.snap.owner)
-        redirection = self.assertRaises(
-            HTTPError, browser.getControl("Begin authorization").click)
+        browser.getControl("Begin authorization").click()
         [call] = responses.calls
         self.assertThat(call.request, MatchesStructure.byEquality(
             url="http://sca.example/dev/api/acl/", method="POST"))
@@ -1176,12 +1176,12 @@ class TestSnapAuthorizeView(BaseTestSnapView):
             self.assertEqual(expected_body, json.loads(call.request.body))
             self.assertEqual(
                 {"root": root_macaroon_raw}, self.snap.store_secrets)
-        self.assertEqual(303, redirection.code)
+        self.assertEqual(303, int(browser.headers["Status"].split(" ", 1)[0]))
         self.assertEqual(
             snap_url + "/+authorize/+login?macaroon_caveat_id=dummy&"
             "discharge_macaroon_action=field.actions.complete&"
             "discharge_macaroon_field=field.discharge_macaroon",
-            redirection.hdrs["Location"])
+            browser.headers["Location"])
 
     def test_complete_authorization_missing_discharge_macaroon(self):
         # If the form does not include a discharge macaroon, the "complete"
@@ -1674,6 +1674,7 @@ class TestSnapRequestBuildsView(BaseTestSnapView):
             Source snap channels:
             core
             core18
+            core20
             snapcraft
             The channels to use for build tools when building the snap
             package.

@@ -656,7 +656,7 @@ table.diff .line-no, table.diff .ss-line-no {
   cursor: pointer;
 }
 
-table.diff .line-no.active {
+table.diff .line-no.active, table.diff .ss-line-no.active {
   background: url(/@@/add) #f6f6f6 center left no-repeat;
 }
 table.diff .diff-chunk, table.diff .diff-file, table.diff .diff-header {

@@ -165,15 +165,15 @@ Now trying to set the owner using Sample Person's webservice is not authorized.
     ... }
     >>> response = test_webservice.patch(
     ...     canonical_archive['self_link'], 'application/json', dumps(patch))
-    >>> print response.getheader('status')
-    401 Unauthorized
+    >>> response.status
+    401
 
 But if we use Karl, the mirror listing admin's, webservice, we can update the owner.
 
     >>> response = karl_webservice.patch(
     ...     canonical_archive['self_link'], 'application/json', dumps(patch))
-    >>> print response.getheader('status')
-    209 Content Returned
+    >>> response.status
+    209
 
     >>> patched_canonical_archive = response.jsonBody()
     >>> print patched_canonical_archive['owner_link']
@@ -193,12 +193,11 @@ Some attributes are read-only via the API:
     ...     canonical_releases['self_link'], 'application/json', dumps(patch))
     >>> print response
     HTTP/1.1 400 Bad Request
-    Status: 400 Bad Request
     ...
-    enabled: You tried to modify a read-only attribute.
-    date_reviewed: You tried to modify a read-only attribute.
-    reviewer_link: You tried to modify a read-only attribute.
     distribution_link: You tried to modify a read-only attribute.
+    enabled: You tried to modify a read-only attribute.
+    reviewer_link: You tried to modify a read-only attribute.
+    date_reviewed: You tried to modify a read-only attribute.
 
 While others can be set with the appropriate authorization:
 
@@ -211,8 +210,8 @@ While others can be set with the appropriate authorization:
     ... }
     >>> response = test_webservice.patch(
     ...     canonical_releases['self_link'], 'application/json', dumps(patch))
-    >>> print response.getheader('status')
-    401 Unauthorized
+    >>> response.status
+    401
 
     >>> response = karl_webservice.patch(
     ...     canonical_releases['self_link'], 'application/json', dumps(patch)).jsonBody()

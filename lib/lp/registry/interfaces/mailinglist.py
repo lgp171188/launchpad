@@ -1,4 +1,4 @@
-# Copyright 2009-2015 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Mailing list interfaces."""
@@ -535,6 +535,15 @@ class IMailingListSet(Interface):
         value_type=Object(schema=IMailingList),
         readonly=True)
 
+    def updateTeamAddresses(old_hostname):
+        """Update team addresses to refer to a different Launchpad instance.
+
+        :param old_hostname: The mailing list hostname of the Launchpad
+            instance from which this instance syncs mailing list data.  Any
+            teams with this address will be updated to refer to the current
+            mailing list hostname.
+        """
+
 
 class IMailingListAPIView(Interface):
     """XMLRPC API that Mailman polls for mailing list actions."""
@@ -643,6 +652,18 @@ class IMailingListAPIView(Interface):
         :return: A dictionary mapping message-ids to the disposition tuple.
             This tuple is of the form (team-name, action), where the action is
             either the string 'accept' or 'decline'.
+        """
+
+    def updateTeamAddresses(old_hostname):
+        """Update team addresses to refer to a different Launchpad instance.
+
+        The mlist-sync script syncs Mailman data between different instances
+        of Launchpad, which requires fixing up team mailing list addresses
+        to refer to the new hostname.  This does so in bulk.
+
+        This endpoint only works on non-production instances.
+
+        :return: True
         """
 
 

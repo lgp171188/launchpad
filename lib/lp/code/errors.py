@@ -66,8 +66,9 @@ __all__ = [
 
 import httplib
 
-from bzrlib.plugins.builder.recipe import RecipeParseError
+from breezy.plugins.builder.recipe import RecipeParseError
 from lazr.restful.declarations import error_status
+import six
 
 from lp.app.errors import (
     NameLookupFailed,
@@ -411,6 +412,7 @@ class GitRepositoryCreationForbidden(GitRepositoryCreationException):
     """
 
 
+@six.python_2_unicode_compatible
 @error_status(httplib.BAD_REQUEST)
 class GitRepositoryCreatorNotMemberOfOwnerTeam(GitRepositoryCreationException):
     """Git repository creator is not a member of the owner team.
@@ -419,7 +421,17 @@ class GitRepositoryCreatorNotMemberOfOwnerTeam(GitRepositoryCreationException):
     owner of the repository to a team that they are not a member of.
     """
 
+    def __init__(self, registrant, owner):
+        self.registrant = registrant
+        self.owner = owner
 
+    def __str__(self):
+        message = ('%s is not a member of %s'
+                   % (self.registrant.displayname, self.owner.displayname))
+        return message
+
+
+@six.python_2_unicode_compatible
 @error_status(httplib.BAD_REQUEST)
 class GitRepositoryCreatorNotOwner(GitRepositoryCreationException):
     """A user cannot create a Git repository belonging to another user.
@@ -427,6 +439,15 @@ class GitRepositoryCreatorNotOwner(GitRepositoryCreationException):
     Raised when a user is attempting to create a repository and set the
     owner of the repository to another user.
     """
+
+    def __init__(self, registrant, owner):
+        self.registrant = registrant
+        self.owner = owner
+
+    def __str__(self):
+        message = ('%s cannot create Git repositories owned by %s'
+                   % (self.registrant.displayname, self.owner.displayname))
+        return message
 
 
 class GitRepositoryCreationFault(Exception):

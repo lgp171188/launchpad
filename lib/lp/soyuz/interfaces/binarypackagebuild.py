@@ -102,6 +102,9 @@ class IBinaryPackageBuildView(IPackageBuild):
         TextLine(
             title=_("Source package name"), required=False, readonly=True),
         exported_as="source_package_name")
+    source_package_version = exported(
+        TextLine(
+            title=_("Source package version"), required=False, readonly=True))
 
     distro_series = Attribute("Direct parent needed by CanonicalURL")
     arch_tag = exported(

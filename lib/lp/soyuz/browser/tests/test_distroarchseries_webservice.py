@@ -11,7 +11,11 @@ from lazr.restfulclient.errors import (
     BadRequest,
     Unauthorized,
     )
-from testtools.matchers import MatchesStructure
+from testtools.matchers import (
+    EndsWith,
+    Equals,
+    MatchesStructure,
+    )
 from zope.security.management import endInteraction
 
 from lp.buildmaster.enums import BuildBaseImageType
@@ -334,15 +338,14 @@ class TestDistroArchSeriesWebservice(TestCaseWithFactory):
         webservice = launchpadlib_for("testing", user, version="devel")
         ws_das = ws_object(webservice, das)
         ws_das.setSourceFilter(packageset=packageset_url, sense="Include")
-        with person_logged_in(user):
-            dasf = das.getSourceFilter()
-        self.assertThat(dasf, MatchesStructure.byEquality(
-            packageset=packageset, sense=DistroArchSeriesFilterSense.INCLUDE))
+        ws_dasf = ws_das.getSourceFilter()
+        self.assertThat(ws_dasf, MatchesStructure(
+            packageset_link=EndsWith(packageset_url),
+            sense=Equals("Include")))
         ws_das.setSourceFilter(packageset=packageset_url, sense="Exclude")
-        with person_logged_in(user):
-            dasf = das.getSourceFilter()
-        self.assertThat(dasf, MatchesStructure.byEquality(
-            packageset=packageset, sense=DistroArchSeriesFilterSense.EXCLUDE))
+        ws_dasf = ws_das.getSourceFilter()
+        self.assertThat(ws_dasf, MatchesStructure(
+            packageset_link=EndsWith(packageset_url),
+            sense=Equals("Exclude")))
         ws_das.removeSourceFilter()
-        with person_logged_in(user):
-            self.assertIsNone(das.getSourceFilter())
+        self.assertIsNone(ws_das.getSourceFilter())

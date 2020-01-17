@@ -46,11 +46,12 @@ fired.
     >>> from zope.interface import Interface
     >>> from lp.bugs.interfaces.buglink import (
     ...     IObjectLinkedEvent, IObjectUnlinkedEvent)
-    >>> from lp.testing.event import TestEventListener
+    >>> from lp.testing.fixture import ZopeEventHandlerFixture
     >>> linked_events = []
-    >>> linked_event_listener = TestEventListener(
-    ...     Interface, IObjectLinkedEvent,
-    ...     lambda object, event: linked_events.append(event))
+    >>> linked_event_listener = ZopeEventHandlerFixture(
+    ...     lambda object, event: linked_events.append(event),
+    ...     (Interface, IObjectLinkedEvent))
+    >>> linked_event_listener.setUp()
 
     >>> bug2 = bugset.get(2)
     >>> target.linkBug(bugset.get(2))
@@ -125,9 +126,10 @@ The method returns whether the link existed. It should also send an
 IObjectUnlinkedEvent for each of the removed link:
 
     >>> unlinked_events = []
-    >>> unlinked_event_listener = TestEventListener(
-    ...     Interface, IObjectUnlinkedEvent,
-    ...     lambda object, event: unlinked_events.append(event))
+    >>> unlinked_event_listener = ZopeEventHandlerFixture(
+    ...     lambda object, event: unlinked_events.append(event),
+    ...     (Interface, IObjectUnlinkedEvent))
+    >>> unlinked_event_listener.setUp()
 
     >>> target.unlinkBug(bug1, factory.makePerson())
     True
@@ -167,5 +169,5 @@ the bug or if they are an administrator.
 == Cleanup ==
 
     # Unregister event listeners.
-    >>> linked_event_listener.unregister()
-    >>> unlinked_event_listener.unregister()
+    >>> linked_event_listener.cleanUp()
+    >>> unlinked_event_listener.cleanUp()

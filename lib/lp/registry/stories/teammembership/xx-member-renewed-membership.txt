@@ -41,6 +41,7 @@ membership can't be renewed and explain why.
     Traceback (most recent call last):
     ...
     LookupError: label 'Renew'
+    ...
     >>> print extract_text(find_tag_by_id(browser.contents, 'maincontent'))
     Renew membership of Karl Tilbury in Mirror Administrators
     This membership cannot be renewed because Mirror Administrators
@@ -70,6 +71,7 @@ the user to renew that membership because it's not about to expire.
     Traceback (most recent call last):
     ...
     LookupError: label 'Renew'
+    ...
     >>> print extract_text(find_tag_by_id(browser.contents, 'maincontent'))
     Renew membership of Karl Tilbury in Mirror Administrators
     This membership cannot be renewed because it is not set to expire in
@@ -79,8 +81,8 @@ the user to renew that membership because it's not about to expire.
 If we now change Karl's membership to expire in a couple days, he'll be
 able to renew it himself.
 
-See pagetests/foaf/40-team-membership.txt for an explanation of the
-mech_control TestBrowser voodoo.
+See lib/lp/registry/stories/team/xx-team-membership.txt for an explanation
+of the expiry._control.attrs TestBrowser voodoo.
 
     >>> from datetime import datetime, timedelta
     >>> import pytz
@@ -93,7 +95,7 @@ mech_control TestBrowser voodoo.
     >>> team_admin_browser.getControl(name='expires').value = ['date']
     >>> expiry = team_admin_browser.getControl(
     ...     name='membership.expirationdate')
-    >>> expiry.mech_control.disabled = False # control may be disabled in JS
+    >>> del expiry._control.attrs['disabled']
     >>> expiry.value = day_after_tomorrow.date().strftime('%Y-%m-%d')
     >>> team_admin_browser.getControl(name='change').click()
 
@@ -126,6 +128,7 @@ Karl can't renew it again, since it's now not set to expire soon.
     Traceback (most recent call last):
     ...
     LookupError: label 'Renew'
+    ...
     >>> print extract_text(find_tag_by_id(browser.contents, 'maincontent'))
     Renew membership of Karl Tilbury in Mirror Administrators
     This membership cannot be renewed because it is not set to expire in

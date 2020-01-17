@@ -8,7 +8,7 @@ __metaclass__ = type
 import os
 import xmlrpclib
 
-from bzrlib import urlutils
+from breezy import urlutils
 from lazr.uri import URI
 from zope.security.proxy import removeSecurityProxy
 

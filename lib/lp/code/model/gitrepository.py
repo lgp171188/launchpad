@@ -27,7 +27,7 @@ from itertools import (
 from operator import attrgetter
 from urllib import quote_plus
 
-from bzrlib import urlutils
+from breezy import urlutils
 from lazr.enum import DBItem
 from lazr.lifecycle.event import ObjectModifiedEvent
 from lazr.lifecycle.snapshot import Snapshot
@@ -558,6 +558,8 @@ class GitRepository(StormBase, WebhookTargetMixin, GitIdentityMixin):
         """See `IGitRepository`."""
         if self.repository_type != GitRepositoryType.HOSTED:
             raise CannotModifyNonHostedGitRepository(self)
+        if value is None:
+            raise NoSuchGitReference(self, value)
         ref = self.getRefByPath(value)
         if ref is None:
             raise NoSuchGitReference(self, value)

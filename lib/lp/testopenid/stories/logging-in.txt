@@ -13,8 +13,8 @@ portion of the authentication process:
     >>> from openid.store.memstore import MemoryStore
     >>> from lp.testopenid.testing.helpers import (
     ...     complete_from_browser, make_identifier_select_endpoint,
-    ...     PublisherFetcher)
-    >>> setDefaultFetcher(PublisherFetcher())
+    ...     ZopeFetcher)
+    >>> setDefaultFetcher(ZopeFetcher())
 
 The authentication process is started by the relying party issuing a
 checkid_setup request, sending the user to Launchpad:

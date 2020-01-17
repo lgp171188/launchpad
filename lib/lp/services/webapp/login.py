@@ -28,8 +28,8 @@ from paste.httpexceptions import (
     )
 import six
 import transaction
-from z3c.ptcompat import ViewPageTemplateFile
 from zope.authentication.interfaces import IUnauthenticatedPrincipal
+from zope.browserpage import ViewPageTemplateFile
 from zope.component import (
     getSiteManager,
     getUtility,
@@ -225,6 +225,8 @@ class OpenIDLogin(LaunchpadView):
         return_to = urlappend(trust_root, '+openid-callback')
         return_to = "%s?%s" % (return_to, starting_url)
         form_html = self.openid_request.htmlMarkup(trust_root, return_to)
+        self.request.response.setHeader(
+            'Content-Type', 'text/html; charset="utf-8"')
 
         # The consumer.begin() call above will insert rows into the
         # OpenIDAssociations table, but since this will be a GET request, the

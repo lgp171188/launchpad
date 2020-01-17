@@ -8,7 +8,9 @@ __all__ = [
     'GitAPI',
     ]
 
+import logging
 import sys
+import uuid
 
 from pymacaroons import Macaroon
 import six
@@ -107,6 +109,15 @@ def _can_internal_issuer_write(verified):
     :param verified: An `IMacaroonVerificationResult`.
     """
     return verified.issuer_name == "code-import-job"
+
+
+class GitLoggerAdapter(logging.LoggerAdapter):
+    """A logger adapter that adds request-id information."""
+
+    def process(self, msg, kwargs):
+        if self.extra is not None and self.extra.get("request-id"):
+            msg = "[request-id=%s] %s" % (self.extra["request-id"], msg)
+        return msg, kwargs
 
 
 @implementer(IGitAPI)
@@ -300,6 +311,14 @@ class GitAPI(LaunchpadXMLRPCView):
         getUtility(IErrorReportingUtility).raising(sys.exc_info(), request)
         raise faults.OopsOccurred("creating a Git repository", request.oopsid)
 
+    def _getLogger(self, request_id=None):
+        # XXX cjwatson 2019-10-16: Ideally we'd always have a request-id,
+        # but since that isn't yet the case, generate one if necessary.
+        if request_id is None:
+            request_id = uuid.uuid4()
+        return GitLoggerAdapter(
+            logging.getLogger(__name__), {"request-id": request_id})
+
     def _createRepository(self, requester, path, clone_from=None):
         try:
             namespace, repository_name, target_default, owner_default = (
@@ -376,18 +395,36 @@ class GitAPI(LaunchpadXMLRPCView):
 
     def translatePath(self, path, permission, auth_params):
         """See `IGitAPI`."""
-        return run_with_login(
-            _get_requester_id(auth_params), self._translatePath,
+        logger = self._getLogger(auth_params.get("request-id"))
+        requester_id = _get_requester_id(auth_params)
+        logger.info(
+            "Request received: translatePath('%s', '%s') for %s",
+            path, permission, requester_id)
+        result = run_with_login(
+            requester_id, self._translatePath,
             six.ensure_text(path).strip("/"), permission, auth_params)
+        if isinstance(result, xmlrpc_client.Fault):
+            logger.error("translatePath failed: %r", result)
+        else:
+            # The results of path translation are not sensitive for logging
+            # purposes (they may refer to private artifacts, but contain no
+            # credentials).
+            logger.info("translatePath succeeded: %s", result)
+        return result
 
     def notify(self, translated_path):
         """See `IGitAPI`."""
+        logger = self._getLogger()
+        logger.info("Request received: notify('%s')", translated_path)
         repository = getUtility(IGitLookup).getByHostingPath(translated_path)
         if repository is None:
-            return faults.NotFound(
+            fault = faults.NotFound(
                 "No repository found for '%s'." % translated_path)
+            logger.error("notify failed: %r", fault)
+            return fault
         getUtility(IGitRefScanJobSource).create(
             removeSecurityProxy(repository))
+        logger.info("notify succeeded")
 
     @return_fault
     def _authenticateWithPassword(self, username, password):
@@ -411,7 +448,19 @@ class GitAPI(LaunchpadXMLRPCView):
 
     def authenticateWithPassword(self, username, password):
         """See `IGitAPI`."""
-        return self._authenticateWithPassword(username, password)
+        logger = self._getLogger()
+        logger.info(
+            "Request received: authenticateWithPassword('%s')", username)
+        result = self._authenticateWithPassword(username, password)
+        if isinstance(result, xmlrpc_client.Fault):
+            logger.error("authenticateWithPassword failed: %r", result)
+        else:
+            # The results of authentication may be sensitive, but we can at
+            # least log the authenticated user.
+            logger.info(
+                "authenticateWithPassword succeeded: %s",
+                result.get("uid", result.get("user")))
+        return result
 
     def _renderPermissions(self, set_of_permissions):
         """Render a set of permission strings for XML-RPC output."""
@@ -470,9 +519,23 @@ class GitAPI(LaunchpadXMLRPCView):
 
     def checkRefPermissions(self, translated_path, ref_paths, auth_params):
         """See `IGitAPI`."""
-        return run_with_login(
-            _get_requester_id(auth_params),
-            self._checkRefPermissions,
-            translated_path,
-            ref_paths,
-            auth_params)
+        logger = self._getLogger(auth_params.get("request-id"))
+        requester_id = _get_requester_id(auth_params)
+        logger.info(
+            "Request received: checkRefPermissions('%s', %s) for %s",
+            translated_path, [ref_path.data for ref_path in ref_paths],
+            requester_id)
+        result = run_with_login(
+            requester_id, self._checkRefPermissions,
+            translated_path, ref_paths, auth_params)
+        if isinstance(result, xmlrpc_client.Fault):
+            logger.error("checkRefPermissions failed: %r", result)
+        else:
+            # The results of ref permission checks are not sensitive for
+            # logging purposes (they may refer to private artifacts, but
+            # contain no credentials).
+            logger.info(
+                "checkRefPermissions succeeded: %s",
+                [(ref_path.data, permissions)
+                 for ref_path, permissions in result])
+        return result

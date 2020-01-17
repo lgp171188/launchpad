@@ -9,8 +9,8 @@ __all__ = [
     ]
 
 
-from z3c.ptcompat import (
-    bind_template,
+from zope.browserpage.viewpagetemplatefile import (
+    BoundPageTemplate,
     ViewPageTemplateFile,
     )
 from zope.component import getMultiAdapter
@@ -44,7 +44,8 @@ class FormNamespaceView(view):
         if isinstance(context, LaunchpadFormView):
             # Note: without explicitly creating the BoundPageTemplate here
             # the view fails to render.
-            context.index = bind_template(FormNamespaceView.template, context)
+            context.index = BoundPageTemplate(
+                FormNamespaceView.template, context)
         else:
             raise TraversalError("The URL does not correspond to a form.")
 

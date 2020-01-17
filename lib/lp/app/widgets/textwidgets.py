@@ -5,7 +5,7 @@ import datetime
 import re
 
 import pytz
-from z3c.ptcompat import ViewPageTemplateFile
+from zope.browserpage import ViewPageTemplateFile
 from zope.datetime import (
     DateTimeError,
     parse,

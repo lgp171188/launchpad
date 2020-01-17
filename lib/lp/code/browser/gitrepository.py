@@ -696,6 +696,8 @@ class GitRepositoryEditView(CodeEditOwnerMixin, GitRepositoryEditFormView):
             self.widgets["target"].hint = (
                 "This is the default repository for this target, so it "
                 "cannot be moved to another target.")
+        if self.context.default_branch:
+            self.widgets['default_branch'].context.required = True
 
     def _setRepositoryExists(self, existing_repository, field_name="name"):
         owner = existing_repository.owner
