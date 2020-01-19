@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test Build features."""
@@ -7,6 +7,8 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 from datetime import timedelta
 import io
+import os.path
+import shutil
 from urllib2 import urlopen
 
 from debian.deb822 import Changes
@@ -83,6 +85,11 @@ class PackageUploadTestCase(TestCaseWithFactory):
     def setUp(self):
         super(PackageUploadTestCase, self).setUp()
         self.test_publisher = SoyuzTestPublisher()
+
+    def tearDown(self):
+        super(PackageUploadTestCase, self).tearDown()
+        if os.path.exists(config.personalpackagearchive.root):
+            shutil.rmtree(config.personalpackagearchive.root)
 
     def test_realiseUpload_for_overridden_component_archive(self):
         # If the component of an upload is overridden to 'Partner' for

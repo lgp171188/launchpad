@@ -1,4 +1,4 @@
-# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 from __future__ import with_statement
@@ -11,7 +11,6 @@ to confirm that the environment hasn't been corrupted by tests
 
 __metaclass__ = type
 
-from contextlib import nested
 from cStringIO import StringIO
 import os
 import signal
@@ -312,10 +311,7 @@ class LibrarianLayerTest(TestCase, TestWithFixtures):
         download_port = config.librarian.download_port
         restricted_download_port = config.librarian.restricted_download_port
         self.useFixture(BaseLayerIsolator())
-        with nested(
-            LayerFixture(BaseLayer),
-            LayerFixture(DatabaseLayer),
-            ):
+        with LayerFixture(BaseLayer), LayerFixture(DatabaseLayer):
             with LayerFixture(LibrarianLayer):
                 active_root = config.librarian_server.root
                 # The config settings have changed:

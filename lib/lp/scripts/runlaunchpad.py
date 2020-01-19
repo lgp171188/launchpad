@@ -1,4 +1,4 @@
-# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 from __future__ import absolute_import, print_function, unicode_literals
@@ -7,12 +7,12 @@ __metaclass__ = type
 __all__ = ['start_launchpad']
 
 
-from contextlib import nested
 import os
 import signal
 import subprocess
 import sys
 
+from contextlib2 import ExitStack
 import fixtures
 from lazr.config import as_host_port
 from rabbitfixture.server import RabbitServerResources
@@ -409,7 +409,9 @@ def start_launchpad(argv=list(sys.argv), setup=None):
         # This is the setup from start_testapp, above.
         setup()
     try:
-        with nested(*services):
+        with ExitStack() as stack:
+            for service in services:
+                stack.enter_context(service)
             # Store our process id somewhere
             make_pidfile('launchpad')
             if config.launchpad.launch:
