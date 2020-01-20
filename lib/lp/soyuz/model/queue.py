@@ -7,9 +7,10 @@ __all__ = [
     'PackageUploadBuild',
     'PackageUploadCustom',
     'PackageUploadLog',
+    'PackageUploadLog',
     'PackageUploadQueue',
     'PackageUploadSet',
-    'PackageUploadSource'
+    'PackageUploadSource',
     ]
 
 from itertools import chain
@@ -114,7 +115,7 @@ from lp.soyuz.interfaces.queue import (
     QueueInconsistentStateError,
     QueueSourceAcceptError,
     QueueStateWriteProtectedError,
-    )
+    IPackageUploadLog)
 from lp.soyuz.interfaces.section import ISectionSet
 from lp.soyuz.mail.packageupload import PackageUploadMailer
 from lp.soyuz.model.binarypackagename import BinaryPackageName
@@ -1225,8 +1226,6 @@ class PackageUploadLog(StormBase):
             "<{self.__class__.__name__} ~{self.reviewer.name} "
             "changed {self.package_upload} to {self.new_status} "
             "{self.date_created}>").format(self=self)
-
-
 
 @implementer(IPackageUploadBuild)
 class PackageUploadBuild(SQLBase):
