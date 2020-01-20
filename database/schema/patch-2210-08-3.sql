@@ -3,32 +3,6 @@
 
 SET client_min_messages=ERROR;
 
-CREATE TABLE OCIRegistry (
-    id serial PRIMARY KEY,
-    date_created timestamp without time zone DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'UTC') NOT NULL,
-    registrant integer NOT NULL REFERENCES person,
-    name text NOT NULL,
-    title text NOT NULL,
-    base_url text NOT NULL,
-    active boolean DEFAULT true NOT NULL,
-    CONSTRAINT valid_name CHECK (valid_name(name))
-);
-
-COMMENT ON TABLE OCIRegistry IS 'A registry for Open Container Initiative images.';
-COMMENT ON COLUMN OCIRegistry.date_created IS 'The date on which this registry was created in Launchpad.';
-COMMENT ON COLUMN OCIRegistry.registrant IS 'The user who registered this registry.';
-COMMENT ON COLUMN OCIRegistry.name IS 'The name of this registry.';
-COMMENT ON COLUMN OCIRegistry.title IS 'A title for this registry.';
-COMMENT ON COLUMN OCIRegistry.base_url IS 'The base URL for this registry.';
-COMMENT ON COLUMN OCIRegistry.active IS 'If True, this registry is active.';
-
-CREATE UNIQUE INDEX ociregistry__name__key
-    ON OCIRegistry (name);
-CREATE UNIQUE INDEX ociregistry__base_url__key
-    ON OCIRegistry (base_url);
-CREATE INDEX ociregistry__registrant__idx
-    ON OCIRegistry (registrant);
-
 CREATE TABLE OCIRecipe (
     id serial PRIMARY KEY,
     date_created timestamp without time zone DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'UTC') NOT NULL,
@@ -36,12 +10,14 @@ CREATE TABLE OCIRecipe (
     registrant integer NOT NULL REFERENCES person,
     owner integer NOT NULL REFERENCES person,
     ociproject integer NOT NULL REFERENCES ociproject,
-    ociproject_default boolean DEFAULT false NOT NULL,
+    name text NOT NULL,
     description text,
+    official boolean DEFAULT false NOT NULL,
     git_repository integer REFERENCES gitrepository,
+    git_path text NOT NULL,
+    build_file text NOT NULL,
     require_virtualized boolean DEFAULT true NOT NULL,
-    build_daily boolean DEFAULT false NOT NULL,
-    registry integer REFERENCES ociregistry
+    build_daily boolean DEFAULT false NOT NULL
 );
 
 COMMENT ON TABLE OCIRecipe IS 'A recipe for building Open Container Initiative images.';
@@ -50,37 +26,22 @@ COMMENT ON COLUMN OCIRecipe.date_last_modified IS 'The date on which this recipe
 COMMENT ON COLUMN OCIRecipe.registrant IS 'The user who registered this recipe.';
 COMMENT ON COLUMN OCIRecipe.owner IS 'The owner of the recipe.';
 COMMENT ON COLUMN OCIRecipe.ociproject IS 'The OCI project that this recipe is for.';
-COMMENT ON COLUMN OCIRecipe.ociproject_default IS 'True if this recipe is the default for its OCI project.';
+COMMENT ON COLUMN OCIRecipe.official IS 'True if this recipe is official for its OCI project.';
+COMMENT ON COLUMN OCIRecipe.name IS 'The name of this recipe.';
 COMMENT ON COLUMN OCIRecipe.description IS 'A short description of this recipe.';
 COMMENT ON COLUMN OCIRecipe.git_repository IS 'A Git repository with a branch containing an OCI recipe.';
+COMMENT ON COLUMN OCIRecipe.git_path IS 'The branch within this recipe''s Git repository where its build files are maintained.';
+COMMENT ON COLUMN OCIRecipe.build_file IS 'The relative path to the file within this recipe''s branch that defines how to build the recipe.';
 COMMENT ON COLUMN OCIRecipe.require_virtualized IS 'If True, this recipe must be built only on a virtual machine.';
 COMMENT ON COLUMN OCIRecipe.build_daily IS 'If True, this recipe should be built daily.';
-COMMENT ON COLUMN OCIRecipe.registry IS 'The OCI registry that builds of this recipe should be pushed to.';
 
-CREATE UNIQUE INDEX ocirecipe__owner__ociproject__key
-    ON OCIRecipe (owner, ociproject);
-CREATE UNIQUE INDEX ocirecipe__ociproject__ociproject_default__key
-    ON OCIRecipe (ociproject)
-    WHERE ociproject_default;
+CREATE UNIQUE INDEX ocirecipe__owner__ociproject__name__key
+    ON OCIRecipe (owner, ociproject, name);
+CREATE UNIQUE INDEX ocirecipe__ociproject__name__official__key
+    ON OCIRecipe (ociproject, name)
+    WHERE official;
 CREATE INDEX ocirecipe__registrant__idx ON OCIRecipe (registrant);
 CREATE INDEX ocirecipe__ociproject__idx ON OCIRecipe (ociproject);
-CREATE INDEX ocirecipe__registry__idx ON OCIRecipe (registry);
-
-CREATE TABLE OCIRecipeChannel (
-    recipe integer NOT NULL REFERENCES ocirecipe,
-    -- Channel name constraints are complicated and may evolve.  We'll just
-    -- enforce them at the application level rather than here.
-    name text NOT NULL,
-    git_path text NOT NULL,
-    build_file text NOT NULL,
-    PRIMARY KEY (recipe, name)
-);
-
-COMMENT ON TABLE OCIRecipeChannel IS 'The channels that exist for an OCI recipe.';
-COMMENT ON COLUMN OCIRecipeChannel.recipe IS 'The OCI recipe for which a channel is specified.';
-COMMENT ON COLUMN OCIRecipeChannel.name IS 'The name of this channel.';
-COMMENT ON COLUMN OCIRecipeChannel.git_path IS 'The branch within this recipe''s Git repository where its build files are maintained.';
-COMMENT ON COLUMN OCIRecipeChannel.build_file IS 'The relative path to the file within this recipe''s branch that defines how to build the recipe.';
 
 CREATE TABLE OCIRecipeArch (
     recipe integer NOT NULL REFERENCES ocirecipe,
@@ -96,7 +57,6 @@ CREATE TABLE OCIRecipeBuild (
     id serial PRIMARY KEY,
     requester integer NOT NULL REFERENCES person,
     recipe integer NOT NULL REFERENCES ocirecipe,
-    channel_name text NOT NULL,
     processor integer NOT NULL REFERENCES processor,
     virtualized boolean NOT NULL,
     date_created timestamp without time zone DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'UTC') NOT NULL,
@@ -115,7 +75,6 @@ CREATE TABLE OCIRecipeBuild (
 COMMENT ON TABLE OCIRecipeBuild IS 'A build record for an OCI recipe.';
 COMMENT ON COLUMN OCIRecipeBuild.requester IS 'The person who requested this OCI recipe build.';
 COMMENT ON COLUMN OCIRecipeBuild.recipe IS 'The OCI recipe to build.';
-COMMENT ON COLUMN OCIRecipeBuild.channel_name IS 'The name of the OCI recipe channel to build.';
 COMMENT ON COLUMN OCIRecipeBuild.processor IS 'The processor that the OCI recipe should be built for.';
 COMMENT ON COLUMN OCIRecipeBuild.virtualized IS 'The virtualization setting required by this build farm job.';
 COMMENT ON COLUMN OCIRecipeBuild.date_created IS 'When the build farm job record was created.';
@@ -142,8 +101,8 @@ CREATE INDEX ocirecipebuild__build_farm_job__idx
     ON OCIRecipeBuild (build_farm_job);
 
 -- OCIRecipe.requestBuild
-CREATE INDEX ocirecipebuild__recipe__channel__processor__status__idx
-    ON OCIRecipeBuild (recipe, channel_name, processor, status);
+CREATE INDEX ocirecipebuild__recipe__processor__status__idx
+    ON OCIRecipeBuild (recipe, processor, status);
 
 -- OCIRecipe.builds, OCIRecipe.completed_builds, OCIRecipe.pending_builds
 CREATE INDEX ocirecipebuild__recipe__status__started__finished__created__id__idx
@@ -173,21 +132,5 @@ COMMENT ON TABLE OCIFile IS 'A link between an OCI recipe build and a file in th
 COMMENT ON COLUMN OCIFile.build IS 'The OCI recipe build producing this file.';
 COMMENT ON COLUMN OCIFile.library_file IS 'A file in the librarian.';
 COMMENT ON COLUMN OCIFile.layer_file_digest IS 'Content-addressable hash of the file''s contents, used for image layers.';
-
-CREATE TABLE OCIRecipeBuildJob (
-    job integer PRIMARY KEY REFERENCES Job ON DELETE CASCADE NOT NULL,
-    build integer REFERENCES ocirecipebuild NOT NULL,
-    job_type integer NOT NULL,
-    json_data text NOT NULL
-);
-
-COMMENT ON TABLE OCIRecipeBuildJob IS 'Contains references to jobs that are executed for a build of an OCI recipe.';
-COMMENT ON COLUMN OCIRecipeBuildJob.job IS 'A reference to a Job row that has all the common job details.';
-COMMENT ON COLUMN OCIRecipeBuildJob.build IS 'The OCI recipe build that this job is for.';
-COMMENT ON COLUMN OCIRecipeBuildJob.job_type IS 'The type of a job, such as a registry push.';
-COMMENT ON COLUMN OCIRecipeBuildJob.json_data IS 'Data that is specific to a particular job type.';
-
-CREATE INDEX ocirecipebuildjob__build__job_type__job__idx
-    ON OCIRecipeBuildJob (build, job_type, job);
 
 INSERT INTO LaunchpadDatabaseRevision VALUES (2210, 08, 3);
