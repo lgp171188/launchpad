@@ -9,7 +9,7 @@ __all__ = [
     'PackageUploadLog',
     'PackageUploadQueue',
     'PackageUploadSet',
-    'PackageUploadSource',
+    'PackageUploadSource'
     ]
 
 from itertools import chain
@@ -32,7 +32,6 @@ from storm.locals import (
     Unicode,
     )
 from storm.properties import DateTime
-from storm.references import ReferenceSet
 from storm.store import (
     EmptyResultSet,
     Store,
@@ -212,15 +211,19 @@ class PackageUpload(SQLBase):
         if self.package_copy_job:
             self.addSearchableNames([self.package_copy_job.package_name])
             self.addSearchableVersions([self.package_copy_job.package_version])
+        self._logs = None
 
     @property
     def logs(self):
-        result_set = Store.of(self).find(
-            PackageUploadLog,
-            PackageUploadLog.package_upload == self)
-        return result_set.order_by(Desc('date_created'))
+        if self._logs is None:
+            logs = Store.of(self).find(
+                PackageUploadLog,
+                PackageUploadLog.package_upload == self)
+            self._logs = list(logs.order_by(Desc('date_created')))
+        return self._logs
 
     def _addLog(self, reviewer, new_status, comment=None):
+        self._logs = None  # clear local cache
         return Store.of(self).add(PackageUploadLog(
             package_upload=self,
             reviewer=reviewer,
@@ -1197,7 +1200,7 @@ class PackageUploadLog(StormBase):
     date_created = DateTime(tzinfo=pytz.UTC, allow_none=False,
                             default=UTC_NOW)
 
-    reviewer_id = Int(name='reviewer', allow_none=True)
+    reviewer_id = Int(name='reviewer', allow_none=False)
     reviewer = Reference(reviewer_id, 'Person.id')
 
     old_status = DBEnum(enum=PackageUploadStatus, allow_none=False)

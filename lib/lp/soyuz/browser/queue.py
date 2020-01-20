@@ -1,4 +1,4 @@
-# Copyright 2009-2017 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Browser views for package queue."""
@@ -10,6 +10,7 @@ __all__ = [
     'QueueItemsView',
     ]
 
+from collections import defaultdict
 from operator import attrgetter
 
 from lazr.delegates import delegate_to
@@ -68,6 +69,7 @@ from lp.soyuz.model.files import (
 from lp.soyuz.model.packagecopyjob import PackageCopyJob
 from lp.soyuz.model.queue import (
     PackageUploadBuild,
+    PackageUploadLog,
     PackageUploadSource,
     )
 from lp.soyuz.model.sourcepackagerelease import SourcePackageRelease
@@ -207,7 +209,23 @@ class QueueItemsView(LaunchpadView):
         jobs = load_related(Job, package_copy_jobs, ['job_id'])
         person_ids.extend(map(attrgetter('requester_id'), jobs))
         list(getUtility(IPersonSet).getPrecachedPersonsFromIDs(
-            person_ids, need_validity=True, need_icon=True))
+            person_ids, need_validity=True))
+
+    def getPreloadedLogsDict(self, uploads):
+        """Returns a dict of preloaded PackageUploadLog objects by
+        package_upload_id, to be used on preloading CompletePackageUpload
+        objects"""
+        logs = load_referencing(
+            PackageUploadLog, uploads, ['package_upload_id'])
+        logs.sort(key=attrgetter("date_created"), reverse=True)
+        list(getUtility(IPersonSet).getPrecachedPersonsFromIDs(
+            [log.reviewer_id for log in logs],
+            need_validity=True
+        ))
+        logs_dict = defaultdict(list)
+        for log in logs:
+            logs_dict[log.package_upload_id].append(log)
+        return logs_dict
 
     def decoratedQueueBatch(self):
         """Return the current batch, converted to decorated objects.
@@ -226,6 +244,9 @@ class QueueItemsView(LaunchpadView):
             PackageUploadSource, uploads, ['packageuploadID'])
         pubs = load_referencing(
             PackageUploadBuild, uploads, ['packageuploadID'])
+
+        # preload logs info
+        logs_dict = self.getPreloadedLogsDict(uploads)
 
         source_sprs = load_related(
             SourcePackageRelease, puses, ['sourcepackagereleaseID'])
@@ -264,7 +285,8 @@ class QueueItemsView(LaunchpadView):
 
         return [
             CompletePackageUpload(
-                item, build_upload_files, source_upload_files, package_sets)
+                item, build_upload_files, source_upload_files, package_sets,
+                logs_dict[item.id])
             for item in uploads]
 
     def is_new(self, binarypackagerelease):
@@ -493,13 +515,14 @@ class CompletePackageUpload:
     date_created = None
     sources = None
     builds = None
+    logs = None
     customfiles = None
     contains_source = None
     contains_build = None
     sourcepackagerelease = None
 
     def __init__(self, packageupload, build_upload_files,
-                 source_upload_files, package_sets):
+                 source_upload_files, package_sets, logs=None):
         self.pocket = packageupload.pocket
         self.date_created = packageupload.date_created
         self.context = packageupload
@@ -507,6 +530,7 @@ class CompletePackageUpload:
         self.contains_source = len(self.sources) > 0
         self.builds = list(packageupload.builds)
         self.contains_build = len(self.builds) > 0
+        self.logs = list(logs) if logs is not None else None
         self.customfiles = list(packageupload.customfiles)
 
         # Create a dictionary of binary files keyed by
