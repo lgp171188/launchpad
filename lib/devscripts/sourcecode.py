@@ -260,7 +260,11 @@ def update_cache(cache, cache_filename, changed, sourcecode_directory, quiet):
     if cache == old_cache:
         return
     with open(cache_filename, 'wb') as cache_file:
-        json.dump(cache, cache_file, indent=4, sort_keys=True)
+        # XXX cjwatson 2020-01-21: Stop explicitly specifying separators
+        # once we require Python >= 3.4 (where this is the default).
+        json.dump(
+            cache, cache_file, indent=4, separators=(',', ': '),
+            sort_keys=True)
     if not quiet:
         print 'Cache updated.  Please commit "%s".' % cache_filename
 
