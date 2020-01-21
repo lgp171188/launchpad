@@ -457,22 +457,15 @@ class TestQueueItemsView(TestCaseWithFactory):
                     break
 
         def run_view():
-            Store.of(uploads[0]).invalidate()
             with person_logged_in(queue_admin):
-                form = {
-                    "queue_state": PackageUploadStatus.REJECTED.value}
-                view = self.makeView(distroseries, queue_admin, form=form)
-                view()
+                url = ("%s/+queue?queue_state=%s" % (
+                    canonical_url(distroseries),
+                    PackageUploadStatus.REJECTED.value))
+                self.getUserBrowser(url, queue_admin)
 
         recorder1, recorder2 = record_two_runs(
             run_view, reject_some_package, 1, 10)
-        # XXX: The query count should be the same, but there is one query
-        # fetching PersonLocation that only happens in the first run (no
-        # matter how many times we create anything), and it's not related at
-        # all to the logs.
-        # self.assertThat(recorder2, HasQueryCount.byEquality(recorder1))
-        self.assertThat(recorder1, HasQueryCount(Equals(37)))
-        self.assertThat(recorder2, HasQueryCount(Equals(36)))
+        self.assertThat(recorder2, HasQueryCount.byEquality(recorder1))
 
 
 class TestCompletePackageUpload(TestCaseWithFactory):
