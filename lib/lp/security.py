@@ -1,4 +1,4 @@
-# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Security policies for using content objects."""
@@ -246,6 +246,7 @@ from lp.soyuz.interfaces.publishing import (
     )
 from lp.soyuz.interfaces.queue import (
     IPackageUpload,
+    IPackageUploadLog,
     IPackageUploadQueue,
     )
 from lp.soyuz.interfaces.sourcepackagerelease import ISourcePackageRelease
@@ -1916,6 +1917,15 @@ class ViewPackageUpload(AuthorizationBase):
     def checkUnauthenticated(self):
         return any(map(
             methodcaller("checkUnauthenticated"), self.iter_adapters()))
+
+
+class ViewPackageUploadLog(DelegatedAuthorization):
+    """Anyone who can view a package upload can view it's logs."""
+    permission = 'launchpad.View'
+    usedfor = IPackageUploadLog
+
+    def __init__(self, obj):
+        super(ViewPackageUploadLog, self).__init__(obj, obj.package_upload)
 
 
 class EditPackageUpload(AdminByAdminsTeam):

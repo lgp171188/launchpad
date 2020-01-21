@@ -105,7 +105,6 @@ from lp.soyuz.interfaces.queue import (
     IPackageUpload,
     IPackageUploadBuild,
     IPackageUploadCustom,
-    IPackageUploadLog,
     IPackageUploadQueue,
     IPackageUploadSet,
     IPackageUploadSource,
