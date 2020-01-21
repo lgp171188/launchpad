@@ -18,7 +18,6 @@ from itertools import chain
 from operator import attrgetter
 
 import pytz
-from lp.registry.interfaces.person import IPersonSet
 from sqlobject import (
     ForeignKey,
     SQLMultipleJoin,
@@ -46,6 +45,7 @@ from zope.interface import implementer
 from lp.app.errors import NotFoundError
 from lp.archiveuploader.tagfiles import parse_tagfile_content
 from lp.registry.interfaces.gpg import IGPGKeySet
+from lp.registry.interfaces.person import IPersonSet
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.registry.model.sourcepackagename import SourcePackageName
 from lp.services.auditor.client import AuditorClient
