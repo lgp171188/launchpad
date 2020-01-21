@@ -50,7 +50,7 @@ from lp.services.database.bulk import (
     load_referencing,
     load_related,
     )
-from lp.services.database.constants import UTC_NOW
+from lp.services.database.constants import UTC_NOW, DEFAULT
 from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.enumcol import (
@@ -1208,21 +1208,20 @@ class PackageUploadLog(StormBase):
     comment = Unicode(allow_none=True)
 
     def __init__(self, package_upload, reviewer, old_status, new_status,
-                 comment=None, date_created=None):
+                 comment=None, date_created=DEFAULT):
         self.package_upload = package_upload
         self.reviewer = reviewer
         self.old_status = old_status
         self.new_status = new_status
-        if comment is not None:
-            self.comment = comment
-        if date_created is not None:
-            self.date_created = date_created
+        self.comment = comment
+        self.date_created = date_created
 
     def __repr__(self):
         return (
             "<{self.__class__.__name__} ~{self.reviewer.name} "
             "changed {self.package_upload} to {self.new_status} "
-            "{self.date_created}>").format(self=self)
+            "on {self.date_created}>").format(self=self)
+
 
 @implementer(IPackageUploadBuild)
 class PackageUploadBuild(SQLBase):
