@@ -17,21 +17,38 @@ import os
 import shutil
 import sys
 
-from bzrlib import ui
-from bzrlib.branch import Branch
-from bzrlib.errors import (
-    BzrError,
-    IncompatibleRepositories,
-    NotBranchError,
-    )
-from bzrlib.plugin import load_plugins
-from bzrlib.revisionspec import RevisionSpec
-from bzrlib.trace import (
-    enable_default_logging,
-    report_exception,
-    )
-from bzrlib.upgrade import upgrade
-from bzrlib.workingtree import WorkingTree
+try:
+    from breezy import ui
+    from breezy.branch import Branch
+    from breezy.errors import (
+        BzrError,
+        IncompatibleRepositories,
+        NotBranchError,
+        )
+    from breezy.plugin import load_plugins
+    from breezy.revisionspec import RevisionSpec
+    from breezy.trace import (
+        enable_default_logging,
+        report_exception,
+        )
+    from breezy.upgrade import upgrade
+    from breezy.workingtree import WorkingTree
+except ImportError:
+    from bzrlib import ui
+    from bzrlib.branch import Branch
+    from bzrlib.errors import (
+        BzrError,
+        IncompatibleRepositories,
+        NotBranchError,
+        )
+    from bzrlib.plugin import load_plugins
+    from bzrlib.revisionspec import RevisionSpec
+    from bzrlib.trace import (
+        enable_default_logging,
+        report_exception,
+        )
+    from bzrlib.upgrade import upgrade
+    from bzrlib.workingtree import WorkingTree
 
 from devscripts import get_launchpad_root
 
@@ -171,6 +188,15 @@ def _format_revision_name(revision, tip=False):
         return 'tip'
 
 
+def get_controldir(branch):
+    try:
+        # Breezy
+        return branch.controldir
+    except AttributeError:
+        # Bazaar
+        return branch.bzrdir
+
+
 def get_branches(sourcecode_directory, new_branches,
                  possible_transports=None, tip=False, quiet=False):
     """Get the new branches into sourcecode."""
@@ -186,7 +212,7 @@ def get_branches(sourcecode_directory, new_branches,
             else:
                 raise
         possible_transports.append(
-            remote_branch.bzrdir.root_transport)
+            get_controldir(remote_branch).root_transport)
         if not quiet:
             print 'Getting %s from %s at %s' % (
                     project, branch_url, _format_revision_name(revision, tip))
@@ -196,7 +222,7 @@ def get_branches(sourcecode_directory, new_branches,
         # incompatibilities.
         force_new_repo = not optional
         revision_id = get_revision_id(revision, remote_branch, tip)
-        remote_branch.bzrdir.sprout(
+        get_controldir(remote_branch).sprout(
             destination, revision_id=revision_id, create_tree_if_local=True,
             source_branch=remote_branch, force_new_repo=force_new_repo,
             possible_transports=possible_transports)
@@ -264,14 +290,14 @@ def update_branches(sourcecode_directory, update_branches,
             else:
                 raise
         possible_transports.append(
-            remote_branch.bzrdir.root_transport)
+            get_controldir(remote_branch).root_transport)
         revision_id = get_revision_id(revision, remote_branch, tip)
         try:
             result = local_tree.pull(
                 remote_branch, stop_revision=revision_id, overwrite=True,
                 possible_transports=possible_transports)
         except IncompatibleRepositories:
-            # XXX JRV 20100407: Ideally remote_branch.bzrdir._format
+            # XXX JRV 20100407: Ideally get_controldir(remote_branch)._format
             # should be passed into upgrade() to ensure the format is the same
             # locally and remotely. Unfortunately smart server branches
             # have their _format set to RemoteFormat rather than an actual

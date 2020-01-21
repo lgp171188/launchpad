@@ -11,9 +11,14 @@ from StringIO import StringIO
 import tempfile
 import unittest
 
-from bzrlib.bzrdir import BzrDir
-from bzrlib.tests import TestCase
-from bzrlib.transport import get_transport
+try:
+    from breezy.bzr.bzrdir import BzrDir
+    from breezy.tests import TestCase
+    from breezy.transport import get_transport
+except ImportError:
+    from bzrlib.bzrdir import BzrDir
+    from bzrlib.tests import TestCase
+    from bzrlib.transport import get_transport
 
 from devscripts import get_launchpad_root
 from devscripts.sourcecode import (
