@@ -211,10 +211,12 @@ class QueueItemsView(LaunchpadView):
         list(getUtility(IPersonSet).getPrecachedPersonsFromIDs(
             person_ids, need_validity=True))
 
-    def getPreloadedLogsDict(self, uploads):
-        """Returns a dict of preloaded PackageUploadLog objects by
-        package_upload_id, to be used on preloading CompletePackageUpload
-        objects"""
+    def _getPreloadedLogs(self, uploads):
+        """Returns a dict of preloaded PackageUploadLog
+
+        The keys from the returning dict are the package_upload_id, and the
+        values are lists of log entries
+        """
         logs = load_referencing(
             PackageUploadLog, uploads, ['package_upload_id'])
         logs.sort(key=attrgetter("date_created"), reverse=True)
@@ -245,8 +247,7 @@ class QueueItemsView(LaunchpadView):
         pubs = load_referencing(
             PackageUploadBuild, uploads, ['packageuploadID'])
 
-        # preload logs info
-        logs_dict = self.getPreloadedLogsDict(uploads)
+        logs_dict = self._getPreloadedLogs(uploads)
 
         source_sprs = load_related(
             SourcePackageRelease, puses, ['sourcepackagereleaseID'])
