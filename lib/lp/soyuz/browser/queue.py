@@ -219,7 +219,6 @@ class QueueItemsView(LaunchpadView):
         """
         logs = load_referencing(
             PackageUploadLog, uploads, ['package_upload_id'])
-        logs.sort(key=attrgetter("date_created"), reverse=True)
         list(getUtility(IPersonSet).getPrecachedPersonsFromIDs(
             [log.reviewer_id for log in logs],
             need_validity=True
@@ -287,7 +286,8 @@ class QueueItemsView(LaunchpadView):
         return [
             CompletePackageUpload(
                 item, build_upload_files, source_upload_files, package_sets,
-                logs_dict[item.id])
+                sorted(logs_dict[item.id], key=attrgetter("date_created"),
+                       reverse=True))
             for item in uploads]
 
     def is_new(self, binarypackagerelease):
@@ -531,7 +531,7 @@ class CompletePackageUpload:
         self.contains_source = len(self.sources) > 0
         self.builds = list(packageupload.builds)
         self.contains_build = len(self.builds) > 0
-        self.logs = list(logs) if logs is not None else None
+        self.logs = list(logs) if logs is not None else []
         self.customfiles = list(packageupload.customfiles)
 
         # Create a dictionary of binary files keyed by
