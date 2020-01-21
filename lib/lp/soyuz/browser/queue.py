@@ -69,7 +69,6 @@ from lp.soyuz.model.files import (
 from lp.soyuz.model.packagecopyjob import PackageCopyJob
 from lp.soyuz.model.queue import (
     PackageUploadBuild,
-    PackageUploadLog,
     PackageUploadSource,
     )
 from lp.soyuz.model.sourcepackagerelease import SourcePackageRelease
@@ -211,23 +210,6 @@ class QueueItemsView(LaunchpadView):
         list(getUtility(IPersonSet).getPrecachedPersonsFromIDs(
             person_ids, need_validity=True))
 
-    def _getPreloadedLogs(self, uploads):
-        """Returns a dict of preloaded PackageUploadLog
-
-        The keys from the returning dict are the package_upload_id, and the
-        values are lists of log entries
-        """
-        logs = load_referencing(
-            PackageUploadLog, uploads, ['package_upload_id'])
-        list(getUtility(IPersonSet).getPrecachedPersonsFromIDs(
-            [log.reviewer_id for log in logs],
-            need_validity=True
-        ))
-        logs_dict = defaultdict(list)
-        for log in logs:
-            logs_dict[log.package_upload_id].append(log)
-        return logs_dict
-
     def decoratedQueueBatch(self):
         """Return the current batch, converted to decorated objects.
 
@@ -245,8 +227,6 @@ class QueueItemsView(LaunchpadView):
             PackageUploadSource, uploads, ['packageuploadID'])
         pubs = load_referencing(
             PackageUploadBuild, uploads, ['packageuploadID'])
-
-        logs_dict = self._getPreloadedLogs(uploads)
 
         source_sprs = load_related(
             SourcePackageRelease, puses, ['sourcepackagereleaseID'])
@@ -285,9 +265,7 @@ class QueueItemsView(LaunchpadView):
 
         return [
             CompletePackageUpload(
-                item, build_upload_files, source_upload_files, package_sets,
-                sorted(logs_dict[item.id], key=attrgetter("date_created"),
-                       reverse=True))
+                item, build_upload_files, source_upload_files, package_sets)
             for item in uploads]
 
     def is_new(self, binarypackagerelease):
@@ -516,14 +494,13 @@ class CompletePackageUpload:
     date_created = None
     sources = None
     builds = None
-    logs = None
     customfiles = None
     contains_source = None
     contains_build = None
     sourcepackagerelease = None
 
     def __init__(self, packageupload, build_upload_files,
-                 source_upload_files, package_sets, logs=None):
+                 source_upload_files, package_sets):
         self.pocket = packageupload.pocket
         self.date_created = packageupload.date_created
         self.context = packageupload
@@ -531,7 +508,6 @@ class CompletePackageUpload:
         self.contains_source = len(self.sources) > 0
         self.builds = list(packageupload.builds)
         self.contains_build = len(self.builds) > 0
-        self.logs = list(logs) if logs is not None else []
         self.customfiles = list(packageupload.customfiles)
 
         # Create a dictionary of binary files keyed by
