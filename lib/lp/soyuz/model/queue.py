@@ -212,19 +212,16 @@ class PackageUpload(SQLBase):
         if self.package_copy_job:
             self.addSearchableNames([self.package_copy_job.package_name])
             self.addSearchableVersions([self.package_copy_job.package_version])
-        self._logs = None
 
-    @property
+    @cachedproperty
     def logs(self):
-        if self._logs is None:
-            logs = Store.of(self).find(
-                PackageUploadLog,
-                PackageUploadLog.package_upload == self)
-            self._logs = list(logs.order_by(Desc('date_created')))
-        return self._logs
+        logs = Store.of(self).find(
+            PackageUploadLog,
+            PackageUploadLog.package_upload == self)
+        return list(logs.order_by(Desc('date_created')))
 
     def _addLog(self, reviewer, new_status, comment=None):
-        self._logs = None  # clear local cache
+        del get_property_cache(self).logs  # clean cache
         return Store.of(self).add(PackageUploadLog(
             package_upload=self,
             reviewer=reviewer,
