@@ -1483,3 +1483,26 @@ class TestPackageUploadWebservice(TestCaseWithFactory):
                 person, component=self.universe),
             5)
         self.assertThat(recorder2, HasQueryCount.byEquality(recorder1))
+
+    def test_api_package_upload_log(self):
+        # API clients can see upload logs of a source uploads.
+        person = self.makeQueueAdmin([self.universe])
+        upload, ws_upload = self.makeSourcePackageUpload(
+            person, sourcepackagename="hello", component=self.universe)
+        with person_logged_in(person):
+            upload.rejectFromQueue(person, 'not a good change')
+            upload.acceptFromQueue(person)
+        import IPython; IPython.embed()
+        ws_logs = self.load(self.distroseries, person)
+
+        self.assertTrue(ws_upload.contains_source)
+        self.assertFalse(ws_upload.contains_build)
+        self.assertFalse(ws_upload.contains_copy)
+        self.assertEqual("hello", ws_upload.display_name)
+        self.assertEqual("source", ws_upload.display_arches)
+        self.assertEqual("hello", ws_upload.package_name)
+        self.assertEqual("universe", ws_upload.component_name)
+        with person_logged_in(person):
+            self.assertEqual(upload.package_version, ws_upload.display_version)
+            self.assertEqual(upload.package_version, ws_upload.package_version)
+            self.assertEqual(upload.section_name, ws_upload.section_name)

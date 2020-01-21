@@ -36,7 +36,7 @@ from lazr.restful.declarations import (
     operation_for_version,
     operation_parameters,
     REQUEST_USER,
-    )
+    operation_returns_collection_of)
 from lazr.restful.fields import Reference
 from zope.interface import (
     Attribute,
@@ -113,6 +113,40 @@ class IPackageUploadQueue(Interface):
     """
 
 
+class IPackageUploadLog(Interface):
+    export_as_webservice_entry()
+
+    id = Int(title=_('ID'), required=True, readonly=True)
+
+    package_upload = Attribute(
+        _("The package upload that generated this log"))
+
+    date_created = exported(
+        Datetime(
+            title=_("When this action happened."), required=True,
+            readonly=True))
+
+    reviewer = exported(
+        Reference(
+            IPerson, title=_("Who did this action."),
+            required=True, readonly=True))
+
+    old_status = exported(
+        Choice(
+            vocabulary=PackageUploadStatus, description=_("Old status."),
+            required=True, readonly=True))
+
+    new_status = exported(
+        Choice(
+            vocabulary=PackageUploadStatus, description=_("New status."),
+            required=True, readonly=True))
+
+    comment = exported(
+        TextLine(
+            title=_("User's comment about this change."),
+            required=False, readonly=True))
+
+
 class IPackageUpload(Interface):
     """A Queue item for the archive uploader."""
 
@@ -150,8 +184,6 @@ class IPackageUpload(Interface):
         Datetime(
             title=_('Date created'),
             description=_("The date this package upload was done.")))
-
-    logs = Attribute(_("The change log of this PackageUpload."))
 
     changesfile = Attribute("The librarian alias for the changes file "
                             "associated with this upload")
@@ -283,6 +315,12 @@ class IPackageUpload(Interface):
         sourcepackagerelease.  For binaries, this is all the components
         on all the binarypackagerelease records arising from the build.
         """)
+
+    @operation_returns_collection_of(IPackageUploadLog)
+    @export_read_operation()
+    @operation_for_version("devel")
+    def getLogs():
+        """The list of status changes"""
 
     @export_read_operation()
     @operation_for_version("devel")
@@ -713,33 +751,6 @@ class IPackageUploadCustom(Interface):
         It's not written to the main archive location because that could be
         protected by htaccess in the case of private archives.
         """
-
-
-class IPackageUploadLog(Interface):
-    id = Int(title=_('ID'), required=True, readonly=True)
-
-    package_upload = Reference(
-        IPackageUpload,
-        title=_("Original package upload."), required=True, readonly=True)
-
-    date_created = Datetime(
-        title=_("When this action happened."), required=True, readonly=True)
-
-    reviewer = Reference(
-        IPerson, title=_("Who did this action."),
-        required=True, readonly=True)
-
-    old_status = Choice(
-        vocabulary=PackageUploadStatus, description=_("Old status."),
-        required=True, readonly=True)
-
-    new_status = Choice(
-        vocabulary=PackageUploadStatus, description=_("New status."),
-        required=True, readonly=True)
-
-    comment = TextLine(
-        title=_("User's comment about this change."),
-        required=False, readonly=True)
 
 
 class IPackageUploadSet(Interface):

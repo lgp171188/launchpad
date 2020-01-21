@@ -105,7 +105,6 @@ from lp.soyuz.interfaces.queue import (
     IPackageUpload,
     IPackageUploadBuild,
     IPackageUploadCustom,
-    IPackageUploadLog,
     IPackageUploadQueue,
     IPackageUploadSet,
     IPackageUploadSource,
@@ -219,6 +218,9 @@ class PackageUpload(SQLBase):
             PackageUploadLog,
             PackageUploadLog.package_upload == self)
         return list(logs.order_by(Desc('date_created')))
+
+    def getLogs(self):
+        return self.logs
 
     def _addLog(self, reviewer, new_status, comment=None):
         del get_property_cache(self).logs  # clean cache
