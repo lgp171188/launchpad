@@ -445,7 +445,7 @@ class TestQueueItemsView(TestCaseWithFactory):
         uploads = []
         distroseries = self.factory.makeDistroSeries()
 
-        for i in range(50):
+        for i in range(11):
             uploads.append(self.factory.makeSourcePackageUpload(distroseries))
         queue_admin = self.factory.makeArchiveAdmin(distroseries.main_archive)
 
