@@ -112,7 +112,7 @@ class PackageUploadTestCase(TestCaseWithFactory):
         expected_repr = (
             "<PackageUploadLog ~lpusername "
             "changed {self.package_upload} to Rejected "
-            "{self.date_created}>").format(self=log)
+            "on {self.date_created}>").format(self=log)
         self.assertEqual(str(expected_repr), repr(log))
 
     def test_realiseUpload_for_overridden_component_archive(self):
