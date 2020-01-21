@@ -18,6 +18,7 @@ import transaction
 from lp.services.features.testing import FeatureFixture
 from lp.services.webapp.publisher import canonical_url
 from lp.snappy.interfaces.snapstoreclient import ISnapStoreClient
+from lp.soyuz.interfaces.livefs import LIVEFS_FEATURE_FLAG
 from lp.testing import (
     login_person,
     record_two_runs,
@@ -55,12 +56,11 @@ batch_nav_tag = soupmatchers.Tag(
 
 
 class GitRepositoryTestHelpers:
-
     event_type = "git:push:0.1"
     expected_event_types = [
         ("git:push:0.1", "Git push"),
         ("merge-proposal:0.1", "Merge proposal"),
-        ]
+    ]
 
     def makeTarget(self):
         return self.factory.makeGitRepository()
@@ -70,12 +70,11 @@ class GitRepositoryTestHelpers:
 
 
 class BranchTestHelpers:
-
     event_type = "bzr:push:0.1"
     expected_event_types = [
         ("bzr:push:0.1", "Bazaar push"),
         ("merge-proposal:0.1", "Merge proposal"),
-        ]
+    ]
 
     def makeTarget(self):
         return self.factory.makeBranch()
@@ -85,11 +84,10 @@ class BranchTestHelpers:
 
 
 class SnapTestHelpers:
-
     event_type = "snap:build:0.1"
     expected_event_types = [
         ("snap:build:0.1", "Snap build"),
-        ]
+    ]
 
     def setUp(self):
         super(SnapTestHelpers, self).setUp()
@@ -101,9 +99,28 @@ class SnapTestHelpers:
     def makeTarget(self):
         self.useFixture(FeatureFixture({
             'webhooks.new.enabled': 'true',
-            }))
+        }))
         owner = self.factory.makePerson()
         return self.factory.makeSnap(registrant=owner, owner=owner)
+
+    def getTraversalStack(self, obj):
+        return [obj]
+
+
+class LiveFSTestHelpers:
+    event_type = "livefs:build:0.1"
+    expected_event_types = [
+        ("livefs:build:0.1", "Live filesystem build"),
+    ]
+
+    def setUp(self):
+        super(LiveFSTestHelpers, self).setUp()
+
+    def makeTarget(self):
+        self.useFixture(FeatureFixture({'webhooks.new.enabled': 'true',
+                                        LIVEFS_FEATURE_FLAG: "on"}))
+        owner = self.factory.makePerson()
+        return self.factory.makeLiveFS(registrant=owner, owner=owner)
 
     def getTraversalStack(self, obj):
         return [obj]
@@ -122,13 +139,12 @@ class WebhookTargetViewTestHelpers:
         view = create_view(self.target, name, principal=self.owner, **kwargs)
         # To test the breadcrumbs we need a correct traversal stack.
         view.request.traversed_objects = (
-            self.getTraversalStack(self.target) + [view])
+                self.getTraversalStack(self.target) + [view])
         view.initialize()
         return view
 
 
 class TestWebhooksViewBase(WebhookTargetViewTestHelpers):
-
     layer = DatabaseFunctionalLayer
 
     def makeHooksAndMatchers(self, count):
@@ -189,24 +205,25 @@ class TestWebhooksViewBase(WebhookTargetViewTestHelpers):
 
 class TestWebhooksViewGitRepository(
     TestWebhooksViewBase, GitRepositoryTestHelpers, TestCaseWithFactory):
-
     pass
 
 
 class TestWebhooksViewBranch(
     TestWebhooksViewBase, BranchTestHelpers, TestCaseWithFactory):
-
     pass
 
 
 class TestWebhooksViewSnap(
     TestWebhooksViewBase, SnapTestHelpers, TestCaseWithFactory):
+    layer = LaunchpadFunctionalLayer
 
+
+class TestWebhooksViewLiveFS(
+    TestWebhooksViewBase, LiveFSTestHelpers, TestCaseWithFactory):
     layer = LaunchpadFunctionalLayer
 
 
 class TestWebhookAddViewBase(WebhookTargetViewTestHelpers):
-
     layer = DatabaseFunctionalLayer
 
     def test_rendering(self):
@@ -287,19 +304,21 @@ class TestWebhookAddViewBase(WebhookTargetViewTestHelpers):
 
 class TestWebhookAddViewGitRepository(
     TestWebhookAddViewBase, GitRepositoryTestHelpers, TestCaseWithFactory):
-
     pass
 
 
 class TestWebhookAddViewBranch(
     TestWebhookAddViewBase, BranchTestHelpers, TestCaseWithFactory):
-
     pass
 
 
 class TestWebhookAddViewSnap(
     TestWebhookAddViewBase, SnapTestHelpers, TestCaseWithFactory):
+    layer = LaunchpadFunctionalLayer
 
+
+class TestWebhookAddViewLiveFS(
+    TestWebhookAddViewBase, LiveFSTestHelpers, TestCaseWithFactory):
     layer = LaunchpadFunctionalLayer
 
 
@@ -318,13 +337,12 @@ class WebhookViewTestHelpers:
         view = create_view(self.webhook, name, principal=self.owner, **kwargs)
         # To test the breadcrumbs we need a correct traversal stack.
         view.request.traversed_objects = (
-            self.getTraversalStack(self.target) + [self.webhook, view])
+                self.getTraversalStack(self.target) + [self.webhook, view])
         view.initialize()
         return view
 
 
 class TestWebhookViewBase(WebhookViewTestHelpers):
-
     layer = DatabaseFunctionalLayer
 
     def test_rendering(self):
@@ -389,24 +407,25 @@ class TestWebhookViewBase(WebhookViewTestHelpers):
 
 class TestWebhookViewGitRepository(
     TestWebhookViewBase, GitRepositoryTestHelpers, TestCaseWithFactory):
-
     pass
 
 
 class TestWebhookViewBranch(
     TestWebhookViewBase, BranchTestHelpers, TestCaseWithFactory):
-
     pass
 
 
 class TestWebhookViewSnap(
     TestWebhookViewBase, SnapTestHelpers, TestCaseWithFactory):
+    pass
 
+
+class TestWebhookViewLiveFS(
+    TestWebhookViewBase, LiveFSTestHelpers, TestCaseWithFactory):
     pass
 
 
 class TestWebhookDeleteViewBase(WebhookViewTestHelpers):
-
     layer = DatabaseFunctionalLayer
 
     def test_rendering(self):
@@ -441,17 +460,19 @@ class TestWebhookDeleteViewBase(WebhookViewTestHelpers):
 
 class TestWebhookDeleteViewGitRepository(
     TestWebhookDeleteViewBase, GitRepositoryTestHelpers, TestCaseWithFactory):
-
     pass
 
 
 class TestWebhookDeleteViewBranch(
     TestWebhookDeleteViewBase, BranchTestHelpers, TestCaseWithFactory):
-
     pass
 
 
 class TestWebhookDeleteViewSnap(
     TestWebhookDeleteViewBase, SnapTestHelpers, TestCaseWithFactory):
+    pass
 
+
+class TestWebhookDeleteViewLiveFS(
+    TestWebhookDeleteViewBase, LiveFSTestHelpers, TestCaseWithFactory):
     pass

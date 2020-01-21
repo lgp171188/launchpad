@@ -15,6 +15,7 @@ from zope.security.proxy import removeSecurityProxy
 from lp.app.enums import InformationType
 from lp.registry.enums import BranchSharingPolicy
 from lp.services.database.interfaces import IStore
+from lp.services.features.testing import FeatureFixture
 from lp.services.webapp.authorization import check_permission
 from lp.services.webapp.snapshot import notify_modified
 from lp.services.webhooks.interfaces import IWebhookSet
@@ -22,6 +23,7 @@ from lp.services.webhooks.model import (
     WebhookJob,
     WebhookSet,
     )
+from lp.soyuz.interfaces.livefs import LIVEFS_FEATURE_FLAG
 from lp.testing import (
     admin_logged_in,
     anonymous_logged_in,
@@ -395,3 +397,16 @@ class TestWebhookSetSnap(TestWebhookSetBase, TestCaseWithFactory):
         if owner is None:
             owner = self.factory.makePerson()
         return self.factory.makeSnap(registrant=owner, owner=owner, **kwargs)
+
+
+class TestWebhookSetLiveFS(TestWebhookSetBase, TestCaseWithFactory):
+
+    event_type = 'livefs:build:0.1'
+
+    def makeTarget(self, owner=None, **kwargs):
+        if owner is None:
+            owner = self.factory.makePerson()
+
+        with FeatureFixture({LIVEFS_FEATURE_FLAG: "on"}):
+            return self.factory.makeLiveFS(registrant=owner,
+                                           owner=owner, **kwargs)

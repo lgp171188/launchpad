@@ -9,6 +9,7 @@ __all__ = [
 from datetime import timedelta
 import math
 
+from lazr.lifecycle.event import ObjectCreatedEvent
 import pytz
 from storm.locals import (
     Bool,
@@ -24,6 +25,7 @@ from storm.locals import (
     Unicode,
     )
 from zope.component import getUtility
+from zope.event import notify
 from zope.interface import implementer
 from zope.security.proxy import removeSecurityProxy
 
@@ -57,6 +59,7 @@ from lp.services.database.stormexpr import (
     )
 from lp.services.features import getFeatureFlag
 from lp.services.webapp.interfaces import ILaunchBag
+from lp.services.webhooks.model import WebhookTargetMixin
 from lp.soyuz.interfaces.archive import ArchiveDisabled
 from lp.soyuz.interfaces.livefs import (
     CannotDeleteLiveFS,
@@ -88,7 +91,7 @@ def livefs_modified(livefs, event):
 
 
 @implementer(ILiveFS, IHasOwner)
-class LiveFS(Storm):
+class LiveFS(Storm, WebhookTargetMixin):
     """See `ILiveFS`."""
 
     __storm_table__ = 'LiveFS'
@@ -137,6 +140,10 @@ class LiveFS(Storm):
         self.date_created = date_created
         self.date_last_modified = date_created
         self.keep_binary_files_days = keep_binary_files_days
+
+    @property
+    def valid_webhook_event_types(self):
+        return ["livefs:build:0.1"]
 
     @property
     def private(self):
@@ -191,6 +198,7 @@ class LiveFS(Storm):
             unique_key=unique_key, metadata_override=metadata_override,
             version=version)
         build.queueBuild()
+        notify(ObjectCreatedEvent(build, user=requester))
         return build
 
     def _getBuilds(self, filter_term, order_by):

@@ -23,6 +23,7 @@ from zope.security.proxy import removeSecurityProxy
 
 from lp.services.features.testing import FeatureFixture
 from lp.services.webapp.interfaces import OAuthPermission
+from lp.soyuz.interfaces.livefs import LIVEFS_FEATURE_FLAG
 from lp.testing import (
     api_url,
     person_logged_in,
@@ -320,7 +321,8 @@ class TestWebhookTargetBase:
              for entry in representation['entries']])
 
     def test_newWebhook_secret(self):
-        self.useFixture(FeatureFixture({'webhooks.new.enabled': 'true'}))
+        self.useFixture(FeatureFixture({'webhooks.new.enabled': 'true',
+                                        LIVEFS_FEATURE_FLAG: "on"}))
         response = self.webservice.named_post(
             self.target_url, 'newWebhook',
             delivery_url='http://example.com/ep',
@@ -379,3 +381,13 @@ class TestWebhookTargetSnap(TestWebhookTargetBase, TestCaseWithFactory):
     def makeTarget(self):
         owner = self.factory.makePerson()
         return self.factory.makeSnap(registrant=owner, owner=owner)
+
+
+class TestWebhookTargetLiveFS(TestWebhookTargetBase, TestCaseWithFactory):
+
+    event_type = 'livefs:build:0.1'
+
+    def makeTarget(self):
+        owner = self.factory.makePerson()
+        with FeatureFixture({LIVEFS_FEATURE_FLAG: "on"}):
+            return self.factory.makeLiveFS(registrant=owner, owner=owner)

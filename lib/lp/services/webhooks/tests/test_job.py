@@ -60,6 +60,7 @@ from lp.services.webhooks.model import (
     WebhookJobType,
     )
 from lp.services.webhooks.testing import LogsScheduledWebhooks
+from lp.soyuz.interfaces.livefs import LIVEFS_FEATURE_FLAG
 from lp.testing import (
     login_person,
     TestCaseWithFactory,
@@ -337,6 +338,16 @@ class TestWebhookDeliveryJob(TestCaseWithFactory):
         job = WebhookDeliveryJob.create(hook, 'test', payload={'foo': 'bar'})
         self.assertEqual(
             "<WebhookDeliveryJob for webhook %d on %r>" % (hook.id, snap),
+            repr(job))
+
+    def test_livefs__repr__(self):
+        # `WebhookDeliveryJob` objects for livefs have an informative __repr__.
+        with FeatureFixture({LIVEFS_FEATURE_FLAG: "on"}):
+            livefs = self.factory.makeLiveFS()
+        hook = self.factory.makeWebhook(target=livefs)
+        job = WebhookDeliveryJob.create(hook, 'test', payload={'foo': 'bar'})
+        self.assertEqual(
+            "<WebhookDeliveryJob for webhook %d on %r>" % (hook.id, livefs),
             repr(job))
 
     def test_short_lease_and_timeout(self):

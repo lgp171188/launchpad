@@ -69,6 +69,7 @@ from lp.services.fields import (
     PersonChoice,
     PublicPersonChoice,
     )
+from lp.services.webhooks.interfaces import IWebhookTarget
 from lp.soyuz.interfaces.archive import IArchive
 from lp.soyuz.interfaces.distroarchseries import IDistroArchSeries
 
@@ -213,7 +214,7 @@ class ILiveFSView(IPrivacy):
         value_type=Reference(schema=Interface), readonly=True)))
 
 
-class ILiveFSEdit(Interface):
+class ILiveFSEdit(IWebhookTarget):
     """`ILiveFS` methods that require launchpad.Edit permission."""
 
     @export_destructor_operation()

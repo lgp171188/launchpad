@@ -104,6 +104,9 @@ class Webhook(StormBase):
     snap_id = Int(name='snap')
     snap = Reference(snap_id, 'Snap.id')
 
+    livefs_id = Int(name='livefs')
+    livefs = Reference(livefs_id, 'LiveFS.id')
+
     registrant_id = Int(name='registrant', allow_none=False)
     registrant = Reference(registrant_id, 'Person.id')
     date_created = DateTime(tzinfo=utc, allow_none=False)
@@ -123,6 +126,8 @@ class Webhook(StormBase):
             return self.branch
         elif self.snap is not None:
             return self.snap
+        elif self.livefs is not None:
+            return self.livefs
         else:
             raise AssertionError("No target.")
 
@@ -177,6 +182,8 @@ class WebhookSet:
         from lp.code.interfaces.branch import IBranch
         from lp.code.interfaces.gitrepository import IGitRepository
         from lp.snappy.interfaces.snap import ISnap
+        from lp.soyuz.interfaces.livefs import ILiveFS
+
         hook = Webhook()
         if IGitRepository.providedBy(target):
             hook.git_repository = target
@@ -184,6 +191,8 @@ class WebhookSet:
             hook.branch = target
         elif ISnap.providedBy(target):
             hook.snap = target
+        elif ILiveFS.providedBy(target):
+            hook.livefs = target
         else:
             raise AssertionError("Unsupported target: %r" % (target,))
         hook.registrant = registrant
@@ -208,12 +217,16 @@ class WebhookSet:
         from lp.code.interfaces.branch import IBranch
         from lp.code.interfaces.gitrepository import IGitRepository
         from lp.snappy.interfaces.snap import ISnap
+        from lp.soyuz.interfaces.livefs import ILiveFS
+
         if IGitRepository.providedBy(target):
             target_filter = Webhook.git_repository == target
         elif IBranch.providedBy(target):
             target_filter = Webhook.branch == target
         elif ISnap.providedBy(target):
             target_filter = Webhook.snap == target
+        elif ILiveFS.providedBy(target):
+            target_filter = Webhook.livefs == target
         else:
             raise AssertionError("Unsupported target: %r" % (target,))
         return IStore(Webhook).find(Webhook, target_filter).order_by(
