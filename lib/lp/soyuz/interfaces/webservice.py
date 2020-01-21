@@ -1,4 +1,4 @@
-# Copyright 2010-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """All the interfaces that are exposed through the webservice.
@@ -35,6 +35,7 @@ __all__ = [
     'ILiveFSBuild',
     'ILiveFSSet',
     'IPackageUpload',
+    'IPackageUploadLog',
     'IPackageset',
     'IPackagesetSet',
     'ISourcePackagePublishingHistory',
@@ -104,7 +105,10 @@ from lp.soyuz.interfaces.publishing import (
     IBinaryPackagePublishingHistory,
     ISourcePackagePublishingHistory,
     )
-from lp.soyuz.interfaces.queue import IPackageUpload
+from lp.soyuz.interfaces.queue import (
+    IPackageUpload,
+    IPackageUploadLog,
+    )
 
 
 _schema_circular_imports

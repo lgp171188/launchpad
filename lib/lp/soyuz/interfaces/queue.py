@@ -35,9 +35,13 @@ from lazr.restful.declarations import (
     exported,
     operation_for_version,
     operation_parameters,
+    operation_returns_collection_of,
     REQUEST_USER,
-    operation_returns_collection_of)
-from lazr.restful.fields import Reference
+    )
+from lazr.restful.fields import (
+    CollectionField,
+    Reference,
+    )
 from zope.interface import (
     Attribute,
     Interface,
@@ -114,7 +118,8 @@ class IPackageUploadQueue(Interface):
 
 
 class IPackageUploadLog(Interface):
-    export_as_webservice_entry()
+
+    export_as_webservice_entry(publish_web_link=True, as_of="devel")
 
     id = Int(title=_('ID'), required=True, readonly=True)
 
@@ -217,6 +222,13 @@ class IPackageUpload(Interface):
     sources = Attribute("The queue sources associated with this queue item")
     builds = Attribute("The queue builds associated with the queue item")
 
+    logs = exported(
+        CollectionField(
+            title=_("The package upload logs"),
+            value_type=Reference(schema=IPackageUploadLog),
+            readonly=True),
+        as_of="devel")
+
     customfiles = Attribute("Custom upload files associated with this "
                             "queue item")
     custom_file_urls = exported(
@@ -315,12 +327,6 @@ class IPackageUpload(Interface):
         sourcepackagerelease.  For binaries, this is all the components
         on all the binarypackagerelease records arising from the build.
         """)
-
-    @operation_returns_collection_of(IPackageUploadLog)
-    @export_read_operation()
-    @operation_for_version("devel")
-    def getLogs():
-        """The list of status changes"""
 
     @export_read_operation()
     @operation_for_version("devel")

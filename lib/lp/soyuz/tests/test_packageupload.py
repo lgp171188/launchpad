@@ -1486,23 +1486,18 @@ class TestPackageUploadWebservice(TestCaseWithFactory):
 
     def test_api_package_upload_log(self):
         # API clients can see upload logs of a source uploads.
-        person = self.makeQueueAdmin([self.universe])
+        admin = self.makeQueueAdmin([self.universe])
         upload, ws_upload = self.makeSourcePackageUpload(
-            person, sourcepackagename="hello", component=self.universe)
-        with person_logged_in(person):
-            upload.rejectFromQueue(person, 'not a good change')
-            upload.acceptFromQueue(person)
-        import IPython; IPython.embed()
-        ws_logs = self.load(self.distroseries, person)
+            admin, sourcepackagename="hello", component=self.universe)
+        with person_logged_in(admin):
+            upload.rejectFromQueue(admin, 'not a good change')
+            upload.acceptFromQueue(admin)
 
-        self.assertTrue(ws_upload.contains_source)
-        self.assertFalse(ws_upload.contains_build)
-        self.assertFalse(ws_upload.contains_copy)
-        self.assertEqual("hello", ws_upload.display_name)
-        self.assertEqual("source", ws_upload.display_arches)
-        self.assertEqual("hello", ws_upload.package_name)
-        self.assertEqual("universe", ws_upload.component_name)
-        with person_logged_in(person):
-            self.assertEqual(upload.package_version, ws_upload.display_version)
-            self.assertEqual(upload.package_version, ws_upload.package_version)
-            self.assertEqual(upload.section_name, ws_upload.section_name)
+        logs = removeSecurityProxy(upload).logs
+        ws_logs = ws_upload.logs
+        for log, ws_log in zip(logs, ws_logs):
+            self.assertEqual(log.comment, ws_log.comment)
+            self.assertEqual(log.date_created, ws_log.date_created)
+            self.assertEqual(log.new_status.title, ws_log.new_status)
+            self.assertEqual(log.old_status.title, ws_log.old_status)
+            self.assertEqual(log.reviewer.name, ws_log.reviewer.name)
