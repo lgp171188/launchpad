@@ -192,7 +192,7 @@ class SpecificationTests(TestCaseWithFactory):
                 'setDefinitionStatus', 'setImplementationStatus', 'setTarget',
                 'transitionToInformationType', 'updateWorkItems')),
             'launchpad.Driver': set(('acceptBy', 'declineBy')),
-            'launchpad.AnyAllowedPerson': set((
+            'launchpad.AnyLegitimatePerson': set((
                 'unlinkBug', 'linkBug', 'setWorkItems')),
             }
         specification = self.factory.makeSpecification()
@@ -203,7 +203,7 @@ class SpecificationTests(TestCaseWithFactory):
     def test_set_permissions(self):
         expected_get_permissions = {
             'launchpad.Admin': set(('direction_approved', 'priority')),
-            'launchpad.AnyAllowedPerson': set(('whiteboard', )),
+            'launchpad.AnyLegitimatePerson': set(('whiteboard', )),
             'launchpad.Edit': set((
                 'approver', 'assignee', 'definition_status', 'distribution',
                 'drafter', 'implementation_status', 'man_days', 'milestone',
