@@ -105,6 +105,7 @@ from lp.soyuz.interfaces.queue import (
     IPackageUpload,
     IPackageUploadBuild,
     IPackageUploadCustom,
+    IPackageUploadLog,
     IPackageUploadQueue,
     IPackageUploadSet,
     IPackageUploadSource,
@@ -114,7 +115,7 @@ from lp.soyuz.interfaces.queue import (
     QueueInconsistentStateError,
     QueueSourceAcceptError,
     QueueStateWriteProtectedError,
-    IPackageUploadLog)
+    )
 from lp.soyuz.interfaces.section import ISectionSet
 from lp.soyuz.mail.packageupload import PackageUploadMailer
 from lp.soyuz.model.binarypackagename import BinaryPackageName
