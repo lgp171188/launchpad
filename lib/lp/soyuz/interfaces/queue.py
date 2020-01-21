@@ -9,19 +9,19 @@ __all__ = [
     'CustomUploadError',
     'ICustomUploadHandler',
     'IHasQueueItems',
-    'IPackageUploadQueue',
     'IPackageUpload',
-    'IPackageUploadLog',
     'IPackageUploadBuild',
-    'IPackageUploadSource',
     'IPackageUploadCustom',
+    'IPackageUploadLog',
+    'IPackageUploadQueue',
     'IPackageUploadSet',
+    'IPackageUploadSource',
     'NonBuildableSourceUploadError',
     'QueueAdminUnauthorizedError',
     'QueueBuildAcceptError',
     'QueueInconsistentStateError',
     'QueueSourceAcceptError',
-    'QueueStateWriteProtectedError',
+    'QueueStateWriteProtectedError'
     ]
 
 import httplib
@@ -38,7 +38,6 @@ from lazr.restful.declarations import (
     REQUEST_USER,
     )
 from lazr.restful.fields import Reference
-from twisted.words.im.interfaces import IPerson
 from zope.interface import (
     Attribute,
     Interface,
@@ -55,6 +54,7 @@ from zope.schema import (
 from zope.security.interfaces import Unauthorized
 
 from lp import _
+from lp.registry.interfaces.person import IPerson
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.soyuz.enums import PackageUploadStatus
 from lp.soyuz.interfaces.packagecopyjob import IPackageCopyJob
