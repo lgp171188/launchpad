@@ -510,7 +510,8 @@ values:
     >>> filelist = find_tags_by_class(anon_browser.contents, 'queue-2')
     >>> for row in filelist:
     ...     print(extract_text(row))
-    pmount_1.0-1_all.deb (18 bytes) NEW 0.1-1 restricted admin extra Accepted a moment ago by Sample Person
+    pmount_1.0-1_all.deb (18 bytes) NEW 0.1-1 restricted admin extra
+    Accepted a moment ago by Sample Person
 
 'netapplet' has gone straight to the 'done' queue because it's a single
 source upload, and we can see its overridden values there:
