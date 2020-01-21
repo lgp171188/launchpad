@@ -716,6 +716,8 @@ class IPackageUploadCustom(Interface):
 
 
 class IPackageUploadLog(Interface):
+    """Entries of package upload status change"""
+
     id = Int(title=_('ID'), required=True, readonly=True)
 
     package_upload = Reference(
