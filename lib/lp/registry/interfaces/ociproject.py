@@ -55,6 +55,7 @@ class IOCIProjectView(IHasGitRepositories, Interface):
         value_type=Reference(schema=Interface))
 
     name = Attribute(_("Name"))
+    display_name = Attribute(_("Display name for this OCI project."))
 
 
 class IOCIProjectEditableAttributes(IBugTarget):

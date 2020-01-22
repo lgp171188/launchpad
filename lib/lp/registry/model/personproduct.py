@@ -28,9 +28,11 @@ class PersonProduct(HasMergeProposalsMixin):
         self.product = product
 
     @property
-    def displayname(self):
+    def display_name(self):
         return '%s in %s' % (
             self.person.displayname, self.product.displayname)
+
+    displayname = display_name
 
     def __eq__(self, other):
         return (

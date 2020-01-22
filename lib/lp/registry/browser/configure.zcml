@@ -2519,6 +2519,11 @@
                  PersonDistributionSourcePackageFacets"
         />
     <browser:url
+        for="lp.registry.interfaces.personociproject.IPersonOCIProject"
+        path_expression="string:${oci_project/pillar/name}/+oci/${oci_project/name}"
+        attribute_to_parent="person"
+        />
+    <browser:url
         for="lp.registry.interfaces.personproduct.IPersonProduct"
         path_expression="product/name"
         attribute_to_parent="person"
