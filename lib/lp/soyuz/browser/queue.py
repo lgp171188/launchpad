@@ -219,10 +219,13 @@ class QueueItemsView(LaunchpadView):
         """
         logs = load_referencing(
             PackageUploadLog, uploads, ['package_upload_id'])
+
+        # Preload users from log entries
+        # Not using `need_icon` since the log's reviewers are always persons,
+        # and fetching icons should be only needed for teams
         list(getUtility(IPersonSet).getPrecachedPersonsFromIDs(
             [log.reviewer_id for log in logs],
-            need_validity=True
-        ))
+            need_validity=True))
         logs_dict = defaultdict(list)
         for log in logs:
             logs_dict[log.package_upload_id].append(log)
