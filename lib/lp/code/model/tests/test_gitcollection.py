@@ -381,6 +381,20 @@ class TestGitCollectionFilters(TestCaseWithFactory):
             sorted([repository, repository2]),
             sorted(collection.getRepositories()))
 
+    def test_in_oci_project(self):
+        # 'inOCIProject' returns a new collection that only
+        # has repositories for the oci project in the distribution.
+        ocip = self.factory.makeOCIProject()
+        ocip_other_distro = self.factory.makeOCIProject()
+        repository = self.factory.makeGitRepository(target=ocip)
+        repository2 = self.factory.makeGitRepository(target=ocip)
+        self.factory.makeGitRepository(target=ocip_other_distro)
+        self.factory.makeGitRepository()
+        collection = self.all_repositories.inOCIProject(ocip)
+        self.assertEqual(
+            sorted([repository, repository2]),
+            sorted(collection.getRepositories()))
+
     def test_withIds(self):
         # 'withIds' returns a new collection that only has repositories with
         # the given ids.

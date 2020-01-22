@@ -15,7 +15,10 @@ from lazr.restful.fields import (
     CollectionField,
     Reference,
     )
-from zope.interface import Interface
+from zope.interface import (
+    Attribute,
+    Interface,
+    )
 from zope.schema import (
     Datetime,
     Int,
@@ -24,6 +27,7 @@ from zope.schema import (
 
 from lp import _
 from lp.bugs.interfaces.bugtarget import IBugTarget
+from lp.code.interfaces.hasgitrepositories import IHasGitRepositories
 from lp.registry.interfaces.distribution import IDistribution
 from lp.registry.interfaces.ociprojectname import IOCIProjectName
 from lp.registry.interfaces.series import SeriesStatus
@@ -31,7 +35,7 @@ from lp.services.database.constants import DEFAULT
 from lp.services.fields import PublicPersonChoice
 
 
-class IOCIProjectView(Interface):
+class IOCIProjectView(IHasGitRepositories, Interface):
     """IOCIProject attributes that require launchpad.View permission."""
 
     id = Int(title=_("ID"), required=True, readonly=True)
@@ -49,6 +53,8 @@ class IOCIProjectView(Interface):
         title=_("Series inside this OCI project."),
         # Really IOCIProjectSeries
         value_type=Reference(schema=Interface))
+
+    name = Attribute(_("Name"))
 
 
 class IOCIProjectEditableAttributes(IBugTarget):
