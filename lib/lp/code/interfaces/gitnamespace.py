@@ -22,6 +22,7 @@ from lp.code.errors import InvalidNamespace
 from lp.registry.interfaces.distributionsourcepackage import (
     IDistributionSourcePackage,
     )
+from lp.registry.interfaces.ociproject import IOCIProject
 from lp.registry.interfaces.person import IPerson
 from lp.registry.interfaces.product import IProduct
 
@@ -198,7 +199,8 @@ class IGitNamespacePolicy(Interface):
 class IGitNamespaceSet(Interface):
     """Interface for getting Git repository namespaces."""
 
-    def get(person, project=None, distribution=None, sourcepackagename=None):
+    def get(person, project=None, distribution=None, sourcepackagename=None,
+            ociprojectname=None):
         """Return the appropriate `IGitNamespace` for the given objects."""
 
 
@@ -209,6 +211,12 @@ def get_git_namespace(target, owner):
         return getUtility(IGitNamespaceSet).get(
             owner, distribution=target.distribution,
             sourcepackagename=target.sourcepackagename)
+    elif IOCIProject.providedBy(target):
+        # This will eventually be allowable, but is not right now.
+        assert target.distribution is not None
+        return getUtility(IGitNamespaceSet).get(
+            owner, distribution=target.distribution,
+            ociprojectname=target.ociprojectname)
     elif target is None or IPerson.providedBy(target):
         return getUtility(IGitNamespaceSet).get(owner)
     else:

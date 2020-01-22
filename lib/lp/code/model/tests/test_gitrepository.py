@@ -222,6 +222,15 @@ class TestGitRepository(TestCaseWithFactory):
                 dsp.sourcepackagename.name, repository.name),
             repository.unique_name)
 
+    def test_unique_name_oci_project(self):
+        oci_project = self.factory.makeOCIProject()
+        repository = self.factory.makeGitRepository(target=oci_project)
+        self.assertEqual(
+            "~%s/%s/+oci/%s/+git/%s" % (
+                repository.owner.name, oci_project.distribution.name,
+                oci_project.ociprojectname.name, repository.name),
+            repository.unique_name)
+
     def test_unique_name_personal(self):
         owner = self.factory.makePerson()
         repository = self.factory.makeGitRepository(owner=owner, target=owner)
@@ -238,6 +247,11 @@ class TestGitRepository(TestCaseWithFactory):
         dsp = self.factory.makeDistributionSourcePackage()
         repository = self.factory.makeGitRepository(target=dsp)
         self.assertEqual(dsp, repository.target)
+
+    def test_target_ociproject(self):
+        oci_project = self.factory.makeOCIProject()
+        repository = self.factory.makeGitRepository(target=oci_project)
+        self.assertEqual(oci_project, repository.target)
 
     def test_target_personal(self):
         owner = self.factory.makePerson()
