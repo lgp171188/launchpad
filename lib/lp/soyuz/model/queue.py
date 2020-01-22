@@ -1642,6 +1642,8 @@ def prefill_packageupload_caches(uploads, puses, pubs, pucs, logs):
         logs_per_pu[log.package_upload_id].append(log)
 
     # preload reviwers of the logs
+    # Not using `need_icon` since reviwers are persons, and icons are only
+    # available for teams
     list(getUtility(IPersonSet).getPrecachedPersonsFromIDs(
         reviewer_ids, need_validity=True))
 

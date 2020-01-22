@@ -223,10 +223,8 @@ class QueueItemsView(LaunchpadView):
             return None
 
         upload_ids = [upload.id for upload in uploads]
-        puses = load_referencing(
-            PackageUploadSource, uploads, ['packageuploadID'])
-        pubs = load_referencing(
-            PackageUploadBuild, uploads, ['packageuploadID'])
+        puses = sum([u.sources for u in uploads], [])
+        pubs = sum([u.builds for u in uploads], [])
 
         source_sprs = load_related(
             SourcePackageRelease, puses, ['sourcepackagereleaseID'])
@@ -492,8 +490,6 @@ class CompletePackageUpload:
     # (i.e. no proxying of __set__).
     pocket = None
     date_created = None
-    sources = None
-    builds = None
     customfiles = None
     contains_source = None
     contains_build = None
@@ -504,9 +500,7 @@ class CompletePackageUpload:
         self.pocket = packageupload.pocket
         self.date_created = packageupload.date_created
         self.context = packageupload
-        self.sources = list(packageupload.sources)
         self.contains_source = len(self.sources) > 0
-        self.builds = list(packageupload.builds)
         self.contains_build = len(self.builds) > 0
         self.customfiles = list(packageupload.customfiles)
 
