@@ -49,7 +49,10 @@ from lp.services.database.bulk import (
     load_referencing,
     load_related,
     )
-from lp.services.database.constants import UTC_NOW, DEFAULT
+from lp.services.database.constants import (
+    DEFAULT,
+    UTC_NOW,
+    )
 from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.enumcol import (
