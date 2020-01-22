@@ -7,7 +7,6 @@ __all__ = [
     'PackageUploadBuild',
     'PackageUploadCustom',
     'PackageUploadLog',
-    'PackageUploadLog',
     'PackageUploadQueue',
     'PackageUploadSet',
     'PackageUploadSource',
