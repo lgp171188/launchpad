@@ -1920,7 +1920,7 @@ class ViewPackageUpload(AuthorizationBase):
 
 
 class ViewPackageUploadLog(DelegatedAuthorization):
-    """Anyone who can view a package upload can view it's logs."""
+    """Anyone who can view a package upload can view its logs."""
     permission = 'launchpad.View'
     usedfor = IPackageUploadLog
 

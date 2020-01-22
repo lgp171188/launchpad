@@ -118,6 +118,7 @@ class IPackageUploadQueue(Interface):
 
 
 class IPackageUploadLog(Interface):
+    """Entries of package upload status change"""
 
     export_as_webservice_entry(publish_web_link=True, as_of="devel")
 
