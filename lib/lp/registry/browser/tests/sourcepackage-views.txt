@@ -184,7 +184,7 @@ bonkers project, the portlet will display that information.
     Bug supervisor: no
     Bug tracker: no
     Branch: no
-    There are no registered releases for the Bonkers &rArr; crazy.
+    There are no registered releases for the Bonkers ⇒ crazy.
 
 A new source project that is not linked to an upstream will result in
 the portlet showing the suggested project.
@@ -201,8 +201,8 @@ the portlet showing the suggested project.
 
     >>> content = extract_text(find_tag_by_id(view.render(), 'no-upstreams'))
     >>> print content
-    Launchpad doesn&#8217;t know which project and series this
-    package belongs to. ...
+    Launchpad doesn’t know which project and series this package belongs to.
+    ...
     Is the following project the upstream for this source package?
     Registered upstream project:
     Lernid
@@ -231,8 +231,8 @@ item is reserved for the "Choose another upstream project" option.
 
     >>> content = extract_text(find_tag_by_id(view.render(), 'no-upstreams'))
     >>> print content
-    Launchpad doesn&#8217;t know which project and series this
-    package belongs to. ...
+    Launchpad doesn’t know which project and series this package belongs to.
+    ...
     Is one of these projects the upstream for this source package?
     Registered upstream project:
     Lernid...
@@ -380,7 +380,7 @@ deleted.
 
     >>> view = create_initialized_view(package, name='+portlet-associations')
     >>> print extract_text(find_tag_by_id(view.render(), 'no-upstreams'))
-    Launchpad doesn&#8217;t know which project ...
+    Launchpad doesn’t know which project ...
     There are no projects registered in Launchpad that are a potential
     match for this source package. Can you help us find one?
     Registered upstream project:

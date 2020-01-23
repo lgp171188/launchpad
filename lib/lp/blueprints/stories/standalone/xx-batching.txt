@@ -59,7 +59,7 @@ blueprint is listed:
   >>> browser.open("http://blueprints.launchpad.test/big-project")
   >>> print extract_text(first_tag_by_class(browser.contents, 
   ...                                      'batch-navigation-index'))
-  1...&rarr...1...of...1 result
+  1...→...1...of...1 result
   
 Let's add some more blueprints:
 
@@ -76,18 +76,18 @@ the blueprints are listed:
   >>> browser.open("http://blueprints.launchpad.test/big-project")
   >>> print extract_text(first_tag_by_class(browser.contents, 
   ...                                      'batch-navigation-index'))
-  1...&rarr...5...of...20 results
+  1...→...5...of...20 results
 
 We can go to the next batch of blueprints by following the 'Next' link:
     
   >>> browser.getLink('Next').click()
   >>> print extract_text(first_tag_by_class(browser.contents, 
   ...                                      'batch-navigation-index'))
-  6...&rarr...10...of...20 results
+  6...→...10...of...20 results
 
 Following the 'Last' link takes us to the last batch of blueprints:
 
   >>> browser.getLink('Last').click()
   >>> print extract_text(first_tag_by_class(browser.contents, 
   ...                                      'batch-navigation-index'))
-  16...&rarr...20...of...20 results
+  16...→...20...of...20 results

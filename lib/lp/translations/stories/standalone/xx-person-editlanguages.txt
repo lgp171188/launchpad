@@ -19,7 +19,7 @@ lists his current preferences.
     Your preferred languages
     Catalan
     Spanish
-    &... Change your preferred languages...
+    » Change your preferred languages...
 
 The 'Change your preferred languages' link takes him to his
 +editlanguages page.
@@ -55,15 +55,15 @@ confirming his changes.
 
     >>> for message in find_tags_by_class(browser.contents, 'message'):
     ...     print(message.renderContents())
-    Added Welsh to your preferred languages.<br
-    />Removed Spanish from your preferred languages.
+    Added Welsh to your preferred languages.<br/>Removed Spanish from your
+    preferred languages.
 
     >>> browser.open('http://translations.launchpad.test/')
     >>> print(find_languages_section(browser.contents))
     Your preferred languages
     Catalan
     Welsh
-    &...
+    » ...
 
 Joao, a Brazilian, travels to Liechtenstein for business and views the
 languages page from there.
@@ -161,7 +161,7 @@ preferred languages.
     >>> browser.getControl('Save').click()
     >>> for message in find_tags_by_class(browser.contents, 'message'):
     ...     print(extract_text(message))
-    Added Spanish to Landscape Developers&#x27;s preferred languages.
+    Added Spanish to Landscape Developers's preferred languages.
 
 
 == Admins may set a Person's languages ==
@@ -183,7 +183,7 @@ Person's page to do it themselves.
     >>> admin_browser.getControl('Save').click()
     >>> for message in find_tags_by_class(admin_browser.contents, 'message'):
     ...     print(extract_text(message))
-    Added Esperanto to No Privileges Person&#x27;s preferred languages.
+    Added Esperanto to No Privileges Person's preferred languages.
 
 
 The personal page nags

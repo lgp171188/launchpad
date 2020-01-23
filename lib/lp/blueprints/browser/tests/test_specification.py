@@ -174,7 +174,7 @@ class TestSpecificationView(BrowserTestCase):
             spec, name='+index', principal=spec.owner,
             rootsite='blueprints')
         li = find_tag_by_id(view.render(), 'spec-url')
-        self.assertEqual('nofollow', li.a['rel'])
+        self.assertEqual(['nofollow'], li.a['rel'])
         self.assertEqual(spec.specurl, li.a['href'])
 
     def test_registration_date_displayed(self):

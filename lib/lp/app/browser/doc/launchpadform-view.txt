@@ -39,6 +39,6 @@ can be used for subordinate field indentation, for example.
     <div class="field subordinate">
     <label for="field.nickname">Nickname:</label>
     <div>
-    <input class="textType" id="field.nickname" name="field.nickname" ... />
+    <input class="textType" id="field.nickname" name="field.nickname" .../>
     </div>
     </div>

@@ -133,7 +133,7 @@ The progress bar is shown as a green bar.
     >>> rendered = view.render()
     >>> print find_tag_by_id(rendered, 'progressbar')
     <div id="progressbar" ...>
-    <img src="/@@/green-bar" ... width: 25%.../>
+    <img ...src="/@@/green-bar" ... width: 25%.../>
     ...
 
 Each application is displayed (except for blueprints) with an

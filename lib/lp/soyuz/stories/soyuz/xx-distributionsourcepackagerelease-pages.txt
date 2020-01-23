@@ -172,7 +172,7 @@ of this source in the context distribution are listed.
     Date  Status     Target     Pocket   Component  Section  Version
     ...   Published  Breezy...  release  main       base     1.0
     ...
-    &laquo;back
+    «back
 
     >>> anon_browser.getLink('back').click()
 

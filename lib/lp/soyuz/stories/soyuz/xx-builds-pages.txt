@@ -134,7 +134,7 @@ initialized' one (fix bug #52704).
     ...     for row in build_rows:
     ...         print(rule)
     ...         print(row.td.img['title'])
-    ...         print(extract_text(row))
+    ...         print(extract_text(row, formatter='html'))
     ...     print(rule)
 
     >>> print_build_rows(anon_browser.contents)

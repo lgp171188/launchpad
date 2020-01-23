@@ -92,7 +92,7 @@ def print_bug_affects_table(content, highlighted_only=False):
             # Don't print the bugtask edit form.
             continue
         # Strip zero-width white-spaces.
-        print extract_text(tr).replace('&#8203;', '')
+        print extract_text(tr).replace(u'\u200B', u'')
 
 
 def print_remote_bugtasks(content):
@@ -102,7 +102,7 @@ def print_remote_bugtasks(content):
     """
     affects_table = find_tags_by_class(content, 'listing')[0]
     for span in affects_table.findAll('span'):
-        for key, value in span.attrs:
+        for key, value in span.attrs.items():
             if 'bug-remote' in value:
                 target = extract_text(span.findAllPrevious('td')[-2])
                 print target, extract_text(span.findNext('a'))
@@ -120,7 +120,7 @@ def print_bugs_list(content, list_id):
         None, {'class': 'similar-bug'})
     for node in bugs_list:
         # Also strip zero-width spaces out.
-        print extract_text(node).replace('&#8203;', '')
+        print extract_text(node).replace(u'\u200B', u'')
 
 
 def print_bugtasks(text, show_heat=None):
@@ -341,4 +341,4 @@ def print_bug_tag_anchors(anchors):
     for anchor in anchors:
         href = anchor['href']
         if href != '+edit' and '/+help-bugs/tag-help.html' not in href:
-            print anchor['class'], anchor.contents[0]
+            print ' '.join(anchor['class']), anchor.contents[0]
