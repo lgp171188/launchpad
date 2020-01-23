@@ -481,6 +481,18 @@ class JobRunnerProcess(child.AMPChild):
         return {'success': len(runner.completed_jobs), 'oops_id': oops_id}
 
 
+class QuietAMPConnector(main.AMPConnector):
+    """An `AMPConnector` that logs stderr output more quietly."""
+
+    def errReceived(self, data):
+        for line in data.strip().splitlines():
+            # Unlike the default implementation, we log this at INFO rather
+            # than ERROR.  Launchpad generates OOPSes for anything at
+            # WARNING or above; we still want to do that if a child process
+            # exits fatally, but not if it just writes something to stderr.
+            main.log.info(u'FROM {n}: {l}', n=self.name, l=line)
+
+
 class TwistedJobRunner(BaseJobRunner):
     """Run Jobs via twisted."""
 
@@ -493,6 +505,7 @@ class TwistedJobRunner(BaseJobRunner):
         env['PYTHONPATH'] = os.pathsep.join(sys.path)
         starter = main.ProcessStarter(
             bootstrap="import _pythonpath\n" + main.BOOTSTRAP, env=env)
+        starter.connectorFactory = QuietAMPConnector
         super(TwistedJobRunner, self).__init__(logger, error_utility)
         self.job_source = job_source
         self.import_name = '%s.%s' % (
