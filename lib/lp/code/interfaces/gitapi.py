@@ -85,7 +85,6 @@ class IGitAPI(Interface):
         in a `repository`.
 
         :returns: The URL for a Merge Proposal for the branch in the
-            specified repository; or empty string if the branch that has
-            been pushed is the default branch of the repository. A `NotFound`
+            specified repository. A `NotFound`
             fault if no repository can be found for 'translated_path'.
         """

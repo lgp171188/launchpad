@@ -445,10 +445,7 @@ class GitAPI(LaunchpadXMLRPCView):
         # we assemble the URL this way here
         # because the ref may not exist yet
         base_url = canonical_url(repository, rootsite='code')
-        pushed_branch = "refs/heads/%s" % branch
-        mp_url = ''
-        if pushed_branch != repository.default_branch:
-            mp_url = ("%s/+ref/%s/+register-merge" % (
+        mp_url = ("%s/+ref/%s/+register-merge" % (
                         base_url, urllib.quote(branch)))
         logger.info("getMergeProposalURL succeeded: %s" % mp_url)
         return mp_url
