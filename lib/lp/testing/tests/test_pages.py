@@ -10,7 +10,7 @@ import shutil
 import tempfile
 import unittest
 
-from bzrlib.tests import iter_suite_tests
+from breezy.tests import iter_suite_tests
 
 from lp.testing.layers import PageTestLayer
 from lp.testing.pages import PageTestSuite

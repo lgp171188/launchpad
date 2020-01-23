@@ -13,8 +13,8 @@ import random
 import sys
 import time
 
-from bzrlib.errors import LockContention
-from bzrlib.lock import WriteLock
+from breezy.errors import LockContention
+from breezy.lock import WriteLock
 import psycopg2
 
 from lp.services.config import config
