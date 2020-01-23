@@ -94,7 +94,7 @@ class SourceForge(ExternalBugTracker):
             query_dict = {}
             bugtracker_link = soup.find('a', text='Bugs')
             if bugtracker_link:
-                href = bugtracker_link.findParent()['href']
+                href = bugtracker_link['href']
 
                 # We need to replace encoded ampersands in the URL since
                 # SourceForge occasionally encodes them.

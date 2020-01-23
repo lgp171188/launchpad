@@ -71,7 +71,7 @@ class SourceForgeRemoteProductFinder:
                 "No tracker link for project '%s'" % sf_project)
             return None
 
-        tracker_url = tracker_link.findParent()['href']
+        tracker_url = tracker_link['href']
 
         # Clean any leading '/' from tracker_url so that urlappend
         # doesn't choke on it.
@@ -91,7 +91,7 @@ class SourceForgeRemoteProductFinder:
                 "No bug tracker link for project '%s'" % sf_project)
             return None
 
-        bugtracker_url = bugtracker_link.findParent()['href']
+        bugtracker_url = bugtracker_link['href']
 
         # We need to replace encoded ampersands in the URL since
         # SourceForge usually encodes them.

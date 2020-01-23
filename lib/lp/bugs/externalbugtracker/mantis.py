@@ -12,7 +12,7 @@ __all__ = [
 import csv
 import logging
 
-from BeautifulSoup import Comment
+from bs4.element import Comment
 from requests.cookies import RequestsCookieJar
 from six.moves.urllib_parse import (
     parse_qsl,
@@ -305,8 +305,7 @@ class Mantis(ExternalBugTracker):
         # specific than this.
         bug_page = BeautifulSoup(
             self._getPage('view.php?id=%s' % bug_id).content,
-            convertEntities=BeautifulSoup.HTML_ENTITIES,
-            parseOnlyThese=SoupStrainer('table'))
+            parse_only=SoupStrainer('table'))
 
         app_error = self._checkForApplicationError(bug_page)
         if app_error:
@@ -355,7 +354,7 @@ class Mantis(ExternalBugTracker):
         """
         app_error = page_soup.find(
             text=lambda node: (node.startswith('APPLICATION ERROR ')
-                               and node.parent['class'] == 'form-title'
+                               and 'form-title' in node.parent.get('class', [])
                                and not isinstance(node, Comment)))
         if app_error:
             app_error_code = ''.join(c for c in app_error if c.isdigit())

@@ -37,7 +37,7 @@ from lp.registry.interfaces.accesspolicy import (
     IAccessPolicySource,
     )
 from lp.registry.interfaces.person import PersonVisibility
-from lp.services.beautifulsoup import BeautifulSoup4 as BeautifulSoup
+from lp.services.beautifulsoup import BeautifulSoup
 from lp.services.webapp.interfaces import IOpenLaunchBag
 from lp.services.webapp.publisher import canonical_url
 from lp.services.webapp.servers import LaunchpadTestRequest
