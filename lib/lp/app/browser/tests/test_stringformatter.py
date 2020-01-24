@@ -517,18 +517,18 @@ class TestDiffFormatter(TestCase):
             [tag.renderContents() for tag in line_numbers])
         text = find_tags_by_class(html, 'text')
         self.assertEqual(
-            ['diff-file text',
-             'diff-header text',
-             'diff-header text',
-             'diff-chunk text',
-             'text',
-             'diff-removed text',
-             'diff-added text',
-             'diff-removed text',
-             'diff-added text',
-             'diff-comment text',
-             'diff-comment text'],
-            [str(tag['class']) for tag in text])
+            [['diff-file', 'text'],
+             ['diff-header', 'text'],
+             ['diff-header', 'text'],
+             ['diff-chunk', 'text'],
+             ['text'],
+             ['diff-removed', 'text'],
+             ['diff-added', 'text'],
+             ['diff-removed', 'text'],
+             ['diff-added', 'text'],
+             ['diff-comment', 'text'],
+             ['diff-comment', 'text']],
+            [tag['class'] for tag in text])
 
     def test_cssClasses_git(self):
         # Git diffs look slightly different, so check that they also end up
@@ -552,17 +552,17 @@ class TestDiffFormatter(TestCase):
             [tag.renderContents() for tag in line_numbers])
         text = find_tags_by_class(html, 'text')
         self.assertEqual(
-            ['diff-file text',
-             'diff-file text',
-             'diff-header text',
-             'diff-header text',
-             'diff-chunk text',
-             'text',
-             'diff-removed text',
-             'diff-added text',
-             'diff-removed text',
-             'diff-added text'],
-            [str(tag['class']) for tag in text])
+            [['diff-file', 'text'],
+             ['diff-file', 'text'],
+             ['diff-header', 'text'],
+             ['diff-header', 'text'],
+             ['diff-chunk', 'text'],
+             ['text'],
+             ['diff-removed', 'text'],
+             ['diff-added', 'text'],
+             ['diff-removed', 'text'],
+             ['diff-added', 'text']],
+            [tag['class'] for tag in text])
 
 
 class TestSideBySideDiffFormatter(TestCase):
@@ -626,23 +626,23 @@ class TestSideBySideDiffFormatter(TestCase):
             [tag.renderContents() for tag in ss_line_numbers])
         text = find_tags_by_class(html, 'text')
         self.assertEqual(
-            ['diff-file text',
-             'diff-header text',
-             'diff-header text',
-             'diff-chunk text',
-             'text',
-             'text',
-             'diff-removed text',
-             'diff-added text',
-             'diff-removed text',
-             'diff-added text',
-             'text',
-             'text',
-             'diff-removed text',
-             'diff-added text',
-             'diff-comment text',
-             'diff-comment text'],
-            [str(tag['class']) for tag in text])
+            [['diff-file', 'text'],
+             ['diff-header', 'text'],
+             ['diff-header', 'text'],
+             ['diff-chunk', 'text'],
+             ['text'],
+             ['text'],
+             ['diff-removed', 'text'],
+             ['diff-added', 'text'],
+             ['diff-removed', 'text'],
+             ['diff-added', 'text'],
+             ['text'],
+             ['text'],
+             ['diff-removed', 'text'],
+             ['diff-added', 'text'],
+             ['diff-comment', 'text'],
+             ['diff-comment', 'text']],
+            [tag['class'] for tag in text])
 
     def test_cssClasses_git(self):
         # Git diffs look slightly different, so check that they also end up
@@ -673,22 +673,22 @@ class TestSideBySideDiffFormatter(TestCase):
             [tag.renderContents() for tag in ss_line_numbers])
         text = find_tags_by_class(html, 'text')
         self.assertEqual(
-            ['diff-file text',
-             'diff-file text',
-             'diff-header text',
-             'diff-header text',
-             'diff-chunk text',
-             'text',
-             'text',
-             'diff-removed text',
-             'diff-added text',
-             'diff-removed text',
-             'diff-added text',
-             'text',
-             'text',
-             'diff-removed text',
-             'diff-added text'],
-            [str(tag['class']) for tag in text])
+            [['diff-file', 'text'],
+             ['diff-file', 'text'],
+             ['diff-header', 'text'],
+             ['diff-header', 'text'],
+             ['diff-chunk', 'text'],
+             ['text'],
+             ['text'],
+             ['diff-removed', 'text'],
+             ['diff-added', 'text'],
+             ['diff-removed', 'text'],
+             ['diff-added', 'text'],
+             ['text'],
+             ['text'],
+             ['diff-removed', 'text'],
+             ['diff-added', 'text']],
+            [tag['class'] for tag in text])
 
 
 class TestOOPSFormatter(TestCase):

@@ -42,8 +42,8 @@ Firefox has not yet selected a bug tracker.
     >>> print firefox.projectgroup.bugtracker
     None
 
-    >>> from BeautifulSoup import Tag
-    >>> from lp.services.beautifulsoup import BeautifulSoup
+    >>> from bs4.element import Tag
+    >>> from lp.services.beautifulsoup import BeautifulSoup4 as BeautifulSoup
     >>> from lp.testing.pages import extract_text
     >>> def print_items(html):
     ...     soup = BeautifulSoup(html)
@@ -288,7 +288,7 @@ presented ordered to appear in a 3 column list.
 
 
     >>> print extract_text(find_tag_by_id(html, 'special'))
-    I don&#x27;t know yet
+    I don't know yet
     Other/Proprietary
     Other/Open Source
 
@@ -373,7 +373,7 @@ But not all of them.
     >>> print_checked_items(license_widget(), links=True)
     [ ] Apache Licence ... <http://www.opensource.org/licenses/apache2.0.php>
     ...
-    [ ] I don&#x27;t know yet
+    [ ] I don't know yet
     [ ] Other/Proprietary
     [ ] Other/Open Source
 

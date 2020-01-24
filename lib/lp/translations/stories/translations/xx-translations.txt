@@ -14,7 +14,7 @@ has no translations at all.
   >>> print(find_tag_by_id(
   ...     user_browser.contents, 'msgset_150').renderContents())
   21.
-  <input type="hidden" name="msgset_150" />
+  <input name="msgset_150" type="hidden"/>
   >>> print(find_tag_by_id(
   ...     user_browser.contents, 'msgset_150_singular').renderContents())
   Found <code>%i</code> invalid file.
@@ -73,7 +73,7 @@ Also, we can see that the message has no active translation yet:
   >>> print(find_tag_by_id(
   ...     user_browser.contents, 'msgset_150').renderContents())
   21.
-  <input type="hidden" name="msgset_150" />
+  <input name="msgset_150" type="hidden"/>
   >>> print(find_tag_by_id(
   ...     user_browser.contents, 'msgset_150_singular').renderContents())
   Found <code>%i</code> invalid file.

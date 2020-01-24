@@ -7,8 +7,8 @@ dedicated batched page showing all announcements, and as an RSS/Atom
 news feed.
 
     >>> from lp.services.beautifulsoup import (
-    ...     BeautifulSoup,
-    ...     SoupStrainer,
+    ...     BeautifulSoup4 as BeautifulSoup,
+    ...     SoupStrainer4 as SoupStrainer,
     ...     )
     >>> from lp.services.feeds.tests.helper import (
     ...     parse_ids, parse_links, validate_feed)
@@ -612,7 +612,7 @@ not be able to move it.
     Move announcement : Kubuntu announcement headline : GuadaLinex
     >>> kamion_browser.getControl('For').value = 'kubuntu'
     >>> kamion_browser.getControl('Retarget').click()
-    >>> "don&#x27;t have permission" in extract_text(
+    >>> "don't have permission" in extract_text(
     ...     find_main_content(kamion_browser.contents))
     True
     >>> print kamion_browser.title
@@ -643,7 +643,7 @@ domain.
     >>> links = parse_links(nopriv_browser.contents, rel='self')
     >>> for link in links:
     ...     print link
-    <link rel="self" href="http://feeds.launchpad.test/netapplet/announcements.atom" />
+    <link href="http://feeds.launchpad.test/netapplet/announcements.atom" rel="self"/>
 
     >>> for id_ in parse_ids(nopriv_browser.contents):
     ...     print extract_text(id_)
@@ -716,7 +716,7 @@ products.
     >>> links = parse_links(nopriv_browser.contents, rel='self')
     >>> for link in links:
     ...     print link
-    <link rel="self" href="http://feeds.launchpad.test/apache/announcements.atom" />
+    <link href="http://feeds.launchpad.test/apache/announcements.atom" rel="self"/>
 
 Finally, there is a feed for all announcements across all projects
 hosted in Launchpad:
@@ -755,18 +755,16 @@ let us use a DTD to define the html entities that standard xml is missing.
     No Errors
     >>> soup = BeautifulSoup(nopriv_browser.contents)
     >>> soup.find('feed').entry.title
-    <...>Ampersand=&quot;&amp;&quot; LessThan=&quot;&lt;&quot;
-    GreaterThan=&quot;&gt;&quot;</title>
-    >>> soup.find('feed').entry.content
+    <...>Ampersand="&amp;" LessThan="&lt;" GreaterThan="&gt;"</title>
+    >>> print(soup.find('feed').entry.content)
     <...
-    Ampersand=&amp;quot;&amp;amp;&amp;quot;&lt;br /&gt;
-    LessThan=&amp;quot;&amp;lt;&amp;quot;&lt;br /&gt;
-    GreaterThan=&amp;quot;&amp;gt;&amp;quot;&lt;br /&gt;
-    Newline=&amp;quot;&lt;br /&gt;
-    &amp;quot;&lt;br /&gt;
-    url=&amp;quot;&lt;a rel=&quot;nofollow&quot;
-    href=&quot;http://www.ubuntu.com&quot;&gt;http://&lt;wbr
-    /&gt;www.ubuntu.&lt;wbr /&gt;com&lt;/a&gt;&amp;quot;...
+    Ampersand="&amp;amp;"&lt;br/&gt;
+    LessThan="&amp;lt;"&lt;br/&gt;
+    GreaterThan="&amp;gt;"&lt;br/&gt;
+    Newline="&lt;br/&gt;
+    "&lt;br/&gt;
+    url="&lt;a href="http://www.ubuntu.com"
+    rel="nofollow"&gt;http://&lt;wbr/&gt;www.ubuntu.&lt;wbr/&gt;com&lt;/a&gt;"...
 
 
 Deletion

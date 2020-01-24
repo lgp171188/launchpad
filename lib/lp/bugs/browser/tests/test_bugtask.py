@@ -13,6 +13,7 @@ import urllib
 from lazr.restful.interfaces import IJSONRequestCache
 from pytz import UTC
 import simplejson
+import six
 import soupmatchers
 from testscenarios import (
     load_tests_apply_scenarios,
@@ -2414,7 +2415,7 @@ class TestBugTaskExpirableListingView(BrowserTestCase):
         title = bug.title
         content = self.getMainContent(
             bug.default_bugtask.target, "+expirable-bugs")
-        self.assertIn(title, str(content))
+        self.assertIn(title, six.text_type(content))
 
 
 class TestBugListingBatchNavigator(TestCaseWithFactory):

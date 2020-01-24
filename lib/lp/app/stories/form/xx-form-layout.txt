@@ -20,7 +20,7 @@ The new team form contains an example of a normal text widget.
     <div>
     <label for="field.name">Name:</label>
     <div>
-    <input ... name="field.name" ... />
+    <input ... name="field.name" .../>
     </div>
     <p class="formHelp">....</p>
     </div>
@@ -38,7 +38,7 @@ If the text field is optional, then that is noted after the widget.
     <label for="field.defaultmembershipperiod">Subscription period:</label>
     <span class="fieldRequired">(Optional)</span>
     <div>
-    <input ... id="field.defaultmembershipperiod" ... />
+    <input ... id="field.defaultmembershipperiod" .../>
     </div>
     <p class="formHelp">...</p>
     </div>
@@ -59,7 +59,7 @@ Checkboxes have their label to the right. Let's look at one example.
     <tr>
       <td colspan="2">
        <div>
-          <input ... name="field.project_reviewed" type="checkbox" ...  />
+          <input ... name="field.project_reviewed" type="checkbox" .../>
           <label for="field.project_reviewed">Project reviewed</label>...
       </td>
     </tr>

@@ -76,7 +76,7 @@ class.
 
     >>> print(text.findAll('p')[-1])
     <p><span class="foldable">--...
-    &lt;email address hidden&gt;<br />
+    &lt;email address hidden&gt;<br/>
     Witty signatures rock!
     </span></p>
 
@@ -88,9 +88,9 @@ tag of 'foldable' class, citation lines are always displayed. Again
 we can continue with the anonymous user to see the markup.
 
     >>> print(text.findAll('p')[-2])
-    <p>Somebody said sometime ago:<br />
+    <p>Somebody said sometime ago:<br/>
     <span class="foldable-quoted">
-    &gt; 1. Remove the letters  c, j, q, x, w<br />
-    &gt;    from the English Language.<br />
+    &gt; 1. Remove the letters  c, j, q, x, w<br/>
+    &gt;    from the English Language.<br/>
     &gt; 2. Remove the penny from US currency.
     </span></p>

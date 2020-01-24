@@ -15,6 +15,7 @@ from lazr.restful.interfaces import (
     IWebServiceClientRequest,
     )
 from simplejson import dumps
+import six
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 from zope.traversing.browser import absoluteURL
@@ -249,7 +250,7 @@ class QuestionSetViewTestCase(TestCaseWithFactory):
         target_widget = view.widgets['scope'].target_widget
         self.assertIsNot(
             None, content.find(True, id=target_widget.show_widget_id))
-        text = str(content)
+        text = six.text_type(content)
         picker_vocab = "DistributionOrProductOrProjectGroup"
         self.assertIn(picker_vocab, text)
         focus_script = "setFocusByName('field.search_text')"

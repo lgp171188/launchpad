@@ -11,10 +11,10 @@ duplicates.
     ...     bugs_list = find_tags_by_class(content, 'similar-bug')
     ...     for node in bugs_list:
     ...         label = node.findAll('label')[0]
-    ...         label_class = label['class']
+    ...         label_class = ' '.join(label['class'])
     ...         text_lines = [line.strip() for line in
     ...                       extract_text(node).splitlines()]
-    ...         summary = ' '.join(text_lines[:2]).replace('&#8203;','')
+    ...         summary = ' '.join(text_lines[:2]).replace(u'\u200B', u'')
     ...         status = ' '.join(text_lines[2:])
     ...         # All this trouble is worth it when you see ndiff output
     ...         # from a failing test, and it *makes sense* :)

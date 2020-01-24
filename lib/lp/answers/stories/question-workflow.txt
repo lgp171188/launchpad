@@ -141,7 +141,7 @@ discussion.
     Status: Open ...
 
     >>> print_last_comment(owner_browser.contents)
-    The following SVG doesn&#x27;t display properly:
+    The following SVG doesn't display properly:
     http://www.w3.org/2001/08/rdfweb/rdfweb-chaals-and-dan.svg
 
 
@@ -180,8 +180,8 @@ When the owner comes back on the question page, they will now see a new
     ...     'http://launchpad.test/firefox/+question/2')
     >>> soup = find_main_content(owner_browser.contents)
     >>> soup.findAll('div', 'boardComment')[-1].find('input', type='submit')
-    <input type="submit" name="field.actions.confirm"
-     value="This Solved My Problem" />
+    <input name="field.actions.confirm" type="submit"
+     value="This Solved My Problem"/>
 
 (Note although we have three comments on the question, that's the only
 one that has this button. Only answers have this button.)
@@ -216,7 +216,7 @@ The confirmed answer is also highlighted.
     >>> soup = find_main_content(owner_browser.contents)
     >>> bestAnswer = soup.findAll('div', 'boardComment')[-2]
     >>> print(bestAnswer.find('img'))
-    <img src="/@@/favourite-yes" ... title="Marked as best answer" />
+    <img ... src="/@@/favourite-yes" ... title="Marked as best answer"/>
 
     >>> print(soup.find(
     ...     'div', 'boardCommentBody highlighted').renderContents())
@@ -279,8 +279,7 @@ its status back to 'Open'.
     >>> print_last_comment(owner_browser.contents)
     Actually, there are still SVGs that do not display correctly.
     For example, the following
-    http://people.w3.org/maxf/ChessGML/immortal.svg doesn&#x27;t
-    display correctly.
+    http://people.w3.org/maxf/ChessGML/immortal.svg doesn't display correctly.
 
 This also removes the highlighting from the previous answer and sets the
 answerer back to None.
@@ -350,7 +349,7 @@ The answer's message is also highlighted as the best answer.
     >>> soup = find_main_content(owner_browser.contents)
     >>> bestAnswer = soup.find('img', {'title' : 'Marked as best answer'})
     >>> print(bestAnswer)
-    <img src="/@@/favourite-yes" ... title="Marked as best answer" />
+    <img ... src="/@@/favourite-yes" ... title="Marked as best answer"/>
 
     >>> answerer = bestAnswer.parent.find('a')
     >>> print(extract_text(answerer))

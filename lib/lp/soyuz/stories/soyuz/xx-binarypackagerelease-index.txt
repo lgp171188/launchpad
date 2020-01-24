@@ -84,11 +84,11 @@ sections contain only unsatisfied dependencies, which are rendered as
 text:
 
   >>> print_relation('depends')
-  TEXT: "gcc-3.4 (&gt;= 3.4.1-4sarge1)"
-  TEXT: "gcc-3.4 (&lt;&lt; 3.4.2)"
+  TEXT: "gcc-3.4 (>= 3.4.1-4sarge1)"
+  TEXT: "gcc-3.4 (<< 3.4.2)"
   TEXT: "gcc-3.4-base"
-  TEXT: "libc6 (&gt;= 2.3.2.ds1-4)"
-  TEXT: "libstdc++6-dev (&gt;= 3.4.1-4sarge1)"
+  TEXT: "libc6 (>= 2.3.2.ds1-4)"
+  TEXT: "libstdc++6-dev (>= 3.4.1-4sarge1)"
 
   >>> print_relation('conflicts')
   TEXT: "firefox"
@@ -103,11 +103,11 @@ text:
   TEXT: "gnome-mozilla-browser"
 
   >>> print_relation('recommends')
-  TEXT: "gcc-3.4 (&gt;= 3.4.1-4sarge1)"
-  TEXT: "gcc-3.4 (&lt;&lt; 3.4.2)"
+  TEXT: "gcc-3.4 (>= 3.4.1-4sarge1)"
+  TEXT: "gcc-3.4 (<< 3.4.2)"
   TEXT: "gcc-3.4-base"
-  TEXT: "libc6 (&gt;= 2.3.2.ds1-4)"
-  TEXT: "libstdc++6-dev (&gt;= 3.4.1-4sarge1)"
+  TEXT: "libc6 (>= 2.3.2.ds1-4)"
+  TEXT: "libstdc++6-dev (>= 3.4.1-4sarge1)"
 
 Even when there is no information to present and the package control
 files don't contain the field, we still present the  corresponding

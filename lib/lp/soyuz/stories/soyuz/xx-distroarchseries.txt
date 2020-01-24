@@ -52,7 +52,8 @@ package summary.
 
 More details are available by clicking on the binary package name.
     >>> print(extract_text(
-    ...     find_tag_by_id(anon_browser.contents, 'search-results')))
+    ...     find_tag_by_id(anon_browser.contents, 'search-results'),
+    ...     formatter='html'))
     1 &rarr; 3 of 3 results
     First &bull; Previous &bull; Next &bull; Last
     mozilla-firefox: Mozilla Firefox Web Browser

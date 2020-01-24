@@ -75,8 +75,8 @@ from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.registry.errors import NameAlreadyTaken
 from lp.registry.interfaces.teammembership import TeamMembershipStatus
 from lp.services.beautifulsoup import (
-    BeautifulSoup,
-    SoupStrainer,
+    BeautifulSoup4 as BeautifulSoup,
+    SoupStrainer4 as SoupStrainer,
     )
 from lp.services.config import config
 from lp.services.encoding import wsgi_native_string
@@ -253,7 +253,7 @@ def find_tag_by_id(content, id):
     else:
         elements_with_id = [
             tag for tag in BeautifulSoup(
-                content, parseOnlyThese=SoupStrainer(id=id))]
+                content, parse_only=SoupStrainer(id=id))]
     if len(elements_with_id) == 0:
         return None
     elif len(elements_with_id) == 1:
@@ -279,7 +279,7 @@ def find_tags_by_class(content, class_, only_first=False):
         classes = set(value.split())
         return match_classes.issubset(classes)
     soup = BeautifulSoup(
-        content, parseOnlyThese=SoupStrainer(attrs={'class': class_matcher}))
+        content, parse_only=SoupStrainer(attrs={'class': class_matcher}))
     if only_first:
         find = BeautifulSoup.find
     else:
@@ -323,7 +323,7 @@ def get_feedback_messages(content):
                        'warning message']
     soup = BeautifulSoup(
         content,
-        parseOnlyThese=SoupStrainer(['div', 'p'], {'class': message_classes}))
+        parse_only=SoupStrainer(['div', 'p'], {'class': message_classes}))
     return [extract_text(tag) for tag in soup]
 
 
@@ -466,6 +466,8 @@ def extract_text(content, extract_image_text=False, skip_tags=None,
             # unicode() call here, but we keep it for consistency and clarity
             # purposes.
             result.append(unicode(node[:]))
+        elif isinstance(node, CData4):
+            result.append(unicode(node))
         elif isinstance(node, NavigableString):
             result.append(unicode(node))
         elif isinstance(node, NavigableString4):

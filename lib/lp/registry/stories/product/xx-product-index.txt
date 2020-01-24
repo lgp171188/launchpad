@@ -103,7 +103,7 @@ Any user can see that the project's licence has not been reviewed.
     >>> user_browser.open('http://launchpad.test/thunderbird')
     >>> print extract_text(
     ...     find_tag_by_id(user_browser.contents, 'license-status'))
-    This project&rsquo;s licence has not been reviewed.
+    This project’s licence has not been reviewed.
 
 Changing the state to reviewed but not approved results in the project
 being shown as proprietary.
@@ -130,7 +130,7 @@ direct the owner to purchase a subscription.
     >>> logout()
     >>> owner_browser.open('http://launchpad.test/firefox')
     >>> print find_tag_by_id(owner_browser.contents, 'license-status')
-    <...This project&rsquo;s licence is proprietary...
+    <...This project’s licence is proprietary...
 
     >>> print find_tag_by_id(owner_browser.contents,
     ...     'portlet-requires-subscription')
