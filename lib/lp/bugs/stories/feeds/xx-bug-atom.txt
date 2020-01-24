@@ -1,10 +1,12 @@
 = Atom Feeds =
 
 Atom feeds produce XML not HTML.  Therefore we must parse the output as XML
-using BeautifulStoneSoup instead of BSS or the helper functions.
+by asking BeautifulSoup to use lxml.
 
-    >>> from BeautifulSoup import BeautifulStoneSoup as BSS
-    >>> from BeautifulSoup import SoupStrainer
+    >>> from lp.services.beautifulsoup import (
+    ...     BeautifulSoup4 as BeautifulSoup,
+    ...     SoupStrainer4 as SoupStrainer,
+    ...     )
     >>> from lp.services.feeds.tests.helper import (
     ...     parse_entries, parse_links, validate_feed)
 
@@ -26,25 +28,26 @@ point to the bugs themselves.
     >>> validate_feed(browser.contents,
     ...              browser.headers['content-type'], browser.url)
     No Errors
-    >>> BSS(browser.contents).title.contents
+    >>> BeautifulSoup(browser.contents, 'xml').title.contents
     [u'Bugs in Jokosher']
     >>> browser.url
     'http://feeds.launchpad.test/jokosher/latest-bugs.atom'
 
-    >>> soup = BSS(browser.contents, parseOnlyThese=SoupStrainer('id'))
+    >>> soup = BeautifulSoup(
+    ...     browser.contents, 'xml', parse_only=SoupStrainer('id'))
     >>> print(extract_text(soup.find('id')))
     tag:launchpad.net,2007-03-15:/bugs/jokosher
     >>> alternate_links = parse_links(browser.contents, 'alternate')
     >>> for link in alternate_links:
     ...     print(link)
-    <link rel="alternate" href="http://bugs.launchpad.test/jokosher" />
-    <link rel="alternate" href="http://bugs.launchpad.test/bugs/12" />
-    <link rel="alternate" href="http://bugs.launchpad.test/bugs/11" />
+    <link href="http://bugs.launchpad.test/jokosher" rel="alternate"/>
+    <link href="http://bugs.launchpad.test/bugs/12" rel="alternate"/>
+    <link href="http://bugs.launchpad.test/bugs/11" rel="alternate"/>
 
     >>> self_links = parse_links(browser.contents, 'self')
     >>> for link in self_links:
     ...     print(link)
-    <link rel="self" href="http://feeds.launchpad.test/jokosher/latest-bugs.atom" />
+    <link href="http://feeds.launchpad.test/jokosher/latest-bugs.atom" rel="self"/>
 
     >>> entries = parse_entries(browser.contents)
     >>> print(len(entries))
@@ -83,19 +86,20 @@ as the latest bugs feed for a product.
     >>> validate_feed(browser.contents,
     ...              browser.headers['content-type'], browser.url)
     No Errors
-    >>> BSS(browser.contents).title.contents
+    >>> BeautifulSoup(browser.contents, 'xml').title.contents
     [u'Bugs in The Mozilla Project']
     >>> browser.url
     'http://feeds.launchpad.test/mozilla/latest-bugs.atom'
 
-    >>> soup = BSS(browser.contents, parseOnlyThese=SoupStrainer('id'))
+    >>> soup = BeautifulSoup(
+    ...     browser.contents, 'xml', parse_only=SoupStrainer('id'))
     >>> print(extract_text(soup.find('id')))
     tag:launchpad.net,2004-09-24:/bugs/mozilla
 
     >>> self_links = parse_links(browser.contents, 'self')
     >>> for link in self_links:
     ...     print(link)
-    <link rel="self" href="http://feeds.launchpad.test/mozilla/latest-bugs.atom" />
+    <link href="http://feeds.launchpad.test/mozilla/latest-bugs.atom" rel="self"/>
 
     >>> entries = parse_entries(browser.contents)
     >>> print(len(entries))
@@ -144,19 +148,20 @@ of content as the latest bugs feed for a product.
     >>> validate_feed(browser.contents,
     ...              browser.headers['content-type'], browser.url)
     No Errors
-    >>> BSS(browser.contents).title.contents
+    >>> BeautifulSoup(browser.contents, 'xml').title.contents
     [u'Bugs in Ubuntu']
     >>> browser.url
     'http://feeds.launchpad.test/ubuntu/latest-bugs.atom'
 
-    >>> soup = BSS(browser.contents, parseOnlyThese=SoupStrainer('id'))
+    >>> soup = BeautifulSoup(
+    ...     browser.contents, 'xml', parse_only=SoupStrainer('id'))
     >>> print(extract_text(soup.find('id')))
     tag:launchpad.net,2006-10-16:/bugs/ubuntu
 
     >>> self_links = parse_links(browser.contents, 'self')
     >>> for link in self_links:
     ...     print(link)
-    <link rel="self" href="http://feeds.launchpad.test/ubuntu/latest-bugs.atom" />
+    <link href="http://feeds.launchpad.test/ubuntu/latest-bugs.atom" rel="self"/>
 
     >>> entries = parse_entries(browser.contents)
     >>> print(len(entries))
@@ -214,11 +219,8 @@ The bug should be included in the feed.
 
 Private teams should show as '-'.
 
-    >>> entry_content = BSS(
-    ...     entry.find('content').text,
-    ...     convertEntities=BSS.HTML_ENTITIES)
-    >>> soup = BSS(entry_content.text)
-    >>> print([tr.findAll('td')[4].text for tr in soup.findAll('tr')[1:4]])
+    >>> soup = BeautifulSoup(entry.find('content').text, 'xml')
+    >>> print([tr.find_all('td')[4].text for tr in soup.find_all('tr')[1:4]])
     [u'Mark Shuttleworth', u'-', u'-']
 
 == Latest bugs for a source package ==
@@ -232,11 +234,12 @@ type of content as the latest bugs feed for a product.
     >>> validate_feed(browser.contents,
     ...              browser.headers['content-type'], browser.url)
     No Errors
-    >>> BSS(browser.contents).title.contents
+    >>> BeautifulSoup(browser.contents, 'xml').title.contents
     [u'Bugs in thunderbird in Ubuntu']
     >>> browser.url
     'http://feeds.launchpad.test/ubuntu/+source/thunderbird/latest-bugs.atom'
-    >>> soup = BSS(browser.contents, parseOnlyThese=SoupStrainer('id'))
+    >>> soup = BeautifulSoup(
+    ...     browser.contents, 'xml', parse_only=SoupStrainer('id'))
     >>> print(extract_text(soup.find('id')))
     tag:launchpad.net,2008:/bugs/ubuntu/+source/thunderbird
     >>> entries = parse_entries(browser.contents)
@@ -264,19 +267,20 @@ type of content as the latest bugs feed for a product.
     >>> validate_feed(browser.contents,
     ...              browser.headers['content-type'], browser.url)
     No Errors
-    >>> BSS(browser.contents).title.contents
+    >>> BeautifulSoup(browser.contents, 'xml').title.contents
     [u'Bugs in Hoary']
     >>> browser.url
     'http://feeds.launchpad.test/ubuntu/hoary/latest-bugs.atom'
 
-    >>> soup = BSS(browser.contents, parseOnlyThese=SoupStrainer('id'))
+    >>> soup = BeautifulSoup(
+    ...     browser.contents, 'xml', parse_only=SoupStrainer('id'))
     >>> print(extract_text(soup.find('id')))
     tag:launchpad.net,2006-10-16:/bugs/ubuntu/hoary
 
     >>> self_links = parse_links(browser.contents, 'self')
     >>> for link in self_links:
     ...     print(link)
-    <link rel="self" href="http://feeds.launchpad.test/ubuntu/hoary/latest-bugs.atom" />
+    <link href="http://feeds.launchpad.test/ubuntu/hoary/latest-bugs.atom" rel="self"/>
 
     >>> entries = parse_entries(browser.contents)
     >>> print(len(entries))
@@ -304,19 +308,20 @@ type of content as the latest bugs feed for a product.
     >>> validate_feed(browser.contents,
     ...              browser.headers['content-type'], browser.url)
     No Errors
-    >>> BSS(browser.contents).title.contents
+    >>> BeautifulSoup(browser.contents, 'xml').title.contents
     [u'Bugs in 1.0']
     >>> browser.url
     'http://feeds.launchpad.test/firefox/1.0/latest-bugs.atom'
 
-    >>> soup = BSS(browser.contents, parseOnlyThese=SoupStrainer('id'))
+    >>> soup = BeautifulSoup(
+    ...     browser.contents, 'xml', parse_only=SoupStrainer('id'))
     >>> print(extract_text(soup.find('id')))
     tag:launchpad.net,2005-06-06:/bugs/firefox/1.0
 
     >>> self_links = parse_links(browser.contents, 'self')
     >>> for link in self_links:
     ...     print(link)
-    <link rel="self" href="http://feeds.launchpad.test/firefox/1.0/latest-bugs.atom" />
+    <link href="http://feeds.launchpad.test/firefox/1.0/latest-bugs.atom" rel="self"/>
 
     >>> entries = parse_entries(browser.contents)
     >>> print(len(entries))
@@ -342,19 +347,20 @@ This feed gets the latest bugs for a person.
     >>> validate_feed(browser.contents,
     ...              browser.headers['content-type'], browser.url)
     No Errors
-    >>> BSS(browser.contents).title.contents
+    >>> BeautifulSoup(browser.contents, 'xml').title.contents
     [u'Bugs for Foo Bar']
     >>> browser.url
     'http://feeds.launchpad.test/~name16/latest-bugs.atom'
 
-    >>> soup = BSS(browser.contents, parseOnlyThese=SoupStrainer('id'))
+    >>> soup = BeautifulSoup(
+    ...     browser.contents, 'xml', parse_only=SoupStrainer('id'))
     >>> print(extract_text(soup.find('id')))
     tag:launchpad.net,2005-06-06:/bugs/~name16
 
     >>> self_links = parse_links(browser.contents, 'self')
     >>> for link in self_links:
     ...     print(link)
-    <link rel="self" href="http://feeds.launchpad.test/~name16/latest-bugs.atom" />
+    <link href="http://feeds.launchpad.test/~name16/latest-bugs.atom" rel="self"/>
 
     >>> entries = parse_entries(browser.contents)
     >>> print(len(entries))
@@ -417,17 +423,18 @@ some results.
     >>> validate_feed(browser.contents,
     ...              browser.headers['content-type'], browser.url)
     No Errors
-    >>> BSS(browser.contents).title.contents
+    >>> BeautifulSoup(browser.contents, 'xml').title.contents
     [u'Bugs for Simple Team']
 
-    >>> soup = BSS(browser.contents, parseOnlyThese=SoupStrainer('id'))
+    >>> soup = BeautifulSoup(
+    ...     browser.contents, 'xml', parse_only=SoupStrainer('id'))
     >>> print(extract_text(soup.find('id')))
     tag:launchpad.net,2007-02-21:/bugs/~simple-team
 
     >>> self_links = parse_links(browser.contents, 'self')
     >>> for link in self_links:
     ...     print(link)
-    <link rel="self" href="http://feeds.launchpad.test/~simple-team/latest-bugs.atom" />
+    <link href="http://feeds.launchpad.test/~simple-team/latest-bugs.atom" rel="self"/>
 
     >>> entries = parse_entries(browser.contents)
     >>> print(len(entries))
@@ -445,19 +452,20 @@ This feed gets the latest bugs reported against any target.
     >>> validate_feed(browser.contents,
     ...               browser.headers['content-type'], browser.url)
     No Errors
-    >>> BSS(browser.contents).title.contents
+    >>> BeautifulSoup(browser.contents, 'xml').title.contents
     [u'Launchpad bugs']
     >>> browser.url
     'http://feeds.launchpad.test/bugs/latest-bugs.atom'
 
-    >>> soup = BSS(browser.contents, parseOnlyThese=SoupStrainer('id'))
+    >>> soup = BeautifulSoup(
+    ...     browser.contents, 'xml', parse_only=SoupStrainer('id'))
     >>> print(extract_text(soup.find('id')))
     tag:launchpad.net,2008:/bugs
 
     >>> self_links = parse_links(browser.contents, 'self')
     >>> for link in self_links:
     ...     print(link)
-    <link rel="self" href="http://feeds.launchpad.test/bugs/latest-bugs.atom" />
+    <link href="http://feeds.launchpad.test/bugs/latest-bugs.atom" rel="self"/>
 
     >>> entries = parse_entries(browser.contents)
     >>> print(len(entries))
@@ -508,10 +516,11 @@ The bug search feed can be tested after setting is_bug_search_feed_active
 to True.
 
     >>> browser.open(url)
-    >>> BSS(browser.contents).title.contents
+    >>> BeautifulSoup(browser.contents, 'xml').title.contents
     [u'Bugs from custom search']
 
-    >>> soup = BSS(browser.contents, parseOnlyThese=SoupStrainer('id'))
+    >>> soup = BeautifulSoup(
+    ...     browser.contents, 'xml', parse_only=SoupStrainer('id'))
     >>> feed_id = extract_text(soup.find('id'))
     >>> print(feed_id)
     tag:launchpad.net,2008:/+bugs.atom?field.scope.target=&amp;field.scope=all&amp;field.searchtext=&amp;search=Search+Bug+Reports
@@ -523,7 +532,7 @@ to True.
     >>> self_links = parse_links(browser.contents, 'self')
     >>> for link in self_links:
     ...     print(link)
-    <link rel="self" href="http://feeds.launchpad.test/bugs/+bugs.atom?field.scope.target=&amp;field.scope=all&amp;field.searchtext=&amp;search=Search+Bug+Reports" />
+    <link href="http://feeds.launchpad.test/bugs/+bugs.atom?field.scope.target=&amp;field.scope=all&amp;field.searchtext=&amp;search=Search+Bug+Reports" rel="self"/>
 
     >>> entries = parse_entries(browser.contents)
     >>> print(len(entries))
@@ -554,7 +563,7 @@ This feed shows the status of a single bug.
     >>> validate_feed(browser.contents,
     ...              browser.headers['content-type'], browser.url)
     No Errors
-    >>> BSS(browser.contents).title.contents
+    >>> BeautifulSoup(browser.contents, 'xml').title.contents
     [u'Bug 1']
     >>> entries = parse_entries(browser.contents)
     >>> print(len(entries))
@@ -565,7 +574,7 @@ This feed shows the status of a single bug.
     >>> self_links = parse_links(browser.contents, 'self')
     >>> for link in self_links:
     ...     print(link)
-    <link rel="self" href="http://feeds.launchpad.test/bugs/1/bug.atom" />
+    <link href="http://feeds.launchpad.test/bugs/1/bug.atom" rel="self"/>
 
 == Feeds Configuration Options ==
 
