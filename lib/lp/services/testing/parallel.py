@@ -11,7 +11,7 @@ import subprocess
 import sys
 import tempfile
 
-from bzrlib.osutils import local_concurrency
+from breezy.osutils import local_concurrency
 from subunit import ProtocolTestCase
 from subunit.run import SubunitTestRunner
 from testtools import (

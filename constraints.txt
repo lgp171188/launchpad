@@ -157,10 +157,7 @@ zc.recipe.testrunner==2.0.0
 
 # Alphabetical, case-insensitive, please! :-)
 
-# lp:~launchpad/ampoule/lp
-# post1 Don't add a process back to the ready set if it received an error
-# such as a timeout.
-ampoule==0.2.0.post1
+ampoule==19.12.0
 amqp==2.4.2
 anyjson==0.3.3
 appdirs==1.4.3

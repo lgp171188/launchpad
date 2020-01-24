@@ -22,7 +22,7 @@ import StringIO
 import sys
 import threading
 
-from bzrlib import lsprof
+from breezy import lsprof
 import oops_datedir_repo.serializer_rfc822
 from zope.component import (
     adapter,
@@ -100,7 +100,7 @@ class Profiler:
         This unhooks from threading and cleans up the profiler, returning
         the gathered Stats object.
 
-        :return: A bzrlib.lsprof.Stats object.
+        :return: A breezy.lsprof.Stats object.
         """
         try:
             self.disable()

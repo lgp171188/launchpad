@@ -44,8 +44,8 @@ __all__ = [
 from operator import attrgetter
 from urlparse import urlunsplit
 
-from bzrlib import urlutils
-from bzrlib.revision import NULL_REVISION
+from breezy import urlutils
+from breezy.revision import NULL_REVISION
 from lazr.delegates import delegate_to
 from lazr.restful.interface import (
     copy_field,

@@ -17,8 +17,7 @@ from datetime import (
 from operator import attrgetter
 from urlparse import urlsplit
 
-from bzrlib import urlutils
-from bzrlib.errors import InvalidURLJoin
+from breezy import urlutils
 from lazr.lifecycle.event import ObjectCreatedEvent
 from pymacaroons import Macaroon
 import pytz
@@ -1365,7 +1364,7 @@ class SnapSet:
                 raise MissingSnapcraftYaml(context.unique_name)
         except GitRepositoryBlobUnsupportedRemote as e:
             raise CannotFetchSnapcraftYaml(str(e), unsupported_remote=True)
-        except InvalidURLJoin as e:
+        except urlutils.InvalidURLJoin as e:
             raise CannotFetchSnapcraftYaml(str(e))
         except (BranchHostingFault, GitRepositoryScanFault) as e:
             msg = "Failed to get snap manifest from %s"
