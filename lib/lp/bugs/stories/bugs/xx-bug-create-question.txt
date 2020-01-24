@@ -39,7 +39,7 @@ Privileges Person chooses to make the bug into a question. There is a
 field for a comment. They decide to create the question using the
 'Convert this bug to a question' button.
 
-    >>> find_main_content(user_browser.contents).p
+    >>> print(find_main_content(user_browser.contents).p)
     <p>... the bug's status is set to Invalid. The new question
     will be linked to the bug. ...
 
@@ -53,7 +53,7 @@ informational message stating that a question was created from the bug.
     'Bug #10 ... : Bugs : linux-source-2.6.15 package : Ubuntu'
 
     >>> content = find_main_content(user_browser.contents)
-    >>> content.find(id="bug-is-question")
+    >>> print(content.find(id="bug-is-question"))
     <p...This bug report was converted into a question:
      question #...: <a ...>another test bug</a>. </p>
 
@@ -132,7 +132,7 @@ question.
     >>> print(user_browser.title)
     Convert this bug to a question...
 
-    >>> find_main_content(user_browser.contents).p
+    >>> print(find_main_content(user_browser.contents).p)
     <p>
     This bug cannot be converted into a question.
     Mozilla Thunderbird does not use Launchpad to track bugs.
@@ -161,7 +161,7 @@ a bookmark, they see that they cannot create the question again.
     >>> user_browser.title
     'Convert this bug to a question...
 
-    >>> find_main_content(user_browser.contents).p
+    >>> print(find_main_content(user_browser.contents).p)
     <p>
     This bug cannot be converted into a question.
     A question was already created from this bug. ...
@@ -222,7 +222,7 @@ Privileges Person chooses to reactivate the bug. There is an optional
 field for a comment. No other input is needed. No Privileges Person uses
 the 'Convert back to a bug' button.
 
-    >>> find_main_content(user_browser.contents).p
+    >>> print(find_main_content(user_browser.contents).p)
     <p>... Reactivate this bug report by removing the question created
     from the bug. ...
 
@@ -287,7 +287,7 @@ remove.
     >>> print(user_browser.title)
     Bug #12 - Convert this...
 
-    >>> find_main_content(user_browser.contents).p
+    >>> print(find_main_content(user_browser.contents).p)
     <p>
     The bug was not converted to a question. There is nothing to change. ...
 

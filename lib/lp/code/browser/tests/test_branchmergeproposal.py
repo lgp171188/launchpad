@@ -193,7 +193,7 @@ class TestBranchMergeProposalMergedViewMixin:
             self.arbitrary_revisions[2])
         browser.getControl('Mark as Merged').click()
         self.assertEqual(
-            ["The proposal&#x27;s merged revision has been updated."],
+            ["The proposal's merged revision has been updated."],
             get_feedback_messages(browser.contents))
         self.assertIn(
             'Status:\nMerged\nMerged at revision:\n%s' % (

@@ -78,7 +78,7 @@ summary.
     >>> print_tag_with_id(browser.contents, "proposals")
     Approved reviews ready to land
     Branch Merge Proposal   Requested By          Lines Activity
-    lp://dev/~bob/fooix/approved &rArr; lp://dev/fooix
+    lp://dev/~bob/fooix/approved ⇒ lp://dev/fooix
             Bob                                         None
     Reviews requested or in progress
     Branch Merge Proposal   Requested By          Lines Activity

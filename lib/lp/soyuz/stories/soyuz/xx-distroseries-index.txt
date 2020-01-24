@@ -10,7 +10,8 @@ packages within the distroseries in context:
     >>> anon_browser.url
     'http://launchpad.test/ubuntu/warty/+search?text=a'
     >>> print(extract_text(
-    ...     find_tag_by_id(anon_browser.contents, 'search-results')))
+    ...     find_tag_by_id(anon_browser.contents, 'search-results'),
+    ...     formatter='html'))
     1 &rarr; 3 of 3 results
     First &bull; Previous &bull; Next &bull; Last
     foobar: foobar is bad

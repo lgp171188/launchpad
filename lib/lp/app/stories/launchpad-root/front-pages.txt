@@ -47,7 +47,8 @@ The front page also lists the recent blog posts published on the Launchpad
 blog:
 
     >>> print extract_text(
-    ...     find_tag_by_id(browser.contents, 'homepage-blogposts'))
+    ...     find_tag_by_id(browser.contents, 'homepage-blogposts'),
+    ...     formatter='html')
     Recent Launchpad blog posts
     Launchpad EPIC 2010 photo
     &ndash; 16 Jul 2010
@@ -100,4 +101,4 @@ and guide:
 
     >>> print extract_text(
     ...     find_tags_by_class(user_browser.contents, 'lp-arcana')[0])
-    &bull; Take the tour &bull; Read the guide
+    • Take the tour • Read the guide

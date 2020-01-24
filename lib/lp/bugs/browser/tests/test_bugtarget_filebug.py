@@ -270,7 +270,7 @@ class TestBugTargetFileBugConfirmationMessage(TestCaseWithFactory):
         filebug_form_container = filebug_form.findParents(
             id='filebug-form-container')[0]
         class_attrs = [item.strip()
-                       for item in filebug_form_container['class'].split(" ")]
+                       for item in filebug_form_container['class']]
         self.assertTrue('hidden' in class_attrs)
 
     def test_bug_filing_view_with_dupe_search_disabled(self):

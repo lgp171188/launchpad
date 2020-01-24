@@ -6,6 +6,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 __metaclass__ = type
 
 from fixtures import FakeLogger
+import six
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
@@ -142,9 +143,9 @@ class TestAssignments(TestCaseWithFactory):
         view = create_initialized_view(product, name='+assignments',
             query_string="batch=1")
         content = view.render()
-        self.assertEqual('next',
+        self.assertEqual(['next'],
             find_tag_by_id(content, 'upper-batch-nav-batchnav-next')['class'])
-        self.assertEqual('next',
+        self.assertEqual(['next'],
             find_tag_by_id(content, 'lower-batch-nav-batchnav-next')['class'])
 
 
@@ -309,7 +310,7 @@ class SpecificationSetViewTestCase(TestCaseWithFactory):
         target_widget = view.widgets['scope'].target_widget
         self.assertIsNot(
             None, content.find(True, id=target_widget.show_widget_id))
-        text = str(content)
+        text = six.text_type(content)
         picker_vocab = 'DistributionOrProductOrProjectGroup'
         self.assertIn(picker_vocab, text)
         focus_script = "setFocusByName('field.search_text')"

@@ -73,8 +73,8 @@ class TestRequestPeopleMergeMultipleEmails(RequestPeopleMergeMixin):
         explanation = find_tag_by_id(browser.contents, 'explanation')
         self.assertThat(
             extract_text(explanation), DocTestMatches(
-                "The account..."
-                "has more than one registered email address..."))
+                u"The account..."
+                u"has more than one registered email address..."))
         email_select_control = browser.getControl(name='selected')
         for ctrl in email_select_control.controls:
             ctrl.selected = True

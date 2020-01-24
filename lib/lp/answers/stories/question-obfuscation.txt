@@ -38,7 +38,7 @@ in the question's description.
     >>> description = find_main_content(user_browser.contents).p
     >>> description.renderContents()
     'I am not able to open my email client if i click on a
-     <a ... href="mailto:user@domain.com">mailto:...user@domain...com</a>
+     <a href="mailto:user@domain.com" ...>mailto:...user@domain...com</a>
      link ...'
 
 No Privileges Person can see email addresses in the FAQ's

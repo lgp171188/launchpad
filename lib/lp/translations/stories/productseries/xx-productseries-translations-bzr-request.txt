@@ -54,7 +54,7 @@ The request is made by clicking on a button labeled
     >>> request_button = find_tag_by_id(
     ...     browser.contents, 'field.actions.request_import')
     >>> print(request_button)
-    <input type="submit"...value="Request one-time import"...
+    <input ...type="submit"...value="Request one-time import"...
     >>> browser.getControl("Request one-time import").click()
     >>> print(browser.url)
     http://translations.launchpad.test/evolution/trunk

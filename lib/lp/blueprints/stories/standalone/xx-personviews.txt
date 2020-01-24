@@ -22,10 +22,10 @@ that the user is supposed to approve.
     >>> browser.url
     '.../~name16/+specs?role=approver'
     >>> soup = find_main_content(browser.contents)
-    >>> soup('p', 'informational message')
-    [<p class="informational message">
+    >>> print(soup.find('p', 'informational message'))
+    <p class="informational message">
     No feature specifications match your criteria.
-    </p>]
+    </p>
 
 The 'Assignee' link displays a page showing the specifications assigned
 to the person.
@@ -34,10 +34,10 @@ to the person.
     >>> browser.url
     '.../~name16/+specs?role=assignee'
     >>> soup = find_main_content(browser.contents)
-    >>> soup('p', 'informational message')
-    [<p class="informational message">
+    >>> print(soup.find('p', 'informational message'))
+    <p class="informational message">
     No feature specifications match your criteria.
-    </p>]
+    </p>
 
 The 'Subscriber' link displays a page showing the specifications to
 which the person subscribed.
@@ -55,10 +55,10 @@ person drafted.
     >>> browser.url
     '.../~name16/+specs?role=drafter'
     >>> soup = find_main_content(browser.contents)
-    >>> soup('p', 'informational message')
-    [<p class="informational message">
+    >>> print(soup.find('p', 'informational message'))
+    <p class="informational message">
     No feature specifications match your criteria.
-    </p>]
+    </p>
 
 The 'Workload' link displays a page showing the specifications that are
 in the workload of that person.

@@ -93,7 +93,6 @@ from lp.registry.model.product import (
 from lp.registry.model.productlicense import ProductLicense
 from lp.services.database.interfaces import IStore
 from lp.services.webapp.authorization import check_permission
-from lp.services.webapp.escaping import html_escape
 from lp.testing import (
     celebrity_logged_in,
     login,
@@ -1433,7 +1432,7 @@ class TestProductFiles(TestCase):
         firefox_owner.getControl("Upload").click()
         self.assertEqual(
             get_feedback_messages(firefox_owner.contents),
-            [html_escape(u"Your file 'foo\xa5.txt' has been uploaded.")])
+            [u"Your file 'foo\xa5.txt' has been uploaded."])
         firefox_owner.open('http://launchpad.test/firefox/+download')
         content = find_main_content(firefox_owner.contents)
         rows = content.findAll('tr')

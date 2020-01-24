@@ -54,7 +54,7 @@ page.
     ...     """Print all the comments on the page."""
     ...     comment_divs = find_tags_by_class(page, 'boardComment')
     ...     for div_tag in comment_divs[subset]:
-    ...         print(extract_text(div_tag).replace("&#8594;", "=>"))
+    ...         print(extract_text(div_tag))
     ...         print('-' * 8)
 
     >>> user_browser.open(
@@ -68,12 +68,12 @@ page.
     on 2007-12-18
     Changed in thunderbird:
     status:
-    Unknown => New
+    Unknown → New
     --------
     No Privileges Person (no-priv)
     ...
     #7
-    Here&#x27;s a comment for testing, like.
+    Here's a comment for testing, like.
     ...
     --------
 
@@ -186,13 +186,13 @@ We'll add a milestone to Redfish to demonstrate this.
     ...
     Changed in redfish:
     assignee:
-    nobody => Foo Bar (name16)
+    nobody → Foo Bar (name16)
     importance:
-    Undecided => High
+    Undecided → High
     milestone:
-    none => foo
+    none → foo
     status:
-    New => Confirmed
+    New → Confirmed
     --------
 
 If a change is made to a bug task which is targeted to a distro source
@@ -208,7 +208,7 @@ package, the name of the package and the distro will be displayed.
     ... ago
     Changed in mozilla-firefox (Ubuntu):
     status:
-    New => Confirmed
+    New → Confirmed
     --------
 
 If a change has a comment associated with it it will be displayed in the
@@ -230,11 +230,11 @@ bundled with that comment in the UI.
     Lookit, a change!
     Changed in mozilla-firefox (Ubuntu):
     status:
-    New => Confirmed
+    New → Confirmed
     importance:
-    Medium => Low
+    Medium → Low
     status:
-    Confirmed => New
+    Confirmed → New
     Hide
     --------
 
@@ -254,7 +254,7 @@ If a target of a bug task is changed the old and new value will be shown.
     #2
     ...
     affects:
-    mozilla-firefox (Ubuntu) => linux-source-2.6.15 (Ubuntu)
+    mozilla-firefox (Ubuntu) → linux-source-2.6.15 (Ubuntu)
     Hide
     --------
 
@@ -284,7 +284,7 @@ Changes to information_type are shown.
     Foo Bar (name16)
     ... ago
     information type:
-    Public => Private
+    Public → Private
     --------
 
     >>> admin_browser.open(
@@ -296,5 +296,5 @@ Changes to information_type are shown.
     Foo Bar (name16)
     ... ago
     information type:
-    Private Security => Private
+    Private Security → Private
     --------

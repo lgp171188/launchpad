@@ -180,7 +180,7 @@ Carlos can see that he is viewing the first page of results in the
 navigation bar between the translation controls and the messages.
 
     >>> navigation = find_tags_by_class(browser.contents, 'results')[0].td
-    >>> print(extract_text(navigation).decode('utf-8'))
+    >>> print(extract_text(navigation))
     1 ... 10  of 15 results ...
 
 Carlos uses the 'Save & Continue' button to see the next page of
