@@ -91,17 +91,6 @@ def normalise_leading_slashes(rest):
     return '//' + rest.lstrip('/')
 
 
-def normalise_base_url(base_url):
-    """Convert https to http, and normalise scheme for others."""
-    schema, rest = splittype(base_url)
-    if schema == 'https':
-        return 'http:' + rest
-    elif schema is None:
-        return 'http:' + normalise_leading_slashes(base_url)
-    else:
-        return '%s:%s' % (schema, rest)
-
-
 def base_url_permutations(base_url):
     """Return all the possible variants of a base URL.
 
