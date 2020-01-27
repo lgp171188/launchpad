@@ -1,4 +1,4 @@
-# Copyright 2015-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for `IGitNamespace` implementations."""
@@ -348,6 +348,8 @@ class TestPersonalGitNamespace(TestCaseWithFactory, NamespaceMixin):
             owner=owner, target=self.factory.makeProduct())
         self.factory.makeGitRepository(
             owner=owner, target=self.factory.makeDistributionSourcePackage())
+        self.factory.makeGitRepository(
+            owner=owner, target=self.factory.makeOCIProject())
         self.assertContentEqual(
             repositories,
             repositories[0].namespace.collection.getRepositories())
@@ -450,6 +452,7 @@ class TestProjectGitNamespace(TestCaseWithFactory, NamespaceMixin):
             owner=repositories[0].owner, target=repositories[0].owner)
         self.factory.makeGitRepository(
             target=self.factory.makeDistributionSourcePackage())
+        self.factory.makeGitRepository(target=self.factory.makeOCIProject())
         self.assertContentEqual(
             repositories,
             repositories[0].namespace.collection.getRepositories())
@@ -553,6 +556,8 @@ class TestOCIProjectGitNamespace(TestCaseWithFactory, NamespaceMixin):
         self.factory.makeGitRepository(
             target=self.factory.makeOCIProject())
         self.factory.makeGitRepository(target=self.factory.makeProduct())
+        self.factory.makeGitRepository(
+            target=self.factory.makeDistributionSourcePackage())
         self.factory.makeGitRepository(
             owner=repositories[0].owner, target=repositories[0].owner)
         self.assertContentEqual(
@@ -832,6 +837,7 @@ class TestPackageGitNamespace(TestCaseWithFactory, NamespaceMixin):
         self.factory.makeGitRepository(target=self.factory.makeProduct())
         self.factory.makeGitRepository(
             owner=repositories[0].owner, target=repositories[0].owner)
+        self.factory.makeGitRepository(target=self.factory.makeOCIProject())
         self.assertContentEqual(
             repositories,
             repositories[0].namespace.collection.getRepositories())
@@ -958,6 +964,12 @@ class TestNamespaceSet(TestCaseWithFactory):
         namespace = get_git_namespace(dsp, person)
         self.assertIsInstance(namespace, PackageGitNamespace)
 
+    def test_get_oci_project(self):
+        person = self.factory.makePerson()
+        oci_project = self.factory.makeOCIProject()
+        namespace = get_git_namespace(oci_project, person)
+        self.assertIsInstance(namespace, OCIProjectGitNamespace)
+
 
 class TestPersonalGitNamespaceAllowedInformationTypes(TestCaseWithFactory):
     """Tests for PersonalGitNamespace.getAllowedInformationTypes."""
@@ -997,6 +1009,20 @@ class TestPackageGitNamespaceAllowedInformationTypes(TestCaseWithFactory):
         dsp = self.factory.makeDistributionSourcePackage()
         person = self.factory.makePerson()
         namespace = PackageGitNamespace(person, dsp)
+        self.assertContentEqual(
+            PUBLIC_INFORMATION_TYPES, namespace.getAllowedInformationTypes())
+
+
+class TestOCIProjectGitNamespaceAllowedInformationTypes(TestCaseWithFactory):
+    """Tests for OCIProjectGitNamespace.getAllowedInformationTypes."""
+
+    layer = DatabaseFunctionalLayer
+
+    def test_anyone(self):
+        # OCI project repositories are always public (for now).
+        oci_project = self.factory.makeOCIProject()
+        person = self.factory.makePerson()
+        namespace = OCIProjectGitNamespace(person, oci_project)
         self.assertContentEqual(
             PUBLIC_INFORMATION_TYPES, namespace.getAllowedInformationTypes())
 
@@ -1082,6 +1108,14 @@ class TestPackageGitNamespaceValidateNewRepository(
     def _getNamespace(self, owner):
         dsp = self.factory.makeDistributionSourcePackage()
         return PackageGitNamespace(owner, dsp)
+
+
+class TestOCIProjectGitNamespaceValidateNewRepository(
+    TestCaseWithFactory, BaseValidateNewRepositoryMixin):
+
+    def _getNamespace(self, owner):
+        oci_project = self.factory.makeOCIProject()
+        return OCIProjectGitNamespace(owner, oci_project)
 
 
 class TestProjectGitNamespaceValidateNewRepository(
