@@ -203,9 +203,8 @@ class TestLiveFSBuild(TestCaseWithFactory):
                 repr(delivery))
 
     def test_updateStatus_no_change_does_not_trigger_webhooks(self):
-        # An updateStatus call that changes details such as the revision_id
-        # but that doesn't change the build's status attribute does not
-        # trigger webhooks.
+        # An updateStatus call that doesn't change the build's status
+        # attribute does not trigger webhooks.
         logger = self.useFixture(FakeLogger())
         hook = self.factory.makeWebhook(
             target=self.build.livefs, event_types=["livefs:build:0.1"])
