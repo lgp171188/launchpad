@@ -14,6 +14,7 @@ __all__ = [
 from lazr.restful.fields import (
     CollectionField,
     Reference,
+    ReferenceChoice,
     )
 from zope.interface import (
     Attribute,
@@ -23,9 +24,11 @@ from zope.schema import (
     Datetime,
     Int,
     Text,
+    TextLine,
     )
 
 from lp import _
+from lp.app.validators.name import name_validator
 from lp.bugs.interfaces.bugtarget import IBugTarget
 from lp.code.interfaces.hasgitrepositories import IHasGitRepositories
 from lp.registry.interfaces.distribution import IDistribution
@@ -54,7 +57,6 @@ class IOCIProjectView(IHasGitRepositories, Interface):
         # Really IOCIProjectSeries
         value_type=Reference(schema=Interface))
 
-    name = Attribute(_("Name"))
     display_name = Attribute(_("Display name for this OCI project."))
 
 
@@ -64,12 +66,17 @@ class IOCIProjectEditableAttributes(IBugTarget):
     These attributes need launchpad.View to see, and launchpad.Edit to change.
     """
 
-    distribution = Reference(
-        IDistribution,
-        title=_("The distribution that this OCI project is associated with."))
+    distribution = ReferenceChoice(
+        title=_("The distribution that this OCI project is associated with."),
+        schema=IDistribution, vocabulary="Distribution",
+        required=True, readonly=False)
+    name = TextLine(
+        title=_("Name"), required=True, readonly=False,
+        constraint=name_validator,
+        description=_("The name of this OCI project."))
     ociprojectname = Reference(
         IOCIProjectName,
-        title=_("The name of this OCI project."),
+        title=_("The name of this OCI project, as an `IOCIProjectName`."),
         required=True,
         readonly=True)
     description = Text(title=_("The description for this OCI project."))

@@ -71,7 +71,15 @@ class TestOCIProject(TestCaseWithFactory):
         oci_project_name = self.factory.makeOCIProjectName(name='test-name')
         oci_project = self.factory.makeOCIProject(
             ociprojectname=oci_project_name)
-        self.assertEqual(oci_project.name, 'test-name')
+        self.assertEqual('test-name', oci_project.name)
+
+    def test_display_name(self):
+        oci_project_name = self.factory.makeOCIProjectName(name='test-name')
+        oci_project = self.factory.makeOCIProject(
+            ociprojectname=oci_project_name)
+        self.assertEqual(
+            'OCI project test-name for %s' % oci_project.pillar.display_name,
+            oci_project.display_name)
 
 
 class TestOCIProjectSet(TestCaseWithFactory):

@@ -39,13 +39,16 @@ class IOCIProjectNameSet(Interface):
     """A set of `OCIProjectName`."""
 
     def __getitem__(name):
-        """Retrieve a `OCIProjectName` by name."""
+        """Retrieve an `OCIProjectName` by name."""
 
     def getByName(name):
-        """Return a `OCIProjectName` by its name.
+        """Return an `OCIProjectName` by its name.
 
         :raises NoSuchOCIProjectName: if the `OCIProjectName` can't be found.
         """
 
     def new(name):
         """Create a new `OCIProjectName`."""
+
+    def getOrCreateByName(name):
+        """Return an `OCIProjectName` by its name, creating it if necessary."""
