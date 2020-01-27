@@ -35,11 +35,15 @@ from lp.code.interfaces.gitnamespace import IGitNamespaceSet
 from lp.code.interfaces.gitrepository import IGitRepositorySet
 from lp.code.interfaces.hasgitrepositories import IHasGitRepositories
 from lp.code.model.gitrepository import GitRepository
-from lp.registry.errors import NoSuchSourcePackageName
+from lp.registry.errors import (
+    NoSuchOCIProjectName,
+    NoSuchSourcePackageName,
+    )
 from lp.registry.interfaces.distribution import IDistribution
 from lp.registry.interfaces.distributionsourcepackage import (
     IDistributionSourcePackage,
     )
+from lp.registry.interfaces.ociproject import IOCIProject
 from lp.registry.interfaces.person import (
     IPerson,
     IPersonSet,
@@ -162,16 +166,24 @@ class DistributionGitTraversable(_BaseGitTraversable):
         """
         # Distributions don't support named repositories themselves, so
         # ignore the base traverse method.
-        if name != "+source":
+        if name not in {"+source", "+oci"}:
             raise InvalidNamespace("/".join(segments.traversed))
         try:
             spn_name = next(segments)
         except StopIteration:
             raise InvalidNamespace("/".join(segments.traversed))
-        distro_source_package = self.context.getSourcePackage(spn_name)
-        if distro_source_package is None:
-            raise NoSuchSourcePackageName(spn_name)
-        return owner, distro_source_package, None
+        if name == "+source":
+            distro_source_package = self.context.getSourcePackage(spn_name)
+            if distro_source_package is None:
+                raise NoSuchSourcePackageName(spn_name)
+            return owner, distro_source_package, None
+        elif name == "+oci":
+            oci_project = self.context.getOCIProject(spn_name)
+            if oci_project is None:
+                raise NoSuchOCIProjectName(spn_name)
+            return owner, oci_project, None
+        else:
+            raise AssertionError("name '%s' is not +source or +oci" % name)
 
 
 @adapter(IDistributionSourcePackage)
@@ -226,6 +238,21 @@ class PersonGitTraversable(_BaseGitTraversable):
                 # Actually, the pillar is no such *anything*.
                 raise NoSuchProduct(name)
             return owner, pillar, None
+
+
+@adapter(IOCIProject)
+@implementer(IGitTraversable)
+class DistributionOCIProjectGitTraversable(_BaseGitTraversable):
+    """Git repository traversable for distribution-based OCI Projects.
+
+    From here, you can traverse to a named distribution-based OCI Project
+    repository.
+    """
+
+    def getNamespace(self, owner):
+        return getUtility(IGitNamespaceSet).get(
+            owner, distribution=self.context.distribution,
+            ociprojectname=self.context.ociprojectname)
 
 
 class SegmentIterator:

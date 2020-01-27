@@ -1736,6 +1736,10 @@ class GitRepositorySet:
             clauses.append(GitRepository.distribution == target.distribution)
             clauses.append(
                 GitRepository.sourcepackagename == target.sourcepackagename)
+        elif IOCIProject.providedBy(target):
+            clauses.append(GitRepository.distribution == target.distribution)
+            clauses.append(
+                GitRepository.ociprojectname == target.ociprojectname)
         else:
             raise GitTargetError(
                 "Personal repositories cannot be defaults for any target.")
@@ -1758,8 +1762,12 @@ class GitRepositorySet:
                 "Personal repositories cannot be defaults for any target.")
         return IStore(GitRepository).find(GitRepository, *clauses).one()
 
-    def setDefaultRepository(self, target, repository):
+    def setDefaultRepository(self, target, repository, force_oci=False):
         """See `IGitRepositorySet`."""
+        if IOCIProject.providedBy(target) and not force_oci:
+            raise GitTargetError(
+                "Cannot manually set a default Git repository"
+                " for an OCI Project")
         if IPerson.providedBy(target):
             raise GitTargetError(
                 "Cannot set a default Git repository for a person, only "

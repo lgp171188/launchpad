@@ -15,6 +15,7 @@ from lp.code.interfaces.defaultgit import ICanHasDefaultGitRepository
 from lp.registry.interfaces.distributionsourcepackage import (
     IDistributionSourcePackage,
     )
+from lp.registry.interfaces.ociproject import IOCIProject
 from lp.registry.interfaces.persondistributionsourcepackage import (
     IPersonDistributionSourcePackage,
     )
@@ -71,6 +72,22 @@ class PackageDefaultGitRepository(BaseDefaultGitRepository):
         return "%s/+source/%s" % (
             self.context.distribution.name,
             self.context.sourcepackagename.name)
+
+
+@adapter(IOCIProject)
+@implementer(ICanHasDefaultGitRepository)
+class OCIProjectDefaultGitRepository(BaseDefaultGitRepository):
+    """Implement a default Git repository for an OCI project."""
+
+    sort_order = 0
+
+    def __init__(self, oci_project):
+        self.context = oci_project
+
+    @property
+    def path(self):
+        """See `ICanHasDefaultGitRepository`."""
+        return "%s/+oci/%s" % (self.context.pillar.name, self.context.name)
 
 
 @adapter(IPersonProduct)

@@ -894,7 +894,7 @@
     <allow interface="lp.code.interfaces.gitnamespace.IGitNamespace" />
     <allow interface="lp.code.interfaces.gitnamespace.IGitNamespacePolicy" />
   </class>
-  <class class="lp.code.model.gitnamespace.DistributionOCIGitNamespace">
+  <class class="lp.code.model.gitnamespace.OCIProjectGitNamespace">
     <allow interface="lp.code.interfaces.gitnamespace.IGitNamespace" />
     <allow interface="lp.code.interfaces.gitnamespace.IGitNamespacePolicy" />
   </class>
@@ -1049,6 +1049,7 @@
 
   <adapter factory="lp.code.model.defaultgit.ProjectDefaultGitRepository" />
   <adapter factory="lp.code.model.defaultgit.PackageDefaultGitRepository" />
+  <adapter factory="lp.code.model.defaultgit.OCIProjectDefaultGitRepository" />
   <adapter factory="lp.code.model.defaultgit.OwnerProjectDefaultGitRepository" />
   <adapter factory="lp.code.model.defaultgit.OwnerPackageDefaultGitRepository" />
 
@@ -1069,6 +1070,7 @@
   <adapter factory="lp.code.model.gitlookup.ProjectGitTraversable" />
   <adapter factory="lp.code.model.gitlookup.DistributionGitTraversable" />
   <adapter factory="lp.code.model.gitlookup.DistributionSourcePackageGitTraversable" />
+  <adapter factory="lp.code.model.gitlookup.DistributionOCIProjectGitTraversable" />
 
   <!-- Git hosting -->
   <securedutility

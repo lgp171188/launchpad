@@ -31,7 +31,7 @@ from lp.code.interfaces.gitnamespace import (
     )
 from lp.code.interfaces.gitrepository import IGitRepositorySet
 from lp.code.model.gitnamespace import (
-    DistributionOCIGitNamespace,
+    OCIProjectGitNamespace,
     PackageGitNamespace,
     PersonalGitNamespace,
     ProjectGitNamespace,
@@ -455,8 +455,8 @@ class TestProjectGitNamespace(TestCaseWithFactory, NamespaceMixin):
             repositories[0].namespace.collection.getRepositories())
 
 
-class TestDistributionOCIGitNamespace(TestCaseWithFactory, NamespaceMixin):
-    """Tests for `DistributionOCIGitNamespace`."""
+class TestOCIProjectGitNamespace(TestCaseWithFactory, NamespaceMixin):
+    """Tests for `OCIProjectGitNamespace`."""
 
     layer = DatabaseFunctionalLayer
 
@@ -468,7 +468,7 @@ class TestDistributionOCIGitNamespace(TestCaseWithFactory, NamespaceMixin):
     def test_name(self):
         person = self.factory.makePerson()
         oci_project = self.factory.makeOCIProject()
-        namespace = DistributionOCIGitNamespace(person, oci_project)
+        namespace = OCIProjectGitNamespace(person, oci_project)
         self.assertEqual(
             "~%s/%s/+oci/%s" % (
                 person.name, oci_project.distribution.name,
@@ -479,14 +479,14 @@ class TestDistributionOCIGitNamespace(TestCaseWithFactory, NamespaceMixin):
         # The person passed to an oci project namespace is the owner.
         person = self.factory.makePerson()
         oci_project = self.factory.makeOCIProject()
-        namespace = DistributionOCIGitNamespace(person, oci_project)
+        namespace = OCIProjectGitNamespace(person, oci_project)
         self.assertEqual(person, removeSecurityProxy(namespace).owner)
 
     def test_target(self):
         # The target for an oci project namespace is the oci project.
         person = self.factory.makePerson()
         oci_project = self.factory.makeOCIProject()
-        namespace = DistributionOCIGitNamespace(person, oci_project)
+        namespace = OCIProjectGitNamespace(person, oci_project)
         self.assertEqual(oci_project, namespace.target)
 
     def test_supports_merge_proposals(self):
