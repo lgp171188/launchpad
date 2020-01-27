@@ -26,6 +26,7 @@ __all__ = [
 
 import httplib
 
+from lazr.lifecycle.snapshot import doNotSnapshot
 from lazr.restful.declarations import (
     call_with,
     error_status,
@@ -225,10 +226,11 @@ class IPackageUpload(Interface):
     builds = Attribute("The queue builds associated with the queue item")
 
     logs = exported(
-        CollectionField(
-            title=_("The package upload logs"),
-            value_type=Reference(schema=IPackageUploadLog),
-            readonly=True),
+        doNotSnapshot(
+            CollectionField(
+                title=_("The package upload logs"),
+                value_type=Reference(schema=IPackageUploadLog),
+                readonly=True)),
         as_of="devel")
 
     customfiles = Attribute("Custom upload files associated with this "
