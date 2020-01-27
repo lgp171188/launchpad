@@ -1,4 +1,4 @@
-# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -208,26 +208,26 @@ class BugTrackerComponent(StormBase):
         distribution_id,
         'Distribution.id')
 
-    sourcepackagename_id = Int('source_package_name')
-    sourcepackagename = Reference(
-        sourcepackagename_id,
+    source_package_name_id = Int('source_package_name')
+    source_package_name = Reference(
+        source_package_name_id,
         'SourcePackageName.id')
 
     def _get_distro_source_package(self):
         """Retrieves the corresponding source package"""
-        if self.distribution is None or self.sourcepackagename is None:
+        if self.distribution is None or self.source_package_name is None:
             return None
         return self.distribution.getSourcePackage(
-            self.sourcepackagename)
+            self.source_package_name)
 
     def _set_distro_source_package(self, dsp):
         """Links this component to its corresponding source package"""
         if dsp is None:
             self.distribution = None
-            self.sourcepackagename = None
+            self.source_package_name = None
         else:
             self.distribution = dsp.distribution
-            self.sourcepackagename = dsp.sourcepackagename
+            self.source_package_name = dsp.sourcepackagename
 
     distro_source_package = property(
         _get_distro_source_package,
@@ -730,7 +730,7 @@ class BugTracker(SQLBase):
         return Store.of(self).find(
             BugTrackerComponent,
             BugTrackerComponent.distribution == distribution.id,
-            BugTrackerComponent.sourcepackagename ==
+            BugTrackerComponent.source_package_name ==
             dsp.sourcepackagename.id).one()
 
     def getRelatedPillars(self, user=None):
