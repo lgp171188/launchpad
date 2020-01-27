@@ -206,7 +206,7 @@ from lp.soyuz.interfaces.publishing import (
     ISourcePackagePublishingHistoryEdit,
     ISourcePackagePublishingHistoryPublic,
     )
-from lp.soyuz.interfaces.queue import IPackageUpload
+from lp.soyuz.interfaces.queue import IPackageUpload, IPackageUploadLog
 from lp.soyuz.interfaces.sourcepackagerelease import ISourcePackageRelease
 from lp.translations.interfaces.hastranslationimports import (
     IHasTranslationImports,
@@ -363,6 +363,8 @@ patch_reference_property(
     ISourcePackagePublishingHistory)
 patch_reference_property(
     ISourcePackagePublishingHistory, 'packageupload', IPackageUpload)
+patch_reference_property(
+    IPackageUploadLog, 'package_upload', IPackageUpload)
 patch_entry_return_type(
     ISourcePackagePublishingHistoryEdit, 'changeOverride',
     ISourcePackagePublishingHistory)

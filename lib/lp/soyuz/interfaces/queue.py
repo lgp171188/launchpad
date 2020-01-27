@@ -35,7 +35,6 @@ from lazr.restful.declarations import (
     exported,
     operation_for_version,
     operation_parameters,
-    operation_returns_collection_of,
     REQUEST_USER,
     )
 from lazr.restful.fields import (
@@ -118,14 +117,16 @@ class IPackageUploadQueue(Interface):
 
 
 class IPackageUploadLog(Interface):
-    """Entries of package upload status change"""
+    """A log entry recording a change in a package upload's status."""
 
     export_as_webservice_entry(publish_web_link=True, as_of="devel")
 
     id = Int(title=_('ID'), required=True, readonly=True)
 
-    package_upload = Attribute(
-        _("The package upload that generated this log"))
+    package_upload = exported(
+        Reference(
+            Interface, title=_("The package upload that generated this log"),
+            required=True, readonly=True))
 
     date_created = exported(
         Datetime(
