@@ -163,6 +163,14 @@ class TestPersonNavigation(TestCaseWithFactory):
             dsp.sourcepackagename.name, repository.name)
         self.assertEqual(repository, test_traverse(url)[0])
 
+    def test_traverse_git_repository_oci_project(self):
+        oci_project = self.factory.makeOCIProject()
+        repository = self.factory.makeGitRepository(target=oci_project)
+        url = "/~%s/%s/+oci/%s/+git/%s" % (
+            repository.owner.name, oci_project.pillar.name, oci_project.name,
+            repository.name)
+        self.assertEqual(repository, test_traverse(url)[0])
+
     def test_traverse_git_repository_personal(self):
         person = self.factory.makePerson()
         repository = self.factory.makeGitRepository(
