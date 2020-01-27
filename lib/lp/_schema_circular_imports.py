@@ -206,7 +206,10 @@ from lp.soyuz.interfaces.publishing import (
     ISourcePackagePublishingHistoryEdit,
     ISourcePackagePublishingHistoryPublic,
     )
-from lp.soyuz.interfaces.queue import IPackageUpload, IPackageUploadLog
+from lp.soyuz.interfaces.queue import (
+    IPackageUpload,
+    IPackageUploadLog,
+    )
 from lp.soyuz.interfaces.sourcepackagerelease import ISourcePackageRelease
 from lp.translations.interfaces.hastranslationimports import (
     IHasTranslationImports,
