@@ -27,7 +27,7 @@ from zope.component import getUtility
 from zope.datetime import rfc1123_date
 from zope.interface import implementer
 
-from lp.services.beautifulsoup import BeautifulSoup4 as BeautifulSoup
+from lp.services.beautifulsoup import BeautifulSoup
 from lp.services.config import config
 from lp.services.feeds.interfaces.feed import (
     IFeed,

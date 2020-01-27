@@ -4,8 +4,8 @@ Atom feeds produce XML not HTML.  Therefore we must parse the output as XML
 by asking BeautifulSoup to use lxml.
 
     >>> from lp.services.beautifulsoup import (
-    ...     BeautifulSoup4 as BeautifulSoup,
-    ...     SoupStrainer4 as SoupStrainer,
+    ...     BeautifulSoup,
+    ...     SoupStrainer,
     ...     )
     >>> from lp.services.feeds.tests.helper import (
     ...     parse_entries, parse_links, validate_feed)

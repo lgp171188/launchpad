@@ -26,7 +26,7 @@ from zope.security.proxy import removeSecurityProxy
 from lp.app.utilities.celebrities import ILaunchpadCelebrities
 from lp.buildmaster.enums import BuildStatus
 from lp.registry.interfaces.pocket import PackagePublishingPocket
-from lp.services.beautifulsoup import BeautifulSoup4 as BeautifulSoup
+from lp.services.beautifulsoup import BeautifulSoup
 from lp.services.webapp import canonical_url
 from lp.services.webapp.authentication import LaunchpadPrincipal
 from lp.soyuz.browser.archive import ArchiveNavigationMenu

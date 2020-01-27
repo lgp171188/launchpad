@@ -7,8 +7,8 @@ dedicated batched page showing all announcements, and as an RSS/Atom
 news feed.
 
     >>> from lp.services.beautifulsoup import (
-    ...     BeautifulSoup4 as BeautifulSoup,
-    ...     SoupStrainer4 as SoupStrainer,
+    ...     BeautifulSoup,
+    ...     SoupStrainer,
     ...     )
     >>> from lp.services.feeds.tests.helper import (
     ...     parse_ids, parse_links, validate_feed)

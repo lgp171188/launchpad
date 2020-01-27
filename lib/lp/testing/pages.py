@@ -18,24 +18,15 @@ import re
 import unittest
 from urlparse import urljoin
 
-from BeautifulSoup import (
+from bs4.element import (
     CData,
     Comment,
     Declaration,
+    Doctype,
     NavigableString,
     PageElement,
     ProcessingInstruction,
     Tag,
-    )
-from bs4.element import (
-    CData as CData4,
-    Comment as Comment4,
-    Declaration as Declaration4,
-    Doctype as Doctype4,
-    NavigableString as NavigableString4,
-    PageElement as PageElement4,
-    ProcessingInstruction as ProcessingInstruction4,
-    Tag as Tag4,
     )
 from contrib.oauth import (
     OAuthConsumer,
@@ -75,8 +66,8 @@ from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.registry.errors import NameAlreadyTaken
 from lp.registry.interfaces.teammembership import TeamMembershipStatus
 from lp.services.beautifulsoup import (
-    BeautifulSoup4 as BeautifulSoup,
-    SoupStrainer4 as SoupStrainer,
+    BeautifulSoup,
+    SoupStrainer,
     )
 from lp.services.config import config
 from lp.services.encoding import wsgi_native_string
@@ -247,8 +238,6 @@ class DuplicateIdError(Exception):
 def find_tag_by_id(content, id):
     """Find and return the tag with the given ID"""
     if isinstance(content, PageElement):
-        elements_with_id = content.findAll(True, {'id': id})
-    elif isinstance(content, PageElement4):
         elements_with_id = content.find_all(True, {'id': id})
     else:
         elements_with_id = [
@@ -393,8 +382,7 @@ def strip_label(label):
 
 
 IGNORED_ELEMENTS = [
-    Comment, Declaration, ProcessingInstruction,
-    Comment4, Declaration4, Doctype4, ProcessingInstruction4,
+    Comment, Declaration, Doctype, ProcessingInstruction,
     ]
 ELEMENTS_INTRODUCING_NEWLINE = [
     'p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'pre', 'dl',
@@ -415,7 +403,7 @@ def extract_link_from_tag(tag, base=None):
     A `tag` should contain a 'href' attribute, and `base` will commonly
     be extracted from browser.url.
     """
-    if not isinstance(tag, (PageElement, PageElement4)):
+    if not isinstance(tag, PageElement):
         link = BeautifulSoup(tag)
     else:
         link = tag
@@ -437,7 +425,7 @@ def extract_text(content, extract_image_text=False, skip_tags=None,
     """
     if skip_tags is None:
         skip_tags = ['script']
-    if not isinstance(content, (PageElement, PageElement4)):
+    if not isinstance(content, PageElement):
         soup = BeautifulSoup(content)
     else:
         soup = content
@@ -449,36 +437,13 @@ def extract_text(content, extract_image_text=False, skip_tags=None,
         if type(node) in IGNORED_ELEMENTS:
             continue
         elif isinstance(node, CData):
-            # CData inherits from NavigableString which inherits from unicode,
-            # but contains a __unicode__() method that calls __str__() that
-            # wraps the contents in <![CDATA[...]]>.  In Python 2.4, calling
-            # unicode(cdata_instance) copies the data directly so the wrapping
-            # does not happen.  Python 2.5 changed the unicode() function (C
-            # function PyObject_Unicode) to call its operand's __unicode__()
-            # method, which ends up calling CData.__str__() and the wrapping
-            # happens.  We don't want our test output to have to deal with the
-            # <![CDATA[...]]> wrapper.
-            #
-            # The CData class does not override slicing though, so by slicing
-            # node first, we're effectively turning it into a concrete unicode
-            # instance, which does not wrap the contents when its
-            # __unicode__() is called of course.  We could remove the
-            # unicode() call here, but we keep it for consistency and clarity
-            # purposes.
-            result.append(unicode(node[:]))
-        elif isinstance(node, CData4):
             result.append(unicode(node))
         elif isinstance(node, NavigableString):
-            result.append(unicode(node))
-        elif isinstance(node, NavigableString4):
             result.append(node.format_string(node, formatter=formatter))
         else:
-            if isinstance(node, (Tag, Tag4)):
+            if isinstance(node, Tag):
                 # If the node has the class "sortkey" then it is invisible.
-                if isinstance(node, Tag) and node.get('class') == 'sortkey':
-                    continue
-                elif (isinstance(node, Tag4) and
-                        node.get('class') == ['sortkey']):
+                if node.get('class') == ['sortkey']:
                     continue
                 elif getattr(node, 'name', '') in skip_tags:
                     continue
@@ -688,12 +653,8 @@ def print_location_apps(contents):
     else:
         for tab in location_apps:
             tab_text = extract_text(tab)
-            if isinstance(tab['class'], list):  # BeautifulSoup 4
-                if 'active' in tab['class']:
-                    tab_text += ' (selected)'
-            else:                               # BeautifulSoup 3
-                if tab['class'].find('active') != -1:
-                    tab_text += ' (selected)'
+            if 'active' in tab['class']:
+                tab_text += ' (selected)'
             if tab.a:
                 link = tab.a['href']
             else:
@@ -741,9 +702,9 @@ class Browser(_Browser):
     def _getText(self, element):
         def get_strings(elem):
             for descendant in elem.descendants:
-                if isinstance(descendant, (NavigableString4, CData4)):
+                if isinstance(descendant, (NavigableString, CData)):
                     yield descendant
-                elif isinstance(descendant, Tag4) and descendant.name == 'img':
+                elif isinstance(descendant, Tag) and descendant.name == 'img':
                     yield u'%s[%s]' % (
                         descendant.get('alt', u''), descendant.name.upper())
 
