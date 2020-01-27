@@ -1,4 +1,4 @@
-# Copyright 2009-2016 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Job classes related to BranchMergeProposals are in here.
@@ -27,6 +27,7 @@ from datetime import (
     timedelta,
     )
 
+from contextlib2 import ExitStack
 from lazr.delegates import delegate_to
 from lazr.enum import (
     DBEnumeratedType,
@@ -363,15 +364,12 @@ class UpdatePreviewDiffJob(BranchMergeProposalJobDerived):
     def run(self):
         """See `IRunnableJob`."""
         self.checkReady()
-        if self.branch_merge_proposal.source_branch is not None:
-            server_context = server(get_ro_server(), no_replace=True)
-        else:
-            # A no-op context manager.  (This could be simplified with
-            # contextlib.ExitStack from Python 3.3.)
-            server_context = contextmanager(lambda: (None for _ in [None]))()
+        if self.branch_merge_proposal.source_git_ref is not None:
             # Update related bug links based on commits in the source branch.
             self.branch_merge_proposal.updateRelatedBugsFromSource()
-        with server_context:
+        with ExitStack() as stack:
+            if self.branch_merge_proposal.source_branch is not None:
+                stack.enter_context(server(get_ro_server(), no_replace=True))
             with BranchMergeProposalDelta.monitor(self.branch_merge_proposal):
                 PreviewDiff.fromBranchMergeProposal(self.branch_merge_proposal)
 

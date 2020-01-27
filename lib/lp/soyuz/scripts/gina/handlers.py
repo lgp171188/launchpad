@@ -560,9 +560,11 @@ class SourcePackageHandler:
                 SourcePackagePublishingHistory.distroseries =
                     DistroSeries.id AND
                 SourcePackagePublishingHistory.archive = %s AND
+                SourcePackagePublishingHistory.sourcepackagename = %s AND
                 DistroSeries.distribution = %s
                 """ % sqlvalues(sourcepackagename, version,
                                 distroseries.main_archive,
+                                sourcepackagename,
                                 distroseries.distribution)
         ret = SourcePackageRelease.select(query,
             clauseTables=['SourcePackagePublishingHistory', 'DistroSeries'],
@@ -740,7 +742,8 @@ class BinaryPackageHandler:
         architecture = binarypackagedata.architecture
 
         clauseTables = ["BinaryPackageRelease", "DistroSeries",
-                        "BinaryPackageBuild", "DistroArchSeries"]
+                        "DistroArchSeries", "BinaryPackageBuild",
+                        "BinaryPackagePublishingHistory"]
         distroseries = distroarchseries.distroseries
 
         # When looking for binaries, we need to remember that they are
@@ -748,13 +751,18 @@ class BinaryPackageHandler:
         # distribution and the architecture tag of the distroarchseries
         # they were built for
         query = (
+            "BinaryPackagePublishingHistory.archive = %s AND "
+            "BinaryPackagePublishingHistory.binarypackagename = %s AND "
+            "BinaryPackageRelease.id ="
+            " BinaryPackagePublishingHistory.binarypackagerelease AND "
             "BinaryPackageRelease.binarypackagename=%s AND "
             "BinaryPackageRelease.version=%s AND "
             "BinaryPackageRelease.build = BinaryPackageBuild.id AND "
             "BinaryPackageBuild.distro_arch_series = DistroArchSeries.id AND "
             "DistroArchSeries.distroseries = DistroSeries.id AND "
-            "DistroSeries.distribution = %d" %
-            (binaryname.id, quote(version), distroseries.distribution.id))
+            "DistroSeries.distribution = %s" %
+            sqlvalues(distroseries.main_archive, binaryname, binaryname,
+                      version, distroseries.distribution))
 
         if architecture != "all":
             query += ("AND DistroArchSeries.architecturetag = %s" %
@@ -762,7 +770,7 @@ class BinaryPackageHandler:
 
         try:
             bpr = BinaryPackageRelease.selectOne(
-                query, clauseTables=clauseTables)
+                query, clauseTables=clauseTables, distinct=True)
         except SQLObjectMoreThanOneResultError:
             # XXX kiko 2005-10-27: Untested
             raise MultiplePackageReleaseError("Found more than one "
@@ -845,9 +853,10 @@ class BinaryPackageHandler:
         query = ("BinaryPackageBuild.source_package_release = %d AND "
                  "BinaryPackageBuild.distro_arch_series = "
                  "    DistroArchSeries.id AND "
+                 "BinaryPackageBuild.archive = %d AND "
                  "DistroArchSeries.distroseries = DistroSeries.id AND "
                  "DistroSeries.distribution = %d"
-                 % (srcpkg.id, distribution.id))
+                 % (srcpkg.id, distribution.main_archive.id, distribution.id))
 
         if archtag != "all":
             query += ("AND DistroArchSeries.architecturetag = %s"

@@ -30,8 +30,8 @@ Some distributions have listings of major versions, for example Debian:
     >>> anon_browser.open('http://launchpad.test/debian')
     >>> print extract_text(find_tag_by_id(anon_browser.contents, 'sandm'))
     Active series and milestones
-    3.1 &#8220;Sarge&#8221; series - frozen
-    3.0 &#8220;Woody&#8221; series - current
+    3.1 “Sarge” series - frozen
+    3.0 “Woody” series - current
         Milestones: 3.1 and 3.1-rc1
     All series
     All milestones
@@ -88,16 +88,16 @@ along with a link to list all of them.
     ...     find_tag_by_id(anon_browser.contents, 'derivatives'))
     Latest derivatives
     9.9.9
-    &#8220;Hoary Mock&#8221; series
+    “Hoary Mock” series
     (from Warty)
     8.06
-    &#8220;Krunch&#8221; series
+    “Krunch” series
     (from Hoary)
     6.6.6
-    &#8220;Breezy Badger Autotest&#8221; series
+    “Breezy Badger Autotest” series
     (from Warty)
     2005
-    &#8220;Guada2005&#8221; series
+    “Guada2005” series
     (from Hoary)
     All derivatives
 

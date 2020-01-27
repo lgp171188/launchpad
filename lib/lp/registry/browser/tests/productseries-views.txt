@@ -99,7 +99,7 @@ the class table is 'listing hidden'.
     listing hidden
 
     >>> table = find_tag_by_id(view.render(), 'series-simple')
-    >>> print table['class']
+    >>> print ' '.join(table['class'])
     listing hidden
 
 When the product series has milestones, the class is just 'listing'.

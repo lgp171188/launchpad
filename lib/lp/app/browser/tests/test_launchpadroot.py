@@ -14,8 +14,8 @@ from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.registry.interfaces.person import IPersonSet
 from lp.registry.interfaces.pillar import IPillarNameSet
 from lp.services.beautifulsoup import (
-    BeautifulSoup4 as BeautifulSoup,
-    SoupStrainer4 as SoupStrainer,
+    BeautifulSoup,
+    SoupStrainer,
     )
 from lp.services.config import config
 from lp.services.features.testing import FeatureFixture

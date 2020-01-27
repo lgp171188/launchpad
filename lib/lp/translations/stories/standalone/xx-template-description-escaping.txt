@@ -32,7 +32,7 @@ The template's description is linkified, so the URL is clickable.
     >>> len(description)
     1
     >>> print(description[0])
-    See <a ... href="http://example.com/">...</a> for an example!
+    See <a href="http://example.com/" ...>...</a> for an example!
 
 The same description also shows up on the +translate page for the
 package.  Again,the URL is clickable.
@@ -41,4 +41,4 @@ package.  Again,the URL is clickable.
     >>> len(description)
     1
     >>> print(description[0])
-    See <a ... href="http://example.com/">...</a> for an example!
+    See <a href="http://example.com/" ...>...</a> for an example!

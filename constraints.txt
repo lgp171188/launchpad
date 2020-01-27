@@ -157,10 +157,7 @@ zc.recipe.testrunner==2.0.0
 
 # Alphabetical, case-insensitive, please! :-)
 
-# lp:~launchpad/ampoule/lp
-# post1 Don't add a process back to the ready set if it received an error
-# such as a timeout.
-ampoule==0.2.0.post1
+ampoule==19.12.0
 amqp==2.4.2
 anyjson==0.3.3
 appdirs==1.4.3
@@ -173,7 +170,6 @@ Automat==0.6.0
 Babel==2.5.1
 backports.functools-lru-cache==1.5
 backports.lzma==0.0.3
-BeautifulSoup==3.2.1
 beautifulsoup4[lxml]==4.7.1
 billiard==3.5.0.5
 bleach==3.1.0
@@ -185,10 +181,11 @@ celery==4.1.1
 Chameleon==3.6.2
 configobj==5.0.6
 constantly==15.1.0
+contextlib2==0.6.0.post1
 cookies==2.2.1
 cryptography==2.7
 cssselect==0.9.1
-cssutils==0.9.10
+cssutils==1.0.2
 d2to1==0.2.12
 defusedxml==0.6.0
 Django==1.4
@@ -208,7 +205,6 @@ futures==3.2.0
 geoip2==2.9.0
 grokcore.component==1.6
 gunicorn==19.8.1
-html5browser==0.0.9
 httplib2==0.8
 hyperlink==18.0.0
 importlib==1.0.2
@@ -226,7 +222,7 @@ lazr.authentication==0.1.1
 lazr.batchnavigator==1.3.0
 lazr.config==2.2.2
 lazr.delegates==2.0.4
-lazr.enum==1.1.3
+lazr.enum==1.2
 lazr.jobrunner==0.16
 lazr.lifecycle==1.2
 lazr.restful==0.21.0
@@ -323,14 +319,14 @@ WSGIProxy2==0.4.6
 wsgiref==0.1.2
 z3c.pt==3.2.0
 z3c.ptcompat==2.2.0
-zc.zservertracelog==1.3.2
+zc.zservertracelog==2.0.0
 zope.app.applicationcontrol==4.0.0
 zope.app.appsetup==4.1.0
 zope.app.http==4.0.1
 zope.app.publication==4.3.1
-zope.app.publisher==3.10.2
+zope.app.publisher==4.2.0
 zope.app.server==4.0.0
 zope.app.wsgi[testlayer]==4.1.0
-zope.server==3.8.6
+zope.server==4.0.2
 zope.testbrowser==5.5.1
-zope.vocabularyregistry==1.0.0
+zope.vocabularyregistry==1.1.1

@@ -128,6 +128,6 @@ to the source package page and an informational message will be displayed.
     Linked Bonkers project to bonkers source package.
     >>> print extract_text(
     ...     find_tag_by_id(user_browser.contents, 'upstreams'))
-    Bonkers &rArr; trunk
+    Bonkers ⇒ trunk
     Change upstream link
     Remove upstream link...

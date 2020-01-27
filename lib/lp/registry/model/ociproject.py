@@ -19,7 +19,9 @@ from storm.locals import (
     Reference,
     Unicode,
     )
+from zope.component import getUtility
 from zope.interface import implementer
+from zope.security.proxy import removeSecurityProxy
 
 from lp.bugs.model.bugtarget import BugTargetBase
 from lp.registry.interfaces.distribution import IDistribution
@@ -27,15 +29,30 @@ from lp.registry.interfaces.ociproject import (
     IOCIProject,
     IOCIProjectSet,
     )
+from lp.registry.interfaces.ociprojectname import IOCIProjectNameSet
 from lp.registry.interfaces.series import SeriesStatus
 from lp.registry.model.ociprojectname import OCIProjectName
 from lp.registry.model.ociprojectseries import OCIProjectSeries
-from lp.services.database.constants import DEFAULT
+from lp.services.database.constants import (
+    DEFAULT,
+    UTC_NOW,
+    )
 from lp.services.database.interfaces import (
     IMasterStore,
     IStore,
     )
 from lp.services.database.stormbase import StormBase
+
+
+def oci_project_modified(oci_project, event):
+    """Update the date_last_modified property when an OCIProject is modified.
+
+    This method is registered as a subscriber to `IObjectModifiedEvent`
+    events on OCI projects.
+    """
+    # This attribute is normally read-only; bypass the security proxy to
+    # avoid that.
+    removeSecurityProxy(oci_project).date_last_modified = UTC_NOW
 
 
 @implementer(IOCIProject)
@@ -67,21 +84,27 @@ class OCIProject(BugTargetBase, StormBase):
         name="enable_bugfiling_duplicate_search")
 
     @property
+    def name(self):
+        return self.ociprojectname.name
+
+    @name.setter
+    def name(self, value):
+        self.ociprojectname = getUtility(IOCIProjectNameSet).getOrCreateByName(
+            value)
+
+    @property
     def pillar(self):
         """See `IBugTarget`."""
         return self.distribution
 
     @property
-    def bugtargetname(self):
-        """See `IBugTarget`."""
+    def display_name(self):
+        """See `IOCIProject`."""
         return "OCI project %s for %s" % (
-            self.ociprojectname.name, self.pillar.name)
+            self.ociprojectname.name, self.pillar.display_name)
 
-    @property
-    def bugtargetdisplayname(self):
-        """See `IBugTarget`."""
-        return "OCI project %s for %s" % (
-            self.ociprojectname.name, self.pillar.name)
+    bugtargetname = display_name
+    bugtargetdisplayname = display_name
 
     def newSeries(self, name, summary, registrant,
                   status=SeriesStatus.DEVELOPMENT, date_created=DEFAULT):

@@ -138,6 +138,9 @@ class IGitCollection(Interface):
     def inDistributionSourcePackage(distro_source_package):
         """Restrict to repositories in a package for a distribution."""
 
+    def inOCIProject(oci_project):
+        """Restrict to repositories in an OCI Project."""
+
     def isPersonal():
         """Restrict the collection to personal repositories."""
 

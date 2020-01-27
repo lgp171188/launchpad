@@ -121,6 +121,7 @@ from lp.services.config.fixture import (
     )
 from lp.services.database.interfaces import IStore
 from lp.services.database.sqlbase import session_store
+from lp.services.encoding import wsgi_native_string
 from lp.services.job.tests import celery_worker
 from lp.services.librarian.model import LibraryFileAlias
 from lp.services.librarianserver.testing.server import LibrarianServerFixture
@@ -147,7 +148,6 @@ from lp.services.webapp.interfaces import IOpenLaunchBag
 from lp.services.webapp.servers import (
     LaunchpadAccessLogger,
     register_launchpad_request_publication_factories,
-    wsgi_native_string,
     )
 import lp.services.webapp.session
 from lp.testing import (

@@ -73,10 +73,12 @@ from lp.code.interfaces.hasrecipes import IHasRecipes
 from lp.registry.interfaces.distributionsourcepackage import (
     IDistributionSourcePackage,
     )
+from lp.registry.interfaces.ociproject import IOCIProject
 from lp.registry.interfaces.person import IPerson
 from lp.registry.interfaces.persondistributionsourcepackage import (
     IPersonDistributionSourcePackageFactory,
     )
+from lp.registry.interfaces.personociproject import IPersonOCIProjectFactory
 from lp.registry.interfaces.personproduct import IPersonProductFactory
 from lp.registry.interfaces.product import IProduct
 from lp.registry.interfaces.role import IPersonRoles
@@ -406,9 +408,10 @@ class IGitRepositoryView(IHasRecipes):
         itself.  For default repositories, the context object is the
         appropriate default object.
 
-        Where a repository is the default for a product or a distribution
-        source package, the repository is available through a number of
-        different URLs.  These URLs are the aliases for the repository.
+        Where a repository is the default for a product, distribution
+        source package or OCI project, the repository is available
+        through a number of different URLs.
+        These URLs are the aliases for the repository.
 
         For example, a repository which is the default for the 'fooix'
         project and which is also its owner's default repository for that
@@ -947,8 +950,9 @@ class IGitRepositorySet(Interface):
             repository.
         :param registrant: The `IPerson` who registered the new repository.
         :param owner: The `IPerson` who owns the new repository.
-        :param target: The `IProduct`, `IDistributionSourcePackage`, or
-            `IPerson` that the new repository is associated with.
+        :param target: The `IProduct`, `IDistributionSourcePackage`,
+            `IOCIProjectName`, or `IPerson` that the new repository is
+            associated with.
         :param name: The repository name.
         :param information_type: Set the repository's information type to
             one different from the target's default.  The type must conform
@@ -1071,7 +1075,7 @@ class IGitRepositorySet(Interface):
             title=_("Git repository"), required=False, schema=IGitRepository))
     @export_write_operation()
     @operation_for_version("devel")
-    def setDefaultRepository(target, repository):
+    def setDefaultRepository(target, repository, force_oci=False):
         """Set the default repository for a target.
 
         :param target: An `IHasGitRepositories`.
@@ -1163,11 +1167,14 @@ class GitIdentityMixin:
             elif IDistributionSourcePackage.providedBy(self.target):
                 factory = getUtility(IPersonDistributionSourcePackageFactory)
                 default = factory.create(self.owner, self.target)
+            elif IOCIProject.providedBy(self.target):
+                factory = getUtility(IPersonOCIProjectFactory)
+                default = factory.create(self.owner, self.target)
             else:
                 # Also enforced by database constraint.
                 raise AssertionError(
-                    "Only projects or packages can have owner-target default "
-                    "repositories.")
+                    "Only projects, packages, or OCI projects can have "
+                    "owner-target default repositories.")
             defaults.append(ICanHasDefaultGitRepository(default))
         return sorted(defaults)
 

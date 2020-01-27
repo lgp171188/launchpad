@@ -39,7 +39,7 @@ a separate method to pretty-print all the translations.
     ...         for cell in cells:
     ...             type = dict(cell.attrs).get('class')
     ...             if type:
-    ...                 return type
+    ...                 return ' '.join(type)
     ...         return None
     ...
     ...     # Get contents of all the `cells`, and join them with spaces.

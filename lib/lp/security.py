@@ -3434,6 +3434,11 @@ class EditSnapBaseSet(EditByRegistryExpertsOrAdmins):
     usedfor = ISnapBaseSet
 
 
+class ViewOCIProject(AnonymousAuthorization):
+    """Anyone can view an `IOCIProject`."""
+    usedfor = IOCIProject
+
+
 class EditOCIProject(AuthorizationBase):
     permission = 'launchpad.Edit'
     usedfor = IOCIProject

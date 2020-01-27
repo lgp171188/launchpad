@@ -235,11 +235,10 @@ it has been mirrored:
 The branch description should not be shown if there is none.
 
     >>> def get_branch_description(browser):
-    ...     return extract_text(find_tag_by_id(
-    ...         browser.contents, 'branch-description'))
+    ...     tag = find_tag_by_id(browser.contents, 'branch-description')
+    ...     return extract_text(tag) if tag is not None else None
     >>> print(get_branch_description(browser))
-    Traceback (most recent call last):
-    TypeError: expected string or buffer
+    None
 
 Branches that have never been mirrored don't have a 'Last mirrored'
 field.

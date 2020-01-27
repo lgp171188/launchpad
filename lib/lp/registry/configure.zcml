@@ -1,4 +1,4 @@
-<!-- Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+<!-- Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
      GNU Affero General Public License version 3 (see the file LICENSE).
 -->
 
@@ -746,18 +746,19 @@
             interface="lp.registry.interfaces.ociproject.IOCIProjectEdit"
             set_schema="lp.registry.interfaces.ociproject.IOCIProjectEditableAttributes" />
     </class>
-    <securedutility
-        class="lp.registry.model.ociproject.OCIProject"
-        provides="lp.registry.interfaces.ociproject.IOCIProject">
-        <allow
-            interface="lp.registry.interfaces.ociproject.IOCIProject"/>
-    </securedutility>
+    <subscriber
+        for="lp.registry.interfaces.ociproject.IOCIProject zope.lifecycleevent.interfaces.IObjectModifiedEvent"
+        handler="lp.registry.model.ociproject.oci_project_modified" />
     <securedutility
         class="lp.registry.model.ociproject.OCIProjectSet"
         provides="lp.registry.interfaces.ociproject.IOCIProjectSet">
         <allow
             interface="lp.registry.interfaces.ociproject.IOCIProjectSet"/>
     </securedutility>
+    <adapter
+        for="lp.registry.interfaces.ociproject.IOCIProject"
+        provides="lp.services.webapp.interfaces.IBreadcrumb"
+        factory="lp.registry.browser.ociproject.OCIProjectBreadcrumb"/>
 
     <!-- OCIProjectSeries -->
     <class
@@ -2197,6 +2198,21 @@
         class="lp.registry.model.personnotification.PersonNotificationSet">
         <allow
             interface="lp.registry.interfaces.personnotification.IPersonNotificationSet"/>
+    </securedutility>
+
+    <!-- PersonOCIProject -->
+
+    <class
+        class="lp.registry.model.personociproject.PersonOCIProject">
+        <allow
+            interface="lp.registry.interfaces.personociproject.IPersonOCIProject"/>
+    </class>
+
+    <securedutility
+        component="lp.registry.model.personociproject.PersonOCIProject"
+        provides="lp.registry.interfaces.personociproject.IPersonOCIProjectFactory">
+        <allow
+            interface="lp.registry.interfaces.personociproject.IPersonOCIProjectFactory"/>
     </securedutility>
 
     <!-- PersonProduct -->

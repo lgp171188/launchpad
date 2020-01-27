@@ -1,17 +1,16 @@
 # Copyright 2011-2012 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
+from __future__ import absolute_import, print_function, unicode_literals
+
 __metaclass__ = type
 
 import os
 import shutil
 import tempfile
 
-from paste.fixture import TestApp
-
 from lp.scripts.utilities.js.combo import (
     combine_files,
-    combo_app,
     parse_url,
     )
 from lp.testing import TestCase
@@ -435,7 +434,7 @@ class TestCombo(ComboTestBase):
             "".join(combine_files(["widget/assets/skins/sam/widget.css",
                                    "editor/assets/skins/sam/editor.css"],
                                   root=test_dir,
-                                  resource_prefix="/static/")).strip(),
+                                  resource_prefix=b"/static/")).strip(),
             expected)
 
     def test_missing_file_is_ignored(self):
@@ -513,60 +512,3 @@ class TestCombo(ComboTestBase):
         self.assertEqual(
             "".join(combine_files([hack], root=test_dir)).strip(),
             expected)
-
-
-class TestWSGICombo(ComboTestBase):
-
-    def setUp(self):
-        super(TestWSGICombo, self).setUp()
-        self.root = self.makeDir()
-        self.app = TestApp(combo_app(self.root))
-
-    def test_combo_app_sets_content_type_for_js(self):
-        """The WSGI App should set a proper Content-Type for Javascript."""
-        self.makeSampleFile(
-            self.root,
-            os.path.join("yui", "yui-min.js"),
-            "** yui-min **")
-        self.makeSampleFile(
-            self.root,
-            os.path.join("oop", "oop-min.js"),
-            "** oop-min **")
-        self.makeSampleFile(
-            self.root,
-            os.path.join("event-custom", "event-custom-min.js"),
-            "** event-custom-min **")
-
-        expected = "\n".join(("// yui/yui-min.js",
-                              "** yui-min **",
-                              "// oop/oop-min.js",
-                              "** oop-min **",
-                              "// event-custom/event-custom-min.js",
-                              "** event-custom-min **"))
-
-        res = self.app.get("/?" + "&".join(
-            ["yui/yui-min.js",
-             "oop/oop-min.js",
-             "event-custom/event-custom-min.js"]), status=200)
-        self.assertEqual(res.headers, [("Content-Type", "text/javascript")])
-        self.assertEqual(res.body.strip(), expected)
-
-    def test_combo_app_sets_content_type_for_css(self):
-        """The WSGI App should set a proper Content-Type for CSS."""
-        self.makeSampleFile(
-            self.root,
-            os.path.join("widget", "skin", "sam", "widget.css"),
-            "/* widget-skin-sam */")
-
-        expected = "/* widget/skin/sam/widget.css */"
-
-        res = self.app.get("/?" + "&".join(
-            ["widget/skin/sam/widget.css"]), status=200)
-        self.assertEqual(res.headers, [("Content-Type", "text/css")])
-        self.assertEqual(res.body.strip(), expected)
-
-    def test_no_filename_gives_404(self):
-        """If no filename is included, a 404 should be returned."""
-        res = self.app.get("/", status=404)
-        self.assertEqual(res.headers, [("Content-Type", "text/plain")])
-        self.assertEqual(res.body, "Not Found")

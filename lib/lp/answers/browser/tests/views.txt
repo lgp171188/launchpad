@@ -893,7 +893,7 @@ Summary, Created, Submitter, Assignee, and Status.
     >>> for row in table.findAll('tr'):
     ...     print(extract_text(row))
     Summary                Created     Submitter      Assignee  Status
-    6 Newly installed...  2005-10-14   Sample Person  &mdash;   Answered ...
+    6 Newly installed...  2005-10-14   Sample Person  —         Answered ...
 
 Distribution display the "Source Package" column. The name of the source
 package is displayed if it exists.
@@ -910,8 +910,8 @@ package is displayed if it exists.
     >>> for row in table.findAll('tr'):
     ...     print(extract_text(row))
     Summary  Created     Submitter      Source Package   Assignee  Status ...
-    8 ...    2006-07-20  Sample Person  mozilla-firefox  &mdash;   Answered
-    7 ...    2005-10-14  Foo Bar        &mdash;          &mdash;   Needs ...
+    8 ...    2006-07-20  Sample Person  mozilla-firefox  —         Answered
+    7 ...    2005-10-14  Foo Bar        —                —         Needs ...
 
 ProjectGroups display the "In" column to show the product name.
 
@@ -930,7 +930,7 @@ ProjectGroups display the "In" column to show the product name.
     >>> for row in table.findAll('tr'):
     ...     print(extract_text(row))
     Summary  Created     Submitter      In               Assignee  Status
-    6 ...    2005-10-14  Sample Person  Mozilla Firefox  &mdash;   Answered...
+    6 ...    2005-10-14  Sample Person  Mozilla Firefox  —         Answered...
 
 The Assignee column is always displayed. It contains The person assigned
 to the question, or an m-dash if there is no assignee.
@@ -951,7 +951,7 @@ to the question, or an m-dash if there is no assignee.
     ...     print(extract_text(row))
     Summary  Created     Submitter      Assignee  Status
     6 ...    2005-10-14  Sample Person  Bob       Answered
-    4 ...    2005-09-05  Foo Bar        &mdash;   Open ...
+    4 ...    2005-09-05  Foo Bar        —         Open ...
 
 
 ManageAnswerContactView

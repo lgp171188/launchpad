@@ -261,11 +261,11 @@ source package's question listing.
     >>> browser.title
     'Questions : mozilla-firefox package : Ubuntu'
     >>> soup = find_main_content(browser.contents)
-    >>> soup('table', 'listing')
-    [<table...
+    >>> print(soup.find('table', 'listing'))
+    <table...
     ...mailto: problem in webpage...2006-07-20...
     ...Installation of Java Runtime Environment for Mozilla...2006-07-20...
-    </table>]
+    </table>
 
 Average Joe wants to see all questions but listed from the oldest to the
 newest. Again, he adds the 'Invalid' status to the selection and
@@ -276,12 +276,12 @@ selects the 'oldest first' sort order.
     >>> browser.getControl('Search', index=0).click()
 
     >>> soup = find_main_content(browser.contents)
-    >>> soup('table', 'listing')
-    [<table...
+    >>> print(soup.find('table', 'listing'))
+    <table...
     ...Firefox is slow and consumes too much RAM...2005-09-05...
     ...Installation of Java Runtime Environment for Mozilla...2006-07-20...
     ...mailto: problem in webpage...2006-07-20...
-    </table>]
+    </table>
 
 
 == Common Reports ==
@@ -770,7 +770,7 @@ Entering an invalid project also displays an error message:
 
     >>> for message in find_tags_by_class(anon_browser.contents, 'message'):
     ...     print(message.renderContents())
-    There is no project named &#x27;invalid&#x27; registered in Launchpad
+    There is no project named 'invalid' registered in Launchpad
 
 If the browser supports javascript, there is a 'Choose' link available
 to help the user find an existing project. Since the test browser does

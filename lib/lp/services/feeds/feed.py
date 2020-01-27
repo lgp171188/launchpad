@@ -302,9 +302,7 @@ class FeedTypedData:
         if self.content_type in ('text', 'html'):
             altered_content = html_escape(altered_content)
         elif self.content_type == 'xhtml':
-            soup = BeautifulSoup(
-                altered_content,
-                convertEntities=BeautifulSoup.HTML_ENTITIES)
+            soup = BeautifulSoup(altered_content)
             altered_content = unicode(soup)
         return altered_content
 

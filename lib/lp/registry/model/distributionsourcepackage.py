@@ -17,7 +17,7 @@ from operator import (
     )
 from threading import local
 
-from bzrlib.lru_cache import LRUCache
+from breezy.lru_cache import LRUCache
 from sqlobject.sqlbuilder import SQLConstant
 from storm.expr import (
     And,

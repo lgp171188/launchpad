@@ -804,7 +804,7 @@ added (with some extra html code, but the same content we wanted to add)
 
     >>> tag = find_tag_by_id(browser.contents, 'msgset_148_cy_translation_0')
     >>> print(tag.renderContents())
-    foo<img alt="" src="/@@/translation-newline" /><br />
+    foo<img alt="" src="/@@/translation-newline"/><br/>
     %i%i%i
 
 
@@ -1102,7 +1102,7 @@ an error message back.
 
     >>> for tag in find_tags_by_class(admin_browser.contents, 'error'):
     ...     print(tag.renderContents())
-    Ignored your upload because you didn&#x27;t select a file to upload.
+    Ignored your upload because you didn't select a file to upload.
 
 Uploading files with an unkown file format notifies the user that it
 cannot be handled.

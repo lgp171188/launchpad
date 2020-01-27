@@ -1,6 +1,8 @@
 # Copyright 2011-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
+from __future__ import absolute_import, print_function, unicode_literals
+
 __metaclass__ = type
 
 import os
@@ -8,7 +10,7 @@ import urlparse
 
 from six.moves.urllib.parse import parse_qsl
 
-from jsbuild import (
+from lp.scripts.utilities.js.jsbuild import (
     CSSComboFile,
     JSComboFile,
     )
@@ -32,13 +34,17 @@ def parse_qs(query):
     return tuple([param for param, value in params])
 
 
-def combine_files(fnames, root, resource_prefix="",
+def combine_files(fnames, root, resource_prefix=b"",
                   minify_css=True, rewrite_urls=True):
     """Combine many files into one.
 
     Returns an iterator with the combined content of all the
     files. The relative path to root will be included as a comment
     between each file.
+
+    Although CSS files are conceptually closer to text than bytes, we always
+    yield bytes here since that's closer to what cssutils gives us, and it
+    saves having to know the encoding.
     """
 
     combo_by_kind = {
@@ -56,33 +62,6 @@ def combine_files(fnames, root, resource_prefix="",
         if not full.startswith(root) or not os.path.exists(full):
             yield combo.get_comment("[missing]")
         else:
-            f = open(full, "r")
-            content = f.read()
-            f.close()
+            with open(full, "rb") as f:
+                content = f.read()
             yield combo.filter_file_content(content, full)
-
-
-def combo_app(root, resource_prefix="", minify_css=True, rewrite_urls=True):
-    """A simple YUI Combo Service WSGI app.
-
-    Serves any files under C{root}, setting an appropriate
-    C{Content-Type} header.
-    """
-    root = os.path.abspath(root)
-
-    def app(environ, start_response, root=root):
-        fnames = parse_qs(environ["QUERY_STRING"])
-        content_type = "text/plain"
-        if fnames:
-            if fnames[0].endswith(".js"):
-                content_type = "text/javascript"
-            elif fnames[0].endswith(".css"):
-                content_type = "text/css"
-        else:
-            start_response("404 Not Found", [("Content-Type", content_type)])
-            return ("Not Found",)
-        start_response("200 OK", [("Content-Type", content_type)])
-        return combine_files(fnames, root, resource_prefix,
-                             minify_css, rewrite_urls)
-
-    return app

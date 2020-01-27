@@ -764,6 +764,16 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
                 requester.name,
                 dsp.distribution.name, dsp.sourcepackagename.name))
 
+    def test_translatePath_create_oci_project(self):
+        # translatePath creates an OCI project repository that doesn't
+        # exist, if it can.
+        requester = self.factory.makePerson()
+        oci_project = self.factory.makeOCIProject()
+        self.assertCreates(
+            requester,
+            u"/~%s/%s/+oci/%s/+git/random" % (
+                requester.name, oci_project.pillar.name, oci_project.name))
+
     def test_translatePath_create_personal(self):
         # translatePath creates a personal repository that doesn't exist, if
         # it can.
@@ -911,6 +921,18 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
         self.assertPermissionDenied(
             requester, path, message=message, permission="write")
 
+    def test_translatePath_create_oci_project_default_denied(self):
+        # A repository cannot (yet) be created and immediately set as the
+        # default for an OCI project.
+        requester = self.factory.makePerson()
+        oci_project = self.factory.makeOCIProject()
+        path = u"/%s/+oci/%s" % (oci_project.pillar.name, oci_project.name)
+        message = (
+            "Cannot automatically set the default repository for this target; "
+            "push to a named repository instead.")
+        self.assertPermissionDenied(
+            requester, path, message=message, permission="write")
+
     def test_translatePath_create_project_owner_default(self):
         # A repository can be created and immediately set as its owner's
         # default for a project.
@@ -979,6 +1001,44 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
         dsp = self.factory.makeDistributionSourcePackage()
         path = u"/~%s/%s/+source/%s" % (
             team.name, dsp.distribution.name, dsp.sourcepackagename.name)
+        repository = self.assertCreates(requester, path)
+        self.assertFalse(repository.target_default)
+        self.assertTrue(repository.owner_default)
+        self.assertEqual(team, repository.owner)
+
+    def test_translatePath_create_oci_project_owner_default(self):
+        # A repository can be created and immediately set as its owner's
+        # default for an OCI project.
+        requester = self.factory.makePerson()
+        oci_project = self.factory.makeOCIProject()
+        path = u"/~%s/%s/+oci/%s" % (
+            requester.name, oci_project.pillar.name, oci_project.name)
+        repository = self.assertCreates(requester, path)
+        self.assertFalse(repository.target_default)
+        self.assertTrue(repository.owner_default)
+        self.assertEqual(requester, repository.owner)
+
+    def test_translatePath_create_oci_project_team_owner_default(self):
+        # The owner of a team can create a team-owned repository and
+        # immediately set it as that team's default for an OCI project.
+        requester = self.factory.makePerson()
+        team = self.factory.makeTeam(owner=requester)
+        oci_project = self.factory.makeOCIProject()
+        path = u"/~%s/%s/+oci/%s" % (
+            team.name, oci_project.pillar.name, oci_project.name)
+        repository = self.assertCreates(requester, path)
+        self.assertFalse(repository.target_default)
+        self.assertTrue(repository.owner_default)
+        self.assertEqual(team, repository.owner)
+
+    def test_translatePath_create_oci_project_team_member_default(self):
+        # A non-owner member of a team can create a team-owned repository
+        # and immediately set it as that team's default for an OCI project.
+        requester = self.factory.makePerson()
+        team = self.factory.makeTeam(members=[requester])
+        oci_project = self.factory.makeOCIProject()
+        path = u"/~%s/%s/+oci/%s" % (
+            team.name, oci_project.pillar.name, oci_project.name)
         repository = self.assertCreates(requester, path)
         self.assertFalse(repository.target_default)
         self.assertTrue(repository.owner_default)

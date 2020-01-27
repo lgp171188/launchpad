@@ -602,6 +602,45 @@
         provides="zope.traversing.interfaces.IPathAdapter"
         for="lp.registry.interfaces.sourcepackage.ISourcePackage"
         />
+    <browser:defaultView
+        name="+index"
+        for="lp.registry.interfaces.ociproject.IOCIProject"
+        />
+    <browser:url
+        for="lp.registry.interfaces.ociproject.IOCIProject"
+        path_expression="string:+oci/${name}"
+        attribute_to_parent="pillar"
+        />
+    <browser:navigation
+        module="lp.registry.browser.ociproject"
+        classes="OCIProjectNavigation"
+        />
+    <browser:page
+        name="+index"
+        for="lp.registry.interfaces.ociproject.IOCIProject"
+        class="lp.services.webapp.LaunchpadView"
+        permission="launchpad.View"
+        template="../templates/ociproject-index.pt"
+        />
+    <browser:page
+        name="+edit"
+        for="lp.registry.interfaces.ociproject.IOCIProject"
+        class="lp.registry.browser.ociproject.OCIProjectEditView"
+        permission="launchpad.Edit"
+        template="../../app/templates/generic-edit.pt"
+        />
+    <browser:menus
+        module="lp.registry.browser.ociproject"
+        classes="
+            OCIProjectFacets
+            OCIProjectNavigationMenu"
+        />
+    <adapter
+        name="fmt"
+        factory="lp.registry.browser.ociproject.OCIProjectFormatterAPI"
+        provides="zope.traversing.interfaces.IPathAdapter"
+        for="lp.registry.interfaces.ociproject.IOCIProject"
+        />
     <browser:url
         for="lp.registry.interfaces.commercialsubscription.ICommercialSubscription"
         path_expression="string:+commercialsubscription/${id}"
@@ -2517,6 +2556,11 @@
         module="lp.registry.browser.persondistributionsourcepackage"
         classes="
                  PersonDistributionSourcePackageFacets"
+        />
+    <browser:url
+        for="lp.registry.interfaces.personociproject.IPersonOCIProject"
+        path_expression="string:${oci_project/pillar/name}/+oci/${oci_project/name}"
+        attribute_to_parent="person"
         />
     <browser:url
         for="lp.registry.interfaces.personproduct.IPersonProduct"

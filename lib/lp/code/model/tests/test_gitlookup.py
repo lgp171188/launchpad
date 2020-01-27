@@ -19,7 +19,10 @@ from lp.code.interfaces.gitlookup import (
     IGitTraverser,
     )
 from lp.code.interfaces.gitrepository import IGitRepositorySet
-from lp.registry.errors import NoSuchSourcePackageName
+from lp.registry.errors import (
+    NoSuchOCIProjectName,
+    NoSuchSourcePackageName,
+    )
 from lp.registry.interfaces.person import NoSuchPerson
 from lp.registry.interfaces.product import (
     InvalidProductName,
@@ -107,6 +110,14 @@ class TestGetByUniqueName(TestCaseWithFactory):
         self.assertIsNone(self.lookup.getByUniqueName(
             repository.unique_name + "-nonexistent"))
 
+    def test_ociproject(self):
+        ociproject = self.factory.makeOCIProject()
+        repository = self.factory.makeGitRepository(target=ociproject)
+        self.assertEqual(
+            repository, self.lookup.getByUniqueName(repository.unique_name))
+        self.assertIsNone(self.lookup.getByUniqueName(
+            repository.unique_name + "-nonexistent"))
+
 
 class TestGetByPath(TestCaseWithFactory):
     """Test `IGitLookup.getByPath`."""
@@ -150,6 +161,21 @@ class TestGetByPath(TestCaseWithFactory):
         repository = self.factory.makeGitRepository(owner=owner, target=owner)
         self.assertEqual(
             (repository, ""), self.lookup.getByPath(repository.unique_name))
+
+    def test_ociproject(self):
+        oci_project = self.factory.makeOCIProject()
+        repository = self.factory.makeGitRepository(target=oci_project)
+        self.assertEqual(
+            (repository, ""), self.lookup.getByPath(repository.unique_name))
+
+    def test_ociproject_default(self):
+        oci_project = self.factory.makeOCIProject()
+        repository = self.factory.makeGitRepository(target=oci_project)
+        with person_logged_in(repository.target.distribution.owner):
+            getUtility(IGitRepositorySet).setDefaultRepository(
+                repository.target, repository, force_oci=True)
+        self.assertEqual(
+            (repository, ""), self.lookup.getByPath(repository.shortened_path))
 
     def test_extra_path(self):
         repository = self.factory.makeGitRepository()
@@ -362,6 +388,38 @@ class TestGitTraverser(TestCaseWithFactory):
                 dsp.distribution.name, dsp.sourcepackagename.name,
                 repository.name))
 
+    def test_missing_ociprojectname(self):
+        # `traverse_path` raises `InvalidNamespace` if there are no segments
+        # after '+oci'.
+        self.factory.makeDistribution(name="distro")
+        self.assertRaises(
+            InvalidNamespace, self.traverser.traverse_path, "distro/+oci")
+
+    def test_no_such_ociprojectname(self):
+        # `traverse_path` raises `NoSuchOCIProjectName` if the OCI project
+        # in distro/+oci/ociproject doesn't exist.
+        self.factory.makeDistribution(name="distro")
+        self.assertRaises(
+            NoSuchOCIProjectName, self.traverser.traverse_path,
+            "distro/+oci/nonexistent")
+
+    def test_ociproject(self):
+        # `traverse_path` resolves 'distro/+oci/ociproject' to the OCI
+        # project.
+        oci_project = self.factory.makeOCIProject()
+        path = "%s/+oci/%s" % (oci_project.pillar.name, oci_project.name)
+        self.assertTraverses(path, None, oci_project)
+
+    def test_ociproject_no_named_repositories(self):
+        # OCI projects do not have named repositories without an owner
+        # context, so trying to traverse to them raises `InvalidNamespace`.
+        oci_project = self.factory.makeOCIProject()
+        repository = self.factory.makeGitRepository(target=oci_project)
+        self.assertRaises(
+            InvalidNamespace, self.traverser.traverse_path,
+            "%s/+oci/%s/+git/%s" % (
+                oci_project.pillar.name, oci_project.name, repository.name))
+
     def test_nonexistent_person(self):
         # `traverse_path` raises `NoSuchPerson` when resolving a path of
         # '~person/project' if the person doesn't exist.
@@ -520,6 +578,65 @@ class TestGitTraverser(TestCaseWithFactory):
                 person.name, dsp.distribution.name, dsp.sourcepackagename.name,
                 repository.name),
             person, dsp, repository)
+
+    def test_missing_person_ociprojectname(self):
+        # `traverse_path` raises `InvalidNamespace` if there are no segments
+        # after '+oci' in a person-OCIProject path.
+        self.factory.makePerson(name="person")
+        self.factory.makeDistribution(name="distro")
+        self.assertRaises(
+            InvalidNamespace, self.traverser.traverse_path,
+            "~person/distro/+oci")
+
+    def test_no_such_person_ociprojectname(self):
+        # `traverse_path` raises `NoSuchOCIProjectName` if the OCI project
+        # in ~person/distro/+oci/ociproject doesn't exist.
+        self.factory.makePerson(name="person")
+        self.factory.makeDistribution(name="distro")
+        self.assertRaises(
+            NoSuchOCIProjectName, self.traverser.traverse_path,
+            "~person/distro/+oci/nonexistent")
+
+    def test_person_ociproject(self):
+        # `traverse_path` resolves '~person/distro/+oci/ociproject' to the
+        # person and the OCIProject.
+        person = self.factory.makePerson()
+        oci_project = self.factory.makeOCIProject()
+        path = "~%s/%s/+oci/%s" % (
+            person.name, oci_project.pillar.name, oci_project.name)
+        self.assertTraverses(path, person, oci_project)
+
+    def test_person_ociproject_missing_repository_name(self):
+        # `traverse_path` raises `InvalidNamespace` if there are no segments
+        # after '+git'.
+        person = self.factory.makePerson()
+        oci_project = self.factory.makeOCIProject()
+        self.assertRaises(
+            InvalidNamespace, self.traverser.traverse_path,
+            "~%s/%s/+oci/%s/+git" % (
+                person.name, oci_project.pillar.name, oci_project.name))
+
+    def test_person_ociproject_no_such_repository(self):
+        # `traverse_path` raises `NoSuchGitRepository` if the repository in
+        # ~person/distro/+oci/ociproject/+git/repository doesn't exist.
+        person = self.factory.makePerson()
+        oci_project = self.factory.makeOCIProject()
+        self.assertRaises(
+            NoSuchGitRepository, self.traverser.traverse_path,
+            "~%s/%s/+oci/%s/+git/nonexistent" % (
+                person.name, oci_project.pillar.name, oci_project.name))
+
+    def test_person_ociproject_repository(self):
+        # `traverse_path` resolves an existing person-OCIProject repository.
+        person = self.factory.makePerson()
+        oci_project = self.factory.makeOCIProject()
+        repository = self.factory.makeGitRepository(
+            owner=person, target=oci_project)
+        self.assertTraverses(
+            "~%s/%s/+oci/%s/+git/%s" % (
+                person.name, oci_project.pillar.name, oci_project.name,
+                repository.name),
+            person, oci_project, repository)
 
     def test_person_repository_from_person(self):
         # To save on queries, `traverse` can be given a person as a starting

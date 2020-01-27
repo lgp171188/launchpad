@@ -111,8 +111,7 @@ even if they guess the URL for the voting page.
     >>> for tag in find_tags_by_class(
     ...     non_member_browser.contents, "informational message"):
     ...     print tag.renderContents()
-    You can&#8217;t vote in this poll because you&#8217;re not a member
-    of Ubuntu Team.
+    You can’t vote in this poll because you’re not a member of Ubuntu Team.
 
 
 == Closed polls ==

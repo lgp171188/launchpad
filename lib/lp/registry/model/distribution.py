@@ -101,6 +101,7 @@ from lp.registry.interfaces.distributionmirror import (
     MirrorFreshness,
     MirrorStatus,
     )
+from lp.registry.interfaces.ociproject import IOCIProjectSet
 from lp.registry.interfaces.oopsreferences import IHasOOPSReferences
 from lp.registry.interfaces.person import (
     validate_person,
@@ -825,6 +826,11 @@ class Distribution(SQLBase, BugTargetBase, MakesAnnouncements,
             distribution = %s AND
             name = %s
             """ % sqlvalues(self.id, name))
+
+    def getOCIProject(self, name):
+        oci_project = getUtility(IOCIProjectSet).getByDistributionAndName(
+            self, name)
+        return oci_project
 
     def getSourcePackage(self, name):
         """See `IDistribution`."""

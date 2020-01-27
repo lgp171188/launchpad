@@ -22,7 +22,7 @@ The markup is valid and correctly escaped:
     ...     admin_browser.contents, 'field.contact_address').prettify()
     <input class="textType" id="field.contact_address"
            name="field.contact_address" size="20" type="text"
-           value='&lt;script&gt;alert("cheezburger");&lt;/script&gt;' />
+           value='&lt;script&gt;alert("cheezburger");&lt;/script&gt;'/>
 
 The error message is also valid and correctly escaped:
 
@@ -31,7 +31,7 @@ The error message is also valid and correctly escaped:
     <p class="error message">
     ...
     <div class="message">
-    &lt;script&gt;alert(&quot;cheezburger&quot;);&lt;/script&gt; isn&#x27;t...
+    &lt;script&gt;alert("cheezburger");&lt;/script&gt; isn't...
     </div>
 
 The script we tried to inject is not present, unescaped, anywhere in
