@@ -33,8 +33,8 @@ from zope.interface import (
     )
 
 from lp.services.beautifulsoup import (
-    BeautifulSoup4 as BeautifulSoup,
-    SoupStrainer4 as SoupStrainer,
+    BeautifulSoup,
+    SoupStrainer,
     )
 from lp.services.webapp.publisher import LaunchpadView
 

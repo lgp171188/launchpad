@@ -8,7 +8,7 @@ First, set all the bugs to private.
     >>> from zope.security.interfaces import Unauthorized
     >>> from lp.app.enums import InformationType
     >>> from lp.bugs.model.bug import Bug
-    >>> from lp.services.beautifulsoup import BeautifulSoup4 as BeautifulSoup
+    >>> from lp.services.beautifulsoup import BeautifulSoup
     >>> from lp.services.database.interfaces import IStore
     >>> IStore(Bug).find(Bug).set(information_type=InformationType.USERDATA)
     >>> transaction.commit()

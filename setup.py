@@ -147,7 +147,6 @@ setup(
         'auditorclient',
         'auditorfixture',
         'backports.lzma',
-        'BeautifulSoup',
         'beautifulsoup4[lxml]',
         'breezy',
         'bzr',

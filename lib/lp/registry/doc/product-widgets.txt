@@ -43,7 +43,7 @@ Firefox has not yet selected a bug tracker.
     None
 
     >>> from bs4.element import Tag
-    >>> from lp.services.beautifulsoup import BeautifulSoup4 as BeautifulSoup
+    >>> from lp.services.beautifulsoup import BeautifulSoup
     >>> from lp.testing.pages import extract_text
     >>> def print_items(html):
     ...     soup = BeautifulSoup(html)

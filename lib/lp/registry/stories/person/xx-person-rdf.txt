@@ -4,8 +4,8 @@ Person RDF Pages
 We export FOAF RDF metadata from the /~Person.name/+index document.
 
     >>> from lp.services.beautifulsoup import (
-    ...     BeautifulSoup4 as BeautifulSoup,
-    ...     SoupStrainer4 as SoupStrainer,
+    ...     BeautifulSoup,
+    ...     SoupStrainer,
     ...     )
     >>> anon_browser.open("http://launchpad.test/~name16")
     >>> strainer = SoupStrainer(['link'], {'type': ['application/rdf+xml']})
