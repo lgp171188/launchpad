@@ -28,6 +28,7 @@ from lp.code.interfaces.gitrepository import IGitRepositorySet
 from lp.registry.interfaces.persondistributionsourcepackage import (
     IPersonDistributionSourcePackage,
     )
+from lp.registry.interfaces.personociproject import IPersonOCIProject
 from lp.registry.interfaces.personproduct import IPersonProduct
 from lp.services.config import config
 from lp.services.propertycache import cachedproperty
@@ -143,6 +144,8 @@ class PersonTargetGitListingView(BaseGitListingView):
             return self.context.product
         elif IPersonDistributionSourcePackage.providedBy(self.context):
             return self.context.distro_source_package
+        elif IPersonOCIProject.providedBy(self.context):
+            return self.context.oci_project
         else:
             raise Exception("Unknown context: %r" % self.context)
 
@@ -158,10 +161,22 @@ class PersonTargetGitListingView(BaseGitListingView):
             return None
 
 
+class OCIProjectGitListingView(TargetGitListingView):
+
+    # OCIProject:+branches doesn't exist.
+    show_bzr_link = False
+
+
 class PersonDistributionSourcePackageGitListingView(
         PersonTargetGitListingView):
 
     # PersonDistributionSourcePackage:+branches doesn't exist.
+    show_bzr_link = False
+
+
+class PersonOCIProjectGitListingView(PersonTargetGitListingView):
+
+    # PersonOCIProject:+branches doesn't exist.
     show_bzr_link = False
 
 
