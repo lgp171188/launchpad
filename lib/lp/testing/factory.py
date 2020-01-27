@@ -4900,7 +4900,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
     def makeOCIProjectName(self, name=None):
         if name is None:
             name = self.getUniqueString(u"oci-project-name")
-        return getUtility(IOCIProjectNameSet).new(name)
+        return getUtility(IOCIProjectNameSet).getOrCreateByName(name)
 
     def makeOCIProject(self, registrant=None, pillar=None,
                        ociprojectname=None, date_created=DEFAULT,

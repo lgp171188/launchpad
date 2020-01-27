@@ -70,3 +70,10 @@ class OCIProjectNameSet:
         project_name = OCIProjectName(name=name)
         store.add(project_name)
         return project_name
+
+    def getOrCreateByName(self, name):
+        """See `IOCIProjectNameSet`."""
+        try:
+            return self.getByName(name)
+        except NoSuchOCIProjectName:
+            return self.new(name)

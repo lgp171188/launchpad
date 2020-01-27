@@ -1,0 +1,49 @@
+<html
+  xmlns="http://www.w3.org/1999/xhtml"
+  xmlns:tal="http://xml.zope.org/namespaces/tal"
+  xmlns:metal="http://xml.zope.org/namespaces/metal"
+  xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+  metal:use-macro="view/macro:page/main_side"
+  i18n:domain="launchpad"
+>
+
+<body>
+  <metal:registering fill-slot="registering">
+    Created by
+      <tal:registrant replace="structure context/registrant/fmt:link"/>
+    on
+      <tal:created-on replace="structure context/date_created/fmt:date"/>
+    and last modified on
+      <tal:last-modified replace="structure context/date_last_modified/fmt:date"/>
+  </metal:registering>
+
+  <metal:side fill-slot="side">
+    <div tal:replace="structure context/@@+global-actions"/>
+  </metal:side>
+
+  <metal:heading fill-slot="heading">
+    <h1 tal:content="context/display_name"/>
+  </metal:heading>
+
+  <div metal:fill-slot="main">
+    <h2>OCI project information</h2>
+    <div class="two-column-list">
+      <dl id="distribution" tal:define="distribution context/distribution">
+        <dt>Distribution:</dt>
+        <dd>
+          <a tal:attributes="href distribution/fmt:url"
+             tal:content="distribution/display_name"/>
+          <a tal:replace="structure view/menu:overview/edit/fmt:icon"/>
+        </dd>
+      </dl>
+      <dl id="name">
+        <dt>Name:</dt>
+        <dd>
+          <span tal:content="context/name"/>
+          <a tal:replace="structure view/menu:overview/edit/fmt:icon"/>
+        </dd>
+      </dl>
+    </div>
+  </div>
+</body>
+</html>
