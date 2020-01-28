@@ -24,6 +24,7 @@ eval set -- "$(getopt -o '' -l no-workspace,lpusername:,quiet -- "$@")"
           echo "Using username $lpusername for Launchpad";
           ;;
       --quiet)
+          echo "Installing packages without prompting";
           INSTALL_OPTS="-y"
           shift;
           ;;
