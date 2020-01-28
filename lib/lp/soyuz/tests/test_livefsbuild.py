@@ -43,6 +43,7 @@ from lp.services.webhooks.testing import LogsScheduledWebhooks
 from lp.soyuz.enums import ArchivePurpose
 from lp.soyuz.interfaces.livefs import (
     LIVEFS_FEATURE_FLAG,
+    LIVEFS_WEBHOOKS_FEATURE_FLAG,
     LiveFSFeatureDisabled,
     )
 from lp.soyuz.interfaces.livefsbuild import (
@@ -178,7 +179,8 @@ class TestLiveFSBuild(TestCaseWithFactory):
         logger = self.useFixture(FakeLogger())
         hook = self.factory.makeWebhook(
             target=self.build.livefs, event_types=["livefs:build:0.1"])
-        self.build.updateStatus(BuildStatus.FULLYBUILT)
+        with FeatureFixture({LIVEFS_WEBHOOKS_FEATURE_FLAG: "on"}):
+            self.build.updateStatus(BuildStatus.FULLYBUILT)
         expected_payload = {
             "livefs_build": Equals(
                 canonical_url(self.build, force_local_path=True)),
@@ -208,7 +210,8 @@ class TestLiveFSBuild(TestCaseWithFactory):
         logger = self.useFixture(FakeLogger())
         hook = self.factory.makeWebhook(
             target=self.build.livefs, event_types=["livefs:build:0.1"])
-        self.build.updateStatus(BuildStatus.BUILDING)
+        with FeatureFixture({LIVEFS_WEBHOOKS_FEATURE_FLAG: "on"}):
+            self.build.updateStatus(BuildStatus.BUILDING)
         expected_logs = [
             (hook, "livefs:build:0.1", ContainsDict({
                 "action": Equals("status-changed"),

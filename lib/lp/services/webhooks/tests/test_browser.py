@@ -18,7 +18,10 @@ import transaction
 from lp.services.features.testing import FeatureFixture
 from lp.services.webapp.publisher import canonical_url
 from lp.snappy.interfaces.snapstoreclient import ISnapStoreClient
-from lp.soyuz.interfaces.livefs import LIVEFS_FEATURE_FLAG
+from lp.soyuz.interfaces.livefs import (
+    LIVEFS_FEATURE_FLAG,
+    LIVEFS_WEBHOOKS_FEATURE_FLAG,
+    )
 from lp.testing import (
     login_person,
     record_two_runs,
@@ -118,7 +121,8 @@ class LiveFSTestHelpers:
 
     def makeTarget(self):
         self.useFixture(FeatureFixture({'webhooks.new.enabled': 'true',
-                                        LIVEFS_FEATURE_FLAG: "on"}))
+                                        LIVEFS_FEATURE_FLAG: "on",
+                                        LIVEFS_WEBHOOKS_FEATURE_FLAG: "on"}))
         owner = self.factory.makePerson()
         return self.factory.makeLiveFS(registrant=owner, owner=owner)
 

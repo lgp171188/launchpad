@@ -14,6 +14,7 @@ __all__ = [
     'ILiveFSSet',
     'ILiveFSView',
     'LIVEFS_FEATURE_FLAG',
+    'LIVEFS_WEBHOOKS_FEATURE_FLAG',
     'LiveFSBuildAlreadyPending',
     'LiveFSBuildArchiveOwnerMismatch',
     'LiveFSFeatureDisabled',
@@ -75,6 +76,7 @@ from lp.soyuz.interfaces.distroarchseries import IDistroArchSeries
 
 
 LIVEFS_FEATURE_FLAG = u"soyuz.livefs.allow_new"
+LIVEFS_WEBHOOKS_FEATURE_FLAG = u"soyuz.livefs.webhooks.enabled"
 
 
 @error_status(httplib.BAD_REQUEST)

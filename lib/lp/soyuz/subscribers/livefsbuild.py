@@ -14,12 +14,12 @@ from lp.services.features import getFeatureFlag
 from lp.services.webapp.publisher import canonical_url
 from lp.services.webhooks.interfaces import IWebhookSet
 from lp.services.webhooks.payload import compose_webhook_payload
-from lp.soyuz.interfaces.livefs import LIVEFS_FEATURE_FLAG
+from lp.soyuz.interfaces.livefs import LIVEFS_WEBHOOKS_FEATURE_FLAG
 from lp.soyuz.interfaces.livefsbuild import ILiveFSBuild
 
 
 def _trigger_livefs_build_webhook(livefsbuild, action):
-    if getFeatureFlag(LIVEFS_FEATURE_FLAG):
+    if getFeatureFlag(LIVEFS_WEBHOOKS_FEATURE_FLAG):
         payload = {
             "livefs_build": canonical_url(livefsbuild, force_local_path=True),
             "action": action,

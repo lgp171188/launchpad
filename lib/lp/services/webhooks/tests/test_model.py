@@ -23,7 +23,10 @@ from lp.services.webhooks.model import (
     WebhookJob,
     WebhookSet,
     )
-from lp.soyuz.interfaces.livefs import LIVEFS_FEATURE_FLAG
+from lp.soyuz.interfaces.livefs import (
+    LIVEFS_FEATURE_FLAG,
+    LIVEFS_WEBHOOKS_FEATURE_FLAG,
+    )
 from lp.testing import (
     admin_logged_in,
     anonymous_logged_in,
@@ -407,6 +410,7 @@ class TestWebhookSetLiveFS(TestWebhookSetBase, TestCaseWithFactory):
         if owner is None:
             owner = self.factory.makePerson()
 
-        with FeatureFixture({LIVEFS_FEATURE_FLAG: "on"}):
+        with FeatureFixture({LIVEFS_FEATURE_FLAG: "on",
+                             LIVEFS_WEBHOOKS_FEATURE_FLAG: "on"}):
             return self.factory.makeLiveFS(registrant=owner,
                                            owner=owner, **kwargs)
