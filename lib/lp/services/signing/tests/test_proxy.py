@@ -17,6 +17,10 @@ from nacl.public import PublicKey
 
 class SigningServiceResponseFactory:
     """Factory for fake responses from lp-signing service
+
+    This class is a helper to pretend that lp-signing service is running by
+    mocking `requests` module, and returning fake responses from
+    response.get(url)  and response.post(url). See `patch_requests` method.
     """
     def _get_mock_response(self, status_code, json):
         mock_response = mock.Mock(requests.Response)
@@ -44,9 +48,15 @@ class SigningServiceResponseFactory:
             200, {'fingerprint': finger_print, 'public-key': public_key})
 
     def patch_requests(self, requests_module, method, responses):
-        """Patch the fake "requests module" to return the given responses
+        """Patch the mock "requests module" to return the given responses
         when certain endpoints are called
 
+        :param requests_module: The result of @mock.patch("requests"),
+                                to be patched
+        :param method: HTTP method beign patched (GET or POST, for example)
+        :param responses: A dict where keys are the endpoints and the values
+                          are the mock requests.Response objects. E.g.:
+                          {"/sign": mock.Mock(requests.Response), ...}
         """
         def side_effect(url, *args, **kwags):
             for endpoint, response in responses.items():
@@ -61,7 +71,12 @@ class SigningServiceResponseFactory:
 
 @mock.patch("lp.services.signing.proxy.requests")
 class SigningServiceProxyTest(TestCaseWithFactory):
-    """Tests signing service without actually making calls to lp-signing
+    """Tests signing service without actually making calls to lp-signing.
+
+    Every REST call is mocked using self.response_factory, and most of this
+    class's work is actually calling those endpoints. So, many things are
+    mocked here, returning fake responses created at
+    SigningServiceResponseFactory.
     """
     layer = ZopelessLayer
 
@@ -108,9 +123,6 @@ class SigningServiceProxyTest(TestCaseWithFactory):
     def test_generate_key(self, mock_requests):
         """Makes sure that the SigningService.generate method calls the
         correct endpoints
-
-        This method is actually mocking a lot of things because most of the
-        things are already unit-tested
         """
         b64_nonce = "neSSa2MUZlQU3XiipU2TfiaqW5nrVUpR"
         mock_nonce_response = self.response_factory.post_nonce(b64_nonce)
@@ -197,6 +209,7 @@ class SigningServiceProxyTest(TestCaseWithFactory):
         self.assertEqual(0, mock_requests.post.call_count)
 
     def test_sign(self, mock_requests):
+        """Runs through SignService.sign() flow"""
         # Replace GET /service-key response by our mock
         mock_pub_key_response = self.response_factory.get_service_key(
             "x7vTtpmn0+DvKNdmtf047fn1JRQI5eMnOQRy3xJ1m10=")
