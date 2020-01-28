@@ -1,4 +1,4 @@
-# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -731,7 +731,7 @@ class BugTracker(SQLBase):
             BugTrackerComponent,
             BugTrackerComponent.distribution == distribution.id,
             BugTrackerComponent.source_package_name ==
-                dsp.sourcepackagename.id).one()
+            dsp.sourcepackagename.id).one()
 
     def getRelatedPillars(self, user=None):
         """See `IBugTracker`."""

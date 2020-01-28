@@ -1,4 +1,4 @@
-# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Bug tracker interfaces."""
@@ -576,7 +576,7 @@ class IBugTrackerComponent(Interface):
             title=_('Name'),
             description=_("The name of a software component "
                           "as shown in Launchpad.")))
-    sourcepackagename = Choice(
+    source_package_name = Choice(
         title=_("Package"), required=False, vocabulary='SourcePackageName')
     distribution = Choice(
         title=_("Distribution"), required=False, vocabulary='Distribution')
