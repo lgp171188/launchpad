@@ -43,7 +43,7 @@ class SigningServiceResponseFactory:
         return self._get_mock_response(
             200, {'fingerprint': finger_print, 'public-key': public_key})
 
-    def patch_post_requests(self, requests_module, responses):
+    def patch_requests(self, requests_module, method, responses):
         """Patch the fake "requests module" to return the given responses
         when certain endpoints are called
 
@@ -53,7 +53,9 @@ class SigningServiceResponseFactory:
                 if url.endswith(endpoint):
                     return response
             return mock.Mock()
-        requests_module.post.side_effect = side_effect
+        method = method.lower()
+        requests_method = getattr(requests_module, method)
+        requests_method.side_effect = side_effect
         return requests_module
 
 
@@ -142,17 +144,18 @@ class SigningServiceProxyTest(TestCaseWithFactory):
         mock_generate_response = self.response_factory.post_generate(
             public_key, fingerprint)
 
-        # Replace /nonce and /generate responses by our mocks
-        self.response_factory.patch_post_requests(
-            mock_requests, {"/nonce": mock_nonce_response,
-                            "/generate": mock_generate_response})
+        # Replace POST /nonce and POST /generate responses by our mocks
+        self.response_factory.patch_requests(
+            mock_requests, "POST", {"/nonce": mock_nonce_response,
+                                    "/generate": mock_generate_response})
 
-        # Mock fetching service public key
+        # Replace GET /service-key response by our mocks
         b64_service_pub_key = (
             "x7vTtpmn0+DvKNdmtf047fn1JRQI5eMnOQRy3xJ1m10=")
         mock_pub_key_response = self.response_factory.get_service_key(
             b64_service_pub_key)
-        mock_requests.get.return_value = mock_pub_key_response
+        self.response_factory.patch_requests(
+            mock_requests, "GET", {"/service-key": mock_pub_key_response})
 
         # Generate the key, and checks if we got back the correct dict
         signing = SigningService()
@@ -170,6 +173,62 @@ class SigningServiceProxyTest(TestCaseWithFactory):
 
         mock_requests.post.assert_called_with(
             signing.LP_SIGNING_ADDRESS + "/generate",
+            headers={
+                "Content-Type": "application/x-boxed-json",
+                "X-Client-Public-Key": signing.LOCAL_PUBLIC_KEY,
+                "X-Nonce": b64_nonce
+            },
+            data=ANY)  # XXX: check the encrypted data
+
+    def test_sign_invalid_mode(self, mock_requests):
+        signing = SigningService()
+        self.assertRaises(
+            ValueError, signing.sign,
+            'UEFI', 'fingerprint', 'message_name', 'message', 'NO-MODE')
+        self.assertEqual(0, mock_requests.get.call_count)
+        self.assertEqual(0, mock_requests.post.call_count)
+
+    def test_sign_invalid_key_type(self, mock_requests):
+        signing = SigningService()
+        self.assertRaises(
+            ValueError, signing.sign,
+            'shrug', 'fingerprint', 'message_name', 'message', 'ATTACHED')
+        self.assertEqual(0, mock_requests.get.call_count)
+        self.assertEqual(0, mock_requests.post.call_count)
+
+    def test_sign(self, mock_requests):
+        # Replace GET /service-key response by our mock
+        mock_pub_key_response = self.response_factory.get_service_key(
+            "x7vTtpmn0+DvKNdmtf047fn1JRQI5eMnOQRy3xJ1m10=")
+        self.response_factory.patch_requests(
+            mock_requests, "GET", {"/service-key": mock_pub_key_response})
+
+        # Replace POST /nonce by our mock
+        mock_sign_response = mock.Mock()
+
+        b64_nonce = "neSSa2MUZlQU3XiipU2TfiaqW5nrVUpR"
+        mock_nonce_response = self.response_factory.post_nonce(b64_nonce)
+        self.response_factory.patch_requests(
+            mock_requests, "POST", {"/nonce": mock_nonce_response,
+                                    "/sign": mock_sign_response})
+
+        fingerprint = '338D218488DFD597D8FCB9C328C3E9D9ADA16CEE'
+        key_type = 'KMOD'
+        mode = 'DETACHED'
+        message_name = 'my test msg'
+        message = 'this is the message content'
+
+        signing = SigningService()
+        data = signing.sign(
+            key_type, fingerprint, message_name, message, mode)
+
+        # Should have returned the endpoint's response.json() result
+        self.assertEqual(data, mock_sign_response.json.return_value)
+        mock_nonce_response.json.assert_called_once_with()
+        mock_sign_response.json.assert_called_once_with()
+
+        mock_requests.post.assert_called_with(
+            signing.LP_SIGNING_ADDRESS + "/sign",
             headers={
                 "Content-Type": "application/x-boxed-json",
                 "X-Client-Public-Key": signing.LOCAL_PUBLIC_KEY,
