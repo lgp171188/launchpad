@@ -27,3 +27,4 @@ class SigningServiceProxyTest(TestCaseWithFactory):
         self.assertEqual("test-foo", key)
         mock_requests.get.assert_called_once_with(
             signing.LP_SIGNING_ADDRESS + "/service-key")
+
