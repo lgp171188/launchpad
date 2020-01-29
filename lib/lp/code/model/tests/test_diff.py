@@ -1,4 +1,4 @@
-# Copyright 2009-2017 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for Diff, etc."""
@@ -17,6 +17,12 @@ from breezy.patches import (
     InsertLine,
     parse_patches,
     RemoveLine,
+    )
+from testtools.matchers import (
+    Equals,
+    Is,
+    MatchesDict,
+    MatchesListwise,
     )
 import transaction
 from zope.security.proxy import removeSecurityProxy
@@ -141,14 +147,18 @@ class DiffTestCase(TestCaseWithFactory):
         return (source_bzr, source_rev_id, target_bzr, prerequisite_bzr,
                 prerequisite)
 
-    def createExampleGitMerge(self):
+    def createExampleGitMerge(self, prerequisite_bmp=None):
         """Create an example Git-based merge scenario.
 
         The actual diff work is done in turnip, and we have no turnip
         fixture as yet, so for the moment we just install a fake hosting
         client that will return a plausible-looking diff.
         """
-        bmp = self.factory.makeBranchMergeProposalForGit()
+        kwargs = {}
+        if prerequisite_bmp is not None:
+            kwargs["target_ref"] = prerequisite_bmp.target_git_ref
+            kwargs["prerequisite_ref"] = prerequisite_bmp.source_git_ref
+        bmp = self.factory.makeBranchMergeProposalForGit(**kwargs)
         source_sha1 = bmp.source_git_ref.commit_sha1
         target_sha1 = bmp.target_git_ref.commit_sha1
         patch = dedent("""\
@@ -586,6 +596,47 @@ class TestPreviewDiff(DiffTestCase):
         transaction.commit()
         self.assertEqual(patch, preview.text)
         self.assertEqual({'foo': (5, 0)}, preview.diffstat)
+        self.assertThat(
+            self.hosting_fixture.getMergeDiff.calls,
+            MatchesListwise([
+                MatchesListwise([
+                    Equals((
+                        "%s:%s" % (
+                            bmp.target_git_repository.getInternalPath(),
+                            bmp.source_git_repository.getInternalPath()),
+                        bmp.target_git_commit_sha1,
+                        bmp.source_git_commit_sha1,
+                        )),
+                    MatchesDict({"prerequisite": Is(None)}),
+                    ])]))
+
+    def test_fromBranchMergeProposalForGit_with_prerequisite(self):
+        # Correctly generates a PreviewDiff from a Git-based
+        # BranchMergeProposal.
+        prerequisite_bmp = self.factory.makeBranchMergeProposalForGit()
+        bmp, source_rev_id, target_rev_id, patch = self.createExampleGitMerge(
+            prerequisite_bmp=prerequisite_bmp)
+        preview = PreviewDiff.fromBranchMergeProposal(bmp)
+        transaction.commit()
+        self.assertEqual(patch, preview.text)
+        self.assertEqual({'foo': (5, 0)}, preview.diffstat)
+        self.assertThat(
+            self.hosting_fixture.getMergeDiff.calls,
+            MatchesListwise([
+                MatchesListwise([
+                    Equals((
+                        "%s:%s:%s" % (
+                            bmp.target_git_repository.getInternalPath(),
+                            bmp.source_git_repository.getInternalPath(),
+                            bmp.prerequisite_git_repository.getInternalPath()),
+                        bmp.target_git_commit_sha1,
+                        bmp.source_git_commit_sha1,
+                        )),
+                    MatchesDict({
+                        "prerequisite": Equals(
+                            bmp.prerequisite_git_commit_sha1),
+                        }),
+                    ])]))
 
     def test_fromBranchMergeProposalForGit_sets_conflicts(self):
         # Conflicts are set on the PreviewDiff.
