@@ -430,24 +430,58 @@ class GitAPI(LaunchpadXMLRPCView):
             removeSecurityProxy(repository))
         logger.info("notify succeeded")
 
-    def getMergeProposalURL(self, translated_path, branch):
+    def getMergeProposalURL(self, translated_path, branch, auth_params):
         """See `IGitAPI`."""
-        logger = self._getLogger()
-        logger.info("Request received: getMergeProposalURL('%s')",
-                    translated_path)
-        repository = getUtility(IGitLookup).getByHostingPath(translated_path)
-        if repository is None:
-            fault = faults.NotFound(
-                "No repository found for '%s'." % translated_path)
-            logger.error("getMergeProposalURL failed: %r", fault)
-            return fault
+        logger = self._getLogger(auth_params.get("request-id"))
+        requester_id = _get_requester_id(auth_params)
+        logger.info(
+            "Request received: getMergeProposalURL('%s') for %s",
+            translated_path, requester_id)
+        result = run_with_login(
+            requester_id, self._getMergeProposalURL,
+            translated_path, branch, auth_params)
+        if isinstance(result, xmlrpc_client.Fault):
+            logger.error("getMergeProposalURL failed: %r", result)
 
-        # we assemble the URL this way here
-        # because the ref may not exist yet
+        logger.info("getMergeProposalURL succeeded: %s" % result)
+        return result
+
+    @return_fault
+    def _getMergeProposalURL(self, requester, translated_path, branch,
+                             auth_params):
+        if requester == LAUNCHPAD_ANONYMOUS:
+            requester = None
+        repository = removeSecurityProxy(
+            getUtility(IGitLookup).getByHostingPath(translated_path))
+        if repository is None:
+            raise faults.GitRepositoryNotFound(translated_path)
+
+        try:
+            verified = self._verifyAuthParams(
+                requester, repository, auth_params)
+            if verified is not None and verified.user is NO_USER:
+                if not _can_internal_issuer_write(verified):
+                    raise faults.Unauthorized()
+
+                # We have verified that the authentication parameters
+                # correctly specify internal-services authentication with a
+                # suitable macaroon that specifically grants access to this
+                # repository, so we can bypass other checks and grant access
+                # as an anonymous repository owner.  This is only permitted
+                # for selected macaroon issuers.
+                requester = GitGranteeType.REPOSITORY_OWNER
+        except faults.Unauthorized:
+            # It would be simpler to just raise
+            # this directly, but turnip won't handle it very gracefully at
+            # the moment.  It's possible to reach this by being very unlucky
+            # about the timing of a push.
+            return ''
+
+        # We assemble the URL this way here
+        # because the ref may not exist yet.
         base_url = canonical_url(repository, rootsite='code')
         mp_url = ("%s/+ref/%s/+register-merge" % (
                         base_url, urllib.quote(branch)))
-        logger.info("getMergeProposalURL succeeded: %s" % mp_url)
         return mp_url
 
     @return_fault
@@ -479,11 +513,13 @@ class GitAPI(LaunchpadXMLRPCView):
         if isinstance(result, xmlrpc_client.Fault):
             logger.error("authenticateWithPassword failed: %r", result)
         else:
-            # The results of authentication may be sensitive, but we can at
-            # least log the authenticated user.
-            logger.info(
-                "authenticateWithPassword succeeded: %s",
-                result.get("uid", result.get("user")))
+            # # The results of authentication may be sensitive, but we can at
+            # # least log the authenticated user.
+            # logger.info(
+            #     "authenticateWithPassword succeeded: %s",
+            #     result.get("uid", result.get("user")))
+            logger.info("getMergeProposalURL succeeded: %s" % result)
+
         return result
 
     def _renderPermissions(self, set_of_permissions):
