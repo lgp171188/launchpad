@@ -7,9 +7,11 @@
 __metaclass__ = type
 
 import pytz
+from lp.archivepublisher.enums import SigningKeyType
 from lp.archivepublisher.interfaces.signingkey import ISigningKey
 from lp.registry.model.distroseries import DistroSeries
 from lp.services.database.constants import UTC_NOW, DEFAULT
+from lp.services.database.enumcol import DBEnum
 from lp.services.database.stormbase import StormBase
 from lp.soyuz.model.archive import Archive
 from storm.locals import (
@@ -35,6 +37,8 @@ class SigningKey(StormBase):
     distro_series_id = Int(name="distro_series", allow_none=True)
     distro_series = Reference(distro_series_id, DistroSeries.id)
 
+    key_type = DBEnum(enum=SigningKeyType)
+
     fingerprint = Unicode(allow_none=False)
 
     public_key = Unicode(allow_none=True)
@@ -50,3 +54,13 @@ class SigningKey(StormBase):
         self.public_key = public_key
         self.distro_series = distro_series
         self.date_created = date_created
+
+    @classmethod
+    def generate(cls):
+        """Generated a new key on signing service, and save it to db.
+
+        :returns: The generated SigningKey
+        """
+
+    @classmethod
+    def get_
