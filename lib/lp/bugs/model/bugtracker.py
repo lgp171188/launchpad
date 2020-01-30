@@ -13,16 +13,14 @@ __all__ = [
 
 from datetime import datetime
 from itertools import chain
-# splittype is not formally documented, but is in urllib.__all__, is
-# simple, and is heavily used by the rest of urllib, hence is unlikely
-# to change or go away.
-from urllib import (
-    quote,
-    splittype,
-    )
 
 from lazr.uri import URI
 from pytz import timezone
+from six.moves.urllib.parse import (
+    quote,
+    urlsplit,
+    urlunsplit,
+    )
 from sqlobject import (
     BoolCol,
     ForeignKey,
@@ -86,22 +84,6 @@ from lp.services.database.stormbase import StormBase
 from lp.services.helpers import shortlist
 
 
-def normalise_leading_slashes(rest):
-    """Ensure that the 'rest' segment of a URL starts with //."""
-    return '//' + rest.lstrip('/')
-
-
-def normalise_base_url(base_url):
-    """Convert https to http, and normalise scheme for others."""
-    schema, rest = splittype(base_url)
-    if schema == 'https':
-        return 'http:' + rest
-    elif schema is None:
-        return 'http:' + normalise_leading_slashes(base_url)
-    else:
-        return '%s:%s' % (schema, rest)
-
-
 def base_url_permutations(base_url):
     """Return all the possible variants of a base URL.
 
@@ -114,18 +96,19 @@ def base_url_permutations(base_url):
     ['http://foo/bar', 'http://foo/bar/',
      'https://foo/bar', 'https://foo/bar/']
     """
-    http_schemas = ['http', 'https']
-    url_schema, rest = splittype(base_url)
-    if url_schema in http_schemas or url_schema is None:
-        possible_schemas = http_schemas
-        rest = normalise_leading_slashes(rest)
+    http_schemes = ['http', 'https']
+    url_scheme, netloc, path, query, fragment = urlsplit(base_url)
+    if not url_scheme or url_scheme in http_schemes:
+        possible_schemes = http_schemes
+        # Ensure that the path starts with a single slash.
+        path = '/' + path.lstrip('/')
     else:
         # This else-clause is here since we have no strict
         # requirement that bug trackers have to have http URLs.
-        possible_schemas = [url_schema]
+        possible_schemes = [url_scheme]
     alternative_urls = [base_url]
-    for schema in possible_schemas:
-        url = "%s:%s" % (schema, rest)
+    for scheme in possible_schemes:
+        url = urlunsplit((scheme, netloc, path, query, fragment))
         if url != base_url:
             alternative_urls.append(url)
         if url.endswith('/'):
