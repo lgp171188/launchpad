@@ -102,11 +102,11 @@ $(API_INDEX): $(VERSION_INFO) $(PY)
 	    --force "$(APIDOC_TMPDIR)"
 	mv $(APIDOC_TMPDIR) $(APIDOC_DIR)
 
-apidoc:
 ifdef LP_MAKE_NO_WADL
+apidoc:
 	@echo "Skipping WADL generation."
 else
-	$(MAKE) compile $(API_INDEX)
+apidoc: compile $(API_INDEX)
 endif
 
 # Used to generate HTML developer documentation for Launchpad.
