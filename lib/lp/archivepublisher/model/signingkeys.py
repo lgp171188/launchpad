@@ -37,7 +37,7 @@ class SigningKey(StormBase):
     distro_series_id = Int(name="distro_series", allow_none=True)
     distro_series = Reference(distro_series_id, DistroSeries.id)
 
-    key_type = DBEnum(enum=SigningKeyType)
+    key_type = DBEnum(enum=SigningKeyType, allow_none=False)
 
     fingerprint = Unicode(allow_none=False)
 
@@ -46,9 +46,10 @@ class SigningKey(StormBase):
     date_created = DateTime(
         allow_none=False, default=UTC_NOW, tzinfo=pytz.UTC)
 
-    def __init__(self, archive, fingerprint, public_key, distro_series=None,
-                 date_created=DEFAULT):
+    def __init__(self, key_type, archive, fingerprint, public_key,
+                 distro_series=None, date_created=DEFAULT):
         super(SigningKey, self).__init__()
+        self.key_type = key_type
         self.archive = archive
         self.fingerprint = fingerprint
         self.public_key = public_key
@@ -61,6 +62,3 @@ class SigningKey(StormBase):
 
         :returns: The generated SigningKey
         """
-
-    @classmethod
-    def get_

@@ -9,14 +9,15 @@ __all__ = [
     'ISigningKey'
 ]
 
+from lp.archivepublisher.enums import SigningKeyType
 from lp.registry.interfaces.distroseries import IDistroSeries
 from lp.soyuz.interfaces.archive import IArchive
 from zope.interface.interface import Interface
 from zope.schema import (
     Int,
-    TextLine,
     Text,
-    Datetime
+    Datetime,
+    Choice
     )
 from lazr.restful.fields import Reference
 from lp import _
@@ -34,6 +35,10 @@ class ISigningKey(Interface):
     distro_serie = Reference(
         IDistroSeries, title=_("Distro serie"), required=False,
         description=_("The distro serie that uses this archive."))
+
+    key_type = Choice(
+        title=_("The signing key type (UEFI, KMOD, etc)."),
+        required=True, readonly=True, vocabulary=SigningKeyType)
 
     fingerprint = Text(
         title=_("Fingerprint of the key"), required=True, readonly=True)

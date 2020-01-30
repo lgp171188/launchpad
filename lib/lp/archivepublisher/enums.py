@@ -6,7 +6,7 @@
 
 __metaclass__ = type
 __all__ = [
-    'PackagePublishingPocket',
+    'SigningKeyType',
     ]
 
 from lazr.enum import (
@@ -18,9 +18,34 @@ from lazr.enum import DBEnumeratedType
 
 
 class SigningKeyType(DBEnumeratedType):
-    RELEASE = DBItem(0, """
-        Release
+    """Available key types on lp-signing service
+    """
+    UEFI = DBItem(0, """
+        UEFI key
+        
+        UEFI signing key
+        """)
 
-        The package versions that were published
-        when the distribution release was made.
+    KMOD = DBItem(1, """
+        KMOD key
+        
+        KMOD signing key
+        """)
+
+    OPAL = DBItem(2, """
+        OPAL key
+        
+        OPAL signing key
+        """)
+
+    SIPL = DBItem(3, """
+        SIPL key
+        
+        SIPL signing key
+        """)
+
+    FIT  = DBItem(4, """
+        FIT key
+        
+        FIT signing key
         """)
