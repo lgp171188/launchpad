@@ -95,17 +95,25 @@ def base_url_permutations(base_url):
     >>> base_url_permutations('http://foo/bar')
     ['http://foo/bar', 'http://foo/bar/',
      'https://foo/bar', 'https://foo/bar/']
+    >>> base_url_permutations('example.org/bar')
+    ['example.org/bar',
+     'http://example.org/bar', 'http://example.org/bar/',
+     'https://example.org/bar', 'https://example.org/bar/']
     """
     http_schemes = ['http', 'https']
     url_scheme, netloc, path, query, fragment = urlsplit(base_url)
     if not url_scheme or url_scheme in http_schemes:
         possible_schemes = http_schemes
-        # Ensure that the path starts with a single slash.
-        path = '/' + path.lstrip('/')
     else:
         # This else-clause is here since we have no strict
         # requirement that bug trackers have to have http URLs.
         possible_schemes = [url_scheme]
+    # If there's no netloc, try to make one out of the first segment of the
+    # path.
+    if not netloc:
+        netloc, _, path = path.partition('/')
+    # Ensure that the path starts with a single slash.
+    path = '/' + path.lstrip('/')
     alternative_urls = [base_url]
     for scheme in possible_schemes:
         url = urlunsplit((scheme, netloc, path, query, fragment))
