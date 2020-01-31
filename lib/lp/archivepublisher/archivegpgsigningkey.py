@@ -1,12 +1,12 @@
 # Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-"""ArchiveSigningKey implementation."""
+"""ArchiveGPGSigningKey implementation."""
 
 __metaclass__ = type
 
 __all__ = [
-    'ArchiveSigningKey',
+    'ArchiveGPGSigningKey',
     'SignableArchive',
     'SigningMode',
     ]
@@ -29,9 +29,9 @@ from zope.security.proxy import (
 
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.archivepublisher.config import getPubConfig
-from lp.archivepublisher.interfaces.archivesigningkey import (
+from lp.archivepublisher.interfaces.archivegpgsigningkey import (
     CannotSignArchive,
-    IArchiveSigningKey,
+    IArchiveGPGSigningKey,
     ISignableArchive,
     )
 from lp.archivepublisher.run_parts import (
@@ -176,18 +176,18 @@ class SignableArchive:
             [(path, "%s.gpg" % path, SigningMode.DETACHED, suite)], log=log)
 
 
-@implementer(IArchiveSigningKey)
-class ArchiveSigningKey(SignableArchive):
+@implementer(IArchiveGPGSigningKey)
+class ArchiveGPGSigningKey(SignableArchive):
     """`IArchive` adapter for manipulating its GPG key."""
 
     def getPathForSecretKey(self, key):
-        """See `IArchiveSigningKey`."""
+        """See `IArchiveGPGSigningKey`."""
         return os.path.join(
             config.personalpackagearchive.signing_keys_root,
             "%s.gpg" % key.fingerprint)
 
     def exportSecretKey(self, key):
-        """See `IArchiveSigningKey`."""
+        """See `IArchiveGPGSigningKey`."""
         assert key.secret, "Only secret keys should be exported."
         export_path = self.getPathForSecretKey(key)
 
@@ -198,7 +198,7 @@ class ArchiveSigningKey(SignableArchive):
             export_file.write(key.export())
 
     def generateSigningKey(self):
-        """See `IArchiveSigningKey`."""
+        """See `IArchiveGPGSigningKey`."""
         assert self.archive.signing_key is None, (
             "Cannot override signing_keys.")
 
@@ -208,7 +208,7 @@ class ArchiveSigningKey(SignableArchive):
         default_ppa = self.archive.owner.archive
         if self.archive != default_ppa:
             if default_ppa.signing_key is None:
-                IArchiveSigningKey(default_ppa).generateSigningKey()
+                IArchiveGPGSigningKey(default_ppa).generateSigningKey()
             key = default_ppa.signing_key
             self.archive.signing_key_owner = key.owner
             self.archive.signing_key_fingerprint = key.fingerprint
@@ -221,7 +221,7 @@ class ArchiveSigningKey(SignableArchive):
         self._setupSigningKey(secret_key)
 
     def setSigningKey(self, key_path, async_keyserver=False):
-        """See `IArchiveSigningKey`."""
+        """See `IArchiveGPGSigningKey`."""
         assert self.archive.signing_key is None, (
             "Cannot override signing_keys.")
         assert os.path.exists(key_path), (
