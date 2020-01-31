@@ -32,8 +32,8 @@ class ISigningKey(Interface):
         IArchive, title=_("Archive"), required=True,
         description=_("The archive that owns this key."))
 
-    distro_serie = Reference(
-        IDistroSeries, title=_("Distro serie"), required=False,
+    distro_series = Reference(
+        IDistroSeries, title=_("Distro series"), required=False,
         description=_("The distro serie that uses this archive."))
 
     key_type = Choice(
