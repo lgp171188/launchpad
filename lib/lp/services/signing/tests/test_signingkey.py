@@ -5,23 +5,22 @@ __metaclass__ = type
 
 import base64
 
-import mock
 import responses
 
 from lp.services.signing.enums import SigningKeyType
-from lp.services.signing.model.signingkeys import SigningKey
+from lp.services.signing.model.signingkey import SigningKey
 from lp.services.database.interfaces import IMasterStore
 from lp.services.signing.tests.test_proxy import SigningServiceResponseFactory
 from lp.testing import TestCaseWithFactory
 from lp.testing.layers import DatabaseFunctionalLayer
 
 
-class TestSigningServiceSigningKey(TestCaseWithFactory):
+class TestSigningKey(TestCaseWithFactory):
 
     layer = DatabaseFunctionalLayer
 
     def setUp(self, *args, **kwargs):
-        super(TestSigningServiceSigningKey, self).setUp(*args, **kwargs)
+        super(TestSigningKey, self).setUp(*args, **kwargs)
         self.signing_service = SigningServiceResponseFactory()
 
     def test_save_signing_key(self):
