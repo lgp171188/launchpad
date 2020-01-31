@@ -12,6 +12,7 @@ import logging
 import sys
 import urllib
 import uuid
+import xmlrpclib
 
 from pymacaroons import Macaroon
 import six
@@ -440,10 +441,10 @@ class GitAPI(LaunchpadXMLRPCView):
         result = run_with_login(
             requester_id, self._getMergeProposalURL,
             translated_path, branch, auth_params)
-        if isinstance(result, xmlrpc_client.Fault):
+        if isinstance(result, (xmlrpc_client.Fault, xmlrpclib.Fault)):
             logger.error("getMergeProposalURL failed: %r", result)
-
-        logger.info("getMergeProposalURL succeeded: %s" % result)
+        else:
+            logger.info("getMergeProposalURL succeeded: %s" % result)
         return result
 
     @return_fault
@@ -469,7 +470,12 @@ class GitAPI(LaunchpadXMLRPCView):
                 # repository, so we can bypass other checks and grant access
                 # as an anonymous repository owner.  This is only permitted
                 # for selected macaroon issuers.
-                requester = GitGranteeType.REPOSITORY_OWNER
+                #
+                # In the case of getMergeProposalURL we do not send the MP URL
+                # back to a Code Import job so we need to return here instead
+                # of granting repository owner permissions.
+
+                return ''
         except faults.Unauthorized:
             # It would be simpler to just raise
             # this directly, but turnip won't handle it very gracefully at
@@ -477,11 +483,10 @@ class GitAPI(LaunchpadXMLRPCView):
             # about the timing of a push.
             return ''
 
-        # We assemble the URL this way here
-        # because the ref may not exist yet.
+        # We assemble the URL this way here because the ref may not exist yet.
         base_url = canonical_url(repository, rootsite='code')
-        mp_url = ("%s/+ref/%s/+register-merge" % (
-                        base_url, urllib.quote(branch)))
+        mp_url = "%s/+ref/%s/+register-merge" % (
+                        base_url, urllib.quote(branch))
         return mp_url
 
     @return_fault
@@ -513,13 +518,11 @@ class GitAPI(LaunchpadXMLRPCView):
         if isinstance(result, xmlrpc_client.Fault):
             logger.error("authenticateWithPassword failed: %r", result)
         else:
-            # # The results of authentication may be sensitive, but we can at
-            # # least log the authenticated user.
-            # logger.info(
-            #     "authenticateWithPassword succeeded: %s",
-            #     result.get("uid", result.get("user")))
-            logger.info("getMergeProposalURL succeeded: %s" % result)
-
+            # The results of authentication may be sensitive, but we can at
+            # least log the authenticated user.
+            logger.info(
+                "authenticateWithPassword succeeded: %s",
+                result.get("uid", result.get("user")))
         return result
 
     def _renderPermissions(self, set_of_permissions):
