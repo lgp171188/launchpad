@@ -1,4 +1,4 @@
-# Copyright 2009-2015 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test CodeReviewComment emailing functionality."""
@@ -278,7 +278,7 @@ class TestCodeReviewComment(TestCaseWithFactory):
         See `build_inline_comments_section` tests for formatting details.
         """
         comment = self.makeCommentWithInlineComments(
-            inline_comments={'3': 'Is this from Pl\u0060net Earth ?'})
+            inline_comments={'3': u'Is this from Pl\u00e4net Earth ?'})
         switch_dbuser(config.IBranchMergeProposalJobSource.dbuser)
         mailer = CodeReviewCommentMailer.forCreation(comment)
         commenter = comment.branch_merge_proposal.registrant
@@ -295,7 +295,7 @@ class TestCodeReviewComment(TestCaseWithFactory):
             ('> +++ yvo/yc/pbqr/vagresnprf/qvss.cl      '
              '2010-02-02 15:48:56 +0000'),
             '',
-            'Is this from Pl\u0060net Earth ?',
+            u'Is this from Pl\u00e4net Earth ?',
             '',
         ]
         self.assertEqual(expected_lines, ctrl.body.splitlines()[1:10])
@@ -548,12 +548,12 @@ class TestInlineCommentsSection(testtools.TestCase):
     def test_single_line_comment(self):
         # The inline comments are correctly contextualized in the diff.
         # and prefixed with '>>> '
-        comments = {'4': '\u03b4\u03bf\u03ba\u03b9\u03bc\u03ae'}
+        comments = {'4': u'\u03b4\u03bf\u03ba\u03b9\u03bc\u03ae'}
         self.assertEqual(
             map(unicode, [
                 '> +++ bar.py\t1969-12-31 19:00:00.000000000 -0500',
                 '',
-                '\u03b4\u03bf\u03ba\u03b9\u03bc\u03ae',
+                u'\u03b4\u03bf\u03ba\u03b9\u03bc\u03ae',
                 '']),
             self.getSection(comments).splitlines()[7:11])
 
