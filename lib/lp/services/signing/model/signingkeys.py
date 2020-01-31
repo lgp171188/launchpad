@@ -16,7 +16,7 @@ from storm.locals import (
 from zope.interface.declarations import implementer
 
 from lp.archivepublisher.enums import SigningKeyType
-from lp.archivepublisher.interfaces.signingkey import ISigningKey
+from lp.services.signing.interfaces.signingkey import ISigningKey
 from lp.registry.model.distroseries import DistroSeries
 from lp.services.database.constants import (
     DEFAULT,

@@ -3,10 +3,12 @@
 
 __metaclass__ = type
 
+import base64
+
 import mock
 
 from lp.archivepublisher.enums import SigningKeyType
-from lp.archivepublisher.model.signingkeys import SigningKey
+from lp.services.signing.model.signingkeys import SigningKey
 from lp.services.database.interfaces import IMasterStore
 from lp.services.signing.tests.test_proxy import SigningServiceResponseFactory
 from lp.testing import TestCaseWithFactory
@@ -82,4 +84,5 @@ class TestSigningServiceSigningKey(TestCaseWithFactory):
         api_resp = self.signing_service.get_latest_json_response(
             "POST", "/sign")
         self.assertIsNotNone(api_resp, "The API was never called")
-        self.assertEqual(api_resp['signed-message'], signed)
+        self.assertEqual(
+            base64.b64decode(api_resp['signed-message']), signed)
