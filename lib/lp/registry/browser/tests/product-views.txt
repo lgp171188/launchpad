@@ -232,8 +232,8 @@ purchase a commercial subscription.
     ...     firefox, name='+review-license', form=form)
     >>> view.errors
     [u'Proprietary projects may not be manually approved to use Launchpad.
-       Proprietary projects must use the commercial subscription voucher
-       system to be allowed to use Launchpad.']
+       Proprietary projects must be granted a commercial subscription
+       to be allowed to use Launchpad.']
     >>> firefox.license_approved
     False
     >>> print firefox.reviewer_whiteboard

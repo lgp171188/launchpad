@@ -1146,13 +1146,6 @@
         template="../templates/person-portlet-related-projects.pt"
         />
     <browser:page
-        name="+vouchers"
-        for="lp.registry.interfaces.person.IPerson"
-        class="lp.registry.browser.person.PersonVouchersView"
-        permission="launchpad.Commercial"
-        template="../templates/person-vouchers.pt"
-        />
-    <browser:page
         name="+rdf"
         for="lp.registry.interfaces.person.IPerson"
         class="lp.registry.browser.person.PersonRdfView"
