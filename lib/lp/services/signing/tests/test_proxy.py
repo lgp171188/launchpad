@@ -30,31 +30,36 @@ class SigningServiceResponseFactory:
         self.base64_service_public_key = (
             u"x7vTtpmn0+DvKNdmtf047fn1JRQI5eMnOQRy3xJ1m10=")
         self.base64_nonce = u"neSSa2MUZlQU3XiipU2TfiaqW5nrVUpR"
-        self.generated_public_key = (
-            u'LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURFVENDQWZtZ0F3SUJBZ0l'
-            u'VZlgreHlFNUp4VVcyWVBYemVDMGtsQlZZQTBjd0RRWUpLb1pJaHZjTkFRRUwKQl'
-            u'FBd0dERVdNQlFHQTFVRUF3d05WR1Z6ZENCclpYa2dWVVZHU1RBZUZ3MHlNREF4T'
-            u'WpneE16UTVORGRhRncwegpNREF4TWpVeE16UTVORGRhTUJneEZqQVVCZ05WQkFN'
-            u'TURWUmxjM1FnYTJWNUlGVkZSa2t3Z2dFaU1BMEdDU3FHClNJYjNEUUVCQVFVQUE'
-            u'0SUJEd0F3Z2dFS0FvSUJBUURPc3Vvd3VGZllRK1g0TjVLZWtXMGxBbmMvemNrYk'
-            u'5mUmEKK2hZSE56RmJDa2hMUzZYTWdOY1d5eW8rTk4rd05FN3JEcUgwc3gweUZzc'
-            u'zJuVCtxWXM1WFdIYmRXMHBVNnpCTwp0bEh0MjhNQzYzWU03ZkpFZnVpM1RFRXph'
-            u'R1VKOUp2dFhENG16Vkd1cGxZczVBckkvc3RvdDVHY0J6bHVuNHJnCkNHNUdtWXR'
-            u'KVGw4YkpSWGFqckhMZFJJc2dIWCtXTXBKUCtnQVlnSE94M3Y5VHlXaDJMR0FnbU'
-            u'MyYVFSbFE3WEoKS1ZSRzVaYTJVMlRaZ3dnYzc0SkFBNjVIQSt2Z2xtcW5SZExad'
-            u'0RRTUluYjZ6djBsL0tDYkFRbldwL2hxMDB6VwoxRkVrR1k2Sm1Jb3BnR0lxTm9E'
-            u'WVJOSEllWCtiVHE2eWthcUg5M0pjV2NOYlBZdEZGMUFGQWdNQkFBR2pVekJSCk1'
-            u'CMEdBMVVkRGdRV0JCUXFpZXBwdkxOaWZIMjlKV3ByNk4zdmFpYzNDREFmQmdOVk'
-            u'hTTUVHREFXZ0JRcWllcHAKdkxOaWZIMjlKV3ByNk4zdmFpYzNDREFQQmdOVkhST'
-            u'UJBZjhFQlRBREFRSC9NQTBHQ1NxR1NJYjNEUUVCQ3dVQQpBNElCQVFCYXIzaGk5'
-            u'TXFabjJ4eUh5Z3pBQzhGMFlmU2lHNm5aV09jSEJPT1QveVhMOVloTlFxL292TWZ'
-            u'TUlJtCnl1SkE3eWlxcUhUU211ZDZ4QWxYZlhQYXpxaUxHSEdpMXl2dWVVOWtmOW'
-            u'dHRGp2NW5Kek1YMXBLeUZLcVZjaysKZVdyVEF6S21xL2FTWFRlcFhUNVBoRU14Y'
-            u'UdORHlJb3I3ck0rU2JZaWNFZGZoeEZiSTc1UWk3NERCdGlBdmZCbgpsK2JwMk1D'
-            u'dDNydS81YiszYUNjRm5Pa0dXQ3I0RW1RZktzSTlYanViblJYNTFVMTVleFdsQW1'
-            u'LaVNQRGd4aUcvCm5iSklYVHNUYXNqeVNuaEl0QkFQcWozdlgzRFhFZmlpVm5icH'
-            u'dSbEZ4YjhQRlI5cC9hQTExdVp2VXhMYTI1TDQKSEVhdW5sRWdpRnM4Ynl5Z2hTa'
-            u'GZJdU40aDZuMwotLS0tLUVORCBDRVJUSUZJQ0FURS0tLS0tCg')
+        self.b64_generated_public_key = (
+            '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')
         self.generated_fingerprint = (
             u'338D218488DFD597D8FCB9C328C3E9D9ADA16CEE')
         self.b64_signed_msg = base64.b64encode("the-signed-msg")
@@ -94,13 +99,13 @@ class SigningServiceResponseFactory:
         responses.add(
             responses.POST, self.get_url("/generate"),
             json={'fingerprint': self.generated_fingerprint,
-                  'public-key': self.generated_public_key},
+                  'public-key': self.b64_generated_public_key},
             status=201)
 
         responses.add(
             responses.POST, self.get_url("/sign"),
             json={'signed-message': self.b64_signed_msg,
-                  'public-key': self.generated_public_key},
+                  'public-key': self.b64_generated_public_key},
             status=201)
 
 
@@ -206,7 +211,7 @@ class SigningServiceProxyTest(TestCaseWithFactory):
         generated = signing.generate(SigningKeyType.UEFI, "my lp test key")
 
         self.assertEqual(generated, {
-            'public-key': self.response_factory.generated_public_key,
+            'public-key': self.response_factory.b64_generated_public_key,
             'fingerprint': self.response_factory.generated_fingerprint})
 
         self.assertEqual(3, len(responses.calls))

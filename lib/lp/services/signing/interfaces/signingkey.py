@@ -34,7 +34,7 @@ class ISigningKey(Interface):
 
     distro_series = Reference(
         IDistroSeries, title=_("Distro series"), required=False,
-        description=_("The distro serie that uses this archive."))
+        description=_("The minimum series that uses this key, if any."))
 
     key_type = Choice(
         title=_("The signing key type (UEFI, KMOD, etc)."),
@@ -44,7 +44,7 @@ class ISigningKey(Interface):
         title=_("Fingerprint of the key"), required=True, readonly=True)
 
     public_key = Text(
-        title=_("Public key content, base64-encoded"), required=False,
+        title=_("Public key binary content"), required=False,
         readonly=True)
 
     date_created = Datetime(

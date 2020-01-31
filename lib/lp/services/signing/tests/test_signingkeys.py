@@ -27,11 +27,16 @@ class TestSigningServiceSigningKey(TestCaseWithFactory):
     def test_save_signing_key(self):
         archive = self.factory.makeArchive()
         s = SigningKey(
-            SigningKeyType.UEFI, archive, u"a fingerprint", u"a public_key",
+            key_type=SigningKeyType.UEFI,
+            archive=archive, fingerprint=u"a fingerprint",
+            public_key=base64.b64decode(
+                self.signing_service.b64_generated_public_key),
             description=u"This is my key!")
         store = IMasterStore(SigningKey)
         store.add(s)
         store.commit()
+
+        store.invalidate()
 
         resultset = store.find(SigningKey)
         self.assertEqual(1, resultset.count())
@@ -39,7 +44,9 @@ class TestSigningServiceSigningKey(TestCaseWithFactory):
         self.assertEqual(SigningKeyType.UEFI, db_key.key_type)
         self.assertEqual(archive, db_key.archive)
         self.assertEqual("a fingerprint", db_key.fingerprint)
-        self.assertEqual("a public_key", db_key.public_key)
+        self.assertEqual(
+            self.signing_service.b64_generated_public_key,
+            base64.b64encode(db_key.public_key))
         self.assertEqual("This is my key!", db_key.description)
 
     @responses.activate
@@ -64,7 +71,8 @@ class TestSigningServiceSigningKey(TestCaseWithFactory):
         self.assertEqual(
             self.signing_service.generated_fingerprint, db_key.fingerprint)
         self.assertEqual(
-            self.signing_service.generated_public_key, db_key.public_key)
+            self.signing_service.b64_generated_public_key,
+            base64.b64encode(db_key.public_key))
         self.assertEqual(archive, db_key.archive)
         self.assertEqual(distro_series, db_key.distro_series)
         self.assertEqual("this is my key", db_key.description)
@@ -76,7 +84,8 @@ class TestSigningServiceSigningKey(TestCaseWithFactory):
         archive = self.factory.makeArchive()
 
         s = SigningKey(
-            SigningKeyType.UEFI, archive, u"a fingerprint", u"a public_key",
+            SigningKeyType.UEFI, archive, u"a fingerprint",
+            self.signing_service.b64_generated_public_key,
             description=u"This is my key!")
         signed = s.sign("ATTACHED", "secure message", "message_name")
 

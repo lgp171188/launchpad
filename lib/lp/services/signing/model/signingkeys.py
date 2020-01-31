@@ -6,12 +6,15 @@
 
 __metaclass__ = type
 
+import base64
+
 import pytz
 from storm.locals import (
     DateTime,
     Int,
     Reference,
     Unicode,
+    RawStr
     )
 from zope.interface.declarations import implementer
 
@@ -49,13 +52,19 @@ class SigningKey(StormBase):
 
     fingerprint = Unicode(allow_none=False)
 
-    public_key = Unicode(allow_none=True)
+    public_key = RawStr(allow_none=True)
 
     date_created = DateTime(
         allow_none=False, default=UTC_NOW, tzinfo=pytz.UTC)
 
     def __init__(self, key_type, archive, fingerprint, public_key,
                  distro_series=None, description=None, date_created=DEFAULT):
+        """Builds the signing key
+
+        :param key_type: One of the SigningKeyType enum items
+        :param fingerprint: The key's fingerprint
+        :param public_key: The key's public key (raw; not base64-encoded)
+        """
         super(SigningKey, self).__init__()
         self.key_type = key_type
         self.archive = archive
@@ -83,7 +92,7 @@ class SigningKey(StormBase):
         signing_key = SigningKey(
             key_type=key_type, archive=archive,
             fingerprint=generated_key['fingerprint'],
-            public_key=generated_key['public-key'],
+            public_key=base64.b64decode(generated_key['public-key']),
             distro_series=distro_series, description=description)
         store = IMasterStore(SigningKey)
         store.add(signing_key)
