@@ -1,4 +1,4 @@
-# Copyright 2009-2015 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Email notifications for code review comments."""
@@ -175,7 +175,8 @@ def format_comment(comment):
     comment_lines = []
     if comment is not None:
         comment_lines.append(b'')
-        comment_lines.extend(comment.splitlines())
+        comment_lines.extend(
+            [line.encode('UTF-8') for line in comment.splitlines()])
         comment_lines.append(b'')
     return comment_lines
 
