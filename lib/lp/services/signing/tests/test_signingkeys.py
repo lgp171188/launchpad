@@ -7,7 +7,7 @@ import base64
 
 import mock
 
-from lp.archivepublisher.enums import SigningKeyType
+from lp.services.signing.enums import SigningKeyType
 from lp.services.signing.model.signingkeys import SigningKey
 from lp.services.database.interfaces import IMasterStore
 from lp.services.signing.tests.test_proxy import SigningServiceResponseFactory

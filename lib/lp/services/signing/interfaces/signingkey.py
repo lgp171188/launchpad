@@ -9,7 +9,7 @@ __all__ = [
     'ISigningKey'
 ]
 
-from lp.archivepublisher.enums import SigningKeyType
+from lp.services.signing.enums import SigningKeyType
 from lp.registry.interfaces.distroseries import IDistroSeries
 from lp.soyuz.interfaces.archive import IArchive
 from zope.interface.interface import Interface
