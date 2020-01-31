@@ -881,7 +881,7 @@ class TestProduct(TestCaseWithFactory):
             'past_sprints', 'personHasDriverRights',
             'primary_translatable', 'private_bugs',
             'programminglang', 'qualifies_for_free_hosting',
-            'recipes', 'redeemSubscriptionVoucher', 'registrant', 'releases',
+            'recipes', 'registrant', 'releases',
             'remote_product', 'removeCustomLanguageCode',
             'screenshotsurl',
             'searchFAQs', 'searchQuestions', 'security_contact',
@@ -933,7 +933,7 @@ class TestProduct(TestCaseWithFactory):
                 'license_info', 'licenses', 'logo', 'mugshot',
                 'official_answers', 'official_blueprints',
                 'official_codehosting', 'owner', 'private',
-                'programminglang', 'projectgroup', 'redeemSubscriptionVoucher',
+                'programminglang', 'projectgroup',
                 'releaseroot', 'screenshotsurl', 'sourceforgeproject',
                 'summary', 'uses_launchpad', 'wikiurl', 'vcs')),
             'launchpad.Moderate': set((
@@ -1486,27 +1486,6 @@ class ProductAttributeCacheTestCase(TestCaseWithFactory):
         ProductLicense(product=self.product, license=License.MIT)
         self.assertEqual(self.product.licenses,
                          (License.ACADEMIC, License.AFFERO, License.MIT))
-
-    def testCommercialSubscriptionCache(self):
-        """commercial_subscription cache should not traverse transactions."""
-        self.assertEqual(self.product.commercial_subscription, None)
-        self.factory.makeCommercialSubscription(self.product)
-        self.assertEqual(self.product.commercial_subscription, None)
-        self.product.redeemSubscriptionVoucher(
-            'hello', self.product.owner, self.product.owner, 1)
-        self.assertEqual(
-            'hello', self.product.commercial_subscription.sales_system_id)
-        transaction.abort()
-        # Cache is cleared.
-        self.assertIs(None, self.product.commercial_subscription)
-
-        # Cache is cleared again.
-        transaction.abort()
-        self.factory.makeCommercialSubscription(self.product)
-        # Cache is cleared and it sees database changes that occur
-        # before the cache is populated.
-        self.assertEqual(
-            'new', self.product.commercial_subscription.sales_system_id)
 
 
 class ProductLicensingTestCase(TestCaseWithFactory):
