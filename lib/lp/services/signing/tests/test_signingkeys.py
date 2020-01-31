@@ -6,6 +6,7 @@ __metaclass__ = type
 import base64
 
 import mock
+import responses
 
 from lp.services.signing.enums import SigningKeyType
 from lp.services.signing.model.signingkeys import SigningKey
@@ -41,9 +42,9 @@ class TestSigningServiceSigningKey(TestCaseWithFactory):
         self.assertEqual("a public_key", db_key.public_key)
         self.assertEqual("This is my key!", db_key.description)
 
-    @mock.patch("lp.services.signing.proxy.requests")
-    def test_generate_signing_key_saves_correctly(self, mock_requests):
-        self.signing_service.patch(mock_requests)
+    @responses.activate
+    def test_generate_signing_key_saves_correctly(self):
+        self.signing_service.patch()
 
         archive = self.factory.makeArchive()
         distro_series = archive.distribution.series[0]
@@ -68,9 +69,9 @@ class TestSigningServiceSigningKey(TestCaseWithFactory):
         self.assertEqual(distro_series, db_key.distro_series)
         self.assertEqual("this is my key", db_key.description)
 
-    @mock.patch("lp.services.signing.proxy.requests")
-    def test_sign_some_data(self, mock_requests):
-        self.signing_service.patch(mock_requests)
+    @responses.activate
+    def test_sign_some_data(self):
+        self.signing_service.patch()
 
         archive = self.factory.makeArchive()
 
@@ -81,8 +82,9 @@ class TestSigningServiceSigningKey(TestCaseWithFactory):
 
         # Checks if the returned value is actually the returning value from
         # HTTP POST /sign call to lp-signing service
-        api_resp = self.signing_service.get_latest_json_response(
-            "POST", "/sign")
+        self.assertEqual(3, len(responses.calls))
+        http_sign = responses.calls[-1]
+        api_resp = http_sign.response.json()
         self.assertIsNotNone(api_resp, "The API was never called")
         self.assertEqual(
             base64.b64decode(api_resp['signed-message']), signed)

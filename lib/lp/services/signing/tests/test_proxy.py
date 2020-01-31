@@ -11,6 +11,7 @@ from mock import ANY
 from nacl.encoding import Base64Encoder
 from nacl.public import PublicKey
 import requests
+import responses
 
 from lp.services.signing.proxy import SigningService
 from lp.testing import TestCaseWithFactory
@@ -27,7 +28,7 @@ class SigningServiceResponseFactory:
     def __init__(self):
         self.base64_service_public_key = (
             u"x7vTtpmn0+DvKNdmtf047fn1JRQI5eMnOQRy3xJ1m10=")
-        self.base64_nonce = "neSSa2MUZlQU3XiipU2TfiaqW5nrVUpR"
+        self.base64_nonce = u"neSSa2MUZlQU3XiipU2TfiaqW5nrVUpR"
         self.generated_public_key = (
             u'LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURFVENDQWZtZ0F3SUJBZ0l'
             u'VZlgreHlFNUp4VVcyWVBYemVDMGtsQlZZQTBjd0RRWUpLb1pJaHZjTkFRRUwKQl'
@@ -55,135 +56,53 @@ class SigningServiceResponseFactory:
             u'GZJdU40aDZuMwotLS0tLUVORCBDRVJUSUZJQ0FURS0tLS0tCg')
         self.generated_fingerprint = (
             u'338D218488DFD597D8FCB9C328C3E9D9ADA16CEE')
+        self.b64_signed_msg = base64.b64encode("the-signed-msg")
 
-        """self.latest_response is a Structure like:
-         {
-            "GET": {
-                "/service-key": mock_response1,
-            },
-            "POST": {
-                "/nonce": mock_response2
-            }
-        }
+    @classmethod
+    def get_url(cls, path):
+        """Shortcut to get full path of an endpoint at lp-signing.
         """
-        self.latest_responses = defaultdict(dict)
+        return SigningService().get_url(path)
 
-    def get_latest_json_response(self, method, endpoint):
-        """Returns the latest JSON response for the given HTTP method and
-        endpoint.
-        """
-        method = method.upper()
-        resp = self.get_latest_response(method, endpoint)
-        if resp is None:
-            return None
-        return resp.json.return_value
-
-    def get_latest_response(self, method, endpoint):
-        """Returns the latest response object for the given HTTP method and
-        endpoint.
-        """
-        return self.latest_responses.get(method, {}).get(endpoint)
-
-    def _get_mock_response(self, status_code, json):
-        mock_response = mock.Mock(requests.Response)
-        mock_response.status_code = status_code
-        mock_response.json.return_value = json
-        return mock_response
-
-    def get_service_key(self, service_key):
-        """Fake response for GET /service-key endpoint.
-        """
-        return self._get_mock_response(200, {"service-key": service_key})
-
-    def post_nonce(self, nonce):
-        """Fake response for POST /nonce endpoint.
-
-        :param nonce: The base64-encoded nonce, as it would be returned by
-                      the request.
-        """
-        return self._get_mock_response(200, {"nonce": nonce})
-
-    def post_generate(self, public_key, finger_print):
-        """Fake response for POST /generate endpoint.
-        """
-        return self._get_mock_response(
-            200, {'fingerprint': finger_print, 'public-key': public_key})
-
-    def post_sign(self, signed_message, public_key):
-        b64_signed_msg = base64.b64encode(signed_message)
-        return self._get_mock_response(
-            200, {'signed-message': b64_signed_msg, 'public-key': public_key})
-
-    def patch_requests(self, requests_module, method, responses):
-        """Patch the mock "requests module" to return the given responses
-        when certain endpoints are called.
-
-        :param requests_module: The result of @mock.patch("requests"),
-                                to be patched.
-        :param method: HTTP method beign patched (GET or POST, for example)
-        :param responses: A dict where keys are the endpoints and the values
-                          are the mock requests.Response objects. E.g.:
-                          {"/sign": mock.Mock(requests.Response), ...}
-        """
-        def side_effect(url, *args, **kwags):
-            for endpoint, response in responses.items():
-                if url.endswith(endpoint):
-                    self.latest_responses[method.upper()][endpoint] = response
-                    return response
-            return mock.Mock()
-        method = method.lower()
-        requests_method = getattr(requests_module, method)
-        requests_method.side_effect = side_effect
-        return requests_module
-
-    def patch(self, requests_module):
+    def patch(self):
         """Patches all requests with default test values.
 
-        This method gets a `requests` module mock, and sets the responses as
-        if they were real calls to lp-signing. You can inspect the responses
-        and called methods using some helpers provided by this class.
+        This method uses `responses` module to mock `requests`. You should use
+        @responses.activate decorator in your test method before
+        calling this method.
 
-        The mock responses are available using self.get_latest_json_response
-        and self.get_latest_response. Both methods receives the HTTP
-        method and the endpoint (e.g. ("GET", "/service-key").
-
-        You can easily checked if an API call was actually made by
-        checking if the above mock_response.json was called or is None,
-        for example.
+        See https://github.com/getsentry/responses for details on how to
+        inspect the HTTP calls made.
 
         Other helpful attributes are:
-            self.base64_service_public_key
-            self.base64_nonce
-            self.generated_public_key
-            self.generated_fingerprint
-        which holds the respective values used in the fake responses
-
-        :param requests_module: The mock of `requests` module, patched with
-                                mock.patch.
+            - self.base64_service_public_key
+            - self.base64_nonce
+            - self.generated_public_key
+            - self.generated_fingerprint
+            - self.base64_signed_msg
+        which holds the respective values used in the default fake responses.
         """
-        # HTTP GET responses
-        get_service_key_response = self.get_service_key(
-            self.base64_service_public_key)
-        get_responses = {"/service-key": get_service_key_response}
-        self.patch_requests(requests_module, "GET", get_responses)
+        responses.add(
+            responses.GET, self.get_url("/service-key"),
+            json={"service-key": self.base64_service_public_key}, status=200)
 
-        post_nonce_response = self.post_nonce(self.base64_nonce)
-        post_generate_response = self.post_generate(
-            self.generated_public_key, self.generated_fingerprint)
+        responses.add(
+            responses.POST, self.get_url("/nonce"),
+            json={"nonce": self.base64_nonce}, status=201)
 
-        post_sign_response = self.post_sign(
-            'the-signed-msg', 'the-public-key')
+        responses.add(
+            responses.POST, self.get_url("/generate"),
+            json={'fingerprint': self.generated_fingerprint,
+                  'public-key': self.generated_public_key},
+            status=201)
 
-        # Replace POST /nonce, /generate and /sign responses by our mocks.
-        self.patch_requests(
-            requests_module, "POST", {
-                "/nonce": post_nonce_response,
-                "/generate": post_generate_response,
-                "/sign": post_sign_response})
+        responses.add(
+            responses.POST, self.get_url("/sign"),
+            json={'signed-message': self.b64_signed_msg,
+                  'public-key': self.generated_public_key},
+            status=201)
 
 
-
-@mock.patch("lp.services.signing.proxy.requests")
 class SigningServiceProxyTest(TestCaseWithFactory):
     """Tests signing service without actually making calls to lp-signing.
 
@@ -198,8 +117,40 @@ class SigningServiceProxyTest(TestCaseWithFactory):
         super(TestCaseWithFactory, self).setUp(*args, **kwargs)
         self.response_factory = SigningServiceResponseFactory()
 
-    def test_get_service_public_key(self, mock_requests):
-        self.response_factory.patch(mock_requests)
+    def assertHeaderContains(self, request, headers):
+        """Checks if the request's header contains the headers dictionary
+        provided
+
+        :param request: The requests.Request object
+        :param headers: Dictionary of expected headers
+        """
+        missing_headers = []
+        # List of tuples like (header key, got, expected)
+        different_headers = []
+        for k, v in headers.items():
+            if k not in request.headers:
+                missing_headers.append(k)
+                continue
+            if v != request.headers[k]:
+                different_headers.append((k, request.headers[k], v))
+                continue
+        failure_msgs = []
+        if missing_headers:
+            text = ", ".join(missing_headers)
+            failure_msgs.append("Missing headers: %s" % text)
+        if different_headers:
+            text = "; ".join(
+                "Header '%s': [got: %s / expected: %s]" % (k, got, expected)
+                for k, got, expected in different_headers)
+            failure_msgs.append(text)
+        if failure_msgs:
+            text = "\n".join(failure_msgs)
+            self.fail(
+                "Request header does not contain expected items:\n%s" % text)
+
+    @responses.activate
+    def test_get_service_public_key(self):
+        self.response_factory.patch()
 
         signing = SigningService()
         key = signing.service_public_key
@@ -210,14 +161,16 @@ class SigningServiceProxyTest(TestCaseWithFactory):
             key.encode(Base64Encoder),
             self.response_factory.base64_service_public_key)
 
-        # Asserts that the endpoint was called.
-        mock_requests.get.assert_called_once_with(
-            signing.LP_SIGNING_ADDRESS + "/service-key")
+        # Checks that the HTTP call was made
+        self.assertEqual(1, len(responses.calls))
+        call = responses.calls[0]
+        self.assertEqual("GET", call.request.method)
+        self.assertEqual(
+            self.response_factory.get_url("/service-key"), call.request.url)
 
-    def test_get_nonce(self, mock_requests):
-        # Server returns base64-encoded nonce, but the
-        # SigningService.get_nonce method returns it already decoded.
-        self.response_factory.patch(mock_requests)
+    @responses.activate
+    def test_get_nonce(self):
+        self.response_factory.patch()
 
         signing = SigningService()
         nonce = signing.get_nonce()
@@ -225,18 +178,28 @@ class SigningServiceProxyTest(TestCaseWithFactory):
         self.assertEqual(
             base64.b64encode(nonce), self.response_factory.base64_nonce)
 
-    def test_generate_unknown_key_type_raises_exception(self, mock_requests):
+        # Checks that the HTTP call was made
+        self.assertEqual(1, len(responses.calls))
+        call = responses.calls[0]
+        self.assertEqual("POST", call.request.method)
+        self.assertEqual(
+            self.response_factory.get_url("/nonce"), call.request.url)
+
+    @responses.activate
+    def test_generate_unknown_key_type_raises_exception(self):
+        self.response_factory.patch()
+
         signing = SigningService()
         self.assertRaises(
             ValueError, signing.generate, "banana", "Wrong key type")
-        self.assertEqual(0, mock_requests.get.call_count)
-        self.assertEqual(0, mock_requests.post.call_count)
+        self.assertEqual(0, len(responses.calls))
 
-    def test_generate_key(self, mock_requests):
+    @responses.activate
+    def test_generate_key(self):
         """Makes sure that the SigningService.generate method calls the
         correct endpoints
         """
-        self.response_factory.patch(mock_requests)
+        self.response_factory.patch()
         # Generate the key, and checks if we got back the correct dict.
         signing = SigningService()
         generated = signing.generate("UEFI", "my lp test key")
@@ -245,47 +208,52 @@ class SigningServiceProxyTest(TestCaseWithFactory):
             'public-key': self.response_factory.generated_public_key,
             'fingerprint': self.response_factory.generated_fingerprint})
 
-        # Asserts it tried to fetch service key, fetched the nonce and posted
-        # to the /generate endpoint.
-        mock_requests.get.assert_called_once_with(
-            signing.LP_SIGNING_ADDRESS + "/service-key")
+        self.assertEqual(3, len(responses.calls))
 
-        responses = self.response_factory
-        self.assertIsNotNone(
-            responses.get_latest_json_response("POST", "/nonce"))
-        self.assertIsNotNone(
-            responses.get_latest_json_response("POST", "/generate"))
+        # expected order of HTTP calls
+        http_nonce, http_service_key, http_generate = responses.calls
 
-        mock_requests.post.assert_called_with(
-            signing.LP_SIGNING_ADDRESS + "/generate",
-            headers={
-                "Content-Type": "application/x-boxed-json",
-                "X-Client-Public-Key": signing.LOCAL_PUBLIC_KEY,
-                "X-Nonce": self.response_factory.base64_nonce
-            },
-            data=ANY)  # XXX: check the encrypted data.
+        self.assertEqual("POST", http_nonce.request.method)
+        self.assertEqual(
+            self.response_factory.get_url("/nonce"), http_nonce.request.url)
 
-    def test_sign_invalid_mode(self, mock_requests):
+        self.assertEqual("GET", http_service_key.request.method)
+        self.assertEqual(
+            self.response_factory.get_url("/service-key"),
+            http_service_key.request.url)
+
+        self.assertEqual("POST", http_generate.request.method)
+        self.assertEqual(
+            self.response_factory.get_url("/generate"),
+            http_generate.request.url)
+        self.assertHeaderContains(http_generate.request, {
+            "Content-Type": "application/x-boxed-json",
+            "X-Client-Public-Key": signing.LOCAL_PUBLIC_KEY,
+            "X-Nonce": self.response_factory.base64_nonce})
+        self.assertIsNotNone(http_generate.request.body)
+
+    @responses.activate
+    def test_sign_invalid_mode(self):
         signing = SigningService()
         self.assertRaises(
             ValueError, signing.sign,
             'UEFI', 'fingerprint', 'message_name', 'message', 'NO-MODE')
-        self.assertEqual(0, mock_requests.get.call_count)
-        self.assertEqual(0, mock_requests.post.call_count)
+        self.assertEqual(0, len(responses.calls))
 
-    def test_sign_invalid_key_type(self, mock_requests):
+    @responses.activate
+    def test_sign_invalid_key_type(self):
         signing = SigningService()
         self.assertRaises(
             ValueError, signing.sign,
             'shrug', 'fingerprint', 'message_name', 'message', 'ATTACHED')
-        self.assertEqual(0, mock_requests.get.call_count)
-        self.assertEqual(0, mock_requests.post.call_count)
+        self.assertEqual(0, len(responses.calls))
 
-    def test_sign(self, mock_requests):
+    @responses.activate
+    def test_sign(self):
         """Runs through SignService.sign() flow"""
         # Replace GET /service-key response by our mock.
         resp_factory = self.response_factory
-        resp_factory.patch(mock_requests)
+        resp_factory.patch()
 
         fingerprint = '338D218488DFD597D8FCB9C328C3E9D9ADA16CEE'
         key_type = 'KMOD'
@@ -297,25 +265,34 @@ class SigningServiceProxyTest(TestCaseWithFactory):
         data = signing.sign(
             key_type, fingerprint, message_name, message, mode)
 
+        self.assertEqual(3, len(responses.calls))
+        # expected order of HTTP calls
+        http_nonce, http_service_key, http_sign = responses.calls
+
+        self.assertEqual("POST", http_nonce.request.method)
+        self.assertEqual(
+            self.response_factory.get_url("/nonce"), http_nonce.request.url)
+
+        self.assertEqual("GET", http_service_key.request.method)
+        self.assertEqual(
+            self.response_factory.get_url("/service-key"),
+            http_service_key.request.url)
+
+        self.assertEqual("POST", http_sign.request.method)
+        self.assertEqual(
+            self.response_factory.get_url("/sign"),
+            http_sign.request.url)
+        self.assertHeaderContains(http_sign.request, {
+            "Content-Type": "application/x-boxed-json",
+            "X-Client-Public-Key": signing.LOCAL_PUBLIC_KEY,
+            "X-Nonce": self.response_factory.base64_nonce})
+        self.assertIsNotNone(http_sign.request.body)
+
         # It should have returned the values from response.json(),
         # but decoding what is base64-encoded.
-        resp_json = resp_factory.get_latest_json_response("POST", "/sign")
         self.assertEqual(2, len(data))
+        resp_json = http_sign.response.json()
         self.assertEqual(data['public-key'], resp_json['public-key'])
         self.assertEqual(
             data['signed-message'],
             base64.b64decode(resp_json['signed-message']))
-
-        self.assertIsNotNone(
-            resp_factory.get_latest_response("POST", "/nonce"))
-        self.assertIsNotNone(
-            resp_factory.get_latest_response("POST", "/sign"))
-
-        mock_requests.post.assert_called_with(
-            signing.LP_SIGNING_ADDRESS + "/sign",
-            headers={
-                "Content-Type": "application/x-boxed-json",
-                "X-Client-Public-Key": signing.LOCAL_PUBLIC_KEY,
-                "X-Nonce": resp_factory.base64_nonce
-            },
-            data=ANY)  # XXX: check the encrypted data.
