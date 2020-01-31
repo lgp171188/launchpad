@@ -7,6 +7,7 @@ import base64
 from collections import defaultdict
 
 import mock
+from lp.services.signing.enums import SigningKeyType
 from mock import ANY
 from nacl.encoding import Base64Encoder
 from nacl.public import PublicKey
@@ -202,7 +203,7 @@ class SigningServiceProxyTest(TestCaseWithFactory):
         self.response_factory.patch()
         # Generate the key, and checks if we got back the correct dict.
         signing = SigningService()
-        generated = signing.generate("UEFI", "my lp test key")
+        generated = signing.generate(SigningKeyType.UEFI, "my lp test key")
 
         self.assertEqual(generated, {
             'public-key': self.response_factory.generated_public_key,
@@ -237,7 +238,8 @@ class SigningServiceProxyTest(TestCaseWithFactory):
         signing = SigningService()
         self.assertRaises(
             ValueError, signing.sign,
-            'UEFI', 'fingerprint', 'message_name', 'message', 'NO-MODE')
+            SigningKeyType.UEFI, 'fingerprint', 'message_name', 'message',
+            'NO-MODE')
         self.assertEqual(0, len(responses.calls))
 
     @responses.activate
@@ -256,7 +258,7 @@ class SigningServiceProxyTest(TestCaseWithFactory):
         resp_factory.patch()
 
         fingerprint = '338D218488DFD597D8FCB9C328C3E9D9ADA16CEE'
-        key_type = 'KMOD'
+        key_type = SigningKeyType.KMOD
         mode = 'DETACHED'
         message_name = 'my test msg'
         message = 'this is the message content'

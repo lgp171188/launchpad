@@ -79,7 +79,7 @@ class SigningKey(StormBase):
         :returns: The generated SigningKey
         """
         signing_service = SigningService()
-        generated_key = signing_service.generate(key_type.name, description)
+        generated_key = signing_service.generate(key_type, description)
         signing_key = SigningKey(
             key_type=key_type, archive=archive,
             fingerprint=generated_key['fingerprint'],
@@ -97,5 +97,5 @@ class SigningKey(StormBase):
         :param message_name: A name for the message beign signed"""
         signing_service = SigningService()
         signed = signing_service.sign(
-            self.key_type.name, self.fingerprint, message_name, message, mode)
+            self.key_type, self.fingerprint, message_name, message, mode)
         return signed['signed-message']
