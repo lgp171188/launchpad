@@ -10,9 +10,11 @@ __metaclass__ = type
 import base64
 import json
 
-import requests
+from lazr.restful.utils import get_current_browser_request
 from lp.services.propertycache import cachedproperty
 from lp.services.signing.enums import SigningKeyType
+from lp.services.timeline.requesttimeline import get_request_timeline
+from lp.services.timeout import urlfetch
 from nacl.encoding import Base64Encoder
 from nacl.public import (
     Box,
@@ -37,29 +39,32 @@ class SigningService:
 
     def get_url(self, path):
         """Shotcut to concatenate LP_SIGNING_ADDRESS with the desired
-        endpoint path
+        endpoint path.
 
-        :param path: The REST endpoint to be joined"""
+        :param path: The REST endpoint to be joined.
+        """
         return self.LP_SIGNING_ADDRESS + path
 
     def _get_json(self, path, method="GET", **kwargs):
         """Helper method to do an HTTP request and get back a json from  the
-        signing service, raising exception if status code != 200
+        signing service, raising exception if status code != 2xx.
         """
-        url = self.get_url(path)
-        if method == "GET":
-            response = requests.get(url)
-        elif method == "POST":
-            response = requests.post(url, **kwargs)
-        else:
-            raise NotImplemented("Only GET and POST are allowed for now")
+        timeline = get_request_timeline(get_current_browser_request())
+        action = timeline.start(
+            "lp-services-signin-proxy-%s" % method, "%s %s %s" %
+            (path, method, json.dumps(kwargs)))
 
-        response.raise_for_status()
-        return response.json()
+        try:
+            url = self.get_url(path)
+            response = urlfetch(url, method=method.lower(), **kwargs)
+            response.raise_for_status()
+            return response.json()
+        finally:
+            action.finish()
 
     @cachedproperty
     def service_public_key(self):
-        """Returns the lp-signing service's public key
+        """Returns the lp-signing service's public key.
         """
         data = self._get_json("/service-key")
         return PublicKey(data["service-key"], encoder=Base64Encoder)
@@ -69,13 +74,13 @@ class SigningService:
         return PrivateKey(self.LOCAL_PRIVATE_KEY, encoder=Base64Encoder)
 
     def get_nonce(self):
-        """Get nonce, to be used when sending messages
+        """Get nonce, to be used when sending messages.
         """
         data = self._get_json("/nonce", "POST")
         return base64.b64decode(data["nonce"].encode("UTF-8"))
 
     def _get_auth_headers(self, nonce):
-        """Get headers to call authenticated endpoints
+        """Get headers to call authenticated endpoints.
 
         :param nonce: The nonce bytes to be used (not the base64 encoded one!)
         :return: Header dict, ready to be used by requests
@@ -87,7 +92,7 @@ class SigningService:
 
     def _encrypt_payload(self, nonce, message):
         """Returns the encrypted version of message, base64 encoded and
-        ready to be sent on a HTTP request to lp-signing service
+        ready to be sent on a HTTP request to lp-signing service.
 
         :param nonce: The original (non-base64 encoded) nonce
         :param message: The str message to be encrypted
@@ -97,7 +102,7 @@ class SigningService:
         return encrypted_message.ciphertext
 
     def generate(self, key_type, description):
-        """Generate a key to be used when signing
+        """Generate a key to be used when signing.
 
         :param key_type: One of available key types at SigningKeyType
         :param description: String description of the generated key
