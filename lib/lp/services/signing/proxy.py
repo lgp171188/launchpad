@@ -142,7 +142,11 @@ class SigningService:
             "message": base64.b64encode(message).decode("UTF-8"),
             "mode": mode,
             }).encode("UTF-8")
-        return self._get_json(
+        data = self._get_json(
             "/sign", "POST",
             headers=self._get_auth_headers(nonce),
             data=self._encrypt_payload(nonce, data))
+
+        return {
+            'public-key': data['public-key'],
+            'signed-message': base64.b64decode(data['signed-message'])}

@@ -1,22 +1,24 @@
-# Copyright 2010-2016 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
 
 import base64
+from collections import defaultdict
 
-import requests
-from lp.services.signing.proxy import SigningService
-from lp.testing import TestCaseWithFactory
-from lp.testing.layers import ZopelessLayer
 import mock
 from mock import ANY
 from nacl.encoding import Base64Encoder
 from nacl.public import PublicKey
+import requests
+
+from lp.services.signing.proxy import SigningService
+from lp.testing import TestCaseWithFactory
+from lp.testing.layers import BaseLayer
 
 
 class SigningServiceResponseFactory:
-    """Factory for fake responses from lp-signing service
+    """Factory for fake responses from lp-signing service.
 
     This class is a helper to pretend that lp-signing service is running by
     mocking `requests` module, and returning fake responses from
@@ -24,40 +26,63 @@ class SigningServiceResponseFactory:
     """
     def __init__(self):
         self.base64_service_public_key = (
-            "x7vTtpmn0+DvKNdmtf047fn1JRQI5eMnOQRy3xJ1m10=")
+            u"x7vTtpmn0+DvKNdmtf047fn1JRQI5eMnOQRy3xJ1m10=")
         self.base64_nonce = "neSSa2MUZlQU3XiipU2TfiaqW5nrVUpR"
         self.generated_public_key = (
-            'LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURFVENDQWZtZ0F3SUJBZ0l'
-            'VZlgreHlFNUp4VVcyWVBYemVDMGtsQlZZQTBjd0RRWUpLb1pJaHZjTkFRRUwKQl'
-            'FBd0dERVdNQlFHQTFVRUF3d05WR1Z6ZENCclpYa2dWVVZHU1RBZUZ3MHlNREF4T'
-            'WpneE16UTVORGRhRncwegpNREF4TWpVeE16UTVORGRhTUJneEZqQVVCZ05WQkFN'
-            'TURWUmxjM1FnYTJWNUlGVkZSa2t3Z2dFaU1BMEdDU3FHClNJYjNEUUVCQVFVQUE'
-            '0SUJEd0F3Z2dFS0FvSUJBUURPc3Vvd3VGZllRK1g0TjVLZWtXMGxBbmMvemNrYk'
-            '5mUmEKK2hZSE56RmJDa2hMUzZYTWdOY1d5eW8rTk4rd05FN3JEcUgwc3gweUZzc'
-            'zJuVCtxWXM1WFdIYmRXMHBVNnpCTwp0bEh0MjhNQzYzWU03ZkpFZnVpM1RFRXph'
-            'R1VKOUp2dFhENG16Vkd1cGxZczVBckkvc3RvdDVHY0J6bHVuNHJnCkNHNUdtWXR'
-            'KVGw4YkpSWGFqckhMZFJJc2dIWCtXTXBKUCtnQVlnSE94M3Y5VHlXaDJMR0FnbU'
-            'MyYVFSbFE3WEoKS1ZSRzVaYTJVMlRaZ3dnYzc0SkFBNjVIQSt2Z2xtcW5SZExad'
-            '0RRTUluYjZ6djBsL0tDYkFRbldwL2hxMDB6VwoxRkVrR1k2Sm1Jb3BnR0lxTm9E'
-            'WVJOSEllWCtiVHE2eWthcUg5M0pjV2NOYlBZdEZGMUFGQWdNQkFBR2pVekJSCk1'
-            'CMEdBMVVkRGdRV0JCUXFpZXBwdkxOaWZIMjlKV3ByNk4zdmFpYzNDREFmQmdOVk'
-            'hTTUVHREFXZ0JRcWllcHAKdkxOaWZIMjlKV3ByNk4zdmFpYzNDREFQQmdOVkhST'
-            'UJBZjhFQlRBREFRSC9NQTBHQ1NxR1NJYjNEUUVCQ3dVQQpBNElCQVFCYXIzaGk5'
-            'TXFabjJ4eUh5Z3pBQzhGMFlmU2lHNm5aV09jSEJPT1QveVhMOVloTlFxL292TWZ'
-            'TUlJtCnl1SkE3eWlxcUhUU211ZDZ4QWxYZlhQYXpxaUxHSEdpMXl2dWVVOWtmOW'
-            'dHRGp2NW5Kek1YMXBLeUZLcVZjaysKZVdyVEF6S21xL2FTWFRlcFhUNVBoRU14Y'
-            'UdORHlJb3I3ck0rU2JZaWNFZGZoeEZiSTc1UWk3NERCdGlBdmZCbgpsK2JwMk1D'
-            'dDNydS81YiszYUNjRm5Pa0dXQ3I0RW1RZktzSTlYanViblJYNTFVMTVleFdsQW1'
-            'LaVNQRGd4aUcvCm5iSklYVHNUYXNqeVNuaEl0QkFQcWozdlgzRFhFZmlpVm5icH'
-            'dSbEZ4YjhQRlI5cC9hQTExdVp2VXhMYTI1TDQKSEVhdW5sRWdpRnM4Ynl5Z2hTa'
-            'GZJdU40aDZuMwotLS0tLUVORCBDRVJUSUZJQ0FURS0tLS0tCg')
+            u'LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURFVENDQWZtZ0F3SUJBZ0l'
+            u'VZlgreHlFNUp4VVcyWVBYemVDMGtsQlZZQTBjd0RRWUpLb1pJaHZjTkFRRUwKQl'
+            u'FBd0dERVdNQlFHQTFVRUF3d05WR1Z6ZENCclpYa2dWVVZHU1RBZUZ3MHlNREF4T'
+            u'WpneE16UTVORGRhRncwegpNREF4TWpVeE16UTVORGRhTUJneEZqQVVCZ05WQkFN'
+            u'TURWUmxjM1FnYTJWNUlGVkZSa2t3Z2dFaU1BMEdDU3FHClNJYjNEUUVCQVFVQUE'
+            u'0SUJEd0F3Z2dFS0FvSUJBUURPc3Vvd3VGZllRK1g0TjVLZWtXMGxBbmMvemNrYk'
+            u'5mUmEKK2hZSE56RmJDa2hMUzZYTWdOY1d5eW8rTk4rd05FN3JEcUgwc3gweUZzc'
+            u'zJuVCtxWXM1WFdIYmRXMHBVNnpCTwp0bEh0MjhNQzYzWU03ZkpFZnVpM1RFRXph'
+            u'R1VKOUp2dFhENG16Vkd1cGxZczVBckkvc3RvdDVHY0J6bHVuNHJnCkNHNUdtWXR'
+            u'KVGw4YkpSWGFqckhMZFJJc2dIWCtXTXBKUCtnQVlnSE94M3Y5VHlXaDJMR0FnbU'
+            u'MyYVFSbFE3WEoKS1ZSRzVaYTJVMlRaZ3dnYzc0SkFBNjVIQSt2Z2xtcW5SZExad'
+            u'0RRTUluYjZ6djBsL0tDYkFRbldwL2hxMDB6VwoxRkVrR1k2Sm1Jb3BnR0lxTm9E'
+            u'WVJOSEllWCtiVHE2eWthcUg5M0pjV2NOYlBZdEZGMUFGQWdNQkFBR2pVekJSCk1'
+            u'CMEdBMVVkRGdRV0JCUXFpZXBwdkxOaWZIMjlKV3ByNk4zdmFpYzNDREFmQmdOVk'
+            u'hTTUVHREFXZ0JRcWllcHAKdkxOaWZIMjlKV3ByNk4zdmFpYzNDREFQQmdOVkhST'
+            u'UJBZjhFQlRBREFRSC9NQTBHQ1NxR1NJYjNEUUVCQ3dVQQpBNElCQVFCYXIzaGk5'
+            u'TXFabjJ4eUh5Z3pBQzhGMFlmU2lHNm5aV09jSEJPT1QveVhMOVloTlFxL292TWZ'
+            u'TUlJtCnl1SkE3eWlxcUhUU211ZDZ4QWxYZlhQYXpxaUxHSEdpMXl2dWVVOWtmOW'
+            u'dHRGp2NW5Kek1YMXBLeUZLcVZjaysKZVdyVEF6S21xL2FTWFRlcFhUNVBoRU14Y'
+            u'UdORHlJb3I3ck0rU2JZaWNFZGZoeEZiSTc1UWk3NERCdGlBdmZCbgpsK2JwMk1D'
+            u'dDNydS81YiszYUNjRm5Pa0dXQ3I0RW1RZktzSTlYanViblJYNTFVMTVleFdsQW1'
+            u'LaVNQRGd4aUcvCm5iSklYVHNUYXNqeVNuaEl0QkFQcWozdlgzRFhFZmlpVm5icH'
+            u'dSbEZ4YjhQRlI5cC9hQTExdVp2VXhMYTI1TDQKSEVhdW5sRWdpRnM4Ynl5Z2hTa'
+            u'GZJdU40aDZuMwotLS0tLUVORCBDRVJUSUZJQ0FURS0tLS0tCg')
         self.generated_fingerprint = (
-            '338D218488DFD597D8FCB9C328C3E9D9ADA16CEE')
+            u'338D218488DFD597D8FCB9C328C3E9D9ADA16CEE')
 
-        self.get_service_key_response = None
-        self.post_nonce_response = None
-        self.post_generate_response = None
-        self.post_sign_response = None
+        """self.latest_response is a Structure like:
+         {
+            "GET": {
+                "/service-key": mock_response1,
+            },
+            "POST": {
+                "/nonce": mock_response2
+            }
+        }
+        """
+        self.latest_responses = defaultdict(dict)
+
+    def get_latest_json_response(self, method, endpoint):
+        """Returns the latest JSON response for the given HTTP method and
+        endpoint.
+        """
+        method = method.upper()
+        resp = self.get_latest_response(method, endpoint)
+        if resp is None:
+            return None
+        return resp.json.return_value
+
+    def get_latest_response(self, method, endpoint):
+        """Returns the latest response object for the given HTTP method and
+        endpoint.
+        """
+        return self.latest_responses.get(method, {}).get(endpoint)
 
     def _get_mock_response(self, status_code, json):
         mock_response = mock.Mock(requests.Response)
@@ -66,30 +91,35 @@ class SigningServiceResponseFactory:
         return mock_response
 
     def get_service_key(self, service_key):
-        """Fake response for GET /service-key endpoint
+        """Fake response for GET /service-key endpoint.
         """
         return self._get_mock_response(200, {"service-key": service_key})
 
     def post_nonce(self, nonce):
-        """Fake response for POST /nonce endpoint
+        """Fake response for POST /nonce endpoint.
 
         :param nonce: The base64-encoded nonce, as it would be returned by
-                      the request
+                      the request.
         """
         return self._get_mock_response(200, {"nonce": nonce})
 
     def post_generate(self, public_key, finger_print):
-        """Fake response for POST /generate endpoint
+        """Fake response for POST /generate endpoint.
         """
         return self._get_mock_response(
             200, {'fingerprint': finger_print, 'public-key': public_key})
 
+    def post_sign(self, signed_message, public_key):
+        b64_signed_msg = base64.b64encode(signed_message)
+        return self._get_mock_response(
+            200, {'signed-message': b64_signed_msg, 'public-key': public_key})
+
     def patch_requests(self, requests_module, method, responses):
         """Patch the mock "requests module" to return the given responses
-        when certain endpoints are called
+        when certain endpoints are called.
 
         :param requests_module: The result of @mock.patch("requests"),
-                                to be patched
+                                to be patched.
         :param method: HTTP method beign patched (GET or POST, for example)
         :param responses: A dict where keys are the endpoints and the values
                           are the mock requests.Response objects. E.g.:
@@ -98,6 +128,7 @@ class SigningServiceResponseFactory:
         def side_effect(url, *args, **kwags):
             for endpoint, response in responses.items():
                 if url.endswith(endpoint):
+                    self.latest_responses[method.upper()][endpoint] = response
                     return response
             return mock.Mock()
         method = method.lower()
@@ -106,15 +137,19 @@ class SigningServiceResponseFactory:
         return requests_module
 
     def patch(self, requests_module):
-        """Patches all requests with default test values (see __init__)
+        """Patches all requests with default test values.
 
-        The mock responses are available at:
-            self.get_service_key_response
-            self.post_nonce_response
-            self.post_generate_response
-            self.post_sign_response
-        and can be easily checked if they were actually returned by check if
-        mock_response.json was called, for example.
+        This method gets a `requests` module mock, and sets the responses as
+        if they were real calls to lp-signing. You can inspect the responses
+        and called methods using some helpers provided by this class.
+
+        The mock responses are available using self.get_latest_json_response
+        and self.get_latest_response. Both methods receives the HTTP
+        method and the endpoint (e.g. ("GET", "/service-key").
+
+        You can easily checked if an API call was actually made by
+        checking if the above mock_response.json was called or is None,
+        for example.
 
         Other helpful attributes are:
             self.base64_service_public_key
@@ -122,27 +157,29 @@ class SigningServiceResponseFactory:
             self.generated_public_key
             self.generated_fingerprint
         which holds the respective values used in the fake responses
+
+        :param requests_module: The mock of `requests` module, patched with
+                                mock.patch.
         """
         # HTTP GET responses
-        self.get_service_key_response = self.get_service_key(
+        get_service_key_response = self.get_service_key(
             self.base64_service_public_key)
-        get_responses = {"/service-key": self.get_service_key_response}
-        self.patch_requests(
-            requests_module, "GET", get_responses)
+        get_responses = {"/service-key": get_service_key_response}
+        self.patch_requests(requests_module, "GET", get_responses)
 
-        self.post_nonce_response = self.post_nonce(
-            self.base64_nonce)
-        self.post_generate_response = self.post_generate(
+        post_nonce_response = self.post_nonce(self.base64_nonce)
+        post_generate_response = self.post_generate(
             self.generated_public_key, self.generated_fingerprint)
 
-        self.post_sign_response = mock.Mock()
+        post_sign_response = self.post_sign(
+            'the-signed-msg', 'the-public-key')
 
-        # Replace POST /nonce and POST /generate responses by our mocks
+        # Replace POST /nonce, /generate and /sign responses by our mocks.
         self.patch_requests(
             requests_module, "POST", {
-                "/nonce": self.post_nonce_response,
-                "/generate": self.post_generate_response,
-                "/sign": self.post_sign_response})
+                "/nonce": post_nonce_response,
+                "/generate": post_generate_response,
+                "/sign": post_sign_response})
 
 
 
@@ -155,7 +192,7 @@ class SigningServiceProxyTest(TestCaseWithFactory):
     mocked here, returning fake responses created at
     SigningServiceResponseFactory.
     """
-    layer = ZopelessLayer
+    layer = BaseLayer
 
     def setUp(self, *args, **kwargs):
         super(TestCaseWithFactory, self).setUp(*args, **kwargs)
@@ -173,13 +210,13 @@ class SigningServiceProxyTest(TestCaseWithFactory):
             key.encode(Base64Encoder),
             self.response_factory.base64_service_public_key)
 
-        # Asserts that the endpoint was called
+        # Asserts that the endpoint was called.
         mock_requests.get.assert_called_once_with(
             signing.LP_SIGNING_ADDRESS + "/service-key")
 
     def test_get_nonce(self, mock_requests):
         # Server returns base64-encoded nonce, but the
-        # SigningService.get_nonce method returns it already decoded
+        # SigningService.get_nonce method returns it already decoded.
         self.response_factory.patch(mock_requests)
 
         signing = SigningService()
@@ -200,7 +237,7 @@ class SigningServiceProxyTest(TestCaseWithFactory):
         correct endpoints
         """
         self.response_factory.patch(mock_requests)
-        # Generate the key, and checks if we got back the correct dict
+        # Generate the key, and checks if we got back the correct dict.
         signing = SigningService()
         generated = signing.generate("UEFI", "my lp test key")
 
@@ -209,11 +246,15 @@ class SigningServiceProxyTest(TestCaseWithFactory):
             'fingerprint': self.response_factory.generated_fingerprint})
 
         # Asserts it tried to fetch service key, fetched the nonce and posted
-        # to the /generate endpoint
+        # to the /generate endpoint.
         mock_requests.get.assert_called_once_with(
             signing.LP_SIGNING_ADDRESS + "/service-key")
-        self.response_factory.post_nonce_response.json.assert_called_with()
-        self.response_factory.post_generate_response.json.assert_called_with()
+
+        responses = self.response_factory
+        self.assertIsNotNone(
+            responses.get_latest_json_response("POST", "/nonce"))
+        self.assertIsNotNone(
+            responses.get_latest_json_response("POST", "/generate"))
 
         mock_requests.post.assert_called_with(
             signing.LP_SIGNING_ADDRESS + "/generate",
@@ -222,7 +263,7 @@ class SigningServiceProxyTest(TestCaseWithFactory):
                 "X-Client-Public-Key": signing.LOCAL_PUBLIC_KEY,
                 "X-Nonce": self.response_factory.base64_nonce
             },
-            data=ANY)  # XXX: check the encrypted data
+            data=ANY)  # XXX: check the encrypted data.
 
     def test_sign_invalid_mode(self, mock_requests):
         signing = SigningService()
@@ -242,7 +283,7 @@ class SigningServiceProxyTest(TestCaseWithFactory):
 
     def test_sign(self, mock_requests):
         """Runs through SignService.sign() flow"""
-        # Replace GET /service-key response by our mock
+        # Replace GET /service-key response by our mock.
         resp_factory = self.response_factory
         resp_factory.patch(mock_requests)
 
@@ -256,11 +297,19 @@ class SigningServiceProxyTest(TestCaseWithFactory):
         data = signing.sign(
             key_type, fingerprint, message_name, message, mode)
 
-        # Should have returned the endpoint's response.json() result
+        # It should have returned the values from response.json(),
+        # but decoding what is base64-encoded.
+        resp_json = resp_factory.get_latest_json_response("POST", "/sign")
+        self.assertEqual(2, len(data))
+        self.assertEqual(data['public-key'], resp_json['public-key'])
         self.assertEqual(
-            data, resp_factory.post_sign_response.json.return_value)
-        resp_factory.post_nonce_response.json.assert_called_once_with()
-        resp_factory.post_sign_response.json.assert_called_once_with()
+            data['signed-message'],
+            base64.b64decode(resp_json['signed-message']))
+
+        self.assertIsNotNone(
+            resp_factory.get_latest_response("POST", "/nonce"))
+        self.assertIsNotNone(
+            resp_factory.get_latest_response("POST", "/sign"))
 
         mock_requests.post.assert_called_with(
             signing.LP_SIGNING_ADDRESS + "/sign",
@@ -269,5 +318,4 @@ class SigningServiceProxyTest(TestCaseWithFactory):
                 "X-Client-Public-Key": signing.LOCAL_PUBLIC_KEY,
                 "X-Nonce": resp_factory.base64_nonce
             },
-            data=ANY)  # XXX: check the encrypted data
-
+            data=ANY)  # XXX: check the encrypted data.
