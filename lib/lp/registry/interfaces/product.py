@@ -798,23 +798,6 @@ class IProductView(
                                 filter_statuses.
         """
 
-    def redeemSubscriptionVoucher(voucher, registrant, purchaser,
-                                  subscription_months, whiteboard=None,
-                                  current_datetime=None):
-        """Redeem a voucher and extend the subscription expiration date.
-
-        The voucher must have already been verified to be redeemable.
-        :param voucher: The voucher id as tracked in the external system.
-        :param registrant: Who is redeeming the voucher.
-        :param purchaser: Who purchased the voucher.  May not be known.
-        :param subscription_months: integer indicating the number of months
-            the voucher is for.
-        :param whiteboard: Notes for this activity.
-        :param current_datetime: Current time.  Will be datetime.now() if not
-            specified.
-        :return: None
-        """
-
     def getPackage(distroseries):
         """Return a package in that distroseries for this product."""
 

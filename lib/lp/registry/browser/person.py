@@ -39,7 +39,6 @@ __all__ = [
     'PersonSetContextMenu',
     'PersonSetNavigation',
     'PersonView',
-    'PersonVouchersView',
     'PPANavigationMenuMixIn',
     'RedirectToEditLanguagesView',
     'RestrictedMembershipsPersonView',
@@ -71,8 +70,6 @@ from zope.component import (
     getUtility,
     queryMultiAdapter,
     )
-from zope.error.interfaces import IErrorReportingUtility
-from zope.formlib import form
 from zope.formlib.form import FormFields
 from zope.formlib.widget import CustomWidgetFactory
 from zope.formlib.widgets import (
@@ -121,7 +118,6 @@ from lp.app.validators.email import valid_email
 from lp.app.validators.username import username_validator
 from lp.app.widgets.image import ImageChangeWidget
 from lp.app.widgets.itemswidgets import (
-    LaunchpadDropdownWidget,
     LaunchpadRadioWidget,
     LaunchpadRadioWidgetWithDescription,
     )
@@ -142,7 +138,6 @@ from lp.registry.browser.menu import (
     )
 from lp.registry.browser.teamjoin import TeamJoinMixin
 from lp.registry.enums import PersonVisibility
-from lp.registry.errors import VoucherAlreadyRedeemed
 from lp.registry.interfaces.codeofconduct import ISignedCodeOfConductSet
 from lp.registry.interfaces.distribution import IDistribution
 from lp.registry.interfaces.distributionsourcepackage import (
@@ -195,7 +190,6 @@ from lp.registry.model.person import get_recipients
 from lp.services.config import config
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.sqlbase import flush_database_updates
-from lp.services.features import getFeatureFlag
 from lp.services.feeds.browser import FeedsMixin
 from lp.services.geoip.interfaces import IRequestPreferredLanguages
 from lp.services.gpg.interfaces import (
@@ -228,11 +222,6 @@ from lp.services.openid.interfaces.openid import IOpenIDPersistentIdentity
 from lp.services.propertycache import (
     cachedproperty,
     get_property_cache,
-    )
-from lp.services.salesforce.interfaces import (
-    ISalesforceVoucherProxy,
-    REDEEMABLE_VOUCHER_STATUSES,
-    SalesforceVoucherProxyException,
     )
 from lp.services.verification.interfaces.authtoken import LoginTokenType
 from lp.services.verification.interfaces.logintoken import ILoginTokenSet
@@ -804,7 +793,6 @@ class PersonOverviewMenu(ApplicationMenu, PersonMenuMixin,
         'projects',
         'activate_ppa',
         'maintained',
-        'manage_vouchers',
         'owned_teams',
         'synchronised',
         'view_ppa_subscriptions',
@@ -830,16 +818,6 @@ class PersonOverviewMenu(ApplicationMenu, PersonMenuMixin,
         request_tokens = self.context.oauth_request_tokens
         enabled = bool(access_tokens or request_tokens)
         return Link(target, text, enabled=enabled, icon='info')
-
-    @enabled_with_permission('launchpad.Edit')
-    def manage_vouchers(self):
-        target = '+vouchers'
-        text = 'Manage commercial subscriptions'
-        summary = 'Purchase and redeem commercial subscription vouchers'
-        return Link(
-            target, text, summary, icon='info',
-            enabled=not bool(
-                getFeatureFlag('commercial_subscriptions.new.disabled')))
 
     @enabled_with_permission('launchpad.Edit')
     def editlanguages(self):
@@ -1362,126 +1340,6 @@ class PersonAccountAdministerView(LaunchpadFormView):
                 u'The account "%s" is now deactivated. The user can log in '
                 u'to reactivate it.' % self.context.displayname)
         self.context.setStatus(data['status'], self.user, data['comment'])
-
-
-class PersonVouchersView(LaunchpadFormView):
-    """Form for displaying and redeeming commercial subscription vouchers."""
-
-    custom_widget_voucher = LaunchpadDropdownWidget
-
-    @property
-    def page_title(self):
-        return 'Commercial subscription vouchers'
-
-    @property
-    def cancel_url(self):
-        """See `LaunchpadFormView`."""
-        return canonical_url(self.context)
-
-    def setUpFields(self):
-        """Set up the fields for this view."""
-
-        self.form_fields = []
-        self.form_fields = (self.createProjectField() +
-                            self.createVoucherField())
-
-    def createProjectField(self):
-        """Create the project field for selection commercial projects.
-
-        The vocabulary shows commercial projects owned by the current user.
-        """
-        field = FormFields(
-            Choice(__name__='project',
-                   title=_('Select the project you wish to subscribe'),
-                   description=_('Commercial projects you administer'),
-                   vocabulary="CommercialProjects",
-                   required=True),
-            render_context=self.render_context)
-        return field
-
-    def createVoucherField(self):
-        """Create voucher field.
-
-        Only redeemable vouchers owned by the user are shown.
-        """
-        terms = []
-        for voucher in self.redeemable_vouchers:
-            text = "%s (%d months)" % (
-                voucher.voucher_id, voucher.term_months)
-            terms.append(SimpleTerm(voucher, voucher.voucher_id, text))
-        voucher_vocabulary = SimpleVocabulary(terms)
-        field = FormFields(
-            Choice(__name__='voucher',
-                   title=_('Select a voucher'),
-                   description=_('Choose one of these redeemable vouchers'),
-                   vocabulary=voucher_vocabulary,
-                   required=True),
-            render_context=self.render_context)
-        return field
-
-    @cachedproperty
-    def show_voucher_selection(self):
-        return self.redeemable_vouchers or self.errors
-
-    @cachedproperty
-    def redeemable_vouchers(self):
-        """Get the list redeemable vouchers owned by the user."""
-        vouchers = [
-            voucher for voucher in
-            self.context.getRedeemableCommercialSubscriptionVouchers()]
-        return vouchers
-
-    def removeRedeemableVoucher(self, voucher):
-        """Remove the voucher from the cached list of redeemable vouchers.
-
-        Updated the voucher field and widget so that the form can be reused.
-        """
-        vouchers = get_property_cache(self).redeemable_vouchers
-        vouchers.remove(voucher)
-        # Setup the fields and widgets again, but withut the submitted data.
-        self.form_fields = (
-            self.createProjectField() + self.createVoucherField())
-        self.widgets = form.setUpWidgets(
-            self.form_fields.select('project', 'voucher'),
-            self.prefix, self.context, self.request,
-            data=self.initial_values, ignore_request=True)
-
-    @action(_("Redeem"), name="redeem")
-    def redeem_action(self, action, data):
-        salesforce_proxy = getUtility(ISalesforceVoucherProxy)
-        project = data['project']
-        voucher = data['voucher']
-
-        try:
-            # Perform a check that the submitted voucher id is valid.
-            check_voucher = salesforce_proxy.getVoucher(voucher.voucher_id)
-            if not check_voucher.status in REDEEMABLE_VOUCHER_STATUSES:
-                self.addError(
-                    _("Voucher %s has invalid status %s"
-                      % (check_voucher.voucher_id, check_voucher.status)))
-                return
-            # Redeem the voucher in Launchpad, marking the subscription as
-            # pending. Launchpad will honour the subscription but a job will
-            # still need to be run to notify Salesforce.
-            try:
-                project.redeemSubscriptionVoucher(
-                    voucher='pending-' + voucher.voucher_id,
-                    registrant=self.context,
-                    purchaser=self.context,
-                    subscription_months=voucher.term_months)
-            except VoucherAlreadyRedeemed as error:
-                self.setFieldError('voucher', _(error.message))
-                return
-            self.request.response.addInfoNotification(
-                _("Voucher redeemed successfully"))
-            self.removeRedeemableVoucher(voucher)
-        except SalesforceVoucherProxyException as error:
-            self.addError(
-                _("The voucher could not be redeemed at this time."))
-            # Log an OOPS report without raising an error.
-            info = (error.__class__, error, None)
-            globalErrorUtility = getUtility(IErrorReportingUtility)
-            globalErrorUtility.raising(info, self.request)
 
 
 class PersonLanguagesView(LaunchpadFormView):

@@ -298,11 +298,6 @@ from lp.services.propertycache import (
     cachedproperty,
     get_property_cache,
     )
-from lp.services.salesforce.interfaces import (
-    ISalesforceVoucherProxy,
-    REDEEMABLE_VOUCHER_STATUSES,
-    VOUCHER_STATUSES,
-    )
 from lp.services.searchbuilder import any
 from lp.services.statistics.interfaces.statistic import ILaunchpadStatisticSet
 from lp.services.verification.interfaces.authtoken import LoginTokenType
@@ -1139,46 +1134,6 @@ class Person(
             SQL("count(*) > 0"),
         )
         return rs.one()
-
-    def getAllCommercialSubscriptionVouchers(self, voucher_proxy=None):
-        """See `IPerson`."""
-        if voucher_proxy is None:
-            voucher_proxy = getUtility(ISalesforceVoucherProxy)
-        commercial_vouchers = voucher_proxy.getAllVouchers(self)
-        vouchers = {}
-        for status in VOUCHER_STATUSES:
-            vouchers[status] = []
-        for voucher in commercial_vouchers:
-            assert voucher.status in VOUCHER_STATUSES, (
-                "Voucher %s has unrecognized status %s" %
-                (voucher.voucher_id, voucher.status))
-            vouchers[voucher.status].append(voucher)
-        return vouchers
-
-    def getRedeemableCommercialSubscriptionVouchers(self, voucher_proxy=None):
-        """See `IPerson`."""
-        # Circular imports.
-        from lp.registry.model.commercialsubscription import (
-            CommercialSubscription,
-            )
-        if voucher_proxy is None:
-            voucher_proxy = getUtility(ISalesforceVoucherProxy)
-        vouchers = voucher_proxy.getUnredeemedVouchers(self)
-        # Exclude pending vouchers being sent to Salesforce and vouchers which
-        # have already been redeemed.
-        voucher_ids = [unicode(voucher.voucher_id) for voucher in vouchers]
-        voucher_expr = (
-            "trim(leading 'pending-' "
-            "from CommercialSubscription.sales_system_id)")
-        already_redeemed = list(Store.of(self).using(CommercialSubscription)
-            .find(SQL(voucher_expr), SQL(voucher_expr).is_in(voucher_ids)))
-        redeemable_vouchers = [voucher for voucher in vouchers
-                               if voucher.voucher_id not in already_redeemed]
-        for voucher in redeemable_vouchers:
-            assert voucher.status in REDEEMABLE_VOUCHER_STATUSES, (
-                "Voucher %s has invalid status %s" %
-                (voucher.voucher_id, voucher.status))
-        return redeemable_vouchers
 
     def hasCurrentCommercialSubscription(self):
         """See `IPerson`."""
