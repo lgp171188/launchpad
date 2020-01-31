@@ -34,8 +34,8 @@ from lp.archivepublisher.customupload import (
     CustomUploadAlreadyExists,
     CustomUploadBadUmask,
     )
-from lp.archivepublisher.interfaces.archivesigningkey import (
-    IArchiveSigningKey,
+from lp.archivepublisher.interfaces.archivegpgsigningkey import (
+    IArchiveGPGSigningKey,
     )
 from lp.archivepublisher.interfaces.publisherconfig import IPublisherConfigSet
 from lp.archivepublisher.signing import (
@@ -212,7 +212,7 @@ class TestSigningHelpers(TestCaseWithFactory):
         with InProcessKeyServerFixture() as keyserver:
             yield keyserver.start()
             key_path = os.path.join(gpgkeysdir, 'ppa-sample@canonical.com.sec')
-            yield IArchiveSigningKey(self.archive).setSigningKey(
+            yield IArchiveGPGSigningKey(self.archive).setSigningKey(
                 key_path, async_keyserver=True)
 
     def setUpUefiKeys(self, create=True, series=None):
@@ -1356,7 +1356,8 @@ class TestSigning(RunPartsMixin, TestSigningHelpers):
         # run_parts is called.
         self.enableRunParts(distribution_name=self.distro.name)
         run_parts_fixture = self.useFixture(MonkeyPatch(
-            "lp.archivepublisher.archivesigningkey.run_parts", FakeMethod()))
+            "lp.archivepublisher.archivegpgsigningkey.run_parts",
+            FakeMethod()))
         self.setUpUefiKeys()
         self.setUpKmodKeys()
         self.setUpOpalKeys()

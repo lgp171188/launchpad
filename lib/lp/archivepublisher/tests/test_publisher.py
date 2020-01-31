@@ -67,8 +67,8 @@ from zope.security.proxy import removeSecurityProxy
 
 from lp.archivepublisher.config import getPubConfig
 from lp.archivepublisher.diskpool import DiskPool
-from lp.archivepublisher.interfaces.archivesigningkey import (
-    IArchiveSigningKey,
+from lp.archivepublisher.interfaces.archivegpgsigningkey import (
+    IArchiveGPGSigningKey,
     )
 from lp.archivepublisher.publishing import (
     BY_HASH_STAY_OF_EXECUTION,
@@ -3211,7 +3211,7 @@ class TestPublisherRepositorySignatures(
 
         # Set a signing key for Celso's PPA.
         key_path = os.path.join(gpgkeysdir, 'ppa-sample@canonical.com.sec')
-        yield IArchiveSigningKey(cprov.archive).setSigningKey(
+        yield IArchiveGPGSigningKey(cprov.archive).setSigningKey(
             key_path, async_keyserver=True)
         self.assertTrue(cprov.archive.signing_key is not None)
 
