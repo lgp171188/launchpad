@@ -6,13 +6,15 @@ from __future__ import absolute_import, print_function, unicode_literals
 __metaclass__ = type
 __all__ = ['start_launchpad']
 
-
+try:
+    from contextlib import ExitStack
+except ImportError:
+    from contextlib2 import ExitStack
 import os
 import signal
 import subprocess
 import sys
 
-from contextlib2 import ExitStack
 import fixtures
 from lazr.config import as_host_port
 from rabbitfixture.server import RabbitServerResources
