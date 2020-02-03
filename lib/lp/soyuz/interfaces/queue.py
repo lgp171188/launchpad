@@ -60,6 +60,7 @@ from zope.security.interfaces import Unauthorized
 from lp import _
 from lp.registry.interfaces.person import IPerson
 from lp.registry.interfaces.pocket import PackagePublishingPocket
+from lp.services.webservice.apihelpers import patch_reference_property
 from lp.soyuz.enums import PackageUploadStatus
 from lp.soyuz.interfaces.packagecopyjob import IPackageCopyJob
 
@@ -543,6 +544,9 @@ class IPackageUpload(Interface):
         """
 
 
+patch_reference_property(IPackageUploadLog, 'package_upload', IPackageUpload)
+
+
 class IPackageUploadBuild(Interface):
     """A Queue item's related builds."""
 
@@ -558,7 +562,7 @@ class IPackageUploadBuild(Interface):
     build = Int(title=_("The related build"), required=True, readonly=False)
 
     buildID = Int(
-        title=_("The Related build ID"), required=True,
+        title=_("The related build ID"), required=True,
         readonly=True)
 
     def binaries():

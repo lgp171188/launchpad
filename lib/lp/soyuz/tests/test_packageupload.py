@@ -18,6 +18,7 @@ from lazr.restfulclient.errors import (
     )
 from testtools.matchers import (
     Equals,
+    MatchesListwise,
     MatchesStructure,
     )
 import transaction
@@ -1496,10 +1497,13 @@ class TestPackageUploadWebservice(TestCaseWithFactory):
         logs = removeSecurityProxy(upload).logs
         ws_logs = ws_upload.logs
         self.assertEqual(len(ws_logs), len(logs))
-        for log, ws_log in zip(logs, ws_logs):
-            self.assertEqual(log.comment, ws_log.comment)
-            self.assertEqual(log.date_created, ws_log.date_created)
-            self.assertEqual(log.new_status.title, ws_log.new_status)
-            self.assertEqual(log.old_status.title, ws_log.old_status)
-            self.assertEqual(log.reviewer.name, ws_log.reviewer.name)
-            self.assertEqual(ws_log.package_upload.id, ws_upload.id)
+        self.assertThat(ws_upload.logs, MatchesListwise([
+            MatchesStructure(
+                comment=Equals(log.comment),
+                date_created=Equals(log.date_created),
+                new_status=Equals(log.new_status.title),
+                old_status=Equals(log.old_status.title),
+                reviewer=MatchesStructure.byEquality(
+                    name=log.reviewer.name),
+                package_upload=MatchesStructure.byEquality(id=ws_upload.id))
+            for log in removeSecurityProxy(upload).logs]))

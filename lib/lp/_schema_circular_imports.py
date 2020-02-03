@@ -1,4 +1,4 @@
-# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Update the interface schema values due to circular imports.
@@ -206,10 +206,7 @@ from lp.soyuz.interfaces.publishing import (
     ISourcePackagePublishingHistoryEdit,
     ISourcePackagePublishingHistoryPublic,
     )
-from lp.soyuz.interfaces.queue import (
-    IPackageUpload,
-    IPackageUploadLog,
-    )
+from lp.soyuz.interfaces.queue import IPackageUpload
 from lp.soyuz.interfaces.sourcepackagerelease import ISourcePackageRelease
 from lp.translations.interfaces.hastranslationimports import (
     IHasTranslationImports,
@@ -366,8 +363,6 @@ patch_reference_property(
     ISourcePackagePublishingHistory)
 patch_reference_property(
     ISourcePackagePublishingHistory, 'packageupload', IPackageUpload)
-patch_reference_property(
-    IPackageUploadLog, 'package_upload', IPackageUpload)
 patch_entry_return_type(
     ISourcePackagePublishingHistoryEdit, 'changeOverride',
     ISourcePackagePublishingHistory)

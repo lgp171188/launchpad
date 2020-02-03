@@ -223,6 +223,10 @@ class QueueItemsView(LaunchpadView):
             return None
 
         upload_ids = [upload.id for upload in uploads]
+
+        # Both "u.sources" and "u.builds" below are preloaded by
+        # self.context.getPackageUploads (which uses PackageUploadSet.getAll)
+        # when building self.batchnav.
         puses = sum([u.sources for u in uploads], [])
         pubs = sum([u.builds for u in uploads], [])
 
