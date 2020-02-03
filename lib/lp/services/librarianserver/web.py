@@ -5,9 +5,9 @@ __metaclass__ = type
 
 from datetime import datetime
 import time
-from urlparse import urlparse
 
 from pymacaroons import Macaroon
+from six.moves.urllib.parse import urlparse
 from storm.exceptions import DisconnectionError
 from twisted.internet import (
     abstract,

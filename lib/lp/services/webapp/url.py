@@ -6,12 +6,12 @@
 __metaclass__ = type
 __all__ = ['urlappend', 'urlparse', 'urlsplit']
 
-from urlparse import (
+from six.moves.urllib.parse import (
     urljoin,
     urlparse as original_urlparse,
     urlsplit as original_urlsplit,
     )
-import urlparse as urlparse_module
+import six.moves.urllib.parse as urlparse_module
 
 
 def _enable_sftp_in_urlparse():

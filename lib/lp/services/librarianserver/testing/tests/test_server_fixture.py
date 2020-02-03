@@ -10,7 +10,8 @@ __metaclass__ = type
 import os
 import socket
 from textwrap import dedent
-from urllib import urlopen
+
+from six.moves.urllib.request import urlopen
 
 from lp.services.config import config
 from lp.services.config.fixture import ConfigFixture

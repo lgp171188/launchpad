@@ -8,10 +8,12 @@ __metaclass__ = type
 __all__ = ['make_product_form']
 
 import re
-from urlparse import urlsplit
 
 from lazr.restful.interfaces import IJSONRequestCache
-from six.moves.urllib.parse import urlencode
+from six.moves.urllib.parse import (
+    urlencode,
+    urlsplit,
+    )
 from soupmatchers import (
     HTMLContains,
     Tag,

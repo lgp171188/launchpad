@@ -11,11 +11,15 @@ import itertools
 import logging
 import os.path
 from StringIO import StringIO
-import urllib
-import urlparse
 
 import requests
 from six.moves import http_client
+from six.moves.urllib.parse import (
+    unquote,
+    urljoin,
+    urlparse,
+    urlunparse,
+    )
 from twisted.internet import (
     defer,
     protocol,
@@ -321,8 +325,8 @@ class RedirectAwareProberFactory(ProberFactory):
 
         scheme, host, port, orig_path = _parse(self.url)
         scheme, host, port, new_path = _parse(url)
-        if (urllib.unquote(orig_path.split('/')[-1])
-            != urllib.unquote(new_path.split('/')[-1])):
+        if (unquote(orig_path.split('/')[-1])
+                != unquote(new_path.split('/')[-1])):
             # Server redirected us to a file which doesn't seem to be what we
             # requested.  It's likely to be a stupid server which redirects
             # instead of 404ing (https://launchpad.net/bugs/204460).
@@ -618,12 +622,12 @@ def _get_cdimage_file_list():
     url = config.distributionmirrorprober.cdimage_file_list_url
     # In test environments, this may be a file: URL.  Adjust it to be in a
     # form that requests can cope with (i.e. using an absolute path).
-    parsed_url = urlparse.urlparse(url)
+    parsed_url = urlparse(url)
     if parsed_url.scheme == 'file' and not os.path.isabs(parsed_url.path):
         assert parsed_url.path == parsed_url[2]
         parsed_url = list(parsed_url)
         parsed_url[2] = os.path.join(config.root, parsed_url[2])
-    url = urlparse.urlunparse(parsed_url)
+    url = urlunparse(parsed_url)
     try:
         return urlfetch(
             url, headers={'Pragma': 'no-cache', 'Cache-control': 'no-cache'},
@@ -685,7 +689,7 @@ def probe_archive_mirror(mirror, logfile, unchecked_keys, logger):
     all_paths = itertools.chain(packages_paths, sources_paths)
     request_manager = RequestManager()
     for series, pocket, component, path in all_paths:
-        url = urlparse.urljoin(base_url, path)
+        url = urljoin(base_url, path)
         callbacks = ArchiveMirrorProberCallbacks(
             mirror, series, pocket, component, url, logfile)
         unchecked_keys.append(url)
@@ -735,7 +739,7 @@ def probe_cdimage_mirror(mirror, logfile, unchecked_keys, logger):
         deferredList = []
         request_manager = RequestManager()
         for path in paths:
-            url = urlparse.urljoin(base_url, path)
+            url = urljoin(base_url, path)
             # Use a RedirectAwareProberFactory because CD mirrors are allowed
             # to redirect, and we need to cope with that.
             prober = RedirectAwareProberFactory(url)
@@ -761,7 +765,7 @@ def should_skip_host(host):
 
 def _parse(url, defaultPort=80):
     """Parse the given URL returning the scheme, host, port and path."""
-    scheme, host, path, dummy, dummy, dummy = urlparse.urlparse(url)
+    scheme, host, path, dummy, dummy, dummy = urlparse(url)
     port = defaultPort
     if ':' in host:
         host, port = host.split(':')

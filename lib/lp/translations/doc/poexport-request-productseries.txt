@@ -84,9 +84,9 @@ The email contains a URL linking to where the exported file can be downloaded.
 
 Let's download it and make sure the contents look ok.
 
-    >>> import urllib2
+    >>> from six.moves.urllib.request import urlopen
     >>> from lp.services.helpers import string_to_tarfile
-    >>> tarball = string_to_tarfile(urllib2.urlopen(url).read())
+    >>> tarball = string_to_tarfile(urlopen(url).read())
     >>> for name in sorted(tarball.getnames()):
     ...     print(name)
     evolution-2.2

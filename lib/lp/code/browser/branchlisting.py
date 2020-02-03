@@ -27,13 +27,13 @@ __all__ = [
     ]
 
 from operator import attrgetter
-import urlparse
 
 from lazr.delegates import delegate_to
 from lazr.enum import (
     EnumeratedType,
     Item,
     )
+from six.moves.urllib.parse import parse_qs
 from storm.expr import Desc
 from zope.browserpage import ViewPageTemplateFile
 from zope.component import getUtility
@@ -496,7 +496,7 @@ class BranchListingView(LaunchpadFormView, FeedsMixin):
     @property
     def template(self):
         query_string = self.request.get('QUERY_STRING') or ''
-        query_params = urlparse.parse_qs(query_string)
+        query_params = parse_qs(query_string)
         render_table_only = 'batch_request' in query_params
         if render_table_only:
             return self.table_only_template

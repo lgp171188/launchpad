@@ -17,9 +17,9 @@ __all__ = [
 
 import os.path
 import re
-import urllib
 
 from lazr.restful.utils import smartquote
+from six.moves.urllib.parse import urlencode
 from zope.component import getUtility
 from zope.publisher.browser import FileUpload
 
@@ -568,7 +568,7 @@ class POFileTranslateView(BaseTranslationView, POFileMetadataViewMixin):
             return self.request.response.redirect(
                 canonical_url(self.user, view_name='+licensing',
                               rootsite='translations') +
-                '?' + urllib.urlencode({'back_to': url}))
+                '?' + urlencode({'back_to': url}))
 
         # The handling of errors is slightly tricky here. Because this
         # form displays multiple POMsgSetViews, we need to track the

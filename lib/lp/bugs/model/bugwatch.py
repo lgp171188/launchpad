@@ -11,13 +11,15 @@ __all__ = [
 
 from datetime import datetime
 import re
-import urllib
-from urlparse import urlunsplit
 
 from lazr.lifecycle.event import ObjectModifiedEvent
 from lazr.lifecycle.snapshot import Snapshot
 from lazr.uri import find_uris_in_text
 from pytz import utc
+from six.moves.urllib.parse import (
+    splitvalue,
+    urlunsplit,
+    )
 from sqlobject import (
     ForeignKey,
     SQLObjectNotFound,
@@ -722,7 +724,7 @@ class BugWatchSet:
             scheme, host, path, query_string, frag = urlsplit(url)
             query = {}
             for query_part in query_string.split('&'):
-                key, value = urllib.splitvalue(query_part)
+                key, value = splitvalue(query_part)
                 query[key] = value
 
             bugtracker_data = parse_func(scheme, host, path, query)

@@ -23,13 +23,16 @@ from cStringIO import StringIO
 from datetime import datetime
 from functools import partial
 from operator import itemgetter
-import urllib
 
 from lazr.restful.interface import copy_field
 from lazr.restful.interfaces import IJSONRequestCache
 from pytz import timezone
 from simplejson import dumps
 from six.moves import http_client
+from six.moves.urllib.parse import (
+    quote,
+    urlencode,
+    )
 from sqlobject import SQLObjectNotFound
 from zope.browserpage import ViewPageTemplateFile
 from zope.component import getUtility
@@ -1100,7 +1103,7 @@ class ProjectGroupFileBugGuidedView(LaunchpadFormView):
         base = canonical_url(
             data['product'], view_name='+filebug', rootsite='bugs')
         title = data['title'].encode('utf8')
-        query = urllib.urlencode([
+        query = urlencode([
             ('field.title', title),
             ('field.tags', ' '.join(data['tags'])),
             ])
@@ -1217,7 +1220,7 @@ class BugTargetBugTagsView(LaunchpadView):
     def _getSearchURL(self, tag):
         """Return the search URL for the tag."""
         # Use path_only here to reduce the size of the rendered page.
-        return "+bugs?field.tag=%s" % urllib.quote(tag)
+        return "+bugs?field.tag=%s" % quote(tag)
 
     @property
     def tags_cloud_data(self):

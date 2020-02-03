@@ -10,7 +10,6 @@ from datetime import (
     datetime,
     timedelta,
     )
-import urllib
 
 from openid.consumer.consumer import (
     CANCEL,
@@ -27,6 +26,7 @@ from paste.httpexceptions import (
     HTTPException,
     )
 import six
+from six.moves.urllib.parse import urlencode
 import transaction
 from zope.authentication.interfaces import IUnauthenticatedPrincipal
 from zope.browserpage import ViewPageTemplateFile
@@ -220,7 +220,7 @@ class OpenIDLogin(LaunchpadView):
             passthrough_field = self.request.form.get(passthrough_name, None)
             if passthrough_field is not None:
                 starting_data.append((passthrough_name, passthrough_field))
-        starting_url = urllib.urlencode(starting_data)
+        starting_url = urlencode(starting_data)
         trust_root = allvhosts.configs['mainsite'].rooturl
         return_to = urlappend(trust_root, '+openid-callback')
         return_to = "%s?%s" % (return_to, starting_url)
@@ -240,7 +240,7 @@ class OpenIDLogin(LaunchpadView):
     def starting_url(self):
         starting_url = self.request.getURL(1)
         params = list(self.form_args)
-        query_string = urllib.urlencode(params, doseq=True)
+        query_string = urlencode(params, doseq=True)
         if query_string:
             starting_url += "?%s" % query_string
         return starting_url
@@ -265,9 +265,8 @@ class OpenIDLogin(LaunchpadView):
             else:
                 value_list = [value]
 
-            # urllib.urlencode will just encode unicode values to ASCII.
-            # For our purposes, we can be a little more liberal and allow
-            # UTF-8.
+            # urlencode will just encode unicode values to ASCII.  For our
+            # purposes, we can be a little more liberal and allow UTF-8.
             yield (
                 six.ensure_binary(name),
                 [six.ensure_binary(value) for value in value_list])
@@ -591,7 +590,7 @@ class CookieLogoutPage:
         openid_root = config.launchpad.openid_provider_root
         target = '%s+logout?%s' % (
             config.codehosting.secure_codebrowse_root,
-            urllib.urlencode(dict(next_to='%s+logout' % (openid_root, ))))
+            urlencode(dict(next_to='%s+logout' % (openid_root, ))))
         self.request.response.redirect(target)
         return ''
 

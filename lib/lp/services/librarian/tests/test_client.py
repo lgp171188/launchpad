@@ -7,17 +7,17 @@ import os
 import re
 import textwrap
 import unittest
-from urllib2 import (
-    HTTPError,
-    URLError,
-    urlopen,
-    )
 
 from fixtures import (
     EnvironmentVariable,
     TempDir,
     )
 from six.moves import http_client
+from six.moves.urllib.error import (
+    HTTPError,
+    URLError,
+    )
+from six.moves.urllib.request import urlopen
 import transaction
 
 from lp.services.config import config

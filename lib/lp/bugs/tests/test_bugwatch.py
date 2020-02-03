@@ -10,10 +10,10 @@ from datetime import (
     timedelta,
     )
 import re
-from urlparse import urlunsplit
 
 from lazr.lifecycle.snapshot import Snapshot
 from pytz import utc
+from six.moves.urllib.parse import urlunsplit
 from storm.store import Store
 from testscenarios import (
     load_tests_apply_scenarios,

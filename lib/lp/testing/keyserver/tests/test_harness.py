@@ -3,7 +3,7 @@
 
 __metaclass__ = type
 
-from urllib import urlopen
+from six.moves.urllib.request import urlopen
 
 from lp.services.config import config
 from lp.testing import TestCase

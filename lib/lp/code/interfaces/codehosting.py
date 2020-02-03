@@ -22,10 +22,10 @@ __all__ = [
     ]
 
 import os.path
-import urllib
 
 from lazr.uri import URI
 import six
+from six.moves.urllib.parse import quote
 from zope.interface import Interface
 
 from lp.app.validators.name import valid_name
@@ -204,7 +204,7 @@ def compose_public_url(scheme, unique_name, suffix=None):
     host = URI(config.codehosting.supermirror_root).host
     # After quoting and encoding, the path should be perfectly
     # safe as a plain ASCII string, str() just enforces this
-    path = '/' + str(urllib.quote(six.ensure_binary(unique_name), safe='/~+'))
+    path = '/' + str(quote(six.ensure_binary(unique_name), safe='/~+'))
     if suffix:
         path = os.path.join(path, suffix)
     return str(URI(scheme=scheme, host=host, path=path))

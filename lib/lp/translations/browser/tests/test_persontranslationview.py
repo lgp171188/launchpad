@@ -3,8 +3,7 @@
 
 __metaclass__ = type
 
-import urllib
-
+from six.moves.urllib.parse import urlencode
 from zope.security.proxy import removeSecurityProxy
 
 from lp.app.enums import ServiceUsage
@@ -199,7 +198,7 @@ class TestPersonTranslationView(TestCaseWithFactory):
         pofiles_worked_on = self._makePOFiles(11, previously_worked_on=True)
 
         # the expected results
-        person_name = urllib.urlencode({'person': self.view.context.name})
+        person_name = urlencode({'person': self.view.context.name})
         expected_links = [
             (pofile.potemplate.translationtarget.title,
             canonical_url(pofile, view_name="+filter") + "?%s" % person_name)

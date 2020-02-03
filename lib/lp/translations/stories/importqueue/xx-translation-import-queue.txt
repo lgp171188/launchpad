@@ -208,8 +208,8 @@ There is an option to remove entries from the queue.
 
 No Privileges Person tries to remove entries but to no effect.
 
-  >>> import urllib
-  >>> post_data = urllib.urlencode(
+  >>> from six.moves.urllib.parse import urlencode
+  >>> post_data = urlencode(
   ...     {
   ...         'field.filter_target': 'all',
   ...         'field.filter_status': 'all',
@@ -456,7 +456,7 @@ the erroneous parenthesis included.
 Here we'll simulate such a request and show that the resulting unrecognized
 filter_extension values do not generate an error.  See bug 388997.
 
-  >>> post_data = urllib.urlencode(
+  >>> post_data = urlencode(
   ...     {
   ...         'field.filter_target': 'all',
   ...         'field.filter_status': 'all',
