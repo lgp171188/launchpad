@@ -75,6 +75,7 @@ from lp.services.webservice.apihelpers import (
 WEBHOOK_EVENT_TYPES = {
     "bzr:push:0.1": "Bazaar push",
     "git:push:0.1": "Git push",
+    "livefs:build:0.1": "Live filesystem build",
     "merge-proposal:0.1": "Merge proposal",
     "snap:build:0.1": "Snap build",
     }

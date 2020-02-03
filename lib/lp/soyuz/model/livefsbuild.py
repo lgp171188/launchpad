@@ -50,6 +50,7 @@ from lp.services.librarian.model import (
     LibraryFileAlias,
     LibraryFileContent,
     )
+from lp.services.webapp.snapshot import notify_modified
 from lp.soyuz.interfaces.component import IComponentSet
 from lp.soyuz.interfaces.livefs import (
     LIVEFS_FEATURE_FLAG,
@@ -314,6 +315,20 @@ class LiveFSBuild(PackageBuildMixin, Storm):
     def verifySuccessfulUpload(self):
         """See `IPackageBuild`."""
         return not self.getFiles().is_empty()
+
+    def updateStatus(self, status, builder=None, slave_status=None,
+                     date_started=None, date_finished=None,
+                     force_invalid_transition=False):
+        """See `IBuildFarmJob`."""
+
+        edited_fields = set()
+        with notify_modified(self, edited_fields) as previous_obj:
+            super(LiveFSBuild, self).updateStatus(
+                status, builder=builder, slave_status=slave_status,
+                date_started=date_started, date_finished=date_finished,
+                force_invalid_transition=force_invalid_transition)
+            if self.status != previous_obj.status:
+                edited_fields.add("status")
 
     def notify(self, extra_info=None):
         """See `IPackageBuild`."""
