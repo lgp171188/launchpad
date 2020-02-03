@@ -22,7 +22,7 @@ is approved because he is in the active members table.
     >>> print backslashreplace(browser.title)
     Members : \u201cUbuntu Gnome Team\u201d team
     >>> content = find_tag_by_id(browser.contents, 'activemembers')
-    >>> print extract_text(content)
+    >>> print extract_text(content, formatter='html')
     Name               Member since  Expires  Status
     ...
     Mark Shuttleworth  2005-03-03    &ndash;  Approved

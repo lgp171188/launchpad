@@ -48,7 +48,7 @@ respective bug task.
     Target
     Distribution
     ...
-    Project (Find&hellip;)
+    Project (Find…)
     Status  Importance  Milestone
     New...  Low...      (nothing selected)...
     Assigned to... Mark Shuttleworth (mark)

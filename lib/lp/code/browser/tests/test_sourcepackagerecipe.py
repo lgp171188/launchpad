@@ -52,7 +52,6 @@ from lp.services.beautifulsoup import BeautifulSoup
 from lp.services.database.constants import UTC_NOW
 from lp.services.propertycache import clear_property_cache
 from lp.services.webapp import canonical_url
-from lp.services.webapp.escaping import html_escape
 from lp.services.webapp.interfaces import ILaunchpadRoot
 from lp.services.webapp.servers import LaunchpadTestRequest
 from lp.testing import (
@@ -506,7 +505,7 @@ class TestSourcePackageRecipeAddViewMixin:
         browser.getControl('Create Recipe').click()
         self.assertEqual(
             get_feedback_messages(browser.contents)[1],
-            html_escape('The recipe instruction "run" is not permitted here.'))
+            'The recipe instruction "run" is not permitted here.')
 
     def createRecipe(self, recipe_text, branch=None):
         if branch is None:
@@ -730,7 +729,7 @@ class TestSourcePackageRecipeAddViewMixin:
         browser.getControl('Create Recipe').click()
         self.assertEqual(
             get_feedback_messages(browser.contents)[1],
-            html_escape("You already have a PPA for Ubuntu named 'foo'."))
+            "You already have a PPA for Ubuntu named 'foo'.")
 
     def test_create_new_ppa_missing_name(self):
         # If a new PPA is being created, and the user has not specified a
@@ -990,7 +989,7 @@ class TestSourcePackageRecipeEditViewMixin:
 
         self.assertEqual(
             get_feedback_messages(browser.contents)[1],
-            html_escape('The recipe instruction "run" is not permitted here.'))
+            'The recipe instruction "run" is not permitted here.')
 
     def test_edit_recipe_format_too_new(self):
         # If the recipe's format version is too new, we should notify the

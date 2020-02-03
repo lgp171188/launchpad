@@ -14,8 +14,8 @@ that mirror's distribution.
 
     >>> navigation = find_tags_by_class(
     ...     browser.contents, 'batch-navigation-index')[0]
-    >>> extract_text(navigation.renderContents())
-    u'1...&rarr;...1...of...1...result'
+    >>> print(extract_text(navigation.decode_contents()))
+    1...→...1...of...1...result
 
 A random logged in user won't have the rights to see that page.
 

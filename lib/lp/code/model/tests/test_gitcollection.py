@@ -44,6 +44,7 @@ from lp.registry.interfaces.person import TeamMembershipPolicy
 from lp.registry.model.persondistributionsourcepackage import (
     PersonDistributionSourcePackage,
     )
+from lp.registry.model.personociproject import PersonOCIProject
 from lp.registry.model.personproduct import PersonProduct
 from lp.services.database.interfaces import IStore
 from lp.services.webapp.publisher import canonical_url
@@ -85,6 +86,10 @@ class TestGitCollectionAdaptation(TestCaseWithFactory):
         # collection.
         self.assertCollection(self.factory.makeDistributionSourcePackage())
 
+    def test_oci_project(self):
+        # An OCI project can be adapted to a Git repository collection.
+        self.assertCollection(self.factory.makeOCIProject())
+
     def test_person(self):
         # A person can be adapted to a Git repository collection.
         self.assertCollection(self.factory.makePerson())
@@ -100,6 +105,12 @@ class TestGitCollectionAdaptation(TestCaseWithFactory):
         dsp = self.factory.makeDistributionSourcePackage()
         self.assertCollection(
             PersonDistributionSourcePackage(dsp.distribution.owner, dsp))
+
+    def test_person_oci_project(self):
+        # A PersonOCIProject can be adapted to a Git repository collection.
+        oci_project = self.factory.makeOCIProject()
+        self.assertCollection(
+            PersonOCIProject(oci_project.pillar.owner, oci_project))
 
 
 class TestGenericGitCollection(TestCaseWithFactory):
@@ -377,6 +388,20 @@ class TestGitCollectionFilters(TestCaseWithFactory):
         self.factory.makeGitRepository(target=dsp_other_distro)
         self.factory.makeGitRepository()
         collection = self.all_repositories.inDistributionSourcePackage(dsp)
+        self.assertEqual(
+            sorted([repository, repository2]),
+            sorted(collection.getRepositories()))
+
+    def test_in_oci_project(self):
+        # 'inOCIProject' returns a new collection that only
+        # has repositories for the oci project in the distribution.
+        ocip = self.factory.makeOCIProject()
+        ocip_other_distro = self.factory.makeOCIProject()
+        repository = self.factory.makeGitRepository(target=ocip)
+        repository2 = self.factory.makeGitRepository(target=ocip)
+        self.factory.makeGitRepository(target=ocip_other_distro)
+        self.factory.makeGitRepository()
+        collection = self.all_repositories.inOCIProject(ocip)
         self.assertEqual(
             sorted([repository, repository2]),
             sorted(collection.getRepositories()))

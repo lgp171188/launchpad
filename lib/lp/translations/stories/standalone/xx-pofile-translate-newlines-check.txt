@@ -12,7 +12,7 @@ https://bugzilla.mozilla.org/show_bug.cgi?id=299009
     ...     """Find and print [tags] in browser.contents. End each with '--'."""
     ...     soup = find_main_content(browser.contents)
     ...     for tag in soup.findAll(attrs={'id': tags}):
-    ...         print("%s\n--\n" % tag.renderContents(encoding=None))
+    ...         print(u"%s\n--\n" % tag.decode_contents())
 
     >>> browser = setupBrowser(auth='Basic carlos@canonical.com:test')
     >>> browser.open(
@@ -24,7 +24,7 @@ We can see that the message we are interested in is not translated.
     >>> print_tags(browser,
     ...     ['msgset_149', 'msgset_149_singular', 'msgset_149_es_translation_0'])
     20.
-    <input type="hidden" name="msgset_149" />
+    <input name="msgset_149" type="hidden"/>
     --
     Please select a key size in bits.  The cipher you have chosen...
     --
@@ -94,11 +94,11 @@ And, as we can see, we get the trailing new line char
     >>> print_tags(browser, [
     ...     'msgset_165', 'msgset_165_singular', 'msgset_165_es_translation_0'])
     23.
-    <input type="hidden" name="msgset_165" />
+    <input name="msgset_165" type="hidden"/>
     --
-    <code>%s</code>: option `<code>%s</code>&#x27; is ambiguous...
+    <code>%s</code>: option `<code>%s</code>' is ambiguous...
     --
-    <code>%s</code>: la opcion «<code>%s</code>» es ambigua<img alt="" src="/@@/translation-newline" /><br />
+    <code>%s</code>: la opcion «<code>%s</code>» es ambigua<img alt="" src="/@@/translation-newline"/><br/>
     --
 
 Now, we do the right submit, with one trailing new line...
@@ -124,11 +124,11 @@ And, as we can see, we get the same output, just one trailing newline char.
     >>> print_tags(browser, [
     ...     'msgset_165', 'msgset_165_singular', 'msgset_165_es_translation_0'])
     23.
-    <input type="hidden" name="msgset_165" />
+    <input name="msgset_165" type="hidden"/>
     --
-    <code>%s</code>: option `<code>%s</code>&#x27; is ambiguous...
+    <code>%s</code>: option `<code>%s</code>' is ambiguous...
     --
-    <code>%s</code>: la opcion «<code>%s</code>» es ambigua<img alt="" src="/@@/translation-newline" /><br />
+    <code>%s</code>: la opcion «<code>%s</code>» es ambigua<img alt="" src="/@@/translation-newline"/><br/>
     --
 
 Last check, the user sends two new line chars instead of just one...
@@ -154,9 +154,9 @@ And Launchpad comes to the rescue and stores just one!
     >>> print_tags(browser, [
     ...     'msgset_165', 'msgset_165_singular', 'msgset_165_es_translation_0'])
     23.
-    <input type="hidden" name="msgset_165" />
+    <input name="msgset_165" type="hidden"/>
     --
-    <code>%s</code>: option `<code>%s</code>&#x27; is ambiguous...
+    <code>%s</code>: option `<code>%s</code>' is ambiguous...
     --
-    <code>%s</code>: la opcion «<code>%s</code>» es ambigua<img alt="" src="/@@/translation-newline" /><br />
+    <code>%s</code>: la opcion «<code>%s</code>» es ambigua<img alt="" src="/@@/translation-newline"/><br/>
     --

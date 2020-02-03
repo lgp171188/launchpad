@@ -93,7 +93,6 @@ from lp.registry.model.product import (
 from lp.registry.model.productlicense import ProductLicense
 from lp.services.database.interfaces import IStore
 from lp.services.webapp.authorization import check_permission
-from lp.services.webapp.escaping import html_escape
 from lp.testing import (
     celebrity_logged_in,
     login,
@@ -882,7 +881,7 @@ class TestProduct(TestCaseWithFactory):
             'past_sprints', 'personHasDriverRights',
             'primary_translatable', 'private_bugs',
             'programminglang', 'qualifies_for_free_hosting',
-            'recipes', 'redeemSubscriptionVoucher', 'registrant', 'releases',
+            'recipes', 'registrant', 'releases',
             'remote_product', 'removeCustomLanguageCode',
             'screenshotsurl',
             'searchFAQs', 'searchQuestions', 'security_contact',
@@ -934,7 +933,7 @@ class TestProduct(TestCaseWithFactory):
                 'license_info', 'licenses', 'logo', 'mugshot',
                 'official_answers', 'official_blueprints',
                 'official_codehosting', 'owner', 'private',
-                'programminglang', 'projectgroup', 'redeemSubscriptionVoucher',
+                'programminglang', 'projectgroup',
                 'releaseroot', 'screenshotsurl', 'sourceforgeproject',
                 'summary', 'uses_launchpad', 'wikiurl', 'vcs')),
             'launchpad.Moderate': set((
@@ -1433,7 +1432,7 @@ class TestProductFiles(TestCase):
         firefox_owner.getControl("Upload").click()
         self.assertEqual(
             get_feedback_messages(firefox_owner.contents),
-            [html_escape(u"Your file 'foo\xa5.txt' has been uploaded.")])
+            [u"Your file 'foo\xa5.txt' has been uploaded."])
         firefox_owner.open('http://launchpad.test/firefox/+download')
         content = find_main_content(firefox_owner.contents)
         rows = content.findAll('tr')
@@ -1487,27 +1486,6 @@ class ProductAttributeCacheTestCase(TestCaseWithFactory):
         ProductLicense(product=self.product, license=License.MIT)
         self.assertEqual(self.product.licenses,
                          (License.ACADEMIC, License.AFFERO, License.MIT))
-
-    def testCommercialSubscriptionCache(self):
-        """commercial_subscription cache should not traverse transactions."""
-        self.assertEqual(self.product.commercial_subscription, None)
-        self.factory.makeCommercialSubscription(self.product)
-        self.assertEqual(self.product.commercial_subscription, None)
-        self.product.redeemSubscriptionVoucher(
-            'hello', self.product.owner, self.product.owner, 1)
-        self.assertEqual(
-            'hello', self.product.commercial_subscription.sales_system_id)
-        transaction.abort()
-        # Cache is cleared.
-        self.assertIs(None, self.product.commercial_subscription)
-
-        # Cache is cleared again.
-        transaction.abort()
-        self.factory.makeCommercialSubscription(self.product)
-        # Cache is cleared and it sees database changes that occur
-        # before the cache is populated.
-        self.assertEqual(
-            'new', self.product.commercial_subscription.sales_system_id)
 
 
 class ProductLicensingTestCase(TestCaseWithFactory):

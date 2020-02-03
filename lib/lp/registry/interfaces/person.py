@@ -1213,25 +1213,6 @@ class IPersonViewRestricted(IHasBranches, IHasSpecifications,
     def isAnyPillarOwner():
         """Is this person the owner of any pillar?"""
 
-    def getAllCommercialSubscriptionVouchers(voucher_proxy=None):
-        """Return all commercial subscription vouchers.
-
-        All of a `Person`s vouchers are returned, regardless of redemption
-        status.  Even vouchers marked inactive are returned.
-        The result is a dictionary, indexed by the three
-        voucher statuses.
-        :return: dict
-        """
-
-    def getRedeemableCommercialSubscriptionVouchers(voucher_proxy=None):
-        """Return the set of redeemable vouchers.
-
-        The `Person`s vouchers are returned if they are unredeemed and active.
-
-        The result is a list of vouchers.
-        :return: list
-        """
-
     def hasCurrentCommercialSubscription():
         """Return if the user has a current commercial subscription."""
 

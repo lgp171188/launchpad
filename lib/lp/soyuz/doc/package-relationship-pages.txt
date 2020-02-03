@@ -57,14 +57,12 @@ correctly like:
      </li>
   </ul>
 
-  >>> from lp.testing.pages import (
-  ...     parse_relationship_section)
+  >>> from lp.testing.pages import parse_relationship_section
 
   >>> parse_relationship_section(pkg_rel_view())
-  LINK: "foobar (&gt;= 1.0.2)" -> http://whatever/
+  LINK: "foobar (>= 1.0.2)" -> http://whatever/
   TEXT: "test (= 1.0)"
 
 
 Note that no link is rendered for IPackageReleationship where 'url' is
 None.
-

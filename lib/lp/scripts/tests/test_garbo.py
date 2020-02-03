@@ -21,7 +21,6 @@ from pytz import UTC
 from storm.exceptions import LostObjectError
 from storm.expr import (
     In,
-    Like,
     Min,
     Not,
     SQL,
@@ -112,8 +111,6 @@ from lp.services.job.model.job import Job
 from lp.services.librarian.model import TimeLimitedToken
 from lp.services.messages.model.message import Message
 from lp.services.openid.model.openidconsumer import OpenIDConsumerNonce
-from lp.services.salesforce.interfaces import ISalesforceVoucherProxy
-from lp.services.salesforce.tests.proxy import TestSalesforceVoucherProxy
 from lp.services.scripts.tests import run_script
 from lp.services.session.model import (
     SessionData,
@@ -1151,34 +1148,6 @@ class TestGarbo(FakeAdapterMixin, TestCaseWithFactory):
         num_rows = store.execute(
             "SELECT COUNT(*) FROM BugSummaryJournal").get_one()[0]
         self.assertThat(num_rows, Equals(0))
-
-    def test_VoucherRedeemer(self):
-        switch_dbuser('testadmin')
-
-        voucher_proxy = TestSalesforceVoucherProxy()
-        self.registerUtility(voucher_proxy, ISalesforceVoucherProxy)
-
-        # Mark has some unredeemed vouchers so set one of them as pending.
-        mark = getUtility(IPersonSet).getByName('mark')
-        voucher = voucher_proxy.getUnredeemedVouchers(mark)[0]
-        product = self.factory.makeProduct(owner=mark)
-        redeemed_id = voucher.voucher_id
-        self.factory.makeCommercialSubscription(
-            product, False, 'pending-%s' % redeemed_id)
-        transaction.commit()
-
-        self.runFrequently()
-
-        # There should now be 0 pending vouchers in Launchpad.
-        num_rows = IMasterStore(CommercialSubscription).find(
-            CommercialSubscription,
-            Like(CommercialSubscription.sales_system_id, 'pending-%')
-            ).count()
-        self.assertThat(num_rows, Equals(0))
-        # Salesforce should also now have redeemed the voucher.
-        unredeemed_ids = [
-            v.voucher_id for v in voucher_proxy.getUnredeemedVouchers(mark)]
-        self.assertNotIn(redeemed_id, unredeemed_ids)
 
     def test_UnusedPOTMsgSetPruner_removes_obsolete_message_sets(self):
         # UnusedPOTMsgSetPruner removes any POTMsgSet that are

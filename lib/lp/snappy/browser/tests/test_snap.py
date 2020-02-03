@@ -1655,7 +1655,7 @@ class TestSnapRequestBuildsView(BaseTestSnapView):
             Source archive:
             Primary Archive for Ubuntu Linux
             PPA
-            \(Find&hellip;\)
+            \(Find\u2026\)
             Architectures:
             amd64
             i386

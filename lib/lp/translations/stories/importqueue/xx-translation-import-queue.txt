@@ -128,7 +128,7 @@ the last entry.
   >>> anon_browser.open('http://translations.launchpad.test/+imports')
   >>> nav_index = first_tag_by_class(anon_browser.contents,
   ...     'batch-navigation-index')
-  >>> print(extract_text(nav_index))
+  >>> print(extract_text(nav_index, formatter='html'))
   1 &rarr; 5 of 5 results
   >>> rows = find_tags_by_class(anon_browser.contents, 'import_entry_row')
   >>> print(extract_text(rows[4]))
@@ -367,7 +367,7 @@ decent error message:
   >>> browser.getControl('Upload').click()
   >>> for tag in find_tags_by_class(browser.contents, 'message'):
   ...     print(tag)
-  <div...Your upload was ignored because you didn&#x27;t select a file....
+  <div...Your upload was ignored because you didn't select a file....
   ...Please select a file and try again.</div>...
 
 Let's try now a tarball upload. Should work:

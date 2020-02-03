@@ -431,12 +431,14 @@ class PreviewDiff(Storm):
         else:
             source_repository = bmp.source_git_repository
             target_repository = bmp.target_git_repository
-            if source_repository == target_repository:
-                path = source_repository.getInternalPath()
-            else:
-                path = "%s:%s" % (
-                    target_repository.getInternalPath(),
-                    source_repository.getInternalPath())
+            prerequisite_repository = bmp.prerequisite_git_repository
+            path = target_repository.getInternalPath()
+            if source_repository != target_repository:
+                path += ":%s" % source_repository.getInternalPath()
+            if (prerequisite_repository is not None and
+                    prerequisite_repository != source_repository and
+                    prerequisite_repository != target_repository):
+                path += ":%s" % prerequisite_repository.getInternalPath()
             response = getUtility(IGitHostingClient).getMergeDiff(
                 path, bmp.target_git_commit_sha1, bmp.source_git_commit_sha1,
                 prerequisite=bmp.prerequisite_git_commit_sha1)

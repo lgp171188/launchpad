@@ -12,7 +12,8 @@ __all__ = [
     ]
 
 from textwrap import dedent
-import urllib
+
+from six.moves.urllib.parse import urlsplit
 
 from lp import _
 from lp.app.validators import LaunchpadValidationError
@@ -131,8 +132,7 @@ def validate_url(url, valid_schemes):
     """
     if not url:
         return False
-    scheme, host = urllib.splittype(url)
-    if not scheme in valid_schemes:
+    if urlsplit(url).scheme not in valid_schemes:
         return False
     if not valid_absolute_url(url):
         return False

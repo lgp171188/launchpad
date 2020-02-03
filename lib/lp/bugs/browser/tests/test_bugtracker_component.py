@@ -1,4 +1,4 @@
-# Copyright 2010-2016 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version (see the file LICENSE).
 
 """Unit tests for linking bug tracker components to source packages."""
@@ -36,7 +36,7 @@ class BugTrackerEditComponentViewTextCase(TestCaseWithFactory):
         else:
             name = sourcepackage.name
         return {
-            'field.sourcepackagename': name,
+            'field.source_package_name': name,
             'field.actions.save': 'Save',
             }
 
@@ -57,7 +57,7 @@ class BugTrackerEditComponentViewTextCase(TestCaseWithFactory):
         label = 'Link a distribution source package to Example component'
         self.assertEqual(label, view.label)
         self.assertEqual('Link component', view.page_title)
-        self.assertEqual(['sourcepackagename'], view.field_names)
+        self.assertEqual(['source_package_name'], view.field_names)
         url = canonical_url(component.component_group.bug_tracker)
         self.assertEqual(url, view.next_url)
         self.assertEqual(url, view.cancel_url)

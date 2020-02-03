@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Bug tracker views."""
@@ -466,8 +466,8 @@ class BugTrackerEditComponentView(LaunchpadEditFormView):
     linked to source packages in the Ubuntu distribution.
     """
     schema = IBugTrackerComponent
-    custom_widget_sourcepackagename = UbuntuSourcePackageNameWidget
-    field_names = ['sourcepackagename']
+    custom_widget_source_package_name = UbuntuSourcePackageNameWidget
+    field_names = ['source_package_name']
     page_title = 'Link component'
 
     @property
@@ -479,10 +479,10 @@ class BugTrackerEditComponentView(LaunchpadEditFormView):
     @property
     def initial_values(self):
         """See `LaunchpadFormView.`"""
-        field_values = dict(sourcepackagename='')
+        field_values = dict(source_package_name='')
         dsp = self.context.distro_source_package
         if dsp is not None:
-            field_values['sourcepackagename'] = dsp.name
+            field_values['source_package_name'] = dsp.name
         return field_values
 
     @property
@@ -498,24 +498,24 @@ class BugTrackerEditComponentView(LaunchpadEditFormView):
         look it up in Ubuntu to retrieve the distro_source_package
         object, and link it to this component.
         """
-        sourcepackagename = data['sourcepackagename']
-        distribution = self.widgets['sourcepackagename'].getDistribution()
-        dsp = distribution.getSourcePackage(sourcepackagename)
+        source_package_name = data['source_package_name']
+        distribution = self.widgets['source_package_name'].getDistribution()
+        dsp = distribution.getSourcePackage(source_package_name)
         bug_tracker = self.context.component_group.bug_tracker
         # Has this source package already been assigned to a component?
         component = bug_tracker.getRemoteComponentForDistroSourcePackageName(
-            distribution, sourcepackagename)
+            distribution, source_package_name)
         if component is not None:
             self.request.response.addNotification(
                 "The %s source package is already linked to %s:%s in %s." % (
-                    sourcepackagename.name,
+                    source_package_name.name,
                     component.component_group.name,
                     component.name, distribution.name))
             return
         # The submitted component can be linked to the distro source package.
         component = context or self.context
         component.distro_source_package = dsp
-        if sourcepackagename is None:
+        if source_package_name is None:
             self.request.response.addNotification(
                 "%s:%s is now unlinked." % (
                     component.component_group.name, component.name))
@@ -523,7 +523,7 @@ class BugTrackerEditComponentView(LaunchpadEditFormView):
             self.request.response.addNotification(
                 "%s:%s is now linked to the %s source package in %s." % (
                     component.component_group.name, component.name,
-                    sourcepackagename.name, distribution.name))
+                    source_package_name.name, distribution.name))
 
     @action('Save Changes', name='save')
     def save_action(self, action, data):

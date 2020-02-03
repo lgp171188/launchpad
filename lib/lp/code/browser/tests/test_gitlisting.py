@@ -13,6 +13,7 @@ from lp.app.enums import InformationType
 from lp.code.enums import BranchMergeProposalStatus
 from lp.code.interfaces.gitrepository import IGitRepositorySet
 from lp.registry.enums import VCSType
+from lp.registry.interfaces.personociproject import IPersonOCIProjectFactory
 from lp.registry.model.persondistributionsourcepackage import (
     PersonDistributionSourcePackage,
     )
@@ -34,6 +35,10 @@ class TestTargetGitListingView:
 
     layer = DatabaseFunctionalLayer
 
+    def setDefaultRepository(self, target, repository):
+        getUtility(IGitRepositorySet).setDefaultRepository(
+            target=target, repository=repository)
+
     def test_rendering(self):
         main_repo = self.factory.makeGitRepository(
             owner=self.owner, target=self.target, name="foo")
@@ -53,8 +58,7 @@ class TestTargetGitListingView:
             target=self.target, name="bar")
 
         with admin_logged_in():
-            getUtility(IGitRepositorySet).setDefaultRepository(
-                target=self.target, repository=main_repo)
+            self.setDefaultRepository(target=self.target, repository=main_repo)
             getUtility(IGitRepositorySet).setDefaultRepositoryForOwner(
                 owner=other_repo.owner, target=self.target,
                 repository=other_repo, user=other_repo.owner)
@@ -115,8 +119,7 @@ class TestTargetGitListingView:
             self.factory.makeGitRefs(other_repo)
 
         with admin_logged_in():
-            getUtility(IGitRepositorySet).setDefaultRepository(
-                target=self.target, repository=main_repo)
+            self.setDefaultRepository(target=self.target, repository=main_repo)
             getUtility(IGitRepositorySet).setDefaultRepositoryForOwner(
                 owner=other_repo.owner, target=self.target,
                 repository=other_repo, user=other_repo.owner)
@@ -155,7 +158,7 @@ class TestTargetGitListingView:
         other_repo = self.factory.makeGitRepository(
             target=self.target, information_type=InformationType.PUBLIC)
         with admin_logged_in():
-            getUtility(IGitRepositorySet).setDefaultRepository(
+            self.setDefaultRepository(
                 target=self.target, repository=invisible_repo)
 
         # An anonymous user can't see the default.
@@ -339,8 +342,7 @@ class TestProductGitListingView(TestTargetGitListingView,
             paths=["refs/heads/master", "refs/heads/1.0", "refs/tags/1.1"])
 
         with admin_logged_in():
-            getUtility(IGitRepositorySet).setDefaultRepository(
-                    target=self.target, repository=main_repo)
+            self.setDefaultRepository(target=self.target, repository=main_repo)
 
         self.factory.makeBranchMergeProposalForGit(
             target_ref=git_refs[0],
@@ -411,6 +413,48 @@ class TestPersonDistributionSourcePackageGitListingView(
         # As a special case for PersonDistributionSourcePackage, no link
         # appears even if there is a branch. There's no PersonDSP:+branches.
         self.factory.makeBranch(owner=self.owner, target=self.branch_target)
+        view = create_initialized_view(self.owner_target, '+git')
+        self.assertNotIn('View Bazaar branches', view())
+
+
+class TestOCIProjectGitListingView(
+        TestTargetGitListingView, TestCaseWithFactory):
+
+    def setUp(self):
+        super(TestOCIProjectGitListingView, self).setUp()
+        self.owner = self.factory.makePerson(name="foowner")
+        distro = self.factory.makeDistribution(name="foo", owner=self.owner)
+        self.target = self.factory.makeOCIProject(
+            pillar=distro, ociprojectname="bar")
+        self.target_path = "foo/+oci/bar"
+
+    def setDefaultRepository(self, target, repository):
+        getUtility(IGitRepositorySet).setDefaultRepository(
+            target=target, repository=repository, force_oci=True)
+
+    def test_bzr_link(self):
+        # There's no OCIProject:+branches, nor any ability to create Bazaar
+        # branches for OCI projects.
+        view = create_initialized_view(self.target, '+git')
+        self.assertNotIn('View Bazaar branches', view())
+
+
+class TestPersonOCIProjectGitListingView(
+        TestPersonTargetGitListingView, TestCaseWithFactory):
+
+    def setUp(self):
+        super(TestPersonOCIProjectGitListingView, self).setUp()
+        self.owner = self.factory.makePerson(name="dev")
+        distro = self.factory.makeDistribution(name="foo", owner=self.owner)
+        self.target = self.factory.makeOCIProject(
+            pillar=distro, ociprojectname="bar")
+        self.target_path = "foo/+oci/bar"
+        self.owner_target = getUtility(IPersonOCIProjectFactory).create(
+            self.owner, self.target)
+
+    def test_bzr_link(self):
+        # There's no PersonOCIProject:+branches, nor any ability to create
+        # Bazaar branches for OCI projects.
         view = create_initialized_view(self.owner_target, '+git')
         self.assertNotIn('View Bazaar branches', view())
 

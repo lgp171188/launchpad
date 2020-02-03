@@ -894,6 +894,10 @@
     <allow interface="lp.code.interfaces.gitnamespace.IGitNamespace" />
     <allow interface="lp.code.interfaces.gitnamespace.IGitNamespacePolicy" />
   </class>
+  <class class="lp.code.model.gitnamespace.OCIProjectGitNamespace">
+    <allow interface="lp.code.interfaces.gitnamespace.IGitNamespace" />
+    <allow interface="lp.code.interfaces.gitnamespace.IGitNamespacePolicy" />
+  </class>
   <securedutility
       class="lp.code.model.gitnamespace.GitNamespaceSet"
       provides="lp.code.interfaces.gitnamespace.IGitNamespaceSet">
@@ -1024,6 +1028,10 @@
       provides="lp.code.interfaces.gitcollection.IGitCollection"
       factory="lp.code.adapters.gitcollection.git_collection_for_distro_source_package"/>
   <adapter
+      for="lp.registry.interfaces.ociproject.IOCIProject"
+      provides="lp.code.interfaces.gitcollection.IGitCollection"
+      factory="lp.code.adapters.gitcollection.git_collection_for_oci_project"/>
+  <adapter
       for="lp.registry.interfaces.person.IPerson"
       provides="lp.code.interfaces.gitcollection.IGitCollection"
       factory="lp.code.adapters.gitcollection.git_collection_for_person"/>
@@ -1035,6 +1043,10 @@
       for="lp.registry.interfaces.persondistributionsourcepackage.IPersonDistributionSourcePackage"
       provides="lp.code.interfaces.gitcollection.IGitCollection"
       factory="lp.code.adapters.gitcollection.git_collection_for_person_distro_source_package"/>
+  <adapter
+      for="lp.registry.interfaces.personociproject.IPersonOCIProject"
+      provides="lp.code.interfaces.gitcollection.IGitCollection"
+      factory="lp.code.adapters.gitcollection.git_collection_for_person_oci_project"/>
   <securedutility
       class="lp.code.model.gitcollection.GenericGitCollection"
       provides="lp.code.interfaces.gitcollection.IAllGitRepositories">
@@ -1045,8 +1057,10 @@
 
   <adapter factory="lp.code.model.defaultgit.ProjectDefaultGitRepository" />
   <adapter factory="lp.code.model.defaultgit.PackageDefaultGitRepository" />
+  <adapter factory="lp.code.model.defaultgit.OCIProjectDefaultGitRepository" />
   <adapter factory="lp.code.model.defaultgit.OwnerProjectDefaultGitRepository" />
   <adapter factory="lp.code.model.defaultgit.OwnerPackageDefaultGitRepository" />
+  <adapter factory="lp.code.model.defaultgit.OwnerOCIProjectDefaultGitRepository" />
 
   <class class="lp.code.model.gitlookup.GitLookup">
     <allow interface="lp.code.interfaces.gitlookup.IGitLookup" />
@@ -1065,6 +1079,7 @@
   <adapter factory="lp.code.model.gitlookup.ProjectGitTraversable" />
   <adapter factory="lp.code.model.gitlookup.DistributionGitTraversable" />
   <adapter factory="lp.code.model.gitlookup.DistributionSourcePackageGitTraversable" />
+  <adapter factory="lp.code.model.gitlookup.DistributionOCIProjectGitTraversable" />
 
   <!-- Git hosting -->
   <securedutility

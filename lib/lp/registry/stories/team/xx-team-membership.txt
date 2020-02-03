@@ -223,7 +223,7 @@ Sample Person has both direct and indirect memberships:
     None
 
     >>> print extract_text(
-    ...     find_tag_by_id(content, 'participation'))
+    ...     find_tag_by_id(content, 'participation'), formatter='html')
     Team                  Joined      Role    Via                 Mailing List
     HWDB Team             2009-07-09  Member  &mdash;              &mdash;
     Landscape Developers  2006-07-11  Owner   &mdash;              &mdash;
@@ -254,6 +254,7 @@ list column.
 
     >>> admin_browser.open('http://launchpad.test/~admins/+participation')
     >>> print extract_text(
-    ...     find_tag_by_id(admin_browser.contents, 'participation'))
+    ...     find_tag_by_id(admin_browser.contents, 'participation'),
+    ...     formatter='html')
     Team                  Joined      Role    Via
     Mailing List Experts  2007-10-04  Owner   &mdash;

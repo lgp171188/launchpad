@@ -7,6 +7,7 @@ import contextlib
 
 from lazr.restful.interfaces import IJSONRequestCache
 import simplejson
+import soupmatchers
 import transaction
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
@@ -924,7 +925,7 @@ class TestPersonIndexVisibilityView(TestCaseWithFactory):
             self.assertEqual(view.super_teams, list(team.super_teams))
             superteams = find_tag_by_id(html, 'subteam-of')
         self.assertFalse('&lt;hidden&gt;' in superteams)
-        self.assertEqual(
-            '<a href="/~private-team" class="sprite team private">'
-            'Private Team</a>',
-            str(superteams.findNext('a')))
+        self.assertThat(superteams, soupmatchers.Tag(
+            'private team link', 'a',
+            attrs={'href': '/~private-team', 'class': 'sprite team private'},
+            text='Private Team'))

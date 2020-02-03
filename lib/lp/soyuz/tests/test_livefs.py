@@ -12,9 +12,15 @@ from datetime import (
     timedelta,
     )
 
+from fixtures import FakeLogger
 import pytz
+from storm.exceptions import LostObjectError
 from storm.locals import Store
-from testtools.matchers import Equals
+from testtools.matchers import (
+    Equals,
+    MatchesDict,
+    MatchesStructure,
+    )
 import transaction
 from zope.component import getUtility
 from zope.security.interfaces import Unauthorized
@@ -30,16 +36,20 @@ from lp.buildmaster.model.buildqueue import BuildQueue
 from lp.registry.enums import PersonVisibility
 from lp.registry.interfaces.distribution import IDistributionSet
 from lp.registry.interfaces.pocket import PackagePublishingPocket
+from lp.services.config import config
 from lp.services.database.constants import UTC_NOW
 from lp.services.features.testing import FeatureFixture
+from lp.services.webapp import canonical_url
 from lp.services.webapp.interfaces import OAuthPermission
 from lp.services.webapp.snapshot import notify_modified
+from lp.services.webhooks.testing import LogsScheduledWebhooks
 from lp.soyuz.interfaces.livefs import (
     CannotDeleteLiveFS,
     ILiveFS,
     ILiveFSSet,
     ILiveFSView,
     LIVEFS_FEATURE_FLAG,
+    LIVEFS_WEBHOOKS_FEATURE_FLAG,
     LiveFSBuildAlreadyPending,
     LiveFSFeatureDisabled,
     )
@@ -54,6 +64,7 @@ from lp.testing import (
     StormStatementRecorder,
     TestCaseWithFactory,
     )
+from lp.testing.dbuser import dbuser
 from lp.testing.layers import (
     DatabaseFunctionalLayer,
     LaunchpadZopelessLayer,
@@ -361,6 +372,57 @@ class TestLiveFS(TestCaseWithFactory):
             self.assertRaises(CannotDeleteLiveFS, livefs.destroySelf)
         self.assertTrue(
             getUtility(ILiveFSSet).exists(owner, distroseries, "condemned"))
+
+    def test_requestBuild_triggers_webhooks(self):
+        # Requesting a build triggers webhooks.
+        logger = self.useFixture(FakeLogger())
+        with FeatureFixture({LIVEFS_FEATURE_FLAG: "on",
+                             LIVEFS_WEBHOOKS_FEATURE_FLAG: "on"}):
+            livefs = self.factory.makeLiveFS()
+            distroarchseries = self.factory.makeDistroArchSeries(
+                distroseries=livefs.distro_series)
+            hook = self.factory.makeWebhook(
+                target=livefs, event_types=["livefs:build:0.1"])
+            build = livefs.requestBuild(
+                livefs.owner, livefs.distro_series.main_archive,
+                distroarchseries,
+                PackagePublishingPocket.RELEASE)
+
+        expected_payload = {
+            "livefs_build": Equals(canonical_url(build,
+                                                 force_local_path=True)),
+            "action": Equals("created"),
+            "livefs": Equals(canonical_url(livefs, force_local_path=True)),
+            "status": Equals("Needs building"),
+            }
+        with person_logged_in(livefs.owner):
+            delivery = hook.deliveries.one()
+            self.assertThat(
+                delivery, MatchesStructure(
+                    event_type=Equals("livefs:build:0.1"),
+                    payload=MatchesDict(expected_payload)))
+            with dbuser(config.IWebhookDeliveryJobSource.dbuser):
+                self.assertEqual(
+                    "<WebhookDeliveryJob for webhook %d on %r>" % (
+                        hook.id, hook.target),
+                    repr(delivery))
+                self.assertThat(
+                    logger.output,
+                    LogsScheduledWebhooks([
+                        (hook, "livefs:build:0.1",
+                         MatchesDict(expected_payload))]))
+
+    def test_related_webhooks_deleted(self):
+        owner = self.factory.makePerson()
+        with FeatureFixture({LIVEFS_FEATURE_FLAG: "on",
+                             LIVEFS_WEBHOOKS_FEATURE_FLAG: "on"}):
+            livefs = self.factory.makeLiveFS(registrant=owner, owner=owner)
+            webhook = self.factory.makeWebhook(target=livefs)
+        with person_logged_in(livefs.owner):
+            webhook.ping()
+            livefs.destroySelf()
+            transaction.commit()
+            self.assertRaises(LostObjectError, getattr, webhook, "target")
 
 
 class TestLiveFSSet(TestCaseWithFactory):

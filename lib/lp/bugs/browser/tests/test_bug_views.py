@@ -37,7 +37,7 @@ from lp.registry.interfaces.accesspolicy import (
     IAccessPolicySource,
     )
 from lp.registry.interfaces.person import PersonVisibility
-from lp.services.beautifulsoup import BeautifulSoup4 as BeautifulSoup
+from lp.services.beautifulsoup import BeautifulSoup
 from lp.services.webapp.interfaces import IOpenLaunchBag
 from lp.services.webapp.publisher import canonical_url
 from lp.services.webapp.servers import LaunchpadTestRequest
@@ -142,12 +142,10 @@ class TestAlsoAffectsLinks(BrowserTestCase):
         browser = self.getUserBrowser(url, user=owner)
         also_affects = find_tag_by_id(
             browser.contents, 'also-affects-product')
-        self.assertIn(
-            'private-disallow', also_affects['class'].split(' '))
+        self.assertIn('private-disallow', also_affects['class'])
         also_affects = find_tag_by_id(
             browser.contents, 'also-affects-package')
-        self.assertIn(
-            'private-disallow', also_affects['class'].split(' '))
+        self.assertIn('private-disallow', also_affects['class'])
 
     def test_also_affects_links_distro_bug(self):
         # We expect that only the Also Affects Project link is disallowed.
@@ -165,12 +163,10 @@ class TestAlsoAffectsLinks(BrowserTestCase):
         browser = self.getUserBrowser(url, user=owner)
         also_affects = find_tag_by_id(
             browser.contents, 'also-affects-product')
-        self.assertIn(
-            'private-disallow', also_affects['class'].split(' '))
+        self.assertIn('private-disallow', also_affects['class'])
         also_affects = find_tag_by_id(
             browser.contents, 'also-affects-package')
-        self.assertNotIn(
-            'private-disallow', also_affects['class'].split(' '))
+        self.assertNotIn('private-disallow', also_affects['class'])
 
 
 class TestEmailObfuscated(BrowserTestCase):

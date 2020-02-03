@@ -1029,6 +1029,14 @@
             permission="launchpad.Admin"
             interface=".interfaces.livefsbuild.ILiveFSBuildAdmin"/>
     </class>
+    <subscriber
+        for="lp.soyuz.interfaces.livefsbuild.ILiveFSBuild
+             lazr.lifecycle.interfaces.IObjectCreatedEvent"
+        handler="lp.soyuz.subscribers.livefsbuild.livefs_build_created" />
+    <subscriber
+        for="lp.soyuz.interfaces.livefsbuild.ILiveFSBuild
+             lazr.lifecycle.interfaces.IObjectModifiedEvent"
+        handler="lp.soyuz.subscribers.livefsbuild.livefs_build_status_changed" />
 
     <!-- LiveFSBuildSet -->
     <securedutility

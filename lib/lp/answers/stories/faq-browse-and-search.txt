@@ -127,8 +127,7 @@ matches.)
 
     >>> message = find_main_content(browser.contents).find('p')
     >>> print(extract_text(message))
-    You can also consult the list of 1 question(s)
-        matching &ldquo;plugin&rdquo;.
+    You can also consult the list of 1 question(s) matching “plugin”.
 
 Following the link will show the questions results:
 
@@ -146,8 +145,7 @@ the same keywords.
 
     >>> message = find_tag_by_id(browser.contents, 'found-matching-faqs')
     >>> print(extract_text(message))
-    You can also consult the list of 1 FAQ(s)
-        matching &ldquo;plugin&rdquo;.
+    You can also consult the list of 1 FAQ(s) matching “plugin”.
 
 Following the link will show the questions results:
 

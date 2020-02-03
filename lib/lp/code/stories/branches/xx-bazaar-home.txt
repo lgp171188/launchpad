@@ -32,7 +32,7 @@ with a link to the complete listing.
     >>> preview = find_tag_by_id(browser.contents, 'project-cloud-preview')
     >>> print(extract_text(preview))
     Most active projects in the last month
-    see all projects&#8230;
+    see all projects…
 
     >>> print(preview.findAll('a')[-1]['href'])
     /projects
@@ -93,8 +93,8 @@ registered is the ordering, the registered date is also shown.
     Last Modified
     Last Commit
     >>> links = find_tag_by_id(browser.contents, 'branch-batch-links')
-    >>> links.renderContents()
-    '...1...&rarr;...6...of...28...results...'
+    >>> print(links.decode_contents())
+    <...1...→...6...of...28...results...
 
 
 Recently changed

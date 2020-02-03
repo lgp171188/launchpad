@@ -181,7 +181,7 @@ cancellation is displayed.
     Joe Smith                             Joe is my friend    Edit/Cancel
 
     >>> print_feedback_messages(cprov_browser.contents)
-    You have revoked Launchpad Developers&#x27;s access to PPA
+    You have revoked Launchpad Developers's access to PPA
     named p3a for Celso Providelo.
 
 
@@ -259,8 +259,7 @@ the page is redisplayed with new sources.list entries and a notification.
     >>> print_feedback_messages(joe_browser.contents)
     Launchpad has generated the new password you requested for your
     access to the archive PPA named p3a for Celso Providelo. Please
-    follow the instructions below to update your custom
-    &quot;sources.list&quot;.
+    follow the instructions below to update your custom "sources.list".
 
 
 === Scenario 3: A user activates a team subscription ===

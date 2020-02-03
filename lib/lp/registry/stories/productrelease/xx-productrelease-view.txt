@@ -26,8 +26,8 @@ release. Each file is linked.
     firefox_0.9.2.orig.tar.gz (md5)              -
 
     >>> print table.a
-    <a title="firefox_0.9.2.orig.tar.gz (9.5 MiB)"
-       href=".../firefox/trunk/0.9.2/+download/firefox_0.9.2.orig.tar.gz">...
+    <a href=".../firefox/trunk/0.9.2/+download/firefox_0.9.2.orig.tar.gz"
+       title="firefox_0.9.2.orig.tar.gz (9.5 MiB)">...
 
 There is an link about how to verify downloaded files.
 

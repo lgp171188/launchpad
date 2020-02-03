@@ -16,7 +16,7 @@ __metaclass__ = type
 from zope.browserpage import ViewPageTemplateFile
 
 from lp.registry.interfaces.person import PersonVisibility
-from lp.services.beautifulsoup import BeautifulSoup4 as BeautifulSoup
+from lp.services.beautifulsoup import BeautifulSoup
 from lp.services.webapp.publisher import LaunchpadView
 from lp.services.webapp.servers import LaunchpadTestRequest
 from lp.testing import (

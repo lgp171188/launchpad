@@ -107,7 +107,8 @@ your teams as members.
     LinkNotFoundError
 
     >>> browser.open('http://launchpad.test/~ubuntu-team/+add-my-teams')
-    >>> print extract_text(find_tag_by_id(browser.contents, 'candidates'))
+    >>> print extract_text(
+    ...     find_tag_by_id(browser.contents, 'candidates'), formatter='html')
     This is a restricted team
     New members can not be proposed&mdash;they can only be added by one
     of the team's administrators.

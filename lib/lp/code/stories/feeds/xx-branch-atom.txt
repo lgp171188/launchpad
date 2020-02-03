@@ -1,10 +1,12 @@
 = Atom Feeds For Branches =
 
 Atom feeds produce XML not HTML.  Therefore we must parse the output as XML
-using BeautifulStoneSoup instead of BeautifulSoup or the helper functions.
+by asking BeautifulSoup to use lxml.
 
-    >>> from BeautifulSoup import BeautifulStoneSoup as BSS
-    >>> from BeautifulSoup import SoupStrainer
+    >>> from lp.services.beautifulsoup import (
+    ...     BeautifulSoup,
+    ...     SoupStrainer,
+    ...     )
     >>> from lp.services.feeds.tests.helper import (
     ...     parse_ids, parse_links, validate_feed)
 
@@ -49,7 +51,7 @@ which will include an entry for each branch.
     ...         browser.contents, browser.headers['content-type'], browser.url)
     >>> validate_browser_feed(anon_browser)
     No Errors
-    >>> BSS(anon_browser.contents).title.contents
+    >>> BeautifulSoup(anon_browser.contents, 'xml').title.contents
     [u'Branches for Mike Murphy']
     >>> def print_parse_ids(browser):
     ...     for id in parse_ids(browser.contents):
@@ -71,14 +73,15 @@ Ensure the self link is correct and there is only one.
     ...     for link in parse_links(browser.contents, rel="self"):
     ...         print(link)
     >>> print_parse_links(anon_browser)
-    <link rel="self" href="http://feeds.launchpad.test/~mike/branches.atom" />
+    <link href="http://feeds.launchpad.test/~mike/branches.atom" rel="self"/>
 
 The <update> field for the feed will be the most recent value for the
 updated field in all of the entries.
 
     >>> strainer = SoupStrainer('updated')
-    >>> updated_dates = [extract_text(tag) for tag in BSS(anon_browser.contents,
-    ...                  parseOnlyThese=strainer)]
+    >>> updated_dates = [
+    ...     extract_text(tag) for tag in BeautifulSoup(
+    ...         anon_browser.contents, 'xml', parse_only=strainer)]
     >>> feed_updated = updated_dates[0]
     >>> entry_dates = sorted(updated_dates[1:], reverse=True)
     >>> assert feed_updated == entry_dates[0], (
@@ -90,7 +93,7 @@ still be hidden:
     >>> anon_browser.open('http://feeds.launchpad.test/~name12/branches.atom')
     >>> validate_browser_feed(anon_browser)
     No Errors
-    >>> BSS(anon_browser.contents).title.contents
+    >>> BeautifulSoup(anon_browser.contents, 'xml').title.contents
     [u'Branches for Sample Person']
     >>> 'foo@localhost' in anon_browser.contents
     False
@@ -125,7 +128,7 @@ branches listed, just an id for the feed.
     >>> browser.open('http://feeds.launchpad.test/~landscape-developers/branches.atom')
     >>> validate_browser_feed(browser)
     No Errors
-    >>> BSS(browser.contents).title.contents
+    >>> BeautifulSoup(browser.contents, 'xml').title.contents
     [u'Branches for Landscape Developers']
     >>> print_parse_ids(browser)
     <id>tag:launchpad.net,2006-07-11:/code/~landscape-developers</id>
@@ -139,7 +142,7 @@ which will include an entry for each branch.
     >>> anon_browser.open('http://feeds.launchpad.test/fooix/branches.atom')
     >>> validate_browser_feed(anon_browser)
     No Errors
-    >>> BSS(anon_browser.contents).title.contents
+    >>> BeautifulSoup(anon_browser.contents, 'xml').title.contents
     [u'Branches for Fooix']
     >>> print_parse_ids(anon_browser)
     <id>tag:launchpad.net,...:/code/fooix</id>
@@ -148,14 +151,15 @@ which will include an entry for each branch.
     <id>tag:launchpad.net,2007-12-01:/code/~mike/fooix/first</id>
 
     >>> print_parse_links(anon_browser)
-    <link rel="self" href="http://feeds.launchpad.test/fooix/branches.atom" />
+    <link href="http://feeds.launchpad.test/fooix/branches.atom" rel="self"/>
 
 The <update> field for the feed will be the most recent value for the
 updated field in all of the entries.
 
     >>> strainer = SoupStrainer('updated')
-    >>> updated_dates = [extract_text(tag) for tag in BSS(anon_browser.contents,
-    ...                  parseOnlyThese=strainer)]
+    >>> updated_dates = [
+    ...     extract_text(tag) for tag in BeautifulSoup(
+    ...         anon_browser.contents, 'xml', parse_only=strainer)]
     >>> feed_updated = updated_dates[0]
     >>> entry_dates = sorted(updated_dates[1:], reverse=True)
     >>> assert feed_updated == entry_dates[0], (
@@ -170,7 +174,7 @@ branches which will include an entry for each branch.
     >>> anon_browser.open('http://feeds.launchpad.test/oh-man/branches.atom')
     >>> validate_browser_feed(anon_browser)
     No Errors
-    >>> BSS(anon_browser.contents).title.contents
+    >>> BeautifulSoup(anon_browser.contents, 'xml').title.contents
     [u'Branches for Oh Man']
     >>> print_parse_ids(anon_browser)
     <id>tag:launchpad.net,...:/code/oh-man</id>
@@ -182,14 +186,15 @@ branches which will include an entry for each branch.
     <id>tag:launchpad.net,2007-12-01:/code/~mike/fooix/first</id>
 
     >>> print_parse_links(anon_browser)
-    <link rel="self" href="http://feeds.launchpad.test/oh-man/branches.atom" />
+    <link href="http://feeds.launchpad.test/oh-man/branches.atom" rel="self"/>
 
 The <update> field for the feed will be the most recent value for the
 updated field in all of the entries.
 
     >>> strainer = SoupStrainer('updated')
-    >>> updated_dates = [extract_text(tag) for tag in BSS(anon_browser.contents,
-    ...                  parseOnlyThese=strainer)]
+    >>> updated_dates = [
+    ...     extract_text(tag) for tag in BeautifulSoup(
+    ...         anon_browser.contents, 'xml', parse_only=strainer)]
     >>> feed_updated = updated_dates[0]
     >>> entry_dates = sorted(updated_dates[1:], reverse=True)
     >>> assert feed_updated == entry_dates[0], (
@@ -206,7 +211,7 @@ different entry.
     >>> validate_feed(browser.contents,
     ...              browser.headers['content-type'], browser.url)
     No Errors
-    >>> BSS(browser.contents).title.contents
+    >>> BeautifulSoup(browser.contents, 'xml').title.contents
     [u'Latest Revisions for Branch lp://dev/~mark/firefox/release--0.9.1']
     >>> print(browser.url)
     http://feeds.launchpad.test/~mark/firefox/release--0.9.1/branch.atom
@@ -214,17 +219,19 @@ different entry.
 The first <id> in a feed identifies the feed.  Each entry then has its
 own <id>, which in the case of a single branch feed will be identical.
 
-    >>> soup = BSS(browser.contents, parseOnlyThese=SoupStrainer('id'))
+    >>> soup = BeautifulSoup(
+    ...     browser.contents, 'xml', parse_only=SoupStrainer('id'))
     >>> ids = parse_ids(browser.contents)
     >>> for id_ in ids:
     ...     print(id_)
     <id>tag:launchpad.net,2006-10-16:/code/~mark/firefox/release--0.9.1</id>
     <id>tag:launchpad.net,2005-03-09:/code/~mark/firefox/release--0.9.1/revision/1</id>
     >>> print_parse_links(browser)
-    <link rel="self" href="http://feeds.launchpad.test/~mark/firefox/release--0.9.1/branch.atom" />
+    <link href="http://feeds.launchpad.test/~mark/firefox/release--0.9.1/branch.atom" rel="self"/>
     >>> strainer = SoupStrainer('updated')
-    >>> updated_dates = [extract_text(tag) for tag in BSS(browser.contents,
-    ...                  parseOnlyThese=strainer)]
+    >>> updated_dates = [
+    ...     extract_text(tag) for tag in BeautifulSoup(
+    ...         browser.contents, 'xml', parse_only=strainer)]
 
 The update date for the entire feed (updated_dates[0]) must be equal
 to the update_date of the first entry in the feed (updated_dates[1]).

@@ -305,8 +305,7 @@ class InitializeDistroSeries:
         for parent in self.parents:
             dsp_set = getUtility(IDistroSeriesParentSet)
             if self.overlays and self.overlays[count]:
-                pocket = PackagePublishingPocket.__metaclass__.getTermByToken(
-                    PackagePublishingPocket,
+                pocket = PackagePublishingPocket.getTermByToken(
                     self.overlay_pockets[count]).value
                 component_set = getUtility(IComponentSet)
                 component = component_set[self.overlay_components[count]]

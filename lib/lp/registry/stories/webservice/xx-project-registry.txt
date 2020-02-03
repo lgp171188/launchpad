@@ -1132,9 +1132,7 @@ through the API.
     >>> print mmm.commercial_subscription
     None
 
-    >>> owner = mmm.owner
-    >>> mmm.redeemSubscriptionVoucher('mmm_voucher', owner, owner, 12,
-    ...     'notes')
+    >>> _ = factory.makeCommercialSubscription(mmm)
     >>> print mmm.commercial_subscription.product.name
     mega-money-maker
 

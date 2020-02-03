@@ -28,21 +28,21 @@ The page presents a table with all bugtrackers currently registered:
     Debian Bug tracker
     http://bugs.debian.org
       --> http://bugs.debian.org
-    &mdash;
+    —
     Debbugs
     5
     ------------------------
     Email bugtracker
     mailto:bugs@example.com
       --> mailto:bugs@example.com
-    &mdash;
+    —
     Email Address
     0
     ------------------------
-    T&#x27;other Gnome GBugGTracker
+    T'other Gnome GBugGTracker
     http://bugzilla.gnome.org/
       --> http://bugzilla.gnome.org/
-    &mdash;
+    —
     Bugzilla
     0
     ------------------------
@@ -65,7 +65,7 @@ auto-created ones - so the title is also obfuscated.
     &lt;email address hidden&gt; bug tracker
     mailto:&lt;email address hidden&gt;
       --> None
-    &mdash;
+    —
     Email Address
     0
     ------------------------
@@ -77,7 +77,7 @@ The watch counts match the number of bugs listed, of course:
     >>> nav = find_tags_by_class(user_browser.contents,
     ...     'batch-navigation-index')
     >>> print(extract_text(nav[0]))
-    1 &rarr; 5 of 5 results
+    1 → 5 of 5 results
 
 The listing also displays projects and projects linked to bug trackers.
 Let's link a pair to debbugs:
@@ -123,7 +123,7 @@ linked to bugtrackers are also linked.
     Debian Bug tracker
     http://bugs.debian.org
       --> http://bugs.debian.org
-    a52dec, Derby, iso-codes &hellip;
+    a52dec, Derby, iso-codes …
     Debbugs
     5
     ------------------------

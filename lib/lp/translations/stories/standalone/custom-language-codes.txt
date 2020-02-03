@@ -98,10 +98,10 @@ to see there.
 
     >>> owner_browser.getLink("no").click()
     >>> main = find_main_content(owner_browser.contents)
-    >>> print(extract_text(main.renderContents()))
+    >>> print(extract_text(main.decode_contents()))
     Custom language code  ...no... for Foo
     For Foo, uploads with the language code
-    &ldquo;no&rdquo;
+    “no”
     are associated with the language
     Norwegian Nynorsk.
     remove custom language code

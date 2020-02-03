@@ -44,8 +44,8 @@ __all__ = [
 from operator import attrgetter
 from urlparse import urlunsplit
 
-from bzrlib import urlutils
-from bzrlib.revision import NULL_REVISION
+from breezy import urlutils
+from breezy.revision import NULL_REVISION
 from lazr.delegates import delegate_to
 from lazr.restful.interface import (
     copy_field,
@@ -1589,7 +1589,7 @@ class ProductReviewLicenseView(ReturnToReferrerMixin, ProductEditView,
                     'license_approved',
                     'Proprietary projects may not be manually '
                     'approved to use Launchpad.  Proprietary projects '
-                    'must use the commercial subscription voucher system '
+                    'must be granted a commercial subscription '
                     'to be allowed to use Launchpad.')
             else:
                 # An Other/Open Source licence was specified so it may be
