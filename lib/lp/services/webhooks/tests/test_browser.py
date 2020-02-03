@@ -18,6 +18,10 @@ import transaction
 from lp.services.features.testing import FeatureFixture
 from lp.services.webapp.publisher import canonical_url
 from lp.snappy.interfaces.snapstoreclient import ISnapStoreClient
+from lp.soyuz.interfaces.livefs import (
+    LIVEFS_FEATURE_FLAG,
+    LIVEFS_WEBHOOKS_FEATURE_FLAG,
+    )
 from lp.testing import (
     login_person,
     record_two_runs,
@@ -25,10 +29,7 @@ from lp.testing import (
     )
 from lp.testing.fakemethod import FakeMethod
 from lp.testing.fixture import ZopeUtilityFixture
-from lp.testing.layers import (
-    DatabaseFunctionalLayer,
-    LaunchpadFunctionalLayer,
-    )
+from lp.testing.layers import DatabaseFunctionalLayer
 from lp.testing.matchers import HasQueryCount
 from lp.testing.pages import extract_text
 from lp.testing.views import create_view
@@ -104,6 +105,26 @@ class SnapTestHelpers:
             }))
         owner = self.factory.makePerson()
         return self.factory.makeSnap(registrant=owner, owner=owner)
+
+    def getTraversalStack(self, obj):
+        return [obj]
+
+
+class LiveFSTestHelpers:
+    event_type = "livefs:build:0.1"
+    expected_event_types = [
+        ("livefs:build:0.1", "Live filesystem build"),
+    ]
+
+    def setUp(self):
+        super(LiveFSTestHelpers, self).setUp()
+
+    def makeTarget(self):
+        self.useFixture(FeatureFixture({'webhooks.new.enabled': 'true',
+                                        LIVEFS_FEATURE_FLAG: "on",
+                                        LIVEFS_WEBHOOKS_FEATURE_FLAG: "on"}))
+        owner = self.factory.makePerson()
+        return self.factory.makeLiveFS(registrant=owner, owner=owner)
 
     def getTraversalStack(self, obj):
         return [obj]
@@ -195,14 +216,19 @@ class TestWebhooksViewGitRepository(
 
 class TestWebhooksViewBranch(
     TestWebhooksViewBase, BranchTestHelpers, TestCaseWithFactory):
-
     pass
 
 
 class TestWebhooksViewSnap(
     TestWebhooksViewBase, SnapTestHelpers, TestCaseWithFactory):
 
-    layer = LaunchpadFunctionalLayer
+    pass
+
+
+class TestWebhooksViewLiveFS(
+    TestWebhooksViewBase, LiveFSTestHelpers, TestCaseWithFactory):
+
+    pass
 
 
 class TestWebhookAddViewBase(WebhookTargetViewTestHelpers):
@@ -300,7 +326,13 @@ class TestWebhookAddViewBranch(
 class TestWebhookAddViewSnap(
     TestWebhookAddViewBase, SnapTestHelpers, TestCaseWithFactory):
 
-    layer = LaunchpadFunctionalLayer
+    pass
+
+
+class TestWebhookAddViewLiveFS(
+    TestWebhookAddViewBase, LiveFSTestHelpers, TestCaseWithFactory):
+
+    pass
 
 
 class WebhookViewTestHelpers:
@@ -405,6 +437,12 @@ class TestWebhookViewSnap(
     pass
 
 
+class TestWebhookViewLiveFS(
+    TestWebhookViewBase, LiveFSTestHelpers, TestCaseWithFactory):
+
+    pass
+
+
 class TestWebhookDeleteViewBase(WebhookViewTestHelpers):
 
     layer = DatabaseFunctionalLayer
@@ -453,5 +491,11 @@ class TestWebhookDeleteViewBranch(
 
 class TestWebhookDeleteViewSnap(
     TestWebhookDeleteViewBase, SnapTestHelpers, TestCaseWithFactory):
+
+    pass
+
+
+class TestWebhookDeleteViewLiveFS(
+    TestWebhookDeleteViewBase, LiveFSTestHelpers, TestCaseWithFactory):
 
     pass

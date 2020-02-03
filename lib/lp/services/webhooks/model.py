@@ -34,10 +34,7 @@ from storm.properties import (
 from storm.references import Reference
 from storm.store import Store
 import transaction
-from zope.component import (
-    getAdapter,
-    getUtility,
-    )
+from zope.component import getUtility
 from zope.interface import (
     implementer,
     provider,
@@ -45,8 +42,6 @@ from zope.interface import (
 from zope.security.proxy import removeSecurityProxy
 
 from lp.app import versioninfo
-from lp.app.interfaces.security import IAuthorization
-from lp.registry.interfaces.role import IPersonRoles
 from lp.registry.model.person import Person
 from lp.services.config import config
 from lp.services.database.bulk import load_related
@@ -65,6 +60,8 @@ from lp.services.job.model.job import (
     )
 from lp.services.job.runner import BaseRunnableJob
 from lp.services.scripts import log
+from lp.services.webapp.authorization import iter_authorization
+from lp.services.webapp.interfaces import IPlacelessAuthUtility
 from lp.services.webhooks.interfaces import (
     IWebhook,
     IWebhookClient,
@@ -107,6 +104,9 @@ class Webhook(StormBase):
     snap_id = Int(name='snap')
     snap = Reference(snap_id, 'Snap.id')
 
+    livefs_id = Int(name='livefs')
+    livefs = Reference(livefs_id, 'LiveFS.id')
+
     registrant_id = Int(name='registrant', allow_none=False)
     registrant = Reference(registrant_id, 'Person.id')
     date_created = DateTime(tzinfo=utc, allow_none=False)
@@ -126,6 +126,8 @@ class Webhook(StormBase):
             return self.branch
         elif self.snap is not None:
             return self.snap
+        elif self.livefs is not None:
+            return self.livefs
         else:
             raise AssertionError("No target.")
 
@@ -180,6 +182,8 @@ class WebhookSet:
         from lp.code.interfaces.branch import IBranch
         from lp.code.interfaces.gitrepository import IGitRepository
         from lp.snappy.interfaces.snap import ISnap
+        from lp.soyuz.interfaces.livefs import ILiveFS
+
         hook = Webhook()
         if IGitRepository.providedBy(target):
             hook.git_repository = target
@@ -187,6 +191,8 @@ class WebhookSet:
             hook.branch = target
         elif ISnap.providedBy(target):
             hook.snap = target
+        elif ILiveFS.providedBy(target):
+            hook.livefs = target
         else:
             raise AssertionError("Unsupported target: %r" % (target,))
         hook.registrant = registrant
@@ -211,12 +217,16 @@ class WebhookSet:
         from lp.code.interfaces.branch import IBranch
         from lp.code.interfaces.gitrepository import IGitRepository
         from lp.snappy.interfaces.snap import ISnap
+        from lp.soyuz.interfaces.livefs import ILiveFS
+
         if IGitRepository.providedBy(target):
             target_filter = Webhook.git_repository == target
         elif IBranch.providedBy(target):
             target_filter = Webhook.branch == target
         elif ISnap.providedBy(target):
             target_filter = Webhook.snap == target
+        elif ILiveFS.providedBy(target):
+            target_filter = Webhook.livefs == target
         else:
             raise AssertionError("Unsupported target: %r" % (target,))
         return IStore(Webhook).find(Webhook, target_filter).order_by(
@@ -234,10 +244,10 @@ class WebhookSet:
         :return: True if the context is visible to the webhook owner,
             otherwise False.
         """
-        roles = IPersonRoles(user)
-        authz = getAdapter(
-            removeSecurityProxy(context), IAuthorization, "launchpad.View")
-        return authz.checkAuthenticated(roles)
+        authutil = getUtility(IPlacelessAuthUtility)
+        return all(iter_authorization(
+            removeSecurityProxy(context), "launchpad.View",
+            authutil.getPrincipal(user.accountID), {}))
 
     def trigger(self, target, event_type, payload, context=None):
         if context is None:
