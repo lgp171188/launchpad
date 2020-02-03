@@ -227,8 +227,8 @@ class QueueItemsView(LaunchpadView):
         # Both "u.sources" and "u.builds" below are preloaded by
         # self.context.getPackageUploads (which uses PackageUploadSet.getAll)
         # when building self.batchnav.
-        puses = sum([u.sources for u in uploads], [])
-        pubs = sum([u.builds for u in uploads], [])
+        puses = sum([removeSecurityProxy(u.sources) for u in uploads], [])
+        pubs = sum([removeSecurityProxy(u.builds) for u in uploads], [])
 
         source_sprs = load_related(
             SourcePackageRelease, puses, ['sourcepackagereleaseID'])

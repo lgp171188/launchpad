@@ -561,10 +561,6 @@ class IPackageUploadBuild(Interface):
 
     build = Int(title=_("The related build"), required=True, readonly=False)
 
-    buildID = Int(
-        title=_("The related build ID"), required=True,
-        readonly=True)
-
     def binaries():
         """Returns the properties of the binaries in this build.
 
@@ -607,10 +603,6 @@ class IPackageUploadSource(Interface):
     sourcepackagerelease = Int(
             title=_("The related source package release"), required=True,
             readonly=False)
-
-    sourcepackagereleaseID = Int(
-            title=_("The related source package release ID"), required=True,
-            readonly=True)
 
     def getSourceAncestryForDiffs():
         """Return a suitable ancestry publication for this context.
