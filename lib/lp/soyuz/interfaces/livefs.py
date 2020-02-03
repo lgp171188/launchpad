@@ -14,6 +14,7 @@ __all__ = [
     'ILiveFSSet',
     'ILiveFSView',
     'LIVEFS_FEATURE_FLAG',
+    'LIVEFS_WEBHOOKS_FEATURE_FLAG',
     'LiveFSBuildAlreadyPending',
     'LiveFSBuildArchiveOwnerMismatch',
     'LiveFSFeatureDisabled',
@@ -69,11 +70,13 @@ from lp.services.fields import (
     PersonChoice,
     PublicPersonChoice,
     )
+from lp.services.webhooks.interfaces import IWebhookTarget
 from lp.soyuz.interfaces.archive import IArchive
 from lp.soyuz.interfaces.distroarchseries import IDistroArchSeries
 
 
 LIVEFS_FEATURE_FLAG = u"soyuz.livefs.allow_new"
+LIVEFS_WEBHOOKS_FEATURE_FLAG = u"soyuz.livefs.webhooks.enabled"
 
 
 @error_status(httplib.BAD_REQUEST)
@@ -213,7 +216,7 @@ class ILiveFSView(IPrivacy):
         value_type=Reference(schema=Interface), readonly=True)))
 
 
-class ILiveFSEdit(Interface):
+class ILiveFSEdit(IWebhookTarget):
     """`ILiveFS` methods that require launchpad.Edit permission."""
 
     @export_destructor_operation()

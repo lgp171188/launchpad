@@ -55,6 +55,7 @@ from lp.services.webapp.breadcrumb import (
     Breadcrumb,
     NameBreadcrumb,
     )
+from lp.services.webhooks.browser import WebhookTargetNavigationMixin
 from lp.soyuz.browser.build import get_build_by_id_str
 from lp.soyuz.interfaces.livefs import (
     ILiveFS,
@@ -66,7 +67,7 @@ from lp.soyuz.interfaces.livefs import (
 from lp.soyuz.interfaces.livefsbuild import ILiveFSBuildSet
 
 
-class LiveFSNavigation(Navigation):
+class LiveFSNavigation(WebhookTargetNavigationMixin, Navigation):
     usedfor = ILiveFS
 
     @stepthrough('+build')
