@@ -51,6 +51,8 @@ from breezy.revision import Revision as BzrRevision
 from cryptography.utils import int_to_bytes
 from lazr.jobrunner.jobrunner import SuspendJobException
 import pytz
+from lp.services.signing.enums import SigningKeyType
+from lp.services.signing.model.signingkey import SigningKey
 from pytz import UTC
 import six
 from twisted.conch.ssh.common import (
@@ -4176,6 +4178,25 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         if date_created is not None:
             removeSecurityProxy(bpr).datecreated = date_created
         return bpr
+
+    def makeSigningKey(self, key_type=None, fingerprint=None,
+                       public_key=None, description=None):
+        """Makes a SigningKey (integration with lp-signing)
+        """
+        if key_type is None:
+            key_type = SigningKeyType.UEFI
+        if fingerprint is None:
+            fingerprint = self.getUniqueUnicode('fingerprint')
+        if public_key is None:
+            public_key = self.getUniqueHexString(64)
+        store = IMasterStore(SigningKey)
+        signing_key = SigningKey(
+            key_type=key_type, fingerprint=fingerprint, public_key=public_key,
+            description=description)
+        store.add(signing_key)
+        return signing_key
+
+
 
     def makeSection(self, name=None):
         """Make a `Section`."""

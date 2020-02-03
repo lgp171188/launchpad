@@ -60,6 +60,8 @@ class SigningServiceResponseFactory:
             '/+oYo03b4VELW7E5z37cWd7q8N5rzcS5oTWx+XWfLikNO/N9nK+REtCcCQvMOU'
             'R0OBvL9F1A+vVmY0ffHYHAnoUAhIJ+QtctnyLiL+8WYtTh2v7EYglnsiW3id96'
             'k4jd7ojqpCOF9DNyNr1qELk1cb/rReipInCgGFOZodWWCsDiYkLuIu8e')
+        self.generated_public_key = base64.b64decode(
+            self.b64_generated_public_key)
         self.generated_fingerprint = (
             u'338D218488DFD597D8FCB9C328C3E9D9ADA16CEE')
         self.b64_signed_msg = base64.b64encode("the-signed-msg")

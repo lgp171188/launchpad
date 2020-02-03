@@ -6,7 +6,8 @@
 __metaclass__ = type
 
 __all__ = [
-    'ISigningKey'
+    'ISigningKey',
+    'IArchiveSigningKey'
 ]
 
 from lp.services.signing.enums import SigningKeyType
@@ -28,14 +29,6 @@ class ISigningKey(Interface):
 
     id = Int(title=_('ID'), required=True, readonly=True)
 
-    archive = Reference(
-        IArchive, title=_("Archive"), required=True,
-        description=_("The archive that owns this key."))
-
-    distro_series = Reference(
-        IDistroSeries, title=_("Distro series"), required=False,
-        description=_("The minimum series that uses this key, if any."))
-
     key_type = Choice(
         title=_("The signing key type (UEFI, KMOD, etc)."),
         required=True, readonly=True, vocabulary=SigningKeyType)
@@ -49,3 +42,21 @@ class ISigningKey(Interface):
 
     date_created = Datetime(
         title=_('When this key was created'), required=True, readonly=True)
+
+
+class IArchiveSigningKey(Interface):
+    """Which signing key should be used by a specific archive"""
+
+    id = Int(title=_('ID'), required=True, readonly=True)
+
+    archive = Reference(
+        IArchive, title=_("Archive"), required=True,
+        description=_("The archive that owns this key."))
+
+    distro_series = Reference(
+        IDistroSeries, title=_("Distro series"), required=False,
+        description=_("The minimum series that uses this key, if any."))
+
+    signing_key = Reference(
+        ISigningKey, title=_("Signing key"), required=True, readonly=True,
+        description=_("Which signing key should be used by this archive"))
