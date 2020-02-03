@@ -59,6 +59,7 @@ from lp.services.database.stormexpr import (
     )
 from lp.services.features import getFeatureFlag
 from lp.services.webapp.interfaces import ILaunchBag
+from lp.services.webhooks.interfaces import IWebhookSet
 from lp.services.webhooks.model import WebhookTargetMixin
 from lp.soyuz.interfaces.archive import ArchiveDisabled
 from lp.soyuz.interfaces.livefs import (
@@ -263,6 +264,7 @@ class LiveFS(Storm, WebhookTargetMixin):
         if not self.builds.is_empty():
             raise CannotDeleteLiveFS(
                 "Cannot delete a live filesystem with builds.")
+        getUtility(IWebhookSet).delete(self.webhooks)
         IStore(LiveFS).remove(self)
 
 
