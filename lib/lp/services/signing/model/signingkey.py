@@ -12,6 +12,7 @@ __all__ = [
     ]
 
 import base64
+from collections import defaultdict
 
 import pytz
 from storm.locals import (
@@ -129,14 +130,17 @@ class ArchiveSigningKey(StormBase):
 
     @classmethod
     def create_or_update(cls, archive, distro_series, signing_key):
-        """Creates a new ArchiveSigningKey or updates the existing one to
-        point to the new signing key.
+        """Creates a new ArchiveSigningKey, or updates the existing one from
+        the same type to point to the new signing key.
 
         :return: A tuple like (db_object:ArchiveSigningKey, created:boolean)
                  with the ArchiveSigningKey and True if it was created (
                  False if it was updated) """
         store = IMasterStore(SigningKey)
+        key_type = signing_key.key_type
         obj = store.find(ArchiveSigningKey, [
+            ArchiveSigningKey.signing_key_id == SigningKey.id,
+            SigningKey.key_type == key_type,
             ArchiveSigningKey.distro_series == distro_series,
             ArchiveSigningKey.archive == archive
             ]).one()
@@ -150,24 +154,49 @@ class ArchiveSigningKey(StormBase):
         return obj, created
 
     @classmethod
-    def get_signing_key(cls, archive, distro_series):
-        """Get the most suitable key for a given archive / distro series
+    def get_signing_keys(cls, archive, distro_series):
+        """Get the most suitable keys for a given archive / distro series
         pair.
+
+        :return: A dict of most suitable key per type, like {
+            SigningKeyType.UEFI: <ArchiveSigningKey object 1>,
+            SigningKeyType.KMOD: <ArchiveSigningKey object 1>, ... }
         """
+        # Gets all the keys available for the given archive.
         store = IStore(ArchiveSigningKey)
         rs = store.find(ArchiveSigningKey, [
-            ArchiveSigningKey.archive == archive])
-        keys_per_series = {i.distro_series: i for i in rs}
-        found = False
-        for series in archive.distribution.series:
-            if series == distro_series:
-                found = True
-            if found and series in keys_per_series:
-                return keys_per_series[series]
-        # If not specific key for distro_series was found, returns the key
-        # for the archive itself (or None if no key is available for the
-        # archive either)
-        return keys_per_series.get(None)
+                ArchiveSigningKey.archive == archive])
+
+        # prefetch related signing keys to avoid extra queries.
+        signing_keys = store.find(SigningKey, [
+            SigningKey.id.is_in([i.signing_key_id for i in rs])])
+        signing_keys_by_id = {i.id: i for i in signing_keys}
+
+        # Group keys per type, and per distro series
+        keys_data = defaultdict(dict)
+        for i in rs:
+            signing_key = signing_keys_by_id[i.signing_key_id]
+            keys_data[signing_key.key_type][i.distro_series] = i
+
+        ret_keys = {}
+
+        # Let's search the most suitable per key type.
+        for key_type, keys_per_series in keys_data.items():
+            found_series = False
+            found_key = False
+            for series in archive.distribution.series:
+                if series == distro_series:
+                    found_series = True
+                if found_series and series in keys_per_series:
+                    ret_keys[key_type] = keys_per_series[series]
+                    found_key = True
+                    break
+            # If not specific keys for distro_series was found, returns
+            # the keys for the archive itself (or None if no key is
+            # available for the archive either).
+            if not found_series or not found_key:
+                ret_keys[key_type] = keys_per_series.get(None)
+        return ret_keys
 
     @classmethod
     def generate(cls, key_type, archive, distro_series=None,
