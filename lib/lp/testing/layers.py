@@ -71,7 +71,6 @@ from unittest import (
     TestCase,
     TestResult,
     )
-from urllib import urlopen
 import uuid
 
 from fixtures import (
@@ -79,10 +78,12 @@ from fixtures import (
     MonkeyPatch,
     )
 import psycopg2
+from six.moves.urllib.error import URLError
 from six.moves.urllib.parse import (
     quote,
     urlparse,
     )
+from six.moves.urllib.request import urlopen
 from storm.zope.interfaces import IZStorm
 import transaction
 from webob.request import environ_from_url as orig_environ_from_url
@@ -1968,14 +1969,11 @@ class LayerProcessController:
             try:
                 connection = urlopen(root_url)
                 connection.read()
-            except IOError as error:
+            except URLError as error:
                 # We are interested in a wrapped socket.error.
-                # urlopen() really sucks here.
-                if len(error.args) <= 1:
+                if not isinstance(error.reason, socket.error):
                     raise
-                if not isinstance(error.args[1], socket.error):
-                    raise
-                if error.args[1].args[0] != errno.ECONNREFUSED:
+                if error.reason.args[0] != errno.ECONNREFUSED:
                     raise
                 returncode = cls.appserver.poll()
                 if returncode is not None:
