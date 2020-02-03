@@ -296,7 +296,7 @@ SimpleTAL==4.3
 soupmatchers==0.4
 soupsieve==1.9
 # lp:~launchpad-committers/storm/lp
-storm==0.21.0.99+lp413
+storm==0.22+lp414
 subprocess32==3.2.6
 subvertpy==0.9.1
 testresources==0.2.7
