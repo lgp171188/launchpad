@@ -42,6 +42,7 @@ CREATE UNIQUE INDEX ocirecipe__oci_project__name__official__key
     WHERE official;
 CREATE INDEX ocirecipe__registrant__idx ON OCIRecipe (registrant);
 CREATE INDEX ocirecipe__oci_project__idx ON OCIRecipe (oci_project);
+CREATE INDEX ocirecipe__git_repository__idx ON OCIRecipe (git_repository);
 
 CREATE TABLE OCIRecipeArch (
     recipe integer NOT NULL REFERENCES ocirecipe,
