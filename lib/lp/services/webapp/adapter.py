@@ -9,7 +9,6 @@ import os
 import re
 import sys
 from textwrap import dedent
-import thread
 import threading
 from time import time
 import traceback
@@ -467,7 +466,7 @@ def break_main_thread_db_access(*ignored):
     """
     # Record the ID of the main thread.
     global _main_thread_id
-    _main_thread_id = thread.get_ident()
+    _main_thread_id = threading.current_thread().ident
 
     try:
         getUtility(IStoreSelector).get(MAIN_STORE, DEFAULT_FLAVOR)
@@ -511,7 +510,7 @@ class LaunchpadDatabase(Postgres):
         # Prevent database connections from the main thread if
         # break_main_thread_db_access() has been run.
         if (_main_thread_id is not None and
-            _main_thread_id == thread.get_ident()):
+            _main_thread_id == threading.current_thread().ident):
             raise StormAccessFromMainThread()
 
         try:
