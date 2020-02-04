@@ -12,6 +12,10 @@ __metaclass__ = type
 
 
 import glob
+try:
+    from importlib import resources
+except ImportError:
+    import importlib_resources as resources
 import logging
 import os
 import sys
@@ -20,7 +24,6 @@ from urlparse import (
     urlunparse,
     )
 
-import importlib_resources
 from lazr.config import ImplicitTypeSchema
 from lazr.config.interfaces import ConfigErrors
 import ZConfig
@@ -241,8 +244,7 @@ class LaunchpadConfig:
 
     def _setZConfig(self):
         """Modify the config, adding automatically generated settings"""
-        with importlib_resources.path(
-                'zope.app.server', 'schema.xml') as schemafile:
+        with resources.path('zope.app.server', 'schema.xml') as schemafile:
             schema = ZConfig.loadSchema(str(schemafile))
         root_options, handlers = ZConfig.loadConfig(
             schema, self.zope_config_file)
