@@ -4,7 +4,6 @@
 import logging
 import os
 import threading
-import xmlrpclib
 
 from breezy import (
     errors,
@@ -40,6 +39,7 @@ from paste.request import (
     parse_querystring,
     path_info_pop,
     )
+from six.moves import xmlrpc_client
 from six.moves.urllib.parse import (
     urlencode,
     urljoin,
@@ -75,7 +75,7 @@ set_default_openid_fetcher()
 def check_fault(fault, *fault_classes):
     """Check if 'fault's faultCode matches any of 'fault_classes'.
 
-    :param fault: An instance of `xmlrpclib.Fault`.
+    :param fault: An instance of `xmlrpc_client.Fault`.
     :param fault_classes: Any number of `LaunchpadFault` subclasses.
     """
     for cls in fault_classes:
@@ -101,7 +101,7 @@ class RootApp:
     def get_branchfs(self):
         t = getattr(thread_locals, 'branchfs', None)
         if t is None:
-            thread_locals.branchfs = xmlrpclib.ServerProxy(
+            thread_locals.branchfs = xmlrpc_client.ServerProxy(
                 config.codehosting.codehosting_endpoint)
         return thread_locals.branchfs
 
@@ -224,7 +224,7 @@ class RootApp:
                 branchfs = self.get_branchfs()
                 transport_type, info, trail = branchfs.translatePath(
                     identity_url, urlutils.escape(path))
-            except xmlrpclib.Fault as f:
+            except xmlrpc_client.Fault as f:
                 if check_fault(f, faults.PathTranslationError):
                     raise HTTPNotFound()
                 elif check_fault(f, faults.PermissionDenied):

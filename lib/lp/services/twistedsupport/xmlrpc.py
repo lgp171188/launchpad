@@ -17,7 +17,7 @@ from twisted.web import xmlrpc
 
 
 class BlockingProxy:
-    """Make an xmlrpclib.ServerProxy behave like a Twisted XML-RPC proxy.
+    """Make a ServerProxy behave like a Twisted XML-RPC proxy.
 
     This is useful for writing code that needs to work in both a synchronous
     and asynchronous fashion.
@@ -29,7 +29,7 @@ class BlockingProxy:
     def __init__(self, proxy):
         """Construct a `BlockingProxy`.
 
-        :param proxy: An xmlrpclib.ServerProxy.
+        :param proxy: An xmlrpc_client.ServerProxy.
         """
         self._proxy = proxy
 
@@ -38,12 +38,13 @@ class BlockingProxy:
 
 
 class DeferredBlockingProxy(BlockingProxy):
-    """Make an xmlrpclib.ServerProxy behave more like a Twisted XML-RPC proxy.
+    """Make a ServerProxy behave more like a Twisted XML-RPC proxy.
 
     This is almost exactly like 'BlockingProxy', except that this returns
     Deferreds. It is guaranteed to be exactly as synchronous as the passed-in
-    proxy. That means if you pass in a normal xmlrpclib proxy you ought to be
-    able to use `lp.services.twistedsupport.extract_result` to get the result.
+    proxy. That means if you pass in a normal xmlrpc_client proxy you ought to
+    be able to use `lp.services.twistedsupport.extract_result` to get the
+    result.
     """
 
     def callRemote(self, method_name, *args, **kwargs):

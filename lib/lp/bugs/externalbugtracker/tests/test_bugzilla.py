@@ -6,9 +6,9 @@
 __metaclass__ = type
 
 from xml.parsers.expat import ExpatError
-import xmlrpclib
 
 import responses
+from six.moves import xmlrpc_client
 import transaction
 
 from lp.bugs.externalbugtracker.base import UnparsableBugData
@@ -73,11 +73,11 @@ class TestBugzillaSniffing(TestCase):
         # it is taken to mean that no XML-RPC capabilities exist.
         bugzilla = Bugzilla("http://not.real")
 
-        class Transport(xmlrpclib.Transport):
+        class Transport(xmlrpc_client.Transport):
             def request(self, host, handler, request, verbose=None):
                 raise ExpatError("mismatched tag")
 
-        bugzilla._test_xmlrpc_proxy = xmlrpclib.ServerProxy(
+        bugzilla._test_xmlrpc_proxy = xmlrpc_client.ServerProxy(
             '%s/xmlrpc.cgi' % bugzilla.baseurl, transport=Transport())
 
         # We must abort any existing transactions before attempting to call

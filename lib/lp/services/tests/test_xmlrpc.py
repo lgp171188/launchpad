@@ -13,7 +13,7 @@ from lp.testing.layers import BaseLayer
 
 
 class TestTransport(TestCase):
-    """Test code that allows xmlrpclib.ServerProxy to have a socket timeout"""
+    """Test code that allows ServerProxy to have a socket timeout."""
 
     layer = BaseLayer
 

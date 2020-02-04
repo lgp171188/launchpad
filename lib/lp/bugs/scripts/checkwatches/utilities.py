@@ -10,7 +10,8 @@ __all__ = [
     ]
 
 import socket
-from xmlrpclib import ProtocolError
+
+from six.moves.xmlrpc_client import ProtocolError
 
 from lp.bugs.externalbugtracker import (
     BugNotFound,

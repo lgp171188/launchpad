@@ -12,8 +12,8 @@ from __future__ import absolute_import, print_function, unicode_literals
 import os
 import signal
 import time
-import xmlrpclib
 
+from six.moves import xmlrpc_client
 from testtools.matchers import Equals
 from testtools.testcase import ExpectedException
 from testtools.twistedsupport import (
@@ -316,7 +316,7 @@ class TestSlaveScannerScan(TestCaseWithFactory):
         transaction.commit()
         scanner = self._getScanner(builder_name=builder.name)
         d = scanner.scan()
-        return assert_fails_with(d, xmlrpclib.Fault)
+        return assert_fails_with(d, xmlrpc_client.Fault)
 
     def test_scan_of_partial_utf8_logtail(self):
         # The builder returns a fixed number of bytes from the tail of the
@@ -325,7 +325,7 @@ class TestSlaveScannerScan(TestCaseWithFactory):
             @defer.inlineCallbacks
             def status(self):
                 status = yield super(BrokenUTF8Slave, self).status()
-                status["logtail"] = xmlrpclib.Binary(
+                status["logtail"] = xmlrpc_client.Binary(
                     u"───".encode("UTF-8")[1:])
                 defer.returnValue(status)
 
@@ -354,7 +354,7 @@ class TestSlaveScannerScan(TestCaseWithFactory):
             @defer.inlineCallbacks
             def status(self):
                 status = yield super(NULSlave, self).status()
-                status["logtail"] = xmlrpclib.Binary(b"foo\0bar\0baz")
+                status["logtail"] = xmlrpc_client.Binary(b"foo\0bar\0baz")
                 defer.returnValue(status)
 
         builder = getUtility(IBuilderSet)[BOB_THE_BUILDER_NAME]
@@ -1087,7 +1087,7 @@ class TestCancellationChecking(TestCaseWithFactory):
         slave = LostBuildingBrokenSlave()
         self.builder.current_build.cancel()
         with ExpectedException(
-                xmlrpclib.Fault, "<Fault 8002: u'Could not abort'>"):
+                xmlrpc_client.Fault, "<Fault 8002: u'Could not abort'>"):
             yield self._getScanner().checkCancellation(self.vitals, slave)
 
 

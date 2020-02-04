@@ -8,13 +8,13 @@ __all__ = []
 
 from email import message_from_string
 from textwrap import dedent
-import xmlrpclib
 
 from testtools.matchers import (
     Equals,
     MatchesDict,
     MatchesSetwise,
     )
+from six.moves import xmlrpc_client
 import transaction
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
@@ -496,7 +496,7 @@ class MailingListAPIMessageTestCase(TestCaseWithFactory):
                 I put \xa9 in the body.
                 """))
         info = self.mailinglist_api.holdMessage(
-            'team', xmlrpclib.Binary(message.as_string()))
+            'team', xmlrpc_client.Binary(message.as_string()))
         transaction.commit()
         found = self.message_approval_set.getMessageByMessageID('<\\xa9-me>')
         self.assertIs(True, info)
