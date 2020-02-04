@@ -9,7 +9,7 @@ CREATE TABLE OCIRecipe (
     date_last_modified timestamp without time zone DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'UTC') NOT NULL,
     registrant integer NOT NULL REFERENCES person,
     owner integer NOT NULL REFERENCES person,
-    ociproject integer NOT NULL REFERENCES ociproject,
+    oci_project integer NOT NULL REFERENCES ociproject,
     name text NOT NULL,
     description text,
     official boolean DEFAULT false NOT NULL,
@@ -25,7 +25,7 @@ COMMENT ON COLUMN OCIRecipe.date_created IS 'The date on which this recipe was c
 COMMENT ON COLUMN OCIRecipe.date_last_modified IS 'The date on which this recipe was last modified in Launchpad.';
 COMMENT ON COLUMN OCIRecipe.registrant IS 'The user who registered this recipe.';
 COMMENT ON COLUMN OCIRecipe.owner IS 'The owner of the recipe.';
-COMMENT ON COLUMN OCIRecipe.ociproject IS 'The OCI project that this recipe is for.';
+COMMENT ON COLUMN OCIRecipe.oci_project IS 'The OCI project that this recipe is for.';
 COMMENT ON COLUMN OCIRecipe.official IS 'True if this recipe is official for its OCI project.';
 COMMENT ON COLUMN OCIRecipe.name IS 'The name of this recipe.';
 COMMENT ON COLUMN OCIRecipe.description IS 'A short description of this recipe.';
@@ -35,13 +35,13 @@ COMMENT ON COLUMN OCIRecipe.build_file IS 'The relative path to the file within 
 COMMENT ON COLUMN OCIRecipe.require_virtualized IS 'If True, this recipe must be built only on a virtual machine.';
 COMMENT ON COLUMN OCIRecipe.build_daily IS 'If True, this recipe should be built daily.';
 
-CREATE UNIQUE INDEX ocirecipe__owner__ociproject__name__key
-    ON OCIRecipe (owner, ociproject, name);
-CREATE UNIQUE INDEX ocirecipe__ociproject__name__official__key
-    ON OCIRecipe (ociproject, name)
+CREATE UNIQUE INDEX ocirecipe__owner__oci_project__name__key
+    ON OCIRecipe (owner, oci_project, name);
+CREATE UNIQUE INDEX ocirecipe__oci_project__name__official__key
+    ON OCIRecipe (oci_project, name)
     WHERE official;
 CREATE INDEX ocirecipe__registrant__idx ON OCIRecipe (registrant);
-CREATE INDEX ocirecipe__ociproject__idx ON OCIRecipe (ociproject);
+CREATE INDEX ocirecipe__oci_project__idx ON OCIRecipe (oci_project);
 
 CREATE TABLE OCIRecipeArch (
     recipe integer NOT NULL REFERENCES ocirecipe,
