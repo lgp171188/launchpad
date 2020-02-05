@@ -12,8 +12,8 @@ __metaclass__ = type
 
 from collections import OrderedDict
 from difflib import unified_diff
+from io import BytesIO
 import re
-from StringIO import StringIO
 import subprocess
 import tarfile
 import warnings
@@ -87,10 +87,10 @@ def backslashreplace(str):
     return str.decode('UTF-8').encode('ASCII', 'backslashreplace')
 
 
-def string_to_tarfile(s):
-    """Convert a binary string containing a tar file into a tar file obj."""
+def bytes_to_tarfile(s):
+    """Convert a byte string containing a tar file into a tar file obj."""
 
-    return tarfile.open('', 'r', StringIO(s))
+    return tarfile.open('', 'r', BytesIO(s))
 
 
 def simple_popen2(command, input, env=None, in_bufsize=1024, out_bufsize=128):

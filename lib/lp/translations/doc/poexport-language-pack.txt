@@ -10,7 +10,7 @@ Some initialization tasks:
     >>> import pytz
     >>> import transaction
     >>> from lp.testing import login
-    >>> from lp.services.helpers import string_to_tarfile
+    >>> from lp.services.helpers import bytes_to_tarfile
     >>> from lp.app.interfaces.launchpad import ILaunchpadCelebrities
     >>> from lp.translations.scripts.language_pack import (
     ...    export_language_pack)
@@ -73,7 +73,7 @@ Check that the log looks ok.
 
     # Get the generated tarball.
 
-    >>> tarfile = string_to_tarfile(language_pack.file.read())
+    >>> tarfile = bytes_to_tarfile(language_pack.file.read())
 
 The tarball has the right members.
 
@@ -210,7 +210,7 @@ We are now ready to get an exported language pack with XPI files.
 We get other entries in language pack + en-US.xpi file and the
 translations in .po file format.
 
-    >>> tarfile = string_to_tarfile(language_pack.file.read())
+    >>> tarfile = bytes_to_tarfile(language_pack.file.read())
     >>> examine_tarfile(tarfile)
     |     - | rosetta-grumpy
     |     1 | rosetta-grumpy/mapping.txt
@@ -333,7 +333,7 @@ Check that the log looks ok.
 
     # Get the generated tarball.
 
-    >>> tarfile = string_to_tarfile(language_pack.file.read())
+    >>> tarfile = bytes_to_tarfile(language_pack.file.read())
     >>> examine_tarfile(tarfile)
     |     - | rosetta-grumpy
     |     - | rosetta-grumpy/cy
@@ -428,7 +428,7 @@ should get only files that were updated after 2000-01-02.
 
     # Get the generated tarball.
 
-    >>> tarfile = string_to_tarfile(language_pack.file.read())
+    >>> tarfile = bytes_to_tarfile(language_pack.file.read())
 
 Now, there is only one file exported for the 'test' domain, the one that
 had the modification date after the last generated language pack. We
@@ -479,7 +479,7 @@ that was exported on 2000-01-03:
 The Spanish translation has not changed since 2000-01-03, but the
 template has.  That's why we get both translations:
 
-    >>> tarfile = string_to_tarfile(language_pack.file.read())
+    >>> tarfile = bytes_to_tarfile(language_pack.file.read())
     >>> examine_tarfile(tarfile)
     |     - | rosetta-grumpy
     |     - | rosetta-grumpy/cy
