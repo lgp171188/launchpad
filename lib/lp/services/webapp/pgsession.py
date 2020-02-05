@@ -5,9 +5,9 @@
 
 __metaclass__ = type
 
+from collections import MutableMapping
 import hashlib
 import time
-from UserDict import DictMixin
 
 from lazr.restful.utils import get_current_browser_request
 from six.moves import cPickle as pickle
@@ -162,7 +162,7 @@ class PGSessionData(PGSessionBase):
 
 
 @implementer(ISessionPkgData)
-class PGSessionPkgData(DictMixin, PGSessionBase):
+class PGSessionPkgData(MutableMapping, PGSessionBase):
 
     @property
     def store(self):
@@ -229,8 +229,11 @@ class PGSessionPkgData(DictMixin, PGSessionBase):
              ensure_unicode(key)),
             noresult=True)
 
-    def keys(self):
-        return self._data_cache.keys()
+    def __iter__(self):
+        return iter(self._data_cache)
+
+    def __len__(self):
+        return len(self._data_cache)
 
 
 data_container = PGSessionDataContainer()
