@@ -768,8 +768,9 @@ def merge_people(from_person, to_person, reviewer, delete=False):
         ('latestpersonsourcepackagereleasecache', 'maintainer'),
         # Obsolete table.
         ('branchmergequeue', 'owner'),
-        # This needs handling before we deploy the OCI recipe code, but can
-        # be ignored for the purpose of deploying the database tables.
+        # XXX cjwatson 2020-02-05: This needs handling before we deploy the
+        # OCI recipe code, but can be ignored for the purpose of deploying
+        # the database tables.
         ('ocirecipe', 'owner'),
         ]
 
