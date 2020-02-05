@@ -7,13 +7,13 @@ __metaclass__ = type
 
 
 from datetime import datetime
-import httplib
 import logging
 import os
 from StringIO import StringIO
 
 from lazr.uri import URI
 import responses
+from six.moves import http_client
 from sqlobject import SQLObjectNotFound
 from testtools.matchers import (
     ContainsDict,
@@ -210,7 +210,7 @@ class TestProberProtocolAndFactory(TestCase):
             self.assertTrue(prober.redirection_count == 1)
             new_url = 'http://localhost:%s/valid-mirror/file' % self.port
             self.assertTrue(prober.url == new_url)
-            self.assertTrue(result == str(httplib.OK))
+            self.assertTrue(result == str(http_client.OK))
 
         return deferred.addCallback(got_result)
 
@@ -231,7 +231,7 @@ class TestProberProtocolAndFactory(TestCase):
 
         def got_result(result):
             self.assertTrue(
-                result == str(httplib.OK),
+                result == str(http_client.OK),
                 "Expected a '200' status but got '%s'" % result)
 
         return d.addCallback(got_result)
@@ -708,7 +708,8 @@ class TestMirrorCDImageProberCallbacks(TestCaseWithFactory):
 
     def test_mirrorcdimageseries_creation_and_deletion_some_404s(self):
         not_all_success = [
-            (defer.FAILURE, Failure(BadResponseCode(str(httplib.NOT_FOUND)))),
+            (defer.FAILURE,
+             Failure(BadResponseCode(str(http_client.NOT_FOUND)))),
             (defer.SUCCESS, '200')]
         callbacks = self.makeMirrorProberCallbacks()
         all_success = [(defer.SUCCESS, '200'), (defer.SUCCESS, '200')]
@@ -737,7 +738,7 @@ class TestMirrorCDImageProberCallbacks(TestCaseWithFactory):
                 RedirectToDifferentFile,
                 UnknownURLSchemeAfterRedirect,
                 ]))
-        exceptions = [BadResponseCode(str(httplib.NOT_FOUND)),
+        exceptions = [BadResponseCode(str(http_client.NOT_FOUND)),
                       ProberTimeout('http://localhost/', 5),
                       ConnectionSkipped(),
                       RedirectToDifferentFile('/foo', '/bar'),
@@ -794,7 +795,8 @@ class TestArchiveMirrorProberCallbacks(TestCaseWithFactory):
             self.fail("A timeout shouldn't be propagated. Got %s" % e)
         try:
             callbacks.deleteMirrorSeries(
-                Failure(BadResponseCode(str(httplib.INTERNAL_SERVER_ERROR))))
+                Failure(BadResponseCode(
+                    str(http_client.INTERNAL_SERVER_ERROR))))
         except Exception as e:
             self.fail(
                 "A bad response code shouldn't be propagated. Got %s" % e)
@@ -825,7 +827,7 @@ class TestArchiveMirrorProberCallbacks(TestCaseWithFactory):
     def test_mirrorseries_creation_and_deletion(self):
         callbacks = self.makeMirrorProberCallbacks()
         mirror_distro_series_source = callbacks.ensureMirrorSeries(
-             str(httplib.OK))
+             str(http_client.OK))
         self.assertIsNot(
             mirror_distro_series_source, None,
             "If the prober gets a 200 Okay status, a new "
@@ -833,7 +835,7 @@ class TestArchiveMirrorProberCallbacks(TestCaseWithFactory):
             "created.")
 
         callbacks.deleteMirrorSeries(
-            Failure(BadResponseCode(str(httplib.NOT_FOUND))))
+            Failure(BadResponseCode(str(http_client.NOT_FOUND))))
         # If the prober gets a 404 status, we need to make sure there's no
         # MirrorDistroSeriesSource/MirrorDistroArchSeries referent to
         # that url

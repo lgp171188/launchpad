@@ -35,26 +35,25 @@ __all__ = [
     'UserCannotSubscribePerson',
     ]
 
-import httplib
-
 from lazr.restful.declarations import error_status
+from six.moves import http_client
 from zope.schema.interfaces import ConstraintNotSatisfied
 from zope.security.interfaces import Unauthorized
 
 from lp.app.errors import NameLookupFailed
 
 
-@error_status(httplib.FORBIDDEN)
+@error_status(http_client.FORBIDDEN)
 class PrivatePersonLinkageError(ValueError):
     """An attempt was made to link a private person/team to something."""
 
 
-@error_status(httplib.FORBIDDEN)
+@error_status(http_client.FORBIDDEN)
 class InclusiveTeamLinkageError(ValueError):
     """An attempt was made to link an open team to something."""
 
 
-@error_status(httplib.CONFLICT)
+@error_status(http_client.CONFLICT)
 class NameAlreadyTaken(Exception):
     """The name given for a person is already in use by other person."""
 
@@ -63,17 +62,17 @@ class InvalidName(Exception):
     """The name given for a person is not valid."""
 
 
-@error_status(httplib.BAD_REQUEST)
+@error_status(http_client.BAD_REQUEST)
 class NotPlaceholderAccount(Exception):
     """A non-placeholder account already exists for that OpenID identifier."""
 
 
-@error_status(httplib.BAD_REQUEST)
+@error_status(http_client.BAD_REQUEST)
 class NoSuchAccount(Exception):
     """No account exists for the specified openid identifier."""
 
 
-@error_status(httplib.BAD_REQUEST)
+@error_status(http_client.BAD_REQUEST)
 class InvalidFilename(Exception):
     """An invalid filename was used as an attachment filename."""
 
@@ -83,7 +82,7 @@ class NoSuchDistroSeries(NameLookupFailed):
     _message_prefix = "No such distribution series"
 
 
-@error_status(httplib.UNAUTHORIZED)
+@error_status(http_client.UNAUTHORIZED)
 class UserCannotChangeMembershipSilently(Unauthorized):
     """User not permitted to change membership status silently.
 
@@ -92,7 +91,7 @@ class UserCannotChangeMembershipSilently(Unauthorized):
     """
 
 
-@error_status(httplib.FORBIDDEN)
+@error_status(http_client.FORBIDDEN)
 class CommercialSubscribersOnly(Unauthorized):
     """Feature is only available to current commercial subscribers.
 
@@ -115,7 +114,7 @@ class NoSuchOCIProjectName(NameLookupFailed):
     _message_prefix = "No such OCI Project"
 
 
-@error_status(httplib.BAD_REQUEST)
+@error_status(http_client.BAD_REQUEST)
 class CannotTransitionToCountryMirror(Exception):
     """Root exception for transitions to country mirrors."""
 
@@ -152,7 +151,7 @@ class MirrorNotProbed(CannotTransitionToCountryMirror):
     """
 
 
-@error_status(httplib.BAD_REQUEST)
+@error_status(http_client.BAD_REQUEST)
 class DeleteSubscriptionError(Exception):
     """Delete Subscription Error.
 
@@ -160,12 +159,12 @@ class DeleteSubscriptionError(Exception):
     structural subscription."""
 
 
-@error_status(httplib.UNAUTHORIZED)
+@error_status(http_client.UNAUTHORIZED)
 class UserCannotSubscribePerson(Exception):
     """User does not have permission to subscribe the person or team."""
 
 
-@error_status(httplib.BAD_REQUEST)
+@error_status(http_client.BAD_REQUEST)
 class DistroSeriesDifferenceError(Exception):
     """Raised when package diffs cannot be created for a difference."""
 
@@ -177,7 +176,7 @@ class NotADerivedSeriesError(Exception):
     non-derived series - that is, a distroseries with a null Parent."""
 
 
-@error_status(httplib.BAD_REQUEST)
+@error_status(http_client.BAD_REQUEST)
 class TeamMembershipTransitionError(ValueError):
     """Indicates something has gone wrong with the transtiion.
 
@@ -186,7 +185,7 @@ class TeamMembershipTransitionError(ValueError):
     """
 
 
-@error_status(httplib.BAD_REQUEST)
+@error_status(http_client.BAD_REQUEST)
 class TeamMembershipPolicyError(ConstraintNotSatisfied):
     """The team cannot have the specified TeamMembershipPolicy.
 
@@ -210,12 +209,12 @@ class TeamMembershipPolicyError(ConstraintNotSatisfied):
         return self.message
 
 
-@error_status(httplib.BAD_REQUEST)
+@error_status(http_client.BAD_REQUEST)
 class JoinNotAllowed(Exception):
     """User is not allowed to join a given team."""
 
 
-@error_status(httplib.BAD_REQUEST)
+@error_status(http_client.BAD_REQUEST)
 class PPACreationError(Exception):
     """Raised when there is an issue creating a new PPA."""
 
@@ -224,12 +223,12 @@ class CannotDeleteCommercialSubscription(Exception):
     """Raised when a commercial subscription cannot be deleted."""
 
 
-@error_status(httplib.BAD_REQUEST)
+@error_status(http_client.BAD_REQUEST)
 class CannotChangeInformationType(Exception):
     """The information type cannot be changed."""
 
 
-@error_status(httplib.BAD_REQUEST)
+@error_status(http_client.BAD_REQUEST)
 class InvalidMirrorReviewState(Exception):
     """The mirror is in an invalid state in the review workflow."""
 

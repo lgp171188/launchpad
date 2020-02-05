@@ -3,7 +3,6 @@
 
 __metaclass__ = type
 
-import httplib
 import socket
 import sys
 import urllib2
@@ -41,6 +40,7 @@ from lazr.uri import (
     InvalidURIError,
     URI,
     )
+from six.moves import http_client
 
 from lp.code.bzr import (
     BranchFormat,
@@ -389,7 +389,7 @@ class PullerWorker:
         #
         except urllib2.HTTPError as e:
             msg = str(e)
-            if int(e.code) == httplib.UNAUTHORIZED:
+            if int(e.code) == http_client.UNAUTHORIZED:
                 # Maybe this will be caught in bzrlib one day, and then we'll
                 # be able to get rid of this.
                 # https://launchpad.net/products/bzr/+bug/42383

@@ -22,7 +22,6 @@ __all__ = [
 from cStringIO import StringIO
 from datetime import datetime
 from functools import partial
-import httplib
 from operator import itemgetter
 import urllib
 
@@ -30,6 +29,7 @@ from lazr.restful.interface import copy_field
 from lazr.restful.interfaces import IJSONRequestCache
 from pytz import timezone
 from simplejson import dumps
+from six.moves import http_client
 from sqlobject import SQLObjectNotFound
 from zope.browserpage import ViewPageTemplateFile
 from zope.component import getUtility
@@ -902,7 +902,7 @@ class FileBugAdvancedView(LaunchpadView):
         filebug_url = canonical_url(
             self.context, rootsite='bugs', view_name='+filebug')
         self.request.response.redirect(
-            filebug_url, status=httplib.MOVED_PERMANENTLY)
+            filebug_url, status=http_client.MOVED_PERMANENTLY)
 
 
 class IDistroBugAddForm(IBugAddForm):

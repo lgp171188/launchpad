@@ -11,8 +11,6 @@ __all__ = [
     'IFAQSet',
     ]
 
-import httplib
-
 from lazr.restful.declarations import (
     error_status,
     export_as_webservice_entry,
@@ -21,6 +19,7 @@ from lazr.restful.declarations import (
     operation_for_version,
     )
 from lazr.restful.fields import Reference
+from six.moves import http_client
 from zope.interface import Attribute
 from zope.schema import (
     Datetime,
@@ -39,7 +38,7 @@ from lp.services.fields import (
     )
 
 
-@error_status(httplib.BAD_REQUEST)
+@error_status(http_client.BAD_REQUEST)
 class CannotDeleteFAQ(Exception):
     """The FAQ cannnot be deleted."""
 

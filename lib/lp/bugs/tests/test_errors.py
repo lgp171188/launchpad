@@ -7,7 +7,7 @@
 __metaclass__ = type
 
 
-from httplib import EXPECTATION_FAILED
+from six.moves.http_client import EXPECTATION_FAILED
 
 from lp.bugs.errors import InvalidDuplicateValue
 from lp.testing import TestCase

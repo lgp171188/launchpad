@@ -7,7 +7,7 @@
 __metaclass__ = type
 
 
-from httplib import (
+from six.moves.http_client import (
     BAD_REQUEST,
     CONFLICT,
     FORBIDDEN,
