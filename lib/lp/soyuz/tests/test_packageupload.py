@@ -16,7 +16,10 @@ from lazr.restfulclient.errors import (
     BadRequest,
     Unauthorized,
     )
-from testtools.matchers import Equals
+from testtools.matchers import (
+    Equals,
+    MatchesStructure,
+    )
 import transaction
 from zope.component import (
     getUtility,
@@ -90,6 +93,27 @@ class PackageUploadTestCase(TestCaseWithFactory):
         super(PackageUploadTestCase, self).tearDown()
         if os.path.exists(config.personalpackagearchive.root):
             shutil.rmtree(config.personalpackagearchive.root)
+
+    def test_add_log_entry(self):
+        upload = self.factory.makePackageUpload(
+            status=PackageUploadStatus.UNAPPROVED)
+        upload = removeSecurityProxy(upload)
+        self.assertEqual(0, len(upload.logs))
+
+        person = self.factory.makePerson(name='lpusername')
+
+        upload._addLog(person, PackageUploadStatus.REJECTED, 'just because')
+
+        log = upload.logs[0]
+        self.assertThat(log, MatchesStructure.byEquality(
+            reviewer=person, old_status=PackageUploadStatus.UNAPPROVED,
+            new_status=PackageUploadStatus.REJECTED, comment='just because'))
+
+        expected_repr = (
+            "<PackageUploadLog ~lpusername "
+            "changed {self.package_upload} to Rejected "
+            "on {self.date_created}>").format(self=log)
+        self.assertEqual(str(expected_repr), repr(log))
 
     def test_realiseUpload_for_overridden_component_archive(self):
         # If the component of an upload is overridden to 'Partner' for
@@ -358,8 +382,14 @@ class PackageUploadTestCase(TestCaseWithFactory):
 
         # Accepting one of them works.  (Since it's a single source upload,
         # it goes straight to DONE.)
-        upload_one.acceptFromQueue()
+        person = self.factory.makePerson()
+        upload_one.acceptFromQueue(person)
         self.assertEqual("DONE", upload_one.status.name)
+
+        log = upload_one.logs[0]
+        self.assertThat(log, MatchesStructure.byEquality(
+            reviewer=person, old_status=PackageUploadStatus.UNAPPROVED,
+            new_status=PackageUploadStatus.ACCEPTED, comment=None))
         transaction.commit()
 
         # Trying to accept the second fails.
@@ -368,8 +398,14 @@ class PackageUploadTestCase(TestCaseWithFactory):
         self.assertEqual("UNAPPROVED", upload_two.status.name)
 
         # Rejecting the second upload works.
-        upload_two.rejectFromQueue(self.factory.makePerson())
+        upload_two.rejectFromQueue(person, 'Because yes')
         self.assertEqual("REJECTED", upload_two.status.name)
+
+        self.assertEqual(1, len(upload_two.logs))
+        log = upload_two.logs[0]
+        self.assertThat(log, MatchesStructure.byEquality(
+            reviewer=person, old_status=PackageUploadStatus.UNAPPROVED,
+            new_status=PackageUploadStatus.REJECTED, comment='Because yes'))
 
     def test_rejectFromQueue_source_sends_email(self):
         # Rejecting a source package sends an email to the uploader.

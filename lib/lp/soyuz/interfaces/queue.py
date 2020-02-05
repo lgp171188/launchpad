@@ -1,4 +1,4 @@
-# Copyright 2009-2016 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Queue interfaces."""
@@ -9,18 +9,19 @@ __all__ = [
     'CustomUploadError',
     'ICustomUploadHandler',
     'IHasQueueItems',
-    'IPackageUploadQueue',
     'IPackageUpload',
     'IPackageUploadBuild',
-    'IPackageUploadSource',
     'IPackageUploadCustom',
+    'IPackageUploadLog',
+    'IPackageUploadQueue',
     'IPackageUploadSet',
+    'IPackageUploadSource',
     'NonBuildableSourceUploadError',
     'QueueAdminUnauthorizedError',
     'QueueBuildAcceptError',
     'QueueInconsistentStateError',
     'QueueSourceAcceptError',
-    'QueueStateWriteProtectedError',
+    'QueueStateWriteProtectedError'
     ]
 
 import httplib
@@ -53,6 +54,7 @@ from zope.schema import (
 from zope.security.interfaces import Unauthorized
 
 from lp import _
+from lp.registry.interfaces.person import IPerson
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.soyuz.enums import PackageUploadStatus
 from lp.soyuz.interfaces.packagecopyjob import IPackageCopyJob
@@ -148,6 +150,8 @@ class IPackageUpload(Interface):
         Datetime(
             title=_('Date created'),
             description=_("The date this package upload was done.")))
+
+    logs = Attribute(_("The change log of this PackageUpload."))
 
     changesfile = Attribute("The librarian alias for the changes file "
                             "associated with this upload")
@@ -709,6 +713,35 @@ class IPackageUploadCustom(Interface):
         It's not written to the main archive location because that could be
         protected by htaccess in the case of private archives.
         """
+
+
+class IPackageUploadLog(Interface):
+    """Entries of package upload status change"""
+
+    id = Int(title=_('ID'), required=True, readonly=True)
+
+    package_upload = Reference(
+        IPackageUpload,
+        title=_("Original package upload."), required=True, readonly=True)
+
+    date_created = Datetime(
+        title=_("When this action happened."), required=True, readonly=True)
+
+    reviewer = Reference(
+        IPerson, title=_("Who did this action."),
+        required=True, readonly=True)
+
+    old_status = Choice(
+        vocabulary=PackageUploadStatus, description=_("Old status."),
+        required=True, readonly=True)
+
+    new_status = Choice(
+        vocabulary=PackageUploadStatus, description=_("New status."),
+        required=True, readonly=True)
+
+    comment = TextLine(
+        title=_("User's comment about this change."),
+        required=False, readonly=True)
 
 
 class IPackageUploadSet(Interface):

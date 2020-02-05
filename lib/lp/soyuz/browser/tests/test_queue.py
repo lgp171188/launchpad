@@ -1,4 +1,4 @@
-# Copyright 2010-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Unit tests for QueueItemsView."""
@@ -33,6 +33,7 @@ from lp.testing import (
     login_person,
     logout,
     person_logged_in,
+    record_two_runs,
     StormStatementRecorder,
     TestCaseWithFactory,
     )
@@ -342,10 +343,10 @@ class TestQueueItemsView(TestCaseWithFactory):
 
     layer = LaunchpadFunctionalLayer
 
-    def makeView(self, distroseries, user):
+    def makeView(self, distroseries, user, form=None):
         """Create a queue view."""
         return create_initialized_view(
-            distroseries, name='+queue', principal=user)
+            distroseries, name='+queue', principal=user, form=form)
 
     def test_view_renders_source_upload(self):
         login(ADMIN_EMAIL)
@@ -437,7 +438,34 @@ class TestQueueItemsView(TestCaseWithFactory):
             with StormStatementRecorder() as recorder:
                 view = self.makeView(distroseries, queue_admin)
                 view()
-        self.assertThat(recorder, HasQueryCount(Equals(56)))
+        self.assertThat(recorder, HasQueryCount(Equals(57)))
+
+    def test_package_upload_with_logs_query_count(self):
+        login(ADMIN_EMAIL)
+        uploads = []
+        distroseries = self.factory.makeDistroSeries()
+
+        for i in range(11):
+            uploads.append(self.factory.makeSourcePackageUpload(distroseries))
+        queue_admin = self.factory.makeArchiveAdmin(distroseries.main_archive)
+
+        def reject_some_package():
+            for upload in uploads:
+                if len(upload.logs) == 0:
+                    person = self.factory.makePerson()
+                    upload.rejectFromQueue(person)
+                    break
+
+        def run_view():
+            with person_logged_in(queue_admin):
+                url = ("%s/+queue?queue_state=%s" % (
+                    canonical_url(distroseries),
+                    PackageUploadStatus.REJECTED.value))
+                self.getUserBrowser(url, queue_admin)
+
+        recorder1, recorder2 = record_two_runs(
+            run_view, reject_some_package, 1, 10)
+        self.assertThat(recorder2, HasQueryCount.byEquality(recorder1))
 
 
 class TestCompletePackageUpload(TestCaseWithFactory):
