@@ -18,6 +18,7 @@ from lazr.restfulclient.errors import (
     )
 from testtools.matchers import (
     Equals,
+    MatchesListwise,
     MatchesStructure,
     )
 import transaction
@@ -1483,3 +1484,26 @@ class TestPackageUploadWebservice(TestCaseWithFactory):
                 person, component=self.universe),
             5)
         self.assertThat(recorder2, HasQueryCount.byEquality(recorder1))
+
+    def test_api_package_upload_log(self):
+        # API clients can see upload logs of a source uploads.
+        admin = self.makeQueueAdmin([self.universe])
+        upload, ws_upload = self.makeSourcePackageUpload(
+            admin, sourcepackagename="hello", component=self.universe)
+        with person_logged_in(admin):
+            upload.rejectFromQueue(admin, 'not a good change')
+            upload.acceptFromQueue(admin)
+
+        logs = removeSecurityProxy(upload).logs
+        ws_logs = ws_upload.logs
+        self.assertEqual(len(ws_logs), len(logs))
+        self.assertThat(ws_upload.logs, MatchesListwise([
+            MatchesStructure(
+                comment=Equals(log.comment),
+                date_created=Equals(log.date_created),
+                new_status=Equals(log.new_status.title),
+                old_status=Equals(log.old_status.title),
+                reviewer=MatchesStructure.byEquality(
+                    name=log.reviewer.name),
+                package_upload=MatchesStructure.byEquality(id=ws_upload.id))
+            for log in removeSecurityProxy(upload).logs]))

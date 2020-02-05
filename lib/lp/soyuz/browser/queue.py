@@ -69,7 +69,6 @@ from lp.soyuz.model.files import (
 from lp.soyuz.model.packagecopyjob import PackageCopyJob
 from lp.soyuz.model.queue import (
     PackageUploadBuild,
-    PackageUploadLog,
     PackageUploadSource,
     )
 from lp.soyuz.model.sourcepackagerelease import SourcePackageRelease
@@ -211,26 +210,6 @@ class QueueItemsView(LaunchpadView):
         list(getUtility(IPersonSet).getPrecachedPersonsFromIDs(
             person_ids, need_validity=True))
 
-    def _getPreloadedLogs(self, uploads):
-        """Returns a dict of preloaded PackageUploadLog
-
-        The keys from the returning dict are the package_upload_id, and the
-        values are lists of log entries
-        """
-        logs = load_referencing(
-            PackageUploadLog, uploads, ['package_upload_id'])
-
-        # Preload users from log entries
-        # Not using `need_icon` since the log's reviewers are always persons,
-        # and fetching icons should be only needed for teams
-        list(getUtility(IPersonSet).getPrecachedPersonsFromIDs(
-            [log.reviewer_id for log in logs],
-            need_validity=True))
-        logs_dict = defaultdict(list)
-        for log in logs:
-            logs_dict[log.package_upload_id].append(log)
-        return logs_dict
-
     def decoratedQueueBatch(self):
         """Return the current batch, converted to decorated objects.
 
@@ -244,12 +223,12 @@ class QueueItemsView(LaunchpadView):
             return None
 
         upload_ids = [upload.id for upload in uploads]
-        puses = load_referencing(
-            PackageUploadSource, uploads, ['packageuploadID'])
-        pubs = load_referencing(
-            PackageUploadBuild, uploads, ['packageuploadID'])
 
-        logs_dict = self._getPreloadedLogs(uploads)
+        # Both "u.sources" and "u.builds" below are preloaded by
+        # self.context.getPackageUploads (which uses PackageUploadSet.getAll)
+        # when building self.batchnav.
+        puses = sum([removeSecurityProxy(u.sources) for u in uploads], [])
+        pubs = sum([removeSecurityProxy(u.builds) for u in uploads], [])
 
         source_sprs = load_related(
             SourcePackageRelease, puses, ['sourcepackagereleaseID'])
@@ -288,9 +267,7 @@ class QueueItemsView(LaunchpadView):
 
         return [
             CompletePackageUpload(
-                item, build_upload_files, source_upload_files, package_sets,
-                sorted(logs_dict[item.id], key=attrgetter("date_created"),
-                       reverse=True))
+                item, build_upload_files, source_upload_files, package_sets)
             for item in uploads]
 
     def is_new(self, binarypackagerelease):
@@ -517,24 +494,18 @@ class CompletePackageUpload:
     # (i.e. no proxying of __set__).
     pocket = None
     date_created = None
-    sources = None
-    builds = None
-    logs = None
     customfiles = None
     contains_source = None
     contains_build = None
     sourcepackagerelease = None
 
     def __init__(self, packageupload, build_upload_files,
-                 source_upload_files, package_sets, logs=None):
+                 source_upload_files, package_sets):
         self.pocket = packageupload.pocket
         self.date_created = packageupload.date_created
         self.context = packageupload
-        self.sources = list(packageupload.sources)
         self.contains_source = len(self.sources) > 0
-        self.builds = list(packageupload.builds)
         self.contains_build = len(self.builds) > 0
-        self.logs = list(logs) if logs is not None else []
         self.customfiles = list(packageupload.customfiles)
 
         # Create a dictionary of binary files keyed by

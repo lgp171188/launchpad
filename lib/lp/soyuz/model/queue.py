@@ -12,7 +12,9 @@ __all__ = [
     'PackageUploadSource',
     ]
 
+from collections import defaultdict
 from itertools import chain
+from operator import attrgetter
 
 import pytz
 from sqlobject import (
@@ -42,6 +44,7 @@ from zope.interface import implementer
 from lp.app.errors import NotFoundError
 from lp.archiveuploader.tagfiles import parse_tagfile_content
 from lp.registry.interfaces.gpg import IGPGKeySet
+from lp.registry.interfaces.person import IPersonSet
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.registry.model.sourcepackagename import SourcePackageName
 from lp.services.auditor.client import AuditorClient
@@ -1600,8 +1603,10 @@ class PackageUploadSet:
                 PackageUploadBuild, rows, ["packageuploadID"])
             pucs = load_referencing(
                 PackageUploadCustom, rows, ["packageuploadID"])
+            logs = load_referencing(
+                PackageUploadLog, rows, ["package_upload_id"])
 
-            prefill_packageupload_caches(rows, puses, pubs, pucs)
+            prefill_packageupload_caches(rows, puses, pubs, pucs, logs)
 
         return DecoratedResultSet(query, pre_iter_hook=preload_hook)
 
@@ -1622,18 +1627,32 @@ class PackageUploadSet:
             PackageUpload.package_copy_job_id.is_in(pcj_ids))
 
 
-def prefill_packageupload_caches(uploads, puses, pubs, pucs):
+def prefill_packageupload_caches(uploads, puses, pubs, pucs, logs):
     # Circular imports.
     from lp.soyuz.model.archive import Archive
     from lp.soyuz.model.binarypackagebuild import BinaryPackageBuild
     from lp.soyuz.model.publishing import SourcePackagePublishingHistory
     from lp.soyuz.model.sourcepackagerelease import SourcePackageRelease
 
+    logs_per_pu = defaultdict(list)
+    reviewer_ids = set()
+    for log in logs:
+        reviewer_ids.add(log.reviewer_id)
+        logs_per_pu[log.package_upload_id].append(log)
+
+    # Preload reviewers of the logs.
+    # We are not using `need_icon` here because reviewers are persons,
+    # and icons are only available for teams.
+    list(getUtility(IPersonSet).getPrecachedPersonsFromIDs(
+        reviewer_ids, need_validity=True))
+
     for pu in uploads:
         cache = get_property_cache(pu)
         cache.sources = []
         cache.builds = []
         cache.customfiles = []
+        cache.logs = sorted(
+            logs_per_pu[pu.id], key=attrgetter("date_created"), reverse=True)
 
     for pus in puses:
         get_property_cache(pus.packageupload).sources.append(pus)

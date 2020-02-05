@@ -26,6 +26,7 @@ __all__ = [
 
 import httplib
 
+from lazr.lifecycle.snapshot import doNotSnapshot
 from lazr.restful.declarations import (
     call_with,
     error_status,
@@ -37,7 +38,10 @@ from lazr.restful.declarations import (
     operation_parameters,
     REQUEST_USER,
     )
-from lazr.restful.fields import Reference
+from lazr.restful.fields import (
+    CollectionField,
+    Reference,
+    )
 from zope.interface import (
     Attribute,
     Interface,
@@ -56,6 +60,7 @@ from zope.security.interfaces import Unauthorized
 from lp import _
 from lp.registry.interfaces.person import IPerson
 from lp.registry.interfaces.pocket import PackagePublishingPocket
+from lp.services.webservice.apihelpers import patch_reference_property
 from lp.soyuz.enums import PackageUploadStatus
 from lp.soyuz.interfaces.packagecopyjob import IPackageCopyJob
 
@@ -113,6 +118,44 @@ class IPackageUploadQueue(Interface):
     """
 
 
+class IPackageUploadLog(Interface):
+    """A log entry recording a change in a package upload's status."""
+
+    export_as_webservice_entry(publish_web_link=True, as_of="devel")
+
+    id = Int(title=_('ID'), required=True, readonly=True)
+
+    package_upload = exported(
+        Reference(
+            Interface, title=_("The package upload that generated this log"),
+            required=True, readonly=True))
+
+    date_created = exported(
+        Datetime(
+            title=_("When this action happened."), required=True,
+            readonly=True))
+
+    reviewer = exported(
+        Reference(
+            IPerson, title=_("Who did this action."),
+            required=True, readonly=True))
+
+    old_status = exported(
+        Choice(
+            vocabulary=PackageUploadStatus, description=_("Old status."),
+            required=True, readonly=True))
+
+    new_status = exported(
+        Choice(
+            vocabulary=PackageUploadStatus, description=_("New status."),
+            required=True, readonly=True))
+
+    comment = exported(
+        TextLine(
+            title=_("User's comment about this change."),
+            required=False, readonly=True))
+
+
 class IPackageUpload(Interface):
     """A Queue item for the archive uploader."""
 
@@ -151,8 +194,6 @@ class IPackageUpload(Interface):
             title=_('Date created'),
             description=_("The date this package upload was done.")))
 
-    logs = Attribute(_("The change log of this PackageUpload."))
-
     changesfile = Attribute("The librarian alias for the changes file "
                             "associated with this upload")
     changes_file_url = exported(
@@ -184,6 +225,14 @@ class IPackageUpload(Interface):
             title=_("Archive"), required=True, readonly=True))
     sources = Attribute("The queue sources associated with this queue item")
     builds = Attribute("The queue builds associated with the queue item")
+
+    logs = exported(
+        doNotSnapshot(
+            CollectionField(
+                title=_("The package upload logs"),
+                value_type=Reference(schema=IPackageUploadLog),
+                readonly=True)),
+        as_of="devel")
 
     customfiles = Attribute("Custom upload files associated with this "
                             "queue item")
@@ -495,6 +544,9 @@ class IPackageUpload(Interface):
         """
 
 
+patch_reference_property(IPackageUploadLog, 'package_upload', IPackageUpload)
+
+
 class IPackageUploadBuild(Interface):
     """A Queue item's related builds."""
 
@@ -507,9 +559,7 @@ class IPackageUploadBuild(Interface):
             readonly=False,
             )
 
-    build = Int(
-            title=_("The related build"), required=True, readonly=False,
-            )
+    build = Int(title=_("The related build"), required=True, readonly=False)
 
     def binaries():
         """Returns the properties of the binaries in this build.
@@ -552,8 +602,7 @@ class IPackageUploadSource(Interface):
 
     sourcepackagerelease = Int(
             title=_("The related source package release"), required=True,
-            readonly=False,
-            )
+            readonly=False)
 
     def getSourceAncestryForDiffs():
         """Return a suitable ancestry publication for this context.
@@ -713,35 +762,6 @@ class IPackageUploadCustom(Interface):
         It's not written to the main archive location because that could be
         protected by htaccess in the case of private archives.
         """
-
-
-class IPackageUploadLog(Interface):
-    """Entries of package upload status change"""
-
-    id = Int(title=_('ID'), required=True, readonly=True)
-
-    package_upload = Reference(
-        IPackageUpload,
-        title=_("Original package upload."), required=True, readonly=True)
-
-    date_created = Datetime(
-        title=_("When this action happened."), required=True, readonly=True)
-
-    reviewer = Reference(
-        IPerson, title=_("Who did this action."),
-        required=True, readonly=True)
-
-    old_status = Choice(
-        vocabulary=PackageUploadStatus, description=_("Old status."),
-        required=True, readonly=True)
-
-    new_status = Choice(
-        vocabulary=PackageUploadStatus, description=_("New status."),
-        required=True, readonly=True)
-
-    comment = TextLine(
-        title=_("User's comment about this change."),
-        required=False, readonly=True)
 
 
 class IPackageUploadSet(Interface):

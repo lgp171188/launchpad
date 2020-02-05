@@ -1,4 +1,4 @@
-<!-- Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+<!-- Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
      GNU Affero General Public License version 3 (see the file LICENSE).
 -->
 
@@ -660,6 +660,11 @@
         for="lp.soyuz.interfaces.queue.IPackageUpload"
         path_expression="string:+upload/${id}"
         attribute_to_parent="distroseries"
+        />
+    <browser:url
+        for="lp.soyuz.interfaces.queue.IPackageUploadLog"
+        path_expression="string:+log/${id}"
+        attribute_to_parent="package_upload"
         />
     <browser:navigation
         module="lp.soyuz.browser.queue"
