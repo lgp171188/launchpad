@@ -25,8 +25,10 @@ from storm.locals import (
 from zope.interface.declarations import implementer
 
 from lp.services.signing.enums import SigningKeyType
-from lp.services.signing.interfaces.signingkey import ISigningKey, \
-    IArchiveSigningKey
+from lp.services.signing.interfaces.signingkey import (
+    ISigningKey,
+    IArchiveSigningKey,
+    )
 from lp.registry.model.distroseries import DistroSeries
 from lp.services.database.constants import (
     DEFAULT,
@@ -93,12 +95,16 @@ class SigningKey(StormBase):
         store.add(signing_key)
         return signing_key
 
-    def sign(self, mode, message, message_name=None):
+    def sign(self, message, message_name=None):
         """Sign the given message using this key
 
-        :param mode: "ATTACHED" or "DETACHED"
-        :param message: The message to be signed
-        :param message_name: A name for the message beign signed"""
+        :param message: The message to be signed.
+        :param message_name: A name for the message beign signed.
+        """
+        if self.key_type in (SigningKeyType.UEFI, SigningKeyType.FIT):
+            mode = "ATTACHED"
+        else:
+            mode = "DETACHED"
         signing_service = SigningService()
         signed = signing_service.sign(
             self.key_type, self.fingerprint, message_name, message, mode)
@@ -107,7 +113,8 @@ class SigningKey(StormBase):
 
 @implementer(IArchiveSigningKey)
 class ArchiveSigningKey(StormBase):
-    """Which signing key should be used by a given archive / series"""
+    """Which signing key should be used by a given archive / series.
+    """
 
     __storm_table__ = 'ArchiveSigningKey'
 
@@ -135,7 +142,8 @@ class ArchiveSigningKey(StormBase):
 
         :return: A tuple like (db_object:ArchiveSigningKey, created:boolean)
                  with the ArchiveSigningKey and True if it was created (
-                 False if it was updated) """
+                 False if it was updated).
+        """
         store = IMasterStore(SigningKey)
         key_type = signing_key.key_type
         obj = store.find(ArchiveSigningKey, [

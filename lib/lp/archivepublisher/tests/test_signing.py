@@ -12,8 +12,12 @@ import re
 import stat
 import tarfile
 
+import responses
 from fixtures import MonkeyPatch
 import scandir
+from lp.services.features.testing import FeatureFixture
+from lp.services.signing.tests.test_proxy import SigningServiceResponseFactory
+from lp.services.webapp.interaction import ANONYMOUS
 from testtools.matchers import (
     Contains,
     Equals,
@@ -24,7 +28,7 @@ from testtools.matchers import (
     Mismatch,
     Not,
     StartsWith,
-    )
+    MatchesStructure)
 from testtools.twistedsupport import AsynchronousDeferredRunTest
 from twisted.internet import defer
 from zope.component import getUtility
@@ -33,7 +37,7 @@ from lp.archivepublisher.config import getPubConfig
 from lp.archivepublisher.customupload import (
     CustomUploadAlreadyExists,
     CustomUploadBadUmask,
-    )
+    CustomUpload)
 from lp.archivepublisher.interfaces.archivegpgsigningkey import (
     IArchiveGPGSigningKey,
     )
@@ -1499,3 +1503,50 @@ class TestUefi(TestSigningHelpers):
             self.getDistsPath(), "uefi")))
         self.assertTrue(os.path.exists(os.path.join(
             self.getSignedPath("test", "amd64"), "1.0", "empty.efi")))
+
+
+class TestSigningUploadWithSigningService(TestSigningHelpers):
+    """Tests for SigningUpload using lp-signing service"""
+    layer = ZopelessDatabaseLayer
+
+    def setUp(self, *args, **kwargs):
+        super(TestSigningUploadWithSigningService, self).setUp(
+            *args, **kwargs)
+        self.useFixture(FeatureFixture({'lp.services.signing.enabled': True}))
+        self.signing_service = SigningServiceResponseFactory()
+
+    def test_set_target_directory_with_distroseries(self):
+        archive = self.factory.makeArchive()
+        series_name = archive.distribution.series[1].name
+
+        upload = SigningUpload()
+        upload.setTargetDirectory(
+            archive, "test_1.0_amd64.tar.gz", series_name)
+
+        pubconfig = getPubConfig(archive)
+        self.assertThat(upload, MatchesStructure.byEquality(
+            distro_series=archive.distribution.series[1],
+            archive=archive,
+            autokey=pubconfig.signingautokey))
+
+    @responses.activate
+    def test_sign_with_autokey(self):
+        self.signing_service.patch()
+
+        # PPAs should auto-generate keys. Let's use one for this test.
+        self.setUpPPA()
+
+        self.openArchive("test", "1.0", "amd64")
+        self.tarfile.add_file("1.0/empty.efi", b"")
+        self.tarfile.add_file("1.0/empty.ko", b"")
+        self.tarfile.add_file("1.0/empty.opal", b"")
+        self.tarfile.add_file("1.0/empty.sipl", b"")
+        self.tarfile.add_file("1.0/empty.fit", b"")
+
+        self.tarfile.close()
+        self.buffer.close()
+
+        upload = SigningUpload()
+        upload.process(self.archive, self.path, self.suite)
+
+        self.assertTrue(upload.autokey)

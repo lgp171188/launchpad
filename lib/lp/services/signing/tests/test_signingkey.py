@@ -55,7 +55,7 @@ class TestSigningKey(TestCaseWithFactory):
             SigningKeyType.UEFI, u"a fingerprint",
             self.signing_service.b64_generated_public_key,
             description=u"This is my key!")
-        signed = s.sign("ATTACHED", "secure message", "message_name")
+        signed = s.sign("secure message", "message_name")
 
         # Checks if the returned value is actually the returning value from
         # HTTP POST /sign call to lp-signing service
