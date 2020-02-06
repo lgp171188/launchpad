@@ -147,10 +147,14 @@
                 </td>
              </tr>
            </tbody>
-           <tbody tal:attributes="class string:${filelist_class}">
+           <tbody tal:attributes="class string:${filelist_class}"
+                  tal:define="hasActions python: len(view.availableActions()) > 0">
              <metal:filelist use-macro="template/macros/package-filelist"/>
+
              <tr class="log-content" tal:repeat="log packageupload/logs">
-               <td colspan="2" style="border: 0"></td>
+               <td tal:attributes="colspan python: 2 if hasActions else 1"
+                   style="border: 0"></td>
+
                <td colspan="8" style="border: 0">
                  <span tal:content="log/new_status"></span>
                  <span tal:attributes="title log/date_created/fmt:datetime"
