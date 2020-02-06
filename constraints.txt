@@ -74,14 +74,16 @@ BTrees==4.5.1
 persistent==4.4.3
 python-gettext==4.0
 pytz==2018.9
-setuptools==41.0.0
+# Handled in setup-requirements.txt instead.
+#setuptools==41.0.0
 six==1.12.0
 transaction==2.4.0
 
 # zope.password needs these
 bcrypt==3.1.6
-cffi==1.12.2
-pycparser==2.19
+# Handled in setup-requirements.txt instead.
+#cffi==1.12.2
+#pycparser==2.19
 
 # Python2-only
 zope.untrustedpython==4.0.0
@@ -312,7 +314,6 @@ waitress==1.3.1
 webencodings==0.5.1
 WebOb==1.8.5
 WebTest==2.0.33
-wheel==0.29.0
 wsgi-intercept==1.9.2
 WSGIProxy2==0.4.6
 wsgiref==0.1.2
