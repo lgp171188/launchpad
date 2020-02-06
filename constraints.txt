@@ -313,7 +313,7 @@ webencodings==0.5.1
 WebOb==1.8.5
 WebTest==2.0.33
 wheel==0.29.0
-wsgi-intercept==0.5.1
+wsgi-intercept==1.9.2
 WSGIProxy2==0.4.6
 wsgiref==0.1.2
 z3c.pt==3.2.0
