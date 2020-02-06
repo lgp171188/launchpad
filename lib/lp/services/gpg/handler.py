@@ -12,7 +12,6 @@ __all__ = [
 
 import atexit
 from contextlib import contextmanager
-import httplib
 import os
 import shutil
 import socket
@@ -25,6 +24,7 @@ import urllib
 import gpgme
 from lazr.restful.utils import get_current_browser_request
 import requests
+from six.moves import http_client
 from zope.interface import implementer
 from zope.security.proxy import removeSecurityProxy
 
@@ -466,7 +466,7 @@ class GPGHandler:
         keyserver_http_url = '%s:%s' % (
             config.gpghandler.host, config.gpghandler.port)
 
-        conn = httplib.HTTPConnection(keyserver_http_url)
+        conn = http_client.HTTPConnection(keyserver_http_url)
         params = urllib.urlencode({'keytext': content})
         headers = {
             "Content-type": "application/x-www-form-urlencoded",
@@ -480,7 +480,7 @@ class GPGHandler:
                 'Could not reach keyserver at http://%s %s' % (
                     keyserver_http_url, str(err)))
 
-        assert conn.getresponse().status == httplib.OK, (
+        assert conn.getresponse().status == http_client.OK, (
             'Keyserver POST failed')
 
         conn.close()

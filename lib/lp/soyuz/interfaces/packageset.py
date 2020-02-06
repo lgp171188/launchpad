@@ -12,8 +12,6 @@ __all__ = [
     'NoSuchPackageSet',
     ]
 
-import httplib
-
 from lazr.restful.declarations import (
     collection_default_content,
     error_status,
@@ -31,6 +29,7 @@ from lazr.restful.declarations import (
     )
 from lazr.restful.fields import Reference
 from lazr.restful.interface import copy_field
+from six.moves import http_client
 from zope.interface import Interface
 from zope.schema import (
     Bool,
@@ -54,7 +53,7 @@ class NoSuchPackageSet(NameLookupFailed):
     _message_prefix = "No such package set (in the specified distro series)"
 
 
-@error_status(httplib.BAD_REQUEST)
+@error_status(http_client.BAD_REQUEST)
 class DuplicatePackagesetName(Exception):
     """Raised for packagesets with the same name and distroseries."""
 

@@ -24,8 +24,6 @@ __all__ = [
     'QueueStateWriteProtectedError'
     ]
 
-import httplib
-
 from lazr.lifecycle.snapshot import doNotSnapshot
 from lazr.restful.declarations import (
     call_with,
@@ -42,6 +40,7 @@ from lazr.restful.fields import (
     CollectionField,
     Reference,
     )
+from six.moves import http_client
 from zope.interface import (
     Attribute,
     Interface,
@@ -73,7 +72,7 @@ class QueueStateWriteProtectedError(Exception):
     """
 
 
-@error_status(httplib.BAD_REQUEST)
+@error_status(http_client.BAD_REQUEST)
 class QueueInconsistentStateError(Exception):
     """Queue state machine error.
 

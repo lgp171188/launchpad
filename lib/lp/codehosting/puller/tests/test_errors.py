@@ -5,7 +5,6 @@
 
 __metaclass__ = type
 
-import httplib
 import os
 import socket
 import tempfile
@@ -23,6 +22,7 @@ from breezy.url_policy_open import (
     BranchReferenceForbidden,
     )
 from lazr.uri import InvalidURIError
+from six.moves import http_client
 
 from lp.code.enums import BranchType
 from lp.codehosting.puller.worker import (
@@ -142,7 +142,7 @@ class TestErrorCatching(TestCase):
         # error message.
         msg = self.getMirrorFailureForException(
             urllib2.HTTPError(
-                'http://something', httplib.UNAUTHORIZED,
+                'http://something', http_client.UNAUTHORIZED,
                 'Authorization Required', 'some headers',
                 os.fdopen(tempfile.mkstemp()[0])))
         self.assertEqual("Authentication required.", msg)

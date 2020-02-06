@@ -7,7 +7,6 @@ __all__ = [
     ]
 
 from datetime import datetime
-import httplib
 import itertools
 import logging
 import os.path
@@ -16,6 +15,7 @@ import urllib
 import urlparse
 
 import requests
+from six.moves import http_client
 from twisted.internet import (
     defer,
     protocol,
@@ -145,7 +145,7 @@ class ProberProtocol(HTTPClient):
         # According to http://lists.debian.org/deity/2001/10/msg00046.html,
         # apt intentionally handles only '200 OK' responses, so we do the
         # same here.
-        if status == str(httplib.OK):
+        if status == str(http_client.OK):
             self.factory.succeeded(status)
         else:
             self.factory.failed(Failure(BadResponseCode(status)))
@@ -164,7 +164,8 @@ class RedirectAwareProberProtocol(ProberProtocol):
 
     # The different redirect statuses that I handle.
     handled_redirect_statuses = (
-        httplib.MOVED_PERMANENTLY, httplib.FOUND, httplib.SEE_OTHER)
+        http_client.MOVED_PERMANENTLY, http_client.FOUND,
+        http_client.SEE_OTHER)
 
     def handleHeader(self, key, value):
         key = key.lower()

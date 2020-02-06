@@ -17,9 +17,8 @@ __all__ = [
     'TokenException',
     ]
 
-import httplib
-
 from lazr.restful.declarations import error_status
+from six.moves import http_client
 from zope.interface import (
     Attribute,
     Interface,
@@ -268,7 +267,7 @@ class IOAuthSignedRequest(Interface):
 # so they may be raised but will not cause an OOPS to be generated.  The
 # client will see them as an UNAUTHORIZED error.
 
-@error_status(httplib.UNAUTHORIZED)
+@error_status(http_client.UNAUTHORIZED)
 class _TokenException(Exception):
     """Base class for token exceptions."""
 

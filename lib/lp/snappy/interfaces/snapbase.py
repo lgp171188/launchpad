@@ -13,8 +13,6 @@ __all__ = [
     "NoSuchSnapBase",
     ]
 
-import httplib
-
 from lazr.restful.declarations import (
     call_with,
     collection_default_content,
@@ -32,6 +30,7 @@ from lazr.restful.declarations import (
     REQUEST_USER,
     )
 from lazr.restful.fields import Reference
+from six.moves import http_client
 from zope.component import getUtility
 from zope.interface import Interface
 from zope.schema import (
@@ -58,7 +57,7 @@ class NoSuchSnapBase(NameLookupFailed):
     _message_prefix = "No such base"
 
 
-@error_status(httplib.BAD_REQUEST)
+@error_status(http_client.BAD_REQUEST)
 class CannotDeleteSnapBase(Exception):
     """The base cannot be deleted at this time."""
 

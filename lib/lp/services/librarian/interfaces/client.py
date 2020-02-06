@@ -13,10 +13,10 @@ __all__ = [
     'UploadFailed',
     ]
 
-import httplib
 import signal
 
 from lazr.restful.declarations import error_status
+from six.moves import http_client
 from zope.interface import Interface
 
 
@@ -36,7 +36,7 @@ class DownloadFailed(LibrarianFailure):
     pass
 
 
-@error_status(httplib.REQUEST_TIMEOUT)
+@error_status(http_client.REQUEST_TIMEOUT)
 class LibrarianServerError(Exception):
     """An error indicating that the Librarian server is not responding."""
 

@@ -14,8 +14,6 @@ __all__ = [
     'ISpecificationView',
     ]
 
-import httplib
-
 from lazr.restful.declarations import (
     call_with,
     collection_default_content,
@@ -37,6 +35,7 @@ from lazr.restful.fields import (
     ReferenceChoice,
     )
 from lazr.restful.interface import copy_field
+from six.moves import http_client
 from zope.component import getUtility
 from zope.interface import (
     Attribute,
@@ -94,7 +93,7 @@ from lp.services.webapp import canonical_url
 from lp.services.webapp.escaping import structured
 
 
-@error_status(httplib.BAD_REQUEST)
+@error_status(http_client.BAD_REQUEST)
 class GoalProposeError(Exception):
     """Invalid series goal for this specification."""
 

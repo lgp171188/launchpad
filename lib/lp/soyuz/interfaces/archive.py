@@ -54,7 +54,6 @@ __all__ = [
     'validate_external_dependencies',
     ]
 
-import httplib
 import re
 from urlparse import urlparse
 
@@ -81,6 +80,7 @@ from lazr.restful.fields import (
     CollectionField,
     Reference,
     )
+from six.moves import http_client
 from zope.interface import (
     Attribute,
     Interface,
@@ -123,7 +123,7 @@ from lp.soyuz.interfaces.component import IComponent
 NAMED_AUTH_TOKEN_FEATURE_FLAG = u"soyuz.named_auth_token.allow_new"
 
 
-@error_status(httplib.BAD_REQUEST)
+@error_status(http_client.BAD_REQUEST)
 class ArchiveDependencyError(Exception):
     """Raised when an `IArchiveDependency` does not fit the context archive.
 
@@ -137,12 +137,12 @@ class ArchiveDependencyError(Exception):
 
 # Exceptions used in the webservice that need to be in this file to get
 # picked up therein.
-@error_status(httplib.BAD_REQUEST)
+@error_status(http_client.BAD_REQUEST)
 class CannotCopy(Exception):
     """Exception raised when a copy cannot be performed."""
 
 
-@error_status(httplib.BAD_REQUEST)
+@error_status(http_client.BAD_REQUEST)
 class CannotSwitchPrivacy(Exception):
     """Raised when switching the privacy of an archive that has
     publishing records."""
@@ -153,17 +153,17 @@ class PocketNotFound(NameLookupFailed):
     _message_prefix = "No such pocket"
 
 
-@error_status(httplib.BAD_REQUEST)
+@error_status(http_client.BAD_REQUEST)
 class AlreadySubscribed(Exception):
     """Raised when creating a subscription for a subscribed person."""
 
 
-@error_status(httplib.BAD_REQUEST)
+@error_status(http_client.BAD_REQUEST)
 class ArchiveNotPrivate(Exception):
     """Raised when creating an archive subscription for a public archive."""
 
 
-@error_status(httplib.BAD_REQUEST)
+@error_status(http_client.BAD_REQUEST)
 class NoTokensForTeams(Exception):
     """Raised when creating a token for a team, rather than a person."""
 
@@ -173,7 +173,7 @@ class ComponentNotFound(NameLookupFailed):
     _message_prefix = 'No such component'
 
 
-@error_status(httplib.BAD_REQUEST)
+@error_status(http_client.BAD_REQUEST)
 class InvalidComponent(Exception):
     """Invalid component name."""
 
@@ -193,17 +193,17 @@ class NoSuchPPA(NameLookupFailed):
     _message_prefix = "No such ppa"
 
 
-@error_status(httplib.BAD_REQUEST)
+@error_status(http_client.BAD_REQUEST)
 class VersionRequiresName(Exception):
     """Raised on some queries when version is specified but name is not."""
 
 
-@error_status(httplib.BAD_REQUEST)
+@error_status(http_client.BAD_REQUEST)
 class ArchiveAlreadyDeleted(Exception):
     """Archive already deleted."""
 
 
-@error_status(httplib.FORBIDDEN)
+@error_status(http_client.FORBIDDEN)
 class CannotUploadToArchive(Exception):
     """A reason for not being able to upload to an archive."""
 
@@ -220,7 +220,7 @@ class InvalidPocketForPartnerArchive(CannotUploadToArchive):
     _fmt = "Partner uploads must be for the RELEASE or PROPOSED pocket."
 
 
-@error_status(httplib.FORBIDDEN)
+@error_status(http_client.FORBIDDEN)
 class CannotUploadToPocket(Exception):
     """Returned when a pocket is closed for uploads."""
 
@@ -230,7 +230,7 @@ class CannotUploadToPocket(Exception):
             "'%s' state." % (pocket.name, distroseries.status.name))
 
 
-@error_status(httplib.FORBIDDEN)
+@error_status(http_client.FORBIDDEN)
 class RedirectedPocket(Exception):
     """Returned for a pocket that would normally be redirected to another.
 
@@ -301,7 +301,7 @@ class CannotUploadToSeries(CannotUploadToArchive):
             distroseries=distroseries.name)
 
 
-@error_status(httplib.BAD_REQUEST)
+@error_status(http_client.BAD_REQUEST)
 class InvalidExternalDependencies(Exception):
     """Tried to set external dependencies to an invalid value."""
 
@@ -311,7 +311,7 @@ class InvalidExternalDependencies(Exception):
         self.errors = errors
 
 
-@error_status(httplib.FORBIDDEN)
+@error_status(http_client.FORBIDDEN)
 class CannotModifyArchiveProcessor(Exception):
     """Tried to enable or disable a restricted processor on an archive."""
 
@@ -324,13 +324,13 @@ class CannotModifyArchiveProcessor(Exception):
             self._fmt % {'processor': processor.name})
 
 
-@error_status(httplib.CONFLICT)
+@error_status(http_client.CONFLICT)
 class DuplicateTokenName(Exception):
     """Raised when creating a named token and an active token for this archive
      with this name already exists."""
 
 
-@error_status(httplib.UNAUTHORIZED)
+@error_status(http_client.UNAUTHORIZED)
 class NamedAuthTokenFeatureDisabled(Unauthorized):
     """Only certain users can create named authorization tokens."""
 

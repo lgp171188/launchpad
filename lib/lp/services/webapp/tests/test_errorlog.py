@@ -5,7 +5,6 @@
 
 __metaclass__ = type
 
-import httplib
 import sys
 from textwrap import dedent
 import traceback
@@ -15,6 +14,7 @@ from lazr.batchnavigator.interfaces import InvalidBatchSizeError
 from lazr.restful.declarations import error_status
 import oops_amqp
 import pytz
+from six.moves import http_client
 import testtools
 from timeline.timeline import Timeline
 from zope.interface import directlyProvides
@@ -257,7 +257,7 @@ class TestErrorReportingUtility(TestCaseWithFactory):
 
         # Exceptions with a error_status in the 500 range result
         # in OOPSes.
-        @error_status(httplib.INTERNAL_SERVER_ERROR)
+        @error_status(http_client.INTERNAL_SERVER_ERROR)
         class InternalServerError(Exception):
             pass
         try:
@@ -268,7 +268,7 @@ class TestErrorReportingUtility(TestCaseWithFactory):
 
         # Exceptions with any other error_status do not result
         # in OOPSes.
-        @error_status(httplib.BAD_REQUEST)
+        @error_status(http_client.BAD_REQUEST)
         class BadDataError(Exception):
             pass
         try:
