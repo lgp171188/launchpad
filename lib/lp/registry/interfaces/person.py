@@ -38,8 +38,6 @@ __all__ = [
     'validate_membership_policy',
     ]
 
-import httplib
-
 from lazr.enum import (
     DBEnumeratedType,
     DBItem,
@@ -70,6 +68,7 @@ from lazr.restful.fields import (
     Reference,
     )
 from lazr.restful.interface import copy_field
+from six.moves import http_client
 from zope.component import getUtility
 from zope.formlib.form import NoInputData
 from zope.interface import (
@@ -2670,12 +2669,12 @@ class ICanonicalSSOAPI(Interface):
         """Get the details of an LP person based on an OpenID identifier."""
 
 
-@error_status(httplib.FORBIDDEN)
+@error_status(http_client.FORBIDDEN)
 class ImmutableVisibilityError(Exception):
     """A change in team membership visibility is not allowed."""
 
 
-@error_status(httplib.BAD_REQUEST)
+@error_status(http_client.BAD_REQUEST)
 class NoAccountError(Exception):
     """The person has no account."""
 

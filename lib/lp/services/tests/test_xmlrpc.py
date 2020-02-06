@@ -5,7 +5,7 @@
 
 __metaclass__ = type
 
-import httplib
+from six.moves import http_client
 
 from lp.services.xmlrpc import Transport
 from lp.testing import TestCase
@@ -19,7 +19,7 @@ class TestTransport(TestCase):
 
     def test_default_initialization(self):
         transport = Transport()
-        conn = httplib.HTTPConnection('localhost')
+        conn = http_client.HTTPConnection('localhost')
         self.assertEqual(conn.timeout, transport.timeout)
 
     def test_custom_initialization(self):

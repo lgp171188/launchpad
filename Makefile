@@ -245,7 +245,6 @@ $(PY): download-cache constraints.txt setup.py
 	rm -rf env
 	mkdir -p env
 	(echo '[easy_install]'; \
-	 echo "allow_hosts = ''"; \
 	 echo 'find_links = file://$(WD)/download-cache/dist/') \
 		>env/.pydistutils.cfg
 	$(VIRTUALENV) \
@@ -254,11 +253,11 @@ $(PY): download-cache constraints.txt setup.py
 		env
 	ln -sfn env/bin bin
 	$(SHHH) $(PIP) install $(PIP_INSTALL_ARGS) \
-		-r pip-requirements.txt
+		-r setup-requirements.txt
 	$(SHHH) LPCONFIG=$(LPCONFIG) $(PIP) \
 		--cache-dir=$(WD)/download-cache/ \
 		install $(PIP_INSTALL_ARGS) \
-		-c pip-requirements.txt -c constraints.txt -e . \
+		-c setup-requirements.txt -c constraints.txt -e . \
 		|| { code=$$?; rm -f $@; exit $$code; }
 	touch $@
 

@@ -9,9 +9,8 @@ __all__ = [
     'GitLab',
     ]
 
-import httplib
-
 import pytz
+from six.moves import http_client
 from six.moves.urllib.parse import (
     quote,
     quote_plus,
@@ -160,7 +159,8 @@ class GitLab(ExternalBugTracker):
                 response = self._getPage(page, last_accessed=last_accessed)
             except BugTrackerConnectError as e:
                 if (e.error.response is not None and
-                        e.error.response.status_code == httplib.NOT_MODIFIED):
+                    e.error.response.status_code ==
+                        http_client.NOT_MODIFIED):
                     return
                 else:
                     raise

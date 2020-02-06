@@ -11,9 +11,8 @@ __all__ = [
     'PackageDiffAlreadyRequested',
     ]
 
-import httplib
-
 from lazr.restful.declarations import error_status
+from six.moves import http_client
 from zope.interface import (
     Attribute,
     Interface,
@@ -29,7 +28,7 @@ from lp.services.librarian.interfaces import ILibraryFileAlias
 from lp.soyuz.enums import PackageDiffStatus
 
 
-@error_status(httplib.BAD_REQUEST)
+@error_status(http_client.BAD_REQUEST)
 class PackageDiffRequestException(Exception):
     """Base class for package diff request errors."""
 

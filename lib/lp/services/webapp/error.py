@@ -13,10 +13,10 @@ __all__ = [
     ]
 
 
-import httplib
 import sys
 import traceback
 
+from six.moves import http_client
 from zope.browser.interfaces import ISystemErrorView
 from zope.browserpage import ViewPageTemplateFile
 from zope.component import getUtility
@@ -45,7 +45,7 @@ class SystemErrorView(LaunchpadView):
         'templates/oops-veryplain.pt')
 
     # Override this in subclasses.  A value of None means "don't set this"
-    response_code = httplib.INTERNAL_SERVER_ERROR
+    response_code = http_client.INTERNAL_SERVER_ERROR
 
     show_tracebacks = False
     debugging = False
@@ -184,7 +184,7 @@ class NotFoundView(SystemErrorView):
 
     page_title = 'Error: Page not found'
 
-    response_code = httplib.NOT_FOUND
+    response_code = http_client.NOT_FOUND
 
     def __call__(self):
         return self.index()
@@ -215,14 +215,14 @@ class GoneView(NotFoundView):
 
     page_title = 'Error: Page gone'
 
-    response_code = httplib.GONE
+    response_code = http_client.GONE
 
 
 class RequestExpiredView(SystemErrorView):
 
     page_title = 'Error: Timeout'
 
-    response_code = httplib.SERVICE_UNAVAILABLE
+    response_code = http_client.SERVICE_UNAVAILABLE
 
     def __init__(self, context, request):
         SystemErrorView.__init__(self, context, request)
@@ -237,7 +237,7 @@ class InvalidBatchSizeView(SystemErrorView):
 
     page_title = "Error: Invalid Batch Size"
 
-    response_code = httplib.BAD_REQUEST
+    response_code = http_client.BAD_REQUEST
 
     def isSystemError(self):
         """We don't need to log these errors in the SiteLog."""
@@ -255,7 +255,7 @@ class TranslationUnavailableView(SystemErrorView):
 
     page_title = 'Error: Translation page is not available'
 
-    response_code = httplib.SERVICE_UNAVAILABLE
+    response_code = http_client.SERVICE_UNAVAILABLE
 
     def __call__(self):
         return self.index()
@@ -264,12 +264,12 @@ class TranslationUnavailableView(SystemErrorView):
 class NoReferrerErrorView(SystemErrorView):
     """View rendered when a POST request does not include a REFERER header."""
 
-    response_code = httplib.FORBIDDEN
+    response_code = http_client.FORBIDDEN
 
 
 class OpenIdDiscoveryFailureView(SystemErrorView):
 
-    response_code = httplib.SERVICE_UNAVAILABLE
+    response_code = http_client.SERVICE_UNAVAILABLE
 
     def isSystemError(self):
         """We don't need to log these errors in the SiteLog."""
@@ -278,7 +278,7 @@ class OpenIdDiscoveryFailureView(SystemErrorView):
 
 class DisconnectionErrorView(SystemErrorView):
 
-    response_code = httplib.SERVICE_UNAVAILABLE
+    response_code = http_client.SERVICE_UNAVAILABLE
     reason = u'our database being temporarily offline'
 
 

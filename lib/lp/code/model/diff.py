@@ -10,6 +10,10 @@ __all__ = [
     'PreviewDiff',
     ]
 
+try:
+    from contextlib import ExitStack
+except ImportError:
+    from contextlib2 import ExitStack
 from cStringIO import StringIO
 from operator import attrgetter
 import sys
@@ -23,7 +27,6 @@ from breezy.patches import (
     Patch,
     )
 from breezy.plugins.difftacular.generate_diff import diff_ignore_branches
-from contextlib2 import ExitStack
 from lazr.delegates import delegate_to
 import simplejson
 from sqlobject import (

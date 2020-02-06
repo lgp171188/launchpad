@@ -1,4 +1,4 @@
-<!-- Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+<!-- Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
      GNU Affero General Public License version 3 (see the file LICENSE).
 -->
 
@@ -151,6 +151,7 @@
                 displayarchs
                 displayversion
                 isPPA
+                logs
                 package_copy_job
                 package_copy_job_id
                 package_name
@@ -181,6 +182,12 @@
                 overrideSource
                 overrideBinaries"
             set_attributes="status distroseries pocket changesfile archive"/>
+    </class>
+    <class
+        class="lp.soyuz.model.queue.PackageUploadLog">
+        <require
+            permission="launchpad.View"
+            interface="lp.soyuz.interfaces.queue.IPackageUploadLog"/>
     </class>
     <class
         class="lp.soyuz.model.queue.PackageUploadSource">

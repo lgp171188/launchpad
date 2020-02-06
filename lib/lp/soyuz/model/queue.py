@@ -1,18 +1,22 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
 __all__ = [
-    'PackageUploadQueue',
     'PackageUpload',
     'PackageUploadBuild',
-    'PackageUploadSource',
     'PackageUploadCustom',
+    'PackageUploadLog',
+    'PackageUploadQueue',
     'PackageUploadSet',
+    'PackageUploadSource',
     ]
 
+from collections import defaultdict
 from itertools import chain
+from operator import attrgetter
 
+import pytz
 from sqlobject import (
     ForeignKey,
     SQLMultipleJoin,
@@ -29,6 +33,7 @@ from storm.locals import (
     SQL,
     Unicode,
     )
+from storm.properties import DateTime
 from storm.store import (
     EmptyResultSet,
     Store,
@@ -39,6 +44,7 @@ from zope.interface import implementer
 from lp.app.errors import NotFoundError
 from lp.archiveuploader.tagfiles import parse_tagfile_content
 from lp.registry.interfaces.gpg import IGPGKeySet
+from lp.registry.interfaces.person import IPersonSet
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.registry.model.sourcepackagename import SourcePackageName
 from lp.services.auditor.client import AuditorClient
@@ -46,10 +52,16 @@ from lp.services.database.bulk import (
     load_referencing,
     load_related,
     )
-from lp.services.database.constants import UTC_NOW
+from lp.services.database.constants import (
+    DEFAULT,
+    UTC_NOW,
+    )
 from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.decoratedresultset import DecoratedResultSet
-from lp.services.database.enumcol import EnumCol
+from lp.services.database.enumcol import (
+    DBEnum,
+    EnumCol,
+    )
 from lp.services.database.interfaces import (
     IMasterStore,
     IStore,
@@ -58,6 +70,7 @@ from lp.services.database.sqlbase import (
     SQLBase,
     sqlvalues,
     )
+from lp.services.database.stormbase import StormBase
 from lp.services.database.stormexpr import (
     Array,
     ArrayContains,
@@ -97,6 +110,7 @@ from lp.soyuz.interfaces.queue import (
     IPackageUpload,
     IPackageUploadBuild,
     IPackageUploadCustom,
+    IPackageUploadLog,
     IPackageUploadQueue,
     IPackageUploadSet,
     IPackageUploadSource,
@@ -203,6 +217,23 @@ class PackageUpload(SQLBase):
         if self.package_copy_job:
             self.addSearchableNames([self.package_copy_job.package_name])
             self.addSearchableVersions([self.package_copy_job.package_version])
+
+    @cachedproperty
+    def logs(self):
+        logs = Store.of(self).find(
+            PackageUploadLog,
+            PackageUploadLog.package_upload == self)
+        return list(logs.order_by(Desc('date_created')))
+
+    def _addLog(self, reviewer, new_status, comment=None):
+        del get_property_cache(self).logs  # clean cache
+        return Store.of(self).add(PackageUploadLog(
+            package_upload=self,
+            reviewer=reviewer,
+            old_status=self.status,
+            new_status=new_status,
+            comment=comment
+        ))
 
     @cachedproperty
     def sources(self):
@@ -571,6 +602,10 @@ class PackageUpload(SQLBase):
 
     def acceptFromQueue(self, user=None):
         """See `IPackageUpload`."""
+        # XXX: Only tests are not passing user here. We should adjust the
+        # tests and always create the log entries after
+        if user is not None:
+            self._addLog(user, PackageUploadStatus.ACCEPTED, None)
         if self.package_copy_job is None:
             self._acceptNonSyncFromQueue()
         else:
@@ -581,6 +616,7 @@ class PackageUpload(SQLBase):
 
     def rejectFromQueue(self, user, comment=None):
         """See `IPackageUpload`."""
+        self._addLog(user, PackageUploadStatus.REJECTED, comment)
         self.setRejected()
         if self.package_copy_job is not None:
             # Circular imports :(
@@ -1153,6 +1189,45 @@ def get_properties_for_binary(bpr):
         }
 
 
+@implementer(IPackageUploadLog)
+class PackageUploadLog(StormBase):
+    """Tracking of status changes for a given package upload"""
+
+    __storm_table__ = "PackageUploadLog"
+
+    id = Int(primary=True)
+
+    package_upload_id = Int(name='package_upload')
+    package_upload = Reference(package_upload_id, PackageUpload.id)
+
+    date_created = DateTime(tzinfo=pytz.UTC, allow_none=False,
+                            default=UTC_NOW)
+
+    reviewer_id = Int(name='reviewer', allow_none=False)
+    reviewer = Reference(reviewer_id, 'Person.id')
+
+    old_status = DBEnum(enum=PackageUploadStatus, allow_none=False)
+
+    new_status = DBEnum(enum=PackageUploadStatus, allow_none=False)
+
+    comment = Unicode(allow_none=True)
+
+    def __init__(self, package_upload, reviewer, old_status, new_status,
+                 comment=None, date_created=DEFAULT):
+        self.package_upload = package_upload
+        self.reviewer = reviewer
+        self.old_status = old_status
+        self.new_status = new_status
+        self.comment = comment
+        self.date_created = date_created
+
+    def __repr__(self):
+        return (
+            "<{self.__class__.__name__} ~{self.reviewer.name} "
+            "changed {self.package_upload} to {self.new_status} "
+            "on {self.date_created}>").format(self=self)
+
+
 @implementer(IPackageUploadBuild)
 class PackageUploadBuild(SQLBase):
     """A Queue item's related builds."""
@@ -1528,8 +1603,10 @@ class PackageUploadSet:
                 PackageUploadBuild, rows, ["packageuploadID"])
             pucs = load_referencing(
                 PackageUploadCustom, rows, ["packageuploadID"])
+            logs = load_referencing(
+                PackageUploadLog, rows, ["package_upload_id"])
 
-            prefill_packageupload_caches(rows, puses, pubs, pucs)
+            prefill_packageupload_caches(rows, puses, pubs, pucs, logs)
 
         return DecoratedResultSet(query, pre_iter_hook=preload_hook)
 
@@ -1550,18 +1627,32 @@ class PackageUploadSet:
             PackageUpload.package_copy_job_id.is_in(pcj_ids))
 
 
-def prefill_packageupload_caches(uploads, puses, pubs, pucs):
+def prefill_packageupload_caches(uploads, puses, pubs, pucs, logs):
     # Circular imports.
     from lp.soyuz.model.archive import Archive
     from lp.soyuz.model.binarypackagebuild import BinaryPackageBuild
     from lp.soyuz.model.publishing import SourcePackagePublishingHistory
     from lp.soyuz.model.sourcepackagerelease import SourcePackageRelease
 
+    logs_per_pu = defaultdict(list)
+    reviewer_ids = set()
+    for log in logs:
+        reviewer_ids.add(log.reviewer_id)
+        logs_per_pu[log.package_upload_id].append(log)
+
+    # Preload reviewers of the logs.
+    # We are not using `need_icon` here because reviewers are persons,
+    # and icons are only available for teams.
+    list(getUtility(IPersonSet).getPrecachedPersonsFromIDs(
+        reviewer_ids, need_validity=True))
+
     for pu in uploads:
         cache = get_property_cache(pu)
         cache.sources = []
         cache.builds = []
         cache.customfiles = []
+        cache.logs = sorted(
+            logs_per_pu[pu.id], key=attrgetter("date_created"), reverse=True)
 
     for pus in puses:
         get_property_cache(pus.packageupload).sources.append(pus)

@@ -12,11 +12,14 @@ from doctest import (
     ELLIPSIS,
     NORMALIZE_WHITESPACE,
     )
+try:
+    from importlib import resources
+except ImportError:
+    import importlib_resources as resources
 import os
 import unittest
 
 from fixtures import TempDir
-import importlib_resources
 from lazr.config import ConfigSchema
 from lazr.config.interfaces import ConfigErrors
 import scandir
@@ -30,7 +33,7 @@ from lp.services.config.fixture import ConfigUseFixture
 EXCLUDED_CONFIGS = ['lpnet-template']
 
 # Calculate some landmark paths.
-with importlib_resources.path('zope.app.server', 'schema.xml') as schema_file:
+with resources.path('zope.app.server', 'schema.xml') as schema_file:
     schema = ZConfig.loadSchema(str(schema_file))
 
 here = os.path.dirname(lp.services.config.__file__)

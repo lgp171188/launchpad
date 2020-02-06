@@ -23,7 +23,6 @@ __all__ = [
     'valid_keyid',
     ]
 
-import httplib
 import os.path
 import re
 
@@ -32,6 +31,7 @@ from lazr.enum import (
     DBItem,
     )
 from lazr.restful.declarations import error_status
+from six.moves import http_client
 from zope.interface import (
     Attribute,
     Interface,
@@ -139,7 +139,7 @@ class GPGKeyNotFoundError(Exception):
         super(GPGKeyNotFoundError, self).__init__(message)
 
 
-@error_status(httplib.INTERNAL_SERVER_ERROR)
+@error_status(http_client.INTERNAL_SERVER_ERROR)
 class GPGKeyTemporarilyNotFoundError(GPGKeyNotFoundError):
     """The GPG key with the given fingerprint was not found on the keyserver.
 
@@ -154,7 +154,7 @@ class GPGKeyTemporarilyNotFoundError(GPGKeyNotFoundError):
             fingerprint, message)
 
 
-@error_status(httplib.NOT_FOUND)
+@error_status(http_client.NOT_FOUND)
 class GPGKeyDoesNotExistOnServer(GPGKeyNotFoundError):
     """The GPG key with the given fingerprint was not found on the keyserver.
 

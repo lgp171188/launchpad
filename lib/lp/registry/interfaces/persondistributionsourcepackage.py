@@ -16,10 +16,10 @@ from zope.interface import (
     )
 from zope.schema import TextLine
 
-from lp.registry.interfaces.person import IPerson
 from lp.registry.interfaces.distributionsourcepackage import (
     IDistributionSourcePackage,
     )
+from lp.registry.interfaces.person import IPerson
 
 
 class IPersonDistributionSourcePackage(Interface):

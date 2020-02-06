@@ -27,6 +27,8 @@ def text_lines_to_set(text):
 # __all__. The following dict maps from such modules to a list of attributes
 # that are allowed to be imported, whether or not they are in __all__.
 valid_imports_not_in_all = {
+    # Exported in Python 3, but missing and so not exported in Python 2.
+    'contextlib': set(['ExitStack']),
     'cookielib': set(['domain_match']),
     # Exported in Python 3, but missing and so not exported in Python 2.
     'json.decoder': set(['JSONDecodeError']),

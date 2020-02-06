@@ -22,8 +22,6 @@ __all__ = [
     'ValidWebhookEventTypeVocabulary',
     ]
 
-import httplib
-
 from lazr.lifecycle.snapshot import doNotSnapshot
 from lazr.restful.declarations import (
     call_with,
@@ -42,6 +40,7 @@ from lazr.restful.fields import (
     Reference,
     )
 from lazr.restful.interface import copy_field
+from six.moves import http_client
 from zope.interface import (
     Attribute,
     Interface,
@@ -81,7 +80,7 @@ WEBHOOK_EVENT_TYPES = {
     }
 
 
-@error_status(httplib.UNAUTHORIZED)
+@error_status(http_client.UNAUTHORIZED)
 class WebhookFeatureDisabled(Exception):
     """Only certain users can create new webhooks."""
 

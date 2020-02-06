@@ -40,8 +40,6 @@ __all__ = [
     'ParameterError',
     ]
 
-import httplib
-
 from lazr.enum import (
     DBEnumeratedType,
     DBItem,
@@ -64,6 +62,7 @@ from lazr.restful.fields import (
     Reference,
     )
 from lazr.restful.interface import copy_field
+from six.moves import http_client
 from zope.component import getUtility
 from zope.interface import (
     Attribute,
@@ -1690,11 +1689,11 @@ class IHWDBApplication(ILaunchpadApplication):
         """
 
 
-@error_status(httplib.BAD_REQUEST)
+@error_status(http_client.BAD_REQUEST)
 class IllegalQuery(Exception):
     """Exception raised when trying to run an illegal submissions query."""
 
 
-@error_status(httplib.BAD_REQUEST)
+@error_status(http_client.BAD_REQUEST)
 class ParameterError(Exception):
     """Exception raised when a method parameter does not match a constrint."""

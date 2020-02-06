@@ -21,13 +21,15 @@ __all__ = [
     'UpdatePreviewDiffJob',
     ]
 
-from contextlib import contextmanager
+try:
+    from contextlib import ExitStack
+except ImportError:
+    from contextlib2 import ExitStack
 from datetime import (
     datetime,
     timedelta,
     )
 
-from contextlib2 import ExitStack
 from lazr.delegates import delegate_to
 from lazr.enum import (
     DBEnumeratedType,

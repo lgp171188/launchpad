@@ -14,10 +14,10 @@ __all__ = [
     ]
 
 import datetime
-import httplib
 from operator import itemgetter
 
 from lazr.restful.declarations import error_status
+from six.moves import http_client
 from sqlobject import (
     AND,
     BoolCol,
@@ -125,7 +125,7 @@ class HasMilestonesMixin:
     milestones = property(_get_milestones)
 
 
-@error_status(httplib.BAD_REQUEST)
+@error_status(http_client.BAD_REQUEST)
 class MultipleProductReleases(Exception):
     """Raised when a second ProductRelease is created for a milestone."""
 
@@ -133,7 +133,7 @@ class MultipleProductReleases(Exception):
         super(MultipleProductReleases, self).__init__(msg)
 
 
-@error_status(httplib.BAD_REQUEST)
+@error_status(http_client.BAD_REQUEST)
 class InvalidTags(Exception):
     """Raised when tags are invalid."""
 

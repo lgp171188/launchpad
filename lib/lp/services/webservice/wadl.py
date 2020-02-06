@@ -5,10 +5,12 @@
 
 __metaclass__ = type
 
+try:
+    from importlib import resources
+except ImportError:
+    import importlib_resources as resources
 import subprocess
 import urlparse
-
-import importlib_resources
 
 from lp.services.webapp.interaction import (
     ANONYMOUS,
@@ -57,7 +59,7 @@ def generate_html(wadl_filename, suppress_stderr=True):
     # stderr (like we want to do during test runs), we reassign the subprocess
     # stderr file handle and then discard the output.  Otherwise we let the
     # subprocess inherit stderr.
-    with importlib_resources.path(
+    with resources.path(
             'lp.services.webservice', 'wadl-to-refhtml.xsl') as stylesheet:
         if suppress_stderr:
             stderr = subprocess.PIPE

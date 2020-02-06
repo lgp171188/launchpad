@@ -146,12 +146,12 @@ setup(
         'ampoule',
         'auditorclient',
         'auditorfixture',
-        'backports.lzma',
+        'backports.lzma; python_version < "3.3"',
         'beautifulsoup4[lxml]',
         'breezy',
         'bzr',
         'celery',
-        'contextlib2',
+        'contextlib2; python_version < "3.3"',
         'cssselect',
         'cssutils',
         'defusedxml',
@@ -162,10 +162,17 @@ setup(
         'feedparser',
         'feedvalidator',
         'fixtures',
+        # Required for gunicorn[gthread].  We depend on it explicitly
+        # because gunicorn declares its dependency in a way that produces
+        # (and thus may cache) different wheels depending on whether it was
+        # built on Python 2 or 3 while claiming that the wheels are
+        # universal.
+        # XXX cjwatson 2020-02-03: Remove this once we're on Python 3.
+        'futures; python_version < "3.2"',
         'geoip2',
-        'gunicorn[gthread]',
-        'importlib-resources',
-        'ipaddress',
+        'gunicorn',
+        'importlib-resources; python_version < "3.7"',
+        'ipaddress; python_version < "3.3"',
         'ipython',
         'jsautobuild',
         'launchpad-buildd',
