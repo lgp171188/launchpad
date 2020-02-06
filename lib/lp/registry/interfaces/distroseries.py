@@ -14,8 +14,6 @@ __all__ = [
     'IDistroSeriesSet',
     ]
 
-import httplib
-
 from lazr.lifecycle.snapshot import doNotSnapshot
 from lazr.restful.declarations import (
     call_with,
@@ -37,6 +35,7 @@ from lazr.restful.fields import (
     Reference,
     ReferenceChoice,
     )
+from six.moves import http_client
 from zope.component import getUtility
 from zope.interface import (
     Attribute,
@@ -1069,7 +1068,7 @@ class IDistroSeriesSet(Interface):
         """
 
 
-@error_status(httplib.BAD_REQUEST)
+@error_status(http_client.BAD_REQUEST)
 class DerivationError(Exception):
     """Raised when there is a problem deriving a distroseries."""
     _message_prefix = "Error deriving distro series"

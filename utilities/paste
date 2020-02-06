@@ -10,7 +10,6 @@ from cookielib import (
     Cookie,
     CookieJar,
     )
-import httplib
 from optparse import OptionParser
 import os
 import pwd

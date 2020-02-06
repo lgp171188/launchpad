@@ -8,9 +8,9 @@ __all__ = [
     ]
 
 from cStringIO import StringIO
-import httplib
 import xmlrpclib
 
+from six.moves import http_client
 from zope.security.management import (
     endInteraction,
     queryInteraction,
@@ -26,7 +26,7 @@ from lp.testing.pages import http
 class _FakeSocket(object):
     """Pretend to be a socket that has a makefile method.
 
-    This is used because it is what httplib.HTTPResponse expects.
+    This is used because it is what http_client.HTTPResponse expects.
     """
     def __init__(self, output):
         self._output = output
@@ -35,7 +35,7 @@ class _FakeSocket(object):
         return StringIO(self._output)
 
 
-class TestHTTPConnection(httplib.HTTPConnection):
+class TestHTTPConnection(http_client.HTTPConnection):
     """A HTTPConnection which talks to http() instead of a real server.
 
     Only the methods called by xmlrpclib are overridden.
@@ -71,7 +71,7 @@ class TestHTTPConnection(httplib.HTTPConnection):
     def getresponse(self, buffering=False):
         content = self._zope_response().getOutput()
         sock = _FakeSocket(content)
-        response = httplib.HTTPResponse(sock)
+        response = http_client.HTTPResponse(sock)
         response.begin()
         return response
 

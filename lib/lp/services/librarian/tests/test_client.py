@@ -3,7 +3,6 @@
 
 from cStringIO import StringIO
 import hashlib
-import httplib
 import os
 import re
 import textwrap
@@ -18,6 +17,7 @@ from fixtures import (
     EnvironmentVariable,
     TempDir,
     )
+from six.moves import http_client
 import transaction
 
 from lp.services.config import config
@@ -149,7 +149,7 @@ class LibrarianFileWrapperTestCase(TestCase):
     def test_unbounded_read_incorrect_length(self):
         file = self.makeFile(extra_content_length=1)
         self.assertEqual(b"abcdef", file.read())
-        self.assertRaises(httplib.IncompleteRead, file.read)
+        self.assertRaises(http_client.IncompleteRead, file.read)
 
     def test_bounded_read_correct_length(self):
         file = self.makeFile()
@@ -161,7 +161,7 @@ class LibrarianFileWrapperTestCase(TestCase):
         file = self.makeFile(extra_content_length=1)
         self.assertEqual(b"abcd", file.read(chunksize=4))
         self.assertEqual(b"ef", file.read(chunksize=4))
-        self.assertRaises(httplib.IncompleteRead, file.read, chunksize=4)
+        self.assertRaises(http_client.IncompleteRead, file.read, chunksize=4)
 
 
 class LibrarianClientTestCase(unittest.TestCase):
@@ -422,4 +422,4 @@ class TestWebServiceErrors(unittest.TestCase):
 
     def test_LibrarianServerError_timeout(self):
         error_view = create_webservice_error_view(LibrarianServerError())
-        self.assertEqual(httplib.REQUEST_TIMEOUT, error_view.status)
+        self.assertEqual(http_client.REQUEST_TIMEOUT, error_view.status)

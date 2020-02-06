@@ -14,7 +14,6 @@ __all__ = [
 
 
 import hashlib
-import httplib
 from select import select
 import socket
 from socket import (
@@ -33,6 +32,7 @@ from urlparse import (
 
 from lazr.restful.utils import get_current_browser_request
 import six
+from six.moves import http_client
 from storm.store import Store
 from zope.interface import implementer
 
@@ -316,7 +316,7 @@ class _File:
                 # from a non-chunked-transfer-coding resource.  Check this
                 # manually.
                 if not s and chunksize != 0 and self.length:
-                    raise httplib.IncompleteRead(s, expected=self.length)
+                    raise http_client.IncompleteRead(s, expected=self.length)
             return s
         finally:
             action.finish()
