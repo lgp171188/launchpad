@@ -149,6 +149,16 @@
            </tbody>
            <tbody tal:attributes="class string:${filelist_class}">
              <metal:filelist use-macro="template/macros/package-filelist"/>
+             <tr class="log-content" tal:repeat="log packageupload/logs">
+               <td colspan="2" style="border: 0"></td>
+               <td colspan="8" style="border: 0">
+                 <span tal:content="log/new_status"></span>
+                 <span tal:attributes="title log/date_created/fmt:datetime"
+                       tal:content="log/date_created/fmt:displaydate" />
+                 by <span tal:content="structure log/reviewer/fmt:link" />
+                 <p tal:condition="log/comment" tal:content="log/comment" />
+               </td>
+             </tr>
            </tbody>
          </tal:block>
        </tal:batch>

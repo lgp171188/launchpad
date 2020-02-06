@@ -512,6 +512,7 @@ values:
     >>> for row in filelist:
     ...     print(extract_text(row))
     pmount_1.0-1_all.deb (18 bytes) NEW 0.1-1 restricted admin extra
+    Accepted a moment ago by Sample Person
 
 'netapplet' has gone straight to the 'done' queue because it's a single
 source upload, and we can see its overridden values there:
@@ -546,6 +547,15 @@ Rejecting 'alsa-utils' source:
     Package             Version     Component Section Priority Sets Pocket  When
     netapplet...ddtp... -                                           Release 2006-...
     netapplet...dist... -                                           Release 2006-...
+
+    >>> upload_manager_browser.getControl(
+    ...     name="queue_state", index=0).displayValue=['Rejected']
+    >>> upload_manager_browser.getControl("Update").click()
+    >>> logs = find_tags_by_class(
+    ...     upload_manager_browser.contents, "log-content")
+    >>> for log in logs:
+    ...     print(extract_text(log))
+    Rejected...a moment ago...by Sample Person...Foo
 
 One rejection email is generated:
 
@@ -599,6 +609,21 @@ button will be disabled.
 
     >>> upload_manager_browser.getControl(name="Reject").disabled
     True
+
+Accepting alsa again, and check that the package upload log has more rows
+
+    >>> upload_manager_browser.getControl(name="QUEUE_ID").value = ['4']
+    >>> upload_manager_browser.getControl(name="Accept").click()
+    >>> upload_manager_browser.getControl(
+    ...     name="queue_state", index=0).displayValue=['Accepted']
+    >>> upload_manager_browser.getControl("Update").click()
+    >>> pkg_content = first_tag_by_class(upload_manager_browser.contents,
+    ...                                  "queue-4")
+    >>> logs = find_tags_by_class(str(pkg_content), "log-content")
+    >>> for log in logs:
+    ...     print(extract_text(log))
+    Accepted...a moment ago...by Sample Person...
+    Rejected...a moment ago...by Sample Person...Foo
 
 
 Clean up
