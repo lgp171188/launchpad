@@ -34,7 +34,7 @@ class IOCIProjectSeriesView(Interface):
 
     id = Int(title=_("ID"), required=True, readonly=True)
 
-    ociproject = Reference(
+    oci_project = Reference(
         IOCIProject,
         title=_("The OCI project that this series belongs to."),
         required=True, readonly=True)

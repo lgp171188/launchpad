@@ -3471,7 +3471,7 @@ class EditOCIProjectSeries(AuthorizationBase):
     def checkAuthenticated(self, user):
         """Maintainers, drivers, and admins can drive projects."""
         return (user.in_admin or
-                user.isDriver(self.obj.ociproject.pillar))
+                user.isDriver(self.obj.oci_project.pillar))
 
 
 class ViewOCIRecipe(AnonymousAuthorization):

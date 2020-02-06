@@ -13,7 +13,6 @@ __all__ = [
     'IOCIRecipeSet',
     'IOCIRecipeView',
     'OCIRecipeBuildAlreadyPending',
-    'OCIRecipeChannelAlreadyExists',
     'OCIRecipeNotOwner',
     ]
 
@@ -24,19 +23,20 @@ from lazr.restful.fields import (
     CollectionField,
     Reference,
     )
-from zope.interface import (
-    Attribute,
-    Interface,
-    )
+from zope.interface import Interface
 from zope.schema import (
     Bool,
     Datetime,
     Int,
     Text,
+    TextLine,
     )
 from zope.security.interfaces import Unauthorized
 
 from lp import _
+from lp.app.errors import NameLookupFailed
+from lp.app.validators.name import name_validator
+from lp.app.validators.path import path_within_repo
 from lp.code.interfaces.gitrepository import IGitRepository
 from lp.registry.interfaces.ociproject import IOCIProject
 from lp.registry.interfaces.role import IHasOwner
@@ -59,14 +59,14 @@ class OCIRecipeBuildAlreadyPending(Exception):
         super(OCIRecipeBuildAlreadyPending, self).__init__(
             "An identical build of this snap package is already pending.")
 
-
 @error_status(httplib.BAD_REQUEST)
-class OCIRecipeChannelAlreadyExists(Exception):
-    """A channel with that name already exists for this OCI recipe."""
+class DuplicateOCIRecipeName(Exception):
+    """An OCI Recipe already exists with the same name."""
 
-    def __init__(self):
-        super(OCIRecipeChannelAlreadyExists, self).__init__(
-            "A channel with that name already exists for this OCI recipe.")
+
+class NoSuchOCIRecipe(NameLookupFailed):
+    """The requested OCI Recipe does not exist."""
+    _message_prefix = "No such OCI Recipe exists for this OCI Project"
 
 
 class IOCIRecipeView(Interface):
@@ -108,17 +108,9 @@ class IOCIRecipeView(Interface):
         # Really IOCIRecipeBuild, patched in _schema_circular_imports.
         value_type=Reference(schema=Interface), readonly=True)
 
-    channels = Attribute("The channels that this OCI recipe can be build for.")
-
 
 class IOCIRecipeEdit(Interface):
     """`IOCIRecipe` methods that require launchpad.Edit permission."""
-
-    def addChannel(name, git_path, build_file):
-        """Add a channel to this recipe."""
-
-    def removeChannel(name):
-        """Remove a channel from this recipe."""
 
     def destroySelf():
         """Delete this OCI recipe, provided that it has no builds."""
@@ -130,26 +122,42 @@ class IOCIRecipeEditableAttributes(IHasOwner):
     These attributes need launchpad.View to see, and launchpad.Edit to change.
     """
 
+    name = TextLine(
+        title=_("The name of this recipe."),
+        constraint=name_validator,
+        required=True)
+
     owner = PersonChoice(
         title=_("Owner"), required=True, readonly=False,
         vocabulary="AllUserTeamsParticipationPlusSelf",
         description=_("The owner of this OCI recipe."))
 
-    ociproject = Reference(
+    oci_project = Reference(
         IOCIProject,
         title=_("The OCI project that this recipe is for."),
         required=True,
         readonly=True)
-    ociproject_default = Bool(
-        title=_("OCI Project default"), required=True, default=False,
-        description=_("True if this recipe is the default "
-                      "for its OCI project."))
+
+    official = Bool(
+        title=_("OCI Project Official"), required=True, default=False,
+        description=_("True if this recipe is official for its OCI project."))
 
     git_repository = Reference(
         IGitRepository,
         title=_("A Git repository with a branch containing an OCI recipe."))
 
     description = Text(title=_("A short description of this recipe."))
+
+    git_path = TextLine(
+        title=_("The branch within this recipe's Git "
+                "repository where its build files are maintained."),
+        required=True)
+
+    build_file = TextLine(
+        title=_("The relative path to the file within this recipe's "
+                "branch that defines how to build the recipe."),
+        constraint=path_within_repo,
+        required=True)
 
     require_virtualized = Bool(
         title=_("Require virtualized"), required=True, default=True)
@@ -166,6 +174,12 @@ class IOCIRecipe(IOCIRecipeView, IOCIRecipeEdit, IOCIRecipeEditableAttributes):
 class IOCIRecipeSet(Interface):
     """A utility to create and access OCI Recipes."""
 
-    def new(registrant, owner, ociproject, ociproject_default,
-            require_virtualized):
+    def new(name, registrant, owner, oci_project, description, official,
+            require_virtualized, git_repository, git_path, build_file):
         """Create an IOCIRecipe."""
+
+    def exists(oci_project, name):
+        """Check to see if an existing OCI Recipe exists."""
+
+    def getByName(oci_project, name):
+        """Return the appropriate `OCIRecipe` for the given objects."""

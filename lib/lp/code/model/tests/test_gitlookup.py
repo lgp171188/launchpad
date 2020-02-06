@@ -111,8 +111,8 @@ class TestGetByUniqueName(TestCaseWithFactory):
             repository.unique_name + "-nonexistent"))
 
     def test_ociproject(self):
-        ociproject = self.factory.makeOCIProject()
-        repository = self.factory.makeGitRepository(target=ociproject)
+        oci_project = self.factory.makeOCIProject()
+        repository = self.factory.makeGitRepository(target=oci_project)
         self.assertEqual(
             repository, self.lookup.getByUniqueName(repository.unique_name))
         self.assertIsNone(self.lookup.getByUniqueName(
@@ -168,7 +168,7 @@ class TestGetByPath(TestCaseWithFactory):
         self.assertEqual(
             (repository, ""), self.lookup.getByPath(repository.unique_name))
 
-    def test_ociproject_default(self):
+    def test_official(self):
         oci_project = self.factory.makeOCIProject()
         repository = self.factory.makeGitRepository(target=oci_project)
         with person_logged_in(repository.target.distribution.owner):

@@ -34,15 +34,15 @@ from zope.interface import implementer
 from lp.buildmaster.enums import BuildStatus
 from lp.buildmaster.interfaces.buildqueue import IBuildQueueSet
 from lp.oci.interfaces.ocirecipe import (
+    DuplicateOCIRecipeName,
     IOCIRecipe,
     IOCIRecipeSet,
+    NoSuchOCIRecipe,
     OCIRecipeBuildAlreadyPending,
-    OCIRecipeChannelAlreadyExists,
     OCIRecipeNotOwner,
     )
 from lp.oci.interfaces.ocirecipebuild import IOCIRecipeBuildSet
 from lp.oci.model.ocirecipebuild import OCIRecipeBuild
-from lp.oci.model.ocirecipechannel import OCIRecipeChannel
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.interfaces import (
     IMasterStore,
@@ -71,29 +71,37 @@ class OCIRecipe(Storm):
     owner_id = Int(name='owner', allow_none=False)
     owner = Reference(owner_id, 'Person.id')
 
-    ociproject_id = Int(name='ociproject', allow_none=False)
-    ociproject = Reference(ociproject_id, "OCIProject.id")
+    oci_project_id = Int(name='oci_project', allow_none=False)
+    oci_project = Reference(oci_project_id, "OCIProject.id")
 
-    ociproject_default = Bool(name="ociproject_default", default=False)
-
+    name = Unicode(name="name", allow_none=False)
     description = Unicode(name="description")
+
+    official = Bool(name="official", default=False)
 
     git_repository_id = Int(name="git_repository")
     git_repository = Reference(git_repository_id, "GitRepository.id")
+    git_path = Unicode(name="git_path", allow_none=False)
+    build_file = Unicode(name="build_file", allow_none=False)
 
     require_virtualized = Bool(name="require_virtualized", default=True)
 
     build_daily = Bool(name="build_daily", default=False)
 
-    def __init__(self, registrant, owner, ociproject, ociproject_default=False,
-                 require_virtualized=True, git_repository=None):
+    def __init__(self, name, registrant, owner, oci_project, description=None,
+                 official=False, require_virtualized=True, git_repository=None,
+                 git_path=None, build_file=None):
         super(OCIRecipe, self).__init__()
+        self.name = name
+        self.description = description
         self.registrant = registrant
         self.owner = owner
-        self.ociproject = ociproject
-        self.ociproject_default = ociproject_default
+        self.oci_project = oci_project
+        self.official = official
         self.require_virtualized = require_virtualized
         self.git_repository = git_repository
+        self.git_path = git_path
+        self.build_file = build_file
 
     def destroySelf(self):
         """See `IOCIRecipe`."""
@@ -101,7 +109,6 @@ class OCIRecipe(Storm):
         # are added
         store = IStore(OCIRecipe)
         store.find(OCIRecipeBuild, OCIRecipeBuild.recipe == self).remove()
-        store.find(OCIRecipeChannel, OCIRecipeChannel.recipe == self).remove()
         store.remove(self)
 
     def _checkRequestBuild(self, requester):
@@ -110,20 +117,19 @@ class OCIRecipe(Storm):
                 "%s cannot create OCI image builds owned by %s." %
                 (requester.displayname, self.owner.displayname))
 
-    def requestBuild(self, requester, channel, architecture):
+    def requestBuild(self, requester, architecture):
         self._checkRequestBuild(requester)
 
         pending = IStore(self).find(
             OCIRecipeBuild,
             OCIRecipeBuild.recipe == self.id,
-            OCIRecipeBuild.channel_name == channel.name,
             OCIRecipeBuild.processor == architecture.processor,
             OCIRecipeBuild.status == BuildStatus.NEEDSBUILD)
         if pending.any() is not None:
             raise OCIRecipeBuildAlreadyPending
 
         build = getUtility(IOCIRecipeBuildSet).new(
-            requester, self, channel.name, architecture.processor,
+            requester, self, architecture.processor,
             self.require_virtualized)
         build.queueBuild()
         notify(ObjectCreatedEvent(build, user=requester))
@@ -186,37 +192,6 @@ class OCIRecipe(Storm):
         order_by = Desc(OCIRecipeBuild.id)
         return self._getBuilds(filter_term, order_by)
 
-    @property
-    def channels(self):
-        """See `IOCIRecipe`."""
-        result = Store.of(self).find(
-            OCIRecipeChannel,
-            OCIRecipeChannel.recipe == self)
-        result.order_by(Desc(OCIRecipeChannel.name))
-        return result
-
-    def addChannel(self, name, git_path, build_file):
-        """See `IOCIRecipe`."""
-        existing = Store.of(self).find(
-            OCIRecipeChannel,
-            OCIRecipeChannel.recipe == self,
-            OCIRecipeChannel.name == name)
-        if existing.count():
-            raise OCIRecipeChannelAlreadyExists
-        store = IMasterStore(OCIRecipeBuild)
-        channel = OCIRecipeChannel(self, name, git_path, build_file)
-        store.add(channel)
-        return channel
-
-    def removeChannel(self, name):
-        """See `IOCIRecipe`."""
-        result = Store.of(self).find(
-            OCIRecipeChannel,
-            OCIRecipeChannel.recipe == self,
-            OCIRecipeChannel.name == name)
-        if not result.is_empty():
-            result.remove()
-
 
 class OCIRecipeArch(Storm):
     """Link table to back `OCIRecipe.processors`."""
@@ -238,8 +213,8 @@ class OCIRecipeArch(Storm):
 @implementer(IOCIRecipeSet)
 class OCIRecipeSet:
 
-    def new(self, registrant, owner, ociproject, ociproject_default,
-            require_virtualized, git_repository):
+    def new(self, name, description, registrant, owner, oci_project, official,
+            require_virtualized, git_repository, git_path, build_file):
         """See `IOCIRecipeSet`."""
         if not registrant.inTeam(owner):
             if owner.is_team:
@@ -251,10 +226,30 @@ class OCIRecipeSet:
                     "%s cannot create OCI images owned by %s." %
                     (registrant.displayname, owner.displayname))
 
+        if self.exists(owner, name):
+            raise DuplicateOCIRecipeName
+
         store = IMasterStore(OCIRecipe)
         oci_recipe = OCIRecipe(
-            registrant, owner, ociproject, ociproject_default,
-            require_virtualized, git_repository)
+            name, registrant, owner, oci_project, description, official,
+            require_virtualized, git_repository, git_path, build_file)
         store.add(oci_recipe)
 
+        return oci_recipe
+
+    def _getByName(self, oci_project, name):
+        return IStore(OCIRecipe).find(
+            OCIRecipe,
+            OCIRecipe.name == name,
+            OCIRecipe.oci_project == oci_project).one()
+
+    def exists(self, oci_project, name):
+        """See `IOCIRecipeSet`."""
+        return self._getByName(oci_project, name) is not None
+
+    def getByName(self, oci_project, name):
+        """See `IOCIRecipeSet`."""
+        oci_recipe = self._getByName(oci_project, name)
+        if oci_recipe is None:
+            raise NoSuchOCIRecipe(name)
         return oci_recipe

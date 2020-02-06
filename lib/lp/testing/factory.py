@@ -162,7 +162,6 @@ from lp.oci.model.ocirecipe import (
     OCIRecipe,
     OCIRecipeArch,
     )
-from lp.oci.model.ocirecipechannel import OCIRecipeChannel
 from lp.registry.enums import (
     BranchSharingPolicy,
     BugSharingPolicy,
@@ -4942,38 +4941,36 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             oci_project = self.makeOCIProject(**kwargs)
         return oci_project.newSeries(name, summary, registrant)
 
-    def makeOCIRecipe(self, registrant=None, owner=None, ociproject=None,
-                      ociproject_default=False, require_virtualized=True,
-                      git_repository=DEFAULT):
+    def makeOCIRecipe(self, name=None, registrant=None, owner=None,
+                      oci_project=None, description=None, official=False,
+                      require_virtualized=True, git_repository=DEFAULT,
+                      git_path=None, build_file=None):
         """Make a new OCIRecipe."""
+        if name is None:
+            name = self.getUniqueString(u"oci-recipe-name")
         if registrant is None:
             registrant = self.makePerson()
+        if description is None:
+            description = self.getUniqueString(u"oci-recipe-description")
         if owner is None:
             owner = self.makeTeam(members=[registrant])
-        if ociproject is None:
-            ociproject = self.makeOCIProject()
-        return OCIRecipe(
-            registrant=registrant,
-            owner=owner,
-            ociproject=ociproject,
-            ociproject_default=ociproject_default,
-            require_virtualized=require_virtualized,
-            git_repository=git_repository)
-
-    def makeOCIRecipeChannel(self, recipe=None, name=None, git_path=None,
-                             build_file=None):
-        """Make a new OCIRecipeChannel."""
-        if recipe is None:
-            recipe = self.makeOCIRecipe()
-        if name is None:
-            name = self.getUniqueString(
-                u"oci-recipe-channel-name-{}".format(recipe.id))
+        if oci_project is None:
+            oci_project = self.makeOCIProject()
         if git_path is None:
             git_path = self.getUniqueUnicode(u"refs/heads/path")
         if build_file is None:
             build_file = self.getUniqueUnicode(u"build_file_for")
-        oci_channel = OCIRecipeChannel(recipe, name, git_path, build_file)
-        return oci_channel
+        return OCIRecipe(
+            name=name,
+            registrant=registrant,
+            owner=owner,
+            oci_project=oci_project,
+            description=description,
+            official=official,
+            require_virtualized=require_virtualized,
+            git_repository=git_repository,
+            git_path=git_path,
+            build_file=build_file)
 
     def makeOCIRecipeArch(self, recipe=None, processor=None):
         """Make a new OCIRecipeArch."""
@@ -4983,19 +4980,16 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             processor = self.makeProcessor()
         return OCIRecipeArch(recipe, processor)
 
-    def makeOCIRecipeBuild(self, requester=None, recipe=None,
-                           channel_name=None, processor=None,
+    def makeOCIRecipeBuild(self, requester=None, recipe=None, processor=None,
                            virtualized=False, date_created=DEFAULT):
         """Make a new OCIRecipeBuild."""
         if requester is None:
             requester = self.makePerson()
-        if channel_name is None:
-            channel_name = self.getUniqueString(u"oci-recipe-channel-name")
         if processor is None:
             processor = self.makeProcessor()
 
         return getUtility(IOCIRecipeBuildSet).new(
-            requester, recipe, channel_name, processor, virtualized,
+            requester, recipe, processor, virtualized,
             date_created)
 
 

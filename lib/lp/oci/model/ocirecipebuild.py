@@ -49,19 +49,15 @@ class OCIRecipeBuild(PackageBuildMixin, Storm):
 
     id = Int(name='id', primary=True)
 
-    build_farm_job_id = Int(name='build_farm_job', allow_none=False)
-    build_farm_job = Reference(build_farm_job_id, 'BuildFarmJob.id')
-
     requester_id = Int(name='requester', allow_none=False)
     requester = Reference(requester_id, 'Person.id')
 
     recipe_id = Int(name='recipe', allow_none=False)
     recipe = Reference(recipe_id, 'OCIRecipe.id')
 
-    channel_name = Unicode(name="channel_name", allow_none=False)
-
     processor_id = Int(name='processor', allow_none=False)
     processor = Reference(processor_id, 'Processor.id')
+
     virtualized = Bool(name='virtualized')
 
     date_created = DateTime(
@@ -86,17 +82,19 @@ class OCIRecipeBuild(PackageBuildMixin, Storm):
 
     failure_count = Int(name='failure_count', allow_none=False)
 
-    def __init__(self, build_farm_job, requester, recipe, channel_name,
+    build_farm_job_id = Int(name='build_farm_job', allow_none=False)
+    build_farm_job = Reference(build_farm_job_id, 'BuildFarmJob.id')
+
+    def __init__(self, build_farm_job, requester, recipe,
                  processor, virtualized, date_created):
 
-        self.build_farm_job = build_farm_job
         self.requester = requester
         self.recipe = recipe
-        self.channel_name = channel_name
         self.processor = processor
         self.virtualized = virtualized
         self.date_created = date_created
         self.status = BuildStatus.NEEDSBUILD
+        self.build_farm_job = build_farm_job
 
     def queueBuild(self):
         """See `IPackageBuild`."""
@@ -108,14 +106,14 @@ class OCIRecipeBuild(PackageBuildMixin, Storm):
 class OCIRecipeBuildSet(SpecificBuildFarmJobSourceMixin):
     """See `IOCIRecipeBuildSet`."""
 
-    def new(self, requester, recipe, channel_name, processor, virtualized,
+    def new(self, requester, recipe, processor, virtualized,
             date_created=DEFAULT):
         """See `IOCIRecipeBuildSet`."""
         store = IMasterStore(OCIRecipeBuild)
         build_farm_job = getUtility(IBuildFarmJobSource).new(
             OCIRecipeBuild.job_type, BuildStatus.NEEDSBUILD, date_created)
         ocirecipebuild = OCIRecipeBuild(
-            build_farm_job, requester, recipe, channel_name, processor,
+            build_farm_job, requester, recipe, processor,
             virtualized, date_created)
         store.add(ocirecipebuild)
         return ocirecipebuild
