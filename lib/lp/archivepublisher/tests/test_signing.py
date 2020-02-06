@@ -1515,6 +1515,10 @@ class TestSigningUploadWithSigningService(TestSigningHelpers):
         self.useFixture(FeatureFixture({'lp.services.signing.enabled': True}))
         self.signing_service = SigningServiceResponseFactory()
 
+    def getSignedPath(self, loader_type, arch):
+        return os.path.join(self.getDistsPath(), "signed",
+            "%s-%s" % (loader_type, arch))
+
     def test_set_target_directory_with_distroseries(self):
         archive = self.factory.makeArchive()
         series_name = archive.distribution.series[1].name
@@ -1550,3 +1554,30 @@ class TestSigningUploadWithSigningService(TestSigningHelpers):
         upload.process(self.archive, self.path, self.suite)
 
         self.assertTrue(upload.autokey)
+
+        self.assertThat(self.getSignedPath("test", "amd64"), SignedMatches([
+            "1.0/SHA256SUMS",
+            "1.0/empty.efi", "1.0/empty.efi.signed", "1.0/control/uefi.crt",
+            "1.0/empty.ko", "1.0/empty.ko.sig", "1.0/control/kmod.x509",
+            "1.0/empty.opal", "1.0/empty.opal.sig", "1.0/control/opal.x509",
+            "1.0/empty.sipl", "1.0/empty.sipl.sig", "1.0/control/sipl.x509",
+            "1.0/empty.fit", "1.0/empty.fit.signed", "1.0/control/fit.crt",
+        ]))
+
+        # 21 calls: 4 (nonce/generate/nonce/sign) * 5 files
+        #           + 1 to get service-key
+        self.assertEqual(21, len(responses.calls))
+
+        api_calls = []
+        for call in responses.calls:
+            url = call.request.url
+            # Interested only in the /generate and /sign calls
+            if not url.endswith("/sign") and not url.endswith("/generate"):
+                continue
+            api_calls.append((call.request.method, url))
+
+        expected = [
+            ('POST', 'http://signing.launchpad.test:8000/generate'),
+            ('POST', 'http://signing.launchpad.test:8000/sign')
+            ] * 5
+        self.assertEquals(expected, api_calls)

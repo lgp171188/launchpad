@@ -24,6 +24,10 @@ from nacl.public import (
 
 
 class SigningService:
+    """Representation of lp-signing service REST interface
+
+    This class is a singleton (see __new__ method and _instance attribute).
+    """
     # XXX: Move it to configuration
     LP_SIGNING_ADDRESS = "http://signing.launchpad.test:8000"
 
@@ -33,6 +37,22 @@ class SigningService:
 
     ATTACHED = "ATTACHED"
     DETACHED = "DETACHED"
+
+    _instance = None
+
+    def __new__(cls, *args, **kwargs):
+        """Builder for this class to return a singleton instance.
+
+        At first, the will be no way to have multiple different instances of
+        lp-signing running (at least not in a way that launchpad should
+        be aware of). So, keeping this class as a singleton generates the
+        benefit of keeping cached across several points of the system the
+        @cachedproperties we have here (service_public_key, for example,
+        costs an HTTP request every time it needs to fill the cache).
+        """
+        if not isinstance(cls._instance, cls):
+            cls._instance = object.__new__(cls, *args, **kwargs)
+        return cls._instance
 
     def __init__(self):
         pass

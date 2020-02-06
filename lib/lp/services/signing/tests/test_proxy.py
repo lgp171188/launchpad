@@ -125,6 +125,11 @@ class SigningServiceProxyTest(TestCaseWithFactory):
         super(TestCaseWithFactory, self).setUp(*args, **kwargs)
         self.response_factory = SigningServiceResponseFactory()
 
+    def tearDown(self):
+        super(SigningServiceProxyTest, self).tearDown()
+        # clean singleton instance of signing service.
+        SigningService._instance = None
+
     def assertHeaderContains(self, request, headers):
         """Checks if the request's header contains the headers dictionary
         provided

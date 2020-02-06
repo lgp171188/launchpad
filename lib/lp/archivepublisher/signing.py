@@ -56,7 +56,7 @@ def should_use_signing_service(default_value=False,
     return value.lower().strip() not in ['false', '0', 'no', 'off']
 
 
-def forbidden_if_using_signing_service(method):
+class forbidden_if_using_signing_service:
     """Decorator to block access to the given method if we are using
     lp-signing service.
 
@@ -64,27 +64,32 @@ def forbidden_if_using_signing_service(method):
     to lp-signing service, and to make sure we early raise OOPSes in case
     something goes odd and calls a method that shouldn't be called.
     """
-    is_using_signing_service = should_use_signing_service()
 
-    def runner(*args, **kwargs):
-        if is_using_signing_service:
-            raise ForbiddenAttribute(
-                "%s is forbidden when using lp-signing service" % method)
-        return method(*args, **kwargs)
-    return runner
+    def __init__(self):
+        pass
+
+    def __call__(self, method, *args, **kwargs):
+        def runner(*args, **kwargs):
+            if should_use_signing_service():
+                raise ForbiddenAttribute(
+                    "%s is forbidden when using lp-signing service" % method)
+            return method(*args, **kwargs)
+        return runner
 
 
-def forbidden_if_not_using_signing_service(method):
-    """See @forbidden_if_using_signing_service above.
+class forbidden_if_not_using_signing_service:
+    """See @forbidden_if_using_signing_service() above.
     """
-    is_using_signing_service = should_use_signing_service()
+    def __init__(self):
+        pass
 
-    def runner(*args, **kwargs):
-        if is_using_signing_service:
-            raise ForbiddenAttribute(
-                "%s is forbidden when NOT using lp-signing service" % method)
-        return method(*args, **kwargs)
-    return runner
+    def __call__(self, method, *args, **kwargs):
+        def runner(*args, **kwargs):
+            if not should_use_signing_service():
+                raise ForbiddenAttribute(
+                    "%s is forbidden when using lp-signing service" % method)
+            return method(*args, **kwargs)
+        return runner
 
 
 class SigningUpload(CustomUpload):
@@ -163,7 +168,7 @@ class SigningUpload(CustomUpload):
             handler = self._setTargetDirectoryLocalKeys
         return handler(archive, tarfile_path, suite)
 
-    @forbidden_if_not_using_signing_service
+    @forbidden_if_not_using_signing_service()
     def _setTargetDirectorySigningService(self, archive, tarfile_path, suite):
         self.pubconf = getPubConfig(archive)
         self.archive = archive
@@ -182,7 +187,7 @@ class SigningUpload(CustomUpload):
         self.temproot = self.pubconf.temproot
         self.public_keys = set()
 
-    @forbidden_if_using_signing_service
+    @forbidden_if_using_signing_service()
     def _setTargetDirectoryLocalKeys(self, archive, tarfile_path, suite):
         self.archive = archive
         pubconf = getPubConfig(archive)
@@ -247,13 +252,29 @@ class SigningUpload(CustomUpload):
 
         self.public_keys = set()
 
-    @forbidden_if_using_signing_service
     def publishPublicKey(self, key):
         """Record this key as having been used in this upload."""
         self.public_keys.add(key)
 
-    @forbidden_if_using_signing_service
     def copyPublishedPublicKeys(self):
+        if self.should_use_signing_service:
+            return self._copyPublishedPublicKeysService()
+        else:
+            return self._copyPublishedPublicKeysLocal()
+
+    @forbidden_if_not_using_signing_service()
+    def _copyPublishedPublicKeysService(self):
+        """Copy out published keys into the custom upload."""
+        keydir = os.path.join(self.tmpdir, self.version, "control")
+        if not os.path.exists(keydir):
+            os.makedirs(keydir)
+        for filename, content in self.public_keys:
+            file_path = os.path.join(keydir, os.path.basename(filename))
+            with open(file_path, 'w') as fd:
+                fd.write(content)
+
+    @forbidden_if_using_signing_service()
+    def _copyPublishedPublicKeysLocal(self):
         """Copy out published keys into the custom upload."""
         keydir = os.path.join(self.tmpdir, self.version, "control")
         if not os.path.exists(keydir):
@@ -265,7 +286,7 @@ class SigningUpload(CustomUpload):
             else:
                 if self.logger is not None:
                     self.logger.warning(
-                        "%s: public key not world readable" % key)
+                    "%s: public key not world readable" % key)
 
     def setSigningOptions(self):
         """Find and extract raw-signing options from the tarball."""
@@ -289,7 +310,7 @@ class SigningUpload(CustomUpload):
         except ValueError:
             return None
 
-    @forbidden_if_using_signing_service
+    @forbidden_if_using_signing_service()
     def callLog(self, description, cmdl):
         status = subprocess.call(cmdl)
         if status != 0:
@@ -309,7 +330,7 @@ class SigningUpload(CustomUpload):
         for i in handler():
             yield i
 
-    @forbidden_if_not_using_signing_service
+    @forbidden_if_not_using_signing_service()
     def _findSigningHandlersFromSigningService(self):
         # Avoid circular import issue
         from lp.services.signing.model.signingkey import ArchiveSigningKey
@@ -335,11 +356,11 @@ class SigningUpload(CustomUpload):
                     continue
 
                 key = keys.get(key_type)
-                handler = partial(self.sign_using_key, key_type, key)
+                handler = partial(self.signUsingKey, key_type, key)
                 yield file_path, handler
 
-    @forbidden_if_not_using_signing_service
-    def sign_using_key(self, key_type, key, filename):
+    @forbidden_if_not_using_signing_service()
+    def signUsingKey(self, key_type, key, filename):
         # XXX: check why this is failing to import at top of the module
         from lp.services.signing.model.signingkey import ArchiveSigningKey
 
@@ -352,13 +373,24 @@ class SigningUpload(CustomUpload):
         with open(filename) as fd:
             content = fd.read()
 
-        signed = signing_key.sign(content)
+        signed_content = signing_key.sign(content)
 
-        with open('%s.sig' % filename, 'w') as fd:
-            fd.write(signed)
-        # self.publishPublicKey(signing_key.public_key)
+        if key_type in (SigningKeyType.UEFI, SigningKeyType.FIT):
+            file_sufix = ".signed"
+            public_key_sufix = ".crt"
+        else:
+            file_sufix = ".sig"
+            public_key_sufix = ".x509"
 
-    @forbidden_if_using_signing_service
+        signed_filename = filename + file_sufix
+        public_key_filename = key_type.name.lower() + public_key_sufix
+
+        with open(signed_filename, 'w') as fd:
+            fd.write(signed_content)
+
+        self.publishPublicKey((public_key_filename, signing_key.public_key))
+
+    @forbidden_if_using_signing_service()
     def _findSigningHandlersLocalKeys(self):
         """Find all the signable files in an extracted tarball."""
         for dirpath, dirnames, filenames in scandir.walk(self.tmpdir):
@@ -374,7 +406,7 @@ class SigningUpload(CustomUpload):
                 elif filename.endswith(".fit"):
                     yield (os.path.join(dirpath, filename), self.signFit)
 
-    @forbidden_if_using_signing_service
+    @forbidden_if_using_signing_service()
     def getKeys(self, which, generate, *keynames):
         """Validate and return the uefi key and cert for encryption."""
 
@@ -396,7 +428,7 @@ class SigningUpload(CustomUpload):
             return [None for k in keynames]
         return keynames
 
-    @forbidden_if_using_signing_service
+    @forbidden_if_using_signing_service()
     def generateKeyCommonName(self, owner, archive, suffix=''):
         # PPA <owner> <archive> <suffix>
         # truncate <owner> <archive> to ensure the overall form is shorter
@@ -406,7 +438,7 @@ class SigningUpload(CustomUpload):
         common_name = "PPA %s %s" % (owner, archive)
         return common_name[0:64 - len(suffix)] + suffix
 
-    @forbidden_if_using_signing_service
+    @forbidden_if_using_signing_service()
     def generateKeyCrtPair(self, key_type, key_filename, cert_filename):
         """Generate new Key/Crt key pairs."""
         directory = os.path.dirname(key_filename)
@@ -431,12 +463,12 @@ class SigningUpload(CustomUpload):
         if os.path.exists(cert_filename):
             os.chmod(cert_filename, 0o644)
 
-    @forbidden_if_using_signing_service
+    @forbidden_if_using_signing_service()
     def generateUefiKeys(self):
         """Generate new UEFI Keys for this archive."""
         self.generateKeyCrtPair("UEFI", self.uefi_key, self.uefi_cert)
 
-    @forbidden_if_using_signing_service
+    @forbidden_if_using_signing_service()
     def signUefi(self, image):
         """Attempt to sign an image."""
         remove_if_exists("%s.signed" % image)
@@ -448,7 +480,7 @@ class SigningUpload(CustomUpload):
         cmdl = ["sbsign", "--key", key, "--cert", cert, image]
         return self.callLog("UEFI signing", cmdl)
 
-    # @forbidden_if_using_signing_service
+    # @forbidden_if_using_signing_service()
     openssl_config_base = textwrap.dedent("""\
         [ req ]
         default_bits = 4096
@@ -467,10 +499,10 @@ class SigningUpload(CustomUpload):
         authorityKeyIdentifier=keyid
         """)
 
-    # @forbidden_if_using_signing_service
+    # @forbidden_if_using_signing_service()
     openssl_config_opal = "# OPAL OpenSSL config\n" + openssl_config_base
 
-    # @forbidden_if_using_signing_service
+    # @forbidden_if_using_signing_service()
     openssl_config_kmod = "# KMOD OpenSSL config\n" + openssl_config_base + \
         textwrap.dedent("""
         # codeSigning:  specifies that this key is used to sign code.
@@ -479,9 +511,10 @@ class SigningUpload(CustomUpload):
         extendedKeyUsage        = codeSigning,1.3.6.1.4.1.2312.16.1.2
         """)
 
+    # @forbidden_if_using_signing_service()
     openssl_config_sipl = "# SIPL OpenSSL config\n" + openssl_config_base
 
-    @forbidden_if_using_signing_service
+    @forbidden_if_using_signing_service()
     def generateOpensslConfig(self, key_type, genkey_tmpl):
         # Truncate name to 64 character maximum.
         common_name = self.generateKeyCommonName(
@@ -489,7 +522,7 @@ class SigningUpload(CustomUpload):
 
         return genkey_tmpl.format(common_name=common_name)
 
-    @forbidden_if_using_signing_service
+    @forbidden_if_using_signing_service()
     def generatePemX509Pair(self, key_type, genkey_text, pem_filename,
             x509_filename):
         """Generate new pem/x509 key pairs."""
@@ -525,13 +558,13 @@ class SigningUpload(CustomUpload):
         if os.path.exists(x509_filename):
             os.chmod(x509_filename, 0o644)
 
-    @forbidden_if_using_signing_service
+    @forbidden_if_using_signing_service()
     def generateKmodKeys(self):
         """Generate new Kernel Signing Keys for this archive."""
         config = self.generateOpensslConfig("Kmod", self.openssl_config_kmod)
         self.generatePemX509Pair("Kmod", config, self.kmod_pem, self.kmod_x509)
 
-    @forbidden_if_using_signing_service
+    @forbidden_if_using_signing_service()
     def signKmod(self, image):
         """Attempt to sign a kernel module."""
         remove_if_exists("%s.sig" % image)
@@ -543,13 +576,13 @@ class SigningUpload(CustomUpload):
         cmdl = ["kmodsign", "-D", "sha512", pem, cert, image, image + ".sig"]
         return self.callLog("Kmod signing", cmdl)
 
-    @forbidden_if_using_signing_service
+    @forbidden_if_using_signing_service()
     def generateOpalKeys(self):
         """Generate new Opal Signing Keys for this archive."""
         config = self.generateOpensslConfig("Opal", self.openssl_config_opal)
         self.generatePemX509Pair("Opal", config, self.opal_pem, self.opal_x509)
 
-    @forbidden_if_using_signing_service
+    @forbidden_if_using_signing_service()
     def signOpal(self, image):
         """Attempt to sign a kernel image for Opal."""
         remove_if_exists("%s.sig" % image)
@@ -561,13 +594,13 @@ class SigningUpload(CustomUpload):
         cmdl = ["kmodsign", "-D", "sha512", pem, cert, image, image + ".sig"]
         return self.callLog("Opal signing", cmdl)
 
-    @forbidden_if_using_signing_service
+    @forbidden_if_using_signing_service()
     def generateSiplKeys(self):
         """Generate new Sipl Signing Keys for this archive."""
         config = self.generateOpensslConfig("SIPL", self.openssl_config_sipl)
         self.generatePemX509Pair("SIPL", config, self.sipl_pem, self.sipl_x509)
 
-    @forbidden_if_using_signing_service
+    @forbidden_if_using_signing_service()
     def signSipl(self, image):
         """Attempt to sign a kernel image for Sipl."""
         remove_if_exists("%s.sig" % image)
@@ -579,12 +612,12 @@ class SigningUpload(CustomUpload):
         cmdl = ["kmodsign", "-D", "sha512", pem, cert, image, image + ".sig"]
         return self.callLog("SIPL signing", cmdl)
 
-    @forbidden_if_using_signing_service
+    @forbidden_if_using_signing_service()
     def generateFitKeys(self):
         """Generate new FIT Keys for this archive."""
         self.generateKeyCrtPair("FIT", self.fit_key, self.fit_cert)
 
-    @forbidden_if_using_signing_service
+    @forbidden_if_using_signing_service()
     def signFit(self, image):
         """Attempt to sign an image."""
         image_signed = "%s.signed" % image
