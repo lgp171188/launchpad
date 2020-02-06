@@ -10,13 +10,13 @@ __all__ = [
 
 import logging
 import sys
-import urllib
 import uuid
 import xmlrpclib
 
 from pymacaroons import Macaroon
 import six
 from six.moves import xmlrpc_client
+from six.moves.urllib.parse import quote
 import transaction
 from zope.component import (
     ComponentLookupError,
@@ -431,22 +431,6 @@ class GitAPI(LaunchpadXMLRPCView):
             removeSecurityProxy(repository))
         logger.info("notify succeeded")
 
-    def getMergeProposalURL(self, translated_path, branch, auth_params):
-        """See `IGitAPI`."""
-        logger = self._getLogger(auth_params.get("request-id"))
-        requester_id = _get_requester_id(auth_params)
-        logger.info(
-            "Request received: getMergeProposalURL('%s') for %s",
-            translated_path, requester_id)
-        result = run_with_login(
-            requester_id, self._getMergeProposalURL,
-            translated_path, branch, auth_params)
-        if isinstance(result, (xmlrpc_client.Fault, xmlrpclib.Fault)):
-            logger.error("getMergeProposalURL failed: %r", result)
-        else:
-            logger.info("getMergeProposalURL succeeded: %s" % result)
-        return result
-
     @return_fault
     def _getMergeProposalURL(self, requester, translated_path, branch,
                              auth_params):
@@ -457,37 +441,37 @@ class GitAPI(LaunchpadXMLRPCView):
         if repository is None:
             raise faults.GitRepositoryNotFound(translated_path)
 
-        try:
-            verified = self._verifyAuthParams(
-                requester, repository, auth_params)
-            if verified is not None and verified.user is NO_USER:
-                if not _can_internal_issuer_write(verified):
-                    raise faults.Unauthorized()
-
-                # We have verified that the authentication parameters
-                # correctly specify internal-services authentication with a
-                # suitable macaroon that specifically grants access to this
-                # repository, so we can bypass other checks and grant access
-                # as an anonymous repository owner.  This is only permitted
-                # for selected macaroon issuers.
-                #
-                # In the case of getMergeProposalURL we do not send the MP URL
-                # back to a Code Import job so we need to return here instead
-                # of granting repository owner permissions.
-
-                return ''
-        except faults.Unauthorized:
-            # It would be simpler to just raise
-            # this directly, but turnip won't handle it very gracefully at
-            # the moment.  It's possible to reach this by being very unlucky
-            # about the timing of a push.
-            return ''
+        verified = self._verifyAuthParams(requester, repository, auth_params)
+        if verified is not None and verified.user is NO_USER:
+            # In the case of getMergeProposalURL we do not send the MP URL
+            # back to a Code Import job so we need to return here instead
+            # of granting repository owner permissions.
+            raise faults.Unauthorized()
 
         # We assemble the URL this way here because the ref may not exist yet.
         base_url = canonical_url(repository, rootsite='code')
         mp_url = "%s/+ref/%s/+register-merge" % (
-                        base_url, urllib.quote(branch))
+                        base_url, quote(branch))
         return mp_url
+
+    def getMergeProposalURL(self, translated_path, branch, auth_params):
+        """See `IGitAPI`."""
+        logger = self._getLogger(auth_params.get("request-id"))
+        requester_id = _get_requester_id(auth_params)
+        logger.info(
+            "Request received: getMergeProposalURL('%s %s') for %s",
+            translated_path, branch, requester_id)
+        result = run_with_login(
+            requester_id, self._getMergeProposalURL,
+            translated_path, branch, auth_params)
+        if isinstance(result, xmlrpclib.Fault):
+            logger.error("getMergeProposalURL failed: %r", result)
+        else:
+            # The result of getMergeProposalURL is not sensitive for logging
+            # purposes (it may refer private artifacts, but contains no
+            # credentials, only the merge proposal URL).
+            logger.info("getMergeProposalURL succeeded: %s" % result)
+        return result
 
     @return_fault
     def _authenticateWithPassword(self, username, password):

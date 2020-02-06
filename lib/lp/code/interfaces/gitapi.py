@@ -84,12 +84,11 @@ class IGitAPI(Interface):
         """Return the URL for a merge proposal.
 
         When a `branch` that is not the default branch in a repository
-        is pushed the URL where the merge proposal for that branch can
-        be open will be generated and returned.
+        is pushed, the URL where the merge proposal for that branch can
+        be opened will be generated and returned.
 
-        :returns: The URL for a merge proposal for the branch in the
-            specified repository. A `GitRepositoryNotFound`
-            fault is returned if no repository can be found for
-            'translated_path', or an `Unauthorized` fault for unauthorized
-            push attempts.
+        :returns: The URL to register a merge proposal for the branch in the
+            specified repository. A `GitRepositoryNotFound` fault is returned
+            if no repository can be found for 'translated_path',
+            or an `Unauthorized` fault for unauthorized push attempts.
         """

@@ -11,6 +11,7 @@ from fixtures import FakeLogger
 from pymacaroons import Macaroon
 import six
 from six.moves import xmlrpc_client
+from six.moves.urllib.parse import quote
 from testtools.matchers import (
     Equals,
     IsInstance,
@@ -51,6 +52,7 @@ from lp.services.macaroons.interfaces import (
     NO_USER,
     )
 from lp.services.macaroons.model import MacaroonIssuerBase
+from lp.services.webapp import canonical_url
 from lp.services.webapp.escaping import html_escape
 from lp.snappy.interfaces.snap import SNAP_TESTING_FLAGS
 from lp.testing import (
@@ -325,6 +327,15 @@ class TestGitAPIMixin:
                 Equals(ref_permissions),
                 ])
             for ref_path, ref_permissions in permissions.items())))
+
+    def assertHasMergeProposalURL(self, repository,
+                                  pushed_branch, auth_params):
+        base_url = canonical_url(repository, rootsite='code')
+        expected_mp_url = "%s/+ref/%s/+register-merge" % (
+            base_url, quote(pushed_branch))
+        result = self.git_api.getMergeProposalURL(
+            repository.getInternalPath(), pushed_branch, auth_params)
+        self.assertEqual(expected_mp_url, result)
 
     def test_translatePath_private_repository(self):
         requester = self.factory.makePerson()
@@ -636,24 +647,12 @@ class TestGitAPIMixin:
             faults.GitRepositoryNotFound("nonexistent"), None,
             "checkRefPermissions", "nonexistent", [], {"uid": requester.id})
 
-    def tests_getMergeProposalURL_GitRepositoryNotFound(self):
-        self.pushConfig("codehosting", git_macaroon_secret_key="some-secret")
+    def test_getMergeProposalURL__nonexistent_repository(self):
         requester = self.factory.makePerson()
-        repository = self.factory.makeGitRepository(owner=requester)
-        issuer = getUtility(IMacaroonIssuer, "git-repository")
-        self.factory.makeGitRefs(
-            repository=repository, paths=[u'refs/heads/master'])
-        removeSecurityProxy(repository).default_branch = u'refs/heads/master'
-
-        pushed_branch = 'branch1'
-        with person_logged_in(requester):
-            macaroon = removeSecurityProxy(issuer).issueMacaroon(
-                    repository, user=requester)
-        auth_params = _make_auth_params(requester,
-                                        macaroon_raw=macaroon.serialize())
         self.assertFault(
             faults.GitRepositoryNotFound("nonexistent"), None,
-            "getMergeProposalURL", "nonexistent", pushed_branch, auth_params)
+            "getMergeProposalURL", "nonexistent", 'branch1',
+            {"uid": requester.id})
 
 
 class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
@@ -1284,8 +1283,36 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
                     requester, path, permission="read",
                     macaroon_raw=macaroon.serialize())
 
+    def test_getMergeProposalURL_user(self):
+        # A merge proposal URL is returned by LP for a non-default branch
+        # pushed by a user that has their ordinary privileges on the
+        # corresponding repository.
+        requester_owner = self.factory.makePerson()
+        repository = self.factory.makeGitRepository(owner=requester_owner)
+        self.factory.makeGitRefs(
+            repository=repository, paths=[u'refs/heads/master'])
+        removeSecurityProxy(repository).default_branch = u'refs/heads/master'
+        pushed_branch = 'branch1'
+        self.assertHasMergeProposalURL(repository, pushed_branch,
+                                       {"uid": requester_owner.id})
+
+        # Turnip verifies if the pushed branch is the default branch
+        # in a repository and calls LP only for non default branches.
+        # Consequently LP will process any incoming branch from Turnip
+        # as being non default and produce a merge proposal URL for it.
+        self.factory.makeGitRefs(
+            repository=repository, paths=[u'refs/heads/%s' % pushed_branch])
+        removeSecurityProxy(repository).default_branch = (
+                u'refs/heads/%s' % pushed_branch)
+        self.assertHasMergeProposalURL(repository, pushed_branch,
+                                       {"uid": requester_owner.id})
+
+        requester_non_owner = self.factory.makePerson()
+        self.assertHasMergeProposalURL(repository, pushed_branch,
+                                       {"uid": requester_non_owner.id})
+
     def test_getMergeProposalURL_user_macaroon(self):
-        # Test the MP Url is returned by LP for a non-default branch
+        # The merge proposal URL is returned by LP for a non-default branch
         # pushed by a user with a suitable macaroon that
         # has their ordinary privileges on the corresponding repository.
 
@@ -1303,10 +1330,7 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
                     repository, user=requester)
         auth_params = _make_auth_params(requester,
                                         macaroon_raw=macaroon.serialize())
-        mp_url = u'+ref/%s/+register-merge' % pushed_branch
-        results = getattr(self.git_api, "getMergeProposalURL")(
-              repository.getInternalPath(), pushed_branch, auth_params)
-        self.assertIn(mp_url, results)
+        self.assertHasMergeProposalURL(repository, pushed_branch, auth_params)
 
     def test_getMergeProposalURL_user_mismatch(self):
         # getMergeProposalURL refuses macaroons in the case where the
@@ -1330,41 +1354,31 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
         pushed_branch = 'branch1'
         macaroon = issuer.issueMacaroon(repository)
 
-        scenarios = (
+        for verified_user, authorized, unauthorized in (
                 (requesters[0], [requesters[0]],
                  [LAUNCHPAD_SERVICES, requesters[1], None]),
-                ([None] + [NO_USER], [], [LAUNCHPAD_SERVICES] +
-                 requesters + [None]),
-        )
-
-        for verified_user, authorized, unauthorized in scenarios:
-
+                ([None, NO_USER], [],
+                 [LAUNCHPAD_SERVICES] + requesters + [None]),
+        ):
             issuer._verified_user = verified_user
             for requester in authorized:
                 login(ANONYMOUS)
                 auth_params = _make_auth_params(
                      requester, macaroon_raw=macaroon.serialize())
-                mp_url = u'+ref/%s/+register-merge' % pushed_branch
-                result = getattr(self.git_api, "getMergeProposalURL")(
-                    repository.getInternalPath(), pushed_branch, auth_params)
-                self.assertIn(mp_url, result)
-
+                self.assertHasMergeProposalURL(repository,
+                                               pushed_branch, auth_params)
             for requester in unauthorized:
                 login(ANONYMOUS)
                 auth_params = _make_auth_params(
                     requester, macaroon_raw=macaroon.serialize())
-                mp_url = getattr(self.git_api, "getMergeProposalURL")(
-                    repository.getInternalPath(), pushed_branch, auth_params)
-                # We do not raise Unauthorized in LP as Turnip
-                # doesn't handle it very well.
-                # Instead we send an empty string for the MP URL.
-                self.assertIs(mp_url, '')
+
+                self.assertFault(
+                    faults.Unauthorized, None,
+                    "getMergeProposalURL", repository.getInternalPath(),
+                    pushed_branch, auth_params)
 
     def test_getMergeProposalURL_code_import(self):
-        # A code import worker with a suitable macaroon has repository owner
-        # privileges on a repository associated with a running code import
-        # job.
-        # Test that we do not return an MP URL from LP to Turnip for
+        # A merge proposal URL from LP to Turnip is not returned for
         # code import job as there is no User at the other end.
 
         issuer = DummyMacaroonIssuer()
@@ -1389,51 +1403,60 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
         auth_params = _make_auth_params(
             LAUNCHPAD_SERVICES, macaroons[0].serialize())
         pushed_branch = 'branch1'
-        mp_url = getattr(self.git_api, "getMergeProposalURL")(
-            repository.getInternalPath(), pushed_branch, auth_params)
-        self.assertIs(mp_url, '')
+        self.assertFault(
+            faults.Unauthorized, None,
+            "getMergeProposalURL", repository.getInternalPath(),
+            pushed_branch, auth_params)
 
         with celebrity_logged_in("vcs_imports"):
             getUtility(ICodeImportJobWorkflow).startJob(jobs[0], machine)
         auth_params = _make_auth_params(
             LAUNCHPAD_SERVICES, macaroons[0].serialize())
-        mp_url = getattr(self.git_api, "getMergeProposalURL")(
-            repository.getInternalPath(), pushed_branch, auth_params)
-        self.assertIs(mp_url, '')
+
+        self.assertFault(
+            faults.Unauthorized, None,
+            "getMergeProposalURL",
+            removeSecurityProxy(repository).getInternalPath(),
+            pushed_branch, auth_params)
 
         auth_params = _make_auth_params(
             LAUNCHPAD_SERVICES, macaroons[1].serialize())
-        mp_url = getattr(self.git_api, "getMergeProposalURL")(
-            repository.getInternalPath(), pushed_branch, auth_params)
-        self.assertIs(mp_url, '')
+
+        self.assertFault(
+            faults.Unauthorized, None,
+            "getMergeProposalURL",
+            removeSecurityProxy(repository).getInternalPath(),
+            pushed_branch, auth_params)
 
         auth_params = _make_auth_params(
             LAUNCHPAD_SERVICES,
             macaroon_raw=Macaroon(
                 location=config.vhost.mainsite.hostname, identifier="another",
                 key="another-secret").serialize())
-        mp_url = getattr(self.git_api, "getMergeProposalURL")(
-            repository.getInternalPath(), pushed_branch, auth_params)
-        self.assertIs(mp_url, '')
+        self.assertFault(
+            faults.Unauthorized, None,
+            "getMergeProposalURL",
+            removeSecurityProxy(repository).getInternalPath(),
+            pushed_branch, auth_params)
 
         auth_params = _make_auth_params(
             LAUNCHPAD_SERVICES, macaroon_raw="nonsense")
-        mp_url = getattr(self.git_api, "getMergeProposalURL")(
-            repository.getInternalPath(), pushed_branch, auth_params)
-        self.assertIs(mp_url, '')
+
+        self.assertFault(
+            faults.Unauthorized, None,
+            "getMergeProposalURL",
+            removeSecurityProxy(repository).getInternalPath(),
+            pushed_branch, auth_params)
 
         # A Person with no macaroon
         auth_params = _make_auth_params(
             code_imports[0].registrant, macaroons[0].serialize())
-        result = getattr(self.git_api, "getMergeProposalURL")(
-            repository.getInternalPath(), pushed_branch, auth_params)
-        mp_url = u'+ref/%s/+register-merge' % pushed_branch
-        self.assertIn(mp_url, result)
+        self.assertHasMergeProposalURL(repository, pushed_branch, auth_params)
 
     def test_getMergeProposalURL_private_code_import(self):
         # A code import worker with a suitable macaroon has repository owner
         # privileges on a repository associated with a running private code
-        # import job. We should not be sending the Merge Proposal URL back
+        # import job. We do not send the Merge Proposal URL back
         # to a Code Import Job.
 
         self.pushConfig(
@@ -1457,20 +1480,24 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
         auth_params = _make_auth_params(
             LAUNCHPAD_SERVICES, macaroons[0].serialize())
         pushed_branch = 'branch1'
-        mp_url = getattr(self.git_api, "getMergeProposalURL")(
+
+        self.assertFault(
+            faults.Unauthorized, None,
+            "getMergeProposalURL",
             removeSecurityProxy(repository).getInternalPath(),
             pushed_branch, auth_params)
-        self.assertIs(mp_url, '')
 
         with celebrity_logged_in("vcs_imports"):
             getUtility(ICodeImportJobWorkflow).startJob(jobs[0], machine)
 
         auth_params = _make_auth_params(
             LAUNCHPAD_SERVICES, macaroons[1].serialize())
-        mp_url = getattr(self.git_api, "getMergeProposalURL")(
+
+        self.assertFault(
+            faults.Unauthorized, None,
+            "getMergeProposalURL",
             removeSecurityProxy(repository).getInternalPath(),
             pushed_branch, auth_params)
-        self.assertIs(mp_url, '')
 
         auth_params = _make_auth_params(
             LAUNCHPAD_SERVICES, macaroon_raw=Macaroon(
@@ -1478,25 +1505,31 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
                  identifier="another",
                  key="another-secret").serialize())
         pushed_branch = 'branch1'
-        mp_url = getattr(self.git_api, "getMergeProposalURL")(
+
+        self.assertFault(
+            faults.Unauthorized, None,
+            "getMergeProposalURL",
             removeSecurityProxy(repository).getInternalPath(),
             pushed_branch, auth_params)
-        self.assertIs(mp_url, '')
 
         auth_params = _make_auth_params(
             LAUNCHPAD_SERVICES, macaroon_raw="nonsense")
-        mp_url = getattr(self.git_api, "getMergeProposalURL")(
+
+        self.assertFault(
+            faults.Unauthorized, None,
+            "getMergeProposalURL",
             removeSecurityProxy(repository).getInternalPath(),
             pushed_branch, auth_params)
-        self.assertIs(mp_url, '')
 
         auth_params = _make_auth_params(
             code_imports[0].registrant,
             macaroon_raw=macaroons[0].serialize())
-        mp_url = getattr(self.git_api, "getMergeProposalURL")(
+
+        self.assertFault(
+            faults.Unauthorized, None,
+            "getMergeProposalURL",
             removeSecurityProxy(repository).getInternalPath(),
             pushed_branch, auth_params)
-        self.assertIs(mp_url, '')
 
     def test_notify(self):
         # The notify call creates a GitRefScanJob.
