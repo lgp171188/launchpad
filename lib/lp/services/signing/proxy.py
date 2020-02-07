@@ -18,14 +18,11 @@ from nacl.public import (
     PublicKey,
     )
 
-from lp.services.config import LaunchpadConfig
+from lp.services.config import config
 from lp.services.propertycache import cachedproperty
 from lp.services.signing.enums import SigningKeyType
 from lp.services.timeline.requesttimeline import get_request_timeline
 from lp.services.timeout import urlfetch
-
-
-config = LaunchpadConfig()
 
 
 class SigningService:
