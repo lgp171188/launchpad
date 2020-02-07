@@ -21,5 +21,3 @@ top="$(readlink -f "$(dirname "$0")/..")"
 for path in "$1"/lib/*/site-packages/lp.egg-link; do
     printf '%s/lib\n../' "$top" >"$path"
 done
-sed -i "s#^find_links = .*#find_links = file://$top/download-cache/dist/#" \
-    "$1"/.pydistutils.cfg
