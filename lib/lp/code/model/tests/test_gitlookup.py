@@ -168,7 +168,7 @@ class TestGetByPath(TestCaseWithFactory):
         self.assertEqual(
             (repository, ""), self.lookup.getByPath(repository.unique_name))
 
-    def test_official(self):
+    def test_ociproject_official(self):
         oci_project = self.factory.makeOCIProject()
         repository = self.factory.makeGitRepository(target=oci_project)
         with person_logged_in(repository.target.distribution.owner):
