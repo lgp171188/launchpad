@@ -7,7 +7,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 __all__ = [
-    'path_within_repo'
+    'path_does_not_escape'
 ]
 
 import os
@@ -15,15 +15,20 @@ import os
 from lp.app.validators import LaunchpadValidationError
 
 
-def path_within_repo(path):
+def path_does_not_escape(path):
+    """First-pass validation that a given path does not escape a root.
+
+    This is only intended as a first defence, usage of this will also
+    require checking for filesystem escapes (symlinks, etc).
+    """
     # We're not working with complete paths, so we need to make them so
-    fake_base_path = '/repo'
+    fake_base_path = '/target'
     # Ensure that we start with a common base
     target_path = os.path.join(fake_base_path, path)
     # Resolve symlinks and such
-    real_path = os.path.realpath(target_path)
+    real_path = os.path.normpath(target_path)
     # If the paths don't have a common start anymore,
     # we are attempting an escape
     if not os.path.commonprefix((real_path, fake_base_path)) == fake_base_path:
-        raise LaunchpadValidationError("Path would escape build directory")
+        raise LaunchpadValidationError("Path would escape target directory")
     return True

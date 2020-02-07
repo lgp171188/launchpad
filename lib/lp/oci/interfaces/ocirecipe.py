@@ -39,7 +39,7 @@ from zope.security.interfaces import Unauthorized
 from lp import _
 from lp.app.errors import NameLookupFailed
 from lp.app.validators.name import name_validator
-from lp.app.validators.path import path_within_repo
+from lp.app.validators.path import path_does_not_escape
 from lp.code.interfaces.gitrepository import IGitRepository
 from lp.registry.interfaces.ociproject import IOCIProject
 from lp.registry.interfaces.role import IHasOwner
@@ -177,7 +177,7 @@ class IOCIRecipeEditableAttributes(IHasOwner):
     build_file = TextLine(
         title=_("The relative path to the file within this recipe's "
                 "branch that defines how to build the recipe."),
-        constraint=path_within_repo,
+        constraint=path_does_not_escape,
         required=True)
 
     require_virtualized = Bool(
