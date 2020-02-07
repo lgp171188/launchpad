@@ -1568,10 +1568,11 @@ class TestSigningUploadWithSigningService(TestSigningHelpers):
         #           + 1 to get service-key
         self.assertEqual(21, len(responses.calls))
 
+        # Inspect the /generate and /sign calls (the others are
+        # lp-signing's internal process, and should be tested elsewhere)
         api_calls = []
         for call in responses.calls:
             url = call.request.url
-            # Interested only in the /generate and /sign calls
             if not url.endswith("/sign") and not url.endswith("/generate"):
                 continue
             api_calls.append((call.request.method, url))
