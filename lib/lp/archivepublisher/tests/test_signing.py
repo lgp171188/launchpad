@@ -1542,6 +1542,40 @@ class TestSigningUploadWithSigningService(TestSigningHelpers):
         return contents
 
     @responses.activate
+    def test_sign_without_autokey_and_no_key_pre_set(self):
+        self.signing_service.patch()
+
+        filenames = [
+            "1.0/empty.efi",
+            "1.0/empty.ko",
+            "1.0/empty.opal",
+            "1.0/empty.sipl",
+            "1.0/empty.fit"]
+
+        # Write data on the archive
+        self.openArchive("test", "1.0", "amd64")
+        for filename in filenames:
+            self.tarfile.add_file(filename, b"somedata for %s" % filename)
+
+        self.tarfile.close()
+        self.buffer.close()
+
+        upload = SigningUpload()
+        upload.process(self.archive, self.path, self.suite)
+
+        self.assertFalse(upload.autokey)
+        self.assertEqual(0, len(responses.calls))
+
+        signed_path = self.getSignedPath("test", "amd64")
+        self.assertThat(signed_path, SignedMatches(
+            ["1.0/SHA256SUMS"] + filenames))
+
+    @responses.activate
+    def test_sign_without_autokey_and_some_keys_pre_set(self):
+        self.signing_service.patch()
+        self.skip("Not implemented yet")
+
+    @responses.activate
     def test_sign_with_autokey(self):
         self.signing_service.patch()
 
@@ -1553,8 +1587,7 @@ class TestSigningUploadWithSigningService(TestSigningHelpers):
             "1.0/empty.ko",
             "1.0/empty.opal",
             "1.0/empty.sipl",
-            "1.0/empty.fit",
-        ]
+            "1.0/empty.fit"]
 
         # Write data on the archive
         self.openArchive("test", "1.0", "amd64")
