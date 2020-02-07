@@ -48,17 +48,19 @@ class SigningUploadPackError(CustomUploadError):
         CustomUploadError.__init__(self, message)
 
 
-def should_use_signing_service(
-        default_value=False, flag='lp.services.signing.enabled'):
+def should_use_signing_service():
     """Checks if we should be using lp-signing service or not.
     """
-    value = getFeatureFlag(flag)
+    default_value = False
+    value = getFeatureFlag('lp.services.signing.enabled')
     if value is None:
-        return default_value
+        return False
     return value.lower().strip() not in ['false', '0', 'no', 'off']
 
 
 class BaseSigningUpload(CustomUpload):
+    """Common methods between LocalSigningUpload and SigningServiceUpload.
+    """
     def __init__(self, *args, **kwargs):
         super(BaseSigningUpload, self).__init__(*args, **kwargs)
 
