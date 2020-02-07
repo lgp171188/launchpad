@@ -1,4 +1,4 @@
-# Copyright 2012-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2012-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """The processing of Signing tarballs.
@@ -18,6 +18,7 @@ __all__ = [
     "UefiUpload",
     ]
 
+from functools import partial
 import os
 import shutil
 import stat
@@ -25,9 +26,10 @@ import subprocess
 import tarfile
 import tempfile
 import textwrap
-from functools import partial
 
 import scandir
+from zope.component._api import getUtility
+from zope.security.proxy import removeSecurityProxy
 
 from lp.archivepublisher.config import getPubConfig
 from lp.archivepublisher.customupload import CustomUpload
@@ -35,10 +37,8 @@ from lp.registry.interfaces.distroseries import IDistroSeriesSet
 from lp.services.features import getFeatureFlag
 from lp.services.osutils import remove_if_exists
 from lp.services.signing.enums import SigningKeyType
+from lp.services.signing.model.signingkey import ArchiveSigningKey
 from lp.soyuz.interfaces.queue import CustomUploadError
-from zope.component._api import getUtility
-from zope.security.interfaces import ForbiddenAttribute
-from zope.security.proxy import removeSecurityProxy
 
 
 class SigningUploadPackError(CustomUploadError):
@@ -598,9 +598,6 @@ class SigningServiceUpload(BaseSigningUpload):
                 yield file_path, handler
 
     def signUsingKey(self, key_type, key, filename):
-        # XXX: check why this is failing to import at top of the module
-        from lp.services.signing.model.signingkey import ArchiveSigningKey
-
         if key is None:
             if not self.autokey:
                 return

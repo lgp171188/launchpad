@@ -18,27 +18,28 @@ import pytz
 from storm.locals import (
     DateTime,
     Int,
+    RawStr,
     Reference,
     Unicode,
-    RawStr
     )
 from zope.interface.declarations import implementer
 
-from lp.services.signing.enums import SigningKeyType
-from lp.services.signing.interfaces.signingkey import (
-    ISigningKey,
-    IArchiveSigningKey,
-    )
-from lp.registry.model.distroseries import DistroSeries
 from lp.services.database.constants import (
     DEFAULT,
     UTC_NOW,
     )
 from lp.services.database.enumcol import DBEnum
-from lp.services.database.interfaces import IMasterStore, IStore
+from lp.services.database.interfaces import (
+    IMasterStore,
+    IStore,
+    )
 from lp.services.database.stormbase import StormBase
+from lp.services.signing.enums import SigningKeyType
+from lp.services.signing.interfaces.signingkey import (
+    IArchiveSigningKey,
+    ISigningKey,
+    )
 from lp.services.signing.proxy import SigningService
-from lp.soyuz.model.archive import Archive
 
 
 @implementer(ISigningKey)
@@ -121,10 +122,10 @@ class ArchiveSigningKey(StormBase):
     id = Int(primary=True)
 
     archive_id = Int(name="archive")
-    archive = Reference(archive_id, Archive.id)
+    archive = Reference(archive_id, 'Archive.id')
 
     distro_series_id = Int(name="distro_series", allow_none=True)
-    distro_series = Reference(distro_series_id, DistroSeries.id)
+    distro_series = Reference(distro_series_id, 'DistroSeries.id')
 
     signing_key_id = Int(name="signing_key", allow_none=False)
     signing_key = Reference(signing_key_id, SigningKey.id)
