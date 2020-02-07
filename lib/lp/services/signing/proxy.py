@@ -11,16 +11,21 @@ import base64
 import json
 
 from lazr.restful.utils import get_current_browser_request
-from lp.services.propertycache import cachedproperty
-from lp.services.signing.enums import SigningKeyType
-from lp.services.timeline.requesttimeline import get_request_timeline
-from lp.services.timeout import urlfetch
 from nacl.encoding import Base64Encoder
 from nacl.public import (
     Box,
     PrivateKey,
     PublicKey,
-)
+    )
+
+from lp.services.config import LaunchpadConfig
+from lp.services.propertycache import cachedproperty
+from lp.services.signing.enums import SigningKeyType
+from lp.services.timeline.requesttimeline import get_request_timeline
+from lp.services.timeout import urlfetch
+
+
+config = LaunchpadConfig()
 
 
 class SigningService:
@@ -28,12 +33,9 @@ class SigningService:
 
     This class is a singleton (see __new__ method and _instance attribute).
     """
-    # XXX: Move it to configuration
-    LP_SIGNING_ADDRESS = "http://signing.launchpad.test:8000"
-
-    # XXX: Temporary test keys. Should be moved to configuration files
-    LOCAL_PRIVATE_KEY = "O73bJzd3hybyBxUKk0FaR6K9CbbmxBYkw6vCrIWZkSY="
-    LOCAL_PUBLIC_KEY = "xEtwSS7kdGmo0ElcN2fR/mcHS0A42zhYbo/+5KV4xRs="
+    LP_SIGNING_ADDRESS = config.signing.lp_signing_address
+    LOCAL_PRIVATE_KEY = config.signing.local_private_key
+    LOCAL_PUBLIC_KEY = config.signing.local_public_key
 
     ATTACHED = "ATTACHED"
     DETACHED = "DETACHED"
@@ -43,9 +45,9 @@ class SigningService:
     def __new__(cls, *args, **kwargs):
         """Builder for this class to return a singleton instance.
 
-        At first, the will be no way to have multiple different instances of
-        lp-signing running (at least not in a way that launchpad should
-        be aware of). So, keeping this class as a singleton generates the
+        At first, there will be no way to have multiple different instances
+        of lp-signing running (at least not in a way that launchpad should
+        be aware of). So, keeping this class as a singleton creates the
         benefit of keeping cached across several points of the system the
         @cachedproperties we have here (service_public_key, for example,
         costs an HTTP request every time it needs to fill the cache).
@@ -53,9 +55,6 @@ class SigningService:
         if not isinstance(cls._instance, cls):
             cls._instance = object.__new__(cls, *args, **kwargs)
         return cls._instance
-
-    def __init__(self):
-        pass
 
     def get_url(self, path):
         """Shotcut to concatenate LP_SIGNING_ADDRESS with the desired
