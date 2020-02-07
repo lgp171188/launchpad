@@ -11,7 +11,8 @@
 source /etc/lsb-release
 DO_WORKSPACE=1
 INSTALL_OPTS=""
-eval set -- "$(getopt -o '' -l no-workspace,lpusername:,assume-yes -- "$@")"
+getopt_output="$(getopt -o '' -l no-workspace,lpusername:,assume-yes -- "$@")" || exit 1
++eval set -- "$getopt_output"
   while :; do
     case $1 in
       --no-workspace)
