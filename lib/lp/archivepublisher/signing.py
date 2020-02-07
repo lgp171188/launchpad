@@ -48,8 +48,10 @@ class SigningUploadPackError(CustomUploadError):
         CustomUploadError.__init__(self, message)
 
 
-def should_use_signing_service(default_value=False,
-                               flag='lp.services.signing.enabled'):
+def should_use_signing_service(
+        default_value=False, flag='lp.services.signing.enabled'):
+    """Checks if we should be using lp-signing service or not.
+    """
     value = getFeatureFlag(flag)
     if value is None:
         return default_value
@@ -136,8 +138,7 @@ class BaseSigningUpload(CustomUpload):
         """
         super(BaseSigningUpload, self).extract()
         self.setSigningOptions()
-        filehandlers = list(self.findSigningHandlers())
-        for (filename, handler) in filehandlers:
+        for (filename, handler) in self.findSigningHandlers():
             if (handler(filename) == 0 and
                 'signed-only' in self.signing_options):
                 os.unlink(filename)
@@ -547,7 +548,6 @@ class SigningServiceUpload(BaseSigningUpload):
 
     def __init__(self, *args, **kwargs):
         super(SigningServiceUpload, self).__init__(*args, **kwargs)
-        self.should_use_signing_service = should_use_signing_service()
         # Attributes only used by lp-signing-enabled version
         self.distro_series = None
         self.pubconf = None
@@ -623,6 +623,9 @@ class SigningServiceUpload(BaseSigningUpload):
             fd.write(signed_content)
 
         self.publishPublicKey((public_key_filename, signing_key.public_key))
+        # For historical reason, this method returns zero if everything went
+        # well (to keep compatibility with LocalSigningUpload class).
+        return 0
 
     def copyPublishedPublicKeys(self):
         """Copy out published keys into the custom upload."""

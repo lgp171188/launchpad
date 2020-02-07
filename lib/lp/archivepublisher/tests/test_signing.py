@@ -1,4 +1,4 @@
-# Copyright 2012-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2012-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test UEFI custom uploads."""
@@ -12,12 +12,9 @@ import re
 import stat
 import tarfile
 
-import responses
 from fixtures import MonkeyPatch
+import responses
 import scandir
-from lp.services.features.testing import FeatureFixture
-from lp.services.signing.tests.test_proxy import SigningServiceResponseFactory
-from lp.services.webapp.interaction import ANONYMOUS
 from testtools.matchers import (
     Contains,
     Equals,
@@ -25,10 +22,11 @@ from testtools.matchers import (
     Matcher,
     MatchesAll,
     MatchesDict,
+    MatchesStructure,
     Mismatch,
     Not,
     StartsWith,
-    MatchesStructure)
+    )
 from testtools.twistedsupport import AsynchronousDeferredRunTest
 from twisted.internet import defer
 from zope.component import getUtility
@@ -37,7 +35,7 @@ from lp.archivepublisher.config import getPubConfig
 from lp.archivepublisher.customupload import (
     CustomUploadAlreadyExists,
     CustomUploadBadUmask,
-    CustomUpload)
+    )
 from lp.archivepublisher.interfaces.archivegpgsigningkey import (
     IArchiveGPGSigningKey,
     )
@@ -47,7 +45,14 @@ from lp.archivepublisher.signing import (
     UefiUpload,
     )
 from lp.archivepublisher.tests.test_run_parts import RunPartsMixin
+from lp.services.features.testing import FeatureFixture
 from lp.services.osutils import write_file
+from lp.services.signing.model.signingkey import ArchiveSigningKey
+from lp.services.signing.proxy import (
+    SigningKeyType,
+    SigningService,
+    )
+from lp.services.signing.tests.test_proxy import SigningServiceResponseFactory
 from lp.services.tarfile_helpers import LaunchpadWriteTarFile
 from lp.soyuz.enums import ArchivePurpose
 from lp.testing import TestCaseWithFactory
@@ -83,6 +88,7 @@ class SignedMatches(Matcher):
 
 class FakeMethodCallLog(FakeMethod):
     """Fake execution general commands."""
+
     def __init__(self, upload=None, *args, **kwargs):
         super(FakeMethodCallLog, self).__init__(*args, **kwargs)
         self.upload = upload
@@ -173,7 +179,6 @@ class FakeMethodCallLog(FakeMethod):
 
 
 class TestSigningHelpers(TestCaseWithFactory):
-
     layer = ZopelessDatabaseLayer
     run_tests_with = AsynchronousDeferredRunTest.make_factory(timeout=10)
 
@@ -271,7 +276,7 @@ class TestSigningHelpers(TestCaseWithFactory):
         return os.path.join(pubconf.archiveroot, "dists", self.suite, "main")
 
 
-class TestSigning(RunPartsMixin, TestSigningHelpers):
+class TestLocalSigningUpload(RunPartsMixin, TestSigningHelpers):
 
     def getSignedPath(self, loader_type, arch):
         return os.path.join(self.getDistsPath(), "signed",
@@ -1294,7 +1299,7 @@ class TestSigning(RunPartsMixin, TestSigningHelpers):
         self.tarfile.add_file("1.0/empty.sipl", b"")
         self.process_emulate()
         sha256file = os.path.join(self.getSignedPath("test", "amd64"),
-             "1.0", "SHA256SUMS")
+            "1.0", "SHA256SUMS")
         self.assertTrue(os.path.exists(sha256file))
 
     @defer.inlineCallbacks
@@ -1313,7 +1318,7 @@ class TestSigning(RunPartsMixin, TestSigningHelpers):
         self.tarfile.add_file("1.0/empty.sipl", b"")
         self.process_emulate()
         sha256file = os.path.join(self.getSignedPath("test", "amd64"),
-             "1.0", "SHA256SUMS")
+            "1.0", "SHA256SUMS")
         self.assertTrue(os.path.exists(sha256file))
         self.assertThat(
             sha256file + '.gpg',
@@ -1337,7 +1342,7 @@ class TestSigning(RunPartsMixin, TestSigningHelpers):
         self.tarfile.add_file("1.0/empty.sipl", b"")
         self.process_emulate()
         sha256file = os.path.join(self.getSignedPath("test", "amd64"),
-             "1.0", "SHA256SUMS")
+            "1.0", "SHA256SUMS")
         self.assertTrue(os.path.exists(sha256file))
         self.assertThat(
             sha256file + '.gpg',
@@ -1348,10 +1353,10 @@ class TestSigning(RunPartsMixin, TestSigningHelpers):
             "1.0", "signed.tar.gz")
         with tarfile.open(tarfilename) as tarball:
             self.assertThat(tarball.getnames(), MatchesAll(*[
-              Not(Contains(name)) for name in [
-                  "1.0/SHA256SUMS", "1.0/SHA256SUMS.gpg",
-                  "1.0/signed.tar.gz",
-                  ]]))
+                Not(Contains(name)) for name in [
+                    "1.0/SHA256SUMS", "1.0/SHA256SUMS.gpg",
+                    "1.0/signed.tar.gz",
+                    ]]))
 
     def test_checksumming_tree_signed_with_external_run_parts(self):
         # Checksum files can be signed using an external run-parts helper.
@@ -1372,7 +1377,7 @@ class TestSigning(RunPartsMixin, TestSigningHelpers):
         self.tarfile.add_file("1.0/empty.sipl", "")
         self.process_emulate()
         sha256file = os.path.join(self.getSignedPath("test", "amd64"),
-             "1.0", "SHA256SUMS")
+            "1.0", "SHA256SUMS")
         self.assertTrue(os.path.exists(sha256file))
         self.assertEqual(1, run_parts_fixture.new_value.call_count)
         args, kwargs = run_parts_fixture.new_value.calls[-1]
@@ -1506,7 +1511,8 @@ class TestUefi(TestSigningHelpers):
 
 
 class TestSigningUploadWithSigningService(TestSigningHelpers):
-    """Tests for SigningUpload using lp-signing service"""
+    """Tests for SigningUpload using lp-signing service
+    """
     layer = ZopelessDatabaseLayer
 
     def setUp(self, *args, **kwargs):
@@ -1515,10 +1521,34 @@ class TestSigningUploadWithSigningService(TestSigningHelpers):
         self.useFixture(FeatureFixture({'lp.services.signing.enabled': True}))
         self.signing_service = SigningServiceResponseFactory()
 
+    def tearDown(self):
+        super(TestSigningUploadWithSigningService, self).tearDown()
+        # Cleanup SigningService caches every round
+        SigningService._instance = None
+
+    @staticmethod
+    def get_filelist_content(basedir, filenames):
+        contents = []
+        for filename in filenames:
+            with open(os.path.join(basedir, filename)) as fd:
+                contents.append(fd.read())
+        return contents
+
     def getSignedPath(self, loader_type, arch):
         return os.path.join(self.getDistsPath(), "signed",
             "%s-%s" % (loader_type, arch))
 
+    def process_emulate(self):
+        """Shotcut to the close tarfile and run SigningUpload.process
+        """
+        self.tarfile.close()
+        self.buffer.close()
+
+        upload = SigningUpload()
+        upload.process(self.archive, self.path, self.suite)
+        return upload
+
+    @responses.activate
     def test_set_target_directory_with_distroseries(self):
         archive = self.factory.makeArchive()
         series_name = archive.distribution.series[1].name
@@ -1532,36 +1562,174 @@ class TestSigningUploadWithSigningService(TestSigningHelpers):
             distro_series=archive.distribution.series[1],
             archive=archive,
             autokey=pubconfig.signingautokey))
+        self.assertEqual(0, len(responses.calls))
 
-    @staticmethod
-    def get_filelist_content(basedir, filenames):
-        contents = []
-        for filename in filenames:
-            with open(os.path.join(basedir, filename)) as fd:
-                contents.append(fd.read())
-        return contents
+    @responses.activate
+    def test_options_handling_single(self):
+        """If the configured key/cert are missing, processing succeeds but
+        nothing is signed.
+        """
+        self.openArchive("test", "1.0", "amd64")
+        self.tarfile.add_file("1.0/control/options", b"first\n")
+
+        upload = self.process_emulate()
+
+        self.assertContentEqual(['first'], upload.signing_options.keys())
+        self.assertEqual(0, len(responses.calls))
+
+    @responses.activate
+    def test_options_handling_multiple(self):
+        """If the configured key/cert are missing, processing succeeds but
+        nothing is signed.
+        """
+        self.signing_service.patch()
+        self.openArchive("test", "1.0", "amd64")
+        self.tarfile.add_file("1.0/control/options", b"first\nsecond\n")
+
+        upload = self.process_emulate()
+
+        self.assertContentEqual(['first', 'second'],
+                                upload.signing_options.keys())
+        self.assertEqual(0, len(responses.calls))
+
+    @responses.activate
+    def test_options_tarball(self):
+        """Specifying the "tarball" option should create an tarball in tmpdir.
+        """
+        self.signing_service.patch()
+        # Use PPA to enable autokey and actually sign things.
+        self.setUpPPA()
+        self.openArchive("test", "1.0", "amd64")
+        self.tarfile.add_file("1.0/control/options", b"tarball")
+        self.tarfile.add_file("1.0/empty.efi", b"")
+        self.tarfile.add_file("1.0/empty.ko", b"")
+        self.tarfile.add_file("1.0/empty.opal", b"")
+        self.tarfile.add_file("1.0/empty.sipl", b"")
+        self.tarfile.add_file("1.0/empty.fit", b"")
+
+        upload = self.process_emulate()
+
+        self.assertThat(self.getSignedPath("test", "amd64"), SignedMatches([
+            "1.0/SHA256SUMS",
+            "1.0/signed.tar.gz",
+        ]))
+        tarfilename = os.path.join(self.getSignedPath("test", "amd64"),
+                                   "1.0", "signed.tar.gz")
+        with tarfile.open(tarfilename) as tarball:
+            self.assertContentEqual([
+                '1.0', '1.0/control', '1.0/control/options',
+                '1.0/empty.efi', '1.0/empty.efi.signed',
+                '1.0/control/uefi.crt',
+                '1.0/empty.ko', '1.0/empty.ko.sig', '1.0/control/kmod.x509',
+                '1.0/empty.opal', '1.0/empty.opal.sig',
+                '1.0/control/opal.x509',
+                '1.0/empty.sipl', '1.0/empty.sipl.sig',
+                '1.0/control/sipl.x509',
+                '1.0/empty.fit', '1.0/empty.fit.signed',
+                '1.0/control/fit.crt',
+                ], tarball.getnames())
+
+    @responses.activate
+    def test_options_signed_only(self):
+        """Specifying the "signed-only" option should trigger removal of
+        the source files leaving signatures only.
+        """
+        self.signing_service.patch()
+        # Use PPA to enable autokey and actually sign things.
+        self.setUpPPA()
+        self.openArchive("test", "1.0", "amd64")
+        self.tarfile.add_file("1.0/control/options", b"signed-only")
+        self.tarfile.add_file("1.0/empty.efi", b"")
+        self.tarfile.add_file("1.0/empty.ko", b"")
+        self.tarfile.add_file("1.0/empty.opal", b"")
+        self.tarfile.add_file("1.0/empty.sipl", b"")
+        self.tarfile.add_file("1.0/empty.fit", b"")
+
+        upload = self.process_emulate()
+
+        self.assertThat(self.getSignedPath("test", "amd64"), SignedMatches([
+            "1.0/SHA256SUMS", "1.0/control/options",
+            "1.0/empty.efi.signed", "1.0/control/uefi.crt",
+            "1.0/empty.ko.sig", "1.0/control/kmod.x509",
+            "1.0/empty.opal.sig", "1.0/control/opal.x509",
+            "1.0/empty.sipl.sig", "1.0/control/sipl.x509",
+            "1.0/empty.fit.signed", "1.0/control/fit.crt",
+        ]))
+
+    @responses.activate
+    def test_options_tarball_signed_only(self):
+        """Specifying the "tarball" option should create an tarball in
+        the tmpdir.  Adding signed-only should trigger removal of the
+        original files.
+        """
+        self.signing_service.patch()
+        self.setUpPPA()
+        self.openArchive("test", "1.0", "amd64")
+        self.tarfile.add_file("1.0/control/options", b"tarball\nsigned-only")
+        self.tarfile.add_file("1.0/empty.efi", b"")
+        self.tarfile.add_file("1.0/empty.ko", b"")
+        self.tarfile.add_file("1.0/empty.opal", b"")
+        self.tarfile.add_file("1.0/empty.sipl", b"")
+        self.tarfile.add_file("1.0/empty.fit", b"")
+        self.process_emulate()
+        self.assertThat(self.getSignedPath("test", "amd64"), SignedMatches([
+            "1.0/SHA256SUMS",
+            "1.0/signed.tar.gz",
+        ]))
+        tarfilename = os.path.join(self.getSignedPath("test", "amd64"),
+                                   "1.0", "signed.tar.gz")
+        with tarfile.open(tarfilename) as tarball:
+            self.assertContentEqual([
+                '1.0', '1.0/control', '1.0/control/options',
+                '1.0/empty.efi.signed', '1.0/control/uefi.crt',
+                '1.0/empty.ko.sig', '1.0/control/kmod.x509',
+                '1.0/empty.opal.sig', '1.0/control/opal.x509',
+                '1.0/empty.sipl.sig', '1.0/control/sipl.x509',
+                '1.0/empty.fit.signed', '1.0/control/fit.crt',
+            ], tarball.getnames())
+
+    @responses.activate
+    def test_archive_copy(self):
+        """If there is no key/cert configuration, processing succeeds but
+        nothing is signed.
+        """
+        self.archive = self.factory.makeArchive(
+            distribution=self.distro, purpose=ArchivePurpose.COPY)
+        pubconf = getPubConfig(self.archive)
+        if not os.path.exists(pubconf.temproot):
+            os.makedirs(pubconf.temproot)
+        self.openArchive("test", "1.0", "amd64")
+        self.tarfile.add_file("1.0/empty.efi", b"")
+        self.tarfile.add_file("1.0/empty.ko", b"")
+        self.tarfile.add_file("1.0/empty.opal", b"")
+        self.tarfile.add_file("1.0/empty.sipl", b"")
+        self.tarfile.add_file("1.0/empty.fit", b"")
+        self.tarfile.close()
+        self.buffer.close()
+
+        upload = SigningUpload()
+        upload.process(self.archive, self.path, self.suite)
+
+        signed_path = self.getSignedPath("test", "amd64")
+        self.assertThat(signed_path, SignedMatches(
+            ["1.0/SHA256SUMS", "1.0/empty.efi", "1.0/empty.ko",
+             "1.0/empty.opal", "1.0/empty.sipl", "1.0/empty.fit", ]))
+        self.assertEqual(0, len(responses.calls))
 
     @responses.activate
     def test_sign_without_autokey_and_no_key_pre_set(self):
         self.signing_service.patch()
 
         filenames = [
-            "1.0/empty.efi",
-            "1.0/empty.ko",
-            "1.0/empty.opal",
-            "1.0/empty.sipl",
-            "1.0/empty.fit"]
+            "1.0/empty.efi", "1.0/empty.ko", "1.0/empty.opal",
+            "1.0/empty.sipl", "1.0/empty.fit"]
 
         # Write data on the archive
         self.openArchive("test", "1.0", "amd64")
         for filename in filenames:
             self.tarfile.add_file(filename, b"somedata for %s" % filename)
 
-        self.tarfile.close()
-        self.buffer.close()
-
-        upload = SigningUpload()
-        upload.process(self.archive, self.path, self.suite)
+        upload = self.process_emulate()
 
         self.assertFalse(upload.autokey)
         self.assertEqual(0, len(responses.calls))
@@ -1572,24 +1740,50 @@ class TestSigningUploadWithSigningService(TestSigningHelpers):
 
     @responses.activate
     def test_sign_without_autokey_and_some_keys_pre_set(self):
+        """For no autokey archives, signing process should sign only for the
+        available keys, and skip signing the other files
+        """
         self.signing_service.patch()
-        self.skip("Not implemented yet")
+
+        # Pre-generate KMOD and OPAL keys
+        ArchiveSigningKey.generate(SigningKeyType.KMOD, self.archive)
+        ArchiveSigningKey.generate(SigningKeyType.OPAL, self.archive)
+        # Resets HTTP calls history and SigningService caches
+        responses.calls.reset()
+        SigningService._instance = None
+
+        filenames = [
+            "1.0/empty.efi", "1.0/empty.ko", "1.0/empty.opal",
+            "1.0/empty.sipl", "1.0/empty.fit"]
+
+        self.openArchive("test", "1.0", "amd64")
+        for filename in filenames:
+            self.tarfile.add_file(filename, b"somedata for %s" % filename)
+
+        upload = self.process_emulate()
+
+        signed_path = self.getSignedPath("test", "amd64")
+        self.assertThat(signed_path, SignedMatches(filenames + [
+            "1.0/SHA256SUMS", "1.0/empty.ko.sig", "1.0/empty.opal.sig",
+            "1.0/control/kmod.x509", "1.0/control/opal.x509"]))
+
+        http_calls = ["%s %s" % (call.request.method, call.request.path_url)
+                      for call in responses.calls]
+        self.assertEqual([
+            'POST /nonce', 'GET /service-key', 'POST /sign',
+            'POST /nonce', 'POST /sign'], http_calls)
 
     @responses.activate
-    def test_sign_with_autokey(self):
+    def test_sign_with_autokey_ppa(self):
         self.signing_service.patch()
 
         # PPAs should auto-generate keys. Let's use one for this test.
         self.setUpPPA()
 
         filenames = [
-            "1.0/empty.efi",
-            "1.0/empty.ko",
-            "1.0/empty.opal",
-            "1.0/empty.sipl",
-            "1.0/empty.fit"]
+            "1.0/empty.efi", "1.0/empty.ko", "1.0/empty.opal",
+            "1.0/empty.sipl", "1.0/empty.fit"]
 
-        # Write data on the archive
         self.openArchive("test", "1.0", "amd64")
         for filename in filenames:
             self.tarfile.add_file(filename, b"somedata for %s" % filename)
@@ -1603,17 +1797,13 @@ class TestSigningUploadWithSigningService(TestSigningHelpers):
         self.assertTrue(upload.autokey)
 
         expected_signed_filenames = [
-            "1.0/empty.efi.signed",
-            "1.0/empty.ko.sig",
-            "1.0/empty.opal.sig",
-            "1.0/empty.sipl.sig",
+            "1.0/empty.efi.signed", "1.0/empty.ko.sig",
+            "1.0/empty.opal.sig", "1.0/empty.sipl.sig",
             "1.0/empty.fit.signed"]
 
         expected_public_keys_filenames = [
-            "1.0/control/uefi.crt",
-            "1.0/control/kmod.x509",
-            "1.0/control/opal.x509",
-            "1.0/control/sipl.x509",
+            "1.0/control/uefi.crt", "1.0/control/kmod.x509",
+            "1.0/control/opal.x509", "1.0/control/sipl.x509",
             "1.0/control/fit.crt"]
 
         signed_path = self.getSignedPath("test", "amd64")
