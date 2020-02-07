@@ -37,6 +37,7 @@ from lp.oci.interfaces.ocirecipe import (
     DuplicateOCIRecipeName,
     IOCIRecipe,
     IOCIRecipeSet,
+    NoSourceForOCIRecipe,
     NoSuchOCIRecipe,
     OCIRecipeBuildAlreadyPending,
     OCIRecipeNotOwner,
@@ -226,7 +227,10 @@ class OCIRecipeSet:
                     "%s cannot create OCI images owned by %s." %
                     (registrant.displayname, owner.displayname))
 
-        if self.exists(owner, name):
+        if not (git_path and build_file):
+            raise NoSourceForOCIRecipe
+
+        if self.exists(oci_project, name):
             raise DuplicateOCIRecipeName
 
         store = IMasterStore(OCIRecipe)

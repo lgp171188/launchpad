@@ -7,11 +7,14 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 __all__ = [
+    'DuplicateOCIRecipeName',
     'IOCIRecipe',
     'IOCIRecipeEdit',
     'IOCIRecipeEditableAttributes',
     'IOCIRecipeSet',
     'IOCIRecipeView',
+    'NoSuchOCIRecipe',
+    'NoSourceForOCIRecipe',
     'OCIRecipeBuildAlreadyPending',
     'OCIRecipeNotOwner',
     ]
@@ -59,6 +62,7 @@ class OCIRecipeBuildAlreadyPending(Exception):
         super(OCIRecipeBuildAlreadyPending, self).__init__(
             "An identical build of this snap package is already pending.")
 
+
 @error_status(httplib.BAD_REQUEST)
 class DuplicateOCIRecipeName(Exception):
     """An OCI Recipe already exists with the same name."""
@@ -67,6 +71,15 @@ class DuplicateOCIRecipeName(Exception):
 class NoSuchOCIRecipe(NameLookupFailed):
     """The requested OCI Recipe does not exist."""
     _message_prefix = "No such OCI Recipe exists for this OCI Project"
+
+
+@error_status(httplib.BAD_REQUEST)
+class NoSourceForOCIRecipe(Exception):
+    """OCI Recipes must have a source and build file."""
+
+    def __init__(self):
+        super(NoSourceForOCIRecipe, self).__init__(
+            "New OCI Recipes must have a git branch and build file.")
 
 
 class IOCIRecipeView(Interface):
@@ -107,6 +120,14 @@ class IOCIRecipeView(Interface):
             "order of creation."),
         # Really IOCIRecipeBuild, patched in _schema_circular_imports.
         value_type=Reference(schema=Interface), readonly=True)
+
+    def requestBuild(requester, architecture):
+        """Request that the OCI recipe is built.
+
+        :param requester: The person requesting the build.
+        :param architecture: The architecture to build for.
+        :return: `IOCIRecipeBuild`.
+        """
 
 
 class IOCIRecipeEdit(Interface):

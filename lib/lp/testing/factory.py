@@ -157,11 +157,9 @@ from lp.hardwaredb.interfaces.hwdb import (
     IHWSubmissionDeviceSet,
     IHWSubmissionSet,
     )
+from lp.oci.interfaces.ocirecipe import IOCIRecipeSet
 from lp.oci.interfaces.ocirecipebuild import IOCIRecipeBuildSet
-from lp.oci.model.ocirecipe import (
-    OCIRecipe,
-    OCIRecipeArch,
-    )
+from lp.oci.model.ocirecipe import OCIRecipeArch
 from lp.registry.enums import (
     BranchSharingPolicy,
     BugSharingPolicy,
@@ -4944,7 +4942,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
     def makeOCIRecipe(self, name=None, registrant=None, owner=None,
                       oci_project=None, description=None, official=False,
                       require_virtualized=True, git_repository=DEFAULT,
-                      git_path=None, build_file=None):
+                      git_path=DEFAULT, build_file=DEFAULT):
         """Make a new OCIRecipe."""
         if name is None:
             name = self.getUniqueString(u"oci-recipe-name")
@@ -4956,11 +4954,13 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             owner = self.makeTeam(members=[registrant])
         if oci_project is None:
             oci_project = self.makeOCIProject()
-        if git_path is None:
+        if git_repository is DEFAULT:
+            git_repository = self.makeGitRepository()
+        if git_path is DEFAULT:
             git_path = self.getUniqueUnicode(u"refs/heads/path")
-        if build_file is None:
+        if build_file is DEFAULT:
             build_file = self.getUniqueUnicode(u"build_file_for")
-        return OCIRecipe(
+        return getUtility(IOCIRecipeSet).new(
             name=name,
             registrant=registrant,
             owner=owner,

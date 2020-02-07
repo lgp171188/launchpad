@@ -10,15 +10,18 @@ from zope.security.proxy import removeSecurityProxy
 
 from lp.buildmaster.enums import BuildStatus
 from lp.oci.interfaces.ocirecipe import (
+    DuplicateOCIRecipeName,
     IOCIRecipe,
     IOCIRecipeSet,
+    NoSourceForOCIRecipe,
+    NoSuchOCIRecipe,
     OCIRecipeBuildAlreadyPending,
     OCIRecipeNotOwner,
     )
 from lp.oci.interfaces.ocirecipebuild import IOCIRecipeBuildSet
-from lp.services.database.interfaces import IMasterStore
 from lp.testing import (
     admin_logged_in,
+    person_logged_in,
     TestCaseWithFactory,
     )
 from lp.testing.layers import DatabaseFunctionalLayer
@@ -64,7 +67,8 @@ class TestOCIRecipe(TestCaseWithFactory):
             build_ids.append(
                 self.factory.makeOCIRecipeBuild(recipe=oci_recipe).id)
 
-        oci_recipe.destroySelf()
+        with person_logged_in(oci_recipe.owner):
+            oci_recipe.destroySelf()
 
         for build_id in build_ids:
             self.assertIsNone(getUtility(IOCIRecipeBuildSet).getByID(build_id))
@@ -133,3 +137,49 @@ class TestOCIRecipeSet(TestCaseWithFactory):
         self.assertEqual(target.official, False)
         self.assertEqual(target.require_virtualized, False)
         self.assertEqual(target.git_repository, git_repo)
+
+    def test_already_exists(self):
+        oci_project = self.factory.makeOCIProject()
+        self.factory.makeOCIRecipe(
+            name="already exists", oci_project=oci_project)
+
+        self.assertRaises(
+            DuplicateOCIRecipeName,
+            self.factory.makeOCIRecipe,
+            name="already exists",
+            oci_project=oci_project)
+
+    def test_no_source_git_path(self):
+        self.assertRaises(
+            NoSourceForOCIRecipe,
+            self.factory.makeOCIRecipe,
+            name="already exists",
+            git_path=None)
+
+    def test_no_source_build_file(self):
+        self.assertRaises(
+            NoSourceForOCIRecipe,
+            self.factory.makeOCIRecipe,
+            name="already exists",
+            build_file=None)
+
+    def test_getByName(self):
+        name = "a test recipe"
+        oci_project = self.factory.makeOCIProject()
+        target = self.factory.makeOCIRecipe(name=name, oci_project=oci_project)
+
+        for _ in range(3):
+            self.factory.makeOCIRecipe(oci_project=oci_project)
+
+        result = getUtility(IOCIRecipeSet).getByName(oci_project, name)
+        self.assertEqual(target, result)
+
+    def test_getByName_missing(self):
+        oci_project = self.factory.makeOCIProject()
+        for _ in range(3):
+            self.factory.makeOCIRecipe(oci_project=oci_project)
+        self.assertRaises(
+            NoSuchOCIRecipe,
+            getUtility(IOCIRecipeSet).getByName,
+            oci_project=oci_project,
+            name="missing")
