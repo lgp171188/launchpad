@@ -9,20 +9,21 @@ PYTHONPATH:=$(WD)/lib:${PYTHONPATH}
 VERBOSITY=-vv
 
 # virtualenv and pip fail if setlocale fails, so force a valid locale.
-VIRTUALENV := LC_ALL=C.UTF-8 virtualenv
-PIP := PYTHONPATH= LC_ALL=C.UTF-8 env/bin/pip
+PIP_ENV := LC_ALL=C.UTF-8
 # Run with "make PIP_NO_INDEX=" if you want pip to find software
 # dependencies *other* than those in our download-cache.  Once you have the
 # desired software, commit it to lp:lp-source-dependencies if it is going to
 # be reviewed/merged/deployed.
+PIP_NO_INDEX := 1
+PIP_ENV += PIP_NO_INDEX=$(PIP_NO_INDEX)
 # Although --ignore-installed is slower, we need it to avoid confusion with
 # system-installed Python packages.  If we ever manage to remove the need
 # for virtualenv --system-site-packages, then we can remove this too.
-PIP_NO_INDEX := --no-index
-PIP_INSTALL_ARGS := \
-	$(PIP_NO_INDEX) \
-	--ignore-installed \
-	--find-links=file://$(WD)/download-cache/dist/ \
+PIP_ENV += PIP_IGNORE_INSTALLED=1
+PIP_ENV += PIP_FIND_LINKS=file://$(WD)/download-cache/dist/
+
+VIRTUALENV := $(PIP_ENV) virtualenv
+PIP := PYTHONPATH= $(PIP_ENV) env/bin/pip
 
 TESTFLAGS=-p $(VERBOSITY)
 TESTOPTS=
@@ -244,19 +245,15 @@ build_eggs: build_wheels
 $(PY): download-cache constraints.txt setup.py
 	rm -rf env
 	mkdir -p env
-	(echo '[easy_install]'; \
-	 echo 'find_links = file://$(WD)/download-cache/dist/') \
-		>env/.pydistutils.cfg
 	$(VIRTUALENV) \
 		--python=$(PYTHON) --system-site-packages --never-download \
 		--extra-search-dir=$(WD)/download-cache/dist/ \
 		env
 	ln -sfn env/bin bin
-	$(SHHH) $(PIP) install $(PIP_INSTALL_ARGS) \
-		-r setup-requirements.txt
+	$(SHHH) $(PIP) install -r setup-requirements.txt
 	$(SHHH) LPCONFIG=$(LPCONFIG) $(PIP) \
 		--cache-dir=$(WD)/download-cache/ \
-		install $(PIP_INSTALL_ARGS) \
+		install \
 		-c setup-requirements.txt -c constraints.txt -e . \
 		|| { code=$$?; rm -f $@; exit $$code; }
 	touch $@
