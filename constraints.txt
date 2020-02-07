@@ -289,7 +289,7 @@ scandir==1.7
 service-identity==18.1.0
 setproctitle==1.1.7
 setuptools-git==1.2
-setuptools-scm==1.15.7
+setuptools-scm==3.4.3
 simplejson==3.8.2
 SimpleTAL==4.3
 soupmatchers==0.4
