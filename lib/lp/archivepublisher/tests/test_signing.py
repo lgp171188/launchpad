@@ -1533,6 +1533,14 @@ class TestSigningUploadWithSigningService(TestSigningHelpers):
             archive=archive,
             autokey=pubconfig.signingautokey))
 
+    @staticmethod
+    def get_filelist_content(basedir, filenames):
+        contents = []
+        for filename in filenames:
+            with open(os.path.join(basedir, filename)) as fd:
+                contents.append(fd.read())
+        return contents
+
     @responses.activate
     def test_sign_with_autokey(self):
         self.signing_service.patch()
@@ -1540,12 +1548,18 @@ class TestSigningUploadWithSigningService(TestSigningHelpers):
         # PPAs should auto-generate keys. Let's use one for this test.
         self.setUpPPA()
 
+        filenames = [
+            "1.0/empty.efi",
+            "1.0/empty.ko",
+            "1.0/empty.opal",
+            "1.0/empty.sipl",
+            "1.0/empty.fit",
+        ]
+
+        # Write data on the archive
         self.openArchive("test", "1.0", "amd64")
-        self.tarfile.add_file("1.0/empty.efi", b"")
-        self.tarfile.add_file("1.0/empty.ko", b"")
-        self.tarfile.add_file("1.0/empty.opal", b"")
-        self.tarfile.add_file("1.0/empty.sipl", b"")
-        self.tarfile.add_file("1.0/empty.fit", b"")
+        for filename in filenames:
+            self.tarfile.add_file(filename, b"somedata for %s" % filename)
 
         self.tarfile.close()
         self.buffer.close()
@@ -1555,30 +1569,44 @@ class TestSigningUploadWithSigningService(TestSigningHelpers):
 
         self.assertTrue(upload.autokey)
 
-        self.assertThat(self.getSignedPath("test", "amd64"), SignedMatches([
-            "1.0/SHA256SUMS",
-            "1.0/empty.efi", "1.0/empty.efi.signed", "1.0/control/uefi.crt",
-            "1.0/empty.ko", "1.0/empty.ko.sig", "1.0/control/kmod.x509",
-            "1.0/empty.opal", "1.0/empty.opal.sig", "1.0/control/opal.x509",
-            "1.0/empty.sipl", "1.0/empty.sipl.sig", "1.0/control/sipl.x509",
-            "1.0/empty.fit", "1.0/empty.fit.signed", "1.0/control/fit.crt",
-        ]))
+        expected_signed_filenames = [
+            "1.0/empty.efi.signed",
+            "1.0/empty.ko.sig",
+            "1.0/empty.opal.sig",
+            "1.0/empty.sipl.sig",
+            "1.0/empty.fit.signed"]
 
-        # 21 calls: 4 (nonce/generate/nonce/sign) * 5 files
+        expected_public_keys_filenames = [
+            "1.0/control/uefi.crt",
+            "1.0/control/kmod.x509",
+            "1.0/control/opal.x509",
+            "1.0/control/sipl.x509",
+            "1.0/control/fit.crt"]
+
+        signed_path = self.getSignedPath("test", "amd64")
+        self.assertThat(signed_path, SignedMatches(
+            ["1.0/SHA256SUMS"] + filenames + expected_public_keys_filenames +
+            expected_signed_filenames))
+
+        # 21 calls: 4 (/nonce, /generate, /nonce and /sign) * 5 files
         #           + 1 to get service-key
         self.assertEqual(21, len(responses.calls))
 
-        # Inspect the /generate and /sign calls (the others are
-        # lp-signing's internal process, and should be tested elsewhere)
-        api_calls = []
-        for call in responses.calls:
-            url = call.request.url
-            if not url.endswith("/sign") and not url.endswith("/generate"):
-                continue
-            api_calls.append((call.request.method, url))
+        # Checks that all files got signed
+        # (patched responses from /sign on lp-signing gets back
+        # "$callIndex::signed!", so we should check this ended up in the
+        # signed files).
+        contents = self.get_filelist_content(
+            signed_path, expected_signed_filenames)
+        expected_signed_contents = {
+            "%s::signed!" % i for i in range(1, len(filenames) + 1)}
+        self.assertItemsEqual(expected_signed_contents, contents)
 
-        expected = [
-            ('POST', 'http://signing.launchpad.test:8000/generate'),
-            ('POST', 'http://signing.launchpad.test:8000/sign')
-            ] * 5
-        self.assertEquals(expected, api_calls)
+        # Checks that all public keys ended up in the 1.0/control/xxx files
+        contents = self.get_filelist_content(
+            signed_path, expected_public_keys_filenames)
+        # Patched lp-signing gives back always the same generated public key
+        expected_public_keys = [
+            self.signing_service.generated_public_key
+            for i in range(len(expected_public_keys_filenames))]
+        self.assertEqual(expected_public_keys, contents)

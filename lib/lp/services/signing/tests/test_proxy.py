@@ -4,6 +4,7 @@
 __metaclass__ = type
 
 import base64
+import json
 from collections import defaultdict
 
 import mock
@@ -87,8 +88,12 @@ class SigningServiceResponseFactory:
             - self.base64_nonce
             - self.generated_public_key
             - self.generated_fingerprint
-            - self.base64_signed_msg
         which holds the respective values used in the default fake responses.
+
+        The /sign endpoint will return, as signed message, "$n::signed!",
+        where $n is the call number (base64-encoded, as lp-signing would
+        return). This could be useful on black-box tests, where several
+        calls to /sign would be done and the response should be checked.
         """
         responses.add(
             responses.GET, self.get_url("/service-key"),
@@ -104,11 +109,18 @@ class SigningServiceResponseFactory:
                   'public-key': self.b64_generated_public_key},
             status=201)
 
-        responses.add(
+        call_counts = {'/sign': 0}
+
+        def sign_callback(request):
+            call_counts['/sign'] += 1
+            signed = base64.b64encode("%s::signed!" % call_counts['/sign'])
+            data = {'signed-message': signed,
+                    'public-key': self.b64_generated_public_key}
+            return 201, {}, json.dumps(data)
+
+        responses.add_callback(
             responses.POST, self.get_url("/sign"),
-            json={'signed-message': self.b64_signed_msg,
-                  'public-key': self.b64_generated_public_key},
-            status=201)
+            callback=sign_callback)
 
 
 class SigningServiceProxyTest(TestCaseWithFactory):
