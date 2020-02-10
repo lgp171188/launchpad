@@ -13,19 +13,18 @@ __all__ = [
     'IOCIRecipeEditableAttributes',
     'IOCIRecipeSet',
     'IOCIRecipeView',
-    'NoSuchOCIRecipe',
     'NoSourceForOCIRecipe',
+    'NoSuchOCIRecipe',
     'OCIRecipeBuildAlreadyPending',
     'OCIRecipeNotOwner',
     ]
-
-import httplib
 
 from lazr.restful.declarations import error_status
 from lazr.restful.fields import (
     CollectionField,
     Reference,
     )
+from six.moves import http_client
 from zope.interface import Interface
 from zope.schema import (
     Bool,
@@ -49,12 +48,12 @@ from lp.services.fields import (
     )
 
 
-@error_status(httplib.UNAUTHORIZED)
+@error_status(http_client.UNAUTHORIZED)
 class OCIRecipeNotOwner(Unauthorized):
     """The registrant/requester is not the owner or a member of its team."""
 
 
-@error_status(httplib.BAD_REQUEST)
+@error_status(http_client.BAD_REQUEST)
 class OCIRecipeBuildAlreadyPending(Exception):
     """A build was requested when an identical build was already pending."""
 
@@ -63,7 +62,7 @@ class OCIRecipeBuildAlreadyPending(Exception):
             "An identical build of this snap package is already pending.")
 
 
-@error_status(httplib.BAD_REQUEST)
+@error_status(http_client.BAD_REQUEST)
 class DuplicateOCIRecipeName(Exception):
     """An OCI Recipe already exists with the same name."""
 
@@ -73,7 +72,7 @@ class NoSuchOCIRecipe(NameLookupFailed):
     _message_prefix = "No such OCI Recipe exists for this OCI Project"
 
 
-@error_status(httplib.BAD_REQUEST)
+@error_status(http_client.BAD_REQUEST)
 class NoSourceForOCIRecipe(Exception):
     """OCI Recipes must have a source and build file."""
 
@@ -146,12 +145,15 @@ class IOCIRecipeEditableAttributes(IHasOwner):
     name = TextLine(
         title=_("The name of this recipe."),
         constraint=name_validator,
-        required=True)
+        required=True,
+        readonly=False)
 
     owner = PersonChoice(
-        title=_("Owner"), required=True, readonly=False,
+        title=_("Owner"),
+        required=True,
         vocabulary="AllUserTeamsParticipationPlusSelf",
-        description=_("The owner of this OCI recipe."))
+        description=_("The owner of this OCI recipe."),
+        readonly=False)
 
     oci_project = Reference(
         IOCIProject,
@@ -160,32 +162,47 @@ class IOCIRecipeEditableAttributes(IHasOwner):
         readonly=True)
 
     official = Bool(
-        title=_("OCI Project Official"), required=True, default=False,
-        description=_("True if this recipe is official for its OCI project."))
+        title=_("OCI project official"),
+        required=True,
+        default=False,
+        description=_("True if this recipe is official for its OCI project."),
+        readonly=False)
 
     git_repository = Reference(
         IGitRepository,
-        title=_("A Git repository with a branch containing an OCI recipe."))
+        title=_("A Git repository with a branch containing an OCI recipe."),
+        required=True,
+        readonly=False)
 
-    description = Text(title=_("A short description of this recipe."))
+    description = Text(
+        title=_("A short description of this recipe."),
+        readonly=False)
 
     git_path = TextLine(
         title=_("The branch within this recipe's Git "
                 "repository where its build files are maintained."),
-        required=True)
+        required=True,
+        readonly=False)
 
     build_file = TextLine(
         title=_("The relative path to the file within this recipe's "
                 "branch that defines how to build the recipe."),
         constraint=path_does_not_escape,
-        required=True)
+        required=True,
+        readonly=False)
 
     require_virtualized = Bool(
-        title=_("Require virtualized"), required=True, default=True)
+        title=_("Require virtualized"),
+        required=True,
+        default=True,
+        readonly=True)
 
     build_daily = Bool(
-        title=_("Build daily"), required=True, default=False,
-        description=_("If True, this recipe should be built daily."))
+        title=_("Build daily"),
+        required=True,
+        default=False,
+        description=_("If True, this recipe should be built daily."),
+        readonly=False)
 
 
 class IOCIRecipe(IOCIRecipeView, IOCIRecipeEdit, IOCIRecipeEditableAttributes):

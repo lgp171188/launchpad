@@ -214,7 +214,7 @@ class OCIRecipeArch(Storm):
 @implementer(IOCIRecipeSet)
 class OCIRecipeSet:
 
-    def new(self, name, description, registrant, owner, oci_project, official,
+    def new(self, name, registrant, owner, oci_project, description, official,
             require_virtualized, git_repository, git_path, build_file):
         """See `IOCIRecipeSet`."""
         if not registrant.inTeam(owner):
