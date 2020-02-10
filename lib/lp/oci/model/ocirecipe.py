@@ -145,7 +145,7 @@ class OCIRecipe(Storm):
         if not requester.inTeam(self.owner):
             raise OCIRecipeNotOwner(
                 "%s cannot create OCI image builds owned by %s." %
-                (requester.displayname, self.owner.displayname))
+                (requester.display_name, self.owner.display_name))
 
     def requestBuild(self, requester, architecture):
         self._checkRequestBuild(requester)
