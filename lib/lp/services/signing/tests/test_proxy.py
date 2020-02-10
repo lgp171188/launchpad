@@ -15,7 +15,7 @@ from nacl.public import PublicKey
 import requests
 import responses
 
-from lp.services.signing.proxy import SigningService
+from lp.services.signing.proxy import SigningServiceClient
 from lp.testing import TestCaseWithFactory
 from lp.testing.layers import BaseLayer
 
@@ -71,7 +71,7 @@ class SigningServiceResponseFactory:
     def get_url(cls, path):
         """Shortcut to get full path of an endpoint at lp-signing.
         """
-        return SigningService().get_url(path)
+        return SigningService().getUrl(path)
 
     def patch(self):
         """Patches all requests with default test values.
@@ -140,7 +140,7 @@ class SigningServiceProxyTest(TestCaseWithFactory):
     def tearDown(self):
         super(SigningServiceProxyTest, self).tearDown()
         # clean singleton instance of signing service.
-        SigningService._instance = None
+        SigningServiceClient._instance = None
 
     def assertHeaderContains(self, request, headers):
         """Checks if the request's header contains the headers dictionary
@@ -198,7 +198,7 @@ class SigningServiceProxyTest(TestCaseWithFactory):
         self.response_factory.patch()
 
         signing = SigningService()
-        nonce = signing.get_nonce()
+        nonce = signing.getNonce()
 
         self.assertEqual(
             base64.b64encode(nonce), self.response_factory.base64_nonce)

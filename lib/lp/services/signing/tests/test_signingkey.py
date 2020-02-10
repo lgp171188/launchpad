@@ -10,7 +10,7 @@ import responses
 from lp.services.signing.enums import SigningKeyType
 from lp.services.signing.model.signingkey import SigningKey, ArchiveSigningKey
 from lp.services.database.interfaces import IMasterStore
-from lp.services.signing.proxy import SigningService
+from lp.services.signing.proxy import SigningServiceClient
 from lp.services.signing.tests.test_proxy import SigningServiceResponseFactory
 from lp.testing import TestCaseWithFactory
 from lp.testing.layers import DatabaseFunctionalLayer
@@ -29,7 +29,7 @@ class TestSigningKey(TestCaseWithFactory):
     def tearDown(self):
         super(TestSigningKey, self).tearDown()
         # clean singleton instance of signing service.
-        SigningService._instance = None
+        SigningServiceClient._instance = None
 
     @responses.activate
     def test_generate_signing_key_saves_correctly(self):

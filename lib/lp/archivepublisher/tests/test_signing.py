@@ -50,7 +50,7 @@ from lp.services.osutils import write_file
 from lp.services.signing.model.signingkey import ArchiveSigningKey
 from lp.services.signing.proxy import (
     SigningKeyType,
-    SigningService,
+    SigningServiceClient,
     )
 from lp.services.signing.tests.test_proxy import SigningServiceResponseFactory
 from lp.services.tarfile_helpers import LaunchpadWriteTarFile
@@ -1526,7 +1526,7 @@ class TestSigningUploadWithSigningService(TestSigningHelpers):
     def tearDown(self):
         super(TestSigningUploadWithSigningService, self).tearDown()
         # Cleanup SigningService caches every round
-        SigningService._instance = None
+        SigningServiceClient._instance = None
 
     @staticmethod
     def get_filelist_content(basedir, filenames):
@@ -1752,7 +1752,7 @@ class TestSigningUploadWithSigningService(TestSigningHelpers):
         ArchiveSigningKey.generate(SigningKeyType.OPAL, self.archive)
         # Resets HTTP calls history and SigningService caches
         responses.calls.reset()
-        SigningService._instance = None
+        SigningServiceClient._instance = None
 
         filenames = [
             "1.0/empty.efi", "1.0/empty.ko", "1.0/empty.opal",

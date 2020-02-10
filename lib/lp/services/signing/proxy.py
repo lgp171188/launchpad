@@ -25,7 +25,7 @@ from lp.services.timeline.requesttimeline import get_request_timeline
 from lp.services.timeout import urlfetch
 
 
-class SigningService:
+class SigningServiceClient:
     """Representation of lp-signing service REST interface
 
     This class is a singleton (see __new__ method and _instance attribute).
@@ -53,7 +53,7 @@ class SigningService:
             cls._instance = object.__new__(cls, *args, **kwargs)
         return cls._instance
 
-    def get_url(self, path):
+    def getUrl(self, path):
         """Shotcut to concatenate LP_SIGNING_ADDRESS with the desired
         endpoint path.
 
@@ -61,7 +61,7 @@ class SigningService:
         """
         return self.LP_SIGNING_ADDRESS + path
 
-    def _get_json(self, path, method="GET", **kwargs):
+    def _getJson(self, path, method="GET", **kwargs):
         """Helper method to do an HTTP request and get back a json from  the
         signing service, raising exception if status code != 2xx.
         """
@@ -71,7 +71,7 @@ class SigningService:
             (path, method, json.dumps(kwargs)))
 
         try:
-            url = self.get_url(path)
+            url = self.getUrl(path)
             response = urlfetch(url, method=method.lower(), **kwargs)
             response.raise_for_status()
             return response.json()
@@ -82,20 +82,20 @@ class SigningService:
     def service_public_key(self):
         """Returns the lp-signing service's public key.
         """
-        data = self._get_json("/service-key")
+        data = self._getJson("/service-key")
         return PublicKey(data["service-key"], encoder=Base64Encoder)
 
     @property
     def private_key(self):
         return PrivateKey(self.LOCAL_PRIVATE_KEY, encoder=Base64Encoder)
 
-    def get_nonce(self):
+    def getNonce(self):
         """Get nonce, to be used when sending messages.
         """
-        data = self._get_json("/nonce", "POST")
+        data = self._getJson("/nonce", "POST")
         return base64.b64decode(data["nonce"].encode("UTF-8"))
 
-    def _get_auth_headers(self, nonce):
+    def _getAuthHeaders(self, nonce):
         """Get headers to call authenticated endpoints.
 
         :param nonce: The nonce bytes to be used (not the base64 encoded one!)
@@ -106,7 +106,7 @@ class SigningService:
             "X-Client-Public-Key": self.LOCAL_PUBLIC_KEY,
             "X-Nonce": base64.b64encode(nonce)}
 
-    def _encrypt_payload(self, nonce, message):
+    def _encryptPayload(self, nonce, message):
         """Returns the encrypted version of message, base64 encoded and
         ready to be sent on a HTTP request to lp-signing service.
 
@@ -127,14 +127,14 @@ class SigningService:
         """
         if key_type not in SigningKeyType.items:
             raise ValueError("%s is not a valid key type" % key_type)
-        nonce = self.get_nonce()
+        nonce = self.getNonce()
         data = json.dumps({
             "key-type": key_type.name,
             "description": description,
             }).encode("UTF-8")
-        return self._get_json(
-            "/generate", "POST", headers=self._get_auth_headers(nonce),
-            data=self._encrypt_payload(nonce, data))
+        return self._getJson(
+            "/generate", "POST", headers=self._getAuthHeaders(nonce),
+            data=self._encryptPayload(nonce, data))
 
     def sign(self, key_type, fingerprint, message_name, message, mode):
         """Sign the given message using the specified key_type and a
@@ -148,12 +148,13 @@ class SigningService:
         :param mode: SignService.ATTACHED or SignService.DETACHED
         :return: A dict with 'public-key' and 'signed-message'
         """
-        if mode not in {SigningService.ATTACHED, SigningService.DETACHED}:
+        if mode not in {SigningServiceClient.ATTACHED,
+                        SigningServiceClient.DETACHED}:
             raise ValueError("%s is not a valid mode" % mode)
         if key_type not in SigningKeyType.items:
             raise ValueError("%s is not a valid key type" % key_type)
 
-        nonce = self.get_nonce()
+        nonce = self.getNonce()
         data = json.dumps({
             "key-type": key_type.name,
             "fingerprint": fingerprint,
@@ -161,10 +162,10 @@ class SigningService:
             "message": base64.b64encode(message).decode("UTF-8"),
             "mode": mode,
             }).encode("UTF-8")
-        data = self._get_json(
+        data = self._getJson(
             "/sign", "POST",
-            headers=self._get_auth_headers(nonce),
-            data=self._encrypt_payload(nonce, data))
+            headers=self._getAuthHeaders(nonce),
+            data=self._encryptPayload(nonce, data))
 
         return {
             'public-key': data['public-key'],

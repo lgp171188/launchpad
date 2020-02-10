@@ -39,7 +39,7 @@ from lp.services.signing.interfaces.signingkey import (
     IArchiveSigningKey,
     ISigningKey,
     )
-from lp.services.signing.proxy import SigningService
+from lp.services.signing.proxy import SigningServiceClient
 
 
 @implementer(ISigningKey)
