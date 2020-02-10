@@ -210,8 +210,8 @@ class IOCIRecipeSet(Interface):
             official, require_virtualized, build_file, date_created):
         """Create an IOCIRecipe."""
 
-    def exists(oci_project, name):
+    def exists(owner, oci_project, name):
         """Check to see if an existing OCI Recipe exists."""
 
-    def getByName(oci_project, name):
+    def getByName(owner, oci_project, name):
         """Return the appropriate `OCIRecipe` for the given objects."""

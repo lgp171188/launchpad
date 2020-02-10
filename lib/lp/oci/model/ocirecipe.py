@@ -262,7 +262,7 @@ class OCIRecipeSet:
         if not (git_ref and build_file):
             raise NoSourceForOCIRecipe
 
-        if self.exists(oci_project, name):
+        if self.exists(owner, oci_project, name):
             raise DuplicateOCIRecipeName
 
         store = IMasterStore(OCIRecipe)
@@ -273,19 +273,20 @@ class OCIRecipeSet:
 
         return oci_recipe
 
-    def _getByName(self, oci_project, name):
+    def _getByName(self, owner, oci_project, name):
         return IStore(OCIRecipe).find(
             OCIRecipe,
+            OCIRecipe.owner == owner,
             OCIRecipe.name == name,
             OCIRecipe.oci_project == oci_project).one()
 
-    def exists(self, oci_project, name):
+    def exists(self, owner, oci_project, name):
         """See `IOCIRecipeSet`."""
-        return self._getByName(oci_project, name) is not None
+        return self._getByName(owner, oci_project, name) is not None
 
-    def getByName(self, oci_project, name):
+    def getByName(self, owner, oci_project, name):
         """See `IOCIRecipeSet`."""
-        oci_recipe = self._getByName(oci_project, name)
+        oci_recipe = self._getByName(owner, oci_project, name)
         if oci_recipe is None:
             raise NoSuchOCIRecipe(name)
         return oci_recipe

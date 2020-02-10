@@ -138,13 +138,17 @@ class TestOCIRecipeSet(TestCaseWithFactory):
         self.assertEqual(target.git_ref, git_ref)
 
     def test_already_exists(self):
+        owner = self.factory.makePerson()
         oci_project = self.factory.makeOCIProject()
         self.factory.makeOCIRecipe(
-            name="already exists", oci_project=oci_project)
+            owner=owner, registrant=owner, name="already exists",
+            oci_project=oci_project)
 
         self.assertRaises(
             DuplicateOCIRecipeName,
             self.factory.makeOCIRecipe,
+            owner=owner,
+            registrant=owner,
             name="already exists",
             oci_project=oci_project)
 
@@ -163,22 +167,27 @@ class TestOCIRecipeSet(TestCaseWithFactory):
             build_file=None)
 
     def test_getByName(self):
+        owner = self.factory.makePerson()
         name = "a test recipe"
         oci_project = self.factory.makeOCIProject()
-        target = self.factory.makeOCIRecipe(name=name, oci_project=oci_project)
+        target = self.factory.makeOCIRecipe(
+            owner=owner, registrant=owner, name=name, oci_project=oci_project)
 
         for _ in range(3):
             self.factory.makeOCIRecipe(oci_project=oci_project)
 
-        result = getUtility(IOCIRecipeSet).getByName(oci_project, name)
+        result = getUtility(IOCIRecipeSet).getByName(owner, oci_project, name)
         self.assertEqual(target, result)
 
     def test_getByName_missing(self):
+        owner = self.factory.makePerson()
         oci_project = self.factory.makeOCIProject()
         for _ in range(3):
-            self.factory.makeOCIRecipe(oci_project=oci_project)
+            self.factory.makeOCIRecipe(
+                owner=owner, registrant=owner, oci_project=oci_project)
         self.assertRaises(
             NoSuchOCIRecipe,
             getUtility(IOCIRecipeSet).getByName,
+            owner=owner,
             oci_project=oci_project,
             name="missing")
