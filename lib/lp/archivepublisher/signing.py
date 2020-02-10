@@ -48,21 +48,9 @@ class SigningUploadPackError(CustomUploadError):
         CustomUploadError.__init__(self, message)
 
 
-def should_use_signing_service():
-    """Checks if we should be using lp-signing service or not.
-    """
-    default_value = False
-    value = getFeatureFlag('lp.services.signing.enabled')
-    if value is None:
-        return False
-    return value.lower().strip() not in ['false', '0', 'no', 'off']
-
-
 class BaseSigningUpload(CustomUpload):
     """Common methods between LocalSigningUpload and SigningServiceUpload.
     """
-    def __init__(self, *args, **kwargs):
-        super(BaseSigningUpload, self).__init__(*args, **kwargs)
 
     @staticmethod
     def parsePath(tarfile_path):
@@ -98,7 +86,7 @@ class BaseSigningUpload(CustomUpload):
         if not os.path.exists(options_file):
             return
 
-        with open(options_file) as options_fd:
+        with open(options_file, 'rb') as options_fd:
             for option in options_fd:
                 self.signing_options[option.strip()] = True
 
@@ -201,9 +189,6 @@ class LocalSigningUpload(BaseSigningUpload):
     custom_type = "signing"
 
     dists_directory = "signed"
-
-    def __init__(self, *args, **kwargs):
-        super(LocalSigningUpload, self).__init__(*args, **kwargs)
 
     def getSeriesPath(self, pubconf, key_name, archive, signing_for):
         """Find the key path for a given series.
@@ -573,9 +558,6 @@ class SigningServiceUpload(BaseSigningUpload):
         self.public_keys = set()
 
     def findSigningHandlers(self):
-        # Avoid circular import issue
-        from lp.services.signing.model.signingkey import ArchiveSigningKey
-
         keys = ArchiveSigningKey.get_signing_keys(
             self.archive, self.distro_series)
 
@@ -615,7 +597,7 @@ class SigningServiceUpload(BaseSigningUpload):
                         (self.archive.id, e.__class__.__name__, e))
 
         signing_key = key.signing_key
-        with open(filename) as fd:
+        with open(filename, "rb") as fd:
             content = fd.read()
 
         try:
@@ -629,16 +611,16 @@ class SigningServiceUpload(BaseSigningUpload):
             return
 
         if key_type in (SigningKeyType.UEFI, SigningKeyType.FIT):
-            file_sufix = ".signed"
-            public_key_sufix = ".crt"
+            file_suffix = ".signed"
+            public_key_suffix = ".crt"
         else:
-            file_sufix = ".sig"
-            public_key_sufix = ".x509"
+            file_suffix = ".sig"
+            public_key_suffix = ".x509"
 
-        signed_filename = filename + file_sufix
-        public_key_filename = key_type.name.lower() + public_key_sufix
+        signed_filename = filename + file_suffix
+        public_key_filename = key_type.name.lower() + public_key_suffix
 
-        with open(signed_filename, 'w') as fd:
+        with open(signed_filename, 'wb') as fd:
             fd.write(signed_content)
 
         self.publishPublicKey((public_key_filename, signing_key.public_key))
@@ -665,7 +647,7 @@ class SigningUpload:
     rename SigningServiceUpload to SigningUpload.
     """
     def __new__(cls, *args, **kwargs):
-        if should_use_signing_service():
+        if bool(getFeatureFlag('lp.services.signing.enabled')):
             klass = SigningServiceUpload
         else:
             klass = LocalSigningUpload
@@ -705,7 +687,7 @@ class UefiUpload:
     same, but for the legacy UefiUpload.
     """
     def __new__(cls, *args, **kwargs):
-        if should_use_signing_service():
+        if bool(getFeatureFlag('lp.services.signing.enabled')):
             klass = ServiceUefiUpload
         else:
             klass = LocalUefiUpload

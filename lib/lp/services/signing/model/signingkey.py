@@ -56,7 +56,7 @@ class SigningKey(StormBase):
 
     fingerprint = Unicode(allow_none=False)
 
-    public_key = RawStr(allow_none=True)
+    public_key = RawStr(allow_none=False)
 
     date_created = DateTime(
         allow_none=False, default=UTC_NOW, tzinfo=pytz.UTC)
@@ -121,7 +121,7 @@ class ArchiveSigningKey(StormBase):
 
     id = Int(primary=True)
 
-    archive_id = Int(name="archive")
+    archive_id = Int(name="archive", allow_none=False)
     archive = Reference(archive_id, 'Archive.id')
 
     distro_series_id = Int(name="distro_series", allow_none=True)
@@ -147,12 +147,12 @@ class ArchiveSigningKey(StormBase):
         """
         store = IMasterStore(SigningKey)
         key_type = signing_key.key_type
-        obj = store.find(ArchiveSigningKey, [
+        obj = store.find(ArchiveSigningKey,
             ArchiveSigningKey.signing_key_id == SigningKey.id,
             SigningKey.key_type == key_type,
             ArchiveSigningKey.distro_series == distro_series,
             ArchiveSigningKey.archive == archive
-            ]).one()
+            ).one()
         if obj is not None:
             obj.signing_key = signing_key
             created = False
