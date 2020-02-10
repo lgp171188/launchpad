@@ -184,6 +184,8 @@ class TestSigningHelpers(TestCaseWithFactory):
 
     def setUp(self):
         super(TestSigningHelpers, self).setUp()
+
+        self.useFixture(FeatureFixture({'lp.services.signing.enabled': False}))
         self.temp_dir = self.makeTemporaryDirectory()
         self.distro = self.factory.makeDistribution()
         db_pubconf = getUtility(IPublisherConfigSet).getByDistribution(
@@ -1003,7 +1005,7 @@ class TestLocalSigningUpload(RunPartsMixin, TestSigningHelpers):
         self.openArchive("test", "1.0", "amd64")
         self.tarfile.add_file("1.0/empty.efi", b"")
         upload = self.process_emulate()
-        expected_callers = [('UEFI signing', 1),]
+        expected_callers = [('UEFI signing', 1), ]
         self.assertContentEqual(expected_callers, upload.callLog.caller_list())
         # Check the correct series name appears in the call arguments
         self.assertIn(
@@ -1607,7 +1609,7 @@ class TestSigningUploadWithSigningService(TestSigningHelpers):
         self.tarfile.add_file("1.0/empty.sipl", b"")
         self.tarfile.add_file("1.0/empty.fit", b"")
 
-        upload = self.process_emulate()
+        self.process_emulate()
 
         self.assertThat(self.getSignedPath("test", "amd64"), SignedMatches([
             "1.0/SHA256SUMS",
@@ -1645,7 +1647,7 @@ class TestSigningUploadWithSigningService(TestSigningHelpers):
         self.tarfile.add_file("1.0/empty.sipl", b"")
         self.tarfile.add_file("1.0/empty.fit", b"")
 
-        upload = self.process_emulate()
+        self.process_emulate()
 
         self.assertThat(self.getSignedPath("test", "amd64"), SignedMatches([
             "1.0/SHA256SUMS", "1.0/control/options",
@@ -1760,7 +1762,7 @@ class TestSigningUploadWithSigningService(TestSigningHelpers):
         for filename in filenames:
             self.tarfile.add_file(filename, b"somedata for %s" % filename)
 
-        upload = self.process_emulate()
+        self.process_emulate()
 
         signed_path = self.getSignedPath("test", "amd64")
         self.assertThat(signed_path, SignedMatches(filenames + [
