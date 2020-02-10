@@ -207,7 +207,7 @@ class IOCIRecipeSet(Interface):
     """A utility to create and access OCI Recipes."""
 
     def new(name, registrant, owner, oci_project, git_ref, description,
-            official, require_virtualized, build_file):
+            official, require_virtualized, build_file, date_created):
         """Create an IOCIRecipe."""
 
     def exists(oci_project, name):

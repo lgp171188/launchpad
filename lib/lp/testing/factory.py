@@ -4942,7 +4942,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
     def makeOCIRecipe(self, name=None, registrant=None, owner=None,
                       oci_project=None, git_ref=DEFAULT, description=None,
                       official=False, require_virtualized=True,
-                      build_file=DEFAULT):
+                      build_file=DEFAULT, date_created=DEFAULT):
         """Make a new OCIRecipe."""
         if name is None:
             name = self.getUniqueString(u"oci-recipe-name")
@@ -4964,10 +4964,11 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             owner=owner,
             oci_project=oci_project,
             git_ref=git_ref,
+            build_file=build_file,
             description=description,
             official=official,
             require_virtualized=require_virtualized,
-            build_file=build_file)
+            date_created=date_created)
 
     def makeOCIRecipeArch(self, recipe=None, processor=None):
         """Make a new OCIRecipeArch."""

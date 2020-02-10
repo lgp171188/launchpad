@@ -46,6 +46,7 @@ from lp.oci.interfaces.ocirecipe import (
     )
 from lp.oci.interfaces.ocirecipebuild import IOCIRecipeBuildSet
 from lp.oci.model.ocirecipebuild import OCIRecipeBuild
+from lp.services.database.constants import DEFAULT
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.interfaces import (
     IMasterStore,
@@ -94,16 +95,17 @@ class OCIRecipe(Storm):
 
     def __init__(self, name, registrant, owner, oci_project, git_ref,
                  description=None, official=False, require_virtualized=True,
-                 build_file=None):
+                 build_file=None, date_created=DEFAULT):
         super(OCIRecipe, self).__init__()
         self.name = name
         self.registrant = registrant
         self.owner = owner
         self.oci_project = oci_project
         self.description = description
+        self.build_file = build_file
         self.official = official
         self.require_virtualized = require_virtualized
-        self.build_file = build_file
+        self.date_created = date_created
         self.git_ref = git_ref
 
     def destroySelf(self):
@@ -243,8 +245,9 @@ class OCIRecipeArch(Storm):
 @implementer(IOCIRecipeSet)
 class OCIRecipeSet:
 
-    def new(self, name, registrant, owner, oci_project, git_ref, description,
-            official, require_virtualized, build_file):
+    def new(self, name, registrant, owner, oci_project, git_ref, build_file,
+            description=None, official=False, require_virtualized=True,
+            date_created=DEFAULT):
         """See `IOCIRecipeSet`."""
         if not registrant.inTeam(owner):
             if owner.is_team:
@@ -265,7 +268,7 @@ class OCIRecipeSet:
         store = IMasterStore(OCIRecipe)
         oci_recipe = OCIRecipe(
             name, registrant, owner, oci_project, git_ref, description,
-            official, require_virtualized, build_file)
+            official, require_virtualized, build_file, date_created)
         store.add(oci_recipe)
 
         return oci_recipe
