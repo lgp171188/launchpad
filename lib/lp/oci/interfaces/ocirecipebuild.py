@@ -8,7 +8,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 __metaclass__ = type
 __all__ = [
     'IOCIRecipeBuild',
-    'IOCIRecipeBuildSet'
+    'IOCIRecipeBuildSet',
     ]
 
 from lazr.restful.fields import Reference
@@ -24,6 +24,7 @@ from lp.services.fields import PublicPersonChoice
 
 
 class IOCIRecipeBuildEdit(Interface):
+    # XXX twom 2020-02-10 This will probably need cancel() implementing
     pass
 
 
@@ -40,12 +41,9 @@ class IOCIRecipeBuildView(IPackageBuild):
         required=True,
         readonly=True)
 
-    channel_name = Text(
-        title=_("The name of the OCI recipe channel to build."),
-        required=True, readonly=True)
-
 
 class IOCIRecipeBuildAdmin(Interface):
+    # XXX twom 2020-02-10 This will probably need rescore() implementing
     pass
 
 
@@ -57,9 +55,9 @@ class IOCIRecipeBuild(IOCIRecipeBuildAdmin, IOCIRecipeBuildEdit,
 class IOCIRecipeBuildSet(ISpecificBuildFarmJobSource):
     """A utility to create and access OCIRecipeBuilds."""
 
-    def new(requester, recipe, channel_name, processor, virtualized,
+    def new(requester, recipe, processor, virtualized,
             date_created=DEFAULT):
         """Create an `IOCIRecipeBuild`."""
 
-    def preloadBuildsData(self, builds):
+    def preloadBuildsData(builds):
         """Load the data related to a list of OCI recipe builds."""
