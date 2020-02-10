@@ -13,25 +13,25 @@ DO_WORKSPACE=1
 INSTALL_OPTS=""
 getopt_output="$(getopt -o '' -l no-workspace,lpusername:,assume-yes -- "$@")" || exit 1
 eval set -- "$getopt_output"
-  while :; do
-    case $1 in
-      --no-workspace)
-          DO_WORKSPACE=0
-          shift
-          ;;
-      --lpusername)
-          lpusername=$2
-          echo "Using username $lpusername for Launchpad"
-          shift
-          ;;
-      --assume-yes)
-          echo "Installing packages without prompting"
-          INSTALL_OPTS="-y"
-          shift
-          ;;
-      -- | *) shift; break ;;
-      esac
-  done
+while :; do
+  case $1 in
+    --no-workspace)
+        DO_WORKSPACE=0
+        shift
+        ;;
+    --lpusername)
+        lpusername=$2
+        echo "Using username $lpusername for Launchpad"
+        shift
+        ;;
+    --assume-yes)
+        echo "Installing packages without prompting"
+        INSTALL_OPTS="-y"
+        shift
+        ;;
+    -- | *) shift; break ;;
+    esac
+done
 
 if [ -z ${lpusername} ]; then
   # Establish LP username
