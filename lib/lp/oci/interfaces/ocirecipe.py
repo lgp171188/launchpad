@@ -39,7 +39,7 @@ from lp import _
 from lp.app.errors import NameLookupFailed
 from lp.app.validators.name import name_validator
 from lp.app.validators.path import path_does_not_escape
-from lp.code.interfaces.gitrepository import IGitRepository
+from lp.code.interfaces.gitref import IGitRef
 from lp.registry.interfaces.ociproject import IOCIProject
 from lp.registry.interfaces.role import IHasOwner
 from lp.services.fields import (
@@ -168,20 +168,14 @@ class IOCIRecipeEditableAttributes(IHasOwner):
         description=_("True if this recipe is official for its OCI project."),
         readonly=False)
 
-    git_repository = Reference(
-        IGitRepository,
-        title=_("A Git repository with a branch containing an OCI recipe."),
-        required=True,
-        readonly=False)
+    git_ref = Reference(
+        IGitRef, title=_("Git branch"), required=False, readonly=False,
+        description=_(
+            "The Git branch containing a Dockerfile at the location "
+            "defined by the build_file attribute."))
 
     description = Text(
         title=_("A short description of this recipe."),
-        readonly=False)
-
-    git_path = TextLine(
-        title=_("The branch within this recipe's Git "
-                "repository where its build files are maintained."),
-        required=True,
         readonly=False)
 
     build_file = TextLine(
@@ -212,8 +206,8 @@ class IOCIRecipe(IOCIRecipeView, IOCIRecipeEdit, IOCIRecipeEditableAttributes):
 class IOCIRecipeSet(Interface):
     """A utility to create and access OCI Recipes."""
 
-    def new(name, registrant, owner, oci_project, description, official,
-            require_virtualized, git_repository, git_path, build_file):
+    def new(name, registrant, owner, oci_project, git_ref, description,
+            official, require_virtualized, build_file):
         """Create an IOCIRecipe."""
 
     def exists(oci_project, name):

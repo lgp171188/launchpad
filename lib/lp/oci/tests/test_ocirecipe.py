@@ -119,24 +119,23 @@ class TestOCIRecipeSet(TestCaseWithFactory):
         registrant = self.factory.makePerson()
         owner = self.factory.makeTeam(members=[registrant])
         oci_project = self.factory.makeOCIProject()
-        git_repo = self.factory.makeGitRepository()
+        [git_ref] = self.factory.makeGitRefs()
         target = getUtility(IOCIRecipeSet).new(
             name='a name',
             registrant=registrant,
             owner=owner,
             oci_project=oci_project,
+            git_ref=git_ref,
             description='a description',
             official=False,
             require_virtualized=False,
-            git_repository=git_repo,
-            git_path='git path',
             build_file='build file')
         self.assertEqual(target.registrant, registrant)
         self.assertEqual(target.owner, owner)
         self.assertEqual(target.oci_project, oci_project)
         self.assertEqual(target.official, False)
         self.assertEqual(target.require_virtualized, False)
-        self.assertEqual(target.git_repository, git_repo)
+        self.assertEqual(target.git_ref, git_ref)
 
     def test_already_exists(self):
         oci_project = self.factory.makeOCIProject()
@@ -149,18 +148,18 @@ class TestOCIRecipeSet(TestCaseWithFactory):
             name="already exists",
             oci_project=oci_project)
 
-    def test_no_source_git_path(self):
+    def test_no_source_git_ref(self):
         self.assertRaises(
             NoSourceForOCIRecipe,
             self.factory.makeOCIRecipe,
-            name="already exists",
-            git_path=None)
+            name="no source",
+            git_ref=None)
 
     def test_no_source_build_file(self):
         self.assertRaises(
             NoSourceForOCIRecipe,
             self.factory.makeOCIRecipe,
-            name="already exists",
+            name="no build file",
             build_file=None)
 
     def test_getByName(self):

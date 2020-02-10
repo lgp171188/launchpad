@@ -80,29 +80,29 @@ class OCIRecipe(Storm):
 
     official = Bool(name="official", default=False)
 
-    git_repository_id = Int(name="git_repository")
+    git_repository_id = Int(name="git_repository", allow_none=False)
     git_repository = Reference(git_repository_id, "GitRepository.id")
     git_path = Unicode(name="git_path", allow_none=False)
     build_file = Unicode(name="build_file", allow_none=False)
 
-    require_virtualized = Bool(name="require_virtualized", default=True)
+    require_virtualized = Bool(name="require_virtualized", default=True,
+                               allow_none=False)
 
     build_daily = Bool(name="build_daily", default=False)
 
-    def __init__(self, name, registrant, owner, oci_project, description=None,
-                 official=False, require_virtualized=True, git_repository=None,
-                 git_path=None, build_file=None):
+    def __init__(self, name, registrant, owner, oci_project, git_ref,
+                 description=None, official=False, require_virtualized=True,
+                 build_file=None):
         super(OCIRecipe, self).__init__()
         self.name = name
-        self.description = description
         self.registrant = registrant
         self.owner = owner
         self.oci_project = oci_project
+        self.description = description
         self.official = official
         self.require_virtualized = require_virtualized
-        self.git_repository = git_repository
-        self.git_path = git_path
         self.build_file = build_file
+        self.git_ref = git_ref
 
     def destroySelf(self):
         """See `IOCIRecipe`."""
@@ -111,6 +111,23 @@ class OCIRecipe(Storm):
         store = IStore(OCIRecipe)
         store.find(OCIRecipeBuild, OCIRecipeBuild.recipe == self).remove()
         store.remove(self)
+
+    @property
+    def git_ref(self):
+        """See `IOCIRecipe`."""
+        if self.git_repository is not None:
+            return self.git_repository.getRefByPath(self.git_path)
+        return None
+
+    @git_ref.setter
+    def git_ref(self, value):
+        """See `IOCIRecipe`."""
+        if value is not None:
+            self.git_path = value.path
+            self.git_repository = value.repository
+        else:
+            self.git_repository = None
+            self.git_path = None
 
     def _checkRequestBuild(self, requester):
         if not requester.inTeam(self.owner):
@@ -214,8 +231,8 @@ class OCIRecipeArch(Storm):
 @implementer(IOCIRecipeSet)
 class OCIRecipeSet:
 
-    def new(self, name, registrant, owner, oci_project, description, official,
-            require_virtualized, git_repository, git_path, build_file):
+    def new(self, name, registrant, owner, oci_project, git_ref, description,
+            official, require_virtualized, build_file):
         """See `IOCIRecipeSet`."""
         if not registrant.inTeam(owner):
             if owner.is_team:
@@ -227,7 +244,7 @@ class OCIRecipeSet:
                     "%s cannot create OCI images owned by %s." %
                     (registrant.displayname, owner.displayname))
 
-        if not (git_path and build_file):
+        if not (git_ref and build_file):
             raise NoSourceForOCIRecipe
 
         if self.exists(oci_project, name):
@@ -235,8 +252,8 @@ class OCIRecipeSet:
 
         store = IMasterStore(OCIRecipe)
         oci_recipe = OCIRecipe(
-            name, registrant, owner, oci_project, description, official,
-            require_virtualized, git_repository, git_path, build_file)
+            name, registrant, owner, oci_project, git_ref, description,
+            official, require_virtualized, build_file)
         store.add(oci_recipe)
 
         return oci_recipe
