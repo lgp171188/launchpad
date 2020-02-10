@@ -34,7 +34,10 @@ from lp.services.database.interfaces import (
     IStore,
     )
 from lp.services.database.stormbase import StormBase
-from lp.services.signing.enums import SigningKeyType
+from lp.services.signing.enums import (
+    SigningKeyType,
+    SigningMode,
+    )
 from lp.services.signing.interfaces.signingkey import (
     IArchiveSigningKey,
     ISigningKey,
@@ -86,7 +89,7 @@ class SigningKey(StormBase):
                             key
         :returns: The SigningKey object associated with the newly created
                   key at lp-singing"""
-        signing_service = SigningService()
+        signing_service = SigningServiceClient()
         generated_key = signing_service.generate(key_type, description)
         signing_key = SigningKey(
             key_type=key_type, fingerprint=generated_key['fingerprint'],
@@ -103,10 +106,10 @@ class SigningKey(StormBase):
         :param message_name: A name for the message beign signed.
         """
         if self.key_type in (SigningKeyType.UEFI, SigningKeyType.FIT):
-            mode = "ATTACHED"
+            mode = SigningMode.ATTACHED
         else:
-            mode = "DETACHED"
-        signing_service = SigningService()
+            mode = SigningMode.DETACHED
+        signing_service = SigningServiceClient()
         signed = signing_service.sign(
             self.key_type, self.fingerprint, message_name, message, mode)
         return signed['signed-message']
@@ -137,7 +140,7 @@ class ArchiveSigningKey(StormBase):
         self.signing_key = signing_key
 
     @classmethod
-    def create_or_update(cls, archive, distro_series, signing_key):
+    def createOrUpdate(cls, archive, distro_series, signing_key):
         """Creates a new ArchiveSigningKey, or updates the existing one from
         the same type to point to the new signing key.
 
@@ -163,13 +166,13 @@ class ArchiveSigningKey(StormBase):
         return obj, created
 
     @classmethod
-    def get_signing_keys(cls, archive, distro_series):
+    def getSigningKeys(cls, archive, distro_series):
         """Get the most suitable keys for a given archive / distro series
         pair.
 
         :return: A dict of most suitable key per type, like {
             SigningKeyType.UEFI: <ArchiveSigningKey object 1>,
-            SigningKeyType.KMOD: <ArchiveSigningKey object 1>, ... }
+            SigningKeyType.KMOD: <ArchiveSigningKey object 2>, ... }
         """
         # Gets all the keys available for the given archive.
         store = IStore(ArchiveSigningKey)
@@ -221,6 +224,6 @@ class ArchiveSigningKey(StormBase):
         :returns: The generated ArchiveSigningKey
         """
         signing_key = SigningKey.generate(key_type, description)
-        archive_signing, created = ArchiveSigningKey.create_or_update(
+        archive_signing, created = ArchiveSigningKey.createOrUpdate(
             archive, distro_series, signing_key)
         return archive_signing

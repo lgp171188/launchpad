@@ -8,11 +8,14 @@ __metaclass__ = type
 
 __all__ = [
     'SigningKeyType',
+    'SigningMode',
     ]
 
 from lazr.enum import (
     DBEnumeratedType,
     DBItem,
+    EnumeratedType,
+    Item,
     )
 
 
@@ -48,3 +51,11 @@ class SigningKeyType(DBEnumeratedType):
         
         FIT signing key
         """)
+
+
+class SigningMode(EnumeratedType):
+    """Archive file signing mode."""
+
+    ATTACHED = Item("Attached signature")
+    DETACHED = Item("Detached signature")
+    CLEAR = Item("Cleartext signature")

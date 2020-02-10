@@ -4,17 +4,20 @@
 __metaclass__ = type
 
 import base64
-import json
 from collections import defaultdict
+import json
 
 import mock
-from lp.services.signing.enums import SigningKeyType
 from mock import ANY
 from nacl.encoding import Base64Encoder
-from nacl.public import PublicKey
+from nacl.public import PublicKey, PrivateKey
 import requests
 import responses
 
+from lp.services.signing.enums import (
+    SigningKeyType,
+    SigningMode,
+    )
 from lp.services.signing.proxy import SigningServiceClient
 from lp.testing import TestCaseWithFactory
 from lp.testing.layers import BaseLayer
@@ -31,36 +34,9 @@ class SigningServiceResponseFactory:
         self.base64_service_public_key = (
             u"x7vTtpmn0+DvKNdmtf047fn1JRQI5eMnOQRy3xJ1m10=")
         self.base64_nonce = u"neSSa2MUZlQU3XiipU2TfiaqW5nrVUpR"
-        self.b64_generated_public_key = (
-            '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')
+        self.generated_public_key = bytes(PrivateKey.generate().public_key)
+        self.b64_generated_public_key = base64.b64encode(
+            self.generated_public_key)
         self.generated_public_key = base64.b64decode(
             self.b64_generated_public_key)
         self.generated_fingerprint = (
@@ -68,12 +44,12 @@ class SigningServiceResponseFactory:
         self.b64_signed_msg = base64.b64encode("the-signed-msg")
 
     @classmethod
-    def get_url(cls, path):
+    def getUrl(cls, path):
         """Shortcut to get full path of an endpoint at lp-signing.
         """
-        return SigningService().getUrl(path)
+        return SigningServiceClient().getUrl(path)
 
-    def patch(self):
+    def addResponses(self):
         """Patches all requests with default test values.
 
         This method uses `responses` module to mock `requests`. You should use
@@ -96,15 +72,15 @@ class SigningServiceResponseFactory:
         calls to /sign would be done and the response should be checked.
         """
         responses.add(
-            responses.GET, self.get_url("/service-key"),
+            responses.GET, self.getUrl("/service-key"),
             json={"service-key": self.base64_service_public_key}, status=200)
 
         responses.add(
-            responses.POST, self.get_url("/nonce"),
+            responses.POST, self.getUrl("/nonce"),
             json={"nonce": self.base64_nonce}, status=201)
 
         responses.add(
-            responses.POST, self.get_url("/generate"),
+            responses.POST, self.getUrl("/generate"),
             json={'fingerprint': self.generated_fingerprint,
                   'public-key': self.b64_generated_public_key},
             status=201)
@@ -119,7 +95,7 @@ class SigningServiceResponseFactory:
             return 201, {}, json.dumps(data)
 
         responses.add_callback(
-            responses.POST, self.get_url("/sign"),
+            responses.POST, self.getUrl("/sign"),
             callback=sign_callback)
 
 
@@ -175,9 +151,9 @@ class SigningServiceProxyTest(TestCaseWithFactory):
 
     @responses.activate
     def test_get_service_public_key(self):
-        self.response_factory.patch()
+        self.response_factory.addResponses()
 
-        signing = SigningService()
+        signing = SigningServiceClient()
         key = signing.service_public_key
 
         # Asserts that the public key is correct.
@@ -191,13 +167,13 @@ class SigningServiceProxyTest(TestCaseWithFactory):
         call = responses.calls[0]
         self.assertEqual("GET", call.request.method)
         self.assertEqual(
-            self.response_factory.get_url("/service-key"), call.request.url)
+            self.response_factory.getUrl("/service-key"), call.request.url)
 
     @responses.activate
     def test_get_nonce(self):
-        self.response_factory.patch()
+        self.response_factory.addResponses()
 
-        signing = SigningService()
+        signing = SigningServiceClient()
         nonce = signing.getNonce()
 
         self.assertEqual(
@@ -208,13 +184,13 @@ class SigningServiceProxyTest(TestCaseWithFactory):
         call = responses.calls[0]
         self.assertEqual("POST", call.request.method)
         self.assertEqual(
-            self.response_factory.get_url("/nonce"), call.request.url)
+            self.response_factory.getUrl("/nonce"), call.request.url)
 
     @responses.activate
     def test_generate_unknown_key_type_raises_exception(self):
-        self.response_factory.patch()
+        self.response_factory.addResponses()
 
-        signing = SigningService()
+        signing = SigningServiceClient()
         self.assertRaises(
             ValueError, signing.generate, "banana", "Wrong key type")
         self.assertEqual(0, len(responses.calls))
@@ -224,9 +200,9 @@ class SigningServiceProxyTest(TestCaseWithFactory):
         """Makes sure that the SigningService.generate method calls the
         correct endpoints
         """
-        self.response_factory.patch()
+        self.response_factory.addResponses()
         # Generate the key, and checks if we got back the correct dict.
-        signing = SigningService()
+        signing = SigningServiceClient()
         generated = signing.generate(SigningKeyType.UEFI, "my lp test key")
 
         self.assertEqual(generated, {
@@ -240,16 +216,16 @@ class SigningServiceProxyTest(TestCaseWithFactory):
 
         self.assertEqual("POST", http_nonce.request.method)
         self.assertEqual(
-            self.response_factory.get_url("/nonce"), http_nonce.request.url)
+            self.response_factory.getUrl("/nonce"), http_nonce.request.url)
 
         self.assertEqual("GET", http_service_key.request.method)
         self.assertEqual(
-            self.response_factory.get_url("/service-key"),
+            self.response_factory.getUrl("/service-key"),
             http_service_key.request.url)
 
         self.assertEqual("POST", http_generate.request.method)
         self.assertEqual(
-            self.response_factory.get_url("/generate"),
+            self.response_factory.getUrl("/generate"),
             http_generate.request.url)
         self.assertHeaderContains(http_generate.request, {
             "Content-Type": "application/x-boxed-json",
@@ -259,7 +235,7 @@ class SigningServiceProxyTest(TestCaseWithFactory):
 
     @responses.activate
     def test_sign_invalid_mode(self):
-        signing = SigningService()
+        signing = SigningServiceClient()
         self.assertRaises(
             ValueError, signing.sign,
             SigningKeyType.UEFI, 'fingerprint', 'message_name', 'message',
@@ -268,10 +244,11 @@ class SigningServiceProxyTest(TestCaseWithFactory):
 
     @responses.activate
     def test_sign_invalid_key_type(self):
-        signing = SigningService()
+        signing = SigningServiceClient()
         self.assertRaises(
             ValueError, signing.sign,
-            'shrug', 'fingerprint', 'message_name', 'message', 'ATTACHED')
+            'shrug', 'fingerprint', 'message_name', 'message',
+            SigningMode.ATTACHED)
         self.assertEqual(0, len(responses.calls))
 
     @responses.activate
@@ -279,15 +256,15 @@ class SigningServiceProxyTest(TestCaseWithFactory):
         """Runs through SignService.sign() flow"""
         # Replace GET /service-key response by our mock.
         resp_factory = self.response_factory
-        resp_factory.patch()
+        resp_factory.addResponses()
 
         fingerprint = '338D218488DFD597D8FCB9C328C3E9D9ADA16CEE'
         key_type = SigningKeyType.KMOD
-        mode = 'DETACHED'
+        mode = SigningMode.DETACHED
         message_name = 'my test msg'
         message = 'this is the message content'
 
-        signing = SigningService()
+        signing = SigningServiceClient()
         data = signing.sign(
             key_type, fingerprint, message_name, message, mode)
 
@@ -297,16 +274,16 @@ class SigningServiceProxyTest(TestCaseWithFactory):
 
         self.assertEqual("POST", http_nonce.request.method)
         self.assertEqual(
-            self.response_factory.get_url("/nonce"), http_nonce.request.url)
+            self.response_factory.getUrl("/nonce"), http_nonce.request.url)
 
         self.assertEqual("GET", http_service_key.request.method)
         self.assertEqual(
-            self.response_factory.get_url("/service-key"),
+            self.response_factory.getUrl("/service-key"),
             http_service_key.request.url)
 
         self.assertEqual("POST", http_sign.request.method)
         self.assertEqual(
-            self.response_factory.get_url("/sign"),
+            self.response_factory.getUrl("/sign"),
             http_sign.request.url)
         self.assertHeaderContains(http_sign.request, {
             "Content-Type": "application/x-boxed-json",

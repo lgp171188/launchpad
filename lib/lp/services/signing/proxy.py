@@ -17,10 +17,14 @@ from nacl.public import (
     PrivateKey,
     PublicKey,
     )
+import six
 
 from lp.services.config import config
 from lp.services.propertycache import cachedproperty
-from lp.services.signing.enums import SigningKeyType
+from lp.services.signing.enums import (
+    SigningKeyType,
+    SigningMode,
+    )
 from lp.services.timeline.requesttimeline import get_request_timeline
 from lp.services.timeout import urlfetch
 
@@ -33,9 +37,6 @@ class SigningServiceClient:
     LP_SIGNING_ADDRESS = config.signing.lp_signing_address
     LOCAL_PRIVATE_KEY = config.signing.local_private_key
     LOCAL_PUBLIC_KEY = config.signing.local_public_key
-
-    ATTACHED = "ATTACHED"
-    DETACHED = "DETACHED"
 
     _instance = None
 
@@ -59,7 +60,8 @@ class SigningServiceClient:
 
         :param path: The REST endpoint to be joined.
         """
-        return self.LP_SIGNING_ADDRESS + path
+        base_url = config.signing.lp_signing_address
+        return six.moves.urllib.parse.urljoin(base_url, path)
 
     def _getJson(self, path, method="GET", **kwargs):
         """Helper method to do an HTTP request and get back a json from  the
@@ -67,8 +69,8 @@ class SigningServiceClient:
         """
         timeline = get_request_timeline(get_current_browser_request())
         action = timeline.start(
-            "lp-services-signin-proxy-%s" % method, "%s %s %s" %
-            (path, method, json.dumps(kwargs)))
+            "services-signing-proxy-%s" % method, "%s %s" %
+            (path, json.dumps(kwargs)))
 
         try:
             url = self.getUrl(path)
@@ -145,11 +147,10 @@ class SigningServiceClient:
                             the `generate` method
         :param message_name: A description of the message being signed
         :param message: The message to be signed
-        :param mode: SignService.ATTACHED or SignService.DETACHED
+        :param mode: SigningMode.ATTACHED or SigningMode.DETACHED
         :return: A dict with 'public-key' and 'signed-message'
         """
-        if mode not in {SigningServiceClient.ATTACHED,
-                        SigningServiceClient.DETACHED}:
+        if mode not in {SigningMode.ATTACHED, SigningMode.DETACHED}:
             raise ValueError("%s is not a valid mode" % mode)
         if key_type not in SigningKeyType.items:
             raise ValueError("%s is not a valid key type" % key_type)
@@ -160,7 +161,7 @@ class SigningServiceClient:
             "fingerprint": fingerprint,
             "message-name": message_name,
             "message": base64.b64encode(message).decode("UTF-8"),
-            "mode": mode,
+            "mode": mode.name,
             }).encode("UTF-8")
         data = self._getJson(
             "/sign", "POST",

@@ -558,7 +558,7 @@ class SigningServiceUpload(BaseSigningUpload):
         self.public_keys = set()
 
     def findSigningHandlers(self):
-        keys = ArchiveSigningKey.get_signing_keys(
+        keys = ArchiveSigningKey.getSigningKeys(
             self.archive, self.distro_series)
 
         for dirpath, dirnames, filenames in scandir.walk(self.tmpdir):
@@ -595,6 +595,7 @@ class SigningServiceUpload(BaseSigningUpload):
                     self.logger.error(
                         "Error generating signing key for PPA#%s: %s %s" %
                         (self.archive.id, e.__class__.__name__, e))
+                return
 
         signing_key = key.signing_key
         with open(filename, "rb") as fd:

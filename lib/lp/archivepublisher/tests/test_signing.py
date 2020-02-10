@@ -184,8 +184,6 @@ class TestSigningHelpers(TestCaseWithFactory):
 
     def setUp(self):
         super(TestSigningHelpers, self).setUp()
-
-        self.useFixture(FeatureFixture({'lp.services.signing.enabled': False}))
         self.temp_dir = self.makeTemporaryDirectory()
         self.distro = self.factory.makeDistribution()
         db_pubconf = getUtility(IPublisherConfigSet).getByDistribution(
@@ -1584,7 +1582,7 @@ class TestSigningUploadWithSigningService(TestSigningHelpers):
         """If the configured key/cert are missing, processing succeeds but
         nothing is signed.
         """
-        self.signing_service.patch()
+        self.signing_service.addResponses()
         self.openArchive("test", "1.0", "amd64")
         self.tarfile.add_file("1.0/control/options", b"first\nsecond\n")
 
@@ -1598,7 +1596,7 @@ class TestSigningUploadWithSigningService(TestSigningHelpers):
     def test_options_tarball(self):
         """Specifying the "tarball" option should create an tarball in tmpdir.
         """
-        self.signing_service.patch()
+        self.signing_service.addResponses()
         # Use PPA to enable autokey and actually sign things.
         self.setUpPPA()
         self.openArchive("test", "1.0", "amd64")
@@ -1636,7 +1634,7 @@ class TestSigningUploadWithSigningService(TestSigningHelpers):
         """Specifying the "signed-only" option should trigger removal of
         the source files leaving signatures only.
         """
-        self.signing_service.patch()
+        self.signing_service.addResponses()
         # Use PPA to enable autokey and actually sign things.
         self.setUpPPA()
         self.openArchive("test", "1.0", "amd64")
@@ -1664,7 +1662,7 @@ class TestSigningUploadWithSigningService(TestSigningHelpers):
         the tmpdir.  Adding signed-only should trigger removal of the
         original files.
         """
-        self.signing_service.patch()
+        self.signing_service.addResponses()
         self.setUpPPA()
         self.openArchive("test", "1.0", "amd64")
         self.tarfile.add_file("1.0/control/options", b"tarball\nsigned-only")
@@ -1720,7 +1718,7 @@ class TestSigningUploadWithSigningService(TestSigningHelpers):
 
     @responses.activate
     def test_sign_without_autokey_and_no_key_pre_set(self):
-        self.signing_service.patch()
+        self.signing_service.addResponses()
 
         filenames = [
             "1.0/empty.efi", "1.0/empty.ko", "1.0/empty.opal",
@@ -1745,7 +1743,7 @@ class TestSigningUploadWithSigningService(TestSigningHelpers):
         """For no autokey archives, signing process should sign only for the
         available keys, and skip signing the other files
         """
-        self.signing_service.patch()
+        self.signing_service.addResponses()
 
         # Pre-generate KMOD and OPAL keys
         ArchiveSigningKey.generate(SigningKeyType.KMOD, self.archive)
@@ -1777,7 +1775,7 @@ class TestSigningUploadWithSigningService(TestSigningHelpers):
 
     @responses.activate
     def test_sign_with_autokey_ppa(self):
-        self.signing_service.patch()
+        self.signing_service.addResponses()
 
         # PPAs should auto-generate keys. Let's use one for this test.
         self.setUpPPA()
