@@ -26,6 +26,7 @@
   <include package=".profile" />
   <include package=".scripts" />
   <include package=".session" />
+  <include package=".signing" />
   <include package=".sitesearch" />
   <include package=".statistics" />
   <include package=".temporaryblobstorage" />

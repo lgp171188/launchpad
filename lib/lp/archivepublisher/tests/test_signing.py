@@ -47,7 +47,8 @@ from lp.archivepublisher.signing import (
 from lp.archivepublisher.tests.test_run_parts import RunPartsMixin
 from lp.services.features.testing import FeatureFixture
 from lp.services.osutils import write_file
-from lp.services.signing.model.signingkey import ArchiveSigningKey
+from lp.services.signing.model.signingkey import ArchiveSigningKey, \
+    ArchiveSigningKeySet
 from lp.services.signing.proxy import (
     SigningKeyType,
     SigningServiceClient,
@@ -1746,8 +1747,8 @@ class TestSigningUploadWithSigningService(TestSigningHelpers):
         self.signing_service.addResponses()
 
         # Pre-generate KMOD and OPAL keys
-        ArchiveSigningKey.generate(SigningKeyType.KMOD, self.archive)
-        ArchiveSigningKey.generate(SigningKeyType.OPAL, self.archive)
+        ArchiveSigningKeySet.generate(SigningKeyType.KMOD, self.archive)
+        ArchiveSigningKeySet.generate(SigningKeyType.OPAL, self.archive)
         # Resets HTTP calls history and SigningService caches
         responses.calls.reset()
         SigningServiceClient._instance = None

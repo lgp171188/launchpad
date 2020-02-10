@@ -28,6 +28,7 @@ import tempfile
 import textwrap
 
 import scandir
+from lp.services.signing.interfaces.signingkey import IArchiveSigningKeySet
 from zope.component._api import getUtility
 from zope.security.proxy import removeSecurityProxy
 
@@ -558,7 +559,7 @@ class SigningServiceUpload(BaseSigningUpload):
         self.public_keys = set()
 
     def findSigningHandlers(self):
-        keys = ArchiveSigningKey.getSigningKeys(
+        keys = getUtility(IArchiveSigningKeySet).getSigningKeys(
             self.archive, self.distro_series)
 
         for dirpath, dirnames, filenames in scandir.walk(self.tmpdir):
@@ -588,7 +589,7 @@ class SigningServiceUpload(BaseSigningUpload):
             description = (
                 u"%s key for PPA#%s" % (key_type.name, self.archive.id))
             try:
-                key = ArchiveSigningKey.generate(
+                key = getUtility(IArchiveSigningKeySet).generate(
                     key_type, self.archive, description=description)
             except Exception as e:
                 if self.logger:

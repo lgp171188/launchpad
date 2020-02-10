@@ -7,7 +7,8 @@ __metaclass__ = type
 
 __all__ = [
     'ISigningKey',
-    'IArchiveSigningKey'
+    'IArchiveSigningKey',
+    'IArchiveSigningKeySet'
 ]
 
 from lp.services.signing.enums import SigningKeyType
@@ -43,6 +44,13 @@ class ISigningKey(Interface):
     date_created = Datetime(
         title=_('When this key was created'), required=True, readonly=True)
 
+    def sign(message, message_name=None):
+        """Sign the given message using this key
+
+        :param message: The message to be signed.
+        :param message_name: A name for the message beign signed.
+        """
+
 
 class IArchiveSigningKey(Interface):
     """Which signing key should be used by a specific archive"""
@@ -60,3 +68,38 @@ class IArchiveSigningKey(Interface):
     signing_key = Reference(
         ISigningKey, title=_("Signing key"), required=True, readonly=True,
         description=_("Which signing key should be used by this archive"))
+
+
+class IArchiveSigningKeySet(Interface):
+    """Management class to deal with ArchiveSigningKey objects
+    """
+
+    def createOrUpdate(archive, distro_series, signing_key):
+        """Creates a new ArchiveSigningKey, or updates the existing one from
+        the same type to point to the new signing key.
+
+        :return: A tuple like (db_object:ArchiveSigningKey, created:boolean)
+                 with the ArchiveSigningKey and True if it was created (
+                 False if it was updated).
+        """
+
+    def getSigningKeys(archive, distro_series):
+        """Get the most suitable keys for a given archive / distro series
+        pair.
+
+        :return: A dict of most suitable key per type, like {
+            SigningKeyType.UEFI: <ArchiveSigningKey object 1>,
+            SigningKeyType.KMOD: <ArchiveSigningKey object 2>, ... }
+        """
+
+    def generate(key_type, archive, distro_series=None, description=None):
+        """Generated a new key on signing service, and save it to db.
+
+        :param key_type: One of the SigningKeyType enum's value
+        :param archive: The package Archive that should be associated with
+                        this key
+        :param distro_series: (optional) The DistroSeries object
+        :param description: (optional) The description associated with this
+                            key
+        :returns: The generated ArchiveSigningKey
+        """
