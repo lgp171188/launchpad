@@ -33,8 +33,8 @@ from lp.archivepublisher.customupload import (
     CustomUploadTarballBadSymLink,
     CustomUploadTarballInvalidFileType,
     )
-from lp.archivepublisher.interfaces.archivesigningkey import (
-    IArchiveSigningKey,
+from lp.archivepublisher.interfaces.archivegpgsigningkey import (
+    IArchiveGPGSigningKey,
     )
 from lp.archivepublisher.interfaces.publisherconfig import IPublisherConfigSet
 from lp.archivepublisher.tests.test_run_parts import RunPartsMixin
@@ -260,7 +260,7 @@ class TestSigning(TestCaseWithFactory, RunPartsMixin):
         self.assertIsNone(self.archive.signing_key)
         self.useFixture(InProcessKeyServerFixture()).start()
         key_path = os.path.join(gpgkeysdir, 'ppa-sample@canonical.com.sec')
-        yield IArchiveSigningKey(self.archive).setSigningKey(
+        yield IArchiveGPGSigningKey(self.archive).setSigningKey(
             key_path, async_keyserver=True)
         self.assertIsNotNone(self.archive.signing_key)
         custom_processor = CustomUpload()
@@ -280,7 +280,8 @@ class TestSigning(TestCaseWithFactory, RunPartsMixin):
         write_file(filename, b"contents")
         self.assertIsNone(self.archive.signing_key)
         run_parts_fixture = self.useFixture(MonkeyPatch(
-            "lp.archivepublisher.archivesigningkey.run_parts", FakeMethod()))
+            "lp.archivepublisher.archivegpgsigningkey.run_parts",
+            FakeMethod()))
         custom_processor = CustomUpload()
         custom_processor.sign(self.archive, "suite", filename)
         args, kwargs = run_parts_fixture.new_value.calls[0]

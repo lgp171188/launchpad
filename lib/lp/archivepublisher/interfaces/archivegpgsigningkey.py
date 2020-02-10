@@ -1,13 +1,13 @@
 # Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-"""ArchiveSigningKey interface."""
+"""ArchiveGPGSigningKey interface."""
 
 __metaclass__ = type
 
 __all__ = [
     'CannotSignArchive',
-    'IArchiveSigningKey',
+    'IArchiveGPGSigningKey',
     'ISignableArchive',
     ]
 
@@ -67,8 +67,8 @@ class ISignableArchive(Interface):
         """
 
 
-class IArchiveSigningKey(ISignableArchive):
-    """`ArchiveSigningKey` interface.
+class IArchiveGPGSigningKey(ISignableArchive):
+    """`ArchiveGPGSigningKey` interface.
 
     `IArchive` adapter for operations using its 'signing_key'.
 

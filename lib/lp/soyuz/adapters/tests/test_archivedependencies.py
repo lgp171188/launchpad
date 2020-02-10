@@ -20,8 +20,8 @@ from twisted.internet.threads import deferToThread
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
-from lp.archivepublisher.interfaces.archivesigningkey import (
-    IArchiveSigningKey,
+from lp.archivepublisher.interfaces.archivegpgsigningkey import (
+    IArchiveGPGSigningKey,
     )
 from lp.registry.interfaces.distribution import IDistributionSet
 from lp.registry.interfaces.pocket import PackagePublishingPocket
@@ -174,7 +174,7 @@ class TestSourcesList(TestCaseWithFactory):
         archive = self.factory.makeArchive(distribution=self.ubuntu, **kwargs)
         if signing_key_name is not None:
             key_path = os.path.join(gpgkeysdir, "%s.sec" % signing_key_name)
-            yield IArchiveSigningKey(archive).setSigningKey(
+            yield IArchiveGPGSigningKey(archive).setSigningKey(
                 key_path, async_keyserver=True)
         if publish_binary:
             self.publisher.getPubBinaries(
