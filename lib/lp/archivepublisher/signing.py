@@ -603,13 +603,30 @@ class SigningServiceUpload(BaseSigningUpload):
         if key is None:
             if not self.autokey:
                 return
-            key = ArchiveSigningKey.generate(key_type, self.archive)
+            description = (
+                u"%s key for PPA#%s" % (key_type.name, self.archive.id))
+            try:
+                key = ArchiveSigningKey.generate(
+                    key_type, self.archive, description=description)
+            except Exception as e:
+                if self.logger:
+                    self.logger.error(
+                        "Error generating signing key for PPA#%s: %s %s" %
+                        (self.archive.id, e.__class__.__name__, e))
 
         signing_key = key.signing_key
         with open(filename) as fd:
             content = fd.read()
 
-        signed_content = signing_key.sign(content)
+        try:
+            signed_content = signing_key.sign(
+                content, message_name=os.path.basename(filename))
+        except Exception as e:
+            if self.logger:
+                self.logger.error(
+                    "Error signing %s on signing service: %s %s" %
+                    (filename, e.__class__.__name__, e))
+            return
 
         if key_type in (SigningKeyType.UEFI, SigningKeyType.FIT):
             file_sufix = ".signed"
