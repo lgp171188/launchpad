@@ -33,6 +33,8 @@ from zope.interface import implementer
 
 from lp.buildmaster.enums import BuildStatus
 from lp.buildmaster.interfaces.buildqueue import IBuildQueueSet
+from lp.buildmaster.model.buildfarmjob import BuildFarmJob
+from lp.buildmaster.model.buildqueue import BuildQueue
 from lp.oci.interfaces.ocirecipe import (
     DuplicateOCIRecipeName,
     IOCIRecipe,
@@ -109,8 +111,18 @@ class OCIRecipe(Storm):
         # XXX twom 2019-11-26 This needs to expand as more build artifacts
         # are added
         store = IStore(OCIRecipe)
+        buildqueue_records = store.find(
+            BuildQueue,
+            BuildQueue._build_farm_job_id == OCIRecipeBuild.build_farm_job_id,
+            OCIRecipeBuild.recipe == self)
+        for buildqueue_record in buildqueue_records:
+            buildqueue_record.destroySelf()
+        build_farm_job_ids = list(store.find(
+            OCIRecipeBuild.build_farm_job_id, OCIRecipeBuild.recipe == self))
         store.find(OCIRecipeBuild, OCIRecipeBuild.recipe == self).remove()
         store.remove(self)
+        store.find(
+            BuildFarmJob, BuildFarmJob.id.is_in(build_farm_job_ids)).remove()
 
     @property
     def git_ref(self):
