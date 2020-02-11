@@ -28,7 +28,6 @@ import tempfile
 import textwrap
 
 import scandir
-from lp.services.signing.interfaces.signingkey import IArchiveSigningKeySet
 from zope.component._api import getUtility
 from zope.security.proxy import removeSecurityProxy
 
@@ -38,7 +37,7 @@ from lp.registry.interfaces.distroseries import IDistroSeriesSet
 from lp.services.features import getFeatureFlag
 from lp.services.osutils import remove_if_exists
 from lp.services.signing.enums import SigningKeyType
-from lp.services.signing.model.signingkey import ArchiveSigningKey
+from lp.services.signing.interfaces.signingkey import IArchiveSigningKeySet
 from lp.soyuz.interfaces.queue import CustomUploadError
 
 
