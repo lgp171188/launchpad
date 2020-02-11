@@ -55,7 +55,7 @@ class IOCIRecipeBuild(IOCIRecipeBuildAdmin, IOCIRecipeBuildEdit,
 class IOCIRecipeBuildSet(ISpecificBuildFarmJobSource):
     """A utility to create and access OCIRecipeBuilds."""
 
-    def new(requester, recipe, processor, virtualized,
+    def new(requester, recipe, distro_arch_series,
             date_created=DEFAULT):
         """Create an `IOCIRecipeBuild`."""
 

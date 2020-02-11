@@ -149,20 +149,19 @@ class OCIRecipe(Storm):
                 "%s cannot create OCI image builds owned by %s." %
                 (requester.display_name, self.owner.display_name))
 
-    def requestBuild(self, requester, architecture):
+    def requestBuild(self, requester, distro_arch_series):
         self._checkRequestBuild(requester)
 
         pending = IStore(self).find(
             OCIRecipeBuild,
             OCIRecipeBuild.recipe == self.id,
-            OCIRecipeBuild.processor == architecture.processor,
+            OCIRecipeBuild.processor == distro_arch_series.processor,
             OCIRecipeBuild.status == BuildStatus.NEEDSBUILD)
         if pending.any() is not None:
             raise OCIRecipeBuildAlreadyPending
 
         build = getUtility(IOCIRecipeBuildSet).new(
-            requester, self, architecture.processor,
-            self.require_virtualized)
+            requester, self, distro_arch_series)
         build.queueBuild()
         notify(ObjectCreatedEvent(build, user=requester))
         return build

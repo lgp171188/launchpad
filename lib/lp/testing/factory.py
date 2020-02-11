@@ -4978,17 +4978,16 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             processor = self.makeProcessor()
         return OCIRecipeArch(recipe, processor)
 
-    def makeOCIRecipeBuild(self, requester=None, recipe=None, processor=None,
-                           virtualized=False, date_created=DEFAULT):
+    def makeOCIRecipeBuild(self, requester=None, recipe=None,
+                           distro_arch_series=None, date_created=DEFAULT):
         """Make a new OCIRecipeBuild."""
         if requester is None:
             requester = self.makePerson()
-        if processor is None:
-            processor = self.makeProcessor()
+        if distro_arch_series is None:
+            distro_arch_series = self.makeDistroArchSeries()
 
         return getUtility(IOCIRecipeBuildSet).new(
-            requester, recipe, processor, virtualized,
-            date_created)
+            requester, recipe, distro_arch_series, date_created)
 
 
 # Some factory methods return simple Python types. We don't add

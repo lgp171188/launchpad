@@ -24,6 +24,7 @@ from storm.locals import (
     Storm,
     Unicode,
     )
+from storm.store import EmptyResultSet
 from zope.component import getUtility
 from zope.interface import implementer
 
@@ -39,6 +40,7 @@ from lp.oci.interfaces.ocirecipebuild import (
     IOCIRecipeBuildSet,
     )
 from lp.services.database.constants import DEFAULT
+from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import (
     IMasterStore,
@@ -133,14 +135,18 @@ class OCIRecipeBuild(PackageBuildMixin, Storm):
 class OCIRecipeBuildSet(SpecificBuildFarmJobSourceMixin):
     """See `IOCIRecipeBuildSet`."""
 
-    def new(self, requester, recipe, processor, virtualized,
+    def new(self, requester, recipe, distro_arch_series,
             date_created=DEFAULT):
         """See `IOCIRecipeBuildSet`."""
+
+        virtualized = not (distro_arch_series.processor.supports_nonvirtualized
+                           or recipe.require_virtualized)
+
         store = IMasterStore(OCIRecipeBuild)
         build_farm_job = getUtility(IBuildFarmJobSource).new(
             OCIRecipeBuild.job_type, BuildStatus.NEEDSBUILD, date_created)
         ocirecipebuild = OCIRecipeBuild(
-            build_farm_job, requester, recipe, processor,
+            build_farm_job, requester, recipe, distro_arch_series.processor,
             virtualized, date_created)
         store.add(ocirecipebuild)
         return ocirecipebuild
@@ -159,3 +165,12 @@ class OCIRecipeBuildSet(SpecificBuildFarmJobSourceMixin):
         """See `ISpecificBuildFarmJobSource`."""
         return Store.of(build_farm_job).find(
             OCIRecipeBuild, build_farm_job_id=build_farm_job.id).one()
+
+    def getByBuildFarmJobs(self, build_farm_jobs):
+        """See `ISpecificBuildFarmJobSource`."""
+        if len(build_farm_jobs) == 0:
+            return EmptyResultSet()
+        rows = Store.of(build_farm_jobs[0]).find(
+            OCIRecipeBuild, OCIRecipeBuild.build_farm_job_id.is_in(
+                bfj.id for bfj in build_farm_jobs))
+        return DecoratedResultSet(rows, pre_iter_hook=self.preloadBuildsData)
