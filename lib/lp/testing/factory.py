@@ -4940,9 +4940,9 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         return oci_project.newSeries(name, summary, registrant)
 
     def makeOCIRecipe(self, name=None, registrant=None, owner=None,
-                      oci_project=None, git_ref=DEFAULT, description=None,
+                      oci_project=None, git_ref=None, description=None,
                       official=False, require_virtualized=True,
-                      build_file=DEFAULT, date_created=DEFAULT):
+                      build_file=None, date_created=DEFAULT):
         """Make a new OCIRecipe."""
         if name is None:
             name = self.getUniqueString(u"oci-recipe-name")
@@ -4954,9 +4954,9 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             owner = self.makeTeam(members=[registrant])
         if oci_project is None:
             oci_project = self.makeOCIProject()
-        if git_ref is DEFAULT:
+        if git_ref is None:
             [git_ref] = self.makeGitRefs()
-        if build_file is DEFAULT:
+        if build_file is None:
             build_file = self.getUniqueUnicode(u"build_file_for")
         return getUtility(IOCIRecipeSet).new(
             name=name,

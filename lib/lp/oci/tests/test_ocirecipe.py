@@ -153,17 +153,32 @@ class TestOCIRecipeSet(TestCaseWithFactory):
             oci_project=oci_project)
 
     def test_no_source_git_ref(self):
+        owner = self.factory.makePerson()
+        oci_project = self.factory.makeOCIProject()
+        recipe_set = getUtility(IOCIRecipeSet)
         self.assertRaises(
             NoSourceForOCIRecipe,
-            self.factory.makeOCIRecipe,
+            recipe_set.new,
             name="no source",
-            git_ref=None)
+            registrant=owner,
+            owner=owner,
+            oci_project=oci_project,
+            git_ref=None,
+            build_file='build_file')
 
     def test_no_source_build_file(self):
+        owner = self.factory.makePerson()
+        oci_project = self.factory.makeOCIProject()
+        recipe_set = getUtility(IOCIRecipeSet)
+        [git_ref] = self.factory.makeGitRefs()
         self.assertRaises(
             NoSourceForOCIRecipe,
-            self.factory.makeOCIRecipe,
-            name="no build file",
+            recipe_set.new,
+            name="no source",
+            registrant=owner,
+            owner=owner,
+            oci_project=oci_project,
+            git_ref=git_ref,
             build_file=None)
 
     def test_getByName(self):
