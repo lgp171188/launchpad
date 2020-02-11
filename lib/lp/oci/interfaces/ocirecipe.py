@@ -23,6 +23,7 @@ from lazr.restful.declarations import error_status
 from lazr.restful.fields import (
     CollectionField,
     Reference,
+    ReferenceChoice,
     )
 from six.moves import http_client
 from zope.interface import Interface
@@ -40,6 +41,7 @@ from lp.app.errors import NameLookupFailed
 from lp.app.validators.name import name_validator
 from lp.app.validators.path import path_does_not_escape
 from lp.code.interfaces.gitref import IGitRef
+from lp.code.interfaces.gitrepository import IGitRepository
 from lp.registry.interfaces.ociproject import IOCIProject
 from lp.registry.interfaces.role import IHasOwner
 from lp.services.fields import (
@@ -174,6 +176,20 @@ class IOCIRecipeEditableAttributes(IHasOwner):
             "The Git branch containing a Dockerfile at the location "
             "defined by the build_file attribute."))
 
+    git_repository = ReferenceChoice(
+        title=_("Git repository"),
+        schema=IGitRepository, vocabulary="GitRepository",
+        required=False, readonly=True,
+        description=_(
+            "A Git repository with a branch containing a Dockerfile "
+            "at the location defined by the build_file attribute."))
+
+    git_path = TextLine(
+        title=_("Git branch path"), required=False, readonly=False,
+        description=_(
+            "The path of the Git branch containing a Dockerfile "
+            "at the location defined by the build_file attribute."))
+
     description = Text(
         title=_("A short description of this recipe."),
         readonly=False)
@@ -215,3 +231,6 @@ class IOCIRecipeSet(Interface):
 
     def getByName(owner, oci_project, name):
         """Return the appropriate `OCIRecipe` for the given objects."""
+
+    def findByOwner(owner):
+        """Return all OCI Recipes with the given `owner`."""

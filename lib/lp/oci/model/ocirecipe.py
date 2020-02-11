@@ -289,3 +289,7 @@ class OCIRecipeSet:
         if oci_recipe is None:
             raise NoSuchOCIRecipe(name)
         return oci_recipe
+
+    def findByOwner(self, owner):
+        """See `IOCIRecipe`."""
+        return IStore(OCIRecipe).find(OCIRecipe, OCIRecipe.owner == owner)
