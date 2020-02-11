@@ -259,12 +259,15 @@ $(PY): download-cache constraints.txt setup.py
 
 $(subst $(PY),,$(PIP_BIN)): $(PY)
 
-compile: $(PY) $(VERSION_INFO)
+# Explicitly update version-info.py rather than declaring $(VERSION_INFO) as
+# a prerequisite, to make sure it's up to date when doing deployments.
+compile: $(PY)
 	${SHHH} utilities/relocate-virtualenv env
 	${SHHH} $(MAKE) -C sourcecode build PYTHON=${PYTHON} \
 	    LPCONFIG=${LPCONFIG}
 	${SHHH} bin/build-twisted-plugin-cache
 	${SHHH} LPCONFIG=${LPCONFIG} ${PY} -t buildmailman.py
+	scripts/update-version-info.sh
 
 test_build: build
 	bin/test $(TESTFLAGS) $(TESTOPTS)
