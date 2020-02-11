@@ -22,6 +22,7 @@ from storm.locals import (
     Reference,
     Unicode,
     )
+from zope.component._api import getUtility
 from zope.interface import implementer
 
 from lp.services.database.constants import (
@@ -40,8 +41,12 @@ from lp.services.signing.enums import (
     )
 from lp.services.signing.interfaces.signingkey import (
     IArchiveSigningKey,
+    IArchiveSigningKeySet,
     ISigningKey,
-    IArchiveSigningKeySet)
+    )
+from lp.services.signing.interfaces.signingserviceclient import (
+    ISigningServiceClient,
+    )
 from lp.services.signing.proxy import SigningServiceClient
 
 
@@ -89,7 +94,7 @@ class SigningKey(StormBase):
                             key
         :returns: The SigningKey object associated with the newly created
                   key at lp-singing"""
-        signing_service = SigningServiceClient()
+        signing_service = getUtility(ISigningServiceClient)
         generated_key = signing_service.generate(key_type, description)
         signing_key = SigningKey(
             key_type=key_type, fingerprint=generated_key['fingerprint'],
@@ -104,7 +109,7 @@ class SigningKey(StormBase):
             mode = SigningMode.ATTACHED
         else:
             mode = SigningMode.DETACHED
-        signing_service = SigningServiceClient()
+        signing_service = getUtility(ISigningServiceClient)
         signed = signing_service.sign(
             self.key_type, self.fingerprint, message_name, message, mode)
         return signed['signed-message']

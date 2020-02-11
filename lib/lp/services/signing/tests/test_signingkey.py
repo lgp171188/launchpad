@@ -6,17 +6,24 @@ __metaclass__ = type
 import base64
 
 import responses
+from storm.store import Store
+from testtools.matchers import MatchesStructure
+from zope.component._api import getUtility
 
-from lp.services.signing.enums import SigningKeyType
-from lp.services.signing.model.signingkey import SigningKey, ArchiveSigningKey, \
-    ArchiveSigningKeySet
 from lp.services.database.interfaces import IMasterStore
+from lp.services.signing.enums import SigningKeyType
+from lp.services.signing.interfaces.signingserviceclient import (
+    ISigningServiceClient,
+    )
+from lp.services.signing.model.signingkey import (
+    ArchiveSigningKey,
+    ArchiveSigningKeySet,
+    SigningKey,
+    )
 from lp.services.signing.proxy import SigningServiceClient
 from lp.services.signing.tests.test_proxy import SigningServiceResponseFactory
 from lp.testing import TestCaseWithFactory
 from lp.testing.layers import DatabaseFunctionalLayer
-from storm.store import Store
-from testtools.matchers import MatchesStructure
 
 
 class TestSigningKey(TestCaseWithFactory):
@@ -30,7 +37,7 @@ class TestSigningKey(TestCaseWithFactory):
     def tearDown(self):
         super(TestSigningKey, self).tearDown()
         # clean singleton instance of signing service.
-        SigningServiceClient._instance = None
+        getUtility(ISigningServiceClient)._cleanCaches()
 
     @responses.activate
     def test_generate_signing_key_saves_correctly(self):

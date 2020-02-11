@@ -4,24 +4,34 @@
 __metaclass__ = type
 
 import base64
-from collections import defaultdict
 import json
 
-import mock
-from mock import ANY
 from nacl.encoding import Base64Encoder
-from nacl.public import PublicKey, PrivateKey
-import requests
+from nacl.public import (
+    PrivateKey,
+    PublicKey,
+    )
 import responses
+from testtools.matchers import (
+    ContainsDict,
+    Equals,
+    )
+from zope.component._api import getUtility
 
+from lp.services.config import config
 from lp.services.signing.enums import (
     SigningKeyType,
     SigningMode,
     )
+from lp.services.signing.interfaces.signingserviceclient import (
+    ISigningServiceClient,
+    )
 from lp.services.signing.proxy import SigningServiceClient
 from lp.testing import TestCaseWithFactory
-from lp.testing.layers import BaseLayer
-from testtools.matchers import ContainsDict, Equals
+from lp.testing.layers import (
+    BaseLayer,
+    ZopelessLayer,
+    )
 
 
 class SigningServiceResponseFactory:
@@ -108,7 +118,7 @@ class SigningServiceProxyTest(TestCaseWithFactory):
     mocked here, returning fake responses created at
     SigningServiceResponseFactory.
     """
-    layer = BaseLayer
+    layer = ZopelessLayer
 
     def setUp(self, *args, **kwargs):
         super(TestCaseWithFactory, self).setUp(*args, **kwargs)
@@ -117,7 +127,7 @@ class SigningServiceProxyTest(TestCaseWithFactory):
     def tearDown(self):
         super(SigningServiceProxyTest, self).tearDown()
         # clean singleton instance of signing service.
-        SigningServiceClient._instance = None
+        getUtility(ISigningServiceClient)._cleanCaches()
 
     @responses.activate
     def test_get_service_public_key(self):
@@ -199,7 +209,7 @@ class SigningServiceProxyTest(TestCaseWithFactory):
             http_generate.request.url)
         self.assertThat(http_generate.request.headers, ContainsDict({
             "Content-Type": Equals("application/x-boxed-json"),
-            "X-Client-Public-Key": Equals(signing.LOCAL_PUBLIC_KEY),
+            "X-Client-Public-Key": Equals(config.signing.local_public_key),
             "X-Nonce": Equals(self.response_factory.base64_nonce)}))
         self.assertIsNotNone(http_generate.request.body)
 
@@ -257,7 +267,7 @@ class SigningServiceProxyTest(TestCaseWithFactory):
             http_sign.request.url)
         self.assertThat(http_sign.request.headers, ContainsDict({
             "Content-Type": Equals("application/x-boxed-json"),
-            "X-Client-Public-Key": Equals(signing.LOCAL_PUBLIC_KEY),
+            "X-Client-Public-Key": Equals(config.signing.local_public_key),
             "X-Nonce": Equals(self.response_factory.base64_nonce)}))
         self.assertIsNotNone(http_sign.request.body)
 
