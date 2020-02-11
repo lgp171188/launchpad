@@ -46,8 +46,8 @@ class ArchiveSigningKeySetFixture(fixtures.Fixture):
 
     def setUpAllKeyTypes(self, factory, archive):
         """Helper to make ArchiveSigningKeySet.getSigningKeys return one key
-        of each type, making it virtually unnecessary for .generate to be
-        called
+        of each type, making it unnecessary for ArchiveSigningKeySet.generate
+        to be called.
         """
         # Setup, for self.archive, all key types and make
         # ArchiveSigningKeySet return them

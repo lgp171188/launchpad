@@ -21,6 +21,7 @@ from lp.services.signing.enums import (
 from lp.services.signing.proxy import SigningServiceClient
 from lp.testing import TestCaseWithFactory
 from lp.testing.layers import BaseLayer
+from testtools.matchers import ContainsDict, Equals
 
 
 class SigningServiceResponseFactory:
@@ -118,37 +119,6 @@ class SigningServiceProxyTest(TestCaseWithFactory):
         # clean singleton instance of signing service.
         SigningServiceClient._instance = None
 
-    def assertHeaderContains(self, request, headers):
-        """Checks if the request's header contains the headers dictionary
-        provided
-
-        :param request: The requests.Request object
-        :param headers: Dictionary of expected headers
-        """
-        missing_headers = []
-        # List of tuples like (header key, got, expected)
-        different_headers = []
-        for k, v in headers.items():
-            if k not in request.headers:
-                missing_headers.append(k)
-                continue
-            if v != request.headers[k]:
-                different_headers.append((k, request.headers[k], v))
-                continue
-        failure_msgs = []
-        if missing_headers:
-            text = ", ".join(missing_headers)
-            failure_msgs.append("Missing headers: %s" % text)
-        if different_headers:
-            text = "; ".join(
-                "Header '%s': [got: %s / expected: %s]" % (k, got, expected)
-                for k, got, expected in different_headers)
-            failure_msgs.append(text)
-        if failure_msgs:
-            text = "\n".join(failure_msgs)
-            self.fail(
-                "Request header does not contain expected items:\n%s" % text)
-
     @responses.activate
     def test_get_service_public_key(self):
         self.response_factory.addResponses()
@@ -227,10 +197,10 @@ class SigningServiceProxyTest(TestCaseWithFactory):
         self.assertEqual(
             self.response_factory.getUrl("/generate"),
             http_generate.request.url)
-        self.assertHeaderContains(http_generate.request, {
-            "Content-Type": "application/x-boxed-json",
-            "X-Client-Public-Key": signing.LOCAL_PUBLIC_KEY,
-            "X-Nonce": self.response_factory.base64_nonce})
+        self.assertThat(http_generate.request.headers, ContainsDict({
+            "Content-Type": Equals("application/x-boxed-json"),
+            "X-Client-Public-Key": Equals(signing.LOCAL_PUBLIC_KEY),
+            "X-Nonce": Equals(self.response_factory.base64_nonce)}))
         self.assertIsNotNone(http_generate.request.body)
 
     @responses.activate
@@ -285,10 +255,10 @@ class SigningServiceProxyTest(TestCaseWithFactory):
         self.assertEqual(
             self.response_factory.getUrl("/sign"),
             http_sign.request.url)
-        self.assertHeaderContains(http_sign.request, {
-            "Content-Type": "application/x-boxed-json",
-            "X-Client-Public-Key": signing.LOCAL_PUBLIC_KEY,
-            "X-Nonce": self.response_factory.base64_nonce})
+        self.assertThat(http_sign.request.headers, ContainsDict({
+            "Content-Type": Equals("application/x-boxed-json"),
+            "X-Client-Public-Key": Equals(signing.LOCAL_PUBLIC_KEY),
+            "X-Nonce": Equals(self.response_factory.base64_nonce)}))
         self.assertIsNotNone(http_sign.request.body)
 
         # It should have returned the values from response.json(),
