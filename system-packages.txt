@@ -1,0 +1,32 @@
+# System-installed Python packages to link into our virtualenv.  This
+# facility should be reserved for cases where installing them as a normal
+# Python dependency is impossible or unreliable (perhaps due to frequent ABI
+# changes in system libraries they depend on, or frequent security updates
+# managed by the distribution's security team).
+
+# Used by launchpad-buildd.
+apt
+
+# Used by Soyuz and other related code to parse Debian packages and
+# repository index files, and to compare Debian version numbers.
+apt_inst
+apt_pkg
+
+# utilities/js-deps
+convoy
+
+# lp.services.geoip.model
+GeoIP
+
+# lp.testing.html5browser
+gi
+
+# lp.services.fields, lp.services.spriteutils
+PIL
+
+# Dependency of cscvs.
+sqlite
+_sqlite
+
+# Optional dependency of bzr-git and bzr-svn.
+tdb
