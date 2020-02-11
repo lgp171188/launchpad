@@ -28,7 +28,7 @@ import tempfile
 import textwrap
 
 import scandir
-from zope.component._api import getUtility
+from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
 from lp.archivepublisher.config import getPubConfig
@@ -48,122 +48,7 @@ class SigningUploadPackError(CustomUploadError):
         CustomUploadError.__init__(self, message)
 
 
-class BaseSigningUpload(CustomUpload):
-    """Common methods between LocalSigningUpload and SigningServiceUpload.
-    """
-
-    @staticmethod
-    def parsePath(tarfile_path):
-        tarfile_base = os.path.basename(tarfile_path)
-        bits = tarfile_base.split("_")
-        if len(bits) != 3:
-            raise ValueError("%s is not TYPE_VERSION_ARCH" % tarfile_base)
-        return bits[0], bits[1], bits[2].split(".")[0]
-
-    def setComponents(self, tarfile_path):
-        self.package, self.version, self.arch = self.parsePath(
-            tarfile_path)
-
-    def setTargetDirectory(self, archive, tarfile_path, suite):
-        raise NotImplementedError(
-            "This method should be implemented in subclasses")
-
-    def publishPublicKey(self, key):
-        """Record this key as having been used in this upload."""
-        self.public_keys.add(key)
-
-    def copyPublishedPublicKeys(self):
-        raise NotImplementedError(
-            "This method should be implemented in subclasses")
-
-    def setSigningOptions(self):
-        """Find and extract raw-signing options from the tarball."""
-        self.signing_options = {}
-
-        # Look for an options file in the top level control directory.
-        options_file = os.path.join(self.tmpdir, self.version,
-            "control", "options")
-        if not os.path.exists(options_file):
-            return
-
-        with open(options_file, 'rb') as options_fd:
-            for option in options_fd:
-                self.signing_options[option.strip()] = True
-
-    @classmethod
-    def getSeriesKey(cls, tarfile_path):
-        try:
-            package, _, arch = cls.parsePath(tarfile_path)
-            return package, arch
-        except ValueError:
-            return None
-
-    def findSigningHandlers(self):
-        raise NotImplementedError(
-            "This method should be implemented in subclasses")
-
-    def convertToTarball(self):
-        """Convert unpacked output to signing tarball."""
-        tarfilename = os.path.join(self.tmpdir, "signed.tar.gz")
-        versiondir = os.path.join(self.tmpdir, self.version)
-
-        try:
-            with tarfile.open(tarfilename, "w:gz") as tarball:
-                tarball.add(versiondir, arcname=self.version)
-        except tarfile.TarError as exc:
-            raise SigningUploadPackError(tarfilename, exc)
-
-        # Clean out the original tree and move the signing tarball in.
-        try:
-            shutil.rmtree(versiondir)
-            os.mkdir(versiondir)
-            os.rename(tarfilename, os.path.join(versiondir, "signed.tar.gz"))
-        except OSError as exc:
-            raise SigningUploadPackError(tarfilename, exc)
-
-    def extract(self):
-        """Copy the custom upload to a temporary directory, and sign it.
-
-        No actual extraction is required.
-        """
-        super(BaseSigningUpload, self).extract()
-        self.setSigningOptions()
-        for filename, handler, fallback_handler in self.findSigningHandlers():
-            return_code = handler(filename)
-            if return_code != 0 and fallback_handler is not None:
-                return_code = fallback_handler(filename)
-            if return_code == 0 and 'signed-only' in self.signing_options:
-                os.unlink(filename)
-
-        # Copy out the public keys where they were used.
-        self.copyPublishedPublicKeys()
-
-        # If tarball output is requested, tar up the results.
-        if 'tarball' in self.signing_options:
-            self.convertToTarball()
-
-    def installFiles(self, archive, suite):
-        """After installation hash and sign the installed result."""
-        # Avoid circular import.
-        from lp.archivepublisher.publishing import DirectoryHash
-
-        super(BaseSigningUpload, self).installFiles(archive, suite)
-
-        versiondir = os.path.join(self.targetdir, self.version)
-        with DirectoryHash(versiondir, self.temproot) as hasher:
-            hasher.add_dir(versiondir)
-        for checksum_path in hasher.checksum_paths:
-            if self.shouldSign(checksum_path):
-                self.sign(archive, suite, checksum_path)
-
-    def shouldInstall(self, filename):
-        return filename.startswith("%s/" % self.version)
-
-    def shouldSign(self, filename):
-        return filename.endswith("SUMS")
-
-
-class SigningUpload(BaseSigningUpload):
+class SigningUpload(CustomUpload):
     """Signing custom upload.
 
     The filename must be of the form:
@@ -192,7 +77,7 @@ class SigningUpload(BaseSigningUpload):
     basically two places interacting with it:
         - findSigningHandlers(), that provides a handler to call signing
         service to sign each file (together with a fallback handler,
-        that signs the file locally)
+        that signs the file locally).
 
         - copyPublishedPublicKeys(), that accepts both ways of saving public
         keys: by copying from local file system (old way) or saving the
@@ -206,6 +91,18 @@ class SigningUpload(BaseSigningUpload):
         super(SigningUpload, self).__init__(*args, **kwargs)
         self.use_signing_service = bool(getFeatureFlag(
             'lp.services.signing.enabled'))
+
+    @staticmethod
+    def parsePath(tarfile_path):
+        tarfile_base = os.path.basename(tarfile_path)
+        bits = tarfile_base.split("_")
+        if len(bits) != 3:
+            raise ValueError("%s is not TYPE_VERSION_ARCH" % tarfile_base)
+        return bits[0], bits[1], bits[2].split(".")[0]
+
+    def setComponents(self, tarfile_path):
+        self.package, self.version, self.arch = self.parsePath(
+            tarfile_path)
 
     def getSeriesPath(self, pubconf, key_name, archive, signing_for):
         """Find the key path for a given series.
@@ -297,6 +194,10 @@ class SigningUpload(BaseSigningUpload):
 
         self.public_keys = set()
 
+    def publishPublicKey(self, key):
+        """Record this key as having been used in this upload."""
+        self.public_keys.add(key)
+
     def copyPublishedPublicKeys(self):
         """Copy out published keys into the custom upload."""
         keydir = os.path.join(self.tmpdir, self.version, "control")
@@ -319,6 +220,28 @@ class SigningUpload(BaseSigningUpload):
                     if self.logger is not None:
                         self.logger.warning(
                         "%s: public key not world readable" % key)
+
+    def setSigningOptions(self):
+        """Find and extract raw-signing options from the tarball."""
+        self.signing_options = {}
+
+        # Look for an options file in the top level control directory.
+        options_file = os.path.join(self.tmpdir, self.version,
+            "control", "options")
+        if not os.path.exists(options_file):
+            return
+
+        with open(options_file, 'rb') as options_fd:
+            for option in options_fd:
+                self.signing_options[option.strip()] = True
+
+    @classmethod
+    def getSeriesKey(cls, tarfile_path):
+        try:
+            package, _, arch = cls.parsePath(tarfile_path)
+            return package, arch
+        except ValueError:
+            return None
 
     def callLog(self, description, cmdl):
         status = subprocess.call(cmdl)
@@ -368,6 +291,20 @@ class SigningUpload(BaseSigningUpload):
                     yield file_path, fallback_handler, None
 
     def signUsingSigningService(self, key_type, key, filename):
+        """Sign the given filename using a certain key hosted on signing
+        service, writing the signed file back to the filesystem version and
+        publishing the used public key to self.public_keys.
+
+        If the given key is None, this method tries to generate a key on
+        signing service, if the archive is configured to automatically
+        generate it (autokey).
+
+        :param key_type: One of the SigningKeyType enum items
+        :param key: The ArchiveSigningKey to be used (or None,
+                    to autogenerate if possible).
+        :param filename: The filename to be signed.
+        :return: 0 in case of success, any other number otherwise.
+        """
         if key is None:
             if not self.autokey:
                 return 1
@@ -623,6 +560,66 @@ class SigningUpload(BaseSigningUpload):
         cmdl = ["mkimage", "-F", "-k", os.path.dirname(key), "-r",
             image_signed]
         return self.callLog("FIT signing", cmdl)
+
+    def convertToTarball(self):
+        """Convert unpacked output to signing tarball."""
+        tarfilename = os.path.join(self.tmpdir, "signed.tar.gz")
+        versiondir = os.path.join(self.tmpdir, self.version)
+
+        try:
+            with tarfile.open(tarfilename, "w:gz") as tarball:
+                tarball.add(versiondir, arcname=self.version)
+        except tarfile.TarError as exc:
+            raise SigningUploadPackError(tarfilename, exc)
+
+        # Clean out the original tree and move the signing tarball in.
+        try:
+            shutil.rmtree(versiondir)
+            os.mkdir(versiondir)
+            os.rename(tarfilename, os.path.join(versiondir, "signed.tar.gz"))
+        except OSError as exc:
+            raise SigningUploadPackError(tarfilename, exc)
+
+    def extract(self):
+        """Copy the custom upload to a temporary directory, and sign it.
+
+        No actual extraction is required.
+        """
+        super(SigningUpload, self).extract()
+        self.setSigningOptions()
+        for filename, handler, fallback_handler in self.findSigningHandlers():
+            return_code = handler(filename)
+            if return_code != 0 and fallback_handler is not None:
+                return_code = fallback_handler(filename)
+            if return_code == 0 and 'signed-only' in self.signing_options:
+                os.unlink(filename)
+
+        # Copy out the public keys where they were used.
+        self.copyPublishedPublicKeys()
+
+        # If tarball output is requested, tar up the results.
+        if 'tarball' in self.signing_options:
+            self.convertToTarball()
+
+    def installFiles(self, archive, suite):
+        """After installation hash and sign the installed result."""
+        # Avoid circular import.
+        from lp.archivepublisher.publishing import DirectoryHash
+
+        super(SigningUpload, self).installFiles(archive, suite)
+
+        versiondir = os.path.join(self.targetdir, self.version)
+        with DirectoryHash(versiondir, self.temproot) as hasher:
+            hasher.add_dir(versiondir)
+        for checksum_path in hasher.checksum_paths:
+            if self.shouldSign(checksum_path):
+                self.sign(archive, suite, checksum_path)
+
+    def shouldInstall(self, filename):
+        return filename.startswith("%s/" % self.version)
+
+    def shouldSign(self, filename):
+        return filename.endswith("SUMS")
 
 
 class UefiUpload(SigningUpload):

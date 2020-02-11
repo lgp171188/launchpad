@@ -13,7 +13,6 @@ import stat
 import tarfile
 
 from fixtures import MonkeyPatch
-import mock
 import responses
 import scandir
 from testtools.matchers import (
@@ -48,17 +47,10 @@ from lp.archivepublisher.signing import (
 from lp.archivepublisher.tests.test_run_parts import RunPartsMixin
 from lp.services.features.testing import FeatureFixture
 from lp.services.osutils import write_file
-from lp.services.signing.model.signingkey import (
-    ArchiveSigningKey,
-    ArchiveSigningKeySet,
-    SigningKey,
-    )
 from lp.services.signing.proxy import (
     SigningKeyType,
-    SigningServiceClient,
     )
 from lp.services.signing.tests.helpers import ArchiveSigningKeySetFixture
-from lp.services.signing.tests.test_proxy import SigningServiceResponseFactory
 from lp.services.tarfile_helpers import LaunchpadWriteTarFile
 from lp.soyuz.enums import ArchivePurpose
 from lp.testing import TestCaseWithFactory
@@ -1839,3 +1831,6 @@ class TestSigningUploadWithSigningService(TestSigningHelpers):
         expected_public_keys = [
             arch_keys[k].signing_key.public_key for k in key_types]
         self.assertEqual(expected_public_keys, contents)
+
+    def test_fallback_handler_works(self):
+        self.fail('To be implemented.')
