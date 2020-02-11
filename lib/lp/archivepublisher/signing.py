@@ -205,7 +205,7 @@ class SigningUpload(CustomUpload):
             os.makedirs(keydir)
         for key in self.public_keys:
             if self.use_signing_service and isinstance(key, tuple):
-                # Files signed with signing service comes in another format:
+                # A file signed with signing service comes in another format:
                 # a tuple with filename and file content.
                 filename, content = key
                 file_path = os.path.join(keydir, os.path.basename(filename))
@@ -292,16 +292,16 @@ class SigningUpload(CustomUpload):
 
     def signUsingSigningService(self, key_type, key, filename):
         """Sign the given filename using a certain key hosted on signing
-        service, writing the signed file back to the filesystem version and
-        publishing the used public key to self.public_keys.
+        service, writes the signed content back to the filesystem and
+        publishes the public key to self.public_keys.
 
-        If the given key is None, this method tries to generate a key on
-        signing service, if the archive is configured to automatically
-        generate it (autokey).
+        If the given key is None and self.autokey is set to True, this method
+        generates a key on signing service and associate it with the current
+        archive.
 
         :param key_type: One of the SigningKeyType enum items
         :param key: The ArchiveSigningKey to be used (or None,
-                    to autogenerate if possible).
+                    to autogenerate a key if possible).
         :param filename: The filename to be signed.
         :return: 0 in case of success, any other number otherwise.
         """

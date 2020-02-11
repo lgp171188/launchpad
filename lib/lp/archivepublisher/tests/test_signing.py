@@ -86,7 +86,6 @@ class SignedMatches(Matcher):
 
 class FakeMethodCallLog(FakeMethod):
     """Fake execution general commands."""
-
     def __init__(self, upload=None, *args, **kwargs):
         super(FakeMethodCallLog, self).__init__(*args, **kwargs)
         self.upload = upload
@@ -1832,5 +1831,5 @@ class TestSigningUploadWithSigningService(TestSigningHelpers):
             arch_keys[k].signing_key.public_key for k in key_types]
         self.assertEqual(expected_public_keys, contents)
 
-    def test_fallback_handler_works(self):
+    def test_fallback_handler(self):
         self.fail('To be implemented.')
