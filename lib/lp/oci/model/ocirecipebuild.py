@@ -8,16 +8,19 @@ from __future__ import absolute_import, print_function, unicode_literals
 __metaclass__ = type
 __all__ = [
     'OCIRecipeBuild',
-    'OCIRecipeBuildSet'
+    'OCIRecipeBuildSet',
     ]
 
+from datetime import timedelta
 
 import pytz
 from storm.locals import (
     Bool,
     DateTime,
+    Desc,
     Int,
     Reference,
+    Store,
     Storm,
     Unicode,
     )
@@ -37,7 +40,10 @@ from lp.oci.interfaces.ocirecipebuild import (
     )
 from lp.services.database.constants import DEFAULT
 from lp.services.database.enumcol import DBEnum
-from lp.services.database.interfaces import IMasterStore
+from lp.services.database.interfaces import (
+    IMasterStore,
+    IStore,
+    )
 
 
 @implementer(IOCIRecipeBuild)
@@ -96,10 +102,31 @@ class OCIRecipeBuild(PackageBuildMixin, Storm):
         self.status = BuildStatus.NEEDSBUILD
         self.build_farm_job = build_farm_job
 
-    def queueBuild(self):
-        """See `IPackageBuild`."""
-        # XXX twom 2019-11-28 Currently a no-op skeleton, to be filled in
-        return
+    def calculateScore(self):
+        # XXX twom 2020-02-11 - This might need an addition?
+        return 2510
+
+    def estimateDuration(self):
+        """See `IBuildFarmJob`."""
+        median = self.getMedianBuildDuration()
+        if median is not None:
+            return median
+        return timedelta(minutes=30)
+
+    def getMedianBuildDuration(self):
+        """Return the median duration of our successful builds."""
+        store = IStore(self)
+        result = store.find(
+            (OCIRecipeBuild.date_started, OCIRecipeBuild.date_finished),
+            OCIRecipeBuild.recipe == self.recipe_id,
+            OCIRecipeBuild.processor == self.processor_id,
+            OCIRecipeBuild.status == BuildStatus.FULLYBUILT)
+        result.order_by(Desc(OCIRecipeBuild.date_finished))
+        durations = [row[1] - row[0] for row in result[:9]]
+        if len(durations) == 0:
+            return None
+        durations.sort()
+        return durations[len(durations) // 2]
 
 
 @implementer(IOCIRecipeBuildSet)
@@ -127,3 +154,8 @@ class OCIRecipeBuildSet(SpecificBuildFarmJobSourceMixin):
         """See `ISpecificBuildFarmJobSource`."""
         store = IMasterStore(OCIRecipeBuild)
         return store.get(OCIRecipeBuild, build_id)
+
+    def getByBuildFarmJob(self, build_farm_job):
+        """See `ISpecificBuildFarmJobSource`."""
+        return Store.of(build_farm_job).find(
+            OCIRecipeBuild, build_farm_job_id=build_farm_job.id).one()
