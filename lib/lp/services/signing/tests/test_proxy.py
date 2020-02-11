@@ -16,7 +16,7 @@ from testtools.matchers import (
     ContainsDict,
     Equals,
     )
-from zope.component._api import getUtility
+from zope.component import getUtility
 
 from lp.services.config import config
 from lp.services.signing.enums import (
@@ -28,10 +28,7 @@ from lp.services.signing.interfaces.signingserviceclient import (
     )
 from lp.services.signing.proxy import SigningServiceClient
 from lp.testing import TestCaseWithFactory
-from lp.testing.layers import (
-    BaseLayer,
-    ZopelessLayer,
-    )
+from lp.testing.layers import ZopelessLayer
 
 
 class SigningServiceResponseFactory:

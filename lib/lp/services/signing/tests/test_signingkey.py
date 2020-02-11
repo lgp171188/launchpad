@@ -8,7 +8,7 @@ import base64
 import responses
 from storm.store import Store
 from testtools.matchers import MatchesStructure
-from zope.component._api import getUtility
+from zope.component import getUtility
 
 from lp.services.database.interfaces import IMasterStore
 from lp.services.signing.enums import SigningKeyType
@@ -20,7 +20,6 @@ from lp.services.signing.model.signingkey import (
     ArchiveSigningKeySet,
     SigningKey,
     )
-from lp.services.signing.proxy import SigningServiceClient
 from lp.services.signing.tests.test_proxy import SigningServiceResponseFactory
 from lp.testing import TestCaseWithFactory
 from lp.testing.layers import DatabaseFunctionalLayer

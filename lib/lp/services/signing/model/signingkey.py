@@ -9,6 +9,7 @@ __metaclass__ = type
 __all__ = [
     'SigningKey',
     'ArchiveSigningKey',
+    'ArchiveSigningKeySet'
     ]
 
 import base64
@@ -22,7 +23,7 @@ from storm.locals import (
     Reference,
     Unicode,
     )
-from zope.component._api import getUtility
+from zope.component import getUtility
 from zope.interface import implementer
 
 from lp.services.database.constants import (
@@ -47,7 +48,6 @@ from lp.services.signing.interfaces.signingkey import (
 from lp.services.signing.interfaces.signingserviceclient import (
     ISigningServiceClient,
     )
-from lp.services.signing.proxy import SigningServiceClient
 
 
 @implementer(ISigningKey)
