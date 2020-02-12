@@ -13,11 +13,15 @@
         <require
             permission="launchpad.View"
             interface="lp.oci.interfaces.ocirecipe.IOCIRecipeView
-                       lp.oci.interfaces.ocirecipe.IOCIRecipeEditableAttributes"/>
+                       lp.oci.interfaces.ocirecipe.IOCIRecipeEditableAttributes
+                       lp.oci.interfaces.ocirecipe.IOCIRecipeAdminAttributes"/>
         <require
             permission="launchpad.Edit"
             interface="lp.oci.interfaces.ocirecipe.IOCIRecipeEdit"
             set_schema="lp.oci.interfaces.ocirecipe.IOCIRecipeEditableAttributes" />
+        <require
+            permission="launchpad.Admin"
+            set_schema="lp.oci.interfaces.ocirecipe.IOCIRecipeAdminAttributes" />
     </class>
     <securedutility
         class="lp.oci.model.ocirecipe.OCIRecipeSet"

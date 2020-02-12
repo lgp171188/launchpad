@@ -130,6 +130,23 @@ class OCIRecipeBuild(PackageBuildMixin, Storm):
         durations.sort()
         return durations[len(durations) // 2]
 
+    @property
+    def archive(self):
+        # XXX twom 2019-12-05 This may need to change when an OCIProject
+        # pillar isn't just a distribution
+        return self.recipe.oci_project.distribution.main_archive
+
+    @property
+    def distribution(self):
+        # XXX twom 2019-12-05 This may need to change when an OCIProject
+        # pillar isn't just a distribution
+        return self.recipe.oci_project.distribution
+
+    # Stub attributes to match the IPackageBuild interface that we
+    # will not use in this implementation.
+    pocket = None
+    distro_series = None
+
 
 @implementer(IOCIRecipeBuildSet)
 class OCIRecipeBuildSet(SpecificBuildFarmJobSourceMixin):
@@ -139,8 +156,9 @@ class OCIRecipeBuildSet(SpecificBuildFarmJobSourceMixin):
             date_created=DEFAULT):
         """See `IOCIRecipeBuildSet`."""
 
-        virtualized = not (distro_arch_series.processor.supports_nonvirtualized
-                           or recipe.require_virtualized)
+        virtualized = (
+            not distro_arch_series.processor.supports_nonvirtualized
+            or recipe.require_virtualized)
 
         store = IMasterStore(OCIRecipeBuild)
         build_farm_job = getUtility(IBuildFarmJobSource).new(

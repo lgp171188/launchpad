@@ -4985,6 +4985,8 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             requester = self.makePerson()
         if distro_arch_series is None:
             distro_arch_series = self.makeDistroArchSeries()
+        if recipe is None:
+            recipe = self.makeOCIRecipe()
 
         return getUtility(IOCIRecipeBuildSet).new(
             requester, recipe, distro_arch_series, date_created)

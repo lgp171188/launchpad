@@ -3479,6 +3479,34 @@ class ViewOCIRecipe(AnonymousAuthorization):
     usedfor = IOCIRecipe
 
 
+class EditOCIRecipe(AuthorizationBase):
+    permission = 'launchpad.Edit'
+    usedfor = IOCIRecipe
+
+    def checkAuthenticated(self, user):
+        return (
+            user.isOwner(self.obj) or
+            user.in_commercial_admin or user.in_admin)
+
+
+class AdminOCIRecipe(AuthorizationBase):
+    """Restrict changing build settings on OCI recipes.
+
+    The security of the non-virtualised build farm depends on these
+    settings, so they can only be changed by "PPA"/commercial admins, or by
+    "PPA" self admins on OCI recipes that they can already edit.
+    """
+    permission = 'launchpad.Admin'
+    usedfor = IOCIRecipe
+
+    def checkAuthenticated(self, user):
+        if user.in_ppa_admin or user.in_commercial_admin or user.in_admin:
+            return True
+        return (
+            user.in_ppa_self_admins
+            and EditSnap(self.obj).checkAuthenticated(user))
+
+
 class ViewOCIRecipeBuild(AnonymousAuthorization):
     """Anyone can view an `IOCIRecipe`."""
     usedfor = IOCIRecipeBuild

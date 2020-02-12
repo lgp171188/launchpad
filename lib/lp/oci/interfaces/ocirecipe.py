@@ -201,12 +201,6 @@ class IOCIRecipeEditableAttributes(IHasOwner):
         required=True,
         readonly=False)
 
-    require_virtualized = Bool(
-        title=_("Require virtualized"),
-        required=True,
-        default=True,
-        readonly=True)
-
     build_daily = Bool(
         title=_("Build daily"),
         required=True,
@@ -215,7 +209,19 @@ class IOCIRecipeEditableAttributes(IHasOwner):
         readonly=False)
 
 
-class IOCIRecipe(IOCIRecipeView, IOCIRecipeEdit, IOCIRecipeEditableAttributes):
+class IOCIRecipeAdminAttributes(Interface):
+    """`IOCIRecipe` attributes that can be edited by admins.
+
+    These attributes need launchpad.View to see, and launchpad.Admin to change.
+    """
+
+    require_virtualized = Bool(
+        title=_("Require virtualized builders"), required=True, readonly=False,
+        description=_("Only build this OCI recipe on virtual builders."))
+
+
+class IOCIRecipe(IOCIRecipeView, IOCIRecipeEdit, IOCIRecipeEditableAttributes,
+                 IOCIRecipeAdminAttributes):
     """A recipe for building Open Container Initiative images."""
 
 
