@@ -71,7 +71,7 @@ class DuplicateOCIRecipeName(Exception):
 
 class NoSuchOCIRecipe(NameLookupFailed):
     """The requested OCI Recipe does not exist."""
-    _message_prefix = "No such OCI Recipe exists for this OCI Project"
+    _message_prefix = "No such OCI recipe exists for this OCI project"
 
 
 @error_status(http_client.BAD_REQUEST)
@@ -80,7 +80,7 @@ class NoSourceForOCIRecipe(Exception):
 
     def __init__(self):
         super(NoSourceForOCIRecipe, self).__init__(
-            "New OCI Recipes must have a git branch and build file.")
+            "New OCI recipes must have a git branch and build file.")
 
 
 class IOCIRecipeView(Interface):
