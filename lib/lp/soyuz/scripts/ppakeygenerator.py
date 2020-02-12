@@ -7,8 +7,8 @@ __all__ = [
 
 from zope.component import getUtility
 
-from lp.archivepublisher.interfaces.archivesigningkey import (
-    IArchiveSigningKey,
+from lp.archivepublisher.interfaces.archivegpgsigningkey import (
+    IArchiveGPGSigningKey,
     )
 from lp.services.scripts.base import (
     LaunchpadCronScript,
@@ -32,7 +32,7 @@ class PPAKeyGenerator(LaunchpadCronScript):
         self.logger.info(
             "Generating signing key for %s (%s)" %
             (archive.reference, archive.displayname))
-        archive_signing_key = IArchiveSigningKey(archive)
+        archive_signing_key = IArchiveGPGSigningKey(archive)
         archive_signing_key.generateSigningKey()
         self.logger.info("Key %s" % archive.signing_key.fingerprint)
 

@@ -10,21 +10,37 @@
 # load up Ubuntu release details so we know which repos to enable
 source /etc/lsb-release
 DO_WORKSPACE=1
-for arg in "$@"; do
-  if [ "$arg" == "--no-workspace" ]; then
-    DO_WORKSPACE=0
-  else
-    echo Unrecognized argument: $arg >& 2
-    exit 1;
-  fi
+INSTALL_OPTS=""
+getopt_output="$(getopt -o '' -l no-workspace,lpusername:,assume-yes -- "$@")" || exit 1
+eval set -- "$getopt_output"
+while :; do
+  case $1 in
+    --no-workspace)
+        DO_WORKSPACE=0
+        shift
+        ;;
+    --lpusername)
+        lpusername=$2
+        echo "Using username $lpusername for Launchpad"
+        shift
+        ;;
+    --assume-yes)
+        echo "Installing packages without prompting"
+        INSTALL_OPTS="-y"
+        shift
+        ;;
+    -- | *) shift; break ;;
+    esac
 done
 
-# Establish LP username
-whoami=`whoami`
-printf "What is your Launchpad username? [$whoami] "
-read lpusername
 if [ -z ${lpusername} ]; then
-  lpusername=${whoami}
+  # Establish LP username
+  whoami=`whoami`
+  printf "What is your Launchpad username? [$whoami] "
+  read lpusername
+  if [ -z ${lpusername} ]; then
+    lpusername=${whoami}
+  fi
 fi
 
 # Make sure you have all the needed virtual hosts
@@ -121,7 +137,7 @@ do_install() {
   dpkg -s $pkg | grep -q "^Status: install ok installed"
   if [ $? -ne 0 ]; then
     echo "Installing $pkg package..."
-    sudo apt-get install $pkg
+    sudo apt-get install $INSTALL_OPTS $pkg
     if [ $? -ne 0 ]; then
       echo "Unable to install $pkg."
       exit 1

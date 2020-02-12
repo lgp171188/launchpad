@@ -54,8 +54,8 @@ from zope.publisher.xmlrpc import TestRequest
 from zope.security.proxy import removeSecurityProxy
 
 from lp.app.enums import InformationType
-from lp.archivepublisher.interfaces.archivesigningkey import (
-    IArchiveSigningKey,
+from lp.archivepublisher.interfaces.archivegpgsigningkey import (
+    IArchiveGPGSigningKey,
     )
 from lp.buildmaster.enums import (
     BuildBaseImageType,
@@ -649,7 +649,7 @@ class TestAsyncSnapBuildBehaviour(TestSnapBuildBehaviourBase):
         yield self.useFixture(InProcessKeyServerFixture()).start()
         archive = self.factory.makeArchive()
         key_path = os.path.join(gpgkeysdir, "ppa-sample@canonical.com.sec")
-        yield IArchiveSigningKey(archive).setSigningKey(
+        yield IArchiveGPGSigningKey(archive).setSigningKey(
             key_path, async_keyserver=True)
         job = self.makeJob(archive=archive)
         self.factory.makeBinaryPackagePublishingHistory(

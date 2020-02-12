@@ -96,6 +96,8 @@ from lp.hardwaredb.interfaces.hwdb import (
     IHWSubmissionDevice,
     IHWVendorID,
     )
+from lp.oci.interfaces.ocirecipe import IOCIRecipe
+from lp.oci.interfaces.ocirecipebuild import IOCIRecipeBuild
 from lp.registry.interfaces.commercialsubscription import (
     ICommercialSubscription,
     )
@@ -1090,3 +1092,8 @@ patch_operations_explicit_version(
 
 # IWikiName
 patch_entry_explicit_version(IWikiName, 'beta')
+
+# IOCIRecipe
+patch_collection_property(IOCIRecipe, 'builds', IOCIRecipeBuild)
+patch_collection_property(IOCIRecipe, 'completed_builds', IOCIRecipeBuild)
+patch_collection_property(IOCIRecipe, 'pending_builds', IOCIRecipeBuild)

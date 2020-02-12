@@ -23,7 +23,7 @@ PIP_ENV += PIP_IGNORE_INSTALLED=1
 PIP_ENV += PIP_FIND_LINKS=file://$(WD)/download-cache/dist/
 
 VIRTUALENV := $(PIP_ENV) virtualenv
-PIP := PYTHONPATH= $(PIP_ENV) env/bin/pip
+PIP := PYTHONPATH= $(PIP_ENV) env/bin/pip --cache-dir=$(WD)/download-cache/
 
 TESTFLAGS=-p $(VERBOSITY)
 TESTOPTS=
@@ -252,7 +252,6 @@ $(PY): download-cache constraints.txt setup.py
 	ln -sfn env/bin bin
 	$(SHHH) $(PIP) install -r setup-requirements.txt
 	$(SHHH) LPCONFIG=$(LPCONFIG) $(PIP) \
-		--cache-dir=$(WD)/download-cache/ \
 		install \
 		-c setup-requirements.txt -c constraints.txt -e . \
 		|| { code=$$?; rm -f $@; exit $$code; }
@@ -260,12 +259,15 @@ $(PY): download-cache constraints.txt setup.py
 
 $(subst $(PY),,$(PIP_BIN)): $(PY)
 
-compile: $(PY) $(VERSION_INFO)
+# Explicitly update version-info.py rather than declaring $(VERSION_INFO) as
+# a prerequisite, to make sure it's up to date when doing deployments.
+compile: $(PY)
 	${SHHH} utilities/relocate-virtualenv env
 	${SHHH} $(MAKE) -C sourcecode build PYTHON=${PYTHON} \
 	    LPCONFIG=${LPCONFIG}
 	${SHHH} bin/build-twisted-plugin-cache
 	${SHHH} LPCONFIG=${LPCONFIG} ${PY} -t buildmailman.py
+	scripts/update-version-info.sh
 
 test_build: build
 	bin/test $(TESTFLAGS) $(TESTOPTS)

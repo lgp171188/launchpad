@@ -1,7 +1,7 @@
 # Copyright 2016-2019 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-"""Test ArchiveSigningKey."""
+"""Test ArchiveGPGSigningKey."""
 
 from __future__ import absolute_import, print_function, unicode_literals
 
@@ -16,8 +16,8 @@ from twisted.internet import defer
 from zope.component import getUtility
 
 from lp.archivepublisher.config import getPubConfig
-from lp.archivepublisher.interfaces.archivesigningkey import (
-    IArchiveSigningKey,
+from lp.archivepublisher.interfaces.archivegpgsigningkey import (
+    IArchiveGPGSigningKey,
     ISignableArchive,
     )
 from lp.archivepublisher.interfaces.publisherconfig import IPublisherConfigSet
@@ -51,7 +51,7 @@ class TestSignableArchiveWithSigningKey(TestCaseWithFactory):
         with InProcessKeyServerFixture() as keyserver:
             yield keyserver.start()
             key_path = os.path.join(gpgkeysdir, 'ppa-sample@canonical.com.sec')
-            yield IArchiveSigningKey(self.archive).setSigningKey(
+            yield IArchiveGPGSigningKey(self.archive).setSigningKey(
                 key_path, async_keyserver=True)
 
     def test_signFile_absolute_within_archive(self):

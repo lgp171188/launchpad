@@ -37,8 +37,8 @@ from zope.security.proxy import removeSecurityProxy
 
 from lp.app.errors import NotFoundError
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
-from lp.archivepublisher.interfaces.archivesigningkey import (
-    IArchiveSigningKey,
+from lp.archivepublisher.interfaces.archivegpgsigningkey import (
+    IArchiveGPGSigningKey,
     )
 from lp.buildmaster.enums import (
     BuildQueueStatus,
@@ -1827,7 +1827,7 @@ class TestArchiveDependencies(TestCaseWithFactory):
         with InProcessKeyServerFixture() as keyserver:
             yield keyserver.start()
             key_path = os.path.join(gpgkeysdir, 'ppa-sample@canonical.com.sec')
-            yield IArchiveSigningKey(p3a).setSigningKey(
+            yield IArchiveGPGSigningKey(p3a).setSigningKey(
                 key_path, async_keyserver=True)
         dependency = self.factory.makeArchive(
             name='dependency', private=True, owner=p3a.owner)

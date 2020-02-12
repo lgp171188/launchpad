@@ -24,8 +24,8 @@ from zope.security.proxy import removeSecurityProxy
 
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.archivepublisher.config import getPubConfig
-from lp.archivepublisher.interfaces.archivesigningkey import (
-    IArchiveSigningKey,
+from lp.archivepublisher.interfaces.archivegpgsigningkey import (
+    IArchiveGPGSigningKey,
     )
 from lp.archivepublisher.interfaces.publisherconfig import IPublisherConfigSet
 from lp.archivepublisher.publishing import Publisher
@@ -256,7 +256,7 @@ class TestPublishDistro(TestNativePublishingBase):
         self.setUpRequireSigningKeys()
         yield self.useFixture(InProcessKeyServerFixture()).start()
         key_path = os.path.join(gpgkeysdir, 'ppa-sample@canonical.com.sec')
-        yield IArchiveSigningKey(cprov.archive).setSigningKey(
+        yield IArchiveGPGSigningKey(cprov.archive).setSigningKey(
             key_path, async_keyserver=True)
         name16.archive.signing_key_owner = cprov.archive.signing_key_owner
         name16.archive.signing_key_fingerprint = (
@@ -308,7 +308,7 @@ class TestPublishDistro(TestNativePublishingBase):
         self.setUpRequireSigningKeys()
         yield self.useFixture(InProcessKeyServerFixture()).start()
         key_path = os.path.join(gpgkeysdir, 'ppa-sample@canonical.com.sec')
-        yield IArchiveSigningKey(private_ppa).setSigningKey(
+        yield IArchiveGPGSigningKey(private_ppa).setSigningKey(
             key_path, async_keyserver=True)
 
         # Try a plain PPA run, to ensure the private one is NOT published.
@@ -413,7 +413,7 @@ class TestPublishDistro(TestNativePublishingBase):
         self.setUpRequireSigningKeys()
         yield self.useFixture(InProcessKeyServerFixture()).start()
         key_path = os.path.join(gpgkeysdir, 'ppa-sample@canonical.com.sec')
-        yield IArchiveSigningKey(archive).setSigningKey(
+        yield IArchiveGPGSigningKey(archive).setSigningKey(
             key_path, async_keyserver=True)
 
         self.layer.txn.commit()

@@ -63,7 +63,7 @@ from lp.archivepublisher.indices import (
     build_source_stanza_fields,
     build_translations_stanza_fields,
     )
-from lp.archivepublisher.interfaces.archivesigningkey import ISignableArchive
+from lp.archivepublisher.interfaces.archivegpgsigningkey import ISignableArchive
 from lp.archivepublisher.model.ftparchive import FTPArchiveHandler
 from lp.archivepublisher.utils import (
     get_ppa_reference,

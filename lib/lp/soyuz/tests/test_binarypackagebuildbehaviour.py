@@ -22,8 +22,8 @@ from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
 from lp.archivepublisher.diskpool import poolify
-from lp.archivepublisher.interfaces.archivesigningkey import (
-    IArchiveSigningKey,
+from lp.archivepublisher.interfaces.archivegpgsigningkey import (
+    IArchiveGPGSigningKey,
     )
 from lp.buildmaster.enums import (
     BuilderCleanStatus,
@@ -354,7 +354,7 @@ class TestBinaryBuildPackageBehaviour(TestCaseWithFactory):
         archive = self.factory.makeArchive()
         builder = self.factory.makeBuilder()
         key_path = os.path.join(gpgkeysdir, "ppa-sample@canonical.com.sec")
-        yield IArchiveSigningKey(archive).setSigningKey(
+        yield IArchiveGPGSigningKey(archive).setSigningKey(
             key_path, async_keyserver=True)
         build = self.factory.makeBinaryPackageBuild(archive=archive)
         self.factory.makeBinaryPackagePublishingHistory(

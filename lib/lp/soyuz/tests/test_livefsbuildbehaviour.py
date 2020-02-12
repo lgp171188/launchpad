@@ -20,8 +20,8 @@ from twisted.trial.unittest import TestCase as TrialTestCase
 from zope.component import getUtility
 from zope.security.proxy import Proxy
 
-from lp.archivepublisher.interfaces.archivesigningkey import (
-    IArchiveSigningKey,
+from lp.archivepublisher.interfaces.archivegpgsigningkey import (
+    IArchiveGPGSigningKey,
     )
 from lp.buildmaster.enums import (
     BuildBaseImageType,
@@ -247,7 +247,7 @@ class TestAsyncLiveFSBuildBehaviour(TestLiveFSBuildBehaviourBase):
         yield self.useFixture(InProcessKeyServerFixture()).start()
         archive = self.factory.makeArchive()
         key_path = os.path.join(gpgkeysdir, "ppa-sample@canonical.com.sec")
-        yield IArchiveSigningKey(archive).setSigningKey(
+        yield IArchiveGPGSigningKey(archive).setSigningKey(
             key_path, async_keyserver=True)
         job = self.makeJob(archive=archive, with_builder=True)
         self.factory.makeBinaryPackagePublishingHistory(

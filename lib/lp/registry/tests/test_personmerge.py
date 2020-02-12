@@ -18,6 +18,7 @@ from zope.security.proxy import removeSecurityProxy
 from lp.app.enums import InformationType
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.code.interfaces.gitrepository import IGitRepositorySet
+from lp.oci.interfaces.ocirecipe import IOCIRecipeSet
 from lp.registry.interfaces.accesspolicy import (
     IAccessArtifactGrantSource,
     IAccessPolicyGrantSource,
@@ -659,6 +660,45 @@ class TestMergePeople(TestCaseWithFactory, KarmaTestMixin):
         self.assertIsNone(snaps[1].git_repository)
         self.assertIsNone(snaps[1].git_path)
         self.assertEqual(u'foo-1', snaps[1].name)
+
+    def test_merge_moves_oci_recipes(self):
+        # When person/teams are merged, oci recipes owned by the from
+        # person are moved.
+        duplicate = self.factory.makePerson()
+        mergee = self.factory.makePerson()
+        self.factory.makeOCIRecipe(registrant=duplicate, owner=duplicate)
+        self._do_premerge(duplicate, mergee)
+        login_person(mergee)
+        duplicate, mergee = self._do_merge(duplicate, mergee)
+        self.assertEqual(
+            1, getUtility(IOCIRecipeSet).findByOwner(mergee).count())
+
+    def test_merge_with_duplicated_oci_recipes(self):
+        # If both the from and to people have oci recipes with the same
+        # name, merging renames the duplicate from the from person's side.
+        duplicate = self.factory.makePerson()
+        mergee = self.factory.makePerson()
+        [ref] = self.factory.makeGitRefs()
+        [ref2] = self.factory.makeGitRefs()
+        self.factory.makeOCIRecipe(
+            registrant=duplicate, owner=duplicate, name=u'foo', git_ref=ref)
+        self.factory.makeOCIRecipe(
+            registrant=mergee, owner=mergee, name=u'foo', git_ref=ref2)
+        self._do_premerge(duplicate, mergee)
+        login_person(mergee)
+        duplicate, mergee = self._do_merge(duplicate, mergee)
+        oci_recipes = sorted(
+            getUtility(IOCIRecipeSet).findByOwner(mergee),
+            key=attrgetter("name"))
+        self.assertEqual(2, len(oci_recipes))
+        self.assertEqual(ref2, oci_recipes[0].git_ref)
+        self.assertEqual(ref2.repository, oci_recipes[0].git_repository)
+        self.assertEqual(ref2.path, oci_recipes[0].git_path)
+        self.assertEqual(u'foo', oci_recipes[0].name)
+        self.assertEqual(ref, oci_recipes[1].git_ref)
+        self.assertEqual(ref.repository, oci_recipes[1].git_repository)
+        self.assertEqual(ref.path, oci_recipes[1].git_path)
+        self.assertEqual(u'foo-1', oci_recipes[1].name)
 
 
 class TestMergeMailingListSubscriptions(TestCaseWithFactory):
