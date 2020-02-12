@@ -47,9 +47,7 @@ from lp.archivepublisher.signing import (
 from lp.archivepublisher.tests.test_run_parts import RunPartsMixin
 from lp.services.features.testing import FeatureFixture
 from lp.services.osutils import write_file
-from lp.services.signing.proxy import (
-    SigningKeyType,
-    )
+from lp.services.signing.proxy import SigningKeyType
 from lp.services.signing.tests.helpers import ArchiveSigningKeySetFixture
 from lp.services.tarfile_helpers import LaunchpadWriteTarFile
 from lp.soyuz.enums import ArchivePurpose
@@ -1832,4 +1830,64 @@ class TestSigningUploadWithSigningService(TestSigningHelpers):
         self.assertEqual(expected_public_keys, contents)
 
     def test_fallback_handler(self):
-        self.fail('To be implemented.')
+        upload = SigningUpload()
+
+        # Pre-set KMOD fails on ".sign" method (should fallback to local
+        # signing method).
+        kmod_arch_key = self.getArchiveSigningKey(SigningKeyType.KMOD)
+        kmod_arch_key.signing_key.sign = FakeMethod(failure=ValueError("!!"))
+        upload.signKmod = FakeMethod(result=0)
+
+        # We don't have a signing service key for UEFI. Should fallback too.
+        upload.signUefi = FakeMethod(result=0)
+
+        # OPAL key works just fine.
+        opal_arch_key = self.getArchiveSigningKey(SigningKeyType.OPAL)
+        upload.signOpal = FakeMethod(result=0)
+
+        self.arch_key_set.getSigningKeys.result = {
+            SigningKeyType.KMOD: kmod_arch_key,
+            SigningKeyType.OPAL: opal_arch_key
+            }
+
+        filenames = ["1.0/empty.efi", "1.0/empty.ko", "1.0/empty.opal"]
+
+        self.openArchive("test", "1.0", "amd64")
+        for filename in filenames:
+            self.tarfile.add_file(filename, b"data for %s" % filename)
+
+        self.tarfile.close()
+        self.buffer.close()
+
+        # Small hack to keep the tmpdir used during upload.process
+        # Without this hack, upload.tmpdir is set back to None at the end of
+        # process() method execution, during cleanup phase.
+        original_cleanup = upload.cleanup
+
+        def intercept_cleanup():
+            upload.tmpdir_used = upload.tmpdir
+            original_cleanup()
+
+        upload.cleanup = intercept_cleanup
+        upload.process(self.archive, self.path, self.suite)
+
+        # Make sure it only used the existing keys and fallbacks. No new key
+        # should be generated.
+        self.assertFalse(upload.autokey)
+
+        # Check kmod signing
+        self.assertEqual(1, kmod_arch_key.signing_key.sign.call_count)
+        self.assertEqual(1, upload.signKmod.call_count)
+        self.assertEqual(
+            [(os.path.join(upload.tmpdir_used, "1.0/empty.ko"), )],
+            upload.signKmod.extract_args())
+
+        # Check OPAL signing
+        self.assertEqual(1, opal_arch_key.signing_key.sign.call_count)
+        self.assertEqual(0, upload.signOpal.call_count)
+
+        # Check UEFI signing
+        self.assertEqual(1, upload.signUefi.call_count)
+        self.assertEqual(
+            [(os.path.join(upload.tmpdir_used, "1.0/empty.efi"),)],
+            upload.signUefi.extract_args())
