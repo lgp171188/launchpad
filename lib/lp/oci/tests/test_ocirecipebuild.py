@@ -138,3 +138,27 @@ class TestOCIRecipeBuildSet(TestCaseWithFactory):
     def test_getByBuildFarmJobs_empty(self):
         self.assertContentEqual(
             [], getUtility(IOCIRecipeBuildSet).getByBuildFarmJobs([]))
+
+    def test_virtualized_recipe_requires(self):
+        recipe = self.factory.makeOCIRecipe()
+        with admin_logged_in():
+            recipe.require_virtualized = True
+        target = self.factory.makeOCIRecipeBuild(recipe=recipe)
+        self.assertTrue(target.virtualized)
+
+    def test_virtualized_archive_supports(self):
+        distro_arch_series = self.factory.makeDistroArchSeries()
+        distro_arch_series.processor.supports_nonvirtualized = False
+        target = self.factory.makeOCIRecipeBuild(
+            distro_arch_series=distro_arch_series)
+        self.assertTrue(target.virtualized)
+
+    def test_virtualized_no_support(self):
+        recipe = self.factory.makeOCIRecipe()
+        with admin_logged_in():
+            recipe.require_virtualized = False
+        distro_arch_series = self.factory.makeDistroArchSeries()
+        distro_arch_series.processor.supports_nonvirtualized = True
+        target = self.factory.makeOCIRecipeBuild(
+            recipe=recipe, distro_arch_series=distro_arch_series)
+        self.assertFalse(target.virtualized)
