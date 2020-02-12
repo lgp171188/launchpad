@@ -209,11 +209,6 @@ class OCIRecipeBuild(PackageBuildMixin, Storm):
         # pillar isn't just a distribution
         return self.recipe.oci_project.distribution
 
-    # Stub attributes to match the IPackageBuild interface that we
-    # will not use in this implementation.
-    pocket = None
-    distro_series = None
-
 
 @implementer(IOCIRecipeBuildSet)
 class OCIRecipeBuildSet(SpecificBuildFarmJobSourceMixin):
