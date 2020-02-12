@@ -157,6 +157,9 @@ from lp.hardwaredb.interfaces.hwdb import (
     IHWSubmissionDeviceSet,
     IHWSubmissionSet,
     )
+from lp.oci.interfaces.ocirecipe import IOCIRecipeSet
+from lp.oci.interfaces.ocirecipebuild import IOCIRecipeBuildSet
+from lp.oci.model.ocirecipe import OCIRecipeArch
 from lp.registry.enums import (
     BranchSharingPolicy,
     BugSharingPolicy,
@@ -4935,6 +4938,58 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         if oci_project is None:
             oci_project = self.makeOCIProject(**kwargs)
         return oci_project.newSeries(name, summary, registrant)
+
+    def makeOCIRecipe(self, name=None, registrant=None, owner=None,
+                      oci_project=None, git_ref=None, description=None,
+                      official=False, require_virtualized=True,
+                      build_file=None, date_created=DEFAULT):
+        """Make a new OCIRecipe."""
+        if name is None:
+            name = self.getUniqueString(u"oci-recipe-name")
+        if registrant is None:
+            registrant = self.makePerson()
+        if description is None:
+            description = self.getUniqueString(u"oci-recipe-description")
+        if owner is None:
+            owner = self.makeTeam(members=[registrant])
+        if oci_project is None:
+            oci_project = self.makeOCIProject()
+        if git_ref is None:
+            [git_ref] = self.makeGitRefs()
+        if build_file is None:
+            build_file = self.getUniqueUnicode(u"build_file_for")
+        return getUtility(IOCIRecipeSet).new(
+            name=name,
+            registrant=registrant,
+            owner=owner,
+            oci_project=oci_project,
+            git_ref=git_ref,
+            build_file=build_file,
+            description=description,
+            official=official,
+            require_virtualized=require_virtualized,
+            date_created=date_created)
+
+    def makeOCIRecipeArch(self, recipe=None, processor=None):
+        """Make a new OCIRecipeArch."""
+        if recipe is None:
+            recipe = self.makeOCIRecipe()
+        if processor is None:
+            processor = self.makeProcessor()
+        return OCIRecipeArch(recipe, processor)
+
+    def makeOCIRecipeBuild(self, requester=None, recipe=None,
+                           distro_arch_series=None, date_created=DEFAULT):
+        """Make a new OCIRecipeBuild."""
+        if requester is None:
+            requester = self.makePerson()
+        if distro_arch_series is None:
+            distro_arch_series = self.makeDistroArchSeries()
+        if recipe is None:
+            recipe = self.makeOCIRecipe()
+
+        return getUtility(IOCIRecipeBuildSet).new(
+            requester, recipe, distro_arch_series, date_created)
 
 
 # Some factory methods return simple Python types. We don't add

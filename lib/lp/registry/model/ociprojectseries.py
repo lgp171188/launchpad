@@ -36,8 +36,8 @@ class OCIProjectSeries(StormBase):
 
     id = Int(primary=True)
 
-    ociproject_id = Int(name='ociproject', allow_none=False)
-    ociproject = Reference(ociproject_id, "OCIProject.id")
+    oci_project_id = Int(name='ociproject', allow_none=False)
+    oci_project = Reference(oci_project_id, "OCIProject.id")
 
     name = Unicode(name="name", allow_none=False)
 
@@ -52,13 +52,13 @@ class OCIProjectSeries(StormBase):
     status = DBEnum(
         name='status', allow_none=False, enum=SeriesStatus)
 
-    def __init__(self, ociproject, name, summary,
+    def __init__(self, oci_project, name, summary,
                  registrant, status, date_created=DEFAULT):
         if not valid_name(name):
             raise InvalidName(
                 "%s is not a valid name for an OCI project series." % name)
         self.name = name
-        self.ociproject = ociproject
+        self.oci_project = oci_project
         self.summary = summary
         self.registrant = registrant
         self.status = status
