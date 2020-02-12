@@ -111,11 +111,9 @@ class TestOCIRecipeBuildSet(TestCaseWithFactory):
     def test_new(self):
         requester = self.factory.makePerson()
         recipe = self.factory.makeOCIRecipe()
-        channel_name = 'test'
-        processor = self.factory.makeProcessor()
-        virtualized = False
+        distro_arch_series = self.factory.makeDistroArchSeries()
         target = getUtility(IOCIRecipeBuildSet).new(
-            requester, recipe, channel_name, processor, virtualized)
+            requester, recipe, distro_arch_series)
         with admin_logged_in():
             self.assertProvides(target, IOCIRecipeBuild)
 

@@ -159,12 +159,8 @@ from lp.hardwaredb.interfaces.hwdb import (
     )
 from lp.oci.interfaces.ocirecipe import IOCIRecipeSet
 from lp.oci.interfaces.ocirecipebuild import IOCIRecipeBuildSet
-from lp.oci.model.ocirecipe import (
-    OCIRecipe,
-    OCIRecipeArch,
-    )
+from lp.oci.model.ocirecipe import OCIRecipeArch
 from lp.oci.model.ocirecipebuild import OCIFile
-from lp.oci.model.ocirecipechannel import OCIRecipeChannel
 from lp.registry.enums import (
     BranchSharingPolicy,
     BugSharingPolicy,

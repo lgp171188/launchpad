@@ -201,7 +201,7 @@ class OCIRecipeBuild(PackageBuildMixin, Storm):
     def archive(self):
         # XXX twom 2019-12-05 This may need to change when an OCIProject
         # pillar isn't just a distribution
-        return self.recipe.ociproject.distribution.main_archive
+        return self.recipe.oci_project.distribution.main_archive
 
     @property
     def distribution(self):
@@ -213,32 +213,6 @@ class OCIRecipeBuild(PackageBuildMixin, Storm):
     # will not use in this implementation.
     pocket = None
     distro_series = None
-
-    def getMedianBuildDuration(self):
-        """Return the median duration of our successful builds."""
-        store = IStore(self)
-        result = store.find(
-            (OCIRecipeBuild.date_started, OCIRecipeBuild.date_finished),
-            OCIRecipeBuild.recipe == self.recipe,
-            OCIRecipeBuild.status == BuildStatus.FULLYBUILT,
-            OCIRecipeBuild.processor == self.processor)
-        result.order_by(Desc(OCIRecipeBuild.date_finished))
-        durations = [row[1] - row[0] for row in result[:9]]
-        if len(durations) == 0:
-            return None
-        durations.sort()
-        return durations[len(durations) // 2]
-
-    def estimateDuration(self):
-        """See `IBuildFarmJob`."""
-        median = self.getMedianBuildDuration()
-        if median is not None:
-            return median
-        return timedelta(minutes=30)
-
-    def calculateScore(self):
-        """See `IBuildFarmJob`."""
-        return 2510 + self.archive.relative_build_score
 
 
 @implementer(IOCIRecipeBuildSet)
