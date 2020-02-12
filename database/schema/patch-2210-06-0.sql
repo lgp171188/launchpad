@@ -70,7 +70,7 @@ $$;
 
 -- Rewrite the existing bugtaskflat_maintain_bug_summary as a
 -- statement-level trigger.
-CREATE TYPE todo_bugsummary_btf_internal AS (
+CREATE TYPE bugsummary_temp_btf_internal AS (
    btf bugtaskflat,
    count integer
 );
@@ -81,8 +81,8 @@ CREATE OR REPLACE FUNCTION bugtaskflat_maintain_bug_summary()
     SET search_path TO 'public'
     AS $$
 DECLARE
-    all_rows todo_bugsummary_btf_internal[];
-    temp_rows todo_bugsummary_btf_internal[];
+    all_rows bugsummary_temp_btf_internal[];
+    temp_rows bugsummary_temp_btf_internal[];
     journals bugsummaryjournal[];
     temp_rec record;
     temp_journal bugsummaryjournal;
@@ -139,7 +139,7 @@ CREATE TRIGGER bugtaskflat_maintain_bug_summary_delete
 
 -- Rewrite the existing bugtag_maintain_bug_summary as a statement-level
 -- trigger.
-CREATE TYPE todo_bugsummary_bug_internal AS (
+CREATE TYPE bugsummary_temp_bug_internal AS (
    bug integer,
    tags text[],
    count integer
@@ -151,8 +151,8 @@ CREATE OR REPLACE FUNCTION bugtag_maintain_bug_summary()
     SET search_path TO 'public'
     AS $$
 DECLARE
-    all_rows todo_bugsummary_bug_internal[];
-    temp_rows todo_bugsummary_bug_internal[];
+    all_rows bugsummary_temp_bug_internal[];
+    temp_rows bugsummary_temp_bug_internal[];
     journals bugsummaryjournal[];
     temp_rec record;
     temp_journal bugsummaryjournal;
