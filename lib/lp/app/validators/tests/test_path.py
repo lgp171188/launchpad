@@ -7,10 +7,9 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 
-from lp.testing import TestCase
-
 from lp.app.validators import LaunchpadValidationError
 from lp.app.validators.path import path_does_not_escape
+from lp.testing import TestCase
 
 
 class TestPathDoesNotEscape(TestCase):
