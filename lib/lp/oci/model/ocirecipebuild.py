@@ -171,7 +171,7 @@ class OCIRecipeBuild(PackageBuildMixin, Storm):
         durations.sort()
         return durations[len(durations) // 2]
 
-    def getFileByFileName(self, filename):
+    def getByFileName(self, filename):
         result = Store.of(self).find(
             (OCIFile, LibraryFileAlias, LibraryFileContent),
             OCIFile.build == self.id,

@@ -45,12 +45,12 @@ class TestOCIRecipeBuild(TestCaseWithFactory):
     def test_addFile(self):
         lfa = self.factory.makeLibraryFileAlias()
         self.build.addFile(lfa)
-        _, result_lfa, _ = self.build.getFileByFileName(lfa.filename)
+        _, result_lfa, _ = self.build.getByFileName(lfa.filename)
         self.assertEqual(result_lfa, lfa)
 
-    def test_getFileByFileName(self):
+    def test_getByFileName(self):
         files = [self.factory.makeOCIFile(build=self.build) for x in range(3)]
-        result, _, _ = self.build.getFileByFileName(
+        result, _, _ = self.build.getByFileName(
             files[0].library_file.filename)
         self.assertEqual(result, files[0])
 
