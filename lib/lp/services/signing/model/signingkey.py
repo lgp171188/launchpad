@@ -16,6 +16,7 @@ import base64
 from collections import defaultdict
 
 import pytz
+from storm.exceptions import IntegrityError
 from storm.locals import (
     DateTime,
     Int,
@@ -139,23 +140,11 @@ class ArchiveSigningKey(StormBase):
 class ArchiveSigningKeySet:
 
     @classmethod
-    def createOrUpdate(cls, archive, distro_series, signing_key):
+    def create(cls, archive, distro_series, signing_key):
         store = IMasterStore(SigningKey)
-        key_type = signing_key.key_type
-        obj = store.find(ArchiveSigningKey,
-            ArchiveSigningKey.signing_key_id == SigningKey.id,
-            SigningKey.key_type == key_type,
-            ArchiveSigningKey.distro_series == distro_series,
-            ArchiveSigningKey.archive == archive
-            ).one()
-        if obj is not None:
-            obj.signing_key = signing_key
-            created = False
-        else:
-            obj = ArchiveSigningKey(archive, distro_series, signing_key)
-            created = True
+        obj = ArchiveSigningKey(archive, distro_series, signing_key)
         store.add(obj)
-        return obj, created
+        return obj
 
     @classmethod
     def getSigningKeys(cls, archive, distro_series):
@@ -199,6 +188,6 @@ class ArchiveSigningKeySet:
     def generate(cls, key_type, archive, distro_series=None,
                  description=None):
         signing_key = SigningKey.generate(key_type, description)
-        archive_signing, created = ArchiveSigningKeySet.createOrUpdate(
+        archive_signing = ArchiveSigningKeySet.create(
             archive, distro_series, signing_key)
         return archive_signing

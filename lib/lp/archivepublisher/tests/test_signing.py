@@ -1831,6 +1831,11 @@ class TestSigningUploadWithSigningService(TestSigningHelpers):
     def test_fallback_handler(self):
         upload = SigningUpload()
 
+        # Creating a new archive since our setUp method fills the self.archive
+        # with keys, and we don't want it.
+        self.archive = self.factory.makeArchive(
+            distribution=self.distro, purpose=ArchivePurpose.PRIMARY)
+
         # Pre-set KMOD fails on ".sign" method (should fallback to local
         # signing method).
         kmod_arch_key = self.getArchiveSigningKey(SigningKeyType.KMOD)

@@ -10,8 +10,9 @@ from nacl.encoding import Base64Encoder
 from nacl.public import (
     PrivateKey,
     PublicKey,
-    )
+    Box)
 import responses
+from nacl.utils import random
 from testtools.matchers import (
     ContainsDict,
     Equals,
@@ -40,15 +41,17 @@ class SigningServiceResponseFactory:
     response.get(url) and response.post(url). See `patch` method.
     """
     def __init__(self):
-        self.base64_service_public_key = (
-            u"x7vTtpmn0+DvKNdmtf047fn1JRQI5eMnOQRy3xJ1m10=")
-        self.base64_nonce = u"neSSa2MUZlQU3XiipU2TfiaqW5nrVUpR"
+        service_public_key = PrivateKey.generate().public_key
+        self.b64_service_public_key = service_public_key.encode(
+            encoder=Base64Encoder).decode("UTF-8")
+        self.b64_nonce = base64.b64encode(
+            random(Box.NONCE_SIZE)).decode("UTF-8")
         self.generated_public_key = bytes(PrivateKey.generate().public_key)
         self.b64_generated_public_key = base64.b64encode(
             self.generated_public_key)
         self.generated_fingerprint = (
             u'338D218488DFD597D8FCB9C328C3E9D9ADA16CEE')
-        self.b64_signed_msg = base64.b64encode("the-signed-msg")
+        self.b64_signed_msg = base64.b64encode(b"the-signed-msg")
 
     @classmethod
     def getUrl(cls, path):
@@ -67,8 +70,8 @@ class SigningServiceResponseFactory:
         inspect the HTTP calls made.
 
         Other helpful attributes are:
-            - self.base64_service_public_key
-            - self.base64_nonce
+            - self.b64_service_public_key
+            - self.b64_nonce
             - self.generated_public_key
             - self.generated_fingerprint
         which holds the respective values used in the default fake responses.
@@ -80,16 +83,17 @@ class SigningServiceResponseFactory:
         """
         responses.add(
             responses.GET, self.getUrl("/service-key"),
-            json={"service-key": self.base64_service_public_key}, status=200)
+            json={"service-key": self.b64_service_public_key.decode('utf8')},
+            status=200)
 
         responses.add(
             responses.POST, self.getUrl("/nonce"),
-            json={"nonce": self.base64_nonce}, status=201)
+            json={"nonce": self.b64_nonce.decode('utf8')}, status=201)
 
         responses.add(
             responses.POST, self.getUrl("/generate"),
             json={'fingerprint': self.generated_fingerprint,
-                  'public-key': self.b64_generated_public_key},
+                  'public-key': self.b64_generated_public_key.decode('utf8')},
             status=201)
 
         call_counts = {'/sign': 0}
@@ -97,8 +101,8 @@ class SigningServiceResponseFactory:
         def sign_callback(request):
             call_counts['/sign'] += 1
             signed = base64.b64encode("%s::signed!" % call_counts['/sign'])
-            data = {'signed-message': signed,
-                    'public-key': self.b64_generated_public_key}
+            data = {'signed-message': signed.decode('utf8'),
+                    'public-key': self.b64_generated_public_key.decode('utf8')}
             return 201, {}, json.dumps(data)
 
         responses.add_callback(
@@ -119,11 +123,8 @@ class SigningServiceProxyTest(TestCaseWithFactory):
     def setUp(self, *args, **kwargs):
         super(TestCaseWithFactory, self).setUp(*args, **kwargs)
         self.response_factory = SigningServiceResponseFactory()
-
-    def tearDown(self):
-        super(SigningServiceProxyTest, self).tearDown()
-        # clean singleton instance of signing service.
-        removeSecurityProxy(getUtility(ISigningServiceClient))._cleanCaches()
+        self.addCleanup(
+            removeSecurityProxy(getUtility(ISigningServiceClient))._cleanCaches)
 
     @responses.activate
     def test_get_service_public_key(self):
@@ -136,7 +137,7 @@ class SigningServiceProxyTest(TestCaseWithFactory):
         self.assertIsInstance(key, PublicKey)
         self.assertEqual(
             key.encode(Base64Encoder),
-            self.response_factory.base64_service_public_key)
+            self.response_factory.b64_service_public_key)
 
         # Checks that the HTTP call was made
         self.assertEqual(1, len(responses.calls))
@@ -153,7 +154,7 @@ class SigningServiceProxyTest(TestCaseWithFactory):
         nonce = signing.getNonce()
 
         self.assertEqual(
-            base64.b64encode(nonce), self.response_factory.base64_nonce)
+            base64.b64encode(nonce), self.response_factory.b64_nonce)
 
         # Checks that the HTTP call was made
         self.assertEqual(1, len(responses.calls))
@@ -206,7 +207,7 @@ class SigningServiceProxyTest(TestCaseWithFactory):
         self.assertThat(http_generate.request.headers, ContainsDict({
             "Content-Type": Equals("application/x-boxed-json"),
             "X-Client-Public-Key": Equals(config.signing.client_public_key),
-            "X-Nonce": Equals(self.response_factory.base64_nonce)}))
+            "X-Nonce": Equals(self.response_factory.b64_nonce)}))
         self.assertIsNotNone(http_generate.request.body)
 
     @responses.activate
@@ -234,7 +235,7 @@ class SigningServiceProxyTest(TestCaseWithFactory):
         resp_factory = self.response_factory
         resp_factory.addResponses()
 
-        fingerprint = '338D218488DFD597D8FCB9C328C3E9D9ADA16CEE'
+        fingerprint = self.factory.getUniqueHexString(40).upper()
         key_type = SigningKeyType.KMOD
         mode = SigningMode.DETACHED
         message_name = 'my test msg'
@@ -264,7 +265,7 @@ class SigningServiceProxyTest(TestCaseWithFactory):
         self.assertThat(http_sign.request.headers, ContainsDict({
             "Content-Type": Equals("application/x-boxed-json"),
             "X-Client-Public-Key": Equals(config.signing.client_public_key),
-            "X-Nonce": Equals(self.response_factory.base64_nonce)}))
+            "X-Nonce": Equals(self.response_factory.b64_nonce)}))
         self.assertIsNotNone(http_sign.request.body)
 
         # It should have returned the values from response.json(),

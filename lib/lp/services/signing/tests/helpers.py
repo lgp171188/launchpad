@@ -12,6 +12,7 @@ __all__ = [
 
 import fixtures
 import mock
+
 from lp.services.signing.enums import SigningKeyType
 from lp.services.signing.interfaces.signingkey import IArchiveSigningKeySet
 from lp.testing.fakemethod import FakeMethod
@@ -59,9 +60,6 @@ class ArchiveSigningKeySetFixture(fixtures.Fixture):
                 archive=archive, signing_key=signing_key)
             signing_keys_by_type[key_type] = archive_signing_key
 
-        gen_arch_signing_key = factory.makeArchiveSigningKey(archive=archive)
-        gen_arch_signing_key.signing_key.sign = FakeMethod(
-            result="gen-signed!")
         self.getSigningKeys.result = signing_keys_by_type
 
     def _setUp(self):

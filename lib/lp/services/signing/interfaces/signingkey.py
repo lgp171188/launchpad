@@ -92,7 +92,7 @@ class IArchiveSigningKeySet(Interface):
     """Management class to deal with ArchiveSigningKey objects
     """
 
-    def createOrUpdate(archive, distro_series, signing_key):
+    def create(archive, distro_series, signing_key):
         """Creates a new ArchiveSigningKey, or updates the existing one from
         the same type to point to the new signing key.
 

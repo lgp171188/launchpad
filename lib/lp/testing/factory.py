@@ -4205,8 +4205,8 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             archive = self.makeArchive()
         if signing_key is None:
             signing_key = self.makeSigningKey()
-        return ArchiveSigningKeySet.createOrUpdate(
-            archive, distro_series, signing_key)[0]
+        return ArchiveSigningKeySet.create(
+            archive, distro_series, signing_key)
 
     def makeSection(self, name=None):
         """Make a `Section`."""

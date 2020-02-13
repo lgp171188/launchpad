@@ -6,6 +6,8 @@ __metaclass__ = type
 import base64
 
 import responses
+from lp.services.signing.interfaces.signingkey import IArchiveSigningKeySet
+from storm.exceptions import IntegrityError
 from storm.store import Store
 from testtools.matchers import MatchesStructure
 from zope.component import getUtility
@@ -23,21 +25,18 @@ from lp.services.signing.model.signingkey import (
     )
 from lp.services.signing.tests.test_proxy import SigningServiceResponseFactory
 from lp.testing import TestCaseWithFactory
-from lp.testing.layers import DatabaseFunctionalLayer
+from lp.testing.layers import ZopelessDatabaseLayer
 
 
 class TestSigningKey(TestCaseWithFactory):
 
-    layer = DatabaseFunctionalLayer
+    layer = ZopelessDatabaseLayer
 
     def setUp(self, *args, **kwargs):
         super(TestSigningKey, self).setUp(*args, **kwargs)
         self.signing_service = SigningServiceResponseFactory()
-
-    def tearDown(self):
-        super(TestSigningKey, self).tearDown()
-        # clean singleton instance of signing service.
-        removeSecurityProxy(getUtility(ISigningServiceClient))._cleanCaches()
+        self.addCleanup(
+            removeSecurityProxy(getUtility(ISigningServiceClient))._cleanCaches)
 
     @responses.activate
     def test_generate_signing_key_saves_correctly(self):
@@ -81,7 +80,7 @@ class TestSigningKey(TestCaseWithFactory):
 
 
 class TestArchiveSigningKey(TestCaseWithFactory):
-    layer = DatabaseFunctionalLayer
+    layer = ZopelessDatabaseLayer
 
     def setUp(self, *args, **kwargs):
         super(TestArchiveSigningKey, self).setUp(*args, **kwargs)
@@ -94,7 +93,7 @@ class TestArchiveSigningKey(TestCaseWithFactory):
         archive = self.factory.makeArchive()
         distro_series = archive.distribution.series[0]
 
-        arch_key = ArchiveSigningKeySet.generate(
+        arch_key = getUtility(IArchiveSigningKeySet).generate(
             SigningKeyType.UEFI, archive, distro_series=distro_series,
             description=u"some description")
 
@@ -113,12 +112,14 @@ class TestArchiveSigningKey(TestCaseWithFactory):
             fingerprint=self.signing_service.generated_fingerprint,
             public_key=self.signing_service.generated_public_key))
 
-    def test_create_or_update(self):
+    def test_create(self):
         archive = self.factory.makeArchive()
         distro_series = archive.distribution.series[0]
         signing_key = self.factory.makeSigningKey()
 
-        arch_key, created = ArchiveSigningKeySet.createOrUpdate(
+        arch_signing_key_set = getUtility(IArchiveSigningKeySet)
+
+        arch_key = arch_signing_key_set.create(
             archive, distro_series, signing_key)
 
         store = Store.of(arch_key)
@@ -127,20 +128,6 @@ class TestArchiveSigningKey(TestCaseWithFactory):
 
         self.assertEqual(1, rs.count())
         db_arch_key = rs.one()
-        self.assertTrue(created)
-        self.assertThat(db_arch_key, MatchesStructure.byEquality(
-            archive=archive, distro_series=distro_series,
-            signing_key=signing_key))
-
-        another_signing_key = self.factory.makeSigningKey()
-        updated_arch_key, created = ArchiveSigningKeySet.createOrUpdate(
-            archive, distro_series, another_signing_key)
-
-        store.invalidate()
-        rs = store.find(ArchiveSigningKey)
-        self.assertEqual(1, store.find(ArchiveSigningKey).count())
-        db_arch_key = rs.one()
-        self.assertFalse(created)
         self.assertThat(db_arch_key, MatchesStructure.byEquality(
             archive=archive, distro_series=distro_series,
             signing_key=signing_key))
@@ -148,10 +135,9 @@ class TestArchiveSigningKey(TestCaseWithFactory):
         # Saving another type should create a new entry
         signing_key_from_another_type = self.factory.makeSigningKey(
             key_type=SigningKeyType.KMOD)
-        arch_key_another_type, created = ArchiveSigningKeySet.createOrUpdate(
+        arch_key_another_type = arch_signing_key_set.create(
             archive, distro_series, signing_key_from_another_type)
 
-        self.assertTrue(created)
         self.assertEqual(2, store.find(ArchiveSigningKey).count())
 
     def test_get_signing_keys_without_distro_series_configured(self):
@@ -168,24 +154,25 @@ class TestArchiveSigningKey(TestCaseWithFactory):
         # Fill the database with keys from other archives to make sure we
         # are filtering it out
         other_archive = archive = self.factory.makeArchive()
-        ArchiveSigningKeySet.createOrUpdate(
+        arch_signing_key_set = getUtility(IArchiveSigningKeySet)
+        arch_signing_key_set.create(
             other_archive, None, self.factory.makeSigningKey())
 
         # Create a key for the archive (no specific series)
-        arch_uefi_key, created = ArchiveSigningKeySet.createOrUpdate(
+        arch_uefi_key = arch_signing_key_set.create(
             archive, None, uefi_key)
-        arch_kmod_key, created = ArchiveSigningKeySet.createOrUpdate(
+        arch_kmod_key = arch_signing_key_set.create(
             archive, None, kmod_key)
 
         # Should find the keys if we ask for the archive key
         self.assertEqual(
             {UEFI: arch_uefi_key, KMOD: arch_kmod_key},
-            ArchiveSigningKeySet.getSigningKeys(archive, None))
+            arch_signing_key_set.getSigningKeys(archive, None))
 
         # Should find the key if we ask for archive + distro_series key
         self.assertEqual(
             {UEFI: arch_uefi_key, KMOD: arch_kmod_key},
-            ArchiveSigningKeySet.getSigningKeys(archive, distro_series))
+            arch_signing_key_set.getSigningKeys(archive, distro_series))
 
     def test_get_signing_keys_with_distro_series_configured(self):
         UEFI = SigningKeyType.UEFI
@@ -199,38 +186,39 @@ class TestArchiveSigningKey(TestCaseWithFactory):
         # Fill the database with keys from other archives to make sure we
         # are filtering it out
         other_archive = archive = self.factory.makeArchive()
-        ArchiveSigningKeySet.createOrUpdate(
+        arch_signing_key_set = getUtility(IArchiveSigningKeySet)
+        arch_signing_key_set.create(
             other_archive, None, self.factory.makeSigningKey())
 
         # Create a key for the archive (no specific series)
-        arch_uefi_key, created = ArchiveSigningKeySet.createOrUpdate(
+        arch_uefi_key = arch_signing_key_set.create(
             archive, None, uefi_key)
 
         # for kmod, should give back this one if provided a
         # newer distro series
-        arch_kmod_key, created = ArchiveSigningKeySet.createOrUpdate(
+        arch_kmod_key = arch_signing_key_set.create(
             archive, series[1], kmod_key)
-        old_arch_kmod_key, created = ArchiveSigningKeySet.createOrUpdate(
+        old_arch_kmod_key = arch_signing_key_set.create(
             archive, series[2], kmod_key)
 
         # If no distroseries is specified, it should give back no KMOD key,
         # since we don't have a default
         self.assertEqual(
             {UEFI: arch_uefi_key, KMOD: None},
-            ArchiveSigningKeySet.getSigningKeys(archive, None))
+            arch_signing_key_set.getSigningKeys(archive, None))
 
         # For the most recent series, use the KMOD key we've set for the
         # previous one
         self.assertEqual(
             {UEFI: arch_uefi_key, KMOD: arch_kmod_key},
-            ArchiveSigningKeySet.getSigningKeys(archive, series[0]))
+            arch_signing_key_set.getSigningKeys(archive, series[0]))
 
         # For the previous series, we have a KMOD key configured
         self.assertEqual(
             {UEFI: arch_uefi_key, KMOD: arch_kmod_key},
-            ArchiveSigningKeySet.getSigningKeys(archive, series[1]))
+            arch_signing_key_set.getSigningKeys(archive, series[1]))
 
         # For the old series, we have an old KMOD key configured
         self.assertEqual(
             {UEFI: arch_uefi_key, KMOD: old_arch_kmod_key},
-            ArchiveSigningKeySet.getSigningKeys(archive, series[2]))
+            arch_signing_key_set.getSigningKeys(archive, series[2]))
