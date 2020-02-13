@@ -17,6 +17,7 @@ from testtools.matchers import (
     Equals,
     )
 from zope.component import getUtility
+from zope.security.proxy import removeSecurityProxy
 
 from lp.services.config import config
 from lp.services.signing.enums import (
@@ -45,8 +46,6 @@ class SigningServiceResponseFactory:
         self.generated_public_key = bytes(PrivateKey.generate().public_key)
         self.b64_generated_public_key = base64.b64encode(
             self.generated_public_key)
-        self.generated_public_key = base64.b64decode(
-            self.b64_generated_public_key)
         self.generated_fingerprint = (
             u'338D218488DFD597D8FCB9C328C3E9D9ADA16CEE')
         self.b64_signed_msg = base64.b64encode("the-signed-msg")
@@ -124,7 +123,7 @@ class SigningServiceProxyTest(TestCaseWithFactory):
     def tearDown(self):
         super(SigningServiceProxyTest, self).tearDown()
         # clean singleton instance of signing service.
-        getUtility(ISigningServiceClient)._cleanCaches()
+        removeSecurityProxy(getUtility(ISigningServiceClient))._cleanCaches()
 
     @responses.activate
     def test_get_service_public_key(self):
@@ -183,7 +182,7 @@ class SigningServiceProxyTest(TestCaseWithFactory):
         generated = signing.generate(SigningKeyType.UEFI, "my lp test key")
 
         self.assertEqual(generated, {
-            'public-key': self.response_factory.b64_generated_public_key,
+            'public-key': self.response_factory.generated_public_key,
             'fingerprint': self.response_factory.generated_fingerprint})
 
         self.assertEqual(3, len(responses.calls))
@@ -272,7 +271,8 @@ class SigningServiceProxyTest(TestCaseWithFactory):
         # but decoding what is base64-encoded.
         self.assertEqual(2, len(data))
         resp_json = http_sign.response.json()
-        self.assertEqual(data['public-key'], resp_json['public-key'])
+        self.assertEqual(
+            data['public-key'], base64.b64decode(resp_json['public-key']))
         self.assertEqual(
             data['signed-message'],
             base64.b64decode(resp_json['signed-message']))

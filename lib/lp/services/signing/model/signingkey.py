@@ -25,6 +25,7 @@ from storm.locals import (
     )
 from zope.component import getUtility
 from zope.interface import implementer
+from zope.interface.declarations import provider
 
 from lp.services.database.constants import (
     DEFAULT,
@@ -44,6 +45,7 @@ from lp.services.signing.interfaces.signingkey import (
     IArchiveSigningKey,
     IArchiveSigningKeySet,
     ISigningKey,
+    ISigningKeySet,
     )
 from lp.services.signing.interfaces.signingserviceclient import (
     ISigningServiceClient,
@@ -51,6 +53,7 @@ from lp.services.signing.interfaces.signingserviceclient import (
 
 
 @implementer(ISigningKey)
+@provider(ISigningKeySet)
 class SigningKey(StormBase):
     """A key stored at lp-signing, used to sign uploaded files and packages"""
 
@@ -86,19 +89,11 @@ class SigningKey(StormBase):
 
     @classmethod
     def generate(cls, key_type, description=None):
-        """Generates a new signing key on lp-signing and stores it in LP's
-        database.
-
-        :param key_type: One of the SigningKeyType enum's value
-        :param description: (optional) The description associated with this
-                            key
-        :returns: The SigningKey object associated with the newly created
-                  key at lp-singing"""
         signing_service = getUtility(ISigningServiceClient)
         generated_key = signing_service.generate(key_type, description)
         signing_key = SigningKey(
             key_type=key_type, fingerprint=generated_key['fingerprint'],
-            public_key=base64.b64decode(generated_key['public-key']),
+            public_key=generated_key['public-key'],
             description=description)
         store = IMasterStore(SigningKey)
         store.add(signing_key)

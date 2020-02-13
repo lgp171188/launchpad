@@ -11,6 +11,7 @@ __all__ = [
 
 from zope.interface import Interface
 from zope.interface.interface import Attribute
+
 from lp import _
 
 
@@ -27,8 +28,7 @@ class ISigningServiceClient(Interface):
 
         :param key_type: One of available key types at SigningKeyType
         :param description: String description of the generated key
-        :return: A dict with 'fingerprint' (str) and 'public-key' (a
-                Base64-encoded NaCl public key)
+        :return: A dict with 'fingerprint' (str) and 'public-key' (bytes)
         """
 
     def sign(key_type, fingerprint, message_name, message, mode):
@@ -43,6 +43,3 @@ class ISigningServiceClient(Interface):
         :param mode: SigningMode.ATTACHED or SigningMode.DETACHED
         :return: A dict with 'public-key' and 'signed-message'
         """
-
-    def _cleanCaches():
-        """Cleanup cached properties"""

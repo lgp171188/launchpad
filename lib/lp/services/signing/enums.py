@@ -1,7 +1,7 @@
 # Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
-"""Enum for signing keys management
+"""Enums for signing keys management
 """
 
 __metaclass__ = type
@@ -20,36 +20,40 @@ from lazr.enum import (
 
 
 class SigningKeyType(DBEnumeratedType):
-    """Available key types on lp-signing service
+    """Available key types on lp-signing service.
+
+    These items should be kept in sync with
+    lp-signing:lp-signing/lp_signing/enums.py (specially the numbers) to
+    avoid confusion when reading values from different databases.
     """
-    UEFI = DBItem(0, """
-        UEFI key
-        
-        UEFI signing key
+    UEFI = DBItem(1, """
+        UEFI
+
+        A signing key for UEFI Secure Boot images.
         """)
 
-    KMOD = DBItem(1, """
-        KMOD key
-        
-        KMOD signing key
+    KMOD = DBItem(2, """
+        Kmod
+
+        A signing key for kernel modules.
         """)
 
-    OPAL = DBItem(2, """
-        OPAL key
-        
-        OPAL signing key
+    OPAL = DBItem(3, """
+        OPAL
+
+        A signing key for OPAL kernel images.
         """)
 
-    SIPL = DBItem(3, """
-        SIPL key
-        
-        SIPL signing key
+    SIPL = DBItem(4, """
+        SIPL
+
+        A signing key for Secure Initial Program Load kernel images.
         """)
 
-    FIT  = DBItem(4, """
-        FIT key
-        
-        FIT signing key
+    FIT = DBItem(5, """
+        FIT
+
+        A signing key for U-Boot Flat Image Tree images.
         """)
 
 

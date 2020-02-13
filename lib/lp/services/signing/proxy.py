@@ -3,7 +3,7 @@
 
 """Proxy calls to lp-signing service"""
 
-from __future__ import division
+from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 
@@ -17,7 +17,7 @@ from nacl.public import (
     PrivateKey,
     PublicKey,
     )
-import six
+from six.moves.urllib.parse import urljoin
 from zope.interface import implementer
 
 from lp.services.config import config
@@ -45,16 +45,17 @@ class SigningServiceClient:
     """
 
     def _cleanCaches(self):
+        """Cleanup cached properties"""
         del get_property_cache(self).service_public_key
 
     def getUrl(self, path):
-        """Shotcut to concatenate lp-signing address with the desired
+        """Shortcut to concatenate lp-signing address with the desired
         endpoint path.
 
         :param path: The REST endpoint to be joined.
         """
         base_url = config.signing.signing_endpoint
-        return six.moves.urllib.parse.urljoin(base_url, path)
+        return urljoin(base_url, path)
 
     def _getJson(self, path, method="GET", **kwargs):
         """Helper method to do an HTTP request and get back a json from  the
@@ -119,9 +120,12 @@ class SigningServiceClient:
             "key-type": key_type.name,
             "description": description,
             }).encode("UTF-8")
-        return self._getJson(
+        ret = self._getJson(
             "/generate", "POST", headers=self._getAuthHeaders(nonce),
             data=self._encryptPayload(nonce, data))
+        return {
+            "fingerprint": ret["fingerprint"],
+            "public-key": base64.b64decode(ret["public-key"])}
 
     def sign(self, key_type, fingerprint, message_name, message, mode):
         if mode not in {SigningMode.ATTACHED, SigningMode.DETACHED}:
@@ -143,5 +147,5 @@ class SigningServiceClient:
             data=self._encryptPayload(nonce, data))
 
         return {
-            'public-key': data['public-key'],
+            'public-key': base64.b64decode(data['public-key']),
             'signed-message': base64.b64decode(data['signed-message'])}

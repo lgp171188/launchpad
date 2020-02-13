@@ -9,6 +9,7 @@ import responses
 from storm.store import Store
 from testtools.matchers import MatchesStructure
 from zope.component import getUtility
+from zope.security.proxy import removeSecurityProxy
 
 from lp.services.database.interfaces import IMasterStore
 from lp.services.signing.enums import SigningKeyType
@@ -36,7 +37,7 @@ class TestSigningKey(TestCaseWithFactory):
     def tearDown(self):
         super(TestSigningKey, self).tearDown()
         # clean singleton instance of signing service.
-        getUtility(ISigningServiceClient)._cleanCaches()
+        removeSecurityProxy(getUtility(ISigningServiceClient))._cleanCaches()
 
     @responses.activate
     def test_generate_signing_key_saves_correctly(self):
@@ -66,7 +67,7 @@ class TestSigningKey(TestCaseWithFactory):
 
         s = SigningKey(
             SigningKeyType.UEFI, u"a fingerprint",
-            self.signing_service.b64_generated_public_key,
+            self.signing_service.generated_public_key,
             description=u"This is my key!")
         signed = s.sign("secure message", "message_name")
 

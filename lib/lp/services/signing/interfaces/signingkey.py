@@ -7,22 +7,25 @@ __metaclass__ = type
 
 __all__ = [
     'ISigningKey',
+    'ISigningKeySet',
     'IArchiveSigningKey',
-    'IArchiveSigningKeySet'
+    'IArchiveSigningKeySet',
 ]
 
-from lp.services.signing.enums import SigningKeyType
-from lp.registry.interfaces.distroseries import IDistroSeries
-from lp.soyuz.interfaces.archive import IArchive
+from lazr.restful.fields import Reference
 from zope.interface.interface import Interface
 from zope.schema import (
+    Bytes,
+    Choice,
+    Datetime,
     Int,
     Text,
-    Datetime,
-    Choice
     )
-from lazr.restful.fields import Reference
+
 from lp import _
+from lp.registry.interfaces.distroseries import IDistroSeries
+from lp.services.signing.enums import SigningKeyType
+from lp.soyuz.interfaces.archive import IArchive
 
 
 class ISigningKey(Interface):
@@ -37,7 +40,7 @@ class ISigningKey(Interface):
     fingerprint = Text(
         title=_("Fingerprint of the key"), required=True, readonly=True)
 
-    public_key = Text(
+    public_key = Bytes(
         title=_("Public key binary content"), required=False,
         readonly=True)
 
@@ -48,8 +51,23 @@ class ISigningKey(Interface):
         """Sign the given message using this key
 
         :param message: The message to be signed.
-        :param message_name: A name for the message beign signed.
+        :param message_name: A name for the message being signed.
         """
+
+
+class ISigningKeySet(Interface):
+    """Interface to deal with the collection of signing keys
+    """
+
+    def generate(key_type, description=None):
+        """Generates a new signing key on lp-signing and stores it in LP's
+        database.
+
+        :param key_type: One of the SigningKeyType enum's value
+        :param description: (optional) The description associated with this
+                            key
+        :returns: The SigningKey object associated with the newly created
+                  key at lp-signing"""
 
 
 class IArchiveSigningKey(Interface):
@@ -93,7 +111,7 @@ class IArchiveSigningKeySet(Interface):
         """
 
     def generate(key_type, archive, distro_series=None, description=None):
-        """Generated a new key on signing service, and save it to db.
+        """Generate a new key on signing service, and save it to db.
 
         :param key_type: One of the SigningKeyType enum's value
         :param archive: The package Archive that should be associated with
