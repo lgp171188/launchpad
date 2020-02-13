@@ -206,7 +206,7 @@ class SigningServiceProxyTest(TestCaseWithFactory):
             http_generate.request.url)
         self.assertThat(http_generate.request.headers, ContainsDict({
             "Content-Type": Equals("application/x-boxed-json"),
-            "X-Client-Public-Key": Equals(config.signing.local_public_key),
+            "X-Client-Public-Key": Equals(config.signing.client_public_key),
             "X-Nonce": Equals(self.response_factory.base64_nonce)}))
         self.assertIsNotNone(http_generate.request.body)
 
@@ -264,7 +264,7 @@ class SigningServiceProxyTest(TestCaseWithFactory):
             http_sign.request.url)
         self.assertThat(http_sign.request.headers, ContainsDict({
             "Content-Type": Equals("application/x-boxed-json"),
-            "X-Client-Public-Key": Equals(config.signing.local_public_key),
+            "X-Client-Public-Key": Equals(config.signing.client_public_key),
             "X-Nonce": Equals(self.response_factory.base64_nonce)}))
         self.assertIsNotNone(http_sign.request.body)
 

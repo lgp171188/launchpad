@@ -53,7 +53,7 @@ class SigningServiceClient:
 
         :param path: The REST endpoint to be joined.
         """
-        base_url = config.signing.lp_signing_address
+        base_url = config.signing.signing_endpoint
         return six.moves.urllib.parse.urljoin(base_url, path)
 
     def _getJson(self, path, method="GET", **kwargs):
@@ -83,7 +83,7 @@ class SigningServiceClient:
     @property
     def private_key(self):
         return PrivateKey(
-            config.signing.local_private_key, encoder=Base64Encoder)
+            config.signing.client_private_key, encoder=Base64Encoder)
 
     def getNonce(self):
         data = self._getJson("/nonce", "POST")
@@ -97,7 +97,7 @@ class SigningServiceClient:
         """
         return {
             "Content-Type": "application/x-boxed-json",
-            "X-Client-Public-Key": config.signing.local_public_key,
+            "X-Client-Public-Key": config.signing.client_public_key,
             "X-Nonce": base64.b64encode(nonce)}
 
     def _encryptPayload(self, nonce, message):

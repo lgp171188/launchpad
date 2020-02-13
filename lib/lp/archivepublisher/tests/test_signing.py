@@ -1537,7 +1537,7 @@ class TestSigningUploadWithSigningService(TestSigningHelpers):
             "%s-%s" % (loader_type, arch))
 
     def process_emulate(self):
-        """Shortcut to close tarfile and run SigningUpload.process
+        """Shortcut to close tarfile and run SigningUpload.process.
         """
         self.tarfile.close()
         self.buffer.close()
