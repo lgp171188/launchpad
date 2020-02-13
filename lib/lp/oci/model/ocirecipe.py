@@ -49,10 +49,10 @@ from lp.oci.interfaces.ocirecipe import (
     )
 from lp.oci.interfaces.ocirecipebuild import IOCIRecipeBuildSet
 from lp.oci.model.ocirecipebuild import OCIRecipeBuild
-from lp.services.database.constants import DEFAULT
 from lp.registry.interfaces.person import IPersonSet
-from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.bulk import load_related
+from lp.services.database.constants import DEFAULT
+from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.interfaces import (
     IMasterStore,
     IStore,

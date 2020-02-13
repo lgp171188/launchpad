@@ -14,8 +14,6 @@ __all__ = [
 
 from datetime import timedelta
 
-from datetime import timedelta
-
 import pytz
 from storm.locals import (
     Bool,
