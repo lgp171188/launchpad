@@ -7,6 +7,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 from datetime import timedelta
 
+import six
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
@@ -54,9 +55,15 @@ class TestOCIRecipeBuild(TestCaseWithFactory):
             files[0].library_file.filename)
         self.assertEqual(result, files[0])
 
+    def test_getByFileName_missing(self):
+        self.assertRaises(
+            NotFoundError,
+            self.build.getByFileName,
+            "missing")
+
     def test_getLayerFileByDigest(self):
         files = [self.factory.makeOCIFile(
-                    build=self.build, layer_file_digest=unicode(x))
+                    build=self.build, layer_file_digest=six.text_type(x))
                  for x in range(3)]
         result, _, _ = self.build.getLayerFileByDigest(
             files[0].layer_file_digest)
@@ -64,7 +71,7 @@ class TestOCIRecipeBuild(TestCaseWithFactory):
 
     def test_getLayerFileByDigest_missing(self):
         [self.factory.makeOCIFile(
-            build=self.build, layer_file_digest=unicode(x))
+            build=self.build, layer_file_digest=six.text_type(x))
          for x in range(3)]
         self.assertRaises(
             NotFoundError,

@@ -172,16 +172,18 @@ class OCIRecipeBuild(PackageBuildMixin, Storm):
         result = Store.of(self).find(
             (OCIFile, LibraryFileAlias, LibraryFileContent),
             OCIFile.build == self.id,
-            LibraryFileAlias.id == OCIFile.libraryfile_id,
+            LibraryFileAlias.id == OCIFile.library_file_id,
             LibraryFileContent.id == LibraryFileAlias.contentID,
-            LibraryFileAlias.filename == filename)
-        return result.one()
+            LibraryFileAlias.filename == filename).one()
+        if result is not None:
+            return result
+        raise NotFoundError(filename)
 
     def getLayerFileByDigest(self, layer_file_digest):
         file_object = Store.of(self).find(
             (OCIFile, LibraryFileAlias, LibraryFileContent),
             OCIFile.build == self.id,
-            LibraryFileAlias.id == OCIFile.libraryfile_id,
+            LibraryFileAlias.id == OCIFile.library_file_id,
             LibraryFileContent.id == LibraryFileAlias.contentID,
             OCIFile.layer_file_digest == layer_file_digest).one()
         if file_object is not None:
