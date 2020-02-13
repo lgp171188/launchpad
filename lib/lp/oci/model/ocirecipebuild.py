@@ -52,7 +52,6 @@ from lp.services.database.interfaces import (
     IMasterStore,
     IStore,
     )
-from lp.services.librarian.browser import ProxiedLibraryFileAlias
 from lp.services.librarian.model import (
     LibraryFileAlias,
     LibraryFileContent,
@@ -69,8 +68,8 @@ class OCIFile(Storm):
     build_id = Int(name='build', allow_none=False)
     build = Reference(build_id, 'OCIRecipeBuild.id')
 
-    libraryfile_id = Int(name='library_file', allow_none=False)
-    library_file = Reference(libraryfile_id, 'LibraryFileAlias.id')
+    library_file_id = Int(name='library_file', allow_none=False)
+    library_file = Reference(library_file_id, 'LibraryFileAlias.id')
 
     layer_file_digest = Unicode(name='layer_file_digest', allow_none=True)
 
@@ -128,7 +127,7 @@ class OCIRecipeBuild(PackageBuildMixin, Storm):
     build_farm_job = Reference(build_farm_job_id, 'BuildFarmJob.id')
 
     # Stub attributes to match the IPackageBuild interface that we
-    # will not use in this implementation.
+    # are not using in this implementation at this time.
     pocket = None
     distro_series = None
 
