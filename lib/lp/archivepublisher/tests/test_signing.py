@@ -1510,9 +1510,8 @@ class TestSigningUploadWithSigningService(TestSigningHelpers):
     """
     layer = ZopelessDatabaseLayer
 
-    def setUp(self, *args, **kwargs):
-        super(TestSigningUploadWithSigningService, self).setUp(
-            *args, **kwargs)
+    def setUp(self):
+        super(TestSigningUploadWithSigningService, self).setUp()
         self.useFixture(FeatureFixture({'lp.services.signing.enabled': True}))
 
         self.arch_key_set = self.useFixture(ArchiveSigningKeySetFixture())
@@ -1526,10 +1525,10 @@ class TestSigningUploadWithSigningService(TestSigningHelpers):
         return arch_signing_key
 
     @staticmethod
-    def get_filelist_content(basedir, filenames):
+    def getFileListContent(basedir, filenames):
         contents = []
         for filename in filenames:
-            with open(os.path.join(basedir, filename)) as fd:
+            with open(os.path.join(basedir, filename), 'rb') as fd:
                 contents.append(fd.read())
         return contents
 
@@ -1538,7 +1537,7 @@ class TestSigningUploadWithSigningService(TestSigningHelpers):
             "%s-%s" % (loader_type, arch))
 
     def process_emulate(self):
-        """Shotcut to the close tarfile and run SigningUpload.process
+        """Shortcut to close tarfile and run SigningUpload.process
         """
         self.tarfile.close()
         self.buffer.close()
@@ -1812,17 +1811,17 @@ class TestSigningUploadWithSigningService(TestSigningHelpers):
         self.assertEqual(1, len(self.arch_key_set.getSigningKeys.calls))
 
         # Checks that all files got signed
-        contents = self.get_filelist_content(
+        contents = self.getFileListContent(
             signed_path, expected_signed_filenames)
         key_types = (
             SigningKeyType.UEFI, SigningKeyType.KMOD, SigningKeyType.OPAL,
             SigningKeyType.SIPL, SigningKeyType.FIT)
         expected_signed_contents = [
-            u"signed with %s" % k.name for k in key_types]
+            b"signed with %s" % k.name for k in key_types]
         self.assertItemsEqual(expected_signed_contents, contents)
 
         # Checks that all public keys ended up in the 1.0/control/xxx files
-        contents = self.get_filelist_content(
+        contents = self.getFileListContent(
             signed_path, expected_public_keys_filenames)
         arch_keys = self.arch_key_set.getSigningKeys.result
         expected_public_keys = [

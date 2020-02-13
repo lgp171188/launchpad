@@ -48,6 +48,10 @@ class SigningUploadPackError(CustomUploadError):
         CustomUploadError.__init__(self, message)
 
 
+class NoSigningKeyError(Exception):
+    pass
+
+
 class SigningUpload(CustomUpload):
     """Signing custom upload.
 
@@ -192,34 +196,36 @@ class SigningUpload(CustomUpload):
         self.distro_series = distro_series_set.queryByName(
             self.archive.distribution, distro_series_name)
 
-        self.public_keys = set()
+        self.public_keys = {}
 
     def publishPublicKey(self, key):
-        """Record this key as having been used in this upload."""
-        self.public_keys.add(key)
+        """Record this key as having been used in this upload.
+
+        :param key: Either a file name where the key is stored, or a tuple
+                    like (filename, content).
+        """
+        if isinstance(key, tuple):
+            filename, content = key
+            self.public_keys[filename] = content
+        elif key not in self.public_keys:
+            # Ensure we only emit files which are world-readable.
+            if stat.S_IMODE(os.stat(key).st_mode) & stat.S_IROTH:
+                with open(key, "rb") as f:
+                    self.public_keys[key] = f.read()
+            else:
+                if self.logger is not None:
+                    self.logger.warning(
+                        "%s: public key not world readable" % key)
 
     def copyPublishedPublicKeys(self):
         """Copy out published keys into the custom upload."""
         keydir = os.path.join(self.tmpdir, self.version, "control")
         if not os.path.exists(keydir):
             os.makedirs(keydir)
-        for key in self.public_keys:
-            if self.use_signing_service and isinstance(key, tuple):
-                # A file signed with signing service comes in another format:
-                # a tuple with filename and file content.
-                filename, content = key
-                file_path = os.path.join(keydir, os.path.basename(filename))
-                with open(file_path, 'wb') as fd:
-                    fd.write(content)
-            else:
-                # Ensure we only emit files which are world readable.
-                if stat.S_IMODE(os.stat(key).st_mode) & stat.S_IROTH:
-                    shutil.copy(
-                        key, os.path.join(keydir, os.path.basename(key)))
-                else:
-                    if self.logger is not None:
-                        self.logger.warning(
-                        "%s: public key not world readable" % key)
+        for filename, content in self.public_keys.items():
+            file_path = os.path.join(keydir, os.path.basename(filename))
+            with open(file_path, 'wb') as fd:
+                fd.write(content)
 
     def setSigningOptions(self):
         """Find and extract raw-signing options from the tarball."""
@@ -231,7 +237,7 @@ class SigningUpload(CustomUpload):
         if not os.path.exists(options_file):
             return
 
-        with open(options_file, 'rb') as options_fd:
+        with open(options_file) as options_fd:
             for option in options_fd:
                 self.signing_options[option.strip()] = True
 
@@ -261,26 +267,31 @@ class SigningUpload(CustomUpload):
         else:
             keys = {}
 
+        fallback_handlers = {
+            SigningKeyType.UEFI: self.signUefi,
+            SigningKeyType.KMOD: self.signKmod,
+            SigningKeyType.OPAL: self.signOpal,
+            SigningKeyType.SIPL: self.signSipl,
+            SigningKeyType.FIT: self.signFit
+        }
+
         for dirpath, dirnames, filenames in scandir.walk(self.tmpdir):
             for filename in filenames:
                 file_path = os.path.join(dirpath, filename)
                 if filename.endswith(".efi"):
-                    fallback_handler = self.signUefi
                     key_type = SigningKeyType.UEFI
                 elif filename.endswith(".ko"):
-                    fallback_handler = self.signKmod
                     key_type = SigningKeyType.KMOD
                 elif filename.endswith(".opal"):
-                    fallback_handler = self.signOpal
                     key_type = SigningKeyType.OPAL
                 elif filename.endswith(".sipl"):
-                    fallback_handler = self.signSipl
                     key_type = SigningKeyType.SIPL
                 elif filename.endswith(".fit"):
-                    fallback_handler = self.signFit
                     key_type = SigningKeyType.FIT
                 else:
                     continue
+
+                fallback_handler = fallback_handlers.get(key_type)
 
                 if self.use_signing_service:
                     key = keys.get(key_type)
@@ -303,22 +314,22 @@ class SigningUpload(CustomUpload):
         :param key: The ArchiveSigningKey to be used (or None,
                     to autogenerate a key if possible).
         :param filename: The filename to be signed.
-        :return: 0 in case of success, any other number otherwise.
+        :return: Boolean. True if signed, False otherwise.
         """
         if key is None:
             if not self.autokey:
-                return 1
+                raise NoSigningKeyError("No signing key for %s" % filename)
             description = (
-                u"%s key for PPA#%s" % (key_type.name, self.archive.id))
+                u"%s key for %s" % (key_type.name, self.archive.reference))
             try:
                 key = getUtility(IArchiveSigningKeySet).generate(
                     key_type, self.archive, description=description)
             except Exception as e:
                 if self.logger:
                     self.logger.error(
-                        "Error generating signing key for PPA#%s: %s %s" %
-                        (self.archive.id, e.__class__.__name__, e))
-                return 2
+                        "Error generating signing key for %s: %s %s" %
+                        (self.archive.reference, e.__class__.__name__, e))
+                return False
 
         signing_key = key.signing_key
         with open(filename, "rb") as fd:
@@ -332,7 +343,7 @@ class SigningUpload(CustomUpload):
                 self.logger.error(
                     "Error signing %s on signing service: %s %s" %
                     (filename, e.__class__.__name__, e))
-            return 3
+            return False
 
         if key_type in (SigningKeyType.UEFI, SigningKeyType.FIT):
             file_suffix = ".signed"
@@ -348,14 +359,12 @@ class SigningUpload(CustomUpload):
             fd.write(signed_content)
 
         self.publishPublicKey((public_key_filename, signing_key.public_key))
-        # For historical reason, this method returns zero if everything went
-        # well (to keep compatibility with fallback methods).
-        return 0
+        return True
 
     def getKeys(self, which, generate, *keynames):
         """Validate and return the uefi key and cert for encryption."""
 
-        if self.autokey:
+        if self.autokey and not self.use_signing_service:
             for keyfile in keynames:
                 if keyfile and not os.path.exists(keyfile):
                     generate()
@@ -419,7 +428,7 @@ class SigningUpload(CustomUpload):
             return
         self.publishPublicKey(cert)
         cmdl = ["sbsign", "--key", key, "--cert", cert, image]
-        return self.callLog("UEFI signing", cmdl)
+        return self.callLog("UEFI signing", cmdl) == 0
 
     openssl_config_base = textwrap.dedent("""\
         [ req ]
@@ -507,7 +516,7 @@ class SigningUpload(CustomUpload):
             return
         self.publishPublicKey(cert)
         cmdl = ["kmodsign", "-D", "sha512", pem, cert, image, image + ".sig"]
-        return self.callLog("Kmod signing", cmdl)
+        return self.callLog("Kmod signing", cmdl) == 0
 
     def generateOpalKeys(self):
         """Generate new Opal Signing Keys for this archive."""
@@ -523,7 +532,7 @@ class SigningUpload(CustomUpload):
             return
         self.publishPublicKey(cert)
         cmdl = ["kmodsign", "-D", "sha512", pem, cert, image, image + ".sig"]
-        return self.callLog("Opal signing", cmdl)
+        return self.callLog("Opal signing", cmdl) == 0
 
     def generateSiplKeys(self):
         """Generate new Sipl Signing Keys for this archive."""
@@ -539,7 +548,7 @@ class SigningUpload(CustomUpload):
             return
         self.publishPublicKey(cert)
         cmdl = ["kmodsign", "-D", "sha512", pem, cert, image, image + ".sig"]
-        return self.callLog("SIPL signing", cmdl)
+        return self.callLog("SIPL signing", cmdl) == 0
 
     def generateFitKeys(self):
         """Generate new FIT Keys for this archive."""
@@ -559,7 +568,7 @@ class SigningUpload(CustomUpload):
         shutil.copy(image, image_signed)
         cmdl = ["mkimage", "-F", "-k", os.path.dirname(key), "-r",
             image_signed]
-        return self.callLog("FIT signing", cmdl)
+        return self.callLog("FIT signing", cmdl) == 0
 
     def convertToTarball(self):
         """Convert unpacked output to signing tarball."""
@@ -588,10 +597,16 @@ class SigningUpload(CustomUpload):
         super(SigningUpload, self).extract()
         self.setSigningOptions()
         for filename, handler, fallback_handler in self.findSigningHandlers():
-            return_code = handler(filename)
-            if return_code != 0 and fallback_handler is not None:
-                return_code = fallback_handler(filename)
-            if return_code == 0 and 'signed-only' in self.signing_options:
+            # XXX: Which cases to call fallback? Only when we don't have the
+            # key on signing service? Or in any error case? It's doing it
+            # for every error case for now.
+            try:
+                was_signed = handler(filename)
+            except NoSigningKeyError:
+                was_signed = False
+            if not was_signed and fallback_handler is not None:
+                was_signed = fallback_handler(filename)
+            if was_signed and 'signed-only' in self.signing_options:
                 os.unlink(filename)
 
         # Copy out the public keys where they were used.
