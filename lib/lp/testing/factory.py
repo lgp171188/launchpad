@@ -160,6 +160,7 @@ from lp.hardwaredb.interfaces.hwdb import (
 from lp.oci.interfaces.ocirecipe import IOCIRecipeSet
 from lp.oci.interfaces.ocirecipebuild import IOCIRecipeBuildSet
 from lp.oci.model.ocirecipe import OCIRecipeArch
+from lp.oci.model.ocirecipebuild import OCIFile
 from lp.registry.enums import (
     BranchSharingPolicy,
     BugSharingPolicy,
@@ -4979,7 +4980,9 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         return OCIRecipeArch(recipe, processor)
 
     def makeOCIRecipeBuild(self, requester=None, recipe=None,
-                           distro_arch_series=None, date_created=DEFAULT):
+                           distro_arch_series=None, date_created=DEFAULT,
+                           status=BuildStatus.NEEDSBUILD, builder=None,
+                           duration=None):
         """Make a new OCIRecipeBuild."""
         if requester is None:
             requester = self.makePerson()
@@ -4987,9 +4990,29 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             distro_arch_series = self.makeDistroArchSeries()
         if recipe is None:
             recipe = self.makeOCIRecipe()
-
-        return getUtility(IOCIRecipeBuildSet).new(
+        oci_build = getUtility(IOCIRecipeBuildSet).new(
             requester, recipe, distro_arch_series, date_created)
+        if duration is not None:
+            removeSecurityProxy(oci_build).updateStatus(
+                BuildStatus.BUILDING, builder=builder,
+                date_started=oci_build.date_created)
+            removeSecurityProxy(oci_build).updateStatus(
+                status, builder=builder,
+                date_finished=oci_build.date_started + duration)
+        else:
+            removeSecurityProxy(oci_build).updateStatus(
+                status, builder=builder)
+        return oci_build
+
+    def makeOCIFile(self, build=None, library_file=None,
+                    layer_file_digest=None):
+        """Make a new OCIFile."""
+        if build is None:
+            build = self.makeOCIRecipeBuild()
+        if library_file is None:
+            library_file = self.makeLibraryFileAlias()
+        return OCIFile(build=build, library_file=library_file,
+                       layer_file_digest=layer_file_digest)
 
 
 # Some factory methods return simple Python types. We don't add

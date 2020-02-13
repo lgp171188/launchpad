@@ -240,3 +240,6 @@ class IOCIRecipeSet(Interface):
 
     def findByOwner(owner):
         """Return all OCI Recipes with the given `owner`."""
+
+    def preloadDataForOCIRecipes(recipes, user):
+        """Load the data reloated to a list of OCI Recipes."""
