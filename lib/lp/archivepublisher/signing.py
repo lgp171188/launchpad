@@ -28,12 +28,11 @@ import tempfile
 import textwrap
 
 import scandir
+from lp.registry.errors import NoSuchDistroSeries
 from zope.component import getUtility
-from zope.security.proxy import removeSecurityProxy
 
 from lp.archivepublisher.config import getPubConfig
 from lp.archivepublisher.customupload import CustomUpload
-from lp.registry.interfaces.distroseries import IDistroSeriesSet
 from lp.services.features import getFeatureFlag
 from lp.services.osutils import remove_if_exists
 from lp.services.signing.enums import SigningKeyType
@@ -191,9 +190,11 @@ class SigningUpload(CustomUpload):
         self.temproot = pubconf.temproot
 
         distro_series_name = suite.split('-')[0]
-        distro_series_set = removeSecurityProxy(getUtility(IDistroSeriesSet))
-        self.distro_series = distro_series_set.queryByName(
-            self.archive.distribution, distro_series_name)
+        try:
+            self.distro_series = self.archive.distribution.getSeries(
+                distro_series_name)
+        except NoSuchDistroSeries:
+            self.distro_series = None
 
         self.public_keys = {}
 
