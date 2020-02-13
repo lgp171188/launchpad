@@ -41,6 +41,10 @@ from lp.services.signing.interfaces.signingkey import IArchiveSigningKeySet
 from lp.soyuz.interfaces.queue import CustomUploadError
 
 
+PUBLISHER_USES_SIGNING_SERVICE = (
+    'archivepublisher.signing.use_signing_service')
+
+
 class SigningUploadPackError(CustomUploadError):
     def __init__(self, tarfile_path, exc):
         message = "Problem building tarball '%s': %s" % (
@@ -90,11 +94,6 @@ class SigningUpload(CustomUpload):
     custom_type = "signing"
 
     dists_directory = "signed"
-
-    def __init__(self, *args, **kwargs):
-        super(SigningUpload, self).__init__(*args, **kwargs)
-        self.use_signing_service = bool(getFeatureFlag(
-            'lp.services.signing.enabled'))
 
     @staticmethod
     def parsePath(tarfile_path):
@@ -261,7 +260,9 @@ class SigningUpload(CustomUpload):
 
     def findSigningHandlers(self):
         """Find all the signable files in an extracted tarball."""
-        if self.use_signing_service:
+        use_signing_service = bool(
+            getFeatureFlag(PUBLISHER_USES_SIGNING_SERVICE))
+        if use_signing_service:
             keys = getUtility(IArchiveSigningKeySet).getSigningKeys(
                 self.archive, self.distro_series)
         else:
@@ -293,7 +294,7 @@ class SigningUpload(CustomUpload):
 
                 fallback_handler = fallback_handlers.get(key_type)
 
-                if self.use_signing_service:
+                if use_signing_service:
                     key = keys.get(key_type)
                     handler = partial(
                         self.signUsingSigningService, key_type, key)
@@ -363,8 +364,9 @@ class SigningUpload(CustomUpload):
 
     def getKeys(self, which, generate, *keynames):
         """Validate and return the uefi key and cert for encryption."""
-
-        if self.autokey and not self.use_signing_service:
+        use_signing_service = bool(
+            getFeatureFlag(PUBLISHER_USES_SIGNING_SERVICE))
+        if self.autokey and not use_signing_service:
             for keyfile in keynames:
                 if keyfile and not os.path.exists(keyfile):
                     generate()
@@ -597,9 +599,10 @@ class SigningUpload(CustomUpload):
         super(SigningUpload, self).extract()
         self.setSigningOptions()
         for filename, handler, fallback_handler in self.findSigningHandlers():
-            # XXX: Which cases to call fallback? Only when we don't have the
-            # key on signing service? Or in any error case? It's doing it
-            # for every error case for now.
+            # XXX pappacena: In which cases should we call the fallback? Only
+            # when we don't have the key on signing service,
+            # or in any error case?
+            # It's doing it for every error case for now.
             try:
                 was_signed = handler(filename)
             except NoSigningKeyError:

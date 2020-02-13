@@ -43,7 +43,7 @@ from lp.archivepublisher.interfaces.publisherconfig import IPublisherConfigSet
 from lp.archivepublisher.signing import (
     SigningUpload,
     UefiUpload,
-    )
+    PUBLISHER_USES_SIGNING_SERVICE)
 from lp.archivepublisher.tests.test_run_parts import RunPartsMixin
 from lp.services.features.testing import FeatureFixture
 from lp.services.osutils import write_file
@@ -1512,7 +1512,7 @@ class TestSigningUploadWithSigningService(TestSigningHelpers):
 
     def setUp(self):
         super(TestSigningUploadWithSigningService, self).setUp()
-        self.useFixture(FeatureFixture({'lp.services.signing.enabled': True}))
+        self.useFixture(FeatureFixture({PUBLISHER_USES_SIGNING_SERVICE: True}))
 
         self.arch_key_set = self.useFixture(ArchiveSigningKeySetFixture())
         self.arch_key_set.setUpAllKeyTypes(self.factory, self.archive)
