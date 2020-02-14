@@ -147,11 +147,13 @@ class ArchiveSigningKeySet:
         return obj
 
     @classmethod
-    def getSigningKeys(cls, archive, distro_series):
+    def getSigningKey(cls, key_type, archive, distro_series):
         # Gets all the keys available for the given archive.
         store = IStore(ArchiveSigningKey)
-        rs = store.find(ArchiveSigningKey, [
-                ArchiveSigningKey.archive == archive])
+        rs = store.find(ArchiveSigningKey,
+                SigningKey.id == ArchiveSigningKey.signing_key_id,
+                SigningKey.key_type == key_type,
+                ArchiveSigningKey.archive == archive)
 
         # prefetch related signing keys to avoid extra queries.
         signing_keys = store.find(SigningKey, [
@@ -159,30 +161,24 @@ class ArchiveSigningKeySet:
         signing_keys_by_id = {i.id: i for i in signing_keys}
 
         # Group keys per type, and per distro series
-        keys_data = defaultdict(dict)
+        keys_per_series = defaultdict(dict)
         for i in rs:
             signing_key = signing_keys_by_id[i.signing_key_id]
-            keys_data[signing_key.key_type][i.distro_series] = i
+            keys_per_series[i.distro_series] = signing_key
 
         ret_keys = {}
 
         # Let's search the most suitable per key type.
-        for key_type, keys_per_series in keys_data.items():
-            found_series = False
-            found_key = False
-            for series in archive.distribution.series:
-                if series == distro_series:
-                    found_series = True
-                if found_series and series in keys_per_series:
-                    ret_keys[key_type] = keys_per_series[series]
-                    found_key = True
-                    break
-            # If not specific keys for distro_series was found, returns
-            # the keys for the archive itself (or None if no key is
-            # available for the archive either).
-            if not found_series or not found_key:
-                ret_keys[key_type] = keys_per_series.get(None)
-        return ret_keys
+        found_series = False
+        for series in archive.distribution.series:
+            if series == distro_series:
+                found_series = True
+            if found_series and series in keys_per_series:
+                return keys_per_series[series]
+        # If no specific key for distro_series was found, returns
+        # the keys for the archive itself (or None if no key is
+        # available for the archive either).
+        return keys_per_series.get(None)
 
     @classmethod
     def generate(cls, key_type, archive, distro_series=None,

@@ -166,13 +166,19 @@ class TestArchiveSigningKey(TestCaseWithFactory):
 
         # Should find the keys if we ask for the archive key
         self.assertEqual(
-            {UEFI: arch_uefi_key, KMOD: arch_kmod_key},
-            arch_signing_key_set.getSigningKeys(archive, None))
+            arch_uefi_key.signing_key,
+            arch_signing_key_set.getSigningKey(UEFI, archive, None))
+        self.assertEqual(
+            arch_kmod_key.signing_key,
+            arch_signing_key_set.getSigningKey(KMOD, archive, None))
 
         # Should find the key if we ask for archive + distro_series key
         self.assertEqual(
-            {UEFI: arch_uefi_key, KMOD: arch_kmod_key},
-            arch_signing_key_set.getSigningKeys(archive, distro_series))
+            arch_uefi_key.signing_key,
+            arch_signing_key_set.getSigningKey(UEFI, archive, distro_series))
+        self.assertEqual(
+            arch_kmod_key.signing_key,
+            arch_signing_key_set.getSigningKey(KMOD, archive, distro_series))
 
     def test_get_signing_keys_with_distro_series_configured(self):
         UEFI = SigningKeyType.UEFI
@@ -204,21 +210,33 @@ class TestArchiveSigningKey(TestCaseWithFactory):
         # If no distroseries is specified, it should give back no KMOD key,
         # since we don't have a default
         self.assertEqual(
-            {UEFI: arch_uefi_key, KMOD: None},
-            arch_signing_key_set.getSigningKeys(archive, None))
+            arch_uefi_key.signing_key,
+            arch_signing_key_set.getSigningKey(UEFI, archive, None))
+        self.assertEqual(
+            None,
+            arch_signing_key_set.getSigningKey(KMOD, archive, None))
 
         # For the most recent series, use the KMOD key we've set for the
         # previous one
         self.assertEqual(
-            {UEFI: arch_uefi_key, KMOD: arch_kmod_key},
-            arch_signing_key_set.getSigningKeys(archive, series[0]))
+            arch_uefi_key.signing_key,
+            arch_signing_key_set.getSigningKey(UEFI, archive, series[0]))
+        self.assertEqual(
+            arch_kmod_key.signing_key,
+            arch_signing_key_set.getSigningKey(KMOD, archive, series[0]))
 
         # For the previous series, we have a KMOD key configured
         self.assertEqual(
-            {UEFI: arch_uefi_key, KMOD: arch_kmod_key},
-            arch_signing_key_set.getSigningKeys(archive, series[1]))
+            arch_uefi_key.signing_key,
+            arch_signing_key_set.getSigningKey(UEFI, archive, series[1]))
+        self.assertEqual(
+            arch_kmod_key.signing_key,
+            arch_signing_key_set.getSigningKey(KMOD, archive, series[1]))
 
         # For the old series, we have an old KMOD key configured
         self.assertEqual(
-            {UEFI: arch_uefi_key, KMOD: old_arch_kmod_key},
-            arch_signing_key_set.getSigningKeys(archive, series[2]))
+            arch_uefi_key.signing_key,
+            arch_signing_key_set.getSigningKey(UEFI, archive, series[2]))
+        self.assertEqual(
+            old_arch_kmod_key.signing_key,
+            arch_signing_key_set.getSigningKey(KMOD, archive, series[2]))

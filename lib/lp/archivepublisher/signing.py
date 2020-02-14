@@ -267,11 +267,6 @@ class SigningUpload(CustomUpload):
         """Find all the signable files in an extracted tarball."""
         use_signing_service = bool(
             getFeatureFlag(PUBLISHER_USES_SIGNING_SERVICE))
-        if use_signing_service:
-            keys = getUtility(IArchiveSigningKeySet).getSigningKeys(
-                self.archive, self.distro_series)
-        else:
-            keys = {}
 
         fallback_handlers = {
             SigningKeyType.UEFI: self.signUefi,
@@ -298,7 +293,8 @@ class SigningUpload(CustomUpload):
                     continue
 
                 if use_signing_service:
-                    key = keys.get(key_type)
+                    key = getUtility(IArchiveSigningKeySet).getSigningKey(
+                        key_type, self.archive, self.distro_series)
                     handler = partial(
                         self.signUsingSigningService, key_type, key)
                     fallback_handler = partial(
@@ -337,7 +333,7 @@ class SigningUpload(CustomUpload):
                 "where not found.")
         return handler(filename)
 
-    def signUsingSigningService(self, key_type, key, filename):
+    def signUsingSigningService(self, key_type, signing_key, filename):
         """Sign the given filename using a certain key hosted on signing
         service, writes the signed content back to the filesystem and
         publishes the public key to self.public_keys.
@@ -347,19 +343,20 @@ class SigningUpload(CustomUpload):
         archive.
 
         :param key_type: One of the SigningKeyType enum items
-        :param key: The ArchiveSigningKey to be used (or None,
-                    to autogenerate a key if possible).
+        :param signing_key: The SigningKey to be used (or None,
+                            to autogenerate a key if possible).
         :param filename: The filename to be signed.
         :return: Boolean. True if signed, False otherwise.
         """
-        if key is None:
+        if signing_key is None:
             if not self.autokey:
                 raise NoSigningKeyError("No signing key for %s" % filename)
             description = (
                 u"%s key for %s" % (key_type.name, self.archive.reference))
             try:
-                key = getUtility(IArchiveSigningKeySet).generate(
-                    key_type, self.archive, description=description)
+                signing_key = getUtility(IArchiveSigningKeySet).generate(
+                    key_type, self.archive, description=description
+                    ).signing_key
             except Exception as e:
                 if self.logger:
                     self.logger.error(
@@ -368,7 +365,6 @@ class SigningUpload(CustomUpload):
                 raise SigningServiceError(
                     "Could not generate key %s: %s" % (key_type, e))
 
-        signing_key = key.signing_key
         with open(filename, "rb") as fd:
             content = fd.read()
 
@@ -636,7 +632,11 @@ class SigningUpload(CustomUpload):
         for filename, handler, fallback_handler in self.findSigningHandlers():
             try:
                 was_signed = handler(filename)
-            except (NoSigningKeyError, SigningServiceError):
+            except (NoSigningKeyError, SigningServiceError) as e:
+                if fallback_handler is not None and self.logger:
+                    self.logger.warning(
+                        "Signing service will try to fallback to local key. "
+                        "Reason: %s (%s)" % (e.__class__.__name__, e))
                 was_signed = False
             if not was_signed and fallback_handler is not None:
                 was_signed = fallback_handler(filename)

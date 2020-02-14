@@ -100,13 +100,11 @@ class IArchiveSigningKeySet(Interface):
                  False if it was updated).
         """
 
-    def getSigningKeys(archive, distro_series):
-        """Get the most suitable keys for a given archive / distro series
+    def getSigningKey(key_type, archive, distro_series):
+        """Get the most suitable key for a given archive / distro series
         pair.
 
-        :return: A dict of most suitable key per type, like {
-            SigningKeyType.UEFI: <ArchiveSigningKey object 1>,
-            SigningKeyType.KMOD: <ArchiveSigningKey object 2>, ... }
+        :return: The most suitable key
         """
 
     def generate(key_type, archive, distro_series=None, description=None):
