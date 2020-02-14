@@ -144,8 +144,6 @@ setup(
     # used in zcml.
     install_requires=[
         'ampoule',
-        'auditorclient',
-        'auditorfixture',
         'backports.lzma; python_version < "3.3"',
         'beautifulsoup4[lxml]',
         'breezy',
