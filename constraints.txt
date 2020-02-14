@@ -162,9 +162,6 @@ anyjson==0.3.3
 appdirs==1.4.3
 asn1crypto==0.23.0
 attrs==19.1.0
-auditor==0.0.3
-auditorclient==0.0.4
-auditorfixture==0.0.7
 Automat==0.6.0
 Babel==2.5.1
 backports.functools-lru-cache==1.5
@@ -188,7 +185,6 @@ cssutils==1.0.2
 d2to1==0.2.12
 defusedxml==0.6.0
 distro==1.4.0
-Django==1.4
 dkimpy==0.5.4
 # Required by dkimpy
 dnspython==1.10.0

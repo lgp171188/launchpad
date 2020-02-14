@@ -23,7 +23,6 @@ from __future__ import absolute_import, print_function
 __metaclass__ = type
 __all__ = [
     'AppServerLayer',
-    'AuditorLayer',
     'BaseLayer',
     'BingLaunchpadFunctionalLayer',
     'BingServiceLayer',
@@ -109,7 +108,6 @@ import zope.testbrowser.wsgi
 from zope.testbrowser.wsgi import AuthorizationMiddleware
 
 from lp.services import pidfile
-from lp.services.auditor.server import AuditorServer
 from lp.services.config import (
     config,
     dbconfig,
@@ -1421,42 +1419,6 @@ class LaunchpadFunctionalLayer(LaunchpadLayer, FunctionalLayer):
 
         # Disconnect Storm so it doesn't get in the way of database resets
         disconnect_stores()
-
-
-class AuditorLayer(LaunchpadFunctionalLayer):
-
-    auditor = AuditorServer()
-
-    _is_setup = False
-
-    @classmethod
-    @profiled
-    def setUp(cls):
-        cls.auditor.setUp()
-        cls.config_fixture.add_section(cls.auditor.service_config)
-        cls.appserver_config_fixture.add_section(cls.auditor.service_config)
-        cls._is_setup = True
-
-    @classmethod
-    @profiled
-    def tearDown(cls):
-        if not cls._is_setup:
-            return
-        cls.auditor.cleanUp()
-        cls._is_setup = False
-        # Can't pop the config above, so bail here and let the test runner
-        # start a sub-process.
-        raise NotImplementedError
-
-    @classmethod
-    @profiled
-    def testSetUp(cls):
-        pass
-
-    @classmethod
-    @profiled
-    def testTearDown(cls):
-        pass
 
 
 class BingLaunchpadFunctionalLayer(LaunchpadFunctionalLayer,
