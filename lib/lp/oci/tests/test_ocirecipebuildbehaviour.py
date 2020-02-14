@@ -12,8 +12,10 @@ import os
 import shutil
 import tempfile
 
+import fixtures
 from testtools import ExpectedException
 from twisted.internet import defer
+from twisted.trial.unittest import TestCase as TrialTestCase
 from zope.security.proxy import removeSecurityProxy
 
 from lp.buildmaster.enums import BuildStatus
@@ -66,8 +68,8 @@ class TestOCIBuildBehaviour(TestCaseWithFactory):
         self.assertProvides(job, IBuildFarmJobBehaviour)
 
 
-class TestHandleStatusForOCIRecipeBuild(MakeOCIBuildMixin,
-                                        TestCaseWithFactory):
+class TestHandleStatusForOCIRecipeBuild(MakeOCIBuildMixin, TrialTestCase,
+                                        fixtures.TestWithFixtures):
     # This is mostly copied from TestHandleStatusMixin, however
     # we can't use all of those tests, due to the way OCIRecipeBuildBehaviour
     # parses the file contents, rather than just retrieving all that are
@@ -75,6 +77,19 @@ class TestHandleStatusForOCIRecipeBuild(MakeOCIBuildMixin,
     # we need a much more complex filemap here.
 
     layer = LaunchpadZopelessLayer
+
+    def pushConfig(self, section, **kwargs):
+        """Push some key-value pairs into a section of the config.
+
+        The config values will be restored during test tearDown.
+        """
+        # Taken from lp/testing.py as we're using TrialTestCase,
+        # not lp.testing.TestCase, as we need to handle the deferred
+        # correctly.
+        name = self.factory.getUniqueString()
+        body = '\n'.join("%s: %s" % (k, v) for k, v in kwargs.iteritems())
+        config.push(name, "\n[%s]\n%s\n" % (section, body))
+        self.addCleanup(config.pop, name)
 
     def _createTestFile(self, name, content, hash):
         path = os.path.join(self.test_files_dir, name)
@@ -102,7 +117,7 @@ class TestHandleStatusForOCIRecipeBuild(MakeOCIBuildMixin,
         self.upload_root = tempdir
         self.pushConfig('builddmaster', root=self.upload_root)
 
-        # We stub out our builds getUploaderCommand() method so
+        # We stub out our build's getUploaderCommand() method so
         # we can check whether it was called as well as
         # verifySuccessfulUpload().
         removeSecurityProxy(self.build).verifySuccessfulUpload = FakeMethod(
@@ -308,5 +323,9 @@ class TestHandleStatusForOCIRecipeBuild(MakeOCIBuildMixin,
 
 
 class TestGetUploadMethodsForOCIRecipeBuild(
-    MakeOCIBuildMixin, TestGetUploadMethodsMixin, TestCaseWithFactory):
+    MakeOCIBuildMixin, TestGetUploadMethodsMixin, TrialTestCase):
     """IPackageBuild.getUpload-related methods work with OCI recipe builds."""
+
+    def setUp(self):
+        super(TestGetUploadMethodsForOCIRecipeBuild, self).__init__(self)
+        self.factory = LaunchpadObjectFactory()

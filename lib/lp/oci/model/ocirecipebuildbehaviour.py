@@ -76,8 +76,7 @@ class OCIRecipeBuildBehaviour(BuildFarmJobBehaviourBase):
                 continue
             layer_path = os.path.join(upload_path, layer_filename)
             librarian_layer_file.open()
-            with open(layer_path, 'wb') as layer_fp:
-                copy_and_close(librarian_layer_file, layer_fp)
+            copy_and_close(librarian_layer_file, open(layer_path, 'wb'))
 
     def _convertToRetrievableFile(self, upload_path, file_name, filemap):
         file_path = os.path.join(upload_path, file_name)
@@ -112,4 +111,6 @@ class OCIRecipeBuildBehaviour(BuildFarmJobBehaviourBase):
         # The implementation in BuildFarmJobBehaviourBase checks whether the
         # target suite is modifiable in the target archive.  However, an
         # `OCIRecipeBuild` does not use an archive in this manner.
-        return True
+        # We do, however, refuse to build for
+        # obsolete series.
+        assert self.build.distro_series.status != SeriesStatus.OBSOLETE
