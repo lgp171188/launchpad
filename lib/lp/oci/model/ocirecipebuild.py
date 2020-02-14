@@ -7,6 +7,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 __all__ = [
+    'OCIFile',
     'OCIRecipeBuild',
     'OCIRecipeBuildSet',
     ]
@@ -28,6 +29,7 @@ from storm.store import EmptyResultSet
 from zope.component import getUtility
 from zope.interface import implementer
 
+from lp.app.errors import NotFoundError
 from lp.buildmaster.enums import (
     BuildFarmJobType,
     BuildStatus,
@@ -35,10 +37,14 @@ from lp.buildmaster.enums import (
 from lp.buildmaster.interfaces.buildfarmjob import IBuildFarmJobSource
 from lp.buildmaster.model.buildfarmjob import SpecificBuildFarmJobSourceMixin
 from lp.buildmaster.model.packagebuild import PackageBuildMixin
+from lp.oci.interfaces.ocirecipe import IOCIRecipeSet
 from lp.oci.interfaces.ocirecipebuild import (
+    IOCIFile,
     IOCIRecipeBuild,
     IOCIRecipeBuildSet,
     )
+from lp.registry.model.person import Person
+from lp.services.database.bulk import load_related
 from lp.services.database.constants import DEFAULT
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.enumcol import DBEnum
@@ -46,6 +52,33 @@ from lp.services.database.interfaces import (
     IMasterStore,
     IStore,
     )
+from lp.services.librarian.model import (
+    LibraryFileAlias,
+    LibraryFileContent,
+    )
+
+
+@implementer(IOCIFile)
+class OCIFile(Storm):
+
+    __storm_table__ = 'OCIFile'
+
+    id = Int(name='id', primary=True)
+
+    build_id = Int(name='build', allow_none=False)
+    build = Reference(build_id, 'OCIRecipeBuild.id')
+
+    library_file_id = Int(name='library_file', allow_none=False)
+    library_file = Reference(library_file_id, 'LibraryFileAlias.id')
+
+    layer_file_digest = Unicode(name='layer_file_digest', allow_none=True)
+
+    def __init__(self, build, library_file, layer_file_digest=None):
+        """Construct a `OCIFile`."""
+        super(OCIFile, self).__init__()
+        self.build = build
+        self.library_file = library_file
+        self.layer_file_digest = layer_file_digest
 
 
 @implementer(IOCIRecipeBuild)
@@ -93,6 +126,11 @@ class OCIRecipeBuild(PackageBuildMixin, Storm):
     build_farm_job_id = Int(name='build_farm_job', allow_none=False)
     build_farm_job = Reference(build_farm_job_id, 'BuildFarmJob.id')
 
+    # Stub attributes to match the IPackageBuild interface that we
+    # are not using in this implementation at this time.
+    pocket = None
+    distro_series = None
+
     def __init__(self, build_farm_job, requester, recipe,
                  processor, virtualized, date_created):
 
@@ -130,6 +168,34 @@ class OCIRecipeBuild(PackageBuildMixin, Storm):
         durations.sort()
         return durations[len(durations) // 2]
 
+    def getByFileName(self, filename):
+        result = Store.of(self).find(
+            (OCIFile, LibraryFileAlias, LibraryFileContent),
+            OCIFile.build == self.id,
+            LibraryFileAlias.id == OCIFile.library_file_id,
+            LibraryFileContent.id == LibraryFileAlias.contentID,
+            LibraryFileAlias.filename == filename).one()
+        if result is not None:
+            return result
+        raise NotFoundError(filename)
+
+    def getLayerFileByDigest(self, layer_file_digest):
+        file_object = Store.of(self).find(
+            (OCIFile, LibraryFileAlias, LibraryFileContent),
+            OCIFile.build == self.id,
+            LibraryFileAlias.id == OCIFile.library_file_id,
+            LibraryFileContent.id == LibraryFileAlias.contentID,
+            OCIFile.layer_file_digest == layer_file_digest).one()
+        if file_object is not None:
+            return file_object
+        raise NotFoundError(layer_file_digest)
+
+    def addFile(self, lfa, layer_file_digest=None):
+        oci_file = OCIFile(
+            build=self, library_file=lfa, layer_file_digest=layer_file_digest)
+        IMasterStore(OCIFile).add(oci_file)
+        return oci_file
+
     @property
     def archive(self):
         # XXX twom 2019-12-05 This may need to change when an OCIProject
@@ -141,11 +207,6 @@ class OCIRecipeBuild(PackageBuildMixin, Storm):
         # XXX twom 2019-12-05 This may need to change when an OCIProject
         # pillar isn't just a distribution
         return self.recipe.oci_project.distribution
-
-    # Stub attributes to match the IPackageBuild interface that we
-    # will not use in this implementation.
-    pocket = None
-    distro_series = None
 
 
 @implementer(IOCIRecipeBuildSet)
@@ -171,7 +232,15 @@ class OCIRecipeBuildSet(SpecificBuildFarmJobSourceMixin):
 
     def preloadBuildsData(self, builds):
         """See `IOCIRecipeBuildSet`."""
-        # XXX twom 2019-12-02 Currently a no-op skeleton, to be filled in
+        # Circular import.
+        from lp.oci.model.ocirecipe import OCIRecipe
+        load_related(Person, builds, ["requester_id"])
+        lfas = load_related(LibraryFileAlias, builds, ["log_id"])
+        load_related(LibraryFileContent, lfas, ["contentID"])
+        recipes = load_related(OCIRecipe, builds, ["recipe_id"])
+        getUtility(IOCIRecipeSet).preloadDataForOCIRecipes(recipes)
+        # XXX twom 2019-12-05 This needs to be extended to include
+        # OCIRecipeBuildJob when that exists.
         return
 
     def getByID(self, build_id):

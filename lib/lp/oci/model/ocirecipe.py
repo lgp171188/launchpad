@@ -30,11 +30,14 @@ from storm.locals import (
 from zope.component import getUtility
 from zope.event import notify
 from zope.interface import implementer
+from zope.security.proxy import removeSecurityProxy
 
 from lp.buildmaster.enums import BuildStatus
 from lp.buildmaster.interfaces.buildqueue import IBuildQueueSet
 from lp.buildmaster.model.buildfarmjob import BuildFarmJob
 from lp.buildmaster.model.buildqueue import BuildQueue
+from lp.code.model.gitcollection import GenericGitCollection
+from lp.code.model.gitrepository import GitRepository
 from lp.oci.interfaces.ocirecipe import (
     DuplicateOCIRecipeName,
     IOCIRecipe,
@@ -46,6 +49,8 @@ from lp.oci.interfaces.ocirecipe import (
     )
 from lp.oci.interfaces.ocirecipebuild import IOCIRecipeBuildSet
 from lp.oci.model.ocirecipebuild import OCIRecipeBuild
+from lp.registry.interfaces.person import IPersonSet
+from lp.services.database.bulk import load_related
 from lp.services.database.constants import DEFAULT
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.interfaces import (
@@ -293,3 +298,15 @@ class OCIRecipeSet:
     def findByOwner(self, owner):
         """See `IOCIRecipe`."""
         return IStore(OCIRecipe).find(OCIRecipe, OCIRecipe.owner == owner)
+
+    def preloadDataForOCIRecipes(self, recipes, user=None):
+        """See `IOCIRecipeSet`."""
+        recipes = [removeSecurityProxy(recipe) for recipe in recipes]
+
+        person_ids = set()
+        for recipe in recipes:
+            person_ids.add(recipe.registrant_id)
+            person_ids.add(recipe.owner_id)
+
+        list(getUtility(IPersonSet).getPrecachedPersonsFromIDs(
+            person_ids, need_validity=True))
