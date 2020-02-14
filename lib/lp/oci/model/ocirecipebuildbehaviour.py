@@ -46,7 +46,7 @@ class OCIRecipeBuildBehaviour(BuildFarmJobBehaviourBase):
         # If the evaluated output file name is not within our
         # upload path, then we don't try to copy this or any
         # subsequent files.
-        if not os.path.normpath(file_path).startswith(upload_path):
+        if not os.path.normpath(file_path).startswith(upload_path + '/'):
             raise BuildDaemonError(
                 "Build returned a file named '%s'." % file_name)
 
