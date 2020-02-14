@@ -36,7 +36,7 @@ from lp.services.librarian.utils import copy_and_close
 class OCIRecipeBuildBehaviour(BuildFarmJobBehaviourBase):
 
     builder_type = "oci"
-    image_types = [BuildBaseImageType.LXD]
+    image_types = [BuildBaseImageType.LXD, BuildBaseImageType.CHROOT]
 
     # These attributes are defined in `IOCIBuildFarmJobBehaviour`,
     # but are not used in this implementation.
