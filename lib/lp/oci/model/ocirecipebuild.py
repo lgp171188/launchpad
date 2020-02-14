@@ -132,7 +132,13 @@ class OCIRecipeBuild(PackageBuildMixin, Storm):
     # Stub attributes to match the IPackageBuild interface that we
     # are not using in this implementation at this time.
     pocket = None
-    distro_series = None
+
+    @property
+    def distro_series(self):
+        # XXX twom 2020-02-14 - This really needs to be set elsewhere,
+        # as this may not be an LTS release and ties the OCI target to
+        # a completely unrelated process.
+        return self.distribution.currentseries
 
     def __init__(self, build_farm_job, requester, recipe,
                  processor, virtualized, date_created):

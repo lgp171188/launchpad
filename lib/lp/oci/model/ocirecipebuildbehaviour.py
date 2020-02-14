@@ -29,6 +29,7 @@ from lp.buildmaster.interfaces.buildfarmjobbehaviour import (
 from lp.buildmaster.model.buildfarmjobbehaviour import (
     BuildFarmJobBehaviourBase,
     )
+from lp.registry.interfaces.series import SeriesStatus
 from lp.services.librarian.utils import copy_and_close
 
 

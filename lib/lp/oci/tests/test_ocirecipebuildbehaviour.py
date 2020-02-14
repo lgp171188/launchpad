@@ -29,6 +29,7 @@ from lp.buildmaster.tests.test_buildfarmjobbehaviour import (
     TestGetUploadMethodsMixin,
     )
 from lp.oci.model.ocirecipebuildbehaviour import OCIRecipeBuildBehaviour
+from lp.registry.interfaces.series import SeriesStatus
 from lp.services.config import config
 from lp.testing import TestCaseWithFactory
 from lp.testing.dbuser import dbuser
@@ -42,6 +43,9 @@ class MakeOCIBuildMixin:
 
     def makeBuild(self):
         build = self.factory.makeOCIRecipeBuild()
+        distro_series = self.factory.makeDistroSeries(
+            distribution=build.recipe.oci_project.distribution,
+            status=SeriesStatus.CURRENT)
         build.queueBuild()
         return build
 
