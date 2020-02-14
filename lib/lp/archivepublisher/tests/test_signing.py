@@ -998,7 +998,7 @@ class TestLocalSigningUpload(RunPartsMixin, TestSigningHelpers):
         self.openArchive("test", "1.0", "amd64")
         self.tarfile.add_file("1.0/empty.efi", b"")
         upload = self.process_emulate()
-        expected_callers = [('UEFI signing', 1), ]
+        expected_callers = [('UEFI signing', 1)]
         self.assertContentEqual(expected_callers, upload.callLog.caller_list())
         # Check the correct series name appears in the call arguments
         self.assertIn(

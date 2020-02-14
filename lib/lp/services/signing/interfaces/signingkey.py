@@ -93,8 +93,7 @@ class IArchiveSigningKeySet(Interface):
     """
 
     def create(archive, distro_series, signing_key):
-        """Creates a new ArchiveSigningKey, or updates the existing one from
-        the same type to point to the new signing key.
+        """Creates a new ArchiveSigningKey for archive/distro_series.
 
         :return: A tuple like (db_object:ArchiveSigningKey, created:boolean)
                  with the ArchiveSigningKey and True if it was created (
