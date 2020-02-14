@@ -14,11 +14,6 @@ __all__ = [
 
 import ftplib
 import socket
-from urllib import unquote_plus
-from urlparse import (
-    urljoin,
-    urlsplit,
-    )
 
 from cscvs.dircompare.path import (
     as_dir,
@@ -30,6 +25,11 @@ from lazr.uri import (
     )
 import requests
 import scandir
+from six.moves.urllib.parse import (
+    unquote_plus,
+    urljoin,
+    urlsplit,
+    )
 
 from lp.registry.scripts.productreleasefinder import log
 from lp.services.beautifulsoup import BeautifulSoup

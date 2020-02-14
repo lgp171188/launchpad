@@ -22,17 +22,21 @@ from socket import (
     )
 import threading
 import time
-import urllib
-import urllib2
-from urlparse import (
-    urljoin,
-    urlparse,
-    urlunparse,
-    )
 
 from lazr.restful.utils import get_current_browser_request
 import six
 from six.moves import http_client
+from six.moves.urllib.error import (
+    HTTPError,
+    URLError,
+    )
+from six.moves.urllib.parse import (
+    quote,
+    urljoin,
+    urlparse,
+    urlunparse,
+    )
+from six.moves.urllib.request import urlopen
 from storm.store import Store
 from zope.interface import implementer
 
@@ -55,12 +59,12 @@ from lp.services.timeline.requesttimeline import get_request_timeline
 
 def url_path_quote(filename):
     """Quote `filename` for use in a URL."""
-    # RFC 3986 says ~ should not be generated escaped, but urllib.quote
+    # RFC 3986 says ~ should not be generated escaped, but urllib.parse.quote
     # predates it. Additionally, + is safe to use unescaped in paths and is
     # frequently used in Debian versions, so leave it alone.
     #
     # This needs to match Library.getAlias' TimeLimitedToken handling.
-    return urllib.quote(filename, safe='/~+')
+    return quote(filename, safe='/~+')
 
 
 def get_libraryfilealias_download_path(aliasID, filename):
@@ -339,7 +343,7 @@ class FileDownloadClient:
     #     url = ('http://%s:%d/search?digest=%s' % (
     #         host, port, hexdigest)
     #         )
-    #     results = urllib2.urlopen(url).read()
+    #     results = urlopen(url).read()
     #     lines = results.split('\n')
     #     count, paths = lines[0], lines[1:]
     #     if int(count) != len(paths):
@@ -500,21 +504,21 @@ class FileDownloadClient:
         """Helper for getFileByAlias."""
         while 1:
             try:
-                return _File(urllib2.urlopen(url), url)
-            except urllib2.URLError as error:
+                return _File(urlopen(url), url)
+            except URLError as error:
                 # 404 errors indicate a data inconsistency: more than one
                 # attempt to open the file is pointless.
                 #
                 # Note that URLError is a base class of HTTPError.
-                if isinstance(error, urllib2.HTTPError) and error.code == 404:
+                if isinstance(error, HTTPError) and error.code == 404:
                     raise LookupError(aliasID)
                 # HTTPErrors with a 5xx error code ("server problem")
                 # are a reason to retry the access again, as well as
                 # generic, non-HTTP, URLErrors like "connection refused".
-                if (isinstance(error, urllib2.HTTPError)
+                if (isinstance(error, HTTPError)
                     and 500 <= error.code <= 599
-                    or isinstance(error, urllib2.URLError) and
-                        not isinstance(error, urllib2.HTTPError)):
+                    or isinstance(error, URLError) and
+                        not isinstance(error, HTTPError)):
                     if  time.time() <= try_until:
                         time.sleep(1)
                     else:

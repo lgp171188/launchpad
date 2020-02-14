@@ -24,10 +24,6 @@ import io
 import os
 import shutil
 import subprocess
-from urlparse import (
-    urlsplit,
-    urlunsplit,
-    )
 
 # FIRST Ensure correct plugins are loaded. Do not delete this comment or the
 # line below this comment.
@@ -78,6 +74,10 @@ from lazr.uri import (
     )
 from pymacaroons import Macaroon
 import SCM
+from six.moves.urllib.parse import (
+    urlsplit,
+    urlunsplit,
+    )
 
 from lp.code.interfaces.branch import get_blacklisted_hostnames
 from lp.codehosting.codeimport.foreigntree import CVSWorkingTree

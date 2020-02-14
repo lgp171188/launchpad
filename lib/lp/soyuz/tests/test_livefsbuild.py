@@ -11,7 +11,6 @@ from datetime import (
     datetime,
     timedelta,
     )
-from urllib2 import urlopen
 
 from fixtures import FakeLogger
 import pytz
@@ -21,6 +20,7 @@ from testtools.matchers import (
     MatchesDict,
     MatchesStructure,
     )
+from six.moves.urllib.request import urlopen
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 

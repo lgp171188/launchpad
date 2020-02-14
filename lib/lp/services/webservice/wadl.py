@@ -10,7 +10,8 @@ try:
 except ImportError:
     import importlib_resources as resources
 import subprocess
-import urlparse
+
+from six.moves.urllib.parse import urljoin
 
 from lp.services.webapp.interaction import (
     ANONYMOUS,
@@ -26,7 +27,7 @@ from lp.services.webapp.vhosts import allvhosts
 def _generate_web_service_root(version, mimetype):
     """Generate the webservice description for the given version and mimetype.
     """
-    url = urlparse.urljoin(allvhosts.configs['api'].rooturl, version)
+    url = urljoin(allvhosts.configs['api'].rooturl, version)
     # Since we want HTTPS URLs we have to munge the request URL.
     url = url.replace('http://', 'https://')
     request = WebServiceTestRequest(version=version, environ={

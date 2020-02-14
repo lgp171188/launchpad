@@ -15,7 +15,6 @@ from datetime import (
 import json
 from operator import attrgetter
 from textwrap import dedent
-from urlparse import urlsplit
 
 from fixtures import (
     FakeLogger,
@@ -26,6 +25,7 @@ from nacl.public import PrivateKey
 from pymacaroons import Macaroon
 import pytz
 import responses
+from six.moves.urllib.parse import urlsplit
 from storm.exceptions import LostObjectError
 from storm.locals import Store
 from testtools.matchers import (

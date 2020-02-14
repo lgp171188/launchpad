@@ -11,7 +11,6 @@ import signal
 import subprocess
 import sys
 import time
-import urllib2
 import xmlrpclib
 
 import breezy.branch
@@ -19,6 +18,7 @@ from breezy.tests import TestCaseWithTransport
 from breezy.tests.per_repository import all_repository_format_scenarios
 from breezy.urlutils import local_path_from_url
 from breezy.workingtree import WorkingTree
+from six.moves.urllib.request import urlopen
 from testscenarios import (
     load_tests_apply_scenarios,
     WithScenarios,
@@ -747,7 +747,7 @@ class SmartserverTests(WithScenarios, SSHTestCase):
         self.assertEqual('tcp:', config.codehosting.web_status_port[:4])
         port = int(config.codehosting.web_status_port[4:])
         web_status_url = 'http://localhost:%d/' % port
-        urllib2.urlopen(web_status_url)
+        urlopen(web_status_url)
 
 
 load_tests = load_tests_apply_scenarios

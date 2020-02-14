@@ -12,11 +12,11 @@ import os
 import signal
 import socket
 import sys
-import urlparse
 
 from lazr.sshserver.events import AvatarEvent
 from lazr.sshserver.session import DoNothingSession
 from six import reraise
+from six.moves.urllib.parse import urlparse
 from twisted.internet import (
     error,
     interfaces,
@@ -471,7 +471,7 @@ def launch_smart_server(avatar):
     environment = dict(os.environ)
 
     # Extract the hostname from the supermirror root config.
-    hostname = urlparse.urlparse(config.codehosting.supermirror_root)[1]
+    hostname = urlparse(config.codehosting.supermirror_root)[1]
     environment['BRZ_EMAIL'] = '%s@%s' % (avatar.username, hostname)
     # TODO: Use a FeatureFlag to enable this in a more fine-grained approach.
     #       If the forking daemon has been spawned, then we can use it if the

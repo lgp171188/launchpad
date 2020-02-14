@@ -5,10 +5,11 @@
 
 __metaclass__ = type
 
-from contextlib import contextmanager
 from cStringIO import StringIO
+from functools import partial
 
-from lp.services.librarian import smoketest
+from fixtures import MockPatch
+
 from lp.services.librarian.smoketest import (
     do_smoketest,
     FILE_DATA,
@@ -19,43 +20,24 @@ from lp.testing import TestCaseWithFactory
 from lp.testing.layers import ZopelessDatabaseLayer
 
 
-class GoodUrllib:
+def good_urlopen(url):
     """A urllib replacement for testing that returns good results."""
-
-    def urlopen(self, url):
-        return StringIO(FILE_DATA)
+    return StringIO(FILE_DATA)
 
 
-class BadUrllib:
+def bad_urlopen(url):
     """A urllib replacement for testing that returns bad results."""
-
-    def urlopen(self, url):
-        return StringIO('bad data')
+    return StringIO('bad data')
 
 
-class ErrorUrllib:
+def error_urlopen(url):
     """A urllib replacement for testing that raises an exception."""
-
-    def urlopen(self, url):
-        raise IOError('network error')
+    raise IOError('network error')
 
 
-class ExplosiveUrllib:
+def explosive_urlopen(exception, url):
     """A urllib replacement that raises an "explosive" exception."""
-
-    def __init__(self, exception):
-        self.exception = exception
-
-    def urlopen(self, url):
-        raise self.exception
-
-
-@contextmanager
-def fake_urllib(fake):
-    original_urllib = smoketest.urllib
-    smoketest.urllib = fake
-    yield
-    smoketest.urllib = original_urllib
+    raise exception
 
 
 class SmokeTestTestCase(TestCaseWithFactory):
@@ -77,7 +59,8 @@ class SmokeTestTestCase(TestCaseWithFactory):
         # If storing and retrieving both the public and private files work,
         # the main function will return 0 (which will be used as the processes
         # exit code to signal success).
-        with fake_urllib(GoodUrllib()):
+        with MockPatch(
+                "lp.services.librarian.smoketest.urlopen", good_urlopen):
             self.assertEqual(
                 do_smoketest(self.fake_librarian, self.fake_librarian,
                              output=StringIO()),
@@ -86,7 +69,7 @@ class SmokeTestTestCase(TestCaseWithFactory):
     def test_bad_data(self):
         # If incorrect data is retrieved, the main function will return 1
         # (which will be used as the processes exit code to signal an error).
-        with fake_urllib(BadUrllib()):
+        with MockPatch("lp.services.librarian.smoketest.urlopen", bad_urlopen):
             self.assertEqual(
                 do_smoketest(self.fake_librarian, self.fake_librarian,
                              output=StringIO()),
@@ -96,7 +79,8 @@ class SmokeTestTestCase(TestCaseWithFactory):
         # If an exception is raised when retrieving the data, the main
         # function will return 1 (which will be used as the processes exit
         # code to signal an error).
-        with fake_urllib(ErrorUrllib()):
+        with MockPatch(
+                "lp.services.librarian.smoketest.urlopen", error_urlopen):
             self.assertEqual(
                 do_smoketest(self.fake_librarian, self.fake_librarian,
                              output=StringIO()),
@@ -106,7 +90,9 @@ class SmokeTestTestCase(TestCaseWithFactory):
         # If an "explosive" exception (an exception that should not be caught)
         # is raised when retrieving the data it is re-raised.
         for exception in MemoryError, SystemExit, KeyboardInterrupt:
-            with fake_urllib(ExplosiveUrllib(exception)):
+            with MockPatch(
+                    "lp.services.librarian.smoketest.urlopen",
+                    partial(explosive_urlopen, exception)):
                 self.assertRaises(
                     exception,
                     do_smoketest, self.fake_librarian, self.fake_librarian,

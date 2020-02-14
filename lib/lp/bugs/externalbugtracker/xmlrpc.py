@@ -10,10 +10,6 @@ __all__ = [
 
 
 from io import BytesIO
-from urlparse import (
-    urlparse,
-    urlunparse,
-    )
 from xmlrpclib import (
     ProtocolError,
     Transport,
@@ -23,6 +19,10 @@ from defusedxml.xmlrpc import monkey_patch
 import requests
 from requests.cookies import RequestsCookieJar
 import six
+from six.moves.urllib.parse import (
+    urlparse,
+    urlunparse,
+    )
 
 from lp.bugs.externalbugtracker.base import repost_on_redirect_hook
 from lp.services.config import config

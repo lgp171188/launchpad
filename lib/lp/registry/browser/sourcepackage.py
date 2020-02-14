@@ -18,7 +18,6 @@ __all__ = [
     ]
 
 import string
-import urllib
 
 from apt_pkg import (
     upstream_version,
@@ -29,6 +28,7 @@ from lazr.enum import (
     Item,
     )
 from lazr.restful.interface import copy_field
+from six.moves.urllib.parse import urlencode
 from zope.browserpage import ViewPageTemplateFile
 from zope.component import (
     adapter,
@@ -125,8 +125,7 @@ def get_register_upstream_url(source_package):
         for binary in source_package.releases[0].sample_binary_packages:
             summary_set.add(binary.summary)
         params['field.summary'] = '\n'.join(sorted(summary_set))
-    query_string = urllib.urlencode(
-        sorted(params.items()), doseq=True)
+    query_string = urlencode(sorted(params.items()), doseq=True)
     return '/projects/+new?%s' % query_string
 
 

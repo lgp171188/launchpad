@@ -19,9 +19,9 @@ import hashlib
 import os.path
 import re
 import time
-import urllib
 
 import scandir
+from six.moves.urllib.parse import quote
 from swiftclient import client as swiftclient
 
 from lp.services.config import config
@@ -233,8 +233,7 @@ def _put(log, swift_connection, lfc_id, container, obj_name, fs_path):
                     lfc_id, disk_md5_hash, db_md5_hash))
             raise AssertionError('md5 mismatch')
 
-        manifest = '{0}/{1}/'.format(
-            urllib.quote(container), urllib.quote(obj_name))
+        manifest = '{0}/{1}/'.format(quote(container), quote(obj_name))
         manifest_headers = {'X-Object-Manifest': manifest}
         swift_connection.put_object(
             container, obj_name, '', 0, headers=manifest_headers)

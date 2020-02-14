@@ -5,9 +5,10 @@
 
 __metaclass__ = type
 
-import urllib
-
-from six.moves.urllib.parse import parse_qsl
+from six.moves.urllib.parse import (
+    parse_qsl,
+    splitquery,
+    )
 from soupmatchers import (
     HTMLContains,
     Tag,
@@ -60,7 +61,7 @@ class TestSourcePackageViewHelpers(TestCaseWithFactory):
         return distroseries.getSourcePackage(source_package_name)
 
     def assertInQueryString(self, url, field, value):
-        base, query = urllib.splitquery(url)
+        base, query = splitquery(url)
         params = parse_qsl(query)
         self.assertTrue((field, value) in params)
 
@@ -72,7 +73,7 @@ class TestSourcePackageViewHelpers(TestCaseWithFactory):
             distroseries=distroseries,
             sourcepackagename='python-super-package')
         url = get_register_upstream_url(source_package)
-        base, query = urllib.splitquery(url)
+        base, query = splitquery(url)
         self.assertEqual('/projects/+new', base)
         params = parse_qsl(query)
         expected_params = [
