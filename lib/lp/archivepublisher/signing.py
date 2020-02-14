@@ -41,7 +41,7 @@ from lp.soyuz.interfaces.queue import CustomUploadError
 
 
 PUBLISHER_USES_SIGNING_SERVICE = (
-    'archivepublisher.signing.use_signing_service')
+    'archivepublisher.signing_service.enabled')
 
 
 class SigningUploadPackError(CustomUploadError):
@@ -274,8 +274,8 @@ class SigningUpload(CustomUpload):
             SigningKeyType.KMOD: self.signKmod,
             SigningKeyType.OPAL: self.signOpal,
             SigningKeyType.SIPL: self.signSipl,
-            SigningKeyType.FIT: self.signFit
-        }
+            SigningKeyType.FIT: self.signFit,
+            }
 
         for dirpath, dirnames, filenames in scandir.walk(self.tmpdir):
             for filename in filenames:
@@ -293,15 +293,45 @@ class SigningUpload(CustomUpload):
                 else:
                     continue
 
-                fallback_handler = fallback_handlers.get(key_type)
-
                 if use_signing_service:
                     key = keys.get(key_type)
                     handler = partial(
                         self.signUsingSigningService, key_type, key)
+                    fallback_handler = partial(
+                        self.signUsingLocalKey, key_type,
+                        fallback_handlers.get(key_type))
                     yield file_path, handler, fallback_handler
                 else:
-                    yield file_path, fallback_handler, None
+                    yield file_path, fallback_handlers.get(key_type), None
+
+    def signUsingLocalKey(self, key_type, handler, filename):
+        """Sign the given filename using using handler if the local
+        key files exists. If the local key files does not exist, raises
+        IOError.
+
+        Note that this method should only be used as a fallback to signing
+        service, since it will not try to generate local keys.
+
+        :param key_type: One of the SigningKeyType items.
+        :param handler: One of the local signing handlers (self.signUefi,
+                        self.signKmod, etc).
+        :param filename: The filename to be signed.
+        """
+        fallback_keys = {
+            SigningKeyType.UEFI: [self.uefi_cert, self.uefi_key],
+            SigningKeyType.KMOD: [self.kmod_pem, self.kmod_x509],
+            SigningKeyType.OPAL: [self.opal_pem, self.opal_x509],
+            SigningKeyType.SIPL: [self.sipl_pem, self.sipl_x509],
+            SigningKeyType.FIT: [self.fit_cert, self.fit_key],
+            }
+
+        # If we are missing local key files, do not proceed.
+        key_files = [i for i in fallback_keys[key_type] if i]
+        if not all(os.path.exists(key_file) for key_file in key_files):
+            raise IOError(
+                "Could not fallback to local signing keys: the key files"
+                "where not found.")
+        return handler(filename)
 
     def signUsingSigningService(self, key_type, key, filename):
         """Sign the given filename using a certain key hosted on signing
@@ -365,9 +395,7 @@ class SigningUpload(CustomUpload):
 
     def getKeys(self, which, generate, *keynames):
         """Validate and return the uefi key and cert for encryption."""
-        use_signing_service = bool(
-            getFeatureFlag(PUBLISHER_USES_SIGNING_SERVICE))
-        if self.autokey and not use_signing_service:
+        if self.autokey:
             for keyfile in keynames:
                 if keyfile and not os.path.exists(keyfile):
                     generate()

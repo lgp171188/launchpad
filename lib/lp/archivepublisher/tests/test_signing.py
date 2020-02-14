@@ -1713,6 +1713,10 @@ class TestSigningUploadWithSigningService(TestSigningHelpers):
         self.assertEqual(1, len(self.arch_key_set.getSigningKeys.calls))
 
     def test_sign_without_autokey_and_no_key_pre_set(self):
+        """This case should raise exception, since we don't have fallback
+        keys on the filesystem to cover for the missing signing service
+        keys.
+        """
         self.arch_key_set.getSigningKeys.result = {}  # No key pre set.
 
         filenames = [
@@ -1724,20 +1728,11 @@ class TestSigningUploadWithSigningService(TestSigningHelpers):
         for filename in filenames:
             self.tarfile.add_file(filename, b"somedata for %s" % filename)
 
-        upload = self.process_emulate()
-
-        self.assertFalse(upload.autokey)
-        self.assertEqual(0, len(responses.calls))
-
-        signed_path = self.getSignedPath("test", "amd64")
-        self.assertThat(signed_path, SignedMatches(
-            ["1.0/SHA256SUMS"] + filenames))
-        self.assertEqual(0, self.arch_key_set.generate.call_count)
-        self.assertEqual(1, len(self.arch_key_set.getSigningKeys.calls))
+        self.assertRaises(IOError, self.process_emulate)
 
     def test_sign_without_autokey_and_some_keys_pre_set(self):
         """For no autokey archives, signing process should sign only for the
-        available keys, and skip signing the other files
+        available keys, and skip signing the other files.
         """
         # Pre-generate KMOD and OPAL keys
         kmod_arch_key = self.getArchiveSigningKey(SigningKeyType.KMOD)
@@ -1747,9 +1742,7 @@ class TestSigningUploadWithSigningService(TestSigningHelpers):
             SigningKeyType.OPAL: opal_arch_key
             }
 
-        filenames = [
-            "1.0/empty.efi", "1.0/empty.ko", "1.0/empty.opal",
-            "1.0/empty.sipl", "1.0/empty.fit"]
+        filenames = ["1.0/empty.ko", "1.0/empty.opal"]
 
         self.openArchive("test", "1.0", "amd64")
         for filename in filenames:
@@ -1873,6 +1866,22 @@ class TestSigningUploadWithSigningService(TestSigningHelpers):
             original_cleanup()
 
         upload.cleanup = intercept_cleanup
+
+        # Write something on the fallback key file, so they exist and the
+        # processing don't fail.
+        upload.setTargetDirectory(self.archive, self.path, self.suite)
+        key_files = [
+            upload.kmod_x509, upload.kmod_pem, upload.uefi_key,
+            upload.uefi_cert]
+        for key_file in key_files:
+            try:
+                dir = os.path.dirname(key_file)
+                os.mkdir(dir)
+            except OSError:
+                pass
+            with(open(key_file, 'wb')) as fd:
+                fd.write(b"key content")
+
         upload.process(self.archive, self.path, self.suite)
 
         # Make sure it only used the existing keys and fallbacks. No new key
