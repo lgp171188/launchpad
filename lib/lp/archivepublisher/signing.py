@@ -55,6 +55,10 @@ class NoSigningKeyError(Exception):
     pass
 
 
+class SigningServiceError(Exception):
+    pass
+
+
 class SigningUpload(CustomUpload):
     """Signing custom upload.
 
@@ -361,7 +365,8 @@ class SigningUpload(CustomUpload):
                     self.logger.error(
                         "Error generating signing key for %s: %s %s" %
                         (self.archive.reference, e.__class__.__name__, e))
-                return False
+                raise SigningServiceError(
+                    "Could not generate key %s: %s" % (key_type, e))
 
         signing_key = key.signing_key
         with open(filename, "rb") as fd:
@@ -375,7 +380,8 @@ class SigningUpload(CustomUpload):
                 self.logger.error(
                     "Error signing %s on signing service: %s %s" %
                     (filename, e.__class__.__name__, e))
-            return False
+            raise SigningServiceError(
+                "Could not sign message with key %s: %s" % (signing_key, e))
 
         if key_type in (SigningKeyType.UEFI, SigningKeyType.FIT):
             file_suffix = ".signed"
@@ -628,13 +634,9 @@ class SigningUpload(CustomUpload):
         super(SigningUpload, self).extract()
         self.setSigningOptions()
         for filename, handler, fallback_handler in self.findSigningHandlers():
-            # XXX pappacena: In which cases should we call the fallback? Only
-            # when we don't have the key on signing service,
-            # or in any error case?
-            # It's doing it for every error case for now.
             try:
                 was_signed = handler(filename)
-            except NoSigningKeyError:
+            except (NoSigningKeyError, SigningServiceError):
                 was_signed = False
             if not was_signed and fallback_handler is not None:
                 was_signed = fallback_handler(filename)
