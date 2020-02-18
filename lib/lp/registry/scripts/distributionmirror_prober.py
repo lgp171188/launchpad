@@ -230,23 +230,6 @@ class RedirectAwareProberProtocol(ProberProtocol):
         self.transport.loseConnection()
 
 
-class WhitelistContextFactory(BrowserLikePolicyForHTTPS):
-    def __init__(self, good_domains=None, *args, **kwargs):
-        """
-        :param good_domains: List of domains. The URLs must be in bytes
-        """
-        super(WhitelistContextFactory, self).__init__(*args, **kwargs)
-        self.good_domains = good_domains or []
-
-    def creatorForNetloc(self, hostname, port):
-        # check if the hostname is in the the whitelist,
-        # otherwise return the default policy
-        if hostname in self.good_domains:
-            return ssl.CertificateOptions(verify=False)
-        return super(WhitelistContextFactory, self).creatorForNetloc(
-            hostname, port)
-
-
 class ProberFactory(protocol.ClientFactory):
     """Factory using ProberProtocol to probe single URL existence."""
 
@@ -267,6 +250,8 @@ class ProberFactory(protocol.ClientFactory):
     connect_host = None
     connect_port = None
     connect_path = None
+
+    https_agent_policy = BrowserLikePolicyForHTTPS
 
     def __init__(self, url, timeout=config.distributionmirrorprober.timeout):
         # We want the deferred to be a private attribute (_deferred) to make
@@ -304,11 +289,10 @@ class ProberFactory(protocol.ClientFactory):
         return self._deferred
 
     def getHttpsClient(self):
-        context_factory = WhitelistContextFactory(HTTPS_TRUSTED_HOSTS)
-        # Should we use a proxy?)
+        # Should we use a proxy?
         if not config.launchpad.http_proxy:
             agent = Agent(
-                reactor=reactor, contextFactory=context_factory)
+                reactor=reactor, contextFactory=self.https_agent_policy())
         else:
             endpoint = HostnameEndpoint(
                 reactor, self.connect_host, self.connect_port)

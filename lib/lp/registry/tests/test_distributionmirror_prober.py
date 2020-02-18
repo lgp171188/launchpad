@@ -11,6 +11,7 @@ import logging
 import os
 from StringIO import StringIO
 
+import mock
 from lazr.uri import URI
 import responses
 from six.moves import http_client
@@ -32,7 +33,7 @@ from twisted.internet import (
     )
 from twisted.python.failure import Failure
 from twisted.web import server
-from twisted.web.client import ProxyAgent
+from twisted.web.client import ProxyAgent, BrowserLikePolicyForHTTPS
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
@@ -83,6 +84,20 @@ from lp.testing.layers import (
     )
 
 
+class LocalhostWhitelistedHTTPSPolicy(BrowserLikePolicyForHTTPS):
+    """HTTPS policy that bypasses SSL certificate check when doing requests
+    to localhost.
+    """
+
+    def creatorForNetloc(self, hostname, port):
+        # check if the hostname is in the the whitelist,
+        # otherwise return the default policy
+        if hostname == 'localhost':
+            return ssl.CertificateOptions(verify=False)
+        return super(LocalhostWhitelistedHTTPSPolicy, self).creatorForNetloc(
+            hostname, port)
+
+
 class TestProberHTTPSProtocolAndFactory(TestCase):
     layer = TwistedLayer
     run_tests_with = AsynchronousDeferredRunTestForBrokenTwisted.make_factory(
@@ -101,6 +116,21 @@ class TestProberHTTPSProtocolAndFactory(TestCase):
         self.listening_port = reactor.listenSSL(0, site, keys)
 
         self.addCleanup(self.listening_port.stopListening)
+
+        # Change the default policy to accept localhost self-signed
+        # certificates.
+        original_probefactory_policy = ProberFactory.https_agent_policy
+        original_redirect_policy = (
+            RedirectAwareProberFactory.https_agent_policy)
+        ProberFactory.https_agent_policy = LocalhostWhitelistedHTTPSPolicy
+        RedirectAwareProberFactory.https_agent_policy = (
+            LocalhostWhitelistedHTTPSPolicy)
+
+        def cleanup_https_policy():
+            ProberFactory.https_agent_policy = original_probefactory_policy
+            RedirectAwareProberFactory.https_agent_policy = (
+                original_redirect_policy)
+        self.addCleanup(cleanup_https_policy)
 
         self.port = self.listening_port.getHost().port
 
@@ -173,15 +203,9 @@ class TestProberHTTPSProtocolAndFactory(TestCase):
         """Changes the HTTPS_TRUSTED_HOSTS to not trust localhost, and tries
         to make an HTTPS request there.
         """
-        orig_trusted_hosts = distributionmirror_prober.HTTPS_TRUSTED_HOSTS
-        distributionmirror_prober.HTTPS_TRUSTED_HOSTS = []
-
-        def cleanup():
-            distributionmirror_prober.HTTPS_TRUSTED_HOSTS = orig_trusted_hosts
-        self.addCleanup(cleanup)
-
         url = 'https://localhost:%s/valid-mirror/file' % self.port
         prober = RedirectAwareProberFactory(url)
+        prober.https_agent_policy = BrowserLikePolicyForHTTPS
         self.assertEqual(prober.url, url)
         deferred = prober.probe()
 
