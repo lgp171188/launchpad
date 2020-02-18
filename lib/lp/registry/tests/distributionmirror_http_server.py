@@ -1,6 +1,6 @@
 #!/usr/bin/python
 #
-# Copyright 2009 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 from twisted.web.resource import Resource
@@ -21,10 +21,10 @@ class DistributionMirrorTestHTTPServer(Resource):
     :error: Respond with a '500 Internal Server Error' status.
 
     :redirect-to-valid-mirror/*: Respond with a '302 Found' status,
-        redirecting to http://localhost:%(port)s/valid-mirror/*.
+        redirecting to http(s)://localhost:%(port)s/valid-mirror/*.
 
     :redirect-infinite-loop: Respond with a '302 Found' status, redirecting
-        to http://localhost:%(port)s/redirect-infinite-loop.
+        to http(s)://localhost:%(port)s/redirect-infinite-loop.
 
     :redirect-unknown-url-scheme: Respond with a '302 Found' status,
         redirecting to ssh://localhost/redirect-unknown-url-scheme.
@@ -32,11 +32,13 @@ class DistributionMirrorTestHTTPServer(Resource):
     Any other path will cause the server to respond with a '404 Not Found'
     status.
     """
+    protocol = "http"
 
     def getChild(self, name, request):
+        protocol = self.protocol
         port = request.getHost().port
         if name == 'valid-mirror':
-            leaf = DistributionMirrorTestHTTPServer()
+            leaf = self.__class__()
             leaf.isLeaf = True
             return leaf
         elif name == 'timeout':
@@ -49,12 +51,14 @@ class DistributionMirrorTestHTTPServer(Resource):
                 'than one component.')
             remaining_path = request.path.replace('/%s' % name, '')
             leaf = RedirectingResource(
-                'http://localhost:%s/valid-mirror%s' % (port, remaining_path))
+                '%s://localhost:%s/valid-mirror%s' % (
+                    protocol, port, remaining_path))
             leaf.isLeaf = True
             return leaf
         elif name == 'redirect-infinite-loop':
             return RedirectingResource(
-                'http://localhost:%s/redirect-infinite-loop' % port)
+                '%s://localhost:%s/redirect-infinite-loop' %
+                (protocol, port))
         elif name == 'redirect-unknown-url-scheme':
             return RedirectingResource(
                 'ssh://localhost/redirect-unknown-url-scheme')
@@ -63,6 +67,11 @@ class DistributionMirrorTestHTTPServer(Resource):
 
     def render_GET(self, request):
         return "Hi"
+
+
+class DistributionMirrorTestSecureHTTPServer(DistributionMirrorTestHTTPServer):
+    """HTTPS version of DistributionMirrorTestHTTPServer"""
+    protocol = "https"
 
 
 class RedirectingResource(Resource):

@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """distributionmirror-prober tests."""
@@ -28,9 +28,11 @@ from testtools.twistedsupport import (
 from twisted.internet import (
     defer,
     reactor,
+    ssl,
     )
 from twisted.python.failure import Failure
 from twisted.web import server
+from twisted.web.client import ProxyAgent
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
@@ -44,6 +46,7 @@ from lp.registry.scripts.distributionmirror_prober import (
     BadResponseCode,
     ConnectionSkipped,
     InfiniteLoopDetected,
+    InvalidHTTPSCertificate,
     LoggingMixin,
     MAX_REDIRECTS,
     MIN_REQUEST_TIMEOUT_RATIO,
@@ -65,9 +68,9 @@ from lp.registry.scripts.distributionmirror_prober import (
     )
 from lp.registry.tests.distributionmirror_http_server import (
     DistributionMirrorTestHTTPServer,
+    DistributionMirrorTestSecureHTTPServer,
     )
 from lp.services.config import config
-from lp.services.daemons.tachandler import TacTestSetup
 from lp.services.timeout import default_timeout
 from lp.testing import (
     clean_up_reactor,
@@ -80,27 +83,119 @@ from lp.testing.layers import (
     )
 
 
-class HTTPServerTestSetup(TacTestSetup):
+class TestProberHTTPSProtocolAndFactory(TestCase):
+    layer = TwistedLayer
+    run_tests_with = AsynchronousDeferredRunTestForBrokenTwisted.make_factory(
+        timeout=30)
 
-    def setUpRoot(self):
-        pass
+    def setUp(self):
+        super(TestProberHTTPSProtocolAndFactory, self).setUp()
+        root = DistributionMirrorTestSecureHTTPServer()
+        site = server.Site(root)
+        site.displayTracebacks = False
+        keys_path = os.path.join(config.root, "configs", "development")
+        keys = ssl.DefaultOpenSSLContextFactory(
+            os.path.join(keys_path, "launchpad.key"),
+            os.path.join(keys_path, "launchpad.crt"),
+            )
+        self.listening_port = reactor.listenSSL(0, site, keys)
 
-    @property
-    def root(self):
-        return '/var/tmp'
+        self.addCleanup(self.listening_port.stopListening)
 
-    @property
-    def tacfile(self):
-        return os.path.join(
-            self.daemon_directory, 'distributionmirror_http_server.tac')
+        self.port = self.listening_port.getHost().port
 
-    @property
-    def pidfile(self):
-        return os.path.join(self.root, 'distributionmirror_http_server.pid')
+        self.urls = {'timeout': u'https://localhost:%s/timeout' % self.port,
+                     '200': u'https://localhost:%s/valid-mirror' % self.port,
+                     '500': u'https://localhost:%s/error' % self.port,
+                     '404': u'https://localhost:%s/invalid-mirror' % self.port}
+        self.pushConfig('launchpad', http_proxy=None)
 
-    @property
-    def logfile(self):
-        return os.path.join(self.root, 'distributionmirror_http_server.log')
+    def test_config_no_https_proxy(self):
+        prober = ProberFactory(self.urls['200'])
+        self.assertThat(prober, MatchesStructure.byEquality(
+            request_scheme='https',
+            request_host='localhost',
+            request_port=self.port,
+            request_path='/valid-mirror',
+            connect_scheme='https',
+            connect_host='localhost',
+            connect_port=self.port,
+            connect_path='/valid-mirror'))
+
+    def test_RedirectAwareProber_follows_https_redirect(self):
+        url = 'https://localhost:%s/redirect-to-valid-mirror/file' % self.port
+        prober = RedirectAwareProberFactory(url)
+        self.assertEqual(prober.url, url)
+        deferred = prober.probe()
+
+        def got_result(result):
+            self.assertEqual(http_client.OK, result.code)
+            self.assertEqual(
+                'https://localhost:%s/valid-mirror/file' % self.port,
+                result.request.absoluteURI)
+
+        return deferred.addCallback(got_result)
+
+    def test_https_prober_uses_proxy(self):
+        root = DistributionMirrorTestSecureHTTPServer()
+        site = server.Site(root)
+        proxy_listen_port = reactor.listenTCP(0, site)
+        proxy_port = proxy_listen_port.getHost().port
+        self.pushConfig(
+            'launchpad', http_proxy='http://localhost:%s/' % proxy_port)
+
+        url = 'https://localhost:%s/valid-mirror/file' % self.port
+        prober = RedirectAwareProberFactory(url)
+        self.assertEqual(prober.url, url)
+        deferred = prober.probe()
+
+        def got_result(result):
+            # We basically don't care about the result here. We just want to
+            # check that it did the request to the correct URI,
+            # and ProxyAgent was used pointing to the correct proxy.
+            agent = prober.getHttpsClient()._agent
+            self.assertIsInstance(agent, ProxyAgent)
+            self.assertEqual('localhost', agent._proxyEndpoint._hostText)
+            self.assertEqual(proxy_port, agent._proxyEndpoint._port)
+
+            self.assertEqual(
+                'https://localhost:%s/valid-mirror/file' % self.port,
+                result.request.absoluteURI)
+
+        def cleanup(*args, **kwargs):
+            proxy_listen_port.stopListening()
+
+        ret = deferred.addBoth(got_result)
+        deferred.addBoth(cleanup)
+        return ret
+
+    def test_https_fails_on_invalid_certificates(self):
+        """Changes the HTTPS_TRUSTED_HOSTS to not trust localhost, and tries
+        to make an HTTPS request there.
+        """
+        orig_trusted_hosts = distributionmirror_prober.HTTPS_TRUSTED_HOSTS
+        distributionmirror_prober.HTTPS_TRUSTED_HOSTS = []
+
+        def cleanup():
+            distributionmirror_prober.HTTPS_TRUSTED_HOSTS = orig_trusted_hosts
+        self.addCleanup(cleanup)
+
+        url = 'https://localhost:%s/valid-mirror/file' % self.port
+        prober = RedirectAwareProberFactory(url)
+        self.assertEqual(prober.url, url)
+        deferred = prober.probe()
+
+        def on_failure(result):
+            self.assertIsInstance(result.value, InvalidHTTPSCertificate)
+
+        def on_success(result):
+            if result is not None:
+                self.fail(
+                    "Should have raised SSL error. Got '%s' instead" % result)
+
+        deferred.addErrback(on_failure)
+        deferred.addCallback(on_success)
+        return deferred
 
 
 class TestProberProtocolAndFactory(TestCase):
@@ -212,7 +307,7 @@ class TestProberProtocolAndFactory(TestCase):
             self.assertTrue(prober.url == new_url)
             self.assertTrue(result == str(http_client.OK))
 
-        return deferred.addCallback(got_result)
+        return deferred.addBoth(got_result)
 
     def test_redirectawareprober_detects_infinite_loop(self):
         prober = RedirectAwareProberFactory(
@@ -737,12 +832,14 @@ class TestMirrorCDImageProberCallbacks(TestCaseWithFactory):
                 ConnectionSkipped,
                 RedirectToDifferentFile,
                 UnknownURLSchemeAfterRedirect,
+                InvalidHTTPSCertificate,
                 ]))
         exceptions = [BadResponseCode(str(http_client.NOT_FOUND)),
                       ProberTimeout('http://localhost/', 5),
                       ConnectionSkipped(),
                       RedirectToDifferentFile('/foo', '/bar'),
-                      UnknownURLSchemeAfterRedirect('https://localhost')]
+                      UnknownURLSchemeAfterRedirect('https://localhost'),
+                      InvalidHTTPSCertificate('localhost', 443)]
         for exception in exceptions:
             failure = callbacks.ensureOrDeleteMirrorCDImageSeries(
                 [(defer.FAILURE, Failure(exception))])
