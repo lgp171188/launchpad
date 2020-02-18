@@ -176,7 +176,8 @@ class ProberProtocol(HTTPClient):
 
 
 class HTTPSProbeFailureHandler:
-    """Handler to translate general errors into expected errors"""
+    """Handler to translate general errors into expected errors on HTTPS
+    connections."""
     def __init__(self, factory):
         self.factory = factory
 
@@ -264,6 +265,10 @@ class ProberFactory(protocol.ClientFactory):
         self.setURL(url.encode('ascii'))
         self.logger = logging.getLogger('distributionmirror-prober')
 
+    @property
+    def is_https(self):
+        return self.request_scheme == 'https'
+
     def probe(self):
         logger = self.logger
         # NOTE: We don't want to issue connections to any outside host when
@@ -303,13 +308,11 @@ class ProberFactory(protocol.ClientFactory):
         """Starts the connection and sets the self._deferred to the proper
         task.
         """
-        is_https = self.request_scheme == 'https'
         host_requests[self.request_host] += 1
-        if is_https:
+        if self.is_https:
             treq = self.getHttpsClient()
             self._deferred = treq.head(
-                self.url, reactor=reactor, allow_redirects=True,
-                timeout=self.timeout)
+                self.url, reactor=reactor, allow_redirects=True)
             error_handler = HTTPSProbeFailureHandler(self)
             self._deferred.addErrback(error_handler.handleErrors)
         else:
@@ -330,6 +333,8 @@ class ProberFactory(protocol.ClientFactory):
         self.failed(ProberTimeout(self.url, self.timeout))
         if self.connector is not None:
             self.connector.disconnect()
+        if self.is_https:
+            self._defer.cancel()
 
     def startedConnecting(self, connector):
         self.connector = connector
