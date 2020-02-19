@@ -156,7 +156,6 @@ from lp.testing import (
     reset_logging,
     )
 from lp.testing.pgsql import PgTestSetup
-from lp.testing.smtpd import SMTPController
 import zcml
 
 
@@ -1759,9 +1758,8 @@ class TwistedLaunchpadZopelessLayer(TwistedLayer, LaunchpadZopelessLayer):
 class LayerProcessController:
     """Controller for starting and stopping subprocesses.
 
-    Layers which need to start and stop a child process appserver or smtp
-    server should call the methods in this class, but should NOT inherit from
-    this class.
+    Layers which need to start and stop a child process appserver should
+    call the methods in this class, but should NOT inherit from this class.
     """
 
     # Holds the Popen instance of the spawned app server.
@@ -1769,10 +1767,6 @@ class LayerProcessController:
 
     # The config used by the spawned app server.
     appserver_config = None
-
-    # The SMTP server for layer tests.  See
-    # configs/testrunner-appserver/mail-configure.zcml
-    smtp_controller = None
 
     @classmethod
     def setConfig(cls):
@@ -1783,28 +1777,7 @@ class LayerProcessController:
     @classmethod
     def setUp(cls):
         cls.setConfig()
-        cls.startSMTPServer()
         cls.startAppServer()
-
-    @classmethod
-    @profiled
-    def startSMTPServer(cls):
-        """Start the SMTP server if it hasn't already been started."""
-        if cls.smtp_controller is not None:
-            raise LayerInvariantError('SMTP server already running')
-        # Ensure that the SMTP server does proper logging.
-        log = logging.getLogger('lazr.smtptest')
-        log_file = os.path.join(config.mailman.build_var_dir, 'logs', 'smtpd')
-        handler = logging.FileHandler(log_file)
-        formatter = logging.Formatter(
-            fmt='%(asctime)s (%(process)d) %(message)s',
-            datefmt='%b %d %H:%M:%S %Y')
-        handler.setFormatter(formatter)
-        log.setLevel(logging.DEBUG)
-        log.addHandler(handler)
-        log.propagate = False
-        cls.smtp_controller = SMTPController('localhost', 9025)
-        cls.smtp_controller.start()
 
     @classmethod
     @profiled
@@ -1815,15 +1788,6 @@ class LayerProcessController:
         cls._cleanUpStaleAppServer()
         cls._runAppServer(run_name)
         cls._waitUntilAppServerIsReady()
-
-    @classmethod
-    @profiled
-    def stopSMTPServer(cls):
-        """Kill the SMTP server and wait until it's exited."""
-        if cls.smtp_controller is not None:
-            cls.smtp_controller.reset()
-            cls.smtp_controller.stop()
-            cls.smtp_controller = None
 
     @classmethod
     def _kill(cls, sig):
@@ -1966,7 +1930,6 @@ class AppServerLayer(LaunchpadFunctionalLayer):
     @profiled
     def tearDown(cls):
         LayerProcessController.stopAppServer()
-        LayerProcessController.stopSMTPServer()
 
     @classmethod
     @profiled
@@ -2046,7 +2009,6 @@ class ZopelessAppServerLayer(LaunchpadZopelessLayer):
     @profiled
     def tearDown(cls):
         LayerProcessController.stopAppServer()
-        LayerProcessController.stopSMTPServer()
 
     @classmethod
     @profiled
@@ -2072,7 +2034,6 @@ class TwistedAppServerLayer(TwistedLaunchpadZopelessLayer):
     @profiled
     def tearDown(cls):
         LayerProcessController.stopAppServer()
-        LayerProcessController.stopSMTPServer()
 
     @classmethod
     @profiled

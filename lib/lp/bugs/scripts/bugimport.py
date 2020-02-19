@@ -14,7 +14,6 @@ __all__ = [
     'BugImporter',
     ]
 
-import cPickle
 from cStringIO import StringIO
 import datetime
 import logging
@@ -23,6 +22,7 @@ import time
 
 from defusedxml import cElementTree
 import pytz
+from six.moves import cPickle as pickle
 from storm.store import Store
 from zope.component import getUtility
 from zope.contenttype import guess_content_type
@@ -215,15 +215,15 @@ class BugImporter:
             self.bug_id_map = {}
             self.pending_duplicates = {}
         else:
-            self.bug_id_map, self.pending_duplicates = cPickle.load(
+            self.bug_id_map, self.pending_duplicates = pickle.load(
                 open(self.cache_filename, 'rb'))
 
     def saveCache(self):
         """Save the bug ID mapping and pending duplicates list to cache."""
         tmpfilename = '%s.tmp' % self.cache_filename
         fp = open(tmpfilename, 'wb')
-        cPickle.dump((self.bug_id_map, self.pending_duplicates),
-                     fp, protocol=2)
+        pickle.dump((self.bug_id_map, self.pending_duplicates),
+                    fp, protocol=2)
         fp.close()
         os.rename(tmpfilename, self.cache_filename)
 

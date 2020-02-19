@@ -182,7 +182,6 @@ setup(
         'lazr.jobrunner',
         'lazr.lifecycle',
         'lazr.restful',
-        'lazr.smtptest',
         'lazr.sshserver',
         'lazr.uri',
         'lpjsmin',

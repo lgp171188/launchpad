@@ -7,10 +7,11 @@ __metaclass__ = type
 __all__ = ['profiled', 'setup_profiling']
 
 import atexit
-import cPickle as pickle
 import os
 import tempfile
 import time
+
+from six.moves import cPickle as pickle
 
 
 _profile_stats_filename = os.environ.get('lp_layer_profile_filename', None)
