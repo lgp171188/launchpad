@@ -12,4 +12,4 @@ ALTER TABLE DistributionMirror
 
 COMMENT ON COLUMN DistributionMirror.https_base_url IS 'The HTTPS URL used to access the mirror.';
 
-INSERT INTO LaunchpadDatabaseRevision VALUES (2210, 12, 0);
+INSERT INTO LaunchpadDatabaseRevision VALUES (2210, 13, 0);
