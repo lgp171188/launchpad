@@ -27,9 +27,9 @@ from twisted.internet import (
     protocol,
     reactor,
     )
-from twisted.internet.ssl import VerificationError
 from twisted.internet.defer import DeferredSemaphore
 from twisted.internet.endpoints import HostnameEndpoint
+from twisted.internet.ssl import VerificationError
 from twisted.python.failure import Failure
 from twisted.web.client import (
     Agent,
