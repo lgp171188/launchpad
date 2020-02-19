@@ -38,15 +38,9 @@ from lp.services.messages.interfaces.message import IMessageSet
 from lp.services.webapp import LaunchpadXMLRPCView
 from lp.xmlrpc import faults
 
-# Not all developers will have built the Mailman instance (via
-# 'make mailman_instance').  In that case, this import will fail, but in that
-# case just use the constant value directly.
-try:
-    from Mailman.MemberAdaptor import ENABLED, BYUSER
-    ENABLED, BYUSER
-except ImportError:
-    ENABLED = 0
-    BYUSER = 2
+# These constants must match those defined in Mailman.MemberAdaptor.
+ENABLED = 0
+BYUSER = 2
 
 
 @implementer(IMailingListAPIView)

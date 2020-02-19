@@ -38,8 +38,8 @@ def tearDown_bing(test):
 
 
 # The default layer of view tests is the DatabaseFunctionalLayer. Tests
-# that require something special like the librarian or mailman must run
-# on a layer that sets those services up.
+# that require something special like the librarian must run on a layer
+# that sets those services up.
 special = {
     'launchpad-search-pages.txt(Bing)': LayeredDocFileSuite(
         '../doc/launchpad-search-pages.txt',

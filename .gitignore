@@ -11,8 +11,6 @@ database/replication/preamble.sk
 database/schema/diagrams/*.ps
 database/schema/diagrams/*.dot
 thread*.request
-lib/Mailman
-lib/mailman
 TAGS
 cover.txt
 lint.txt

@@ -23,7 +23,6 @@ from zope.app.server.main import main
 
 from lp.services.config import config
 from lp.services.daemons import tachandler
-from lp.services.mailman import runmailman
 from lp.services.osutils import ensure_directory_exists
 from lp.services.pidfile import (
     make_pidfile,
@@ -119,17 +118,6 @@ class TacFile(Service):
         process = subprocess.Popen(args, stdin=subprocess.PIPE)
         self.addCleanup(stop_process, process)
         process.stdin.close()
-
-
-class MailmanService(Service):
-
-    @property
-    def should_launch(self):
-        return config.mailman.launch
-
-    def launch(self):
-        runmailman.start_mailman()
-        self.addCleanup(runmailman.stop_mailman)
 
 
 class CodebrowseService(Service):
@@ -260,7 +248,6 @@ SERVICES = {
                          'librarian_server', prepare_for_librarian),
     'sftp': TacFile('sftp', 'daemons/sftp.tac', 'codehosting'),
     'forker': ForkingSessionService(),
-    'mailman': MailmanService(),
     'bing-webservice': BingWebService(),
     'codebrowse': CodebrowseService(),
     'memcached': MemcachedService(),
@@ -375,10 +362,6 @@ def start_testapp(argv=list(sys.argv)):
         fixture = ConfigUseFixture(BaseLayer.appserver_config_name)
         fixture.setUp()
         teardowns.append(fixture.cleanUp)
-        # Interactive tests always need this.  We let functional tests use
-        # a local one too because of simplicity.
-        LayerProcessController.startSMTPServer()
-        teardowns.append(LayerProcessController.stopSMTPServer)
         if interactive_tests:
             root_url = config.appserver_root_url()
             print('*' * 70)
