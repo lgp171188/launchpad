@@ -27,6 +27,7 @@ from twisted.internet import (
     protocol,
     reactor,
     )
+from twisted.internet.ssl import VerificationError
 from twisted.internet.defer import DeferredSemaphore
 from twisted.internet.endpoints import HostnameEndpoint
 from twisted.python.failure import Failure
@@ -194,7 +195,10 @@ class HTTPSProbeFailureHandler:
         if not isinstance(error.value, ResponseNeverReceived):
             return False
         for reason in error.value.reasons:
-            if reason.check(OpenSSL.SSL.Error) is not None:
+            # It might be a raw SSL error, or a twisted-encapsulated
+            # verification error (such as DNSMismach error when the
+            # certificate is valid for a different domain, for example).
+            if reason.check(OpenSSL.SSL.Error, VerificationError) is not None:
                 return True
         return False
 
