@@ -143,11 +143,20 @@ class TestProberHTTPSProtocolAndFactory(TestCase):
                      '404': u'https://localhost:%s/invalid-mirror' % self.port}
         self.pushConfig('launchpad', http_proxy=None)
 
+        self.orig_host_requests = dict(
+            distributionmirror_prober.host_requests)
+        self.orig_host_timeouts = dict(
+            distributionmirror_prober.host_timeouts)
+        self.orig_invalid_certificate_hosts = set(
+            distributionmirror_prober.invalid_certificate_hosts)
+
     def tearDown(self):
-        # Cleanup global variables.
-        distributionmirror_prober.host_requests = {}
-        distributionmirror_prober.host_timeouts = {}
-        distributionmirror_prober.invalid_certificate_hosts = set()
+        # Restore the globals that our tests messed with.
+        distributionmirror_prober.host_requests = self.orig_host_requests
+        distributionmirror_prober.host_timeouts = self.orig_host_timeouts
+        distributionmirror_prober.invalid_certificate_hosts = (
+            self.orig_invalid_certificate_hosts)
+        super(TestProberHTTPSProtocolAndFactory, self).tearDown()
 
     def test_config_no_https_proxy(self):
         prober = ProberFactory(self.urls['200'])
