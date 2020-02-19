@@ -585,9 +585,9 @@ This includes the 'pt' POFile that was created earlier on the
 'evolution' product as this is sharing translations with the source
 package that this potemplate is from.
 
-    >>> from lp.services.helpers import string_to_tarfile
-    >>> tarfile_string = exported_translation_file.read()
-    >>> tarfile = string_to_tarfile(tarfile_string)
+    >>> from lp.services.helpers import bytes_to_tarfile
+    >>> tarfile_bytes = exported_translation_file.read()
+    >>> tarfile = bytes_to_tarfile(tarfile_bytes)
 
     >>> sorted(tarfile.getnames())
     ['evolution-2.2', 'evolution-2.2/evolution-2.2-es.po',
@@ -604,7 +604,7 @@ The *-es.po file is indeed the Spanish translation...
 And GNU tar can cope with it.
 
     >>> from lp.services.helpers import simple_popen2
-    >>> contents = simple_popen2(['tar', 'ztf', '-'], tarfile_string)
+    >>> contents = simple_popen2(['tar', 'ztf', '-'], tarfile_bytes)
     >>> for line in sorted(contents.splitlines()):
     ...        print(line)
     evolution-2.2/
@@ -617,6 +617,6 @@ And GNU tar can cope with it.
 
     >>> pofile = simple_popen2(
     ...        ['tar', 'zxfO', '-', 'evolution-2.2/evolution-2.2-es.po'],
-    ...        tarfile_string)
+    ...        tarfile_bytes)
     >>> pofile.split(b'\n')[0]
     '# traducci\xc3\xb3n de es.po al Spanish'
