@@ -244,9 +244,8 @@ class TestSnapBuildBehaviourBase(TestCaseWithFactory):
             processor=processor)
 
         # Taken from test_archivedependencies.py
-        for component_name in ["main", "universe"]:
-            component = getUtility(IComponentSet)[component_name]
-            self.factory.makeComponentSelection(distroseries, component)
+        for component_name in ("main", "universe"):
+            self.factory.makeComponentSelection(distroseries, component_name)
 
         build = self.factory.makeSnapBuild(
             archive=archive, distroarchseries=distroarchseries, pocket=pocket,
