@@ -9,7 +9,6 @@ __all__ = [
 
 import re
 import sys
-import thread
 import threading
 import time
 import traceback
@@ -250,7 +249,7 @@ class LaunchpadBrowserPublication(
         notify(StartRequestEvent(request))
         request._traversal_start = time.time()
         request._traversal_thread_start = _get_thread_time()
-        threadid = thread.get_ident()
+        threadid = threading.current_thread().ident
         threadrequestfile = open_for_writing(
             'logs/thread-%s.request' % threadid, 'w')
         try:
