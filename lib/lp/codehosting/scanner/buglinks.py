@@ -8,9 +8,8 @@ __all__ = [
     'BugBranchLinker',
     ]
 
-import urlparse
-
 from breezy.bugtracker import InvalidBugStatus
+from six.moves.urllib.parse import urlsplit
 from zope.component import getUtility
 
 from lp.app.errors import NotFoundError
@@ -25,7 +24,7 @@ class BugBranchLinker:
         self.db_branch = db_branch
 
     def _getBugFromUrl(self, url):
-        protocol, host, path, ignored, ignored = urlparse.urlsplit(url)
+        protocol, host, path, ignored, ignored = urlsplit(url)
 
         # Skip URLs that don't point to Launchpad.
         if host != 'launchpad.net':

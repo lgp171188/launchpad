@@ -9,7 +9,6 @@ import contextlib
 from itertools import repeat
 import operator
 import re
-import urlparse
 
 from lazr.restful.utils import (
     get_current_browser_request,
@@ -20,6 +19,7 @@ import oops_amqp
 from oops_datedir_repo import DateDirRepo
 import oops_timeline
 import pytz
+from six.moves.urllib.parse import urlparse
 from zope.component.interfaces import ObjectEvent
 from zope.error.interfaces import IErrorReportingUtility
 from zope.event import notify
@@ -396,9 +396,8 @@ class ErrorReportingUtility:
                 # broken-url-generator in LP: ignore it.
                 if referer is None:
                     return True
-                referer_parts = urlparse.urlparse(referer)
-                root_parts = urlparse.urlparse(
-                    allvhosts.configs['mainsite'].rooturl)
+                referer_parts = urlparse(referer)
+                root_parts = urlparse(allvhosts.configs['mainsite'].rooturl)
                 if root_parts.netloc not in referer_parts.netloc:
                     return True
         return False

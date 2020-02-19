@@ -5,7 +5,6 @@ __metaclass__ = type
 
 import socket
 import sys
-import urllib2
 
 # FIRST Ensure correct plugins are loaded. Do not delete this comment or the
 # line below this comment.
@@ -41,6 +40,7 @@ from lazr.uri import (
     URI,
     )
 from six.moves import http_client
+from six.moves.urllib.error import HTTPError
 
 from lp.code.bzr import (
     BranchFormat,
@@ -387,7 +387,7 @@ class PullerWorker:
         # add further encountered errors from the production runs here
         # ------ HERE ---------
         #
-        except urllib2.HTTPError as e:
+        except HTTPError as e:
             msg = str(e)
             if int(e.code) == http_client.UNAUTHORIZED:
                 # Maybe this will be caught in bzrlib one day, and then we'll

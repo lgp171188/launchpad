@@ -8,7 +8,7 @@ __all__ = [
     'PPANameWidget',
     ]
 
-import urlparse
+from six.moves.urllib.parse import urljoin
 
 from lp.app.widgets.textwidgets import URIComponentWidget
 from lp.services.config import config
@@ -25,4 +25,4 @@ class PPANameWidget(URIComponentWidget):
             root = config.personalpackagearchive.private_base_url
         else:
             root = config.personalpackagearchive.base_url
-        return urlparse.urljoin(root, owner.name) + '/'
+        return urljoin(root, owner.name) + '/'

@@ -46,8 +46,9 @@ from os.path import (
 from pprint import pprint
 import sys
 from time import sleep
-from urllib import urlencode
-import urllib2
+
+from six.moves.urllib.parse import urlencode
+from six.moves.urllib.request import urlopen
 
 from lp.services.beautifulsoup import BeautifulSoup
 
@@ -67,8 +68,7 @@ class RoundupSniffer:
         """Fetch the URL, consulting the cache first."""
         filename = join(self.cache_dir, urlsafe_b64encode(url))
         if not exists(filename):
-            open(filename, 'wb').write(
-                urllib2.urlopen(url).read())
+            open(filename, 'wb').write(urlopen(url).read())
         return open(filename, 'rb')
 
     def get_all_bugs(self):

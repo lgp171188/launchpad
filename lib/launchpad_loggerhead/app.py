@@ -4,8 +4,6 @@
 import logging
 import os
 import threading
-import urllib
-import urlparse
 import xmlrpclib
 
 from breezy import (
@@ -41,6 +39,10 @@ from paste.request import (
     construct_url,
     parse_querystring,
     path_info_pop,
+    )
+from six.moves.urllib.parse import (
+    urlencode,
+    urljoin,
     )
 
 from lp.code.interfaces.codehosting import (
@@ -127,7 +129,7 @@ class RootApp:
         raise HTTPMovedPermanently(openid_request.redirectURL(
             config.codehosting.secure_codebrowse_root,
             config.codehosting.secure_codebrowse_root + '+login/?'
-            + urllib.urlencode({'back_to': back_to})))
+            + urlencode({'back_to': back_to})))
 
     def _complete_login(self, environ, start_response):
         """Complete the OpenID authentication process.
@@ -261,7 +263,7 @@ class RootApp:
             environ['PATH_INFO'] = trail
             environ['SCRIPT_NAME'] += consumed.rstrip('/')
             branch_url = lp_server.get_url() + branch_name
-            branch_link = urlparse.urljoin(
+            branch_link = urljoin(
                 config.codebrowse.launchpad_root, branch_name)
             cachepath = os.path.join(
                 config.codebrowse.cachepath, branch_name[1:])

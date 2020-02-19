@@ -6,9 +6,11 @@ from __future__ import absolute_import, print_function, unicode_literals
 __metaclass__ = type
 
 import os
-import urlparse
 
-from six.moves.urllib.parse import parse_qsl
+from six.moves.urllib.parse import (
+    parse_qsl,
+    urlsplit,
+    )
 
 from lp.scripts.utilities.js.jsbuild import (
     CSSComboFile,
@@ -21,7 +23,7 @@ def parse_url(url):
 
     Returns the list of arguments in the original order.
     """
-    scheme, loc, path, query, frag = urlparse.urlsplit(url)
+    scheme, loc, path, query, frag = urlsplit(url)
     return parse_qs(query)
 
 

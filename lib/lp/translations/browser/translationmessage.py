@@ -21,10 +21,12 @@ __all__ = [
 import datetime
 import operator
 import re
-import urllib
 
 import pytz
-from six.moves.urllib.parse import parse_qsl
+from six.moves.urllib.parse import (
+    parse_qsl,
+    urlencode,
+    )
 from zope import datetime as zope_datetime
 from zope.browserpage import ViewPageTemplateFile
 from zope.component import getUtility
@@ -863,7 +865,7 @@ class BaseTranslationView(LaunchpadView):
         else:
             base_url = new_url
 
-        new_query = urllib.urlencode(sorted(parameters.items()))
+        new_query = urlencode(sorted(parameters.items()))
 
         if new_query:
             new_url = '%s?%s' % (base_url, new_query)

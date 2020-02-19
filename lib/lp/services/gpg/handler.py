@@ -19,12 +19,12 @@ from StringIO import StringIO
 import subprocess
 import sys
 import tempfile
-import urllib
 
 import gpgme
 from lazr.restful.utils import get_current_browser_request
 import requests
 from six.moves import http_client
+from six.moves.urllib.parse import urlencode
 from zope.interface import implementer
 from zope.security.proxy import removeSecurityProxy
 
@@ -467,7 +467,7 @@ class GPGHandler:
             config.gpghandler.host, config.gpghandler.port)
 
         conn = http_client.HTTPConnection(keyserver_http_url)
-        params = urllib.urlencode({'keytext': content})
+        params = urlencode({'keytext': content})
         headers = {
             "Content-type": "application/x-www-form-urlencoded",
             "Accept": "text/plain",
@@ -512,8 +512,7 @@ class GPGHandler:
             base = 'https://%s' % host
         else:
             base = 'http://%s:%s' % (host, config.gpghandler.port)
-        return '%s/pks/lookup?%s' % (
-            base, urllib.urlencode(sorted(params.items())))
+        return '%s/pks/lookup?%s' % (base, urlencode(sorted(params.items())))
 
     def _getPubKey(self, fingerprint):
         """See IGPGHandler for further information."""

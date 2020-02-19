@@ -8,7 +8,6 @@ from __future__ import absolute_import, print_function, unicode_literals
 __metaclass__ = type
 
 import os
-from urllib import quote
 
 from lazr.restful.interfaces import (
     IJSONRequestCache,
@@ -16,6 +15,7 @@ from lazr.restful.interfaces import (
     )
 from simplejson import dumps
 import six
+from six.moves.urllib.parse import quote
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 from zope.traversing.browser import absoluteURL

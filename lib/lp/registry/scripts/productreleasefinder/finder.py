@@ -13,11 +13,11 @@ import mimetypes
 import os
 import re
 import tempfile
-import urlparse
 
 from cscvs.dircompare import path
 import pytz
 import requests
+from six.moves.urllib.parse import urlsplit
 from zope.component import getUtility
 
 from lp.app.validators.name import invalid_name_pattern
@@ -199,7 +199,7 @@ class ProductReleaseFinder:
     def handleRelease(self, product_name, series_name, url, file_names):
         """If the given URL looks like a release tarball, download it
         and create a corresponding ProductRelease."""
-        filename = urlparse.urlsplit(url)[2]
+        filename = urlsplit(url)[2]
         slash = filename.rfind("/")
         if slash != -1:
             filename = filename[slash + 1:]

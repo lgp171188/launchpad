@@ -7,7 +7,8 @@ __metaclass__ = type
 __all__ = ['SourceForge']
 
 import re
-import urllib
+
+from six.moves.urllib.parse import splitvalue
 
 from lp.bugs.externalbugtracker import (
     BugNotFound,
@@ -103,7 +104,7 @@ class SourceForge(ExternalBugTracker):
 
                 query_bits = query.split('&')
                 for bit in query_bits:
-                    key, value = urllib.splitvalue(bit)
+                    key, value = splitvalue(bit)
                     query_dict[key] = value
 
                 try:

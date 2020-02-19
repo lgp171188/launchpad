@@ -55,7 +55,6 @@ __all__ = [
     ]
 
 import re
-from urlparse import urlparse
 
 from lazr.restful.declarations import (
     call_with,
@@ -81,6 +80,7 @@ from lazr.restful.fields import (
     Reference,
     )
 from six.moves import http_client
+from six.moves.urllib.parse import urlparse
 from zope.interface import (
     Attribute,
     Interface,

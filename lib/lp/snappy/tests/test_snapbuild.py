@@ -11,11 +11,11 @@ from datetime import (
     datetime,
     timedelta,
     )
-from urllib2 import urlopen
 
 from fixtures import FakeLogger
 from pymacaroons import Macaroon
 import pytz
+from six.moves.urllib.request import urlopen
 from testtools.matchers import (
     ContainsDict,
     Equals,

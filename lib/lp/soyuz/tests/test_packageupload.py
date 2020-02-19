@@ -9,7 +9,6 @@ from datetime import timedelta
 import io
 import os.path
 import shutil
-from urllib2 import urlopen
 
 from debian.deb822 import Changes
 from lazr.restfulclient.errors import (
@@ -21,6 +20,7 @@ from testtools.matchers import (
     MatchesListwise,
     MatchesStructure,
     )
+from six.moves.urllib.request import urlopen
 import transaction
 from zope.component import (
     getUtility,

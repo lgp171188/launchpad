@@ -8,7 +8,6 @@ __metaclass__ = type
 import os
 import socket
 import tempfile
-import urllib2
 
 from breezy.errors import (
     BzrError,
@@ -23,6 +22,7 @@ from breezy.url_policy_open import (
     )
 from lazr.uri import InvalidURIError
 from six.moves import http_client
+from six.moves.urllib.error import HTTPError
 
 from lp.code.enums import BranchType
 from lp.codehosting.puller.worker import (
@@ -141,7 +141,7 @@ class TestErrorCatching(TestCase):
         # If the source branch requires HTTP authentication, say so in the
         # error message.
         msg = self.getMirrorFailureForException(
-            urllib2.HTTPError(
+            HTTPError(
                 'http://something', http_client.UNAUTHORIZED,
                 'Authorization Required', 'some headers',
                 os.fdopen(tempfile.mkstemp()[0])))

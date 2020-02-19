@@ -18,8 +18,6 @@ from datetime import (
     timedelta,
     )
 import unittest
-import urllib
-import urlparse
 
 from openid.consumer.consumer import (
     FAILURE,
@@ -32,6 +30,11 @@ from openid.extensions import (
 from openid.yadis.discover import DiscoveryFailure
 from six.moves import http_client
 from six.moves.urllib.error import HTTPError
+from six.moves.urllib.parse import (
+    parse_qsl,
+    quote,
+    urlsplit,
+    )
 from testtools.matchers import (
     Contains,
     ContainsDict,
@@ -773,7 +776,7 @@ class ForwardsCorrectly:
     """
 
     def match(self, query_string):
-        args = dict(urlparse.parse_qsl(query_string))
+        args = dict(parse_qsl(query_string))
         request = LaunchpadTestRequest(form=args)
         request.processInputs()
         # This is a hack to make the request.getURL(1) call issued by the view
@@ -781,8 +784,8 @@ class ForwardsCorrectly:
         request._app_names = ['foo']
         view = StubbedOpenIDLogin(object(), request)
         view()
-        escaped_args = tuple(map(urllib.quote, args.items()[0]))
-        expected_fragment = urllib.quote('%s=%s' % escaped_args)
+        escaped_args = tuple(map(quote, args.items()[0]))
+        expected_fragment = quote('%s=%s' % escaped_args)
         return Contains(
             expected_fragment).match(view.openid_request.return_to)
 
@@ -811,8 +814,8 @@ class TestOpenIDLogin(TestCaseWithFactory):
         # Sometimes the form params are unicode because a decode('utf8')
         # worked in the form machinery... and if so they cannot be trivially
         # quoted but must be encoded first.
-        key = urllib.quote(u'key\xf3'.encode('utf8'))
-        value = urllib.quote(u'value\xf3'.encode('utf8'))
+        key = quote(u'key\xf3'.encode('utf8'))
+        value = quote(u'value\xf3'.encode('utf8'))
         query_string = "%s=%s" % (key, value)
         self.assertThat(query_string, ForwardsCorrectly())
 
@@ -875,8 +878,8 @@ class TestOpenIDLogin(TestCaseWithFactory):
         macaroon_extension = extensions[1]
         self.assertIsInstance(macaroon_extension, MacaroonRequest)
         self.assertEqual(caveat_id, macaroon_extension.caveat_id)
-        return_to_args = dict(urlparse.parse_qsl(
-            urlparse.urlsplit(view.openid_request.return_to).query))
+        return_to_args = dict(parse_qsl(
+            urlsplit(view.openid_request.return_to).query))
         self.assertEqual(
             'field.actions.complete',
             return_to_args['discharge_macaroon_action'])

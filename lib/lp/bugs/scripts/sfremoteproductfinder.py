@@ -8,9 +8,8 @@ __all__ = [
     'SourceForgeRemoteProductFinder',
     ]
 
-import urllib
-
 import requests
+from six.moves.urllib.parse import splitvalue
 from zope.component import getUtility
 
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
@@ -101,7 +100,7 @@ class SourceForgeRemoteProductFinder:
         query_dict = {}
         query_bits = query.split('&')
         for bit in query_bits:
-            key, value = urllib.splitvalue(bit)
+            key, value = splitvalue(bit)
             query_dict[key] = value
 
         try:

@@ -15,7 +15,6 @@ from cStringIO import StringIO
 import os
 import signal
 import smtplib
-from urllib import urlopen
 import uuid
 
 import amqp
@@ -25,6 +24,8 @@ from fixtures import (
     TestWithFixtures,
     )
 from lazr.config import as_host_port
+from six.moves.urllib.error import HTTPError
+from six.moves.urllib.request import urlopen
 from zope.component import (
     ComponentLookupError,
     getUtility,
@@ -354,10 +355,7 @@ class LibrarianResetTestCase(TestCase):
         LibrarianLayer.testTearDown()
         LibrarianLayer.testSetUp()
         # Which should have nuked the old file.
-        # XXX: StuartBishop 2006-06-30 Bug=51370:
-        # We should get a DownloadFailed exception here.
-        data = urlopen(LibrarianTestCase.url).read()
-        self.assertNotEqual(data, self.sample_data)
+        self.assertRaises(HTTPError, urlopen, LibrarianTestCase.url)
 
 
 class LibrarianHideTestCase(TestCase):

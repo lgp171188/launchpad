@@ -12,8 +12,8 @@ from collections import namedtuple
 import logging
 import os.path
 import tempfile
-from urlparse import urlparse
 
+from six.moves.urllib.parse import urlparse
 import transaction
 from twisted.internet import (
     defer,

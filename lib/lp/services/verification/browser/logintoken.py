@@ -15,8 +15,10 @@ __all__ = [
     'ValidateGPGKeyView',
     ]
 
-import urllib
-
+from six.moves.urllib.parse import (
+    urlencode,
+    urljoin,
+    )
 from zope.component import getUtility
 from zope.formlib.widget import CustomWidgetFactory
 from zope.formlib.widgets import TextAreaWidget
@@ -97,7 +99,7 @@ class LoginTokenView(LaunchpadView):
 
     def render(self):
         if self.context.date_consumed is None:
-            url = urllib.basejoin(
+            url = urljoin(
                 str(self.request.URL), self.PAGES[self.context.tokentype])
             self.request.response.redirect(url)
         else:
@@ -400,7 +402,7 @@ class ValidateEmailView(BaseTokenView, LaunchpadFormView):
                 # hack, but if it fails nothing will happen.
                 # -- Guilherme Salgado 2005-07-09
                 url = allvhosts.configs['mainsite'].rooturl
-                query = urllib.urlencode([('field.dupe_person', dupe.name)])
+                query = urlencode([('field.dupe_person', dupe.name)])
                 url += '/people/+requestmerge?' + query
                 self.addError(structured(
                     'This email address is already registered for another '

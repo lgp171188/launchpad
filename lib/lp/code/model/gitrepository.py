@@ -25,7 +25,6 @@ from itertools import (
     groupby,
     )
 from operator import attrgetter
-from urllib import quote_plus
 
 from breezy import urlutils
 from lazr.enum import DBItem
@@ -33,6 +32,7 @@ from lazr.lifecycle.event import ObjectModifiedEvent
 from lazr.lifecycle.snapshot import Snapshot
 import pytz
 import six
+from six.moves.urllib.parse import quote_plus
 from storm.databases.postgres import Returning
 from storm.expr import (
     And,
