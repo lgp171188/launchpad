@@ -209,8 +209,9 @@ class TestProberHTTPSProtocolAndFactory(TestCase):
         return ret
 
     def test_https_fails_on_invalid_certificates(self):
-        """Changes the HTTPS_TRUSTED_HOSTS to not trust localhost, and tries
-        to make an HTTPS request there.
+        """Changes set back the default browser-like policy for HTTPS
+        request and make sure the request is failing due to invalid
+        (self-signed) certificate.
         """
         url = 'https://localhost:%s/valid-mirror/file' % self.port
         prober = RedirectAwareProberFactory(url)

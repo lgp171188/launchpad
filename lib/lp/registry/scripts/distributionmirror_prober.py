@@ -85,8 +85,6 @@ PER_HOST_REQUESTS = 2
 # start connecting.
 OVERALL_REQUESTS = 100
 
-HTTPS_TRUSTED_HOSTS = [b'localhost']
-
 
 class LoggingMixin:
     """Common logging class for archive and releases mirror messages."""
