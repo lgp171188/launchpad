@@ -27,6 +27,7 @@ from lp.oci.interfaces.ocirecipe import IOCIRecipe
 from lp.services.database.constants import DEFAULT
 from lp.services.fields import PublicPersonChoice
 from lp.services.librarian.interfaces import ILibraryFileAlias
+from lp.soyuz.interfaces.distroarchseries import IDistroArchSeries
 
 
 class IOCIRecipeBuildEdit(Interface):
@@ -81,6 +82,11 @@ class IOCIRecipeBuildView(IPackageBuild):
         :raises NotFoundError: if no file exists with the given digest.
         :return: The corresponding `ILibraryFileAlias`.
         """
+
+    distro_arch_series = Reference(
+        IDistroArchSeries,
+        title=_("The series and architecture for which to build."),
+        required=True, readonly=True)
 
 
 class IOCIRecipeBuildAdmin(Interface):

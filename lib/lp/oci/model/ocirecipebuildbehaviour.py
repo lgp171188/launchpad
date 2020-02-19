@@ -14,15 +14,21 @@ __all__ = [
     ]
 
 
+import base64
 import json
 import os
+import time
 
+import treq
 from twisted.internet import defer
 from zope.interface import implementer
 
 from lp.app.errors import NotFoundError
 from lp.buildmaster.enums import BuildBaseImageType
-from lp.buildmaster.interfaces.builder import BuildDaemonError
+from lp.buildmaster.interfaces.builder import (
+    BuildDaemonError,
+    CannotBuild,
+    )
 from lp.buildmaster.interfaces.buildfarmjobbehaviour import (
     IBuildFarmJobBehaviour,
     )
@@ -30,7 +36,11 @@ from lp.buildmaster.model.buildfarmjobbehaviour import (
     BuildFarmJobBehaviourBase,
     )
 from lp.registry.interfaces.series import SeriesStatus
+from lp.services.config import config
 from lp.services.librarian.utils import copy_and_close
+from lp.soyuz.adapters.archivedependencies import (
+    get_sources_list_for_building,
+    )
 
 
 @implementer(IBuildFarmJobBehaviour)
@@ -39,9 +49,107 @@ class OCIRecipeBuildBehaviour(BuildFarmJobBehaviourBase):
     builder_type = "oci"
     image_types = [BuildBaseImageType.LXD, BuildBaseImageType.CHROOT]
 
-    # These attributes are defined in `IOCIBuildFarmJobBehaviour`,
-    # but are not used in this implementation.
-    distro_arch_series = None
+    @property
+    def distro_arch_series(self):
+        return self.build.distro_arch_series
+
+    def getLogFileName(self):
+        series = self.build.distro_series
+
+        # Examples:
+        #   buildlog_oci_ubuntu_wily_amd64_name_FULLYBUILT.txt
+        return 'buildlog_oci_%s_%s_%s_%s_%s' % (
+            series.distribution.name, series.name,
+            self.build.processor.name, self.build.recipe.name,
+            self.build.status.name)
+
+    def verifyBuildRequest(self, logger):
+        """Assert some pre-build checks.
+
+        The build request is checked:
+         * Virtualized builds can't build on a non-virtual builder
+         * Ensure that we have a chroot
+        """
+        build = self.build
+        if build.virtualized and not self._builder.virtualized:
+            raise AssertionError(
+                "Attempt to build virtual item on a non-virtual builder.")
+
+        chroot = build.distro_arch_series.getChroot(pocket=build.pocket)
+        if chroot is None:
+            raise CannotBuild(
+                "Missing chroot for %s" % build.distro_arch_series.displayname)
+
+    @defer.inlineCallbacks
+    def extraBuildArgs(self, logger=None):
+        """
+        Return the extra arguments required by the slave for the given build.
+        """
+        build = self.build
+        args = yield super(OCIRecipeBuildBehaviour, self).extraBuildArgs(
+            logger=logger)
+        if config.oci.builder_proxy_host:
+            token = yield self._requestProxyToken()
+            args["proxy_url"] = (
+                "http://{username}:{password}@{host}:{port}".format(
+                    username=token['username'],
+                    password=token['secret'],
+                    host=config.oci.builder_proxy_host,
+                    port=config.oci.builder_proxy_port))
+            args["revocation_endpoint"] = (
+                "{endpoint}/{token}".format(
+                    endpoint=config.oci.builder_proxy_auth_api_endpoint,
+                    token=token['username']))
+        # XXX twom 2020-02-17 This may need to be more complex, and involve
+        # distribution name.
+        args["name"] = build.recipe.name
+        args["archives"], args["trusted_keys"] = (
+            yield get_sources_list_for_building(
+                build, build.distro_arch_series, None,
+                tools_source=None, tools_fingerprint=None,
+                logger=logger))
+
+        args['build_file'] = build.recipe.build_file
+
+        if build.recipe.git_ref.repository_url is not None:
+            args["git_repository"] = build.recipe.git_ref.repository_url
+        else:
+            args["git_repository"] = (
+                build.recipe.git_repository.git_https_url)
+        if build.recipe.git_path != "HEAD":
+                args["git_path"] = build.recipe.git_ref.name
+
+        defer.returnValue(args)
+
+    @defer.inlineCallbacks
+    def _requestProxyToken(self):
+        admin_username = config.oci.builder_proxy_auth_api_admin_username
+        if not admin_username:
+            raise CannotBuild(
+                "builder_proxy_auth_api_admin_username is not configured.")
+        secret = config.oci.builder_proxy_auth_api_admin_secret
+        if not secret:
+            raise CannotBuild(
+                "builder_proxy_auth_api_admin_secret is not configured.")
+        url = config.oci.builder_proxy_auth_api_endpoint
+        if not secret:
+            raise CannotBuild(
+                "builder_proxy_auth_api_endpoint is not configured.")
+        timestamp = int(time.time())
+        proxy_username = '{build_id}-{timestamp}'.format(
+            build_id=self.build.build_cookie,
+            timestamp=timestamp)
+        auth_string = '{}:{}'.format(admin_username, secret).strip()
+        auth_header = b'Basic ' + base64.b64encode(auth_string)
+
+        response = yield treq.post(
+            url, headers={'Authorization': auth_header},
+            json={'username': proxy_username},
+            reactor=self._slave.reactor,
+            pool=self._slave.pool)
+        response = yield check_status(response)
+        token = yield treq.json_content(response)
+        defer.returnValue(token)
 
     def _ensureFilePath(self, file_name, file_path, upload_path):
         # If the evaluated output file name is not within our

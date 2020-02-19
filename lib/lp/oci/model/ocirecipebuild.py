@@ -44,6 +44,7 @@ from lp.oci.interfaces.ocirecipebuild import (
     IOCIRecipeBuild,
     IOCIRecipeBuildSet,
     )
+from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.registry.model.person import Person
 from lp.services.config import config
 from lp.services.database.bulk import load_related
@@ -129,9 +130,9 @@ class OCIRecipeBuild(PackageBuildMixin, Storm):
     build_farm_job_id = Int(name='build_farm_job', allow_none=False)
     build_farm_job = Reference(build_farm_job_id, 'BuildFarmJob.id')
 
-    # Stub attributes to match the IPackageBuild interface that we
-    # are not using in this implementation at this time.
-    pocket = None
+    # We only care about the pocket from a building environment POV,
+    # it is not a target, nor referenced in the final build.
+    pocket = PackagePublishingPocket.UPDATES
 
     @property
     def distro_series(self):
@@ -263,6 +264,10 @@ class OCIRecipeBuild(PackageBuildMixin, Storm):
         # XXX twom 2019-12-05 This may need to change when an OCIProject
         # pillar isn't just a distribution
         return self.recipe.oci_project.distribution
+
+    @property
+    def distro_arch_series(self):
+        return self.distribution.currentseries.nominatedarchindep
 
     def notify(self, extra_info=None):
         """See `IPackageBuild`."""

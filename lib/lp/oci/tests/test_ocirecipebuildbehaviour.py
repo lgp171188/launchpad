@@ -7,15 +7,39 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 
+from datetime import datetime
 import json
 import os
 import shutil
 import tempfile
+from textwrap import dedent
+import time
+import uuid
 
 import fixtures
+from six.moves.urllib_parse import urlsplit
 from testtools import ExpectedException
-from twisted.internet import defer
+from testtools.matchers import (
+    AfterPreprocessing,
+    Equals,
+    HasLength,
+    Is,
+    MatchesDict,
+    MatchesStructure,
+    )
+from twisted.internet import (
+    defer,
+    endpoints,
+    reactor,
+    )
+from twisted.python.compat import nativeString
 from twisted.trial.unittest import TestCase as TrialTestCase
+from twisted.web import (
+    resource,
+    server,
+    xmlrpc,
+    )
+from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
 from lp.buildmaster.enums import BuildStatus
@@ -24,19 +48,91 @@ from lp.buildmaster.interfaces.builder import BuildDaemonError
 from lp.buildmaster.interfaces.buildfarmjobbehaviour import (
     IBuildFarmJobBehaviour,
     )
-from lp.buildmaster.tests.mock_slaves import WaitingSlave
+from lp.buildmaster.interfaces.processor import IProcessorSet
+from lp.buildmaster.tests.mock_slaves import (
+    MockBuilder,
+    OkSlave,
+    SlaveTestHelpers,
+    WaitingSlave,
+    )
 from lp.buildmaster.tests.test_buildfarmjobbehaviour import (
     TestGetUploadMethodsMixin,
     )
 from lp.oci.model.ocirecipebuildbehaviour import OCIRecipeBuildBehaviour
 from lp.registry.interfaces.series import SeriesStatus
 from lp.services.config import config
+from lp.soyuz.adapters.archivedependencies import (
+    get_sources_list_for_building,
+    )
 from lp.testing import TestCaseWithFactory
 from lp.testing.dbuser import dbuser
 from lp.testing.factory import LaunchpadObjectFactory
 from lp.testing.fakemethod import FakeMethod
 from lp.testing.layers import LaunchpadZopelessLayer
 from lp.testing.mail_helpers import pop_notifications
+
+
+class ProxyAuthAPITokensResource(resource.Resource):
+    """A test tokens resource for the proxy authentication API."""
+
+    isLeaf = True
+
+    def __init__(self):
+        resource.Resource.__init__(self)
+        self.requests = []
+
+    def render_POST(self, request):
+        content = request.content.read()
+        self.requests.append({
+            "method": request.method,
+            "uri": request.uri,
+            "headers": dict(request.requestHeaders.getAllRawHeaders()),
+            "content": content,
+            })
+        username = json.loads(content)["username"]
+        return json.dumps({
+            "username": username,
+            "secret": uuid.uuid4().hex,
+            "timestamp": datetime.utcnow().isoformat(),
+            })
+
+
+class InProcessProxyAuthAPIFixture(fixtures.Fixture):
+    """A fixture that pretends to be the proxy authentication API.
+
+    Users of this fixture must call the `start` method, which returns a
+    `Deferred`, and arrange for that to get back to the reactor.  This is
+    necessary because the basic fixture API does not allow `setUp` to return
+    anything.  For example:
+
+        class TestSomething(TestCase):
+
+            run_tests_with = AsynchronousDeferredRunTest.make_factory(
+                timeout=10)
+
+            @defer.inlineCallbacks
+            def setUp(self):
+                super(TestSomething, self).setUp()
+                yield self.useFixture(InProcessProxyAuthAPIFixture()).start()
+    """
+
+    @defer.inlineCallbacks
+    def start(self):
+        root = resource.Resource()
+        self.tokens = ProxyAuthAPITokensResource()
+        root.putChild("tokens", self.tokens)
+        endpoint = endpoints.serverFromString(reactor, nativeString("tcp:0"))
+        site = server.Site(self.tokens)
+        self.addCleanup(site.stopFactory)
+        port = yield endpoint.listen(site)
+        self.addCleanup(port.stopListening)
+        config.push("in-process-proxy-auth-api-fixture", dedent("""
+            [oci]
+            builder_proxy_auth_api_admin_secret: admin-secret
+            builder_proxy_auth_api_endpoint: http://%s:%s/tokens
+            """) %
+            (port.getHost().host, port.getHost().port))
+        self.addCleanup(config.pop, "in-process-proxy-auth-api-fixture")
 
 
 class MakeOCIBuildMixin:
@@ -60,6 +156,69 @@ class TestOCIBuildBehaviour(TestCaseWithFactory):
 
     layer = LaunchpadZopelessLayer
 
+    @defer.inlineCallbacks
+    def setUp(self):
+        super(TestOCIBuildBehaviour, self).setUp()
+        build_username = 'OCIBUILD-1'
+        self.token = {'secret': uuid.uuid4().get_hex(),
+                    'username': build_username,
+                    'timestamp': datetime.utcnow().isoformat()}
+        self.proxy_url = ("http://{username}:{password}"
+                        "@{host}:{port}".format(
+                            username=self.token['username'],
+                            password=self.token['secret'],
+                            host=config.oci.builder_proxy_host,
+                            port=config.oci.builder_proxy_port))
+        self.proxy_api = self.useFixture(InProcessProxyAuthAPIFixture())
+        yield self.proxy_api.start()
+        self.now = time.time()
+        self.useFixture(fixtures.MockPatch(
+            "time.time", return_value=self.now))
+
+    def makeJob(self, archive=None, **kwargs):
+        """Create a sample `IOCIRecipeBuildBehaviour`."""
+        if archive is None:
+            distribution = self.factory.makeDistribution(name="distro")
+        else:
+            distribution = archive.distribution
+        distroseries = self.factory.makeDistroSeries(
+            distribution=distribution, name="unstable",
+            status=SeriesStatus.CURRENT)
+        processor = getUtility(IProcessorSet).getByName("386")
+        distroarchseries = self.factory.makeDistroArchSeries(
+            distroseries=distroseries, architecturetag="i386",
+            processor=processor)
+        distroseries.nominatedarchindep = distroarchseries
+        oci_project = self.factory.makeOCIProject(pillar=distribution)
+        recipe = self.factory.makeOCIRecipe(
+            name="test-oci-recipe", oci_project=oci_project, **kwargs)
+        build = self.factory.makeOCIRecipeBuild(
+            distro_arch_series=distroarchseries,
+            recipe=recipe)
+
+        job = IBuildFarmJobBehaviour(build)
+        builder = MockBuilder()
+        builder.processor = job.build.processor
+        slave = self.useFixture(SlaveTestHelpers()).getClientSlave()
+        job.setBuilder(builder, slave)
+        self.addCleanup(slave.pool.closeCachedConnections)
+        return job
+
+    def getProxyURLMatcher(self, job):
+        return AfterPreprocessing(urlsplit, MatchesStructure(
+            scheme=Equals("http"),
+            username=Equals("{}-{}".format(
+                job.build.build_cookie, int(self.now))),
+            password=HasLength(32),
+            hostname=Equals(config.snappy.builder_proxy_host),
+            port=Equals(config.snappy.builder_proxy_port),
+            path=Equals("")))
+
+    def getRevocationEndpointMatcher(self, job):
+        return Equals("{}/{}-{}".format(
+            config.oci.builder_proxy_auth_api_endpoint,
+            job.build.build_cookie, int(self.now)))
+
     def test_provides_interface(self):
         # OCIRecipeBuildBehaviour provides IBuildFarmJobBehaviour.
         job = OCIRecipeBuildBehaviour(None)
@@ -70,6 +229,35 @@ class TestOCIBuildBehaviour(TestCaseWithFactory):
         build = self.factory.makeOCIRecipeBuild()
         job = IBuildFarmJobBehaviour(build)
         self.assertProvides(job, IBuildFarmJobBehaviour)
+
+    @defer.inlineCallbacks
+    def test_extraBuildArgs_git(self):
+        # extraBuildArgs returns appropriate arguments if asked to build a
+        # job for a Git branch.
+        [ref] = self.factory.makeGitRefs()
+        job = self.makeJob(git_ref=ref)
+        expected_archives, expected_trusted_keys = (
+            yield get_sources_list_for_building(
+                job.build, job.build.distro_arch_series, None))
+        print(expected_archives)
+        import pdb; pdb.set_trace()
+        with dbuser(config.builddmaster.dbuser):
+            args = yield job.extraBuildArgs()
+        self.assertThat(args, MatchesDict({
+            "archive_private": Is(False),
+            "archives": Equals(expected_archives),
+            "arch_tag": Equals("i386"),
+            "build_file": Equals(job.build.recipe.build_file),
+            # "build_url": Equals(canonical_url(job.build)),
+            "fast_cleanup": Is(True),
+            "git_repository": Equals(ref.repository.git_https_url),
+            "git_path": Equals(ref.name),
+            "name": Equals("test-oci-recipe"),
+            "proxy_url": self.getProxyURLMatcher(job),
+            "revocation_endpoint": self.getRevocationEndpointMatcher(job),
+            "series": Equals("unstable"),
+            "trusted_keys": Equals(expected_trusted_keys),
+            }))
 
 
 class TestHandleStatusForOCIRecipeBuild(MakeOCIBuildMixin, TrialTestCase,

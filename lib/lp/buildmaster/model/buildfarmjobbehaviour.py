@@ -92,7 +92,8 @@ class BuildFarmJobBehaviourBase:
         args = {}
         args["arch_tag"] = self.distro_arch_series.architecturetag
         args["archive_private"] = self.archive.private
-        args["build_url"] = canonical_url(self.build)
+        # XXX uncomment this before merge!
+        # args["build_url"] = canonical_url(self.build)
         args["fast_cleanup"] = self._builder.virtualized
         args["series"] = self.distro_arch_series.distroseries.name
         return args
