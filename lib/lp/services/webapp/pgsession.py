@@ -5,12 +5,12 @@
 
 __metaclass__ = type
 
-import cPickle as pickle
 import hashlib
 import time
 from UserDict import DictMixin
 
 from lazr.restful.utils import get_current_browser_request
+from six.moves import cPickle as pickle
 from storm.zope.interfaces import IZStorm
 from zope.authentication.interfaces import IUnauthenticatedPrincipal
 from zope.component import getUtility
