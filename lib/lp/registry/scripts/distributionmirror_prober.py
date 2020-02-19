@@ -26,7 +26,6 @@ from twisted.internet import (
     defer,
     protocol,
     reactor,
-    ssl,
     )
 from twisted.internet.defer import DeferredSemaphore
 from twisted.internet.endpoints import HostnameEndpoint
@@ -69,6 +68,9 @@ MIN_REQUESTS_TO_CONSIDER_RATIO = 30
 # We need to get rid of these global dicts in this module.
 host_requests = {}
 host_timeouts = {}
+# Set of invalid certificate (host, port) tuples, to avoid doing HTTPS calls
+# to hosts we already know they are not valid.
+invalid_certificate_hosts = set()
 
 MAX_REDIRECTS = 3
 
@@ -183,6 +185,8 @@ class HTTPSProbeFailureHandler:
 
     def handleErrors(self, error):
         if self.isInvalidCertificateError(error):
+            invalid_certificate_hosts.add(
+                (self.factory.request_host, self.factory.request_port))
             reason = InvalidHTTPSCertificate(
                 self.factory.request_host, self.factory.request_port)
             raise reason
@@ -286,6 +290,14 @@ class ProberFactory(protocol.ClientFactory):
             reactor.callLater(0, self.failed, ConnectionSkipped(self.url))
             logger.debug("Skipping %s as we've had too many timeouts on this "
                          "host already." % self.url)
+            self._deferred = defer.Deferred()
+            return self._deferred
+
+        if (self.request_host, self.request_port) in invalid_certificate_hosts:
+            reactor.callLater(
+                0, self.failed, InvalidHTTPSCertificateSkipped(self.url))
+            logger.debug("Skipping %s as it doesn't have a valid HTTPS "
+                         "certificate" % self.url)
             self._deferred = defer.Deferred()
             return self._deferred
 
@@ -493,6 +505,14 @@ class ConnectionSkipped(ProberError):
                 "host. It will be retried on the next probing run.")
 
 
+class InvalidHTTPSCertificateSkipped(ProberError):
+
+    def __str__(self):
+        return ("Connection skipped because the server doesn't have a valid "
+                "HTTPS certificate. It will be retried on the next "
+                "probing run.")
+
+
 class UnknownURLScheme(ProberError):
 
     def __init__(self, url, *args):
@@ -518,6 +538,7 @@ class ArchiveMirrorProberCallbacks(LoggingMixin):
         ProberTimeout,
         ConnectionSkipped,
         InvalidHTTPSCertificate,
+        InvalidHTTPSCertificateSkipped,
         )
 
     def __init__(self, mirror, series, pocket, component, url, log_file):
@@ -664,6 +685,7 @@ class MirrorCDImageProberCallbacks(LoggingMixin):
         RedirectToDifferentFile,
         UnknownURLSchemeAfterRedirect,
         InvalidHTTPSCertificate,
+        InvalidHTTPSCertificateSkipped,
         )
 
     def __init__(self, mirror, distroseries, flavour, log_file):

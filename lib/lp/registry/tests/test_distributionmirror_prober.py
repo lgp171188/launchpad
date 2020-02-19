@@ -11,7 +11,6 @@ import logging
 import os
 from StringIO import StringIO
 
-import mock
 from lazr.uri import URI
 import responses
 from six.moves import http_client
@@ -33,7 +32,10 @@ from twisted.internet import (
     )
 from twisted.python.failure import Failure
 from twisted.web import server
-from twisted.web.client import ProxyAgent, BrowserLikePolicyForHTTPS
+from twisted.web.client import (
+    BrowserLikePolicyForHTTPS,
+    ProxyAgent,
+    )
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
@@ -48,6 +50,7 @@ from lp.registry.scripts.distributionmirror_prober import (
     ConnectionSkipped,
     InfiniteLoopDetected,
     InvalidHTTPSCertificate,
+    InvalidHTTPSCertificateSkipped,
     LoggingMixin,
     MAX_REDIRECTS,
     MIN_REQUEST_TIMEOUT_RATIO,
@@ -140,6 +143,12 @@ class TestProberHTTPSProtocolAndFactory(TestCase):
                      '404': u'https://localhost:%s/invalid-mirror' % self.port}
         self.pushConfig('launchpad', http_proxy=None)
 
+    def tearDown(self):
+        # Cleanup global variables.
+        distributionmirror_prober.host_requests = {}
+        distributionmirror_prober.host_timeouts = {}
+        distributionmirror_prober.invalid_certificate_hosts = set()
+
     def test_config_no_https_proxy(self):
         prober = ProberFactory(self.urls['200'])
         self.assertThat(prober, MatchesStructure.byEquality(
@@ -211,6 +220,9 @@ class TestProberHTTPSProtocolAndFactory(TestCase):
 
         def on_failure(result):
             self.assertIsInstance(result.value, InvalidHTTPSCertificate)
+            self.assertIn(
+                ("localhost", self.port),
+                distributionmirror_prober.invalid_certificate_hosts)
 
         def on_success(result):
             if result is not None:
@@ -220,6 +232,17 @@ class TestProberHTTPSProtocolAndFactory(TestCase):
         deferred.addErrback(on_failure)
         deferred.addCallback(on_success)
         return deferred
+
+    def test_https_skips_invalid_certificates_hosts(self):
+        distributionmirror_prober.invalid_certificate_hosts.add(
+            ("localhost", self.port))
+        url = 'https://localhost:%s/valid-mirror/file' % self.port
+        prober = RedirectAwareProberFactory(url)
+        prober.https_agent_policy = BrowserLikePolicyForHTTPS
+        self.assertEqual(prober.url, url)
+        deferred = prober.probe()
+
+        return assert_fails_with(deferred, InvalidHTTPSCertificateSkipped)
 
 
 class TestProberProtocolAndFactory(TestCase):
@@ -857,13 +880,15 @@ class TestMirrorCDImageProberCallbacks(TestCaseWithFactory):
                 RedirectToDifferentFile,
                 UnknownURLSchemeAfterRedirect,
                 InvalidHTTPSCertificate,
+                InvalidHTTPSCertificateSkipped,
                 ]))
         exceptions = [BadResponseCode(str(http_client.NOT_FOUND)),
                       ProberTimeout('http://localhost/', 5),
                       ConnectionSkipped(),
                       RedirectToDifferentFile('/foo', '/bar'),
                       UnknownURLSchemeAfterRedirect('https://localhost'),
-                      InvalidHTTPSCertificate('localhost', 443)]
+                      InvalidHTTPSCertificate('localhost', 443),
+                      InvalidHTTPSCertificateSkipped("https://localhost/xx")]
         for exception in exceptions:
             failure = callbacks.ensureOrDeleteMirrorCDImageSeries(
                 [(defer.FAILURE, Failure(exception))])
