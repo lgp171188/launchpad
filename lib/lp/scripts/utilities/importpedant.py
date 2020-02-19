@@ -186,10 +186,6 @@ def import_pedant(name, globals={}, locals={}, fromlist=[], level=-1):
     if name == 'sre':
         return module
 
-    # Mailman 2.1 code base is originally circa 1998, so yeah, no __all__'s.
-    if name.startswith('Mailman'):
-        return module
-
     # Some uses of __import__ pass None for globals, so handle that.
     import_into = None
     if globals is not None:

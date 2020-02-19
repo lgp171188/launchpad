@@ -23,8 +23,8 @@ from lp.testing.systemdocs import (
 here = os.path.dirname(os.path.realpath(__file__))
 
 # The default layer of view tests is the DatabaseFunctionalLayer. Tests
-# that require something special like the librarian, memcaches, or mailman
-# must run on a layer that sets those services up.
+# that require something special like the librarian or memcaches must
+# run on a layer that sets those services up.
 special_test_layer = {
     'distribution-views.txt': LaunchpadFunctionalLayer,
     'distributionsourcepackage-views.txt': LaunchpadFunctionalLayer,
