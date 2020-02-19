@@ -64,6 +64,7 @@ from lp.services.config import config
 from lp.soyuz.adapters.archivedependencies import (
     get_sources_list_for_building,
     )
+from lp.soyuz.interfaces.component import IComponentSet
 from lp.testing import TestCaseWithFactory
 from lp.testing.dbuser import dbuser
 from lp.testing.factory import LaunchpadObjectFactory
@@ -202,6 +203,12 @@ class TestOCIBuildBehaviour(TestCaseWithFactory):
         slave = self.useFixture(SlaveTestHelpers()).getClientSlave()
         job.setBuilder(builder, slave)
         self.addCleanup(slave.pool.closeCachedConnections)
+
+        # Taken from test_archivedependencies.py
+        for component_name in ["main", "universe"]:
+            component = getUtility(IComponentSet)[component_name]
+            self.factory.makeComponentSelection(distroseries, component)
+
         return job
 
     def getProxyURLMatcher(self, job):
@@ -239,8 +246,8 @@ class TestOCIBuildBehaviour(TestCaseWithFactory):
         expected_archives, expected_trusted_keys = (
             yield get_sources_list_for_building(
                 job.build, job.build.distro_arch_series, None))
-        print(expected_archives)
-        import pdb; pdb.set_trace()
+        for archive_line in expected_archives:
+            self.assertIn('universe', archive_line)
         with dbuser(config.builddmaster.dbuser):
             args = yield job.extraBuildArgs()
         self.assertThat(args, MatchesDict({
