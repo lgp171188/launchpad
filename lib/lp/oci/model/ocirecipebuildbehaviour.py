@@ -112,13 +112,19 @@ class OCIRecipeBuildBehaviour(BuildFarmJobBehaviourBase):
 
         args['build_file'] = build.recipe.build_file
 
-        if build.recipe.git_ref.repository_url is not None:
-            args["git_repository"] = build.recipe.git_ref.repository_url
+        if build.recipe.git_ref is not None:
+            if build.recipe.git_ref.repository_url is not None:
+                args["git_repository"] = build.recipe.git_ref.repository_url
+            else:
+                args["git_repository"] = (
+                    build.recipe.git_repository.git_https_url)
         else:
-            args["git_repository"] = (
-                build.recipe.git_repository.git_https_url)
+            raise CannotBuild(
+                "Source repository for ~%s/%s has been deleted." %
+                (build.recipe.owner.name, build.recipe.name))
+
         if build.recipe.git_path != "HEAD":
-                args["git_path"] = build.recipe.git_ref.name
+            args["git_path"] = build.recipe.git_ref.name
 
         defer.returnValue(args)
 

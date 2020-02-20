@@ -7,6 +7,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 
+import base64
 from datetime import datetime
 import json
 import os
@@ -16,27 +17,45 @@ import time
 import uuid
 
 import fixtures
+from six.moves.urllib_parse import urlsplit
 from testtools import ExpectedException
 from testtools.matchers import (
+    AfterPreprocessing,
+    ContainsDict,
     Equals,
     Is,
+    IsInstance,
     MatchesDict,
+    MatchesListwise,
+    StartsWith,
     )
 from testtools.twistedsupport import (
     AsynchronousDeferredRunTestForBrokenTwisted,
     )
-from twisted.internet import defer
+from twisted.internet import (
+    defer,
+    reactor,
+    )
 from twisted.trial.unittest import TestCase as TrialTestCase
+from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
-from lp.buildmaster.enums import BuildStatus
+from lp.buildmaster.enums import (
+    BuildBaseImageType,
+    BuildStatus,
+    )
 from lp.buildmaster.interactor import BuilderInteractor
-from lp.buildmaster.interfaces.builder import BuildDaemonError
+from lp.buildmaster.interfaces.builder import (
+    BuildDaemonError,
+    CannotBuild,
+    )
 from lp.buildmaster.interfaces.buildfarmjobbehaviour import (
     IBuildFarmJobBehaviour,
     )
+from lp.buildmaster.interfaces.processor import IProcessorSet
 from lp.buildmaster.tests.mock_slaves import (
     MockBuilder,
+    OkSlave,
     SlaveTestHelpers,
     WaitingSlave,
     )
@@ -50,6 +69,7 @@ from lp.buildmaster.tests.test_buildfarmjobbehaviour import (
 from lp.oci.model.ocirecipebuildbehaviour import OCIRecipeBuildBehaviour
 from lp.registry.interfaces.series import SeriesStatus
 from lp.services.config import config
+from lp.services.log.logger import DevNullLogger
 from lp.services.webapp import canonical_url
 from lp.soyuz.adapters.archivedependencies import (
     get_sources_list_for_building,
@@ -78,36 +98,12 @@ class MakeOCIBuildMixin:
         build.queueBuild()
         return build
 
-
-class TestOCIBuildBehaviour(ProxyEndpointMixin, TestCaseWithFactory):
-
-    run_tests_with = AsynchronousDeferredRunTestForBrokenTwisted.make_factory(
-        timeout=10)
-    layer = LaunchpadZopelessLayer
-
-    @defer.inlineCallbacks
-    def setUp(self):
-        super(TestOCIBuildBehaviour, self).setUp()
-        self.factory = LaunchpadObjectFactory()
-        build_username = 'OCIBUILD-1'
-        self.token = {'secret': uuid.uuid4().get_hex(),
-                      'username': build_username,
-                      'timestamp': datetime.utcnow().isoformat()}
-        self.proxy_url = ("http://{username}:{password}"
-                          "@{host}:{port}".format(
-                            username=self.token['username'],
-                            password=self.token['secret'],
-                            host=config.oci.builder_proxy_host,
-                            port=config.oci.builder_proxy_port))
-        self.proxy_api = self.useFixture(InProcessProxyAuthAPIFixture())
-        yield self.proxy_api.start("oci")
-        self.now = time.time()
-        self.useFixture(fixtures.MockPatch(
-            "time.time", return_value=self.now))
-
-    def makeJob(self, git_ref):
+    def makeJob(self, git_ref, recipe=None):
         """Create a sample `IOCIRecipeBuildBehaviour`."""
-        build = self.factory.makeOCIRecipeBuild()
+        if recipe is None:
+            build = self.factory.makeOCIRecipeBuild()
+        else:
+            build = self.factory.makeOCIRecipeBuild(recipe=recipe)
         build.recipe.git_ref = git_ref
 
         job = IBuildFarmJobBehaviour(build)
@@ -124,6 +120,11 @@ class TestOCIBuildBehaviour(ProxyEndpointMixin, TestCaseWithFactory):
 
         return job
 
+
+class TestOCIBuildBehaviour(TestCaseWithFactory):
+
+    layer = LaunchpadZopelessLayer
+
     def test_provides_interface(self):
         # OCIRecipeBuildBehaviour provides IBuildFarmJobBehaviour.
         job = OCIRecipeBuildBehaviour(self.factory.makeOCIRecipeBuild())
@@ -134,6 +135,82 @@ class TestOCIBuildBehaviour(ProxyEndpointMixin, TestCaseWithFactory):
         build = self.factory.makeOCIRecipeBuild()
         job = IBuildFarmJobBehaviour(build)
         self.assertProvides(job, IBuildFarmJobBehaviour)
+
+
+class TestAsyncOCIRecipeBuildBehaviour(ProxyEndpointMixin, MakeOCIBuildMixin,
+                                       TestCaseWithFactory):
+
+    run_tests_with = AsynchronousDeferredRunTestForBrokenTwisted.make_factory(
+        timeout=10)
+    layer = LaunchpadZopelessLayer
+
+    @defer.inlineCallbacks
+    def setUp(self):
+        super(TestAsyncOCIRecipeBuildBehaviour, self).setUp()
+        build_username = 'OCIBUILD-1'
+        self.token = {'secret': uuid.uuid4().get_hex(),
+                      'username': build_username,
+                      'timestamp': datetime.utcnow().isoformat()}
+        self.proxy_url = ("http://{username}:{password}"
+                          "@{host}:{port}".format(
+                            username=self.token['username'],
+                            password=self.token['secret'],
+                            host=config.oci.builder_proxy_host,
+                            port=config.oci.builder_proxy_port))
+        self.proxy_api = self.useFixture(InProcessProxyAuthAPIFixture())
+        yield self.proxy_api.start("oci")
+        self.now = time.time()
+        self.useFixture(fixtures.MockPatch(
+            "time.time", return_value=self.now))
+
+    @defer.inlineCallbacks
+    def test_composeBuildRequest(self):
+        [ref] = self.factory.makeGitRefs()
+        job = self.makeJob(git_ref=ref)
+        lfa = self.factory.makeLibraryFileAlias(db_only=True)
+        job.build.distro_arch_series.addOrUpdateChroot(lfa)
+        build_request = yield job.composeBuildRequest(None)
+        self.assertThat(build_request, MatchesListwise([
+            Equals('oci'),
+            Equals(job.build.distro_arch_series),
+            Equals(job.build.pocket),
+            Equals({}),
+            IsInstance(dict),
+            ]))
+
+    @defer.inlineCallbacks
+    def test_requestProxyToken_unconfigured(self):
+        self.pushConfig("oci", builder_proxy_auth_api_admin_secret=None)
+        [ref] = self.factory.makeGitRefs()
+        job = self.makeJob(git_ref=ref)
+        expected_exception_msg = (
+            "builder_proxy_auth_api_admin_secret is not configured.")
+        with ExpectedException(CannotBuild, expected_exception_msg):
+            yield job.extraBuildArgs()
+
+    @defer.inlineCallbacks
+    def test_requestProxyToken(self):
+        [ref] = self.factory.makeGitRefs()
+        job = self.makeJob(git_ref=ref)
+        yield job.extraBuildArgs()
+        self.assertThat(self.proxy_api.tokens.requests, MatchesListwise([
+            MatchesDict({
+                "method": Equals("POST"),
+                "uri": Equals(urlsplit(
+                    config.oci.builder_proxy_auth_api_endpoint).path),
+                "headers": ContainsDict({
+                    b"Authorization": MatchesListwise([
+                        Equals(b"Basic " + base64.b64encode(
+                            b"admin-launchpad.test:admin-secret"))]),
+                    b"Content-Type": MatchesListwise([
+                        Equals(b"application/json; charset=UTF-8"),
+                        ]),
+                    }),
+                "content": AfterPreprocessing(json.loads, MatchesDict({
+                    "username": StartsWith(job.build.build_cookie + "-"),
+                    })),
+                }),
+            ]))
 
     @defer.inlineCallbacks
     def test_extraBuildArgs_git(self):
@@ -164,6 +241,109 @@ class TestOCIBuildBehaviour(ProxyEndpointMixin, TestCaseWithFactory):
             "series": Equals(job.build.distro_arch_series.distroseries.name),
             "trusted_keys": Equals(expected_trusted_keys),
             }))
+
+    @defer.inlineCallbacks
+    def test_extraBuildArgs_git_HEAD(self):
+        # extraBuildArgs returns appropriate arguments if asked to build a
+        # job for the default branch in a Launchpad-hosted Git repository.
+        [ref] = self.factory.makeGitRefs()
+        removeSecurityProxy(ref.repository)._default_branch = ref.path
+        job = self.makeJob(git_ref=ref.repository.getRefByPath("HEAD"))
+        expected_archives, expected_trusted_keys = (
+            yield get_sources_list_for_building(
+                job.build, job.build.distro_arch_series, None))
+        for archive_line in expected_archives:
+            self.assertIn('universe', archive_line)
+        with dbuser(config.builddmaster.dbuser):
+            args = yield job.extraBuildArgs()
+        self.assertThat(args, MatchesDict({
+            "archive_private": Is(False),
+            "archives": Equals(expected_archives),
+            "arch_tag": Equals("i386"),
+            "build_file": Equals(job.build.recipe.build_file),
+            "build_url": Equals(canonical_url(job.build)),
+            "fast_cleanup": Is(True),
+            "git_repository": Equals(ref.repository.git_https_url),
+            "name": Equals(job.build.recipe.name),
+            "proxy_url": self.getProxyURLMatcher(job),
+            "revocation_endpoint": self.getRevocationEndpointMatcher(
+                job, "oci"),
+            "series": Equals(job.build.distro_arch_series.distroseries.name),
+            "trusted_keys": Equals(expected_trusted_keys),
+            }))
+
+    @defer.inlineCallbacks
+    def test_composeBuildRequest_proxy_url_set(self):
+        [ref] = self.factory.makeGitRefs()
+        job = self.makeJob(git_ref=ref)
+        build_request = yield job.composeBuildRequest(None)
+        self.assertThat(
+            build_request[4]["proxy_url"], self.getProxyURLMatcher(job))
+
+    @defer.inlineCallbacks
+    def test_composeBuildRequest_git_ref_deleted(self):
+        # If the source Git reference has been deleted, composeBuildRequest
+        # raises CannotBuild.
+        repository = self.factory.makeGitRepository()
+        [ref] = self.factory.makeGitRefs(repository=repository)
+        owner = self.factory.makePerson(name="oci-owner")
+
+        distribution = self.factory.makeDistribution()
+        distroseries = self.factory.makeDistroSeries(
+            distribution=distribution, status=SeriesStatus.CURRENT)
+        processor = getUtility(IProcessorSet).getByName("386")
+        self.factory.makeDistroArchSeries(
+            distroseries=distroseries, architecturetag="i386",
+            processor=processor)
+
+        oci_project = self.factory.makeOCIProject(
+            pillar=distribution, registrant=owner)
+        recipe = self.factory.makeOCIRecipe(
+            oci_project=oci_project, registrant=owner, owner=owner,
+            git_ref=ref)
+        job = self.makeJob(ref, recipe=recipe)
+        repository.removeRefs([ref.path])
+        self.assertIsNone(job.build.recipe.git_ref)
+        expected_exception_msg = ("Source repository for "
+                                  "~oci-owner/{} has been deleted.".format(
+                                      recipe.name))
+        with ExpectedException(CannotBuild, expected_exception_msg):
+            yield job.composeBuildRequest(None)
+
+    @defer.inlineCallbacks
+    def test_dispatchBuildToSlave_prefers_lxd(self):
+        self.pushConfig("oci", builder_proxy_host=None)
+        [ref] = self.factory.makeGitRefs()
+        job = self.makeJob(git_ref=ref)
+        builder = MockBuilder()
+        builder.processor = job.build.processor
+        slave = OkSlave()
+        job.setBuilder(builder, slave)
+        chroot_lfa = self.factory.makeLibraryFileAlias(db_only=True)
+        job.build.distro_arch_series.addOrUpdateChroot(
+            chroot_lfa, image_type=BuildBaseImageType.CHROOT)
+        lxd_lfa = self.factory.makeLibraryFileAlias(db_only=True)
+        job.build.distro_arch_series.addOrUpdateChroot(
+            lxd_lfa, image_type=BuildBaseImageType.LXD)
+        yield job.dispatchBuildToSlave(DevNullLogger())
+        self.assertEqual(
+            ('ensurepresent', lxd_lfa.http_url, '', ''), slave.call_log[0])
+
+    @defer.inlineCallbacks
+    def test_dispatchBuildToSlave_falls_back_to_chroot(self):
+        self.pushConfig("oci", builder_proxy_host=None)
+        [ref] = self.factory.makeGitRefs()
+        job = self.makeJob(git_ref=ref)
+        builder = MockBuilder()
+        builder.processor = job.build.processor
+        slave = OkSlave()
+        job.setBuilder(builder, slave)
+        chroot_lfa = self.factory.makeLibraryFileAlias(db_only=True)
+        job.build.distro_arch_series.addOrUpdateChroot(
+            chroot_lfa, image_type=BuildBaseImageType.CHROOT)
+        yield job.dispatchBuildToSlave(DevNullLogger())
+        self.assertEqual(
+            ('ensurepresent', chroot_lfa.http_url, '', ''), slave.call_log[0])
 
 
 class TestHandleStatusForOCIRecipeBuild(MakeOCIBuildMixin, TrialTestCase,

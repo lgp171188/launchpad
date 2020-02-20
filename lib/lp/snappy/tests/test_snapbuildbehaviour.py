@@ -24,7 +24,6 @@ from testtools.matchers import (
     AfterPreprocessing,
     ContainsDict,
     Equals,
-    HasLength,
     Is,
     IsInstance,
     MatchesDict,
@@ -38,13 +37,10 @@ from testtools.twistedsupport import (
 import transaction
 from twisted.internet import (
     defer,
-    endpoints,
     reactor,
     )
-from twisted.python.compat import nativeString
 from twisted.trial.unittest import TestCase as TrialTestCase
 from twisted.web import (
-    resource,
     server,
     xmlrpc,
     )
@@ -104,7 +100,6 @@ from lp.soyuz.adapters.archivedependencies import (
     )
 from lp.soyuz.enums import PackagePublishingStatus
 from lp.soyuz.interfaces.archive import ArchiveDisabled
-from lp.soyuz.interfaces.component import IComponentSet
 from lp.soyuz.tests.soyuz import Base64KeyMatches
 from lp.testing import (
     TestCase,
