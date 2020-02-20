@@ -25,10 +25,12 @@ report (or a part of) can be piped in, for example by pasting it:
 from __future__ import print_function
 
 import fileinput
-from itertools import takewhile, imap
+from itertools import takewhile
 import os
 import re
 import sys
+
+from six.moves import map as imap
 
 from lp.services.config import config
 

@@ -23,8 +23,9 @@ __all__ = [
 
 __metaclass__ = type
 
-from itertools import izip_longest
 import re
+
+from six.moves import zip_longest as izip_longest
 
 from lp.registry.interfaces.person import IPerson
 import lp.services.config
