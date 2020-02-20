@@ -76,7 +76,8 @@ python-gettext==4.0
 pytz==2018.9
 # Handled in setup-requirements.txt instead.
 #setuptools==41.0.0
-six==1.12.0
+#six==1.12.0
+six==1.14.0
 transaction==2.4.0
 
 # zope.password needs these
