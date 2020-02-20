@@ -21,10 +21,10 @@ __all__ = [
     'SourcePackageData',
     ]
 
+from email.utils import parseaddr
 import glob
 import os
 import re
-import rfc822
 import shutil
 import tempfile
 
@@ -154,10 +154,10 @@ def read_dsc(package, version, component, distro_name, archive_root):
 def parse_person(val):
     """Parse a full email address into human-readable name and address."""
     # Some addresses have commas in them, as in: "Adam C. Powell, IV
-    # <hazelsct@debian.example.com>". rfc822.parseaddr seems not to
+    # <hazelsct@debian.example.com>". email.utils.parseaddr seems not to
     # handle this properly, so we munge them here.
     val = val.replace(',', '')
-    return rfc822.parseaddr(val)
+    return parseaddr(val)
 
 
 def parse_section(v):

@@ -10,10 +10,12 @@ from datetime import (
     datetime,
     timedelta,
     )
-from email.utils import formatdate
+from email.utils import (
+    formatdate,
+    mktime_tz,
+    )
 import math
 import os.path
-import rfc822
 import sys
 from textwrap import dedent
 
@@ -2288,8 +2290,7 @@ class DateTimeFormatterAPI:
         return "%s %s" % (self.date(), self.time())
 
     def rfc822utcdatetime(self):
-        return formatdate(
-            rfc822.mktime_tz(self._datetime.utctimetuple() + (0, )))
+        return formatdate(mktime_tz(self._datetime.utctimetuple() + (0, )))
 
     def isodate(self):
         return self._datetime.isoformat()
