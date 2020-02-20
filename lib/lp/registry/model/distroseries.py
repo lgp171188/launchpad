@@ -13,7 +13,7 @@ __all__ = [
     ]
 
 import collections
-from cStringIO import StringIO
+from io import BytesIO
 from operator import attrgetter
 
 import apt_pkg
@@ -1385,7 +1385,7 @@ class DistroSeries(SQLBase, BugTargetBase, HasSpecificationsMixin,
 
             changes_file_alias = getUtility(ILibraryFileAliasSet).create(
                 changesfilename, len(changesfilecontent),
-                StringIO(changesfilecontent), 'text/plain',
+                BytesIO(changesfilecontent), 'text/plain',
                 restricted=archive.private)
 
         return PackageUpload(

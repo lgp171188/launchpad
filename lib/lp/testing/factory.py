@@ -3621,7 +3621,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         if changes_filename is None:
             changes_filename = self.getUniqueString("changesfilename")
         if changes_file_content is None:
-            changes_file_content = self.getUniqueString("changesfilecontent")
+            changes_file_content = self.getUniqueBytes(b"changesfilecontent")
         if pocket is None:
             pocket = PackagePublishingPocket.RELEASE
         package_upload = distroseries.createQueueEntry(

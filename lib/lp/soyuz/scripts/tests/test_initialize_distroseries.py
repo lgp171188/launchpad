@@ -310,7 +310,7 @@ class TestInitializeDistroSeries(InitializationHelperTestCase):
             distribution=parent.distribution)
         upload = other_series.createQueueEntry(
             PackagePublishingPocket.RELEASE,
-            other_series.main_archive, 'foo.changes', 'bar')
+            other_series.main_archive, 'foo.changes', b'bar')
         # Create a binary package upload for this upload.
         upload.addBuild(self.factory.makeBinaryPackageBuild())
         child = self.factory.makeDistroSeries()
@@ -487,7 +487,7 @@ class TestInitializeDistroSeries(InitializationHelperTestCase):
         for pocket in pockets:
             parent, parent_das = self.setupParent()
             upload = parent.createQueueEntry(
-                pocket, parent.main_archive, 'foo.changes', 'bar')
+                pocket, parent.main_archive, 'foo.changes', b'bar')
             # Create a binary package upload for this upload.
             upload.addBuild(self.factory.makeBinaryPackageBuild())
             child = self.factory.makeDistroSeries()
@@ -508,7 +508,7 @@ class TestInitializeDistroSeries(InitializationHelperTestCase):
         for pocket in pockets:
             parent, parent_das = self.setupParent()
             upload = parent.createQueueEntry(
-                pocket, parent.main_archive, 'foo.changes', 'bar')
+                pocket, parent.main_archive, 'foo.changes', b'bar')
             # Create a binary package upload for this upload.
             upload.addBuild(self.factory.makeBinaryPackageBuild())
             child = self.factory.makeDistroSeries()
@@ -572,7 +572,7 @@ class TestInitializeDistroSeries(InitializationHelperTestCase):
         parent, parent_das = self.setupParent()
         upload = parent.createQueueEntry(
             PackagePublishingPocket.RELEASE,
-            parent.main_archive, 'foo.changes', 'bar')
+            parent.main_archive, 'foo.changes', b'bar')
         # Create a source package upload for this upload.
         upload.addSource(self.factory.makeSourcePackageRelease())
         child = self.factory.makeDistroSeries()
@@ -595,7 +595,7 @@ class TestInitializeDistroSeries(InitializationHelperTestCase):
         # packageset 'packageset2'.
         upload = parent.createQueueEntry(
             PackagePublishingPocket.RELEASE,
-            parent.main_archive, 'foo.changes', 'bar')
+            parent.main_archive, 'foo.changes', b'bar')
         upload.addBuild(self.factory.makeBinaryPackageBuild(
             distroarchseries=parent_das,
             source_package_release=spr2))
@@ -619,7 +619,7 @@ class TestInitializeDistroSeries(InitializationHelperTestCase):
         # packageset 'packageset2'.
         upload = parent.createQueueEntry(
             PackagePublishingPocket.RELEASE,
-            parent.main_archive, 'foo.changes', 'bar')
+            parent.main_archive, 'foo.changes', b'bar')
         upload.addBuild(self.factory.makeBinaryPackageBuild(
             distroarchseries=parent_das,
             source_package_release=spr1))

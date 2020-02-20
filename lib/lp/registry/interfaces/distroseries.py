@@ -787,7 +787,7 @@ class IDistroSeriesPublic(
         :param changesfilename: Name for the upload's .changes file.  You may
             specify a changes file by passing both `changesfilename` and
             `changesfilecontent`, or by passing `changes_file_alias`.
-        :param changesfilecontent: Text for the changes file.  It will be
+        :param changesfilecontent: Bytes for the changes file.  It will be
             signed and stored in the Librarian.  Must be passed together with
             `changesfilename`; alternatively, you may provide a
             `changes_file_alias` to replace both of these.

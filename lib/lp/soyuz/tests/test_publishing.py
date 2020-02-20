@@ -516,7 +516,7 @@ class SoyuzTestPublisher:
             if new_version is None:
                 new_version = version
             changesfile_content = ''
-            with open(changesfile_path, 'r') as handle:
+            with open(changesfile_path, 'rb') as handle:
                 changesfile_content = handle.read()
 
             source = self.getPubSource(
