@@ -246,11 +246,11 @@ class IProductReleaseEditRestricted(Interface):
         The signature file will also be added if available.
 
         :param filename: Name of the file being uploaded.
-        :param file_content: StringIO or file object.
+        :param file_content: `io.BytesIO` or binary file object.
         :param content_type: A MIME content type string.
         :param uploader: The person who uploaded the file.
         :param signature_filename: Name of the uploaded gpg signature file.
-        :param signature_content: StringIO or file object.
+        :param signature_content: `io.BytesIO` or binary file object.
         :param file_type: An `UpstreamFileType` enum value.
         :param description: Info about the file.
         :returns: `IProductReleaseFile` object.

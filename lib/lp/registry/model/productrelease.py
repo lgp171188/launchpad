@@ -9,8 +9,11 @@ __all__ = [
     'productrelease_to_milestone',
     ]
 
+from io import (
+    BufferedIOBase,
+    BytesIO,
+    )
 import os
-from StringIO import StringIO
 
 from sqlobject import (
     ForeignKey,
@@ -126,14 +129,14 @@ class ProductRelease(SQLBase):
     def _getFileObjectAndSize(self, file_or_data):
         """Return an object and length for file_or_data.
 
-        :param file_or_data: A string or a file object or StringIO object.
-        :return: file object or StringIO object and size.
+        :param file_or_data: `bytes` or `io.BufferedIOBase`.
+        :return: binary file object or `io.BytesIO` object and size.
         """
-        if isinstance(file_or_data, basestring):
+        if isinstance(file_or_data, bytes):
             file_size = len(file_or_data)
-            file_obj = StringIO(file_or_data)
+            file_obj = BytesIO(file_or_data)
         else:
-            assert isinstance(file_or_data, (file, StringIO)), (
+            assert isinstance(file_or_data, BufferedIOBase), (
                 "file_or_data is not an expected type")
             file_obj = file_or_data
             start = file_obj.tell()

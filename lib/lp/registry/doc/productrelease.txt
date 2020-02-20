@@ -55,7 +55,7 @@ deleted.
     >>> milestone = firefox_1_0.newMilestone('1.0.10')
     >>> firefox_1010 = milestone.createProductRelease(owner,
     ...                                               datetime.now(UTC))
-    >>> firefox_1010.addReleaseFile('test', 'test', 'text/plain', owner)
+    >>> firefox_1010.addReleaseFile('test', b'test', 'text/plain', owner)
     <ProductReleaseFile...
     >>> firefox_1010.destroySelf()
     Traceback (most recent call last):
