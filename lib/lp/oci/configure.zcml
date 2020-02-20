@@ -7,6 +7,8 @@
     xmlns:lp="http://namespaces.canonical.com/lp"
     i18n_domain="launchpad">
 
+    <include package=".browser" />
+
     <!-- OCIRecipe -->
     <class
         class="lp.oci.model.ocirecipe.OCIRecipe">

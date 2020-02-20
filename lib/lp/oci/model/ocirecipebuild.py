@@ -32,6 +32,7 @@ from zope.interface import implementer
 from lp.app.errors import NotFoundError
 from lp.buildmaster.enums import (
     BuildFarmJobType,
+    BuildQueueStatus,
     BuildStatus,
     )
 from lp.buildmaster.interfaces.buildfarmjob import IBuildFarmJobSource
@@ -56,6 +57,7 @@ from lp.services.librarian.model import (
     LibraryFileAlias,
     LibraryFileContent,
     )
+from lp.services.propertycache import cachedproperty
 
 
 @implementer(IOCIFile)
@@ -142,6 +144,20 @@ class OCIRecipeBuild(PackageBuildMixin, Storm):
         self.status = BuildStatus.NEEDSBUILD
         self.build_farm_job = build_farm_job
 
+    def __repr__(self):
+        return "<OCIRecipeBuild ~%s/%s/+oci/%s/+recipe/%s/+build/%d>" % (
+            self.recipe.owner.name, self.recipe.oci_project.pillar.name,
+            self.recipe.oci_project.name, self.recipe.name, self.id)
+
+    @property
+    def title(self):
+        # XXX cjwatson 2020-02-19: This should use a DAS architecture tag
+        # rather than a processor name once we can do that.
+        return "%s build of ~%s/%s/+oci/%s/+recipe/%s" % (
+            self.processor.name, self.recipe.owner.name,
+            self.recipe.oci_project.pillar.name, self.recipe.oci_project.name,
+            self.recipe.name)
+
     def calculateScore(self):
         # XXX twom 2020-02-11 - This might need an addition?
         return 2510
@@ -195,6 +211,39 @@ class OCIRecipeBuild(PackageBuildMixin, Storm):
             build=self, library_file=lfa, layer_file_digest=layer_file_digest)
         IMasterStore(OCIFile).add(oci_file)
         return oci_file
+
+    @cachedproperty
+    def eta(self):
+        """The datetime when the build job is estimated to complete.
+
+        This is the BuildQueue.estimated_duration plus the
+        Job.date_started or BuildQueue.getEstimatedJobStartTime.
+        """
+        if self.buildqueue_record is None:
+            return None
+        queue_record = self.buildqueue_record
+        if queue_record.status == BuildQueueStatus.WAITING:
+            start_time = queue_record.getEstimatedJobStartTime()
+        else:
+            start_time = queue_record.date_started
+        if start_time is None:
+            return None
+        duration = queue_record.estimated_duration
+        return start_time + duration
+
+    @property
+    def estimate(self):
+        """If true, the date value is an estimate."""
+        if self.date_finished is not None:
+            return False
+        return self.eta is not None
+
+    @property
+    def date(self):
+        """The date when the build completed or is estimated to complete."""
+        if self.estimate:
+            return self.eta
+        return self.date_finished
 
     @property
     def archive(self):
