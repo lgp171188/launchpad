@@ -23,6 +23,7 @@ from lp.services.database.constants import (
     ONE_DAY_AGO,
     UTC_NOW,
     )
+from lp.services.database.sqlbase import flush_database_caches
 from lp.services.webapp.snapshot import notify_modified
 from lp.testing import (
     admin_logged_in,
@@ -88,6 +89,7 @@ class TestOCIRecipe(TestCaseWithFactory):
 
         with person_logged_in(oci_recipe.owner):
             oci_recipe.destroySelf()
+        flush_database_caches()
 
         for build_id in build_ids:
             self.assertIsNone(getUtility(IOCIRecipeBuildSet).getByID(build_id))
