@@ -33,17 +33,27 @@
         <dd>
           <a tal:attributes="href distribution/fmt:url"
              tal:content="distribution/display_name"/>
-          <a tal:replace="structure view/menu:overview/edit/fmt:icon"/>
+          <a tal:replace="structure context/menu:overview/edit/fmt:icon"/>
         </dd>
       </dl>
       <dl id="name">
         <dt>Name:</dt>
         <dd>
           <span tal:content="context/name"/>
-          <a tal:replace="structure view/menu:overview/edit/fmt:icon"/>
+          <a tal:replace="structure context/menu:overview/edit/fmt:icon"/>
         </dd>
       </dl>
     </div>
+
+    <h2>Recipes</h2>
+    <div id="recipe-summary"
+         tal:define="link context/menu:context/view_recipes"
+         tal:condition="link/enabled"
+         tal:content="structure link/render"/>
+    <tal:create-recipe
+        define="link context/menu:context/create_recipe"
+        condition="link/enabled"
+        replace="structure link/render"/>
   </div>
 </body>
 </html>

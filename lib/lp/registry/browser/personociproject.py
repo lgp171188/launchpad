@@ -10,16 +10,21 @@ __all__ = [
     'PersonOCIProjectNavigation',
     ]
 
-from zope.component import queryAdapter
+from zope.component import (
+    getUtility,
+    queryAdapter,
+    )
 from zope.interface import implementer
 from zope.traversing.interfaces import IPathAdapter
 
 from lp.code.browser.vcslisting import PersonTargetDefaultVCSNavigationMixin
+from lp.oci.interfaces.ocirecipe import IOCIRecipeSet
 from lp.registry.interfaces.personociproject import IPersonOCIProject
 from lp.services.webapp import (
     canonical_url,
     Navigation,
     StandardLaunchpadFacets,
+    stepthrough,
     )
 from lp.services.webapp.breadcrumb import Breadcrumb
 from lp.services.webapp.interfaces import IMultiFacetedBreadcrumb
@@ -29,6 +34,11 @@ class PersonOCIProjectNavigation(
         PersonTargetDefaultVCSNavigationMixin, Navigation):
 
     usedfor = IPersonOCIProject
+
+    @stepthrough('+recipe')
+    def traverse_recipe(self, name):
+        return getUtility(IOCIRecipeSet).getByName(
+            self.context.person, self.context.oci_project, name)
 
 
 # XXX cjwatson 2019-11-26: Do we need two breadcrumbs, one for the
