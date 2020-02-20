@@ -44,6 +44,7 @@ from lp.code.interfaces.gitref import IGitRef
 from lp.code.interfaces.gitrepository import IGitRepository
 from lp.registry.interfaces.ociproject import IOCIProject
 from lp.registry.interfaces.role import IHasOwner
+from lp.services.database.constants import DEFAULT
 from lp.services.fields import (
     PersonChoice,
     PublicPersonChoice,
@@ -145,7 +146,8 @@ class IOCIRecipeEditableAttributes(IHasOwner):
     """
 
     name = TextLine(
-        title=_("The name of this recipe."),
+        title=_("Name"),
+        description=_("The name of this recipe."),
         constraint=name_validator,
         required=True,
         readonly=False)
@@ -159,7 +161,8 @@ class IOCIRecipeEditableAttributes(IHasOwner):
 
     oci_project = Reference(
         IOCIProject,
-        title=_("The OCI project that this recipe is for."),
+        title=_("OCI project"),
+        description=_("The OCI project that this recipe is for."),
         required=True,
         readonly=True)
 
@@ -171,7 +174,7 @@ class IOCIRecipeEditableAttributes(IHasOwner):
         readonly=False)
 
     git_ref = Reference(
-        IGitRef, title=_("Git branch"), required=False, readonly=False,
+        IGitRef, title=_("Git branch"), required=True, readonly=False,
         description=_(
             "The Git branch containing a Dockerfile at the location "
             "defined by the build_file attribute."))
@@ -179,24 +182,27 @@ class IOCIRecipeEditableAttributes(IHasOwner):
     git_repository = ReferenceChoice(
         title=_("Git repository"),
         schema=IGitRepository, vocabulary="GitRepository",
-        required=False, readonly=True,
+        required=True, readonly=False,
         description=_(
             "A Git repository with a branch containing a Dockerfile "
             "at the location defined by the build_file attribute."))
 
     git_path = TextLine(
-        title=_("Git branch path"), required=False, readonly=False,
+        title=_("Git branch path"), required=True, readonly=False,
         description=_(
             "The path of the Git branch containing a Dockerfile "
             "at the location defined by the build_file attribute."))
 
     description = Text(
-        title=_("A short description of this recipe."),
+        title=_("Description"),
+        description=_("A short description of this recipe."),
+        required=False,
         readonly=False)
 
     build_file = TextLine(
-        title=_("The relative path to the file within this recipe's "
-                "branch that defines how to build the recipe."),
+        title=_("Build file path"),
+        description=_("The relative path to the file within this recipe's "
+                      "branch that defines how to build the recipe."),
         constraint=path_does_not_escape,
         required=True,
         readonly=False)
@@ -228,8 +234,9 @@ class IOCIRecipe(IOCIRecipeView, IOCIRecipeEdit, IOCIRecipeEditableAttributes,
 class IOCIRecipeSet(Interface):
     """A utility to create and access OCI Recipes."""
 
-    def new(name, registrant, owner, oci_project, git_ref, description,
-            official, require_virtualized, build_file, date_created):
+    def new(name, registrant, owner, oci_project, git_ref, build_file,
+            description=None, official=False, require_virtualized=True,
+            date_created=DEFAULT):
         """Create an IOCIRecipe."""
 
     def exists(owner, oci_project, name):
