@@ -19,9 +19,9 @@ __all__ = [
     ]
 
 
-from cStringIO import StringIO
 from email.utils import make_msgid
 from functools import wraps
+from io import BytesIO
 from itertools import chain
 import operator
 import re
@@ -1299,7 +1299,7 @@ class Bug(SQLBase, InformationTypeMixin):
         # wrongly encoded.
         if from_api:
             data = get_raw_form_value_from_current_request(data, 'data')
-        if isinstance(data, str):
+        if isinstance(data, bytes):
             filecontent = data
         else:
             filecontent = data.read()
@@ -1313,7 +1313,7 @@ class Bug(SQLBase, InformationTypeMixin):
 
         filealias = getUtility(ILibraryFileAliasSet).create(
             name=filename, size=len(filecontent),
-            file=StringIO(filecontent), contentType=content_type,
+            file=BytesIO(filecontent), contentType=content_type,
             restricted=self.private)
 
         return self.linkAttachment(

@@ -64,10 +64,10 @@ first comment.
 If we add an attachment to the first comment, this comment is included
 in activity_and_comments...
 
-    >>> import StringIO
+    >>> from io import BytesIO
     >>> login("test@canonical.com")
     >>> attachment = bug_11.addAttachment(
-    ...     owner=None, data=StringIO.StringIO('whatever'),
+    ...     owner=None, data=BytesIO(b'whatever'),
     ...     comment=bug_11.initial_message, filename='test.txt',
     ...     is_patch=False, content_type='text/plain',
     ...     description='sample data')
@@ -194,7 +194,6 @@ attachments to a bug to see this in action:
 
     >>> from lp.services.webapp.interfaces import ILaunchBag
     >>> from lp.registry.interfaces.person import IPersonSet
-    >>> import StringIO
     >>> user = getUtility(ILaunchBag).user
     >>> different_user = getUtility(IPersonSet).getByName('name16')
 
@@ -208,7 +207,7 @@ attachments to a bug to see this in action:
     ...     owner=user, subject="Ho", content="Hello there")
     >>> m4 = bug_three.newMessage(
     ...     owner=user, subject="Ho", content="Hello there")
-    >>> file_ = StringIO.StringIO("Bogus content makes the world go round")
+    >>> file_ = BytesIO(b"Bogus content makes the world go round")
     >>> a1 = bug_three.addAttachment(
     ...     owner=user, data=file_, description="Ho",
     ...     filename="munchy", comment="Hello there")
@@ -386,22 +385,22 @@ not included in BugComment.patches.
     >>> bug_task = factory.makeBugTask(owner=user)
     >>> bug = bug_task.bug
     >>> attachment_1 = bug.addAttachment(
-    ...     owner=None, data=StringIO.StringIO('whatever'),
+    ...     owner=None, data=BytesIO(b'whatever'),
     ...     comment=bug.initial_message, filename='file1',
     ...     is_patch=False, content_type='text/plain',
     ...     description='sample data 1')
     >>> attachment_2 = bug.addAttachment(
-    ...     owner=None, data=StringIO.StringIO('whatever'),
+    ...     owner=None, data=BytesIO(b'whatever'),
     ...     comment=bug.initial_message, filename='file2',
     ...     is_patch=False, content_type='text/plain',
     ...     description='sample data 2')
     >>> patch_1 = bug.addAttachment(
-    ...     owner=None, data=StringIO.StringIO('whatever'),
+    ...     owner=None, data=BytesIO(b'whatever'),
     ...     comment=bug.initial_message, filename='patch1',
     ...     is_patch=True, content_type='text/plain',
     ...     description='patch 1')
     >>> patch_2 = bug.addAttachment(
-    ...     owner=None, data=StringIO.StringIO('whatever'),
+    ...     owner=None, data=BytesIO(b'whatever'),
     ...     comment=bug.initial_message, filename='patch2',
     ...     is_patch=True, content_type='text/plain',
     ...     description='patch 2')

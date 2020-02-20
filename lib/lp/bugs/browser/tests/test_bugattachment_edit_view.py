@@ -33,7 +33,7 @@ class TestBugAttachmentEditView(TestCaseWithFactory):
         login_person(self.bug_owner)
         self.bug = self.factory.makeBug(owner=self.bug_owner)
         self.bugattachment = self.factory.makeBugAttachment(
-            bug=self.bug, filename='foo.diff', data='file content',
+            bug=self.bug, filename='foo.diff', data=b'file content',
             description='attachment description', content_type='text/plain',
             is_patch=False)
         # The Librarian server should know about the new file before
