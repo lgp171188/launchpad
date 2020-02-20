@@ -22,9 +22,11 @@ from testtools.matchers import (
     Is,
     MatchesDict,
     )
+from testtools.twistedsupport import (
+    AsynchronousDeferredRunTestForBrokenTwisted,
+    )
 from twisted.internet import defer
 from twisted.trial.unittest import TestCase as TrialTestCase
-from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
 from lp.buildmaster.enums import BuildStatus
@@ -33,7 +35,6 @@ from lp.buildmaster.interfaces.builder import BuildDaemonError
 from lp.buildmaster.interfaces.buildfarmjobbehaviour import (
     IBuildFarmJobBehaviour,
     )
-from lp.buildmaster.interfaces.processor import IProcessorSet
 from lp.buildmaster.tests.mock_slaves import (
     MockBuilder,
     SlaveTestHelpers,
@@ -49,6 +50,7 @@ from lp.buildmaster.tests.test_buildfarmjobbehaviour import (
 from lp.oci.model.ocirecipebuildbehaviour import OCIRecipeBuildBehaviour
 from lp.registry.interfaces.series import SeriesStatus
 from lp.services.config import config
+from lp.services.webapp import canonical_url
 from lp.soyuz.adapters.archivedependencies import (
     get_sources_list_for_building,
     )
@@ -79,11 +81,14 @@ class MakeOCIBuildMixin:
 
 class TestOCIBuildBehaviour(ProxyEndpointMixin, TestCaseWithFactory):
 
+    run_tests_with = AsynchronousDeferredRunTestForBrokenTwisted.make_factory(
+        timeout=10)
     layer = LaunchpadZopelessLayer
 
     @defer.inlineCallbacks
     def setUp(self):
         super(TestOCIBuildBehaviour, self).setUp()
+        self.factory = LaunchpadObjectFactory()
         build_username = 'OCIBUILD-1'
         self.token = {'secret': uuid.uuid4().get_hex(),
                       'username': build_username,
@@ -152,11 +157,11 @@ class TestOCIBuildBehaviour(ProxyEndpointMixin, TestCaseWithFactory):
             "fast_cleanup": Is(True),
             "git_repository": Equals(ref.repository.git_https_url),
             "git_path": Equals(ref.name),
-            "name": Equals("test-oci-recipe"),
+            "name": Equals(job.build.recipe.name),
             "proxy_url": self.getProxyURLMatcher(job),
             "revocation_endpoint": self.getRevocationEndpointMatcher(
                 job, "oci"),
-            "series": Equals("unstable"),
+            "series": Equals(job.build.distro_arch_series.distroseries.name),
             "trusted_keys": Equals(expected_trusted_keys),
             }))
 

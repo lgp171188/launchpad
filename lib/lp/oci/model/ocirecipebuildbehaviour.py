@@ -38,6 +38,7 @@ from lp.buildmaster.model.buildfarmjobbehaviour import (
 from lp.registry.interfaces.series import SeriesStatus
 from lp.services.config import config
 from lp.services.librarian.utils import copy_and_close
+from lp.services.twistedsupport.treq import check_status
 from lp.soyuz.adapters.archivedependencies import (
     get_sources_list_for_building,
     )
