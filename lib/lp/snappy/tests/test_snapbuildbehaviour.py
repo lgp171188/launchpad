@@ -71,6 +71,10 @@ from lp.buildmaster.tests.mock_slaves import (
     OkSlave,
     SlaveTestHelpers,
     )
+from lp.buildmaster.tests.snapbuildproxy import (
+    InProcessProxyAuthAPIFixture,
+    ProxyEndpointMixin,
+    )
 from lp.buildmaster.tests.test_buildfarmjobbehaviour import (
     TestGetUploadMethodsMixin,
     TestHandleStatusMixin,
@@ -114,69 +118,6 @@ from lp.testing.gpgkeys import (
 from lp.testing.keyserver import InProcessKeyServerFixture
 from lp.testing.layers import LaunchpadZopelessLayer
 from lp.xmlrpc.interfaces import IPrivateApplication
-
-
-class ProxyAuthAPITokensResource(resource.Resource):
-    """A test tokens resource for the proxy authentication API."""
-
-    isLeaf = True
-
-    def __init__(self):
-        resource.Resource.__init__(self)
-        self.requests = []
-
-    def render_POST(self, request):
-        content = request.content.read()
-        self.requests.append({
-            "method": request.method,
-            "uri": request.uri,
-            "headers": dict(request.requestHeaders.getAllRawHeaders()),
-            "content": content,
-            })
-        username = json.loads(content)["username"]
-        return json.dumps({
-            "username": username,
-            "secret": uuid.uuid4().hex,
-            "timestamp": datetime.utcnow().isoformat(),
-            })
-
-
-class InProcessProxyAuthAPIFixture(fixtures.Fixture):
-    """A fixture that pretends to be the proxy authentication API.
-
-    Users of this fixture must call the `start` method, which returns a
-    `Deferred`, and arrange for that to get back to the reactor.  This is
-    necessary because the basic fixture API does not allow `setUp` to return
-    anything.  For example:
-
-        class TestSomething(TestCase):
-
-            run_tests_with = AsynchronousDeferredRunTest.make_factory(
-                timeout=10)
-
-            @defer.inlineCallbacks
-            def setUp(self):
-                super(TestSomething, self).setUp()
-                yield self.useFixture(InProcessProxyAuthAPIFixture()).start()
-    """
-
-    @defer.inlineCallbacks
-    def start(self):
-        root = resource.Resource()
-        self.tokens = ProxyAuthAPITokensResource()
-        root.putChild("tokens", self.tokens)
-        endpoint = endpoints.serverFromString(reactor, nativeString("tcp:0"))
-        site = server.Site(self.tokens)
-        self.addCleanup(site.stopFactory)
-        port = yield endpoint.listen(site)
-        self.addCleanup(port.stopListening)
-        config.push("in-process-proxy-auth-api-fixture", dedent("""
-            [snappy]
-            builder_proxy_auth_api_admin_secret: admin-secret
-            builder_proxy_auth_api_endpoint: http://%s:%s/tokens
-            """) %
-            (port.getHost().host, port.getHost().port))
-        self.addCleanup(config.pop, "in-process-proxy-auth-api-fixture")
 
 
 class InProcessAuthServer(xmlrpc.XMLRPC):
@@ -346,7 +287,8 @@ class TestSnapBuildBehaviour(TestSnapBuildBehaviourBase):
         self.assertIn("Missing chroot", str(e))
 
 
-class TestAsyncSnapBuildBehaviour(TestSnapBuildBehaviourBase):
+class TestAsyncSnapBuildBehaviour(ProxyEndpointMixin,
+                                  TestSnapBuildBehaviourBase):
     run_tests_with = AsynchronousDeferredRunTestForBrokenTwisted.make_factory(
         timeout=10)
 
@@ -364,7 +306,7 @@ class TestAsyncSnapBuildBehaviour(TestSnapBuildBehaviourBase):
                               host=config.snappy.builder_proxy_host,
                               port=config.snappy.builder_proxy_port))
         self.proxy_api = self.useFixture(InProcessProxyAuthAPIFixture())
-        yield self.proxy_api.start()
+        yield self.proxy_api.start("snappy")
         self.now = time.time()
         self.useFixture(fixtures.MockPatch(
             "time.time", return_value=self.now))
@@ -379,21 +321,6 @@ class TestAsyncSnapBuildBehaviour(TestSnapBuildBehaviourBase):
         job.setBuilder(builder, slave)
         self.addCleanup(slave.pool.closeCachedConnections)
         return job
-
-    def getProxyURLMatcher(self, job):
-        return AfterPreprocessing(urlsplit, MatchesStructure(
-            scheme=Equals("http"),
-            username=Equals("{}-{}".format(
-                job.build.build_cookie, int(self.now))),
-            password=HasLength(32),
-            hostname=Equals(config.snappy.builder_proxy_host),
-            port=Equals(config.snappy.builder_proxy_port),
-            path=Equals("")))
-
-    def getRevocationEndpointMatcher(self, job):
-        return Equals("{}/{}-{}".format(
-            config.snappy.builder_proxy_auth_api_endpoint,
-            job.build.build_cookie, int(self.now)))
 
     @defer.inlineCallbacks
     def test_composeBuildRequest(self):
@@ -467,7 +394,8 @@ class TestAsyncSnapBuildBehaviour(TestSnapBuildBehaviourBase):
             "name": Equals("test-snap"),
             "private": Is(False),
             "proxy_url": self.getProxyURLMatcher(job),
-            "revocation_endpoint": self.getRevocationEndpointMatcher(job),
+            "revocation_endpoint": self.getRevocationEndpointMatcher(
+                job, "snappy"),
             "series": Equals("unstable"),
             "trusted_keys": Equals(expected_trusted_keys),
             }))
@@ -508,7 +436,8 @@ class TestAsyncSnapBuildBehaviour(TestSnapBuildBehaviourBase):
             "name": Equals("test-snap"),
             "private": Is(False),
             "proxy_url": self.getProxyURLMatcher(job),
-            "revocation_endpoint": self.getRevocationEndpointMatcher(job),
+            "revocation_endpoint": self.getRevocationEndpointMatcher(
+                job, "snappy"),
             "series": Equals("unstable"),
             "trusted_keys": Equals(expected_trusted_keys),
             }))
@@ -538,7 +467,8 @@ class TestAsyncSnapBuildBehaviour(TestSnapBuildBehaviourBase):
             "name": Equals("test-snap"),
             "private": Is(False),
             "proxy_url": self.getProxyURLMatcher(job),
-            "revocation_endpoint": self.getRevocationEndpointMatcher(job),
+            "revocation_endpoint": self.getRevocationEndpointMatcher(
+                job, "snappy"),
             "series": Equals("unstable"),
             "trusted_keys": Equals(expected_trusted_keys),
             }))
@@ -585,7 +515,8 @@ class TestAsyncSnapBuildBehaviour(TestSnapBuildBehaviourBase):
             "name": Equals("test-snap"),
             "private": Is(True),
             "proxy_url": self.getProxyURLMatcher(job),
-            "revocation_endpoint": self.getRevocationEndpointMatcher(job),
+            "revocation_endpoint": self.getRevocationEndpointMatcher(
+                job, "snappy"),
             "series": Equals("unstable"),
             "trusted_keys": Equals(expected_trusted_keys),
             }))
@@ -617,7 +548,8 @@ class TestAsyncSnapBuildBehaviour(TestSnapBuildBehaviourBase):
             "name": Equals("test-snap"),
             "private": Is(False),
             "proxy_url": self.getProxyURLMatcher(job),
-            "revocation_endpoint": self.getRevocationEndpointMatcher(job),
+            "revocation_endpoint": self.getRevocationEndpointMatcher(
+                job, "snappy"),
             "series": Equals("unstable"),
             "trusted_keys": Equals(expected_trusted_keys),
             }))
@@ -647,7 +579,8 @@ class TestAsyncSnapBuildBehaviour(TestSnapBuildBehaviourBase):
             "name": Equals("test-snap"),
             "private": Is(False),
             "proxy_url": self.getProxyURLMatcher(job),
-            "revocation_endpoint": self.getRevocationEndpointMatcher(job),
+            "revocation_endpoint": self.getRevocationEndpointMatcher(
+                job, "snappy"),
             "series": Equals("unstable"),
             "trusted_keys": Equals(expected_trusted_keys),
             }))

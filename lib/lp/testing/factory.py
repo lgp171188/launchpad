@@ -4987,9 +4987,17 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         if requester is None:
             requester = self.makePerson()
         if distro_arch_series is None:
-            distro_arch_series = self.makeDistroArchSeries()
+            distribution = self.makeDistribution()
+            distroseries = self.makeDistroSeries(
+                distribution=distribution, status=SeriesStatus.CURRENT)
+            processor = getUtility(IProcessorSet).getByName("386")
+            distro_arch_series = self.makeDistroArchSeries(
+                distroseries=distroseries, architecturetag="i386",
+                processor=processor)
         if recipe is None:
-            recipe = self.makeOCIRecipe()
+            oci_project = self.makeOCIProject(
+                pillar=distro_arch_series.distroseries.distribution)
+            recipe = self.makeOCIRecipe(oci_project=oci_project)
         oci_build = getUtility(IOCIRecipeBuildSet).new(
             requester, recipe, distro_arch_series, date_created)
         if duration is not None:

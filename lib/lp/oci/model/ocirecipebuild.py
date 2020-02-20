@@ -267,7 +267,8 @@ class OCIRecipeBuild(PackageBuildMixin, Storm):
 
     @property
     def distro_arch_series(self):
-        return self.distribution.currentseries.nominatedarchindep
+        return self.distribution.currentseries.getDistroArchSeriesByProcessor(
+            self.processor)
 
     def notify(self, extra_info=None):
         """See `IPackageBuild`."""
