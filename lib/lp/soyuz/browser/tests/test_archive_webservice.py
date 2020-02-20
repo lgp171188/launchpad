@@ -581,7 +581,7 @@ class TestGetPublishedBinaries(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestgetPublishedBinaries, self).setUp()
+        super(TestGetPublishedBinaries, self).setUp()
         self.person = self.factory.makePerson()
         self.archive = self.factory.makeArchive()
         self.person_url = api_url(self.person)
