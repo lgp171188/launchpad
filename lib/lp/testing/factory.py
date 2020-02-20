@@ -34,10 +34,6 @@ from email.utils import (
     )
 import hashlib
 from itertools import count
-from operator import (
-    isMappingType,
-    isSequenceType,
-    )
 import os
 from StringIO import StringIO
 import sys
@@ -53,6 +49,10 @@ from lazr.jobrunner.jobrunner import SuspendJobException
 import pytz
 from pytz import UTC
 import six
+from six.moves.collections_abc import (
+    Mapping,
+    Sequence,
+    )
 from twisted.conch.ssh.common import (
     MP,
     NS,
@@ -5039,11 +5039,11 @@ def is_security_proxied_or_harmless(obj):
         return True
     if type(obj) in unwrapped_types:
         return True
-    if isSequenceType(obj) or isinstance(obj, (set, frozenset)):
+    if isinstance(obj, Sequence) or isinstance(obj, (set, frozenset)):
         return all(
             is_security_proxied_or_harmless(element)
             for element in obj)
-    if isMappingType(obj):
+    if isinstance(obj, Mapping):
         return all(
             (is_security_proxied_or_harmless(key) and
              is_security_proxied_or_harmless(obj[key]))
