@@ -17,12 +17,12 @@ from lp.buildmaster.enums import BuildStatus
 from lp.buildmaster.interfaces.buildqueue import IBuildQueue
 from lp.buildmaster.interfaces.packagebuild import IPackageBuild
 from lp.buildmaster.interfaces.processor import IProcessorSet
-from lp.registry.interfaces.series import SeriesStatus
 from lp.oci.interfaces.ocirecipebuild import (
     IOCIRecipeBuild,
     IOCIRecipeBuildSet,
     )
 from lp.oci.model.ocirecipebuild import OCIRecipeBuildSet
+from lp.registry.interfaces.series import SeriesStatus
 from lp.services.propertycache import clear_property_cache
 from lp.testing import (
     admin_logged_in,
