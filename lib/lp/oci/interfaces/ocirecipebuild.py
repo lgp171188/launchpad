@@ -14,7 +14,11 @@ __all__ = [
 
 from lazr.restful.fields import Reference
 from zope.interface import Interface
-from zope.schema import TextLine
+from zope.schema import (
+    Bool,
+    Datetime,
+    TextLine,
+    )
 
 from lp import _
 from lp.buildmaster.interfaces.buildfarmjob import ISpecificBuildFarmJobSource
@@ -49,6 +53,18 @@ class IOCIRecipeBuildView(IPackageBuild):
         IOCIRecipe,
         title=_("The OCI recipe to build."),
         required=True,
+        readonly=True)
+
+    eta = Datetime(
+        title=_("The datetime when the build job is estimated to complete."),
+        readonly=True)
+
+    estimate = Bool(
+        title=_("If true, the date value is an estimate."), readonly=True)
+
+    date = Datetime(
+        title=_(
+            "The date when the build completed or is estimated to complete."),
         readonly=True)
 
     def getByFileName():

@@ -309,6 +309,11 @@ class OCIRecipeSet:
         """See `IOCIRecipe`."""
         return IStore(OCIRecipe).find(OCIRecipe, OCIRecipe.owner == owner)
 
+    def findByOCIProject(self, oci_project):
+        """See `IOCIRecipe`."""
+        return IStore(OCIRecipe).find(
+            OCIRecipe, OCIRecipe.oci_project == oci_project)
+
     def preloadDataForOCIRecipes(self, recipes, user=None):
         """See `IOCIRecipeSet`."""
         recipes = [removeSecurityProxy(recipe) for recipe in recipes]

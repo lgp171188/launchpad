@@ -633,7 +633,8 @@
         module="lp.registry.browser.ociproject"
         classes="
             OCIProjectFacets
-            OCIProjectNavigationMenu"
+            OCIProjectNavigationMenu
+            OCIProjectContextMenu"
         />
     <adapter
         name="fmt"

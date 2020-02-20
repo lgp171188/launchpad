@@ -8,6 +8,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 from datetime import timedelta
 
 import six
+from testtools.matchers import Equals
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
@@ -20,14 +21,17 @@ from lp.oci.interfaces.ocirecipebuild import (
     IOCIRecipeBuildSet,
     )
 from lp.oci.model.ocirecipebuild import OCIRecipeBuildSet
+from lp.services.propertycache import clear_property_cache
 from lp.testing import (
     admin_logged_in,
+    StormStatementRecorder,
     TestCaseWithFactory,
     )
 from lp.testing.layers import (
     DatabaseFunctionalLayer,
     LaunchpadZopelessLayer,
     )
+from lp.testing.matchers import HasQueryCount
 
 
 class TestOCIRecipeBuild(TestCaseWithFactory):
@@ -104,6 +108,33 @@ class TestOCIRecipeBuild(TestCaseWithFactory):
         self.assertEqual(self.build.virtualized, bq.virtualized)
         self.assertIsNotNone(bq.processor)
         self.assertEqual(bq, self.build.buildqueue_record)
+
+    def test_eta(self):
+        # OCIRecipeBuild.eta returns a non-None value when it should, or
+        # None when there's no start time.
+        self.build.queueBuild()
+        self.assertIsNone(self.build.eta)
+        self.factory.makeBuilder(processors=[self.build.processor])
+        clear_property_cache(self.build)
+        self.assertIsNotNone(self.build.eta)
+
+    def test_eta_cached(self):
+        # The expensive completion time estimate is cached.
+        self.build.queueBuild()
+        self.build.eta
+        with StormStatementRecorder() as recorder:
+            self.build.eta
+        self.assertThat(recorder, HasQueryCount(Equals(0)))
+
+    def test_estimate(self):
+        # OCIRecipeBuild.estimate returns True until the job is completed.
+        self.build.queueBuild()
+        self.factory.makeBuilder(processors=[self.build.processor])
+        self.build.updateStatus(BuildStatus.BUILDING)
+        self.assertTrue(self.build.estimate)
+        self.build.updateStatus(BuildStatus.FULLYBUILT)
+        clear_property_cache(self.build)
+        self.assertFalse(self.build.estimate)
 
 
 class TestOCIRecipeBuildSet(TestCaseWithFactory):
