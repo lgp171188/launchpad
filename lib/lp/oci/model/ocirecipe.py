@@ -36,8 +36,6 @@ from lp.buildmaster.enums import BuildStatus
 from lp.buildmaster.interfaces.buildqueue import IBuildQueueSet
 from lp.buildmaster.model.buildfarmjob import BuildFarmJob
 from lp.buildmaster.model.buildqueue import BuildQueue
-from lp.code.model.gitcollection import GenericGitCollection
-from lp.code.model.gitrepository import GitRepository
 from lp.oci.interfaces.ocirecipe import (
     DuplicateOCIRecipeName,
     IOCIRecipe,
@@ -50,8 +48,10 @@ from lp.oci.interfaces.ocirecipe import (
 from lp.oci.interfaces.ocirecipebuild import IOCIRecipeBuildSet
 from lp.oci.model.ocirecipebuild import OCIRecipeBuild
 from lp.registry.interfaces.person import IPersonSet
-from lp.services.database.bulk import load_related
-from lp.services.database.constants import DEFAULT
+from lp.services.database.constants import (
+    DEFAULT,
+    UTC_NOW,
+    )
 from lp.services.database.decoratedresultset import DecoratedResultSet
 from lp.services.database.interfaces import (
     IMasterStore,
@@ -61,6 +61,15 @@ from lp.services.database.stormexpr import (
     Greatest,
     NullsLast,
     )
+
+
+def oci_recipe_modified(recipe, event):
+    """Update the date_last_modified property when an OCIRecipe is modified.
+
+    This method is registered as a subscriber to `IObjectModifiedEvent`
+    events on OCI recipes.
+    """
+    removeSecurityProxy(recipe).date_last_modified = UTC_NOW
 
 
 @implementer(IOCIRecipe)
@@ -111,6 +120,7 @@ class OCIRecipe(Storm):
         self.official = official
         self.require_virtualized = require_virtualized
         self.date_created = date_created
+        self.date_last_modified = date_created
         self.git_ref = git_ref
 
     def destroySelf(self):

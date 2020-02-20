@@ -19,6 +19,11 @@ from lp.oci.interfaces.ocirecipe import (
     OCIRecipeNotOwner,
     )
 from lp.oci.interfaces.ocirecipebuild import IOCIRecipeBuildSet
+from lp.services.database.constants import (
+    ONE_DAY_AGO,
+    UTC_NOW,
+    )
+from lp.services.webapp.snapshot import notify_modified
 from lp.testing import (
     admin_logged_in,
     person_logged_in,
@@ -35,6 +40,20 @@ class TestOCIRecipe(TestCaseWithFactory):
         target = self.factory.makeOCIRecipe()
         with admin_logged_in():
             self.assertProvides(target, IOCIRecipe)
+
+    def test_initial_date_last_modified(self):
+        # The initial value of date_last_modified is date_created.
+        recipe = self.factory.makeOCIRecipe(date_created=ONE_DAY_AGO)
+        self.assertEqual(recipe.date_created, recipe.date_last_modified)
+
+    def test_modifiedevent_sets_date_last_modified(self):
+        # When an OCIRecipe receives an object modified event, the last
+        # modified date is set to UTC_NOW.
+        recipe = self.factory.makeOCIRecipe(date_created=ONE_DAY_AGO)
+        with notify_modified(removeSecurityProxy(recipe), ["name"]):
+            pass
+        self.assertSqlAttributeEqualsDate(
+            recipe, "date_last_modified", UTC_NOW)
 
     def test_checkRequestBuild(self):
         ocirecipe = removeSecurityProxy(self.factory.makeOCIRecipe())
