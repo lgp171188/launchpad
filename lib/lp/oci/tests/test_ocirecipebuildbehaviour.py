@@ -148,7 +148,7 @@ class TestOCIBuildBehaviour(ProxyEndpointMixin, TestCaseWithFactory):
             "archives": Equals(expected_archives),
             "arch_tag": Equals("i386"),
             "build_file": Equals(job.build.recipe.build_file),
-            # "build_url": Equals(canonical_url(job.build)),
+            "build_url": Equals(canonical_url(job.build)),
             "fast_cleanup": Is(True),
             "git_repository": Equals(ref.repository.git_https_url),
             "git_path": Equals(ref.name),
