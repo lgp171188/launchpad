@@ -93,7 +93,7 @@ class OCIRecipe(Storm):
     oci_project = Reference(oci_project_id, "OCIProject.id")
 
     name = Unicode(name="name", allow_none=False)
-    description = Unicode(name="description")
+    description = Unicode(name="description", allow_none=True)
 
     official = Bool(name="official", default=False)
 
