@@ -5002,6 +5002,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         else:
             removeSecurityProxy(oci_build).updateStatus(
                 status, builder=builder)
+        IStore(oci_build).flush()
         return oci_build
 
     def makeOCIFile(self, build=None, library_file=None,

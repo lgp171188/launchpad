@@ -23,6 +23,11 @@
             permission="launchpad.Admin"
             set_schema="lp.oci.interfaces.ocirecipe.IOCIRecipeAdminAttributes" />
     </class>
+    <subscriber
+        for="lp.oci.interfaces.ocirecipe.IOCIRecipe
+             zope.lifecycleevent.interfaces.IObjectModifiedEvent"
+        handler="lp.oci.model.ocirecipe.oci_recipe_modified" />
+
     <securedutility
         class="lp.oci.model.ocirecipe.OCIRecipeSet"
         provides="lp.oci.interfaces.ocirecipe.IOCIRecipeSet">
