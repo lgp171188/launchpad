@@ -39,13 +39,14 @@ from lp.registry.interfaces.series import SeriesStatus
 from lp.services.config import config
 from lp.services.librarian.utils import copy_and_close
 from lp.services.twistedsupport.treq import check_status
+from lp.snappy.model.snapbuildbehaviour import SnapProxyMixin
 from lp.soyuz.adapters.archivedependencies import (
     get_sources_list_for_building,
     )
 
 
 @implementer(IBuildFarmJobBehaviour)
-class OCIRecipeBuildBehaviour(BuildFarmJobBehaviourBase):
+class OCIRecipeBuildBehaviour(SnapProxyMixin, BuildFarmJobBehaviourBase):
 
     builder_type = "oci"
     image_types = [BuildBaseImageType.LXD, BuildBaseImageType.CHROOT]
@@ -85,18 +86,7 @@ class OCIRecipeBuildBehaviour(BuildFarmJobBehaviourBase):
         build = self.build
         args = yield super(OCIRecipeBuildBehaviour, self).extraBuildArgs(
             logger=logger)
-        if config.snappy.builder_proxy_host:
-            token = yield self._requestProxyToken()
-            args["proxy_url"] = (
-                "http://{username}:{password}@{host}:{port}".format(
-                    username=token['username'],
-                    password=token['secret'],
-                    host=config.snappy.builder_proxy_host,
-                    port=config.snappy.builder_proxy_port))
-            args["revocation_endpoint"] = (
-                "{endpoint}/{token}".format(
-                    endpoint=config.snappy.builder_proxy_auth_api_endpoint,
-                    token=token['username']))
+        yield self.addProxyArgs(args)
         # XXX twom 2020-02-17 This may need to be more complex, and involve
         # distribution name.
         args["name"] = build.recipe.name
@@ -120,36 +110,6 @@ class OCIRecipeBuildBehaviour(BuildFarmJobBehaviourBase):
             args["git_path"] = build.recipe.git_ref.name
 
         defer.returnValue(args)
-
-    @defer.inlineCallbacks
-    def _requestProxyToken(self):
-        admin_username = config.snappy.builder_proxy_auth_api_admin_username
-        if not admin_username:
-            raise CannotBuild(
-                "builder_proxy_auth_api_admin_username is not configured.")
-        secret = config.snappy.builder_proxy_auth_api_admin_secret
-        if not secret:
-            raise CannotBuild(
-                "builder_proxy_auth_api_admin_secret is not configured.")
-        url = config.snappy.builder_proxy_auth_api_endpoint
-        if not secret:
-            raise CannotBuild(
-                "builder_proxy_auth_api_endpoint is not configured.")
-        timestamp = int(time.time())
-        proxy_username = '{build_id}-{timestamp}'.format(
-            build_id=self.build.build_cookie,
-            timestamp=timestamp)
-        auth_string = '{}:{}'.format(admin_username, secret).strip()
-        auth_header = b'Basic ' + base64.b64encode(auth_string)
-
-        response = yield treq.post(
-            url, headers={'Authorization': auth_header},
-            json={'username': proxy_username},
-            reactor=self._slave.reactor,
-            pool=self._slave.pool)
-        response = yield check_status(response)
-        token = yield treq.json_content(response)
-        defer.returnValue(token)
 
     def _ensureFilePath(self, file_name, file_path, upload_path):
         # If the evaluated output file name is not within our
