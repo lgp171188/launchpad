@@ -667,7 +667,7 @@ class TestRemoveCopyNotification(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
-        super(TestremoveCopyNotification, self).setUp()
+        super(TestRemoveCopyNotification, self).setUp()
         self.person = self.factory.makePerson()
         self.archive = self.factory.makeArchive(owner=self.person)
         self.archive_url = api_url(self.archive)
