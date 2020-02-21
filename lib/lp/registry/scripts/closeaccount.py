@@ -1,4 +1,4 @@
-# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Remove personal details of a user from the database, leaving a stub."""
@@ -262,9 +262,11 @@ def close_account(username, log):
         # concerned with being removed from our systems.
         ('EmailAddress', 'person'),
 
-        # Login tokens are no longer interesting if the user can no longer
-        # log in.
+        # Login and OAuth tokens are no longer interesting if the user can
+        # no longer log in.
         ('LoginToken', 'requester'),
+        ('OAuthAccessToken', 'person'),
+        ('OAuthRequestToken', 'person'),
 
         # Trash their codes of conduct and GPG keys
         ('SignedCodeOfConduct', 'owner'),
