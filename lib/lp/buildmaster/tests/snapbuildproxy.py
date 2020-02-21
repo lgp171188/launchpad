@@ -15,9 +15,9 @@ import uuid
 import fixtures
 from six.moves.urllib_parse import urlsplit
 from testtools.matchers import (
-    AfterPreprocessing,
     Equals,
     HasLength,
+    Matcher,
     MatchesStructure,
     )
 from twisted.internet import (
@@ -97,20 +97,32 @@ class InProcessProxyAuthAPIFixture(fixtures.Fixture):
         self.addCleanup(config.pop, "in-process-proxy-auth-api-fixture")
 
 
-class ProxyEndpointMixin:
-    """Checks for testing Snap Build Proxy methods and return values."""
+class ProxyUrlMatcher(Matcher):
+    """Check that a string is a valid url for a snap build proxy."""
 
-    def getProxyURLMatcher(self, job):
-        return AfterPreprocessing(urlsplit, MatchesStructure(
+    def __init__(self, job, now):
+        self.job = job
+        self.now = now
+
+    def match(self, matchee):
+        return MatchesStructure(
             scheme=Equals("http"),
             username=Equals("{}-{}".format(
-                job.build.build_cookie, int(self.now))),
+                self.job.build.build_cookie, int(self.now))),
             password=HasLength(32),
             hostname=Equals(config.snappy.builder_proxy_host),
             port=Equals(config.snappy.builder_proxy_port),
-            path=Equals("")))
+            path=Equals("")).match(urlsplit(matchee))
 
-    def getRevocationEndpointMatcher(self, job):
+
+class RevocationEndpointMatcher(Matcher):
+    """Check that a string is a valid endpoint for proxy token revocation."""
+
+    def __init__(self, job, now):
+        self.job = job
+        self.now = now
+
+    def match(self, matchee):
         return Equals("{}/{}-{}".format(
             config.snappy.builder_proxy_auth_api_endpoint,
-            job.build.build_cookie, int(self.now)))
+            self.job.build.build_cookie, int(self.now))).match(matchee)
