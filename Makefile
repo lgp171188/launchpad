@@ -470,7 +470,7 @@ copy-apache-config: codehosting-dir
 	fi; \
 	sed -e 's,%BRANCH_REWRITE%,$(shell pwd)/scripts/branch-rewrite.py,' \
 		-e 's,%LISTEN_ADDRESS%,$(LISTEN_ADDRESS),' \
-		configs/development/local-launchpad-apache > \
+		configs/$(LPCONFIG)/local-launchpad-apache > \
 		/etc/apache2/sites-available/$$base
 	if [ ! -d /srv/launchpad.test ]; then \
 		mkdir /srv/launchpad.test; \
