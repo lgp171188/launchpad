@@ -342,7 +342,7 @@ class TestTemporaryBlobStorageAddView(TestCaseWithFactory):
         # Create a BLOB using existing testing data.
         testfiles = os.path.join(config.root, 'lib/lp/bugs/tests/testfiles')
         blob_file = open(
-            os.path.join(testfiles, 'extra_filebug_data.msg'))
+            os.path.join(testfiles, 'extra_filebug_data.msg'), 'rb')
         self.blob_data = blob_file.read()
         blob_file.close()
 

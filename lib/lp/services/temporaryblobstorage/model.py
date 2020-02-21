@@ -9,8 +9,8 @@ __all__ = [
     ]
 
 
-from cStringIO import StringIO
 from datetime import timedelta
+from io import BytesIO
 import uuid
 
 from sqlobject import (
@@ -124,7 +124,7 @@ class TemporaryStorageManager:
         secret = str(uuid.uuid1())
 
         file_alias = getUtility(ILibraryFileAliasSet).create(
-                secret, len(blob), StringIO(blob),
+                secret, len(blob), BytesIO(blob),
                 'application/octet-stream', expires
                 )
         TemporaryBlobStorage(uuid=new_uuid, file_alias=file_alias)
