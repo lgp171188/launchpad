@@ -83,7 +83,7 @@ Launchpad is free to use for <a href="https://help.launchpad.net/Legal/ProjectLi
                            Your project can use any or all of Launchpad's applications:</p><br />
                    			<ul>
 				                  <li><strong><a href="bugs">Bug tracking</a>:</strong> across project and tool boundaries</li>
-				                  <li><strong><a href="branch-hosting-tracking">Code hosting and review</a>:</strong> open up to drive-by contributions with Bazaar branch hosting/mirroring and imports from git, Subversion and CVS.</li>
+				                  <li><strong><a href="branch-hosting-tracking">Code hosting and review</a>:</strong> open up to drive-by contributions with Git or Bazaar hosting and imports from Git, Subversion and CVS.</li>
 				                  <li><strong><a href="translation">Web-based translation</a>:</strong> make your software available to a global audience with help from Launchpad's 35,000 translators.</li>
 				                  <li><strong><a href="ppa">Ubuntu package building and hosting</a>:</strong> use your Personal Package Archives to distribute software, with updates, to Ubuntu users.</li>
 				                  <li><strong><a href="community">Mailing lists and teams</a>:</strong> hassle-free mailing list hosting and easy role delegation through teams.</li>
