@@ -155,10 +155,10 @@ class TestAsyncOCIRecipeBuildBehaviour(ProxyEndpointMixin, MakeOCIBuildMixin,
                           "@{host}:{port}".format(
                             username=self.token['username'],
                             password=self.token['secret'],
-                            host=config.oci.builder_proxy_host,
-                            port=config.oci.builder_proxy_port))
+                            host=config.snappy.builder_proxy_host,
+                            port=config.snappy.builder_proxy_port))
         self.proxy_api = self.useFixture(InProcessProxyAuthAPIFixture())
-        yield self.proxy_api.start("oci")
+        yield self.proxy_api.start()
         self.now = time.time()
         self.useFixture(fixtures.MockPatch(
             "time.time", return_value=self.now))
@@ -180,7 +180,7 @@ class TestAsyncOCIRecipeBuildBehaviour(ProxyEndpointMixin, MakeOCIBuildMixin,
 
     @defer.inlineCallbacks
     def test_requestProxyToken_unconfigured(self):
-        self.pushConfig("oci", builder_proxy_auth_api_admin_secret=None)
+        self.pushConfig("snappy", builder_proxy_auth_api_admin_secret=None)
         [ref] = self.factory.makeGitRefs()
         job = self.makeJob(git_ref=ref)
         expected_exception_msg = (
@@ -197,7 +197,7 @@ class TestAsyncOCIRecipeBuildBehaviour(ProxyEndpointMixin, MakeOCIBuildMixin,
             MatchesDict({
                 "method": Equals("POST"),
                 "uri": Equals(urlsplit(
-                    config.oci.builder_proxy_auth_api_endpoint).path),
+                    config.snappy.builder_proxy_auth_api_endpoint).path),
                 "headers": ContainsDict({
                     b"Authorization": MatchesListwise([
                         Equals(b"Basic " + base64.b64encode(
@@ -236,8 +236,7 @@ class TestAsyncOCIRecipeBuildBehaviour(ProxyEndpointMixin, MakeOCIBuildMixin,
             "git_path": Equals(ref.name),
             "name": Equals(job.build.recipe.name),
             "proxy_url": self.getProxyURLMatcher(job),
-            "revocation_endpoint": self.getRevocationEndpointMatcher(
-                job, "oci"),
+            "revocation_endpoint": self.getRevocationEndpointMatcher(job),
             "series": Equals(job.build.distro_arch_series.distroseries.name),
             "trusted_keys": Equals(expected_trusted_keys),
             }))
@@ -266,8 +265,7 @@ class TestAsyncOCIRecipeBuildBehaviour(ProxyEndpointMixin, MakeOCIBuildMixin,
             "git_repository": Equals(ref.repository.git_https_url),
             "name": Equals(job.build.recipe.name),
             "proxy_url": self.getProxyURLMatcher(job),
-            "revocation_endpoint": self.getRevocationEndpointMatcher(
-                job, "oci"),
+            "revocation_endpoint":  self.getRevocationEndpointMatcher(job),
             "series": Equals(job.build.distro_arch_series.distroseries.name),
             "trusted_keys": Equals(expected_trusted_keys),
             }))
@@ -312,7 +310,7 @@ class TestAsyncOCIRecipeBuildBehaviour(ProxyEndpointMixin, MakeOCIBuildMixin,
 
     @defer.inlineCallbacks
     def test_dispatchBuildToSlave_prefers_lxd(self):
-        self.pushConfig("oci", builder_proxy_host=None)
+        self.pushConfig("snappy", builder_proxy_host=None)
         [ref] = self.factory.makeGitRefs()
         job = self.makeJob(git_ref=ref)
         builder = MockBuilder()
@@ -331,7 +329,7 @@ class TestAsyncOCIRecipeBuildBehaviour(ProxyEndpointMixin, MakeOCIBuildMixin,
 
     @defer.inlineCallbacks
     def test_dispatchBuildToSlave_falls_back_to_chroot(self):
-        self.pushConfig("oci", builder_proxy_host=None)
+        self.pushConfig("snappy", builder_proxy_host=None)
         [ref] = self.factory.makeGitRefs()
         job = self.makeJob(git_ref=ref)
         builder = MockBuilder()

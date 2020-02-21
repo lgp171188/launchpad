@@ -89,17 +89,17 @@ class OCIRecipeBuildBehaviour(BuildFarmJobBehaviourBase):
         build = self.build
         args = yield super(OCIRecipeBuildBehaviour, self).extraBuildArgs(
             logger=logger)
-        if config.oci.builder_proxy_host:
+        if config.snappy.builder_proxy_host:
             token = yield self._requestProxyToken()
             args["proxy_url"] = (
                 "http://{username}:{password}@{host}:{port}".format(
                     username=token['username'],
                     password=token['secret'],
-                    host=config.oci.builder_proxy_host,
-                    port=config.oci.builder_proxy_port))
+                    host=config.snappy.builder_proxy_host,
+                    port=config.snappy.builder_proxy_port))
             args["revocation_endpoint"] = (
                 "{endpoint}/{token}".format(
-                    endpoint=config.oci.builder_proxy_auth_api_endpoint,
+                    endpoint=config.snappy.builder_proxy_auth_api_endpoint,
                     token=token['username']))
         # XXX twom 2020-02-17 This may need to be more complex, and involve
         # distribution name.
@@ -130,15 +130,15 @@ class OCIRecipeBuildBehaviour(BuildFarmJobBehaviourBase):
 
     @defer.inlineCallbacks
     def _requestProxyToken(self):
-        admin_username = config.oci.builder_proxy_auth_api_admin_username
+        admin_username = config.snappy.builder_proxy_auth_api_admin_username
         if not admin_username:
             raise CannotBuild(
                 "builder_proxy_auth_api_admin_username is not configured.")
-        secret = config.oci.builder_proxy_auth_api_admin_secret
+        secret = config.snappy.builder_proxy_auth_api_admin_secret
         if not secret:
             raise CannotBuild(
                 "builder_proxy_auth_api_admin_secret is not configured.")
-        url = config.oci.builder_proxy_auth_api_endpoint
+        url = config.snappy.builder_proxy_auth_api_endpoint
         if not secret:
             raise CannotBuild(
                 "builder_proxy_auth_api_endpoint is not configured.")

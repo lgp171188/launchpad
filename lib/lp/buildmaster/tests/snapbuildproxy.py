@@ -79,7 +79,7 @@ class InProcessProxyAuthAPIFixture(fixtures.Fixture):
     """
 
     @defer.inlineCallbacks
-    def start(self, config_section):
+    def start(self):
         root = resource.Resource()
         self.tokens = ProxyAuthAPITokensResource()
         root.putChild("tokens", self.tokens)
@@ -89,11 +89,11 @@ class InProcessProxyAuthAPIFixture(fixtures.Fixture):
         port = yield endpoint.listen(site)
         self.addCleanup(port.stopListening)
         config.push("in-process-proxy-auth-api-fixture", dedent("""
-            [%s]
+            [snappy]
             builder_proxy_auth_api_admin_secret: admin-secret
             builder_proxy_auth_api_endpoint: http://%s:%s/tokens
             """) %
-            (config_section, port.getHost().host, port.getHost().port))
+            (port.getHost().host, port.getHost().port))
         self.addCleanup(config.pop, "in-process-proxy-auth-api-fixture")
 
 
@@ -110,7 +110,7 @@ class ProxyEndpointMixin:
             port=Equals(config.snappy.builder_proxy_port),
             path=Equals("")))
 
-    def getRevocationEndpointMatcher(self, job, config_section):
+    def getRevocationEndpointMatcher(self, job):
         return Equals("{}/{}-{}".format(
-            config[config_section].builder_proxy_auth_api_endpoint,
+            config.snappy.builder_proxy_auth_api_endpoint,
             job.build.build_cookie, int(self.now)))

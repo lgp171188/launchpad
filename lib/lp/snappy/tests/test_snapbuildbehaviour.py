@@ -301,7 +301,7 @@ class TestAsyncSnapBuildBehaviour(ProxyEndpointMixin,
                               host=config.snappy.builder_proxy_host,
                               port=config.snappy.builder_proxy_port))
         self.proxy_api = self.useFixture(InProcessProxyAuthAPIFixture())
-        yield self.proxy_api.start("snappy")
+        yield self.proxy_api.start()
         self.now = time.time()
         self.useFixture(fixtures.MockPatch(
             "time.time", return_value=self.now))
@@ -389,8 +389,7 @@ class TestAsyncSnapBuildBehaviour(ProxyEndpointMixin,
             "name": Equals("test-snap"),
             "private": Is(False),
             "proxy_url": self.getProxyURLMatcher(job),
-            "revocation_endpoint": self.getRevocationEndpointMatcher(
-                job, "snappy"),
+            "revocation_endpoint": self.getRevocationEndpointMatcher(job),
             "series": Equals("unstable"),
             "trusted_keys": Equals(expected_trusted_keys),
             }))
@@ -431,8 +430,7 @@ class TestAsyncSnapBuildBehaviour(ProxyEndpointMixin,
             "name": Equals("test-snap"),
             "private": Is(False),
             "proxy_url": self.getProxyURLMatcher(job),
-            "revocation_endpoint": self.getRevocationEndpointMatcher(
-                job, "snappy"),
+            "revocation_endpoint": self.getRevocationEndpointMatcher(job),
             "series": Equals("unstable"),
             "trusted_keys": Equals(expected_trusted_keys),
             }))
@@ -462,8 +460,7 @@ class TestAsyncSnapBuildBehaviour(ProxyEndpointMixin,
             "name": Equals("test-snap"),
             "private": Is(False),
             "proxy_url": self.getProxyURLMatcher(job),
-            "revocation_endpoint": self.getRevocationEndpointMatcher(
-                job, "snappy"),
+            "revocation_endpoint": self.getRevocationEndpointMatcher(job),
             "series": Equals("unstable"),
             "trusted_keys": Equals(expected_trusted_keys),
             }))
@@ -510,8 +507,7 @@ class TestAsyncSnapBuildBehaviour(ProxyEndpointMixin,
             "name": Equals("test-snap"),
             "private": Is(True),
             "proxy_url": self.getProxyURLMatcher(job),
-            "revocation_endpoint": self.getRevocationEndpointMatcher(
-                job, "snappy"),
+            "revocation_endpoint": self.getRevocationEndpointMatcher(job),
             "series": Equals("unstable"),
             "trusted_keys": Equals(expected_trusted_keys),
             }))
@@ -543,8 +539,7 @@ class TestAsyncSnapBuildBehaviour(ProxyEndpointMixin,
             "name": Equals("test-snap"),
             "private": Is(False),
             "proxy_url": self.getProxyURLMatcher(job),
-            "revocation_endpoint": self.getRevocationEndpointMatcher(
-                job, "snappy"),
+            "revocation_endpoint": self.getRevocationEndpointMatcher(job),
             "series": Equals("unstable"),
             "trusted_keys": Equals(expected_trusted_keys),
             }))
@@ -574,8 +569,7 @@ class TestAsyncSnapBuildBehaviour(ProxyEndpointMixin,
             "name": Equals("test-snap"),
             "private": Is(False),
             "proxy_url": self.getProxyURLMatcher(job),
-            "revocation_endpoint": self.getRevocationEndpointMatcher(
-                job, "snappy"),
+            "revocation_endpoint": self.getRevocationEndpointMatcher(job),
             "series": Equals("unstable"),
             "trusted_keys": Equals(expected_trusted_keys),
             }))
