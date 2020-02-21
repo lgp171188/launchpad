@@ -1,6 +1,11 @@
 # ztk-versions.cfg from ZTK a9eb2093b5 (2019-10-23), with some upgrades
 # ---------------------------------------------------------------------
 
+# XXX cjwatson 2020-02-21: Cases where we've upgraded relative to
+# ztk-versions.cfg are denoted by the upstream version being commented out
+# and followed by the real version we want to use.  This is a bit
+# cumbersome, and we should build this file dynamically instead.
+
 zope.annotation==4.7.0
 zope.applicationcontrol==4.2.0
 zope.authentication==4.4.0
