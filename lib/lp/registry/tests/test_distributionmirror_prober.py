@@ -13,6 +13,7 @@ from StringIO import StringIO
 
 from lazr.uri import URI
 import responses
+from lp.services.daemons.tachandler import TacTestSetup
 from six.moves import http_client
 from sqlobject import SQLObjectNotFound
 from testtools.matchers import (
@@ -85,6 +86,30 @@ from lp.testing.layers import (
     TwistedLayer,
     ZopelessDatabaseLayer,
     )
+
+
+class HTTPServerTestSetup(TacTestSetup):
+
+    def setUpRoot(self):
+        pass
+
+    @property
+    def root(self):
+        return '/var/tmp'
+
+    @property
+    def tacfile(self):
+        return os.path.join(
+            self.daemon_directory, 'distributionmirror_http_server.tac')
+
+    @property
+    def pidfile(self):
+        return os.path.join(self.root, 'distributionmirror_http_server.pid')
+
+    @property
+    def logfile(self):
+        return os.path.join(self.root, 'distributionmirror_http_server.log')
+
 
 
 class LocalhostWhitelistedHTTPSPolicy(BrowserLikePolicyForHTTPS):
