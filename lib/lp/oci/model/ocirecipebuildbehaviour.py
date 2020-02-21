@@ -50,10 +50,6 @@ class OCIRecipeBuildBehaviour(BuildFarmJobBehaviourBase):
     builder_type = "oci"
     image_types = [BuildBaseImageType.LXD, BuildBaseImageType.CHROOT]
 
-    @property
-    def distro_arch_series(self):
-        return self.build.distro_arch_series
-
     def getLogFileName(self):
         series = self.build.distro_series
 
@@ -113,11 +109,8 @@ class OCIRecipeBuildBehaviour(BuildFarmJobBehaviourBase):
         args['build_file'] = build.recipe.build_file
 
         if build.recipe.git_ref is not None:
-            if build.recipe.git_ref.repository_url is not None:
-                args["git_repository"] = build.recipe.git_ref.repository_url
-            else:
-                args["git_repository"] = (
-                    build.recipe.git_repository.git_https_url)
+            args["git_repository"] = (
+                build.recipe.git_repository.git_https_url)
         else:
             raise CannotBuild(
                 "Source repository for ~%s/%s has been deleted." %
