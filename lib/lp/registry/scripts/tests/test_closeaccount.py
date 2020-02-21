@@ -1,4 +1,4 @@
-# Copyright 2018-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2018-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test the close-account script."""
@@ -543,6 +543,44 @@ class TestCloseAccount(TestCaseWithFactory):
         self.assertRemoved(account_id, person_id)
         self.assertRaises(
             KeyError, login_token_set.__getitem__, plaintext_token)
+
+    def test_handles_oauth_request_token(self):
+        person = self.factory.makePerson()
+        other_person = self.factory.makePerson()
+        request_token = self.factory.makeOAuthRequestToken(reviewed_by=person)
+        other_request_token = self.factory.makeOAuthRequestToken(
+            reviewed_by=other_person)
+        self.assertContentEqual([request_token], person.oauth_request_tokens)
+        self.assertContentEqual(
+            [other_request_token], other_person.oauth_request_tokens)
+        person_id = person.id
+        account_id = person.account.id
+        script = self.makeScript([six.ensure_str(person.name)])
+        with dbuser('launchpad'):
+            self.runScript(script)
+        self.assertRemoved(account_id, person_id)
+        self.assertContentEqual([], person.oauth_request_tokens)
+        self.assertContentEqual(
+            [other_request_token], other_person.oauth_request_tokens)
+
+    def test_handles_oauth_access_token(self):
+        person = self.factory.makePerson()
+        other_person = self.factory.makePerson()
+        access_token, _ = self.factory.makeOAuthAccessToken(owner=person)
+        other_access_token, _ = self.factory.makeOAuthAccessToken(
+            owner=other_person)
+        self.assertContentEqual([access_token], person.oauth_access_tokens)
+        self.assertContentEqual(
+            [other_access_token], other_person.oauth_access_tokens)
+        person_id = person.id
+        account_id = person.account.id
+        script = self.makeScript([six.ensure_str(person.name)])
+        with dbuser('launchpad'):
+            self.runScript(script)
+        self.assertRemoved(account_id, person_id)
+        self.assertContentEqual([], person.oauth_access_tokens)
+        self.assertContentEqual(
+            [other_access_token], other_person.oauth_access_tokens)
 
     def test_fails_on_undeleted_ppa(self):
         person = self.factory.makePerson()
