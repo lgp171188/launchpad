@@ -455,8 +455,8 @@ install: reload-apache
 
 copy-certificates:
 	mkdir -p /etc/apache2/ssl
-	cp configs/development/launchpad.crt /etc/apache2/ssl/
-	cp configs/development/launchpad.key /etc/apache2/ssl/
+	cp configs/$(LPCONFIG)/launchpad.crt /etc/apache2/ssl/
+	cp configs/$(LPCONFIG)/launchpad.key /etc/apache2/ssl/
 
 copy-apache-config: codehosting-dir
 	# We insert the absolute path to the branch-rewrite script
