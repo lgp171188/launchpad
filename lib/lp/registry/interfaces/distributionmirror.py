@@ -359,7 +359,10 @@ class IDistributionMirror(Interface):
         title=_('HTTPS URL'), required=False, readonly=False,
         allowed_schemes=['https'], allow_userinfo=False,
         allow_query=False, allow_fragment=False, trailing_slash=True,
-        description=_('e.g.: https://archive.ubuntu.com/ubuntu/')))
+        # XXX: pappacena 2020-02-21: Add description field with a more
+        # suitable example once we have https for archive.ubuntu.com, like:
+        # description=_('e.g.: http://archive.ubuntu.com/ubuntu/')
+        ))
     ftp_base_url = exported(DistroMirrorFTPURIField(
         title=_('FTP URL'), required=False, readonly=False,
         allowed_schemes=['ftp'], allow_userinfo=False,

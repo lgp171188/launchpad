@@ -196,7 +196,7 @@ class HTTPSProbeFailureHandler:
             return False
         for reason in error.value.reasons:
             # It might be a raw SSL error, or a twisted-encapsulated
-            # verification error (such as DNSMismach error when the
+            # verification error (such as DNSMismatch error when the
             # certificate is valid for a different domain, for example).
             if reason.check(OpenSSL.SSL.Error, VerificationError) is not None:
                 return True
