@@ -94,4 +94,3 @@ class FiveHundredResource(Resource):
     def render_GET(self, request):
         request.setResponseCode(500)
         request.write('ASPLODE!!!')
-        return NOT_DONE_YET

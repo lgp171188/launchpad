@@ -27,7 +27,10 @@ from twisted.internet import (
     protocol,
     reactor,
     )
-from twisted.internet.defer import DeferredSemaphore
+from twisted.internet.defer import (
+    CancelledError,
+    DeferredSemaphore,
+    )
 from twisted.internet.endpoints import HostnameEndpoint
 from twisted.internet.ssl import VerificationError
 from twisted.python.failure import Failure
@@ -182,23 +185,54 @@ class HTTPSProbeFailureHandler:
     def __init__(self, factory):
         self.factory = factory
 
+    def handleResponse(self, response):
+        """Translates any request with return code different from 200 into
+        an error in the callback chain.
+
+        Note that other 2xx codes that are not 200 are considered errors too.
+        This behaviour is the same as seen in ProberProtocol.handleStatus,
+        for HTTP responses.
+        """
+        status = response.code
+        if status == http_client.OK:
+            return response
+        else:
+            raise BadResponseCode(status)
+
     def handleErrors(self, error):
+        """Handle exceptions in https requests.
+        """
         if self.isInvalidCertificateError(error):
             invalid_certificate_hosts.add(
                 (self.factory.request_host, self.factory.request_port))
             reason = InvalidHTTPSCertificate(
                 self.factory.request_host, self.factory.request_port)
             raise reason
+        if self.isTimeout(error):
+            raise ProberTimeout(self.factory.url, self.factory.timeout)
         raise error
 
+    def isTimeout(self, error):
+        """Checks if the error was caused by a timeout.
+        """
+        return self._isErrorFromType(error, CancelledError)
+
     def isInvalidCertificateError(self, error):
+        """Checks if the error was caused by an invalid certificate.
+        """
+        # It might be a raw SSL error, or a twisted-encapsulated
+        # verification error (such as DNSMismatch error when the
+        # certificate is valid for a different domain, for example).
+        return self._isErrorFromType(
+            error, OpenSSL.SSL.Error, VerificationError)
+
+    def _isErrorFromType(self, error, *types):
+        """Checks if the error was caused by any of the given types.
+        """
         if not isinstance(error.value, ResponseNeverReceived):
             return False
         for reason in error.value.reasons:
-            # It might be a raw SSL error, or a twisted-encapsulated
-            # verification error (such as DNSMismatch error when the
-            # certificate is valid for a different domain, for example).
-            if reason.check(OpenSSL.SSL.Error, VerificationError) is not None:
+            if reason.check(*types) is not None:
                 return True
         return False
 
@@ -265,7 +299,7 @@ class ProberFactory(protocol.ClientFactory):
         # sure our clients will only use the deferred returned by the probe()
         # method; this is to ensure self._cancelTimeout is always the first
         # callback in the chain.
-        self._deferred = None
+        self._deferred = defer.Deferred()
         self.timeout = timeout
         self.timeoutCall = None
         self.setURL(url.encode('ascii'))
@@ -285,14 +319,12 @@ class ProberFactory(protocol.ClientFactory):
             reactor.callLater(0, self.succeeded, '200')
             logger.debug("Forging a successful response on %s as we've been "
                          "told to probe only local URLs." % self.url)
-            self._deferred = defer.Deferred()
             return self._deferred
 
         if should_skip_host(self.request_host):
             reactor.callLater(0, self.failed, ConnectionSkipped(self.url))
             logger.debug("Skipping %s as we've had too many timeouts on this "
                          "host already." % self.url)
-            self._deferred = defer.Deferred()
             return self._deferred
 
         if (self.request_host, self.request_port) in invalid_certificate_hosts:
@@ -300,7 +332,6 @@ class ProberFactory(protocol.ClientFactory):
                 0, self.failed, InvalidHTTPSCertificateSkipped(self.url))
             logger.debug("Skipping %s as it doesn't have a valid HTTPS "
                          "certificate" % self.url)
-            self._deferred = defer.Deferred()
             return self._deferred
 
         self.connect()
@@ -325,10 +356,14 @@ class ProberFactory(protocol.ClientFactory):
         host_requests[self.request_host] += 1
         if self.is_https:
             treq = self.getHttpsClient()
-            self._deferred = treq.head(
-                self.url, reactor=reactor, allow_redirects=True)
+            self._deferred.addCallback(
+                lambda result: treq.head(
+                    self.url, reactor=reactor, allow_redirects=True,
+                    timeout=self.timeout))
             error_handler = HTTPSProbeFailureHandler(self)
+            self._deferred.addCallback(error_handler.handleResponse)
             self._deferred.addErrback(error_handler.handleErrors)
+            reactor.callWhenRunning(self._deferred.callback, None)
         else:
             reactor.connectTCP(self.connect_host, self.connect_port, self)
 
@@ -336,8 +371,6 @@ class ProberFactory(protocol.ClientFactory):
             self._cancelTimeout(None)
         self.timeoutCall = reactor.callLater(
             self.timeout, self.failWithTimeoutError)
-        if self._deferred is None:
-            self._deferred = defer.Deferred()
         self._deferred.addBoth(self._cancelTimeout)
 
     connector = None
@@ -347,8 +380,6 @@ class ProberFactory(protocol.ClientFactory):
         self.failed(ProberTimeout(self.url, self.timeout))
         if self.connector is not None:
             self.connector.disconnect()
-        if self.is_https:
-            self._defer.cancel()
 
     def startedConnecting(self, connector):
         self.connector = connector

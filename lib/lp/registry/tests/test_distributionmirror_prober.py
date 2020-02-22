@@ -13,7 +13,6 @@ from StringIO import StringIO
 
 from lazr.uri import URI
 import responses
-from lp.services.daemons.tachandler import TacTestSetup
 from six.moves import http_client
 from sqlobject import SQLObjectNotFound
 from testtools.matchers import (
@@ -76,6 +75,7 @@ from lp.registry.tests.distributionmirror_http_server import (
     DistributionMirrorTestSecureHTTPServer,
     )
 from lp.services.config import config
+from lp.services.daemons.tachandler import TacTestSetup
 from lp.services.timeout import default_timeout
 from lp.testing import (
     clean_up_reactor,
@@ -182,6 +182,23 @@ class TestProberHTTPSProtocolAndFactory(TestCase):
         distributionmirror_prober.invalid_certificate_hosts = (
             self.orig_invalid_certificate_hosts)
         super(TestProberHTTPSProtocolAndFactory, self).tearDown()
+
+    def _createProberAndProbe(self, url):
+        prober = ProberFactory(url)
+        return prober.probe()
+
+    def test_timeout(self):
+        prober = ProberFactory(self.urls['timeout'], timeout=0.5)
+        d = prober.probe()
+        return assert_fails_with(d, ProberTimeout)
+
+    def test_500(self):
+        d = self._createProberAndProbe(self.urls['500'])
+        return assert_fails_with(d, BadResponseCode)
+
+    def test_notfound(self):
+        d = self._createProberAndProbe(self.urls['404'])
+        return assert_fails_with(d, BadResponseCode)
 
     def test_config_no_https_proxy(self):
         prober = ProberFactory(self.urls['200'])
