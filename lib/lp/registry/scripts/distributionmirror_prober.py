@@ -197,7 +197,7 @@ class HTTPSProbeFailureHandler:
         if status == http_client.OK:
             return response
         else:
-            raise BadResponseCode(status)
+            raise BadResponseCode(status, response)
 
     def handleErrors(self, error):
         """Handle exceptions in https requests.
@@ -494,9 +494,10 @@ class ProberTimeout(ProberError):
 
 class BadResponseCode(ProberError):
 
-    def __init__(self, status, *args):
+    def __init__(self, status, response=None, *args):
         ProberError.__init__(self, *args)
         self.status = status
+        self.response = response
 
     def __str__(self):
         return "Bad response code: %s" % self.status

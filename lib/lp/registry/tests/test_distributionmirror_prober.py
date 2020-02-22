@@ -224,7 +224,8 @@ class TestProberHTTPSProtocolAndFactory(TestCase):
         proxy_listen_port = reactor.listenTCP(0, site)
         proxy_port = proxy_listen_port.getHost().port
         self.pushConfig(
-            'launchpad', http_proxy='http://localhost:%s/' % proxy_port)
+            'launchpad', http_proxy='http://localhost:%s/valid-mirror/file'
+                                    % proxy_port)
 
         url = 'https://localhost:%s/valid-mirror/file' % self.port
         prober = RedirectAwareProberFactory(url)
@@ -242,14 +243,16 @@ class TestProberHTTPSProtocolAndFactory(TestCase):
 
             self.assertEqual(
                 'https://localhost:%s/valid-mirror/file' % self.port,
-                result.request.absoluteURI)
+                result.value.response.request.absoluteURI)
 
         def cleanup(*args, **kwargs):
             proxy_listen_port.stopListening()
 
-        ret = deferred.addBoth(got_result)
+        # Doing the proxy checks on the error callback because the
+        # proxy is dummy and always returns 404.
+        deferred.addErrback(got_result)
         deferred.addBoth(cleanup)
-        return ret
+        return deferred
 
     def test_https_fails_on_invalid_certificates(self):
         """Changes set back the default browser-like policy for HTTPS
