@@ -11,6 +11,7 @@ import logging
 import os
 from StringIO import StringIO
 
+from fixtures import MockPatchObject
 from lazr.uri import URI
 import responses
 from six.moves import http_client
@@ -154,11 +155,10 @@ class TestProberHTTPSProtocolAndFactory(TestCase):
         RedirectAwareProberFactory.https_agent_policy = (
             LocalhostWhitelistedHTTPSPolicy)
 
-        def cleanup_https_policy():
-            ProberFactory.https_agent_policy = original_probefactory_policy
-            RedirectAwareProberFactory.https_agent_policy = (
-                original_redirect_policy)
-        self.addCleanup(cleanup_https_policy)
+        for factory in (ProberFactory, RedirectAwareProberFactory):
+            self.useFixture(MockPatchObject(
+                factory, "https_agent_policy",
+                LocalhostWhitelistedHTTPSPolicy))
 
         self.port = self.listening_port.getHost().port
 
@@ -168,20 +168,12 @@ class TestProberHTTPSProtocolAndFactory(TestCase):
                      '404': u'https://localhost:%s/invalid-mirror' % self.port}
         self.pushConfig('launchpad', http_proxy=None)
 
-        self.orig_host_requests = dict(
-            distributionmirror_prober.host_requests)
-        self.orig_host_timeouts = dict(
-            distributionmirror_prober.host_timeouts)
-        self.orig_invalid_certificate_hosts = set(
-            distributionmirror_prober.invalid_certificate_hosts)
-
-    def tearDown(self):
-        # Restore the globals that our tests messed with.
-        distributionmirror_prober.host_requests = self.orig_host_requests
-        distributionmirror_prober.host_timeouts = self.orig_host_timeouts
-        distributionmirror_prober.invalid_certificate_hosts = (
-            self.orig_invalid_certificate_hosts)
-        super(TestProberHTTPSProtocolAndFactory, self).tearDown()
+        self.useFixture(MockPatchObject(
+            distributionmirror_prober, "host_requests", {}))
+        self.useFixture(MockPatchObject(
+            distributionmirror_prober, "host_timeouts", {}))
+        self.useFixture(MockPatchObject(
+            distributionmirror_prober, "invalid_certificate_hosts", set()))
 
     def _createProberAndProbe(self, url):
         prober = ProberFactory(url)
