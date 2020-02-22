@@ -20,7 +20,7 @@ PIP_ENV += PIP_NO_INDEX=$(PIP_NO_INDEX)
 # system-installed Python packages.  If we ever manage to remove the need
 # for virtualenv --system-site-packages, then we can remove this too.
 PIP_ENV += PIP_IGNORE_INSTALLED=1
-PIP_ENV += PIP_FIND_LINKS=file://$(WD)/download-cache/dist/
+PIP_ENV += PIP_FIND_LINKS="file://$(WD)/wheelhouse/ file://$(WD)/download-cache/dist/"
 
 VIRTUALENV := $(PIP_ENV) virtualenv
 PIP := PYTHONPATH= $(PIP_ENV) env/bin/pip --cache-dir=$(WD)/download-cache/
@@ -221,10 +221,20 @@ jsbuild: $(LP_JS_BUILD) $(YUI_SYMLINK)
 
 # This target is used by LOSAs to prepare a build to be pushed out to
 # destination machines.  We only want wheels: they are the expensive bits,
-# and the other bits might run into problems like bug 575037.  This
-# target runs pip, and then removes everything created except for the
-# wheels.
-build_wheels: $(PIP_BIN) clean_pip
+# and the other bits might run into problems like bug 575037.  This target
+# runs pip, builds a wheelhouse with predictable paths that can be used even
+# if the build is pushed to a different path on the destination machines,
+# and then removes everything created except for the wheels.
+#
+# It doesn't seem to be straightforward to build a wheelhouse of all our
+# dependencies without also building a useless wheel of Launchpad itself;
+# fortunately that doesn't take too long, and we just remove it afterwards.
+build_wheels: $(PIP_BIN)
+	$(RM) -r wheelhouse
+	$(SHHH) $(PIP) wheel \
+		-c setup-requirements.txt -c constraints.txt -w wheelhouse .
+	$(RM) wheelhouse/lp-[0-9]*.whl
+	$(MAKE) clean_pip
 
 # Compatibility.
 build_eggs: build_wheels
@@ -242,6 +252,7 @@ $(PY): download-cache constraints.txt setup.py
 	$(VIRTUALENV) \
 		--python=$(PYTHON) --system-site-packages --never-download \
 		--extra-search-dir=$(WD)/download-cache/dist/ \
+		--extra-search-dir=$(WD)/wheelhouse/ \
 		env
 	ln -sfn env/bin bin
 	$(SHHH) $(PIP) install -r setup-requirements.txt
@@ -388,7 +399,7 @@ lxc-clean: clean_js clean_pip clean_logs
 	if test -f sourcecode/pygettextpo/Makefile; then \
 		$(MAKE) -C sourcecode/pygettextpo clean; \
 	fi
-	$(RM) -r env
+	$(RM) -r env wheelhouse
 	$(RM) -r $(LP_BUILT_JS_ROOT)/*
 	$(RM) -r $(CODEHOSTING_ROOT)/*
 	$(RM) -r $(APIDOC_DIR)
