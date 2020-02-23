@@ -21,6 +21,7 @@ import re
 import time
 
 import scandir
+import six
 from six.moves.urllib.parse import quote
 from swiftclient import client as swiftclient
 
@@ -245,7 +246,7 @@ def swift_location(lfc_id):
     Per https://answers.launchpad.net/swift/+question/181977, we can't
     simply stuff everything into one container.
     '''
-    assert isinstance(lfc_id, (int, long)), 'Not a LibraryFileContent.id'
+    assert isinstance(lfc_id, six.integer_types), 'Not a LibraryFileContent.id'
 
     # Don't change this unless you are also going to rebuild the Swift
     # storage, as objects will no longer be found in the expected

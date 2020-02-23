@@ -68,6 +68,7 @@ from lazr.restful.fields import (
     Reference,
     )
 from lazr.restful.interface import copy_field
+import six
 from six.moves import http_client
 from zope.component import getUtility
 from zope.formlib.form import NoInputData
@@ -180,7 +181,7 @@ def validate_person_common(obj, attr, value, validate_func,
     """Validate the person using the supplied function."""
     if value is None:
         return None
-    assert isinstance(value, (int, long)), (
+    assert isinstance(value, six.integer_types), (
         "Expected int for Person foreign key reference, got %r" % type(value))
 
     # Importing here to avoid a cyclic import.
