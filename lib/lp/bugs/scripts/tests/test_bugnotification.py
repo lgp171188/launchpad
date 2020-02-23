@@ -427,7 +427,7 @@ class TestGetEmailNotifications(TestCase):
         # Now we create the generator, start it, and then close it, triggering
         # a GeneratorExit exception inside the generator.
         email_notifications = get_email_notifications(notifications)
-        email_notifications.next()
+        next(email_notifications)
         email_notifications.close()
 
         # Verify that no "Error while building email notifications." is logged.
@@ -706,7 +706,7 @@ class EmailNotificationsBugMixin:
     def test_change_seen(self):
         # A smoketest.
         self.change(self.old, self.new)
-        message, body = self.get_messages().next()
+        message, body = next(self.get_messages())
         self.assertThat(body, Contains(self.unexpected_text))
 
     def test_undone_change_sends_no_emails(self):
@@ -718,7 +718,7 @@ class EmailNotificationsBugMixin:
         self.change(self.old, self.new)
         self.change(self.new, self.old)
         self.change_other()
-        message, body = self.get_messages().next()
+        message, body = next(self.get_messages())
         self.assertThat(body, Not(Contains(self.unexpected_text)))
 
     def test_multiple_undone_changes_sends_no_emails(self):
@@ -761,7 +761,7 @@ class EmailNotificationsBugTaskMixin(EmailNotificationsBugMixin):
             self.bug.addTask(self.product_owner, product2)
         self.change(self.old, self.new, index=0)
         self.change(self.new, self.old, index=1)
-        message, body = self.get_messages().next()
+        message, body = next(self.get_messages())
         self.assertThat(body, Contains(self.unexpected_text))
 
 
@@ -775,7 +775,7 @@ class EmailNotificationsAddedRemovedMixin:
 
     def test_added_seen(self):
         self.add(self.old)
-        message, body = self.get_messages().next()
+        message, body = next(self.get_messages())
         self.assertThat(body, Contains(self.added_message))
 
     def test_added_removed_sends_no_emails(self):
@@ -791,7 +791,7 @@ class EmailNotificationsAddedRemovedMixin:
     def test_added_another_removed_sends_emails(self):
         self.add(self.old)
         self.remove(self.new)
-        message, body = self.get_messages().next()
+        message, body = next(self.get_messages())
         self.assertThat(body, Contains(self.added_message))
         self.assertThat(body, Contains(self.removed_message))
 

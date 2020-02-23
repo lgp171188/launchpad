@@ -140,7 +140,7 @@ class MantisBugBatchParser:
         # it because different Mantis instances have different header
         # ordering and even different columns in the export.
         try:
-            headers = [h.lower() for h in reader.next()]
+            headers = [h.lower() for h in next(reader)]
         except StopIteration:
             raise UnparsableBugData("Missing header line")
         missing_headers = [

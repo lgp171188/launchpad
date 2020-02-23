@@ -449,7 +449,7 @@ class ErrorReportingUtility:
         :param message: Unicode message.
         :returns: Key for this message.
         """
-        key = self._oops_message_key_iter.next()
+        key = next(self._oops_message_key_iter)
         self._oops_messages[key] = message
         return key
 

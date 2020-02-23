@@ -4,6 +4,8 @@
 
 __metaclass__ = type
 
+from functools import partial
+
 from twisted.internet.defer import (
     Deferred,
     succeed,
@@ -193,7 +195,8 @@ class TestPollingTaskSource(TestCase):
             self.factory.getUniqueString(), self.factory.getUniqueString()]
         consumer1_tasks = []
         consumer2_tasks = []
-        task_source = self.makeTaskSource(task_producer=iter(tasks).next)
+        task_source = self.makeTaskSource(
+            task_producer=partial(next, iter(tasks)))
         task_source.start(AppendingTaskConsumer(consumer1_tasks))
         task_source.start(AppendingTaskConsumer(consumer2_tasks))
         self.assertEqual(

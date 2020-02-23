@@ -47,7 +47,7 @@ class BranchVocabulary(SQLObjectVocabularyBase):
         """See `IVocabularyTokenized`."""
         search_results = self.searchForTerms(token)
         if search_results.count() == 1:
-            return iter(search_results).next()
+            return next(iter(search_results))
         raise LookupError(token)
 
     def searchForTerms(self, query=None, vocab_filter=None):

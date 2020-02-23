@@ -144,7 +144,7 @@ class TestGPGHandler(TestCase):
     def test_non_ascii_filter(self):
         """localKeys should not error if passed non-ascii unicode strings."""
         filtered_keys = self.gpg_handler.localKeys(u'non-ascii \u8463')
-        self.assertRaises(StopIteration, filtered_keys.next)
+        self.assertRaises(StopIteration, next, filtered_keys)
 
     def testTestkeyrings(self):
         """Do we have the expected test keyring files"""

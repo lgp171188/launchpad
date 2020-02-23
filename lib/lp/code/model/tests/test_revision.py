@@ -369,7 +369,7 @@ class GetPublicRevisionsTestCase(TestCaseWithFactory):
     def _makeRevision(self, revision_date=None):
         """Make a revision using the date generator."""
         if revision_date is None:
-            revision_date = self.date_generator.next()
+            revision_date = next(self.date_generator)
         return self.factory.makeRevision(
             revision_date=revision_date)
 
@@ -477,7 +477,7 @@ class TestGetPublicRevisionsForPerson(GetPublicRevisionsTestCase,
 
         `author` defaults to self.author if not set."""
         if revision_date is None:
-            revision_date = self.date_generator.next()
+            revision_date = next(self.date_generator)
         if author is None:
             author = self.author
         return self.factory.makeRevision(
@@ -955,7 +955,7 @@ class TestPruneRevisionCache(RevisionCacheTestCase):
             delta=timedelta(days=2))
         for i in range(4):
             revision = self.factory.makeRevision(
-                revision_date=date_generator.next())
+                revision_date=next(date_generator))
             cache = RevisionCache(revision)
             self.store.add(cache)
         RevisionSet.pruneRevisionCache(5)
@@ -968,7 +968,7 @@ class TestPruneRevisionCache(RevisionCacheTestCase):
             delta=timedelta(days=2))
         for i in range(4):
             revision = self.factory.makeRevision(
-                revision_date=date_generator.next())
+                revision_date=next(date_generator))
             cache = RevisionCache(revision)
             self.store.add(cache)
         RevisionSet.pruneRevisionCache(1)

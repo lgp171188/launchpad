@@ -111,7 +111,7 @@ class DirectoryListing:
         return self
 
     def next(self):
-        return self.iter.next()
+        return next(self.iter)
 
     def close(self):
         # I can't believe we had to implement a whole class just to
@@ -191,7 +191,7 @@ class TransportSFTPFile:
             self._escaped_path, [(offset, length)])
 
         def get_first_chunk(read_things):
-            return read_things.next()[1]
+            return next(read_things)[1]
 
         def handle_short_read(failure):
             """Handle short reads by reading what was available.

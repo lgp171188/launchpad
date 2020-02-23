@@ -112,7 +112,7 @@ def parse_file(fd, start_position, logger, get_download_key, parsed_lines=0):
         # logfile that has been rotated already, so it should be safe to
         # parse its last line.
         try:
-            next_line = fd.next()
+            next_line = next(fd)
         except StopIteration:
             if parsed_lines > 0:
                 break
