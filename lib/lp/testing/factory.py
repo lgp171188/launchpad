@@ -5039,7 +5039,7 @@ def is_security_proxied_or_harmless(obj):
         return True
     if type(obj) in unwrapped_types:
         return True
-    if isinstance(obj, Sequence) or isinstance(obj, (set, frozenset)):
+    if isinstance(obj, (Sequence, set, frozenset)):
         return all(
             is_security_proxied_or_harmless(element)
             for element in obj)
