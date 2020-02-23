@@ -214,7 +214,8 @@ class TestPublishFTPMasterScript(
 
     def readReleaseFile(self, filename):
         """Read a Release file, return as a keyword/value dict."""
-        sections = list(TagFile(file(filename)))
+        with open(filename) as f:
+            sections = list(TagFile(f))
         self.assertEqual(1, len(sections))
         return dict(sections[0])
 
@@ -233,9 +234,8 @@ class TestPublishFTPMasterScript(
         script_dir = os.path.join(parts_base, distro.name, parts_dir)
         os.makedirs(script_dir)
         script_path = os.path.join(script_dir, self.factory.getUniqueString())
-        script_file = file(script_path, "w")
-        script_file.write(script_code)
-        script_file.close()
+        with open(script_path, "w") as script_file:
+            script_file.write(script_code)
         os.chmod(script_path, 0o755)
 
     def test_script_runs_successfully(self):
@@ -308,10 +308,12 @@ class TestPublishFTPMasterScript(
 
         dsc = os.path.join(
             archive_root, 'pool', 'main', 'f', 'foo', 'foo_666.dsc')
-        self.assertEqual("I do not care about sources.", file(dsc).read())
+        with open(dsc) as dsc_file:
+            self.assertEqual("I do not care about sources.", dsc_file.read())
         overrides = os.path.join(
             archive_root + '-overrides', distroseries.name + '_main_source')
-        self.assertEqual(dsc, file(overrides).read().rstrip())
+        with open(overrides) as overrides_file:
+            self.assertEqual(dsc, overrides_file.read().rstrip())
         self.assertTrue(path_exists(
             dists_root, distroseries.name, 'main', 'source', 'Sources.gz'))
         self.assertTrue(path_exists(

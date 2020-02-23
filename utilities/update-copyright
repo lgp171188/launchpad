@@ -57,7 +57,8 @@ def update_files(filenames):
         if not os.access(filename, os.W_OK):
             print("Skipped: %s is not writeable." % filename)
             continue
-        lines = file(filename).readlines()
+        with open(filename) as f:
+            lines = f.readlines()
         changed = update_copyright(lines)
         if changed:
             newfile = open(filename, 'w')

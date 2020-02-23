@@ -48,9 +48,10 @@ def differ_in_content(one_file, other_file):
     one_exists = file_exists(one_file)
     other_exists = file_exists(other_file)
     if any([one_exists, other_exists]):
-        return (
-            one_exists != other_exists or
-            file(one_file).read() != file(other_file).read())
+        if one_exists != other_exists:
+            return True
+        with open(one_file, 'rb') as one_f, open(other_file, 'rb') as other_f:
+            return one_f.read() != other_f.read()
     else:
         return False
 
@@ -161,23 +162,24 @@ class GenerateContentsFiles(LaunchpadCronScript):
         output_dirname = '%s-misc' % self.distribution.name
         output_path = os.path.join(
             self.content_archive, output_dirname, "apt-contents.conf")
-        output_file = file(output_path, 'w')
 
         parameters = {
             'content_archive': self.content_archive,
             'distribution': self.distribution.name,
         }
 
-        header = get_template('apt_conf_header.template')
-        output_file.write(file(header).read() % parameters)
+        with open(output_path, 'w') as output_file:
+            header = get_template('apt_conf_header.template')
+            with open(header) as header_file:
+                output_file.write(header_file.read() % parameters)
 
-        dist_template = file(get_template('apt_conf_dist.template')).read()
-        for suite in suites:
-            parameters['suite'] = suite
-            parameters['architectures'] = ' '.join(self.getArchs(suite))
-            output_file.write(dist_template % parameters)
-
-        output_file.close()
+            with open(get_template(
+                    'apt_conf_dist.template')) as dist_template_file:
+                dist_template = dist_template_file.read()
+            for suite in suites:
+                parameters['suite'] = suite
+                parameters['architectures'] = ' '.join(self.getArchs(suite))
+                output_file.write(dist_template % parameters)
 
     def createComponentDirs(self, suites):
         """Create the content archive's tree for all of its components."""

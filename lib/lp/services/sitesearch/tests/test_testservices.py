@@ -36,7 +36,7 @@ class TestServiceUtilities(WithScenarios, unittest.TestCase):
 
         # Create a stale/bogus PID file.
         filepath = pidfile_path(self.testservice.service_name)
-        with file(filepath, 'w') as pidfile:
+        with open(filepath, 'w') as pidfile:
             pidfile.write(str(bogus_pid))
 
         # The PID clean-up code should silently remove the file and return.
