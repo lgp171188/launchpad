@@ -20,6 +20,9 @@ Unix.
 
 @see: class L{GlobalLock} for more details.
 '''
+
+from __future__ import absolute_import, print_function
+
 __version__ = '0.2.' + '$Revision: #5 $'[12:-2]
 __author__ = 'Richard Gruet', 'rjgruet@yahoo.com'
 __date__    = '$Date: 2005/06/19 $'[7:-2], '$Author: rgruet $'[9:-2]
@@ -132,7 +135,7 @@ class GlobalLock:
             self.acquire()
 
     def __del__(self):
-        #print '__del__ called' ##
+        #print('__del__ called') ##
         try: self.release()
         except: pass
         if _windows:
@@ -185,7 +188,7 @@ class GlobalLock:
                 else:
                     raise GlobalLockError('Cannot acquire lock on "file" '
                                           '%s: %s\n' % (self.name, message))
-            #print 'got file lock.' ##
+            #print('got file lock.') ##
 
             # Then acquire the local (inter-thread) lock:
             if not self.threadLock.acquire(blocking):
@@ -194,7 +197,7 @@ class GlobalLock:
                                           'someone else' % self.name)
             if self.previous_lockfile_present and self.logger:
                 self.logger.warn("Stale lockfile detected and claimed.")
-            #print 'got thread lock.' ##
+            #print('got thread lock.') ##
 
         self.is_locked = True
 
@@ -229,7 +232,7 @@ class GlobalLock:
             else:
                 try:
                     win32event.ReleaseMutex(self.mutex)
-                    #print "released mutex"
+                    #print("released mutex")
                 except pywintypes.error as e:
                     errCode, fctName, errMsg =  e.args
                     if errCode == 288:
@@ -264,7 +267,7 @@ def test():
 #----------------------------------------------------------------------------
     ##TODO: a more serious test with distinct processes !
 
-    print 'Testing glock.py...' 
+    print('Testing glock.py...')
 
     # unfortunately can't test inter-process lock here!
     lockName = 'myFirstLock'
@@ -283,31 +286,31 @@ def test():
     # Check that <> threads of same process do block:
     import threading, time
     thread = threading.Thread(target=threadMain, args=(l,))
-    print 'main: locking...',
+    print('main: locking...', end='')
     l.acquire()
-    print ' done.'
+    print(' done.')
     thread.start()
     time.sleep(3)
-    print '\nmain: unlocking...',
+    print('\nmain: unlocking...', end='')
     l.release()
-    print ' done.'
+    print(' done.')
     time.sleep(0.1)
 
-    print '=> Test of glock.py passed.'
+    print('=> Test of glock.py passed.')
     return l
 
 def threadMain(lock):
-    print 'thread started(%s).' % lock
+    print('thread started(%s).' % lock)
     try: lock.acquire(blocking=False)
     except LockAlreadyAcquired: pass
     else: raise Exception('should have raised LockAlreadyAcquired')
-    print 'thread: locking (should stay blocked for ~ 3 sec)...',
+    print('thread: locking (should stay blocked for ~ 3 sec)...', end='')
     lock.acquire()
-    print 'thread: locking done.'
-    print 'thread: unlocking...',
+    print('thread: locking done.')
+    print('thread: unlocking...', end='')
     lock.release()
-    print ' done.'
-    print 'thread ended.'
+    print(' done.')
+    print('thread ended.')
 
 #----------------------------------------------------------------------------
 #       M A I N
