@@ -14,12 +14,9 @@ __all__ = [
     ]
 
 
-import base64
 import json
 import os
-import time
 
-import treq
 from twisted.internet import defer
 from zope.interface import implementer
 
@@ -36,9 +33,7 @@ from lp.buildmaster.model.buildfarmjobbehaviour import (
     BuildFarmJobBehaviourBase,
     )
 from lp.registry.interfaces.series import SeriesStatus
-from lp.services.config import config
 from lp.services.librarian.utils import copy_and_close
-from lp.services.twistedsupport.treq import check_status
 from lp.snappy.model.snapbuildbehaviour import SnapProxyMixin
 from lp.soyuz.adapters.archivedependencies import (
     get_sources_list_for_building,
