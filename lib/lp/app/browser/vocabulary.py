@@ -12,10 +12,9 @@ __all__ = [
     'vocabulary_filters',
     ]
 
-from itertools import izip
-
 from lazr.restful.interfaces import IWebServiceClientRequest
 import simplejson
+from six.moves import zip as izip
 from zope.component import (
     adapter,
     getUtility,
