@@ -58,7 +58,7 @@ from lp.buildmaster.tests.mock_slaves import (
     )
 from lp.buildmaster.tests.snapbuildproxy import (
     InProcessProxyAuthAPIFixture,
-    ProxyUrlMatcher,
+    ProxyURLMatcher,
     RevocationEndpointMatcher,
     )
 from lp.buildmaster.tests.test_buildfarmjobbehaviour import (
@@ -232,7 +232,7 @@ class TestAsyncOCIRecipeBuildBehaviour(MakeOCIBuildMixin, TestCaseWithFactory):
             "git_repository": Equals(ref.repository.git_https_url),
             "git_path": Equals(ref.name),
             "name": Equals(job.build.recipe.name),
-            "proxy_url": ProxyUrlMatcher(job, self.now),
+            "proxy_url": ProxyURLMatcher(job, self.now),
             "revocation_endpoint":  RevocationEndpointMatcher(job, self.now),
             "series": Equals(job.build.distro_arch_series.distroseries.name),
             "trusted_keys": Equals(expected_trusted_keys),
@@ -261,7 +261,7 @@ class TestAsyncOCIRecipeBuildBehaviour(MakeOCIBuildMixin, TestCaseWithFactory):
             "fast_cleanup": Is(True),
             "git_repository": Equals(ref.repository.git_https_url),
             "name": Equals(job.build.recipe.name),
-            "proxy_url": ProxyUrlMatcher(job, self.now),
+            "proxy_url": ProxyURLMatcher(job, self.now),
             "revocation_endpoint":  RevocationEndpointMatcher(job, self.now),
             "series": Equals(job.build.distro_arch_series.distroseries.name),
             "trusted_keys": Equals(expected_trusted_keys),
@@ -273,7 +273,7 @@ class TestAsyncOCIRecipeBuildBehaviour(MakeOCIBuildMixin, TestCaseWithFactory):
         job = self.makeJob(git_ref=ref)
         build_request = yield job.composeBuildRequest(None)
         self.assertThat(
-            build_request[4]["proxy_url"], ProxyUrlMatcher(job, self.now))
+            build_request[4]["proxy_url"], ProxyURLMatcher(job, self.now))
 
     @defer.inlineCallbacks
     def test_composeBuildRequest_git_ref_deleted(self):
