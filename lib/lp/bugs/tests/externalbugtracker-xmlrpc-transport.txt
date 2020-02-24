@@ -71,7 +71,7 @@ In addition to cookies sent by the server, we can set cookies locally.
     foo=bar
 
 If an error occurs trying to make the request, an
-``xmlrpclib.ProtocolError`` is raised.
+``xmlrpc_client.ProtocolError`` is raised.
 
     >>> request_body = """<?xml version="1.0"?>
     ... <methodCall>

@@ -186,7 +186,7 @@ class BuildQueue(SQLBase):
         if builder_status == "BuilderStatus.ABORTING":
             self.logtail = "Waiting for slave process to be terminated"
         elif slave_status.get("logtail") is not None:
-            # slave_status["logtail"] is normally an xmlrpclib.Binary
+            # slave_status["logtail"] is normally an xmlrpc_client.Binary
             # instance, and the contents might include invalid UTF-8 due to
             # being a fixed number of bytes from the tail of the log.  Turn
             # it into Unicode as best we can.

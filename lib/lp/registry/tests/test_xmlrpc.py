@@ -5,8 +5,7 @@
 
 __metaclass__ = type
 
-import xmlrpclib
-
+from six.moves import xmlrpc_client
 from zope.security.proxy import removeSecurityProxy
 
 from lp.registry.enums import PersonVisibility
@@ -21,7 +20,7 @@ class TestCanonicalSSOApplication(TestCaseWithFactory):
 
     def setUp(self):
         super(TestCanonicalSSOApplication, self).setUp()
-        self.rpc_proxy = xmlrpclib.ServerProxy(
+        self.rpc_proxy = xmlrpc_client.ServerProxy(
             'http://xmlrpc-private.launchpad.test:8087/canonicalsso',
             transport=XMLRPCTestTransport())
 
@@ -50,12 +49,12 @@ class TestCanonicalSSOApplication(TestCaseWithFactory):
         person = self.factory.makePerson()
         openid_identifier = removeSecurityProxy(
             person.account).openid_identifiers.any().identifier
-        public_rpc_proxy = xmlrpclib.ServerProxy(
+        public_rpc_proxy = xmlrpc_client.ServerProxy(
             'http://test@canonical.com:test@'
             'xmlrpc.launchpad.test/canonicalsso',
             transport=XMLRPCTestTransport())
         e = self.assertRaises(
-            xmlrpclib.ProtocolError,
+            xmlrpc_client.ProtocolError,
             public_rpc_proxy.getPersonDetailsByOpenIDIdentifier,
             openid_identifier)
         self.assertEqual(404, e.errcode)

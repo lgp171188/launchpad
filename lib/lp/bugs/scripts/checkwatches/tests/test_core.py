@@ -7,8 +7,8 @@ __metaclass__ = type
 from datetime import datetime
 import threading
 import unittest
-from xmlrpclib import ProtocolError
 
+from six.moves.xmlrpc_client import ProtocolError
 import transaction
 from zope.component import getUtility
 

@@ -10,12 +10,12 @@ import csv
 from datetime import datetime
 from email.utils import parseaddr
 import time
-import xmlrpclib
 
 from mimeparse import parse_mime_type
 import pytz
 import requests
 from requests.cookies import RequestsCookieJar
+from six.moves import xmlrpc_client
 from zope.component import getUtility
 from zope.interface import implementer
 
@@ -304,14 +304,14 @@ class Trac(ExternalBugTracker):
 def needs_authentication(func):
     """Decorator for automatically authenticating if needed.
 
-    If an `xmlrpclib.ProtocolError` with error code 403 is raised by the
+    If an `xmlrpc_client.ProtocolError` with error code 403 is raised by the
     function, we'll try to authenticate and call the function again.
     """
 
     def decorator(self, *args, **kwargs):
         try:
             return func(self, *args, **kwargs)
-        except xmlrpclib.ProtocolError as error:
+        except xmlrpc_client.ProtocolError as error:
             # Catch authentication errors only.
             if error.errcode != 403:
                 raise
@@ -339,7 +339,7 @@ class TracLPPlugin(Trac):
         self._internal_xmlrpc_transport = internal_xmlrpc_transport
 
         xmlrpc_endpoint = urlappend(self.baseurl, 'xmlrpc')
-        self._server = xmlrpclib.ServerProxy(
+        self._server = xmlrpc_client.ServerProxy(
             xmlrpc_endpoint, transport=self._xmlrpc_transport)
 
     def makeRequest(self, method, url, **kwargs):
@@ -364,7 +364,7 @@ class TracLPPlugin(Trac):
     @ensure_no_transaction
     def _generateAuthenticationToken(self):
         """Create an authentication token and return it."""
-        internal_xmlrpc = xmlrpclib.ServerProxy(
+        internal_xmlrpc = xmlrpc_client.ServerProxy(
             config.checkwatches.xmlrpc_url,
             transport=self._internal_xmlrpc_transport)
         return internal_xmlrpc.newBugTrackerToken()
@@ -490,7 +490,7 @@ class TracLPPlugin(Trac):
         try:
             timestamp, lp_bug_id = self._server.launchpad.get_launchpad_bug(
                 remote_bug)
-        except xmlrpclib.Fault as fault:
+        except xmlrpc_client.Fault as fault:
             # Deal with "Ticket does not exist" faults. We re-raise
             # anything else, since they're a sign of a bigger problem.
             if fault.faultCode == FAULT_TICKET_NOT_FOUND:
@@ -521,7 +521,7 @@ class TracLPPlugin(Trac):
         try:
             self._server.launchpad.set_launchpad_bug(
                 remote_bug, launchpad_bug_id)
-        except xmlrpclib.Fault as fault:
+        except xmlrpc_client.Fault as fault:
             # Deal with "Ticket does not exist" faults. We re-raise
             # anything else, since they're a sign of a bigger problem.
             if fault.faultCode == FAULT_TICKET_NOT_FOUND:

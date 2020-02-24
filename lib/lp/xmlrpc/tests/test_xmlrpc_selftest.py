@@ -4,8 +4,7 @@
 """XMLRPC self-test api.
 """
 
-import xmlrpclib
-
+from six.moves import xmlrpc_client
 from zope.component import getUtility
 
 from lp.services.webapp.interfaces import ILaunchBag
@@ -28,11 +27,11 @@ class TestXMLRPCSelfTest(TestCaseWithFactory):
     layer = LaunchpadFunctionalLayer
 
     def make_proxy(self):
-        return xmlrpclib.ServerProxy(
+        return xmlrpc_client.ServerProxy(
             'http://xmlrpc.launchpad.test/', transport=XMLRPCTestTransport())
 
     def make_logged_in_proxy(self):
-        return xmlrpclib.ServerProxy(
+        return xmlrpc_client.ServerProxy(
             'http://test@canonical.com:test@xmlrpc.launchpad.test/',
             transport=XMLRPCTestTransport())
 
@@ -47,18 +46,18 @@ class TestXMLRPCSelfTest(TestCaseWithFactory):
         self.assertEqual("<Fault 666: 'Yoghurt and spanners.'>", str(fault))
 
     def test_custom_transport(self):
-        """We can test our XMLRPC APIs using xmlrpclib, using a custom
+        """We can test our XMLRPC APIs using xmlrpc_client, using a custom
         Transport which talks with the publisher directly.
         """
         selftest = self.make_proxy()
         self.assertEqual('foo bar', selftest.concatenate('foo', 'bar'))
-        fault = self.assertRaises(xmlrpclib.Fault, selftest.make_fault)
+        fault = self.assertRaises(xmlrpc_client.Fault, selftest.make_fault)
         self.assertEqual("<Fault 666: 'Yoghurt and spanners.'>", str(fault))
 
     def test_unexpected_exception(self):
         """Sometimes an XML-RPC method will be buggy, and raise an exception
-        other than xmlrpclib.Fault.  We have such a method on the self test
-        view.
+        other than xmlrpc_client.Fault.  We have such a method on the self
+        test view.
         """
         selftestview = SelfTest('somecontext', 'somerequest')
         self.assertRaises(RuntimeError, selftestview.raise_exception)
@@ -70,7 +69,7 @@ class TestXMLRPCSelfTest(TestCaseWithFactory):
         one was generated):
         """
         selftest = self.make_proxy()
-        e = self.assertRaises(xmlrpclib.Fault, selftest.raise_exception)
+        e = self.assertRaises(xmlrpc_client.Fault, selftest.raise_exception)
         self.assertStartsWith(str(e), "<Fault -1: 'OOPS-")
 
     def test_anonymous_authentication(self):

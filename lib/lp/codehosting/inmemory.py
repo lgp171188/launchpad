@@ -10,7 +10,7 @@ __all__ = [
     ]
 
 import operator
-from xmlrpclib import Fault
+from six.moves.xmlrpc_client import Fault
 
 from breezy.urlutils import (
     escape,
