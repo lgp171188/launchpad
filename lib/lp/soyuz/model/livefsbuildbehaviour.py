@@ -87,7 +87,7 @@ class LiveFSBuildBehaviour(BuildFarmJobBehaviourBase):
         base_args = yield super(LiveFSBuildBehaviour, self).extraBuildArgs(
             logger=logger)
         # Non-trivial metadata values may have been security-wrapped, which
-        # is pointless here and just gets in the way of xmlrpclib
+        # is pointless here and just gets in the way of xmlrpc_client
         # serialisation.
         args = dict(removeSecurityProxy(build.livefs.metadata))
         if build.metadata_override is not None:

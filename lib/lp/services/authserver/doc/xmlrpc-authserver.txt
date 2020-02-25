@@ -28,9 +28,9 @@ The AuthServerAPIView provides the IAuthServer XML-RPC API:
 That interface allows the codehosting SSH server to find information
 about users.
 
-    >>> import xmlrpclib
+    >>> from six.moves import xmlrpc_client
     >>> from lp.testing.xmlrpc import XMLRPCTestTransport
-    >>> authserver= xmlrpclib.ServerProxy(
+    >>> authserver= xmlrpc_client.ServerProxy(
     ...     'http://xmlrpc-private.launchpad.test:8087/authserver',
     ...     transport=XMLRPCTestTransport())
 

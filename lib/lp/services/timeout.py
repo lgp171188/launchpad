@@ -26,10 +26,6 @@ from threading import (
     Lock,
     Thread,
     )
-from xmlrpclib import (
-    SafeTransport,
-    Transport,
-    )
 
 from requests import (
     HTTPError,
@@ -42,6 +38,10 @@ from requests.adapters import (
 from requests_file import FileAdapter
 from requests_toolbelt.downloadutils import stream
 from six import reraise
+from six.moves.xmlrpc_client import (
+    SafeTransport,
+    Transport,
+    )
 from urllib3.connectionpool import (
     HTTPConnectionPool,
     HTTPSConnectionPool,

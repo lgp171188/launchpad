@@ -17,13 +17,13 @@ __all__ = [
     ]
 
 from base64 import urlsafe_b64encode
-from itertools import izip_longest
 import re
 import sys
 
 from breezy.patches import hunk_from_header
 from lxml import html
 import markdown
+from six.moves import zip_longest as izip_longest
 from zope.component import getUtility
 from zope.error.interfaces import IErrorReportingUtility
 from zope.interface import implementer

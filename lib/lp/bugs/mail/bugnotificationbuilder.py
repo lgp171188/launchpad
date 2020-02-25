@@ -12,9 +12,11 @@ __all__ = [
     ]
 
 from email.mime.text import MIMEText
-from email.utils import formatdate
+from email.utils import (
+    formatdate,
+    mktime_tz,
+    )
 import re
-import rfc822
 
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
@@ -35,7 +37,7 @@ from lp.services.mail.sendmail import (
 
 def format_rfc2822_date(date):
     """Formats a date according to RFC2822's desires."""
-    return formatdate(rfc822.mktime_tz(date.utctimetuple() + (0, )))
+    return formatdate(mktime_tz(date.utctimetuple() + (0, )))
 
 
 def get_bugmail_from_address(person, bug):

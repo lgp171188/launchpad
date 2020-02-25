@@ -7,9 +7,9 @@ __all__ = [
     'PublishDistro',
     ]
 
-from itertools import ifilter
 from optparse import OptionValueError
 
+from six.moves import filter as ifilter
 from zope.component import getUtility
 
 from lp.app.errors import NotFoundError

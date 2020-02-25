@@ -42,9 +42,9 @@ can be found in the tests for ICodeImportJobSet.
 
 The point of all this is for it to be accessed over XMLRPC.
 
-    >>> import xmlrpclib
+    >>> from six.moves import xmlrpc_client
     >>> from lp.testing.xmlrpc import XMLRPCTestTransport
-    >>> codeimportscheduler = xmlrpclib.ServerProxy(
+    >>> codeimportscheduler = xmlrpc_client.ServerProxy(
     ...     'http://xmlrpc-private.launchpad.test:8087/codeimportscheduler',
     ...     transport=XMLRPCTestTransport())
     >>> codeimportscheduler.getJobForMachine('bazaar-importer', 2)

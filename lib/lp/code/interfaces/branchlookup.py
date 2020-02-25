@@ -11,11 +11,10 @@ __all__ = [
     'ILinkedBranchTraverser',
     ]
 
-from itertools import (
-    ifilter,
-    imap,
+from six.moves import (
+    filter as ifilter,
+    map as imap,
     )
-
 from zope.interface import Interface
 
 from lp.code.interfaces.codehosting import (
