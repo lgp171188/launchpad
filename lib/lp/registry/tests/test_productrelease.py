@@ -78,7 +78,7 @@ class ProductReleaseFileTestcase(TestCaseWithFactory):
         maintainer = release.milestone.product.owner
         with person_logged_in(maintainer):
             release_file = release.addReleaseFile(
-                'pting.txt', 'test', 'text/plain', maintainer,
+                'pting.txt', b'test', 'text/plain', maintainer,
                 file_type=UpstreamFileType.README, description='desc')
         self.assertEqual('desc', release_file.description)
         self.assertEqual(UpstreamFileType.README, release_file.filetype)
@@ -93,7 +93,7 @@ class ProductReleaseFileTestcase(TestCaseWithFactory):
         with person_logged_in(maintainer):
             self.assertRaises(
                 InvalidFilename, release.addReleaseFile,
-                library_file.filename, 'test', 'text/plain', maintainer)
+                library_file.filename, b'test', 'text/plain', maintainer)
 
     def test_addReleaseFile_only_works_on_public_products(self):
         owner = self.factory.makePerson()
@@ -104,4 +104,4 @@ class ProductReleaseFileTestcase(TestCaseWithFactory):
             self.assertFalse(release.can_have_release_files)
             self.assertRaises(
                 ProprietaryProduct, release.addReleaseFile,
-                'README', 'test', 'text/plain', owner)
+                'README', b'test', 'text/plain', owner)
