@@ -19,9 +19,9 @@ __all__ = [
     "product_to_productbugconfiguration",
     ]
 
-from cStringIO import StringIO
 from datetime import datetime
 from functools import partial
+from io import BytesIO
 from operator import itemgetter
 
 from lazr.restful.interface import copy_field
@@ -617,7 +617,7 @@ class FileBugViewBase(LaunchpadFormView):
                     file_description = filename
 
                 bug.addAttachment(
-                    owner=self.user, data=StringIO(data['filecontent']),
+                    owner=self.user, data=BytesIO(data['filecontent']),
                     filename=filename, description=file_description,
                     comment=attachment_comment, is_patch=data['patch'])
 

@@ -7,7 +7,7 @@ To demonstrate this feature, we'll use bug 1.
 
 We'll start by adding some attachments to the bug:
 
-    >>> import StringIO
+    >>> from io import BytesIO
     >>> from lp.services.database.sqlbase import flush_database_updates
     >>> from lp.testing import login, logout
     >>> from lp.bugs.model.bug import Bug
@@ -16,14 +16,14 @@ We'll start by adding some attachments to the bug:
     >>> mark = Person.selectOneBy(name="mark")
     >>> mark.display_name = u"M\xe1rk Sh\xfattlew\xf2rth"
     >>> bug = Bug.get(1)
-    >>> content = StringIO.StringIO("<html><body>bogus</body></html>")
+    >>> content = BytesIO(b"<html><body>bogus</body></html>")
     >>> a1 = bug.addAttachment(mark, content, "comment for file a",
     ...     "file_a.txt", content_type="text/html")
-    >>> content = StringIO.StringIO("do we need to")
+    >>> content = BytesIO(b"do we need to")
     >>> a2 = bug.addAttachment(mark, content, "comment for file with space",
     ...     "file with space.txt",
     ...     content_type='text/plain;\n  name="file with space.txt"')
-    >>> content = StringIO.StringIO("Yes we can!")
+    >>> content = BytesIO(b"Yes we can!")
     >>> a3 = bug.addAttachment(mark, content, "comment for patch",
     ...      "bug-patch.diff", is_patch=True, content_type='text/plain',
     ...      description="a patch")

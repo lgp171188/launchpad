@@ -53,7 +53,7 @@ class TestAccessToBugAttachmentFiles(TestCaseWithFactory):
         login_person(self.bug_owner)
         self.bug = self.factory.makeBug(owner=self.bug_owner)
         self.bugattachment = self.factory.makeBugAttachment(
-            bug=self.bug, filename='foo.txt', data='file content')
+            bug=self.bug, filename='foo.txt', data=b'file content')
 
     def test_traversal_to_lfa_of_bug_attachment(self):
         # Traversing to the URL provided by a ProxiedLibraryFileAlias of a
@@ -132,7 +132,7 @@ class TestWebserviceAccessToBugAttachmentFiles(TestCaseWithFactory):
         login_person(self.bug_owner)
         self.bug = self.factory.makeBug(owner=self.bug_owner)
         self.factory.makeBugAttachment(
-            bug=self.bug, filename='foo.txt', data='file content')
+            bug=self.bug, filename='foo.txt', data=b'file content')
         self.bug_url = api_url(self.bug)
 
     def test_anon_access_to_public_bug_attachment(self):
