@@ -1,4 +1,4 @@
-# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2016 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Database classes for implementing distribution items."""
@@ -709,7 +709,7 @@ class Distribution(SQLBase, BugTargetBase, MakesAnnouncements,
             country_dns_mirror=True).one()
 
     def newMirror(self, owner, speed, country, content, display_name=None,
-                  description=None, http_base_url=None, https_base_url=None,
+                  description=None, http_base_url=None,
                   ftp_base_url=None, rsync_base_url=None,
                   official_candidate=False, enabled=False,
                   whiteboard=None):
@@ -722,17 +722,15 @@ class Distribution(SQLBase, BugTargetBase, MakesAnnouncements,
             return None
 
         urls = {'http_base_url': http_base_url,
-                'https_base_url': https_base_url,
                 'ftp_base_url': ftp_base_url,
                 'rsync_base_url': rsync_base_url}
         for name, value in urls.items():
             if value is not None:
                 urls[name] = IDistributionMirror[name].normalize(value)
 
-        url = (urls['https_base_url'] or urls['http_base_url'] or
-               urls['ftp_base_url'])
+        url = urls['http_base_url'] or urls['ftp_base_url']
         assert url is not None, (
-            "A mirror must provide at least one HTTP/HTTPS/FTP URL.")
+            "A mirror must provide either an HTTP or FTP URL (or both).")
         dummy, host, dummy, dummy, dummy, dummy = urlparse(url)
         name = sanitize_name('%s-%s' % (host, content.name.lower()))
 
@@ -746,7 +744,6 @@ class Distribution(SQLBase, BugTargetBase, MakesAnnouncements,
             distribution=self, owner=owner, name=name, speed=speed,
             country=country, content=content, display_name=display_name,
             description=description, http_base_url=urls['http_base_url'],
-            https_base_url=urls['https_base_url'],
             ftp_base_url=urls['ftp_base_url'],
             rsync_base_url=urls['rsync_base_url'],
             official_candidate=official_candidate, enabled=enabled,

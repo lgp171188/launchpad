@@ -159,7 +159,6 @@ packages matching (substring) the given text.
     enabled: True
     ftp_base_url: None
     http_base_url: u'http://releases.ubuntu.com/'
-    https_base_url: None
     name: u'canonical-releases'
     official_candidate: True
     owner_link: u'http://.../~mark'
