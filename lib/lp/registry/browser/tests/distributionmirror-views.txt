@@ -138,7 +138,7 @@ The URL cannot contain a query string.
     ...     print error[2]
     URIs with query strings are not allowed.
 
-The HTTPS URL should no have HTTP scheme.
+The HTTPS URL may not have an HTTP scheme.
 
     >>> bad_form['field.http_base_url'] = ''
     >>> bad_form['field.https_base_url'] = 'http://secret.me/#fragement'

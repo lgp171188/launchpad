@@ -357,7 +357,7 @@ class ProberFactory(protocol.ClientFactory):
         if self.is_https:
             treq = self.getHttpsClient()
             self._deferred.addCallback(
-                lambda result: treq.head(
+                lambda _: treq.head(
                     self.url, reactor=reactor, allow_redirects=True,
                     timeout=self.timeout))
             error_handler = HTTPSProbeFailureHandler(self)
