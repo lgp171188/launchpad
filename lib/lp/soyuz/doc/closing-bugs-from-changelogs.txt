@@ -57,7 +57,7 @@ for close_bugs_for_queue_item to operate on.
     ...        pocket=PackagePublishingPocket.RELEASE,
     ...        archive=None, distroseries=None):
     ...     """Create a PackageUpload record."""
-    ...     changes = changes_template % fixing_text
+    ...     changes = (changes_template % fixing_text).encode('UTF-8')
     ...     if distroseries is None:
     ...         distroseries = ubuntu_hoary
     ...     if archive is None:

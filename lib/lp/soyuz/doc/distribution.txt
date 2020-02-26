@@ -139,7 +139,7 @@ Create a NEW PackageUpload record for cprov PPA:
     >>> login('mark@example.com')
     >>> queue = hoary.createQueueEntry(
     ...      pocket=PackagePublishingPocket.RELEASE, archive=cprov.archive,
-    ...      changesfilename='foo', changesfilecontent='bar')
+    ...      changesfilename='foo', changesfilecontent=b'bar')
     >>> queue.status.name
     'NEW'
 

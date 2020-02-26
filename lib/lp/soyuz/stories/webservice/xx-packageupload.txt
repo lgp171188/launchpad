@@ -64,7 +64,7 @@ First, insert some data to retrieve:
     >>> warty_series = getUtility(IDistributionSet)['ubuntu']['warty']
     >>> upload = warty_series.createQueueEntry(
     ...     pocket=PackagePublishingPocket.RELEASE, changesfilename="test",
-    ...     changesfilecontent="test", archive=warty_series.main_archive)
+    ...     changesfilecontent=b"test", archive=warty_series.main_archive)
     >>> arbitrary_file = factory.makeLibraryFileAlias(filename="custom1")
     >>> custom = upload.addCustom(
     ...     arbitrary_file, PackageUploadCustomFormat.STATIC_TRANSLATIONS)

@@ -81,7 +81,9 @@ class TestAcceptRejectQueueUploads(TestCaseWithFactory):
         self.partner_archive = distribution.getArchiveByComponent('partner')
 
         # Get some sample changes file content for the new uploads.
-        with open(datadir('suite/bar_1.0-1/bar_1.0-1_source.changes')) as cf:
+        with open(
+                datadir('suite/bar_1.0-1/bar_1.0-1_source.changes'),
+                'rb') as cf:
             changes_file_content = cf.read()
 
         self.partner_spr = self.makeSPR(
