@@ -47,6 +47,7 @@ from lp.code.interfaces.branchmergeproposal import IBranchMergeProposal
 from lp.code.interfaces.codereviewvote import ICodeReviewVoteReference
 from lp.code.interfaces.gitref import IGitRef
 from lp.code.interfaces.gitrepository import IGitRepositorySet
+from lp.registry.interfaces.person import IPerson
 from lp.services.helpers import english_list
 from lp.services.propertycache import cachedproperty
 from lp.services.scripts import log
@@ -387,3 +388,27 @@ class GitRefRegisterMergeProposalView(LaunchpadFormView):
                     'prerequisite_git_repository',
                     "This repository is not mergeable into %s." %
                     target_repository.identity)
+
+    @property
+    def initial_values(self):
+        values = {}
+        if IGitRef.providedBy(self.context):
+            repository = self.context.repository
+        else:
+            repository = self.context
+
+        if IPerson.providedBy(repository.target):
+            # If the source is a personal repository, then the only valid
+            # target is that same repository.
+            target_repository = repository
+        else:
+            repository_set = getUtility(IGitRepositorySet)
+            target_repository = repository_set.getDefaultRepository(
+                repository.target)
+        # If the target has a default branch, use that.
+        # If not, see if we can use the source one for convenience.
+        if target_repository and target_repository.default_branch:
+            values['target_git_path'] = target_repository.default_branch
+        elif repository.default_branch:
+            values['target_git_path'] = repository.default_branch
+        return values

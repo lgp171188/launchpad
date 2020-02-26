@@ -862,6 +862,16 @@ class TestRegisterBranchMergeProposalViewGit(
         values.update(extras)
         return values
 
+    def test_default_branch(self):
+        with admin_logged_in():
+            target_branch = self._makeTargetBranch(target_default=True)
+        removeSecurityProxy(
+            target_branch.repository)._default_branch = target_branch.path
+        view = self._createView()
+        self.assertEqual(
+            target_branch.repository.default_branch,
+            view.initial_values['target_git_path'])
+
     def test_register_ajax_request_with_confirmation(self):
         # Ajax submits return json data containing info about what the visible
         # repositories are if they are not all visible to the reviewer.
