@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """distributionmirror-prober tests."""
@@ -11,6 +11,7 @@ import logging
 import os
 from StringIO import StringIO
 
+from fixtures import MockPatchObject
 from lazr.uri import URI
 import responses
 from six.moves import http_client
@@ -28,9 +29,14 @@ from testtools.twistedsupport import (
 from twisted.internet import (
     defer,
     reactor,
+    ssl,
     )
 from twisted.python.failure import Failure
 from twisted.web import server
+from twisted.web.client import (
+    BrowserLikePolicyForHTTPS,
+    ProxyAgent,
+    )
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
@@ -44,6 +50,8 @@ from lp.registry.scripts.distributionmirror_prober import (
     BadResponseCode,
     ConnectionSkipped,
     InfiniteLoopDetected,
+    InvalidHTTPSCertificate,
+    InvalidHTTPSCertificateSkipped,
     LoggingMixin,
     MAX_REDIRECTS,
     MIN_REQUEST_TIMEOUT_RATIO,
@@ -65,6 +73,7 @@ from lp.registry.scripts.distributionmirror_prober import (
     )
 from lp.registry.tests.distributionmirror_http_server import (
     DistributionMirrorTestHTTPServer,
+    DistributionMirrorTestSecureHTTPServer,
     )
 from lp.services.config import config
 from lp.services.daemons.tachandler import TacTestSetup
@@ -101,6 +110,186 @@ class HTTPServerTestSetup(TacTestSetup):
     @property
     def logfile(self):
         return os.path.join(self.root, 'distributionmirror_http_server.log')
+
+
+
+class LocalhostWhitelistedHTTPSPolicy(BrowserLikePolicyForHTTPS):
+    """HTTPS policy that bypasses SSL certificate check when doing requests
+    to localhost.
+    """
+
+    def creatorForNetloc(self, hostname, port):
+        # check if the hostname is in the the whitelist,
+        # otherwise return the default policy
+        if hostname == 'localhost':
+            return ssl.CertificateOptions(verify=False)
+        return super(LocalhostWhitelistedHTTPSPolicy, self).creatorForNetloc(
+            hostname, port)
+
+
+class TestProberHTTPSProtocolAndFactory(TestCase):
+    layer = TwistedLayer
+    run_tests_with = AsynchronousDeferredRunTestForBrokenTwisted.make_factory(
+        timeout=30)
+
+    def setUp(self):
+        super(TestProberHTTPSProtocolAndFactory, self).setUp()
+        root = DistributionMirrorTestSecureHTTPServer()
+        site = server.Site(root)
+        site.displayTracebacks = False
+        keys_path = os.path.join(config.root, "configs", "development")
+        keys = ssl.DefaultOpenSSLContextFactory(
+            os.path.join(keys_path, "launchpad.key"),
+            os.path.join(keys_path, "launchpad.crt"),
+            )
+        self.listening_port = reactor.listenSSL(0, site, keys)
+
+        self.addCleanup(self.listening_port.stopListening)
+
+        # Change the default policy to accept localhost self-signed
+        # certificates.
+        original_probefactory_policy = ProberFactory.https_agent_policy
+        original_redirect_policy = (
+            RedirectAwareProberFactory.https_agent_policy)
+        ProberFactory.https_agent_policy = LocalhostWhitelistedHTTPSPolicy
+        RedirectAwareProberFactory.https_agent_policy = (
+            LocalhostWhitelistedHTTPSPolicy)
+
+        for factory in (ProberFactory, RedirectAwareProberFactory):
+            self.useFixture(MockPatchObject(
+                factory, "https_agent_policy",
+                LocalhostWhitelistedHTTPSPolicy))
+
+        self.port = self.listening_port.getHost().port
+
+        self.urls = {'timeout': u'https://localhost:%s/timeout' % self.port,
+                     '200': u'https://localhost:%s/valid-mirror' % self.port,
+                     '500': u'https://localhost:%s/error' % self.port,
+                     '404': u'https://localhost:%s/invalid-mirror' % self.port}
+        self.pushConfig('launchpad', http_proxy=None)
+
+        self.useFixture(MockPatchObject(
+            distributionmirror_prober, "host_requests", {}))
+        self.useFixture(MockPatchObject(
+            distributionmirror_prober, "host_timeouts", {}))
+        self.useFixture(MockPatchObject(
+            distributionmirror_prober, "invalid_certificate_hosts", set()))
+
+    def _createProberAndProbe(self, url):
+        prober = ProberFactory(url)
+        return prober.probe()
+
+    def test_timeout(self):
+        prober = ProberFactory(self.urls['timeout'], timeout=0.5)
+        d = prober.probe()
+        return assert_fails_with(d, ProberTimeout)
+
+    def test_500(self):
+        d = self._createProberAndProbe(self.urls['500'])
+        return assert_fails_with(d, BadResponseCode)
+
+    def test_notfound(self):
+        d = self._createProberAndProbe(self.urls['404'])
+        return assert_fails_with(d, BadResponseCode)
+
+    def test_config_no_https_proxy(self):
+        prober = ProberFactory(self.urls['200'])
+        self.assertThat(prober, MatchesStructure.byEquality(
+            request_scheme='https',
+            request_host='localhost',
+            request_port=self.port,
+            request_path='/valid-mirror',
+            connect_scheme='https',
+            connect_host='localhost',
+            connect_port=self.port,
+            connect_path='/valid-mirror'))
+
+    def test_RedirectAwareProber_follows_https_redirect(self):
+        url = 'https://localhost:%s/redirect-to-valid-mirror/file' % self.port
+        prober = RedirectAwareProberFactory(url)
+        self.assertEqual(prober.url, url)
+        deferred = prober.probe()
+
+        def got_result(result):
+            self.assertEqual(http_client.OK, result.code)
+            self.assertEqual(
+                'https://localhost:%s/valid-mirror/file' % self.port,
+                result.request.absoluteURI)
+
+        return deferred.addCallback(got_result)
+
+    def test_https_prober_uses_proxy(self):
+        root = DistributionMirrorTestSecureHTTPServer()
+        site = server.Site(root)
+        proxy_listen_port = reactor.listenTCP(0, site)
+        proxy_port = proxy_listen_port.getHost().port
+        self.pushConfig(
+            'launchpad', http_proxy='http://localhost:%s/valid-mirror/file'
+                                    % proxy_port)
+
+        url = 'https://localhost:%s/valid-mirror/file' % self.port
+        prober = RedirectAwareProberFactory(url)
+        self.assertEqual(prober.url, url)
+        deferred = prober.probe()
+
+        def got_result(result):
+            # We basically don't care about the result here. We just want to
+            # check that it did the request to the correct URI,
+            # and ProxyAgent was used pointing to the correct proxy.
+            agent = prober.getHttpsClient()._agent
+            self.assertIsInstance(agent, ProxyAgent)
+            self.assertEqual('localhost', agent._proxyEndpoint._hostText)
+            self.assertEqual(proxy_port, agent._proxyEndpoint._port)
+
+            self.assertEqual(
+                'https://localhost:%s/valid-mirror/file' % self.port,
+                result.value.response.request.absoluteURI)
+
+        def cleanup(*args, **kwargs):
+            proxy_listen_port.stopListening()
+
+        # Doing the proxy checks on the error callback because the
+        # proxy is dummy and always returns 404.
+        deferred.addErrback(got_result)
+        deferred.addBoth(cleanup)
+        return deferred
+
+    def test_https_fails_on_invalid_certificates(self):
+        """Changes set back the default browser-like policy for HTTPS
+        request and make sure the request is failing due to invalid
+        (self-signed) certificate.
+        """
+        url = 'https://localhost:%s/valid-mirror/file' % self.port
+        prober = RedirectAwareProberFactory(url)
+        prober.https_agent_policy = BrowserLikePolicyForHTTPS
+        self.assertEqual(prober.url, url)
+        deferred = prober.probe()
+
+        def on_failure(result):
+            self.assertIsInstance(result.value, InvalidHTTPSCertificate)
+            self.assertIn(
+                ("localhost", self.port),
+                distributionmirror_prober.invalid_certificate_hosts)
+
+        def on_success(result):
+            if result is not None:
+                self.fail(
+                    "Should have raised SSL error. Got '%s' instead" % result)
+
+        deferred.addErrback(on_failure)
+        deferred.addCallback(on_success)
+        return deferred
+
+    def test_https_skips_invalid_certificates_hosts(self):
+        distributionmirror_prober.invalid_certificate_hosts.add(
+            ("localhost", self.port))
+        url = 'https://localhost:%s/valid-mirror/file' % self.port
+        prober = RedirectAwareProberFactory(url)
+        prober.https_agent_policy = BrowserLikePolicyForHTTPS
+        self.assertEqual(prober.url, url)
+        deferred = prober.probe()
+
+        return assert_fails_with(deferred, InvalidHTTPSCertificateSkipped)
 
 
 class TestProberProtocolAndFactory(TestCase):
@@ -212,7 +401,7 @@ class TestProberProtocolAndFactory(TestCase):
             self.assertTrue(prober.url == new_url)
             self.assertTrue(result == str(http_client.OK))
 
-        return deferred.addCallback(got_result)
+        return deferred.addBoth(got_result)
 
     def test_redirectawareprober_detects_infinite_loop(self):
         prober = RedirectAwareProberFactory(
@@ -737,12 +926,16 @@ class TestMirrorCDImageProberCallbacks(TestCaseWithFactory):
                 ConnectionSkipped,
                 RedirectToDifferentFile,
                 UnknownURLSchemeAfterRedirect,
+                InvalidHTTPSCertificate,
+                InvalidHTTPSCertificateSkipped,
                 ]))
         exceptions = [BadResponseCode(str(http_client.NOT_FOUND)),
                       ProberTimeout('http://localhost/', 5),
                       ConnectionSkipped(),
                       RedirectToDifferentFile('/foo', '/bar'),
-                      UnknownURLSchemeAfterRedirect('https://localhost')]
+                      UnknownURLSchemeAfterRedirect('https://localhost'),
+                      InvalidHTTPSCertificate('localhost', 443),
+                      InvalidHTTPSCertificateSkipped("https://localhost/xx")]
         for exception in exceptions:
             failure = callbacks.ensureOrDeleteMirrorCDImageSeries(
                 [(defer.FAILURE, Failure(exception))])
