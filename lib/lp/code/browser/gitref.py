@@ -47,7 +47,6 @@ from lp.code.interfaces.branchmergeproposal import IBranchMergeProposal
 from lp.code.interfaces.codereviewvote import ICodeReviewVoteReference
 from lp.code.interfaces.gitref import IGitRef
 from lp.code.interfaces.gitrepository import IGitRepositorySet
-from lp.registry.interfaces.person import IPerson
 from lp.services.helpers import english_list
 from lp.services.propertycache import cachedproperty
 from lp.services.scripts import log
@@ -280,6 +279,17 @@ class GitRefRegisterMergeProposalView(LaunchpadFormView):
             raise NotFound(self.context, '+register-merge')
         super(GitRefRegisterMergeProposalView, self).initialize()
 
+    def setUpWidgets(self, context=None):
+        super(GitRefRegisterMergeProposalView, self).setUpWidgets(
+            context=context)
+        vocab = next(
+            iter(self.widgets['target_git_repository'].vocabulary),
+            None)
+        # If we have a target, and the user hasn't entered a value.
+        if vocab and not self.widgets['target_git_path'].hasInput():
+            self.widgets['target_git_path'].setRenderedValue(
+                vocab.value.default_branch)
+
     @action('Propose Merge', name='register',
             failure=LaunchpadFormView.ajax_failure_handler)
     def register_action(self, action, data):
@@ -388,27 +398,3 @@ class GitRefRegisterMergeProposalView(LaunchpadFormView):
                     'prerequisite_git_repository',
                     "This repository is not mergeable into %s." %
                     target_repository.identity)
-
-    @property
-    def initial_values(self):
-        values = {}
-        if IGitRef.providedBy(self.context):
-            repository = self.context.repository
-        else:
-            repository = self.context
-
-        if IPerson.providedBy(repository.target):
-            # If the source is a personal repository, then the only valid
-            # target is that same repository.
-            target_repository = repository
-        else:
-            repository_set = getUtility(IGitRepositorySet)
-            target_repository = repository_set.getDefaultRepository(
-                repository.target)
-        # If the target has a default branch, use that.
-        # If not, see if we can use the source one for convenience.
-        if target_repository and target_repository.default_branch:
-            values['target_git_path'] = target_repository.default_branch
-        elif repository.default_branch:
-            values['target_git_path'] = repository.default_branch
-        return values
