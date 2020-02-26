@@ -44,19 +44,18 @@ The view provides a label, page_title, and cancel_url
     >>> print view.cancel_url
     http://launchpad.test/ubuntu
 
-A HTTP, HTTPS or FTP URL is required to register a mirror.
+A HTTP or FTP URL is required to register a mirror.
 
     >>> view.field_names
-    ['display_name', 'description', 'whiteboard', 'https_base_url',
-     'http_base_url', 'ftp_base_url', 'rsync_base_url', 'speed', 'country',
-     'content', 'official_candidate']
+    ['display_name', 'description', 'whiteboard', 'http_base_url',
+     'ftp_base_url', 'rsync_base_url', 'speed', 'country', 'content',
+     'official_candidate']
 
     >>> form = {
     ...     'field.display_name': 'Illuminati',
     ...     'field.description': 'description',
     ...     'field.whiteboard': 'whiteboard',
     ...     'field.http_base_url': 'http://secret.me/',
-    ...     'field.https_base_url': '',
     ...     'field.ftp_base_url': '',
     ...     'field.rsync_base_url': '',
     ...     'field.speed': 'S128K',
@@ -94,7 +93,6 @@ not significant).
 The same is true for a FTP URL.
 
     >>> mirror.ftp_base_url = 'ftp://now-here.me/'
-    >>> bad_form['field.https_base_url'] = ''
     >>> bad_form['field.http_base_url'] = ''
     >>> bad_form['field.ftp_base_url'] = 'ftp://now-here.me'
     >>> view = create_initialized_view(ubuntu, '+newmirror', form=bad_form)
@@ -112,15 +110,14 @@ The same is true for a rsync URL.
     ...     print error[2]
     The distribution mirror ... is already registered with this URL.
 
-A mirror must have an ftp, HTTPS or http URL.
+A mirror must have an ftp or http URL.
 
-    >>> bad_form['field.https_base_url'] = ''
     >>> bad_form['field.http_base_url'] = ''
     >>> bad_form['field.ftp_base_url'] = ''
     >>> view = create_initialized_view(ubuntu, '+newmirror', form=bad_form)
     >>> for message in view.errors:
     ...     print message
-    A mirror must have at least an HTTP(S) or FTP URL.
+    A mirror must have at least an HTTP or FTP URL.
 
 The URL cannot contain a fragment.
 
@@ -133,34 +130,6 @@ The URL cannot contain a fragment.
 The URL cannot contain a query string.
 
     >>> bad_form['field.http_base_url'] = 'http://secret.me/?query=string'
-    >>> view = create_initialized_view(ubuntu, '+newmirror', form=bad_form)
-    >>> for error in view.errors:
-    ...     print error[2]
-    URIs with query strings are not allowed.
-
-The HTTPS URL may not have an HTTP scheme.
-
-    >>> bad_form['field.http_base_url'] = ''
-    >>> bad_form['field.https_base_url'] = 'http://secret.me/#fragement'
-    >>> view = create_initialized_view(ubuntu, '+newmirror', form=bad_form)
-    >>> for error in view.errors:
-    ...     print error[2]
-    The URI scheme &quot;http&quot; is not allowed.
-    Only URIs with the following schemes may be used: https
-
-The HTTPS URL cannot contain a fragment.
-
-    >>> bad_form['field.http_base_url'] = ''
-    >>> bad_form['field.https_base_url'] = 'https://secret.me/#fragement'
-    >>> view = create_initialized_view(ubuntu, '+newmirror', form=bad_form)
-    >>> for error in view.errors:
-    ...     print error[2]
-    URIs with fragment identifiers are not allowed.
-
-The URL cannot contain a query string.
-
-    >>> bad_form['field.http_base_url'] = ''
-    >>> bad_form['field.https_base_url'] = 'https://secret.me/?query=string'
     >>> view = create_initialized_view(ubuntu, '+newmirror', form=bad_form)
     >>> for error in view.errors:
     ...     print error[2]
@@ -270,9 +239,9 @@ The +edit view provides a label, page_title, and cancel_url.
 The user can edit the mirror fields.
 
     >>> view.field_names
-    ['name', 'display_name', 'description', 'whiteboard', 'https_base_url',
-     'http_base_url', 'ftp_base_url', 'rsync_base_url', 'speed', 'country',
-     'content', 'official_candidate']
+    ['name', 'display_name', 'description', 'whiteboard', 'http_base_url',
+     'ftp_base_url', 'rsync_base_url', 'speed', 'country', 'content',
+     'official_candidate']
 
     >>> print mirror.ftp_base_url
     None
