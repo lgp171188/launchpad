@@ -485,6 +485,10 @@ class ObjectFactory:
         string = "%s-%s" % (prefix, self.getUniqueInteger())
         return string
 
+    # XXX cjwatson 2020-02-20: We should disentangle this; most uses of
+    # getUniqueString should probably use getUniqueUnicode instead.
+    getUniqueBytes = getUniqueString
+
     def getUniqueUnicode(self, prefix=None):
         return self.getUniqueString(prefix=prefix).decode('latin-1')
 
@@ -967,7 +971,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
                                               milestone=milestone)
         with person_logged_in(release.milestone.product.owner):
             release_file = release.addReleaseFile(
-                filename, 'test', 'text/plain',
+                filename, b'test', 'text/plain',
                 uploader=release.milestone.product.owner,
                 signature_filename=signature_filename,
                 signature_content=signature_content,
@@ -2157,7 +2161,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         if owner is None:
             owner = self.makePerson()
         if data is None:
-            data = self.getUniqueString()
+            data = self.getUniqueBytes()
         if description is None:
             description = self.getUniqueString()
         if comment is None:

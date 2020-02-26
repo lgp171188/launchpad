@@ -698,7 +698,7 @@ class IBugAppend(Interface):
         """Attach a file to this bug.
 
         :owner: An IPerson.
-        :data: A file-like object, or a `str`.
+        :data: A file-like object, or a `bytes`.
         :description: A brief description of the attachment.
         :comment: An IMessage or string.
         :filename: A string.

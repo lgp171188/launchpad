@@ -49,16 +49,16 @@ Add a file alias to the productrelease.
     >>> from lp.services.webapp.interfaces import ILaunchBag
 
     >>> login("foo.bar@canonical.com")
-    >>> from zope.security.proxy import removeSecurityProxy
-    >>> from StringIO import StringIO
     >>> from datetime import datetime
+    >>> from io import BytesIO
     >>> from pytz import UTC
+    >>> from zope.security.proxy import removeSecurityProxy
     >>> def add_release_file(release, file_content, name, description,
     ...                      date_uploaded=None):
     ...     user = getUtility(ILaunchBag).user
     ...     result = release.addReleaseFile(
     ...         filename=name,
-    ...         file_content=StringIO(file_content),
+    ...         file_content=BytesIO(file_content),
     ...         content_type='test/plain',
     ...         uploader=user,
     ...         description=description)
@@ -66,7 +66,7 @@ Add a file alias to the productrelease.
     ...         removeSecurityProxy(result).date_uploaded = date_uploaded
     ...     return result
     >>> product_release_file = add_release_file(
-    ...    rel, 'Some useful information.',
+    ...    rel, b'Some useful information.',
     ...    'foo.txt', 'Foo file')
     >>> print product_release_file.description
     Foo file
@@ -170,7 +170,7 @@ Let's add some release files to the releases for firefox.
     >>> from datetime import timedelta
     >>> now = datetime.now(UTC)
     >>> for i, release in enumerate(releases):
-    ...     content = "Content %d" % i
+    ...     content = b"Content %d" % i
     ...     name = "name%d" % i
     ...     description = "description%d" % i
     ...     upload_date = now + timedelta(days=i)

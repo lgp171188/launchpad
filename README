@@ -33,7 +33,7 @@ submit a patch, please consult <https://dev.launchpad.net/PatchSubmission>.
 Our bug tracker is at <https://bugs.launchpad.net/launchpad/> and you can get
 the source code any time by doing:
 
-  $ bzr branch lp:launchpad
+  $ git clone https://git.launchpad.net/launchpad
 
 
 Navigating the tree
