@@ -83,7 +83,7 @@ class MacaroonAuth(requests.auth.AuthBase):
     """Attaches macaroon authentication to a given Request object."""
 
     # The union of the base64 and URL-safe base64 alphabets.
-    allowed_chars = set(string.digits + string.letters + "+/=-_")
+    allowed_chars = set(string.digits + string.ascii_letters + "+/=-_")
 
     def __init__(self, root_macaroon_raw, unbound_discharge_macaroon_raw=None,
                  logger=log):
