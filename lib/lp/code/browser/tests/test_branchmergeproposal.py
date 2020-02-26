@@ -876,13 +876,11 @@ class TestRegisterBranchMergeProposalViewGit(
         with admin_logged_in():
             self._makeTargetBranch(target_default=True)
         view = self._createView()
-        self.assertEqual(
-            None, view.widgets['target_git_path']._getCurrentValue())
+        self.assertIsNone(view.widgets['target_git_path']._getCurrentValue())
 
     def test_default_branch_no_target(self):
         view = self._createView()
-        self.assertEqual(
-            None, view.widgets['target_git_path']._getCurrentValue())
+        self.assertIsNone(view.widgets['target_git_path']._getCurrentValue())
 
     def test_register_ajax_request_with_confirmation(self):
         # Ajax submits return json data containing info about what the visible
