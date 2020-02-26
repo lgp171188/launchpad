@@ -396,7 +396,7 @@ class TestHandleStatusForOCIRecipeBuild(MakeOCIBuildMixin, TrialTestCase,
         removeSecurityProxy(self.build).verifySuccessfulUpload = FakeMethod(
             result=True)
 
-        digests = {
+        digests = [{
             "diff_id_1": {
                 "digest": "digest_1",
                 "source": "test/base_1",
@@ -407,7 +407,7 @@ class TestHandleStatusForOCIRecipeBuild(MakeOCIBuildMixin, TrialTestCase,
                 "source": "",
                 "layer_id": "layer_2"
             }
-        }
+        }]
 
         self.test_files_dir = tempfile.mkdtemp()
         self._createTestFile('buildlog', '', 'buildlog')

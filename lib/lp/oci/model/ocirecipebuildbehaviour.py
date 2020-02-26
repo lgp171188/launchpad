@@ -114,33 +114,35 @@ class OCIRecipeBuildBehaviour(SnapProxyMixin, BuildFarmJobBehaviourBase):
             raise BuildDaemonError(
                 "Build returned a file named '%s'." % file_name)
 
+    @defer.inlineCallbacks
     def _fetchIntermediaryFile(self, name, filemap, upload_path):
         file_hash = filemap[name]
         file_path = os.path.join(upload_path, name)
         self._ensureFilePath(name, file_path, upload_path)
-        self._slave.getFile(file_hash, file_path)
+        yield self._slave.getFile(file_hash, file_path)
 
         with open(file_path, 'r') as file_fp:
             contents = json.load(file_fp)
-        return contents
+        defer.returnValue(contents)
 
     def _extractLayerFiles(self, upload_path, section, config, digests, files):
         # These are different sets of ids, in the same order
         # layer_id is the filename, diff_id is the internal (docker) id
         for diff_id in config['rootfs']['diff_ids']:
-            layer_id = digests[diff_id]['layer_id']
-            # This is in the form '<id>/layer.tar', we only need the first
-            layer_filename = "{}.tar.gz".format(layer_id.split('/')[0])
-            digest = digests[diff_id]['digest']
-            try:
-                _, librarian_layer_file, _ = self.build.getLayerFileByDigest(
-                    digest)
-            except NotFoundError:
-                files.add(layer_filename)
-                continue
-            layer_path = os.path.join(upload_path, layer_filename)
-            librarian_layer_file.open()
-            copy_and_close(librarian_layer_file, open(layer_path, 'wb'))
+            for digests_section in digests:
+                layer_id = digests_section[diff_id]['layer_id']
+                # This is in the form '<id>/layer.tar', we only need the first
+                layer_filename = "{}.tar.gz".format(layer_id.split('/')[0])
+                digest = digests_section[diff_id]['digest']
+                try:
+                    _, librarian_file, _ = self.build.getLayerFileByDigest(
+                        digest)
+                except NotFoundError:
+                    files.add(layer_filename)
+                    continue
+                layer_path = os.path.join(upload_path, layer_filename)
+                librarian_file.open()
+                copy_and_close(librarian_file, open(layer_path, 'wb'))
 
     def _convertToRetrievableFile(self, upload_path, file_name, filemap):
         file_path = os.path.join(upload_path, file_name)
@@ -153,14 +155,14 @@ class OCIRecipeBuildBehaviour(SnapProxyMixin, BuildFarmJobBehaviourBase):
         # We don't want to download all of the files that have been created,
         # just the ones that are mentioned in the manifest and config.
 
-        manifest = self._fetchIntermediaryFile(
+        manifest = yield self._fetchIntermediaryFile(
             'manifest.json', filemap, upload_path)
-        digests = self._fetchIntermediaryFile(
+        digests = yield self._fetchIntermediaryFile(
             'digests.json', filemap, upload_path)
 
         files = set()
         for section in manifest:
-            config = self._fetchIntermediaryFile(
+            config = yield self._fetchIntermediaryFile(
                 section['Config'], filemap, upload_path)
             self._extractLayerFiles(
                 upload_path, section, config, digests, files)
