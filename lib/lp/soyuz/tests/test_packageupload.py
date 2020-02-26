@@ -124,7 +124,7 @@ class PackageUploadTestCase(TestCaseWithFactory):
 
         # Get some sample changes file content for the new upload.
         changes_file = open(
-            datadir('suite/bar_1.0-1/bar_1.0-1_source.changes'))
+            datadir('suite/bar_1.0-1/bar_1.0-1_source.changes'), 'rb')
         changes_file_content = changes_file.read()
         changes_file.close()
 

@@ -449,7 +449,7 @@ class TestPublisherSeries(TestNativePublishingBase):
             bin_i386.name, bin_i386.version, build_i386.arch_tag)
         pu_i386 = self.addPackageUpload(
             build_i386.archive, build_i386.distro_arch_series.distroseries,
-            build_i386.pocket, changes_file_content='anything',
+            build_i386.pocket, changes_file_content=b'anything',
             changes_file_name=changes_file_name,
             upload_status=PackageUploadStatus.ACCEPTED)
         pu_i386.addBuild(build_i386)

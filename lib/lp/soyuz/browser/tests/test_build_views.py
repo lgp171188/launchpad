@@ -191,7 +191,7 @@ class TestBuildViews(TestCaseWithFactory):
         self.assertFalse(build_view.has_published_binaries)
         package_upload = build.distro_series.createQueueEntry(
             PackagePublishingPocket.UPDATES, build.archive,
-            'changes.txt', 'my changes')
+            'changes.txt', b'my changes')
         # Old SQL Object: creating it, adds it automatically to the store.
         PackageUploadBuild(packageupload=package_upload, build=build)
         self.assertEqual(package_upload.status.name, 'NEW')
