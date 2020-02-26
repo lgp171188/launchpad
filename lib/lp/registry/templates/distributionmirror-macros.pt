@@ -17,7 +17,7 @@
   <tbody>
     <tal:country_and_mirrors repeat="country_and_mirrors mirrors_by_country">
       <tr class="head">
-        <th colspan="2" 
+        <th colspan="2"
             tal:content="country_and_mirrors/country" />
         <th tal:content="country_and_mirrors/throughput"/>
         <th tal:condition="show_mirror_type">
@@ -35,6 +35,8 @@
              tal:content="mirror/title">Mirror Name</a>
         </td>
         <td>
+          <a tal:condition="mirror/https_base_url"
+             tal:attributes="href mirror/https_base_url">https</a>
           <a tal:condition="mirror/http_base_url"
              tal:attributes="href mirror/http_base_url">http</a>
           <a tal:condition="mirror/ftp_base_url"
