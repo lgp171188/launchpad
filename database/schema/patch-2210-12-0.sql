@@ -7,29 +7,42 @@ SET client_min_messages=ERROR;
 CREATE TABLE signingkey (
     id serial PRIMARY KEY,
     key_type integer NOT NULL,
-    description text NULL,
+    description text,
     fingerprint text NOT NULL,
     public_key bytea NOT NULL,
     date_created timestamp without time zone NOT NULL
-        DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'UTC')
+        DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'UTC'),
+
+    -- This unique constraint is needed because ArchiveSigningKey has a
+    -- compound foreign key using both columns.
+    CONSTRAINT signingkey__id__key_type__key
+        UNIQUE(id, key_type),
+
+    CONSTRAINT signingkey__key_type__fingerprint__key
+        UNIQUE (key_type, fingerprint)
 );
 
 
 CREATE TABLE archivesigningkey (
     id serial PRIMARY KEY,
     archive integer NOT NULL REFERENCES archive,
-    distro_series integer NULL REFERENCES distroseries,
-    signing_key integer NOT NULL REFERENCES signingkey,
+    earliest_distro_series integer REFERENCES distroseries,
+    key_type integer NOT NULL,
+    signing_key integer NOT NULL,
     date_created timestamp without time zone NOT NULL
-        DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'UTC')
-);
+        DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'UTC'),
 
+    CONSTRAINT archivesigningkey__signing_key__fk
+        FOREIGN KEY (signing_key, key_type)
+        REFERENCES signingkey (id, key_type),
+
+    CONSTRAINT archivesigningkey__key_type__archive__earliest_distro_series__idx
+        UNIQUE(key_type, archive, earliest_distro_series)
+);
 
 CREATE INDEX archivesigningkey__archive__idx
     ON archivesigningkey(archive);
 
-CREATE INDEX archivesigningkey__distro_series__idx
-    ON archivesigningkey(distro_series);
 
 INSERT INTO LaunchpadDatabaseRevision VALUES (2210, 12, 0);
 
