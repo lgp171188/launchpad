@@ -100,7 +100,7 @@ class SigningKey(StormBase):
         store.add(signing_key)
         return signing_key
 
-    def sign(self, message, message_name=None):
+    def sign(self, message, message_name):
         if self.key_type in (SigningKeyType.UEFI, SigningKeyType.FIT):
             mode = SigningMode.ATTACHED
         else:

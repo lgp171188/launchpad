@@ -6,10 +6,10 @@
 __metaclass__ = type
 
 __all__ = [
-    'ISigningKey',
-    'ISigningKeySet',
     'IArchiveSigningKey',
     'IArchiveSigningKeySet',
+    'ISigningKey',
+    'ISigningKeySet',
 ]
 
 from lazr.restful.fields import Reference
@@ -47,7 +47,7 @@ class ISigningKey(Interface):
     date_created = Datetime(
         title=_('When this key was created'), required=True, readonly=True)
 
-    def sign(message, message_name=None):
+    def sign(message, message_name):
         """Sign the given message using this key
 
         :param message: The message to be signed.

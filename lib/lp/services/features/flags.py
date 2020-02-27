@@ -227,7 +227,7 @@ flag_info = sorted([
      'bing',
      'Site search engine',
      ''),
-    ('lp.services.signing.enabled',
+    ('archivepublisher.signing_service.enabled',
      'boolean',
      'If true, sign packages using signing service instead of local files.',
      '',

@@ -32,7 +32,6 @@ from zope.component import getUtility
 
 from lp.archivepublisher.config import getPubConfig
 from lp.archivepublisher.customupload import CustomUpload
-from lp.registry.errors import NoSuchDistroSeries
 from lp.services.features import getFeatureFlag
 from lp.services.osutils import remove_if_exists
 from lp.services.signing.enums import SigningKeyType
@@ -194,10 +193,10 @@ class SigningUpload(CustomUpload):
         self.temproot = pubconf.temproot
 
         distro_series_name = suite.split('-')[0]
-        try:
+        if distro_series_name:
             self.distro_series = self.archive.distribution.getSeries(
                 distro_series_name)
-        except NoSuchDistroSeries:
+        else:
             self.distro_series = None
 
         self.public_keys = {}
@@ -339,7 +338,7 @@ class SigningUpload(CustomUpload):
         publishes the public key to self.public_keys.
 
         If the given key is None and self.autokey is set to True, this method
-        generates a key on signing service and associate it with the current
+        generates a key on signing service and associates it with the current
         archive.
 
         :param key_type: One of the SigningKeyType enum items

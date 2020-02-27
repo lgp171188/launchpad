@@ -14,7 +14,6 @@ import tarfile
 
 from fixtures import MonkeyPatch
 from mock import call
-import responses
 import scandir
 from testtools.matchers import (
     Contains,
@@ -190,7 +189,7 @@ class TestSigningHelpers(TestCaseWithFactory):
             distribution=self.distro, purpose=ArchivePurpose.PRIMARY)
         self.signing_dir = os.path.join(
             self.temp_dir, self.distro.name + "-signing")
-        self.suite = "distroseries"
+        self.suite = ""
         pubconf = getPubConfig(self.archive)
         if not os.path.exists(pubconf.temproot):
             os.makedirs(pubconf.temproot)
@@ -610,7 +609,7 @@ class TestLocalSigningUpload(RunPartsMixin, TestSigningHelpers):
         upload = SigningUpload()
         upload.generateUefiKeys = FakeMethod()
         upload.setTargetDirectory(
-            self.archive, "test_1.0_amd64.tar.gz", "distroseries")
+            self.archive, "test_1.0_amd64.tar.gz", "")
         upload.signUefi('t.efi')
         self.assertEqual(1, fake_call.call_count)
         # Assert command form.
@@ -630,7 +629,7 @@ class TestLocalSigningUpload(RunPartsMixin, TestSigningHelpers):
         upload = SigningUpload()
         upload.generateUefiKeys = FakeMethod()
         upload.setTargetDirectory(
-            self.archive, "test_1.0_amd64.tar.gz", "distroseries")
+            self.archive, "test_1.0_amd64.tar.gz", "")
         upload.signUefi('t.efi')
         self.assertEqual(0, fake_call.call_count)
         self.assertEqual(0, upload.generateUefiKeys.call_count)
@@ -644,7 +643,7 @@ class TestLocalSigningUpload(RunPartsMixin, TestSigningHelpers):
         self.useFixture(MonkeyPatch("subprocess.call", fake_call))
         upload = SigningUpload()
         upload.setTargetDirectory(
-            self.archive, "test_1.0_amd64.tar.gz", "distroseries")
+            self.archive, "test_1.0_amd64.tar.gz", "")
         upload.generateUefiKeys()
         self.assertEqual(1, fake_call.call_count)
         # Assert the actual command matches.
@@ -668,7 +667,7 @@ class TestLocalSigningUpload(RunPartsMixin, TestSigningHelpers):
         upload = SigningUpload()
         upload.generateFitKeys = FakeMethod()
         upload.setTargetDirectory(
-            self.archive, "test_1.0_amd64.tar.gz", "distroseries")
+            self.archive, "test_1.0_amd64.tar.gz", "")
         upload.signFit('t.fit')
         # Confirm the copy was performed.
         self.assertEqual(1, fake_copy.call_count)
@@ -693,7 +692,7 @@ class TestLocalSigningUpload(RunPartsMixin, TestSigningHelpers):
         upload = SigningUpload()
         upload.generateFitKeys = FakeMethod()
         upload.setTargetDirectory(
-            self.archive, "test_1.0_amd64.tar.gz", "distroseries")
+            self.archive, "test_1.0_amd64.tar.gz", "")
         upload.signUefi('t.fit')
         self.assertEqual(0, fake_call.call_count)
         self.assertEqual(0, upload.generateFitKeys.call_count)
@@ -707,7 +706,7 @@ class TestLocalSigningUpload(RunPartsMixin, TestSigningHelpers):
         self.useFixture(MonkeyPatch("subprocess.call", fake_call))
         upload = SigningUpload()
         upload.setTargetDirectory(
-            self.archive, "test_1.0_amd64.tar.gz", "distroseries")
+            self.archive, "test_1.0_amd64.tar.gz", "")
         upload.generateFitKeys()
         self.assertEqual(1, fake_call.call_count)
         # Assert the actual command matches.
@@ -726,7 +725,7 @@ class TestLocalSigningUpload(RunPartsMixin, TestSigningHelpers):
         self.setUpPPA()
         upload = SigningUpload()
         upload.setTargetDirectory(
-            self.archive, "test_1.0_amd64.tar.gz", "distroseries")
+            self.archive, "test_1.0_amd64.tar.gz", "")
         text = upload.generateOpensslConfig('Kmod', upload.openssl_config_kmod)
 
         id_re = re.compile(r'^# KMOD OpenSSL config\n')
@@ -749,7 +748,7 @@ class TestLocalSigningUpload(RunPartsMixin, TestSigningHelpers):
         upload = SigningUpload()
         upload.generateKmodKeys = FakeMethod()
         upload.setTargetDirectory(
-            self.archive, "test_1.0_amd64.tar.gz", "distroseries")
+            self.archive, "test_1.0_amd64.tar.gz", "")
         upload.signKmod('t.ko')
         self.assertEqual(1, fake_call.call_count)
         # Assert command form.
@@ -770,7 +769,7 @@ class TestLocalSigningUpload(RunPartsMixin, TestSigningHelpers):
         upload = SigningUpload()
         upload.generateKmodKeys = FakeMethod()
         upload.setTargetDirectory(
-            self.archive, "test_1.0_amd64.tar.gz", "distroseries")
+            self.archive, "test_1.0_amd64.tar.gz", "")
         upload.signKmod('t.ko')
         self.assertEqual(0, fake_call.call_count)
         self.assertEqual(0, upload.generateKmodKeys.call_count)
@@ -784,7 +783,7 @@ class TestLocalSigningUpload(RunPartsMixin, TestSigningHelpers):
         self.useFixture(MonkeyPatch("subprocess.call", fake_call))
         upload = SigningUpload()
         upload.setTargetDirectory(
-            self.archive, "test_1.0_amd64.tar.gz", "distroseries")
+            self.archive, "test_1.0_amd64.tar.gz", "")
         upload.generateKmodKeys()
         self.assertEqual(2, fake_call.call_count)
         # Assert the actual command matches.
@@ -812,7 +811,7 @@ class TestLocalSigningUpload(RunPartsMixin, TestSigningHelpers):
         self.setUpPPA()
         upload = SigningUpload()
         upload.setTargetDirectory(
-            self.archive, "test_1.0_amd64.tar.gz", "distroseries")
+            self.archive, "test_1.0_amd64.tar.gz", "")
         text = upload.generateOpensslConfig('Opal', upload.openssl_config_opal)
 
         id_re = re.compile(r'^# OPAL OpenSSL config\n')
@@ -832,7 +831,7 @@ class TestLocalSigningUpload(RunPartsMixin, TestSigningHelpers):
         upload = SigningUpload()
         upload.generateOpalKeys = FakeMethod()
         upload.setTargetDirectory(
-            self.archive, "test_1.0_amd64.tar.gz", "distroseries")
+            self.archive, "test_1.0_amd64.tar.gz", "")
         upload.signOpal('t.opal')
         self.assertEqual(1, fake_call.call_count)
         # Assert command form.
@@ -853,7 +852,7 @@ class TestLocalSigningUpload(RunPartsMixin, TestSigningHelpers):
         upload = SigningUpload()
         upload.generateOpalKeys = FakeMethod()
         upload.setTargetDirectory(
-            self.archive, "test_1.0_amd64.tar.gz", "distroseries")
+            self.archive, "test_1.0_amd64.tar.gz", "")
         upload.signOpal('t.opal')
         self.assertEqual(0, fake_call.call_count)
         self.assertEqual(0, upload.generateOpalKeys.call_count)
@@ -867,7 +866,7 @@ class TestLocalSigningUpload(RunPartsMixin, TestSigningHelpers):
         self.useFixture(MonkeyPatch("subprocess.call", fake_call))
         upload = SigningUpload()
         upload.setTargetDirectory(
-            self.archive, "test_1.0_amd64.tar.gz", "distroseries")
+            self.archive, "test_1.0_amd64.tar.gz", "")
         upload.generateOpalKeys()
         self.assertEqual(2, fake_call.call_count)
         # Assert the actual command matches.
@@ -895,7 +894,7 @@ class TestLocalSigningUpload(RunPartsMixin, TestSigningHelpers):
         self.setUpPPA()
         upload = SigningUpload()
         upload.setTargetDirectory(
-            self.archive, "test_1.0_amd64.tar.gz", "distroseries")
+            self.archive, "test_1.0_amd64.tar.gz", "")
         text = upload.generateOpensslConfig('SIPL', upload.openssl_config_sipl)
 
         id_re = re.compile(r'^# SIPL OpenSSL config\n')
@@ -915,7 +914,7 @@ class TestLocalSigningUpload(RunPartsMixin, TestSigningHelpers):
         upload = SigningUpload()
         upload.generateSiplKeys = FakeMethod()
         upload.setTargetDirectory(
-            self.archive, "test_1.0_amd64.tar.gz", "distroseries")
+            self.archive, "test_1.0_amd64.tar.gz", "")
         upload.signSipl('t.sipl')
         self.assertEqual(1, fake_call.call_count)
         # Assert command form.
@@ -936,7 +935,7 @@ class TestLocalSigningUpload(RunPartsMixin, TestSigningHelpers):
         upload = SigningUpload()
         upload.generateSiplKeys = FakeMethod()
         upload.setTargetDirectory(
-            self.archive, "test_1.0_amd64.tar.gz", "distroseries")
+            self.archive, "test_1.0_amd64.tar.gz", "")
         upload.signOpal('t.sipl')
         self.assertEqual(0, fake_call.call_count)
         self.assertEqual(0, upload.generateSiplKeys.call_count)
@@ -950,7 +949,7 @@ class TestLocalSigningUpload(RunPartsMixin, TestSigningHelpers):
         self.useFixture(MonkeyPatch("subprocess.call", fake_call))
         upload = SigningUpload()
         upload.setTargetDirectory(
-            self.archive, "test_1.0_amd64.tar.gz", "distroseries")
+            self.archive, "test_1.0_amd64.tar.gz", "")
         upload.generateSiplKeys()
         self.assertEqual(2, fake_call.call_count)
         # Assert the actual command matches.
@@ -1109,7 +1108,7 @@ class TestLocalSigningUpload(RunPartsMixin, TestSigningHelpers):
         upload = SigningUpload()
         upload.callLog = FakeMethodCallLog(upload=upload)
         upload.setTargetDirectory(
-            self.archive, "test_1.0_amd64.tar.gz", "distroseries")
+            self.archive, "test_1.0_amd64.tar.gz", "")
         upload.signUefi(os.path.join(self.makeTemporaryDirectory(), 't.efi'))
         self.assertEqual(0, upload.callLog.caller_count('UEFI keygen'))
         self.assertFalse(os.path.exists(self.key))
@@ -1126,7 +1125,7 @@ class TestLocalSigningUpload(RunPartsMixin, TestSigningHelpers):
         upload = SigningUpload()
         upload.callLog = FakeMethodCallLog(upload=upload)
         upload.setTargetDirectory(
-            self.archive, "test_1.0_amd64.tar.gz", "distroseries")
+            self.archive, "test_1.0_amd64.tar.gz", "")
         upload.signUefi(os.path.join(self.makeTemporaryDirectory(), 't.efi'))
         self.assertEqual(1, upload.callLog.caller_count('UEFI keygen'))
         self.assertTrue(os.path.exists(self.key))
@@ -1144,7 +1143,7 @@ class TestLocalSigningUpload(RunPartsMixin, TestSigningHelpers):
         upload = SigningUpload()
         upload.callLog = FakeMethodCallLog(upload=upload)
         upload.setTargetDirectory(
-            self.archive, "test_1.0_amd64.tar.gz", "distroseries")
+            self.archive, "test_1.0_amd64.tar.gz", "")
         upload.signFit(os.path.join(self.makeTemporaryDirectory(), 'fit'))
         self.assertEqual(0, upload.callLog.caller_count('FIT keygen'))
         self.assertFalse(os.path.exists(self.fit_key))
@@ -1163,7 +1162,7 @@ class TestLocalSigningUpload(RunPartsMixin, TestSigningHelpers):
         upload = SigningUpload()
         upload.callLog = FakeMethodCallLog(upload=upload)
         upload.setTargetDirectory(
-            self.archive, "test_1.0_amd64.tar.gz", "distroseries")
+            self.archive, "test_1.0_amd64.tar.gz", "")
         upload.signFit(os.path.join(self.makeTemporaryDirectory(), 't.fit'))
         self.assertEqual(1, upload.callLog.caller_count('FIT keygen'))
         self.assertTrue(os.path.exists(self.fit_key))
@@ -1181,7 +1180,7 @@ class TestLocalSigningUpload(RunPartsMixin, TestSigningHelpers):
         upload = SigningUpload()
         upload.callLog = FakeMethodCallLog(upload=upload)
         upload.setTargetDirectory(
-            self.archive, "test_1.0_amd64.tar.gz", "distroseries")
+            self.archive, "test_1.0_amd64.tar.gz", "")
         upload.signKmod(os.path.join(self.makeTemporaryDirectory(), 't.ko'))
         self.assertEqual(0, upload.callLog.caller_count('Kmod keygen key'))
         self.assertEqual(0, upload.callLog.caller_count('Kmod keygen cert'))
@@ -1199,7 +1198,7 @@ class TestLocalSigningUpload(RunPartsMixin, TestSigningHelpers):
         upload = SigningUpload()
         upload.callLog = FakeMethodCallLog(upload=upload)
         upload.setTargetDirectory(
-            self.archive, "test_1.0_amd64.tar.gz", "distroseries")
+            self.archive, "test_1.0_amd64.tar.gz", "")
         upload.signKmod(os.path.join(self.makeTemporaryDirectory(), 't.ko'))
         self.assertEqual(1, upload.callLog.caller_count('Kmod keygen key'))
         self.assertEqual(1, upload.callLog.caller_count('Kmod keygen cert'))
@@ -1218,7 +1217,7 @@ class TestLocalSigningUpload(RunPartsMixin, TestSigningHelpers):
         upload = SigningUpload()
         upload.callLog = FakeMethodCallLog(upload=upload)
         upload.setTargetDirectory(
-            self.archive, "test_1.0_amd64.tar.gz", "distroseries")
+            self.archive, "test_1.0_amd64.tar.gz", "")
         upload.signOpal(os.path.join(self.makeTemporaryDirectory(), 't.opal'))
         self.assertEqual(0, upload.callLog.caller_count('Opal keygen key'))
         self.assertEqual(0, upload.callLog.caller_count('Opal keygen cert'))
@@ -1236,7 +1235,7 @@ class TestLocalSigningUpload(RunPartsMixin, TestSigningHelpers):
         upload = SigningUpload()
         upload.callLog = FakeMethodCallLog(upload=upload)
         upload.setTargetDirectory(
-            self.archive, "test_1.0_amd64.tar.gz", "distroseries")
+            self.archive, "test_1.0_amd64.tar.gz", "")
         upload.signOpal(os.path.join(self.makeTemporaryDirectory(), 't.opal'))
         self.assertEqual(1, upload.callLog.caller_count('Opal keygen key'))
         self.assertEqual(1, upload.callLog.caller_count('Opal keygen cert'))
@@ -1255,7 +1254,7 @@ class TestLocalSigningUpload(RunPartsMixin, TestSigningHelpers):
         upload = SigningUpload()
         upload.callLog = FakeMethodCallLog(upload=upload)
         upload.setTargetDirectory(
-            self.archive, "test_1.0_amd64.tar.gz", "distroseries")
+            self.archive, "test_1.0_amd64.tar.gz", "")
         upload.signOpal(os.path.join(self.makeTemporaryDirectory(), 't.sipl'))
         self.assertEqual(0, upload.callLog.caller_count('SIPL keygen key'))
         self.assertEqual(0, upload.callLog.caller_count('SIPL keygen cert'))
@@ -1273,7 +1272,7 @@ class TestLocalSigningUpload(RunPartsMixin, TestSigningHelpers):
         upload = SigningUpload()
         upload.callLog = FakeMethodCallLog(upload=upload)
         upload.setTargetDirectory(
-            self.archive, "test_1.0_amd64.tar.gz", "distroseries")
+            self.archive, "test_1.0_amd64.tar.gz", "")
         upload.signSipl(os.path.join(self.makeTemporaryDirectory(), 't.sipl'))
         self.assertEqual(1, upload.callLog.caller_count('SIPL keygen key'))
         self.assertEqual(1, upload.callLog.caller_count('SIPL keygen cert'))
