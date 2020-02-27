@@ -9,8 +9,8 @@ __all__ = [
     ]
 
 import re
-import xmlrpclib
 
+from six.moves import xmlrpc_client
 from zope.component import getUtility
 from zope.interface import implementer
 from zope.security.proxy import removeSecurityProxy
@@ -38,15 +38,9 @@ from lp.services.messages.interfaces.message import IMessageSet
 from lp.services.webapp import LaunchpadXMLRPCView
 from lp.xmlrpc import faults
 
-# Not all developers will have built the Mailman instance (via
-# 'make mailman_instance').  In that case, this import will fail, but in that
-# case just use the constant value directly.
-try:
-    from Mailman.MemberAdaptor import ENABLED, BYUSER
-    ENABLED, BYUSER
-except ImportError:
-    ENABLED = 0
-    BYUSER = 2
+# These constants must match those defined in Mailman.MemberAdaptor.
+ENABLED = 0
+BYUSER = 2
 
 
 @implementer(IMailingListAPIView)
@@ -247,7 +241,7 @@ class MailingListAPIView(LaunchpadXMLRPCView):
         # non-ascii characters in the message can be safely passed across
         # XMLRPC. For most tests though it's much more convenient to just
         # pass 8-bit strings.
-        if isinstance(bytes, xmlrpclib.Binary):
+        if isinstance(bytes, xmlrpc_client.Binary):
             bytes = bytes.data
         # Although it is illegal for an email header to have unencoded
         # non-ascii characters, it is better to let the list owner

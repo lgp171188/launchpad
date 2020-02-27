@@ -983,8 +983,8 @@ class POFile(SQLBase, POFileMixIn):
             entry_to_import.setErrorOutput(
                 "File was not exported from Launchpad.")
         except (MixedNewlineMarkersError, TranslationFormatSyntaxError,
-                TranslationFormatInvalidInputError, UnicodeDecodeError) as (
-                exception):
+                TranslationFormatInvalidInputError,
+                UnicodeDecodeError) as exception:
             # The import failed with a format error. We log it and select the
             # email template.
             if logger:

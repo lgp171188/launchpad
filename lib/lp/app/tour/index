@@ -80,17 +80,17 @@
                     </div>
                     <div class="block odd">
                         <h3><a href="branch-hosting-tracking">Code hosting and review</a></h3>
-                        <h4>Democratise your code using Bazaar with Launchpad.</h4>
+                        <h4>Democratise your code using version control with Launchpad.</h4>
                         <p class="screen-holder">
                             <img src="images/code-screenshot.png" alt="Code hosting and tracking" />
                         </p>
                         <p>
 
-                         Launchpad and <a href="http://bazaar-vcs.org/">Bazaar</a> distributed versional control strip away the barriers to contributing to your project. In just a few key strokes anyone can create their own local branch of your trunk with full version control.<br /><br />
+                         Launchpad and <a href="https://git-scm.com/">Git</a> or <a href="http://bazaar.canonical.com/">Bazaar</a> distributed version control strip away the barriers to contributing to your project. In just a few key strokes anyone can create their own local branch of your trunk with full version control.<br /><br />
 
                          When they're ready, they can upload their branch to Launchpad and propose it for merging back into your trunk. Code review &mdash; by web and email &mdash; gives you a public forum to discuss and approve or reject the merge.<br /><br />
 
-                         You can even use Launchpad to import Git, CVS and Subversion repositories into Bazaar branches.
+                         You can even use Launchpad to mirror Git repositories, or to import Git, CVS and Subversion repositories into Bazaar branches.
                         </p>
                         <p style="float: right;"><a href="branch-hosting-tracking" accesskey="f" tabindex="4">More about code hosting and review &gt;</a></p>
                         </ul>

@@ -28,9 +28,9 @@ import socket
 import sys
 import threading
 import time
-from xmlrpclib import ProtocolError
 
 import pytz
+from six.moves.xmlrpc_client import ProtocolError
 from twisted.internet import reactor
 from twisted.internet.defer import DeferredList
 from twisted.internet.threads import deferToThreadPool

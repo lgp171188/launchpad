@@ -6,9 +6,9 @@
 __metaclass__ = type
 
 import json
-from urlparse import urlparse
 
 from lxml import html
+from six.moves.urllib.parse import urlparse
 from testtools.matchers import StartsWith
 
 from lp.app.enums import InformationType

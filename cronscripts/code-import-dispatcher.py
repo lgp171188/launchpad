@@ -7,7 +7,7 @@
 
 import _pythonpath
 
-from xmlrpclib import ServerProxy
+from six.moves.xmlrpc_client import ServerProxy
 
 from lp.codehosting.codeimport.dispatcher import CodeImportDispatcher
 from lp.services.config import config

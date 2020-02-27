@@ -20,7 +20,7 @@ of bug #11 is:
 
 If we add an attachment to the bug report...
 
-    >>> import StringIO
+    >>> from io import BytesIO
     >>> from zope.component import getUtility
     >>> from lp.testing import login, logout
     >>> from lp.services.webapp.interfaces import ILaunchBag
@@ -30,7 +30,7 @@ If we add an attachment to the bug report...
     >>> launchbag = getUtility(ILaunchBag)
     >>> launchbag.clear()
     >>> attachment = bug_11.addAttachment(
-    ...     owner=None, data=StringIO.StringIO('whatever'),
+    ...     owner=None, data=BytesIO(b'whatever'),
     ...     comment=bug_11.initial_message, filename='test.txt',
     ...     is_patch=False, content_type='text/plain',
     ...     description='sample data')
@@ -64,7 +64,7 @@ Patch attachments are shown before non-patch attachments
     >>> login("test@canonical.com")
     >>> launchbag.clear()
     >>> patch_attachment = bug_11.addAttachment(
-    ...     owner=None, data=StringIO.StringIO('patchy patch patch'),
+    ...     owner=None, data=BytesIO(b'patchy patch patch'),
     ...     comment=bug_11.initial_message, filename='patch.txt',
     ...     is_patch=True, content_type='text/plain',
     ...     description='a patch')

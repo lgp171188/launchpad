@@ -318,7 +318,7 @@ appropriate 'Build status' section the user will see 2 new sections,
     ...     PackagePublishingPocket.RELEASE,
     ...     stp.distroseries.main_archive,
     ...     'testing_1.0_all.changes',
-    ...     'nothing-special')
+    ...     b'nothing-special')
     >>> unused = upload.addBuild(build)
     >>> logout()
 

@@ -10,18 +10,20 @@ from datetime import (
     datetime,
     timedelta,
     )
-from email.utils import formatdate
+from email.utils import (
+    formatdate,
+    mktime_tz,
+    )
 import math
 import os.path
-import rfc822
 import sys
 from textwrap import dedent
-import urllib
 
 from lazr.enum import enumerated_type_registry
 from lazr.restful.utils import get_current_browser_request
 from lazr.uri import URI
 import pytz
+from six.moves.urllib.parse import quote
 from zope.browserpage import ViewPageTemplateFile
 from zope.component import (
     adapter,
@@ -1645,7 +1647,7 @@ class ProductReleaseFileFormatterAPI(ObjectFormatterAPI):
         url = urlappend(canonical_url(self._release), '+download')
         # Quote the filename to eliminate non-ascii characters which
         # are invalid in the url.
-        return urlappend(url, urllib.quote(lfa.filename.encode('utf-8')))
+        return urlappend(url, quote(lfa.filename.encode('utf-8')))
 
 
 class BranchFormatterAPI(ObjectFormatterAPI):
@@ -2288,8 +2290,7 @@ class DateTimeFormatterAPI:
         return "%s %s" % (self.date(), self.time())
 
     def rfc822utcdatetime(self):
-        return formatdate(
-            rfc822.mktime_tz(self._datetime.utctimetuple() + (0, )))
+        return formatdate(mktime_tz(self._datetime.utctimetuple() + (0, )))
 
     def isodate(self):
         return self._datetime.isoformat()

@@ -9,11 +9,9 @@ __all__ = [
 
 import re
 import sys
-import thread
 import threading
 import time
 import traceback
-import urllib
 
 from lazr.restful.utils import safe_hasattr
 from lazr.uri import (
@@ -21,6 +19,7 @@ from lazr.uri import (
     URI,
     )
 from psycopg2.extensions import TransactionRollbackError
+from six.moves.urllib.parse import quote
 from storm.database import STATE_DISCONNECTED
 from storm.exceptions import (
     DisconnectionError,
@@ -250,7 +249,7 @@ class LaunchpadBrowserPublication(
         notify(StartRequestEvent(request))
         request._traversal_start = time.time()
         request._traversal_thread_start = _get_thread_time()
-        threadid = thread.get_ident()
+        threadid = threading.current_thread().ident
         threadrequestfile = open_for_writing(
             'logs/thread-%s.request' % threadid, 'w')
         try:
@@ -350,7 +349,7 @@ class LaunchpadBrowserPublication(
 
         non_restricted_url = self.getNonRestrictedURL(request)
         if non_restricted_url is not None:
-            location += '?production=%s' % urllib.quote(non_restricted_url)
+            location += '?production=%s' % quote(non_restricted_url)
 
         request.response.setResult('')
         request.response.redirect(location, temporary_if_possible=True)

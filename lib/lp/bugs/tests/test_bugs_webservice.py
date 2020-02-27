@@ -392,7 +392,7 @@ class TestErrorHandling(TestCaseWithFactory):
         launchpad = launchpadlib_for('test', owner)
         lp_bug = launchpad.load(api_url(bug))
         self.assertRaises(
-            BadRequest, lp_bug.addAttachment, comment='foo', data='foo',
+            BadRequest, lp_bug.addAttachment, comment='foo', data=b'foo',
             filename='/home/foo/bar.txt')
 
 

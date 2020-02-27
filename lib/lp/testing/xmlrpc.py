@@ -8,9 +8,11 @@ __all__ = [
     ]
 
 from cStringIO import StringIO
-import xmlrpclib
 
-from six.moves import http_client
+from six.moves import (
+    http_client,
+    xmlrpc_client,
+    )
 from zope.security.management import (
     endInteraction,
     queryInteraction,
@@ -38,7 +40,7 @@ class _FakeSocket(object):
 class TestHTTPConnection(http_client.HTTPConnection):
     """A HTTPConnection which talks to http() instead of a real server.
 
-    Only the methods called by xmlrpclib are overridden.
+    Only the methods called by xmlrpc_client are overridden.
     """
 
     _data_to_send = ''
@@ -76,7 +78,7 @@ class TestHTTPConnection(http_client.HTTPConnection):
         return response
 
 
-class XMLRPCTestTransport(xmlrpclib.Transport):
+class XMLRPCTestTransport(xmlrpc_client.Transport):
     """An XMLRPC Transport which sends the requests to http()."""
 
     def make_connection(self, host):

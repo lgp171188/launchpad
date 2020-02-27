@@ -34,10 +34,6 @@ from email.utils import (
     )
 import hashlib
 from itertools import count
-from operator import (
-    isMappingType,
-    isSequenceType,
-    )
 import os
 from StringIO import StringIO
 import sys
@@ -53,6 +49,10 @@ from lazr.jobrunner.jobrunner import SuspendJobException
 import pytz
 from pytz import UTC
 import six
+from six.moves.collections_abc import (
+    Mapping,
+    Sequence,
+    )
 from twisted.conch.ssh.common import (
     MP,
     NS,
@@ -157,6 +157,10 @@ from lp.hardwaredb.interfaces.hwdb import (
     IHWSubmissionDeviceSet,
     IHWSubmissionSet,
     )
+from lp.oci.interfaces.ocirecipe import IOCIRecipeSet
+from lp.oci.interfaces.ocirecipebuild import IOCIRecipeBuildSet
+from lp.oci.model.ocirecipe import OCIRecipeArch
+from lp.oci.model.ocirecipebuild import OCIFile
 from lp.registry.enums import (
     BranchSharingPolicy,
     BugSharingPolicy,
@@ -485,6 +489,10 @@ class ObjectFactory:
                 source, frame.f_lineno)
         string = "%s-%s" % (prefix, self.getUniqueInteger())
         return string
+
+    # XXX cjwatson 2020-02-20: We should disentangle this; most uses of
+    # getUniqueString should probably use getUniqueUnicode instead.
+    getUniqueBytes = getUniqueString
 
     def getUniqueUnicode(self, prefix=None):
         return self.getUniqueString(prefix=prefix).decode('latin-1')
@@ -968,7 +976,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
                                               milestone=milestone)
         with person_logged_in(release.milestone.product.owner):
             release_file = release.addReleaseFile(
-                filename, 'test', 'text/plain',
+                filename, b'test', 'text/plain',
                 uploader=release.milestone.product.owner,
                 signature_filename=signature_filename,
                 signature_content=signature_content,
@@ -2158,7 +2166,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         if owner is None:
             owner = self.makePerson()
         if data is None:
-            data = self.getUniqueString()
+            data = self.getUniqueBytes()
         if description is None:
             description = self.getUniqueString()
         if comment is None:
@@ -3618,7 +3626,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         if changes_filename is None:
             changes_filename = self.getUniqueString("changesfilename")
         if changes_file_content is None:
-            changes_file_content = self.getUniqueString("changesfilecontent")
+            changes_file_content = self.getUniqueBytes(b"changesfilecontent")
         if pocket is None:
             pocket = PackagePublishingPocket.RELEASE
         package_upload = distroseries.createQueueEntry(
@@ -4967,6 +4975,81 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             oci_project = self.makeOCIProject(**kwargs)
         return oci_project.newSeries(name, summary, registrant)
 
+    def makeOCIRecipe(self, name=None, registrant=None, owner=None,
+                      oci_project=None, git_ref=None, description=None,
+                      official=False, require_virtualized=True,
+                      build_file=None, date_created=DEFAULT):
+        """Make a new OCIRecipe."""
+        if name is None:
+            name = self.getUniqueString(u"oci-recipe-name")
+        if registrant is None:
+            registrant = self.makePerson()
+        if description is None:
+            description = self.getUniqueString(u"oci-recipe-description")
+        if owner is None:
+            owner = self.makeTeam(members=[registrant])
+        if oci_project is None:
+            oci_project = self.makeOCIProject()
+        if git_ref is None:
+            [git_ref] = self.makeGitRefs()
+        if build_file is None:
+            build_file = self.getUniqueUnicode(u"build_file_for")
+        return getUtility(IOCIRecipeSet).new(
+            name=name,
+            registrant=registrant,
+            owner=owner,
+            oci_project=oci_project,
+            git_ref=git_ref,
+            build_file=build_file,
+            description=description,
+            official=official,
+            require_virtualized=require_virtualized,
+            date_created=date_created)
+
+    def makeOCIRecipeArch(self, recipe=None, processor=None):
+        """Make a new OCIRecipeArch."""
+        if recipe is None:
+            recipe = self.makeOCIRecipe()
+        if processor is None:
+            processor = self.makeProcessor()
+        return OCIRecipeArch(recipe, processor)
+
+    def makeOCIRecipeBuild(self, requester=None, recipe=None,
+                           distro_arch_series=None, date_created=DEFAULT,
+                           status=BuildStatus.NEEDSBUILD, builder=None,
+                           duration=None):
+        """Make a new OCIRecipeBuild."""
+        if requester is None:
+            requester = self.makePerson()
+        if distro_arch_series is None:
+            distro_arch_series = self.makeDistroArchSeries()
+        if recipe is None:
+            recipe = self.makeOCIRecipe()
+        oci_build = getUtility(IOCIRecipeBuildSet).new(
+            requester, recipe, distro_arch_series, date_created)
+        if duration is not None:
+            removeSecurityProxy(oci_build).updateStatus(
+                BuildStatus.BUILDING, builder=builder,
+                date_started=oci_build.date_created)
+            removeSecurityProxy(oci_build).updateStatus(
+                status, builder=builder,
+                date_finished=oci_build.date_started + duration)
+        else:
+            removeSecurityProxy(oci_build).updateStatus(
+                status, builder=builder)
+        IStore(oci_build).flush()
+        return oci_build
+
+    def makeOCIFile(self, build=None, library_file=None,
+                    layer_file_digest=None):
+        """Make a new OCIFile."""
+        if build is None:
+            build = self.makeOCIRecipeBuild()
+        if library_file is None:
+            library_file = self.makeLibraryFileAlias()
+        return OCIFile(build=build, library_file=library_file,
+                       layer_file_digest=layer_file_digest)
+
 
 # Some factory methods return simple Python types. We don't add
 # security wrappers for them, as well as for objects created by
@@ -4991,11 +5074,11 @@ def is_security_proxied_or_harmless(obj):
         return True
     if type(obj) in unwrapped_types:
         return True
-    if isSequenceType(obj) or isinstance(obj, (set, frozenset)):
+    if isinstance(obj, (Sequence, set, frozenset)):
         return all(
             is_security_proxied_or_harmless(element)
             for element in obj)
-    if isMappingType(obj):
+    if isinstance(obj, Mapping):
         return all(
             (is_security_proxied_or_harmless(key) and
              is_security_proxied_or_harmless(obj[key]))

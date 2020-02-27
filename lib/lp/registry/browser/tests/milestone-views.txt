@@ -231,7 +231,7 @@ files. If there is no release, or no files, None is returned.
 If there are files, these files will be returned as a list.
 
     >>> release_file = release.addReleaseFile(
-    ...     'test.txt', 'test', 'text/plain', person,
+    ...     'test.txt', b'test', 'text/plain', person,
     ...     signature_filename='test.txt.asc', signature_content='123',
     ...     description="test file")
     >>> view = create_view(milestone, '+index')
@@ -678,7 +678,7 @@ milestone.
     >>> release = milestone.createProductRelease(
     ...     owner, datetime.now(UTC))
     >>> release_file = release.addReleaseFile(
-    ...     'test', 'test', 'text/plain', owner, description="test file")
+    ...     'test', b'test', 'text/plain', owner, description="test file")
     >>> specification = factory.makeSpecification(product=firefox)
     >>> specification.milestone = milestone
     >>> bug = factory.makeBug(target=firefox)

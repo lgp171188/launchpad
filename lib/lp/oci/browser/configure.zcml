@@ -1,0 +1,82 @@
+<!-- Copyright 2020 Canonical Ltd.  This software is licensed under the
+     GNU Affero General Public License version 3 (see the file LICENSE).
+-->
+
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:browser="http://namespaces.zope.org/browser"
+    xmlns:i18n="http://namespaces.zope.org/i18n"
+    i18n_domain="launchpad">
+    <facet facet="overview">
+        <browser:url
+            for="lp.oci.interfaces.ocirecipe.IOCIRecipe"
+            path_expression="string:${oci_project/pillar/name}/+oci/${oci_project/name}/+recipe/${name}"
+            attribute_to_parent="owner" />
+        <browser:menus
+            module="lp.oci.browser.ocirecipe"
+            classes="OCIRecipeNavigationMenu" />
+        <browser:navigation
+            module="lp.oci.browser.ocirecipe"
+            classes="OCIRecipeNavigation" />
+        <browser:defaultView
+            for="lp.oci.interfaces.ocirecipe.IOCIRecipe"
+            name="+index" />
+        <browser:page
+            for="lp.oci.interfaces.ocirecipe.IOCIRecipe"
+            class="lp.oci.browser.ocirecipe.OCIRecipeView"
+            permission="launchpad.View"
+            name="+index"
+            template="../templates/ocirecipe-index.pt" />
+        <browser:page
+            for="lp.registry.interfaces.ociproject.IOCIProject"
+            class="lp.oci.browser.ocirecipe.OCIRecipeAddView"
+            permission="launchpad.AnyLegitimatePerson"
+            name="+new-recipe"
+            template="../templates/ocirecipe-new.pt" />
+        <browser:page
+            for="lp.oci.interfaces.ocirecipe.IOCIRecipe"
+            class="lp.oci.browser.ocirecipe.OCIRecipeAdminView"
+            permission="launchpad.Admin"
+            name="+admin"
+            template="../../app/templates/generic-edit.pt" />
+        <browser:page
+            for="lp.oci.interfaces.ocirecipe.IOCIRecipe"
+            class="lp.oci.browser.ocirecipe.OCIRecipeEditView"
+            permission="launchpad.Edit"
+            name="+edit"
+            template="../../app/templates/generic-edit.pt" />
+        <browser:page
+            for="lp.oci.interfaces.ocirecipe.IOCIRecipe"
+            class="lp.oci.browser.ocirecipe.OCIRecipeDeleteView"
+            permission="launchpad.Edit"
+            name="+delete"
+            template="../../app/templates/generic-edit.pt" />
+        <adapter
+            provides="lp.services.webapp.interfaces.IBreadcrumb"
+            for="lp.oci.interfaces.ocirecipe.IOCIRecipe"
+            factory="lp.oci.browser.ocirecipe.OCIRecipeBreadcrumb"
+            permission="zope.Public" />
+
+        <browser:url
+            for="lp.oci.interfaces.ocirecipebuild.IOCIRecipeBuild"
+            path_expression="string:+build/${id}"
+            attribute_to_parent="recipe" />
+        <browser:navigation
+            module="lp.oci.browser.ocirecipebuild"
+            classes="OCIRecipeBuildNavigation" />
+        <browser:defaultView
+            for="lp.oci.interfaces.ocirecipebuild.IOCIRecipeBuild"
+            name="+index" />
+        <browser:page
+            for="lp.oci.interfaces.ocirecipebuild.IOCIRecipeBuild"
+            class="lp.oci.browser.ocirecipebuild.OCIRecipeBuildView"
+            permission="launchpad.View"
+            name="+index"
+            template="../templates/ocirecipebuild-index.pt" />
+        <adapter
+            provides="lp.services.webapp.interfaces.IBreadcrumb"
+            for="lp.oci.interfaces.ocirecipebuild.IOCIRecipeBuild"
+            factory="lp.services.webapp.breadcrumb.TitleBreadcrumb"
+            permission="zope.Public" />
+    </facet>
+</configure>

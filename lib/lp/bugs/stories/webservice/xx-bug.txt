@@ -1244,7 +1244,7 @@ An attachment can be added to the bug:
 
     >>> response = webservice.named_post(
     ...     bug_one['self_link'], 'addAttachment',
-    ...     data="12345", filename="numbers.txt", content_type='foo/bar',
+    ...     data=b"12345", filename="numbers.txt", content_type='foo/bar',
     ...     comment="The numbers you asked for.")
     >>> print(response)
     HTTP/1.1 201 Created...
@@ -1297,7 +1297,7 @@ we must follow to download the data.
     Location: http://.../numbers.txt
     ...
 
-    >>> from urllib2 import urlopen
+    >>> from six.moves.urllib.request import urlopen
 
     >>> data = None
     >>> conn = urlopen(data_response.getHeader('Location'))

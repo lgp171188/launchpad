@@ -126,12 +126,6 @@ check: clean build $(JS_BUILD_DIR)/.development
 	${PY} -t ./test_on_merge.py $(VERBOSITY) $(TESTOPTS)
 	bzr status --no-pending
 
-check_mailman: build $(JS_BUILD_DIR)/.development
-	# Run all tests, including the Mailman integration
-	# tests. test_on_merge.py takes care of setting up the database.
-	${PY} -t ./test_on_merge.py $(VERBOSITY) $(TESTOPTS) \
-		lp.services.mailman.tests
-
 lint: ${PY} $(JS_BUILD_DIR)/.development
 	@bash ./utilities/lint
 
@@ -266,7 +260,6 @@ compile: $(PY)
 	${SHHH} $(MAKE) -C sourcecode build PYTHON=${PYTHON} \
 	    LPCONFIG=${LPCONFIG}
 	${SHHH} bin/build-twisted-plugin-cache
-	${SHHH} LPCONFIG=${LPCONFIG} ${PY} -t buildmailman.py
 	scripts/update-version-info.sh
 
 test_build: build
@@ -300,7 +293,7 @@ start-gdb: build inplace stop support_files run.gdb
 
 run_all: build inplace stop
 	bin/run \
-	 -r librarian,sftp,forker,mailman,codebrowse,bing-webservice,\
+	 -r librarian,sftp,forker,codebrowse,bing-webservice,\
 	memcached,rabbitmq -i $(LPCONFIG)
 
 run_codebrowse: compile
@@ -346,7 +339,7 @@ stop: build initscript-stop
 # servers, where we know we don't need the extra steps in a full
 # "make stop" because of how the code is deployed/built.
 initscript-stop:
-	bin/killservice librarian launchpad mailman
+	bin/killservice librarian launchpad
 
 shutdown: scheduleoutage stop
 	$(RM) +maintenancetime.txt
@@ -384,16 +377,7 @@ clean_buildout: clean_pip
 clean_logs:
 	$(RM) logs/thread*.request
 
-clean_mailman:
-	$(RM) -r /var/tmp/mailman /var/tmp/mailman-xmlrpc.test
-ifdef LP_MAKE_KEEP_MAILMAN
-	@echo "Keeping previously built mailman."
-else
-	$(RM) lib/Mailman
-	$(RM) -r lib/mailman
-endif
-
-lxc-clean: clean_js clean_mailman clean_pip clean_logs
+lxc-clean: clean_js clean_pip clean_logs
 	# XXX: BradCrittenden 2012-05-25 bug=1004514:
 	# It is important for parallel tests inside LXC that the
 	# $(CODEHOSTING_ROOT) directory not be completely removed.
@@ -403,9 +387,6 @@ lxc-clean: clean_js clean_mailman clean_pip clean_logs
 	# the 'clean' target.
 	if test -f sourcecode/pygettextpo/Makefile; then \
 		$(MAKE) -C sourcecode/pygettextpo clean; \
-	fi
-	if test -f sourcecode/mailman/Makefile; then \
-		$(MAKE) -C sourcecode/mailman clean; \
 	fi
 	$(RM) -r env
 	$(RM) -r $(LP_BUILT_JS_ROOT)/*
@@ -422,8 +403,6 @@ lxc-clean: clean_js clean_mailman clean_pip clean_logs
 			  /var/tmp/fatsam.test \
 			  /var/tmp/lperr \
 			  /var/tmp/lperr.test \
-			  /var/tmp/mailman \
-			  /var/tmp/mailman-xmlrpc.test \
 			  /var/tmp/ppa \
 			  /var/tmp/ppa.test \
 			  /var/tmp/testkeyserver
@@ -455,8 +434,8 @@ install: reload-apache
 
 copy-certificates:
 	mkdir -p /etc/apache2/ssl
-	cp configs/development/launchpad.crt /etc/apache2/ssl/
-	cp configs/development/launchpad.key /etc/apache2/ssl/
+	cp configs/$(LPCONFIG)/launchpad.crt /etc/apache2/ssl/
+	cp configs/$(LPCONFIG)/launchpad.key /etc/apache2/ssl/
 
 copy-apache-config: codehosting-dir
 	# We insert the absolute path to the branch-rewrite script
@@ -470,7 +449,7 @@ copy-apache-config: codehosting-dir
 	fi; \
 	sed -e 's,%BRANCH_REWRITE%,$(shell pwd)/scripts/branch-rewrite.py,' \
 		-e 's,%LISTEN_ADDRESS%,$(LISTEN_ADDRESS),' \
-		configs/development/local-launchpad-apache > \
+		configs/$(LPCONFIG)/local-launchpad-apache > \
 		/etc/apache2/sites-available/$$base
 	if [ ! -d /srv/launchpad.test ]; then \
 		mkdir /srv/launchpad.test; \
@@ -505,7 +484,7 @@ pydoctor:
 		--docformat restructuredtext --verbose-about epytext-summary \
 		$(PYDOCTOR_OPTIONS)
 
-.PHONY: apidoc build_eggs build_wheels check check_config check_mailman	\
+.PHONY: apidoc build_eggs build_wheels check check_config		\
 	clean clean_buildout clean_js clean_logs clean_pip compile	\
 	css_combine debug default doc ftest_build ftest_inplace		\
 	hosted_branches jsbuild jsbuild_widget_css launchpad.pot	\

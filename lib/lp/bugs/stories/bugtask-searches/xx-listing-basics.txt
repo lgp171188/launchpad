@@ -232,9 +232,9 @@ relevant listings:
 
 Patches also appear as badges in bug listings.
 
+    >>> from io import BytesIO
     >>> from lp.testing import login, logout
     >>> from zope.component import getUtility
-    >>> from StringIO import StringIO
     >>> from lp.services.messages.interfaces.message import IMessageSet
     >>> from lp.bugs.interfaces.bug import IBugSet
     >>> from lp.registry.interfaces.person import IPersonSet
@@ -249,7 +249,7 @@ Patches also appear as badges in bug listings.
     >>> bug_one = bugset.get(1)
     >>> bug_one.addAttachment(
     ...     owner=foobar,
-    ...     data=StringIO("file data"),
+    ...     data=BytesIO(b"file data"),
     ...     filename="foo.bar",
     ...     description="this fixes the bug",
     ...     comment=message,

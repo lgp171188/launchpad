@@ -4,8 +4,7 @@
 """Private XMLRPC tests.
 """
 
-import xmlrpclib
-
+from six.moves import xmlrpc_client
 from zope.component import getUtility
 
 from lp.services.verification.interfaces.logintoken import ILoginTokenSet
@@ -31,14 +30,14 @@ class TestPrivateXMLRPC(TestCase):
     private_root = 'http://xmlrpc-private.launchpad.test:8087/'
 
     def get_public_proxy(self, path):
-        """Get an xmlrpclib.ServerProxy pointing at the public URL"""
-        return xmlrpclib.ServerProxy(
+        """Get an xmlrpc_client.ServerProxy pointing at the public URL"""
+        return xmlrpc_client.ServerProxy(
             self.public_root + path,
             transport=XMLRPCTestTransport())
 
     def get_private_proxy(self, path):
-        """Get an xmlrpclib.ServerProxy pointing at the private URL"""
-        return xmlrpclib.ServerProxy(
+        """Get an xmlrpc_client.ServerProxy pointing at the private URL"""
+        return xmlrpc_client.ServerProxy(
             self.private_root + path,
             transport=XMLRPCTestTransport())
 
@@ -48,7 +47,7 @@ class TestPrivateXMLRPC(TestCase):
         not available on the external XML-RPC port.
         """
         external_api = self.get_public_proxy('mailinglists/')
-        e = self.assertRaises(xmlrpclib.ProtocolError,
+        e = self.assertRaises(xmlrpc_client.ProtocolError,
                               external_api.getPendingActions)
         self.assertEqual(404, e.errcode)
 
@@ -78,7 +77,7 @@ class TestPrivateXMLRPC(TestCase):
         internal_api = self.get_private_proxy('bugs/')
         bug_dict = dict(
             product='firefox', summary='the summary', comment='the comment')
-        e = self.assertRaises(xmlrpclib.ProtocolError,
+        e = self.assertRaises(xmlrpc_client.ProtocolError,
                               internal_api.filebug, bug_dict)
         self.assertEqual(404, e.errcode)
 

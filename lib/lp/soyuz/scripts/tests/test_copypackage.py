@@ -1684,7 +1684,8 @@ class TestDoDirectCopy(BaseDoCopyTests, TestCaseWithFactory):
         changes_file_name = '%s_%s_%s.changes' % (
             lazy_bin.name, lazy_bin.version, build_i386.arch_tag)
         self.test_publisher.addPackageUpload(
-            archive, nobby, build_i386.pocket, changes_file_content='anything',
+            archive, nobby, build_i386.pocket,
+            changes_file_content=b'anything',
             changes_file_name=changes_file_name)
 
         # Make the new library files available.
@@ -1991,8 +1992,8 @@ class TestCopyClosesBugs(TestCaseWithFactory):
 
     def createSource(self, version, archive, pocket, bug_id):
         changes_template = (
-            "Format: 1.7\n"
-            "Launchpad-bugs-fixed: %s\n")
+            b"Format: 1.7\n"
+            b"Launchpad-bugs-fixed: %s\n")
         changes_file_content = changes_template % bug_id
         source = self.test_publisher.getPubSource(
             sourcename='buggy-source', version=version,

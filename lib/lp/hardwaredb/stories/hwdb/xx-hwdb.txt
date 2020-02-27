@@ -196,7 +196,7 @@ present in the form and submits this data. Unfortunately, it sometimes
 simply omits some fields. In such a case, we return an extra header
 "Required fields not contained in POST data".
 
-    >>> from urllib import urlencode
+    >>> from six.moves.urllib.parse import urlencode
     >>> form_data = {
     ...     'field.date_created': '2009-01-01',
     ...     'field.format': 'VERSION_1',

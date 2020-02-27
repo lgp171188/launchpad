@@ -112,6 +112,8 @@ from lp.hardwaredb.interfaces.hwdb import (
     IHWSubmissionDevice,
     IHWVendorID,
     )
+from lp.oci.interfaces.ocirecipe import IOCIRecipe
+from lp.oci.interfaces.ocirecipebuild import IOCIRecipeBuild
 from lp.registry.enums import PersonVisibility
 from lp.registry.interfaces.announcement import IAnnouncement
 from lp.registry.interfaces.distribution import IDistribution
@@ -3469,4 +3471,42 @@ class EditOCIProjectSeries(AuthorizationBase):
     def checkAuthenticated(self, user):
         """Maintainers, drivers, and admins can drive projects."""
         return (user.in_admin or
-                user.isDriver(self.obj.ociproject.pillar))
+                user.isDriver(self.obj.oci_project.pillar))
+
+
+class ViewOCIRecipe(AnonymousAuthorization):
+    """Anyone can view an `IOCIRecipe`."""
+    usedfor = IOCIRecipe
+
+
+class EditOCIRecipe(AuthorizationBase):
+    permission = 'launchpad.Edit'
+    usedfor = IOCIRecipe
+
+    def checkAuthenticated(self, user):
+        return (
+            user.isOwner(self.obj) or
+            user.in_commercial_admin or user.in_admin)
+
+
+class AdminOCIRecipe(AuthorizationBase):
+    """Restrict changing build settings on OCI recipes.
+
+    The security of the non-virtualised build farm depends on these
+    settings, so they can only be changed by "PPA"/commercial admins, or by
+    "PPA" self admins on OCI recipes that they can already edit.
+    """
+    permission = 'launchpad.Admin'
+    usedfor = IOCIRecipe
+
+    def checkAuthenticated(self, user):
+        if user.in_ppa_admin or user.in_commercial_admin or user.in_admin:
+            return True
+        return (
+            user.in_ppa_self_admins
+            and EditSnap(self.obj).checkAuthenticated(user))
+
+
+class ViewOCIRecipeBuild(AnonymousAuthorization):
+    """Anyone can view an `IOCIRecipe`."""
+    usedfor = IOCIRecipeBuild

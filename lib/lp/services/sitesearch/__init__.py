@@ -12,15 +12,15 @@ __all__ = [
     ]
 
 import json
-import urllib
-from urlparse import (
-    parse_qsl,
-    urlunparse,
-    )
 
 from lazr.restful.utils import get_current_browser_request
 from lazr.uri import URI
 import requests
+from six.moves.urllib.parse import (
+    parse_qsl,
+    urlencode,
+    urlunparse,
+    )
 from zope.interface import implementer
 
 from lp.services.config import config
@@ -88,7 +88,7 @@ class PageMatch:
         """Escapes invalid urls."""
         parts = urlparse(url)
         querydata = parse_qsl(parts.query)
-        querystring = urllib.urlencode(querydata)
+        querystring = urlencode(querydata)
         urldata = list(parts)
         urldata[-2] = querystring
         return urlunparse(urldata)
@@ -242,7 +242,7 @@ class BingSearchService:
         search_params['q'] = terms.encode('utf8')
         search_params['offset'] = start
         search_params['customConfig'] = self.custom_config_id
-        query_string = urllib.urlencode(sorted(search_params.items()))
+        query_string = urlencode(sorted(search_params.items()))
         return self.site + '?' + query_string
 
     def create_search_headers(self):

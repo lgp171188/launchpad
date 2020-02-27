@@ -19,10 +19,12 @@ from functools import partial
 from itertools import (
     chain,
     count,
-    imap,
-    izip,
     )
 
+from six.moves import (
+    map as imap,
+    zip as izip,
+    )
 import transaction
 
 from lp.registry.interfaces.teammembership import ACTIVE_STATES

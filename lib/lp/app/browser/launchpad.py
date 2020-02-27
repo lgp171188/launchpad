@@ -27,9 +27,11 @@ import operator
 import os
 import re
 import time
-import urllib
 
-from six.moves.urllib.parse import parse_qs
+from six.moves.urllib.parse import (
+    parse_qs,
+    urlencode,
+    )
 from zope import i18n
 from zope.component import (
     getGlobalSiteManager,
@@ -633,8 +635,7 @@ class LoginStatus:
         if query_string:
             query_dict = parse_qs(query_string, keep_blank_values=True)
             query_dict.pop('loggingout', None)
-            query_string = urllib.urlencode(
-                sorted(query_dict.items()), doseq=True)
+            query_string = urlencode(sorted(query_dict.items()), doseq=True)
             # If we still have a query_string after things we don't want
             # have been removed, add it onto the url.
             if query_string:

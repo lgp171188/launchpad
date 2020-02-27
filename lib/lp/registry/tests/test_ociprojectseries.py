@@ -48,7 +48,7 @@ class TestOCIProjectSeries(TestCaseWithFactory):
             oci_project, name, summary, registrant, status, date_created)
         self.assertThat(
             project_series, MatchesStructure.byEquality(
-                ociproject=project_series.ociproject,
+                oci_project=project_series.oci_project,
                 name=project_series.name,
                 summary=project_series.summary,
                 registrant=project_series.registrant,

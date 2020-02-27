@@ -14,8 +14,6 @@ __metaclass__ = type
 from cStringIO import StringIO
 import os
 import signal
-import smtplib
-from urllib import urlopen
 import uuid
 
 import amqp
@@ -24,7 +22,8 @@ from fixtures import (
     Fixture,
     TestWithFixtures,
     )
-from lazr.config import as_host_port
+from six.moves.urllib.error import HTTPError
+from six.moves.urllib.request import urlopen
 from zope.component import (
     ComponentLookupError,
     getUtility,
@@ -354,10 +353,7 @@ class LibrarianResetTestCase(TestCase):
         LibrarianLayer.testTearDown()
         LibrarianLayer.testSetUp()
         # Which should have nuked the old file.
-        # XXX: StuartBishop 2006-06-30 Bug=51370:
-        # We should get a DownloadFailed exception here.
-        data = urlopen(LibrarianTestCase.url).read()
-        self.assertNotEqual(data, self.sample_data)
+        self.assertRaises(HTTPError, urlopen, LibrarianTestCase.url)
 
 
 class LibrarianHideTestCase(TestCase):
@@ -494,22 +490,10 @@ class LayerProcessControllerInvariantsTestCase(BaseTestCase):
             'Is your project registered yet?' in home_page,
             "Home page couldn't be retrieved:\n%s" % home_page)
 
-    def testSMTPServerIsAvailable(self):
-        # Test that the SMTP server is up and running.
-        smtpd = smtplib.SMTP()
-        host, port = as_host_port(config.mailman.smtp)
-        code, message = smtpd.connect(host, port)
-        self.assertEqual(code, 220)
-
     def testStartingAppServerTwiceRaisesInvariantError(self):
         # Starting the appserver twice should raise an exception.
         self.assertRaises(LayerInvariantError,
                           LayerProcessController.startAppServer)
-
-    def testStartingSMTPServerTwiceRaisesInvariantError(self):
-        # Starting the SMTP server twice should raise an exception.
-        self.assertRaises(LayerInvariantError,
-                          LayerProcessController.startSMTPServer)
 
 
 class LayerProcessControllerTestCase(TestCase):
@@ -519,8 +503,7 @@ class LayerProcessControllerTestCase(TestCase):
 
     def tearDown(self):
         super(LayerProcessControllerTestCase, self).tearDown()
-        # Stop both servers.  It's okay if they aren't running.
-        LayerProcessController.stopSMTPServer()
+        # Stop the app server.  It's okay if it isn't running.
         LayerProcessController.stopAppServer()
 
     def test_stopAppServer(self):

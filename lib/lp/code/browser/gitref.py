@@ -279,6 +279,17 @@ class GitRefRegisterMergeProposalView(LaunchpadFormView):
             raise NotFound(self.context, '+register-merge')
         super(GitRefRegisterMergeProposalView, self).initialize()
 
+    def setUpWidgets(self, context=None):
+        super(GitRefRegisterMergeProposalView, self).setUpWidgets(
+            context=context)
+        term = next(
+            iter(self.widgets['target_git_repository'].vocabulary),
+            None)
+        # If we have a target, and the user hasn't entered a value.
+        if term and not self.widgets['target_git_path'].hasInput():
+            self.widgets['target_git_path'].setRenderedValue(
+                term.value.default_branch)
+
     @action('Propose Merge', name='register',
             failure=LaunchpadFormView.ajax_failure_handler)
     def register_action(self, action, data):

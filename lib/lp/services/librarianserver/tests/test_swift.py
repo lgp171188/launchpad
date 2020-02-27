@@ -44,7 +44,7 @@ class TestFeedSwift(TestCase):
 
         # Restart the Librarian so it picks up the OS_* environment
         # variables.
-        LibrarianLayer.librarian_fixture.killTac()
+        LibrarianLayer.librarian_fixture.cleanUp()
         LibrarianLayer.librarian_fixture.setUp()
 
         # Add some files. These common sample files all have their
@@ -65,7 +65,7 @@ class TestFeedSwift(TestCase):
         super(TestFeedSwift, self).tearDown()
         # Restart the Librarian so it picks up the feature flag change.
         self.attachLibrarianLog(LibrarianLayer.librarian_fixture)
-        LibrarianLayer.librarian_fixture.killTac()
+        LibrarianLayer.librarian_fixture.cleanUp()
         LibrarianLayer.librarian_fixture.setUp()
 
     @write_transaction

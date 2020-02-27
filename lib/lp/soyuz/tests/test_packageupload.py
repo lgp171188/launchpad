@@ -9,7 +9,6 @@ from datetime import timedelta
 import io
 import os.path
 import shutil
-from urllib2 import urlopen
 
 from debian.deb822 import Changes
 from lazr.restfulclient.errors import (
@@ -21,6 +20,7 @@ from testtools.matchers import (
     MatchesListwise,
     MatchesStructure,
     )
+from six.moves.urllib.request import urlopen
 import transaction
 from zope.component import (
     getUtility,
@@ -124,7 +124,7 @@ class PackageUploadTestCase(TestCaseWithFactory):
 
         # Get some sample changes file content for the new upload.
         changes_file = open(
-            datadir('suite/bar_1.0-1/bar_1.0-1_source.changes'))
+            datadir('suite/bar_1.0-1/bar_1.0-1_source.changes'), 'rb')
         changes_file_content = changes_file.read()
         changes_file.close()
 

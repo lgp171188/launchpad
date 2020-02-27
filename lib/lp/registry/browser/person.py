@@ -54,7 +54,6 @@ from operator import (
     itemgetter,
     )
 from textwrap import dedent
-import urllib
 
 from lazr.config import as_timedelta
 from lazr.delegates import delegate_to
@@ -63,6 +62,10 @@ from lazr.restful.interfaces import IWebServiceClientRequest
 from lazr.restful.utils import smartquote
 from lazr.uri import URI
 import pytz
+from six.moves.urllib.parse import (
+    quote,
+    urlencode,
+    )
 from storm.zope.interfaces import IResultSet
 from zope.browserpage import ViewPageTemplateFile
 from zope.component import (
@@ -1717,7 +1720,7 @@ class PersonView(LaunchpadView, FeedsMixin, ContactViaWebLinksMixin):
         """Return an URL to a page which lists all bugs assigned to this
         person that are In Progress.
         """
-        query_string = urllib.urlencode(
+        query_string = urlencode(
             [('field.status', BugTaskStatus.INPROGRESS.title)])
         url = "%s/+assignedbugs" % canonical_url(self.context)
         return ("%(url)s?search=Search&%(query_string)s"
@@ -2952,7 +2955,7 @@ class PersonEditEmailsView(LaunchpadFormView):
                     "to be confirmed as yours." % newemail)
             else:
                 owner = email.person
-                owner_name = urllib.quote(owner.name)
+                owner_name = quote(owner.name)
                 merge_url = (
                     '%s/+requestmerge?field.dupe_person=%s'
                     % (canonical_url(getUtility(IPersonSet)), owner_name))

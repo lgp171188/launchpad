@@ -41,7 +41,7 @@ class TestFilterTests(TestCase):
         f.flush()
 
     @staticmethod
-    def make_suite(testnames=string.lowercase):
+    def make_suite(testnames=string.ascii_lowercase):
         """Make a suite containing `testnames` (default: 'a'..'z')."""
         suite = unittest.TestSuite()
         for testname in testnames:
@@ -55,8 +55,8 @@ class TestFilterTests(TestCase):
         The first has 'a'..'m' and the second 'n'..'z'.
         """
         return (
-            TestFilterTests.make_suite(string.lowercase[:13]),
-            TestFilterTests.make_suite(string.lowercase[13:]),
+            TestFilterTests.make_suite(string.ascii_lowercase[:13]),
+            TestFilterTests.make_suite(string.ascii_lowercase[13:]),
             )
 
     @staticmethod

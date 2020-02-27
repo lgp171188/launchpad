@@ -280,10 +280,10 @@ class OnceTests:
         # a given type.
         with person_logged_in(self.owner):
             self.bugtasks[0].bug.addAttachment(
-                owner=self.owner, data='filedata', comment='a comment',
+                owner=self.owner, data=b'filedata', comment='a comment',
                 filename='file1.txt', is_patch=False)
             self.bugtasks[1].bug.addAttachment(
-                owner=self.owner, data='filedata', comment='a comment',
+                owner=self.owner, data=b'filedata', comment='a comment',
                 filename='file1.txt', is_patch=True)
         # We can search for bugs with non-patch attachments...
         params = self.getBugTaskSearchParams(

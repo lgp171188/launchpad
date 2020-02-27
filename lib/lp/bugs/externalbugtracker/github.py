@@ -13,12 +13,14 @@ __all__ = [
 
 from contextlib import contextmanager
 import time
-from urllib import urlencode
-from urlparse import urlunsplit
 
 import pytz
 import requests
 from six.moves import http_client
+from six.moves.urllib.parse import (
+    urlencode,
+    urlunsplit,
+    )
 from zope.component import getUtility
 from zope.interface import Interface
 

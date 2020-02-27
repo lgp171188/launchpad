@@ -22,7 +22,6 @@ __all__ = [
     ]
 
 import os.path
-import urllib
 
 from lazr.delegates import delegate_to
 from lazr.restful.interfaces import IJSONRequestCache
@@ -33,6 +32,8 @@ from simplejson.encoder import JSONEncoderForHTML
 from six.moves.urllib.parse import (
     parse_qs,
     parse_qsl,
+    quote,
+    urlencode,
     )
 from zope.authentication.interfaces import IUnauthenticatedPrincipal
 from zope.browserpage import ViewPageTemplateFile
@@ -245,7 +246,7 @@ def rewrite_old_bugtask_status_query_string(query_string):
     if query_elements == query_elements_mapped:
         return query_string
     else:
-        return urllib.urlencode(query_elements_mapped, doseq=True)
+        return urlencode(query_elements_mapped, doseq=True)
 
 
 def target_has_expirable_bugs_listing(target):
@@ -593,7 +594,7 @@ def get_buglisting_search_filter_url(
     if orderby is not None:
         search_params.append(('orderby', orderby))
 
-    query_string = urllib.urlencode(search_params, doseq=True)
+    query_string = urlencode(search_params, doseq=True)
 
     search_filter_url = "+bugs?search=Search"
     if query_string != '':
@@ -688,7 +689,7 @@ class BugTaskListingItem:
             'reporter': reporter.displayname,
             'status': self.status.title,
             'status_class': 'status' + self.status.name,
-            'tags': [{'url': base_tag_url + urllib.quote(tag), 'tag': tag}
+            'tags': [{'url': base_tag_url + quote(tag), 'tag': tag}
                 for tag in self.tags],
             'title': self.bug.title,
             }

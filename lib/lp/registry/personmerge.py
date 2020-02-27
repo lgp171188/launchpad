@@ -15,6 +15,7 @@ from lp.code.interfaces.branchcollection import (
     IBranchCollection,
     )
 from lp.code.interfaces.gitcollection import IGitCollection
+from lp.oci.interfaces.ocirecipe import IOCIRecipeSet
 from lp.registry.interfaces.mailinglist import (
     IMailingListSet,
     MailingListStatus,
@@ -671,6 +672,24 @@ def _mergeSnap(cur, from_person, to_person):
         IStore(snaps[0]).flush()
 
 
+def _mergeOCIRecipe(cur, from_person, to_person):
+    # This shouldn't use removeSecurityProxy
+    oci_recipes = getUtility(IOCIRecipeSet).findByOwner(from_person)
+    existing_names = [
+        r.name for r in getUtility(IOCIRecipeSet).findByOwner(to_person)]
+    for recipe in oci_recipes:
+        new_name = recipe.name
+        count = 1
+        while new_name in existing_names:
+            new_name = '%s-%s' % (recipe.name, count)
+            count += 1
+        naked_recipe = removeSecurityProxy(recipe)
+        naked_recipe.owner = to_person
+        naked_recipe.name = new_name
+    if not oci_recipes.is_empty():
+        IStore(oci_recipes[0]).flush()
+
+
 def _purgeUnmergableTeamArtifacts(from_team, to_team, reviewer):
     """Purge team artifacts that cannot be merged, but can be removed."""
     # A team cannot have more than one mailing list.
@@ -897,6 +916,9 @@ def merge_people(from_person, to_person, reviewer, delete=False):
 
     _mergeSnap(cur, from_person, to_person)
     skip.append(('snap', 'owner'))
+
+    _mergeOCIRecipe(cur, from_person, to_person)
+    skip.append(('ocirecipe', 'owner'))
 
     # Sanity check. If we have a reference that participates in a
     # UNIQUE index, it must have already been handled by this point.

@@ -13,12 +13,12 @@ import shutil
 import StringIO
 import subprocess
 import tempfile
-import urllib
 
 from bzrlib.branch import Branch
 from bzrlib.tests import TestCaseInTempDir
 from dulwich.repo import Repo as GitRepo
 import oops_twisted
+from six.moves.urllib.request import urlopen
 from testtools.twistedsupport import (
     assert_fails_with,
     AsynchronousDeferredRunTest,
@@ -368,7 +368,7 @@ class TestWorkerMonitorUnit(TestCase):
         def check_file_uploaded(result):
             transaction.abort()
             url = worker_monitor.codeimport_endpoint.calls[0][3]
-            text = urllib.urlopen(url).read()
+            text = urlopen(url).read()
             self.assertEqual(log_text, text)
 
         return worker_monitor.finishJob(

@@ -19,17 +19,17 @@ import logging
 from optparse import OptionParser
 import os.path
 import sys
-from urllib2 import (
-    HTTPError,
-    URLError,
-    urlopen,
-    )
 
 from contrib.glock import (
     GlobalLock,
     LockAlreadyAcquired,
     )
 import pytz
+from six.moves.urllib.error import (
+    HTTPError,
+    URLError,
+    )
+from six.moves.urllib.request import urlopen
 import transaction
 from zope.component import getUtility
 

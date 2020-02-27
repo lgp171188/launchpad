@@ -164,6 +164,12 @@ class BuildFarmJobType(DBEnumeratedType):
         Build a snap package from a recipe.
         """)
 
+    OCIRECIPEBUILD = DBItem(7, """
+        OCI image build
+
+        Build an OCI image from a recipe.
+        """)
+
 
 class BuildQueueStatus(DBEnumeratedType):
     """Build queue status.

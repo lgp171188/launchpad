@@ -1,4 +1,4 @@
-# Copyright 2014-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2014-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test live filesystems."""
@@ -246,6 +246,35 @@ class TestLiveFS(TestCaseWithFactory):
             self.factory.makeDistroArchSeries(
                 distroseries=livefs.distro_series),
             PackagePublishingPocket.RELEASE)
+        # We can specify a unique key.
+        livefs.requestBuild(
+            livefs.owner, livefs.distro_series.main_archive, distroarchseries,
+            PackagePublishingPocket.RELEASE, unique_key="foo")
+        livefs.requestBuild(
+            livefs.owner, livefs.distro_series.main_archive, distroarchseries,
+            PackagePublishingPocket.RELEASE, unique_key="bar")
+        self.assertRaises(
+            LiveFSBuildAlreadyPending, livefs.requestBuild,
+            livefs.owner, livefs.distro_series.main_archive, distroarchseries,
+            PackagePublishingPocket.RELEASE, unique_key="bar")
+        # We can apply different metadata overrides.
+        livefs.requestBuild(
+            livefs.owner, livefs.distro_series.main_archive, distroarchseries,
+            PackagePublishingPocket.RELEASE,
+            metadata_override={"proposed": True})
+        livefs.requestBuild(
+            livefs.owner, livefs.distro_series.main_archive, distroarchseries,
+            PackagePublishingPocket.RELEASE,
+            metadata_override={"project": "foo", "proposed": True})
+        livefs.requestBuild(
+            livefs.owner, livefs.distro_series.main_archive, distroarchseries,
+            PackagePublishingPocket.RELEASE,
+            metadata_override={"project": "foo"})
+        self.assertRaises(
+            LiveFSBuildAlreadyPending, livefs.requestBuild,
+            livefs.owner, livefs.distro_series.main_archive, distroarchseries,
+            PackagePublishingPocket.RELEASE,
+            metadata_override={"project": "foo", "proposed": True})
         # Changing the status of the old build allows a new build.
         old_build.updateStatus(BuildStatus.BUILDING)
         old_build.updateStatus(BuildStatus.FULLYBUILT)

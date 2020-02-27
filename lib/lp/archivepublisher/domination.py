@@ -54,16 +54,16 @@ __all__ = ['Dominator']
 
 from collections import defaultdict
 from datetime import timedelta
-from itertools import (
-    ifilter,
-    ifilterfalse,
-    )
 from operator import (
     attrgetter,
     itemgetter,
     )
 
 import apt_pkg
+from six.moves import (
+    filter as ifilter,
+    filterfalse as ifilterfalse,
+    )
 from storm.expr import (
     And,
     Count,

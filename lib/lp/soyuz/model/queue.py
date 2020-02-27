@@ -47,7 +47,6 @@ from lp.registry.interfaces.gpg import IGPGKeySet
 from lp.registry.interfaces.person import IPersonSet
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.registry.model.sourcepackagename import SourcePackageName
-from lp.services.auditor.client import AuditorClient
 from lp.services.database.bulk import (
     load_referencing,
     load_related,
@@ -610,9 +609,6 @@ class PackageUpload(SQLBase):
             self._acceptNonSyncFromQueue()
         else:
             self._acceptSyncFromQueue()
-        if bool(getFeatureFlag('auditor.enabled')):
-            client = AuditorClient()
-            client.send(self, 'packageupload-accepted', user)
 
     def rejectFromQueue(self, user, comment=None):
         """See `IPackageUpload`."""
@@ -637,9 +633,6 @@ class PackageUpload(SQLBase):
         getUtility(IPackageUploadNotificationJobSource).create(
             self, summary_text=summary_text)
         self.syncUpdate()
-        if bool(getFeatureFlag('auditor.enabled')):
-            client = AuditorClient()
-            client.send(self, 'packageupload-rejected', user)
 
     def _isSingleSourceUpload(self):
         """Return True if this upload contains only a single source."""

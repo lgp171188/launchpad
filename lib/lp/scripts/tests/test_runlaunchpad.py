@@ -145,12 +145,7 @@ class ServersToStart(testtools.TestCase):
         services = sorted(get_services_to_run([]))
         expected = [SERVICES['librarian']]
 
-        # Mailman may or may not be asked to run.
-        if config.mailman.launch:
-            expected.append(SERVICES['mailman'])
-
-        # Likewise, the search test services may or may not be asked to
-        # run.
+        # The search test services may or may not be asked to run.
         if config.bing_test_service.launch:
             expected.append(SERVICES['bing-webservice'])
 

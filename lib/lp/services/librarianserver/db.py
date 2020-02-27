@@ -9,9 +9,12 @@ __all__ = [
     ]
 
 import hashlib
-import urllib
 
 from pymacaroons import Macaroon
+from six.moves.urllib.parse import (
+    quote,
+    unquote,
+    )
 from six.moves.xmlrpc_client import Fault
 from storm.expr import (
     And,
@@ -109,13 +112,12 @@ class Library:
                 # The URL-encoding of the path may have changed somewhere
                 # along the line, so reencode it canonically. LFA.filename
                 # can't contain slashes, so they're safe to leave unencoded.
-                # And urllib.quote erroneously excludes ~ from its safe set,
-                # while RFC 3986 says it should be unescaped and Chromium
-                # forcibly decodes it in any URL that it sees.
+                # And urllib.parse.quote erroneously excludes ~ from its
+                # safe set, while RFC 3986 says it should be unescaped and
+                # Chromium forcibly decodes it in any URL that it sees.
                 #
                 # This needs to match url_path_quote.
-                normalised_path = urllib.quote(
-                    urllib.unquote(path), safe='/~+')
+                normalised_path = quote(unquote(path), safe='/~+')
                 store = session_store()
                 token_ok = not store.find(TimeLimitedToken,
                     SQL("age(created) < interval '1 day'"),

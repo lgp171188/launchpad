@@ -14,10 +14,10 @@ import hashlib
 import os
 import signal
 import tempfile
-import xmlrpclib
 
 from lpbuildd.slave import BuilderStatus
 from lpbuildd.tests.harness import BuilddSlaveTestSetup
+from six.moves import xmlrpc_client
 from testtools.matchers import (
     ContainsAll,
     HasLength,
@@ -293,7 +293,7 @@ class TestBuilderInteractorCleanSlave(TestCase):
         try:
             yield BuilderInteractor.cleanSlave(
                 vitals, slave, MockBuilderFactory(builder, None))
-        except xmlrpclib.Fault:
+        except xmlrpc_client.Fault:
             self.assertEqual(['status', 'abort'], slave.call_log)
         else:
             self.fail("abort() should crash.")
@@ -327,7 +327,7 @@ class TestBuilderSlaveStatus(TestCase):
             del status["build_id"]
         if logtail:
             tail = status.pop("logtail")
-            self.assertIsInstance(tail, xmlrpclib.Binary)
+            self.assertIsInstance(tail, xmlrpc_client.Binary)
 
         self.assertEqual(expected, status)
 
@@ -546,7 +546,7 @@ class TestSlave(TestCase):
         status = yield slave.status()
         self.assertEqual(BuilderStatus.BUILDING, status['builder_status'])
         self.assertEqual(build_id, status['build_id'])
-        self.assertIsInstance(status['logtail'], xmlrpclib.Binary)
+        self.assertIsInstance(status['logtail'], xmlrpc_client.Binary)
 
     def test_ensurepresent_not_there(self):
         # ensurepresent checks to see if a file is there.

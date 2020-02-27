@@ -100,6 +100,7 @@ from lp.soyuz.adapters.archivedependencies import (
     )
 from lp.soyuz.enums import PackagePublishingStatus
 from lp.soyuz.interfaces.archive import ArchiveDisabled
+from lp.soyuz.interfaces.component import IComponentSet
 from lp.soyuz.tests.soyuz import Base64KeyMatches
 from lp.testing import (
     TestCase,
@@ -241,6 +242,11 @@ class TestSnapBuildBehaviourBase(TestCaseWithFactory):
         distroarchseries = self.factory.makeDistroArchSeries(
             distroseries=distroseries, architecturetag="i386",
             processor=processor)
+
+        # Taken from test_archivedependencies.py
+        for component_name in ("main", "universe"):
+            self.factory.makeComponentSelection(distroseries, component_name)
+
         build = self.factory.makeSnapBuild(
             archive=archive, distroarchseries=distroarchseries, pocket=pocket,
             name="test-snap", **kwargs)
@@ -446,6 +452,8 @@ class TestAsyncSnapBuildBehaviour(TestSnapBuildBehaviourBase):
         expected_archives, expected_trusted_keys = (
             yield get_sources_list_for_building(
                 job.build, job.build.distro_arch_series, None))
+        for archive_line in expected_archives:
+            self.assertIn('universe', archive_line)
         with dbuser(config.builddmaster.dbuser):
             args = yield job.extraBuildArgs()
         self.assertThat(args, MatchesDict({
@@ -484,6 +492,8 @@ class TestAsyncSnapBuildBehaviour(TestSnapBuildBehaviourBase):
         expected_archives, expected_trusted_keys = (
             yield get_sources_list_for_building(
                 job.build, job.build.distro_arch_series, None))
+        for archive_line in expected_archives:
+            self.assertIn('universe', archive_line)
         with dbuser(config.builddmaster.dbuser):
             args = yield job.extraBuildArgs()
         self.assertThat(args, MatchesDict({
@@ -513,6 +523,8 @@ class TestAsyncSnapBuildBehaviour(TestSnapBuildBehaviourBase):
         expected_archives, expected_trusted_keys = (
             yield get_sources_list_for_building(
                 job.build, job.build.distro_arch_series, None))
+        for archive_line in expected_archives:
+            self.assertIn('universe', archive_line)
         with dbuser(config.builddmaster.dbuser):
             args = yield job.extraBuildArgs()
         self.assertThat(args, MatchesDict({
@@ -545,6 +557,8 @@ class TestAsyncSnapBuildBehaviour(TestSnapBuildBehaviourBase):
         expected_archives, expected_trusted_keys = (
             yield get_sources_list_for_building(
                 job.build, job.build.distro_arch_series, None))
+        for archive_line in expected_archives:
+            self.assertIn('universe', archive_line)
         args = yield job.extraBuildArgs()
         split_browse_root = urlsplit(config.codehosting.git_browse_root)
         self.assertThat(args, MatchesDict({
@@ -587,6 +601,8 @@ class TestAsyncSnapBuildBehaviour(TestSnapBuildBehaviourBase):
         expected_archives, expected_trusted_keys = (
             yield get_sources_list_for_building(
                 job.build, job.build.distro_arch_series, None))
+        for archive_line in expected_archives:
+            self.assertIn('universe', archive_line)
         with dbuser(config.builddmaster.dbuser):
             args = yield job.extraBuildArgs()
         self.assertThat(args, MatchesDict({
@@ -616,6 +632,8 @@ class TestAsyncSnapBuildBehaviour(TestSnapBuildBehaviourBase):
         expected_archives, expected_trusted_keys = (
             yield get_sources_list_for_building(
                 job.build, job.build.distro_arch_series, None))
+        for archive_line in expected_archives:
+            self.assertIn('universe', archive_line)
         with dbuser(config.builddmaster.dbuser):
             args = yield job.extraBuildArgs()
         self.assertThat(args, MatchesDict({

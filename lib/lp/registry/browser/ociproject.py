@@ -8,8 +8,10 @@ from __future__ import absolute_import, print_function, unicode_literals
 __metaclass__ = type
 __all__ = [
     'OCIProjectBreadcrumb',
+    'OCIProjectContextMenu',
     'OCIProjectFacets',
     'OCIProjectNavigation',
+    'OCIProjectNavigationMenu',
     ]
 
 from zope.component import getUtility
@@ -20,14 +22,15 @@ from lp.app.browser.launchpadform import (
     LaunchpadEditFormView,
     )
 from lp.app.browser.tales import CustomizableFormatter
-from lp.app.interfaces.headings import IHeadingBreadcrumb
 from lp.code.browser.vcslisting import TargetDefaultVCSNavigationMixin
+from lp.oci.interfaces.ocirecipe import IOCIRecipeSet
 from lp.registry.interfaces.ociproject import (
     IOCIProject,
     IOCIProjectSet,
     )
 from lp.services.webapp import (
     canonical_url,
+    ContextMenu,
     enabled_with_permission,
     Link,
     Navigation,
@@ -53,7 +56,7 @@ class OCIProjectNavigation(TargetDefaultVCSNavigationMixin, Navigation):
     usedfor = IOCIProject
 
 
-@implementer(IHeadingBreadcrumb, IMultiFacetedBreadcrumb)
+@implementer(IMultiFacetedBreadcrumb)
 class OCIProjectBreadcrumb(Breadcrumb):
     """Builds a breadcrumb for an `IOCIProject`."""
 
@@ -83,6 +86,26 @@ class OCIProjectNavigationMenu(NavigationMenu):
     @enabled_with_permission('launchpad.Edit')
     def edit(self):
         return Link('+edit', 'Edit OCI project', icon='edit')
+
+
+class OCIProjectContextMenu(ContextMenu):
+    """Context menu for OCI projects."""
+
+    usedfor = IOCIProject
+
+    facet = 'overview'
+
+    links = ('create_recipe', 'view_recipes')
+
+    @enabled_with_permission('launchpad.AnyLegitimatePerson')
+    def create_recipe(self):
+        return Link('+new-recipe', 'Create OCI recipe', icon='add')
+
+    def view_recipes(self):
+        enabled = not getUtility(IOCIRecipeSet).findByOCIProject(
+            self.context).is_empty()
+        return Link(
+            '+recipes', 'View OCI recipes', icon='info', enabled=enabled)
 
 
 class OCIProjectEditView(LaunchpadEditFormView):

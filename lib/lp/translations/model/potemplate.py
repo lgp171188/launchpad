@@ -931,8 +931,8 @@ class POTemplate(SQLBase, RosettaStats):
             errors, warnings = translation_importer.importFile(
                 entry_to_import, logger)
         except (MixedNewlineMarkersError, TranslationFormatSyntaxError,
-                TranslationFormatInvalidInputError, UnicodeDecodeError) as (
-                exception):
+                TranslationFormatInvalidInputError,
+                UnicodeDecodeError) as exception:
             if logger:
                 logger.info(
                     'We got an error importing %s', self.title, exc_info=1)

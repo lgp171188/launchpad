@@ -19,13 +19,13 @@ except ImportError:
 import logging
 import os
 import sys
-from urlparse import (
-    urlparse,
-    urlunparse,
-    )
 
 from lazr.config import ImplicitTypeSchema
 from lazr.config.interfaces import ConfigErrors
+from six.moves.urllib.parse import (
+    urlparse,
+    urlunparse,
+    )
 import ZConfig
 
 from lp.services.osutils import open_for_writing

@@ -6,10 +6,10 @@
 __metaclass__ = type
 
 from datetime import datetime
-from urllib import urlencode
 
 import pytz
 import simplejson
+from six.moves.urllib.parse import urlencode
 from zope.component import (
     getSiteManager,
     getUtility,

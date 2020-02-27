@@ -33,7 +33,6 @@ __all__ = [
     ]
 
 import bz2
-import cPickle as pickle
 from datetime import datetime
 from itertools import (
     islice,
@@ -53,6 +52,7 @@ from fixtures import (
     )
 from lazr.enum import BaseItem
 import pytz
+from six.moves import cPickle as pickle
 from twisted.python.util import mergeFunctionMetadata
 from zope.security.proxy import isinstance as zope_isinstance
 

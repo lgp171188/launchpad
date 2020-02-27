@@ -144,8 +144,6 @@ setup(
     # used in zcml.
     install_requires=[
         'ampoule',
-        'auditorclient',
-        'auditorfixture',
         'backports.lzma; python_version < "3.3"',
         'beautifulsoup4[lxml]',
         'breezy',
@@ -184,7 +182,6 @@ setup(
         'lazr.jobrunner',
         'lazr.lifecycle',
         'lazr.restful',
-        'lazr.smtptest',
         'lazr.sshserver',
         'lazr.uri',
         'lpjsmin',

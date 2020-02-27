@@ -1,4 +1,4 @@
-# Copyright 2014-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2014-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -7,10 +7,13 @@ __all__ = [
     ]
 
 from datetime import timedelta
+import json
 import math
 
 from lazr.lifecycle.event import ObjectCreatedEvent
 import pytz
+import six
+from storm.expr import Cast
 from storm.locals import (
     Bool,
     DateTime,
@@ -55,6 +58,7 @@ from lp.services.database.interfaces import (
     )
 from lp.services.database.stormexpr import (
     Greatest,
+    IsDistinctFrom,
     NullsLast,
     )
 from lp.services.features import getFeatureFlag
@@ -183,14 +187,25 @@ class LiveFS(Storm, WebhookTargetMixin):
             # See rationale in `LiveFSBuildArchiveOwnerMismatch` docstring.
             raise LiveFSBuildArchiveOwnerMismatch()
 
-        pending = IStore(self).find(
-            LiveFSBuild,
+        clauses = [
             LiveFSBuild.livefs_id == self.id,
             LiveFSBuild.archive_id == archive.id,
             LiveFSBuild.distro_arch_series_id == distro_arch_series.id,
             LiveFSBuild.pocket == pocket,
-            LiveFSBuild.unique_key == unique_key,
-            LiveFSBuild.status == BuildStatus.NEEDSBUILD)
+            Not(IsDistinctFrom(LiveFSBuild.unique_key, unique_key)),
+            # Cast to jsonb in order to compare the JSON structures rather
+            # than their encoding, since the latter might differ in
+            # insignificant ways.
+            Not(IsDistinctFrom(
+                Cast(LiveFSBuild.metadata_override, "jsonb"),
+                Cast(
+                    None if metadata_override is None
+                    else six.ensure_text(
+                        json.dumps(metadata_override, ensure_ascii=False)),
+                    "jsonb"))),
+            LiveFSBuild.status == BuildStatus.NEEDSBUILD,
+            ]
+        pending = IStore(self).find(LiveFSBuild, *clauses)
         if pending.any() is not None:
             raise LiveFSBuildAlreadyPending
 

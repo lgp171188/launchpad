@@ -20,12 +20,12 @@ __all__ = [
     ]
 
 from textwrap import dedent
-from urlparse import urlparse
 
 from lazr.restful.interface import (
     copy_field,
     use_template,
     )
+from six.moves.urllib.parse import urlparse
 from zope.component import (
     getUtility,
     queryAdapter,

@@ -35,7 +35,6 @@ from datetime import (
 from itertools import groupby
 from operator import attrgetter
 import re
-import urllib
 
 from lazr.delegates import delegate_to
 from lazr.lifecycle.event import ObjectModifiedEvent
@@ -50,6 +49,7 @@ from lazr.restful.interfaces import (
 from lazr.restful.utils import smartquote
 from pytz import utc
 from simplejson import dumps
+from six.moves.urllib.parse import quote
 import transaction
 from zope import formlib
 from zope.browserpage import ViewPageTemplateFile
@@ -864,7 +864,7 @@ class BugTaskView(LaunchpadView, BugViewMixin, FeedsMixin):
             if tag in target_official_tags:
                 links.append((tag, '%s?field.tag=%s' % (
                     canonical_url(self.context.target, view_name='+bugs',
-                        force_local_path=True), urllib.quote(tag))))
+                        force_local_path=True), quote(tag))))
         return links
 
     @property
@@ -876,7 +876,7 @@ class BugTaskView(LaunchpadView, BugViewMixin, FeedsMixin):
             if tag not in target_official_tags:
                 links.append((tag, '%s?field.tag=%s' % (
                     canonical_url(self.context.target, view_name='+bugs',
-                        force_local_path=True), urllib.quote(tag))))
+                        force_local_path=True), quote(tag))))
         return links
 
     @property

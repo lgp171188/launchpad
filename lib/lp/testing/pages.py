@@ -16,7 +16,6 @@ import os
 import pprint
 import re
 import unittest
-from urlparse import urljoin
 
 from bs4.element import (
     CData,
@@ -36,6 +35,7 @@ from contrib.oauth import (
     )
 from lazr.restful.testing.webservice import WebServiceCaller
 import six
+from six.moves.urllib.parse import urljoin
 from soupsieve import escape as css_escape
 import transaction
 from webtest import (

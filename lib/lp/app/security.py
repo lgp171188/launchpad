@@ -11,11 +11,9 @@ __all__ = [
     'DelegatedAuthorization',
     ]
 
-from itertools import (
-    izip,
-    repeat,
-    )
+from itertools import repeat
 
+from six.moves import zip as izip
 from zope.component import queryAdapter
 from zope.interface import implementer
 from zope.security.permission import checkPermission
