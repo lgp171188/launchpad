@@ -131,8 +131,8 @@ class SigningServiceProxyTest(TestCaseWithFactory):
     def test_get_service_public_key(self):
         self.response_factory.addResponses()
 
-        signing = SigningServiceClient()
-        key = signing.service_public_key
+        signing = getUtility(ISigningServiceClient)
+        key = removeSecurityProxy(signing.service_public_key)
 
         # Asserts that the public key is correct.
         self.assertIsInstance(key, PublicKey)
@@ -151,7 +151,7 @@ class SigningServiceProxyTest(TestCaseWithFactory):
     def test_get_nonce(self):
         self.response_factory.addResponses()
 
-        signing = SigningServiceClient()
+        signing = getUtility(ISigningServiceClient)
         nonce = signing.getNonce()
 
         self.assertEqual(
@@ -168,7 +168,7 @@ class SigningServiceProxyTest(TestCaseWithFactory):
     def test_generate_unknown_key_type_raises_exception(self):
         self.response_factory.addResponses()
 
-        signing = SigningServiceClient()
+        signing = getUtility(ISigningServiceClient)
         self.assertRaises(
             ValueError, signing.generate, "banana", "Wrong key type")
         self.assertEqual(0, len(responses.calls))
@@ -180,7 +180,7 @@ class SigningServiceProxyTest(TestCaseWithFactory):
         """
         self.response_factory.addResponses()
         # Generate the key, and checks if we got back the correct dict.
-        signing = SigningServiceClient()
+        signing = getUtility(ISigningServiceClient)
         generated = signing.generate(SigningKeyType.UEFI, "my lp test key")
 
         self.assertEqual(generated, {
@@ -213,7 +213,7 @@ class SigningServiceProxyTest(TestCaseWithFactory):
 
     @responses.activate
     def test_sign_invalid_mode(self):
-        signing = SigningServiceClient()
+        signing = getUtility(ISigningServiceClient)
         self.assertRaises(
             ValueError, signing.sign,
             SigningKeyType.UEFI, 'fingerprint', 'message_name', 'message',
@@ -222,7 +222,7 @@ class SigningServiceProxyTest(TestCaseWithFactory):
 
     @responses.activate
     def test_sign_invalid_key_type(self):
-        signing = SigningServiceClient()
+        signing = getUtility(ISigningServiceClient)
         self.assertRaises(
             ValueError, signing.sign,
             'shrug', 'fingerprint', 'message_name', 'message',
@@ -242,7 +242,7 @@ class SigningServiceProxyTest(TestCaseWithFactory):
         message_name = 'my test msg'
         message = 'this is the message content'
 
-        signing = SigningServiceClient()
+        signing = getUtility(ISigningServiceClient)
         data = signing.sign(
             key_type, fingerprint, message_name, message, mode)
 
