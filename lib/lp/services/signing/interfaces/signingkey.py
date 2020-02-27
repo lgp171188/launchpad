@@ -76,12 +76,16 @@ class IArchiveSigningKey(Interface):
     id = Int(title=_('ID'), required=True, readonly=True)
 
     archive = Reference(
-        IArchive, title=_("Archive"), required=True,
+        IArchive, title=_("Archive"), required=True, readonly=True,
         description=_("The archive that owns this key."))
 
-    distro_series = Reference(
-        IDistroSeries, title=_("Distro series"), required=False,
+    earliest_distro_series = Reference(
+        IDistroSeries, title=_("Distro series"), required=False, readonly=True,
         description=_("The minimum series that uses this key, if any."))
+
+    key_type = Choice(
+        title=_("The signing key type (UEFI, KMOD, etc)."),
+        required=True, readonly=True, vocabulary=SigningKeyType)
 
     signing_key = Reference(
         ISigningKey, title=_("Signing key"), required=True, readonly=True,
@@ -92,7 +96,7 @@ class IArchiveSigningKeySet(Interface):
     """Management class to deal with ArchiveSigningKey objects
     """
 
-    def create(archive, distro_series, signing_key):
+    def create(archive, earliest_distro_series, signing_key):
         """Creates a new ArchiveSigningKey for archive/distro_series.
 
         :return: A tuple like (db_object:ArchiveSigningKey, created:boolean)
@@ -107,13 +111,15 @@ class IArchiveSigningKeySet(Interface):
         :return: The most suitable key
         """
 
-    def generate(key_type, archive, distro_series=None, description=None):
+    def generate(key_type, archive, earliest_distro_series=None,
+                 description=None):
         """Generate a new key on signing service, and save it to db.
 
         :param key_type: One of the SigningKeyType enum's value
         :param archive: The package Archive that should be associated with
                         this key
-        :param distro_series: (optional) The DistroSeries object
+        :param earliest_distro_series: (optional) The minimum distro series
+                                       that should use the generated key.
         :param description: (optional) The description associated with this
                             key
         :returns: The generated ArchiveSigningKey

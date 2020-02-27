@@ -94,7 +94,7 @@ class TestArchiveSigningKey(TestCaseWithFactory):
         distro_series = archive.distribution.series[0]
 
         arch_key = getUtility(IArchiveSigningKeySet).generate(
-            SigningKeyType.UEFI, archive, distro_series=distro_series,
+            SigningKeyType.UEFI, archive, earliest_distro_series=distro_series,
             description=u"some description")
 
         store = Store.of(arch_key)
@@ -105,7 +105,8 @@ class TestArchiveSigningKey(TestCaseWithFactory):
 
         db_arch_key = rs.one()
         self.assertThat(db_arch_key, MatchesStructure.byEquality(
-            archive=archive, distro_series=distro_series))
+            key_type=SigningKeyType.UEFI, archive=archive,
+            earliest_distro_series=distro_series))
 
         self.assertThat(db_arch_key.signing_key, MatchesStructure.byEquality(
             key_type=SigningKeyType.UEFI, description=u"some description",
@@ -129,7 +130,8 @@ class TestArchiveSigningKey(TestCaseWithFactory):
         self.assertEqual(1, rs.count())
         db_arch_key = rs.one()
         self.assertThat(db_arch_key, MatchesStructure.byEquality(
-            archive=archive, distro_series=distro_series,
+            key_type=signing_key.key_type, archive=archive,
+            earliest_distro_series=distro_series,
             signing_key=signing_key))
 
         # Saving another type should create a new entry
@@ -153,7 +155,7 @@ class TestArchiveSigningKey(TestCaseWithFactory):
 
         # Fill the database with keys from other archives to make sure we
         # are filtering it out
-        other_archive = archive = self.factory.makeArchive()
+        other_archive = self.factory.makeArchive()
         arch_signing_key_set = getUtility(IArchiveSigningKeySet)
         arch_signing_key_set.create(
             other_archive, None, self.factory.makeSigningKey())
@@ -191,7 +193,7 @@ class TestArchiveSigningKey(TestCaseWithFactory):
 
         # Fill the database with keys from other archives to make sure we
         # are filtering it out
-        other_archive = archive = self.factory.makeArchive()
+        other_archive = self.factory.makeArchive()
         arch_signing_key_set = getUtility(IArchiveSigningKeySet)
         arch_signing_key_set.create(
             other_archive, None, self.factory.makeSigningKey())

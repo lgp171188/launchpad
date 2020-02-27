@@ -12,11 +12,9 @@ __all__ = [
     'ArchiveSigningKeySet'
     ]
 
-import base64
 from collections import defaultdict
 
 import pytz
-from storm.exceptions import IntegrityError
 from storm.locals import (
     DateTime,
     Int,
@@ -123,26 +121,32 @@ class ArchiveSigningKey(StormBase):
     archive_id = Int(name="archive", allow_none=False)
     archive = Reference(archive_id, 'Archive.id')
 
-    distro_series_id = Int(name="distro_series", allow_none=True)
-    distro_series = Reference(distro_series_id, 'DistroSeries.id')
+    earliest_distro_series_id = Int(
+        name="earliest_distro_series", allow_none=True)
+    earliest_distro_series = Reference(
+        earliest_distro_series_id, 'DistroSeries.id')
+
+    key_type = DBEnum(enum=SigningKeyType, allow_none=False)
 
     signing_key_id = Int(name="signing_key", allow_none=False)
     signing_key = Reference(signing_key_id, SigningKey.id)
 
-    def __init__(self, archive=None, distro_series=None, signing_key=None):
+    def __init__(self, archive=None, earliest_distro_series=None,
+                 signing_key=None):
         super(ArchiveSigningKey, self).__init__()
         self.archive = archive
         self.signing_key = signing_key
-        self.distro_series = distro_series
+        self.key_type = signing_key.key_type
+        self.earliest_distro_series = earliest_distro_series
 
 
 @implementer(IArchiveSigningKeySet)
 class ArchiveSigningKeySet:
 
     @classmethod
-    def create(cls, archive, distro_series, signing_key):
+    def create(cls, archive, earliest_distro_series, signing_key):
         store = IMasterStore(SigningKey)
-        obj = ArchiveSigningKey(archive, distro_series, signing_key)
+        obj = ArchiveSigningKey(archive, earliest_distro_series, signing_key)
         store.add(obj)
         return obj
 
@@ -153,6 +157,7 @@ class ArchiveSigningKeySet:
         rs = store.find(ArchiveSigningKey,
                 SigningKey.id == ArchiveSigningKey.signing_key_id,
                 SigningKey.key_type == key_type,
+                ArchiveSigningKey.key_type == key_type,
                 ArchiveSigningKey.archive == archive)
 
         # prefetch related signing keys to avoid extra queries.
@@ -164,9 +169,7 @@ class ArchiveSigningKeySet:
         keys_per_series = defaultdict(dict)
         for i in rs:
             signing_key = signing_keys_by_id[i.signing_key_id]
-            keys_per_series[i.distro_series] = signing_key
-
-        ret_keys = {}
+            keys_per_series[i.earliest_distro_series] = signing_key
 
         # Let's search the most suitable per key type.
         found_series = False
@@ -181,9 +184,9 @@ class ArchiveSigningKeySet:
         return keys_per_series.get(None)
 
     @classmethod
-    def generate(cls, key_type, archive, distro_series=None,
+    def generate(cls, key_type, archive, earliest_distro_series=None,
                  description=None):
         signing_key = SigningKey.generate(key_type, description)
         archive_signing = ArchiveSigningKeySet.create(
-            archive, distro_series, signing_key)
+            archive, earliest_distro_series, signing_key)
         return archive_signing
