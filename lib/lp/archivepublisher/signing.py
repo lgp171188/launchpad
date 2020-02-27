@@ -28,11 +28,11 @@ import tempfile
 import textwrap
 
 import scandir
-from lp.registry.errors import NoSuchDistroSeries
 from zope.component import getUtility
 
 from lp.archivepublisher.config import getPubConfig
 from lp.archivepublisher.customupload import CustomUpload
+from lp.registry.errors import NoSuchDistroSeries
 from lp.services.features import getFeatureFlag
 from lp.services.osutils import remove_if_exists
 from lp.services.signing.enums import SigningKeyType

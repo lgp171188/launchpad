@@ -8,11 +8,12 @@ import json
 
 from nacl.encoding import Base64Encoder
 from nacl.public import (
+    Box,
     PrivateKey,
     PublicKey,
-    Box)
-import responses
+    )
 from nacl.utils import random
+import responses
 from testtools.matchers import (
     ContainsDict,
     Equals,

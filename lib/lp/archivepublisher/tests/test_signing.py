@@ -13,9 +13,9 @@ import stat
 import tarfile
 
 from fixtures import MonkeyPatch
+from mock import call
 import responses
 import scandir
-from mock import call
 from testtools.matchers import (
     Contains,
     Equals,
@@ -42,9 +42,10 @@ from lp.archivepublisher.interfaces.archivegpgsigningkey import (
     )
 from lp.archivepublisher.interfaces.publisherconfig import IPublisherConfigSet
 from lp.archivepublisher.signing import (
+    PUBLISHER_USES_SIGNING_SERVICE,
     SigningUpload,
     UefiUpload,
-    PUBLISHER_USES_SIGNING_SERVICE)
+    )
 from lp.archivepublisher.tests.test_run_parts import RunPartsMixin
 from lp.services.features.testing import FeatureFixture
 from lp.services.osutils import write_file
