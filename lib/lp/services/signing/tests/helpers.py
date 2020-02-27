@@ -7,91 +7,61 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 __all__ = [
-    'ArchiveSigningKeySetFixture',
+    'SigningServiceClientFixture',
     ]
 
 import fixtures
 import mock
+from nacl.public import PrivateKey
+from six import text_type
 
-from lp.services.signing.enums import SigningKeyType
-from lp.services.signing.interfaces.signingkey import IArchiveSigningKeySet
-from lp.testing.fakemethod import FakeMethod
+from lp.services.signing.interfaces.signingserviceclient import (
+    ISigningServiceClient,
+    )
 from lp.testing.fixture import ZopeUtilityFixture
 
 
-class ArchiveSigningKeySetFixture(fixtures.Fixture):
-    """A fixture that temporarily registers a fake ArchiveSigningKeySet."""
+class SigningServiceClientFixture(fixtures.Fixture):
+    """Mock for SigningServiceClient class.
 
-    def __init__(self, signing_key=None, generate=None):
-        self.getSigningKey = mock.Mock()
-        self.getSigningKey.return_value = signing_key
+    This method fakes the API calls on generate and sign methods,
+    and provides a nice way of getting the fake returned values on
+    self.generate_returns and self.sign_returns attributes.
+
+    Both generate_returns and sign_returns format is the following:
+        [(key_type, api_return_dict), (key_type, api_return_dict), ...]"""
+    def __init__(self, factory):
+        self.factory = factory
 
         self.generate = mock.Mock()
-        self.generate.return_value = generate
+        self.generate.side_effect = self._generate
 
-    def setUpKeyGeneration(self, factory, archive):
-        """Helper to make ArchiveSigningKeySet.generate calls to actually
-        generate a new signing key every time, including it on
-        ArchiveSigningKeySet.getSigningKeys call.
+        self.sign = mock.Mock()
+        self.sign.side_effect = self._sign
 
-        :return: A dict like {key_type: signing_key} where all generated
-                 keys will be stored.
-        """
-        self.getSigningKey.result = mock.Mock()
-        self.generate = mock.Mock()
+        self.generate_returns = []
+        self.sign_returns = []
 
-        generated_keys = {}
-        def fake_gen(key_type, *args, **kwargs):
-            key = factory.makeSigningKey(key_type=key_type)
-            key.sign = FakeMethod(result="signed with %s" % key_type.name)
-            arch_signing_key = factory.makeArchiveSigningKey(
-                archive=archive, signing_key=key)
-            generated_keys[key_type] = key
-            return arch_signing_key
+    def _generate(self, key_type, description):
+        key = bytes(PrivateKey.generate().public_key)
+        data = {
+            "fingerprint": text_type(self.factory.getUniqueHexString(40)),
+            "public-key": key}
+        self.generate_returns.append((key_type, data))
+        return data
 
-        def fake_get_key(key_type, *args, **kwargs):
-            return generated_keys.get(key_type)
-
-        self.generate.side_effect = fake_gen
-        self.getSigningKey.side_effect = fake_get_key
-        return generated_keys
-
-    def setUpAllKeyTypes(self, factory, archive):
-        """Helper to make ArchiveSigningKeySet.getSigningKeys return one key
-        of each type, making it unnecessary for ArchiveSigningKeySet.generate
-        to be called.
-
-        :return: A dict like {key_type: signing_key} with all keys available.
-        """
-        # Setup, for self.archive, all key types and make
-        # ArchiveSigningKeySet return them
-        signing_keys_by_type = {}
-        for key_type in SigningKeyType.items:
-            signing_key = factory.makeSigningKey(key_type=key_type)
-            signing_key.sign = FakeMethod(result="signed!")
-            archive_signing_key = factory.makeArchiveSigningKey(
-                archive=archive, signing_key=signing_key)
-            signing_keys_by_type[key_type] = archive_signing_key.signing_key
-
-        def fake_get_key(key_type, *args, **kwargs):
-            return signing_keys_by_type.get(key_type)
-
-        self.getSigningKey = mock.Mock()
-        self.getSigningKey.side_effect = fake_get_key
-        return signing_keys_by_type
-
-    def setUpSigningKeys(self, keys_per_type):
-        """
-        Sets the return of getSigningKey to be the given dict of {key_type:
-        signing_key} given by keys_per_type parameter.
-
-        :return: A dict like {key_type: signing_key} with all keys available.
-        """
-        def fake_get_key(key_type, *args, **kwargs):
-            return keys_per_type.get(key_type)
-        self.getSigningKey = mock.Mock()
-        self.getSigningKey.side_effect = fake_get_key
-        return keys_per_type
+    def _sign(self, key_type, fingerprint, message_name, message, mode):
+        key = bytes(PrivateKey.generate().public_key)
+        signed_msg = "signed with key_type={}".format(key_type.name)
+        data = {
+            'public-key': key,
+            'signed-message': signed_msg}
+        self.sign_returns.append((key_type, data))
+        return data
 
     def _setUp(self):
-        self.useFixture(ZopeUtilityFixture(self, IArchiveSigningKeySet))
+        self.useFixture(ZopeUtilityFixture(self, ISigningServiceClient))
+
+    def _cleanup(self):
+        self.generate_returns = []
+        self.sign_returns = []

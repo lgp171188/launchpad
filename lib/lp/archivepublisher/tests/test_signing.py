@@ -9,10 +9,12 @@ __metaclass__ = type
 
 import os
 import re
+import shutil
 import stat
 import tarfile
 
 from fixtures import MonkeyPatch
+import mock
 from mock import call
 import scandir
 from testtools.matchers import (
@@ -48,8 +50,9 @@ from lp.archivepublisher.signing import (
 from lp.archivepublisher.tests.test_run_parts import RunPartsMixin
 from lp.services.features.testing import FeatureFixture
 from lp.services.osutils import write_file
+from lp.services.signing.enums import SigningMode
 from lp.services.signing.proxy import SigningKeyType
-from lp.services.signing.tests.helpers import ArchiveSigningKeySetFixture
+from lp.services.signing.tests.helpers import SigningServiceClientFixture
 from lp.services.tarfile_helpers import LaunchpadWriteTarFile
 from lp.soyuz.enums import ArchivePurpose
 from lp.testing import TestCaseWithFactory
@@ -57,6 +60,7 @@ from lp.testing.fakemethod import FakeMethod
 from lp.testing.gpgkeys import gpgkeysdir
 from lp.testing.keyserver import InProcessKeyServerFixture
 from lp.testing.layers import ZopelessDatabaseLayer
+from lp.testing.matchers import Contains
 
 
 class SignedMatches(Matcher):
@@ -1515,14 +1519,29 @@ class TestSigningUploadWithSigningService(TestSigningHelpers):
         super(TestSigningUploadWithSigningService, self).setUp()
         self.useFixture(FeatureFixture({PUBLISHER_USES_SIGNING_SERVICE: True}))
 
-        self.arch_key_set = self.useFixture(ArchiveSigningKeySetFixture())
-        self.arch_key_set.setUpAllKeyTypes(self.factory, self.archive)
+        self.signing_service_client = self.useFixture(
+            SigningServiceClientFixture(self.factory))
+        self.signing_keys = {
+            k: v.signing_key for k, v in self.setUpAllKeyTypes(
+                self.archive).items()}
+
+    def setUpAllKeyTypes(self, archive):
+        """Helper to create
+
+        :return: A dict like {key_type: signing_key} with all keys available.
+        """
+        keys_per_type = {}
+        for key_type in SigningKeyType.items:
+            signing_key = self.factory.makeSigningKey(key_type=key_type)
+            arch_key = self.factory.makeArchiveSigningKey(
+                archive=archive, signing_key=signing_key)
+            keys_per_type[key_type] = arch_key
+        return keys_per_type
 
     def getArchiveSigningKey(self, key_type):
         signing_key = self.factory.makeSigningKey(key_type=key_type)
         arch_signing_key = self.factory.makeArchiveSigningKey(
             archive=self.archive, signing_key=signing_key)
-        signing_key.sign = FakeMethod(result="signed!")
         return arch_signing_key
 
     @staticmethod
@@ -1560,8 +1579,8 @@ class TestSigningUploadWithSigningService(TestSigningHelpers):
             distro_series=archive.distribution.series[1],
             archive=archive,
             autokey=pubconfig.signingautokey))
-        self.assertEqual(0, self.arch_key_set.generate.call_count)
-        self.assertEqual(0, self.arch_key_set.getSigningKey.call_count)
+        self.assertEqual(0, self.signing_service_client.generate.call_count)
+        self.assertEqual(0, self.signing_service_client.sign.call_count)
 
     def test_options_handling_single(self):
         """If the configured key/cert are missing, processing succeeds but
@@ -1574,8 +1593,8 @@ class TestSigningUploadWithSigningService(TestSigningHelpers):
 
         self.assertContentEqual(['first'], upload.signing_options.keys())
 
-        self.assertEqual(0, self.arch_key_set.generate.call_count)
-        self.assertEqual(0, self.arch_key_set.getSigningKey.call_count)
+        self.assertEqual(0, self.signing_service_client.generate.call_count)
+        self.assertEqual(0, self.signing_service_client.sign.call_count)
 
     def test_options_handling_multiple(self):
         """If the configured key/cert are missing, processing succeeds but
@@ -1588,19 +1607,19 @@ class TestSigningUploadWithSigningService(TestSigningHelpers):
 
         self.assertContentEqual(['first', 'second'],
                                 upload.signing_options.keys())
-        self.assertEqual(0, self.arch_key_set.generate.call_count)
-        self.assertEqual(0, self.arch_key_set.getSigningKey.call_count)
+        self.assertEqual(0, self.signing_service_client.generate.call_count)
+        self.assertEqual(0, self.signing_service_client.sign.call_count)
 
     def test_options_tarball(self):
         """Specifying the "tarball" option should create an tarball in tmpdir.
         """
         self.openArchive("test", "1.0", "amd64")
         self.tarfile.add_file("1.0/control/options", b"tarball")
-        self.tarfile.add_file("1.0/empty.efi", b"")
-        self.tarfile.add_file("1.0/empty.ko", b"")
-        self.tarfile.add_file("1.0/empty.opal", b"")
-        self.tarfile.add_file("1.0/empty.sipl", b"")
-        self.tarfile.add_file("1.0/empty.fit", b"")
+        self.tarfile.add_file("1.0/empty.efi", b"a")
+        self.tarfile.add_file("1.0/empty.ko", b"b")
+        self.tarfile.add_file("1.0/empty.opal", b"c")
+        self.tarfile.add_file("1.0/empty.sipl", b"d")
+        self.tarfile.add_file("1.0/empty.fit", b"e")
 
         self.process_emulate()
 
@@ -1623,15 +1642,25 @@ class TestSigningUploadWithSigningService(TestSigningHelpers):
                 '1.0/empty.fit', '1.0/empty.fit.signed',
                 '1.0/control/fit.crt',
                 ], tarball.getnames())
-        self.assertEqual(0, self.arch_key_set.generate.call_count)
-        self.assertEqual(5, self.arch_key_set.getSigningKey.call_count)
+        self.assertEqual(0, self.signing_service_client.generate.call_count)
+        keys = self.signing_keys
         self.assertItemsEqual([
-            call(SigningKeyType.UEFI, self.archive, None),
-            call(SigningKeyType.KMOD, self.archive, None),
-            call(SigningKeyType.OPAL, self.archive, None),
-            call(SigningKeyType.SIPL, self.archive, None),
-            call(SigningKeyType.FIT, self.archive, None)],
-            self.arch_key_set.getSigningKey.call_args_list)
+            call(
+                SigningKeyType.UEFI, keys[SigningKeyType.UEFI].fingerprint,
+                'empty.efi', b'a', SigningMode.ATTACHED),
+            call(
+                SigningKeyType.KMOD, keys[SigningKeyType.KMOD].fingerprint,
+                'empty.ko', b'b', SigningMode.DETACHED),
+            call(
+                SigningKeyType.OPAL, keys[SigningKeyType.OPAL].fingerprint,
+                'empty.opal', b'c', SigningMode.DETACHED),
+            call(
+                SigningKeyType.SIPL, keys[SigningKeyType.SIPL].fingerprint,
+                'empty.sipl', b'd', SigningMode.DETACHED),
+            call(
+                SigningKeyType.FIT, keys[SigningKeyType.FIT].fingerprint,
+                'empty.fit', b'e', SigningMode.ATTACHED)],
+            self.signing_service_client.sign.call_args_list)
 
     def test_options_signed_only(self):
         """Specifying the "signed-only" option should trigger removal of
@@ -1639,11 +1668,11 @@ class TestSigningUploadWithSigningService(TestSigningHelpers):
         """
         self.openArchive("test", "1.0", "amd64")
         self.tarfile.add_file("1.0/control/options", b"signed-only")
-        self.tarfile.add_file("1.0/empty.efi", b"")
-        self.tarfile.add_file("1.0/empty.ko", b"")
-        self.tarfile.add_file("1.0/empty.opal", b"")
-        self.tarfile.add_file("1.0/empty.sipl", b"")
-        self.tarfile.add_file("1.0/empty.fit", b"")
+        self.tarfile.add_file("1.0/empty.efi", b"a")
+        self.tarfile.add_file("1.0/empty.ko", b"b")
+        self.tarfile.add_file("1.0/empty.opal", b"c")
+        self.tarfile.add_file("1.0/empty.sipl", b"d")
+        self.tarfile.add_file("1.0/empty.fit", b"e")
 
         self.process_emulate()
 
@@ -1655,15 +1684,25 @@ class TestSigningUploadWithSigningService(TestSigningHelpers):
             "1.0/empty.sipl.sig", "1.0/control/sipl.x509",
             "1.0/empty.fit.signed", "1.0/control/fit.crt",
         ]))
-        self.assertEqual(0, self.arch_key_set.generate.call_count)
-        self.assertEqual(5, self.arch_key_set.getSigningKey.call_count)
+        self.assertEqual(0, self.signing_service_client.generate.call_count)
+        keys = self.signing_keys
         self.assertItemsEqual([
-            call(SigningKeyType.UEFI, self.archive, None),
-            call(SigningKeyType.KMOD, self.archive, None),
-            call(SigningKeyType.OPAL, self.archive, None),
-            call(SigningKeyType.SIPL, self.archive, None),
-            call(SigningKeyType.FIT, self.archive, None)],
-            self.arch_key_set.getSigningKey.call_args_list)
+            call(
+                SigningKeyType.UEFI, keys[SigningKeyType.UEFI].fingerprint,
+                'empty.efi', b'a', SigningMode.ATTACHED),
+            call(
+                SigningKeyType.KMOD, keys[SigningKeyType.KMOD].fingerprint,
+                'empty.ko', b'b', SigningMode.DETACHED),
+            call(
+                SigningKeyType.OPAL, keys[SigningKeyType.OPAL].fingerprint,
+                'empty.opal', b'c', SigningMode.DETACHED),
+            call(
+                SigningKeyType.SIPL, keys[SigningKeyType.SIPL].fingerprint,
+                'empty.sipl', b'd', SigningMode.DETACHED),
+            call(
+                SigningKeyType.FIT, keys[SigningKeyType.FIT].fingerprint,
+                'empty.fit', b'e', SigningMode.ATTACHED)],
+            self.signing_service_client.sign.call_args_list)
 
     def test_options_tarball_signed_only(self):
         """Specifying the "tarball" option should create an tarball in
@@ -1672,11 +1711,11 @@ class TestSigningUploadWithSigningService(TestSigningHelpers):
         """
         self.openArchive("test", "1.0", "amd64")
         self.tarfile.add_file("1.0/control/options", b"tarball\nsigned-only")
-        self.tarfile.add_file("1.0/empty.efi", b"")
-        self.tarfile.add_file("1.0/empty.ko", b"")
-        self.tarfile.add_file("1.0/empty.opal", b"")
-        self.tarfile.add_file("1.0/empty.sipl", b"")
-        self.tarfile.add_file("1.0/empty.fit", b"")
+        self.tarfile.add_file("1.0/empty.efi", b"a")
+        self.tarfile.add_file("1.0/empty.ko", b"b")
+        self.tarfile.add_file("1.0/empty.opal", b"c")
+        self.tarfile.add_file("1.0/empty.sipl", b"d")
+        self.tarfile.add_file("1.0/empty.fit", b"e")
         self.process_emulate()
         self.assertThat(self.getSignedPath("test", "amd64"), SignedMatches([
             "1.0/SHA256SUMS",
@@ -1693,15 +1732,25 @@ class TestSigningUploadWithSigningService(TestSigningHelpers):
                 '1.0/empty.sipl.sig', '1.0/control/sipl.x509',
                 '1.0/empty.fit.signed', '1.0/control/fit.crt',
             ], tarball.getnames())
-        self.assertEqual(0, self.arch_key_set.generate.call_count)
-        self.assertEqual(5, self.arch_key_set.getSigningKey.call_count)
+        self.assertEqual(0, self.signing_service_client.generate.call_count)
+        keys = self.signing_keys
         self.assertItemsEqual([
-            call(SigningKeyType.UEFI, self.archive, None),
-            call(SigningKeyType.KMOD, self.archive, None),
-            call(SigningKeyType.OPAL, self.archive, None),
-            call(SigningKeyType.SIPL, self.archive, None),
-            call(SigningKeyType.FIT, self.archive, None)],
-            self.arch_key_set.getSigningKey.call_args_list)
+            call(
+                SigningKeyType.UEFI, keys[SigningKeyType.UEFI].fingerprint,
+                'empty.efi', b'a', SigningMode.ATTACHED),
+            call(
+                SigningKeyType.KMOD, keys[SigningKeyType.KMOD].fingerprint,
+                'empty.ko', b'b', SigningMode.DETACHED),
+            call(
+                SigningKeyType.OPAL, keys[SigningKeyType.OPAL].fingerprint,
+                'empty.opal', b'c', SigningMode.DETACHED),
+            call(
+                SigningKeyType.SIPL, keys[SigningKeyType.SIPL].fingerprint,
+                'empty.sipl', b'd', SigningMode.DETACHED),
+            call(
+                SigningKeyType.FIT, keys[SigningKeyType.FIT].fingerprint,
+                'empty.fit', b'e', SigningMode.ATTACHED)],
+            self.signing_service_client.sign.call_args_list)
 
     def test_archive_copy(self):
         """If there is no key/cert configuration, processing succeeds but
@@ -1709,18 +1758,16 @@ class TestSigningUploadWithSigningService(TestSigningHelpers):
         """
         self.archive = self.factory.makeArchive(
             distribution=self.distro, purpose=ArchivePurpose.COPY)
-        # new archive, empty return from ArchiveSigningKeySet:
-        self.arch_key_set.setUpSigningKeys({})
 
         pubconf = getPubConfig(self.archive)
         if not os.path.exists(pubconf.temproot):
             os.makedirs(pubconf.temproot)
         self.openArchive("test", "1.0", "amd64")
-        self.tarfile.add_file("1.0/empty.efi", b"")
-        self.tarfile.add_file("1.0/empty.ko", b"")
-        self.tarfile.add_file("1.0/empty.opal", b"")
-        self.tarfile.add_file("1.0/empty.sipl", b"")
-        self.tarfile.add_file("1.0/empty.fit", b"")
+        self.tarfile.add_file("1.0/empty.efi", b"a")
+        self.tarfile.add_file("1.0/empty.ko", b"b")
+        self.tarfile.add_file("1.0/empty.opal", b"c")
+        self.tarfile.add_file("1.0/empty.sipl", b"d")
+        self.tarfile.add_file("1.0/empty.fit", b"e")
         self.tarfile.close()
         self.buffer.close()
 
@@ -1731,22 +1778,18 @@ class TestSigningUploadWithSigningService(TestSigningHelpers):
         self.assertThat(signed_path, SignedMatches(
             ["1.0/SHA256SUMS", "1.0/empty.efi", "1.0/empty.ko",
              "1.0/empty.opal", "1.0/empty.sipl", "1.0/empty.fit", ]))
-        self.assertEqual(0, self.arch_key_set.generate.call_count)
-        self.assertEqual(5, self.arch_key_set.getSigningKey.call_count)
-        self.assertItemsEqual([
-            call(SigningKeyType.UEFI, self.archive, None),
-            call(SigningKeyType.KMOD, self.archive, None),
-            call(SigningKeyType.OPAL, self.archive, None),
-            call(SigningKeyType.SIPL, self.archive, None),
-            call(SigningKeyType.FIT, self.archive, None)],
-            self.arch_key_set.getSigningKey.call_args_list)
+
+        self.assertEqual(0, self.signing_service_client.generate.call_count)
+        self.assertEqual(0, self.signing_service_client.sign.call_count)
 
     def test_sign_without_autokey_and_no_key_pre_set(self):
         """This case should raise exception, since we don't have fallback
         keys on the filesystem to cover for the missing signing service
         keys.
         """
-        self.arch_key_set.setUpSigningKeys({})
+        self.archive = self.factory.makeArchive(
+            distribution=self.factory.makeDistribution(),
+            purpose=ArchivePurpose.PRIMARY)
 
         filenames = [
             "1.0/empty.efi", "1.0/empty.ko", "1.0/empty.opal",
@@ -1766,10 +1809,6 @@ class TestSigningUploadWithSigningService(TestSigningHelpers):
         # Pre-generate KMOD and OPAL keys
         kmod_arch_key = self.getArchiveSigningKey(SigningKeyType.KMOD)
         opal_arch_key = self.getArchiveSigningKey(SigningKeyType.OPAL)
-        self.arch_key_set.setUpSigningKeys({
-            SigningKeyType.KMOD: kmod_arch_key.signing_key,
-            SigningKeyType.OPAL: opal_arch_key.signing_key,
-            })
 
         filenames = ["1.0/empty.ko", "1.0/empty.opal"]
 
@@ -1784,25 +1823,22 @@ class TestSigningUploadWithSigningService(TestSigningHelpers):
             "1.0/SHA256SUMS", "1.0/empty.ko.sig", "1.0/empty.opal.sig",
             "1.0/control/kmod.x509", "1.0/control/opal.x509"]))
 
-        self.assertEqual(0, self.arch_key_set.generate.call_count)
-        self.assertEqual(2, self.arch_key_set.getSigningKey.call_count)
+        self.assertEqual(0, self.signing_service_client.generate.call_count)
+        keys = self.signing_keys
         self.assertItemsEqual([
-            call(SigningKeyType.KMOD, self.archive, None),
-            call(SigningKeyType.OPAL, self.archive, None)],
-            self.arch_key_set.getSigningKey.call_args_list)
-
-        self.assertEqual(
-            [(b"some data for 1.0/empty.opal",)],
-            opal_arch_key.signing_key.sign.extract_args())
-        self.assertEqual(
-            [(b"some data for 1.0/empty.ko",)],
-            kmod_arch_key.signing_key.sign.extract_args())
+            call(
+                SigningKeyType.KMOD, keys[SigningKeyType.KMOD].fingerprint,
+                'empty.ko', b'some data for 1.0/empty.ko',
+                SigningMode.DETACHED),
+            call(
+                SigningKeyType.OPAL, keys[SigningKeyType.OPAL].fingerprint,
+                'empty.opal', b'some data for 1.0/empty.opal',
+                SigningMode.DETACHED)],
+            self.signing_service_client.sign.call_args_list)
 
     def test_sign_with_autokey_ppa(self):
         # PPAs should auto-generate keys. Let's use one for this test.
         self.setUpPPA()
-        generated_keys = self.arch_key_set.setUpKeyGeneration(
-            self.factory, self.archive)
 
         filenames = [
             "1.0/empty.efi", "1.0/empty.ko", "1.0/empty.opal",
@@ -1810,7 +1846,7 @@ class TestSigningUploadWithSigningService(TestSigningHelpers):
 
         self.openArchive("test", "1.0", "amd64")
         for filename in filenames:
-            self.tarfile.add_file(filename, b"data for %s" % filename)
+            self.tarfile.add_file(filename, b"data - %s" % filename)
 
         self.tarfile.close()
         self.buffer.close()
@@ -1835,15 +1871,29 @@ class TestSigningUploadWithSigningService(TestSigningHelpers):
             ["1.0/SHA256SUMS"] + filenames + expected_public_keys_filenames +
             expected_signed_filenames))
 
-        self.assertEqual(5, self.arch_key_set.generate.call_count)
-        self.assertEqual(5, self.arch_key_set.getSigningKey.call_count)
+        self.assertEqual(5, self.signing_service_client.generate.call_count)
+        self.assertEqual(5, self.signing_service_client.sign.call_count)
+
+        fingerprints = {
+            key_type: data['fingerprint'] for key_type, data in
+            self.signing_service_client.generate_returns}
         self.assertItemsEqual([
-            call(SigningKeyType.UEFI, self.archive, None),
-            call(SigningKeyType.KMOD, self.archive, None),
-            call(SigningKeyType.OPAL, self.archive, None),
-            call(SigningKeyType.SIPL, self.archive, None),
-            call(SigningKeyType.FIT, self.archive, None)],
-            self.arch_key_set.getSigningKey.call_args_list)
+            call(
+                SigningKeyType.UEFI, fingerprints[SigningKeyType.UEFI],
+                'empty.efi', b'data - 1.0/empty.efi', SigningMode.ATTACHED),
+            call(
+                SigningKeyType.KMOD, fingerprints[SigningKeyType.KMOD],
+                'empty.ko', b'data - 1.0/empty.ko', SigningMode.DETACHED),
+            call(
+                SigningKeyType.OPAL, fingerprints[SigningKeyType.OPAL],
+                'empty.opal', b'data - 1.0/empty.opal', SigningMode.DETACHED),
+            call(
+                SigningKeyType.SIPL, fingerprints[SigningKeyType.SIPL],
+                'empty.sipl', b'data - 1.0/empty.sipl', SigningMode.DETACHED),
+            call(
+                SigningKeyType.FIT, fingerprints[SigningKeyType.FIT],
+                'empty.fit', b'data - 1.0/empty.fit', SigningMode.ATTACHED)],
+            self.signing_service_client.sign.call_args_list)
 
         # Checks that all files got signed
         contents = self.getFileListContent(
@@ -1852,28 +1902,47 @@ class TestSigningUploadWithSigningService(TestSigningHelpers):
             SigningKeyType.UEFI, SigningKeyType.KMOD, SigningKeyType.OPAL,
             SigningKeyType.SIPL, SigningKeyType.FIT)
         expected_signed_contents = [
-            b"signed with %s" % k.name for k in key_types]
+            b"signed with key_type=%s" % k.name for k in key_types]
         self.assertItemsEqual(expected_signed_contents, contents)
 
         # Checks that all public keys ended up in the 1.0/control/xxx files
+        public_keys = {
+            key_type: data['public-key'] for key_type, data in
+            self.signing_service_client.generate_returns}
         contents = self.getFileListContent(
             signed_path, expected_public_keys_filenames)
         expected_public_keys = [
-            generated_keys[k].public_key for k in key_types]
+            public_keys[k] for k in key_types]
         self.assertEqual(expected_public_keys, contents)
 
     def test_fallback_handler(self):
         upload = SigningUpload()
 
         # Creating a new archive since our setUp method fills the self.archive
-        # with keys, and we don't want it.
+        # with signing keys, and we don't want that here.
+        self.distro = self.factory.makeDistribution()
         self.archive = self.factory.makeArchive(
-            distribution=self.distro, purpose=ArchivePurpose.PRIMARY)
+            distribution=self.distro,
+            purpose=ArchivePurpose.PRIMARY)
+        pubconf = getPubConfig(self.archive)
+        if not os.path.exists(pubconf.temproot):
+            os.makedirs(pubconf.temproot)
+            self.addCleanup(lambda: shutil.rmtree(pubconf.temproot, True))
+        old_umask = os.umask(0o022)
+        self.addCleanup(os.umask, old_umask)
+        self.addCleanup(lambda: shutil.rmtree(pubconf.distroroot, True))
+
+        # Make KMOD signing fail with an exception.
+        def mock_sign(key_type, *args, **kwargs):
+            if key_type == SigningKeyType.KMOD:
+                raise ValueError("!!")
+            return self.signing_service_client._sign(key_type, *args, **kwargs)
+
+        self.signing_service_client.sign.side_effect = mock_sign
 
         # Pre-set KMOD fails on ".sign" method (should fallback to local
         # signing method).
         kmod_arch_key = self.getArchiveSigningKey(SigningKeyType.KMOD)
-        kmod_arch_key.signing_key.sign = FakeMethod(failure=ValueError("!!"))
         upload.signKmod = FakeMethod(result=0)
 
         # We don't have a signing service key for UEFI. Should fallback too.
@@ -1883,16 +1952,11 @@ class TestSigningUploadWithSigningService(TestSigningHelpers):
         opal_arch_key = self.getArchiveSigningKey(SigningKeyType.OPAL)
         upload.signOpal = FakeMethod(result=0)
 
-        self.arch_key_set.setUpSigningKeys({
-            SigningKeyType.KMOD: kmod_arch_key.signing_key,
-            SigningKeyType.OPAL: opal_arch_key.signing_key,
-            })
-
         filenames = ["1.0/empty.efi", "1.0/empty.ko", "1.0/empty.opal"]
 
         self.openArchive("test", "1.0", "amd64")
         for filename in filenames:
-            self.tarfile.add_file(filename, b"data for %s" % filename)
+            self.tarfile.add_file(filename, b"data - %s" % filename)
 
         self.tarfile.close()
         self.buffer.close()
@@ -1908,20 +1972,9 @@ class TestSigningUploadWithSigningService(TestSigningHelpers):
 
         upload.cleanup = intercept_cleanup
 
-        # Write something on the fallback key file, so they exist and the
-        # processing don't fail.
-        upload.setTargetDirectory(self.archive, self.path, self.suite)
-        key_files = [
-            upload.kmod_x509, upload.kmod_pem, upload.uefi_key,
-            upload.uefi_cert]
-        for key_file in key_files:
-            try:
-                dir = os.path.dirname(key_file)
-                os.mkdir(dir)
-            except OSError:
-                pass
-            with(open(key_file, 'wb')) as fd:
-                fd.write(b"key content")
+        # Pretend that all key files exists, so the fallback calls are not
+        # blocked.
+        upload.keyFilesExists = lambda _: True
 
         upload.process(self.archive, self.path, self.suite)
 
@@ -1929,23 +1982,16 @@ class TestSigningUploadWithSigningService(TestSigningHelpers):
         # should be generated.
         self.assertFalse(upload.autokey)
 
-        self.assertEqual(0, self.arch_key_set.generate.call_count)
-        self.assertEqual(3, self.arch_key_set.getSigningKey.call_count)
-        self.assertItemsEqual([
-            call(SigningKeyType.UEFI, self.archive, None),
-            call(SigningKeyType.KMOD, self.archive, None),
-            call(SigningKeyType.OPAL, self.archive, None)],
-            self.arch_key_set.getSigningKey.call_args_list)
+        self.assertEqual(0, self.signing_service_client.generate.call_count)
+        self.assertEqual(2, self.signing_service_client.sign.call_count)
 
         # Check kmod signing
-        self.assertEqual(1, kmod_arch_key.signing_key.sign.call_count)
         self.assertEqual(1, upload.signKmod.call_count)
         self.assertEqual(
             [(os.path.join(upload.tmpdir_used, "1.0/empty.ko"), )],
             upload.signKmod.extract_args())
 
         # Check OPAL signing
-        self.assertEqual(1, opal_arch_key.signing_key.sign.call_count)
         self.assertEqual(0, upload.signOpal.call_count)
 
         # Check UEFI signing

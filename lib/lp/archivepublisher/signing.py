@@ -316,6 +316,17 @@ class SigningUpload(CustomUpload):
                         self.signKmod, etc).
         :param filename: The filename to be signed.
         """
+
+        if not self.keyFilesExists(key_type):
+            raise IOError(
+                "Could not fallback to local signing keys: the key files"
+                "where not found.")
+        return handler(filename)
+
+    def keyFilesExists(self, key_type):
+        """Checks if all needed key files exists in the local filesystem
+        for the given key type.
+        """
         fallback_keys = {
             SigningKeyType.UEFI: [self.uefi_cert, self.uefi_key],
             SigningKeyType.KMOD: [self.kmod_pem, self.kmod_x509],
@@ -323,14 +334,10 @@ class SigningUpload(CustomUpload):
             SigningKeyType.SIPL: [self.sipl_pem, self.sipl_x509],
             SigningKeyType.FIT: [self.fit_cert, self.fit_key],
             }
-
         # If we are missing local key files, do not proceed.
         key_files = [i for i in fallback_keys[key_type] if i]
-        if not all(os.path.exists(key_file) for key_file in key_files):
-            raise IOError(
-                "Could not fallback to local signing keys: the key files"
-                "where not found.")
-        return handler(filename)
+        return all(os.path.exists(key_file) for key_file in key_files)
+
 
     def signUsingSigningService(self, key_type, signing_key, filename):
         """Sign the given filename using a certain key hosted on signing

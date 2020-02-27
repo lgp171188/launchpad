@@ -6,7 +6,6 @@ __metaclass__ = type
 import base64
 
 import responses
-from storm.exceptions import IntegrityError
 from storm.store import Store
 from testtools.matchers import MatchesStructure
 from zope.component import getUtility
@@ -20,7 +19,6 @@ from lp.services.signing.interfaces.signingserviceclient import (
     )
 from lp.services.signing.model.signingkey import (
     ArchiveSigningKey,
-    ArchiveSigningKeySet,
     SigningKey,
     )
 from lp.services.signing.tests.test_proxy import SigningServiceResponseFactory
