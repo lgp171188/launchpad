@@ -7,9 +7,9 @@
 __metaclass__ = type
 
 __all__ = [
-    'SigningKey',
     'ArchiveSigningKey',
-    'ArchiveSigningKeySet'
+    'ArchiveSigningKeySet',
+    'SigningKey',
     ]
 
 from collections import defaultdict
@@ -152,8 +152,8 @@ class ArchiveSigningKeySet:
 
     @classmethod
     def getSigningKey(cls, key_type, archive, distro_series):
-        # Gets all the keys available for the given archive.
         store = IStore(ArchiveSigningKey)
+        # Gets all the keys of the given key_type available for the archive
         rs = store.find(ArchiveSigningKey,
                 SigningKey.id == ArchiveSigningKey.signing_key_id,
                 SigningKey.key_type == key_type,
@@ -173,6 +173,8 @@ class ArchiveSigningKeySet:
 
         # Let's search the most suitable per key type.
         found_series = False
+        # Not that archive.distribution.series is, by default, sorted by
+        # "version", reversed.
         for series in archive.distribution.series:
             if series == distro_series:
                 found_series = True
