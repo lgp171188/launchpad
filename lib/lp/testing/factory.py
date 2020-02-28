@@ -282,10 +282,8 @@ from lp.services.propertycache import (
     get_property_cache,
     )
 from lp.services.signing.enums import SigningKeyType
-from lp.services.signing.model.signingkey import (
-    ArchiveSigningKeySet,
-    SigningKey,
-    )
+from lp.services.signing.interfaces.signingkey import IArchiveSigningKeySet
+from lp.services.signing.model.signingkey import SigningKey
 from lp.services.temporaryblobstorage.interfaces import (
     ITemporaryStorageManager,
     )
@@ -4213,7 +4211,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             archive = self.makeArchive()
         if signing_key is None:
             signing_key = self.makeSigningKey()
-        return ArchiveSigningKeySet.create(
+        return getUtility(IArchiveSigningKeySet).create(
             archive, distro_series, signing_key)
 
     def makeSection(self, name=None):
