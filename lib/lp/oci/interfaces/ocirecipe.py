@@ -62,7 +62,7 @@ class OCIRecipeBuildAlreadyPending(Exception):
 
     def __init__(self):
         super(OCIRecipeBuildAlreadyPending, self).__init__(
-            "An identical build of this snap package is already pending.")
+            "An identical build of this OCI recipe is already pending.")
 
 
 @error_status(http_client.BAD_REQUEST)
