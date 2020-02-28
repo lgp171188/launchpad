@@ -228,6 +228,45 @@ class TestOCIRecipeSet(TestCaseWithFactory):
             oci_project=oci_project,
             name="missing")
 
+    def test_findByGitRepository(self):
+        # IOCIRecipeSet.findByGitRepository returns all OCI recipes with the
+        # given Git repository.
+        repositories = [self.factory.makeGitRepository() for i in range(2)]
+        oci_recipes = []
+        for repository in repositories:
+            for i in range(2):
+                [ref] = self.factory.makeGitRefs(repository=repository)
+                oci_recipes.append(self.factory.makeOCIRecipe(git_ref=ref))
+        oci_recipe_set = getUtility(IOCIRecipeSet)
+        self.assertContentEqual(
+            oci_recipes[:2], oci_recipe_set.findByGitRepository(
+                repositories[0]))
+        self.assertContentEqual(
+            oci_recipes[2:], oci_recipe_set.findByGitRepository(
+                repositories[1]))
+
+    def test_findByGitRepository_paths(self):
+        # IOCIRecipeSet.findByGitRepository can restrict by reference paths.
+        repositories = [self.factory.makeGitRepository() for i in range(2)]
+        oci_recipes = []
+        for repository in repositories:
+            for i in range(3):
+                [ref] = self.factory.makeGitRefs(repository=repository)
+                oci_recipes.append(self.factory.makeOCIRecipe(git_ref=ref))
+        oci_recipe_set = getUtility(IOCIRecipeSet)
+        self.assertContentEqual(
+            [], oci_recipe_set.findByGitRepository(repositories[0], paths=[]))
+        self.assertContentEqual(
+            [oci_recipes[0]],
+            oci_recipe_set.findByGitRepository(
+                repositories[0], paths=[oci_recipes[0].git_ref.path]))
+        self.assertContentEqual(
+            oci_recipes[:2],
+            oci_recipe_set.findByGitRepository(
+                repositories[0],
+                paths=[
+                    oci_recipes[0].git_ref.path, oci_recipes[1].git_ref.path]))
+
     def test_detachFromGitRepository(self):
         repositories = [self.factory.makeGitRepository() for i in range(2)]
         oci_recipes = []
