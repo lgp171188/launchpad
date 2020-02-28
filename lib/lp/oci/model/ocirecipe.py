@@ -97,9 +97,9 @@ class OCIRecipe(Storm):
 
     official = Bool(name="official", default=False)
 
-    git_repository_id = Int(name="git_repository", allow_none=False)
+    git_repository_id = Int(name="git_repository", allow_none=True)
     git_repository = Reference(git_repository_id, "GitRepository.id")
-    git_path = Unicode(name="git_path", allow_none=False)
+    git_path = Unicode(name="git_path", allow_none=True)
     build_file = Unicode(name="build_file", allow_none=False)
 
     require_virtualized = Bool(name="require_virtualized", default=True,
@@ -152,8 +152,8 @@ class OCIRecipe(Storm):
     def git_ref(self, value):
         """See `IOCIRecipe`."""
         if value is not None:
-            self.git_path = value.path
             self.git_repository = value.repository
+            self.git_path = value.path
         else:
             self.git_repository = None
             self.git_path = None
@@ -306,13 +306,25 @@ class OCIRecipeSet:
         return oci_recipe
 
     def findByOwner(self, owner):
-        """See `IOCIRecipe`."""
+        """See `IOCIRecipeSet`."""
         return IStore(OCIRecipe).find(OCIRecipe, OCIRecipe.owner == owner)
 
     def findByOCIProject(self, oci_project):
-        """See `IOCIRecipe`."""
+        """See `IOCIRecipeSet`."""
         return IStore(OCIRecipe).find(
             OCIRecipe, OCIRecipe.oci_project == oci_project)
+
+    def findByGitRepository(self, repository, paths=None):
+        """See `IOCIRecipeSet`."""
+        clauses = [OCIRecipe.git_repository == repository]
+        if paths is not None:
+            clauses.append(OCIRecipe.git_path.is_in(paths))
+        return IStore(OCIRecipe).find(OCIRecipe, *clauses)
+
+    def detachFromGitRepository(self, repository):
+        """See `IOCIRecipeSet`."""
+        self.findByGitRepository(repository).set(
+            git_repository_id=None, git_path=None, date_last_modified=UTC_NOW)
 
     def preloadDataForOCIRecipes(self, recipes, user=None):
         """See `IOCIRecipeSet`."""
