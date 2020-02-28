@@ -292,4 +292,3 @@ class TestOCIRecipeSet(TestCaseWithFactory):
         for oci_recipe in oci_recipes[:2]:
             self.assertSqlAttributeEqualsDate(
                 oci_recipe, "date_last_modified", UTC_NOW)
-
