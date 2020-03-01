@@ -407,7 +407,6 @@ class TestTranslationImportQueue(TestCaseWithFactory):
         files = dict((
             self._makeFile('pot'),
             self._makeFile('po'),
-            self._makeFile('xpi'),
             ))
         tarfile_content = LaunchpadWriteTarFile.files_to_stream(files)
         self.import_queue.addOrUpdateEntriesFromTarball(
