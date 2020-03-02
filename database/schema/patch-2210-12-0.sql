@@ -36,12 +36,9 @@ CREATE TABLE archivesigningkey (
         FOREIGN KEY (signing_key, key_type)
         REFERENCES signingkey (id, key_type),
 
-    CONSTRAINT archivesigningkey__key_type__archive__earliest_distro_series__idx
-        UNIQUE(key_type, archive, earliest_distro_series)
+    CONSTRAINT archivesigningkey__archive__key_type__earliest_distro_series__key
+        UNIQUE(archive, key_type, earliest_distro_series)
 );
-
-CREATE INDEX archivesigningkey__archive__idx
-    ON archivesigningkey(archive);
 
 
 INSERT INTO LaunchpadDatabaseRevision VALUES (2210, 12, 0);
