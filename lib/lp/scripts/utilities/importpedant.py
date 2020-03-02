@@ -1,4 +1,4 @@
-# Copyright 2009-2016 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 from __future__ import absolute_import, print_function, unicode_literals
@@ -42,6 +42,8 @@ valid_imports_not_in_all = {
     'textwrap': set(['dedent']),
     'testtools.testresult.real': set(['_details_to_str']),
     'twisted.internet.threads': set(['deferToThreadPool']),
+    # Even docs tell us to use this class. See docs on WebClientContextFactory.
+    'twisted.web.client': set(['BrowserLikePolicyForHTTPS']),
     'zope.component': set(
         ['adapter',
          'ComponentLookupError',

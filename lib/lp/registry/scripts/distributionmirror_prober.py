@@ -1,4 +1,4 @@
-# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -12,6 +12,7 @@ import logging
 import os.path
 from StringIO import StringIO
 
+import OpenSSL
 import requests
 from six.moves import http_client
 from six.moves.urllib.parse import (
@@ -20,14 +21,27 @@ from six.moves.urllib.parse import (
     urlparse,
     urlunparse,
     )
+from treq.client import HTTPClient as TreqHTTPClient
 from twisted.internet import (
     defer,
     protocol,
     reactor,
     )
-from twisted.internet.defer import DeferredSemaphore
+from twisted.internet.defer import (
+    CancelledError,
+    DeferredSemaphore,
+    )
+from twisted.internet.endpoints import HostnameEndpoint
+from twisted.internet.ssl import VerificationError
 from twisted.python.failure import Failure
+from twisted.web.client import (
+    Agent,
+    BrowserLikePolicyForHTTPS,
+    ProxyAgent,
+    ResponseNeverReceived,
+    )
 from twisted.web.http import HTTPClient
+from twisted.web.iweb import IResponse
 from zope.component import getUtility
 
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
@@ -50,6 +64,7 @@ from lp.soyuz.interfaces.distroarchseries import IDistroArchSeries
 # IMPORTANT: Changing these values can cause lots of false negatives when
 # probing mirrors, so please don't change them unless you know what you're
 # doing.
+
 MIN_REQUEST_TIMEOUT_RATIO = 3
 MIN_REQUESTS_TO_CONSIDER_RATIO = 30
 
@@ -57,6 +72,9 @@ MIN_REQUESTS_TO_CONSIDER_RATIO = 30
 # We need to get rid of these global dicts in this module.
 host_requests = {}
 host_timeouts = {}
+# Set of invalid certificate (host, port) tuples, to avoid doing HTTPS calls
+# to hosts we already know they are not valid.
+invalid_certificate_hosts = set()
 
 MAX_REDIRECTS = 3
 
@@ -161,6 +179,64 @@ class ProberProtocol(HTTPClient):
         pass
 
 
+class HTTPSProbeFailureHandler:
+    """Handler to translate general errors into expected errors on HTTPS
+    connections."""
+    def __init__(self, factory):
+        self.factory = factory
+
+    def handleResponse(self, response):
+        """Translates any request with return code different from 200 into
+        an error in the callback chain.
+
+        Note that other 2xx codes that are not 200 are considered errors too.
+        This behaviour is the same as seen in ProberProtocol.handleStatus,
+        for HTTP responses.
+        """
+        status = response.code
+        if status == http_client.OK:
+            return response
+        else:
+            raise BadResponseCode(status, response)
+
+    def handleErrors(self, error):
+        """Handle exceptions in https requests.
+        """
+        if self.isInvalidCertificateError(error):
+            invalid_certificate_hosts.add(
+                (self.factory.request_host, self.factory.request_port))
+            reason = InvalidHTTPSCertificate(
+                self.factory.request_host, self.factory.request_port)
+            raise reason
+        if self.isTimeout(error):
+            raise ProberTimeout(self.factory.url, self.factory.timeout)
+        raise error
+
+    def isTimeout(self, error):
+        """Checks if the error was caused by a timeout.
+        """
+        return self._isErrorFromType(error, CancelledError)
+
+    def isInvalidCertificateError(self, error):
+        """Checks if the error was caused by an invalid certificate.
+        """
+        # It might be a raw SSL error, or a twisted-encapsulated
+        # verification error (such as DNSMismatch error when the
+        # certificate is valid for a different domain, for example).
+        return self._isErrorFromType(
+            error, OpenSSL.SSL.Error, VerificationError)
+
+    def _isErrorFromType(self, error, *types):
+        """Checks if the error was caused by any of the given types.
+        """
+        if not isinstance(error.value, ResponseNeverReceived):
+            return False
+        for reason in error.value.reasons:
+            if reason.check(*types) is not None:
+                return True
+        return False
+
+
 class RedirectAwareProberProtocol(ProberProtocol):
     """A specialized version of ProberProtocol that follows HTTP redirects."""
 
@@ -216,6 +292,8 @@ class ProberFactory(protocol.ClientFactory):
     connect_port = None
     connect_path = None
 
+    https_agent_policy = BrowserLikePolicyForHTTPS
+
     def __init__(self, url, timeout=config.distributionmirrorprober.timeout):
         # We want the deferred to be a private attribute (_deferred) to make
         # sure our clients will only use the deferred returned by the probe()
@@ -225,9 +303,14 @@ class ProberFactory(protocol.ClientFactory):
         self.timeout = timeout
         self.timeoutCall = None
         self.setURL(url.encode('ascii'))
+        self.logger = logging.getLogger('distributionmirror-prober')
+
+    @property
+    def is_https(self):
+        return self.request_scheme == 'https'
 
     def probe(self):
-        logger = logging.getLogger('distributionmirror-prober')
+        logger = self.logger
         # NOTE: We don't want to issue connections to any outside host when
         # running the mirror prober in a development machine, so we do this
         # hack here.
@@ -244,13 +327,46 @@ class ProberFactory(protocol.ClientFactory):
                          "host already." % self.url)
             return self._deferred
 
+        if (self.request_host, self.request_port) in invalid_certificate_hosts:
+            reactor.callLater(
+                0, self.failed, InvalidHTTPSCertificateSkipped(self.url))
+            logger.debug("Skipping %s as it doesn't have a valid HTTPS "
+                         "certificate" % self.url)
+            return self._deferred
+
         self.connect()
         logger.debug('Probing %s' % self.url)
         return self._deferred
 
+    def getHttpsClient(self):
+        # Should we use a proxy?
+        if not config.launchpad.http_proxy:
+            agent = Agent(
+                reactor=reactor, contextFactory=self.https_agent_policy())
+        else:
+            endpoint = HostnameEndpoint(
+                reactor, self.connect_host, self.connect_port)
+            agent = ProxyAgent(endpoint)
+        return TreqHTTPClient(agent)
+
     def connect(self):
+        """Starts the connection and sets the self._deferred to the proper
+        task.
+        """
         host_requests[self.request_host] += 1
-        reactor.connectTCP(self.connect_host, self.connect_port, self)
+        if self.is_https:
+            treq = self.getHttpsClient()
+            self._deferred.addCallback(
+                lambda _: treq.head(
+                    self.url, reactor=reactor, allow_redirects=True,
+                    timeout=self.timeout))
+            error_handler = HTTPSProbeFailureHandler(self)
+            self._deferred.addCallback(error_handler.handleResponse)
+            self._deferred.addErrback(error_handler.handleErrors)
+            reactor.callWhenRunning(self._deferred.callback, None)
+        else:
+            reactor.connectTCP(self.connect_host, self.connect_port, self)
+
         if self.timeoutCall is not None and self.timeoutCall.active():
             self._cancelTimeout(None)
         self.timeoutCall = reactor.callLater(
@@ -269,6 +385,8 @@ class ProberFactory(protocol.ClientFactory):
         self.connector = connector
 
     def succeeded(self, status):
+        if IResponse.providedBy(status):
+            status = str(status.code)
         self._deferred.callback(status)
 
     def failed(self, reason):
@@ -288,7 +406,7 @@ class ProberFactory(protocol.ClientFactory):
         # https://bugs.squid-cache.org/show_bug.cgi?id=1758 applied. So, if
         # you encounter any problems with FTP URLs you'll probably have to nag
         # the sysadmins to fix squid for you.
-        if scheme not in ('http', 'ftp'):
+        if scheme not in ('http', 'https', 'ftp'):
             raise UnknownURLScheme(url)
 
         if scheme and host:
@@ -376,12 +494,24 @@ class ProberTimeout(ProberError):
 
 class BadResponseCode(ProberError):
 
-    def __init__(self, status, *args):
+    def __init__(self, status, response=None, *args):
         ProberError.__init__(self, *args)
         self.status = status
+        self.response = response
 
     def __str__(self):
         return "Bad response code: %s" % self.status
+
+
+class InvalidHTTPSCertificate(ProberError):
+    def __init__(self, host, port, *args):
+        super(InvalidHTTPSCertificate, self).__init__(*args)
+        self.host = host
+        self.port = port
+
+    def __str__(self):
+        return "Invalid SSL certificate when trying to probe %s:%s" % (
+            self.host, self.port)
 
 
 class RedirectToDifferentFile(ProberError):
@@ -409,6 +539,14 @@ class ConnectionSkipped(ProberError):
                 "host. It will be retried on the next probing run.")
 
 
+class InvalidHTTPSCertificateSkipped(ProberError):
+
+    def __str__(self):
+        return ("Connection skipped because the server doesn't have a valid "
+                "HTTPS certificate. It will be retried on the next "
+                "probing run.")
+
+
 class UnknownURLScheme(ProberError):
 
     def __init__(self, url, *args):
@@ -429,7 +567,13 @@ class UnknownURLSchemeAfterRedirect(UnknownURLScheme):
 
 class ArchiveMirrorProberCallbacks(LoggingMixin):
 
-    expected_failures = (BadResponseCode, ProberTimeout, ConnectionSkipped)
+    expected_failures = (
+        BadResponseCode,
+        ProberTimeout,
+        ConnectionSkipped,
+        InvalidHTTPSCertificate,
+        InvalidHTTPSCertificateSkipped,
+        )
 
     def __init__(self, mirror, series, pocket, component, url, log_file):
         self.mirror = mirror
@@ -574,6 +718,8 @@ class MirrorCDImageProberCallbacks(LoggingMixin):
         ProberTimeout,
         RedirectToDifferentFile,
         UnknownURLSchemeAfterRedirect,
+        InvalidHTTPSCertificate,
+        InvalidHTTPSCertificateSkipped,
         )
 
     def __init__(self, mirror, distroseries, flavour, log_file):

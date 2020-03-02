@@ -118,6 +118,10 @@
     <h2>Mirror location information</h2>
 
     <ul class="webref" id="mirror-urls">
+      <li tal:condition="context/https_base_url" >
+        <a tal:content="context/https_base_url"
+           tal:attributes="href context/https_base_url">https://url/</a>
+      </li>
       <li tal:condition="context/http_base_url" >
         <a tal:content="context/http_base_url"
            tal:attributes="href context/http_base_url">http://url/</a>
