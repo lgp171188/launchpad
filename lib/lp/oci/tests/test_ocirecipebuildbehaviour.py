@@ -596,9 +596,5 @@ class TestHandleStatusForOCIRecipeBuild(MakeOCIBuildMixin, TrialTestCase,
 
 
 class TestGetUploadMethodsForOCIRecipeBuild(
-    MakeOCIBuildMixin, TestGetUploadMethodsMixin, TrialTestCase):
+    MakeOCIBuildMixin, TestGetUploadMethodsMixin, TestCaseWithFactory):
     """IPackageBuild.getUpload-related methods work with OCI recipe builds."""
-
-    def setUp(self):
-        super(TestGetUploadMethodsForOCIRecipeBuild, self).__init__(self)
-        self.factory = LaunchpadObjectFactory()
