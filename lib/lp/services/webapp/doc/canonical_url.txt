@@ -333,19 +333,19 @@ We have to do the tests that involve errors bit by bit, to allow the doctest
 to work properly.
 
     >>> iterator = canonical_url_iterator(object_that_has_no_url)
-    >>> iterator.next().__class__.__name__
+    >>> next(iterator).__class__.__name__
     'object'
-    >>> iterator.next()
+    >>> next(iterator)
     Traceback (most recent call last):
     ...
     NoCanonicalUrl: No url for <...object...> because <...object...> broke the chain.
 
     >>> iterator = canonical_url_iterator(unrooted_object)
-    >>> iterator.next().__class__.__name__
+    >>> next(iterator).__class__.__name__
     'ObjectThatHasUrl'
-    >>> iterator.next().__class__.__name__
+    >>> next(iterator).__class__.__name__
     'object'
-    >>> iterator.next()
+    >>> next(iterator)
     Traceback (most recent call last):
     ...
     NoCanonicalUrl: No url for <...ObjectThatHasUrl...> because <...object...> broke the chain.

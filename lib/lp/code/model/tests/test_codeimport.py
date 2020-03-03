@@ -532,11 +532,11 @@ class TestCodeImportResultsAttribute(TestCodeImportBase):
             origin=datetime(2007, 9, 9, 12, tzinfo=pytz.UTC),
             delta=timedelta(days=1))
         first = self.factory.makeCodeImportResult(
-            self.code_import, date_started=when.next())
+            self.code_import, date_started=next(when))
         second = self.factory.makeCodeImportResult(
-            self.code_import, date_started=when.next())
+            self.code_import, date_started=next(when))
         third = self.factory.makeCodeImportResult(
-            self.code_import, date_started=when.next())
+            self.code_import, date_started=next(when))
         self.assertTrue(first.date_job_started < second.date_job_started)
         self.assertTrue(second.date_job_started < third.date_job_started)
         results = list(self.code_import.results)
@@ -552,11 +552,11 @@ class TestCodeImportResultsAttribute(TestCodeImportBase):
             origin=datetime(2007, 9, 11, 12, tzinfo=pytz.UTC),
             delta=timedelta(days=-1))
         first = self.factory.makeCodeImportResult(
-            self.code_import, date_started=when.next())
+            self.code_import, date_started=next(when))
         second = self.factory.makeCodeImportResult(
-            self.code_import, date_started=when.next())
+            self.code_import, date_started=next(when))
         third = self.factory.makeCodeImportResult(
-            self.code_import, date_started=when.next())
+            self.code_import, date_started=next(when))
         self.assertTrue(first.date_job_started > second.date_job_started)
         self.assertTrue(second.date_job_started > third.date_job_started)
         results = list(self.code_import.results)

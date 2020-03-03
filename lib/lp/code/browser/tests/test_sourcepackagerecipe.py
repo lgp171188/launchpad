@@ -1362,12 +1362,12 @@ class TestSourcePackageRecipeViewMixin:
         # use id as the ordering attribute and lower ids mean created earlier.
         date_gen = time_counter(
             datetime(2010, 3, 16, tzinfo=UTC), timedelta(days=1))
-        build1 = self.makeBuildJob(recipe, date_gen.next())
-        build2 = self.makeBuildJob(recipe, date_gen.next())
-        build3 = self.makeBuildJob(recipe, date_gen.next())
-        build4 = self.makeBuildJob(recipe, date_gen.next())
-        build5 = self.makeBuildJob(recipe, date_gen.next())
-        build6 = self.makeBuildJob(recipe, date_gen.next())
+        build1 = self.makeBuildJob(recipe, next(date_gen))
+        build2 = self.makeBuildJob(recipe, next(date_gen))
+        build3 = self.makeBuildJob(recipe, next(date_gen))
+        build4 = self.makeBuildJob(recipe, next(date_gen))
+        build5 = self.makeBuildJob(recipe, next(date_gen))
+        build6 = self.makeBuildJob(recipe, next(date_gen))
         view = SourcePackageRecipeView(recipe, None)
         self.assertEqual(
             [build6, build5, build4, build3, build2, build1],

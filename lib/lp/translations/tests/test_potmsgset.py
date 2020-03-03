@@ -7,6 +7,7 @@ from datetime import (
     datetime,
     timedelta,
     )
+from functools import partial
 
 import pytz
 import transaction
@@ -648,7 +649,7 @@ class TestPOTMsgSetSuggestions(TestCaseWithFactory):
         # Create a product with all the boilerplate objects to be able to
         # create TranslationMessage objects.
         super(TestPOTMsgSetSuggestions, self).setUp('carlos@canonical.com')
-        self.now = self.gen_now().next
+        self.now = partial(next, self.gen_now())
         self.foo = self.factory.makeProduct(
             translations_usage=ServiceUsage.LAUNCHPAD)
         self.foo_main = self.factory.makeProductSeries(
@@ -846,7 +847,7 @@ class TestPOTMsgSetResetTranslation(TestCaseWithFactory):
         # create TranslationMessage objects.
         super(TestPOTMsgSetResetTranslation, self).setUp(
             'carlos@canonical.com')
-        self.now = self.gen_now().next
+        self.now = partial(next, self.gen_now())
         self.foo = self.factory.makeProduct(
             translations_usage=ServiceUsage.LAUNCHPAD)
         self.foo_main = self.factory.makeProductSeries(

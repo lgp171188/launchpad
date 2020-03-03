@@ -38,7 +38,7 @@ AnswerTrackerHandler.
     ...     lines = ['From: %s' % from_addr]
     ...     to_addr = 'question%s@answers.launchpad.net' % question_id
     ...     lines.append('To: %s' % to_addr)
-    ...     date = mktime_tz(now.next().utctimetuple() + (0, ))
+    ...     date = mktime_tz(next(now).utctimetuple() + (0, ))
     ...     lines.append('Date: %s' % formatdate(date))
     ...     msgid = make_msgid()
     ...     lines.append('Message-Id: %s' % msgid)
@@ -116,7 +116,7 @@ possibilities for the user.
     ...     question = ubuntu.newQuestion(
     ...         no_priv, 'Unable to boot installer',
     ...         "I've tried installing Ubuntu on a Mac. But the installer "
-    ...         "never boots.", datecreated=now.next())
+    ...         "never boots.", datecreated=next(now))
     ...     question_id = question.id
 
     # We need to refetch the question, since a new transaction was started.
@@ -127,7 +127,7 @@ possibilities for the user.
     >>> def setQuestionStatus(question, new_status):
     ...     login('foo.bar@canonical.com')
     ...     question.setStatus(foo_bar, new_status, 'Status Change',
-    ...                            datecreated=now.next())
+    ...                            datecreated=next(now))
     ...     login('no-priv@canonical.com')
 
 Message From the Question Owner

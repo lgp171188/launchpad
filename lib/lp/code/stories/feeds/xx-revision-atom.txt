@@ -37,7 +37,7 @@ by asking BeautifulSoup to use lxml.
     ...     global factory, date_generator
     ...     return factory.makeRevision(
     ...         author=removeSecurityProxy(author).preferredemail.email,
-    ...         revision_date=date_generator.next(),
+    ...         revision_date=next(date_generator),
     ...         rev_id=rev_id, log_body=log_body)
     >>> ignored = fooey_branch.createBranchRevision(
     ...     1, makeRevision(

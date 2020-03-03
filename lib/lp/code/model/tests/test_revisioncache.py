@@ -114,7 +114,7 @@ class TestRevisionCache(TestCaseWithFactory):
         # query is the reverse order.
         revisions = [
             self.makeCachedRevision(
-                revision=self.factory.makeRevision(revision_date=tc.next()))
+                revision=self.factory.makeRevision(revision_date=next(tc)))
             for i in range(4)]
         revisions.reverse()
         cache = getUtility(IRevisionCache)
@@ -142,7 +142,7 @@ class TestRevisionCache(TestCaseWithFactory):
         # Make four cached revisions spanning 33, 31, 29, and 27 days ago.
         for i in range(4):
             self.makeCachedRevision(
-                revision=self.factory.makeRevision(revision_date=tc.next()))
+                revision=self.factory.makeRevision(revision_date=next(tc)))
         cache = getUtility(IRevisionCache)
         self.assertEqual(2, cache.count())
 

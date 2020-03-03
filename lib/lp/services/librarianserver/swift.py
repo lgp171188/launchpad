@@ -309,7 +309,7 @@ class SwiftStream:
 
     def _next_chunk(self):
         try:
-            return self._chunks.next()
+            return next(self._chunks)
         except StopIteration:
             return None
 

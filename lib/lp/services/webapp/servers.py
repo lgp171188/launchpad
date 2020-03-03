@@ -113,7 +113,7 @@ from lp.testopenid.interfaces.server import ITestOpenIDApplication
 from lp.xmlrpc.interfaces import IPrivateApplication
 
 
-class StepsToGo:
+class StepsToGo(six.Iterator):
     """
 
     >>> class FakeRequest:
@@ -195,7 +195,7 @@ class StepsToGo:
         except IndexError:
             return None
 
-    def next(self):
+    def __next__(self):
         value = self.consume()
         if value is None:
             raise StopIteration

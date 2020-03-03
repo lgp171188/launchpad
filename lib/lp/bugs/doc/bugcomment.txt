@@ -270,7 +270,7 @@ We'll create an example bug with 9 comments.
     >>> def add_comments(bug, how_many):
     ...     bug_message_set = getUtility(IBugMessageSet)
     ...     for i in range(how_many):
-    ...         num = comment_counter.next()
+    ...         num = next(comment_counter)
     ...         bug_message_set.createMessage(
     ...             "Comment %d" % num, bug, bug.owner,
     ...             "Something or other #%d" % num)

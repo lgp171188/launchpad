@@ -607,7 +607,7 @@ class LaunchpadTransportTests:
             [(3, 2)])
 
         def get_chunk(generator):
-            return generator.next()[1]
+            return next(generator)[1]
         deferred.addCallback(get_chunk)
         return deferred.addCallback(self.assertEqual, data[3:5])
 
