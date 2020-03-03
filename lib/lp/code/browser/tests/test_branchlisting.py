@@ -123,7 +123,7 @@ class TestPersonOwnedBranchesView(TestCaseWithFactory,
         self.branches = [
             self.factory.makeProductBranch(
                 product=self.bambam, owner=self.barney,
-                date_created=time_gen.next())
+                date_created=next(time_gen))
             for i in range(10)]
         self.bug = self.factory.makeBug()
         self.bug.linkBranch(self.branches[0], self.barney)
@@ -459,7 +459,7 @@ class TestGroupedDistributionSourcePackageBranchesView(TestCaseWithFactory):
             self.factory.makePackageBranch(
                 distroseries=distroseries,
                 sourcepackagename=self.sourcepackagename,
-                date_created=time_gen.next())
+                date_created=next(time_gen))
             for i in range(branch_count)]
 
         official = []

@@ -3,6 +3,7 @@
 
 """CVE related tests."""
 
+from functools import partial
 from operator import attrgetter
 import re
 
@@ -35,7 +36,7 @@ class TestCVEReportView(TestCaseWithFactory):
         self.resolved_bugtasks = []
         self.unresolved_bugtasks = []
         self.cves = {}
-        self.getCVE = self.cveGenerator().next
+        self.getCVE = partial(next, self.cveGenerator())
         with person_logged_in(distroseries.owner):
             for status in RESOLVED_BUGTASK_STATUSES:
                 tasks, cves = self.makeBugTasksWithCve(status, distroseries)

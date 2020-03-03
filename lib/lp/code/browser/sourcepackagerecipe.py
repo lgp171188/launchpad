@@ -755,7 +755,7 @@ class SourcePackageRecipeAddView(RecipeRelatedBranchesMixin,
         yield "%s-daily" % branch_target_name
         counter = itertools.count(1)
         while True:
-            yield "%s-daily-%s" % (branch_target_name, counter.next())
+            yield "%s-daily-%s" % (branch_target_name, next(counter))
 
     def _find_unused_name(self, owner):
         # Grab the last path element of the branch target path.

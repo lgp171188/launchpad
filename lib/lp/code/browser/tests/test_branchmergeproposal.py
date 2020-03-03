@@ -322,13 +322,13 @@ class TestBranchMergeProposalVoteView(TestCaseWithFactory):
             owner=reviewer,
             subject=self.factory.getUniqueString('subject'),
             vote=vote,
-            _date_created=self.date_generator.next())
+            _date_created=next(self.date_generator))
 
     def _nominateReviewer(self, reviewer, registrant):
         """Nominate a reviewer for the merge proposal."""
         self.bmp.nominateReviewer(
             reviewer=reviewer, registrant=registrant,
-            _date_created=self.date_generator.next())
+            _date_created=next(self.date_generator))
 
     def testNoVotes(self):
         # No votes should return empty lists

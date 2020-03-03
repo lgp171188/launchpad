@@ -41,7 +41,7 @@ are not a member of, their message gets held for moderator approval.
     ... Date: %s
     ...
     ... Point of order!
-    ... """ % (from_address, to_team_name, message_ids.next(), formatdate()))
+    ... """ % (from_address, to_team_name, next(message_ids), formatdate()))
     ...     mailing_list = getUtility(IMailingListSet).get(to_team_name)
     ...     held_message = mailing_list.holdMessage(message)
     ...     return held_message

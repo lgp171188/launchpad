@@ -64,7 +64,7 @@ Creating a question
     >>> firefox = getUtility(IProductSet)['firefox']
     >>> firefox_question = firefox.newQuestion(
     ...     title='New question', description='Question description.',
-    ...     owner=sample_person, datecreated=now.next())
+    ...     owner=sample_person, datecreated=next(now))
     Karma added: action=questionasked, product=firefox, person=name12
 
 
@@ -77,7 +77,7 @@ will usually be called by an automated script.
     >>> msg = firefox_question.expireQuestion(
     ...     foo_bar, 'Expiring because of inactivity. Reopen if you are '
     ...     'still having the problem and provide additional information.',
-    ...     datecreated=now.next())
+    ...     datecreated=next(now))
 
 
 Reopening a question
@@ -85,7 +85,7 @@ Reopening a question
 
     >>> msg = firefox_question.reopen(
     ...     "Firefox doesn't have any 'Quick Searches' in its bookmarks.",
-    ...     datecreated=now.next())
+    ...     datecreated=next(now))
     Karma added: action=questionreopened, product=firefox, person=name12
 
 
@@ -94,7 +94,7 @@ Requesting for more information
 
     >>> msg = firefox_question.requestInfo(
     ...     foo_bar, 'What "Quick Searches" do you want?',
-    ...     datecreated=now.next())
+    ...     datecreated=next(now))
     Karma added: action=questionrequestedinfo, product=firefox, person=name16
 
 
@@ -103,7 +103,7 @@ Giving back more information
 
     >>> msg = firefox_question.giveInfo(
     ...     'The same one than shipped upstreams.',
-    ...     datecreated=now.next())
+    ...     datecreated=next(now))
     Karma added: action=questiongaveinfo, product=firefox, person=name12
 
 
@@ -112,7 +112,7 @@ Giving an answer to a question
 
     >>> msg = firefox_question.giveAnswer(
     ...     foo_bar, "Ok, I see what you mean. You need to install them "
-    ...     "manually for now.", datecreated=now.next())
+    ...     "manually for now.", datecreated=next(now))
     Karma added: action=questiongaveanswer, product=firefox, person=name16
 
 
@@ -121,7 +121,7 @@ Adding a comment
 
     >>> msg = firefox_question.addComment(
     ...     foo_bar, 'You could also fill a bug about that, if you like.',
-    ...     datecreated=now.next())
+    ...     datecreated=next(now))
     Karma added: action=questioncommentadded, product=firefox, person=name16
 
 
@@ -134,7 +134,7 @@ receives karma.
 
     >>> msg = firefox_question.confirmAnswer(
     ...     "Ok, thanks. I'll open a bug about this then.",
-    ...     answer=msg, datecreated=now.next())
+    ...     answer=msg, datecreated=next(now))
     Karma added: action=questionansweraccepted, product=firefox, person=name12
     Karma added: action=questionanswered, product=firefox, person=name16
 
@@ -156,7 +156,7 @@ We do not grant karma for status change made outside of workflow:
     >>> from lp.answers.enums import QuestionStatus
     >>> msg = firefox_question.setStatus(
     ...     foo_bar, QuestionStatus.OPEN, 'That rejection was an error.',
-    ...     datecreated=now.next())
+    ...     datecreated=next(now))
 
 
 Changing the title of a question
@@ -205,7 +205,7 @@ persons who were awarded it in the past.
     >>> msg = firefox_question.giveAnswer(
     ...     sample_person, "I was able to import some by following the "
     ...     "instructions on http://tinyurl.com/cyus4",
-    ...     datecreated=now.next())
+    ...     datecreated=next(now))
 
 
 Creating a FAQ

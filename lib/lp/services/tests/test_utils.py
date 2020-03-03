@@ -201,8 +201,8 @@ class TestCachingIterator(TestCase):
         ci = CachingIterator(partial(iter, [0, 1, 2, 3, 4]))
         i1 = iter(ci)
         i2 = iter(ci)
-        self.assertEqual(0, i1.next())
-        self.assertEqual(0, i2.next())
+        self.assertEqual(0, next(i1))
+        self.assertEqual(0, next(i2))
         self.assertEqual([1, 2, 3, 4], list(i2))
         self.assertEqual([1, 2, 3, 4], list(i1))
 

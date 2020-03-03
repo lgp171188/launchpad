@@ -440,7 +440,7 @@ class ObjectFactory:
         For each thread, this will be a series of increasing numbers, but the
         starting point will be unique per thread.
         """
-        return ObjectFactory._unique_int_counter.next()
+        return next(ObjectFactory._unique_int_counter)
 
     def getUniqueHexString(self, digits=None):
         """Return a unique hexadecimal string.
@@ -1740,7 +1740,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             revision = revision_set.new(
                 revision_id=self.getUniqueString('revision-id'),
                 log_body=self.getUniqueString('log-body'),
-                revision_date=date_generator.next(),
+                revision_date=next(date_generator),
                 revision_author=author,
                 parent_ids=parent_ids,
                 properties={})
@@ -2545,7 +2545,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             # If a date_started is specified, then base the finish time
             # on that.
             if date_started is None:
-                date_finished = time_counter().next()
+                date_finished = next(time_counter())
             else:
                 date_finished = date_started + timedelta(hours=4)
         if date_started is None:

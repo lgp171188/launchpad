@@ -255,14 +255,14 @@ class DistributionOCIProjectGitTraversable(_BaseGitTraversable):
             ociprojectname=self.context.ociprojectname)
 
 
-class SegmentIterator:
+class SegmentIterator(six.Iterator):
     """An iterator that remembers the elements it has traversed."""
 
     def __init__(self, iterator):
         self._iterator = iterator
         self.traversed = []
 
-    def next(self):
+    def __next__(self):
         segment = six.ensure_text(next(self._iterator), encoding="US-ASCII")
         self.traversed.append(segment)
         return segment

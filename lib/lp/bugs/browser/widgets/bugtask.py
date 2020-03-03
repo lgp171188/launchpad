@@ -384,7 +384,7 @@ class BugTaskBugWatchWidget(RadioWidget):
             and len(self.vocabulary) > 0
             and self.context.required):
             # Grab the first item from the iterator:
-            values = [iter(self.vocabulary).next().value]
+            values = [next(iter(self.vocabulary)).value]
         elif value != self.context.missing_value:
             values = [value]
         else:

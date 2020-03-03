@@ -9,6 +9,7 @@ from datetime import (
     datetime,
     timedelta,
     )
+from functools import partial
 
 import pytz
 from zope.component import getUtility
@@ -58,7 +59,7 @@ class TestCurrentTranslationMessage_can_dismiss(TestCaseWithFactory):
         self.pofile = self.factory.makePOFile(potemplate=self.potemplate)
         self.potmsgset = self.factory.makePOTMsgSet(self.potemplate)
         self.view = None
-        self.now = self._gen_now().next
+        self.now = partial(next, self._gen_now())
 
     def _createView(self, message):
         self.view = CurrentTranslationMessageView(
