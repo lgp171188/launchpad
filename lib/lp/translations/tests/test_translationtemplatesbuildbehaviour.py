@@ -138,7 +138,7 @@ class TestTranslationTemplatesBuildBehaviour(
         buildqueue = FakeBuildQueue(behaviour)
         path = behaviour.templates_tarball_path
         # Poke the file we're expecting into the mock slave.
-        behaviour._slave.valid_file_hashes.append(path)
+        behaviour._slave.valid_files[path] = ''
 
         def got_tarball(filename):
             tarball = open(filename, 'r')

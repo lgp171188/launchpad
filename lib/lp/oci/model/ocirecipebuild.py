@@ -44,7 +44,9 @@ from lp.oci.interfaces.ocirecipebuild import (
     IOCIRecipeBuild,
     IOCIRecipeBuildSet,
     )
+from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.registry.model.person import Person
+from lp.services.config import config
 from lp.services.database.bulk import load_related
 from lp.services.database.constants import DEFAULT
 from lp.services.database.decoratedresultset import DecoratedResultSet
@@ -128,10 +130,16 @@ class OCIRecipeBuild(PackageBuildMixin, Storm):
     build_farm_job_id = Int(name='build_farm_job', allow_none=False)
     build_farm_job = Reference(build_farm_job_id, 'BuildFarmJob.id')
 
-    # Stub attributes to match the IPackageBuild interface that we
-    # are not using in this implementation at this time.
-    pocket = None
-    distro_series = None
+    # We only care about the pocket from a building environment POV,
+    # it is not a target, nor referenced in the final build.
+    pocket = PackagePublishingPocket.UPDATES
+
+    @property
+    def distro_series(self):
+        # XXX twom 2020-02-14 - This really needs to be set elsewhere,
+        # as this may not be an LTS release and ties the OCI target to
+        # a completely unrelated process.
+        return self.distribution.currentseries
 
     def __init__(self, build_farm_job, requester, recipe,
                  processor, virtualized, date_created):
@@ -256,6 +264,19 @@ class OCIRecipeBuild(PackageBuildMixin, Storm):
         # XXX twom 2019-12-05 This may need to change when an OCIProject
         # pillar isn't just a distribution
         return self.recipe.oci_project.distribution
+
+    @property
+    def distro_arch_series(self):
+        return self.distribution.currentseries.getDistroArchSeriesByProcessor(
+            self.processor)
+
+    def notify(self, extra_info=None):
+        """See `IPackageBuild`."""
+        if not config.builddmaster.send_build_notification:
+            return
+        if self.status == BuildStatus.FULLYBUILT:
+            return
+        # XXX twom 2019-12-11 This should send mail
 
 
 @implementer(IOCIRecipeBuildSet)
