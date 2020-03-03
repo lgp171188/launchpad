@@ -16,11 +16,13 @@ from lp.app.errors import NotFoundError
 from lp.buildmaster.enums import BuildStatus
 from lp.buildmaster.interfaces.buildqueue import IBuildQueue
 from lp.buildmaster.interfaces.packagebuild import IPackageBuild
+from lp.buildmaster.interfaces.processor import IProcessorSet
 from lp.oci.interfaces.ocirecipebuild import (
     IOCIRecipeBuild,
     IOCIRecipeBuildSet,
     )
 from lp.oci.model.ocirecipebuild import OCIRecipeBuildSet
+from lp.registry.interfaces.series import SeriesStatus
 from lp.services.propertycache import clear_property_cache
 from lp.testing import (
     admin_logged_in,
@@ -148,8 +150,16 @@ class TestOCIRecipeBuildSet(TestCaseWithFactory):
 
     def test_new(self):
         requester = self.factory.makePerson()
-        recipe = self.factory.makeOCIRecipe()
+        distribution = self.factory.makeDistribution()
+        distroseries = self.factory.makeDistroSeries(
+            distribution=distribution, status=SeriesStatus.CURRENT)
+        processor = getUtility(IProcessorSet).getByName("386")
+        distro_arch_series = self.factory.makeDistroArchSeries(
+            distroseries=distroseries, architecturetag="i386",
+            processor=processor)
         distro_arch_series = self.factory.makeDistroArchSeries()
+        oci_project = self.factory.makeOCIProject(pillar=distribution)
+        recipe = self.factory.makeOCIRecipe(oci_project=oci_project)
         target = getUtility(IOCIRecipeBuildSet).new(
             requester, recipe, distro_arch_series)
         with admin_logged_in():

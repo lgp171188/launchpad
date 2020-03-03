@@ -4992,9 +4992,15 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         if requester is None:
             requester = self.makePerson()
         if distro_arch_series is None:
-            distro_arch_series = self.makeDistroArchSeries()
+            distroseries = self.makeDistroSeries(status=SeriesStatus.CURRENT)
+            processor = getUtility(IProcessorSet).getByName("386")
+            distro_arch_series = self.makeDistroArchSeries(
+                distroseries=distroseries, architecturetag="i386",
+                processor=processor)
         if recipe is None:
-            recipe = self.makeOCIRecipe()
+            oci_project = self.makeOCIProject(
+                pillar=distro_arch_series.distroseries.distribution)
+            recipe = self.makeOCIRecipe(oci_project=oci_project)
         oci_build = getUtility(IOCIRecipeBuildSet).new(
             requester, recipe, distro_arch_series, date_created)
         if duration is not None:
@@ -5011,12 +5017,13 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         return oci_build
 
     def makeOCIFile(self, build=None, library_file=None,
-                    layer_file_digest=None):
+                    layer_file_digest=None, content=None, filename=None):
         """Make a new OCIFile."""
         if build is None:
             build = self.makeOCIRecipeBuild()
         if library_file is None:
-            library_file = self.makeLibraryFileAlias()
+            library_file = self.makeLibraryFileAlias(
+                content=content, filename=filename)
         return OCIFile(build=build, library_file=library_file,
                        layer_file_digest=layer_file_digest)
 
