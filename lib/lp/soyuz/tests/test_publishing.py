@@ -1,4 +1,4 @@
-# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test native publication workflow for Soyuz. """
@@ -62,6 +62,7 @@ from lp.soyuz.model.publishing import (
     SourcePackagePublishingHistory,
     )
 from lp.testing import (
+    person_logged_in,
     StormStatementRecorder,
     TestCaseWithFactory,
     )
@@ -997,14 +998,17 @@ class TestPublishingSetLite(TestCaseWithFactory):
             debug_non_match_bpph.status, PackagePublishingStatus.PENDING)
 
     def test_changeOverride_also_overrides_debug_package(self):
-        bpph, debug_bpph = self.factory.makeBinaryPackagePublishingHistory(
-            pocket=PackagePublishingPocket.RELEASE, with_debug=True)
-        new_section = self.factory.makeSection()
-        new_bpph = bpph.changeOverride(new_section=new_section)
-        publishing_set = getUtility(IPublishingSet)
-        [new_debug_bpph] = publishing_set.findCorrespondingDDEBPublications(
-            [new_bpph])
-        self.assertEqual(new_debug_bpph.section, new_section)
+        user = self.factory.makeAdministrator()
+        with person_logged_in(user):
+            bpph, debug_bpph = self.factory.makeBinaryPackagePublishingHistory(
+                pocket=PackagePublishingPocket.RELEASE, with_debug=True)
+            new_section = self.factory.makeSection()
+            new_bpph = bpph.changeOverride(new_section=new_section)
+            publishing_set = getUtility(IPublishingSet)
+            [new_debug_bpph] = publishing_set.findCorrespondingDDEBPublications(
+                [new_bpph])
+            self.assertEqual(new_debug_bpph.creator, user)
+            self.assertEqual(new_debug_bpph.section, new_section)
 
     def test_requestDeletion_forbids_debug_package(self):
         bpph, debug_bpph = self.factory.makeBinaryPackagePublishingHistory(

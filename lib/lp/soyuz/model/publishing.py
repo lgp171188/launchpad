@@ -1,4 +1,4 @@
-# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -49,7 +49,10 @@ from zope.security.proxy import (
 
 from lp.app.errors import NotFoundError
 from lp.buildmaster.enums import BuildStatus
-from lp.registry.interfaces.person import validate_public_person
+from lp.registry.interfaces.person import (
+    IPerson,
+    validate_public_person,
+    )
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.services.database import bulk
 from lp.services.database.constants import UTC_NOW
@@ -75,6 +78,7 @@ from lp.services.webapp.errorlog import (
     ErrorReportingUtility,
     ScriptRequest,
     )
+from lp.services.webapp.interaction import get_current_principal
 from lp.services.worlddata.model.country import Country
 from lp.soyuz.adapters.proxiedsourcefiles import ProxiedSourceLibraryFileAlias
 from lp.soyuz.enums import (
@@ -510,12 +514,17 @@ class SourcePackagePublishingHistory(SQLBase, ArchivePublisherBase):
                 "Cannot change overrides in suite '%s'" %
                 self.distroseries.getSuite(self.pocket))
 
+        # If there is a logged-in user, let's use it as the creator of this
+        # publishing history.
+        logged_in_user = IPerson(get_current_principal(), None)
+
         return getUtility(IPublishingSet).newSourcePublication(
             distroseries=self.distroseries,
             sourcepackagerelease=self.sourcepackagerelease,
             pocket=self.pocket,
             component=new_component,
             section=new_section,
+            creator=logged_in_user,
             archive=self.archive)
 
     def copyTo(self, distroseries, pocket, archive, override=None,
@@ -629,6 +638,9 @@ class BinaryPackagePublishingHistory(SQLBase, ArchivePublisherBase):
     phased_update_percentage = IntCol(
         dbName='phased_update_percentage', notNull=False, default=None)
     scheduleddeletiondate = UtcDateTimeCol(default=None)
+    creator = ForeignKey(
+        dbName='creator', foreignKey='Person',
+        storm_validator=validate_public_person, notNull=False, default=None)
     datepublished = UtcDateTimeCol(default=None)
     datecreated = UtcDateTimeCol(default=UTC_NOW)
     datesuperseded = UtcDateTimeCol(default=None)
@@ -861,6 +873,11 @@ class BinaryPackagePublishingHistory(SQLBase, ArchivePublisherBase):
         # Search for related debug publications, and override them too.
         debugs = getUtility(IPublishingSet).findCorrespondingDDEBPublications(
             [self])
+
+        # If there is a logged-in user, let's use it as the creator of this
+        # publishing history.
+        logged_in_user = IPerson(get_current_principal(), None)
+
         # We expect only one, but we will override all of them.
         for debug in debugs:
             BinaryPackagePublishingHistory(
@@ -873,6 +890,7 @@ class BinaryPackagePublishingHistory(SQLBase, ArchivePublisherBase):
                 component=new_component,
                 section=new_section,
                 priority=new_priority,
+                creator=logged_in_user,
                 archive=debug.archive,
                 phased_update_percentage=new_phased_update_percentage)
 
@@ -888,6 +906,7 @@ class BinaryPackagePublishingHistory(SQLBase, ArchivePublisherBase):
             section=new_section,
             priority=new_priority,
             archive=self.archive,
+            creator=logged_in_user,
             phased_update_percentage=new_phased_update_percentage)
 
     def copyTo(self, distroseries, pocket, archive):

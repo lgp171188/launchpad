@@ -1,4 +1,4 @@
-# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Publishing interfaces."""
@@ -663,6 +663,13 @@ class IBinaryPackagePublishingHistoryPublic(IPublishingView):
             title=_('The build which superseded this one'),
             required=False, readonly=False,
             )
+    creator = exported(
+        Reference(
+            IPerson,
+            title=_('Publication Creator'),
+            description=_('The IPerson who created this publication.'),
+            required=False, readonly=True
+        ))
     datecreated = exported(
         Datetime(
             title=_('Date Created'),
