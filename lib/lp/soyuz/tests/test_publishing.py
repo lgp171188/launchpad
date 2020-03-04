@@ -1528,6 +1528,21 @@ class TestChangeOverride(TestNativePublishingBase):
             binary=True, new_component="universe", new_section="misc",
             new_priority="extra", new_phased_update_percentage=90)
 
+    def test_change_binary_logged_in_user(self):
+        person = self.factory.makePerson()
+        with person_logged_in(person):
+            new_pub = self.assertCanOverride(
+                binary=True, new_component="universe", new_section="misc",
+                new_priority="extra", new_phased_update_percentage=90)
+            self.assertEqual(person, new_pub.creator)
+
+    def test_change_source_logged_in_user(self):
+        person = self.factory.makePerson()
+        with person_logged_in(person):
+            new_pub = self.assertCanOverride(
+                binary=False, new_component="universe", new_section="misc")
+            self.assertEqual(person, new_pub.creator)
+
     def test_set_and_clear_phased_update_percentage(self):
         # new_phased_update_percentage=<integer> sets a phased update
         # percentage; new_phased_update_percentage=100 clears it.
