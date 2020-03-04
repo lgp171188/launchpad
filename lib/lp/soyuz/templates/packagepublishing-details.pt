@@ -4,6 +4,9 @@
   xmlns:i18n="http://xml.zope.org/namespaces/i18n"
   omit-tag="">
   <ul>
+    <li tal:condition="context/creator">
+      Change made by <a tal:replace="structure context/creator/fmt:link"/>
+    </li>
     <li tal:condition="view/isRemoved">
       Removed from disk
       <span tal:attributes="title context/dateremoved/fmt:datetime"
