@@ -152,8 +152,8 @@ class OCIRecipe(Storm):
     def git_ref(self, value):
         """See `IOCIRecipe`."""
         if value is not None:
-            self.git_path = value.path
             self.git_repository = value.repository
+            self.git_path = value.path
         else:
             self.git_repository = None
             self.git_path = None
