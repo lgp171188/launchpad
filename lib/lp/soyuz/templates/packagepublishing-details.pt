@@ -7,7 +7,7 @@
     <li tal:condition="python: context.creator
                                and not view.wasCopied()
                                and view.isPending()">
-      Change made
+      Created
       <span tal:attributes="title context/datecreated/fmt:datetime"
             tal:content="context/datecreated/fmt:displaydate" />
       by <a tal:replace="structure context/creator/fmt:link"/>

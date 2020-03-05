@@ -46,7 +46,7 @@ A change-override request should show who made the request
     >>> print(extract_text(table))
     Date    Status    Target     Pocket   Component Section Version
     ... UTC Pending   Breezy ... release  universe  base    666
-    Change made ... ago by Foo Bar
+    Created ... ago by Foo Bar
     ... UTC Published Breezy ... release  main      base    666
     Published ... ago
 
@@ -67,7 +67,7 @@ request for deletion by a user.
     >>> print(extract_text(table))
     Date    Status    Target     Pocket   Component Section Version
     ... UTC Pending   Breezy ... release  universe  base    666
-    Change made ... ago by Foo Bar
+    Created ... ago by Foo Bar
             Deleted   Breezy ... release  main      base    666
     Deleted ... ago by ... fix bug 1
     Published ... ago
