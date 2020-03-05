@@ -1,4 +1,4 @@
-# Copyright 2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2019-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """A recipe for building Open Container Initiative images."""
@@ -61,6 +61,8 @@ from lp.services.database.stormexpr import (
     Greatest,
     NullsLast,
     )
+from lp.services.webhooks.interfaces import IWebhookSet
+from lp.services.webhooks.model import WebhookTargetMixin
 
 
 def oci_recipe_modified(recipe, event):
@@ -73,7 +75,7 @@ def oci_recipe_modified(recipe, event):
 
 
 @implementer(IOCIRecipe)
-class OCIRecipe(Storm):
+class OCIRecipe(Storm, WebhookTargetMixin):
 
     __storm_table__ = 'OCIRecipe'
 
@@ -123,6 +125,10 @@ class OCIRecipe(Storm):
         self.date_last_modified = date_created
         self.git_ref = git_ref
 
+    @property
+    def valid_webhook_event_types(self):
+        return ["oci-recipe:build:0.1"]
+
     def destroySelf(self):
         """See `IOCIRecipe`."""
         # XXX twom 2019-11-26 This needs to expand as more build artifacts
@@ -137,6 +143,7 @@ class OCIRecipe(Storm):
         build_farm_job_ids = list(store.find(
             OCIRecipeBuild.build_farm_job_id, OCIRecipeBuild.recipe == self))
         store.find(OCIRecipeBuild, OCIRecipeBuild.recipe == self).remove()
+        getUtility(IWebhookSet).delete(self.webhooks)
         store.remove(self)
         store.find(
             BuildFarmJob, BuildFarmJob.id.is_in(build_farm_job_ids)).remove()
