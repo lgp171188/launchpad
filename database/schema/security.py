@@ -49,7 +49,10 @@ POSTGRES_ACL_MAP = {
     'T': 'TEMPORARY',
     }
 
-QUOTED_STRING_RE = '(?:([a-z_]+)|"([^"]*(?:""[^"]*)*)")?'
+# PostgreSQL's putid emits an unquoted string if every character in the role
+# name isalnum or is _. Otherwise the name is enclosed in double quotes, and
+# any embedded double quotes are doubled.
+QUOTED_STRING_RE = '(?:([A-Za-z0-9_]+)|"([^"]*(?:""[^"]*)*)")?'
 ACLITEM_RE = re.compile('^%(qs)s=([\w*]*)/%(qs)s$' % {'qs': QUOTED_STRING_RE})
 
 
