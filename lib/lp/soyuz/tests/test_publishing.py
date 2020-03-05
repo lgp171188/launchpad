@@ -999,16 +999,15 @@ class TestPublishingSetLite(TestCaseWithFactory):
 
     def test_changeOverride_also_overrides_debug_package(self):
         user = self.factory.makeAdministrator()
-        with person_logged_in(user):
-            bpph, debug_bpph = self.factory.makeBinaryPackagePublishingHistory(
-                pocket=PackagePublishingPocket.RELEASE, with_debug=True)
-            new_section = self.factory.makeSection()
-            new_bpph = bpph.changeOverride(new_section=new_section)
-            publishing_set = getUtility(IPublishingSet)
-            [new_debug_bpph] = publishing_set.findCorrespondingDDEBPublications(
-                [new_bpph])
-            self.assertEqual(new_debug_bpph.creator, user)
-            self.assertEqual(new_debug_bpph.section, new_section)
+        bpph, debug_bpph = self.factory.makeBinaryPackagePublishingHistory(
+            pocket=PackagePublishingPocket.RELEASE, with_debug=True)
+        new_section = self.factory.makeSection()
+        new_bpph = bpph.changeOverride(new_section=new_section, creator=user)
+        publishing_set = getUtility(IPublishingSet)
+        [new_debug_bpph] = publishing_set.findCorrespondingDDEBPublications(
+            [new_bpph])
+        self.assertEqual(new_debug_bpph.creator, user)
+        self.assertEqual(new_debug_bpph.section, new_section)
 
     def test_requestDeletion_forbids_debug_package(self):
         bpph, debug_bpph = self.factory.makeBinaryPackagePublishingHistory(
@@ -1530,18 +1529,18 @@ class TestChangeOverride(TestNativePublishingBase):
 
     def test_change_binary_logged_in_user(self):
         person = self.factory.makePerson()
-        with person_logged_in(person):
-            new_pub = self.assertCanOverride(
-                binary=True, new_component="universe", new_section="misc",
-                new_priority="extra", new_phased_update_percentage=90)
-            self.assertEqual(person, new_pub.creator)
+        new_pub = self.assertCanOverride(
+            binary=True, new_component="universe", new_section="misc",
+            new_priority="extra", new_phased_update_percentage=90,
+            creator=person)
+        self.assertEqual(person, new_pub.creator)
 
     def test_change_source_logged_in_user(self):
         person = self.factory.makePerson()
-        with person_logged_in(person):
-            new_pub = self.assertCanOverride(
-                binary=False, new_component="universe", new_section="misc")
-            self.assertEqual(person, new_pub.creator)
+        new_pub = self.assertCanOverride(
+            binary=False, new_component="universe", new_section="misc",
+            creator=person)
+        self.assertEqual(person, new_pub.creator)
 
     def test_set_and_clear_phased_update_percentage(self):
         # new_phased_update_percentage=<integer> sets a phased update

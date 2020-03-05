@@ -475,7 +475,8 @@ class SourcePackagePublishingHistory(SQLBase, ArchivePublisherBase):
 
             self.supersededby = dominant.sourcepackagerelease
 
-    def changeOverride(self, new_component=None, new_section=None):
+    def changeOverride(self, new_component=None, new_section=None,
+                       creator=None):
         """See `ISourcePackagePublishingHistory`."""
         # Check we have been asked to do something
         if (new_component is None and
@@ -514,17 +515,13 @@ class SourcePackagePublishingHistory(SQLBase, ArchivePublisherBase):
                 "Cannot change overrides in suite '%s'" %
                 self.distroseries.getSuite(self.pocket))
 
-        # If there is a logged-in user, let's use it as the creator of this
-        # publishing history.
-        logged_in_user = IPerson(get_current_principal(), None)
-
         return getUtility(IPublishingSet).newSourcePublication(
             distroseries=self.distroseries,
             sourcepackagerelease=self.sourcepackagerelease,
             pocket=self.pocket,
             component=new_component,
             section=new_section,
-            creator=logged_in_user,
+            creator=creator,
             archive=self.archive)
 
     def copyTo(self, distroseries, pocket, archive, override=None,
@@ -806,7 +803,8 @@ class BinaryPackagePublishingHistory(SQLBase, ArchivePublisherBase):
             dominated.supersede(dominant, logger)
 
     def changeOverride(self, new_component=None, new_section=None,
-                       new_priority=None, new_phased_update_percentage=None):
+                       new_priority=None, new_phased_update_percentage=None,
+                       creator=None):
         """See `IBinaryPackagePublishingHistory`."""
 
         # Check we have been asked to do something
@@ -874,10 +872,6 @@ class BinaryPackagePublishingHistory(SQLBase, ArchivePublisherBase):
         debugs = getUtility(IPublishingSet).findCorrespondingDDEBPublications(
             [self])
 
-        # If there is a logged-in user, let's use it as the creator of this
-        # publishing history.
-        logged_in_user = IPerson(get_current_principal(), None)
-
         # We expect only one, but we will override all of them.
         for debug in debugs:
             BinaryPackagePublishingHistory(
@@ -890,7 +884,7 @@ class BinaryPackagePublishingHistory(SQLBase, ArchivePublisherBase):
                 component=new_component,
                 section=new_section,
                 priority=new_priority,
-                creator=logged_in_user,
+                creator=creator,
                 archive=debug.archive,
                 phased_update_percentage=new_phased_update_percentage)
 
@@ -906,7 +900,7 @@ class BinaryPackagePublishingHistory(SQLBase, ArchivePublisherBase):
             section=new_section,
             priority=new_priority,
             archive=self.archive,
-            creator=logged_in_user,
+            creator=creator,
             phased_update_percentage=new_phased_update_percentage)
 
     def copyTo(self, distroseries, pocket, archive):

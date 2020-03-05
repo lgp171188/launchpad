@@ -134,6 +134,9 @@ class BasePublishingRecordView(LaunchpadView):
         accessor = attrgetter(self.timestamp_map[self.context.status])
         return accessor(self.context)
 
+    def isPending(self):
+        return self.context.status == PackagePublishingStatus.PENDING
+
     def wasDeleted(self):
         """Whether or not a publishing record deletion was requested.
 
