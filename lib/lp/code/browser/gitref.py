@@ -288,7 +288,7 @@ class GitRefRegisterMergeProposalView(LaunchpadFormView):
         # If we have a target, and the user hasn't entered a value.
         if term and not self.widgets['target_git_path'].hasInput():
             branch_display = term.value.default_branch
-            if branch_display.startswith("refs/heads/"):
+            if branch_display and branch_display.startswith("refs/heads/"):
                 branch_display = branch_display[len("refs/heads/"):]
             self.widgets['target_git_path'].setRenderedValue(branch_display)
 
