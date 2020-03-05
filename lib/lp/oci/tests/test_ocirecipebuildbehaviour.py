@@ -74,7 +74,6 @@ from lp.soyuz.adapters.archivedependencies import (
     )
 from lp.testing import TestCaseWithFactory
 from lp.testing.dbuser import dbuser
-from lp.testing.factory import LaunchpadObjectFactory
 from lp.testing.fakemethod import FakeMethod
 from lp.testing.layers import LaunchpadZopelessLayer
 from lp.testing.mail_helpers import pop_notifications
@@ -341,8 +340,8 @@ class TestAsyncOCIRecipeBuildBehaviour(MakeOCIBuildMixin, TestCaseWithFactory):
             ('ensurepresent', chroot_lfa.http_url, '', ''), slave.call_log[0])
 
 
-class TestHandleStatusForOCIRecipeBuild(MakeOCIBuildMixin, TrialTestCase,
-                                        fixtures.TestWithFixtures):
+class TestHandleStatusForOCIRecipeBuild(MakeOCIBuildMixin,
+                                        TestCaseWithFactory):
     # This is mostly copied from TestHandleStatusMixin, however
     # we can't use all of those tests, due to the way OCIRecipeBuildBehaviour
     # parses the file contents, rather than just retrieving all that are
@@ -350,19 +349,8 @@ class TestHandleStatusForOCIRecipeBuild(MakeOCIBuildMixin, TrialTestCase,
     # we need a much more complex filemap here.
 
     layer = LaunchpadZopelessLayer
-
-    def pushConfig(self, section, **kwargs):
-        """Push some key-value pairs into a section of the config.
-
-        The config values will be restored during test tearDown.
-        """
-        # Taken from lp/testing.py as we're using TrialTestCase,
-        # not lp.testing.TestCase, as we need to handle the deferred
-        # correctly.
-        name = self.factory.getUniqueString()
-        body = '\n'.join("%s: %s" % (k, v) for k, v in kwargs.iteritems())
-        config.push(name, "\n[%s]\n%s\n" % (section, body))
-        self.addCleanup(config.pop, name)
+    run_tests_with = AsynchronousDeferredRunTestForBrokenTwisted.make_factory(
+        timeout=20)
 
     def _createTestFile(self, name, content, hash):
         path = os.path.join(self.test_files_dir, name)
@@ -372,7 +360,7 @@ class TestHandleStatusForOCIRecipeBuild(MakeOCIBuildMixin, TrialTestCase,
 
     def setUp(self):
         super(TestHandleStatusForOCIRecipeBuild, self).setUp()
-        self.factory = LaunchpadObjectFactory()
+        self.useFixture(fixtures.FakeLogger())
         self.build = self.makeBuild()
         # For the moment, we require a builder for the build so that
         # handleStatus_OK can get a reference to the slave.
