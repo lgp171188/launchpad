@@ -410,6 +410,7 @@ class TestHandleStatusForOCIRecipeBuild(MakeOCIBuildMixin, TrialTestCase,
         }]
 
         self.test_files_dir = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, self.test_files_dir)
         self._createTestFile('buildlog', '', 'buildlog')
         self._createTestFile(
             'manifest.json',
