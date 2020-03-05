@@ -287,8 +287,10 @@ class GitRefRegisterMergeProposalView(LaunchpadFormView):
             None)
         # If we have a target, and the user hasn't entered a value.
         if term and not self.widgets['target_git_path'].hasInput():
-            self.widgets['target_git_path'].setRenderedValue(
-                term.value.default_branch)
+            branch_display = term.value.default_branch
+            if branch_display.startswith("refs/heads/"):
+                branch_display = branch_display[len("refs/heads/"):]
+            self.widgets['target_git_path'].setRenderedValue(branch_display)
 
     @action('Propose Merge', name='register',
             failure=LaunchpadFormView.ajax_failure_handler)
