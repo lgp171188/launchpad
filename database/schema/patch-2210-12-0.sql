@@ -11,5 +11,13 @@ CREATE INDEX binarypackagepublishinghistory__creator__idx ON
     binarypackagepublishinghistory(creator) WHERE creator IS NOT NULL;
 
 
+ALTER TABLE binarypackagepublishinghistory
+    ADD COLUMN copied_from_archive INT REFERENCES archive;
+
+
+ALTER TABLE sourcepackagepublishinghistory
+    ADD COLUMN copied_from_archive INT REFERENCES archive;
+
+
 INSERT INTO LaunchpadDatabaseRevision VALUES (2210, 12, 0);
 
