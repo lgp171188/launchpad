@@ -193,16 +193,20 @@ class TestOCIRecipeBuildSet(TestCaseWithFactory):
         self.assertTrue(target.virtualized)
 
     def test_virtualized_processor_requires(self):
-        distro_arch_series = self.factory.makeDistroArchSeries()
-        distro_arch_series.processor.supports_nonvirtualized = False
         recipe = self.factory.makeOCIRecipe(require_virtualized=False)
+        distro_arch_series = self.factory.makeDistroArchSeries(
+            distroseries=self.factory.makeDistroSeries(
+                distribution=recipe.oci_project.distribution))
+        distro_arch_series.processor.supports_nonvirtualized = False
         target = self.factory.makeOCIRecipeBuild(
             distro_arch_series=distro_arch_series, recipe=recipe)
         self.assertTrue(target.virtualized)
 
     def test_virtualized_no_support(self):
         recipe = self.factory.makeOCIRecipe(require_virtualized=False)
-        distro_arch_series = self.factory.makeDistroArchSeries()
+        distro_arch_series = self.factory.makeDistroArchSeries(
+            distroseries=self.factory.makeDistroSeries(
+                distribution=recipe.oci_project.distribution))
         distro_arch_series.processor.supports_nonvirtualized = True
         target = self.factory.makeOCIRecipeBuild(
             recipe=recipe, distro_arch_series=distro_arch_series)

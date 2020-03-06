@@ -4992,7 +4992,12 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         if requester is None:
             requester = self.makePerson()
         if distro_arch_series is None:
-            distroseries = self.makeDistroSeries(status=SeriesStatus.CURRENT)
+            if recipe is not None:
+                distribution = recipe.oci_project.distribution
+            else:
+                distribution = None
+            distroseries = self.makeDistroSeries(
+                distribution=distribution, status=SeriesStatus.CURRENT)
             processor = getUtility(IProcessorSet).getByName("386")
             distro_arch_series = self.makeDistroArchSeries(
                 distroseries=distroseries, architecturetag="i386",
