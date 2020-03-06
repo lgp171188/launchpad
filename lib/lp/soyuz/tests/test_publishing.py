@@ -15,7 +15,9 @@ import tempfile
 import pytz
 import scandir
 from storm.store import Store
-from testtools.matchers import Equals
+from testtools.matchers import (
+    Equals,
+    )
 import transaction
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
@@ -62,7 +64,9 @@ from lp.soyuz.model.publishing import (
     SourcePackagePublishingHistory,
     )
 from lp.testing import (
+    login,
     person_logged_in,
+    record_two_runs,
     StormStatementRecorder,
     TestCaseWithFactory,
     )
@@ -73,10 +77,12 @@ from lp.testing.dbuser import (
 from lp.testing.factory import LaunchpadObjectFactory
 from lp.testing.layers import (
     DatabaseFunctionalLayer,
+    LaunchpadFunctionalLayer,
     LaunchpadZopelessLayer,
     ZopelessDatabaseLayer,
     )
 from lp.testing.matchers import HasQueryCount
+from lp.testing.sampledata import ADMIN_EMAIL
 
 
 class SoyuzTestPublisher:
@@ -1590,3 +1596,45 @@ class TestChangeOverride(TestNativePublishingBase):
         # archive.
         self.assertCannotOverride(new_component="partner")
         self.assertCannotOverride(binary=True, new_component="partner")
+
+
+class TestPublishingHistoryView(TestCaseWithFactory):
+    layer = LaunchpadFunctionalLayer
+
+    def test_constant_query_counts_on_publishing_history_change_override(self):
+        admin = self.factory.makeAdministrator()
+        with person_logged_in(admin):
+            test_publisher = SoyuzTestPublisher()
+            test_publisher.prepareBreezyAutotest()
+
+            source_pub = test_publisher.getPubSource(
+                "test-history", status=PackagePublishingStatus.PUBLISHED)
+        url = ("http://launchpad.test/ubuntutest/+source/test-history"
+               "/+publishinghistory")
+
+        def insert_more_publish_history():
+            person1 = self.factory.makeAdministrator()
+            new_component = (
+                'universe' if source_pub.component.name == 'main'
+                else 'main')
+            source_pub.changeOverride(
+                new_component=new_component, creator=person1)
+
+            person2 = self.factory.makeAdministrator()
+            new_section = ('web' if source_pub.section.name == 'base'
+                           else 'base')
+            source_pub.changeOverride(
+                new_section=new_section, creator=person2)
+
+        def show_page():
+            self.getUserBrowser(url, admin)
+
+        # Make sure to have all the history fitting in one page.
+        self.pushConfig("launchpad", default_batch_size=50)
+
+        recorder1, recorder2 = record_two_runs(
+            show_page, insert_more_publish_history,
+            1, 10, login_method=lambda: login(ADMIN_EMAIL))
+
+        self.assertThat(recorder1, HasQueryCount(Equals(26)))
+        self.assertThat(recorder2, HasQueryCount.byEquality(recorder1))
