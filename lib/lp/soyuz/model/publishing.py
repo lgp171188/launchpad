@@ -1,4 +1,4 @@
-# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -531,6 +531,9 @@ class SourcePackagePublishingHistory(SQLBase, ArchivePublisherBase):
                 component = override.component
             if override.section is not None:
                 section = override.section
+
+        copied_from_archive = self.archive if archive != self.archive else None
+
         return getUtility(IPublishingSet).newSourcePublication(
             archive,
             self.sourcepackagerelease,
@@ -542,6 +545,7 @@ class SourcePackagePublishingHistory(SQLBase, ArchivePublisherBase):
             create_dsd_job=create_dsd_job,
             creator=creator,
             sponsor=sponsor,
+            copied_from_archive=copied_from_archive,
             packageupload=packageupload)
 
     def getStatusSummaryForBuilds(self):
@@ -1020,8 +1024,11 @@ def expand_binary_requests(distroseries, binaries):
 class PublishingSet:
     """Utilities for manipulating publications in batches."""
 
-    def publishBinaries(self, archive, distroseries, pocket, binaries):
+    def publishBinaries(self, archive, distroseries, pocket, binaries,
+                        copied_from_archives=None):
         """See `IPublishingSet`."""
+        if copied_from_archives is None:
+            copied_from_archives = {}
         # Expand the dict of binaries into a list of tuples including the
         # architecture.
         if distroseries.distribution != archive.distribution:
@@ -1070,13 +1077,24 @@ class PublishingSet:
         if not needed:
             return []
 
+        def get_origin_archive(bpr):
+            """Returns the original archive of a BinaryPackageRelease
+            to be set on the newly created BinaryPackagePublishingHistory.
+            """
+            original_archive = copied_from_archives.get(bpr)
+            if original_archive == archive or original_archive is None:
+                return None
+            return original_archive
+
         BPPH = BinaryPackagePublishingHistory
         return bulk.create(
-            (BPPH.archive, BPPH.distroarchseries, BPPH.pocket,
+            (BPPH.archive, BPPH.copied_from_archive,
+             BPPH.distroarchseries, BPPH.pocket,
              BPPH.binarypackagerelease, BPPH.binarypackagename,
              BPPH.component, BPPH.section, BPPH.priority,
              BPPH.phased_update_percentage, BPPH.status, BPPH.datecreated),
-            [(archive, das, pocket, bpr, bpr.binarypackagename,
+            [(archive, get_origin_archive(bpr), das, pocket, bpr,
+              bpr.binarypackagename,
               get_component(archive, das.distroseries, component),
               section, priority, phased_update_percentage,
               PackagePublishingStatus.PENDING, UTC_NOW)
@@ -1154,12 +1172,16 @@ class PublishingSet:
                  bpph.priority, None)) for bpph in bpphs)
         if not with_overrides:
             return list()
+        copied_from_archives = {
+            bpph.binarypackagerelease: bpph.archive for bpph in bpphs}
         return self.publishBinaries(
-            archive, distroseries, pocket, with_overrides)
+            archive, distroseries, pocket, with_overrides,
+            copied_from_archives)
 
     def newSourcePublication(self, archive, sourcepackagerelease,
                              distroseries, component, section, pocket,
                              ancestor=None, create_dsd_job=True,
+                             copied_from_archive=None,
                              creator=None, sponsor=None, packageupload=None):
         """See `IPublishingSet`."""
         # Circular import.
@@ -1175,6 +1197,7 @@ class PublishingSet:
         pub = SourcePackagePublishingHistory(
             distroseries=distroseries,
             pocket=pocket,
+            copied_from_archive=copied_from_archive,
             archive=archive,
             sourcepackagename=sourcepackagerelease.sourcepackagename,
             sourcepackagerelease=sourcepackagerelease,

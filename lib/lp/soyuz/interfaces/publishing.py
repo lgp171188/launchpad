@@ -1,4 +1,4 @@
-# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Publishing interfaces."""
@@ -879,7 +879,8 @@ class IBinaryPackagePublishingHistory(IBinaryPackagePublishingHistoryPublic,
 class IPublishingSet(Interface):
     """Auxiliary methods for dealing with sets of publications."""
 
-    def publishBinaries(archive, distroseries, pocket, binaries):
+    def publishBinaries(archive, distroseries, pocket, binaries,
+                        copied_from_archives=None):
         """Efficiently publish multiple BinaryPackageReleases in an Archive.
 
         Creates `IBinaryPackagePublishingHistory` records for each
@@ -893,6 +894,8 @@ class IPublishingSet(Interface):
         :param binaries: A dict mapping `BinaryPackageReleases` to their
             desired overrides as (`Component`, `Section`,
             `PackagePublishingPriority`, `phased_update_percentage`) tuples.
+        :param copied_from_archives: A dict mapping `BinaryPackageReleases`
+            to their original archives (for copy operations).
 
         :return: A list of new `IBinaryPackagePublishingHistory` records.
         """
@@ -928,6 +931,8 @@ class IPublishingSet(Interface):
         :param pocket: A `PackagePublishingPocket`
         :param ancestor: A `ISourcePackagePublishingHistory` for the previous
             version of this publishing record
+        :param copied_from_archive: For copy operations, this should be the
+            source archive (from where this new publication is comming from).
         :param create_dsd_job: A boolean indicating whether or not a dsd job
              should be created for the new source publication.
         :param creator: An optional `IPerson`. If this is None, the
