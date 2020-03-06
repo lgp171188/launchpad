@@ -258,6 +258,8 @@ class SourcePackagePublishingHistory(SQLBase, ArchivePublisherBase):
                      default=PackagePublishingPocket.RELEASE,
                      notNull=True)
     archive = ForeignKey(dbName="archive", foreignKey="Archive", notNull=True)
+    copied_from_archive = ForeignKey(
+        dbName="copied_from_archive", foreignKey="Archive", notNull=False)
     removed_by = ForeignKey(
         dbName="removed_by", foreignKey="Person",
         storm_validator=validate_public_person, default=None)
@@ -638,6 +640,8 @@ class BinaryPackagePublishingHistory(SQLBase, ArchivePublisherBase):
     dateremoved = UtcDateTimeCol(default=None)
     pocket = EnumCol(dbName='pocket', schema=PackagePublishingPocket)
     archive = ForeignKey(dbName="archive", foreignKey="Archive", notNull=True)
+    copied_from_archive = ForeignKey(
+        dbName="copied_from_archive", foreignKey="Archive", notNull=False)
     removed_by = ForeignKey(
         dbName="removed_by", foreignKey="Person",
         storm_validator=validate_public_person, default=None)

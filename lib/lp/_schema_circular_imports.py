@@ -361,6 +361,10 @@ patch_reference_property(
 patch_reference_property(
     ISourcePackagePublishingHistory, 'archive', IArchive)
 patch_reference_property(
+    IBinaryPackagePublishingHistory, 'copied_from_archive', IArchive)
+patch_reference_property(
+    ISourcePackagePublishingHistory, 'copied_from_archive', IArchive)
+patch_reference_property(
     ISourcePackagePublishingHistory, 'ancestor',
     ISourcePackagePublishingHistory)
 patch_reference_property(

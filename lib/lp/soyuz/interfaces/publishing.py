@@ -269,6 +269,13 @@ class ISourcePackagePublishingHistoryPublic(IPublishingView):
             Interface,
             title=_('Archive ID'), required=True, readonly=True,
             ))
+    copied_from_archive = exported(
+        Reference(
+            # Really IArchive (fixed in _schema_circular_imports.py).
+            Interface,
+            title=_('Original archive ID where this package was copied from.'),
+            required=False, readonly=True,
+            ))
     supersededby = Int(
             title=_('The sourcepackagerelease which superseded this one'),
             required=False, readonly=False,
@@ -703,6 +710,13 @@ class IBinaryPackagePublishingHistoryPublic(IPublishingView):
             description=_("The context archive for this publication."),
             required=True, readonly=True,
             ))
+    copied_from_archive = exported(
+        Reference(
+            # Really IArchive (fixed in _schema_circular_imports.py).
+            Interface,
+            title=_('Original archive ID where this package was copied from.'),
+            required=False, readonly=True,
+        ))
     removed_by = exported(
         Reference(
             IPerson,
