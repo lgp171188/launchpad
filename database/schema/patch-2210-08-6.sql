@@ -7,7 +7,7 @@ CREATE TABLE OCIRegistryCredentials (
     id serial PRIMARY KEY,
     owner integer NOT NULL REFERENCES Person,
     url text NOT NULL,
-    credentials text NOT NULL
+    credentials jsonb NOT NULL
 );
 
 CREATE INDEX ociregistrycredentials__owner__idx
