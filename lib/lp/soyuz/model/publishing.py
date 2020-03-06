@@ -78,7 +78,6 @@ from lp.services.webapp.errorlog import (
     ErrorReportingUtility,
     ScriptRequest,
     )
-from lp.services.webapp.interaction import get_current_principal
 from lp.services.worlddata.model.country import Country
 from lp.soyuz.adapters.proxiedsourcefiles import ProxiedSourceLibraryFileAlias
 from lp.soyuz.enums import (
@@ -871,7 +870,6 @@ class BinaryPackagePublishingHistory(SQLBase, ArchivePublisherBase):
         # Search for related debug publications, and override them too.
         debugs = getUtility(IPublishingSet).findCorrespondingDDEBPublications(
             [self])
-
         # We expect only one, but we will override all of them.
         for debug in debugs:
             BinaryPackagePublishingHistory(

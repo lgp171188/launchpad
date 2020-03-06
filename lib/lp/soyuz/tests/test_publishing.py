@@ -15,9 +15,7 @@ import tempfile
 import pytz
 import scandir
 from storm.store import Store
-from testtools.matchers import (
-    Equals,
-    )
+from testtools.matchers import Equals
 import transaction
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
