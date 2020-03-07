@@ -20,6 +20,8 @@ Details of the Subversion server are printed to stdout.
 # XXX: JonathanLange 2008-01-03: This is deliberately horrible.
 # You can make it nicer if you want.
 
+from __future__ import absolute_import, print_function
+
 import _pythonpath
 
 import os
@@ -38,7 +40,7 @@ from lp.testing.factory import LaunchpadObjectFactory
 
 
 def shell(*args):
-    print ' '.join(args)
+    print(' '.join(args))
     return Popen(args, stdout=PIPE).communicate()[0]
 
 
@@ -59,12 +61,12 @@ def main():
             'trunk', [('README', 'No real content\n.')])
         job = make_import_job(svn_url)
         transaction.commit()
-        print "CodeImportJob.id:", job.id
-        print "Code Import URL:", canonical_url(job.code_import)
-        print "Subversion Repository:", svn_repo_path
-        print "Subversion branch URL:", job.code_import.svn_branch_url
-        print "Launchpad branch URL:", canonical_url(job.code_import.branch)
-        print
+        print("CodeImportJob.id:", job.id)
+        print("Code Import URL:", canonical_url(job.code_import))
+        print("Subversion Repository:", svn_repo_path)
+        print("Subversion branch URL:", job.code_import.svn_branch_url)
+        print("Launchpad branch URL:", canonical_url(job.code_import.branch))
+        print()
     finally:
         svn_server.tearDown()
 

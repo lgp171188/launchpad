@@ -10,6 +10,9 @@ Example:
     % LPCONFIG=development bin/py utilities/create-lp-wadl-and-apidoc.py \\
       "lib/canonical/launchpad/apidoc/wadl-development-%(version)s.xml"
 """
+
+from __future__ import absolute_import, print_function
+
 import _pythonpath
 
 from multiprocessing import Process
@@ -63,12 +66,12 @@ def make_files(directory, version, timestamp, force):
         (json_filename, json_index, generate_json, 'JSON')):
         # If the src doesn't exist or we are forced to regenerate it...
         if (not os.path.exists(src) or force):
-            print "Writing %s for version %s to %s." % (
-                name, version, src)
+            print("Writing %s for version %s to %s." % (
+                name, version, src))
             write(src, gen(version), timestamp)
         else:
-            print "Skipping already present %s file: %s" % (
-                name, src)
+            print("Skipping already present %s file: %s" % (
+                name, src))
         # Make "index" symlinks, removing any preexisting ones.
         if os.path.exists(dest):
             os.remove(dest)
@@ -106,12 +109,12 @@ def make_files(directory, version, timestamp, force):
     # If the HTML file doesn't exist or we're being forced to regenerate
     # it...
     if (not os.path.exists(html_filename) or force):
-        print "Writing apidoc for version %s to %s" % (
-            version, html_filename)
+        print("Writing apidoc for version %s to %s" % (
+            version, html_filename))
         write(html_filename, generate_html(wadl_filename,
             suppress_stderr=False), timestamp)
     else:
-        print "Skipping already present HTML file:", html_filename
+        print("Skipping already present HTML file:", html_filename)
 
     # Symlink the top-level version html in the version directory for
     # completeness.
@@ -131,7 +134,7 @@ def main(directory, force=False):
     template_file = 'apidoc-index.pt'
     template = PageTemplateFile(template_file)
     index_filename = os.path.join(directory, "index.html")
-    print "Writing index:", index_filename
+    print("Writing index:", index_filename)
     f = open(index_filename, 'w')
     f.write(template(config=config))
 

@@ -8,6 +8,8 @@
 Like createdb, except will retry on failure.
 ."""
 
+from __future__ import absolute_import, print_function
+
 __metaclass__ = type
 
 import sys
@@ -18,7 +20,7 @@ import psycopg2
 
 def main():
     if len(sys.argv) != 3:
-        print >> sys.stderr, 'Usage: %s [template] [dbname]' % sys.argv[0]
+        print('Usage: %s [template] [dbname]' % sys.argv[0], file=sys.stderr)
         return 1
 
     template, dbname = sys.argv[1:]
