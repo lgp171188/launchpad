@@ -6,6 +6,8 @@
 """Kill transaction that have hung around for too long.
 """
 
+from __future__ import absolute_import, print_function
+
 __metaclass__ = type
 __all__ = []
 
@@ -66,13 +68,13 @@ def main():
 
     if len(rows) == 0:
         if not options.quiet:
-            print 'No transactions to kill'
+            print('No transactions to kill')
             return 0
 
     for usename, pid, backend_start, transaction_start in rows:
-        print 'Killing %s (%d), %s, %s' % (
+        print('Killing %s (%d), %s, %s' % (
             usename, pid, backend_start, transaction_start,
-            )
+            ))
         if not options.dry_run:
             os.kill(pid, signal.SIGTERM)
     return 0

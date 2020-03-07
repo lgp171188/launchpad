@@ -36,6 +36,8 @@ this program; if not, write to the Free Software Foundation, Inc., 675 Mass
 Ave, Cambridge, MA 02139, USA.
 """
 
+from __future__ import absolute_import, print_function
+
 import compiler
 from compiler import ast
 from compiler.visitor import ASTVisitor
@@ -194,7 +196,8 @@ class ModuleGraph(object):
             if filename.endswith(ext):
                 break
         else:
-            print >> sys.stderr, "%s: unknown file name extension" % filename
+            print(
+                "%s: unknown file name extension" % filename, file=sys.stderr)
         longest_prefix_len = 0
         filename = os.path.abspath(filename)
         for prefix in self.path:
@@ -221,8 +224,9 @@ class ModuleGraph(object):
                 return candidate
             name = name[:name.rfind('.')]
         if dotted_name not in self._warned_about:
-            print >> sys.stderr, ("%s: could not find %s"
-                                  % (filename, dotted_name))
+            print(
+                "%s: could not find %s" % (filename, dotted_name),
+                file=sys.stderr)
             self._warned_about.add(dotted_name)
         return dotted_name
 
@@ -268,15 +272,15 @@ class ModuleGraph(object):
 
     def printImportedNames(self):
         for module in self.listModules():
-            print "%s:" % module.modname
-            print "  %s" % "\n  ".join(module.imported_names)
+            print("%s:" % module.modname)
+            print("  %s" % "\n  ".join(module.imported_names))
 
     def printImports(self):
         for module in self.listModules():
-            print "%s:" % module.modname
+            print("%s:" % module.modname)
             imports = list(module.imports)
             imports.sort()
-            print "  %s" % "\n  ".join(imports)
+            print("  %s" % "\n  ".join(imports))
 
     def printUnusedImports(self):
         for module in self.listModules():
@@ -289,31 +293,31 @@ class ModuleGraph(object):
                     if '#' in line:
                         continue # assume there's a comment explaining why it
                                  # is not used
-                print "%s:%s: %s not used" % (module.filename, lineno, name)
+                print("%s:%s: %s not used" % (module.filename, lineno, name))
 
     def printDot(self):
-        print "digraph ModuleDependencies {"
-        print "  node[shape=box];"
+        print("digraph ModuleDependencies {")
+        print("  node[shape=box];")
         allNames = set()
         nameDict = {}
         for n, module in enumerate(self.listModules()):
             module._dot_name = "mod%d" % n
             nameDict[module.modname] = module._dot_name
-            print "  %s[label=\"%s\"];" % (module._dot_name, module.modname)
+            print("  %s[label=\"%s\"];" % (module._dot_name, module.modname))
             for name in module.imports:
                 if name not in self.modules:
                     allNames.add(name)
-        print "  node[style=dotted];"
+        print("  node[style=dotted];")
         names = list(allNames)
         names.sort()
         for n, name in enumerate(names):
             nameDict[name] = id = "extmod%d" % n
-            print "  %s[label=\"%s\"];" % (id, name)
+            print("  %s[label=\"%s\"];" % (id, name))
         for module in self.modules.values():
             for other in module.imports:
-                print "  %s -> %s;" % (nameDict[module.modname],
-                                       nameDict[other]);
-        print "}"
+                print("  %s -> %s;" % (nameDict[module.modname],
+                                       nameDict[other]))
+        print("}")
 
 
 def main(argv=sys.argv):
@@ -326,8 +330,8 @@ def main(argv=sys.argv):
                                    ['dot', 'unused', 'all', 'names', 'imports',
                                     'help'])
     except getopt.error as e:
-        print >> sys.stderr, "%s: %s" % (progname, e)
-        print >> sys.stderr, "Try %s --help." % progname
+        print("%s: %s" % (progname, e), file=sys.stderr)
+        print("Try %s --help." % progname, file=sys.stderr)
         return 1
     for k, v in opts:
         if k in ('-d', '--dot'):
@@ -341,7 +345,7 @@ def main(argv=sys.argv):
         elif k in ('-i', '--imports'):
             action = g.printImports
         elif k in ('-h', '--help'):
-            print helptext
+            print(helptext)
             return 0
     g.trackUnusedNames = (action == g.printUnusedImports)
     if not args:

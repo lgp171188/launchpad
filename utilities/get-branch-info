@@ -8,6 +8,8 @@
 Usage: get-branch-info <branch_url>
 """
 
+from __future__ import absolute_import, print_function
+
 import _pythonpath
 
 import sys
@@ -29,21 +31,21 @@ def main(args):
     branch_lookup = getUtility(IBranchLookup)
     branch = branch_lookup.getByUrl(branch_url)
     if branch is None:
-        print "Could not find branch at %r" % (branch_url,)
+        print("Could not find branch at %r" % (branch_url,))
         return
-    print branch.bzr_identity
-    print
-    print 'Unique name:', branch.unique_name
-    print 'ID:', branch.id
-    print 'Private:', branch.private
-    print 'Type:', branch.branch_type
-    print 'URL:', canonical_url(branch)
+    print(branch.bzr_identity)
+    print()
+    print('Unique name:', branch.unique_name)
+    print('ID:', branch.id)
+    print('Private:', branch.private)
+    print('Type:', branch.branch_type)
+    print('URL:', canonical_url(branch))
     if branch.url is not None:
-        print 'External URL:', branch.url
+        print('External URL:', branch.url)
     branch_path = branch_id_to_path(branch.id)
     mirrored_path = join(
         config.codehosting.mirrored_branches_root, branch_path)
-    print 'Mirrored copy:', mirrored_path
+    print('Mirrored copy:', mirrored_path)
 
 
 if __name__ == '__main__':
