@@ -1,4 +1,4 @@
-# Copyright 2015-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """A collection of Git repositories.
@@ -150,6 +150,9 @@ class IGitCollection(Interface):
     def isExclusive():
         """Restrict the collection to repositories owned by exclusive
         people."""
+
+    def modifiedSince(date):
+        """Restrict the collection to repositories modified since `date`."""
 
     def ownedBy(person):
         """Restrict the collection to repositories owned by 'person'."""

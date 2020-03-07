@@ -1,4 +1,4 @@
-# Copyright 2015-2017 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for Git repository collections."""
@@ -230,6 +230,20 @@ class TestGitCollectionFilters(TestCaseWithFactory):
         self.assertEqual(1, collection.getRepositories().count())
         self.assertEqual(1, len(list(collection.getRepositories())))
         self.assertEqual(1, collection.count())
+
+    def test_modifiedSince(self):
+        # Only repositories modified since the time specified will be
+        # returned.
+        old_repository = self.factory.makeGitRepository()
+        removeSecurityProxy(old_repository).date_last_modified = datetime(
+            2008, 1, 1, tzinfo=pytz.UTC)
+        new_repository = self.factory.makeGitRepository()
+        removeSecurityProxy(new_repository).date_last_modified = datetime(
+            2009, 1, 1, tzinfo=pytz.UTC)
+        repositories = self.all_repositories.modifiedSince(
+            datetime(2008, 6, 1, tzinfo=pytz.UTC))
+        self.assertEqual(
+            [new_repository], list(repositories.getRepositories()))
 
     def test_ownedBy(self):
         # 'ownedBy' returns a new collection restricted to repositories

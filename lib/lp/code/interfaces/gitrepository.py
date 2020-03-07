@@ -1,4 +1,4 @@
-# Copyright 2015-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Git repository interfaces."""
@@ -989,16 +989,35 @@ class IGitRepositorySet(Interface):
     @call_with(user=REQUEST_USER)
     @operation_parameters(
         target=Reference(
-            title=_("Target"), required=True, schema=IHasGitRepositories))
+            title=_("Target"), required=False, schema=IHasGitRepositories),
+        order_by_modified_date=Bool(
+            title=_("Order by modified date"),
+            # order_by_modified_date=False currently returns repositories
+            # ordered by ID, but we don't want to commit to this.
+            description=_(
+                "Return most-recently-modified repositories first.  If False, "
+                "the order of results is unspecified."),
+            required=False),
+        modified_since_date=Datetime(
+            title=_("Modified since date"),
+            description=_(
+                "Return only repositories whose `date_last_modified` is "
+                "greater than or equal to this date.")))
     @operation_returns_collection_of(IGitRepository)
     @export_read_operation()
     @operation_for_version("devel")
-    def getRepositories(user, target):
+    def getRepositories(user, target=None, order_by_modified_date=False,
+                        modified_since_date=None):
         """Get all repositories for a target.
 
         :param user: An `IPerson`.  Only repositories visible by this user
             will be returned.
-        :param target: An `IHasGitRepositories`.
+        :param target: An `IHasGitRepositories`, or None to get repositories
+            for all targets.
+        :param order_by_modified_date: If True, order results by descending
+            `date_last_modified`; if False, the order is unspecified.
+        :param modified_since_date: If not None, return only repositories
+            whose `date_last_modified` is greater than this date.
 
         :return: A collection of `IGitRepository` objects.
         """

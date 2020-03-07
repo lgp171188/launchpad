@@ -1,4 +1,4 @@
-# Copyright 2015-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Implementations of `IGitCollection`."""
@@ -222,7 +222,8 @@ class GenericGitCollection:
         resultset = self.store.using(*tables).find(find_expr, *expressions)
         assert not order_by_date or not order_by_id
         if order_by_date:
-            resultset.order_by(Desc(GitRepository.date_last_modified))
+            resultset.order_by(
+                Desc(GitRepository.date_last_modified), Desc(GitRepository.id))
         elif order_by_id:
             resultset.order_by(GitRepository.id)
 
@@ -488,6 +489,11 @@ class GenericGitCollection:
             [Person.membership_policy.is_in(EXCLUSIVE_TEAM_POLICY)],
             table=Person,
             join=Join(Person, GitRepository.owner_id == Person.id))
+
+    def modifiedSince(self, date):
+        """See `IGitCollection`."""
+        return self._filterBy(
+            [GitRepository.date_last_modified > date], symmetric=False)
 
     def ownedBy(self, person):
         """See `IGitCollection`."""

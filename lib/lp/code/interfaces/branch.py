@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Branch interfaces."""
@@ -1427,10 +1427,36 @@ class IBranchSet(Interface):
         Return None if no match was found.
         """
 
-    @collection_default_content()
-    def getBranches(limit=50, eager_load=True):
+    @call_with(user=REQUEST_USER)
+    @operation_parameters(
+        order_by_modified_date=Bool(
+            title=_("Order by modified date"),
+            # order_by_modified_date=False currently returns branches in the
+            # same order as True (descending date_last_modified followed by
+            # descending ID), but we don't want to commit to this.
+            description=_(
+                "Return most-recently-modified branches first.  If False, "
+                "the order of results is unspecified."),
+            required=False),
+        modified_since_date=Datetime(
+            title=_("Modified since date"),
+            description=_(
+                "Return only branches whose `date_last_modified` is "
+                "greater than or equal to this date.")))
+    @operation_returns_collection_of(IBranch)
+    @export_read_operation()
+    @operation_for_version("devel")
+    @collection_default_content(user=None, limit=50)
+    def getBranches(user, order_by_modified_date=False,
+                    modified_since_date=None, limit=None, eager_load=True):
         """Return a collection of branches.
 
+        :param user: An `IPerson`.  Only branches visible by this user will
+            be returned.
+        :param order_by_modified_date: If True, order results by descending
+            `date_last_modified`; if False, the order is unspecified.
+        :param modified_since_date: If not None, return only branches whose
+            `date_last_modified` is greater than this date.
         :param eager_load: If True (the default because this is used in the
             web service and it needs the related objects to create links)
             eager load related objects (products, code imports etc).
