@@ -5,6 +5,8 @@
 
 """Create lazr.config schema and confs from ZConfig data."""
 
+from __future__ import absolute_import, print_function
+
 __metatype__ = type
 
 # Scripts may have relative imports.
@@ -70,10 +72,10 @@ class Configuration:
             was defined.
         :param section_name: Only print the named section.
         """
-        print '# This configuration derives from:'
+        print('# This configuration derives from:')
         for config_data in self.config.overlays:
-            print '#     %s' % config_data.filename
-        print
+            print('#     %s' % config_data.filename)
+        print()
         name_key = attrgetter('name')
         for count, section in enumerate(sorted(self.config, key=name_key)):
             if section_name is not None and section_name != section.name:
@@ -81,17 +83,17 @@ class Configuration:
             if count > 0:
                 # Separate sections by a blank line, or two when verbose.
                 print
-            print '[%s]' % section.name
+            print('[%s]' % section.name)
             if verbose and section.optional:
-                print '# This section is optional.\n'
+                print('# This section is optional.\n')
             for count, key in enumerate(sorted(section)):
                 if verbose:
                     if count > 0:
                         # Separate keys by a blank line.
-                        print
+                        print()
                     conf_file_name = self.config_file_for_value(section, key)
-                    print '# Defined in: %s' % conf_file_name
-                print '%s: %s' % (key, section[key])
+                    print('# Defined in: %s' % conf_file_name)
+                print('%s: %s' % (key, section[key]))
 
 
 def get_option_parser():

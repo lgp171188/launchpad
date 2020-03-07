@@ -48,7 +48,7 @@ def shhh(cmd):
     >>> shhh_script(cmd)
     ('', '', 1)
 
-    >>> cmd = [python, "-c", "import sys; print 666; sys.exit(42)"]
+    >>> cmd = [python, "-c", "import sys; print(666); sys.exit(42)"]
     >>> shhh(cmd)
     666
     42
@@ -57,7 +57,9 @@ def shhh(cmd):
 
     >>> cmd = [
     ...     python, "-c",
-    ...     "import sys; print 666; print >> sys.stderr, 667; sys.exit(42)",
+    ...     "from __future__ import print_function; "
+    ...     "import sys; "
+    ...     "print(666); print(667, file=sys.stderr); sys.exit(42)",
     ...     ]
     >>> shhh_script(cmd)
     ('666\n', '667\n', 42)

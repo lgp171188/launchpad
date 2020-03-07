@@ -125,6 +125,8 @@ is over the length limit.
 }}}
 """
 
+from __future__ import absolute_import, print_function
+
 __metaclass__ = type
 
 # SKIP this file when reformatting.
@@ -380,7 +382,7 @@ def process_file(fpath):
     """Process the file with the given path."""
     changed = reformat_importsection(fpath)
     if changed:
-        print fpath
+        print(fpath)
 
 
 def process_tree(dpath):
