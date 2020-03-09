@@ -73,6 +73,12 @@
           replace="message" />
       </tal:binary_build_location>
     </li>
+    <li tal:define="original_archive view/copiedFromArchive"
+        tal:condition="original_archive">
+        Copied from
+        <a tal:attributes="href original_archive/fmt:url"
+              tal:content="original_archive/displayname" />
+      </li>
 
   </ul>
 </tal:root>
