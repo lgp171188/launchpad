@@ -28,6 +28,7 @@ def set_default_openid_fetcher():
     # if pycurl is installed.
     fetcher = Urllib2Fetcher()
     if config.launchpad.enable_test_openid_provider:
-        cafile = os.path.join(config.root, "configs/development/launchpad.crt")
+        cert_path = "configs/{}/launchpad.crt".format(config.instance_name)
+        cafile = os.path.join(config.root, cert_path)
         fetcher.urlopen = partial(urlopen, cafile=cafile)
     setDefaultFetcher(fetcher)
