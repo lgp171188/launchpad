@@ -28,8 +28,8 @@ shows the complete history of a package in all series.
     8
 
 Copy the package to a new distribution named "foo-distro". The publishing
-history page should show that the package was copied, but no intermediate
-archive information.
+history page of Foo-distro should show that the package was copied, but no
+intermediate archive information.
 
     >>> login('foo.bar@canonical.com')
     >>> from lp.soyuz.model.archive import ArchivePurpose
@@ -54,8 +54,10 @@ archive information.
     Copied from ubuntutest breezy-autotest in Primary Archive for Ubuntu Test
 
 
-Copying from "foo-distro" to a new distribution "another-distro". It should
-show the intermediate archive too on the history page.
+Copying from "Foo-distro" to a new distribution "Another-distro". It should
+show the intermediate archive Foo-distro on Another-distro's history page,
+since we copied the package from there. It should also show that the
+original distribution was Ubuntutest breezy-autotest.
 
     >>> login('foo.bar@canonical.com')
     >>> from lp.soyuz.model.archive import ArchivePurpose
