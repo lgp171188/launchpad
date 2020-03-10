@@ -49,10 +49,7 @@ from zope.security.proxy import (
 
 from lp.app.errors import NotFoundError
 from lp.buildmaster.enums import BuildStatus
-from lp.registry.interfaces.person import (
-    IPerson,
-    validate_public_person,
-    )
+from lp.registry.interfaces.person import validate_public_person
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.services.database import bulk
 from lp.services.database.constants import UTC_NOW

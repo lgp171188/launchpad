@@ -62,7 +62,7 @@ from lp.soyuz.model.publishing import (
     SourcePackagePublishingHistory,
     )
 from lp.testing import (
-    login,
+    login_admin,
     person_logged_in,
     record_two_runs,
     StormStatementRecorder,
@@ -1601,6 +1601,8 @@ class TestPublishingHistoryView(TestCaseWithFactory):
 
     def test_constant_query_counts_on_publishing_history_change_override(self):
         admin = self.factory.makeAdministrator()
+        normal_user = self.factory.makePerson()
+
         with person_logged_in(admin):
             test_publisher = SoyuzTestPublisher()
             test_publisher.prepareBreezyAutotest()
@@ -1625,14 +1627,14 @@ class TestPublishingHistoryView(TestCaseWithFactory):
                 new_section=new_section, creator=person2)
 
         def show_page():
-            self.getUserBrowser(url, admin)
+            self.getUserBrowser(url, normal_user)
 
         # Make sure to have all the history fitting in one page.
         self.pushConfig("launchpad", default_batch_size=50)
 
         recorder1, recorder2 = record_two_runs(
             show_page, insert_more_publish_history,
-            1, 10, login_method=lambda: login(ADMIN_EMAIL))
+            1, 10, login_method=login_admin)
 
         self.assertThat(recorder1, HasQueryCount(Equals(26)))
         self.assertThat(recorder2, HasQueryCount.byEquality(recorder1))
