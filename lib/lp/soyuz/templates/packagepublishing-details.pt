@@ -34,7 +34,16 @@
       <span tal:attributes="title context/datepublished/fmt:datetime"
             tal:content="context/datepublished/fmt:displaydate" />
     </li>
-    <li tal:condition="view/wasCopied">
+
+    <tal:comment condition="nothing">
+           For package copies, we have a distinction between what is the
+           "previous_archive" (the archive from where we directly copied a
+           publishing) and the "root_archive" (the archive where the package
+            was originally uploaded to).
+    </tal:comment>
+    <li tal:define="previous_archive view/copiedFromArchive;
+                    root_archive view/rootOriginArchive"
+        tal:condition="view/wasCopied">
       Copied from
       <tal:source_original_location condition="view/is_source">
         <tal:define
@@ -46,12 +55,11 @@
                     message string:${distro/name} ${series/name} in "
             replace="message" />
           <a tal:condition="linkify_archive"
-             tal:attributes="href source/upload_archive/fmt:url"
-             tal:content="source/upload_archive/displayname" />
+             tal:attributes="href root_archive/fmt:url"
+             tal:content="root_archive/displayname" />
           <tal:message
             condition="not:linkify_archive"
-            define="archive source/upload_archive;
-                    message string:${archive/displayname}"
+            define="message string:${root_archive/displayname}"
             replace="message" />
         </tal:define>
         <tal:source_creator condition="context/creator">
@@ -64,21 +72,20 @@
       <tal:binary_build_location condition="view/is_binary">
         <tal:message
           define="build context/binarypackagerelease/build;
-                  archive build/archive;
                   pocket build/pocket;
                   arch build/distro_arch_series;
                   series arch/distroseries;
                   distro series/distribution;
-                  message string:${distro/name} ${series/name}-${pocket/name/fmt:lower} ${arch/architecturetag} in ${archive/displayname}"
+                  message string:${distro/name} ${series/name}-${pocket/name/fmt:lower} ${arch/architecturetag} in ${root_archive/displayname}"
           replace="message" />
       </tal:binary_build_location>
-    </li>
-    <li tal:define="original_archive view/copiedFromArchive"
-        tal:condition="original_archive">
-        Copied from
-        <a tal:attributes="href original_archive/fmt:url"
-              tal:content="original_archive/displayname" />
-      </li>
 
+      <p tal:condition="python: previous_archive
+                                and previous_archive != root_archive">
+          Previous archive was
+          <a tal:attributes="href previous_archive/fmt:url"
+                  tal:content="previous_archive/displayname" />
+      </p>
+    </li>
   </ul>
 </tal:root>

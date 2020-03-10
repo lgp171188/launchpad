@@ -27,6 +27,59 @@ shows the complete history of a package in all series.
     >>> print(table.findAll("tr")[2].td["colspan"])
     8
 
+Copy the package to a new distribution named "foo-distro". The publishing
+history page should show that the package was copied, but no intermediate
+archive information.
+
+    >>> login('foo.bar@canonical.com')
+    >>> from lp.soyuz.model.archive import ArchivePurpose
+    >>> new_distro = stp.factory.makeDistribution(name='foo-distro')
+    >>> new_distroseries = stp.factory.makeDistroSeries(
+    ...     name='foo-series', distribution=new_distro)
+    >>> new_archive = stp.factory.makeArchive(
+    ...     distribution=new_distro,
+    ...     purpose=ArchivePurpose.PRIMARY)
+    >>> new_pub1 = source_pub.copyTo(
+    ...     new_distroseries, source_pub.pocket, new_archive)
+    >>> logout()
+
+    >>> anon_browser.open(
+    ...     'http://launchpad.test/%s/+source/test-history/'
+    ...     '+publishinghistory' % new_distro.name)
+
+    >>> table = find_tag_by_id(anon_browser.contents, 'publishing-summary')
+    >>> print(extract_text(table))
+    Date    Status    Target          Pocket   Component Section Version
+    ... UTC Pending   Foo-series      release  main      base    666
+    Copied from ubuntutest breezy-autotest in Primary Archive for Ubuntu Test
+
+
+Copying from "foo-distro" to a new distribution "another-distro". It should
+show the intermediate archive too on the history page.
+
+    >>> login('foo.bar@canonical.com')
+    >>> from lp.soyuz.model.archive import ArchivePurpose
+    >>> new_distro = stp.factory.makeDistribution(name='another-distro')
+    >>> new_distroseries = stp.factory.makeDistroSeries(
+    ...     name='another-series', distribution=new_distro)
+    >>> new_archive = stp.factory.makeArchive(
+    ...     distribution=new_distro,
+    ...     purpose=ArchivePurpose.PRIMARY)
+    >>> new_pub2 = new_pub1.copyTo(
+    ...     new_distroseries, source_pub.pocket, new_archive)
+    >>> logout()
+
+    >>> anon_browser.open(
+    ...     'http://launchpad.test/%s/+source/test-history/'
+    ...     '+publishinghistory' % new_distro.name)
+
+    >>> table = find_tag_by_id(anon_browser.contents, 'publishing-summary')
+    >>> print(extract_text(table))
+    Date    Status    Target          Pocket   Component Section Version
+    ... UTC Pending   Another-series  release  main      base    666
+    Copied from ubuntutest breezy-autotest in Primary Archive for Ubuntu Test
+    Previous archive was Primary Archive for Foo-distro
+
 A publishing record will be shown as deleted in the publishing history after a
 request for deletion by a user.
 

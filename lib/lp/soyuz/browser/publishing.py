@@ -210,7 +210,7 @@ class BasePublishingRecordView(LaunchpadView):
         this method returns None (it's a special case, threated separately
         on the template with "wasCopied" method).
         """
-        if self.wasCopied():
+        if not self.wasCopied():
             return None
         return self.context.copied_from_archive
 
@@ -276,6 +276,14 @@ class SourcePublishingRecordView(BasePublishingRecordView):
             return True
 
         return False
+
+    def rootOriginArchive(self):
+        """Get the original archive from this binary build if this was a
+        copied publishing.
+        """
+        if not self.wasCopied():
+            return None
+        return self.context.sourcepackagerelease.upload_archive
 
     @property
     def allow_selection(self):
@@ -418,3 +426,11 @@ class BinaryPublishingRecordView(BasePublishingRecordView):
             return True
 
         return False
+
+    def rootOriginArchive(self):
+        """Get the original archive from this binary build if this was a
+        copied publishing.
+        """
+        if not self.wasCopied():
+            return None
+        return self.context.binarypackagerelease.build.archive
