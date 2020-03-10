@@ -202,18 +202,6 @@ class BasePublishingRecordView(LaunchpadView):
             return u"%d%% of users" % self.context.phased_update_percentage
         return u""
 
-    def copiedFromArchive(self):
-        """
-        Returns the archive from where this package was copied.
-
-        If this package was copied from another distroserie's archive,
-        this method returns None (it's a special case, threated separately
-        on the template with "wasCopied" method).
-        """
-        if not self.wasCopied():
-            return None
-        return self.context.copied_from_archive
-
 
 class SourcePublishingRecordView(BasePublishingRecordView):
     """View class for `ISourcePackagePublishingHistory`."""

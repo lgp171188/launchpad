@@ -39,9 +39,9 @@
            For package copies, we have a distinction between what is the
            "previous_archive" (the archive from where we directly copied a
            publishing) and the "root_archive" (the archive where the package
-            was originally uploaded to).
+           was originally uploaded to).
     </tal:comment>
-    <li tal:define="previous_archive view/copiedFromArchive;
+    <li tal:define="previous_archive context/copied_from_archive;
                     root_archive view/rootOriginArchive"
         tal:condition="view/wasCopied">
       Copied from

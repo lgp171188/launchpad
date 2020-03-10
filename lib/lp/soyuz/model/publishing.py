@@ -1082,7 +1082,7 @@ class PublishingSet:
             to be set on the newly created BinaryPackagePublishingHistory.
             """
             original_archive = copied_from_archives.get(bpr)
-            if original_archive == archive or original_archive is None:
+            if original_archive == archive:
                 return None
             return original_archive
 

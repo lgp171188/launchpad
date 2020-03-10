@@ -920,7 +920,8 @@ class IPublishingSet(Interface):
 
     def newSourcePublication(archive, sourcepackagerelease, distroseries,
                              component, section, pocket, ancestor,
-                             create_dsd_job=True):
+                             create_dsd_job=True, copied_from_archive=None,
+                             creator=None, sponsor=None, packageupload=None):
         """Create a new `SourcePackagePublishingHistory`.
 
         :param archive: An `IArchive`
@@ -931,10 +932,10 @@ class IPublishingSet(Interface):
         :param pocket: A `PackagePublishingPocket`
         :param ancestor: A `ISourcePackagePublishingHistory` for the previous
             version of this publishing record
-        :param copied_from_archive: For copy operations, this should be the
-            source archive (from where this new publication is comming from).
         :param create_dsd_job: A boolean indicating whether or not a dsd job
              should be created for the new source publication.
+        :param copied_from_archive: For copy operations, this should be the
+            source archive (from where this new publication is comming from).
         :param creator: An optional `IPerson`. If this is None, the
             sourcepackagerelease's creator will be used.
         :param sponsor: An optional `IPerson` indicating the sponsor of this
