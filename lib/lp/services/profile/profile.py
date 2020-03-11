@@ -354,15 +354,14 @@ def end_request(event):
         del prof_stats
     # Dump memory profiling info.
     if 'memory_profile_start' in actions:
-        log = file(config.profiling.memory_profile_log, 'a')
-        vss_start, rss_start = actions.pop('memory_profile_start')
-        vss_end, rss_end = memory(), resident()
-        if oopsid is None:
-            oopsid = '-'
-        log.write('%s %s %s %f %d %d %d %d\n' % (
-            timestamp, pageid, oopsid, da.get_request_duration(),
-            vss_start, rss_start, vss_end, rss_end))
-        log.close()
+        with open(config.profiling.memory_profile_log, 'a') as log:
+            vss_start, rss_start = actions.pop('memory_profile_start')
+            vss_end, rss_end = memory(), resident()
+            if oopsid is None:
+                oopsid = '-'
+            log.write('%s %s %s %f %d %d %d %d\n' % (
+                timestamp, pageid, oopsid, da.get_request_duration(),
+                vss_start, rss_start, vss_end, rss_end))
     trace = None
     if 'sql' in actions:
         trace = da.stop_sql_logging() or ()
