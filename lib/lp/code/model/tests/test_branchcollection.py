@@ -1,4 +1,4 @@
-# Copyright 2009-2017 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for branch collections."""
@@ -1412,6 +1412,7 @@ class TestBranchCollectionConvertListingSortToOrderBy(TestCase):
         Desc(Branch.lifecycle_status),
         Asc(Owner.name),
         Asc(Branch.name),
+        Desc(Branch.id),
         ]
 
     def assertSortsEqual(self, sort_one, sort_two):
@@ -1443,7 +1444,9 @@ class TestBranchCollectionConvertListingSortToOrderBy(TestCase):
             [Desc(Branch.lifecycle_status),
              Asc(Product.name),
              Asc(Owner.name),
-             Asc(Branch.name)], lifecycle_order)
+             Asc(Branch.name),
+             Desc(Branch.id)],
+            lifecycle_order)
 
     def test_sort_on_column_not_in_default_sort_order(self):
         """Test with an option that's not part of the default sort.

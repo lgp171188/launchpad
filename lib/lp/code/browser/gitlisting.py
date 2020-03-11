@@ -1,4 +1,4 @@
-# Copyright 2015 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """View classes for Git repository listings."""
@@ -18,6 +18,7 @@ from zope.interface import (
 
 from lp.app.enums import PRIVATE_INFORMATION_TYPES
 from lp.code.browser.gitrepository import GitRefBatchNavigator
+from lp.code.enums import GitListingSort
 from lp.code.interfaces.branchcollection import IBranchCollection
 from lp.code.interfaces.gitcollection import IGitCollection
 from lp.code.interfaces.gitnamespace import (
@@ -50,7 +51,8 @@ class GitRepositoryBatchNavigator(TableBatchNavigator):
     def __init__(self, view, repo_collection):
         super(GitRepositoryBatchNavigator, self).__init__(
             repo_collection.getRepositories(
-                eager_load=True, order_by_date=True),
+                eager_load=True,
+                sort_by=GitListingSort.MOST_RECENTLY_CHANGED_FIRST),
             view.request, size=config.launchpad.branchlisting_batch_size)
         self.view = view
         self.column_count = 2

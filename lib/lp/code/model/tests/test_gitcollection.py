@@ -1,4 +1,4 @@
-# Copyright 2015-2017 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for Git repository collections."""
@@ -14,6 +14,10 @@ from datetime import (
 from operator import attrgetter
 
 import pytz
+from storm.expr import (
+    Asc,
+    Desc,
+    )
 from storm.store import (
     EmptyResultSet,
     Store,
@@ -30,6 +34,7 @@ from lp.code.enums import (
     BranchSubscriptionDiffSize,
     BranchSubscriptionNotificationLevel,
     CodeReviewNotificationLevel,
+    GitListingSort,
     )
 from lp.code.interfaces.codehosting import LAUNCHPAD_SERVICES
 from lp.code.interfaces.gitcollection import (
@@ -51,6 +56,7 @@ from lp.services.webapp.publisher import canonical_url
 from lp.testing import (
     person_logged_in,
     StormStatementRecorder,
+    TestCase,
     TestCaseWithFactory,
     )
 from lp.testing.layers import (
@@ -230,6 +236,20 @@ class TestGitCollectionFilters(TestCaseWithFactory):
         self.assertEqual(1, collection.getRepositories().count())
         self.assertEqual(1, len(list(collection.getRepositories())))
         self.assertEqual(1, collection.count())
+
+    def test_modifiedSince(self):
+        # Only repositories modified since the time specified will be
+        # returned.
+        old_repository = self.factory.makeGitRepository()
+        removeSecurityProxy(old_repository).date_last_modified = datetime(
+            2008, 1, 1, tzinfo=pytz.UTC)
+        new_repository = self.factory.makeGitRepository()
+        removeSecurityProxy(new_repository).date_last_modified = datetime(
+            2009, 1, 1, tzinfo=pytz.UTC)
+        repositories = self.all_repositories.modifiedSince(
+            datetime(2008, 6, 1, tzinfo=pytz.UTC))
+        self.assertEqual(
+            [new_repository], list(repositories.getRepositories()))
 
     def test_ownedBy(self):
         # 'ownedBy' returns a new collection restricted to repositories
@@ -1109,3 +1129,40 @@ class TestGitCollectionOwnerCounts(TestCaseWithFactory):
         collection = self.all_repositories.inProject(project)
         person_count, team_count = collection.ownerCounts()
         self.assertEqual(1, person_count)
+
+
+class TestGitCollectionConvertListingSortToOrderBy(TestCase):
+
+    DEFAULT_LISTING_SORT = [
+        Desc(GitRepository.id),
+        ]
+
+    def assertSortsEqual(self, sort_one, sort_two):
+        """Assert that one list of sort specs is equal to another."""
+        def sort_data(sort):
+            return sort.suffix, sort.expr
+        self.assertEqual(
+            [sort_data(sort) for sort in sort_one],
+            [sort_data(sort) for sort in sort_two])
+
+    def test_default(self):
+        """Test that passing None or DEFAULT results in the default list."""
+        self.assertSortsEqual(
+            self.DEFAULT_LISTING_SORT,
+            GenericGitCollection._convertListingSortToOrderBy(None))
+        self.assertSortsEqual(
+            self.DEFAULT_LISTING_SORT,
+            GenericGitCollection._convertListingSortToOrderBy(
+                GitListingSort.DEFAULT))
+
+    def test_sort_on_column_not_in_default_sort_order(self):
+        """Test with an option that's not part of the default sort.
+
+        This should put the passed option first in the list, but leave the
+        rest the same.
+        """
+        order = GenericGitCollection._convertListingSortToOrderBy(
+            GitListingSort.OLDEST_FIRST)
+        self.assertSortsEqual(
+            [Asc(GitRepository.date_created)] + self.DEFAULT_LISTING_SORT,
+            order)

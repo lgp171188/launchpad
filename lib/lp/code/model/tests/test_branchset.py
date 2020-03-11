@@ -1,4 +1,4 @@
-# Copyright 2009-2017 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for BranchSet."""
@@ -7,11 +7,17 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 
+from datetime import datetime
+
+import pytz
 from testtools.matchers import LessThan
+from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
 from lp.app.enums import InformationType
+from lp.code.enums import BranchListingSort
 from lp.code.interfaces.branch import IBranchSet
+from lp.code.interfaces.branchcollection import IAllBranches
 from lp.code.interfaces.linkedbranch import ICanHasLinkedBranch
 from lp.code.model.branch import BranchSet
 from lp.services.propertycache import clear_property_cache
@@ -59,6 +65,40 @@ class TestBranchSet(TestCaseWithFactory):
         self.assertEqual(product.name, branch.shortened_path)
         self.assertEqual(branch, BranchSet().getByPath(branch.shortened_path))
         self.assertIsNone(BranchSet().getByPath('nonexistent'))
+
+    def test_getBranches_order_by(self):
+        # We can get a collection of all branches with a given sort order.
+        # Unscan branches from sampledata so that they don't get in our way.
+        for branch in getUtility(IAllBranches).scanned().getBranches():
+            removeSecurityProxy(branch).unscan(rescan=False)
+        branches = [self.factory.makeProductBranch() for _ in range(5)]
+        modified_dates = [
+            datetime(2010, 1, 1, tzinfo=pytz.UTC),
+            datetime(2015, 1, 1, tzinfo=pytz.UTC),
+            datetime(2014, 1, 1, tzinfo=pytz.UTC),
+            datetime(2020, 1, 1, tzinfo=pytz.UTC),
+            datetime(2019, 1, 1, tzinfo=pytz.UTC),
+            ]
+        for branch, modified_date in zip(branches, modified_dates):
+            self.factory.makeRevisionsForBranch(branch)
+            branch.date_last_modified = modified_date
+        removeSecurityProxy(branches[0]).transitionToInformationType(
+            InformationType.PRIVATESECURITY, branches[0].registrant)
+        self.assertEqual(
+            [branches[3], branches[4], branches[1], branches[2], branches[0]],
+            list(getUtility(IBranchSet).getBranches(
+                branches[0].owner,
+                order_by=BranchListingSort.MOST_RECENTLY_CHANGED_FIRST)))
+        self.assertEqual(
+            [branches[3], branches[4], branches[1]],
+            list(getUtility(IBranchSet).getBranches(
+                branches[0].owner,
+                order_by=BranchListingSort.MOST_RECENTLY_CHANGED_FIRST,
+                modified_since_date=datetime(2014, 12, 1, tzinfo=pytz.UTC))))
+        self.assertEqual(
+            [branches[3], branches[4], branches[1], branches[2]],
+            list(getUtility(IBranchSet).getBranches(
+                None, order_by=BranchListingSort.MOST_RECENTLY_CHANGED_FIRST)))
 
     def test_api_branches_query_count(self):
         webservice = LaunchpadWebServiceCaller()
