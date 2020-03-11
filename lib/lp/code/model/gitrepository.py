@@ -1,4 +1,4 @@
-# Copyright 2015-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -92,6 +92,7 @@ from lp.code.adapters.branch import BranchMergeProposalNoPreviewDiffDelta
 from lp.code.enums import (
     BranchMergeProposalStatus,
     GitGranteeType,
+    GitListingSort,
     GitObjectType,
     GitPermissionType,
     GitRepositoryType,
@@ -1701,10 +1702,18 @@ class GitRepositorySet:
             return repository
         return None
 
-    def getRepositories(self, user, target):
+    def getRepositories(self, user, target=None,
+                        order_by=GitListingSort.MOST_RECENTLY_CHANGED_FIRST,
+                        modified_since_date=None):
         """See `IGitRepositorySet`."""
-        collection = IGitCollection(target).visibleByUser(user)
-        return collection.getRepositories(eager_load=True, order_by_id=True)
+        if target is not None:
+            collection = IGitCollection(target)
+        else:
+            collection = getUtility(IAllGitRepositories)
+        collection = collection.visibleByUser(user)
+        if modified_since_date is not None:
+            collection = collection.modifiedSince(modified_since_date)
+        return collection.getRepositories(eager_load=True, sort_by=order_by)
 
     def getRepositoryVisibilityInfo(self, user, person, repository_names):
         """See `IGitRepositorySet`."""
