@@ -76,6 +76,7 @@ from lp.code.bzr import (
     )
 from lp.code.enums import (
     BranchLifecycleStatus,
+    BranchListingSort,
     BranchMergeProposalStatus,
     BranchSubscriptionDiffSize,
     BranchSubscriptionNotificationLevel,
@@ -1429,14 +1430,9 @@ class IBranchSet(Interface):
 
     @call_with(user=REQUEST_USER)
     @operation_parameters(
-        order_by_modified_date=Bool(
-            title=_("Order by modified date"),
-            # order_by_modified_date=False currently returns branches in the
-            # same order as True (descending date_last_modified followed by
-            # descending ID), but we don't want to commit to this.
-            description=_(
-                "Return most-recently-modified branches first.  If False, "
-                "the order of results is unspecified."),
+        order_by=Choice(
+            title=_("Sort order"), vocabulary=BranchListingSort,
+            default=BranchListingSort.MOST_RECENTLY_CHANGED_FIRST,
             required=False),
         modified_since_date=Datetime(
             title=_("Modified since date"),
@@ -1447,14 +1443,15 @@ class IBranchSet(Interface):
     @export_read_operation()
     @operation_for_version("devel")
     @collection_default_content(user=None, limit=50)
-    def getBranches(user, order_by_modified_date=False,
+    def getBranches(user,
+                    order_by=BranchListingSort.MOST_RECENTLY_CHANGED_FIRST,
                     modified_since_date=None, limit=None, eager_load=True):
         """Return a collection of branches.
 
         :param user: An `IPerson`.  Only branches visible by this user will
             be returned.
-        :param order_by_modified_date: If True, order results by descending
-            `date_last_modified`; if False, the order is unspecified.
+        :param order_by: An item from the `BranchListingSort` enumeration,
+            or None to return an unordered result set.
         :param modified_since_date: If not None, return only branches whose
             `date_last_modified` is greater than this date.
         :param eager_load: If True (the default because this is used in the

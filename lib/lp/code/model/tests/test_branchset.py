@@ -15,6 +15,7 @@ from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
 from lp.app.enums import InformationType
+from lp.code.enums import BranchListingSort
 from lp.code.interfaces.branch import IBranchSet
 from lp.code.interfaces.branchcollection import IAllBranches
 from lp.code.interfaces.linkedbranch import ICanHasLinkedBranch
@@ -65,9 +66,8 @@ class TestBranchSet(TestCaseWithFactory):
         self.assertEqual(branch, BranchSet().getByPath(branch.shortened_path))
         self.assertIsNone(BranchSet().getByPath('nonexistent'))
 
-    def test_getBranches_order_by_modified_date(self):
-        # We can get a collection of all branches ordered by modification
-        # date.
+    def test_getBranches_order_by(self):
+        # We can get a collection of all branches with a given sort order.
         # Unscan branches from sampledata so that they don't get in our way.
         for branch in getUtility(IAllBranches).scanned().getBranches():
             removeSecurityProxy(branch).unscan(rescan=False)
@@ -87,16 +87,18 @@ class TestBranchSet(TestCaseWithFactory):
         self.assertEqual(
             [branches[3], branches[4], branches[1], branches[2], branches[0]],
             list(getUtility(IBranchSet).getBranches(
-                branches[0].owner, order_by_modified_date=True)))
+                branches[0].owner,
+                order_by=BranchListingSort.MOST_RECENTLY_CHANGED_FIRST)))
         self.assertEqual(
             [branches[3], branches[4], branches[1]],
             list(getUtility(IBranchSet).getBranches(
-                branches[0].owner, order_by_modified_date=True,
+                branches[0].owner,
+                order_by=BranchListingSort.MOST_RECENTLY_CHANGED_FIRST,
                 modified_since_date=datetime(2014, 12, 1, tzinfo=pytz.UTC))))
         self.assertEqual(
             [branches[3], branches[4], branches[1], branches[2]],
             list(getUtility(IBranchSet).getBranches(
-                None, order_by_modified_date=True)))
+                None, order_by=BranchListingSort.MOST_RECENTLY_CHANGED_FIRST)))
 
     def test_api_branches_query_count(self):
         webservice = LaunchpadWebServiceCaller()

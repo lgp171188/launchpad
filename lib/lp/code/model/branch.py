@@ -84,6 +84,7 @@ from lp.code.bzr import (
     )
 from lp.code.enums import (
     BranchLifecycleStatus,
+    BranchListingSort,
     BranchMergeProposalStatus,
     BranchType,
     )
@@ -1715,7 +1716,8 @@ class BranchSet:
         """See `IBranchSet`."""
         return getUtility(IBranchLookup).getByPath(path)
 
-    def getBranches(self, user, target=None, order_by_modified_date=False,
+    def getBranches(self, user, target=None,
+                    order_by=BranchListingSort.MOST_RECENTLY_CHANGED_FIRST,
                     modified_since_date=None, limit=None, eager_load=True):
         """See `IBranchSet`."""
         if target is not None:
@@ -1725,9 +1727,8 @@ class BranchSet:
         collection = collection.visibleByUser(user)
         if modified_since_date is not None:
             collection = collection.modifiedSince(modified_since_date)
-        branches = collection.scanned().getBranches(eager_load=eager_load)
-        branches.order_by(
-            Desc(Branch.date_last_modified), Desc(Branch.id))
+        branches = collection.scanned().getBranches(
+            eager_load=eager_load, sort_by=order_by)
         if limit is not None:
             branches.config(limit=limit)
         return branches
