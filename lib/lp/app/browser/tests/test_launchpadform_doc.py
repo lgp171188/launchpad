@@ -100,14 +100,14 @@ def doctest_custom_widget_with_setUpFields_override():
     consider this custom widget and view:
 
         >>> from zope.formlib.interfaces import IDisplayWidget, IInputWidget
-        >>> from zope.interface import directlyProvides, implements
+        >>> from zope.interface import implementer
         >>> from lp.app.browser.launchpadform import LaunchpadFormView
         >>> from zope.schema import Bool
         >>> from zope.publisher.browser import TestRequest
         >>> from zope.formlib import form
 
-        >>> class CustomStubWidget:
-        ...     implements(IInputWidget)
+        >>> @implementer(IInputWidget)
+        ... class CustomStubWidget:
         ...     # The methods below are the minimal necessary for widget
         ...     # initialization.
         ...     def __init__(self, field, request):
