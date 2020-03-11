@@ -61,6 +61,7 @@ from lp.code.enums import (
     BranchSubscriptionNotificationLevel,
     CodeReviewNotificationLevel,
     GitGranteeType,
+    GitListingSort,
     GitObjectType,
     GitRepositoryType,
     TargetRevisionControlSystems,
@@ -3269,9 +3270,8 @@ class TestGitRepositorySet(TestCaseWithFactory):
             public_repositories + [private_repository],
             self.repository_set.getRepositories(other_person, project))
 
-    def test_getRepositories_order_by_modified_date(self):
-        # We can get a collection of all repositories ordered by
-        # modification date.
+    def test_getRepositories_order_by(self):
+        # We can get a collection of all repositories with a given sort order.
         repositories = [self.factory.makeGitRepository() for _ in range(5)]
         modified_dates = [
             datetime(2010, 1, 1, tzinfo=pytz.UTC),
@@ -3288,17 +3288,19 @@ class TestGitRepositorySet(TestCaseWithFactory):
             [repositories[3], repositories[4], repositories[1],
              repositories[2], repositories[0]],
             list(self.repository_set.getRepositories(
-                repositories[0].owner, order_by_modified_date=True)))
+                repositories[0].owner,
+                order_by=GitListingSort.MOST_RECENTLY_CHANGED_FIRST)))
         self.assertEqual(
             [repositories[3], repositories[4], repositories[1]],
             list(self.repository_set.getRepositories(
-                repositories[0].owner, order_by_modified_date=True,
+                repositories[0].owner,
+                order_by=GitListingSort.MOST_RECENTLY_CHANGED_FIRST,
                 modified_since_date=datetime(2014, 12, 1, tzinfo=pytz.UTC))))
         self.assertEqual(
             [repositories[3], repositories[4], repositories[1],
              repositories[2]],
             list(self.repository_set.getRepositories(
-                None, order_by_modified_date=True)))
+                None, order_by=GitListingSort.MOST_RECENTLY_CHANGED_FIRST)))
 
     def test_getRepositoryVisibilityInfo_empty_repository_names(self):
         # If repository_names is empty, getRepositoryVisibilityInfo returns
@@ -3745,7 +3747,7 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
             response = webservice.named_get(
                 "/+git", "getRepositories", user=owner_url, target=target_url)
             self.assertEqual(200, response.status)
-            self.assertEqual(
+            self.assertContentEqual(
                 [webservice.getAbsoluteUrl(url) for url in repos_url],
                 [entry["self_link"]
                  for entry in response.jsonBody()["entries"]])

@@ -54,8 +54,7 @@ class IGitCollection(Interface):
             collection.
         """
 
-    def getRepositories(eager_load=False, order_by_date=False,
-                        order_by_id=False):
+    def getRepositories(eager_load=False, sort_by=None):
         """Return a result set of all repositories in this collection.
 
         The returned result set will also join across the specified tables
@@ -65,9 +64,8 @@ class IGitCollection(Interface):
 
         :param eager_load: If True trigger eager loading of all the related
             objects in the collection.
-        :param order_by_date: If True, order results by descending
-            modification date.
-        :param order_by_id: If True, order results by ascending ID.
+        :param sort_by: An item from the `GitListingSort` enumeration, or
+            None to return an unordered result set.
         """
 
     def getRepositoryIds():

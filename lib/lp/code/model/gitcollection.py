@@ -17,6 +17,7 @@ from lazr.uri import (
     )
 from storm.expr import (
     And,
+    Asc,
     Count,
     Desc,
     In,
@@ -32,6 +33,7 @@ from zope.component import getUtility
 from zope.interface import implementer
 
 from lp.app.enums import PRIVATE_INFORMATION_TYPES
+from lp.code.enums import GitListingSort
 from lp.code.interfaces.codehosting import LAUNCHPAD_SERVICES
 from lp.code.interfaces.gitcollection import (
     IGitCollection,
@@ -212,20 +214,42 @@ class GenericGitCollection:
                 CodeImport, CodeImport.git_repositoryID.is_in(repository_ids)):
             caches[code_import.git_repositoryID].code_import = code_import
 
+    @staticmethod
+    def _convertListingSortToOrderBy(sort_by):
+        """Compute a value to pass to `order_by` on a repository collection.
+
+        :param sort_by: an item from the `GitListingSort` enumeration.
+        """
+        LISTING_SORT_TO_COLUMN = {
+            GitListingSort.NAME: (Asc, GitRepository.name),
+            GitListingSort.MOST_RECENTLY_CHANGED_FIRST: (
+                Desc, GitRepository.date_last_modified),
+            GitListingSort.LEAST_RECENTLY_CHANGED_FIRST: (
+                Asc, GitRepository.date_last_modified),
+            GitListingSort.NEWEST_FIRST: (Desc, GitRepository.date_created),
+            GitListingSort.OLDEST_FIRST: (Asc, GitRepository.date_created),
+            }
+
+        # Stabilise the sort using descending ID as a last resort.
+        order_by = [(Desc, GitRepository.id)]
+
+        if sort_by not in (None, GitListingSort.DEFAULT):
+            direction, column = LISTING_SORT_TO_COLUMN[sort_by]
+            order_by = (
+                [(direction, column)] +
+                [sort for sort in order_by if sort[1] is not column])
+        return [direction(column) for direction, column in order_by]
+
     def getRepositories(self, find_expr=GitRepository, eager_load=False,
-                        order_by_date=False, order_by_id=False):
+                        sort_by=None):
         """See `IGitCollection`."""
         all_tables = set(
             self._tables.values() + self._asymmetric_tables.values())
         tables = [GitRepository] + list(all_tables)
         expressions = self._getRepositoryExpressions()
-        resultset = self.store.using(*tables).find(find_expr, *expressions)
-        assert not order_by_date or not order_by_id
-        if order_by_date:
-            resultset.order_by(
-                Desc(GitRepository.date_last_modified), Desc(GitRepository.id))
-        elif order_by_id:
-            resultset.order_by(GitRepository.id)
+        resultset = (
+            self.store.using(*tables).find(find_expr, *expressions).order_by(
+                *self._convertListingSortToOrderBy(sort_by)))
 
         def do_eager_load(rows):
             repository_ids = set(repository.id for repository in rows)

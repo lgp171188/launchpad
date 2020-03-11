@@ -92,6 +92,7 @@ from lp.code.adapters.branch import BranchMergeProposalNoPreviewDiffDelta
 from lp.code.enums import (
     BranchMergeProposalStatus,
     GitGranteeType,
+    GitListingSort,
     GitObjectType,
     GitPermissionType,
     GitRepositoryType,
@@ -1701,7 +1702,8 @@ class GitRepositorySet:
             return repository
         return None
 
-    def getRepositories(self, user, target=None, order_by_modified_date=False,
+    def getRepositories(self, user, target=None,
+                        order_by=GitListingSort.MOST_RECENTLY_CHANGED_FIRST,
                         modified_since_date=None):
         """See `IGitRepositorySet`."""
         if target is not None:
@@ -1711,12 +1713,7 @@ class GitRepositorySet:
         collection = collection.visibleByUser(user)
         if modified_since_date is not None:
             collection = collection.modifiedSince(modified_since_date)
-        kwargs = {}
-        if order_by_modified_date:
-            kwargs["order_by_date"] = True
-        else:
-            kwargs["order_by_id"] = True
-        return collection.getRepositories(eager_load=True, **kwargs)
+        return collection.getRepositories(eager_load=True, sort_by=order_by)
 
     def getRepositoryVisibilityInfo(self, user, person, repository_names):
         """See `IGitRepositorySet`."""

@@ -65,6 +65,7 @@ from lp.code.enums import (
     BranchSubscriptionDiffSize,
     BranchSubscriptionNotificationLevel,
     CodeReviewNotificationLevel,
+    GitListingSort,
     GitRepositoryType,
     )
 from lp.code.interfaces.defaultgit import ICanHasDefaultGitRepository
@@ -990,13 +991,9 @@ class IGitRepositorySet(Interface):
     @operation_parameters(
         target=Reference(
             title=_("Target"), required=False, schema=IHasGitRepositories),
-        order_by_modified_date=Bool(
-            title=_("Order by modified date"),
-            # order_by_modified_date=False currently returns repositories
-            # ordered by ID, but we don't want to commit to this.
-            description=_(
-                "Return most-recently-modified repositories first.  If False, "
-                "the order of results is unspecified."),
+        order_by=Choice(
+            title=_("Sort order"), vocabulary=GitListingSort,
+            default=GitListingSort.MOST_RECENTLY_CHANGED_FIRST,
             required=False),
         modified_since_date=Datetime(
             title=_("Modified since date"),
@@ -1006,7 +1003,8 @@ class IGitRepositorySet(Interface):
     @operation_returns_collection_of(IGitRepository)
     @export_read_operation()
     @operation_for_version("devel")
-    def getRepositories(user, target=None, order_by_modified_date=False,
+    def getRepositories(user, target=None,
+                        order_by=GitListingSort.MOST_RECENTLY_CHANGED_FIRST,
                         modified_since_date=None):
         """Get all repositories for a target.
 
@@ -1014,8 +1012,8 @@ class IGitRepositorySet(Interface):
             will be returned.
         :param target: An `IHasGitRepositories`, or None to get repositories
             for all targets.
-        :param order_by_modified_date: If True, order results by descending
-            `date_last_modified`; if False, the order is unspecified.
+        :param order_by: An item from the `GitListingSort` enumeration, or
+            None to return an unordered result set.
         :param modified_since_date: If not None, return only repositories
             whose `date_last_modified` is greater than this date.
 
