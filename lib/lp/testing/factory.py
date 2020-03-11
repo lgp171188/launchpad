@@ -2121,7 +2121,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         """
         if bug is None:
             bug = self.makeBug()
-        elif isinstance(bug, (int, long, basestring)):
+        elif isinstance(bug, (six.integer_types, basestring)):
             bug = getUtility(IBugSet).getByNameOrID(str(bug))
         if owner is None:
             owner = self.makePerson()
@@ -2156,7 +2156,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         """
         if bug is None:
             bug = self.makeBug()
-        elif isinstance(bug, (int, long, basestring)):
+        elif isinstance(bug, (six.integer_types, basestring)):
             bug = getUtility(IBugSet).getByNameOrID(str(bug))
         if owner is None:
             owner = self.makePerson()

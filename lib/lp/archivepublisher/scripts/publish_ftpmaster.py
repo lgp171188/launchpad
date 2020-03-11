@@ -238,7 +238,7 @@ class PublishFTPMaster(LaunchpadCronScript):
         longer needs archive indexes to be set up.
         """
         marker_name = self.locateIndexesMarker(distribution, suite)
-        with file(marker_name, "w") as marker:
+        with open(marker_name, "w") as marker:
             marker.write(
                 "Indexes for %s were created on %s.\n"
                 % (suite, datetime.now(utc)))

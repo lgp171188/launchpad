@@ -28,10 +28,12 @@ SECURITY_PATH = os.path.join(
 
 
 def main():
-    data = file(SECURITY_PATH).read()
+    with open(SECURITY_PATH) as f:
+        data = f.read()
     auditor = SettingsAuditor(data)
     settings = auditor.audit()
-    file(SECURITY_PATH, 'w').write(settings)
+    with open(SECURITY_PATH, 'w') as f:
+        f.write(settings)
     print(auditor.error_data)
 
 if __name__ == '__main__':

@@ -30,6 +30,7 @@ import threading
 import time
 
 import pytz
+import six
 from six.moves.xmlrpc_client import ProtocolError
 from twisted.internet import reactor
 from twisted.internet.defer import DeferredList
@@ -256,7 +257,7 @@ class CheckwatchesMaster(WorkingBase):
         """
         with self.transaction:
             # Get the bug tracker.
-            if isinstance(bug_tracker, (int, long)):
+            if isinstance(bug_tracker, six.integer_types):
                 bug_tracker = getUtility(IBugTrackerSet).get(bug_tracker)
             # Save the name and url for later, since we might need it
             # to report an error after a transaction has been aborted.

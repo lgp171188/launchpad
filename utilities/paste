@@ -8,10 +8,6 @@ from __future__ import absolute_import, print_function
 import _pythonpath
 
 import base64
-from cookielib import (
-    Cookie,
-    CookieJar,
-    )
 from optparse import OptionParser
 import os
 import pwd
@@ -19,6 +15,10 @@ import sys
 import webbrowser
 
 from fixtures import MonkeyPatch
+from six.moves.http_cookiejar import (
+    Cookie,
+    CookieJar,
+    )
 from six.moves.urllib.parse import urljoin
 from zope.testbrowser.browser import Browser
 

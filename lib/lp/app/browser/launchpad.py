@@ -544,7 +544,8 @@ class MaintenanceMessage:
 
     def __call__(self):
         if os.path.exists('+maintenancetime.txt'):
-            message = file('+maintenancetime.txt').read()
+            with open('+maintenancetime.txt') as f:
+                message = f.read()
             try:
                 maintenancetime = parseDatetimetz(message)
             except DateTimeError:

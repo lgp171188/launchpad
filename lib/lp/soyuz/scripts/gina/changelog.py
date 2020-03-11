@@ -100,4 +100,5 @@ def parse_changelog(changelines):
 
 if __name__ == '__main__':
     import pprint
-    pprint.pprint(parse_changelog(file(sys.argv[1], "r")))
+    with open(sys.argv[1]) as f:
+        pprint.pprint(parse_changelog(f))

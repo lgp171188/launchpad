@@ -224,7 +224,7 @@ class FileUploadClient:
 
             Store.of(content).flush()
 
-            assert isinstance(aliasID, (int, long)), \
+            assert isinstance(aliasID, six.integer_types), \
                     "aliasID %r not an integer" % (aliasID, )
             return aliasID
         finally:
