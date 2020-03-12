@@ -532,8 +532,6 @@ class SourcePackagePublishingHistory(SQLBase, ArchivePublisherBase):
             if override.section is not None:
                 section = override.section
 
-        copied_from_archive = self.archive if archive != self.archive else None
-
         return getUtility(IPublishingSet).newSourcePublication(
             archive,
             self.sourcepackagerelease,
@@ -545,7 +543,7 @@ class SourcePackagePublishingHistory(SQLBase, ArchivePublisherBase):
             create_dsd_job=create_dsd_job,
             creator=creator,
             sponsor=sponsor,
-            copied_from_archive=copied_from_archive,
+            copied_from_archive=self.archive,
             packageupload=packageupload)
 
     def getStatusSummaryForBuilds(self):
@@ -1077,15 +1075,6 @@ class PublishingSet:
         if not needed:
             return []
 
-        def get_origin_archive(bpr):
-            """Returns the original archive of a BinaryPackageRelease
-            to be set on the newly created BinaryPackagePublishingHistory.
-            """
-            original_archive = copied_from_archives.get(bpr)
-            if original_archive == archive:
-                return None
-            return original_archive
-
         BPPH = BinaryPackagePublishingHistory
         return bulk.create(
             (BPPH.archive, BPPH.copied_from_archive,
@@ -1093,7 +1082,7 @@ class PublishingSet:
              BPPH.binarypackagerelease, BPPH.binarypackagename,
              BPPH.component, BPPH.section, BPPH.priority,
              BPPH.phased_update_percentage, BPPH.status, BPPH.datecreated),
-            [(archive, get_origin_archive(bpr), das, pocket, bpr,
+            [(archive, copied_from_archives.get(bpr), das, pocket, bpr,
               bpr.binarypackagename,
               get_component(archive, das.distroseries, component),
               section, priority, phased_update_percentage,
