@@ -38,7 +38,10 @@ from storm.expr import (
     Select,
     SQL,
     )
-from storm.locals import AutoReload
+from storm.locals import (
+    AutoReload,
+    ReferenceSet,
+    )
 from storm.store import Store
 from zope.component import getUtility
 from zope.event import notify
@@ -441,12 +444,12 @@ class Branch(SQLBase, WebhookTargetMixin, BzrIdentityMixin):
         'Person', joinColumn='branch', otherColumn='person',
         intermediateTable='BranchSubscription', orderBy='name')
 
-    bug_branches = SQLMultipleJoin(
-        'BugBranch', joinColumn='branch', orderBy='id')
+    bug_branches = ReferenceSet(
+        'id', 'BugBranch.branch_id', order_by='BugBranch.id')
 
-    linked_bugs = SQLRelatedJoin(
-        'Bug', joinColumn='branch', otherColumn='bug',
-        intermediateTable='BugBranch', orderBy='id')
+    linked_bugs = ReferenceSet(
+        'id', 'BugBranch.branch_id',
+        'BugBranch.bug_id', 'Bug.id', order_by='Bug.id')
 
     def getLinkedBugTasks(self, user, status_filter=None):
         """See `IBranch`."""
