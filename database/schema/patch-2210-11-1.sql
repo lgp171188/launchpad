@@ -12,12 +12,12 @@ CREATE INDEX binarypackagepublishinghistory__creator__idx ON
 
 
 ALTER TABLE binarypackagepublishinghistory
-    ADD COLUMN copied_from_archive INT REFERENCES archive;
+    ADD COLUMN copied_from_archive INTEGER REFERENCES archive;
 
 
 ALTER TABLE sourcepackagepublishinghistory
-    ADD COLUMN copied_from_archive INT REFERENCES archive;
+    ADD COLUMN copied_from_archive INTEGER REFERENCES archive;
 
 
-INSERT INTO LaunchpadDatabaseRevision VALUES (2210, 12, 0);
+INSERT INTO LaunchpadDatabaseRevision VALUES (2210, 11, 1);
 
