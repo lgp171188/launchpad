@@ -265,9 +265,10 @@ class SourcePublishingRecordView(BasePublishingRecordView):
 
         return False
 
-    def rootOriginArchive(self):
+    @property
+    def uploadArchive(self):
         """Get the original archive from this binary build if this was a
-        copied publishing.
+        copied publication.
         """
         if not self.wasCopied():
             return None
@@ -415,9 +416,10 @@ class BinaryPublishingRecordView(BasePublishingRecordView):
 
         return False
 
-    def rootOriginArchive(self):
+    @property
+    def uploadArchive(self):
         """Get the original archive from this binary build if this was a
-        copied publishing.
+        copied publication.
         """
         if not self.wasCopied():
             return None
