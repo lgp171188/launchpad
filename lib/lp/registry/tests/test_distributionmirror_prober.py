@@ -229,9 +229,8 @@ class TestProberHTTPSProtocolAndFactory(TestCase):
         prober = RedirectAwareProberFactory(url, timeout=0.5)
         self.assertEqual(prober.url, url)
 
-        # We basically don't care about the result here. We just want to
-        # check that it did the request to the correct URI,
-        # and ProxyAgent was used pointing to the correct proxy.
+        # We just want to check that it did the request using the correct
+        # Agent, pointing to the correct proxy config.
         agent = prober.getHttpsClient()._agent
         self.assertIsInstance(agent, TunnelingAgent)
         self.assertEqual(('localhost', proxy_port, None), agent._proxyConf)
