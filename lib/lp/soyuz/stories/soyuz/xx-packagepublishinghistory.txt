@@ -23,6 +23,7 @@ shows the complete history of a package in all series.
     >>> print(extract_text(table))
     Date    Status    Target     Pocket   Component Section Version
     ... UTC Published Breezy ... release  main      base    666
+    Created ... ago by Foo Bar
     Published ... ago
     >>> print(table.findAll("tr")[2].td["colspan"])
     8
@@ -47,6 +48,7 @@ A change-override request should show who made the request
     ... UTC Pending   Breezy ... release  universe  base    666
     Created ... ago by Foo Bar
     ... UTC Published Breezy ... release  main      base    666
+    Created ... ago by Foo Bar
     Published ... ago
 
 

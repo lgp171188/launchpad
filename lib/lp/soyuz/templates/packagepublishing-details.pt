@@ -6,7 +6,7 @@
   <ul>
     <li tal:condition="python: context.creator
                                and not view.wasCopied()
-                               and view.isPending()">
+                               and not view.wasDeleted()">
       Created
       <span tal:attributes="title context/datecreated/fmt:datetime"
             tal:content="context/datecreated/fmt:displaydate" />
