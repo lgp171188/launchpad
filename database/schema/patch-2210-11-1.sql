@@ -5,7 +5,7 @@ SET client_min_messages=ERROR;
 
 
 ALTER TABLE binarypackagepublishinghistory
-    ADD COLUMN creator INT REFERENCES person;
+    ADD COLUMN creator INTEGER REFERENCES person;
 
 CREATE INDEX binarypackagepublishinghistory__creator__idx ON
     binarypackagepublishinghistory(creator) WHERE creator IS NOT NULL;
