@@ -31,10 +31,6 @@ from twisted.internet import (
     reactor,
     ssl,
     )
-from twisted.internet.defer import (
-    CancelledError,
-    inlineCallbacks,
-    )
 from twisted.python.failure import Failure
 from twisted.web import server
 from twisted.web.client import BrowserLikePolicyForHTTPS
