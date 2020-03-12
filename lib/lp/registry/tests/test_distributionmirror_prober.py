@@ -220,18 +220,13 @@ class TestProberHTTPSProtocolAndFactory(TestCase):
 
         return deferred.addCallback(got_result)
 
-    @inlineCallbacks
     def test_https_prober_uses_proxy(self):
-        root = DistributionMirrorTestHTTPServer()
-        site = server.Site(root)
-        proxy_listen_port = reactor.listenTCP(0, site)
-        proxy_port = proxy_listen_port.getHost().port
+        proxy_port = 6654
         self.pushConfig(
-            'launchpad', http_proxy='http://localhost:%s/valid-mirror/file'
-                                    % proxy_port)
+            'launchpad', http_proxy='http://localhost:%s'% proxy_port)
 
         url = 'https://localhost:%s/valid-mirror/file' % self.port
-        prober = RedirectAwareProberFactory(url, timeout=1)
+        prober = RedirectAwareProberFactory(url, timeout=0.5)
         self.assertEqual(prober.url, url)
 
         # We basically don't care about the result here. We just want to
@@ -240,17 +235,6 @@ class TestProberHTTPSProtocolAndFactory(TestCase):
         agent = prober.getHttpsClient()._agent
         self.assertIsInstance(agent, TunnelingAgent)
         self.assertEqual(('localhost', proxy_port, None), agent._proxyConf)
-
-        try:
-            # It's important to actually run prober.probe() to check that
-            # reactor was not left with pending tasks.
-            result = yield prober.probe()
-        except Exception as e:
-            # Should have raised a timeout here, since our proxy doesn't
-            # answer CONNECT here.
-            self.assertIsInstance(e, CancelledError)
-        finally:
-            proxy_listen_port.stopListening()
 
     def test_https_fails_on_invalid_certificates(self):
         """Changes set back the default browser-like policy for HTTPS

@@ -209,9 +209,8 @@ class HTTPSProbeFailureHandler:
         if self.isInvalidCertificateError(error):
             invalid_certificate_hosts.add(
                 (self.factory.request_host, self.factory.request_port))
-            reason = InvalidHTTPSCertificate(
+            raise InvalidHTTPSCertificate(
                 self.factory.request_host, self.factory.request_port)
-            raise reason
         if self.isTimeout(error):
             raise ProberTimeout(self.factory.url, self.factory.timeout)
         raise error

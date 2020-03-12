@@ -81,13 +81,7 @@ class TunnelingTCP4ClientEndpoint(TCP4ClientEndpoint):
             TunnelingTCP4ClientEndpoint, self).connect(protocolFactory)
         self._connectDeferred.addCallback(self.requestTunnel)
         self._connectDeferred.addErrback(self.connectFailed)
-        self._connectDeferred.addBoth(self.cleanup)
         return self._tunnelReadyDeferred
-
-    def cleanup(self, result):
-        if self._protocol:
-            self._protocol.abort()
-        return result
 
 
 class TunnelingAgent(Agent):
@@ -103,12 +97,9 @@ class TunnelingAgent(Agent):
         self._connectTimeout = connectTimeout
         self._bindAddress = bindAddress
         self._proxyConf = proxyConf
-        self._endpoint = None
 
     def _getEndpoint(self, url):
-        if self._endpoint is not None:
-            return self._endpoint
-        self._endpoint = TunnelingTCP4ClientEndpoint(self._reactor, url.host, url.port,
+        return TunnelingTCP4ClientEndpoint(
+            self._reactor, url.host, url.port,
             self._proxyConf, self._contextFactory, self._connectTimeout,
             self._bindAddress)
-        return self._endpoint
