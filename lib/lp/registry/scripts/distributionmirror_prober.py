@@ -10,7 +10,6 @@ from datetime import datetime
 import itertools
 import logging
 import os.path
-import re
 from StringIO import StringIO
 
 import OpenSSL
