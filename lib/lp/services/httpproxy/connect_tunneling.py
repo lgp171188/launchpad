@@ -48,9 +48,8 @@ class TunnelingTCP4ClientEndpoint(TCP4ClientEndpoint):
         tunnelReq = 'CONNECT %s:%s HTTP/1.1\n' % (self._tunneledHost,
                                                   self._tunneledPort)
         if self._proxyAuthHeader:
-            tunnelReq += 'Proxy-Authorization: %s \n\n' % self._proxyAuthHeader
-        else:
-            tunnelReq += '\n'
+            tunnelReq += 'Proxy-Authorization: %s\n' % self._proxyAuthHeader
+        tunnelReq += '\n'
         protocol.transport.write(tunnelReq)
         self._protocolDataReceived = protocol.dataReceived
         protocol.dataReceived = self.processProxyResponse
