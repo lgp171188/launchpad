@@ -16,7 +16,6 @@ __all__ = [
     'ZopeViewReplacementFixture',
     ]
 
-from ConfigParser import SafeConfigParser
 import os.path
 import socket
 import time
@@ -43,6 +42,7 @@ from zope.security.checker import (
     )
 
 from lp.services import webapp
+from lp.services.compat import SafeConfigParser
 from lp.services.config import config
 from lp.services.database.interfaces import IStore
 from lp.services.librarian.model import LibraryFileAlias

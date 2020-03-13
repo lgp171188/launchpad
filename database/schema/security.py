@@ -8,13 +8,13 @@ __metaclass__ = type
 import _pythonpath
 
 from collections import defaultdict
-from ConfigParser import SafeConfigParser
 from optparse import OptionParser
 import os
 import re
 import sys
 
 from fti import quote_identifier
+from lp.services.compat import SafeConfigParser
 from lp.services.database.sqlbase import connect
 from lp.services.scripts import (
     db_options,
