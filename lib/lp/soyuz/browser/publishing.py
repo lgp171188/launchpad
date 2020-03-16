@@ -210,6 +210,8 @@ class BasePublishingRecordView(LaunchpadView):
         user has permission to see it.
         """
         archive = self.context.copied_from_archive
+        if archive is None:
+            return False
         return archive.is_ppa and check_permission('launchpad.View', archive)
 
 

@@ -287,9 +287,8 @@ context.
     >>> jblack_extra_browser.open(expander_url)
     >>> print(extract_text(jblack_extra_browser.contents))
     Publishing details
-      Copied from ubuntu hoary in Primary Archive for Ubuntu Linux by James
-      Blackwell
-      Previous archive was PPA for Celso Providelo
+      Copied from PPA for Celso Providelo by James Blackwell
+      Originally uploaded to ubuntu hoary in Primary Archive for Ubuntu Linux
     Changelog
       pmount (0.1-1) hoary; urgency=low
       * Fix description (Malone #1)

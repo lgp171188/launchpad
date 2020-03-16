@@ -62,12 +62,14 @@
         </li>
 
         <li>
-          <span tal:condition="python: copied_from_archive != upload_archive">
+          <span tal:condition="python: copied_from_archive is not None
+                                       and copied_from_archive != upload_archive">
             Originally
             <p tal:replace="python: 'uploaded to' if view.is_source
                                     else 'built as'" />
           </span>
-          <span tal:condition="python: copied_from_archive == upload_archive">
+          <span tal:condition="python: copied_from_archive is None
+                                       or copied_from_archive == upload_archive">
             Copied from
           </span>
 
