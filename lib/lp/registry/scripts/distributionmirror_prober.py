@@ -15,7 +15,7 @@ from StringIO import StringIO
 import OpenSSL
 from OpenSSL.SSL import (
     Context,
-    TLSv1_1_METHOD,
+    TLSv1_2_METHOD,
     )
 import requests
 from six.moves import http_client
@@ -350,7 +350,16 @@ class ProberFactory(protocol.ClientFactory):
                 reactor=reactor, contextFactory=self.https_agent_policy())
         else:
             contextFactory = self.https_agent_policy()
-            contextFactory.getContext = lambda: Context(TLSv1_1_METHOD)
+            # XXX: pappacena 2020-03-16
+            # TLS version 1.2 should work for most servers. But if it
+            # doesn't, we should implement a negotiation mechanism to test
+            # which version should be used before doing the actual probing
+            # request.
+            # One way to debug which version a given server is compatible
+            # with using curl is issuing the following command:
+            # curl -v --head https://<server-host> --tlsv1.2 --tls-max 1.2
+            # (changing 1.2 with other version numbers)
+            contextFactory.getContext = lambda: Context(TLSv1_2_METHOD)
             agent = TunnelingAgent(
                 reactor, (self.connect_host, self.connect_port, None),
                 contextFactory=contextFactory)
@@ -917,14 +926,17 @@ def should_skip_host(host):
         return ratio < MIN_REQUEST_TIMEOUT_RATIO
 
 
-def _parse(url, defaultPort=80):
+def _parse(url, defaultPort=None):
     """Parse the given URL returning the scheme, host, port and path."""
     scheme, host, path, dummy, dummy, dummy = urlparse(url)
-    port = defaultPort
     if ':' in host:
         host, port = host.split(':')
         assert port.isdigit()
         port = int(port)
+    elif defaultPort is None:
+        port = 443 if scheme == 'https' else 80
+    else:
+        port = defaultPort
     return scheme, host, port, path
 
 
