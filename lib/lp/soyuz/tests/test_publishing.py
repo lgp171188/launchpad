@@ -80,7 +80,6 @@ from lp.testing.layers import (
     ZopelessDatabaseLayer,
     )
 from lp.testing.matchers import HasQueryCount
-from lp.testing.sampledata import ADMIN_EMAIL
 
 
 class SoyuzTestPublisher:
@@ -1002,7 +1001,7 @@ class TestPublishingSetLite(TestCaseWithFactory):
             debug_non_match_bpph.status, PackagePublishingStatus.PENDING)
 
     def test_changeOverride_also_overrides_debug_package(self):
-        user = self.factory.makeAdministrator()
+        user = self.factory.makePerson()
         bpph, debug_bpph = self.factory.makeBinaryPackagePublishingHistory(
             pocket=PackagePublishingPocket.RELEASE, with_debug=True)
         new_section = self.factory.makeSection()
@@ -1613,14 +1612,14 @@ class TestPublishingHistoryView(TestCaseWithFactory):
                "/+publishinghistory")
 
         def insert_more_publish_history():
-            person1 = self.factory.makeAdministrator()
+            person1 = self.factory.makePerson()
             new_component = (
                 'universe' if source_pub.component.name == 'main'
                 else 'main')
             source_pub.changeOverride(
                 new_component=new_component, creator=person1)
 
-            person2 = self.factory.makeAdministrator()
+            person2 = self.factory.makePerson()
             new_section = ('web' if source_pub.section.name == 'base'
                            else 'base')
             source_pub.changeOverride(
