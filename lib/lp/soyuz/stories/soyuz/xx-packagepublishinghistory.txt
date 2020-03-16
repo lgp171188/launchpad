@@ -53,7 +53,7 @@ intermediate archive information.
     >>> print(extract_text(table))
     Date    Status    Target          Pocket   Component Section Version
     ... UTC Pending   Foo-series      release  main      base    666
-    Copied from ubuntutest breezy-autotest in Primary Archive for Ubuntu Test
+    Copied from ubuntutest breezy-autotest in Primary Archive for Ubuntu Test by Person123
 
 
 Copying from "Foo-distro" to a new distribution "Another-distro". It should

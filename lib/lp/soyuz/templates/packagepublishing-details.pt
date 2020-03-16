@@ -41,12 +41,13 @@
        publishing) and the "upload_archive" (the archive where the package
        was originally uploaded to).
     </tal:comment>
-    <tal:copied tal:define="copied_from_archive context/copied_from_archive;
-                            upload_archive view/uploadArchive"
-                tal:condition="view/wasCopied">
+    <tal:copied tal:define="
+          copied_from_archive context/copied_from_archive;
+          upload_archive view/uploadArchive;
+          show_creator_on_top python: copied_from_archive and copied_from_archive != upload_archive"
+          tal:condition="view/wasCopied">
         <li tal:define="linkify_archive view/linkify_copied_from_archive"
-            tal:condition="python: copied_from_archive
-                                   and copied_from_archive != upload_archive">
+            tal:condition="show_creator_on_top">
               Copied from
               <a tal:condition="linkify_archive"
                  tal:attributes="href copied_from_archive/fmt:url"
@@ -89,6 +90,16 @@
                 define="message string:${upload_archive/displayname}"
                 replace="message" />
             </tal:define>
+
+            <tal:comment condition="nothing">
+                Only show "creator" if we didn't show above, at the
+                previoud copied_from_archive "li" tag.
+            </tal:comment>
+            <tal:source_creator
+              condition="python: context.creator and not show_creator_on_top">
+              by <a tal:replace="structure context/creator/fmt:link"/>
+            </tal:source_creator>
+
             <tal:source_sponsor condition="context/sponsor">
               (sponsored by <a tal:replace="structure context/sponsor/fmt:link"/>)
             </tal:source_sponsor>
