@@ -111,7 +111,6 @@ class HTTPServerTestSetup(TacTestSetup):
         return os.path.join(self.root, 'distributionmirror_http_server.log')
 
 
-
 class LocalhostWhitelistedHTTPSPolicy(BrowserLikePolicyForHTTPS):
     """HTTPS policy that bypasses SSL certificate check when doing requests
     to localhost.
@@ -172,6 +171,13 @@ class TestProberHTTPSProtocolAndFactory(TestCase):
         ProberFactory.https_agent_policy = LocalhostWhitelistedHTTPSPolicy
         RedirectAwareProberFactory.https_agent_policy = (
             LocalhostWhitelistedHTTPSPolicy)
+
+        def restore_policy():
+            ProberFactory.https_agent_policy = original_probefactory_policy
+            RedirectAwareProberFactory.https_agent_policy = (
+                original_redirect_policy)
+
+        self.addCleanup(restore_policy)
 
         for factory in (ProberFactory, RedirectAwareProberFactory):
             self.useFixture(MockPatchObject(
@@ -239,7 +245,7 @@ class TestProberHTTPSProtocolAndFactory(TestCase):
     def test_https_prober_uses_proxy(self):
         proxy_port = 6654
         self.pushConfig(
-            'launchpad', http_proxy='http://localhost:%s'% proxy_port)
+            'launchpad', http_proxy='http://localhost:%s' % proxy_port)
 
         url = 'https://localhost:%s/valid-mirror/file' % self.port
         prober = RedirectAwareProberFactory(url, timeout=0.5)
