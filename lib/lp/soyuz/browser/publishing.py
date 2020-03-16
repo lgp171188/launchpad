@@ -202,6 +202,16 @@ class BasePublishingRecordView(LaunchpadView):
             return u"%d%% of users" % self.context.phased_update_percentage
         return u""
 
+    @property
+    def linkify_copied_from_archive(self):
+        """True if the copied_from_archive should be linkified.
+
+        The copied_from_archive should be linkified if it's a PPA and the
+        user has permission to see it.
+        """
+        archive = self.context.copied_from_archive
+        return archive.is_ppa and check_permission('launchpad.View', archive)
+
 
 class SourcePublishingRecordView(BasePublishingRecordView):
     """View class for `ISourcePackagePublishingHistory`."""
@@ -351,6 +361,7 @@ class SourcePublishingRecordView(BasePublishingRecordView):
             return False
 
         return check_permission('launchpad.View', archive)
+
 
     @property
     def recipe_build_details(self):
