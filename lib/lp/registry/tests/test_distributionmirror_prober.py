@@ -165,20 +165,6 @@ class TestProberHTTPSProtocolAndFactory(TestCase):
 
         # Change the default policy to accept localhost self-signed
         # certificates.
-        original_probefactory_policy = ProberFactory.https_agent_policy
-        original_redirect_policy = (
-            RedirectAwareProberFactory.https_agent_policy)
-        ProberFactory.https_agent_policy = LocalhostWhitelistedHTTPSPolicy
-        RedirectAwareProberFactory.https_agent_policy = (
-            LocalhostWhitelistedHTTPSPolicy)
-
-        def restore_policy():
-            ProberFactory.https_agent_policy = original_probefactory_policy
-            RedirectAwareProberFactory.https_agent_policy = (
-                original_redirect_policy)
-
-        self.addCleanup(restore_policy)
-
         for factory in (ProberFactory, RedirectAwareProberFactory):
             self.useFixture(MockPatchObject(
                 factory, "https_agent_policy",
