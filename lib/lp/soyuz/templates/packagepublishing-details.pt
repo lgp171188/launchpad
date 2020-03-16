@@ -37,11 +37,11 @@
 
     <tal:comment condition="nothing">
            For package copies, we have a distinction between what is the
-           "previous_archive" (the archive from where we directly copied a
+           "copied_from_archive" (the archive from where we directly copied a
            publishing) and the "upload_archive" (the archive where the package
            was originally uploaded to).
     </tal:comment>
-    <li tal:define="previous_archive context/copied_from_archive;
+    <li tal:define="copied_from_archive context/copied_from_archive;
                     upload_archive view/uploadArchive"
         tal:condition="view/wasCopied">
       Copied from
@@ -80,11 +80,11 @@
           replace="message" />
       </tal:binary_build_location>
 
-      <p tal:condition="python: previous_archive
-                                and previous_archive != upload_archive">
+      <p tal:condition="python: copied_from_archive
+                                and copied_from_archive != upload_archive">
           Previous archive was
-          <a tal:attributes="href previous_archive/fmt:url"
-                  tal:content="previous_archive/displayname" />
+          <a tal:attributes="href copied_from_archive/fmt:url"
+                  tal:content="copied_from_archive/displayname" />
       </p>
     </li>
   </ul>
