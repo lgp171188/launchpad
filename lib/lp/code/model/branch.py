@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -84,6 +84,7 @@ from lp.code.bzr import (
     )
 from lp.code.enums import (
     BranchLifecycleStatus,
+    BranchListingSort,
     BranchMergeProposalStatus,
     BranchType,
     )
@@ -110,7 +111,10 @@ from lp.code.interfaces.branch import (
     user_has_special_branch_access,
     WrongNumberOfReviewTypeArguments,
     )
-from lp.code.interfaces.branchcollection import IAllBranches
+from lp.code.interfaces.branchcollection import (
+    IAllBranches,
+    IBranchCollection,
+    )
 from lp.code.interfaces.branchhosting import IBranchHostingClient
 from lp.code.interfaces.branchlookup import IBranchLookup
 from lp.code.interfaces.branchmergeproposal import (
@@ -1712,13 +1716,21 @@ class BranchSet:
         """See `IBranchSet`."""
         return getUtility(IBranchLookup).getByPath(path)
 
-    def getBranches(self, limit=50, eager_load=True):
+    def getBranches(self, user, target=None,
+                    order_by=BranchListingSort.MOST_RECENTLY_CHANGED_FIRST,
+                    modified_since_date=None, limit=None, eager_load=True):
         """See `IBranchSet`."""
-        anon_branches = getUtility(IAllBranches).visibleByUser(None)
-        branches = anon_branches.scanned().getBranches(eager_load=eager_load)
-        branches.order_by(
-            Desc(Branch.date_last_modified), Desc(Branch.id))
-        branches.config(limit=limit)
+        if target is not None:
+            collection = IBranchCollection(target)
+        else:
+            collection = getUtility(IAllBranches)
+        collection = collection.visibleByUser(user)
+        if modified_since_date is not None:
+            collection = collection.modifiedSince(modified_since_date)
+        branches = collection.scanned().getBranches(
+            eager_load=eager_load, sort_by=order_by)
+        if limit is not None:
+            branches.config(limit=limit)
         return branches
 
     def getBranchVisibilityInfo(self, user, person, branch_names):

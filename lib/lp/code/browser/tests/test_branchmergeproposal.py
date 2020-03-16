@@ -869,7 +869,7 @@ class TestRegisterBranchMergeProposalViewGit(
             target_branch.repository)._default_branch = target_branch.path
         view = self._createView()
         self.assertEqual(
-            target_branch.repository.default_branch,
+            target_branch.repository.default_branch.split('/')[-1],
             view.widgets['target_git_path']._getCurrentValue())
 
     def test_default_branch_no_default_set(self):

@@ -28,6 +28,13 @@ def set_default_openid_fetcher():
     # if pycurl is installed.
     fetcher = Urllib2Fetcher()
     if config.launchpad.enable_test_openid_provider:
-        cafile = os.path.join(config.root, "configs/development/launchpad.crt")
+        # Tests have an instance name that looks like 'testrunner-appserver'
+        # or similar. We're in 'development' there, so just use that config.
+        if config.instance_name.startswith("testrunner"):
+            instance_name = 'development'
+        else:
+            instance_name = config.instance_name
+        cert_path = "configs/{}/launchpad.crt".format(instance_name)
+        cafile = os.path.join(config.root, cert_path)
         fetcher.urlopen = partial(urlopen, cafile=cafile)
     setDefaultFetcher(fetcher)

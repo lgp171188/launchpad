@@ -1,4 +1,4 @@
-# Copyright 2015-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Git repository interfaces."""
@@ -65,6 +65,7 @@ from lp.code.enums import (
     BranchSubscriptionDiffSize,
     BranchSubscriptionNotificationLevel,
     CodeReviewNotificationLevel,
+    GitListingSort,
     GitRepositoryType,
     )
 from lp.code.interfaces.defaultgit import ICanHasDefaultGitRepository
@@ -989,16 +990,32 @@ class IGitRepositorySet(Interface):
     @call_with(user=REQUEST_USER)
     @operation_parameters(
         target=Reference(
-            title=_("Target"), required=True, schema=IHasGitRepositories))
+            title=_("Target"), required=False, schema=IHasGitRepositories),
+        order_by=Choice(
+            title=_("Sort order"), vocabulary=GitListingSort,
+            default=GitListingSort.MOST_RECENTLY_CHANGED_FIRST,
+            required=False),
+        modified_since_date=Datetime(
+            title=_("Modified since date"),
+            description=_(
+                "Return only repositories whose `date_last_modified` is "
+                "greater than or equal to this date.")))
     @operation_returns_collection_of(IGitRepository)
     @export_read_operation()
     @operation_for_version("devel")
-    def getRepositories(user, target):
+    def getRepositories(user, target=None,
+                        order_by=GitListingSort.MOST_RECENTLY_CHANGED_FIRST,
+                        modified_since_date=None):
         """Get all repositories for a target.
 
         :param user: An `IPerson`.  Only repositories visible by this user
             will be returned.
-        :param target: An `IHasGitRepositories`.
+        :param target: An `IHasGitRepositories`, or None to get repositories
+            for all targets.
+        :param order_by: An item from the `GitListingSort` enumeration, or
+            None to return an unordered result set.
+        :param modified_since_date: If not None, return only repositories
+            whose `date_last_modified` is greater than this date.
 
         :return: A collection of `IGitRepository` objects.
         """

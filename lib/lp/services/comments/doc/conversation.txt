@@ -18,12 +18,10 @@ The comment in the conversation needs to provide the IComment interface.  A
 simple way to do this is to have a view class that implements IComment and
 delegates to the underlying interface object, like this:
 
+@implementer(IComment)
+@delegate_to(ICodeReviewComment, context='comment')
 class CodeReviewDisplayComment:
     """A code review comment or activity or both."""
-
-    implements(IComment)
-
-    delegates(ICodeReviewComment, 'comment')
 
     ...
 

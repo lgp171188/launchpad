@@ -125,6 +125,8 @@ is over the length limit.
 }}}
 """
 
+from __future__ import absolute_import, print_function
+
 __metaclass__ = type
 
 # SKIP this file when reformatting.
@@ -345,7 +347,8 @@ def format_imports(imports):
 
 def reformat_importsection(filename):
     """Replace the given file with a reformatted version of it."""
-    pyfile = file(filename).read()
+    with open(filename) as f:
+        pyfile = f.read()
     import_start, import_end = find_imports_section(pyfile)
     if import_start is None:
         # Skip files with no import section.
@@ -380,7 +383,7 @@ def process_file(fpath):
     """Process the file with the given path."""
     changed = reformat_importsection(fpath)
     if changed:
-        print fpath
+        print(fpath)
 
 
 def process_tree(dpath):

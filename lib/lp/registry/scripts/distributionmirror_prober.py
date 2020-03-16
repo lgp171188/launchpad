@@ -13,6 +13,10 @@ import os.path
 from StringIO import StringIO
 
 import OpenSSL
+from OpenSSL.SSL import (
+    Context,
+    TLSv1_2_METHOD,
+    )
 import requests
 from six.moves import http_client
 from six.moves.urllib.parse import (
@@ -31,13 +35,11 @@ from twisted.internet.defer import (
     CancelledError,
     DeferredSemaphore,
     )
-from twisted.internet.endpoints import HostnameEndpoint
 from twisted.internet.ssl import VerificationError
 from twisted.python.failure import Failure
 from twisted.web.client import (
     Agent,
     BrowserLikePolicyForHTTPS,
-    ProxyAgent,
     ResponseNeverReceived,
     )
 from twisted.web.http import HTTPClient
@@ -53,6 +55,7 @@ from lp.registry.interfaces.distributionmirror import (
     )
 from lp.registry.interfaces.distroseries import IDistroSeries
 from lp.services.config import config
+from lp.services.httpproxy.connect_tunneling import TunnelingAgent
 from lp.services.librarian.interfaces import ILibraryFileAliasSet
 from lp.services.timeout import urlfetch
 from lp.services.webapp import canonical_url
@@ -205,9 +208,8 @@ class HTTPSProbeFailureHandler:
         if self.isInvalidCertificateError(error):
             invalid_certificate_hosts.add(
                 (self.factory.request_host, self.factory.request_port))
-            reason = InvalidHTTPSCertificate(
+            raise InvalidHTTPSCertificate(
                 self.factory.request_host, self.factory.request_port)
-            raise reason
         if self.isTimeout(error):
             raise ProberTimeout(self.factory.url, self.factory.timeout)
         raise error
@@ -304,6 +306,7 @@ class ProberFactory(protocol.ClientFactory):
         self.timeoutCall = None
         self.setURL(url.encode('ascii'))
         self.logger = logging.getLogger('distributionmirror-prober')
+        self._https_client = None
 
     @property
     def is_https(self):
@@ -339,15 +342,29 @@ class ProberFactory(protocol.ClientFactory):
         return self._deferred
 
     def getHttpsClient(self):
+        if self._https_client is not None:
+            return self._https_client
         # Should we use a proxy?
         if not config.launchpad.http_proxy:
             agent = Agent(
                 reactor=reactor, contextFactory=self.https_agent_policy())
         else:
-            endpoint = HostnameEndpoint(
-                reactor, self.connect_host, self.connect_port)
-            agent = ProxyAgent(endpoint)
-        return TreqHTTPClient(agent)
+            contextFactory = self.https_agent_policy()
+            # XXX: pappacena 2020-03-16
+            # TLS version 1.2 should work for most servers. But if it
+            # doesn't, we should implement a negotiation mechanism to test
+            # which version should be used before doing the actual probing
+            # request.
+            # One way to debug which version a given server is compatible
+            # with using curl is issuing the following command:
+            # curl -v --head https://<server-host> --tlsv1.2 --tls-max 1.2
+            # (changing 1.2 with other version numbers)
+            contextFactory.getContext = lambda: Context(TLSv1_2_METHOD)
+            agent = TunnelingAgent(
+                reactor, (self.connect_host, self.connect_port, None),
+                contextFactory=contextFactory)
+        self._https_client = TreqHTTPClient(agent)
+        return self._https_client
 
     def connect(self):
         """Starts the connection and sets the self._deferred to the proper
@@ -909,14 +926,17 @@ def should_skip_host(host):
         return ratio < MIN_REQUEST_TIMEOUT_RATIO
 
 
-def _parse(url, defaultPort=80):
+def _parse(url, defaultPort=None):
     """Parse the given URL returning the scheme, host, port and path."""
     scheme, host, path, dummy, dummy, dummy = urlparse(url)
-    port = defaultPort
     if ':' in host:
         host, port = host.split(':')
         assert port.isdigit()
         port = int(port)
+    elif defaultPort is None:
+        port = 443 if scheme == 'https' else 80
+    else:
+        port = defaultPort
     return scheme, host, port, path
 
 

@@ -8,6 +8,8 @@ Generate some statistics about a PostgreSQL database suitable for
 emailing via cron
 """
 
+from __future__ import absolute_import, print_function
+
 __metaclass__ = type
 
 import sys
@@ -24,7 +26,7 @@ def percentage(num, total):
 
 
 def print_row(key, value):
-    print '%(key)-20s: %(value)s' % vars()
+    print('%(key)-20s: %(value)s' % vars())
 
 
 def pgstattuple(cur, table):
@@ -56,8 +58,8 @@ def main(dbname):
     con = psycopg2.connect("dbname=%s" % dbname)
     cur = con.cursor()
 
-    print 'Statistics for %s' % dbname
-    print '===============' + '=' * (len(dbname))
+    print('Statistics for %s' % dbname)
+    print('===============' + '=' * (len(dbname)))
 
     # Database level statistics
     cur.execute("""
@@ -146,7 +148,7 @@ def main(dbname):
 
 if __name__ == '__main__':
     if len(sys.argv) != 2:
-        print >> sys.stderr, "Usage: %s [DBNAME]" % sys.argv[0]
+        print("Usage: %s [DBNAME]" % sys.argv[0], file=sys.stderr)
         sys.exit(1)
     dbname = sys.argv[1]
     main(dbname)

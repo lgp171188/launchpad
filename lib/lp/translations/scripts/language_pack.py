@@ -251,9 +251,12 @@ def export_language_pack(distribution_name, series_name, logger,
         if output_file == '-':
             output_filehandle = sys.stdout
         else:
-            output_filehandle = file(output_file, 'wb')
+            output_filehandle = open(output_file, 'wb')
 
         copyfileobj(filehandle, output_filehandle)
+
+        if output_filehandle != sys.stdout:
+            output_filehandle.close()
     else:
         # Upload the tarball to the librarian.
 

@@ -346,7 +346,8 @@ class TestFileExists(TestCase):
         self.useTempDir()
 
     def test_finds_file(self):
-        file("a-real-file.txt", "w").write("Here I am.")
+        with open("a-real-file.txt", "w") as f:
+            f.write("Here I am.")
         self.assertTrue(file_exists("a-real-file.txt"))
 
     def test_finds_directory(self):
