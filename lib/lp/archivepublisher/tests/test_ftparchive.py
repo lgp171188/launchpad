@@ -156,8 +156,10 @@ class TestFTPArchive(TestCaseWithFactory):
         if samplename is None:
             samplename = leafname
         leaf = os.path.join(self._sampledir, samplename)
-        leafcontent = file(leaf).read()
-        file(fullpath, "w").write(leafcontent)
+        with open(leaf) as leaf_file:
+            leafcontent = leaf_file.read()
+        with open(fullpath, "w") as f:
+            f.write(leafcontent)
 
     def _setUpFTPArchiveHandler(self):
         return FTPArchiveHandler(
@@ -483,7 +485,8 @@ class TestFTPArchive(TestCaseWithFactory):
         # Test that a publisher run now will generate an empty apt
         # config and nothing else.
         apt_conf = fa.generateConfig()
-        self.assertEqual(22, len(file(apt_conf).readlines()))
+        with open(apt_conf) as apt_conf_file:
+            self.assertEqual(22, len(apt_conf_file.readlines()))
 
         # XXX cprov 2007-03-21: see above, do not run a-f on dev machines.
         fa.runApt(apt_conf)
@@ -532,10 +535,11 @@ class TestFTPArchive(TestCaseWithFactory):
         # comparing is weak.
         apt_conf = fa.generateConfig(fullpublish=True)
         self.assertTrue(os.path.exists(apt_conf))
-        apt_conf_content = file(apt_conf).read()
-        sample_content = file(
-            os.path.join(
-            self._sampledir, 'apt_conf_single_empty_suite_test')).read()
+        with open(apt_conf) as apt_conf_file:
+            apt_conf_content = apt_conf_file.read()
+        with open(os.path.join(
+                self._sampledir, 'apt_conf_single_empty_suite_test')) as f:
+            sample_content = f.read()
         self.assertEqual(apt_conf_content, sample_content)
 
         # XXX cprov 2007-03-21: see above, do not run a-f on dev machines.

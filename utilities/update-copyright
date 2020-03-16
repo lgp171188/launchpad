@@ -10,6 +10,8 @@ notice to reflect the current year. Looks for the notice in the first three
 lines of the file and leaves the file unchanged if it finds none.
 """
 
+from __future__ import absolute_import, print_function
+
 from datetime import date
 import os
 import re
@@ -49,21 +51,22 @@ def update_files(filenames):
     """Open the files with the given file names and update them."""
     for filename in filenames:
         if not os.path.isfile(filename):
-            print "Skipped: %s does not exist or is not a regular file." %(
-                filename)
+            print("Skipped: %s does not exist or is not a regular file." %(
+                filename))
             continue
         if not os.access(filename, os.W_OK):
-            print "Skipped: %s is not writeable." % filename
+            print("Skipped: %s is not writeable." % filename)
             continue
-        lines = file(filename).readlines()
+        with open(filename) as f:
+            lines = f.readlines()
         changed = update_copyright(lines)
         if changed:
             newfile = open(filename, 'w')
             newfile.write(''.join(lines))
             newfile.close()
-            print "Updated: %s" % filename
+            print("Updated: %s" % filename)
         else:
-            print "Unchanged: %s" % filename
+            print("Unchanged: %s" % filename)
 
 def find_changed_files():
     """Use the find-changed-files.sh script."""

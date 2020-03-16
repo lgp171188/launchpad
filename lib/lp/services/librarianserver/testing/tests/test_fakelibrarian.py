@@ -7,6 +7,7 @@ __metaclass__ = type
 
 from StringIO import StringIO
 
+import six
 import transaction
 from transaction.interfaces import ISynchronizer
 from zope.component import getUtility
@@ -59,7 +60,7 @@ class LibraryAccessScenarioMixin:
 
     def test_insert_retrieve(self):
         name, text, alias = self._storeFile()
-        self.assertIsInstance(alias.id, (int, long))
+        self.assertIsInstance(alias.id, six.integer_types)
 
         transaction.commit()
 
@@ -99,7 +100,7 @@ class LibraryAccessScenarioMixin:
     def test_addFile_returns_alias_id(self):
         alias_id = getUtility(ILibrarianClient).addFile(
             'bar.txt', 3, StringIO('bar'), 'text/plain')
-        self.assertIsInstance(alias_id, (int, long))
+        self.assertIsInstance(alias_id, six.integer_types)
         self.assertIsInstance(
             getUtility(ILibraryFileAliasSet)[alias_id],
             LibraryFileAlias)

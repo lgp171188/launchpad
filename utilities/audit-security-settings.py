@@ -9,6 +9,9 @@ Usage hint:
 
 % utilities/audit-security.py
 """
+
+from __future__ import absolute_import, print_function
+
 __metatype__ = type
 
 import _pythonpath
@@ -25,11 +28,13 @@ SECURITY_PATH = os.path.join(
 
 
 def main():
-    data = file(SECURITY_PATH).read()
+    with open(SECURITY_PATH) as f:
+        data = f.read()
     auditor = SettingsAuditor(data)
     settings = auditor.audit()
-    file(SECURITY_PATH, 'w').write(settings)
-    print auditor.error_data
+    with open(SECURITY_PATH, 'w') as f:
+        f.write(settings)
+    print(auditor.error_data)
 
 if __name__ == '__main__':
     main()

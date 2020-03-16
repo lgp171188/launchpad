@@ -33,10 +33,7 @@ from twisted.internet import (
     )
 from twisted.python.failure import Failure
 from twisted.web import server
-from twisted.web.client import (
-    BrowserLikePolicyForHTTPS,
-    ProxyAgent,
-    )
+from twisted.web.client import BrowserLikePolicyForHTTPS
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
@@ -46,6 +43,7 @@ from lp.registry.model.distributionmirror import DistributionMirror
 from lp.registry.scripts import distributionmirror_prober
 from lp.registry.scripts.distributionmirror_prober import (
     _get_cdimage_file_list,
+    _parse,
     ArchiveMirrorProberCallbacks,
     BadResponseCode,
     ConnectionSkipped,
@@ -77,6 +75,7 @@ from lp.registry.tests.distributionmirror_http_server import (
     )
 from lp.services.config import config
 from lp.services.daemons.tachandler import TacTestSetup
+from lp.services.httpproxy.connect_tunneling import TunnelingAgent
 from lp.services.timeout import default_timeout
 from lp.testing import (
     clean_up_reactor,
@@ -112,7 +111,6 @@ class HTTPServerTestSetup(TacTestSetup):
         return os.path.join(self.root, 'distributionmirror_http_server.log')
 
 
-
 class LocalhostWhitelistedHTTPSPolicy(BrowserLikePolicyForHTTPS):
     """HTTPS policy that bypasses SSL certificate check when doing requests
     to localhost.
@@ -125,6 +123,25 @@ class LocalhostWhitelistedHTTPSPolicy(BrowserLikePolicyForHTTPS):
             return ssl.CertificateOptions(verify=False)
         return super(LocalhostWhitelistedHTTPSPolicy, self).creatorForNetloc(
             hostname, port)
+
+
+class TestURLParser(TestCase):
+    def test_defined_port(self):
+        url = 'http://foo.com:37/bar'
+        self.assertEqual(('http', 'foo.com', 37, '/bar'), _parse(url))
+
+    def test_default_port_http(self):
+        url = 'http://foo.com/bar'
+        self.assertEqual(('http', 'foo.com', 80, '/bar'), _parse(url))
+
+    def test_default_port_https(self):
+        url = 'https://foo.com/bar'
+        self.assertEqual(('https', 'foo.com', 443, '/bar'), _parse(url))
+
+    def test_given_default_port(self):
+        url = 'https://foo.com/bar'
+        self.assertEqual(
+            ('https', 'foo.com', 99, '/bar'), _parse(url, defaultPort=99))
 
 
 class TestProberHTTPSProtocolAndFactory(TestCase):
@@ -148,13 +165,6 @@ class TestProberHTTPSProtocolAndFactory(TestCase):
 
         # Change the default policy to accept localhost self-signed
         # certificates.
-        original_probefactory_policy = ProberFactory.https_agent_policy
-        original_redirect_policy = (
-            RedirectAwareProberFactory.https_agent_policy)
-        ProberFactory.https_agent_policy = LocalhostWhitelistedHTTPSPolicy
-        RedirectAwareProberFactory.https_agent_policy = (
-            LocalhostWhitelistedHTTPSPolicy)
-
         for factory in (ProberFactory, RedirectAwareProberFactory):
             self.useFixture(MockPatchObject(
                 factory, "https_agent_policy",
@@ -219,40 +229,19 @@ class TestProberHTTPSProtocolAndFactory(TestCase):
         return deferred.addCallback(got_result)
 
     def test_https_prober_uses_proxy(self):
-        root = DistributionMirrorTestSecureHTTPServer()
-        site = server.Site(root)
-        proxy_listen_port = reactor.listenTCP(0, site)
-        proxy_port = proxy_listen_port.getHost().port
+        proxy_port = 6654
         self.pushConfig(
-            'launchpad', http_proxy='http://localhost:%s/valid-mirror/file'
-                                    % proxy_port)
+            'launchpad', http_proxy='http://localhost:%s' % proxy_port)
 
         url = 'https://localhost:%s/valid-mirror/file' % self.port
-        prober = RedirectAwareProberFactory(url)
+        prober = RedirectAwareProberFactory(url, timeout=0.5)
         self.assertEqual(prober.url, url)
-        deferred = prober.probe()
 
-        def got_result(result):
-            # We basically don't care about the result here. We just want to
-            # check that it did the request to the correct URI,
-            # and ProxyAgent was used pointing to the correct proxy.
-            agent = prober.getHttpsClient()._agent
-            self.assertIsInstance(agent, ProxyAgent)
-            self.assertEqual('localhost', agent._proxyEndpoint._hostText)
-            self.assertEqual(proxy_port, agent._proxyEndpoint._port)
-
-            self.assertEqual(
-                'https://localhost:%s/valid-mirror/file' % self.port,
-                result.value.response.request.absoluteURI)
-
-        def cleanup(*args, **kwargs):
-            proxy_listen_port.stopListening()
-
-        # Doing the proxy checks on the error callback because the
-        # proxy is dummy and always returns 404.
-        deferred.addErrback(got_result)
-        deferred.addBoth(cleanup)
-        return deferred
+        # We just want to check that it did the request using the correct
+        # Agent, pointing to the correct proxy config.
+        agent = prober.getHttpsClient()._agent
+        self.assertIsInstance(agent, TunnelingAgent)
+        self.assertEqual(('localhost', proxy_port, None), agent._proxyConf)
 
     def test_https_fails_on_invalid_certificates(self):
         """Changes set back the default browser-like policy for HTTPS

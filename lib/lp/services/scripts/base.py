@@ -11,7 +11,6 @@ __all__ = [
     'SilentLaunchpadScriptFailure',
     ]
 
-from ConfigParser import SafeConfigParser
 from contextlib import contextmanager
 from cProfile import Profile
 import datetime
@@ -34,6 +33,7 @@ import transaction
 from zope.component import getUtility
 
 from lp.services import scripts
+from lp.services.compat import SafeConfigParser
 from lp.services.config import (
     config,
     dbconfig,

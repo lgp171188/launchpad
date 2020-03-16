@@ -49,7 +49,8 @@ class RequestHandler(BaseHTTPRequestHandler):
         self.end_headers()
 
         filepath = os.path.join(self.content_dir, filename)
-        content_body = file(filepath).read()
+        with open(filepath) as f:
+            content_body = f.read()
         self.wfile.write(content_body)
 
     def log_message(self, format, *args):
@@ -66,12 +67,13 @@ class RequestHandler(BaseHTTPRequestHandler):
 def url_to_file_map(mapfile):
     """Return our URL-to-file mapping as a dictionary."""
     mapping = {}
-    for line in file(mapfile):
-        if line.startswith('#') or len(line.strip()) == 0:
-            # Skip comments and blank lines.
-            continue
-        url, fname = line.split()
-        mapping[url.strip()] = fname.strip()
+    with open(mapfile) as f:
+        for line in f:
+            if line.startswith('#') or len(line.strip()) == 0:
+                # Skip comments and blank lines.
+                continue
+            url, fname = line.split()
+            mapping[url.strip()] = fname.strip()
 
     return mapping
 

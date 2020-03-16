@@ -1,4 +1,4 @@
-# Copyright 2009-2017 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Implementations of `IBranchCollection`."""
@@ -301,8 +301,11 @@ class GenericBranchCollection:
             BranchListingSort.OLDEST_FIRST: (Asc, Branch.date_created),
             }
 
-        order_by = map(
-            LISTING_SORT_TO_COLUMN.get, DEFAULT_BRANCH_LISTING_SORT)
+        order_by = [
+            LISTING_SORT_TO_COLUMN.get(sort)
+            for sort in DEFAULT_BRANCH_LISTING_SORT]
+        # Stabilise the sort using descending ID as a last resort.
+        order_by.append((Desc, Branch.id))
 
         if sort_by is not None and sort_by != BranchListingSort.DEFAULT:
             direction, column = LISTING_SORT_TO_COLUMN[sort_by]

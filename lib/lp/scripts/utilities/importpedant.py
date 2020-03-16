@@ -29,7 +29,6 @@ def text_lines_to_set(text):
 valid_imports_not_in_all = {
     # Exported in Python 3, but missing and so not exported in Python 2.
     'contextlib': set(['ExitStack']),
-    'cookielib': set(['domain_match']),
     # Exported in Python 3, but missing and so not exported in Python 2.
     'json.decoder': set(['JSONDecodeError']),
     'openid.fetchers': set(['Urllib2Fetcher']),
@@ -38,6 +37,7 @@ valid_imports_not_in_all = {
     'pipes': set(['quote']),
     # Exported in Python 3, but missing and so not exported in Python 2.
     'shlex': set(['quote']),
+    'six.moves.http_cookiejar': set(['domain_match']),
     'storm.database': set(['STATE_DISCONNECTED']),
     'textwrap': set(['dedent']),
     'testtools.testresult.real': set(['_details_to_str']),

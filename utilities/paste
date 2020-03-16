@@ -3,13 +3,11 @@
 # Copyright 2009-2012 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
+from __future__ import absolute_import, print_function
+
 import _pythonpath
 
 import base64
-from cookielib import (
-    Cookie,
-    CookieJar,
-    )
 from optparse import OptionParser
 import os
 import pwd
@@ -17,6 +15,10 @@ import sys
 import webbrowser
 
 from fixtures import MonkeyPatch
+from six.moves.http_cookiejar import (
+    Cookie,
+    CookieJar,
+    )
 from six.moves.urllib.parse import urljoin
 from zope.testbrowser.browser import Browser
 
@@ -123,7 +125,7 @@ def main():
         # Figure out the authentication.
         lp_cookie = get_lp_auth_cookie(AUTH_FILE)
         if lp_cookie is None:
-            print LP_AUTH_INSTRUCTIONS
+            print(LP_AUTH_INSTRUCTIONS)
             return
         browser.testapp.cookiejar.set_cookie(lp_cookie)
 
@@ -140,12 +142,12 @@ def main():
         if oid_form is not None:
             authenticated = authenticate(browser)
             if not authenticated:
-                print LP_AUTH_INSTRUCTIONS
+                print(LP_AUTH_INSTRUCTIONS)
                 return
     for name, value in form:
         browser.getControl(name=name).value = value
     browser.getControl('Paste!').click()
-    print browser.url
+    print(browser.url)
     if parser.options.browser:
         webbrowser.open(browser.url)
 
