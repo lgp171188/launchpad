@@ -43,6 +43,7 @@ from lp.registry.model.distributionmirror import DistributionMirror
 from lp.registry.scripts import distributionmirror_prober
 from lp.registry.scripts.distributionmirror_prober import (
     _get_cdimage_file_list,
+    _parse,
     ArchiveMirrorProberCallbacks,
     BadResponseCode,
     ConnectionSkipped,
@@ -123,6 +124,25 @@ class LocalhostWhitelistedHTTPSPolicy(BrowserLikePolicyForHTTPS):
             return ssl.CertificateOptions(verify=False)
         return super(LocalhostWhitelistedHTTPSPolicy, self).creatorForNetloc(
             hostname, port)
+
+
+class TestURLParser(TestCase):
+    def test_defined_port(self):
+        url = 'http://foo.com:37/bar'
+        self.assertEqual(('http', 'foo.com', 37, '/bar'), _parse(url))
+
+    def test_default_port_http(self):
+        url = 'http://foo.com/bar'
+        self.assertEqual(('http', 'foo.com', 80, '/bar'), _parse(url))
+
+    def test_default_port_https(self):
+        url = 'https://foo.com/bar'
+        self.assertEqual(('https', 'foo.com', 443, '/bar'), _parse(url))
+
+    def test_given_default_port(self):
+        url = 'https://foo.com/bar'
+        self.assertEqual(
+            ('https', 'foo.com', 99, '/bar'), _parse(url, defaultPort=99))
 
 
 class TestProberHTTPSProtocolAndFactory(TestCase):
