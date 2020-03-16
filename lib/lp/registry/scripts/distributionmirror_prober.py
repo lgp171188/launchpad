@@ -350,6 +350,15 @@ class ProberFactory(protocol.ClientFactory):
                 reactor=reactor, contextFactory=self.https_agent_policy())
         else:
             contextFactory = self.https_agent_policy()
+            # XXX: pappacena 2020-03-16
+            # TLS version 1.2 should work for most servers. But if it
+            # doesn't, we should implement a negotiation mechanism to test
+            # which version should be used before doing the actual probing
+            # request.
+            # One way to debug which version a given server is compatible
+            # with using curl is issuing the following command:
+            # curl -v --head https://<server-host> --tlsv1.2 --tls-max 1.2
+            # (changing 1.2 with other version numbers)
             contextFactory.getContext = lambda: Context(TLSv1_2_METHOD)
             agent = TunnelingAgent(
                 reactor, (self.connect_host, self.connect_port, None),
