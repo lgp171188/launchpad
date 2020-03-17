@@ -227,6 +227,13 @@ flag_info = sorted([
      'bing',
      'Site search engine',
      ''),
+    ('oci.distro.arch.series',
+     'boolean',
+     'For OCI builds if the distribution is Ubuntu we default to Bionic, '
+     'otherwise we default to current series under distribution.',
+     'disabled',
+     '',
+     ''),
     ])
 
 # The set of all flag names that are documented.

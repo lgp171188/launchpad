@@ -55,11 +55,16 @@ from lp.services.database.interfaces import (
     IMasterStore,
     IStore,
     )
+from lp.services.features import getFeatureFlag
 from lp.services.librarian.model import (
     LibraryFileAlias,
     LibraryFileContent,
     )
 from lp.services.propertycache import cachedproperty
+
+
+USE_OCI_DISTRO_ARCH_SERIES_FEATURE = (
+    'oci.distro.arch.series')
 
 
 @implementer(IOCIFile)
@@ -267,6 +272,13 @@ class OCIRecipeBuild(PackageBuildMixin, Storm):
 
     @property
     def distro_arch_series(self):
+        # For OCI builds if the distribution is Ubuntu we default to Bionic,
+        # otherwise we default to current series under distribution.
+        use_oci_distro_arch_series_feature = bool(
+            getFeatureFlag(USE_OCI_DISTRO_ARCH_SERIES_FEATURE))
+        if use_oci_distro_arch_series_feature:
+            if self.distribution.name == 'ubuntu':
+                return self.distribution.getSeries('bionic')
         return self.distribution.currentseries.getDistroArchSeriesByProcessor(
             self.processor)
 

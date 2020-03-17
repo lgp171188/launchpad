@@ -21,8 +21,14 @@ from lp.oci.interfaces.ocirecipebuild import (
     IOCIRecipeBuild,
     IOCIRecipeBuildSet,
     )
-from lp.oci.model.ocirecipebuild import OCIRecipeBuildSet
+from lp.oci.model.ocirecipebuild import (
+    OCIRecipeBuildSet,
+    USE_OCI_DISTRO_ARCH_SERIES_FEATURE,
+    )
+from lp.registry.interfaces.distribution import IDistributionSet
+from lp.registry.interfaces.distroseries import IDistroSeriesSet
 from lp.registry.interfaces.series import SeriesStatus
+from lp.services.features.testing import FeatureFixture
 from lp.services.propertycache import clear_property_cache
 from lp.testing import (
     admin_logged_in,
@@ -154,6 +160,32 @@ class TestOCIRecipeBuildSet(TestCaseWithFactory):
         distroseries = self.factory.makeDistroSeries(
             distribution=distribution, status=SeriesStatus.CURRENT)
         processor = getUtility(IProcessorSet).getByName("386")
+        distro_arch_series = self.factory.makeDistroArchSeries(
+            distroseries=distroseries, architecturetag="i386",
+            processor=processor)
+        distro_arch_series = self.factory.makeDistroArchSeries()
+        oci_project = self.factory.makeOCIProject(pillar=distribution)
+        recipe = self.factory.makeOCIRecipe(oci_project=oci_project)
+        target = getUtility(IOCIRecipeBuildSet).new(
+            requester, recipe, distro_arch_series)
+        with admin_logged_in():
+            self.assertProvides(target, IOCIRecipeBuild)
+
+    def test_new_oci_feature_flag_enabled(self):
+        requester = self.factory.makePerson()
+        distribution = getUtility(IDistributionSet).getByName('ubuntu')
+        if distribution is None:
+            distribution = self.factory.makeDistribution(name='ubuntu')
+
+        distroseries = getUtility(IDistroSeriesSet).queryByName(
+            distribution, 'bionic')
+        if distroseries is None:
+            distroseries = self.factory.makeDistroSeries(
+                distribution=distribution, status=SeriesStatus.CURRENT,
+                name='bionic')
+        processor = getUtility(IProcessorSet).getByName("386")
+        self.useFixture(FeatureFixture(
+            {USE_OCI_DISTRO_ARCH_SERIES_FEATURE: True}))
         distro_arch_series = self.factory.makeDistroArchSeries(
             distroseries=distroseries, architecturetag="i386",
             processor=processor)
