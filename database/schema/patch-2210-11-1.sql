@@ -7,9 +7,6 @@ SET client_min_messages=ERROR;
 ALTER TABLE binarypackagepublishinghistory
     ADD COLUMN creator INTEGER REFERENCES person;
 
-CREATE INDEX binarypackagepublishinghistory__creator__idx ON
-    binarypackagepublishinghistory(creator) WHERE creator IS NOT NULL;
-
 
 ALTER TABLE binarypackagepublishinghistory
     ADD COLUMN copied_from_archive INTEGER REFERENCES archive;
@@ -20,4 +17,3 @@ ALTER TABLE sourcepackagepublishinghistory
 
 
 INSERT INTO LaunchpadDatabaseRevision VALUES (2210, 11, 1);
-
