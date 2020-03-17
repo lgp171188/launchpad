@@ -971,7 +971,7 @@ class DistroMirrorProber:
 
         You should control carefully the parallelism here. Increasing too
         much the number of max_parallel_per_host could make the mirrors take
-        too much to run or deny our requests.
+        too much to answer or deny our requests.
 
         If we increase too much the max_parallel, we might experience timeouts
         because of our production proxy or internet bandwidth.
@@ -987,7 +987,7 @@ class DistroMirrorProber:
             mirrors.
         :param max_parallel: Maximum number of requests happening
             simultaneously.
-        :param max_parallel_per_host: Maximum number of requests to to same
+        :param max_parallel_per_host: Maximum number of requests to the same
             host happening simultaneously.
         """
         if content_type == MirrorContent.ARCHIVE:
