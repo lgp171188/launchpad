@@ -37,6 +37,15 @@ class DistroMirrorProberScript(LaunchpadCronScript):
         self.parser.add_option('--max-mirrors',
             dest='max_mirrors', default=None, action='store', type="int",
             help='Only probe N mirrors.')
+        self.parser.add_option('--max-parallel',
+            dest='max_parallel', default=100,
+            action='store', type="int",
+            help='Keep maximum N parallel requests at a time (default=100).')
+        self.parser.add_option('--max-parallel-per-host',
+            dest='max_parallel_per_host', default=2,
+            action='store', type="int",
+            help='Keep maximum N parallel requests per host at a time.'
+                 ' (default=2)')
 
     def main(self):
         if self.options.content_type == 'archive':
@@ -52,7 +61,8 @@ class DistroMirrorProberScript(LaunchpadCronScript):
             lambda: config.distributionmirrorprober.timeout)
         DistroMirrorProber(self.txn, self.logger).probe(
             content_type, self.options.no_remote_hosts, self.options.force,
-            self.options.max_mirrors, not self.options.no_owner_notification)
+            self.options.max_mirrors, not self.options.no_owner_notification,
+            self.options.max_parallel, self.options.max_parallel_per_host)
 
 
 if __name__ == '__main__':
