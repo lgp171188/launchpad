@@ -1,4 +1,4 @@
-# Copyright 2015-2016 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for the webhook webservice objects."""
@@ -21,6 +21,7 @@ from testtools.matchers import (
     )
 from zope.security.proxy import removeSecurityProxy
 
+from lp.oci.interfaces.ocirecipe import OCI_RECIPE_WEBHOOKS_FEATURE_FLAG
 from lp.services.features.testing import FeatureFixture
 from lp.services.webapp.interfaces import OAuthPermission
 from lp.soyuz.interfaces.livefs import (
@@ -394,3 +395,13 @@ class TestWebhookTargetLiveFS(TestWebhookTargetBase, TestCaseWithFactory):
         with FeatureFixture({LIVEFS_FEATURE_FLAG: "on",
                              LIVEFS_WEBHOOKS_FEATURE_FLAG: "on"}):
             return self.factory.makeLiveFS(registrant=owner, owner=owner)
+
+
+class TestWebhookTargetOCIRecipe(TestWebhookTargetBase, TestCaseWithFactory):
+
+    event_type = 'oci-recipe:build:0.1'
+
+    def makeTarget(self):
+        owner = self.factory.makePerson()
+        with FeatureFixture({OCI_RECIPE_WEBHOOKS_FEATURE_FLAG: "on"}):
+            return self.factory.makeOCIRecipe(registrant=owner, owner=owner)

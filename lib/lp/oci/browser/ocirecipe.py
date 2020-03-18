@@ -35,8 +35,10 @@ from lp.oci.interfaces.ocirecipe import (
     IOCIRecipe,
     IOCIRecipeSet,
     NoSuchOCIRecipe,
+    OCI_RECIPE_WEBHOOKS_FEATURE_FLAG,
     )
 from lp.oci.interfaces.ocirecipebuild import IOCIRecipeBuildSet
+from lp.services.features import getFeatureFlag
 from lp.services.propertycache import cachedproperty
 from lp.services.webapp import (
     canonical_url,
@@ -48,10 +50,11 @@ from lp.services.webapp import (
     stepthrough,
     )
 from lp.services.webapp.breadcrumb import NameBreadcrumb
+from lp.services.webhooks.browser import WebhookTargetNavigationMixin
 from lp.soyuz.browser.build import get_build_by_id_str
 
 
-class OCIRecipeNavigation(Navigation):
+class OCIRecipeNavigation(WebhookTargetNavigationMixin, Navigation):
 
     usedfor = IOCIRecipe
 
@@ -77,7 +80,7 @@ class OCIRecipeNavigationMenu(NavigationMenu):
 
     facet = "overview"
 
-    links = ("admin", "edit", "delete")
+    links = ("admin", "edit", "webhooks", "delete")
 
     @enabled_with_permission("launchpad.Admin")
     def admin(self):
@@ -86,6 +89,12 @@ class OCIRecipeNavigationMenu(NavigationMenu):
     @enabled_with_permission("launchpad.Edit")
     def edit(self):
         return Link("+edit", "Edit OCI recipe", icon="edit")
+
+    @enabled_with_permission('launchpad.Edit')
+    def webhooks(self):
+        return Link(
+            '+webhooks', 'Manage webhooks', icon='edit',
+            enabled=bool(getFeatureFlag(OCI_RECIPE_WEBHOOKS_FEATURE_FLAG)))
 
     @enabled_with_permission("launchpad.Edit")
     def delete(self):
