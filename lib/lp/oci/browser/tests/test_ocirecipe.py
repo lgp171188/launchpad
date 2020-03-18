@@ -327,10 +327,13 @@ class TestOCIRecipeView(BaseTestOCIRecipeView):
             processor=processor)
         self.factory.makeBuilder(virtualized=True)
 
-    def makeOCIRecipe(self, **kwargs):
+    def makeOCIRecipe(self, oci_project=None, **kwargs):
+        if oci_project is None:
+            oci_project = self.factory.makeOCIProject(
+                pillar=self.distroseries.distribution)
         return self.factory.makeOCIRecipe(
             registrant=self.person, owner=self.person, name="recipe-name",
-            **kwargs)
+            oci_project=oci_project, **kwargs)
 
     def makeBuild(self, recipe=None, date_created=None, **kwargs):
         if recipe is None:
@@ -343,7 +346,8 @@ class TestOCIRecipeView(BaseTestOCIRecipeView):
             date_created=date_created, **kwargs)
 
     def test_breadcrumb(self):
-        oci_project = self.factory.makeOCIProject()
+        oci_project = self.factory.makeOCIProject(
+            pillar=self.distroseries.distribution)
         oci_project_name = oci_project.name
         oci_project_url = canonical_url(oci_project)
         recipe = self.makeOCIRecipe(oci_project=oci_project)
@@ -369,7 +373,8 @@ class TestOCIRecipeView(BaseTestOCIRecipeView):
                         text=re.compile(r"\srecipe-name\s")))))
 
     def test_index(self):
-        oci_project = self.factory.makeOCIProject()
+        oci_project = self.factory.makeOCIProject(
+            pillar=self.distroseries.distribution)
         oci_project_name = oci_project.name
         oci_project_display = oci_project.display_name
         [ref] = self.factory.makeGitRefs(

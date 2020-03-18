@@ -1,4 +1,4 @@
-# Copyright 2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2019-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for OCI image building recipe functionality."""
@@ -7,8 +7,14 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 from datetime import timedelta
 
+from fixtures import FakeLogger
 import six
-from testtools.matchers import Equals
+from testtools.matchers import (
+    ContainsDict,
+    Equals,
+    MatchesDict,
+    MatchesStructure,
+    )
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
@@ -17,18 +23,24 @@ from lp.buildmaster.enums import BuildStatus
 from lp.buildmaster.interfaces.buildqueue import IBuildQueue
 from lp.buildmaster.interfaces.packagebuild import IPackageBuild
 from lp.buildmaster.interfaces.processor import IProcessorSet
+from lp.oci.interfaces.ocirecipe import OCI_RECIPE_WEBHOOKS_FEATURE_FLAG
 from lp.oci.interfaces.ocirecipebuild import (
     IOCIRecipeBuild,
     IOCIRecipeBuildSet,
     )
 from lp.oci.model.ocirecipebuild import OCIRecipeBuildSet
 from lp.registry.interfaces.series import SeriesStatus
+from lp.services.config import config
+from lp.services.features.testing import FeatureFixture
 from lp.services.propertycache import clear_property_cache
+from lp.services.webapp.publisher import canonical_url
+from lp.services.webhooks.testing import LogsScheduledWebhooks
 from lp.testing import (
     admin_logged_in,
     StormStatementRecorder,
     TestCaseWithFactory,
     )
+from lp.testing.dbuser import dbuser
 from lp.testing.layers import (
     DatabaseFunctionalLayer,
     LaunchpadZopelessLayer,
@@ -110,6 +122,63 @@ class TestOCIRecipeBuild(TestCaseWithFactory):
         self.assertEqual(self.build.virtualized, bq.virtualized)
         self.assertIsNotNone(bq.processor)
         self.assertEqual(bq, self.build.buildqueue_record)
+
+    def test_updateStatus_triggers_webhooks(self):
+        # Updating the status of an OCIRecipeBuild triggers webhooks on the
+        # corresponding OCIRecipe.
+        logger = self.useFixture(FakeLogger())
+        hook = self.factory.makeWebhook(
+            target=self.build.recipe, event_types=["oci-recipe:build:0.1"])
+        with FeatureFixture({OCI_RECIPE_WEBHOOKS_FEATURE_FLAG: "on"}):
+            self.build.updateStatus(BuildStatus.FULLYBUILT)
+        expected_payload = {
+            "recipe_build": Equals(
+                canonical_url(self.build, force_local_path=True)),
+            "action": Equals("status-changed"),
+            "recipe": Equals(
+                 canonical_url(self.build.recipe, force_local_path=True)),
+            "status": Equals("Successfully built"),
+            }
+        self.assertThat(
+            logger.output, LogsScheduledWebhooks([
+                (hook, "oci-recipe:build:0.1",
+                 MatchesDict(expected_payload))]))
+
+        delivery = hook.deliveries.one()
+        self.assertThat(
+            delivery, MatchesStructure(
+                event_type=Equals("oci-recipe:build:0.1"),
+                payload=MatchesDict(expected_payload)))
+        with dbuser(config.IWebhookDeliveryJobSource.dbuser):
+            self.assertEqual(
+                "<WebhookDeliveryJob for webhook %d on %r>" % (
+                    hook.id, hook.target),
+                repr(delivery))
+
+    def test_updateStatus_no_change_does_not_trigger_webhooks(self):
+        # An updateStatus call that doesn't change the build's status
+        # attribute does not trigger webhooks.
+        logger = self.useFixture(FakeLogger())
+        hook = self.factory.makeWebhook(
+            target=self.build.recipe, event_types=["oci-recipe:build:0.1"])
+        with FeatureFixture({OCI_RECIPE_WEBHOOKS_FEATURE_FLAG: "on"}):
+            self.build.updateStatus(BuildStatus.BUILDING)
+        expected_logs = [
+            (hook, "oci-recipe:build:0.1", ContainsDict({
+                "action": Equals("status-changed"),
+                "status": Equals("Currently building"),
+                }))]
+        self.assertEqual(1, hook.deliveries.count())
+        self.assertThat(logger.output, LogsScheduledWebhooks(expected_logs))
+
+        self.build.updateStatus(BuildStatus.BUILDING)
+        expected_logs = [
+            (hook, "oci-recipe:build:0.1", ContainsDict({
+                "action": Equals("status-changed"),
+                "status": Equals("Currently building"),
+                }))]
+        self.assertEqual(1, hook.deliveries.count())
+        self.assertThat(logger.output, LogsScheduledWebhooks(expected_logs))
 
     def test_eta(self):
         # OCIRecipeBuild.eta returns a non-None value when it should, or
@@ -193,16 +262,20 @@ class TestOCIRecipeBuildSet(TestCaseWithFactory):
         self.assertTrue(target.virtualized)
 
     def test_virtualized_processor_requires(self):
-        distro_arch_series = self.factory.makeDistroArchSeries()
-        distro_arch_series.processor.supports_nonvirtualized = False
         recipe = self.factory.makeOCIRecipe(require_virtualized=False)
+        distro_arch_series = self.factory.makeDistroArchSeries(
+            distroseries=self.factory.makeDistroSeries(
+                distribution=recipe.oci_project.distribution))
+        distro_arch_series.processor.supports_nonvirtualized = False
         target = self.factory.makeOCIRecipeBuild(
             distro_arch_series=distro_arch_series, recipe=recipe)
         self.assertTrue(target.virtualized)
 
     def test_virtualized_no_support(self):
         recipe = self.factory.makeOCIRecipe(require_virtualized=False)
-        distro_arch_series = self.factory.makeDistroArchSeries()
+        distro_arch_series = self.factory.makeDistroArchSeries(
+            distroseries=self.factory.makeDistroSeries(
+                distribution=recipe.oci_project.distribution))
         distro_arch_series.processor.supports_nonvirtualized = True
         target = self.factory.makeOCIRecipeBuild(
             recipe=recipe, distro_arch_series=distro_arch_series)

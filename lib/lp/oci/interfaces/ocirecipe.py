@@ -1,4 +1,4 @@
-# Copyright 2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2019-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Interfaces related to recipes for OCI Images."""
@@ -15,6 +15,7 @@ __all__ = [
     'IOCIRecipeView',
     'NoSourceForOCIRecipe',
     'NoSuchOCIRecipe',
+    'OCI_RECIPE_WEBHOOKS_FEATURE_FLAG',
     'OCIRecipeBuildAlreadyPending',
     'OCIRecipeNotOwner',
     ]
@@ -49,6 +50,10 @@ from lp.services.fields import (
     PersonChoice,
     PublicPersonChoice,
     )
+from lp.services.webhooks.interfaces import IWebhookTarget
+
+
+OCI_RECIPE_WEBHOOKS_FEATURE_FLAG = "oci.recipe.webhooks.enabled"
 
 
 @error_status(http_client.UNAUTHORIZED)
@@ -132,7 +137,7 @@ class IOCIRecipeView(Interface):
         """
 
 
-class IOCIRecipeEdit(Interface):
+class IOCIRecipeEdit(IWebhookTarget):
     """`IOCIRecipe` methods that require launchpad.Edit permission."""
 
     def destroySelf():

@@ -1,4 +1,4 @@
-# Copyright 2015-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for `WebhookJob`s."""
@@ -37,6 +37,7 @@ from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
 from lp.app import versioninfo
+from lp.oci.interfaces.ocirecipe import OCI_RECIPE_WEBHOOKS_FEATURE_FLAG
 from lp.services.database.interfaces import IStore
 from lp.services.features.testing import FeatureFixture
 from lp.services.job.interfaces.job import JobStatus
@@ -352,6 +353,17 @@ class TestWebhookDeliveryJob(TestCaseWithFactory):
         job = WebhookDeliveryJob.create(hook, 'test', payload={'foo': 'bar'})
         self.assertEqual(
             "<WebhookDeliveryJob for webhook %d on %r>" % (hook.id, livefs),
+            repr(job))
+
+    def test_oci_recipe__repr__(self):
+        # `WebhookDeliveryJob` objects for OCI recipes have an informative
+        # __repr__.
+        with FeatureFixture({OCI_RECIPE_WEBHOOKS_FEATURE_FLAG: "on"}):
+            recipe = self.factory.makeOCIRecipe()
+        hook = self.factory.makeWebhook(target=recipe)
+        job = WebhookDeliveryJob.create(hook, 'test', payload={'foo': 'bar'})
+        self.assertEqual(
+            "<WebhookDeliveryJob for webhook %d on %r>" % (hook.id, recipe),
             repr(job))
 
     def test_short_lease_and_timeout(self):

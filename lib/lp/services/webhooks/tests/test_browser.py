@@ -16,6 +16,7 @@ from testtools.matchers import (
 import transaction
 from zope.component import getUtility
 
+from lp.oci.interfaces.ocirecipe import OCI_RECIPE_WEBHOOKS_FEATURE_FLAG
 from lp.services.features.testing import FeatureFixture
 from lp.services.webapp.interfaces import IPlacelessAuthUtility
 from lp.services.webapp.publisher import canonical_url
@@ -127,6 +128,27 @@ class LiveFSTestHelpers:
                                         LIVEFS_WEBHOOKS_FEATURE_FLAG: "on"}))
         owner = self.factory.makePerson()
         return self.factory.makeLiveFS(registrant=owner, owner=owner)
+
+    def getTraversalStack(self, obj):
+        return [obj]
+
+
+class OCIRecipeTestHelpers:
+    event_type = "oci-recipe:build:0.1"
+    expected_event_types = [
+        ("oci-recipe:build:0.1", "OCI recipe build"),
+        ]
+
+    def setUp(self):
+        super(OCIRecipeTestHelpers, self).setUp()
+
+    def makeTarget(self):
+        self.useFixture(FeatureFixture({
+            'webhooks.new.enabled': 'true',
+            OCI_RECIPE_WEBHOOKS_FEATURE_FLAG: 'on',
+            }))
+        owner = self.factory.makePerson()
+        return self.factory.makeOCIRecipe(registrant=owner, owner=owner)
 
     def getTraversalStack(self, obj):
         return [obj]
@@ -257,6 +279,12 @@ class TestWebhooksViewLiveFS(
     pass
 
 
+class TestWebhooksViewOCIRecipe(
+    TestWebhooksViewBase, OCIRecipeTestHelpers, TestCaseWithFactory):
+
+    pass
+
+
 class TestWebhookAddViewBase(WebhookTargetViewTestHelpers):
 
     layer = DatabaseFunctionalLayer
@@ -357,6 +385,12 @@ class TestWebhookAddViewSnap(
 
 class TestWebhookAddViewLiveFS(
     TestWebhookAddViewBase, LiveFSTestHelpers, TestCaseWithFactory):
+
+    pass
+
+
+class TestWebhookAddViewOCIRecipe(
+    TestWebhookAddViewBase, OCIRecipeTestHelpers, TestCaseWithFactory):
 
     pass
 
@@ -469,6 +503,12 @@ class TestWebhookViewLiveFS(
     pass
 
 
+class TestWebhookViewOCIRecipe(
+    TestWebhookViewBase, OCIRecipeTestHelpers, TestCaseWithFactory):
+
+    pass
+
+
 class TestWebhookDeleteViewBase(WebhookViewTestHelpers):
 
     layer = DatabaseFunctionalLayer
@@ -523,5 +563,11 @@ class TestWebhookDeleteViewSnap(
 
 class TestWebhookDeleteViewLiveFS(
     TestWebhookDeleteViewBase, LiveFSTestHelpers, TestCaseWithFactory):
+
+    pass
+
+
+class TestWebhookDeleteViewOCIRecipe(
+    TestWebhookDeleteViewBase, OCIRecipeTestHelpers, TestCaseWithFactory):
 
     pass
