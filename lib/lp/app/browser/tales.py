@@ -956,7 +956,10 @@ class BugTaskImageDisplayAPI(ObjectImageDisplayAPI):
 
     def _hasBugBranch(self):
         """Return whether the bug has a branch linked to it."""
-        return not self._context.bug.linked_bugbranches.is_empty()
+        # XXX cjwatson 2020-03-18: This should use the more efficient
+        # .is_empty(), but that doesn't work on `BoundReferenceSet`s.
+        #   https://code.launchpad.net/~cjwatson/storm/reference-set-is-empty/+merge/380837
+        return self._context.bug.linked_bugbranches.any() is None
 
     def _hasSpecification(self):
         """Return whether the bug is linked to a specification."""
