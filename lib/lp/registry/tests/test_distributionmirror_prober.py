@@ -56,8 +56,6 @@ from lp.registry.scripts.distributionmirror_prober import (
     MIN_REQUESTS_TO_CONSIDER_RATIO,
     MirrorCDImageProberCallbacks,
     MultiLock,
-    OVERALL_REQUESTS,
-    PER_HOST_REQUESTS,
     probe_archive_mirror,
     probe_cdimage_mirror,
     ProberFactory,
@@ -1052,7 +1050,7 @@ class TestProbeFunctionSemaphores(TestCase):
         # Note that calling this function won't actually probe any mirrors; we
         # need to call reactor.run() to actually start the probing.
         with default_timeout(15.0):
-            probe_cdimage_mirror(mirror, StringIO(), [], logging)
+            probe_cdimage_mirror(mirror, StringIO(), [], logging, 100, 2)
         self.assertEqual(0, len(mirror.cdimage_series))
 
     def test_archive_mirror_probe_function(self):
@@ -1081,43 +1079,45 @@ class TestProbeFunctionSemaphores(TestCase):
         The given probe_function must be either probe_cdimage_mirror or
         probe_archive_mirror.
         """
-        request_manager = RequestManager()
+        max_per_host_requests = 2
+        max_requests = 100
+        request_manager = RequestManager(max_requests, max_per_host_requests)
         mirror1_host = URI(mirror1.base_url).host
         mirror2_host = URI(mirror2.base_url).host
         mirror3_host = URI(mirror3.base_url).host
 
-        probe_function(mirror1, StringIO(), [], logging)
+        probe_function(mirror1, StringIO(), [], logging, 100, 2)
         # Since we have a single mirror to probe we need to have a single
-        # DeferredSemaphore with a limit of PER_HOST_REQUESTS, to ensure we
+        # DeferredSemaphore with a limit of max_per_host_requests, to ensure we
         # don't issue too many simultaneous connections on that host.
         self.assertEqual(len(request_manager.host_locks), 1)
         multi_lock = request_manager.host_locks[mirror1_host]
-        self.assertEqual(multi_lock.host_lock.limit, PER_HOST_REQUESTS)
+        self.assertEqual(multi_lock.host_lock.limit, max_per_host_requests)
         # Note that our multi_lock contains another semaphore to control the
         # overall number of requests.
-        self.assertEqual(multi_lock.overall_lock.limit, OVERALL_REQUESTS)
+        self.assertEqual(multi_lock.overall_lock.limit, max_requests)
 
-        probe_function(mirror2, StringIO(), [], logging)
+        probe_function(mirror2, StringIO(), [], logging, 100, 2)
         # Now we have two mirrors to probe, but they have the same hostname,
         # so we'll still have a single semaphore in host_semaphores.
         self.assertEqual(mirror2_host, mirror1_host)
         self.assertEqual(len(request_manager.host_locks), 1)
         multi_lock = request_manager.host_locks[mirror2_host]
-        self.assertEqual(multi_lock.host_lock.limit, PER_HOST_REQUESTS)
+        self.assertEqual(multi_lock.host_lock.limit, max_per_host_requests)
 
-        probe_function(mirror3, StringIO(), [], logging)
+        probe_function(mirror3, StringIO(), [], logging, 100, 2)
         # This third mirror is on a separate host, so we'll have a second
         # semaphore added to host_semaphores.
         self.assertTrue(mirror3_host != mirror1_host)
         self.assertEqual(len(request_manager.host_locks), 2)
         multi_lock = request_manager.host_locks[mirror3_host]
-        self.assertEqual(multi_lock.host_lock.limit, PER_HOST_REQUESTS)
+        self.assertEqual(multi_lock.host_lock.limit, max_per_host_requests)
 
         # When using an http_proxy, even though we'll actually connect to the
         # proxy, we'll use the mirror's host as the key to find the semaphore
         # that should be used
         self.pushConfig('launchpad', http_proxy='http://squid.internal:3128/')
-        probe_function(mirror3, StringIO(), [], logging)
+        probe_function(mirror3, StringIO(), [], logging, 100, 2)
         self.assertEqual(len(request_manager.host_locks), 2)
 
 
