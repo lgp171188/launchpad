@@ -43,6 +43,7 @@ from lp.registry.model.distributionmirror import DistributionMirror
 from lp.registry.scripts import distributionmirror_prober
 from lp.registry.scripts.distributionmirror_prober import (
     _get_cdimage_file_list,
+    _parse,
     ArchiveMirrorProberCallbacks,
     BadResponseCode,
     ConnectionSkipped,
@@ -110,7 +111,6 @@ class HTTPServerTestSetup(TacTestSetup):
         return os.path.join(self.root, 'distributionmirror_http_server.log')
 
 
-
 class LocalhostWhitelistedHTTPSPolicy(BrowserLikePolicyForHTTPS):
     """HTTPS policy that bypasses SSL certificate check when doing requests
     to localhost.
@@ -123,6 +123,25 @@ class LocalhostWhitelistedHTTPSPolicy(BrowserLikePolicyForHTTPS):
             return ssl.CertificateOptions(verify=False)
         return super(LocalhostWhitelistedHTTPSPolicy, self).creatorForNetloc(
             hostname, port)
+
+
+class TestURLParser(TestCase):
+    def test_defined_port(self):
+        url = 'http://foo.com:37/bar'
+        self.assertEqual(('http', 'foo.com', 37, '/bar'), _parse(url))
+
+    def test_default_port_http(self):
+        url = 'http://foo.com/bar'
+        self.assertEqual(('http', 'foo.com', 80, '/bar'), _parse(url))
+
+    def test_default_port_https(self):
+        url = 'https://foo.com/bar'
+        self.assertEqual(('https', 'foo.com', 443, '/bar'), _parse(url))
+
+    def test_given_default_port(self):
+        url = 'https://foo.com/bar'
+        self.assertEqual(
+            ('https', 'foo.com', 99, '/bar'), _parse(url, defaultPort=99))
 
 
 class TestProberHTTPSProtocolAndFactory(TestCase):
@@ -146,13 +165,6 @@ class TestProberHTTPSProtocolAndFactory(TestCase):
 
         # Change the default policy to accept localhost self-signed
         # certificates.
-        original_probefactory_policy = ProberFactory.https_agent_policy
-        original_redirect_policy = (
-            RedirectAwareProberFactory.https_agent_policy)
-        ProberFactory.https_agent_policy = LocalhostWhitelistedHTTPSPolicy
-        RedirectAwareProberFactory.https_agent_policy = (
-            LocalhostWhitelistedHTTPSPolicy)
-
         for factory in (ProberFactory, RedirectAwareProberFactory):
             self.useFixture(MockPatchObject(
                 factory, "https_agent_policy",
@@ -219,7 +231,7 @@ class TestProberHTTPSProtocolAndFactory(TestCase):
     def test_https_prober_uses_proxy(self):
         proxy_port = 6654
         self.pushConfig(
-            'launchpad', http_proxy='http://localhost:%s'% proxy_port)
+            'launchpad', http_proxy='http://localhost:%s' % proxy_port)
 
         url = 'https://localhost:%s/valid-mirror/file' % self.port
         prober = RedirectAwareProberFactory(url, timeout=0.5)
