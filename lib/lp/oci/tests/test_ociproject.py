@@ -9,21 +9,16 @@ import json
 
 from lp.services.webapp.interfaces import OAuthPermission
 from lp.testing.pages import webservice_for_person
-from storm.store import Store
 from testtools.matchers import (
     ContainsDict,
     Equals,
-    MatchesListwise,
     )
 import transaction
 from zope.security.proxy import removeSecurityProxy
 
-from lp.services.macaroons.testing import MatchesStructure
 from lp.services.webhooks.testing import StartsWith
 from lp.testing import (
     api_url,
-    launchpadlib_for,
-    login_person,
     person_logged_in,
     TestCaseWithFactory,
     )
