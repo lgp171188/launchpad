@@ -5,6 +5,8 @@
 
 __all__ = [
     'IOCIProject',
+    'IOCIProjectSeries'
     ]
 
 from lp.registry.interfaces.ociproject import IOCIProject
+from lp.registry.interfaces.ociprojectseries import IOCIProjectSeries

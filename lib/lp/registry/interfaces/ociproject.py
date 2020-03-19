@@ -1,4 +1,4 @@
-# Copyright 2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2019-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """OCI Project interfaces."""
@@ -11,7 +11,10 @@ __all__ = [
     'IOCIProjectSet',
     ]
 
-from lazr.restful.declarations import export_as_webservice_entry, exported
+from lazr.restful.declarations import (
+    export_as_webservice_entry,
+    exported,
+    )
 from lazr.restful.fields import (
     CollectionField,
     Reference,
@@ -53,10 +56,10 @@ class IOCIProjectView(IHasGitRepositories, Interface):
         description=_("The person that registered this project."),
         vocabulary='ValidPersonOrTeam', required=True, readonly=True))
 
-    series = CollectionField(
+    series = exported(CollectionField(
         title=_("Series inside this OCI project."),
         # Really IOCIProjectSeries
-        value_type=Reference(schema=Interface))
+        value_type=Reference(schema=Interface)))
 
     display_name = exported(TextLine(
         title=_("Display name for this OCI project.")))
@@ -68,23 +71,24 @@ class IOCIProjectEditableAttributes(IBugTarget):
     These attributes need launchpad.View to see, and launchpad.Edit to change.
     """
 
-    distribution = ReferenceChoice(
+    distribution = exported(ReferenceChoice(
         title=_("The distribution that this OCI project is associated with."),
         schema=IDistribution, vocabulary="Distribution",
-        required=True, readonly=False)
-    name = TextLine(
+        required=True, readonly=False))
+    name = exported(TextLine(
         title=_("Name"), required=True, readonly=False,
         constraint=name_validator,
-        description=_("The name of this OCI project."))
+        description=_("The name of this OCI project.")))
     ociprojectname = Reference(
         IOCIProjectName,
         title=_("The name of this OCI project, as an `IOCIProjectName`."),
         required=True,
         readonly=True)
-    description = Text(title=_("The description for this OCI project."))
-    pillar = Reference(
+    description = exported(Text(
+        title=_("The description for this OCI project.")))
+    pillar = exported(Reference(
         IDistribution,
-        title=_("The pillar containing this target."), readonly=True)
+        title=_("The pillar containing this target."), readonly=True))
 
 
 class IOCIProjectEdit(Interface):
