@@ -11,6 +11,7 @@ __all__ = [
     'IOCIProjectSet',
     ]
 
+from lazr.restful.declarations import export_as_webservice_entry, exported
 from lazr.restful.fields import (
     CollectionField,
     Reference,
@@ -42,22 +43,23 @@ class IOCIProjectView(IHasGitRepositories, Interface):
     """IOCIProject attributes that require launchpad.View permission."""
 
     id = Int(title=_("ID"), required=True, readonly=True)
-    date_created = Datetime(
-        title=_("Date created"), required=True, readonly=True)
-    date_last_modified = Datetime(
-        title=_("Date last modified"), required=True, readonly=True)
+    date_created = exported(Datetime(
+        title=_("Date created"), required=True, readonly=True))
+    date_last_modified = exported(Datetime(
+        title=_("Date last modified"), required=True, readonly=True))
 
-    registrant = PublicPersonChoice(
+    registrant = exported(PublicPersonChoice(
         title=_("Registrant"),
         description=_("The person that registered this project."),
-        vocabulary='ValidPersonOrTeam', required=True, readonly=True)
+        vocabulary='ValidPersonOrTeam', required=True, readonly=True))
 
     series = CollectionField(
         title=_("Series inside this OCI project."),
         # Really IOCIProjectSeries
         value_type=Reference(schema=Interface))
 
-    display_name = Attribute(_("Display name for this OCI project."))
+    display_name = exported(TextLine(
+        title=_("Display name for this OCI project.")))
 
 
 class IOCIProjectEditableAttributes(IBugTarget):
@@ -96,6 +98,8 @@ class IOCIProjectEdit(Interface):
 class IOCIProject(IOCIProjectView, IOCIProjectEdit,
                        IOCIProjectEditableAttributes):
     """A project containing Open Container Initiative recipes."""
+
+    export_as_webservice_entry(publish_web_link=True, as_of="devel")
 
 
 class IOCIProjectSet(Interface):
