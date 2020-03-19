@@ -159,6 +159,7 @@ from lp.hardwaredb.interfaces.hwdb import (
     )
 from lp.oci.interfaces.ocirecipe import IOCIRecipeSet
 from lp.oci.interfaces.ocirecipebuild import IOCIRecipeBuildSet
+from lp.oci.interfaces.ociregistrycredentials import IOCIRegistryCredentialsSet
 from lp.oci.model.ocirecipe import OCIRecipeArch
 from lp.oci.model.ocirecipebuild import OCIFile
 from lp.registry.enums import (
@@ -5031,6 +5032,20 @@ class BareLaunchpadObjectFactory(ObjectFactory):
                 content=content, filename=filename)
         return OCIFile(build=build, library_file=library_file,
                        layer_file_digest=layer_file_digest)
+
+    def makeOCIRegistryCredentials(self, owner=None, url=None,
+                                   credentials=DEFAULT):
+        """Make a new OCIRegistryCredentials."""
+        if owner is None:
+            owner = self.makePerson()
+        if url is None:
+            url = unicode(self.getUniqueURL())
+        if credentials is DEFAULT:
+            credentials = None
+        return getUtility(IOCIRegistryCredentialsSet).new(
+            owner=owner,
+            url=url,
+            credentials=credentials)
 
 
 # Some factory methods return simple Python types. We don't add

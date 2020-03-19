@@ -114,6 +114,7 @@ from lp.hardwaredb.interfaces.hwdb import (
     )
 from lp.oci.interfaces.ocirecipe import IOCIRecipe
 from lp.oci.interfaces.ocirecipebuild import IOCIRecipeBuild
+from lp.oci.interfaces.ociregistrycredentials import IOCIRegistryCredentials
 from lp.registry.enums import PersonVisibility
 from lp.registry.interfaces.announcement import IAnnouncement
 from lp.registry.interfaces.distribution import IDistribution
@@ -3510,3 +3511,19 @@ class AdminOCIRecipe(AuthorizationBase):
 class ViewOCIRecipeBuild(AnonymousAuthorization):
     """Anyone can view an `IOCIRecipe`."""
     usedfor = IOCIRecipeBuild
+
+
+class ViewOCIRegistryCredentials(AuthorizationBase):
+    permission = 'launchpad.View'
+    usedfor = IOCIRegistryCredentials
+
+    def checkAuthenticated(self, user):
+        return user.isOwner(self.obj)
+
+
+class EditOCIRegistryCredentials(AuthorizationBase):
+    permission = 'launchpad.Edit'
+    usedfor = IOCIRegistryCredentials
+
+    def checkAuthenticated(self, user):
+        return user.isOwner(self.obj)
