@@ -1,4 +1,4 @@
-# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -700,11 +700,11 @@ def _build_query(params):
         extra_clauses.append(hw_clause)
 
     def make_branch_clause(branches=None):
-        where = [BugBranch.bugID == BugTaskFlat.bug_id]
+        where = [BugBranch.bug_id == BugTaskFlat.bug_id]
         if branches is not None:
             where.append(
                 search_value_to_storm_where_condition(
-                    BugBranch.branchID, branches))
+                    BugBranch.branch_id, branches))
         return Exists(Select(1, tables=[BugBranch], where=And(*where)))
 
     def make_merge_proposal_clause(merge_proposals=None):

@@ -1,4 +1,4 @@
-# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Classes that implement IBugTask and its related interfaces."""
@@ -1392,7 +1392,7 @@ class BugTaskSet:
                 [(u'bug', unicode(bug_id)) for bug_id in bug_ids],
                 types=[u'specification']).keys())
         bug_ids_with_branches = set(IStore(BugBranch).find(
-                BugBranch.bugID, BugBranch.bugID.is_in(bug_ids)))
+                BugBranch.bug_id, BugBranch.bug_id.is_in(bug_ids)))
         # Badging looks up milestones too : eager load into the storm cache.
         milestoneset = getUtility(IMilestoneSet)
         # And trigger a load:

@@ -1,4 +1,4 @@
-# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Launchpad bug-related database table classes."""
@@ -59,6 +59,7 @@ from storm.locals import (
     DateTime,
     Int,
     Reference,
+    ReferenceSet,
     )
 from storm.store import (
     EmptyResultSet,
@@ -360,8 +361,8 @@ class Bug(SQLBase, InformationTypeMixin):
     watches = SQLMultipleJoin(
         'BugWatch', joinColumn='bug', orderBy=['bugtracker', 'remotebug'])
     duplicates = SQLMultipleJoin('Bug', joinColumn='duplicateof', orderBy='id')
-    linked_bugbranches = SQLMultipleJoin(
-        'BugBranch', joinColumn='bug', orderBy='id')
+    linked_bugbranches = ReferenceSet(
+        'id', BugBranch.bug_id, order_by=BugBranch.id)
     date_last_message = UtcDateTimeCol(default=None)
     number_of_duplicates = IntCol(notNull=True, default=0)
     message_count = IntCol(notNull=True, default=0)
@@ -1368,7 +1369,8 @@ class Bug(SQLBase, InformationTypeMixin):
 
     def unlinkBranch(self, branch, user):
         """See `IBug`."""
-        bug_branch = BugBranch.selectOneBy(bug=self, branch=branch)
+        bug_branch = Store.of(self).find(
+            BugBranch, BugBranch.bug == self, BugBranch.branch == branch).one()
         if bug_branch is not None:
             self.addChange(BranchUnlinkedFromBug(UTC_NOW, user, branch, self))
             notify(ObjectUnlinkedEvent(branch, self, user=user))
@@ -1385,7 +1387,7 @@ class Bug(SQLBase, InformationTypeMixin):
             branch_ids = [branch.id for branch in linked_branches]
             results = Store.of(self).find(
                 BugBranch,
-                BugBranch.bug == self, In(BugBranch.branchID, branch_ids))
+                BugBranch.bug == self, In(BugBranch.branch_id, branch_ids))
             return results.order_by(BugBranch.id)
 
     def linkMergeProposal(self, merge_proposal, user, check_permissions=True):

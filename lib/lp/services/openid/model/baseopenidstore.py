@@ -17,8 +17,8 @@ from openid.association import Association
 from openid.store import nonce
 from openid.store.interface import OpenIDStore
 from storm.properties import (
+    Bytes,
     Int,
-    RawStr,
     Unicode,
     )
 
@@ -32,7 +32,7 @@ class BaseStormOpenIDAssociation:
 
     server_url = Unicode()
     handle = Unicode()
-    secret = RawStr()
+    secret = Bytes()
     issued = Int()
     lifetime = Int()
     assoc_type = Unicode()
