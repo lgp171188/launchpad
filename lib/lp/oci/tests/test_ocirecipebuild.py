@@ -21,10 +21,7 @@ from lp.oci.interfaces.ocirecipebuild import (
     IOCIRecipeBuild,
     IOCIRecipeBuildSet,
     )
-from lp.oci.model.ocirecipebuild import (
-    OCIRecipeBuildSet,
-    USE_OCI_DISTRO_ARCH_SERIES_FEATURE,
-    )
+from lp.oci.model.ocirecipebuild import OCIRecipeBuildSet
 from lp.registry.interfaces.distribution import IDistributionSet
 from lp.registry.interfaces.distroseries import IDistroSeriesSet
 from lp.registry.interfaces.series import SeriesStatus
@@ -185,11 +182,10 @@ class TestOCIRecipeBuildSet(TestCaseWithFactory):
                 name='bionic')
         processor = getUtility(IProcessorSet).getByName("386")
         self.useFixture(FeatureFixture(
-            {USE_OCI_DISTRO_ARCH_SERIES_FEATURE: True}))
+            {'oci.build_series.ubuntu': 'bionic'}))
         distro_arch_series = self.factory.makeDistroArchSeries(
             distroseries=distroseries, architecturetag="i386",
             processor=processor)
-        distro_arch_series = self.factory.makeDistroArchSeries()
         oci_project = self.factory.makeOCIProject(pillar=distribution)
         recipe = self.factory.makeOCIRecipe(oci_project=oci_project)
         target = getUtility(IOCIRecipeBuildSet).new(
