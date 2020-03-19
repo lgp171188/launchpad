@@ -5,6 +5,10 @@
 
 from __future__ import absolute_import, print_function, unicode_literals
 
+import json
+
+from lp.services.webapp.interfaces import OAuthPermission
+from lp.testing.pages import webservice_for_person
 from storm.store import Store
 from testtools.matchers import (
     ContainsDict,
@@ -31,56 +35,49 @@ class TestOCIProjectWebservice(TestCaseWithFactory):
 
     def setUp(self):
         super(TestOCIProjectWebservice, self).setUp()
-        self.webservice = None
         self.person = self.factory.makePerson(displayname="Test Person")
-        login_person(self.person)
+        self.webservice = webservice_for_person(
+            self.person, permission=OAuthPermission.WRITE_PUBLIC,
+            default_api_version="devel")
 
-    def load_from_api(self, obj, person=None):
-        if person is None:
-            person = self.person
-        if self.webservice is None:
-            self.webservice = launchpadlib_for("testing", person)
-        with person_logged_in(person):
-            url = api_url(obj)
-        return self.webservice.load(url)
+    def load_from_api(self, url):
+        response = self.webservice.get(url)
+        self.assertEqual(200, response.status, response.body)
+        return response.jsonBody()
 
     def test_api_get_oci_project(self):
-        project = removeSecurityProxy(self.factory.makeOCIProject(
-            registrant=self.person))
-        series = removeSecurityProxy(self.factory.makeOCIProjectSeries(
-            oci_project=project, registrant=self.person))
-        transaction.commit()
+        with person_logged_in(self.person):
+            project = removeSecurityProxy(self.factory.makeOCIProject(
+                registrant=self.person))
+            removeSecurityProxy(self.factory.makeOCIProjectSeries(
+                oci_project=project, registrant=self.person))
+            url = api_url(project)
+            transaction.commit()
 
-        ws_project = self.load_from_api(project)
-        ws_series = ws_project.series.entries
+        ws_project = self.load_from_api(url)
 
-        self.assertThat(ws_project, MatchesStructure(
-            date_created=Equals(project.date_created),
-            date_last_modified=Equals(project.date_last_modified),
+        self.assertThat(ws_project, ContainsDict(dict(
+            date_created=Equals(project.date_created.isoformat()),
+            date_last_modified=Equals(project.date_last_modified.isoformat()),
             display_name=Equals(project.display_name),
-            registrant=MatchesStructure.byEquality(
-                name=project.registrant.name)
+            registrant_link=StartsWith("http"),
+            series_collection_link=StartsWith("http"))
             ))
-
-        self.assertEqual(1, len(ws_series))
-        self.assertThat(ws_series, MatchesListwise([
-            ContainsDict(dict(
-                name=Equals(series.name),
-                summary=Equals(series.summary),
-                date_created=Equals(series.date_created.isoformat()),
-                registrant_link=StartsWith("http"),
-                oci_project_link=StartsWith("http")
-            ))
-        ]))
 
     def test_api_save_oci_project(self):
-        project = removeSecurityProxy(self.factory.makeOCIProject(
-            registrant=self.person))
+        with person_logged_in(self.person):
+            # Only the owner of the distribution (which is the pillar of the
+            # OCIProject) is allowed to update it's attributed.
+            distro = self.factory.makeDistribution(owner=self.person)
+            project = removeSecurityProxy(self.factory.makeOCIProject(
+                registrant=self.person, pillar=distro))
+            url = api_url(project)
 
-        ws_project = self.load_from_api(project, self.person)
         new_description = 'Some other description'
-        ws_project.description = new_description
-        ws_project.lp_save()
+        resp = self.webservice.patch(
+            url, 'application/json',
+            json.dumps({'description': new_description}))
+        self.assertEqual(209, resp.status, resp.body)
 
-        ws_project = self.load_from_api(project)
-        self.assertEqual(new_description, ws_project.description)
+        ws_project = self.load_from_api(url)
+        self.assertEqual(new_description, ws_project['description'])
