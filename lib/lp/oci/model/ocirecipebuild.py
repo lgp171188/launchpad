@@ -268,8 +268,10 @@ class OCIRecipeBuild(PackageBuildMixin, Storm):
 
     @property
     def distro_arch_series(self):
-        # For OCI builds if the distribution is Ubuntu we default to Bionic,
-        # otherwise we default to current series under distribution.
+        # For OCI builds if the distribution is Ubuntu we default to
+        # the series set by the feature flag.
+        # If the distribution of the OCIRecipeBuild is not Ubuntu we default
+        # to current series under that distribution.
         use_oci_distro_arch_series_feature = bool(
             getFeatureFlag('oci.build_series.%s' % self.distribution.name))
 

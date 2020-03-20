@@ -228,10 +228,10 @@ flag_info = sorted([
      'Site search engine',
      ''),
     ('oci.build_series.ubuntu',
-     'boolean',
-     'For OCI builds if the distribution is Ubuntu we default to Bionic, '
-     'otherwise we default to current series under distribution.',
-     'disabled',
+     'space delimited',
+     'Name of the series under the Ubuntu distribution for which we build '
+     'OCI images.',
+     'bionic',
      '',
      ''),
     ])
