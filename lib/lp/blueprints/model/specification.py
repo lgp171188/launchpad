@@ -1,4 +1,4 @@
-# Copyright 2009-2016 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -255,7 +255,7 @@ class Specification(SQLBase, BugLinkTargetMixin, InformationTypeMixin):
     def linked_branches(self):
         return list(Store.of(self).find(
             SpecificationBranch,
-            SpecificationBranch.specificationID == self.id).order_by(
+            SpecificationBranch.specification_id == self.id).order_by(
                 SpecificationBranch.id))
 
     def _fetch_children_or_parents(self, join_cond, cond, user):
@@ -871,8 +871,10 @@ class Specification(SQLBase, BugLinkTargetMixin, InformationTypeMixin):
 
     # branches
     def getBranchLink(self, branch):
-        return SpecificationBranch.selectOneBy(
-            specificationID=self.id, branchID=branch.id)
+        return Store.of(self).find(
+            SpecificationBranch,
+            SpecificationBranch.specification == self,
+            SpecificationBranch.branch == branch).one()
 
     def linkBranch(self, branch, registrant):
         branch_link = self.getBranchLink(branch)

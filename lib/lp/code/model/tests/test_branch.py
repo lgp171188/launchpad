@@ -1613,10 +1613,10 @@ class TestBranchDeletionConsequences(TestCase):
         spec2.linkBranch(self.branch, self.branch.owner)
         spec2_branch_id = self.branch.spec_links[1].id
         self.branch.destroySelf(break_references=True)
-        self.assertRaises(
-            SQLObjectNotFound, SpecificationBranch.get, spec1_branch_id)
-        self.assertRaises(
-            SQLObjectNotFound, SpecificationBranch.get, spec2_branch_id)
+        self.assertIsNone(IStore(SpecificationBranch).get(
+            SpecificationBranch, spec1_branch_id))
+        self.assertIsNone(IStore(SpecificationBranch).get(
+            SpecificationBranch, spec2_branch_id))
 
     def test_branchWithSeriesRequirements(self):
         """Deletion requirements for a series' branch are right."""
@@ -1750,8 +1750,8 @@ class TestBranchDeletionConsequences(TestCase):
         spec_link = spec.linkBranch(self.branch, self.branch.owner)
         spec_link_id = spec_link.id
         DeletionCallable(spec, 'blah', spec_link.destroySelf)()
-        self.assertRaises(SQLObjectNotFound, SpecificationBranch.get,
-                          spec_link_id)
+        self.assertIsNone(IStore(SpecificationBranch).get(
+            SpecificationBranch, spec_link_id))
 
     def test_DeleteCodeImport(self):
         """DeleteCodeImport.__call__ must delete the CodeImport."""

@@ -468,8 +468,9 @@ class Branch(SQLBase, WebhookTargetMixin, BzrIdentityMixin):
         """See `IBranch`."""
         return bug.unlinkBranch(self, user)
 
-    spec_links = SQLMultipleJoin(
-        'SpecificationBranch', joinColumn='branch', orderBy='id')
+    spec_links = ReferenceSet(
+        'id', 'SpecificationBranch.branch_id',
+        order_by='SpecificationBranch.id')
 
     def getSpecificationLinks(self, user):
         """See `IBranch`."""
@@ -477,10 +478,10 @@ class Branch(SQLBase, WebhookTargetMixin, BzrIdentityMixin):
             SpecificationBranch,
             Join(
                 Specification,
-                SpecificationBranch.specificationID == Specification.id)]
+                SpecificationBranch.specification_id == Specification.id)]
         return Store.of(self).using(*tables).find(
             SpecificationBranch,
-            SpecificationBranch.branchID == self.id,
+            SpecificationBranch.branch_id == self.id,
             *get_specification_privacy_filter(user))
 
     def linkSpecification(self, spec, registrant):
