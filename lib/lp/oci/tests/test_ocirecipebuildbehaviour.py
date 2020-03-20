@@ -33,6 +33,7 @@ from testtools.twistedsupport import (
     AsynchronousDeferredRunTestForBrokenTwisted,
     )
 from twisted.internet import defer
+from twisted.trial.unittest import TestCase as TrialTestCase
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 

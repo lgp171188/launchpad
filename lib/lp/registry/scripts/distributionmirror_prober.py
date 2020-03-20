@@ -13,6 +13,10 @@ import os.path
 from StringIO import StringIO
 
 import OpenSSL
+from OpenSSL.SSL import (
+    Context,
+    TLSv1_2_METHOD,
+    )
 import requests
 from six.moves import http_client
 from six.moves.urllib.parse import (
@@ -31,13 +35,11 @@ from twisted.internet.defer import (
     CancelledError,
     DeferredSemaphore,
     )
-from twisted.internet.endpoints import HostnameEndpoint
 from twisted.internet.ssl import VerificationError
 from twisted.python.failure import Failure
 from twisted.web.client import (
     Agent,
     BrowserLikePolicyForHTTPS,
-    ProxyAgent,
     ResponseNeverReceived,
     )
 from twisted.web.http import HTTPClient
@@ -53,6 +55,7 @@ from lp.registry.interfaces.distributionmirror import (
     )
 from lp.registry.interfaces.distroseries import IDistroSeries
 from lp.services.config import config
+from lp.services.httpproxy.connect_tunneling import TunnelingAgent
 from lp.services.librarian.interfaces import ILibraryFileAliasSet
 from lp.services.timeout import urlfetch
 from lp.services.webapp import canonical_url
@@ -78,17 +81,6 @@ invalid_certificate_hosts = set()
 
 MAX_REDIRECTS = 3
 
-# Number of simultaneous requests we issue on a given host.
-# IMPORTANT: Don't change this unless you really know what you're doing. Using
-# a too big value can cause spurious failures on lots of mirrors and a too
-# small one can cause the prober to run for hours.
-PER_HOST_REQUESTS = 2
-
-# We limit the overall number of simultaneous requests as well to prevent
-# them from stalling and timing out before they even get a chance to
-# start connecting.
-OVERALL_REQUESTS = 100
-
 
 class LoggingMixin:
     """Common logging class for archive and releases mirror messages."""
@@ -107,11 +99,14 @@ class LoggingMixin:
 
 class RequestManager:
 
-    overall_semaphore = DeferredSemaphore(OVERALL_REQUESTS)
-
     # Yes, I want a mutable class attribute because I want changes done in an
     # instance to be visible in other instances as well.
     host_locks = {}
+
+    def __init__(self, max_parallel, max_parallel_per_host):
+        self.max_parallel = max_parallel
+        self.max_parallel_per_host = max_parallel_per_host
+        self.overall_semaphore = DeferredSemaphore(max_parallel)
 
     def run(self, host, probe_func):
         # Use a MultiLock with one semaphore limiting the overall
@@ -120,7 +115,8 @@ class RequestManager:
             multi_lock = self.host_locks[host]
         else:
             multi_lock = MultiLock(
-                self.overall_semaphore, DeferredSemaphore(PER_HOST_REQUESTS))
+                self.overall_semaphore,
+                DeferredSemaphore(self.max_parallel_per_host))
             self.host_locks[host] = multi_lock
         return multi_lock.run(probe_func)
 
@@ -205,9 +201,8 @@ class HTTPSProbeFailureHandler:
         if self.isInvalidCertificateError(error):
             invalid_certificate_hosts.add(
                 (self.factory.request_host, self.factory.request_port))
-            reason = InvalidHTTPSCertificate(
+            raise InvalidHTTPSCertificate(
                 self.factory.request_host, self.factory.request_port)
-            raise reason
         if self.isTimeout(error):
             raise ProberTimeout(self.factory.url, self.factory.timeout)
         raise error
@@ -304,6 +299,7 @@ class ProberFactory(protocol.ClientFactory):
         self.timeoutCall = None
         self.setURL(url.encode('ascii'))
         self.logger = logging.getLogger('distributionmirror-prober')
+        self._https_client = None
 
     @property
     def is_https(self):
@@ -339,15 +335,29 @@ class ProberFactory(protocol.ClientFactory):
         return self._deferred
 
     def getHttpsClient(self):
+        if self._https_client is not None:
+            return self._https_client
         # Should we use a proxy?
         if not config.launchpad.http_proxy:
             agent = Agent(
                 reactor=reactor, contextFactory=self.https_agent_policy())
         else:
-            endpoint = HostnameEndpoint(
-                reactor, self.connect_host, self.connect_port)
-            agent = ProxyAgent(endpoint)
-        return TreqHTTPClient(agent)
+            contextFactory = self.https_agent_policy()
+            # XXX: pappacena 2020-03-16
+            # TLS version 1.2 should work for most servers. But if it
+            # doesn't, we should implement a negotiation mechanism to test
+            # which version should be used before doing the actual probing
+            # request.
+            # One way to debug which version a given server is compatible
+            # with using curl is issuing the following command:
+            # curl -v --head https://<server-host> --tlsv1.2 --tls-max 1.2
+            # (changing 1.2 with other version numbers)
+            contextFactory.getContext = lambda: Context(TLSv1_2_METHOD)
+            agent = TunnelingAgent(
+                reactor, (self.connect_host, self.connect_port, None),
+                contextFactory=contextFactory)
+        self._https_client = TreqHTTPClient(agent)
+        return self._https_client
 
     def connect(self):
         """Starts the connection and sets the self._deferred to the proper
@@ -622,7 +632,7 @@ class ArchiveMirrorProberCallbacks(LoggingMixin):
         self.logMessage(msg)
         return mirror
 
-    def updateMirrorFreshness(self, arch_or_source_mirror):
+    def updateMirrorFreshness(self, arch_or_source_mirror, request_manager):
         """Update the freshness of this MirrorDistro{ArchSeries,SeriesSource}.
 
         This is done by issuing HTTP HEAD requests on that mirror looking for
@@ -647,7 +657,6 @@ class ArchiveMirrorProberCallbacks(LoggingMixin):
             self.deleteMethod(self.series, self.pocket, self.component)
             return
 
-        request_manager = RequestManager()
         deferredList = []
         # We start setting the freshness to unknown, and then we move on
         # trying to find one of the recently published packages mirrored
@@ -819,7 +828,8 @@ def checkComplete(result, key, unchecked_keys):
     return result
 
 
-def probe_archive_mirror(mirror, logfile, unchecked_keys, logger):
+def probe_archive_mirror(mirror, logfile, unchecked_keys, logger,
+                         max_parallel, max_parallel_per_host):
     """Probe an archive mirror for its contents and freshness.
 
     First we issue a set of HTTP HEAD requests on some key files to find out
@@ -833,7 +843,7 @@ def probe_archive_mirror(mirror, logfile, unchecked_keys, logger):
     packages_paths = mirror.getExpectedPackagesPaths()
     sources_paths = mirror.getExpectedSourcesPaths()
     all_paths = itertools.chain(packages_paths, sources_paths)
-    request_manager = RequestManager()
+    request_manager = RequestManager(max_parallel, max_parallel_per_host)
     for series, pocket, component, path in all_paths:
         url = urljoin(base_url, path)
         callbacks = ArchiveMirrorProberCallbacks(
@@ -847,13 +857,14 @@ def probe_archive_mirror(mirror, logfile, unchecked_keys, logger):
         deferred.addCallbacks(
             callbacks.ensureMirrorSeries, callbacks.deleteMirrorSeries)
 
-        deferred.addCallback(callbacks.updateMirrorFreshness)
+        deferred.addCallback(callbacks.updateMirrorFreshness, request_manager)
         deferred.addErrback(logger.error)
 
         deferred.addBoth(checkComplete, url, unchecked_keys)
 
 
-def probe_cdimage_mirror(mirror, logfile, unchecked_keys, logger):
+def probe_cdimage_mirror(mirror, logfile, unchecked_keys, logger,
+                         max_parallel, max_parallel_per_host):
     """Probe a cdimage mirror for its contents.
 
     This is done by checking the list of files for each flavour and series
@@ -883,7 +894,7 @@ def probe_cdimage_mirror(mirror, logfile, unchecked_keys, logger):
         mirror_key = (series, flavour)
         unchecked_keys.append(mirror_key)
         deferredList = []
-        request_manager = RequestManager()
+        request_manager = RequestManager(max_parallel, max_parallel_per_host)
         for path in paths:
             url = urljoin(base_url, path)
             # Use a RedirectAwareProberFactory because CD mirrors are allowed
@@ -909,14 +920,17 @@ def should_skip_host(host):
         return ratio < MIN_REQUEST_TIMEOUT_RATIO
 
 
-def _parse(url, defaultPort=80):
+def _parse(url, defaultPort=None):
     """Parse the given URL returning the scheme, host, port and path."""
     scheme, host, path, dummy, dummy, dummy = urlparse(url)
-    port = defaultPort
     if ':' in host:
         host, port = host.split(':')
         assert port.isdigit()
         port = int(port)
+    elif defaultPort is None:
+        port = 443 if scheme == 'https' else 80
+    else:
+        port = defaultPort
     return scheme, host, port, path
 
 
@@ -951,8 +965,16 @@ class DistroMirrorProber:
         mirror.newProbeRecord(log_file)
 
     def probe(self, content_type, no_remote_hosts, ignore_last_probe,
-              max_mirrors, notify_owner):
+              max_mirrors, notify_owner, max_parallel=100,
+              max_parallel_per_host=2):
         """Probe distribution mirrors.
+
+        You should control carefully the parallelism here. Increasing too
+        much the number of max_parallel_per_host could make the mirrors take
+        too much to answer or deny our requests.
+
+        If we increase too much the max_parallel, we might experience timeouts
+        because of our production proxy or internet bandwidth.
 
         :param content_type: The type of mirrored content, as a
             `MirrorContent`.
@@ -963,6 +985,10 @@ class DistroMirrorProber:
             no maximum.
         :param notify_owner: Send failure notification to the owners of the
             mirrors.
+        :param max_parallel: Maximum number of requests happening
+            simultaneously.
+        :param max_parallel_per_host: Maximum number of requests to the same
+            host happening simultaneously.
         """
         if content_type == MirrorContent.ARCHIVE:
             probe_function = probe_archive_mirror
@@ -1013,7 +1039,8 @@ class DistroMirrorProber:
             probed_mirrors.append(mirror)
             logfile = StringIO()
             logfiles[mirror_id] = logfile
-            probe_function(mirror, logfile, unchecked_keys, self.logger)
+            probe_function(mirror, logfile, unchecked_keys, self.logger,
+                           max_parallel, max_parallel_per_host)
 
         if probed_mirrors:
             reactor.run()

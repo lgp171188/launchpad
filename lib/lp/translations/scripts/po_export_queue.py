@@ -291,7 +291,7 @@ class ExportResult:
             name=path, size=self.exported_file.size, file=self.exported_file,
             contentType=self.exported_file.content_type)
 
-        self.url = alias.http_url
+        self.url = alias.getURL()
         if logger is not None:
             logger.info("Stored file at %s" % self.url)
 

@@ -334,7 +334,7 @@ class GenericBranchCollection:
             # need for validity etc in the /branches API call.
             load_related(Person, rows,
                 ['ownerID', 'registrantID', 'reviewerID'])
-            load_referencing(BugBranch, rows, ['branchID'])
+            load_referencing(BugBranch, rows, ['branch_id'])
 
         def cache_permission(branch):
             if self._user:
@@ -549,11 +549,11 @@ class GenericBranchCollection:
             store = IStore(BugBranch)
             rs = store.using(
                 BugBranch,
-                Join(BugTask, BugTask.bugID == BugBranch.bugID),
+                Join(BugTask, BugTask.bugID == BugBranch.bug_id),
             ).find(
                 (BugTask, BugBranch),
-                BugBranch.bugID.is_in(bug_ids),
-                BugBranch.branchID.is_in(source_branch_ids)
+                BugBranch.bug_id.is_in(bug_ids),
+                BugBranch.branch_id.is_in(source_branch_ids)
             )
 
             # Build up a collection of bugtasks for each branch
@@ -731,7 +731,7 @@ class GenericBranchCollection:
         """See `IBranchCollection`."""
         bug_ids = [bug.id for bug in bugs]
         return self._filterBy(
-            [In(BugBranch.bugID, bug_ids)],
+            [In(BugBranch.bug_id, bug_ids)],
             table=BugBranch,
             join=Join(BugBranch, BugBranch.branch == Branch.id),
             symmetric=False)

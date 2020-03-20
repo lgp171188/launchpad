@@ -1,6 +1,6 @@
 #!/usr/bin/python -S
 #
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Script to probe distribution mirrors and check how up-to-date they are."""
@@ -38,6 +38,23 @@ class DistroMirrorProberScript(LaunchpadCronScript):
             dest='max_mirrors', default=None, action='store', type="int",
             help='Only probe N mirrors.')
 
+        # IMPORTANT: Don't change this unless you really know what you're
+        # doing. Using a too big value can cause spurious failures on lots of
+        # mirrors and a too small one can cause the prober to run for hours.
+        self.parser.add_option('--max-parallel-per-host',
+            dest='max_parallel_per_host', default=2,
+            action='store', type="int",
+            help='Keep maximum N parallel requests per host at a time.'
+                 ' (default=2)')
+
+        # We limit the overall number of simultaneous requests as well to
+        # prevent them from stalling and timing out before they even get a
+        # chance to start connecting.
+        self.parser.add_option('--max-parallel',
+            dest='max_parallel', default=100,
+            action='store', type="int",
+            help='Keep maximum N parallel requests at a time (default=100).')
+
     def main(self):
         if self.options.content_type == 'archive':
             content_type = MirrorContent.ARCHIVE
@@ -52,7 +69,8 @@ class DistroMirrorProberScript(LaunchpadCronScript):
             lambda: config.distributionmirrorprober.timeout)
         DistroMirrorProber(self.txn, self.logger).probe(
             content_type, self.options.no_remote_hosts, self.options.force,
-            self.options.max_mirrors, not self.options.no_owner_notification)
+            self.options.max_mirrors, not self.options.no_owner_notification,
+            self.options.max_parallel, self.options.max_parallel_per_host)
 
 
 if __name__ == '__main__':

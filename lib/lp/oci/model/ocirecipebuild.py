@@ -1,4 +1,4 @@
-# Copyright 2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2019-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """A build record for OCI Recipes."""
@@ -60,7 +60,11 @@ from lp.services.librarian.model import (
     LibraryFileAlias,
     LibraryFileContent,
     )
-from lp.services.propertycache import cachedproperty
+from lp.services.propertycache import (
+    cachedproperty,
+    get_property_cache,
+    )
+from lp.services.webapp.snapshot import notify_modified
 
 
 @implementer(IOCIFile)
@@ -281,6 +285,22 @@ class OCIRecipeBuild(PackageBuildMixin, Storm):
             return oci_series.getDistroArchSeriesByProcessor(self.processor)
         return self.distribution.currentseries.getDistroArchSeriesByProcessor(
             self.processor)
+
+    def updateStatus(self, status, builder=None, slave_status=None,
+                     date_started=None, date_finished=None,
+                     force_invalid_transition=False):
+        """See `IBuildFarmJob`."""
+        edited_fields = set()
+        with notify_modified(self, edited_fields) as previous_obj:
+            super(OCIRecipeBuild, self).updateStatus(
+                status, builder=builder, slave_status=slave_status,
+                date_started=date_started, date_finished=date_finished,
+                force_invalid_transition=force_invalid_transition)
+            if self.status != previous_obj.status:
+                edited_fields.add("status")
+        # notify_modified evaluates all attributes mentioned in the
+        # interface, but we may then make changes that affect self.eta.
+        del get_property_cache(self).eta
 
     def notify(self, extra_info=None):
         """See `IPackageBuild`."""

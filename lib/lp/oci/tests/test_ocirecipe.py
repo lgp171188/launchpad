@@ -1,10 +1,18 @@
-# Copyright 2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2019-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for OCI image building recipe functionality."""
 
 from __future__ import absolute_import, print_function, unicode_literals
 
+from fixtures import FakeLogger
+from storm.exceptions import LostObjectError
+from testtools.matchers import (
+    Equals,
+    MatchesDict,
+    MatchesStructure,
+    )
+import transaction
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
@@ -15,21 +23,27 @@ from lp.oci.interfaces.ocirecipe import (
     IOCIRecipeSet,
     NoSourceForOCIRecipe,
     NoSuchOCIRecipe,
+    OCI_RECIPE_WEBHOOKS_FEATURE_FLAG,
     OCIRecipeBuildAlreadyPending,
     OCIRecipeNotOwner,
     )
 from lp.oci.interfaces.ocirecipebuild import IOCIRecipeBuildSet
+from lp.services.config import config
 from lp.services.database.constants import (
     ONE_DAY_AGO,
     UTC_NOW,
     )
 from lp.services.database.sqlbase import flush_database_caches
+from lp.services.features.testing import FeatureFixture
+from lp.services.webapp.publisher import canonical_url
 from lp.services.webapp.snapshot import notify_modified
+from lp.services.webhooks.testing import LogsScheduledWebhooks
 from lp.testing import (
     admin_logged_in,
     person_logged_in,
     TestCaseWithFactory,
     )
+from lp.testing.dbuser import dbuser
 from lp.testing.layers import DatabaseFunctionalLayer
 
 
@@ -80,6 +94,40 @@ class TestOCIRecipe(TestCaseWithFactory):
             ocirecipe.requestBuild,
             ocirecipe.owner, oci_arch)
 
+    def test_requestBuild_triggers_webhooks(self):
+        # Requesting a build triggers webhooks.
+        logger = self.useFixture(FakeLogger())
+        with FeatureFixture({OCI_RECIPE_WEBHOOKS_FEATURE_FLAG: "on"}):
+            recipe = self.factory.makeOCIRecipe()
+            oci_arch = self.factory.makeOCIRecipeArch(recipe=recipe)
+            hook = self.factory.makeWebhook(
+                target=recipe, event_types=["oci-recipe:build:0.1"])
+            build = recipe.requestBuild(recipe.owner, oci_arch)
+
+        expected_payload = {
+            "recipe_build": Equals(
+                canonical_url(build, force_local_path=True)),
+            "action": Equals("created"),
+            "recipe": Equals(canonical_url(recipe, force_local_path=True)),
+            "status": Equals("Needs building"),
+            }
+        with person_logged_in(recipe.owner):
+            delivery = hook.deliveries.one()
+            self.assertThat(
+                delivery, MatchesStructure(
+                    event_type=Equals("oci-recipe:build:0.1"),
+                    payload=MatchesDict(expected_payload)))
+            with dbuser(config.IWebhookDeliveryJobSource.dbuser):
+                self.assertEqual(
+                    "<WebhookDeliveryJob for webhook %d on %r>" % (
+                        hook.id, hook.target),
+                    repr(delivery))
+                self.assertThat(
+                    logger.output,
+                    LogsScheduledWebhooks([
+                        (hook, "oci-recipe:build:0.1",
+                         MatchesDict(expected_payload))]))
+
     def test_destroySelf(self):
         oci_recipe = self.factory.makeOCIRecipe()
         build_ids = []
@@ -93,6 +141,17 @@ class TestOCIRecipe(TestCaseWithFactory):
 
         for build_id in build_ids:
             self.assertIsNone(getUtility(IOCIRecipeBuildSet).getByID(build_id))
+
+    def test_related_webhooks_deleted(self):
+        owner = self.factory.makePerson()
+        with FeatureFixture({OCI_RECIPE_WEBHOOKS_FEATURE_FLAG: "on"}):
+            recipe = self.factory.makeOCIRecipe(registrant=owner, owner=owner)
+            webhook = self.factory.makeWebhook(target=recipe)
+        with person_logged_in(recipe.owner):
+            webhook.ping()
+            recipe.destroySelf()
+            transaction.commit()
+            self.assertRaises(LostObjectError, getattr, webhook, "target")
 
     def test_getBuilds(self):
         # Test the various getBuilds methods.

@@ -36,6 +36,13 @@ class TestExportResult(TestCaseWithFactory):
 
     layer = ZopelessDatabaseLayer
 
+    def setUp(self):
+        super(TestExportResult, self).setUp()
+        # In development mode, the librarian is normally configured to
+        # generate HTTP URLs.  Enable HTTPS URLs so that we can test that
+        # ExportResult uses them.
+        self.pushConfig("librarian", use_https=True)
+
     def makeExportResult(self):
         request = [self.factory.makePOFile()]
         requester = self.factory.makePerson()
@@ -55,7 +62,7 @@ class TestExportResult(TestCaseWithFactory):
         export_result.setExportFile(export)
         export_result.upload()
 
-        self.assertIsNot(None, export_result.url)
+        self.assertStartsWith(export_result.url, "https://")
         sha256 = hashlib.sha256(export.content).hexdigest()
         self.assertEqual(sha256, librarian.aliases.values()[0].content.sha256)
         alias = librarian.findBySHA256(sha256)
