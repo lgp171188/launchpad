@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """The code import scheduler XML-RPC API."""
@@ -8,6 +8,7 @@ __all__ = [
     'CodeImportSchedulerAPI',
     ]
 
+import six
 from zope.component import getUtility
 from zope.interface import implementer
 from zope.security.proxy import removeSecurityProxy
@@ -35,7 +36,7 @@ class CodeImportSchedulerAPI(LaunchpadXMLRPCView):
     def getJobForMachine(self, hostname, worker_limit):
         """See `ICodeImportScheduler`."""
         job = getUtility(ICodeImportJobSet).getJobForMachine(
-            hostname, worker_limit)
+            six.ensure_text(hostname), worker_limit)
         if job is not None:
             return job.id
         else:
@@ -58,11 +59,13 @@ class CodeImportSchedulerAPI(LaunchpadXMLRPCView):
 
     def updateHeartbeat(self, job_id, log_tail):
         """See `ICodeImportScheduler`."""
-        return self._updateHeartbeat(job_id, log_tail)
+        return self._updateHeartbeat(job_id, six.ensure_text(log_tail))
 
     def finishJobID(self, job_id, status_name, log_file_alias_url):
         """See `ICodeImportScheduler`."""
-        return self._finishJobID(job_id, status_name, log_file_alias_url)
+        return self._finishJobID(
+            job_id, six.ensure_text(status_name),
+            six.ensure_text(log_file_alias_url))
 
     @return_fault
     def _getImportDataForJobID(self, job_id):

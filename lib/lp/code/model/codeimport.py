@@ -1,4 +1,4 @@
-# Copyright 2009-2016 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Database classes including and related to CodeImport."""
@@ -34,6 +34,7 @@ from storm.references import Reference
 from zope.component import getUtility
 from zope.event import notify
 from zope.interface import implementer
+from zope.security.proxy import removeSecurityProxy
 
 from lp.app.errors import NotFoundError
 from lp.code.enums import (
@@ -158,7 +159,7 @@ class CodeImport(SQLBase):
         seconds = default_interval_dict.get(self.rcs_type, 21600)
         return timedelta(seconds=seconds)
 
-    import_job = Reference("<primary key>", "CodeImportJob.code_importID",
+    import_job = Reference("<primary key>", "CodeImportJob.code_import_id",
                            on_remote=True)
 
     def getImportDetailsForDisplay(self):
@@ -347,9 +348,8 @@ class CodeImportSet:
 
     def delete(self, code_import):
         """See `ICodeImportSet`."""
-        from lp.code.model.codeimportjob import CodeImportJob
         if code_import.import_job is not None:
-            CodeImportJob.delete(code_import.import_job.id)
+            removeSecurityProxy(code_import.import_job).destroySelf()
         CodeImport.delete(code_import.id)
 
     def get(self, id):
