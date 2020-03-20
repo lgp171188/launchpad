@@ -3518,12 +3518,6 @@ class ViewOCIRegistryCredentials(AuthorizationBase):
     usedfor = IOCIRegistryCredentials
 
     def checkAuthenticated(self, user):
-        return user.isOwner(self.obj)
-
-
-class EditOCIRegistryCredentials(AuthorizationBase):
-    permission = 'launchpad.Edit'
-    usedfor = IOCIRegistryCredentials
-
-    def checkAuthenticated(self, user):
-        return user.isOwner(self.obj)
+        return (
+            user.isOwner(self.obj) or
+            user.in_admin)

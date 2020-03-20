@@ -14,11 +14,11 @@ __all__ = [
 from zope.interface import Interface
 from zope.schema import (
     Int,
-    Text,
     TextLine,
     )
 
 from lp import _
+from lp.registry.interfaces.role import IHasOwner
 from lp.services.fields import PersonChoice
 
 
@@ -30,7 +30,7 @@ class IOCIRegistryCredentialsView(Interface):
         """Get the saved credentials."""
 
 
-class IOCIRegistryCredentialsEditableAttributes(Interface):
+class IOCIRegistryCredentialsEditableAttributes(IHasOwner):
 
     owner = PersonChoice(
         title=_("Owner"),

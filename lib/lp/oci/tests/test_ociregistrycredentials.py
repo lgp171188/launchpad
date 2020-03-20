@@ -6,9 +6,11 @@
 from __future__ import absolute_import, print_function, unicode_literals
 
 import base64
+import json
 
 from nacl.public import PrivateKey
 from testtools.matchers import (
+    AfterPreprocessing,
     Equals,
     MatchesDict,
     )
@@ -19,6 +21,7 @@ from lp.oci.interfaces.ociregistrycredentials import (
     IOCIRegistryCredentials,
     IOCIRegistryCredentialsSet,
     )
+from lp.services.crypto.interfaces import IEncryptedContainer
 from lp.testing import (
     person_logged_in,
     TestCaseWithFactory,
@@ -40,34 +43,38 @@ class TestOCIRegistryCredentials(TestCaseWithFactory):
         self.pushConfig(
             "oci",
             registry_secrets_private_key=base64.b64encode(
-                bytes(self.private_key)))
+                bytes(self.private_key)).decode("UTF-8"))
 
     def test_implements_interface(self):
-        target = getUtility(IOCIRegistryCredentialsSet).new(
+        oci_credentials = getUtility(IOCIRegistryCredentialsSet).new(
             owner=self.factory.makePerson(),
             url='http://example.org',
             credentials={'username': 'foo', 'password': 'bar'})
-        self.assertProvides(target, IOCIRegistryCredentials)
+        self.assertProvides(oci_credentials, IOCIRegistryCredentials)
 
     def test_retrieve_encrypted_credentials(self):
         owner = self.factory.makePerson()
-        target = self.factory.makeOCIRegistryCredentials(
+        oci_credentials = self.factory.makeOCIRegistryCredentials(
             owner=owner,
             url='http://example.org',
             credentials={'username': 'foo', 'password': 'bar'})
 
         with person_logged_in(owner):
-            self.assertThat(target.getCredentials(), MatchesDict({
+            self.assertThat(oci_credentials.getCredentials(), MatchesDict({
                 "username": Equals("foo"),
                 "password": Equals("bar")}))
 
     def test_credentials_are_encrypted(self):
         credentials = {'username': 'foo', 'password': 'bar'}
-        target = removeSecurityProxy(
-                    self.factory.makeOCIRegistryCredentials(
-                        credentials=credentials))
-        self.assertIn('credentials_encrypted', target._credentials)
-        self.assertIn('public_key', target._credentials)
+        oci_credentials = removeSecurityProxy(
+            self.factory.makeOCIRegistryCredentials(
+                credentials=credentials))
+        container = getUtility(IEncryptedContainer, "oci-registry-secrets")
+        self.assertThat(oci_credentials._credentials, MatchesDict({
+            "credentials_encrypted": AfterPreprocessing(
+                lambda value: json.loads(container.decrypt(value)),
+                Equals(credentials)),
+            }))
 
 
 class TestOCIRegistryCredentialsSet(TestCaseWithFactory):
@@ -84,23 +91,23 @@ class TestOCIRegistryCredentialsSet(TestCaseWithFactory):
         self.pushConfig(
             "oci",
             registry_secrets_private_key=base64.b64encode(
-                bytes(self.private_key)))
+                bytes(self.private_key)).decode("UTF-8"))
 
     def test_implements_interface(self):
-        target_set = getUtility(IOCIRegistryCredentialsSet)
-        self.assertProvides(target_set, IOCIRegistryCredentialsSet)
+        credentials_set = getUtility(IOCIRegistryCredentialsSet)
+        self.assertProvides(credentials_set, IOCIRegistryCredentialsSet)
 
     def test_new(self):
         owner = self.factory.makePerson()
         url = unicode(self.factory.getUniqueURL())
         credentials = {'username': 'foo', 'password': 'bar'}
-        target = getUtility(IOCIRegistryCredentialsSet).new(
+        oci_credentials = getUtility(IOCIRegistryCredentialsSet).new(
             owner=owner,
             url=url,
             credentials=credentials)
-        self.assertEqual(target.owner, owner)
-        self.assertEqual(target.url, url)
-        self.assertEqual(target.getCredentials(), credentials)
+        self.assertEqual(oci_credentials.owner, owner)
+        self.assertEqual(oci_credentials.url, url)
+        self.assertEqual(oci_credentials.getCredentials(), credentials)
 
     def test_findByOwner(self):
         owner = self.factory.makePerson()
@@ -112,5 +119,5 @@ class TestOCIRegistryCredentialsSet(TestCaseWithFactory):
 
         found = getUtility(IOCIRegistryCredentialsSet).findByOwner(owner)
         self.assertEqual(found.count(), 3)
-        for target in found:
-            self.assertEqual(target.owner, owner)
+        for oci_credentials in found:
+            self.assertEqual(oci_credentials.owner, owner)

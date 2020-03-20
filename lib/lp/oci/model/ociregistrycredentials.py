@@ -23,6 +23,7 @@ from storm.locals import (
     )
 from zope.component import getUtility
 from zope.interface import implementer
+from zope.security.proxy import removeSecurityProxy
 
 from lp.oci.interfaces.ociregistrycredentials import (
     IOCIRegistryCredentials,
@@ -80,7 +81,6 @@ class OCIRegistryCredentials(Storm):
         container = getUtility(IEncryptedContainer, "oci-registry-secrets")
         try:
             return json.loads(container.decrypt((
-                self._credentials["public_key"],
                 self._credentials['credentials_encrypted'])).decode("UTF-8"))
         except CryptoError as e:
             # XXX twom 2020-03-18 This needs a better error
@@ -90,11 +90,9 @@ class OCIRegistryCredentials(Storm):
 
     def setCredentials(self, value):
         container = getUtility(IEncryptedContainer, "oci-registry-secrets")
-        public_key, encrypted_value = container.encrypt(
-            json.dumps(value).encode('UTF-8'))
         self._credentials = {
-            "credentials_encrypted": encrypted_value,
-            "public_key": public_key}
+            "credentials_encrypted": removeSecurityProxy(
+                container.encrypt(json.dumps(value).encode('UTF-8')))}
 
     def destroySelf(self):
         """See `IOCIRegistryCredentials`."""

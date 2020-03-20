@@ -5034,14 +5034,16 @@ class BareLaunchpadObjectFactory(ObjectFactory):
                        layer_file_digest=layer_file_digest)
 
     def makeOCIRegistryCredentials(self, owner=None, url=None,
-                                   credentials=DEFAULT):
+                                   credentials=None):
         """Make a new OCIRegistryCredentials."""
         if owner is None:
             owner = self.makePerson()
         if url is None:
-            url = unicode(self.getUniqueURL())
-        if credentials is DEFAULT:
-            credentials = None
+            url = six.ensure_text(self.getUniqueURL())
+        if credentials is None:
+            credentials = {
+                'username': self.getUniqueUnicode(),
+                'password': self.getUniqueUnicode()}
         return getUtility(IOCIRegistryCredentialsSet).new(
             owner=owner,
             url=url,
