@@ -7,8 +7,6 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 import json
 
-from lp.services.webapp.interfaces import OAuthPermission
-from lp.testing.pages import webservice_for_person
 from testtools.matchers import (
     ContainsDict,
     Equals,
@@ -16,13 +14,16 @@ from testtools.matchers import (
 import transaction
 from zope.security.proxy import removeSecurityProxy
 
+from lp.services.webapp.interfaces import OAuthPermission
 from lp.services.webhooks.testing import StartsWith
 from lp.testing import (
+    admin_logged_in,
     api_url,
     person_logged_in,
     TestCaseWithFactory,
     )
 from lp.testing.layers import DatabaseFunctionalLayer
+from lp.testing.pages import webservice_for_person
 
 
 class TestOCIProjectWebservice(TestCaseWithFactory):
@@ -76,3 +77,23 @@ class TestOCIProjectWebservice(TestCaseWithFactory):
 
         ws_project = self.load_from_api(url)
         self.assertEqual(new_description, ws_project['description'])
+
+    def test_api_save_oci_project_prevents_updates_from_others(self):
+        with admin_logged_in():
+            other_person = self.factory.makePerson()
+        with person_logged_in(other_person):
+            # Only the owner of the distribution (which is the pillar of the
+            # OCIProject) is allowed to update it's attributed.
+            distro = self.factory.makeDistribution(owner=other_person)
+            project = removeSecurityProxy(self.factory.makeOCIProject(
+                registrant=other_person, pillar=distro, description="foo"))
+            url = api_url(project)
+
+        new_description = 'Some other description'
+        resp = self.webservice.patch(
+            url, 'application/json',
+            json.dumps({'description': new_description}))
+        self.assertEqual(401, resp.status, resp.body)
+
+        ws_project = self.load_from_api(url)
+        self.assertEqual("foo", ws_project['description'])

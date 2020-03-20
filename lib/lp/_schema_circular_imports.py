@@ -120,7 +120,7 @@ from lp.registry.interfaces.milestone import (
     IHasMilestones,
     IMilestone,
     )
-from lp.registry.interfaces.ociproject import IOCIProjectView
+from lp.registry.interfaces.ociproject import IOCIProject
 from lp.registry.interfaces.ociprojectseries import IOCIProjectSeries
 from lp.registry.interfaces.person import (
     IPerson,
@@ -1096,7 +1096,7 @@ patch_operations_explicit_version(
 patch_entry_explicit_version(IWikiName, 'beta')
 
 # IOCIProject
-patch_collection_property(IOCIProjectView, 'series', IOCIProjectSeries)
+patch_collection_property(IOCIProject, 'series', IOCIProjectSeries)
 
 # IOCIRecipe
 patch_collection_property(IOCIRecipe, 'builds', IOCIRecipeBuild)
