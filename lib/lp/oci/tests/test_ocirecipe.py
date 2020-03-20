@@ -5,12 +5,16 @@
 
 from __future__ import absolute_import, print_function, unicode_literals
 
+import json
+
 from fixtures import FakeLogger
 from storm.exceptions import LostObjectError
 from testtools.matchers import (
+    ContainsDict,
     Equals,
     MatchesDict,
     MatchesStructure,
+    StartsWith,
     )
 import transaction
 from zope.component import getUtility
@@ -35,16 +39,19 @@ from lp.services.database.constants import (
     )
 from lp.services.database.sqlbase import flush_database_caches
 from lp.services.features.testing import FeatureFixture
+from lp.services.webapp.interfaces import OAuthPermission
 from lp.services.webapp.publisher import canonical_url
 from lp.services.webapp.snapshot import notify_modified
 from lp.services.webhooks.testing import LogsScheduledWebhooks
 from lp.testing import (
     admin_logged_in,
+    api_url,
     person_logged_in,
     TestCaseWithFactory,
     )
 from lp.testing.dbuser import dbuser
 from lp.testing.layers import DatabaseFunctionalLayer
+from lp.testing.pages import webservice_for_person
 
 
 class TestOCIRecipe(TestCaseWithFactory):
@@ -286,3 +293,92 @@ class TestOCIRecipeSet(TestCaseWithFactory):
             owner=owner,
             oci_project=oci_project,
             name="missing")
+
+
+class TestOCIRecipeWebservice(TestCaseWithFactory):
+    layer = DatabaseFunctionalLayer
+
+    def setUp(self):
+        super(TestOCIRecipeWebservice, self).setUp()
+        self.person = self.factory.makePerson(displayname="Test Person")
+        self.webservice = webservice_for_person(
+            self.person, permission=OAuthPermission.WRITE_PUBLIC,
+            default_api_version="devel")
+
+    def load_from_api(self, url):
+        response = self.webservice.get(url)
+        self.assertEqual(200, response.status, response.body)
+        return response.jsonBody()
+
+    def test_api_get_oci_recipe(self):
+        with person_logged_in(self.person):
+            project = removeSecurityProxy(self.factory.makeOCIProject(
+                registrant=self.person))
+            recipe = removeSecurityProxy(self.factory.makeOCIRecipe(
+                oci_project=project))
+            url = api_url(recipe)
+
+        ws_recipe = self.load_from_api(url)
+
+        self.assertThat(ws_recipe, ContainsDict(dict(
+            date_created=Equals(recipe.date_created.isoformat()),
+            date_last_modified=Equals(recipe.date_last_modified.isoformat()),
+            registrant_link=StartsWith("http"),
+            resource_type_link=StartsWith("http"),
+            pending_builds_collection_link=StartsWith("http"),
+            webhooks_collection_link=StartsWith("http"),
+            name=Equals(recipe.name),
+            owner_link=StartsWith("http"),
+            oci_project_link=StartsWith("http"),
+            official=Equals(recipe.official),
+            git_ref_link=StartsWith("http"),
+            git_repository_link=StartsWith("http"),
+            git_path=Equals(recipe.git_path),
+            description=Equals(recipe.description),
+            build_file=Equals(recipe.build_file),
+            build_daily=Equals(recipe.build_daily)
+        )))
+
+    def test_api_patch_oci_recipe(self):
+        with person_logged_in(self.person):
+            distro = self.factory.makeDistribution(owner=self.person)
+            project = removeSecurityProxy(self.factory.makeOCIProject(
+                pillar=distro, registrant=self.person))
+            # Only the owner should be able to edit.
+            recipe = removeSecurityProxy(self.factory.makeOCIRecipe(
+                oci_project=project, owner=self.person,
+                registrant=self.person))
+            url = api_url(recipe)
+
+        new_description = 'Some other description'
+        resp = self.webservice.patch(
+            url, 'application/json',
+            json.dumps({'description': new_description}))
+
+        self.assertEqual(209, resp.status, resp.body)
+
+        ws_project = self.load_from_api(url)
+        self.assertEqual(new_description, ws_project['description'])
+
+    def test_api_patch_fails_with_different_user(self):
+        with admin_logged_in():
+            other_person = self.factory.makePerson()
+        with person_logged_in(other_person):
+            distro = self.factory.makeDistribution(owner=other_person)
+            project = removeSecurityProxy(self.factory.makeOCIProject(
+                pillar=distro, registrant=other_person))
+            # Only the owner should be able to edit.
+            recipe = removeSecurityProxy(self.factory.makeOCIRecipe(
+                oci_project=project, owner=other_person,
+                registrant=other_person,
+                description="old description"))
+            url = api_url(recipe)
+
+        new_description = 'Some other description'
+        resp = self.webservice.patch(
+            url, 'application/json',
+            json.dumps({'description': new_description}))
+        self.assertEqual(401, resp.status, resp.body)
+
+        ws_project = self.load_from_api(url)
+        self.assertEqual("old description", ws_project['description'])

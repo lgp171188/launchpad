@@ -11,7 +11,6 @@ from testtools.matchers import (
     ContainsDict,
     Equals,
     )
-import transaction
 from zope.security.proxy import removeSecurityProxy
 
 from lp.services.webapp.interfaces import OAuthPermission
@@ -45,10 +44,9 @@ class TestOCIProjectWebservice(TestCaseWithFactory):
         with person_logged_in(self.person):
             project = removeSecurityProxy(self.factory.makeOCIProject(
                 registrant=self.person))
-            removeSecurityProxy(self.factory.makeOCIProjectSeries(
-                oci_project=project, registrant=self.person))
+            self.factory.makeOCIProjectSeries(
+                oci_project=project, registrant=self.person)
             url = api_url(project)
-            transaction.commit()
 
         ws_project = self.load_from_api(url)
 
@@ -86,7 +84,8 @@ class TestOCIProjectWebservice(TestCaseWithFactory):
             # OCIProject) is allowed to update it's attributed.
             distro = self.factory.makeDistribution(owner=other_person)
             project = removeSecurityProxy(self.factory.makeOCIProject(
-                registrant=other_person, pillar=distro, description="foo"))
+                registrant=other_person, pillar=distro,
+                description="old description"))
             url = api_url(project)
 
         new_description = 'Some other description'
@@ -96,4 +95,4 @@ class TestOCIProjectWebservice(TestCaseWithFactory):
         self.assertEqual(401, resp.status, resp.body)
 
         ws_project = self.load_from_api(url)
-        self.assertEqual("foo", ws_project['description'])
+        self.assertEqual("old description", ws_project['description'])
