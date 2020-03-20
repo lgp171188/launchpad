@@ -14,7 +14,7 @@ CREATE INDEX ociregistrycredentials__owner__idx
     ON OCIRegistryCredentials (owner);
 
 COMMENT ON TABLE OCIRegistryCredentials IS 'Credentials for pushing to an OCI registry.';
-COMMENT ON COLUMN OCIRegistryCredentials.owner IS 'The owner of these credentials.  Only the owner is entitled to make use of them.';
+COMMENT ON COLUMN OCIRegistryCredentials.owner IS 'The owner of these credentials.  Only the owner is entitled to create push rules using them.';
 COMMENT ON COLUMN OCIRegistryCredentials.url IS 'The registry URL.';
 COMMENT ON COLUMN OCIRegistryCredentials.credentials IS 'Encrypted credentials for pushing to the registry.';
 
