@@ -140,6 +140,13 @@ class IOCIRecipeView(Interface):
         :return: `IOCIRecipeBuild`.
         """
 
+    push_rules = CollectionField(
+        title=_("Push Rules for this OCI recipe."),
+        description=_("All of the push rules for registry upload "
+                      "that apply to this recipe."),
+        # Really IOCIPushRule, patched in _schema_cirular_imports.
+        value_type=Reference(schema=Interface), readonly=True)
+
 
 class IOCIRecipeEdit(IWebhookTarget):
     """`IOCIRecipe` methods that require launchpad.Edit permission."""
