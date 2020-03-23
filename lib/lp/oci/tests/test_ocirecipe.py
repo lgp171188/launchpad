@@ -398,17 +398,14 @@ class TestOCIRecipeWebservice(TestCaseWithFactory):
             git_ref_url = api_url(git_ref)
 
         url = '/{distribution}/+oci/{oci_project}/'
-        url = url.format(
-            username=self.person.name, distribution=distro.name,
-            oci_project=project.name)
+        url = url.format(distribution=distro.name, oci_project=project.name)
 
         obj = {
             "name": "My recipe",
             "oci_project": project_url,
             "git_ref": git_ref_url,
             "build_file": "./Dockerfile",
-            "description": "My recipe"
-        }
+            "description": "My recipe"}
 
         resp = self.webservice.named_post(url, "newRecipe", **obj)
         self.assertEqual(201, resp.status, resp.body)
@@ -426,3 +423,32 @@ class TestOCIRecipeWebservice(TestCaseWithFactory):
             owner=Equals(self.person),
             registrant=Equals(self.person),
         ))
+
+    def test_api_create_oci_recipe_non_legitimate_user(self):
+        """Ensure that a non-legitimate user cannot create recipe using API"""
+        self.pushConfig(
+            'launchpad', min_legitimate_karma=9999,
+            min_legitimate_account_age=9999)
+
+        with person_logged_in(self.person):
+            distro = removeSecurityProxy(self.factory.makeDistribution(
+                owner=self.person))
+            project = removeSecurityProxy(self.factory.makeOCIProject(
+                pillar=distro, registrant=self.person))
+            git_ref = self.factory.makeGitRefs()[0]
+
+            project_url = api_url(project)
+            git_ref_url = api_url(git_ref)
+
+        url = '/{distribution}/+oci/{oci_project}/'
+        url = url.format(distribution=distro.name, oci_project=project.name)
+
+        obj = {
+            "name": "My recipe",
+            "oci_project": project_url,
+            "git_ref": git_ref_url,
+            "build_file": "./Dockerfile",
+            "description": "My recipe"}
+
+        resp = self.webservice.named_post(url, "newRecipe", **obj)
+        self.assertEqual(401, resp.status, resp.body)

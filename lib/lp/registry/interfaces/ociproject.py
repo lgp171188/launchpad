@@ -98,6 +98,15 @@ class IOCIProjectEditableAttributes(IBugTarget):
 class IOCIProjectEdit(Interface):
     """IOCIProject attributes that require launchpad.Edit permission."""
 
+    def newSeries(name, summary, registrant,
+                  status=SeriesStatus.DEVELOPMENT, date_created=DEFAULT):
+        """Creates a new `IOCIProjectSeries`."""
+
+
+class IOCIProjectPublicActions(Interface):
+    """IOCIProject methods that require launchpad.AnyLegitimatePerson
+    permission.
+    """
     @call_with(registrant=REQUEST_USER, owner=REQUEST_USER)
     @operation_parameters(
         name=Text(
@@ -119,16 +128,12 @@ class IOCIProjectEdit(Interface):
     @export_factory_operation(Interface, [])
     @operation_for_version("devel")
     def newRecipe(name, registrant, owner, git_ref, build_file,
-            description=None, official=False, require_virtualized=True):
+                  description=None, official=False, require_virtualized=True):
         """Create an IOCIRecipe for this project."""
-
-    def newSeries(name, summary, registrant,
-                  status=SeriesStatus.DEVELOPMENT, date_created=DEFAULT):
-        """Creates a new `IOCIProjectSeries`."""
 
 
 class IOCIProject(IOCIProjectView, IOCIProjectEdit,
-                       IOCIProjectEditableAttributes):
+                  IOCIProjectEditableAttributes, IOCIProjectPublicActions):
     """A project containing Open Container Initiative recipes."""
 
     export_as_webservice_entry(publish_web_link=True, as_of="devel")
