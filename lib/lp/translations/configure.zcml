@@ -291,15 +291,6 @@
         <allow
             interface="lp.translations.interfaces.translationimporter.ITranslationFormatImporter"/>
     </class>
-    <class
-        class="lp.translations.utilities.mozilla_xpi_importer.MozillaXpiImporter">
-        <allow
-            interface="lp.translations.interfaces.translationimporter.ITranslationFormatImporter"/>
-    </class>
-    <subscriber
-        for="lp.translations.interfaces.translationimportqueue.ITranslationImportQueueEntry"
-        provides="lp.translations.interfaces.translationimporter.ITranslationFormatImporter"
-        factory="lp.translations.utilities.mozilla_xpi_importer.MozillaXpiImporter"/>
 
         <!-- PO File -->
 
