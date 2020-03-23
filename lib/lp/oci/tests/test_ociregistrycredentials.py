@@ -28,6 +28,20 @@ from lp.testing import (
 from lp.testing.layers import LaunchpadZopelessLayer
 
 
+class OCIConfigHelperMixin:
+
+    def setConfig(self):
+        self.private_key = PrivateKey.generate()
+        self.pushConfig(
+            "oci",
+            registry_secrets_public_key=base64.b64encode(
+                bytes(self.private_key.public_key)).decode("UTF-8"))
+        self.pushConfig(
+            "oci",
+            registry_secrets_private_key=base64.b64encode(
+                bytes(self.private_key)).decode("UTF-8"))
+
+
 class TestOCIRegistryCredentials(OCIConfigHelperMixin, TestCaseWithFactory):
 
     layer = LaunchpadZopelessLayer

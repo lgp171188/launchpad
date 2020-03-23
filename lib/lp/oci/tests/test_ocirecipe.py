@@ -6,10 +6,15 @@
 from __future__ import absolute_import, print_function, unicode_literals
 
 import base64
+<<<<<<< 16ae97a6453c1c6d4e298ff58b1cc50a78f4b326
 import json
 
 from fixtures import FakeLogger
 from six import string_types
+=======
+
+from fixtures import FakeLogger
+>>>>>>> Add OCIPushRule model
 from nacl.public import PrivateKey
 from storm.exceptions import LostObjectError
 from testtools.matchers import (

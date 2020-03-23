@@ -351,4 +351,4 @@ class OCIRecipeSet:
             person_ids.add(recipe.owner_id)
 
         list(getUtility(IPersonSet).getPrecachedPersonsFromIDs(
-            person_ids, need_validity=True))
+             person_ids, need_validity=True))

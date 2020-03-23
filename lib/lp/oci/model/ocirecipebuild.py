@@ -56,6 +56,7 @@ from lp.services.database.interfaces import (
     IStore,
     )
 from lp.services.features import getFeatureFlag
+from lp.services.librarian.browser import ProxiedLibraryFileAlias
 from lp.services.librarian.model import (
     LibraryFileAlias,
     LibraryFileContent,
@@ -208,22 +209,6 @@ class OCIRecipeBuild(PackageBuildMixin, Storm):
             return result
         raise NotFoundError(filename)
 
-    def getLayerFileByDigest(self, layer_file_digest):
-        file_object = Store.of(self).find(
-            (OCIFile, LibraryFileAlias, LibraryFileContent),
-            OCIFile.build == self.id,
-            LibraryFileAlias.id == OCIFile.library_file_id,
-            LibraryFileContent.id == LibraryFileAlias.contentID,
-            OCIFile.layer_file_digest == layer_file_digest).one()
-        if file_object is not None:
-            return file_object
-        raise NotFoundError(layer_file_digest)
-
-    def addFile(self, lfa, layer_file_digest=None):
-        oci_file = OCIFile(
-            build=self, library_file=lfa, layer_file_digest=layer_file_digest)
-        IMasterStore(OCIFile).add(oci_file)
-        return oci_file
 
     @cachedproperty
     def eta(self):
@@ -307,6 +292,23 @@ class OCIRecipeBuild(PackageBuildMixin, Storm):
         if self.status == BuildStatus.FULLYBUILT:
             return
         # XXX twom 2019-12-11 This should send mail
+
+    def getLayerFileByDigest(self, layer_file_digest):
+        file_object = Store.of(self).find(
+            (OCIFile, LibraryFileAlias, LibraryFileContent),
+            OCIFile.build == self.id,
+            LibraryFileAlias.id == OCIFile.library_file_id,
+            LibraryFileContent.id == LibraryFileAlias.contentID,
+            OCIFile.layer_file_digest == layer_file_digest).one()
+        if file_object is not None:
+            return file_object
+        raise NotFoundError(layer_file_digest)
+
+    def addFile(self, lfa, layer_file_digest=None):
+        oci_file = OCIFile(
+            build=self, library_file=lfa, layer_file_digest=layer_file_digest)
+        IMasterStore(OCIFile).add(oci_file)
+        return oci_file
 
 
 @implementer(IOCIRecipeBuildSet)
