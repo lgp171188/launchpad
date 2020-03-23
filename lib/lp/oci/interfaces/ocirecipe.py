@@ -187,7 +187,7 @@ class IOCIRecipeEditableAttributes(IHasOwner):
     git_repository = ReferenceChoice(
         title=_("Git repository"),
         schema=IGitRepository, vocabulary="GitRepository",
-        required=True, readonly=False,
+        required=False, readonly=False,
         description=_(
             "A Git repository with a branch containing a Dockerfile "
             "at the location defined by the build_file attribute."))
@@ -257,4 +257,19 @@ class IOCIRecipeSet(Interface):
         """Return all OCI recipes with the given `oci_project`."""
 
     def preloadDataForOCIRecipes(recipes, user):
-        """Load the data reloated to a list of OCI Recipes."""
+        """Load the data related to a list of OCI Recipes."""
+
+    def findByGitRepository(repository, paths=None):
+        """Return all OCI recipes for the given Git repository.
+
+        :param repository: An `IGitRepository`.
+        :param paths: If not None, only return OCI recipes for one of
+            these Git reference paths.
+        """
+
+    def detachFromGitRepository(repository):
+        """Detach all OCI recipes from the given Git repository.
+
+        After this, any OCI recipes that previously used this repository
+        will have no source and so cannot dispatch new builds.
+        """
