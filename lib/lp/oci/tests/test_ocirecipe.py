@@ -458,7 +458,7 @@ class TestOCIRecipeWebservice(TestCaseWithFactory):
     def test_api_create_oci_recipe_is_disabled_by_feature_flag(self):
         """Ensure that OCI newRecipe API method returns HTTP 401 when the
         feature flag is not set."""
-        self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: 'features/flags.py'}))
+        self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: ''}))
 
         with person_logged_in(self.person):
             distro = removeSecurityProxy(self.factory.makeDistribution(
