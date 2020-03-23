@@ -330,10 +330,7 @@ class TestOCIRecipeWebservice(TestCaseWithFactory):
             name=Equals(recipe.name),
             owner_link=StartsWith("http"),
             oci_project_link=StartsWith("http"),
-            official=Equals(recipe.official),
             git_ref_link=StartsWith("http"),
-            git_repository_link=StartsWith("http"),
-            git_path=Equals(recipe.git_path),
             description=Equals(recipe.description),
             build_file=Equals(recipe.build_file),
             build_daily=Equals(recipe.build_daily)

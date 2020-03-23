@@ -103,7 +103,8 @@ class IOCIProject(IOCIProjectView, IOCIProjectEdit,
                        IOCIProjectEditableAttributes):
     """A project containing Open Container Initiative recipes."""
 
-    export_as_webservice_entry(publish_web_link=True, as_of="devel")
+    export_as_webservice_entry(
+        publish_web_link=True, as_of="devel", singular_name="oci_project")
 
 
 class IOCIProjectSet(Interface):
