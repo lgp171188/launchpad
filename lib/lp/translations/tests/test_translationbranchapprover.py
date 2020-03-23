@@ -111,17 +111,6 @@ class TestTranslationBranchApprover(TestCaseWithFactory):
         self.assertEqual(
             translation_domain, entry.potemplate.translation_domain)
 
-    def test_new_template_domain_with_xpi(self):
-        # For xpi files, template files are always called "en-US.xpi" so
-        # the approver won't use that string for a domain.  It'll fall
-        # back to the next possibility, which is the directory.
-        translation_domain = self.factory.getUniqueString()
-        template_path = translation_domain + '/en-US.xpi'
-        entry = self._upload_file(template_path)
-        self._createApprover(template_path).approve(entry)
-        self.assertEqual(
-            translation_domain, entry.potemplate.translation_domain)
-
     def test_template_name(self):
         # The name is derived from the file name and must be a valid name.
         translation_domain = (u'Invalid-Name_with illegal#Characters')

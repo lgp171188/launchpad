@@ -16,9 +16,6 @@ from lp.translations.scripts.validate_translations_file import (
     UnknownFileType,
     ValidateTranslationsFile,
     )
-from lp.translations.utilities.tests.xpi_helpers import (
-    get_en_US_xpi_file_to_import,
-    )
 
 
 class TestValidateTranslationsFile(TestCase):
@@ -44,30 +41,6 @@ class TestValidateTranslationsFile(TestCase):
         validator = self._makeValidator()
         self.assertRaises(
             UnknownFileType, validator._validateContent, 'foo.bar', 'content')
-
-    def test_validate_dtd_good(self):
-        validator = self._makeValidator()
-        result = validator._validateContent(
-            'test.dtd', '<!ENTITY a.translatable.string "A string">\n')
-        self.assertTrue(result)
-
-    def test_validate_dtd_bad(self):
-        validator = self._makeValidator()
-        result = validator._validateContent(
-            'test.dtd', '<!ENTIT etc.')
-        self.assertFalse(result)
-
-    def test_validate_xpi_manifest_good(self):
-        validator = self._makeValidator()
-        result = validator._validateContent(
-            'chrome.manifest', 'locale foo nl jar:chrome/nl.jar!/foo/')
-        self.assertTrue(result)
-
-    def test_validate_xpi_manifest_bad(self):
-        # XPI manifests must not begin with newline.
-        validator = self._makeValidator()
-        result = validator._validateContent('chrome.manifest', '\nlocale')
-        self.assertFalse(result)
 
     def test_validate_po_good(self):
         validator = self._makeValidator()
@@ -108,17 +81,6 @@ class TestValidateTranslationsFile(TestCase):
     def test_validate_pot_bad(self):
         validator = self._makeValidator()
         result = validator._validateContent('test.pot', 'garble')
-        self.assertFalse(result)
-
-    def test_validate_xpi_good(self):
-        validator = self._makeValidator()
-        xpi_content = get_en_US_xpi_file_to_import('en-US').read()
-        result = validator._validateContent('pl.xpi', xpi_content)
-        self.assertTrue(result)
-
-    def test_validate_xpi_bad(self):
-        validator = self._makeValidator()
-        result = validator._validateContent('de.xpi', 'garble')
         self.assertFalse(result)
 
     def test_script(self):
