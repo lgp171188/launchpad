@@ -1062,17 +1062,6 @@ class TestRosettaUploadJob(TestCaseWithFactory):
         self.assertEqual([(po_path, po_content)],
                          job.translation_files_changed)
 
-    def test_upload_xpi_template(self):
-        # XPI templates are indentified by a special name. They are imported
-        # like POT files.
-        pot_name = "en-US.xpi"
-        entries = self._runJobWithFiles(
-            TranslationsBranchImportMode.IMPORT_TEMPLATES,
-            ((pot_name,), ('eo.xpi',), ('README',)))
-        self.assertEqual(len(entries), 1)
-        entry = entries[0]
-        self.assertEqual(pot_name, entry.path)
-
     def test_upload_empty_pot(self):
         # An empty POT cannot be uploaded, if if the product series is
         # configured for template import.
