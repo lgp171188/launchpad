@@ -237,12 +237,12 @@ class ZopeUtilityFixture(Fixture):
         gsm = getGlobalSiteManager()
         original = gsm.queryUtility(self.intf, self.name)
         gsm.registerUtility(self.component, self.intf, self.name)
-        self.addCleanup(
-            gsm.unregisterUtility,
-            self.component, self.intf, self.name)
         if original is not None:
             self.addCleanup(
                 gsm.registerUtility, original, self.intf, self.name)
+        self.addCleanup(
+            gsm.unregisterUtility,
+            self.component, self.intf, self.name)
 
 
 class CaptureOops(Fixture):
