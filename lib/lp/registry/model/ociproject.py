@@ -1,4 +1,4 @@
-# Copyright 2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2019-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """OCI Project implementation."""
@@ -24,6 +24,7 @@ from zope.interface import implementer
 from zope.security.proxy import removeSecurityProxy
 
 from lp.bugs.model.bugtarget import BugTargetBase
+from lp.oci.interfaces.ocirecipe import IOCIRecipeSet
 from lp.registry.interfaces.distribution import IDistribution
 from lp.registry.interfaces.ociproject import (
     IOCIProject,
@@ -88,7 +89,7 @@ class OCIProject(BugTargetBase, StormBase):
         return self.ociprojectname.name
 
     @name.setter
-    def name(self, value):
+    def name_setter(self, value):
         self.ociprojectname = getUtility(IOCIProjectNameSet).getOrCreateByName(
             value)
 
@@ -105,6 +106,21 @@ class OCIProject(BugTargetBase, StormBase):
 
     bugtargetname = display_name
     bugtargetdisplayname = display_name
+
+    def newRecipe(self, name, registrant, owner, git_ref,
+                  build_file, description=None, official=False,
+                  require_virtualized=True):
+        return getUtility(IOCIRecipeSet).new(
+            name=name,
+            registrant=registrant,
+            owner=owner,
+            oci_project=self,
+            git_ref=git_ref,
+            build_file=build_file,
+            description=description,
+            official=official,
+            require_virtualized=require_virtualized
+        )
 
     def newSeries(self, name, summary, registrant,
                   status=SeriesStatus.DEVELOPMENT, date_created=DEFAULT):

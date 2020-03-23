@@ -9,6 +9,7 @@ import json
 
 from fixtures import FakeLogger
 from storm.exceptions import LostObjectError
+from storm.store import Store
 from testtools.matchers import (
     ContainsDict,
     Equals,
@@ -32,6 +33,7 @@ from lp.oci.interfaces.ocirecipe import (
     OCIRecipeNotOwner,
     )
 from lp.oci.interfaces.ocirecipebuild import IOCIRecipeBuildSet
+from lp.oci.model.ocirecipe import OCIRecipe
 from lp.services.config import config
 from lp.services.database.constants import (
     ONE_DAY_AGO,
@@ -300,7 +302,8 @@ class TestOCIRecipeWebservice(TestCaseWithFactory):
 
     def setUp(self):
         super(TestOCIRecipeWebservice, self).setUp()
-        self.person = self.factory.makePerson(displayname="Test Person")
+        self.person = removeSecurityProxy(self.factory.makePerson(
+            displayname="Test Person"))
         self.webservice = webservice_for_person(
             self.person, permission=OAuthPermission.WRITE_PUBLIC,
             default_api_version="devel")
@@ -382,3 +385,44 @@ class TestOCIRecipeWebservice(TestCaseWithFactory):
 
         ws_project = self.load_from_api(url)
         self.assertEqual("old description", ws_project['description'])
+
+    def test_api_create_oci_recipe(self):
+        with person_logged_in(self.person):
+            distro = removeSecurityProxy(self.factory.makeDistribution(
+                owner=self.person))
+            project = removeSecurityProxy(self.factory.makeOCIProject(
+                pillar=distro, registrant=self.person))
+            git_ref = self.factory.makeGitRefs()[0]
+
+            project_url = api_url(project)
+            git_ref_url = api_url(git_ref)
+
+        url = '/{distribution}/+oci/{oci_project}/'
+        url = url.format(
+            username=self.person.name, distribution=distro.name,
+            oci_project=project.name)
+
+        obj = {
+            "name": "My recipe",
+            "oci_project": project_url,
+            "git_ref": git_ref_url,
+            "build_file": "./Dockerfile",
+            "description": "My recipe"
+        }
+
+        resp = self.webservice.named_post(url, "newRecipe", **obj)
+        self.assertEqual(201, resp.status, resp.body)
+
+        result_set = Store.of(project).find(OCIRecipe)
+        self.assertEqual(1, result_set.count())
+
+        recipe = result_set[0]
+        self.assertThat(recipe, MatchesStructure(
+            name=Equals(obj["name"]),
+            oci_project=Equals(project),
+            git_ref=Equals(git_ref),
+            build_file=Equals(obj["build_file"]),
+            description=Equals(obj["description"]),
+            owner=Equals(self.person),
+            registrant=Equals(self.person),
+        ))

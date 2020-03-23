@@ -12,28 +12,32 @@ __all__ = [
     ]
 
 from lazr.restful.declarations import (
+    call_with,
     export_as_webservice_entry,
+    export_factory_operation,
     exported,
+    operation_for_version,
+    operation_parameters,
+    REQUEST_USER,
     )
 from lazr.restful.fields import (
     CollectionField,
     Reference,
     ReferenceChoice,
     )
-from zope.interface import (
-    Attribute,
-    Interface,
-    )
+from zope.interface import Interface
 from zope.schema import (
     Datetime,
     Int,
     Text,
     TextLine,
     )
+from zope.schema._bootstrapfields import Bool
 
 from lp import _
 from lp.app.validators.name import name_validator
 from lp.bugs.interfaces.bugtarget import IBugTarget
+from lp.code.interfaces.gitref import IGitRef
 from lp.code.interfaces.hasgitrepositories import IHasGitRepositories
 from lp.registry.interfaces.distribution import IDistribution
 from lp.registry.interfaces.ociprojectname import IOCIProjectName
@@ -93,6 +97,30 @@ class IOCIProjectEditableAttributes(IBugTarget):
 
 class IOCIProjectEdit(Interface):
     """IOCIProject attributes that require launchpad.Edit permission."""
+
+    @call_with(registrant=REQUEST_USER, owner=REQUEST_USER)
+    @operation_parameters(
+        name=Text(
+            title=_("OCI Recipe name."),
+            description=_("The name of the new OCI Recipe.")),
+        git_ref=Reference(IGitRef, title=_("Git branch.")),
+        build_file=TextLine(
+            title=_("Build file path."),
+            description=_(
+                "The relative path to the file within this recipe's "
+                "branch that defines how to build the recipe.")),
+        description=Text(
+            title=_("Description for this recipe."),
+            description=_("A short description of this recipe.")),
+        official=Bool(
+            title=_("Is this the official recipe?"),
+            description=_("True if this recipe is official for its "
+                          "OCI project.")))
+    @export_factory_operation(Interface, [])
+    @operation_for_version("devel")
+    def newRecipe(name, registrant, owner, git_ref, build_file,
+            description=None, official=False, require_virtualized=True):
+        """Create an IOCIRecipe for this project."""
 
     def newSeries(name, summary, registrant,
                   status=SeriesStatus.DEVELOPMENT, date_created=DEFAULT):
