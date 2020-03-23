@@ -9,10 +9,10 @@ __metaclass__ = type
 
 import json
 
+from six import string_types
 from testtools.matchers import (
     ContainsDict,
     Equals,
-    StartsWith,
     )
 from testtools.testcase import ExpectedException
 from zope.component import getUtility
@@ -143,6 +143,13 @@ class TestOCIProjectWebservice(TestCaseWithFactory):
             self.person, permission=OAuthPermission.WRITE_PUBLIC,
             default_api_version="devel")
 
+    def getAbsoluteURL(self, target):
+        """Get the webservice absolute URL of the given object or relative
+        path."""
+        if not isinstance(target, string_types):
+            target = api_url(target)
+        return self.webservice.getAbsoluteUrl(target)
+
     def load_from_api(self, url):
         response = self.webservice.get(url)
         self.assertEqual(200, response.status, response.body)
@@ -150,6 +157,7 @@ class TestOCIProjectWebservice(TestCaseWithFactory):
 
     def test_api_get_oci_project(self):
         with person_logged_in(self.person):
+            person = removeSecurityProxy(self.person)
             project = removeSecurityProxy(self.factory.makeOCIProject(
                 registrant=self.person))
             self.factory.makeOCIProjectSeries(
@@ -158,13 +166,16 @@ class TestOCIProjectWebservice(TestCaseWithFactory):
 
         ws_project = self.load_from_api(url)
 
+        series_url = "{project_path}/series".format(
+            project_path=self.getAbsoluteURL(project))
+
         self.assertThat(ws_project, ContainsDict(dict(
             date_created=Equals(project.date_created.isoformat()),
             date_last_modified=Equals(project.date_last_modified.isoformat()),
             display_name=Equals(project.display_name),
-            registrant_link=StartsWith("http"),
-            series_collection_link=StartsWith("http"))
-            ))
+            registrant_link=Equals(self.getAbsoluteURL(person)),
+            series_collection_link=Equals(series_url)
+            )))
 
     def test_api_save_oci_project(self):
         with person_logged_in(self.person):

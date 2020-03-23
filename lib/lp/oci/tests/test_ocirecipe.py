@@ -8,13 +8,13 @@ from __future__ import absolute_import, print_function, unicode_literals
 import json
 
 from fixtures import FakeLogger
+from six import string_types
 from storm.exceptions import LostObjectError
 from testtools.matchers import (
     ContainsDict,
     Equals,
     MatchesDict,
     MatchesStructure,
-    StartsWith,
     )
 import transaction
 from zope.component import getUtility
@@ -305,6 +305,13 @@ class TestOCIRecipeWebservice(TestCaseWithFactory):
             self.person, permission=OAuthPermission.WRITE_PUBLIC,
             default_api_version="devel")
 
+    def getAbsoluteURL(self, target):
+        """Get the webservice absolute URL of the given object or relative
+        path."""
+        if not isinstance(target, string_types):
+            target = api_url(target)
+        return self.webservice.getAbsoluteUrl(target)
+
     def load_from_api(self, url):
         response = self.webservice.get(url)
         self.assertEqual(200, response.status, response.body)
@@ -320,21 +327,22 @@ class TestOCIRecipeWebservice(TestCaseWithFactory):
 
         ws_recipe = self.load_from_api(url)
 
+        recipe_abs_url = self.getAbsoluteURL(recipe)
         self.assertThat(ws_recipe, ContainsDict(dict(
             date_created=Equals(recipe.date_created.isoformat()),
             date_last_modified=Equals(recipe.date_last_modified.isoformat()),
-            registrant_link=StartsWith("http"),
-            resource_type_link=StartsWith("http"),
-            pending_builds_collection_link=StartsWith("http"),
-            webhooks_collection_link=StartsWith("http"),
+            registrant_link=Equals(self.getAbsoluteURL(recipe.registrant)),
+            pending_builds_collection_link=Equals(
+                recipe_abs_url + "/pending_builds"),
+            webhooks_collection_link=Equals(recipe_abs_url + "/webhooks"),
             name=Equals(recipe.name),
-            owner_link=StartsWith("http"),
-            oci_project_link=StartsWith("http"),
-            git_ref_link=StartsWith("http"),
+            owner_link=Equals(self.getAbsoluteURL(recipe.owner)),
+            oci_project_link=Equals(self.getAbsoluteURL(project)),
+            git_ref_link=Equals(self.getAbsoluteURL(recipe.git_ref)),
             description=Equals(recipe.description),
             build_file=Equals(recipe.build_file),
             build_daily=Equals(recipe.build_daily)
-        )))
+            )))
 
     def test_api_patch_oci_recipe(self):
         with person_logged_in(self.person):
