@@ -70,7 +70,7 @@ class IOCIProjectSeriesEditableAttributes(Interface):
         description=_("A brief summary of this series.")))
 
     status = exported(Choice(
-        title=_("Status"), required=True,
+        title=_("Status"), required=True, readonly=False,
         vocabulary=SeriesStatus))
 
 
