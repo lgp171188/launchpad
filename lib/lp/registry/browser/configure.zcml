@@ -643,11 +643,6 @@
         for="lp.registry.interfaces.ociproject.IOCIProject"
         />
     <browser:url
-        for="lp.registry.interfaces.ociprojectseries.IOCIProjectSeries"
-        path_expression="string:+oci/${oci_project}/series/${name}"
-        attribute_to_parent="oci_project"
-        />
-    <browser:url
         for="lp.registry.interfaces.commercialsubscription.ICommercialSubscription"
         path_expression="string:+commercialsubscription/${id}"
         attribute_to_parent="product"

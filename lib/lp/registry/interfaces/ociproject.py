@@ -62,7 +62,8 @@ class IOCIProjectView(IHasGitRepositories, Interface):
         value_type=Reference(schema=Interface)))
 
     display_name = exported(TextLine(
-        title=_("Display name for this OCI project.")))
+        title=_("Display name for this OCI project."),
+        required=True, readonly=True))
 
 
 class IOCIProjectEditableAttributes(IBugTarget):
@@ -85,7 +86,8 @@ class IOCIProjectEditableAttributes(IBugTarget):
         required=True,
         readonly=True)
     description = exported(Text(
-        title=_("The description for this OCI project.")))
+        title=_("The description for this OCI project."),
+        required=True, readonly=False))
     pillar = exported(Reference(
         IDistribution,
         title=_("The pillar containing this target."), readonly=True))

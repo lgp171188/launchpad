@@ -180,7 +180,7 @@ class TestOCIProjectWebservice(TestCaseWithFactory):
     def test_api_save_oci_project(self):
         with person_logged_in(self.person):
             # Only the owner of the distribution (which is the pillar of the
-            # OCIProject) is allowed to update it's attributed.
+            # OCIProject) is allowed to update its attributes.
             distro = self.factory.makeDistribution(owner=self.person)
             project = removeSecurityProxy(self.factory.makeOCIProject(
                 registrant=self.person, pillar=distro))
@@ -200,7 +200,7 @@ class TestOCIProjectWebservice(TestCaseWithFactory):
             other_person = self.factory.makePerson()
         with person_logged_in(other_person):
             # Only the owner of the distribution (which is the pillar of the
-            # OCIProject) is allowed to update it's attributed.
+            # OCIProject) is allowed to update its attributes.
             distro = self.factory.makeDistribution(owner=other_person)
             project = removeSecurityProxy(self.factory.makeOCIProject(
                 registrant=other_person, pillar=distro,
