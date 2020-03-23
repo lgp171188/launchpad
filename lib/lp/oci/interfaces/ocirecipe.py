@@ -15,6 +15,7 @@ __all__ = [
     'IOCIRecipeView',
     'NoSourceForOCIRecipe',
     'NoSuchOCIRecipe',
+    'OCI_RECIPE_ALLOW_CREATE',
     'OCI_RECIPE_WEBHOOKS_FEATURE_FLAG',
     'OCIRecipeBuildAlreadyPending',
     'OCIRecipeNotOwner',
@@ -58,6 +59,7 @@ from lp.services.webhooks.interfaces import IWebhookTarget
 
 
 OCI_RECIPE_WEBHOOKS_FEATURE_FLAG = "oci.recipe.webhooks.enabled"
+OCI_RECIPE_ALLOW_CREATE = 'oci.recipe.create.enabled'
 
 
 @error_status(http_client.UNAUTHORIZED)

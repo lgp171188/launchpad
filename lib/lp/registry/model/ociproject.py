@@ -21,10 +21,14 @@ from storm.locals import (
     )
 from zope.component import getUtility
 from zope.interface import implementer
+from zope.security.interfaces import Unauthorized
 from zope.security.proxy import removeSecurityProxy
 
 from lp.bugs.model.bugtarget import BugTargetBase
-from lp.oci.interfaces.ocirecipe import IOCIRecipeSet
+from lp.oci.interfaces.ocirecipe import (
+    IOCIRecipeSet,
+    OCI_RECIPE_ALLOW_CREATE,
+    )
 from lp.registry.interfaces.distribution import IDistribution
 from lp.registry.interfaces.ociproject import (
     IOCIProject,
@@ -43,6 +47,7 @@ from lp.services.database.interfaces import (
     IStore,
     )
 from lp.services.database.stormbase import StormBase
+from lp.services.features import getFeatureFlag
 
 
 def oci_project_modified(oci_project, event):
@@ -110,6 +115,8 @@ class OCIProject(BugTargetBase, StormBase):
     def newRecipe(self, name, registrant, owner, git_ref,
                   build_file, description=None, official=False,
                   require_virtualized=True):
+        if not getFeatureFlag(OCI_RECIPE_ALLOW_CREATE):
+            raise Unauthorized("Creating new recipes is not allowed.")
         return getUtility(IOCIRecipeSet).new(
             name=name,
             registrant=registrant,
