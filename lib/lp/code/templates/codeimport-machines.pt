@@ -12,7 +12,7 @@
 
 <div metal:fill-slot="main" class="visualPadding">
 
-  <div style="float:right;">
+  <div style="width:18%; float:right;" class="portlet">
     <div id="import-queue-status">
       <div>
         <div>
