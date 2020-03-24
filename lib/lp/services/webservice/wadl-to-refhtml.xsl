@@ -455,6 +455,26 @@
                 <xsl:text>/</xsl:text>
                 <var>&lt;name&gt;</var>
             </xsl:when>
+            <xsl:when test="@id = 'oci_project'">
+                <var>/&lt;distribution.name&gt;</var>
+                <xsl:text>/+oci/</xsl:text>
+                <var>&lt;oci_project.name&gt;</var>
+            </xsl:when>
+            <xsl:when test="@id = 'oci_project_series'">
+                <var>/&lt;distribution.name&gt;</var>
+                <xsl:text>/+oci/</xsl:text>
+                <var>&lt;oci_project.name&gt;</var>
+                <xsl:text>/series/</xsl:text>
+            </xsl:when>
+            <xsl:when test="@id = 'oci_recipe'">
+                <xsl:text>/~</xsl:text>
+                <var>&lt;person.name&gt;</var>
+                <var>/&lt;distribution.name&gt;</var>
+                <xsl:text>/+oci/</xsl:text>
+                <var>&lt;oci_project.name&gt;</var>
+                <xsl:text>/+recipes/</xsl:text>
+                <var>&lt;oci_recipe.name&gt;</var>
+            </xsl:when>
             <xsl:when test="@id = 'team' or @id = 'person'">
                 <xsl:text>/~</xsl:text>
                 <var>&lt;name&gt;</var>
