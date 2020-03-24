@@ -464,7 +464,7 @@
                 <var>/&lt;distribution.name&gt;</var>
                 <xsl:text>/+oci/</xsl:text>
                 <var>&lt;oci_project.name&gt;</var>
-                <xsl:text>/series/</xsl:text>
+                <xsl:text>/+series/</xsl:text>
             </xsl:when>
             <xsl:when test="@id = 'oci_recipe'">
                 <xsl:text>/~</xsl:text>

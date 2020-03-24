@@ -20,10 +20,7 @@ from lazr.restful.fields import (
     Reference,
     ReferenceChoice,
     )
-from zope.interface import (
-    Attribute,
-    Interface,
-    )
+from zope.interface import Interface
 from zope.schema import (
     Datetime,
     Int,
@@ -64,6 +61,9 @@ class IOCIProjectView(IHasGitRepositories, Interface):
     display_name = exported(TextLine(
         title=_("Display name for this OCI project."),
         required=True, readonly=True))
+
+    def getSeriesByName(name):
+        """Get an OCIProjectSeries for this OCIProject by series' name."""
 
 
 class IOCIProjectEditableAttributes(IBugTarget):

@@ -1,4 +1,4 @@
-# Copyright 2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2019-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test OCIProjectSeries."""
@@ -7,20 +7,29 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 
-from testtools.matchers import MatchesStructure
+from six import string_types
+from testtools.matchers import (
+    ContainsDict,
+    Equals,
+    MatchesStructure,
+    )
 from testtools.testcase import ExpectedException
 from zope.security.interfaces import Unauthorized
+from zope.security.proxy import removeSecurityProxy
 
 from lp.registry.errors import InvalidName
 from lp.registry.interfaces.ociprojectseries import IOCIProjectSeries
 from lp.registry.interfaces.series import SeriesStatus
 from lp.registry.model.ociprojectseries import OCIProjectSeries
 from lp.services.database.constants import UTC_NOW
+from lp.services.webapp.interfaces import OAuthPermission
 from lp.testing import (
+    api_url,
     person_logged_in,
     TestCaseWithFactory,
     )
 from lp.testing.layers import DatabaseFunctionalLayer
+from lp.testing.pages import webservice_for_person
 
 
 class TestOCIProjectSeries(TestCaseWithFactory):
@@ -97,3 +106,62 @@ class TestOCIProjectSeries(TestCaseWithFactory):
             project_series.name = 'allowed'
 
             self.assertEqual(project_series.name, 'allowed')
+
+
+class TestOCIProjectSeriesWebservice(TestCaseWithFactory):
+    layer = DatabaseFunctionalLayer
+
+    def setUp(self):
+        super(TestOCIProjectSeriesWebservice, self).setUp()
+        self.person = self.factory.makePerson(displayname="Test Person")
+        self.webservice = webservice_for_person(
+            self.person, permission=OAuthPermission.WRITE_PUBLIC,
+            default_api_version="devel")
+
+    def getAbsoluteURL(self, target):
+        """Get the webservice absolute URL of the given object or relative
+        path."""
+        if not isinstance(target, string_types):
+            target = api_url(target)
+        return self.webservice.getAbsoluteUrl(target)
+
+    def load_from_api(self, url):
+        response = self.webservice.get(url)
+        self.assertEqual(200, response.status, response.body)
+        return response.jsonBody()
+
+    def test_get_oci_project_series(self):
+        with person_logged_in(self.person):
+            person = removeSecurityProxy(self.person)
+            project = removeSecurityProxy(self.factory.makeOCIProject(
+                registrant=self.person))
+            series = self.factory.makeOCIProjectSeries(
+                oci_project=project, registrant=self.person)
+            url = api_url(series)
+
+        expected_url = "{project}/+series/{name}".format(
+            project=api_url(project), name=series.name)
+        self.assertEqual(expected_url, url)
+
+        ws_series = self.load_from_api(url)
+
+        self.assertThat(ws_series, ContainsDict({
+            'date_created': Equals(series.date_created.isoformat()),
+            'name': Equals(series.name),
+            'oci_project_link': Equals(self.getAbsoluteURL(project)),
+            'registrant_link': Equals(self.getAbsoluteURL(series.registrant)),
+            'status': Equals(series.status.title),
+            'summary': Equals(series.summary),
+            }))
+
+    def test_get_non_existent_series(self):
+        with person_logged_in(self.person):
+            project = removeSecurityProxy(self.factory.makeOCIProject(
+                registrant=self.person))
+            series = self.factory.makeOCIProjectSeries(
+                oci_project=project, registrant=self.person)
+
+        url = "{project}/+series/{name}trash".format(
+            project=api_url(project), name=series.name)
+        resp = self.webservice.get(url + 'trash')
+        self.assertEqual(404, resp.status, resp.body)

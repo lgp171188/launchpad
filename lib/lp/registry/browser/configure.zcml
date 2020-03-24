@@ -611,6 +611,11 @@
         path_expression="string:+oci/${name}"
         attribute_to_parent="pillar"
         />
+    <browser:url
+        for="lp.registry.interfaces.ociprojectseries.IOCIProjectSeries"
+        path_expression="string:+series/${name}"
+        attribute_to_parent="oci_project"
+        />
     <browser:navigation
         module="lp.registry.browser.ociproject"
         classes="OCIProjectNavigation"
