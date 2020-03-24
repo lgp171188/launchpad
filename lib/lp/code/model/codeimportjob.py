@@ -215,6 +215,11 @@ class CodeImportJobSet(object):
             % sqlvalues(CodeImportJobState.RUNNING, UTC_NOW,
                         config.codeimportworker.maximum_heartbeat_interval))
 
+    def getJobsInState(self, state):
+        return IStore(CodeImportJob).find(
+            CodeImportJob,
+            CodeImportJob.state == state)
+
 
 @implementer(ICodeImportJobWorkflow)
 class CodeImportJobWorkflow:

@@ -217,6 +217,18 @@ class TestCodeImportJobSet(TestCaseWithFactory):
         no_job = getUtility(ICodeImportJobSet).getById(-1)
         self.assertIs(None, no_job)
 
+    def test_getByJobState(self):
+        self.machine = self.factory.makeCodeImportMachine(set_online=True)
+        made_job = removeSecurityProxy(self.factory.makeCodeImportJob())
+        for _ in range(3):
+            job = self.factory.makeCodeImportJob()
+            getUtility(ICodeImportJobWorkflow).startJob(job, self.machine)
+        found_jobs = getUtility(ICodeImportJobSet).getJobsInState(
+            CodeImportJobState.PENDING).order_by(CodeImportJob.id)
+        # There's a job in the test date, we need the second one.
+        self.assertEqual(found_jobs.count(), 2)
+        self.assertEqual(made_job, found_jobs[1])
+
 
 class TestCodeImportJobSetGetJobForMachine(TestCaseWithFactory):
     """Tests for the CodeImportJobSet.getJobForMachine method.
