@@ -16,5 +16,7 @@ COMMENT ON COLUMN OCIRecipeBuildJob.json_data IS 'Data that is specific to a par
 
 CREATE INDEX ocirecipebuildjob__build__job_type__job__idx
     ON OCIRecipeBuildJob (build, job_type, job);
+CREATE INDEX ocirecipebuildjob__job__job_type__idx
+    ON OCIRecipeBuildJob (job, job_type);
 
 INSERT INTO LaunchpadDatabaseRevision VALUES (2210, 08, 7);
