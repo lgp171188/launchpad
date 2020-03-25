@@ -20,7 +20,12 @@ __all__ = [
     'OCIRecipeNotOwner',
     ]
 
-from lazr.restful.declarations import error_status
+from lazr.lifecycle.snapshot import doNotSnapshot
+from lazr.restful.declarations import (
+    error_status,
+    export_as_webservice_entry,
+    exported,
+    )
 from lazr.restful.fields import (
     CollectionField,
     Reference,
@@ -93,40 +98,40 @@ class IOCIRecipeView(Interface):
     """`IOCIRecipe` attributes that require launchpad.View permission."""
 
     id = Int(title=_("ID"), required=True, readonly=True)
-    date_created = Datetime(
-        title=_("Date created"), required=True, readonly=True)
-    date_last_modified = Datetime(
-        title=_("Date last modified"), required=True, readonly=True)
+    date_created = exported(Datetime(
+        title=_("Date created"), required=True, readonly=True))
+    date_last_modified = exported(Datetime(
+        title=_("Date last modified"), required=True, readonly=True))
 
-    registrant = PublicPersonChoice(
+    registrant = exported(PublicPersonChoice(
         title=_("Registrant"),
         description=_("The user who registered this recipe."),
-        vocabulary='ValidPersonOrTeam', required=True, readonly=True)
+        vocabulary='ValidPersonOrTeam', required=True, readonly=True))
 
-    builds = CollectionField(
+    builds = exported(doNotSnapshot(CollectionField(
         title=_("Completed builds of this OCI recipe."),
         description=_(
             "Completed builds of this OCI recipe, sorted in descending "
             "order of finishing."),
         # Really IOCIRecipeBuild, patched in _schema_circular_imports.
         value_type=Reference(schema=Interface),
-        required=True, readonly=True)
+        required=True, readonly=True)))
 
-    completed_builds = CollectionField(
+    completed_builds = exported(doNotSnapshot(CollectionField(
         title=_("Completed builds of this OCI recipe."),
         description=_(
             "Completed builds of this OCI recipe, sorted in descending "
             "order of finishing."),
         # Really IOCIRecipeBuild, patched in _schema_circular_imports.
-        value_type=Reference(schema=Interface), readonly=True)
+        value_type=Reference(schema=Interface), readonly=True)))
 
-    pending_builds = CollectionField(
+    pending_builds = exported(doNotSnapshot(CollectionField(
         title=_("Pending builds of this OCI recipe."),
         description=_(
             "Pending builds of this OCI recipe, sorted in descending "
             "order of creation."),
         # Really IOCIRecipeBuild, patched in _schema_circular_imports.
-        value_type=Reference(schema=Interface), readonly=True)
+        value_type=Reference(schema=Interface), readonly=True)))
 
     def requestBuild(requester, architecture):
         """Request that the OCI recipe is built.
@@ -150,26 +155,26 @@ class IOCIRecipeEditableAttributes(IHasOwner):
     These attributes need launchpad.View to see, and launchpad.Edit to change.
     """
 
-    name = TextLine(
+    name = exported(TextLine(
         title=_("Name"),
         description=_("The name of this recipe."),
         constraint=name_validator,
         required=True,
-        readonly=False)
+        readonly=False))
 
-    owner = PersonChoice(
+    owner = exported(PersonChoice(
         title=_("Owner"),
         required=True,
         vocabulary="AllUserTeamsParticipationPlusSelf",
         description=_("The owner of this OCI recipe."),
-        readonly=False)
+        readonly=False))
 
-    oci_project = Reference(
+    oci_project = exported(Reference(
         IOCIProject,
         title=_("OCI project"),
         description=_("The OCI project that this recipe is for."),
         required=True,
-        readonly=True)
+        readonly=True))
 
     official = Bool(
         title=_("OCI project official"),
@@ -178,11 +183,11 @@ class IOCIRecipeEditableAttributes(IHasOwner):
         description=_("True if this recipe is official for its OCI project."),
         readonly=False)
 
-    git_ref = Reference(
+    git_ref = exported(Reference(
         IGitRef, title=_("Git branch"), required=True, readonly=False,
         description=_(
             "The Git branch containing a Dockerfile at the location "
-            "defined by the build_file attribute."))
+            "defined by the build_file attribute.")))
 
     git_repository = ReferenceChoice(
         title=_("Git repository"),
@@ -198,26 +203,26 @@ class IOCIRecipeEditableAttributes(IHasOwner):
             "The path of the Git branch containing a Dockerfile "
             "at the location defined by the build_file attribute."))
 
-    description = Text(
+    description = exported(Text(
         title=_("Description"),
         description=_("A short description of this recipe."),
         required=False,
-        readonly=False)
+        readonly=False))
 
-    build_file = TextLine(
+    build_file = exported(TextLine(
         title=_("Build file path"),
         description=_("The relative path to the file within this recipe's "
                       "branch that defines how to build the recipe."),
         constraint=path_does_not_escape,
         required=True,
-        readonly=False)
+        readonly=False))
 
-    build_daily = Bool(
+    build_daily = exported(Bool(
         title=_("Build daily"),
         required=True,
         default=False,
         description=_("If True, this recipe should be built daily."),
-        readonly=False)
+        readonly=False))
 
 
 class IOCIRecipeAdminAttributes(Interface):
@@ -234,6 +239,9 @@ class IOCIRecipeAdminAttributes(Interface):
 class IOCIRecipe(IOCIRecipeView, IOCIRecipeEdit, IOCIRecipeEditableAttributes,
                  IOCIRecipeAdminAttributes):
     """A recipe for building Open Container Initiative images."""
+
+    export_as_webservice_entry(
+        publish_web_link=True, as_of="devel", singular_name="oci_recipe")
 
 
 class IOCIRecipeSet(Interface):

@@ -1,4 +1,4 @@
-# Copyright 2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2019-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Views, menus, and traversal related to `OCIProject`s."""
@@ -22,6 +22,7 @@ from lp.app.browser.launchpadform import (
     LaunchpadEditFormView,
     )
 from lp.app.browser.tales import CustomizableFormatter
+from lp.app.errors import NotFoundError
 from lp.code.browser.vcslisting import TargetDefaultVCSNavigationMixin
 from lp.oci.interfaces.ocirecipe import IOCIRecipeSet
 from lp.registry.interfaces.ociproject import (
@@ -36,6 +37,7 @@ from lp.services.webapp import (
     Navigation,
     NavigationMenu,
     StandardLaunchpadFacets,
+    stepthrough,
     )
 from lp.services.webapp.breadcrumb import Breadcrumb
 from lp.services.webapp.interfaces import IMultiFacetedBreadcrumb
@@ -54,6 +56,13 @@ class OCIProjectFormatterAPI(CustomizableFormatter):
 class OCIProjectNavigation(TargetDefaultVCSNavigationMixin, Navigation):
 
     usedfor = IOCIProject
+
+    @stepthrough('+series')
+    def traverse_series(self, name):
+        series = self.context.getSeriesByName(name)
+        if series is None:
+            raise NotFoundError('%s is not a valid series name' % name)
+        return series
 
 
 @implementer(IMultiFacetedBreadcrumb)
