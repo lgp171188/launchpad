@@ -1,4 +1,4 @@
-# Copyright 2009-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Binary package release interfaces."""
@@ -61,6 +61,9 @@ class IBinaryPackageRelease(Interface):
     pre_depends = TextLine(required=False)
     enhances = TextLine(required=False)
     breaks = TextLine(required=False)
+    built_using_references = List(
+        title=_("Sequence of Built-Using references."), required=True)
+    built_using = TextLine(required=False)
     essential = Bool(required=False)
     installedsize = Int(required=False)
     architecturespecific = Bool(required=True)

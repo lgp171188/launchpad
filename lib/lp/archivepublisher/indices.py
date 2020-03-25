@@ -1,4 +1,4 @@
-# Copyright 2009-2014 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __all__ = [
@@ -212,6 +212,13 @@ def build_binary_stanza_fields(bpr, component, section, priority,
     fields.append('Pre-Depends', bpr.pre_depends)
     fields.append('Enhances', bpr.enhances)
     fields.append('Breaks', bpr.breaks)
+    # Add Built-Using at this position, but conditionally since it may be in
+    # bpr.user_defined_fields instead (for older BPRs or for gina-imported
+    # BPRs with unresolvable Built-Using), and in that case if we were to
+    # add it to IndexStanzaFields now then the one in user_defined_fields
+    # would be ignored.
+    if bpr.built_using:
+        fields.append('Built-Using', bpr.built_using)
     fields.append('Essential', essential)
     fields.append('Filename', bin_filepath)
     fields.append('Size', bin_size)

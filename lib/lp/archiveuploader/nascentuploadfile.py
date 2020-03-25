@@ -1,4 +1,4 @@
-# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Specific models for uploaded files"""
@@ -445,6 +445,7 @@ class BaseBinaryUploadFile(PackageUploadFile):
         "Provides",
         "Pre-Depends",
         "Enhances",
+        "Built-Using",
         "Essential",
         "Description",
         "Installed-Size",
@@ -920,6 +921,7 @@ class BaseBinaryUploadFile(PackageUploadFile):
             pre_depends=encoded.get('Pre-Depends', ''),
             enhances=encoded.get('Enhances', ''),
             breaks=encoded.get('Breaks', ''),
+            built_using=encoded.get('Built-Using', ''),
             homepage=encoded.get('Homepage'),
             essential=is_essential,
             installedsize=installedsize,

@@ -1,4 +1,4 @@
-# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Package information classes.
@@ -466,6 +466,7 @@ class BinaryPackageData(AbstractPackageData):
     pre_depends = ""
     enhances = ""
     breaks = ""
+    built_using = ""
     essential = False
 
     # Overwritten in do_package, optionally

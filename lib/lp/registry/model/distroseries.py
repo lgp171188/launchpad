@@ -1,4 +1,4 @@
-# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Database classes for a distribution series."""
@@ -124,6 +124,7 @@ from lp.services.propertycache import (
 from lp.services.worlddata.model.language import Language
 from lp.soyuz.enums import (
     ArchivePurpose,
+    BinarySourceReferenceType,
     IndexCompressionType,
     PackagePublishingStatus,
     PackageUploadStatus,
@@ -1138,6 +1139,9 @@ class DistroSeries(SQLBase, BugTargetBase, HasSpecificationsMixin,
 
     def getBinaryPackagePublishing(self, archtag, pocket, component, archive):
         """See `IDistroSeries`."""
+        # Circular import.
+        from lp.soyuz.model.binarysourcereference import BinarySourceReference
+
         bpphs = Store.of(self).find(
             BinaryPackagePublishingHistory,
             DistroArchSeries.distroseries == self,
@@ -1161,6 +1165,20 @@ class DistroSeries(SQLBase, BugTargetBase, HasSpecificationsMixin,
             bpbs = load_related(BinaryPackageBuild, bprs, ["buildID"])
             sprs = load_related(
                 SourcePackageRelease, bpbs, ["source_package_release_id"])
+            built_using_bsrs = load_referencing(
+                BinarySourceReference, bprs, ["binary_package_release_id"],
+                extra_conditions=[
+                    BinarySourceReference.reference_type ==
+                        BinarySourceReferenceType.BUILT_USING,
+                    ])
+            # Make sure this is initialised for all BPRs, as some may not
+            # have any BinarySourceReferences.
+            built_using_bsr_map = {bpr: [] for bpr in bprs}
+            for bsr in built_using_bsrs:
+                built_using_bsr_map[bsr.binary_package_release].append(bsr)
+            for bpr, bsrs in built_using_bsr_map.items():
+                get_property_cache(bpr).built_using_references = sorted(
+                    bsrs, key=attrgetter("id"))
             bpfs = load_referencing(
                 BinaryPackageFile, bprs, ["binarypackagereleaseID"])
             file_map = collections.defaultdict(list)
