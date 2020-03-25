@@ -50,9 +50,7 @@ class OCIPushRule(Storm):
 
     def destroySelf(self):
         """See `IOCIPushRule`."""
-        store = IStore(OCIPushRule)
-        store.find(
-            OCIPushRule, OCIPushRule.id == self).remove()
+        IStore(OCIPushRule).get(self.id).remove()
 
 
 @implementer(IOCIPushRuleSet)
