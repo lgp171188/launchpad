@@ -397,8 +397,6 @@ class TestOCIRecipeWebservice(TestCaseWithFactory):
             date_created=Equals(recipe.date_created.isoformat()),
             date_last_modified=Equals(recipe.date_last_modified.isoformat()),
             registrant_link=Equals(self.getAbsoluteURL(recipe.registrant)),
-            pending_builds_collection_link=Equals(
-                recipe_abs_url + "/pending_builds"),
             webhooks_collection_link=Equals(recipe_abs_url + "/webhooks"),
             name=Equals(recipe.name),
             owner_link=Equals(self.getAbsoluteURL(recipe.owner)),
