@@ -141,7 +141,7 @@ class IOCIRecipeView(Interface):
         """
 
     push_rules = CollectionField(
-        title=_("Push Rules for this OCI recipe."),
+        title=_("Push rules for this OCI recipe."),
         description=_("All of the push rules for registry upload "
                       "that apply to this recipe."),
         # Really IOCIPushRule, patched in _schema_cirular_imports.

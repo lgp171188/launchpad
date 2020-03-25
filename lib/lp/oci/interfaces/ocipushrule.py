@@ -24,7 +24,7 @@ from lp.oci.interfaces.ociregistrycredentials import IOCIRegistryCredentials
 
 
 class IOCIPushRuleView(Interface):
-    """`IOCIPushRule` methods that required launchpad.View
+    """`IOCIPushRule` methods that require launchpad.View
     permission.
     """
 
@@ -76,4 +76,4 @@ class IOCIPushRuleSet(Interface):
     """A utility to create and access OCI Push Rules."""
 
     def new(recipe, registry_credentials, image_name):
-        """Create an `IOCIRPushRule`."""
+        """Create an `IOCIPushRule`."""
