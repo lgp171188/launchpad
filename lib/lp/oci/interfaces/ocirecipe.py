@@ -21,6 +21,7 @@ __all__ = [
     'OCIRecipeNotOwner',
     ]
 
+from lazr.lifecycle.snapshot import doNotSnapshot
 from lazr.restful.declarations import (
     error_status,
     export_as_webservice_entry,
@@ -109,30 +110,30 @@ class IOCIRecipeView(Interface):
         description=_("The user who registered this recipe."),
         vocabulary='ValidPersonOrTeam', required=True, readonly=True))
 
-    builds = exported(CollectionField(
+    builds = exported(doNotSnapshot(CollectionField(
         title=_("Completed builds of this OCI recipe."),
         description=_(
             "Completed builds of this OCI recipe, sorted in descending "
             "order of finishing."),
         # Really IOCIRecipeBuild, patched in _schema_circular_imports.
         value_type=Reference(schema=Interface),
-        required=True, readonly=True))
+        required=True, readonly=True)))
 
-    completed_builds = exported(CollectionField(
+    completed_builds = exported(doNotSnapshot(CollectionField(
         title=_("Completed builds of this OCI recipe."),
         description=_(
             "Completed builds of this OCI recipe, sorted in descending "
             "order of finishing."),
         # Really IOCIRecipeBuild, patched in _schema_circular_imports.
-        value_type=Reference(schema=Interface), readonly=True))
+        value_type=Reference(schema=Interface), readonly=True)))
 
-    pending_builds = exported(CollectionField(
+    pending_builds = exported(doNotSnapshot(CollectionField(
         title=_("Pending builds of this OCI recipe."),
         description=_(
             "Pending builds of this OCI recipe, sorted in descending "
             "order of creation."),
         # Really IOCIRecipeBuild, patched in _schema_circular_imports.
-        value_type=Reference(schema=Interface), readonly=True))
+        value_type=Reference(schema=Interface), readonly=True)))
 
     def requestBuild(requester, architecture):
         """Request that the OCI recipe is built.
@@ -177,12 +178,12 @@ class IOCIRecipeEditableAttributes(IHasOwner):
         required=True,
         readonly=True))
 
-    official = exported(Bool(
+    official = Bool(
         title=_("OCI project official"),
         required=True,
         default=False,
         description=_("True if this recipe is official for its OCI project."),
-        readonly=False))
+        readonly=False)
 
     git_ref = exported(Reference(
         IGitRef, title=_("Git branch"), required=True, readonly=False,
@@ -190,19 +191,19 @@ class IOCIRecipeEditableAttributes(IHasOwner):
             "The Git branch containing a Dockerfile at the location "
             "defined by the build_file attribute.")))
 
-    git_repository = exported(ReferenceChoice(
+    git_repository = ReferenceChoice(
         title=_("Git repository"),
         schema=IGitRepository, vocabulary="GitRepository",
-        required=True, readonly=False,
+        required=False, readonly=False,
         description=_(
             "A Git repository with a branch containing a Dockerfile "
-            "at the location defined by the build_file attribute.")))
+            "at the location defined by the build_file attribute."))
 
-    git_path = exported(TextLine(
+    git_path = TextLine(
         title=_("Git branch path"), required=True, readonly=False,
         description=_(
             "The path of the Git branch containing a Dockerfile "
-            "at the location defined by the build_file attribute.")))
+            "at the location defined by the build_file attribute."))
 
     description = exported(Text(
         title=_("Description"),
@@ -241,7 +242,8 @@ class IOCIRecipe(IOCIRecipeView, IOCIRecipeEdit, IOCIRecipeEditableAttributes,
                  IOCIRecipeAdminAttributes):
     """A recipe for building Open Container Initiative images."""
 
-    export_as_webservice_entry(publish_web_link=True, as_of="devel")
+    export_as_webservice_entry(
+        publish_web_link=True, as_of="devel", singular_name="oci_recipe")
 
 
 class IOCIRecipeSet(Interface):
@@ -265,4 +267,19 @@ class IOCIRecipeSet(Interface):
         """Return all OCI recipes with the given `oci_project`."""
 
     def preloadDataForOCIRecipes(recipes, user):
-        """Load the data reloated to a list of OCI Recipes."""
+        """Load the data related to a list of OCI Recipes."""
+
+    def findByGitRepository(repository, paths=None):
+        """Return all OCI recipes for the given Git repository.
+
+        :param repository: An `IGitRepository`.
+        :param paths: If not None, only return OCI recipes for one of
+            these Git reference paths.
+        """
+
+    def detachFromGitRepository(repository):
+        """Detach all OCI recipes from the given Git repository.
+
+        After this, any OCI recipes that previously used this repository
+        will have no source and so cannot dispatch new builds.
+        """

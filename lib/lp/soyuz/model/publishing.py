@@ -1,4 +1,4 @@
-# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -471,7 +471,8 @@ class SourcePackagePublishingHistory(SQLBase, ArchivePublisherBase):
 
             self.supersededby = dominant.sourcepackagerelease
 
-    def changeOverride(self, new_component=None, new_section=None):
+    def changeOverride(self, new_component=None, new_section=None,
+                       creator=None):
         """See `ISourcePackagePublishingHistory`."""
         # Check we have been asked to do something
         if (new_component is None and
@@ -516,6 +517,7 @@ class SourcePackagePublishingHistory(SQLBase, ArchivePublisherBase):
             pocket=self.pocket,
             component=new_component,
             section=new_section,
+            creator=creator,
             archive=self.archive)
 
     def copyTo(self, distroseries, pocket, archive, override=None,
@@ -629,6 +631,9 @@ class BinaryPackagePublishingHistory(SQLBase, ArchivePublisherBase):
     phased_update_percentage = IntCol(
         dbName='phased_update_percentage', notNull=False, default=None)
     scheduleddeletiondate = UtcDateTimeCol(default=None)
+    creator = ForeignKey(
+        dbName='creator', foreignKey='Person',
+        storm_validator=validate_public_person, notNull=False, default=None)
     datepublished = UtcDateTimeCol(default=None)
     datecreated = UtcDateTimeCol(default=UTC_NOW)
     datesuperseded = UtcDateTimeCol(default=None)
@@ -794,7 +799,8 @@ class BinaryPackagePublishingHistory(SQLBase, ArchivePublisherBase):
             dominated.supersede(dominant, logger)
 
     def changeOverride(self, new_component=None, new_section=None,
-                       new_priority=None, new_phased_update_percentage=None):
+                       new_priority=None, new_phased_update_percentage=None,
+                       creator=None):
         """See `IBinaryPackagePublishingHistory`."""
 
         # Check we have been asked to do something
@@ -873,6 +879,7 @@ class BinaryPackagePublishingHistory(SQLBase, ArchivePublisherBase):
                 component=new_component,
                 section=new_section,
                 priority=new_priority,
+                creator=creator,
                 archive=debug.archive,
                 phased_update_percentage=new_phased_update_percentage)
 
@@ -888,6 +895,7 @@ class BinaryPackagePublishingHistory(SQLBase, ArchivePublisherBase):
             section=new_section,
             priority=new_priority,
             archive=self.archive,
+            creator=creator,
             phased_update_percentage=new_phased_update_percentage)
 
     def copyTo(self, distroseries, pocket, archive):

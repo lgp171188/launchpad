@@ -378,6 +378,7 @@ section indicates to the user that it is still published.
     >>> anon_browser.open(expander_url)
     >>> print(extract_text(anon_browser.contents))
     Publishing details
+    Created ... ago by Foo Bar
     Changelog
     Builds
       i386
@@ -404,6 +405,7 @@ available for deletion because it contains a PUBLISHED binary.
     >>> anon_browser.open(expander_url)
     >>> print(extract_text(anon_browser.contents))
     Publishing details
+    Created ... ago by Foo Bar
     Changelog
     Builds
       i386

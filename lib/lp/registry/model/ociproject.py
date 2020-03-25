@@ -150,6 +150,9 @@ class OCIProject(BugTargetBase, StormBase):
             ).order_by(OCIProjectSeries.date_created)
         return ret
 
+    def getSeriesByName(self, name):
+        return self.series.find(OCIProjectSeries.name == name).one()
+
 
 @implementer(IOCIProjectSet)
 class OCIProjectSet:

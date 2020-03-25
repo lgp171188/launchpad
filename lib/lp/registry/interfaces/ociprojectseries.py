@@ -70,7 +70,7 @@ class IOCIProjectSeriesEditableAttributes(Interface):
         description=_("A brief summary of this series.")))
 
     status = exported(Choice(
-        title=_("Status"), required=True,
+        title=_("Status"), required=True, readonly=False,
         vocabulary=SeriesStatus))
 
 
@@ -85,4 +85,6 @@ class IOCIProjectSeries(IOCIProjectSeriesView, IOCIProjectSeriesEdit,
     This is used to allow tracking bugs against multiple versions of images.
     """
 
-    export_as_webservice_entry(publish_web_link=True, as_of="devel")
+    export_as_webservice_entry(
+        publish_web_link=True, as_of="devel",
+        singular_name="oci_project_series")

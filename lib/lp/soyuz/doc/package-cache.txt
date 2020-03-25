@@ -689,8 +689,8 @@ Content class declarations for FTI
 ==================================
 
 For the FTI to work properly with Storm queries, the fti column on the
-content class must be declared as a RawStr, otherwise unicode errors are
-likely to be thrown.
+content class must be declared as Bytes, otherwise unicode errors are likely
+to be thrown.
 
     >>> transaction.commit()
     >>> binary_name = getUtility(
@@ -702,7 +702,7 @@ likely to be thrown.
 
     >>> cache = DistroSeriesPackageCache.get(id=cache_with_unicode.id)
 
-The following line fails unless the content class FTI column is RawStr:
+The following line fails unless the content class FTI column is Bytes:
 
     >>> cache.fti
     "'\xc3\xa2\xc2\x80\xc2\x9cunicode\xc3\xa2\xc2\x80\xc2\x9c':1B"

@@ -1179,10 +1179,7 @@ class TestAutoBlocking(TestCaseWithFactory):
         translation target as `same_target_as`.  This lets you create an
         entry for the same translation target as another one.
         """
-        if suffix == '.xpi':
-            basename = 'en-US'
-        else:
-            basename = self.factory.getUniqueString()
+        basename = self.factory.getUniqueString()
 
         filename = basename + suffix
         if directory is None:
@@ -1222,26 +1219,6 @@ class TestAutoBlocking(TestCaseWithFactory):
 
         self._makeTranslationEntry(
             'gl.po', status=RosettaImportStatus.BLOCKED)
-
-        new_blocklist = self.queue._getBlockableDirectories()
-
-        self.assertEqual(len(old_blocklist), len(new_blocklist))
-
-    def test_getBlockableDirectories_checks_xpi_templates(self):
-        old_blocklist = self.queue._getBlockableDirectories()
-
-        self._makeTemplateEntry(
-            suffix='.xpi', status=RosettaImportStatus.BLOCKED)
-
-        new_blocklist = self.queue._getBlockableDirectories()
-
-        self.assertEqual(len(old_blocklist) + 1, len(new_blocklist))
-
-    def test_getBlockableDirectories_ignores_xpi_translations(self):
-        old_blocklist = self.queue._getBlockableDirectories()
-
-        self._makeTranslationEntry(
-            'lt.xpi', status=RosettaImportStatus.BLOCKED)
 
         new_blocklist = self.queue._getBlockableDirectories()
 

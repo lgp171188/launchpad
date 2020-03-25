@@ -25,10 +25,12 @@ from lp.app.browser.launchpadform import (
     LaunchpadFormView,
     )
 from lp.code.enums import (
+    CodeImportJobState,
     CodeImportMachineOfflineReason,
     CodeImportMachineState,
     )
 from lp.code.interfaces.codeimportevent import ICodeImportEvent
+from lp.code.interfaces.codeimportjob import ICodeImportJobSet
 from lp.code.interfaces.codeimportmachine import ICodeImportMachineSet
 from lp.services.propertycache import cachedproperty
 from lp.services.webapp import (
@@ -71,6 +73,24 @@ class CodeImportMachineSetView(LaunchpadView):
     def machines(self):
         """Get the machines, sorted alphabetically by hostname."""
         return getUtility(ICodeImportMachineSet).getAll()
+
+    @property
+    def pending_imports(self):
+        """Get the number of imports that are pending."""
+        return getUtility(ICodeImportJobSet).getJobsInState(
+            CodeImportJobState.PENDING).count()
+
+    @property
+    def scheduled_imports(self):
+        """Get the number of imports that are scheduled."""
+        return getUtility(ICodeImportJobSet).getJobsInState(
+            CodeImportJobState.SCHEDULED).count()
+
+    @property
+    def running_imports(self):
+        """Get the number of imports that are running."""
+        return getUtility(ICodeImportJobSet).getJobsInState(
+            CodeImportJobState.RUNNING).count()
 
 
 class UpdateMachineStateForm(Interface):

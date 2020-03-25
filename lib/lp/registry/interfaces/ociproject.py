@@ -66,7 +66,11 @@ class IOCIProjectView(IHasGitRepositories, Interface):
         value_type=Reference(schema=Interface)))
 
     display_name = exported(TextLine(
-        title=_("Display name for this OCI project.")))
+        title=_("Display name for this OCI project."),
+        required=True, readonly=True))
+
+    def getSeriesByName(name):
+        """Get an OCIProjectSeries for this OCIProject by series' name."""
 
 
 class IOCIProjectEditableAttributes(IBugTarget):
@@ -89,7 +93,8 @@ class IOCIProjectEditableAttributes(IBugTarget):
         required=True,
         readonly=True)
     description = exported(Text(
-        title=_("The description for this OCI project.")))
+        title=_("The description for this OCI project."),
+        required=True, readonly=False))
     pillar = exported(Reference(
         IDistribution,
         title=_("The pillar containing this target."), readonly=True))
@@ -136,7 +141,8 @@ class IOCIProject(IOCIProjectView, IOCIProjectEdit,
                   IOCIProjectEditableAttributes, IOCIProjectPublicActions):
     """A project containing Open Container Initiative recipes."""
 
-    export_as_webservice_entry(publish_web_link=True, as_of="devel")
+    export_as_webservice_entry(
+        publish_web_link=True, as_of="devel", singular_name="oci_project")
 
 
 class IOCIProjectSet(Interface):

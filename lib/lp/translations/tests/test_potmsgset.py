@@ -16,7 +16,6 @@ from zope.security.proxy import removeSecurityProxy
 
 from lp.app.enums import ServiceUsage
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
-from lp.services.propertycache import get_property_cache
 from lp.testing import TestCaseWithFactory
 from lp.testing.layers import (
     DatabaseFunctionalLayer,
@@ -83,54 +82,16 @@ class TestTranslationSharedPOTMsgSets(TestCaseWithFactory):
         self.assertEqual(devel_potmsgsets, [self.potmsgset])
         self.assertEqual(devel_potmsgsets, stable_potmsgsets)
 
-    def test_POTMsgSetInIncompatiblePOTemplates(self):
-        # Make sure a POTMsgSet cannot be used in two POTemplates with
-        # different incompatible source_file_format (like XPI and PO).
-        self.devel_potemplate.source_file_format = TranslationFileFormat.PO
-        self.stable_potemplate.source_file_format = TranslationFileFormat.XPI
-
-        potmsgset = self.potmsgset
-
-        self.assertRaises(POTMsgSetInIncompatibleTemplatesError,
-                          potmsgset.setSequence, self.stable_potemplate, 1)
-
-        # If the two file formats are compatible, it works.
-        self.stable_potemplate.source_file_format = (
-            TranslationFileFormat.KDEPO)
-        potmsgset.setSequence(self.stable_potemplate, 1)
-
-        devel_potmsgsets = list(self.devel_potemplate.getPOTMsgSets())
-        stable_potmsgsets = list(self.stable_potemplate.getPOTMsgSets())
-        self.assertEqual(devel_potmsgsets, stable_potmsgsets)
-
-        # We hack the POTemplate manually to make data inconsistent
-        # in database.
-        self.stable_potemplate.source_file_format = TranslationFileFormat.XPI
-        transaction.commit()
-
-        # We remove the security proxy to be able to get a callable for
-        # properties like `uses_english_msgids` and `singular_text`.
-        naked_potmsgset = removeSecurityProxy(potmsgset)
-
-        self.assertRaises(POTMsgSetInIncompatibleTemplatesError,
-                          naked_potmsgset.__getattribute__,
-                          "uses_english_msgids")
-
-        self.assertRaises(POTMsgSetInIncompatibleTemplatesError,
-                          naked_potmsgset.__getattribute__, "singular_text")
-
     def test_POTMsgSetUsesEnglishMsgids(self):
         """Test that `uses_english_msgids` property works correctly."""
+        # XXX cjwatson 2020-03-01: We currently have no file formats with
+        # importers for which uses_english_msgids would be False (XPI used
+        # to be such a case).
 
         # Gettext PO format uses English strings as msgids.
         self.devel_potemplate.source_file_format = TranslationFileFormat.PO
         transaction.commit()
         self.assertTrue(self.potmsgset.uses_english_msgids)
-
-        # Mozilla XPI format doesn't use English strings as msgids.
-        self.devel_potemplate.source_file_format = TranslationFileFormat.XPI
-        transaction.commit()
-        self.assertFalse(self.potmsgset.uses_english_msgids)
 
     def test_getCurrentTranslationMessageOrDummy_returns_upstream_tm(self):
         pofile = self.factory.makePOFile('nl')
@@ -1004,110 +965,6 @@ class TestPOTMsgSetText(TestCaseWithFactory):
         potmsgset = self._makePOTMsgSet(
             english_msgid, TranslationFileFormat.PO)
         self.assertEqual(english_msgid, potmsgset.singular_text)
-
-    def test_singular_text_xpi(self):
-        # Mozilla XPI format uses English strings as msgids if no English
-        # pofile exists.
-        symbolic_msgid = self.factory.getUniqueString()
-        potmsgset = self._makePOTMsgSet(
-            symbolic_msgid, TranslationFileFormat.XPI)
-        self.assertEqual(symbolic_msgid, potmsgset.singular_text)
-
-    def test_singular_text_xpi_english(self):
-        # Mozilla XPI format uses English strings as msgids if no English
-        # pofile exists.
-        # POTMsgSet singular_text is read from a shared English translation.
-        symbolic_msgid = self.factory.getUniqueString()
-        english_msgid = self.factory.getUniqueString()
-        potmsgset, potemplate = self._makePOTMsgSetAndTemplate(
-            symbolic_msgid, TranslationFileFormat.XPI)
-        en_pofile = self.factory.makePOFile('en', potemplate)
-        self.factory.makeCurrentTranslationMessage(
-            pofile=en_pofile, potmsgset=potmsgset,
-            translations=[english_msgid])
-
-        self.assertEqual(english_msgid, potmsgset.singular_text)
-
-    def test_singular_text_xpi_english_diverged(self):
-        # A diverged (translation.potemplate != None) English translation
-        # is not used as a singular_text.
-        symbolic_msgid = self.factory.getUniqueString()
-        english_msgid = self.factory.getUniqueString()
-        diverged_msgid = self.factory.getUniqueString()
-        potmsgset, potemplate = self._makePOTMsgSetAndTemplate(
-            symbolic_msgid, TranslationFileFormat.XPI)
-        en_pofile = self.factory.makePOFile('en', potemplate)
-        self.factory.makeCurrentTranslationMessage(
-            pofile=en_pofile, potmsgset=potmsgset,
-            translations=[english_msgid])
-        self.factory.makeCurrentTranslationMessage(
-            pofile=en_pofile, potmsgset=potmsgset,
-            translations=[diverged_msgid], diverged=True)
-
-        self.assertEqual(english_msgid, potmsgset.singular_text)
-
-    def _setUpSharingWithUbuntu(self):
-        """Create a potmsgset shared in upstream and Ubuntu."""
-        productseries = self.factory.makeProductSeries()
-
-        # Create the source package that this product is linked to.
-        distroseries = self.factory.makeUbuntuDistroSeries()
-        distroseries.distribution.translation_focus = distroseries
-        sourcepackagename = self.factory.makeSourcePackageName()
-        sourcepackage = self.factory.makeSourcePackage(
-            distroseries=distroseries, sourcepackagename=sourcepackagename)
-        sourcepackage.setPackaging(productseries, self.factory.makePerson())
-
-        # Create two sharing templates.
-        self.potmsgset, upstream_potemplate = self._makePOTMsgSetAndTemplate(
-            None, TranslationFileFormat.XPI, productseries)
-        ubuntu_potemplate = self.factory.makePOTemplate(
-            distroseries=distroseries, sourcepackagename=sourcepackagename,
-            name=upstream_potemplate.name)
-        ubuntu_potemplate.source_file_format = TranslationFileFormat.XPI
-        self.potmsgset.setSequence(ubuntu_potemplate, 1)
-
-        # The pofile is automatically created for all sharing templates.
-        self.upstream_pofile = self.factory.makePOFile(
-            'en', upstream_potemplate, create_sharing=True)
-        self.ubuntu_pofile = ubuntu_potemplate.getPOFileByLang('en')
-        self.assertIsNot(None, self.ubuntu_pofile)
-
-    def test_singular_text_xpi_english_uses_upstream(self):
-        # POTMsgSet singular_text is read from the upstream English
-        # translation.
-        self._setUpSharingWithUbuntu()
-        # Create different "English translations" for this potmsgset.
-        ubuntu_msgid = self.factory.getUniqueString()
-        upstream_msgid = self.factory.getUniqueString()
-
-        self.factory.makeCurrentTranslationMessage(
-            pofile=self.upstream_pofile, potmsgset=self.potmsgset,
-            translations=[upstream_msgid])
-        self.factory.makeCurrentTranslationMessage(
-            pofile=self.ubuntu_pofile, potmsgset=self.potmsgset,
-            translations=[ubuntu_msgid])
-
-        # makeCurrentTranslationMessage calls singular_text and caches the
-        # upstream msgid, causing the test to pass even without the
-        # Ubuntu message being present.
-        del get_property_cache(self.potmsgset).singular_text
-        self.assertEqual(upstream_msgid, self.potmsgset.singular_text)
-
-    def test_singular_text_xpi_english_falls_back_to_ubuntu(self):
-        # POTMsgSet singular_text is read from the Ubuntu English
-        # translation if no upstream one exists. This is a safeguard against
-        # old or broken data.
-        self._setUpSharingWithUbuntu()
-
-        # Create different "English translations" for this potmsgset.
-        ubuntu_msgid = self.factory.getUniqueString()
-
-        self.factory.makeCurrentTranslationMessage(
-            pofile=self.ubuntu_pofile, potmsgset=self.potmsgset,
-            translations=[ubuntu_msgid])
-
-        self.assertEqual(ubuntu_msgid, self.potmsgset.singular_text)
 
 
 class TestPOTMsgSetTranslationCredits(TestCaseWithFactory):

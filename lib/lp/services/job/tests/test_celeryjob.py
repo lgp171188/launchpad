@@ -11,6 +11,7 @@ from testtools.content_type import UTF8_TEXT
 
 from lp.code.model.branchjob import BranchScanJob
 from lp.scripts.helpers import TransactionFreeOperation
+from lp.services.database.sqlbase import flush_database_updates
 from lp.services.features.testing import FeatureFixture
 from lp.services.job.tests import (
     celery_worker,
@@ -76,6 +77,7 @@ class TestRunMissingJobs(TestCaseWithFactory):
     def test_find_missing_ready(self):
         """A job which is ready but not queued is "missing"."""
         job = self.createMissingJob()
+        flush_database_updates()
         self.addTextDetail(
             'job_info', 'job.id: %d, job.job_id: %d' % (job.id, job.job_id))
         find_missing_ready_obj = self.getFMR(BranchScanJob, 0)
