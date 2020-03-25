@@ -10,6 +10,7 @@ __metaclass__ = type
 import json
 
 from six import string_types
+from storm.store import Store
 from testtools.matchers import (
     ContainsDict,
     Equals,
@@ -24,6 +25,8 @@ from lp.registry.interfaces.ociproject import (
     IOCIProjectSet,
     )
 from lp.registry.interfaces.ociprojectseries import IOCIProjectSeries
+from lp.registry.model.ociproject import OCIProject
+from lp.services.macaroons.testing import MatchesStructure
 from lp.services.webapp.interfaces import OAuthPermission
 from lp.testing import (
     admin_logged_in,
@@ -215,3 +218,34 @@ class TestOCIProjectWebservice(TestCaseWithFactory):
 
         ws_project = self.load_from_api(url)
         self.assertEqual("old description", ws_project['description'])
+
+    def test_create_oci_project(self):
+        with person_logged_in(self.person):
+            distro = removeSecurityProxy(self.factory.makeDistribution(
+                owner=self.person))
+            url = api_url(distro)
+
+        obj = {
+            "ociprojectname": "someprojectname",
+            "description": "My OCI project",
+            "bug_reporting_guidelines": "Bug reporting guide",
+            "bug_reported_acknowledgement": "Bug reporting ack",
+            "bugfiling_duplicate_search": True,
+        }
+        resp = self.webservice.named_post(url, "newOCIProject", **obj)
+        self.assertEqual(201, resp.status, resp.body)
+
+        store = Store.of(distro)
+        result_set = [i for i in store.find(OCIProject)]
+
+        self.assertEqual(1, len(result_set))
+        self.assertThat(result_set[0], MatchesStructure(
+            ociprojectname=MatchesStructure(
+                name=Equals(obj["ociprojectname"])),
+            description=Equals(obj["description"]),
+            bug_reporting_guidelines=Equals(obj["bug_reporting_guidelines"]),
+            bug_reported_acknowledgement=Equals(
+                obj["bug_reported_acknowledgement"]),
+            enable_bugfiling_duplicate_search=Equals(
+                obj["bugfiling_duplicate_search"])
+            ))

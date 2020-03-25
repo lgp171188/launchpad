@@ -22,6 +22,7 @@ from lazr.restful.declarations import (
     collection_default_content,
     export_as_webservice_collection,
     export_as_webservice_entry,
+    export_factory_operation,
     export_operation_as,
     export_read_operation,
     exported,
@@ -654,6 +655,40 @@ class IDistributionPublic(
 
     def userCanEdit(user):
         """Can the user edit this distribution?"""
+
+    # XXX: pappacena 2020-04-25: This method is sit on IDistributionPublic
+    # for now, until we workout the specific permission for creating OCI
+    # Projects.
+    @call_with(registrant=REQUEST_USER)
+    @operation_parameters(
+        ociprojectname=Text(
+            title=_("The OCI project name."),
+            description=_("The name that groups a set of OCI projects "
+                          "together.")),
+        description=Text(
+            title=_("Description for this OCI project."),
+            description=_("A short description of this OCI project.")),
+        bug_reporting_guidelines=Text(
+            title=_("The guidelines to report a bug."),
+            description=_("What is the guideline to report a bug to this "
+                          "OCI Project?")),
+        bug_reported_acknowledgement=Text(
+            title=_("Acknowledgement text for a bug reported."),
+            description=_("Acknowledgement text for a bug reported in this "
+                          "OCI Project.")),
+        bugfiling_duplicate_search=Bool(
+            title=_("Show bug search before allowing to open a bug?"),
+            description=_("To avoid duplicate bugs, show to the user a bug "
+                          "search before allowing them to create new bugs?"))
+    )
+    # Interface is actually IOCIProject. Fixed at _schema_circular_imports
+    @export_factory_operation(Interface, [])
+    @operation_for_version("devel")
+    def newOCIProject(
+        registrant, ociprojectname, description=None,
+        bug_reporting_guidelines=None, bug_reported_acknowledgement=None,
+        bugfiling_duplicate_search=False):
+        """Create an `IOCIProject` for this distro."""
 
 
 class IDistribution(

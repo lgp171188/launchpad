@@ -1450,6 +1450,18 @@ class Distribution(SQLBase, BugTargetBase, MakesAnnouncements,
                 return True
         return False
 
+    def newOCIProject(self, registrant, ociprojectname, description=None,
+            bug_reporting_guidelines=None, bug_reported_acknowledgement=None,
+            bugfiling_duplicate_search=False):
+        """Create an `IOCIProject` for this distro."""
+        return getUtility(IOCIProjectSet).new(
+            pillar=self,
+            registrant=registrant, ociprojectname=ociprojectname,
+            description=description,
+            bug_reporting_guidelines=bug_reporting_guidelines,
+            bug_reported_acknowledgement=bug_reported_acknowledgement,
+            bugfiling_duplicate_search=bugfiling_duplicate_search)
+
 
 @implementer(IDistributionSet)
 class DistributionSet:
