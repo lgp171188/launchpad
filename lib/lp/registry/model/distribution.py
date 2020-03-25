@@ -35,6 +35,7 @@ from storm.info import ClassAlias
 from storm.store import Store
 from zope.component import getUtility
 from zope.interface import implementer
+from zope.security.interfaces import Unauthorized
 
 from lp.answers.enums import QUESTION_STATUS_DEFAULT_SEARCH
 from lp.answers.model.faq import (
@@ -130,6 +131,7 @@ from lp.registry.model.milestone import (
     HasMilestonesMixin,
     Milestone,
     )
+from lp.registry.model.ociproject import OCI_PROJECT_ALLOW_CREATE
 from lp.registry.model.oopsreferences import referenced_oops
 from lp.registry.model.pillar import HasAliasMixin
 from lp.registry.model.sourcepackagename import SourcePackageName
@@ -147,6 +149,7 @@ from lp.services.database.stormexpr import (
     fti_search,
     rank_by_fti,
     )
+from lp.services.features import getFeatureFlag
 from lp.services.helpers import shortlist
 from lp.services.propertycache import (
     cachedproperty,
@@ -1454,6 +1457,8 @@ class Distribution(SQLBase, BugTargetBase, MakesAnnouncements,
             bug_reporting_guidelines=None, bug_reported_acknowledgement=None,
             bugfiling_duplicate_search=False):
         """Create an `IOCIProject` for this distro."""
+        if not getFeatureFlag(OCI_PROJECT_ALLOW_CREATE):
+            raise Unauthorized("Creating new OCI projects is not allowed.")
         return getUtility(IOCIProjectSet).new(
             pillar=self,
             registrant=registrant, ociprojectname=ociprojectname,

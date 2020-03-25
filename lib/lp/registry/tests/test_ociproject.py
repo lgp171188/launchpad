@@ -25,7 +25,11 @@ from lp.registry.interfaces.ociproject import (
     IOCIProjectSet,
     )
 from lp.registry.interfaces.ociprojectseries import IOCIProjectSeries
-from lp.registry.model.ociproject import OCIProject
+from lp.registry.model.ociproject import (
+    OCI_PROJECT_ALLOW_CREATE,
+    OCIProject,
+    )
+from lp.services.features.testing import FeatureFixture
 from lp.services.macaroons.testing import MatchesStructure
 from lp.services.webapp.interfaces import OAuthPermission
 from lp.testing import (
@@ -145,6 +149,7 @@ class TestOCIProjectWebservice(TestCaseWithFactory):
         self.webservice = webservice_for_person(
             self.person, permission=OAuthPermission.WRITE_PUBLIC,
             default_api_version="devel")
+        self.useFixture(FeatureFixture({OCI_PROJECT_ALLOW_CREATE: 'on'}))
 
     def getAbsoluteURL(self, target):
         """Get the webservice absolute URL of the given object or relative
@@ -249,3 +254,20 @@ class TestOCIProjectWebservice(TestCaseWithFactory):
             enable_bugfiling_duplicate_search=Equals(
                 obj["bugfiling_duplicate_search"])
             ))
+
+    def test_api_create_oci_project_is_disabled_by_feature_flag(self):
+        self.useFixture(FeatureFixture({OCI_PROJECT_ALLOW_CREATE: ''}))
+        with person_logged_in(self.person):
+            distro = removeSecurityProxy(self.factory.makeDistribution(
+                owner=self.person))
+            url = api_url(distro)
+
+        obj = {
+            "ociprojectname": "someprojectname",
+            "description": "My OCI project",
+            "bug_reporting_guidelines": "Bug reporting guide",
+            "bug_reported_acknowledgement": "Bug reporting ack",
+            "bugfiling_duplicate_search": True,
+        }
+        resp = self.webservice.named_post(url, "newOCIProject", **obj)
+        self.assertEqual(401, resp.status, resp.body)

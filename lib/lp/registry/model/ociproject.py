@@ -7,6 +7,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 __all__ = [
+    'OCI_PROJECT_ALLOW_CREATE',
     'OCIProject',
     'OCIProjectSet',
     ]
@@ -43,6 +44,9 @@ from lp.services.database.interfaces import (
     IStore,
     )
 from lp.services.database.stormbase import StormBase
+
+
+OCI_PROJECT_ALLOW_CREATE = 'oci.project.create.enabled'
 
 
 def oci_project_modified(oci_project, event):
