@@ -472,7 +472,8 @@
             <xsl:when test="@id = 'oci_recipe'">
                 <xsl:text>/~</xsl:text>
                 <var>&lt;person.name&gt;</var>
-                <var>/&lt;distribution.name&gt;</var>
+                <xsl:text>/</xsl:text>
+                <var>&lt;distribution.name&gt;</var>
                 <xsl:text>/+oci/</xsl:text>
                 <var>&lt;oci_project.name&gt;</var>
                 <xsl:text>/+recipe/</xsl:text>
