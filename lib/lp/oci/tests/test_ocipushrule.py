@@ -5,6 +5,7 @@
 
 from __future__ import absolute_import, print_function, unicode_literals
 
+from testtools.matchers import MatchesStructure
 from zope.component import getUtility
 
 from lp.oci.interfaces.ocipushrule import (
@@ -50,6 +51,9 @@ class TestOCIPushRuleSet(OCIConfigHelperMixin, TestCaseWithFactory):
             registry_credentials=registry_credentials,
             image_name=image_name)
 
-        self.assertEqual(push_rule.recipe, recipe)
-        self.assertEqual(push_rule.registry_credentials, registry_credentials)
-        self.assertEqual(push_rule.image_name, image_name)
+        self.assertThat(
+            push_rule,
+            MatchesStructure.byEquality(
+                recipe=recipe,
+                registry_credentials=registry_credentials,
+                image_name=image_name))
