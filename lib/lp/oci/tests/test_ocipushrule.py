@@ -12,7 +12,7 @@ from lp.oci.interfaces.ocipushrule import (
     IOCIPushRule,
     IOCIPushRuleSet,
     )
-from lp.oci.tests.test_ociregistrycredentials import OCIConfigHelperMixin
+from lp.oci.tests.helpers import OCIConfigHelperMixin
 from lp.testing import TestCaseWithFactory
 from lp.testing.layers import LaunchpadZopelessLayer
 
