@@ -1,4 +1,4 @@
-# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Unit tests for CodeImportJob and CodeImportJobWorkflow."""
@@ -249,7 +249,7 @@ class TestCodeImportJobSetGetJobForMachine(TestCaseWithFactory):
         # the sample data and set up some objects.
         super(TestCodeImportJobSetGetJobForMachine, self).setUp()
         login_for_code_imports()
-        for job in CodeImportJob.select():
+        for job in IStore(CodeImportJob).find(CodeImportJob):
             job.destroySelf()
         self.machine = self.factory.makeCodeImportMachine(set_online=True)
 
@@ -363,7 +363,7 @@ class ReclaimableJobTests(TestCaseWithFactory):
     def setUp(self):
         super(ReclaimableJobTests, self).setUp()
         login_for_code_imports()
-        for job in CodeImportJob.select():
+        for job in IStore(CodeImportJob).find(CodeImportJob):
             job.destroySelf()
 
     def makeJobWithHeartbeatInPast(self, seconds_in_past):

@@ -1,7 +1,9 @@
-# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Database classes for the CodeImportJob table."""
+
+from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 __all__ = [
@@ -10,13 +12,17 @@ __all__ = [
     'CodeImportJobWorkflow',
     ]
 
-import datetime
+from datetime import timedelta
 
-from sqlobject import (
-    ForeignKey,
-    IntCol,
-    SQLObjectNotFound,
-    StringCol,
+import pytz
+from storm.expr import Cast
+from storm.locals import (
+    DateTime,
+    Desc,
+    Int,
+    Reference,
+    Store,
+    Unicode,
     )
 from zope.component import getUtility
 from zope.interface import implementer
@@ -50,13 +56,10 @@ from lp.code.model.codeimportresult import CodeImportResult
 from lp.registry.interfaces.person import validate_public_person
 from lp.services.config import config
 from lp.services.database.constants import UTC_NOW
-from lp.services.database.datetimecol import UtcDateTimeCol
-from lp.services.database.enumcol import EnumCol
+from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IStore
-from lp.services.database.sqlbase import (
-    SQLBase,
-    sqlvalues,
-    )
+from lp.services.database.sqlbase import get_transaction_timestamp
+from lp.services.database.stormbase import StormBase
 from lp.services.macaroons.interfaces import (
     BadMacaroonContext,
     IMacaroonIssuer,
@@ -66,53 +69,48 @@ from lp.services.macaroons.model import MacaroonIssuerBase
 
 
 @implementer(ICodeImportJob)
-class CodeImportJob(SQLBase):
+class CodeImportJob(StormBase):
     """See `ICodeImportJob`."""
 
-    date_created = UtcDateTimeCol(notNull=True, default=UTC_NOW)
+    __storm_table__ = 'CodeImportJob'
 
-    code_import = ForeignKey(
-        dbName='code_import', foreignKey='CodeImport', notNull=True)
+    id = Int(primary=True)
 
-    machine = ForeignKey(
-        dbName='machine', foreignKey='CodeImportMachine',
-        notNull=False, default=None)
+    date_created = DateTime(tzinfo=pytz.UTC, allow_none=False, default=UTC_NOW)
 
-    date_due = UtcDateTimeCol(notNull=True)
+    code_import_id = Int(name='code_import', allow_none=False)
+    code_import = Reference(code_import_id, 'CodeImport.id')
 
-    state = EnumCol(
-        enum=CodeImportJobState, notNull=True,
+    machine_id = Int(name='machine', allow_none=True, default=None)
+    machine = Reference(machine_id, 'CodeImportMachine.id')
+
+    date_due = DateTime(tzinfo=pytz.UTC, allow_none=False)
+
+    state = DBEnum(
+        enum=CodeImportJobState, allow_none=False,
         default=CodeImportJobState.PENDING)
 
-    requesting_user = ForeignKey(
-        dbName='requesting_user', foreignKey='Person',
-        storm_validator=validate_public_person,
-        notNull=False, default=None)
+    requesting_user_id = Int(
+        name='requesting_user', allow_none=True,
+        validator=validate_public_person, default=None)
+    requesting_user = Reference(requesting_user_id, 'Person.id')
 
-    ordering = IntCol(notNull=False, default=None)
+    ordering = Int(allow_none=True, default=None)
 
-    heartbeat = UtcDateTimeCol(notNull=False, default=None)
+    heartbeat = DateTime(tzinfo=pytz.UTC, allow_none=True, default=None)
 
-    logtail = StringCol(notNull=False, default=None)
+    logtail = Unicode(allow_none=True, default=None)
 
-    date_started = UtcDateTimeCol(notNull=False, default=None)
+    date_started = DateTime(tzinfo=pytz.UTC, allow_none=True, default=None)
+
+    def __init__(self, code_import, date_due):
+        super(CodeImportJob, self).__init__()
+        self.code_import = code_import
+        self.date_due = date_due
 
     def isOverdue(self):
         """See `ICodeImportJob`."""
-        # SQLObject offers no easy way to compare a timestamp to UTC_NOW, so
-        # we must use trickery here.
-
-        # First we flush any pending update to self to ensure that the
-        # following database query will give the correct result even if
-        # date_due was modified in this transaction.
-        self.syncUpdate()
-
-        # Then, we try to find a CodeImportJob object with the id of self, and
-        # a date_due of now or past. If we find one, this means self is
-        # overdue.
-        import_job = CodeImportJob.selectOne(
-            "id = %s AND date_due <= %s" % sqlvalues(self.id, UTC_NOW))
-        return import_job is not None
+        return self.date_due <= get_transaction_timestamp(Store.of(self))
 
     def makeWorkerArguments(self):
         """See `ICodeImportJob`."""
@@ -169,6 +167,9 @@ class CodeImportJob(SQLBase):
             result.append(macaroon.serialize())
         return result
 
+    def destroySelf(self):
+        Store.of(self).remove(self)
+
 
 @implementer(ICodeImportJobSet, ICodeImportJobSetPublic)
 class CodeImportJobSet(object):
@@ -179,10 +180,7 @@ class CodeImportJobSet(object):
 
     def getById(self, id):
         """See `ICodeImportJobSet`."""
-        try:
-            return CodeImportJob.get(id)
-        except SQLObjectNotFound:
-            return None
+        return IStore(CodeImportJob).get(CodeImportJob, id)
 
     def getJobForMachine(self, hostname, worker_limit):
         """See `ICodeImportJobSet`."""
@@ -195,12 +193,12 @@ class CodeImportJobSet(object):
                 hostname, CodeImportMachineState.ONLINE)
         elif not machine.shouldLookForJob(worker_limit):
             return None
-        job = CodeImportJob.selectOne(
-            """id IN (SELECT id FROM CodeImportJob
-               WHERE date_due <= %s AND state = %s
-               ORDER BY requesting_user IS NULL, date_due
-               LIMIT 1)"""
-            % sqlvalues(UTC_NOW, CodeImportJobState.PENDING))
+        job = IStore(CodeImportJob).find(
+            CodeImportJob,
+            CodeImportJob.date_due <= UTC_NOW,
+            CodeImportJob.state == CodeImportJobState.PENDING).order_by(
+                CodeImportJob.requesting_user == None,
+                CodeImportJob.date_due).first()
         if job is not None:
             job_workflow.startJob(job, machine)
             return job
@@ -209,11 +207,12 @@ class CodeImportJobSet(object):
 
     def getReclaimableJobs(self):
         """See `ICodeImportJobSet`."""
+        interval = config.codeimportworker.maximum_heartbeat_interval
         return IStore(CodeImportJob).find(
             CodeImportJob,
-            "state = %s and heartbeat < %s + '-%s seconds'"
-            % sqlvalues(CodeImportJobState.RUNNING, UTC_NOW,
-                        config.codeimportworker.maximum_heartbeat_interval))
+            CodeImportJob.state == CodeImportJobState.RUNNING,
+            CodeImportJob.heartbeat < (
+                UTC_NOW - Cast(timedelta(seconds=interval), 'interval')))
 
     def getJobsInState(self, state):
         return IStore(CodeImportJob).find(
@@ -238,16 +237,18 @@ class CodeImportJobWorkflow:
             interval = code_import.effective_update_interval
 
         job = CodeImportJob(code_import=code_import, date_due=UTC_NOW)
+        IStore(CodeImportJob).add(job)
 
         # Find the most recent CodeImportResult for this CodeImport. We
         # sort by date_created because we do not have an index on
         # date_job_started in the database, and that should give the same
         # sort order.
-        most_recent_result_list = list(CodeImportResult.selectBy(
-            code_import=code_import).orderBy(['-date_created']).limit(1))
+        most_recent_result = IStore(CodeImportResult).find(
+            CodeImportResult,
+            CodeImportResult.code_import == code_import).order_by(
+                Desc(CodeImportResult.date_created)).first()
 
-        if len(most_recent_result_list) != 0:
-            [most_recent_result] = most_recent_result_list
+        if most_recent_result is not None:
             date_due = most_recent_result.date_job_started + interval
             job.date_due = max(job.date_due, date_due)
 
@@ -306,7 +307,7 @@ class CodeImportJobWorkflow:
         naked_job = removeSecurityProxy(import_job)
         naked_job.date_started = UTC_NOW
         naked_job.heartbeat = UTC_NOW
-        naked_job.logtail = u''
+        naked_job.logtail = ''
         naked_job.machine = machine
         naked_job.state = CodeImportJobState.RUNNING
         getUtility(ICodeImportEventSet).newStart(
@@ -370,7 +371,7 @@ class CodeImportJobWorkflow:
             code_import.updateFromData(
                 dict(review_status=CodeImportReviewStatus.FAILING), None)
         elif status == CodeImportResultStatus.SUCCESS_PARTIAL:
-            interval = datetime.timedelta(0)
+            interval = timedelta(0)
         elif failure_count > 0:
             interval = (code_import.effective_update_interval *
                         (2 ** (failure_count - 1)))
@@ -411,7 +412,7 @@ class CodeImportJobWorkflow:
             import_job, CodeImportResultStatus.RECLAIMED, None)
         # 3)
         if code_import.review_status == CodeImportReviewStatus.REVIEWED:
-            self.newJob(code_import, datetime.timedelta(0))
+            self.newJob(code_import, timedelta(0))
         # 4)
         getUtility(ICodeImportEventSet).newReclaim(
             code_import, machine, job_id)
