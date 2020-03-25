@@ -656,7 +656,7 @@ class IDistributionPublic(
     def userCanEdit(user):
         """Can the user edit this distribution?"""
 
-    # XXX: pappacena 2020-04-25: This method is sit on IDistributionPublic
+    # XXX: pappacena 2020-04-25: This method here on IDistributionPublic
     # for now, until we workout the specific permission for creating OCI
     # Projects.
     @call_with(registrant=REQUEST_USER)
