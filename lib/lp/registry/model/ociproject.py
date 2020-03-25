@@ -128,10 +128,7 @@ class OCIProject(BugTargetBase, StormBase):
         return ret
 
     def getSeriesByName(self, name):
-        series = [i for i in self.series.find(OCIProjectSeries.name == name)]
-        if len(series) != 1:
-            return None
-        return series[0]
+        return self.series.find(OCIProjectSeries.name == name).one()
 
 
 @implementer(IOCIProjectSet)
