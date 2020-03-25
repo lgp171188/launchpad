@@ -225,7 +225,7 @@ class TestCodeImportJobSet(TestCaseWithFactory):
             getUtility(ICodeImportJobWorkflow).startJob(job, self.machine)
         found_jobs = getUtility(ICodeImportJobSet).getJobsInState(
             CodeImportJobState.PENDING).order_by(CodeImportJob.id)
-        # There's a job in the test date, we need the second one.
+        # There's a job in the test data, we need the second one.
         self.assertEqual(found_jobs.count(), 2)
         self.assertEqual(made_job, found_jobs[1])
 
