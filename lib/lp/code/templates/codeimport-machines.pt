@@ -12,7 +12,30 @@
 
 <div metal:fill-slot="main" class="visualPadding">
 
-  <table class="listing" id="code-import-machine-listing">
+  <div style="width:18%; float:right;" class="portlet">
+    <div id="import-queue-status">
+      <div>
+        <div>
+          <h3>Import queue</h3>
+          <table class="summary">
+            <tr>
+              <td>Pending</td>
+              <td tal:content="view/pending_imports"></td>
+            </tr>
+            <tr>
+              <td>Scheduled</td>
+              <td tal:content="view/scheduled_imports"></td>
+            </tr>
+            <tr>
+              <td>Running</td>
+              <td tal:content="view/running_imports"></td>
+            </tr>
+        </div>
+      </div>
+    </div><!-- portlet -->
+  </div><!-- yui-u -->
+
+  <table style="width:80%" class="listing" id="code-import-machine-listing">
     <thead>
       <tr>
         <th>Machine</th>

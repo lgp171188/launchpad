@@ -1,21 +1,29 @@
+# -*- coding: utf-8 -*-
+# NOTE: The first line above must stay first; do not move the copyright
+# notice to the top.  See http://www.python.org/dev/peps/pep-0263/.
+#
 # Copyright 2009-2017 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
 
 from textwrap import dedent
-import unittest
 
+from fixtures import MonkeyPatch
 import transaction
 from zope.component import (
     getAdapter,
     getUtility,
     )
+from zope.interface import implementer
 from zope.interface.verify import verifyObject
+from zope.security.proxy import removeSecurityProxy
 
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.registry.interfaces.person import IPersonSet
 from lp.registry.interfaces.product import IProductSet
+from lp.testing import TestCase
+from lp.testing.fixture import ZopeUtilityFixture
 from lp.testing.layers import LaunchpadZopelessLayer
 from lp.translations.enums import RosettaImportStatus
 from lp.translations.interfaces.potemplate import IPOTemplateSet
@@ -25,21 +33,165 @@ from lp.translations.interfaces.translationcommonformat import (
 from lp.translations.interfaces.translationexporter import (
     ITranslationFormatExporter,
     )
+from lp.translations.interfaces.translationfileformat import (
+    TranslationFileFormat,
+    )
+from lp.translations.interfaces.translationimporter import (
+    ITranslationFormatImporter,
+    ITranslationImporter,
+    )
 from lp.translations.interfaces.translationimportqueue import (
     ITranslationImportQueue,
     )
-from lp.translations.utilities.tests.test_xpi_import import (
-    get_en_US_xpi_file_to_import,
+from lp.translations.interfaces.translations import TranslationConstants
+from lp.translations.utilities.translation_common_format import (
+    TranslationFileData,
+    TranslationMessageData,
     )
 from lp.translations.utilities.translation_export import ExportFileStorage
+from lp.translations.utilities.xpi_header import XpiHeader
 from lp.translations.utilities.xpi_po_exporter import XPIPOExporter
 
 
-class XPIPOExporterTestCase(unittest.TestCase):
+# Hardcoded representations of what used to be found in
+# lib/lp/translations/utilities/tests/firefox-data/.  We no longer have real
+# XPI import code, so we pre-parse the messages.
+test_xpi_header = dedent(u'''\
+    <?xml version="1.0"?>
+    <RDF xmlns="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+         xmlns:em="http://www.mozilla.org/2004/em-rdf#">
+      <Description about="urn:mozilla:install-manifest"
+                   em:id="langpack-en-US@firefox.mozilla.org"
+                   em:name="English U.S. (en-US) Language Pack"
+                   em:version="2.0"
+                   em:type="8"
+                   em:creator="Danilo Šegan">
+        <em:contributor>Данило Шеган</em:contributor>
+        <em:contributor>Carlos Perelló Marín &lt;carlos@canonical.com&gt;</em:contributor>
+
+        <em:targetApplication>
+          <Description>
+            <em:id>{ec8030f7-c20a-464f-9b0e-13a3a9e97384}</em:id><!-- firefox -->
+            <em:minVersion>2.0</em:minVersion>
+            <em:maxVersion>2.0.0.*</em:maxVersion>
+          </Description>
+        </em:targetApplication>
+      </Description>
+    </RDF>
+''')
+test_xpi_messages = [
+    (u'foozilla.menu.title', u'main/subdir/test2.dtd',
+     u'jar:chrome/en-US.jar!/subdir/test2.dtd', u'MENU',
+     u' This is a DTD file inside a subdirectory\n'),
+    (u'foozilla.menu.accesskey', u'main/subdir/test2.dtd',
+     u'jar:chrome/en-US.jar!/subdir/test2.dtd', u'M',
+     dedent(u'''\
+        Select the access key that you want to use. These have
+        to be translated in a way that the selected character is
+        present in the translated string of the label being
+        referred to, for example 'i' in 'Edit' menu item in
+        English. If a translation already exists, please don't
+        change it if you are not sure about it. Please find the
+        context of the key from the end of the 'Located in' text
+        below.
+        ''')),
+    (u'foozilla.menu.commandkey', u'main/subdir/test2.dtd',
+     u'jar:chrome/en-US.jar!/subdir/test2.dtd', u'm',
+     dedent(u'''\
+        Select the shortcut key that you want to use. It
+        should be translated, but often shortcut keys (for
+        example Ctrl + KEY) are not changed from the original. If
+        a translation already exists, please don't change it if
+        you are not sure about it. Please find the context of
+        the key from the end of the 'Located in' text below.
+        ''')),
+    (u'foozilla_something', u'main/subdir/test2.properties',
+     u'jar:chrome/en-US.jar!/subdir/test2.properties:6', u'SomeZilla',
+     dedent(u'''\
+        Translators, what you are seeing now is a lovely,
+        awesome, multiline comment aimed at you directly
+        from the streets of a .properties file
+        ''')),
+    (u'foozilla.name', u'main/test1.dtd',
+     u'jar:chrome/en-US.jar!/test1.dtd', u'FooZilla!', None),
+    (u'foozilla.play.fire', u'main/test1.dtd',
+     u'jar:chrome/en-US.jar!/test1.dtd', u'Do you want to play with fire?',
+     u" Translators, don't play with fire!\n"),
+    (u'foozilla.play.ice', u'main/test1.dtd',
+     u'jar:chrome/en-US.jar!/test1.dtd', u'Play with ice?',
+     u' This is just a comment, not a comment for translators\n'),
+    (u'foozilla.title', u'main/test1.properties',
+     u'jar:chrome/en-US.jar!/test1.properties:1', u'FooZilla Zilla Thingy',
+     None),
+    (u'foozilla.happytitle', u'main/test1.properties',
+     u'jar:chrome/en-US.jar!/test1.properties:3',
+     u'http://foozillingy.happy.net/',
+     u"Translators, if you're older than six, don't translate this\n"),
+    (u'foozilla.nocomment', u'main/test1.properties',
+     u'jar:chrome/en-US.jar!/test1.properties:4', u'No Comment',
+     u'(Except this one)\n'),
+    (u'foozilla.utf8', u'main/test1.properties',
+     u'jar:chrome/en-US.jar!/test1.properties:5', u'\u0414\u0430\u043d=Day',
+     None),
+    ]
+
+
+class FakeXPIMessage(TranslationMessageData):
+    """Simulate an XPI translation message."""
+
+    def __init__(self, key, chrome_path, file_and_line, value, last_comment):
+        super(FakeXPIMessage, self).__init__()
+        self.msgid_singular = key
+        self.context = chrome_path
+        self.file_references = '%s(%s)' % (file_and_line, key)
+        value = value.strip()
+        self.addTranslation(TranslationConstants.SINGULAR_FORM, value)
+        self.singular_text = value
+        self.source_comment = last_comment
+
+
+@implementer(ITranslationFormatImporter)
+class FakeXPIImporter:
+    """Simulate an XPI import.  We no longer have real XPI import code."""
+
+    def getFormat(self, file_contents):
+        """See `ITranslationFormatImporter`."""
+        return TranslationFileFormat.XPI
+
+    priority = 0
+    content_type = 'application/zip'
+    file_extensions = ['.xpi']
+    template_suffix = 'en-US.xpi'
+    uses_source_string_msgids = True
+
+    def parse(self, translation_import_queue_entry):
+        """See `ITranslationFormatImporter`.
+
+        This takes a `TranslationImportQueueEntry` to satisfy the interface,
+        but ignores it and returns hardcoded data instead.
+        """
+        translation_file = TranslationFileData()
+        translation_file.header = XpiHeader(test_xpi_header)
+        translation_file.messages = [
+            FakeXPIMessage(*message) for message in test_xpi_messages]
+        return translation_file
+
+    def getHeaderFromString(self, header_string):
+        """See `ITranslationFormatImporter`.
+
+        This takes a header string to satisfy the interface, but ignores it
+        and returns hardcoded data instead.
+        """
+        return XpiHeader(test_xpi_header)
+
+
+class XPIPOExporterTestCase(TestCase):
     """Class test for gettext's .po file exports"""
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
+        super(XPIPOExporterTestCase, self).setUp()
+
         self.translation_exporter = XPIPOExporter()
 
         # Get the importer.
@@ -75,14 +227,24 @@ class XPIPOExporterTestCase(unittest.TestCase):
 
     def setUpTranslationImportQueueForTemplate(self):
         """Return an ITranslationImportQueueEntry for testing purposes."""
-        # Get the file to import.
-        en_US_xpi = get_en_US_xpi_file_to_import('en-US')
+        # Install a fake XPI importer, since we no longer have real XPI
+        # import code.
+        fake_xpi_importer = FakeXPIImporter()
+        self.useFixture(MonkeyPatch(
+            'lp.translations.utilities.translation_import.importers',
+            {TranslationFileFormat.XPI: fake_xpi_importer}))
+        # Temporarily reinstall the translation importer without a security
+        # proxy.  This avoids problems getting attributes of
+        # FakeXPIImporter, which has no Zope permissions defined.
+        self.useFixture(ZopeUtilityFixture(
+            removeSecurityProxy(getUtility(ITranslationImporter)),
+            ITranslationImporter))
 
         # Attach it to the import queue.
         translation_import_queue = getUtility(ITranslationImportQueue)
         by_maintainer = True
         entry = translation_import_queue.addOrUpdateEntry(
-            self.firefox_template.path, en_US_xpi, by_maintainer,
+            self.firefox_template.path, b'dummy', by_maintainer,
             self.importer, productseries=self.firefox_template.productseries,
             potemplate=self.firefox_template)
 

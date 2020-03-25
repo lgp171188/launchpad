@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for the CodeImportWorkerMonitor and related classes."""
@@ -72,6 +72,7 @@ from lp.services.config.fixture import (
     ConfigFixture,
     ConfigUseFixture,
     )
+from lp.services.database.interfaces import IStore
 from lp.services.log.logger import BufferLogger
 from lp.services.twistedsupport import suppress_stderr
 from lp.services.twistedsupport.tests.test_processmonitor import (
@@ -669,7 +670,7 @@ class TestWorkerMonitorRunNoProcess(TestCase):
 
 def nuke_codeimport_sample_data():
     """Delete all the sample data that might interfere with tests."""
-    for job in CodeImportJob.select():
+    for job in IStore(CodeImportJob).find(CodeImportJob):
         job.destroySelf()
     for code_import in CodeImport.select():
         code_import.destroySelf()
@@ -796,7 +797,7 @@ class TestWorkerMonitorIntegration(TestCaseInTempDir, TestCase):
             code_import.updateFromData(
                 {'review_status': CodeImportReviewStatus.REVIEWED},
                 self.factory.makePerson())
-        job = getUtility(ICodeImportJobSet).getJobForMachine('machine', 10)
+        job = getUtility(ICodeImportJobSet).getJobForMachine(u'machine', 10)
         self.assertEqual(code_import, job.code_import)
         source_details = CodeImportSourceDetails.fromArguments(
             removeSecurityProxy(job.makeWorkerArguments()))

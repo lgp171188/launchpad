@@ -1,4 +1,4 @@
-# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Publishing interfaces."""
@@ -561,8 +561,9 @@ class ISourcePackagePublishingHistoryEdit(IPublishingEdit):
         new_component=TextLine(title=u"The new component name."),
         new_section=TextLine(title=u"The new section name."))
     @export_write_operation()
+    @call_with(creator=REQUEST_USER)
     @operation_for_version("devel")
-    def changeOverride(new_component=None, new_section=None):
+    def changeOverride(new_component=None, new_section=None, creator=None):
         """Change the component and/or section of this publication.
 
         It is changed only if the argument is not None.
@@ -663,6 +664,13 @@ class IBinaryPackagePublishingHistoryPublic(IPublishingView):
             title=_('The build which superseded this one'),
             required=False, readonly=False,
             )
+    creator = exported(
+        Reference(
+            IPerson,
+            title=_('Publication Creator'),
+            description=_('The IPerson who created this publication.'),
+            required=False, readonly=True
+        ))
     datecreated = exported(
         Datetime(
             title=_('Date Created'),
@@ -840,9 +848,11 @@ class IBinaryPackagePublishingHistoryEdit(IPublishingEdit):
         new_phased_update_percentage=Int(
             title=u"The new phased update percentage."))
     @export_write_operation()
+    @call_with(creator=REQUEST_USER)
     @operation_for_version("devel")
     def changeOverride(new_component=None, new_section=None,
-                       new_priority=None, new_phased_update_percentage=None):
+                       new_priority=None, new_phased_update_percentage=None,
+                       creator=None):
         """Change the component/section/priority/phase of this publication.
 
         It is changed only if the argument is not None.

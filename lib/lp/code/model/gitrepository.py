@@ -144,6 +144,7 @@ from lp.code.model.gitrule import (
     GitRuleGrant,
     )
 from lp.code.model.gitsubscription import GitSubscription
+from lp.oci.interfaces.ocirecipe import IOCIRecipeSet
 from lp.registry.enums import PersonVisibility
 from lp.registry.errors import CannotChangeInformationType
 from lp.registry.interfaces.accesspolicy import (
@@ -1526,6 +1527,10 @@ class GitRepository(StormBase, WebhookTargetMixin, GitIdentityMixin):
             alteration_operations.append(DeletionCallable(
                 None, msg("Some snap packages build from this repository."),
                 getUtility(ISnapSet).detachFromGitRepository, self))
+        if not getUtility(IOCIRecipeSet).findByGitRepository(self).is_empty():
+            alteration_operations.append(DeletionCallable(
+                None, msg("Some OCI recipes build from this repository."),
+                getUtility(IOCIRecipeSet).detachFromGitRepository, self))
 
         return (alteration_operations, deletion_operations)
 

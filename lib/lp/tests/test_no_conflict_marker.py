@@ -1,4 +1,4 @@
-# Copyright 2009 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test that no files in the tree has spurious conflicts markers."""
@@ -17,28 +17,15 @@ class NoSpuriousConflictsMarkerTest(unittest.TestCase):
     # old heading style in some doctests.
     CONFLICT_MARKER_RE = r'^\(<<<<<<< \|>>>>>>> \)'
 
-    # We could use bzrlib.workingtree for that test, but this cause
-    # problems when the system bzr (so the developer's branch) isn't at
-    # the same level than the bzrlib included in our tree. Anyway, it's
-    # probably faster to use grep.
-    # XXX cjwatson 2019-09-25: Once we're on git, it may be simpler to use
-    # something based on "git diff --check".
+    # XXX cjwatson 2019-09-25: It may be simpler to use something based on
+    # "git diff --check", but we'd need to work out what to do about its
+    # whitespace checks.
     def test_noSpuriousConflictsMarker(self):
         """Fail if any spurious conflicts markers are found."""
         root_dir = os.path.join(os.path.dirname(__file__), '../../..')
 
-        if os.path.exists(os.path.join(root_dir, '.git')):
-            list_files_command = ['git', 'ls-files']
-        else:
-            list_files_command = ['bzr', 'ls', '-R', '--versioned']
-
-        # We need to reset PYTHONPATH here, otherwise the bzr in our tree
-        # will be picked up.
-        new_env = dict(os.environ)
-        new_env['PYTHONPATH'] = ''
         list_files = subprocess.Popen(
-            list_files_command,
-            stdout=subprocess.PIPE, cwd=root_dir, env=new_env)
+            ['git', 'ls-files'], stdout=subprocess.PIPE, cwd=root_dir)
         unique_files = subprocess.Popen(
             ['sort', '-u'],
             stdin=list_files.stdout, stdout=subprocess.PIPE)

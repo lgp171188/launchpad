@@ -294,6 +294,71 @@ class TestOCIRecipeSet(TestCaseWithFactory):
             oci_project=oci_project,
             name="missing")
 
+    def test_findByGitRepository(self):
+        # IOCIRecipeSet.findByGitRepository returns all OCI recipes with the
+        # given Git repository.
+        repositories = [self.factory.makeGitRepository() for i in range(2)]
+        oci_recipes = []
+        for repository in repositories:
+            for i in range(2):
+                [ref] = self.factory.makeGitRefs(repository=repository)
+                oci_recipes.append(self.factory.makeOCIRecipe(git_ref=ref))
+        oci_recipe_set = getUtility(IOCIRecipeSet)
+        self.assertContentEqual(
+            oci_recipes[:2], oci_recipe_set.findByGitRepository(
+                repositories[0]))
+        self.assertContentEqual(
+            oci_recipes[2:], oci_recipe_set.findByGitRepository(
+                repositories[1]))
+
+    def test_findByGitRepository_paths(self):
+        # IOCIRecipeSet.findByGitRepository can restrict by reference paths.
+        repositories = [self.factory.makeGitRepository() for i in range(2)]
+        oci_recipes = []
+        for repository in repositories:
+            for i in range(3):
+                [ref] = self.factory.makeGitRefs(repository=repository)
+                oci_recipes.append(self.factory.makeOCIRecipe(git_ref=ref))
+        oci_recipe_set = getUtility(IOCIRecipeSet)
+        self.assertContentEqual(
+            [], oci_recipe_set.findByGitRepository(repositories[0], paths=[]))
+        self.assertContentEqual(
+            [oci_recipes[0]],
+            oci_recipe_set.findByGitRepository(
+                repositories[0], paths=[oci_recipes[0].git_ref.path]))
+        self.assertContentEqual(
+            oci_recipes[:2],
+            oci_recipe_set.findByGitRepository(
+                repositories[0],
+                paths=[
+                    oci_recipes[0].git_ref.path, oci_recipes[1].git_ref.path]))
+
+    def test_detachFromGitRepository(self):
+        repositories = [self.factory.makeGitRepository() for i in range(2)]
+        oci_recipes = []
+        paths = []
+        refs = []
+        for repository in repositories:
+            for i in range(2):
+                [ref] = self.factory.makeGitRefs(repository=repository)
+                paths.append(ref.path)
+                refs.append(ref)
+                oci_recipes.append(self.factory.makeOCIRecipe(
+                    git_ref=ref, date_created=ONE_DAY_AGO))
+        getUtility(IOCIRecipeSet).detachFromGitRepository(repositories[0])
+        self.assertEqual(
+            [None, None, repositories[1], repositories[1]],
+            [oci_recipe.git_repository for oci_recipe in oci_recipes])
+        self.assertEqual(
+            [None, None, paths[2], paths[3]],
+            [oci_recipe.git_path for oci_recipe in oci_recipes])
+        self.assertEqual(
+            [None, None, refs[2], refs[3]],
+            [oci_recipe.git_ref for oci_recipe in oci_recipes])
+        for oci_recipe in oci_recipes[:2]:
+            self.assertSqlAttributeEqualsDate(
+                oci_recipe, "date_last_modified", UTC_NOW)
+
 
 class TestOCIRecipeWebservice(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer

@@ -139,6 +139,12 @@ class ICodeImportJobSetPublic(Interface):
         It will return None if there is no such job.
         """
 
+    def getJobsInState(state):
+        """Get the jobs that are in a given state.
+
+        :return: A ResultSet of `CodeImportJob`.
+        """
+
 
 class ICodeImportJobWorkflow(Interface):
     """Utility to manage `CodeImportJob` objects through their life cycle."""

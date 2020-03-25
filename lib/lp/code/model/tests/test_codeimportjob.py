@@ -1,4 +1,4 @@
-# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Unit tests for CodeImportJob and CodeImportJobWorkflow."""
@@ -217,6 +217,18 @@ class TestCodeImportJobSet(TestCaseWithFactory):
         no_job = getUtility(ICodeImportJobSet).getById(-1)
         self.assertIs(None, no_job)
 
+    def test_getByJobState(self):
+        self.machine = self.factory.makeCodeImportMachine(set_online=True)
+        made_job = removeSecurityProxy(self.factory.makeCodeImportJob())
+        for _ in range(3):
+            job = self.factory.makeCodeImportJob()
+            getUtility(ICodeImportJobWorkflow).startJob(job, self.machine)
+        found_jobs = getUtility(ICodeImportJobSet).getJobsInState(
+            CodeImportJobState.PENDING).order_by(CodeImportJob.id)
+        # There's a job in the test data, we need the second one.
+        self.assertEqual(found_jobs.count(), 2)
+        self.assertEqual(made_job, found_jobs[1])
+
 
 class TestCodeImportJobSetGetJobForMachine(TestCaseWithFactory):
     """Tests for the CodeImportJobSet.getJobForMachine method.
@@ -237,7 +249,7 @@ class TestCodeImportJobSetGetJobForMachine(TestCaseWithFactory):
         # the sample data and set up some objects.
         super(TestCodeImportJobSetGetJobForMachine, self).setUp()
         login_for_code_imports()
-        for job in CodeImportJob.select():
+        for job in IStore(CodeImportJob).find(CodeImportJob):
             job.destroySelf()
         self.machine = self.factory.makeCodeImportMachine(set_online=True)
 
@@ -351,7 +363,7 @@ class ReclaimableJobTests(TestCaseWithFactory):
     def setUp(self):
         super(ReclaimableJobTests, self).setUp()
         login_for_code_imports()
-        for job in CodeImportJob.select():
+        for job in IStore(CodeImportJob).find(CodeImportJob):
             job.destroySelf()
 
     def makeJobWithHeartbeatInPast(self, seconds_in_past):
