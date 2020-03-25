@@ -255,7 +255,7 @@ class Specification(SQLBase, BugLinkTargetMixin, InformationTypeMixin):
     def linked_branches(self):
         return list(Store.of(self).find(
             SpecificationBranch,
-            SpecificationBranch.specification_id == self.id).order_by(
+            SpecificationBranch.specification == self).order_by(
                 SpecificationBranch.id))
 
     def _fetch_children_or_parents(self, join_cond, cond, user):
