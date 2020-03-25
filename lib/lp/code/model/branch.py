@@ -1262,7 +1262,7 @@ class Branch(SQLBase, WebhookTargetMixin, BzrIdentityMixin):
         jobs = Store.of(self).find(
             BranchJob,
             BranchJob.branch == self,
-            Job.id == BranchJob.jobID,
+            Job.id == BranchJob.job_id,
             Job._status.is_in([JobStatus.WAITING, JobStatus.RUNNING]),
             BranchJob.job_type == BranchJobType.SCAN_BRANCH)
         pending_scan_job = not jobs.is_empty()
@@ -1431,7 +1431,7 @@ class Branch(SQLBase, WebhookTargetMixin, BzrIdentityMixin):
         # Remove BranchJobs.
         store = Store.of(self)
         affected_jobs = Select(
-            [BranchJob.jobID],
+            [BranchJob.job_id],
             And(BranchJob.job == Job.id, BranchJob.branch == self))
         store.find(Job, Job.id.is_in(affected_jobs)).remove()
 
@@ -1497,7 +1497,7 @@ class Branch(SQLBase, WebhookTargetMixin, BzrIdentityMixin):
         jobs = store.find(
             BranchJob,
             BranchJob.branch == self,
-            Job.id == BranchJob.jobID,
+            Job.id == BranchJob.job_id,
             Job._status != JobStatus.COMPLETED,
             Job._status != JobStatus.FAILED,
             BranchJob.job_type == BranchJobType.UPGRADE_BRANCH)

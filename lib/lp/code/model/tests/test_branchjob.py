@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for BranchJobs."""
@@ -18,7 +18,6 @@ from breezy.revision import NULL_REVISION
 from breezy.transport import get_transport
 from fixtures import MockPatch
 import pytz
-from sqlobject import SQLObjectNotFound
 from storm.locals import Store
 import transaction
 from zope.component import getUtility
@@ -65,7 +64,10 @@ from lp.codehosting.vfs import branch_id_to_path
 from lp.scripts.helpers import TransactionFreeOperation
 from lp.services.config import config
 from lp.services.database.constants import UTC_NOW
-from lp.services.database.interfaces import IMasterStore
+from lp.services.database.interfaces import (
+    IMasterStore,
+    IStore,
+    )
 from lp.services.features.testing import FeatureFixture
 from lp.services.identity.interfaces.emailaddress import EmailAddressStatus
 from lp.services.job.interfaces.job import JobStatus
@@ -116,7 +118,9 @@ class TestBranchJob(TestCaseWithFactory):
         branch_job = BranchJob(branch, BranchJobType.STATIC_DIFF, {})
         job_id = branch_job.job.id
         branch_job.destroySelf()
-        self.assertRaises(SQLObjectNotFound, BranchJob.get, job_id)
+        self.assertIsNone(
+            IStore(BranchJob).find(
+                BranchJob, BranchJob.job_id == job_id).one())
 
 
 class TestBranchJobDerived(TestCaseWithFactory):
@@ -394,8 +398,6 @@ class TestRevisionMailJob(TestCaseWithFactory):
         branch = self.factory.makeAnyBranch()
         job = RevisionMailJob.create(
             branch, 0, 'from@example.org', 'body', 'subject')
-        job.job.sync()
-        job.context.sync()
         self.assertEqual([job], list(RevisionMailJob.iterReady()))
 
     def test_iterReady_excludes_unready_jobs(self):
@@ -949,10 +951,7 @@ class TestRosettaUploadJob(TestCaseWithFactory):
         dummy.destroySelf()
 
         # Now create the RosettaUploadJob.
-        job = RosettaUploadJob.create(self.branch, NULL_REVISION)
-        job.job.sync()
-        job.context.sync()
-        return job
+        return RosettaUploadJob.create(self.branch, NULL_REVISION)
 
     def _commitFilesToTree(self, files, commit_message=None):
         """Add files to the tree.

@@ -1,4 +1,4 @@
-# Copyright 2009-2017 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Unit tests for methods of CodeImport and CodeImportSet."""
@@ -47,6 +47,7 @@ from lp.code.model.codeimportresult import CodeImportResult
 from lp.code.tests.codeimporthelpers import make_running_import
 from lp.code.tests.helpers import GitHostingFixture
 from lp.registry.interfaces.person import IPersonSet
+from lp.services.database.interfaces import IStore
 from lp.testing import (
     login,
     login_person,
@@ -377,7 +378,7 @@ class TestCodeImportStatusUpdate(TestCodeImportBase):
         self.import_operator = getUtility(IPersonSet).getByEmail(
             'david.allouche@canonical.com')
         # Remove existing jobs.
-        for job in CodeImportJob.select():
+        for job in IStore(CodeImportJob).find(CodeImportJob):
             job.destroySelf()
 
     def makeApprovedImportWithPendingJob(self):

@@ -1,4 +1,4 @@
-# Copyright 2009 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Database classes including and related to CodeImportMachine."""
@@ -14,6 +14,7 @@ from sqlobject import (
     SQLMultipleJoin,
     StringCol,
     )
+from storm.locals import ReferenceSet
 from zope.component import getUtility
 from zope.interface import implementer
 
@@ -48,9 +49,9 @@ class CodeImportMachine(SQLBase):
         default=CodeImportMachineState.OFFLINE)
     heartbeat = UtcDateTimeCol(notNull=False)
 
-    current_jobs = SQLMultipleJoin(
-        'CodeImportJob', joinColumn='machine',
-        orderBy=['date_started', 'id'])
+    current_jobs = ReferenceSet(
+        '<primary key>', 'CodeImportJob.machine_id',
+        order_by=('CodeImportJob.date_started', 'CodeImportJob.id'))
 
     events = SQLMultipleJoin(
         'CodeImportEvent', joinColumn='machine',

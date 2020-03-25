@@ -1,4 +1,4 @@
-# Copyright 2010-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test for the methods of `ICodeImportScheduler`."""
@@ -15,6 +15,7 @@ from lp.code.model.codeimportjob import CodeImportJob
 from lp.code.tests.codeimporthelpers import make_running_import
 from lp.code.xmlrpc.codeimportscheduler import CodeImportSchedulerAPI
 from lp.services.database.constants import UTC_NOW
+from lp.services.database.interfaces import IStore
 from lp.services.webapp import canonical_url
 from lp.testing import (
     run_with_login,
@@ -32,7 +33,7 @@ class TestCodeImportSchedulerAPI(TestCaseWithFactory):
         TestCaseWithFactory.setUp(self)
         self.api = CodeImportSchedulerAPI(None, None)
         self.machine = self.factory.makeCodeImportMachine(set_online=True)
-        for job in CodeImportJob.select():
+        for job in IStore(CodeImportJob).find(CodeImportJob):
             job.destroySelf()
 
     def makeCodeImportJob(self, running):
@@ -84,7 +85,7 @@ class TestCodeImportSchedulerAPI(TestCaseWithFactory):
     def test_updateHeartbeat(self):
         # updateHeartbeat calls the updateHeartbeat job workflow method.
         code_import_job = self.makeCodeImportJob(running=True)
-        log_tail = self.factory.getUniqueString()
+        log_tail = self.factory.getUniqueUnicode()
         self.api.updateHeartbeat(code_import_job.id, log_tail)
         self.assertSqlAttributeEqualsDate(
             code_import_job, 'heartbeat', UTC_NOW)

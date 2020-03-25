@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Code to talk to the database about what the worker script is doing."""
@@ -10,6 +10,7 @@ __all__ = []
 import os
 import tempfile
 
+import six
 from twisted.internet import (
     defer,
     error,
@@ -57,7 +58,7 @@ class CodeImportWorkerMonitorProtocol(ProcessMonitorProtocolWithTimeout):
             self, deferred, clock=clock,
             timeout=config.codeimport.worker_inactivity_timeout)
         self.worker_monitor = worker_monitor
-        self._tail = ''
+        self._tail = b''
         self._log_file = log_file
         self._looping_call = task.LoopingCall(self._updateHeartbeat)
         self._looping_call.clock = self._clock
@@ -91,7 +92,7 @@ class CodeImportWorkerMonitorProtocol(ProcessMonitorProtocolWithTimeout):
         """
         self.resetTimeout()
         self._log_file.write(data)
-        self._tail = '\n'.join((self._tail + data).split('\n')[-5:])
+        self._tail = b'\n'.join((self._tail + data).split(b'\n')[-5:])
 
     errReceived = outReceived
 
@@ -195,8 +196,12 @@ class CodeImportWorkerMonitor:
     def updateHeartbeat(self, tail):
         """Call the updateHeartbeat method for the job we are working on."""
         self._logger.debug("Updating heartbeat.")
+        # The log tail is really bytes, but it's stored in the database as a
+        # text column, so it's easiest to convert it to text now; passing
+        # text over XML-RPC requires less boilerplate than bytes anyway.
         deferred = self.codeimport_endpoint.callRemote(
-            'updateHeartbeat', self._job_id, tail)
+            'updateHeartbeat', self._job_id,
+            six.ensure_text(tail, errors='replace'))
         return deferred.addErrback(self._trap_nosuchcodeimportjob)
 
     def _createLibrarianFileAlias(self, name, size, file, contentType):
