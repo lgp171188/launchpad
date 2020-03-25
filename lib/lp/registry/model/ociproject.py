@@ -1,4 +1,4 @@
-# Copyright 2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2019-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """OCI Project implementation."""
@@ -126,6 +126,9 @@ class OCIProject(BugTargetBase, StormBase):
             OCIProjectSeries.oci_project == self
             ).order_by(OCIProjectSeries.date_created)
         return ret
+
+    def getSeriesByName(self, name):
+        return self.series.find(OCIProjectSeries.name == name).one()
 
 
 @implementer(IOCIProjectSet)
