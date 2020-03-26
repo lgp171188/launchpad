@@ -78,7 +78,6 @@ original distribution was Ubuntutest breezy-autotest.
     >>> anon_browser.open(
     ...     'http://launchpad.test/%s/+source/test-history/'
     ...     '+publishinghistory' % new_distro.name)
-
     >>> table = find_tag_by_id(anon_browser.contents, 'publishing-summary')
     >>> print(extract_text(table))
     Date    Status    Target          Pocket   Component Section Version
@@ -86,13 +85,34 @@ original distribution was Ubuntutest breezy-autotest.
     Copied from Primary Archive for Foo-distro by Person123
     Originally uploaded to ubuntutest breezy-autotest in Primary Archive for Ubuntu Test
 
-A change-override request should show who made the request
+And in this new distro, a change-override on a copied archive should show both
+messages.
 
     >>> from lp.registry.interfaces.person import IPersonSet
     >>> from zope.component import getUtility
+    >>> from zope.security.proxy import removeSecurityProxy
 
     >>> login('foo.bar@canonical.com')
     >>> person = getUtility(IPersonSet).getByEmail('foo.bar@canonical.com')
+    >>> new_pub2_changed = removeSecurityProxy(new_pub2).changeOverride(
+    ...     new_component='universe', creator=person)
+    >>> logout()
+    >>> anon_browser.open(
+    ...     'http://launchpad.test/%s/+source/test-history/'
+    ...     '+publishinghistory' % new_distro.name)
+    >>> table = find_tag_by_id(anon_browser.contents, 'publishing-summary')
+    >>> print(extract_text(table))
+    Date    Status    Target          Pocket   Component Section Version
+    ... UTC Pending   Another-series  release  universe  base    666
+    Copied from ubuntutest breezy-autotest in Primary Archive for Ubuntu Test by Foo Bar
+    ... UTC Pending   Another-series  release  main      base    666
+    Copied from Primary Archive for Foo-distro by Person123
+    Originally uploaded to ubuntutest breezy-autotest in Primary Archive for Ubuntu Test
+
+Going back to the original distribution, a change-override request should
+show who made the request.
+
+    >>> login('foo.bar@canonical.com')
     >>> new_pub = source_pub.changeOverride(
     ...     new_component='universe', creator=person)
     >>> logout()

@@ -98,20 +98,20 @@
                 define="message string:${upload_archive/displayname}"
                 replace="message" />
             </tal:define>
-
-            <tal:comment condition="nothing">
-                Only show "creator" if we didn't show above, at the
-                previoud copied_from_archive "li" tag.
-            </tal:comment>
-            <tal:source_creator
-              condition="python: context.creator and not show_creator_on_top">
-              by <a tal:replace="structure context/creator/fmt:link"/>
-            </tal:source_creator>
-
-            <tal:source_sponsor condition="context/sponsor">
-              (sponsored by <a tal:replace="structure context/sponsor/fmt:link"/>)
-            </tal:source_sponsor>
           </tal:source_original_location>
+
+          <tal:comment condition="nothing">
+              Only show "creator" if we didn't show above, at the
+              previoud copied_from_archive "li" tag.
+          </tal:comment>
+          <tal:source_creator
+            condition="python: context.creator and not show_creator_on_top">
+            by <a tal:replace="structure context/creator/fmt:link"/>
+          </tal:source_creator>
+          <tal:source_sponsor condition="context/sponsor">
+            (sponsored by <a tal:replace="structure context/sponsor/fmt:link"/>)
+          </tal:source_sponsor>
+
           <tal:binary_build_location condition="view/is_binary">
             <tal:message
               define="build context/binarypackagerelease/build;
