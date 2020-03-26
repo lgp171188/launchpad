@@ -29,8 +29,6 @@ from lp.oci.interfaces.ocirecipebuild import (
     IOCIRecipeBuildSet,
     )
 from lp.oci.model.ocirecipebuild import OCIRecipeBuildSet
-from lp.registry.interfaces.distribution import IDistributionSet
-from lp.registry.interfaces.distroseries import IDistroSeriesSet
 from lp.registry.interfaces.series import SeriesStatus
 from lp.services.config import config
 from lp.services.features.testing import FeatureFixture
@@ -228,29 +226,22 @@ class TestOCIRecipeBuildSet(TestCaseWithFactory):
         distro_arch_series = self.factory.makeDistroArchSeries(
             distroseries=distroseries, architecturetag="i386",
             processor=processor)
-        distro_arch_series = self.factory.makeDistroArchSeries()
         oci_project = self.factory.makeOCIProject(pillar=distribution)
         recipe = self.factory.makeOCIRecipe(oci_project=oci_project)
         target = getUtility(IOCIRecipeBuildSet).new(
             requester, recipe, distro_arch_series)
         with admin_logged_in():
             self.assertProvides(target, IOCIRecipeBuild)
+            self.assertEqual(distro_arch_series, target.distro_arch_series)
 
     def test_new_oci_feature_flag_enabled(self):
         requester = self.factory.makePerson()
-        distribution = getUtility(IDistributionSet).getByName('ubuntu')
-        if distribution is None:
-            distribution = self.factory.makeDistribution(name='ubuntu')
-
-        distroseries = getUtility(IDistroSeriesSet).queryByName(
-            distribution, 'bionic')
-        if distroseries is None:
-            distroseries = self.factory.makeDistroSeries(
-                distribution=distribution, status=SeriesStatus.CURRENT,
-                name='bionic')
+        distribution = self.factory.makeDistribution()
+        distroseries = self.factory.makeDistroSeries(
+            distribution=distribution, status=SeriesStatus.CURRENT)
         processor = getUtility(IProcessorSet).getByName("386")
-        self.useFixture(FeatureFixture(
-            {'oci.build_series.ubuntu': 'bionic'}))
+        self.useFixture(FeatureFixture({
+            "oci.build_series.%s" % distribution.name: distroseries.name}))
         distro_arch_series = self.factory.makeDistroArchSeries(
             distroseries=distroseries, architecturetag="i386",
             processor=processor)
@@ -260,6 +251,7 @@ class TestOCIRecipeBuildSet(TestCaseWithFactory):
             requester, recipe, distro_arch_series)
         with admin_logged_in():
             self.assertProvides(target, IOCIRecipeBuild)
+            self.assertEqual(distro_arch_series, target.distro_arch_series)
 
     def test_getByID(self):
         builds = [self.factory.makeOCIRecipeBuild() for x in range(3)]

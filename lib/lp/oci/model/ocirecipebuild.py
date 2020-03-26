@@ -44,6 +44,7 @@ from lp.oci.interfaces.ocirecipebuild import (
     IOCIRecipeBuild,
     IOCIRecipeBuildSet,
     )
+from lp.registry.errors import NoSuchDistroSeries
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.registry.model.person import Person
 from lp.services.config import config
@@ -272,19 +273,17 @@ class OCIRecipeBuild(PackageBuildMixin, Storm):
 
     @property
     def distro_arch_series(self):
-        # For OCI builds if the distribution is Ubuntu we default to
-        # the series set by the feature flag.
-        # If the distribution of the OCIRecipeBuild is not Ubuntu we default
-        # to current series under that distribution.
-        use_oci_distro_arch_series_feature = bool(
-            getFeatureFlag('oci.build_series.%s' % self.distribution.name))
+        # For OCI builds we default to the series set by the feature flag.
+        # If the feature flag is not set we default to current series under
+        # the OCIRecipeBuild distribution.
 
-        if use_oci_distro_arch_series_feature:
+        try:
             oci_series = self.distribution.getSeries(
                 getFeatureFlag('oci.build_series.%s' % self.distribution.name))
             return oci_series.getDistroArchSeriesByProcessor(self.processor)
-        return self.distribution.currentseries.getDistroArchSeriesByProcessor(
-            self.processor)
+        except NoSuchDistroSeries:
+            return (self.distribution.currentseries.
+                    getDistroArchSeriesByProcessor(self.processor))
 
     def updateStatus(self, status, builder=None, slave_status=None,
                      date_started=None, date_finished=None,

@@ -227,13 +227,6 @@ flag_info = sorted([
      'bing',
      'Site search engine',
      ''),
-    ('oci.build_series.ubuntu',
-     'space delimited',
-     'Name of the series under the Ubuntu distribution for which we build '
-     'OCI images.',
-     'bionic',
-     '',
-     ''),
     ])
 
 # The set of all flag names that are documented.
