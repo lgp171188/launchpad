@@ -1,13 +1,16 @@
-<!-- Copyright 2015-2019 Canonical Ltd.  This software is licensed under the
+<!-- Copyright 2015-2020 Canonical Ltd.  This software is licensed under the
      GNU Affero General Public License version 3 (see the file LICENSE).
 -->
 <configure
     xmlns="http://namespaces.zope.org/zope"
     xmlns:i18n="http://namespaces.zope.org/i18n"
     xmlns:lp="http://namespaces.canonical.com/lp"
+    xmlns:webservice="http://namespaces.canonical.com/webservice"
     i18n_domain="launchpad">
 
     <include package=".browser" />
+
+    <webservice:register module="lp.oci.interfaces.webservice" />
 
     <!-- OCIRecipe -->
     <class
@@ -49,6 +52,14 @@
             permission="launchpad.Admin"
             interface="lp.oci.interfaces.ocirecipebuild.IOCIRecipeBuildAdmin" />
     </class>
+    <subscriber
+        for="lp.oci.interfaces.ocirecipebuild.IOCIRecipeBuild
+             lazr.lifecycle.interfaces.IObjectCreatedEvent"
+        handler="lp.oci.subscribers.ocirecipebuild.oci_recipe_build_created" />
+    <subscriber
+        for="lp.oci.interfaces.ocirecipebuild.IOCIRecipeBuild
+             lazr.lifecycle.interfaces.IObjectModifiedEvent"
+        handler="lp.oci.subscribers.ocirecipebuild.oci_recipe_build_status_changed" />
 
     <!-- OCIRecipeBuildSet -->
     <securedutility

@@ -57,7 +57,6 @@ from lp.translations.interfaces.translationmessage import (
 from lp.translations.interfaces.translations import TranslationConstants
 from lp.translations.utilities.gettext_po_importer import GettextPOImporter
 from lp.translations.utilities.kde_po_importer import KdePOImporter
-from lp.translations.utilities.mozilla_xpi_importer import MozillaXpiImporter
 from lp.translations.utilities.sanitize import (
     sanitize_translations_from_import,
     )
@@ -73,7 +72,6 @@ from lp.translations.utilities.validate import (
 importers = {
     TranslationFileFormat.KDEPO: KdePOImporter(),
     TranslationFileFormat.PO: GettextPOImporter(),
-    TranslationFileFormat.XPI: MozillaXpiImporter(),
     }
 
 

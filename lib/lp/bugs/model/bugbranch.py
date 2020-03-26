@@ -1,16 +1,23 @@
-# Copyright 2009 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Database classes for linking bugtasks and branches."""
 
+from __future__ import absolute_import, print_function, unicode_literals
+
 __metaclass__ = type
 
-__all__ = ["BugBranch",
-           "BugBranchSet"]
+__all__ = [
+    "BugBranch",
+    "BugBranchSet",
+    ]
 
-from sqlobject import (
-    ForeignKey,
-    IntCol,
+import pytz
+from storm.locals import (
+    DateTime,
+    Int,
+    Reference,
+    Store,
     )
 from zope.interface import implementer
 
@@ -20,23 +27,37 @@ from lp.bugs.interfaces.bugbranch import (
     )
 from lp.registry.interfaces.person import validate_public_person
 from lp.services.database.constants import UTC_NOW
-from lp.services.database.datetimecol import UtcDateTimeCol
 from lp.services.database.interfaces import IStore
-from lp.services.database.sqlbase import SQLBase
+from lp.services.database.stormbase import StormBase
 
 
 @implementer(IBugBranch)
-class BugBranch(SQLBase):
+class BugBranch(StormBase):
     """See `IBugBranch`."""
 
-    datecreated = UtcDateTimeCol(notNull=True, default=UTC_NOW)
-    bug = ForeignKey(dbName="bug", foreignKey="Bug", notNull=True)
-    branch_id = IntCol(dbName="branch", notNull=True)
-    branch = ForeignKey(dbName="branch", foreignKey="Branch", notNull=True)
+    __storm_table__ = 'BugBranch'
 
-    registrant = ForeignKey(
-        dbName='registrant', foreignKey='Person',
-        storm_validator=validate_public_person, notNull=True)
+    id = Int(primary=True)
+
+    datecreated = DateTime(
+        name='datecreated', tzinfo=pytz.UTC, allow_none=False, default=UTC_NOW)
+    bug_id = Int(name='bug', allow_none=False)
+    bug = Reference(bug_id, 'Bug.id')
+    branch_id = Int(name="branch", allow_none=False)
+    branch = Reference(branch_id, 'Branch.id')
+
+    registrant_id = Int(
+        name='registrant', allow_none=False, validator=validate_public_person)
+    registrant = Reference(registrant_id, 'Person.id')
+
+    def __init__(self, branch, bug, registrant):
+        super(BugBranch, self).__init__()
+        self.branch = branch
+        self.bug = bug
+        self.registrant = registrant
+
+    def destroySelf(self):
+        Store.of(self).remove(self)
 
 
 @implementer(IBugBranchSet)
@@ -54,7 +75,7 @@ class BugBranchSet:
 
         visible = get_bug_privacy_filter(user)
         return IStore(BugBranch).find(
-            BugBranch.branchID,
+            BugBranch.branch_id,
             BugBranch.branch_id.is_in(branch_ids),
-            BugTaskFlat.bug_id == BugBranch.bugID,
+            BugTaskFlat.bug_id == BugBranch.bug_id,
             visible).config(distinct=True)

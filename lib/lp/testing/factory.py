@@ -3989,7 +3989,8 @@ class BareLaunchpadObjectFactory(ObjectFactory):
                                            sourcepackagename=None,
                                            version=None,
                                            architecturespecific=False,
-                                           with_debug=False, with_file=False):
+                                           with_debug=False, with_file=False,
+                                           creator=None):
         """Make a `BinaryPackagePublishingHistory`."""
         if distroarchseries is None:
             if archive is None:
@@ -4082,7 +4083,8 @@ class BareLaunchpadObjectFactory(ObjectFactory):
                 binpackageformat=BinaryPackageFormat.DDEB,
                 sourcepackagename=sourcepackagename,
                 architecturespecific=architecturespecific,
-                with_file=with_file)
+                with_file=with_file,
+                creator=creator)
             removeSecurityProxy(bpph.binarypackagerelease).debug_package = (
                 debug_bpph.binarypackagerelease)
             return bpphs[0], debug_bpph
@@ -4992,7 +4994,12 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         if requester is None:
             requester = self.makePerson()
         if distro_arch_series is None:
-            distroseries = self.makeDistroSeries(status=SeriesStatus.CURRENT)
+            if recipe is not None:
+                distribution = recipe.oci_project.distribution
+            else:
+                distribution = None
+            distroseries = self.makeDistroSeries(
+                distribution=distribution, status=SeriesStatus.CURRENT)
             processor = getUtility(IProcessorSet).getByName("386")
             distro_arch_series = self.makeDistroArchSeries(
                 distroseries=distroseries, architecturetag="i386",

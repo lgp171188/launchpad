@@ -38,7 +38,10 @@ from storm.expr import (
     Select,
     SQL,
     )
-from storm.locals import AutoReload
+from storm.locals import (
+    AutoReload,
+    ReferenceSet,
+    )
 from storm.store import Store
 from zope.component import getUtility
 from zope.event import notify
@@ -441,12 +444,12 @@ class Branch(SQLBase, WebhookTargetMixin, BzrIdentityMixin):
         'Person', joinColumn='branch', otherColumn='person',
         intermediateTable='BranchSubscription', orderBy='name')
 
-    bug_branches = SQLMultipleJoin(
-        'BugBranch', joinColumn='branch', orderBy='id')
+    bug_branches = ReferenceSet(
+        'id', 'BugBranch.branch_id', order_by='BugBranch.id')
 
-    linked_bugs = SQLRelatedJoin(
-        'Bug', joinColumn='branch', otherColumn='bug',
-        intermediateTable='BugBranch', orderBy='id')
+    linked_bugs = ReferenceSet(
+        'id', 'BugBranch.branch_id',
+        'BugBranch.bug_id', 'Bug.id', order_by='Bug.id')
 
     def getLinkedBugTasks(self, user, status_filter=None):
         """See `IBranch`."""
@@ -465,8 +468,9 @@ class Branch(SQLBase, WebhookTargetMixin, BzrIdentityMixin):
         """See `IBranch`."""
         return bug.unlinkBranch(self, user)
 
-    spec_links = SQLMultipleJoin(
-        'SpecificationBranch', joinColumn='branch', orderBy='id')
+    spec_links = ReferenceSet(
+        'id', 'SpecificationBranch.branch_id',
+        order_by='SpecificationBranch.id')
 
     def getSpecificationLinks(self, user):
         """See `IBranch`."""
@@ -474,10 +478,10 @@ class Branch(SQLBase, WebhookTargetMixin, BzrIdentityMixin):
             SpecificationBranch,
             Join(
                 Specification,
-                SpecificationBranch.specificationID == Specification.id)]
+                SpecificationBranch.specification_id == Specification.id)]
         return Store.of(self).using(*tables).find(
             SpecificationBranch,
-            SpecificationBranch.branchID == self.id,
+            SpecificationBranch.branch_id == self.id,
             *get_specification_privacy_filter(user))
 
     def linkSpecification(self, spec, registrant):
@@ -1259,7 +1263,7 @@ class Branch(SQLBase, WebhookTargetMixin, BzrIdentityMixin):
         jobs = Store.of(self).find(
             BranchJob,
             BranchJob.branch == self,
-            Job.id == BranchJob.jobID,
+            Job.id == BranchJob.job_id,
             Job._status.is_in([JobStatus.WAITING, JobStatus.RUNNING]),
             BranchJob.job_type == BranchJobType.SCAN_BRANCH)
         pending_scan_job = not jobs.is_empty()
@@ -1428,7 +1432,7 @@ class Branch(SQLBase, WebhookTargetMixin, BzrIdentityMixin):
         # Remove BranchJobs.
         store = Store.of(self)
         affected_jobs = Select(
-            [BranchJob.jobID],
+            [BranchJob.job_id],
             And(BranchJob.job == Job.id, BranchJob.branch == self))
         store.find(Job, Job.id.is_in(affected_jobs)).remove()
 
@@ -1494,7 +1498,7 @@ class Branch(SQLBase, WebhookTargetMixin, BzrIdentityMixin):
         jobs = store.find(
             BranchJob,
             BranchJob.branch == self,
-            Job.id == BranchJob.jobID,
+            Job.id == BranchJob.job_id,
             Job._status != JobStatus.COMPLETED,
             Job._status != JobStatus.FAILED,
             BranchJob.job_type == BranchJobType.UPGRADE_BRANCH)

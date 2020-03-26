@@ -1,4 +1,4 @@
-# Copyright 2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2019-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """A recipe for building Open Container Initiative images."""
@@ -61,6 +61,8 @@ from lp.services.database.stormexpr import (
     Greatest,
     NullsLast,
     )
+from lp.services.webhooks.interfaces import IWebhookSet
+from lp.services.webhooks.model import WebhookTargetMixin
 
 
 def oci_recipe_modified(recipe, event):
@@ -73,7 +75,7 @@ def oci_recipe_modified(recipe, event):
 
 
 @implementer(IOCIRecipe)
-class OCIRecipe(Storm):
+class OCIRecipe(Storm, WebhookTargetMixin):
 
     __storm_table__ = 'OCIRecipe'
 
@@ -97,9 +99,9 @@ class OCIRecipe(Storm):
 
     official = Bool(name="official", default=False)
 
-    git_repository_id = Int(name="git_repository", allow_none=False)
+    git_repository_id = Int(name="git_repository", allow_none=True)
     git_repository = Reference(git_repository_id, "GitRepository.id")
-    git_path = Unicode(name="git_path", allow_none=False)
+    git_path = Unicode(name="git_path", allow_none=True)
     build_file = Unicode(name="build_file", allow_none=False)
 
     require_virtualized = Bool(name="require_virtualized", default=True,
@@ -123,6 +125,10 @@ class OCIRecipe(Storm):
         self.date_last_modified = date_created
         self.git_ref = git_ref
 
+    @property
+    def valid_webhook_event_types(self):
+        return ["oci-recipe:build:0.1"]
+
     def destroySelf(self):
         """See `IOCIRecipe`."""
         # XXX twom 2019-11-26 This needs to expand as more build artifacts
@@ -137,6 +143,7 @@ class OCIRecipe(Storm):
         build_farm_job_ids = list(store.find(
             OCIRecipeBuild.build_farm_job_id, OCIRecipeBuild.recipe == self))
         store.find(OCIRecipeBuild, OCIRecipeBuild.recipe == self).remove()
+        getUtility(IWebhookSet).delete(self.webhooks)
         store.remove(self)
         store.find(
             BuildFarmJob, BuildFarmJob.id.is_in(build_farm_job_ids)).remove()
@@ -306,13 +313,25 @@ class OCIRecipeSet:
         return oci_recipe
 
     def findByOwner(self, owner):
-        """See `IOCIRecipe`."""
+        """See `IOCIRecipeSet`."""
         return IStore(OCIRecipe).find(OCIRecipe, OCIRecipe.owner == owner)
 
     def findByOCIProject(self, oci_project):
-        """See `IOCIRecipe`."""
+        """See `IOCIRecipeSet`."""
         return IStore(OCIRecipe).find(
             OCIRecipe, OCIRecipe.oci_project == oci_project)
+
+    def findByGitRepository(self, repository, paths=None):
+        """See `IOCIRecipeSet`."""
+        clauses = [OCIRecipe.git_repository == repository]
+        if paths is not None:
+            clauses.append(OCIRecipe.git_path.is_in(paths))
+        return IStore(OCIRecipe).find(OCIRecipe, *clauses)
+
+    def detachFromGitRepository(self, repository):
+        """See `IOCIRecipeSet`."""
+        self.findByGitRepository(repository).set(
+            git_repository_id=None, git_path=None, date_last_modified=UTC_NOW)
 
     def preloadDataForOCIRecipes(self, recipes, user=None):
         """See `IOCIRecipeSet`."""

@@ -4,6 +4,14 @@
   xmlns:i18n="http://xml.zope.org/namespaces/i18n"
   omit-tag="">
   <ul>
+    <li tal:condition="python: context.creator
+                               and not view.wasCopied()
+                               and not view.wasDeleted()">
+      Created
+      <span tal:attributes="title context/datecreated/fmt:datetime"
+            tal:content="context/datecreated/fmt:displaydate" />
+      by <a tal:replace="structure context/creator/fmt:link"/>
+    </li>
     <li tal:condition="view/isRemoved">
       Removed from disk
       <span tal:attributes="title context/dateremoved/fmt:datetime"

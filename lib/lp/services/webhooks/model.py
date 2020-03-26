@@ -1,4 +1,4 @@
-# Copyright 2015-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -107,6 +107,9 @@ class Webhook(StormBase):
     livefs_id = Int(name='livefs')
     livefs = Reference(livefs_id, 'LiveFS.id')
 
+    oci_recipe_id = Int(name='oci_recipe')
+    oci_recipe = Reference(oci_recipe_id, 'OCIRecipe.id')
+
     registrant_id = Int(name='registrant', allow_none=False)
     registrant = Reference(registrant_id, 'Person.id')
     date_created = DateTime(tzinfo=utc, allow_none=False)
@@ -128,6 +131,8 @@ class Webhook(StormBase):
             return self.snap
         elif self.livefs is not None:
             return self.livefs
+        elif self.oci_recipe is not None:
+            return self.oci_recipe
         else:
             raise AssertionError("No target.")
 
@@ -181,6 +186,7 @@ class WebhookSet:
             secret):
         from lp.code.interfaces.branch import IBranch
         from lp.code.interfaces.gitrepository import IGitRepository
+        from lp.oci.interfaces.ocirecipe import IOCIRecipe
         from lp.snappy.interfaces.snap import ISnap
         from lp.soyuz.interfaces.livefs import ILiveFS
 
@@ -193,6 +199,8 @@ class WebhookSet:
             hook.snap = target
         elif ILiveFS.providedBy(target):
             hook.livefs = target
+        elif IOCIRecipe.providedBy(target):
+            hook.oci_recipe = target
         else:
             raise AssertionError("Unsupported target: %r" % (target,))
         hook.registrant = registrant
@@ -216,6 +224,7 @@ class WebhookSet:
     def findByTarget(self, target):
         from lp.code.interfaces.branch import IBranch
         from lp.code.interfaces.gitrepository import IGitRepository
+        from lp.oci.interfaces.ocirecipe import IOCIRecipe
         from lp.snappy.interfaces.snap import ISnap
         from lp.soyuz.interfaces.livefs import ILiveFS
 
@@ -227,6 +236,8 @@ class WebhookSet:
             target_filter = Webhook.snap == target
         elif ILiveFS.providedBy(target):
             target_filter = Webhook.livefs == target
+        elif IOCIRecipe.providedBy(target):
+            target_filter = Webhook.oci_recipe == target
         else:
             raise AssertionError("Unsupported target: %r" % (target,))
         return IStore(Webhook).find(Webhook, target_filter).order_by(

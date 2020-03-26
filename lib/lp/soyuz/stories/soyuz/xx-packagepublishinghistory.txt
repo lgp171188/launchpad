@@ -23,6 +23,7 @@ shows the complete history of a package in all series.
     >>> print(extract_text(table))
     Date    Status    Target     Pocket   Component Section Version
     ... UTC Published Breezy ... release  main      base    666
+    Created ... ago by Foo Bar
     Published ... ago
     >>> print(table.findAll("tr")[2].td["colspan"])
     8
@@ -85,6 +86,29 @@ original distribution was Ubuntutest breezy-autotest.
     Copied from Primary Archive for Foo-distro by Person123
     Originally uploaded to ubuntutest breezy-autotest in Primary Archive for Ubuntu Test
 
+A change-override request should show who made the request
+
+    >>> from lp.registry.interfaces.person import IPersonSet
+    >>> from zope.component import getUtility
+
+    >>> login('foo.bar@canonical.com')
+    >>> person = getUtility(IPersonSet).getByEmail('foo.bar@canonical.com')
+    >>> new_pub = source_pub.changeOverride(
+    ...     new_component='universe', creator=person)
+    >>> logout()
+
+    >>> anon_browser.open(
+    ...     'http://launchpad.test/ubuntutest/+source/test-history/'
+    ...     '+publishinghistory')
+    >>> table = find_tag_by_id(anon_browser.contents, 'publishing-summary')
+    >>> print(extract_text(table))
+    Date    Status    Target     Pocket   Component Section Version
+    ... UTC Pending   Breezy ... release  universe  base    666
+    Created ... ago by Foo Bar
+    ... UTC Published Breezy ... release  main      base    666
+    Created ... ago by Foo Bar
+    Published ... ago
+
 A publishing record will be shown as deleted in the publishing history after a
 request for deletion by a user.
 
@@ -100,6 +124,8 @@ request for deletion by a user.
     >>> table = find_tag_by_id(anon_browser.contents, 'publishing-summary')
     >>> print(extract_text(table))
     Date    Status    Target     Pocket   Component Section Version
+    ... UTC Pending   Breezy ... release  universe  base    666
+    Created ... ago by Foo Bar
             Deleted   Breezy ... release  main      base    666
     Deleted ... ago by ... fix bug 1
     Published ... ago

@@ -1,4 +1,4 @@
-# Copyright 2015-2016 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 from storm.store import Store
@@ -13,6 +13,7 @@ from zope.security.checker import getChecker
 from zope.security.proxy import removeSecurityProxy
 
 from lp.app.enums import InformationType
+from lp.oci.interfaces.ocirecipe import OCI_RECIPE_WEBHOOKS_FEATURE_FLAG
 from lp.registry.enums import BranchSharingPolicy
 from lp.services.database.interfaces import IStore
 from lp.services.features.testing import FeatureFixture
@@ -414,3 +415,16 @@ class TestWebhookSetLiveFS(TestWebhookSetBase, TestCaseWithFactory):
                              LIVEFS_WEBHOOKS_FEATURE_FLAG: "on"}):
             return self.factory.makeLiveFS(registrant=owner,
                                            owner=owner, **kwargs)
+
+
+class TestWebhookSetOCIRecipe(TestWebhookSetBase, TestCaseWithFactory):
+
+    event_type = 'oci-recipe:build:0.1'
+
+    def makeTarget(self, owner=None, **kwargs):
+        if owner is None:
+            owner = self.factory.makePerson()
+
+        with FeatureFixture({OCI_RECIPE_WEBHOOKS_FEATURE_FLAG: "on"}):
+            return self.factory.makeOCIRecipe(
+                registrant=owner, owner=owner, **kwargs)
