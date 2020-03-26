@@ -44,7 +44,6 @@ from lp.oci.interfaces.ocirecipebuild import (
     IOCIRecipeBuild,
     IOCIRecipeBuildSet,
     )
-from lp.registry.errors import NoSuchDistroSeries
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.registry.model.person import Person
 from lp.services.config import config
@@ -277,13 +276,13 @@ class OCIRecipeBuild(PackageBuildMixin, Storm):
         # If the feature flag is not set we default to current series under
         # the OCIRecipeBuild distribution.
 
-        try:
-            oci_series = self.distribution.getSeries(
-                getFeatureFlag('oci.build_series.%s' % self.distribution.name))
-            return oci_series.getDistroArchSeriesByProcessor(self.processor)
-        except NoSuchDistroSeries:
-            return (self.distribution.currentseries.
-                    getDistroArchSeriesByProcessor(self.processor))
+        oci_series = getFeatureFlag('oci.build_series.%s'
+                                    % self.distribution.name)
+        if oci_series:
+            oci_series = self.distribution.getSeries(oci_series)
+        else:
+            oci_series = self.distribution.currentseries
+        return oci_series.getDistroArchSeriesByProcessor(self.processor)
 
     def updateStatus(self, status, builder=None, slave_status=None,
                      date_started=None, date_finished=None,
