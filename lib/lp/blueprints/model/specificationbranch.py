@@ -1,7 +1,9 @@
-# Copyright 2009 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Database classes for linking specifications and branches."""
+
+from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 
@@ -10,9 +12,12 @@ __all__ = [
     "SpecificationBranchSet",
     ]
 
-from sqlobject import (
-    ForeignKey,
-    IN,
+import pytz
+from storm.locals import (
+    DateTime,
+    Int,
+    Reference,
+    Store,
     )
 from zope.interface import implementer
 
@@ -22,22 +27,37 @@ from lp.blueprints.interfaces.specificationbranch import (
     )
 from lp.registry.interfaces.person import validate_public_person
 from lp.services.database.constants import UTC_NOW
-from lp.services.database.datetimecol import UtcDateTimeCol
-from lp.services.database.sqlbase import SQLBase
+from lp.services.database.interfaces import IStore
+from lp.services.database.stormbase import StormBase
 
 
 @implementer(ISpecificationBranch)
-class SpecificationBranch(SQLBase):
+class SpecificationBranch(StormBase):
     """See `ISpecificationBranch`."""
 
-    datecreated = UtcDateTimeCol(notNull=True, default=UTC_NOW)
-    specification = ForeignKey(dbName="specification",
-                               foreignKey="Specification", notNull=True)
-    branch = ForeignKey(dbName="branch", foreignKey="Branch", notNull=True)
+    __storm_table__ = 'SpecificationBranch'
 
-    registrant = ForeignKey(
-        dbName='registrant', foreignKey='Person',
-        storm_validator=validate_public_person, notNull=True)
+    id = Int(primary=True)
+
+    datecreated = DateTime(
+        name='datecreated', tzinfo=pytz.UTC, allow_none=False, default=UTC_NOW)
+    specification_id = Int(name='specification', allow_none=False)
+    specification = Reference(specification_id, 'Specification.id')
+    branch_id = Int(name='branch', allow_none=False)
+    branch = Reference(branch_id, 'Branch.id')
+
+    registrant_id = Int(
+        name='registrant', allow_none=False, validator=validate_public_person)
+    registrant = Reference(registrant_id, 'Person.id')
+
+    def __init__(self, specification, branch, registrant):
+        super(SpecificationBranch, self).__init__()
+        self.specification = specification
+        self.branch = branch
+        self.registrant = registrant
+
+    def destroySelf(self):
+        Store.of(self).remove(self)
 
 
 @implementer(ISpecificationBranchSet)
@@ -50,7 +70,8 @@ class SpecificationBranchSet:
         if not branch_ids:
             return []
 
-        # When specification gain the ability to be private, this
+        # When specifications gain the ability to be private, this
         # method will need to be updated to enforce the privacy checks.
-        return SpecificationBranch.select(
-            IN(SpecificationBranch.q.branchID, branch_ids))
+        return IStore(SpecificationBranch).find(
+            SpecificationBranch,
+            SpecificationBranch.branch_id.is_in(branch_ids))
