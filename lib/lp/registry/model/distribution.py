@@ -236,6 +236,9 @@ class Distribution(SQLBase, BugTargetBase, MakesAnnouncements,
     mirror_admin = ForeignKey(
         dbName='mirror_admin', foreignKey='Person',
         storm_validator=validate_public_person, notNull=True)
+    oci_project_admin = ForeignKey(
+        dbName='oci_project_admin', foreignKey='Person',
+        storm_validator=validate_public_person, notNull=False)
     translationgroup = ForeignKey(
         dbName='translationgroup', foreignKey='TranslationGroup',
         notNull=False, default=None)

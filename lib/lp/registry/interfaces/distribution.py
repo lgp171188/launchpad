@@ -249,6 +249,11 @@ class IDistributionPublic(
         description=_("The person or team that has the rights to review and "
                       "mark this distribution's mirrors as official."),
         required=True, vocabulary='ValidPersonOrTeam'))
+    oci_project_admin = exported(PublicPersonChoice(
+        title=_("OCI Project Administrator"),
+        description=_("The person or team that has the rights to manage OCI "
+                      "Projects."),
+        required=False, vocabulary='ValidPersonOrTeam'))
     archive_mirrors = exported(doNotSnapshot(
         CollectionField(
             description=_("All enabled and official ARCHIVE mirrors "
