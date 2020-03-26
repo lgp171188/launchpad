@@ -108,7 +108,7 @@
             condition="python: context.creator and not show_creator_on_top">
             by <a tal:replace="structure context/creator/fmt:link"/>
           </tal:source_creator>
-          <tal:source_sponsor condition="context/sponsor">
+          <tal:source_sponsor condition="python: view.is_source and context.sponsor">
             (sponsored by <a tal:replace="structure context/sponsor/fmt:link"/>)
           </tal:source_sponsor>
 
