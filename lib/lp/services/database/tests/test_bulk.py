@@ -1,4 +1,4 @@
-# Copyright 2010-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test the bulk database functions."""
@@ -264,7 +264,7 @@ class TestLoaders(TestCaseWithFactory):
         self.assertNotEqual(0, len(expected))
         self.assertEqual(expected,
             set(bulk.load_referencing(BranchSubscription, owned_objects,
-                ['branchID'])))
+                ['branch_id'])))
 
 
 class TestCreate(TestCaseWithFactory):
