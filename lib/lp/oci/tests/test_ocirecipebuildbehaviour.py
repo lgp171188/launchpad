@@ -33,7 +33,6 @@ from testtools.twistedsupport import (
     AsynchronousDeferredRunTestForBrokenTwisted,
     )
 from twisted.internet import defer
-from twisted.trial.unittest import TestCase as TrialTestCase
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
@@ -67,6 +66,7 @@ from lp.buildmaster.tests.test_buildfarmjobbehaviour import (
 from lp.oci.model.ocirecipebuildbehaviour import OCIRecipeBuildBehaviour
 from lp.registry.interfaces.series import SeriesStatus
 from lp.services.config import config
+from lp.services.features.testing import FeatureFixture
 from lp.services.log.logger import DevNullLogger
 from lp.services.webapp import canonical_url
 from lp.soyuz.adapters.archivedependencies import (
@@ -95,12 +95,13 @@ class MakeOCIBuildMixin:
         build.queueBuild()
         return build
 
-    def makeJob(self, git_ref, recipe=None):
+    def makeJob(self, git_ref, recipe=None, build=None):
         """Create a sample `IOCIRecipeBuildBehaviour`."""
-        if recipe is None:
-            build = self.factory.makeOCIRecipeBuild()
-        else:
-            build = self.factory.makeOCIRecipeBuild(recipe=recipe)
+        if build is None:
+            if recipe is None:
+                build = self.factory.makeOCIRecipeBuild()
+            else:
+                build = self.factory.makeOCIRecipeBuild(recipe=recipe)
         build.recipe.git_ref = git_ref
 
         job = IBuildFarmJobBehaviour(build)
@@ -338,6 +339,45 @@ class TestAsyncOCIRecipeBuildBehaviour(MakeOCIBuildMixin, TestCaseWithFactory):
         yield job.dispatchBuildToSlave(DevNullLogger())
         self.assertEqual(
             ('ensurepresent', chroot_lfa.http_url, '', ''), slave.call_log[0])
+
+    @defer.inlineCallbacks
+    def test_dispatchBuildToSlave_oci_feature_flag_enabled(self):
+        self.pushConfig("snappy", builder_proxy_host=None)
+        [ref] = self.factory.makeGitRefs()
+
+        distribution = self.factory.makeDistribution()
+        distroseries = self.factory.makeDistroSeries(
+            distribution=distribution, status=SeriesStatus.CURRENT)
+        processor = getUtility(IProcessorSet).getByName("386")
+        self.useFixture(FeatureFixture({
+            "oci.build_series.%s" % distribution.name: distroseries.name}))
+        distro_arch_series = self.factory.makeDistroArchSeries(
+            distroseries=distroseries, architecturetag="i386",
+            processor=processor)
+
+        build = self.factory.makeOCIRecipeBuild(
+            distro_arch_series=distro_arch_series)
+        job = self.makeJob(git_ref=ref, build=build)
+        builder = MockBuilder()
+        builder.processor = job.build.processor
+        slave = OkSlave()
+        job.setBuilder(builder, slave)
+        chroot_lfa = self.factory.makeLibraryFileAlias(db_only=True)
+
+        job.build.distro_arch_series.addOrUpdateChroot(
+            chroot_lfa, image_type=BuildBaseImageType.CHROOT)
+        lxd_lfa = self.factory.makeLibraryFileAlias(db_only=True)
+        job.build.distro_arch_series.addOrUpdateChroot(
+            lxd_lfa, image_type=BuildBaseImageType.LXD)
+        yield job.dispatchBuildToSlave(DevNullLogger())
+        self.assertEqual(distroseries.name,
+            job.build.distro_arch_series.distroseries.name)
+        self.assertEqual(
+            ('ensurepresent', lxd_lfa.http_url, '', ''), slave.call_log[0])
+        # grab the build method log from the OKMockSlave
+        # and check inside the arguments dict that we build
+        # for Distro series
+        self.assertEqual(distroseries.name, slave.call_log[1][5]['series'])
 
 
 class TestHandleStatusForOCIRecipeBuild(MakeOCIBuildMixin,
