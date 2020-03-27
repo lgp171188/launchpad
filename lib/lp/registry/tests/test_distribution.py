@@ -696,31 +696,36 @@ class DistributionOCIProjectAdminPermission(TestCaseWithFactory):
 
     def setUp(self):
         super(DistributionOCIProjectAdminPermission, self).setUp()
-        self.simple_user = self.factory.makePerson()
-        login_person(self.simple_user)
 
     def test_check_oci_project_admin_person(self):
-        admin = self.factory.makeAdministrator()
-        with person_logged_in(admin):
-            person1 = self.factory.makePerson()
-            person2 = self.factory.makePerson()
-            distro = self.factory.makeDistribution(oci_project_admin=person1)
+        person1 = self.factory.makePerson()
+        person2 = self.factory.makePerson()
+        distro = self.factory.makeDistribution(oci_project_admin=person1)
 
         self.assertTrue(distro.canAdministerOCIProjects(person1))
         self.assertFalse(distro.canAdministerOCIProjects(person2))
+        self.assertFalse(distro.canAdministerOCIProjects(None))
 
     def test_check_oci_project_admin_team(self):
+        person1 = self.factory.makePerson()
+        person2 = self.factory.makePerson()
+        person3 = self.factory.makePerson()
+        team = self.factory.makeTeam(owner=person1)
+        distro = self.factory.makeDistribution(oci_project_admin=team)
+
         admin = self.factory.makeAdministrator()
         with person_logged_in(admin):
-            person1 = self.factory.makePerson()
-            person2 = self.factory.makePerson()
-            person3 = self.factory.makePerson()
-            team = self.factory.makeTeam(owner=person1)
             person2.join(team)
-
-            distro = self.factory.makeDistribution(oci_project_admin=team)
 
         self.assertTrue(distro.canAdministerOCIProjects(team))
         self.assertTrue(distro.canAdministerOCIProjects(person1))
         self.assertTrue(distro.canAdministerOCIProjects(person2))
         self.assertFalse(distro.canAdministerOCIProjects(person3))
+        self.assertFalse(distro.canAdministerOCIProjects(None))
+
+    def test_check_oci_project_admin_without_any_admin(self):
+        person1 = self.factory.makePerson()
+        distro = self.factory.makeDistribution(oci_project_admin=None)
+
+        self.assertFalse(distro.canAdministerOCIProjects(person1))
+        self.assertFalse(distro.canAdministerOCIProjects(None))

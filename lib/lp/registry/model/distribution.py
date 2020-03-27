@@ -1365,6 +1365,8 @@ class Distribution(SQLBase, BugTargetBase, MakesAnnouncements,
 
     def canAdministerOCIProjects(self, person):
         """See `IDistribution`."""
+        if person is None or self.oci_project_admin is None:
+            return False
         if person == self.oci_project_admin:
             return True
         if self.oci_project_admin.is_team:
