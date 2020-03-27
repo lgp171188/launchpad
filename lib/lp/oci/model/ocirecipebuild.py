@@ -55,6 +55,7 @@ from lp.services.database.interfaces import (
     IMasterStore,
     IStore,
     )
+from lp.services.features import getFeatureFlag
 from lp.services.librarian.model import (
     LibraryFileAlias,
     LibraryFileContent,
@@ -271,8 +272,17 @@ class OCIRecipeBuild(PackageBuildMixin, Storm):
 
     @property
     def distro_arch_series(self):
-        return self.distribution.currentseries.getDistroArchSeriesByProcessor(
-            self.processor)
+        # For OCI builds we default to the series set by the feature flag.
+        # If the feature flag is not set we default to current series under
+        # the OCIRecipeBuild distribution.
+
+        oci_series = getFeatureFlag('oci.build_series.%s'
+                                    % self.distribution.name)
+        if oci_series:
+            oci_series = self.distribution.getSeries(oci_series)
+        else:
+            oci_series = self.distribution.currentseries
+        return oci_series.getDistroArchSeriesByProcessor(self.processor)
 
     def updateStatus(self, status, builder=None, slave_status=None,
                      date_started=None, date_finished=None,
