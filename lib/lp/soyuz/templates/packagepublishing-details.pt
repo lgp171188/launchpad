@@ -107,8 +107,7 @@
           </tal:comment>
 
           <tal:source_creator_and_sponsor condition="not: chained_copies">
-              <tal:source_creator
-                condition="python: context.creator">
+              <tal:source_creator condition="context/creator">
                 by <a tal:replace="structure context/creator/fmt:link"/>
               </tal:source_creator>
               <tal:source_sponsor condition="python: view.is_source and context.sponsor">
