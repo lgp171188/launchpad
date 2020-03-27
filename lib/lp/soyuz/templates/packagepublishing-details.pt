@@ -51,11 +51,11 @@
     </tal:comment>
     <tal:copied tal:define="
           copied_from_archive context/copied_from_archive;
-          upload_archive view/uploadArchive;
-          show_creator_on_top python: copied_from_archive and copied_from_archive != upload_archive"
+          upload_archive view/upload_archive;
+          chained_copies python: copied_from_archive and copied_from_archive != upload_archive"
           tal:condition="view/wasCopied">
         <li tal:define="linkify_archive view/linkify_copied_from_archive"
-            tal:condition="show_creator_on_top">
+            tal:condition="chained_copies">
               Copied from
               <a tal:condition="linkify_archive"
                  tal:attributes="href copied_from_archive/fmt:url"
@@ -70,14 +70,12 @@
         </li>
 
         <li>
-          <span tal:condition="python: copied_from_archive is not None
-                                       and copied_from_archive != upload_archive">
+          <span tal:condition="chained_copies">
             Originally
             <p tal:replace="python: 'uploaded to' if view.is_source
                                     else 'built as'" />
           </span>
-          <span tal:condition="python: copied_from_archive is None
-                                       or copied_from_archive == upload_archive">
+          <span tal:condition="not: chained_copies">
             Copied from
           </span>
 
@@ -102,10 +100,10 @@
 
           <tal:comment condition="nothing">
               Only show "creator" if we didn't show above, at the
-              previoud copied_from_archive "li" tag.
+              previous copied_from_archive "li" tag.
           </tal:comment>
           <tal:source_creator
-            condition="python: context.creator and not show_creator_on_top">
+            condition="python: context.creator and not chained_copies">
             by <a tal:replace="structure context/creator/fmt:link"/>
           </tal:source_creator>
           <tal:source_sponsor condition="python: view.is_source and context.sponsor">
@@ -123,6 +121,6 @@
               replace="message" />
           </tal:binary_build_location>
         </li>
-      </tal:copied>
+    </tal:copied>
   </ul>
 </tal:root>

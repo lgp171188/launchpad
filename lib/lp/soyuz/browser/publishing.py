@@ -278,7 +278,7 @@ class SourcePublishingRecordView(BasePublishingRecordView):
         return False
 
     @property
-    def uploadArchive(self):
+    def upload_archive(self):
         """Get the original archive from this binary build if this was a
         copied publication.
         """
@@ -429,7 +429,7 @@ class BinaryPublishingRecordView(BasePublishingRecordView):
         return False
 
     @property
-    def uploadArchive(self):
+    def upload_archive(self):
         """Get the original archive from this binary build if this was a
         copied publication.
         """

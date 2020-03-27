@@ -1032,15 +1032,13 @@ class CopyCheckerTestCase(TestCaseWithFactory):
             purpose=ArchivePurpose.PPA)
 
         copied_source = source.copyTo(hoary, source.pocket, target_archive)
-        copied_source = removeSecurityProxy(copied_source)
         self.assertThat(
             copied_source, MatchesStructure.byEquality(
                     archive=target_archive,
                     copied_from_archive=source.archive))
 
         copied_binaries = binary.copyTo(hoary, source.pocket, target_archive)
-        copied_binaries = removeSecurityProxy(copied_binaries)
-        self.assertEqual(1, len(copied_binaries))
+
         self.assertThat(
             copied_binaries, MatchesListwise([
                 MatchesStructure.byEquality(
