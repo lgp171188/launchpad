@@ -31,9 +31,9 @@ later, implementations having facets and menus will be defined.
 
     # Create a fake module that we'll patch our examples into.
 
-    >>> import new
     >>> import sys
-    >>> cookingexample = new.module('cookingexample')
+    >>> import types
+    >>> cookingexample = types.ModuleType('cookingexample')
     >>> sys.modules['lp.app.cookingexample'] = cookingexample
 
     >>> cookingexample.ICookbook = ICookbook
