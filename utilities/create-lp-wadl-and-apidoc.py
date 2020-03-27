@@ -22,6 +22,7 @@ import subprocess
 import sys
 
 from lazr.restful.interfaces import IWebServiceConfiguration
+import six
 from zope.component import getUtility
 from zope.pagetemplate.pagetemplatefile import PageTemplateFile
 
@@ -36,9 +37,8 @@ from lp.systemhomes import WebServiceApplication
 
 def write(filename, content, timestamp):
     """Replace the named file with the given string."""
-    f = open(filename, 'w')
-    f.write(content)
-    f.close()
+    with open(filename, 'wb') as f:
+        f.write(six.ensure_binary(content))
     os.utime(filename, (timestamp, timestamp))  # (atime, mtime)
 
 
