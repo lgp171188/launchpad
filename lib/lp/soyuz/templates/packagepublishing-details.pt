@@ -67,6 +67,9 @@
               <tal:creator condition="context/creator">
                 by <a tal:replace="structure context/creator/fmt:link"/>
               </tal:creator>
+              <tal:source_sponsor condition="python: view.is_source and context.sponsor">
+                (sponsored by <a tal:replace="structure context/sponsor/fmt:link"/>)
+              </tal:source_sponsor>
         </li>
 
         <li>
@@ -102,13 +105,16 @@
               Only show "creator" if we didn't show above, at the
               previous copied_from_archive "li" tag.
           </tal:comment>
-          <tal:source_creator
-            condition="python: context.creator and not chained_copies">
-            by <a tal:replace="structure context/creator/fmt:link"/>
-          </tal:source_creator>
-          <tal:source_sponsor condition="python: view.is_source and context.sponsor">
-            (sponsored by <a tal:replace="structure context/sponsor/fmt:link"/>)
-          </tal:source_sponsor>
+
+          <tal:source_creator_and_sponsor condition="not: chained_copies">
+              <tal:source_creator
+                condition="python: context.creator">
+                by <a tal:replace="structure context/creator/fmt:link"/>
+              </tal:source_creator>
+              <tal:source_sponsor condition="python: view.is_source and context.sponsor">
+                (sponsored by <a tal:replace="structure context/sponsor/fmt:link"/>)
+              </tal:source_sponsor>
+           </tal:source_creator_and_sponsor>
 
           <tal:binary_build_location condition="view/is_binary">
             <tal:message
