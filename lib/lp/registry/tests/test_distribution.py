@@ -1,4 +1,4 @@
-# Copyright 2009-2015 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for Distribution."""
@@ -689,3 +689,38 @@ class TestWebService(WebServiceTestCase):
         self.assertEqual(
             [],
             ws_distro.findReferencedOOPS(start_date=now - day, end_date=now))
+
+
+class DistributionOCIProjectAdminPermission(TestCaseWithFactory):
+    layer = DatabaseFunctionalLayer
+
+    def setUp(self):
+        super(DistributionOCIProjectAdminPermission, self).setUp()
+        self.simple_user = self.factory.makePerson()
+        login_person(self.simple_user)
+
+    def test_check_oci_project_admin_person(self):
+        admin = self.factory.makeAdministrator()
+        with person_logged_in(admin):
+            person1 = self.factory.makePerson()
+            person2 = self.factory.makePerson()
+            distro = self.factory.makeDistribution(oci_project_admin=person1)
+
+        self.assertTrue(distro.canAdministerOCIProjects(person1))
+        self.assertFalse(distro.canAdministerOCIProjects(person2))
+
+    def test_check_oci_project_admin_team(self):
+        admin = self.factory.makeAdministrator()
+        with person_logged_in(admin):
+            person1 = self.factory.makePerson()
+            person2 = self.factory.makePerson()
+            person3 = self.factory.makePerson()
+            team = self.factory.makeTeam(owner=person1)
+            person2.join(team)
+
+            distro = self.factory.makeDistribution(oci_project_admin=team)
+
+        self.assertTrue(distro.canAdministerOCIProjects(team))
+        self.assertTrue(distro.canAdministerOCIProjects(person1))
+        self.assertTrue(distro.canAdministerOCIProjects(person2))
+        self.assertFalse(distro.canAdministerOCIProjects(person3))

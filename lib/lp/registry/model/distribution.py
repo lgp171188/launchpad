@@ -1363,6 +1363,14 @@ class Distribution(SQLBase, BugTargetBase, MakesAnnouncements,
         admins = getUtility(ILaunchpadCelebrities).admin
         return user.inTeam(self.owner) or user.inTeam(admins)
 
+    def canAdministerOCIProjects(self, person):
+        """See `IDistribution`."""
+        if person == self.oci_project_admin:
+            return True
+        if self.oci_project_admin.is_team:
+            return person in self.oci_project_admin.activemembers
+        return False
+
     def newSeries(self, name, display_name, title, summary,
                   description, version, previous_series, registrant):
         """See `IDistribution`."""
@@ -1493,7 +1501,7 @@ class DistributionSet:
 
     def new(self, name, display_name, title, description, summary, domainname,
             members, owner, registrant, mugshot=None, logo=None, icon=None,
-            vcs=None):
+            vcs=None, oci_project_admin=None):
         """See `IDistributionSet`."""
         distro = Distribution(
             name=name,
@@ -1509,7 +1517,8 @@ class DistributionSet:
             mugshot=mugshot,
             logo=logo,
             icon=icon,
-            vcs=vcs)
+            vcs=vcs,
+            oci_project_admin=oci_project_admin)
         getUtility(IArchiveSet).new(distribution=distro,
             owner=owner, purpose=ArchivePurpose.PRIMARY)
         policies = itertools.product(

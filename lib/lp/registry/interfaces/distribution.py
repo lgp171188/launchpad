@@ -660,6 +660,10 @@ class IDistributionPublic(
     def userCanEdit(user):
         """Can the user edit this distribution?"""
 
+    def canAdministerOCIProjects(person):
+        """Checks if the given person can administer OCI Projects of this
+        distro."""
+
 
 class IDistribution(
     IDistributionEditRestricted, IDistributionPublic, IHasBugSupervisor,
@@ -715,7 +719,8 @@ class IDistributionSet(Interface):
         """Return the IDistribution with the given name or None."""
 
     def new(name, display_name, title, description, summary, domainname,
-            members, owner, registrant, mugshot=None, logo=None, icon=None):
+            members, owner, registrant, mugshot=None, logo=None, icon=None,
+            oci_project_admin=None):
         """Create a new distribution."""
 
     def getCurrentSourceReleases(distro_to_source_packagenames):
