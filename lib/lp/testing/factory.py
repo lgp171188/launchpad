@@ -2681,8 +2681,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             members = self.makeTeam(owner)
         distro = getUtility(IDistributionSet).new(
             name, displayname, title, description, summary, domainname,
-            members, owner, registrant, icon=icon, vcs=vcs,
-            oci_project_admin=oci_project_admin)
+            members, owner, registrant, icon=icon, vcs=vcs)
         naked_distro = removeSecurityProxy(distro)
         if aliases is not None:
             naked_distro.setAliases(aliases)
@@ -2690,6 +2689,8 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             naked_distro.driver = driver
         if bug_supervisor is not None:
             naked_distro.bug_supervisor = bug_supervisor
+        if oci_project_admin is not None:
+            naked_distro.oci_project_admin = oci_project_admin
         if not no_pubconf:
             self.makePublisherConfig(
                 distro, publish_root_dir, publish_base_url,

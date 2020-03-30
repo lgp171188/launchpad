@@ -694,9 +694,6 @@ class TestWebService(WebServiceTestCase):
 class DistributionOCIProjectAdminPermission(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
-    def setUp(self):
-        super(DistributionOCIProjectAdminPermission, self).setUp()
-
     def test_check_oci_project_admin_person(self):
         person1 = self.factory.makePerson()
         person2 = self.factory.makePerson()
@@ -729,3 +726,13 @@ class DistributionOCIProjectAdminPermission(TestCaseWithFactory):
 
         self.assertFalse(distro.canAdministerOCIProjects(person1))
         self.assertFalse(distro.canAdministerOCIProjects(None))
+
+    def test_check_oci_project_admin_user_and_distro_owner(self):
+        admin = self.factory.makeAdministrator()
+        owner = self.factory.makePerson()
+        someone = self.factory.makePerson()
+        distro = self.factory.makeDistribution(owner=owner)
+
+        self.assertFalse(distro.canAdministerOCIProjects(someone))
+        self.assertTrue(distro.canAdministerOCIProjects(owner))
+        self.assertTrue(distro.canAdministerOCIProjects(admin))

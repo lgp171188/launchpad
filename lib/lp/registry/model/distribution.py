@@ -110,6 +110,7 @@ from lp.registry.interfaces.person import (
     )
 from lp.registry.interfaces.pillar import IPillarNameSet
 from lp.registry.interfaces.pocket import suffixpocket
+from lp.registry.interfaces.role import IPersonRoles
 from lp.registry.interfaces.series import SeriesStatus
 from lp.registry.interfaces.sourcepackagename import ISourcePackageName
 from lp.registry.model.announcement import MakesAnnouncements
@@ -238,7 +239,7 @@ class Distribution(SQLBase, BugTargetBase, MakesAnnouncements,
         storm_validator=validate_public_person, notNull=True)
     oci_project_admin = ForeignKey(
         dbName='oci_project_admin', foreignKey='Person',
-        storm_validator=validate_public_person, notNull=False)
+        storm_validator=validate_public_person, notNull=False, default=None)
     translationgroup = ForeignKey(
         dbName='translationgroup', foreignKey='TranslationGroup',
         notNull=False, default=None)
@@ -1365,12 +1366,15 @@ class Distribution(SQLBase, BugTargetBase, MakesAnnouncements,
 
     def canAdministerOCIProjects(self, person):
         """See `IDistribution`."""
-        if person is None or self.oci_project_admin is None:
+        if person is None:
             return False
         if person == self.oci_project_admin:
             return True
-        if self.oci_project_admin.is_team:
-            return person in self.oci_project_admin.activemembers
+        if person.inTeam(self.oci_project_admin):
+            return True
+        person_roles = IPersonRoles(person)
+        if person_roles.in_admin or person_roles.isOwner(self):
+            return True
         return False
 
     def newSeries(self, name, display_name, title, summary,
@@ -1503,7 +1507,7 @@ class DistributionSet:
 
     def new(self, name, display_name, title, description, summary, domainname,
             members, owner, registrant, mugshot=None, logo=None, icon=None,
-            vcs=None, oci_project_admin=None):
+            vcs=None):
         """See `IDistributionSet`."""
         distro = Distribution(
             name=name,
@@ -1519,8 +1523,7 @@ class DistributionSet:
             mugshot=mugshot,
             logo=logo,
             icon=icon,
-            vcs=vcs,
-            oci_project_admin=oci_project_admin)
+            vcs=vcs)
         getUtility(IArchiveSet).new(distribution=distro,
             owner=owner, purpose=ArchivePurpose.PRIMARY)
         policies = itertools.product(
