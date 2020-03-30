@@ -1448,15 +1448,8 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
             removeSecurityProxy(repository).getInternalPath(),
             pushed_branch, auth_params)
 
-        # A Person with no macaroon
-        auth_params = _make_auth_params(
-            code_imports[0].registrant, macaroons[0].serialize())
-        self.assertHasMergeProposalURL(repository, pushed_branch, auth_params)
-
     def test_getMergeProposalURL_private_code_import(self):
-        # A code import worker with a suitable macaroon has repository owner
-        # privileges on a repository associated with a running private code
-        # import job. We do not send the Merge Proposal URL back
+        # We do not send the Merge Proposal URL back
         # to a Code Import Job.
 
         self.pushConfig(
@@ -1504,7 +1497,7 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
                  location=config.vhost.mainsite.hostname,
                  identifier="another",
                  key="another-secret").serialize())
-        pushed_branch = 'branch1'
+        #pushed_branch = 'branch1'
 
         self.assertFault(
             faults.Unauthorized, None,
@@ -1514,16 +1507,6 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
 
         auth_params = _make_auth_params(
             LAUNCHPAD_SERVICES, macaroon_raw="nonsense")
-
-        self.assertFault(
-            faults.Unauthorized, None,
-            "getMergeProposalURL",
-            removeSecurityProxy(repository).getInternalPath(),
-            pushed_branch, auth_params)
-
-        auth_params = _make_auth_params(
-            code_imports[0].registrant,
-            macaroon_raw=macaroons[0].serialize())
 
         self.assertFault(
             faults.Unauthorized, None,

@@ -11,7 +11,6 @@ __all__ = [
 import logging
 import sys
 import uuid
-import xmlrpclib
 
 from pymacaroons import Macaroon
 import six
@@ -443,15 +442,14 @@ class GitAPI(LaunchpadXMLRPCView):
 
         verified = self._verifyAuthParams(requester, repository, auth_params)
         if verified is not None and verified.user is NO_USER:
-            # In the case of getMergeProposalURL we do not send the MP URL
-            # back to a Code Import job so we need to return here instead
-            # of granting repository owner permissions.
-            raise faults.Unauthorized()
+            # Showing a merge proposal URL may be useful to ordinary users,
+            # but it doesn't make sense in the context of an internal service.
+            return None
 
         # We assemble the URL this way here because the ref may not exist yet.
         base_url = canonical_url(repository, rootsite='code')
         mp_url = "%s/+ref/%s/+register-merge" % (
-                        base_url, quote(branch))
+            base_url, quote(branch))
         return mp_url
 
     def getMergeProposalURL(self, translated_path, branch, auth_params):
@@ -459,16 +457,16 @@ class GitAPI(LaunchpadXMLRPCView):
         logger = self._getLogger(auth_params.get("request-id"))
         requester_id = _get_requester_id(auth_params)
         logger.info(
-            "Request received: getMergeProposalURL('%s %s') for %s",
+            "Request received: getMergeProposalURL('%s, %s') for %s",
             translated_path, branch, requester_id)
         result = run_with_login(
             requester_id, self._getMergeProposalURL,
             translated_path, branch, auth_params)
-        if isinstance(result, xmlrpclib.Fault):
+        if isinstance(result, xmlrpc_client.Fault):
             logger.error("getMergeProposalURL failed: %r", result)
         else:
             # The result of getMergeProposalURL is not sensitive for logging
-            # purposes (it may refer private artifacts, but contains no
+            # purposes (it may refer to private artifacts, but contains no
             # credentials, only the merge proposal URL).
             logger.info("getMergeProposalURL succeeded: %s" % result)
         return result
