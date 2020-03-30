@@ -3,6 +3,8 @@
 
 """Loggers."""
 
+from __future__ import absolute_import, print_function
+
 __metaclass__ = type
 __all__ = [
     'BufferLogger',
@@ -127,7 +129,7 @@ class FakeLogger:
         else:
             output_file = self.output_file
         prefix = LEVEL_PREFIXES.get(level, "%d>" % level)
-        print >> output_file, prefix, self._format_message(msg, *stuff)
+        print(prefix, self._format_message(msg, *stuff), file=output_file)
 
         if 'exc_info' in kw:
             traceback.print_exc(file=output_file)
