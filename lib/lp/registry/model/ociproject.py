@@ -7,7 +7,6 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 __all__ = [
-    'OCI_PROJECT_ALLOW_CREATE',
     'OCIProject',
     'OCIProjectSet',
     ]
@@ -44,9 +43,6 @@ from lp.services.database.interfaces import (
     IStore,
     )
 from lp.services.database.stormbase import StormBase
-
-
-OCI_PROJECT_ALLOW_CREATE = 'oci.project.create.enabled'
 
 
 def oci_project_modified(oci_project, event):
@@ -139,15 +135,15 @@ class OCIProject(BugTargetBase, StormBase):
 @implementer(IOCIProjectSet)
 class OCIProjectSet:
 
-    def new(self, registrant, pillar, ociprojectname,
+    def new(self, registrant, pillar, name,
             date_created=DEFAULT, description=None,
             bug_reporting_guidelines=None,
             bug_reported_acknowledgement=None,
             bugfiling_duplicate_search=False):
         """See `IOCIProjectSet`."""
-        if isinstance(ociprojectname, string_types):
-            ociprojectname = getUtility(IOCIProjectNameSet).getOrCreateByName(
-                ociprojectname)
+        if isinstance(name, string_types):
+            name = getUtility(IOCIProjectNameSet).getOrCreateByName(
+                name)
         store = IMasterStore(OCIProject)
         target = OCIProject()
         target.date_created = date_created
@@ -163,7 +159,7 @@ class OCIProjectSet:
                 'IDistribution instance.')
 
         target.registrant = registrant
-        target.ociprojectname = ociprojectname
+        target.ociprojectname = name
         target.description = description
         target.bug_reporting_guidelines = bug_reporting_guidelines
         target.bug_reported_acknowledgement = bug_reported_acknowledgement

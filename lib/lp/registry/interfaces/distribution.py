@@ -658,36 +658,23 @@ class IDistributionPublic(
 
     # XXX: pappacena 2020-04-25: This method is here on IDistributionPublic
     # for now, until we workout the specific permission for creating OCI
-    # Projects.
+    # Projects. It's guarded by the feature flag oci.project.create.enabled.
     @call_with(registrant=REQUEST_USER)
     @operation_parameters(
-        ociprojectname=Text(
+        name=Text(
             title=_("The OCI project name."),
-            description=_("The name that groups a set of OCI projects "
-                          "together.")),
+            description=_("The name that groups a set of OCI recipes "
+                          "together."),
+            required=True),
         description=Text(
             title=_("Description for this OCI project."),
-            description=_("A short description of this OCI project.")),
-        bug_reporting_guidelines=Text(
-            title=_("The guidelines to report a bug."),
-            description=_("What is the guideline to report a bug to this "
-                          "OCI Project?")),
-        bug_reported_acknowledgement=Text(
-            title=_("Acknowledgement text for a bug reported."),
-            description=_("Acknowledgement text for a bug reported in this "
-                          "OCI Project.")),
-        bugfiling_duplicate_search=Bool(
-            title=_("Show bug search before allowing to open a bug?"),
-            description=_("To avoid duplicate bugs, show to the user a bug "
-                          "search before allowing them to create new bugs?"))
+            description=_("A short description of this OCI project."),
+            required=False)
     )
     # Interface is actually IOCIProject. Fixed at _schema_circular_imports
     @export_factory_operation(Interface, [])
     @operation_for_version("devel")
-    def newOCIProject(
-        registrant, ociprojectname, description=None,
-        bug_reporting_guidelines=None, bug_reported_acknowledgement=None,
-        bugfiling_duplicate_search=False):
+    def newOCIProject(registrant, name, description=None):
         """Create an `IOCIProject` for this distro."""
 
 

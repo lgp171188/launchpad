@@ -9,8 +9,7 @@ __metaclass__ = type
 
 import json
 
-from six import string_types
-from storm.store import Store
+from six import text_type
 from testtools.matchers import (
     ContainsDict,
     Equals,
@@ -23,14 +22,10 @@ from zope.security.proxy import removeSecurityProxy
 from lp.registry.interfaces.ociproject import (
     IOCIProject,
     IOCIProjectSet,
+    OCI_PROJECT_ALLOW_CREATE,
     )
 from lp.registry.interfaces.ociprojectseries import IOCIProjectSeries
-from lp.registry.model.ociproject import (
-    OCI_PROJECT_ALLOW_CREATE,
-    OCIProject,
-    )
 from lp.services.features.testing import FeatureFixture
-from lp.services.macaroons.testing import MatchesStructure
 from lp.services.webapp.interfaces import OAuthPermission
 from lp.testing import (
     admin_logged_in,
@@ -154,7 +149,7 @@ class TestOCIProjectWebservice(TestCaseWithFactory):
     def getAbsoluteURL(self, target):
         """Get the webservice absolute URL of the given object or relative
         path."""
-        if not isinstance(target, string_types):
+        if not isinstance(target, text_type):
             target = api_url(target)
         return self.webservice.getAbsoluteUrl(target)
 
@@ -228,32 +223,20 @@ class TestOCIProjectWebservice(TestCaseWithFactory):
         with person_logged_in(self.person):
             distro = removeSecurityProxy(self.factory.makeDistribution(
                 owner=self.person))
+            registrant_url = self.getAbsoluteURL(self.person)
             url = api_url(distro)
 
-        obj = {
-            "ociprojectname": "someprojectname",
-            "description": "My OCI project",
-            "bug_reporting_guidelines": "Bug reporting guide",
-            "bug_reported_acknowledgement": "Bug reporting ack",
-            "bugfiling_duplicate_search": True,
-        }
+        obj = {"name": "someprojectname", "description": "My OCI project"}
         resp = self.webservice.named_post(url, "newOCIProject", **obj)
         self.assertEqual(201, resp.status, resp.body)
 
-        store = Store.of(distro)
-        result_set = [i for i in store.find(OCIProject)]
-
-        self.assertEqual(1, len(result_set))
-        self.assertThat(result_set[0], MatchesStructure(
-            ociprojectname=MatchesStructure(
-                name=Equals(obj["ociprojectname"])),
-            description=Equals(obj["description"]),
-            bug_reporting_guidelines=Equals(obj["bug_reporting_guidelines"]),
-            bug_reported_acknowledgement=Equals(
-                obj["bug_reported_acknowledgement"]),
-            enable_bugfiling_duplicate_search=Equals(
-                obj["bugfiling_duplicate_search"])
-            ))
+        new_obj_url = resp.getHeader("Location")
+        oci_project = self.webservice.get(new_obj_url).jsonBody()
+        self.assertThat(oci_project, ContainsDict({
+            "registrant_link": Equals(registrant_url),
+            "name": Equals(obj["name"]),
+            "description": Equals(obj["description"])
+            }))
 
     def test_api_create_oci_project_is_disabled_by_feature_flag(self):
         self.useFixture(FeatureFixture({OCI_PROJECT_ALLOW_CREATE: ''}))
@@ -262,12 +245,6 @@ class TestOCIProjectWebservice(TestCaseWithFactory):
                 owner=self.person))
             url = api_url(distro)
 
-        obj = {
-            "ociprojectname": "someprojectname",
-            "description": "My OCI project",
-            "bug_reporting_guidelines": "Bug reporting guide",
-            "bug_reported_acknowledgement": "Bug reporting ack",
-            "bugfiling_duplicate_search": True,
-        }
+        obj = {"name": "someprojectname", "description": "My OCI project"}
         resp = self.webservice.named_post(url, "newOCIProject", **obj)
         self.assertEqual(401, resp.status, resp.body)

@@ -102,7 +102,10 @@ from lp.registry.interfaces.distributionmirror import (
     MirrorFreshness,
     MirrorStatus,
     )
-from lp.registry.interfaces.ociproject import IOCIProjectSet
+from lp.registry.interfaces.ociproject import (
+    IOCIProjectSet,
+    OCI_PROJECT_ALLOW_CREATE,
+    )
 from lp.registry.interfaces.oopsreferences import IHasOOPSReferences
 from lp.registry.interfaces.person import (
     validate_person,
@@ -131,7 +134,6 @@ from lp.registry.model.milestone import (
     HasMilestonesMixin,
     Milestone,
     )
-from lp.registry.model.ociproject import OCI_PROJECT_ALLOW_CREATE
 from lp.registry.model.oopsreferences import referenced_oops
 from lp.registry.model.pillar import HasAliasMixin
 from lp.registry.model.sourcepackagename import SourcePackageName
@@ -1453,19 +1455,13 @@ class Distribution(SQLBase, BugTargetBase, MakesAnnouncements,
                 return True
         return False
 
-    def newOCIProject(self, registrant, ociprojectname, description=None,
-            bug_reporting_guidelines=None, bug_reported_acknowledgement=None,
-            bugfiling_duplicate_search=False):
+    def newOCIProject(self, registrant, name, description=None):
         """Create an `IOCIProject` for this distro."""
         if not getFeatureFlag(OCI_PROJECT_ALLOW_CREATE):
             raise Unauthorized("Creating new OCI projects is not allowed.")
         return getUtility(IOCIProjectSet).new(
-            pillar=self,
-            registrant=registrant, ociprojectname=ociprojectname,
-            description=description,
-            bug_reporting_guidelines=bug_reporting_guidelines,
-            bug_reported_acknowledgement=bug_reported_acknowledgement,
-            bugfiling_duplicate_search=bugfiling_duplicate_search)
+            pillar=self, registrant=registrant, name=name,
+            description=description)
 
 
 @implementer(IDistributionSet)

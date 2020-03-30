@@ -7,6 +7,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 __all__ = [
+    'OCI_PROJECT_ALLOW_CREATE',
     'IOCIProject',
     'IOCIProjectSet',
     ]
@@ -37,6 +38,9 @@ from lp.registry.interfaces.ociprojectname import IOCIProjectName
 from lp.registry.interfaces.series import SeriesStatus
 from lp.services.database.constants import DEFAULT
 from lp.services.fields import PublicPersonChoice
+
+
+OCI_PROJECT_ALLOW_CREATE = 'oci.project.create.enabled'
 
 
 class IOCIProjectView(IHasGitRepositories, Interface):
@@ -112,8 +116,7 @@ class IOCIProject(IOCIProjectView, IOCIProjectEdit,
 class IOCIProjectSet(Interface):
     """A utility to create and access OCI Projects."""
 
-    def new(registrant, pillar, ociprojectname,
-            date_created=None, description=None,
+    def new(registrant, pillar, name, date_created=None, description=None,
             bug_reporting_guidelines=None, bug_reported_acknowledgement=None,
             bugfiling_duplicate_search=False):
         """Create an `IOCIProject`."""

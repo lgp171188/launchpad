@@ -329,8 +329,6 @@ patch_entry_return_type(ISourcePackagePublic, 'getBranch', IBranch)
 patch_plain_parameter_type(ISourcePackageEdit, 'setBranch', 'branch', IBranch)
 patch_reference_property(ISourcePackage, 'distribution', IDistribution)
 
-patch_entry_return_type(IDistribution, 'newOCIProject', IOCIProject)
-
 # IPerson
 patch_entry_return_type(IPerson, 'createRecipe', ISourcePackageRecipe)
 patch_list_parameter_type(IPerson, 'createRecipe', 'distroseries',
@@ -461,6 +459,7 @@ patch_collection_return_type(
     IDistribution, 'searchSourcePackages', IDistributionSourcePackage)
 patch_reference_property(IDistribution, 'main_archive', IArchive)
 patch_collection_property(IDistribution, 'all_distro_archives', IArchive)
+patch_entry_return_type(IDistribution, 'newOCIProject', IOCIProject)
 
 
 # IDistributionMirror
