@@ -108,7 +108,7 @@ def wrap_text(text, prefix, wrap_width):
 
     def local_escape(text):
         ret = text.replace(u'\\', u'\\\\')
-        ret = ret.replace(ur'"', ur'\"')
+        ret = ret.replace(u'"', u'\\"')
         ret = ret.replace(u'\t', u'\\t')
         ret = ret.replace(u'\r', u'\\r')
         return ret.replace(u'\n', u'\\n')
