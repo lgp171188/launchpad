@@ -25,6 +25,7 @@ from lazr.restful.fields import (
     Reference,
     ReferenceChoice,
     )
+from lp.registry.interfaces.person import IPerson
 from zope.interface import Interface
 from zope.schema import (
     Bool,
@@ -112,11 +113,13 @@ class IOCIProjectLegitimate(Interface):
     """IOCIProject methods that require launchpad.AnyLegitimatePerson
     permission.
     """
-    @call_with(registrant=REQUEST_USER, owner=REQUEST_USER)
+    @call_with(registrant=REQUEST_USER)
     @operation_parameters(
         name=Text(
             title=_("OCI Recipe name."),
             description=_("The name of the new OCI Recipe.")),
+        owner=Reference(
+            IPerson, title=_("Person or team that owns the new OCI Recipe.")),
         git_ref=Reference(IGitRef, title=_("Git branch.")),
         build_file=TextLine(
             title=_("Build file path."),

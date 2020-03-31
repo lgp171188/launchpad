@@ -480,9 +480,11 @@ class TestOCIRecipeWebservice(TestCaseWithFactory):
 
             oci_project_url = api_url(oci_project)
             git_ref_url = api_url(git_ref)
+            person_url = api_url(self.person)
 
         obj = {
             "name": "My recipe",
+            "owner": person_url,
             "git_ref": git_ref_url,
             "build_file": "./Dockerfile",
             "description": "My recipe"}
@@ -519,9 +521,11 @@ class TestOCIRecipeWebservice(TestCaseWithFactory):
 
             oci_project_url = api_url(oci_project)
             git_ref_url = api_url(git_ref)
+            person_url = api_url(self.person)
 
         obj = {
             "name": "My recipe",
+            "owner": person_url,
             "git_ref": git_ref_url,
             "build_file": "./Dockerfile",
             "description": "My recipe"}
@@ -543,9 +547,11 @@ class TestOCIRecipeWebservice(TestCaseWithFactory):
 
             oci_project_url = api_url(oci_project)
             git_ref_url = api_url(git_ref)
+            person_url = api_url(self.person)
 
         obj = {
             "name": "My recipe",
+            "owner": person_url,
             "git_ref": git_ref_url,
             "build_file": "./Dockerfile",
             "description": "My recipe"}
