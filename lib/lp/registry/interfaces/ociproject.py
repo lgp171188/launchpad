@@ -108,7 +108,7 @@ class IOCIProjectEdit(Interface):
         """Creates a new `IOCIProjectSeries`."""
 
 
-class IOCIProjectPublicActions(Interface):
+class IOCIProjectLegitimate(Interface):
     """IOCIProject methods that require launchpad.AnyLegitimatePerson
     permission.
     """
@@ -138,7 +138,7 @@ class IOCIProjectPublicActions(Interface):
 
 
 class IOCIProject(IOCIProjectView, IOCIProjectEdit,
-                  IOCIProjectEditableAttributes, IOCIProjectPublicActions):
+                  IOCIProjectEditableAttributes, IOCIProjectLegitimate):
     """A project containing Open Container Initiative recipes."""
 
     export_as_webservice_entry(

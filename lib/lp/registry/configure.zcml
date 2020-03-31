@@ -747,7 +747,7 @@
             set_schema="lp.registry.interfaces.ociproject.IOCIProjectEditableAttributes" />
         <require
             permission="launchpad.AnyLegitimatePerson"
-            interface="lp.registry.interfaces.ociproject.IOCIProjectPublicActions"/>
+            interface="lp.registry.interfaces.ociproject.IOCIProjectLegitimate"/>
     </class>
     <subscriber
         for="lp.registry.interfaces.ociproject.IOCIProject zope.lifecycleevent.interfaces.IObjectModifiedEvent"
