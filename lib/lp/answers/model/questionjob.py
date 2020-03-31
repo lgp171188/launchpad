@@ -10,6 +10,7 @@ __all__ = [
 
 from lazr.delegates import delegate_to
 import simplejson
+import six
 from storm.expr import And
 from storm.locals import (
     Int,
@@ -81,7 +82,7 @@ class QuestionJob(StormBase):
         self.job_type = job_type
         self.question = question
         json_data = simplejson.dumps(metadata)
-        self._json_data = json_data.decode('utf-8')
+        self._json_data = six.ensure_text(json_data)
 
     def __repr__(self):
         return (
