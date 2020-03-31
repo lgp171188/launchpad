@@ -13,7 +13,10 @@ from lp.oci.interfaces.ocipushrule import (
     IOCIPushRuleSet,
     )
 from lp.oci.tests.helpers import OCIConfigHelperMixin
-from lp.testing import TestCaseWithFactory
+from lp.testing import (
+    person_logged_in,
+    TestCaseWithFactory,
+    )
 from lp.testing.layers import LaunchpadZopelessLayer
 
 
@@ -28,6 +31,14 @@ class TestOCIPushRule(OCIConfigHelperMixin, TestCaseWithFactory):
     def test_implements_interface(self):
         push_rule = self.factory.makeOCIPushRule()
         self.assertProvides(push_rule, IOCIPushRule)
+
+    def test_change_attribute(self):
+        push_rule = self.factory.makeOCIPushRule()
+        with person_logged_in(push_rule.recipe.owner):
+            push_rule.image_name = 'new image name'
+
+        found_rule = push_rule.recipe.push_rules[0]
+        self.assertEqual(found_rule.image_name, 'new image name')
 
 
 class TestOCIPushRuleSet(OCIConfigHelperMixin, TestCaseWithFactory):
