@@ -42,7 +42,9 @@ from lp.oci.interfaces.ocirecipe import (
     IOCIRecipeSet,
     NoSourceForOCIRecipe,
     NoSuchOCIRecipe,
+    OCI_RECIPE_ALLOW_CREATE,
     OCIRecipeBuildAlreadyPending,
+    OCIRecipeFeatureDisabled,
     OCIRecipeNotOwner,
     )
 from lp.oci.interfaces.ocirecipebuild import IOCIRecipeBuildSet
@@ -61,6 +63,7 @@ from lp.services.database.stormexpr import (
     Greatest,
     NullsLast,
     )
+from lp.services.features import getFeatureFlag
 from lp.services.webhooks.interfaces import IWebhookSet
 from lp.services.webhooks.model import WebhookTargetMixin
 
@@ -112,6 +115,8 @@ class OCIRecipe(Storm, WebhookTargetMixin):
     def __init__(self, name, registrant, owner, oci_project, git_ref,
                  description=None, official=False, require_virtualized=True,
                  build_file=None, date_created=DEFAULT):
+        if not getFeatureFlag(OCI_RECIPE_ALLOW_CREATE):
+            raise OCIRecipeFeatureDisabled()
         super(OCIRecipe, self).__init__()
         self.name = name
         self.registrant = registrant

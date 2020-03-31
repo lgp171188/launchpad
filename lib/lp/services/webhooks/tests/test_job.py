@@ -37,7 +37,10 @@ from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
 from lp.app import versioninfo
-from lp.oci.interfaces.ocirecipe import OCI_RECIPE_WEBHOOKS_FEATURE_FLAG
+from lp.oci.interfaces.ocirecipe import (
+    OCI_RECIPE_ALLOW_CREATE,
+    OCI_RECIPE_WEBHOOKS_FEATURE_FLAG,
+    )
 from lp.services.database.interfaces import IStore
 from lp.services.features.testing import FeatureFixture
 from lp.services.job.interfaces.job import JobStatus
@@ -358,7 +361,8 @@ class TestWebhookDeliveryJob(TestCaseWithFactory):
     def test_oci_recipe__repr__(self):
         # `WebhookDeliveryJob` objects for OCI recipes have an informative
         # __repr__.
-        with FeatureFixture({OCI_RECIPE_WEBHOOKS_FEATURE_FLAG: "on"}):
+        with FeatureFixture({OCI_RECIPE_WEBHOOKS_FEATURE_FLAG: "on",
+                             OCI_RECIPE_ALLOW_CREATE: 'on'}):
             recipe = self.factory.makeOCIRecipe()
         hook = self.factory.makeWebhook(target=recipe)
         job = WebhookDeliveryJob.create(hook, 'test', payload={'foo': 'bar'})

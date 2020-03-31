@@ -35,7 +35,9 @@ from lp.oci.interfaces.ocirecipe import (
     IOCIRecipe,
     IOCIRecipeSet,
     NoSuchOCIRecipe,
+    OCI_RECIPE_ALLOW_CREATE,
     OCI_RECIPE_WEBHOOKS_FEATURE_FLAG,
+    OCIRecipeFeatureDisabled,
     )
 from lp.oci.interfaces.ocirecipebuild import IOCIRecipeBuildSet
 from lp.services.features import getFeatureFlag
@@ -173,6 +175,11 @@ class OCIRecipeAddView(LaunchpadFormView):
         "build_daily",
         )
     custom_widget_git_ref = GitRefWidget
+
+    def initialize(self):
+        super(OCIRecipeAddView, self).initialize()
+        if not getFeatureFlag(OCI_RECIPE_ALLOW_CREATE):
+            raise OCIRecipeFeatureDisabled()
 
     @property
     def cancel_url(self):

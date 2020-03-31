@@ -61,6 +61,10 @@ class TestOCIRecipe(TestCaseWithFactory):
 
     layer = DatabaseFunctionalLayer
 
+    def setUp(self):
+        super(TestOCIRecipe, self).setUp()
+        self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: 'on'}))
+
     def test_implements_interface(self):
         target = self.factory.makeOCIRecipe()
         with admin_logged_in():
@@ -107,7 +111,8 @@ class TestOCIRecipe(TestCaseWithFactory):
     def test_requestBuild_triggers_webhooks(self):
         # Requesting a build triggers webhooks.
         logger = self.useFixture(FakeLogger())
-        with FeatureFixture({OCI_RECIPE_WEBHOOKS_FEATURE_FLAG: "on"}):
+        with FeatureFixture({OCI_RECIPE_WEBHOOKS_FEATURE_FLAG: "on",
+                             OCI_RECIPE_ALLOW_CREATE: 'on'}):
             recipe = self.factory.makeOCIRecipe()
             oci_arch = self.factory.makeOCIRecipeArch(recipe=recipe)
             hook = self.factory.makeWebhook(
@@ -154,7 +159,8 @@ class TestOCIRecipe(TestCaseWithFactory):
 
     def test_related_webhooks_deleted(self):
         owner = self.factory.makePerson()
-        with FeatureFixture({OCI_RECIPE_WEBHOOKS_FEATURE_FLAG: "on"}):
+        with FeatureFixture({OCI_RECIPE_WEBHOOKS_FEATURE_FLAG: "on",
+                             OCI_RECIPE_ALLOW_CREATE: 'on'}):
             recipe = self.factory.makeOCIRecipe(registrant=owner, owner=owner)
             webhook = self.factory.makeWebhook(target=recipe)
         with person_logged_in(recipe.owner):
@@ -199,6 +205,10 @@ class TestOCIRecipe(TestCaseWithFactory):
 class TestOCIRecipeSet(TestCaseWithFactory):
 
     layer = DatabaseFunctionalLayer
+
+    def setUp(self):
+        super(TestOCIRecipeSet, self).setUp()
+        self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: 'on'}))
 
     def test_implements_interface(self):
         target_set = getUtility(IOCIRecipeSet)
