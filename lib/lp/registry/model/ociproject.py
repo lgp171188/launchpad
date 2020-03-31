@@ -12,7 +12,7 @@ __all__ = [
     ]
 
 import pytz
-from six import string_types
+from six import text_type
 from storm.locals import (
     Bool,
     DateTime,
@@ -141,7 +141,7 @@ class OCIProjectSet:
             bug_reported_acknowledgement=None,
             bugfiling_duplicate_search=False):
         """See `IOCIProjectSet`."""
-        if isinstance(name, string_types):
+        if isinstance(name, text_type):
             name = getUtility(IOCIProjectNameSet).getOrCreateByName(
                 name)
         store = IMasterStore(OCIProject)

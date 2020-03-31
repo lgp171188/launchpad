@@ -232,11 +232,13 @@ class TestOCIProjectWebservice(TestCaseWithFactory):
 
         new_obj_url = resp.getHeader("Location")
         oci_project = self.webservice.get(new_obj_url).jsonBody()
-        self.assertThat(oci_project, ContainsDict({
-            "registrant_link": Equals(registrant_url),
-            "name": Equals(obj["name"]),
-            "description": Equals(obj["description"])
-            }))
+        with person_logged_in(self.person):
+            self.assertThat(oci_project, ContainsDict({
+                "registrant_link": Equals(registrant_url),
+                "name": Equals(obj["name"]),
+                "description": Equals(obj["description"]),
+                "distribution_link": Equals(self.getAbsoluteURL(distro)),
+                }))
 
     def test_api_create_oci_project_is_disabled_by_feature_flag(self):
         self.useFixture(FeatureFixture({OCI_PROJECT_ALLOW_CREATE: ''}))

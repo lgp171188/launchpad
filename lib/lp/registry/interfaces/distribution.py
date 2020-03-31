@@ -661,7 +661,7 @@ class IDistributionPublic(
     # Projects. It's guarded by the feature flag oci.project.create.enabled.
     @call_with(registrant=REQUEST_USER)
     @operation_parameters(
-        name=Text(
+        name=TextLine(
             title=_("The OCI project name."),
             description=_("The name that groups a set of OCI recipes "
                           "together."),
