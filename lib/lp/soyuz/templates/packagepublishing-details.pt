@@ -42,45 +42,90 @@
       <span tal:attributes="title context/datepublished/fmt:datetime"
             tal:content="context/datepublished/fmt:displaydate" />
     </li>
-    <li tal:condition="view/wasCopied">
-      Copied from
-      <tal:source_original_location condition="view/is_source">
-        <tal:define
-          define="linkify_archive view/linkify_source_archive;
-                  source context/sourcepackagerelease">
-          <tal:message
-            define="series source/upload_distroseries;
-                    distro series/distribution;
-                    message string:${distro/name} ${series/name} in "
-            replace="message" />
-          <a tal:condition="linkify_archive"
-             tal:attributes="href source/upload_archive/fmt:url"
-             tal:content="source/upload_archive/displayname" />
-          <tal:message
-            condition="not:linkify_archive"
-            define="archive source/upload_archive;
-                    message string:${archive/displayname}"
-            replace="message" />
-        </tal:define>
-        <tal:source_creator condition="context/creator">
-          by <a tal:replace="structure context/creator/fmt:link"/>
-        </tal:source_creator>
-        <tal:source_sponsor condition="context/sponsor">
-          (sponsored by <a tal:replace="structure context/sponsor/fmt:link"/>)
-        </tal:source_sponsor>
-      </tal:source_original_location>
-      <tal:binary_build_location condition="view/is_binary">
-        <tal:message
-          define="build context/binarypackagerelease/build;
-                  archive build/archive;
-                  pocket build/pocket;
-                  arch build/distro_arch_series;
-                  series arch/distroseries;
-                  distro series/distribution;
-                  message string:${distro/name} ${series/name}-${pocket/name/fmt:lower} ${arch/architecturetag} in ${archive/displayname}"
-          replace="message" />
-      </tal:binary_build_location>
-    </li>
 
+    <tal:comment condition="nothing">
+       For package copies, we have a distinction between what is the
+       "copied_from_archive" (the archive from where we directly copied a
+       publishing) and the "upload_archive" (the archive where the package
+       was originally uploaded to).
+    </tal:comment>
+    <tal:copied tal:define="
+          copied_from_archive context/copied_from_archive;
+          upload_archive view/upload_archive;
+          chained_copies python: copied_from_archive and copied_from_archive != upload_archive"
+          tal:condition="view/wasCopied">
+        <li tal:define="linkify_archive view/linkify_copied_from_archive"
+            tal:condition="chained_copies">
+              Copied from
+              <a tal:condition="linkify_archive"
+                 tal:attributes="href copied_from_archive/fmt:url"
+                 tal:content="copied_from_archive/displayname" />
+              <tal:message
+                condition="not:linkify_archive"
+                define="message string:${copied_from_archive/displayname}"
+                replace="message" />
+              <tal:creator condition="context/creator">
+                by <a tal:replace="structure context/creator/fmt:link"/>
+              </tal:creator>
+              <tal:source_sponsor condition="python: view.is_source and context.sponsor">
+                (sponsored by <a tal:replace="structure context/sponsor/fmt:link"/>)
+              </tal:source_sponsor>
+        </li>
+
+        <li>
+          <span tal:condition="chained_copies">
+            Originally
+            <p tal:replace="python: 'uploaded to' if view.is_source
+                                    else 'built as'" />
+          </span>
+          <span tal:condition="not: chained_copies">
+            Copied from
+          </span>
+
+          <tal:source_original_location condition="view/is_source">
+            <tal:define
+              define="linkify_archive view/linkify_source_archive;
+                      source context/sourcepackagerelease">
+              <tal:message
+                define="series source/upload_distroseries;
+                        distro series/distribution;
+                        message string:${distro/name} ${series/name} in "
+                replace="message" />
+              <a tal:condition="linkify_archive"
+                 tal:attributes="href upload_archive/fmt:url"
+                 tal:content="upload_archive/displayname" />
+              <tal:message
+                condition="not:linkify_archive"
+                define="message string:${upload_archive/displayname}"
+                replace="message" />
+            </tal:define>
+          </tal:source_original_location>
+
+          <tal:comment condition="nothing">
+              Only show "creator" if we didn't show above, at the
+              previous copied_from_archive "li" tag.
+          </tal:comment>
+
+          <tal:source_creator_and_sponsor condition="not: chained_copies">
+              <tal:source_creator condition="context/creator">
+                by <a tal:replace="structure context/creator/fmt:link"/>
+              </tal:source_creator>
+              <tal:source_sponsor condition="python: view.is_source and context.sponsor">
+                (sponsored by <a tal:replace="structure context/sponsor/fmt:link"/>)
+              </tal:source_sponsor>
+           </tal:source_creator_and_sponsor>
+
+          <tal:binary_build_location condition="view/is_binary">
+            <tal:message
+              define="build context/binarypackagerelease/build;
+                      pocket build/pocket;
+                      arch build/distro_arch_series;
+                      series arch/distroseries;
+                      distro series/distribution;
+                      message string:${distro/name} ${series/name}-${pocket/name/fmt:lower} ${arch/architecturetag} in ${upload_archive/displayname}"
+              replace="message" />
+          </tal:binary_build_location>
+        </li>
+    </tal:copied>
   </ul>
 </tal:root>

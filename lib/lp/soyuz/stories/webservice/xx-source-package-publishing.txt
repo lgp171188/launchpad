@@ -121,6 +121,7 @@ publication to play with first.
     >>> pprint_entry(pubs['entries'][0])
     archive_link: u'http://.../~cprov/+archive/ubuntu/ppa'
     component_name: u'main'
+    copied_from_archive_link: None
     creator_link: u'http://api.launchpad.test/beta/~name16'
     date_created: ...
     date_made_pending: None

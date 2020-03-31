@@ -269,6 +269,13 @@ class ISourcePackagePublishingHistoryPublic(IPublishingView):
             Interface,
             title=_('Archive ID'), required=True, readonly=True,
             ))
+    copied_from_archive = exported(
+        Reference(
+            # Really IArchive (fixed in _schema_circular_imports.py).
+            Interface,
+            title=_('Original archive ID where this package was copied from.'),
+            required=False, readonly=True,
+            ))
     supersededby = Int(
             title=_('The sourcepackagerelease which superseded this one'),
             required=False, readonly=False,
@@ -711,6 +718,13 @@ class IBinaryPackagePublishingHistoryPublic(IPublishingView):
             description=_("The context archive for this publication."),
             required=True, readonly=True,
             ))
+    copied_from_archive = exported(
+        Reference(
+            # Really IArchive (fixed in _schema_circular_imports.py).
+            Interface,
+            title=_('Original archive ID where this package was copied from.'),
+            required=False, readonly=True,
+        ))
     removed_by = exported(
         Reference(
             IPerson,
@@ -875,7 +889,8 @@ class IBinaryPackagePublishingHistory(IBinaryPackagePublishingHistoryPublic,
 class IPublishingSet(Interface):
     """Auxiliary methods for dealing with sets of publications."""
 
-    def publishBinaries(archive, distroseries, pocket, binaries):
+    def publishBinaries(archive, distroseries, pocket, binaries,
+                        copied_from_archives=None):
         """Efficiently publish multiple BinaryPackageReleases in an Archive.
 
         Creates `IBinaryPackagePublishingHistory` records for each
@@ -889,6 +904,8 @@ class IPublishingSet(Interface):
         :param binaries: A dict mapping `BinaryPackageReleases` to their
             desired overrides as (`Component`, `Section`,
             `PackagePublishingPriority`, `phased_update_percentage`) tuples.
+        :param copied_from_archives: A dict mapping `BinaryPackageReleases`
+            to their original archives (for copy operations).
 
         :return: A list of new `IBinaryPackagePublishingHistory` records.
         """
@@ -913,7 +930,8 @@ class IPublishingSet(Interface):
 
     def newSourcePublication(archive, sourcepackagerelease, distroseries,
                              component, section, pocket, ancestor,
-                             create_dsd_job=True):
+                             create_dsd_job=True, copied_from_archive=None,
+                             creator=None, sponsor=None, packageupload=None):
         """Create a new `SourcePackagePublishingHistory`.
 
         :param archive: An `IArchive`
@@ -926,6 +944,8 @@ class IPublishingSet(Interface):
             version of this publishing record
         :param create_dsd_job: A boolean indicating whether or not a dsd job
              should be created for the new source publication.
+        :param copied_from_archive: For copy operations, this should be the
+            source archive (from where this new publication is coming from).
         :param creator: An optional `IPerson`. If this is None, the
             sourcepackagerelease's creator will be used.
         :param sponsor: An optional `IPerson` indicating the sponsor of this

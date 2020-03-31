@@ -258,6 +258,8 @@ class SourcePackagePublishingHistory(SQLBase, ArchivePublisherBase):
                      default=PackagePublishingPocket.RELEASE,
                      notNull=True)
     archive = ForeignKey(dbName="archive", foreignKey="Archive", notNull=True)
+    copied_from_archive = ForeignKey(
+        dbName="copied_from_archive", foreignKey="Archive", notNull=False)
     removed_by = ForeignKey(
         dbName="removed_by", foreignKey="Person",
         storm_validator=validate_public_person, default=None)
@@ -531,6 +533,7 @@ class SourcePackagePublishingHistory(SQLBase, ArchivePublisherBase):
                 component = override.component
             if override.section is not None:
                 section = override.section
+
         return getUtility(IPublishingSet).newSourcePublication(
             archive,
             self.sourcepackagerelease,
@@ -542,6 +545,7 @@ class SourcePackagePublishingHistory(SQLBase, ArchivePublisherBase):
             create_dsd_job=create_dsd_job,
             creator=creator,
             sponsor=sponsor,
+            copied_from_archive=self.archive,
             packageupload=packageupload)
 
     def getStatusSummaryForBuilds(self):
@@ -643,6 +647,8 @@ class BinaryPackagePublishingHistory(SQLBase, ArchivePublisherBase):
     dateremoved = UtcDateTimeCol(default=None)
     pocket = EnumCol(dbName='pocket', schema=PackagePublishingPocket)
     archive = ForeignKey(dbName="archive", foreignKey="Archive", notNull=True)
+    copied_from_archive = ForeignKey(
+        dbName="copied_from_archive", foreignKey="Archive", notNull=False)
     removed_by = ForeignKey(
         dbName="removed_by", foreignKey="Person",
         storm_validator=validate_public_person, default=None)
@@ -1024,8 +1030,11 @@ def expand_binary_requests(distroseries, binaries):
 class PublishingSet:
     """Utilities for manipulating publications in batches."""
 
-    def publishBinaries(self, archive, distroseries, pocket, binaries):
+    def publishBinaries(self, archive, distroseries, pocket, binaries,
+                        copied_from_archives=None):
         """See `IPublishingSet`."""
+        if copied_from_archives is None:
+            copied_from_archives = {}
         # Expand the dict of binaries into a list of tuples including the
         # architecture.
         if distroseries.distribution != archive.distribution:
@@ -1076,11 +1085,13 @@ class PublishingSet:
 
         BPPH = BinaryPackagePublishingHistory
         return bulk.create(
-            (BPPH.archive, BPPH.distroarchseries, BPPH.pocket,
+            (BPPH.archive, BPPH.copied_from_archive,
+             BPPH.distroarchseries, BPPH.pocket,
              BPPH.binarypackagerelease, BPPH.binarypackagename,
              BPPH.component, BPPH.section, BPPH.priority,
              BPPH.phased_update_percentage, BPPH.status, BPPH.datecreated),
-            [(archive, das, pocket, bpr, bpr.binarypackagename,
+            [(archive, copied_from_archives.get(bpr), das, pocket, bpr,
+              bpr.binarypackagename,
               get_component(archive, das.distroseries, component),
               section, priority, phased_update_percentage,
               PackagePublishingStatus.PENDING, UTC_NOW)
@@ -1158,12 +1169,16 @@ class PublishingSet:
                  bpph.priority, None)) for bpph in bpphs)
         if not with_overrides:
             return list()
+        copied_from_archives = {
+            bpph.binarypackagerelease: bpph.archive for bpph in bpphs}
         return self.publishBinaries(
-            archive, distroseries, pocket, with_overrides)
+            archive, distroseries, pocket, with_overrides,
+            copied_from_archives)
 
     def newSourcePublication(self, archive, sourcepackagerelease,
                              distroseries, component, section, pocket,
                              ancestor=None, create_dsd_job=True,
+                             copied_from_archive=None,
                              creator=None, sponsor=None, packageupload=None):
         """See `IPublishingSet`."""
         # Circular import.
@@ -1179,6 +1194,7 @@ class PublishingSet:
         pub = SourcePackagePublishingHistory(
             distroseries=distroseries,
             pocket=pocket,
+            copied_from_archive=copied_from_archive,
             archive=archive,
             sourcepackagename=sourcepackagerelease.sourcepackagename,
             sourcepackagerelease=sourcepackagerelease,
