@@ -27,12 +27,12 @@ from lazr.restful.fields import (
     )
 from zope.interface import Interface
 from zope.schema import (
+    Bool,
     Datetime,
     Int,
     Text,
     TextLine,
     )
-from zope.schema._bootstrapfields import Bool
 
 from lp import _
 from lp.app.validators.name import name_validator

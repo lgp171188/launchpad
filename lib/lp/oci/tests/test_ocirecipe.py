@@ -473,7 +473,6 @@ class TestOCIRecipeWebservice(TestCaseWithFactory):
 
         obj = {
             "name": "My recipe",
-            "oci_project": oci_project_url,
             "git_ref": git_ref_url,
             "build_file": "./Dockerfile",
             "description": "My recipe"}
@@ -513,7 +512,6 @@ class TestOCIRecipeWebservice(TestCaseWithFactory):
 
         obj = {
             "name": "My recipe",
-            "oci_project": oci_project_url,
             "git_ref": git_ref_url,
             "build_file": "./Dockerfile",
             "description": "My recipe"}
@@ -538,7 +536,6 @@ class TestOCIRecipeWebservice(TestCaseWithFactory):
 
         obj = {
             "name": "My recipe",
-            "oci_project": oci_project_url,
             "git_ref": git_ref_url,
             "build_file": "./Dockerfile",
             "description": "My recipe"}
