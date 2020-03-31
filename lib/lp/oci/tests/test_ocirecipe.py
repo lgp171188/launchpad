@@ -10,7 +10,6 @@ import json
 from fixtures import FakeLogger
 from six import string_types
 from storm.exceptions import LostObjectError
-from storm.store import Store
 from testtools.matchers import (
     ContainsDict,
     Equals,
@@ -34,7 +33,6 @@ from lp.oci.interfaces.ocirecipe import (
     OCIRecipeNotOwner,
     )
 from lp.oci.interfaces.ocirecipebuild import IOCIRecipeBuildSet
-from lp.oci.model.ocirecipe import OCIRecipe
 from lp.services.config import config
 from lp.services.database.constants import (
     ONE_DAY_AGO,
