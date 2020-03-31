@@ -1497,7 +1497,6 @@ class TestGitAPI(TestGitAPIMixin, TestCaseWithFactory):
                  location=config.vhost.mainsite.hostname,
                  identifier="another",
                  key="another-secret").serialize())
-        #pushed_branch = 'branch1'
 
         self.assertFault(
             faults.Unauthorized, None,
