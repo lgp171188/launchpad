@@ -25,7 +25,6 @@ from lazr.restful.fields import (
     Reference,
     ReferenceChoice,
     )
-from lp.registry.interfaces.person import IPerson
 from zope.interface import Interface
 from zope.schema import (
     Bool,
@@ -44,7 +43,10 @@ from lp.registry.interfaces.distribution import IDistribution
 from lp.registry.interfaces.ociprojectname import IOCIProjectName
 from lp.registry.interfaces.series import SeriesStatus
 from lp.services.database.constants import DEFAULT
-from lp.services.fields import PublicPersonChoice
+from lp.services.fields import (
+    PersonChoice,
+    PublicPersonChoice,
+    )
 
 
 class IOCIProjectView(IHasGitRepositories, Interface):
@@ -115,28 +117,32 @@ class IOCIProjectLegitimate(Interface):
     """
     @call_with(registrant=REQUEST_USER)
     @operation_parameters(
-        name=Text(
+        name=TextLine(
             title=_("OCI Recipe name."),
-            description=_("The name of the new OCI Recipe.")),
-        owner=Reference(
-            IPerson, title=_("Person or team that owns the new OCI Recipe.")),
-        git_ref=Reference(IGitRef, title=_("Git branch.")),
+            description=_("The name of the new OCI Recipe."),
+            required=True),
+        owner=PersonChoice(
+            title=_("Person or team that owns the new OCI Recipe."),
+            vocabulary="AllUserTeamsParticipationPlusSelf",
+            required=True),
+        git_ref=Reference(IGitRef, title=_("Git branch."), required=True),
         build_file=TextLine(
             title=_("Build file path."),
             description=_(
                 "The relative path to the file within this recipe's "
-                "branch that defines how to build the recipe.")),
+                "branch that defines how to build the recipe."),
+            required=True),
         description=Text(
             title=_("Description for this recipe."),
-            description=_("A short description of this recipe.")),
-        official=Bool(
-            title=_("Is this the official recipe?"),
-            description=_("True if this recipe is official for its "
-                          "OCI project.")))
+            description=_("A short description of this recipe."),
+            required=False),
+        build_daily=Bool(
+            title=_("Should this recipe be built daily?."), required=False))
     @export_factory_operation(Interface, [])
     @operation_for_version("devel")
     def newRecipe(name, registrant, owner, git_ref, build_file,
-                  description=None, official=False, require_virtualized=True):
+                  description=None, build_daily=False,
+                  require_virtualized=True):
         """Create an IOCIRecipe for this project."""
 
 

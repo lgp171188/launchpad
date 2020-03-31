@@ -108,7 +108,7 @@ class OCIProject(BugTargetBase, StormBase):
     bugtargetdisplayname = display_name
 
     def newRecipe(self, name, registrant, owner, git_ref,
-                  build_file, description=None, official=False,
+                  build_file, description=None, build_daily=False,
                   require_virtualized=True):
         return getUtility(IOCIRecipeSet).new(
             name=name,
@@ -118,8 +118,8 @@ class OCIProject(BugTargetBase, StormBase):
             git_ref=git_ref,
             build_file=build_file,
             description=description,
-            official=official,
-            require_virtualized=require_virtualized
+            require_virtualized=require_virtualized,
+            build_daily=build_daily,
         )
 
     def newSeries(self, name, summary, registrant,

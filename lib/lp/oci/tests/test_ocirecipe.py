@@ -483,7 +483,7 @@ class TestOCIRecipeWebservice(TestCaseWithFactory):
             person_url = api_url(self.person)
 
         obj = {
-            "name": "My recipe",
+            "name": "my-recipe",
             "owner": person_url,
             "git_ref": git_ref_url,
             "build_file": "./Dockerfile",
@@ -492,19 +492,19 @@ class TestOCIRecipeWebservice(TestCaseWithFactory):
         resp = self.webservice.named_post(oci_project_url, "newRecipe", **obj)
         self.assertEqual(201, resp.status, resp.body)
 
-        result_set = Store.of(oci_project).find(OCIRecipe)
-        self.assertEqual(1, result_set.count())
+        new_obj_url = resp.getHeader("Location")
+        ws_recipe = self.load_from_api(new_obj_url)
 
-        recipe = result_set[0]
-        self.assertThat(recipe, MatchesStructure(
-            name=Equals(obj["name"]),
-            oci_project=Equals(oci_project),
-            git_ref=Equals(git_ref),
-            build_file=Equals(obj["build_file"]),
-            description=Equals(obj["description"]),
-            owner=Equals(self.person),
-            registrant=Equals(self.person),
-        ))
+        with person_logged_in(self.person):
+            self.assertThat(ws_recipe, ContainsDict(dict(
+                name=Equals(obj["name"]),
+                oci_project_link=Equals(self.getAbsoluteURL(oci_project)),
+                git_ref_link=Equals(self.getAbsoluteURL(git_ref)),
+                build_file=Equals(obj["build_file"]),
+                description=Equals(obj["description"]),
+                owner_link=Equals(self.getAbsoluteURL(self.person)),
+                registrant_link=Equals(self.getAbsoluteURL(self.person)),
+            )))
 
     def test_api_create_oci_recipe_non_legitimate_user(self):
         """Ensure that a non-legitimate user cannot create recipe using API"""

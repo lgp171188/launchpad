@@ -261,7 +261,7 @@ class IOCIRecipeSet(Interface):
 
     def new(name, registrant, owner, oci_project, git_ref, build_file,
             description=None, official=False, require_virtualized=True,
-            date_created=DEFAULT):
+            build_daily=False, date_created=DEFAULT):
         """Create an IOCIRecipe."""
 
     def exists(owner, oci_project, name):
