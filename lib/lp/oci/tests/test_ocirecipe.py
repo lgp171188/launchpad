@@ -9,6 +9,7 @@ import base64
 import json
 
 from fixtures import FakeLogger
+from six import string_types
 from nacl.public import PrivateKey
 from storm.exceptions import LostObjectError
 from testtools.matchers import (
