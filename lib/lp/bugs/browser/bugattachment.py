@@ -1,4 +1,4 @@
-# Copyright 2010-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Bug attachment views."""
@@ -169,7 +169,10 @@ class BugAttachmentEditView(LaunchpadFormView, BugAttachmentContentCheck):
                 ILibraryFileAliasWithParent)
             lfa_with_parent.mimetype = data['contenttype']
 
-    @action('Delete Attachment', name='delete')
+    def canRemoveFromBug(self, action):
+        return self.context.canRemoveFromBug(self.user)
+
+    @action('Delete Attachment', name='delete', condition=canRemoveFromBug)
     def delete_action(self, action, data):
         libraryfile_url = ProxiedLibraryFileAlias(
             self.context.libraryfile, self.context).http_url

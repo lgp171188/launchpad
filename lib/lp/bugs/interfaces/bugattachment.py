@@ -1,4 +1,4 @@
-# Copyright 2009 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Bug attachment interfaces."""
@@ -125,6 +125,14 @@ class IBugAttachment(IHasBug):
         title=_('Patch?'),
         description=_('Is this attachment a patch?'),
         readonly=True)
+
+    def canRemoveFromBug(user):
+        """Checks if this attachment can be removed from bug by the given
+        user.
+
+        An attachment can only be removed by admin users, launchpad
+        developers, bug owner or by the user who uploaded the attachment.
+        """
 
     @call_with(user=REQUEST_USER)
     @export_write_operation()

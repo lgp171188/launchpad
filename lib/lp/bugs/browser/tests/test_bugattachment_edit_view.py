@@ -1,4 +1,4 @@
-# Copyright 2010 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -81,30 +81,55 @@ class TestBugAttachmentEditView(TestCaseWithFactory):
         'field.actions.delete': 'Delete Attachment',
         }
 
-    def test_delete_action_public_bug(self):
-        # Bug attachments can be removed from a bug.
+    def test_delete_cannot_be_performed_by_other_users(self):
         user = self.factory.makePerson()
         login_person(user)
         create_initialized_view(
             self.bugattachment, name='+edit', form=self.DELETE_FORM_DATA)
-        self.assertEqual(0, self.bug.attachments.count())
+        self.assertEqual(1, self.bug.attachments.count())
 
-    def test_delete_action_private_bug(self):
-        # Subscribers of a private bug can delete attachments.
-        user = self.factory.makePerson()
-        self.bug.setPrivate(True, self.bug_owner)
-        with person_logged_in(self.bug_owner):
-            self.bug.subscribe(user, self.bug_owner)
-        login_person(user)
+    def test_admin_can_delete_any_attachment(self):
+        admin = self.factory.makeAdministrator()
+        login_person(admin)
         create_initialized_view(
             self.bugattachment, name='+edit', form=self.DELETE_FORM_DATA)
         self.assertEqual(0, self.bug.attachments.count())
 
-    def test_delete_action_private_bug_unautorized(self):
-        # Other users cannot delete private bug attachments.
-        user = self.factory.makePerson()
-        self.bug.setPrivate(True, self.bug_owner)
-        login_person(user)
-        self.assertRaises(
-            Unauthorized, create_initialized_view, self.bugattachment,
-            name='+edit', form=self.DELETE_FORM_DATA)
+    def test_attachment_owner_can_delete_his_own_attachment(self):
+        bug = self.factory.makeBug(owner=self.bug_owner)
+        another_user = self.factory.makePerson()
+        attachment = self.factory.makeBugAttachment(
+            bug=bug, owner=another_user, filename='foo.diff',
+            data=b'the file content', description='some file',
+            content_type='text/plain', is_patch=False)
+
+        login_person(another_user)
+        create_initialized_view(
+            attachment, name='+edit', form=self.DELETE_FORM_DATA)
+        self.assertEqual(0, bug.attachments.count())
+
+    def test_bug_owner_can_delete_any_attachment(self):
+        bug = self.factory.makeBug(owner=self.bug_owner)
+        # Attachment from bug owner.
+        attachment1 = self.factory.makeBugAttachment(
+            bug=bug, owner=self.bug_owner, filename='foo.diff',
+            data=b'the file content', description='some file',
+            content_type='text/plain', is_patch=False)
+
+        # Attachment from another user.
+        another_user = self.factory.makePerson()
+        attachment2 = self.factory.makeBugAttachment(
+            bug=bug, owner=another_user, filename='foo.diff',
+            data=b'the file content', description='some file',
+            content_type='text/plain', is_patch=False)
+
+        login_person(self.bug_owner)
+        # Bug owner can remove his own attachment.
+        create_initialized_view(
+            attachment1, name='+edit', form=self.DELETE_FORM_DATA)
+        self.assertEqual(1, bug.attachments.count())
+
+        # Bug owner can remove someone else's attachment.
+        create_initialized_view(
+            attachment2, name='+edit', form=self.DELETE_FORM_DATA)
+        self.assertEqual(0, bug.attachments.count())

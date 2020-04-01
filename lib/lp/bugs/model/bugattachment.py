@@ -1,4 +1,4 @@
-# Copyright 2009 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -16,6 +16,7 @@ from sqlobject import (
 from storm.store import Store
 from zope.event import notify
 from zope.interface import implementer
+from zope.security.interfaces import Unauthorized
 
 from lp.app.errors import NotFoundError
 from lp.bugs.interfaces.bugattachment import (
@@ -23,9 +24,17 @@ from lp.bugs.interfaces.bugattachment import (
     IBugAttachment,
     IBugAttachmentSet,
     )
+from lp.registry.interfaces.role import IPersonRoles
 from lp.services.database.enumcol import EnumCol
 from lp.services.database.sqlbase import SQLBase
 from lp.services.propertycache import cachedproperty
+
+
+class BugAttachmentPermissionError(Unauthorized):
+    def __init__(self, user):
+        super(BugAttachmentPermissionError, self).__init__(
+            "{} doesn't have permission to perform this action".format(
+                user.name))
 
 
 @implementer(IBugAttachment)
@@ -62,8 +71,17 @@ class BugAttachment(SQLBase):
         """See IBugAttachment."""
         return self.type == BugAttachmentType.PATCH
 
+    def canRemoveFromBug(self, user):
+        """See IBugAttachment."""
+        person_roles = IPersonRoles(user)
+        if person_roles.in_admin or person_roles.in_launchpad_developers:
+            return True
+        return user.inTeam(self.message.owner) or user.inTeam(self.bug.owner)
+
     def removeFromBug(self, user):
         """See IBugAttachment."""
+        if not self.canRemoveFromBug(user):
+            raise BugAttachmentPermissionError(user)
         notify(ObjectDeletedEvent(self, user))
         self.destroySelf()
 
