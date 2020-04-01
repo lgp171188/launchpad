@@ -12,6 +12,7 @@ __all__ = [
     ]
 
 import pytz
+from six import text_type
 from storm.locals import (
     Bool,
     DateTime,
@@ -134,12 +135,15 @@ class OCIProject(BugTargetBase, StormBase):
 @implementer(IOCIProjectSet)
 class OCIProjectSet:
 
-    def new(self, registrant, pillar, ociprojectname,
+    def new(self, registrant, pillar, name,
             date_created=DEFAULT, description=None,
             bug_reporting_guidelines=None,
             bug_reported_acknowledgement=None,
             bugfiling_duplicate_search=False):
         """See `IOCIProjectSet`."""
+        if isinstance(name, text_type):
+            name = getUtility(IOCIProjectNameSet).getOrCreateByName(
+                name)
         store = IMasterStore(OCIProject)
         target = OCIProject()
         target.date_created = date_created
@@ -155,9 +159,10 @@ class OCIProjectSet:
                 'IDistribution instance.')
 
         target.registrant = registrant
-        target.ociprojectname = ociprojectname
+        target.ociprojectname = name
         target.description = description
         target.bug_reporting_guidelines = bug_reporting_guidelines
+        target.bug_reported_acknowledgement = bug_reported_acknowledgement
         target.enable_bugfiling_duplicate_search = bugfiling_duplicate_search
         store.add(target)
         return target
