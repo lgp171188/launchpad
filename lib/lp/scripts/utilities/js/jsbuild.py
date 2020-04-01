@@ -157,7 +157,8 @@ class CSSComboFile(ComboFile):
             if relative_src_dir == ".":
                 relative_parts = []
             else:
-                relative_parts = relative_src_dir.split(os.path.sep)
+                relative_parts = relative_src_dir.encode("UTF-8").split(
+                    os.path.sep.encode("UTF-8"))
 
             def fix_relative_url(match):
                 url = match.group(1)
@@ -166,7 +167,7 @@ class CSSComboFile(ComboFile):
                         url.startswith(b"/") or
                         url.startswith(b"data:")):
                     return match.group(0)
-                parts = relative_parts + url.split("/")
+                parts = relative_parts + url.split(b"/")
                 result = []
                 for part in parts:
                     if part == b".." and result and result[-1] != b"..":

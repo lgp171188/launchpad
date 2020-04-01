@@ -22,7 +22,6 @@ __all__ = [
     'OCIRecipeNotOwner',
     ]
 
-from lazr.lifecycle.snapshot import doNotSnapshot
 from lazr.restful.declarations import (
     error_status,
     export_as_webservice_entry,
@@ -120,30 +119,30 @@ class IOCIRecipeView(Interface):
         description=_("The user who registered this recipe."),
         vocabulary='ValidPersonOrTeam', required=True, readonly=True))
 
-    builds = exported(doNotSnapshot(CollectionField(
+    builds = CollectionField(
         title=_("Completed builds of this OCI recipe."),
         description=_(
             "Completed builds of this OCI recipe, sorted in descending "
             "order of finishing."),
         # Really IOCIRecipeBuild, patched in _schema_circular_imports.
         value_type=Reference(schema=Interface),
-        required=True, readonly=True)))
+        required=True, readonly=True)
 
-    completed_builds = exported(doNotSnapshot(CollectionField(
+    completed_builds = CollectionField(
         title=_("Completed builds of this OCI recipe."),
         description=_(
             "Completed builds of this OCI recipe, sorted in descending "
             "order of finishing."),
         # Really IOCIRecipeBuild, patched in _schema_circular_imports.
-        value_type=Reference(schema=Interface), readonly=True)))
+        value_type=Reference(schema=Interface), readonly=True)
 
-    pending_builds = exported(doNotSnapshot(CollectionField(
+    pending_builds = CollectionField(
         title=_("Pending builds of this OCI recipe."),
         description=_(
             "Pending builds of this OCI recipe, sorted in descending "
             "order of creation."),
         # Really IOCIRecipeBuild, patched in _schema_circular_imports.
-        value_type=Reference(schema=Interface), readonly=True)))
+        value_type=Reference(schema=Interface), readonly=True)
 
     def requestBuild(requester, architecture):
         """Request that the OCI recipe is built.
@@ -152,6 +151,13 @@ class IOCIRecipeView(Interface):
         :param architecture: The architecture to build for.
         :return: `IOCIRecipeBuild`.
         """
+
+    push_rules = CollectionField(
+        title=_("Push rules for this OCI recipe."),
+        description=_("All of the push rules for registry upload "
+                      "that apply to this recipe."),
+        # Really IOCIPushRule, patched in _schema_cirular_imports.
+        value_type=Reference(schema=Interface), readonly=True)
 
 
 class IOCIRecipeEdit(IWebhookTarget):

@@ -236,8 +236,8 @@ class AsyncVirtualTransport(Transport):
         deferred = gatherResults([to_deferred, from_deferred])
 
         @no_traceback_failures
-        def check_transports_and_rename(
-            ((to_transport, to_path), (from_transport, from_path))):
+        def check_transports_and_rename(results):
+            (to_transport, to_path), (from_transport, from_path) = results
             if to_transport.base != from_transport.base:
                 return Failure(TransportNotPossible(
                     'cannot move between underlying transports'))

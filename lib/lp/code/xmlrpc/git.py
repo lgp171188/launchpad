@@ -15,6 +15,7 @@ import uuid
 from pymacaroons import Macaroon
 import six
 from six.moves import xmlrpc_client
+from six.moves.urllib.parse import quote
 import transaction
 from zope.component import (
     ComponentLookupError,
@@ -72,7 +73,10 @@ from lp.services.macaroons.interfaces import (
     IMacaroonIssuer,
     NO_USER,
     )
-from lp.services.webapp import LaunchpadXMLRPCView
+from lp.services.webapp import (
+    canonical_url,
+    LaunchpadXMLRPCView,
+    )
 from lp.services.webapp.authorization import check_permission
 from lp.services.webapp.errorlog import ScriptRequest
 from lp.xmlrpc import faults
@@ -425,6 +429,47 @@ class GitAPI(LaunchpadXMLRPCView):
         getUtility(IGitRefScanJobSource).create(
             removeSecurityProxy(repository))
         logger.info("notify succeeded")
+
+    @return_fault
+    def _getMergeProposalURL(self, requester, translated_path, branch,
+                             auth_params):
+        if requester == LAUNCHPAD_ANONYMOUS:
+            requester = None
+        repository = removeSecurityProxy(
+            getUtility(IGitLookup).getByHostingPath(translated_path))
+        if repository is None:
+            raise faults.GitRepositoryNotFound(translated_path)
+
+        verified = self._verifyAuthParams(requester, repository, auth_params)
+        if verified is not None and verified.user is NO_USER:
+            # Showing a merge proposal URL may be useful to ordinary users,
+            # but it doesn't make sense in the context of an internal service.
+            return None
+
+        # We assemble the URL this way here because the ref may not exist yet.
+        base_url = canonical_url(repository, rootsite='code')
+        mp_url = "%s/+ref/%s/+register-merge" % (
+            base_url, quote(branch))
+        return mp_url
+
+    def getMergeProposalURL(self, translated_path, branch, auth_params):
+        """See `IGitAPI`."""
+        logger = self._getLogger(auth_params.get("request-id"))
+        requester_id = _get_requester_id(auth_params)
+        logger.info(
+            "Request received: getMergeProposalURL('%s, %s') for %s",
+            translated_path, branch, requester_id)
+        result = run_with_login(
+            requester_id, self._getMergeProposalURL,
+            translated_path, branch, auth_params)
+        if isinstance(result, xmlrpc_client.Fault):
+            logger.error("getMergeProposalURL failed: %r", result)
+        else:
+            # The result of getMergeProposalURL is not sensitive for logging
+            # purposes (it may refer to private artifacts, but contains no
+            # credentials, only the merge proposal URL).
+            logger.info("getMergeProposalURL succeeded: %s" % result)
+        return result
 
     @return_fault
     def _authenticateWithPassword(self, username, password):

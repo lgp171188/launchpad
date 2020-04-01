@@ -279,33 +279,33 @@ class XPIPOExporterTestCase(TestCase):
         self.translation_exporter.exportTranslationFile(
             translation_file_data, storage)
 
-        expected_template = dedent(ur'''
+        expected_template = dedent(u'''
             #, fuzzy
             msgid ""
             msgstr ""
-            "<?xml version=\"1.0\"?>\n"
-            "<RDF xmlns=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"\n"
-            "     xmlns:em=\"http://www.mozilla.org/2004/em-rdf#\">\n"
-            "  <Description about=\"urn:mozilla:install-manifest\"\n"
-            "               em:id=\"langpack-en-US@firefox.mozilla.org\"\n"
-            "               em:name=\"English U.S. (en-US) Language Pack\"\n"
-            "               em:version=\"2.0\"\n"
-            "               em:type=\"8\"\n"
-            "               em:creator=\"Danilo \u0160egan\">\n"
-            "    <em:contributor>\u0414\u0430\u043d\u0438\u043b\u043e \u0428\u0435\u0433\u0430\u043d</em:contributor>\n"
-            "    <em:contributor>Carlos Perell\u00f3 Mar\u00edn "
-            "&lt;carlos@canonical.com&gt;</em:contributor>\n"
-            "\n"
-            "    <em:targetApplication>\n"
-            "      <Description>\n"
+            "<?xml version=\\"1.0\\"?>\\n"
+            "<RDF xmlns=\\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\\"\\n"
+            "     xmlns:em=\\"http://www.mozilla.org/2004/em-rdf#\\">\\n"
+            "  <Description about=\\"urn:mozilla:install-manifest\\"\\n"
+            "               em:id=\\"langpack-en-US@firefox.mozilla.org\\"\\n"
+            "               em:name=\\"English U.S. (en-US) Language Pack\\"\\n"
+            "               em:version=\\"2.0\\"\\n"
+            "               em:type=\\"8\\"\\n"
+            "               em:creator=\\"Danilo Šegan\\">\\n"
+            "    <em:contributor>Данило Шеган</em:contributor>\\n"
+            "    <em:contributor>Carlos Perelló Marín "
+            "&lt;carlos@canonical.com&gt;</em:contributor>\\n"
+            "\\n"
+            "    <em:targetApplication>\\n"
+            "      <Description>\\n"
             "        <em:id>{ec8030f7-c20a-464f-9b0e-13a3a9e97384}</em:id><!-- firefox --"
-            ">\n"
-            "        <em:minVersion>2.0</em:minVersion>\n"
-            "        <em:maxVersion>2.0.0.*</em:maxVersion>\n"
-            "      </Description>\n"
-            "    </em:targetApplication>\n"
-            "  </Description>\n"
-            "</RDF>\n"
+            ">\\n"
+            "        <em:minVersion>2.0</em:minVersion>\\n"
+            "        <em:maxVersion>2.0.0.*</em:maxVersion>\\n"
+            "      </Description>\\n"
+            "    </em:targetApplication>\\n"
+            "  </Description>\\n"
+            "</RDF>\\n"
 
             #.  This is a DTD file inside a subdirectory
             #: jar:chrome/en-US.jar!/subdir/test2.dtd(foozilla.menu.title)
@@ -381,7 +381,7 @@ class XPIPOExporterTestCase(TestCase):
 
             #: jar:chrome/en-US.jar!/test1.properties:5(foozilla.utf8)
             msgctxt "main/test1.properties"
-            msgid "\u0414\u0430\u043d=Day"
+            msgid "Дан=Day"
             msgstr ""
             ''').strip()
 
