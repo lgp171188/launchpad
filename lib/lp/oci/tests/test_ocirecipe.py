@@ -5,10 +5,12 @@
 
 from __future__ import absolute_import, print_function, unicode_literals
 
+import base64
 import json
 
 from fixtures import FakeLogger
 from six import string_types
+from nacl.public import PrivateKey
 from storm.exceptions import LostObjectError
 from testtools.matchers import (
     ContainsDict,
@@ -191,6 +193,21 @@ class TestOCIRecipe(TestCaseWithFactory):
         self.assertEqual(
             [fullybuilt, instacancelled], list(oci_recipe.completed_builds))
         self.assertEqual([], list(oci_recipe.pending_builds))
+
+    def test_push_rules(self):
+        self.pushConfig(
+            "oci",
+            registry_secrets_public_key=base64.b64encode(
+                bytes(PrivateKey.generate().public_key)).decode("UTF-8"))
+        oci_recipe = self.factory.makeOCIRecipe()
+        for _ in range(3):
+            self.factory.makeOCIPushRule(recipe=oci_recipe)
+        # Add some others
+        for _ in range(3):
+            self.factory.makeOCIPushRule()
+
+        for rule in oci_recipe.push_rules:
+            self.assertEqual(rule.recipe, oci_recipe)
 
 
 class TestOCIRecipeSet(TestCaseWithFactory):

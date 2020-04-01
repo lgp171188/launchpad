@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Browser views for Soyuz publishing records."""
@@ -202,6 +202,18 @@ class BasePublishingRecordView(LaunchpadView):
             return u"%d%% of users" % self.context.phased_update_percentage
         return u""
 
+    @property
+    def linkify_copied_from_archive(self):
+        """Return True if the copied_from_archive should be linkified.
+
+        The copied_from_archive should be linkified if it's a PPA and the
+        user has permission to see it.
+        """
+        archive = self.context.copied_from_archive
+        if archive is None:
+            return False
+        return archive.is_ppa and check_permission('launchpad.View', archive)
+
 
 class SourcePublishingRecordView(BasePublishingRecordView):
     """View class for `ISourcePackagePublishingHistory`."""
@@ -264,6 +276,15 @@ class SourcePublishingRecordView(BasePublishingRecordView):
             return True
 
         return False
+
+    @property
+    def upload_archive(self):
+        """Get the original archive from this binary build if this was a
+        copied publication.
+        """
+        if not self.wasCopied():
+            return None
+        return self.context.sourcepackagerelease.upload_archive
 
     @property
     def allow_selection(self):
@@ -406,3 +427,12 @@ class BinaryPublishingRecordView(BasePublishingRecordView):
             return True
 
         return False
+
+    @property
+    def upload_archive(self):
+        """Get the original archive from this binary build if this was a
+        copied publication.
+        """
+        if not self.wasCopied():
+            return None
+        return self.context.binarypackagerelease.build.archive
