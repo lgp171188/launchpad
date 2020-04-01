@@ -5,10 +5,8 @@
 
 from __future__ import absolute_import, print_function, unicode_literals
 
-import base64
 import json
 
-from nacl.public import PrivateKey
 from testtools.matchers import (
     AfterPreprocessing,
     Equals,
@@ -21,6 +19,7 @@ from lp.oci.interfaces.ociregistrycredentials import (
     IOCIRegistryCredentials,
     IOCIRegistryCredentialsSet,
     )
+from lp.oci.tests.helpers import OCIConfigHelperMixin
 from lp.services.crypto.interfaces import IEncryptedContainer
 from lp.testing import (
     person_logged_in,
@@ -29,21 +28,13 @@ from lp.testing import (
 from lp.testing.layers import LaunchpadZopelessLayer
 
 
-class TestOCIRegistryCredentials(TestCaseWithFactory):
+class TestOCIRegistryCredentials(OCIConfigHelperMixin, TestCaseWithFactory):
 
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
         super(TestOCIRegistryCredentials, self).setUp()
-        self.private_key = PrivateKey.generate()
-        self.pushConfig(
-            "oci",
-            registry_secrets_public_key=base64.b64encode(
-                bytes(self.private_key.public_key)).decode("UTF-8"))
-        self.pushConfig(
-            "oci",
-            registry_secrets_private_key=base64.b64encode(
-                bytes(self.private_key)).decode("UTF-8"))
+        self.setConfig()
 
     def test_implements_interface(self):
         oci_credentials = getUtility(IOCIRegistryCredentialsSet).new(
@@ -77,21 +68,13 @@ class TestOCIRegistryCredentials(TestCaseWithFactory):
             }))
 
 
-class TestOCIRegistryCredentialsSet(TestCaseWithFactory):
+class TestOCIRegistryCredentialsSet(OCIConfigHelperMixin, TestCaseWithFactory):
 
     layer = LaunchpadZopelessLayer
 
     def setUp(self):
         super(TestOCIRegistryCredentialsSet, self).setUp()
-        self.private_key = PrivateKey.generate()
-        self.pushConfig(
-            "oci",
-            registry_secrets_public_key=base64.b64encode(
-                bytes(self.private_key.public_key)).decode("UTF-8"))
-        self.pushConfig(
-            "oci",
-            registry_secrets_private_key=base64.b64encode(
-                bytes(self.private_key)).decode("UTF-8"))
+        self.setConfig()
 
     def test_implements_interface(self):
         credentials_set = getUtility(IOCIRegistryCredentialsSet)

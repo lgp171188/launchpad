@@ -157,6 +157,7 @@ from lp.hardwaredb.interfaces.hwdb import (
     IHWSubmissionDeviceSet,
     IHWSubmissionSet,
     )
+from lp.oci.interfaces.ocipushrule import IOCIPushRuleSet
 from lp.oci.interfaces.ocirecipe import IOCIRecipeSet
 from lp.oci.interfaces.ocirecipebuild import IOCIRecipeBuildSet
 from lp.oci.interfaces.ociregistrycredentials import IOCIRegistryCredentialsSet
@@ -5050,6 +5051,20 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             owner=owner,
             url=url,
             credentials=credentials)
+
+    def makeOCIPushRule(self, recipe=None, registry_credentials=None,
+                        image_name=None):
+        """Make a new OCIPushRule."""
+        if recipe is None:
+            recipe = self.makeOCIRecipe()
+        if registry_credentials is None:
+            registry_credentials = self.makeOCIRegistryCredentials()
+        if image_name is None:
+            image_name = self.getUniqueUnicode(u"oci-image-name")
+        return getUtility(IOCIPushRuleSet).new(
+            recipe=recipe,
+            registry_credentials=registry_credentials,
+            image_name=image_name)
 
 
 # Some factory methods return simple Python types. We don't add

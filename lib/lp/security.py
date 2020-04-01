@@ -112,6 +112,7 @@ from lp.hardwaredb.interfaces.hwdb import (
     IHWSubmissionDevice,
     IHWVendorID,
     )
+from lp.oci.interfaces.ocipushrule import IOCIPushRule
 from lp.oci.interfaces.ocirecipe import IOCIRecipe
 from lp.oci.interfaces.ocirecipebuild import IOCIRecipeBuild
 from lp.oci.interfaces.ociregistrycredentials import IOCIRegistryCredentials
@@ -3521,3 +3522,8 @@ class ViewOCIRegistryCredentials(AuthorizationBase):
         return (
             user.isOwner(self.obj) or
             user.in_admin)
+
+
+class ViewOCIPushRule(AnonymousAuthorization):
+    """Anyone can view an `IOCIPushRule`."""
+    usedfor = IOCIPushRule
