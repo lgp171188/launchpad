@@ -212,7 +212,8 @@ class OCIRecipeAddView(LaunchpadFormView):
         recipe = getUtility(IOCIRecipeSet).new(
             name=data["name"], registrant=self.user, owner=data["owner"],
             oci_project=self.context, git_ref=data["git_ref"],
-            build_file=data["build_file"], description=data["description"])
+            build_file=data["build_file"], description=data["description"],
+            build_daily=data["build_daily"])
         self.next_url = canonical_url(recipe)
 
 
