@@ -64,36 +64,8 @@ class BugAttachmentType(DBEnumeratedType):
         """)
 
 
-class IBugAttachment(IHasBug):
-    """A file attachment to an IBug.
-
-    Launchpadlib example of accessing content of an attachment::
-
-        for attachment in bug.attachments:
-            buffer = attachment.data.open()
-            for line in buffer:
-                print line
-            buffer.close()
-
-    Launchpadlib example of accessing metadata about an attachment::
-
-        attachment = bug.attachments[0]
-        print "title:", attachment.title
-        print "ispatch:", attachment.type
-
-    For information about the file-like object returned by
-    attachment.data.open() see lazr.restfulclient's documentation of the
-    HostedFile object.
-
-    Details about the message associated with an attachment can be found on
-    the "message" attribute::
-
-        message = attachment.message
-        print "subject:", message.subject.encode('utf-8')
-        print "owner:", message.owner.display_name.encode('utf-8')
-        print "created:", message.date_created
-    """
-    export_as_webservice_entry()
+class IBugAttachmentView(IHasBug):
+    """Interface for BugAttachment that requires launchpad.View permission."""
 
     id = Int(title=_('ID'), required=True, readonly=True)
     bug = exported(
@@ -126,18 +98,16 @@ class IBugAttachment(IHasBug):
         description=_('Is this attachment a patch?'),
         readonly=True)
 
-    def canRemoveFromBug(user):
-        """Checks if this attachment can be removed from bug by the given
-        user.
+    def getFileByName(filename):
+        """Return the `ILibraryFileAlias for the given file name.
 
-        An attachment can only be removed by admin users, launchpad
-        developers, bug owner or by the user who uploaded the attachment.
+        NotFoundError is raised if the given filename does not match
+        libraryfile.filename.
         """
 
-    @call_with(user=REQUEST_USER)
-    @export_write_operation()
-    def removeFromBug(user):
-        """Remove the attachment from the bug."""
+
+class IBugAttachmentEdit(Interface):
+    """Interface for BugAttachment that requires launchpad.Edit permission."""
 
     def destroySelf():
         """Delete this record.
@@ -145,12 +115,42 @@ class IBugAttachment(IHasBug):
         The library file content for this attachment is set to None.
         """
 
-    def getFileByName(filename):
-        """Return the `ILibraryFileAlias for the given file name.
+    @call_with(user=REQUEST_USER)
+    @export_write_operation()
+    def removeFromBug(user):
+        """Remove the attachment from the bug."""
 
-        NotFoundError is raised if the given filename does not match
-        libraryfile.filename.
-        """
+
+class IBugAttachment(IBugAttachmentView, IBugAttachmentEdit):
+    """A file attachment to an IBug.
+
+        Launchpadlib example of accessing content of an attachment::
+
+            for attachment in bug.attachments:
+                buffer = attachment.data.open()
+                for line in buffer:
+                    print line
+                buffer.close()
+
+        Launchpadlib example of accessing metadata about an attachment::
+
+            attachment = bug.attachments[0]
+            print "title:", attachment.title
+            print "ispatch:", attachment.type
+
+        For information about the file-like object returned by
+        attachment.data.open() see lazr.restfulclient's documentation of the
+        HostedFile object.
+
+        Details about the message associated with an attachment can be found on
+        the "message" attribute::
+
+            message = attachment.message
+            print "subject:", message.subject.encode('utf-8')
+            print "owner:", message.owner.display_name.encode('utf-8')
+            print "created:", message.date_created
+    """
+    export_as_webservice_entry()
 
 
 # Need to do this here because of circular imports.

@@ -220,9 +220,13 @@ class EditBugAttachment(DelegatedAuthorization):
     permission = 'launchpad.Edit'
     usedfor = IBugAttachment
 
-    def __init__(self, bugattachment):
-        super(EditBugAttachment, self).__init__(
-            bugattachment, bugattachment.bug)
+    def checkAuthenticated(self, user):
+        return (user.in_admin or
+                user.in_registry_experts or
+                user.inTeam(self.obj.message.owner))
+
+    def checkUnauthenticated(self):
+        return False
 
 
 class ViewBugActivity(DelegatedAuthorization):

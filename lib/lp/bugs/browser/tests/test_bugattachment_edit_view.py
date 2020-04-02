@@ -4,8 +4,9 @@
 __metaclass__ = type
 
 import transaction
-from zope.security.interfaces import Unauthorized
+from zope.component import getUtility
 
+from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.testing import (
     login_person,
     person_logged_in,
@@ -30,6 +31,11 @@ class TestBugAttachmentEditView(TestCaseWithFactory):
     def setUp(self):
         super(TestBugAttachmentEditView, self).setUp()
         self.bug_owner = self.factory.makePerson()
+        self.registry_expert = self.factory.makePerson()
+        registry = getUtility(ILaunchpadCelebrities).registry_experts
+        with person_logged_in(registry.teamowner):
+            registry.addMember(self.registry_expert, registry.teamowner)
+
         login_person(self.bug_owner)
         self.bug = self.factory.makeBug(owner=self.bug_owner)
         self.bugattachment = self.factory.makeBugAttachment(
@@ -40,11 +46,8 @@ class TestBugAttachmentEditView(TestCaseWithFactory):
         # we start the tests.
         transaction.commit()
 
-    def test_change_action_public_bug(self):
-        # Properties of attachments for public bugs can be
-        # changed by every user.
-        user = self.factory.makePerson()
-        login_person(user)
+    def test_user_changes_his_own_attachment(self):
+        login_person(self.bugattachment.message.owner)
         create_initialized_view(
             self.bugattachment, name='+edit', form=self.CHANGE_FORM_DATA)
         self.assertEqual('new description', self.bugattachment.title)
@@ -52,14 +55,9 @@ class TestBugAttachmentEditView(TestCaseWithFactory):
         self.assertEqual(
             'application/whatever', self.bugattachment.libraryfile.mimetype)
 
-    def test_change_action_private_bug(self):
-        # Subscribers of a private bug can edit attachments.
-        user = self.factory.makePerson()
-        self.bug.setPrivate(True, self.bug_owner)
-        with person_logged_in(self.bug_owner):
-            self.bug.subscribe(user, self.bug_owner)
-        transaction.commit()
-        login_person(user)
+    def test_admin_changes_any_attachment(self):
+        admin = self.factory.makeAdministrator()
+        login_person(admin)
         create_initialized_view(
             self.bugattachment, name='+edit', form=self.CHANGE_FORM_DATA)
         self.assertEqual('new description', self.bugattachment.title)
@@ -67,15 +65,23 @@ class TestBugAttachmentEditView(TestCaseWithFactory):
         self.assertEqual(
             'application/whatever', self.bugattachment.libraryfile.mimetype)
 
-    def test_change_action_private_bug_unauthorized(self):
-        # Other users cannot edit attachments of private bugs.
-        user = self.factory.makePerson()
-        self.bug.setPrivate(True, self.bug_owner)
-        transaction.commit()
-        login_person(user)
-        self.assertRaises(
-            Unauthorized, create_initialized_view, self.bugattachment,
-            name='+edit', form=self.CHANGE_FORM_DATA)
+    def test_registry_expert_changes_any_attachment(self):
+        login_person(self.registry_expert)
+        create_initialized_view(
+            self.bugattachment, name='+edit', form=self.CHANGE_FORM_DATA)
+        self.assertEqual('new description', self.bugattachment.title)
+        self.assertTrue(self.bugattachment.is_patch)
+        self.assertEqual(
+            'application/whatever', self.bugattachment.libraryfile.mimetype)
+
+    def test_other_user_changes_attachment_fails(self):
+        random_user = self.factory.makePerson()
+        login_person(random_user)
+        create_initialized_view(
+            self.bugattachment, name='+edit', form=self.CHANGE_FORM_DATA)
+        self.assertEqual('attachment description', self.bugattachment.title)
+        self.assertFalse(self.bugattachment.is_patch)
+        self.assertEqual('text/plain', self.bugattachment.libraryfile.mimetype)
 
     DELETE_FORM_DATA = {
         'field.actions.delete': 'Delete Attachment',
@@ -95,6 +101,12 @@ class TestBugAttachmentEditView(TestCaseWithFactory):
             self.bugattachment, name='+edit', form=self.DELETE_FORM_DATA)
         self.assertEqual(0, self.bug.attachments.count())
 
+    def test_registry_expert_can_delete_any_attachment(self):
+        login_person(self.registry_expert)
+        create_initialized_view(
+            self.bugattachment, name='+edit', form=self.DELETE_FORM_DATA)
+        self.assertEqual(0, self.bug.attachments.count())
+
     def test_attachment_owner_can_delete_his_own_attachment(self):
         bug = self.factory.makeBug(owner=self.bug_owner)
         another_user = self.factory.makePerson()
@@ -106,30 +118,4 @@ class TestBugAttachmentEditView(TestCaseWithFactory):
         login_person(another_user)
         create_initialized_view(
             attachment, name='+edit', form=self.DELETE_FORM_DATA)
-        self.assertEqual(0, bug.attachments.count())
-
-    def test_bug_owner_can_delete_any_attachment(self):
-        bug = self.factory.makeBug(owner=self.bug_owner)
-        # Attachment from bug owner.
-        attachment1 = self.factory.makeBugAttachment(
-            bug=bug, owner=self.bug_owner, filename='foo.diff',
-            data=b'the file content', description='some file',
-            content_type='text/plain', is_patch=False)
-
-        # Attachment from another user.
-        another_user = self.factory.makePerson()
-        attachment2 = self.factory.makeBugAttachment(
-            bug=bug, owner=another_user, filename='foo.diff',
-            data=b'the file content', description='some file',
-            content_type='text/plain', is_patch=False)
-
-        login_person(self.bug_owner)
-        # Bug owner can remove his own attachment.
-        create_initialized_view(
-            attachment1, name='+edit', form=self.DELETE_FORM_DATA)
-        self.assertEqual(1, bug.attachments.count())
-
-        # Bug owner can remove someone else's attachment.
-        create_initialized_view(
-            attachment2, name='+edit', form=self.DELETE_FORM_DATA)
         self.assertEqual(0, bug.attachments.count())

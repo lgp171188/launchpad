@@ -71,17 +71,8 @@ class BugAttachment(SQLBase):
         """See IBugAttachment."""
         return self.type == BugAttachmentType.PATCH
 
-    def canRemoveFromBug(self, user):
-        """See IBugAttachment."""
-        person_roles = IPersonRoles(user)
-        if person_roles.in_admin or person_roles.in_launchpad_developers:
-            return True
-        return user.inTeam(self.message.owner) or user.inTeam(self.bug.owner)
-
     def removeFromBug(self, user):
         """See IBugAttachment."""
-        if not self.canRemoveFromBug(user):
-            raise BugAttachmentPermissionError(user)
         notify(ObjectDeletedEvent(self, user))
         self.destroySelf()
 

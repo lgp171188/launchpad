@@ -13,6 +13,7 @@ __all__ = [
     ]
 
 from lazr.restful.utils import smartquote
+from lp.services.webapp.authorization import check_permission
 from zope.component import (
     getMultiAdapter,
     getUtility,
@@ -135,7 +136,10 @@ class BugAttachmentEditView(LaunchpadFormView, BugAttachmentContentCheck):
             patch=attachment.type == BugAttachmentType.PATCH,
             contenttype=attachment.libraryfile.mimetype)
 
-    @action('Change', name='change')
+    def canEditAttachment(self, action):
+        return check_permission('launchpad.Edit', self.context)
+
+    @action('Change', name='change', condition=canEditAttachment)
     def change_action(self, action, data):
         if data['patch']:
             new_type = BugAttachmentType.PATCH
@@ -169,10 +173,7 @@ class BugAttachmentEditView(LaunchpadFormView, BugAttachmentContentCheck):
                 ILibraryFileAliasWithParent)
             lfa_with_parent.mimetype = data['contenttype']
 
-    def canRemoveFromBug(self, action):
-        return self.context.canRemoveFromBug(self.user)
-
-    @action('Delete Attachment', name='delete', condition=canRemoveFromBug)
+    @action('Delete Attachment', name='delete', condition=canEditAttachment)
     def delete_action(self, action, data):
         libraryfile_url = ProxiedLibraryFileAlias(
             self.context.libraryfile, self.context).http_url
