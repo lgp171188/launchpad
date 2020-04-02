@@ -26,6 +26,7 @@ from lazr.restful.fields import (
     Reference,
     ReferenceChoice,
     )
+from lp.app.validators.path import path_does_not_escape
 from zope.interface import Interface
 from zope.schema import (
     Bool,
@@ -135,6 +136,7 @@ class IOCIProjectLegitimate(Interface):
             description=_(
                 "The relative path to the file within this recipe's "
                 "branch that defines how to build the recipe."),
+            constraint=path_does_not_escape,
             required=True),
         description=Text(
             title=_("Description for this recipe."),

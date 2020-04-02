@@ -10,9 +10,10 @@ __all__ = []
 
 import base64
 
+from nacl.public import PrivateKey
+
 from lp.oci.interfaces.ocirecipe import OCI_RECIPE_ALLOW_CREATE
 from lp.services.features.testing import FeatureFixture
-from nacl.public import PrivateKey
 
 
 class OCIConfigHelperMixin:
