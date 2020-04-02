@@ -59,8 +59,7 @@ But this delete option should not be shown for other users.
     ...     another_browser.getControl('Delete Attachment')
     ...     raise ValueError("'Delete Attachment' button shouldn't be here!")
     ... except LookupError:
-    ...     print(True)
-    True
+    ...     pass
 
 If the button is pressed, the attachment will be deleted, which means
 that it won't show up in the attachments portlet anymore. Since there
