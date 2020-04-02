@@ -98,10 +98,7 @@ from lp.hardwaredb.interfaces.hwdb import (
     )
 from lp.oci.interfaces.ocipushrule import IOCIPushRule
 from lp.oci.interfaces.ocirecipe import IOCIRecipe
-from lp.oci.interfaces.ocirecipebuild import (
-    IOCIFile,
-    IOCIRecipeBuild,
-    )
+from lp.oci.interfaces.ocirecipebuild import IOCIRecipeBuild
 from lp.registry.interfaces.commercialsubscription import (
     ICommercialSubscription,
     )
@@ -1112,6 +1109,3 @@ patch_collection_property(IOCIRecipe, 'builds', IOCIRecipeBuild)
 patch_collection_property(IOCIRecipe, 'completed_builds', IOCIRecipeBuild)
 patch_collection_property(IOCIRecipe, 'pending_builds', IOCIRecipeBuild)
 patch_collection_property(IOCIRecipe, 'push_rules', IOCIPushRule)
-
-# IOCIRecipeBuild
-patch_reference_property(IOCIFile, 'layer_file_digest', IOCIRecipeBuild)
