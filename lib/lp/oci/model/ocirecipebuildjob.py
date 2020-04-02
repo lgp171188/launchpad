@@ -39,7 +39,7 @@ class OCIRecipeBuildJobType(DBEnumeratedType):
     """Values that `OCIBuildJobType.job_type` can take."""
 
     # XXX twom (2020-04-02) This does not currently have a concrete
-    # implentation, awaiting registry upload.
+    # implementation, awaiting registry upload.
 
     REGISTRY_UPLOAD = DBItem(0, """
         Registry upload
