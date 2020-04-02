@@ -2,7 +2,6 @@ import json
 import os
 
 from storm.store import Store
-from zope.component import getUtility
 
 from lp.archiveuploader.tests.test_uploadprocessor import (
     TestUploadProcessorBase,
@@ -12,8 +11,7 @@ from lp.archiveuploader.uploadprocessor import (
     UploadStatusEnum,
     )
 from lp.buildmaster.enums import BuildStatus
-from lp.oci.interfaces.ocirecipebuild import IOCIRecipeBuildSet
-from lp.registry.interfaces.pocket import PackagePublishingPocket
+from lp.services.propertycache import get_property_cache
 from lp.services.osutils import write_file
 
 
@@ -49,6 +47,8 @@ class TestOCIRecipeUploads(TestUploadProcessorBase):
     def test_sets_build_and_state(self):
         # The upload processor uploads files and sets the correct status.
         self.assertFalse(self.build.verifySuccessfulUpload())
+        del get_property_cache(self.build).manifest
+        del get_property_cache(self.build).digests
         upload_dir = os.path.join(
             self.incoming_folder, "test", str(self.build.id), "ubuntu")
         write_file(os.path.join(upload_dir, "layer_1.tar.gz"), b"layer_1")
@@ -69,6 +69,8 @@ class TestOCIRecipeUploads(TestUploadProcessorBase):
         # The upload processor fails if the upload does not contain the
         # digests file
         self.assertFalse(self.build.verifySuccessfulUpload())
+        del get_property_cache(self.build).manifest
+        del get_property_cache(self.build).digests
         upload_dir = os.path.join(
             self.incoming_folder, "test", str(self.build.id), "ubuntu")
         write_file(os.path.join(upload_dir, "layer_1.tar.gz"), b"layer_1")
@@ -84,6 +86,8 @@ class TestOCIRecipeUploads(TestUploadProcessorBase):
     def test_missing_layer_file(self):
         # The digests.json specifies a layer file that is missing
         self.assertFalse(self.build.verifySuccessfulUpload())
+        del get_property_cache(self.build).manifest
+        del get_property_cache(self.build).digests
         upload_dir = os.path.join(
             self.incoming_folder, "test", str(self.build.id), "ubuntu")
         write_file(os.path.join(upload_dir, "layer_1.tar.gz"), b"layer_1")

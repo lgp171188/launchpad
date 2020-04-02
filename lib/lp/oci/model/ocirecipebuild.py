@@ -330,7 +330,6 @@ class OCIRecipeBuild(PackageBuildMixin, Storm):
 
     def verifySuccessfulUpload(self):
         """See `IPackageBuild`."""
-        manifest = self.manifest
         layer_files = Store.of(self).find(
             OCIFile,
             OCIFile.build == self.id,
