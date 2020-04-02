@@ -38,10 +38,13 @@ from lp.services.job.runner import BaseRunnableJob
 class OCIRecipeBuildJobType(DBEnumeratedType):
     """Values that `OCIBuildJobType.job_type` can take."""
 
+    # XXX twom (2020-04-02) This does not currently have a concrete
+    # implentation, awaiting registry upload.
+
     REGISTRY_UPLOAD = DBItem(0, """
         Registry upload
 
-        This job uploads an OCI Image to registry.
+        This job uploads an OCI Image to the registry.
         """)
 
 
