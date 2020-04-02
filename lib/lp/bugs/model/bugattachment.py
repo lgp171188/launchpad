@@ -16,7 +16,6 @@ from sqlobject import (
 from storm.store import Store
 from zope.event import notify
 from zope.interface import implementer
-from zope.security.interfaces import Unauthorized
 
 from lp.app.errors import NotFoundError
 from lp.bugs.interfaces.bugattachment import (
@@ -24,17 +23,9 @@ from lp.bugs.interfaces.bugattachment import (
     IBugAttachment,
     IBugAttachmentSet,
     )
-from lp.registry.interfaces.role import IPersonRoles
 from lp.services.database.enumcol import EnumCol
 from lp.services.database.sqlbase import SQLBase
 from lp.services.propertycache import cachedproperty
-
-
-class BugAttachmentPermissionError(Unauthorized):
-    def __init__(self, user):
-        super(BugAttachmentPermissionError, self).__init__(
-            "{} doesn't have permission to perform this action".format(
-                user.name))
 
 
 @implementer(IBugAttachment)
