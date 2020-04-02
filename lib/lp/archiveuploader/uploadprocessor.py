@@ -632,7 +632,7 @@ class BuildUploadHandler(UploadHandler):
             self.processor.ztm.abort()
             raise
 
-    def processOCIRecipeBuild(self, logger=None):
+    def processOCIRecipe(self, logger=None):
         """Process an OCI image upload."""
         assert IOCIRecipeBuild.providedBy(self.build)
         if logger is None:
@@ -700,7 +700,7 @@ class BuildUploadHandler(UploadHandler):
             elif ISnapBuild.providedBy(self.build):
                 result = self.processSnap(logger)
             elif IOCIRecipeBuild.providedBy(self.build):
-                result = self.processOCIRecipeBuild(logger)
+                result = self.processOCIRecipe(logger)
             else:
                 self.processor.log.debug("Build %s found" % self.build.id)
                 [changes_file] = self.locateChangesFiles()

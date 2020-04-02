@@ -67,7 +67,7 @@ class TestOCIRecipeUploads(TestUploadProcessorBase):
         write_file(os.path.join(upload_dir, "manifest.json"), b"manifest")
         handler = UploadHandler.forProcessor(
             self.uploadprocessor, self.incoming_folder, "test", self.build)
-        result = handler.processOCIRecipeBuild(self.log)
+        result = handler.processOCIRecipe(self.log)
         self.assertEqual(
             UploadStatusEnum.ACCEPTED, result,
             "OCI upload failed\nGot: %s" % self.log.getLogBuffer())
@@ -85,7 +85,7 @@ class TestOCIRecipeUploads(TestUploadProcessorBase):
         write_file(os.path.join(upload_dir, "layer_1.tar.gz"), b"layer_1")
         handler = UploadHandler.forProcessor(
             self.uploadprocessor, self.incoming_folder, "test", self.build)
-        result = handler.processOCIRecipeBuild(self.log)
+        result = handler.processOCIRecipe(self.log)
         self.assertEqual(UploadStatusEnum.REJECTED, result)
         self.assertIn(
             "ERROR Build did not produce a digests.json.",
@@ -104,7 +104,7 @@ class TestOCIRecipeUploads(TestUploadProcessorBase):
             os.path.join(upload_dir, "digests.json"), json.dumps(self.digests))
         handler = UploadHandler.forProcessor(
             self.uploadprocessor, self.incoming_folder, "test", self.build)
-        result = handler.processOCIRecipeBuild(self.log)
+        result = handler.processOCIRecipe(self.log)
         self.assertEqual(UploadStatusEnum.REJECTED, result)
         self.assertIn(
             "ERROR Missing layer file: layer_2.",
