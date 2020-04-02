@@ -221,6 +221,8 @@ class EditBugAttachment(DelegatedAuthorization):
     usedfor = IBugAttachment
 
     def checkAuthenticated(self, user):
+        # XXX: pappacena 2020-04-02: Maybe for bug tasks we should also allow
+        # pillar's bug supervisor do edit the attachments.
         return (user.in_admin or
                 user.in_registry_experts or
                 user.inTeam(self.obj.message.owner))

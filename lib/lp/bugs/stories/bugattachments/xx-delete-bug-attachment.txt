@@ -44,10 +44,9 @@ attachment.
 
 But this delete option should not be shown for other users.
 
-    >>> from lp.testing.factory import LaunchpadObjectFactory
     >>> from lp.testing.pages import setupBrowserForUser
     >>> login('foo.bar@canonical.com')
-    >>> another_user = LaunchpadObjectFactory().makePerson()
+    >>> another_user = factory.makePerson()
     >>> another_browser = setupBrowserForUser(another_user)
     >>> logout()
 
