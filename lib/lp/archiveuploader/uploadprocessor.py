@@ -647,7 +647,7 @@ class BuildUploadHandler(UploadHandler):
                 self.processor.ztm.abort()
             else:
                 logger.info(
-                    "Commiting the transaction and any mails associated "
+                    "Committing the transaction and any mails associated "
                     "with this upload.")
                 self.processor.ztm.commit()
             return UploadStatusEnum.ACCEPTED

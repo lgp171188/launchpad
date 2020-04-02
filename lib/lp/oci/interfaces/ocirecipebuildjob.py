@@ -15,18 +15,14 @@ from zope.interface import (
     Attribute,
     Interface,
     )
-from zope.schema import TextLine
 
 from lp import _
 from lp.oci.interfaces.ocirecipebuild import IOCIRecipeBuild
-from lp.services.job.interfaces.job import (
-    IJob,
-    IJobSource,
-    IRunnableJob,
-    )
+from lp.services.job.interfaces.job import IJob
 
 
 class IOCIRecipeBuildJob(Interface):
+    """A job related to an OCI image."""
     job = Reference(
         title=_("The common Job attributes."), schema=IJob,
         required=True, readonly=True)
