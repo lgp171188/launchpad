@@ -95,15 +95,18 @@ class OCIRecipeBuildJobDerived(BaseRunnableJob):
 
     def __repr__(self):
         """An informative representation of the job."""
-        return "<%s for %s>" % (
-            self.__class__.__name__, self.build.id)
+        build = self.build
+        return "<%s for ~%s/%s/+oci/%s/+recipe/%s/+build/%d>" % (
+            self.__class__.__name__, build.recipe.owner.name,
+            build.recipe.oci_project.pillar.name,
+            build.recipe.oci_project.name, build.recipe.name, build.id)
 
     @classmethod
     def get(cls, job_id):
         """Get a job by id.
 
-        :return: The `OCIBuildJob` with the specified id, as the current
-            `OCIBuildJobDerived` subclass.
+        :return: The `OCIRecipeBuildJob` with the specified id, as the current
+            `OCIRecipeBuildJobDerived` subclass.
         :raises: `NotFoundError` if there is no job with the specified id,
             or its `job_type` does not match the desired subclass.
         """
@@ -131,7 +134,7 @@ class OCIRecipeBuildJobDerived(BaseRunnableJob):
         oops_vars.extend([
             ('job_type', self.context.job_type.title),
             ('build_id', self.context.build.id),
-            ('owner_id', self.context.build.recipe.owner.id),
-            ('project_name', self.context.build.recipe.oci_project.name)
+            ('recipe_owner_id', self.context.build.recipe.owner.id),
+            ('oci_project_name', self.context.build.recipe.oci_project.name)
             ])
         return oops_vars

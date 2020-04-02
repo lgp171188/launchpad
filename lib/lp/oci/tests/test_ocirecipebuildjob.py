@@ -43,7 +43,7 @@ class TestOCIRecipeBuildJob(TestCaseWithFactory):
             ('job_id', build_job.job.id),
             ('job_type', build_job.job_type.title),
             ('build_id', oci_build.id),
-            ('owner_id', oci_build.recipe.owner.id),
-            ('project_name', oci_build.recipe.oci_project.name),
+            ('recipe_owner_id', oci_build.recipe.owner.id),
+            ('oci_project_name', oci_build.recipe.oci_project.name),
             ]
         self.assertEqual(expected, oops)
