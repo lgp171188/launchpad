@@ -20,14 +20,17 @@ from lp.archiveuploader.uploadprocessor import (
     UploadStatusEnum,
     )
 from lp.buildmaster.enums import BuildStatus
-from lp.services.propertycache import get_property_cache
+from lp.oci.interfaces.ocirecipe import OCI_RECIPE_ALLOW_CREATE
+from lp.services.features.testing import FeatureFixture
 from lp.services.osutils import write_file
+from lp.services.propertycache import get_property_cache
 
 
 class TestOCIRecipeUploads(TestUploadProcessorBase):
 
     def setUp(self):
         super(TestOCIRecipeUploads, self).setUp()
+        self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: 'on'}))
 
         self.setupBreezy()
 

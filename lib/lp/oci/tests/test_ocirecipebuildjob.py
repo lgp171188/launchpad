@@ -7,13 +7,14 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 
-
+from lp.oci.interfaces.ocirecipe import OCI_RECIPE_ALLOW_CREATE
 from lp.oci.interfaces.ocirecipebuildjob import IOCIRecipeBuildJob
 from lp.oci.model.ocirecipebuildjob import (
     OCIRecipeBuildJob,
     OCIRecipeBuildJobDerived,
     OCIRecipeBuildJobType,
     )
+from lp.services.features.testing import FeatureFixture
 from lp.testing import TestCaseWithFactory
 from lp.testing.layers import DatabaseFunctionalLayer
 
@@ -25,6 +26,10 @@ class FakeOCIBuildJob(OCIRecipeBuildJobDerived):
 class TestOCIRecipeBuildJob(TestCaseWithFactory):
 
     layer = DatabaseFunctionalLayer
+
+    def setUp(self):
+        super(TestOCIRecipeBuildJob, self).setUp()
+        self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: 'on'}))
 
     def test_provides_interface(self):
         oci_build = self.factory.makeOCIRecipeBuild()
