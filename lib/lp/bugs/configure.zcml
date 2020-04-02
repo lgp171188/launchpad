@@ -342,7 +342,7 @@
         <require
             permission="launchpad.Edit"
             interface="lp.bugs.interfaces.bugattachment.IBugAttachmentEdit"
-            set_attributes="type title" />
+            set_schema="lp.bugs.interfaces.bugattachment.IBugAttachmentView" />
     </class>
 
     <!-- BugAttachmentSet -->
