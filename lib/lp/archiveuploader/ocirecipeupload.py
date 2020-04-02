@@ -48,6 +48,7 @@ class OCIRecipeUpload:
                 continue
             # Open the digest file
             digest_path = os.path.join(dirpath, 'digests.json')
+            self.logger.debug("Digest path: {}".format(digest_path))
             with open(digest_path, 'r') as digest_fp:
                 digests = json.load(digest_fp)
 
@@ -60,6 +61,7 @@ class OCIRecipeUpload:
                         dirpath,
                         "{}.tar.gz".format(layer_id)
                     )
+                    self.logger.debug("Layer path: {}".format(layer_path))
                     if not os.path.exists(layer_path):
                         raise UploadError(
                             "Missing layer file: {}.".format(layer_id))
@@ -75,6 +77,7 @@ class OCIRecipeUpload:
             for filename in filenames:
                 if filename.endswith('.json'):
                     file_path = os.path.join(dirpath, filename)
+                    self.logger.debug("JSON file: {}".format(file_path))
                     libraryfile = self.librarian.create(
                         os.path.basename(file_path),
                         os.stat(file_path).st_size,
