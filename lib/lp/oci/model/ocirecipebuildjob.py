@@ -26,10 +26,7 @@ from zope.interface import implementer
 from lp.app.errors import NotFoundError
 from lp.oci.interfaces.ocirecipebuildjob import IOCIRecipeBuildJob
 from lp.services.database.enumcol import DBEnum
-from lp.services.database.interfaces import (
-    IMasterStore,
-    IStore,
-    )
+from lp.services.database.interfaces import IStore
 from lp.services.database.stormbase import StormBase
 from lp.services.job.model.job import (
     EnumeratedSubclass,
@@ -118,7 +115,7 @@ class OCIRecipeBuildJobDerived(BaseRunnableJob):
     @classmethod
     def iterReady(cls):
         """See `IJobSource`."""
-        jobs = IMasterStore(OCIRecipeBuildJob).find(
+        jobs = IStore(OCIRecipeBuildJob).find(
             OCIRecipeBuildJob,
             OCIRecipeBuildJob.job_type == cls.class_job_type,
             OCIRecipeBuildJob.job == Job.id,
