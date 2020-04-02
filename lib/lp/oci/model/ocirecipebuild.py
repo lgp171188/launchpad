@@ -56,7 +56,6 @@ from lp.services.database.interfaces import (
     IStore,
     )
 from lp.services.features import getFeatureFlag
-from lp.services.librarian.browser import ProxiedLibraryFileAlias
 from lp.services.librarian.model import (
     LibraryFileAlias,
     LibraryFileContent,
@@ -309,7 +308,7 @@ class OCIRecipeBuild(PackageBuildMixin, Storm):
         IMasterStore(OCIFile).add(oci_file)
         return oci_file
 
-    @property
+    @cachedproperty
     def manifest(self):
         result = Store.of(self).find(
             (OCIFile, LibraryFileAlias, LibraryFileContent),
@@ -319,7 +318,7 @@ class OCIRecipeBuild(PackageBuildMixin, Storm):
             LibraryFileAlias.filename == 'manifest.json')
         return result.one()
 
-    @property
+    @cachedproperty
     def digests(self):
         result = Store.of(self).find(
             (OCIFile, LibraryFileAlias, LibraryFileContent),
