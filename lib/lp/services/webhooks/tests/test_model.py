@@ -13,8 +13,10 @@ from zope.security.checker import getChecker
 from zope.security.proxy import removeSecurityProxy
 
 from lp.app.enums import InformationType
-from lp.oci.interfaces.ocirecipe import OCI_RECIPE_WEBHOOKS_FEATURE_FLAG, \
-    OCI_RECIPE_ALLOW_CREATE
+from lp.oci.interfaces.ocirecipe import (
+    OCI_RECIPE_ALLOW_CREATE,
+    OCI_RECIPE_WEBHOOKS_FEATURE_FLAG,
+    )
 from lp.registry.enums import BranchSharingPolicy
 from lp.services.database.interfaces import IStore
 from lp.services.features.testing import FeatureFixture

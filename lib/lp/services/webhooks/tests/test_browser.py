@@ -16,8 +16,10 @@ from testtools.matchers import (
 import transaction
 from zope.component import getUtility
 
-from lp.oci.interfaces.ocirecipe import OCI_RECIPE_WEBHOOKS_FEATURE_FLAG, \
-    OCI_RECIPE_ALLOW_CREATE
+from lp.oci.interfaces.ocirecipe import (
+    OCI_RECIPE_ALLOW_CREATE,
+    OCI_RECIPE_WEBHOOKS_FEATURE_FLAG,
+    )
 from lp.services.features.testing import FeatureFixture
 from lp.services.webapp.interfaces import IPlacelessAuthUtility
 from lp.services.webapp.publisher import canonical_url
