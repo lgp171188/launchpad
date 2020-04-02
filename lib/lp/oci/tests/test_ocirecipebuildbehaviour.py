@@ -1,4 +1,4 @@
-# Copyright 2015-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for `OCIRecipeBuildBehaviour`."""
@@ -63,6 +63,7 @@ from lp.buildmaster.tests.snapbuildproxy import (
 from lp.buildmaster.tests.test_buildfarmjobbehaviour import (
     TestGetUploadMethodsMixin,
     )
+from lp.oci.interfaces.ocirecipe import OCI_RECIPE_ALLOW_CREATE
 from lp.oci.model.ocirecipebuildbehaviour import OCIRecipeBuildBehaviour
 from lp.registry.interfaces.series import SeriesStatus
 from lp.services.config import config
@@ -123,6 +124,10 @@ class TestOCIBuildBehaviour(TestCaseWithFactory):
 
     layer = LaunchpadZopelessLayer
 
+    def setUp(self):
+        super(TestOCIBuildBehaviour, self).setUp()
+        self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: 'on'}))
+
     def test_provides_interface(self):
         # OCIRecipeBuildBehaviour provides IBuildFarmJobBehaviour.
         job = OCIRecipeBuildBehaviour(self.factory.makeOCIRecipeBuild())
@@ -159,6 +164,7 @@ class TestAsyncOCIRecipeBuildBehaviour(MakeOCIBuildMixin, TestCaseWithFactory):
         self.now = time.time()
         self.useFixture(fixtures.MockPatch(
             "time.time", return_value=self.now))
+        self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: 'on'}))
 
     @defer.inlineCallbacks
     def test_composeBuildRequest(self):
@@ -350,7 +356,8 @@ class TestAsyncOCIRecipeBuildBehaviour(MakeOCIBuildMixin, TestCaseWithFactory):
             distribution=distribution, status=SeriesStatus.CURRENT)
         processor = getUtility(IProcessorSet).getByName("386")
         self.useFixture(FeatureFixture({
-            "oci.build_series.%s" % distribution.name: distroseries.name}))
+            "oci.build_series.%s" % distribution.name: distroseries.name,
+            OCI_RECIPE_ALLOW_CREATE: 'on'}))
         distro_arch_series = self.factory.makeDistroArchSeries(
             distroseries=distroseries, architecturetag="i386",
             processor=processor)
@@ -401,6 +408,7 @@ class TestHandleStatusForOCIRecipeBuild(MakeOCIBuildMixin,
     def setUp(self):
         super(TestHandleStatusForOCIRecipeBuild, self).setUp()
         self.useFixture(fixtures.FakeLogger())
+        self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: 'on'}))
         self.build = self.makeBuild()
         # For the moment, we require a builder for the build so that
         # handleStatus_OK can get a reference to the slave.
@@ -627,3 +635,6 @@ class TestHandleStatusForOCIRecipeBuild(MakeOCIBuildMixin,
 class TestGetUploadMethodsForOCIRecipeBuild(
     MakeOCIBuildMixin, TestGetUploadMethodsMixin, TestCaseWithFactory):
     """IPackageBuild.getUpload-related methods work with OCI recipe builds."""
+    def setUp(self):
+        self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: 'on'}))
+        super(TestGetUploadMethodsForOCIRecipeBuild, self).setUp()
