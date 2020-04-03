@@ -20,14 +20,20 @@ from zope.interface import implementer
 from lp.app.browser.launchpadform import (
     action,
     LaunchpadEditFormView,
+    LaunchpadFormView,
     )
 from lp.app.browser.tales import CustomizableFormatter
 from lp.app.errors import NotFoundError
 from lp.code.browser.vcslisting import TargetDefaultVCSNavigationMixin
 from lp.oci.interfaces.ocirecipe import IOCIRecipeSet
+from lp.registry.errors import NoSuchOCIProjectName
 from lp.registry.interfaces.ociproject import (
     IOCIProject,
     IOCIProjectSet,
+    )
+from lp.registry.interfaces.ociprojectname import (
+    IOCIProjectName,
+    IOCIProjectNameSet,
     )
 from lp.services.webapp import (
     canonical_url,
@@ -41,6 +47,27 @@ from lp.services.webapp import (
     )
 from lp.services.webapp.breadcrumb import Breadcrumb
 from lp.services.webapp.interfaces import IMultiFacetedBreadcrumb
+
+
+class OCIProjectAddView(LaunchpadFormView):
+
+    schema = IOCIProjectName
+    field_names = ['name']
+
+    @action("Create Project", name="create")
+    def create_action(self, action, data):
+        """Create a new OCI Project."""
+        name = data.get('name')
+        try:
+            oci_project_name = getUtility(IOCIProjectNameSet).getByName(name)
+        except NoSuchOCIProjectName:
+            oci_project_name = getUtility(IOCIProjectNameSet).new(name)
+
+        oci_project = getUtility(IOCIProjectSet).new(
+            registrant=self.user,
+            pillar=self.context,
+            name=oci_project_name)
+        self.next_url = canonical_url(oci_project)
 
 
 class OCIProjectFormatterAPI(CustomizableFormatter):

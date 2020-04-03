@@ -306,11 +306,16 @@ class DistributionNavigationMenu(NavigationMenu, DistributionLinksMixin):
     def sharing(self):
         return Link('+sharing', 'Sharing', icon='edit')
 
+    @enabled_with_permission('launchpad.Admin')
+    def newociproject(self):
+        text = 'Create an OCI Project'
+        return Link('+newociproject', text, icon='add')
+
     @cachedproperty
     def links(self):
         return [
             'edit', 'admin', 'pubconf', 'subscribe_to_bug_mail',
-            'edit_bug_mail', 'sharing']
+            'edit_bug_mail', 'sharing', 'newociproject']
 
 
 class DistributionOverviewMenu(ApplicationMenu, DistributionLinksMixin):
