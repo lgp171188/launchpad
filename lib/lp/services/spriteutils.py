@@ -245,6 +245,6 @@ class SpriteUtil:
             position = self.positions[sprite['filename']]
             rule.style.backgroundPosition = '%dpx %dpx' % tuple(position)
 
-        with open(css_file, 'w') as fp:
-            fp.write(self.EDIT_WARNING)
+        with open(css_file, 'wb') as fp:
+            fp.write(self.EDIT_WARNING.encode('UTF-8'))
             fp.write(self.css_object.cssText)

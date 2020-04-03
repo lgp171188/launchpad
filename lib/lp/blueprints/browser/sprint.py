@@ -25,9 +25,9 @@ __all__ = [
 
 from collections import defaultdict
 import csv
-from StringIO import StringIO
 
 from lazr.restful.utils import smartquote
+import six
 import pytz
 from zope.component import getUtility
 from zope.formlib.widget import CustomWidgetFactory
@@ -573,16 +573,6 @@ class SprintSetView(LaunchpadView):
 class SprintAttendeesCsvExportView(LaunchpadView):
     """View for exporting the attendees for a sprint as CSV."""
 
-    def encode_value(self, value):
-        """Encode a value for CSV.
-
-        Return the string representation of `value` encoded as UTF-8,
-        or the empty string if value is None."""
-        if value is not None:
-            return unicode(value).encode('utf-8')
-        else:
-            return ''
-
     def render(self):
         """Render a CSV output of all the attendees for a sprint."""
         rows = [('Launchpad username',
@@ -621,17 +611,19 @@ class SprintAttendeesCsvExportView(LaunchpadView):
                  time_zone,
                  attendance.time_starts.strftime('%Y-%m-%dT%H:%M:%SZ'),
                  attendance.time_ends.strftime('%Y-%m-%dT%H:%M:%SZ'),
-                 attendance.is_physical))
-        # CSV can't handle unicode, so we force encoding
-        # everything as UTF-8
-        rows = [[self.encode_value(column)
+                 str(attendance.is_physical)))
+        # On Python 2, CSV can't handle unicode, so we encode everything as
+        # UTF-8.  Note that none of the columns constructed above can ever
+        # be None, so it's safe to use six.ensure_str here (which will raise
+        # TypeError if given None).
+        rows = [[six.ensure_str(column)
                  for column in row]
                 for row in rows]
         self.request.response.setHeader('Content-type', 'text/csv')
         self.request.response.setHeader(
             'Content-disposition',
             'attachment; filename=%s-attendees.csv' % self.context.name)
-        output = StringIO()
+        output = six.StringIO()
         writer = csv.writer(output)
         writer.writerows(rows)
         return output.getvalue()

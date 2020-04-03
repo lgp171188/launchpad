@@ -9,7 +9,7 @@ __metaclass__ = type
 
 import json
 
-from six import string_types
+from six import text_type
 from testtools.matchers import (
     ContainsDict,
     Equals,
@@ -22,8 +22,10 @@ from zope.security.proxy import removeSecurityProxy
 from lp.registry.interfaces.ociproject import (
     IOCIProject,
     IOCIProjectSet,
+    OCI_PROJECT_ALLOW_CREATE,
     )
 from lp.registry.interfaces.ociprojectseries import IOCIProjectSeries
+from lp.services.features.testing import FeatureFixture
 from lp.services.webapp.interfaces import OAuthPermission
 from lp.testing import (
     admin_logged_in,
@@ -142,11 +144,12 @@ class TestOCIProjectWebservice(TestCaseWithFactory):
         self.webservice = webservice_for_person(
             self.person, permission=OAuthPermission.WRITE_PUBLIC,
             default_api_version="devel")
+        self.useFixture(FeatureFixture({OCI_PROJECT_ALLOW_CREATE: 'on'}))
 
     def getAbsoluteURL(self, target):
         """Get the webservice absolute URL of the given object or relative
         path."""
-        if not isinstance(target, string_types):
+        if not isinstance(target, text_type):
             target = api_url(target)
         return self.webservice.getAbsoluteUrl(target)
 
@@ -215,3 +218,35 @@ class TestOCIProjectWebservice(TestCaseWithFactory):
 
         ws_project = self.load_from_api(url)
         self.assertEqual("old description", ws_project['description'])
+
+    def test_create_oci_project(self):
+        with person_logged_in(self.person):
+            distro = removeSecurityProxy(self.factory.makeDistribution(
+                owner=self.person))
+            registrant_url = self.getAbsoluteURL(self.person)
+            url = api_url(distro)
+
+        obj = {"name": "someprojectname", "description": "My OCI project"}
+        resp = self.webservice.named_post(url, "newOCIProject", **obj)
+        self.assertEqual(201, resp.status, resp.body)
+
+        new_obj_url = resp.getHeader("Location")
+        oci_project = self.webservice.get(new_obj_url).jsonBody()
+        with person_logged_in(self.person):
+            self.assertThat(oci_project, ContainsDict({
+                "registrant_link": Equals(registrant_url),
+                "name": Equals(obj["name"]),
+                "description": Equals(obj["description"]),
+                "distribution_link": Equals(self.getAbsoluteURL(distro)),
+                }))
+
+    def test_api_create_oci_project_is_disabled_by_feature_flag(self):
+        self.useFixture(FeatureFixture({OCI_PROJECT_ALLOW_CREATE: ''}))
+        with person_logged_in(self.person):
+            distro = removeSecurityProxy(self.factory.makeDistribution(
+                owner=self.person))
+            url = api_url(distro)
+
+        obj = {"name": "someprojectname", "description": "My OCI project"}
+        resp = self.webservice.named_post(url, "newOCIProject", **obj)
+        self.assertEqual(401, resp.status, resp.body)

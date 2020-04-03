@@ -15,8 +15,10 @@ __all__ = [
     'IOCIRecipeView',
     'NoSourceForOCIRecipe',
     'NoSuchOCIRecipe',
+    'OCI_RECIPE_ALLOW_CREATE',
     'OCI_RECIPE_WEBHOOKS_FEATURE_FLAG',
     'OCIRecipeBuildAlreadyPending',
+    'OCIRecipeFeatureDisabled',
     'OCIRecipeNotOwner',
     ]
 
@@ -58,6 +60,16 @@ from lp.services.webhooks.interfaces import IWebhookTarget
 
 
 OCI_RECIPE_WEBHOOKS_FEATURE_FLAG = "oci.recipe.webhooks.enabled"
+OCI_RECIPE_ALLOW_CREATE = 'oci.recipe.create.enabled'
+
+
+@error_status(http_client.UNAUTHORIZED)
+class OCIRecipeFeatureDisabled(Unauthorized):
+    """Only certain users can create new LiveFS-related objects."""
+
+    def __init__(self):
+        super(OCIRecipeFeatureDisabled, self).__init__(
+            "You do not have permission to create new OCI recipe.")
 
 
 @error_status(http_client.UNAUTHORIZED)
@@ -139,6 +151,13 @@ class IOCIRecipeView(Interface):
         :param architecture: The architecture to build for.
         :return: `IOCIRecipeBuild`.
         """
+
+    push_rules = CollectionField(
+        title=_("Push rules for this OCI recipe."),
+        description=_("All of the push rules for registry upload "
+                      "that apply to this recipe."),
+        # Really IOCIPushRule, patched in _schema_cirular_imports.
+        value_type=Reference(schema=Interface), readonly=True)
 
 
 class IOCIRecipeEdit(IWebhookTarget):
@@ -248,7 +267,7 @@ class IOCIRecipeSet(Interface):
 
     def new(name, registrant, owner, oci_project, git_ref, build_file,
             description=None, official=False, require_virtualized=True,
-            date_created=DEFAULT):
+            build_daily=False, date_created=DEFAULT):
         """Create an IOCIRecipe."""
 
     def exists(owner, oci_project, name):

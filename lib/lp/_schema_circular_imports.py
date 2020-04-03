@@ -96,6 +96,7 @@ from lp.hardwaredb.interfaces.hwdb import (
     IHWSubmissionDevice,
     IHWVendorID,
     )
+from lp.oci.interfaces.ocipushrule import IOCIPushRule
 from lp.oci.interfaces.ocirecipe import IOCIRecipe
 from lp.oci.interfaces.ocirecipebuild import IOCIRecipeBuild
 from lp.registry.interfaces.commercialsubscription import (
@@ -363,6 +364,10 @@ patch_reference_property(
 patch_reference_property(
     ISourcePackagePublishingHistory, 'archive', IArchive)
 patch_reference_property(
+    IBinaryPackagePublishingHistory, 'copied_from_archive', IArchive)
+patch_reference_property(
+    ISourcePackagePublishingHistory, 'copied_from_archive', IArchive)
+patch_reference_property(
     ISourcePackagePublishingHistory, 'ancestor',
     ISourcePackagePublishingHistory)
 patch_reference_property(
@@ -459,6 +464,7 @@ patch_collection_return_type(
     IDistribution, 'searchSourcePackages', IDistributionSourcePackage)
 patch_reference_property(IDistribution, 'main_archive', IArchive)
 patch_collection_property(IDistribution, 'all_distro_archives', IArchive)
+patch_entry_return_type(IDistribution, 'newOCIProject', IOCIProject)
 
 
 # IDistributionMirror
@@ -1097,8 +1103,10 @@ patch_entry_explicit_version(IWikiName, 'beta')
 
 # IOCIProject
 patch_collection_property(IOCIProject, 'series', IOCIProjectSeries)
+patch_entry_return_type(IOCIProject, 'newRecipe', IOCIRecipe)
 
 # IOCIRecipe
 patch_collection_property(IOCIRecipe, 'builds', IOCIRecipeBuild)
 patch_collection_property(IOCIRecipe, 'completed_builds', IOCIRecipeBuild)
 patch_collection_property(IOCIRecipe, 'pending_builds', IOCIRecipeBuild)
+patch_collection_property(IOCIRecipe, 'push_rules', IOCIPushRule)

@@ -13,6 +13,8 @@ from storm.locals import Store
 from testtools.matchers import StartsWith
 
 from lp.buildmaster.enums import BuildStatus
+from lp.oci.interfaces.ocirecipe import OCI_RECIPE_ALLOW_CREATE
+from lp.services.features.testing import FeatureFixture
 from lp.services.webapp import canonical_url
 from lp.testing import (
     BrowserTestCase,
@@ -28,6 +30,10 @@ from lp.testing.pages import (
 class TestCanonicalUrlForOCIRecipeBuild(TestCaseWithFactory):
 
     layer = DatabaseFunctionalLayer
+
+    def setUp(self):
+        super(TestCanonicalUrlForOCIRecipeBuild, self).setUp()
+        self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: 'on'}))
 
     def test_canonical_url(self):
         owner = self.factory.makePerson(name="person")
@@ -51,6 +57,7 @@ class TestOCIRecipeBuildOperations(BrowserTestCase):
 
     def setUp(self):
         super(TestOCIRecipeBuildOperations, self).setUp()
+        self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: 'on'}))
         self.build = self.factory.makeOCIRecipeBuild()
         self.build_url = canonical_url(self.build)
 

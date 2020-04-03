@@ -42,10 +42,13 @@ from lp.oci.interfaces.ocirecipe import (
     IOCIRecipeSet,
     NoSourceForOCIRecipe,
     NoSuchOCIRecipe,
+    OCI_RECIPE_ALLOW_CREATE,
     OCIRecipeBuildAlreadyPending,
+    OCIRecipeFeatureDisabled,
     OCIRecipeNotOwner,
     )
 from lp.oci.interfaces.ocirecipebuild import IOCIRecipeBuildSet
+from lp.oci.model.ocipushrule import OCIPushRule
 from lp.oci.model.ocirecipebuild import OCIRecipeBuild
 from lp.registry.interfaces.person import IPersonSet
 from lp.services.database.constants import (
@@ -61,6 +64,7 @@ from lp.services.database.stormexpr import (
     Greatest,
     NullsLast,
     )
+from lp.services.features import getFeatureFlag
 from lp.services.webhooks.interfaces import IWebhookSet
 from lp.services.webhooks.model import WebhookTargetMixin
 
@@ -111,7 +115,9 @@ class OCIRecipe(Storm, WebhookTargetMixin):
 
     def __init__(self, name, registrant, owner, oci_project, git_ref,
                  description=None, official=False, require_virtualized=True,
-                 build_file=None, date_created=DEFAULT):
+                 build_file=None, build_daily=False, date_created=DEFAULT):
+        if not getFeatureFlag(OCI_RECIPE_ALLOW_CREATE):
+            raise OCIRecipeFeatureDisabled()
         super(OCIRecipe, self).__init__()
         self.name = name
         self.registrant = registrant
@@ -121,6 +127,7 @@ class OCIRecipe(Storm, WebhookTargetMixin):
         self.build_file = build_file
         self.official = official
         self.require_virtualized = require_virtualized
+        self.build_daily = build_daily
         self.date_created = date_created
         self.date_last_modified = date_created
         self.git_ref = git_ref
@@ -187,6 +194,13 @@ class OCIRecipe(Storm, WebhookTargetMixin):
         build.queueBuild()
         notify(ObjectCreatedEvent(build, user=requester))
         return build
+
+    @property
+    def push_rules(self):
+        rules = IStore(self).find(
+            OCIPushRule,
+            OCIPushRule.recipe == self.id)
+        return rules
 
     @property
     def _pending_states(self):
@@ -268,7 +282,7 @@ class OCIRecipeSet:
 
     def new(self, name, registrant, owner, oci_project, git_ref, build_file,
             description=None, official=False, require_virtualized=True,
-            date_created=DEFAULT):
+            build_daily=False, date_created=DEFAULT):
         """See `IOCIRecipeSet`."""
         if not registrant.inTeam(owner):
             if owner.is_team:
@@ -289,7 +303,8 @@ class OCIRecipeSet:
         store = IMasterStore(OCIRecipe)
         oci_recipe = OCIRecipe(
             name, registrant, owner, oci_project, git_ref, description,
-            official, require_virtualized, build_file, date_created)
+            official, require_virtualized, build_file, build_daily,
+            date_created)
         store.add(oci_recipe)
 
         return oci_recipe

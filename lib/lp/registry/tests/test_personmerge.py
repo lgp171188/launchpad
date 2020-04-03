@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for merge_people."""
@@ -18,7 +18,10 @@ from zope.security.proxy import removeSecurityProxy
 from lp.app.enums import InformationType
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.code.interfaces.gitrepository import IGitRepositorySet
-from lp.oci.interfaces.ocirecipe import IOCIRecipeSet
+from lp.oci.interfaces.ocirecipe import (
+    IOCIRecipeSet,
+    OCI_RECIPE_ALLOW_CREATE,
+    )
 from lp.registry.interfaces.accesspolicy import (
     IAccessArtifactGrantSource,
     IAccessPolicyGrantSource,
@@ -664,6 +667,7 @@ class TestMergePeople(TestCaseWithFactory, KarmaTestMixin):
     def test_merge_moves_oci_recipes(self):
         # When person/teams are merged, oci recipes owned by the from
         # person are moved.
+        self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: 'on'}))
         duplicate = self.factory.makePerson()
         mergee = self.factory.makePerson()
         self.factory.makeOCIRecipe(registrant=duplicate, owner=duplicate)
@@ -676,6 +680,7 @@ class TestMergePeople(TestCaseWithFactory, KarmaTestMixin):
     def test_merge_with_duplicated_oci_recipes(self):
         # If both the from and to people have oci recipes with the same
         # name, merging renames the duplicate from the from person's side.
+        self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: 'on'}))
         duplicate = self.factory.makePerson()
         mergee = self.factory.makePerson()
         [ref] = self.factory.makeGitRefs()

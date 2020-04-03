@@ -23,7 +23,10 @@ from lp.buildmaster.enums import BuildStatus
 from lp.buildmaster.interfaces.buildqueue import IBuildQueue
 from lp.buildmaster.interfaces.packagebuild import IPackageBuild
 from lp.buildmaster.interfaces.processor import IProcessorSet
-from lp.oci.interfaces.ocirecipe import OCI_RECIPE_WEBHOOKS_FEATURE_FLAG
+from lp.oci.interfaces.ocirecipe import (
+    OCI_RECIPE_ALLOW_CREATE,
+    OCI_RECIPE_WEBHOOKS_FEATURE_FLAG,
+    )
 from lp.oci.interfaces.ocirecipebuild import (
     IOCIRecipeBuild,
     IOCIRecipeBuildSet,
@@ -54,6 +57,7 @@ class TestOCIRecipeBuild(TestCaseWithFactory):
 
     def setUp(self):
         super(TestOCIRecipeBuild, self).setUp()
+        self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: 'on'}))
         self.build = self.factory.makeOCIRecipeBuild()
 
     def test_implements_interface(self):
@@ -212,6 +216,10 @@ class TestOCIRecipeBuildSet(TestCaseWithFactory):
 
     layer = DatabaseFunctionalLayer
 
+    def setUp(self):
+        super(TestOCIRecipeBuildSet, self).setUp()
+        self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: 'on'}))
+
     def test_implements_interface(self):
         target = OCIRecipeBuildSet()
         with admin_logged_in():
@@ -226,13 +234,33 @@ class TestOCIRecipeBuildSet(TestCaseWithFactory):
         distro_arch_series = self.factory.makeDistroArchSeries(
             distroseries=distroseries, architecturetag="i386",
             processor=processor)
-        distro_arch_series = self.factory.makeDistroArchSeries()
         oci_project = self.factory.makeOCIProject(pillar=distribution)
         recipe = self.factory.makeOCIRecipe(oci_project=oci_project)
         target = getUtility(IOCIRecipeBuildSet).new(
             requester, recipe, distro_arch_series)
         with admin_logged_in():
             self.assertProvides(target, IOCIRecipeBuild)
+            self.assertEqual(distro_arch_series, target.distro_arch_series)
+
+    def test_new_oci_feature_flag_enabled(self):
+        requester = self.factory.makePerson()
+        distribution = self.factory.makeDistribution()
+        distroseries = self.factory.makeDistroSeries(
+            distribution=distribution, status=SeriesStatus.CURRENT)
+        processor = getUtility(IProcessorSet).getByName("386")
+        self.useFixture(FeatureFixture({
+            "oci.build_series.%s" % distribution.name: distroseries.name,
+            OCI_RECIPE_ALLOW_CREATE: 'on'}))
+        distro_arch_series = self.factory.makeDistroArchSeries(
+            distroseries=distroseries, architecturetag="i386",
+            processor=processor)
+        oci_project = self.factory.makeOCIProject(pillar=distribution)
+        recipe = self.factory.makeOCIRecipe(oci_project=oci_project)
+        target = getUtility(IOCIRecipeBuildSet).new(
+            requester, recipe, distro_arch_series)
+        with admin_logged_in():
+            self.assertProvides(target, IOCIRecipeBuild)
+            self.assertEqual(distro_arch_series, target.distro_arch_series)
 
     def test_getByID(self):
         builds = [self.factory.makeOCIRecipeBuild() for x in range(3)]
