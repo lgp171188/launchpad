@@ -1103,6 +1103,7 @@ patch_entry_explicit_version(IWikiName, 'beta')
 
 # IOCIProject
 patch_collection_property(IOCIProject, 'series', IOCIProjectSeries)
+patch_entry_return_type(IOCIProject, 'newRecipe', IOCIRecipe)
 
 # IOCIRecipe
 patch_collection_property(IOCIRecipe, 'builds', IOCIRecipeBuild)

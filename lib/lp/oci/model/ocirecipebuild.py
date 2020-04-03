@@ -208,23 +208,6 @@ class OCIRecipeBuild(PackageBuildMixin, Storm):
             return result
         raise NotFoundError(filename)
 
-    def getLayerFileByDigest(self, layer_file_digest):
-        file_object = Store.of(self).find(
-            (OCIFile, LibraryFileAlias, LibraryFileContent),
-            OCIFile.build == self.id,
-            LibraryFileAlias.id == OCIFile.library_file_id,
-            LibraryFileContent.id == LibraryFileAlias.contentID,
-            OCIFile.layer_file_digest == layer_file_digest).one()
-        if file_object is not None:
-            return file_object
-        raise NotFoundError(layer_file_digest)
-
-    def addFile(self, lfa, layer_file_digest=None):
-        oci_file = OCIFile(
-            build=self, library_file=lfa, layer_file_digest=layer_file_digest)
-        IMasterStore(OCIFile).add(oci_file)
-        return oci_file
-
     @cachedproperty
     def eta(self):
         """The datetime when the build job is estimated to complete.
@@ -307,6 +290,54 @@ class OCIRecipeBuild(PackageBuildMixin, Storm):
         if self.status == BuildStatus.FULLYBUILT:
             return
         # XXX twom 2019-12-11 This should send mail
+
+    def getLayerFileByDigest(self, layer_file_digest):
+        file_object = Store.of(self).find(
+            (OCIFile, LibraryFileAlias, LibraryFileContent),
+            OCIFile.build == self.id,
+            LibraryFileAlias.id == OCIFile.library_file_id,
+            LibraryFileContent.id == LibraryFileAlias.contentID,
+            OCIFile.layer_file_digest == layer_file_digest).one()
+        if file_object is not None:
+            return file_object
+        raise NotFoundError(layer_file_digest)
+
+    def addFile(self, lfa, layer_file_digest=None):
+        oci_file = OCIFile(
+            build=self, library_file=lfa, layer_file_digest=layer_file_digest)
+        IMasterStore(OCIFile).add(oci_file)
+        return oci_file
+
+    @cachedproperty
+    def manifest(self):
+        result = Store.of(self).find(
+            (OCIFile, LibraryFileAlias, LibraryFileContent),
+            OCIFile.build == self.id,
+            LibraryFileAlias.id == OCIFile.library_file_id,
+            LibraryFileContent.id == LibraryFileAlias.contentID,
+            LibraryFileAlias.filename == 'manifest.json')
+        return result.one()
+
+    @cachedproperty
+    def digests(self):
+        result = Store.of(self).find(
+            (OCIFile, LibraryFileAlias, LibraryFileContent),
+            OCIFile.build == self.id,
+            LibraryFileAlias.id == OCIFile.library_file_id,
+            LibraryFileContent.id == LibraryFileAlias.contentID,
+            LibraryFileAlias.filename == 'digests.json')
+        return result.one()
+
+    def verifySuccessfulUpload(self):
+        """See `IPackageBuild`."""
+        layer_files = Store.of(self).find(
+            OCIFile,
+            OCIFile.build == self.id,
+            OCIFile.layer_file_digest is not None)
+        layer_files_present = not layer_files.is_empty()
+        metadata_present = (self.manifest is not None
+                            and self.digests is not None)
+        return layer_files_present and metadata_present
 
 
 @implementer(IOCIRecipeBuildSet)

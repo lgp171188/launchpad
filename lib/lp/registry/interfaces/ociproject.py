@@ -13,16 +13,23 @@ __all__ = [
     ]
 
 from lazr.restful.declarations import (
+    call_with,
     export_as_webservice_entry,
+    export_factory_operation,
     exported,
+    operation_for_version,
+    operation_parameters,
+    REQUEST_USER,
     )
 from lazr.restful.fields import (
     CollectionField,
     Reference,
     ReferenceChoice,
     )
+from lp.app.validators.path import path_does_not_escape
 from zope.interface import Interface
 from zope.schema import (
+    Bool,
     Datetime,
     Int,
     Text,
@@ -32,12 +39,16 @@ from zope.schema import (
 from lp import _
 from lp.app.validators.name import name_validator
 from lp.bugs.interfaces.bugtarget import IBugTarget
+from lp.code.interfaces.gitref import IGitRef
 from lp.code.interfaces.hasgitrepositories import IHasGitRepositories
 from lp.registry.interfaces.distribution import IDistribution
 from lp.registry.interfaces.ociprojectname import IOCIProjectName
 from lp.registry.interfaces.series import SeriesStatus
 from lp.services.database.constants import DEFAULT
-from lp.services.fields import PublicPersonChoice
+from lp.services.fields import (
+    PersonChoice,
+    PublicPersonChoice,
+    )
 
 
 OCI_PROJECT_ALLOW_CREATE = 'oci.project.create.enabled'
@@ -105,8 +116,44 @@ class IOCIProjectEdit(Interface):
         """Creates a new `IOCIProjectSeries`."""
 
 
+class IOCIProjectLegitimate(Interface):
+    """IOCIProject methods that require launchpad.AnyLegitimatePerson
+    permission.
+    """
+    @call_with(registrant=REQUEST_USER)
+    @operation_parameters(
+        name=TextLine(
+            title=_("OCI Recipe name."),
+            description=_("The name of the new OCI Recipe."),
+            required=True),
+        owner=PersonChoice(
+            title=_("Person or team that owns the new OCI Recipe."),
+            vocabulary="AllUserTeamsParticipationPlusSelf",
+            required=True),
+        git_ref=Reference(IGitRef, title=_("Git branch."), required=True),
+        build_file=TextLine(
+            title=_("Build file path."),
+            description=_(
+                "The relative path to the file within this recipe's "
+                "branch that defines how to build the recipe."),
+            constraint=path_does_not_escape,
+            required=True),
+        description=Text(
+            title=_("Description for this recipe."),
+            description=_("A short description of this recipe."),
+            required=False),
+        build_daily=Bool(
+            title=_("Should this recipe be built daily?."), required=False))
+    @export_factory_operation(Interface, [])
+    @operation_for_version("devel")
+    def newRecipe(name, registrant, owner, git_ref, build_file,
+                  description=None, build_daily=False,
+                  require_virtualized=True):
+        """Create an IOCIRecipe for this project."""
+
+
 class IOCIProject(IOCIProjectView, IOCIProjectEdit,
-                       IOCIProjectEditableAttributes):
+                  IOCIProjectEditableAttributes, IOCIProjectLegitimate):
     """A project containing Open Container Initiative recipes."""
 
     export_as_webservice_entry(

@@ -29,7 +29,9 @@ from lp.oci.browser.ocirecipe import (
     OCIRecipeEditView,
     OCIRecipeView,
     )
+from lp.oci.interfaces.ocirecipe import OCI_RECIPE_ALLOW_CREATE
 from lp.services.database.constants import UTC_NOW
+from lp.services.features.testing import FeatureFixture
 from lp.services.propertycache import get_property_cache
 from lp.services.webapp import canonical_url
 from lp.services.webapp.servers import LaunchpadTestRequest
@@ -61,6 +63,10 @@ from lp.testing.views import create_view
 class TestOCIRecipeNavigation(TestCaseWithFactory):
 
     layer = DatabaseFunctionalLayer
+
+    def setUp(self):
+        super(TestOCIRecipeNavigation, self).setUp()
+        self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: 'on'}))
 
     def test_canonical_url(self):
         owner = self.factory.makePerson(name="person")
@@ -95,6 +101,10 @@ class BaseTestOCIRecipeView(BrowserTestCase):
 
 
 class TestOCIRecipeAddView(BaseTestOCIRecipeView):
+
+    def setUp(self):
+        super(TestOCIRecipeAddView, self).setUp()
+        self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: 'on'}))
 
     def test_create_new_recipe_not_logged_in(self):
         oci_project = self.factory.makeOCIProject()
@@ -151,6 +161,10 @@ class TestOCIRecipeAddView(BaseTestOCIRecipeView):
 
 class TestOCIRecipeAdminView(BaseTestOCIRecipeView):
 
+    def setUp(self):
+        super(TestOCIRecipeAdminView, self).setUp()
+        self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: 'on'}))
+
     def test_unauthorized(self):
         # A non-admin user cannot administer an OCI recipe.
         login_person(self.person)
@@ -198,6 +212,10 @@ class TestOCIRecipeAdminView(BaseTestOCIRecipeView):
 
 
 class TestOCIRecipeEditView(BaseTestOCIRecipeView):
+
+    def setUp(self):
+        super(TestOCIRecipeEditView, self).setUp()
+        self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: 'on'}))
 
     def test_edit_recipe(self):
         oci_project = self.factory.makeOCIProject()
@@ -275,6 +293,10 @@ class TestOCIRecipeEditView(BaseTestOCIRecipeView):
 
 class TestOCIRecipeDeleteView(BaseTestOCIRecipeView):
 
+    def setUp(self):
+        super(TestOCIRecipeDeleteView, self).setUp()
+        self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: 'on'}))
+
     def test_unauthorized(self):
         # A user without edit access cannot delete an OCI recipe.
         recipe = self.factory.makeOCIRecipe(
@@ -326,6 +348,7 @@ class TestOCIRecipeView(BaseTestOCIRecipeView):
             distroseries=self.distroseries, architecturetag="i386",
             processor=processor)
         self.factory.makeBuilder(virtualized=True)
+        self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: 'on'}))
 
     def makeOCIRecipe(self, oci_project=None, **kwargs):
         if oci_project is None:
