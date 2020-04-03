@@ -158,6 +158,22 @@ class TestOCIProjectWebservice(TestCaseWithFactory):
         self.assertEqual(200, response.status, response.body)
         return response.jsonBody()
 
+    def assertIsPossibleToCreateOCIProject(self, distro, registrant):
+        url = api_url(distro)
+        obj = {"name": "someprojectname", "description": "My OCI project"}
+        resp = self.webservice.named_post(url, "newOCIProject", **obj)
+        self.assertEqual(201, resp.status, resp.body)
+
+        new_obj_url = resp.getHeader("Location")
+        oci_project = self.webservice.get(new_obj_url).jsonBody()
+        with person_logged_in(self.person):
+            self.assertThat(oci_project, ContainsDict({
+                "registrant_link": Equals(self.getAbsoluteURL(registrant)),
+                "name": Equals(obj["name"]),
+                "description": Equals(obj["description"]),
+                "distribution_link": Equals(self.getAbsoluteURL(distro)),
+            }))
+
     def test_api_get_oci_project(self):
         with person_logged_in(self.person):
             person = removeSecurityProxy(self.person)
@@ -221,24 +237,35 @@ class TestOCIProjectWebservice(TestCaseWithFactory):
 
     def test_create_oci_project(self):
         with person_logged_in(self.person):
-            distro = removeSecurityProxy(self.factory.makeDistribution(
-                owner=self.person))
-            registrant_url = self.getAbsoluteURL(self.person)
-            url = api_url(distro)
+            distro = self.factory.makeDistribution(owner=self.person)
 
+        self.assertIsPossibleToCreateOCIProject(distro, self.person)
+
+    def test_ociproject_admin_can_create(self):
+        with person_logged_in(self.person):
+            owner = self.factory.makePerson()
+            distro = self.factory.makeDistribution(
+                owner=owner, oci_project_admin=self.person)
+        self.assertIsPossibleToCreateOCIProject(distro, self.person)
+
+    def test_same_team_of_ociproject_admin_can_create(self):
+        with admin_logged_in():
+            team = self.factory.makeTeam()
+            team.addMember(self.person, team.teamowner)
+            distro = self.factory.makeDistribution(
+                owner=team.teamowner, oci_project_admin=team)
+
+        self.assertIsPossibleToCreateOCIProject(distro, self.person)
+
+    def test_not_everyone_can_create_oci_project(self):
+        with person_logged_in(self.person):
+            owner = self.factory.makePerson()
+            distro = self.factory.makeDistribution(
+                owner=owner, oci_project_admin=owner)
+            url = api_url(distro)
         obj = {"name": "someprojectname", "description": "My OCI project"}
         resp = self.webservice.named_post(url, "newOCIProject", **obj)
-        self.assertEqual(201, resp.status, resp.body)
-
-        new_obj_url = resp.getHeader("Location")
-        oci_project = self.webservice.get(new_obj_url).jsonBody()
-        with person_logged_in(self.person):
-            self.assertThat(oci_project, ContainsDict({
-                "registrant_link": Equals(registrant_url),
-                "name": Equals(obj["name"]),
-                "description": Equals(obj["description"]),
-                "distribution_link": Equals(self.getAbsoluteURL(distro)),
-                }))
+        self.assertEqual(401, resp.status, resp.body)
 
     def test_api_create_oci_project_is_disabled_by_feature_flag(self):
         self.useFixture(FeatureFixture({OCI_PROJECT_ALLOW_CREATE: ''}))
