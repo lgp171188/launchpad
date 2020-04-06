@@ -9,11 +9,13 @@ __metaclass__ = type
 __all__ = [
     'IOCIProject',
     'IOCIProjectSet',
-    'OCI_PROJECT_ALLOW_CREATE'
+    'OCI_PROJECT_ALLOW_CREATE',
+    'OCIProjectCreateFeatureDisabled'
     ]
 
 from lazr.restful.declarations import (
     call_with,
+    error_status,
     export_as_webservice_entry,
     export_factory_operation,
     exported,
@@ -26,7 +28,7 @@ from lazr.restful.fields import (
     Reference,
     ReferenceChoice,
     )
-from lp.app.validators.path import path_does_not_escape
+from six.moves import http_client
 from zope.interface import Interface
 from zope.schema import (
     Bool,
@@ -35,9 +37,11 @@ from zope.schema import (
     Text,
     TextLine,
     )
+from zope.security.interfaces import Unauthorized
 
 from lp import _
 from lp.app.validators.name import name_validator
+from lp.app.validators.path import path_does_not_escape
 from lp.bugs.interfaces.bugtarget import IBugTarget
 from lp.code.interfaces.gitref import IGitRef
 from lp.code.interfaces.hasgitrepositories import IHasGitRepositories
@@ -170,3 +174,12 @@ class IOCIProjectSet(Interface):
 
     def getByDistributionAndName(distribution, name):
         """Get the OCIProjects for a given distribution."""
+
+
+@error_status(http_client.UNAUTHORIZED)
+class OCIProjectCreateFeatureDisabled(Unauthorized):
+    """Only certain users can create new OCI Projects."""
+
+    def __init__(self):
+        super(OCIProjectCreateFeatureDisabled, self).__init__(
+            "You do not have permission to create an OCI Project.")
