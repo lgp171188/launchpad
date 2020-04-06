@@ -201,15 +201,15 @@ class SigningUpload(CustomUpload):
 
         self.public_keys = {}
 
-    def publishPublicKey(self, key):
+    def publishPublicKey(self, key, content=None):
         """Record this key as having been used in this upload.
 
-        :param key: Either a file name where the key is stored, or a tuple
-                    like (filename, content).
+        :param key: Key file name
+        :param content: Key file content (if None, try to read it from local
+            filesystem)
         """
-        if isinstance(key, tuple):
-            filename, content = key
-            self.public_keys[filename] = content
+        if content is not None:
+            self.public_keys[key] = content
         elif key not in self.public_keys:
             # Ensure we only emit files which are world-readable.
             if stat.S_IMODE(os.stat(key).st_mode) & stat.S_IROTH:
@@ -397,7 +397,7 @@ class SigningUpload(CustomUpload):
         with open(signed_filename, 'wb') as fd:
             fd.write(signed_content)
 
-        self.publishPublicKey((public_key_filename, signing_key.public_key))
+        self.publishPublicKey(public_key_filename, signing_key.public_key)
         return True
 
     def getKeys(self, which, generate, *keynames):

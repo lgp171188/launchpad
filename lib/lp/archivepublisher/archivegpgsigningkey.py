@@ -8,7 +8,7 @@ __metaclass__ = type
 __all__ = [
     'ArchiveGPGSigningKey',
     'SignableArchive',
-]
+    ]
 
 
 import os
