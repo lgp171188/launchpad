@@ -126,7 +126,6 @@ class SigningServiceResponseFactory:
             responses.POST, self.getUrl("/nonce"),
             json={"nonce": self.b64_nonce.decode('utf8')}, status=201)
 
-
         responses.add(
             responses.POST, self.getUrl("/generate"),
             body=self._encryptPayload({
@@ -162,8 +161,9 @@ class SigningServiceProxyTest(TestCaseWithFactory, TestWithFixtures):
     def setUp(self, *args, **kwargs):
         super(TestCaseWithFactory, self).setUp(*args, **kwargs)
         self.response_factory = SigningServiceResponseFactory()
-        self.addCleanup(
-            removeSecurityProxy(getUtility(ISigningServiceClient))._cleanCaches)
+
+        client = removeSecurityProxy(getUtility(ISigningServiceClient))
+        self.addCleanup(client._cleanCaches)
 
     @responses.activate
     def test_get_service_public_key(self):

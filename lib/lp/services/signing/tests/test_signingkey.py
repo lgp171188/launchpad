@@ -34,8 +34,9 @@ class TestSigningKey(TestCaseWithFactory, TestWithFixtures):
     def setUp(self, *args, **kwargs):
         super(TestSigningKey, self).setUp(*args, **kwargs)
         self.signing_service = SigningServiceResponseFactory()
-        self.addCleanup(
-            removeSecurityProxy(getUtility(ISigningServiceClient))._cleanCaches)
+
+        client = removeSecurityProxy(getUtility(ISigningServiceClient))
+        self.addCleanup(client._cleanCaches)
 
     @responses.activate
     def test_generate_signing_key_saves_correctly(self):
@@ -81,8 +82,9 @@ class TestArchiveSigningKey(TestCaseWithFactory):
     def setUp(self, *args, **kwargs):
         super(TestArchiveSigningKey, self).setUp(*args, **kwargs)
         self.signing_service = SigningServiceResponseFactory()
-        self.addCleanup(
-            removeSecurityProxy(getUtility(ISigningServiceClient))._cleanCaches)
+
+        client = removeSecurityProxy(getUtility(ISigningServiceClient))
+        self.addCleanup(client._cleanCaches)
 
     @responses.activate
     def test_generate_saves_correctly(self):
@@ -135,7 +137,7 @@ class TestArchiveSigningKey(TestCaseWithFactory):
         # Saving another type should create a new entry
         signing_key_from_another_type = self.factory.makeSigningKey(
             key_type=SigningKeyType.KMOD)
-        arch_key_another_type = arch_signing_key_set.create(
+        arch_signing_key_set.create(
             archive, distro_series, signing_key_from_another_type)
 
         self.assertEqual(2, store.find(ArchiveSigningKey).count())
