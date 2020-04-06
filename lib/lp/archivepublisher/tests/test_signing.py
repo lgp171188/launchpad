@@ -14,7 +14,6 @@ import stat
 import tarfile
 
 from fixtures import MonkeyPatch
-import mock
 from mock import call
 import scandir
 from testtools.matchers import (
@@ -60,7 +59,6 @@ from lp.testing.fakemethod import FakeMethod
 from lp.testing.gpgkeys import gpgkeysdir
 from lp.testing.keyserver import InProcessKeyServerFixture
 from lp.testing.layers import ZopelessDatabaseLayer
-from lp.testing.matchers import Contains
 
 
 class SignedMatches(Matcher):
@@ -1807,8 +1805,8 @@ class TestSigningUploadWithSigningService(TestSigningHelpers):
         available keys, and skip signing the other files.
         """
         # Pre-generate KMOD and OPAL keys
-        kmod_arch_key = self.getArchiveSigningKey(SigningKeyType.KMOD)
-        opal_arch_key = self.getArchiveSigningKey(SigningKeyType.OPAL)
+        self.getArchiveSigningKey(SigningKeyType.KMOD)
+        self.getArchiveSigningKey(SigningKeyType.OPAL)
 
         filenames = ["1.0/empty.ko", "1.0/empty.opal"]
 
@@ -1942,14 +1940,14 @@ class TestSigningUploadWithSigningService(TestSigningHelpers):
 
         # Pre-set KMOD fails on ".sign" method (should fallback to local
         # signing method).
-        kmod_arch_key = self.getArchiveSigningKey(SigningKeyType.KMOD)
+        self.getArchiveSigningKey(SigningKeyType.KMOD)
         upload.signKmod = FakeMethod(result=0)
 
         # We don't have a signing service key for UEFI. Should fallback too.
         upload.signUefi = FakeMethod(result=0)
 
         # OPAL key works just fine.
-        opal_arch_key = self.getArchiveSigningKey(SigningKeyType.OPAL)
+        self.getArchiveSigningKey(SigningKeyType.OPAL)
         upload.signOpal = FakeMethod(result=0)
 
         filenames = ["1.0/empty.efi", "1.0/empty.ko", "1.0/empty.opal"]

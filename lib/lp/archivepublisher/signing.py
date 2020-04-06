@@ -338,7 +338,6 @@ class SigningUpload(CustomUpload):
         key_files = [i for i in fallback_keys[key_type] if i]
         return all(os.path.exists(key_file) for key_file in key_files)
 
-
     def signUsingSigningService(self, key_type, signing_key, filename):
         """Sign the given filename using a certain key hosted on signing
         service, writes the signed content back to the filesystem and
