@@ -6,6 +6,8 @@ __metaclass__ = type
 import base64
 import json
 
+from fixtures import MockPatch
+from fixtures.testcase import TestWithFixtures
 from nacl.encoding import Base64Encoder
 from nacl.public import (
     Box,
@@ -42,17 +44,26 @@ class SigningServiceResponseFactory:
     response.get(url) and response.post(url). See `patch` method.
     """
     def __init__(self):
-        service_public_key = PrivateKey.generate().public_key
-        self.b64_service_public_key = service_public_key.encode(
+        self.service_private_key = PrivateKey.generate()
+        self.service_public_key = self.service_private_key.public_key
+        self.b64_service_public_key = self.service_public_key.encode(
             encoder=Base64Encoder).decode("UTF-8")
-        self.b64_nonce = base64.b64encode(
-            random(Box.NONCE_SIZE)).decode("UTF-8")
-        self.generated_public_key = bytes(PrivateKey.generate().public_key)
+
+        self.client_private_key = PrivateKey(
+            config.signing.client_private_key, encoder=Base64Encoder)
+        self.client_public_key = self.client_private_key.public_key
+
+        self.nonce = random(Box.NONCE_SIZE)
+        self.b64_nonce = base64.b64encode(self.nonce).decode("UTF-8")
+
+        self.generated_public_key = PrivateKey.generate().public_key
         self.b64_generated_public_key = base64.b64encode(
-            self.generated_public_key)
+            bytes(self.generated_public_key))
         self.generated_fingerprint = (
             u'338D218488DFD597D8FCB9C328C3E9D9ADA16CEE')
         self.b64_signed_msg = base64.b64encode(b"the-signed-msg")
+
+        self.signed_msg_template = "%s::signed!"
 
     @classmethod
     def getUrl(cls, path):
@@ -60,7 +71,23 @@ class SigningServiceResponseFactory:
         """
         return SigningServiceClient().getUrl(path)
 
-    def addResponses(self):
+    def _encryptPayload(self, data, nonce):
+        """Translated the given data dict as a boxed json, encrypted as
+        lp-signing would do."""
+        box = Box(self.service_private_key, self.client_public_key)
+        return box.encrypt(
+            json.dumps(data), nonce, encoder=Base64Encoder).ciphertext
+
+    def getAPISignedContent(self, call_index=0):
+        """Returns the signed message returned by the API.
+
+        This is a shortcut to avoid inspecting and decrypting API calls,
+        since we know that the content of /sign calls are hardcoded by this
+        fixture.
+        """
+        return self.signed_msg_template % (call_index + 1)
+
+    def addResponses(self, test_case):
         """Patches all requests with default test values.
 
         This method uses `responses` module to mock `requests`. You should use
@@ -82,6 +109,14 @@ class SigningServiceResponseFactory:
         return). This could be useful on black-box tests, where several
         calls to /sign would be done and the response should be checked.
         """
+        # Patch SigningServiceClient._make_response_nonce to return always the
+        # same nonce, to simplify the tests.
+        response_nonce = random(Box.NONCE_SIZE)
+        test_case.useFixture(MockPatch(
+            'lp.services.signing.proxy.SigningServiceClient.'
+            '_make_response_nonce',
+            return_value=response_nonce))
+
         responses.add(
             responses.GET, self.getUrl("/service-key"),
             json={"service-key": self.b64_service_public_key.decode('utf8')},
@@ -91,27 +126,30 @@ class SigningServiceResponseFactory:
             responses.POST, self.getUrl("/nonce"),
             json={"nonce": self.b64_nonce.decode('utf8')}, status=201)
 
+
         responses.add(
             responses.POST, self.getUrl("/generate"),
-            json={'fingerprint': self.generated_fingerprint,
-                  'public-key': self.b64_generated_public_key.decode('utf8')},
+            body=self._encryptPayload({
+                'fingerprint': self.generated_fingerprint,
+                'public-key': self.b64_generated_public_key.decode('utf8')
+                }, nonce=response_nonce),
             status=201)
-
         call_counts = {'/sign': 0}
 
         def sign_callback(request):
             call_counts['/sign'] += 1
-            signed = base64.b64encode("%s::signed!" % call_counts['/sign'])
+            signed = base64.b64encode(
+                self.signed_msg_template % call_counts['/sign'])
             data = {'signed-message': signed.decode('utf8'),
                     'public-key': self.b64_generated_public_key.decode('utf8')}
-            return 201, {}, json.dumps(data)
+            return 201, {}, self._encryptPayload(data, response_nonce)
 
         responses.add_callback(
             responses.POST, self.getUrl("/sign"),
             callback=sign_callback)
 
 
-class SigningServiceProxyTest(TestCaseWithFactory):
+class SigningServiceProxyTest(TestCaseWithFactory, TestWithFixtures):
     """Tests signing service without actually making calls to lp-signing.
 
     Every REST call is mocked using self.response_factory, and most of this
@@ -129,7 +167,7 @@ class SigningServiceProxyTest(TestCaseWithFactory):
 
     @responses.activate
     def test_get_service_public_key(self):
-        self.response_factory.addResponses()
+        self.response_factory.addResponses(self)
 
         signing = getUtility(ISigningServiceClient)
         key = removeSecurityProxy(signing.service_public_key)
@@ -149,7 +187,7 @@ class SigningServiceProxyTest(TestCaseWithFactory):
 
     @responses.activate
     def test_get_nonce(self):
-        self.response_factory.addResponses()
+        self.response_factory.addResponses(self)
 
         signing = getUtility(ISigningServiceClient)
         nonce = signing.getNonce()
@@ -166,7 +204,7 @@ class SigningServiceProxyTest(TestCaseWithFactory):
 
     @responses.activate
     def test_generate_unknown_key_type_raises_exception(self):
-        self.response_factory.addResponses()
+        self.response_factory.addResponses(self)
 
         signing = getUtility(ISigningServiceClient)
         self.assertRaises(
@@ -178,13 +216,13 @@ class SigningServiceProxyTest(TestCaseWithFactory):
         """Makes sure that the SigningService.generate method calls the
         correct endpoints
         """
-        self.response_factory.addResponses()
+        self.response_factory.addResponses(self)
         # Generate the key, and checks if we got back the correct dict.
         signing = getUtility(ISigningServiceClient)
         generated = signing.generate(SigningKeyType.UEFI, "my lp test key")
 
         self.assertEqual(generated, {
-            'public-key': self.response_factory.generated_public_key,
+            'public-key': bytes(self.response_factory.generated_public_key),
             'fingerprint': self.response_factory.generated_fingerprint})
 
         self.assertEqual(3, len(responses.calls))
@@ -234,7 +272,7 @@ class SigningServiceProxyTest(TestCaseWithFactory):
         """Runs through SignService.sign() flow"""
         # Replace GET /service-key response by our mock.
         resp_factory = self.response_factory
-        resp_factory.addResponses()
+        resp_factory.addResponses(self)
 
         fingerprint = self.factory.getUniqueHexString(40).upper()
         key_type = SigningKeyType.KMOD
@@ -269,12 +307,12 @@ class SigningServiceProxyTest(TestCaseWithFactory):
             "X-Nonce": Equals(self.response_factory.b64_nonce)}))
         self.assertIsNotNone(http_sign.request.body)
 
-        # It should have returned the values from response.json(),
-        # but decoding what is base64-encoded.
+        # It should have returned the correct JSON content, with signed
+        # message from the API and the public-key.
         self.assertEqual(2, len(data))
-        resp_json = http_sign.response.json()
         self.assertEqual(
-            data['public-key'], base64.b64decode(resp_json['public-key']))
+            self.response_factory.getAPISignedContent(),
+            data['signed-message'])
         self.assertEqual(
-            data['signed-message'],
-            base64.b64decode(resp_json['signed-message']))
+            bytes(self.response_factory.generated_public_key),
+            data['public-key'])

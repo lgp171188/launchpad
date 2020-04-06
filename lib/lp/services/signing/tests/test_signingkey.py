@@ -5,6 +5,7 @@ __metaclass__ = type
 
 import base64
 
+from fixtures.testcase import TestWithFixtures
 import responses
 from storm.store import Store
 from testtools.matchers import MatchesStructure
@@ -26,7 +27,7 @@ from lp.testing import TestCaseWithFactory
 from lp.testing.layers import ZopelessDatabaseLayer
 
 
-class TestSigningKey(TestCaseWithFactory):
+class TestSigningKey(TestCaseWithFactory, TestWithFixtures):
 
     layer = ZopelessDatabaseLayer
 
@@ -38,7 +39,7 @@ class TestSigningKey(TestCaseWithFactory):
 
     @responses.activate
     def test_generate_signing_key_saves_correctly(self):
-        self.signing_service.addResponses()
+        self.signing_service.addResponses(self)
 
         key = SigningKey.generate(SigningKeyType.UEFI, u"this is my key")
         self.assertIsInstance(key, SigningKey)
@@ -60,21 +61,18 @@ class TestSigningKey(TestCaseWithFactory):
 
     @responses.activate
     def test_sign_some_data(self):
-        self.signing_service.addResponses()
+        self.signing_service.addResponses(self)
 
         s = SigningKey(
             SigningKeyType.UEFI, u"a fingerprint",
-            self.signing_service.generated_public_key,
+            bytes(self.signing_service.generated_public_key),
             description=u"This is my key!")
         signed = s.sign("secure message", "message_name")
 
         # Checks if the returned value is actually the returning value from
         # HTTP POST /sign call to lp-signing service
         self.assertEqual(3, len(responses.calls))
-        http_sign = responses.calls[-1]
-        api_resp = http_sign.response.json()
-        self.assertEqual(
-            base64.b64decode(api_resp['signed-message']), signed)
+        self.assertEqual(self.signing_service.getAPISignedContent(), signed)
 
 
 class TestArchiveSigningKey(TestCaseWithFactory):
@@ -83,10 +81,12 @@ class TestArchiveSigningKey(TestCaseWithFactory):
     def setUp(self, *args, **kwargs):
         super(TestArchiveSigningKey, self).setUp(*args, **kwargs)
         self.signing_service = SigningServiceResponseFactory()
+        self.addCleanup(
+            removeSecurityProxy(getUtility(ISigningServiceClient))._cleanCaches)
 
     @responses.activate
     def test_generate_saves_correctly(self):
-        self.signing_service.addResponses()
+        self.signing_service.addResponses(self)
 
         archive = self.factory.makeArchive()
         distro_series = archive.distribution.series[0]
@@ -109,7 +109,7 @@ class TestArchiveSigningKey(TestCaseWithFactory):
         self.assertThat(db_arch_key.signing_key, MatchesStructure.byEquality(
             key_type=SigningKeyType.UEFI, description=u"some description",
             fingerprint=self.signing_service.generated_fingerprint,
-            public_key=self.signing_service.generated_public_key))
+            public_key=bytes(self.signing_service.generated_public_key)))
 
     def test_create(self):
         archive = self.factory.makeArchive()

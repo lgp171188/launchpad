@@ -17,6 +17,7 @@ from nacl.public import (
     PrivateKey,
     PublicKey,
     )
+from nacl.utils import random
 from six.moves.urllib.parse import urljoin
 from zope.interface import implementer
 
@@ -57,20 +58,44 @@ class SigningServiceClient:
         base_url = config.signing.signing_endpoint
         return urljoin(base_url, path)
 
-    def _getJson(self, path, method="GET", **kwargs):
+    def _make_response_nonce(self):
+        return random(Box.NONCE_SIZE)
+
+    def _decrypt_response_json(self, response, response_nonce):
+        box = Box(self.private_key, self.service_public_key)
+        return json.loads(box.decrypt(
+            response.content, response_nonce, encoder=Base64Encoder))
+
+    def _getJson(self, path, method="GET", needs_resp_nonce=False, **kwargs):
         """Helper method to do an HTTP request and get back a json from  the
         signing service, raising exception if status code != 2xx.
+
+        :param path: The endpoint path
+        :param method: The HTTP method to be used (GET, POST, etc)
+        :param needs_resp_nonce: Indicates if the endpoint requires us to
+            include a X-Response-Nonce, and returns back an encrypted
+            response JSON.
         """
         timeline = get_request_timeline(get_current_browser_request())
         action = timeline.start(
             "services-signing-proxy-%s" % method, "%s %s" %
             (path, json.dumps(kwargs)))
 
+        if needs_resp_nonce:
+            response_nonce = self._make_response_nonce()
+            headers = kwargs.get("headers", {})
+            headers["X-Response-Nonce"] = Base64Encoder.encode(
+                response_nonce).decode("UTF-8")
+            kwargs["headers"] = headers
+
         try:
             url = self.getUrl(path)
             response = urlfetch(url, method=method.lower(), **kwargs)
             response.raise_for_status()
-            return response.json()
+            if not needs_resp_nonce:
+                return response.json()
+            else:
+                return self._decrypt_response_json(response, response_nonce)
         finally:
             action.finish()
 
@@ -121,7 +146,7 @@ class SigningServiceClient:
             "description": description,
             }).encode("UTF-8")
         ret = self._getJson(
-            "/generate", "POST", headers=self._getAuthHeaders(nonce),
+            "/generate", "POST", True, headers=self._getAuthHeaders(nonce),
             data=self._encryptPayload(nonce, data))
         return {
             "fingerprint": ret["fingerprint"],
@@ -142,7 +167,7 @@ class SigningServiceClient:
             "mode": mode.name,
             }).encode("UTF-8")
         data = self._getJson(
-            "/sign", "POST",
+            "/sign", "POST", True,
             headers=self._getAuthHeaders(nonce),
             data=self._encryptPayload(nonce, data))
 
