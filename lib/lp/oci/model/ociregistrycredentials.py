@@ -14,9 +14,9 @@ __all__ = [
 import base64
 import json
 
+from storm.databases.postgres import JSON
 from storm.locals import (
     Int,
-    JSON,
     Reference,
     Storm,
     Unicode,
