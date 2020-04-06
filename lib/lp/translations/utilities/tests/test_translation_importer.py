@@ -72,9 +72,6 @@ class TranslationImporterTestCase(TestCaseWithFactory):
             None,
             importer.getTranslationFormatImporter(
                 TranslationFileFormat.KDEPO))
-        self.assertIsNot(
-            None,
-            importer.getTranslationFormatImporter(TranslationFileFormat.XPI))
 
     def testGetTranslationFileFormatByFileExtension(self):
         """Checked whether file format precedence works correctly."""
@@ -94,10 +91,6 @@ class TranslationImporterTestCase(TestCaseWithFactory):
             importer.getTranslationFileFormat(
                 ".po", BytesIO(b'msgid "_: kde context\nmessage"\nmsgstr ""')))
 
-        self.assertEqual(
-            TranslationFileFormat.XPI,
-            importer.getTranslationFileFormat(".xpi", BytesIO(b"")))
-
     def testNoConflictingPriorities(self):
         """Check that no two importers for the same file extension have
         exactly the same priority."""
@@ -111,13 +104,12 @@ class TranslationImporterTestCase(TestCaseWithFactory):
     def testFileExtensionsWithImporters(self):
         """Check whether we get the right list of file extensions handled."""
         self.assertEqual(
-            ['.po', '.pot', '.xpi'],
+            ['.po', '.pot'],
             TranslationImporter().supported_file_extensions)
 
     def testTemplateSuffixes(self):
         """Check for changes in filename suffixes that identify templates."""
-        self.assertEqual(
-            ['.pot', 'en-US.xpi'], TranslationImporter().template_suffixes)
+        self.assertEqual(['.pot'], TranslationImporter().template_suffixes)
 
     def _assertIsNotTemplate(self, path):
         self.assertFalse(
@@ -137,12 +129,8 @@ class TranslationImporterTestCase(TestCaseWithFactory):
         self._assertIsTemplate("bar.pot")
         self._assertIsTemplate("foo/bar.pot")
         self._assertIsTemplate("foo.bar.pot")
-        self._assertIsTemplate("en-US.xpi")
-        self._assertIsTemplate("translations/en-US.xpi")
 
         self._assertIsNotTemplate("pt_BR.po")
-        self._assertIsNotTemplate("pt_BR.xpi")
-        self._assertIsNotTemplate("pt-BR.xpi")
 
     def testHiddenFilesRecognition(self):
         # Hidden files and directories (leading dot) are recognized.
@@ -189,13 +177,9 @@ class TranslationImporterTestCase(TestCaseWithFactory):
         self._assertIsTranslation("po/el.po")
         self._assertIsTranslation("po/package-el.po")
         self._assertIsTranslation("po/package-zh_TW.po")
-        self._assertIsTranslation("en-GB.xpi")
-        self._assertIsTranslation("translations/en-GB.xpi")
 
         self._assertIsNotTranslation("hi.pot")
         self._assertIsNotTranslation("po/hi.pot")
-        self._assertIsNotTranslation("en-US.xpi")
-        self._assertIsNotTranslation("translations/en-US.xpi")
 
     def testIsIdenticalTranslation(self):
         """Test `is_identical_translation`."""

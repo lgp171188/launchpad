@@ -1320,11 +1320,11 @@ def time_counter(origin=None, delta=timedelta(seconds=5)):
     by the delta.
 
     >>> now = time_counter(datetime(2007, 12, 1), timedelta(days=1))
-    >>> now.next()
+    >>> next(now)
     datetime.datetime(2007, 12, 1, 0, 0)
-    >>> now.next()
+    >>> next(now)
     datetime.datetime(2007, 12, 2, 0, 0)
-    >>> now.next()
+    >>> next(now)
     datetime.datetime(2007, 12, 3, 0, 0)
     """
     if origin is None:

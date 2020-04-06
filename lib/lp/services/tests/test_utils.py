@@ -201,8 +201,8 @@ class TestCachingIterator(TestCase):
         ci = CachingIterator(partial(iter, [0, 1, 2, 3, 4]))
         i1 = iter(ci)
         i2 = iter(ci)
-        self.assertEqual(0, i1.next())
-        self.assertEqual(0, i2.next())
+        self.assertEqual(0, next(i1))
+        self.assertEqual(0, next(i2))
         self.assertEqual([1, 2, 3, 4], list(i2))
         self.assertEqual([1, 2, 3, 4], list(i1))
 
@@ -346,7 +346,8 @@ class TestFileExists(TestCase):
         self.useTempDir()
 
     def test_finds_file(self):
-        file("a-real-file.txt", "w").write("Here I am.")
+        with open("a-real-file.txt", "w") as f:
+            f.write("Here I am.")
         self.assertTrue(file_exists("a-real-file.txt"))
 
     def test_finds_directory(self):

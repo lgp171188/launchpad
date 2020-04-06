@@ -127,7 +127,7 @@ def find_merged_revno(merge_sorted, tip_rev_id):
     iterator = iter(merge_sorted)
     while True:
         try:
-            rev_id, depth, revno, ignored = iterator.next()
+            rev_id, depth, revno, ignored = next(iterator)
         except StopIteration:
             break
         if depth == 0:

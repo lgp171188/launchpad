@@ -8,13 +8,13 @@ __metaclass__ = type
 import _pythonpath
 
 from collections import defaultdict
-from ConfigParser import SafeConfigParser
 from optparse import OptionParser
 import os
 import re
 import sys
 
 from fti import quote_identifier
+from lp.services.compat import SafeConfigParser
 from lp.services.database.sqlbase import connect
 from lp.services.scripts import (
     db_options,
@@ -49,7 +49,10 @@ POSTGRES_ACL_MAP = {
     'T': 'TEMPORARY',
     }
 
-QUOTED_STRING_RE = '(?:([a-z_]+)|"([^"]*(?:""[^"]*)*)")?'
+# PostgreSQL's putid emits an unquoted string if every character in the role
+# name isalnum or is _. Otherwise the name is enclosed in double quotes, and
+# any embedded double quotes are doubled.
+QUOTED_STRING_RE = '(?:([A-Za-z0-9_]+)|"([^"]*(?:""[^"]*)*)")?'
 ACLITEM_RE = re.compile('^%(qs)s=([\w*]*)/%(qs)s$' % {'qs': QUOTED_STRING_RE})
 
 

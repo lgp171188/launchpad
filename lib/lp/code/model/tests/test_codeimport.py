@@ -1,4 +1,4 @@
-# Copyright 2009-2017 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Unit tests for methods of CodeImport and CodeImportSet."""
@@ -47,6 +47,7 @@ from lp.code.model.codeimportresult import CodeImportResult
 from lp.code.tests.codeimporthelpers import make_running_import
 from lp.code.tests.helpers import GitHostingFixture
 from lp.registry.interfaces.person import IPersonSet
+from lp.services.database.interfaces import IStore
 from lp.testing import (
     login,
     login_person,
@@ -377,7 +378,7 @@ class TestCodeImportStatusUpdate(TestCodeImportBase):
         self.import_operator = getUtility(IPersonSet).getByEmail(
             'david.allouche@canonical.com')
         # Remove existing jobs.
-        for job in CodeImportJob.select():
+        for job in IStore(CodeImportJob).find(CodeImportJob):
             job.destroySelf()
 
     def makeApprovedImportWithPendingJob(self):
@@ -532,11 +533,11 @@ class TestCodeImportResultsAttribute(TestCodeImportBase):
             origin=datetime(2007, 9, 9, 12, tzinfo=pytz.UTC),
             delta=timedelta(days=1))
         first = self.factory.makeCodeImportResult(
-            self.code_import, date_started=when.next())
+            self.code_import, date_started=next(when))
         second = self.factory.makeCodeImportResult(
-            self.code_import, date_started=when.next())
+            self.code_import, date_started=next(when))
         third = self.factory.makeCodeImportResult(
-            self.code_import, date_started=when.next())
+            self.code_import, date_started=next(when))
         self.assertTrue(first.date_job_started < second.date_job_started)
         self.assertTrue(second.date_job_started < third.date_job_started)
         results = list(self.code_import.results)
@@ -552,11 +553,11 @@ class TestCodeImportResultsAttribute(TestCodeImportBase):
             origin=datetime(2007, 9, 11, 12, tzinfo=pytz.UTC),
             delta=timedelta(days=-1))
         first = self.factory.makeCodeImportResult(
-            self.code_import, date_started=when.next())
+            self.code_import, date_started=next(when))
         second = self.factory.makeCodeImportResult(
-            self.code_import, date_started=when.next())
+            self.code_import, date_started=next(when))
         third = self.factory.makeCodeImportResult(
-            self.code_import, date_started=when.next())
+            self.code_import, date_started=next(when))
         self.assertTrue(first.date_job_started > second.date_job_started)
         self.assertTrue(second.date_job_started > third.date_job_started)
         results = list(self.code_import.results)

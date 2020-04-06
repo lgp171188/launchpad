@@ -1,4 +1,4 @@
-<!-- Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+<!-- Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
      GNU Affero General Public License version 3 (see the file LICENSE).
 -->
 
@@ -610,6 +610,11 @@
         for="lp.registry.interfaces.ociproject.IOCIProject"
         path_expression="string:+oci/${name}"
         attribute_to_parent="pillar"
+        />
+    <browser:url
+        for="lp.registry.interfaces.ociprojectseries.IOCIProjectSeries"
+        path_expression="string:+series/${name}"
+        attribute_to_parent="oci_project"
         />
     <browser:navigation
         module="lp.registry.browser.ociproject"

@@ -1,4 +1,4 @@
-# Copyright 2009-2015 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Interfaces including and related to IDistribution."""
@@ -22,6 +22,7 @@ from lazr.restful.declarations import (
     collection_default_content,
     export_as_webservice_collection,
     export_as_webservice_entry,
+    export_factory_operation,
     export_operation_as,
     export_read_operation,
     exported,
@@ -491,13 +492,13 @@ class IDistributionPublic(
         """Return the country DNS mirror for a country and content type."""
 
     def newMirror(owner, speed, country, content, display_name=None,
-                  description=None, http_base_url=None,
+                  description=None, http_base_url=None, https_base_url=None,
                   ftp_base_url=None, rsync_base_url=None, enabled=False,
                   official_candidate=False, whiteboard=None):
         """Create a new DistributionMirror for this distribution.
 
-        At least one of http_base_url or ftp_base_url must be provided in
-        order to create a mirror.
+        At least one of {http,https,ftp}_base_url must be provided in order to
+        create a mirror.
         """
 
     def getOCIProject(name):
@@ -654,6 +655,27 @@ class IDistributionPublic(
 
     def userCanEdit(user):
         """Can the user edit this distribution?"""
+
+    # XXX: pappacena 2020-04-25: This method is here on IDistributionPublic
+    # for now, until we workout the specific permission for creating OCI
+    # Projects. It's guarded by the feature flag oci.project.create.enabled.
+    @call_with(registrant=REQUEST_USER)
+    @operation_parameters(
+        name=TextLine(
+            title=_("The OCI project name."),
+            description=_("The name that groups a set of OCI recipes "
+                          "together."),
+            required=True),
+        description=Text(
+            title=_("Description for this OCI project."),
+            description=_("A short description of this OCI project."),
+            required=False)
+    )
+    # Interface is actually IOCIProject. Fixed at _schema_circular_imports
+    @export_factory_operation(Interface, [])
+    @operation_for_version("devel")
+    def newOCIProject(registrant, name, description=None):
+        """Create an `IOCIProject` for this distro."""
 
 
 class IDistribution(

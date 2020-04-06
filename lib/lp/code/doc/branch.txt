@@ -193,7 +193,7 @@ order.
     ...     """Create """
     ...     new_branch = factory.makeProductBranch(
     ...         branch_type=branch_type, owner=owner, product=product,
-    ...         name=name, date_created=time_generator.next())
+    ...         name=name, date_created=next(time_generator))
     ...     new_branch.last_scanned = new_branch.date_created
 
     >>> make_new_scanned_branch('oldest')

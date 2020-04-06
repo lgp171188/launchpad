@@ -25,7 +25,7 @@ Read the mbox file and make sure the message we just mailed is in there.
     >>> from mailbox import UnixMailbox
     >>> mbox_file = open(mbox_filename)
     >>> mbox = UnixMailbox(mbox_file)
-    >>> msg = mbox.next()
+    >>> msg = next(mbox)
     >>> msg['from']
     'geddy@example.com'
     >>> msg['to']
@@ -43,7 +43,7 @@ Read the mbox file and make sure the message we just mailed is in there.
 
 There should be no other messages in the mbox file.
 
-    >>> mbox.next()
+    >>> next(mbox)
     >>> mbox_file.close()
 
 Create another mailer, again that overwrites.  Make sure it actually does
@@ -63,10 +63,10 @@ overwrite.
 
     >>> mbox_file = open(mbox_filename)
     >>> mbox = UnixMailbox(mbox_file)
-    >>> msg = mbox.next()
+    >>> msg = next(mbox)
     >>> msg['from']
     'mick@example.com'
-    >>> mbox.next()
+    >>> next(mbox)
     >>> mbox_file.close()
 
 Create another mailer, this time one that does not overwrite.  Both the
@@ -87,10 +87,10 @@ mbox file.
 
     >>> mbox_file = open(mbox_filename)
     >>> mbox = UnixMailbox(mbox_file)
-    >>> msg = mbox.next()
+    >>> msg = next(mbox)
     >>> msg['from']
     'mick@example.com'
-    >>> msg = mbox.next()
+    >>> msg = next(mbox)
     >>> msg['from']
     'carol@example.com'
     >>> mbox_file.close()
@@ -120,14 +120,14 @@ harness.
 
     >>> mbox_file = open(mbox_filename)
     >>> mbox = UnixMailbox(mbox_file)
-    >>> msg = mbox.next()
+    >>> msg = next(mbox)
     >>> msg['from']
     'sting@example.com'
-    >>> msg = mbox.next()
+    >>> msg = next(mbox)
 
     >>> mbox_file = open(chained_filename)
     >>> mbox = UnixMailbox(mbox_file)
-    >>> msg = mbox.next()
+    >>> msg = next(mbox)
     >>> msg['from']
     'sting@example.com'
-    >>> msg = mbox.next()
+    >>> msg = next(mbox)

@@ -151,7 +151,7 @@ class Trac(ExternalBugTracker):
         # We read the remote bugs into a list so that we can check that
         # the data we're getting back from the remote server are valid.
         csv_reader = csv.DictReader(self._getPage(query_url).iter_lines())
-        remote_bugs = [csv_reader.next()]
+        remote_bugs = [next(csv_reader)]
 
         # We consider the data we're getting from the remote server to
         # be valid if there is an ID field and a status field in the CSV

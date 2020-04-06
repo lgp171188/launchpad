@@ -1,4 +1,4 @@
-# Copyright 2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2019-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Interfaces related to recipes for OCI Images."""
@@ -15,11 +15,18 @@ __all__ = [
     'IOCIRecipeView',
     'NoSourceForOCIRecipe',
     'NoSuchOCIRecipe',
+    'OCI_RECIPE_ALLOW_CREATE',
+    'OCI_RECIPE_WEBHOOKS_FEATURE_FLAG',
     'OCIRecipeBuildAlreadyPending',
+    'OCIRecipeFeatureDisabled',
     'OCIRecipeNotOwner',
     ]
 
-from lazr.restful.declarations import error_status
+from lazr.restful.declarations import (
+    error_status,
+    export_as_webservice_entry,
+    exported,
+    )
 from lazr.restful.fields import (
     CollectionField,
     Reference,
@@ -49,6 +56,20 @@ from lp.services.fields import (
     PersonChoice,
     PublicPersonChoice,
     )
+from lp.services.webhooks.interfaces import IWebhookTarget
+
+
+OCI_RECIPE_WEBHOOKS_FEATURE_FLAG = "oci.recipe.webhooks.enabled"
+OCI_RECIPE_ALLOW_CREATE = 'oci.recipe.create.enabled'
+
+
+@error_status(http_client.UNAUTHORIZED)
+class OCIRecipeFeatureDisabled(Unauthorized):
+    """Only certain users can create new LiveFS-related objects."""
+
+    def __init__(self):
+        super(OCIRecipeFeatureDisabled, self).__init__(
+            "You do not have permission to create new OCI recipe.")
 
 
 @error_status(http_client.UNAUTHORIZED)
@@ -88,15 +109,15 @@ class IOCIRecipeView(Interface):
     """`IOCIRecipe` attributes that require launchpad.View permission."""
 
     id = Int(title=_("ID"), required=True, readonly=True)
-    date_created = Datetime(
-        title=_("Date created"), required=True, readonly=True)
-    date_last_modified = Datetime(
-        title=_("Date last modified"), required=True, readonly=True)
+    date_created = exported(Datetime(
+        title=_("Date created"), required=True, readonly=True))
+    date_last_modified = exported(Datetime(
+        title=_("Date last modified"), required=True, readonly=True))
 
-    registrant = PublicPersonChoice(
+    registrant = exported(PublicPersonChoice(
         title=_("Registrant"),
         description=_("The user who registered this recipe."),
-        vocabulary='ValidPersonOrTeam', required=True, readonly=True)
+        vocabulary='ValidPersonOrTeam', required=True, readonly=True))
 
     builds = CollectionField(
         title=_("Completed builds of this OCI recipe."),
@@ -131,8 +152,15 @@ class IOCIRecipeView(Interface):
         :return: `IOCIRecipeBuild`.
         """
 
+    push_rules = CollectionField(
+        title=_("Push rules for this OCI recipe."),
+        description=_("All of the push rules for registry upload "
+                      "that apply to this recipe."),
+        # Really IOCIPushRule, patched in _schema_cirular_imports.
+        value_type=Reference(schema=Interface), readonly=True)
 
-class IOCIRecipeEdit(Interface):
+
+class IOCIRecipeEdit(IWebhookTarget):
     """`IOCIRecipe` methods that require launchpad.Edit permission."""
 
     def destroySelf():
@@ -145,26 +173,26 @@ class IOCIRecipeEditableAttributes(IHasOwner):
     These attributes need launchpad.View to see, and launchpad.Edit to change.
     """
 
-    name = TextLine(
+    name = exported(TextLine(
         title=_("Name"),
         description=_("The name of this recipe."),
         constraint=name_validator,
         required=True,
-        readonly=False)
+        readonly=False))
 
-    owner = PersonChoice(
+    owner = exported(PersonChoice(
         title=_("Owner"),
         required=True,
         vocabulary="AllUserTeamsParticipationPlusSelf",
         description=_("The owner of this OCI recipe."),
-        readonly=False)
+        readonly=False))
 
-    oci_project = Reference(
+    oci_project = exported(Reference(
         IOCIProject,
         title=_("OCI project"),
         description=_("The OCI project that this recipe is for."),
         required=True,
-        readonly=True)
+        readonly=True))
 
     official = Bool(
         title=_("OCI project official"),
@@ -173,16 +201,16 @@ class IOCIRecipeEditableAttributes(IHasOwner):
         description=_("True if this recipe is official for its OCI project."),
         readonly=False)
 
-    git_ref = Reference(
+    git_ref = exported(Reference(
         IGitRef, title=_("Git branch"), required=True, readonly=False,
         description=_(
             "The Git branch containing a Dockerfile at the location "
-            "defined by the build_file attribute."))
+            "defined by the build_file attribute.")))
 
     git_repository = ReferenceChoice(
         title=_("Git repository"),
         schema=IGitRepository, vocabulary="GitRepository",
-        required=True, readonly=False,
+        required=False, readonly=False,
         description=_(
             "A Git repository with a branch containing a Dockerfile "
             "at the location defined by the build_file attribute."))
@@ -193,26 +221,26 @@ class IOCIRecipeEditableAttributes(IHasOwner):
             "The path of the Git branch containing a Dockerfile "
             "at the location defined by the build_file attribute."))
 
-    description = Text(
+    description = exported(Text(
         title=_("Description"),
         description=_("A short description of this recipe."),
         required=False,
-        readonly=False)
+        readonly=False))
 
-    build_file = TextLine(
+    build_file = exported(TextLine(
         title=_("Build file path"),
         description=_("The relative path to the file within this recipe's "
                       "branch that defines how to build the recipe."),
         constraint=path_does_not_escape,
         required=True,
-        readonly=False)
+        readonly=False))
 
-    build_daily = Bool(
+    build_daily = exported(Bool(
         title=_("Build daily"),
         required=True,
         default=False,
         description=_("If True, this recipe should be built daily."),
-        readonly=False)
+        readonly=False))
 
 
 class IOCIRecipeAdminAttributes(Interface):
@@ -230,13 +258,16 @@ class IOCIRecipe(IOCIRecipeView, IOCIRecipeEdit, IOCIRecipeEditableAttributes,
                  IOCIRecipeAdminAttributes):
     """A recipe for building Open Container Initiative images."""
 
+    export_as_webservice_entry(
+        publish_web_link=True, as_of="devel", singular_name="oci_recipe")
+
 
 class IOCIRecipeSet(Interface):
     """A utility to create and access OCI Recipes."""
 
     def new(name, registrant, owner, oci_project, git_ref, build_file,
             description=None, official=False, require_virtualized=True,
-            date_created=DEFAULT):
+            build_daily=False, date_created=DEFAULT):
         """Create an IOCIRecipe."""
 
     def exists(owner, oci_project, name):
@@ -252,4 +283,19 @@ class IOCIRecipeSet(Interface):
         """Return all OCI recipes with the given `oci_project`."""
 
     def preloadDataForOCIRecipes(recipes, user):
-        """Load the data reloated to a list of OCI Recipes."""
+        """Load the data related to a list of OCI Recipes."""
+
+    def findByGitRepository(repository, paths=None):
+        """Return all OCI recipes for the given Git repository.
+
+        :param repository: An `IGitRepository`.
+        :param paths: If not None, only return OCI recipes for one of
+            these Git reference paths.
+        """
+
+    def detachFromGitRepository(repository):
+        """Detach all OCI recipes from the given Git repository.
+
+        After this, any OCI recipes that previously used this repository
+        will have no source and so cannot dispatch new builds.
+        """

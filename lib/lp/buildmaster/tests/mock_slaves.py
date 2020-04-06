@@ -194,7 +194,8 @@ class WaitingSlave(OkSlave):
 
         # By default, the slave only has a buildlog, but callsites
         # can update this list as needed.
-        self.valid_file_hashes = ['buildlog']
+        self.valid_files = {'buildlog': ''}
+        self._got_file_record = []
 
     def status(self):
         self.call_log.append('status')
@@ -208,12 +209,17 @@ class WaitingSlave(OkSlave):
 
     def getFile(self, hash, file_to_write):
         self.call_log.append('getFile')
-        if hash in self.valid_file_hashes:
-            content = "This is a %s" % hash
+        if hash in self.valid_files:
             if isinstance(file_to_write, types.StringTypes):
                 file_to_write = open(file_to_write, 'wb')
+            if not self.valid_files[hash]:
+                content = b"This is a %s" % hash
+            else:
+                with open(self.valid_files[hash], 'rb') as source:
+                    content = source.read()
             file_to_write.write(content)
             file_to_write.close()
+            self._got_file_record.append(hash)
         return defer.succeed(None)
 
 

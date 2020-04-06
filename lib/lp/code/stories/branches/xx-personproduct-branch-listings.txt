@@ -27,14 +27,14 @@ that only the fooix branches are shown.
     ...     datetime(2007, 12, 1, tzinfo=pytz.UTC), timedelta(days=1))
     >>> branch = factory.makeProductBranch(
     ...     owner=eric, product=fooix, name="testing",
-    ...     date_created=date_generator.next())
+    ...     date_created=next(date_generator))
     >>> branch = factory.makeProductBranch(
     ...     owner=eric, product=fooix, name="feature",
-    ...     date_created=date_generator.next())
+    ...     date_created=next(date_generator))
     >>> branch = factory.makeAnyBranch(
-    ...     owner=eric, date_created=date_generator.next())
+    ...     owner=eric, date_created=next(date_generator))
     >>> branch = factory.makeAnyBranch(
-    ...     owner=eric, date_created=date_generator.next())
+    ...     owner=eric, date_created=next(date_generator))
     >>> logout()
 
     >>> browser.open('http://code.launchpad.test/~eric/fooix')

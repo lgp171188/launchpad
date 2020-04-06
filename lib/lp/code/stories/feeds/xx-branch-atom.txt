@@ -21,7 +21,7 @@ by asking BeautifulSoup to use lxml.
     >>> def make_branch(owner, product, name):
     ...     global factory, date_generator
     ...     factory.makeProductBranch(name=name, product=product,
-    ...         owner=owner, date_created=date_generator.next())
+    ...         owner=owner, date_created=next(date_generator))
     >>> mike = factory.makePerson(name='mike', displayname='Mike Murphy')
     >>> mary = factory.makePerson(name='mary', displayname='Mary Murphy')
     >>> projectgroup = factory.makeProject(name='oh-man', displayname='Oh Man')

@@ -37,6 +37,7 @@ from lazr.enum import (
     )
 import pytz
 import simplejson
+import six
 from sqlobject import SQLObjectNotFound
 from storm.expr import (
     And,
@@ -186,7 +187,7 @@ class BranchMergeProposalJob(StormBase):
         self.job_type = job_type
         # XXX AaronBentley 2009-01-29 bug=322819: This should be a bytestring,
         # but the DB representation is unicode.
-        self._json_data = json_data.decode('utf-8')
+        self._json_data = six.ensure_text(json_data)
 
     def sync(self):
         store = Store.of(self)

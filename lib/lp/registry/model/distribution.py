@@ -1,4 +1,4 @@
-# Copyright 2009-2016 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Database classes for implementing distribution items."""
@@ -35,6 +35,7 @@ from storm.info import ClassAlias
 from storm.store import Store
 from zope.component import getUtility
 from zope.interface import implementer
+from zope.security.interfaces import Unauthorized
 
 from lp.answers.enums import QUESTION_STATUS_DEFAULT_SEARCH
 from lp.answers.model.faq import (
@@ -101,7 +102,10 @@ from lp.registry.interfaces.distributionmirror import (
     MirrorFreshness,
     MirrorStatus,
     )
-from lp.registry.interfaces.ociproject import IOCIProjectSet
+from lp.registry.interfaces.ociproject import (
+    IOCIProjectSet,
+    OCI_PROJECT_ALLOW_CREATE,
+    )
 from lp.registry.interfaces.oopsreferences import IHasOOPSReferences
 from lp.registry.interfaces.person import (
     validate_person,
@@ -147,6 +151,7 @@ from lp.services.database.stormexpr import (
     fti_search,
     rank_by_fti,
     )
+from lp.services.features import getFeatureFlag
 from lp.services.helpers import shortlist
 from lp.services.propertycache import (
     cachedproperty,
@@ -709,7 +714,7 @@ class Distribution(SQLBase, BugTargetBase, MakesAnnouncements,
             country_dns_mirror=True).one()
 
     def newMirror(self, owner, speed, country, content, display_name=None,
-                  description=None, http_base_url=None,
+                  description=None, http_base_url=None, https_base_url=None,
                   ftp_base_url=None, rsync_base_url=None,
                   official_candidate=False, enabled=False,
                   whiteboard=None):
@@ -722,15 +727,17 @@ class Distribution(SQLBase, BugTargetBase, MakesAnnouncements,
             return None
 
         urls = {'http_base_url': http_base_url,
+                'https_base_url': https_base_url,
                 'ftp_base_url': ftp_base_url,
                 'rsync_base_url': rsync_base_url}
         for name, value in urls.items():
             if value is not None:
                 urls[name] = IDistributionMirror[name].normalize(value)
 
-        url = urls['http_base_url'] or urls['ftp_base_url']
+        url = (urls['https_base_url'] or urls['http_base_url'] or
+               urls['ftp_base_url'])
         assert url is not None, (
-            "A mirror must provide either an HTTP or FTP URL (or both).")
+            "A mirror must provide at least one HTTP/HTTPS/FTP URL.")
         dummy, host, dummy, dummy, dummy, dummy = urlparse(url)
         name = sanitize_name('%s-%s' % (host, content.name.lower()))
 
@@ -744,6 +751,7 @@ class Distribution(SQLBase, BugTargetBase, MakesAnnouncements,
             distribution=self, owner=owner, name=name, speed=speed,
             country=country, content=content, display_name=display_name,
             description=description, http_base_url=urls['http_base_url'],
+            https_base_url=urls['https_base_url'],
             ftp_base_url=urls['ftp_base_url'],
             rsync_base_url=urls['rsync_base_url'],
             official_candidate=official_candidate, enabled=enabled,
@@ -1446,6 +1454,14 @@ class Distribution(SQLBase, BugTargetBase, MakesAnnouncements,
             if not archive.getPublishedSources().order_by().is_empty():
                 return True
         return False
+
+    def newOCIProject(self, registrant, name, description=None):
+        """Create an `IOCIProject` for this distro."""
+        if not getFeatureFlag(OCI_PROJECT_ALLOW_CREATE):
+            raise Unauthorized("Creating new OCI projects is not allowed.")
+        return getUtility(IOCIProjectSet).new(
+            pillar=self, registrant=registrant, name=name,
+            description=description)
 
 
 @implementer(IDistributionSet)

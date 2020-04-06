@@ -16,6 +16,7 @@ from lazr.lifecycle.event import ObjectModifiedEvent
 from lazr.lifecycle.snapshot import Snapshot
 from lazr.uri import find_uris_in_text
 from pytz import utc
+import six
 from six.moves.urllib.parse import (
     splitvalue,
     urlunsplit,
@@ -110,7 +111,7 @@ def get_bug_watch_ids(references):
     for reference in references:
         if IBugWatch.providedBy(reference):
             yield reference.id
-        elif isinstance(reference, (int, long)):
+        elif isinstance(reference, six.integer_types):
             yield reference
         else:
             raise AssertionError(

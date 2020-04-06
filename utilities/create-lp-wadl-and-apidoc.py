@@ -1,6 +1,6 @@
 #! /usr/bin/python -S
 #
-# Copyright 2010-2016 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Create a static WADL file describing the current webservice.
@@ -10,6 +10,9 @@ Example:
     % LPCONFIG=development bin/py utilities/create-lp-wadl-and-apidoc.py \\
       "lib/canonical/launchpad/apidoc/wadl-development-%(version)s.xml"
 """
+
+from __future__ import absolute_import, print_function
+
 import _pythonpath
 
 from multiprocessing import Process
@@ -18,9 +21,8 @@ import os
 import subprocess
 import sys
 
-import breezy
-from breezy.branch import Branch
 from lazr.restful.interfaces import IWebServiceConfiguration
+import six
 from zope.component import getUtility
 from zope.pagetemplate.pagetemplatefile import PageTemplateFile
 
@@ -35,9 +37,8 @@ from lp.systemhomes import WebServiceApplication
 
 def write(filename, content, timestamp):
     """Replace the named file with the given string."""
-    f = open(filename, 'w')
-    f.write(content)
-    f.close()
+    with open(filename, 'wb') as f:
+        f.write(six.ensure_binary(content))
     os.utime(filename, (timestamp, timestamp))  # (atime, mtime)
 
 
@@ -63,12 +64,12 @@ def make_files(directory, version, timestamp, force):
         (json_filename, json_index, generate_json, 'JSON')):
         # If the src doesn't exist or we are forced to regenerate it...
         if (not os.path.exists(src) or force):
-            print "Writing %s for version %s to %s." % (
-                name, version, src)
+            print("Writing %s for version %s to %s." % (
+                name, version, src))
             write(src, gen(version), timestamp)
         else:
-            print "Skipping already present %s file: %s" % (
-                name, src)
+            print("Skipping already present %s file: %s" % (
+                name, src))
         # Make "index" symlinks, removing any preexisting ones.
         if os.path.exists(dest):
             os.remove(dest)
@@ -106,12 +107,12 @@ def make_files(directory, version, timestamp, force):
     # If the HTML file doesn't exist or we're being forced to regenerate
     # it...
     if (not os.path.exists(html_filename) or force):
-        print "Writing apidoc for version %s to %s" % (
-            version, html_filename)
+        print("Writing apidoc for version %s to %s" % (
+            version, html_filename))
         write(html_filename, generate_html(wadl_filename,
             suppress_stderr=False), timestamp)
     else:
-        print "Skipping already present HTML file:", html_filename
+        print("Skipping already present HTML file:", html_filename)
 
     # Symlink the top-level version html in the version directory for
     # completeness.
@@ -131,23 +132,16 @@ def main(directory, force=False):
     template_file = 'apidoc-index.pt'
     template = PageTemplateFile(template_file)
     index_filename = os.path.join(directory, "index.html")
-    print "Writing index:", index_filename
+    print("Writing index:", index_filename)
     f = open(index_filename, 'w')
     f.write(template(config=config))
 
     # Get the time of the last commit.  We will use this as the mtime for the
     # generated files so that we can safely use it as part of Apache's etag
     # generation in the face of multiple servers/filesystems.
-    top = os.path.dirname(os.path.dirname(__file__))
-    if os.path.exists(os.path.join(top, ".git")):
-        timestamp = int(subprocess.check_output(
-            ["git", "log", "-1", "--format=%ct", "HEAD"],
-            universal_newlines=True))
-    else:
-        with breezy.get_global_state():
-            branch = Branch.open(top)
-            timestamp = branch.repository.get_revision(
-                branch.last_revision()).timestamp
+    timestamp = int(subprocess.check_output(
+        ["git", "log", "-1", "--format=%ct", "HEAD"],
+        universal_newlines=True))
 
     # Start a process to build each set of WADL and HTML files.
     processes = []

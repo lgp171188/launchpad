@@ -1,4 +1,4 @@
-<!-- Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+<!-- Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
      GNU Affero General Public License version 3 (see the file LICENSE).
 -->
 
@@ -745,6 +745,9 @@
             permission="launchpad.Edit"
             interface="lp.registry.interfaces.ociproject.IOCIProjectEdit"
             set_schema="lp.registry.interfaces.ociproject.IOCIProjectEditableAttributes" />
+        <require
+            permission="launchpad.AnyLegitimatePerson"
+            interface="lp.registry.interfaces.ociproject.IOCIProjectLegitimate"/>
     </class>
     <subscriber
         for="lp.registry.interfaces.ociproject.IOCIProject zope.lifecycleevent.interfaces.IObjectModifiedEvent"
@@ -2046,6 +2049,7 @@
                 description
                 distribution
                 http_base_url
+                https_base_url
                 ftp_base_url
                 rsync_base_url
                 enabled
@@ -2084,8 +2088,9 @@
         <require
             permission="launchpad.Edit"
             set_attributes="name display_name description whiteboard
-                            http_base_url ftp_base_url rsync_base_url enabled
-                            speed country content official_candidate owner"
+                            http_base_url https_base_url ftp_base_url
+                            rsync_base_url enabled speed country content
+                            official_candidate owner"
             attributes="official_candidate whiteboard resubmitForReview" />
         <require
             permission="launchpad.Admin"

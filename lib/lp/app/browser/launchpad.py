@@ -271,9 +271,9 @@ class Hierarchy(LaunchpadView):
         """The objects for which we want breadcrumbs."""
         # Start the chain with the deepest object that has a breadcrumb.
         try:
-            objects = [(
+            objects = [next((
                 obj for obj in reversed(self.request.traversed_objects)
-                if IBreadcrumb(obj, None)).next()]
+                if IBreadcrumb(obj, None)))]
         except StopIteration:
             return []
         # Now iterate. If an object has a breadcrumb, it can override
@@ -544,7 +544,8 @@ class MaintenanceMessage:
 
     def __call__(self):
         if os.path.exists('+maintenancetime.txt'):
-            message = file('+maintenancetime.txt').read()
+            with open('+maintenancetime.txt') as f:
+                message = f.read()
             try:
                 maintenancetime = parseDatetimetz(message)
             except DateTimeError:

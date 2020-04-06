@@ -35,8 +35,12 @@ from lp.oci.interfaces.ocirecipe import (
     IOCIRecipe,
     IOCIRecipeSet,
     NoSuchOCIRecipe,
+    OCI_RECIPE_ALLOW_CREATE,
+    OCI_RECIPE_WEBHOOKS_FEATURE_FLAG,
+    OCIRecipeFeatureDisabled,
     )
 from lp.oci.interfaces.ocirecipebuild import IOCIRecipeBuildSet
+from lp.services.features import getFeatureFlag
 from lp.services.propertycache import cachedproperty
 from lp.services.webapp import (
     canonical_url,
@@ -48,10 +52,11 @@ from lp.services.webapp import (
     stepthrough,
     )
 from lp.services.webapp.breadcrumb import NameBreadcrumb
+from lp.services.webhooks.browser import WebhookTargetNavigationMixin
 from lp.soyuz.browser.build import get_build_by_id_str
 
 
-class OCIRecipeNavigation(Navigation):
+class OCIRecipeNavigation(WebhookTargetNavigationMixin, Navigation):
 
     usedfor = IOCIRecipe
 
@@ -77,7 +82,7 @@ class OCIRecipeNavigationMenu(NavigationMenu):
 
     facet = "overview"
 
-    links = ("admin", "edit", "delete")
+    links = ("admin", "edit", "webhooks", "delete")
 
     @enabled_with_permission("launchpad.Admin")
     def admin(self):
@@ -86,6 +91,12 @@ class OCIRecipeNavigationMenu(NavigationMenu):
     @enabled_with_permission("launchpad.Edit")
     def edit(self):
         return Link("+edit", "Edit OCI recipe", icon="edit")
+
+    @enabled_with_permission('launchpad.Edit')
+    def webhooks(self):
+        return Link(
+            '+webhooks', 'Manage webhooks', icon='edit',
+            enabled=bool(getFeatureFlag(OCI_RECIPE_WEBHOOKS_FEATURE_FLAG)))
 
     @enabled_with_permission("launchpad.Edit")
     def delete(self):
@@ -165,6 +176,11 @@ class OCIRecipeAddView(LaunchpadFormView):
         )
     custom_widget_git_ref = GitRefWidget
 
+    def initialize(self):
+        super(OCIRecipeAddView, self).initialize()
+        if not getFeatureFlag(OCI_RECIPE_ALLOW_CREATE):
+            raise OCIRecipeFeatureDisabled()
+
     @property
     def cancel_url(self):
         """See `LaunchpadFormView`."""
@@ -196,7 +212,8 @@ class OCIRecipeAddView(LaunchpadFormView):
         recipe = getUtility(IOCIRecipeSet).new(
             name=data["name"], registrant=self.user, owner=data["owner"],
             oci_project=self.context, git_ref=data["git_ref"],
-            build_file=data["build_file"], description=data["description"])
+            build_file=data["build_file"], description=data["description"],
+            build_daily=data["build_daily"])
         self.next_url = canonical_url(recipe)
 
 

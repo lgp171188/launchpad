@@ -1,4 +1,4 @@
-# Copyright 2009-2015 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Module docstring goes here."""
@@ -129,6 +129,8 @@ class DistributionMirror(SQLBase):
         notNull=False, default=None)
     http_base_url = StringCol(
         notNull=False, default=None, unique=True)
+    https_base_url = StringCol(
+        notNull=False, default=None, unique=True)
     ftp_base_url = StringCol(
         notNull=False, default=None, unique=True)
     rsync_base_url = StringCol(
@@ -155,7 +157,9 @@ class DistributionMirror(SQLBase):
     @property
     def base_url(self):
         """See IDistributionMirror"""
-        if self.http_base_url is not None:
+        if self.https_base_url is not None:
+            return self.https_base_url
+        elif self.http_base_url is not None:
             return self.http_base_url
         else:
             return self.ftp_base_url
@@ -676,6 +680,10 @@ class DistributionMirrorSet:
     def getByHttpUrl(self, url):
         """See IDistributionMirrorSet"""
         return DistributionMirror.selectOneBy(http_base_url=url)
+
+    def getByHttpsUrl(self, url):
+        """See IDistributionMirrorSet"""
+        return DistributionMirror.selectOneBy(https_base_url=url)
 
     def getByFtpUrl(self, url):
         """See IDistributionMirrorSet"""

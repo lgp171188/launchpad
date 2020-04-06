@@ -160,7 +160,7 @@ def consistent_branch_names():
         yield name
     index = count(1)
     while True:
-        yield "branch-%s" % index.next()
+        yield "branch-%s" % next(index)
 
 
 def make_package_branches(factory, series, sourcepackagename, branch_count,
@@ -180,8 +180,8 @@ def make_package_branches(factory, series, sourcepackagename, branch_count,
         factory.makePackageBranch(
             distroseries=series,
             sourcepackagename=sourcepackagename,
-            date_created=time_gen.next(),
-            name=branch_names.next(), owner=owner, registrant=registrant)
+            date_created=next(time_gen),
+            name=next(branch_names), owner=owner, registrant=registrant)
         for i in range(branch_count)]
 
     official = []

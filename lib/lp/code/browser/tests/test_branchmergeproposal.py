@@ -322,13 +322,13 @@ class TestBranchMergeProposalVoteView(TestCaseWithFactory):
             owner=reviewer,
             subject=self.factory.getUniqueString('subject'),
             vote=vote,
-            _date_created=self.date_generator.next())
+            _date_created=next(self.date_generator))
 
     def _nominateReviewer(self, reviewer, registrant):
         """Nominate a reviewer for the merge proposal."""
         self.bmp.nominateReviewer(
             reviewer=reviewer, registrant=registrant,
-            _date_created=self.date_generator.next())
+            _date_created=next(self.date_generator))
 
     def testNoVotes(self):
         # No votes should return empty lists
@@ -869,7 +869,7 @@ class TestRegisterBranchMergeProposalViewGit(
             target_branch.repository)._default_branch = target_branch.path
         view = self._createView()
         self.assertEqual(
-            target_branch.repository.default_branch,
+            target_branch.repository.default_branch.split('/')[-1],
             view.widgets['target_git_path']._getCurrentValue())
 
     def test_default_branch_no_default_set(self):

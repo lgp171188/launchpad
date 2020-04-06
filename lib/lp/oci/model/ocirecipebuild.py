@@ -1,4 +1,4 @@
-# Copyright 2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2019-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """A build record for OCI Recipes."""
@@ -44,7 +44,9 @@ from lp.oci.interfaces.ocirecipebuild import (
     IOCIRecipeBuild,
     IOCIRecipeBuildSet,
     )
+from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.registry.model.person import Person
+from lp.services.config import config
 from lp.services.database.bulk import load_related
 from lp.services.database.constants import DEFAULT
 from lp.services.database.decoratedresultset import DecoratedResultSet
@@ -53,11 +55,16 @@ from lp.services.database.interfaces import (
     IMasterStore,
     IStore,
     )
+from lp.services.features import getFeatureFlag
 from lp.services.librarian.model import (
     LibraryFileAlias,
     LibraryFileContent,
     )
-from lp.services.propertycache import cachedproperty
+from lp.services.propertycache import (
+    cachedproperty,
+    get_property_cache,
+    )
+from lp.services.webapp.snapshot import notify_modified
 
 
 @implementer(IOCIFile)
@@ -128,10 +135,16 @@ class OCIRecipeBuild(PackageBuildMixin, Storm):
     build_farm_job_id = Int(name='build_farm_job', allow_none=False)
     build_farm_job = Reference(build_farm_job_id, 'BuildFarmJob.id')
 
-    # Stub attributes to match the IPackageBuild interface that we
-    # are not using in this implementation at this time.
-    pocket = None
-    distro_series = None
+    # We only care about the pocket from a building environment POV,
+    # it is not a target, nor referenced in the final build.
+    pocket = PackagePublishingPocket.UPDATES
+
+    @property
+    def distro_series(self):
+        # XXX twom 2020-02-14 - This really needs to be set elsewhere,
+        # as this may not be an LTS release and ties the OCI target to
+        # a completely unrelated process.
+        return self.distribution.currentseries
 
     def __init__(self, build_farm_job, requester, recipe,
                  processor, virtualized, date_created):
@@ -195,23 +208,6 @@ class OCIRecipeBuild(PackageBuildMixin, Storm):
             return result
         raise NotFoundError(filename)
 
-    def getLayerFileByDigest(self, layer_file_digest):
-        file_object = Store.of(self).find(
-            (OCIFile, LibraryFileAlias, LibraryFileContent),
-            OCIFile.build == self.id,
-            LibraryFileAlias.id == OCIFile.library_file_id,
-            LibraryFileContent.id == LibraryFileAlias.contentID,
-            OCIFile.layer_file_digest == layer_file_digest).one()
-        if file_object is not None:
-            return file_object
-        raise NotFoundError(layer_file_digest)
-
-    def addFile(self, lfa, layer_file_digest=None):
-        oci_file = OCIFile(
-            build=self, library_file=lfa, layer_file_digest=layer_file_digest)
-        IMasterStore(OCIFile).add(oci_file)
-        return oci_file
-
     @cachedproperty
     def eta(self):
         """The datetime when the build job is estimated to complete.
@@ -256,6 +252,92 @@ class OCIRecipeBuild(PackageBuildMixin, Storm):
         # XXX twom 2019-12-05 This may need to change when an OCIProject
         # pillar isn't just a distribution
         return self.recipe.oci_project.distribution
+
+    @property
+    def distro_arch_series(self):
+        # For OCI builds we default to the series set by the feature flag.
+        # If the feature flag is not set we default to current series under
+        # the OCIRecipeBuild distribution.
+
+        oci_series = getFeatureFlag('oci.build_series.%s'
+                                    % self.distribution.name)
+        if oci_series:
+            oci_series = self.distribution.getSeries(oci_series)
+        else:
+            oci_series = self.distribution.currentseries
+        return oci_series.getDistroArchSeriesByProcessor(self.processor)
+
+    def updateStatus(self, status, builder=None, slave_status=None,
+                     date_started=None, date_finished=None,
+                     force_invalid_transition=False):
+        """See `IBuildFarmJob`."""
+        edited_fields = set()
+        with notify_modified(self, edited_fields) as previous_obj:
+            super(OCIRecipeBuild, self).updateStatus(
+                status, builder=builder, slave_status=slave_status,
+                date_started=date_started, date_finished=date_finished,
+                force_invalid_transition=force_invalid_transition)
+            if self.status != previous_obj.status:
+                edited_fields.add("status")
+        # notify_modified evaluates all attributes mentioned in the
+        # interface, but we may then make changes that affect self.eta.
+        del get_property_cache(self).eta
+
+    def notify(self, extra_info=None):
+        """See `IPackageBuild`."""
+        if not config.builddmaster.send_build_notification:
+            return
+        if self.status == BuildStatus.FULLYBUILT:
+            return
+        # XXX twom 2019-12-11 This should send mail
+
+    def getLayerFileByDigest(self, layer_file_digest):
+        file_object = Store.of(self).find(
+            (OCIFile, LibraryFileAlias, LibraryFileContent),
+            OCIFile.build == self.id,
+            LibraryFileAlias.id == OCIFile.library_file_id,
+            LibraryFileContent.id == LibraryFileAlias.contentID,
+            OCIFile.layer_file_digest == layer_file_digest).one()
+        if file_object is not None:
+            return file_object
+        raise NotFoundError(layer_file_digest)
+
+    def addFile(self, lfa, layer_file_digest=None):
+        oci_file = OCIFile(
+            build=self, library_file=lfa, layer_file_digest=layer_file_digest)
+        IMasterStore(OCIFile).add(oci_file)
+        return oci_file
+
+    @cachedproperty
+    def manifest(self):
+        result = Store.of(self).find(
+            (OCIFile, LibraryFileAlias, LibraryFileContent),
+            OCIFile.build == self.id,
+            LibraryFileAlias.id == OCIFile.library_file_id,
+            LibraryFileContent.id == LibraryFileAlias.contentID,
+            LibraryFileAlias.filename == 'manifest.json')
+        return result.one()
+
+    @cachedproperty
+    def digests(self):
+        result = Store.of(self).find(
+            (OCIFile, LibraryFileAlias, LibraryFileContent),
+            OCIFile.build == self.id,
+            LibraryFileAlias.id == OCIFile.library_file_id,
+            LibraryFileContent.id == LibraryFileAlias.contentID,
+            LibraryFileAlias.filename == 'digests.json')
+        return result.one()
+
+    def verifySuccessfulUpload(self):
+        """See `IPackageBuild`."""
+        layer_files = Store.of(self).find(
+            OCIFile,
+            OCIFile.build == self.id,
+            OCIFile.layer_file_digest is not None)
+        layer_files_present = not layer_files.is_empty()
+        metadata_present = (self.manifest is not None
+                            and self.digests is not None)
+        return layer_files_present and metadata_present
 
 
 @implementer(IOCIRecipeBuildSet)

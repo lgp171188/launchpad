@@ -17,6 +17,8 @@ This script creates a user "ppa-user" (email ppa-user@example.com,
 password test) who is able to create PPAs.
 """
 
+from __future__ import absolute_import, print_function
+
 __metaclass__ = type
 
 import _pythonpath
@@ -342,7 +344,7 @@ def create_ppa_user(username, options, approver, log):
         pipe = subprocess.Popen(command_line, stderr=subprocess.PIPE)
         stdout, stderr = pipe.communicate()
         if stderr != '':
-            print stderr
+            print(stderr)
         if pipe.returncode != 0:
             sys.exit(2)
 
@@ -396,7 +398,7 @@ class SoyuzSampledataSetup(LaunchpadScript):
         transaction.commit()
         self.logger.info("Done.")
 
-        print dedent("""
+        print(dedent("""
             Now start your local Launchpad with "make run_codehosting" and log
             into https://launchpad.test/ as "%(email)s" with "test" as the
             password.
@@ -404,7 +406,7 @@ class SoyuzSampledataSetup(LaunchpadScript):
             % {
                 'email': self.options.email,
                 'user_name': user_name,
-                })
+                }))
 
 
 if __name__ == "__main__":

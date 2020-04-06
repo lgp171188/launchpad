@@ -138,7 +138,7 @@ class TestTranslationTemplatesBuildBehaviour(
         buildqueue = FakeBuildQueue(behaviour)
         path = behaviour.templates_tarball_path
         # Poke the file we're expecting into the mock slave.
-        behaviour._slave.valid_file_hashes.append(path)
+        behaviour._slave.valid_files[path] = ''
 
         def got_tarball(filename):
             tarball = open(filename, 'r')
@@ -297,8 +297,8 @@ class TestTTBuildBehaviourTranslationsQueue(
     def test_uploadTarball(self):
         # Files from the tarball end up in the import queue.
         behaviour = self.makeBehaviour()
-        behaviour._uploadTarball(
-            self.branch, file(self.dummy_tar).read(), None)
+        with open(self.dummy_tar) as f:
+            behaviour._uploadTarball(self.branch, f.read(), None)
 
         entries = self.queue.getAllEntries(target=self.productseries)
         expected_templates = [
@@ -313,8 +313,8 @@ class TestTTBuildBehaviourTranslationsQueue(
     def test_uploadTarball_approved(self):
         # Uploaded template files are automatically approved.
         behaviour = self.makeBehaviour()
-        behaviour._uploadTarball(
-            self.branch, file(self.dummy_tar).read(), None)
+        with open(self.dummy_tar) as f:
+            behaviour._uploadTarball(self.branch, f.read(), None)
 
         entries = self.queue.getAllEntries(target=self.productseries)
         statuses = [entry.status for entry in entries]
@@ -324,8 +324,8 @@ class TestTTBuildBehaviourTranslationsQueue(
     def test_uploadTarball_importer(self):
         # Files from the tarball are owned by the branch owner.
         behaviour = self.makeBehaviour()
-        behaviour._uploadTarball(
-            self.branch, file(self.dummy_tar).read(), None)
+        with open(self.dummy_tar) as f:
+            behaviour._uploadTarball(self.branch, f.read(), None)
 
         entries = self.queue.getAllEntries(target=self.productseries)
         self.assertEqual(self.branch.owner, entries[0].importer)

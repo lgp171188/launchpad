@@ -157,8 +157,10 @@ from lp.hardwaredb.interfaces.hwdb import (
     IHWSubmissionDeviceSet,
     IHWSubmissionSet,
     )
+from lp.oci.interfaces.ocipushrule import IOCIPushRuleSet
 from lp.oci.interfaces.ocirecipe import IOCIRecipeSet
 from lp.oci.interfaces.ocirecipebuild import IOCIRecipeBuildSet
+from lp.oci.interfaces.ociregistrycredentials import IOCIRegistryCredentialsSet
 from lp.oci.model.ocirecipe import OCIRecipeArch
 from lp.oci.model.ocirecipebuild import OCIFile
 from lp.registry.enums import (
@@ -443,7 +445,7 @@ class ObjectFactory:
         For each thread, this will be a series of increasing numbers, but the
         starting point will be unique per thread.
         """
-        return ObjectFactory._unique_int_counter.next()
+        return next(ObjectFactory._unique_int_counter)
 
     def getUniqueHexString(self, digits=None):
         """Return a unique hexadecimal string.
@@ -1743,7 +1745,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             revision = revision_set.new(
                 revision_id=self.getUniqueString('revision-id'),
                 log_body=self.getUniqueString('log-body'),
-                revision_date=date_generator.next(),
+                revision_date=next(date_generator),
                 revision_author=author,
                 parent_ids=parent_ids,
                 properties={})
@@ -2124,7 +2126,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         """
         if bug is None:
             bug = self.makeBug()
-        elif isinstance(bug, (int, long, basestring)):
+        elif isinstance(bug, (six.integer_types, basestring)):
             bug = getUtility(IBugSet).getByNameOrID(str(bug))
         if owner is None:
             owner = self.makePerson()
@@ -2159,7 +2161,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         """
         if bug is None:
             bug = self.makeBug()
-        elif isinstance(bug, (int, long, basestring)):
+        elif isinstance(bug, (six.integer_types, basestring)):
             bug = getUtility(IBugSet).getByNameOrID(str(bug))
         if owner is None:
             owner = self.makePerson()
@@ -2548,7 +2550,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             # If a date_started is specified, then base the finish time
             # on that.
             if date_started is None:
-                date_finished = time_counter().next()
+                date_finished = next(time_counter())
             else:
                 date_finished = date_started + timedelta(hours=4)
         if date_started is None:
@@ -3530,13 +3532,13 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         return proberecord
 
     def makeMirror(self, distribution, displayname=None, country=None,
-                   http_url=None, ftp_url=None, rsync_url=None,
+                   http_url=None, https_url=None, ftp_url=None, rsync_url=None,
                    official_candidate=False):
         """Create a mirror for the distribution."""
         if displayname is None:
             displayname = self.getUniqueString("mirror")
         # If no URL is specified create an HTTP URL.
-        if http_url is None and ftp_url is None and rsync_url is None:
+        if http_url is https_url is ftp_url is rsync_url is None:
             http_url = self.getUniqueURL()
         # If no country is given use Argentina.
         if country is None:
@@ -3550,6 +3552,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             display_name=displayname,
             description=None,
             http_base_url=http_url,
+            https_base_url=https_url,
             ftp_base_url=ftp_url,
             rsync_base_url=rsync_url,
             official_candidate=official_candidate)
@@ -3991,7 +3994,8 @@ class BareLaunchpadObjectFactory(ObjectFactory):
                                            sourcepackagename=None,
                                            version=None,
                                            architecturespecific=False,
-                                           with_debug=False, with_file=False):
+                                           with_debug=False, with_file=False,
+                                           creator=None):
         """Make a `BinaryPackagePublishingHistory`."""
         if distroarchseries is None:
             if archive is None:
@@ -4084,7 +4088,8 @@ class BareLaunchpadObjectFactory(ObjectFactory):
                 binpackageformat=BinaryPackageFormat.DDEB,
                 sourcepackagename=sourcepackagename,
                 architecturespecific=architecturespecific,
-                with_file=with_file)
+                with_file=with_file,
+                creator=creator)
             removeSecurityProxy(bpph.binarypackagerelease).debug_package = (
                 debug_bpph.binarypackagerelease)
             return bpphs[0], debug_bpph
@@ -5020,9 +5025,20 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         if requester is None:
             requester = self.makePerson()
         if distro_arch_series is None:
-            distro_arch_series = self.makeDistroArchSeries()
+            if recipe is not None:
+                distribution = recipe.oci_project.distribution
+            else:
+                distribution = None
+            distroseries = self.makeDistroSeries(
+                distribution=distribution, status=SeriesStatus.CURRENT)
+            processor = getUtility(IProcessorSet).getByName("386")
+            distro_arch_series = self.makeDistroArchSeries(
+                distroseries=distroseries, architecturetag="i386",
+                processor=processor)
         if recipe is None:
-            recipe = self.makeOCIRecipe()
+            oci_project = self.makeOCIProject(
+                pillar=distro_arch_series.distroseries.distribution)
+            recipe = self.makeOCIRecipe(oci_project=oci_project)
         oci_build = getUtility(IOCIRecipeBuildSet).new(
             requester, recipe, distro_arch_series, date_created)
         if duration is not None:
@@ -5039,14 +5055,45 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         return oci_build
 
     def makeOCIFile(self, build=None, library_file=None,
-                    layer_file_digest=None):
+                    layer_file_digest=None, content=None, filename=None):
         """Make a new OCIFile."""
         if build is None:
             build = self.makeOCIRecipeBuild()
         if library_file is None:
-            library_file = self.makeLibraryFileAlias()
+            library_file = self.makeLibraryFileAlias(
+                content=content, filename=filename)
         return OCIFile(build=build, library_file=library_file,
                        layer_file_digest=layer_file_digest)
+
+    def makeOCIRegistryCredentials(self, owner=None, url=None,
+                                   credentials=None):
+        """Make a new OCIRegistryCredentials."""
+        if owner is None:
+            owner = self.makePerson()
+        if url is None:
+            url = six.ensure_text(self.getUniqueURL())
+        if credentials is None:
+            credentials = {
+                'username': self.getUniqueUnicode(),
+                'password': self.getUniqueUnicode()}
+        return getUtility(IOCIRegistryCredentialsSet).new(
+            owner=owner,
+            url=url,
+            credentials=credentials)
+
+    def makeOCIPushRule(self, recipe=None, registry_credentials=None,
+                        image_name=None):
+        """Make a new OCIPushRule."""
+        if recipe is None:
+            recipe = self.makeOCIRecipe()
+        if registry_credentials is None:
+            registry_credentials = self.makeOCIRegistryCredentials()
+        if image_name is None:
+            image_name = self.getUniqueUnicode(u"oci-image-name")
+        return getUtility(IOCIPushRuleSet).new(
+            recipe=recipe,
+            registry_credentials=registry_credentials,
+            image_name=image_name)
 
 
 # Some factory methods return simple Python types. We don't add

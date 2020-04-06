@@ -8,6 +8,8 @@ import os
 import re
 import subprocess
 
+import six
+
 
 class Bug:
     def __init__(self, db, id, package=None, date=None, status=None,
@@ -97,7 +99,7 @@ class Database:
         self.debbugs_pl = debbugs_pl
         self.subdir = subdir
 
-    class bug_iterator:
+    class bug_iterator(six.Iterator):
         index_record = re.compile(
             r'^(?P<package>\S+) (?P<bugid>\d+) (?P<date>\d+) (?P<status>\w+) '
             r'\[(?P<originator>.*)\] (?P<severity>\w+)(?: (?P<tags>.*))?$')
@@ -107,7 +109,7 @@ class Database:
             self.index = open(os.path.join(self.db.root, 'index/index.db'))
             self.filter = filter
 
-        def next(self):
+        def __next__(self):
             line = self.index.readline()
             if not line:
                 raise StopIteration

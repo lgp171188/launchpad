@@ -20,6 +20,7 @@ from datetime import (
 from lazr.delegates import delegate_to
 from pytz import utc
 import simplejson
+import six
 from storm.expr import (
     And,
     Not,
@@ -156,7 +157,7 @@ class ProductJob(StormBase):
         self.product = product
         self.job_type = job_type
         json_data = simplejson.dumps(metadata)
-        self._json_data = json_data.decode('utf-8')
+        self._json_data = six.ensure_text(json_data)
 
 
 @delegate_to(IProductJob)

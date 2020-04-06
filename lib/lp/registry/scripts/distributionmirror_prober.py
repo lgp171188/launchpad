@@ -1,4 +1,4 @@
-# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -12,6 +12,11 @@ import logging
 import os.path
 from StringIO import StringIO
 
+import OpenSSL
+from OpenSSL.SSL import (
+    Context,
+    TLSv1_2_METHOD,
+    )
 import requests
 from six.moves import http_client
 from six.moves.urllib.parse import (
@@ -20,14 +25,25 @@ from six.moves.urllib.parse import (
     urlparse,
     urlunparse,
     )
+from treq.client import HTTPClient as TreqHTTPClient
 from twisted.internet import (
     defer,
     protocol,
     reactor,
     )
-from twisted.internet.defer import DeferredSemaphore
+from twisted.internet.defer import (
+    CancelledError,
+    DeferredSemaphore,
+    )
+from twisted.internet.ssl import VerificationError
 from twisted.python.failure import Failure
+from twisted.web.client import (
+    Agent,
+    BrowserLikePolicyForHTTPS,
+    ResponseNeverReceived,
+    )
 from twisted.web.http import HTTPClient
+from twisted.web.iweb import IResponse
 from zope.component import getUtility
 
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
@@ -39,6 +55,7 @@ from lp.registry.interfaces.distributionmirror import (
     )
 from lp.registry.interfaces.distroseries import IDistroSeries
 from lp.services.config import config
+from lp.services.httpproxy.connect_tunneling import TunnelingAgent
 from lp.services.librarian.interfaces import ILibraryFileAliasSet
 from lp.services.timeout import urlfetch
 from lp.services.webapp import canonical_url
@@ -50,6 +67,7 @@ from lp.soyuz.interfaces.distroarchseries import IDistroArchSeries
 # IMPORTANT: Changing these values can cause lots of false negatives when
 # probing mirrors, so please don't change them unless you know what you're
 # doing.
+
 MIN_REQUEST_TIMEOUT_RATIO = 3
 MIN_REQUESTS_TO_CONSIDER_RATIO = 30
 
@@ -57,19 +75,11 @@ MIN_REQUESTS_TO_CONSIDER_RATIO = 30
 # We need to get rid of these global dicts in this module.
 host_requests = {}
 host_timeouts = {}
+# Set of invalid certificate (host, port) tuples, to avoid doing HTTPS calls
+# to hosts we already know they are not valid.
+invalid_certificate_hosts = set()
 
 MAX_REDIRECTS = 3
-
-# Number of simultaneous requests we issue on a given host.
-# IMPORTANT: Don't change this unless you really know what you're doing. Using
-# a too big value can cause spurious failures on lots of mirrors and a too
-# small one can cause the prober to run for hours.
-PER_HOST_REQUESTS = 2
-
-# We limit the overall number of simultaneous requests as well to prevent
-# them from stalling and timing out before they even get a chance to
-# start connecting.
-OVERALL_REQUESTS = 100
 
 
 class LoggingMixin:
@@ -89,11 +99,14 @@ class LoggingMixin:
 
 class RequestManager:
 
-    overall_semaphore = DeferredSemaphore(OVERALL_REQUESTS)
-
     # Yes, I want a mutable class attribute because I want changes done in an
     # instance to be visible in other instances as well.
     host_locks = {}
+
+    def __init__(self, max_parallel, max_parallel_per_host):
+        self.max_parallel = max_parallel
+        self.max_parallel_per_host = max_parallel_per_host
+        self.overall_semaphore = DeferredSemaphore(max_parallel)
 
     def run(self, host, probe_func):
         # Use a MultiLock with one semaphore limiting the overall
@@ -102,7 +115,8 @@ class RequestManager:
             multi_lock = self.host_locks[host]
         else:
             multi_lock = MultiLock(
-                self.overall_semaphore, DeferredSemaphore(PER_HOST_REQUESTS))
+                self.overall_semaphore,
+                DeferredSemaphore(self.max_parallel_per_host))
             self.host_locks[host] = multi_lock
         return multi_lock.run(probe_func)
 
@@ -161,6 +175,63 @@ class ProberProtocol(HTTPClient):
         pass
 
 
+class HTTPSProbeFailureHandler:
+    """Handler to translate general errors into expected errors on HTTPS
+    connections."""
+    def __init__(self, factory):
+        self.factory = factory
+
+    def handleResponse(self, response):
+        """Translates any request with return code different from 200 into
+        an error in the callback chain.
+
+        Note that other 2xx codes that are not 200 are considered errors too.
+        This behaviour is the same as seen in ProberProtocol.handleStatus,
+        for HTTP responses.
+        """
+        status = response.code
+        if status == http_client.OK:
+            return response
+        else:
+            raise BadResponseCode(status, response)
+
+    def handleErrors(self, error):
+        """Handle exceptions in https requests.
+        """
+        if self.isInvalidCertificateError(error):
+            invalid_certificate_hosts.add(
+                (self.factory.request_host, self.factory.request_port))
+            raise InvalidHTTPSCertificate(
+                self.factory.request_host, self.factory.request_port)
+        if self.isTimeout(error):
+            raise ProberTimeout(self.factory.url, self.factory.timeout)
+        raise error
+
+    def isTimeout(self, error):
+        """Checks if the error was caused by a timeout.
+        """
+        return self._isErrorFromType(error, CancelledError)
+
+    def isInvalidCertificateError(self, error):
+        """Checks if the error was caused by an invalid certificate.
+        """
+        # It might be a raw SSL error, or a twisted-encapsulated
+        # verification error (such as DNSMismatch error when the
+        # certificate is valid for a different domain, for example).
+        return self._isErrorFromType(
+            error, OpenSSL.SSL.Error, VerificationError)
+
+    def _isErrorFromType(self, error, *types):
+        """Checks if the error was caused by any of the given types.
+        """
+        if not isinstance(error.value, ResponseNeverReceived):
+            return False
+        for reason in error.value.reasons:
+            if reason.check(*types) is not None:
+                return True
+        return False
+
+
 class RedirectAwareProberProtocol(ProberProtocol):
     """A specialized version of ProberProtocol that follows HTTP redirects."""
 
@@ -216,6 +287,8 @@ class ProberFactory(protocol.ClientFactory):
     connect_port = None
     connect_path = None
 
+    https_agent_policy = BrowserLikePolicyForHTTPS
+
     def __init__(self, url, timeout=config.distributionmirrorprober.timeout):
         # We want the deferred to be a private attribute (_deferred) to make
         # sure our clients will only use the deferred returned by the probe()
@@ -225,9 +298,15 @@ class ProberFactory(protocol.ClientFactory):
         self.timeout = timeout
         self.timeoutCall = None
         self.setURL(url.encode('ascii'))
+        self.logger = logging.getLogger('distributionmirror-prober')
+        self._https_client = None
+
+    @property
+    def is_https(self):
+        return self.request_scheme == 'https'
 
     def probe(self):
-        logger = logging.getLogger('distributionmirror-prober')
+        logger = self.logger
         # NOTE: We don't want to issue connections to any outside host when
         # running the mirror prober in a development machine, so we do this
         # hack here.
@@ -244,13 +323,60 @@ class ProberFactory(protocol.ClientFactory):
                          "host already." % self.url)
             return self._deferred
 
+        if (self.request_host, self.request_port) in invalid_certificate_hosts:
+            reactor.callLater(
+                0, self.failed, InvalidHTTPSCertificateSkipped(self.url))
+            logger.debug("Skipping %s as it doesn't have a valid HTTPS "
+                         "certificate" % self.url)
+            return self._deferred
+
         self.connect()
         logger.debug('Probing %s' % self.url)
         return self._deferred
 
+    def getHttpsClient(self):
+        if self._https_client is not None:
+            return self._https_client
+        # Should we use a proxy?
+        if not config.launchpad.http_proxy:
+            agent = Agent(
+                reactor=reactor, contextFactory=self.https_agent_policy())
+        else:
+            contextFactory = self.https_agent_policy()
+            # XXX: pappacena 2020-03-16
+            # TLS version 1.2 should work for most servers. But if it
+            # doesn't, we should implement a negotiation mechanism to test
+            # which version should be used before doing the actual probing
+            # request.
+            # One way to debug which version a given server is compatible
+            # with using curl is issuing the following command:
+            # curl -v --head https://<server-host> --tlsv1.2 --tls-max 1.2
+            # (changing 1.2 with other version numbers)
+            contextFactory.getContext = lambda: Context(TLSv1_2_METHOD)
+            agent = TunnelingAgent(
+                reactor, (self.connect_host, self.connect_port, None),
+                contextFactory=contextFactory)
+        self._https_client = TreqHTTPClient(agent)
+        return self._https_client
+
     def connect(self):
+        """Starts the connection and sets the self._deferred to the proper
+        task.
+        """
         host_requests[self.request_host] += 1
-        reactor.connectTCP(self.connect_host, self.connect_port, self)
+        if self.is_https:
+            treq = self.getHttpsClient()
+            self._deferred.addCallback(
+                lambda _: treq.head(
+                    self.url, reactor=reactor, allow_redirects=True,
+                    timeout=self.timeout))
+            error_handler = HTTPSProbeFailureHandler(self)
+            self._deferred.addCallback(error_handler.handleResponse)
+            self._deferred.addErrback(error_handler.handleErrors)
+            reactor.callWhenRunning(self._deferred.callback, None)
+        else:
+            reactor.connectTCP(self.connect_host, self.connect_port, self)
+
         if self.timeoutCall is not None and self.timeoutCall.active():
             self._cancelTimeout(None)
         self.timeoutCall = reactor.callLater(
@@ -269,6 +395,8 @@ class ProberFactory(protocol.ClientFactory):
         self.connector = connector
 
     def succeeded(self, status):
+        if IResponse.providedBy(status):
+            status = str(status.code)
         self._deferred.callback(status)
 
     def failed(self, reason):
@@ -288,7 +416,7 @@ class ProberFactory(protocol.ClientFactory):
         # https://bugs.squid-cache.org/show_bug.cgi?id=1758 applied. So, if
         # you encounter any problems with FTP URLs you'll probably have to nag
         # the sysadmins to fix squid for you.
-        if scheme not in ('http', 'ftp'):
+        if scheme not in ('http', 'https', 'ftp'):
             raise UnknownURLScheme(url)
 
         if scheme and host:
@@ -376,12 +504,24 @@ class ProberTimeout(ProberError):
 
 class BadResponseCode(ProberError):
 
-    def __init__(self, status, *args):
+    def __init__(self, status, response=None, *args):
         ProberError.__init__(self, *args)
         self.status = status
+        self.response = response
 
     def __str__(self):
         return "Bad response code: %s" % self.status
+
+
+class InvalidHTTPSCertificate(ProberError):
+    def __init__(self, host, port, *args):
+        super(InvalidHTTPSCertificate, self).__init__(*args)
+        self.host = host
+        self.port = port
+
+    def __str__(self):
+        return "Invalid SSL certificate when trying to probe %s:%s" % (
+            self.host, self.port)
 
 
 class RedirectToDifferentFile(ProberError):
@@ -409,6 +549,14 @@ class ConnectionSkipped(ProberError):
                 "host. It will be retried on the next probing run.")
 
 
+class InvalidHTTPSCertificateSkipped(ProberError):
+
+    def __str__(self):
+        return ("Connection skipped because the server doesn't have a valid "
+                "HTTPS certificate. It will be retried on the next "
+                "probing run.")
+
+
 class UnknownURLScheme(ProberError):
 
     def __init__(self, url, *args):
@@ -429,7 +577,13 @@ class UnknownURLSchemeAfterRedirect(UnknownURLScheme):
 
 class ArchiveMirrorProberCallbacks(LoggingMixin):
 
-    expected_failures = (BadResponseCode, ProberTimeout, ConnectionSkipped)
+    expected_failures = (
+        BadResponseCode,
+        ProberTimeout,
+        ConnectionSkipped,
+        InvalidHTTPSCertificate,
+        InvalidHTTPSCertificateSkipped,
+        )
 
     def __init__(self, mirror, series, pocket, component, url, log_file):
         self.mirror = mirror
@@ -478,7 +632,7 @@ class ArchiveMirrorProberCallbacks(LoggingMixin):
         self.logMessage(msg)
         return mirror
 
-    def updateMirrorFreshness(self, arch_or_source_mirror):
+    def updateMirrorFreshness(self, arch_or_source_mirror, request_manager):
         """Update the freshness of this MirrorDistro{ArchSeries,SeriesSource}.
 
         This is done by issuing HTTP HEAD requests on that mirror looking for
@@ -503,7 +657,6 @@ class ArchiveMirrorProberCallbacks(LoggingMixin):
             self.deleteMethod(self.series, self.pocket, self.component)
             return
 
-        request_manager = RequestManager()
         deferredList = []
         # We start setting the freshness to unknown, and then we move on
         # trying to find one of the recently published packages mirrored
@@ -574,6 +727,8 @@ class MirrorCDImageProberCallbacks(LoggingMixin):
         ProberTimeout,
         RedirectToDifferentFile,
         UnknownURLSchemeAfterRedirect,
+        InvalidHTTPSCertificate,
+        InvalidHTTPSCertificateSkipped,
         )
 
     def __init__(self, mirror, distroseries, flavour, log_file):
@@ -673,7 +828,8 @@ def checkComplete(result, key, unchecked_keys):
     return result
 
 
-def probe_archive_mirror(mirror, logfile, unchecked_keys, logger):
+def probe_archive_mirror(mirror, logfile, unchecked_keys, logger,
+                         max_parallel, max_parallel_per_host):
     """Probe an archive mirror for its contents and freshness.
 
     First we issue a set of HTTP HEAD requests on some key files to find out
@@ -687,7 +843,7 @@ def probe_archive_mirror(mirror, logfile, unchecked_keys, logger):
     packages_paths = mirror.getExpectedPackagesPaths()
     sources_paths = mirror.getExpectedSourcesPaths()
     all_paths = itertools.chain(packages_paths, sources_paths)
-    request_manager = RequestManager()
+    request_manager = RequestManager(max_parallel, max_parallel_per_host)
     for series, pocket, component, path in all_paths:
         url = urljoin(base_url, path)
         callbacks = ArchiveMirrorProberCallbacks(
@@ -701,13 +857,14 @@ def probe_archive_mirror(mirror, logfile, unchecked_keys, logger):
         deferred.addCallbacks(
             callbacks.ensureMirrorSeries, callbacks.deleteMirrorSeries)
 
-        deferred.addCallback(callbacks.updateMirrorFreshness)
+        deferred.addCallback(callbacks.updateMirrorFreshness, request_manager)
         deferred.addErrback(logger.error)
 
         deferred.addBoth(checkComplete, url, unchecked_keys)
 
 
-def probe_cdimage_mirror(mirror, logfile, unchecked_keys, logger):
+def probe_cdimage_mirror(mirror, logfile, unchecked_keys, logger,
+                         max_parallel, max_parallel_per_host):
     """Probe a cdimage mirror for its contents.
 
     This is done by checking the list of files for each flavour and series
@@ -737,7 +894,7 @@ def probe_cdimage_mirror(mirror, logfile, unchecked_keys, logger):
         mirror_key = (series, flavour)
         unchecked_keys.append(mirror_key)
         deferredList = []
-        request_manager = RequestManager()
+        request_manager = RequestManager(max_parallel, max_parallel_per_host)
         for path in paths:
             url = urljoin(base_url, path)
             # Use a RedirectAwareProberFactory because CD mirrors are allowed
@@ -763,14 +920,17 @@ def should_skip_host(host):
         return ratio < MIN_REQUEST_TIMEOUT_RATIO
 
 
-def _parse(url, defaultPort=80):
+def _parse(url, defaultPort=None):
     """Parse the given URL returning the scheme, host, port and path."""
     scheme, host, path, dummy, dummy, dummy = urlparse(url)
-    port = defaultPort
     if ':' in host:
         host, port = host.split(':')
         assert port.isdigit()
         port = int(port)
+    elif defaultPort is None:
+        port = 443 if scheme == 'https' else 80
+    else:
+        port = defaultPort
     return scheme, host, port, path
 
 
@@ -805,8 +965,16 @@ class DistroMirrorProber:
         mirror.newProbeRecord(log_file)
 
     def probe(self, content_type, no_remote_hosts, ignore_last_probe,
-              max_mirrors, notify_owner):
+              max_mirrors, notify_owner, max_parallel=100,
+              max_parallel_per_host=2):
         """Probe distribution mirrors.
+
+        You should control carefully the parallelism here. Increasing too
+        much the number of max_parallel_per_host could make the mirrors take
+        too much to answer or deny our requests.
+
+        If we increase too much the max_parallel, we might experience timeouts
+        because of our production proxy or internet bandwidth.
 
         :param content_type: The type of mirrored content, as a
             `MirrorContent`.
@@ -817,6 +985,10 @@ class DistroMirrorProber:
             no maximum.
         :param notify_owner: Send failure notification to the owners of the
             mirrors.
+        :param max_parallel: Maximum number of requests happening
+            simultaneously.
+        :param max_parallel_per_host: Maximum number of requests to the same
+            host happening simultaneously.
         """
         if content_type == MirrorContent.ARCHIVE:
             probe_function = probe_archive_mirror
@@ -867,7 +1039,8 @@ class DistroMirrorProber:
             probed_mirrors.append(mirror)
             logfile = StringIO()
             logfiles[mirror_id] = logfile
-            probe_function(mirror, logfile, unchecked_keys, self.logger)
+            probe_function(mirror, logfile, unchecked_keys, self.logger,
+                           max_parallel, max_parallel_per_host)
 
         if probed_mirrors:
             reactor.run()

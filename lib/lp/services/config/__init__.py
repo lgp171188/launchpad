@@ -73,8 +73,8 @@ def find_instance_name():
     if instance_name is None:
         for config_lookup_file in CONFIG_LOOKUP_FILES:
             if os.path.exists(config_lookup_file):
-                instance_name = file(
-                    config_lookup_file, 'r').read()[:80].strip()
+                with open(config_lookup_file) as f:
+                    instance_name = f.read()[:80].strip()
                 break
 
     # Of instance_name falls back for developers.

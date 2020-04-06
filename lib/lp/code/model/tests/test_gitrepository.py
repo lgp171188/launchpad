@@ -2,7 +2,7 @@
 # NOTE: The first line above must stay first; do not move the copyright
 # notice to the top.  See http://www.python.org/dev/peps/pep-0263/.
 #
-# Copyright 2015-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for Git repositories."""
@@ -61,6 +61,7 @@ from lp.code.enums import (
     BranchSubscriptionNotificationLevel,
     CodeReviewNotificationLevel,
     GitGranteeType,
+    GitListingSort,
     GitObjectType,
     GitRepositoryType,
     TargetRevisionControlSystems,
@@ -3269,6 +3270,38 @@ class TestGitRepositorySet(TestCaseWithFactory):
             public_repositories + [private_repository],
             self.repository_set.getRepositories(other_person, project))
 
+    def test_getRepositories_order_by(self):
+        # We can get a collection of all repositories with a given sort order.
+        repositories = [self.factory.makeGitRepository() for _ in range(5)]
+        modified_dates = [
+            datetime(2010, 1, 1, tzinfo=pytz.UTC),
+            datetime(2015, 1, 1, tzinfo=pytz.UTC),
+            datetime(2014, 1, 1, tzinfo=pytz.UTC),
+            datetime(2020, 1, 1, tzinfo=pytz.UTC),
+            datetime(2019, 1, 1, tzinfo=pytz.UTC),
+            ]
+        for repository, modified_date in zip(repositories, modified_dates):
+            removeSecurityProxy(repository).date_last_modified = modified_date
+        removeSecurityProxy(repositories[0]).transitionToInformationType(
+            InformationType.PRIVATESECURITY, repositories[0].registrant)
+        self.assertEqual(
+            [repositories[3], repositories[4], repositories[1],
+             repositories[2], repositories[0]],
+            list(self.repository_set.getRepositories(
+                repositories[0].owner,
+                order_by=GitListingSort.MOST_RECENTLY_CHANGED_FIRST)))
+        self.assertEqual(
+            [repositories[3], repositories[4], repositories[1]],
+            list(self.repository_set.getRepositories(
+                repositories[0].owner,
+                order_by=GitListingSort.MOST_RECENTLY_CHANGED_FIRST,
+                modified_since_date=datetime(2014, 12, 1, tzinfo=pytz.UTC))))
+        self.assertEqual(
+            [repositories[3], repositories[4], repositories[1],
+             repositories[2]],
+            list(self.repository_set.getRepositories(
+                None, order_by=GitListingSort.MOST_RECENTLY_CHANGED_FIRST)))
+
     def test_getRepositoryVisibilityInfo_empty_repository_names(self):
         # If repository_names is empty, getRepositoryVisibilityInfo returns
         # an empty visible_repositories list.
@@ -3714,7 +3747,7 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
             response = webservice.named_get(
                 "/+git", "getRepositories", user=owner_url, target=target_url)
             self.assertEqual(200, response.status)
-            self.assertEqual(
+            self.assertContentEqual(
                 [webservice.getAbsoluteUrl(url) for url in repos_url],
                 [entry["self_link"]
                  for entry in response.jsonBody()["entries"]])

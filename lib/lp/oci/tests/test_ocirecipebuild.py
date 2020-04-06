@@ -1,4 +1,4 @@
-# Copyright 2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2019-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for OCI image building recipe functionality."""
@@ -7,8 +7,14 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 from datetime import timedelta
 
+from fixtures import FakeLogger
 import six
-from testtools.matchers import Equals
+from testtools.matchers import (
+    ContainsDict,
+    Equals,
+    MatchesDict,
+    MatchesStructure,
+    )
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
@@ -16,17 +22,28 @@ from lp.app.errors import NotFoundError
 from lp.buildmaster.enums import BuildStatus
 from lp.buildmaster.interfaces.buildqueue import IBuildQueue
 from lp.buildmaster.interfaces.packagebuild import IPackageBuild
+from lp.buildmaster.interfaces.processor import IProcessorSet
+from lp.oci.interfaces.ocirecipe import (
+    OCI_RECIPE_ALLOW_CREATE,
+    OCI_RECIPE_WEBHOOKS_FEATURE_FLAG,
+    )
 from lp.oci.interfaces.ocirecipebuild import (
     IOCIRecipeBuild,
     IOCIRecipeBuildSet,
     )
 from lp.oci.model.ocirecipebuild import OCIRecipeBuildSet
+from lp.registry.interfaces.series import SeriesStatus
+from lp.services.config import config
+from lp.services.features.testing import FeatureFixture
 from lp.services.propertycache import clear_property_cache
+from lp.services.webapp.publisher import canonical_url
+from lp.services.webhooks.testing import LogsScheduledWebhooks
 from lp.testing import (
     admin_logged_in,
     StormStatementRecorder,
     TestCaseWithFactory,
     )
+from lp.testing.dbuser import dbuser
 from lp.testing.layers import (
     DatabaseFunctionalLayer,
     LaunchpadZopelessLayer,
@@ -40,6 +57,7 @@ class TestOCIRecipeBuild(TestCaseWithFactory):
 
     def setUp(self):
         super(TestOCIRecipeBuild, self).setUp()
+        self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: 'on'}))
         self.build = self.factory.makeOCIRecipeBuild()
 
     def test_implements_interface(self):
@@ -109,6 +127,63 @@ class TestOCIRecipeBuild(TestCaseWithFactory):
         self.assertIsNotNone(bq.processor)
         self.assertEqual(bq, self.build.buildqueue_record)
 
+    def test_updateStatus_triggers_webhooks(self):
+        # Updating the status of an OCIRecipeBuild triggers webhooks on the
+        # corresponding OCIRecipe.
+        logger = self.useFixture(FakeLogger())
+        hook = self.factory.makeWebhook(
+            target=self.build.recipe, event_types=["oci-recipe:build:0.1"])
+        with FeatureFixture({OCI_RECIPE_WEBHOOKS_FEATURE_FLAG: "on"}):
+            self.build.updateStatus(BuildStatus.FULLYBUILT)
+        expected_payload = {
+            "recipe_build": Equals(
+                canonical_url(self.build, force_local_path=True)),
+            "action": Equals("status-changed"),
+            "recipe": Equals(
+                 canonical_url(self.build.recipe, force_local_path=True)),
+            "status": Equals("Successfully built"),
+            }
+        self.assertThat(
+            logger.output, LogsScheduledWebhooks([
+                (hook, "oci-recipe:build:0.1",
+                 MatchesDict(expected_payload))]))
+
+        delivery = hook.deliveries.one()
+        self.assertThat(
+            delivery, MatchesStructure(
+                event_type=Equals("oci-recipe:build:0.1"),
+                payload=MatchesDict(expected_payload)))
+        with dbuser(config.IWebhookDeliveryJobSource.dbuser):
+            self.assertEqual(
+                "<WebhookDeliveryJob for webhook %d on %r>" % (
+                    hook.id, hook.target),
+                repr(delivery))
+
+    def test_updateStatus_no_change_does_not_trigger_webhooks(self):
+        # An updateStatus call that doesn't change the build's status
+        # attribute does not trigger webhooks.
+        logger = self.useFixture(FakeLogger())
+        hook = self.factory.makeWebhook(
+            target=self.build.recipe, event_types=["oci-recipe:build:0.1"])
+        with FeatureFixture({OCI_RECIPE_WEBHOOKS_FEATURE_FLAG: "on"}):
+            self.build.updateStatus(BuildStatus.BUILDING)
+        expected_logs = [
+            (hook, "oci-recipe:build:0.1", ContainsDict({
+                "action": Equals("status-changed"),
+                "status": Equals("Currently building"),
+                }))]
+        self.assertEqual(1, hook.deliveries.count())
+        self.assertThat(logger.output, LogsScheduledWebhooks(expected_logs))
+
+        self.build.updateStatus(BuildStatus.BUILDING)
+        expected_logs = [
+            (hook, "oci-recipe:build:0.1", ContainsDict({
+                "action": Equals("status-changed"),
+                "status": Equals("Currently building"),
+                }))]
+        self.assertEqual(1, hook.deliveries.count())
+        self.assertThat(logger.output, LogsScheduledWebhooks(expected_logs))
+
     def test_eta(self):
         # OCIRecipeBuild.eta returns a non-None value when it should, or
         # None when there's no start time.
@@ -141,6 +216,10 @@ class TestOCIRecipeBuildSet(TestCaseWithFactory):
 
     layer = DatabaseFunctionalLayer
 
+    def setUp(self):
+        super(TestOCIRecipeBuildSet, self).setUp()
+        self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: 'on'}))
+
     def test_implements_interface(self):
         target = OCIRecipeBuildSet()
         with admin_logged_in():
@@ -148,12 +227,40 @@ class TestOCIRecipeBuildSet(TestCaseWithFactory):
 
     def test_new(self):
         requester = self.factory.makePerson()
-        recipe = self.factory.makeOCIRecipe()
-        distro_arch_series = self.factory.makeDistroArchSeries()
+        distribution = self.factory.makeDistribution()
+        distroseries = self.factory.makeDistroSeries(
+            distribution=distribution, status=SeriesStatus.CURRENT)
+        processor = getUtility(IProcessorSet).getByName("386")
+        distro_arch_series = self.factory.makeDistroArchSeries(
+            distroseries=distroseries, architecturetag="i386",
+            processor=processor)
+        oci_project = self.factory.makeOCIProject(pillar=distribution)
+        recipe = self.factory.makeOCIRecipe(oci_project=oci_project)
         target = getUtility(IOCIRecipeBuildSet).new(
             requester, recipe, distro_arch_series)
         with admin_logged_in():
             self.assertProvides(target, IOCIRecipeBuild)
+            self.assertEqual(distro_arch_series, target.distro_arch_series)
+
+    def test_new_oci_feature_flag_enabled(self):
+        requester = self.factory.makePerson()
+        distribution = self.factory.makeDistribution()
+        distroseries = self.factory.makeDistroSeries(
+            distribution=distribution, status=SeriesStatus.CURRENT)
+        processor = getUtility(IProcessorSet).getByName("386")
+        self.useFixture(FeatureFixture({
+            "oci.build_series.%s" % distribution.name: distroseries.name,
+            OCI_RECIPE_ALLOW_CREATE: 'on'}))
+        distro_arch_series = self.factory.makeDistroArchSeries(
+            distroseries=distroseries, architecturetag="i386",
+            processor=processor)
+        oci_project = self.factory.makeOCIProject(pillar=distribution)
+        recipe = self.factory.makeOCIRecipe(oci_project=oci_project)
+        target = getUtility(IOCIRecipeBuildSet).new(
+            requester, recipe, distro_arch_series)
+        with admin_logged_in():
+            self.assertProvides(target, IOCIRecipeBuild)
+            self.assertEqual(distro_arch_series, target.distro_arch_series)
 
     def test_getByID(self):
         builds = [self.factory.makeOCIRecipeBuild() for x in range(3)]
@@ -183,16 +290,20 @@ class TestOCIRecipeBuildSet(TestCaseWithFactory):
         self.assertTrue(target.virtualized)
 
     def test_virtualized_processor_requires(self):
-        distro_arch_series = self.factory.makeDistroArchSeries()
-        distro_arch_series.processor.supports_nonvirtualized = False
         recipe = self.factory.makeOCIRecipe(require_virtualized=False)
+        distro_arch_series = self.factory.makeDistroArchSeries(
+            distroseries=self.factory.makeDistroSeries(
+                distribution=recipe.oci_project.distribution))
+        distro_arch_series.processor.supports_nonvirtualized = False
         target = self.factory.makeOCIRecipeBuild(
             distro_arch_series=distro_arch_series, recipe=recipe)
         self.assertTrue(target.virtualized)
 
     def test_virtualized_no_support(self):
         recipe = self.factory.makeOCIRecipe(require_virtualized=False)
-        distro_arch_series = self.factory.makeDistroArchSeries()
+        distro_arch_series = self.factory.makeDistroArchSeries(
+            distroseries=self.factory.makeDistroSeries(
+                distribution=recipe.oci_project.distribution))
         distro_arch_series.processor.supports_nonvirtualized = True
         target = self.factory.makeOCIRecipeBuild(
             recipe=recipe, distro_arch_series=distro_arch_series)

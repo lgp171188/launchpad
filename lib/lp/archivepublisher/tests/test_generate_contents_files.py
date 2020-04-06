@@ -231,9 +231,10 @@ class TestGenerateContentsFiles(TestCaseWithFactory):
         distro = self.makeDistro()
         script = self.makeScript(distro)
         script.writeAptContentsConf([])
-        apt_contents_conf = file(
-            "%s/%s-misc/apt-contents.conf"
-            % (script.content_archive, distro.name)).read()
+        with open(
+                "%s/%s-misc/apt-contents.conf"
+                % (script.content_archive, distro.name)) as f:
+            apt_contents_conf = f.read()
         self.assertIn('\nDefault\n{', apt_contents_conf)
         self.assertIn(distro.name, apt_contents_conf)
 
@@ -247,9 +248,10 @@ class TestGenerateContentsFiles(TestCaseWithFactory):
         script = self.makeScript(distro)
         content_archive = script.content_archive
         script.writeAptContentsConf([distroseries.name])
-        apt_contents_conf = file(
-            "%s/%s-misc/apt-contents.conf"
-            % (script.content_archive, distro.name)).read()
+        with open(
+                "%s/%s-misc/apt-contents.conf"
+                % (script.content_archive, distro.name)) as f:
+            apt_contents_conf = f.read()
         self.assertIn(
             'tree "dists/%s"\n' % distroseries.name, apt_contents_conf)
         overrides_path = os.path.join(

@@ -489,7 +489,7 @@ class BranchNamespaceSet:
 
         def get_next_segment():
             try:
-                result = segments.next()
+                result = next(segments)
             except StopIteration:
                 raise InvalidNamespace('/'.join(traversed_segments))
             if result is None:

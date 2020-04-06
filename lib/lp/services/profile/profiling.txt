@@ -195,10 +195,10 @@ log file.
     ...     profile_request: False
     ...     memory_profile_log: %s""" % memory_profile_log))
     >>> response = http('GET / HTTP/1.0')
-    >>> memory_profile_fh = file(memory_profile_log)
-    >>> (timestamp, page_id, oops_id, duration,
-    ...  start_vss, start_rss, end_vss, end_rss) = (
-    ...     memory_profile_fh.readline().split())
+    >>> with open(memory_profile_log) as memory_profile_fh:
+    ...     (timestamp, page_id, oops_id, duration,
+    ...      start_vss, start_rss, end_vss, end_rss) = (
+    ...         memory_profile_fh.readline().split())
     >>> print timestamp
     20...
     >>> print oops_id

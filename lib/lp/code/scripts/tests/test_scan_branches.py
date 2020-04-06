@@ -1,6 +1,6 @@
 #! /usr/bin/python
 #
-# Copyright 2010 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test the scan_branches script."""
@@ -76,7 +76,7 @@ class TestScanBranches(TestCaseWithFactory):
         store = Store.of(db_branch)
         result = store.find(
             BranchJob,
-            BranchJob.jobID == Job.id,
+            BranchJob.job_id == Job.id,
             Job._status == JobStatus.WAITING,
             BranchJob.job_type == BranchJobType.REVISION_MAIL,
             BranchJob.branch == db_branch)
