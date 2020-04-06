@@ -8,6 +8,8 @@ from __future__ import absolute_import, print_function, unicode_literals
 __metaclass__ = type
 __all__ = [
     'IOCIRecipeBuildJob',
+    'IOCIRegistryUploadJob',
+    'IOCIRegistryUploadJobSource',
     ]
 
 from lazr.restful.fields import Reference
@@ -15,10 +17,15 @@ from zope.interface import (
     Attribute,
     Interface,
     )
+from zope.schema import TextLine
 
 from lp import _
 from lp.oci.interfaces.ocirecipebuild import IOCIRecipeBuild
-from lp.services.job.interfaces.job import IJob
+from lp.services.job.interfaces.job import (
+    IJob,
+    IJobSource,
+    IRunnableJob,
+    )
 
 
 class IOCIRecipeBuildJob(Interface):
@@ -32,3 +39,19 @@ class IOCIRecipeBuildJob(Interface):
         schema=IOCIRecipeBuild, required=True, readonly=True)
 
     json_data = Attribute(_("A dict of data about the job."))
+
+
+class IOCIRegistryUploadJob(IRunnableJob):
+    """A Job that uploads an OCI image to a registry."""
+
+    error_message = TextLine(
+        title=_("Error message"), required=False, readonly=True)
+
+
+class IOCIRegistryUploadJobSource(IJobSource):
+
+    def create(build):
+        """Upload an OCI image to a registry.
+
+        :param build: The OCI recipe build to upload.
+        """

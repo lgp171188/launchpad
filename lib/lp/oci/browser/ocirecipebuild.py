@@ -14,6 +14,7 @@ __all__ = [
     'OCIRecipeBuildView',
     ]
 
+from zope.component.interfaces import IObjectEvent
 from zope.interface import Interface
 
 from lp.app.browser.launchpadform import (
@@ -34,6 +35,10 @@ from lp.services.webapp import (
     Navigation,
     )
 from lp.soyuz.interfaces.binarypackagebuild import IBuildRescoreForm
+
+
+class IOCIBuildStatusChangedEvent(IObjectEvent):
+    """The status of an OCI recipe build changed."""
 
 
 class OCIRecipeBuildNavigation(Navigation, FileNavigationMixin):

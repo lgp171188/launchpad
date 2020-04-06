@@ -46,6 +46,10 @@ from lp.oci.interfaces.ocirecipebuild import (
     IOCIRecipeBuild,
     IOCIRecipeBuildSet,
     )
+from lp.oci.model.ocirecipebuildjob import (
+    OCIRecipeBuildJob,
+    OCIRecipeBuildJobType,
+    )
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.registry.model.person import Person
 from lp.services.config import config
@@ -66,6 +70,7 @@ from lp.services.propertycache import (
     get_property_cache,
     )
 from lp.services.webapp.snapshot import notify_modified
+from lp.services.job.model.job import Job
 
 
 @implementer(IOCIFile)
@@ -382,6 +387,21 @@ class OCIRecipeBuild(PackageBuildMixin, Storm):
         metadata_present = (self.manifest is not None
                             and self.digests is not None)
         return layer_files_present and metadata_present
+
+    @property
+    def registry_upload_jobs(self):
+        jobs = Store.of(self).find(
+            OCIRecipeBuildJob,
+            OCIRecipeBuildJob.build == self,
+            OCIRecipeBuildJob.job_type == OCIRecipeBuildJobType.REGISTRY_UPLOAD
+        )
+        jobs.order_by(Desc(OCIRecipeBuildJob.job_id))
+
+        def preload_jobs(rows):
+            load_related(Job, rows, ["job_id"])
+
+        return DecoratedResultSet(
+            jobs, lambda job: job.makeDerived(), pre_iter_hook=preload_jobs)
 
 
 @implementer(IOCIRecipeBuildSet)

@@ -127,4 +127,15 @@
             interface="lp.oci.interfaces.ocipushrule.IOCIPushRuleSet"/>
     </securedutility>
 
+    <!-- OCI related jobs -->
+    <securedutility
+        component="lp.oci.model.ocirecipebuildjob.OCIRegistryUploadJob"
+        provides="lp.oci.interfaces.ocirecipebuildjob.IOCIRegistryUploadJobSource">
+        <allow interface="lp.oci.interfaces.ocirecipebuildjob.IOCIRegistryUploadJobSource" />
+    </securedutility>
+    <class class="lp.oci.model.ocirecipebuildjob.OCIRegistryUploadJob">
+        <allow interface="lp.oci.interfaces.ocirecipebuildjob.IOCIRecipeBuildJob" />
+        <allow interface="lp.oci.interfaces.ocirecipebuildjob.IOCIRegistryUploadJob" />
+    </class>
+
 </configure>

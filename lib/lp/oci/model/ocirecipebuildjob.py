@@ -21,10 +21,18 @@ from storm.locals import (
     Int,
     Reference,
     )
-from zope.interface import implementer
+from zope.interface import (
+    implementer,
+    provider,
+    )
 
 from lp.app.errors import NotFoundError
-from lp.oci.interfaces.ocirecipebuildjob import IOCIRecipeBuildJob
+from lp.oci.interfaces.ocirecipebuildjob import (
+    IOCIRecipeBuildJob,
+    IOCIRegistryUploadJob,
+    IOCIRegistryUploadJobSource,
+    )
+from lp.oci.model.ociregistryclient import OCIRegistryClient
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IStore
 from lp.services.database.stormbase import StormBase
@@ -33,13 +41,11 @@ from lp.services.job.model.job import (
     Job,
     )
 from lp.services.job.runner import BaseRunnableJob
+from lp.services.propertycache import get_property_cache
 
 
 class OCIRecipeBuildJobType(DBEnumeratedType):
     """Values that `OCIBuildJobType.job_type` can take."""
-
-    # XXX twom (2020-04-02) This does not currently have a concrete
-    # implementation, awaiting registry upload.
 
     REGISTRY_UPLOAD = DBItem(0, """
         Registry upload
@@ -82,7 +88,7 @@ class OCIRecipeBuildJob(StormBase):
         self.json_data = json_data
 
     def makeDerived(self):
-        return OCIRecipeBuildJob.makeSubclass(self)
+        return OCIRecipeBuildJobDerived.makeSubclass(self)
 
 
 @delegate_to(IOCIRecipeBuildJob)
@@ -138,3 +144,40 @@ class OCIRecipeBuildJobDerived(BaseRunnableJob):
             ('oci_project_name', self.context.build.recipe.oci_project.name)
             ])
         return oops_vars
+
+
+@implementer(IOCIRegistryUploadJob)
+@provider(IOCIRegistryUploadJobSource)
+class OCIRegistryUploadJob(OCIRecipeBuildJobDerived):
+
+    class_job_type = OCIRecipeBuildJobType.REGISTRY_UPLOAD
+
+    @classmethod
+    def create(cls, build):
+        """See `IOCIRegistryUploadJobSource`"""
+        oci_build_job = OCIRecipeBuildJob(
+            build, cls.class_job_type, {})
+        job = cls(oci_build_job)
+        job.celeryRunOnCommit()
+        del get_property_cache(build).last_registry_upload_job
+        # notify(SnapBuildStoreUploadStatusChangedEvent(ocibuild))
+        return job
+
+    @property
+    def error_message(self):
+        """See `IOCIRegistryUploadJob`."""
+        return self.json_data.get("error_message")
+
+    @error_message.setter
+    def error_message(self, message):
+        """See `IOCIRegistryUploadJob`."""
+        self.json_data["error_message"] = message
+
+    def run(self):
+        """See `IRunnableJob`."""
+        client = OCIRegistryClient()
+        try:
+            client = client.upload(self.build)
+        except Exception as e:
+            import pdb; pdb.set_trace()
+            print(e)

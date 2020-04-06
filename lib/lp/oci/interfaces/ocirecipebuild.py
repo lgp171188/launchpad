@@ -12,8 +12,14 @@ __all__ = [
     'IOCIRecipeBuildSet',
     ]
 
-from lazr.restful.fields import Reference
-from zope.interface import Interface
+from lazr.restful.fields import (
+    CollectionField,
+    Reference,
+    )
+from zope.interface import (
+    Attribute,
+    Interface,
+    )
 from zope.schema import (
     Bool,
     Datetime,
@@ -101,6 +107,16 @@ class IOCIRecipeBuildView(IPackageBuild):
         title=_("Can be cancelled"),
         required=True, readonly=True,
         description=_("Whether this build record can be cancelled."))
+
+    manifest = Attribute(_("The manifest of the image."))
+
+    digests = Attribute(_("File containing the image digests."))
+
+    registry_upload_jobs = CollectionField(
+        title=_("Registry upload jobs for this build."),
+        # Really IOCIRegistryUploadJob.
+        value_type=Reference(schema=Interface),
+        readonly=True)
 
 
 class IOCIRecipeBuildEdit(Interface):

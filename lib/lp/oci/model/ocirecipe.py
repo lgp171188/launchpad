@@ -377,6 +377,12 @@ class OCIRecipe(Storm, WebhookTargetMixin):
         order_by = Desc(OCIRecipeBuild.id)
         return self._getBuilds(filter_term, order_by)
 
+    @property
+    def can_upload_to_registry(self):
+        # XXX twom 2020-03-03 this should check for
+        # a set of credentials existing
+        return True
+
 
 class OCIRecipeArch(Storm):
     """Link table to back `OCIRecipe.processors`."""

@@ -214,6 +214,12 @@ class IOCIRecipeView(Interface):
         # Really IOCIPushRule, patched in _schema_cirular_imports.
         value_type=Reference(schema=Interface), readonly=True)
 
+    can_upload_to_registry = Bool(
+        title=_("Can upload to registry"), required=True, readonly=True,
+        description=_(
+            "Whether everything is set up to allow uploading builds of "
+            "this OCI recipe to a registry."))
+
 
 class IOCIRecipeEdit(IWebhookTarget):
     """`IOCIRecipe` methods that require launchpad.Edit permission."""
