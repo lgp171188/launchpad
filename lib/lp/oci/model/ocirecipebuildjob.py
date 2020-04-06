@@ -16,9 +16,9 @@ from lazr.enum import (
     DBEnumeratedType,
     DBItem,
     )
+from storm.databases.postgres import JSON
 from storm.locals import (
     Int,
-    JSON,
     Reference,
     )
 from zope.interface import implementer
