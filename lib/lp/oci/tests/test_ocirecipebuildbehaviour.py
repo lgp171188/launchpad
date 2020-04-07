@@ -488,6 +488,7 @@ class TestHandleStatusForOCIRecipeBuild(MakeOCIBuildMixin,
             yield self.behaviour.handleStatus(
                 self.build.buildqueue_record, 'OK',
                 {'filemap': self.filemap})
+        timestamp = datetime.now()
         self.assertEqual(
             ['buildlog', 'manifest_hash', 'digests_hash', 'config_1_hash',
              'layer_2_hash'],
@@ -501,7 +502,8 @@ class TestHandleStatusForOCIRecipeBuild(MakeOCIBuildMixin,
         layer_1_path = os.path.join(
             self.upload_root,
             "incoming",
-            self.behaviour.getUploadDirLeaf(self.build.build_cookie),
+            self.behaviour.getUploadDirLeaf(self.build.build_cookie,
+                                            now=timestamp),
             str(self.build.archive.id),
             self.build.distribution.name,
             "layer_1.tar.gz"
