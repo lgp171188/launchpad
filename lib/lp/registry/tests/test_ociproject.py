@@ -227,7 +227,7 @@ class TestOCIProjectWebservice(TestCaseWithFactory):
             url = api_url(distro)
 
         obj = {"name": "someprojectname", "description": "My OCI project"}
-        resp = self.webservice.named_post(url, "new_oci_project", **obj)
+        resp = self.webservice.named_post(url, "newOCIProject", **obj)
         self.assertEqual(201, resp.status, resp.body)
 
         new_obj_url = resp.getHeader("Location")
@@ -248,5 +248,5 @@ class TestOCIProjectWebservice(TestCaseWithFactory):
             url = api_url(distro)
 
         obj = {"name": "someprojectname", "description": "My OCI project"}
-        resp = self.webservice.named_post(url, "new_oci_project", **obj)
+        resp = self.webservice.named_post(url, "newOCIProject", **obj)
         self.assertEqual(401, resp.status, resp.body)
