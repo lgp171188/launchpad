@@ -13,6 +13,7 @@ __all__ = [
     'OCIRecipeEditView',
     'OCIRecipeNavigation',
     'OCIRecipeNavigationMenu',
+    'OCIRecipeRequestBuildsView',
     'OCIRecipeView',
     ]
 
@@ -22,6 +23,10 @@ from lazr.restful.interface import (
     )
 from zope.component import getUtility
 from zope.interface import Interface
+from zope.schema import (
+    Choice,
+    List,
+    )
 
 from lp.app.browser.launchpadform import (
     action,
@@ -30,6 +35,7 @@ from lp.app.browser.launchpadform import (
     )
 from lp.app.browser.lazrjs import InlinePersonEditPickerWidget
 from lp.app.browser.tales import format_link
+from lp.app.widgets.itemswidgets import LabeledMultiCheckBoxWidget
 from lp.buildmaster.interfaces.processor import IProcessorSet
 from lp.code.browser.widgets.gitref import GitRefWidget
 from lp.oci.interfaces.ocirecipe import (
@@ -38,10 +44,12 @@ from lp.oci.interfaces.ocirecipe import (
     NoSuchOCIRecipe,
     OCI_RECIPE_ALLOW_CREATE,
     OCI_RECIPE_WEBHOOKS_FEATURE_FLAG,
+    OCIRecipeBuildAlreadyPending,
     OCIRecipeFeatureDisabled,
     )
 from lp.oci.interfaces.ocirecipebuild import IOCIRecipeBuildSet
 from lp.services.features import getFeatureFlag
+from lp.services.helpers import english_list
 from lp.services.propertycache import cachedproperty
 from lp.services.webapp import (
     canonical_url,
@@ -51,6 +59,7 @@ from lp.services.webapp import (
     Navigation,
     NavigationMenu,
     stepthrough,
+    structured,
     )
 from lp.services.webapp.breadcrumb import NameBreadcrumb
 from lp.services.webhooks.browser import WebhookTargetNavigationMixin
@@ -146,6 +155,88 @@ def builds_for_recipe(recipe):
     if len(builds) < 10:
         builds.extend(recipe.completed_builds[:10 - len(builds)])
     return builds
+
+
+def new_builds_notification_text(builds, already_pending=None):
+    nr_builds = len(builds)
+    if not nr_builds:
+        builds_text = "All requested builds are already queued."
+    elif nr_builds == 1:
+        builds_text = "1 new build has been queued."
+    else:
+        builds_text = "%d new builds have been queued." % nr_builds
+    if nr_builds and already_pending:
+        return structured("<p>%s</p><p>%s</p>", builds_text, already_pending)
+    else:
+        return builds_text
+
+
+class OCIRecipeRequestBuildsView(LaunchpadFormView):
+    """A view for requesting builds of an OCI recipe."""
+
+    @property
+    def label(self):
+        return 'Request builds for %s' % self.context.name
+
+    page_title = 'Request builds'
+
+    class schema(Interface):
+        """Schema for requesting a build."""
+
+        distro_arch_series = List(
+            Choice(vocabulary='OCIRecipeDistroArchSeries'),
+            title='Architectures', required=True)
+
+    custom_widget_distro_arch_series = LabeledMultiCheckBoxWidget
+
+    @property
+    def cancel_url(self):
+        return canonical_url(self.context)
+
+    @property
+    def initial_values(self):
+        """See `LaunchpadFormView`."""
+        return {'distro_arch_series': self.context.getAllowedArchitectures()}
+
+    def validate(self, data):
+        """See `LaunchpadFormView`."""
+        arches = data.get('distro_arch_series', [])
+        if not arches:
+            self.setFieldError(
+                'distro_arch_series',
+                'You need to select at least one architecture.')
+
+    def requestBuilds(self, data):
+        """User action for requesting a number of builds.
+
+        We raise exceptions for most errors, but if there's already a
+        pending build for a particular architecture, we simply record that
+        so that other builds can be queued and a message displayed to the
+        caller.
+        """
+        informational = {}
+        builds = []
+        already_pending = []
+        for arch in data['distro_arch_series']:
+            try:
+                build = self.context.requestBuild(self.user, arch)
+                builds.append(build)
+            except OCIRecipeBuildAlreadyPending:
+                already_pending.append(arch)
+        if already_pending:
+            informational['already_pending'] = (
+                "An identical build is already pending for %s." %
+                english_list(arch.architecturetag for arch in already_pending))
+        return builds, informational
+
+    @action('Request builds', name='request')
+    def request_action(self, action, data):
+        builds, informational = self.requestBuilds(data)
+        already_pending = informational.get('already_pending')
+        notification_text = new_builds_notification_text(
+            builds, already_pending)
+        self.request.response.addNotification(notification_text)
+        self.next_url = self.cancel_url
 
 
 class IOCIRecipeEditSchema(Interface):

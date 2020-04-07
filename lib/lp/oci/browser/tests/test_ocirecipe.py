@@ -698,3 +698,90 @@ class TestOCIRecipeView(BaseTestOCIRecipeView):
             self.setStatus(build, BuildStatus.FULLYBUILT)
         del get_property_cache(view).builds
         self.assertEqual(list(reversed(builds[1:])), view.builds)
+
+
+class TestOCIRecipeRequestBuildsView(BaseTestOCIRecipeView):
+
+    def setUp(self):
+        super(TestOCIRecipeRequestBuildsView, self).setUp()
+        self.ubuntu = getUtility(ILaunchpadCelebrities).ubuntu
+        self.distroseries = self.factory.makeDistroSeries(
+            distribution=self.ubuntu, name="shiny", displayname="Shiny")
+        self.architectures = []
+        for processor, architecture in ("386", "i386"), ("amd64", "amd64"):
+            das = self.factory.makeDistroArchSeries(
+                distroseries=self.distroseries, architecturetag=architecture,
+                processor=getUtility(IProcessorSet).getByName(processor))
+            das.addOrUpdateChroot(self.factory.makeLibraryFileAlias())
+            self.architectures.append(das)
+        self.useFixture(FeatureFixture({
+            OCI_RECIPE_ALLOW_CREATE: "on",
+            "oci.build_series.%s" % self.distroseries.distribution.name:
+                self.distroseries.name,
+            }))
+        oci_project = self.factory.makeOCIProject(
+            pillar=self.distroseries.distribution,
+            ociprojectname="oci-project-name")
+        self.recipe = self.factory.makeOCIRecipe(
+            name="recipe-name", registrant=self.person, owner=self.person,
+            oci_project=oci_project)
+
+    def test_request_builds_page(self):
+        # The +request-builds page is sane.
+        self.assertTextMatchesExpressionIgnoreWhitespace("""
+            Request builds for recipe-name
+            oci-project-name OCI project
+            recipe-name
+            Request builds
+            Architectures:
+            amd64
+            i386
+            or
+            Cancel
+            """,
+            self.getMainText(self.recipe, "+request-builds", user=self.person))
+
+    def test_request_builds_not_owner(self):
+        # A user without launchpad.Edit cannot request builds.
+        self.assertRaises(
+            Unauthorized, self.getViewBrowser, self.recipe, "+request-builds")
+
+    def test_request_builds_action(self):
+        # Requesting a build creates pending builds.
+        browser = self.getViewBrowser(
+            self.recipe, "+request-builds", user=self.person)
+        self.assertTrue(browser.getControl("amd64").selected)
+        self.assertTrue(browser.getControl("i386").selected)
+        browser.getControl("Request builds").click()
+
+        login_person(self.person)
+        builds = self.recipe.pending_builds
+        self.assertContentEqual(
+            ["amd64", "i386"],
+            [build.distro_arch_series.architecturetag for build in builds])
+        self.assertContentEqual(
+            [2510], set(build.buildqueue_record.lastscore for build in builds))
+
+    def test_request_builds_rejects_duplicate(self):
+        # A duplicate build request causes a notification.
+        self.recipe.requestBuild(self.person, self.distroseries["amd64"])
+        browser = self.getViewBrowser(
+            self.recipe, "+request-builds", user=self.person)
+        self.assertTrue(browser.getControl("amd64").selected)
+        self.assertTrue(browser.getControl("i386").selected)
+        browser.getControl("Request builds").click()
+        main_text = extract_text(find_main_content(browser.contents))
+        self.assertIn("1 new build has been queued.", main_text)
+        self.assertIn(
+            "An identical build is already pending for amd64.", main_text)
+
+    def test_request_builds_no_architectures(self):
+        # Selecting no architectures causes a validation failure.
+        browser = self.getViewBrowser(
+            self.recipe, "+request-builds", user=self.person)
+        browser.getControl("amd64").selected = False
+        browser.getControl("i386").selected = False
+        browser.getControl("Request builds").click()
+        self.assertIn(
+            "You need to select at least one architecture.",
+            extract_text(find_main_content(browser.contents)))
