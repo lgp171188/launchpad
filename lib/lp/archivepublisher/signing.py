@@ -317,13 +317,13 @@ class SigningUpload(CustomUpload):
         :param filename: The filename to be signed.
         """
 
-        if not self.keyFilesExists(key_type):
+        if not self.keyFilesExist(key_type):
             raise IOError(
-                "Could not fallback to local signing keys: the key files"
-                "where not found.")
+                "Could not fallback to local signing keys: the key files "
+                "were not found.")
         return handler(filename)
 
-    def keyFilesExists(self, key_type):
+    def keyFilesExist(self, key_type):
         """Checks if all needed key files exists in the local filesystem
         for the given key type.
         """
@@ -351,7 +351,8 @@ class SigningUpload(CustomUpload):
         :param signing_key: The SigningKey to be used (or None,
                             to autogenerate a key if possible).
         :param filename: The filename to be signed.
-        :return: Boolean. True if signed, False otherwise.
+        :return: Boolean. True if signed, or raises SigningServiceError
+                 on failure.
         """
         if signing_key is None:
             if not self.autokey:
@@ -364,7 +365,7 @@ class SigningUpload(CustomUpload):
                     ).signing_key
             except Exception as e:
                 if self.logger:
-                    self.logger.error(
+                    self.logger.exception(
                         "Error generating signing key for %s: %s %s" %
                         (self.archive.reference, e.__class__.__name__, e))
                 raise SigningServiceError(
@@ -378,7 +379,7 @@ class SigningUpload(CustomUpload):
                 content, message_name=os.path.basename(filename))
         except Exception as e:
             if self.logger:
-                self.logger.error(
+                self.logger.exception(
                     "Error signing %s on signing service: %s %s" %
                     (filename, e.__class__.__name__, e))
             raise SigningServiceError(

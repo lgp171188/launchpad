@@ -1,4 +1,4 @@
-# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for publisher class."""
@@ -32,11 +32,13 @@ import time
 
 from debian.deb822 import Release
 from fixtures import MonkeyPatch
+
+
 try:
     import lzma
 except ImportError:
     from backports import lzma
-import mock
+from lp.services.compat import mock
 import pytz
 import scandir
 from testscenarios import (

@@ -11,10 +11,10 @@ __all__ = [
     ]
 
 import fixtures
-import mock
 from nacl.public import PrivateKey
 from six import text_type
 
+from lp.services.compat import mock
 from lp.services.signing.interfaces.signingserviceclient import (
     ISigningServiceClient,
     )

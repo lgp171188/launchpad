@@ -1972,7 +1972,7 @@ class TestSigningUploadWithSigningService(TestSigningHelpers):
 
         # Pretend that all key files exists, so the fallback calls are not
         # blocked.
-        upload.keyFilesExists = lambda _: True
+        upload.keyFilesExist = lambda _: True
 
         upload.process(self.archive, self.path, self.suite)
 
