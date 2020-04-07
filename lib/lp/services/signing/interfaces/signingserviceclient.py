@@ -9,8 +9,10 @@ __all__ = [
     'ISigningServiceClient',
     ]
 
-from zope.interface import Interface
-from zope.interface.interface import Attribute
+from zope.interface import (
+    Attribute,
+    Interface,
+    )
 
 from lp import _
 

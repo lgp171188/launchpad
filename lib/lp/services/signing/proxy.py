@@ -58,15 +58,15 @@ class SigningServiceClient:
         base_url = config.signing.signing_endpoint
         return urljoin(base_url, path)
 
-    def _make_response_nonce(self):
+    def _makeResponseNonce(self):
         return random(Box.NONCE_SIZE)
 
-    def _decrypt_response_json(self, response, response_nonce):
+    def _decryptResponseJson(self, response, response_nonce):
         box = Box(self.private_key, self.service_public_key)
         return json.loads(box.decrypt(
             response.content, response_nonce, encoder=Base64Encoder))
 
-    def _getJson(self, path, method="GET", needs_resp_nonce=False, **kwargs):
+    def _requestJson(self, path, method="GET", needs_resp_nonce=False, **kwargs):
         """Helper method to do an HTTP request and get back a json from  the
         signing service, raising exception if status code != 2xx.
 
@@ -82,7 +82,7 @@ class SigningServiceClient:
             (path, json.dumps(kwargs)))
 
         if needs_resp_nonce:
-            response_nonce = self._make_response_nonce()
+            response_nonce = self._makeResponseNonce()
             headers = kwargs.get("headers", {})
             headers["X-Response-Nonce"] = Base64Encoder.encode(
                 response_nonce).decode("UTF-8")
@@ -95,7 +95,7 @@ class SigningServiceClient:
             if not needs_resp_nonce:
                 return response.json()
             else:
-                return self._decrypt_response_json(response, response_nonce)
+                return self._decryptResponseJson(response, response_nonce)
         finally:
             action.finish()
 
@@ -103,7 +103,7 @@ class SigningServiceClient:
     def service_public_key(self):
         """Returns the lp-signing service's public key.
         """
-        data = self._getJson("/service-key")
+        data = self._requestJson("/service-key")
         return PublicKey(data["service-key"], encoder=Base64Encoder)
 
     @property
@@ -112,7 +112,7 @@ class SigningServiceClient:
             config.signing.client_private_key, encoder=Base64Encoder)
 
     def getNonce(self):
-        data = self._getJson("/nonce", "POST")
+        data = self._requestJson("/nonce", "POST")
         return base64.b64decode(data["nonce"].encode("UTF-8"))
 
     def _getAuthHeaders(self, nonce):
@@ -145,7 +145,7 @@ class SigningServiceClient:
             "key-type": key_type.name,
             "description": description,
             }).encode("UTF-8")
-        ret = self._getJson(
+        ret = self._requestJson(
             "/generate", "POST", True, headers=self._getAuthHeaders(nonce),
             data=self._encryptPayload(nonce, data))
         return {
@@ -166,7 +166,7 @@ class SigningServiceClient:
             "message": base64.b64encode(message).decode("UTF-8"),
             "mode": mode.name,
             }).encode("UTF-8")
-        data = self._getJson(
+        data = self._requestJson(
             "/sign", "POST", True,
             headers=self._getAuthHeaders(nonce),
             data=self._encryptPayload(nonce, data))

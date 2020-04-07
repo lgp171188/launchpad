@@ -16,15 +16,17 @@ from collections import defaultdict
 
 import pytz
 from storm.locals import (
+    Bytes,
     DateTime,
     Int,
-    RawStr,
     Reference,
     Unicode,
     )
 from zope.component import getUtility
-from zope.interface import implementer
-from zope.interface.declarations import provider
+from zope.interface import (
+    implementer,
+    provider,
+    )
 
 from lp.services.database.constants import (
     DEFAULT,
@@ -66,7 +68,7 @@ class SigningKey(StormBase):
 
     fingerprint = Unicode(allow_none=False)
 
-    public_key = RawStr(allow_none=False)
+    public_key = Bytes(allow_none=False)
 
     date_created = DateTime(
         allow_none=False, default=UTC_NOW, tzinfo=pytz.UTC)
@@ -173,7 +175,7 @@ class ArchiveSigningKeySet:
 
         # Let's search the most suitable per key type.
         found_series = False
-        # Not that archive.distribution.series is, by default, sorted by
+        # Note that archive.distribution.series is, by default, sorted by
         # "version", reversed.
         for series in archive.distribution.series:
             if series == distro_series:

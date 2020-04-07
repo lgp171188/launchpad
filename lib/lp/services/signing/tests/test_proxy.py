@@ -109,12 +109,12 @@ class SigningServiceResponseFactory:
         return). This could be useful on black-box tests, where several
         calls to /sign would be done and the response should be checked.
         """
-        # Patch SigningServiceClient._make_response_nonce to return always the
+        # Patch SigningServiceClient._makeResponseNonce to return always the
         # same nonce, to simplify the tests.
         response_nonce = random(Box.NONCE_SIZE)
         test_case.useFixture(MockPatch(
             'lp.services.signing.proxy.SigningServiceClient.'
-            '_make_response_nonce',
+            '_makeResponseNonce',
             return_value=response_nonce))
 
         responses.add(
