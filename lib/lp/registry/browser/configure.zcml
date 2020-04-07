@@ -2149,7 +2149,7 @@
         template="../templates/distribution-newmirror.pt">
     </browser:page>
     <browser:page
-        name="+newociproject"
+        name="+new-oci-project"
         for="lp.registry.interfaces.distribution.IDistribution"
         class="lp.registry.browser.ociproject.OCIProjectAddView"
         permission="launchpad.AnyPerson"

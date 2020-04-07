@@ -306,15 +306,15 @@ class DistributionNavigationMenu(NavigationMenu, DistributionLinksMixin):
     def sharing(self):
         return Link('+sharing', 'Sharing', icon='edit')
 
-    def newociproject(self):
+    def new_oci_project(self):
         text = 'Create an OCI Project'
-        return Link('+newociproject', text, icon='add')
+        return Link('+new-oci-project', text, icon='add')
 
     @cachedproperty
     def links(self):
         return [
             'edit', 'admin', 'pubconf', 'subscribe_to_bug_mail',
-            'edit_bug_mail', 'sharing', 'newociproject']
+            'edit_bug_mail', 'sharing', 'new_oci_project']
 
 
 class DistributionOverviewMenu(ApplicationMenu, DistributionLinksMixin):

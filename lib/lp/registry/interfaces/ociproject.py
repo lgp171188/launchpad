@@ -10,7 +10,7 @@ __all__ = [
     'IOCIProject',
     'IOCIProjectSet',
     'OCI_PROJECT_ALLOW_CREATE',
-    'OCIProjectCreateFeatureDisabled'
+    'OCIProjectCreateFeatureDisabled',
     ]
 
 from lazr.restful.declarations import (
@@ -182,4 +182,4 @@ class OCIProjectCreateFeatureDisabled(Unauthorized):
 
     def __init__(self):
         super(OCIProjectCreateFeatureDisabled, self).__init__(
-            "You do not have permission to create an OCI Project.")
+            "You do not have permission to create an OCI project.")

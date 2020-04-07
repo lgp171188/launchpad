@@ -674,7 +674,7 @@ class IDistributionPublic(
     # Interface is actually IOCIProject. Fixed at _schema_circular_imports
     @export_factory_operation(Interface, [])
     @operation_for_version("devel")
-    def newOCIProject(registrant, name, description=None):
+    def new_oci_project(registrant, name, description=None):
         """Create an `IOCIProject` for this distro."""
 
 

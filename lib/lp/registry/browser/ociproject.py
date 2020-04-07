@@ -26,7 +26,6 @@ from lp.app.browser.tales import CustomizableFormatter
 from lp.app.errors import NotFoundError
 from lp.code.browser.vcslisting import TargetDefaultVCSNavigationMixin
 from lp.oci.interfaces.ocirecipe import IOCIRecipeSet
-from lp.registry.errors import NoSuchOCIProjectName
 from lp.registry.interfaces.ociproject import (
     IOCIProject,
     IOCIProjectSet,
@@ -62,29 +61,31 @@ class OCIProjectAddView(LaunchpadFormView):
             raise OCIProjectCreateFeatureDisabled
         super(OCIProjectAddView, self).initialize()
 
-    @action("Create Project", name="create")
+    @action("Create OCI Project", name="create")
     def create_action(self, action, data):
         """Create a new OCI Project."""
         name = data.get('name')
-        try:
-            oci_project_name = getUtility(IOCIProjectNameSet).getByName(name)
-        except NoSuchOCIProjectName:
-            oci_project_name = getUtility(IOCIProjectNameSet).new(name)
+        oci_project_name = getUtility(
+            IOCIProjectNameSet).getOrCreateByName(name)
+        oci_project = getUtility(IOCIProjectSet).new(
+            registrant=self.user,
+            pillar=self.context,
+            name=oci_project_name)
+        self.next_url = canonical_url(oci_project)
+
+    def validate(self, data):
+        super(OCIProjectAddView, self).validate(data)
+        name = data.get('name', None)
+        oci_project_name = getUtility(
+            IOCIProjectNameSet).getOrCreateByName(name)
 
         oci_project = getUtility(IOCIProjectSet).getByDistributionAndName(
             self.context, oci_project_name.name)
-
         if oci_project:
             self.setFieldError(
                     'name',
                     'There is already an OCI project in %s with this name.' % (
                         self.context.display_name))
-        else:
-            oci_project = getUtility(IOCIProjectSet).new(
-                registrant=self.user,
-                pillar=self.context,
-                name=oci_project_name)
-            self.next_url = canonical_url(oci_project)
 
 
 class OCIProjectFormatterAPI(CustomizableFormatter):

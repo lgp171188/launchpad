@@ -8,7 +8,15 @@
 
   <body>
   <div metal:fill-slot="main">
-      <p>Enter the name for the new OCI Project.</p>
+      <p>
+        <a href="https://www.opencontainers.org/">
+            Open Container Initiative
+        </a> images are a packaging format for applications that can be
+        launched using a container runtime such as Docker or rkt.  Each OCI
+        project in Launchpad corresponds to an upstream application, and
+        contains recipes that describe how to build images for that application.
+      </p>
+      <p>Enter the name for the new OCI project.</p>
       <div metal:use-macro="context/@@launchpad_form/form" />
     </div>
   </body>

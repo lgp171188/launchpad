@@ -12,7 +12,10 @@ from datetime import datetime
 
 import pytz
 
-from lp.registry.interfaces.ociproject import OCI_PROJECT_ALLOW_CREATE
+from lp.registry.interfaces.ociproject import (
+    OCI_PROJECT_ALLOW_CREATE,
+    OCIProjectCreateFeatureDisabled,
+    )
 from lp.services.database.constants import UTC_NOW
 from lp.services.features.testing import FeatureFixture
 from lp.services.webapp import canonical_url
@@ -167,9 +170,9 @@ class TestOCIProjectAddView(BrowserTestCase):
         new_distribution = self.factory.makeDistribution(
             owner=oci_project.pillar.owner)
         browser = self.getViewBrowser(
-            new_distribution, view_name='+newociproject')
+            new_distribution, view_name='+new-oci-project')
         browser.getControl(name="field.name").value = "new-name"
-        browser.getControl("Create Project").click()
+        browser.getControl("Create OCI Project").click()
 
         content = find_main_content(browser.contents)
         self.assertEqual(
@@ -189,11 +192,20 @@ class TestOCIProjectAddView(BrowserTestCase):
                                     pillar=distribution)
 
         browser = self.getViewBrowser(
-            distribution, view_name='+newociproject')
+            distribution, view_name='+new-oci-project')
         browser.getControl(name="field.name").value = "new-name"
-        browser.getControl("Create Project").click()
+        browser.getControl("Create OCI Project").click()
 
         self.assertEqual(
             "There is already an OCI project in %s with this name." % (
                 distribution.display_name),
             extract_text(find_tags_by_class(browser.contents, "message")[1]))
+
+    def test_create_oci_project_feature_flag_disabled(self):
+        self.useFixture(FeatureFixture({OCI_PROJECT_ALLOW_CREATE: ''}))
+        new_distribution = self.factory.makeDistribution()
+        self.assertRaises(
+            OCIProjectCreateFeatureDisabled,
+            self.getViewBrowser,
+            new_distribution,
+            view_name='+new-oci-project')

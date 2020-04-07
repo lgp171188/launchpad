@@ -1455,7 +1455,7 @@ class Distribution(SQLBase, BugTargetBase, MakesAnnouncements,
                 return True
         return False
 
-    def newOCIProject(self, registrant, name, description=None):
+    def new_oci_project(self, registrant, name, description=None):
         """Create an `IOCIProject` for this distro."""
         if not getFeatureFlag(OCI_PROJECT_ALLOW_CREATE):
             raise Unauthorized("Creating new OCI projects is not allowed.")
