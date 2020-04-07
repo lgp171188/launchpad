@@ -66,7 +66,7 @@ class SigningServiceClient:
         return json.loads(box.decrypt(
             response.content, response_nonce, encoder=Base64Encoder))
 
-    def _requestJson(self, path, method="GET", needs_resp_nonce=False, **kwargs):
+    def _requestJson(self, path, method="GET", **kwargs):
         """Helper method to do an HTTP request and get back a json from  the
         signing service, raising exception if status code != 2xx.
 
@@ -81,18 +81,16 @@ class SigningServiceClient:
             "services-signing-proxy-%s" % method, "%s %s" %
             (path, json.dumps(kwargs)))
 
-        if needs_resp_nonce:
-            response_nonce = self._makeResponseNonce()
-            headers = kwargs.get("headers", {})
-            headers["X-Response-Nonce"] = Base64Encoder.encode(
-                response_nonce).decode("UTF-8")
-            kwargs["headers"] = headers
+        headers = kwargs.get("headers", {})
+        response_nonce = None
+        if "X-Response-Nonce" in headers:
+            response_nonce = base64.b64decode(headers["X-Response-Nonce"])
 
         try:
             url = self.getUrl(path)
             response = urlfetch(url, method=method.lower(), **kwargs)
             response.raise_for_status()
-            if not needs_resp_nonce:
+            if response_nonce is None:
                 return response.json()
             else:
                 return self._decryptResponseJson(response, response_nonce)
@@ -115,16 +113,20 @@ class SigningServiceClient:
         data = self._requestJson("/nonce", "POST")
         return base64.b64decode(data["nonce"].encode("UTF-8"))
 
-    def _getAuthHeaders(self, nonce):
+    def _getAuthHeaders(self, nonce, response_nonce):
         """Get headers to call authenticated endpoints.
 
         :param nonce: The nonce bytes to be used (not the base64 encoded one!)
+        :param response_nonce: The X-Response-Nonce bytes to be used to
+            decrypt the boxed response.
         :return: Header dict, ready to be used by requests
         """
         return {
             "Content-Type": "application/x-boxed-json",
             "X-Client-Public-Key": config.signing.client_public_key,
-            "X-Nonce": base64.b64encode(nonce)}
+            "X-Nonce": base64.b64encode(nonce),
+            "X-Response-Nonce": base64.b64encode(response_nonce),
+            }
 
     def _encryptPayload(self, nonce, message):
         """Returns the encrypted version of message, base64 encoded and
@@ -140,13 +142,16 @@ class SigningServiceClient:
     def generate(self, key_type, description):
         if key_type not in SigningKeyType.items:
             raise ValueError("%s is not a valid key type" % key_type)
+
         nonce = self.getNonce()
+        response_nonce = self._makeResponseNonce()
         data = json.dumps({
             "key-type": key_type.name,
             "description": description,
             }).encode("UTF-8")
         ret = self._requestJson(
-            "/generate", "POST", True, headers=self._getAuthHeaders(nonce),
+            "/generate", "POST",
+            headers=self._getAuthHeaders(nonce, response_nonce),
             data=self._encryptPayload(nonce, data))
         return {
             "fingerprint": ret["fingerprint"],
@@ -159,6 +164,7 @@ class SigningServiceClient:
             raise ValueError("%s is not a valid key type" % key_type)
 
         nonce = self.getNonce()
+        response_nonce = self._makeResponseNonce()
         data = json.dumps({
             "key-type": key_type.name,
             "fingerprint": fingerprint,
@@ -167,8 +173,8 @@ class SigningServiceClient:
             "mode": mode.name,
             }).encode("UTF-8")
         data = self._requestJson(
-            "/sign", "POST", True,
-            headers=self._getAuthHeaders(nonce),
+            "/sign", "POST",
+            headers=self._getAuthHeaders(nonce, response_nonce),
             data=self._encryptPayload(nonce, data))
 
         return {
