@@ -192,7 +192,7 @@ class SigningUpload(CustomUpload):
         self.archiveroot = pubconf.archiveroot
         self.temproot = pubconf.temproot
 
-        distro_series_name = suite.split('-')[0]
+        distro_series_name = suite.split('-')[0] if suite else None
         if distro_series_name:
             self.distro_series = self.archive.distribution.getSeries(
                 distro_series_name)
