@@ -283,6 +283,9 @@ from lp.services.propertycache import (
     clear_property_cache,
     get_property_cache,
     )
+from lp.services.signing.enums import SigningKeyType
+from lp.services.signing.interfaces.signingkey import IArchiveSigningKeySet
+from lp.services.signing.model.signingkey import SigningKey
 from lp.services.temporaryblobstorage.interfaces import (
     ITemporaryStorageManager,
     )
@@ -4189,6 +4192,32 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         if date_created is not None:
             removeSecurityProxy(bpr).datecreated = date_created
         return bpr
+
+    def makeSigningKey(self, key_type=None, fingerprint=None,
+                       public_key=None, description=None):
+        """Makes a SigningKey (integration with lp-signing)
+        """
+        if key_type is None:
+            key_type = SigningKeyType.UEFI
+        if fingerprint is None:
+            fingerprint = self.getUniqueUnicode('fingerprint')
+        if public_key is None:
+            public_key = self.getUniqueHexString(64)
+        store = IMasterStore(SigningKey)
+        signing_key = SigningKey(
+            key_type=key_type, fingerprint=fingerprint, public_key=public_key,
+            description=description)
+        store.add(signing_key)
+        return signing_key
+
+    def makeArchiveSigningKey(self, archive=None, distro_series=None,
+                              signing_key=None):
+        if archive is None:
+            archive = self.makeArchive()
+        if signing_key is None:
+            signing_key = self.makeSigningKey()
+        return getUtility(IArchiveSigningKeySet).create(
+            archive, distro_series, signing_key)
 
     def makeSection(self, name=None):
         """Make a `Section`."""
