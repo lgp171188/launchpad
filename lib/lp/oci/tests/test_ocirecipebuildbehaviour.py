@@ -17,6 +17,7 @@ import time
 import uuid
 
 import fixtures
+from fixtures import MockPatch
 from six.moves.urllib_parse import urlsplit
 from testtools import ExpectedException
 from testtools.matchers import (
@@ -489,6 +490,9 @@ class TestHandleStatusForOCIRecipeBuild(MakeOCIBuildMixin,
                 self.build.buildqueue_record, 'OK',
                 {'filemap': self.filemap})
         timestamp = datetime.now()
+        mock_datetime = self.useFixture(MockPatch(
+            'lp.buildmaster.model.buildfarmjobbehaviour.datetime')).mock
+        mock_datetime.now = lambda: timestamp
         self.assertEqual(
             ['buildlog', 'manifest_hash', 'digests_hash', 'config_1_hash',
              'layer_2_hash'],
