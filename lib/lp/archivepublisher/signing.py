@@ -32,6 +32,7 @@ from zope.component import getUtility
 
 from lp.archivepublisher.config import getPubConfig
 from lp.archivepublisher.customupload import CustomUpload
+from lp.registry.interfaces.distroseries import IDistroSeriesSet
 from lp.services.features import getFeatureFlag
 from lp.services.osutils import remove_if_exists
 from lp.services.signing.enums import SigningKeyType
@@ -132,6 +133,13 @@ class SigningUpload(CustomUpload):
 
     def setTargetDirectory(self, archive, tarfile_path, suite):
         self.archive = archive
+
+        if suite:
+            self.distro_series, _ = getUtility(IDistroSeriesSet).fromSuite(
+                self.archive.distribution, suite)
+        else:
+            self.distro_series = None
+
         pubconf = getPubConfig(archive)
         if pubconf.signingroot is None:
             if self.logger is not None:
@@ -149,7 +157,7 @@ class SigningUpload(CustomUpload):
             self.fit_cert = None
             self.autokey = False
         else:
-            signing_for = suite.split('-')[0]
+            signing_for = self.distro_series.name if self.distro_series else ''
             self.uefi_key = self.getSeriesPath(
                 pubconf, "uefi.key", archive, signing_for)
             self.uefi_cert = self.getSeriesPath(
@@ -191,13 +199,6 @@ class SigningUpload(CustomUpload):
             dists_signed, "%s-%s" % (self.package, self.arch))
         self.archiveroot = pubconf.archiveroot
         self.temproot = pubconf.temproot
-
-        distro_series_name = suite.split('-')[0] if suite else None
-        if distro_series_name:
-            self.distro_series = self.archive.distribution.getSeries(
-                distro_series_name)
-        else:
-            self.distro_series = None
 
         self.public_keys = {}
 

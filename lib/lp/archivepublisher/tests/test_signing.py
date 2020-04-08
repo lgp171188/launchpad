@@ -193,7 +193,7 @@ class TestSigningHelpers(TestCaseWithFactory):
         self.signing_dir = os.path.join(
             self.temp_dir, self.distro.name + "-signing")
         self.distroseries = self.factory.makeDistroSeries(
-            distribution=self.distro, name="distroseries")
+            distribution=self.distro)
         self.suite = self.distroseries.name
         pubconf = getPubConfig(self.archive)
         if not os.path.exists(pubconf.temproot):
@@ -989,15 +989,13 @@ class TestLocalSigningUpload(RunPartsMixin, TestSigningHelpers):
         This should fall through to the first series,
         as the second does not have keys.
         """
-        self.suite = "nokeys-distroseries"
         first_series = self.factory.makeDistroSeries(
             self.distro,
             name="existingkeys"
             )
-        self.factory.makeDistroSeries(
-            self.distro,
-            name="nokeys"
-            )
+        self.distroseries = self.factory.makeDistroSeries(
+            self.distro, name="nokeys")
+        self.suite = self.distroseries.name
         # Each image in the tarball is signed.
         self.setUpUefiKeys()
         self.setUpUefiKeys(series=first_series)
@@ -1790,7 +1788,7 @@ class TestSigningUploadWithSigningService(TestSigningHelpers):
         """
         self.distro = self.factory.makeDistribution()
         self.distroseries = self.factory.makeDistroSeries(
-            distribution=self.distro, name="distroseries")
+            distribution=self.distro)
         self.suite = self.distroseries.name
         self.archive = self.factory.makeArchive(
             distribution=self.distro, purpose=ArchivePurpose.PRIMARY)
@@ -1926,7 +1924,7 @@ class TestSigningUploadWithSigningService(TestSigningHelpers):
         # with signing keys, and we don't want that here.
         self.distro = self.factory.makeDistribution()
         self.distroseries = self.factory.makeDistroSeries(
-            distribution=self.distro, name="distroseries")
+            distribution=self.distro)
         self.suite = self.distroseries.name
         self.archive = self.factory.makeArchive(
             distribution=self.distro,
