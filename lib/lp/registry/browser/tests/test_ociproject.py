@@ -12,7 +12,12 @@ from datetime import datetime
 
 import pytz
 
+from lp.registry.interfaces.ociproject import (
+    OCI_PROJECT_ALLOW_CREATE,
+    OCIProjectCreateFeatureDisabled,
+    )
 from lp.services.database.constants import UTC_NOW
+from lp.services.features.testing import FeatureFixture
 from lp.services.webapp import canonical_url
 from lp.services.webapp.escaping import structured
 from lp.testing import (
@@ -150,3 +155,57 @@ class TestOCIProjectEditView(BrowserTestCase):
         self.assertStartsWith(
             extract_text(find_tags_by_class(browser.contents, "message")[1]),
             "Invalid name 'invalid name'.")
+
+
+class TestOCIProjectAddView(BrowserTestCase):
+
+    layer = DatabaseFunctionalLayer
+
+    def setUp(self):
+        super(TestOCIProjectAddView, self).setUp()
+        self.useFixture(FeatureFixture({OCI_PROJECT_ALLOW_CREATE: "on"}))
+
+    def test_create_oci_project(self):
+        oci_project = self.factory.makeOCIProject()
+        new_distribution = self.factory.makeDistribution(
+            owner=oci_project.pillar.owner)
+        browser = self.getViewBrowser(
+            new_distribution, view_name='+new-oci-project')
+        browser.getControl(name="field.name").value = "new-name"
+        browser.getControl("Create OCI Project").click()
+
+        content = find_main_content(browser.contents)
+        self.assertEqual(
+            "OCI project new-name for %s" % new_distribution.display_name,
+            extract_text(content.h1))
+        self.assertThat(
+            "Distribution:\n%s\n" % (
+                new_distribution.display_name),
+            MatchesTagText(content, "distribution"))
+        self.assertThat(
+             "Name:\nnew-name\n",
+             MatchesTagText(content, "name"))
+
+    def test_create_oci_project_already_exists(self):
+        distribution = self.factory.makeDistribution()
+        self.factory.makeOCIProject(ociprojectname="new-name",
+                                    pillar=distribution)
+
+        browser = self.getViewBrowser(
+            distribution, view_name='+new-oci-project')
+        browser.getControl(name="field.name").value = "new-name"
+        browser.getControl("Create OCI Project").click()
+
+        self.assertEqual(
+            "There is already an OCI project in %s with this name." % (
+                distribution.display_name),
+            extract_text(find_tags_by_class(browser.contents, "message")[1]))
+
+    def test_create_oci_project_feature_flag_disabled(self):
+        self.useFixture(FeatureFixture({OCI_PROJECT_ALLOW_CREATE: ''}))
+        new_distribution = self.factory.makeDistribution()
+        self.assertRaises(
+            OCIProjectCreateFeatureDisabled,
+            self.getViewBrowser,
+            new_distribution,
+            view_name='+new-oci-project')

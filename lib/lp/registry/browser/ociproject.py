@@ -20,6 +20,7 @@ from zope.interface import implementer
 from lp.app.browser.launchpadform import (
     action,
     LaunchpadEditFormView,
+    LaunchpadFormView,
     )
 from lp.app.browser.tales import CustomizableFormatter
 from lp.app.errors import NotFoundError
@@ -28,7 +29,14 @@ from lp.oci.interfaces.ocirecipe import IOCIRecipeSet
 from lp.registry.interfaces.ociproject import (
     IOCIProject,
     IOCIProjectSet,
+    OCI_PROJECT_ALLOW_CREATE,
+    OCIProjectCreateFeatureDisabled,
     )
+from lp.registry.interfaces.ociprojectname import (
+    IOCIProjectName,
+    IOCIProjectNameSet,
+    )
+from lp.services.features import getFeatureFlag
 from lp.services.webapp import (
     canonical_url,
     ContextMenu,
@@ -41,6 +49,43 @@ from lp.services.webapp import (
     )
 from lp.services.webapp.breadcrumb import Breadcrumb
 from lp.services.webapp.interfaces import IMultiFacetedBreadcrumb
+
+
+class OCIProjectAddView(LaunchpadFormView):
+
+    schema = IOCIProjectName
+    field_names = ['name']
+
+    def initialize(self):
+        if not getFeatureFlag(OCI_PROJECT_ALLOW_CREATE):
+            raise OCIProjectCreateFeatureDisabled
+        super(OCIProjectAddView, self).initialize()
+
+    @action("Create OCI Project", name="create")
+    def create_action(self, action, data):
+        """Create a new OCI Project."""
+        name = data.get('name')
+        oci_project_name = getUtility(
+            IOCIProjectNameSet).getOrCreateByName(name)
+        oci_project = getUtility(IOCIProjectSet).new(
+            registrant=self.user,
+            pillar=self.context,
+            name=oci_project_name)
+        self.next_url = canonical_url(oci_project)
+
+    def validate(self, data):
+        super(OCIProjectAddView, self).validate(data)
+        name = data.get('name', None)
+        oci_project_name = getUtility(
+            IOCIProjectNameSet).getOrCreateByName(name)
+
+        oci_project = getUtility(IOCIProjectSet).getByDistributionAndName(
+            self.context, oci_project_name.name)
+        if oci_project:
+            self.setFieldError(
+                    'name',
+                    'There is already an OCI project in %s with this name.' % (
+                        self.context.display_name))
 
 
 class OCIProjectFormatterAPI(CustomizableFormatter):
