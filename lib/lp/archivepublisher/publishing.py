@@ -35,10 +35,6 @@ from debian.deb822 import (
     _multivalued,
     Release,
     )
-try:
-    import lzma
-except ImportError:
-    from backports import lzma
 import scandir
 from storm.expr import Desc
 from zope.component import getUtility
@@ -75,6 +71,7 @@ from lp.registry.interfaces.pocket import (
     )
 from lp.registry.interfaces.series import SeriesStatus
 from lp.registry.model.distroseries import DistroSeries
+from lp.services.compat import lzma
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.interfaces import IStore
 from lp.services.features import getFeatureFlag
