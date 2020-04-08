@@ -485,14 +485,14 @@ class TestHandleStatusForOCIRecipeBuild(MakeOCIBuildMixin,
 
     @defer.inlineCallbacks
     def test_handleStatus_OK_normal_image(self):
+        now = datetime.now()
+        mock_datetime = self.useFixture(MockPatch(
+            'lp.buildmaster.model.buildfarmjobbehaviour.datetime')).mock
+        mock_datetime.now = lambda: now
         with dbuser(config.builddmaster.dbuser):
             yield self.behaviour.handleStatus(
                 self.build.buildqueue_record, 'OK',
                 {'filemap': self.filemap})
-        timestamp = datetime.now()
-        mock_datetime = self.useFixture(MockPatch(
-            'lp.buildmaster.model.buildfarmjobbehaviour.datetime')).mock
-        mock_datetime.now = lambda: timestamp
         self.assertEqual(
             ['buildlog', 'manifest_hash', 'digests_hash', 'config_1_hash',
              'layer_2_hash'],
@@ -506,8 +506,7 @@ class TestHandleStatusForOCIRecipeBuild(MakeOCIBuildMixin,
         layer_1_path = os.path.join(
             self.upload_root,
             "incoming",
-            self.behaviour.getUploadDirLeaf(self.build.build_cookie,
-                                            now=timestamp),
+            self.behaviour.getUploadDirLeaf(self.build.build_cookie),
             str(self.build.archive.id),
             self.build.distribution.name,
             "layer_1.tar.gz"
