@@ -7,6 +7,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 __all__ = [
+    'CannotModifyOCIRecipeProcessor',
     'DuplicateOCIRecipeName',
     'IOCIRecipe',
     'IOCIRecipeEdit',
@@ -23,9 +24,14 @@ __all__ = [
     ]
 
 from lazr.restful.declarations import (
+    call_with,
     error_status,
     export_as_webservice_entry,
+    export_write_operation,
     exported,
+    operation_for_version,
+    operation_parameters,
+    REQUEST_USER,
     )
 from lazr.restful.fields import (
     CollectionField,
@@ -33,11 +39,15 @@ from lazr.restful.fields import (
     ReferenceChoice,
     )
 from six.moves import http_client
-from zope.interface import Interface
+from zope.interface import (
+    Attribute,
+    Interface,
+    )
 from zope.schema import (
     Bool,
     Datetime,
     Int,
+    List,
     Text,
     TextLine,
     )
@@ -47,8 +57,11 @@ from lp import _
 from lp.app.errors import NameLookupFailed
 from lp.app.validators.name import name_validator
 from lp.app.validators.path import path_does_not_escape
+from lp.buildmaster.interfaces.processor import IProcessor
 from lp.code.interfaces.gitref import IGitRef
 from lp.code.interfaces.gitrepository import IGitRepository
+from lp.registry.interfaces.distribution import IDistribution
+from lp.registry.interfaces.distroseries import IDistroSeries
 from lp.registry.interfaces.ociproject import IOCIProject
 from lp.registry.interfaces.role import IHasOwner
 from lp.services.database.constants import DEFAULT
@@ -105,6 +118,19 @@ class NoSourceForOCIRecipe(Exception):
             "New OCI recipes must have a git branch and build file.")
 
 
+@error_status(http_client.FORBIDDEN)
+class CannotModifyOCIRecipeProcessor(Exception):
+    """Tried to enable or disable a restricted processor on an OCI recipe."""
+
+    _fmt = (
+        '%(processor)s is restricted, and may only be enabled or disabled '
+        'by administrators.')
+
+    def __init__(self, processor):
+        super(CannotModifyOCIRecipeProcessor, self).__init__(
+            self._fmt % {'processor': processor.name})
+
+
 class IOCIRecipeView(Interface):
     """`IOCIRecipe` attributes that require launchpad.View permission."""
 
@@ -118,6 +144,35 @@ class IOCIRecipeView(Interface):
         title=_("Registrant"),
         description=_("The user who registered this recipe."),
         vocabulary='ValidPersonOrTeam', required=True, readonly=True))
+
+    distribution = Reference(
+        IDistribution, title=_("Distribution"),
+        required=True, readonly=True,
+        description=_("The distribution that this recipe is associated with."))
+
+    distro_series = Reference(
+        IDistroSeries, title=_("Distro series"),
+        required=True, readonly=True,
+        description=_("The series for which the recipe should be built."))
+
+    available_processors = Attribute(
+        "The architectures that are available to be enabled or disabled for "
+        "this OCI recipe.")
+
+    @call_with(check_permissions=True, user=REQUEST_USER)
+    @operation_parameters(
+        processors=List(
+            value_type=Reference(schema=IProcessor), required=True))
+    @export_write_operation()
+    @operation_for_version("devel")
+    def setProcessors(processors, check_permissions=False, user=None):
+        """Set the architectures for which the recipe should be built."""
+
+    def getAllowedArchitectures():
+        """Return all distroarchseries that this recipe can build for.
+
+        :return: Sequence of `IDistroArchSeries` instances.
+        """
 
     builds = CollectionField(
         title=_("Completed builds of this OCI recipe."),
@@ -253,6 +308,13 @@ class IOCIRecipeAdminAttributes(Interface):
         title=_("Require virtualized builders"), required=True, readonly=False,
         description=_("Only build this OCI recipe on virtual builders."))
 
+    processors = exported(CollectionField(
+        title=_("Processors"),
+        description=_(
+            "The architectures for which the OCI recipe should be built."),
+        value_type=Reference(schema=IProcessor),
+        readonly=False))
+
 
 class IOCIRecipe(IOCIRecipeView, IOCIRecipeEdit, IOCIRecipeEditableAttributes,
                  IOCIRecipeAdminAttributes):
@@ -267,7 +329,7 @@ class IOCIRecipeSet(Interface):
 
     def new(name, registrant, owner, oci_project, git_ref, build_file,
             description=None, official=False, require_virtualized=True,
-            build_daily=False, date_created=DEFAULT):
+            build_daily=False, processors=None, date_created=DEFAULT):
         """Create an IOCIRecipe."""
 
     def exists(owner, oci_project, name):
