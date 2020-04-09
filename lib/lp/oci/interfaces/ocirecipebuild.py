@@ -1,4 +1,4 @@
-# Copyright 2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2019-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Interfaces for a build record for OCI recipes."""
@@ -12,6 +12,7 @@ __all__ = [
     'IOCIRecipeBuildSet',
     ]
 
+from lazr.restful.declarations import export_as_webservice_entry
 from lazr.restful.fields import Reference
 from zope.interface import Interface
 from zope.schema import (

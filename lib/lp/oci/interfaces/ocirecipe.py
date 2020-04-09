@@ -28,6 +28,7 @@ from lazr.restful.declarations import (
     error_status,
     export_as_webservice_entry,
     export_write_operation,
+    export_factory_operation,
     exported,
     operation_for_version,
     operation_parameters,
@@ -70,6 +71,7 @@ from lp.services.fields import (
     PublicPersonChoice,
     )
 from lp.services.webhooks.interfaces import IWebhookTarget
+from lp.soyuz.interfaces.distroarchseries import IDistroArchSeries
 
 
 OCI_RECIPE_WEBHOOKS_FEATURE_FLAG = "oci.recipe.webhooks.enabled"
@@ -205,6 +207,23 @@ class IOCIRecipeView(Interface):
         :param requester: The person requesting the build.
         :param architecture: The architecture to build for.
         :return: `IOCIRecipeBuild`.
+        """
+
+    @call_with(requester=REQUEST_USER)
+    @operation_parameters(
+        distro_arch_series_list=List(
+            Reference(schema=IDistroArchSeries),
+            title=_("The list of distro series and architectures to build"),
+            required=True)
+    )
+    @export_factory_operation(Interface, [])
+    @operation_for_version("devel")
+    def requestBuilds(requester):
+        """Request that the OCI recipe is built for all available
+        architectures.
+
+        :param requester: The person requesting the build.
+        :return: List of `IOCIRecipeBuild`.
         """
 
     push_rules = CollectionField(

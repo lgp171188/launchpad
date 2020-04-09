@@ -37,6 +37,7 @@ from lp.oci.interfaces.ocirecipe import (
     OCIRecipeNotOwner,
     )
 from lp.oci.interfaces.ocirecipebuild import IOCIRecipeBuildSet
+from lp.registry.interfaces.series import SeriesStatus
 from lp.services.config import config
 from lp.services.database.constants import (
     ONE_DAY_AGO,
@@ -93,6 +94,61 @@ class TestOCIRecipe(TestCaseWithFactory):
             OCIRecipeNotOwner,
             ocirecipe._checkRequestBuild,
             unrelated_person)
+
+    def getDistroArchSeries(self, distribution, proc_name="386",
+                            arch_tag="i386"):
+        distroseries = self.factory.makeDistroSeries(
+            distribution=distribution, status=SeriesStatus.CURRENT)
+        processor = getUtility(IProcessorSet).getByName(proc_name)
+        return self.factory.makeDistroArchSeries(
+            distroseries=distroseries, architecturetag=arch_tag,
+            processor=processor)
+
+    def test_hasPendingBuilds(self):
+        ocirecipe = removeSecurityProxy(self.factory.makeOCIRecipe())
+        distro = ocirecipe.oci_project.distribution
+
+        arch_series_386 = self.getDistroArchSeries(distro, "386", "386")
+        arch_series_amd64 = self.getDistroArchSeries(distro, "amd64", "amd64")
+        proc_i386 = arch_series_386.processor
+        proc_amd64 = arch_series_amd64.processor
+
+        # Successful build (i386)
+        self.factory.makeOCIRecipeBuild(
+            recipe=ocirecipe, status=BuildStatus.FULLYBUILT,
+            distro_arch_series=arch_series_386)
+        # Failed build (i386)
+        self.factory.makeOCIRecipeBuild(
+            recipe=ocirecipe, status=BuildStatus.FAILEDTOBUILD,
+            distro_arch_series=arch_series_386)
+        # Building build (i386)
+        self.factory.makeOCIRecipeBuild(
+            recipe=ocirecipe, status=BuildStatus.BUILDING,
+            distro_arch_series=arch_series_386)
+        # Building build (amd64)
+        self.factory.makeOCIRecipeBuild(
+            recipe=ocirecipe, status=BuildStatus.BUILDING,
+            distro_arch_series=arch_series_amd64)
+
+        self.assertFalse(
+            ocirecipe._hasPendingBuilds([proc_i386]))
+        self.assertFalse(
+            ocirecipe._hasPendingBuilds([proc_amd64]))
+        self.assertFalse(
+            ocirecipe._hasPendingBuilds([proc_i386, proc_amd64]))
+
+        # The only pending build, for i386.
+        self.factory.makeOCIRecipeBuild(
+            recipe=ocirecipe, status=BuildStatus.NEEDSBUILD,
+            distro_arch_series=arch_series_386)
+
+        self.assertTrue(
+            ocirecipe._hasPendingBuilds([proc_i386]))
+        self.assertFalse(
+            ocirecipe._hasPendingBuilds([proc_amd64]))
+        self.assertTrue(
+            ocirecipe._hasPendingBuilds([proc_i386, proc_amd64]))
+
 
     def test_requestBuild(self):
         ocirecipe = self.factory.makeOCIRecipe()

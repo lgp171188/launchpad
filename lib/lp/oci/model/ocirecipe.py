@@ -38,6 +38,7 @@ from zope.security.proxy import removeSecurityProxy
 
 from lp.app.interfaces.security import IAuthorization
 from lp.buildmaster.enums import BuildStatus
+from lp.buildmaster.interfaces.buildfarmjob import IBuildFarmJobSource
 from lp.buildmaster.interfaces.buildqueue import IBuildQueueSet
 from lp.buildmaster.model.buildfarmjob import BuildFarmJob
 from lp.buildmaster.model.buildqueue import BuildQueue
@@ -296,22 +297,41 @@ class OCIRecipe(Storm, WebhookTargetMixin):
                 "%s cannot create OCI image builds owned by %s." %
                 (requester.display_name, self.owner.display_name))
 
-    def requestBuild(self, requester, distro_arch_series):
-        self._checkRequestBuild(requester)
-
+    def _hasPendingBuilds(self, processors):
+        """Checks if this OCIRecipe has pending builds for any of the given
+        processors."""
         pending = IStore(self).find(
             OCIRecipeBuild,
             OCIRecipeBuild.recipe == self.id,
-            OCIRecipeBuild.processor == distro_arch_series.processor,
+            OCIRecipeBuild.processor_id.is_in([i.id for i in processors]),
             OCIRecipeBuild.status == BuildStatus.NEEDSBUILD)
-        if pending.any() is not None:
-            raise OCIRecipeBuildAlreadyPending
+        return pending.any() is not None
 
+    def _createBuild(self, requester, distro_arch_series):
+        """Creates a build without checking anything."""
         build = getUtility(IOCIRecipeBuildSet).new(
             requester, self, distro_arch_series)
         build.queueBuild()
         notify(ObjectCreatedEvent(build, user=requester))
         return build
+
+    def requestBuild(self, requester, distro_arch_series):
+        self._checkRequestBuild(requester)
+        if self._hasPendingBuilds([distro_arch_series.processor]):
+            raise OCIRecipeBuildAlreadyPending
+
+        return self._createBuild(requester, distro_arch_series)
+
+    def requestBuilds(self, requester):
+        self._checkRequestBuild(requester)
+        processors = self.available_processors
+        if self._hasPendingBuilds(processors):
+            raise OCIRecipeBuildAlreadyPending
+
+        builds = []
+        for distro_arch_series in self.oci_project.distribution.architectures:
+            builds.append(self._createBuild(requester, distro_arch_series))
+        return builds
 
     @property
     def push_rules(self):
