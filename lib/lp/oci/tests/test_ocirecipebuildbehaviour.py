@@ -17,6 +17,7 @@ import time
 import uuid
 
 import fixtures
+from fixtures import MockPatch
 from six.moves.urllib_parse import urlsplit
 from testtools import ExpectedException
 from testtools.matchers import (
@@ -484,6 +485,10 @@ class TestHandleStatusForOCIRecipeBuild(MakeOCIBuildMixin,
 
     @defer.inlineCallbacks
     def test_handleStatus_OK_normal_image(self):
+        now = datetime.now()
+        mock_datetime = self.useFixture(MockPatch(
+            'lp.buildmaster.model.buildfarmjobbehaviour.datetime')).mock
+        mock_datetime.now = lambda: now
         with dbuser(config.builddmaster.dbuser):
             yield self.behaviour.handleStatus(
                 self.build.buildqueue_record, 'OK',
