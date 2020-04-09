@@ -93,7 +93,7 @@ class OCIRegistryClient:
             lfa.close()
 
     @classmethod
-    def _build_image_manifest(cls, name, tag, digests,
+    def _build_image_manifest(cls, name, digests,
                               config, config_json, config_sha):
         manifest = {
             "schemaVersion": 2,
@@ -139,6 +139,18 @@ class OCIRegistryClient:
         return data
 
     @classmethod
+    def _calculateName(cls, build, push_rule):
+        return "{}/{}".format(
+            build.recipe.oci_project.pillar.name,
+            push_rule.image_name)
+
+    @classmethod
+    def _calculateTag(cls, build, push_rule):
+        # XXX twom 2020-04-17 This needs to include OCIProjectSeries and
+        # base image name
+        return "{}".format("edge")
+
+    @classmethod
     def upload(cls, build):
         # get manifest
         manifest = cls._getJSONfile(build.manifest)
@@ -148,37 +160,37 @@ class OCIRegistryClient:
             for k, v in digest_dict.items():
                 digests[k] = v
 
-        # XXX twom 2020-04-06 This should be calculated
-        build_tag = "temp-build-tag"
-
         preloaded_data = cls._preloadFiles(build, manifest, digests)
 
         for push_rule in build.recipe.push_rules:
             for section in manifest:
+                image_name = cls._calculateName(build, push_rule)
+                tag = cls._calculateTag(build, push_rule)
                 file_data = preloaded_data[section["Config"]]
                 config = file_data["config_file"]
                 for diff_id in config["rootfs"]["diff_ids"]:
                     cls._upload_layer(
                         diff_id,
                         push_rule,
-                        push_rule.image_name,
+                        image_name,
                         file_data[diff_id].get('lfa'))
                 config_json = json.dumps(config).encode()
                 config_sha = hashlib.sha256(config_json).hexdigest()
                 cls._upload(
                     "sha256:{}".format(config_sha),
                     push_rule,
-                    push_rule.image_name,
+                    image_name,
                     BytesIO(config_json)
                 )
                 image_manifest = cls._build_image_manifest(
-                    push_rule.image_name, build_tag, digests,
+                    image_name, digests,
                     config, config_json, config_sha)
 
                 manifest_response = urlfetch(
-                    "{}/v2/{}/manifests/latest".format(
+                    "{}/v2/{}/manifests/{}".format(
                         push_rule.registry_credentials.url,
-                        push_rule.image_name),
+                        image_name,
+                        tag),
                     json=image_manifest,
                     headers={
                         "Content-Type":
