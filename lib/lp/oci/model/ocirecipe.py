@@ -38,7 +38,6 @@ from zope.security.proxy import removeSecurityProxy
 
 from lp.app.interfaces.security import IAuthorization
 from lp.buildmaster.enums import BuildStatus
-from lp.buildmaster.interfaces.buildfarmjob import IBuildFarmJobSource
 from lp.buildmaster.interfaces.buildqueue import IBuildQueueSet
 from lp.buildmaster.model.buildfarmjob import BuildFarmJob
 from lp.buildmaster.model.buildqueue import BuildQueue
@@ -322,7 +321,7 @@ class OCIRecipe(Storm, WebhookTargetMixin):
 
         return self._createBuild(requester, distro_arch_series)
 
-    def requestBuilds(self, requester):
+    def requestBuildsFromJob(self, requester):
         self._checkRequestBuild(requester)
         processors = self.available_processors
         if self._hasPendingBuilds(processors):
@@ -332,6 +331,9 @@ class OCIRecipe(Storm, WebhookTargetMixin):
         for distro_arch_series in self.oci_project.distribution.architectures:
             builds.append(self._createBuild(requester, distro_arch_series))
         return builds
+
+    def requestBuilds(requester):
+        pass
 
     @property
     def push_rules(self):

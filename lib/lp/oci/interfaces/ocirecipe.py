@@ -23,12 +23,16 @@ __all__ = [
     'OCIRecipeNotOwner',
     ]
 
+from lazr.enum._enum import (
+    EnumeratedType,
+    Item,
+    )
 from lazr.restful.declarations import (
     call_with,
     error_status,
     export_as_webservice_entry,
-    export_write_operation,
     export_factory_operation,
+    export_write_operation,
     exported,
     operation_for_version,
     operation_parameters,
@@ -52,6 +56,10 @@ from zope.schema import (
     Text,
     TextLine,
     )
+from zope.schema._field import (
+    Choice,
+    Set,
+    )
 from zope.security.interfaces import Unauthorized
 
 from lp import _
@@ -71,7 +79,6 @@ from lp.services.fields import (
     PublicPersonChoice,
     )
 from lp.services.webhooks.interfaces import IWebhookTarget
-from lp.soyuz.interfaces.distroarchseries import IDistroArchSeries
 
 
 OCI_RECIPE_WEBHOOKS_FEATURE_FLAG = "oci.recipe.webhooks.enabled"
@@ -131,6 +138,65 @@ class CannotModifyOCIRecipeProcessor(Exception):
     def __init__(self, processor):
         super(CannotModifyOCIRecipeProcessor, self).__init__(
             self._fmt % {'processor': processor.name})
+
+
+class OCIRecipeBuildRequestStatus(EnumeratedType):
+    """The status of a request to build an oci recipe."""
+
+    PENDING = Item("""
+        Pending
+
+        This OCI recipe build request is pending.
+        """)
+
+    FAILED = Item("""
+        Failed
+
+        This OCI recipe build request failed.
+        """)
+
+    COMPLETED = Item("""
+        Completed
+
+        This OCI recipe build request completed successfully.
+        """)
+
+
+class IOCIRecipeBuildRequest(Interface):
+    """A request to build an OCI Recipe."""
+    export_as_webservice_entry(as_of="devel")
+
+    id = Int(title=_("ID"), required=True, readonly=True)
+
+    date_requested = exported(Datetime(
+        title=_("The time when this request was made"),
+        required=True, readonly=True))
+
+    date_finished = exported(Datetime(
+        title=_("The time when this request finished"),
+        required=False, readonly=True))
+
+    oci_recipe = exported(Reference(
+        # Really IOCIRecipe, patched in _schema_circular_imports.
+        Interface,
+        title=_("OCI Recipe"), required=True, readonly=True))
+
+    status = exported(Choice(
+        title=_("Status"), vocabulary=OCIRecipeBuildRequestStatus,
+        required=True, readonly=True))
+
+    error_message = exported(TextLine(
+        title=_("Error message"), required=True, readonly=True))
+
+    builds = exported(CollectionField(
+        title=_("Builds produced by this request"),
+        # Really IOCIRecipeBuild, patched in _schema_circular_imports.
+        value_type=Reference(schema=Interface),
+        required=True, readonly=True))
+
+    architectures = Set(
+        title=_("If set, this request is limited to these architecture tags"),
+        value_type=TextLine(), required=False, readonly=True)
 
 
 class IOCIRecipeView(Interface):
@@ -210,13 +276,7 @@ class IOCIRecipeView(Interface):
         """
 
     @call_with(requester=REQUEST_USER)
-    @operation_parameters(
-        distro_arch_series_list=List(
-            Reference(schema=IDistroArchSeries),
-            title=_("The list of distro series and architectures to build"),
-            required=True)
-    )
-    @export_factory_operation(Interface, [])
+    @export_factory_operation(IOCIRecipeBuildRequest, [])
     @operation_for_version("devel")
     def requestBuilds(requester):
         """Request that the OCI recipe is built for all available
