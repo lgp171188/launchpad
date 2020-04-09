@@ -8,11 +8,13 @@ from __future__ import absolute_import, print_function, unicode_literals
 __metaclass__ = type
 __all__ = [
     'IOCIRecipeBuildJob',
+    'IOCIRecipeBuildRegistryUploadStatusChangedEvent',
     'IOCIRegistryUploadJob',
     'IOCIRegistryUploadJobSource',
     ]
 
 from lazr.restful.fields import Reference
+from zope.component.interfaces import IObjectEvent
 from zope.interface import (
     Attribute,
     Interface,
@@ -26,6 +28,10 @@ from lp.services.job.interfaces.job import (
     IJobSource,
     IRunnableJob,
     )
+
+
+class IOCIRecipeBuildRegistryUploadStatusChangedEvent(IObjectEvent):
+    """The store upload status of an OCI recipe build changed."""
 
 
 class IOCIRecipeBuildJob(Interface):

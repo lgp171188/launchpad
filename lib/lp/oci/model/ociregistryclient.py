@@ -1,3 +1,16 @@
+# Copyright 2020 Canonical Ltd.  This software is licensed under the
+# GNU Affero General Public License version 3 (see the file LICENSE).
+
+"""Client for talking to an OCI registry."""
+
+from __future__ import absolute_import, print_function, unicode_literals
+
+__metaclass__ = type
+__all__ = [
+    'OCIRegistryClient'
+]
+
+
 from io import BytesIO
 import hashlib
 import json
@@ -25,7 +38,7 @@ class ManifestUploadFailed(Exception):
     pass
 
 
-class OCIRegistryClient():
+class OCIRegistryClient:
 
     def _getJSONfile(self, reference):
         _, lfa, lfc = reference
