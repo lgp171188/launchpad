@@ -18,29 +18,21 @@ import logging
 import tarfile
 
 import requests
+from zope.interface import implementer
+
+from lp.oci.interfaces.ociregistryclient import (
+    IOCIRegistryClient,
+    LayerUploadFailed,
+    ManifestUploadFailed,
+    )
 
 log = logging.getLogger("ociregistryclient")
 
-
-class LayerNotFound(Exception):
-    pass
-
-
-class LayerMountFailed(Exception):
-    pass
-
-
-class LayerUploadFailed(Exception):
-    pass
-
-
-class ManifestUploadFailed(Exception):
-    pass
-
-
+@implementer(IOCIRegistryClient)
 class OCIRegistryClient:
 
-    def _getJSONfile(self, reference):
+    @classmethod
+    def _getJSONfile(cls, reference):
         _, lfa, lfc = reference
         try:
             lfa.open()
@@ -48,7 +40,8 @@ class OCIRegistryClient:
         finally:
             lfa.close()
 
-    def _upload(self, digest, push_rule, name, fileobj):
+    @classmethod
+    def _upload(cls, digest, push_rule, name, fileobj):
 
         # Check if it already exists
         head_response = requests.head(
@@ -73,7 +66,8 @@ class OCIRegistryClient:
             raise LayerUploadFailed(
                 "Upload of {} for {} failed".format(digest, name))
 
-    def _upload_layer(self, digest, push_rule, name, lfa):
+    @classmethod
+    def _upload_layer(cls, digest, push_rule, name, lfa):
 
         lfa.open()
         try:
@@ -82,11 +76,12 @@ class OCIRegistryClient:
                 if tarinfo.name != 'layer.tar':
                     continue
                 fileobj = un_zipped.extractfile(tarinfo)
-                self._upload(digest, push_rule, name, fileobj)
+                cls._upload(digest, push_rule, name, fileobj)
         finally:
             lfa.close()
 
-    def _build_image_manifest(self, name, tag, digests,
+    @classmethod
+    def _build_image_manifest(cls, name, tag, digests,
                               config, config_json, config_sha):
         manifest = {
             "schemaVersion": 2,
@@ -111,12 +106,13 @@ class OCIRegistryClient:
             )
         return manifest
 
-    def _preloadFiles(self, build, manifest, digests):
+    @classmethod
+    def _preloadFiles(cls, build, manifest, digests):
         # preload the data from the librarian to avoid potential multiple
         # pulls if there is more than one push rule
         data = {}
         for section in manifest:
-            config = self._getJSONfile(
+            config = cls._getJSONfile(
                 build.getByFileName(section['Config']))
             files = {"config_file": config}
             for diff_id in config["rootfs"]["diff_ids"]:
@@ -130,10 +126,11 @@ class OCIRegistryClient:
             data[section["Config"]] = files
         return data
 
-    def upload(self, build):
+    @classmethod
+    def upload(cls, build):
         # get manifest
-        manifest = self._getJSONfile(build.manifest)
-        digests_list = self._getJSONfile(build.digests)
+        manifest = cls._getJSONfile(build.manifest)
+        digests_list = cls._getJSONfile(build.digests)
         digests = {}
         for digest_dict in digests_list:
             for k, v in digest_dict.items():
@@ -142,27 +139,27 @@ class OCIRegistryClient:
         # XXX twom 2020-04-06 This should be calculated
         build_tag = "temp-build-tag"
 
-        preloaded_data = self._preloadFiles(build, manifest, digests)
+        preloaded_data = cls._preloadFiles(build, manifest, digests)
 
         for push_rule in build.recipe.push_rules:
             for section in manifest:
                 file_data = preloaded_data[section["Config"]]
                 config = file_data["config_file"]
                 for diff_id in config["rootfs"]["diff_ids"]:
-                    self._upload_layer(
+                    cls._upload_layer(
                         diff_id,
                         push_rule,
                         push_rule.image_name,
                         file_data[diff_id].get('lfa'))
                 config_json = json.dumps(config).encode()
                 config_sha = hashlib.sha256(config_json).hexdigest()
-                self._upload(
+                cls._upload(
                     "sha256:{}".format(config_sha),
                     push_rule,
                     push_rule.image_name,
                     BytesIO(config_json)
                 )
-                image_manifest = self._build_image_manifest(
+                image_manifest = cls._build_image_manifest(
                     push_rule.image_name, build_tag, digests,
                     config, config_json, config_sha)
 

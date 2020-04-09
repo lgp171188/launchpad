@@ -11,6 +11,7 @@ __all__ = [
     'OCIRecipeBuildJobType',
     ]
 
+
 from lazr.delegates import delegate_to
 from lazr.enum import (
     DBEnumeratedType,
@@ -184,5 +185,4 @@ class OCIRegistryUploadJob(OCIRecipeBuildJobDerived):
 
     def run(self):
         """See `IRunnableJob`."""
-        client = OCIRegistryClient()
-        client = client.upload(self.build)
+        OCIRegistryClient.upload(self.build)
