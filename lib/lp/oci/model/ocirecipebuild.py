@@ -70,7 +70,6 @@ from lp.services.propertycache import (
     get_property_cache,
     )
 from lp.services.webapp.snapshot import notify_modified
-from lp.services.job.model.job import Job
 
 
 @implementer(IOCIFile)
