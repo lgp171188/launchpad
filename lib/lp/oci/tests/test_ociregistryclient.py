@@ -9,17 +9,15 @@ __metaclass__ = type
 
 import json
 
+from fixtures import MockPatch
 import responses
 import transaction
 
-from lp.oci.interfaces.ocirecipe import OCI_RECIPE_ALLOW_CREATE
 from lp.oci.model.ociregistryclient import OCIRegistryClient
 from lp.oci.tests.helpers import OCIConfigHelperMixin
-from lp.services.features.testing import FeatureFixture
 
 from lp.testing import TestCaseWithFactory
 from lp.testing.layers import LaunchpadZopelessLayer
-from fixtures import MockPatch
 
 
 class TestOCIRegistryClient(OCIConfigHelperMixin, TestCaseWithFactory):

@@ -70,7 +70,7 @@ class OCIRegistryClient():
         finally:
             lfa.close()
 
-    def build_image_manifest(self, name, tag, digests,
+    def _build_image_manifest(self, name, tag, digests,
                              config, config_json, config_sha):
         manifest = {
             "schemaVersion": 2,
@@ -146,7 +146,7 @@ class OCIRegistryClient():
                     push_rule.image_name,
                     StringIO(config_json)
                 )
-                image_manifest = self.build_image_manifest(
+                image_manifest = self._build_image_manifest(
                     push_rule.image_name, build_tag, digests,
                     config, config_json, config_sha)
 

@@ -102,8 +102,6 @@ class TestOCIRegistryCredentialsSet(OCIConfigHelperMixin, TestCaseWithFactory):
             self.factory.makeOCIRegistryCredentials()
         transaction.commit()
 
-        import transaction
-        transaction.commit()
         found = getUtility(IOCIRegistryCredentialsSet).findByOwner(owner)
         self.assertEqual(found.count(), 3)
         for oci_credentials in found:
