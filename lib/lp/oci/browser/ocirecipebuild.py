@@ -14,7 +14,6 @@ __all__ = [
     'OCIRecipeBuildView',
     ]
 
-from zope.component.interfaces import IObjectEvent
 from zope.interface import Interface
 
 from lp.app.browser.launchpadform import (
