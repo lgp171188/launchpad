@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python2
 # -*- coding: utf-8 -*-
 #
 # Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
