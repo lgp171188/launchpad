@@ -20,7 +20,10 @@ from lp.testing import (
     BrowserTestCase,
     TestCaseWithFactory,
     )
-from lp.testing.layers import DatabaseFunctionalLayer
+from lp.testing.layers import (
+    DatabaseFunctionalLayer,
+    LaunchpadFunctionalLayer,
+    )
 from lp.testing.pages import (
     extract_text,
     find_main_content,
@@ -49,6 +52,32 @@ class TestCanonicalUrlForOCIRecipeBuild(TestCaseWithFactory):
             StartsWith(
                 "http://launchpad.test/~person/distro/+oci/oci-project/"
                 "+recipe/recipe/+build/"))
+
+
+class TestOCIRecipeBuildView(BrowserTestCase):
+
+    layer = LaunchpadFunctionalLayer
+
+    def setUp(self):
+        super(TestOCIRecipeBuildView, self).setUp()
+        self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: 'on'}))
+
+    def test_index(self):
+        build = self.factory.makeOCIRecipeBuild()
+        recipe = build.recipe
+        oci_project = recipe.oci_project
+        self.assertTextMatchesExpressionIgnoreWhitespace("""\
+            386 build of .*
+            created .*
+            Build status
+            Needs building
+            Build details
+            Recipe: OCI recipe %s/%s/%s for %s
+            Architecture: i386
+            """ % (
+                oci_project.pillar.name, oci_project.name, recipe.name,
+                recipe.owner.display_name),
+            self.getMainText(build))
 
 
 class TestOCIRecipeBuildOperations(BrowserTestCase):
