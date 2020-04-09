@@ -1,9 +1,12 @@
+from io import BytesIO
 import hashlib
 import json
-from StringIO import StringIO
+import logging
 import tarfile
 
 import requests
+
+log = logging.getLogger("ociregistryclient")
 
 
 class LayerNotFound(Exception):
@@ -39,7 +42,7 @@ class OCIRegistryClient():
             "{}/v2/{}/blobs/{}".format(
                 push_rule.registry_credentials.url, name, digest))
         if head_response.status_code == 200:
-            print("{} already found".format(digest))
+            log.info("{} already found".format(digest))
             return
 
         post_request = requests.post(
@@ -71,7 +74,7 @@ class OCIRegistryClient():
             lfa.close()
 
     def _build_image_manifest(self, name, tag, digests,
-                             config, config_json, config_sha):
+                              config, config_json, config_sha):
         manifest = {
             "schemaVersion": 2,
             "mediaType":
@@ -144,7 +147,7 @@ class OCIRegistryClient():
                     "sha256:{}".format(config_sha),
                     push_rule,
                     push_rule.image_name,
-                    StringIO(config_json)
+                    BytesIO(config_json)
                 )
                 image_manifest = self._build_image_manifest(
                     push_rule.image_name, build_tag, digests,
