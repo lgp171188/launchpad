@@ -17,7 +17,7 @@ import json
 import logging
 import tarfile
 
-import requests
+from requests.exceptions import HTTPError
 from zope.interface import implementer
 
 from lp.oci.interfaces.ociregistryclient import (
@@ -25,8 +25,10 @@ from lp.oci.interfaces.ociregistryclient import (
     LayerUploadFailed,
     ManifestUploadFailed,
     )
+from lp.services.timeout import urlfetch
 
 log = logging.getLogger("ociregistryclient")
+
 
 @implementer(IOCIRegistryClient)
 class OCIRegistryClient:
@@ -44,23 +46,33 @@ class OCIRegistryClient:
     def _upload(cls, digest, push_rule, name, fileobj):
 
         # Check if it already exists
-        head_response = requests.head(
-            "{}/v2/{}/blobs/{}".format(
-                push_rule.registry_credentials.url, name, digest))
-        if head_response.status_code == 200:
-            log.info("{} already found".format(digest))
-            return
+        try:
+            head_response = urlfetch(
+                "{}/v2/{}/blobs/{}".format(
+                    push_rule.registry_credentials.url, name, digest),
+                method="HEAD")
+            if head_response.status_code == 200:
+                log.info("{} already found".format(digest))
+                return
+        except HTTPError as http_error:
+            # A 404 is fine, we're about to upload the layer anyway
+            if http_error.response.status_code != 404:
+                raise http_error
 
-        post_request = requests.post(
+        post_response = urlfetch(
             "{}/v2/{}/blobs/uploads/".format(
-                push_rule.registry_credentials.url, name))
+                push_rule.registry_credentials.url, name),
+            method="POST")
 
-        post_location = post_request.headers["Location"]
+        post_location = post_response.headers["Location"]
         query_parsed = {"digest": digest}
 
-        put_response = requests.put(
-            post_location, params=query_parsed,
-            data=fileobj)
+        put_response = urlfetch(
+            post_location,
+            params=query_parsed,
+            data=fileobj,
+            method="PUT"
+        )
 
         if put_response.status_code != 201:
             raise LayerUploadFailed(
@@ -163,7 +175,7 @@ class OCIRegistryClient:
                     push_rule.image_name, build_tag, digests,
                     config, config_json, config_sha)
 
-                manifest_response = requests.put(
+                manifest_response = urlfetch(
                     "{}/v2/{}/manifests/latest".format(
                         push_rule.registry_credentials.url,
                         push_rule.image_name),
@@ -173,6 +185,7 @@ class OCIRegistryClient:
                             "application/"
                             "vnd.docker.distribution.manifest.v2+json"
                         },
+                    method="PUT"
                 )
                 if manifest_response.status_code != 201:
                     raise ManifestUploadFailed(
