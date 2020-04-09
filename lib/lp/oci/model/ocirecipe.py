@@ -379,9 +379,7 @@ class OCIRecipe(Storm, WebhookTargetMixin):
 
     @property
     def can_upload_to_registry(self):
-        # XXX twom 2020-03-03 this should check for
-        # a set of credentials existing
-        return True
+        return bool(self.push_rules.count())
 
 
 class OCIRecipeArch(Storm):
