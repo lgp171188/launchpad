@@ -35,6 +35,12 @@
             template="../templates/ocirecipe-new.pt" />
         <browser:page
             for="lp.oci.interfaces.ocirecipe.IOCIRecipe"
+            class="lp.oci.browser.ocirecipe.OCIRecipeRequestBuildsView"
+            permission="launchpad.Edit"
+            name="+request-builds"
+            template="../templates/ocirecipe-request-builds.pt" />
+        <browser:page
+            for="lp.oci.interfaces.ocirecipe.IOCIRecipe"
             class="lp.oci.browser.ocirecipe.OCIRecipeAdminView"
             permission="launchpad.Admin"
             name="+admin"
