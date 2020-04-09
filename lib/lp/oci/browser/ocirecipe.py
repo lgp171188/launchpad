@@ -9,6 +9,7 @@ __metaclass__ = type
 __all__ = [
     'OCIRecipeAddView',
     'OCIRecipeAdminView',
+    'OCIRecipeContextMenu',
     'OCIRecipeDeleteView',
     'OCIRecipeEditView',
     'OCIRecipeNavigation',
@@ -53,6 +54,7 @@ from lp.services.helpers import english_list
 from lp.services.propertycache import cachedproperty
 from lp.services.webapp import (
     canonical_url,
+    ContextMenu,
     enabled_with_permission,
     LaunchpadView,
     Link,
@@ -112,6 +114,20 @@ class OCIRecipeNavigationMenu(NavigationMenu):
     @enabled_with_permission("launchpad.Edit")
     def delete(self):
         return Link("+delete", "Delete OCI recipe", icon="trash-icon")
+
+
+class OCIRecipeContextMenu(ContextMenu):
+    """Context menu for OCI recipes."""
+
+    usedfor = IOCIRecipe
+
+    facet = 'overview'
+
+    links = ('request_builds',)
+
+    @enabled_with_permission('launchpad.Edit')
+    def request_builds(self):
+        return Link('+request-builds', 'Request builds', icon='add')
 
 
 class OCIRecipeView(LaunchpadView):

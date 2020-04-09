@@ -14,7 +14,9 @@
             attribute_to_parent="owner" />
         <browser:menus
             module="lp.oci.browser.ocirecipe"
-            classes="OCIRecipeNavigationMenu" />
+            classes="
+                OCIRecipeNavigationMenu
+                OCIRecipeContextMenu" />
         <browser:navigation
             module="lp.oci.browser.ocirecipe"
             classes="OCIRecipeNavigation" />
