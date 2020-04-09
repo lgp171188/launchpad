@@ -57,8 +57,8 @@ class TacTestSetup(TacTestFixture):
         the log file.
         """
         if os.path.exists(self.logfile):
-            with open(self.logfile, 'r') as logfile:
-                return readyservice.LOG_MAGIC in logfile.read()
+            with open(self.logfile, 'rb') as logfile:
+                return readyservice.LOG_MAGIC.encode('UTF-8') in logfile.read()
         else:
             return False
 
@@ -73,11 +73,12 @@ class TacTestSetup(TacTestFixture):
         0 bytes.
         """
         if os.path.exists(self.logfile):
+            log_magic_bytes = readyservice.LOG_MAGIC.encode('UTF-8')
             with open(self.logfile, "r+b") as logfile:
                 position = 0
                 for line in logfile:
                     position += len(line)
-                    if readyservice.LOG_MAGIC in line:
+                    if log_magic_bytes in line:
                         logfile.truncate(position)
                         break
                 else:
