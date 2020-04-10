@@ -9,6 +9,7 @@
     i18n_domain="launchpad">
 
     <include package=".browser" />
+    <include file="vocabularies.zcml" />
 
     <webservice:register module="lp.oci.interfaces.webservice" />
 

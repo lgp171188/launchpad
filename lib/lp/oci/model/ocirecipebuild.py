@@ -55,7 +55,6 @@ from lp.services.database.interfaces import (
     IMasterStore,
     IStore,
     )
-from lp.services.features import getFeatureFlag
 from lp.services.librarian.model import (
     LibraryFileAlias,
     LibraryFileContent,
@@ -138,13 +137,6 @@ class OCIRecipeBuild(PackageBuildMixin, Storm):
     # We only care about the pocket from a building environment POV,
     # it is not a target, nor referenced in the final build.
     pocket = PackagePublishingPocket.UPDATES
-
-    @property
-    def distro_series(self):
-        # XXX twom 2020-02-14 - This really needs to be set elsewhere,
-        # as this may not be an LTS release and ties the OCI target to
-        # a completely unrelated process.
-        return self.distribution.currentseries
 
     def __init__(self, build_farm_job, requester, recipe,
                  processor, virtualized, date_created):
@@ -245,27 +237,20 @@ class OCIRecipeBuild(PackageBuildMixin, Storm):
     def archive(self):
         # XXX twom 2019-12-05 This may need to change when an OCIProject
         # pillar isn't just a distribution
-        return self.recipe.oci_project.distribution.main_archive
+        return self.recipe.distribution.main_archive
 
     @property
     def distribution(self):
-        # XXX twom 2019-12-05 This may need to change when an OCIProject
-        # pillar isn't just a distribution
-        return self.recipe.oci_project.distribution
+        return self.recipe.distribution
+
+    @property
+    def distro_series(self):
+        return self.recipe.distro_series
 
     @property
     def distro_arch_series(self):
-        # For OCI builds we default to the series set by the feature flag.
-        # If the feature flag is not set we default to current series under
-        # the OCIRecipeBuild distribution.
-
-        oci_series = getFeatureFlag('oci.build_series.%s'
-                                    % self.distribution.name)
-        if oci_series:
-            oci_series = self.distribution.getSeries(oci_series)
-        else:
-            oci_series = self.distribution.currentseries
-        return oci_series.getDistroArchSeriesByProcessor(self.processor)
+        return self.recipe.distro_series.getDistroArchSeriesByProcessor(
+            self.processor)
 
     def updateStatus(self, status, builder=None, slave_status=None,
                      date_started=None, date_finished=None,

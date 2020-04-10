@@ -14,7 +14,9 @@
             attribute_to_parent="owner" />
         <browser:menus
             module="lp.oci.browser.ocirecipe"
-            classes="OCIRecipeNavigationMenu" />
+            classes="
+                OCIRecipeNavigationMenu
+                OCIRecipeContextMenu" />
         <browser:navigation
             module="lp.oci.browser.ocirecipe"
             classes="OCIRecipeNavigation" />
@@ -33,6 +35,12 @@
             permission="launchpad.AnyLegitimatePerson"
             name="+new-recipe"
             template="../templates/ocirecipe-new.pt" />
+        <browser:page
+            for="lp.oci.interfaces.ocirecipe.IOCIRecipe"
+            class="lp.oci.browser.ocirecipe.OCIRecipeRequestBuildsView"
+            permission="launchpad.Edit"
+            name="+request-builds"
+            template="../templates/ocirecipe-request-builds.pt" />
         <browser:page
             for="lp.oci.interfaces.ocirecipe.IOCIRecipe"
             class="lp.oci.browser.ocirecipe.OCIRecipeAdminView"

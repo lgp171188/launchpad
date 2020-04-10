@@ -1,6 +1,6 @@
-#!/usr/bin/python
+#!/usr/bin/python2
 #
-# Copyright 2010-2013 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Update the year in copyright notices.
@@ -72,7 +72,9 @@ def find_changed_files():
     """Use the find-changed-files.sh script."""
     find_changed_files_cmd = [
         os.path.join(UTILITIES_DIR, 'find-changed-files.sh')]
-    filenames = Popen(find_changed_files_cmd, stdout=PIPE).communicate()[0]
+    filenames = Popen(
+        find_changed_files_cmd, stdout=PIPE,
+        universal_newlines=True).communicate()[0]
     return filenames.strip()
 
 def find_and_update():
