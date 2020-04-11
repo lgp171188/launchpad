@@ -3514,6 +3514,27 @@ class ViewOCIRecipeBuild(AnonymousAuthorization):
     usedfor = IOCIRecipeBuild
 
 
+class EditOCIRecipeBuild(AdminByBuilddAdmin):
+    permission = 'launchpad.Edit'
+    usedfor = IOCIRecipeBuild
+
+    def checkAuthenticated(self, user):
+        """Check edit access for OCI recipe builds.
+
+        Allow admins, buildd admins, and the owner of the OCI recipe.
+        (Note that the requester of the build is required to be in the team
+        that owns the OCI recipe.)
+        """
+        auth_recipe = EditOCIRecipe(self.obj.recipe)
+        if auth_recipe.checkAuthenticated(user):
+            return True
+        return super(EditOCIRecipeBuild, self).checkAuthenticated(user)
+
+
+class AdminOCIRecipeBuild(AdminByBuilddAdmin):
+    usedfor = IOCIRecipeBuild
+
+
 class ViewOCIRegistryCredentials(AuthorizationBase):
     permission = 'launchpad.View'
     usedfor = IOCIRegistryCredentials
