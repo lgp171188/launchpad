@@ -1,4 +1,4 @@
-# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Facilities for running Jobs."""
@@ -66,6 +66,7 @@ from lp.services.config import (
     config,
     dbconfig,
     )
+from lp.services.database.policy import DatabaseBlockedPolicy
 from lp.services.features import getFeatureFlag
 from lp.services.job.interfaces.job import (
     IJob,
@@ -96,6 +97,20 @@ class BaseRunnableJobSource:
     @contextlib.contextmanager
     def contextManager():
         yield
+
+
+class JobState:
+    """Extract some state from a job.
+
+    This is just enough to allow `BaseRunnableJob.runViaCelery` to run
+    without database access.
+    """
+
+    def __init__(self, runnable_job):
+        self.job_id = runnable_job.job.id
+        self.task_id = runnable_job.taskId()
+        self.scheduled_start = runnable_job.scheduled_start
+        self.lease_expires = runnable_job.lease_expires
 
 
 @delegate_to(IJob, context='job')
@@ -245,39 +260,41 @@ class BaseRunnableJob(BaseRunnableJobSource):
         else:
             task = celery_run_job
         db_class = self.getDBClass()
-        ujob_id = (self.job_id, db_class.__module__, db_class.__name__)
-        eta = self.job.scheduled_start
+        ujob_id = (
+            self.job_state.job_id, db_class.__module__, db_class.__name__)
+        eta = self.job_state.scheduled_start
         # Don't schedule the job while its lease is still held, or
         # celery will skip it.
-        if (self.job.lease_expires is not None
-                and (eta is None or eta < self.job.lease_expires)):
-            eta = self.job.lease_expires
+        if (self.job_state.lease_expires is not None
+                and (eta is None or eta < self.job_state.lease_expires)):
+            eta = self.job_state.lease_expires
         return task.apply_async(
             (ujob_id, self.config.dbuser), queue=self.task_queue, eta=eta,
             soft_time_limit=self.soft_time_limit.total_seconds(),
-            task_id=self.taskId())
+            task_id=self.job_state.task_id)
 
     def getDBClass(self):
         return self.context.__class__
 
+    def extractJobState(self):
+        """Hook function to call before starting a commit."""
+        self.job_state = JobState(self)
+
     def celeryCommitHook(self, succeeded):
-        """Hook function to call when a commit completes."""
-        if succeeded:
-            ignore_result = bool(BaseRunnableJob.celery_responses is None)
-            response = self.runViaCelery(ignore_result)
-            if not ignore_result:
-                BaseRunnableJob.celery_responses.append(response)
-            # transaction >= 1.6.0 removes data managers from the
-            # transaction before calling after-commit hooks; this means that
-            # the transaction begun in runViaCelery to look up details of
-            # the job doesn't get committed or rolled back, and so
-            # subsequent SQL statements executed by the caller confusingly
-            # see a database snapshot from before the Celery job was run,
-            # even if they use the block_on_job test helper.  Since
-            # runViaCelery never issues any data-modifying statements
-            # itself, the least confusing thing to do here is to just roll
-            # back its transaction.
-            transaction.abort()
+        """Hook function to call when a commit completes.
+
+        extractJobState must have been run first.
+        """
+        try:
+            with DatabaseBlockedPolicy():
+                if succeeded:
+                    ignore_result = bool(
+                        BaseRunnableJob.celery_responses is None)
+                    response = self.runViaCelery(ignore_result)
+                    if not ignore_result:
+                        BaseRunnableJob.celery_responses.append(response)
+        finally:
+            self.job_state = None
 
     def celeryRunOnCommit(self):
         """Configure transaction so that commit runs this job via Celery."""
@@ -285,6 +302,7 @@ class BaseRunnableJob(BaseRunnableJobSource):
                 not celery_enabled(self.__class__.__name__)):
             return
         current = transaction.get()
+        current.addBeforeCommitHook(self.extractJobState)
         current.addAfterCommitHook(self.celeryCommitHook)
 
     def queue(self, manage_transaction=False, abort_transaction=False):
