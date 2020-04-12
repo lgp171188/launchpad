@@ -546,30 +546,27 @@ they are as we expect.
 
 == Registering menus in ZCML ==
 
-First, we define a couple of interfaces, and put them in the
-lp.testing module.
+First, we define a couple of interfaces, and put them in a temporary module.
+
+    >>> import sys
+    >>> import types
+
+    >>> module = types.ModuleType(factory.getUniqueString().replace('-', '_'))
+    >>> sys.modules[module.__name__] = module
 
     >>> class IThingHavingFacets(Interface):
-    ...     pass
-    >>> import lp.testing
-    >>> getattr(lp.testing, 'IThingHavingFacets', None) is None
-    True
+    ...     __module__ = module.__name__
 
-    >>> lp.testing.IThingHavingFacets = IThingHavingFacets
-    >>> IThingHavingFacets.__module__ = 'lp.testing'
+    >>> module.IThingHavingFacets = IThingHavingFacets
 
     >>> class IThingHavingMenus(Interface):
-    ...     pass
-    >>> import lp.testing
-    >>> getattr(lp.testing, 'IThingHavingMenus', None) is None
-    True
+    ...     __module__ = module.__name__
 
-    >>> lp.testing.IThingHavingMenus = IThingHavingMenus
-    >>> IThingHavingMenus.__module__ = 'lp.testing'
+    >>> module.IThingHavingMenus = IThingHavingMenus
 
 Next, we define a FacetMenu subclass to be used for IThingHavingFacets,
 using a usedfor class attribute to say what interface it is to be
-registered for, and put it too in the lp.testing module.
+registered for, and put it too in our temporary module.
 
     >>> class FacetsForThing(Facets):
     ...     usedfor = IThingHavingFacets
@@ -585,10 +582,7 @@ registered for, and put it too in the lp.testing module.
     ...             summary = self.request.method
     ...         return Link(target, text, summary=summary)
 
-    >>> getattr(lp.testing, 'FacetsForThing', None) is None
-    True
-
-    >>> lp.testing.FacetsForThing = FacetsForThing
+    >>> module.FacetsForThing = FacetsForThing
 
 And likewise for an application menu registered for IThingHavingMenus.
 
@@ -596,20 +590,14 @@ And likewise for an application menu registered for IThingHavingMenus.
     ...     usedfor = IThingHavingMenus
     ...     facet = 'foo'
 
-    >>> getattr(lp.testing, 'FooMenuForThing', None) is None
-    True
-
-    >>> lp.testing.FooMenuForThing = FooMenuForThing
+    >>> module.FooMenuForThing = FooMenuForThing
 
 We do the same for a context menu.
 
     >>> class ContextMenuForThing(MyContextMenu):
     ...     usedfor = IThingHavingMenus
 
-    >>> print getattr(lp.testing, 'ContextMenuForThing', None)
-    None
-
-    >>> lp.testing.ContextMenuForThing = ContextMenuForThing
+    >>> module.ContextMenuForThing = ContextMenuForThing
 
 Now, check that we have no IFacetMenu adapter for an IThingHavingFacets
 object.
@@ -641,11 +629,11 @@ Same for an IContextMenu adapter.
     ... <configure xmlns:browser="http://namespaces.zope.org/browser">
     ...   <include file="lib/lp/services/webapp/meta.zcml" />
     ...   <browser:menus
-    ...       module="lp.testing"
+    ...       module="{module_name}"
     ...       classes="FacetsForThing FooMenuForThing ContextMenuForThing"
     ...       />
     ... </configure>
-    ... """)
+    ... """.format(module_name=module.__name__))
 
     >>> menu1 = IFacetMenu(something_with_facets)
     >>> menu1.context = something_with_facets
@@ -885,14 +873,9 @@ render() method.
 
 == Cleaning up ==
 
-We're done testing the zcml, so we can clean up the
-lp.testing module.
+We're done testing the zcml, so we can clean up the temporary module.
 
-    >>> del lp.testing.FacetsForThing
-    >>> del lp.testing.FooMenuForThing
-    >>> del lp.testing.ContextMenuForThing
-    >>> del lp.testing.IThingHavingFacets
-    >>> del lp.testing.IThingHavingMenus
+    >>> del sys.modules[module.__name__]
 
 
 == The enabled_with_permission function decorator ==
