@@ -19,6 +19,7 @@ from lazr.enum import (
     DBEnumeratedType,
     DBItem,
     )
+import six
 from storm.locals import (
     Desc,
     Int,
@@ -120,9 +121,7 @@ class SnapJob(StormBase):
 
 
 @delegate_to(ISnapJob)
-class SnapJobDerived(BaseRunnableJob):
-
-    __metaclass__ = EnumeratedSubclass
+class SnapJobDerived(six.with_metaclass(EnumeratedSubclass, BaseRunnableJob)):
 
     def __init__(self, snap_job):
         self.context = snap_job

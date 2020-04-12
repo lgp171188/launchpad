@@ -9,6 +9,7 @@ __all__ = [
 
 from lazr.delegates import delegate_to
 import simplejson
+import six
 from zope.component import getUtility
 from zope.interface import (
     implementer,
@@ -32,9 +33,8 @@ from lp.soyuz.interfaces.packagediffjob import (
 
 @delegate_to(IPackageDiffJob)
 @provider(IPackageDiffJobSource)
-class PackageDiffJobDerived(BaseRunnableJob):
-
-    __metaclass__ = EnumeratedSubclass
+class PackageDiffJobDerived(
+        six.with_metaclass(EnumeratedSubclass, BaseRunnableJob)):
 
     config = config.IPackageDiffJobSource
 

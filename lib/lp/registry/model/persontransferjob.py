@@ -130,7 +130,8 @@ class PersonTransferJob(StormBase):
 
 @delegate_to(IPersonTransferJob)
 @provider(IPersonTransferJobSource)
-class PersonTransferJobDerived(BaseRunnableJob):
+class PersonTransferJobDerived(
+        six.with_metaclass(EnumeratedSubclass, BaseRunnableJob)):
     """Intermediate class for deriving from PersonTransferJob.
 
     Storm classes can't simply be subclassed or you can end up with
@@ -139,8 +140,6 @@ class PersonTransferJobDerived(BaseRunnableJob):
     infoheritance solution to the problem. Subclasses need to override
     the run() method.
     """
-
-    __metaclass__ = EnumeratedSubclass
 
     def __init__(self, job):
         self.context = job
