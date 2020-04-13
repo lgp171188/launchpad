@@ -16,6 +16,7 @@ from testtools.matchers import (
     ContainsDict,
     Equals,
     MatchesDict,
+    MatchesSetwise,
     MatchesStructure,
     )
 import transaction
@@ -95,10 +96,8 @@ class TestOCIRecipe(TestCaseWithFactory):
             ocirecipe._checkRequestBuild,
             unrelated_person)
 
-    def getDistroArchSeries(self, distribution, proc_name="386",
+    def getDistroArchSeries(self, distroseries, proc_name="386",
                             arch_tag="i386"):
-        distroseries = self.factory.makeDistroSeries(
-            distribution=distribution, status=SeriesStatus.CURRENT)
         processor = getUtility(IProcessorSet).getByName(proc_name)
         return self.factory.makeDistroArchSeries(
             distroseries=distroseries, architecturetag=arch_tag,
@@ -107,9 +106,11 @@ class TestOCIRecipe(TestCaseWithFactory):
     def test_hasPendingBuilds(self):
         ocirecipe = removeSecurityProxy(self.factory.makeOCIRecipe())
         distro = ocirecipe.oci_project.distribution
+        series = self.factory.makeDistroSeries(
+            distribution=distro, status=SeriesStatus.CURRENT)
 
-        arch_series_386 = self.getDistroArchSeries(distro, "386", "386")
-        arch_series_amd64 = self.getDistroArchSeries(distro, "amd64", "amd64")
+        arch_series_386 = self.getDistroArchSeries(series, "386", "386")
+        arch_series_amd64 = self.getDistroArchSeries(series, "amd64", "amd64")
         proc_i386 = arch_series_386.processor
         proc_amd64 = arch_series_amd64.processor
 
@@ -148,7 +149,6 @@ class TestOCIRecipe(TestCaseWithFactory):
             ocirecipe._hasPendingBuilds([proc_amd64]))
         self.assertTrue(
             ocirecipe._hasPendingBuilds([proc_i386, proc_amd64]))
-
 
     def test_requestBuild(self):
         ocirecipe = self.factory.makeOCIRecipe()
@@ -200,6 +200,53 @@ class TestOCIRecipe(TestCaseWithFactory):
                     LogsScheduledWebhooks([
                         (hook, "oci-recipe:build:0.1",
                          MatchesDict(expected_payload))]))
+
+    def test_requestBuildsFromJob_creates_builds(self):
+        ocirecipe = removeSecurityProxy(self.factory.makeOCIRecipe())
+        owner = ocirecipe.owner
+        distro = ocirecipe.oci_project.distribution
+        series = self.factory.makeDistroSeries(
+            distribution=distro, status=SeriesStatus.CURRENT)
+
+        arch_series_386 = self.getDistroArchSeries(series, "386", "386")
+        arch_series_amd64 = self.getDistroArchSeries(series, "amd64", "amd64")
+
+        with person_logged_in(owner):
+            builds = ocirecipe.requestBuildsFromJob(owner)
+            self.assertThat(builds, MatchesSetwise(
+                MatchesStructure(
+                    recipe=Equals(ocirecipe),
+                    processor=Equals(arch_series_386.processor)),
+                MatchesStructure(
+                    recipe=Equals(ocirecipe),
+                    processor=Equals(arch_series_amd64.processor))
+            ))
+
+    def test_requestBuildsFromJob_unauthorized_user(self):
+        ocirecipe = removeSecurityProxy(self.factory.makeOCIRecipe())
+        another_user = self.factory.makePerson()
+        with person_logged_in(another_user):
+            self.assertRaises(
+                OCIRecipeNotOwner,
+                ocirecipe.requestBuildsFromJob, another_user)
+
+    def test_requestBuildsFromJob_with_pending_jobs(self):
+        ocirecipe = removeSecurityProxy(self.factory.makeOCIRecipe())
+        distro = ocirecipe.oci_project.distribution
+        series = self.factory.makeDistroSeries(
+            distribution=distro, status=SeriesStatus.CURRENT)
+
+        arch_series_386 = self.getDistroArchSeries(series, "386", "386")
+        self.getDistroArchSeries(series, "amd64", "amd64")
+
+        self.factory.makeOCIRecipeBuild(
+            recipe=ocirecipe, status=BuildStatus.NEEDSBUILD,
+            distro_arch_series=arch_series_386)
+
+        with person_logged_in(ocirecipe.owner):
+            self.assertRaises(
+                OCIRecipeBuildAlreadyPending,
+                ocirecipe.requestBuildsFromJob, ocirecipe.owner)
 
     def test_destroySelf(self):
         oci_recipe = self.factory.makeOCIRecipe()
@@ -605,7 +652,8 @@ class TestOCIRecipeWebservice(TestCaseWithFactory):
             recipe_abs_url = self.getAbsoluteURL(recipe)
             self.assertThat(ws_recipe, ContainsDict(dict(
                 date_created=Equals(recipe.date_created.isoformat()),
-                date_last_modified=Equals(recipe.date_last_modified.isoformat()),
+                date_last_modified=Equals(
+                    recipe.date_last_modified.isoformat()),
                 registrant_link=Equals(self.getAbsoluteURL(recipe.registrant)),
                 webhooks_collection_link=Equals(recipe_abs_url + "/webhooks"),
                 name=Equals(recipe.name),

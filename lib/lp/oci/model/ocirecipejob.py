@@ -9,29 +9,47 @@ __metaclass__ = type
 __all__ = [
     ]
 
-import transaction
 from breezy.decorators import cachedproperty
 from lazr.delegates._python2 import delegate_to
-from lazr.enum import DBEnumeratedType, DBItem
-from lp.app.errors import NotFoundError
-from lp.oci.interfaces.ocirecipejob import IOCIRecipeJob, \
-    IOCIRecipeRequestBuildsJob
-from lp.oci.model.ocirecipebuild import OCIRecipeBuild
-from lp.registry.interfaces.person import IPersonSet
-from lp.services.scripts import log
-from lp.services.config import config
-from lp.services.database.enumcol import EnumCol
-from lp.services.database.interfaces import IMasterStore, IStore
-from lp.services.database.stormbase import StormBase
-from lp.services.job.model.job import Job, EnumeratedSubclass
-from lp.services.job.runner import BaseRunnableJob
-from lp.services.mail.sendmail import format_address_for_person
-from lp.snappy.interfaces.snapjob import ISnapRequestBuildsJobSource
-from storm.properties import Int, JSON
+from lazr.enum import (
+    DBEnumeratedType,
+    DBItem,
+    )
+from storm.properties import (
+    Int,
+    JSON,
+    )
 from storm.references import Reference
 from storm.store import EmptyResultSet
+import transaction
 from zope.component._api import getUtility
-from zope.interface.declarations import implementer, provider
+from zope.interface.declarations import (
+    implementer,
+    provider,
+    )
+
+from lp.app.errors import NotFoundError
+from lp.oci.interfaces.ocirecipejob import (
+    IOCIRecipeJob,
+    IOCIRecipeRequestBuildsJob,
+    )
+from lp.oci.model.ocirecipebuild import OCIRecipeBuild
+from lp.registry.interfaces.person import IPersonSet
+from lp.services.config import config
+from lp.services.database.enumcol import EnumCol
+from lp.services.database.interfaces import (
+    IMasterStore,
+    IStore,
+    )
+from lp.services.database.stormbase import StormBase
+from lp.services.job.model.job import (
+    EnumeratedSubclass,
+    Job,
+    )
+from lp.services.job.runner import BaseRunnableJob
+from lp.services.mail.sendmail import format_address_for_person
+from lp.services.scripts import log
+from lp.snappy.interfaces.snapjob import ISnapRequestBuildsJobSource
 
 
 class OCIRecipeJobType(DBEnumeratedType):
@@ -135,7 +153,7 @@ class OCIRecipeJobDerived(BaseRunnableJob):
 @implementer(IOCIRecipeRequestBuildsJob)
 @provider(ISnapRequestBuildsJobSource)
 class OCIRecipeRequestBuildsJob(OCIRecipeJobDerived):
-    """A Job that processes a request for builds of a snap package."""
+    """A Job that processes a request for builds of an OCI Recipe package."""
 
     class_job_type = OCIRecipeJobType.REQUEST_BUILDS
 
@@ -240,4 +258,3 @@ class OCIRecipeRequestBuildsJob(OCIRecipeJobDerived):
             # are to this job's metadata and should be preserved.
             transaction.commit()
             raise
-
