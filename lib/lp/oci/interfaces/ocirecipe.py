@@ -78,11 +78,11 @@ OCI_RECIPE_ALLOW_CREATE = 'oci.recipe.create.enabled'
 
 @error_status(http_client.UNAUTHORIZED)
 class OCIRecipeFeatureDisabled(Unauthorized):
-    """Only certain users can create new LiveFS-related objects."""
+    """Only certain users can create new OCI recipes."""
 
     def __init__(self):
         super(OCIRecipeFeatureDisabled, self).__init__(
-            "You do not have permission to create new OCI recipe.")
+            "You do not have permission to create new OCI recipes.")
 
 
 @error_status(http_client.UNAUTHORIZED)
