@@ -113,7 +113,7 @@ class TranslationSharingJob(StormBase):
         return TranslationSharingJobDerived.makeSubclass(self)
 
 
-@delegate_to(ITranslationSharingJob, context='job')
+@delegate_to(ITranslationSharingJob)
 class TranslationSharingJobDerived:
     """Base class for specialized TranslationTemplate Job types."""
 
@@ -143,7 +143,7 @@ class TranslationSharingJobDerived:
         assert job.job_type == self.class_job_type, (
             "Attempting to create a %s using a %s TranslationSharingJob" %
             (self.__class__.__name__, job.job_type))
-        self.job = job
+        self.context = job
 
     @classmethod
     def create(cls, productseries=None, distroseries=None,
