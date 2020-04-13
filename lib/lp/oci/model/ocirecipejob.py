@@ -32,6 +32,7 @@ from lp.app.errors import NotFoundError
 from lp.oci.interfaces.ocirecipejob import (
     IOCIRecipeJob,
     IOCIRecipeRequestBuildsJob,
+    IOCIRecipeRequestBuildsJobSource,
     )
 from lp.oci.model.ocirecipebuild import OCIRecipeBuild
 from lp.registry.interfaces.person import IPersonSet
@@ -49,7 +50,6 @@ from lp.services.job.model.job import (
 from lp.services.job.runner import BaseRunnableJob
 from lp.services.mail.sendmail import format_address_for_person
 from lp.services.scripts import log
-from lp.snappy.interfaces.snapjob import ISnapRequestBuildsJobSource
 
 
 class OCIRecipeJobType(DBEnumeratedType):
@@ -151,7 +151,7 @@ class OCIRecipeJobDerived(BaseRunnableJob):
 
 
 @implementer(IOCIRecipeRequestBuildsJob)
-@provider(ISnapRequestBuildsJobSource)
+@provider(IOCIRecipeRequestBuildsJobSource)
 class OCIRecipeRequestBuildsJob(OCIRecipeJobDerived):
     """A Job that processes a request for builds of an OCI Recipe package."""
 
@@ -166,7 +166,7 @@ class OCIRecipeRequestBuildsJob(OCIRecipeJobDerived):
 
     @classmethod
     def create(cls, oci_recipe, requester):
-        """See `ISnapRequestBuildsJobSource`."""
+        """See `OCIRecipeRequestBuildsJob`."""
         processors = oci_recipe.available_processors
         metadata = {
             "requester": requester.id,
@@ -175,13 +175,13 @@ class OCIRecipeRequestBuildsJob(OCIRecipeJobDerived):
             "processors": (
                 list(processors) if processors is not None else None),
             }
-        snap_job = OCIRecipeJob(oci_recipe, cls.class_job_type, metadata)
-        job = cls(snap_job)
+        oci_recipe_job = OCIRecipeJob(oci_recipe, cls.class_job_type, metadata)
+        job = cls(oci_recipe_job)
         job.celeryRunOnCommit()
         return job
 
     def getOperationDescription(self):
-        return "requesting builds of %s" % self.snap.name
+        return "requesting builds of %s" % self.oci_recipe
 
     def getErrorRecipients(self):
         if self.requester is None or self.requester.preferredemail is None:
@@ -190,38 +190,38 @@ class OCIRecipeRequestBuildsJob(OCIRecipeJobDerived):
 
     @cachedproperty
     def requester(self):
-        """See `ISnapRequestBuildsJob`."""
+        """See `OCIRecipeRequestBuildsJob`."""
         requester_id = self.metadata["requester"]
         return getUtility(IPersonSet).get(requester_id)
 
     @property
     def date_created(self):
-        """See `ISnapRequestBuildsJob`."""
+        """See `OCIRecipeRequestBuildsJob`."""
         return self.context.job.date_created
 
     @property
     def date_finished(self):
-        """See `ISnapRequestBuildsJob`."""
+        """See `OCIRecipeRequestBuildsJob`."""
         return self.context.job.date_finished
 
     @property
     def error_message(self):
-        """See `ISnapRequestBuildsJob`."""
+        """See `OCIRecipeRequestBuildsJob`."""
         return self.metadata.get("error_message")
 
     @error_message.setter
     def error_message(self, message):
-        """See `ISnapRequestBuildsJob`."""
+        """See `OCIRecipeRequestBuildsJob`."""
         self.metadata["error_message"] = message
 
     @property
     def build_request(self):
-        """See `ISnapRequestBuildsJob`."""
-        return self.snap.getBuildRequest(self.job.id)
+        """See `OCIRecipeRequestBuildsJob`."""
+        return self.oci_recipe.getBuildRequest(self.job.id)
 
     @property
     def builds(self):
-        """See `ISnapRequestBuildsJob`."""
+        """See `OCIRecipeRequestBuildsJob`."""
         build_ids = self.metadata.get("builds")
         if build_ids:
             return IStore(OCIRecipeBuild).find(
@@ -231,7 +231,7 @@ class OCIRecipeRequestBuildsJob(OCIRecipeJobDerived):
 
     @builds.setter
     def builds(self, builds):
-        """See `ISnapRequestBuildsJob`."""
+        """See `OCIRecipeRequestBuildsJob`."""
         self.metadata["builds"] = [build.id for build in builds]
 
     def run(self):
