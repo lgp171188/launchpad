@@ -181,6 +181,16 @@ class OCIRecipeRequestBuildsJob(OCIRecipeJobDerived):
         job.celeryRunOnCommit()
         return job
 
+    @classmethod
+    def findByOCIRecipeAndID(cls, oci_recipe, job_id):
+        job = IStore(OCIRecipeJob).find(
+            OCIRecipeJob,
+            OCIRecipeJob.oci_recipe == oci_recipe,
+            OCIRecipeJob.job_id == job_id).one()
+        if job is None:
+            raise NotFoundError("Could not find job ID %s" % job_id)
+        return cls(job)
+
     def getOperationDescription(self):
         return "requesting builds of %s" % self.oci_recipe
 
@@ -241,11 +251,6 @@ class OCIRecipeRequestBuildsJob(OCIRecipeJobDerived):
         if requester is None:
             log.info(
                 "Skipping %r because the requester has been deleted." % self)
-            return
-        archive = self.archive
-        if archive is None:
-            log.info(
-                "Skipping %r because the archive has been deleted." % self)
             return
         try:
             self.builds = self.oci_recipe.requestBuildsFromJob(requester)

@@ -23,7 +23,7 @@ __all__ = [
     'OCIRecipeNotOwner',
     ]
 
-from lazr.enum._enum import (
+from lazr.enum import (
     EnumeratedType,
     Item,
     )
@@ -50,15 +50,12 @@ from zope.interface import (
     )
 from zope.schema import (
     Bool,
+    Choice,
     Datetime,
     Int,
     List,
     Text,
     TextLine,
-    )
-from zope.schema._field import (
-    Choice,
-    Set,
     )
 from zope.security.interfaces import Unauthorized
 
@@ -164,7 +161,9 @@ class OCIRecipeBuildRequestStatus(EnumeratedType):
 
 class IOCIRecipeBuildRequest(Interface):
     """A request to build an OCI Recipe."""
-    export_as_webservice_entry(as_of="devel")
+    export_as_webservice_entry(
+        publish_web_link=True, as_of="devel",
+        singular_name="oci_recipe_build_request")
 
     id = Int(title=_("ID"), required=True, readonly=True)
 
@@ -193,10 +192,6 @@ class IOCIRecipeBuildRequest(Interface):
         # Really IOCIRecipeBuild, patched in _schema_circular_imports.
         value_type=Reference(schema=Interface),
         required=True, readonly=True))
-
-    architectures = Set(
-        title=_("If set, this request is limited to these architecture tags"),
-        value_type=TextLine(), required=False, readonly=True)
 
 
 class IOCIRecipeView(Interface):
@@ -284,6 +279,10 @@ class IOCIRecipeView(Interface):
 
         :param requester: The person requesting the build.
         :return: A `IOCIRecipeBuildRequest` instance.
+        """
+
+    def getBuildRequest(job_id):
+        """Get a OCIRecipeBuildRequest object for the given job_id.
         """
 
     push_rules = CollectionField(

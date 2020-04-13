@@ -7,8 +7,12 @@ __all__ = [
     'IOCIProject',
     'IOCIProjectSeries',
     'IOCIRecipe',
+    'IOCIRecipeBuildRequest'
     ]
 
-from lp.oci.interfaces.ocirecipe import IOCIRecipe
+from lp.oci.interfaces.ocirecipe import (
+    IOCIRecipe,
+    IOCIRecipeBuildRequest,
+    )
 from lp.registry.interfaces.ociproject import IOCIProject
 from lp.registry.interfaces.ociprojectseries import IOCIProjectSeries

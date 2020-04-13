@@ -8,6 +8,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 __metaclass__ = type
 __all__ = [
     'OCIRecipe',
+    'OCIRecipeBuildRequest',
     'OCIRecipeSet',
     ]
 
@@ -78,6 +79,7 @@ from lp.services.database.stormexpr import (
     )
 from lp.services.features import getFeatureFlag
 from lp.services.job.interfaces.job import JobStatus
+from lp.services.propertycache import cachedproperty
 from lp.services.webhooks.interfaces import IWebhookSet
 from lp.services.webhooks.model import WebhookTargetMixin
 from lp.soyuz.model.distroarchseries import DistroArchSeries
@@ -324,6 +326,9 @@ class OCIRecipe(Storm, WebhookTargetMixin):
 
         return self._createBuild(requester, distro_arch_series)
 
+    def getBuildRequest(self, job_id):
+        return OCIRecipeBuildRequest(self, job_id)
+
     def requestBuildsFromJob(self, requester):
         self._checkRequestBuild(requester)
         processors = self.available_processors
@@ -338,7 +343,7 @@ class OCIRecipe(Storm, WebhookTargetMixin):
     def requestBuilds(self, requester):
         job = getUtility(IOCIRecipeRequestBuildsJobSource).create(
             self, requester)
-        return OCIRecipeBuildRequest(self, job)
+        return self.getBuildRequest(job.job_id)
 
     @property
     def push_rules(self):
@@ -514,13 +519,15 @@ class OCIRecipeSet:
 
 @implementer(IOCIRecipeBuildRequest)
 class OCIRecipeBuildRequest:
-    def __init__(self, oci_recipe, job):
+    def __init__(self, oci_recipe, id):
         self.oci_recipe = oci_recipe
-        self.job = job
+        self.id = id
 
-    @property
-    def id(self):
-        return self.job.id
+    @cachedproperty
+    def job(self):
+        util = getUtility(IOCIRecipeRequestBuildsJobSource)
+        return util.findByOCIRecipeAndID(
+            self.oci_recipe, self.id)
 
     @property
     def date_requested(self):
@@ -548,7 +555,3 @@ class OCIRecipeBuildRequest:
     @property
     def builds(self):
         return self.job.builds
-
-    @property
-    def architectures(self):
-        return self.job.requester

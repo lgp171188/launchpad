@@ -97,7 +97,10 @@ from lp.hardwaredb.interfaces.hwdb import (
     IHWVendorID,
     )
 from lp.oci.interfaces.ocipushrule import IOCIPushRule
-from lp.oci.interfaces.ocirecipe import IOCIRecipe
+from lp.oci.interfaces.ocirecipe import (
+    IOCIRecipe,
+    IOCIRecipeBuildRequest,
+    )
 from lp.oci.interfaces.ocirecipebuild import IOCIRecipeBuild
 from lp.registry.interfaces.commercialsubscription import (
     ICommercialSubscription,
@@ -1110,3 +1113,7 @@ patch_collection_property(IOCIRecipe, 'builds', IOCIRecipeBuild)
 patch_collection_property(IOCIRecipe, 'completed_builds', IOCIRecipeBuild)
 patch_collection_property(IOCIRecipe, 'pending_builds', IOCIRecipeBuild)
 patch_collection_property(IOCIRecipe, 'push_rules', IOCIPushRule)
+
+# IOCIRecipeRequestBuild
+patch_reference_property(IOCIRecipeBuildRequest, 'oci_recipe', IOCIRecipe)
+patch_collection_property(IOCIRecipeBuildRequest, 'builds', IOCIRecipeBuild)

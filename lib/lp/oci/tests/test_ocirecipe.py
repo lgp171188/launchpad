@@ -8,7 +8,10 @@ from __future__ import absolute_import, print_function, unicode_literals
 import base64
 import json
 
-from fixtures import FakeLogger
+from fixtures import (
+    FakeLogger,
+    MockPatch,
+    )
 from nacl.public import PrivateKey
 from six import string_types
 from storm.exceptions import LostObjectError
@@ -35,6 +38,7 @@ from lp.oci.interfaces.ocirecipe import (
     OCI_RECIPE_ALLOW_CREATE,
     OCI_RECIPE_WEBHOOKS_FEATURE_FLAG,
     OCIRecipeBuildAlreadyPending,
+    OCIRecipeBuildRequestStatus,
     OCIRecipeNotOwner,
     )
 from lp.oci.interfaces.ocirecipebuild import IOCIRecipeBuildSet
@@ -831,23 +835,39 @@ class TestOCIRecipeAsyncWebservice(TestCaseWithFactory):
             self.getDistroArchSeries(series, "amd64", "amd64")]
 
     def test_requestBuilds_creates_builds(self):
+        celeryRunOnCommit = MockPatch(
+            'lp.oci.model.ocirecipejob.OCIRecipeRequestBuildsJob.'
+            'celeryRunOnCommit', lambda instance: instance.run())
+        # This will make the celery task run synchronously during the request.
+        self.useFixture(celeryRunOnCommit)
+
         with person_logged_in(self.person):
             distro = self.factory.makeDistribution(owner=self.person)
             oci_project = self.factory.makeOCIProject(
                 registrant=self.person, pillar=distro)
             oci_recipe = self.factory.makeOCIRecipe(
+                oci_project=oci_project,
                 owner=self.person, registrant=self.person)
-            i386_arch_series, amd64_arch_series = self.prepareArchSeries(
-                oci_recipe)
+            self.prepareArchSeries(oci_recipe)
             recipe_url = api_url(oci_recipe)
 
         response = self.webservice.named_post(recipe_url, "requestBuilds")
         self.assertEqual(201, response.status, response.body)
 
         build_request_url = response.getHeader("Location")
-        build_request = self.webservice.get(build_request_url).jsonBody()
+        job_id = int(build_request_url.split('/')[-1])
 
+        ws_build_request = self.webservice.get(build_request_url).jsonBody()
         with person_logged_in(self.person):
-            # request = oci_recipe.requestBuilds(oci_recipe.owner)
-            import ipdb; ipdb.set_trace()
-            print("+===")
+            build_request = oci_recipe.getBuildRequest(job_id)
+
+            fmt_date = lambda x: x if x is None else x.isoformat()
+            abs_url = lambda x: self.webservice.getAbsoluteUrl(api_url(x))
+            self.assertThat(ws_build_request, ContainsDict(dict(
+                status=Equals(OCIRecipeBuildRequestStatus.PENDING.title),
+                date_requested=Equals(fmt_date(build_request.date_requested)),
+                date_finished=Equals(fmt_date(build_request.date_finished)),
+                oci_recipe_link=Equals(abs_url(build_request.oci_recipe)),
+                error_message=Equals(build_request.error_message),
+                builds_collection_link=Equals(build_request_url + '/builds')
+            )))

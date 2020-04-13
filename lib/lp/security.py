@@ -113,7 +113,10 @@ from lp.hardwaredb.interfaces.hwdb import (
     IHWVendorID,
     )
 from lp.oci.interfaces.ocipushrule import IOCIPushRule
-from lp.oci.interfaces.ocirecipe import IOCIRecipe
+from lp.oci.interfaces.ocirecipe import (
+    IOCIRecipe,
+    IOCIRecipeBuildRequest,
+    )
 from lp.oci.interfaces.ocirecipebuild import IOCIRecipeBuild
 from lp.oci.interfaces.ociregistrycredentials import IOCIRegistryCredentials
 from lp.registry.enums import PersonVisibility
@@ -3474,6 +3477,15 @@ class EditOCIProjectSeries(AuthorizationBase):
         """Maintainers, drivers, and admins can drive projects."""
         return (user.in_admin or
                 user.isDriver(self.obj.oci_project.pillar))
+
+
+class ViewOCIRecipeBuildRequest(DelegatedAuthorization):
+    permission = 'launchpad.View'
+    usedfor = IOCIRecipeBuildRequest
+
+    def __init__(self, obj):
+        super(ViewOCIRecipeBuildRequest, self).__init__(
+            obj, obj.oci_recipe, 'launchpad.View')
 
 
 class ViewOCIRecipe(AnonymousAuthorization):

@@ -17,7 +17,10 @@ from zope.interface import (
     Attribute,
     Interface,
     )
-from zope.schema import List
+from zope.schema import (
+    List,
+    TextLine,
+    )
 
 from lp import _
 from lp.oci.interfaces.ocirecipe import (
@@ -67,6 +70,9 @@ class IOCIRecipeRequestBuildsJob(IRunnableJob):
         value_type=Reference(schema=IOCIRecipeBuild), required=True,
         readonly=True)
 
+    error_message = TextLine(
+        title=_("Error message"), required=True, readonly=True)
+
 
 class IOCIRecipeRequestBuildsJobSource(IJobSource):
 
@@ -75,4 +81,8 @@ class IOCIRecipeRequestBuildsJobSource(IJobSource):
 
         :param oci_recipe: The OCI Recipe to build.
         :param requester: The person requesting the builds.
+        """
+
+    def findByOCIRecipeAndID(self, oci_recipe, job_id):
+        """Retrieve the build job by OCI recipe and the given job ID.
         """
