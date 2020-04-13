@@ -283,7 +283,7 @@ class IOCIRecipeView(Interface):
         architectures.
 
         :param requester: The person requesting the build.
-        :return: List of `IOCIRecipeBuild`.
+        :return: A `IOCIRecipeBuildRequest` instance.
         """
 
     push_rules = CollectionField(

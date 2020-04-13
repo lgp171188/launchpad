@@ -11,7 +11,6 @@ __all__ = [
     'OCIRecipeSet',
     ]
 
-
 from lazr.lifecycle.event import ObjectCreatedEvent
 import pytz
 from storm.expr import (
@@ -46,15 +45,18 @@ from lp.oci.interfaces.ocirecipe import (
     CannotModifyOCIRecipeProcessor,
     DuplicateOCIRecipeName,
     IOCIRecipe,
+    IOCIRecipeBuildRequest,
     IOCIRecipeSet,
     NoSourceForOCIRecipe,
     NoSuchOCIRecipe,
     OCI_RECIPE_ALLOW_CREATE,
     OCIRecipeBuildAlreadyPending,
+    OCIRecipeBuildRequestStatus,
     OCIRecipeFeatureDisabled,
     OCIRecipeNotOwner,
     )
 from lp.oci.interfaces.ocirecipebuild import IOCIRecipeBuildSet
+from lp.oci.interfaces.ocirecipejob import IOCIRecipeRequestBuildsJobSource
 from lp.oci.model.ocipushrule import OCIPushRule
 from lp.oci.model.ocirecipebuild import OCIRecipeBuild
 from lp.registry.interfaces.person import IPersonSet
@@ -75,6 +77,7 @@ from lp.services.database.stormexpr import (
     NullsLast,
     )
 from lp.services.features import getFeatureFlag
+from lp.services.job.interfaces.job import JobStatus
 from lp.services.webhooks.interfaces import IWebhookSet
 from lp.services.webhooks.model import WebhookTargetMixin
 from lp.soyuz.model.distroarchseries import DistroArchSeries
@@ -332,8 +335,10 @@ class OCIRecipe(Storm, WebhookTargetMixin):
             builds.append(self._createBuild(requester, distro_arch_series))
         return builds
 
-    def requestBuilds(requester):
-        pass
+    def requestBuilds(self, requester):
+        job = getUtility(IOCIRecipeRequestBuildsJobSource).create(
+            self, requester)
+        return OCIRecipeBuildRequest(self, job)
 
     @property
     def push_rules(self):
@@ -505,3 +510,45 @@ class OCIRecipeSet:
 
         list(getUtility(IPersonSet).getPrecachedPersonsFromIDs(
             person_ids, need_validity=True))
+
+
+@implementer(IOCIRecipeBuildRequest)
+class OCIRecipeBuildRequest:
+    def __init__(self, oci_recipe, job):
+        self.oci_recipe = oci_recipe
+        self.job = job
+
+    @property
+    def id(self):
+        return self.job.id
+
+    @property
+    def date_requested(self):
+        return self.job.date_created
+
+    @property
+    def date_finished(self):
+        return self.job.date_finished
+
+    @property
+    def status(self):
+        status_map = {
+            JobStatus.WAITING: OCIRecipeBuildRequestStatus.PENDING,
+            JobStatus.RUNNING: OCIRecipeBuildRequestStatus.PENDING,
+            JobStatus.COMPLETED: OCIRecipeBuildRequestStatus.COMPLETED,
+            JobStatus.FAILED: OCIRecipeBuildRequestStatus.FAILED,
+            JobStatus.SUSPENDED: OCIRecipeBuildRequestStatus.PENDING,
+        }
+        return status_map[self.job.status]
+
+    @property
+    def error_message(self):
+        return self.job.error_message
+
+    @property
+    def builds(self):
+        return self.job.builds
+
+    @property
+    def architectures(self):
+        return self.job.requester

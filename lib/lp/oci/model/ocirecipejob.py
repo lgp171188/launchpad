@@ -22,8 +22,8 @@ from storm.properties import (
 from storm.references import Reference
 from storm.store import EmptyResultSet
 import transaction
-from zope.component._api import getUtility
-from zope.interface.declarations import (
+from zope.component import getUtility
+from zope.interface import (
     implementer,
     provider,
     )
@@ -173,7 +173,8 @@ class OCIRecipeRequestBuildsJob(OCIRecipeJobDerived):
             # Really a set or None, but sets aren't directly
             # JSON-serialisable.
             "processors": (
-                list(processors) if processors is not None else None),
+                [i.id for i in processors] if processors is not None
+                else None),
             }
         oci_recipe_job = OCIRecipeJob(oci_recipe, cls.class_job_type, metadata)
         job = cls(oci_recipe_job)

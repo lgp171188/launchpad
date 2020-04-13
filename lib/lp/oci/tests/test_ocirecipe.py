@@ -57,7 +57,10 @@ from lp.testing import (
     TestCaseWithFactory,
     )
 from lp.testing.dbuser import dbuser
-from lp.testing.layers import DatabaseFunctionalLayer
+from lp.testing.layers import (
+    DatabaseFunctionalLayer,
+    LaunchpadFunctionalLayer,
+    )
 from lp.testing.pages import webservice_for_person
 
 
@@ -797,3 +800,54 @@ class TestOCIRecipeWebservice(TestCaseWithFactory):
 
         resp = self.webservice.named_post(oci_project_url, "newRecipe", **obj)
         self.assertEqual(401, resp.status, resp.body)
+
+
+class TestOCIRecipeAsyncWebservice(TestCaseWithFactory):
+    layer = LaunchpadFunctionalLayer
+
+    def setUp(self):
+        super(TestOCIRecipeAsyncWebservice, self).setUp()
+        self.person = self.factory.makePerson(
+            displayname="Test Person")
+        self.webservice = webservice_for_person(
+            self.person, permission=OAuthPermission.WRITE_PUBLIC,
+            default_api_version="devel")
+        self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: 'on'}))
+
+    def getDistroArchSeries(self, distroseries, proc_name="386",
+                            arch_tag="i386"):
+        processor = getUtility(IProcessorSet).getByName(proc_name)
+        return self.factory.makeDistroArchSeries(
+            distroseries=distroseries, architecturetag=arch_tag,
+            processor=processor)
+
+    def prepareArchSeries(self, ocirecipe):
+        distro = ocirecipe.oci_project.distribution
+        series = self.factory.makeDistroSeries(
+            distribution=distro, status=SeriesStatus.CURRENT)
+
+        return [
+            self.getDistroArchSeries(series, "386", "386"),
+            self.getDistroArchSeries(series, "amd64", "amd64")]
+
+    def test_requestBuilds_creates_builds(self):
+        with person_logged_in(self.person):
+            distro = self.factory.makeDistribution(owner=self.person)
+            oci_project = self.factory.makeOCIProject(
+                registrant=self.person, pillar=distro)
+            oci_recipe = self.factory.makeOCIRecipe(
+                owner=self.person, registrant=self.person)
+            i386_arch_series, amd64_arch_series = self.prepareArchSeries(
+                oci_recipe)
+            recipe_url = api_url(oci_recipe)
+
+        response = self.webservice.named_post(recipe_url, "requestBuilds")
+        self.assertEqual(201, response.status, response.body)
+
+        build_request_url = response.getHeader("Location")
+        build_request = self.webservice.get(build_request_url).jsonBody()
+
+        with person_logged_in(self.person):
+            # request = oci_recipe.requestBuilds(oci_recipe.owner)
+            import ipdb; ipdb.set_trace()
+            print("+===")

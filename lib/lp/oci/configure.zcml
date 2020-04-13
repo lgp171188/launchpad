@@ -41,6 +41,19 @@
             interface="lp.oci.interfaces.ocirecipe.IOCIRecipeSet"/>
     </securedutility>
 
+    <!-- OCIRecipeRequestBuildsJob -->
+    <class class="lp.oci.model.ocirecipe.OCIRecipeBuildRequest">
+        <allow interface="lp.oci.interfaces.ocirecipe.IOCIRecipeBuildRequest" />
+    </class>
+    <class class="lp.oci.model.ocirecipejob.OCIRecipeRequestBuildsJob">
+        <allow interface="lp.oci.interfaces.ocirecipejob.IOCIRecipeRequestBuildsJob" />
+    </class>
+    <securedutility
+        component="lp.oci.model.ocirecipejob.OCIRecipeRequestBuildsJob"
+        provides="lp.oci.interfaces.ocirecipejob.IOCIRecipeRequestBuildsJobSource">
+        <allow interface="lp.oci.interfaces.ocirecipejob.IOCIRecipeRequestBuildsJobSource" />
+    </securedutility>
+
     <!-- OCIRecipeBuild -->
     <class class="lp.oci.model.ocirecipebuild.OCIRecipeBuild">
         <require

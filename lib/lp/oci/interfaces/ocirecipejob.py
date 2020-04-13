@@ -12,16 +12,25 @@ __all__ = [
     'IOCIRecipeRequestBuildsJobSource',
     ]
 
-from formencode.interfaces import Interface, Attribute
 from lazr.restful.fields import Reference
-from lp.oci.interfaces.ocirecipe import IOCIRecipe, IOCIRecipeBuildRequest
+from zope.interface import (
+    Attribute,
+    Interface,
+    )
+from zope.schema import List
+
+from lp import _
+from lp.oci.interfaces.ocirecipe import (
+    IOCIRecipe,
+    IOCIRecipeBuildRequest,
+    )
 from lp.oci.interfaces.ocirecipebuild import IOCIRecipeBuild
 from lp.registry.interfaces.person import IPerson
-from lp.services.job.interfaces.job import IRunnableJob, IJobSource, IJob
-from lp import _
-from zope.schema import List
-from zope.schema._bootstrapfields import TextLine
-from zope.schema._field import Datetime
+from lp.services.job.interfaces.job import (
+    IJob,
+    IJobSource,
+    IRunnableJob,
+    )
 
 
 class IOCIRecipeJob(Interface):
@@ -61,27 +70,9 @@ class IOCIRecipeRequestBuildsJob(IRunnableJob):
 
 class IOCIRecipeRequestBuildsJobSource(IJobSource):
 
-    requester = Reference(
-        title=_("The person requesting the builds."), schema=IPerson,
-        required=True, readonly=True)
+    def create(oci_recipe, requester):
+        """Request builds of an OCI Recipe.
 
-    date_created = Datetime(
-        title=_("Time when this job was created."),
-        required=True, readonly=True)
-
-    date_finished = Datetime(
-        title=_("Time when this job finished."),
-        required=True, readonly=True)
-
-    error_message = TextLine(
-        title=_("Error message resulting from running this job."),
-        required=False, readonly=True)
-
-    build_request = Reference(
-        title=_("The build request corresponding to this job."),
-        schema=IOCIRecipeBuildRequest, required=True, readonly=True)
-
-    builds = List(
-        title=_("The builds created by this request."),
-        value_type=Reference(schema=IOCIRecipeBuild), required=True,
-        readonly=True)
+        :param oci_recipe: The OCI Recipe to build.
+        :param requester: The person requesting the builds.
+        """
