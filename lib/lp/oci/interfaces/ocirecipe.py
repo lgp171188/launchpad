@@ -10,23 +10,20 @@ __all__ = [
     'CannotModifyOCIRecipeProcessor',
     'DuplicateOCIRecipeName',
     'IOCIRecipe',
+    'IOCIRecipeBuildRequest',
     'IOCIRecipeEdit',
     'IOCIRecipeEditableAttributes',
     'IOCIRecipeSet',
     'IOCIRecipeView',
     'NoSourceForOCIRecipe',
     'NoSuchOCIRecipe',
-    'OCI_RECIPE_ALLOW_CREATE',
-    'OCI_RECIPE_WEBHOOKS_FEATURE_FLAG',
     'OCIRecipeBuildAlreadyPending',
     'OCIRecipeFeatureDisabled',
     'OCIRecipeNotOwner',
+    'OCI_RECIPE_ALLOW_CREATE',
+    'OCI_RECIPE_WEBHOOKS_FEATURE_FLAG',
     ]
 
-from lazr.enum import (
-    EnumeratedType,
-    Item,
-    )
 from lazr.restful.declarations import (
     call_with,
     error_status,
@@ -66,6 +63,7 @@ from lp.app.validators.path import path_does_not_escape
 from lp.buildmaster.interfaces.processor import IProcessor
 from lp.code.interfaces.gitref import IGitRef
 from lp.code.interfaces.gitrepository import IGitRepository
+from lp.oci.enums import OCIRecipeBuildRequestStatus
 from lp.registry.interfaces.distribution import IDistribution
 from lp.registry.interfaces.distroseries import IDistroSeries
 from lp.registry.interfaces.ociproject import IOCIProject
@@ -135,28 +133,6 @@ class CannotModifyOCIRecipeProcessor(Exception):
     def __init__(self, processor):
         super(CannotModifyOCIRecipeProcessor, self).__init__(
             self._fmt % {'processor': processor.name})
-
-
-class OCIRecipeBuildRequestStatus(EnumeratedType):
-    """The status of a request to build an oci recipe."""
-
-    PENDING = Item("""
-        Pending
-
-        This OCI recipe build request is pending.
-        """)
-
-    FAILED = Item("""
-        Failed
-
-        This OCI recipe build request failed.
-        """)
-
-    COMPLETED = Item("""
-        Completed
-
-        This OCI recipe build request completed successfully.
-        """)
 
 
 class IOCIRecipeBuildRequest(Interface):

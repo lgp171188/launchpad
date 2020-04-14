@@ -42,6 +42,7 @@ from lp.buildmaster.interfaces.buildqueue import IBuildQueueSet
 from lp.buildmaster.model.buildfarmjob import BuildFarmJob
 from lp.buildmaster.model.buildqueue import BuildQueue
 from lp.buildmaster.model.processor import Processor
+from lp.oci.enums import OCIRecipeBuildRequestStatus
 from lp.oci.interfaces.ocirecipe import (
     CannotModifyOCIRecipeProcessor,
     DuplicateOCIRecipeName,
@@ -52,7 +53,6 @@ from lp.oci.interfaces.ocirecipe import (
     NoSuchOCIRecipe,
     OCI_RECIPE_ALLOW_CREATE,
     OCIRecipeBuildAlreadyPending,
-    OCIRecipeBuildRequestStatus,
     OCIRecipeFeatureDisabled,
     OCIRecipeNotOwner,
     )
