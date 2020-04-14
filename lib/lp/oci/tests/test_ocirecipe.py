@@ -9,8 +9,8 @@ import base64
 import json
 
 from fixtures import FakeLogger
-from six import string_types
 from nacl.public import PrivateKey
+from six import string_types
 from storm.exceptions import LostObjectError
 from testtools.matchers import (
     ContainsDict,
@@ -23,12 +23,15 @@ from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
 from lp.buildmaster.enums import BuildStatus
+from lp.buildmaster.interfaces.processor import IProcessorSet
 from lp.oci.interfaces.ocirecipe import (
+    CannotModifyOCIRecipeProcessor,
     DuplicateOCIRecipeName,
     IOCIRecipe,
     IOCIRecipeSet,
     NoSourceForOCIRecipe,
     NoSuchOCIRecipe,
+    OCI_RECIPE_ALLOW_CREATE,
     OCI_RECIPE_WEBHOOKS_FEATURE_FLAG,
     OCIRecipeBuildAlreadyPending,
     OCIRecipeNotOwner,
@@ -59,6 +62,10 @@ from lp.testing.pages import webservice_for_person
 class TestOCIRecipe(TestCaseWithFactory):
 
     layer = DatabaseFunctionalLayer
+
+    def setUp(self):
+        super(TestOCIRecipe, self).setUp()
+        self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: 'on'}))
 
     def test_implements_interface(self):
         target = self.factory.makeOCIRecipe()
@@ -106,7 +113,8 @@ class TestOCIRecipe(TestCaseWithFactory):
     def test_requestBuild_triggers_webhooks(self):
         # Requesting a build triggers webhooks.
         logger = self.useFixture(FakeLogger())
-        with FeatureFixture({OCI_RECIPE_WEBHOOKS_FEATURE_FLAG: "on"}):
+        with FeatureFixture({OCI_RECIPE_WEBHOOKS_FEATURE_FLAG: "on",
+                             OCI_RECIPE_ALLOW_CREATE: 'on'}):
             recipe = self.factory.makeOCIRecipe()
             oci_arch = self.factory.makeOCIRecipeArch(recipe=recipe)
             hook = self.factory.makeWebhook(
@@ -153,7 +161,8 @@ class TestOCIRecipe(TestCaseWithFactory):
 
     def test_related_webhooks_deleted(self):
         owner = self.factory.makePerson()
-        with FeatureFixture({OCI_RECIPE_WEBHOOKS_FEATURE_FLAG: "on"}):
+        with FeatureFixture({OCI_RECIPE_WEBHOOKS_FEATURE_FLAG: "on",
+                             OCI_RECIPE_ALLOW_CREATE: 'on'}):
             recipe = self.factory.makeOCIRecipe(registrant=owner, owner=owner)
             webhook = self.factory.makeWebhook(target=recipe)
         with person_logged_in(recipe.owner):
@@ -210,9 +219,134 @@ class TestOCIRecipe(TestCaseWithFactory):
             self.assertEqual(rule.recipe, oci_recipe)
 
 
+class TestOCIRecipeProcessors(TestCaseWithFactory):
+
+    layer = DatabaseFunctionalLayer
+
+    def setUp(self):
+        super(TestOCIRecipeProcessors, self).setUp(
+            user="foo.bar@canonical.com")
+        self.default_procs = [
+            getUtility(IProcessorSet).getByName("386"),
+            getUtility(IProcessorSet).getByName("amd64")]
+        self.unrestricted_procs = (
+            self.default_procs + [getUtility(IProcessorSet).getByName("hppa")])
+        self.arm = self.factory.makeProcessor(
+            name="arm", restricted=True, build_by_default=False)
+        self.distroseries = self.factory.makeDistroSeries()
+        self.useFixture(FeatureFixture({
+            OCI_RECIPE_ALLOW_CREATE: "on",
+            "oci.build_series.%s" % self.distroseries.distribution.name:
+                self.distroseries.name
+            }))
+
+    def test_available_processors(self):
+        # Only those processors that are enabled for the recipe's
+        # distroseries are available.
+        for processor in self.default_procs:
+            self.factory.makeDistroArchSeries(
+                distroseries=self.distroseries, architecturetag=processor.name,
+                processor=processor)
+        self.factory.makeDistroArchSeries(
+            architecturetag=self.arm.name, processor=self.arm)
+        oci_project = self.factory.makeOCIProject(
+            pillar=self.distroseries.distribution)
+        recipe = self.factory.makeOCIRecipe(oci_project=oci_project)
+        self.assertContentEqual(
+            self.default_procs, recipe.available_processors)
+
+    def test_new_default_processors(self):
+        # OCIRecipeSet.new creates an OCIRecipeArch for each available
+        # Processor with build_by_default set.
+        new_procs = [
+            self.factory.makeProcessor(name="default", build_by_default=True),
+            self.factory.makeProcessor(
+                name="nondefault", build_by_default=False),
+            ]
+        owner = self.factory.makePerson()
+        for processor in self.unrestricted_procs + [self.arm] + new_procs:
+            self.factory.makeDistroArchSeries(
+                distroseries=self.distroseries, architecturetag=processor.name,
+                processor=processor)
+        oci_project = self.factory.makeOCIProject(
+            pillar=self.distroseries.distribution)
+        recipe = getUtility(IOCIRecipeSet).new(
+            name=self.factory.getUniqueUnicode(), registrant=owner,
+            owner=owner, oci_project=oci_project,
+            git_ref=self.factory.makeGitRefs()[0],
+            build_file=self.factory.getUniqueUnicode())
+        self.assertContentEqual(
+            ["386", "amd64", "hppa", "default"],
+            [processor.name for processor in recipe.processors])
+
+    def test_new_override_processors(self):
+        # OCIRecipeSet.new can be given a custom set of processors.
+        owner = self.factory.makePerson()
+        oci_project = self.factory.makeOCIProject(
+            pillar=self.distroseries.distribution)
+        recipe = getUtility(IOCIRecipeSet).new(
+            name=self.factory.getUniqueUnicode(), registrant=owner,
+            owner=owner, oci_project=oci_project,
+            git_ref=self.factory.makeGitRefs()[0],
+            build_file=self.factory.getUniqueUnicode(), processors=[self.arm])
+        self.assertContentEqual(
+            ["arm"], [processor.name for processor in recipe.processors])
+
+    def test_set(self):
+        # The property remembers its value correctly.
+        recipe = self.factory.makeOCIRecipe()
+        recipe.setProcessors([self.arm])
+        self.assertContentEqual([self.arm], recipe.processors)
+        recipe.setProcessors(self.unrestricted_procs + [self.arm])
+        self.assertContentEqual(
+            self.unrestricted_procs + [self.arm], recipe.processors)
+        recipe.setProcessors([])
+        self.assertContentEqual([], recipe.processors)
+
+    def test_set_non_admin(self):
+        """Non-admins can only enable or disable unrestricted processors."""
+        recipe = self.factory.makeOCIRecipe()
+        recipe.setProcessors(self.default_procs)
+        self.assertContentEqual(self.default_procs, recipe.processors)
+        with person_logged_in(recipe.owner) as owner:
+            # Adding arm is forbidden ...
+            self.assertRaises(
+                CannotModifyOCIRecipeProcessor, recipe.setProcessors,
+                [self.default_procs[0], self.arm],
+                check_permissions=True, user=owner)
+            # ... but removing amd64 is OK.
+            recipe.setProcessors(
+                [self.default_procs[0]], check_permissions=True, user=owner)
+            self.assertContentEqual([self.default_procs[0]], recipe.processors)
+        with admin_logged_in() as admin:
+            recipe.setProcessors(
+                [self.default_procs[0], self.arm],
+                check_permissions=True, user=admin)
+            self.assertContentEqual(
+                [self.default_procs[0], self.arm], recipe.processors)
+        with person_logged_in(recipe.owner) as owner:
+            hppa = getUtility(IProcessorSet).getByName("hppa")
+            self.assertFalse(hppa.restricted)
+            # Adding hppa while removing arm is forbidden ...
+            self.assertRaises(
+                CannotModifyOCIRecipeProcessor, recipe.setProcessors,
+                [self.default_procs[0], hppa],
+                check_permissions=True, user=owner)
+            # ... but adding hppa while retaining arm is OK.
+            recipe.setProcessors(
+                [self.default_procs[0], self.arm, hppa],
+                check_permissions=True, user=owner)
+            self.assertContentEqual(
+                [self.default_procs[0], self.arm, hppa], recipe.processors)
+
+
 class TestOCIRecipeSet(TestCaseWithFactory):
 
     layer = DatabaseFunctionalLayer
+
+    def setUp(self):
+        super(TestOCIRecipeSet, self).setUp()
+        self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: 'on'}))
 
     def test_implements_interface(self):
         target_set = getUtility(IOCIRecipeSet)
@@ -382,10 +516,12 @@ class TestOCIRecipeWebservice(TestCaseWithFactory):
 
     def setUp(self):
         super(TestOCIRecipeWebservice, self).setUp()
-        self.person = self.factory.makePerson(displayname="Test Person")
+        self.person = self.factory.makePerson(
+            displayname="Test Person")
         self.webservice = webservice_for_person(
             self.person, permission=OAuthPermission.WRITE_PUBLIC,
             default_api_version="devel")
+        self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: 'on'}))
 
     def getAbsoluteURL(self, target):
         """Get the webservice absolute URL of the given object or relative
@@ -401,38 +537,39 @@ class TestOCIRecipeWebservice(TestCaseWithFactory):
 
     def test_api_get_oci_recipe(self):
         with person_logged_in(self.person):
-            project = removeSecurityProxy(self.factory.makeOCIProject(
-                registrant=self.person))
-            recipe = removeSecurityProxy(self.factory.makeOCIRecipe(
-                oci_project=project))
+            oci_project = self.factory.makeOCIProject(
+                registrant=self.person)
+            recipe = self.factory.makeOCIRecipe(
+                oci_project=oci_project)
             url = api_url(recipe)
 
         ws_recipe = self.load_from_api(url)
 
-        recipe_abs_url = self.getAbsoluteURL(recipe)
-        self.assertThat(ws_recipe, ContainsDict(dict(
-            date_created=Equals(recipe.date_created.isoformat()),
-            date_last_modified=Equals(recipe.date_last_modified.isoformat()),
-            registrant_link=Equals(self.getAbsoluteURL(recipe.registrant)),
-            webhooks_collection_link=Equals(recipe_abs_url + "/webhooks"),
-            name=Equals(recipe.name),
-            owner_link=Equals(self.getAbsoluteURL(recipe.owner)),
-            oci_project_link=Equals(self.getAbsoluteURL(project)),
-            git_ref_link=Equals(self.getAbsoluteURL(recipe.git_ref)),
-            description=Equals(recipe.description),
-            build_file=Equals(recipe.build_file),
-            build_daily=Equals(recipe.build_daily)
-            )))
+        with person_logged_in(self.person):
+            recipe_abs_url = self.getAbsoluteURL(recipe)
+            self.assertThat(ws_recipe, ContainsDict(dict(
+                date_created=Equals(recipe.date_created.isoformat()),
+                date_last_modified=Equals(recipe.date_last_modified.isoformat()),
+                registrant_link=Equals(self.getAbsoluteURL(recipe.registrant)),
+                webhooks_collection_link=Equals(recipe_abs_url + "/webhooks"),
+                name=Equals(recipe.name),
+                owner_link=Equals(self.getAbsoluteURL(recipe.owner)),
+                oci_project_link=Equals(self.getAbsoluteURL(oci_project)),
+                git_ref_link=Equals(self.getAbsoluteURL(recipe.git_ref)),
+                description=Equals(recipe.description),
+                build_file=Equals(recipe.build_file),
+                build_daily=Equals(recipe.build_daily)
+                )))
 
     def test_api_patch_oci_recipe(self):
         with person_logged_in(self.person):
             distro = self.factory.makeDistribution(owner=self.person)
-            project = removeSecurityProxy(self.factory.makeOCIProject(
-                pillar=distro, registrant=self.person))
+            oci_project = self.factory.makeOCIProject(
+                pillar=distro, registrant=self.person)
             # Only the owner should be able to edit.
-            recipe = removeSecurityProxy(self.factory.makeOCIRecipe(
-                oci_project=project, owner=self.person,
-                registrant=self.person))
+            recipe = self.factory.makeOCIRecipe(
+                oci_project=oci_project, owner=self.person,
+                registrant=self.person)
             url = api_url(recipe)
 
         new_description = 'Some other description'
@@ -450,13 +587,13 @@ class TestOCIRecipeWebservice(TestCaseWithFactory):
             other_person = self.factory.makePerson()
         with person_logged_in(other_person):
             distro = self.factory.makeDistribution(owner=other_person)
-            project = removeSecurityProxy(self.factory.makeOCIProject(
-                pillar=distro, registrant=other_person))
+            oci_project = self.factory.makeOCIProject(
+                pillar=distro, registrant=other_person)
             # Only the owner should be able to edit.
-            recipe = removeSecurityProxy(self.factory.makeOCIRecipe(
-                oci_project=project, owner=other_person,
+            recipe = self.factory.makeOCIRecipe(
+                oci_project=oci_project, owner=other_person,
                 registrant=other_person,
-                description="old description"))
+                description="old description")
             url = api_url(recipe)
 
         new_description = 'Some other description'
@@ -467,3 +604,92 @@ class TestOCIRecipeWebservice(TestCaseWithFactory):
 
         ws_project = self.load_from_api(url)
         self.assertEqual("old description", ws_project['description'])
+
+    def test_api_create_oci_recipe(self):
+        with person_logged_in(self.person):
+            distro = self.factory.makeDistribution(
+                owner=self.person)
+            oci_project = self.factory.makeOCIProject(
+                pillar=distro, registrant=self.person)
+            git_ref = self.factory.makeGitRefs()[0]
+
+            oci_project_url = api_url(oci_project)
+            git_ref_url = api_url(git_ref)
+            person_url = api_url(self.person)
+
+        obj = {
+            "name": "my-recipe",
+            "owner": person_url,
+            "git_ref": git_ref_url,
+            "build_file": "./Dockerfile",
+            "description": "My recipe"}
+
+        resp = self.webservice.named_post(oci_project_url, "newRecipe", **obj)
+        self.assertEqual(201, resp.status, resp.body)
+
+        new_obj_url = resp.getHeader("Location")
+        ws_recipe = self.load_from_api(new_obj_url)
+
+        with person_logged_in(self.person):
+            self.assertThat(ws_recipe, ContainsDict(dict(
+                name=Equals(obj["name"]),
+                oci_project_link=Equals(self.getAbsoluteURL(oci_project)),
+                git_ref_link=Equals(self.getAbsoluteURL(git_ref)),
+                build_file=Equals(obj["build_file"]),
+                description=Equals(obj["description"]),
+                owner_link=Equals(self.getAbsoluteURL(self.person)),
+                registrant_link=Equals(self.getAbsoluteURL(self.person)),
+            )))
+
+    def test_api_create_oci_recipe_non_legitimate_user(self):
+        """Ensure that a non-legitimate user cannot create recipe using API"""
+        self.pushConfig(
+            'launchpad', min_legitimate_karma=9999,
+            min_legitimate_account_age=9999)
+
+        with person_logged_in(self.person):
+            distro = self.factory.makeDistribution(
+                owner=self.person)
+            oci_project = self.factory.makeOCIProject(
+                pillar=distro, registrant=self.person)
+            git_ref = self.factory.makeGitRefs()[0]
+
+            oci_project_url = api_url(oci_project)
+            git_ref_url = api_url(git_ref)
+            person_url = api_url(self.person)
+
+        obj = {
+            "name": "My recipe",
+            "owner": person_url,
+            "git_ref": git_ref_url,
+            "build_file": "./Dockerfile",
+            "description": "My recipe"}
+
+        resp = self.webservice.named_post(oci_project_url, "newRecipe", **obj)
+        self.assertEqual(401, resp.status, resp.body)
+
+    def test_api_create_oci_recipe_is_disabled_by_feature_flag(self):
+        """Ensure that OCI newRecipe API method returns HTTP 401 when the
+        feature flag is not set."""
+        self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: ''}))
+
+        with person_logged_in(self.person):
+            distro = self.factory.makeDistribution(
+                owner=self.person)
+            oci_project = self.factory.makeOCIProject(
+                pillar=distro, registrant=self.person)
+            git_ref = self.factory.makeGitRefs()[0]
+
+            oci_project_url = api_url(oci_project)
+            git_ref_url = api_url(git_ref)
+            person_url = api_url(self.person)
+
+        obj = {
+            "name": "My recipe",
+            "owner": person_url,
+            "git_ref": git_ref_url,
+            "build_file": "./Dockerfile",
+            "description": "My recipe"}
+
+        resp = self.webservice.named_post(oci_project_url, "newRecipe", **obj)
+        self.assertEqual(401, resp.status, resp.body)

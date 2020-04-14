@@ -1,4 +1,4 @@
-<!-- Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+<!-- Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
      GNU Affero General Public License version 3 (see the file LICENSE).
 -->
 
@@ -858,6 +858,12 @@
       for="lp.soyuz.interfaces.livefs.ILiveFS"
       provides="zope.traversing.interfaces.IPathAdapter"
       factory="lp.app.browser.tales.LiveFSFormatterAPI"
+      name="fmt"
+      />
+  <adapter
+      for="lp.oci.interfaces.ocirecipe.IOCIRecipe"
+      provides="zope.traversing.interfaces.IPathAdapter"
+      factory="lp.app.browser.tales.OCIRecipeFormatterAPI"
       name="fmt"
       />
   <adapter

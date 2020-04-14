@@ -14,7 +14,9 @@
             attribute_to_parent="owner" />
         <browser:menus
             module="lp.oci.browser.ocirecipe"
-            classes="OCIRecipeNavigationMenu" />
+            classes="
+                OCIRecipeNavigationMenu
+                OCIRecipeContextMenu" />
         <browser:navigation
             module="lp.oci.browser.ocirecipe"
             classes="OCIRecipeNavigation" />
@@ -33,6 +35,12 @@
             permission="launchpad.AnyLegitimatePerson"
             name="+new-recipe"
             template="../templates/ocirecipe-new.pt" />
+        <browser:page
+            for="lp.oci.interfaces.ocirecipe.IOCIRecipe"
+            class="lp.oci.browser.ocirecipe.OCIRecipeRequestBuildsView"
+            permission="launchpad.Edit"
+            name="+request-builds"
+            template="../templates/ocirecipe-request-builds.pt" />
         <browser:page
             for="lp.oci.interfaces.ocirecipe.IOCIRecipe"
             class="lp.oci.browser.ocirecipe.OCIRecipeAdminView"
@@ -61,6 +69,9 @@
             for="lp.oci.interfaces.ocirecipebuild.IOCIRecipeBuild"
             path_expression="string:+build/${id}"
             attribute_to_parent="recipe" />
+        <browser:menus
+            module="lp.oci.browser.ocirecipebuild"
+            classes="OCIRecipeBuildContextMenu" />
         <browser:navigation
             module="lp.oci.browser.ocirecipebuild"
             classes="OCIRecipeBuildNavigation" />
@@ -73,6 +84,18 @@
             permission="launchpad.View"
             name="+index"
             template="../templates/ocirecipebuild-index.pt" />
+        <browser:page
+            for="lp.oci.interfaces.ocirecipebuild.IOCIRecipeBuild"
+            class="lp.oci.browser.ocirecipebuild.OCIRecipeBuildCancelView"
+            permission="launchpad.Edit"
+            name="+cancel"
+            template="../../app/templates/generic-edit.pt" />
+        <browser:page
+            for="lp.oci.interfaces.ocirecipebuild.IOCIRecipeBuild"
+            class="lp.oci.browser.ocirecipebuild.OCIRecipeBuildRescoreView"
+            permission="launchpad.Admin"
+            name="+rescore"
+            template="../../app/templates/generic-edit.pt" />
         <adapter
             provides="lp.services.webapp.interfaces.IBreadcrumb"
             for="lp.oci.interfaces.ocirecipebuild.IOCIRecipeBuild"

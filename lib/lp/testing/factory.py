@@ -160,7 +160,9 @@ from lp.hardwaredb.interfaces.hwdb import (
 from lp.oci.interfaces.ocipushrule import IOCIPushRuleSet
 from lp.oci.interfaces.ocirecipe import IOCIRecipeSet
 from lp.oci.interfaces.ocirecipebuild import IOCIRecipeBuildSet
-from lp.oci.interfaces.ociregistrycredentials import IOCIRegistryCredentialsSet
+from lp.oci.interfaces.ociregistrycredentials import (
+    IOCIRegistryCredentialsSet,
+    )
 from lp.oci.model.ocirecipe import OCIRecipeArch
 from lp.oci.model.ocirecipebuild import OCIFile
 from lp.registry.enums import (
@@ -2662,7 +2664,8 @@ class BareLaunchpadObjectFactory(ObjectFactory):
                          aliases=None, bug_supervisor=None, driver=None,
                          publish_root_dir=None, publish_base_url=None,
                          publish_copy_base_url=None, no_pubconf=False,
-                         icon=None, summary=None, vcs=None):
+                         icon=None, summary=None, vcs=None,
+                         oci_project_admin=None):
         """Make a new distribution."""
         if name is None:
             name = self.getUniqueString(prefix="distribution")
@@ -2690,6 +2693,8 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             naked_distro.driver = driver
         if bug_supervisor is not None:
             naked_distro.bug_supervisor = bug_supervisor
+        if oci_project_admin is not None:
+            naked_distro.oci_project_admin = oci_project_admin
         if not no_pubconf:
             self.makePublisherConfig(
                 distro, publish_root_dir, publish_base_url,
@@ -4988,7 +4993,7 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             processor = self.makeProcessor()
         return OCIRecipeArch(recipe, processor)
 
-    def makeOCIRecipeBuild(self, requester=None, recipe=None,
+    def makeOCIRecipeBuild(self, requester=None, registrant=None, recipe=None,
                            distro_arch_series=None, date_created=DEFAULT,
                            status=BuildStatus.NEEDSBUILD, builder=None,
                            duration=None):
@@ -5009,7 +5014,10 @@ class BareLaunchpadObjectFactory(ObjectFactory):
         if recipe is None:
             oci_project = self.makeOCIProject(
                 pillar=distro_arch_series.distroseries.distribution)
-            recipe = self.makeOCIRecipe(oci_project=oci_project)
+            if registrant is None:
+                registrant = requester
+            recipe = self.makeOCIRecipe(
+                registrant=registrant, oci_project=oci_project)
         oci_build = getUtility(IOCIRecipeBuildSet).new(
             requester, recipe, distro_arch_series, date_created)
         if duration is not None:

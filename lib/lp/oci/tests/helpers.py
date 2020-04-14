@@ -12,6 +12,9 @@ import base64
 
 from nacl.public import PrivateKey
 
+from lp.oci.interfaces.ocirecipe import OCI_RECIPE_ALLOW_CREATE
+from lp.services.features.testing import FeatureFixture
+
 
 class OCIConfigHelperMixin:
 
@@ -25,3 +28,5 @@ class OCIConfigHelperMixin:
             "oci",
             registry_secrets_private_key=base64.b64encode(
                 bytes(self.private_key)).decode("UTF-8"))
+        # Default feature flags for our tests
+        self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: 'on'}))

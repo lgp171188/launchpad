@@ -1,4 +1,4 @@
-# Copyright 2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2019-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Interfaces for a build record for OCI recipes."""
@@ -17,6 +17,7 @@ from zope.interface import Interface
 from zope.schema import (
     Bool,
     Datetime,
+    Int,
     TextLine,
     )
 
@@ -30,20 +31,8 @@ from lp.services.librarian.interfaces import ILibraryFileAlias
 from lp.soyuz.interfaces.distroarchseries import IDistroArchSeries
 
 
-class IOCIRecipeBuildEdit(Interface):
-
-    # XXX twom 2020-02-10 This will probably need cancel() implementing
-
-    def addFile(lfa, layer_file_digest):
-        """Add an OCI file to this build.
-
-        :param lfa: An `ILibraryFileAlias`.
-        :param layer_file_digest: Digest for this file, used for image layers.
-        :return: An `IOCILayerFile`.
-        """
-
-
 class IOCIRecipeBuildView(IPackageBuild):
+    """`IOCIRecipeBuild` attributes that require launchpad.View permission."""
 
     requester = PublicPersonChoice(
         title=_("Requester"),
@@ -88,10 +77,52 @@ class IOCIRecipeBuildView(IPackageBuild):
         title=_("The series and architecture for which to build."),
         required=True, readonly=True)
 
+    score = Int(
+        title=_("Score of the related build farm job (if any)."),
+        required=False, readonly=True)
+
+    can_be_rescored = Bool(
+        title=_("Can be rescored"),
+        required=True, readonly=True,
+        description=_("Whether this build record can be rescored manually."))
+
+    can_be_cancelled = Bool(
+        title=_("Can be cancelled"),
+        required=True, readonly=True,
+        description=_("Whether this build record can be cancelled."))
+
+
+class IOCIRecipeBuildEdit(Interface):
+    """`IOCIRecipeBuild` attributes that require launchpad.Edit permission."""
+
+    def addFile(lfa, layer_file_digest):
+        """Add an OCI file to this build.
+
+        :param lfa: An `ILibraryFileAlias`.
+        :param layer_file_digest: Digest for this file, used for image layers.
+        :return: An `IOCILayerFile`.
+        """
+
+    def cancel():
+        """Cancel the build if it is either pending or in progress.
+
+        Check the can_be_cancelled property prior to calling this method to
+        find out if cancelling the build is possible.
+
+        If the build is in progress, it is marked as CANCELLING until the
+        buildd manager terminates the build and marks it CANCELLED.  If the
+        build is not in progress, it is marked CANCELLED immediately and is
+        removed from the build queue.
+
+        If the build is not in a cancellable state, this method is a no-op.
+        """
+
 
 class IOCIRecipeBuildAdmin(Interface):
-    # XXX twom 2020-02-10 This will probably need rescore() implementing
-    pass
+    """`IOCIRecipeBuild` attributes that require launchpad.Admin permission."""
+
+    def rescore(score):
+        """Change the build's score."""
 
 
 class IOCIRecipeBuild(IOCIRecipeBuildAdmin, IOCIRecipeBuildEdit,
