@@ -162,8 +162,6 @@ class OCIRecipeRequestBuildsJob(OCIRecipeJobDerived):
 
     max_retries = 5
 
-    config = config.ISnapRequestBuildsJobSource
-
     @classmethod
     def create(cls, oci_recipe, requester):
         """See `OCIRecipeRequestBuildsJob`."""
