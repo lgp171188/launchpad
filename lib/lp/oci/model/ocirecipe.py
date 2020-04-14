@@ -555,3 +555,7 @@ class OCIRecipeBuildRequest:
     @property
     def builds(self):
         return self.job.builds
+
+    @property
+    def requester(self):
+        return self.job.requester

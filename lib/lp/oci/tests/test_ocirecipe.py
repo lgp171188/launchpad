@@ -864,10 +864,11 @@ class TestOCIRecipeAsyncWebservice(TestCaseWithFactory):
             fmt_date = lambda x: x if x is None else x.isoformat()
             abs_url = lambda x: self.webservice.getAbsoluteUrl(api_url(x))
             self.assertThat(ws_build_request, ContainsDict(dict(
+                requester_link=Equals(abs_url(self.person)),
+                oci_recipe_link=Equals(abs_url(build_request.oci_recipe)),
                 status=Equals(OCIRecipeBuildRequestStatus.PENDING.title),
                 date_requested=Equals(fmt_date(build_request.date_requested)),
                 date_finished=Equals(fmt_date(build_request.date_finished)),
-                oci_recipe_link=Equals(abs_url(build_request.oci_recipe)),
                 error_message=Equals(build_request.error_message),
                 builds_collection_link=Equals(build_request_url + '/builds')
             )))

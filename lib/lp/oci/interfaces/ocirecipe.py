@@ -67,6 +67,7 @@ from lp.oci.enums import OCIRecipeBuildRequestStatus
 from lp.registry.interfaces.distribution import IDistribution
 from lp.registry.interfaces.distroseries import IDistroSeries
 from lp.registry.interfaces.ociproject import IOCIProject
+from lp.registry.interfaces.person import IPerson
 from lp.registry.interfaces.role import IHasOwner
 from lp.services.database.constants import DEFAULT
 from lp.services.fields import (
@@ -150,6 +151,10 @@ class IOCIRecipeBuildRequest(Interface):
     date_finished = exported(Datetime(
         title=_("The time when this request finished"),
         required=False, readonly=True))
+
+    requester = exported(Reference(
+        IPerson, title=_("The IPerson that requested this build"),
+        required=True, readonly=True))
 
     oci_recipe = exported(Reference(
         # Really IOCIRecipe, patched in _schema_circular_imports.

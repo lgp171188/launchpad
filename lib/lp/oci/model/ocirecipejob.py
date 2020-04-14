@@ -167,15 +167,7 @@ class OCIRecipeRequestBuildsJob(OCIRecipeJobDerived):
     @classmethod
     def create(cls, oci_recipe, requester):
         """See `OCIRecipeRequestBuildsJob`."""
-        processors = oci_recipe.available_processors
-        metadata = {
-            "requester": requester.id,
-            # Really a set or None, but sets aren't directly
-            # JSON-serialisable.
-            "processors": (
-                [i.id for i in processors] if processors is not None
-                else None),
-            }
+        metadata = {"requester": requester.id}
         oci_recipe_job = OCIRecipeJob(oci_recipe, cls.class_job_type, metadata)
         job = cls(oci_recipe_job)
         job.celeryRunOnCommit()
