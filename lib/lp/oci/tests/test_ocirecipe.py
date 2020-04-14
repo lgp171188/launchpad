@@ -848,7 +848,7 @@ class TestOCIRecipeAsyncWebservice(TestCaseWithFactory):
             oci_recipe = self.factory.makeOCIRecipe(
                 oci_project=oci_project,
                 owner=self.person, registrant=self.person)
-            self.prepareArchSeries(oci_recipe)
+            distro_arch_series = self.prepareArchSeries(oci_recipe)
             recipe_url = api_url(oci_recipe)
 
         response = self.webservice.named_post(recipe_url, "requestBuilds")
@@ -857,12 +857,13 @@ class TestOCIRecipeAsyncWebservice(TestCaseWithFactory):
         build_request_url = response.getHeader("Location")
         job_id = int(build_request_url.split('/')[-1])
 
+        fmt_date = lambda x: x if x is None else x.isoformat()
+        abs_url = lambda x: self.webservice.getAbsoluteUrl(api_url(x))
+
         ws_build_request = self.webservice.get(build_request_url).jsonBody()
         with person_logged_in(self.person):
             build_request = oci_recipe.getBuildRequest(job_id)
 
-            fmt_date = lambda x: x if x is None else x.isoformat()
-            abs_url = lambda x: self.webservice.getAbsoluteUrl(api_url(x))
             self.assertThat(ws_build_request, ContainsDict(dict(
                 requester_link=Equals(abs_url(self.person)),
                 oci_recipe_link=Equals(abs_url(build_request.oci_recipe)),
@@ -872,3 +873,15 @@ class TestOCIRecipeAsyncWebservice(TestCaseWithFactory):
                 error_message=Equals(build_request.error_message),
                 builds_collection_link=Equals(build_request_url + '/builds')
             )))
+
+        builds = self.webservice.get(
+            ws_build_request["builds_collection_link"]).jsonBody()["entries"]
+        with person_logged_in(self.person):
+            self.assertThat(builds, MatchesSetwise(*[
+                ContainsDict({
+                    "buildstate": Equals("Needs building"),
+                    "title": Equals(
+                        "%s build of %s" % (
+                            arch_series.processor.name, api_url(oci_recipe)))
+                })
+                for arch_series in distro_arch_series]))

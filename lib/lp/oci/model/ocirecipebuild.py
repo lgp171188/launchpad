@@ -158,7 +158,7 @@ class OCIRecipeBuild(PackageBuildMixin, Storm):
     def title(self):
         # XXX cjwatson 2020-02-19: This should use a DAS architecture tag
         # rather than a processor name once we can do that.
-        return "%s build of ~%s/%s/+oci/%s/+recipe/%s" % (
+        return "%s build of /~%s/%s/+oci/%s/+recipe/%s" % (
             self.processor.name, self.recipe.owner.name,
             self.recipe.oci_project.pillar.name, self.recipe.oci_project.name,
             self.recipe.name)
