@@ -162,6 +162,11 @@ class OCIRecipeRequestBuildsJob(OCIRecipeJobDerived):
 
     max_retries = 5
 
+    # XXX: pappacena 2020-04-14: Add specific configuration for OCI jobs
+    # here, once other MP is landed with "oci-build-job" database user.
+    # See shcema-lazr.conf notes too.
+    # config = config.IOCIRecipeRequestBuildsJobSource
+
     @classmethod
     def create(cls, oci_recipe, requester):
         """See `OCIRecipeRequestBuildsJob`."""
