@@ -174,12 +174,9 @@ class OCIRegistryClient:
                 # for multiple fetches, but the files can be arbitary size
                 # Potentially gigabytes.
                 files[diff_id] = {}
-                source = digests[diff_id]["source"]
                 source_digest = digests[diff_id]["digest"]
-                files[diff_id]["source"] = source_digest
                 _, lfa, _ = build.getLayerFileByDigest(source_digest)
-                files[diff_id]["lfa"] = lfa
-                files['attempt_mount'] = bool(source)
+                files[diff_id] = lfa
             data[section["Config"]] = files
         return data
 
@@ -238,7 +235,7 @@ class OCIRegistryClient:
                         diff_id,
                         push_rule,
                         image_name,
-                        file_data[diff_id].get('lfa'))
+                        file_data[diff_id])
                 # The config file is required in different forms, so we can
                 # calculate the sha, work these out and upload
                 config_json = json.dumps(config).encode()

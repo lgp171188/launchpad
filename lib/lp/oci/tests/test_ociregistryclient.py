@@ -46,9 +46,9 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, TestCaseWithFactory):
         self.config = {"rootfs": {"diff_ids": ["diff_id_1", "diff_id_2"]}}
         self.build = self.factory.makeOCIRecipeBuild()
         self.factory.makeOCIPushRule(recipe=self.build.recipe)
+        self.client = OCIRegistryClient()
 
-    @responses.activate
-    def test_upload(self):
+    def _makeFiles(self):
         self.factory.makeOCIFile(
             build=self.build,
             content=json.dumps(self.manifest),
@@ -66,13 +66,13 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, TestCaseWithFactory):
         )
 
         # make layer files
-        self.factory.makeOCIFile(
+        self.layer_1_file = self.factory.makeOCIFile(
             build=self.build,
             content="digest_1",
             filename="digest_1_filename",
             layer_file_digest="digest_1"
         )
-        self.factory.makeOCIFile(
+        self.layer_2_file = self.factory.makeOCIFile(
             build=self.build,
             content="digest_2",
             filename="digest_2_filename",
@@ -80,7 +80,10 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, TestCaseWithFactory):
         )
 
         transaction.commit()
-        client = OCIRegistryClient()
+
+    @responses.activate
+    def test_upload(self):
+        self._makeFiles()
         self.useFixture(MockPatch(
             "lp.oci.model.ociregistryclient.OCIRegistryClient._upload"))
         self.useFixture(MockPatch(
@@ -92,7 +95,7 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, TestCaseWithFactory):
             self.build.recipe.push_rules[0].image_name
         )
         responses.add("PUT", manifests_url, status=201)
-        client.upload(self.build)
+        self.client.upload(self.build)
 
         request = json.loads(responses.calls[0].request.body)
 
@@ -122,3 +125,13 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, TestCaseWithFactory):
                 "application/vnd.docker.distribution.manifest.v2+json")
         }))
 
+    def test_preloadFiles(self):
+        self._makeFiles()
+        files = self.client._preloadFiles(
+            self.build, self.manifest, self.digests[0])
+
+        self.assertThat(files, MatchesDict({
+            'config_file_1.json': MatchesDict({
+                'config_file': Equals(self.config),
+                'diff_id_1': Equals(self.layer_1_file.library_file),
+                'diff_id_2': Equals(self.layer_2_file.library_file)})}))
