@@ -135,3 +135,46 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, TestCaseWithFactory):
                 'config_file': Equals(self.config),
                 'diff_id_1': Equals(self.layer_1_file.library_file),
                 'diff_id_2': Equals(self.layer_2_file.library_file)})}))
+
+    def test_calculateTag(self):
+        result = self.client._calculateTag(
+            self.build, self.build.recipe.push_rules[0])
+        self.assertEqual("edge", result)
+
+    def test_calculateName(self):
+        result = self.client._calculateName(
+            self.build, self.build.recipe.push_rules[0])
+        expected = "{}/{}".format(
+            self.build.recipe.oci_project.pillar.name,
+            self.build.recipe.push_rules[0].image_name)
+        self.assertEqual(expected, result)
+
+    def test_build_registry_manifest(self):
+        manifest = self.client._build_registry_manifest(
+            self.digests[0],
+            self.config,
+            json.dumps(self.config),
+            "config-sha")
+        self.assertThat(manifest, MatchesDict({
+            "layers": MatchesListwise([
+                MatchesDict({
+                    "mediaType": Equals(
+                        "application/vnd.docker.image.rootfs.diff.tar.gzip"),
+                    "digest": Equals("diff_id_1"),
+                    "size": Equals(0)}),
+                MatchesDict({
+                    "mediaType": Equals(
+                        "application/vnd.docker.image.rootfs.diff.tar.gzip"),
+                    "digest": Equals("diff_id_2"),
+                    "size": Equals(0)})
+            ]),
+            "schemaVersion": Equals(2),
+            "config": MatchesDict({
+                "mediaType": Equals(
+                    "application/vnd.docker.container.image.v1+json"),
+                "digest": Equals("sha256:config-sha"),
+                "size": Equals(52)
+            }),
+            "mediaType": Equals(
+                "application/vnd.docker.distribution.manifest.v2+json")
+        }))
