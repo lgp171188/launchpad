@@ -2664,7 +2664,8 @@ class BareLaunchpadObjectFactory(ObjectFactory):
                          aliases=None, bug_supervisor=None, driver=None,
                          publish_root_dir=None, publish_base_url=None,
                          publish_copy_base_url=None, no_pubconf=False,
-                         icon=None, summary=None, vcs=None):
+                         icon=None, summary=None, vcs=None,
+                         oci_project_admin=None):
         """Make a new distribution."""
         if name is None:
             name = self.getUniqueString(prefix="distribution")
@@ -2692,6 +2693,8 @@ class BareLaunchpadObjectFactory(ObjectFactory):
             naked_distro.driver = driver
         if bug_supervisor is not None:
             naked_distro.bug_supervisor = bug_supervisor
+        if oci_project_admin is not None:
+            naked_distro.oci_project_admin = oci_project_admin
         if not no_pubconf:
             self.makePublisherConfig(
                 distro, publish_root_dir, publish_base_url,
