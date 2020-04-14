@@ -41,7 +41,7 @@
             interface="lp.oci.interfaces.ocirecipe.IOCIRecipeSet"/>
     </securedutility>
 
-    <!-- OCIRecipeRequestBuildsJob -->
+    <!-- OCIRecipeRequestBuildsJob related classes -->
     <class class="lp.oci.model.ocirecipe.OCIRecipeBuildRequest">
         <require
             permission="launchpad.View"
