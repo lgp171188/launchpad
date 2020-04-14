@@ -18,6 +18,7 @@ from lp.oci.tests.helpers import OCIConfigHelperMixin
 
 from lp.testing import TestCaseWithFactory
 from lp.testing.layers import LaunchpadZopelessLayer
+from testtools.matchers import Equals, MatchesDict, MatchesListwise
 
 
 class TestOCIRegistryClient(OCIConfigHelperMixin, TestCaseWithFactory):
@@ -92,3 +93,32 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, TestCaseWithFactory):
         )
         responses.add("PUT", manifests_url, status=201)
         client.upload(self.build)
+
+        request = json.loads(responses.calls[0].request.body)
+
+        self.assertThat(request, MatchesDict({
+            "layers": MatchesListwise([
+                MatchesDict({
+                    "mediaType": Equals(
+                        "application/vnd.docker.image.rootfs.diff.tar.gzip"),
+                    "digest": Equals("diff_id_1"),
+                    "size": Equals(0)}),
+                MatchesDict({
+                    "mediaType": Equals(
+                        "application/vnd.docker.image.rootfs.diff.tar.gzip"),
+                    "digest": Equals("diff_id_2"),
+                    "size": Equals(0)})
+            ]),
+            "schemaVersion": Equals(2),
+            "config": MatchesDict({
+                "mediaType": Equals(
+                    "application/vnd.docker.container.image.v1+json"),
+                "digest": Equals(
+                    "sha256:33b69b4b6e106f9fc7a8b93409"
+                    "36c85cf7f84b2d017e7b55bee6ab214761f6ab"),
+                "size": Equals(52)
+            }),
+            "mediaType": Equals(
+                "application/vnd.docker.distribution.manifest.v2+json")
+        }))
+
