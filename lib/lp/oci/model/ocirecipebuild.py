@@ -230,15 +230,31 @@ class OCIRecipeBuild(PackageBuildMixin, Storm):
         durations.sort()
         return durations[len(durations) // 2]
 
-    def getByFileName(self, filename):
+    def getFiles(self):
+        """See `IOCIRecipeBuild`."""
         result = Store.of(self).find(
             (OCIFile, LibraryFileAlias, LibraryFileContent),
             OCIFile.build == self.id,
             LibraryFileAlias.id == OCIFile.library_file_id,
-            LibraryFileContent.id == LibraryFileAlias.contentID,
-            LibraryFileAlias.filename == filename).one()
-        if result is not None:
-            return result
+            LibraryFileContent.id == LibraryFileAlias.contentID)
+        return result.order_by([LibraryFileAlias.filename, OCIFile.id])
+
+    def getFileByName(self, filename):
+        """See `IOCIRecipeBuild`."""
+        if filename.endswith(".txt.gz"):
+            file_object = self.log
+        elif filename.endswith("_log.txt"):
+            file_object = self.upload_log
+        else:
+            file_object = Store.of(self).find(
+                LibraryFileAlias,
+                OCIFile.build == self.id,
+                LibraryFileAlias.id == OCIFile.library_file_id,
+                LibraryFileAlias.filename == filename).one()
+
+        if file_object is not None and file_object.filename == filename:
+            return file_object
+
         raise NotFoundError(filename)
 
     @cachedproperty

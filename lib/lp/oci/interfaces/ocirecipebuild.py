@@ -57,11 +57,27 @@ class IOCIRecipeBuildView(IPackageBuild):
             "The date when the build completed or is estimated to complete."),
         readonly=True)
 
-    def getByFileName():
-        """Retrieve a file by filename
+    def getFiles():
+        """Retrieve the build's `IOCIFile` records.
 
         :return: A result set of (`IOCIFile`, `ILibraryFileAlias`,
             `ILibraryFileContent`).
+        """
+
+    def getFileByName():
+        """Return the corresponding `ILibraryFileAlias` in this context.
+
+        The following file types (and extension) can be looked up:
+
+         * Build log: '.txt.gz'
+         * Upload log: '_log.txt'
+
+        Any filename not matching one of these extensions is looked up as an
+        OCI recipe output file.
+
+        :param filename: The filename to look up.
+        :raises NotFoundError: if no file exists with the given name.
+        :return: The corresponding `ILibraryFileAlias`.
         """
 
     def getLayerFileByDigest(layer_file_digest):

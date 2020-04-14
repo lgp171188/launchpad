@@ -68,20 +68,31 @@ class TestOCIRecipeBuild(TestCaseWithFactory):
     def test_addFile(self):
         lfa = self.factory.makeLibraryFileAlias()
         self.build.addFile(lfa)
-        _, result_lfa, _ = self.build.getByFileName(lfa.filename)
+        result_lfa = self.build.getFileByName(lfa.filename)
         self.assertEqual(result_lfa, lfa)
 
-    def test_getByFileName(self):
+    def test_getFileByName(self):
         files = [self.factory.makeOCIFile(build=self.build) for x in range(3)]
-        result, _, _ = self.build.getByFileName(
-            files[0].library_file.filename)
-        self.assertEqual(result, files[0])
+        result = self.build.getFileByName(files[0].library_file.filename)
+        self.assertEqual(files[0].library_file, result)
 
-    def test_getByFileName_missing(self):
+    def test_getFileByName_missing(self):
         self.assertRaises(
             NotFoundError,
-            self.build.getByFileName,
+            self.build.getFileByName,
             "missing")
+
+    def test_getFileByName_logs(self):
+        # getFileByName returns the logs when requested by name.
+        self.build.setLog(
+            self.factory.makeLibraryFileAlias(filename="buildlog.txt.gz"))
+        self.assertEqual(
+            self.build.log, self.build.getFileByName("buildlog.txt.gz"))
+        self.assertRaises(NotFoundError, self.build.getFileByName, "foo")
+        self.build.storeUploadLog("uploaded")
+        self.assertEqual(
+            self.build.upload_log,
+            self.build.getFileByName(self.build.upload_log.filename))
 
     def test_getLayerFileByDigest(self):
         files = [self.factory.makeOCIFile(
