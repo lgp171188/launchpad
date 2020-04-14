@@ -1,4 +1,4 @@
-# Copyright 2018-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2018-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Tests for snap package jobs."""
@@ -208,4 +208,38 @@ class TestSnapRequestBuildsJob(TestCaseWithFactory):
             date_finished=MatchesAll(
                 GreaterThan(expected_date_created), LessThan(now)),
             error_message=Equals("Nonsense on stilts"),
+            builds=AfterPreprocessing(set, MatchesSetwise())))
+
+    def test_run_failed_no_such_snap_base(self):
+        # A run where the snap base does not exist sets the job status to
+        # FAILED and records the error message.
+        [git_ref] = self.factory.makeGitRefs()
+        snap = self.factory.makeSnap(git_ref=git_ref)
+        expected_date_created = get_transaction_timestamp(IStore(snap))
+        job = SnapRequestBuildsJob.create(
+            snap, snap.registrant, snap.distro_series.main_archive,
+            PackagePublishingPocket.RELEASE, None)
+        snapcraft_yaml = "base: nonexistent\n"
+        self.useFixture(GitHostingFixture(blob=snapcraft_yaml))
+        with dbuser(config.ISnapRequestBuildsJobSource.dbuser):
+            JobRunner([job]).runAll()
+        now = get_transaction_timestamp(IStore(snap))
+        [notification] = self.assertEmailQueueLength(1)
+        self.assertThat(dict(notification), ContainsDict({
+            "From": Equals(config.canonical.noreply_from_address),
+            "To": Equals(format_address_for_person(snap.registrant)),
+            "Subject": Equals(
+                "Launchpad error while requesting builds of %s" % snap.name),
+            }))
+        self.assertEqual(
+            "Launchpad encountered an error during the following operation: "
+            "requesting builds of %s.  No such base: "
+            "'nonexistent'." % snap.name,
+            notification.get_payload(decode=True))
+        self.assertThat(job, MatchesStructure(
+            job=MatchesStructure.byEquality(status=JobStatus.FAILED),
+            date_created=Equals(expected_date_created),
+            date_finished=MatchesAll(
+                GreaterThan(expected_date_created), LessThan(now)),
+            error_message=Equals("No such base: 'nonexistent'."),
             builds=AfterPreprocessing(set, MatchesSetwise())))
