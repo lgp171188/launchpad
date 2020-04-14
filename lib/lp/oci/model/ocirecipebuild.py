@@ -163,6 +163,47 @@ class OCIRecipeBuild(PackageBuildMixin, Storm):
             self.recipe.oci_project.pillar.name, self.recipe.oci_project.name,
             self.recipe.name)
 
+    @property
+    def score(self):
+        """See `IOCIRecipeBuild`."""
+        if self.buildqueue_record is None:
+            return None
+        else:
+            return self.buildqueue_record.lastscore
+
+    @property
+    def can_be_rescored(self):
+        """See `IOCIRecipeBuild`."""
+        return (
+            self.buildqueue_record is not None and
+            self.status is BuildStatus.NEEDSBUILD)
+
+    @property
+    def can_be_cancelled(self):
+        """See `IOCIRecipeBuild`."""
+        if not self.buildqueue_record:
+            return False
+
+        cancellable_statuses = [
+            BuildStatus.BUILDING,
+            BuildStatus.NEEDSBUILD,
+            ]
+        return self.status in cancellable_statuses
+
+    def rescore(self, score):
+        """See `IOCIRecipeBuild`."""
+        assert self.can_be_rescored, "Build %s cannot be rescored" % self.id
+        self.buildqueue_record.manualScore(score)
+
+    def cancel(self):
+        """See `IOCIRecipeBuild`."""
+        if not self.can_be_cancelled:
+            return
+        # BuildQueue.cancel() will decide whether to go straight to
+        # CANCELLED, or go through CANCELLING to let buildd-manager clean up
+        # the slave.
+        self.buildqueue_record.cancel()
+
     def calculateScore(self):
         # XXX twom 2020-02-11 - This might need an addition?
         return 2510
