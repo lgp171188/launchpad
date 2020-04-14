@@ -1373,8 +1373,6 @@ class Distribution(SQLBase, BugTargetBase, MakesAnnouncements,
         """See `IDistribution`."""
         if person is None:
             return False
-        if person == self.oci_project_admin:
-            return True
         if person.inTeam(self.oci_project_admin):
             return True
         person_roles = IPersonRoles(person)
