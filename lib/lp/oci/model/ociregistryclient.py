@@ -11,8 +11,8 @@ __all__ = [
 ]
 
 
-from io import BytesIO
 import hashlib
+from io import BytesIO
 import json
 import logging
 import tarfile
@@ -26,6 +26,7 @@ from lp.oci.interfaces.ociregistryclient import (
     ManifestUploadFailed,
     )
 from lp.services.timeout import urlfetch
+
 
 log = logging.getLogger("ociregistryclient")
 
@@ -80,8 +81,7 @@ class OCIRegistryClient:
             post_location,
             params=query_parsed,
             data=fileobj,
-            method="PUT"
-        )
+            method="PUT")
 
         if put_response.status_code != 201:
             raise BlobUploadFailed(
@@ -134,19 +134,15 @@ class OCIRegistryClient:
                 "size": len(config_json),
                 "digest": "sha256:{}".format(config_sha),
             },
-            "layers": [],
-        }
+            "layers": []}
 
         # Fill in the layer information
         for layer in config["rootfs"]["diff_ids"]:
-            manifest["layers"].append(
-                {
-                    "mediaType":
-                        "application/vnd.docker.image.rootfs.diff.tar.gzip",
-                    "size": 0,  # XXX twom 2020-04-14 We can get this from LFA
-                    "digest": layer,
-                }
-            )
+            manifest["layers"].append({
+                "mediaType":
+                    "application/vnd.docker.image.rootfs.diff.tar.gzip",
+                "size": 0,  # XXX twom 2020-04-14 We can get this from LFA
+                "digest": layer})
         return manifest
 
     @classmethod
@@ -243,8 +239,7 @@ class OCIRegistryClient:
                     "sha256:{}".format(config_sha),
                     push_rule,
                     image_name,
-                    BytesIO(config_json)
-                )
+                    BytesIO(config_json))
 
                 # Build the registry manifest from the image manifest
                 # and associated configs
@@ -263,8 +258,7 @@ class OCIRegistryClient:
                             "application/"
                             "vnd.docker.distribution.manifest.v2+json"
                         },
-                    method="PUT"
-                )
+                    method="PUT")
                 if manifest_response.status_code != 201:
                     raise ManifestUploadFailed(
                         "Failed to upload manifest for {} in {}".format(

@@ -10,15 +10,19 @@ __metaclass__ = type
 import json
 
 from fixtures import MockPatch
+from requests.exceptions import HTTPError
 import responses
+from testtools.matchers import (
+    Equals,
+    MatchesDict,
+    MatchesListwise,
+    )
 import transaction
 
 from lp.oci.model.ociregistryclient import OCIRegistryClient
 from lp.oci.tests.helpers import OCIConfigHelperMixin
-
 from lp.testing import TestCaseWithFactory
 from lp.testing.layers import LaunchpadZopelessLayer
-from testtools.matchers import Equals, MatchesDict, MatchesListwise
 
 
 class TestOCIRegistryClient(OCIConfigHelperMixin, TestCaseWithFactory):
@@ -178,3 +182,28 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, TestCaseWithFactory):
             "mediaType": Equals(
                 "application/vnd.docker.distribution.manifest.v2+json")
         }))
+
+    @responses.activate
+    def test_upload_handles_existing(self):
+        blobs_url = "{}/v2/{}/blobs/{}".format(
+            self.build.recipe.push_rules[0].registry_credentials.url,
+            "test-name",
+            "test-digest")
+        responses.add("HEAD", blobs_url, status=200)
+        self.client._upload(
+            "test-digest", self.build.recipe.push_rules[0], "test-name", None)
+
+    @responses.activate
+    def test_upload_raises_non_404(self):
+        blobs_url = "{}/v2/{}/blobs/{}".format(
+            self.build.recipe.push_rules[0].registry_credentials.url,
+            "test-name",
+            "test-digest")
+        responses.add("HEAD", blobs_url, status=500)
+        self.assertRaises(
+            HTTPError,
+            self.client._upload,
+            "test-digest",
+            self.build.recipe.push_rules[0],
+            "test-name",
+            None)
