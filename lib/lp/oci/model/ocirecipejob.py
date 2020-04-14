@@ -9,8 +9,7 @@ __metaclass__ = type
 __all__ = [
     ]
 
-from breezy.decorators import cachedproperty
-from lazr.delegates._python2 import delegate_to
+from lazr.delegates import delegate_to
 from lazr.enum import (
     DBEnumeratedType,
     DBItem,
@@ -49,6 +48,7 @@ from lp.services.job.model.job import (
     )
 from lp.services.job.runner import BaseRunnableJob
 from lp.services.mail.sendmail import format_address_for_person
+from lp.services.propertycache import cachedproperty
 from lp.services.scripts import log
 
 
