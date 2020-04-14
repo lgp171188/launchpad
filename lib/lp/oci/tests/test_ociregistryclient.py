@@ -67,6 +67,12 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, TestCaseWithFactory):
         # make layer files
         self.factory.makeOCIFile(
             build=self.build,
+            content="digest_1",
+            filename="digest_1_filename",
+            layer_file_digest="digest_1"
+        )
+        self.factory.makeOCIFile(
+            build=self.build,
             content="digest_2",
             filename="digest_2_filename",
             layer_file_digest="digest_2"
@@ -75,12 +81,13 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, TestCaseWithFactory):
         transaction.commit()
         client = OCIRegistryClient()
         self.useFixture(MockPatch(
-            "lp.oci.model.ociregistryclient.OCIRegistryClient._do_mount"))
+            "lp.oci.model.ociregistryclient.OCIRegistryClient._upload"))
         self.useFixture(MockPatch(
-            "lp.oci.model.ociregistryclient.OCIRegistryClient._do_upload"))
+            "lp.oci.model.ociregistryclient.OCIRegistryClient._upload_layer"))
 
-        manifests_url = "{}/v2/{}/manifests/latest".format(
+        manifests_url = "{}/v2/{}/{}/manifests/edge".format(
             self.build.recipe.push_rules[0].registry_credentials.url,
+            self.build.recipe.oci_project.pillar.name,
             self.build.recipe.push_rules[0].image_name
         )
         responses.add("PUT", manifests_url, status=201)
