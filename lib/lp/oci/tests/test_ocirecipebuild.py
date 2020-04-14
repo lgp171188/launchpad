@@ -100,6 +100,35 @@ class TestOCIRecipeBuild(TestCaseWithFactory):
             self.build.getLayerFileByDigest,
             'missing')
 
+    def test_can_be_cancelled(self):
+        # For all states that can be cancelled, can_be_cancelled returns True.
+        ok_cases = [
+            BuildStatus.BUILDING,
+            BuildStatus.NEEDSBUILD,
+            ]
+        for status in BuildStatus:
+            if status in ok_cases:
+                self.assertTrue(self.build.can_be_cancelled)
+            else:
+                self.assertFalse(self.build.can_be_cancelled)
+
+    def test_cancel_not_in_progress(self):
+        # The cancel() method for a pending build leaves it in the CANCELLED
+        # state.
+        self.build.queueBuild()
+        self.build.cancel()
+        self.assertEqual(BuildStatus.CANCELLED, self.build.status)
+        self.assertIsNone(self.build.buildqueue_record)
+
+    def test_cancel_in_progress(self):
+        # The cancel() method for a building build leaves it in the
+        # CANCELLING state.
+        bq = self.build.queueBuild()
+        bq.markAsBuilding(self.factory.makeBuilder())
+        self.build.cancel()
+        self.assertEqual(BuildStatus.CANCELLING, self.build.status)
+        self.assertEqual(bq, self.build.buildqueue_record)
+
     def test_estimateDuration(self):
         # Without previous builds, the default time estimate is 30m.
         self.assertEqual(1800, self.build.estimateDuration().seconds)
