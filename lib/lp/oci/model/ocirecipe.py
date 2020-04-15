@@ -301,46 +301,56 @@ class OCIRecipe(Storm, WebhookTargetMixin):
                 "%s cannot create OCI image builds owned by %s." %
                 (requester.display_name, self.owner.display_name))
 
-    def _hasPendingBuilds(self, processors):
-        """Checks if this OCIRecipe has pending builds for any of the given
-        processors."""
+    def _hasPendingBuilds(self, distro_arch_series):
+        """Checks if this OCIRecipe has pending builds for all processors
+        in the given list of distro_arch_series.
+
+        :param distro_arch_series: A list of DistroArchSeries
+        :return: True if all processors have pending builds. False otherwise.
+        """
+        processors = {i.processor for i in distro_arch_series}
         pending = IStore(self).find(
             OCIRecipeBuild,
             OCIRecipeBuild.recipe == self.id,
-            OCIRecipeBuild.processor_id.is_in([i.id for i in processors]),
+            OCIRecipeBuild.processor_id.is_in([p.id for p in processors]),
             OCIRecipeBuild.status == BuildStatus.NEEDSBUILD)
-        return pending.any() is not None
+        pending_processors = {i.processor for i in pending}
+        return len(pending_processors) == len(processors)
 
-    def _createBuild(self, requester, distro_arch_series):
-        """Creates a build without checking anything."""
+    def requestBuild(self, requester, distro_arch_series):
+        self._checkRequestBuild(requester)
+        if self._hasPendingBuilds([distro_arch_series]):
+            raise OCIRecipeBuildAlreadyPending
+
         build = getUtility(IOCIRecipeBuildSet).new(
             requester, self, distro_arch_series)
         build.queueBuild()
         notify(ObjectCreatedEvent(build, user=requester))
         return build
 
-    def requestBuild(self, requester, distro_arch_series):
-        self._checkRequestBuild(requester)
-        if self._hasPendingBuilds([distro_arch_series.processor]):
-            raise OCIRecipeBuildAlreadyPending
-
-        return self._createBuild(requester, distro_arch_series)
-
     def getBuildRequest(self, job_id):
         return OCIRecipeBuildRequest(self, job_id)
 
     def requestBuildsFromJob(self, requester):
         self._checkRequestBuild(requester)
-        processors = self.available_processors
-        if self._hasPendingBuilds(processors):
+        distro_arch_series_to_build = set(self.getAllowedArchitectures())
+
+        # If *all* available architectures have pending builds, we fail the
+        # job. Otherwise, each single architecture will be checked again
+        # bellow, on self.requestBuild call.
+        if self._hasPendingBuilds(distro_arch_series_to_build):
             raise OCIRecipeBuildAlreadyPending
 
         builds = []
-        for distro_arch_series in self.oci_project.distribution.architectures:
-            builds.append(self._createBuild(requester, distro_arch_series))
+        for das in distro_arch_series_to_build:
+            try:
+                builds.append(self.requestBuild(requester, das))
+            except OCIRecipeBuildAlreadyPending:
+                pass
         return builds
 
     def requestBuilds(self, requester):
+        self._checkRequestBuild(requester)
         job = getUtility(IOCIRecipeRequestBuildsJobSource).create(
             self, requester)
         return self.getBuildRequest(job.job_id)

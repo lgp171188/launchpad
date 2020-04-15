@@ -8,9 +8,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 import base64
 import json
 
-from fixtures import (
-    FakeLogger,
-    )
+from fixtures import FakeLogger
 from nacl.public import PrivateKey
 from six import string_types
 from storm.exceptions import LostObjectError
@@ -107,20 +105,24 @@ class TestOCIRecipe(TestCaseWithFactory):
     def getDistroArchSeries(self, distroseries, proc_name="386",
                             arch_tag="i386"):
         processor = getUtility(IProcessorSet).getByName(proc_name)
-        return self.factory.makeDistroArchSeries(
+
+        das = self.factory.makeDistroArchSeries(
             distroseries=distroseries, architecturetag=arch_tag,
             processor=processor)
+        fake_chroot = self.factory.makeLibraryFileAlias(
+            filename="fake_chroot.tar.gz", db_only=True)
+        das.addOrUpdateChroot(fake_chroot)
+        return das
 
     def test_hasPendingBuilds(self):
-        ocirecipe = removeSecurityProxy(self.factory.makeOCIRecipe())
+        ocirecipe = removeSecurityProxy(
+            self.factory.makeOCIRecipe(require_virtualized=False))
         distro = ocirecipe.oci_project.distribution
         series = self.factory.makeDistroSeries(
             distribution=distro, status=SeriesStatus.CURRENT)
 
         arch_series_386 = self.getDistroArchSeries(series, "386", "386")
-        arch_series_amd64 = self.getDistroArchSeries(series, "amd64", "amd64")
-        proc_i386 = arch_series_386.processor
-        proc_amd64 = arch_series_amd64.processor
+        arch_series_hppa = self.getDistroArchSeries(series, "hppa", "hppa")
 
         # Successful build (i386)
         self.factory.makeOCIRecipeBuild(
@@ -134,17 +136,17 @@ class TestOCIRecipe(TestCaseWithFactory):
         self.factory.makeOCIRecipeBuild(
             recipe=ocirecipe, status=BuildStatus.BUILDING,
             distro_arch_series=arch_series_386)
-        # Building build (amd64)
+        # Building build (hppa)
         self.factory.makeOCIRecipeBuild(
             recipe=ocirecipe, status=BuildStatus.BUILDING,
-            distro_arch_series=arch_series_amd64)
+            distro_arch_series=arch_series_hppa)
 
         self.assertFalse(
-            ocirecipe._hasPendingBuilds([proc_i386]))
+            ocirecipe._hasPendingBuilds([arch_series_386]))
         self.assertFalse(
-            ocirecipe._hasPendingBuilds([proc_amd64]))
+            ocirecipe._hasPendingBuilds([arch_series_hppa]))
         self.assertFalse(
-            ocirecipe._hasPendingBuilds([proc_i386, proc_amd64]))
+            ocirecipe._hasPendingBuilds([arch_series_386, arch_series_hppa]))
 
         # The only pending build, for i386.
         self.factory.makeOCIRecipeBuild(
@@ -152,11 +154,19 @@ class TestOCIRecipe(TestCaseWithFactory):
             distro_arch_series=arch_series_386)
 
         self.assertTrue(
-            ocirecipe._hasPendingBuilds([proc_i386]))
+            ocirecipe._hasPendingBuilds([arch_series_386]))
         self.assertFalse(
-            ocirecipe._hasPendingBuilds([proc_amd64]))
+            ocirecipe._hasPendingBuilds([arch_series_hppa]))
+        self.assertFalse(
+            ocirecipe._hasPendingBuilds([arch_series_386, arch_series_hppa]))
+
+        # Add a pending for hppa
+        self.factory.makeOCIRecipeBuild(
+            recipe=ocirecipe, status=BuildStatus.NEEDSBUILD,
+            distro_arch_series=arch_series_hppa)
+
         self.assertTrue(
-            ocirecipe._hasPendingBuilds([proc_i386, proc_amd64]))
+            ocirecipe._hasPendingBuilds([arch_series_386, arch_series_hppa]))
 
     def test_requestBuild(self):
         ocirecipe = self.factory.makeOCIRecipe()
@@ -210,14 +220,15 @@ class TestOCIRecipe(TestCaseWithFactory):
                          MatchesDict(expected_payload))]))
 
     def test_requestBuildsFromJob_creates_builds(self):
-        ocirecipe = removeSecurityProxy(self.factory.makeOCIRecipe())
+        ocirecipe = removeSecurityProxy(self.factory.makeOCIRecipe(
+            require_virtualized=False))
         owner = ocirecipe.owner
         distro = ocirecipe.oci_project.distribution
         series = self.factory.makeDistroSeries(
             distribution=distro, status=SeriesStatus.CURRENT)
 
         arch_series_386 = self.getDistroArchSeries(series, "386", "386")
-        arch_series_amd64 = self.getDistroArchSeries(series, "amd64", "amd64")
+        arch_series_hppa = self.getDistroArchSeries(series, "hppa", "hppa")
 
         with person_logged_in(owner):
             builds = ocirecipe.requestBuildsFromJob(owner)
@@ -227,11 +238,14 @@ class TestOCIRecipe(TestCaseWithFactory):
                     processor=Equals(arch_series_386.processor)),
                 MatchesStructure(
                     recipe=Equals(ocirecipe),
-                    processor=Equals(arch_series_amd64.processor))
+                    processor=Equals(arch_series_hppa.processor))
             ))
 
     def test_requestBuildsFromJob_unauthorized_user(self):
         ocirecipe = removeSecurityProxy(self.factory.makeOCIRecipe())
+        self.factory.makeDistroSeries(
+            distribution=ocirecipe.oci_project.distribution,
+            status=SeriesStatus.CURRENT)
         another_user = self.factory.makePerson()
         with person_logged_in(another_user):
             self.assertRaises(
@@ -245,7 +259,6 @@ class TestOCIRecipe(TestCaseWithFactory):
             distribution=distro, status=SeriesStatus.CURRENT)
 
         arch_series_386 = self.getDistroArchSeries(series, "386", "386")
-        self.getDistroArchSeries(series, "amd64", "amd64")
 
         self.factory.makeOCIRecipeBuild(
             recipe=ocirecipe, status=BuildStatus.NEEDSBUILD,
@@ -822,9 +835,14 @@ class TestOCIRecipeAsyncWebservice(TestCaseWithFactory):
     def getDistroArchSeries(self, distroseries, proc_name="386",
                             arch_tag="i386"):
         processor = getUtility(IProcessorSet).getByName(proc_name)
-        return self.factory.makeDistroArchSeries(
+
+        das = self.factory.makeDistroArchSeries(
             distroseries=distroseries, architecturetag=arch_tag,
             processor=processor)
+        fake_chroot = self.factory.makeLibraryFileAlias(
+            filename="fake_chroot.tar.gz", db_only=True)
+        das.addOrUpdateChroot(fake_chroot)
+        return das
 
     def prepareArchSeries(self, ocirecipe):
         distro = ocirecipe.oci_project.distribution
@@ -833,7 +851,7 @@ class TestOCIRecipeAsyncWebservice(TestCaseWithFactory):
 
         return [
             self.getDistroArchSeries(series, "386", "386"),
-            self.getDistroArchSeries(series, "amd64", "amd64")]
+            self.getDistroArchSeries(series, "hppa", "hppa")]
 
     def test_requestBuilds_creates_builds(self):
         with person_logged_in(self.person):
@@ -841,7 +859,7 @@ class TestOCIRecipeAsyncWebservice(TestCaseWithFactory):
             oci_project = self.factory.makeOCIProject(
                 registrant=self.person, pillar=distro)
             oci_recipe = self.factory.makeOCIRecipe(
-                oci_project=oci_project,
+                oci_project=oci_project, require_virtualized=False,
                 owner=self.person, registrant=self.person)
             distro_arch_series = self.prepareArchSeries(oci_recipe)
             recipe_url = api_url(oci_recipe)
