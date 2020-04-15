@@ -96,12 +96,6 @@ from lp.hardwaredb.interfaces.hwdb import (
     IHWSubmissionDevice,
     IHWVendorID,
     )
-from lp.oci.interfaces.ocipushrule import IOCIPushRule
-from lp.oci.interfaces.ocirecipe import (
-    IOCIRecipe,
-    IOCIRecipeBuildRequest,
-    )
-from lp.oci.interfaces.ocirecipebuild import IOCIRecipeBuild
 from lp.registry.interfaces.commercialsubscription import (
     ICommercialSubscription,
     )
@@ -125,7 +119,6 @@ from lp.registry.interfaces.milestone import (
     IMilestone,
     )
 from lp.registry.interfaces.ociproject import IOCIProject
-from lp.registry.interfaces.ociprojectseries import IOCIProjectSeries
 from lp.registry.interfaces.person import (
     IPerson,
     IPersonEditRestricted,
@@ -1103,17 +1096,3 @@ patch_operations_explicit_version(
 
 # IWikiName
 patch_entry_explicit_version(IWikiName, 'beta')
-
-# IOCIProject
-patch_collection_property(IOCIProject, 'series', IOCIProjectSeries)
-patch_entry_return_type(IOCIProject, 'newRecipe', IOCIRecipe)
-
-# IOCIRecipe
-patch_collection_property(IOCIRecipe, 'builds', IOCIRecipeBuild)
-patch_collection_property(IOCIRecipe, 'completed_builds', IOCIRecipeBuild)
-patch_collection_property(IOCIRecipe, 'pending_builds', IOCIRecipeBuild)
-patch_collection_property(IOCIRecipe, 'push_rules', IOCIPushRule)
-
-# IOCIRecipeRequestBuild
-patch_reference_property(IOCIRecipeBuildRequest, 'oci_recipe', IOCIRecipe)
-patch_collection_property(IOCIRecipeBuildRequest, 'builds', IOCIRecipeBuild)
