@@ -15,11 +15,13 @@ __all__ = [
 from datetime import timedelta
 
 import pytz
+from storm.expr import LeftJoin
 from storm.locals import (
     Bool,
     DateTime,
     Desc,
     Int,
+    Or,
     Reference,
     Store,
     Storm,
@@ -241,16 +243,16 @@ class OCIRecipeBuild(PackageBuildMixin, Storm):
 
     def getFileByName(self, filename):
         """See `IOCIRecipeBuild`."""
-        if filename.endswith(".txt.gz"):
-            file_object = self.log
-        elif filename.endswith("_log.txt"):
-            file_object = self.upload_log
-        else:
-            file_object = Store.of(self).find(
-                LibraryFileAlias,
-                OCIFile.build == self.id,
-                LibraryFileAlias.id == OCIFile.library_file_id,
-                LibraryFileAlias.filename == filename).one()
+        origin = [
+            LibraryFileAlias,
+            LeftJoin(OCIFile, LibraryFileAlias.id == OCIFile.library_file_id),
+            ]
+        file_object = Store.of(self).using(*origin).find(
+            LibraryFileAlias,
+            Or(
+                LibraryFileAlias.id.is_in((self.log_id, self.upload_log_id)),
+                OCIFile.build == self.id),
+            LibraryFileAlias.filename == filename).one()
 
         if file_object is not None and file_object.filename == filename:
             return file_object
