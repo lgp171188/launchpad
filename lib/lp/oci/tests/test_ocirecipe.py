@@ -10,7 +10,6 @@ import json
 
 from fixtures import (
     FakeLogger,
-    MockPatch,
     )
 from nacl.public import PrivateKey
 from six import string_types
@@ -42,6 +41,7 @@ from lp.oci.interfaces.ocirecipe import (
     OCIRecipeNotOwner,
     )
 from lp.oci.interfaces.ocirecipebuild import IOCIRecipeBuildSet
+from lp.oci.interfaces.ocirecipejob import IOCIRecipeRequestBuildsJobSource
 from lp.registry.interfaces.series import SeriesStatus
 from lp.services.config import config
 from lp.services.database.constants import (
@@ -50,6 +50,7 @@ from lp.services.database.constants import (
     )
 from lp.services.database.sqlbase import flush_database_caches
 from lp.services.features.testing import FeatureFixture
+from lp.services.job.runner import JobRunner
 from lp.services.webapp.interfaces import OAuthPermission
 from lp.services.webapp.publisher import canonical_url
 from lp.services.webapp.snapshot import notify_modified
@@ -835,12 +836,6 @@ class TestOCIRecipeAsyncWebservice(TestCaseWithFactory):
             self.getDistroArchSeries(series, "amd64", "amd64")]
 
     def test_requestBuilds_creates_builds(self):
-        celeryRunOnCommit = MockPatch(
-            'lp.oci.model.ocirecipejob.OCIRecipeRequestBuildsJob.'
-            'celeryRunOnCommit', lambda instance: instance.run())
-        # This will make the celery task run synchronously during the request.
-        self.useFixture(celeryRunOnCommit)
-
         with person_logged_in(self.person):
             distro = self.factory.makeDistribution(owner=self.person)
             oci_project = self.factory.makeOCIProject(
@@ -854,6 +849,12 @@ class TestOCIRecipeAsyncWebservice(TestCaseWithFactory):
         response = self.webservice.named_post(recipe_url, "requestBuilds")
         self.assertEqual(201, response.status, response.body)
 
+        with admin_logged_in():
+            [job] = getUtility(IOCIRecipeRequestBuildsJobSource).iterReady()
+            # XXX: pappacena 2020-04-15: Test JobRunner with the proper dbuser.
+            # with dbuser(config.IOCIRecipeRequestBuildsJobSource.dbuser):
+            JobRunner([job]).runAll()
+
         build_request_url = response.getHeader("Location")
         job_id = int(build_request_url.split('/')[-1])
 
@@ -866,7 +867,7 @@ class TestOCIRecipeAsyncWebservice(TestCaseWithFactory):
 
             self.assertThat(ws_build_request, ContainsDict(dict(
                 recipe_link=Equals(abs_url(build_request.recipe)),
-                status=Equals(OCIRecipeBuildRequestStatus.PENDING.title),
+                status=Equals(OCIRecipeBuildRequestStatus.COMPLETED.title),
                 date_requested=Equals(fmt_date(build_request.date_requested)),
                 date_finished=Equals(fmt_date(build_request.date_finished)),
                 error_message=Equals(build_request.error_message),
