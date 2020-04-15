@@ -2590,12 +2590,14 @@ class IAdminPeopleMergeSchema(Interface):
     dupe_person = Choice(
         title=_('Duplicated Person'), required=True,
         vocabulary='AdminMergeablePerson',
-        description=_("The duplicated person found in Launchpad."))
+        description=_(
+            "The duplicated person found in Launchpad. "
+            "This account will be removed."))
 
     target_person = Choice(
         title=_('Target Person'), required=True,
         vocabulary='AdminMergeablePerson',
-        description=_("The person to be merged on."))
+        description=_("The person to be merged on. This account will remain."))
 
 
 class IAdminTeamMergeSchema(Interface):
