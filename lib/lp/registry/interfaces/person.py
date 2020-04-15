@@ -2597,7 +2597,9 @@ class IAdminPeopleMergeSchema(Interface):
     target_person = Choice(
         title=_('Target Person'), required=True,
         vocabulary='AdminMergeablePerson',
-        description=_("The person to be merged on. This account will remain."))
+        description=_(
+            "The person to be merged into. "
+            "This account will remain."))
 
 
 class IAdminTeamMergeSchema(Interface):
@@ -2605,11 +2607,15 @@ class IAdminTeamMergeSchema(Interface):
 
     dupe_person = Choice(
         title=_('Duplicated Team'), required=True, vocabulary='ValidTeam',
-        description=_("The duplicated team found in Launchpad."))
+        description=_(
+            "The duplicated team found in Launchpad."
+            "This team will be removed."))
 
     target_person = Choice(
         title=_('Target Team'), required=True, vocabulary='ValidTeam',
-        description=_("The team to be merged on."))
+        description=_(
+            "The team to be merged into. "
+            "This team will remain."))
 
 
 class IObjectReassignment(Interface):
