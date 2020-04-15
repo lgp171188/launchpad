@@ -14,10 +14,8 @@ from lazr.enum import (
     DBEnumeratedType,
     DBItem,
     )
-from storm.properties import (
-    Int,
-    JSON,
-    )
+from storm.databases.postgres import JSON
+from storm.properties import Int
 from storm.references import Reference
 from storm.store import EmptyResultSet
 import transaction
@@ -35,7 +33,7 @@ from lp.oci.interfaces.ocirecipejob import (
     )
 from lp.oci.model.ocirecipebuild import OCIRecipeBuild
 from lp.registry.interfaces.person import IPersonSet
-from lp.services.config import config
+# from lp.services.config import config
 from lp.services.database.enumcol import EnumCol
 from lp.services.database.interfaces import (
     IMasterStore,
@@ -71,7 +69,7 @@ class OCIRecipeJob(StormBase):
     job_id = Int(name='job', primary=True, allow_none=False)
     job = Reference(job_id, 'Job.id')
 
-    oci_recipe_id = Int(name='oci_recipe', allow_none=False)
+    oci_recipe_id = Int(name='recipe', allow_none=False)
     oci_recipe = Reference(oci_recipe_id, 'OCIRecipe.id')
 
     job_type = EnumCol(enum=OCIRecipeJobType, notNull=True)
