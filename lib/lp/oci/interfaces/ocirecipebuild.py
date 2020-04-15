@@ -64,7 +64,7 @@ class IOCIRecipeBuildView(IPackageBuild):
             `ILibraryFileContent`).
         """
 
-    def getFileByName():
+    def getFileByName(filename):
         """Return the corresponding `ILibraryFileAlias` in this context.
 
         The following file types (and extension) can be looked up:
