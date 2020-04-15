@@ -51,7 +51,7 @@ class OCIRecipeBuildBehaviour(SnapProxyMixin, BuildFarmJobBehaviourBase):
 
         # Examples:
         #   buildlog_oci_ubuntu_wily_amd64_name_FULLYBUILT.txt
-        return 'buildlog_oci_%s_%s_%s_%s_%s' % (
+        return 'buildlog_oci_%s_%s_%s_%s_%s.txt' % (
             series.distribution.name, series.name,
             self.build.processor.name, self.build.recipe.name,
             self.build.status.name)

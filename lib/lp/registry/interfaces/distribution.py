@@ -274,6 +274,11 @@ class IDistributionPublic(
         "All unofficial mirrors of this Distribution.")
     pending_review_mirrors = Attribute(
         "All mirrors of this Distribution that haven't been reviewed yet.")
+    oci_project_admin = exported(PublicPersonChoice(
+        title=_("OCI Project Administrator"),
+        description=_("The person or team that has the rights to manage OCI "
+                      "Projects for this distribution."),
+        required=False, vocabulary='ValidPersonOrTeam'))
     series = exported(doNotSnapshot(
         CollectionField(
             title=_("DistroSeries inside this Distribution"),
@@ -655,6 +660,10 @@ class IDistributionPublic(
 
     def userCanEdit(user):
         """Can the user edit this distribution?"""
+
+    def canAdministerOCIProjects(person):
+        """Checks if the given person can administer OCI Projects of this
+        distro."""
 
     # XXX: pappacena 2020-04-25: This method is here on IDistributionPublic
     # for now, until we workout the specific permission for creating OCI

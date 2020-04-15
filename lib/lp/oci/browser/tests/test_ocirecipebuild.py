@@ -16,6 +16,7 @@ from testtools.matchers import StartsWith
 import transaction
 from zope.component import getUtility
 from zope.security.interfaces import Unauthorized
+from zope.security.proxy import removeSecurityProxy
 from zope.testbrowser.browser import LinkNotFoundError
 
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
@@ -39,6 +40,7 @@ from lp.testing.pages import (
     find_main_content,
     find_tags_by_class,
     )
+from lp.testing.views import create_initialized_view
 
 
 class TestCanonicalUrlForOCIRecipeBuild(TestCaseWithFactory):
@@ -89,6 +91,21 @@ class TestOCIRecipeBuildView(BrowserTestCase):
                 oci_project.pillar.name, oci_project.name, recipe.name,
                 recipe.owner.display_name),
             self.getMainText(build))
+
+    def test_files(self):
+        # OCIRecipeBuildView.files returns all the associated files.
+        build = self.factory.makeOCIRecipeBuild(status=BuildStatus.FULLYBUILT)
+        oci_file = self.factory.makeOCIFile(build=build)
+        build_view = create_initialized_view(build, "+index")
+        self.assertEqual(
+            [oci_file.library_file.filename],
+            [lfa.filename for lfa in build_view.files])
+        # Deleted files won't be included.
+        self.assertFalse(oci_file.library_file.deleted)
+        removeSecurityProxy(oci_file.library_file).content = None
+        self.assertTrue(oci_file.library_file.deleted)
+        build_view = create_initialized_view(build, "+index")
+        self.assertEqual([], build_view.files)
 
 
 class TestOCIRecipeBuildOperations(BrowserTestCase):

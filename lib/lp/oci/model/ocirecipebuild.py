@@ -15,11 +15,13 @@ __all__ = [
 from datetime import timedelta
 
 import pytz
+from storm.expr import LeftJoin
 from storm.locals import (
     Bool,
     DateTime,
     Desc,
     Int,
+    Or,
     Reference,
     Store,
     Storm,
@@ -230,15 +232,31 @@ class OCIRecipeBuild(PackageBuildMixin, Storm):
         durations.sort()
         return durations[len(durations) // 2]
 
-    def getByFileName(self, filename):
+    def getFiles(self):
+        """See `IOCIRecipeBuild`."""
         result = Store.of(self).find(
             (OCIFile, LibraryFileAlias, LibraryFileContent),
             OCIFile.build == self.id,
             LibraryFileAlias.id == OCIFile.library_file_id,
-            LibraryFileContent.id == LibraryFileAlias.contentID,
+            LibraryFileContent.id == LibraryFileAlias.contentID)
+        return result.order_by([LibraryFileAlias.filename, OCIFile.id])
+
+    def getFileByName(self, filename):
+        """See `IOCIRecipeBuild`."""
+        origin = [
+            LibraryFileAlias,
+            LeftJoin(OCIFile, LibraryFileAlias.id == OCIFile.library_file_id),
+            ]
+        file_object = Store.of(self).using(*origin).find(
+            LibraryFileAlias,
+            Or(
+                LibraryFileAlias.id.is_in((self.log_id, self.upload_log_id)),
+                OCIFile.build == self.id),
             LibraryFileAlias.filename == filename).one()
-        if result is not None:
-            return result
+
+        if file_object is not None and file_object.filename == filename:
+            return file_object
+
         raise NotFoundError(filename)
 
     @cachedproperty

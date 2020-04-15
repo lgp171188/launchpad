@@ -114,6 +114,7 @@ from lp.registry.interfaces.person import (
     )
 from lp.registry.interfaces.pillar import IPillarNameSet
 from lp.registry.interfaces.pocket import suffixpocket
+from lp.registry.interfaces.role import IPersonRoles
 from lp.registry.interfaces.series import SeriesStatus
 from lp.registry.interfaces.sourcepackagename import ISourcePackageName
 from lp.registry.model.announcement import MakesAnnouncements
@@ -241,6 +242,9 @@ class Distribution(SQLBase, BugTargetBase, MakesAnnouncements,
     mirror_admin = ForeignKey(
         dbName='mirror_admin', foreignKey='Person',
         storm_validator=validate_public_person, notNull=True)
+    oci_project_admin = ForeignKey(
+        dbName='oci_project_admin', foreignKey='Person',
+        storm_validator=validate_public_person, notNull=False, default=None)
     translationgroup = ForeignKey(
         dbName='translationgroup', foreignKey='TranslationGroup',
         notNull=False, default=None)
@@ -1364,6 +1368,17 @@ class Distribution(SQLBase, BugTargetBase, MakesAnnouncements,
             return False
         admins = getUtility(ILaunchpadCelebrities).admin
         return user.inTeam(self.owner) or user.inTeam(admins)
+
+    def canAdministerOCIProjects(self, person):
+        """See `IDistribution`."""
+        if person is None:
+            return False
+        if person.inTeam(self.oci_project_admin):
+            return True
+        person_roles = IPersonRoles(person)
+        if person_roles.in_admin or person_roles.isOwner(self):
+            return True
+        return False
 
     def newSeries(self, name, display_name, title, summary,
                   description, version, previous_series, registrant):

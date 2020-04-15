@@ -1,4 +1,4 @@
-# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """ArchiveGPGSigningKey implementation."""
@@ -8,17 +8,12 @@ __metaclass__ = type
 __all__ = [
     'ArchiveGPGSigningKey',
     'SignableArchive',
-    'SigningMode',
     ]
 
 
 import os
 
 import gpgme
-from lazr.enum import (
-    EnumeratedType,
-    Item,
-    )
 from twisted.internet.threads import deferToThread
 from zope.component import getUtility
 from zope.interface import implementer
@@ -43,13 +38,7 @@ from lp.services.config import config
 from lp.services.gpg.interfaces import IGPGHandler
 from lp.services.osutils import remove_if_exists
 from lp.services.propertycache import get_property_cache
-
-
-class SigningMode(EnumeratedType):
-    """Archive file signing mode."""
-
-    DETACHED = Item("Detached signature")
-    CLEAR = Item("Cleartext signature")
+from lp.services.signing.enums import SigningMode
 
 
 @implementer(ISignableArchive)
@@ -100,6 +89,8 @@ class SignableArchive:
 
         output_paths = []
         for input_path, output_path, mode, suite in signatures:
+            if mode not in {SigningMode.DETACHED, SigningMode.CLEAR}:
+                raise ValueError('Invalid signature mode for GPG: %s' % mode)
             if self.archive.signing_key is not None:
                 with open(input_path) as input_file:
                     input_content = input_file.read()
