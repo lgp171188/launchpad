@@ -57,11 +57,22 @@ class IOCIRecipeBuildView(IPackageBuild):
             "The date when the build completed or is estimated to complete."),
         readonly=True)
 
-    def getByFileName():
-        """Retrieve a file by filename
+    def getFiles():
+        """Retrieve the build's `IOCIFile` records.
 
         :return: A result set of (`IOCIFile`, `ILibraryFileAlias`,
             `ILibraryFileContent`).
+        """
+
+    def getFileByName(filename):
+        """Return the corresponding `ILibraryFileAlias` in this context.
+
+        The `filename` may be that of the build log, the upload log, or any
+        of this build's `OCIFile`s.
+
+        :param filename: The filename to look up.
+        :raises NotFoundError: if no file exists with the given name.
+        :return: The corresponding `ILibraryFileAlias`.
         """
 
     def getLayerFileByDigest(layer_file_digest):

@@ -21,6 +21,11 @@ from lp.app.browser.launchpadform import (
     LaunchpadFormView,
     )
 from lp.oci.interfaces.ocirecipebuild import IOCIRecipeBuild
+from lp.services.librarian.browser import (
+    FileNavigationMixin,
+    ProxiedLibraryFileAlias,
+    )
+from lp.services.propertycache import cachedproperty
 from lp.services.webapp import (
     canonical_url,
     ContextMenu,
@@ -31,7 +36,7 @@ from lp.services.webapp import (
 from lp.soyuz.interfaces.binarypackagebuild import IBuildRescoreForm
 
 
-class OCIRecipeBuildNavigation(Navigation):
+class OCIRecipeBuildNavigation(Navigation, FileNavigationMixin):
 
     usedfor = IOCIRecipeBuild
 
@@ -69,6 +74,20 @@ class OCIRecipeBuildView(LaunchpadFormView):
         return self.context.title
 
     page_title = label
+
+    @cachedproperty
+    def files(self):
+        """Return `LibraryFileAlias`es for files produced by this build."""
+        if not self.context.was_built:
+            return None
+
+        return [
+            ProxiedLibraryFileAlias(alias, self.context)
+            for _, alias, _ in self.context.getFiles() if not alias.deleted]
+
+    @cachedproperty
+    def has_files(self):
+        return bool(self.files)
 
     @property
     def next_url(self):
