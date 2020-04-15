@@ -18,6 +18,7 @@ from zope.interface import (
     Interface,
     )
 from zope.schema import (
+    Datetime,
     List,
     TextLine,
     )
@@ -69,6 +70,14 @@ class IOCIRecipeRequestBuildsJob(IRunnableJob):
         title=_("The builds created by this request."),
         value_type=Reference(schema=IOCIRecipeBuild), required=True,
         readonly=True)
+
+    date_created = Datetime(
+        title=_("Time when this job was created."),
+        required=True, readonly=True)
+
+    date_finished = Datetime(
+        title=_("Time when this job finished."),
+        required=True, readonly=True)
 
     error_message = TextLine(
         title=_("Error message"), required=False, readonly=True)
