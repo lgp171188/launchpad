@@ -180,3 +180,24 @@ class SigningServiceClient:
         return {
             'public-key': base64.b64decode(data['public-key']),
             'signed-message': base64.b64decode(data['signed-message'])}
+
+    def inject(self, key_type, private_key, public_key, description,
+               created_at):
+        payload = json.dumps({
+            "key-type": key_type.name,
+            "private-key": base64.b64encode(
+                bytes(private_key)).decode("UTF-8"),
+            "public-key": base64.b64encode(
+                bytes(public_key)).decode("UTF-8"),
+            "created-at": created_at.isoformat(),
+            "description": description,
+        }).encode("UTF-8")
+
+        nonce = self.getNonce()
+        response_nonce = self._makeResponseNonce()
+
+        data = self._requestJson(
+            "/inject", "POST",
+            headers=self._getAuthHeaders(nonce, response_nonce),
+            data=self._encryptPayload(nonce, payload))
+        return {"fingerprint": data["fingerprint"]}

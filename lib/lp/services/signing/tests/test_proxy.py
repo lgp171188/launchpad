@@ -4,6 +4,7 @@
 __metaclass__ = type
 
 import base64
+from datetime import datetime
 import json
 
 from fixtures import MockPatch
@@ -131,8 +132,16 @@ class SigningServiceResponseFactory:
             body=self._encryptPayload({
                 'fingerprint': self.generated_fingerprint,
                 'public-key': self.b64_generated_public_key.decode('utf8')
-                }, nonce=response_nonce),
+            }, nonce=response_nonce),
             status=201)
+
+        responses.add(
+            responses.POST, self.getUrl("/inject"),
+            body=self._encryptPayload({
+                'fingerprint': self.generated_fingerprint,
+            }, nonce=response_nonce),
+            status=200)
+
         call_counts = {'/sign': 0}
 
         def sign_callback(request):
@@ -316,3 +325,45 @@ class SigningServiceProxyTest(TestCaseWithFactory, TestWithFixtures):
         self.assertEqual(
             bytes(self.response_factory.generated_public_key),
             data['public-key'])
+
+    @responses.activate
+    def test_inject_key(self):
+        """Makes sure that the SigningService.inject method calls the
+        correct endpoints, and actually injects key contents.
+        """
+        self.response_factory.addResponses(self)
+        private_key = PrivateKey.generate()
+        public_key = private_key.public_key
+
+        # Generate the key, and checks if we got back the correct dict.
+        signing = getUtility(ISigningServiceClient)
+        response_data = signing.inject(
+            SigningKeyType.UEFI, private_key, public_key,
+            "This is a test key injected.", datetime.now())
+
+        self.assertEqual(response_data, {
+            'fingerprint': self.response_factory.generated_fingerprint})
+
+        self.assertEqual(3, len(responses.calls))
+
+        # expected order of HTTP calls
+        http_nonce, http_service_key, http_inject = responses.calls
+
+        self.assertEqual("POST", http_nonce.request.method)
+        self.assertEqual(
+            self.response_factory.getUrl("/nonce"), http_nonce.request.url)
+
+        self.assertEqual("GET", http_service_key.request.method)
+        self.assertEqual(
+            self.response_factory.getUrl("/service-key"),
+            http_service_key.request.url)
+
+        self.assertEqual("POST", http_inject.request.method)
+        self.assertEqual(
+            self.response_factory.getUrl("/inject"),
+            http_inject.request.url)
+        self.assertThat(http_inject.request.headers, ContainsDict({
+            "Content-Type": Equals("application/x-boxed-json"),
+            "X-Client-Public-Key": Equals(config.signing.client_public_key),
+            "X-Nonce": Equals(self.response_factory.b64_nonce)}))
+        self.assertIsNotNone(http_inject.request.body)
