@@ -152,12 +152,8 @@ class IOCIRecipeBuildRequest(Interface):
         title=_("The time when this request finished"),
         required=False, readonly=True))
 
-    requester = exported(Reference(
-        IPerson, title=_("The IPerson that requested this build"),
-        required=True, readonly=True))
-
-    oci_recipe = exported(Reference(
-        # Really IOCIRecipe, patched in _schema_circular_imports.
+    recipe = exported(Reference(
+        # Really IOCIRecipe, patched in lp.oci.interfaces.webservice.
         Interface,
         title=_("OCI Recipe"), required=True, readonly=True))
 
@@ -166,11 +162,11 @@ class IOCIRecipeBuildRequest(Interface):
         required=True, readonly=True))
 
     error_message = exported(TextLine(
-        title=_("Error message"), required=True, readonly=True))
+        title=_("Error message"), required=False, readonly=True))
 
     builds = exported(CollectionField(
         title=_("Builds produced by this request"),
-        # Really IOCIRecipeBuild, patched in _schema_circular_imports.
+        # Really IOCIRecipeBuild, patched in lp.oci.interfaces.webservice.
         value_type=Reference(schema=Interface),
         required=True, readonly=True))
 
@@ -262,8 +258,16 @@ class IOCIRecipeView(Interface):
         :return: A `IOCIRecipeBuildRequest` instance.
         """
 
+    def requestBuildsFromJob(requester):
+        """Async part of requesting builds, that should be called as a
+        Celery task.
+
+        :param requester: The person requesting the build.
+        :return: A list of created IOCIRecipeBuild objects.
+        """
+
     def getBuildRequest(job_id):
-        """Get a OCIRecipeBuildRequest object for the given job_id.
+        """Get an OCIRecipeBuildRequest object for the given job_id.
         """
 
     push_rules = CollectionField(

@@ -43,7 +43,7 @@ class IOCIRecipeJob(Interface):
         title=_("The common Job attributes."), schema=IJob,
         required=True, readonly=True)
 
-    oci_recipe = Reference(
+    recipe = Reference(
         title=_("The OCI recipe to use for this job."),
         schema=IOCIRecipe, required=True, readonly=True)
 
@@ -71,7 +71,7 @@ class IOCIRecipeRequestBuildsJob(IRunnableJob):
         readonly=True)
 
     error_message = TextLine(
-        title=_("Error message"), required=True, readonly=True)
+        title=_("Error message"), required=False, readonly=True)
 
 
 class IOCIRecipeRequestBuildsJobSource(IJobSource):
@@ -79,10 +79,10 @@ class IOCIRecipeRequestBuildsJobSource(IJobSource):
     def create(oci_recipe, requester):
         """Request builds of an OCI Recipe.
 
-        :param oci_recipe: The OCI Recipe to build.
+        :param oci_recipe: The OCI recipe to build.
         :param requester: The person requesting the builds.
         """
 
-    def findByOCIRecipeAndID(self, oci_recipe, job_id):
+    def getByOCIRecipeAndID(self, oci_recipe, job_id):
         """Retrieve the build job by OCI recipe and the given job ID.
         """

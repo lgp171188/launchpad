@@ -15,7 +15,7 @@ from lazr.enum import (
 
 
 class OCIRecipeBuildRequestStatus(EnumeratedType):
-    """The status of a request to build an oci recipe."""
+    """The status of a request to build an OCI recipe."""
 
     PENDING = Item("""
         Pending

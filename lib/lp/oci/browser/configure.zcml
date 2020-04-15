@@ -66,7 +66,7 @@
         <browser:url
             for="lp.oci.interfaces.ocirecipe.IOCIRecipeBuildRequest"
             path_expression="string:+build-request/${id}"
-            attribute_to_parent="oci_recipe" />
+            attribute_to_parent="recipe" />
         <browser:url
             for="lp.oci.interfaces.ocirecipebuild.IOCIRecipeBuild"
             path_expression="string:+build/${id}"

@@ -519,15 +519,20 @@ class OCIRecipeSet:
 
 @implementer(IOCIRecipeBuildRequest)
 class OCIRecipeBuildRequest:
+    """See `IOCIRecipeBuildRequest`
+
+    This is not directly backed by a database table; instead, it is a
+    webservice-friendly view of an asynchronous build request.
+    """
     def __init__(self, oci_recipe, id):
-        self.oci_recipe = oci_recipe
+        self.recipe = oci_recipe
         self.id = id
 
     @cachedproperty
     def job(self):
         util = getUtility(IOCIRecipeRequestBuildsJobSource)
-        return util.findByOCIRecipeAndID(
-            self.oci_recipe, self.id)
+        return util.getByOCIRecipeAndID(
+            self.recipe, self.id)
 
     @property
     def date_requested(self):
@@ -555,7 +560,3 @@ class OCIRecipeBuildRequest:
     @property
     def builds(self):
         return self.job.builds
-
-    @property
-    def requester(self):
-        return self.job.requester

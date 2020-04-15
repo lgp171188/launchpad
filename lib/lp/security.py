@@ -3485,7 +3485,7 @@ class ViewOCIRecipeBuildRequest(DelegatedAuthorization):
 
     def __init__(self, obj):
         super(ViewOCIRecipeBuildRequest, self).__init__(
-            obj, obj.oci_recipe, 'launchpad.View')
+            obj, obj.recipe, 'launchpad.View')
 
 
 class ViewOCIRecipe(AnonymousAuthorization):

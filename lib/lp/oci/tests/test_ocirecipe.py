@@ -865,8 +865,7 @@ class TestOCIRecipeAsyncWebservice(TestCaseWithFactory):
             build_request = oci_recipe.getBuildRequest(job_id)
 
             self.assertThat(ws_build_request, ContainsDict(dict(
-                requester_link=Equals(abs_url(self.person)),
-                oci_recipe_link=Equals(abs_url(build_request.oci_recipe)),
+                recipe_link=Equals(abs_url(build_request.recipe)),
                 status=Equals(OCIRecipeBuildRequestStatus.PENDING.title),
                 date_requested=Equals(fmt_date(build_request.date_requested)),
                 date_finished=Equals(fmt_date(build_request.date_finished)),

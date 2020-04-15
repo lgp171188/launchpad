@@ -35,5 +35,5 @@ patch_collection_property(IOCIRecipe, 'pending_builds', IOCIRecipeBuild)
 patch_collection_property(IOCIRecipe, 'push_rules', IOCIPushRule)
 
 # IOCIRecipeRequestBuild
-patch_reference_property(IOCIRecipeBuildRequest, 'oci_recipe', IOCIRecipe)
+patch_reference_property(IOCIRecipeBuildRequest, 'recipe', IOCIRecipe)
 patch_collection_property(IOCIRecipeBuildRequest, 'builds', IOCIRecipeBuild)

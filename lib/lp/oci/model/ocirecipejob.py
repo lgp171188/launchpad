@@ -69,27 +69,27 @@ class OCIRecipeJob(StormBase):
     job_id = Int(name='job', primary=True, allow_none=False)
     job = Reference(job_id, 'Job.id')
 
-    oci_recipe_id = Int(name='recipe', allow_none=False)
-    oci_recipe = Reference(oci_recipe_id, 'OCIRecipe.id')
+    recipe_id = Int(name='recipe', allow_none=False)
+    recipe = Reference(recipe_id, 'OCIRecipe.id')
 
     job_type = EnumCol(enum=OCIRecipeJobType, notNull=True)
 
     metadata = JSON('json_data', allow_none=False)
 
-    def __init__(self, oci_recipe, job_type, metadata, **job_args):
+    def __init__(self, recipe, job_type, metadata, **job_args):
         """Constructor.
 
         Extra keyword arguments are used to construct the underlying Job
         object.
 
-        :param oci_recipe: The `IOCIRecipe` this job relates to.
+        :param recipe: The `IOCIRecipe` this job relates to.
         :param job_type: The `OCIRecipeJobType` of this job.
         :param metadata: The type-specific variables, as a JSON-compatible
             dict.
         """
         super(OCIRecipeJob, self).__init__()
         self.job = Job(**job_args)
-        self.oci_recipe = oci_recipe
+        self.recipe = recipe
         self.job_type = job_type
         self.metadata = metadata
 
@@ -102,13 +102,13 @@ class OCIRecipeJobDerived(BaseRunnableJob):
 
     __metaclass__ = EnumeratedSubclass
 
-    def __init__(self, oci_recipe_job):
-        self.context = oci_recipe_job
+    def __init__(self, recipe_job):
+        self.context = recipe_job
 
     def __repr__(self):
         """An informative representation of the job."""
         return "<%s for %s>" % (
-            self.__class__.__name__, self.oci_recipe)
+            self.__class__.__name__, self.recipe)
 
     @classmethod
     def get(cls, job_id):
@@ -119,12 +119,12 @@ class OCIRecipeJobDerived(BaseRunnableJob):
         :raises: `NotFoundError` if there is no job with the specified id,
             or its `job_type` does not match the desired subclass.
         """
-        oci_recipe_job = IStore(IOCIRecipeJob).get(IOCIRecipeJob, job_id)
-        if oci_recipe_job.job_type != cls.class_job_type:
+        recipe_job = IStore(IOCIRecipeJob).get(IOCIRecipeJob, job_id)
+        if recipe_job.job_type != cls.class_job_type:
             raise NotFoundError(
                 "No object found with id %d and type %s" %
                 (job_id, cls.class_job_type.title))
-        return cls(oci_recipe_job)
+        return cls(recipe_job)
 
     @classmethod
     def iterReady(cls):
@@ -142,8 +142,9 @@ class OCIRecipeJobDerived(BaseRunnableJob):
         oops_vars.extend([
             ("job_id", self.context.job.id),
             ("job_type", self.context.job_type.title),
-            ("oci_recipe_owner_name", self.context.oci_recipe.owner.name),
-            ("oci_recipe_name", self.context.oci_recipe.name),
+            ("oci_project_name", self.context.recipe.oci_project.name),
+            ("recipe_owner_name", self.context.recipe.owner.name),
+            ("recipe_name", self.context.recipe.name),
             ])
         return oops_vars
 
@@ -151,12 +152,9 @@ class OCIRecipeJobDerived(BaseRunnableJob):
 @implementer(IOCIRecipeRequestBuildsJob)
 @provider(IOCIRecipeRequestBuildsJobSource)
 class OCIRecipeRequestBuildsJob(OCIRecipeJobDerived):
-    """A Job that processes a request for builds of an OCI Recipe package."""
+    """A Job that processes a request for builds of an OCI Recipe."""
 
     class_job_type = OCIRecipeJobType.REQUEST_BUILDS
-
-    user_error_types = tuple()
-    retry_error_types = tuple()
 
     max_retries = 5
 
@@ -166,26 +164,26 @@ class OCIRecipeRequestBuildsJob(OCIRecipeJobDerived):
     # config = config.IOCIRecipeRequestBuildsJobSource
 
     @classmethod
-    def create(cls, oci_recipe, requester):
+    def create(cls, recipe, requester):
         """See `OCIRecipeRequestBuildsJob`."""
         metadata = {"requester": requester.id}
-        oci_recipe_job = OCIRecipeJob(oci_recipe, cls.class_job_type, metadata)
-        job = cls(oci_recipe_job)
+        recipe_job = OCIRecipeJob(recipe, cls.class_job_type, metadata)
+        job = cls(recipe_job)
         job.celeryRunOnCommit()
         return job
 
     @classmethod
-    def findByOCIRecipeAndID(cls, oci_recipe, job_id):
+    def getByOCIRecipeAndID(cls, recipe, job_id):
         job = IStore(OCIRecipeJob).find(
             OCIRecipeJob,
-            OCIRecipeJob.oci_recipe == oci_recipe,
+            OCIRecipeJob.recipe == recipe,
             OCIRecipeJob.job_id == job_id).one()
         if job is None:
             raise NotFoundError("Could not find job ID %s" % job_id)
         return cls(job)
 
     def getOperationDescription(self):
-        return "requesting builds of %s" % self.oci_recipe
+        return "requesting builds of %s" % self.recipe
 
     def getErrorRecipients(self):
         if self.requester is None or self.requester.preferredemail is None:
@@ -221,7 +219,7 @@ class OCIRecipeRequestBuildsJob(OCIRecipeJobDerived):
     @property
     def build_request(self):
         """See `OCIRecipeRequestBuildsJob`."""
-        return self.oci_recipe.getBuildRequest(self.job.id)
+        return self.recipe.getBuildRequest(self.job.id)
 
     @property
     def builds(self):
@@ -246,7 +244,7 @@ class OCIRecipeRequestBuildsJob(OCIRecipeJobDerived):
                 "Skipping %r because the requester has been deleted." % self)
             return
         try:
-            self.builds = self.oci_recipe.requestBuildsFromJob(requester)
+            self.builds = self.recipe.requestBuildsFromJob(requester)
             self.error_message = None
         except self.retry_error_types:
             raise
