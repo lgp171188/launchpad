@@ -67,13 +67,8 @@ class IOCIRecipeBuildView(IPackageBuild):
     def getFileByName(filename):
         """Return the corresponding `ILibraryFileAlias` in this context.
 
-        The following file types (and extension) can be looked up:
-
-         * Build log: '.txt.gz'
-         * Upload log: '_log.txt'
-
-        Any filename not matching one of these extensions is looked up as an
-        OCI recipe output file.
+        The `filename` may be that of the build log, the upload log, or any
+        of this build's `OCIFile`s.
 
         :param filename: The filename to look up.
         :raises NotFoundError: if no file exists with the given name.
