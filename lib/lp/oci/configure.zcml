@@ -60,7 +60,7 @@
     <subscriber
         for="lp.oci.interfaces.ocirecipebuild.IOCIRecipeBuild
              lazr.lifecycle.interfaces.IObjectModifiedEvent"
-        handler="lp.oci.subscribers.ocirecipebuild.oci_recipe_build_status_changed" />
+        handler="lp.oci.subscribers.ocirecipebuild.oci_recipe_build_modified" />
 
     <!-- OCIRecipeBuildSet -->
     <securedutility
@@ -137,10 +137,6 @@
         <allow interface="lp.oci.interfaces.ocirecipebuildjob.IOCIRecipeBuildJob" />
         <allow interface="lp.oci.interfaces.ocirecipebuildjob.IOCIRegistryUploadJob" />
     </class>
-    <subscriber
-        for="lp.oci.interfaces.ocirecipebuild.IOCIRecipeBuild
-             lazr.lifecycle.interfaces.IObjectModifiedEvent"
-        handler="lp.oci.subscribers.ocirecipebuild.oci_recipe_build_registry_upload_status_changed" />
 
     <!-- Registry interaction -->
     <securedutility
