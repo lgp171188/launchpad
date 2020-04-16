@@ -361,23 +361,17 @@ class OCIRecipeBuild(PackageBuildMixin, Storm):
 
     @cachedproperty
     def manifest(self):
-        result = Store.of(self).find(
-            (OCIFile, LibraryFileAlias, LibraryFileContent),
-            OCIFile.build == self.id,
-            LibraryFileAlias.id == OCIFile.library_file_id,
-            LibraryFileContent.id == LibraryFileAlias.contentID,
-            LibraryFileAlias.filename == 'manifest.json')
-        return result.one()
+        try:
+            return self.getFileByName("manifest.json")
+        except NotFoundError:
+            return None
 
     @cachedproperty
     def digests(self):
-        result = Store.of(self).find(
-            (OCIFile, LibraryFileAlias, LibraryFileContent),
-            OCIFile.build == self.id,
-            LibraryFileAlias.id == OCIFile.library_file_id,
-            LibraryFileContent.id == LibraryFileAlias.contentID,
-            LibraryFileAlias.filename == 'digests.json')
-        return result.one()
+        try:
+            return self.getFileByName("digests.json")
+        except NotFoundError:
+            return None
 
     def verifySuccessfulUpload(self):
         """See `IPackageBuild`."""

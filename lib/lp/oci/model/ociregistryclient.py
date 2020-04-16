@@ -37,12 +37,11 @@ class OCIRegistryClient:
     @classmethod
     def _getJSONfile(cls, reference):
         """Read JSON out of a `LibraryFileAlias`."""
-        _, lfa, lfc = reference
         try:
-            lfa.open()
-            return json.loads(lfa.read())
+            reference.open()
+            return json.loads(reference.read())
         finally:
-            lfa.close()
+            reference.close()
 
     @classmethod
     def _upload(cls, digest, push_rule, name, fileobj):
@@ -157,7 +156,7 @@ class OCIRegistryClient:
         for section in manifest:
             # Load the matching config file for this section
             config = cls._getJSONfile(
-                build.getByFileName(section['Config']))
+                build.getFileByName(section['Config']))
             files = {"config_file": config}
             for diff_id in config["rootfs"]["diff_ids"]:
                 # We may have already seen this diff ID.

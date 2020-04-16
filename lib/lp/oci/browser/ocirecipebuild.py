@@ -36,10 +36,6 @@ from lp.services.webapp import (
 from lp.soyuz.interfaces.binarypackagebuild import IBuildRescoreForm
 
 
-class IOCIBuildStatusChangedEvent(IObjectEvent):
-    """The status of an OCI recipe build changed."""
-
-
 class OCIRecipeBuildNavigation(Navigation, FileNavigationMixin):
 
     usedfor = IOCIRecipeBuild
