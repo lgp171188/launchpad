@@ -58,10 +58,6 @@ class IOCIRecipeRequestBuildsJob(IRunnableJob):
         title=_("The person requesting the builds."), schema=IPerson,
         required=True, readonly=True)
 
-    oci_recipe = Reference(
-        title=_("The OCI Recipe being built."), schema=IOCIRecipe,
-        required=True, readonly=True)
-
     build_request = Reference(
         title=_("The build request corresponding to this job."),
         schema=IOCIRecipeBuildRequest, required=True, readonly=True)
