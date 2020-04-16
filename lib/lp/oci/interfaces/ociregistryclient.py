@@ -29,5 +29,5 @@ class IOCIRegistryClient(Interface):
     def upload(build):
         """Upload an OCI image to a registry.
 
-        :param ocibuild: The `IOCIRecipeBuild` to upload.
+        :param build: The `IOCIRecipeBuild` to upload.
         """
