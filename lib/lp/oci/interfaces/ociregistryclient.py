@@ -26,7 +26,7 @@ class ManifestUploadFailed(Exception):
 class IOCIRegistryClient(Interface):
     """Interface for the API provided by an OCI registry."""
 
-    def upload(ocibuild):
+    def upload(build):
         """Upload an OCI image to a registry.
 
         :param ocibuild: The `IOCIRecipeBuild` to upload.
