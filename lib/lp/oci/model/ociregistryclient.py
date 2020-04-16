@@ -164,7 +164,7 @@ class OCIRegistryClient:
                     continue
                 # Retrieve the layer files.
                 # This doesn't read the content, so there is potential
-                # for multiple fetches, but the files can be arbitary size
+                # for multiple fetches, but the files can be arbitrary size
                 # Potentially gigabytes.
                 files[diff_id] = {}
                 source_digest = digests[diff_id]["digest"]
