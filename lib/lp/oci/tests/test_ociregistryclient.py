@@ -108,12 +108,12 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, TestCaseWithFactory):
                     "mediaType": Equals(
                         "application/vnd.docker.image.rootfs.diff.tar.gzip"),
                     "digest": Equals("diff_id_1"),
-                    "size": Equals(0)}),
+                    "size": Equals(8)}),
                 MatchesDict({
                     "mediaType": Equals(
                         "application/vnd.docker.image.rootfs.diff.tar.gzip"),
                     "digest": Equals("diff_id_2"),
-                    "size": Equals(0)})
+                    "size": Equals(8)})
             ]),
             "schemaVersion": Equals(2),
             "config": MatchesDict({
@@ -145,23 +145,27 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, TestCaseWithFactory):
         self.assertEqual("edge", result)
 
     def test_build_registry_manifest(self):
+        self._makeFiles()
+        preloaded_data = self.client._preloadFiles(
+            self.build, self.manifest, self.digests[0])
         manifest = self.client._build_registry_manifest(
             self.digests[0],
             self.config,
             json.dumps(self.config),
-            "config-sha")
+            "config-sha",
+            preloaded_data["config_file_1.json"])
         self.assertThat(manifest, MatchesDict({
             "layers": MatchesListwise([
                 MatchesDict({
                     "mediaType": Equals(
                         "application/vnd.docker.image.rootfs.diff.tar.gzip"),
                     "digest": Equals("diff_id_1"),
-                    "size": Equals(0)}),
+                    "size": Equals(8)}),
                 MatchesDict({
                     "mediaType": Equals(
                         "application/vnd.docker.image.rootfs.diff.tar.gzip"),
                     "digest": Equals("diff_id_2"),
-                    "size": Equals(0)})
+                    "size": Equals(8)})
             ]),
             "schemaVersion": Equals(2),
             "config": MatchesDict({

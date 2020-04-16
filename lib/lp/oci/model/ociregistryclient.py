@@ -123,7 +123,6 @@ class OCIRegistryClient:
         :param config_json: The config file as a JSON string.
         :param config_sha: The sha256sum of the config JSON string.
         """
-
         # Create the initial manifest data with empty layer information
         manifest = {
             "schemaVersion": 2,
@@ -141,7 +140,7 @@ class OCIRegistryClient:
             manifest["layers"].append({
                 "mediaType":
                     "application/vnd.docker.image.rootfs.diff.tar.gzip",
-                "size": 0,  # XXX twom 2020-04-14 We can get this from LFA
+                "size": preloaded_data[layer].content.filesize,
                 "digest": layer})
         return manifest
 
@@ -233,7 +232,8 @@ class OCIRegistryClient:
                 # Build the registry manifest from the image manifest
                 # and associated configs
                 registry_manifest = cls._build_registry_manifest(
-                    digests, config, config_json, config_sha, preloaded_data)
+                    digests, config, config_json, config_sha,
+                    preloaded_data[section["Config"]])
 
                 # Upload the registry manifest
                 manifest_response = urlfetch(
