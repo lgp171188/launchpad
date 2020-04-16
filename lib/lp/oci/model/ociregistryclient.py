@@ -198,8 +198,7 @@ class OCIRegistryClient:
         digests_list = cls._getJSONfile(build.digests)
         digests = {}
         for digest_dict in digests_list:
-            for k, v in digest_dict.items():
-                digests[k] = v
+            digests.update(digest_dict)
 
         # Preload the requested files
         preloaded_data = cls._preloadFiles(build, manifest, digests)
