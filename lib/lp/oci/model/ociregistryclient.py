@@ -44,7 +44,7 @@ class OCIRegistryClient:
             reference.close()
 
     @classmethod
-    def _upload(cls, digest, push_rule, name, fileobj):
+    def _upload(cls, digest, push_rule, name, fileobj, auth):
         """Upload a blob to the registry, using a given digest.
 
         :param digest: The digest to store the file under.
@@ -59,7 +59,8 @@ class OCIRegistryClient:
             head_response = urlfetch(
                 "{}/v2/{}/blobs/{}".format(
                     push_rule.registry_credentials.url, name, digest),
-                method="HEAD")
+                method="HEAD",
+                auth=auth)
             if head_response.status_code == 200:
                 log.info("{} already found".format(digest))
                 return
@@ -71,7 +72,7 @@ class OCIRegistryClient:
         post_response = urlfetch(
             "{}/v2/{}/blobs/uploads/".format(
                 push_rule.registry_credentials.url, name),
-            method="POST")
+            method="POST", auth=auth)
 
         post_location = post_response.headers["Location"]
         query_parsed = {"digest": digest}
@@ -80,14 +81,15 @@ class OCIRegistryClient:
             post_location,
             params=query_parsed,
             data=fileobj,
-            method="PUT")
+            method="PUT",
+            auth=auth)
 
         if put_response.status_code != 201:
             raise BlobUploadFailed(
                 "Upload of {} for {} failed".format(digest, name))
 
     @classmethod
-    def _upload_layer(cls, digest, push_rule, name, lfa):
+    def _upload_layer(cls, digest, push_rule, name, lfa, auth):
         """Upload a layer blob to the registry.
 
         Uses _upload, but opens the LFA and extracts the necessary files
@@ -105,7 +107,7 @@ class OCIRegistryClient:
                 if tarinfo.name != 'layer.tar':
                     continue
                 fileobj = un_zipped.extractfile(tarinfo)
-                cls._upload(digest, push_rule, name, fileobj)
+                cls._upload(digest, push_rule, name, fileobj, auth)
         finally:
             lfa.close()
 
@@ -204,6 +206,12 @@ class OCIRegistryClient:
         preloaded_data = cls._preloadFiles(build, manifest, digests)
 
         for push_rule in build.recipe.push_rules:
+            # Work out the auth details for the registry
+            auth = push_rule.registry_credentials.getCredentials()
+            if auth.get('username'):
+                auth_tuple = (auth['username'], auth.get('password'))
+            else:
+                auth_tuple = None
             for section in manifest:
                 # Work out names and tags
                 image_name = push_rule.image_name
@@ -216,7 +224,8 @@ class OCIRegistryClient:
                         diff_id,
                         push_rule,
                         image_name,
-                        file_data[diff_id])
+                        file_data[diff_id],
+                        auth_tuple)
                 # The config file is required in different forms, so we can
                 # calculate the sha, work these out and upload
                 config_json = json.dumps(config).encode("UTF-8")
@@ -225,7 +234,8 @@ class OCIRegistryClient:
                     "sha256:{}".format(config_sha),
                     push_rule,
                     image_name,
-                    BytesIO(config_json))
+                    BytesIO(config_json),
+                    auth_tuple)
 
                 # Build the registry manifest from the image manifest
                 # and associated configs
@@ -245,7 +255,8 @@ class OCIRegistryClient:
                             "application/"
                             "vnd.docker.distribution.manifest.v2+json"
                         },
-                    method="PUT")
+                    method="PUT",
+                    auth=auth_tuple)
                 if manifest_response.status_code != 201:
                     raise ManifestUploadFailed(
                         "Failed to upload manifest for {} in {}".format(
