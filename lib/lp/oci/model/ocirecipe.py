@@ -379,7 +379,7 @@ class OCIRecipe(Storm, WebhookTargetMixin):
 
     @property
     def can_upload_to_registry(self):
-        return bool(self.push_rules.count())
+        return not self.push_rules.is_empty()
 
 
 class OCIRecipeArch(Storm):
