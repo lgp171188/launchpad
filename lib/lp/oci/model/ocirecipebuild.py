@@ -45,6 +45,7 @@ from lp.oci.interfaces.ocirecipebuild import (
     IOCIFile,
     IOCIRecipeBuild,
     IOCIRecipeBuildSet,
+    OCIRecipeBuildRegistryUploadStatus,
     )
 from lp.oci.model.ocirecipebuildjob import (
     OCIRecipeBuildJob,
@@ -61,6 +62,7 @@ from lp.services.database.interfaces import (
     IMasterStore,
     IStore,
     )
+from lp.services.job.interfaces.job import JobStatus
 from lp.services.job.model.job import Job
 from lp.services.librarian.model import (
     LibraryFileAlias,
@@ -402,6 +404,22 @@ class OCIRecipeBuild(PackageBuildMixin, Storm):
 
         return DecoratedResultSet(
             jobs, lambda job: job.makeDerived(), pre_iter_hook=preload_jobs)
+
+    @cachedproperty
+    def last_registry_upload_job(self):
+        return self.registry_upload_jobs.first()
+
+    @property
+    def registry_upload_status(self):
+        job = self.last_registry_upload_job
+        if job is None or job.job.status == JobStatus.SUSPENDED:
+            return OCIRecipeBuildRegistryUploadStatus.UNSCHEDULED
+        elif job.job.status in (JobStatus.WAITING, JobStatus.RUNNING):
+            return OCIRecipeBuildRegistryUploadStatus.PENDING
+        elif job.job.status == JobStatus.COMPLETED:
+            return OCIRecipeBuildRegistryUploadStatus.UPLOADED
+        else:
+            return OCIRecipeBuildRegistryUploadStatus.FAILEDTOUPLOAD
 
 
 @implementer(IOCIRecipeBuildSet)
