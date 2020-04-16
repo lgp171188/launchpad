@@ -29,7 +29,6 @@ from lp.services.job.interfaces.job import (
     )
 
 
-
 class IOCIRecipeBuildJob(Interface):
     """A job related to an OCI image."""
     job = Reference(

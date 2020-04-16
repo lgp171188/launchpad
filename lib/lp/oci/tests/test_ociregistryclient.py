@@ -93,9 +93,8 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, TestCaseWithFactory):
         self.useFixture(MockPatch(
             "lp.oci.model.ociregistryclient.OCIRegistryClient._upload_layer"))
 
-        manifests_url = "{}/v2/{}/{}/manifests/edge".format(
+        manifests_url = "{}/v2/{}/manifests/edge".format(
             self.build.recipe.push_rules[0].registry_credentials.url,
-            self.build.recipe.oci_project.pillar.name,
             self.build.recipe.push_rules[0].image_name
         )
         responses.add("PUT", manifests_url, status=201)

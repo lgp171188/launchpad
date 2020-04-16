@@ -17,25 +17,32 @@ from lazr.enum import (
     DBEnumeratedType,
     DBItem,
     )
-from lazr.lifecycle.event import ObjectCreatedEvent
+from lazr.lifecycle.event import (
+    ObjectCreatedEvent,
+    ObjectModifiedEvent,
+    )
 from storm.databases.postgres import JSON
 from storm.locals import (
     Int,
     Reference,
     )
+import transaction
+from zope.component import getUtility
 from zope.event import notify
 from zope.interface import (
     implementer,
     provider,
+    providedBy
     )
 
 from lp.app.errors import NotFoundError
+from lp.oci.interfaces.ocirecipebuild import OCIRecipeBuildRegistryUploadStatus
 from lp.oci.interfaces.ocirecipebuildjob import (
     IOCIRecipeBuildJob,
     IOCIRegistryUploadJob,
     IOCIRegistryUploadJobSource,
     )
-from lp.oci.model.ociregistryclient import OCIRegistryClient
+from lp.oci.interfaces.ociregistryclient import IOCIRegistryClient
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IStore
 from lp.services.database.stormbase import StormBase
@@ -45,6 +52,7 @@ from lp.services.job.model.job import (
     )
 from lp.services.job.runner import BaseRunnableJob
 from lp.services.propertycache import get_property_cache
+from lazr.lifecycle.snapshot import Snapshot
 
 
 class OCIRecipeBuildJobType(DBEnumeratedType):
@@ -166,6 +174,44 @@ class OCIRegistryUploadJob(OCIRecipeBuildJobDerived):
         notify(ObjectCreatedEvent(build))
         return job
 
+    # Ideally we'd just override Job._set_status or similar, but
+    # lazr.delegates makes that difficult, so we use this to override all
+    # the individual Job lifecycle methods instead.
+    def _do_lifecycle(self, method_name, manage_transaction=False,
+                      *args, **kwargs):
+        build_before_modifications = Snapshot(
+            self.build, providing=providedBy(self.build))
+        old_registry_upload_status = self.build.registry_upload_status
+        getattr(super(OCIRegistryUploadJob, self), method_name)(
+            *args, manage_transaction=manage_transaction, **kwargs)
+        upload_status = self.build.registry_upload_status
+        if upload_status != old_registry_upload_status:
+            notify(
+                ObjectModifiedEvent(
+                    self.build,
+                    build_before_modifications,
+                    ['registry_upload_status']))
+            if manage_transaction:
+                transaction.commit()
+
+    def start(self, *args, **kwargs):
+        self._do_lifecycle("start", *args, **kwargs)
+
+    def complete(self, *args, **kwargs):
+        self._do_lifecycle("complete", *args, **kwargs)
+
+    def fail(self, *args, **kwargs):
+        self._do_lifecycle("fail", *args, **kwargs)
+
+    def queue(self, *args, **kwargs):
+        self._do_lifecycle("queue", *args, **kwargs)
+
+    def suspend(self, *args, **kwargs):
+        self._do_lifecycle("suspend", *args, **kwargs)
+
+    def resume(self, *args, **kwargs):
+        self._do_lifecycle("resume", *args, **kwargs)
+
     @property
     def error_message(self):
         """See `IOCIRegistryUploadJob`."""
@@ -178,4 +224,5 @@ class OCIRegistryUploadJob(OCIRecipeBuildJobDerived):
 
     def run(self):
         """See `IRunnableJob`."""
-        OCIRegistryClient.upload(self.build)
+        client = getUtility(IOCIRegistryClient)
+        client.upload(self.build)

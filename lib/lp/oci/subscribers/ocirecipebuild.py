@@ -27,7 +27,7 @@ def _trigger_oci_recipe_build_webhook(build, action):
             }
         payload.update(compose_webhook_payload(
             IOCIRecipeBuild, build,
-            ["recipe", "status"]))
+            ["recipe", "status", "registry_upload_status"]))
         getUtility(IWebhookSet).trigger(
             build.recipe, "oci-recipe:build:0.1", payload)
 
@@ -45,3 +45,10 @@ def oci_recipe_build_status_changed(build, event):
     if (build.recipe.can_upload_to_registry and
             build.status == BuildStatus.FULLYBUILT):
         getUtility(IOCIRegistryUploadJobSource).create(build)
+
+
+def oci_recipe_build_registry_upload_status_changed(build, event):
+    """Trigger events when snap package build store upload statuses change."""
+    if event.edited_fields is not None:
+        if "registry_upload_status" in event.edited_fields:
+            _trigger_oci_recipe_build_webhook(build, "status-changed")
