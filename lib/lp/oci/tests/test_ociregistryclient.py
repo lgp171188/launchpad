@@ -145,14 +145,6 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, TestCaseWithFactory):
             self.build, self.build.recipe.push_rules[0])
         self.assertEqual("edge", result)
 
-    def test_calculateName(self):
-        result = self.client._calculateName(
-            self.build, self.build.recipe.push_rules[0])
-        expected = "{}/{}".format(
-            self.build.recipe.oci_project.pillar.name,
-            self.build.recipe.push_rules[0].image_name)
-        self.assertEqual(expected, result)
-
     def test_build_registry_manifest(self):
         manifest = self.client._build_registry_manifest(
             self.digests[0],

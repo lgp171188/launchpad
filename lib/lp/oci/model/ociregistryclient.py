@@ -176,17 +176,6 @@ class OCIRegistryClient:
         return data
 
     @classmethod
-    def _calculateName(cls, build, push_rule):
-        """Work out what the name for the image should be.
-
-        :param build: `OCIRecipeBuild` representing this build.
-        :param push_rule: `OCIPushRule` that we are using.
-        """
-        return "{}/{}".format(
-            build.recipe.oci_project.pillar.name,
-            push_rule.image_name)
-
-    @classmethod
     def _calculateTag(cls, build, push_rule):
         """Work out the base tag for the image should be.
 
@@ -220,7 +209,7 @@ class OCIRegistryClient:
         for push_rule in build.recipe.push_rules:
             for section in manifest:
                 # Work out names and tags
-                image_name = cls._calculateName(build, push_rule)
+                image_name = push_rule.image_name
                 tag = cls._calculateTag(build, push_rule)
                 file_data = preloaded_data[section["Config"]]
                 config = file_data["config_file"]
