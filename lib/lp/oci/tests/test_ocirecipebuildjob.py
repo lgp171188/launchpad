@@ -8,10 +8,20 @@ from __future__ import absolute_import, print_function, unicode_literals
 __metaclass__ = type
 
 from fixtures import FakeLogger
+from testtools.matchers import (
+    Equals,
+    MatchesDict,
+    MatchesListwise,
+    MatchesStructure,
+    )
 import transaction
 from zope.interface import implementer
 
-from lp.oci.interfaces.ocirecipe import OCI_RECIPE_ALLOW_CREATE, OCI_RECIPE_WEBHOOKS_FEATURE_FLAG
+from lp.buildmaster.enums import BuildStatus
+from lp.oci.interfaces.ocirecipe import (
+    OCI_RECIPE_ALLOW_CREATE,
+    OCI_RECIPE_WEBHOOKS_FEATURE_FLAG,
+    )
 from lp.oci.interfaces.ocirecipebuildjob import (
     IOCIRecipeBuildJob,
     IOCIRegistryUploadJob,
@@ -36,10 +46,8 @@ from lp.testing.layers import (
     LaunchpadZopelessLayer,
     )
 from lp.testing.mail_helpers import pop_notifications
-from testtools.matchers import Equals, Is, MatchesDict, MatchesListwise, MatchesStructure
 from lp.services.webapp import canonical_url
 from lp.services.webhooks.testing import LogsScheduledWebhooks
-from lp.buildmaster.enums import BuildStatus
 
 
 def run_isolated_jobs(jobs):
