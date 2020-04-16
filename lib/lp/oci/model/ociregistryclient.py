@@ -28,7 +28,7 @@ from lp.oci.interfaces.ociregistryclient import (
 from lp.services.timeout import urlfetch
 
 
-log = logging.getLogger("ociregistryclient")
+log = logging.getLogger(__name__)
 
 
 @implementer(IOCIRegistryClient)
