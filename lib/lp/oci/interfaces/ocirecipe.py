@@ -67,7 +67,6 @@ from lp.oci.enums import OCIRecipeBuildRequestStatus
 from lp.registry.interfaces.distribution import IDistribution
 from lp.registry.interfaces.distroseries import IDistroSeries
 from lp.registry.interfaces.ociproject import IOCIProject
-from lp.registry.interfaces.person import IPerson
 from lp.registry.interfaces.role import IHasOwner
 from lp.services.database.constants import DEFAULT
 from lp.services.fields import (
@@ -259,7 +258,7 @@ class IOCIRecipeView(Interface):
         """
 
     def requestBuildsFromJob(requester):
-        """Async part of requesting builds, that should be called as a
+        """Synchronous part of requesting builds, that should be called as a
         Celery task.
 
         :param requester: The person requesting the build.

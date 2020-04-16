@@ -335,18 +335,18 @@ class OCIRecipe(Storm, WebhookTargetMixin):
         self._checkRequestBuild(requester)
         distro_arch_series_to_build = set(self.getAllowedArchitectures())
 
-        # If *all* available architectures have pending builds, we fail the
-        # job. Otherwise, each single architecture will be checked again
-        # bellow, on self.requestBuild call.
-        if self._hasPendingBuilds(distro_arch_series_to_build):
-            raise OCIRecipeBuildAlreadyPending
-
         builds = []
         for das in distro_arch_series_to_build:
             try:
                 builds.append(self.requestBuild(requester, das))
             except OCIRecipeBuildAlreadyPending:
                 pass
+
+        # If we have distro_arch_series_to_build, but they all failed to due
+        # to pending builds, we fail the job.
+        if len(distro_arch_series_to_build) > 0 and len(builds) == 0:
+            raise OCIRecipeBuildAlreadyPending
+
         return builds
 
     def requestBuilds(self, requester):

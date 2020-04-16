@@ -33,7 +33,6 @@ from lp.oci.interfaces.ocirecipejob import (
     )
 from lp.oci.model.ocirecipebuild import OCIRecipeBuild
 from lp.registry.interfaces.person import IPersonSet
-# from lp.services.config import config
 from lp.services.database.enumcol import EnumCol
 from lp.services.database.interfaces import (
     IMasterStore,
