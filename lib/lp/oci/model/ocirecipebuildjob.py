@@ -17,12 +17,12 @@ from lazr.enum import (
     DBEnumeratedType,
     DBItem,
     )
+from lazr.lifecycle.event import ObjectCreatedEvent
 from storm.databases.postgres import JSON
 from storm.locals import (
     Int,
     Reference,
     )
-from zope.component.interfaces import ObjectEvent
 from zope.event import notify
 from zope.interface import (
     implementer,
@@ -32,7 +32,6 @@ from zope.interface import (
 from lp.app.errors import NotFoundError
 from lp.oci.interfaces.ocirecipebuildjob import (
     IOCIRecipeBuildJob,
-    IOCIRecipeBuildRegistryUploadStatusChangedEvent,
     IOCIRegistryUploadJob,
     IOCIRegistryUploadJobSource,
     )
@@ -56,12 +55,6 @@ class OCIRecipeBuildJobType(DBEnumeratedType):
 
         This job uploads an OCI Image to the registry.
         """)
-
-
-@implementer(IOCIRecipeBuildRegistryUploadStatusChangedEvent)
-class OCIRecipeBuildegistryUploadStatusChangedEvent(ObjectEvent):
-    """See `IOCIRecipeBuildRegistryUploadStatusChangedEvent`."""
-
 
 
 @implementer(IOCIRecipeBuildJob)
@@ -170,7 +163,7 @@ class OCIRegistryUploadJob(OCIRecipeBuildJobDerived):
         job = cls(oci_build_job)
         job.celeryRunOnCommit()
         del get_property_cache(build).last_registry_upload_job
-        notify(OCIRecipeBuildegistryUploadStatusChangedEvent(build))
+        notify(ObjectCreatedEvent(build))
         return job
 
     @property

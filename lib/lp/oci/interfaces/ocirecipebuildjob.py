@@ -8,7 +8,6 @@ from __future__ import absolute_import, print_function, unicode_literals
 __metaclass__ = type
 __all__ = [
     'IOCIRecipeBuildJob',
-    'IOCIRecipeBuildRegistryUploadStatusChangedEvent',
     'IOCIRegistryUploadJob',
     'IOCIRegistryUploadJobSource',
     ]
@@ -29,9 +28,6 @@ from lp.services.job.interfaces.job import (
     IRunnableJob,
     )
 
-
-class IOCIRecipeBuildRegistryUploadStatusChangedEvent(IObjectEvent):
-    """The store upload status of an OCI recipe build changed."""
 
 
 class IOCIRecipeBuildJob(Interface):
