@@ -219,7 +219,7 @@ class OCIRegistryClient:
                         file_data[diff_id])
                 # The config file is required in different forms, so we can
                 # calculate the sha, work these out and upload
-                config_json = json.dumps(config).encode()
+                config_json = json.dumps(config).encode("UTF-8")
                 config_sha = hashlib.sha256(config_json).hexdigest()
                 cls._upload(
                     "sha256:{}".format(config_sha),
