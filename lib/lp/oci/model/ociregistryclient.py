@@ -111,8 +111,8 @@ class OCIRegistryClient:
             lfa.close()
 
     @classmethod
-    def _build_registry_manifest(cls, digests,
-                                 config, config_json, config_sha):
+    def _build_registry_manifest(cls, digests, config, config_json,
+                                 config_sha, preloaded_data):
         """Create an image manifest for the uploading image.
 
         This involves nearly everything as digests and lengths are required.
@@ -233,7 +233,7 @@ class OCIRegistryClient:
                 # Build the registry manifest from the image manifest
                 # and associated configs
                 registry_manifest = cls._build_registry_manifest(
-                    digests, config, config_json, config_sha)
+                    digests, config, config_json, config_sha, preloaded_data)
 
                 # Upload the registry manifest
                 manifest_response = urlfetch(

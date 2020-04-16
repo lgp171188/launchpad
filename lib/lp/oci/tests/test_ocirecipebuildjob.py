@@ -176,3 +176,21 @@ class TestOCIRegistryUploadJob(TestCaseWithFactory):
         self.assertEqual([], pop_notifications())
         self.assertWebhookDeliveries(
             ocibuild, ["Uploaded"], logger)
+
+    def test_run_failed(self):
+        # A failed run sets the registry upload status to FAILED.
+        logger = self.useFixture(FakeLogger())
+        ocibuild = self.makeOCIRecipeBuild()
+        self.assertContentEqual([], ocibuild.registry_upload_jobs)
+        job = OCIRegistryUploadJob.create(ocibuild)
+        client = FakeRegistryClient()
+        client.upload.failure = ValueError("An upload failure")
+        self.useFixture(ZopeUtilityFixture(client, IOCIRegistryClient))
+        with dbuser(config.IOCIRegistryUploadJobSource.dbuser):
+            run_isolated_jobs([job])
+        self.assertEqual([((ocibuild,), {})], client.upload.calls)
+        self.assertContentEqual([job], ocibuild.registry_upload_jobs)
+        self.assertEqual("An upload failure", job.error_message)
+        self.assertEqual([], pop_notifications())
+        self.assertWebhookDeliveries(
+            ocibuild, ["Failed to upload"], logger)

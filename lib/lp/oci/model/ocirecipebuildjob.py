@@ -222,7 +222,39 @@ class OCIRegistryUploadJob(OCIRecipeBuildJobDerived):
         """See `IOCIRegistryUploadJob`."""
         self.json_data["error_message"] = message
 
+    @property
+    def error_detail(self):
+        """See `IOCIRegistryUploadJob`."""
+        return self.json_data.get("error_detail")
+
+    @error_detail.setter
+    def error_detail(self, detail):
+        """See `IOCIRegistryUploadJob`."""
+        self.json_data["error_detail"] = detail
+
+    @property
+    def error_messages(self):
+        """See `IOCIRegistryUploadJob`."""
+        return self.json_data.get("error_messages")
+
+    @error_messages.setter
+    def error_messages(self, messages):
+        """See `IOCIRegistryUploadJob`."""
+        self.json_data["error_messages"] = messages
+
     def run(self):
         """See `IRunnableJob`."""
         client = getUtility(IOCIRegistryClient)
-        client.upload(self.build)
+        # XXX twom 2020-04-16 This is taken from SnapStoreUploadJob
+        # it will need to gain retry support.
+        try:
+            try:
+                client.upload(self.build)
+            except Exception as e:
+                self.error_message = str(e)
+                self.error_messages = getattr(e, "messages", None)
+                self.error_detail = getattr(e, "detail", None)
+                raise
+        except Exception:
+            transaction.commit()
+            raise
