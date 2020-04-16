@@ -208,3 +208,13 @@ class ArchiveSigningKeySet:
         archive_signing = ArchiveSigningKeySet.create(
             archive, earliest_distro_series, signing_key)
         return archive_signing
+
+    @classmethod
+    def inject(cls, key_type, private_key, public_key,
+               archive, earliest_distro_series=None,
+               description=None, created_at=None):
+        signing_key = SigningKey.inject(
+            key_type, private_key, public_key, description, created_at)
+        archive_signing = ArchiveSigningKeySet.create(
+            archive, earliest_distro_series, signing_key)
+        return archive_signing

@@ -143,6 +143,38 @@ class TestArchiveSigningKey(TestCaseWithFactory):
             fingerprint=self.signing_service.generated_fingerprint,
             public_key=bytes(self.signing_service.generated_public_key)))
 
+    @responses.activate
+    def test_inject_saves_correctly(self):
+        self.signing_service.addResponses(self)
+
+        archive = self.factory.makeArchive()
+        distro_series = archive.distribution.series[0]
+
+        priv_key = PrivateKey.generate()
+        pub_key = priv_key.public_key
+
+        now = datetime.now().replace(tzinfo=utc)
+        arch_key = getUtility(IArchiveSigningKeySet).inject(
+            SigningKeyType.UEFI, bytes(priv_key), bytes(pub_key),
+            archive, earliest_distro_series=distro_series,
+            description=u"Some description", created_at=now)
+
+        store = Store.of(arch_key)
+        store.invalidate()
+
+        rs = store.find(ArchiveSigningKey)
+        self.assertEqual(1, rs.count())
+
+        db_arch_key = rs.one()
+        self.assertThat(db_arch_key, MatchesStructure.byEquality(
+            key_type=SigningKeyType.UEFI, archive=archive,
+            earliest_distro_series=distro_series))
+
+        self.assertThat(db_arch_key.signing_key, MatchesStructure.byEquality(
+            key_type=SigningKeyType.UEFI, description=u"Some description",
+            fingerprint=self.signing_service.generated_fingerprint,
+            public_key=bytes(pub_key)))
+
     def test_create(self):
         archive = self.factory.makeArchive()
         distro_series = archive.distribution.series[0]
