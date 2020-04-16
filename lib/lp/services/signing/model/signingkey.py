@@ -100,6 +100,20 @@ class SigningKey(StormBase):
         store.add(signing_key)
         return signing_key
 
+    @classmethod
+    def inject(cls, key_type, private_key, public_key, description,
+               created_at):
+        signing_service = getUtility(ISigningServiceClient)
+        generated_key = signing_service.inject(
+            key_type, private_key, public_key, description, created_at)
+        signing_key = SigningKey(
+            key_type=key_type, fingerprint=generated_key['fingerprint'],
+            public_key=bytes(public_key),
+            description=description, date_created=created_at)
+        store = IMasterStore(SigningKey)
+        store.add(signing_key)
+        return signing_key
+
     def sign(self, message, message_name):
         if self.key_type in (SigningKeyType.UEFI, SigningKeyType.FIT):
             mode = SigningMode.ATTACHED
