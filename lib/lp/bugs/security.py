@@ -211,7 +211,7 @@ class ViewBugAttachment(DelegatedAuthorization):
             bugattachment, bugattachment.bug)
 
 
-class EditBugAttachment(DelegatedAuthorization):
+class EditBugAttachment(AuthorizationBase):
     """Security adapter for editing a bug attachment.
 
     If the user is authorized to view the bug, they're allowed to edit the
@@ -220,9 +220,15 @@ class EditBugAttachment(DelegatedAuthorization):
     permission = 'launchpad.Edit'
     usedfor = IBugAttachment
 
-    def __init__(self, bugattachment):
-        super(EditBugAttachment, self).__init__(
-            bugattachment, bugattachment.bug)
+    def checkAuthenticated(self, user):
+        # XXX: pappacena 2020-04-02: Maybe for bug tasks we should also allow
+        # pillar's bug supervisor to edit the attachments.
+        return (user.in_admin or
+                user.in_registry_experts or
+                user.inTeam(self.obj.message.owner))
+
+    def checkUnauthenticated(self):
+        return False
 
 
 class ViewBugActivity(DelegatedAuthorization):

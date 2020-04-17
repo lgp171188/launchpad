@@ -315,29 +315,25 @@ anonymous can read the attachment's attributes, but they can't set them:
     >>> import transaction
     >>> transaction.abort()
 
-Both Sample Person and Foo Bar can access and set the attributes, though:
-
-    >>> login('test@canonical.com')
-    >>> attachment.title
-    u'this fixes the bug'
-    >>> attachment.title = 'Better Title'
+Attachment owner can access and set the attributes, though:
 
     >>> login('foo.bar@canonical.com')
     >>> attachment.title
-    u'Better Title'
+    u'this fixes the bug'
     >>> attachment.title = 'Even Better Title'
 
 Now let's make the bug private instead:
 
     >>> bug_four.setPrivate(True, getUtility(ILaunchBag).user)
     True
+    >>> logout()
 
 Foo Bar isn't explicitly subscribed to the bug, BUT they are an admin, so
-they can access and set the attachment's attributes:
+they can access the attachment's attributes:
 
+    >>> login('test@canonical.com')
     >>> attachment.title
     u'Even Better Title'
-    >>> attachment.title = 'Even Better Title'
 
 Mr. No Privs, who is not subscribed to bug_four, cannot access or set the
 attachments attributes:
@@ -365,13 +361,11 @@ Of course, anonymous is also not allowed to access or set them:
     ...
     Unauthorized: (..., 'title',...
 
-Sample Person is explicitly subscribed, so they can both access and set
-the attributes:
+Sample Person is explicitly subscribed, so they can access the attributes:
 
     >>> login('test@canonical.com')
     >>> attachment.title
     u'Even Better Title'
-    >>> attachment.title = 'Better Title'
 
 
 Let's make the bug public again:
@@ -423,7 +417,7 @@ There are no patches attached to any bugs:
 Let's make our attachment a patch and search again:
 
     >>> from lp.services.database.sqlbase import flush_database_updates
-    >>> login('test@canonical.com')
+    >>> login('foo.bar@canonical.com')
     >>> attachment.type = BugAttachmentType.PATCH
     >>> flush_database_updates()
     >>> attachmenttype = BugAttachmentType.PATCH
