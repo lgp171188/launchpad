@@ -28,8 +28,7 @@ class TestLibraryFileAliasForBugAttachment(TestCaseWithFactory):
         login_person(self.bug_owner)
         self.bug = self.factory.makeBug(
             owner=self.bug_owner, information_type=InformationType.USERDATA)
-        self.bug_attachment = self.factory.makeBugAttachment(
-            bug=self.bug, owner=self.bug_owner)
+        self.bug_attachment = self.factory.makeBugAttachment(bug=self.bug)
         self.lfa_with_parent = getMultiAdapter(
             (self.bug_attachment.libraryfile, self.bug_attachment),
             ILibraryFileAliasWithParent)
@@ -41,7 +40,7 @@ class TestLibraryFileAliasForBugAttachment(TestCaseWithFactory):
         #
         # People who can edit the parent object can also edit
         # LibraryFilasAlias instance.
-        login_person(self.bug_owner)
+        login_person(self.bug_attachment.message.owner)
         self.assertTrue(self.lfa_with_parent.restricted)
         self.bug_attachment.title = 'foo'
         self.lfa_with_parent.restricted = False
