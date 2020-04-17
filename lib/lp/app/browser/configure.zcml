@@ -576,6 +576,12 @@
       factory="lp.app.browser.tales.BuildImageDisplayAPI"
       name="image"
       />
+  <adapter
+      for="lp.oci.interfaces.ocirecipebuild.IOCIRecipeBuild"
+      provides="zope.traversing.interfaces.IPathAdapter"
+      factory="lp.app.browser.tales.BuildImageDisplayAPI"
+      name="image"
+      />
 
   <adapter
       for="lp.soyuz.interfaces.archive.IArchive"
