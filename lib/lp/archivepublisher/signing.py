@@ -18,8 +18,11 @@ __all__ = [
     "UefiUpload",
     ]
 
+import base64
+from datetime import datetime
 from functools import partial
 import os
+import re
 import shutil
 import stat
 import subprocess
@@ -42,6 +45,8 @@ from lp.soyuz.interfaces.queue import CustomUploadError
 
 PUBLISHER_USES_SIGNING_SERVICE = (
     'archivepublisher.signing_service.enabled')
+PUBLISHER_SIGNING_SERVICE_INJECTS_KEYS = (
+    'archivepublisher.signing_service.injection.enabled')
 
 
 class SigningUploadPackError(CustomUploadError):
@@ -422,6 +427,25 @@ class SigningUpload(CustomUpload):
             return [None for k in keynames]
         return keynames
 
+    def injectIntoSigningService(
+            self, key_type, private_key_file, public_key_file,
+            earliest_distro_series=None):
+        """Injects the given key pair into signing service for current
+        archive."""
+        if not getFeatureFlag(PUBLISHER_SIGNING_SERVICE_INJECTS_KEYS):
+            return
+        self.logger.info(
+            "Injecting key_type %s for archive %s into signing service" %
+            (key_type, self.archive))
+
+        private_key = LocalKeyFile(private_key_file).getPrivateKey()
+        public_key = LocalKeyFile(public_key_file).getPublicKey()
+
+        getUtility(IArchiveSigningKeySet).inject(
+            key_type, private_key, public_key, self.archive,
+            earliest_distro_series=earliest_distro_series, description=None,
+            created_at=datetime.now())
+
     def generateKeyCommonName(self, owner, archive, suffix=''):
         # PPA <owner> <archive> <suffix>
         # truncate <owner> <archive> to ensure the overall form is shorter
@@ -692,3 +716,38 @@ class UefiUpload(SigningUpload):
     """
     custom_type = "uefi"
     dists_directory = "uefi"
+
+
+class LocalKeyFile:
+    """A simple representation of a generated key file."""
+    def __init__(self, filename):
+        self.filename = filename
+        self._content = None
+
+    @property
+    def content(self):
+        if self._content is None:
+            with open(self.filename) as fd:
+                self._content = fd.read()
+        return self._content
+
+    def getKeyContent(self, tag="PRIVATE KEY"):
+        """
+        Extracts the base64 content of the given file content.
+
+        :param key_file_content: The content of a key file.
+        :param tag: Either 'PRIVATE KEY' or 'CERTIFICATE'.
+        :return: The binary content (base64-decoded).
+        """
+        m = re.search(
+            r"-----BEGIN %s-----\n(.*)?\n-----END %s-----" % (tag, tag),
+            self._content, flags=re.DOTALL).groups()[0]
+        if m:
+            return base64.b64decode(m.groups()[0])
+        return None
+
+    def getPrivateKey(self):
+        return self.getKeyContent("PRIVATE KEY")
+
+    def getPublicKey(self):
+        return self.getKeyContent("CERTIFICATE")
