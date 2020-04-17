@@ -98,6 +98,10 @@ class BinarySourceReferenceSet:
                 % (error,))
 
         build = bpr.build
+        if build.current_component is None:
+            raise UnparsableBuiltUsing(
+                "Cannot parse Built-Using because %s has no corresponding "
+                "source publication" % build.title)
         dependencies = expand_dependencies(
             build.archive, build.distro_arch_series, build.pocket,
             build.current_component, bpr.sourcepackagename)

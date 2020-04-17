@@ -53,6 +53,17 @@ class TestBinarySourceReference(TestCaseWithFactory):
             self.reference_set.createFromRelationship(
                 bpr, "nonsense (", BinarySourceReferenceType.BUILT_USING)
 
+    def test_createFromRelationship_no_source_publication(self):
+        spr = self.factory.makeSourcePackageRelease()
+        build = self.factory.makeBinaryPackageBuild(source_package_release=spr)
+        bpr = self.factory.makeBinaryPackageRelease(build=build)
+        expected_message = (
+            r"Cannot parse Built-Using because %s has no corresponding "
+            r"source publication" % re.escape(build.title))
+        with ExpectedException(UnparsableBuiltUsing, expected_message):
+            self.reference_set.createFromRelationship(
+                bpr, "foo (= 1)", BinarySourceReferenceType.BUILT_USING)
+
     def test_createFromRelationship_alternatives(self):
         bpr = self.factory.makeBinaryPackageRelease()
         expected_message = (
