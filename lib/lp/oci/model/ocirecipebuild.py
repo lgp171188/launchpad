@@ -45,6 +45,11 @@ from lp.oci.interfaces.ocirecipebuild import (
     IOCIFile,
     IOCIRecipeBuild,
     IOCIRecipeBuildSet,
+    OCIRecipeBuildRegistryUploadStatus,
+    )
+from lp.oci.model.ocirecipebuildjob import (
+    OCIRecipeBuildJob,
+    OCIRecipeBuildJobType,
     )
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.registry.model.person import Person
@@ -57,6 +62,8 @@ from lp.services.database.interfaces import (
     IMasterStore,
     IStore,
     )
+from lp.services.job.interfaces.job import JobStatus
+from lp.services.job.model.job import Job
 from lp.services.librarian.model import (
     LibraryFileAlias,
     LibraryFileContent,
@@ -354,23 +361,17 @@ class OCIRecipeBuild(PackageBuildMixin, Storm):
 
     @cachedproperty
     def manifest(self):
-        result = Store.of(self).find(
-            (OCIFile, LibraryFileAlias, LibraryFileContent),
-            OCIFile.build == self.id,
-            LibraryFileAlias.id == OCIFile.library_file_id,
-            LibraryFileContent.id == LibraryFileAlias.contentID,
-            LibraryFileAlias.filename == 'manifest.json')
-        return result.one()
+        try:
+            return self.getFileByName("manifest.json")
+        except NotFoundError:
+            return None
 
     @cachedproperty
     def digests(self):
-        result = Store.of(self).find(
-            (OCIFile, LibraryFileAlias, LibraryFileContent),
-            OCIFile.build == self.id,
-            LibraryFileAlias.id == OCIFile.library_file_id,
-            LibraryFileContent.id == LibraryFileAlias.contentID,
-            LibraryFileAlias.filename == 'digests.json')
-        return result.one()
+        try:
+            return self.getFileByName("digests.json")
+        except NotFoundError:
+            return None
 
     def verifySuccessfulUpload(self):
         """See `IPackageBuild`."""
@@ -382,6 +383,37 @@ class OCIRecipeBuild(PackageBuildMixin, Storm):
         metadata_present = (self.manifest is not None
                             and self.digests is not None)
         return layer_files_present and metadata_present
+
+    @property
+    def registry_upload_jobs(self):
+        jobs = Store.of(self).find(
+            OCIRecipeBuildJob,
+            OCIRecipeBuildJob.build == self,
+            OCIRecipeBuildJob.job_type == OCIRecipeBuildJobType.REGISTRY_UPLOAD
+        )
+        jobs.order_by(Desc(OCIRecipeBuildJob.job_id))
+
+        def preload_jobs(rows):
+            load_related(Job, rows, ["job_id"])
+
+        return DecoratedResultSet(
+            jobs, lambda job: job.makeDerived(), pre_iter_hook=preload_jobs)
+
+    @cachedproperty
+    def last_registry_upload_job(self):
+        return self.registry_upload_jobs.first()
+
+    @property
+    def registry_upload_status(self):
+        job = self.last_registry_upload_job
+        if job is None or job.job.status == JobStatus.SUSPENDED:
+            return OCIRecipeBuildRegistryUploadStatus.UNSCHEDULED
+        elif job.job.status in (JobStatus.WAITING, JobStatus.RUNNING):
+            return OCIRecipeBuildRegistryUploadStatus.PENDING
+        elif job.job.status == JobStatus.COMPLETED:
+            return OCIRecipeBuildRegistryUploadStatus.UPLOADED
+        else:
+            return OCIRecipeBuildRegistryUploadStatus.FAILEDTOUPLOAD
 
 
 @implementer(IOCIRecipeBuildSet)
