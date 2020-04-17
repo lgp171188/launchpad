@@ -870,9 +870,8 @@ class TestOCIRecipeAsyncWebservice(TestCaseWithFactory):
 
         with admin_logged_in():
             [job] = getUtility(IOCIRecipeRequestBuildsJobSource).iterReady()
-            # XXX: pappacena 2020-04-15: Test JobRunner with the proper dbuser.
-            # with dbuser(config.IOCIRecipeRequestBuildsJobSource.dbuser):
-            JobRunner([job]).runAll()
+            with dbuser(config.IOCIRecipeRequestBuildsJobSource.dbuser):
+                JobRunner([job]).runAll()
 
         build_request_url = response.getHeader("Location")
         job_id = int(build_request_url.split('/')[-1])

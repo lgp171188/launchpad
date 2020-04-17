@@ -33,6 +33,7 @@ from lp.oci.interfaces.ocirecipejob import (
     )
 from lp.oci.model.ocirecipebuild import OCIRecipeBuild
 from lp.registry.interfaces.person import IPersonSet
+from lp.services.config import config
 from lp.services.database.enumcol import EnumCol
 from lp.services.database.interfaces import (
     IMasterStore,
@@ -157,10 +158,7 @@ class OCIRecipeRequestBuildsJob(OCIRecipeJobDerived):
 
     max_retries = 5
 
-    # XXX: pappacena 2020-04-14: Add specific configuration for OCI jobs
-    # here, once other MP is landed with "oci-build-job" database user.
-    # See shcema-lazr.conf notes too.
-    # config = config.IOCIRecipeRequestBuildsJobSource
+    config = config.IOCIRecipeRequestBuildsJobSource
 
     @classmethod
     def create(cls, recipe, requester):
