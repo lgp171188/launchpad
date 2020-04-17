@@ -11,20 +11,33 @@ __all__ = [
     'OCIRecipeBuildJobType',
     ]
 
+
 from lazr.delegates import delegate_to
 from lazr.enum import (
     DBEnumeratedType,
     DBItem,
     )
+from lazr.lifecycle.event import ObjectCreatedEvent
 from storm.databases.postgres import JSON
 from storm.locals import (
     Int,
     Reference,
     )
-from zope.interface import implementer
+import transaction
+from zope.component import getUtility
+from zope.event import notify
+from zope.interface import (
+    implementer,
+    provider,
+    )
 
 from lp.app.errors import NotFoundError
-from lp.oci.interfaces.ocirecipebuildjob import IOCIRecipeBuildJob
+from lp.oci.interfaces.ocirecipebuildjob import (
+    IOCIRecipeBuildJob,
+    IOCIRegistryUploadJob,
+    IOCIRegistryUploadJobSource,
+    )
+from lp.oci.interfaces.ociregistryclient import IOCIRegistryClient
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IStore
 from lp.services.database.stormbase import StormBase
@@ -33,13 +46,12 @@ from lp.services.job.model.job import (
     Job,
     )
 from lp.services.job.runner import BaseRunnableJob
+from lp.services.propertycache import get_property_cache
+from lp.services.webapp.snapshot import notify_modified
 
 
 class OCIRecipeBuildJobType(DBEnumeratedType):
     """Values that `OCIBuildJobType.job_type` can take."""
-
-    # XXX twom (2020-04-02) This does not currently have a concrete
-    # implementation, awaiting registry upload.
 
     REGISTRY_UPLOAD = DBItem(0, """
         Registry upload
@@ -82,7 +94,7 @@ class OCIRecipeBuildJob(StormBase):
         self.json_data = json_data
 
     def makeDerived(self):
-        return OCIRecipeBuildJob.makeSubclass(self)
+        return OCIRecipeBuildJobDerived.makeSubclass(self)
 
 
 @delegate_to(IOCIRecipeBuildJob)
@@ -138,3 +150,101 @@ class OCIRecipeBuildJobDerived(BaseRunnableJob):
             ('oci_project_name', self.context.build.recipe.oci_project.name)
             ])
         return oops_vars
+
+
+@implementer(IOCIRegistryUploadJob)
+@provider(IOCIRegistryUploadJobSource)
+class OCIRegistryUploadJob(OCIRecipeBuildJobDerived):
+
+    class_job_type = OCIRecipeBuildJobType.REGISTRY_UPLOAD
+
+    @classmethod
+    def create(cls, build):
+        """See `IOCIRegistryUploadJobSource`"""
+        oci_build_job = OCIRecipeBuildJob(
+            build, cls.class_job_type, {})
+        job = cls(oci_build_job)
+        job.celeryRunOnCommit()
+        del get_property_cache(build).last_registry_upload_job
+        notify(ObjectCreatedEvent(build))
+        return job
+
+    # Ideally we'd just override Job._set_status or similar, but
+    # lazr.delegates makes that difficult, so we use this to override all
+    # the individual Job lifecycle methods instead.
+    def _do_lifecycle(self, method_name, manage_transaction=False,
+                      *args, **kwargs):
+        edited_fields = set()
+        with notify_modified(self.build, edited_fields) as before_modification:
+            getattr(super(OCIRegistryUploadJob, self), method_name)(
+                *args, manage_transaction=manage_transaction, **kwargs)
+            upload_status = self.build.registry_upload_status
+            if upload_status != before_modification.registry_upload_status:
+                edited_fields.add('registry_upload_status')
+        if edited_fields and manage_transaction:
+            transaction.commit()
+
+    def start(self, *args, **kwargs):
+        self._do_lifecycle("start", *args, **kwargs)
+
+    def complete(self, *args, **kwargs):
+        self._do_lifecycle("complete", *args, **kwargs)
+
+    def fail(self, *args, **kwargs):
+        self._do_lifecycle("fail", *args, **kwargs)
+
+    def queue(self, *args, **kwargs):
+        self._do_lifecycle("queue", *args, **kwargs)
+
+    def suspend(self, *args, **kwargs):
+        self._do_lifecycle("suspend", *args, **kwargs)
+
+    def resume(self, *args, **kwargs):
+        self._do_lifecycle("resume", *args, **kwargs)
+
+    @property
+    def error_message(self):
+        """See `IOCIRegistryUploadJob`."""
+        return self.json_data.get("error_message")
+
+    @error_message.setter
+    def error_message(self, message):
+        """See `IOCIRegistryUploadJob`."""
+        self.json_data["error_message"] = message
+
+    @property
+    def error_detail(self):
+        """See `IOCIRegistryUploadJob`."""
+        return self.json_data.get("error_detail")
+
+    @error_detail.setter
+    def error_detail(self, detail):
+        """See `IOCIRegistryUploadJob`."""
+        self.json_data["error_detail"] = detail
+
+    @property
+    def error_messages(self):
+        """See `IOCIRegistryUploadJob`."""
+        return self.json_data.get("error_messages")
+
+    @error_messages.setter
+    def error_messages(self, messages):
+        """See `IOCIRegistryUploadJob`."""
+        self.json_data["error_messages"] = messages
+
+    def run(self):
+        """See `IRunnableJob`."""
+        client = getUtility(IOCIRegistryClient)
+        # XXX twom 2020-04-16 This is taken from SnapStoreUploadJob
+        # it will need to gain retry support.
+        try:
+            try:
+                client.upload(self.build)
+            except Exception as e:
+                self.error_message = str(e)
+                self.error_messages = getattr(e, "messages", None)
+                self.error_detail = getattr(e, "detail", None)
+                raise
+        except Exception:
+            transaction.commit()
+            raise

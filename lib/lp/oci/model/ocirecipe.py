@@ -377,6 +377,10 @@ class OCIRecipe(Storm, WebhookTargetMixin):
         order_by = Desc(OCIRecipeBuild.id)
         return self._getBuilds(filter_term, order_by)
 
+    @property
+    def can_upload_to_registry(self):
+        return not self.push_rules.is_empty()
+
 
 class OCIRecipeArch(Storm):
     """Link table to back `OCIRecipe.processors`."""
