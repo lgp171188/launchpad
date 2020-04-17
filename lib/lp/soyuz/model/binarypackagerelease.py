@@ -104,11 +104,6 @@ class BinaryPackageRelease(SQLBase):
         return sorted(references, key=attrgetter('id'))
 
     @property
-    def built_using(self):
-        return getUtility(IBinarySourceReferenceSet).makeRelationship(
-            self.built_using_references)
-
-    @property
     def user_defined_fields(self):
         """See `IBinaryPackageRelease`."""
         if self._user_defined_fields is None:

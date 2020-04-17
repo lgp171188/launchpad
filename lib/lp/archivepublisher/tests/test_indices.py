@@ -1,4 +1,4 @@
-# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2018 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test native archive index generation for Soyuz."""
@@ -144,12 +144,11 @@ class TestNativeArchiveIndexes(TestNativePublishingBase):
         See also testSourceStanza, it must present something similar for
         binary packages.
         """
-        self.getPubSource(sourcename='built-using', version='123')
         pub_binaries = self.getPubBinaries(
             depends='biscuit', recommends='foo-dev', suggests='pyfoo',
             conflicts='old-foo', replaces='old-foo', provides='foo-master',
             pre_depends='master-foo', enhances='foo-super', breaks='old-foo',
-            built_using='built-using (= 123)', phased_update_percentage=50)
+            phased_update_percentage=50)
         pub_binary = pub_binaries[0]
         self.assertEqual(
             ['Package: foo-bin',
@@ -169,7 +168,6 @@ class TestNativeArchiveIndexes(TestNativePublishingBase):
              'Pre-Depends: master-foo',
              'Enhances: foo-super',
              'Breaks: old-foo',
-             'Built-Using: built-using (= 123)',
              'Filename: pool/main/f/foo/foo-bin_666_all.deb',
              'Size: 18',
              'MD5sum: ' + self.deb_md5,
@@ -186,12 +184,10 @@ class TestNativeArchiveIndexes(TestNativePublishingBase):
         custom fields (Python-Version).
 
         """
-        self.getPubSource(sourcename='built-using', version='123')
         pub_binaries = self.getPubBinaries(
             depends='biscuit', recommends='foo-dev', suggests='pyfoo',
             conflicts='old-foo', replaces='old-foo', provides='foo-master',
             pre_depends='master-foo', enhances='foo-super', breaks='old-foo',
-            built_using='built-using (= 123)',
             user_defined_fields=[("Python-Version", ">= 2.4")])
         pub_binary = pub_binaries[0]
         self.assertEqual(
@@ -212,7 +208,6 @@ class TestNativeArchiveIndexes(TestNativePublishingBase):
              'Pre-Depends: master-foo',
              'Enhances: foo-super',
              'Breaks: old-foo',
-             'Built-Using: built-using (= 123)',
              'Filename: pool/main/f/foo/foo-bin_666_all.deb',
              'Size: 18',
              'MD5sum: ' + self.deb_md5,

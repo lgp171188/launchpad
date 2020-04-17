@@ -833,12 +833,8 @@ class BinaryPackageHandler:
             # BinarySourceReference rows at least for those relations that
             # can be parsed and resolved to SourcePackageReleases.  It's not
             # worth spending much time on given that we don't use binary
-            # imports much, though.  For now, just stuff the whole field
-            # into user_defined_fields.
-            if binpkg._user_defined_fields is None:
-                binpkg._user_defined_fields = []
-            binpkg._user_defined_fields.append(
-                ("Built-Using", bin.built_using))
+            # imports much, though.
+            pass
         log.info('Binary Package Release %s (%s) created' %
                  (bin_name.name, bin.version))
 

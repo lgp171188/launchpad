@@ -494,6 +494,14 @@ class BinaryPackageData(AbstractPackageData):
                 except ValueError:
                     raise MissingRequiredArguments("Installed-Size is "
                         "not a valid integer: %r" % v)
+            elif k == "Built-Using":
+                self.built_using = v
+                # Preserve the original form of Built-Using to avoid
+                # possible unfortunate apt behaviour.  This is most easily
+                # done by adding it to _user_defined as well.
+                if self._user_defined is None:
+                    self._user_defined = []
+                self._user_defined.append([k, v])
             else:
                 self.set_field(k, v)
 

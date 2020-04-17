@@ -445,7 +445,10 @@ class BaseBinaryUploadFile(PackageUploadFile):
         "Provides",
         "Pre-Depends",
         "Enhances",
-        "Built-Using",
+        # Note that we intentionally don't include Built-Using here;
+        # although we parse it, we want to preserve its original form to
+        # avoid possible unfortunate apt behaviour, and this is most easily
+        # done by adding it to user_defined_fields.
         "Essential",
         "Description",
         "Installed-Size",

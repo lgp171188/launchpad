@@ -63,7 +63,6 @@ class IBinaryPackageRelease(Interface):
     breaks = TextLine(required=False)
     built_using_references = List(
         title=_("Sequence of Built-Using references."), required=True)
-    built_using = TextLine(required=False)
     essential = Bool(required=False)
     installedsize = Int(required=False)
     architecturespecific = Bool(required=True)

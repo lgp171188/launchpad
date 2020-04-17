@@ -175,16 +175,6 @@ class BinarySourceReferenceSet:
             values, get_objects=True)
 
     @classmethod
-    def makeRelationship(cls, references):
-        """See `IBinarySourceReferenceSet`."""
-        return PkgRelation.str([
-            [{
-                "name": reference.source_package_release.name,
-                "version": ("=", reference.source_package_release.version),
-                }]
-            for reference in references])
-
-    @classmethod
     def findByBinaryPackageRelease(cls, bpr, reference_type):
         """See `IBinarySourceReferenceSet`."""
         return IStore(BinarySourceReference).find(

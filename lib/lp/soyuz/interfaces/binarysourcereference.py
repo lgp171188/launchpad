@@ -64,14 +64,6 @@ class IBinarySourceReferenceSet(Interface):
         :return: A list of new `IBinarySourceReference`s.
         """
 
-    def makeRelationship(references):
-        """Make a text relationship field from some references.
-
-        :param references: An iterable of `IBinarySourceReference`s.
-        :return: A text relationship field in the usual Debian encoding
-            (e.g. "source1 (= 1.0), source2 (= 2.0)").
-        """
-
     def findByBinaryPackageRelease(bpr, reference_type):
         """Find references from a given binary package release.
 
