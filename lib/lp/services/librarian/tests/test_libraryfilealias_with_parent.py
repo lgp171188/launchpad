@@ -28,7 +28,8 @@ class TestLibraryFileAliasForBugAttachment(TestCaseWithFactory):
         login_person(self.bug_owner)
         self.bug = self.factory.makeBug(
             owner=self.bug_owner, information_type=InformationType.USERDATA)
-        self.bug_attachment = self.factory.makeBugAttachment(bug=self.bug)
+        self.bug_attachment = self.factory.makeBugAttachment(
+            bug=self.bug, owner=self.bug_owner)
         self.lfa_with_parent = getMultiAdapter(
             (self.bug_attachment.libraryfile, self.bug_attachment),
             ILibraryFileAliasWithParent)
