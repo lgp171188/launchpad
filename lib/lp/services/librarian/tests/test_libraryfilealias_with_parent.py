@@ -40,7 +40,7 @@ class TestLibraryFileAliasForBugAttachment(TestCaseWithFactory):
         #
         # People who can edit the parent object can also edit
         # LibraryFilasAlias instance.
-        login_person(self.bug_owner)
+        login_person(self.bug_attachment.message.owner)
         self.assertTrue(self.lfa_with_parent.restricted)
         self.bug_attachment.title = 'foo'
         self.lfa_with_parent.restricted = False

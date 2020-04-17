@@ -1,4 +1,4 @@
-# Copyright 2010-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -53,7 +53,8 @@ class TestAccessToBugAttachmentFiles(TestCaseWithFactory):
         login_person(self.bug_owner)
         self.bug = self.factory.makeBug(owner=self.bug_owner)
         self.bugattachment = self.factory.makeBugAttachment(
-            bug=self.bug, filename='foo.txt', data=b'file content')
+            owner=self.bug_owner, bug=self.bug, filename='foo.txt',
+            data=b'file content')
 
     def test_traversal_to_lfa_of_bug_attachment(self):
         # Traversing to the URL provided by a ProxiedLibraryFileAlias of a
