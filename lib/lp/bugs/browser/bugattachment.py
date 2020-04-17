@@ -13,7 +13,6 @@ __all__ = [
     ]
 
 from lazr.restful.utils import smartquote
-from lp.services.webapp.authorization import check_permission
 from zope.component import (
     getMultiAdapter,
     getUtility,
@@ -43,6 +42,7 @@ from lp.services.webapp import (
     GetitemNavigation,
     Navigation,
     )
+from lp.services.webapp.authorization import check_permission
 from lp.services.webapp.escaping import structured
 from lp.services.webapp.interfaces import (
     ICanonicalUrlData,

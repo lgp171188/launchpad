@@ -46,7 +46,7 @@ class TestBugAttachmentEditView(TestCaseWithFactory):
         # we start the tests.
         transaction.commit()
 
-    def test_user_changes_his_own_attachment(self):
+    def test_user_changes_their_own_attachment(self):
         login_person(self.bugattachment.message.owner)
         create_initialized_view(
             self.bugattachment, name='+edit', form=self.CHANGE_FORM_DATA)
@@ -107,7 +107,7 @@ class TestBugAttachmentEditView(TestCaseWithFactory):
             self.bugattachment, name='+edit', form=self.DELETE_FORM_DATA)
         self.assertEqual(0, self.bug.attachments.count())
 
-    def test_attachment_owner_can_delete_his_own_attachment(self):
+    def test_attachment_owner_can_delete_their_own_attachment(self):
         bug = self.factory.makeBug(owner=self.bug_owner)
         another_user = self.factory.makePerson()
         attachment = self.factory.makeBugAttachment(

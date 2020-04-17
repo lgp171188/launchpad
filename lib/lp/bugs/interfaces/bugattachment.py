@@ -99,7 +99,7 @@ class IBugAttachmentView(IHasBug):
         readonly=True)
 
     def getFileByName(filename):
-        """Return the `ILibraryFileAlias for the given file name.
+        """Return the `ILibraryFileAlias` for the given file name.
 
         NotFoundError is raised if the given filename does not match
         libraryfile.filename.
