@@ -82,11 +82,11 @@ OCI_RECIPE_ALLOW_CREATE = 'oci.recipe.create.enabled'
 
 @error_status(http_client.UNAUTHORIZED)
 class OCIRecipeFeatureDisabled(Unauthorized):
-    """Only certain users can create new LiveFS-related objects."""
+    """Only certain users can create new OCI recipes."""
 
     def __init__(self):
         super(OCIRecipeFeatureDisabled, self).__init__(
-            "You do not have permission to create new OCI recipe.")
+            "You do not have permission to create new OCI recipes.")
 
 
 @error_status(http_client.UNAUTHORIZED)
@@ -275,6 +275,12 @@ class IOCIRecipeView(Interface):
                       "that apply to this recipe."),
         # Really IOCIPushRule, patched in _schema_cirular_imports.
         value_type=Reference(schema=Interface), readonly=True)
+
+    can_upload_to_registry = Bool(
+        title=_("Can upload to registry"), required=True, readonly=True,
+        description=_(
+            "Whether everything is set up to allow uploading builds of "
+            "this OCI recipe to a registry."))
 
 
 class IOCIRecipeEdit(IWebhookTarget):

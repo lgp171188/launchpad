@@ -201,6 +201,7 @@ class TestOCIRecipe(TestCaseWithFactory):
             "action": Equals("created"),
             "recipe": Equals(canonical_url(recipe, force_local_path=True)),
             "status": Equals("Needs building"),
+            'registry_upload_status': Equals('Unscheduled'),
             }
         with person_logged_in(recipe.owner):
             delivery = hook.deliveries.one()

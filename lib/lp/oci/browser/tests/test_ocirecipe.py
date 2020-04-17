@@ -670,6 +670,33 @@ class TestOCIRecipeView(BaseTestOCIRecipeView):
             Needs building in .* \(estimated\) 386
             """, self.getMainText(build.recipe))
 
+    def test_index_request_builds_link(self):
+        # Recipe owners get a link to allow requesting builds.
+        owner = self.factory.makePerson()
+        distroseries = self.factory.makeDistroSeries()
+        oci_project = self.factory.makeOCIProject(
+            pillar=distroseries.distribution)
+        recipe = self.factory.makeOCIRecipe(
+            registrant=owner, owner=owner, oci_project=oci_project)
+        recipe_name = recipe.name
+        browser = self.getViewBrowser(recipe, user=owner)
+        browser.getLink("Request builds").click()
+        self.assertIn("Request builds for %s" % recipe_name, browser.contents)
+
+    def test_index_request_builds_link_unauthorized(self):
+        # People who cannot edit the recipe do not get a link to allow
+        # requesting builds.
+        distroseries = self.factory.makeDistroSeries()
+        oci_project = self.factory.makeOCIProject(
+            pillar=distroseries.distribution)
+        recipe = self.factory.makeOCIRecipe(oci_project=oci_project)
+        recipe_url = canonical_url(recipe)
+        browser = self.getViewBrowser(recipe, user=self.person)
+        self.assertRaises(LinkNotFoundError, browser.getLink, "Request builds")
+        self.assertRaises(
+            Unauthorized, self.getUserBrowser, recipe_url + "/+request-builds",
+            user=self.person)
+
     def setStatus(self, build, status):
         build.updateStatus(
             BuildStatus.BUILDING, date_started=build.date_created)
