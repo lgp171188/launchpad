@@ -157,10 +157,6 @@ class BinarySourceReferenceSet:
                 SPPH.sourcepackagereleaseID,
                 SPN.name == rel["name"],
                 SPR.version == rel["version"][1],
-                SPPH.status.is_in((
-                    PackagePublishingStatus.PENDING,
-                    PackagePublishingStatus.PUBLISHED,
-                    PackagePublishingStatus.SUPERSEDED)),
                 ).order_by(Column("index", dependencies_table)).first()
             if closest_spr_id is None:
                 raise UnparsableBuiltUsing(
