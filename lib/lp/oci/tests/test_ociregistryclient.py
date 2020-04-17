@@ -49,7 +49,7 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, TestCaseWithFactory):
         }]
         self.config = {"rootfs": {"diff_ids": ["diff_id_1", "diff_id_2"]}}
         self.build = self.factory.makeOCIRecipeBuild()
-        self.factory.makeOCIPushRule(recipe=self.build.recipe)
+        self.push_rule = self.factory.makeOCIPushRule(recipe=self.build.recipe)
         self.client = OCIRegistryClient()
 
     def _makeFiles(self):
@@ -128,6 +128,30 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, TestCaseWithFactory):
                 "application/vnd.docker.distribution.manifest.v2+json")
         }))
 
+    @responses.activate
+    def test_upload_formats_credentials(self):
+        self._makeFiles()
+        _upload_fixture = self.useFixture(MockPatch(
+            "lp.oci.model.ociregistryclient.OCIRegistryClient._upload"))
+        self.useFixture(MockPatch(
+            "lp.oci.model.ociregistryclient.OCIRegistryClient._upload_layer"))
+
+        self.push_rule.registry_credentials.setCredentials({
+            "username": "test-username",
+            "password": "test-password"
+        })
+
+        manifests_url = "{}/v2/{}/manifests/edge".format(
+            self.build.recipe.push_rules[0].registry_credentials.url,
+            self.build.recipe.push_rules[0].image_name
+        )
+        responses.add("PUT", manifests_url, status=201)
+        self.client.upload(self.build)
+
+        self.assertIn(
+            ('test-username', 'test-password'),
+            _upload_fixture.mock.call_args_list[0][0])
+
     def test_preloadFiles(self):
         self._makeFiles()
         files = self.client._preloadFiles(
@@ -186,7 +210,11 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, TestCaseWithFactory):
             "test-digest")
         responses.add("HEAD", blobs_url, status=200)
         self.client._upload(
-            "test-digest", self.build.recipe.push_rules[0], "test-name", None)
+            "test-digest", self.build.recipe.push_rules[0],
+            "test-name", None, None)
+        # There should be no auth headers for these calls
+        for call in responses.calls:
+            self.assertNotIn('Authorization', call.request.headers.keys())
 
     @responses.activate
     def test_upload_raises_non_404(self):
@@ -201,4 +229,21 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, TestCaseWithFactory):
             "test-digest",
             self.build.recipe.push_rules[0],
             "test-name",
+            None,
             None)
+
+    @responses.activate
+    def test_upload_passes_basic_auth(self):
+        blobs_url = "{}/v2/{}/blobs/{}".format(
+            self.build.recipe.push_rules[0].registry_credentials.url,
+            "test-name",
+            "test-digest")
+        responses.add("HEAD", blobs_url, status=200)
+        self.client._upload(
+            "test-digest", self.build.recipe.push_rules[0],
+            "test-name", None, ('user', 'password'))
+
+        for call in responses.calls:
+            self.assertEqual(
+                'Basic dXNlcjpwYXNzd29yZA==',
+                call.request.headers['Authorization'])
