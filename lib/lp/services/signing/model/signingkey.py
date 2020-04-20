@@ -89,7 +89,7 @@ class SigningKey(StormBase):
         self.date_created = date_created
 
     @classmethod
-    def generate(cls, key_type, description=None):
+    def generate(cls, key_type, description):
         signing_service = getUtility(ISigningServiceClient)
         generated_key = signing_service.generate(key_type, description)
         signing_key = SigningKey(
@@ -202,17 +202,16 @@ class ArchiveSigningKeySet:
         return keys_per_series.get(None)
 
     @classmethod
-    def generate(cls, key_type, archive, earliest_distro_series=None,
-                 description=None):
+    def generate(cls, key_type, description, archive,
+                 earliest_distro_series=None):
         signing_key = SigningKey.generate(key_type, description)
         archive_signing = ArchiveSigningKeySet.create(
             archive, earliest_distro_series, signing_key)
         return archive_signing
 
     @classmethod
-    def inject(cls, key_type, private_key, public_key,
-               archive, earliest_distro_series=None,
-               description=None, created_at=None):
+    def inject(cls, key_type, private_key, public_key, description, created_at,
+               archive, earliest_distro_series=None):
         signing_key = SigningKey.inject(
             key_type, private_key, public_key, description, created_at)
         archive_signing = ArchiveSigningKeySet.create(
