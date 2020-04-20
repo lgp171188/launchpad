@@ -1165,6 +1165,7 @@ class DistroSeries(SQLBase, BugTargetBase, HasSpecificationsMixin,
             bpbs = load_related(BinaryPackageBuild, bprs, ["buildID"])
             sprs = load_related(
                 SourcePackageRelease, bpbs, ["source_package_release_id"])
+
             built_using_bsrs = load_referencing(
                 BinarySourceReference, bprs, ["binary_package_release_id"],
                 extra_conditions=[
@@ -1179,6 +1180,7 @@ class DistroSeries(SQLBase, BugTargetBase, HasSpecificationsMixin,
             for bpr, bsrs in built_using_bsr_map.items():
                 get_property_cache(bpr).built_using_references = sorted(
                     bsrs, key=attrgetter("id"))
+
             bpfs = load_referencing(
                 BinaryPackageFile, bprs, ["binarypackagereleaseID"])
             file_map = collections.defaultdict(list)
