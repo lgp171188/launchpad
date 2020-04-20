@@ -68,20 +68,31 @@ class TestOCIRecipeBuild(TestCaseWithFactory):
     def test_addFile(self):
         lfa = self.factory.makeLibraryFileAlias()
         self.build.addFile(lfa)
-        _, result_lfa, _ = self.build.getByFileName(lfa.filename)
+        result_lfa = self.build.getFileByName(lfa.filename)
         self.assertEqual(result_lfa, lfa)
 
-    def test_getByFileName(self):
+    def test_getFileByName(self):
         files = [self.factory.makeOCIFile(build=self.build) for x in range(3)]
-        result, _, _ = self.build.getByFileName(
-            files[0].library_file.filename)
-        self.assertEqual(result, files[0])
+        result = self.build.getFileByName(files[0].library_file.filename)
+        self.assertEqual(files[0].library_file, result)
 
-    def test_getByFileName_missing(self):
+    def test_getFileByName_missing(self):
         self.assertRaises(
             NotFoundError,
-            self.build.getByFileName,
+            self.build.getFileByName,
             "missing")
+
+    def test_getFileByName_logs(self):
+        # getFileByName returns the logs when requested by name.
+        self.build.setLog(
+            self.factory.makeLibraryFileAlias(filename="buildlog.txt.gz"))
+        self.assertEqual(
+            self.build.log, self.build.getFileByName("buildlog.txt.gz"))
+        self.assertRaises(NotFoundError, self.build.getFileByName, "foo")
+        self.build.storeUploadLog("uploaded")
+        self.assertEqual(
+            self.build.upload_log,
+            self.build.getFileByName(self.build.upload_log.filename))
 
     def test_getLayerFileByDigest(self):
         files = [self.factory.makeOCIFile(
@@ -99,6 +110,35 @@ class TestOCIRecipeBuild(TestCaseWithFactory):
             NotFoundError,
             self.build.getLayerFileByDigest,
             'missing')
+
+    def test_can_be_cancelled(self):
+        # For all states that can be cancelled, can_be_cancelled returns True.
+        ok_cases = [
+            BuildStatus.BUILDING,
+            BuildStatus.NEEDSBUILD,
+            ]
+        for status in BuildStatus:
+            if status in ok_cases:
+                self.assertTrue(self.build.can_be_cancelled)
+            else:
+                self.assertFalse(self.build.can_be_cancelled)
+
+    def test_cancel_not_in_progress(self):
+        # The cancel() method for a pending build leaves it in the CANCELLED
+        # state.
+        self.build.queueBuild()
+        self.build.cancel()
+        self.assertEqual(BuildStatus.CANCELLED, self.build.status)
+        self.assertIsNone(self.build.buildqueue_record)
+
+    def test_cancel_in_progress(self):
+        # The cancel() method for a building build leaves it in the
+        # CANCELLING state.
+        bq = self.build.queueBuild()
+        bq.markAsBuilding(self.factory.makeBuilder())
+        self.build.cancel()
+        self.assertEqual(BuildStatus.CANCELLING, self.build.status)
+        self.assertEqual(bq, self.build.buildqueue_record)
 
     def test_estimateDuration(self):
         # Without previous builds, the default time estimate is 30m.
@@ -142,6 +182,7 @@ class TestOCIRecipeBuild(TestCaseWithFactory):
             "recipe": Equals(
                  canonical_url(self.build.recipe, force_local_path=True)),
             "status": Equals("Successfully built"),
+            'registry_upload_status': Equals("Unscheduled"),
             }
         self.assertThat(
             logger.output, LogsScheduledWebhooks([

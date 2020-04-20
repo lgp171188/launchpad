@@ -23,7 +23,9 @@ from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
 from lp.buildmaster.enums import BuildStatus
+from lp.buildmaster.interfaces.processor import IProcessorSet
 from lp.oci.interfaces.ocirecipe import (
+    CannotModifyOCIRecipeProcessor,
     DuplicateOCIRecipeName,
     IOCIRecipe,
     IOCIRecipeSet,
@@ -125,6 +127,7 @@ class TestOCIRecipe(TestCaseWithFactory):
             "action": Equals("created"),
             "recipe": Equals(canonical_url(recipe, force_local_path=True)),
             "status": Equals("Needs building"),
+            'registry_upload_status': Equals('Unscheduled'),
             }
         with person_logged_in(recipe.owner):
             delivery = hook.deliveries.one()
@@ -215,6 +218,127 @@ class TestOCIRecipe(TestCaseWithFactory):
 
         for rule in oci_recipe.push_rules:
             self.assertEqual(rule.recipe, oci_recipe)
+
+
+class TestOCIRecipeProcessors(TestCaseWithFactory):
+
+    layer = DatabaseFunctionalLayer
+
+    def setUp(self):
+        super(TestOCIRecipeProcessors, self).setUp(
+            user="foo.bar@canonical.com")
+        self.default_procs = [
+            getUtility(IProcessorSet).getByName("386"),
+            getUtility(IProcessorSet).getByName("amd64")]
+        self.unrestricted_procs = (
+            self.default_procs + [getUtility(IProcessorSet).getByName("hppa")])
+        self.arm = self.factory.makeProcessor(
+            name="arm", restricted=True, build_by_default=False)
+        self.distroseries = self.factory.makeDistroSeries()
+        self.useFixture(FeatureFixture({
+            OCI_RECIPE_ALLOW_CREATE: "on",
+            "oci.build_series.%s" % self.distroseries.distribution.name:
+                self.distroseries.name
+            }))
+
+    def test_available_processors(self):
+        # Only those processors that are enabled for the recipe's
+        # distroseries are available.
+        for processor in self.default_procs:
+            self.factory.makeDistroArchSeries(
+                distroseries=self.distroseries, architecturetag=processor.name,
+                processor=processor)
+        self.factory.makeDistroArchSeries(
+            architecturetag=self.arm.name, processor=self.arm)
+        oci_project = self.factory.makeOCIProject(
+            pillar=self.distroseries.distribution)
+        recipe = self.factory.makeOCIRecipe(oci_project=oci_project)
+        self.assertContentEqual(
+            self.default_procs, recipe.available_processors)
+
+    def test_new_default_processors(self):
+        # OCIRecipeSet.new creates an OCIRecipeArch for each available
+        # Processor with build_by_default set.
+        new_procs = [
+            self.factory.makeProcessor(name="default", build_by_default=True),
+            self.factory.makeProcessor(
+                name="nondefault", build_by_default=False),
+            ]
+        owner = self.factory.makePerson()
+        for processor in self.unrestricted_procs + [self.arm] + new_procs:
+            self.factory.makeDistroArchSeries(
+                distroseries=self.distroseries, architecturetag=processor.name,
+                processor=processor)
+        oci_project = self.factory.makeOCIProject(
+            pillar=self.distroseries.distribution)
+        recipe = getUtility(IOCIRecipeSet).new(
+            name=self.factory.getUniqueUnicode(), registrant=owner,
+            owner=owner, oci_project=oci_project,
+            git_ref=self.factory.makeGitRefs()[0],
+            build_file=self.factory.getUniqueUnicode())
+        self.assertContentEqual(
+            ["386", "amd64", "hppa", "default"],
+            [processor.name for processor in recipe.processors])
+
+    def test_new_override_processors(self):
+        # OCIRecipeSet.new can be given a custom set of processors.
+        owner = self.factory.makePerson()
+        oci_project = self.factory.makeOCIProject(
+            pillar=self.distroseries.distribution)
+        recipe = getUtility(IOCIRecipeSet).new(
+            name=self.factory.getUniqueUnicode(), registrant=owner,
+            owner=owner, oci_project=oci_project,
+            git_ref=self.factory.makeGitRefs()[0],
+            build_file=self.factory.getUniqueUnicode(), processors=[self.arm])
+        self.assertContentEqual(
+            ["arm"], [processor.name for processor in recipe.processors])
+
+    def test_set(self):
+        # The property remembers its value correctly.
+        recipe = self.factory.makeOCIRecipe()
+        recipe.setProcessors([self.arm])
+        self.assertContentEqual([self.arm], recipe.processors)
+        recipe.setProcessors(self.unrestricted_procs + [self.arm])
+        self.assertContentEqual(
+            self.unrestricted_procs + [self.arm], recipe.processors)
+        recipe.setProcessors([])
+        self.assertContentEqual([], recipe.processors)
+
+    def test_set_non_admin(self):
+        """Non-admins can only enable or disable unrestricted processors."""
+        recipe = self.factory.makeOCIRecipe()
+        recipe.setProcessors(self.default_procs)
+        self.assertContentEqual(self.default_procs, recipe.processors)
+        with person_logged_in(recipe.owner) as owner:
+            # Adding arm is forbidden ...
+            self.assertRaises(
+                CannotModifyOCIRecipeProcessor, recipe.setProcessors,
+                [self.default_procs[0], self.arm],
+                check_permissions=True, user=owner)
+            # ... but removing amd64 is OK.
+            recipe.setProcessors(
+                [self.default_procs[0]], check_permissions=True, user=owner)
+            self.assertContentEqual([self.default_procs[0]], recipe.processors)
+        with admin_logged_in() as admin:
+            recipe.setProcessors(
+                [self.default_procs[0], self.arm],
+                check_permissions=True, user=admin)
+            self.assertContentEqual(
+                [self.default_procs[0], self.arm], recipe.processors)
+        with person_logged_in(recipe.owner) as owner:
+            hppa = getUtility(IProcessorSet).getByName("hppa")
+            self.assertFalse(hppa.restricted)
+            # Adding hppa while removing arm is forbidden ...
+            self.assertRaises(
+                CannotModifyOCIRecipeProcessor, recipe.setProcessors,
+                [self.default_procs[0], hppa],
+                check_permissions=True, user=owner)
+            # ... but adding hppa while retaining arm is OK.
+            recipe.setProcessors(
+                [self.default_procs[0], self.arm, hppa],
+                check_permissions=True, user=owner)
+            self.assertContentEqual(
+                [self.default_procs[0], self.arm, hppa], recipe.processors)
 
 
 class TestOCIRecipeSet(TestCaseWithFactory):

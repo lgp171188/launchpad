@@ -9,7 +9,7 @@ __all__ = [
     'BuildFarmJobBehaviourBase',
     ]
 
-import datetime
+from datetime import datetime
 import gzip
 import logging
 import os
@@ -159,7 +159,7 @@ class BuildFarmJobBehaviourBase:
     def getUploadDirLeaf(self, build_cookie, now=None):
         """See `IPackageBuild`."""
         if now is None:
-            now = datetime.datetime.now()
+            now = datetime.now()
         timestamp = now.strftime("%Y%m%d-%H%M%S")
         return '%s-%s' % (timestamp, build_cookie)
 

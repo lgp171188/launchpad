@@ -12,6 +12,7 @@ from testtools.matchers import (
     Equals,
     MatchesDict,
     )
+import transaction
 from zope.component import getUtility
 from zope.security.proxy import removeSecurityProxy
 
@@ -99,6 +100,7 @@ class TestOCIRegistryCredentialsSet(OCIConfigHelperMixin, TestCaseWithFactory):
         # make some that have a different owner
         for _ in range(5):
             self.factory.makeOCIRegistryCredentials()
+        transaction.commit()
 
         found = getUtility(IOCIRegistryCredentialsSet).findByOwner(owner)
         self.assertEqual(found.count(), 3)

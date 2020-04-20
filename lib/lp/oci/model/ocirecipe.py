@@ -27,16 +27,23 @@ from storm.locals import (
     Storm,
     Unicode,
     )
-from zope.component import getUtility
+from zope.component import (
+    getAdapter,
+    getUtility,
+    )
 from zope.event import notify
 from zope.interface import implementer
+from zope.security.interfaces import Unauthorized
 from zope.security.proxy import removeSecurityProxy
 
+from lp.app.interfaces.security import IAuthorization
 from lp.buildmaster.enums import BuildStatus
 from lp.buildmaster.interfaces.buildqueue import IBuildQueueSet
 from lp.buildmaster.model.buildfarmjob import BuildFarmJob
 from lp.buildmaster.model.buildqueue import BuildQueue
+from lp.buildmaster.model.processor import Processor
 from lp.oci.interfaces.ocirecipe import (
+    CannotModifyOCIRecipeProcessor,
     DuplicateOCIRecipeName,
     IOCIRecipe,
     IOCIRecipeSet,
@@ -51,6 +58,9 @@ from lp.oci.interfaces.ocirecipebuild import IOCIRecipeBuildSet
 from lp.oci.model.ocipushrule import OCIPushRule
 from lp.oci.model.ocirecipebuild import OCIRecipeBuild
 from lp.registry.interfaces.person import IPersonSet
+from lp.registry.interfaces.role import IPersonRoles
+from lp.registry.model.distroseries import DistroSeries
+from lp.registry.model.series import ACTIVE_STATUSES
 from lp.services.database.constants import (
     DEFAULT,
     UTC_NOW,
@@ -67,6 +77,7 @@ from lp.services.database.stormexpr import (
 from lp.services.features import getFeatureFlag
 from lp.services.webhooks.interfaces import IWebhookSet
 from lp.services.webhooks.model import WebhookTargetMixin
+from lp.soyuz.model.distroarchseries import DistroArchSeries
 
 
 def oci_recipe_modified(recipe, event):
@@ -141,6 +152,7 @@ class OCIRecipe(Storm, WebhookTargetMixin):
         # XXX twom 2019-11-26 This needs to expand as more build artifacts
         # are added
         store = IStore(OCIRecipe)
+        store.find(OCIRecipeArch, OCIRecipeArch.recipe == self).remove()
         buildqueue_records = store.find(
             BuildQueue,
             BuildQueue._build_farm_job_id == OCIRecipeBuild.build_farm_job_id,
@@ -171,6 +183,112 @@ class OCIRecipe(Storm, WebhookTargetMixin):
         else:
             self.git_repository = None
             self.git_path = None
+
+    @property
+    def distribution(self):
+        # XXX twom 2019-12-05 This may need to change when an OCIProject
+        # pillar isn't just a distribution
+        return self.oci_project.distribution
+
+    @property
+    def distro_series(self):
+        # For OCI builds we default to the series set by the feature flag.
+        # If the feature flag is not set we default to the current series of
+        # the recipe's distribution.
+        oci_series = getFeatureFlag('oci.build_series.%s'
+                                    % self.distribution.name)
+        if oci_series:
+            return self.distribution.getSeries(oci_series)
+        else:
+            return self.distribution.currentseries
+
+    @property
+    def available_processors(self):
+        """See `IOCIRecipe`."""
+        clauses = [Processor.id == DistroArchSeries.processor_id]
+        if self.distro_series is not None:
+            clauses.append(DistroArchSeries.id.is_in(
+                self.distro_series.enabled_architectures.get_select_expr(
+                    DistroArchSeries.id)))
+        else:
+            # We might not know the series if the OCI project's distribution
+            # has no series at all, which can happen in tests.  Fall back to
+            # just returning enabled architectures for any active series,
+            # which is a bit of a hack but works.
+            clauses.extend([
+                DistroArchSeries.enabled,
+                DistroArchSeries.distroseriesID == DistroSeries.id,
+                DistroSeries.status.is_in(ACTIVE_STATUSES),
+                ])
+        return Store.of(self).find(Processor, *clauses).config(distinct=True)
+
+    def _getProcessors(self):
+        return list(Store.of(self).find(
+            Processor,
+            Processor.id == OCIRecipeArch.processor_id,
+            OCIRecipeArch.recipe == self))
+
+    def setProcessors(self, processors, check_permissions=False, user=None):
+        """See `IOCIRecipe`."""
+        if check_permissions:
+            can_modify = None
+            if user is not None:
+                roles = IPersonRoles(user)
+                authz = lambda perm: getAdapter(self, IAuthorization, perm)
+                if authz('launchpad.Admin').checkAuthenticated(roles):
+                    can_modify = lambda proc: True
+                elif authz('launchpad.Edit').checkAuthenticated(roles):
+                    can_modify = lambda proc: not proc.restricted
+            if can_modify is None:
+                raise Unauthorized(
+                    'Permission launchpad.Admin or launchpad.Edit required '
+                    'on %s.' % self)
+        else:
+            can_modify = lambda proc: True
+
+        enablements = dict(Store.of(self).find(
+            (Processor, OCIRecipeArch),
+            Processor.id == OCIRecipeArch.processor_id,
+            OCIRecipeArch.recipe == self))
+        for proc in enablements:
+            if proc not in processors:
+                if not can_modify(proc):
+                    raise CannotModifyOCIRecipeProcessor(proc)
+                Store.of(self).remove(enablements[proc])
+        for proc in processors:
+            if proc not in self.processors:
+                if not can_modify(proc):
+                    raise CannotModifyOCIRecipeProcessor(proc)
+                Store.of(self).add(OCIRecipeArch(self, proc))
+
+    processors = property(_getProcessors, setProcessors)
+
+    def _isBuildableArchitectureAllowed(self, das):
+        """Check whether we may build for a buildable `DistroArchSeries`.
+
+        The caller is assumed to have already checked that a suitable chroot
+        is available (either directly or via
+        `DistroSeries.buildable_architectures`).
+        """
+        return (
+            das.enabled
+            and das.processor in self.processors
+            and (
+                das.processor.supports_virtualized
+                or not self.require_virtualized))
+
+    def _isArchitectureAllowed(self, das, pocket):
+        return (
+            das.getChroot(pocket=pocket) is not None
+            and self._isBuildableArchitectureAllowed(das))
+
+    def getAllowedArchitectures(self, distro_series=None):
+        """See `IOCIRecipe`."""
+        if distro_series is None:
+            distro_series = self.distro_series
+        return [
+            das for das in distro_series.buildable_architectures
+            if self._isBuildableArchitectureAllowed(das)]
 
     def _checkRequestBuild(self, requester):
         if not requester.inTeam(self.owner):
@@ -259,6 +377,10 @@ class OCIRecipe(Storm, WebhookTargetMixin):
         order_by = Desc(OCIRecipeBuild.id)
         return self._getBuilds(filter_term, order_by)
 
+    @property
+    def can_upload_to_registry(self):
+        return not self.push_rules.is_empty()
+
 
 class OCIRecipeArch(Storm):
     """Link table to back `OCIRecipe.processors`."""
@@ -282,7 +404,7 @@ class OCIRecipeSet:
 
     def new(self, name, registrant, owner, oci_project, git_ref, build_file,
             description=None, official=False, require_virtualized=True,
-            build_daily=False, date_created=DEFAULT):
+            build_daily=False, processors=None, date_created=DEFAULT):
         """See `IOCIRecipeSet`."""
         if not registrant.inTeam(owner):
             if owner.is_team:
@@ -306,6 +428,12 @@ class OCIRecipeSet:
             official, require_virtualized, build_file, build_daily,
             date_created)
         store.add(oci_recipe)
+
+        if processors is None:
+            processors = [
+                p for p in oci_recipe.available_processors
+                if p.build_by_default]
+        oci_recipe.setProcessors(processors)
 
         return oci_recipe
 

@@ -16,6 +16,10 @@ import re
 from fixtures import FakeLogger
 import pytz
 import soupmatchers
+from testtools.matchers import (
+    MatchesSetwise,
+    MatchesStructure,
+    )
 from zope.component import getUtility
 from zope.publisher.interfaces import NotFound
 from zope.security.interfaces import Unauthorized
@@ -29,7 +33,11 @@ from lp.oci.browser.ocirecipe import (
     OCIRecipeEditView,
     OCIRecipeView,
     )
-from lp.oci.interfaces.ocirecipe import OCI_RECIPE_ALLOW_CREATE
+from lp.oci.interfaces.ocirecipe import (
+    CannotModifyOCIRecipeProcessor,
+    IOCIRecipeSet,
+    OCI_RECIPE_ALLOW_CREATE,
+    )
 from lp.services.database.constants import UTC_NOW
 from lp.services.features.testing import FeatureFixture
 from lp.services.propertycache import get_property_cache
@@ -104,7 +112,31 @@ class TestOCIRecipeAddView(BaseTestOCIRecipeView):
 
     def setUp(self):
         super(TestOCIRecipeAddView, self).setUp()
-        self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: 'on'}))
+        self.distroseries = self.factory.makeDistroSeries()
+        self.distribution = self.distroseries.distribution
+        self.useFixture(FeatureFixture({
+            OCI_RECIPE_ALLOW_CREATE: "on",
+            "oci.build_series.%s" % self.distribution.name:
+                self.distroseries.name,
+            }))
+
+    def setUpDistroSeries(self):
+        """Set up self.distroseries with some available processors."""
+        processor_names = ["386", "amd64", "hppa"]
+        for name in processor_names:
+            processor = getUtility(IProcessorSet).getByName(name)
+            self.factory.makeDistroArchSeries(
+                distroseries=self.distroseries, architecturetag=name,
+                processor=processor)
+
+    def assertProcessorControls(self, processors_control, enabled, disabled):
+        matchers = [
+            MatchesStructure.byEquality(optionValue=name, disabled=False)
+            for name in enabled]
+        matchers.extend([
+            MatchesStructure.byEquality(optionValue=name, disabled=True)
+            for name in disabled])
+        self.assertThat(processors_control.controls, MatchesSetwise(*matchers))
 
     def test_create_new_recipe_not_logged_in(self):
         oci_project = self.factory.makeOCIProject()
@@ -157,6 +189,52 @@ class TestOCIRecipeAddView(BaseTestOCIRecipeView):
         self.assertEqual(
             ["Test Person (test-person)", "Test Team (test-team)"],
             sorted(str(option) for option in options))
+
+    def test_create_new_recipe_display_processors(self):
+        self.setUpDistroSeries()
+        oci_project = self.factory.makeOCIProject(pillar=self.distribution)
+        browser = self.getViewBrowser(
+            oci_project, view_name="+new-recipe", user=self.person)
+        processors = browser.getControl(name="field.processors")
+        self.assertContentEqual(
+            ["Intel 386 (386)", "AMD 64bit (amd64)", "HPPA Processor (hppa)"],
+            [extract_text(option) for option in processors.displayOptions])
+        self.assertContentEqual(["386", "amd64", "hppa"], processors.options)
+        self.assertContentEqual(["386", "amd64", "hppa"], processors.value)
+
+    def test_create_new_recipe_display_restricted_processors(self):
+        # A restricted processor is shown disabled in the UI.
+        self.setUpDistroSeries()
+        oci_project = self.factory.makeOCIProject(pillar=self.distribution)
+        proc_armhf = self.factory.makeProcessor(
+            name="armhf", restricted=True, build_by_default=False)
+        self.factory.makeDistroArchSeries(
+            distroseries=self.distroseries, architecturetag="armhf",
+            processor=proc_armhf)
+        browser = self.getViewBrowser(
+            oci_project, view_name="+new-recipe", user=self.person)
+        processors = browser.getControl(name="field.processors")
+        self.assertProcessorControls(
+            processors, ["386", "amd64", "hppa"], ["armhf"])
+
+    def test_create_new_recipe_processors(self):
+        self.setUpDistroSeries()
+        oci_project = self.factory.makeOCIProject(pillar=self.distribution)
+        [git_ref] = self.factory.makeGitRefs()
+        browser = self.getViewBrowser(
+            oci_project, view_name="+new-recipe", user=self.person)
+        processors = browser.getControl(name="field.processors")
+        processors.value = ["386", "amd64"]
+        browser.getControl(name="field.name").value = "recipe-name"
+        browser.getControl("Git repository").value = (
+            git_ref.repository.identity)
+        browser.getControl("Git branch").value = git_ref.path
+        browser.getControl("Create OCI recipe").click()
+        login_person(self.person)
+        recipe = getUtility(IOCIRecipeSet).getByName(
+            self.person, oci_project, "recipe-name")
+        self.assertContentEqual(
+            ["386", "amd64"], [proc.name for proc in recipe.processors])
 
 
 class TestOCIRecipeAdminView(BaseTestOCIRecipeView):
@@ -215,7 +293,35 @@ class TestOCIRecipeEditView(BaseTestOCIRecipeView):
 
     def setUp(self):
         super(TestOCIRecipeEditView, self).setUp()
-        self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: 'on'}))
+        self.distroseries = self.factory.makeDistroSeries()
+        self.distribution = self.distroseries.distribution
+        self.useFixture(FeatureFixture({
+            OCI_RECIPE_ALLOW_CREATE: "on",
+            "oci.build_series.%s" % self.distribution.name:
+                self.distroseries.name,
+            }))
+
+    def setUpDistroSeries(self):
+        """Set up self.distroseries with some available processors."""
+        processor_names = ["386", "amd64", "hppa"]
+        for name in processor_names:
+            processor = getUtility(IProcessorSet).getByName(name)
+            self.factory.makeDistroArchSeries(
+                distroseries=self.distroseries, architecturetag=name,
+                processor=processor)
+
+    def assertRecipeProcessors(self, recipe, names):
+        self.assertContentEqual(
+            names, [processor.name for processor in recipe.processors])
+
+    def assertProcessorControls(self, processors_control, enabled, disabled):
+        matchers = [
+            MatchesStructure.byEquality(optionValue=name, disabled=False)
+            for name in enabled]
+        matchers.extend([
+            MatchesStructure.byEquality(optionValue=name, disabled=True)
+            for name in disabled])
+        self.assertThat(processors_control.controls, MatchesSetwise(*matchers))
 
     def test_edit_recipe(self):
         oci_project = self.factory.makeOCIProject()
@@ -289,6 +395,118 @@ class TestOCIRecipeEditView(BaseTestOCIRecipeView):
             "There is already an OCI recipe owned by Test Person in %s with "
             "this name." % oci_project_display,
             extract_text(find_tags_by_class(browser.contents, "message")[1]))
+
+    def test_display_processors(self):
+        self.setUpDistroSeries()
+        oci_project = self.factory.makeOCIProject(pillar=self.distribution)
+        recipe = self.factory.makeOCIRecipe(
+            registrant=self.person, owner=self.person, oci_project=oci_project)
+        browser = self.getViewBrowser(
+            recipe, view_name="+edit", user=recipe.owner)
+        processors = browser.getControl(name="field.processors")
+        self.assertContentEqual(
+            ["Intel 386 (386)", "AMD 64bit (amd64)", "HPPA Processor (hppa)"],
+            [extract_text(option) for option in processors.displayOptions])
+        self.assertContentEqual(["386", "amd64", "hppa"], processors.options)
+
+    def test_edit_processors(self):
+        self.setUpDistroSeries()
+        oci_project = self.factory.makeOCIProject(pillar=self.distribution)
+        recipe = self.factory.makeOCIRecipe(
+            registrant=self.person, owner=self.person, oci_project=oci_project)
+        self.assertRecipeProcessors(recipe, ["386", "amd64", "hppa"])
+        browser = self.getViewBrowser(
+            recipe, view_name="+edit", user=recipe.owner)
+        processors = browser.getControl(name="field.processors")
+        self.assertContentEqual(["386", "amd64", "hppa"], processors.value)
+        processors.value = ["386", "amd64"]
+        browser.getControl("Update OCI recipe").click()
+        login_person(self.person)
+        self.assertRecipeProcessors(recipe, ["386", "amd64"])
+
+    def test_edit_with_invisible_processor(self):
+        # It's possible for existing recipes to have an enabled processor
+        # that's no longer usable with the current distroseries, which will
+        # mean it's hidden from the UI, but the non-admin
+        # OCIRecipe.setProcessors isn't allowed to disable it.  Editing the
+        # processor list of such a recipe leaves the invisible processor
+        # intact.
+        proc_386 = getUtility(IProcessorSet).getByName("386")
+        proc_amd64 = getUtility(IProcessorSet).getByName("amd64")
+        proc_armel = self.factory.makeProcessor(
+            name="armel", restricted=True, build_by_default=False)
+        self.setUpDistroSeries()
+        oci_project = self.factory.makeOCIProject(pillar=self.distribution)
+        recipe = self.factory.makeOCIRecipe(
+            registrant=self.person, owner=self.person, oci_project=oci_project)
+        recipe.setProcessors([proc_386, proc_amd64, proc_armel])
+        browser = self.getViewBrowser(
+            recipe, view_name="+edit", user=recipe.owner)
+        processors = browser.getControl(name="field.processors")
+        self.assertContentEqual(["386", "amd64"], processors.value)
+        processors.value = ["amd64"]
+        browser.getControl("Update OCI recipe").click()
+        login_person(self.person)
+        self.assertRecipeProcessors(recipe, ["amd64", "armel"])
+
+    def test_edit_processors_restricted(self):
+        # A restricted processor is shown disabled in the UI and cannot be
+        # enabled.
+        self.setUpDistroSeries()
+        proc_armhf = self.factory.makeProcessor(
+            name="armhf", restricted=True, build_by_default=False)
+        self.factory.makeDistroArchSeries(
+            distroseries=self.distroseries, architecturetag="armhf",
+            processor=proc_armhf)
+        oci_project = self.factory.makeOCIProject(pillar=self.distribution)
+        recipe = self.factory.makeOCIRecipe(
+            registrant=self.person, owner=self.person, oci_project=oci_project)
+        self.assertRecipeProcessors(recipe, ["386", "amd64", "hppa"])
+        browser = self.getViewBrowser(
+            recipe, view_name="+edit", user=recipe.owner)
+        processors = browser.getControl(name="field.processors")
+        self.assertContentEqual(["386", "amd64", "hppa"], processors.value)
+        self.assertProcessorControls(
+            processors, ["386", "amd64", "hppa"], ["armhf"])
+        # Even if the user works around the disabled checkbox and forcibly
+        # enables it, they can't enable the restricted processor.
+        for control in processors.controls:
+            if control.optionValue == "armhf":
+                del control._control.attrs["disabled"]
+        processors.value = ["386", "amd64", "armhf"]
+        self.assertRaises(
+            CannotModifyOCIRecipeProcessor,
+            browser.getControl("Update OCI recipe").click)
+
+    def test_edit_processors_restricted_already_enabled(self):
+        # A restricted processor that is already enabled is shown disabled
+        # in the UI.  This causes form submission to omit it, but the
+        # validation code fixes that up behind the scenes so that we don't
+        # get CannotModifyOCIRecipeProcessor.
+        proc_386 = getUtility(IProcessorSet).getByName("386")
+        proc_amd64 = getUtility(IProcessorSet).getByName("amd64")
+        proc_armhf = self.factory.makeProcessor(
+            name="armhf", restricted=True, build_by_default=False)
+        self.setUpDistroSeries()
+        self.factory.makeDistroArchSeries(
+            distroseries=self.distroseries, architecturetag="armhf",
+            processor=proc_armhf)
+        oci_project = self.factory.makeOCIProject(pillar=self.distribution)
+        recipe = self.factory.makeOCIRecipe(
+            registrant=self.person, owner=self.person, oci_project=oci_project)
+        recipe.setProcessors([proc_386, proc_amd64, proc_armhf])
+        self.assertRecipeProcessors(recipe, ["386", "amd64", "armhf"])
+        browser = self.getUserBrowser(
+            canonical_url(recipe) + "/+edit", user=recipe.owner)
+        processors = browser.getControl(name="field.processors")
+        # armhf is checked but disabled.
+        self.assertContentEqual(["386", "amd64", "armhf"], processors.value)
+        self.assertProcessorControls(
+            processors, ["386", "amd64", "hppa"], ["armhf"])
+        processors.value = ["386"]
+        browser.getControl("Update OCI recipe").click()
+        login_person(self.person)
+        self.assertRecipeProcessors(recipe, ["386", "armhf"])
 
 
 class TestOCIRecipeDeleteView(BaseTestOCIRecipeView):
@@ -452,6 +670,33 @@ class TestOCIRecipeView(BaseTestOCIRecipeView):
             Needs building in .* \(estimated\) 386
             """, self.getMainText(build.recipe))
 
+    def test_index_request_builds_link(self):
+        # Recipe owners get a link to allow requesting builds.
+        owner = self.factory.makePerson()
+        distroseries = self.factory.makeDistroSeries()
+        oci_project = self.factory.makeOCIProject(
+            pillar=distroseries.distribution)
+        recipe = self.factory.makeOCIRecipe(
+            registrant=owner, owner=owner, oci_project=oci_project)
+        recipe_name = recipe.name
+        browser = self.getViewBrowser(recipe, user=owner)
+        browser.getLink("Request builds").click()
+        self.assertIn("Request builds for %s" % recipe_name, browser.contents)
+
+    def test_index_request_builds_link_unauthorized(self):
+        # People who cannot edit the recipe do not get a link to allow
+        # requesting builds.
+        distroseries = self.factory.makeDistroSeries()
+        oci_project = self.factory.makeOCIProject(
+            pillar=distroseries.distribution)
+        recipe = self.factory.makeOCIRecipe(oci_project=oci_project)
+        recipe_url = canonical_url(recipe)
+        browser = self.getViewBrowser(recipe, user=self.person)
+        self.assertRaises(LinkNotFoundError, browser.getLink, "Request builds")
+        self.assertRaises(
+            Unauthorized, self.getUserBrowser, recipe_url + "/+request-builds",
+            user=self.person)
+
     def setStatus(self, build, status):
         build.updateStatus(
             BuildStatus.BUILDING, date_started=build.date_created)
@@ -480,3 +725,90 @@ class TestOCIRecipeView(BaseTestOCIRecipeView):
             self.setStatus(build, BuildStatus.FULLYBUILT)
         del get_property_cache(view).builds
         self.assertEqual(list(reversed(builds[1:])), view.builds)
+
+
+class TestOCIRecipeRequestBuildsView(BaseTestOCIRecipeView):
+
+    def setUp(self):
+        super(TestOCIRecipeRequestBuildsView, self).setUp()
+        self.ubuntu = getUtility(ILaunchpadCelebrities).ubuntu
+        self.distroseries = self.factory.makeDistroSeries(
+            distribution=self.ubuntu, name="shiny", displayname="Shiny")
+        self.architectures = []
+        for processor, architecture in ("386", "i386"), ("amd64", "amd64"):
+            das = self.factory.makeDistroArchSeries(
+                distroseries=self.distroseries, architecturetag=architecture,
+                processor=getUtility(IProcessorSet).getByName(processor))
+            das.addOrUpdateChroot(self.factory.makeLibraryFileAlias())
+            self.architectures.append(das)
+        self.useFixture(FeatureFixture({
+            OCI_RECIPE_ALLOW_CREATE: "on",
+            "oci.build_series.%s" % self.distroseries.distribution.name:
+                self.distroseries.name,
+            }))
+        oci_project = self.factory.makeOCIProject(
+            pillar=self.distroseries.distribution,
+            ociprojectname="oci-project-name")
+        self.recipe = self.factory.makeOCIRecipe(
+            name="recipe-name", registrant=self.person, owner=self.person,
+            oci_project=oci_project)
+
+    def test_request_builds_page(self):
+        # The +request-builds page is sane.
+        self.assertTextMatchesExpressionIgnoreWhitespace("""
+            Request builds for recipe-name
+            oci-project-name OCI project
+            recipe-name
+            Request builds
+            Architectures:
+            amd64
+            i386
+            or
+            Cancel
+            """,
+            self.getMainText(self.recipe, "+request-builds", user=self.person))
+
+    def test_request_builds_not_owner(self):
+        # A user without launchpad.Edit cannot request builds.
+        self.assertRaises(
+            Unauthorized, self.getViewBrowser, self.recipe, "+request-builds")
+
+    def test_request_builds_action(self):
+        # Requesting a build creates pending builds.
+        browser = self.getViewBrowser(
+            self.recipe, "+request-builds", user=self.person)
+        self.assertTrue(browser.getControl("amd64").selected)
+        self.assertTrue(browser.getControl("i386").selected)
+        browser.getControl("Request builds").click()
+
+        login_person(self.person)
+        builds = self.recipe.pending_builds
+        self.assertContentEqual(
+            ["amd64", "i386"],
+            [build.distro_arch_series.architecturetag for build in builds])
+        self.assertContentEqual(
+            [2510], set(build.buildqueue_record.lastscore for build in builds))
+
+    def test_request_builds_rejects_duplicate(self):
+        # A duplicate build request causes a notification.
+        self.recipe.requestBuild(self.person, self.distroseries["amd64"])
+        browser = self.getViewBrowser(
+            self.recipe, "+request-builds", user=self.person)
+        self.assertTrue(browser.getControl("amd64").selected)
+        self.assertTrue(browser.getControl("i386").selected)
+        browser.getControl("Request builds").click()
+        main_text = extract_text(find_main_content(browser.contents))
+        self.assertIn("1 new build has been queued.", main_text)
+        self.assertIn(
+            "An identical build is already pending for amd64.", main_text)
+
+    def test_request_builds_no_architectures(self):
+        # Selecting no architectures causes a validation failure.
+        browser = self.getViewBrowser(
+            self.recipe, "+request-builds", user=self.person)
+        browser.getControl("amd64").selected = False
+        browser.getControl("i386").selected = False
+        browser.getControl("Request builds").click()
+        self.assertIn(
+            "You need to select at least one architecture.",
+            extract_text(find_main_content(browser.contents)))

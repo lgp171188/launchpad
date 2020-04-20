@@ -30,6 +30,10 @@
         </div>
       </div> <!-- yui-g  -->
 
+      <div id="files" class="portlet" tal:condition="view/has_files">
+        <div metal:use-macro="template/macros/files"/>
+      </div>
+
       <div id="buildlog" class="portlet"
            tal:condition="context/status/enumvalue:BUILDING">
         <div metal:use-macro="template/macros/buildlog"/>
@@ -79,6 +83,9 @@
         on <a tal:content="context/builder/title"
               tal:attributes="href context/builder/fmt:url"/>
       </tal:built>
+      <tal:cancel define="link context/menu:context/cancel"
+                  condition="link/enabled"
+                  replace="structure link/fmt:link" />
     </p>
 
     <ul>
@@ -128,6 +135,30 @@
         <a class="sprite download"
            tal:attributes="href context/upload_log_url">uploadlog</a>
         (<span tal:replace="file/content/filesize/fmt:bytes" />)
+      </li>
+    </ul>
+
+    <div
+      style="margin-top: 1.5em"
+      tal:define="link context/menu:context/rescore"
+      tal:condition="link/enabled"
+      >
+      <a tal:replace="structure link/fmt:link"/>
+    </div>
+  </metal:macro>
+
+  <metal:macro define-macro="files">
+    <tal:comment replace="nothing">
+      Files section.
+    </tal:comment>
+    <h2>Built files</h2>
+    <p>Files resulting from this build:</p>
+    <ul>
+      <li tal:repeat="file view/files">
+        <a class="sprite download"
+           tal:content="file/filename"
+           tal:attributes="href file/http_url"/>
+        (<span tal:replace="file/content/filesize/fmt:bytes"/>)
       </li>
     </ul>
   </metal:macro>

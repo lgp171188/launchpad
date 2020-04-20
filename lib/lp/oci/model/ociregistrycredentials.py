@@ -14,9 +14,9 @@ __all__ = [
 import base64
 import json
 
+from storm.databases.postgres import JSON
 from storm.locals import (
     Int,
-    JSON,
     Reference,
     Storm,
     Unicode,
@@ -80,8 +80,8 @@ class OCIRegistryCredentials(Storm):
     def getCredentials(self):
         container = getUtility(IEncryptedContainer, "oci-registry-secrets")
         try:
-            return json.loads(container.decrypt((
-                self._credentials['credentials_encrypted'])).decode("UTF-8"))
+            return json.loads(container.decrypt(
+                self._credentials['credentials_encrypted']).decode("UTF-8"))
         except CryptoError as e:
             # XXX twom 2020-03-18 This needs a better error
             # see SnapStoreClient.UnauthorizedUploadResponse

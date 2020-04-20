@@ -15,11 +15,13 @@ __all__ = [
 from datetime import timedelta
 
 import pytz
+from storm.expr import LeftJoin
 from storm.locals import (
     Bool,
     DateTime,
     Desc,
     Int,
+    Or,
     Reference,
     Store,
     Storm,
@@ -43,6 +45,11 @@ from lp.oci.interfaces.ocirecipebuild import (
     IOCIFile,
     IOCIRecipeBuild,
     IOCIRecipeBuildSet,
+    OCIRecipeBuildRegistryUploadStatus,
+    )
+from lp.oci.model.ocirecipebuildjob import (
+    OCIRecipeBuildJob,
+    OCIRecipeBuildJobType,
     )
 from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.registry.model.person import Person
@@ -55,7 +62,8 @@ from lp.services.database.interfaces import (
     IMasterStore,
     IStore,
     )
-from lp.services.features import getFeatureFlag
+from lp.services.job.interfaces.job import JobStatus
+from lp.services.job.model.job import Job
 from lp.services.librarian.model import (
     LibraryFileAlias,
     LibraryFileContent,
@@ -139,13 +147,6 @@ class OCIRecipeBuild(PackageBuildMixin, Storm):
     # it is not a target, nor referenced in the final build.
     pocket = PackagePublishingPocket.UPDATES
 
-    @property
-    def distro_series(self):
-        # XXX twom 2020-02-14 - This really needs to be set elsewhere,
-        # as this may not be an LTS release and ties the OCI target to
-        # a completely unrelated process.
-        return self.distribution.currentseries
-
     def __init__(self, build_farm_job, requester, recipe,
                  processor, virtualized, date_created):
 
@@ -170,6 +171,47 @@ class OCIRecipeBuild(PackageBuildMixin, Storm):
             self.processor.name, self.recipe.owner.name,
             self.recipe.oci_project.pillar.name, self.recipe.oci_project.name,
             self.recipe.name)
+
+    @property
+    def score(self):
+        """See `IOCIRecipeBuild`."""
+        if self.buildqueue_record is None:
+            return None
+        else:
+            return self.buildqueue_record.lastscore
+
+    @property
+    def can_be_rescored(self):
+        """See `IOCIRecipeBuild`."""
+        return (
+            self.buildqueue_record is not None and
+            self.status is BuildStatus.NEEDSBUILD)
+
+    @property
+    def can_be_cancelled(self):
+        """See `IOCIRecipeBuild`."""
+        if not self.buildqueue_record:
+            return False
+
+        cancellable_statuses = [
+            BuildStatus.BUILDING,
+            BuildStatus.NEEDSBUILD,
+            ]
+        return self.status in cancellable_statuses
+
+    def rescore(self, score):
+        """See `IOCIRecipeBuild`."""
+        assert self.can_be_rescored, "Build %s cannot be rescored" % self.id
+        self.buildqueue_record.manualScore(score)
+
+    def cancel(self):
+        """See `IOCIRecipeBuild`."""
+        if not self.can_be_cancelled:
+            return
+        # BuildQueue.cancel() will decide whether to go straight to
+        # CANCELLED, or go through CANCELLING to let buildd-manager clean up
+        # the slave.
+        self.buildqueue_record.cancel()
 
     def calculateScore(self):
         # XXX twom 2020-02-11 - This might need an addition?
@@ -197,15 +239,31 @@ class OCIRecipeBuild(PackageBuildMixin, Storm):
         durations.sort()
         return durations[len(durations) // 2]
 
-    def getByFileName(self, filename):
+    def getFiles(self):
+        """See `IOCIRecipeBuild`."""
         result = Store.of(self).find(
             (OCIFile, LibraryFileAlias, LibraryFileContent),
             OCIFile.build == self.id,
             LibraryFileAlias.id == OCIFile.library_file_id,
-            LibraryFileContent.id == LibraryFileAlias.contentID,
+            LibraryFileContent.id == LibraryFileAlias.contentID)
+        return result.order_by([LibraryFileAlias.filename, OCIFile.id])
+
+    def getFileByName(self, filename):
+        """See `IOCIRecipeBuild`."""
+        origin = [
+            LibraryFileAlias,
+            LeftJoin(OCIFile, LibraryFileAlias.id == OCIFile.library_file_id),
+            ]
+        file_object = Store.of(self).using(*origin).find(
+            LibraryFileAlias,
+            Or(
+                LibraryFileAlias.id.is_in((self.log_id, self.upload_log_id)),
+                OCIFile.build == self.id),
             LibraryFileAlias.filename == filename).one()
-        if result is not None:
-            return result
+
+        if file_object is not None and file_object.filename == filename:
+            return file_object
+
         raise NotFoundError(filename)
 
     @cachedproperty
@@ -245,27 +303,20 @@ class OCIRecipeBuild(PackageBuildMixin, Storm):
     def archive(self):
         # XXX twom 2019-12-05 This may need to change when an OCIProject
         # pillar isn't just a distribution
-        return self.recipe.oci_project.distribution.main_archive
+        return self.recipe.distribution.main_archive
 
     @property
     def distribution(self):
-        # XXX twom 2019-12-05 This may need to change when an OCIProject
-        # pillar isn't just a distribution
-        return self.recipe.oci_project.distribution
+        return self.recipe.distribution
+
+    @property
+    def distro_series(self):
+        return self.recipe.distro_series
 
     @property
     def distro_arch_series(self):
-        # For OCI builds we default to the series set by the feature flag.
-        # If the feature flag is not set we default to current series under
-        # the OCIRecipeBuild distribution.
-
-        oci_series = getFeatureFlag('oci.build_series.%s'
-                                    % self.distribution.name)
-        if oci_series:
-            oci_series = self.distribution.getSeries(oci_series)
-        else:
-            oci_series = self.distribution.currentseries
-        return oci_series.getDistroArchSeriesByProcessor(self.processor)
+        return self.recipe.distro_series.getDistroArchSeriesByProcessor(
+            self.processor)
 
     def updateStatus(self, status, builder=None, slave_status=None,
                      date_started=None, date_finished=None,
@@ -310,23 +361,17 @@ class OCIRecipeBuild(PackageBuildMixin, Storm):
 
     @cachedproperty
     def manifest(self):
-        result = Store.of(self).find(
-            (OCIFile, LibraryFileAlias, LibraryFileContent),
-            OCIFile.build == self.id,
-            LibraryFileAlias.id == OCIFile.library_file_id,
-            LibraryFileContent.id == LibraryFileAlias.contentID,
-            LibraryFileAlias.filename == 'manifest.json')
-        return result.one()
+        try:
+            return self.getFileByName("manifest.json")
+        except NotFoundError:
+            return None
 
     @cachedproperty
     def digests(self):
-        result = Store.of(self).find(
-            (OCIFile, LibraryFileAlias, LibraryFileContent),
-            OCIFile.build == self.id,
-            LibraryFileAlias.id == OCIFile.library_file_id,
-            LibraryFileContent.id == LibraryFileAlias.contentID,
-            LibraryFileAlias.filename == 'digests.json')
-        return result.one()
+        try:
+            return self.getFileByName("digests.json")
+        except NotFoundError:
+            return None
 
     def verifySuccessfulUpload(self):
         """See `IPackageBuild`."""
@@ -338,6 +383,37 @@ class OCIRecipeBuild(PackageBuildMixin, Storm):
         metadata_present = (self.manifest is not None
                             and self.digests is not None)
         return layer_files_present and metadata_present
+
+    @property
+    def registry_upload_jobs(self):
+        jobs = Store.of(self).find(
+            OCIRecipeBuildJob,
+            OCIRecipeBuildJob.build == self,
+            OCIRecipeBuildJob.job_type == OCIRecipeBuildJobType.REGISTRY_UPLOAD
+        )
+        jobs.order_by(Desc(OCIRecipeBuildJob.job_id))
+
+        def preload_jobs(rows):
+            load_related(Job, rows, ["job_id"])
+
+        return DecoratedResultSet(
+            jobs, lambda job: job.makeDerived(), pre_iter_hook=preload_jobs)
+
+    @cachedproperty
+    def last_registry_upload_job(self):
+        return self.registry_upload_jobs.first()
+
+    @property
+    def registry_upload_status(self):
+        job = self.last_registry_upload_job
+        if job is None or job.job.status == JobStatus.SUSPENDED:
+            return OCIRecipeBuildRegistryUploadStatus.UNSCHEDULED
+        elif job.job.status in (JobStatus.WAITING, JobStatus.RUNNING):
+            return OCIRecipeBuildRegistryUploadStatus.PENDING
+        elif job.job.status == JobStatus.COMPLETED:
+            return OCIRecipeBuildRegistryUploadStatus.UPLOADED
+        else:
+            return OCIRecipeBuildRegistryUploadStatus.FAILEDTOUPLOAD
 
 
 @implementer(IOCIRecipeBuildSet)
