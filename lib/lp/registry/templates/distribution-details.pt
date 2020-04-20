@@ -26,6 +26,11 @@
       <dt>Mirror admins:</dt>
       <dd tal:content="structure view/mirror_admin_widget" />
     </dl>
+
+    <dl id="oci-project-admins">
+      <dt>OCI project admins:</dt>
+      <dd tal:content="structure view/oci_project_admin_widget" />
+    </dl>
   </div>
 
   <dl id="uploaders" style="clear:left">
