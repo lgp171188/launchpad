@@ -8,6 +8,7 @@ from zope.component import getUtility
 
 from lp.app.interfaces.launchpad import ILaunchpadCelebrities
 from lp.testing import (
+    login_admin,
     login_person,
     person_logged_in,
     TestCaseWithFactory,
@@ -56,8 +57,7 @@ class TestBugAttachmentEditView(TestCaseWithFactory):
             'application/whatever', self.bugattachment.libraryfile.mimetype)
 
     def test_admin_changes_any_attachment(self):
-        admin = self.factory.makeAdministrator()
-        login_person(admin)
+        login_admin()
         create_initialized_view(
             self.bugattachment, name='+edit', form=self.CHANGE_FORM_DATA)
         self.assertEqual('new description', self.bugattachment.title)
@@ -67,6 +67,18 @@ class TestBugAttachmentEditView(TestCaseWithFactory):
 
     def test_registry_expert_changes_any_attachment(self):
         login_person(self.registry_expert)
+        create_initialized_view(
+            self.bugattachment, name='+edit', form=self.CHANGE_FORM_DATA)
+        self.assertEqual('new description', self.bugattachment.title)
+        self.assertTrue(self.bugattachment.is_patch)
+        self.assertEqual(
+            'application/whatever', self.bugattachment.libraryfile.mimetype)
+
+    def test_pillar_bug_supervisor_changes_any_attachment(self):
+        login_admin()
+        bug_supervisor = self.factory.makePerson()
+        self.bug.default_bugtask.pillar.bug_supervisor = bug_supervisor
+        login_person(bug_supervisor)
         create_initialized_view(
             self.bugattachment, name='+edit', form=self.CHANGE_FORM_DATA)
         self.assertEqual('new description', self.bugattachment.title)
@@ -95,14 +107,22 @@ class TestBugAttachmentEditView(TestCaseWithFactory):
         self.assertEqual(1, self.bug.attachments.count())
 
     def test_admin_can_delete_any_attachment(self):
-        admin = self.factory.makeAdministrator()
-        login_person(admin)
+        login_admin()
         create_initialized_view(
             self.bugattachment, name='+edit', form=self.DELETE_FORM_DATA)
         self.assertEqual(0, self.bug.attachments.count())
 
     def test_registry_expert_can_delete_any_attachment(self):
         login_person(self.registry_expert)
+        create_initialized_view(
+            self.bugattachment, name='+edit', form=self.DELETE_FORM_DATA)
+        self.assertEqual(0, self.bug.attachments.count())
+
+    def test_pillar_bug_supervisor_can_delete_any_attachment(self):
+        login_admin()
+        bug_supervisor = self.factory.makePerson()
+        self.bug.default_bugtask.pillar.bug_supervisor = bug_supervisor
+        login_person(bug_supervisor)
         create_initialized_view(
             self.bugattachment, name='+edit', form=self.DELETE_FORM_DATA)
         self.assertEqual(0, self.bug.attachments.count())
