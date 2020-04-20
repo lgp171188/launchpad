@@ -50,8 +50,8 @@ class ISigningServiceClient(Interface):
         """Injects an existing key on lp-signing service.
 
         :param key_type: One of `SigningKeyType` items.
-        :param private_key: The private key content, (bytes or nacl object).
-        :param public_key: The public key content (bytes or nacl object).
+        :param private_key: The private key content, in bytes.
+        :param public_key: The public key content, in bytes.
         :param description: The description of this key.
         :param created_at: datetime of when the key was created.
         """

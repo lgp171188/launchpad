@@ -165,7 +165,7 @@ class SigningServiceClient:
 
         nonce = self.getNonce()
         response_nonce = self._makeResponseNonce()
-        data = json.dumps({
+        payload = json.dumps({
             "key-type": key_type.name,
             "fingerprint": fingerprint,
             "message-name": message_name,
@@ -175,7 +175,7 @@ class SigningServiceClient:
         data = self._requestJson(
             "/sign", "POST",
             headers=self._getAuthHeaders(nonce, response_nonce),
-            data=self._encryptPayload(nonce, data))
+            data=self._encryptPayload(nonce, payload))
 
         return {
             'public-key': base64.b64decode(data['public-key']),
@@ -183,18 +183,18 @@ class SigningServiceClient:
 
     def inject(self, key_type, private_key, public_key, description,
                created_at):
-        payload = json.dumps({
-            "key-type": key_type.name,
-            "private-key": base64.b64encode(
-                bytes(private_key)).decode("UTF-8"),
-            "public-key": base64.b64encode(
-                bytes(public_key)).decode("UTF-8"),
-            "created-at": created_at.isoformat(),
-            "description": description,
-        }).encode("UTF-8")
+        if key_type not in SigningKeyType.items:
+            raise ValueError("%s is not a valid key type" % key_type)
 
         nonce = self.getNonce()
         response_nonce = self._makeResponseNonce()
+        payload = json.dumps({
+            "key-type": key_type.name,
+            "private-key": base64.b64encode(private_key).decode("UTF-8"),
+            "public-key": base64.b64encode(public_key).decode("UTF-8"),
+            "created-at": created_at.isoformat(),
+            "description": description,
+        }).encode("UTF-8")
 
         data = self._requestJson(
             "/inject", "POST",

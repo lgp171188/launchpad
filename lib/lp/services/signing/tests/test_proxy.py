@@ -338,7 +338,7 @@ class SigningServiceProxyTest(TestCaseWithFactory, TestWithFixtures):
         # Generate the key, and checks if we got back the correct dict.
         signing = getUtility(ISigningServiceClient)
         response_data = signing.inject(
-            SigningKeyType.UEFI, private_key, public_key,
+            SigningKeyType.UEFI, bytes(private_key), bytes(public_key),
             "This is a test key injected.", datetime.now())
 
         self.assertEqual(response_data, {
@@ -367,3 +367,15 @@ class SigningServiceProxyTest(TestCaseWithFactory, TestWithFixtures):
             "X-Client-Public-Key": Equals(config.signing.client_public_key),
             "X-Nonce": Equals(self.response_factory.b64_nonce)}))
         self.assertIsNotNone(http_inject.request.body)
+
+    @responses.activate
+    def test_inject_invalid_key_type(self):
+        signing = getUtility(ISigningServiceClient)
+        private_key = PrivateKey.generate()
+        public_key = private_key.public_key
+
+        self.assertRaises(
+            ValueError, signing.inject,
+            'shrug', bytes(private_key), bytes(public_key),
+            "This is a test key injected.", datetime.now())
+        self.assertEqual(0, len(responses.calls))

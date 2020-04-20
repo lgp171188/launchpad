@@ -124,8 +124,8 @@ class TestArchiveSigningKey(TestCaseWithFactory):
         distro_series = archive.distribution.series[0]
 
         arch_key = getUtility(IArchiveSigningKeySet).generate(
-            SigningKeyType.UEFI, archive, earliest_distro_series=distro_series,
-            description=u"some description")
+            SigningKeyType.UEFI, u"some description", archive,
+            earliest_distro_series=distro_series)
 
         store = Store.of(arch_key)
         store.invalidate()
@@ -156,8 +156,8 @@ class TestArchiveSigningKey(TestCaseWithFactory):
         now = datetime.now().replace(tzinfo=utc)
         arch_key = getUtility(IArchiveSigningKeySet).inject(
             SigningKeyType.UEFI, bytes(priv_key), bytes(pub_key),
-            archive, earliest_distro_series=distro_series,
-            description=u"Some description", created_at=now)
+            u"Some description", now, archive,
+            earliest_distro_series=distro_series)
 
         store = Store.of(arch_key)
         store.invalidate()
