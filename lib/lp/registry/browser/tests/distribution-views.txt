@@ -210,6 +210,55 @@ Only admins and owners can access the view.
     False
 
 
+Changing a distribution OCI project administrator
+-------------------------------------------------
+
+The +select-oci-project-admins view allows the owner or admin to change the
+OCI project administrator.
+
+    >>> login("admin@canonical.com")
+    >>> view = create_view(distribution, '+select-oci-project-admins')
+    >>> print(view.label)
+    Change the YoUbuntu OCI project administrator
+
+    >>> print(view.page_title)
+    Change the YoUbuntu OCI project administrator
+
+    >>> print(view.cancel_url)
+    http://launchpad.test/youbuntu
+
+The view accepts the oci_project_admin field.
+
+    >>> print(distribution.oci_project_admin)
+    None
+
+    >>> view.field_names
+    ['oci_project_admin']
+
+    >>> form = {
+    ...     'field.oci_project_admin': 'no-priv',
+    ...     'field.actions.change': 'Change',
+    ...     }
+    >>> view = create_initialized_view(
+    ...     distribution, '+select-oci-project-admins', form=form)
+    >>> view.errors
+    []
+    >>> print(view.next_url)
+    http://launchpad.test/youbuntu
+
+    >>> print(distribution.oci_project_admin.name)
+    no-priv
+
+Only admins and owners can access the view.
+
+    >>> check_permission('launchpad.Edit', view)
+    True
+
+    >>> login('no-priv@canonical.com')
+    >>> check_permission('launchpad.Edit', view)
+    False
+
+
 Changing a distribution members team
 ------------------------------------
 
