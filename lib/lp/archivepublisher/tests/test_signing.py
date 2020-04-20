@@ -55,6 +55,7 @@ from lp.services.signing.tests.helpers import SigningServiceClientFixture
 from lp.services.tarfile_helpers import LaunchpadWriteTarFile
 from lp.soyuz.enums import ArchivePurpose
 from lp.testing import TestCaseWithFactory
+from lp.testing.dbuser import dbuser
 from lp.testing.fakemethod import FakeMethod
 from lp.testing.gpgkeys import gpgkeysdir
 from lp.testing.keyserver import InProcessKeyServerFixture
@@ -1562,7 +1563,8 @@ class TestSigningUploadWithSigningService(TestSigningHelpers):
         self.buffer.close()
 
         upload = SigningUpload()
-        upload.process(self.archive, self.path, self.suite)
+        with dbuser("process_accepted"):
+            upload.process(self.archive, self.path, self.suite)
         return upload
 
     def test_set_target_directory_with_distroseries(self):
@@ -1771,7 +1773,8 @@ class TestSigningUploadWithSigningService(TestSigningHelpers):
         self.buffer.close()
 
         upload = SigningUpload()
-        upload.process(self.archive, self.path, self.suite)
+        with dbuser("process_accepted"):
+            upload.process(self.archive, self.path, self.suite)
 
         signed_path = self.getSignedPath("test", "amd64")
         self.assertThat(signed_path, SignedMatches(
@@ -1854,7 +1857,8 @@ class TestSigningUploadWithSigningService(TestSigningHelpers):
         self.buffer.close()
 
         upload = SigningUpload()
-        upload.process(self.archive, self.path, self.suite)
+        with dbuser("process_accepted"):
+            upload.process(self.archive, self.path, self.suite)
 
         self.assertTrue(upload.autokey)
 
@@ -1981,7 +1985,8 @@ class TestSigningUploadWithSigningService(TestSigningHelpers):
         # blocked.
         upload.keyFilesExist = lambda _: True
 
-        upload.process(self.archive, self.path, self.suite)
+        with dbuser("process_accepted"):
+            upload.process(self.archive, self.path, self.suite)
 
         # Make sure it only used the existing keys and fallbacks. No new key
         # should be generated.
