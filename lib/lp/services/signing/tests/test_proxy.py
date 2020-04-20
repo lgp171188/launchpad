@@ -338,7 +338,7 @@ class SigningServiceProxyTest(TestCaseWithFactory, TestWithFixtures):
         # Generate the key, and checks if we got back the correct dict.
         signing = getUtility(ISigningServiceClient)
         response_data = signing.inject(
-            SigningKeyType.UEFI, private_key, public_key,
+            SigningKeyType.UEFI, bytes(private_key), bytes(public_key),
             "This is a test key injected.", datetime.now())
 
         self.assertEqual(response_data, {

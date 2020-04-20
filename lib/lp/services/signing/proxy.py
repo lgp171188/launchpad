@@ -185,10 +185,8 @@ class SigningServiceClient:
                created_at):
         payload = json.dumps({
             "key-type": key_type.name,
-            "private-key": base64.b64encode(
-                bytes(private_key)).decode("UTF-8"),
-            "public-key": base64.b64encode(
-                bytes(public_key)).decode("UTF-8"),
+            "private-key": base64.b64encode(private_key).decode("UTF-8"),
+            "public-key": base64.b64encode(public_key).decode("UTF-8"),
             "created-at": created_at.isoformat(),
             "description": description,
         }).encode("UTF-8")
