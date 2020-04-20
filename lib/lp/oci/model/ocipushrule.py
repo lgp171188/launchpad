@@ -22,6 +22,7 @@ from zope.interface import implementer
 from lp.oci.interfaces.ocipushrule import (
     IOCIPushRule,
     IOCIPushRuleSet,
+    OCIPushRuleAlreadyExists,
     )
 from lp.services.database.interfaces import IStore
 
@@ -58,4 +59,16 @@ class OCIPushRuleSet:
 
     def new(self, recipe, registry_credentials, image_name):
         """See `IOCIPushRuleSet`."""
+        for existing in recipe.push_rules:
+            credentials_match = (
+                existing.registry_credentials == registry_credentials)
+            image_match = (existing.image_name == image_name)
+            if credentials_match and image_match:
+                raise OCIPushRuleAlreadyExists()
         return OCIPushRule(recipe, registry_credentials, image_name)
+
+    def getByID(self, id):
+        """See `IOCIPushRuleSet`."""
+        return IStore(OCIPushRule).find(
+            OCIPushRule,
+            OCIPushRule.id == id).one()

@@ -11,6 +11,7 @@ from zope.component import getUtility
 from lp.oci.interfaces.ocipushrule import (
     IOCIPushRule,
     IOCIPushRuleSet,
+    OCIPushRuleAlreadyExists,
     )
 from lp.oci.tests.helpers import OCIConfigHelperMixin
 from lp.testing import (
@@ -68,3 +69,17 @@ class TestOCIPushRuleSet(OCIConfigHelperMixin, TestCaseWithFactory):
                 recipe=recipe,
                 registry_credentials=registry_credentials,
                 image_name=image_name))
+
+    def test_new_with_existing(self):
+        recipe = self.factory.makeOCIRecipe()
+        registry_credentials = self.factory.makeOCIRegistryCredentials()
+        image_name = self.factory.getUniqueUnicode()
+        getUtility(IOCIPushRuleSet).new(
+            recipe=recipe,
+            registry_credentials=registry_credentials,
+            image_name=image_name)
+
+        self.assertRaises(
+            OCIPushRuleAlreadyExists,
+            getUtility(IOCIPushRuleSet).new,
+            recipe, registry_credentials, image_name)

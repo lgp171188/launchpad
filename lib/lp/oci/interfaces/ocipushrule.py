@@ -8,10 +8,17 @@ from __future__ import absolute_import, print_function, unicode_literals
 __metaclass__ = type
 __all__ = [
     'IOCIPushRule',
-    'IOCIPushRuleSet'
+    'IOCIPushRuleSet',
+    'OCIPushRuleAlreadyExists',
     ]
 
+from lazr.restful.declarations import (
+    error_status,
+    export_as_webservice_entry,
+    exported,
+    )
 from lazr.restful.fields import Reference
+from six.moves import http_client
 from zope.interface import Interface
 from zope.schema import (
     Int,
@@ -21,6 +28,18 @@ from zope.schema import (
 from lp import _
 from lp.oci.interfaces.ocirecipe import IOCIRecipe
 from lp.oci.interfaces.ociregistrycredentials import IOCIRegistryCredentials
+
+
+@error_status(http_client.BAD_REQUEST)
+class OCIPushRuleAlreadyExists(Exception):
+    """A new OCIPushRuleAlreadyExists was added with the
+       same details as an existing one.
+    """
+
+    def __init__(self):
+        super(OCIPushRuleAlreadyExists, self).__init__(
+            "A push rule already exists with the same image_name "
+            "and credentials")
 
 
 class IOCIPushRuleView(Interface):
@@ -51,11 +70,11 @@ class IOCIPushRuleEditableAttributes(Interface):
         required=True,
         readonly=False)
 
-    image_name = TextLine(
+    image_name = exported(TextLine(
         title=_("Image name"),
         description=_("The intended name of the image on the registry."),
         required=True,
-        readonly=False)
+        readonly=False))
 
 
 class IOCIPushRuleEdit(Interface):
@@ -71,9 +90,15 @@ class IOCIPushRule(IOCIPushRuleEdit, IOCIPushRuleEditableAttributes,
                    IOCIPushRuleView):
     """A rule for pushing builds of an OCI recipe to a registry."""
 
+    export_as_webservice_entry(
+        publish_web_link=True, as_of="devel", singular_name="oci_push_rule")
+
 
 class IOCIPushRuleSet(Interface):
     """A utility to create and access OCI Push Rules."""
 
     def new(recipe, registry_credentials, image_name):
         """Create an `IOCIPushRule`."""
+
+    def getByID(id):
+        """Get a single `IOCIPushRule` by it's ID."""

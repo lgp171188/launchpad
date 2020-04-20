@@ -19,6 +19,7 @@ from zope.security.proxy import removeSecurityProxy
 from lp.oci.interfaces.ociregistrycredentials import (
     IOCIRegistryCredentials,
     IOCIRegistryCredentialsSet,
+    OCIRegistryCredentialsAlreadyExist,
     )
 from lp.oci.tests.helpers import OCIConfigHelperMixin
 from lp.services.crypto.interfaces import IEncryptedContainer
@@ -148,6 +149,48 @@ class TestOCIRegistryCredentialsSet(OCIConfigHelperMixin, TestCaseWithFactory):
         self.assertEqual(oci_credentials.owner, owner)
         self.assertEqual(oci_credentials.url, url)
         self.assertEqual(oci_credentials.getCredentials(), credentials)
+
+    def test_new_with_existing(self):
+        owner = self.factory.makePerson()
+        url = unicode(self.factory.getUniqueURL())
+        credentials = {'username': 'foo', 'password': 'bar'}
+        getUtility(IOCIRegistryCredentialsSet).new(
+            owner=owner,
+            url=url,
+            credentials=credentials)
+        self.assertRaises(
+            OCIRegistryCredentialsAlreadyExist,
+            getUtility(IOCIRegistryCredentialsSet).new,
+            owner, url, credentials)
+
+    def test_getOrCreate_existing(self):
+        owner = self.factory.makePerson()
+        url = unicode(self.factory.getUniqueURL())
+        credentials = {'username': 'foo', 'password': 'bar'}
+        new = getUtility(IOCIRegistryCredentialsSet).new(
+            owner=owner,
+            url=url,
+            credentials=credentials)
+
+        existing = getUtility(IOCIRegistryCredentialsSet).getOrCreate(
+            owner=owner,
+            url=url,
+            credentials=credentials)
+
+        self.assertEqual(new.id, existing.id)
+
+    def test_getOrCreate_new(self):
+        owner = self.factory.makePerson()
+        url = unicode(self.factory.getUniqueURL())
+        credentials = {'username': 'foo', 'password': 'bar'}
+        new = getUtility(IOCIRegistryCredentialsSet).getOrCreate(
+            owner=owner,
+            url=url,
+            credentials=credentials)
+
+        self.assertEqual(new.owner, owner)
+        self.assertEqual(new.url, url)
+        self.assertEqual(new.getCredentials(), credentials)
 
     def test_findByOwner(self):
         owner = self.factory.makePerson()

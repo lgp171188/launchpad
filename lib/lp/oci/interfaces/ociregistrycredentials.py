@@ -9,8 +9,11 @@ __metaclass__ = type
 __all__ = [
     'IOCIRegistryCredentials',
     'IOCIRegistryCredentialsSet',
+    'OCIRegistryCredentialsAlreadyExist',
     ]
 
+from lazr.restful.declarations import error_status
+from six.moves import http_client
 from zope.interface import Interface
 from zope.schema import (
     Int,
@@ -20,6 +23,17 @@ from zope.schema import (
 from lp import _
 from lp.registry.interfaces.role import IHasOwner
 from lp.services.fields import PersonChoice
+
+
+@error_status(http_client.BAD_REQUEST)
+class OCIRegistryCredentialsAlreadyExist(Exception):
+    """A new `OCIRegistryCredentials` was added with the
+    same details as an existing one.
+    """
+
+    def __init__(self):
+        super(OCIRegistryCredentialsAlreadyExist, self).__init__(
+            "Credentials already exist with the same URL and username.")
 
 
 class IOCIRegistryCredentialsView(Interface):
@@ -71,6 +85,10 @@ class IOCIRegistryCredentialsSet(Interface):
 
     def new(owner, url, credentials):
         """Create an `IOCIRegistryCredentials`."""
+
+    def getOrCreate(owner, url, credentials):
+        """Get an `IOCIRegistryCredentials` that match the url and username
+        or create a new object."""
 
     def findByOwner(owner):
         """Find matching `IOCIRegistryCredentials` by owner."""
