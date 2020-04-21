@@ -14,32 +14,20 @@ __all__ = [
 import warnings
 
 from debian.deb822 import PkgRelation
-from storm.expr import (
-    Column,
-    Table,
-    )
 from storm.locals import (
-    And,
+    Desc,
     Int,
-    Join,
     Reference,
     )
 from zope.interface import implementer
 
 from lp.registry.model.sourcepackagename import SourcePackageName
-from lp.services.database.bulk import (
-    create,
-    dbify_value,
-    )
+from lp.services.database.bulk import create
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IStore
 from lp.services.database.stormbase import StormBase
-from lp.services.database.stormexpr import Values
-from lp.soyuz.adapters.archivedependencies import expand_dependencies
-from lp.soyuz.enums import (
-    BinarySourceReferenceType,
-    PackagePublishingStatus,
-    )
+from lp.soyuz.adapters.archivedependencies import pocket_dependencies
+from lp.soyuz.enums import BinarySourceReferenceType
 from lp.soyuz.interfaces.binarysourcereference import (
     IBinarySourceReference,
     IBinarySourceReferenceSet,
@@ -98,14 +86,6 @@ class BinarySourceReferenceSet:
                 % (error,))
 
         build = bpr.build
-        if build.current_component is None:
-            raise UnparsableBuiltUsing(
-                "Cannot parse Built-Using because %s has no corresponding "
-                "source publication" % build.title)
-        dependencies = expand_dependencies(
-            build.archive, build.distro_arch_series, build.pocket,
-            build.current_component, bpr.sourcepackagename)
-
         values = []
         for or_rel in parsed_rel:
             if len(or_rel) != 1:
@@ -117,51 +97,43 @@ class BinarySourceReferenceSet:
                 raise UnparsableBuiltUsing(
                     "Built-Using must contain strict dependencies: %s"
                     % (PkgRelation.str([or_rel]),))
+
             # "source-package-name (= version)" might refer to any of
             # several SPRs, for example if the same source package was
             # uploaded to a PPA and then uploaded separately (not copied -
-            # copies add new references to the same SPR) to the
-            # distribution's primary archive.  We need to disambiguate this
-            # and find an actual SPR so that we can efficiently look up
-            # references for a given source publication.  As an
-            # approximation, try this build's archive dependencies in order.
-            # This may go wrong, but rarely.
+            # copies reuse the same SPR) to the distribution's primary
+            # archive.  We need to disambiguate this and find an actual SPR
+            # so that we can efficiently look up references for a given
+            # source publication.
+            #
+            # However, allowing cross-archive references would make the
+            # dominator's job much harder and have other undesirable
+            # properties, such as being able to pin a source in Published in
+            # a foreign archive just by adding it as a dependency and
+            # declaring a Built-Using relationship on it.
+            #
+            # Therefore, as a safe approximation, try this build's pocket
+            # dependencies within its archive and series.  Within this
+            # constraint, a name and version should uniquely identify an
+            # SPR, although we pick the latest by ID just in case that
+            # somehow ends up not being true.
             SPPH = SourcePackagePublishingHistory
-            SPN = SourcePackageName
-            SPR = SourcePackageRelease
-            dependencies_values = Values(
-                "dependencies",
-                [("index", "integer"),
-                 ("archive", "integer"),
-                 ("distroseries", "integer"),
-                 ("pocket", "integer")],
-                [
-                    (i, archive.id, das.distroseries.id,
-                     dbify_value(SPPH.pocket, pocket))
-                    for i, (archive, das, pocket, _) in enumerate(
-                        dependencies)])
-            dependencies_table = Table("dependencies")
-            tables = [
-                SPPH,
-                Join(
-                    dependencies_values,
-                    And(
-                        SPPH.archive == Column("archive", dependencies_table),
-                        SPPH.distroseries ==
-                            Column("distroseries", dependencies_table),
-                        SPPH.pocket == Column("pocket", dependencies_table))),
-                Join(SPN, SPPH.sourcepackagename == SPN.id),
-                Join(SPR, SPPH.sourcepackagerelease == SPR.id),
-                ]
-            closest_spr_id = IStore(SPPH).using(*tables).find(
+            closest_spr_id = IStore(SPPH).find(
                 SPPH.sourcepackagereleaseID,
-                SPN.name == rel["name"],
-                SPR.version == rel["version"][1],
-                ).order_by(Column("index", dependencies_table)).first()
+                SPPH.archive == build.archive,
+                SPPH.distroseries == build.distro_series,
+                SPPH.pocket.is_in(pocket_dependencies[build.pocket]),
+                SPPH.sourcepackagename == SourcePackageName.id,
+                SPPH.sourcepackagerelease == SourcePackageRelease.id,
+                SourcePackageName.name == rel["name"],
+                SourcePackageRelease.version == rel["version"][1],
+                ).order_by(Desc(SPPH.sourcepackagereleaseID)).first()
             if closest_spr_id is None:
                 raise UnparsableBuiltUsing(
-                    "Built-Using refers to unknown or deleted source package "
-                    "%s (= %s)" % (rel["name"], rel["version"][1]))
+                    "Built-Using refers to source package %s (= %s), which is "
+                    "not known in %s in %s" %
+                    (rel["name"], rel["version"][1],
+                     build.distro_series.name, build.archive.reference))
             values.append((bpr.id, closest_spr_id, reference_type))
 
         return create(

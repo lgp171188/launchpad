@@ -20,7 +20,6 @@ from lp.registry.interfaces.pocket import PackagePublishingPocket
 from lp.soyuz.enums import (
     ArchivePurpose,
     BinarySourceReferenceType,
-    PackagePublishingStatus,
     )
 from lp.soyuz.interfaces.binarysourcereference import (
     IBinarySourceReferenceSet,
@@ -53,17 +52,6 @@ class TestBinarySourceReference(TestCaseWithFactory):
             self.reference_set.createFromRelationship(
                 bpr, "nonsense (", BinarySourceReferenceType.BUILT_USING)
 
-    def test_createFromRelationship_no_source_publication(self):
-        spr = self.factory.makeSourcePackageRelease()
-        build = self.factory.makeBinaryPackageBuild(source_package_release=spr)
-        bpr = self.factory.makeBinaryPackageRelease(build=build)
-        expected_message = (
-            r"Cannot parse Built-Using because %s has no corresponding "
-            r"source publication" % re.escape(build.title))
-        with ExpectedException(UnparsableBuiltUsing, expected_message):
-            self.reference_set.createFromRelationship(
-                bpr, "foo (= 1)", BinarySourceReferenceType.BUILT_USING)
-
     def test_createFromRelationship_alternatives(self):
         bpr = self.factory.makeBinaryPackageRelease()
         expected_message = (
@@ -93,8 +81,10 @@ class TestBinarySourceReference(TestCaseWithFactory):
         bpr = self.factory.makeBinaryPackageRelease()
         relationship = "nonexistent (= 1)"
         expected_message = (
-            r"Built-Using refers to unknown or deleted source package %s" %
-            re.escape(relationship))
+            r"Built-Using refers to source package %s, which is not known in "
+            r"%s in %s" % (
+                re.escape(relationship), bpr.build.distro_series.name,
+                bpr.build.archive.reference))
         with ExpectedException(UnparsableBuiltUsing, expected_message):
             self.reference_set.createFromRelationship(
                 bpr, relationship, BinarySourceReferenceType.BUILT_USING)
@@ -108,24 +98,10 @@ class TestBinarySourceReference(TestCaseWithFactory):
         spr = spph.sourcepackagerelease
         relationship = "%s (= %s.1)" % (spr.name, spr.version)
         expected_message = (
-            r"Built-Using refers to unknown or deleted source package %s" %
-            re.escape(relationship))
-        with ExpectedException(UnparsableBuiltUsing, expected_message):
-            self.reference_set.createFromRelationship(
-                bpr, relationship, BinarySourceReferenceType.BUILT_USING)
-
-    def test_createFromRelationship_deleted(self):
-        bpr = self.factory.makeBinaryPackageRelease()
-        spph = self.factory.makeSourcePackagePublishingHistory(
-            archive=bpr.build.archive,
-            distroseries=bpr.build.distro_series,
-            component=bpr.build.current_component,
-            status=PackagePublishingStatus.DELETED)
-        spr = spph.sourcepackagerelease
-        relationship = "%s (= %s)" % (spr.name, spr.version)
-        expected_message = (
-            r"Built-Using refers to unknown or deleted source package %s" %
-            re.escape(relationship))
+            r"Built-Using refers to source package %s, which is not known in "
+            r"%s in %s" % (
+                re.escape(relationship), bpr.build.distro_series.name,
+                bpr.build.archive.reference))
         with ExpectedException(UnparsableBuiltUsing, expected_message):
             self.reference_set.createFromRelationship(
                 bpr, relationship, BinarySourceReferenceType.BUILT_USING)
@@ -166,28 +142,25 @@ class TestBinarySourceReference(TestCaseWithFactory):
                 reference_type=BinarySourceReferenceType.BUILT_USING)
             for spr in sprs[:2])))
 
-    def test_createFromRelationship_multiple_archives(self):
-        # createFromRelationship prefers SPRs found earlier in the build's
-        # archive dependencies.
+    def test_createFromRelationship_foreign_archive(self):
+        # createFromRelationship only considers SPRs found in the same
+        # archive as the build.
         archive = self.factory.makeArchive(purpose=ArchivePurpose.PPA)
         build = self.factory.makeBinaryPackageBuild(archive=archive)
         bpr = self.factory.makeBinaryPackageRelease(build=build)
         spph = self.factory.makeSourcePackagePublishingHistory(
-            archive=archive, distroseries=build.distro_series,
-            pocket=build.pocket)
-        spr = spph.sourcepackagerelease
-        self.factory.makeSourcePackagePublishingHistory(
             archive=build.distro_series.main_archive,
-            distroseries=build.distro_series, pocket=build.pocket,
-            sourcepackagename=spr.name, version=spr.version)
+            distroseries=build.distro_series, pocket=build.pocket)
+        spr = spph.sourcepackagerelease
         relationship = "%s (= %s)" % (spr.name, spr.version)
-        bsrs = self.reference_set.createFromRelationship(
-            bpr, relationship, BinarySourceReferenceType.BUILT_USING)
-        self.assertThat(bsrs, MatchesSetwise(
-            MatchesStructure.byEquality(
-                binary_package_release=bpr,
-                source_package_release=spr,
-                reference_type=BinarySourceReferenceType.BUILT_USING)))
+        expected_message = (
+            r"Built-Using refers to source package %s, which is not known in "
+            r"%s in %s" % (
+                re.escape(relationship), build.distro_series.name,
+                build.archive.reference))
+        with ExpectedException(UnparsableBuiltUsing, expected_message):
+            self.reference_set.createFromRelationship(
+                bpr, relationship, BinarySourceReferenceType.BUILT_USING)
 
     def test_findByBinaryPackageRelease_empty(self):
         bpr = self.factory.makeBinaryPackageRelease()
