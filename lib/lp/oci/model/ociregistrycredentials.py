@@ -119,26 +119,26 @@ class OCIRegistryCredentials(Storm):
 @implementer(IOCIRegistryCredentialsSet)
 class OCIRegistryCredentialsSet:
 
-    def new(self, owner, url,  credentials):
-        """See `IOCIRegistryCredentialsSet`."""
+    def _checkForExisting(self, owner, url, credentials):
         for existing in self.findByOwner(owner):
             # If the urls are different, we can ignore these
             if existing.url != url:
                 continue
-            username = existing.getCredentials().get('username')
-            if username == credentials.get('username'):
-                raise OCIRegistryCredentialsAlreadyExist
+            if existing.username == credentials.get('username'):
+                return existing
+        return None
+
+    def new(self, owner, url,  credentials):
+        """See `IOCIRegistryCredentialsSet`."""
+        if self._checkForExisting(owner, url, credentials):
+            raise OCIRegistryCredentialsAlreadyExist()
         return OCIRegistryCredentials(owner, url, credentials)
 
     def getOrCreate(self, owner, url, credentials):
         """See `IOCIRegistryCredentialsSet`."""
-        for existing in self.findByOwner(owner):
-            # If the urls are different, we can ignore these
-            if existing.url != url:
-                continue
-            username = existing.getCredentials().get('username')
-            if username == credentials.get('username'):
-                return existing
+        existing = self._checkForExisting(owner, url, credentials)
+        if existing:
+            return existing
         return self.new(owner, url, credentials)
 
     def findByOwner(self, owner):

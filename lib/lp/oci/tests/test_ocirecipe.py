@@ -740,7 +740,7 @@ class TestOCIRecipeWebservice(OCIConfigHelperMixin, TestCaseWithFactory):
         self.assertEqual(401, resp.status, resp.body)
 
     def test_api_create_new_push_rule(self):
-        """Can you create a new push rule for a recipe via the API."""
+        """Can you create a new push rule for a recipe via the API?"""
 
         self.setConfig()
 

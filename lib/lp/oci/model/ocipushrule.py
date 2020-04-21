@@ -89,6 +89,4 @@ class OCIPushRuleSet:
 
     def getByID(self, id):
         """See `IOCIPushRuleSet`."""
-        return IStore(OCIPushRule).find(
-            OCIPushRule,
-            OCIPushRule.id == id).one()
+        return IStore(OCIPushRule).get(OCIPushRule, id)
