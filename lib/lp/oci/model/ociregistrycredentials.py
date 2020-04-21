@@ -80,8 +80,13 @@ class OCIRegistryCredentials(Storm):
     def getCredentials(self):
         container = getUtility(IEncryptedContainer, "oci-registry-secrets")
         try:
-            return json.loads(container.decrypt(
+            data = dict(self._credentials or {})
+            decrypted_data = json.loads(container.decrypt(
                 self._credentials['credentials_encrypted']).decode("UTF-8"))
+            if decrypted_data:
+                data.update(decrypted_data)
+            data.pop("credentials_encrypted")
+            return data
         except CryptoError as e:
             # XXX twom 2020-03-18 This needs a better error
             # see SnapStoreClient.UnauthorizedUploadResponse
@@ -90,9 +95,14 @@ class OCIRegistryCredentials(Storm):
 
     def setCredentials(self, value):
         container = getUtility(IEncryptedContainer, "oci-registry-secrets")
-        self._credentials = {
+        copy = value.copy()
+        username = copy.pop("username", None)
+        data = {
             "credentials_encrypted": removeSecurityProxy(
-                container.encrypt(json.dumps(value).encode('UTF-8')))}
+                container.encrypt(json.dumps(copy).encode('UTF-8')))}
+        if username is not None:
+            data["username"] = username
+        self._credentials = data
 
     def destroySelf(self):
         """See `IOCIRegistryCredentials`."""
