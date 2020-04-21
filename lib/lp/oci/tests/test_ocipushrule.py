@@ -36,10 +36,26 @@ class TestOCIPushRule(OCIConfigHelperMixin, TestCaseWithFactory):
     def test_change_attribute(self):
         push_rule = self.factory.makeOCIPushRule()
         with person_logged_in(push_rule.recipe.owner):
-            push_rule.image_name = 'new image name'
+            push_rule.setNewImageName('new image name')
 
         found_rule = push_rule.recipe.push_rules[0]
         self.assertEqual(found_rule.image_name, 'new image name')
+
+    def test_change_image_name_existing(self):
+        first = self.factory.makeOCIPushRule(image_name="first")
+        second = self.factory.makeOCIPushRule(
+            image_name="second",
+            registry_credentials=first.registry_credentials)
+        self.assertRaises(
+            OCIPushRuleAlreadyExists,
+            second.setNewImageName,
+            first.image_name)
+
+    def test_username_retrieval(self):
+        credentials = self.factory.makeOCIRegistryCredentials()
+        push_rule = self.factory.makeOCIPushRule(
+            registry_credentials=credentials)
+        self.assertEqual(credentials.username, push_rule.username)
 
 
 class TestOCIPushRuleSet(OCIConfigHelperMixin, TestCaseWithFactory):

@@ -104,7 +104,7 @@
 
         <browser:url
             for="lp.oci.interfaces.ocipushrule.IOCIPushRule"
-            path_expression="string:+pushrule/${id}"
+            path_expression="string:+push-rule/${id}"
             attribute_to_parent="recipe" />
     </facet>
 </configure>

@@ -44,6 +44,24 @@ class OCIPushRule(Storm):
 
     image_name = Unicode(name="image_name", allow_none=False)
 
+    @property
+    def registry_url(self):
+        return self.registry_credentials.url
+
+    @property
+    def username(self):
+        return self.registry_credentials.username
+
+    def setNewImageName(self, new_image_name):
+        result = IStore(OCIPushRule).find(
+            OCIPushRule,
+            OCIPushRule.registry_credentials == self.registry_credentials,
+            OCIPushRule.image_name == new_image_name
+        ).one()
+        if result:
+            raise OCIPushRuleAlreadyExists()
+        self.image_name = new_image_name
+
     def __init__(self, recipe, registry_credentials, image_name):
         self.recipe = recipe
         self.registry_credentials = registry_credentials

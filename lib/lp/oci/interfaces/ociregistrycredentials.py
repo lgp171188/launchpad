@@ -25,7 +25,7 @@ from lp.registry.interfaces.role import IHasOwner
 from lp.services.fields import PersonChoice
 
 
-@error_status(http_client.BAD_REQUEST)
+@error_status(http_client.CONFLICT)
 class OCIRegistryCredentialsAlreadyExist(Exception):
     """A new `OCIRegistryCredentials` was added with the
     same details as an existing one.
@@ -42,6 +42,12 @@ class IOCIRegistryCredentialsView(Interface):
 
     def getCredentials():
         """Get the saved credentials."""
+
+    username = TextLine(
+        title=_("Username"),
+        description=_("The username for the credentials, if available."),
+        required=True,
+        readonly=True)
 
 
 class IOCIRegistryCredentialsEditableAttributes(IHasOwner):

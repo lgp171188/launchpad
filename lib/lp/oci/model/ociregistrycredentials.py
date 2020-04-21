@@ -105,6 +105,10 @@ class OCIRegistryCredentials(Storm):
             data["username"] = username
         self._credentials = data
 
+    @property
+    def username(self):
+        return self._credentials.get('username')
+
     def destroySelf(self):
         """See `IOCIRegistryCredentials`."""
         store = IStore(OCIRegistryCredentials)

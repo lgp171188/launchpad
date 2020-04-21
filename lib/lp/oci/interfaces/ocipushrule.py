@@ -15,7 +15,12 @@ __all__ = [
 from lazr.restful.declarations import (
     error_status,
     export_as_webservice_entry,
+    export_destructor_operation,
+    export_write_operation,
     exported,
+    mutator_for,
+    operation_parameters,
+    operation_for_version,
     )
 from lazr.restful.fields import Reference
 from six.moves import http_client
@@ -30,7 +35,7 @@ from lp.oci.interfaces.ocirecipe import IOCIRecipe
 from lp.oci.interfaces.ociregistrycredentials import IOCIRegistryCredentials
 
 
-@error_status(http_client.BAD_REQUEST)
+@error_status(http_client.CONFLICT)
 class OCIPushRuleAlreadyExists(Exception):
     """A new OCIPushRuleAlreadyExists was added with the
        same details as an existing one.
@@ -38,7 +43,7 @@ class OCIPushRuleAlreadyExists(Exception):
 
     def __init__(self):
         super(OCIPushRuleAlreadyExists, self).__init__(
-            "A push rule already exists with the same image_name "
+            "A push rule already exists with the same URL, image name, "
             "and credentials")
 
 
@@ -48,6 +53,19 @@ class IOCIPushRuleView(Interface):
     """
 
     id = Int(title=_("ID"), required=True, readonly=True)
+
+    registry_url = exported(TextLine(
+        title=_("Registry URL"),
+        description=_(
+            "The registry URL for the credentials of this push rule"),
+        required=False,
+        readonly=True))
+
+    username = exported(TextLine(
+        title=_("Username"),
+        description=_("The username for the credentials, if available."),
+        required=True,
+        readonly=True))
 
 
 class IOCIPushRuleEditableAttributes(Interface):
@@ -74,7 +92,15 @@ class IOCIPushRuleEditableAttributes(Interface):
         title=_("Image name"),
         description=_("The intended name of the image on the registry."),
         required=True,
-        readonly=False))
+        readonly=True))
+
+    @mutator_for(image_name)
+    @operation_parameters(
+        image_name=TextLine(title=_("Image name"), required=True))
+    @export_write_operation()
+    @operation_for_version("devel")
+    def setNewImageName(image_name):
+        """Set the new image name, checking for uniqueness."""
 
 
 class IOCIPushRuleEdit(Interface):
@@ -82,6 +108,8 @@ class IOCIPushRuleEdit(Interface):
     permission.
     """
 
+    @export_destructor_operation()
+    @operation_for_version("devel")
     def destroySelf():
         """Destroy this push rule."""
 
@@ -101,4 +129,4 @@ class IOCIPushRuleSet(Interface):
         """Create an `IOCIPushRule`."""
 
     def getByID(id):
-        """Get a single `IOCIPushRule` by it's ID."""
+        """Get a single `IOCIPushRule` by its ID."""
