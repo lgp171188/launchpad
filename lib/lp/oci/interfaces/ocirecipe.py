@@ -248,7 +248,7 @@ class IOCIRecipeEdit(IWebhookTarget):
     @export_factory_operation(Interface, [])
     @operation_for_version("devel")
     def createPushRule(owner, registry_url, image_name, credentials):
-        """Create a new `OCIPushRule` and `OCICredentials` for this recipe."""
+        """Add a new rule for pushing builds of this recipe to a registry."""
 
 
 class IOCIRecipeEditableAttributes(IHasOwner):

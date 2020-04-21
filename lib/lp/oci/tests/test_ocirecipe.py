@@ -753,7 +753,7 @@ class TestOCIRecipeWebservice(OCIConfigHelperMixin, TestCaseWithFactory):
             url = api_url(recipe)
 
         obj = {
-            "url": self.factory.getUniqueURL(),
+            "registry_url": self.factory.getUniqueURL(),
             "image_name": self.factory.getUniqueUnicode(),
             "credentials": {"username": "foo", "password": "bar"}}
 

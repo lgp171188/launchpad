@@ -6,17 +6,17 @@
 __all__ = [
     'IOCIProject',
     'IOCIProjectSeries',
-    'IOCIRecipe',
     'IOCIPushRule',
+    'IOCIRecipe',
     ]
 
+from lp.oci.interfaces.ocipushrule import IOCIPushRule
 from lp.oci.interfaces.ocirecipe import (
     IOCIRecipe,
     IOCIRecipeEdit,
     )
 from lp.registry.interfaces.ociproject import IOCIProject
 from lp.registry.interfaces.ociprojectseries import IOCIProjectSeries
-from lp.oci.interfaces.ocipushrule import IOCIPushRule
 from lp.services.webservice.apihelpers import patch_entry_return_type
 
 
