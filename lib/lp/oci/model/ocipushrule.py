@@ -83,7 +83,9 @@ class OCIPushRuleSet:
             image_match = (existing.image_name == image_name)
             if credentials_match and image_match:
                 raise OCIPushRuleAlreadyExists()
-        return OCIPushRule(recipe, registry_credentials, image_name)
+        push_rule = OCIPushRule(recipe, registry_credentials, image_name)
+        IStore(OCIPushRule).add(push_rule)
+        return push_rule
 
     def getByID(self, id):
         """See `IOCIPushRuleSet`."""

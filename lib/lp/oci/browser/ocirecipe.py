@@ -81,7 +81,7 @@ class OCIRecipeNavigation(WebhookTargetNavigationMixin, Navigation):
             return None
         return build
 
-    @stepthrough('+pushrule')
+    @stepthrough('+push-rule')
     def traverse_pushrule(self, id):
         id = int(id)
         return getUtility(IOCIPushRuleSet).getByID(id)
