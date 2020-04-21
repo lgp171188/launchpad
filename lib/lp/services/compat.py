@@ -10,8 +10,9 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 __all__ = [
-    'SafeConfigParser',
+    'lzma',
     'mock',
+    'SafeConfigParser',
     ]
 
 try:
@@ -19,6 +20,10 @@ try:
 except ImportError:
     from ConfigParser import SafeConfigParser
 
+try:
+    import lzma
+except ImportError:
+    from backports import lzma
 
 try:
     import mock
