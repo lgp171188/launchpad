@@ -44,18 +44,6 @@ class TestOCIRegistryCredentials(OCIConfigHelperMixin, TestCaseWithFactory):
             credentials={'username': 'foo', 'password': 'bar'})
         self.assertProvides(oci_credentials, IOCIRegistryCredentials)
 
-    def test_retrieve_encrypted_credentials(self):
-        owner = self.factory.makePerson()
-        oci_credentials = self.factory.makeOCIRegistryCredentials(
-            owner=owner,
-            url='http://example.org',
-            credentials={'username': 'foo', 'password': 'bar'})
-
-        with person_logged_in(owner):
-            self.assertThat(oci_credentials.getCredentials(), MatchesDict({
-                "username": Equals("foo"),
-                "password": Equals("bar")}))
-
     def test_credentials_are_encrypted(self):
         credentials = {'username': 'foo', 'password': 'bar'}
         oci_credentials = removeSecurityProxy(
@@ -69,6 +57,18 @@ class TestOCIRegistryCredentials(OCIConfigHelperMixin, TestCaseWithFactory):
                 Equals({"password": "bar"})),
             }))
 
+    def test_credentials_set(self):
+        owner = self.factory.makePerson()
+        oci_credentials = self.factory.makeOCIRegistryCredentials(
+            owner=owner,
+            url='http://example.org',
+            credentials={'username': 'foo', 'password': 'bar'})
+
+        with person_logged_in(owner):
+            self.assertThat(oci_credentials.getCredentials(), MatchesDict({
+                "username": Equals("foo"),
+                "password": Equals("bar")}))
+
     def test_credentials_set_empty(self):
         owner = self.factory.makePerson()
         oci_credentials = self.factory.makeOCIRegistryCredentials(
@@ -80,36 +80,49 @@ class TestOCIRegistryCredentials(OCIConfigHelperMixin, TestCaseWithFactory):
 
     def test_credentials_set_no_password(self):
         owner = self.factory.makePerson()
-        oci_credentials = self.factory.makeOCIRegistryCredentials(
-            owner=owner,
-            url='http://example.org',
-            credentials={"username": "test"})
+        oci_credentials = removeSecurityProxy(
+            self.factory.makeOCIRegistryCredentials(
+                owner=owner,
+                url='http://example.org',
+                credentials={"username": "test"}))
+        container = getUtility(IEncryptedContainer, "oci-registry-secrets")
         with person_logged_in(owner):
-            self.assertThat(oci_credentials.getCredentials(), MatchesDict({
-                "username": Equals("test")}))
+            self.assertThat(oci_credentials._credentials, MatchesDict({
+                "username": Equals("test"),
+                "credentials_encrypted": AfterPreprocessing(
+                    lambda value: json.loads(container.decrypt(value)),
+                    Equals({})),
+                }))
 
     def test_credentials_set_no_username(self):
         owner = self.factory.makePerson()
-        oci_credentials = self.factory.makeOCIRegistryCredentials(
-            owner=owner,
-            url='http://example.org',
-            credentials={"password": "test"})
+        oci_credentials = removeSecurityProxy(
+            self.factory.makeOCIRegistryCredentials(
+                owner=owner,
+                url='http://example.org',
+                credentials={"password": "bar"}))
+        container = getUtility(IEncryptedContainer, "oci-registry-secrets")
         with person_logged_in(owner):
-            self.assertThat(oci_credentials.getCredentials(), MatchesDict({
-                "password": Equals("test")}))
+            self.assertThat(oci_credentials._credentials, MatchesDict({
+                "credentials_encrypted": AfterPreprocessing(
+                    lambda value: json.loads(container.decrypt(value)),
+                    Equals({"password": "bar"}))}))
 
     def test_credentials_set_encrypts_other_data(self):
         owner = self.factory.makePerson()
-        oci_credentials = self.factory.makeOCIRegistryCredentials(
-            owner=owner,
-            url='http://example.org',
-            credentials={
-                "username": "foo", "password": "bar", "other": "baz"})
+        oci_credentials = removeSecurityProxy(
+            self.factory.makeOCIRegistryCredentials(
+                owner=owner,
+                url='http://example.org',
+                credentials={
+                    "username": "foo", "password": "bar", "other": "baz"}))
+        container = getUtility(IEncryptedContainer, "oci-registry-secrets")
         with person_logged_in(owner):
-            self.assertThat(oci_credentials.getCredentials(), MatchesDict({
+            self.assertThat(oci_credentials._credentials, MatchesDict({
                 "username": Equals("foo"),
-                "password": Equals("bar"),
-                "other": Equals("baz")}))
+                "credentials_encrypted": AfterPreprocessing(
+                    lambda value: json.loads(container.decrypt(value)),
+                    Equals({"password": "bar", "other": "baz"}))}))
 
 
 class TestOCIRegistryCredentialsSet(OCIConfigHelperMixin, TestCaseWithFactory):

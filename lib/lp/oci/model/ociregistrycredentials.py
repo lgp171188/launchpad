@@ -80,10 +80,12 @@ class OCIRegistryCredentials(Storm):
     def getCredentials(self):
         container = getUtility(IEncryptedContainer, "oci-registry-secrets")
         try:
-            data = json.loads(container.decrypt(
+            data = dict(self._credentials or {})
+            decrypted_data = json.loads(container.decrypt(
                 self._credentials['credentials_encrypted']).decode("UTF-8"))
-            if self._credentials.get("username"):
-                data["username"] = self._credentials["username"]
+            if decrypted_data:
+                data.update(decrypted_data)
+            data.pop("credentials_encrypted")
             return data
         except CryptoError as e:
             # XXX twom 2020-03-18 This needs a better error
@@ -93,10 +95,9 @@ class OCIRegistryCredentials(Storm):
 
     def setCredentials(self, value):
         container = getUtility(IEncryptedContainer, "oci-registry-secrets")
+        copy = value.copy()
         if value.get("username"):
-            copy = value.copy()
-            username = copy["username"]
-            del copy["username"]
+            username = copy.pop("username")
             self._credentials = {
                 "username": username,
                 "credentials_encrypted": removeSecurityProxy(
