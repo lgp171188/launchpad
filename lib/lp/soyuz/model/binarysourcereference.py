@@ -15,13 +15,11 @@ import warnings
 
 from debian.deb822 import PkgRelation
 from storm.locals import (
-    Desc,
     Int,
     Reference,
     )
 from zope.interface import implementer
 
-from lp.registry.model.sourcepackagename import SourcePackageName
 from lp.services.database.bulk import create
 from lp.services.database.enumcol import DBEnum
 from lp.services.database.interfaces import IStore
@@ -33,8 +31,6 @@ from lp.soyuz.interfaces.binarysourcereference import (
     IBinarySourceReferenceSet,
     UnparsableBuiltUsing,
     )
-from lp.soyuz.model.publishing import SourcePackagePublishingHistory
-from lp.soyuz.model.sourcepackagerelease import SourcePackageRelease
 
 
 @implementer(IBinarySourceReference)
@@ -117,24 +113,19 @@ class BinarySourceReferenceSet:
             # constraint, a name and version should uniquely identify an
             # SPR, although we pick the latest by ID just in case that
             # somehow ends up not being true.
-            SPPH = SourcePackagePublishingHistory
-            closest_spr_id = IStore(SPPH).find(
-                SPPH.sourcepackagereleaseID,
-                SPPH.archive == build.archive,
-                SPPH.distroseries == build.distro_series,
-                SPPH.pocket.is_in(pocket_dependencies[build.pocket]),
-                SPPH.sourcepackagename == SourcePackageName.id,
-                SPPH.sourcepackagerelease == SourcePackageRelease.id,
-                SourcePackageName.name == rel["name"],
-                SourcePackageRelease.version == rel["version"][1],
-                ).order_by(Desc(SPPH.sourcepackagereleaseID)).first()
-            if closest_spr_id is None:
+            closest_spph = build.archive.getPublishedSources(
+                name=rel["name"], version=rel["version"][1],
+                distroseries=build.distro_series,
+                pocket=pocket_dependencies[build.pocket],
+                exact_match=True).first()
+            if closest_spph is None:
                 raise UnparsableBuiltUsing(
                     "Built-Using refers to source package %s (= %s), which is "
                     "not known in %s in %s" %
                     (rel["name"], rel["version"][1],
                      build.distro_series.name, build.archive.reference))
-            values.append((bpr.id, closest_spr_id, reference_type))
+            values.append(
+                (bpr.id, closest_spph.sourcepackagereleaseID, reference_type))
 
         return create(
             (BinarySourceReference.binary_package_release_id,
