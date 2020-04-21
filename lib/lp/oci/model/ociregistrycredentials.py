@@ -96,16 +96,13 @@ class OCIRegistryCredentials(Storm):
     def setCredentials(self, value):
         container = getUtility(IEncryptedContainer, "oci-registry-secrets")
         copy = value.copy()
-        if value.get("username"):
-            username = copy.pop("username")
-            self._credentials = {
-                "username": username,
-                "credentials_encrypted": removeSecurityProxy(
-                    container.encrypt(json.dumps(copy).encode('UTF-8')))}
-        else:
-            self._credentials = {
-                "credentials_encrypted": removeSecurityProxy(
-                    container.encrypt(json.dumps(value).encode('UTF-8')))}
+        username = copy.pop("username", None)
+        data = {
+            "credentials_encrypted": removeSecurityProxy(
+                container.encrypt(json.dumps(copy).encode('UTF-8')))}
+        if username is not None:
+            data["username"] = username
+        self._credentials = data
 
     def destroySelf(self):
         """See `IOCIRegistryCredentials`."""
