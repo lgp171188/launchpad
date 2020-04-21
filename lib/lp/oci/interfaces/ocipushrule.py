@@ -58,7 +58,7 @@ class IOCIPushRuleView(Interface):
         title=_("Registry URL"),
         description=_(
             "The registry URL for the credentials of this push rule"),
-        required=False,
+        required=True,
         readonly=True))
 
     username = exported(TextLine(

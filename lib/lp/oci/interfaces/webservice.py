@@ -20,4 +20,4 @@ from lp.registry.interfaces.ociprojectseries import IOCIProjectSeries
 from lp.services.webservice.apihelpers import patch_entry_return_type
 
 
-patch_entry_return_type(IOCIRecipeEdit, 'createPushRule', IOCIPushRule)
+patch_entry_return_type(IOCIRecipeEdit, 'newPushRule', IOCIPushRule)

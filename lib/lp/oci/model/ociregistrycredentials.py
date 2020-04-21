@@ -121,10 +121,9 @@ class OCIRegistryCredentialsSet:
 
     def _checkForExisting(self, owner, url, credentials):
         for existing in self.findByOwner(owner):
-            # If the urls are different, we can ignore these
-            if existing.url != url:
-                continue
-            if existing.username == credentials.get('username'):
+            url_match = existing.url == url
+            username_match = existing.username == credentials.get('username')
+            if (url_match and username_match):
                 return existing
         return None
 

@@ -247,7 +247,7 @@ class IOCIRecipeEdit(IWebhookTarget):
     # Really IOCIPushRule, patched in lp.oci.interfaces.webservice.
     @export_factory_operation(Interface, [])
     @operation_for_version("devel")
-    def createPushRule(owner, registry_url, image_name, credentials):
+    def newPushRule(owner, registry_url, image_name, credentials):
         """Add a new rule for pushing builds of this recipe to a registry."""
 
 

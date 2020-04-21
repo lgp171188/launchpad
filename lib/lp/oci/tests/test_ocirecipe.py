@@ -222,7 +222,7 @@ class TestOCIRecipe(OCIConfigHelperMixin, TestCaseWithFactory):
         for rule in oci_recipe.push_rules:
             self.assertEqual(rule.recipe, oci_recipe)
 
-    def test_createPushRule(self):
+    def test_newPushRule(self):
         self.setConfig()
         recipe = self.factory.makeOCIRecipe()
         url = ensure_text(self.factory.getUniqueURL())
@@ -231,7 +231,7 @@ class TestOCIRecipe(OCIConfigHelperMixin, TestCaseWithFactory):
             "username": "test-username", "password": "test-password"}
 
         with person_logged_in(recipe.owner):
-            push_rule = recipe.createPushRule(
+            push_rule = recipe.newPushRule(
                 recipe.owner, url, image_name, credentials)
             self.assertEqual(
                 image_name,
@@ -247,7 +247,7 @@ class TestOCIRecipe(OCIConfigHelperMixin, TestCaseWithFactory):
                 push_rule,
                 recipe.push_rules[0])
 
-    def test_createPushRule_same_details(self):
+    def test_newPushRule_same_details(self):
         self.setConfig()
         recipe = self.factory.makeOCIRecipe()
         url = ensure_text(self.factory.getUniqueURL())
@@ -256,11 +256,11 @@ class TestOCIRecipe(OCIConfigHelperMixin, TestCaseWithFactory):
             "username": "test-username", "password": "test-password"}
 
         with person_logged_in(recipe.owner):
-            recipe.createPushRule(
+            recipe.newPushRule(
                 recipe.owner, url, image_name, credentials)
             self.assertRaises(
                 OCIPushRuleAlreadyExists,
-                recipe.createPushRule,
+                recipe.newPushRule,
                 recipe.owner, url, image_name, credentials)
 
 
@@ -757,7 +757,7 @@ class TestOCIRecipeWebservice(OCIConfigHelperMixin, TestCaseWithFactory):
             "image_name": self.factory.getUniqueUnicode(),
             "credentials": {"username": "foo", "password": "bar"}}
 
-        resp = self.webservice.named_post(url, "createPushRule", **obj)
+        resp = self.webservice.named_post(url, "newPushRule", **obj)
         self.assertEqual(201, resp.status, resp.body)
 
         new_obj_url = resp.getHeader("Location")
