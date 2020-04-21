@@ -63,10 +63,53 @@ class TestOCIRegistryCredentials(OCIConfigHelperMixin, TestCaseWithFactory):
                 credentials=credentials))
         container = getUtility(IEncryptedContainer, "oci-registry-secrets")
         self.assertThat(oci_credentials._credentials, MatchesDict({
+            "username": Equals("foo"),
             "credentials_encrypted": AfterPreprocessing(
                 lambda value: json.loads(container.decrypt(value)),
-                Equals(credentials)),
+                Equals({"password": "bar"})),
             }))
+
+    def test_credentials_set_empty(self):
+        owner = self.factory.makePerson()
+        oci_credentials = self.factory.makeOCIRegistryCredentials(
+            owner=owner,
+            url='http://example.org',
+            credentials={})
+        with person_logged_in(owner):
+            self.assertThat(oci_credentials.getCredentials(), MatchesDict({}))
+
+    def test_credentials_set_no_password(self):
+        owner = self.factory.makePerson()
+        oci_credentials = self.factory.makeOCIRegistryCredentials(
+            owner=owner,
+            url='http://example.org',
+            credentials={"username": "test"})
+        with person_logged_in(owner):
+            self.assertThat(oci_credentials.getCredentials(), MatchesDict({
+                "username": Equals("test")}))
+
+    def test_credentials_set_no_username(self):
+        owner = self.factory.makePerson()
+        oci_credentials = self.factory.makeOCIRegistryCredentials(
+            owner=owner,
+            url='http://example.org',
+            credentials={"password": "test"})
+        with person_logged_in(owner):
+            self.assertThat(oci_credentials.getCredentials(), MatchesDict({
+                "password": Equals("test")}))
+
+    def test_credentials_set_encrypts_other_data(self):
+        owner = self.factory.makePerson()
+        oci_credentials = self.factory.makeOCIRegistryCredentials(
+            owner=owner,
+            url='http://example.org',
+            credentials={
+                "username": "foo", "password": "bar", "other": "baz"})
+        with person_logged_in(owner):
+            self.assertThat(oci_credentials.getCredentials(), MatchesDict({
+                "username": Equals("foo"),
+                "password": Equals("bar"),
+                "other": Equals("baz")}))
 
 
 class TestOCIRegistryCredentialsSet(OCIConfigHelperMixin, TestCaseWithFactory):
