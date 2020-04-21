@@ -231,13 +231,13 @@ class IOCIRecipeEdit(IWebhookTarget):
 
     @call_with(owner=REQUEST_USER)
     @operation_parameters(
-        url=TextLine(
-            title=_("OCI Registry URL"),
-            description=_("URL for the target OCI Registry"),
+        registry_url=TextLine(
+            title=_("Registry URL"),
+            description=_("URL for the target registry"),
             required=True),
         image_name=TextLine(
             title=_("Image name"),
-            description=_("Name of the image to push to on the OCI Registry"),
+            description=_("Name of the image to push to on the registry"),
             required=True),
         credentials=Dict(
             title=_("Registry credentials"),
@@ -247,7 +247,7 @@ class IOCIRecipeEdit(IWebhookTarget):
     # Really IOCIPushRule, patched in lp.oci.interfaces.webservice.
     @export_factory_operation(Interface, [])
     @operation_for_version("devel")
-    def createPushRule(owner, url, image_name, credentials):
+    def createPushRule(owner, registry_url, image_name, credentials):
         """Create a new `OCIPushRule` and `OCICredentials` for this recipe."""
 
 

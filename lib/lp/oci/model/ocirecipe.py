@@ -383,11 +383,11 @@ class OCIRecipe(Storm, WebhookTargetMixin):
     def can_upload_to_registry(self):
         return not self.push_rules.is_empty()
 
-    def createPushRule(self, owner, url, image_name, credentials):
+    def createPushRule(self, owner, registry_url, image_name, credentials):
         """See `IOCIRecipe`."""
 
         oci_credentials = getUtility(IOCIRegistryCredentialsSet).getOrCreate(
-            owner, url, credentials)
+            owner, registry_url, credentials)
         push_rule = getUtility(IOCIPushRuleSet).new(
             self, oci_credentials, image_name)
         Store.of(push_rule).flush()
