@@ -64,6 +64,19 @@ class IBinarySourceReferenceSet(Interface):
         :return: A list of new `IBinarySourceReference`s.
         """
 
+    def createFromSourcePackageReleases(bpr, sprs, reference_type):
+        """Create references from a sequence of source package releases.
+
+        This is a convenience method for use in tests.
+
+        :param bpr: The `IBinaryPackageRelease` from which new references
+            should be created.
+        :param sprs: A sequence of `ISourcePackageRelease`s.
+        :param reference_type: The `BinarySourceReferenceType` of references
+            to create.
+        :return: A list of new `IBinarySourceReference`s.
+        """
+
     def findByBinaryPackageRelease(bpr, reference_type):
         """Find references from a given binary package release.
 

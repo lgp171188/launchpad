@@ -134,6 +134,13 @@ class BinarySourceReferenceSet:
             values, get_objects=True)
 
     @classmethod
+    def createFromSourcePackageReleases(cls, bpr, sprs, reference_type):
+        """See `IBinarySourceReferenceSet`."""
+        relationship = ", ".join(
+            ["%s (= %s)" % (spr.name, spr.version) for spr in sprs])
+        return cls.createFromRelationship(bpr, relationship, reference_type)
+
+    @classmethod
     def findByBinaryPackageRelease(cls, bpr, reference_type):
         """See `IBinarySourceReferenceSet`."""
         return IStore(BinarySourceReference).find(

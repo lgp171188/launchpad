@@ -181,11 +181,8 @@ class TestBinarySourceReference(TestCaseWithFactory):
                 for _ in range(2)]
             sprs = [spph.sourcepackagerelease for spph in spphs]
             all_sprs.extend(sprs)
-            relationship = (
-                "%s (= %s), %s (= %s)" %
-                (sprs[0].name, sprs[0].version, sprs[1].name, sprs[1].version))
-            self.reference_set.createFromRelationship(
-                bpr, relationship, BinarySourceReferenceType.BUILT_USING)
+            self.reference_set.createFromSourcePackageReleases(
+                bpr, sprs, BinarySourceReferenceType.BUILT_USING)
         other_bpr = self.factory.makeBinaryPackageRelease()
         self.assertThat(
             self.reference_set.findByBinaryPackageRelease(
