@@ -362,8 +362,7 @@ class SigningUpload(CustomUpload):
                 u"%s key for %s" % (key_type.name, self.archive.reference))
             try:
                 signing_key = getUtility(IArchiveSigningKeySet).generate(
-                    key_type, self.archive, description=description
-                    ).signing_key
+                    key_type, description, self.archive).signing_key
             except Exception as e:
                 if self.logger:
                     self.logger.exception(
