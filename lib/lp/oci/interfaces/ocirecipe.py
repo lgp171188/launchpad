@@ -209,12 +209,12 @@ class IOCIRecipeView(Interface):
         :return: `IOCIRecipeBuild`.
         """
 
-    push_rules = CollectionField(
+    push_rules = exported(CollectionField(
         title=_("Push rules for this OCI recipe."),
         description=_("All of the push rules for registry upload "
                       "that apply to this recipe."),
         # Really IOCIPushRule, patched in _schema_cirular_imports.
-        value_type=Reference(schema=Interface), readonly=True)
+        value_type=Reference(schema=Interface), readonly=True))
 
     can_upload_to_registry = Bool(
         title=_("Can upload to registry"), required=True, readonly=True,

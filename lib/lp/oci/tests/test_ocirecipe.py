@@ -39,9 +39,6 @@ from lp.oci.interfaces.ocirecipe import (
     OCIRecipeNotOwner,
     )
 from lp.oci.interfaces.ocirecipebuild import IOCIRecipeBuildSet
-from lp.oci.interfaces.ociregistrycredentials import (
-    OCIRegistryCredentialsAlreadyExist,
-    )
 from lp.oci.tests.helpers import OCIConfigHelperMixin
 from lp.services.config import config
 from lp.services.database.constants import (
@@ -763,3 +760,25 @@ class TestOCIRecipeWebservice(OCIConfigHelperMixin, TestCaseWithFactory):
         new_obj_url = resp.getHeader("Location")
         ws_push_rule = self.load_from_api(new_obj_url)
         self.assertEqual(obj["image_name"], ws_push_rule["image_name"])
+
+    def test_api_push_rules_exported(self):
+        """Are push rules exported for a recipe?"""
+        self.setConfig()
+
+        image_name = self.factory.getUniqueUnicode()
+
+        with person_logged_in(self.person):
+            oci_project = self.factory.makeOCIProject(
+                registrant=self.person)
+            recipe = self.factory.makeOCIRecipe(
+                oci_project=oci_project, owner=self.person,
+                registrant=self.person)
+            push_rule = self.factory.makeOCIPushRule(
+                recipe=recipe, image_name=image_name)
+            url = api_url(recipe)
+
+        ws_recipe = self.load_from_api(url)
+        push_rules = self.load_from_api(
+            ws_recipe["push_rules_collection_link"])
+        self.assertEqual(
+            image_name, push_rules["entries"][0]["image_name"])
