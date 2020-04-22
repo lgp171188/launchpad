@@ -2258,6 +2258,13 @@
         template="../../app/templates/generic-edit.pt"
         />
     <browser:page
+        name="+select-oci-project-admins"
+        for="lp.registry.interfaces.distribution.IDistribution"
+        class="lp.registry.browser.distribution.DistributionChangeOCIProjectAdminView"
+        permission="launchpad.Edit"
+        template="../../app/templates/generic-edit.pt"
+        />
+    <browser:page
         name="+pubconf"
         for="lp.registry.interfaces.distribution.IDistribution"
         class="lp.registry.browser.distribution.DistributionPublisherConfigView"

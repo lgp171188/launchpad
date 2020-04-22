@@ -1,4 +1,4 @@
-# Copyright 2010-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Security adapters for the bugs module."""
@@ -122,6 +122,25 @@ class AppendBug(AuthorizationBase):
         return False
 
 
+def _has_any_bug_role(user, targets):
+    """Return True if the user has any role on any of these bug targets."""
+    # XXX cjwatson 2019-03-26: This is inefficient for bugs with many
+    # targets.  However, we only get here if we can't easily establish that
+    # the user seems legitimate, so it shouldn't be a big problem in
+    # practice.  We can optimise this further if it turns out to matter.
+    for target in targets:
+        roles = []
+        if IHasOwner.providedBy(target):
+            roles.append('owner')
+        if IHasAppointedDriver.providedBy(target):
+            roles.append('driver')
+        if IHasBugSupervisor.providedBy(target):
+            roles.append('bug_supervisor')
+        if user.isOneOf(target, roles):
+            return True
+    return False
+
+
 class EditBug(AuthorizationBase):
     """Security adapter for editing bugs.
 
@@ -131,25 +150,6 @@ class EditBug(AuthorizationBase):
     """
     permission = 'launchpad.Edit'
     usedfor = IBug
-
-    def _hasAnyRole(self, user, targets):
-        """Return True if the user has any role on any of these bug targets."""
-        # XXX cjwatson 2019-03-26: This is inefficient for bugs with many
-        # targets.  However, we only get here if we can't easily establish
-        # that the user seems legitimate, so it shouldn't be a big problem
-        # in practice.  We can optimise this further if it turns out to
-        # matter.
-        for target in targets:
-            roles = []
-            if IHasOwner.providedBy(target):
-                roles.append('owner')
-            if IHasAppointedDriver.providedBy(target):
-                roles.append('driver')
-            if IHasBugSupervisor.providedBy(target):
-                roles.append('bug_supervisor')
-            if user.isOneOf(target, roles):
-                return True
-        return False
 
     def checkAuthenticated(self, user):
         """Allow sufficiently-trusted users to edit bugs.
@@ -174,7 +174,7 @@ class EditBug(AuthorizationBase):
             # Users with relevant roles can edit the bug.
             user.in_admin or user.in_commercial_admin or
             user.in_registry_experts or
-            self._hasAnyRole(
+            _has_any_bug_role(
                 user, [task.target for task in self.obj.bugtasks]))
 
     def checkUnauthenticated(self):
@@ -211,7 +211,7 @@ class ViewBugAttachment(DelegatedAuthorization):
             bugattachment, bugattachment.bug)
 
 
-class EditBugAttachment(DelegatedAuthorization):
+class EditBugAttachment(AuthorizationBase):
     """Security adapter for editing a bug attachment.
 
     If the user is authorized to view the bug, they're allowed to edit the
@@ -220,9 +220,15 @@ class EditBugAttachment(DelegatedAuthorization):
     permission = 'launchpad.Edit'
     usedfor = IBugAttachment
 
-    def __init__(self, bugattachment):
-        super(EditBugAttachment, self).__init__(
-            bugattachment, bugattachment.bug)
+    def checkAuthenticated(self, user):
+        return (user.in_admin or
+                user.in_registry_experts or
+                user.inTeam(self.obj.message.owner) or
+                _has_any_bug_role(
+                    user, [task.target for task in self.obj.bug.bugtasks]))
+
+    def checkUnauthenticated(self):
+        return False
 
 
 class ViewBugActivity(DelegatedAuthorization):

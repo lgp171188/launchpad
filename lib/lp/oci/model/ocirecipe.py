@@ -42,6 +42,7 @@ from lp.buildmaster.interfaces.buildqueue import IBuildQueueSet
 from lp.buildmaster.model.buildfarmjob import BuildFarmJob
 from lp.buildmaster.model.buildqueue import BuildQueue
 from lp.buildmaster.model.processor import Processor
+from lp.oci.interfaces.ocipushrule import IOCIPushRuleSet
 from lp.oci.interfaces.ocirecipe import (
     CannotModifyOCIRecipeProcessor,
     DuplicateOCIRecipeName,
@@ -55,6 +56,7 @@ from lp.oci.interfaces.ocirecipe import (
     OCIRecipeNotOwner,
     )
 from lp.oci.interfaces.ocirecipebuild import IOCIRecipeBuildSet
+from lp.oci.interfaces.ociregistrycredentials import IOCIRegistryCredentialsSet
 from lp.oci.model.ocipushrule import OCIPushRule
 from lp.oci.model.ocirecipebuild import OCIRecipeBuild
 from lp.registry.interfaces.person import IPersonSet
@@ -376,6 +378,20 @@ class OCIRecipe(Storm, WebhookTargetMixin):
         # by id (since id increases monotonically) and is less expensive.
         order_by = Desc(OCIRecipeBuild.id)
         return self._getBuilds(filter_term, order_by)
+
+    @property
+    def can_upload_to_registry(self):
+        return not self.push_rules.is_empty()
+
+    def newPushRule(self, owner, registry_url, image_name, credentials):
+        """See `IOCIRecipe`."""
+
+        oci_credentials = getUtility(IOCIRegistryCredentialsSet).getOrCreate(
+            owner, registry_url, credentials)
+        push_rule = getUtility(IOCIPushRuleSet).new(
+            self, oci_credentials, image_name)
+        Store.of(push_rule).flush()
+        return push_rule
 
 
 class OCIRecipeArch(Storm):

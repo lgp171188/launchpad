@@ -28,6 +28,7 @@ from zope.security.proxy import removeSecurityProxy
 from lp.oci.interfaces.ociregistrycredentials import (
     IOCIRegistryCredentials,
     IOCIRegistryCredentialsSet,
+    OCIRegistryCredentialsAlreadyExist,
     )
 from lp.services.config import config
 from lp.services.crypto.interfaces import (
@@ -80,8 +81,13 @@ class OCIRegistryCredentials(Storm):
     def getCredentials(self):
         container = getUtility(IEncryptedContainer, "oci-registry-secrets")
         try:
-            return json.loads(container.decrypt((
-                self._credentials['credentials_encrypted'])).decode("UTF-8"))
+            data = dict(self._credentials or {})
+            decrypted_data = json.loads(container.decrypt(
+                self._credentials['credentials_encrypted']).decode("UTF-8"))
+            if decrypted_data:
+                data.update(decrypted_data)
+            data.pop("credentials_encrypted")
+            return data
         except CryptoError as e:
             # XXX twom 2020-03-18 This needs a better error
             # see SnapStoreClient.UnauthorizedUploadResponse
@@ -90,9 +96,18 @@ class OCIRegistryCredentials(Storm):
 
     def setCredentials(self, value):
         container = getUtility(IEncryptedContainer, "oci-registry-secrets")
-        self._credentials = {
+        copy = value.copy()
+        username = copy.pop("username", None)
+        data = {
             "credentials_encrypted": removeSecurityProxy(
-                container.encrypt(json.dumps(value).encode('UTF-8')))}
+                container.encrypt(json.dumps(copy).encode('UTF-8')))}
+        if username is not None:
+            data["username"] = username
+        self._credentials = data
+
+    @property
+    def username(self):
+        return self._credentials.get('username')
 
     def destroySelf(self):
         """See `IOCIRegistryCredentials`."""
@@ -104,9 +119,26 @@ class OCIRegistryCredentials(Storm):
 @implementer(IOCIRegistryCredentialsSet)
 class OCIRegistryCredentialsSet:
 
+    def _checkForExisting(self, owner, url, credentials):
+        for existing in self.findByOwner(owner):
+            url_match = existing.url == url
+            username_match = existing.username == credentials.get('username')
+            if (url_match and username_match):
+                return existing
+        return None
+
     def new(self, owner, url,  credentials):
         """See `IOCIRegistryCredentialsSet`."""
+        if self._checkForExisting(owner, url, credentials):
+            raise OCIRegistryCredentialsAlreadyExist()
         return OCIRegistryCredentials(owner, url, credentials)
+
+    def getOrCreate(self, owner, url, credentials):
+        """See `IOCIRegistryCredentialsSet`."""
+        existing = self._checkForExisting(owner, url, credentials)
+        if existing:
+            return existing
+        return self.new(owner, url, credentials)
 
     def findByOwner(self, owner):
         """See `IOCIRegistryCredentialsSet`."""

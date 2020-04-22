@@ -32,13 +32,6 @@ import time
 
 from debian.deb822 import Release
 from fixtures import MonkeyPatch
-
-
-try:
-    import lzma
-except ImportError:
-    from backports import lzma
-from lp.services.compat import mock
 import pytz
 import scandir
 from testscenarios import (
@@ -91,6 +84,10 @@ from lp.registry.interfaces.pocket import (
     pocketsuffix,
     )
 from lp.registry.interfaces.series import SeriesStatus
+from lp.services.compat import (
+    lzma,
+    mock,
+    )
 from lp.services.config import config
 from lp.services.database.constants import UTC_NOW
 from lp.services.database.sqlbase import flush_database_caches

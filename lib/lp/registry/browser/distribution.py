@@ -1,4 +1,4 @@
-# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Browser views for distributions."""
@@ -13,6 +13,7 @@ __all__ = [
     'DistributionArchivesView',
     'DistributionChangeMembersView',
     'DistributionChangeMirrorAdminView',
+    'DistributionChangeOCIProjectAdminView',
     'DistributionCountryArchiveMirrorsView',
     'DistributionDisabledMirrorsView',
     'DistributionEditView',
@@ -328,6 +329,7 @@ class DistributionOverviewMenu(ApplicationMenu, DistributionLinksMixin):
         'search',
         'members',
         'mirror_admin',
+        'oci_project_admin',
         'reassign',
         'addseries',
         'series',
@@ -415,6 +417,11 @@ class DistributionOverviewMenu(ApplicationMenu, DistributionLinksMixin):
         text = 'Change mirror admins'
         enabled = self.context.supports_mirrors
         return Link('+selectmirroradmins', text, enabled=enabled, icon='edit')
+
+    @enabled_with_permission('launchpad.Edit')
+    def oci_project_admin(self):
+        text = 'Change OCI project admins'
+        return Link('+select-oci-project-admins', text, icon='edit')
 
     def search(self):
         text = 'Search packages'
@@ -683,6 +690,21 @@ class DistributionView(PillarViewMixin, HasAnnouncementsView, FeedsMixin):
             header='Change the mirror administrator',
             edit_view='+selectmirroradmins', null_display_value=empty_value,
             step_title='Select a new mirror administrator')
+
+    @property
+    def oci_project_admin_widget(self):
+        if canWrite(self.context, 'oci_project_admin'):
+            empty_value = ' Specify an OCI project administrator'
+        else:
+            empty_value = 'None'
+        return InlinePersonEditPickerWidget(
+            self.context, IDistribution['oci_project_admin'],
+            format_link(
+                self.context.oci_project_admin, empty_value=empty_value),
+            header='Change the OCI project administrator',
+            edit_view='+select-oci-project-admins',
+            null_display_value=empty_value,
+            step_title='Select a new OCI project administrator')
 
     def linkedMilestonesForSeries(self, series):
         """Return a string of linkified milestones in the series."""
@@ -1054,6 +1076,18 @@ class DistributionChangeMirrorAdminView(RegistryEditFormView):
     def label(self):
         """See `LaunchpadFormView`."""
         return "Change the %s mirror administrator" % self.context.displayname
+
+
+class DistributionChangeOCIProjectAdminView(RegistryEditFormView):
+    """A view to change the OCI project administrator."""
+    schema = IDistribution
+    field_names = ['oci_project_admin']
+
+    @property
+    def label(self):
+        """See `LaunchpadFormView`."""
+        return "Change the %s OCI project administrator" % (
+            self.context.displayname)
 
 
 class DistributionChangeMembersView(RegistryEditFormView):

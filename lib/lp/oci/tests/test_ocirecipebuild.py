@@ -182,6 +182,7 @@ class TestOCIRecipeBuild(TestCaseWithFactory):
             "recipe": Equals(
                  canonical_url(self.build.recipe, force_local_path=True)),
             "status": Equals("Successfully built"),
+            'registry_upload_status': Equals("Unscheduled"),
             }
         self.assertThat(
             logger.output, LogsScheduledWebhooks([

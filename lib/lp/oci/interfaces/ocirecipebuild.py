@@ -10,12 +10,24 @@ __all__ = [
     'IOCIFile',
     'IOCIRecipeBuild',
     'IOCIRecipeBuildSet',
+    'OCIRecipeBuildRegistryUploadStatus',
     ]
 
-from lazr.restful.fields import Reference
-from zope.interface import Interface
+from lazr.enum import (
+    EnumeratedType,
+    Item,
+    )
+from lazr.restful.fields import (
+    CollectionField,
+    Reference,
+    )
+from zope.interface import (
+    Attribute,
+    Interface,
+    )
 from zope.schema import (
     Bool,
+    Choice,
     Datetime,
     Int,
     TextLine,
@@ -29,6 +41,38 @@ from lp.services.database.constants import DEFAULT
 from lp.services.fields import PublicPersonChoice
 from lp.services.librarian.interfaces import ILibraryFileAlias
 from lp.soyuz.interfaces.distroarchseries import IDistroArchSeries
+
+
+class OCIRecipeBuildRegistryUploadStatus(EnumeratedType):
+    """OCI build registry upload status type
+
+    OCI builds may be uploaded to a registry. This represents the state of
+    that process.
+    """
+
+    UNSCHEDULED = Item("""
+        Unscheduled
+
+        No upload of this OCI build to a registry is scheduled.
+        """)
+
+    PENDING = Item("""
+        Pending
+
+        This OCI build is queued for upload to a registry.
+        """)
+
+    FAILEDTOUPLOAD = Item("""
+        Failed to upload
+
+        The last attempt to upload this OCI build to a registry failed.
+        """)
+
+    UPLOADED = Item("""
+        Uploaded
+
+        This OCI build was successfully uploaded to a registry.
+        """)
 
 
 class IOCIRecipeBuildView(IPackageBuild):
@@ -101,6 +145,26 @@ class IOCIRecipeBuildView(IPackageBuild):
         title=_("Can be cancelled"),
         required=True, readonly=True,
         description=_("Whether this build record can be cancelled."))
+
+    manifest = Attribute(_("The manifest of the image."))
+
+    digests = Attribute(_("File containing the image digests."))
+
+    registry_upload_jobs = CollectionField(
+        title=_("Registry upload jobs for this build."),
+        # Really IOCIRegistryUploadJob.
+        value_type=Reference(schema=Interface),
+        readonly=True)
+
+    # Really IOCIRegistryUploadJob
+    last_registry_upload_job = Reference(
+        title=_("Last registry upload job for this build."), schema=Interface)
+
+    registry_upload_status = Choice(
+        title=_("Registry upload status"),
+        vocabulary=OCIRecipeBuildRegistryUploadStatus,
+        required=True, readonly=False
+    )
 
 
 class IOCIRecipeBuildEdit(Interface):
