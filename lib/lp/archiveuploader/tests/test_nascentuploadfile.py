@@ -20,10 +20,6 @@ from debian.deb822 import (
     Deb822,
     Dsc,
     )
-try:
-    import lzma
-except ImportError:
-    from backports import lzma
 from testtools.matchers import (
     Contains,
     Equals,
@@ -43,6 +39,7 @@ from lp.archiveuploader.nascentuploadfile import (
 from lp.archiveuploader.tests import AbsolutelyAnythingGoesUploadPolicy
 from lp.buildmaster.enums import BuildStatus
 from lp.registry.interfaces.pocket import PackagePublishingPocket
+from lp.services.compat import lzma
 from lp.services.log.logger import BufferLogger
 from lp.services.osutils import write_file
 from lp.soyuz.enums import (

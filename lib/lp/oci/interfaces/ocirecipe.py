@@ -27,6 +27,7 @@ from lazr.restful.declarations import (
     call_with,
     error_status,
     export_as_webservice_entry,
+    export_factory_operation,
     export_write_operation,
     exported,
     operation_for_version,
@@ -46,6 +47,7 @@ from zope.interface import (
 from zope.schema import (
     Bool,
     Datetime,
+    Dict,
     Int,
     List,
     Text,
@@ -226,6 +228,27 @@ class IOCIRecipeEdit(IWebhookTarget):
 
     def destroySelf():
         """Delete this OCI recipe, provided that it has no builds."""
+
+    @call_with(owner=REQUEST_USER)
+    @operation_parameters(
+        registry_url=TextLine(
+            title=_("Registry URL"),
+            description=_("URL for the target registry"),
+            required=True),
+        image_name=TextLine(
+            title=_("Image name"),
+            description=_("Name of the image to push to on the registry"),
+            required=True),
+        credentials=Dict(
+            title=_("Registry credentials"),
+            description=_(
+                "The credentials to use in pushing the image to the registry"),
+            required=True))
+    # Really IOCIPushRule, patched in lp.oci.interfaces.webservice.
+    @export_factory_operation(Interface, [])
+    @operation_for_version("devel")
+    def newPushRule(owner, registry_url, image_name, credentials):
+        """Add a new rule for pushing builds of this recipe to a registry."""
 
 
 class IOCIRecipeEditableAttributes(IHasOwner):

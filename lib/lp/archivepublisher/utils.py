@@ -17,11 +17,7 @@ import os
 import stat
 import tempfile
 
-try:
-    import lzma
-except ImportError:
-    from backports import lzma
-
+from lp.services.compat import lzma
 from lp.soyuz.enums import (
     ArchivePurpose,
     IndexCompressionType,

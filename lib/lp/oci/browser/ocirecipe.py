@@ -39,6 +39,7 @@ from lp.app.browser.tales import format_link
 from lp.app.widgets.itemswidgets import LabeledMultiCheckBoxWidget
 from lp.buildmaster.interfaces.processor import IProcessorSet
 from lp.code.browser.widgets.gitref import GitRefWidget
+from lp.oci.interfaces.ocipushrule import IOCIPushRuleSet
 from lp.oci.interfaces.ocirecipe import (
     IOCIRecipe,
     IOCIRecipeSet,
@@ -79,6 +80,11 @@ class OCIRecipeNavigation(WebhookTargetNavigationMixin, Navigation):
         if build is None or build.recipe != self.context:
             return None
         return build
+
+    @stepthrough('+push-rule')
+    def traverse_pushrule(self, id):
+        id = int(id)
+        return getUtility(IOCIPushRuleSet).getByID(id)
 
 
 class OCIRecipeBreadcrumb(NameBreadcrumb):

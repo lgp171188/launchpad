@@ -101,5 +101,10 @@
             for="lp.oci.interfaces.ocirecipebuild.IOCIRecipeBuild"
             factory="lp.services.webapp.breadcrumb.TitleBreadcrumb"
             permission="zope.Public" />
+
+        <browser:url
+            for="lp.oci.interfaces.ocipushrule.IOCIPushRule"
+            path_expression="string:+push-rule/${id}"
+            attribute_to_parent="recipe" />
     </facet>
 </configure>

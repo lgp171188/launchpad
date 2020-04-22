@@ -15,12 +15,8 @@ import stat
 import tempfile
 import unittest
 
-try:
-    import lzma
-except ImportError:
-    from backports import lzma
-
 from lp.archivepublisher.utils import RepositoryIndexFile
+from lp.services.compat import lzma
 from lp.soyuz.enums import IndexCompressionType
 
 
