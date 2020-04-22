@@ -428,8 +428,7 @@ class SigningUpload(CustomUpload):
         return keynames
 
     def injectIntoSigningService(
-            self, key_type, private_key_file, public_key_file,
-            earliest_distro_series=None):
+            self, key_type, private_key_file, public_key_file):
         """Injects the given key pair into signing service for current
         archive."""
         if key_type not in SigningKeyType:
@@ -460,7 +459,7 @@ class SigningUpload(CustomUpload):
         getUtility(IArchiveSigningKeySet).inject(
             key_type, private_key, public_key,
             u"Auto-generated %s key" % key_type.name, now,
-            self.archive, earliest_distro_series=earliest_distro_series)
+            self.archive, earliest_distro_series=None)
 
     def generateKeyCommonName(self, owner, archive, suffix=''):
         # PPA <owner> <archive> <suffix>
