@@ -30,6 +30,7 @@ import tarfile
 import tempfile
 import textwrap
 
+from pytz import utc
 import scandir
 from zope.component import getUtility
 
@@ -265,7 +266,7 @@ class SigningUpload(CustomUpload):
             # tend to make the publisher rather upset.
             if self.logger is not None:
                 self.logger.warning("%s Failed (cmd='%s')" %
-                    (description, " ".join(cmdl)))
+                                    (description, " ".join(cmdl)))
         return status
 
     def findSigningHandlers(self):
@@ -431,19 +432,35 @@ class SigningUpload(CustomUpload):
             earliest_distro_series=None):
         """Injects the given key pair into signing service for current
         archive."""
-        if not getFeatureFlag(PUBLISHER_SIGNING_SERVICE_INJECTS_KEYS):
+        if key_type not in SigningKeyType:
+            raise ValueError("%s is not a valid key type to inject" % key_type)
+
+        feature_flag = (
+            getFeatureFlag(PUBLISHER_SIGNING_SERVICE_INJECTS_KEYS) or '')
+        key_types_to_inject = [i.strip() for i in feature_flag.split(',')]
+        if not key_types_to_inject:
             return
-        self.logger.info(
-            "Injecting key_type %s for archive %s into signing service" %
-            (key_type, self.archive))
+
+        if key_type.name not in key_types_to_inject:
+            if self.logger:
+                self.logger.info(
+                    "Skipping injection for key type %s: not in %s" %
+                    (key_type, key_types_to_inject))
+            return
+
+        if self.logger:
+            self.logger.info(
+                "Injecting key_type %s for archive %s into signing service" %
+                (key_type, self.archive.name))
 
         private_key = LocalKeyFile(private_key_file).getPrivateKey()
         public_key = LocalKeyFile(public_key_file).getPublicKey()
 
+        now = datetime.now().replace(tzinfo=utc)
         getUtility(IArchiveSigningKeySet).inject(
-            key_type, private_key, public_key, self.archive,
-            earliest_distro_series=earliest_distro_series, description=None,
-            created_at=datetime.now())
+            key_type, private_key, public_key,
+            u"Auto-generated %s key" % key_type.name, now,
+            self.archive, earliest_distro_series=earliest_distro_series)
 
     def generateKeyCommonName(self, owner, archive, suffix=''):
         # PPA <owner> <archive> <suffix>
@@ -477,6 +494,10 @@ class SigningUpload(CustomUpload):
 
         if os.path.exists(cert_filename):
             os.chmod(cert_filename, 0o644)
+
+            signing_key_type = getattr(SigningKeyType, key_type.upper())
+            self.injectIntoSigningService(
+                signing_key_type, key_filename, cert_filename)
 
     def generateUefiKeys(self):
         """Generate new UEFI Keys for this archive."""
@@ -564,6 +585,10 @@ class SigningUpload(CustomUpload):
 
         if os.path.exists(x509_filename):
             os.chmod(x509_filename, 0o644)
+
+            signing_key_type = getattr(SigningKeyType, key_type.upper())
+            self.injectIntoSigningService(
+                signing_key_type, pem_filename, x509_filename)
 
     def generateKmodKeys(self):
         """Generate new Kernel Signing Keys for this archive."""
@@ -718,7 +743,7 @@ class UefiUpload(SigningUpload):
 
 
 class LocalKeyFile:
-    """A simple representation of a generated key file."""
+    """Helper to extract content of locally generated key files."""
     def __init__(self, filename):
         self.filename = filename
         self._content = None
@@ -730,7 +755,7 @@ class LocalKeyFile:
                 self._content = fd.read()
         return self._content
 
-    def getKeyContent(self, tag="PRIVATE KEY"):
+    def getBase64KeyContent(self, tag="PRIVATE KEY"):
         """
         Extracts the base64 content of the given file content.
 
@@ -740,13 +765,19 @@ class LocalKeyFile:
         """
         m = re.search(
             r"-----BEGIN %s-----\n(.*)?\n-----END %s-----" % (tag, tag),
-            self._content, flags=re.DOTALL).groups()[0]
-        if m:
-            return base64.b64decode(m.groups()[0])
-        return None
+            self.content, flags=re.DOTALL)
+        if not m:
+            raise ValueError("No content between -----BEGIN/END %s-----" % tag)
+        return base64.b64decode(m.groups()[0])
 
     def getPrivateKey(self):
-        return self.getKeyContent("PRIVATE KEY")
+        return self.getBase64KeyContent("PRIVATE KEY")
 
     def getPublicKey(self):
-        return self.getKeyContent("CERTIFICATE")
+        try:
+            return self.getBase64KeyContent("CERTIFICATE")
+        except ValueError:
+            # If there is no tag "CERTIFICATE" in the file, it should be a
+            # binary file already.
+            with open(self.filename, 'rb') as fd:
+                return fd.read()
