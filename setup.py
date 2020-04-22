@@ -187,8 +187,7 @@ setup(
         'lpjsmin',
         'Markdown',
         'meliae',
-        # Pin version for now to avoid confusion with system site-packages.
-        'mock==1.0.1',
+        'mock',
         'oauth',
         'oops',
         'oops_amqp',

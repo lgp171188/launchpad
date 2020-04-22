@@ -16,14 +16,13 @@ PIP_ENV := LC_ALL=C.UTF-8
 # be reviewed/merged/deployed.
 PIP_NO_INDEX := 1
 PIP_ENV += PIP_NO_INDEX=$(PIP_NO_INDEX)
-# Although --ignore-installed is slower, we need it to avoid confusion with
-# system-installed Python packages.  If we ever manage to remove the need
-# for virtualenv --system-site-packages, then we can remove this too.
-PIP_ENV += PIP_IGNORE_INSTALLED=1
 PIP_ENV += PIP_FIND_LINKS="file://$(WD)/wheelhouse/ file://$(WD)/download-cache/dist/"
 
 VIRTUALENV := $(PIP_ENV) virtualenv
 PIP := PYTHONPATH= $(PIP_ENV) env/bin/pip --cache-dir=$(WD)/download-cache/
+
+SITE_PACKAGES := \
+	$$(env/bin/python -c 'from distutils.sysconfig import get_python_lib; print(get_python_lib())')
 
 TESTFLAGS=-p $(VERBOSITY)
 TESTOPTS=
@@ -250,7 +249,7 @@ $(PY): download-cache constraints.txt setup.py
 	rm -rf env
 	mkdir -p env
 	$(VIRTUALENV) \
-		--python=$(PYTHON) --system-site-packages --never-download \
+		--python=$(PYTHON) --never-download \
 		--extra-search-dir=$(WD)/download-cache/dist/ \
 		--extra-search-dir=$(WD)/wheelhouse/ \
 		env
@@ -270,6 +269,8 @@ compile: $(PY)
 	${SHHH} utilities/relocate-virtualenv env
 	${SHHH} $(MAKE) -C sourcecode build PYTHON=${PYTHON} \
 	    LPCONFIG=${LPCONFIG}
+	$(PYTHON) utilities/link-system-packages.py \
+		"$(SITE_PACKAGES)" system-packages.txt
 	${SHHH} bin/build-twisted-plugin-cache
 	scripts/update-version-info.sh
 
@@ -477,13 +478,13 @@ reload-apache: enable-apache-launchpad
 TAGS: compile
 	# emacs tags
 	ctags -R -e --languages=-JavaScript --python-kinds=-i -f $@.new \
-		$(CURDIR)/lib $(CURDIR)/env/lib/$(PYTHON)/site-packages
+		$(CURDIR)/lib "$(SITE_PACKAGES)"
 	mv $@.new $@
 
 tags: compile
 	# vi tags
 	ctags -R --languages=-JavaScript --python-kinds=-i -f $@.new \
-		$(CURDIR)/lib $(CURDIR)/env/lib/$(PYTHON)/site-packages
+		$(CURDIR)/lib "$(SITE_PACKAGES)"
 	mv $@.new $@
 
 PYDOCTOR = pydoctor
