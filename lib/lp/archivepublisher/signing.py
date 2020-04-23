@@ -18,11 +18,9 @@ __all__ = [
     "UefiUpload",
     ]
 
-import base64
 from datetime import datetime
 from functools import partial
 import os
-import re
 import shutil
 import stat
 import subprocess
@@ -452,14 +450,17 @@ class SigningUpload(CustomUpload):
                 "Injecting key_type %s for archive %s into signing service" %
                 (key_type, self.archive.name))
 
-        private_key = LocalKeyFile(private_key_file).getPrivateKey()
-        public_key = LocalKeyFile(public_key_file).getPublicKey()
+        with open(private_key_file, 'rb') as fd:
+            private_key = fd.read()
+        with open(public_key_file, 'rb') as fd:
+            public_key = fd.read()
 
         now = datetime.now().replace(tzinfo=utc)
+        description = (
+                u"%s key for %s" % (key_type.name, self.archive.reference))
         getUtility(IArchiveSigningKeySet).inject(
             key_type, private_key, public_key,
-            u"Auto-generated %s key" % key_type.name, now,
-            self.archive, earliest_distro_series=None)
+            description, now, self.archive, earliest_distro_series=None)
 
     def generateKeyCommonName(self, owner, archive, suffix=''):
         # PPA <owner> <archive> <suffix>
@@ -739,44 +740,3 @@ class UefiUpload(SigningUpload):
     """
     custom_type = "uefi"
     dists_directory = "uefi"
-
-
-class LocalKeyFile:
-    """Helper to extract content of locally generated key files."""
-    def __init__(self, filename):
-        self.filename = filename
-        self._content = None
-
-    @property
-    def content(self):
-        if self._content is None:
-            with open(self.filename) as fd:
-                self._content = fd.read()
-        return self._content
-
-    def getBase64KeyContent(self, tag="PRIVATE KEY"):
-        """
-        Extracts the base64 content of the given file content.
-
-        :param key_file_content: The content of a key file.
-        :param tag: Either 'PRIVATE KEY' or 'CERTIFICATE'.
-        :return: The binary content (base64-decoded).
-        """
-        m = re.search(
-            r"-----BEGIN %s-----\n(.*)?\n-----END %s-----" % (tag, tag),
-            self.content, flags=re.DOTALL)
-        if not m:
-            raise ValueError("No content between -----BEGIN/END %s-----" % tag)
-        return base64.b64decode(m.groups()[0])
-
-    def getPrivateKey(self):
-        return self.getBase64KeyContent("PRIVATE KEY")
-
-    def getPublicKey(self):
-        try:
-            return self.getBase64KeyContent("CERTIFICATE")
-        except ValueError:
-            # If there is no tag "CERTIFICATE" in the file, it should be a
-            # binary file already.
-            with open(self.filename, 'rb') as fd:
-                return fd.read()

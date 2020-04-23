@@ -7,7 +7,6 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 
-import base64
 from datetime import datetime
 import os
 import re
@@ -2046,20 +2045,17 @@ class TestSigningUploadWithSigningService(TestSigningHelpers):
         self.assertTrue(upload.autokey)
 
         # Read the key file content
-        with open(upload.opal_pem) as fd:
-            pem = fd.read()
-            start_tag = "-----BEGIN PRIVATE KEY-----"
-            start = pem.index(start_tag) + len(start_tag)
-            end = pem.index("-----END PRIVATE KEY-----")
-            private_key = base64.b64decode(pem[start:end].strip())
-        with open(upload.opal_x509) as fd:
+        with open(upload.opal_pem, 'rb') as fd:
+            private_key = fd.read()
+        with open(upload.opal_x509, 'rb') as fd:
             public_key = fd.read()
 
         # Check if we called lp-signing's /inject endpoint correctly
         self.assertEqual(1, self.signing_service_client.inject.call_count)
         self.assertEqual(
             (SigningKeyType.OPAL, private_key, public_key,
-             u"Auto-generated OPAL key", now.replace(tzinfo=utc)),
+             u"OPAL key for %s" % self.archive.reference,
+             now.replace(tzinfo=utc)),
             self.signing_service_client.inject.call_args[0])
 
         log_content = logger.content.as_text()
