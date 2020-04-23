@@ -62,7 +62,10 @@ class IBinaryPackageRelease(Interface):
     enhances = TextLine(required=False)
     breaks = TextLine(required=False)
     built_using_references = List(
-        title=_("Sequence of Built-Using references."), required=True)
+        title=_("Sequence of Built-Using references."),
+        # Really IBinarySourceReference.
+        value_type=Reference(schema=Interface),
+        required=True)
     essential = Bool(required=False)
     installedsize = Int(required=False)
     architecturespecific = Bool(required=True)
