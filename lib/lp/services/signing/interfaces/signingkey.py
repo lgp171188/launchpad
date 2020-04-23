@@ -13,7 +13,7 @@ __all__ = [
 ]
 
 from lazr.restful.fields import Reference
-from zope.interface.interface import Interface
+from zope.interface import Interface
 from zope.schema import (
     Bytes,
     Choice,

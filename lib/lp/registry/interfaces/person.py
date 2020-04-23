@@ -75,9 +75,9 @@ from zope.formlib.form import NoInputData
 from zope.interface import (
     Attribute,
     Interface,
+    invariant,
     )
 from zope.interface.exceptions import Invalid
-from zope.interface.interface import invariant
 from zope.schema import (
     Bool,
     Choice,
