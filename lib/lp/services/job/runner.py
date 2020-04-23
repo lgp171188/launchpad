@@ -481,6 +481,37 @@ class JobRunnerProcess(child.AMPChild):
         return {'success': len(runner.completed_jobs), 'oops_id': oops_id}
 
 
+class VirtualEnvProcessStarter(main.ProcessStarter):
+    """A `ProcessStarter` that sets up Launchpad's virtualenv correctly.
+
+    `ampoule.main` doesn't make it very easy to use `env/bin/python` rather
+    than the bare `sys.executable`; we have to clone-and-hack the innards of
+    `ProcessStarter.startPythonProcess`.  (The alternative would be to use
+    `sys.executable` with the `-S` option and then `import _pythonpath`, but
+    `ampoule.main` also makes it hard to insert `-S` at the right place in
+    the command line.)
+
+    On the other hand, the cloned-and-hacked version can be much simpler,
+    since we don't need to worry about PYTHONPATH; entering the virtualenv
+    correctly will deal with everything that we care about.
+    """
+
+    @property
+    def _executable(self):
+        return os.path.join(config.root, 'env', 'bin', 'python')
+
+    def startPythonProcess(self, prot, *args):
+        env = self.env.copy()
+        args = (self._executable, '-c', self.bootstrap) + self.args + args
+        # The childFDs variable is needed because sometimes child processes
+        # misbehave and use stdout to output stuff that should really go to
+        # stderr.
+        reactor.spawnProcess(
+            prot, self._executable, args, env, self.path, self.uid, self.gid,
+            self.usePTY, childFDs={0: "w", 1: "r", 2: "r", 3: "w", 4: "r"})
+        return prot.amp, prot.finished
+
+
 class QuietAMPConnector(main.AMPConnector):
     """An `AMPConnector` that logs stderr output more quietly."""
 
@@ -502,9 +533,7 @@ class TwistedJobRunner(BaseJobRunner):
         env = {'PATH': os.environ['PATH']}
         if 'LPCONFIG' in os.environ:
             env['LPCONFIG'] = os.environ['LPCONFIG']
-        env['PYTHONPATH'] = os.pathsep.join(sys.path)
-        starter = main.ProcessStarter(
-            bootstrap="import _pythonpath\n" + main.BOOTSTRAP, env=env)
+        starter = VirtualEnvProcessStarter(env=env)
         starter.connectorFactory = QuietAMPConnector
         super(TwistedJobRunner, self).__init__(logger, error_utility)
         self.job_source = job_source
