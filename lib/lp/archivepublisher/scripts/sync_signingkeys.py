@@ -12,12 +12,17 @@ __all__ = [
     'SyncSigningKeysScript',
     ]
 
+from datetime import datetime
 import os
+
+from pytz import utc
+from zope.component import getUtility
 
 from lp.archivepublisher.config import getPubConfig
 from lp.services.database.interfaces import IStore
 from lp.services.scripts.base import LaunchpadScript
 from lp.services.signing.enums import SigningKeyType
+from lp.services.signing.interfaces.signingkey import IArchiveSigningKeySet
 from lp.soyuz.model.archive import Archive
 
 
@@ -81,15 +86,32 @@ class SyncSigningKeysScript(LaunchpadScript):
             series_paths[None] = pubconf.signingroot
         return series_paths
 
-    def inject(self, archive, key_type, series, priv_key, pub_key):
-        pass
+    def inject(self, archive, key_type, series, priv_key_path, pub_key_path):
+        with open(priv_key_path, 'rb') as fd:
+            private_key = fd.read()
+        with open(pub_key_path, 'rb') as fd:
+            public_key = fd.read()
+
+        now = datetime.now().replace(tzinfo=utc)
+        description = u"%s key for %s" % (key_type.name, archive.reference)
+        return getUtility(IArchiveSigningKeySet).inject(
+            key_type, private_key, public_key,
+            description, now, archive,
+            earliest_distro_series=series)
 
     def processArchive(self, archive):
         for series, path in self.getSeriesPaths(archive).items():
             keys_per_type = self.getKeysPerType(path)
             for key_type, (priv_key, pub_key) in keys_per_type.items():
+                self.logger.debug(
+                    "Found key files %s / %s (type=%s, series=%s)." %
+                    (priv_key, pub_key, key_type,
+                     series.name if series else None))
                 self.inject(archive, key_type, series, priv_key, pub_key)
 
     def main(self):
-        for archive in self.getArchives():
+        for i, archive in enumerate(self.getArchives()):
+            self.logger.debug(
+                "#%s - Processing keys for archive %s.", i, archive.reference)
             self.processArchive(archive)
+        self.logger.debug("Finished processing archives injections.")

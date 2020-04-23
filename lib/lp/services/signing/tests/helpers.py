@@ -39,8 +39,12 @@ class SigningServiceClientFixture(fixtures.Fixture):
         self.sign = mock.Mock()
         self.sign.side_effect = self._sign
 
+        self.inject = mock.Mock()
+        self.inject.side_effect = self._inject
+
         self.generate_returns = []
         self.sign_returns = []
+        self.inject_returns = []
 
     def _generate(self, key_type, description):
         key = bytes(PrivateKey.generate().public_key)
@@ -57,6 +61,12 @@ class SigningServiceClientFixture(fixtures.Fixture):
             'public-key': key,
             'signed-message': signed_msg}
         self.sign_returns.append((key_type, data))
+        return data
+
+    def _inject(self, key_type, private_key, public_key, description,
+                created_at):
+        data = {'fingerprint': text_type(self.factory.getUniqueHexString(40))}
+        self.inject_returns.append(data)
         return data
 
     def _setUp(self):
