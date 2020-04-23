@@ -31,9 +31,6 @@ class SyncSigningKeysScript(LaunchpadScript):
         "Injects into signing services all key files currently in this "
         "machine.")
 
-    def __init__(self, name, dbuser=None, test_args=None):
-        super(SyncSigningKeysScript, self).__init__(name, dbuser, test_args)
-
     def add_my_options(self):
         self.parser.add_option(
             "-l", "--limit", dest="limit", type=int,
@@ -78,6 +75,11 @@ class SyncSigningKeysScript(LaunchpadScript):
                  where the keys for that series are stored."""
         series_paths = {}
         pubconf = getPubConfig(archive)
+        if pubconf is None or pubconf.signingroot is None:
+            self.logger.info(
+                "Skipping %s: no pubconfig or no signing root." %
+                archive.reference)
+            return {}
         for series in archive.distribution.series:
             path = os.path.join(pubconf.signingroot, series.name)
             if os.path.exists(path):
@@ -103,7 +105,7 @@ class SyncSigningKeysScript(LaunchpadScript):
         for series, path in self.getSeriesPaths(archive).items():
             keys_per_type = self.getKeysPerType(path)
             for key_type, (priv_key, pub_key) in keys_per_type.items():
-                self.logger.debug(
+                self.logger.info(
                     "Found key files %s / %s (type=%s, series=%s)." %
                     (priv_key, pub_key, key_type,
                      series.name if series else None))
@@ -111,7 +113,7 @@ class SyncSigningKeysScript(LaunchpadScript):
 
     def main(self):
         for i, archive in enumerate(self.getArchives()):
-            self.logger.debug(
+            self.logger.info(
                 "#%s - Processing keys for archive %s.", i, archive.reference)
             self.processArchive(archive)
-        self.logger.debug("Finished processing archives injections.")
+        self.logger.info("Finished processing archives injections.")

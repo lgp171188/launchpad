@@ -162,10 +162,10 @@ class TestSyncSigningKeysScript(TestCaseWithFactory):
         # Check the log messages.
         content = script.logger.content.as_text()
         self.assertIn(
-            "DEBUG #0 - Processing keys for archive %s." % archive.reference,
+            "INFO #0 - Processing keys for archive %s." % archive.reference,
             content)
 
-        tpl = "DEBUG Found key files %s / %s (type=%s, series=%s)."
+        tpl = "INFO Found key files %s / %s (type=%s, series=%s)."
         self.assertIn(
             tpl % ("kmod.pem", "kmod.x509", SigningKeyType.KMOD, series1.name),
             content)
