@@ -121,8 +121,7 @@ def get_a_suite(distroseries):
 
 def get_marker_files(script, distroseries):
     """Return filesystem paths for all indexes markers for `distroseries`."""
-    suites = [
-        distroseries.getSuite(pocket) for pocket in pocketsuffix.iterkeys()]
+    suites = [distroseries.getSuite(pocket) for pocket in pocketsuffix]
     distro = distroseries.distribution
     return [script.locateIndexesMarker(distro, suite) for suite in suites]
 
@@ -998,7 +997,7 @@ class TestCreateDistroSeriesIndexes(TestCaseWithFactory, HelpersMixin):
         script = self.makeScript(series.distribution)
         script.setUp()
         self.assertContentEqual(
-            [series.getSuite(pocket) for pocket in pocketsuffix.iterkeys()],
+            [series.getSuite(pocket) for pocket in pocketsuffix],
             script.listSuitesNeedingIndexes(series))
 
     def test_listSuitesNeedingIndexes_is_empty_for_nonfrozen_series(self):
@@ -1133,7 +1132,7 @@ class TestCreateDistroSeriesIndexes(TestCaseWithFactory, HelpersMixin):
         [((given_distro, given_suites), kwargs)] = script.createIndexes.calls
         self.assertEqual(distro, given_distro)
         self.assertContentEqual(
-            [series.getSuite(pocket) for pocket in pocketsuffix.iterkeys()],
+            [series.getSuite(pocket) for pocket in pocketsuffix],
             given_suites)
 
     def test_createIndexes_ignores_other_series(self):

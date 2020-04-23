@@ -36,6 +36,7 @@ from debian.deb822 import (
     Release,
     )
 import scandir
+import six
 from storm.expr import Desc
 from zope.component import getUtility
 from zope.interface import (
@@ -984,7 +985,7 @@ class Publisher(object):
                             translation_stanza.makeOutput().encode('utf-8')
                             + '\n\n')
 
-            for index in indices.itervalues():
+            for index in six.itervalues(indices):
                 index.close()
 
         if separate_long_descriptions:

@@ -19,6 +19,7 @@ from debian.changelog import (
     Version,
     )
 from lazr.enum import DBItem
+import six
 from sqlobject import StringCol
 from storm.expr import (
     And,
@@ -279,10 +280,10 @@ def eager_load_dsds(dsds):
     # referred to.
     sprs = bulk.load_related(
         SourcePackageRelease, chain(
-            source_pubs.itervalues(),
-            parent_source_pubs.itervalues(),
-            source_pubs_for_release.itervalues(),
-            parent_source_pubs_for_release.itervalues()),
+            six.itervalues(source_pubs),
+            six.itervalues(parent_source_pubs),
+            six.itervalues(source_pubs_for_release),
+            six.itervalues(parent_source_pubs_for_release)),
         ("sourcepackagereleaseID",))
 
     # Get packagesets and parent_packagesets for each DSD.

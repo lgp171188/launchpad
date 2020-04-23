@@ -151,7 +151,7 @@ class CommandSpawner:
         processes are cleaned up.  Until then, they will stay around as
         zombies.
         """
-        for process in self.running_processes.iterkeys():
+        for process in self.running_processes:
             process.terminate()
 
     def _spawn(self, command):

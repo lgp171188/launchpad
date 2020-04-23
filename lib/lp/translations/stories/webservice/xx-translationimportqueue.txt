@@ -29,7 +29,7 @@ to be cleaned up.
     ...         shown.  If omitted, all keys are shown.
     ...     """
     ...     print('Entry:')
-    ...     for key in sorted(a_dict.iterkeys()):
+    ...     for key in sorted(a_dict):
     ...         if shown_keys is None or key in shown_keys:
     ...             print('', key, a_dict[key])
 

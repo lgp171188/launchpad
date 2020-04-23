@@ -49,6 +49,7 @@ import _pythonpath
 from inspect import getmro
 import os
 
+import six
 from zope.app.wsgi.testlayer import BrowserLayer
 from zope.browserpage.simpleviewclass import simple
 from zope.component import adapter, getGlobalSiteManager
@@ -191,7 +192,7 @@ class Whatever(object):
 
     def __call__(self, *args, **kwargs):
         args = map(repr, args)
-        args.extend('%s=%r' % (k, v) for k, v in kwargs.iteritems())
+        args.extend('%s=%r' % (k, v) for k, v in six.iteritems(kwargs))
         # If we're being called with no args, assume this is part of crazy
         # TALES stuff:
         #   webapp/metazcml.py(365)path()

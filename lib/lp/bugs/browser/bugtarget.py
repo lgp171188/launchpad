@@ -28,6 +28,7 @@ from lazr.restful.interface import copy_field
 from lazr.restful.interfaces import IJSONRequestCache
 from pytz import timezone
 from simplejson import dumps
+import six
 from six.moves import http_client
 from six.moves.urllib.parse import (
     quote,
@@ -1235,7 +1236,7 @@ class BugTargetBugTagsView(LaunchpadView):
                 count=count,
                 url=self._getSearchURL(tag),
                 )
-            for (tag, count) in tags.iteritems()],
+            for (tag, count) in six.iteritems(tags)],
             key=itemgetter('count'), reverse=True)
 
     @property

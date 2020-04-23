@@ -15,6 +15,7 @@ import datetime
 import functools
 import logging
 
+import six
 from storm.expr import LeftJoin
 import transaction
 from twisted.application import service
@@ -139,7 +140,7 @@ class PrefetchedBuilderFactory:
 
     def iterVitals(self):
         """See `BuilderFactory`."""
-        return (b for n, b in sorted(self.vitals_map.iteritems()))
+        return (b for n, b in sorted(six.iteritems(self.vitals_map)))
 
 
 def judge_failure(builder_count, job_count, exc, retry=True):

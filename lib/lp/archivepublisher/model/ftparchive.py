@@ -8,6 +8,7 @@ from StringIO import StringIO
 import time
 
 import scandir
+import six
 from storm.expr import (
     Desc,
     Join,
@@ -201,7 +202,7 @@ class FTPArchiveHandler:
         stderr_handler.finalize()
         failures = sorted([
             (tag, receiver.returncode)
-            for tag, receiver in returncodes.iteritems()
+            for tag, receiver in six.iteritems(returncodes)
                 if receiver.returncode != 0])
         if len(failures) > 0:
             by_arch = ["%s (returned %d)" % failure for failure in failures]
@@ -694,8 +695,8 @@ class FTPArchiveHandler:
 
         self.log.debug("Writing file lists for %s" % suite)
         series, pocket = self.distro.getDistroSeriesAndPocket(suite)
-        for component, architectures in filelist.iteritems():
-            for architecture, file_names in architectures.iteritems():
+        for component, architectures in six.iteritems(filelist):
+            for architecture, file_names in six.iteritems(architectures):
                 # XXX wgrant 2010-10-06: There must be a better place to do
                 # this.
                 if architecture == "source":

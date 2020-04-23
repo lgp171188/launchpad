@@ -19,6 +19,7 @@ import operator
 import os
 
 from psycopg2.extensions import TransactionRollbackError
+import six
 from sqlobject import (
     BoolCol,
     ForeignKey,
@@ -1560,7 +1561,7 @@ class POTemplateSharingSubset(object):
                 equivalents[key] = []
             equivalents[key].append(template)
 
-        for equivalence_list in equivalents.itervalues():
+        for equivalence_list in six.itervalues(equivalents):
             # Sort potemplates from "most representative" to "least
             # representative."
             equivalence_list.sort(key=POTemplate.sharingKey, reverse=True)

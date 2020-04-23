@@ -20,6 +20,7 @@ import logging
 import re
 
 import pytz
+import six
 from zope import datetime as zope_datetime
 from zope.interface import implementer
 
@@ -230,7 +231,7 @@ class POHeader:
 
     def _parseHeaderFields(self):
         """Return plural form values based on the parsed header."""
-        for key, value in self._header_dictionary.iteritems():
+        for key, value in six.iteritems(self._header_dictionary):
             if key == 'plural-forms':
                 parts = self._parseAssignments(value)
                 nplurals = parts.get('nplurals')
@@ -362,7 +363,7 @@ class POHeader:
                 raise AssertionError('key %s is not being handled!' % value)
 
         # Now, we copy any other header information in the original .po file.
-        for key, value in self._header_dictionary.iteritems():
+        for key, value in six.iteritems(self._header_dictionary):
             if key in self._handled_keys_mapping:
                 # It's already handled, skip it.
                 continue

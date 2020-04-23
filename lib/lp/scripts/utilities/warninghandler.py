@@ -12,6 +12,8 @@ import StringIO
 import sys
 import warnings
 
+import six
+
 
 class WarningReport:
 
@@ -211,7 +213,7 @@ def report_other_warnings():
     if other_warnings:
         print(file=sys.stderr)
         print("General warnings.", file=sys.stderr)
-        for warninginfo in other_warnings.itervalues():
+        for warninginfo in six.itervalues(other_warnings):
             print(file=sys.stderr)
             print(warninginfo, file=sys.stderr)
 

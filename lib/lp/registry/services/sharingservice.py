@@ -13,6 +13,7 @@ from operator import attrgetter
 
 from lazr.restful.interfaces import IWebBrowserOriginatingRequest
 from lazr.restful.utils import get_current_web_service_request
+import six
 from storm.expr import (
     And,
     Count,
@@ -608,7 +609,7 @@ class SharingService:
         for (grantee, permissions, shared_artifact_types) in grant_permissions:
             some_things_shared = len(shared_artifact_types) > 0
             grantee_permissions = {}
-            for (policy, permission) in permissions.iteritems():
+            for (policy, permission) in six.iteritems(permissions):
                 grantee_permissions[policy.type.name] = permission.name
             shared_artifact_type_names = [
                 info_type.name for info_type in shared_artifact_types]

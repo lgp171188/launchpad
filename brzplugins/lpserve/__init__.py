@@ -48,6 +48,7 @@ from breezy.transport import (
     get_transport,
     transport_server_registry,
     )
+import six
 
 
 class cmd_launchpad_server(Command):
@@ -591,7 +592,7 @@ class LPForkingService(object):
             pid = os.getpid()
             trace.mutter('%d spawned' % (pid,))
             self._server_socket.close()
-            for env_var, value in env.iteritems():
+            for env_var, value in six.iteritems(env):
                 osutils.set_or_unset_env(env_var, value)
             # See [Decision #3]
             self._create_child_file_descriptors(temp_name)
@@ -769,7 +770,7 @@ class LPForkingService(object):
             # We sent the SIGKILL signal, see if they exited
             self._wait_for_children(self.SLEEP_FOR_CHILDREN_TIMEOUT)
         if self._child_processes:
-            for c_id, (c_path, sock) in self._child_processes.iteritems():
+            for c_id, (c_path, sock) in six.iteritems(self._child_processes):
                 # TODO: We should probably put something into this message?
                 #       However, the likelyhood is very small that this isn't
                 #       already closed because of SIGKILL + _wait_for_children

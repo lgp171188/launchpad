@@ -12,6 +12,7 @@ import logging
 from smtplib import SMTPException
 import sys
 
+import six
 from zope.component import getUtility
 from zope.error.interfaces import IErrorReportingUtility
 from zope.security.management import getSecurityPolicy
@@ -79,7 +80,7 @@ class BaseMailer:
         self._subject_template = subject
         self._template_name = template_name
         self._recipients = NotificationRecipientSet()
-        for recipient, reason in recipients.iteritems():
+        for recipient, reason in six.iteritems(recipients):
             self._recipients.add(recipient, reason, reason.mail_header)
         self.from_address = from_address
         self.delta = delta
