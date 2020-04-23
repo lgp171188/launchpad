@@ -447,8 +447,10 @@ class BaseBinaryUploadFile(PackageUploadFile):
         "Enhances",
         # Note that we intentionally don't include Built-Using here;
         # although we parse it, we want to preserve its original form to
-        # avoid possible unfortunate apt behaviour, and this is most easily
-        # done by adding it to user_defined_fields.
+        # make sure apt doesn't decide that it needs to keep re-upgrading
+        # the package to the same version because the metadata looks
+        # slightly out of sync.  This is most easily done by adding it to
+        # user_defined_fields.
         "Essential",
         "Description",
         "Installed-Size",
