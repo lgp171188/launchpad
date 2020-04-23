@@ -138,6 +138,8 @@ class BaseRunnableJob(BaseRunnableJobSource):
 
     timeline_detail_filter = None
 
+    job_state = None
+
     # We redefine __eq__ and __ne__ here to prevent the security proxy
     # from mucking up our comparisons in tests and elsewhere.
     def __eq__(self, job):
@@ -285,6 +287,9 @@ class BaseRunnableJob(BaseRunnableJobSource):
 
         extractJobState must have been run first.
         """
+        if self.job_state is None:
+            raise AssertionError(
+                "extractJobState was not run before celeryCommitHook.")
         try:
             with DatabaseBlockedPolicy():
                 if succeeded:
