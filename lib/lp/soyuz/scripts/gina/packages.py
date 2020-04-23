@@ -1,4 +1,4 @@
-# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Package information classes.
@@ -466,6 +466,7 @@ class BinaryPackageData(AbstractPackageData):
     pre_depends = ""
     enhances = ""
     breaks = ""
+    built_using = ""
     essential = False
 
     # Overwritten in do_package, optionally
@@ -493,6 +494,14 @@ class BinaryPackageData(AbstractPackageData):
                 except ValueError:
                     raise MissingRequiredArguments("Installed-Size is "
                         "not a valid integer: %r" % v)
+            elif k == "Built-Using":
+                self.built_using = v
+                # Preserve the original form of Built-Using to avoid
+                # possible unfortunate apt behaviour.  This is most easily
+                # done by adding it to _user_defined as well.
+                if self._user_defined is None:
+                    self._user_defined = []
+                self._user_defined.append([k, v])
             else:
                 self.set_field(k, v)
 
