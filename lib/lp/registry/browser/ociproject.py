@@ -57,7 +57,8 @@ class OCIProjectAddView(LaunchpadFormView):
     field_names = ['name']
 
     def initialize(self):
-        if not getFeatureFlag(OCI_PROJECT_ALLOW_CREATE):
+        if (not getFeatureFlag(OCI_PROJECT_ALLOW_CREATE) and not
+                self.context.canAdministerOCIProjects(self.user)):
             raise OCIProjectCreateFeatureDisabled
         super(OCIProjectAddView, self).initialize()
 
