@@ -89,13 +89,27 @@ class SigningKey(StormBase):
         self.date_created = date_created
 
     @classmethod
-    def generate(cls, key_type, description=None):
+    def generate(cls, key_type, description):
         signing_service = getUtility(ISigningServiceClient)
         generated_key = signing_service.generate(key_type, description)
         signing_key = SigningKey(
             key_type=key_type, fingerprint=generated_key['fingerprint'],
             public_key=generated_key['public-key'],
             description=description)
+        store = IMasterStore(SigningKey)
+        store.add(signing_key)
+        return signing_key
+
+    @classmethod
+    def inject(cls, key_type, private_key, public_key, description,
+               created_at):
+        signing_service = getUtility(ISigningServiceClient)
+        generated_key = signing_service.inject(
+            key_type, private_key, public_key, description, created_at)
+        signing_key = SigningKey(
+            key_type=key_type, fingerprint=generated_key['fingerprint'],
+            public_key=bytes(public_key),
+            description=description, date_created=created_at)
         store = IMasterStore(SigningKey)
         store.add(signing_key)
         return signing_key
@@ -188,9 +202,18 @@ class ArchiveSigningKeySet:
         return keys_per_series.get(None)
 
     @classmethod
-    def generate(cls, key_type, archive, earliest_distro_series=None,
-                 description=None):
+    def generate(cls, key_type, description, archive,
+                 earliest_distro_series=None):
         signing_key = SigningKey.generate(key_type, description)
+        archive_signing = ArchiveSigningKeySet.create(
+            archive, earliest_distro_series, signing_key)
+        return archive_signing
+
+    @classmethod
+    def inject(cls, key_type, private_key, public_key, description, created_at,
+               archive, earliest_distro_series=None):
+        signing_key = SigningKey.inject(
+            key_type, private_key, public_key, description, created_at)
         archive_signing = ArchiveSigningKeySet.create(
             archive, earliest_distro_series, signing_key)
         return archive_signing
