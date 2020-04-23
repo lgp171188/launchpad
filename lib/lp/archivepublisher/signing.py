@@ -436,7 +436,7 @@ class SigningUpload(CustomUpload):
 
         feature_flag = (
             getFeatureFlag(PUBLISHER_SIGNING_SERVICE_INJECTS_KEYS) or '')
-        key_types_to_inject = [i.strip() for i in feature_flag.split(',')]
+        key_types_to_inject = [i.strip() for i in feature_flag.split(' ')]
         if not key_types_to_inject:
             return
 

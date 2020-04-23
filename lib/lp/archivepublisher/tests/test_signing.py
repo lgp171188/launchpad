@@ -2021,7 +2021,7 @@ class TestSigningUploadWithSigningService(TestSigningHelpers):
     def test_fallback_injects_key(self):
         self.useFixture(FeatureFixture({PUBLISHER_USES_SIGNING_SERVICE: ''}))
         self.useFixture(FeatureFixture({
-            PUBLISHER_SIGNING_SERVICE_INJECTS_KEYS: 'SIPL,OPAL'}))
+            PUBLISHER_SIGNING_SERVICE_INJECTS_KEYS: 'SIPL OPAL'}))
 
         now = datetime.now()
         mock_datetime = self.useFixture(MockPatch(
