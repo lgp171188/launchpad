@@ -70,6 +70,20 @@
             set_attributes="changelog"/>
     </class>
 
+    <!-- BinarySourceReference -->
+
+    <class
+        class="lp.soyuz.model.binarysourcereference.BinarySourceReference">
+        <allow
+            interface="lp.soyuz.interfaces.binarysourcereference.IBinarySourceReference"/>
+    </class>
+    <securedutility
+        class="lp.soyuz.model.binarysourcereference.BinarySourceReferenceSet"
+        provides="lp.soyuz.interfaces.binarysourcereference.IBinarySourceReferenceSet">
+        <allow
+            interface="lp.soyuz.interfaces.binarysourcereference.IBinarySourceReferenceSet"/>
+    </securedutility>
+
         <!-- SourcePackagePublishingHistory -->
 
         <class

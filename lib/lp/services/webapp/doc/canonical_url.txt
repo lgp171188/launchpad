@@ -9,34 +9,31 @@ The browser:url directive registers an ICanonicalUrlData adapter.
 In this test, we'll use a URL hierarchy /countries/England/+towns/London
 
 In this test, we'll use interfaces ICountrySet, ICountry and ITown, which we
-will put in lp.testing.
+will put in a temporary module.
 
+    >>> import sys
+    >>> import types
     >>> from lp.services.webapp.interfaces import ICanonicalUrlData
     >>> from zope.interface import Interface, Attribute, implementer
 
+    >>> module = types.ModuleType(factory.getUniqueString().replace('-', '_'))
+    >>> sys.modules[module.__name__] = module
+
     >>> class ICountrySet(Interface):
-    ...     pass
+    ...     __module__ = module.__name__
 
     >>> class ICountry(Interface):
+    ...     __module__ = module.__name__
     ...     name = Attribute('the name of this country')
 
     >>> class ITown(Interface):
     ...     """Dummy interface for use in browser:url tests."""
+    ...     __module__ = module.__name__
     ...     country = Attribute('the country the town is in')
     ...     name = Attribute('the name of this town')
 
-XXX: This is evil, as it changes the hash of the interfaces. It *must* be done
-before they're registered anywhere.
-
-Put the interfaces into lp.testing, ensuring that there
-are not already objects with those names there.
-
-    >>> import lp.testing
     >>> for interface in ICountrySet, ICountry, ITown:
-    ...     name = interface.getName()
-    ...     assert getattr(lp.testing, name, None) is None
-    ...     setattr(lp.testing, name, interface)
-    ...     interface.__module__ = 'lp.testing'
+    ...     setattr(module, interface.getName(), interface)
 
 Add a view for Country/+map.
 
@@ -107,27 +104,27 @@ Configure a browser:url for ITown.  Our first attempt fails because we mistyped
     ...   <include package="zope.component" file="meta.zcml" />
     ...   <include package="lp.services.webapp" file="meta.zcml" />
     ...   <browser:url
-    ...       for="lp.testing.ITown"
-    ...       path_expression="string:+towns/${name}"
+    ...       for="{module_name}.ITown"
+    ...       path_expression="string:+towns/${{name}}"
     ...       attribute_to_parent="countryOopsTypo"
     ...       />
     ... </configure>
-    ... """)
+    ... """.format(module_name=module.__name__))
     Traceback (most recent call last):
     ...
     ZopeXMLConfigurationError: File "<string>", line ...
-        AttributeError: The name "countryOopsTypo" is not in lp.testing.ITown
+        AttributeError: The name "countryOopsTypo" is not in ....ITown
 
     >>> zcmlcontext = xmlconfig.string("""
     ... <configure xmlns:browser="http://namespaces.zope.org/browser">
     ...   <include package="lp.services.webapp" file="meta.zcml" />
     ...   <browser:url
-    ...       for="lp.testing.ITown"
-    ...       path_expression="string:+towns/${name}"
+    ...       for="{module_name}.ITown"
+    ...       path_expression="string:+towns/${{name}}"
     ...       attribute_to_parent="country"
     ...       />
     ... </configure>
-    ... """)
+    ... """.format(module_name=module.__name__))
 
 Now, there is an ICanonicalUrlData registered for ITown.
 
@@ -143,12 +140,9 @@ Now, there is an ICanonicalUrlData registered for ITown.
 The parent of an object might be accessible via an attribute, or it might
 be a utility.  This is the case for an ICountry object: its parent is the
 ICountrySet.  I need to put the countryset_instance somewhere we can get
-at it from zcml.  I'll put it in lp.testing.
+at it from zcml.  I'll put it in our temporary module.
 
-    >>> assert getattr(
-    ...     lp.testing, 'countryset_instance', None) is None
-
-    >>> lp.testing.countryset_instance = countryset_instance
+    >>> module.countryset_instance = countryset_instance
 
     >>> zcmlcontext = xmlconfig.string("""
     ... <configure
@@ -160,16 +154,16 @@ at it from zcml.  I'll put it in lp.testing.
     ...       <include file="meta.zcml" />
     ...   </configure>
     ...   <utility
-    ...       provides="lp.testing.ICountrySet"
-    ...       component="lp.testing.countryset_instance"
+    ...       provides="{module_name}.ICountrySet"
+    ...       component="{module_name}.countryset_instance"
     ...       />
     ...   <browser:url
-    ...       for="lp.testing.ICountry"
+    ...       for="{module_name}.ICountry"
     ...       path_expression="name"
-    ...       parent_utility="lp.testing.ICountrySet"
+    ...       parent_utility="{module_name}.ICountrySet"
     ...       />
     ... </configure>
-    ... """)
+    ... """.format(module_name=module.__name__))
 
 Now, there is an ICanonicalUrlData registered for ICountry.
 
@@ -208,19 +202,19 @@ an adapter.
     ...         return getUtility(ILaunchpadRoot)
 
 The CountrySetUrl class needs to be accessible from zcml.  So, we put it
-in lp.testing.
+in our temporary module.
 
-    >>> lp.testing.CountrySetUrl = CountrySetUrl
+    >>> module.CountrySetUrl = CountrySetUrl
 
     >>> zcmlcontext = xmlconfig.string("""
     ... <configure xmlns:browser="http://namespaces.zope.org/browser">
     ...   <include package="lp.services.webapp" file="meta.zcml" />
     ...   <browser:url
-    ...       for="lp.testing.ICountrySet"
-    ...       urldata="lp.testing.CountrySetUrl"
+    ...       for="{module_name}.ICountrySet"
+    ...       urldata="{module_name}.CountrySetUrl"
     ...       />
     ... </configure>
-    ... """)
+    ... """.format(module_name=module.__name__))
 
 Now, there is an ICanonicalUrlData registered for ICountrySet.
 
@@ -438,17 +432,17 @@ And if the configuration does provide a rootsite:
     ...   <include package="zope.component" file="meta.zcml" />
     ...   <include package="lp.services.webapp" file="meta.zcml" />
     ...   <utility
-    ...       provides="lp.testing.ICountrySet"
-    ...       component="lp.testing.countryset_instance"
+    ...       provides="{module_name}.ICountrySet"
+    ...       component="{module_name}.countryset_instance"
     ...       />
     ...   <browser:url
-    ...       for="lp.testing.ICountry"
+    ...       for="{module_name}.ICountry"
     ...       path_expression="name"
-    ...       parent_utility="lp.testing.ICountrySet"
+    ...       parent_utility="{module_name}.ICountrySet"
     ...       rootsite="bugs"
     ...       />
     ... </configure>
-    ... """)
+    ... """.format(module_name=module.__name__))
 
     >>> canonical_url(country_instance)
     u'http://bugs.launchpad.test/countries/England'
@@ -551,10 +545,7 @@ only the relative local path returned.
 
 == The end ==
 
-We've finished with our interfaces and utility component, so remove them from
-lp.testing.
+We've finished with our interfaces and utility component, so remove the
+temporary module.
 
-    >>> for name in ['ICountrySet', 'ICountry', 'ITown', 'countryset_instance',
-    ...              'CountrySetUrl']:
-    ...     delattr(lp.testing, name)
-
+    >>> del sys.modules[module.__name__]

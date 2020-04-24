@@ -87,9 +87,8 @@ transaction==2.4.0
 
 # zope.password needs these
 bcrypt==3.1.6
-# Handled in setup-requirements.txt instead.
-#cffi==1.12.2
-#pycparser==2.19
+cffi==1.12.2
+pycparser==2.19
 
 # Python2-only
 zope.untrustedpython==4.0.0

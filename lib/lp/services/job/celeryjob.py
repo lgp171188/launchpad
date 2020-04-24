@@ -141,6 +141,7 @@ def run_missing_ready(_no_init=False):
         for job in find_missing_ready(BranchScanJob):
             if not celery_enabled(job.__class__.__name__):
                 continue
+            job.extractJobState()
             job.celeryCommitHook(True)
             count += 1
         info('Scheduled %d missing jobs.', count)

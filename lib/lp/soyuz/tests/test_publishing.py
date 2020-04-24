@@ -306,7 +306,8 @@ class SoyuzTestPublisher:
                        shlibdep=None, depends=None, recommends=None,
                        suggests=None, conflicts=None, replaces=None,
                        provides=None, pre_depends=None, enhances=None,
-                       breaks=None, filecontent=b'bbbiiinnnaaarrryyy',
+                       breaks=None, built_using=None,
+                       filecontent=b'bbbiiinnnaaarrryyy',
                        changes_file_content=b"Fake: fake changes file",
                        status=PackagePublishingStatus.PENDING,
                        pocket=PackagePublishingPocket.RELEASE,
@@ -353,7 +354,8 @@ class SoyuzTestPublisher:
                     build, binaryname + '-dbgsym', filecontent, summary,
                     description, shlibdep, depends, recommends, suggests,
                     conflicts, replaces, provides, pre_depends, enhances,
-                    breaks, BinaryPackageFormat.DDEB, version=version)
+                    breaks, built_using, BinaryPackageFormat.DDEB,
+                    version=version)
                 pub_binaries += self.publishBinaryInArchive(
                     binarypackagerelease_ddeb, archive, status,
                     pocket, scheduleddeletiondate, dateremoved,
@@ -364,7 +366,7 @@ class SoyuzTestPublisher:
             binarypackagerelease = self.uploadBinaryForBuild(
                 build, binaryname, filecontent, summary, description,
                 shlibdep, depends, recommends, suggests, conflicts, replaces,
-                provides, pre_depends, enhances, breaks, format,
+                provides, pre_depends, enhances, breaks, built_using, format,
                 binarypackagerelease_ddeb, version=version,
                 user_defined_fields=user_defined_fields)
             pub_binaries += self.publishBinaryInArchive(
@@ -387,8 +389,9 @@ class SoyuzTestPublisher:
         summary="summary", description="description", shlibdep=None,
         depends=None, recommends=None, suggests=None, conflicts=None,
         replaces=None, provides=None, pre_depends=None, enhances=None,
-        breaks=None, format=BinaryPackageFormat.DEB, debug_package=None,
-        user_defined_fields=None, homepage=None, version=None):
+        breaks=None, built_using=None, format=BinaryPackageFormat.DEB,
+        debug_package=None, user_defined_fields=None, homepage=None,
+        version=None):
         """Return the corresponding `BinaryPackageRelease`."""
         sourcepackagerelease = build.source_package_release
         distroarchseries = build.distro_arch_series
@@ -418,6 +421,7 @@ class SoyuzTestPublisher:
             pre_depends=pre_depends,
             enhances=enhances,
             breaks=breaks,
+            built_using=built_using,
             essential=False,
             installedsize=100,
             architecturespecific=architecturespecific,
