@@ -53,6 +53,8 @@ class OCIRegistryClient:
         finally:
             reference.close()
 
+    # Retry this on a ConnectionError, 5 times with 3 seconds wait.
+    # Log each attempt so we can see they are happening.
     @classmethod
     @retry(
         wait=wait_fixed(3),

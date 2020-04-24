@@ -60,7 +60,6 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, TestCaseWithFactory):
         self.build = self.factory.makeOCIRecipeBuild()
         self.push_rule = self.factory.makeOCIPushRule(recipe=self.build.recipe)
         self.client = OCIRegistryClient()
-        self.retry_count = 0
 
     def _makeFiles(self):
         self.factory.makeOCIFile(
@@ -259,6 +258,8 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, TestCaseWithFactory):
                 call.request.headers['Authorization'])
 
     def test_upload_retries_exception(self):
+        # Use a separate counting mechanism so we're not entirely relying
+        # on tenacity to tell us that it has retried.
         def count_retries(*args, **kwargs):
             self.retry_count += 1
             raise ConnectionError
@@ -267,19 +268,17 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, TestCaseWithFactory):
             'lp.oci.model.ociregistryclient.urlfetch',
             side_effect=count_retries
         ))
+        # Patch sleep so we don't need to change our arguments and the
+        # test is instant
+        self.client._upload.retry.sleep = lambda x: None
 
         try:
-            # Call the method with slightly different retry arguments
-            # as otherwise we have to wait 5+ minutes...
-            self.client._upload.retry_with(
-                stop=stop_after_attempt(2),
-                wait=wait_fixed(1))(
-                OCIRegistryClient,
+            self.client._upload(
                 "test-digest", self.build.recipe.push_rules[0],
                 "test-name", None, ('user', 'password'))
         except RetryError:
             pass
-        # We should be able to assert against
-        # self.client._upload.retry.statistics
-        # But there's an interaction with class methods that means it's empty.
-        self.assertEqual(2, self.retry_count)
+        # Check that tenacity and our counting agree
+        self.assertEqual(
+            5, self.client._upload.retry.statistics["attempt_number"])
+        self.assertEqual(5, self.retry_count)
