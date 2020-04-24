@@ -1,4 +1,4 @@
-# Copyright 2009-2017 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """BinaryPackageBuild interfaces."""
@@ -179,8 +179,8 @@ class IBinaryPackageBuildView(IPackageBuild):
         component, section, priority, installedsize, architecturespecific,
         shlibdeps=None, depends=None, recommends=None, suggests=None,
         conflicts=None, replaces=None, provides=None, pre_depends=None,
-        enhances=None, breaks=None, essential=False, debug_package=None,
-        user_defined_fields=None, homepage=None):
+        enhances=None, breaks=None, built_using=None, essential=False,
+        debug_package=None, user_defined_fields=None, homepage=None):
         """Create and return a `BinaryPackageRelease`.
 
         The binarypackagerelease will be attached to this specific build.

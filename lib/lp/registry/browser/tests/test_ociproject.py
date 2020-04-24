@@ -1,4 +1,4 @@
-# Copyright 2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2019-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Test OCI project views."""
@@ -163,14 +163,14 @@ class TestOCIProjectAddView(BrowserTestCase):
 
     def setUp(self):
         super(TestOCIProjectAddView, self).setUp()
-        self.useFixture(FeatureFixture({OCI_PROJECT_ALLOW_CREATE: "on"}))
 
     def test_create_oci_project(self):
         oci_project = self.factory.makeOCIProject()
+        user = oci_project.pillar.owner
         new_distribution = self.factory.makeDistribution(
-            owner=oci_project.pillar.owner)
+            owner=user, oci_project_admin=user)
         browser = self.getViewBrowser(
-            new_distribution, view_name='+new-oci-project')
+            new_distribution, user=user, view_name='+new-oci-project')
         browser.getControl(name="field.name").value = "new-name"
         browser.getControl("Create OCI Project").click()
 
@@ -179,20 +179,22 @@ class TestOCIProjectAddView(BrowserTestCase):
             "OCI project new-name for %s" % new_distribution.display_name,
             extract_text(content.h1))
         self.assertThat(
-            "Distribution:\n%s\n" % (
+            "Distribution:\n%s\nEdit OCI project" % (
                 new_distribution.display_name),
             MatchesTagText(content, "distribution"))
         self.assertThat(
-             "Name:\nnew-name\n",
+             "Name:\nnew-name\nEdit OCI project",
              MatchesTagText(content, "name"))
 
     def test_create_oci_project_already_exists(self):
-        distribution = self.factory.makeDistribution()
+        person = self.factory.makePerson()
+        distribution = self.factory.makeDistribution(oci_project_admin=person)
         self.factory.makeOCIProject(ociprojectname="new-name",
-                                    pillar=distribution)
+                                    pillar=distribution,
+                                    registrant=person)
 
         browser = self.getViewBrowser(
-            distribution, view_name='+new-oci-project')
+            distribution, user=person, view_name='+new-oci-project')
         browser.getControl(name="field.name").value = "new-name"
         browser.getControl("Create OCI Project").click()
 
@@ -201,11 +203,13 @@ class TestOCIProjectAddView(BrowserTestCase):
                 distribution.display_name),
             extract_text(find_tags_by_class(browser.contents, "message")[1]))
 
-    def test_create_oci_project_feature_flag_disabled(self):
+    def test_create_oci_project_no_permission(self):
         self.useFixture(FeatureFixture({OCI_PROJECT_ALLOW_CREATE: ''}))
+        another_person = self.factory.makePerson()
         new_distribution = self.factory.makeDistribution()
         self.assertRaises(
             OCIProjectCreateFeatureDisabled,
             self.getViewBrowser,
             new_distribution,
+            user=another_person,
             view_name='+new-oci-project')
