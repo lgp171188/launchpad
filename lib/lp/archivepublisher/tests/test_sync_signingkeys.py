@@ -239,3 +239,30 @@ class TestSyncSigningKeysScript(TestCaseWithFactory):
              b"Public key content",
              u"UEFI key for %s" % archive.reference, now.replace(tzinfo=utc)),
             signing_service_client.inject.call_args[0])
+
+    def test_inject_existing_key(self):
+        distro = self.factory.makeDistribution()
+        series = self.factory.makeDistroSeries(distribution=distro)
+        archive = self.factory.makeArchive(distribution=distro)
+
+        tmpdir = self.useFixture(TempDir()).path
+        priv_key_path = os.path.join(tmpdir, "priv.key")
+        pub_key_path = os.path.join(tmpdir, "pub.crt")
+        with open(priv_key_path, 'wb') as fd:
+            fd.write(b"Private key content")
+        with open(pub_key_path, 'wb') as fd:
+            fd.write(b"Public key content")
+
+        expected_arch_signing_key = self.factory.makeArchiveSigningKey(
+            archive=archive, distro_series=series)
+        key_type = expected_arch_signing_key.key_type
+
+        script = self.makeScript([])
+        got_arch_key = script.inject(
+            archive, key_type, series, priv_key_path, pub_key_path)
+        self.assertEqual(expected_arch_signing_key, got_arch_key)
+
+        self.assertIn(
+            "Signing key for %s / %s / %s already exists" %
+            (key_type, archive.reference, series.name),
+            script.logger.content.as_text())

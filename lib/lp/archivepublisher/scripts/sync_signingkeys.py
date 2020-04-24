@@ -89,6 +89,14 @@ class SyncSigningKeysScript(LaunchpadScript):
         return series_paths
 
     def inject(self, archive, key_type, series, priv_key_path, pub_key_path):
+        arch_signing_key_set = getUtility(IArchiveSigningKeySet)
+        existing_signing_key = arch_signing_key_set.getSigningKey(
+            key_type, archive, series, exact_match=True)
+        if existing_signing_key is not None:
+            self.logger.info("Signing key for %s / %s / %s already exists",
+                             key_type, archive.reference, series.name)
+            return existing_signing_key
+
         with open(priv_key_path, 'rb') as fd:
             private_key = fd.read()
         with open(pub_key_path, 'rb') as fd:
@@ -96,7 +104,7 @@ class SyncSigningKeysScript(LaunchpadScript):
 
         now = datetime.now().replace(tzinfo=utc)
         description = u"%s key for %s" % (key_type.name, archive.reference)
-        return getUtility(IArchiveSigningKeySet).inject(
+        return arch_signing_key_set.inject(
             key_type, private_key, public_key,
             description, now, archive,
             earliest_distro_series=series)
