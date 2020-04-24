@@ -2075,22 +2075,22 @@ class TestSigningUploadWithSigningService(TestSigningHelpers):
     def test_fallback_skips_key_injection_for_existing_keys(self):
         self.useFixture(FeatureFixture({PUBLISHER_USES_SIGNING_SERVICE: ''}))
         self.useFixture(FeatureFixture({
-            PUBLISHER_SIGNING_SERVICE_INJECTS_KEYS: 'SIPL OPAL'}))
+            PUBLISHER_SIGNING_SERVICE_INJECTS_KEYS: 'UEFI'}))
 
         now = datetime.now()
         mock_datetime = self.useFixture(MockPatch(
             'lp.archivepublisher.signing.datetime')).mock
         mock_datetime.now = lambda: now
 
+        # Setup PPA to ensure it auto-generates keys.
+        self.setUpPPA()
+
         signing_key = self.factory.makeSigningKey(key_type=SigningKeyType.UEFI)
-        arch_signing_key = self.factory.makeArchiveSigningKey(
+        self.factory.makeArchiveSigningKey(
             archive=self.archive, signing_key=signing_key)
 
         logger = BufferLogger()
         upload = SigningUpload(logger=logger)
-
-        # Setup PPA to ensure it auto-generates keys.
-        self.setUpPPA()
 
         filenames = ["1.0/empty.efi"]
 
@@ -2109,5 +2109,5 @@ class TestSigningUploadWithSigningService(TestSigningHelpers):
         log_content = logger.content.as_text()
         self.assertIn(
             "INFO Skipping injection for key type %s: archive "
-            "already has a key on lp-signing.", SigningKeyType.UEFI,
+            "already has a key on lp-signing." % SigningKeyType.UEFI,
             log_content)

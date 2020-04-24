@@ -449,6 +449,7 @@ class SigningUpload(CustomUpload):
         if current_key is not None:
             self.logger.info("Skipping injection for key type %s: archive "
                              "already has a key on lp-signing.", key_type)
+            return
 
         if self.logger:
             self.logger.info(
