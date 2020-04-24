@@ -55,7 +55,7 @@ class OCIRegistryClient:
 
     @classmethod
     @retry(
-        wait=wait_fixed(5),
+        wait=wait_fixed(3),
         before=before_log(log, logging.WARNING),
         retry=retry_if_exception_type(ConnectionError),
         stop=stop_after_attempt(5))
