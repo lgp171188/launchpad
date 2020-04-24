@@ -26,6 +26,7 @@ from testtools.matchers import (
     MatchesStructure,
     )
 
+from lp.archivepublisher.model.publisherconfig import PublisherConfig
 from lp.archivepublisher.scripts.sync_signingkeys import SyncSigningKeysScript
 from lp.services.compat import mock
 from lp.services.database.interfaces import IStore
@@ -54,7 +55,8 @@ class TestSyncSigningKeysScript(TestCaseWithFactory):
     def makeArchives(self):
         for i in range(10):
             self.factory.makeArchive()
-        return IStore(Archive).find(Archive).order_by(Archive.id)
+        conditions = PublisherConfig.distribution_id == Archive.distributionID
+        return IStore(Archive).find(Archive, conditions).order_by(Archive.id)
 
     def makeArchiveSigningDir(self, ppa, series=None):
         """Creates the directory tree to hold signing keys for the PPA

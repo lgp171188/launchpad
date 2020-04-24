@@ -19,6 +19,7 @@ from pytz import utc
 from zope.component import getUtility
 
 from lp.archivepublisher.config import getPubConfig
+from lp.archivepublisher.model.publisherconfig import PublisherConfig
 from lp.services.database.interfaces import IStore
 from lp.services.scripts.base import LaunchpadScript
 from lp.services.signing.enums import SigningKeyType
@@ -41,7 +42,11 @@ class SyncSigningKeysScript(LaunchpadScript):
             help="Offset on archives list.")
 
     def getArchives(self):
-        archives = IStore(Archive).find(Archive).order_by(Archive.id)
+        """Gets the list of archives that should be processed."""
+        archives = IStore(Archive).find(
+            Archive,
+            PublisherConfig.distribution_id == Archive.distributionID)
+        archives = archives.order_by(Archive.id)
         start = self.options.offset if self.options.offset else 0
         end = start + self.options.limit if self.options.limit else None
         return archives[start:end]
