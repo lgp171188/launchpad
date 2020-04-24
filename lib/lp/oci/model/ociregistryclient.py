@@ -58,7 +58,7 @@ class OCIRegistryClient:
     @classmethod
     @retry(
         wait=wait_fixed(3),
-        before=before_log(log, logging.WARNING),
+        before=before_log(log, logging.INFO),
         retry=retry_if_exception_type(ConnectionError),
         stop=stop_after_attempt(5))
     def _upload(cls, digest, push_rule, name, fileobj, auth):
