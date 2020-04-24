@@ -60,7 +60,7 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, TestCaseWithFactory):
         self.build = self.factory.makeOCIRecipeBuild()
         self.push_rule = self.factory.makeOCIPushRule(recipe=self.build.recipe)
         self.client = OCIRegistryClient()
-        TestOCIRegistryClient.retry_count = 0
+        self.retry_count = 0
 
     def _makeFiles(self):
         self.factory.makeOCIFile(
@@ -260,7 +260,7 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, TestCaseWithFactory):
 
     def test_upload_retries_exception(self):
         def count_retries(*args, **kwargs):
-            TestOCIRegistryClient.retry_count += 1
+            self.retry_count += 1
             raise ConnectionError
 
         self.useFixture(MockPatch(
@@ -282,4 +282,4 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, TestCaseWithFactory):
         # We should be able to assert against
         # self.client._upload.retry.statistics
         # But there's an interaction with class methods that means it's empty.
-        self.assertEqual(2, TestOCIRegistryClient.retry_count)
+        self.assertEqual(2, self.retry_count)
