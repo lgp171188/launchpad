@@ -225,6 +225,7 @@ setup(
         'Sphinx',
         'storm',
         'subvertpy',
+        'tenacity',
         'testscenarios',
         'testtools',
         'timeline',

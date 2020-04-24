@@ -17,7 +17,17 @@ import json
 import logging
 import tarfile
 
-from requests.exceptions import HTTPError
+from requests.exceptions import (
+    HTTPError,
+    ConnectionError,
+    )
+from tenacity import (
+    before_log,
+    retry,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_fixed,
+    )
 from zope.interface import implementer
 
 from lp.oci.interfaces.ociregistryclient import (
@@ -44,6 +54,11 @@ class OCIRegistryClient:
             reference.close()
 
     @classmethod
+    @retry(
+        wait=wait_fixed(30),
+        before=before_log(log, logging.WARNING),
+        retry=retry_if_exception_type(ConnectionError),
+        stop=stop_after_attempt(5))
     def _upload(cls, digest, push_rule, name, fileobj, auth):
         """Upload a blob to the registry, using a given digest.
 

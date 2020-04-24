@@ -10,8 +10,16 @@ __metaclass__ = type
 import json
 
 from fixtures import MockPatch
-from requests.exceptions import HTTPError
+from requests.exceptions import (
+    ConnectionError,
+    HTTPError,
+    )
 import responses
+from tenacity import (
+    stop_after_attempt,
+    wait_fixed,
+    RetryError,
+    )
 from testtools.matchers import (
     Equals,
     MatchesDict,
@@ -28,6 +36,7 @@ from lp.testing.layers import LaunchpadZopelessLayer
 class TestOCIRegistryClient(OCIConfigHelperMixin, TestCaseWithFactory):
 
     layer = LaunchpadZopelessLayer
+    retry_count = 0
 
     def setUp(self):
         super(TestOCIRegistryClient, self).setUp()
@@ -51,6 +60,7 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, TestCaseWithFactory):
         self.build = self.factory.makeOCIRecipeBuild()
         self.push_rule = self.factory.makeOCIPushRule(recipe=self.build.recipe)
         self.client = OCIRegistryClient()
+        TestOCIRegistryClient.retry_count = 0
 
     def _makeFiles(self):
         self.factory.makeOCIFile(
@@ -247,3 +257,29 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, TestCaseWithFactory):
             self.assertEqual(
                 'Basic dXNlcjpwYXNzd29yZA==',
                 call.request.headers['Authorization'])
+
+    def test_upload_retries_exception(self):
+        def count_retries(*args, **kwargs):
+            TestOCIRegistryClient.retry_count += 1
+            raise ConnectionError
+
+        self.useFixture(MockPatch(
+            'lp.oci.model.ociregistryclient.urlfetch',
+            side_effect=count_retries
+        ))
+
+        try:
+            # Call the method with slightly different retry arguments
+            # as otherwise we have to wait 5+ minutes...
+            self.client._upload.retry_with(
+                stop=stop_after_attempt(2),
+                wait=wait_fixed(1))(
+                OCIRegistryClient,
+                "test-digest", self.build.recipe.push_rules[0],
+                "test-name", None, ('user', 'password'))
+        except RetryError:
+            pass
+        # We should be able to assert against
+        # self.client._upload.retry.statistics
+        # But there's an interaction with class methods that means it's empty.
+        self.assertEqual(2, TestOCIRegistryClient.retry_count)
