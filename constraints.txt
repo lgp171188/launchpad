@@ -241,6 +241,7 @@ meliae==0.2.0.final.0
 mistune==0.8.3
 mock==1.0.1
 mocker==1.1.1
+monotonic==1.5
 netaddr==0.7.19
 oauth==1.0
 oauthlib==3.1.0
@@ -299,6 +300,7 @@ soupsieve==1.9
 storm==0.23+lp415
 subprocess32==3.2.6
 subvertpy==0.9.1
+tenacity==6.1.0
 testresources==0.2.7
 testscenarios==0.4
 timeline==0.0.7

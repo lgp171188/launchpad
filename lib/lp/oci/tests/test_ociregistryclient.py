@@ -10,8 +10,12 @@ __metaclass__ = type
 import json
 
 from fixtures import MockPatch
-from requests.exceptions import HTTPError
+from requests.exceptions import (
+    ConnectionError,
+    HTTPError,
+    )
 import responses
+from tenacity import RetryError
 from testtools.matchers import (
     Equals,
     MatchesDict,
@@ -28,6 +32,7 @@ from lp.testing.layers import LaunchpadZopelessLayer
 class TestOCIRegistryClient(OCIConfigHelperMixin, TestCaseWithFactory):
 
     layer = LaunchpadZopelessLayer
+    retry_count = 0
 
     def setUp(self):
         super(TestOCIRegistryClient, self).setUp()
@@ -247,3 +252,29 @@ class TestOCIRegistryClient(OCIConfigHelperMixin, TestCaseWithFactory):
             self.assertEqual(
                 'Basic dXNlcjpwYXNzd29yZA==',
                 call.request.headers['Authorization'])
+
+    def test_upload_retries_exception(self):
+        # Use a separate counting mechanism so we're not entirely relying
+        # on tenacity to tell us that it has retried.
+        def count_retries(*args, **kwargs):
+            self.retry_count += 1
+            raise ConnectionError
+
+        self.useFixture(MockPatch(
+            'lp.oci.model.ociregistryclient.urlfetch',
+            side_effect=count_retries
+        ))
+        # Patch sleep so we don't need to change our arguments and the
+        # test is instant
+        self.client._upload.retry.sleep = lambda x: None
+
+        try:
+            self.client._upload(
+                "test-digest", self.build.recipe.push_rules[0],
+                "test-name", None, ('user', 'password'))
+        except RetryError:
+            pass
+        # Check that tenacity and our counting agree
+        self.assertEqual(
+            5, self.client._upload.retry.statistics["attempt_number"])
+        self.assertEqual(5, self.retry_count)
