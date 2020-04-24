@@ -78,9 +78,6 @@ class TestSyncSigningKeysScript(TestCaseWithFactory):
             os.makedirs(path)
         return ret
 
-    def makeArchive(self, *args, **kwargs):
-        """Creates an archive and its signing keys directories."""
-
     def test_fetch_archives_without_limit_and_offset(self):
         script = self.makeScript([])
         all_archives = list(self.makeArchives())
