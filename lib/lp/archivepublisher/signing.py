@@ -434,9 +434,7 @@ class SigningUpload(CustomUpload):
 
         feature_flag = (
             getFeatureFlag(PUBLISHER_SIGNING_SERVICE_INJECTS_KEYS) or '')
-        key_types_to_inject = [i.strip() for i in feature_flag.split(' ')]
-        if not key_types_to_inject:
-            return
+        key_types_to_inject = [i.strip() for i in feature_flag.split()]
 
         if key_type.name not in key_types_to_inject:
             if self.logger:
@@ -444,6 +442,13 @@ class SigningUpload(CustomUpload):
                     "Skipping injection for key type %s: not in %s" %
                     (key_type, key_types_to_inject))
             return
+
+        key_set = getUtility(IArchiveSigningKeySet)
+        current_key = key_set.getSigningKey(
+            key_type, self.archive, None, exact_match=True)
+        if current_key is not None:
+            self.logger.info("Skipping injection for key type %s: archive "
+                             "already has a key on lp-signing.", key_type)
 
         if self.logger:
             self.logger.info(
@@ -458,7 +463,7 @@ class SigningUpload(CustomUpload):
         now = datetime.now().replace(tzinfo=utc)
         description = (
                 u"%s key for %s" % (key_type.name, self.archive.reference))
-        getUtility(IArchiveSigningKeySet).inject(
+        key_set.inject(
             key_type, private_key, public_key,
             description, now, self.archive, earliest_distro_series=None)
 
