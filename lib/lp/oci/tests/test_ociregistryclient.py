@@ -15,11 +15,7 @@ from requests.exceptions import (
     HTTPError,
     )
 import responses
-from tenacity import (
-    stop_after_attempt,
-    wait_fixed,
-    RetryError,
-    )
+from tenacity import RetryError
 from testtools.matchers import (
     Equals,
     MatchesDict,
