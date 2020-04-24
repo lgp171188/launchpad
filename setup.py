@@ -186,6 +186,7 @@ setup(
         'lazr.uri',
         'lpjsmin',
         'Markdown',
+        'monotonic',
         'meliae',
         'mock',
         'oauth',
