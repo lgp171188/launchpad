@@ -1,4 +1,4 @@
-# Copyright 2009-2012 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 __metaclass__ = type
@@ -7,6 +7,7 @@ __all__ = [
     'BinaryPackageReleaseDownloadCount',
     ]
 
+from operator import attrgetter
 
 import simplejson
 from sqlobject import (
@@ -22,6 +23,7 @@ from storm.locals import (
     Store,
     Storm,
     )
+from zope.component import getUtility
 from zope.interface import implementer
 
 from lp.services.database.constants import UTC_NOW
@@ -35,11 +37,15 @@ from lp.services.propertycache import (
 from lp.soyuz.enums import (
     BinaryPackageFileType,
     BinaryPackageFormat,
+    BinarySourceReferenceType,
     PackagePublishingPriority,
     )
 from lp.soyuz.interfaces.binarypackagerelease import (
     IBinaryPackageRelease,
     IBinaryPackageReleaseDownloadCount,
+    )
+from lp.soyuz.interfaces.binarysourcereference import (
+    IBinarySourceReferenceSet,
     )
 from lp.soyuz.model.files import BinaryPackageFile
 
@@ -88,6 +94,14 @@ class BinaryPackageRelease(SQLBase):
                 kwargs['user_defined_fields'])
             del kwargs['user_defined_fields']
         super(BinaryPackageRelease, self).__init__(*args, **kwargs)
+
+    @cachedproperty
+    def built_using_references(self):
+        reference_set = getUtility(IBinarySourceReferenceSet)
+        references = reference_set.findByBinaryPackageRelease(
+            self, BinarySourceReferenceType.BUILT_USING)
+        # Preserving insertion order is good enough.
+        return sorted(references, key=attrgetter('id'))
 
     @property
     def user_defined_fields(self):

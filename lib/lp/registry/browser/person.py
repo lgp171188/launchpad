@@ -83,9 +83,9 @@ from zope.interface import (
     classImplements,
     implementer,
     Interface,
+    invariant,
     )
 from zope.interface.exceptions import Invalid
-from zope.interface.interface import invariant
 from zope.publisher.interfaces import NotFound
 from zope.schema import (
     Choice,

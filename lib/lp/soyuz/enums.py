@@ -1,4 +1,4 @@
-# Copyright 2010-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2010-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Enumerations used in the lp/soyuz modules."""
@@ -13,6 +13,7 @@ __all__ = [
     'archive_suffixes',
     'BinaryPackageFileType',
     'BinaryPackageFormat',
+    'BinarySourceReferenceType',
     'DistroArchSeriesFilterSense',
     'IndexCompressionType',
     'PackageCopyPolicy',
@@ -612,4 +613,16 @@ class DistroArchSeriesFilterSense(DBEnumeratedType):
         Exclude
 
         Packages in this package set are excluded from the distro arch series.
+        """)
+
+
+class BinarySourceReferenceType(DBEnumeratedType):
+    """The type of a reference from a binary package to a source package."""
+
+    BUILT_USING = DBItem(1, """
+        Built-Using
+
+        The referencing binary package incorporates part of the referenced
+        source package, and so the referenced source package needs to remain
+        in the archive for as long as the referencing binary package does.
         """)

@@ -1,4 +1,4 @@
-# Copyright 2012-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2012-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 from cStringIO import StringIO
@@ -82,6 +82,7 @@ class TestRunMissingJobs(TestCaseWithFactory):
             'job_info', 'job.id: %d, job.job_id: %d' % (job.id, job.job_id))
         find_missing_ready_obj = self.getFMR(BranchScanJob, 0)
         self.assertEqual([job], find_missing_ready_obj.find_missing_ready())
+        job.extractJobState()
         job.runViaCelery()
         find_missing_ready_obj = self.getFMR(BranchScanJob, 1)
         missing_ready = find_missing_ready_obj.find_missing_ready()

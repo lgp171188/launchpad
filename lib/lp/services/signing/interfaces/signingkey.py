@@ -13,7 +13,7 @@ __all__ = [
 ]
 
 from lazr.restful.fields import Reference
-from zope.interface.interface import Interface
+from zope.interface import Interface
 from zope.schema import (
     Bytes,
     Choice,
@@ -121,8 +121,8 @@ class IArchiveSigningKeySet(Interface):
         """Get the most suitable key for a given archive / distro series
         pair.
 
-        :param exact_match: If True, returns the ArchiveSigningKey
-                            matching exactly the given key_type, archive and
+        :param exact_match: If True, returns the ArchiveSigningKey matching
+                            exactly the given key_type, archive and
                             distro_series. If False, gets the best match.
         :return: The most suitable key
         """

@@ -50,6 +50,9 @@ valid_imports_not_in_all = {
          'provideAdapter',
          'provideHandler',
          ]),
+    # XXX cjwatson 2020-04-12: Fixed in zope.interface 5.1.0; remove this
+    # when we upgrade to that version.
+    'zope.interface': set(['invariant']),
     }
 
 

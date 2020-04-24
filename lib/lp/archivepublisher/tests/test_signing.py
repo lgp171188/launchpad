@@ -7,14 +7,19 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 __metaclass__ = type
 
+from datetime import datetime
 import os
 import re
 import shutil
 import stat
 import tarfile
 
-from fixtures import MonkeyPatch
+from fixtures import (
+    MockPatch,
+    MonkeyPatch,
+    )
 from mock import call
+from pytz import utc
 import scandir
 from testtools.matchers import (
     Contains,
@@ -42,12 +47,14 @@ from lp.archivepublisher.interfaces.archivegpgsigningkey import (
     )
 from lp.archivepublisher.interfaces.publisherconfig import IPublisherConfigSet
 from lp.archivepublisher.signing import (
+    PUBLISHER_SIGNING_SERVICE_INJECTS_KEYS,
     PUBLISHER_USES_SIGNING_SERVICE,
     SigningUpload,
     UefiUpload,
     )
 from lp.archivepublisher.tests.test_run_parts import RunPartsMixin
 from lp.services.features.testing import FeatureFixture
+from lp.services.log.logger import BufferLogger
 from lp.services.osutils import write_file
 from lp.services.signing.enums import SigningMode
 from lp.services.signing.proxy import SigningKeyType
@@ -1851,7 +1858,8 @@ class TestSigningUploadWithSigningService(TestSigningHelpers):
 
         self.openArchive("test", "1.0", "amd64")
         for filename in filenames:
-            self.tarfile.add_file(filename, b"data - %s" % filename)
+            self.tarfile.add_file(
+                filename, b"data - %s" % filename.encode("UTF-8"))
 
         self.tarfile.close()
         self.buffer.close()
@@ -1965,7 +1973,8 @@ class TestSigningUploadWithSigningService(TestSigningHelpers):
 
         self.openArchive("test", "1.0", "amd64")
         for filename in filenames:
-            self.tarfile.add_file(filename, b"data - %s" % filename)
+            self.tarfile.add_file(
+                filename, b"data - %s" % filename.encode("UTF-8"))
 
         self.tarfile.close()
         self.buffer.close()
@@ -2009,3 +2018,96 @@ class TestSigningUploadWithSigningService(TestSigningHelpers):
         self.assertEqual(
             [(os.path.join(upload.tmpdir_used, "1.0/empty.efi"),)],
             upload.signUefi.extract_args())
+
+    def test_fallback_injects_key(self):
+        self.useFixture(FeatureFixture({PUBLISHER_USES_SIGNING_SERVICE: ''}))
+        self.useFixture(FeatureFixture({
+            PUBLISHER_SIGNING_SERVICE_INJECTS_KEYS: 'SIPL OPAL'}))
+
+        now = datetime.now()
+        mock_datetime = self.useFixture(MockPatch(
+            'lp.archivepublisher.signing.datetime')).mock
+        mock_datetime.now = lambda: now
+
+        logger = BufferLogger()
+        upload = SigningUpload(logger=logger)
+
+        # Setup PPA to ensure it auto-generates keys.
+        self.setUpPPA()
+
+        filenames = ["1.0/empty.efi", "1.0/empty.opal"]
+
+        self.openArchive("test", "1.0", "amd64")
+        for filename in filenames:
+            self.tarfile.add_file(
+                filename, b"data - %s" % filename.encode("UTF-8"))
+        self.tarfile.close()
+        self.buffer.close()
+
+        upload.process(self.archive, self.path, self.suite)
+        self.assertTrue(upload.autokey)
+
+        # Read the key file content
+        with open(upload.opal_pem, 'rb') as fd:
+            private_key = fd.read()
+        with open(upload.opal_x509, 'rb') as fd:
+            public_key = fd.read()
+
+        # Check if we called lp-signing's /inject endpoint correctly
+        self.assertEqual(1, self.signing_service_client.inject.call_count)
+        self.assertEqual(
+            (SigningKeyType.OPAL, private_key, public_key,
+             u"OPAL key for %s" % self.archive.reference,
+             now.replace(tzinfo=utc)),
+            self.signing_service_client.inject.call_args[0])
+
+        log_content = logger.content.as_text()
+        self.assertIn(
+            "INFO Injecting key_type OPAL for archive %s into signing "
+            "service" % (self.archive.name),
+            log_content)
+
+        self.assertIn(
+            "INFO Skipping injection for key type UEFI: "
+            "not in [u'SIPL', u'OPAL']",
+            log_content)
+
+    def test_fallback_skips_key_injection_for_existing_keys(self):
+        self.useFixture(FeatureFixture({PUBLISHER_USES_SIGNING_SERVICE: ''}))
+        self.useFixture(FeatureFixture({
+            PUBLISHER_SIGNING_SERVICE_INJECTS_KEYS: 'UEFI'}))
+
+        now = datetime.now()
+        mock_datetime = self.useFixture(MockPatch(
+            'lp.archivepublisher.signing.datetime')).mock
+        mock_datetime.now = lambda: now
+
+        # Setup PPA to ensure it auto-generates keys.
+        self.setUpPPA()
+
+        signing_key = self.factory.makeSigningKey(key_type=SigningKeyType.UEFI)
+        self.factory.makeArchiveSigningKey(
+            archive=self.archive, signing_key=signing_key)
+
+        logger = BufferLogger()
+        upload = SigningUpload(logger=logger)
+
+        filenames = ["1.0/empty.efi"]
+
+        self.openArchive("test", "1.0", "amd64")
+        for filename in filenames:
+            self.tarfile.add_file(
+                filename, b"data - %s" % filename.encode("UTF-8"))
+        self.tarfile.close()
+        self.buffer.close()
+
+        upload.process(self.archive, self.path, self.suite)
+        self.assertTrue(upload.autokey)
+
+        # Make sure we didn't call lp-signing's /inject endpoint
+        self.assertEqual(0, self.signing_service_client.inject.call_count)
+        log_content = logger.content.as_text()
+        self.assertIn(
+            "INFO Skipping injection for key type %s: archive "
+            "already has a key on lp-signing." % SigningKeyType.UEFI,
+            log_content)
