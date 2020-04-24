@@ -506,6 +506,11 @@ class IDistributionPublic(
         create a mirror.
         """
 
+    @operation_parameters(
+        name=TextLine(title=_("OCI project name"), required=True))
+    # Really returns IOCIProject, see _schema_circular_imports.py.
+    @operation_returns_entry(Interface)
+    @export_read_operation()
     def getOCIProject(name):
         """Return a `OCIProject` with the given name for this
         distribution, or None.

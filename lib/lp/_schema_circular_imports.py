@@ -456,6 +456,7 @@ patch_collection_return_type(
     IDistribution, 'getDevelopmentSeries', IDistroSeries)
 patch_entry_return_type(
     IDistribution, 'getSourcePackage', IDistributionSourcePackage)
+patch_entry_return_type(IDistribution, 'getOCIProject', IOCIProject)
 patch_collection_return_type(
     IDistribution, 'searchSourcePackages', IDistributionSourcePackage)
 patch_reference_property(IDistribution, 'main_archive', IArchive)
