@@ -97,15 +97,15 @@ def test_cookie_scope():
     The cookie scope will use the secure attribute if the request was
     secure:
 
-        >>> print cookie_scope('http://launchpad.net/')
+        >>> print(cookie_scope('http://launchpad.net/'))
         ; Path=/; Domain=.launchpad.net
-        >>> print cookie_scope('https://launchpad.net/')
+        >>> print(cookie_scope('https://launchpad.net/'))
         ; Path=/; Secure; Domain=.launchpad.net
 
     The domain parameter is omitted for domains that appear to be
     separate from a Launchpad instance:
 
-        >>> print cookie_scope('https://example.com/')
+        >>> print(cookie_scope('https://example.com/'))
         ; Path=/; Secure
     """
 

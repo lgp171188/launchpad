@@ -293,12 +293,12 @@ can access `self.context`.
     ...     if facet is not None:
     ...         extra_arguments['selectedfacetname'] = facet
     ...     for link in menu.iterlinks(url, **extra_arguments):
-    ...         print 'link %s' % link.name
+    ...         print('link %s' % link.name)
     ...         attributes = ('url', 'enabled', 'menu', 'selected', 'linked')
     ...         for attrname in attributes:
     ...             if not safe_hasattr(link, attrname):
     ...                 continue
-    ...             print '    %s: %s' % (attrname, getattr(link, attrname))
+    ...             print('    %s: %s' % (attrname, getattr(link, attrname)))
 
     >>> summarise_links(
     ...     CookeryFacetMenu(cookbook),
@@ -581,7 +581,7 @@ objects cannot be adapted to menus.
     ...     traversed_objects=[cookbook, recipe])
     >>> recipe_view = getMultiAdapter((recipe, request), name='+index')
     >>> request._last_obj_traversed = recipe_view
-    >>> print queryAdapter(recipe_view, INavigationMenu)
+    >>> print(queryAdapter(recipe_view, INavigationMenu))
     None
 
 Once registered, the objects can be adapted. The RecipeFacetMenu can be
@@ -876,14 +876,14 @@ see if we have a link to a page within Launchpad.
     ...         text = 'Spoo'
     ...         return Link(target, text)
 
-    >>> print canonical_url(cookbook)
+    >>> print(canonical_url(cookbook))
     http://launchpad.test/joy-of-cooking
 
     >>> request_url = URI('http://launchpad.test/joy-of-cooking')
 
     >>> facets = AbsoluteUrlTargetTestFacets(cookbook)
     >>> for link in facets.iterlinks(request_url):
-    ...     print link.url, link.linked
+    ...     print(link.url, link.linked)
     http://launchpad.test/joy-of-cooking False
     ftp://barlink.example.com/barbarbar True
     http://launchpad.test/joy-of-cooking/+baz True
@@ -999,8 +999,8 @@ over the links. The TALES takes the form of 'view/menu:navigation'.
 
 The attributes of the menu can be accessed with the normal path method.
 
-    >>> print test_tales('context/menu:navigation/journal_entries',
-    ...     context=recipe_journal_view, request=request)
+    >>> print(test_tales('context/menu:navigation/journal_entries',
+    ...     context=recipe_journal_view, request=request))
     42
 
 
@@ -1035,7 +1035,7 @@ that the comment refers to.
 We'll simulate the user viewing a comment.
 
     >>> comment = Comment('a-comment', recipe)
-    >>> print canonical_url(comment)
+    >>> print(canonical_url(comment))
     http://launchpad.test/joy-of-cooking/fried-spam/a-comment
 
 When we try to look up the menu for the comment, the navigation menu for
@@ -1148,7 +1148,7 @@ The Summary in the facet menu is selected because the current facet is
 
     >>> recipe_facet_menu_view = FacetMenuView(recipe, request)
     >>> recipe_facet_menu_view.initialize()
-    >>> print recipe_facet_menu_view()
+    >>> print(recipe_facet_menu_view())
     <div>
       <ul>
         <li>
@@ -1171,7 +1171,7 @@ available (as can be seen in the next example).
 
     >>> recipe_menu_view = NavigationMenuView(recipe, request)
     >>> recipe_menu_view.initialize()
-    >>> print recipe_menu_view()
+    >>> print(recipe_menu_view())
     <div>
       <ul>
         <li>
@@ -1193,7 +1193,7 @@ URL.
     >>> recipe_view_menu_view = NavigationMenuView(
     ...     recipe_journal_view, request)
     >>> recipe_view_menu_view.initialize()
-    >>> print recipe_view_menu_view()
+    >>> print(recipe_view_menu_view())
     <div>
       <label>Journal</label>
       <ul>

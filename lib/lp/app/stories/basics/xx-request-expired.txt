@@ -14,10 +14,10 @@ causing a soft timeout to be logged.
     ...     soft_request_timeout: 2
     ...     """)
     >>> config.push('base_test_data', test_data)
-    >>> print http(r"""
+    >>> print(http(r"""
     ... GET /+soft-timeout HTTP/1.1
     ... Authorization: Basic Zm9vLmJhckBjYW5vbmljYWwuY29tOnRlc3Q=
-    ... """)
+    ... """))
     HTTP/1.1 503 Service Unavailable
     ...
     Retry-After: 900

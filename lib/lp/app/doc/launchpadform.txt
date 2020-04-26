@@ -193,7 +193,7 @@ submitted with that button.
   ...           'field.actions.change': 'Change Name'})
   >>> view = FormTestView4(context, request)
   >>> view.initialize()
-  >>> print context.displayname
+  >>> print(context.displayname)
   bob
 
 Note that input validation should not be performed inside the action
@@ -292,9 +292,9 @@ required fields, and show how to validate one field at a time.
   ...     view.setUpWidgets()
   ...     for error in view.validate_widgets(data, names=names):
   ...         if isinstance(error, str):
-  ...            print error
+  ...            print(error)
   ...         else:
-  ...             print "%s: %s" % (error.widget_title, error.doc())
+  ...             print("%s: %s" % (error.widget_title, error.doc()))
 
 Only the fields we specify will be validated:
 
@@ -340,7 +340,7 @@ redirect the user to another URL.  The URL is specified by the
   >>> view.initialize()
   >>> request.response.getStatus()
   302
-  >>> print request.response.getHeader('location')
+  >>> print(request.response.getHeader('location'))
   http://www.ubuntu.com/
 
 
@@ -420,7 +420,7 @@ on page load.  By default, the first form widget will be focused:
   >>> request = LaunchpadTestRequest()
   >>> view = FormTestView5(context, request)
   >>> view.initialize()
-  >>> print view.focusedElementScript()
+  >>> print(view.focusedElementScript())
   <!--
   setFocusByName('field.name');
   // -->
@@ -435,7 +435,7 @@ The focus can also be set explicitly by overriding initial_focus_widget:
   >>> request = LaunchpadTestRequest()
   >>> view = FormTestView7(context, request)
   >>> view.initialize()
-  >>> print view.focusedElementScript()
+  >>> print(view.focusedElementScript())
   <!--
   setFocusByName('field.password');
   // -->
@@ -451,7 +451,7 @@ Note that if the form is being redisplayed because of a validation
 error, the generated script will focus the first widget with an error:
 
   >>> view.setFieldError('password', 'Bad password')
-  >>> print view.focusedElementScript()
+  >>> print(view.focusedElementScript())
   <!--
   setFocusByName('field.password');
   // -->
@@ -489,7 +489,7 @@ By default, all widgets are visible.
   >>> from lp.services.beautifulsoup import BeautifulSoup
   >>> soup = BeautifulSoup(view())
   >>> for input in soup.findAll('input'):
-  ...     print input
+  ...     print(input)
   <input ... name="field.displayname" ... type="text" ...
 
 If we change a widget's 'visible' flag to False, that widget is rendered
@@ -503,7 +503,7 @@ using its hidden() method, which should return a hidden <input> tag.
 
   >>> soup = BeautifulSoup(view())
   >>> for input in soup.findAll('input'):
-  ...     print input
+  ...     print(input)
   <input ... name="field.displayname" type="hidden" ...
 
   >>> import os
@@ -534,12 +534,12 @@ action).  Those actions can be marked as such:
   ...
   ...     @action(u'Change', name='change')
   ...     def redirect_action(self, action, data):
-  ...         print 'Change'
+  ...         print('Change')
   ...
   ...     @safe_action
   ...     @action(u'Search', name='search')
   ...     def search_action(self, action, data):
-  ...         print 'Search'
+  ...         print('Search')
   >>> context = FormTest()
 
 With this form, the "change" action can only be submitted with a POST
@@ -596,7 +596,7 @@ In other respects, it is used the same way as LaunchpadFormView:
   ...     @action(u"Change Name", name="change")
   ...     def change_action(self, action, data):
   ...         if self.updateContextFromData(data):
-  ...             print 'Context was updated'
+  ...             print('Context was updated')
 
   >>> context = FormTest()
   >>> request = LaunchpadTestRequest()
@@ -606,7 +606,7 @@ In other respects, it is used the same way as LaunchpadFormView:
 
 The field values take their defaults from the context object:
 
-  >>> print view.widgets['displayname']()
+  >>> print(view.widgets['displayname']())
   <input...value="Fred"...
 
 The updateContextFromData() method takes care of updating the context

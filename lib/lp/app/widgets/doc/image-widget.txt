@@ -61,7 +61,7 @@ button allows the user to upload a new image.
 
     >>> from lp.services.beautifulsoup import BeautifulSoup
     >>> html = widget()
-    >>> print BeautifulSoup(html).find('img').get('src')
+    >>> print(BeautifulSoup(html).find('img').get('src'))
     /@@/person-logo
 
     >>> def print_radio_items(html):
@@ -72,7 +72,7 @@ button allows the user to upload a new image.
     ...             item += ': SELECTED'
     ...         else:
     ...             item += ': NOT SELECTED'
-    ...         print item
+    ...         print(item)
     >>> print_radio_items(html)
     keep: SELECTED
     change: NOT SELECTED

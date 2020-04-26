@@ -4,12 +4,13 @@ The tour pages.
 
   >>> browser.open('http://launchpad.test/')
   >>> browser.getLink('Take the tour').click()
-  >>> print extract_text(find_tag_by_id(browser.contents, 'footer-navigation'))
+  >>> print(
+  ...     extract_text(find_tag_by_id(browser.contents, 'footer-navigation')))
   Next...© 2004-2020 Canonical Ltd...
 
 The main template.
 
   >>> browser.open('http://launchpad.test')
-  >>> print extract_text(find_tag_by_id(browser.contents, 'footer'))
+  >>> print(extract_text(find_tag_by_id(browser.contents, 'footer')))
   © 2004-2020 Canonical Ltd.
   ...

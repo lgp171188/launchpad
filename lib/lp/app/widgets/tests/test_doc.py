@@ -21,11 +21,12 @@ here = os.path.dirname(os.path.realpath(__file__))
 special = {
     'image-widget.txt': LayeredDocFileSuite(
         '../doc/image-widget.txt',
-        setUp=setUp, tearDown=tearDown,
+        setUp=lambda test: setUp(test, future=True), tearDown=tearDown,
         layer=LaunchpadFunctionalLayer,
         ),
     }
 
 
 def test_suite():
-    return build_test_suite(here, special)
+    return build_test_suite(
+        here, special, setUp=lambda test: setUp(test, future=True))

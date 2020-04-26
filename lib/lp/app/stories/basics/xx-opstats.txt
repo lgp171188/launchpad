@@ -22,7 +22,7 @@ Create a function to report our stats for these tests.
     ...     for stat_key in sorted(stats.keys()):
     ...         value = stats[stat_key]
     ...         if value > 0:
-    ...             print "%s: %d" % (stat_key, value)
+    ...             print("%s: %d" % (stat_key, value))
     ...     reset()
     ...
 
@@ -39,7 +39,7 @@ are adjusted after the request has been served:
     >>> for key in sorted(stats.keys()):
     ...     # Print all so new keys added to OpStats.stats will trigger
     ...     # failures in this test prompting developers to extend it.
-    ...     print '%s: %d' % (key, stats[key])
+    ...     print('%s: %d' % (key, stats[key]))
     1XXs: 0
     2XXs: 0
     3XXs: 0
@@ -146,7 +146,7 @@ Number of XML-RPC Faults
 
     >>> try:
     ...     opstats = lp_xmlrpc.invalid() # XXX: Need a HTTP test too
-    ...     print 'Should have raised a Fault exception!'
+    ...     print('Should have raised a Fault exception!')
     ... except xmlrpc_client.Fault:
     ...     pass
     >>> report()
@@ -212,7 +212,7 @@ Stats can also be retrieved via HTTP in cricket-graph format:
 
     >>> output = http("GET / HTTP/1.1\nHost: launchpad.test\n")
     >>> output = http("GET / HTTP/1.1\nHost: launchpad.test\n")
-    >>> print http("GET /+opstats HTTP/1.1\nHost: launchpad.test\n")
+    >>> print(http("GET /+opstats HTTP/1.1\nHost: launchpad.test\n"))
     HTTP/1.1 200 Ok
     ...
     Content-Type: text/plain; charset=US-ASCII
@@ -265,7 +265,7 @@ the new connection information is used.
 
 We can still access the opstats page.
 
-    >>> print http("GET /+opstats HTTP/1.1\nHost: launchpad.test\n")
+    >>> print(http("GET /+opstats HTTP/1.1\nHost: launchpad.test\n"))
     HTTP/1.1 200 Ok
     ...
     Content-Type: text/plain; charset=US-ASCII
@@ -275,11 +275,11 @@ We can still access the opstats page.
 
 This is also true if we are provide authentication.
 
-    >>> print http(r"""
+    >>> print(http(r"""
     ... GET /+opstats HTTP/1.1
     ... Host: launchpad.test
     ... Authorization: Basic Zm9vLmJhckBjYW5vbmljYWwuY29tOnRlc3Q=
-    ... """)
+    ... """))
     HTTP/1.1 200 Ok
     ...
     Content-Type: text/plain; charset=US-ASCII

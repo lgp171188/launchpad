@@ -24,7 +24,7 @@ composed of whitespace; the value is considered to be None.
 
 The widget converted the meaningless value to None.
 
-    >>> print widget.getInputValue()
+    >>> print(widget.getInputValue())
     None
 
 Excess whitespace and newlines are stripped.
@@ -32,7 +32,7 @@ Excess whitespace and newlines are stripped.
     >>> request = LaunchpadTestRequest(
     ...     form={'field.code_name' : ' flower \n'})
     >>> widget = NoneableTextWidget(field, request)
-    >>> print widget.getInputValue()
+    >>> print(widget.getInputValue())
     flower
 
 
@@ -54,7 +54,7 @@ composed of whitespace; the value is considered to be None.
 
 The widget converted the meaningless value to None.
 
-    >>> print widget.getInputValue()
+    >>> print(widget.getInputValue())
     None
 
 Excess whitespace is stripped, but newlines are preserved.
