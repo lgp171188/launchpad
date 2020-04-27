@@ -977,17 +977,4 @@ class TestOCIRecipeAsyncWebservice(TestCaseWithFactory):
                 date_requested=Equals(fmt_date(build_request.date_requested)),
                 date_finished=Equals(fmt_date(build_request.date_finished)),
                 error_message=Equals(build_request.error_message),
-                builds_collection_link=Equals(build_request_url + '/builds')
             )))
-
-        builds = self.webservice.get(
-            ws_build_request["builds_collection_link"]).jsonBody()["entries"]
-        with person_logged_in(self.person):
-            self.assertThat(builds, MatchesSetwise(*[
-                ContainsDict({
-                    "buildstate": Equals("Needs building"),
-                    "title": Equals(
-                        "%s build of %s" % (
-                            arch_series.processor.name, api_url(oci_recipe)))
-                })
-                for arch_series in distro_arch_series]))
