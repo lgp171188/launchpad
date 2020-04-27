@@ -180,7 +180,6 @@ class ArchiveSigningKeySet:
         if exact_match:
             rs = rs.find(
                 ArchiveSigningKey.earliest_distro_series == distro_series)
-            return rs.one()
 
         # prefetch related signing keys to avoid extra queries.
         signing_keys = store.find(SigningKey, [

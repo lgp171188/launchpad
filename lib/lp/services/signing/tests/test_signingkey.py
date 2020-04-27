@@ -268,13 +268,13 @@ class TestArchiveSigningKey(TestCaseWithFactory):
 
         # Should get the UEFI key for distro_series1
         self.assertEqual(
-            series1_uefi_key,
+            series1_uefi_key.signing_key,
             arch_signing_key_set.getSigningKey(
                 UEFI, archive, distro_series1, exact_match=True)
         )
         # Should get the archive's KMOD key.
         self.assertEqual(
-            arch_kmod_key,
+            arch_kmod_key.signing_key,
             arch_signing_key_set.getSigningKey(
                 KMOD, archive, None, exact_match=True)
         )
