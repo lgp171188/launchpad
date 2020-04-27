@@ -49,6 +49,7 @@ from lp.archivepublisher.interfaces.publisherconfig import IPublisherConfigSet
 from lp.archivepublisher.signing import (
     PUBLISHER_SIGNING_SERVICE_INJECTS_KEYS,
     PUBLISHER_USES_SIGNING_SERVICE,
+    SigningKeyConflict,
     SigningUpload,
     UefiUpload,
     )
@@ -2101,7 +2102,8 @@ class TestSigningUploadWithSigningService(TestSigningHelpers):
         self.tarfile.close()
         self.buffer.close()
 
-        upload.process(self.archive, self.path, self.suite)
+        self.assertRaises(SigningKeyConflict,
+                          upload.process, self.archive, self.path, self.suite)
         self.assertTrue(upload.autokey)
 
         # Make sure we didn't call lp-signing's /inject endpoint

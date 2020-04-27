@@ -63,6 +63,10 @@ class SigningServiceError(Exception):
     pass
 
 
+class SigningKeyConflict(Exception):
+    pass
+
+
 class SigningUpload(CustomUpload):
     """Signing custom upload.
 
@@ -454,7 +458,9 @@ class SigningUpload(CustomUpload):
         if current_key is not None:
             self.logger.info("Skipping injection for key type %s: archive "
                              "already has a key on lp-signing.", key_type)
-            return
+            raise SigningKeyConflict(
+                "Archive %s already has a signing key type %s on lp-signing."
+                % (self.archive.reference, key_type))
 
         if self.logger:
             self.logger.info(
@@ -507,8 +513,13 @@ class SigningUpload(CustomUpload):
             os.chmod(cert_filename, 0o644)
 
             signing_key_type = getattr(SigningKeyType, key_type.upper())
-            self.injectIntoSigningService(
-                signing_key_type, key_filename, cert_filename)
+            try:
+                self.injectIntoSigningService(
+                    signing_key_type, key_filename, cert_filename)
+            except SigningKeyConflict:
+                os.unlink(key_filename)
+                os.unlink(cert_filename)
+                raise
 
     def generateUefiKeys(self):
         """Generate new UEFI Keys for this archive."""
@@ -598,8 +609,13 @@ class SigningUpload(CustomUpload):
             os.chmod(x509_filename, 0o644)
 
             signing_key_type = getattr(SigningKeyType, key_type.upper())
-            self.injectIntoSigningService(
-                signing_key_type, pem_filename, x509_filename)
+            try:
+                self.injectIntoSigningService(
+                    signing_key_type, pem_filename, x509_filename)
+            except SigningKeyConflict:
+                os.unlink(pem_filename)
+                os.unlink(x509_filename)
+                raise
 
     def generateKmodKeys(self):
         """Generate new Kernel Signing Keys for this archive."""
