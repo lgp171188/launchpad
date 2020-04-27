@@ -3,6 +3,10 @@
 # Python dependency is impossible or unreliable (perhaps due to frequent ABI
 # changes in system libraries they depend on, or frequent security updates
 # managed by the distribution's security team).
+#
+# Package names that end with "?" are optional, in that link-system-packages
+# will not fail if they are missing; this should be reserved for packages
+# only used by the test suite.
 
 # Used by launchpad-buildd.
 apt
@@ -19,7 +23,7 @@ convoy
 GeoIP
 
 # lp.testing.html5browser
-gi
+gi?
 
 # lp.services.fields, lp.services.spriteutils
 PIL
@@ -28,5 +32,5 @@ PIL
 sqlite
 _sqlite
 
-# Optional dependency of bzr-git and bzr-svn.
+# Used by bzr-git and bzr-svn.
 tdb

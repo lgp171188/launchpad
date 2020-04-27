@@ -10,17 +10,18 @@ __all__ = [
     'CannotModifyOCIRecipeProcessor',
     'DuplicateOCIRecipeName',
     'IOCIRecipe',
+    'IOCIRecipeBuildRequest',
     'IOCIRecipeEdit',
     'IOCIRecipeEditableAttributes',
     'IOCIRecipeSet',
     'IOCIRecipeView',
     'NoSourceForOCIRecipe',
     'NoSuchOCIRecipe',
-    'OCI_RECIPE_ALLOW_CREATE',
-    'OCI_RECIPE_WEBHOOKS_FEATURE_FLAG',
     'OCIRecipeBuildAlreadyPending',
     'OCIRecipeFeatureDisabled',
     'OCIRecipeNotOwner',
+    'OCI_RECIPE_ALLOW_CREATE',
+    'OCI_RECIPE_WEBHOOKS_FEATURE_FLAG',
     ]
 
 from lazr.restful.declarations import (
@@ -46,6 +47,7 @@ from zope.interface import (
     )
 from zope.schema import (
     Bool,
+    Choice,
     Datetime,
     Dict,
     Int,
@@ -62,6 +64,7 @@ from lp.app.validators.path import path_does_not_escape
 from lp.buildmaster.interfaces.processor import IProcessor
 from lp.code.interfaces.gitref import IGitRef
 from lp.code.interfaces.gitrepository import IGitRepository
+from lp.oci.enums import OCIRecipeBuildRequestStatus
 from lp.registry.interfaces.distribution import IDistribution
 from lp.registry.interfaces.distroseries import IDistroSeries
 from lp.registry.interfaces.ociproject import IOCIProject
@@ -133,6 +136,41 @@ class CannotModifyOCIRecipeProcessor(Exception):
             self._fmt % {'processor': processor.name})
 
 
+class IOCIRecipeBuildRequest(Interface):
+    """A request to build an OCI Recipe."""
+    export_as_webservice_entry(
+        publish_web_link=True, as_of="devel",
+        singular_name="oci_recipe_build_request")
+
+    id = Int(title=_("ID"), required=True, readonly=True)
+
+    date_requested = exported(Datetime(
+        title=_("The time when this request was made"),
+        required=True, readonly=True))
+
+    date_finished = exported(Datetime(
+        title=_("The time when this request finished"),
+        required=False, readonly=True))
+
+    recipe = exported(Reference(
+        # Really IOCIRecipe, patched in lp.oci.interfaces.webservice.
+        Interface,
+        title=_("OCI Recipe"), required=True, readonly=True))
+
+    status = exported(Choice(
+        title=_("Status"), vocabulary=OCIRecipeBuildRequestStatus,
+        required=True, readonly=True))
+
+    error_message = exported(TextLine(
+        title=_("Error message"), required=False, readonly=True))
+
+    builds = exported(CollectionField(
+        title=_("Builds produced by this request"),
+        # Really IOCIRecipeBuild, patched in lp.oci.interfaces.webservice.
+        value_type=Reference(schema=Interface),
+        required=True, readonly=True))
+
+
 class IOCIRecipeView(Interface):
     """`IOCIRecipe` attributes that require launchpad.View permission."""
 
@@ -201,14 +239,6 @@ class IOCIRecipeView(Interface):
         # Really IOCIRecipeBuild, patched in _schema_circular_imports.
         value_type=Reference(schema=Interface), readonly=True)
 
-    def requestBuild(requester, architecture):
-        """Request that the OCI recipe is built.
-
-        :param requester: The person requesting the build.
-        :param architecture: The architecture to build for.
-        :return: `IOCIRecipeBuild`.
-        """
-
     push_rules = exported(CollectionField(
         title=_("Push rules for this OCI recipe."),
         description=_("All of the push rules for registry upload "
@@ -221,6 +251,37 @@ class IOCIRecipeView(Interface):
         description=_(
             "Whether everything is set up to allow uploading builds of "
             "this OCI recipe to a registry."))
+
+    def requestBuild(requester, architecture):
+        """Request that the OCI recipe is built.
+
+        :param requester: The person requesting the build.
+        :param architecture: The architecture to build for.
+        :return: `IOCIRecipeBuild`.
+        """
+
+    @call_with(requester=REQUEST_USER)
+    @export_factory_operation(IOCIRecipeBuildRequest, [])
+    @operation_for_version("devel")
+    def requestBuilds(requester):
+        """Request that the OCI recipe is built for all available
+        architectures.
+
+        :param requester: The person requesting the build.
+        :return: A `IOCIRecipeBuildRequest` instance.
+        """
+
+    def requestBuildsFromJob(requester):
+        """Synchronous part of requesting builds, that should be called as a
+        Celery task.
+
+        :param requester: The person requesting the build.
+        :return: A list of created IOCIRecipeBuild objects.
+        """
+
+    def getBuildRequest(job_id):
+        """Get an OCIRecipeBuildRequest object for the given job_id.
+        """
 
 
 class IOCIRecipeEdit(IWebhookTarget):

@@ -8,9 +8,9 @@ from __future__ import absolute_import, print_function, unicode_literals
 __metaclass__ = type
 __all__ = [
     'OCIRecipe',
+    'OCIRecipeBuildRequest',
     'OCIRecipeSet',
     ]
-
 
 from lazr.lifecycle.event import ObjectCreatedEvent
 import pytz
@@ -42,11 +42,13 @@ from lp.buildmaster.interfaces.buildqueue import IBuildQueueSet
 from lp.buildmaster.model.buildfarmjob import BuildFarmJob
 from lp.buildmaster.model.buildqueue import BuildQueue
 from lp.buildmaster.model.processor import Processor
+from lp.oci.enums import OCIRecipeBuildRequestStatus
 from lp.oci.interfaces.ocipushrule import IOCIPushRuleSet
 from lp.oci.interfaces.ocirecipe import (
     CannotModifyOCIRecipeProcessor,
     DuplicateOCIRecipeName,
     IOCIRecipe,
+    IOCIRecipeBuildRequest,
     IOCIRecipeSet,
     NoSourceForOCIRecipe,
     NoSuchOCIRecipe,
@@ -56,7 +58,10 @@ from lp.oci.interfaces.ocirecipe import (
     OCIRecipeNotOwner,
     )
 from lp.oci.interfaces.ocirecipebuild import IOCIRecipeBuildSet
-from lp.oci.interfaces.ociregistrycredentials import IOCIRegistryCredentialsSet
+from lp.oci.interfaces.ocirecipejob import IOCIRecipeRequestBuildsJobSource
+from lp.oci.interfaces.ociregistrycredentials import (
+    IOCIRegistryCredentialsSet,
+    )
 from lp.oci.model.ocipushrule import OCIPushRule
 from lp.oci.model.ocirecipebuild import OCIRecipeBuild
 from lp.registry.interfaces.person import IPersonSet
@@ -77,6 +82,8 @@ from lp.services.database.stormexpr import (
     NullsLast,
     )
 from lp.services.features import getFeatureFlag
+from lp.services.job.interfaces.job import JobStatus
+from lp.services.propertycache import cachedproperty
 from lp.services.webhooks.interfaces import IWebhookSet
 from lp.services.webhooks.model import WebhookTargetMixin
 from lp.soyuz.model.distroarchseries import DistroArchSeries
@@ -298,15 +305,25 @@ class OCIRecipe(Storm, WebhookTargetMixin):
                 "%s cannot create OCI image builds owned by %s." %
                 (requester.display_name, self.owner.display_name))
 
-    def requestBuild(self, requester, distro_arch_series):
-        self._checkRequestBuild(requester)
+    def _hasPendingBuilds(self, distro_arch_series):
+        """Checks if this OCIRecipe has pending builds for all processors
+        in the given list of distro_arch_series.
 
+        :param distro_arch_series: A list of DistroArchSeries
+        :return: True if all processors have pending builds. False otherwise.
+        """
+        processors = {i.processor for i in distro_arch_series}
         pending = IStore(self).find(
             OCIRecipeBuild,
             OCIRecipeBuild.recipe == self.id,
-            OCIRecipeBuild.processor == distro_arch_series.processor,
+            OCIRecipeBuild.processor_id.is_in([p.id for p in processors]),
             OCIRecipeBuild.status == BuildStatus.NEEDSBUILD)
-        if pending.any() is not None:
+        pending_processors = {i.processor for i in pending}
+        return len(pending_processors) == len(processors)
+
+    def requestBuild(self, requester, distro_arch_series):
+        self._checkRequestBuild(requester)
+        if self._hasPendingBuilds([distro_arch_series]):
             raise OCIRecipeBuildAlreadyPending
 
         build = getUtility(IOCIRecipeBuildSet).new(
@@ -314,6 +331,33 @@ class OCIRecipe(Storm, WebhookTargetMixin):
         build.queueBuild()
         notify(ObjectCreatedEvent(build, user=requester))
         return build
+
+    def getBuildRequest(self, job_id):
+        return OCIRecipeBuildRequest(self, job_id)
+
+    def requestBuildsFromJob(self, requester):
+        self._checkRequestBuild(requester)
+        distro_arch_series_to_build = set(self.getAllowedArchitectures())
+
+        builds = []
+        for das in distro_arch_series_to_build:
+            try:
+                builds.append(self.requestBuild(requester, das))
+            except OCIRecipeBuildAlreadyPending:
+                pass
+
+        # If we have distro_arch_series_to_build, but they all failed to due
+        # to pending builds, we fail the job.
+        if len(distro_arch_series_to_build) > 0 and len(builds) == 0:
+            raise OCIRecipeBuildAlreadyPending
+
+        return builds
+
+    def requestBuilds(self, requester):
+        self._checkRequestBuild(requester)
+        job = getUtility(IOCIRecipeRequestBuildsJobSource).create(
+            self, requester)
+        return self.getBuildRequest(job.job_id)
 
     @property
     def push_rules(self):
@@ -499,3 +543,48 @@ class OCIRecipeSet:
 
         list(getUtility(IPersonSet).getPrecachedPersonsFromIDs(
             person_ids, need_validity=True))
+
+
+@implementer(IOCIRecipeBuildRequest)
+class OCIRecipeBuildRequest:
+    """See `IOCIRecipeBuildRequest`
+
+    This is not directly backed by a database table; instead, it is a
+    webservice-friendly view of an asynchronous build request.
+    """
+    def __init__(self, oci_recipe, id):
+        self.recipe = oci_recipe
+        self.id = id
+
+    @cachedproperty
+    def job(self):
+        util = getUtility(IOCIRecipeRequestBuildsJobSource)
+        return util.getByOCIRecipeAndID(
+            self.recipe, self.id)
+
+    @property
+    def date_requested(self):
+        return self.job.date_created
+
+    @property
+    def date_finished(self):
+        return self.job.date_finished
+
+    @property
+    def status(self):
+        status_map = {
+            JobStatus.WAITING: OCIRecipeBuildRequestStatus.PENDING,
+            JobStatus.RUNNING: OCIRecipeBuildRequestStatus.PENDING,
+            JobStatus.COMPLETED: OCIRecipeBuildRequestStatus.COMPLETED,
+            JobStatus.FAILED: OCIRecipeBuildRequestStatus.FAILED,
+            JobStatus.SUSPENDED: OCIRecipeBuildRequestStatus.PENDING,
+        }
+        return status_map[self.job.status]
+
+    @property
+    def error_message(self):
+        return self.job.error_message
+
+    @property
+    def builds(self):
+        return self.job.builds

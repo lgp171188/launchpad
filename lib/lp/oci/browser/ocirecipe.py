@@ -74,6 +74,14 @@ class OCIRecipeNavigation(WebhookTargetNavigationMixin, Navigation):
 
     usedfor = IOCIRecipe
 
+    @stepthrough('+build-request')
+    def traverse_build_request(self, name):
+        try:
+            job_id = int(name)
+        except ValueError:
+            return None
+        return self.context.getBuildRequest(job_id)
+
     @stepthrough('+build')
     def traverse_build(self, name):
         build = get_build_by_id_str(IOCIRecipeBuildSet, name)
