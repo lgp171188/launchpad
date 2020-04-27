@@ -164,11 +164,11 @@ class IOCIRecipeBuildRequest(Interface):
     error_message = exported(TextLine(
         title=_("Error message"), required=False, readonly=True))
 
-    builds = CollectionField(
+    builds = exported(CollectionField(
         title=_("Builds produced by this request"),
         # Really IOCIRecipeBuild, patched in lp.oci.interfaces.webservice.
         value_type=Reference(schema=Interface),
-        required=True, readonly=True)
+        required=True, readonly=True))
 
 
 class IOCIRecipeView(Interface):

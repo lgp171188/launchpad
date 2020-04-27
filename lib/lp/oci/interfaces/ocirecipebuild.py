@@ -17,6 +17,10 @@ from lazr.enum import (
     EnumeratedType,
     Item,
     )
+from lazr.restful.declarations import (
+    export_as_webservice_entry,
+    exported,
+    )
 from lazr.restful.fields import (
     CollectionField,
     Reference,
@@ -89,17 +93,17 @@ class IOCIRecipeBuildView(IPackageBuild):
         required=True,
         readonly=True)
 
-    eta = Datetime(
+    eta = exported(Datetime(
         title=_("The datetime when the build job is estimated to complete."),
-        readonly=True)
+        readonly=True))
 
-    estimate = Bool(
-        title=_("If true, the date value is an estimate."), readonly=True)
+    estimate = exported(Bool(
+        title=_("If true, the date value is an estimate."), readonly=True))
 
-    date = Datetime(
+    date = exported(Datetime(
         title=_(
             "The date when the build completed or is estimated to complete."),
-        readonly=True)
+        readonly=True))
 
     def getFiles():
         """Retrieve the build's `IOCIFile` records.
@@ -127,10 +131,10 @@ class IOCIRecipeBuildView(IPackageBuild):
         :return: The corresponding `ILibraryFileAlias`.
         """
 
-    distro_arch_series = Reference(
+    distro_arch_series = exported(Reference(
         IDistroArchSeries,
         title=_("The series and architecture for which to build."),
-        required=True, readonly=True)
+        required=True, readonly=True))
 
     score = Int(
         title=_("Score of the related build farm job (if any)."),
@@ -160,11 +164,11 @@ class IOCIRecipeBuildView(IPackageBuild):
     last_registry_upload_job = Reference(
         title=_("Last registry upload job for this build."), schema=Interface)
 
-    registry_upload_status = Choice(
+    registry_upload_status = exported(Choice(
         title=_("Registry upload status"),
         vocabulary=OCIRecipeBuildRegistryUploadStatus,
         required=True, readonly=False
-    )
+    ))
 
 
 class IOCIRecipeBuildEdit(Interface):
@@ -203,6 +207,8 @@ class IOCIRecipeBuildAdmin(Interface):
 class IOCIRecipeBuild(IOCIRecipeBuildAdmin, IOCIRecipeBuildEdit,
                       IOCIRecipeBuildView):
     """A build record for an OCI recipe."""
+    export_as_webservice_entry(
+        publish_web_link=True, as_of="devel", singular_name="oci_recipe_build")
 
 
 class IOCIRecipeBuildSet(ISpecificBuildFarmJobSource):
