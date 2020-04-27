@@ -8,8 +8,8 @@ __all__ = [
     'IOCIProjectSeries',
     'IOCIPushRule',
     'IOCIRecipe',
-    'IOCIRecipeBuildRequest',
     'IOCIRecipeBuild',
+    'IOCIRecipeBuildRequest',
     ]
 
 from lp.oci.interfaces.ocipushrule import IOCIPushRule
