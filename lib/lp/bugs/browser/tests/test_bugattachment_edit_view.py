@@ -39,6 +39,11 @@ class TestBugAttachmentEditView(TestCaseWithFactory):
 
         login_person(self.bug_owner)
         self.bug = self.factory.makeBug(owner=self.bug_owner)
+        # Reassign the bug's default bug task to a target such that the
+        # pillar is different from the immediate target.  This can make a
+        # difference for some security checks.
+        self.bug.default_bugtask.transitionToTarget(
+            self.factory.makeDistributionSourcePackage(), self.bug_owner)
         self.bugattachment = self.factory.makeBugAttachment(
             bug=self.bug, filename='foo.diff', data=b'file content',
             description='attachment description', content_type='text/plain',
