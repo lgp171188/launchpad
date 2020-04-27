@@ -444,8 +444,8 @@ class SigningUpload(CustomUpload):
         if key_type.name not in key_types_to_inject:
             if self.logger:
                 self.logger.info(
-                    "Skipping injection for key type %s: not in %s" %
-                    (key_type, key_types_to_inject))
+                    "Skipping injection for key type %s: not in %s",
+                    key_type, key_types_to_inject)
             return
 
         key_set = getUtility(IArchiveSigningKeySet)
@@ -458,8 +458,8 @@ class SigningUpload(CustomUpload):
 
         if self.logger:
             self.logger.info(
-                "Injecting key_type %s for archive %s into signing service" %
-                (key_type, self.archive.name))
+                "Injecting key_type %s for archive %s into signing service",
+                key_type, self.archive.name)
 
         with open(private_key_file, 'rb') as fd:
             private_key = fd.read()
