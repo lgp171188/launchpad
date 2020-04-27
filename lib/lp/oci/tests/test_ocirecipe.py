@@ -42,8 +42,8 @@ from lp.oci.interfaces.ocirecipe import (
     )
 from lp.oci.interfaces.ocirecipebuild import IOCIRecipeBuildSet
 from lp.oci.interfaces.ocirecipejob import IOCIRecipeRequestBuildsJobSource
-from lp.registry.interfaces.series import SeriesStatus
 from lp.oci.tests.helpers import OCIConfigHelperMixin
+from lp.registry.interfaces.series import SeriesStatus
 from lp.services.config import config
 from lp.services.database.constants import (
     ONE_DAY_AGO,
