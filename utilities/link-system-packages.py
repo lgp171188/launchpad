@@ -14,8 +14,15 @@ import os.path
 import re
 
 
-def link_module(name, virtualenv_libdir):
-    module = importlib.import_module(name)
+def link_module(name, virtualenv_libdir, optional=False):
+    try:
+        module = importlib.import_module(name)
+    except ImportError:
+        if optional:
+            print("Skipping missing optional module %s." % name)
+            return
+        else:
+            raise
     path = module.__file__
     if os.path.basename(path).startswith("__init__."):
         path = os.path.dirname(path)
@@ -40,7 +47,12 @@ def main():
         line = re.sub(r"#.*", "", line).strip()
         if not line:
             continue
-        link_module(line, args.virtualenv_libdir)
+        if line.endswith("?"):
+            line = line[:-1]
+            optional = True
+        else:
+            optional = False
+        link_module(line, args.virtualenv_libdir, optional=optional)
 
 
 if __name__ == "__main__":
