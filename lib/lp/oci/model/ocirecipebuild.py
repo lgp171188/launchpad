@@ -107,6 +107,8 @@ class OCIRecipeBuild(PackageBuildMixin, Storm):
 
     id = Int(name='id', primary=True)
 
+    build_request_id = Int(name='build_request', allow_none=True)
+
     requester_id = Int(name='requester', allow_none=False)
     requester = Reference(requester_id, 'Person.id')
 
@@ -148,8 +150,8 @@ class OCIRecipeBuild(PackageBuildMixin, Storm):
     pocket = PackagePublishingPocket.UPDATES
 
     def __init__(self, build_farm_job, requester, recipe,
-                 processor, virtualized, date_created):
-
+                 processor, virtualized, date_created, build_request=None):
+        """Construct an `OCIRecipeBuild`."""
         self.requester = requester
         self.recipe = recipe
         self.processor = processor
@@ -157,6 +159,14 @@ class OCIRecipeBuild(PackageBuildMixin, Storm):
         self.date_created = date_created
         self.status = BuildStatus.NEEDSBUILD
         self.build_farm_job = build_farm_job
+        if build_request is not None:
+            self.build_request_id = build_request.id
+
+    @property
+    def build_request(self):
+        """See `IOCIRecipeBuild`."""
+        if self.build_request_id is not None:
+            return self.recipe.getBuildRequest(self.build_request_id)
 
     def __repr__(self):
         return "<OCIRecipeBuild ~%s/%s/+oci/%s/+recipe/%s/+build/%d>" % (
@@ -421,9 +431,8 @@ class OCIRecipeBuildSet(SpecificBuildFarmJobSourceMixin):
     """See `IOCIRecipeBuildSet`."""
 
     def new(self, requester, recipe, distro_arch_series,
-            date_created=DEFAULT):
+            date_created=DEFAULT, build_request=None):
         """See `IOCIRecipeBuildSet`."""
-
         virtualized = (
             not distro_arch_series.processor.supports_nonvirtualized
             or recipe.require_virtualized)
@@ -433,7 +442,7 @@ class OCIRecipeBuildSet(SpecificBuildFarmJobSourceMixin):
             OCIRecipeBuild.job_type, BuildStatus.NEEDSBUILD, date_created)
         ocirecipebuild = OCIRecipeBuild(
             build_farm_job, requester, recipe, distro_arch_series.processor,
-            virtualized, date_created)
+            virtualized, date_created, build_request=build_request)
         store.add(ocirecipebuild)
         return ocirecipebuild
 

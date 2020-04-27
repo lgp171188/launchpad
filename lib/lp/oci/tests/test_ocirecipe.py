@@ -5,11 +5,9 @@
 
 from __future__ import absolute_import, print_function, unicode_literals
 
-from datetime import datetime
 import json
 
 from fixtures import FakeLogger
-from pytz import utc
 from six import (
     ensure_text,
     string_types,
@@ -18,6 +16,7 @@ from storm.exceptions import LostObjectError
 from testtools.matchers import (
     ContainsDict,
     Equals,
+    Is,
     IsInstance,
     MatchesDict,
     MatchesSetwise,
@@ -206,6 +205,7 @@ class TestOCIRecipe(OCIConfigHelperMixin, TestCaseWithFactory):
                 canonical_url(build, force_local_path=True)),
             "action": Equals("created"),
             "recipe": Equals(canonical_url(recipe, force_local_path=True)),
+            "build_request": Is(None),
             "status": Equals("Needs building"),
             'registry_upload_status': Equals('Unscheduled'),
             }
@@ -233,12 +233,14 @@ class TestOCIRecipe(OCIConfigHelperMixin, TestCaseWithFactory):
         distro = ocirecipe.oci_project.distribution
         series = self.factory.makeDistroSeries(
             distribution=distro, status=SeriesStatus.CURRENT)
-
         arch_series_386 = self.getDistroArchSeries(series, "386", "386")
         arch_series_hppa = self.getDistroArchSeries(series, "hppa", "hppa")
+        job = getUtility(IOCIRecipeRequestBuildsJobSource).create(
+            ocirecipe, owner)
 
-        with person_logged_in(owner):
-            builds = ocirecipe.requestBuildsFromJob(owner)
+        with person_logged_in(job.requester):
+            builds = ocirecipe.requestBuildsFromJob(
+                job.requester, build_request=job.build_request)
             self.assertThat(builds, MatchesSetwise(
                 MatchesStructure(
                     recipe=Equals(ocirecipe),
@@ -254,27 +256,79 @@ class TestOCIRecipe(OCIConfigHelperMixin, TestCaseWithFactory):
             distribution=ocirecipe.oci_project.distribution,
             status=SeriesStatus.CURRENT)
         another_user = self.factory.makePerson()
-        with person_logged_in(another_user):
+        job = getUtility(IOCIRecipeRequestBuildsJobSource).create(
+            ocirecipe, another_user)
+        with person_logged_in(job.requester):
             self.assertRaises(
                 OCIRecipeNotOwner,
-                ocirecipe.requestBuildsFromJob, another_user)
+                ocirecipe.requestBuildsFromJob,
+                job.requester, build_request=job.build_request)
 
     def test_requestBuildsFromJob_with_pending_jobs(self):
         ocirecipe = removeSecurityProxy(self.factory.makeOCIRecipe())
         distro = ocirecipe.oci_project.distribution
         series = self.factory.makeDistroSeries(
             distribution=distro, status=SeriesStatus.CURRENT)
-
         arch_series_386 = self.getDistroArchSeries(series, "386", "386")
-
         self.factory.makeOCIRecipeBuild(
             recipe=ocirecipe, status=BuildStatus.NEEDSBUILD,
             distro_arch_series=arch_series_386)
+        job = getUtility(IOCIRecipeRequestBuildsJobSource).create(
+            ocirecipe, ocirecipe.owner)
 
-        with person_logged_in(ocirecipe.owner):
+        with person_logged_in(job.requester):
             self.assertRaises(
                 OCIRecipeBuildAlreadyPending,
-                ocirecipe.requestBuildsFromJob, ocirecipe.owner)
+                ocirecipe.requestBuildsFromJob,
+                job.requester, build_request=job.build_request)
+
+    def test_requestBuildsFromJob_triggers_webhooks(self):
+        # requestBuildsFromJob triggers webhooks, and the payload includes a
+        # link to the build request.
+        self.useFixture(FeatureFixture({
+            OCI_RECIPE_WEBHOOKS_FEATURE_FLAG: "on",
+            OCI_RECIPE_ALLOW_CREATE: "on",
+            }))
+        recipe = removeSecurityProxy(self.factory.makeOCIRecipe(
+            require_virtualized=False))
+        distro = recipe.oci_project.distribution
+        series = self.factory.makeDistroSeries(
+            distribution=distro, status=SeriesStatus.CURRENT)
+        self.getDistroArchSeries(series, "386", "386")
+        self.getDistroArchSeries(series, "hppa", "hppa")
+        job = getUtility(IOCIRecipeRequestBuildsJobSource).create(
+            recipe, recipe.owner)
+
+        logger = self.useFixture(FakeLogger())
+        hook = self.factory.makeWebhook(
+            target=job.recipe, event_types=["oci-recipe:build:0.1"])
+        with person_logged_in(job.requester):
+            builds = recipe.requestBuildsFromJob(
+                job.requester, build_request=job.build_request)
+            self.assertEqual(2, len(builds))
+            payload_matchers = [
+                MatchesDict({
+                    "recipe_build": Equals(canonical_url(
+                        build, force_local_path=True)),
+                    "action": Equals("created"),
+                    "recipe": Equals(canonical_url(
+                        job.recipe, force_local_path=True)),
+                    "build_request": Equals(canonical_url(
+                        job.build_request, force_local_path=True)),
+                    "status": Equals("Needs building"),
+                    "registry_upload_status": Equals("Unscheduled"),
+                    })
+                for build in builds]
+            self.assertThat(hook.deliveries, MatchesSetwise(*(
+                MatchesStructure(
+                    event_type=Equals("oci-recipe:build:0.1"),
+                    payload=payload_matcher)
+                for payload_matcher in payload_matchers)))
+            self.assertThat(
+                logger.output,
+                LogsScheduledWebhooks([
+                    (hook, "oci-recipe:build:0.1", payload_matcher)
+                    for payload_matcher in payload_matchers]))
 
     def test_destroySelf(self):
         oci_recipe = self.factory.makeOCIRecipe()
