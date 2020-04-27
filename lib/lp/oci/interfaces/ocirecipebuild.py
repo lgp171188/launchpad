@@ -17,7 +17,6 @@ from lazr.enum import (
     EnumeratedType,
     Item,
     )
-from lazr.restful.declarations import export_as_webservice_entry
 from lazr.restful.fields import (
     CollectionField,
     Reference,
@@ -204,11 +203,6 @@ class IOCIRecipeBuildAdmin(Interface):
 class IOCIRecipeBuild(IOCIRecipeBuildAdmin, IOCIRecipeBuildEdit,
                       IOCIRecipeBuildView):
     """A build record for an OCI recipe."""
-    # XXX pappacena 2020-04-27: We should expose the attributes on the
-    # webservice too.
-    export_as_webservice_entry(
-        publish_web_link=True, as_of="devel",
-        singular_name="oci_recipe_build")
 
 
 class IOCIRecipeBuildSet(ISpecificBuildFarmJobSource):
