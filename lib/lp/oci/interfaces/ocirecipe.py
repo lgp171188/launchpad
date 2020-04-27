@@ -49,6 +49,7 @@ from zope.schema import (
     Bool,
     Choice,
     Datetime,
+    Dict,
     Int,
     List,
     Text,
@@ -238,6 +239,19 @@ class IOCIRecipeView(Interface):
         # Really IOCIRecipeBuild, patched in _schema_circular_imports.
         value_type=Reference(schema=Interface), readonly=True)
 
+    push_rules = exported(CollectionField(
+        title=_("Push rules for this OCI recipe."),
+        description=_("All of the push rules for registry upload "
+                      "that apply to this recipe."),
+        # Really IOCIPushRule, patched in _schema_cirular_imports.
+        value_type=Reference(schema=Interface), readonly=True))
+
+    can_upload_to_registry = Bool(
+        title=_("Can upload to registry"), required=True, readonly=True,
+        description=_(
+            "Whether everything is set up to allow uploading builds of "
+            "this OCI recipe to a registry."))
+
     def requestBuild(requester, architecture):
         """Request that the OCI recipe is built.
 
@@ -269,25 +283,33 @@ class IOCIRecipeView(Interface):
         """Get an OCIRecipeBuildRequest object for the given job_id.
         """
 
-    push_rules = CollectionField(
-        title=_("Push rules for this OCI recipe."),
-        description=_("All of the push rules for registry upload "
-                      "that apply to this recipe."),
-        # Really IOCIPushRule, patched in _schema_cirular_imports.
-        value_type=Reference(schema=Interface), readonly=True)
-
-    can_upload_to_registry = Bool(
-        title=_("Can upload to registry"), required=True, readonly=True,
-        description=_(
-            "Whether everything is set up to allow uploading builds of "
-            "this OCI recipe to a registry."))
-
 
 class IOCIRecipeEdit(IWebhookTarget):
     """`IOCIRecipe` methods that require launchpad.Edit permission."""
 
     def destroySelf():
         """Delete this OCI recipe, provided that it has no builds."""
+
+    @call_with(owner=REQUEST_USER)
+    @operation_parameters(
+        registry_url=TextLine(
+            title=_("Registry URL"),
+            description=_("URL for the target registry"),
+            required=True),
+        image_name=TextLine(
+            title=_("Image name"),
+            description=_("Name of the image to push to on the registry"),
+            required=True),
+        credentials=Dict(
+            title=_("Registry credentials"),
+            description=_(
+                "The credentials to use in pushing the image to the registry"),
+            required=True))
+    # Really IOCIPushRule, patched in lp.oci.interfaces.webservice.
+    @export_factory_operation(Interface, [])
+    @operation_for_version("devel")
+    def newPushRule(owner, registry_url, image_name, credentials):
+        """Add a new rule for pushing builds of this recipe to a registry."""
 
 
 class IOCIRecipeEditableAttributes(IHasOwner):

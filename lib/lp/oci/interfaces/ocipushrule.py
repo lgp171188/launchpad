@@ -8,10 +8,22 @@ from __future__ import absolute_import, print_function, unicode_literals
 __metaclass__ = type
 __all__ = [
     'IOCIPushRule',
-    'IOCIPushRuleSet'
+    'IOCIPushRuleSet',
+    'OCIPushRuleAlreadyExists',
     ]
 
+from lazr.restful.declarations import (
+    error_status,
+    export_as_webservice_entry,
+    export_destructor_operation,
+    export_write_operation,
+    exported,
+    mutator_for,
+    operation_parameters,
+    operation_for_version,
+    )
 from lazr.restful.fields import Reference
+from six.moves import http_client
 from zope.interface import Interface
 from zope.schema import (
     Int,
@@ -23,12 +35,37 @@ from lp.oci.interfaces.ocirecipe import IOCIRecipe
 from lp.oci.interfaces.ociregistrycredentials import IOCIRegistryCredentials
 
 
+@error_status(http_client.CONFLICT)
+class OCIPushRuleAlreadyExists(Exception):
+    """A new OCIPushRuleAlreadyExists was added with the
+       same details as an existing one.
+    """
+
+    def __init__(self):
+        super(OCIPushRuleAlreadyExists, self).__init__(
+            "A push rule already exists with the same URL, image name, "
+            "and credentials")
+
+
 class IOCIPushRuleView(Interface):
     """`IOCIPushRule` methods that require launchpad.View
     permission.
     """
 
     id = Int(title=_("ID"), required=True, readonly=True)
+
+    registry_url = exported(TextLine(
+        title=_("Registry URL"),
+        description=_(
+            "The registry URL for the credentials of this push rule"),
+        required=True,
+        readonly=True))
+
+    username = exported(TextLine(
+        title=_("Username"),
+        description=_("The username for the credentials, if available."),
+        required=True,
+        readonly=True))
 
 
 class IOCIPushRuleEditableAttributes(Interface):
@@ -51,11 +88,19 @@ class IOCIPushRuleEditableAttributes(Interface):
         required=True,
         readonly=False)
 
-    image_name = TextLine(
+    image_name = exported(TextLine(
         title=_("Image name"),
         description=_("The intended name of the image on the registry."),
         required=True,
-        readonly=False)
+        readonly=True))
+
+    @mutator_for(image_name)
+    @operation_parameters(
+        image_name=TextLine(title=_("Image name"), required=True))
+    @export_write_operation()
+    @operation_for_version("devel")
+    def setNewImageName(image_name):
+        """Set the new image name, checking for uniqueness."""
 
 
 class IOCIPushRuleEdit(Interface):
@@ -63,6 +108,8 @@ class IOCIPushRuleEdit(Interface):
     permission.
     """
 
+    @export_destructor_operation()
+    @operation_for_version("devel")
     def destroySelf():
         """Destroy this push rule."""
 
@@ -71,9 +118,15 @@ class IOCIPushRule(IOCIPushRuleEdit, IOCIPushRuleEditableAttributes,
                    IOCIPushRuleView):
     """A rule for pushing builds of an OCI recipe to a registry."""
 
+    export_as_webservice_entry(
+        publish_web_link=True, as_of="devel", singular_name="oci_push_rule")
+
 
 class IOCIPushRuleSet(Interface):
     """A utility to create and access OCI Push Rules."""
 
     def new(recipe, registry_credentials, image_name):
         """Create an `IOCIPushRule`."""
+
+    def getByID(id):
+        """Get a single `IOCIPushRule` by its ID."""

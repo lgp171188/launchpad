@@ -5,12 +5,13 @@
 
 from __future__ import absolute_import, print_function, unicode_literals
 
-import base64
 import json
 
 from fixtures import FakeLogger
-from nacl.public import PrivateKey
-from six import string_types
+from six import (
+    ensure_text,
+    string_types,
+    )
 from storm.exceptions import LostObjectError
 from testtools.matchers import (
     ContainsDict,
@@ -25,6 +26,7 @@ from zope.security.proxy import removeSecurityProxy
 
 from lp.buildmaster.enums import BuildStatus
 from lp.buildmaster.interfaces.processor import IProcessorSet
+from lp.oci.interfaces.ocipushrule import OCIPushRuleAlreadyExists
 from lp.oci.interfaces.ocirecipe import (
     CannotModifyOCIRecipeProcessor,
     DuplicateOCIRecipeName,
@@ -41,6 +43,7 @@ from lp.oci.interfaces.ocirecipe import (
 from lp.oci.interfaces.ocirecipebuild import IOCIRecipeBuildSet
 from lp.oci.interfaces.ocirecipejob import IOCIRecipeRequestBuildsJobSource
 from lp.registry.interfaces.series import SeriesStatus
+from lp.oci.tests.helpers import OCIConfigHelperMixin
 from lp.services.config import config
 from lp.services.database.constants import (
     ONE_DAY_AGO,
@@ -67,7 +70,7 @@ from lp.testing.layers import (
 from lp.testing.pages import webservice_for_person
 
 
-class TestOCIRecipe(TestCaseWithFactory):
+class TestOCIRecipe(OCIConfigHelperMixin, TestCaseWithFactory):
 
     layer = DatabaseFunctionalLayer
 
@@ -329,10 +332,7 @@ class TestOCIRecipe(TestCaseWithFactory):
         self.assertEqual([], list(oci_recipe.pending_builds))
 
     def test_push_rules(self):
-        self.pushConfig(
-            "oci",
-            registry_secrets_public_key=base64.b64encode(
-                bytes(PrivateKey.generate().public_key)).decode("UTF-8"))
+        self.setConfig()
         oci_recipe = self.factory.makeOCIRecipe()
         for _ in range(3):
             self.factory.makeOCIPushRule(recipe=oci_recipe)
@@ -342,6 +342,47 @@ class TestOCIRecipe(TestCaseWithFactory):
 
         for rule in oci_recipe.push_rules:
             self.assertEqual(rule.recipe, oci_recipe)
+
+    def test_newPushRule(self):
+        self.setConfig()
+        recipe = self.factory.makeOCIRecipe()
+        url = ensure_text(self.factory.getUniqueURL())
+        image_name = ensure_text(self.factory.getUniqueString())
+        credentials = {
+            "username": "test-username", "password": "test-password"}
+
+        with person_logged_in(recipe.owner):
+            push_rule = recipe.newPushRule(
+                recipe.owner, url, image_name, credentials)
+            self.assertEqual(
+                image_name,
+                push_rule.image_name)
+            self.assertEqual(
+                url,
+                push_rule.registry_credentials.url)
+            self.assertEqual(
+                credentials,
+                push_rule.registry_credentials.getCredentials())
+
+            self.assertEqual(
+                push_rule,
+                recipe.push_rules[0])
+
+    def test_newPushRule_same_details(self):
+        self.setConfig()
+        recipe = self.factory.makeOCIRecipe()
+        url = ensure_text(self.factory.getUniqueURL())
+        image_name = ensure_text(self.factory.getUniqueString())
+        credentials = {
+            "username": "test-username", "password": "test-password"}
+
+        with person_logged_in(recipe.owner):
+            recipe.newPushRule(
+                recipe.owner, url, image_name, credentials)
+            self.assertRaises(
+                OCIPushRuleAlreadyExists,
+                recipe.newPushRule,
+                recipe.owner, url, image_name, credentials)
 
 
 class TestOCIRecipeProcessors(TestCaseWithFactory):
@@ -636,7 +677,7 @@ class TestOCIRecipeSet(TestCaseWithFactory):
                 oci_recipe, "date_last_modified", UTC_NOW)
 
 
-class TestOCIRecipeWebservice(TestCaseWithFactory):
+class TestOCIRecipeWebservice(OCIConfigHelperMixin, TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
     def setUp(self):
@@ -819,6 +860,53 @@ class TestOCIRecipeWebservice(TestCaseWithFactory):
 
         resp = self.webservice.named_post(oci_project_url, "newRecipe", **obj)
         self.assertEqual(401, resp.status, resp.body)
+
+    def test_api_create_new_push_rule(self):
+        """Can you create a new push rule for a recipe via the API?"""
+
+        self.setConfig()
+
+        with person_logged_in(self.person):
+            oci_project = self.factory.makeOCIProject(
+                registrant=self.person)
+            recipe = self.factory.makeOCIRecipe(
+                oci_project=oci_project, owner=self.person,
+                registrant=self.person)
+            url = api_url(recipe)
+
+        obj = {
+            "registry_url": self.factory.getUniqueURL(),
+            "image_name": self.factory.getUniqueUnicode(),
+            "credentials": {"username": "foo", "password": "bar"}}
+
+        resp = self.webservice.named_post(url, "newPushRule", **obj)
+        self.assertEqual(201, resp.status, resp.body)
+
+        new_obj_url = resp.getHeader("Location")
+        ws_push_rule = self.load_from_api(new_obj_url)
+        self.assertEqual(obj["image_name"], ws_push_rule["image_name"])
+
+    def test_api_push_rules_exported(self):
+        """Are push rules exported for a recipe?"""
+        self.setConfig()
+
+        image_name = self.factory.getUniqueUnicode()
+
+        with person_logged_in(self.person):
+            oci_project = self.factory.makeOCIProject(
+                registrant=self.person)
+            recipe = self.factory.makeOCIRecipe(
+                oci_project=oci_project, owner=self.person,
+                registrant=self.person)
+            push_rule = self.factory.makeOCIPushRule(
+                recipe=recipe, image_name=image_name)
+            url = api_url(recipe)
+
+        ws_recipe = self.load_from_api(url)
+        push_rules = self.load_from_api(
+            ws_recipe["push_rules_collection_link"])
+        self.assertEqual(
+            image_name, push_rules["entries"][0]["image_name"])
 
 
 class TestOCIRecipeAsyncWebservice(TestCaseWithFactory):

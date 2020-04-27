@@ -3,6 +3,7 @@
 
 __metaclass__ = type
 
+from lazr.restful.fields import Reference
 from zope.interface import Attribute
 
 from lp import _
@@ -10,6 +11,10 @@ from lp.services.job.interfaces.job import IJob
 
 
 class ITranslationSharingJob(IJob):
+
+    job = Reference(
+        title=_("The common Job attributes."), schema=IJob,
+        required=True, readonly=True)
 
     productseries = Attribute(_("The productseries of the Packaging."))
 

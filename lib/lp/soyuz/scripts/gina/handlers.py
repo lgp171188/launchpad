@@ -1,4 +1,4 @@
-# Copyright 2009-2016 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Gina db handlers.
@@ -52,10 +52,15 @@ from lp.services.librarian.interfaces import ILibraryFileAliasSet
 from lp.services.scripts import log
 from lp.soyuz.enums import (
     BinaryPackageFormat,
+    BinarySourceReferenceType,
     PackagePublishingStatus,
     )
 from lp.soyuz.interfaces.binarypackagebuild import IBinaryPackageBuildSet
 from lp.soyuz.interfaces.binarypackagename import IBinaryPackageNameSet
+from lp.soyuz.interfaces.binarysourcereference import (
+    IBinarySourceReferenceSet,
+    UnparsableBuiltUsing,
+    )
 from lp.soyuz.interfaces.publishing import (
     active_publishing_status,
     IPublishingSet,
@@ -820,6 +825,16 @@ class BinaryPackageHandler:
             installedsize=bin.installed_size,
             architecturespecific=architecturespecific,
             **kwargs)
+        try:
+            getUtility(IBinarySourceReferenceSet).createFromRelationship(
+                binpkg, bin.built_using, BinarySourceReferenceType.BUILT_USING)
+        except UnparsableBuiltUsing:
+            # XXX cjwatson 2020-02-03: It might be nice if we created
+            # BinarySourceReference rows at least for those relations that
+            # can be parsed and resolved to SourcePackageReleases.  It's not
+            # worth spending much time on given that we don't use binary
+            # imports much, though.
+            pass
         log.info('Binary Package Release %s (%s) created' %
                  (bin_name.name, bin.version))
 

@@ -144,21 +144,23 @@ class TestProcessAccepted(TestCaseWithFactory):
             commit_count = 0
 
             def beforeCompletion(inner_self, txn):
-                pass
-
-            def afterCompletion(inner_self, txn):
-                if txn.status != 'Committed':
-                    return
-                inner_self.commit_count += 1
-                done_count = len([
+                self.done_count = len([
                     upload for upload in uploads
                     if upload.package_upload.status ==
                         PackageUploadStatus.DONE])
-                # We actually commit twice for each upload: once for the
-                # queue item itself, and again to close its bugs.
-                self.assertIn(
-                    min(len(uploads) * 2, inner_self.commit_count),
-                    (done_count * 2, (done_count * 2) - 1))
+
+            def afterCompletion(inner_self, txn):
+                try:
+                    if txn.status != 'Committed':
+                        return
+                    inner_self.commit_count += 1
+                    # We actually commit twice for each upload: once for the
+                    # queue item itself, and again to close its bugs.
+                    self.assertIn(
+                        min(len(uploads) * 2, inner_self.commit_count),
+                        (self.done_count * 2, (self.done_count * 2) - 1))
+                finally:
+                    self.done_count = None
 
         script = self.getScript([])
         switch_dbuser(self.dbuser)

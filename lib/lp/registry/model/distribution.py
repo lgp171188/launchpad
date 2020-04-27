@@ -1472,7 +1472,8 @@ class Distribution(SQLBase, BugTargetBase, MakesAnnouncements,
 
     def newOCIProject(self, registrant, name, description=None):
         """Create an `IOCIProject` for this distro."""
-        if not getFeatureFlag(OCI_PROJECT_ALLOW_CREATE):
+        if (not getFeatureFlag(OCI_PROJECT_ALLOW_CREATE) and not
+                self.canAdministerOCIProjects(registrant)):
             raise Unauthorized("Creating new OCI projects is not allowed.")
         return getUtility(IOCIProjectSet).new(
             pillar=self, registrant=registrant, name=name,

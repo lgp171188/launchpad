@@ -13,7 +13,7 @@ __all__ = [
 ]
 
 from lazr.restful.fields import Reference
-from zope.interface.interface import Interface
+from zope.interface import Interface
 from zope.schema import (
     Bytes,
     Choice,
@@ -59,15 +59,28 @@ class ISigningKeySet(Interface):
     """Interface to deal with the collection of signing keys
     """
 
-    def generate(key_type, description=None):
+    def generate(key_type, description):
         """Generates a new signing key on lp-signing and stores it in LP's
         database.
 
         :param key_type: One of the SigningKeyType enum's value
-        :param description: (optional) The description associated with this
-                            key
-        :returns: The SigningKey object associated with the newly created
-                  key at lp-signing"""
+        :param description: The description associated with this key
+        :return: The SigningKey object associated with the newly created
+                 key at lp-signing
+        """
+
+    def inject(key_type, private_key, public_key, description, created_at):
+        """Inject an existing key pair on lp-signing and stores it in LP's
+        database.
+
+        :param key_type: One of the SigningKeyType enum's value.
+        :param private_key: The private key to be injected into lp-signing
+        :param public_key: The public key to be injected into lp-signing
+        :param description: The description of the key being injected
+        :param created_at: The datetime when the key was originally created.
+        :return: The SigningKey object associated with the newly created
+                 key at lp-signing
+        """
 
 
 class IArchiveSigningKey(Interface):
@@ -111,16 +124,30 @@ class IArchiveSigningKeySet(Interface):
         :return: The most suitable key
         """
 
-    def generate(key_type, archive, earliest_distro_series=None,
-                 description=None):
+    def generate(key_type, description, archive, earliest_distro_series=None):
         """Generate a new key on signing service, and save it to db.
 
         :param key_type: One of the SigningKeyType enum's value
+        :param description: The description associated with this key
         :param archive: The package Archive that should be associated with
                         this key
         :param earliest_distro_series: (optional) The minimum distro series
                                        that should use the generated key.
-        :param description: (optional) The description associated with this
-                            key
+        :returns: The generated ArchiveSigningKey
+        """
+
+    def inject(key_type, private_key, public_key, description, created_at,
+               archive, earliest_distro_series=None):
+        """Injects an existing key on signing service, and saves it to db.
+
+        :param key_type: One of the SigningKeyType enum's value
+        :param private_key: The private key to be injected into lp-signing
+        :param public_key: The public key to be injected into lp-signing
+        :param description: The description of the key being injected
+        :param created_at: The datetime when the key was originally created.
+        :param archive: The package Archive that should be associated with
+                        this key
+        :param earliest_distro_series: (optional) The minimum distro series
+                                       that should use the generated key.
         :returns: The generated ArchiveSigningKey
         """

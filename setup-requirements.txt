@@ -1,10 +1,3 @@
 pip==20.0.2
 setuptools==44.0.0
 wheel==0.34.2
-
-# Install these early to avoid mismatches with a system-installed
-# python-cffi-backend package.
-# XXX cjwatson 2020-02-06: This would all be much easier if we could remove
-# the need for virtualenv --system-site-packages.
-cffi==1.12.2
-pycparser==2.19

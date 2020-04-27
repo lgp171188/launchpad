@@ -1,4 +1,4 @@
-# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 from doctest import DocTestSuite
@@ -12,6 +12,10 @@ from unittest import TestLoader
 
 import apt_pkg
 from fixtures import EnvironmentVariableFixture
+from testtools.matchers import (
+    MatchesSetwise,
+    MatchesStructure,
+    )
 import transaction
 
 from lp.archiveuploader.tagfiles import parse_tagfile
@@ -22,7 +26,10 @@ from lp.services.features.testing import FeatureFixture
 from lp.services.log.logger import DevNullLogger
 from lp.services.osutils import write_file
 from lp.services.tarfile_helpers import LaunchpadWriteTarFile
-from lp.soyuz.enums import PackagePublishingStatus
+from lp.soyuz.enums import (
+    BinarySourceReferenceType,
+    PackagePublishingStatus,
+    )
 from lp.soyuz.scripts.gina import ExecutionError
 from lp.soyuz.scripts.gina.archive import (
     ArchiveComponentItems,
@@ -483,9 +490,13 @@ class TestBinaryPackageHandler(TestCaseWithFactory):
             "Summary": "",
             "Priority": "extra",
             "Python-Version": "2.7",
+            "Built-Using": "nonexistent (= 0.1)",
             }
         bp_data = BinaryPackageData(**deb_contents)
-        self.assertEqual([["Python-Version", "2.7"]], bp_data._user_defined)
+        self.assertContentEqual(
+            [["Python-Version", "2.7"],
+             ["Built-Using", "nonexistent (= 0.1)"]],
+            bp_data._user_defined)
         bp_data.archive_root = archive_root
         # We don't need a real .deb here.
         write_file(
@@ -493,7 +504,65 @@ class TestBinaryPackageHandler(TestCaseWithFactory):
             b"x")
         bpr = bphandler.createBinaryPackage(bp_data, spr, das, "amd64")
         self.assertIsNotNone(bpr)
-        self.assertEqual([["Python-Version", "2.7"]], bpr.user_defined_fields)
+        self.assertEqual([], bpr.built_using_references)
+        self.assertContentEqual(
+            [["Python-Version", "2.7"],
+             ["Built-Using", "nonexistent (= 0.1)"]],
+            bpr.user_defined_fields)
+
+    def test_resolvable_built_using(self):
+        das = self.factory.makeDistroArchSeries()
+        archive_root = self.useTempDir()
+        sphandler = SourcePackageHandler(
+            das.distroseries.distribution.name, archive_root,
+            PackagePublishingPocket.RELEASE, None)
+        bphandler = BinaryPackageHandler(
+            sphandler, archive_root, PackagePublishingPocket.RELEASE)
+        spr = self.factory.makeSourcePackagePublishingHistory(
+            distroseries=das.distroseries,
+            component="main").sourcepackagerelease
+        built_using_spph = self.factory.makeSourcePackagePublishingHistory(
+            archive=das.main_archive, distroseries=das.distroseries,
+            pocket=PackagePublishingPocket.RELEASE)
+        built_using_spr = built_using_spph.sourcepackagerelease
+        built_using_relationship = "%s (= %s)" % (
+            built_using_spr.name, built_using_spr.version)
+        deb_contents = {
+            "Package": "foo",
+            "Installed-Size": "0",
+            "Maintainer": "Foo Bar <foo@canonical.com>",
+            "Section": "misc",
+            "Architecture": "amd64",
+            "Version": "1.0-1",
+            "Filename": "pool/main/f/foo/foo_1.0-1_amd64.deb",
+            "Component": "main",
+            "Size": "0",
+            "MD5sum": "0" * 32,
+            "Description": "",
+            "Summary": "",
+            "Priority": "extra",
+            "Built-Using": built_using_relationship,
+            }
+        bp_data = BinaryPackageData(**deb_contents)
+        self.assertContentEqual(
+            [["Built-Using", built_using_relationship]], bp_data._user_defined)
+        bp_data.archive_root = archive_root
+        # We don't need a real .deb here.
+        write_file(
+            os.path.join(archive_root, "pool/main/f/foo/foo_1.0-1_amd64.deb"),
+            b"x")
+        bpr = bphandler.createBinaryPackage(bp_data, spr, das, "amd64")
+        self.assertIsNotNone(bpr)
+        self.assertThat(
+            bpr.built_using_references,
+            MatchesSetwise(
+                MatchesStructure.byEquality(
+                    binary_package_release=bpr,
+                    source_package_release=built_using_spr,
+                    reference_type=BinarySourceReferenceType.BUILT_USING)))
+        self.assertContentEqual(
+            [["Built-Using", built_using_relationship]],
+            bpr.user_defined_fields)
 
 
 class TestBinaryPackagePublisher(TestCaseWithFactory):

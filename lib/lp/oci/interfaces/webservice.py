@@ -6,6 +6,7 @@
 __all__ = [
     'IOCIProject',
     'IOCIProjectSeries',
+    'IOCIPushRule',
     'IOCIRecipe',
     'IOCIRecipeBuildRequest'
     ]
@@ -14,6 +15,7 @@ from lp.oci.interfaces.ocipushrule import IOCIPushRule
 from lp.oci.interfaces.ocirecipe import (
     IOCIRecipe,
     IOCIRecipeBuildRequest,
+    IOCIRecipeEdit,
     )
 from lp.oci.interfaces.ocirecipebuild import IOCIRecipeBuild
 from lp.registry.interfaces.ociproject import IOCIProject
@@ -37,3 +39,6 @@ patch_collection_property(IOCIRecipe, 'push_rules', IOCIPushRule)
 # IOCIRecipeRequestBuild
 patch_reference_property(IOCIRecipeBuildRequest, 'recipe', IOCIRecipe)
 patch_collection_property(IOCIRecipeBuildRequest, 'builds', IOCIRecipeBuild)
+
+
+patch_entry_return_type(IOCIRecipeEdit, 'newPushRule', IOCIPushRule)

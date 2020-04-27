@@ -4,8 +4,11 @@
 __metaclass__ = type
 
 import base64
+from datetime import datetime
 
 from fixtures.testcase import TestWithFixtures
+from nacl.public import PrivateKey
+from pytz import utc
 import responses
 from storm.store import Store
 from testtools.matchers import MatchesStructure
@@ -61,6 +64,33 @@ class TestSigningKey(TestCaseWithFactory, TestWithFixtures):
         self.assertEqual("this is my key", db_key.description)
 
     @responses.activate
+    def test_inject_signing_key_saves_correctly(self):
+        self.signing_service.addResponses(self)
+
+        priv_key = PrivateKey.generate()
+        pub_key = priv_key.public_key
+        created_at = datetime(2020, 4, 16, 16, 35).replace(tzinfo=utc)
+
+        key = SigningKey.inject(
+            SigningKeyType.KMOD, bytes(priv_key), bytes(pub_key),
+            u"This is a test key", created_at)
+        self.assertIsInstance(key, SigningKey)
+
+        store = IMasterStore(SigningKey)
+        store.invalidate()
+
+        rs = store.find(SigningKey)
+        self.assertEqual(1, rs.count())
+        db_key = rs.one()
+
+        self.assertEqual(SigningKeyType.KMOD, db_key.key_type)
+        self.assertEqual(
+            self.signing_service.generated_fingerprint, db_key.fingerprint)
+        self.assertEqual(bytes(pub_key), db_key.public_key)
+        self.assertEqual(u"This is a test key", db_key.description)
+        self.assertEqual(created_at, db_key.date_created)
+
+    @responses.activate
     def test_sign_some_data(self):
         self.signing_service.addResponses(self)
 
@@ -94,8 +124,8 @@ class TestArchiveSigningKey(TestCaseWithFactory):
         distro_series = archive.distribution.series[0]
 
         arch_key = getUtility(IArchiveSigningKeySet).generate(
-            SigningKeyType.UEFI, archive, earliest_distro_series=distro_series,
-            description=u"some description")
+            SigningKeyType.UEFI, u"some description", archive,
+            earliest_distro_series=distro_series)
 
         store = Store.of(arch_key)
         store.invalidate()
@@ -112,6 +142,38 @@ class TestArchiveSigningKey(TestCaseWithFactory):
             key_type=SigningKeyType.UEFI, description=u"some description",
             fingerprint=self.signing_service.generated_fingerprint,
             public_key=bytes(self.signing_service.generated_public_key)))
+
+    @responses.activate
+    def test_inject_saves_correctly(self):
+        self.signing_service.addResponses(self)
+
+        archive = self.factory.makeArchive()
+        distro_series = archive.distribution.series[0]
+
+        priv_key = PrivateKey.generate()
+        pub_key = priv_key.public_key
+
+        now = datetime.now().replace(tzinfo=utc)
+        arch_key = getUtility(IArchiveSigningKeySet).inject(
+            SigningKeyType.UEFI, bytes(priv_key), bytes(pub_key),
+            u"Some description", now, archive,
+            earliest_distro_series=distro_series)
+
+        store = Store.of(arch_key)
+        store.invalidate()
+
+        rs = store.find(ArchiveSigningKey)
+        self.assertEqual(1, rs.count())
+
+        db_arch_key = rs.one()
+        self.assertThat(db_arch_key, MatchesStructure.byEquality(
+            key_type=SigningKeyType.UEFI, archive=archive,
+            earliest_distro_series=distro_series))
+
+        self.assertThat(db_arch_key.signing_key, MatchesStructure.byEquality(
+            key_type=SigningKeyType.UEFI, description=u"Some description",
+            fingerprint=self.signing_service.generated_fingerprint,
+            public_key=bytes(pub_key)))
 
     def test_create(self):
         archive = self.factory.makeArchive()

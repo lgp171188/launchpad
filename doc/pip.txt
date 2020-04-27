@@ -372,6 +372,5 @@ Possible Future Goals
 =====================
 
 - Use wheels.
-- No longer use system site-packages.
 - No longer use make.
 - Get rid of the sourcecode directory.

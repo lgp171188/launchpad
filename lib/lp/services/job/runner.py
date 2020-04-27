@@ -1,4 +1,4 @@
-# Copyright 2009-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2009-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Facilities for running Jobs."""
@@ -66,6 +66,7 @@ from lp.services.config import (
     config,
     dbconfig,
     )
+from lp.services.database.policy import DatabaseBlockedPolicy
 from lp.services.features import getFeatureFlag
 from lp.services.job.interfaces.job import (
     IJob,
@@ -98,6 +99,20 @@ class BaseRunnableJobSource:
         yield
 
 
+class JobState:
+    """Extract some state from a job.
+
+    This is just enough to allow `BaseRunnableJob.runViaCelery` to run
+    without database access.
+    """
+
+    def __init__(self, runnable_job):
+        self.job_id = runnable_job.job.id
+        self.task_id = runnable_job.taskId()
+        self.scheduled_start = runnable_job.scheduled_start
+        self.lease_expires = runnable_job.lease_expires
+
+
 @delegate_to(IJob, context='job')
 class BaseRunnableJob(BaseRunnableJobSource):
     """Base class for jobs to be run via JobRunner.
@@ -122,6 +137,8 @@ class BaseRunnableJob(BaseRunnableJobSource):
     soft_time_limit = timedelta(minutes=5)
 
     timeline_detail_filter = None
+
+    job_state = None
 
     # We redefine __eq__ and __ne__ here to prevent the security proxy
     # from mucking up our comparisons in tests and elsewhere.
@@ -245,39 +262,44 @@ class BaseRunnableJob(BaseRunnableJobSource):
         else:
             task = celery_run_job
         db_class = self.getDBClass()
-        ujob_id = (self.job_id, db_class.__module__, db_class.__name__)
-        eta = self.job.scheduled_start
+        ujob_id = (
+            self.job_state.job_id, db_class.__module__, db_class.__name__)
+        eta = self.job_state.scheduled_start
         # Don't schedule the job while its lease is still held, or
         # celery will skip it.
-        if (self.job.lease_expires is not None
-                and (eta is None or eta < self.job.lease_expires)):
-            eta = self.job.lease_expires
+        if (self.job_state.lease_expires is not None
+                and (eta is None or eta < self.job_state.lease_expires)):
+            eta = self.job_state.lease_expires
         return task.apply_async(
             (ujob_id, self.config.dbuser), queue=self.task_queue, eta=eta,
             soft_time_limit=self.soft_time_limit.total_seconds(),
-            task_id=self.taskId())
+            task_id=self.job_state.task_id)
 
     def getDBClass(self):
         return self.context.__class__
 
+    def extractJobState(self):
+        """Hook function to call before starting a commit."""
+        self.job_state = JobState(self)
+
     def celeryCommitHook(self, succeeded):
-        """Hook function to call when a commit completes."""
-        if succeeded:
-            ignore_result = bool(BaseRunnableJob.celery_responses is None)
-            response = self.runViaCelery(ignore_result)
-            if not ignore_result:
-                BaseRunnableJob.celery_responses.append(response)
-            # transaction >= 1.6.0 removes data managers from the
-            # transaction before calling after-commit hooks; this means that
-            # the transaction begun in runViaCelery to look up details of
-            # the job doesn't get committed or rolled back, and so
-            # subsequent SQL statements executed by the caller confusingly
-            # see a database snapshot from before the Celery job was run,
-            # even if they use the block_on_job test helper.  Since
-            # runViaCelery never issues any data-modifying statements
-            # itself, the least confusing thing to do here is to just roll
-            # back its transaction.
-            transaction.abort()
+        """Hook function to call when a commit completes.
+
+        extractJobState must have been run first.
+        """
+        if self.job_state is None:
+            raise AssertionError(
+                "extractJobState was not run before celeryCommitHook.")
+        try:
+            with DatabaseBlockedPolicy():
+                if succeeded:
+                    ignore_result = bool(
+                        BaseRunnableJob.celery_responses is None)
+                    response = self.runViaCelery(ignore_result)
+                    if not ignore_result:
+                        BaseRunnableJob.celery_responses.append(response)
+        finally:
+            self.job_state = None
 
     def celeryRunOnCommit(self):
         """Configure transaction so that commit runs this job via Celery."""
@@ -285,6 +307,7 @@ class BaseRunnableJob(BaseRunnableJobSource):
                 not celery_enabled(self.__class__.__name__)):
             return
         current = transaction.get()
+        current.addBeforeCommitHook(self.extractJobState)
         current.addAfterCommitHook(self.celeryCommitHook)
 
     def queue(self, manage_transaction=False, abort_transaction=False):
@@ -481,6 +504,37 @@ class JobRunnerProcess(child.AMPChild):
         return {'success': len(runner.completed_jobs), 'oops_id': oops_id}
 
 
+class VirtualEnvProcessStarter(main.ProcessStarter):
+    """A `ProcessStarter` that sets up Launchpad's virtualenv correctly.
+
+    `ampoule.main` doesn't make it very easy to use `env/bin/python` rather
+    than the bare `sys.executable`; we have to clone-and-hack the innards of
+    `ProcessStarter.startPythonProcess`.  (The alternative would be to use
+    `sys.executable` with the `-S` option and then `import _pythonpath`, but
+    `ampoule.main` also makes it hard to insert `-S` at the right place in
+    the command line.)
+
+    On the other hand, the cloned-and-hacked version can be much simpler,
+    since we don't need to worry about PYTHONPATH; entering the virtualenv
+    correctly will deal with everything that we care about.
+    """
+
+    @property
+    def _executable(self):
+        return os.path.join(config.root, 'env', 'bin', 'python')
+
+    def startPythonProcess(self, prot, *args):
+        env = self.env.copy()
+        args = (self._executable, '-c', self.bootstrap) + self.args + args
+        # The childFDs variable is needed because sometimes child processes
+        # misbehave and use stdout to output stuff that should really go to
+        # stderr.
+        reactor.spawnProcess(
+            prot, self._executable, args, env, self.path, self.uid, self.gid,
+            self.usePTY, childFDs={0: "w", 1: "r", 2: "r", 3: "w", 4: "r"})
+        return prot.amp, prot.finished
+
+
 class QuietAMPConnector(main.AMPConnector):
     """An `AMPConnector` that logs stderr output more quietly."""
 
@@ -502,9 +556,7 @@ class TwistedJobRunner(BaseJobRunner):
         env = {'PATH': os.environ['PATH']}
         if 'LPCONFIG' in os.environ:
             env['LPCONFIG'] = os.environ['LPCONFIG']
-        env['PYTHONPATH'] = os.pathsep.join(sys.path)
-        starter = main.ProcessStarter(
-            bootstrap="import _pythonpath\n" + main.BOOTSTRAP, env=env)
+        starter = VirtualEnvProcessStarter(env=env)
         starter.connectorFactory = QuietAMPConnector
         super(TwistedJobRunner, self).__init__(logger, error_utility)
         self.job_source = job_source
