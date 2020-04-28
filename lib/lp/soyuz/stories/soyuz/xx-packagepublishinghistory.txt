@@ -154,3 +154,30 @@ Links to bug reports are added for bugs mentioned in the removal comment.
 
     >>> print(anon_browser.getLink("bug 1").url)
     http://launchpad.test/bugs/1
+
+Checking how a copied binary publishing history looks like on the
+distro-arch-series-binarypackage page.
+
+    >>> login('foo.bar@canonical.com')
+    >>> from lp.soyuz.model.distroarchseriesbinarypackage import (
+    ...     DistroArchSeriesBinaryPackage)
+    >>> binary_pub = removeSecurityProxy(stp.getPubBinaries()[0])
+    >>> new_archive = stp.factory.makeArchive(
+    ...         distribution=(
+    ...             binary_pub.distroarchseries.distroseries.distribution))
+    >>> binary_copy = removeSecurityProxy(binary_pub.copyTo(
+    ...     binary_pub.distroarchseries.distroseries, binary_pub.pocket,
+    ...     new_archive)[0])
+    >>> page_obj = DistroArchSeriesBinaryPackage(
+    ...     binary_copy.distroarchseries,
+    ...     binary_copy.binarypackagename)
+    >>> url = canonical_url(page_obj)
+    >>> logout()
+
+    >>> anon_browser.open(url)
+    >>> table = find_tag_by_id(anon_browser.contents, 'publishing-summary')
+    >>> print(extract_text(table))
+        Date    Status    Target     Pocket   Component Section Priority Phased updates Version
+    ... UTC Pending   ubuntutest Breezy ... release  main  base Standard 666
+    Copied from ubuntutest breezy-autotest-release i386 in Primary Archive for Ubuntu Test
+
