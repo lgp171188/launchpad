@@ -936,6 +936,7 @@ def setUpGlobs(test, future=False):
     test.globs['print_tag_with_id'] = print_tag_with_id
     test.globs['PageTestLayer'] = PageTestLayer
     test.globs['stop'] = stop
+    test.globs['six'] = six
 
     if future:
         import __future__

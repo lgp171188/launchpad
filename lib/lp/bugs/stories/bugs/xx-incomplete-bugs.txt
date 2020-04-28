@@ -261,8 +261,6 @@ Since no new comments have been added after we changed the status to
 Incomplete, we can now find that bug searching for Incomplete (without
 response) bugs.
 
-    >>> import six
-
     >>> user_browser.open(
     ...     'http://bugs.launchpad.test/jokosher/+bugs?advanced=1')
     >>> user_browser.getControl(name='field.status:list').value = (
