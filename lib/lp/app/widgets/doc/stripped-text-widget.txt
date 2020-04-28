@@ -15,8 +15,8 @@ set value.
     >>> thing = Thing('abc')
 
     >>> non_required_field.set(thing, '   egf   ')
-    >>> non_required_field.get(thing)
-    'egf'
+    >>> print(non_required_field.get(thing))  # doctest: -NORMALIZE_WHITESPACE
+    egf
 
 None is an accepted field value.
 
@@ -57,7 +57,7 @@ provided.
   True
 
   >>> required_field = StrippedTextLine(
-  ...     __name__='field', title=u'Title',  required=True)
+  ...     __name__=six.ensure_str('field'), title=u'Title', required=True)
   >>> request = LaunchpadTestRequest(form={'field.field':'    \n    '})
   >>> widget = StrippedTextWidget(required_field, request)
   >>> widget.getInputValue()

@@ -16,6 +16,7 @@ from lp.testing.pages import (
     )
 from lp.testing.systemdocs import (
     LayeredDocFileSuite,
+    setGlobs,
     setUp,
     tearDown,
     )
@@ -42,7 +43,7 @@ special = {
         layer=LaunchpadFunctionalLayer,
         ),
     'menus.txt': LayeredDocFileSuite(
-        '../doc/menus.txt', layer=None,
+        '../doc/menus.txt', setUp=setGlobs, layer=None,
         ),
     'stories/launchpad-search(Bing)': PageTestSuite(
         '../stories/launchpad-search/',
