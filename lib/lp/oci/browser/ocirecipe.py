@@ -22,6 +22,7 @@ from lazr.restful.interface import (
     copy_field,
     use_template,
     )
+from lp.services.webapp.batching import BatchNavigator
 from zope.component import getUtility
 from zope.interface import Interface
 from zope.schema import (
@@ -142,6 +143,29 @@ class OCIRecipeContextMenu(ContextMenu):
     @enabled_with_permission('launchpad.Edit')
     def request_builds(self):
         return Link('+request-builds', 'Request builds', icon='add')
+
+
+class OCIRecipeSetView(LaunchpadView):
+    """Default view for the list of OCI recipes of an OCI project."""
+    page_title = 'Recipes'
+    description = 'These are the OCI recipe created for this OCI project.'
+
+    @property
+    def title(self):
+        return self.context.name
+
+    @cachedproperty
+    def count(self):
+        return self.recipes.count()
+
+    @cachedproperty
+    def recipes(self):
+        return getUtility(IOCIRecipeSet).findByOCIProject(
+            self.context)
+
+    @property
+    def recipes_navigator(self):
+        return BatchNavigator(self.recipes, self.request)
 
 
 class OCIRecipeView(LaunchpadView):

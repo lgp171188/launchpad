@@ -1,0 +1,73 @@
+<html
+  xmlns="http://www.w3.org/1999/xhtml"
+  xmlns:tal="http://xml.zope.org/namespaces/tal"
+  xmlns:metal="http://xml.zope.org/namespaces/metal"
+  xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+  metal:use-macro="view/macro:page/main_side"
+  i18n:domain="launchpad"
+>
+
+<body>
+  <metal:side fill-slot="side">
+    <div tal:replace="structure context/@@+global-actions"/>
+  </metal:side>
+
+  <metal:heading fill-slot="heading">
+    <h1>Recipes for <span tal:replace="context/name"/></h1>
+  </metal:heading>
+
+  <div metal:fill-slot="main">
+      <div class="main-portlet">
+        <p class="application-summary"
+           tal:condition="view/description"
+           tal:content="view/description"/>
+        <p tal:define="count view/count"
+           tal:condition="count">
+          <span tal:condition="python: count == 1">
+            There is <strong>1</strong> OCI recipe</span>
+          <span tal:condition="python: count != 1">
+            There are
+            <strong tal:content="count" />
+            OCI recipes
+          </span>
+          registered for <tal:context replace="view/title" />.
+        </p>
+      </div>
+
+      <table class="listing" id="mirrors_list">
+        <tbody>
+          <tr class="head">
+            <th>Name</th>
+            <th>Repository</th>
+            <th>Branch</th>
+            <th>Build file</th>
+            <th>Requires virtualization</th>
+            <th>Builds daily</th>
+            <th>Owner</th>
+            <th>Date created</th>
+            <th>Last modified</th>
+          </tr>
+
+          <tr tal:repeat="recipe view/recipes_navigator/batch">
+            <td>
+              <a tal:content="recipe/name"
+                 tal:attributes="href recipe/fmt:url" />
+            </td>
+            <td tal:content="structure recipe/git_repository/fmt:link"/>
+            <td tal:content="recipe/git_path" />
+            <td tal:content="recipe/build_file" />
+            <td tal:content="recipe/require_virtualized" />
+            <td tal:content="recipe/build_daily" />
+            <td tal:content="structure recipe/owner/fmt:link" />
+            <td tal:content="recipe/date_created/fmt:displaydate" />
+            <td tal:content="recipe/date_last_modified/fmt:displaydate" />
+          </tr>
+        </tbody>
+      </table>
+
+       <tal:navigation
+          replace="structure view/recipes_navigator/@@+navigation-links-lower" />
+  </div>
+
+</body>
+</html>
