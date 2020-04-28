@@ -7,4 +7,6 @@ ALTER TABLE OCIRecipeBuild ADD COLUMN build_request integer REFERENCES job;
 
 COMMENT ON COLUMN OCIRecipeBuild.build_request IS 'The build request that caused this build to be created.';
 
+CREATE INDEX ocirecipebuild__build_request__idx ON OCIRecipeBuild (build_request);
+
 INSERT INTO LaunchpadDatabaseRevision VALUES (2210, 15, 1);
