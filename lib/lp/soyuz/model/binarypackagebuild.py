@@ -107,6 +107,7 @@ from lp.soyuz.interfaces.binarypackagebuild import (
     )
 from lp.soyuz.interfaces.binarysourcereference import (
     IBinarySourceReferenceSet,
+    UnparsableBuiltUsing,
     )
 from lp.soyuz.interfaces.distroarchseries import IDistroArchSeries
 from lp.soyuz.interfaces.packageset import IPackagesetSet
@@ -683,8 +684,14 @@ class BinaryPackageBuild(PackageBuildMixin, SQLBase):
             debug_package=debug_package,
             user_defined_fields=user_defined_fields, homepage=homepage)
         if built_using:
-            getUtility(IBinarySourceReferenceSet).createFromRelationship(
-                bpr, built_using, BinarySourceReferenceType.BUILT_USING)
+            try:
+                getUtility(IBinarySourceReferenceSet).createFromRelationship(
+                    bpr, built_using, BinarySourceReferenceType.BUILT_USING)
+            except UnparsableBuiltUsing:
+                # XXX cjwatson 2020-04-29: We intend for this to fail the
+                # upload eventually, but still have some details to sort
+                # out, so ignore it for now.
+                pass
         return bpr
 
     def estimateDuration(self):
