@@ -24,13 +24,15 @@
         <p tal:define="count view/count"
            tal:condition="count">
           <span tal:condition="python: count == 1">
-            There is <strong>1</strong> OCI recipe</span>
+            There is <strong>1</strong> recipe</span>
           <span tal:condition="python: count != 1">
-            There are
-            <strong tal:content="count" />
-            OCI recipes
+            There are <strong tal:content="count" /> recipes
           </span>
           registered for <tal:context replace="view/title" />.
+        </p>
+        <p tal:define="count view/count"
+           tal:condition="not: count">
+           There are no recipes registered for <tal:context replace="view/title" />.
         </p>
       </div>
 
@@ -48,7 +50,7 @@
             <th>Last modified</th>
           </tr>
 
-          <tr tal:repeat="recipe view/recipes_navigator/batch">
+          <tr tal:repeat="recipe view/preloaded_recipes_batch">
             <td>
               <a tal:content="recipe/name"
                  tal:attributes="href recipe/fmt:url" />

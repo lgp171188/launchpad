@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # Copyright 2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
@@ -11,6 +12,7 @@ from datetime import (
     datetime,
     timedelta,
     )
+from operator import attrgetter
 import re
 
 from fixtures import FakeLogger
@@ -48,6 +50,7 @@ from lp.testing import (
     login,
     login_person,
     person_logged_in,
+    record_two_runs,
     TestCaseWithFactory,
     time_counter,
     )
@@ -812,3 +815,80 @@ class TestOCIRecipeRequestBuildsView(BaseTestOCIRecipeView):
         self.assertIn(
             "You need to select at least one architecture.",
             extract_text(find_main_content(browser.contents)))
+
+
+class TestOCIRecipeSetView(BaseTestOCIRecipeView):
+    def setUp(self):
+        super(TestOCIRecipeSetView, self).setUp()
+        self.ubuntu = getUtility(ILaunchpadCelebrities).ubuntu
+        self.distroseries = self.factory.makeDistroSeries(
+            distribution=self.ubuntu, name="shiny", displayname="Shiny")
+        self.architectures = []
+        for processor, architecture in ("386", "i386"), ("amd64", "amd64"):
+            das = self.factory.makeDistroArchSeries(
+                distroseries=self.distroseries, architecturetag=architecture,
+                processor=getUtility(IProcessorSet).getByName(processor))
+            das.addOrUpdateChroot(self.factory.makeLibraryFileAlias())
+            self.architectures.append(das)
+        self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: 'on'}))
+        self.oci_project = self.factory.makeOCIProject(
+            pillar=self.distroseries.distribution,
+            ociprojectname="oci-project-name")
+
+    def makeRecipes(self, count=1):
+        with person_logged_in(self.person):
+            owner = self.factory.makePerson()
+            return [self.factory.makeOCIRecipe(
+                registrant=owner, owner=owner, oci_project=self.oci_project)
+                for _ in range(count)]
+
+    def test_shows_no_recipe(self):
+        browser = self.getViewBrowser(
+            self.oci_project, "+recipes", user=self.person)
+        main_text = extract_text(find_main_content(browser.contents))
+        with person_logged_in(self.person):
+            self.assertIn(
+                "There are no recipes registered for %s"
+                % self.oci_project.name,
+                main_text)
+
+    def test_paginates_recipes(self):
+        batch_size = 5
+        self.pushConfig("launchpad", default_batch_size=batch_size)
+        recipes = self.makeRecipes(10)
+        browser = self.getViewBrowser(
+            self.oci_project, "+recipes", user=self.person)
+
+        main_text = extract_text(find_main_content(browser.contents))
+        no_wrap_main_text = main_text.replace('\n', ' ')
+        with person_logged_in(self.person):
+            self.assertIn(
+                "There are 10 recipes registered for %s"
+                % self.oci_project.name,
+                no_wrap_main_text)
+            self.assertIn("1 → 5 of 10 results", no_wrap_main_text)
+            self.assertIn("First • Previous • Next • Last", no_wrap_main_text)
+
+            # Make sure it's listing the first set of recipes
+            items = sorted(recipes, key=attrgetter('name'))
+            for recipe in items[:batch_size]:
+                self.assertIn(recipe.name, main_text)
+
+    def test_constant_query_count(self):
+        self.pushConfig("launchpad", default_batch_size=2)
+
+        def getView():
+            view = self.getViewBrowser(
+                self.oci_project, "+recipes", user=self.person)
+            return view
+
+        def do_login():
+            self.useFixture(FeatureFixture({OCI_RECIPE_ALLOW_CREATE: 'on'}))
+            login_person(self.person)
+
+        recorder1, recorder2 = record_two_runs(
+            getView, self.makeRecipes, 1, 15, login_method=do_login)
+
+        # The first run (with no extra pages) makes BatchNavigator issue one
+        # extra count(*) on OCIRecipe. Shouldn't be a big deal.
+        self.assertEqual(recorder1.count, recorder2.count - 1)

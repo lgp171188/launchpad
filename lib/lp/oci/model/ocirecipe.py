@@ -42,6 +42,8 @@ from lp.buildmaster.interfaces.buildqueue import IBuildQueueSet
 from lp.buildmaster.model.buildfarmjob import BuildFarmJob
 from lp.buildmaster.model.buildqueue import BuildQueue
 from lp.buildmaster.model.processor import Processor
+from lp.code.model.gitcollection import GenericGitCollection
+from lp.code.model.gitrepository import GitRepository
 from lp.oci.enums import OCIRecipeBuildRequestStatus
 from lp.oci.interfaces.ocipushrule import IOCIPushRuleSet
 from lp.oci.interfaces.ocirecipe import (
@@ -66,8 +68,11 @@ from lp.oci.model.ocipushrule import OCIPushRule
 from lp.oci.model.ocirecipebuild import OCIRecipeBuild
 from lp.registry.interfaces.person import IPersonSet
 from lp.registry.interfaces.role import IPersonRoles
+from lp.registry.model.distribution import Distribution
 from lp.registry.model.distroseries import DistroSeries
+from lp.registry.model.person import Person
 from lp.registry.model.series import ACTIVE_STATUSES
+from lp.services.database.bulk import load_related
 from lp.services.database.constants import (
     DEFAULT,
     UTC_NOW,
@@ -543,6 +548,15 @@ class OCIRecipeSet:
 
         list(getUtility(IPersonSet).getPrecachedPersonsFromIDs(
             person_ids, need_validity=True))
+
+        # Preload projects
+        projects = [recipe.oci_project for recipe in recipes]
+        load_related(Distribution, projects, ["distribution_id"])
+
+        # Preload repos
+        repos = load_related(GitRepository, recipes, ["git_repository_id"])
+        load_related(Person, repos, ['owner_id', 'registrant_id'])
+        GenericGitCollection.preloadDataForRepositories(repos)
 
 
 @implementer(IOCIRecipeBuildRequest)

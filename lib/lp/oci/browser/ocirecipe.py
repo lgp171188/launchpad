@@ -22,7 +22,6 @@ from lazr.restful.interface import (
     copy_field,
     use_template,
     )
-from lp.services.webapp.batching import BatchNavigator
 from zope.component import getUtility
 from zope.interface import Interface
 from zope.schema import (
@@ -65,6 +64,7 @@ from lp.services.webapp import (
     stepthrough,
     structured,
     )
+from lp.services.webapp.batching import BatchNavigator
 from lp.services.webapp.breadcrumb import NameBreadcrumb
 from lp.services.webhooks.browser import WebhookTargetNavigationMixin
 from lp.soyuz.browser.archive import EnableProcessorsMixin
@@ -148,24 +148,30 @@ class OCIRecipeContextMenu(ContextMenu):
 class OCIRecipeSetView(LaunchpadView):
     """Default view for the list of OCI recipes of an OCI project."""
     page_title = 'Recipes'
-    description = 'These are the OCI recipe created for this OCI project.'
+    description = 'These are the recipes created for this OCI project.'
 
     @property
     def title(self):
         return self.context.name
 
     @cachedproperty
-    def count(self):
-        return self.recipes.count()
-
-    @cachedproperty
     def recipes(self):
-        return getUtility(IOCIRecipeSet).findByOCIProject(
-            self.context)
+        recipes = getUtility(IOCIRecipeSet).findByOCIProject(self.context)
+        return recipes.order_by('name')
 
     @property
     def recipes_navigator(self):
         return BatchNavigator(self.recipes, self.request)
+
+    @cachedproperty
+    def count(self):
+        return self.recipes_navigator.batch.total()
+
+    @property
+    def preloaded_recipes_batch(self):
+        recipes = self.recipes_navigator.batch
+        getUtility(IOCIRecipeSet).preloadDataForOCIRecipes(recipes)
+        return recipes
 
 
 class OCIRecipeView(LaunchpadView):
