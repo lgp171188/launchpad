@@ -511,6 +511,7 @@ class IDistributionPublic(
     # Really returns IOCIProject, see _schema_circular_imports.py.
     @operation_returns_entry(Interface)
     @export_read_operation()
+    @operation_for_version("devel")
     def getOCIProject(name):
         """Return a `OCIProject` with the given name for this
         distribution, or None.
