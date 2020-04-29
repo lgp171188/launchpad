@@ -462,6 +462,8 @@ patch_collection_return_type(
 patch_reference_property(IDistribution, 'main_archive', IArchive)
 patch_collection_property(IDistribution, 'all_distro_archives', IArchive)
 patch_entry_return_type(IDistribution, 'newOCIProject', IOCIProject)
+patch_collection_return_type(
+    IDistribution, 'searchOCIProjects', IOCIProject)
 
 
 # IDistributionMirror

@@ -518,6 +518,16 @@ class IDistributionPublic(
         """
 
     @operation_parameters(
+        text=TextLine(title=_("OCI title substring match "), required=False))
+    # Really returns IOCIProject, see
+    # _schema_circular_imports.py.
+    @operation_returns_collection_of(Interface)
+    @export_read_operation()
+    @operation_for_version("devel")
+    def searchOCIProjects(text):
+        """Search for OCI projects that match the title text."""
+
+    @operation_parameters(
         name=TextLine(title=_("Package name"), required=True))
     # Really returns IDistributionSourcePackage, see
     # _schema_circular_imports.py.

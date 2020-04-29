@@ -312,6 +312,30 @@ class TestDistribution(TestCaseWithFactory):
         result = distro.getOCIProject(first_project.name)
         self.assertEqual(first_project, result)
 
+    def test_searchOCIProjects_by_name(self):
+        name = self.factory.getUniqueUnicode()
+        distro = self.factory.makeDistribution()
+        first_name = self.factory.makeOCIProjectName(name=name)
+        first_project = self.factory.makeOCIProject(
+            pillar=distro, ociprojectname=first_name)
+        self.factory.makeOCIProject(pillar=distro)
+
+        result = distro.searchOCIProjects(text=name)
+        self.assertEqual(1, result.count())
+        self.assertEqual(first_project, result[0])
+
+    def test_searchOCIProjects_by_partial_name(self):
+        name = u'testpartialname'
+        distro = self.factory.makeDistribution()
+        first_name = self.factory.makeOCIProjectName(name=name)
+        first_project = self.factory.makeOCIProject(
+            pillar=distro, ociprojectname=first_name)
+        self.factory.makeOCIProject(pillar=distro)
+
+        result = distro.searchOCIProjects(text=u'partial')
+        self.assertEqual(1, result.count())
+        self.assertEqual(first_project, result[0])
+
 
 class TestDistributionCurrentSourceReleases(
     CurrentSourceReleasesMixin, TestCase):
