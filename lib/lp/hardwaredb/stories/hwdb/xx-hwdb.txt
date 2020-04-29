@@ -59,6 +59,27 @@ Human users get a message too.
     ...     print(tag)
     <div class="informational message">Thank you for your submission.</div>
 
+If the feature flag to disable new submissions is set, then we return an
+appropriate HTTP error instead.
+
+    >>> from lp.hardwaredb.interfaces.hwdb import (
+    ...     HWDB_SUBMISSIONS_DISABLED_FEATURE_FLAG,
+    ...     )
+    >>> from lp.services.features.testing import FeatureFixture
+
+    >>> submit_data['Unique Submission Key:'] = 'unique-id-disabled'
+    >>> browser.handleErrors = True
+    >>> with FeatureFixture({HWDB_SUBMISSIONS_DISABLED_FEATURE_FLAG: u'on'}):
+    ...     browser.open('http://launchpad.test/+hwdb/+submit')
+    ...     fill_form(
+    ...         browser, submit_data, submit_data_checkboxes, submit_file,
+    ...         'test.txt')
+    ...     browser.getControl('Upload').click()
+    Traceback (most recent call last):
+    ...
+    HTTPError: HTTP Error 410: Gone
+    >>> browser.handleErrors = False
+
 If fields are not set, the response contains a header explaining this
 error.
 

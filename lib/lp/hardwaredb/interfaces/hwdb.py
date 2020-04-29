@@ -7,9 +7,11 @@ __metaclass__ = type
 
 __all__ = [
     'HWBus',
+    'HWDB_SUBMISSIONS_DISABLED_FEATURE_FLAG',
     'HWSubmissionFormat',
     'HWSubmissionKeyNotUnique',
     'HWSubmissionProcessingStatus',
+    'HWSubmissionsDisabledError',
     'IHWDBApplication',
     'IHWDevice',
     'IHWDeviceClass',
@@ -94,6 +96,23 @@ from lp.services.webservice.apihelpers import (
     patch_reference_property,
     )
 from lp.soyuz.interfaces.distroarchseries import IDistroArchSeries
+
+
+HWDB_SUBMISSIONS_DISABLED_FEATURE_FLAG = 'hardwaredb.submissions.disabled'
+
+
+@error_status(http_client.GONE)
+class HWSubmissionsDisabledError(Exception):
+    """An exception saying that hardware database submissions are disabled."""
+
+    def __init__(self, message=None):
+        if message is None:
+            message = (
+                "Launchpad's hardware database is obsolete and is no longer "
+                "accepting submissions.  Please use "
+                "https://answers.launchpad.net/launchpad/+addquestion to tell "
+                "us about your requirements if you still need it.")
+        super(HWSubmissionsDisabledError, self).__init__(message)
 
 
 def validate_new_submission_key(submission_key):
