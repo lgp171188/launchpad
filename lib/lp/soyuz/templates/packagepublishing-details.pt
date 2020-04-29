@@ -73,16 +73,9 @@
         </li>
 
         <li>
-          <span tal:condition="chained_copies">
-            Originally
-            <p tal:replace="python: 'uploaded to' if view.is_source
-                                    else 'built as'" />
-          </span>
-          <span tal:condition="not: chained_copies">
-            Copied from
-          </span>
-
           <tal:source_original_location condition="view/is_source">
+            <span tal:condition="chained_copies">Originally uploaded to</span>
+            <span tal:condition="not: chained_copies">Copied from</span>
             <tal:define
               define="linkify_archive view/linkify_source_archive;
                       source context/sourcepackagerelease">
@@ -101,6 +94,19 @@
             </tal:define>
           </tal:source_original_location>
 
+          <tal:binary_build_location condition="view/is_binary">
+            <span tal:condition="chained_copies">Originally built as</span>
+            <span tal:condition="not: chained_copies">Copied from</span>
+            <tal:message
+              define="build context/binarypackagerelease/build;
+                      pocket build/pocket;
+                      arch build/distro_arch_series;
+                      series arch/distroseries;
+                      distro series/distribution;
+                      message string:${distro/name} ${series/name}-${pocket/name/fmt:lower} ${arch/architecturetag} in ${upload_archive/displayname}"
+              replace="message" />
+          </tal:binary_build_location>
+
           <tal:comment condition="nothing">
               Only show "creator" if we didn't show above, at the
               previous copied_from_archive "li" tag.
@@ -113,18 +119,7 @@
               <tal:source_sponsor condition="python: view.is_source and context.sponsor">
                 (sponsored by <a tal:replace="structure context/sponsor/fmt:link"/>)
               </tal:source_sponsor>
-           </tal:source_creator_and_sponsor>
-
-          <tal:binary_build_location condition="view/is_binary">
-            <tal:message
-              define="build context/binarypackagerelease/build;
-                      pocket build/pocket;
-                      arch build/distro_arch_series;
-                      series arch/distroseries;
-                      distro series/distribution;
-                      message string:${distro/name} ${series/name}-${pocket/name/fmt:lower} ${arch/architecturetag} in ${upload_archive/displayname}"
-              replace="message" />
-          </tal:binary_build_location>
+          </tal:source_creator_and_sponsor>
         </li>
     </tal:copied>
   </ul>
