@@ -12,15 +12,8 @@
     <div tal:replace="structure context/@@+global-actions"/>
   </metal:side>
 
-  <metal:heading fill-slot="heading">
-    <h1>Recipes for <span tal:replace="context/name"/></h1>
-  </metal:heading>
-
   <div metal:fill-slot="main">
       <div class="main-portlet">
-        <p class="application-summary"
-           tal:condition="view/description"
-           tal:content="view/description"/>
         <p tal:define="count view/count"
            tal:condition="count">
           <span tal:condition="python: count == 1">
@@ -40,14 +33,10 @@
         <tbody>
           <tr class="head">
             <th>Name</th>
-            <th>Repository</th>
-            <th>Branch</th>
-            <th>Build file</th>
-            <th>Requires virtualization</th>
-            <th>Builds daily</th>
             <th>Owner</th>
+            <th>Source</th>
+            <th>Build file</th>
             <th>Date created</th>
-            <th>Last modified</th>
           </tr>
 
           <tr tal:repeat="recipe view/preloaded_recipes_batch">
@@ -55,14 +44,10 @@
               <a tal:content="recipe/name"
                  tal:attributes="href recipe/fmt:url" />
             </td>
-            <td tal:content="structure recipe/git_repository/fmt:link"/>
-            <td tal:content="recipe/git_path" />
-            <td tal:content="recipe/build_file" />
-            <td tal:content="recipe/require_virtualized" />
-            <td tal:content="recipe/build_daily" />
             <td tal:content="structure recipe/owner/fmt:link" />
+            <td tal:content="recipe/git_ref/identity" />
+            <td tal:content="recipe/build_file" />
             <td tal:content="recipe/date_created/fmt:displaydate" />
-            <td tal:content="recipe/date_last_modified/fmt:displaydate" />
           </tr>
         </tbody>
       </table>

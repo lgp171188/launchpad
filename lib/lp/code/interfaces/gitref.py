@@ -1,4 +1,4 @@
-# Copyright 2015-2019 Canonical Ltd.  This software is licensed under the
+# Copyright 2015-2020 Canonical Ltd.  This software is licensed under the
 # GNU Affero General Public License version 3 (see the file LICENSE).
 
 """Git reference ("ref") interfaces."""
@@ -466,6 +466,22 @@ class IGitRef(IGitRefView, IGitRefEdit):
     # generation working.  Individual attributes must set their version to
     # "devel".
     export_as_webservice_entry(as_of="beta")
+
+
+class IGitRefSet(Interface):
+    def findReposAndRefs(repos_and_paths):
+        """Returns the collection of GitRefs for the given list of tuples
+        (GitRepository, path).
+
+        The "path" part of the tuple can be the shortcut version (e.g
+        "master") or the full path (e.g "refs/heads/master"). If it's the
+        short version, we also search for "refs/head/$path".
+
+        :param repos_and_paths: A list of tuples with git repos and paths
+        :return: A dict where the keys are the tuples provided, and the
+                 values are the GitRef objects. If a given tuple is not
+                 found, the key will be missing in the dictionary.
+        """
 
 
 class IGitRefBatchNavigator(ITableBatchNavigator):

@@ -305,6 +305,9 @@ class TestAsyncOCIRecipeBuildBehaviour(MakeOCIBuildMixin, TestCaseWithFactory):
             git_ref=ref)
         job = self.makeJob(ref, recipe=recipe)
         repository.removeRefs([ref.path])
+        # Clean the git_ref cache
+        removeSecurityProxy(job.build.recipe)._git_ref = None
+
         self.assertIsNone(job.build.recipe.git_ref)
         expected_exception_msg = ("Source repository for "
                                   "~oci-owner/{} has been deleted.".format(

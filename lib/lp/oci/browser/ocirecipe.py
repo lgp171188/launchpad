@@ -148,13 +148,16 @@ class OCIRecipeContextMenu(ContextMenu):
 class OCIProjectRecipesView(LaunchpadView):
     """Default view for the list of OCI recipes of an OCI project."""
     page_title = 'Recipes'
-    description = 'These are the recipes created for this OCI project.'
+
+    @property
+    def label(self):
+        return 'OCI recipes for %s' % self.context.name
 
     @property
     def title(self):
         return self.context.name
 
-    @cachedproperty
+    @property
     def recipes(self):
         recipes = getUtility(IOCIRecipeSet).findByOCIProject(self.context)
         return recipes.order_by('name')

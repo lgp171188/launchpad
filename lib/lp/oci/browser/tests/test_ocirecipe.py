@@ -817,9 +817,9 @@ class TestOCIRecipeRequestBuildsView(BaseTestOCIRecipeView):
             extract_text(find_main_content(browser.contents)))
 
 
-class TestOCIRecipeSetView(BaseTestOCIRecipeView):
+class TestOCIProjectRecipesView(BaseTestOCIRecipeView):
     def setUp(self):
-        super(TestOCIRecipeSetView, self).setUp()
+        super(TestOCIProjectRecipesView, self).setUp()
         self.ubuntu = getUtility(ILaunchpadCelebrities).ubuntu
         self.distroseries = self.factory.makeDistroSeries(
             distribution=self.ubuntu, name="shiny", displayname="Shiny")
@@ -875,7 +875,8 @@ class TestOCIRecipeSetView(BaseTestOCIRecipeView):
                 self.assertIn(recipe.name, main_text)
 
     def test_constant_query_count(self):
-        self.pushConfig("launchpad", default_batch_size=2)
+        batch_size = 3
+        self.pushConfig("launchpad", default_batch_size=batch_size)
 
         def getView():
             view = self.getViewBrowser(

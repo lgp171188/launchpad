@@ -30,11 +30,11 @@
             name="+index"
             template="../templates/ocirecipe-index.pt" />
         <browser:page
-            for="lp.registry.interface.ociproject.IOCIProject"
+            for="lp.registry.interfaces.ociproject.IOCIProject"
             class="lp.oci.browser.ocirecipe.OCIProjectRecipesView"
             permission="launchpad.View"
             name="+recipes"
-            template="../templates/ocirecipe-set.pt" />
+            template="../templates/ociproject-recipes.pt" />
         <browser:page
             for="lp.registry.interfaces.ociproject.IOCIProject"
             class="lp.oci.browser.ocirecipe.OCIRecipeAddView"
