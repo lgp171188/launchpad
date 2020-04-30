@@ -145,7 +145,7 @@ class OCIRecipeContextMenu(ContextMenu):
         return Link('+request-builds', 'Request builds', icon='add')
 
 
-class OCIRecipeSetView(LaunchpadView):
+class OCIProjectRecipesView(LaunchpadView):
     """Default view for the list of OCI recipes of an OCI project."""
     page_title = 'Recipes'
     description = 'These are the recipes created for this OCI project.'
