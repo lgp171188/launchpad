@@ -470,7 +470,7 @@ class IGitRef(IGitRefView, IGitRefEdit):
 
 
 class IGitRefSet(Interface):
-    def findReposAndRefs(repos_and_paths):
+    def findByReposAndPaths(repos_and_paths):
         """Returns the collection of GitRefs for the given list of tuples
         (GitRepository, path).
 

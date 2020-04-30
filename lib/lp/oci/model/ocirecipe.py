@@ -566,7 +566,7 @@ class OCIRecipeSet:
         GenericGitCollection.preloadDataForRepositories(repos)
 
         # Preload GitRefs.
-        git_refs = GitRef.findReposAndRefs(
+        git_refs = GitRef.findByReposAndPaths(
             [(r.git_repository, r.git_path) for r in recipes])
         for recipe in recipes:
             git_ref = git_refs.get((recipe.git_repository, recipe.git_path))

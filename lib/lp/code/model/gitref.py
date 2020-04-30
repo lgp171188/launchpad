@@ -623,7 +623,7 @@ class GitRef(StormBase, GitRefMixin):
             commit_message=commit_message, review_requests=review_requests)
 
     @classmethod
-    def findReposAndRefs(cls, repos_and_paths):
+    def findByReposAndPaths(cls, repos_and_paths):
         """See `IGitRefSet`"""
         def full_path(path):
             if path.startswith(u"refs/heads/"):
