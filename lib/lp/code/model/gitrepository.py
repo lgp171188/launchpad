@@ -596,11 +596,13 @@ class GitRepository(StormBase, WebhookTargetMixin, GitIdentityMixin):
         paths = [path]
         if not path.startswith(u"refs/heads/"):
             paths.append(u"refs/heads/%s" % path)
-        for try_path in paths:
-            ref = Store.of(self).find(
-                GitRef,
-                GitRef.repository_id == self.id,
-                GitRef.path == try_path).one()
+        refs = Store.of(self).find(
+            GitRef,
+            GitRef.repository_id == self.id,
+            GitRef.path.is_in(paths))
+        refs_by_path = {r.path: r for r in refs}
+        for path in paths:
+            ref = refs_by_path.get(path)
             if ref is not None:
                 return ref
         return None
