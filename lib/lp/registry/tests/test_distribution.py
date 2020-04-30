@@ -18,7 +18,6 @@ from testtools.matchers import (
     MatchesAny,
     Not,
     )
-import transaction
 from zope.component import getUtility
 from zope.security.interfaces import Unauthorized
 from zope.security.proxy import removeSecurityProxy
@@ -56,14 +55,12 @@ from lp.soyuz.interfaces.distributionsourcepackagerelease import (
     IDistributionSourcePackageRelease,
     )
 from lp.testing import (
-    admin_logged_in,
     api_url,
     celebrity_logged_in,
     login_person,
     person_logged_in,
     TestCase,
     TestCaseWithFactory,
-    WebServiceTestCase,
     )
 from lp.testing.layers import (
     DatabaseFunctionalLayer,
@@ -775,7 +772,6 @@ class TestDistributionWebservice(TestCaseWithFactory):
             distro = self.factory.makeDistribution()
             self.factory.makeQuestion(
                 title="Crash with %s" % oopsid, target=distro)
-            transaction.commit()
             distro_url = api_url(distro)
 
         now = datetime.datetime.now(tz=pytz.utc)
@@ -802,7 +798,6 @@ class TestDistributionWebservice(TestCaseWithFactory):
         with person_logged_in(self.person):
             self.factory.makeQuestion(title="Crash with %s" % oopsid)
             distro = self.factory.makeDistribution()
-            transaction.commit()
             distro_url = api_url(distro)
         now = datetime.datetime.now(tz=pytz.utc)
         day = datetime.timedelta(days=1)
