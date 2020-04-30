@@ -170,6 +170,7 @@ from lp.testing import (
     logout,
     person_logged_in,
     record_two_runs,
+    StormStatementRecorder,
     TestCaseWithFactory,
     verifyObject,
     )
@@ -3917,6 +3918,17 @@ class TestGitRepositoryWebservice(TestCaseWithFactory):
             repository_url, "getRefByPath", path="c")
         self.assertEqual(200, response.status)
         self.assertIsNone(response.jsonBody())
+
+    def test_getRefByPath_query_count(self):
+        repository_db = self.factory.makeGitRepository()
+        ref_dbs = self.factory.makeGitRefs(
+            repository=repository_db, paths=[
+                "refs/heads/devel", "refs/heads/master"])
+
+        with StormStatementRecorder() as recorder:
+            ref = repository_db.getRefByPath("master")
+            self.assertEqual(ref_dbs[1], ref)
+            self.assertEqual(1, recorder.count)
 
     def test_subscribe(self):
         # A user can subscribe to a repository.
