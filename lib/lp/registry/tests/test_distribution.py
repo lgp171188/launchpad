@@ -50,11 +50,14 @@ from lp.registry.interfaces.series import SeriesStatus
 from lp.registry.tests.test_distroseries import CurrentSourceReleasesMixin
 from lp.services.propertycache import get_property_cache
 from lp.services.webapp import canonical_url
+from lp.services.webapp.interfaces import OAuthPermission
 from lp.soyuz.enums import PackagePublishingStatus
 from lp.soyuz.interfaces.distributionsourcepackagerelease import (
     IDistributionSourcePackageRelease,
     )
 from lp.testing import (
+    admin_logged_in,
+    api_url,
     celebrity_logged_in,
     login_person,
     person_logged_in,
@@ -68,6 +71,7 @@ from lp.testing.layers import (
     ZopelessDatabaseLayer,
     )
 from lp.testing.matchers import Provides
+from lp.testing.pages import webservice_for_person
 from lp.testing.views import create_initialized_view
 from lp.translations.enums import TranslationPermission
 
@@ -760,3 +764,42 @@ class DistributionOCIProjectAdminPermission(TestCaseWithFactory):
         self.assertFalse(distro.canAdministerOCIProjects(someone))
         self.assertTrue(distro.canAdministerOCIProjects(owner))
         self.assertTrue(distro.canAdministerOCIProjects(admin))
+
+
+class TestDistributionWebservice(TestCaseWithFactory):
+    """Test the IDistribution API.
+
+    Some tests already exist in xx-distribution.txt.
+    """
+    layer = DatabaseFunctionalLayer
+
+    def setUp(self):
+        super(TestDistributionWebservice, self).setUp()
+        self.person = self.factory.makePerson(
+            displayname="Test Person")
+        self.webservice = webservice_for_person(
+            self.person, permission=OAuthPermission.WRITE_PUBLIC,
+            default_api_version="devel")
+
+    def test_searchOCIProjects(self):
+        name = self.factory.getUniqueUnicode(u"partial-")
+        with person_logged_in(self.person):
+            distro = self.factory.makeDistribution(owner=self.person)
+            first_name = self.factory.makeOCIProjectName(name=name)
+            first_project = self.factory.makeOCIProject(
+                pillar=distro, ociprojectname=first_name)
+            self.factory.makeOCIProject(pillar=distro)
+            distro_url = api_url(distro)
+
+        response = self.webservice.named_get(
+            distro_url, "searchOCIProjects", text="partial")
+        self.assertEqual(200, response.status, response.body)
+
+        search_body = response.jsonBody()
+        self.assertEqual(1, search_body["total_size"])
+        self.assertEqual(name, search_body["entries"][0]["name"])
+        with person_logged_in(self.person):
+            self.assertEqual(
+                self.webservice.getAbsoluteUrl(api_url(first_project)),
+                search_body["entries"][0]["self_link"])
+
