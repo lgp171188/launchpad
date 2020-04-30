@@ -683,42 +683,6 @@ class TestDistributionTranslations(TestCaseWithFactory):
             distro.translationpermission = TranslationPermission.CLOSED
 
 
-class TestWebService(WebServiceTestCase):
-
-    def test_oops_references_matching_distro(self):
-        # The distro layer provides the context restriction, so we need to
-        # check we can access context filtered references - e.g. on question.
-        oopsid = "OOPS-abcdef1234"
-        distro = self.factory.makeDistribution()
-        self.factory.makeQuestion(
-            title="Crash with %s" % oopsid, target=distro)
-        transaction.commit()
-        ws_distro = self.wsObject(distro, distro.owner)
-        now = datetime.datetime.now(tz=pytz.utc)
-        day = datetime.timedelta(days=1)
-        self.assertEqual(
-            [oopsid],
-            ws_distro.findReferencedOOPS(start_date=now - day, end_date=now))
-        self.assertEqual(
-            [],
-            ws_distro.findReferencedOOPS(
-                start_date=now + day, end_date=now + day))
-
-    def test_oops_references_different_distro(self):
-        # The distro layer provides the context restriction, so we need to
-        # check the filter is tight enough - other contexts should not work.
-        oopsid = "OOPS-abcdef1234"
-        self.factory.makeQuestion(title="Crash with %s" % oopsid)
-        distro = self.factory.makeDistribution()
-        transaction.commit()
-        ws_distro = self.wsObject(distro, distro.owner)
-        now = datetime.datetime.now(tz=pytz.utc)
-        day = datetime.timedelta(days=1)
-        self.assertEqual(
-            [],
-            ws_distro.findReferencedOOPS(start_date=now - day, end_date=now))
-
-
 class DistributionOCIProjectAdminPermission(TestCaseWithFactory):
     layer = DatabaseFunctionalLayer
 
@@ -803,3 +767,49 @@ class TestDistributionWebservice(TestCaseWithFactory):
                 self.webservice.getAbsoluteUrl(api_url(first_project)),
                 search_body["entries"][0]["self_link"])
 
+    def test_oops_references_matching_distro(self):
+        # The distro layer provides the context restriction, so we need to
+        # check we can access context filtered references - e.g. on question.
+        oopsid = "OOPS-abcdef1234"
+        with person_logged_in(self.person):
+            distro = self.factory.makeDistribution()
+            self.factory.makeQuestion(
+                title="Crash with %s" % oopsid, target=distro)
+            transaction.commit()
+            distro_url = api_url(distro)
+
+        now = datetime.datetime.now(tz=pytz.utc)
+        day = datetime.timedelta(days=1)
+
+        yesterday_response = self.webservice.named_get(
+            distro_url,
+            "findReferencedOOPS",
+            start_date=(now - day).isoformat(),
+            end_date=now.isoformat())
+        self.assertEqual([oopsid], yesterday_response.jsonBody())
+
+        future_response = self.webservice.named_get(
+            distro_url,
+            "findReferencedOOPS",
+            start_date=(now + day).isoformat(),
+            end_date=(now + day).isoformat())
+        self.assertEqual([], future_response.jsonBody())
+
+    def test_oops_references_different_distro(self):
+        # The distro layer provides the context restriction, so we need to
+        # check the filter is tight enough - other contexts should not work.
+        oopsid = "OOPS-abcdef1234"
+        with person_logged_in(self.person):
+            self.factory.makeQuestion(title="Crash with %s" % oopsid)
+            distro = self.factory.makeDistribution()
+            transaction.commit()
+            distro_url = api_url(distro)
+        now = datetime.datetime.now(tz=pytz.utc)
+        day = datetime.timedelta(days=1)
+
+        empty_response = self.webservice.named_get(
+            distro_url,
+            "findReferencedOOPS",
+            start_date=(now - day).isoformat(),
+            end_date=now.isoformat())
+        self.assertEqual([], empty_response.jsonBody())
