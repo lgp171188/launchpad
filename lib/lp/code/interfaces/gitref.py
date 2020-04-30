@@ -9,6 +9,7 @@ __all__ = [
     'IGitRef',
     'IGitRefBatchNavigator',
     'IGitRefRemoteSet',
+    'IGitRefSet',
     ]
 
 from textwrap import dedent
