@@ -135,6 +135,7 @@ from lp.registry.model.milestone import (
     HasMilestonesMixin,
     Milestone,
     )
+from lp.registry.model.ociprojectname import OCIProjectName
 from lp.registry.model.oopsreferences import referenced_oops
 from lp.registry.model.pillar import HasAliasMixin
 from lp.registry.model.sourcepackagename import SourcePackageName
@@ -1121,6 +1122,17 @@ class Distribution(SQLBase, BugTargetBase, MakesAnnouncements,
             *(select_spec + find_spec + match_clause)).config(distinct=True)
 
         return result_set.order_by(DistributionSourcePackageCache.name)
+
+    def searchOCIProjects(self, text=None):
+        """See `IDistribution`."""
+        # circular import
+        from lp.registry.model.ociproject import OCIProject
+        store = Store.of(self)
+        return store.find(
+            OCIProject,
+            OCIProject.distribution == self,
+            OCIProject.ociprojectname_id == OCIProjectName.id,
+            OCIProjectName.name.contains_string(text))
 
     def guessPublishedSourcePackageName(self, pkgname):
         """See `IDistribution`"""
