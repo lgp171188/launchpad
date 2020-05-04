@@ -8,6 +8,7 @@ __all__ = [
     'IOCIProjectSeries',
     'IOCIPushRule',
     'IOCIRecipe',
+    'IOCIRecipeBuild',
     'IOCIRecipeBuildRequest'
     ]
 
